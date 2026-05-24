@@ -16,7 +16,7 @@ function getTitleFromNav(pathname: string) {
   return 'Executive Overview'
 }
 
-export function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
+export function Topbar({ onMenuClick, onToggleCollapse }: { onMenuClick: () => void; onToggleCollapse: () => void }) {
   const location = useLocation()
   const title = getTitleFromNav(location.pathname)
 
@@ -30,6 +30,15 @@ export function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
             onClick={onMenuClick}
             className="rounded-lg p-2 text-slate-200 hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/30 md:hidden"
             aria-label="Open sidebar"
+          >
+            <Menu className="size-5" />
+          </button>
+          
+          <button
+            type="button"
+            onClick={onToggleCollapse}
+            className="hidden rounded-lg p-2 text-slate-200 hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/30 md:flex"
+            aria-label="Toggle sidebar"
           >
             <Menu className="size-5" />
           </button>

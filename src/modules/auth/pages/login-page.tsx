@@ -1,12 +1,13 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { UserRound } from 'lucide-react'
 import { useMemo, useState } from 'react'
-import { useForm } from 'react-hook-form'
+import { Controller, useForm } from 'react-hook-form'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
-import { useAuthStore } from '@/app/store/auth-store'
+import { useAuthStore } from '@/modules/auth/store/auth-store'
 import { useLoginMutation } from '@/modules/auth/hooks/use-login-mutation'
+import { useVerifyOtpMutation } from '@/modules/auth/hooks/use-verify-otp-mutation'
 import { type LoginSchema, loginSchema } from '@/modules/auth/validations/login-schema'
 import { type OtpSchema, otpSchema } from '@/modules/auth/validations/otp-schema'
 import { FormField } from '@/shared/components/form/form-field'
@@ -18,17 +19,15 @@ import { Input } from '@/shared/components/ui/input'
 export function LoginPage() {
   const navigate = useNavigate()
   const setSession = useAuthStore((state) => state.setSession)
-  const { mutateAsync, isPending } = useLoginMutation()
+  const { mutateAsync: login, isPending: isLoginPending } = useLoginMutation()
+  const { mutateAsync: verifyOtp, isPending: isVerifyPending } = useVerifyOtpMutation()
   const [step, setStep] = useState<'credentials' | 'otp'>('credentials')
-  const [pendingSession, setPendingSession] = useState<{
-    accessToken: string
-    user: { id: string; email: string; role: 'admin' | 'manager' }
-  } | null>(null)
+  const [pendingEmail, setPendingEmail] = useState<string | null>(null)
 
   const credentialsForm = useForm<LoginSchema>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      email: 'admin@gmail.com',
+      email: '',
       password: '',
     },
   })
@@ -40,21 +39,21 @@ export function LoginPage() {
 
   const onSubmitCredentials = async (values: LoginSchema) => {
     try {
-      if (values.email !== 'admin@gmail.com') {
-        toast.error('Use admin@gmail.com to login')
+      if (!values.email) {
+        toast.error('Email is required')
         return
       }
-      const payload = await mutateAsync(values)
-      setPendingSession(payload)
+      await login({ email: values.email, password: values.password })
+      setPendingEmail(values.email)
       setStep('otp')
-      toast.message('Authorization code sent')
+      toast.success('OTP sent to your email')
     } catch {
-      toast.error('Use admin@gmail.com to login')
+      toast.error('Invalid credentials')
     }
   }
 
-  const onSubmitOtp = (values: OtpSchema) => {
-    if (!pendingSession) {
+  const onSubmitOtp = async (values: OtpSchema) => {
+    if (!pendingEmail) {
       setStep('credentials')
       return
     }
@@ -64,9 +63,14 @@ export function LoginPage() {
       return
     }
 
-    setSession(pendingSession)
-    toast.success('Welcome back')
-    navigate('/dashboard/executive', { replace: true })
+    try {
+      await verifyOtp({ email: pendingEmail, otp: values.code })
+      setSession()
+      toast.success('Welcome back')
+      navigate('/dashboard/executive', { replace: true })
+    } catch {
+      toast.error('Invalid or expired OTP')
+    }
   }
 
   const subtitle = useMemo(() => {
@@ -105,7 +109,7 @@ export function LoginPage() {
                 <Input
                   type="email"
                   className="border-0 border-b border-white/10 bg-transparent text-slate-100 shadow-none focus-visible:ring-0"
-                  placeholder="admin@gmail.com"
+                  placeholder="admin@kods.com"
                   {...credentialsForm.register('email')}
                 />
               </FormField>
@@ -114,27 +118,32 @@ export function LoginPage() {
                 <Input
                   type="password"
                   className="border-0 border-b border-white/10 bg-transparent text-slate-100 shadow-none focus-visible:ring-0"
-                  placeholder="admin123"
+                  placeholder="Enter your password"
                   {...credentialsForm.register('password')}
                 />
               </FormField>
 
-              <Button className="mt-2 w-full" type="submit" disabled={isPending}>
-                {isPending ? 'Signing in...' : 'Sign In'}
+              <Button className="mt-2 w-full" type="submit" disabled={isLoginPending}>
+                {isLoginPending ? 'Signing in...' : 'Sign In'}
               </Button>
             </form>
           ) : (
             <form className="mt-8 space-y-6" onSubmit={otpForm.handleSubmit(onSubmitOtp)}>
               <div className="space-y-3">
-                {/* eslint-disable-next-line react-hooks/incompatible-library */}
-                <OtpInput value={otpForm.watch('code')} onChange={(next) => otpForm.setValue('code', next)} />
+                <Controller
+                  control={otpForm.control}
+                  name="code"
+                  render={({ field }) => (
+                    <OtpInput value={field.value} onChange={field.onChange} />
+                  )}
+                />
                 {otpForm.formState.errors.code?.message ? (
                   <p className="text-center text-xs text-rose-300">{otpForm.formState.errors.code.message}</p>
                 ) : null}
               </div>
 
-              <Button className="w-full" type="submit">
-                Login
+              <Button className="w-full" type="submit" disabled={isVerifyPending}>
+                {isVerifyPending ? 'Verifying...' : 'Login'}
               </Button>
 
               <button

@@ -1,19 +1,18 @@
 import axios from 'axios'
 
-import { useAuthStore } from '@/app/store/auth-store'
 import { env } from '@/config/env'
 
-export const apiClient = axios.create({
-  baseURL: env.apiBaseUrl,
+const defaultConfigs = {
   timeout: 30000,
+  withCredentials: true,
+}
+
+export const authApiClient = axios.create({
+  ...defaultConfigs,
+  baseURL: env.authApiBaseUrl,
 })
 
-apiClient.interceptors.request.use((config) => {
-  const accessToken = useAuthStore.getState().accessToken
-
-  if (accessToken) {
-    config.headers.Authorization = `Bearer ${accessToken}`
-  }
-
-  return config
+export const expertApiClient = axios.create({
+  ...defaultConfigs,
+  baseURL: env.serviceApiBaseUrl,
 })

@@ -15,12 +15,26 @@ export function SidebarGroup({ item, compact = false, onNavigate }: SidebarGroup
   const location = useLocation()
 
   const isChildActive = useMemo(() => {
-    const children = item.children ?? []
-    return children.some((child) => (child.to ? matchPath({ path: child.to, end: false }, location.pathname) : false))
+    const checkActive = (navItem: NavItem): boolean => {
+      if (navItem.to && matchPath({ path: navItem.to, end: false }, location.pathname)) {
+        return true
+      }
+      if (navItem.children) {
+        return navItem.children.some(checkActive)
+      }
+      return false
+    }
+
+    return item.children?.some(checkActive) ?? false
   }, [item.children, location.pathname])
 
-  const [manualOpen, setManualOpen] = useState(false)
-  const open = manualOpen || isChildActive
+  const [isOpen, setIsOpen] = useState(false)
+  const [prevIsChildActive, setPrevIsChildActive] = useState(isChildActive)
+
+  if (isChildActive !== prevIsChildActive) {
+    setPrevIsChildActive(isChildActive)
+    if (isChildActive) setIsOpen(true)
+  }
 
   const children = item.children ?? []
   const hasChildren = children.length > 0
@@ -33,9 +47,9 @@ export function SidebarGroup({ item, compact = false, onNavigate }: SidebarGroup
         badge={item.badge}
         active={isChildActive}
         expandable={hasChildren}
-        expanded={open}
+        expanded={isOpen}
         compact={compact}
-        onToggle={() => setManualOpen((prev) => !prev)}
+        onToggle={() => setIsOpen((prev) => !prev)}
         onNavigate={onNavigate}
       />
 
@@ -43,23 +57,32 @@ export function SidebarGroup({ item, compact = false, onNavigate }: SidebarGroup
         <div
           className={cn(
             'grid transition-[grid-template-rows] duration-300 ease-out',
-            open ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]',
+            isOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]',
           )}
         >
           <div className="min-h-0 overflow-hidden">
             <div className="space-y-1 py-1">
-              {children.map((child) => (
-                <SidebarItem
-                  key={child.key}
-                  label={child.label}
-                  to={child.to}
-                  icon={child.icon}
-                  badge={child.badge}
-                  depth={1}
-                  onNavigate={onNavigate}
-                  compact={compact}
-                />
-              ))}
+              {children.map((child) => {
+                if (child.children && child.children.length > 0) {
+                  return (
+                    <div key={child.key} style={{ paddingLeft: compact ? '0' : '0.75rem' }}>
+                      <SidebarGroup item={child} compact={compact} onNavigate={onNavigate} />
+                    </div>
+                  )
+                }
+                return (
+                  <SidebarItem
+                    key={child.key}
+                    label={child.label}
+                    to={child.to}
+                    icon={child.icon}
+                    badge={child.badge}
+                    depth={1}
+                    onNavigate={onNavigate}
+                    compact={compact}
+                  />
+                )
+              })}
             </div>
           </div>
         </div>

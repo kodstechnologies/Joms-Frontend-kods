@@ -1,20 +1,21 @@
-import { apiClient } from '@/shared/lib/axios'
+import { authApiClient } from '@/shared/lib/axios'
 
-type LoginPayload = {
+export type LoginPayload = {
   email: string
   password: string
 }
 
-type LoginResponse = {
-  accessToken: string
-  user: {
-    id: string
-    email: string
-    role: 'admin' | 'manager'
-  }
+export type VerifyOtpPayload = {
+  email: string
+  otp: string
 }
 
 export async function login(payload: LoginPayload) {
-  const response = await apiClient.post<LoginResponse>('/auth/login', payload)
+  const response = await authApiClient.post('/admin/login', payload)
+  return response.data
+}
+
+export async function verifyOtp(payload: VerifyOtpPayload) {
+  const response = await authApiClient.post('/admin/verify-otp', payload)
   return response.data
 }

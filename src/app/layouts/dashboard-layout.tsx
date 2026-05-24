@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
+import { cn } from '@/shared/lib/cn'
 
 import { Sidebar } from '@/app/layouts/components/sidebar'
 import { SidebarMobile } from '@/app/layouts/components/sidebar-mobile'
@@ -10,46 +11,50 @@ import { uiTokens } from '@/shared/lib/design-tokens'
 
 export function DashboardLayout() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+  const [isCollapsed, setIsCollapsed] = useState(false)
   const location = useLocation()
   const isTabletCompact = useMediaQuery('(min-width: 768px) and (max-width: 1023px)')
   const isDesktopShell = useMediaQuery('(min-width: 768px)')
 
   useEffect(() => {
-    // Mobile drawer: close on route change
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsSidebarOpen(false)
   }, [location.pathname])
 
-  const sidebarWidth = isTabletCompact ? '5.75rem' : '18.5rem'
+  const showCompact = isCollapsed || isTabletCompact
 
   return (
-    <div className={['relative h-dvh overflow-hidden text-slate-100', uiTokens.shellBg].join(' ')}>
+    <div className={cn('relative h-dvh overflow-hidden text-slate-100', uiTokens.shellBg)}>
       <aside
-        className={[
-          'fixed inset-y-0 left-0 z-40 hidden border-r border-white/10 md:block',
+        className={cn(
+          'fixed inset-y-0 left-0 z-40 hidden border-r border-white/10 md:block transition-[width] duration-300 ease-in-out overflow-hidden',
           uiTokens.sidebarBg,
-          'transition-[width] duration-300',
-        ].join(' ')}
-        style={{ width: sidebarWidth }}
+          showCompact ? 'w-[5.75rem]' : 'w-[18.5rem]'
+        )}
       >
-        <div className="flex h-14 items-center px-3">
+        <div className="flex h-16 items-center px-3 overflow-hidden whitespace-nowrap">
           <div className="flex items-center gap-2">
-            <div className="size-2 rounded-full bg-amber-500" />
-            {!isTabletCompact ? (
-              <p className="text-sm font-semibold tracking-tight text-slate-100">JOMS</p>
+            <div className="size-2 rounded-full bg-amber-500 shrink-0" />
+            {!showCompact ? (
+              <p className="text-sm font-semibold tracking-tight text-slate-100 uppercase">JOMS</p>
             ) : null}
           </div>
         </div>
-        <Sidebar compact={isTabletCompact} />
+        <Sidebar compact={showCompact} />
       </aside>
 
       <SidebarMobile open={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
 
       <div
-        className="relative flex h-dvh min-w-0 flex-1 flex-col overflow-hidden"
-        style={{ paddingLeft: isDesktopShell ? sidebarWidth : 0 }}
+        className={cn(
+          "relative flex h-dvh min-w-0 flex-1 flex-col overflow-hidden transition-[padding] duration-300 ease-in-out",
+          showCompact ? "md:pl-[5.75rem]" : "md:pl-[18.5rem]"
+        )}
       >
-        <Topbar onMenuClick={() => setIsSidebarOpen((prev) => !prev)} />
+        <Topbar 
+          onMenuClick={() => setIsSidebarOpen((prev) => !prev)} 
+          onToggleCollapse={() => setIsCollapsed((prev) => !prev)}
+        />
         <main
           className="min-h-0 flex-1 overflow-y-auto overscroll-contain scroll-smooth"
           style={{ overflowY: !isDesktopShell && isSidebarOpen ? 'hidden' : 'auto' }}

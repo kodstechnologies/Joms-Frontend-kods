@@ -58,6 +58,15 @@ export const navigationConfig: NavItem[] = [
     children: [
       { key: 'expert.dashboard', label: 'Dashboard', badge: { label: 'Soon', variant: 'warning' } },
       { key: 'expert.management', label: 'Expert Management', badge: { label: 'Soon', variant: 'warning' } },
+      {
+        key: 'expert.services-group',
+        label: 'Services',
+        children: [
+          { key: 'expert.services.dashboard', label: 'Dashboard', badge: { label: 'Soon', variant: 'warning' } },
+          { key: 'expert.services.management', label: 'Service Management', to: '/services/management' },
+          { key: 'expert.services.categories', label: 'Category Management', badge: { label: 'Soon', variant: 'warning' } },
+        ],
+      },
       { key: 'expert.categories', label: 'Category Management', badge: { label: 'Soon', variant: 'warning' } },
       { key: 'expert.leaderboard', label: 'Leaderboard', badge: { label: 'Soon', variant: 'warning' } },
     ],

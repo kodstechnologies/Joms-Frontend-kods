@@ -2,7 +2,7 @@ import { LogOut } from 'lucide-react'
 
 import { SidebarGroup } from '@/app/layouts/components/sidebar-group'
 import { navigationConfig } from '@/app/layouts/navigation/navigation.config'
-import { useAuthStore } from '@/app/store/auth-store'
+import { useAuthStore } from '@/modules/auth/store/auth-store'
 
 export function Sidebar({ onNavigate, compact = false }: { onNavigate?: () => void; compact?: boolean }) {
   const clearSession = useAuthStore((state) => state.clearSession)
