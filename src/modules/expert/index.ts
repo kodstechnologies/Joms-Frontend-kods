@@ -1,6 +1,4 @@
-export * from './pages/expertmanagement/service-management-page'
-export * from './pages/expertmanagement/service-view-page'
-export * from './pages/expertmanagement/create-service-listing-page'
+export * from './pages/services'
 export * from './hooks/use-services'
 export * from './api/service-api'
 export * from './store/expert-store'
