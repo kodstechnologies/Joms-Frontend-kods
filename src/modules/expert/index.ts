@@ -1,5 +1,5 @@
 export * from './pages/services'
 export * from './hooks/use-services'
 export * from './api/service-api'
-export * from './store/expert-store'
+export * from './store/service-store'
 export * from './type/service'

@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 
-interface ExpertState {
+interface ServiceState {
   searchQuery: string
   setSearchQuery: (query: string) => void
   currentPage: number
@@ -9,11 +9,11 @@ interface ExpertState {
   setActiveStatus: (status: string) => void
 }
 
-export const useExpertStore = create<ExpertState>((set) => ({
+export const useServiceStore = create<ServiceState>((set) => ({
   searchQuery: '',
-  setSearchQuery: (query) => set({ searchQuery: query }),
+  setSearchQuery: (query) => set({ searchQuery: query, currentPage: 1 }),
   currentPage: 1,
   setCurrentPage: (page) => set({ currentPage: page }),
   activeStatus: 'all',
-  setActiveStatus: (status) => set({ activeStatus: status }),
+  setActiveStatus: (status) => set({ activeStatus: status, currentPage: 1 }),
 }))
