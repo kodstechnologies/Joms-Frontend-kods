@@ -1,9 +1,14 @@
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 import {
   AlertCircle,
+  Archive,
   BarChart3,
+  Bell,
+  CheckSquare,
   Eye,
+  Image,
+  Mail,
   MoreVertical,
   PauseCircle,
   Plus,
@@ -30,6 +35,7 @@ const formatPrice = (price: number) =>
 
 export const ServiceManagementPage = () => {
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
+  const [selectedServiceIds, setSelectedServiceIds] = useState<string[]>([])
   const navigate = useNavigate()
   const {
     searchQuery,
@@ -49,12 +55,35 @@ export const ServiceManagementPage = () => {
 
   const services = data?.data || []
   const meta = data?.meta
+  const visibleServiceIds = useMemo(() => services.map((service) => service._id), [services])
+  const selectedServiceCount = selectedServiceIds.length
+  const allVisibleServicesSelected =
+    visibleServiceIds.length > 0 && visibleServiceIds.every((id) => selectedServiceIds.includes(id))
+  const someVisibleServicesSelected = visibleServiceIds.some((id) => selectedServiceIds.includes(id))
   const counts = meta?.counts || {
     approvalsPending: 0,
     reportedServices: 0,
     suspendedServices: 0,
     deletedServices: 0,
   }
+
+  const toggleVisibleServices = useCallback(() => {
+    setSelectedServiceIds((currentIds) => {
+      if (allVisibleServicesSelected) {
+        return currentIds.filter((id) => !visibleServiceIds.includes(id))
+      }
+
+      return Array.from(new Set([...currentIds, ...visibleServiceIds]))
+    })
+  }, [allVisibleServicesSelected, visibleServiceIds])
+
+  const toggleServiceSelection = useCallback((serviceId: string) => {
+    setSelectedServiceIds((currentIds) =>
+      currentIds.includes(serviceId)
+        ? currentIds.filter((id) => id !== serviceId)
+        : [...currentIds, serviceId],
+    )
+  }, [])
 
   const columns = useMemo<ColumnDef<Service>[]>(
     () => [
@@ -64,6 +93,11 @@ export const ServiceManagementPage = () => {
           <input
             type="checkbox"
             aria-label="Select all services"
+            checked={allVisibleServicesSelected}
+            ref={(input) => {
+              if (input) input.indeterminate = someVisibleServicesSelected && !allVisibleServicesSelected
+            }}
+            onChange={toggleVisibleServices}
             className="rounded border-slate-700 bg-transparent"
           />
         ),
@@ -71,6 +105,9 @@ export const ServiceManagementPage = () => {
           <input
             type="checkbox"
             aria-label={`Select ${row.original.title}`}
+            checked={selectedServiceIds.includes(row.original._id)}
+            onChange={() => toggleServiceSelection(row.original._id)}
+            onClick={(event) => event.stopPropagation()}
             className="rounded border-slate-700 bg-transparent"
           />
         ),
@@ -211,8 +248,26 @@ export const ServiceManagementPage = () => {
         },
       },
     ],
-    [activeDropdownId, navigate],
+    [
+      activeDropdownId,
+      allVisibleServicesSelected,
+      navigate,
+      selectedServiceIds,
+      someVisibleServicesSelected,
+      toggleServiceSelection,
+      toggleVisibleServices,
+    ],
   )
+
+  const bulkActions = [
+    { label: 'Delete selected services', icon: Trash2 },
+    { label: 'Manage selected service media', icon: Image },
+    { label: 'Archive selected services', icon: Archive },
+    { label: 'Review selected services', icon: ShieldCheck },
+    { label: 'Notify selected experts', icon: Bell },
+    { label: 'Message selected experts', icon: Mail },
+    { label: 'Suspend selected services', icon: PauseCircle },
+  ]
 
   const statusCards: {
     label: string
@@ -310,6 +365,31 @@ export const ServiceManagementPage = () => {
           </button>
         ))}
       </div>
+
+      {selectedServiceCount > 0 && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-blue-500 bg-blue-950/80 px-4 py-2.5">
+          <div className="flex items-center gap-2 text-xs font-bold text-white">
+            <CheckSquare className="size-3.5" aria-hidden="true" />
+            <span>
+              {selectedServiceCount} {selectedServiceCount === 1 ? 'Service' : 'Services'} Selected
+            </span>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            {bulkActions.map((action) => (
+              <button
+                key={action.label}
+                type="button"
+                aria-label={action.label}
+                onClick={() => toast.message(`${action.label} action is coming soon`)}
+                className="flex size-8 items-center justify-center rounded-md bg-black text-white transition-colors hover:bg-white/10"
+              >
+                <action.icon className="size-3.5" aria-hidden="true" />
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       <DataTable
         columns={columns}
