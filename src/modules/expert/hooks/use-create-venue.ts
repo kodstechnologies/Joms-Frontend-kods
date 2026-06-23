@@ -1,0 +1,181 @@
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import {
+  buildGalleryFormData,
+  buildPricingPayload,
+  buildSpacePayload,
+  buildTermsPayload,
+  createAdminVenue,
+  updateAdminVenueDetails,
+  updateAdminVenueLocation,
+  createAdminSpace,
+  createAdminVenueAmenity,
+  createAdminVenueGallery,
+  createPricing,
+  createVenueTerms,
+  submitVenue,
+  submitAdminVenue,
+} from '../api/venue-api'
+import type { VenueFormData } from '../utils/venue-form'
+
+export const useCreateVenue = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: createAdminVenue,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['venue-draft'] })
+      queryClient.invalidateQueries({ queryKey: ['venue-profile'] })
+    },
+  })
+}
+
+export const useVenueStepMutations = () => {
+  const queryClient = useQueryClient()
+
+  const invalidateDraft = () => {
+    queryClient.invalidateQueries({ queryKey: ['venue-draft'] })
+    queryClient.invalidateQueries({ queryKey: ['venue-profile'] })
+  }
+
+  // Step 1 — save venue details (category + aboutVenue)
+  const saveVenueDetails = useMutation({
+    mutationFn: ({
+      venueId,
+      venueData,
+    }: {
+      venueId: string
+      venueData: Pick<VenueFormData, 'venueCategory' | 'aboutVenue'>
+    }) =>
+      updateAdminVenueDetails(venueId, {
+        venueCategoryId: venueData.venueCategory
+          ? [venueData.venueCategory]
+          : undefined,
+        aboutVenue: venueData.aboutVenue,
+      }),
+    onSuccess: invalidateDraft,
+  })
+
+  // Step 2 — save location
+  const saveLocation = useMutation({
+    mutationFn: ({
+      venueId,
+      venueData,
+    }: {
+      venueId: string
+      venueData: Partial<VenueFormData>
+    }) =>
+      updateAdminVenueLocation(venueId, {
+        location: {
+          address: venueData.address,
+          landmark: venueData.landmark,
+          city: venueData.city,
+        },
+        parkingAvailable: venueData.parkingAvailable,
+        accessibility: venueData.accessibility,
+      }),
+    onSuccess: invalidateDraft,
+  })
+
+  // Step 3 — create space
+  const saveSpace = useMutation({
+    mutationFn: ({
+      venueId,
+      venueData,
+    }: {
+      venueId: string
+      venueData: VenueFormData
+    }) => createAdminSpace(venueId, buildSpacePayload(venueData)),
+    onSuccess: invalidateDraft,
+  })
+
+  // Step 4 — save amenities then gallery
+  const saveAmenitiesAndMedia = useMutation({
+    mutationFn: async ({
+      venueId,
+      spaceId,
+      venueData,
+    }: {
+      venueId: string
+      spaceId: string
+      venueData: VenueFormData
+    }) => {
+      // Build amenities payload grouped by categoryId
+      // venueData.amenities holds subCategoryIds selected by user
+      // For now send as flat structure; backend expects [{categoryId, subCategoryIds}]
+      const groupedAmenities = Object.values(
+  venueData.amenities.reduce(
+    (
+      acc: Record<
+        string,
+        {
+          categoryId: string
+          subCategoryIds: string[]
+        }
+      >,
+      amenity,
+    ) => {
+      if (!acc[amenity.categoryId]) {
+        acc[amenity.categoryId] = {
+          categoryId: amenity.categoryId,
+          subCategoryIds: [],
+        }
+      }
+
+      acc[amenity.categoryId].subCategoryIds.push(
+        amenity.subCategoryId,
+      )
+
+      return acc
+    },
+    {},
+  ),
+)
+
+await createAdminVenueAmenity(venueId, {
+  spaceId,
+  amenities: groupedAmenities,
+})
+      return createAdminVenueGallery(venueId, spaceId, buildGalleryFormData(venueData))
+    },
+    onSuccess: invalidateDraft,
+  })
+
+  // Step 5 — save pricing
+  const savePricing = useMutation({
+    mutationFn: ({
+      spaceId,
+      venueData,
+    }: {
+      spaceId: string
+      venueData: VenueFormData
+    }) => createPricing(spaceId, buildPricingPayload(venueData)),
+    onSuccess: invalidateDraft,
+  })
+
+  // Step 6 — save terms
+  const saveTerms = useMutation({
+    mutationFn: ({
+      venueId,
+      venueData,
+    }: {
+      venueId: string
+      venueData: VenueFormData
+    }) => createVenueTerms(venueId, buildTermsPayload(venueData)),
+    onSuccess: invalidateDraft,
+  })
+
+  const submitVenueListing = useMutation({
+  mutationFn: (venueId: string) =>
+    submitAdminVenue(venueId),
+  onSuccess: invalidateDraft,
+})
+
+  return {
+    saveVenueDetails,
+    saveLocation,
+    saveSpace,
+    saveAmenitiesAndMedia,
+    savePricing,
+    saveTerms,
+    submitVenueListing,
+  }
+}

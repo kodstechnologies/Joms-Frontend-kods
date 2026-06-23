@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState ,useEffect} from 'react'
 import { matchPath, useLocation } from 'react-router-dom'
 
 import type { NavItem } from '@/app/layouts/navigation/navigation.config'
@@ -28,13 +28,13 @@ export function SidebarGroup({ item, compact = false, onNavigate }: SidebarGroup
     return item.children?.some(checkActive) ?? false
   }, [item.children, location.pathname])
 
-  const [isOpen, setIsOpen] = useState(false)
-  const [prevIsChildActive, setPrevIsChildActive] = useState(isChildActive)
+ const [isOpen, setIsOpen] = useState(false)
 
-  if (isChildActive !== prevIsChildActive) {
-    setPrevIsChildActive(isChildActive)
-    if (isChildActive) setIsOpen(true)
+useEffect(() => {
+  if (isChildActive) {
+    setIsOpen(true)
   }
+}, [isChildActive])
 
   const children = item.children ?? []
   const hasChildren = children.length > 0

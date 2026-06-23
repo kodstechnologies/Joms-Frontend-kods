@@ -4,4 +4,5 @@ const getEnv = (key: string, fallback = '') =>
 export const env = {
   authApiBaseUrl: getEnv('VITE_AUTH_API_BASE_URL', 'http://localhost:8081'),
   serviceApiBaseUrl: getEnv('VITE_SERVICE_API_BASE_URL', 'http://localhost:8004'),
+  venueApiBaseUrl: getEnv('VITE_VENUE_API_BASE_URL', 'http://localhost:8007'),
 }

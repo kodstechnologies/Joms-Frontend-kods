@@ -1,0 +1,250 @@
+export type VenueFormData = {
+  venueName: string
+  venueType: string
+  venueCategory: string
+  aboutVenue: string
+  address: string
+  landmark: string
+  city: string
+  parkingAvailable: boolean
+  accessibility: boolean
+  spaceName: string
+  spaceType: string
+  capacity: string
+  areaSqFt: string
+  guestCount: string
+  seatingType: string
+  locationType: string
+  capacityType: string
+  seatedCapacity: string
+  standingCapacity: string
+  inHouseCatering: boolean
+  decorationAvailable: boolean
+  amenities: Array<{
+  categoryId: string
+  subCategoryId: string
+  name: string
+  image: string
+}>
+  serviceType: string
+  setDays: string
+  weekdayPrice: string
+  weekendPrice: string
+  discount: string
+  reservationFee: string
+  terms: string
+  cancellationPolicy: string
+  refundPercentage: string
+  faqs: { question: string; answer: string }[]
+  contacts: { name: string; phone: string; email: string }[]
+  // Image upload fields
+  venueCoverImage: File | null
+  venueImage: File | null
+  galleryImages: File[]
+  // Existing image URLs from backend (for preloading draft)
+  venueCoverImageUrl: string
+  venueImageUrl: string
+  galleryImageUrls: string[]
+}
+
+export const createEmptyVenueFormData = (): VenueFormData => ({
+  venueName: '',
+  venueType: '',
+  venueCategory: '',
+  aboutVenue: '',
+  address: '',
+  landmark: '',
+  city: '',
+  parkingAvailable: false,
+  accessibility: false,
+  spaceName: '',
+  spaceType: '',
+  capacity: '',
+  areaSqFt: '',
+  guestCount: '',
+  seatingType: '',
+  locationType: 'same',
+  capacityType: 'seated',
+  seatedCapacity: '',
+  standingCapacity: '',
+  inHouseCatering: false,
+  decorationAvailable: false,
+  amenities: [],
+  serviceType: 'entire_space',
+  setDays: '',
+  weekdayPrice: '',
+  weekendPrice: '',
+  discount: '',
+  reservationFee: '',
+  terms: '',
+  cancellationPolicy: '',
+  refundPercentage: '',
+  faqs: [{ question: '', answer: '' }],
+  contacts: [{ name: '', phone: '', email: '' }],
+  venueCoverImage: null,
+  venueImage: null,
+  galleryImages: [],
+  venueCoverImageUrl: '',
+  venueImageUrl: '',
+  galleryImageUrls: [],
+})
+
+export const mapCurrentStepToUiStep = (currentStep?: string): number => {
+  switch (currentStep) {
+    case 'venue_details':
+      return 1
+    case 'location':
+      return 2
+    case 'spaces':
+      return 3
+    case 'gallery':
+      return 4
+    case 'pricing':
+      return 5
+    case 'amenities':
+      return 6
+    case 'contact':
+    case 'submitted':
+    case 'completed':
+      return 7
+    default:
+      return 1
+  }
+}
+
+const cancellationHoursMap: Record<string, number> = {
+  '7days': 168,
+  '48hrs': 48,
+  '24hrs': 24,
+  '12hrs': 12,
+}
+
+export const mapCancellationPolicyToHours = (policy: string) =>
+  cancellationHoursMap[policy] ?? 48
+
+const reverseCancellationHoursMap: Record<number, string> = {
+  168: '7days',
+  48: '48hrs',
+  24: '24hrs',
+  12: '12hrs',
+}
+
+export const mapHoursToCancellationPolicy = (hours?: number) =>
+  reverseCancellationHoursMap[hours ?? 48] ?? '48hrs'
+
+export const mapSpaceTypeToApi = (spaceType: string) => {
+  if (spaceType === 'restaurant') return 'restaurant'
+  return 'auditorium'
+}
+
+export const mapSpaceTypeFromApi = (spaceType?: string) => spaceType || ''
+
+export const mapDraftToVenueFormData = (
+  draft: Record<string, unknown>,
+  profile?: Record<string, unknown> | null,
+): VenueFormData => {
+  const base = createEmptyVenueFormData()
+  const location = (draft.location || profile?.location || {}) as Record<
+    string,
+    unknown
+  >
+  const categories = (profile?.categories || draft.venueCategoryId || []) as Array<
+    Record<string, unknown> | string
+  >
+  const firstCategory = categories[0]
+  const categoryId =
+    typeof firstCategory === 'object' && firstCategory !== null
+      ? String(firstCategory._id || '')
+      : String(firstCategory || '')
+
+  const spaces = (profile?.spaces || []) as Array<Record<string, unknown>>
+  const space = spaces[0]
+  const pricing = (space?.pricing as Array<Record<string, unknown>> | undefined)?.[0]
+  const terms = profile?.terms as Record<string, unknown> | undefined
+  const gallery = space?.galleryContact as Record<string, unknown> | undefined
+  const amenitiesDoc = profile?.amenities as
+    | Array<Record<string, unknown>>
+    | Record<string, unknown>
+    | undefined
+
+const amenityLabels = Array.isArray(amenitiesDoc)
+  ? amenitiesDoc.flatMap((item) =>
+      ((item.amenities as Array<Record<string, unknown>>) || []).flatMap(
+        (a) =>
+          (((a.subCategoryIds as Array<Record<string, unknown>>) || []).map(
+            (subCategory) => ({
+              categoryId: String(a.categoryId || ''),
+              subCategoryId: String(subCategory._id || ''),
+              name: String(subCategory.name || ''),
+              image: String(subCategory.image || ''),
+            }),
+          )),
+      ),
+    )
+  : []
+
+  return {
+    ...base,
+    venueName: String(draft.name || profile?.name || ''),
+    venueType: String(draft.venueType || profile?.venueType || ''),
+    venueCategory: categoryId,
+    aboutVenue: String(draft.aboutVenue || profile?.aboutVenue || ''),
+    address: String(location.address || ''),
+    landmark: String(location.landmark || ''),
+    city: String(location.city || ''),
+    parkingAvailable: Boolean(
+      draft.parkingAvailable ?? profile?.parkingAvailable ?? false,
+    ),
+    accessibility: Boolean(
+      draft.accessibility ?? profile?.accessibility ?? false,
+    ),
+    spaceName: String(space?.name || ''),
+    spaceType: mapSpaceTypeFromApi(String(space?.spaceType || '')),
+    capacityType: String(space?.capacityMode || 'seated'),
+    guestCount: String(space?.capacityRange || ''),
+    seatingType: String(space?.seatingStyle || ''),
+    areaSqFt: space?.areaSqFeet ? String(space.areaSqFeet) : '',
+    seatedCapacity:
+      space?.capacityMode === 'seated' && space?.capacityRange
+        ? String(space.capacityRange)
+        : '',
+    standingCapacity:
+      space?.capacityMode === 'standing' && space?.capacityRange
+        ? String(space.capacityRange)
+        : '',
+    locationType: space?.isSameAsVenueLocation === false ? 'different' : 'same',
+    inHouseCatering: Boolean(space?.inHouseCatering ?? false),
+    decorationAvailable: Boolean(space?.decorationAvailable ?? false),
+    amenities: amenityLabels,
+    serviceType: 'entire_space',
+    setDays: '',
+    weekdayPrice: pricing?.weekdayPrice ? String(pricing.weekdayPrice) : '',
+    weekendPrice: pricing?.weekendPrice ? String(pricing.weekendPrice) : '',
+    discount: pricing?.discount ? String(pricing.discount) : '',
+    reservationFee: pricing?.reservationFee
+      ? String(pricing.reservationFee)
+      : '',
+    terms: Array.isArray(terms?.terms)
+      ? (terms?.terms as string[]).join('\n')
+      : String(terms?.terms || ''),
+    cancellationPolicy: mapHoursToCancellationPolicy(
+      (terms?.cancellation as Record<string, unknown> | undefined)
+        ?.freeCancellationHours as number | undefined,
+    ),
+    refundPercentage: String(
+      (terms?.cancellation as Record<string, unknown> | undefined)
+        ?.refundPercentage ?? '',
+    ),
+    faqs: (terms?.faqs as VenueFormData['faqs']) || base.faqs,
+    contacts:
+      (gallery?.contacts as VenueFormData['contacts']) ||
+      (terms?.contacts as VenueFormData['contacts']) ||
+      base.contacts,
+    venueCoverImage: null,
+    venueImage: null,
+    galleryImages: [],
+    venueCoverImageUrl: '',
+    venueImageUrl: '',
+    galleryImageUrls: [],
+  }
+}
