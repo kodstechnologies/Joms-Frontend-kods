@@ -16,9 +16,9 @@ import {
 
 export type NavBadge =
   | {
-      label: string
-      variant?: 'default' | 'success' | 'warning'
-    }
+    label: string
+    variant?: 'default' | 'success' | 'warning'
+  }
   | undefined
 
 export type NavItem = {
@@ -56,8 +56,22 @@ export const navigationConfig: NavItem[] = [
     label: 'Expert Application',
     icon: Shield,
     children: [
-      { key: 'expert.dashboard', label: 'Dashboard', badge: { label: 'Soon', variant: 'warning' } },
-      { key: 'expert.management', label: 'Expert Management', badge: { label: 'Soon', variant: 'warning' } },
+      {
+        key: 'expert.management-group',
+        label: 'Expert',
+        children: [
+          {
+            key: 'expert.management.dashboard',
+            label: 'Dashboard',
+            badge: { label: 'Soon', variant: 'warning' },
+          },
+          {
+            key: 'expert.management.list',
+            label: 'Expert Management',
+            to: '/experts/management',
+          },
+        ],
+      },
       {
         key: 'expert.services-group',
         label: 'Services',

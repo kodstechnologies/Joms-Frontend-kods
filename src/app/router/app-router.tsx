@@ -10,7 +10,16 @@ const ServiceManagementPage = lazy(() => import('@/modules/expert').then(m => ({
 const ServiceViewPage = lazy(() => import('@/modules/expert').then(m => ({ default: m.ServiceViewPage })))
 const CreateServiceListingPage = lazy(() => import('@/modules/expert').then(m => ({ default: m.CreateServiceListingPage })))
 
-
+const ExpertManagementPage = lazy(() =>
+  import('@/modules/expert').then(m => ({
+    default: m.ExpertManagementPage,
+  })),
+)
+const CreateExpertPage = lazy(() =>
+  import('@/modules/expert').then((m) => ({
+    default: m.CreateExpertPage,
+  })),
+)
 const PageLoader = () => (
   <div className="flex h-dvh w-full items-center justify-center bg-slate-950">
     <div className="flex flex-col items-center gap-4">
@@ -32,8 +41,11 @@ export function AppRouter() {
               <Route path="/" element={<Navigate to="/dashboard" replace />} />
               <Route path="/dashboard" element={<Navigate to="/dashboard/executive" replace />} />
               <Route path="/dashboard/executive" element={<ExecutiveOverviewPage />} />
+              <Route path="/experts/management" element={<ExpertManagementPage />} />
               <Route path="/services/management" element={<ServiceManagementPage />} />
               <Route path="/services/management/create" element={<CreateServiceListingPage />} />
+              <Route path="/experts/management/create" element={<CreateExpertPage />}
+              />
               <Route path="/services/management/view/:id" element={<ServiceViewPage />} />
             </Route>
           </Route>
