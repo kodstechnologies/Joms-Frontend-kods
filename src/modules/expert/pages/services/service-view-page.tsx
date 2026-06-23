@@ -1,9 +1,12 @@
-import { useMemo, useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useEffect, useMemo, useState } from 'react'
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
+import axios from 'axios'
 import {
   ArrowLeft,
   ArrowUpRight,
   Check,
+  ChevronLeft,
+  ChevronRight,
   Eye,
   Gavel,
   History,
@@ -16,16 +19,34 @@ import {
   Info,
 } from 'lucide-react'
 
-import { useService } from '../../hooks/use-services'
+import {
+  useConsultation,
+  useService,
+  useUpdateConsultationStatus,
+  useUpdateServiceStatus,
+} from '../../hooks/use-services'
 import { Button } from '@/shared/components/ui/button'
 import {
   DecisionActionModal,
   type DecisionActionModalVariant,
 } from '@/shared/components/modal/decision-action-modal'
 import { cn } from '@/shared/lib/cn'
-import type { ServiceDetail } from '../../type/service'
+import type {
+  ConsultationDetail,
+  ConsultationPricingOption,
+  ServiceDetail,
+  ServiceRejectionReason,
+} from '../../type/service'
+import { SERVICE_REJECTION_REASON_BY_VALUE } from '../../type/service'
 
-type ServiceViewDetail = ServiceDetail & {
+type ServiceViewDetail = Partial<ServiceDetail> &
+  Partial<ConsultationDetail> & {
+  _id: string
+  partnerId: string
+  title: string
+  status: string
+  createdAt: string
+  updatedAt: string
   serviceType?: string
   pricing?: number
   consultationTitle?: string
@@ -41,8 +62,10 @@ type ServiceViewDetail = ServiceDetail & {
   durations?: { label: string; price?: number | string }[]
 }
 
+const EMPTY_VALUE = 'Not provided'
+
 const formatMoney = (value?: number) => {
-  if (value === undefined || Number.isNaN(value)) return '₹60,000.00'
+  if (value === undefined || Number.isNaN(value)) return EMPTY_VALUE
 
   return new Intl.NumberFormat('en-IN', {
     style: 'currency',
@@ -52,10 +75,23 @@ const formatMoney = (value?: number) => {
   }).format(value)
 }
 
+const formatConsultationPrice = (option: ConsultationPricingOption) => {
+  if (option.pricingType === 'free' || !option.price) return 'Free'
+  return formatMoney(option.price)
+}
+
+const formatStatus = (status?: string) => {
+  if (!status) return EMPTY_VALUE
+  if (status === 'in_review') return 'Review Pending'
+  return status.replaceAll('_', ' ')
+}
+
 const formatDate = (isoString?: string) => {
-  if (!isoString) return 'Jan 24, 2025 14:32'
+  if (!isoString) return EMPTY_VALUE
 
   const date = new Date(isoString)
+  if (Number.isNaN(date.getTime())) return EMPTY_VALUE
+
   const formattedDate = date.toLocaleDateString('en-US', {
     month: 'short',
     day: 'numeric',
@@ -71,12 +107,12 @@ const formatDate = (isoString?: string) => {
 }
 
 const getRelativeTime = (isoString?: string) => {
-  if (!isoString) return 'Applied 2 days ago'
+  if (!isoString) return ''
 
-  const diffDays = Math.max(
-    0,
-    Math.floor((Date.now() - new Date(isoString).getTime()) / (1000 * 60 * 60 * 24)),
-  )
+  const date = new Date(isoString)
+  if (Number.isNaN(date.getTime())) return ''
+
+  const diffDays = Math.max(0, Math.floor((Date.now() - date.getTime()) / (1000 * 60 * 60 * 24)))
 
   if (diffDays === 0) return 'Applied today'
   if (diffDays === 1) return 'Applied 1 day ago'
@@ -110,8 +146,25 @@ type ServiceDecisionAction = DecisionActionModalVariant
 export const ServiceViewPage = () => {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const serviceTypeParam = searchParams.get('type') || ''
+  const shouldFetchConsultation = serviceTypeParam.toLowerCase().includes('consultation')
 
-  const { data: apiResponse, isLoading, error } = useService(id || '')
+  const {
+    data: serviceResponse,
+    isLoading: isServiceLoading,
+    error: serviceError,
+  } = useService(id || '', !shouldFetchConsultation)
+  const {
+    data: consultationResponse,
+    isLoading: isConsultationLoading,
+    error: consultationError,
+  } = useConsultation(id || '', shouldFetchConsultation)
+  const { mutateAsync: updateServiceStatus, isPending: isUpdatingServiceStatus } =
+    useUpdateServiceStatus()
+  const { mutateAsync: updateConsultationStatus, isPending: isUpdatingConsultationStatus } =
+    useUpdateConsultationStatus()
+  const isUpdatingStatus = isUpdatingServiceStatus || isUpdatingConsultationStatus
   const [activeImageIndex, setActiveImageIndex] = useState(0)
   const [activeTierIndex, setActiveTierIndex] = useState(1)
   const [internalNotes, setInternalNotes] = useState('')
@@ -125,6 +178,13 @@ export const ServiceViewPage = () => {
     type: 'success' | 'info' | 'error' | null
   }>({ message: '', type: null })
 
+  useEffect(() => {
+    setActiveImageIndex(0)
+  }, [id])
+
+  const apiResponse = shouldFetchConsultation ? consultationResponse : serviceResponse
+  const isLoading = shouldFetchConsultation ? isConsultationLoading : isServiceLoading
+  const error = shouldFetchConsultation ? consultationError : serviceError
   const service = apiResponse?.data as ServiceViewDetail | undefined
   const tierDetails = useMemo(() => {
     if (service?.pricingType !== 'tiered' || !service.tieredPricing?.tiers?.length) return null
@@ -166,8 +226,101 @@ export const ServiceViewPage = () => {
     )
   }
 
-  const submitDecisionAction = () => {
-    if (!activeDecisionAction) return
+  const submitDecisionAction = async () => {
+    if (!activeDecisionAction || !id) return
+
+    if (activeDecisionAction === 'approve' || activeDecisionAction === 'reject') {
+      if (shouldFetchConsultation) {
+        if (activeDecisionAction === 'reject' && !decisionReason.trim()) {
+          showToast('Rejection reason is required.', 'error')
+          return
+        }
+
+        try {
+          if (activeDecisionAction === 'approve') {
+            await updateConsultationStatus({
+              id,
+              payload: { status: 'live' },
+            })
+            showToast('Consultation approved successfully!', 'success')
+          } else {
+            await updateConsultationStatus({
+              id,
+              payload: {
+                status: 'rejected',
+                reason: decisionReason.trim(),
+              },
+            })
+            showToast('Consultation application rejected.', 'error')
+          }
+
+          closeDecisionModal()
+        } catch (error) {
+          const message = axios.isAxiosError(error)
+            ? error.response?.data?.message || 'Failed to update consultation status.'
+            : 'Failed to update consultation status.'
+          showToast(message, 'error')
+        }
+
+        return
+      }
+
+      if (!decisionAdminNotes.trim()) {
+        showToast('Admin notes are required.', 'error')
+        return
+      }
+
+      if (activeDecisionAction === 'reject') {
+        if (!decisionReason.trim()) {
+          showToast('Rejection reason is required.', 'error')
+          return
+        }
+
+        if (selectedReasons.length === 0) {
+          showToast('Please select at least one reason.', 'error')
+          return
+        }
+      }
+
+      const adminNote = decisionAdminNotes.trim()
+
+      try {
+        if (activeDecisionAction === 'approve') {
+          await updateServiceStatus({
+            id,
+            payload: {
+              status: 'live',
+              adminNote,
+            },
+          })
+          showToast('Service listing approved successfully!', 'success')
+        } else {
+          const reasonFor = selectedReasons
+            .map((reasonValue) => SERVICE_REJECTION_REASON_BY_VALUE[reasonValue])
+            .filter((reason): reason is ServiceRejectionReason => Boolean(reason))
+
+          await updateServiceStatus({
+            id,
+            payload: {
+              status: 'rejected',
+              reasonFor,
+              rejectionReason: decisionReason.trim(),
+              adminNote,
+            },
+          })
+          showToast('Service application rejected.', 'error')
+        }
+
+        closeDecisionModal()
+      } catch (error) {
+        const message = axios.isAxiosError(error)
+          ? error.response?.data?.message || 'Failed to update service status.'
+          : 'Failed to update service status.'
+        showToast(message, 'error')
+      }
+
+      return
+    }
 
     const toastByAction: Record<ServiceDecisionAction, { message: string; type: 'success' | 'info' | 'error' }> = {
       approve: { message: 'Service listing approved successfully!', type: 'success' },
@@ -195,9 +348,12 @@ export const ServiceViewPage = () => {
         <div className="rounded-full bg-red-500/10 p-3 text-red-500">
           <Info className="size-10" />
         </div>
-        <h3 className="text-lg font-semibold text-white">Service Not Found</h3>
+        <h3 className="text-lg font-semibold text-white">
+          {shouldFetchConsultation ? 'Consultation Not Found' : 'Service Not Found'}
+        </h3>
         <p className="max-w-md text-sm text-slate-400">
-          The service details could not be loaded. Please ensure the service ID is correct.
+          {apiResponse?.message ||
+            'The service details could not be loaded. Please ensure the service ID is correct.'}
         </p>
         <Button
           variant="ghost"
@@ -210,26 +366,34 @@ export const ServiceViewPage = () => {
     )
   }
 
-  const handleNextImage = () => {
-    if (service.images && service.images.length > 0) {
-      setActiveImageIndex((prev) => (prev === service.images.length - 1 ? 0 : prev + 1))
+  const handlePrevImage = () => {
+    const images = service.images || []
+
+    if (images.length > 0) {
+      setActiveImageIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1))
     }
   }
 
-  const isConsultation = (service.serviceType || '').toLowerCase().includes('consultation')
-  const imageCount = service.images?.length || 0
-  const activeImage = imageCount > 0 ? service.images[activeImageIndex] : undefined
-  const expertName = service.partnerName || service.expertName || 'Michael Chen'
-  const expertId = `#Expert ${(service.partnerId || '10234').slice(-5).toUpperCase()}`
-  const categoryName = service.category?.name || service.consultationCategory || 'Legal'
+  const handleNextImage = () => {
+    const images = service.images || []
+
+    if (images.length > 0) {
+      setActiveImageIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1))
+    }
+  }
+
+  const isConsultation =
+    shouldFetchConsultation || (service.serviceType || '').toLowerCase().includes('consultation')
+  const images = service.images || []
+  const imageCount = images.length
+  const activeImage = imageCount > 0 ? images[Math.min(activeImageIndex, imageCount - 1)] : undefined
+
+  const expertName = service.partnerName || service.expertName || EMPTY_VALUE
+  const expertId = service.expertid || EMPTY_VALUE
+  const categoryName = service.category?.name || service.consultationCategory || service.topics?.[0]?.name || ''
   const submittedAt = formatDate(service.submittedAt || service.createdAt)
   const updatedAt = formatDate(service.updatedAt)
-  const statusLabel = service.status === 'in_review' ? 'Review Pending' : service.status.replace('_', ' ')
-  const fallbackTierFeatures = [
-    'High-level review of the NDA for obvious risks',
-    'Clear summary of key confidentiality and obligation clauses',
-    'Flags sections that may need closer attention',
-  ]
+  const statusLabel = formatStatus(service.status)
 
   const fixedStats = [
     {
@@ -237,11 +401,16 @@ export const ServiceViewPage = () => {
       label: 'Pricing',
     },
     {
-      value: `${service.fixedPricing?.discountPercent || 10}% Off`,
+      value:
+        service.fixedPricing?.discountPercent !== undefined
+          ? `${service.fixedPricing.discountPercent}% Off`
+          : EMPTY_VALUE,
       label: 'Discounts',
     },
     {
-      value: `${service.fixedPricing?.timelineValue || 25} ${service.fixedPricing?.timelineUnit || 'Days'}`,
+      value: service.fixedPricing
+        ? `${service.fixedPricing.timelineValue} ${service.fixedPricing.timelineUnit}`
+        : EMPTY_VALUE,
       label: 'Timelines',
     },
   ]
@@ -254,16 +423,17 @@ export const ServiceViewPage = () => {
     {
       value: service.customPricing
         ? `${service.customPricing.timelineFrom}-${service.customPricing.timelineTo} ${service.customPricing.timelineUnit}`
-        : 'Long term (2-5 Months)',
+        : EMPTY_VALUE,
       label: 'Timelines',
     },
   ]
 
-  const consultationDurations = service.durations || [
-    { label: '15mins (Free)' },
-    { label: '30mins (₹2,000)' },
-    { label: '60mins (₹4,500)' },
-  ]
+  const consultationDurations =
+    service.pricingOptions?.map((option) => ({
+      label: `${option.durationMinutes}mins (${formatConsultationPrice(option)})`,
+    })) ||
+    service.durations ||
+    []
   const decisionModalConfig = activeDecisionAction
     ? {
         approve: {
@@ -320,14 +490,36 @@ export const ServiceViewPage = () => {
         </div>
       )}
 
-      <button
-        type="button"
-        onClick={handleNextImage}
-        className="absolute right-2 bottom-2 flex items-center gap-1 rounded bg-black/85 px-2 py-1 text-[10px] font-semibold text-white"
+      {imageCount > 1 && (
+        <>
+          <button
+            type="button"
+            aria-label="Previous image"
+            onClick={handlePrevImage}
+            className="absolute top-1/2 left-2 flex size-7 -translate-y-1/2 items-center justify-center rounded-full bg-black/75 text-white transition-colors hover:bg-black/90"
+          >
+            <ChevronLeft className="size-4" aria-hidden="true" />
+          </button>
+          <button
+            type="button"
+            aria-label="Next image"
+            onClick={handleNextImage}
+            className="absolute top-1/2 right-2 flex size-7 -translate-y-1/2 items-center justify-center rounded-full bg-black/75 text-white transition-colors hover:bg-black/90"
+          >
+            <ChevronRight className="size-4" aria-hidden="true" />
+          </button>
+        </>
+      )}
+
+      <div
+        className={cn(
+          'absolute bottom-2 flex items-center gap-1 rounded bg-black/85 px-2 py-1 text-[10px] font-semibold text-white',
+          imageCount > 1 ? 'left-1/2 -translate-x-1/2' : 'right-2',
+        )}
       >
         <ImageIcon className="size-3" aria-hidden="true" />
         {imageCount > 0 ? `${activeImageIndex + 1}/${imageCount}` : '0/0'}
-      </button>
+      </div>
     </div>
   )
 
@@ -405,7 +597,9 @@ export const ServiceViewPage = () => {
           <h2 className="text-[18px] font-semibold text-white underline decoration-white/70 underline-offset-2">
             {expertName}
           </h2>
-          <p className="mt-1 text-[11px] text-[#777777]">{getRelativeTime(service.createdAt)}</p>
+          {getRelativeTime(service.createdAt) && (
+            <p className="mt-1 text-[11px] text-[#777777]">{getRelativeTime(service.createdAt)}</p>
+          )}
         </div>
 
         <button
@@ -418,7 +612,7 @@ export const ServiceViewPage = () => {
         </button>
       </div>
 
-      <div className="grid max-w-[760px] grid-cols-1 gap-4 sm:grid-cols-3">
+      <div className="grid w-full grid-cols-1 gap-4 sm:grid-cols-3">
         {[
           ['Expert ID', expertId],
           ['Submitted', submittedAt],
@@ -446,7 +640,7 @@ export const ServiceViewPage = () => {
             <div className="mb-8 flex items-start justify-between gap-6">
               <div>
                 <h2 className="text-[20px] font-semibold leading-none text-white">{service.title}</h2>
-                <p className="mt-2 text-[10px] text-[#777777]">{categoryName}</p>
+                {categoryName && <p className="mt-2 text-[10px] text-[#777777]">{categoryName}</p>}
               </div>
 
               <span className="rounded-md bg-[#6B4217] px-3 py-1.5 text-[12px] font-semibold text-[#E7AE63]">
@@ -454,18 +648,24 @@ export const ServiceViewPage = () => {
               </span>
             </div>
 
-            <p className="max-w-[560px] text-[12px] leading-relaxed text-white">{service.description}</p>
+            {service.description && (
+              <p className="max-w-[560px] text-[12px] leading-relaxed text-white">
+                {service.description}
+              </p>
+            )}
 
-            <div className="mt-5 flex flex-wrap gap-2">
-              {(service.subCategory?.length ? service.subCategory : [{ _id: 'nda', name: 'NDA review' }, { _id: 'policy', name: 'Policy review' }]).map((subCat) => (
-                <span
-                  key={subCat._id}
-                  className="rounded border border-white/40 px-2 py-1 text-[9px] font-medium text-white"
-                >
-                  {subCat.name}
-                </span>
-              ))}
-            </div>
+            {Boolean(service.subCategory?.length) && (
+              <div className="mt-5 flex flex-wrap gap-2">
+                {service.subCategory?.map((subCat) => (
+                  <span
+                    key={subCat._id}
+                    className="rounded border border-white/40 px-2 py-1 text-[9px] font-medium text-white"
+                  >
+                    {subCat.name}
+                  </span>
+                ))}
+              </div>
+            )}
 
             {!isTiered && (
               <div className="mt-7 flex flex-wrap gap-8">
@@ -495,14 +695,16 @@ export const ServiceViewPage = () => {
               ))}
             </div>
 
-            <p className="text-[12px] leading-relaxed text-white">
-              {tierDetails.description || 'Ideal for early-stage reviews or first-time signings'}
-            </p>
-            <ul className="mt-2 list-disc space-y-1 pl-4 text-[11px] leading-relaxed text-white">
-              {(tierDetails.features.length ? tierDetails.features : fallbackTierFeatures).map((feature) => (
-                <li key={feature}>{feature}</li>
-              ))}
-            </ul>
+            {tierDetails.description && (
+              <p className="text-[12px] leading-relaxed text-white">{tierDetails.description}</p>
+            )}
+            {Boolean(tierDetails.features.length) && (
+              <ul className="mt-2 list-disc space-y-1 pl-4 text-[11px] leading-relaxed text-white">
+                {tierDetails.features.map((feature) => (
+                  <li key={feature}>{feature}</li>
+                ))}
+              </ul>
+            )}
 
             <div className="mt-4 flex gap-3">
               <DetailChip value={formatMoney(tierDetails.price)} label="Pricing" />
@@ -522,39 +724,37 @@ export const ServiceViewPage = () => {
       <div className="grid grid-cols-1 gap-6 md:grid-cols-[1fr_0.95fr]">
         <div className="border-l-4 border-[#FBC078] pl-4">
           <h2 className="text-[13px] font-semibold text-white">
-            {service.consultationTitle || service.title || 'Strategy Session'}
+            {service.consultationTitle || service.title}
           </h2>
-          <p className="mt-1 text-[10px] text-[#777777]">{service.consultationCategory || categoryName}</p>
+          {(service.consultationCategory || categoryName) && (
+            <p className="mt-1 text-[10px] text-[#777777]">
+              {service.consultationCategory || categoryName}
+            </p>
+          )}
 
-          <div className="mt-5 flex flex-wrap gap-2">
-            {(service.subCategory?.length ? service.subCategory : [{ _id: 'nda', name: 'NDA review' }, { _id: 'policy', name: 'Policy review' }]).map((subCat) => (
-              <span
-                key={subCat._id}
-                className="rounded bg-[#A8ADB0] px-2.5 py-1 text-[9px] font-bold text-black"
-              >
-                {subCat.name}
-              </span>
-            ))}
-          </div>
+          {Boolean(service.topics?.length || service.subCategory?.length) && (
+            <div className="mt-5 flex flex-wrap gap-2">
+              {(service.topics?.length ? service.topics : service.subCategory || []).map((subCat) => (
+                <span
+                  key={subCat._id}
+                  className="rounded bg-[#A8ADB0] px-2.5 py-1 text-[9px] font-bold text-black"
+                >
+                  {subCat.name}
+                </span>
+              ))}
+            </div>
+          )}
 
           {[
             {
               title: 'Session outline',
-              body:
-                service.sessionOutline ||
-                'A custom-fitted gown tailored to your measurements for a perfect silhouette. Designed with timeless, classic styling that complements any occasion. Crafted using standard yet durable fabrics for a comfortable wear.',
-            },
-            {
-              title: 'Benefits',
-              body:
-                service.benefits ||
-                'A custom-fitted gown tailored to your measurements for a perfect silhouette. Designed with timeless, classic styling that complements any occasion.',
+              body: service.sessionOutline,
             },
             {
               title: 'Who is it for?',
-              body: service.whoIsItFor || 'Start-up founders, young entrepreneurs',
+              body: service.whoItsFor || service.whoIsItFor,
             },
-          ].map((section) => (
+          ].filter((section) => section.body).map((section) => (
             <div key={section.title} className="mt-5">
               <h3 className="text-[11px] font-semibold text-white">{section.title}</h3>
               <p className="mt-2 whitespace-pre-line text-[10px] leading-relaxed text-[#777777]">
@@ -569,13 +769,22 @@ export const ServiceViewPage = () => {
 
           <div className="mt-5 flex flex-wrap gap-5">
             {[
-              { icon: Phone, value: service.modeOfConsultation || 'Mode', label: 'Mode' },
-              { icon: Languages, value: service.language || 'English', label: 'English' },
-              { value: service.followUpWindow || '5 Days', label: 'FollowUps' },
-            ].map((item) => (
+              { icon: Phone, value: service.mode || service.modeOfConsultation, label: 'Mode' },
+              {
+                icon: Languages,
+                value: service.languages?.join(', ') || service.language,
+                label: 'Languages',
+              },
+              {
+                value: service.hasFollowUp
+                  ? `${service.followUpDays || 0} Days`
+                  : service.followUpWindow,
+                label: 'Follow Ups',
+              },
+            ].filter((item) => item.value).map((item) => (
               <div key={item.label} className="flex flex-col items-center gap-2">
-                <div className="flex size-[54px] items-center justify-center rounded-md bg-[#151515] text-[11px] font-semibold text-white">
-                  {'icon' in item && item.icon ? <item.icon className="size-4" aria-hidden="true" /> : item.value}
+                <div className="flex min-h-[54px] min-w-[54px] max-w-[140px] items-center justify-center rounded-md bg-[#151515] px-3 text-center text-[11px] font-semibold capitalize text-white">
+                  {item.value}
                 </div>
                 <span className="text-[9px] text-[#777777]">{item.label}</span>
               </div>
@@ -585,30 +794,40 @@ export const ServiceViewPage = () => {
           {[
             {
               title: 'Post-session requirement',
-              body: service.postSessionRequirement || 'Keep your requirements and questions ready.',
+              body:
+                service.hasPostSessionMessage === false
+                  ? ''
+                  : service.postSessionMessage || service.postSessionRequirement,
             },
             {
               title: 'Pre-session requirement',
-              body: service.preSessionRequirement || 'Keep your requirements and questions ready.',
+              body:
+                service.hasPreSessionRequirement === false
+                  ? ''
+                  : service.preSessionRequirement,
             },
             {
               title: 'Duration & Pricing',
               body: '',
             },
-          ].map((section) => (
+          ].filter((section) => section.title === 'Duration & Pricing' || section.body).map((section) => (
             <div key={section.title} className="border-t border-[#242424] py-4">
               <h3 className="text-[11px] font-semibold text-white">{section.title}</h3>
               {section.body && <p className="mt-2 text-[10px] text-[#777777]">{section.body}</p>}
               {section.title === 'Duration & Pricing' && (
                 <div className="mt-4 flex flex-wrap gap-4">
-                  {consultationDurations.map((duration) => (
-                    <span
-                      key={duration.label}
-                      className="rounded-md bg-[#151515] px-4 py-2.5 text-[10px] font-semibold text-white"
-                    >
-                      {duration.label}
-                    </span>
-                  ))}
+                  {consultationDurations.length ? (
+                    consultationDurations.map((duration) => (
+                      <span
+                        key={duration.label}
+                        className="rounded-md bg-[#151515] px-4 py-2.5 text-[10px] font-semibold text-white"
+                      >
+                        {duration.label}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="text-[10px] text-[#777777]">{EMPTY_VALUE}</span>
+                  )}
                 </div>
               )}
             </div>
@@ -619,7 +838,7 @@ export const ServiceViewPage = () => {
   )
 
   return (
-    <div className="relative flex min-h-screen max-w-[1080px] flex-col gap-5 p-0 pb-8 text-white">
+    <div className="relative flex min-h-screen w-full flex-col gap-5 p-0 pb-8 text-white">
       {actionToast.message && (
         <div
           className={cn(
@@ -666,6 +885,7 @@ export const ServiceViewPage = () => {
           onEscalationOptionChange={setSelectedEscalationOption}
           onClose={closeDecisionModal}
           onSubmit={submitDecisionAction}
+          isSubmitting={isUpdatingStatus}
         />
       )}
 

@@ -117,10 +117,10 @@ export const ServiceManagementPage = () => {
         },
       },
       {
-        accessorKey: '_id',
+        accessorKey: 'serviceid',
         header: 'Service ID',
         cell: ({ row }) => (
-          <span className="font-mono text-xs uppercase">{row.original._id.slice(-6)}</span>
+          <span className="font-mono text-xs uppercase">{row.original.serviceid || row.original._id}</span>
         ),
       },
       {
@@ -142,12 +142,10 @@ export const ServiceManagementPage = () => {
         cell: ({ row }) => formatPrice(row.original.pricing),
       },
       {
-        accessorKey: 'partnerId',
+        accessorKey: 'expertid',
         header: 'Expert ID',
         cell: ({ row }) => (
-          <span className="font-mono text-xs">
-            EXP-{row.original.partnerId.slice(-5).toUpperCase()}
-          </span>
+          <span className="font-mono text-xs">{row.original.expertid || 'Not provided'}</span>
         ),
       },
       {
@@ -233,7 +231,9 @@ export const ServiceManagementPage = () => {
                       type="button"
                       onClick={() => {
                         setActiveDropdownId(null)
-                        navigate(`/services/management/view/${service._id}`)
+                        navigate(
+                          `/services/management/view/${service._id}?type=${encodeURIComponent(service.serviceType)}`,
+                        )
                       }}
                       className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-xs font-semibold text-slate-300 transition-all hover:bg-slate-800/80 hover:text-amber-400"
                     >
@@ -340,14 +340,21 @@ export const ServiceManagementPage = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:gap-4 lg:grid-cols-4">
+      <div className="flex gap-3 overflow-x-auto pb-1 md:gap-4">
         {statusCards.map((card) => (
           <button
             key={card.label}
             type="button"
-            onClick={() => setActiveStatus(activeStatus === card.status ? 'all' : card.status)}
+            onClick={() => {
+              if (card.status === 'pending') {
+                navigate('/services/management/pending')
+                return
+              }
+
+              setActiveStatus(activeStatus === card.status ? 'all' : card.status)
+            }}
             className={cn(
-              'flex items-center justify-between rounded-xl border p-4 transition-all hover:scale-[1.02]',
+              'flex min-w-[220px] flex-1 items-center justify-between rounded-xl border p-4 transition-all hover:scale-[1.02]',
               card.bg,
               card.border,
               activeStatus === card.status && 'ring-2 ring-amber-400/50',
