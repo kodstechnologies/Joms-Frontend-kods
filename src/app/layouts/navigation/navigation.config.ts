@@ -76,7 +76,7 @@ export const navigationConfig: NavItem[] = [
         key: 'expert.services-group',
         label: 'Services',
         children: [
-          { key: 'expert.services.dashboard', label: 'Dashboard', badge: { label: 'Soon', variant: 'warning' } },
+          { key: 'expert.services.dashboard', label: 'Dashboard', to: '/services/dashboard' },
           { key: 'expert.services.management', label: 'Service Management', to: '/services/management' },
           { key: 'expert.services.categories', label: 'Category Management', badge: { label: 'Soon', variant: 'warning' } },
         ],
