@@ -1,9 +1,10 @@
 import { lazy, Suspense } from 'react'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
-
+import { PendingApprovalsPage } from "@/modules/expert";
 import { DashboardLayout } from '@/app/layouts/dashboard-layout'
 import { ProtectedRoute } from '@/app/router/protected-route'
-
+import { DeletedExpertsPage } from "@/modules/expert";
+import { SuspendedExpertsPage } from '@/modules/expert';
 const LoginPage = lazy(() => import('@/modules/auth/pages/login-page').then(m => ({ default: m.LoginPage })))
 const ExecutiveOverviewPage = lazy(() => import('@/modules/dashboard/pages/executive-overview-page').then(m => ({ default: m.ExecutiveOverviewPage })))
 const ServiceManagementPage = lazy(() => import('@/modules/expert').then(m => ({ default: m.ServiceManagementPage })))
@@ -46,6 +47,15 @@ export function AppRouter() {
               <Route path="/services/management/create" element={<CreateServiceListingPage />} />
               <Route path="/experts/management/create" element={<CreateExpertPage />}
               />
+              <Route
+                path="/experts/suspended"
+                element={<SuspendedExpertsPage />}
+              />
+              <Route
+                path="/experts/deleted"
+                element={<DeletedExpertsPage />}
+              />
+              <Route path="/experts/pending-approvals" element={<PendingApprovalsPage />} />
               <Route path="/services/management/view/:id" element={<ServiceViewPage />} />
             </Route>
           </Route>

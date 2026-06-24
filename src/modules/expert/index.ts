@@ -4,5 +4,6 @@ export * from './hooks/use-services'
 export * from './api/service-api'
 export * from './store/service-store'
 export * from './type/service'
+export * from "./pages/experts";
 export { ExpertManagementPage } from './pages/experts'
 export { CreateExpertPage } from './pages/experts/create-expert-page'

@@ -14,11 +14,11 @@ import {
     Plus,
     ShieldCheck,
     Trash2,
-     User,
-  Wallet,
- 
- 
-  Flag,
+    User,
+    Wallet,
+
+
+    Flag,
     type LucideIcon,
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
@@ -311,7 +311,7 @@ export const ExpertManagementPage = () => {
                 bg: 'bg-slate-400/10',
                 border: 'border-slate-400/20',
                 icon: Trash2,
-                status: 'deleted',
+                status: 'deactivated',
             },
         ]
 
@@ -348,7 +348,23 @@ export const ExpertManagementPage = () => {
                     <button
                         key={card.label}
                         type="button"
-                        onClick={() => setActiveStatus(activeStatus === card.status ? 'all' : card.status)}
+                        onClick={() => {
+                            if (card.status === 'pending') {
+                                navigate('/experts/pending-approvals')
+                                return
+                            }
+                            if (card.status === 'suspended') {
+                                navigate('/experts/suspended')
+                                return
+                            }
+
+                            if (card.status === 'deactivated') {
+                                navigate('/experts/deleted')
+                                return
+                            }
+
+                            setActiveStatus(activeStatus === card.status ? 'all' : card.status)
+                        }}
                         className={cn(
                             'flex items-center justify-between rounded-xl border p-4 transition-all hover:scale-[1.02]',
                             card.bg,
