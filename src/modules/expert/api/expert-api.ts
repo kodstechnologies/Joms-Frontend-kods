@@ -1,4 +1,4 @@
-import { expertApiClient } from '@/shared/lib/axios'
+import { adminApiClient } from '@/shared/lib/axios'
 import type { ExpertResponse } from '../type/expert'
 
 export const fetchExperts = async (params?: {
@@ -8,7 +8,7 @@ export const fetchExperts = async (params?: {
   status?: string
 }) => {
     
-  const response = await expertApiClient.get<ExpertResponse>(
+  const response = await adminApiClient.get<ExpertResponse>(
     '/admin/internal/admin/partners',
     {
       params,
@@ -18,7 +18,7 @@ export const fetchExperts = async (params?: {
   return response.data
 }
 export const fetchExpertById = async (id: string) => {
-  const response = await expertApiClient.get(
+  const response = await adminApiClient.get(
     `/internal/admin/partners/${id}`
   )
 

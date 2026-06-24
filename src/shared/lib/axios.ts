@@ -16,3 +16,8 @@ export const expertApiClient = axios.create({
   ...defaultConfigs,
   baseURL: env.serviceApiBaseUrl,
 })
+
+export const adminApiClient = axios.create({
+  ...defaultConfigs,
+  baseURL: env.adminApiBaseUrl,
+})
