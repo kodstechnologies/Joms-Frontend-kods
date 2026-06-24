@@ -45,6 +45,8 @@ export function AppRouter() {
               <Route path="/dashboard/executive" element={<ExecutiveOverviewPage />} />
               <Route path="/services/dashboard" element={<ServiceMarketplacePage />} />
               <Route path="/experts/management" element={<ExpertManagementPage />} />
+              <Route path="/experts/management" element={<ExpertManagementPage />} />
+              <Route path="/services/dashboard" element={<ServiceMarketplacePage />} />
               <Route path="/services/management" element={<ServiceManagementPage />} />
               <Route path="/services/management/pending" element={<PendingApprovalsPage />} />
               <Route path="/services/management/create" element={<CreateServiceListingPage />} />
