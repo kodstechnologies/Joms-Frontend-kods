@@ -1,9 +1,13 @@
+export type ServiceRawStatus = 'active' | 'inactive'
+
 export interface Service {
   _id: string
   serviceid?: string
   title: string
   partnerId: string
   status: 'live' | 'in_review' | 'suspended' | 'deleted' | 'pending' | 'preview'
+  serviceStatus?: ServiceRawStatus
+  isSuspend?: boolean
   createdAt: string
   serviceType: string
   categoryName: string
@@ -11,6 +15,22 @@ export interface Service {
   expertName: string
   expertid?: string
   partnerName?: string
+}
+
+export interface SuspendServicePayload {
+  selectedReasons: string[]
+  suspendIndefinitely: boolean
+  startDate?: string
+  endDate?: string
+  reasonDetails: string
+  adminNotes: string
+}
+
+export interface ServiceSuspendActivateResponse {
+  success: boolean
+  message: string
+  data?: unknown
+  meta?: unknown
 }
 
 export interface ServiceMeta {

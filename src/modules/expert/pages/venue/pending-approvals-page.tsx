@@ -26,7 +26,7 @@ export function VenuePendingApprovalsPage() {
   const { data, isLoading } = useVenues({
     page: currentPage,
     limit: 10,
-    status: 'pending',
+    status: 'in_review',
     search: searchQuery,
   })
 

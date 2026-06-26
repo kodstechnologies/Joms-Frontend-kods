@@ -4,6 +4,9 @@ export type VenueStatus =
   | 'suspended'
   | 'deleted'
   | 'pending'
+  | 'rejected'
+
+export type VenueRawStatus = 'active' | 'inactive'
 
 export interface Venue {
   _id: string
@@ -20,6 +23,8 @@ export interface Venue {
   partnerId?: string
   eventType?: string
   status: VenueStatus
+  venueStatus?: VenueRawStatus
+  isSuspend?: boolean
   createdAt?: string
   updatedAt?: string
   city?: string
@@ -31,6 +36,7 @@ export interface VenueMeta {
     approvalsPending: number
     reportedVenues: number
     suspendedVenues: number
+    rejectedVenues: number
     deletedVenues: number
   }
   pagination: {

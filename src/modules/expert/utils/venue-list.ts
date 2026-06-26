@@ -1,4 +1,4 @@
-import type { Venue, VenueStatus } from '../type/venue'
+import type { Venue, VenueRawStatus, VenueStatus } from '../type/venue'
 import { cn } from '@/shared/lib/cn'
 
 export const getVenueApiId = (venue: Pick<Venue, '_id' | 'venueId'>) =>
@@ -28,7 +28,19 @@ export const getVenueStatusClassName = (status: VenueStatus) =>
         ? 'bg-green-500/10 text-green-500'
         : status === 'suspended'
           ? 'bg-purple-500/10 text-purple-400'
-          : status === 'deleted'
+          : status === 'deleted' || status === 'rejected'
             ? 'bg-red-500/10 text-red-400'
             : 'bg-slate-500/10 text-slate-500',
+  )
+
+/** Raw venue status (active / inactive) shown in the admin listing */
+export const getVenueDisplayStatus = (venue: Pick<Venue, 'venueStatus'>): VenueRawStatus =>
+  venue.venueStatus === 'active' ? 'active' : 'inactive'
+
+export const getVenueDisplayStatusClassName = (venueStatus: VenueRawStatus) =>
+  cn(
+    'rounded px-2 py-0.5 text-[10px] font-bold uppercase',
+    venueStatus === 'active'
+      ? 'bg-green-500/10 text-green-500'
+      : 'bg-slate-500/10 text-slate-400',
   )

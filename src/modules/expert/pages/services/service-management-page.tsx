@@ -18,7 +18,7 @@ import {
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
-import { useServices } from '../../hooks/use-services'
+import { useServices, useSuspendService } from '../../hooks/use-services'
 import { useServiceStore } from '../../store/service-store'
 import type { Service } from '../../type/service'
 import { DataTable } from '@/shared/components/table/data-table'
@@ -26,6 +26,10 @@ import {
   TableActionsDropdown,
   TableActionsItem,
 } from '@/shared/components/table/table-actions-dropdown'
+import {
+  DecisionActionModal,
+  type DecisionActionModalOption,
+} from '@/shared/components/modal/decision-action-modal'
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
 
@@ -36,9 +40,31 @@ const formatPrice = (price: number) =>
     maximumFractionDigits: 0,
   }).format(price)
 
+const SUSPEND_REASON_OPTIONS: DecisionActionModalOption[] = [
+  { label: 'Policy violation', value: 'policy_violation' },
+  { label: 'Temporary operational issue', value: 'temporary_operational_issue' },
+  { label: 'Quality concern', value: 'quality_concern' },
+  { label: 'System verification in progress', value: 'system_verification_in_progress' },
+  { label: 'Admin review required', value: 'admin_review_required' },
+]
+
+const getServiceDisplayStatus = (service: Service): 'active' | 'inactive' =>
+  service.serviceStatus === 'active' ? 'active' : 'inactive'
+
 export const ServiceManagementPage = () => {
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [selectedServiceIds, setSelectedServiceIds] = useState<string[]>([])
+
+  const [suspendServiceTarget, setSuspendServiceTarget] = useState<Service | null>(null)
+  const [suspendReasons, setSuspendReasons] = useState<string[]>([])
+  const [suspendStartDate, setSuspendStartDate] = useState('')
+  const [suspendEndDate, setSuspendEndDate] = useState('')
+  const [suspendIndefinitely, setSuspendIndefinitely] = useState(false)
+  const [suspendReasonDetails, setSuspendReasonDetails] = useState('')
+  const [suspendAdminNotes, setSuspendAdminNotes] = useState('')
+
+  const suspendServiceMutation = useSuspendService()
+
   const navigate = useNavigate()
   const {
     searchQuery,
@@ -87,6 +113,85 @@ export const ServiceManagementPage = () => {
         : [...currentIds, serviceId],
     )
   }, [])
+
+  const openSuspendModal = useCallback((service: Service) => {
+    setSuspendServiceTarget(service)
+    setSuspendReasons([])
+    setSuspendStartDate('')
+    setSuspendEndDate('')
+    setSuspendIndefinitely(false)
+    setSuspendReasonDetails('')
+    setSuspendAdminNotes('')
+  }, [])
+
+  const closeSuspendModal = useCallback(() => {
+    setSuspendServiceTarget(null)
+  }, [])
+
+  const toggleSuspendReason = useCallback((value: string) => {
+    setSuspendReasons((current) =>
+      current.includes(value)
+        ? current.filter((reason) => reason !== value)
+        : [...current, value],
+    )
+  }, [])
+
+  const handleSuspendSubmit = useCallback(() => {
+    if (!suspendServiceTarget) return
+
+    if (suspendReasons.length === 0) {
+      toast.error('Please select at least one reason.')
+      return
+    }
+
+    if (!suspendIndefinitely && (!suspendStartDate || !suspendEndDate)) {
+      toast.error('Please provide a suspension timeline or choose to suspend indefinitely.')
+      return
+    }
+
+    if (!suspendAdminNotes.trim()) {
+      toast.error('Admin notes are required.')
+      return
+    }
+
+    const toIso = (value: string) =>
+      value ? new Date(`${value}T00:00:00.000Z`).toISOString() : undefined
+
+    suspendServiceMutation.mutate(
+      {
+        id: suspendServiceTarget._id,
+        payload: {
+          selectedReasons: suspendReasons,
+          suspendIndefinitely,
+          startDate: suspendIndefinitely ? undefined : toIso(suspendStartDate),
+          endDate: suspendIndefinitely ? undefined : toIso(suspendEndDate),
+          reasonDetails: suspendReasonDetails.trim(),
+          adminNotes: suspendAdminNotes.trim(),
+        },
+      },
+      {
+        onSuccess: () => {
+          toast.success('Service suspended successfully')
+          closeSuspendModal()
+        },
+        onError: (error: any) => {
+          toast.error(
+            error?.response?.data?.message || 'Failed to suspend service. Please try again.',
+          )
+        },
+      },
+    )
+  }, [
+    closeSuspendModal,
+    suspendAdminNotes,
+    suspendEndDate,
+    suspendIndefinitely,
+    suspendReasonDetails,
+    suspendReasons,
+    suspendServiceMutation,
+    suspendServiceTarget,
+    suspendStartDate,
+  ])
 
   const columns = useMemo<ColumnDef<Service>[]>(
     () => [
@@ -156,22 +261,24 @@ export const ServiceManagementPage = () => {
         header: 'Expert Name',
       },
       {
-        accessorKey: 'status',
+        accessorKey: 'serviceStatus',
         header: 'Status',
-        cell: ({ row }) => (
-          <span
-            className={cn(
-              'rounded px-2 py-0.5 text-[10px] font-bold uppercase',
-              row.original.status === 'live'
-                ? 'bg-green-500/10 text-green-500'
-                : row.original.status === 'in_review'
-                  ? 'bg-amber-500/10 text-amber-500'
-                  : 'bg-slate-500/10 text-slate-500',
-            )}
-          >
-            {row.original.status.replace('_', ' ')}
-          </span>
-        ),
+        cell: ({ row }) => {
+          const serviceStatus = getServiceDisplayStatus(row.original)
+
+          return (
+            <span
+              className={cn(
+                'rounded px-2 py-0.5 text-[10px] font-bold uppercase',
+                serviceStatus === 'active'
+                  ? 'bg-green-500/10 text-green-500'
+                  : 'bg-slate-500/10 text-slate-400',
+              )}
+            >
+              {serviceStatus}
+            </span>
+          )
+        },
       },
       {
         accessorKey: 'createdAt',
@@ -242,6 +349,15 @@ export const ServiceManagementPage = () => {
               >
                 Create Listing
               </TableActionsItem>
+              <TableActionsItem
+                icon={<PauseCircle className="size-3.5" aria-hidden="true" />}
+                onClick={() => {
+                  setActiveDropdownId(null)
+                  openSuspendModal(service)
+                }}
+              >
+                Suspend Service
+              </TableActionsItem>
             </TableActionsDropdown>
           )
         },
@@ -251,6 +367,7 @@ export const ServiceManagementPage = () => {
       activeDropdownId,
       allVisibleServicesSelected,
       navigate,
+      openSuspendModal,
       selectedServiceIds,
       someVisibleServicesSelected,
       toggleServiceSelection,
@@ -342,6 +459,10 @@ export const ServiceManagementPage = () => {
                 navigate('/services/management/pending')
                 return
               }
+              if (card.status === 'suspended') {
+                navigate('/services/management/suspended')
+                return
+              }
 
               setActiveStatus(activeStatus === card.status ? 'all' : card.status)
             }}
@@ -409,6 +530,31 @@ export const ServiceManagementPage = () => {
         }}
         resourceLabel="services"
         emptyMessage="No services found."
+      />
+
+      <DecisionActionModal
+        open={Boolean(suspendServiceTarget)}
+        variant="suspend"
+        title="Suspend Service"
+        description="Are you sure you want to suspend this service? This action will hide it from the marketplace and notify the expert."
+        submitLabel="Suspend"
+        reasonOptions={SUSPEND_REASON_OPTIONS}
+        selectedReasons={suspendReasons}
+        onReasonToggle={toggleSuspendReason}
+        showTimeline
+        startDate={suspendStartDate}
+        onStartDateChange={setSuspendStartDate}
+        endDate={suspendEndDate}
+        onEndDateChange={setSuspendEndDate}
+        indefinite={suspendIndefinitely}
+        onIndefiniteChange={setSuspendIndefinitely}
+        reason={suspendReasonDetails}
+        onReasonChange={setSuspendReasonDetails}
+        adminNotes={suspendAdminNotes}
+        onAdminNotesChange={setSuspendAdminNotes}
+        onClose={closeSuspendModal}
+        onSubmit={handleSuspendSubmit}
+        isSubmitting={suspendServiceMutation.isPending}
       />
     </div>
   )

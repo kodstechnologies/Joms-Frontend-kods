@@ -12,6 +12,8 @@ import type {
   ServiceDetailResponse,
   ServiceResponse,
   ServiceStatusUpdateResponse,
+  ServiceSuspendActivateResponse,
+  SuspendServicePayload,
   UpdateConsultationAdditionalInfoPayload,
   UpdateConsultationPricingPayload,
   UpdateConsultationStatusPayload,
@@ -28,6 +30,21 @@ export const fetchServices = async (params?: {
   const response = await expertApiClient.get<ServiceResponse>('/services/internal/admin/services', {
     params,
   })
+  return response.data
+}
+
+export const suspendService = async (id: string, payload: SuspendServicePayload) => {
+  const response = await expertApiClient.patch<ServiceSuspendActivateResponse>(
+    `/services/internal/admin/services/${id}/suspend`,
+    payload,
+  )
+  return response.data
+}
+
+export const activateService = async (id: string) => {
+  const response = await expertApiClient.patch<ServiceSuspendActivateResponse>(
+    `/services/internal/admin/services/${id}/activate`,
+  )
   return response.data
 }
 

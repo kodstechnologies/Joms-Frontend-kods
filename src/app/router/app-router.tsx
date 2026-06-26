@@ -18,6 +18,9 @@ const ServiceMarketplacePage = lazy(() =>
 const PendingApprovalsPage = lazy(() =>
   import('@/modules/expert').then((m) => ({ default: m.PendingApprovalsPage })),
 )
+const SuspendedServicesPage = lazy(() =>
+  import('@/modules/expert').then((m) => ({ default: m.SuspendedServicesPage })),
+)
 const ServiceManagementPage = lazy(() =>
   import('@/modules/expert').then((m) => ({ default: m.ServiceManagementPage })),
 )
@@ -106,6 +109,7 @@ export function AppRouter() {
               <Route path="/services/dashboard" element={<ServiceMarketplacePage />} />
               <Route path="/services/management" element={<ServiceManagementPage />} />
               <Route path="/services/management/pending" element={<PendingApprovalsPage />} />
+              <Route path="/services/management/suspended" element={<SuspendedServicesPage />} />
               <Route path="/services/management/create" element={<CreateServiceListingPage />} />
               <Route path="/experts/management/create" element={<CreateExpertPage />} />
               <Route path="/experts/suspended" element={<SuspendedExpertsPage />} />

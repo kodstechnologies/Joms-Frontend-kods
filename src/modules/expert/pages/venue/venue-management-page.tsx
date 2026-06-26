@@ -7,14 +7,12 @@ import {
     PauseCircle,
     Trash2,
     BarChart3,
-    Eye,
     UserPlus,
     ListPlus,
     Bell,
     Archive,
     Mail,
     Image,
-    ClipboardCheck,
     LayoutDashboard,
     type LucideIcon,
 } from 'lucide-react'
@@ -35,12 +33,12 @@ import {
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
 import {
-    formatVenueStatus,
     getVenueApiId,
     getVenueDisplayId,
     getVenueDisplaySpaceId,
+    getVenueDisplayStatus,
+    getVenueDisplayStatusClassName,
     getVenuePartnerId,
-    getVenueStatusClassName,
 } from '../../utils/venue-list'
 
 const SUSPEND_REASON_OPTIONS: DecisionActionModalOption[] = [
@@ -193,6 +191,7 @@ export const VenueManagementPage = () => {
         approvalsPending: meta?.counts?.approvalsPending ?? 0,
         reportedVenues: meta?.counts?.reportedVenues ?? 0,
         suspendedVenues: meta?.counts?.suspendedVenues ?? 0,
+        rejectedVenues: meta?.counts?.rejectedVenues ?? 0,
         deletedVenues: meta?.counts?.deletedVenues ?? 0,
     }
 
@@ -307,13 +306,16 @@ export const VenueManagementPage = () => {
                 cell: ({ row }) => row.original.spaceName || '—',
             },
             {
-                accessorKey: 'status',
+                accessorKey: 'venueStatus',
                 header: 'Status',
-                cell: ({ row }) => (
-                    <span className={getVenueStatusClassName(row.original.status)}>
-                        {formatVenueStatus(row.original.status)}
-                    </span>
-                ),
+                cell: ({ row }) => {
+                    const venueStatus = getVenueDisplayStatus(row.original)
+                    return (
+                        <span className={getVenueDisplayStatusClassName(venueStatus)}>
+                            {venueStatus}
+                        </span>
+                    )
+                },
             },
             {
                 accessorKey: 'eventType',
@@ -361,30 +363,6 @@ export const VenueManagementPage = () => {
                             isOpen={isOpen}
                             onOpenChange={(open) => setActiveDropdownId(open ? venue._id : null)}
                         >
-                            <TableActionsItem
-                                icon={<Eye className="size-3.5" />}
-                                onClick={() => {
-                                    setActiveDropdownId(null)
-                                    navigate(
-                                        `/venues/management/create?venueId=${getVenueApiId(venue)}&view=true`,
-                                    )
-                                }}
-                            >
-                                View Details
-                            </TableActionsItem>
-
-                            <TableActionsItem
-                                icon={<ClipboardCheck className="size-3.5" />}
-                                onClick={() => {
-                                    setActiveDropdownId(null)
-                                    navigate(
-                                        `/venues/management/application/${getVenueApiId(venue)}`,
-                                    )
-                                }}
-                            >
-                                View Application
-                            </TableActionsItem>
-
                             <TableActionsItem
                                 icon={<LayoutDashboard className="size-3.5" />}
                                 onClick={() => {
