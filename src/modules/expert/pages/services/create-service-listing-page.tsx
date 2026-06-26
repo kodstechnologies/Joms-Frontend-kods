@@ -14,7 +14,6 @@ import {
 } from 'lucide-react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
-import { CreateListingWizard } from '@/modules/expert/components'
 import { useCategories, useSubcategories } from '@/modules/expert/hooks/use-categories'
 import {
   useCreateConsultation,
@@ -37,6 +36,7 @@ import type { ConsultationTopic } from '@/modules/expert/type/service'
 import type { UpdateServicePricingPayload } from '@/modules/expert/type/service'
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
+import { CreateListingWizard } from '@/modules/expert/components'
 
 type UploadedImage = {
   id: string
@@ -1418,7 +1418,7 @@ export const CreateServiceListingPage = () => {
                 onDragOver={(e) => { e.preventDefault(); setIsDragging(true) }}
                 onDragLeave={() => setIsDragging(false)}
                 onDrop={handleDrop}
-                className={cn(
+              className={cn(
                   "flex cursor-pointer select-none flex-col items-center justify-center gap-2 rounded-md border border-dashed py-8 transition-all duration-300",
                   isDragging
                     ? "border-[#FBC078]/60 bg-[#FBC078]/5"

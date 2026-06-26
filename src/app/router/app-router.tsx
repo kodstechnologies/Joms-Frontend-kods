@@ -2,18 +2,34 @@ import { lazy, Suspense } from 'react'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { DashboardLayout } from '@/app/layouts/dashboard-layout'
 import { ProtectedRoute } from '@/app/router/protected-route'
-import { DeletedExpertsPage } from "@/modules/expert";
-import { SuspendedExpertsPage } from '@/modules/expert';
-const LoginPage = lazy(() => import('@/modules/auth/pages/login-page').then(m => ({ default: m.LoginPage })))
-const ExecutiveOverviewPage = lazy(() => import('@/modules/dashboard/pages/executive-overview-page').then(m => ({ default: m.ExecutiveOverviewPage })))
-const ServiceMarketplacePage = lazy(() => import('@/modules/expert').then(m => ({ default: m.ServiceMarketplacePage })))
-const PendingApprovalsPage = lazy(() => import('@/modules/expert').then(m => ({ default: m.PendingApprovalsPage })))
-const ServiceManagementPage = lazy(() => import('@/modules/expert').then(m => ({ default: m.ServiceManagementPage })))
-const ServiceViewPage = lazy(() => import('@/modules/expert').then(m => ({ default: m.ServiceViewPage })))
-const CreateServiceListingPage = lazy(() => import('@/modules/expert').then(m => ({ default: m.CreateServiceListingPage })))
+import { DeletedExpertsPage } from '@/modules/expert'
+import { SuspendedExpertsPage } from '@/modules/expert'
+const LoginPage = lazy(() =>
+  import('@/modules/auth/pages/login-page').then((m) => ({ default: m.LoginPage })),
+)
+const ExecutiveOverviewPage = lazy(() =>
+  import('@/modules/dashboard/pages/executive-overview-page').then((m) => ({
+    default: m.ExecutiveOverviewPage,
+  })),
+)
+const ServiceMarketplacePage = lazy(() =>
+  import('@/modules/expert').then((m) => ({ default: m.ServiceMarketplacePage })),
+)
+const PendingApprovalsPage = lazy(() =>
+  import('@/modules/expert').then((m) => ({ default: m.PendingApprovalsPage })),
+)
+const ServiceManagementPage = lazy(() =>
+  import('@/modules/expert').then((m) => ({ default: m.ServiceManagementPage })),
+)
+const ServiceViewPage = lazy(() =>
+  import('@/modules/expert').then((m) => ({ default: m.ServiceViewPage })),
+)
+const CreateServiceListingPage = lazy(() =>
+  import('@/modules/expert').then((m) => ({ default: m.CreateServiceListingPage })),
+)
 
 const ExpertManagementPage = lazy(() =>
-  import('@/modules/expert').then(m => ({
+  import('@/modules/expert').then((m) => ({
     default: m.ExpertManagementPage,
   })),
 )
@@ -22,11 +38,52 @@ const CreateExpertPage = lazy(() =>
     default: m.CreateExpertPage,
   })),
 )
+const VenueManagementPage = lazy(() =>
+  import('@/modules/expert').then((m) => ({
+    default: m.VenueManagementPage,
+  })),
+)
+
+const CreateVenueListingPage = lazy(() =>
+  import('@/modules/expert').then((m) => ({
+    default: m.CreateVenueListingPage,
+  })),
+)
+const CreateVenueOnboardingPage = lazy(() =>
+  import('@/modules/expert').then((m) => ({
+    default: m.CreateVenueOnboardingPage,
+  })),
+)
+const VenuePendingApprovalsPage = lazy(() =>
+  import('@/modules/expert').then((m) => ({
+    default: m.VenuePendingApprovalsPage,
+  })),
+)
+const VenueSuspendedPage = lazy(() =>
+  import('@/modules/expert').then((m) => ({
+    default: m.VenueSuspendedPage,
+  })),
+)
+const ApplicationDetailsPage = lazy(() =>
+  import('@/modules/expert').then((m) => ({
+    default: m.ApplicationDetailsPage,
+  })),
+)
+const VenueProfileViewPage = lazy(() =>
+  import('@/modules/expert').then((m) => ({
+    default: m.VenueProfileViewPage,
+  })),
+)
+const SpaceDetailsPage = lazy(() =>
+  import('@/modules/expert').then((m) => ({
+    default: m.SpaceDetailsPage,
+  })),
+)
 const PageLoader = () => (
   <div className="flex h-dvh w-full items-center justify-center bg-slate-950">
     <div className="flex flex-col items-center gap-4">
       <div className="size-10 animate-spin rounded-full border-4 border-amber-400 border-t-transparent" />
-      <p className="text-sm font-medium text-slate-400 animate-pulse">Loading...</p>
+      <p className="animate-pulse text-sm font-medium text-slate-400">Loading...</p>
     </div>
   </div>
 )
@@ -50,18 +107,30 @@ export function AppRouter() {
               <Route path="/services/management" element={<ServiceManagementPage />} />
               <Route path="/services/management/pending" element={<PendingApprovalsPage />} />
               <Route path="/services/management/create" element={<CreateServiceListingPage />} />
-              <Route path="/experts/management/create" element={<CreateExpertPage />}
-              />
-              <Route
-                path="/experts/suspended"
-                element={<SuspendedExpertsPage />}
-              />
-              <Route
-                path="/experts/deleted"
-                element={<DeletedExpertsPage />}
-              />
+              <Route path="/experts/management/create" element={<CreateExpertPage />} />
+              <Route path="/experts/suspended" element={<SuspendedExpertsPage />} />
+              <Route path="/experts/deleted" element={<DeletedExpertsPage />} />
               <Route path="/experts/pending-approvals" element={<PendingApprovalsPage />} />
               <Route path="/services/management/view/:id" element={<ServiceViewPage />} />
+
+              <Route path="/venues/management" element={<VenueManagementPage />} />
+              <Route
+                path="/venues/management/application/:id"
+                element={<ApplicationDetailsPage />}
+              />
+              <Route
+                path="/venues/management/profile/:venueId"
+                element={<VenueProfileViewPage />}
+              />
+              <Route
+                path="/venues/management/profile/:venueId/space/:spaceId"
+                element={<SpaceDetailsPage />}
+              />
+              <Route path="/venues/management/pending" element={<VenuePendingApprovalsPage />} />
+              <Route path="/venues/management/suspended" element={<VenueSuspendedPage />} />
+
+              <Route path="/venues/management/onboarding" element={<CreateVenueOnboardingPage />} />
+              <Route path="/venues/management/create" element={<CreateVenueListingPage />} />
             </Route>
           </Route>
 

@@ -21,3 +21,12 @@ export const adminApiClient = axios.create({
   ...defaultConfigs,
   baseURL: env.adminApiBaseUrl,
 })
+export const venueApiClient = axios.create({
+  ...defaultConfigs,
+  baseURL: env.venueApiBaseUrl,
+})
+
+export const kycApiClient = axios.create({
+  ...defaultConfigs,
+  baseURL: env.kycApiBaseUrl,
+})

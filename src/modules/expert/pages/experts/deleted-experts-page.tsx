@@ -9,7 +9,6 @@ import {
     Eye,
     Image,
     Mail,
-    MoreVertical,
     PauseCircle,
     Plus,
     ShieldCheck,
@@ -28,6 +27,10 @@ import { useExperts } from '../../hooks/use-expert'
 import { useExpertStore } from '../../store/expert-store'
 import type { Expert } from '../../type/expert'
 import { DataTable } from '@/shared/components/table/data-table'
+import {
+    TableActionsDropdown,
+    TableActionsItem,
+} from '@/shared/components/table/table-actions-dropdown'
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
 
@@ -196,54 +199,37 @@ export const DeletedExpertsPage = () => {
                 },
                 cell: ({ row }) => {
                     const expert = row.original
+                    const isOpen = activeDropdownId === expert.expertId
 
                     return (
-                        <>
-                            <button
-                                type="button"
-                                aria-label={`Open actions for ${expert.name}`}
-                                aria-expanded={activeDropdownId === expert.expertId}
-                                onClick={(event) => {
-                                    event.stopPropagation()
-                                    setActiveDropdownId(activeDropdownId === expert.expertId ? null : expert.expertId)
+                        <TableActionsDropdown
+                            label={`Open actions for ${expert.name}`}
+                            isOpen={isOpen}
+                            onOpenChange={(open) => setActiveDropdownId(open ? expert.expertId : null)}
+                            menuWidth={192}
+                        >
+                            <TableActionsItem
+                                icon={<Eye className="size-3.5" aria-hidden="true" />}
+                                onClick={() => {
+                                    setActiveDropdownId(null)
+                                    navigate(`/experts/profile/${expert.expertId}`)
                                 }}
-                                className="rounded p-1 text-slate-500 transition-colors hover:bg-slate-800/50 hover:text-white"
                             >
-                                <MoreVertical className="size-4" aria-hidden="true" />
-                            </button>
-
-                            {activeDropdownId === expert.expertId && (
-                                <>
-                                    <div
-                                        className="fixed inset-0 z-10"
-                                        onClick={() => setActiveDropdownId(null)}
-                                    /><div className="absolute right-5 z-20 mt-2 w-48 rounded-lg bg-white text-black shadow-xl">
-                                        <button
-                                            className="block w-full px-4 py-2 text-left hover:bg-slate-800"
-                                            onClick={() => navigate(`/experts/profile/${expert.expertId}`)}
-                                        >
-                                            View Profile
-                                        </button>
-
-                                        <button className="block w-full px-4 py-2 text-left hover:bg-slate-800">
-                                            View Payout History
-                                        </button>
-
-                                        <button className="block w-full px-4 py-2 text-left hover:bg-slate-800">
-                                            Suspend Expert
-                                        </button>
-
-                                        <button className="block w-full px-4 py-2 text-left hover:bg-slate-800">
-                                            Delete Expert
-                                        </button>
-
-                                        <button className="block w-full px-4 py-2 text-left hover:bg-slate-800">
-                                            Report Expert
-                                        </button>
-                                    </div>
-                                </>
-                            )}
-                        </>
+                                View Profile
+                            </TableActionsItem>
+                            <TableActionsItem onClick={() => setActiveDropdownId(null)}>
+                                View Payout History
+                            </TableActionsItem>
+                            <TableActionsItem onClick={() => setActiveDropdownId(null)}>
+                                Suspend Expert
+                            </TableActionsItem>
+                            <TableActionsItem onClick={() => setActiveDropdownId(null)}>
+                                Delete Expert
+                            </TableActionsItem>
+                            <TableActionsItem onClick={() => setActiveDropdownId(null)}>
+                                Report Expert
+                            </TableActionsItem>
+                        </TableActionsDropdown>
                     )
                 },
             },

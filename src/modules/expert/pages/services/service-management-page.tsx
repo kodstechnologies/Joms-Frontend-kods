@@ -8,10 +8,9 @@ import {
   CheckSquare,
   Eye,
   Image,
+  ListPlus,
   Mail,
-  MoreVertical,
   PauseCircle,
-  Plus,
   ShieldCheck,
   Trash2,
   type LucideIcon,
@@ -23,6 +22,10 @@ import { useServices } from '../../hooks/use-services'
 import { useServiceStore } from '../../store/service-store'
 import type { Service } from '../../type/service'
 import { DataTable } from '@/shared/components/table/data-table'
+import {
+  TableActionsDropdown,
+  TableActionsItem,
+} from '@/shared/components/table/table-actions-dropdown'
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
 
@@ -204,46 +207,42 @@ export const ServiceManagementPage = () => {
         },
         cell: ({ row }) => {
           const service = row.original
+          const isOpen = activeDropdownId === service._id
 
           return (
-            <>
-              <button
-                type="button"
-                aria-label={`Open actions for ${service.title}`}
-                aria-expanded={activeDropdownId === service._id}
-                onClick={(event) => {
-                  event.stopPropagation()
-                  setActiveDropdownId(activeDropdownId === service._id ? null : service._id)
+            <TableActionsDropdown
+              label={`Open actions for ${service.title}`}
+              isOpen={isOpen}
+              onOpenChange={(open) => setActiveDropdownId(open ? service._id : null)}
+              menuWidth={192}
+            >
+              <TableActionsItem
+                icon={<Eye className="size-3.5" aria-hidden="true" />}
+                onClick={() => {
+                  setActiveDropdownId(null)
+                  navigate(
+                    `/services/management/view/${service._id}?type=${encodeURIComponent(service.serviceType)}`,
+                  )
                 }}
-                className="rounded p-1 text-slate-500 transition-colors hover:bg-slate-800/50 hover:text-white"
               >
-                <MoreVertical className="size-4" aria-hidden="true" />
-              </button>
-
-              {activeDropdownId === service._id && (
-                <>
-                  <div
-                    className="fixed inset-0 z-10"
-                    onClick={() => setActiveDropdownId(null)}
-                  />
-                  <div className="absolute right-5 z-20 mt-2 w-40 rounded-xl border border-slate-800 bg-[#1A1A1A] py-1.5 text-left shadow-2xl">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setActiveDropdownId(null)
-                        navigate(
-                          `/services/management/view/${service._id}?type=${encodeURIComponent(service.serviceType)}`,
-                        )
-                      }}
-                      className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-xs font-semibold text-slate-300 transition-all hover:bg-slate-800/80 hover:text-amber-400"
-                    >
-                      <Eye className="size-3.5" aria-hidden="true" />
-                      View Details
-                    </button>
-                  </div>
-                </>
-              )}
-            </>
+                View Details
+              </TableActionsItem>
+              <TableActionsItem
+                icon={<ListPlus className="size-3.5" aria-hidden="true" />}
+                onClick={() => {
+                  setActiveDropdownId(null)
+                  if (!service.partnerId) {
+                    toast.error('Partner ID not found for this service.')
+                    return
+                  }
+                  navigate(
+                    `/services/management/create?partnerId=${encodeURIComponent(service.partnerId)}`,
+                  )
+                }}
+              >
+                Create Listing
+              </TableActionsItem>
+            </TableActionsDropdown>
           )
         },
       },
@@ -329,13 +328,6 @@ export const ServiceManagementPage = () => {
           <Button className="w-full gap-2 bg-amber-400 font-semibold text-black hover:bg-amber-500 md:w-auto">
             <BarChart3 className="size-4" />
             Manage Metrics
-          </Button>
-          <Button
-            className="w-full gap-2 bg-white font-semibold text-black hover:bg-slate-200 md:w-auto"
-            onClick={() => navigate('/services/management/create')}
-          >
-            <Plus className="size-4" />
-            Create
           </Button>
         </div>
       </div>

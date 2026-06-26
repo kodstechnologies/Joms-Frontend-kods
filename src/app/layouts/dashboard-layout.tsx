@@ -51,8 +51,8 @@ export function DashboardLayout() {
           showCompact ? "md:pl-[5.75rem]" : "md:pl-[18.5rem]"
         )}
       >
-        <Topbar 
-          onMenuClick={() => setIsSidebarOpen((prev) => !prev)} 
+        <Topbar
+          onMenuClick={() => setIsSidebarOpen((prev) => !prev)}
           onToggleCollapse={() => setIsCollapsed((prev) => !prev)}
         />
         <main
@@ -61,7 +61,7 @@ export function DashboardLayout() {
         >
           <div className="py-4 lg:py-6">
             <PageContainer>
-              <Outlet />
+              <Outlet/>
             </PageContainer>
           </div>
         </main>

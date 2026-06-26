@@ -2,7 +2,12 @@ import { Check, KeyRound, X } from 'lucide-react'
 
 import { cn } from '@/shared/lib/cn'
 
-export type DecisionActionModalVariant = 'approve' | 'reject' | 'requestChanges' | 'escalate'
+export type DecisionActionModalVariant =
+  | 'approve'
+  | 'reject'
+  | 'requestChanges'
+  | 'escalate'
+  | 'suspend'
 
 export type DecisionActionModalOption = {
   label: string
@@ -29,6 +34,14 @@ type DecisionActionModalProps = {
   selectedEscalationOption?: string
   onEscalationOptionChange?: (value: string) => void
   isSubmitting?: boolean
+  showTimeline?: boolean
+  startDate?: string
+  onStartDateChange?: (value: string) => void
+  endDate?: string
+  onEndDateChange?: (value: string) => void
+  indefinite?: boolean
+  onIndefiniteChange?: (value: boolean) => void
+  indefiniteLabel?: string
 }
 
 const variantStyles: Record<
@@ -60,6 +73,10 @@ const variantStyles: Record<
     iconWrap: 'bg-[#5B4424] text-[#FBC078]',
     icon: 'key',
   },
+  suspend: {
+    submit: 'bg-[#F02D2D] text-white hover:bg-[#d92727]',
+    selectedChip: 'bg-[#FBC078] text-black',
+  },
 }
 
 export function DecisionActionModal({
@@ -82,6 +99,14 @@ export function DecisionActionModal({
   selectedEscalationOption,
   onEscalationOptionChange,
   isSubmitting = false,
+  showTimeline = false,
+  startDate = '',
+  onStartDateChange,
+  endDate = '',
+  onEndDateChange,
+  indefinite = false,
+  onIndefiniteChange,
+  indefiniteLabel = 'Suspend indefinitely (until manually reactivated)',
 }: DecisionActionModalProps) {
   if (!open) return null
 
@@ -89,6 +114,7 @@ export function DecisionActionModal({
   const showReasons = reasonOptions.length > 0
   const showReasonInput = Boolean(onReasonChange)
   const showEscalationOptions = escalationOptions.length > 0
+  const showCheckIcon = variant !== 'escalate' && variant !== 'suspend'
 
   return (
     <div
@@ -100,10 +126,10 @@ export function DecisionActionModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="decision-action-modal-title"
-        className="w-full max-w-[470px] overflow-hidden rounded-xl border border-[#242424] bg-[#151515] shadow-2xl"
+        className="flex max-h-[90vh] w-full max-w-[470px] flex-col overflow-hidden rounded-xl border border-[#242424] bg-[#151515] shadow-2xl"
         onClick={(event) => event.stopPropagation()}
       >
-        <div className="flex items-center justify-between border-b border-[#242424] px-6 py-4">
+        <div className="flex shrink-0 items-center justify-between border-b border-[#242424] px-6 py-4">
           <h2 id="decision-action-modal-title" className="text-[18px] font-semibold text-white">
             {title}
           </h2>
@@ -117,7 +143,7 @@ export function DecisionActionModal({
           </button>
         </div>
 
-        <div className="px-6 py-6">
+        <div className="flex-1 overflow-y-auto px-6 py-6">
           {styles.iconWrap && (
             <div className="mb-5 flex justify-center">
               <span className={cn('flex size-14 items-center justify-center rounded-full', styles.iconWrap)}>
@@ -156,6 +182,39 @@ export function DecisionActionModal({
                   )
                 })}
               </div>
+            </div>
+          )}
+
+          {showTimeline && (
+            <div className="mt-5">
+              <span className="mb-2 block text-[10px] font-medium text-[#8A8A8A]">
+                Suspension Timeline
+              </span>
+              <div className="grid grid-cols-2 gap-3">
+                <input
+                  type="date"
+                  value={startDate}
+                  disabled={indefinite}
+                  onChange={(event) => onStartDateChange?.(event.target.value)}
+                  className="w-full rounded-md border border-transparent bg-black px-3 py-2.5 text-[11px] text-white outline-none [color-scheme:dark] focus:border-[#FBC078]/50 disabled:cursor-not-allowed disabled:opacity-50"
+                />
+                <input
+                  type="date"
+                  value={endDate}
+                  disabled={indefinite}
+                  onChange={(event) => onEndDateChange?.(event.target.value)}
+                  className="w-full rounded-md border border-transparent bg-black px-3 py-2.5 text-[11px] text-white outline-none [color-scheme:dark] focus:border-[#FBC078]/50 disabled:cursor-not-allowed disabled:opacity-50"
+                />
+              </div>
+              <label className="mt-3 flex cursor-pointer items-center gap-2 text-[11px] text-white">
+                <input
+                  type="checkbox"
+                  checked={indefinite}
+                  onChange={(event) => onIndefiniteChange?.(event.target.checked)}
+                  className="size-3.5 accent-[#FBC078]"
+                />
+                <span>{indefiniteLabel}</span>
+              </label>
             </div>
           )}
 
@@ -219,7 +278,7 @@ export function DecisionActionModal({
               )}
             >
               {submitLabel}
-              {variant !== 'escalate' && (
+              {showCheckIcon && (
                 <span className="flex size-4 items-center justify-center rounded-full bg-white">
                   <Check
                     className={cn(

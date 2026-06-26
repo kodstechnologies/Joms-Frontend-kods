@@ -7,3 +7,4 @@ export * from './type/service'
 export * from "./pages/experts";
 export { ExpertManagementPage } from './pages/experts'
 export { CreateExpertPage } from './pages/experts/create-expert-page'
+export * from './pages/venue'

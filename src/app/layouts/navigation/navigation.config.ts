@@ -81,6 +81,14 @@ export const navigationConfig: NavItem[] = [
           { key: 'expert.services.categories', label: 'Category Management', badge: { label: 'Soon', variant: 'warning' } },
         ],
       },
+      {
+          key:'expert.venues-group',
+          label:'Venues',
+          children : [
+            { key : 'expert.venues.dashboard', label:'Dashboard', badge : { label : 'Soon', variant : 'warning'} },
+            {key : 'expert.venue.management' , label : 'Venue Management' , to : '/venues/management'},
+          ],
+      },
       { key: 'expert.categories', label: 'Category Management', badge: { label: 'Soon', variant: 'warning' } },
       { key: 'expert.leaderboard', label: 'Leaderboard', badge: { label: 'Soon', variant: 'warning' } },
     ],
