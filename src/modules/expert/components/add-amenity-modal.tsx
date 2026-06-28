@@ -1,5 +1,9 @@
 import { useRef, useState } from 'react'
 import { Save, Upload, X } from 'lucide-react'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
+
+import { addAmenity } from '../api/venue-api'
 
 interface AddAmenityModalProps {
   onClose: () => void
@@ -8,6 +12,8 @@ interface AddAmenityModalProps {
 export const AddAmenityModal = ({
   onClose,
 }: AddAmenityModalProps) => {
+  const queryClient = useQueryClient()
+
   const fileInputRef =
     useRef<HTMLInputElement>(null)
 
@@ -23,32 +29,37 @@ export const AddAmenityModal = ({
   const [iconFile, setIconFile] =
     useState<File | null>(null)
 
-  const handleSave = () => {
-    if (
-      !amenityName ||
-      !venueCategory ||
-      !iconFile
-    ) {
-      alert(
-        'Please fill all required fields',
+  const { mutate: saveAmenity, isPending } = useMutation({
+    mutationFn: (formData: FormData) => addAmenity(formData),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['amenities-master'] })
+      toast.success('Amenity added successfully')
+      onClose()
+    },
+    onError: (error: any) => {
+      toast.error(
+        error?.response?.data?.message || 'Failed to add amenity',
       )
+    },
+  })
+
+  const handleSave = () => {
+    if (!amenityName || !venueCategory || !iconFile) {
+      toast.error('Please fill all required fields')
       return
     }
 
-    console.log({
-      amenityName,
-      venueCategory,
-      subCategory,
-      iconFile,
-    })
+    const formData = new FormData()
+    formData.append('name', amenityName.trim())
+    formData.append('category', venueCategory.trim())
+    formData.append('image', iconFile)
 
-    onClose()
+    saveAmenity(formData)
   }
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/75">
       <div className="w-[580px] rounded-2xl bg-[#161616] shadow-2xl">
-        {/* Header */}
         <div className="flex items-center justify-between border-b border-[#2A2A2A] px-6 py-5">
           <h2 className="text-[18px] font-semibold text-white">
             Add amenities
@@ -59,10 +70,8 @@ export const AddAmenityModal = ({
           </button>
         </div>
 
-        {/* Body */}
         <div className="px-6 py-5">
           <div className="grid grid-cols-2 gap-x-8 gap-y-6">
-            {/* Amenities Name */}
             <div>
               <label className="mb-2 block text-[13px] font-medium text-white">
                 Amenities name *
@@ -79,7 +88,6 @@ export const AddAmenityModal = ({
               />
             </div>
 
-            {/* Upload Icon */}
             <div>
               <label className="mb-2 block text-[13px] font-medium text-white">
                 Upload icon *
@@ -159,10 +167,11 @@ export const AddAmenityModal = ({
             <button
               type="button"
               onClick={handleSave}
-              className="flex h-10 items-center gap-2 rounded-lg bg-[#F5C37A] px-5 text-sm font-medium text-black"
+              disabled={isPending}
+              className="flex h-10 items-center gap-2 rounded-lg bg-[#F5C37A] px-5 text-sm font-medium text-black disabled:cursor-not-allowed disabled:opacity-60"
             >
               <Save size={15} />
-              Save amenity
+              {isPending ? 'Saving…' : 'Save amenity'}
             </button>
           </div>
         </div>

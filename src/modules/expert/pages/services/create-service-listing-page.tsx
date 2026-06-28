@@ -4,7 +4,6 @@ import {
   MessageCircle,
   ChevronDown,
   Info,
-  Plus,
   MapPin,
   Upload,
   Phone,
@@ -16,7 +15,9 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import { useCategories, useSubcategories } from '@/modules/expert/hooks/use-categories'
 import {
+  useConsultationTopics,
   useCreateConsultation,
+  useCreateConsultationTopic,
   useCreateService,
   usePublishConsultation,
   usePublishService,
@@ -44,6 +45,22 @@ type UploadedImage = {
   name: string
   file: File
 }
+
+type TierName = 'basic' | 'standard' | 'premium'
+
+type ServiceTierForm = {
+  name: TierName
+  description: string
+  price: string
+  timelineValue: string
+  timelineUnit: string
+}
+
+const DEFAULT_SERVICE_TIERS: ServiceTierForm[] = [
+  { name: 'basic', description: '', price: '', timelineValue: '', timelineUnit: 'Days' },
+  { name: 'standard', description: '', price: '', timelineValue: '', timelineUnit: 'Days' },
+  { name: 'premium', description: '', price: '', timelineValue: '', timelineUnit: 'Days' },
+]
 
 const serviceSteps = [
   { id: '01', title: 'Service Type', description: 'Choose type offered' },
@@ -78,8 +95,7 @@ export const CreateServiceListingPage = () => {
 
   const [consultationTitle, setConsultationTitle] = useState('')
   const [topics, setTopics] = useState<ConsultationTopic[]>([])
-  const [topicIdInput, setTopicIdInput] = useState('')
-  const [topicNameInput, setTopicNameInput] = useState('')
+  const [newTopicName, setNewTopicName] = useState('')
   const [sessionOutline, setSessionOutline] = useState('')
   const [whoItsFor, setWhoItsFor] = useState('')
   const [languages, setLanguages] = useState('')
@@ -110,13 +126,16 @@ export const CreateServiceListingPage = () => {
   const updateServiceGalleryMutation = useUpdateServiceGallery()
   const publishServiceMutation = usePublishService()
   const createConsultationMutation = useCreateConsultation()
+  const { data: topicsResponse, isLoading: isTopicsLoading } = useConsultationTopics({ limit: 100 })
+  const topicOptions = topicsResponse?.data || []
+  const createTopicMutation = useCreateConsultationTopic()
   const updateConsultationAdditionalInfoMutation = useUpdateConsultationAdditionalInfo()
   const updateConsultationPricingMutation = useUpdateConsultationPricing()
   const publishConsultationMutation = usePublishConsultation()
   const [pricingType, setPricingType] = useState<'fixed' | 'custom' | 'tiered'>('fixed')
   const [selectedDiscount, setSelectedDiscount] = useState<string>('10%')
   const [timelineType, setTimelineType] = useState<'long' | 'short'>('long')
-  const [selectedTier, setSelectedTier] = useState<'Basic' | 'Standard' | 'Premium'>('Standard')
+  const [selectedTier, setSelectedTier] = useState<TierName>('standard')
   const [fixedPrice, setFixedPrice] = useState('₹60,000.00')
   const [fixedTimeline, setFixedTimeline] = useState('25')
   const [fixedTimelineUnit, setFixedTimelineUnit] = useState('Days')
@@ -124,12 +143,24 @@ export const CreateServiceListingPage = () => {
   const [customTimelineMin, setCustomTimelineMin] = useState('2')
   const [customTimelineMax, setCustomTimelineMax] = useState('5')
   const [customTimelineUnit, setCustomTimelineUnit] = useState('Months')
-  const [tieredBasicPrice] = useState('₹30,000.00')
-  const [tieredBasicTimeline] = useState('03 Days')
-  const [tieredStandardPrice, setTieredStandardPrice] = useState('₹60,000.00')
-  const [tieredStandardTimeline, setTieredStandardTimeline] = useState('05 Days')
-  const [tieredPremiumPrice] = useState('₹1,50,000.00')
-  const [tieredPremiumTimeline] = useState('10 Days')
+  const [tiers, setTiers] = useState<ServiceTierForm[]>(DEFAULT_SERVICE_TIERS)
+
+  const updateTier = (name: TierName, field: keyof ServiceTierForm, value: string) => {
+    setTiers((current) =>
+      current.map((tier) => (tier.name === name ? { ...tier, [field]: value } : tier)),
+    )
+  }
+
+  const buildServiceTiers = () =>
+    tiers
+      .filter((tier) => tier.price.trim() !== '')
+      .map((tier) => ({
+        name: tier.name,
+        description: tier.description.trim(),
+        price: parsePrice(tier.price),
+        timelineValue: Number.parseInt(tier.timelineValue, 10) || 0,
+        timelineUnit: normalizeTimelineUnit(tier.timelineUnit),
+      }))
   const [uploadedImages, setUploadedImages] = useState<UploadedImage[]>([])
   const [isDragging, setIsDragging] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -175,24 +206,36 @@ export const CreateServiceListingPage = () => {
     )
   }
 
-  const addTopic = () => {
-    const name = topicNameInput.trim()
-    const _id = topicIdInput.trim()
-    if (!_id || !_id.match(/^[a-f\d]{24}$/i)) {
-      toast.error('Topic ID must be a valid 24-character MongoDB ObjectId.')
-      return
-    }
+  const addTopicById = (topicId: string) => {
+    if (!topicId) return
+    const topic = topicOptions.find((option) => option._id === topicId)
+    if (!topic) return
+    if (topics.some((selected) => selected._id === topic._id)) return
+    setTopics((current) => [...current, topic])
+  }
+
+  const handleCreateTopic = async () => {
+    const name = newTopicName.trim()
     if (!name) {
       toast.error('Topic name is required.')
       return
     }
-    if (topics.some((topic) => topic._id === _id)) {
-      toast.error('This topic is already added.')
+    if (topicOptions.some((option) => option.name.toLowerCase() === name.toLowerCase())) {
+      toast.error('This topic already exists. Select it from the dropdown.')
       return
     }
-    setTopics((current) => [...current, { _id, name }])
-    setTopicIdInput('')
-    setTopicNameInput('')
+    try {
+      const response = await createTopicMutation.mutateAsync(name)
+      setTopics((current) =>
+        current.some((selected) => selected._id === response.data._id)
+          ? current
+          : [...current, response.data],
+      )
+      setNewTopicName('')
+      toast.success('Topic created and added')
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Failed to create topic'))
+    }
   }
 
   const removeTopic = (topicId: string) => {
@@ -230,29 +273,7 @@ export const CreateServiceListingPage = () => {
     return {
       pricingType: 'tiered',
       tieredPricing: {
-        tiers: [
-          {
-            name: 'basic',
-            description: 'Basic tier package',
-            price: parsePrice(tieredBasicPrice),
-            timelineValue: Number.parseInt(tieredBasicTimeline, 10) || 0,
-            timelineUnit: 'days',
-          },
-          {
-            name: 'standard',
-            description: 'Standard tier package',
-            price: parsePrice(tieredStandardPrice),
-            timelineValue: Number.parseInt(tieredStandardTimeline.split(' ')[0], 10) || 0,
-            timelineUnit: 'days',
-          },
-          {
-            name: 'premium',
-            description: 'Premium tier package',
-            price: parsePrice(tieredPremiumPrice),
-            timelineValue: Number.parseInt(tieredPremiumTimeline, 10) || 0,
-            timelineUnit: 'days',
-          },
-        ],
+        tiers: buildServiceTiers(),
       },
     }
   }
@@ -307,6 +328,21 @@ export const CreateServiceListingPage = () => {
         }
 
         if (currentStep === 3) {
+          if (pricingType === 'tiered') {
+            const builtTiers = buildServiceTiers()
+            if (builtTiers.length === 0) {
+              toast.error('Add at least one tier with a price.')
+              return
+            }
+            const invalidTier = builtTiers.find(
+              (tier) => !tier.description || tier.price <= 0 || tier.timelineValue <= 0,
+            )
+            if (invalidTier) {
+              toast.error(`Complete the ${invalidTier.name} tier: description, price, and timeline.`)
+              return
+            }
+          }
+
           await updateServicePricingMutation.mutateAsync({
             id: listingId,
             payload: buildServicePricingPayload(),
@@ -462,27 +498,51 @@ export const CreateServiceListingPage = () => {
 
             <div className="space-y-2.5">
               <label className="text-[11px] font-bold tracking-tight text-white">Add Topics</label>
-              <div className="grid grid-cols-1 gap-2 md:grid-cols-[1fr_1fr_auto]">
+              <div className="relative">
+                <select
+                  value=""
+                  onChange={(e) => addTopicById(e.target.value)}
+                  disabled={isTopicsLoading}
+                  className={cn(consultationInputClass, 'appearance-none pr-8 disabled:opacity-50')}
+                >
+                  <option value="" disabled>
+                    {isTopicsLoading
+                      ? 'Loading topics...'
+                      : topicOptions.length === 0
+                        ? 'No topics yet — create one below'
+                        : 'Select a topic'}
+                  </option>
+                  {topicOptions
+                    .filter((option) => !topics.some((selected) => selected._id === option._id))
+                    .map((option) => (
+                      <option key={option._id} value={option._id}>
+                        {option.name}
+                      </option>
+                    ))}
+                </select>
+                <ChevronDown className="pointer-events-none absolute top-1/2 right-3 size-3 -translate-y-1/2 text-white" />
+              </div>
+              <div className="grid grid-cols-1 gap-2 md:grid-cols-[1fr_auto]">
                 <input
                   type="text"
-                  placeholder="Topic ID (24-char)"
-                  value={topicIdInput}
-                  onChange={(e) => setTopicIdInput(e.target.value)}
-                  className={consultationInputClass}
-                />
-                <input
-                  type="text"
-                  placeholder="Topic name"
-                  value={topicNameInput}
-                  onChange={(e) => setTopicNameInput(e.target.value)}
+                  placeholder="Or create a new topic"
+                  value={newTopicName}
+                  onChange={(e) => setNewTopicName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault()
+                      handleCreateTopic()
+                    }
+                  }}
                   className={consultationInputClass}
                 />
                 <Button
                   type="button"
-                  onClick={addTopic}
+                  onClick={handleCreateTopic}
+                  disabled={createTopicMutation.isPending}
                   className="h-9 bg-[#FBC078] text-[11px] font-bold text-black hover:bg-[#eeb46a]"
                 >
-                  Add
+                  {createTopicMutation.isPending ? 'Creating...' : 'Create'}
                 </Button>
               </div>
               {topics.length > 0 && (
@@ -753,28 +813,56 @@ export const CreateServiceListingPage = () => {
       )
     }
 
+    const reviewLanguages = languages
+      .split(',')
+      .map((lang) => lang.trim())
+      .filter(Boolean)
+
+    const reviewPriceLabel =
+      consultationPricingType === 'free'
+        ? 'Free'
+        : consultationPrice.trim()
+          ? consultationPrice.trim().startsWith('₹')
+            ? consultationPrice.trim()
+            : `₹${consultationPrice.trim()}`
+          : '—'
+
     return (
       <div className="animate-in fade-in slide-in-from-right-4 mx-auto w-full max-w-[850px] rounded-lg border border-white/5 bg-[#151515] p-7 duration-300">
         <div className="grid grid-cols-1 gap-7 md:grid-cols-[1fr_0.9fr]">
           <div className="border-l-4 border-[#FBC078] pl-4">
-            <h2 className="text-[20px] font-bold text-white">Strategy Session</h2>
-            <p className="mt-1 text-[12px] text-[#777777]">Business</p>
+            <h2 className="text-[20px] font-bold text-white">
+              {consultationTitle.trim() || 'Untitled Consultation'}
+            </h2>
+            {topics.length > 0 && (
+              <p className="mt-1 text-[12px] text-[#777777]">
+                {topics.map((topic) => topic.name).join(', ')}
+              </p>
+            )}
 
             <div className="mt-6 space-y-5">
               <div>
                 <h3 className="mb-2 text-[12px] font-bold text-white">Session outline</h3>
-                <p className="text-[12px] leading-relaxed text-[#9A9A9A]">
-                  A focused strategy session designed to understand your current context, clarify key challenges, explore viable options, and define clear priorities, resulting in practical recommendations and next steps that support confident decision-making and effective execution.
+                <p className="text-[12px] leading-relaxed whitespace-pre-line text-[#9A9A9A]">
+                  {sessionOutline.trim() || '—'}
                 </p>
               </div>
-              <div>
-                <h3 className="mb-2 text-[12px] font-bold text-white">Pre-Session Requirement</h3>
-                <p className="text-[12px] text-[#9A9A9A]">Keep your requirements and questions ready.</p>
-              </div>
-              <div>
-                <h3 className="mb-2 text-[12px] font-bold text-white">Post-Session Requirement</h3>
-                <p className="text-[12px] text-[#9A9A9A]">“Thank you consulting Dr. Malavika”</p>
-              </div>
+              {hasPreSessionRequirement && preSessionRequirement.trim() && (
+                <div>
+                  <h3 className="mb-2 text-[12px] font-bold text-white">Pre-Session Requirement</h3>
+                  <p className="text-[12px] whitespace-pre-line text-[#9A9A9A]">
+                    {preSessionRequirement.trim()}
+                  </p>
+                </div>
+              )}
+              {hasPostSessionMessage && postSessionMessage.trim() && (
+                <div>
+                  <h3 className="mb-2 text-[12px] font-bold text-white">Post-Session Requirement</h3>
+                  <p className="text-[12px] whitespace-pre-line text-[#9A9A9A]">
+                    {postSessionMessage.trim()}
+                  </p>
+                </div>
+              )}
             </div>
           </div>
 
@@ -782,32 +870,52 @@ export const CreateServiceListingPage = () => {
             <div className="space-y-6">
               <div>
                 <h3 className="mb-2 text-[12px] font-bold text-white">Who is it for?</h3>
-                <p className="text-[12px] text-[#9A9A9A]">Start-up Founders, young entrepreneurs</p>
+                <p className="text-[12px] whitespace-pre-line text-[#9A9A9A]">
+                  {whoItsFor.trim() || '—'}
+                </p>
               </div>
 
               <div>
                 <h3 className="mb-3 text-[12px] font-bold text-white">Additional Information</h3>
                 <div className="flex flex-wrap gap-4">
-                  {[
-                    { icon: Phone, label: 'Mode', value: '' },
-                    { icon: MessageCircle, label: 'English', value: '' },
-                    { icon: Languages, label: 'Follow Ups', value: '5 days' },
-                  ].map((item) => (
-                    <div key={item.label} className="flex flex-col gap-2">
-                      <div className="flex h-10 min-w-12 items-center justify-center gap-2 rounded-md bg-black px-3">
-                        <item.icon className="size-4 text-white" />
-                        {item.value && <span className="text-[12px] font-bold text-white">{item.value}</span>}
-                      </div>
-                      <span className="text-center text-[11px] text-[#777777]">{item.label}</span>
+                  <div className="flex flex-col gap-2">
+                    <div className="flex h-10 min-w-12 items-center justify-center gap-2 rounded-md bg-black px-3">
+                      <Phone className="size-4 text-white" />
+                      <span className="text-[12px] font-bold text-white capitalize">
+                        {consultationMode}
+                      </span>
                     </div>
-                  ))}
+                    <span className="text-center text-[11px] text-[#777777]">Mode</span>
+                  </div>
+
+                  {reviewLanguages.length > 0 && (
+                    <div className="flex flex-col gap-2">
+                      <div className="flex h-10 min-w-12 items-center justify-center gap-2 rounded-md bg-black px-3">
+                        <MessageCircle className="size-4 text-white" />
+                        <span className="text-[12px] font-bold text-white">
+                          {reviewLanguages.join(', ')}
+                        </span>
+                      </div>
+                      <span className="text-center text-[11px] text-[#777777]">Languages</span>
+                    </div>
+                  )}
+
+                  {hasFollowUp && (
+                    <div className="flex flex-col gap-2">
+                      <div className="flex h-10 min-w-12 items-center justify-center gap-2 rounded-md bg-black px-3">
+                        <Languages className="size-4 text-white" />
+                        <span className="text-[12px] font-bold text-white">{followUpDays} days</span>
+                      </div>
+                      <span className="text-center text-[11px] text-[#777777]">Follow Ups</span>
+                    </div>
+                  )}
                 </div>
               </div>
 
               <div>
                 <h3 className="mb-3 text-[12px] font-bold text-white">Duration &amp; Pricing</h3>
                 <span className="inline-flex rounded-md border border-white/40 px-4 py-2 text-[12px] font-bold text-white">
-                  30mins (₹2,000)
+                  {consultationDuration}mins ({reviewPriceLabel})
                 </span>
               </div>
             </div>
@@ -823,10 +931,6 @@ export const CreateServiceListingPage = () => {
     { label: 'Sarah Johnson' },
     { label: 'Create Listing', isActive: true },
   ]
-
-  const showDraftAction =
-    selectedType !== 'consultation' &&
-    ((currentStep > 1 && currentStep < 5) || (currentStep === 5 && pricingType === 'fixed'))
 
   const primaryActionLabel =
     currentStep === 1 ? (
@@ -856,7 +960,6 @@ export const CreateServiceListingPage = () => {
       steps={activeSteps}
       currentStep={currentStep}
       onBack={handleBack}
-      secondaryAction={showDraftAction ? { label: 'Save as Draft' } : undefined}
       primaryAction={{
         label: isSubmitting ? (
           <span className="flex items-center gap-2">
@@ -1179,6 +1282,7 @@ export const CreateServiceListingPage = () => {
                             >
                               <option>Days</option>
                               <option>Weeks</option>
+                              <option>Months</option>
                             </select>
                             <ChevronDown className="pointer-events-none absolute top-1/2 right-3 size-3 -translate-y-1/2 text-[#666666]" />
                           </div>
@@ -1327,73 +1431,82 @@ export const CreateServiceListingPage = () => {
 
               {pricingType === 'tiered' && (
                 <div className="animate-in fade-in slide-in-from-bottom-4 space-y-5 rounded-lg border border-white/5 bg-[#151515] p-5 duration-500">
-                  <div className="flex items-center justify-between">
+                  <div>
                     <h2 className="text-[13px] font-bold text-white">Tiered Pricing Details</h2>
-                    <Button className="flex h-8 items-center gap-2 rounded-md bg-[#FBC078] px-4 text-[11px] font-bold text-black hover:bg-[#FBC078]/90">
-                      <Plus className="size-3.5" />
-                      Add Tier
-                    </Button>
+                    <p className="mt-1 text-[11px] font-medium text-[#777777]">
+                      Fill the tiers you want to offer. Leave a tier&apos;s price empty to skip it.
+                    </p>
                   </div>
 
-                  <div className="space-y-5">
-                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                      <div className="space-y-2.5">
-                        <label className="text-[11px] font-bold tracking-tight text-white">Tier Name *</label>
-                        <input
-                          type="text"
-                          placeholder="Standard"
-                          className="h-9 w-full rounded-lg border border-white/5 bg-black px-3 text-[11px] text-white outline-none transition-colors placeholder:text-[#444444] focus:border-[#FBC078]/50"
-                        />
-                      </div>
-                      <div className="space-y-2.5">
-                        <label className="text-[11px] font-bold tracking-tight text-white">Price *</label>
-                        <input
-                          type="text"
-                          placeholder="enter Price here..."
-                          value={tieredStandardPrice}
-                          onChange={(e) => setTieredStandardPrice(e.target.value)}
-                          className="h-9 w-full rounded-lg border border-white/5 bg-black px-3 text-[11px] text-white outline-none transition-colors placeholder:text-[#444444] focus:border-[#FBC078]/50"
-                        />
-                      </div>
-                    </div>
+                  <div className="space-y-4">
+                    {tiers.map((tier) => (
+                      <div
+                        key={tier.name}
+                        className="space-y-4 rounded-lg border border-white/5 bg-black p-4"
+                      >
+                        <div className="flex items-center justify-between">
+                          <h3 className="text-[12px] font-bold capitalize text-white">{tier.name}</h3>
+                        </div>
 
-                    <div className="space-y-2.5">
-                      <label className="text-[11px] font-bold tracking-tight text-white">Basic</label>
-                      <div className="rounded-lg border border-white/5 bg-black p-4">
-                        <ul className="space-y-1">
-                          {[
-                            "Priority access to event",
-                            "Access to live session",
-                            "Post-event recording (24h access)",
-                            "Access to live session",
-                            "Post-event recording (24h access)"
-                          ].map((feature, i) => (
-                            <li key={i} className="flex items-start gap-2 text-[11px] text-white">
-                              <span className="mt-1 text-[9px] text-white">•</span>
-                              {feature}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    </div>
+                        <div className="space-y-2.5">
+                          <label className="text-[11px] font-bold tracking-tight text-white">
+                            Description *
+                          </label>
+                          <textarea
+                            placeholder={`Describe what the ${tier.name} tier includes...`}
+                            value={tier.description}
+                            onChange={(e) => updateTier(tier.name, 'description', e.target.value)}
+                            className="min-h-[64px] w-full resize-none rounded-lg border border-white/5 bg-[#151515] p-3 text-[11px] leading-relaxed text-white outline-none transition-colors placeholder:text-[#444444] focus:border-[#FBC078]/50"
+                          />
+                        </div>
 
-                    <div className="max-w-[300px] space-y-2.5">
-                      <label className="text-[11px] font-bold tracking-tight text-white">Set Timelines *</label>
-                      <div className="flex gap-3">
-                        <input
-                          type="text"
-                          value={tieredStandardTimeline.split(' ')[0]}
-                          onChange={(e) => setTieredStandardTimeline(e.target.value.padStart(2, '0') + ' Days')}
-                          className="h-9 w-full rounded-lg border border-white/5 bg-black px-3 text-center text-[11px] text-white outline-none transition-colors focus:border-[#FBC078]/50"
-                        />
-                        <div className="group relative w-20 shrink-0">
-                          <select className="h-9 w-full cursor-pointer appearance-none rounded-lg border border-white/5 bg-black px-3 pr-8 text-[11px] text-white outline-none transition-colors focus:border-[#FBC078]/50">
-                            <option>Days</option>
-                          </select>
-                          <ChevronDown className="pointer-events-none absolute top-1/2 right-3 size-3 -translate-y-1/2 text-[#666666]" />
+                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                          <div className="space-y-2.5">
+                            <label className="text-[11px] font-bold tracking-tight text-white">
+                              Price *
+                            </label>
+                            <input
+                              type="text"
+                              placeholder="₹0.00"
+                              value={tier.price}
+                              onChange={(e) => updateTier(tier.name, 'price', e.target.value)}
+                              className="h-9 w-full rounded-lg border border-white/5 bg-[#151515] px-3 text-[11px] text-white outline-none transition-colors placeholder:text-[#444444] focus:border-[#FBC078]/50"
+                            />
+                          </div>
+
+                          <div className="space-y-2.5">
+                            <label className="text-[11px] font-bold tracking-tight text-white">
+                              Set Timelines *
+                            </label>
+                            <div className="flex gap-3">
+                              <input
+                                type="text"
+                                placeholder="0"
+                                value={tier.timelineValue}
+                                onChange={(e) =>
+                                  updateTier(tier.name, 'timelineValue', e.target.value)
+                                }
+                                className="h-9 w-full rounded-lg border border-white/5 bg-[#151515] px-3 text-center text-[11px] text-white outline-none transition-colors focus:border-[#FBC078]/50"
+                              />
+                              <div className="group relative w-20 shrink-0">
+                                <select
+                                  value={tier.timelineUnit}
+                                  onChange={(e) =>
+                                    updateTier(tier.name, 'timelineUnit', e.target.value)
+                                  }
+                                  className="h-9 w-full cursor-pointer appearance-none rounded-lg border border-white/5 bg-[#151515] px-3 pr-8 text-[11px] text-white outline-none transition-colors focus:border-[#FBC078]/50"
+                                >
+                                  <option>Days</option>
+                                  <option>Weeks</option>
+                                  <option>Months</option>
+                                </select>
+                                <ChevronDown className="pointer-events-none absolute top-1/2 right-3 size-3 -translate-y-1/2 text-[#666666]" />
+                              </div>
+                            </div>
+                          </div>
                         </div>
                       </div>
-                    </div>
+                    ))}
                   </div>
                 </div>
               )}
@@ -1502,82 +1615,56 @@ export const CreateServiceListingPage = () => {
                 </div>
 
                 {pricingType === 'tiered' && (() => {
-                  const tierData = {
-                    Basic: {
-                      description: 'Ideal for quick scans or simple NDAs',
-                      features: [
-                        'High-level scan of the NDA for obvious flags',
-                        'Clear summary of key clauses',
-                        'Flags standard clauses'
-                      ],
-                      price: tieredBasicPrice,
-                      timeline: tieredBasicTimeline,
-                    },
-                    Standard: {
-                      description: 'Ideal for early-stage reviews or first-time signings',
-                      features: [
-                        'High-level review of the NDA for obvious risks',
-                        'Clear summary of key confidentiality and obligation clauses',
-                        'Flags sections that may need closer attention before signing',
-                      ],
-                      price: tieredStandardPrice,
-                      timeline: tieredStandardTimeline,
-                    },
-                    Premium: {
-                      description: 'Full-service NDA advisory for complex agreements',
-                      features: [
-                        'Comprehensive multi-party NDA review',
-                        'Legal opinion letter included',
-                        'Redlining and tracked changes',
-                        'Priority turnaround & revision rounds',
-                        'Post-review consultation call',
-                      ],
-                      price: tieredPremiumPrice,
-                      timeline: tieredPremiumTimeline,
-                    },
+                  const filledTiers = tiers.filter((tier) => tier.price.trim() !== '')
+                  if (filledTiers.length === 0) {
+                    return (
+                      <div className="rounded-lg border border-white/5 bg-black p-4 text-[11px] text-[#777777]">
+                        No tiers added yet.
+                      </div>
+                    )
                   }
-                  const current = tierData[selectedTier]
+                  const current =
+                    filledTiers.find((tier) => tier.name === selectedTier) || filledTiers[0]
+                  const priceLabel = current.price.trim().startsWith('₹')
+                    ? current.price.trim()
+                    : `₹${current.price.trim()}`
                   return (
                     <div className="space-y-4">
                       <div className="flex w-full justify-between rounded-full border border-white/5 bg-black p-1">
-                        {(['Basic', 'Standard', 'Premium'] as const).map((tier) => (
+                        {filledTiers.map((tier) => (
                           <button
-                            key={tier}
-                            onClick={() => setSelectedTier(tier)}
+                            key={tier.name}
+                            onClick={() => setSelectedTier(tier.name)}
                             className={cn(
-                              'flex-1 rounded-full px-5 py-2 text-center text-[11px] font-bold transition-all duration-300',
-                              selectedTier === tier
+                              'flex-1 rounded-full px-5 py-2 text-center text-[11px] font-bold capitalize transition-all duration-300',
+                              current.name === tier.name
                                 ? 'bg-white text-black shadow-lg font-bold'
                                 : 'text-[#666666] hover:text-white bg-transparent'
                             )}
                           >
-                            {tier}
+                            {tier.name}
                           </button>
                         ))}
                       </div>
 
                       <div className="space-y-3">
-                        <p className="text-[12px] font-medium text-white">{current.description}</p>
-                        <ul className="ml-1 space-y-1.5">
-                          {current.features.map((feat, i) => (
-                            <li key={i} className="flex items-start gap-2.5 text-[12px] font-medium text-white">
-                              <span className="mt-1.5 text-[9px] text-white">•</span>
-                              <span>{feat}</span>
-                            </li>
-                          ))}
-                        </ul>
+                        <p className="text-[12px] font-medium whitespace-pre-line text-white">
+                          {current.description.trim() || 'No description provided.'}
+                        </p>
                       </div>
 
                       <div className="flex gap-4 pt-1">
                         <div className="flex flex-col gap-1.5">
                           <div className="flex min-w-[92px] items-center justify-center rounded-md border border-white/15 bg-[#151515] px-4 py-2">
-                            <span className="text-[11px] font-bold text-white">{current.price}</span>
+                            <span className="text-[11px] font-bold text-white">{priceLabel}</span>
                           </div>
                           <span className="text-center text-[11px] font-medium text-[#777777]">Pricing</span>
                         </div>
                         <div className="flex flex-col gap-1.5">
                           <div className="flex min-w-[92px] items-center justify-center rounded-md border border-white/15 bg-[#151515] px-4 py-2">
-                            <span className="text-[11px] font-bold text-white">{current.timeline}</span>
+                            <span className="text-[11px] font-bold text-white">
+                              {current.timelineValue || '0'} {current.timelineUnit}
+                            </span>
                           </div>
                           <span className="text-center text-[11px] font-medium text-[#777777]">Timelines</span>
                         </div>
@@ -1590,21 +1677,42 @@ export const CreateServiceListingPage = () => {
               <div className="flex flex-1 flex-col justify-between self-stretch">
                 <div className="space-y-4">
                   <div>
-                    <h3 className="mb-1 text-[21px] font-bold tracking-tight text-white">NDA Document Review</h3>
-                    <span className="text-[12px] font-medium text-[#777777]">Legal</span>
+                    <h3 className="mb-1 text-[21px] font-bold tracking-tight text-white">
+                      {serviceTitle.trim() || 'Untitled Service'}
+                    </h3>
+                    <span className="text-[12px] font-medium text-[#777777]">
+                      {categories.find((category) => category._id === selectedCategoryId)?.name ||
+                        'Uncategorized'}
+                    </span>
                   </div>
 
-                  <p className="text-[13px] font-medium leading-relaxed text-white">
-                    Get your Non-Disclosure Agreement reviewed to identify risks, unclear clauses, and potential gaps. Receive clear feedback on confidentiality terms, obligations, and limitations so you can sign or share documents with confidence.
+                  <p className="text-[13px] font-medium leading-relaxed whitespace-pre-line text-white">
+                    {description.trim() || 'No description provided.'}
                   </p>
 
-                  <div className="flex flex-wrap gap-2 pt-1">
-                    {['NDA review', 'Policy review'].map((tag) => (
-                      <span key={tag} className="rounded-md border border-white/20 bg-[#151515] px-3 py-1.5 text-[11px] font-bold text-white">
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
+                  {deliverables.trim() && (
+                    <div>
+                      <h4 className="mb-1 text-[12px] font-bold text-white">Deliverables</h4>
+                      <p className="text-[12px] leading-relaxed whitespace-pre-line text-[#9A9A9A]">
+                        {deliverables.trim()}
+                      </p>
+                    </div>
+                  )}
+
+                  {selectedSubCategoryIds.length > 0 && (
+                    <div className="flex flex-wrap gap-2 pt-1">
+                      {subcategories
+                        .filter((subCategory) => selectedSubCategoryIds.includes(subCategory._id))
+                        .map((subCategory) => (
+                          <span
+                            key={subCategory._id}
+                            className="rounded-md border border-white/20 bg-[#151515] px-3 py-1.5 text-[11px] font-bold text-white"
+                          >
+                            {subCategory.name}
+                          </span>
+                        ))}
+                    </div>
+                  )}
                 </div>
 
                 {pricingType === 'fixed' && (

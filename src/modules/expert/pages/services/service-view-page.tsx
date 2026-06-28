@@ -141,7 +141,7 @@ const escalationOptions = [
   { label: '[Moderator 1]', value: 'moderator-1' },
 ]
 
-type ServiceDecisionAction = DecisionActionModalVariant
+type ServiceDecisionAction = Exclude<DecisionActionModalVariant, 'suspend'>
 
 export const ServiceViewPage = () => {
   const { id } = useParams<{ id: string }>()
@@ -842,7 +842,7 @@ export const ServiceViewPage = () => {
       {actionToast.message && (
         <div
           className={cn(
-            'animate-in fade-in slide-in-from-top-4 fixed top-4 right-4 z-50 flex items-center gap-3 rounded-xl border px-5 py-4 shadow-2xl transition-all duration-300',
+            'animate-in fade-in slide-in-from-top-4 fixed top-4 right-4 z-[60] flex items-center gap-3 rounded-xl border px-5 py-4 shadow-2xl transition-all duration-300',
             actionToast.type === 'success'
               ? 'border-emerald-500/30 bg-emerald-950/95 text-emerald-400'
               : actionToast.type === 'error'

@@ -20,7 +20,6 @@ import {
   type ServiceConsultationTrendPoint,
 } from '@/modules/expert/mock/service-marketplace.mock'
 import { DashboardCard } from '@/shared/components/dashboard/dashboard-card'
-import { ResponsiveGrid } from '@/shared/components/responsive/responsive-grid'
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
 
@@ -46,14 +45,14 @@ function CompactMetricCard({ label, value, trend }: MarketplaceMetric) {
   )
 }
 
-function MetricsSection({ title, metrics, desktopCols }: { title: string; metrics: MarketplaceMetric[]; desktopCols: 4 | 6 }) {
+function MetricsSection({ title, metrics }: { title: string; metrics: MarketplaceMetric[] }) {
   return (
     <DashboardCard title={title}>
-      <ResponsiveGrid mobileCols={2} tabletCols={4} desktopCols={desktopCols} gap={3}>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
         {metrics.map((metric) => (
           <CompactMetricCard key={metric.label} {...metric} />
         ))}
-      </ResponsiveGrid>
+      </div>
     </DashboardCard>
   )
 }
@@ -107,27 +106,20 @@ export function ServiceMarketplacePage() {
         </div>
 
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-          <Button
-            className="gap-2 border border-amber-400/70 bg-transparent text-amber-400 hover:bg-amber-400/10"
-            onClick={() => toast.message('Metrics configuration coming soon')}
-          >
+          <Button onClick={() => toast.message('Metrics configuration coming soon')}>
             <BarChart3 className="size-4" />
             Manage Metrics
           </Button>
-          <Button
-            variant="secondary"
-            className="gap-2 border border-amber-400/70 bg-transparent text-amber-400 hover:bg-amber-400/10"
-            onClick={() => toast.message('Export coming soon')}
-          >
+          <Button onClick={() => toast.message('Export coming soon')}>
             <Download className="size-4" />
             Export Data
           </Button>
         </div>
       </div>
 
-      <MetricsSection title="Service Metrics" metrics={serviceMetricsMock} desktopCols={6} />
+      <MetricsSection title="Service Metrics" metrics={serviceMetricsMock} />
 
-      <MetricsSection title="Consultation Metrics" metrics={consultationMetricsMock} desktopCols={4} />
+      <MetricsSection title="Consultation Metrics" metrics={consultationMetricsMock} />
 
       <DashboardCard
         className="p-0"

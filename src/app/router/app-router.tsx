@@ -41,6 +41,16 @@ const CreateExpertPage = lazy(() =>
     default: m.CreateExpertPage,
   })),
 )
+const LeaderboardPage = lazy(() =>
+  import('@/modules/expert').then((m) => ({
+    default: m.LeaderboardPage,
+  })),
+)
+const VenueDashboardPage = lazy(() =>
+  import('@/modules/expert').then((m) => ({
+    default: m.VenueDashboardPage,
+  })),
+)
 const VenueManagementPage = lazy(() =>
   import('@/modules/expert').then((m) => ({
     default: m.VenueManagementPage,
@@ -116,7 +126,10 @@ export function AppRouter() {
               <Route path="/experts/deleted" element={<DeletedExpertsPage />} />
               <Route path="/experts/pending-approvals" element={<PendingApprovalsPage />} />
               <Route path="/services/management/view/:id" element={<ServiceViewPage />} />
+              <Route path="/services/leaderboard" element={<LeaderboardPage />} />
 
+              <Route path="/venues/dashboard" element={<VenueDashboardPage />} />
+              <Route path="/venues/leaderboard" element={<LeaderboardPage />} />
               <Route path="/venues/management" element={<VenueManagementPage />} />
               <Route
                 path="/venues/management/application/:id"

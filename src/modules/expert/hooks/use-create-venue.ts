@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import {
+  buildAvailabilityPayload,
   buildGalleryFormData,
   buildPricingPayload,
   buildSpacePayload,
@@ -10,6 +11,7 @@ import {
   createAdminSpace,
   createAdminVenueAmenity,
   createAdminVenueGallery,
+  createAdminAvailability,
   createPricing,
   createVenueTerms,
   submitVenue,
@@ -139,15 +141,25 @@ await createAdminVenueAmenity(venueId, {
     onSuccess: invalidateDraft,
   })
 
-  // Step 5 — save pricing
+  // Step 5 — save pricing then availability
   const savePricing = useMutation({
-    mutationFn: ({
+    mutationFn: async ({
       spaceId,
       venueData,
     }: {
       spaceId: string
       venueData: VenueFormData
-    }) => createPricing(spaceId, buildPricingPayload(venueData)),
+    }) => {
+      await createPricing(spaceId, buildPricingPayload(venueData))
+
+      const availabilityPayload = buildAvailabilityPayload(venueData)
+      if (
+        availabilityPayload.weeklyAvailability.length > 0 ||
+        availabilityPayload.blockedDates.length > 0
+      ) {
+        await createAdminAvailability(spaceId, availabilityPayload)
+      }
+    },
     onSuccess: invalidateDraft,
   })
 

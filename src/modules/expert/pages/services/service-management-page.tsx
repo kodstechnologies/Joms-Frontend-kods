@@ -3,10 +3,12 @@ import type { ColumnDef } from '@tanstack/react-table'
 import {
   AlertCircle,
   Archive,
+  Ban,
   BarChart3,
   Bell,
   CheckSquare,
   Eye,
+  Hourglass,
   Image,
   ListPlus,
   Mail,
@@ -388,8 +390,7 @@ export const ServiceManagementPage = () => {
   const statusCards: {
     label: string
     count: number
-    color: string
-    bg: string
+    gradient: string
     border: string
     icon: LucideIcon
     status: string
@@ -397,36 +398,32 @@ export const ServiceManagementPage = () => {
     {
       label: 'Approvals Pending',
       count: counts.approvalsPending,
-      color: 'text-amber-400',
-      bg: 'bg-amber-400/10',
-      border: 'border-amber-400/20',
-      icon: ShieldCheck,
+      gradient: 'bg-gradient-to-r from-amber-700/55 to-transparent',
+      border: 'border-amber-600/60',
+      icon: Hourglass,
       status: 'pending',
     },
     {
       label: 'Reported Services',
       count: counts.reportedServices,
-      color: 'text-red-400',
-      bg: 'bg-red-400/10',
-      border: 'border-red-400/20',
+      gradient: 'bg-gradient-to-r from-red-800/55 to-transparent',
+      border: 'border-red-800/60',
       icon: AlertCircle,
       status: 'reported',
     },
     {
       label: 'Suspended Services',
       count: counts.suspendedServices,
-      color: 'text-purple-400',
-      bg: 'bg-purple-400/10',
-      border: 'border-purple-400/20',
-      icon: PauseCircle,
+      gradient: 'bg-gradient-to-r from-red-800/55 to-transparent',
+      border: 'border-red-800/60',
+      icon: Ban,
       status: 'suspended',
     },
     {
       label: 'Deleted Services',
       count: counts.deletedServices,
-      color: 'text-slate-400',
-      bg: 'bg-slate-400/10',
-      border: 'border-slate-400/20',
+      gradient: 'bg-gradient-to-r from-red-800/55 to-transparent',
+      border: 'border-red-800/60',
       icon: Trash2,
       status: 'deleted',
     },
@@ -442,7 +439,7 @@ export const ServiceManagementPage = () => {
           </p>
         </div>
         <div className="flex w-full flex-col items-center gap-3 md:w-auto md:flex-row">
-          <Button className="w-full gap-2 bg-amber-400 font-semibold text-black hover:bg-amber-500 md:w-auto">
+          <Button className="w-full md:w-auto">
             <BarChart3 className="size-4" />
             Manage Metrics
           </Button>
@@ -455,6 +452,9 @@ export const ServiceManagementPage = () => {
             key={card.label}
             type="button"
             onClick={() => {
+              if (card.status === 'reported' || card.status === 'deleted') {
+                return
+              }
               if (card.status === 'pending') {
                 navigate('/services/management/pending')
                 return
@@ -467,19 +467,17 @@ export const ServiceManagementPage = () => {
               setActiveStatus(activeStatus === card.status ? 'all' : card.status)
             }}
             className={cn(
-              'flex min-w-[220px] flex-1 items-center justify-between rounded-xl border p-4 transition-all hover:scale-[1.02]',
-              card.bg,
+              'flex min-w-[220px] flex-1 items-center justify-between gap-3 rounded-xl border p-4 transition-all hover:brightness-110',
+              card.gradient,
               card.border,
               activeStatus === card.status && 'ring-2 ring-amber-400/50',
             )}
           >
             <div className="flex items-center gap-3">
-              <div className={cn('rounded-lg p-2', card.bg)}>
-                <card.icon className={cn('size-5', card.color)} />
-              </div>
-              <span className="text-sm font-medium text-slate-300">{card.label}</span>
+              <card.icon className="size-5 text-white" />
+              <span className="text-sm font-medium text-white">{card.label}</span>
             </div>
-            <span className={cn('text-lg font-bold', card.color)}>
+            <span className="text-lg font-bold text-white">
               {card.count.toString().padStart(2, '0')}
             </span>
           </button>

@@ -189,6 +189,20 @@ export const createPricing = async (
   return response.data
 }
 
+export const createAdminAvailability = async (
+  spaceId: string,
+  payload: {
+    weeklyAvailability: Array<{ day: string; from: string; to: string }>
+    blockedDates: Array<{ date: string; from: string; to: string }>
+  },
+) => {
+  const response = await venueApiClient.post(
+    `/venues/admin/availability/${spaceId}`,
+    payload,
+  )
+  return response.data
+}
+
 export const createVenueTerms = async (
   venueId: string,
   payload: Record<string, unknown>,
@@ -264,6 +278,15 @@ export const buildPricingPayload = (venueData: VenueFormData) => ({
   weekendPrice: venueData.weekendPrice ? Number(venueData.weekendPrice) : undefined,
   discount: venueData.discount ? Number(venueData.discount) : undefined,
   reservationFee: venueData.reservationFee ? Number(venueData.reservationFee) : undefined,
+})
+
+export const buildAvailabilityPayload = (venueData: VenueFormData) => ({
+  weeklyAvailability: (venueData.weeklyAvailability || [])
+    .filter((entry) => entry.enabled && entry.from && entry.to)
+    .map(({ day, from, to }) => ({ day, from, to })),
+  blockedDates: (venueData.blockedDates || [])
+    .filter((entry) => entry.date && entry.from && entry.to)
+    .map(({ date, from, to }) => ({ date, from, to })),
 })
 
 export const buildTermsPayload = (venueData: VenueFormData) => ({
@@ -407,6 +430,17 @@ export const addAmenitySubCategory = async (
     },
   )
 
+  return response.data
+}
+
+export const addAmenity = async (payload: FormData) => {
+  const response = await venueApiClient.post(
+    '/amenities-master/add-amenity',
+    payload,
+    {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    },
+  )
   return response.data
 }
 

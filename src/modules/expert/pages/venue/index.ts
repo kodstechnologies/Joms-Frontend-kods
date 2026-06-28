@@ -1,3 +1,4 @@
+export * from './venue-dashboard-page'
 export * from './create-venue-listing-page'
 export * from './create-venue-onboarding-page'
 export * from './venue-management-page'

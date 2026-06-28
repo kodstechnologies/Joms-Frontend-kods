@@ -3,10 +3,12 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import {
   ArrowLeft,
+  Building2,
   ChevronRight,
   Clock,
   FileText,
   Gauge,
+  ImageOff,
   MapPin,
   MoreVertical,
   Plus,
@@ -46,6 +48,34 @@ const formatCurrency = (value?: number | null) => {
 }
 
 const comingSoon = (label: string) => toast.message(`${label} is coming soon`)
+
+function SafeImage({
+  src,
+  alt,
+  className,
+  fallback,
+}: {
+  src?: string | null
+  alt: string
+  className?: string
+  fallback: ReactNode
+}) {
+  const [errored, setErrored] = useState(false)
+
+  if (!src || errored) {
+    return <>{fallback}</>
+  }
+
+  return (
+    <img
+      src={src}
+      alt={alt}
+      className={className}
+      loading="lazy"
+      onError={() => setErrored(true)}
+    />
+  )
+}
 
 function SidebarRow({
   label,
@@ -166,6 +196,7 @@ function ProfileSidebar({
 function OverviewTab({ data }: { data: VenueFullView }) {
   const { venue, gallery } = data.overview
   const location = venue.location
+  const poc = gallery?.contact?.contacts?.[0]
 
   const galleryImages =
     gallery?.galleryImages?.map((image) => image.url) ??
@@ -194,11 +225,14 @@ function OverviewTab({ data }: { data: VenueFullView }) {
       <div>
         <h3 className="text-[13px] font-semibold text-white">POC details</h3>
         <p className="mt-2 text-[13px] font-medium text-white">
-          {venue.pocName || '—'}
+          {poc?.name || venue.pocName || '—'}
         </p>
         <p className="mt-1 text-[12px] text-[#999]">
-          {venue.pocContactNumber || venue.name}
+          {poc?.phone || venue.pocContactNumber || '—'}
         </p>
+        {poc?.email && (
+          <p className="mt-0.5 text-[12px] text-[#999]">{poc.email}</p>
+        )}
       </div>
 
       <div>
@@ -213,10 +247,15 @@ function OverviewTab({ data }: { data: VenueFullView }) {
                 rel="noreferrer"
                 className="block aspect-[4/3] overflow-hidden rounded-lg border border-white/5"
               >
-                <img
+                <SafeImage
                   src={src}
                   alt={`Gallery ${index + 1}`}
                   className="size-full object-cover"
+                  fallback={
+                    <div className="flex size-full items-center justify-center bg-black text-[#555]">
+                      <ImageOff className="size-5" />
+                    </div>
+                  }
                 />
               </a>
             ))}
@@ -325,17 +364,16 @@ function SpacesTab({
               className="flex w-full items-center gap-4 rounded-lg border border-white/5 bg-black p-3 text-left transition-colors hover:border-[#FBC078]/30"
             >
               <div className="size-16 shrink-0 overflow-hidden rounded-md bg-[#1a1a1a]">
-                {space.coverImage ? (
-                  <img
-                    src={space.coverImage}
-                    alt={space.spaceName}
-                    className="size-full object-cover"
-                  />
-                ) : (
-                  <div className="flex size-full items-center justify-center text-[#555]">
-                    <MapPin className="size-5" />
-                  </div>
-                )}
+                <SafeImage
+                  src={space.coverImage}
+                  alt={space.spaceName}
+                  className="size-full object-cover"
+                  fallback={
+                    <div className="flex size-full items-center justify-center text-[#555]">
+                      <MapPin className="size-5" />
+                    </div>
+                  }
+                />
               </div>
               <div className="min-w-0 flex-1">
                 <p className="truncate text-[13px] font-semibold text-white">
@@ -497,7 +535,19 @@ export function VenueProfileViewPage() {
     )
   }
 
-  const { venue } = fullView.overview
+  const { venue, gallery } = fullView.overview
+
+  const coverImage =
+    gallery?.venueCoverImages?.[0]?.url ||
+    venue.coverImageUrl ||
+    gallery?.galleryImages?.[0]?.url ||
+    null
+
+  const avatarImage =
+    venue.profileImageUrl ||
+    gallery?.spaceCoverImages?.[0]?.url ||
+    gallery?.venueCoverImages?.[0]?.url ||
+    null
 
   const headerActions = [
     { label: 'Create Space', icon: Plus, onClick: () => navigate(`/venues/management/create?venueId=${venueId}`) },
@@ -538,24 +588,30 @@ export function VenueProfileViewPage() {
 
       <div className="relative overflow-hidden rounded-xl border border-white/5 bg-[#111111]">
         <div className="h-40 w-full bg-[#1a1a1a]">
-          {venue.coverImageUrl && (
-            <img
-              src={venue.coverImageUrl}
-              alt={`${venue.name} cover`}
-              className="size-full object-cover"
-            />
-          )}
+          <SafeImage
+            src={coverImage}
+            alt={`${venue.name} cover`}
+            className="size-full object-cover"
+            fallback={
+              <div className="flex size-full items-center justify-center bg-gradient-to-br from-[#1a1a1a] to-[#111111] text-[#555]">
+                <ImageOff className="size-6" />
+              </div>
+            }
+          />
         </div>
         <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-end sm:justify-between">
           <div className="flex items-end gap-3">
             <div className="-mt-12 size-20 shrink-0 overflow-hidden rounded-full border-4 border-[#111111] bg-[#1a1a1a]">
-              {venue.profileImageUrl && (
-                <img
-                  src={venue.profileImageUrl}
-                  alt={venue.name}
-                  className="size-full object-cover"
-                />
-              )}
+              <SafeImage
+                src={avatarImage}
+                alt={venue.name}
+                className="size-full object-cover"
+                fallback={
+                  <div className="flex size-full items-center justify-center text-[#555]">
+                    <Building2 className="size-7" />
+                  </div>
+                }
+              />
             </div>
             <div>
               <h2 className="text-lg font-bold text-white">{venue.name}</h2>

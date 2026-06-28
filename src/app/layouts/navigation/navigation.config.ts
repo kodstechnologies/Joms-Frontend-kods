@@ -78,6 +78,7 @@ export const navigationConfig: NavItem[] = [
         children: [
           { key: 'expert.services.dashboard', label: 'Dashboard', to: '/services/dashboard' },
           { key: 'expert.services.management', label: 'Service Management', to: '/services/management' },
+          { key: 'expert.services.leaderboard', label: 'Leaderboard', to: '/services/leaderboard' },
           { key: 'expert.services.categories', label: 'Category Management', badge: { label: 'Soon', variant: 'warning' } },
         ],
       },
@@ -85,8 +86,9 @@ export const navigationConfig: NavItem[] = [
           key:'expert.venues-group',
           label:'Venues',
           children : [
-            { key : 'expert.venues.dashboard', label:'Dashboard', badge : { label : 'Soon', variant : 'warning'} },
+            { key : 'expert.venues.dashboard', label:'Dashboard', to : '/venues/dashboard' },
             {key : 'expert.venue.management' , label : 'Venue Management' , to : '/venues/management'},
+            { key : 'expert.venues.leaderboard', label : 'Leaderboard', to : '/venues/leaderboard' },
           ],
       },
     ],

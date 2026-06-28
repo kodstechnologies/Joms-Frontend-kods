@@ -98,7 +98,7 @@ export function DataTable<TData>({
       aria-label={`${resourceLabel} table`}
     >
       <div className="flex flex-wrap items-center justify-between gap-3 px-3 pt-3 pb-2">
-        <div className="relative w-full sm:w-[220px]">
+        <div className="relative w-full sm:w-[320px]">
           <Search
             className="absolute top-1/2 left-3 size-3.5 -translate-y-1/2 text-[#737373]"
             aria-hidden="true"

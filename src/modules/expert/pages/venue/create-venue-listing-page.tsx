@@ -15,7 +15,10 @@ import {
 
 import { useVenueStepMutations } from '@/modules/expert/hooks/use-create-venue'
 import { fetchAdminDraftVenue } from '../../api/venue-api'
-import { mapHoursToCancellationPolicy } from '../../utils/venue-form'
+import {
+  createDefaultWeeklyAvailability,
+  mapHoursToCancellationPolicy,
+} from '../../utils/venue-form'
 
 export const CreateVenueListingPage = () => {
   const [searchParams] = useSearchParams()
@@ -86,6 +89,8 @@ export const CreateVenueListingPage = () => {
     faqs: [{ question: '', answer: '' }] as {
       question: string; answer: string
     }[],
+    weeklyAvailability: createDefaultWeeklyAvailability(),
+    blockedDates: [] as { date: string; from: string; to: string }[],
   })
 
   useEffect(() => {
@@ -108,6 +113,22 @@ export const CreateVenueListingPage = () => {
         const space = spaces[0]
         const pricing = space?.pricing?.[0] ?? venue?.pricing?.[0]
         const terms = venue?.terms
+
+        const defaultDays = createDefaultWeeklyAvailability()
+        const savedWeekly = space?.availability?.weeklyAvailability ?? []
+        const weeklyAvailability = defaultDays.map((entry) => {
+          const match = savedWeekly.find((d: any) => d.day === entry.day)
+          return match
+            ? { ...entry, from: match.from, to: match.to, enabled: true }
+            : { ...entry, enabled: savedWeekly.length === 0 ? entry.enabled : false }
+        })
+        const blockedDates = (space?.availability?.blockedDates ?? []).map(
+          (d: any) => ({
+            date: d.date ? String(d.date).slice(0, 10) : '',
+            from: d.from || '',
+            to: d.to || '',
+          }),
+        )
 
         if (space?._id) setSpaceId(String(space._id))
         setVenueData(prev => ({
@@ -135,14 +156,22 @@ export const CreateVenueListingPage = () => {
 
           amenities: Array.isArray(venue?.amenities?.amenities)
             ? venue.amenities.amenities.flatMap((amenity: any) => {
-              return (amenity.subCategories || []).map(
-                (subCategory: any) => ({
-                  categoryId: amenity.categoryId,
-                  subCategoryId: subCategory._id,
-                  name: subCategory.name || '',
-                  image: subCategory.image || '',
-                }),
-              )
+              const subs = amenity.subCategoryIds || amenity.subCategories || []
+              return subs.map((subCategory: any) => {
+                const subId =
+                  typeof subCategory === 'object'
+                    ? subCategory._id
+                    : subCategory
+                return {
+                  categoryId:
+                    typeof amenity.categoryId === 'object'
+                      ? amenity.categoryId._id
+                      : amenity.categoryId,
+                  subCategoryId: String(subId || ''),
+                  name: subCategory?.name || '',
+                  image: subCategory?.image || '',
+                }
+              })
             })
             : [],
 
@@ -181,6 +210,9 @@ export const CreateVenueListingPage = () => {
                 answer: faq.answer || '',
               }))
               : [{ question: '', answer: '' }],
+
+          weeklyAvailability,
+          blockedDates,
         }))
       } catch (err) {
         console.error('Failed to load venue draft', err)
@@ -195,10 +227,12 @@ export const CreateVenueListingPage = () => {
     try {
       if (currentStep === 1 && venueId) {
         await saveVenueDetails.mutateAsync({ venueId, venueData })
+        toast.success('Venue details saved')
       }
 
       if (currentStep === 2 && venueId) {
         await saveLocation.mutateAsync({ venueId, venueData })
+        toast.success('Location saved')
       }
 
       if (currentStep === 3 && venueId) {
@@ -206,22 +240,35 @@ export const CreateVenueListingPage = () => {
 
         const newSpaceId = result?.data?._id || result?._id
         if (newSpaceId) setSpaceId(String(newSpaceId))
+        toast.success('Space created successfully')
       }
 
-      if (currentStep === 4 && venueId && spaceId) {
-        await saveAmenitiesAndMedia.mutateAsync({ venueId, spaceId, venueData })
+      if (currentStep === 4) {
+        if (!spaceId) {
+          toast.error('Please create a space first before adding amenities.')
+          return
+        }
+        await saveAmenitiesAndMedia.mutateAsync({ venueId: venueId!, spaceId, venueData })
+        toast.success('Amenities & media saved')
       }
 
-      if (currentStep === 5 && spaceId) {
+      if (currentStep === 5) {
+        if (!spaceId) {
+          toast.error('Please create a space first before adding pricing.')
+          return
+        }
         await savePricing.mutateAsync({ spaceId, venueData })
+        toast.success('Pricing & availability saved')
       }
 
       if (currentStep === 6 && venueId) {
         await saveTerms.mutateAsync({ venueId, venueData })
+        toast.success('Terms & conditions saved')
       }
 
       if (currentStep === 7 && venueId) {
         await submitVenueListing.mutateAsync(venueId)
+        toast.success('Venue submitted successfully')
 
         navigate('/venues/management')
 

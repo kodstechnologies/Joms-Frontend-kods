@@ -1,3 +1,34 @@
+export type WeeklyAvailabilityEntry = {
+  day: string
+  from: string
+  to: string
+  enabled: boolean
+}
+
+export type BlockedDateEntry = {
+  date: string
+  from: string
+  to: string
+}
+
+export const WEEK_DAYS = [
+  'Monday',
+  'Tuesday',
+  'Wednesday',
+  'Thursday',
+  'Friday',
+  'Saturday',
+  'Sunday',
+] as const
+
+export const createDefaultWeeklyAvailability = (): WeeklyAvailabilityEntry[] =>
+  WEEK_DAYS.map((day) => ({
+    day,
+    from: '09:00',
+    to: '18:00',
+    enabled: day !== 'Saturday' && day !== 'Sunday',
+  }))
+
 export type VenueFormData = {
   venueName: string
   venueType: string
@@ -37,14 +68,14 @@ export type VenueFormData = {
   refundPercentage: string
   faqs: { question: string; answer: string }[]
   contacts: { name: string; phone: string; email: string }[]
-  // Image upload fields
   venueCoverImage: File | null
   venueImage: File | null
   galleryImages: File[]
-  // Existing image URLs from backend (for preloading draft)
   venueCoverImageUrl: string
   venueImageUrl: string
   galleryImageUrls: string[]
+  weeklyAvailability: WeeklyAvailabilityEntry[]
+  blockedDates: BlockedDateEntry[]
 }
 
 export const createEmptyVenueFormData = (): VenueFormData => ({
@@ -87,6 +118,8 @@ export const createEmptyVenueFormData = (): VenueFormData => ({
   venueCoverImageUrl: '',
   venueImageUrl: '',
   galleryImageUrls: [],
+  weeklyAvailability: createDefaultWeeklyAvailability(),
+  blockedDates: [],
 })
 
 export const mapCurrentStepToUiStep = (currentStep?: string): number => {
@@ -246,5 +279,7 @@ const amenityLabels = Array.isArray(amenitiesDoc)
     venueCoverImageUrl: '',
     venueImageUrl: '',
     galleryImageUrls: [],
+    weeklyAvailability: createDefaultWeeklyAvailability(),
+    blockedDates: [],
   }
 }

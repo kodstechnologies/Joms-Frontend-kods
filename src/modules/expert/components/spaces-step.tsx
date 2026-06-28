@@ -1,6 +1,3 @@
-import { Plus } from 'lucide-react'
-import { Button } from '@/shared/components/ui/button'
-
 interface SpacesStepProps {
   venueData: any
   setVenueData: React.Dispatch<React.SetStateAction<any>>
@@ -19,18 +16,11 @@ export const SpacesStep = ({
   return (
     <div className="mx-auto w-full max-w-[850px] space-y-6">
       <div className="animate-in fade-in slide-in-from-right-4 rounded-lg border border-white/5 bg-[#151515] p-6 shadow-xl duration-300">
-        <div className="mb-8 flex items-center justify-between">
-          <div>
-            <h2 className="mb-1 text-[15px] font-bold text-white">Add Space Details</h2>
-            <p className="text-[12px] font-medium text-[#777777]">
-              Provide details about your space offering
-            </p>
-          </div>
-
-          <Button className="bg-[#FBC078] text-black hover:bg-[#eeb46a]">
-            <Plus className="mr-2 size-4" />
-            Add Space
-          </Button>
+        <div className="mb-8">
+          <h2 className="mb-1 text-[15px] font-bold text-white">Add Space Details</h2>
+          <p className="text-[12px] font-medium text-[#777777]">
+            Provide details about your space offering
+          </p>
         </div>
 
         <div className="space-y-6">

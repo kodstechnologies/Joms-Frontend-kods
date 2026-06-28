@@ -36,19 +36,52 @@ export const FinalCheckStep = ({
     },
   ]
 
+  const coverSrc = venueData.venueCoverImage
+    ? URL.createObjectURL(venueData.venueCoverImage)
+    : venueData.venueImage
+      ? URL.createObjectURL(venueData.venueImage)
+      : venueData.venueCoverImageUrl || venueData.venueImageUrl || ''
+
+  const availableDays = (venueData.weeklyAvailability || []).filter(
+    (day: any) => day.enabled,
+  )
+  const blockedDates = venueData.blockedDates || []
+
+  const summariseAvailability = () => {
+    if (availableDays.length === 0) return 'No availability set'
+    const first = availableDays[0]
+    const sameTime = availableDays.every(
+      (d: any) => d.from === first.from && d.to === first.to,
+    )
+    const dayList = availableDays.map((d: any) => d.day.slice(0, 3)).join(', ')
+    return sameTime
+      ? `${dayList}, ${first.from} - ${first.to}`
+      : availableDays
+          .map((d: any) => `${d.day.slice(0, 3)} ${d.from}-${d.to}`)
+          .join(', ')
+  }
+
+  const fileGallery = [
+    venueData.venueCoverImage,
+    venueData.venueImage,
+    ...(venueData.galleryImages || []),
+  ].filter(Boolean) as File[]
+
   return (
     <div className="mx-auto w-full max-w-[850px] space-y-6">
 
       <div className="overflow-hidden rounded-xl border border-white/10 bg-[#151515]">
-        <img
-          src={
-            venueData.venueCoverImageUrl ||
-            venueData.venueImageUrl ||
-            'https://placehold.co/1400x500'
-          }
-          alt="Venue"
-          className="h-[420px] w-full object-cover"
-        />
+        {coverSrc ? (
+          <img
+            src={coverSrc}
+            alt="Venue"
+            className="h-[420px] w-full object-cover"
+          />
+        ) : (
+          <div className="flex h-[420px] w-full items-center justify-center text-sm text-slate-600">
+            No cover image uploaded
+          </div>
+        )}
       </div>
 
 
@@ -94,9 +127,7 @@ export const FinalCheckStep = ({
               <span className="font-semibold text-green-500">
                 Available:
               </span>
-              <span className="text-white">
-                Monday - Friday, 10:00 AM - 10:00 PM
-              </span>
+              <span className="text-white">{summariseAvailability()}</span>
             </div>
 
             <div className="flex items-center gap-2">
@@ -104,7 +135,14 @@ export const FinalCheckStep = ({
                 Unavailable:
               </span>
               <span className="text-white">
-                28, 29 Jan, 10:00 AM - 10:00 PM
+                {blockedDates.length > 0
+                  ? blockedDates
+                      .map(
+                        (d: any) =>
+                          `${d.date}${d.from ? ` ${d.from}-${d.to}` : ''}`,
+                      )
+                      .join(', ')
+                  : 'None'}
               </span>
             </div>
           </div>
@@ -263,31 +301,17 @@ px-3
           </div>
 
           <div className="flex gap-3 overflow-x-auto">
-            {venueData.venueCoverImageUrl && (
-              <img
-                src={venueData.venueCoverImageUrl}
-                alt=""
-                className="h-[110px] w-[120px] rounded-lg object-cover"
-              />
-            )}
-
-            {venueData.venueImageUrl && (
-              <img
-                src={venueData.venueImageUrl}
-                alt=""
-                className="h-[110px] w-[120px] rounded-lg object-cover"
-              />
-            )}
-
-            {venueData.galleryImageUrls?.map(
-              (image: string, index: number) => (
+            {fileGallery.length > 0 ? (
+              fileGallery.map((file, index) => (
                 <img
-                  key={index}
-                  src={image}
+                  key={`file-${index}`}
+                  src={URL.createObjectURL(file)}
                   alt=""
                   className="h-24 w-32 rounded-lg object-cover"
                 />
-              ),
+              ))
+            ) : (
+              <p className="text-xs text-slate-600">No images uploaded.</p>
             )}
           </div>
         </div>

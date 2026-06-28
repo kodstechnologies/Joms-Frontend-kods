@@ -15,3 +15,4 @@ export * from './venue-onboarding-final-review-step'
 
 export * from './add-amenity-modal'
 export * from './manage-amenities-modal'
+export * from './manage-metrics'

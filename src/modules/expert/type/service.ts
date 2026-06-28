@@ -170,6 +170,26 @@ export interface ConsultationTopic {
   name: string
 }
 
+export interface TopicListResponse {
+  success: boolean
+  message: string
+  data: ConsultationTopic[]
+  meta: {
+    pagination: {
+      total: number
+      page: number
+      limit: number
+      pages: number
+    }
+  }
+}
+
+export interface CreateTopicResponse {
+  success: boolean
+  message: string
+  data: ConsultationTopic
+}
+
 export interface ConsultationPricingOption {
   durationMinutes: number
   pricingType: 'free' | 'paid'

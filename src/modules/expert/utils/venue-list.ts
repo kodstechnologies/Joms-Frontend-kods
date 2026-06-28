@@ -4,7 +4,6 @@ import { cn } from '@/shared/lib/cn'
 export const getVenueApiId = (venue: Pick<Venue, '_id' | 'venueId'>) =>
   venue.venueId || venue._id
 
-/** Display id (VEN-XXXX) — admin table only */
 export const getVenueDisplayId = (venue: Pick<Venue, 'venueid' | 'venueId' | '_id'>) =>
   venue.venueid || venue.venueId || venue._id
 
@@ -28,12 +27,11 @@ export const getVenueStatusClassName = (status: VenueStatus) =>
         ? 'bg-green-500/10 text-green-500'
         : status === 'suspended'
           ? 'bg-purple-500/10 text-purple-400'
-          : status === 'deleted' || status === 'rejected'
+          : status === 'deleted'
             ? 'bg-red-500/10 text-red-400'
             : 'bg-slate-500/10 text-slate-500',
   )
 
-/** Raw venue status (active / inactive) shown in the admin listing */
 export const getVenueDisplayStatus = (venue: Pick<Venue, 'venueStatus'>): VenueRawStatus =>
   venue.venueStatus === 'active' ? 'active' : 'inactive'
 

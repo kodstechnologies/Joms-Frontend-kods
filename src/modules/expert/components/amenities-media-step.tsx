@@ -310,11 +310,8 @@ export const AmenitiesMediaStep = ({
 
           
           {(venueData.venueCoverImage ||
-            venueData.venueCoverImageUrl ||
             venueData.venueImage ||
-            venueData.venueImageUrl ||
-            venueData.galleryImages.length > 0 ||
-            venueData.galleryImageUrls.length > 0) && (
+            venueData.galleryImages.length > 0) && (
               <div className="mt-5">
                 <p className="mb-3 text-xs font-medium text-white">
                   Uploaded Images
@@ -343,28 +340,6 @@ export const AmenitiesMediaStep = ({
                       </button>
                     </div>
                   )}
-                  {!venueData.venueCoverImage && venueData.venueCoverImageUrl && (
-                    <div className="relative overflow-hidden rounded-lg">
-                      <img
-                        src={venueData.venueCoverImageUrl}
-                        alt="venue cover"
-                        className="h-[80px] w-[120px] object-cover"
-                      />
-                      <span className="absolute bottom-0 left-0 right-0 bg-black/60 py-0.5 text-center text-[9px] text-white">
-                        Cover
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => coverImageRef.current?.click()}
-                        className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-black/70 text-white shadow"
-                        title="Replace"
-                      >
-                        <Upload size={9} />
-                      </button>
-                    </div>
-                  )}
-
-                  
                   {venueData.venueImage && (
                     <div className="relative overflow-hidden rounded-lg">
                       <img
@@ -386,56 +361,6 @@ export const AmenitiesMediaStep = ({
                       </button>
                     </div>
                   )}
-                  {!venueData.venueImage && venueData.venueImageUrl && (
-                    <div className="relative overflow-hidden rounded-lg">
-                      <img
-                        src={venueData.venueImageUrl}
-                        alt="venue"
-                        className="h-[80px] w-[120px] object-cover"
-                      />
-                      <span className="absolute bottom-0 left-0 right-0 bg-black/60 py-0.5 text-center text-[9px] text-white">
-                        Venue
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => venueImageRef.current?.click()}
-                        className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-black/70 text-white shadow"
-                        title="Replace"
-                      >
-                        <Upload size={9} />
-                      </button>
-                    </div>
-                  )}
-
-                
-                  {venueData.galleryImageUrls.map((url, index) => (
-                    <div
-                      key={`gurl-${index}`}
-                      className="relative h-[80px] w-[80px] overflow-hidden rounded-lg"
-                    >
-                      <img
-                        src={url}
-                        alt={`gallery-${index}`}
-                        className="h-full w-full object-cover"
-                      />
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setVenueData((prev) => ({
-                            ...prev,
-                            galleryImageUrls: prev.galleryImageUrls.filter(
-                              (_, i) => i !== index,
-                            ),
-                          }))
-                        }
-                        className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white shadow"
-                      >
-                        <X size={10} />
-                      </button>
-                    </div>
-                  ))}
-
-                  
                   {venueData.galleryImages.map((file, index) => (
                     <div
                       key={`gfile-${index}`}

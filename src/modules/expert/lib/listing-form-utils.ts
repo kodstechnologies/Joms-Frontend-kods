@@ -6,7 +6,18 @@ export const parsePrice = (value: string) => {
   return Number.isNaN(parsed) ? 0 : parsed
 }
 
-export const normalizeTimelineUnit = (unit: string) => unit.toLowerCase().replace(/s$/, '')
+export const normalizeTimelineUnit = (unit: string): 'days' | 'weeks' | 'months' => {
+  const normalized = unit.trim().toLowerCase().replace(/s$/, '')
+  switch (normalized) {
+    case 'week':
+      return 'weeks'
+    case 'month':
+      return 'months'
+    case 'day':
+    default:
+      return 'days'
+  }
+}
 
 export const getApiErrorMessage = (error: unknown, fallback: string) => {
   if (axios.isAxiosError(error)) {
