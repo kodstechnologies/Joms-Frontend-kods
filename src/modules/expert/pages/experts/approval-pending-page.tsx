@@ -16,8 +16,7 @@ import {
     Trash2,
     User,
     Wallet,
-
-
+    ArrowLeft,
     Flag,
     type LucideIcon,
 } from 'lucide-react'
@@ -38,7 +37,7 @@ const formatPrice = (price: number) =>
         maximumFractionDigits: 0,
     }).format(price)
 
-export const PendingApprovalsPage = () => {
+export const ApprovalsPendingPage = () => {
     const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
     const [selectedExpertIds, setSelectedExpertIds] = useState<string[]>([])
     const navigate = useNavigate()
@@ -47,15 +46,15 @@ export const PendingApprovalsPage = () => {
         setSearchQuery,
         currentPage,
         setCurrentPage,
-        
+
     } = useExpertStore()
 
-  const { data, isLoading } = useExperts({
-    page: currentPage,
-    limit: 10,
-    status: 'pending',
-    search: searchQuery,
-})
+    const { data, isLoading } = useExperts({
+        page: currentPage,
+        limit: 10,
+        status: 'pending',
+        search: searchQuery,
+    })
     console.log('Experts Data =>', data)
     const experts = data?.data || []
     const meta = data?.meta
@@ -126,6 +125,11 @@ export const PendingApprovalsPage = () => {
             {
                 accessorKey: 'expertId',
                 header: 'Expert ID',
+                cell: ({ row }) => (
+                    <span className="font-mono text-xs uppercase">
+                        {row.original.expertId}
+                    </span>
+                ),
             },
 
             {
@@ -148,9 +152,9 @@ export const PendingApprovalsPage = () => {
             {
                 accessorKey: 'status',
                 header: 'Status',
-                cell: ({ row }) => (
-                    <span className="inline-flex items-center rounded-full bg-green-900/40 px-2 py-1 text-xs font-medium text-green-400">
-                        {row.original.status}
+                cell: () => (
+                    <span className="rounded-full bg-amber-500/10 px-2 py-1 text-xs font-medium text-amber-400">
+                        Pending
                     </span>
                 ),
             },
@@ -186,6 +190,29 @@ export const PendingApprovalsPage = () => {
             {
                 accessorKey: 'lastActive',
                 header: 'Last Active',
+                cell: ({ row }) => {
+                    if (!row.original.lastActive) return 'N/A'
+
+                    const date = new Date(row.original.lastActive)
+
+                    return (
+                        <div className="flex flex-col">
+                            <span>
+                                {date.toLocaleDateString('en-US', {
+                                    month: 'short',
+                                    day: 'numeric',
+                                    year: 'numeric',
+                                })}
+                            </span>
+                            <span className="text-[10px] text-slate-500">
+                                {date.toLocaleTimeString('en-US', {
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                })}
+                            </span>
+                        </div>
+                    )
+                },
             },
             {
                 id: 'actions',
@@ -217,27 +244,33 @@ export const PendingApprovalsPage = () => {
                                     <div
                                         className="fixed inset-0 z-10"
                                         onClick={() => setActiveDropdownId(null)}
-                                    /><div className="absolute right-5 z-20 mt-2 w-48 rounded-lg bg-white text-black shadow-xl">
+                                    />
+                                    <div className="absolute right-5 z-20 mt-2 w-52 rounded-xl bg-white py-2 text-black shadow-xl">
                                         <button
-                                            className="block w-full px-4 py-2 text-left hover:bg-slate-800"
+                                            className="flex w-full items-center gap-3 px-4 py-2 text-sm hover:bg-slate-100"
                                             onClick={() => navigate(`/experts/profile/${expert.expertId}`)}
                                         >
+                                            <User className="size-4" />
                                             View Profile
                                         </button>
 
-                                        <button className="block w-full px-4 py-2 text-left hover:bg-slate-800">
+                                        <button className="flex w-full items-center gap-3 px-4 py-2 text-sm hover:bg-slate-100">
+                                            <User className="size-4" />
                                             View Payout History
                                         </button>
 
-                                        <button className="block w-full px-4 py-2 text-left hover:bg-slate-800">
+                                        <button className="flex w-full items-center gap-3 px-4 py-2 text-sm hover:bg-slate-100">
+                                            <User className="size-4" />
                                             Suspend Expert
                                         </button>
 
-                                        <button className="block w-full px-4 py-2 text-left hover:bg-slate-800">
+                                        <button className="flex w-full items-center gap-3 px-4 py-2 text-sm hover:bg-slate-100">
+                                            <User className="size-4" />
                                             Delete Expert
                                         </button>
 
-                                        <button className="block w-full px-4 py-2 text-left hover:bg-slate-800">
+                                        <button className="flex w-full items-center gap-3 px-4 py-2 text-sm hover:bg-slate-100">
+                                            <User className="size-4" />
                                             Report Expert
                                         </button>
                                     </div>
@@ -273,19 +306,27 @@ export const PendingApprovalsPage = () => {
             <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
                 <div>
                     <div
-                        className="mb-4 flex cursor-pointer items-center gap-2 text-white"
                         onClick={() => navigate('/experts/management')}
+                        className="group flex w-fit cursor-pointer items-center gap-2 text-[20px] font-bold tracking-tight text-white transition-colors hover:text-[#FBC078]"
                     >
-                        ←
+                        <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
+                        <span>Pending Approvals</span>
                     </div>
+                    <div className="flex items-center gap-1.5 pl-7 text-[12px] font-medium text-[#777777]">
+                        <button
+                            type="button"
+                            onClick={() => navigate('/experts/management')}
+                            className="transition-colors hover:text-white"
+                        >
+                            User Management
+                        </button>
 
-                    <h1 className="text-2xl font-bold text-white md:text-3xl">
-                        Pending Approvals
-                    </h1>
+                        <span className="text-[#333333]">/</span>
 
-                    <p className="mt-1 text-sm text-slate-400 md:text-base">
-                        User Management / Pending Approvals
-                    </p>
+                        <span className="font-bold text-white">
+                            Pending Approvals
+                        </span>
+                    </div>
                 </div>
                 <div className="flex w-full flex-col items-center gap-3 md:w-auto md:flex-row">
                     <Button className="bg-[#E6BE73] text-black hover:bg-[#D9AE5A]">
@@ -293,11 +334,11 @@ export const PendingApprovalsPage = () => {
                         Manage Metrics
                     </Button>
 
-                   
+
                 </div>
             </div>
 
-            
+
 
             {selectedExpertCount > 0 && (
                 <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-blue-500 bg-blue-950/80 px-4 py-2.5">

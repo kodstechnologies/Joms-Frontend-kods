@@ -4,6 +4,7 @@ import { DashboardLayout } from '@/app/layouts/dashboard-layout'
 import { ProtectedRoute } from '@/app/router/protected-route'
 import { DeletedExpertsPage } from "@/modules/expert";
 import { SuspendedExpertsPage } from '@/modules/expert';
+import { ApprovalsPendingPage } from '@/modules/expert';
 const LoginPage = lazy(() => import('@/modules/auth/pages/login-page').then(m => ({ default: m.LoginPage })))
 const ExecutiveOverviewPage = lazy(() => import('@/modules/dashboard/pages/executive-overview-page').then(m => ({ default: m.ExecutiveOverviewPage })))
 const ServiceMarketplacePage = lazy(() => import('@/modules/expert').then(m => ({ default: m.ServiceMarketplacePage })))
@@ -11,7 +12,11 @@ const PendingApprovalsPage = lazy(() => import('@/modules/expert').then(m => ({ 
 const ServiceManagementPage = lazy(() => import('@/modules/expert').then(m => ({ default: m.ServiceManagementPage })))
 const ServiceViewPage = lazy(() => import('@/modules/expert').then(m => ({ default: m.ServiceViewPage })))
 const CreateServiceListingPage = lazy(() => import('@/modules/expert').then(m => ({ default: m.CreateServiceListingPage })))
-
+const ExpertApplicationViewPage = lazy(() =>
+  import('@/modules/expert').then((m) => ({
+    default: m.ExpertApplicationViewPage,
+  })),
+)
 const ExpertManagementPage = lazy(() =>
   import('@/modules/expert').then(m => ({
     default: m.ExpertManagementPage,
@@ -58,7 +63,11 @@ export function AppRouter() {
                 path="/experts/deleted"
                 element={<DeletedExpertsPage />}
               />
-              <Route path="/experts/pending-approvals" element={<PendingApprovalsPage />} />
+              <Route
+                path="/experts/application/:expertId"
+                element={<ExpertApplicationViewPage />}
+              />
+              <Route path="/experts/pending-approvals" element={<ApprovalsPendingPage />} />
               <Route path="/services/management/view/:id" element={<ServiceViewPage />} />
             </Route>
           </Route>

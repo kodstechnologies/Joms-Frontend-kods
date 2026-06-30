@@ -1,5 +1,7 @@
 export * from './expert-management-page'
-export * from './pending-approvals-page'
+export * from './approval-pending-page'
 export * from './suspended-experts-page';
 export * from './deleted-experts-page';
-export { ExpertManagementPage } from './expert-management-page'
+export * from './create-expert-page';
+export * from './expert-application-view'
+

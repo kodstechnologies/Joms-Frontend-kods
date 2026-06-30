@@ -94,7 +94,7 @@ export function DataTable<TData>({
 
   return (
     <section
-      className={cn('overflow-hidden rounded-md border border-[#202020] bg-[#121212]', className)}
+      className={cn('overflow-visible rounded-md border border-[#202020] bg-[#121212]', className)}
       aria-label={`${resourceLabel} table`}
     >
       <div className="flex flex-wrap items-center justify-between gap-3 px-3 pt-3 pb-2">
@@ -143,12 +143,12 @@ export function DataTable<TData>({
         </p>
       </div>
 
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto overflow-y-visible">
         <table className="w-full min-w-max border-collapse text-left text-[12px]">
           <thead
             className={cn(
               'border-y border-[#252525] bg-[#121212]',
-              stickyHeader && 'sticky top-0 z-10',
+              stickyHeader && 'sticky top-0 ',
             )}
           >
             {table.getHeaderGroups().map((headerGroup) => (

@@ -30,7 +30,7 @@ import type { Expert } from '../../type/expert'
 import { DataTable } from '@/shared/components/table/data-table'
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
-
+import { DecisionActionModal } from '@/shared/components/modal/decision-action-modal'
 const formatPrice = (price: number) =>
     new Intl.NumberFormat('en-IN', {
         style: 'currency',
@@ -51,6 +51,15 @@ export const ExpertManagementPage = () => {
         setActiveStatus,
     } = useExpertStore()
 
+    const [isSuspendModalOpen, setIsSuspendModalOpen] = useState(false)
+    const [selectedExpert, setSelectedExpert] = useState<Expert | null>(null)
+
+    const [adminNotes, setAdminNotes] = useState('')
+    const [selectedReasons, setSelectedReasons] = useState<string[]>([])
+
+    const [suspensionStartDate, setSuspensionStartDate] = useState('')
+    const [suspensionEndDate, setSuspensionEndDate] = useState('')
+    const [suspendIndefinitely, setSuspendIndefinitely] = useState(false)
     const { data, isLoading } = useExperts({
         page: currentPage,
         limit: 10,
@@ -193,7 +202,7 @@ export const ExpertManagementPage = () => {
                 header: 'Actions',
                 meta: {
                     headerClassName: 'pr-5 text-right',
-                    cellClassName: 'relative pr-5 text-right',
+                    cellClassName: 'relative z-50 pr-5 text-right',
                 },
                 cell: ({ row }) => {
                     const expert = row.original
@@ -216,30 +225,55 @@ export const ExpertManagementPage = () => {
                             {activeDropdownId === expert.expertId && (
                                 <>
                                     <div
-                                        className="fixed inset-0 z-10"
+                                        className="fixed inset-0 "
                                         onClick={() => setActiveDropdownId(null)}
-                                    /><div className="absolute right-5 z-20 mt-2 w-48 rounded-lg bg-white text-black shadow-xl">
+                                    /><div
+                                        className="absolute right-full top-1/2 mr-2 z-[99999] w-52 -translate-y-1/2 rounded-xl bg-white py-2 text-black shadow-xl"
+                                    >
                                         <button
-                                            className="block w-full px-4 py-2 text-left hover:bg-slate-800"
+                                            className="flex w-full items-center gap-3 px-4 py-2 text-sm hover:bg-slate-100"
                                             onClick={() => navigate(`/experts/profile/${expert.expertId}`)}
                                         >
+                                            <User className="size-4" />
                                             View Profile
                                         </button>
 
-                                        <button className="block w-full px-4 py-2 text-left hover:bg-slate-800">
+                                        <button className="flex w-full items-center gap-3 px-4 py-2 text-sm hover:bg-slate-100">
+                                            <User className="size-4" />
                                             View Payout History
                                         </button>
-
-                                        <button className="block w-full px-4 py-2 text-left hover:bg-slate-800">
+                                        <button
+                                            className="flex w-full items-center gap-3 px-4 py-2 text-sm hover:bg-slate-100"
+                                            onClick={() => {
+                                                setSelectedExpert(expert)
+                                                setIsSuspendModalOpen(true)
+                                                setActiveDropdownId(null)
+                                            }}
+                                        >
+                                            <User className="size-4" />
                                             Suspend Expert
                                         </button>
 
-                                        <button className="block w-full px-4 py-2 text-left hover:bg-slate-800">
+                                        <button className="flex w-full items-center gap-3 px-4 py-2 text-sm hover:bg-slate-100">
+                                            <User className="size-4" />
                                             Delete Expert
                                         </button>
 
-                                        <button className="block w-full px-4 py-2 text-left hover:bg-slate-800">
+                                        <button className="flex w-full items-center gap-3 px-4 py-2 text-sm hover:bg-slate-100">
+                                            <User className="size-4" />
                                             Report Expert
+                                        </button>
+                                        <button
+                                            className="flex w-full items-center gap-3 px-4 py-2 text-sm hover:bg-slate-100"
+                                            onClick={() => {
+                                                console.log("Row data:", row.original);
+                                                
+                                                navigate(`/experts/application/${row.original.id}`)
+                                                setActiveDropdownId(null)
+                                            }}
+                                        >
+                                            <Eye className="size-4" />
+                                            View Application
                                         </button>
                                     </div>
                                 </>
@@ -429,6 +463,38 @@ export const ExpertManagementPage = () => {
                 }}
                 resourceLabel="experts"
                 emptyMessage="No experts found."
+            />
+            <DecisionActionModal
+                open={isSuspendModalOpen}
+                variant="suspend"
+                title="Suspend Expert"
+                description="Are you sure you want to suspend this Expert? This will result in removal of the account."
+                submitLabel="Suspend User"
+                adminNotes={adminNotes}
+                onAdminNotesChange={setAdminNotes}
+                onClose={() => setIsSuspendModalOpen(false)}
+                onSubmit={() => { }}
+                reasonOptions={[
+                    { label: '[Reason Temp]', value: '1' },
+                    { label: '[Reason Temp]', value: '2' },
+                    { label: '[Reason Temp]', value: '3' },
+                    { label: '[Reason Temp]', value: '4' },
+                    { label: '[Reason Temp]', value: '5' },
+                ]}
+                selectedReasons={selectedReasons}
+                onReasonToggle={(value) => {
+                    setSelectedReasons((prev) =>
+                        prev.includes(value)
+                            ? prev.filter((v) => v !== value)
+                            : [...prev, value]
+                    )
+                }}
+                suspensionStartDate={suspensionStartDate}
+                suspensionEndDate={suspensionEndDate}
+                onSuspensionStartDateChange={setSuspensionStartDate}
+                onSuspensionEndDateChange={setSuspensionEndDate}
+                suspendIndefinitely={suspendIndefinitely}
+                onSuspendIndefinitelyChange={setSuspendIndefinitely}
             />
         </div>
     )

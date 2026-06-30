@@ -1,8 +1,8 @@
-import { Check, KeyRound, X } from 'lucide-react'
+import { Check, KeyRound, PauseCircle, X, X as XIcon } from 'lucide-react'
 
 import { cn } from '@/shared/lib/cn'
 
-export type DecisionActionModalVariant = 'approve' | 'reject' | 'requestChanges' | 'escalate'
+export type DecisionActionModalVariant = 'approve' | 'reject' | 'requestChanges' | 'escalate' | 'suspend'
 
 export type DecisionActionModalOption = {
   label: string
@@ -29,6 +29,12 @@ type DecisionActionModalProps = {
   selectedEscalationOption?: string
   onEscalationOptionChange?: (value: string) => void
   isSubmitting?: boolean
+  suspensionStartDate?: string
+  suspensionEndDate?: string
+  onSuspensionStartDateChange?: (value: string) => void
+  onSuspensionEndDateChange?: (value: string) => void
+  suspendIndefinitely?: boolean
+  onSuspendIndefinitelyChange?: (value: boolean) => void
 }
 
 const variantStyles: Record<
@@ -37,7 +43,7 @@ const variantStyles: Record<
     submit: string
     selectedChip: string
     iconWrap?: string
-    icon?: 'check' | 'key'
+    icon?: 'check' | 'key' | 'suspend'
   }
 > = {
   approve: {
@@ -59,6 +65,12 @@ const variantStyles: Record<
     selectedChip: 'bg-[#FBC078] text-black',
     iconWrap: 'bg-[#5B4424] text-[#FBC078]',
     icon: 'key',
+  },
+  suspend: {
+    submit: 'bg-[#F02D2D] text-white hover:bg-[#d92727]',
+    selectedChip: 'bg-[#FBC078] text-black',
+    iconWrap: 'bg-[#4A1717] text-[#F02D2D]',
+    icon: 'suspend',
   },
 }
 
@@ -82,6 +94,12 @@ export function DecisionActionModal({
   selectedEscalationOption,
   onEscalationOptionChange,
   isSubmitting = false,
+  suspensionStartDate = '',
+  suspensionEndDate = '',
+  onSuspensionStartDateChange,
+  onSuspensionEndDateChange,
+  suspendIndefinitely = false,
+  onSuspendIndefinitelyChange,
 }: DecisionActionModalProps) {
   if (!open) return null
 
@@ -89,6 +107,7 @@ export function DecisionActionModal({
   const showReasons = reasonOptions.length > 0
   const showReasonInput = Boolean(onReasonChange)
   const showEscalationOptions = escalationOptions.length > 0
+  const showSuspensionFields = variant === 'suspend'
 
   return (
     <div
@@ -122,9 +141,11 @@ export function DecisionActionModal({
             <div className="mb-5 flex justify-center">
               <span className={cn('flex size-14 items-center justify-center rounded-full', styles.iconWrap)}>
                 {styles.icon === 'check' ? (
-                  <Check className="size-6" aria-hidden="true" />
+                  <Check className="size-6" />
+                ) : styles.icon === 'key' ? (
+                  <KeyRound className="size-6" />
                 ) : (
-                  <KeyRound className="size-6" aria-hidden="true" />
+                  <XIcon className="size-6" />
                 )}
               </span>
             </div>
@@ -190,6 +211,46 @@ export function DecisionActionModal({
             </label>
           )}
 
+          {showSuspensionFields && (
+            <div className="mt-5">
+              <span className="mb-2 block text-[10px] font-semibold text-white">
+                Suspension Timeline
+              </span>
+
+              <div className="grid grid-cols-2 gap-3">
+                <input
+                  type="date"
+                  value={suspensionStartDate}
+                  onChange={(e) =>
+                    onSuspensionStartDateChange?.(e.target.value)
+                  }
+                  className="rounded-md bg-black px-3 py-2 text-[11px] text-white outline-none"
+                />
+
+                <input
+                  type="date"
+                  value={suspensionEndDate}
+                  onChange={(e) =>
+                    onSuspensionEndDateChange?.(e.target.value)
+                  }
+                  disabled={suspendIndefinitely}
+                  className="rounded-md bg-black px-3 py-2 text-[11px] text-white outline-none disabled:opacity-40"
+                />
+              </div>
+
+              <label className="mt-3 flex items-center gap-2 text-[10px] text-white">
+                <input
+                  type="checkbox"
+                  checked={suspendIndefinitely}
+                  onChange={(e) =>
+                    onSuspendIndefinitelyChange?.(e.target.checked)
+                  }
+                />
+                Suspend indefinitely (until manually reactivated)
+              </label>
+            </div>
+          )}
+
           <label className="mt-5 block">
             <span className="mb-2 block text-[10px] font-semibold text-white">
               Admin notes <span className="text-[#FF4B4B]">*</span>
@@ -221,17 +282,20 @@ export function DecisionActionModal({
               {submitLabel}
               {variant !== 'escalate' && (
                 <span className="flex size-4 items-center justify-center rounded-full bg-white">
-                  <Check
-                    className={cn(
-                      'size-2.5',
-                      variant === 'approve'
-                        ? 'text-[#00B761]'
-                        : variant === 'reject'
-                          ? 'text-[#F02D2D]'
-                          : 'text-[#FF7A1A]',
-                    )}
-                    aria-hidden="true"
-                  />
+                  {variant === 'suspend' ? (
+                    <XIcon className="size-2.5 text-[#F02D2D]" />
+                  ) : (
+                    <Check
+                      className={cn(
+                        'size-2.5',
+                        variant === 'approve'
+                          ? 'text-[#00B761]'
+                          : variant === 'reject'
+                            ? 'text-[#F02D2D]'
+                            : 'text-[#FF7A1A]',
+                      )}
+                    />
+                  )}
                 </span>
               )}
             </button>

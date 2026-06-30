@@ -24,3 +24,11 @@ export const fetchExpertById = async (id: string) => {
 
   return response.data
 }
+
+export const getExpertApplicationView = async (id: string) => {
+  const response = await adminApiClient.get(
+    `/admin/internal/admin/partners/${id}/application-view`
+  )
+
+  return response.data
+}

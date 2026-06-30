@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { fetchExperts,fetchExpertById } from '../api/expert-api'
+import { fetchExperts,fetchExpertById, getExpertApplicationView, } from '../api/expert-api'
 
 export const useExperts = (params?: {
   page?: number
@@ -20,3 +20,12 @@ export const useExpert = (id: string) => {
     enabled: !!id,
   })
 }
+
+export const useExpertApplicationView = (id: string) => {
+  return useQuery({
+    queryKey: ['expert-application-view', id],
+    queryFn: () => getExpertApplicationView(id),
+    enabled: !!id,
+  })
+}
+

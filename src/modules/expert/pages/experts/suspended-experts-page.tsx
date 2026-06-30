@@ -16,8 +16,7 @@ import {
     Trash2,
     User,
     Wallet,
-
-
+    ArrowLeft,
     Flag,
     type LucideIcon,
 } from 'lucide-react'
@@ -38,7 +37,7 @@ const formatPrice = (price: number) =>
         maximumFractionDigits: 0,
     }).format(price)
 
-export const  SuspendedExpertsPage = () => {
+export const SuspendedExpertsPage = () => {
     const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
     const [selectedExpertIds, setSelectedExpertIds] = useState<string[]>([])
     const navigate = useNavigate()
@@ -47,15 +46,15 @@ export const  SuspendedExpertsPage = () => {
         setSearchQuery,
         currentPage,
         setCurrentPage,
-        
+
     } = useExpertStore()
 
-  const { data, isLoading } = useExperts({
-    page: currentPage,
-    limit: 10,
-    status: 'suspended',
-    search: searchQuery,
-})
+    const { data, isLoading } = useExperts({
+        page: currentPage,
+        limit: 10,
+        status: 'suspended',
+        search: searchQuery,
+    })
     console.log('Experts Data =>', data)
     const experts = data?.data || []
     const meta = data?.meta
@@ -126,6 +125,11 @@ export const  SuspendedExpertsPage = () => {
             {
                 accessorKey: 'expertId',
                 header: 'Expert ID',
+                cell: ({ row }) => (
+                    <span className="font-mono text-xs uppercase">
+                        {row.original.expertId}
+                    </span>
+                ),
             },
 
             {
@@ -149,8 +153,8 @@ export const  SuspendedExpertsPage = () => {
                 accessorKey: 'status',
                 header: 'Status',
                 cell: ({ row }) => (
-                    <span className="inline-flex items-center rounded-full bg-green-900/40 px-2 py-1 text-xs font-medium text-green-400">
-                        {row.original.status}
+                    <span className="rounded-full bg-amber-500/10  px-2 py-1 text-xs font-medium  text-amber-400">
+                        Suspended
                     </span>
                 ),
             },
@@ -186,6 +190,30 @@ export const  SuspendedExpertsPage = () => {
             {
                 accessorKey: 'lastActive',
                 header: 'Last Active',
+                cell: ({ row }) => {
+                    if (!row.original.lastActive) return 'N/A'
+
+                    const date = new Date(row.original.lastActive)
+
+                    return (
+                        <div className="flex flex-col">
+                            <span>
+                                {date.toLocaleDateString('en-US', {
+                                    month: 'short',
+                                    day: 'numeric',
+                                    year: 'numeric',
+                                })}
+                            </span>
+
+                            <span className="text-[10px] text-slate-500">
+                                {date.toLocaleTimeString('en-US', {
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                })}
+                            </span>
+                        </div>
+                    )
+                },
             },
             {
                 id: 'actions',
@@ -196,7 +224,7 @@ export const  SuspendedExpertsPage = () => {
                 },
                 cell: ({ row }) => {
                     const expert = row.original
-
+                    
                     return (
                         <>
                             <button
@@ -271,21 +299,31 @@ export const  SuspendedExpertsPage = () => {
     return (
         <div className="flex flex-col gap-4 p-0 md:gap-6">
             <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
+
                 <div>
                     <div
-                        className="mb-4 flex cursor-pointer items-center gap-2 text-white"
                         onClick={() => navigate('/experts/management')}
+                        className="group flex w-fit cursor-pointer items-center gap-2 text-[20px] font-bold tracking-tight text-white transition-colors hover:text-[#FBC078]"
                     >
-                        ←
+                        <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
+                        <span>Suspended Experts</span>
                     </div>
 
-                    <h1 className="text-2xl font-bold text-white md:text-3xl">
-                       Suspended Experts
-                    </h1>
+                    <div className="flex items-center gap-1.5 pl-7 text-[12px] font-medium text-[#777777]">
+                        <button
+                            type="button"
+                            onClick={() => navigate('/experts/management')}
+                            className="transition-colors hover:text-white"
+                        >
+                            User Management
+                        </button>
 
-                    <p className="mt-1 text-sm text-slate-400 md:text-base">
-                        User Management / Suspended Experts
-                    </p>
+                        <span className="text-[#333333]">/</span>
+
+                        <span className="font-bold text-white">
+                            Suspended Experts
+                        </span>
+                    </div>
                 </div>
                 <div className="flex w-full flex-col items-center gap-3 md:w-auto md:flex-row">
                     <Button className="bg-[#E6BE73] text-black hover:bg-[#D9AE5A]">
@@ -293,11 +331,11 @@ export const  SuspendedExpertsPage = () => {
                         Manage Metrics
                     </Button>
 
-                   
+
                 </div>
             </div>
 
-            
+
 
             {selectedExpertCount > 0 && (
                 <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-blue-500 bg-blue-950/80 px-4 py-2.5">
