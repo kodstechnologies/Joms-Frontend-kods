@@ -87,6 +87,36 @@ const VenueProfileViewPage = lazy(() =>
     default: m.VenueProfileViewPage,
   })),
 )
+const MembershipPlansPage = lazy(() =>
+  import('@/modules/memberships').then((m) => ({
+    default: m.MembershipPlansPage,
+  })),
+)
+const MembershipPausedPlansPage = lazy(() =>
+  import('@/modules/memberships').then((m) => ({
+    default: m.MembershipPausedPlansPage,
+  })),
+)
+const MembershipInactivePlansPage = lazy(() =>
+  import('@/modules/memberships').then((m) => ({
+    default: m.MembershipInactivePlansPage,
+  })),
+)
+const MembershipDeletedPlansPage = lazy(() =>
+  import('@/modules/memberships').then((m) => ({
+    default: m.MembershipDeletedPlansPage,
+  })),
+)
+const ExpertMembershipsPage = lazy(() =>
+  import('@/modules/memberships').then((m) => ({
+    default: m.ExpertMembershipsPage,
+  })),
+)
+const MembershipDetailsPage = lazy(() =>
+  import('@/modules/memberships').then((m) => ({
+    default: m.MembershipDetailsPage,
+  })),
+)
 const SpaceDetailsPage = lazy(() =>
   import('@/modules/expert').then((m) => ({
     default: m.SpaceDetailsPage,
@@ -148,6 +178,13 @@ export function AppRouter() {
 
               <Route path="/venues/management/onboarding" element={<CreateVenueOnboardingPage />} />
               <Route path="/venues/management/create" element={<CreateVenueListingPage />} />
+
+              <Route path="/memberships/plans" element={<MembershipPlansPage />} />
+              <Route path="/memberships/plans/paused" element={<MembershipPausedPlansPage />} />
+              <Route path="/memberships/plans/inactive" element={<MembershipInactivePlansPage />} />
+              <Route path="/memberships/plans/deleted" element={<MembershipDeletedPlansPage />} />
+              <Route path="/memberships/experts" element={<ExpertMembershipsPage />} />
+              <Route path="/memberships/experts/:id" element={<MembershipDetailsPage />} />
             </Route>
           </Route>
 
