@@ -116,7 +116,22 @@ export const navigationConfig: NavItem[] = [
     key: 'membership',
     label: 'Membership',
     icon: Building2,
-    children: [{ key: 'membership.dashboard', label: 'Dashboard', badge: { label: 'Soon', variant: 'warning' } }],
+    children: [
+      { key: 'membership.plans', label: 'Membership Plans', to: '/memberships/plans' },
+      {
+        key: 'membership.users',
+        label: 'Users Memberships Management',
+        badge: { label: 'Soon', variant: 'warning' },
+      },
+      {
+        key: 'membership.experts',
+        label: 'Expert Memberships Management',
+        to: '/memberships/experts',
+      },
+      { key: 'membership.paused', label: 'Paused Plans', to: '/memberships/plans/paused' },
+      { key: 'membership.inactive', label: 'Inactive Plans', to: '/memberships/plans/inactive' },
+      { key: 'membership.deleted', label: 'Deleted Plans', to: '/memberships/plans/deleted' },
+    ],
   },
   {
     key: 'referral',
