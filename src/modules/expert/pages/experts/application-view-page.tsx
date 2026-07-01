@@ -49,8 +49,15 @@ const BANKING_REJECT_REASONS: DecisionActionModalOption[] = [
 ]
 
 const getApiErrorMessage = (error: unknown) => {
-  const err = error as { response?: { data?: { message?: string } } }
+  const err = error as {
+    response?: { status?: number; data?: { message?: string } }
+  }
   return err?.response?.data?.message || 'Something went wrong. Please try again.'
+}
+
+const getApiErrorStatus = (error: unknown) => {
+  const err = error as { response?: { status?: number } }
+  return err?.response?.status
 }
 
 const displayValue = (value?: string | number | null) => {
@@ -233,6 +240,9 @@ export function ExpertApplicationViewPage() {
   }
 
   if (isError || !application) {
+    const status = getApiErrorStatus(error)
+    const message = getApiErrorMessage(error)
+
     return (
       <div className="space-y-4">
         <button
@@ -244,15 +254,37 @@ export function ExpertApplicationViewPage() {
           <span>Application View</span>
         </button>
         <div className="rounded-lg border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-400">
-          {getApiErrorMessage(error) || 'Unable to load application view.'}
+          {status ? `[${status}] ` : ''}
+          {message || 'Unable to load application view.'}
         </div>
+        {status === 404 && (
+          <p className="text-[12px] text-[#888]">
+            Partner ID used: <span className="font-mono text-[#ccc]">{id}</span>.
+            The API returns 404 when the partner is not found, or when KYC or banking
+            records are missing for this expert (partial data is not returned).
+          </p>
+        )}
       </div>
     )
   }
 
   const profile = application.expert?.basicProfile
+  const identity = application.expert?.identityVerification
   const kyc = application.kyc
   const banking = application.banking
+
+  const kycPanUrl =
+    kyc?.documents?.panCardUrl || identity?.panCardFile
+  const kycGstUrl =
+    kyc?.documents?.gstCertificateUrl || identity?.gstCertificateFile
+  const kycCertificateUrl =
+    kyc?.documents?.licenceOrCertificateUrl || identity?.certificateFile
+  const kycSampleWorkUrl =
+    kyc?.documents?.sampleWorkFileUrl ||
+    profile?.sampleWorkFile ||
+    kyc?.sampleWorkLink ||
+    profile?.sampleWorkLink
+  const cancelledChequeUrl = banking?.documents?.cancelledChequeUrl
 
   return (
     <div className="flex flex-col gap-5">
@@ -347,19 +379,43 @@ export function ExpertApplicationViewPage() {
           <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
             <SectionCard title="KYC Details" icon={<ClipboardList className="size-4 text-[#FBC078]" />}>
               <div className="grid grid-cols-2 gap-x-6 gap-y-5">
-                <InfoField label="Individual Name / Organisation Name" value={application.expert?.fullname} />
-                <InfoField label="State" value={profile?.location} />
-                <InfoField label="PAN Number" value={kyc?.panNumber} />
-                <InfoField label="Sample Work Link" value={profile?.sampleWorkLink} />
-                <InfoField label="GST Information" value={kyc?.gstAvailable ? 'Yes' : 'No'} />
-                <InfoField label="GST Number" value={kyc?.gstNumber} />
+              <InfoField
+                label="Individual Name / Organisation Name"
+                value={kyc?.legalName || application.expert?.fullname}
+              />
+              <InfoField label="State" value={kyc?.state || profile?.location} />
+              <InfoField
+                label="PAN Number"
+                value={kyc?.panNumber || identity?.panNumber}
+              />
+              <InfoField
+                label="Sample Work Link"
+                value={kyc?.sampleWorkLink || profile?.sampleWorkLink}
+              />
+              <InfoField
+                label="GST Information"
+                value={kyc?.hasGST ?? identity?.gstAvailable ? 'Yes' : 'No'}
+              />
+              <InfoField
+                label="GST Number"
+                value={kyc?.gstNumber || identity?.gstNumber}
+              />
               </div>
             </SectionCard>
             <SectionCard title="Compliance & Declaration" icon={<ShieldCheck className="size-4 text-[#FBC078]" />}>
               <div className="space-y-5">
                 <div className="flex items-center justify-between">
                   <span className="text-[12px] font-medium text-[#bbb]">Filed last 2 years IT Returns</span>
-                  <span className="inline-flex rounded-md bg-emerald-500/15 px-2.5 py-1 text-[11px] font-bold text-emerald-400">Yes</span>
+                  <span
+                    className={cn(
+                      'inline-flex rounded-md px-2.5 py-1 text-[11px] font-bold',
+                      kyc?.itReturnsFiled
+                        ? 'bg-emerald-500/15 text-emerald-400'
+                        : 'bg-amber-500/15 text-amber-300',
+                    )}
+                  >
+                    {kyc?.itReturnsFiled ? 'Yes' : 'No'}
+                  </span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-[12px] font-medium text-[#bbb]">Undertaking Signed</span>
@@ -370,10 +426,10 @@ export function ExpertApplicationViewPage() {
           </div>
           <SectionCard title="Uploaded Documents" icon={<FileText className="size-4 text-[#FBC078]" />}>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
-              <DocumentCard label="PAN Card" url={kyc?.panCardFile} />
-              <DocumentCard label="GST Certificate" url={kyc?.gstCertificateFile} />
-              <DocumentCard label="Certificate / License" url={kyc?.certificateFile} />
-              <DocumentCard label="Sample Work" url={null} />
+              <DocumentCard label="PAN Card" url={kycPanUrl} />
+              <DocumentCard label="GST Certificate" url={kycGstUrl} />
+              <DocumentCard label="Certificate / License" url={kycCertificateUrl} />
+              <DocumentCard label="Sample Work" url={kycSampleWorkUrl} />
             </div>
           </SectionCard>
         </div>
@@ -393,7 +449,7 @@ export function ExpertApplicationViewPage() {
             </div>
           </SectionCard>
           <SectionCard title="Bank Verification Document" icon={<FileText className="size-4 text-[#FBC078]" />}>
-            <DocumentCard label="Cancelled Cheque" url={banking?.cancelledCheque} />
+            <DocumentCard label="Cancelled Cheque" url={cancelledChequeUrl} />
           </SectionCard>
         </div>
       )}

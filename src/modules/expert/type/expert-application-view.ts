@@ -3,31 +3,49 @@ export type ApplicationStatus = 'PENDING' | 'APPROVED' | 'REJECTED'
 export type ApplicationViewResponse = {
   success?: boolean
   message?: string
-  data: ExpertApplicationViewData
+  data: ExpertApplicationViewData | null
   meta?: unknown
 }
 
-export type ExpertApplicationViewData = {
-  expert?: {
-    _id?: string
+export type ExpertApplicationWorkExperience = {
+  _id?: string
+  jobTitle?: string
+  companyName?: string
+  employmentType?: string
+  startDate?: string
+  endDate?: string | null
+  currentlyWorking?: boolean
+  description?: string
+}
+
+export type ExpertApplicationExpert = {
+  _id?: string
+  fullname?: string
+  email?: string
+  phone?: string
+  phoneVerified?: boolean
+  emailVerified?: boolean
+  servicetype?: string
+  isBlocked?: boolean
+  isDeactivated?: boolean
+  basicProfile?: {
+    coverImage?: string
+    profileImage?: string
     fullname?: string
+    location?: string
+    bio?: string
+    industry?: string
+    experienceYears?: number
+    experienceMonths?: number
+    serviceType?: string
+    serviceCategory?: string[]
+    offerings?: string[]
+    sampleWorkLink?: string
+    sampleWorkFile?: string
+    phoneNumber?: string
     email?: string
-    phone?: string
-    basicProfile?: {
-      fullname?: string
-      location?: string
-      industry?: string
-      serviceType?: string
-      serviceCategory?: string[]
-      sampleWorkLink?: string
-    }
-    createdAt?: string
-    updatedAt?: string
   }
-  kyc?: {
-    _id?: string
-    partnerId?: string
-    status?: ApplicationStatus
+  identityVerification?: {
     idType?: string
     idNumber?: string
     gstAvailable?: boolean
@@ -36,30 +54,68 @@ export type ExpertApplicationViewData = {
     panCardFile?: string
     certificateFile?: string
     gstCertificateFile?: string
-    rejectionReason?: string
-    reasonFor?: string[]
-    adminNote?: string
-    createdAt?: string
-    updatedAt?: string
   }
-  banking?: {
-    _id?: string
-    partnerId?: string
-    status?: ApplicationStatus
-    beneficiaryName?: string
-    accountType?: string
-    accountNumber?: string
-    bankName?: string
-    ifscCode?: string
-    providedName?: string
-    nameMatchScore?: number | string
-    cancelledCheque?: string
-    rejectionReason?: string
-    reasonFor?: string[]
-    adminNote?: string
-    createdAt?: string
-    updatedAt?: string
+  workExperience?: ExpertApplicationWorkExperience[]
+  gallery?: { images?: string[] }
+  finalReview?: { internalNotes?: string; isVerified?: boolean }
+  subCategory?: unknown[]
+  createdAt?: string
+  updatedAt?: string
+}
+
+export type ExpertApplicationKyc = {
+  _id?: string
+  userId?: string
+  partnerId?: string
+  legalName?: string
+  hasGST?: boolean
+  gstNumber?: string
+  state?: string
+  panNumber?: string
+  sampleWorkLink?: string
+  itReturnsFiled?: boolean
+  status?: ApplicationStatus
+  documents?: {
+    panCardUrl?: string
+    gstCertificateUrl?: string
+    licenceOrCertificateUrl?: string
+    sampleWorkFileUrl?: string
   }
+  reasonFor?: string[]
+  rejectionReason?: string | null
+  adminNote?: string | null
+  approvedAt?: string | null
+  rejectedAt?: string | null
+  createdAt?: string
+  updatedAt?: string
+}
+
+export type ExpertApplicationBanking = {
+  _id?: string
+  userId?: string
+  partnerId?: string
+  beneficiaryName?: string
+  accountType?: string
+  bankName?: string
+  accountNumber?: string
+  ifscCode?: string
+  providedName?: string
+  nameMatchScore?: number | string
+  documents?: {
+    cancelledChequeUrl?: string
+  }
+  status?: ApplicationStatus
+  reasonFor?: string[]
+  rejectionReason?: string | null
+  adminNote?: string | null
+  createdAt?: string
+  updatedAt?: string
+}
+
+export type ExpertApplicationViewData = {
+  expert?: ExpertApplicationExpert
+  kyc?: ExpertApplicationKyc
+  banking?: ExpertApplicationBanking
 }
 
 export type KycDecisionPayload =

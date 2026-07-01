@@ -1,11 +1,12 @@
 export interface Expert {
+  id: string
   expertId: string
   name: string
   email: string
-  serviceType: string
+  serviceType: string | null
   status: string
   createdAt: string
-  lastActive: string
+  lastActive: string | null
 }
 export interface ExpertResponse {
   data: Expert[]

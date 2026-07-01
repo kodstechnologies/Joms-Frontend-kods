@@ -1,5 +1,10 @@
 import { adminApiClient } from '@/shared/lib/axios'
 import type { ExpertResponse } from '../type/expert'
+import type {
+  ExpertConsultationsResponse,
+  ExpertProfileResponse,
+  ExpertServicesResponse,
+} from '../type/expert-profile'
 
 export const fetchExperts = async (params?: {
   page?: number
@@ -22,5 +27,34 @@ export const fetchExpertById = async (id: string) => {
     `/internal/admin/partners/${id}`
   )
 
+  return response.data
+}
+
+export const fetchExpertProfile = async (id: string) => {
+  const response = await adminApiClient.get<ExpertProfileResponse>(
+    `/admin/internal/admin/partners/${id}`,
+  )
+  return response.data
+}
+
+export const fetchExpertServices = async (
+  expertId: string,
+  params?: { page?: number; limit?: number },
+) => {
+  const response = await adminApiClient.get<ExpertServicesResponse>(
+    `/admin/internal/admin/services/expert/${expertId}/services`,
+    { params },
+  )
+  return response.data
+}
+
+export const fetchExpertConsultations = async (
+  expertId: string,
+  params?: { page?: number; limit?: number },
+) => {
+  const response = await adminApiClient.get<ExpertConsultationsResponse>(
+    `/admin/internal/admin/services/expert/${expertId}/consultations`,
+    { params },
+  )
   return response.data
 }

@@ -7,6 +7,7 @@ import {
     Bell,
     CheckSquare,
     Eye,
+    FileText,
     Hourglass,
     Mail,
     PauseCircle,
@@ -225,7 +226,16 @@ export const ExpertManagementPage = () => {
                                 icon={<Eye className="size-3.5" aria-hidden="true" />}
                                 onClick={() => {
                                     setActiveDropdownId(null)
-                                    navigate(`/experts/management/application/${expert.expertId}`)
+                                    navigate(`/experts/management/profile/${expert.id}`)
+                                }}
+                            >
+                                View Profile
+                            </TableActionsItem>
+                            <TableActionsItem
+                                icon={<FileText className="size-3.5" aria-hidden="true" />}
+                                onClick={() => {
+                                    setActiveDropdownId(null)
+                                    navigate(`/experts/management/application/${expert.id}`)
                                 }}
                             >
                                 Application View
