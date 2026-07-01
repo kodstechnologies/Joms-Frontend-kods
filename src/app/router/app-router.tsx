@@ -92,6 +92,30 @@ const SpaceDetailsPage = lazy(() =>
     default: m.SpaceDetailsPage,
   })),
 )
+const CategoryManagementPage = lazy(() =>
+  import("@/modules/expert").then((m) => ({
+    default: m.CategoryManagementPage,
+  }))
+);
+
+const CreateCategoryPage = lazy(() =>
+  import("@/modules/expert").then((m) => ({
+    default: m.CreateCategoryPage,
+  }))
+);
+
+const PausedCategoriesPage = lazy(() =>
+  import("@/modules/expert").then((m) => ({
+    default: m.PausedCategoriesPage,
+  }))
+);
+
+const RenameCategoryPage = lazy(() =>
+  import("@/modules/expert").then((m) => ({
+    default: m.RenameCategoryPage,
+  }))
+);
+
 const PageLoader = () => (
   <div className="flex h-dvh w-full items-center justify-center bg-slate-950">
     <div className="flex flex-col items-center gap-4">
@@ -127,7 +151,23 @@ export function AppRouter() {
               <Route path="/experts/pending-approvals" element={<PendingApprovalsPage />} />
               <Route path="/services/management/view/:id" element={<ServiceViewPage />} />
               <Route path="/services/leaderboard" element={<LeaderboardPage />} />
+              <Route
+                path="/categories/management"
+                element={<CategoryManagementPage />}
+              />
+              <Route
+                path="/categories/management/create"
+                element={<CreateCategoryPage />}
+              />
+              <Route
+                path="/categories/management/paused"
+                element={<PausedCategoriesPage />}
+              />
 
+              <Route
+                path="/categories/management/rename/:id"
+                element={<RenameCategoryPage />}
+              />
               <Route path="/venues/dashboard" element={<VenueDashboardPage />} />
               <Route path="/venues/leaderboard" element={<LeaderboardPage />} />
               <Route path="/venues/management" element={<VenueManagementPage />} />

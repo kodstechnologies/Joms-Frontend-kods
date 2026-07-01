@@ -9,3 +9,4 @@ export { ExpertManagementPage } from './pages/experts'
 export { CreateExpertPage } from './pages/experts/create-expert-page'
 export * from './pages/venue'
 export * from './pages/leaderboard'
+export { RenameCategoryPage } from "./pages/services/rename-category-page";
