@@ -104,6 +104,12 @@ const CreateCategoryPage = lazy(() =>
   }))
 );
 
+const CreateSubCategoryPage = lazy(() =>
+  import("@/modules/expert").then((m) => ({
+    default: m.CreateSubCategoryPage,
+  }))
+);
+
 const PausedCategoriesPage = lazy(() =>
   import("@/modules/expert").then((m) => ({
     default: m.PausedCategoriesPage,
@@ -113,6 +119,24 @@ const PausedCategoriesPage = lazy(() =>
 const RenameCategoryPage = lazy(() =>
   import("@/modules/expert").then((m) => ({
     default: m.RenameCategoryPage,
+  }))
+);
+
+const DeletedCategoriesPage = lazy(() =>
+  import("@/modules/expert").then((m) => ({
+    default: m.DeletedCategoriesPage,
+  }))
+);
+
+const CategoryViewPage = lazy(() =>
+  import("@/modules/expert").then((m) => ({
+    default: m.CategoryViewPage,
+  }))
+);
+
+const SubCategoryViewPage = lazy(() =>
+  import("@/modules/expert").then((m) => ({
+    default: m.SubCategoryViewPage,
   }))
 );
 
@@ -168,6 +192,25 @@ export function AppRouter() {
                 path="/categories/management/rename/:id"
                 element={<RenameCategoryPage />}
               />
+              <Route
+                path="/categories/management/deleted"
+                element={<DeletedCategoriesPage />}
+              />
+
+              <Route
+                path="/categories/management/create-subcategory/:id"
+                element={<CreateSubCategoryPage />}
+              />
+
+              <Route
+                path="/categories/management/view/:id"
+                element={<CategoryViewPage />}
+              />
+              <Route
+  path="/categories/management/:id/subcategory/:subCategoryId"
+  element={<SubCategoryViewPage />}
+/>
+
               <Route path="/venues/dashboard" element={<VenueDashboardPage />} />
               <Route path="/venues/leaderboard" element={<LeaderboardPage />} />
               <Route path="/venues/management" element={<VenueManagementPage />} />

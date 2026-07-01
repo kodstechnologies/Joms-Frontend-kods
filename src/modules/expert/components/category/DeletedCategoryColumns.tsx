@@ -1,30 +1,33 @@
 import type { ColumnDef } from "@tanstack/react-table";
-import { Eye } from "lucide-react";
 
-import { CategoryActionsDropdown } from "./category-actions-dropdown";
+import DeletedCategoryActions from "./DeletedCategoryActions";
 
-export type Category = {
+export interface DeletedCategory {
   id: string;
   name: string;
   status: string;
-  previousStatus?: string;
   subCategory: number;
   services: number;
   experts: number;
   revenue: string;
-};
+}
 
-const StatusBadge = ({ status }: { status: string }) => {
-  const styles = {
-    Accepted: "bg-green-900/40 text-green-400",
-    Pending: "bg-yellow-900/40 text-yellow-400",
-    Deleted: "bg-red-900/40 text-red-400",
+const StatusBadge = ({
+  status,
+}: {
+  status: string;
+}) => {
+  const styles: Record<string, string> = {
+    Accepted: "bg-green-500/20 text-green-400",
+    Pending: "bg-yellow-500/20 text-yellow-400",
+    Deleted: "bg-red-500/20 text-red-400",
+    Paused: "bg-yellow-700/20 text-yellow-300",
   };
 
   return (
     <span
-      className={`rounded-full px-2 py-1 text-[10px] font-semibold ${
-        styles[status as keyof typeof styles]
+      className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${
+        styles[status] ?? "bg-slate-500/20 text-slate-300"
       }`}
     >
       {status}
@@ -32,7 +35,7 @@ const StatusBadge = ({ status }: { status: string }) => {
   );
 };
 
-export const categoryColumns: ColumnDef<Category>[] = [
+export const deletedCategoryColumns: ColumnDef<DeletedCategory>[] = [
   {
     accessorKey: "id",
     header: "Category ID",
@@ -65,21 +68,14 @@ export const categoryColumns: ColumnDef<Category>[] = [
     header: "Revenue Generated",
   },
   {
-    id: "view",
-    header: "",
-    cell: () => (
-      <button>
-        <Eye className="size-4 text-white" />
-      </button>
+    id: "actions",
+    header: "Actions",
+    enableSorting: false,
+    enableHiding: false,
+    cell: ({ row }) => (
+      <DeletedCategoryActions
+        category={row.original}
+      />
     ),
   },
-  {
-  id: "actions",
-  header: "Actions",
-  cell: ({ row }) => (
-    <CategoryActionsDropdown
-      category={row.original}
-    />
-  ),
-},
 ];

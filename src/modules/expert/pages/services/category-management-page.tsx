@@ -1,26 +1,32 @@
-import { Button } from "@/shared/components/ui/button";
-import { StatCard } from "../../components/stat-card";
-import { SummaryCard } from "../../components/summary-card";
-import { DataTable } from "@/shared/components/table/data-table";
-import { categoryColumns } from "../../components/category-table-columns";
-import { useCategoryStore } from "../../store/category-store";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+import { Button } from "@/shared/components/ui/button";
+import { DataTable } from "@/shared/components/table/data-table";
+
+import { StatCard } from "../../components/stat-card";
+import { SummaryCard } from "../../components/summary-card";
+import { categoryColumns } from "../../components/category/category-table-columns";
+import { useCategoryStore } from "../../store/category-store";
 
 export function CategoryManagementPage() {
     const [searchValue, setSearchValue] = useState("");
     const [page, setPage] = useState(1);
+
     const navigate = useNavigate();
+
     const categories = useCategoryStore(
         (state) => state.categories
     );
 
-    const activeCategories = categories.filter(
-        (category) =>
-            category.status !== "Paused" &&
-            category.status !== "Deleted"
+    const tableCategories = categories.filter(
+        (category) => category.status !== "Paused"
     );
+
+    const activeCount = categories.filter(
+        (category) => category.status === "Accepted"
+    ).length;
+
     const pausedCount = categories.filter(
         (category) => category.status === "Paused"
     ).length;
@@ -29,12 +35,10 @@ export function CategoryManagementPage() {
         (category) => category.status === "Deleted"
     ).length;
 
-    const activeCount = activeCategories.length;
-
     const totalCategories = categories.length;
+
     return (
         <div className="flex flex-col gap-4 p-0 md:gap-6">
-
             {/* Header */}
             <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
                 <div>
@@ -52,17 +56,18 @@ export function CategoryManagementPage() {
                         Manage Metrics
                     </Button>
 
-                    <Button onClick={() => navigate('/categories/management/create')
-                    } className="w-full md:w-auto">
+                    <Button
+                        onClick={() =>
+                            navigate("/categories/management/create")
+                        }
+                        className="w-full md:w-auto"
+                    >
                         Add New Category
                     </Button>
                 </div>
             </div>
 
-            {/* Stats */}
-
             <div className="grid grid-cols-4 gap-6">
-
                 <StatCard
                     title="Total Categories"
                     value={totalCategories.toString()}
@@ -82,46 +87,49 @@ export function CategoryManagementPage() {
                     title="Top Category"
                     value="Technology"
                 />
-
             </div>
 
-            {/* Summary */}
 
             <div className="grid grid-cols-2 gap-5">
-
                 <SummaryCard
-                    onClick={() => navigate("/categories/management/paused")}
+                    onClick={() =>
+                        navigate("/categories/management/paused")
+                    }
                     title="Paused Category"
                     value={pausedCount.toString()}
                     color="yellow"
                 />
+
                 <SummaryCard
+                    onClick={() =>
+                        navigate("/categories/management/deleted")
+                    }
                     title="Deleted Category"
                     value={deletedCount.toString()}
                     color="red"
                 />
-
             </div>
+
+
             <div className="w-full rounded-2xl border border-[#242424] bg-[#171717] p-6">
                 <DataTable
                     columns={categoryColumns}
-                    data={activeCategories}
+                    data={tableCategories}
                     searchValue={searchValue}
                     onSearchChange={setSearchValue}
-                    searchPlaceholder="Search by name , ID or profession"
+                    searchPlaceholder="Search by name, ID or profession"
                     onAdvancedFilter={() => { }}
                     onExport={() => { }}
                     pagination={{
                         page,
                         pageSize: 10,
-                        totalItems: activeCategories.length,
+                        totalItems: tableCategories.length,
                         totalPages: 2,
                         onPageChange: setPage,
                     }}
                     resourceLabel="users"
                 />
             </div>
-
         </div>
     );
 }

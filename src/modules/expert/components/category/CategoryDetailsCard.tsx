@@ -6,6 +6,7 @@ interface CategoryDetailsCardProps {
 
   iconPreview?: string;
   imagePreview?: string;
+  readOnly?: boolean;
 
   onCategoryNameChange: (
     e: React.ChangeEvent<HTMLInputElement>
@@ -24,6 +25,7 @@ const CategoryDetailsCard = ({
   description,
   iconPreview,
   imagePreview,
+  readOnly = false,
   onCategoryNameChange,
   onDescriptionChange,
   onIconChange,
@@ -31,7 +33,7 @@ const CategoryDetailsCard = ({
 }: CategoryDetailsCardProps) => {
   return (
     <div className="rounded-xl bg-[#181818] p-6">
-      {/* Heading */}
+      
 
       <h2 className="text-sm font-semibold text-white">
         Category Details
@@ -41,7 +43,7 @@ const CategoryDetailsCard = ({
         Provide basic details of category & sub category
       </p>
 
-      {/* Category Name */}
+      
 
       <div className="mt-6">
         <label className="mb-2 block text-xs font-medium text-white">
@@ -50,13 +52,14 @@ const CategoryDetailsCard = ({
 
         <input
           value={categoryName}
+          disabled={readOnly}
           onChange={onCategoryNameChange}
           placeholder="Enter Category Name"
           className="h-11 w-full rounded-md border border-[#2A2A2A] bg-[#0B0B0B] px-4 text-sm text-white outline-none transition focus:border-[#F5C16C]"
         />
       </div>
 
-      {/* Description */}
+      
 
       <div className="mt-5">
         <label className="mb-2 block text-xs font-medium text-white">
@@ -65,6 +68,7 @@ const CategoryDetailsCard = ({
 
         <textarea
           value={description}
+          disabled={readOnly}
           onChange={onDescriptionChange}
           placeholder="Enter description here"
           rows={4}
@@ -72,7 +76,7 @@ const CategoryDetailsCard = ({
         />
       </div>
 
-      {/* Uploads */}
+      
 
       <div className="mt-6 grid grid-cols-2 gap-6">
         <UploadBox
@@ -80,6 +84,7 @@ const CategoryDetailsCard = ({
           helperText="Displayed as a clickable 3D-style icon"
           preview={iconPreview}
           onChange={onIconChange}
+          disabled={readOnly}
         />
 
         <UploadBox
@@ -87,6 +92,7 @@ const CategoryDetailsCard = ({
           helperText="Displayed as the header image on the category detail screen"
           preview={imagePreview}
           onChange={onImageChange}
+          disabled={readOnly}
         />
       </div>
     </div>

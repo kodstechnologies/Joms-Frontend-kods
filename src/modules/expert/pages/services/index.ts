@@ -9,3 +9,7 @@ export * from  "./create-category";
 export * from "./paused-categories-page";
 export * from "./category-form-page";
 export * from "./rename-category-page";
+export * from "./deleted-categories-page";
+export * from "./create-subcategory-page";
+export * from "./category-view-page";
+export * from "./sub-category-view-page";

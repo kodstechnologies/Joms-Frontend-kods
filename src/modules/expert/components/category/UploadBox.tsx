@@ -7,14 +7,15 @@ interface UploadBoxProps {
   label?: string;
   helperText?: string;
   showPreview?: boolean;
+  disabled?: boolean;
 }
-
 
 const UploadBox = ({
   label,
   helperText,
   preview,
   onChange,
+  disabled = false,
 }: UploadBoxProps) => {
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -62,14 +63,22 @@ const UploadBox = ({
         type="file"
         accept="image/*"
         hidden
+        disabled={disabled}
         onChange={handleFile}
       />
 
       <div
-        onClick={() => inputRef.current?.click()}
-        className={`relative flex h-14 w-full cursor-pointer items-center justify-center overflow-hidden rounded-lg border border-dashed bg-[#090909] transition-colors ${preview
-          ? "border-[#16C15D]"
-          : "border-[#444] hover:border-[#F5C16C]"
+        onClick={() => {
+          if (!disabled) {
+            inputRef.current?.click();
+          }
+        }}
+        className={`relative flex h-14 w-full items-center justify-center overflow-hidden rounded-lg border border-dashed bg-[#090909] transition-colors ${disabled
+          ? "cursor-not-allowed opacity-60"
+          : "cursor-pointer"
+          } ${preview
+            ? "border-[#16C15D]"
+            : "border-[#444] hover:border-[#F5C16C]"
           }`}
       >
         {preview ? (
@@ -82,17 +91,19 @@ const UploadBox = ({
               />
             </div>
 
-            <button
-              type="button"
-              onClick={handleRemove}
-              className="absolute right-2 top-2 z-50 flex h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-white shadow-lg"
-            >
-              <X
-                size={18}
-                strokeWidth={3}
-                className="text-red-600"
-              />
-            </button>
+            {!disabled && (
+              <button
+                type="button"
+                onClick={handleRemove}
+                className="absolute right-2 top-2 z-50 flex h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-white shadow-lg"
+              >
+                <X
+                  size={18}
+                  strokeWidth={3}
+                  className="text-red-600"
+                />
+              </button>
+            )}
           </>
         ) : (
           <UploadCloud

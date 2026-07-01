@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
 import { dummyData } from "../components/dummy-data";
-import type { Category } from "../components/category-table-columns";
+import type { Category } from "../components/category/category-table-columns";
 
 interface CategoryStore {
     categories: Category[];
@@ -14,6 +14,10 @@ interface CategoryStore {
     pauseCategory: (id: string) => void;
 
     resumeCategory: (id: string) => void;
+
+    removeCategory: (id: string) => void;
+
+    revokeCategory: (id: string) => void;
 }
 
 export const useCategoryStore = create<CategoryStore>()(
@@ -48,6 +52,32 @@ export const useCategoryStore = create<CategoryStore>()(
                 })),
 
             resumeCategory: (id) =>
+                set((state) => ({
+                    categories: state.categories.map((item) =>
+                        item.id === id
+                            ? {
+                                ...item,
+                                status: item.previousStatus ?? "Accepted",
+                                previousStatus: undefined,
+                            }
+                            : item
+                    ),
+                })),
+
+            removeCategory: (id) =>
+                set((state) => ({
+                    categories: state.categories.map((item) =>
+                        item.id === id
+                            ? {
+                                ...item,
+                                previousStatus: item.status,
+                                status: "Deleted",
+                            }
+                            : item
+                    ),
+                })),
+
+            revokeCategory: (id) =>
                 set((state) => ({
                     categories: state.categories.map((item) =>
                         item.id === id

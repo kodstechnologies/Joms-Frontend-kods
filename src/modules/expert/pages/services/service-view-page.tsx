@@ -41,26 +41,26 @@ import { SERVICE_REJECTION_REASON_BY_VALUE } from '../../type/service'
 
 type ServiceViewDetail = Partial<ServiceDetail> &
   Partial<ConsultationDetail> & {
-  _id: string
-  partnerId: string
-  title: string
-  status: string
-  createdAt: string
-  updatedAt: string
-  serviceType?: string
-  pricing?: number
-  consultationTitle?: string
-  consultationCategory?: string
-  sessionOutline?: string
-  benefits?: string
-  whoIsItFor?: string
-  modeOfConsultation?: string
-  language?: string
-  followUpWindow?: string
-  postSessionRequirement?: string
-  preSessionRequirement?: string
-  durations?: { label: string; price?: number | string }[]
-}
+    _id: string
+    partnerId: string
+    title: string
+    status: string
+    createdAt: string
+    updatedAt: string
+    serviceType?: string
+    pricing?: number
+    consultationTitle?: string
+    consultationCategory?: string
+    sessionOutline?: string
+    benefits?: string
+    whoIsItFor?: string
+    modeOfConsultation?: string
+    language?: string
+    followUpWindow?: string
+    postSessionRequirement?: string
+    preSessionRequirement?: string
+    durations?: { label: string; price?: number | string }[]
+  }
 
 const EMPTY_VALUE = 'Not provided'
 
@@ -436,38 +436,38 @@ export const ServiceViewPage = () => {
     []
   const decisionModalConfig = activeDecisionAction
     ? {
-        approve: {
-          title: 'Confirm Application',
-          description:
-            'Are you sure you want to approve this application? The applicant will be notified via email.',
-          submitLabel: 'Confirm Approval',
-          variant: 'approve' as const,
-        },
-        reject: {
-          title: 'Reject Service',
-          description:
-            'Are you sure you want to Reject Approval to this application? The applicant will be notified via email.',
-          submitLabel: 'Reject Service',
-          variant: 'reject' as const,
-          reasonOptions: decisionReasonOptions,
-        },
-        requestChanges: {
-          title: 'Request Changes – Service Approval',
-          description:
-            'Are you sure you want to Request Changes to this application? The applicant will be notified via email.',
-          submitLabel: 'Request Changes',
-          variant: 'requestChanges' as const,
-          reasonOptions: decisionReasonOptions,
-        },
-        escalate: {
-          title: 'Escalate Application',
-          description:
-            'Are you sure you want to escalate this Application? This Post will be reviewed by the selected parties.',
-          submitLabel: 'Escalate',
-          variant: 'escalate' as const,
-          escalationOptions,
-        },
-      }[activeDecisionAction]
+      approve: {
+        title: 'Confirm Application',
+        description:
+          'Are you sure you want to approve this application? The applicant will be notified via email.',
+        submitLabel: 'Confirm Approval',
+        variant: 'approve' as const,
+      },
+      reject: {
+        title: 'Reject Service',
+        description:
+          'Are you sure you want to Reject Approval to this application? The applicant will be notified via email.',
+        submitLabel: 'Reject Service',
+        variant: 'reject' as const,
+        reasonOptions: decisionReasonOptions,
+      },
+      requestChanges: {
+        title: 'Request Changes – Service Approval',
+        description:
+          'Are you sure you want to Request Changes to this application? The applicant will be notified via email.',
+        submitLabel: 'Request Changes',
+        variant: 'requestChanges' as const,
+        reasonOptions: decisionReasonOptions,
+      },
+      escalate: {
+        title: 'Escalate Application',
+        description:
+          'Are you sure you want to escalate this Application? This Post will be reviewed by the selected parties.',
+        submitLabel: 'Escalate',
+        variant: 'escalate' as const,
+        escalationOptions,
+      },
+    }[activeDecisionAction]
     : null
 
   const DetailChip = ({ value, label }: { value: string; label: string }) => (

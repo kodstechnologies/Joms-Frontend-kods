@@ -8,7 +8,7 @@ import type { SubCategory } from "../../components/category/SubCategoryCard";
 import { useNavigate, useParams } from "react-router-dom";
 
 type CategoryFormPageProps = {
-    mode: "create" | "rename";
+    mode: "create" | "rename" | "subcategory";
 };
 
 export const CategoryFormPage = ({
@@ -52,8 +52,18 @@ export const CategoryFormPage = ({
     ]);
 
     useEffect(() => {
-        if (mode === "rename" && category) {
+        if (!category) return;
+
+        if (mode === "rename") {
             setCategoryName(category.name);
+        }
+
+        if (mode === "subcategory") {
+            setCategoryName(category.name);
+            setDescription(category.description);
+
+            setIconPreview(category.icon);
+            setHeaderPreview(category.image);
         }
     }, [mode, category]);
 
@@ -143,11 +153,36 @@ export const CategoryFormPage = ({
             createCategory({
                 id: `CAT${Date.now()}`,
                 name: categoryName,
+                description,
+                icon: iconPreview,
+                image: headerPreview,
+
                 status: "Accepted",
+
                 subCategory: subCategories.length,
+
                 services: 0,
                 experts: 0,
                 revenue: "₹0",
+
+                createdAt: new Date().toLocaleDateString("en-GB"),
+                updatedAt: new Date().toLocaleDateString("en-GB"),
+                createdBy: "Super Admin",
+                adminNotes: "",
+
+                subCategories: subCategories.map((item, index) => ({
+                    id: `SUB${Date.now()}${index}`,
+                    name: item.name,
+                    description: item.description,
+                    status: "Active",
+                    icon: item.icon,
+                    addedOn: new Date().toLocaleDateString("en-GB"),
+                    createdBy: "Super Admin",
+                    updatedAt: new Date().toLocaleDateString("en-GB"),
+                    adminNotes: "",
+                    services: 0,
+                    experts: 0,
+                })),
             });
         } else if (category) {
             updateCategory({
@@ -166,17 +201,23 @@ export const CategoryFormPage = ({
                     title={
                         mode === "create"
                             ? "Create New Category"
-                            : "Rename Category"
+                            : mode === "rename"
+                                ? "Rename Category"
+                                : "Create New Sub-Category"
                     }
                     breadcrumb={
                         mode === "create"
                             ? "Create New Category"
-                            : "Rename Category"
+                            : mode === "rename"
+                                ? "Rename Category"
+                                : "Create New Sub-Category"
+
                     }
                 />
 
                 <div className="mt-6 space-y-6">
                     <CategoryDetailsCard
+                        readOnly={mode === "subcategory"}
                         categoryName={categoryName}
                         description={description}
                         iconPreview={iconPreview}
@@ -207,7 +248,9 @@ export const CategoryFormPage = ({
                         submitText={
                             mode === "create"
                                 ? "Create Category"
-                                : "Rename Category"
+                                : mode === "rename"
+                                    ? "Rename Category"
+                                    : "Create Sub-Category"
                         }
                     />
                 </div>

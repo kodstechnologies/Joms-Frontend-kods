@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import type { Category } from "./category-table-columns";
-import { useCategoryStore } from "../store/category-store";
+import { useCategoryStore } from "../../store/category-store";
 
 interface Props {
   category: Category;
@@ -26,6 +26,9 @@ export function CategoryActionsDropdown({
   const pauseCategory = useCategoryStore(
     (state) => state.pauseCategory
   );
+  const removeCategory = useCategoryStore(
+    (state) => state.removeCategory
+  );
 
   return (
     <TableActionsDropdown
@@ -35,6 +38,9 @@ export function CategoryActionsDropdown({
     >
       <TableActionsItem
         onClick={() => {
+          navigate(
+            `/categories/management/create-subcategory/${category.id}`
+          );
           setOpen(false);
         }}
         icon={<Plus className="size-4" />}
@@ -58,7 +64,7 @@ export function CategoryActionsDropdown({
         onClick={() => {
           setOpen(false)
           pauseCategory(category.id);
-          
+
         }}
         icon={<Pause className="size-4" />}
       >
@@ -66,7 +72,10 @@ export function CategoryActionsDropdown({
       </TableActionsItem>
 
       <TableActionsItem
-        onClick={() => setOpen(false)}
+        onClick={() => {
+          removeCategory(category.id);
+          setOpen(false);
+        }}
         icon={<Trash2 className="size-4 text-red-500" />}
       >
         <span className="text-red-500">
