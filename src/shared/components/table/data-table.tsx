@@ -138,7 +138,7 @@ export function DataTable<TData>({
       </div>
 
       <div className="px-3 pb-5" aria-live="polite">
-        <p className="text-[11px] leading-none text-[#8A8A8A]">
+        <p className="text-[11px] leading-none text-[#ebe5e5]">
           Showing {firstItem}-{lastItem} of {pagination.totalItems} {resourceLabel}
         </p>
       </div>

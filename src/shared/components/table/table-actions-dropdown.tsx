@@ -115,14 +115,23 @@ type TableActionsItemProps = {
   onClick: () => void
   children: ReactNode
   icon?: ReactNode
+  className?: string
 }
 
-export function TableActionsItem({ onClick, children, icon }: TableActionsItemProps) {
+export function TableActionsItem({
+  onClick,
+  children,
+  icon,
+  className,
+}: TableActionsItemProps) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-xs font-semibold text-slate-300 transition-all hover:bg-slate-800/80 hover:text-amber-400"
+      className={cn(
+        "flex w-full items-center gap-2 px-4 py-2.5 text-left text-xs font-semibold text-slate-300 transition-all hover:bg-slate-800/80 hover:text-amber-400",
+        className,
+      )}
     >
       {icon}
       {children}
