@@ -41,6 +41,11 @@ const CreateExpertPage = lazy(() =>
     default: m.CreateExpertPage,
   })),
 )
+const ExpertApplicationViewPage = lazy(() =>
+  import('@/modules/expert').then((m) => ({
+    default: m.ExpertApplicationViewPage,
+  })),
+)
 const LeaderboardPage = lazy(() =>
   import('@/modules/expert').then((m) => ({
     default: m.LeaderboardPage,
@@ -122,6 +127,10 @@ export function AppRouter() {
               <Route path="/services/management/suspended" element={<SuspendedServicesPage />} />
               <Route path="/services/management/create" element={<CreateServiceListingPage />} />
               <Route path="/experts/management/create" element={<CreateExpertPage />} />
+              <Route
+                path="/experts/management/application/:id"
+                element={<ExpertApplicationViewPage />}
+              />
               <Route path="/experts/suspended" element={<SuspendedExpertsPage />} />
               <Route path="/experts/deleted" element={<DeletedExpertsPage />} />
               <Route path="/experts/pending-approvals" element={<PendingApprovalsPage />} />

@@ -13,6 +13,12 @@ export * from './venue-onboarding-location-step'
 export * from './venue-onboarding-kyc-step'
 export * from './venue-onboarding-final-review-step'
 
+export * from './expert-basic-profile-step'
+export * from './expert-identity-verification-step'
+export * from './expert-work-experience-step'
+export * from './expert-gallery-step'
+export * from './expert-final-review-step'
+
 export * from './add-amenity-modal'
 export * from './manage-amenities-modal'
 export * from './manage-metrics'

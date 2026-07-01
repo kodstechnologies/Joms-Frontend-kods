@@ -1,0 +1,470 @@
+import { useMemo, useState, type ReactNode } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
+import { toast } from 'sonner'
+import {
+  ArrowLeft,
+  Banknote,
+  CheckCircle2,
+  ClipboardList,
+  FileText,
+  History,
+  ShieldCheck,
+  User,
+} from 'lucide-react'
+
+import {
+  useExpertApplicationView,
+  useUpdateExpertBankingStatus,
+  useUpdateExpertKycStatus,
+} from '../../hooks/use-expert-application-view'
+import type { ApplicationStatus } from '../../type/expert-application-view'
+import {
+  DecisionActionModal,
+  type DecisionActionModalOption,
+} from '@/shared/components/modal/decision-action-modal'
+import { cn } from '@/shared/lib/cn'
+
+type TabKey = 'overview' | 'kyc' | 'banking'
+type DecisionVariant = 'approve' | 'reject'
+type DecisionTarget = 'kyc' | 'banking'
+
+const TABS: { key: TabKey; label: string }[] = [
+  { key: 'overview', label: 'Overview' },
+  { key: 'kyc', label: 'KYC Details' },
+  { key: 'banking', label: 'Banking Details' },
+]
+
+const KYC_REJECT_REASONS: DecisionActionModalOption[] = [
+  { label: 'Incomplete documents', value: 'incomplete_documents' },
+  { label: 'ID mismatch', value: 'id_mismatch' },
+  { label: 'PAN mismatch', value: 'pan_mismatch' },
+  { label: 'GST details invalid', value: 'invalid_gst' },
+]
+
+const BANKING_REJECT_REASONS: DecisionActionModalOption[] = [
+  { label: 'Cheque unreadable', value: 'cheque_unreadable' },
+  { label: 'Name mismatch', value: 'name_mismatch' },
+  { label: 'Account details invalid', value: 'invalid_account' },
+  { label: 'IFSC mismatch', value: 'ifsc_mismatch' },
+]
+
+const getApiErrorMessage = (error: unknown) => {
+  const err = error as { response?: { data?: { message?: string } } }
+  return err?.response?.data?.message || 'Something went wrong. Please try again.'
+}
+
+const displayValue = (value?: string | number | null) => {
+  if (value === null || value === undefined) return 'N/A'
+  if (typeof value === 'string' && !value.trim()) return 'N/A'
+  return String(value)
+}
+
+const formatDateTime = (value?: string | null) => {
+  if (!value) return 'N/A'
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return 'N/A'
+  return date.toLocaleString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
+function StatusPill({ status }: { status?: ApplicationStatus }) {
+  const className =
+    status === 'APPROVED'
+      ? 'bg-emerald-500/15 text-emerald-400'
+      : status === 'REJECTED'
+        ? 'bg-red-500/15 text-red-400'
+        : 'bg-amber-500/15 text-amber-300'
+  return (
+    <span className={cn('rounded-md px-3 py-1.5 text-[11px] font-semibold', className)}>
+      {displayValue(status || 'PENDING')}
+    </span>
+  )
+}
+
+function SectionCard({
+  title,
+  icon,
+  children,
+}: {
+  title: string
+  icon?: ReactNode
+  children: ReactNode
+}) {
+  return (
+    <div className="rounded-xl border border-white/5 bg-[#111111] p-5">
+      <div className="mb-5 flex items-center gap-2 text-sm font-semibold text-white">
+        {icon}
+        <span>{title}</span>
+      </div>
+      {children}
+    </div>
+  )
+}
+
+function InfoField({ label, value }: { label: string; value?: string | number | null }) {
+  return (
+    <div>
+      <p className="text-[11px] font-medium text-[#777777]">{label}</p>
+      <div className="mt-1 text-[13px] font-semibold text-white">{displayValue(value)}</div>
+    </div>
+  )
+}
+
+function DocumentCard({ label, url }: { label: string; url?: string | null }) {
+  return (
+    <div className="rounded-lg border border-white/5 bg-black p-4">
+      <div className="flex items-start gap-2">
+        <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-emerald-500" />
+        <div className="min-w-0">
+          <p className="truncate text-[12px] font-semibold text-white">{label}</p>
+          <p className="text-[10px] text-[#777]">Document</p>
+        </div>
+      </div>
+      {url ? (
+        <a
+          href={url}
+          target="_blank"
+          rel="noreferrer"
+          className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-md bg-[#1f1f1f] py-2 text-[11px] font-semibold text-white transition-colors hover:bg-[#2a2a2a]"
+        >
+          <FileText className="size-3.5" />
+          View Document
+        </a>
+      ) : (
+        <div className="mt-3 flex w-full items-center justify-center rounded-md bg-[#1a1a1a] py-2 text-[11px] font-medium text-[#666]">
+          Not uploaded
+        </div>
+      )}
+    </div>
+  )
+}
+
+export function ExpertApplicationViewPage() {
+  const navigate = useNavigate()
+  const { id } = useParams<{ id: string }>()
+
+  const [activeTab, setActiveTab] = useState<TabKey>('overview')
+  const [modalOpen, setModalOpen] = useState(false)
+  const [modalVariant, setModalVariant] = useState<DecisionVariant>('approve')
+  const [modalTarget, setModalTarget] = useState<DecisionTarget>('kyc')
+  const [selectedReasons, setSelectedReasons] = useState<string[]>([])
+  const [rejectionReason, setRejectionReason] = useState('')
+  const [adminNotes, setAdminNotes] = useState('')
+
+  const { data, isLoading, isError, error } = useExpertApplicationView(id)
+  const application = data?.data
+
+  const updateKyc = useUpdateExpertKycStatus(application?.kyc?._id)
+  const updateBanking = useUpdateExpertBankingStatus(application?.banking?._id)
+
+  const currentStatus =
+    modalTarget === 'banking' ? application?.banking?.status : application?.kyc?.status
+  const mutation = modalTarget === 'banking' ? updateBanking : updateKyc
+
+  const openDecisionModal = (target: DecisionTarget, variant: DecisionVariant) => {
+    setModalTarget(target)
+    setModalVariant(variant)
+    setSelectedReasons([])
+    setRejectionReason('')
+    setAdminNotes('')
+    setModalOpen(true)
+  }
+
+  const toggleReason = (value: string) => {
+    setSelectedReasons((current) =>
+      current.includes(value) ? current.filter((reason) => reason !== value) : [...current, value],
+    )
+  }
+
+  const handleSubmitDecision = () => {
+    if (!application) return
+    if (modalVariant === 'reject') {
+      if (selectedReasons.length === 0) return toast.error('Please select at least one reason.')
+      if (!rejectionReason.trim()) return toast.error('Please provide a rejection reason.')
+    }
+
+    const payload =
+      modalVariant === 'approve'
+        ? { status: 'APPROVED' as const }
+        : modalTarget === 'banking'
+          ? {
+              status: 'REJECTED' as const,
+              reasonFor: selectedReasons,
+              rejectionReason: rejectionReason.trim(),
+              adminNote: adminNotes.trim() || undefined,
+            }
+          : {
+              status: 'REJECTED' as const,
+              reasonFor: selectedReasons,
+              rejectionReason: rejectionReason.trim(),
+            }
+
+    mutation.mutate(payload, {
+      onSuccess: () => {
+        toast.success(
+          modalVariant === 'approve'
+            ? 'Status updated to APPROVED'
+            : 'Status updated to REJECTED',
+        )
+        setModalOpen(false)
+      },
+      onError: (err) => toast.error(getApiErrorMessage(err)),
+    })
+  }
+
+  const decisionDisabled = currentStatus !== 'PENDING' || mutation.isPending
+
+  const modalTitle = useMemo(() => {
+    const target = modalTarget === 'banking' ? 'Banking' : 'KYC'
+    return modalVariant === 'approve' ? `Approve ${target}` : `Reject ${target}`
+  }, [modalTarget, modalVariant])
+
+  if (isLoading) {
+    return (
+      <div className="flex h-[60vh] items-center justify-center">
+        <div className="size-9 animate-spin rounded-full border-4 border-[#FBC078] border-t-transparent" />
+      </div>
+    )
+  }
+
+  if (isError || !application) {
+    return (
+      <div className="space-y-4">
+        <button
+          type="button"
+          onClick={() => navigate('/experts/management')}
+          className="group flex w-fit items-center gap-2 text-[20px] font-bold text-white transition-colors hover:text-[#FBC078]"
+        >
+          <ArrowLeft className="size-5" />
+          <span>Application View</span>
+        </button>
+        <div className="rounded-lg border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+          {getApiErrorMessage(error) || 'Unable to load application view.'}
+        </div>
+      </div>
+    )
+  }
+
+  const profile = application.expert?.basicProfile
+  const kyc = application.kyc
+  const banking = application.banking
+
+  return (
+    <div className="flex flex-col gap-5">
+      <header className="flex flex-col gap-2">
+        <button
+          type="button"
+          onClick={() => navigate('/experts/management')}
+          className="group flex w-fit items-center gap-2 text-[20px] font-bold tracking-tight text-white transition-colors hover:text-[#FBC078]"
+        >
+          <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
+          <span>Application View</span>
+        </button>
+        <div className="flex items-center gap-1.5 pl-7 text-[12px] font-medium text-[#777777]">
+          <button
+            type="button"
+            onClick={() => navigate('/experts/management')}
+            className="transition-colors hover:text-white"
+          >
+            Expert management
+          </button>
+          <span className="text-[#333333]">/</span>
+          <span className="font-bold text-white">{displayValue(application.expert?.fullname)}</span>
+        </div>
+      </header>
+
+      <div className="rounded-xl border border-white/5 bg-[#111111] p-6">
+        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+          <div>
+            <h2 className="text-2xl font-bold text-white">{displayValue(application.expert?.fullname)}</h2>
+            <p className="mt-1 text-[12px] text-[#777]">
+              Created {formatDateTime(application.expert?.createdAt)}
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <StatusPill status={kyc?.status} />
+            <StatusPill status={banking?.status} />
+          </div>
+        </div>
+
+        <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div className="rounded-lg border border-white/5 bg-black p-4">
+            <p className="text-[11px] text-[#777]">Expert ID</p>
+            <p className="mt-1 text-[13px] font-semibold text-white">{displayValue(application.expert?._id)}</p>
+          </div>
+          <div className="rounded-lg border border-white/5 bg-black p-4">
+            <p className="text-[11px] text-[#777]">Submitted</p>
+            <p className="mt-1 text-[13px] font-semibold text-white">{formatDateTime(application.expert?.createdAt)}</p>
+          </div>
+          <div className="rounded-lg border border-white/5 bg-black p-4">
+            <p className="text-[11px] text-[#777]">Last Updated</p>
+            <p className="mt-1 text-[13px] font-semibold text-white">{formatDateTime(application.expert?.updatedAt)}</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-2 rounded-xl border border-white/5 bg-[#111111] p-1.5">
+        {TABS.map((tab) => (
+          <button
+            key={tab.key}
+            type="button"
+            onClick={() => setActiveTab(tab.key)}
+            className={cn(
+              'flex-1 rounded-lg px-4 py-2.5 text-[13px] font-semibold transition-colors',
+              activeTab === tab.key ? 'bg-[#FBC078]/10 text-[#FBC078]' : 'text-[#888] hover:text-white',
+            )}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {activeTab === 'overview' && (
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+          <SectionCard title="Applicant Information" icon={<User className="size-4 text-[#FBC078]" />}>
+            <div className="grid grid-cols-2 gap-x-6 gap-y-5">
+              <InfoField label="Full Name" value={application.expert?.fullname} />
+              <InfoField label="Phone number" value={application.expert?.phone} />
+              <InfoField label="Work Email" value={application.expert?.email} />
+              <InfoField label="Service Type" value={profile?.serviceType} />
+              <InfoField label="Current role" value={profile?.industry} />
+              <InfoField label="Service Category" value={profile?.serviceCategory?.join(', ')} />
+            </div>
+          </SectionCard>
+          <SectionCard title="Application Notes" icon={<History className="size-4 text-[#FBC078]" />}>
+            <div className="rounded-lg border border-white/5 bg-black p-4 text-[12px] text-[#777]">No notes yet.</div>
+          </SectionCard>
+        </div>
+      )}
+
+      {activeTab === 'kyc' && (
+        <div className="space-y-5">
+          <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+            <SectionCard title="KYC Details" icon={<ClipboardList className="size-4 text-[#FBC078]" />}>
+              <div className="grid grid-cols-2 gap-x-6 gap-y-5">
+                <InfoField label="Individual Name / Organisation Name" value={application.expert?.fullname} />
+                <InfoField label="State" value={profile?.location} />
+                <InfoField label="PAN Number" value={kyc?.panNumber} />
+                <InfoField label="Sample Work Link" value={profile?.sampleWorkLink} />
+                <InfoField label="GST Information" value={kyc?.gstAvailable ? 'Yes' : 'No'} />
+                <InfoField label="GST Number" value={kyc?.gstNumber} />
+              </div>
+            </SectionCard>
+            <SectionCard title="Compliance & Declaration" icon={<ShieldCheck className="size-4 text-[#FBC078]" />}>
+              <div className="space-y-5">
+                <div className="flex items-center justify-between">
+                  <span className="text-[12px] font-medium text-[#bbb]">Filed last 2 years IT Returns</span>
+                  <span className="inline-flex rounded-md bg-emerald-500/15 px-2.5 py-1 text-[11px] font-bold text-emerald-400">Yes</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-[12px] font-medium text-[#bbb]">Undertaking Signed</span>
+                  <span className="inline-flex rounded-md bg-emerald-500/15 px-2.5 py-1 text-[11px] font-bold text-emerald-400">Yes</span>
+                </div>
+              </div>
+            </SectionCard>
+          </div>
+          <SectionCard title="Uploaded Documents" icon={<FileText className="size-4 text-[#FBC078]" />}>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
+              <DocumentCard label="PAN Card" url={kyc?.panCardFile} />
+              <DocumentCard label="GST Certificate" url={kyc?.gstCertificateFile} />
+              <DocumentCard label="Certificate / License" url={kyc?.certificateFile} />
+              <DocumentCard label="Sample Work" url={null} />
+            </div>
+          </SectionCard>
+        </div>
+      )}
+
+      {activeTab === 'banking' && (
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+          <SectionCard title="Account Information" icon={<Banknote className="size-4 text-[#FBC078]" />}>
+            <div className="grid grid-cols-2 gap-x-6 gap-y-5">
+              <InfoField label="Beneficiary Name" value={banking?.beneficiaryName} />
+              <InfoField label="Provided Name" value={banking?.providedName} />
+              <InfoField label="Name Match Score" value={banking?.nameMatchScore} />
+              <InfoField label="Account Type" value={banking?.accountType} />
+              <InfoField label="Account Number" value={banking?.accountNumber} />
+              <InfoField label="Bank Name" value={banking?.bankName} />
+              <InfoField label="IFSC Code" value={banking?.ifscCode} />
+            </div>
+          </SectionCard>
+          <SectionCard title="Bank Verification Document" icon={<FileText className="size-4 text-[#FBC078]" />}>
+            <DocumentCard label="Cancelled Cheque" url={banking?.cancelledCheque} />
+          </SectionCard>
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+        <SectionCard title="Application Notes" icon={<History className="size-4 text-[#FBC078]" />}>
+          <div className="rounded-lg border border-white/5 bg-black p-4 text-[12px] text-[#777]">No notes yet.</div>
+        </SectionCard>
+
+        <SectionCard title="Decision Controls" icon={<ShieldCheck className="size-4 text-[#FBC078]" />}>
+          {currentStatus !== 'PENDING' && (
+            <p className="mb-4 rounded-md border border-white/5 bg-black px-3 py-2 text-[11px] font-medium text-[#999]">
+              This section is already {String(currentStatus).toLowerCase()}.
+            </p>
+          )}
+          <div className="flex flex-wrap gap-3">
+            <button
+              type="button"
+              disabled={decisionDisabled}
+              onClick={() => openDecisionModal(activeTab === 'banking' ? 'banking' : 'kyc', 'approve')}
+              className="rounded-md bg-[#00B761] px-4 py-2.5 text-[11px] font-bold text-white disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Approve
+            </button>
+            <button
+              type="button"
+              onClick={() => toast.message('Ask for Re-Submit is coming soon')}
+              className="rounded-md bg-[#1f1f1f] px-4 py-2.5 text-[11px] font-bold text-white"
+            >
+              Ask for Re-Submit
+            </button>
+            <button
+              type="button"
+              onClick={() => toast.message('Escalate is coming soon')}
+              className="rounded-md bg-[#1D4ED8] px-4 py-2.5 text-[11px] font-bold text-white"
+            >
+              Escalate
+            </button>
+            <button
+              type="button"
+              disabled={decisionDisabled}
+              onClick={() => openDecisionModal(activeTab === 'banking' ? 'banking' : 'kyc', 'reject')}
+              className="rounded-md bg-[#F02D2D] px-4 py-2.5 text-[11px] font-bold text-white disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Reject Application
+            </button>
+          </div>
+        </SectionCard>
+      </div>
+
+      <DecisionActionModal
+        open={modalOpen}
+        variant={modalVariant}
+        title={modalTitle}
+        description={
+          modalVariant === 'approve'
+            ? `Are you sure you want to approve this ${modalTarget === 'banking' ? 'banking' : 'KYC'} section?`
+            : `Are you sure you want to reject this ${modalTarget === 'banking' ? 'banking' : 'KYC'} section?`
+        }
+        submitLabel={modalVariant === 'approve' ? 'Approve' : 'Reject'}
+        reasonOptions={modalVariant === 'reject' ? (modalTarget === 'banking' ? BANKING_REJECT_REASONS : KYC_REJECT_REASONS) : []}
+        selectedReasons={selectedReasons}
+        onReasonToggle={toggleReason}
+        reason={modalVariant === 'reject' ? rejectionReason : undefined}
+        onReasonChange={modalVariant === 'reject' ? setRejectionReason : undefined}
+        adminNotes={adminNotes}
+        onAdminNotesChange={setAdminNotes}
+        onClose={() => setModalOpen(false)}
+        onSubmit={handleSubmitDecision}
+        isSubmitting={mutation.isPending}
+      />
+    </div>
+  )
+}

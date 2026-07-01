@@ -1,0 +1,190 @@
+import { Plus } from 'lucide-react'
+
+import {
+  createEmptyWorkExperienceEntry,
+  type ExpertOnboardingFormData,
+  type ExpertWorkExperienceEntry,
+} from '../utils/expert-onboarding-form'
+
+const fieldClass =
+  'h-11 w-full rounded-md bg-black px-3 text-sm text-white outline-none placeholder:text-[#666] focus:ring-1 focus:ring-[#FBC078]/40'
+
+const EMPLOYMENT_TYPES = ['Full Time', 'Part Time', 'Contract', 'Freelance', 'Internship']
+
+type Props = {
+  formData: ExpertOnboardingFormData
+  setFormData: React.Dispatch<React.SetStateAction<ExpertOnboardingFormData>>
+}
+
+export const ExpertWorkExperienceStep = ({ formData, setFormData }: Props) => {
+  const updateEntry = (
+    index: number,
+    patch: Partial<ExpertWorkExperienceEntry>,
+  ) => {
+    setFormData((prev) => ({
+      ...prev,
+      workExperience: prev.workExperience.map((entry, i) =>
+        i === index ? { ...entry, ...patch } : entry,
+      ),
+    }))
+  }
+
+  const addEntry = () => {
+    setFormData((prev) => ({
+      ...prev,
+      workExperience: [...prev.workExperience, createEmptyWorkExperienceEntry()],
+    }))
+  }
+
+  const removeEntry = (index: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      workExperience: prev.workExperience.filter((_, i) => i !== index),
+    }))
+  }
+
+  return (
+    <div className="mx-auto w-full max-w-[850px]">
+      <div className="animate-in fade-in slide-in-from-right-4 rounded-lg border border-white/5 bg-[#151515] p-6 duration-300">
+        <div className="mb-6">
+          <h2 className="text-sm font-bold text-white">Update Experts Experience</h2>
+          <p className="mt-1 text-xs text-[#777777]">
+            Work history and experience - What they do
+          </p>
+        </div>
+
+        <div className="space-y-8">
+          {formData.workExperience.map((entry, index) => (
+            <div key={index} className="space-y-5">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xs font-bold text-white">Work Title {index + 1}</h3>
+                {formData.workExperience.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => removeEntry(index)}
+                    className="rounded-md border border-red-500/50 px-3 py-1 text-[11px] font-semibold text-red-400 transition-colors hover:bg-red-500/10"
+                  >
+                    Remove
+                  </button>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                <div>
+                  <label className="mb-2 block text-xs font-medium text-white">
+                    Job Title
+                  </label>
+                  <input
+                    value={entry.jobTitle}
+                    onChange={(e) => updateEntry(index, { jobTitle: e.target.value })}
+                    placeholder="Enter Title"
+                    className={fieldClass}
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-xs font-medium text-white">
+                    Company name
+                  </label>
+                  <input
+                    value={entry.companyName}
+                    onChange={(e) => updateEntry(index, { companyName: e.target.value })}
+                    placeholder="Enter Text"
+                    className={fieldClass}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="mb-2 block text-xs font-medium text-white">
+                  Employment Type
+                </label>
+                <select
+                  value={entry.employmentType}
+                  onChange={(e) => updateEntry(index, { employmentType: e.target.value })}
+                  className={`${fieldClass} appearance-none`}
+                >
+                  <option value="">Enter Text</option>
+                  {EMPLOYMENT_TYPES.map((type) => (
+                    <option key={type} value={type}>
+                      {type}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                <div>
+                  <label className="mb-2 block text-xs font-medium text-white">
+                    From ( Start Date)
+                  </label>
+                  <input
+                    type="date"
+                    value={entry.startDate}
+                    onChange={(e) => updateEntry(index, { startDate: e.target.value })}
+                    className={`${fieldClass} [color-scheme:dark]`}
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-xs font-medium text-white">
+                    To( End Date)
+                  </label>
+                  <input
+                    type="date"
+                    value={entry.endDate}
+                    disabled={entry.currentlyWorking}
+                    onChange={(e) => updateEntry(index, { endDate: e.target.value })}
+                    className={`${fieldClass} [color-scheme:dark] disabled:opacity-40`}
+                  />
+                </div>
+              </div>
+
+              <label className="flex w-fit items-center gap-2 text-xs text-white">
+                <input
+                  type="checkbox"
+                  checked={entry.currentlyWorking}
+                  onChange={(e) =>
+                    updateEntry(index, {
+                      currentlyWorking: e.target.checked,
+                      endDate: e.target.checked ? '' : entry.endDate,
+                    })
+                  }
+                  className="rounded border-slate-700 bg-transparent"
+                />
+                Currently working here
+              </label>
+
+              <div>
+                <label className="mb-2 block text-xs font-medium text-white">
+                  Description
+                </label>
+                <textarea
+                  value={entry.description}
+                  onChange={(e) => updateEntry(index, { description: e.target.value })}
+                  placeholder="Short Description"
+                  className="h-28 w-full rounded-md bg-black p-3 text-sm text-white outline-none placeholder:text-[#666] focus:ring-1 focus:ring-[#FBC078]/40"
+                />
+              </div>
+
+              {index < formData.workExperience.length - 1 && (
+                <div className="border-t border-white/5" />
+              )}
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-6 flex justify-end">
+          <button
+            type="button"
+            onClick={addEntry}
+            className="flex items-center gap-2 rounded-md bg-[#FBC078] px-4 py-2 text-[11px] font-bold text-black transition-colors hover:bg-[#eeb46a]"
+          >
+            <Plus className="size-3.5" />
+            Add More
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}

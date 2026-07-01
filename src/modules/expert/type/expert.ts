@@ -2,7 +2,6 @@ export interface Expert {
   expertId: string
   name: string
   email: string
-  profession: string
   serviceType: string
   status: string
   createdAt: string

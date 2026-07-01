@@ -145,10 +145,6 @@ export const ApprovalsPendingPage = () => {
                 header: 'Email ID',
             },
             {
-                accessorKey: 'profession',
-                header: 'Profession',
-            },
-            {
                 accessorKey: 'status',
                 header: 'Status',
                 cell: ({ row }) => (
@@ -317,7 +313,7 @@ export const ApprovalsPendingPage = () => {
                 isLoading={isLoading}
                 searchValue={searchQuery}
                 onSearchChange={setSearchQuery}
-                searchPlaceholder="Search by name, ID or profession"
+                searchPlaceholder="Search by name or expert ID"
                 onAdvancedFilter={() => toast.message('Advanced filters are coming soon')}
                 onExport={() => toast.message('Expert export is coming soon')}
                 pagination={{

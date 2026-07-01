@@ -2,24 +2,19 @@ import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 import {
     AlertCircle,
-    Archive,
+    Ban,
     BarChart3,
     Bell,
     CheckSquare,
     Eye,
-    Image,
+    Hourglass,
     Mail,
     PauseCircle,
     Plus,
     ShieldCheck,
     Trash2,
-    User,
-    Wallet,
     UserPlus,
     ListPlus,
-
-
-    Flag,
     type LucideIcon,
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
@@ -36,12 +31,11 @@ import {
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
 
-const formatPrice = (price: number) =>
-    new Intl.NumberFormat('en-IN', {
-        style: 'currency',
-        currency: 'INR',
-        maximumFractionDigits: 0,
-    }).format(price)
+const displayValue = (value: unknown): string => {
+    if (value === null || value === undefined) return 'N/A'
+    if (typeof value === 'string' && value.trim() === '') return 'N/A'
+    return String(value)
+}
 
 export const ExpertManagementPage = () => {
     const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
@@ -62,7 +56,6 @@ export const ExpertManagementPage = () => {
         status: activeStatus !== 'all' ? activeStatus : undefined,
         search: searchQuery,
     })
-    console.log('Experts Data =>', data)
     const experts = data?.data || []
     const meta = data?.meta
     const visibleExpertIds = useMemo(
@@ -132,42 +125,58 @@ export const ExpertManagementPage = () => {
             {
                 accessorKey: 'expertId',
                 header: 'Expert ID',
+                cell: ({ row }) => (
+                    <span className="font-mono text-xs uppercase">
+                        {displayValue(row.original.expertId)}
+                    </span>
+                ),
             },
 
             {
                 accessorKey: 'name',
                 header: 'Name',
                 cell: ({ row }) => (
-                    <span className="cursor-pointer underline">
-                        {row.original.name}
+                    <span className="font-medium text-white">
+                        {displayValue(row.original.name)}
                     </span>
                 ),
             },
             {
                 accessorKey: 'email',
                 header: 'Email ID',
-            },
-            {
-                accessorKey: 'profession',
-                header: 'Profession',
+                cell: ({ row }) => displayValue(row.original.email),
             },
             {
                 accessorKey: 'status',
                 header: 'Status',
-                cell: ({ row }) => (
-                    <span className="inline-flex items-center rounded-full bg-green-900/40 px-2 py-1 text-xs font-medium text-green-400">
-                        {row.original.status}
-                    </span>
-                ),
+                cell: ({ row }) => {
+                    const status = (row.original.status || '').toLowerCase()
+                    const isActive = status === 'active'
+
+                    return (
+                        <span
+                            className={cn(
+                                'rounded px-2 py-0.5 text-[10px] font-bold uppercase',
+                                isActive
+                                    ? 'bg-green-500/10 text-green-500'
+                                    : 'bg-slate-500/10 text-slate-400',
+                            )}
+                        >
+                            {displayValue(row.original.status)}
+                        </span>
+                    )
+                },
             },
             {
                 accessorKey: 'serviceType',
                 header: 'Service Type',
+                cell: ({ row }) => displayValue(row.original.serviceType),
             },
             {
                 accessorKey: 'createdAt',
                 header: 'Created At',
                 cell: ({ row }) => {
+                    if (!row.original.createdAt) return 'N/A'
                     const createdAt = new Date(row.original.createdAt)
 
                     return (
@@ -192,6 +201,7 @@ export const ExpertManagementPage = () => {
             {
                 accessorKey: 'lastActive',
                 header: 'Last Active',
+                cell: ({ row }) => displayValue(row.original.lastActive),
             },
             {
                 id: 'actions',
@@ -215,10 +225,10 @@ export const ExpertManagementPage = () => {
                                 icon={<Eye className="size-3.5" aria-hidden="true" />}
                                 onClick={() => {
                                     setActiveDropdownId(null)
-                                    navigate(`/experts/profile/${expert.expertId}`)
+                                    navigate(`/experts/management/application/${expert.expertId}`)
                                 }}
                             >
-                                View Profile
+                                Application View
                             </TableActionsItem>
                             <TableActionsItem
                                 icon={<UserPlus className="size-3.5" aria-hidden="true" />}
@@ -281,8 +291,7 @@ export const ExpertManagementPage = () => {
     const statusCards: {
         label: string
         count: number
-        color: string
-        bg: string
+        gradient: string
         border: string
         icon: LucideIcon
         status: string
@@ -290,36 +299,32 @@ export const ExpertManagementPage = () => {
             {
                 label: 'Approvals Pending',
                 count: counts.approvalsPending,
-                color: 'text-amber-400',
-                bg: 'bg-amber-400/10',
-                border: 'border-amber-400/20',
-                icon: ShieldCheck,
+                gradient: 'bg-gradient-to-r from-amber-700/55 to-transparent',
+                border: 'border-amber-600/60',
+                icon: Hourglass,
                 status: 'pending',
             },
             {
                 label: 'Reported Experts',
                 count: counts.reportedExperts,
-                color: 'text-red-400',
-                bg: 'bg-red-400/10',
-                border: 'border-red-400/20',
+                gradient: 'bg-gradient-to-r from-red-800/55 to-transparent',
+                border: 'border-red-800/60',
                 icon: AlertCircle,
                 status: 'reported',
             },
             {
                 label: 'Suspended Experts',
                 count: counts.suspendedExperts,
-                color: 'text-purple-400',
-                bg: 'bg-purple-400/10',
-                border: 'border-purple-400/20',
-                icon: PauseCircle,
+                gradient: 'bg-gradient-to-r from-red-800/55 to-transparent',
+                border: 'border-red-800/60',
+                icon: Ban,
                 status: 'suspended',
             },
             {
                 label: 'Deleted Experts',
                 count: counts.deletedExperts,
-                color: 'text-slate-400',
-                bg: 'bg-slate-400/10',
-                border: 'border-slate-400/20',
+                gradient: 'bg-gradient-to-r from-red-800/55 to-transparent',
+                border: 'border-red-800/60',
                 icon: Trash2,
                 status: 'deactivated',
             },
@@ -338,13 +343,13 @@ export const ExpertManagementPage = () => {
                     </p>
                 </div>
                 <div className="flex w-full flex-col items-center gap-3 md:w-auto md:flex-row">
-                    <Button className="bg-[#E6BE73] text-black hover:bg-[#D9AE5A]">
+                    <Button variant="secondary" className="w-full md:w-auto">
                         <BarChart3 className="size-4" />
                         Manage Metrics
                     </Button>
 
                     <Button
-                        className="bg-amber-400 text-black hover:bg-amber-500"
+                        className="w-full md:w-auto"
                         onClick={() => navigate('/experts/management/create')}
                     >
                         <Plus className="size-4" />
@@ -353,7 +358,7 @@ export const ExpertManagementPage = () => {
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:gap-4 lg:grid-cols-4">
+            <div className="flex gap-3 overflow-x-auto pb-1 md:gap-4">
                 {statusCards.map((card) => (
                     <button
                         key={card.label}
@@ -376,19 +381,17 @@ export const ExpertManagementPage = () => {
                             setActiveStatus(activeStatus === card.status ? 'all' : card.status)
                         }}
                         className={cn(
-                            'flex items-center justify-between rounded-xl border p-4 transition-all hover:scale-[1.02]',
-                            card.bg,
+                            'flex min-w-[220px] flex-1 items-center justify-between gap-3 rounded-xl border p-4 transition-all hover:brightness-110',
+                            card.gradient,
                             card.border,
                             activeStatus === card.status && 'ring-2 ring-amber-400/50',
                         )}
                     >
                         <div className="flex items-center gap-3">
-                            <div className={cn('rounded-lg p-2', card.bg)}>
-                                <card.icon className={cn('size-5', card.color)} />
-                            </div>
-                            <span className="text-sm font-medium text-slate-300">{card.label}</span>
+                            <card.icon className="size-5 text-white" />
+                            <span className="text-sm font-medium text-white">{card.label}</span>
                         </div>
-                        <span className={cn('text-lg font-bold', card.color)}>
+                        <span className="text-lg font-bold text-white">
                             {String(card.count ?? 0).padStart(2, '0')}
                         </span>
                     </button>
@@ -427,7 +430,7 @@ export const ExpertManagementPage = () => {
                 isLoading={isLoading}
                 searchValue={searchQuery}
                 onSearchChange={setSearchQuery}
-                searchPlaceholder="Search by name, ID or profession"
+                searchPlaceholder="Search by name or expert ID"
                 onAdvancedFilter={() => toast.message('Advanced filters are coming soon')}
                 onExport={() => toast.message('Expert export is coming soon')}
                 pagination={{
