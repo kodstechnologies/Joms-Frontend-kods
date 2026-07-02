@@ -207,6 +207,12 @@ const CategoryViewPage = lazy(() =>
   }))
 );
 
+const FinanceDashboardPage = lazy(() =>
+  import('@/modules/payments').then((m) => ({
+    default: m.FinanceDashboardPage,
+  })),
+);
+
 const SubCategoryViewPage = lazy(() =>
   import("@/modules/expert").then((m) => ({
     default: m.SubCategoryViewPage,
@@ -255,6 +261,7 @@ export function AppRouter() {
                 <Route path="/settings/access/roles/:id/edit" element={<CreateRolePage />} />
                 <Route path="/settings/access/users/create" element={<CreateSubAdminPage />} />
                 <Route path="/settings/access/users/:id" element={<SubAdminDetailPage />} />
+                <Route path="/finance/dashboard" element={<FinanceDashboardPage />} />
               </Route>
 
               <Route element={<PermissionRoute module="services" />}>
