@@ -41,7 +41,7 @@ export function OtpInput({ value, onChange, length = 6, className }: OtpInputPro
           }}
           id={`${id}-${index}`}
           className={cn(
-            'h-12 w-10 rounded-xl border border-white/10 bg-white/5 text-center text-lg font-semibold text-slate-100 outline-none focus:border-amber-300/50 focus:ring-2 focus:ring-amber-300/20',
+            'h-12 w-10 rounded-brand-md border border-white/10 bg-brand-surface text-center text-lg font-semibold text-brand-text outline-none focus:border-brand-accent/50 focus:ring-2 focus:ring-brand-accent/20',
           )}
         />
       ))}

@@ -1,6 +1,7 @@
 import type { PropsWithChildren } from 'react'
 
 import { cn } from '@/shared/lib/cn'
+import { uiTokens } from '@/shared/lib/design-tokens'
 
 type BaseModalProps = PropsWithChildren<{
   open: boolean
@@ -17,7 +18,9 @@ export function BaseModal({ open, title, onClose, children }: BaseModalProps) {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
       <div
         className={cn(
-          'w-full max-w-lg rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900',
+          'w-full max-w-lg border border-white/10 bg-brand-surface p-5 text-brand-text',
+          uiTokens.radiusCard,
+          uiTokens.shadowElevated,
         )}
         onClick={(event) => event.stopPropagation()}
       >

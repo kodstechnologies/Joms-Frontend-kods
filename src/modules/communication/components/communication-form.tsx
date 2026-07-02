@@ -1,4 +1,4 @@
-import { ArrowLeft, CircleHelp } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 export function CommunicationForm() {
@@ -8,7 +8,6 @@ export function CommunicationForm() {
     >("sendNow");
     return (
         <div className="flex flex-col gap-6">
-            {/* Header */}
 
             <div>
                 <button
@@ -27,7 +26,6 @@ export function CommunicationForm() {
                 </p>
             </div>
 
-            {/* Main Form Card */}
 
             <div className="rounded-2xl border border-[#242424] bg-[#171717] p-8">
 
@@ -43,7 +41,6 @@ export function CommunicationForm() {
 
                 <div className="mt-8">
 
-                    {/* Communication Title */}
                     <div className="mb-5">
                         <div>
                             <label className="mb-2 block text-sm font-medium text-white">
@@ -58,9 +55,6 @@ export function CommunicationForm() {
                         </div>
                     </div>
 
-                    {/* Row */}
-
-                    {/* Channel Type & Communication Type */}
 
                     <div className="mb-5 grid grid-cols-2 gap-5">
 
@@ -88,7 +82,6 @@ export function CommunicationForm() {
 
                     </div>
 
-                    {/* Audience */}
 
                     <div className="mb-5">
                         <label className="mb-2 block text-sm font-medium text-white">
@@ -102,13 +95,11 @@ export function CommunicationForm() {
                         />
                     </div>
 
-                    {/* Time & Date */}
 
                     <div
                         className={`mb-4 grid gap-5 ${deliveryType === "schedule" ? "grid-cols-2" : "grid-cols-1"
                             }`}
                     >
-                        {/* Left */}
 
                         <div>
                             <label className="mb-2 block text-sm font-medium text-white">
@@ -138,7 +129,6 @@ export function CommunicationForm() {
                             </div>
                         </div>
 
-                        {/* Right - Only show for Schedule */}
 
                         {deliveryType === "schedule" && (
                             <div>
@@ -161,7 +151,6 @@ export function CommunicationForm() {
                             </div>
                         )}
                     </div>
-                    {/* Subject Line */}
 
                     <div className="mt-3">
                         <label className="mb-2 block text-sm font-medium text-white">
@@ -175,7 +164,6 @@ export function CommunicationForm() {
                         />
                     </div>
 
-                    {/* Message Content */}
 
                     <div className="mt-6">
                         <label className="mb-2 block text-sm font-medium text-white">
@@ -189,7 +177,6 @@ export function CommunicationForm() {
                         />
                     </div>
 
-                    {/* Additional Notes */}
 
                     <div className="mt-6">
                         <label className="mb-2 block text-sm font-medium text-white">
@@ -205,7 +192,6 @@ export function CommunicationForm() {
                 </div>
             </div >
 
-            {/* Footer */}
 
             <div className="rounded-xl border border-[#242424] bg-[#171717] px-5 py-4">
                 <div className="flex items-center justify-between">

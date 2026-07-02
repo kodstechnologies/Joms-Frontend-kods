@@ -14,9 +14,9 @@ export function Sidebar({ onNavigate, compact = false }: { onNavigate?: () => vo
     <div className="flex h-[calc(100vh-3.5rem)] flex-col px-3 pb-6 pt-1 md:h-[calc(100dvh-3.5rem)]">
       <div className={compact ? 'mb-4 flex items-center justify-center' : 'mb-5 mt-2 px-2'}>
         <div className="flex items-center gap-2">
-          <div className="size-2 rounded-full bg-amber-500" />
+          <div className="size-2 rounded-full bg-brand-accent" />
           {!compact ? (
-            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-brand-muted">
               JOMS Applications
             </p>
           ) : null}
@@ -35,7 +35,7 @@ export function Sidebar({ onNavigate, compact = false }: { onNavigate?: () => vo
           clearSession()
           onNavigate?.()
         }}
-        className="mt-2 flex items-center gap-2 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2.5 text-sm font-semibold text-red-200 transition-colors hover:bg-red-500/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/30"
+        className="mt-2 flex items-center gap-2 rounded-brand-md border border-brand-danger/30 bg-brand-danger/10 px-3 py-2.5 text-sm font-semibold text-brand-danger transition-colors hover:bg-brand-danger/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent/30"
         aria-label={compact ? 'Log Out' : 'Log Out'}
       >
         <LogOut className="size-4" />

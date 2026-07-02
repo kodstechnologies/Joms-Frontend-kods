@@ -14,10 +14,10 @@ export function DashboardCard({ className, title, rightSlot, children, ...props 
       className={cn(
         uiTokens.radiusCard,
         'p-4 backdrop-blur sm:p-5',
-        'border border-white/10 bg-gradient-to-b from-white/6 to-white/3',
+        'border border-white/10 bg-brand-surface',
         'shadow-[0_10px_30px_rgba(0,0,0,0.35)]',
         'transition-[border-color,transform,background-color] duration-200',
-        'hover:border-white/15 hover:bg-white/6',
+        'hover:border-brand-accent-muted hover:bg-white/6',
         className,
       )}
       {...props}
@@ -25,7 +25,7 @@ export function DashboardCard({ className, title, rightSlot, children, ...props 
       {title ? (
         <div className="mb-5 flex items-start justify-between gap-3">
           <div>
-            <p className="text-sm font-semibold tracking-tight text-slate-100">{title}</p>
+            <p className="text-sm font-semibold tracking-tight text-brand-text">{title}</p>
           </div>
           {rightSlot ? <div className="shrink-0">{rightSlot}</div> : null}
         </div>

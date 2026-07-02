@@ -3,6 +3,7 @@ import { ChevronDown } from 'lucide-react'
 import { NavLink } from 'react-router-dom'
 
 import { cn } from '@/shared/lib/cn'
+import { uiTokens } from '@/shared/lib/design-tokens'
 
 type SidebarItemProps = {
   label: string
@@ -44,11 +45,12 @@ export function SidebarItem({
   const renderContent = (isActive?: boolean) => (
     <div
       className={cn(
-        'flex items-center gap-3 rounded-lg py-2.5 pr-3 text-sm transition-colors duration-200',
+        'flex items-center gap-3 py-2.5 pr-3 text-sm transition-colors duration-200',
+        uiTokens.radiusSoft,
         paddingLeft,
         isActive ?? active
-          ? 'bg-white/10 text-white ring-1 ring-amber-400/15'
-          : 'text-slate-300 hover:bg-white/5 hover:text-white',
+          ? 'bg-brand-accent/15 text-brand-text ring-1 ring-brand-accent/30'
+          : 'text-brand-stroke hover:bg-white/5 hover:text-brand-text',
       )}
     >
       {Icon ? (
@@ -61,9 +63,9 @@ export function SidebarItem({
         <span
           className={cn(
             'rounded-full border px-2 py-0.5 text-[11px] font-semibold',
-            badge.variant === 'success' && 'border-emerald-500/25 bg-emerald-500/10 text-emerald-200',
-            badge.variant === 'warning' && 'border-amber-500/25 bg-amber-500/10 text-amber-200',
-            (!badge.variant || badge.variant === 'default') && 'border-white/10 bg-white/10 text-slate-200',
+            badge.variant === 'success' && 'border-brand-success/30 bg-brand-success/10 text-brand-success',
+            badge.variant === 'warning' && 'border-brand-accent/30 bg-brand-accent/10 text-brand-accent',
+            (!badge.variant || badge.variant === 'default') && 'border-white/10 bg-white/10 text-brand-stroke',
           )}
         >
           {badge.label}
@@ -83,7 +85,7 @@ export function SidebarItem({
         to={to}
         onClick={onNavigate}
         aria-label={compact ? label : undefined}
-        className="block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/30"
+        className="block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent/30"
       >
         {({ isActive }) => renderContent(isActive)}
       </NavLink>
@@ -98,7 +100,7 @@ export function SidebarItem({
     <button
       type="button"
       onClick={onToggle}
-      className="w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/30"
+      className="w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent/30"
       aria-label={compact ? label : undefined}
     >
       {renderContent()}

@@ -94,13 +94,13 @@ export function DataTable<TData>({
 
   return (
     <section
-      className={cn('overflow-hidden rounded-md border border-[#202020] bg-[#121212]', className)}
+      className={cn('overflow-hidden rounded-brand-md border border-white/10 bg-brand-surface', className)}
       aria-label={`${resourceLabel} table`}
     >
       <div className="flex flex-wrap items-center justify-between gap-3 px-3 pt-3 pb-2">
         <div className="relative w-full sm:w-[320px]">
           <Search
-            className="absolute top-1/2 left-3 size-3.5 -translate-y-1/2 text-[#737373]"
+            className="absolute top-1/2 left-3 size-3.5 -translate-y-1/2 text-brand-muted"
             aria-hidden="true"
           />
           <Input
@@ -109,7 +109,7 @@ export function DataTable<TData>({
             onChange={(event) => onSearchChange(event.target.value)}
             placeholder={searchPlaceholder}
             aria-label={`Search ${resourceLabel}`}
-            className="h-9 rounded-md border-[#070707] bg-[#050505] pl-9 text-xs text-white placeholder:text-[#666666] focus-visible:ring-1 focus-visible:ring-[#F0C27B]/40"
+            className="h-9 rounded-brand-md border-white/10 bg-brand-bg pl-9 text-xs text-brand-text placeholder:text-brand-muted focus-visible:ring-1 focus-visible:ring-brand-accent/40"
           />
         </div>
 
@@ -120,7 +120,7 @@ export function DataTable<TData>({
             variant="secondary"
             onClick={onAdvancedFilter}
             disabled={!onAdvancedFilter}
-            className="h-9 flex-1 gap-2 rounded-md border border-white/45 bg-transparent px-3 text-[11px] font-semibold text-white shadow-none hover:border-white/70 hover:bg-white/5 sm:flex-none"
+            className="h-9 flex-1 gap-2 rounded-brand-md border border-white/45 bg-transparent px-3 text-[11px] font-semibold text-brand-text shadow-none hover:border-brand-accent hover:bg-white/5 sm:flex-none"
           >
             <Filter className="size-3.5" aria-hidden="true" />
             Advanced Filters
@@ -129,7 +129,7 @@ export function DataTable<TData>({
             type="button"
             onClick={onExport}
             disabled={!onExport || isExporting}
-            className="h-9 flex-1 gap-2 rounded-md bg-[#F0C27B] px-3 text-[11px] font-bold text-black shadow-none hover:bg-[#f4cc91] sm:flex-none"
+            className="h-9 flex-1 gap-2 rounded-brand-md bg-brand-accent px-3 text-[11px] font-bold text-brand-text-dark shadow-none hover:bg-brand-gold-from sm:flex-none"
           >
             <Download className="size-3.5" aria-hidden="true" />
             {isExporting ? 'Exporting...' : 'Export Data'}
@@ -138,7 +138,7 @@ export function DataTable<TData>({
       </div>
 
       <div className="px-3 pb-5" aria-live="polite">
-        <p className="text-[11px] leading-none text-[#ebe5e5]">
+        <p className="text-[11px] leading-none text-brand-text">
           Showing {firstItem}-{lastItem} of {pagination.totalItems} {resourceLabel}
         </p>
       </div>
@@ -147,12 +147,12 @@ export function DataTable<TData>({
         <table className="w-full min-w-max border-collapse text-left text-[12px]">
           <thead
             className={cn(
-              'border-y border-[#252525] bg-[#121212]',
+              'border-y border-white/10 bg-brand-surface',
               stickyHeader && 'sticky top-0 z-10',
             )}
           >
             {table.getHeaderGroups().map((headerGroup) => (
-              <tr key={headerGroup.id} className="text-[11px] text-[#F5F5F5]">
+              <tr key={headerGroup.id} className="text-[11px] text-brand-text">
                 {headerGroup.headers.map((header) => (
                   <th
                     key={header.id}
@@ -175,7 +175,7 @@ export function DataTable<TData>({
               </tr>
             ))}
           </thead>
-          <tbody className="divide-y divide-[#252525]">
+          <tbody className="divide-y divide-white/10">
             {isLoading ? (
               Array.from({ length: loadingRowCount }, (_, rowIndex) => (
                 <tr key={rowIndex} className="animate-pulse">
@@ -184,7 +184,7 @@ export function DataTable<TData>({
                       key={column.id}
                       className={cn('px-3 py-3', column.columnDef.meta?.cellClassName)}
                     >
-                      <div className="h-4 min-w-12 rounded bg-[#262626]" />
+                      <div className="h-4 min-w-12 rounded bg-white/10" />
                     </td>
                   ))}
                 </tr>
@@ -193,14 +193,14 @@ export function DataTable<TData>({
               <tr>
                 <td
                   colSpan={table.getVisibleLeafColumns().length}
-                  className="px-5 py-12 text-center text-[#8A8A8A]"
+                  className="px-5 py-12 text-center text-brand-muted"
                 >
                   {emptyMessage}
                 </td>
               </tr>
             ) : (
               table.getRowModel().rows.map((row) => (
-                <tr key={row.id} className="text-[#E6E6E6] transition-colors hover:bg-white/[0.03]">
+                <tr key={row.id} className="text-brand-stroke transition-colors hover:bg-white/[0.03]">
                   {row.getVisibleCells().map((cell) => (
                     <td
                       key={cell.id}
@@ -219,13 +219,13 @@ export function DataTable<TData>({
         </table>
       </div>
 
-      <div className="flex flex-col items-center justify-between gap-4 border-t border-[#252525] px-3 py-4 sm:flex-row">
+      <div className="flex flex-col items-center justify-between gap-4 border-t border-white/10 px-3 py-4 sm:flex-row">
         <Button
           type="button"
           variant="secondary"
           onClick={() => changePage(currentPage - 1)}
           disabled={isLoading || currentPage <= 1}
-          className="h-8 w-full rounded-md border border-white/25 bg-transparent px-3 text-[11px] font-medium text-white shadow-none hover:border-white/45 hover:bg-white/5 sm:w-auto"
+          className="h-8 w-full rounded-brand-md border border-white/25 bg-transparent px-3 text-[11px] font-medium text-brand-text shadow-none hover:border-brand-accent hover:bg-white/5 sm:w-auto"
         >
           Previous
         </Button>
@@ -240,7 +240,7 @@ export function DataTable<TData>({
 
             return (
               <div key={page} className="flex items-center gap-1 md:gap-2">
-                {hasGap && <span className="px-1 text-slate-600">...</span>}
+                {hasGap && <span className="px-1 text-brand-muted">...</span>}
                 <button
                   type="button"
                   onClick={() => changePage(page)}
@@ -248,10 +248,10 @@ export function DataTable<TData>({
                   aria-current={currentPage === page ? 'page' : undefined}
                   aria-label={`Go to page ${page}`}
                   className={cn(
-                    'flex size-8 items-center justify-center rounded-md border text-[11px] font-semibold transition-colors disabled:opacity-50',
+                    'flex size-8 items-center justify-center rounded-brand-md border text-[11px] font-semibold transition-colors disabled:opacity-50',
                     currentPage === page
-                      ? 'border-[#F0C27B] bg-[#F0C27B] text-black'
-                      : 'border-white/25 bg-transparent text-white hover:border-white/45 hover:bg-white/5',
+                      ? 'border-brand-accent bg-brand-accent text-brand-text-dark'
+                      : 'border-white/25 bg-transparent text-brand-text hover:border-brand-accent hover:bg-white/5',
                   )}
                 >
                   {page.toString().padStart(2, '0')}
@@ -266,7 +266,7 @@ export function DataTable<TData>({
           variant="secondary"
           onClick={() => changePage(currentPage + 1)}
           disabled={isLoading || currentPage >= Math.max(pagination.totalPages, 1)}
-          className="h-8 w-full rounded-md border border-white/25 bg-transparent px-3 text-[11px] font-medium text-white shadow-none hover:border-white/45 hover:bg-white/5 sm:w-auto"
+          className="h-8 w-full rounded-brand-md border border-white/25 bg-transparent px-3 text-[11px] font-medium text-brand-text shadow-none hover:border-brand-accent hover:bg-white/5 sm:w-auto"
         >
           Next
         </Button>

@@ -19,9 +19,9 @@ export function SectionHeader({ title, subtitle, actions, className, children }:
       )}
     >
       <div className="space-y-1">
-        <h1 className="text-3xl font-semibold tracking-tight text-slate-100 sm:text-4xl">{title}</h1>
+        <h1 className="text-3xl font-semibold tracking-tight text-brand-text sm:text-4xl">{title}</h1>
         {subtitle ? (
-          <p className="text-sm leading-relaxed text-slate-300 sm:text-base">{subtitle}</p>
+          <p className="text-sm leading-relaxed text-brand-stroke sm:text-base">{subtitle}</p>
         ) : null}
         {children}
       </div>

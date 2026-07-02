@@ -309,10 +309,10 @@ const ViewCommunicationPage = lazy(() =>
 );
 
 const PageLoader = () => (
-  <div className="flex h-dvh w-full items-center justify-center bg-slate-950">
+  <div className="flex h-dvh w-full items-center justify-center bg-brand-bg">
     <div className="flex flex-col items-center gap-4">
-      <div className="size-10 animate-spin rounded-full border-4 border-amber-400 border-t-transparent" />
-      <p className="animate-pulse text-sm font-medium text-slate-400">Loading...</p>
+      <div className="size-10 animate-spin rounded-full border-4 border-brand-accent border-t-transparent" />
+      <p className="animate-pulse text-sm font-medium text-brand-muted">Loading...</p>
     </div>
   </div>
 )

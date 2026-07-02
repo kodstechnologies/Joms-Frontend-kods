@@ -24,7 +24,7 @@ export function DashboardLayout() {
   const showCompact = isCollapsed || isTabletCompact
 
   return (
-    <div className={cn('relative h-dvh overflow-hidden text-slate-100', uiTokens.shellBg)}>
+    <div className={cn('relative h-dvh overflow-hidden text-brand-text', uiTokens.shellBg)}>
       <aside
         className={cn(
           'fixed inset-y-0 left-0 z-40 hidden border-r border-white/10 md:block transition-[width] duration-300 ease-in-out overflow-hidden',
@@ -34,9 +34,9 @@ export function DashboardLayout() {
       >
         <div className="flex h-16 items-center px-3 overflow-hidden whitespace-nowrap">
           <div className="flex items-center gap-2">
-            <div className="size-2 rounded-full bg-amber-500 shrink-0" />
+            <div className="size-2 rounded-full bg-brand-accent shrink-0" />
             {!showCompact ? (
-              <p className="text-sm font-semibold tracking-tight text-slate-100 uppercase">JOMS</p>
+              <p className="text-sm font-semibold tracking-tight text-brand-text uppercase">JOMS</p>
             ) : null}
           </div>
         </div>

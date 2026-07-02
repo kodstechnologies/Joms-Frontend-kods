@@ -54,28 +54,28 @@ const variantStyles: Record<
   }
 > = {
   approve: {
-    submit: 'bg-[#00B761] text-white hover:bg-[#08a85d]',
-    selectedChip: 'bg-[#FBC078] text-black',
-    iconWrap: 'bg-[#063D22] text-[#00B761]',
+    submit: 'bg-brand-success text-brand-text hover:bg-brand-progress',
+    selectedChip: 'bg-brand-accent text-brand-text-dark',
+    iconWrap: 'bg-brand-success/15 text-brand-success',
     icon: 'check',
   },
   reject: {
-    submit: 'bg-[#F02D2D] text-white hover:bg-[#d92727]',
-    selectedChip: 'bg-[#FBC078] text-black',
+    submit: 'bg-brand-danger text-brand-text hover:bg-brand-danger/80',
+    selectedChip: 'bg-brand-accent text-brand-text-dark',
   },
   requestChanges: {
-    submit: 'bg-[#FF7A1A] text-white hover:bg-[#ef7018]',
-    selectedChip: 'bg-[#FBC078] text-black',
+    submit: 'bg-brand-accent text-brand-text-dark hover:bg-brand-gold-from',
+    selectedChip: 'bg-brand-accent text-brand-text-dark',
   },
   escalate: {
-    submit: 'bg-[#FBC078] text-black hover:bg-[#f4b96d]',
-    selectedChip: 'bg-[#FBC078] text-black',
-    iconWrap: 'bg-[#5B4424] text-[#FBC078]',
+    submit: 'bg-brand-accent text-brand-text-dark hover:bg-brand-gold-from',
+    selectedChip: 'bg-brand-accent text-brand-text-dark',
+    iconWrap: 'bg-brand-accent/15 text-brand-accent',
     icon: 'key',
   },
   suspend: {
-    submit: 'bg-[#F02D2D] text-white hover:bg-[#d92727]',
-    selectedChip: 'bg-[#FBC078] text-black',
+    submit: 'bg-brand-danger text-brand-text hover:bg-brand-danger/80',
+    selectedChip: 'bg-brand-accent text-brand-text-dark',
   },
 }
 
@@ -118,7 +118,7 @@ export function DecisionActionModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 px-4 py-6 text-white"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 px-4 py-6 text-brand-text"
       role="presentation"
       onClick={onClose}
     >
@@ -126,18 +126,18 @@ export function DecisionActionModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="decision-action-modal-title"
-        className="flex max-h-[90vh] w-full max-w-[470px] flex-col overflow-hidden rounded-xl border border-[#242424] bg-[#151515] shadow-2xl"
+        className="flex max-h-[90vh] w-full max-w-[470px] flex-col overflow-hidden rounded-brand-md border border-white/10 bg-brand-surface shadow-2xl"
         onClick={(event) => event.stopPropagation()}
       >
-        <div className="flex shrink-0 items-center justify-between border-b border-[#242424] px-6 py-4">
-          <h2 id="decision-action-modal-title" className="text-[18px] font-semibold text-white">
+        <div className="flex shrink-0 items-center justify-between border-b border-white/10 px-6 py-4">
+          <h2 id="decision-action-modal-title" className="text-[18px] font-semibold text-brand-text">
             {title}
           </h2>
           <button
             type="button"
             aria-label="Close modal"
             onClick={onClose}
-            className="rounded-full p-1 text-white transition-colors hover:bg-white/10"
+            className="rounded-full p-1 text-brand-text transition-colors hover:bg-white/10"
           >
             <X className="size-5" aria-hidden="true" />
           </button>
@@ -156,13 +156,13 @@ export function DecisionActionModal({
             </div>
           )}
 
-          <p className="mx-auto max-w-[330px] text-center text-[11px] font-semibold leading-relaxed text-white">
+          <p className="mx-auto max-w-[330px] text-center text-[11px] font-semibold leading-relaxed text-brand-text">
             {description}
           </p>
 
           {showReasons && (
             <div className="mt-5">
-              <span className="mb-2 block text-[10px] font-medium text-[#8A8A8A]">Reasons</span>
+              <span className="mb-2 block text-[10px] font-medium text-brand-muted">Reasons</span>
               <div className="flex flex-wrap gap-3">
                 {reasonOptions.map((option) => {
                   const isSelected = selectedReasons.includes(option.value)
@@ -173,7 +173,7 @@ export function DecisionActionModal({
                       type="button"
                       onClick={() => onReasonToggle?.(option.value)}
                       className={cn(
-                        'rounded-md bg-black px-3 py-2 text-[10px] font-bold text-white transition-colors',
+                        'rounded-brand-md bg-brand-bg px-3 py-2 text-[10px] font-bold text-brand-text transition-colors',
                         isSelected && styles.selectedChip,
                       )}
                     >
@@ -187,7 +187,7 @@ export function DecisionActionModal({
 
           {showTimeline && (
             <div className="mt-5">
-              <span className="mb-2 block text-[10px] font-medium text-[#8A8A8A]">
+              <span className="mb-2 block text-[10px] font-medium text-brand-muted">
                 Suspension Timeline
               </span>
               <div className="grid grid-cols-2 gap-3">
@@ -196,22 +196,22 @@ export function DecisionActionModal({
                   value={startDate}
                   disabled={indefinite}
                   onChange={(event) => onStartDateChange?.(event.target.value)}
-                  className="w-full rounded-md border border-transparent bg-black px-3 py-2.5 text-[11px] text-white outline-none [color-scheme:dark] focus:border-[#FBC078]/50 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="w-full rounded-brand-md border border-transparent bg-brand-bg px-3 py-2.5 text-[11px] text-brand-text outline-none [color-scheme:dark] focus:border-brand-accent/50 disabled:cursor-not-allowed disabled:opacity-50"
                 />
                 <input
                   type="date"
                   value={endDate}
                   disabled={indefinite}
                   onChange={(event) => onEndDateChange?.(event.target.value)}
-                  className="w-full rounded-md border border-transparent bg-black px-3 py-2.5 text-[11px] text-white outline-none [color-scheme:dark] focus:border-[#FBC078]/50 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="w-full rounded-brand-md border border-transparent bg-brand-bg px-3 py-2.5 text-[11px] text-brand-text outline-none [color-scheme:dark] focus:border-brand-accent/50 disabled:cursor-not-allowed disabled:opacity-50"
                 />
               </div>
-              <label className="mt-3 flex cursor-pointer items-center gap-2 text-[11px] text-white">
+              <label className="mt-3 flex cursor-pointer items-center gap-2 text-[11px] text-brand-text">
                 <input
                   type="checkbox"
                   checked={indefinite}
                   onChange={(event) => onIndefiniteChange?.(event.target.checked)}
-                  className="size-3.5 accent-[#FBC078]"
+                  className="size-3.5 accent-brand-accent"
                 />
                 <span>{indefiniteLabel}</span>
               </label>
@@ -221,14 +221,14 @@ export function DecisionActionModal({
           {showEscalationOptions && (
             <div className="mt-5 space-y-3">
               {escalationOptions.map((option) => (
-                <label key={option.value} className="flex cursor-pointer items-center gap-2 text-[11px] text-white">
+                <label key={option.value} className="flex cursor-pointer items-center gap-2 text-[11px] text-brand-text">
                   <input
                     type="radio"
                     name="decision-action-escalation"
                     value={option.value}
                     checked={selectedEscalationOption === option.value}
                     onChange={() => onEscalationOptionChange?.(option.value)}
-                    className="size-3 accent-[#FBC078]"
+                    className="size-3 accent-brand-accent"
                   />
                   <span>{option.label}</span>
                 </label>
@@ -238,25 +238,25 @@ export function DecisionActionModal({
 
           {showReasonInput && (
             <label className="mt-5 block">
-              <span className="mb-2 block text-[10px] font-semibold text-white">
-                Reason <span className="text-[#FF4B4B]">*</span>
+              <span className="mb-2 block text-[10px] font-semibold text-brand-text">
+                Reason <span className="text-brand-danger">*</span>
               </span>
               <textarea
                 value={reason}
                 onChange={(event) => onReasonChange?.(event.target.value)}
-                className="h-[58px] w-full resize-none rounded-md border border-transparent bg-black px-4 py-3 text-[11px] text-white outline-none placeholder:text-[#5C5C5C] focus:border-[#FBC078]/50"
+                className="h-[58px] w-full resize-none rounded-brand-md border border-transparent bg-brand-bg px-4 py-3 text-[11px] text-brand-text outline-none placeholder:text-brand-muted focus:border-brand-accent/50"
               />
             </label>
           )}
 
           <label className="mt-5 block">
-            <span className="mb-2 block text-[10px] font-semibold text-white">
-              Admin notes <span className="text-[#FF4B4B]">*</span>
+            <span className="mb-2 block text-[10px] font-semibold text-brand-text">
+              Admin notes <span className="text-brand-danger">*</span>
             </span>
             <textarea
               value={adminNotes}
               onChange={(event) => onAdminNotesChange(event.target.value)}
-              className="h-[92px] w-full resize-none rounded-md border border-transparent bg-black px-4 py-3 text-[11px] text-white outline-none placeholder:text-[#5C5C5C] focus:border-[#FBC078]/50"
+              className="h-[92px] w-full resize-none rounded-brand-md border border-transparent bg-brand-bg px-4 py-3 text-[11px] text-brand-text outline-none placeholder:text-brand-muted focus:border-brand-accent/50"
             />
           </label>
 
@@ -264,7 +264,7 @@ export function DecisionActionModal({
             <button
               type="button"
               onClick={onClose}
-              className="rounded-md border border-white px-4 py-3 text-[10px] font-semibold text-white transition-colors hover:bg-white/10"
+              className="rounded-brand-md border border-white px-4 py-3 text-[10px] font-semibold text-brand-text transition-colors hover:bg-white/10"
             >
               {cancelLabel}
             </button>
@@ -273,7 +273,7 @@ export function DecisionActionModal({
               onClick={onSubmit}
               disabled={isSubmitting}
               className={cn(
-                'flex items-center justify-center gap-2 rounded-md px-4 py-3 text-[10px] font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-60',
+                'flex items-center justify-center gap-2 rounded-brand-md px-4 py-3 text-[10px] font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-60',
                 styles.submit,
               )}
             >
@@ -284,10 +284,10 @@ export function DecisionActionModal({
                     className={cn(
                       'size-2.5',
                       variant === 'approve'
-                        ? 'text-[#00B761]'
+                        ? 'text-brand-success'
                         : variant === 'reject'
-                          ? 'text-[#F02D2D]'
-                          : 'text-[#FF7A1A]',
+                          ? 'text-brand-danger'
+                          : 'text-brand-accent',
                     )}
                     aria-hidden="true"
                   />
