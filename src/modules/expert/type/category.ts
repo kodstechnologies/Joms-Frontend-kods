@@ -1,16 +1,26 @@
 export interface SubCategory {
   _id: string
   name: string
-  isActive?: boolean
+  description: string
+  vectorIcon: string
+  status: "ACTIVE" | "PAUSED" | "DELETED"
 }
 
 export interface Category {
-  _id: string
-  name: string
-  isActive: boolean
-  subCategories: SubCategory[]
-  createdAt: string
-  updatedAt: string
+  _id: string;
+  categoryId: string;
+  name: string;
+  description: string;
+
+  icon3D: string | null;
+  image: string | null;
+
+  status: "ACTIVE" | "PAUSED" | "DELETED";
+
+  subCategories: SubCategory[];
+
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface PaginationMeta {
@@ -36,4 +46,16 @@ export interface SubCategoryListResponse {
   meta: {
     pagination: PaginationMeta
   }
+}
+
+export interface CreateCategoryRequest {
+  name: string;
+  description: string;
+  icon3D: string;
+}
+
+export interface CategoryByIdResponse {
+  success: boolean;
+  message: string;
+  data: Category;
 }

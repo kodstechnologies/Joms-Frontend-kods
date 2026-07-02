@@ -1,14 +1,32 @@
 import { expertApiClient } from '@/shared/lib/axios'
 import type { CategoryListResponse, SubCategoryListResponse } from '../type/category'
+import type { CreateCategoryRequest } from "../type/category";
 
+export const createCategory = async (
+  payload: CreateCategoryRequest
+) => {
+  const response = await expertApiClient.post(
+    "/categories",
+    payload
+  );
+
+  return response.data;
+};
 export const fetchCategories = async (params?: {
-  search?: string
-  page?: number
-  limit?: number
+  search?: string;
+  page?: number;
+  limit?: number;
+  status?: "ACTIVE" | "PAUSED" | "DELETED";
 }) => {
-  const response = await expertApiClient.get<CategoryListResponse>('/categories', { params })
-  return response.data
-}
+  const response = await expertApiClient.get<CategoryListResponse>(
+    "/categories",
+    {
+      params,
+    }
+  );
+
+  return response.data;
+};
 
 export const fetchSubcategories = async (
   categoryId: string,
@@ -20,3 +38,8 @@ export const fetchSubcategories = async (
   )
   return response.data
 }
+
+export const fetchCategoryById = async (id: string) => {
+  const response = await expertApiClient.get(`/categories/${id}`);
+  return response.data;
+};
