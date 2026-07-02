@@ -1,10 +1,9 @@
 import type { ReactNode } from 'react'
 import type { ColumnDef, RowData } from '@tanstack/react-table'
 import { flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table'
-import { ArrowUpDown, Download, Filter, Search } from 'lucide-react'
+import { ArrowUpDown, Filter, Search, Upload } from 'lucide-react'
 
 import { Button } from '@/shared/components/ui/button'
-import { Input } from '@/shared/components/ui/input'
 import { cn } from '@/shared/lib/cn'
 
 declare module '@tanstack/react-table' {
@@ -34,6 +33,7 @@ export type DataTableProps<TData> = {
   searchValue: string
   onSearchChange: (value: string) => void
   searchPlaceholder?: string
+  advancedFilterLabel?: string
   onAdvancedFilter?: () => void
   onExport?: () => void
   isExporting?: boolean
@@ -64,6 +64,7 @@ export function DataTable<TData>({
   searchValue,
   onSearchChange,
   searchPlaceholder = 'Search records',
+  advancedFilterLabel = 'Advanced Filters',
   onAdvancedFilter,
   onExport,
   isExporting = false,
@@ -94,52 +95,56 @@ export function DataTable<TData>({
 
   return (
     <section
-      className={cn('overflow-hidden rounded-md border border-[#202020] bg-[#121212]', className)}
+      className={cn('overflow-hidden rounded-xl border border-white/[0.06] bg-[#121212]', className)}
       aria-label={`${resourceLabel} table`}
     >
-      <div className="flex flex-wrap items-center justify-between gap-3 px-3 pt-3 pb-2">
-        <div className="relative w-full sm:w-[320px]">
+      <div className="flex flex-col gap-3 px-5 pt-5 lg:flex-row lg:items-center lg:justify-between">
+        <div className="relative min-w-0 w-full flex-1">
           <Search
-            className="absolute top-1/2 left-3 size-3.5 -translate-y-1/2 text-[#737373]"
+            className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-[#666666]"
             aria-hidden="true"
           />
-          <Input
+          <input
             type="search"
             value={searchValue}
             onChange={(event) => onSearchChange(event.target.value)}
             placeholder={searchPlaceholder}
             aria-label={`Search ${resourceLabel}`}
-            className="h-9 rounded-md border-[#070707] bg-[#050505] pl-9 text-xs text-white placeholder:text-[#666666] focus-visible:ring-1 focus-visible:ring-[#F0C27B]/40"
+            className="h-10 w-full rounded-lg border border-white/10 bg-black pl-10 pr-3 text-[12px] text-white outline-none transition-colors placeholder:text-[#555555] focus:border-[#FBC078]/50"
           />
         </div>
 
-        <div className="flex w-full items-center justify-end gap-2 sm:w-auto">
+        <div className="flex w-full shrink-0 items-center justify-end gap-3 lg:w-auto">
           {toolbarContent}
           <Button
             type="button"
             variant="secondary"
             onClick={onAdvancedFilter}
             disabled={!onAdvancedFilter}
-            className="h-9 flex-1 gap-2 rounded-md border border-white/45 bg-transparent px-3 text-[11px] font-semibold text-white shadow-none hover:border-white/70 hover:bg-white/5 sm:flex-none"
+            className="h-10 flex-1 gap-2 rounded-lg border border-white/45 bg-transparent px-4 text-[11px] font-semibold text-white shadow-none hover:border-white/70 hover:bg-white/5 sm:flex-none"
           >
-            <Filter className="size-3.5" aria-hidden="true" />
-            Advanced Filters
+            <Filter className="size-4" aria-hidden="true" />
+            {advancedFilterLabel}
           </Button>
           <Button
             type="button"
             onClick={onExport}
             disabled={!onExport || isExporting}
-            className="h-9 flex-1 gap-2 rounded-md bg-[#F0C27B] px-3 text-[11px] font-bold text-black shadow-none hover:bg-[#f4cc91] sm:flex-none"
+            className="h-10 flex-1 gap-2 rounded-lg bg-[#F0C27B] px-4 text-[11px] font-bold text-black shadow-none hover:bg-[#f4cc91] sm:flex-none"
           >
-            <Download className="size-3.5" aria-hidden="true" />
+            <Upload className="size-4" aria-hidden="true" />
             {isExporting ? 'Exporting...' : 'Export Data'}
           </Button>
         </div>
       </div>
 
-      <div className="px-3 pb-5" aria-live="polite">
-        <p className="text-[11px] leading-none text-[#ebe5e5]">
-          Showing {firstItem}-{lastItem} of {pagination.totalItems} {resourceLabel}
+      <div className="px-5 pb-4 pt-4" aria-live="polite">
+        <p className="text-[11px] leading-none text-[#777777]">
+          Showing{' '}
+          <span className="font-semibold text-white">
+            {firstItem}–{lastItem}
+          </span>{' '}
+          of <span className="font-semibold text-white">{pagination.totalItems}</span> {resourceLabel}
         </p>
       </div>
 
@@ -219,7 +224,7 @@ export function DataTable<TData>({
         </table>
       </div>
 
-      <div className="flex flex-col items-center justify-between gap-4 border-t border-[#252525] px-3 py-4 sm:flex-row">
+      <div className="flex flex-col items-center justify-between gap-4 border-t border-[#252525] px-5 py-4 sm:flex-row">
         <Button
           type="button"
           variant="secondary"

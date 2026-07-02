@@ -142,7 +142,7 @@ export const navigationConfig: NavItem[] = [
     superAdminOnly: true,
     children: [
       { key: 'finance.dashboard', label: 'Dashboard', to: '/finance/dashboard' },
-      { key: 'finance.revenue', label: 'Revenue Overview', badge: { label: 'Soon', variant: 'warning' } },
+      { key: 'finance.revenue', label: 'Revenue Overview', to: '/finance/revenue' },
       { key: 'finance.events', label: 'Events', badge: { label: 'Soon', variant: 'warning' } },
       { key: 'finance.services', label: 'Services', badge: { label: 'Soon', variant: 'warning' } },
       { key: 'finance.venues', label: 'Venues', badge: { label: 'Soon', variant: 'warning' } },
