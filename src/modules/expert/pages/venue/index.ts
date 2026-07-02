@@ -8,7 +8,6 @@ export * from "./application-details-page";
 export * from "./venue-profile-view-page";
 export * from "./space-details-page";
 
-export * from "./category-form-page";
 export { VenueCategoryManagementPage } from "./category-management-page";
 export { VenueCategoryViewPage } from "./category-view-page";
 export { CreateVenueCategoryPage } from "./create-category";

@@ -4,7 +4,6 @@ import CategoryHeader from "../../components/category/CategoryHeader";
 import CategoryDetailsCard from "../../components/category/CategoryDetailsCard";
 import FooterActions from "../../components/category/FooterActions";
 import SubCategoryCard from "../../components/category/SubCategoryCard";
-import type { SubCategory } from "../../components/category/SubCategoryCard";
 import { useNavigate, useParams } from "react-router-dom";
 
 type CategoryFormPageProps = {
@@ -39,8 +38,8 @@ export const CategoryFormPage = ({
     const [iconPreview, setIconPreview] = useState<string>();
     const [headerPreview, setHeaderPreview] = useState<string>();
 
-    const [iconFile, setIconFile] = useState<File | null>(null);
-    const [headerFile, setHeaderFile] = useState<File | null>(null);
+    const [, setIconFile] = useState<File | null>(null);
+    const [, setHeaderFile] = useState<File | null>(null);
 
     const [subCategories, setSubCategories] = useState<
         {

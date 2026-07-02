@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react'
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
+import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import { DashboardLayout } from '@/app/layouts/dashboard-layout'
 import { ProtectedRoute } from '@/app/router/protected-route'
 import { PermissionRoute } from '@/app/router/permission-route'
@@ -313,10 +313,21 @@ export function AppRouter() {
 
               <Route element={<SuperAdminRoute />}>
                 <Route path="/dashboard/executive" element={<ExecutiveOverviewPage />} />
+                <Route path="/experts/dashboard" element={<ExpertDashboardPage />} />
+                <Route path="/experts/dashboard/metrics" element={<ExpertMetricsPage />} />
                 <Route path="/experts/management" element={<ExpertManagementPage />} />
                 <Route path="/experts/management/create" element={<CreateExpertPage />} />
+                <Route
+                  path="/experts/management/profile/:id"
+                  element={<ExpertProfileViewPage />}
+                />
+                <Route
+                  path="/experts/management/application/:id"
+                  element={<ExpertApplicationViewPage />}
+                />
                 <Route path="/experts/suspended" element={<ExpertSuspendedExpertsPage />} />
                 <Route path="/experts/deleted" element={<ExpertDeletedExpertsPage />} />
+                <Route path="/experts/reported" element={<ExpertReportedExpertsPage />} />
                 <Route path="/experts/pending-approvals" element={<ExpertPendingApprovalsPage />} />
                 <Route path="/referrals/management" element={<ReferralManagementPage />} />
                 <Route path="/memberships/plans" element={<MembershipPlansPage />} />
@@ -342,6 +353,20 @@ export function AppRouter() {
                 <Route path="/services/management/create" element={<CreateServiceListingPage />} />
                 <Route path="/services/management/view/:id" element={<ServiceViewPage />} />
                 <Route path="/services/leaderboard" element={<LeaderboardPage />} />
+                <Route path="/categories/management" element={<CategoryManagementPage />} />
+                <Route path="/categories/management/create" element={<CreateCategoryPage />} />
+                <Route
+                  path="/categories/management/create-subcategory/:id"
+                  element={<CreateSubCategoryPage />}
+                />
+                <Route path="/categories/management/paused" element={<PausedCategoriesPage />} />
+                <Route path="/categories/management/deleted" element={<DeletedCategoriesPage />} />
+                <Route path="/categories/management/rename/:id" element={<RenameCategoryPage />} />
+                <Route path="/categories/management/view/:id" element={<CategoryViewPage />} />
+                <Route
+                  path="/categories/management/:id/subcategory/:subCategoryId"
+                  element={<SubCategoryViewPage />}
+                />
               </Route>
 
               <Route element={<PermissionRoute module="venues" />}>
@@ -364,6 +389,38 @@ export function AppRouter() {
                 <Route path="/venues/management/suspended" element={<VenueSuspendedPage />} />
                 <Route path="/venues/management/onboarding" element={<CreateVenueOnboardingPage />} />
                 <Route path="/venues/management/create" element={<CreateVenueListingPage />} />
+                <Route
+                  path="/venues/categories/management"
+                  element={<VenueCategoryManagementPage />}
+                />
+                <Route
+                  path="/venues/categories/management/create"
+                  element={<CreateVenueCategoryPage />}
+                />
+                <Route
+                  path="/venues/categories/management/create-subcategory/:id"
+                  element={<CreateVenueSubCategoryPage />}
+                />
+                <Route
+                  path="/venues/categories/management/paused"
+                  element={<PausedVenueCategoriesPage />}
+                />
+                <Route
+                  path="/venues/categories/management/deleted"
+                  element={<DeletedVenueCategoriesPage />}
+                />
+                <Route
+                  path="/venues/categories/management/rename/:id"
+                  element={<RenameVenueCategoryPage />}
+                />
+                <Route
+                  path="/venues/categories/management/view/:id"
+                  element={<VenueCategoryViewPage />}
+                />
+                <Route
+                  path="/venues/categories/management/:id/subcategory/:subCategoryId"
+                  element={<VenueSubCategoryViewPage />}
+                />
               </Route>
             </Route>
           </Route>

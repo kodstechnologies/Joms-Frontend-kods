@@ -94,7 +94,6 @@ function SidebarRow({
 
 function ProfileSidebar({
   data,
-  venueId,
 }: {
   data: VenueFullView
   venueId: string

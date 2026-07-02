@@ -14,7 +14,6 @@ import {
   createAdminAvailability,
   createPricing,
   createVenueTerms,
-  submitVenue,
   submitAdminVenue,
 } from '../api/venue-api'
 import type { VenueFormData } from '../utils/venue-form'

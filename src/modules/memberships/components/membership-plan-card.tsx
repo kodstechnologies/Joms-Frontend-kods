@@ -1,7 +1,5 @@
 import {
   Check,
-  Clock,
-  Hourglass,
   Image,
   MoreVertical,
   PauseCircle,

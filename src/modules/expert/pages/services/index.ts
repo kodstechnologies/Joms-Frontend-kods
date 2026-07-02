@@ -7,7 +7,6 @@ export * from './create-service-listing-page'
 export * from "./category-management-page";
 export * from  "./create-category";
 export * from "./paused-categories-page";
-export * from "./category-form-page";
 export * from "./rename-category-page";
 export * from "./deleted-categories-page";
 export * from "./create-subcategory-page";

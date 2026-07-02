@@ -39,8 +39,8 @@ export const CategoryFormPage = ({
     const [iconPreview, setIconPreview] = useState<string>();
     const [headerPreview, setHeaderPreview] = useState<string>();
 
-    const [iconFile, setIconFile] = useState<File | null>(null);
-    const [headerFile, setHeaderFile] = useState<File | null>(null);
+    const [, setIconFile] = useState<File | null>(null);
+    const [, setHeaderFile] = useState<File | null>(null);
 
     const [subCategories, setSubCategories] = useState<SubCategory[]>([
         {
