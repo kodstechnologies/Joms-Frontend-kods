@@ -1,11 +1,14 @@
-import { LogOut } from 'lucide-react'
+import { useMemo } from 'react'
 
 import { SidebarGroup } from '@/app/layouts/components/sidebar-group'
-import { navigationConfig } from '@/app/layouts/navigation/navigation.config'
+import { getVisibleNavigation } from '@/app/layouts/navigation/navigation.filter'
 import { useAuthStore } from '@/modules/auth/store/auth-store'
+import { LogOut } from 'lucide-react'
 
 export function Sidebar({ onNavigate, compact = false }: { onNavigate?: () => void; compact?: boolean }) {
   const clearSession = useAuthStore((state) => state.clearSession)
+  const user = useAuthStore((state) => state.user)
+  const visibleNavigation = useMemo(() => getVisibleNavigation(user), [user])
 
   return (
     <div className="flex h-[calc(100vh-3.5rem)] flex-col px-3 pb-6 pt-1 md:h-[calc(100dvh-3.5rem)]">
@@ -21,7 +24,7 @@ export function Sidebar({ onNavigate, compact = false }: { onNavigate?: () => vo
       </div>
 
       <nav className="flex-1 space-y-2 overflow-y-auto pb-4">
-        {navigationConfig.map((item) => (
+        {visibleNavigation.map((item) => (
           <SidebarGroup key={item.key} item={item} compact={compact} onNavigate={onNavigate} />
         ))}
       </nav>

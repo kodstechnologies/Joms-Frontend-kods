@@ -68,6 +68,31 @@ const buildMembershipFormData = (payload: CreateMembershipPayload) => {
   return formData
 }
 
+const buildUpdateMembershipFormData = (payload: Partial<CreateMembershipPayload>) => {
+  const formData = new FormData()
+
+  if (payload.type) formData.append('type', payload.type)
+  if (payload.planName) formData.append('planName', payload.planName)
+  if (payload.pricing) formData.append('pricing', JSON.stringify(payload.pricing))
+  if (payload.features) formData.append('features', JSON.stringify(payload.features))
+  if (payload.trialPeriodDays !== undefined) {
+    formData.append('trialPeriodDays', String(payload.trialPeriodDays))
+  }
+  if (payload.enableAutoRenew !== undefined) {
+    formData.append('enableAutoRenew', String(payload.enableAutoRenew))
+  }
+  if (payload.allowPlanUpgrades !== undefined) {
+    formData.append('allowPlanUpgrades', String(payload.allowPlanUpgrades))
+  }
+  if (payload.allowDowngradePlans !== undefined) {
+    formData.append('allowDowngradePlans', String(payload.allowDowngradePlans))
+  }
+  if (payload.updatedBy) formData.append('updatedBy', payload.updatedBy)
+  if (payload.icon) formData.append('icon', payload.icon)
+
+  return formData
+}
+
 export const createMembership = async (payload: CreateMembershipPayload) => {
   const response = await membershipApiClient.post<MembershipDetailResponse>(
     '/memberships',
@@ -81,19 +106,7 @@ export const updateMembership = async (
   id: string,
   payload: Partial<CreateMembershipPayload>,
 ) => {
-  const formData = buildMembershipFormData({
-    type: payload.type ?? 'user',
-    planName: payload.planName ?? '',
-    pricing: payload.pricing ?? [],
-    features: payload.features ?? {
-      accessToBasicNetworkingFeatures: false,
-      joinCommunities: { enabled: false, count: 0 },
-      platformHostedEvents: { enabled: false, count: 0 },
-      profileCustomization: false,
-      dedicatedAccountManager: false,
-    },
-    ...payload,
-  })
+  const formData = buildUpdateMembershipFormData(payload)
 
   const response = await membershipApiClient.patch<MembershipDetailResponse>(
     `/memberships/${id}`,

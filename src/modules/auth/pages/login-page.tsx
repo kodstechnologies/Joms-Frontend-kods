@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
 import { useAuthStore } from '@/modules/auth/store/auth-store'
+import { getDefaultHomeRoute, normalizeUserPermissions } from '@/app/layouts/navigation/navigation.filter'
 import { useLoginMutation } from '@/modules/auth/hooks/use-login-mutation'
 import { useVerifyOtpMutation } from '@/modules/auth/hooks/use-verify-otp-mutation'
 import { type LoginSchema, loginSchema } from '@/modules/auth/validations/login-schema'
@@ -64,10 +65,35 @@ export function LoginPage() {
     }
 
     try {
-      await verifyOtp({ email: pendingEmail, otp: values.code })
-      setSession()
+      const response = await verifyOtp({ email: pendingEmail, otp: values.code })
+      const admin = response?.data?.admin
+      let sessionUser
+
+      if (admin) {
+        sessionUser = {
+          id: admin.id,
+          email: admin.email,
+          fullname: admin.fullname,
+          kind: admin.kind ?? 'subadmin',
+          isSuperAdmin: Boolean(admin.isSuperAdmin),
+          permissions: normalizeUserPermissions(admin.permissions ?? []),
+          mfaEnabled: admin.mfaEnabled,
+          status: admin.status,
+        }
+        setSession(sessionUser)
+      } else {
+        sessionUser = {
+          id: '',
+          email: pendingEmail,
+          fullname: 'Admin',
+          kind: 'superadmin' as const,
+          isSuperAdmin: true,
+          permissions: [],
+        }
+        setSession(sessionUser)
+      }
       toast.success('Welcome back')
-      navigate('/dashboard/executive', { replace: true })
+      navigate(getDefaultHomeRoute(sessionUser), { replace: true })
     } catch {
       toast.error('Invalid or expired OTP')
     }
@@ -75,7 +101,7 @@ export function LoginPage() {
 
   const subtitle = useMemo(() => {
     return step === 'credentials'
-      ? 'Enter your credentials to access the admin panel'
+      ? 'Enter your email and password to access the admin panel. Sub-admins use the credentials set when their account was created.'
       : 'Enter 6 digit authorisation code sent to your email.'
   }, [step])
 

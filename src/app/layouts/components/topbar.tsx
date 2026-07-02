@@ -1,24 +1,37 @@
 import { Bell, Menu } from 'lucide-react'
 import { useLocation } from 'react-router-dom'
 
-import { navigationConfig } from '@/app/layouts/navigation/navigation.config'
+import { getVisibleNavigation } from '@/app/layouts/navigation/navigation.filter'
+import { useAuthStore } from '@/modules/auth/store/auth-store'
 import { cn } from '@/shared/lib/cn'
 import { uiTokens } from '@/shared/lib/design-tokens'
+import type { NavItem } from '@/app/layouts/navigation/navigation.config'
 
-function getTitleFromNav(pathname: string) {
-  for (const group of navigationConfig) {
-    for (const child of group.children ?? []) {
-      if (child.to && pathname.startsWith(child.to)) {
-        return child.label
-      }
+function findTitleInNav(items: NavItem[], pathname: string): string | null {
+  for (const item of items) {
+    if (item.to && pathname.startsWith(item.to)) {
+      return item.label
+    }
+    if (item.children) {
+      const childTitle = findTitleInNav(item.children, pathname)
+      if (childTitle) return childTitle
     }
   }
-  return 'Executive Overview'
+  return null
+}
+
+function getTitleFromNav(pathname: string, items: NavItem[]) {
+  return findTitleInNav(items, pathname) ?? 'Dashboard'
 }
 
 export function Topbar({ onMenuClick, onToggleCollapse }: { onMenuClick: () => void; onToggleCollapse: () => void }) {
   const location = useLocation()
-  const title = getTitleFromNav(location.pathname)
+  const user = useAuthStore((state) => state.user)
+  const visibleNavigation = getVisibleNavigation(user)
+  const title = getTitleFromNav(location.pathname, visibleNavigation)
+  const displayName = user?.fullname ?? 'Admin'
+  const roleLabel = user?.isSuperAdmin ? 'Super Admin' : 'Sub Admin'
+  const userInitial = displayName.charAt(0).toUpperCase()
 
   return (
     <header className={cn('sticky top-0 z-30 backdrop-blur', uiTokens.headerBg)}>
@@ -60,11 +73,11 @@ export function Topbar({ onMenuClick, onToggleCollapse }: { onMenuClick: () => v
 
           <div className="flex items-center gap-3">
             <div className={cn('hidden text-right sm:block')}>
-              <p className="text-sm font-semibold text-slate-100">Super Admin</p>
-              <p className="text-[11px] text-slate-400">Last login: 11/02/2026 · 05:29</p>
+              <p className="text-sm font-semibold text-slate-100">{displayName}</p>
+              <p className="text-[11px] text-slate-400">{roleLabel}</p>
             </div>
             <div className="grid size-10 place-items-center rounded-full border border-white/10 bg-gradient-to-br from-amber-400/20 to-fuchsia-500/10 text-sm font-semibold text-slate-100 shadow-[0_12px_35px_rgba(0,0,0,0.45)]">
-              <span className="translate-y-0.5">S</span>
+              <span className="translate-y-0.5">{userInitial}</span>
             </div>
           </div>
         </div>

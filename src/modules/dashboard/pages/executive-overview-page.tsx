@@ -67,8 +67,8 @@ export function ExecutiveOverviewPage() {
           isLoading={isLoading}
           isEmpty={!revenueMemberGrowthMock.length}
         >
-          <div className="h-[220px] sm:h-[260px]">
-            <ResponsiveContainer width="100%" height="100%">
+          <div className="h-[220px] w-full min-h-[220px] sm:h-[260px]">
+            <ResponsiveContainer width="100%" height="100%" minHeight={220}>
               <LineChart data={revenueMemberGrowthMock} margin={{ left: 8, right: 8, top: 8, bottom: 8 }}>
                 <CartesianGrid stroke="rgba(255,255,255,0.05)" vertical={false} />
                 <XAxis
@@ -100,8 +100,8 @@ export function ExecutiveOverviewPage() {
           isLoading={isLoading}
           isEmpty={!membershipTrendsMock.length}
         >
-          <div className="h-[220px] sm:h-[260px]">
-            <ResponsiveContainer width="100%" height="100%">
+          <div className="h-[220px] w-full min-h-[220px] sm:h-[260px]">
+            <ResponsiveContainer width="100%" height="100%" minHeight={220}>
               <BarChart data={membershipTrendsMock} margin={{ left: 8, right: 8, top: 8, bottom: 8 }}>
                 <CartesianGrid stroke="rgba(255,255,255,0.05)" vertical={false} />
                 <XAxis
@@ -129,8 +129,8 @@ export function ExecutiveOverviewPage() {
           isLoading={isLoading}
           isEmpty={!conversionFunnelMock.length}
         >
-          <div className="h-[220px] sm:h-[260px]">
-            <ResponsiveContainer width="100%" height="100%">
+          <div className="h-[220px] w-full min-h-[220px] sm:h-[260px]">
+            <ResponsiveContainer width="100%" height="100%" minHeight={220}>
               <BarChart data={conversionFunnelMock} layout="vertical" margin={{ left: 12, right: 12, top: 8, bottom: 8 }}>
                 <CartesianGrid stroke="rgba(255,255,255,0.05)" horizontal={false} />
                 <XAxis type="number" tickLine={false} axisLine={false} tick={{ fill: 'rgba(148,163,184,0.85)', fontSize: 12 }} />
@@ -150,8 +150,8 @@ export function ExecutiveOverviewPage() {
           isLoading={isLoading}
           isEmpty={!serviceDistributionMock.length}
         >
-          <div className="h-[220px] sm:h-[260px]">
-            <ResponsiveContainer width="100%" height="100%">
+          <div className="h-[220px] w-full min-h-[220px] sm:h-[260px]">
+            <ResponsiveContainer width="100%" height="100%" minHeight={220}>
               <PieChart>
                 <Tooltip
                   contentStyle={tooltipStyle}

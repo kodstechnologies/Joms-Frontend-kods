@@ -12,8 +12,17 @@ type ResponsiveGridProps = PropsWithChildren<{
   className?: string
 }>
 
+const colsClassMap: Record<GridCols, string> = {
+  1: 'grid-cols-1',
+  2: 'grid-cols-2',
+  3: 'grid-cols-3',
+  4: 'grid-cols-4',
+  5: 'grid-cols-5',
+  6: 'grid-cols-6',
+}
+
 function colsClass(cols: GridCols) {
-  return `grid-cols-${cols}`
+  return colsClassMap[cols]
 }
 
 function gapClass(gap?: ResponsiveGridProps['gap']) {

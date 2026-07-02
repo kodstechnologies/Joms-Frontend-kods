@@ -1,4 +1,5 @@
 export { MembershipPlansPage } from './pages/membership-plans-page'
+export { MembershipPlanFormPage } from './pages/membership-plan-form-page'
 export {
   MembershipPausedPlansPage,
   MembershipInactivePlansPage,

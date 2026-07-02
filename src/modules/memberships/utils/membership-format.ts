@@ -17,6 +17,93 @@ export const formatMembershipDate = (value?: string | null) => {
   }).format(new Date(value))
 }
 
+export const formatMembershipDateTime = (value?: string | null) => {
+  if (!value) return '—'
+
+  return new Intl.DateTimeFormat('en-IN', {
+    day: 'numeric',
+    month: 'short',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  }).format(new Date(value))
+}
+
+export const formatMembershipTimelineDate = (value?: string | null) => {
+  if (!value) return '—'
+
+  return new Intl.DateTimeFormat('en-IN', {
+    day: '2-digit',
+    month: 'short',
+  }).format(new Date(value))
+}
+
+export const formatMembershipTimelineTime = (value?: string | null) => {
+  if (!value) return '—'
+
+  return new Intl.DateTimeFormat('en-IN', {
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  }).format(new Date(value))
+}
+
+type HistoryEntry = {
+  action: string
+  fromPlanName?: string
+  toPlanName?: string
+  billingCycleName?: string
+  performedBy?: string
+  performedAt?: string
+}
+
+export const getHistoryActionTitle = (action: string) => {
+  switch (action) {
+    case 'purchase':
+      return 'Purchased Membership'
+    case 'upgrade':
+      return 'Upgraded Membership'
+    case 'downgrade':
+      return 'Downgraded Membership'
+    case 'cancel':
+      return 'Canceled Membership'
+    case 'extend':
+      return 'Extended Membership'
+    default:
+      return action.charAt(0).toUpperCase() + action.slice(1)
+  }
+}
+
+export const getHistoryActionDescription = (
+  entry: HistoryEntry,
+  fallbackPrice?: number,
+) => {
+  const priceText = fallbackPrice ? formatCurrency(fallbackPrice) : ''
+  const cycleSuffix = entry.billingCycleName
+    ? `${priceText ? `${priceText}/` : ''}${entry.billingCycleName}`
+    : priceText
+
+  switch (entry.action) {
+    case 'purchase':
+      return `Bought "${entry.toPlanName ?? 'plan'}" plan${cycleSuffix ? ` of ${cycleSuffix}` : ''}`
+    case 'upgrade': {
+      const performer = entry.performedBy?.toLowerCase() ?? ''
+      if (performer === 'admin' || performer === 'platform') {
+        return `Upgraded by the Platform for "${entry.toPlanName ?? 'plan'}" plan`
+      }
+      return `Upgraded to "${entry.toPlanName ?? 'plan'}" plan${cycleSuffix ? ` of ${cycleSuffix}` : ''}`
+    }
+    case 'downgrade':
+      return `Asked the platform to Downgrade to "${entry.toPlanName ?? 'plan'}" Plan${cycleSuffix ? ` for ${cycleSuffix}` : ''}`
+    case 'cancel':
+      return `Canceled the plan "${entry.fromPlanName ?? entry.toPlanName ?? 'plan'}"${priceText ? ` worth of ${priceText}` : ''}`
+    case 'extend':
+      return `Extended "${entry.toPlanName ?? entry.fromPlanName ?? 'plan'}" membership`
+    default:
+      return entry.toPlanName ?? entry.fromPlanName ?? 'Membership updated'
+  }
+}
+
 export const getTypeLabel = (type: MembershipPlan['type']) =>
   type === 'user' ? 'Users' : 'Experts'
 
