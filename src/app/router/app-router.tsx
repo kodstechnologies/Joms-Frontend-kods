@@ -180,6 +180,55 @@ const SubCategoryViewPage = lazy(() =>
   }))
 );
 
+const VenueCategoryManagementPage = lazy(() =>
+  import("@/modules/expert").then((m) => ({
+    default: m.VenueCategoryManagementPage,
+  }))
+);
+
+const CreateVenueCategoryPage = lazy(() =>
+  import("@/modules/expert").then((m) => ({
+    default: m.CreateVenueCategoryPage,
+  }))
+);
+
+const CreateVenueSubCategoryPage = lazy(() =>
+  import("@/modules/expert").then((m) => ({
+    default: m.CreateVenueSubCategoryPage,
+  }))
+);
+
+const PausedVenueCategoriesPage = lazy(() =>
+  import("@/modules/expert").then((m) => ({
+    default: m.PausedVenueCategoriesPage,
+  }))
+);
+
+const DeletedVenueCategoriesPage = lazy(() =>
+  import("@/modules/expert").then((m) => ({
+    default: m.DeletedVenueCategoriesPage,
+  }))
+);
+
+const RenameVenueCategoryPage = lazy(() =>
+  import("@/modules/expert").then((m) => ({
+    default: m.RenameVenueCategoryPage,
+  }))
+);
+
+const VenueCategoryViewPage = lazy(() =>
+  import("@/modules/expert").then((m) => ({
+    default: m.VenueCategoryViewPage,
+  }))
+);
+
+const VenueSubCategoryViewPage = lazy(() =>
+  import("@/modules/expert").then((m) => ({
+    default: m.VenueSubCategoryViewPage,
+  }))
+);
+
+
 const PageLoader = () => (
   <div className="flex h-dvh w-full items-center justify-center bg-slate-950">
     <div className="flex flex-col items-center gap-4">
@@ -255,9 +304,49 @@ export function AppRouter() {
                 element={<CategoryViewPage />}
               />
               <Route
-  path="/categories/management/:id/subcategory/:subCategoryId"
-  element={<SubCategoryViewPage />}
-/>
+                path="/categories/management/:id/subcategory/:subCategoryId"
+                element={<SubCategoryViewPage />}
+              />
+              <Route
+                path="/venues/categories/management"
+                element={<VenueCategoryManagementPage />}
+              />
+
+              <Route
+                path="/venues/categories/management/create"
+                element={<CreateVenueCategoryPage />}
+              />
+
+              <Route
+                path="/venues/categories/management/paused"
+                element={<PausedVenueCategoriesPage />}
+              />
+
+              <Route
+                path="/venues/categories/management/deleted"
+                element={<DeletedVenueCategoriesPage />}
+              />
+
+              <Route
+                path="/venues/categories/management/rename/:id"
+                element={<RenameVenueCategoryPage />}
+              />
+
+              <Route
+                path="/venues/categories/management/create-subcategory/:id"
+                element={<CreateVenueSubCategoryPage />}
+              />
+
+              <Route
+                path="/venues/categories/management/view/:id"
+                element={<VenueCategoryViewPage />}
+              />
+
+              <Route
+                path="/venues/categories/management/:id/subcategory/:subCategoryId"
+                element={<VenueSubCategoryViewPage />}
+              />
+
 
               <Route path="/venues/dashboard" element={<VenueDashboardPage />} />
               <Route path="/venues/leaderboard" element={<LeaderboardPage />} />
