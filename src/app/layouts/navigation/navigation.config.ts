@@ -13,9 +13,9 @@ import {
 
 export type NavBadge =
   | {
-      label: string
-      variant?: 'default' | 'success' | 'warning'
-    }
+    label: string
+    variant?: 'default' | 'success' | 'warning'
+  }
   | undefined
 
 export type PermissionModule = 'venues' | 'services'
@@ -91,11 +91,17 @@ export const navigationConfig: NavItem[] = [
     ],
   },
   {
-    key: 'communication',
-    label: 'Communication',
+    key: "communication",
+    label: "Communication",
     icon: MessageCircle,
     superAdminOnly: true,
-    children: [{ key: 'communication.notifications', label: 'Broadcasts', badge: { label: 'Soon', variant: 'warning' } }],
+    children: [
+      {
+        key: "communication.management",
+        label: "Communication Management",
+        to: "/communication/management",
+      },
+    ],
   },
   {
     key: 'membership',
