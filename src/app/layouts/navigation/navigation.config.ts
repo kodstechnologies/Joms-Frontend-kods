@@ -55,7 +55,7 @@ export const navigationConfig: NavItem[] = [
           {
             key: 'expert.management.dashboard',
             label: 'Dashboard',
-            badge: { label: 'Soon', variant: 'warning' },
+            to: '/experts/dashboard',
           },
           {
             key: 'expert.management.list',
@@ -86,6 +86,11 @@ export const navigationConfig: NavItem[] = [
           { key: 'expert.venues.dashboard', label: 'Dashboard', to: '/venues/dashboard' },
           { key: 'expert.venue.management', label: 'Venue Management', to: '/venues/management' },
           { key: 'expert.venues.leaderboard', label: 'Leaderboard', to: '/venues/leaderboard' },
+          {
+            key: "expert.venues.categories",
+            label: "Category Management",
+            to: "/venues/categories/management",
+          },
         ],
       },
     ],

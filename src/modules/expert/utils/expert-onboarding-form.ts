@@ -71,7 +71,7 @@ export const createEmptyExpertOnboardingForm = (): ExpertOnboardingFormData => (
   industry: '',
   experienceYears: '',
   experienceMonths: '',
-  serviceType: 'concierge',
+  serviceType: '',
   serviceCategory: [],
   offerings: [],
   phoneNumber: '',

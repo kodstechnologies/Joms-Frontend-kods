@@ -34,6 +34,16 @@ const CreateServiceListingPage = lazy(() =>
   import('@/modules/expert').then((m) => ({ default: m.CreateServiceListingPage })),
 )
 
+const ExpertDashboardPage = lazy(() =>
+  import('@/modules/expert').then((m) => ({
+    default: m.ExpertDashboardPage,
+  })),
+)
+const ExpertMetricsPage = lazy(() =>
+  import('@/modules/expert').then((m) => ({
+    default: m.ExpertMetricsPage,
+  })),
+)
 const ExpertManagementPage = lazy(() =>
   import('@/modules/expert').then((m) => ({
     default: m.ExpertManagementPage,
@@ -52,6 +62,26 @@ const ExpertApplicationViewPage = lazy(() =>
 const ExpertProfileViewPage = lazy(() =>
   import('@/modules/expert').then((m) => ({
     default: m.ExpertProfileViewPage,
+  })),
+)
+const ExpertPendingApprovalsPage = lazy(() =>
+  import('@/modules/expert').then((m) => ({
+    default: m.ExpertPendingApprovalsPage,
+  })),
+)
+const ExpertSuspendedExpertsPage = lazy(() =>
+  import('@/modules/expert').then((m) => ({
+    default: m.ExpertSuspendedExpertsPage,
+  })),
+)
+const ExpertDeletedExpertsPage = lazy(() =>
+  import('@/modules/expert').then((m) => ({
+    default: m.ExpertDeletedExpertsPage,
+  })),
+)
+const ExpertReportedExpertsPage = lazy(() =>
+  import('@/modules/expert').then((m) => ({
+    default: m.ExpertReportedExpertsPage,
   })),
 )
 const LeaderboardPage = lazy(() =>
@@ -212,6 +242,55 @@ const SubCategoryViewPage = lazy(() =>
     default: m.SubCategoryViewPage,
   }))
 );
+
+const VenueCategoryManagementPage = lazy(() =>
+  import("@/modules/expert").then((m) => ({
+    default: m.VenueCategoryManagementPage,
+  }))
+);
+
+const CreateVenueCategoryPage = lazy(() =>
+  import("@/modules/expert").then((m) => ({
+    default: m.CreateVenueCategoryPage,
+  }))
+);
+
+const CreateVenueSubCategoryPage = lazy(() =>
+  import("@/modules/expert").then((m) => ({
+    default: m.CreateVenueSubCategoryPage,
+  }))
+);
+
+const PausedVenueCategoriesPage = lazy(() =>
+  import("@/modules/expert").then((m) => ({
+    default: m.PausedVenueCategoriesPage,
+  }))
+);
+
+const DeletedVenueCategoriesPage = lazy(() =>
+  import("@/modules/expert").then((m) => ({
+    default: m.DeletedVenueCategoriesPage,
+  }))
+);
+
+const RenameVenueCategoryPage = lazy(() =>
+  import("@/modules/expert").then((m) => ({
+    default: m.RenameVenueCategoryPage,
+  }))
+);
+
+const VenueCategoryViewPage = lazy(() =>
+  import("@/modules/expert").then((m) => ({
+    default: m.VenueCategoryViewPage,
+  }))
+);
+
+const VenueSubCategoryViewPage = lazy(() =>
+  import("@/modules/expert").then((m) => ({
+    default: m.VenueSubCategoryViewPage,
+  }))
+);
+
 
 const PageLoader = () => (
   <div className="flex h-dvh w-full items-center justify-center bg-slate-950">

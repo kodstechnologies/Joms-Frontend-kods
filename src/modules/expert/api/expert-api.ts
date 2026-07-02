@@ -58,3 +58,33 @@ export const fetchExpertConsultations = async (
   )
   return response.data
 }
+
+export type SuspendExpertPayload = {
+  selectedReasons: string[]
+  startDate?: string
+  endDate?: string
+  suspendIndefinitely: boolean
+  reasonDetails: string
+  adminNotes: string
+}
+
+export type DeactivateExpertPayload = {
+  reason?: string
+  adminNotes: string
+}
+
+export const suspendExpert = async (id: string, payload: SuspendExpertPayload) => {
+  const response = await adminApiClient.patch(
+    `/admin/internal/admin/partners/${id}/suspend`,
+    payload,
+  )
+  return response.data
+}
+
+export const deactivateExpert = async (id: string, payload: DeactivateExpertPayload) => {
+  const response = await adminApiClient.patch(
+    `/admin/internal/admin/partners/${id}/deactivate`,
+    payload,
+  )
+  return response.data
+}

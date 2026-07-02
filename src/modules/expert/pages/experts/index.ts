@@ -1,8 +1,10 @@
 export * from './expert-management-page'
-export * from './pending-approvals-page'
-export * from './suspended-experts-page';
-export * from './deleted-experts-page';
+export { ExpertDashboardPage } from './expert-dashboard-page'
+export { ExpertMetricsPage } from './expert-metrics-page'
+export { ExpertPendingApprovalsPage } from './pending-approvals-page'
+export { ExpertSuspendedExpertsPage } from './suspended-experts-page'
+export { ExpertDeletedExpertsPage } from './deleted-experts-page'
+export { ExpertReportedExpertsPage } from './reported-experts-page'
 export * from './application-view-page'
 export * from './expert-profile-view-page'
 export { ExpertManagementPage } from './expert-management-page'
-

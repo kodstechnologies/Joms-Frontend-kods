@@ -66,3 +66,21 @@ export const submitExpertApplication = async (
   )
   return response.data
 }
+
+export type ExpertServiceCategoryItem = {
+  id: string
+  name: string
+  icon: string
+}
+
+export type ExpertServiceCategoryGroups = Record<string, ExpertServiceCategoryItem[]>
+
+export const fetchServiceCategoriesByType = async (params: {
+  servicetype: 'concierge' | 'venue'
+  search?: string
+}) => {
+  const response = await authApiClient.get<
+    ExpertOnboardingApiResponse<ExpertServiceCategoryGroups>
+  >('/service-category/getservicebyservicetype', { params })
+  return response.data
+}
