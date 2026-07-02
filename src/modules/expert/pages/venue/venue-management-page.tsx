@@ -9,13 +9,12 @@ import {
     BarChart3,
     Ban,
     Hourglass,
-    UserPlus,
-    ListPlus,
+    LayoutDashboard,
     Bell,
     Archive,
     Mail,
     Image,
-    LayoutDashboard,
+    Plus,
     type LucideIcon,
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
@@ -40,7 +39,6 @@ import {
     getVenueDisplaySpaceId,
     getVenueDisplayStatus,
     getVenueDisplayStatusClassName,
-    getVenuePartnerId,
 } from '../../utils/venue-list'
 
 const SUSPEND_REASON_OPTIONS: DecisionActionModalOption[] = [
@@ -50,6 +48,10 @@ const SUSPEND_REASON_OPTIONS: DecisionActionModalOption[] = [
     { label: 'System verification in progress', value: 'system_verification_in_progress' },
     { label: 'Admin review required', value: 'admin_review_required' },
 ]
+
+const ACTION_MENU_CLASS = 'border border-slate-200 bg-white shadow-xl'
+const ACTION_ITEM_CLASS =
+    'text-slate-800 hover:bg-slate-100 hover:text-slate-900'
 
 export const VenueManagementPage = () => {
     const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
@@ -359,57 +361,22 @@ export const VenueManagementPage = () => {
                             label={`Open actions for ${venue.venueName}`}
                             isOpen={isOpen}
                             onOpenChange={(open) => setActiveDropdownId(open ? venue._id : null)}
+                            menuClassName={ACTION_MENU_CLASS}
                         >
                             <TableActionsItem
-                                icon={<LayoutDashboard className="size-3.5" />}
+                                icon={<LayoutDashboard className="size-3.5 text-slate-700" />}
+                                className={ACTION_ITEM_CLASS}
                                 onClick={() => {
                                     setActiveDropdownId(null)
-                                    navigate(
-                                        `/venues/management/profile/${getVenueApiId(venue)}`,
-                                    )
+                                    navigate(`/venues/management/profile/${getVenueApiId(venue)}`)
                                 }}
                             >
-                                Profile View
+                                View Profile
                             </TableActionsItem>
 
                             <TableActionsItem
-                                icon={<UserPlus className="size-3.5" />}
-                                onClick={() => {
-                                    setActiveDropdownId(null)
-                                    const partnerId = getVenuePartnerId(venue)
-
-                                    if (!partnerId) {
-                                        toast.error('Partner ID not found for this venue.')
-                                        return
-                                    }
-
-                                    const params = new URLSearchParams({
-                                        partnerId,
-                                        venueId: getVenueApiId(venue),
-                                    })
-                                    navigate(`/venues/management/onboarding?${params.toString()}`)
-                                }}
-                            >
-                                Create Profile
-                            </TableActionsItem>
-
-                            <TableActionsItem
-                                icon={<ListPlus className="size-3.5" />}
-                                onClick={() => {
-                                    setActiveDropdownId(null)
-                                    const partnerId = getVenuePartnerId(venue)
-                                    const params = new URLSearchParams({
-                                        venueId: getVenueApiId(venue),
-                                    })
-                                    if (partnerId) params.set('partnerId', partnerId)
-                                    navigate(`/venues/management/create?${params.toString()}`)
-                                }}
-                            >
-                                Venue Listing
-                            </TableActionsItem>
-
-                            <TableActionsItem
-                                icon={<PauseCircle className="size-3.5" />}
+                                icon={<PauseCircle className="size-3.5 text-slate-700" />}
+                                className={ACTION_ITEM_CLASS}
                                 onClick={() => {
                                     setActiveDropdownId(null)
                                     openSuspendModal(venue)
@@ -454,9 +421,19 @@ export const VenueManagementPage = () => {
                     </p>
                 </div>
                 <div className="flex w-full flex-col items-center gap-3 md:w-auto md:flex-row">
-                    <Button className="w-full md:w-auto">
+                    <Button
+                        className="w-full md:w-auto"
+                        onClick={() => navigate('/venues/dashboard/metrics')}
+                    >
                         <BarChart3 className="size-4" />
                         Manage Metrics
+                    </Button>
+                    <Button
+                        className="w-full md:w-auto"
+                        onClick={() => navigate('/venues/management/onboarding')}
+                    >
+                        <Plus className="size-4" />
+                        Create Account
                     </Button>
                 </div>
             </div>

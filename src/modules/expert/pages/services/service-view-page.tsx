@@ -3,37 +3,35 @@ import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import axios from 'axios'
 import {
   ArrowLeft,
-  ArrowUpRight,
+  Ban,
   Check,
   ChevronLeft,
   ChevronRight,
-  Eye,
-  Gavel,
   History,
   Image as ImageIcon,
-  Languages,
   Loader2,
-  Phone,
-  RotateCcw,
-  X,
   Info,
+  X,
 } from 'lucide-react'
+import { toast } from 'sonner'
 
 import {
   useConsultation,
   useService,
+  useSuspendService,
   useUpdateConsultationStatus,
   useUpdateServiceStatus,
 } from '../../hooks/use-services'
+import { useExpertProfile } from '../../hooks/use-expert-profile'
 import { Button } from '@/shared/components/ui/button'
 import {
   DecisionActionModal,
-  type DecisionActionModalVariant,
 } from '@/shared/components/modal/decision-action-modal'
 import { cn } from '@/shared/lib/cn'
 import type {
   ConsultationDetail,
   ConsultationPricingOption,
+  CustomPricing,
   ServiceDetail,
   ServiceRejectionReason,
 } from '../../type/service'
@@ -52,7 +50,6 @@ type ServiceViewDetail = Partial<ServiceDetail> &
     consultationTitle?: string
     consultationCategory?: string
     sessionOutline?: string
-    benefits?: string
     whoIsItFor?: string
     modeOfConsultation?: string
     language?: string
@@ -80,52 +77,17 @@ const formatConsultationPrice = (option: ConsultationPricingOption) => {
   return formatMoney(option.price)
 }
 
-const formatStatus = (status?: string) => {
-  if (!status) return EMPTY_VALUE
-  if (status === 'in_review') return 'Review Pending'
-  return status.replaceAll('_', ' ')
-}
-
-const formatDate = (isoString?: string) => {
-  if (!isoString) return EMPTY_VALUE
-
-  const date = new Date(isoString)
-  if (Number.isNaN(date.getTime())) return EMPTY_VALUE
-
-  const formattedDate = date.toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  })
-  const formattedTime = date.toLocaleTimeString('en-US', {
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-  })
-
-  return `${formattedDate} ${formattedTime}`
-}
-
-const getRelativeTime = (isoString?: string) => {
-  if (!isoString) return ''
-
-  const date = new Date(isoString)
-  if (Number.isNaN(date.getTime())) return ''
-
-  const diffDays = Math.max(0, Math.floor((Date.now() - date.getTime()) / (1000 * 60 * 60 * 24)))
-
-  if (diffDays === 0) return 'Applied today'
-  if (diffDays === 1) return 'Applied 1 day ago'
-  return `Applied ${diffDays} days ago`
-}
-
 const parseDescription = (description = '') => {
   const [summary, ...features] = description.split('+').map((part) => part.trim()).filter(Boolean)
 
-  return {
-    summary,
-    features,
-  }
+  return { summary, features }
+}
+
+const formatCustomTimeline = (custom?: CustomPricing) => {
+  if (!custom) return EMPTY_VALUE
+
+  const durationLabel = custom.durationType === 'long_term' ? 'Long term' : 'Short term'
+  return `${durationLabel} (${custom.timelineFrom}-${custom.timelineTo} ${custom.timelineUnit})`
 }
 
 const decisionReasonOptions = [
@@ -136,56 +98,77 @@ const decisionReasonOptions = [
   { label: 'Invalid GST', value: 'invalid-gst' },
 ]
 
-const escalationOptions = [
-  { label: '[Super Admin]', value: 'super-admin' },
-  { label: '[Moderator 1]', value: 'moderator-1' },
+const suspendReasonOptions = [
+  { label: 'Policy Violation', value: 'policy-violation' },
+  { label: 'Quality Issues', value: 'quality-issues' },
+  { label: 'Customer Complaints', value: 'customer-complaints' },
+  { label: 'Other', value: 'other' },
 ]
 
-type ServiceDecisionAction = Exclude<DecisionActionModalVariant, 'suspend'>
+type ServiceDecisionAction = 'approve' | 'reject' | 'suspend'
+
+const toIso = (date: string) => new Date(date).toISOString()
 
 export const ServiceViewPage = () => {
-  const { id } = useParams<{ id: string }>()
+  const { id, expertId, serviceId } = useParams<{
+    id?: string
+    expertId?: string
+    serviceId?: string
+  }>()
+  const resolvedServiceId = serviceId || id || ''
+  const fromExpert = Boolean(expertId)
+
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const serviceTypeParam = searchParams.get('type') || ''
   const shouldFetchConsultation = serviceTypeParam.toLowerCase().includes('consultation')
 
+  const { data: expertProfileResponse } = useExpertProfile(expertId)
+  const expertProfile = expertProfileResponse?.data
+  const expertName =
+    expertProfile?.basicProfile?.fullname ||
+    expertProfile?.fullname ||
+    'Expert'
+
   const {
     data: serviceResponse,
     isLoading: isServiceLoading,
     error: serviceError,
-  } = useService(id || '', !shouldFetchConsultation)
+  } = useService(resolvedServiceId, !shouldFetchConsultation)
   const {
     data: consultationResponse,
     isLoading: isConsultationLoading,
     error: consultationError,
-  } = useConsultation(id || '', shouldFetchConsultation)
+  } = useConsultation(resolvedServiceId, shouldFetchConsultation)
   const { mutateAsync: updateServiceStatus, isPending: isUpdatingServiceStatus } =
     useUpdateServiceStatus()
   const { mutateAsync: updateConsultationStatus, isPending: isUpdatingConsultationStatus } =
     useUpdateConsultationStatus()
+  const suspendServiceMutation = useSuspendService()
+
   const isUpdatingStatus = isUpdatingServiceStatus || isUpdatingConsultationStatus
+
   const [activeImageIndex, setActiveImageIndex] = useState(0)
   const [activeTierIndex, setActiveTierIndex] = useState(1)
-  const [internalNotes, setInternalNotes] = useState('')
-  const [activeDecisionAction, setActiveDecisionAction] = useState<ServiceDecisionAction | null>(null)
+  const [activeDecisionAction, setActiveDecisionAction] = useState<ServiceDecisionAction | null>(
+    null,
+  )
   const [decisionAdminNotes, setDecisionAdminNotes] = useState('')
   const [decisionReason, setDecisionReason] = useState('')
   const [selectedReasons, setSelectedReasons] = useState<string[]>([])
-  const [selectedEscalationOption, setSelectedEscalationOption] = useState(escalationOptions[0].value)
-  const [actionToast, setActionToast] = useState<{
-    message: string
-    type: 'success' | 'info' | 'error' | null
-  }>({ message: '', type: null })
+  const [suspendIndefinitely, setSuspendIndefinitely] = useState(false)
+  const [suspendStartDate, setSuspendStartDate] = useState('')
+  const [suspendEndDate, setSuspendEndDate] = useState('')
 
   useEffect(() => {
     setActiveImageIndex(0)
-  }, [id])
+  }, [resolvedServiceId])
 
   const apiResponse = shouldFetchConsultation ? consultationResponse : serviceResponse
   const isLoading = shouldFetchConsultation ? isConsultationLoading : isServiceLoading
   const error = shouldFetchConsultation ? consultationError : serviceError
   const service = apiResponse?.data as ServiceViewDetail | undefined
+
   const tierDetails = useMemo(() => {
     if (service?.pricingType !== 'tiered' || !service.tieredPricing?.tiers?.length) return null
 
@@ -199,19 +182,16 @@ export const ServiceViewPage = () => {
     }
   }, [activeTierIndex, service])
 
-  const showToast = (message: string, type: 'success' | 'info' | 'error' = 'success') => {
-    setActionToast({ message, type })
-    setTimeout(() => {
-      setActionToast({ message: '', type: null })
-    }, 4000)
-  }
-
   const openDecisionModal = (action: ServiceDecisionAction) => {
     setActiveDecisionAction(action)
     setDecisionAdminNotes('')
     setDecisionReason('')
-    setSelectedReasons(action === 'approve' || action === 'escalate' ? [] : ['unclear-image', 'content-issue'])
-    setSelectedEscalationOption(escalationOptions[0].value)
+    setSelectedReasons(
+      action === 'suspend' ? [] : action === 'approve' ? [] : ['unclear-image', 'content-issue'],
+    )
+    setSuspendIndefinitely(false)
+    setSuspendStartDate('')
+    setSuspendEndDate('')
   }
 
   const closeDecisionModal = () => {
@@ -226,111 +206,129 @@ export const ServiceViewPage = () => {
     )
   }
 
+  const handleBack = () => {
+    if (fromExpert && expertId) {
+      navigate(`/experts/management/profile/${expertId}`)
+      return
+    }
+    navigate('/services/management')
+  }
+
   const submitDecisionAction = async () => {
-    if (!activeDecisionAction || !id) return
+    if (!activeDecisionAction || !resolvedServiceId) return
+
+    if (activeDecisionAction === 'suspend') {
+      if (selectedReasons.length === 0) {
+        toast.error('Please select at least one reason.')
+        return
+      }
+      if (!suspendIndefinitely && (!suspendStartDate || !suspendEndDate)) {
+        toast.error('Please provide a suspension timeline or choose to suspend indefinitely.')
+        return
+      }
+      if (!decisionAdminNotes.trim()) {
+        toast.error('Admin notes are required.')
+        return
+      }
+
+      try {
+        await suspendServiceMutation.mutateAsync({
+          id: resolvedServiceId,
+          payload: {
+            selectedReasons,
+            suspendIndefinitely,
+            startDate: suspendIndefinitely ? undefined : toIso(suspendStartDate),
+            endDate: suspendIndefinitely ? undefined : toIso(suspendEndDate),
+            reasonDetails: decisionReason.trim(),
+            adminNotes: decisionAdminNotes.trim(),
+          },
+        })
+        toast.success('Service suspended successfully')
+        closeDecisionModal()
+      } catch (err) {
+        const message = axios.isAxiosError(err)
+          ? err.response?.data?.message || 'Failed to suspend service.'
+          : 'Failed to suspend service.'
+        toast.error(message)
+      }
+      return
+    }
 
     if (activeDecisionAction === 'approve' || activeDecisionAction === 'reject') {
       if (shouldFetchConsultation) {
         if (activeDecisionAction === 'reject' && !decisionReason.trim()) {
-          showToast('Rejection reason is required.', 'error')
+          toast.error('Rejection reason is required.')
           return
         }
 
         try {
           if (activeDecisionAction === 'approve') {
-            await updateConsultationStatus({
-              id,
-              payload: { status: 'live' },
-            })
-            showToast('Consultation approved successfully!', 'success')
+            await updateConsultationStatus({ id: resolvedServiceId, payload: { status: 'live' } })
+            toast.success('Consultation approved successfully')
           } else {
             await updateConsultationStatus({
-              id,
-              payload: {
-                status: 'rejected',
-                reason: decisionReason.trim(),
-              },
+              id: resolvedServiceId,
+              payload: { status: 'rejected', reason: decisionReason.trim() },
             })
-            showToast('Consultation application rejected.', 'error')
+            toast.success('Consultation rejected')
           }
-
           closeDecisionModal()
-        } catch (error) {
-          const message = axios.isAxiosError(error)
-            ? error.response?.data?.message || 'Failed to update consultation status.'
+        } catch (err) {
+          const message = axios.isAxiosError(err)
+            ? err.response?.data?.message || 'Failed to update consultation status.'
             : 'Failed to update consultation status.'
-          showToast(message, 'error')
+          toast.error(message)
         }
-
         return
       }
 
       if (!decisionAdminNotes.trim()) {
-        showToast('Admin notes are required.', 'error')
+        toast.error('Admin notes are required.')
         return
       }
 
       if (activeDecisionAction === 'reject') {
         if (!decisionReason.trim()) {
-          showToast('Rejection reason is required.', 'error')
+          toast.error('Rejection reason is required.')
           return
         }
-
         if (selectedReasons.length === 0) {
-          showToast('Please select at least one reason.', 'error')
+          toast.error('Please select at least one reason.')
           return
         }
       }
 
-      const adminNote = decisionAdminNotes.trim()
-
       try {
         if (activeDecisionAction === 'approve') {
           await updateServiceStatus({
-            id,
-            payload: {
-              status: 'live',
-              adminNote,
-            },
+            id: resolvedServiceId,
+            payload: { status: 'live', adminNote: decisionAdminNotes.trim() },
           })
-          showToast('Service listing approved successfully!', 'success')
+          toast.success('Service approved successfully')
         } else {
           const reasonFor = selectedReasons
             .map((reasonValue) => SERVICE_REJECTION_REASON_BY_VALUE[reasonValue])
             .filter((reason): reason is ServiceRejectionReason => Boolean(reason))
 
           await updateServiceStatus({
-            id,
+            id: resolvedServiceId,
             payload: {
               status: 'rejected',
               reasonFor,
               rejectionReason: decisionReason.trim(),
-              adminNote,
+              adminNote: decisionAdminNotes.trim(),
             },
           })
-          showToast('Service application rejected.', 'error')
+          toast.success('Service rejected')
         }
-
         closeDecisionModal()
-      } catch (error) {
-        const message = axios.isAxiosError(error)
-          ? error.response?.data?.message || 'Failed to update service status.'
+      } catch (err) {
+        const message = axios.isAxiosError(err)
+          ? err.response?.data?.message || 'Failed to update service status.'
           : 'Failed to update service status.'
-        showToast(message, 'error')
+        toast.error(message)
       }
-
-      return
     }
-
-    const toastByAction: Record<ServiceDecisionAction, { message: string; type: 'success' | 'info' | 'error' }> = {
-      approve: { message: 'Service listing approved successfully!', type: 'success' },
-      reject: { message: 'Service application rejected.', type: 'error' },
-      requestChanges: { message: 'Change request submitted.', type: 'info' },
-      escalate: { message: 'Listing escalated for review.', type: 'info' },
-    }
-
-    showToast(toastByAction[activeDecisionAction].message, toastByAction[activeDecisionAction].type)
-    closeDecisionModal()
   }
 
   if (isLoading) {
@@ -358,28 +356,12 @@ export const ServiceViewPage = () => {
         <Button
           variant="ghost"
           className="mt-4 gap-2 text-amber-400 hover:bg-transparent hover:text-amber-300"
-          onClick={() => navigate('/services/management')}
+          onClick={handleBack}
         >
-          <ArrowLeft className="size-4" /> Back to management
+          <ArrowLeft className="size-4" /> Go back
         </Button>
       </div>
     )
-  }
-
-  const handlePrevImage = () => {
-    const images = service.images || []
-
-    if (images.length > 0) {
-      setActiveImageIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1))
-    }
-  }
-
-  const handleNextImage = () => {
-    const images = service.images || []
-
-    if (images.length > 0) {
-      setActiveImageIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1))
-    }
   }
 
   const isConsultation =
@@ -387,481 +369,202 @@ export const ServiceViewPage = () => {
   const images = service.images || []
   const imageCount = images.length
   const activeImage = imageCount > 0 ? images[Math.min(activeImageIndex, imageCount - 1)] : undefined
+  const categoryName =
+    service.category?.name || service.consultationCategory || service.topics?.[0]?.name || ''
+  const showApprovalControls =
+    !fromExpert && (service.status === 'in_review' || service.status === 'pending')
 
-  const expertName = service.partnerName || service.expertName || EMPTY_VALUE
-  const expertId = service.expertid || EMPTY_VALUE
-  const categoryName = service.category?.name || service.consultationCategory || service.topics?.[0]?.name || ''
-  const submittedAt = formatDate(service.submittedAt || service.createdAt)
-  const updatedAt = formatDate(service.updatedAt)
-  const statusLabel = formatStatus(service.status)
+  const handlePrevImage = () => {
+    if (imageCount > 0) {
+      setActiveImageIndex((prev) => (prev === 0 ? imageCount - 1 : prev - 1))
+    }
+  }
 
-  const fixedStats = [
+  const handleNextImage = () => {
+    if (imageCount > 0) {
+      setActiveImageIndex((prev) => (prev === imageCount - 1 ? 0 : prev + 1))
+    }
+  }
+
+  const topActions = [
+    { label: 'Version History', onClick: () => toast.message('Version history coming soon') },
+    { label: 'Pause Service', onClick: () => toast.message('Pause service coming soon') },
+    { label: 'Flag For Review', onClick: () => toast.message('Flag for review coming soon') },
     {
-      value: formatMoney(service.fixedPricing?.price || service.pricing),
-      label: 'Pricing',
+      label: 'View Support Ticket',
+      onClick: () => toast.message('Support tickets coming soon'),
     },
-    {
-      value:
-        service.fixedPricing?.discountPercent !== undefined
-          ? `${service.fixedPricing.discountPercent}% Off`
-          : EMPTY_VALUE,
-      label: 'Discounts',
-    },
-    {
-      value: service.fixedPricing
-        ? `${service.fixedPricing.timelineValue} ${service.fixedPricing.timelineUnit}`
-        : EMPTY_VALUE,
-      label: 'Timelines',
-    },
+    { label: 'Suspend Service', onClick: () => openDecisionModal('suspend') },
   ]
 
-  const customStats = [
-    {
-      value: formatMoney(service.customPricing?.minPrice || service.pricing),
-      label: 'Starting From',
-    },
-    {
-      value: service.customPricing
-        ? `${service.customPricing.timelineFrom}-${service.customPricing.timelineTo} ${service.customPricing.timelineUnit}`
-        : EMPTY_VALUE,
-      label: 'Timelines',
-    },
-  ]
-
-  const consultationDurations =
-    service.pricingOptions?.map((option) => ({
-      label: `${option.durationMinutes}mins (${formatConsultationPrice(option)})`,
-    })) ||
-    service.durations ||
-    []
   const decisionModalConfig = activeDecisionAction
     ? {
-      approve: {
-        title: 'Confirm Application',
-        description:
-          'Are you sure you want to approve this application? The applicant will be notified via email.',
-        submitLabel: 'Confirm Approval',
-        variant: 'approve' as const,
-      },
-      reject: {
-        title: 'Reject Service',
-        description:
-          'Are you sure you want to Reject Approval to this application? The applicant will be notified via email.',
-        submitLabel: 'Reject Service',
-        variant: 'reject' as const,
-        reasonOptions: decisionReasonOptions,
-      },
-      requestChanges: {
-        title: 'Request Changes – Service Approval',
-        description:
-          'Are you sure you want to Request Changes to this application? The applicant will be notified via email.',
-        submitLabel: 'Request Changes',
-        variant: 'requestChanges' as const,
-        reasonOptions: decisionReasonOptions,
-      },
-      escalate: {
-        title: 'Escalate Application',
-        description:
-          'Are you sure you want to escalate this Application? This Post will be reviewed by the selected parties.',
-        submitLabel: 'Escalate',
-        variant: 'escalate' as const,
-        escalationOptions,
-      },
-    }[activeDecisionAction]
+        approve: {
+          title: 'Confirm Application',
+          description:
+            'Are you sure you want to approve this application? The applicant will be notified via email.',
+          submitLabel: 'Confirm Approval',
+          variant: 'approve' as const,
+        },
+        reject: {
+          title: 'Reject Service',
+          description:
+            'Are you sure you want to reject this application? The applicant will be notified via email.',
+          submitLabel: 'Reject Service',
+          variant: 'reject' as const,
+          reasonOptions: decisionReasonOptions,
+        },
+        suspend: {
+          title: 'Suspend Service',
+          description:
+            'Are you sure you want to suspend this service? This will restrict visibility and notify the partner.',
+          submitLabel: 'Suspend Service',
+          variant: 'suspend' as const,
+          reasonOptions: suspendReasonOptions,
+        },
+      }[activeDecisionAction]
     : null
 
   const DetailChip = ({ value, label }: { value: string; label: string }) => (
     <div className="flex flex-col items-center gap-1.5">
-      <div className="rounded-md bg-[#151515] px-3.5 py-2 text-[10px] font-semibold text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.05)]">
+      <div className="rounded-md bg-[#151515] px-4 py-2.5 text-[11px] font-semibold text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.05)]">
         {value}
       </div>
-      <span className="text-[9px] text-[#5C5C5C]">{label}</span>
+      <span className="text-[10px] text-[#5C5C5C]">{label}</span>
     </div>
   )
 
-  const ImagePreview = () => (
-    <div className="relative h-[178px] w-full overflow-hidden rounded-md bg-[#101010] md:w-[300px]">
-      {activeImage ? (
-        <img src={activeImage} alt={service.title} className="h-full w-full object-cover" />
-      ) : (
-        <div className="flex h-full flex-col items-center justify-center gap-2 text-[#5C5C5C]">
-          <ImageIcon className="size-8" aria-hidden="true" />
-          <span className="text-[10px]">No images uploaded</span>
-        </div>
-      )}
-
-      {imageCount > 1 && (
-        <>
-          <button
-            type="button"
-            aria-label="Previous image"
-            onClick={handlePrevImage}
-            className="absolute top-1/2 left-2 flex size-7 -translate-y-1/2 items-center justify-center rounded-full bg-black/75 text-white transition-colors hover:bg-black/90"
-          >
-            <ChevronLeft className="size-4" aria-hidden="true" />
-          </button>
-          <button
-            type="button"
-            aria-label="Next image"
-            onClick={handleNextImage}
-            className="absolute top-1/2 right-2 flex size-7 -translate-y-1/2 items-center justify-center rounded-full bg-black/75 text-white transition-colors hover:bg-black/90"
-          >
-            <ChevronRight className="size-4" aria-hidden="true" />
-          </button>
-        </>
-      )}
-
-      <div
-        className={cn(
-          'absolute bottom-2 flex items-center gap-1 rounded bg-black/85 px-2 py-1 text-[10px] font-semibold text-white',
-          imageCount > 1 ? 'left-1/2 -translate-x-1/2' : 'right-2',
-        )}
-      >
-        <ImageIcon className="size-3" aria-hidden="true" />
-        {imageCount > 0 ? `${activeImageIndex + 1}/${imageCount}` : '0/0'}
-      </div>
+  const renderFixedPricing = () => (
+    <div className="mt-6 flex flex-wrap gap-8">
+      <DetailChip
+        value={formatMoney(service.fixedPricing?.price || service.pricing)}
+        label="Pricing"
+      />
+      <DetailChip
+        value={
+          service.fixedPricing?.discountPercent !== undefined
+            ? `${service.fixedPricing.discountPercent}% Off`
+            : EMPTY_VALUE
+        }
+        label="Discounts"
+      />
+      <DetailChip
+        value={
+          service.fixedPricing
+            ? `${service.fixedPricing.timelineValue} ${service.fixedPricing.timelineUnit}`
+            : EMPTY_VALUE
+        }
+        label="Timelines"
+      />
     </div>
   )
 
-  const ActionCards = () => (
-    <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-      <div className="rounded-md bg-[#151515] p-4">
-        <div className="mb-3 flex items-center gap-2 text-[14px] font-semibold text-white">
-          <History className="size-4" aria-hidden="true" />
-          <h3>Internal Notes</h3>
-        </div>
-
-        <textarea
-          placeholder="No notes yet."
-          value={internalNotes}
-          onChange={(e) => setInternalNotes(e.target.value)}
-          className="h-[60px] w-full resize-none rounded-md border border-transparent bg-black px-4 py-3 text-[11px] text-[#BDBDBD] outline-none placeholder:text-[#5C5C5C] focus:border-[#FBC078]/40"
-        />
-      </div>
-
-      <div className="rounded-md bg-[#151515] p-4">
-        <div className="mb-6 flex items-center gap-2 text-[14px] font-semibold text-white">
-          <Gavel className="size-4" aria-hidden="true" />
-          <h3>Decision Controls</h3>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-3">
-          <button
-            type="button"
-            onClick={() => openDecisionModal('approve')}
-            className="flex items-center gap-2 rounded-md bg-[#00B761] px-3 py-2 text-[10px] font-bold text-white"
-          >
-            Approve Application
-            <span className="flex size-4 items-center justify-center rounded-full bg-white">
-              <Check className="size-2.5 text-[#00B761]" aria-hidden="true" />
-            </span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => openDecisionModal('requestChanges')}
-            className="flex items-center gap-2 rounded-md bg-black px-3 py-2 text-[10px] font-bold text-white"
-          >
-            Request Changes
-            <RotateCcw className="size-3" aria-hidden="true" />
-          </button>
-
-          <button
-            type="button"
-            onClick={() => openDecisionModal('escalate')}
-            className="flex items-center gap-2 rounded-md bg-[#1F6BFF] px-3 py-2 text-[10px] font-bold text-white"
-          >
-            Escalate
-            <ArrowUpRight className="size-3" aria-hidden="true" />
-          </button>
-
-          <button
-            type="button"
-            onClick={() => openDecisionModal('reject')}
-            className="flex items-center gap-2 rounded-md bg-[#F02D2D] px-3 py-2 text-[10px] font-bold text-white"
-          >
-            Reject Application
-            <span className="flex size-4 items-center justify-center rounded-full border border-white">
-              <X className="size-2.5" aria-hidden="true" />
-            </span>
-          </button>
-        </div>
-      </div>
+  const renderCustomPricing = () => (
+    <div className="mt-6 flex flex-wrap gap-8">
+      <DetailChip
+        value={formatMoney(service.customPricing?.minPrice || service.pricing)}
+        label="Starting From"
+      />
+      <DetailChip
+        value={formatCustomTimeline(service.customPricing)}
+        label="Timelines"
+      />
     </div>
   )
 
-  const ExpertSummary = () => (
-    <section className="rounded-md bg-[#151515] px-5 py-4">
-      <div className="mb-4 flex items-start justify-between gap-4">
-        <div>
-          <h2 className="text-[18px] font-semibold text-white underline decoration-white/70 underline-offset-2">
-            {expertName}
-          </h2>
-          {getRelativeTime(service.createdAt) && (
-            <p className="mt-1 text-[11px] text-[#777777]">{getRelativeTime(service.createdAt)}</p>
-          )}
-        </div>
-
-        <button
-          type="button"
-          onClick={() => showToast('Navigating to expert profile details...', 'info')}
-          className="mt-1 flex items-center gap-2 rounded-md bg-black px-3 py-2 text-[10px] font-semibold text-white"
-        >
-          <Eye className="size-3" aria-hidden="true" />
-          View Profile
-        </button>
-      </div>
-
-      <div className="grid w-full grid-cols-1 gap-4 sm:grid-cols-3">
-        {[
-          ['Expert ID', expertId],
-          ['Submitted', submittedAt],
-          ['Last Updated', updatedAt],
-        ].map(([label, value]) => (
-          <div key={label} className="rounded-md bg-black px-4 py-3">
-            <span className="block text-[10px] text-[#666666]">{label}</span>
-            <span className="mt-2 block text-[11px] font-semibold text-white">{value}</span>
-          </div>
+  const renderTieredPricing = () => (
+    <div className="mt-6 space-y-4">
+      <div className="flex w-full max-w-[360px] rounded-full bg-[#171717] p-0.5">
+        {service.tieredPricing?.tiers.map((tier, index) => (
+          <button
+            key={tier.name}
+            type="button"
+            onClick={() => setActiveTierIndex(index)}
+            className={cn(
+              'flex-1 rounded-full py-2 text-[10px] font-medium transition-colors',
+              activeTierIndex === index ? 'bg-white text-black' : 'text-white',
+            )}
+          >
+            {tier.name}
+          </button>
         ))}
       </div>
-    </section>
+
+      {tierDetails?.description && (
+        <p className="max-w-[560px] text-[12px] leading-relaxed text-white">
+          {tierDetails.description}
+        </p>
+      )}
+
+      {Boolean(tierDetails?.features.length) && (
+        <ul className="list-disc space-y-1 pl-4 text-[11px] leading-relaxed text-white">
+          {tierDetails?.features.map((feature) => (
+            <li key={feature}>{feature}</li>
+          ))}
+        </ul>
+      )}
+
+      <div className="flex flex-wrap gap-8">
+        <DetailChip value={formatMoney(tierDetails?.price)} label="Pricing" />
+        <DetailChip
+          value={
+            tierDetails
+              ? `${String(tierDetails.timelineValue).padStart(2, '0')} ${tierDetails.timelineUnit}`
+              : EMPTY_VALUE
+          }
+          label="Timelines"
+        />
+      </div>
+    </div>
   )
 
-  const ServiceContent = () => {
-    const isTiered = service.pricingType === 'tiered' && tierDetails
-    const stats = service.pricingType === 'fixed' ? fixedStats : customStats
+  const renderConsultationContent = () => {
+    const consultationDurations =
+      service.pricingOptions?.map((option) => ({
+        label: `${option.durationMinutes}mins (${formatConsultationPrice(option)})`,
+      })) || []
 
     return (
-      <section className={cn('relative', isTiered ? 'space-y-5' : 'flex flex-col gap-5 md:flex-row')}>
-        <div className={cn(isTiered ? 'flex flex-col gap-5 md:flex-row' : 'contents')}>
-          <ImagePreview />
-
-          <div className="min-w-0 flex-1 pt-3">
-            <div className="mb-8 flex items-start justify-between gap-6">
-              <div>
-                <h2 className="text-[20px] font-semibold leading-none text-white">{service.title}</h2>
-                {categoryName && <p className="mt-2 text-[10px] text-[#777777]">{categoryName}</p>}
-              </div>
-
-              <span className="rounded-md bg-[#6B4217] px-3 py-1.5 text-[12px] font-semibold text-[#E7AE63]">
-                {statusLabel}
-              </span>
-            </div>
-
-            {service.description && (
-              <p className="max-w-[560px] text-[12px] leading-relaxed text-white">
-                {service.description}
-              </p>
-            )}
-
-            {Boolean(service.subCategory?.length) && (
-              <div className="mt-5 flex flex-wrap gap-2">
-                {service.subCategory?.map((subCat) => (
-                  <span
-                    key={subCat._id}
-                    className="rounded border border-white/40 px-2 py-1 text-[9px] font-medium text-white"
-                  >
-                    {subCat.name}
-                  </span>
-                ))}
-              </div>
-            )}
-
-            {!isTiered && (
-              <div className="mt-7 flex flex-wrap gap-8">
-                {stats.map((stat) => (
-                  <DetailChip key={stat.label} value={stat.value} label={stat.label} />
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {isTiered && (
-          <div className="max-w-[315px]">
-            <div className="mb-4 flex rounded-full bg-[#171717] p-0.5">
-              {service.tieredPricing?.tiers.map((tier, index) => (
-                <button
-                  key={tier.name}
-                  type="button"
-                  onClick={() => setActiveTierIndex(index)}
-                  className={cn(
-                    'flex-1 rounded-full py-2 text-[9px] font-medium transition-colors',
-                    activeTierIndex === index ? 'bg-white text-black' : 'text-white',
-                  )}
-                >
-                  {tier.name}
-                </button>
-              ))}
-            </div>
-
-            {tierDetails.description && (
-              <p className="text-[12px] leading-relaxed text-white">{tierDetails.description}</p>
-            )}
-            {Boolean(tierDetails.features.length) && (
-              <ul className="mt-2 list-disc space-y-1 pl-4 text-[11px] leading-relaxed text-white">
-                {tierDetails.features.map((feature) => (
-                  <li key={feature}>{feature}</li>
-                ))}
-              </ul>
-            )}
-
-            <div className="mt-4 flex gap-3">
-              <DetailChip value={formatMoney(tierDetails.price)} label="Pricing" />
-              <DetailChip
-                value={`${String(tierDetails.timelineValue).padStart(2, '0')} ${tierDetails.timelineUnit}`}
-                label="Timelines"
-              />
-            </div>
+      <div className="space-y-5">
+        {service.sessionOutline && (
+          <div>
+            <h3 className="text-[12px] font-semibold text-white">Session outline</h3>
+            <p className="mt-2 whitespace-pre-line text-[11px] leading-relaxed text-[#999]">
+              {service.sessionOutline}
+            </p>
           </div>
         )}
-      </section>
-    )
-  }
 
-  const ConsultationContent = () => (
-    <section className="mx-auto w-full max-w-[910px] rounded-md bg-black px-5 py-6">
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-[1fr_0.95fr]">
-        <div className="border-l-4 border-[#FBC078] pl-4">
-          <h2 className="text-[13px] font-semibold text-white">
-            {service.consultationTitle || service.title}
-          </h2>
-          {(service.consultationCategory || categoryName) && (
-            <p className="mt-1 text-[10px] text-[#777777]">
-              {service.consultationCategory || categoryName}
+        {(service.whoItsFor || service.whoIsItFor) && (
+          <div>
+            <h3 className="text-[12px] font-semibold text-white">Who is it for?</h3>
+            <p className="mt-2 text-[11px] leading-relaxed text-[#999]">
+              {service.whoItsFor || service.whoIsItFor}
             </p>
-          )}
+          </div>
+        )}
 
-          {Boolean(service.topics?.length || service.subCategory?.length) && (
-            <div className="mt-5 flex flex-wrap gap-2">
-              {(service.topics?.length ? service.topics : service.subCategory || []).map((subCat) => (
+        {consultationDurations.length > 0 && (
+          <div>
+            <h3 className="mb-3 text-[12px] font-semibold text-white">Duration &amp; Pricing</h3>
+            <div className="flex flex-wrap gap-3">
+              {consultationDurations.map((duration) => (
                 <span
-                  key={subCat._id}
-                  className="rounded bg-[#A8ADB0] px-2.5 py-1 text-[9px] font-bold text-black"
+                  key={duration.label}
+                  className="rounded-md bg-[#151515] px-4 py-2.5 text-[10px] font-semibold text-white"
                 >
-                  {subCat.name}
+                  {duration.label}
                 </span>
               ))}
             </div>
-          )}
-
-          {[
-            {
-              title: 'Session outline',
-              body: service.sessionOutline,
-            },
-            {
-              title: 'Who is it for?',
-              body: service.whoItsFor || service.whoIsItFor,
-            },
-          ].filter((section) => section.body).map((section) => (
-            <div key={section.title} className="mt-5">
-              <h3 className="text-[11px] font-semibold text-white">{section.title}</h3>
-              <p className="mt-2 whitespace-pre-line text-[10px] leading-relaxed text-[#777777]">
-                {section.body}
-              </p>
-            </div>
-          ))}
-        </div>
-
-        <div className="border-l border-[#242424] pl-5">
-          <h3 className="text-[11px] font-semibold text-white">Additional Information</h3>
-
-          <div className="mt-5 flex flex-wrap gap-5">
-            {[
-              { icon: Phone, value: service.mode || service.modeOfConsultation, label: 'Mode' },
-              {
-                icon: Languages,
-                value: service.languages?.join(', ') || service.language,
-                label: 'Languages',
-              },
-              {
-                value: service.hasFollowUp
-                  ? `${service.followUpDays || 0} Days`
-                  : service.followUpWindow,
-                label: 'Follow Ups',
-              },
-            ].filter((item) => item.value).map((item) => (
-              <div key={item.label} className="flex flex-col items-center gap-2">
-                <div className="flex min-h-[54px] min-w-[54px] max-w-[140px] items-center justify-center rounded-md bg-[#151515] px-3 text-center text-[11px] font-semibold capitalize text-white">
-                  {item.value}
-                </div>
-                <span className="text-[9px] text-[#777777]">{item.label}</span>
-              </div>
-            ))}
           </div>
-
-          {[
-            {
-              title: 'Post-session requirement',
-              body:
-                service.hasPostSessionMessage === false
-                  ? ''
-                  : service.postSessionMessage || service.postSessionRequirement,
-            },
-            {
-              title: 'Pre-session requirement',
-              body:
-                service.hasPreSessionRequirement === false
-                  ? ''
-                  : service.preSessionRequirement,
-            },
-            {
-              title: 'Duration & Pricing',
-              body: '',
-            },
-          ].filter((section) => section.title === 'Duration & Pricing' || section.body).map((section) => (
-            <div key={section.title} className="border-t border-[#242424] py-4">
-              <h3 className="text-[11px] font-semibold text-white">{section.title}</h3>
-              {section.body && <p className="mt-2 text-[10px] text-[#777777]">{section.body}</p>}
-              {section.title === 'Duration & Pricing' && (
-                <div className="mt-4 flex flex-wrap gap-4">
-                  {consultationDurations.length ? (
-                    consultationDurations.map((duration) => (
-                      <span
-                        key={duration.label}
-                        className="rounded-md bg-[#151515] px-4 py-2.5 text-[10px] font-semibold text-white"
-                      >
-                        {duration.label}
-                      </span>
-                    ))
-                  ) : (
-                    <span className="text-[10px] text-[#777777]">{EMPTY_VALUE}</span>
-                  )}
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
+        )}
       </div>
-    </section>
-  )
+    )
+  }
 
   return (
-    <div className="relative flex min-h-screen w-full flex-col gap-5 p-0 pb-8 text-white">
-      {actionToast.message && (
-        <div
-          className={cn(
-            'animate-in fade-in slide-in-from-top-4 fixed top-4 right-4 z-[60] flex items-center gap-3 rounded-xl border px-5 py-4 shadow-2xl transition-all duration-300',
-            actionToast.type === 'success'
-              ? 'border-emerald-500/30 bg-emerald-950/95 text-emerald-400'
-              : actionToast.type === 'error'
-                ? 'border-red-500/30 bg-red-950/95 text-red-400'
-                : 'border-slate-800 bg-slate-900/95 text-slate-300',
-          )}
-        >
-          <div className="size-2 animate-pulse rounded-full bg-current" />
-          <span className="text-sm font-semibold">{actionToast.message}</span>
-          <button
-            type="button"
-            onClick={() => setActionToast({ message: '', type: null })}
-            className="ml-2 hover:opacity-80"
-          >
-            <X className="size-4" />
-          </button>
-        </div>
-      )}
-
+    <div className="relative flex w-full flex-col gap-5 pb-8 text-white">
       {decisionModalConfig && (
         <DecisionActionModal
           open={Boolean(activeDecisionAction)}
@@ -873,49 +576,227 @@ export const ServiceViewPage = () => {
           onAdminNotesChange={setDecisionAdminNotes}
           reason={decisionReason}
           onReasonChange={
-            activeDecisionAction === 'reject' || activeDecisionAction === 'requestChanges'
+            activeDecisionAction === 'reject' || activeDecisionAction === 'suspend'
               ? setDecisionReason
               : undefined
           }
           reasonOptions={decisionModalConfig.reasonOptions}
           selectedReasons={selectedReasons}
           onReasonToggle={toggleDecisionReason}
-          escalationOptions={decisionModalConfig.escalationOptions}
-          selectedEscalationOption={selectedEscalationOption}
-          onEscalationOptionChange={setSelectedEscalationOption}
+          showTimeline={activeDecisionAction === 'suspend'}
+          startDate={suspendStartDate}
+          onStartDateChange={setSuspendStartDate}
+          endDate={suspendEndDate}
+          onEndDateChange={setSuspendEndDate}
+          indefinite={suspendIndefinitely}
+          onIndefiniteChange={setSuspendIndefinitely}
           onClose={closeDecisionModal}
           onSubmit={submitDecisionAction}
-          isSubmitting={isUpdatingStatus}
+          isSubmitting={isUpdatingStatus || suspendServiceMutation.isPending}
         />
       )}
 
-      <header className="flex flex-col gap-2">
+      <header className="flex flex-col gap-3">
         <button
           type="button"
-          onClick={() => navigate('/services/management')}
-          className="group flex w-fit items-center gap-2 text-[18px] font-semibold text-white transition-colors hover:text-slate-200"
+          onClick={handleBack}
+          className="group flex w-fit items-center gap-2 text-[20px] font-bold tracking-tight text-white transition-colors hover:text-[#FBC078]"
         >
-          <ArrowLeft className="size-4 transition-transform group-hover:-translate-x-1" />
-          <span>{isConsultation ? 'Consultation View' : 'Service View'}</span>
+          <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
+          <span>{isConsultation ? 'Consultation Details' : 'Service Details'}</span>
         </button>
 
-        <div className="mt-2 flex items-center gap-1.5 text-[10px] text-[#777777]">
-          <span>Service management</span>
-          <span>/</span>
-          <span>Service View</span>
-          <span>/</span>
-          <span className="font-medium text-white">{expertName}</span>
+        <div className="flex items-center gap-1.5 pl-7 text-[12px] font-medium text-[#777777]">
+          {fromExpert ? (
+            <>
+              <button
+                type="button"
+                onClick={() => navigate('/experts/management')}
+                className="transition-colors hover:text-white"
+              >
+                All Experts
+              </button>
+              <span className="text-[#333333]">/</span>
+              <button
+                type="button"
+                onClick={() => expertId && navigate(`/experts/management/profile/${expertId}`)}
+                className="transition-colors hover:text-white"
+              >
+                {expertName}
+              </button>
+              <span className="text-[#333333]">/</span>
+              <span className="font-bold text-white">Service Details</span>
+            </>
+          ) : (
+            <>
+              <button
+                type="button"
+                onClick={() => navigate('/services/management')}
+                className="transition-colors hover:text-white"
+              >
+                Service Management
+              </button>
+              <span className="text-[#333333]">/</span>
+              <span className="font-bold text-white">Service Details</span>
+            </>
+          )}
         </div>
-        <h1 className="mt-3 text-[15px] font-semibold text-white">
-          {isConsultation ? 'Consultation Details' : 'Service Details'}
-        </h1>
       </header>
 
-      <ExpertSummary />
+      <div className="flex flex-wrap items-center justify-end gap-2">
+        {topActions.map((action) => (
+          <button
+            key={action.label}
+            type="button"
+            onClick={action.onClick}
+            className="flex items-center gap-2 rounded-lg border border-white/10 bg-transparent px-3 py-2 text-[11px] font-semibold text-white transition-colors hover:bg-white/5"
+          >
+            <Ban className="size-3.5 text-[#888]" aria-hidden="true" />
+            {action.label}
+          </button>
+        ))}
+      </div>
 
-      {isConsultation ? <ConsultationContent /> : <ServiceContent />}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[340px_minmax(0,1fr)]">
+        <div className="flex flex-col gap-4">
+          <div className="relative h-[220px] w-full overflow-hidden rounded-lg bg-[#101010]">
+            {activeImage ? (
+              <img src={activeImage} alt={service.title} className="h-full w-full object-cover" />
+            ) : (
+              <div className="flex h-full flex-col items-center justify-center gap-2 text-[#5C5C5C]">
+                <ImageIcon className="size-8" aria-hidden="true" />
+                <span className="text-[10px]">No images uploaded</span>
+              </div>
+            )}
 
-      <ActionCards />
+            {imageCount > 1 && (
+              <>
+                <button
+                  type="button"
+                  aria-label="Previous image"
+                  onClick={handlePrevImage}
+                  className="absolute top-1/2 left-2 flex size-7 -translate-y-1/2 items-center justify-center rounded-full bg-black/75 text-white"
+                >
+                  <ChevronLeft className="size-4" />
+                </button>
+                <button
+                  type="button"
+                  aria-label="Next image"
+                  onClick={handleNextImage}
+                  className="absolute top-1/2 right-2 flex size-7 -translate-y-1/2 items-center justify-center rounded-full bg-black/75 text-white"
+                >
+                  <ChevronRight className="size-4" />
+                </button>
+              </>
+            )}
+
+            <div className="absolute right-2 bottom-2 flex items-center gap-1 rounded bg-black/85 px-2 py-1 text-[10px] font-semibold text-white">
+              <ImageIcon className="size-3" />
+              {imageCount > 0 ? `${activeImageIndex + 1}/${imageCount}` : '0/0'}
+            </div>
+          </div>
+
+          <div className="rounded-lg bg-[#151515] p-4">
+            <h3 className="text-[14px] font-semibold text-white">Support &amp; Admin</h3>
+
+            <div className="mt-4 space-y-3">
+              <div>
+                <p className="text-[11px] font-semibold text-white">Active Tickets</p>
+                <p className="mt-1 text-[11px] text-[#777]">None</p>
+              </div>
+
+              <div>
+                <p className="text-[11px] font-semibold text-white">Admin notes</p>
+                <p className="mt-1 text-[11px] text-[#777]">
+                  {service.adminNote?.trim() || 'None'}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex min-w-0 flex-col">
+          <div className="mb-1 flex items-start justify-between gap-4">
+            <div>
+              <h1 className="text-[22px] font-semibold leading-tight text-white">
+                {service.title}
+              </h1>
+              {categoryName && <p className="mt-1 text-[12px] text-[#777]">{categoryName}</p>}
+            </div>
+          </div>
+
+          {!isConsultation && service.description && (
+            <p className="mt-4 max-w-[640px] text-[12px] leading-relaxed text-white">
+              {service.description}
+            </p>
+          )}
+
+          {Boolean(service.subCategory?.length || service.topics?.length) && (
+            <div className="mt-4 flex flex-wrap gap-2">
+              {(service.subCategory?.length ? service.subCategory : service.topics || []).map(
+                (item) => (
+                  <span
+                    key={item._id}
+                    className="rounded border border-white/30 px-2.5 py-1 text-[10px] font-medium text-white"
+                  >
+                    {item.name}
+                  </span>
+                ),
+              )}
+            </div>
+          )}
+
+          {isConsultation ? (
+            renderConsultationContent()
+          ) : (
+            <>
+              {service.pricingType === 'fixed' && renderFixedPricing()}
+              {service.pricingType === 'custom' && renderCustomPricing()}
+              {service.pricingType === 'tiered' && renderTieredPricing()}
+            </>
+          )}
+
+          <button
+            type="button"
+            onClick={() => navigate('/services/dashboard/metrics')}
+            className="mt-8 flex w-full items-center justify-between rounded-lg border border-[#6B4217] px-5 py-4 text-[13px] font-semibold text-white transition-colors hover:bg-[#6B4217]/10"
+          >
+            {isConsultation ? 'Consultation Performance' : 'Service Performance'}
+            <ChevronRight className="size-4 text-[#E7AE63]" />
+          </button>
+        </div>
+      </div>
+
+      {showApprovalControls && (
+        <div className="rounded-lg bg-[#151515] p-5">
+          <div className="mb-4 flex items-center gap-2 text-[14px] font-semibold text-white">
+            <History className="size-4" />
+            <h3>Decision Controls</h3>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            <button
+              type="button"
+              onClick={() => openDecisionModal('approve')}
+              className="flex items-center gap-2 rounded-md bg-[#00B761] px-4 py-2 text-[11px] font-bold text-white"
+            >
+              Approve Application
+              <span className="flex size-4 items-center justify-center rounded-full bg-white">
+                <Check className="size-2.5 text-[#00B761]" />
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => openDecisionModal('reject')}
+              className="flex items-center gap-2 rounded-md bg-[#F02D2D] px-4 py-2 text-[11px] font-bold text-white"
+            >
+              Reject Application
+              <span className="flex size-4 items-center justify-center rounded-full border border-white">
+                <X className="size-2.5" />
+              </span>
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

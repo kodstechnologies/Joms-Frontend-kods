@@ -32,7 +32,10 @@ export const DeletedCategoriesPage = () => {
                     breadcrumb="Deleted Categories"
                 />
                 <div className="flex items-center gap-3">
-                    <Button className="bg-[#F0C27B] text-black hover:bg-[#f4cc91]">
+                    <Button
+                        className="bg-[#F0C27B] text-black hover:bg-[#f4cc91]"
+                        onClick={() => navigate('/services/dashboard/metrics')}
+                    >
                         Manage Metrics
                     </Button>
 

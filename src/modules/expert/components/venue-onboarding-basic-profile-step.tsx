@@ -1,7 +1,7 @@
 import { useRef } from 'react'
 import { Search, Upload } from 'lucide-react'
 
-import { useVenueCategories } from '../hooks/use-venue-categories'
+import { useServiceCategoriesByType } from '../hooks/use-service-categories'
 import type { VenueOnboardingFormData } from '../utils/venue-onboarding-form'
 
 const fieldClass =
@@ -15,8 +15,10 @@ type Props = {
 export const VenueOnboardingBasicProfileStep = ({ formData, setFormData }: Props) => {
   const profileInputRef = useRef<HTMLInputElement>(null)
   const coverInputRef = useRef<HTMLInputElement>(null)
-  const { data: categoriesData } = useVenueCategories()
-  const categories = categoriesData?.data || []
+  const { data: categoriesData, isLoading: isCategoriesLoading } =
+    useServiceCategoriesByType('venue')
+  const categoryGroups = categoriesData?.data || {}
+  const categories = Object.values(categoryGroups).flat()
 
   const handleImageChange = (field: 'profileImage' | 'coverImage', file: File | null) => {
     setFormData((prev) => {
@@ -36,7 +38,7 @@ export const VenueOnboardingBasicProfileStep = ({ formData, setFormData }: Props
   }
 
   return (
-    <div className="mx-auto max-w-5xl">
+    <div className="mx-auto w-full max-w-[850px]">
       <div className="animate-in fade-in slide-in-from-right-4 rounded-lg border border-white/5 bg-[#151515] p-6 duration-300">
         <div className="mb-6">
           <h2 className="text-sm font-bold text-white">Basic Profile Setup</h2>
@@ -121,15 +123,13 @@ export const VenueOnboardingBasicProfileStep = ({ formData, setFormData }: Props
 
           <div>
             <label className="mb-2 block text-xs font-medium text-white">
-              Service type
+              Service Type
             </label>
             <input
               value={formData.venueType}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, venueType: e.target.value }))
-              }
+              disabled
               placeholder="Venue Partner"
-              className={fieldClass}
+              className={`${fieldClass} cursor-not-allowed text-[#888] opacity-70`}
             />
           </div>
 
@@ -162,9 +162,16 @@ export const VenueOnboardingBasicProfileStep = ({ formData, setFormData }: Props
                 }
                 className={`${fieldClass} appearance-none pl-10`}
               >
-                <option value="">Search</option>
-                {categories.map((cat: { _id: string; name: string }) => (
-                  <option key={cat._id} value={cat._id}>
+                <option value="">
+                  {isCategoriesLoading ? 'Loading categories...' : 'Search'}
+                </option>
+                {!isCategoriesLoading && categories.length === 0 && (
+                  <option value="" disabled>
+                    No venue categories found
+                  </option>
+                )}
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.id}>
                     {cat.name}
                   </option>
                 ))}

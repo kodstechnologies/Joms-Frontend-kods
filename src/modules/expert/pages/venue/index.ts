@@ -1,12 +1,14 @@
 export * from "./venue-dashboard-page";
+export * from "./venue-metrics-page";
 export * from "./create-venue-listing-page";
 export * from "./create-venue-onboarding-page";
 export * from "./venue-management-page";
 export * from "./pending-approvals-page";
 export * from "./suspended-venues-page";
-export * from "./application-details-page";
+export { ApplicationDetailsPage } from "./application-details-page.tsx";
 export * from "./venue-profile-view-page";
 export * from "./space-details-page";
+export * from "./space-analytics-page";
 
 export { VenueCategoryManagementPage } from "./category-management-page";
 export { VenueCategoryViewPage } from "./category-view-page";

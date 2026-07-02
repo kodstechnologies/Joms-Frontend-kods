@@ -54,6 +54,13 @@ export const suspendVenue = async (
   return response.data
 }
 
+export const activateVenue = async (venueId: string) => {
+  const response = await venueApiClient.patch(
+    `/venues/admin/activate/${venueId}`,
+  )
+  return response.data
+}
+
 export const fetchVenueById = async (id: string) => {
   const response = await venueApiClient.get<VenueDetailResponse>(`/venues/${id}`)
   return response.data
@@ -62,6 +69,50 @@ export const fetchVenueById = async (id: string) => {
 export const fetchVenueFullView = async (venueId: string) => {
   const response = await venueApiClient.get<VenueFullViewResponse>(
     `/venues/admin/${venueId}/full-view`,
+  )
+  return response.data
+}
+
+export type UpdateVenueSpaceStatusPayload =
+  | {
+    status: 'approved'
+    adminNote?: string
+  }
+  | {
+    status: 'rejected'
+    reasonFor: string[]
+    rejectionReason: string
+    adminNote?: string
+  }
+
+export const updateVenueSpaceStatus = async (
+  spaceId: string,
+  payload: UpdateVenueSpaceStatusPayload,
+) => {
+  const response = await venueApiClient.patch(
+    `/venues/space/admin/status/${spaceId}`,
+    payload,
+  )
+  return response.data
+}
+
+export type UpdateVenueSpaceVisibilityPayload = {
+  action: 'hide' | 'activate' | 'suspend'
+  selectedReasons?: string[]
+  startDate?: string
+  endDate?: string
+  suspendIndefinitely?: boolean
+  reasonDetails?: string
+  adminNotes?: string
+}
+
+export const updateVenueSpaceVisibility = async (
+  spaceId: string,
+  payload: UpdateVenueSpaceVisibilityPayload,
+) => {
+  const response = await venueApiClient.patch(
+    `/venues/space/admin/visibility/${spaceId}`,
+    payload,
   )
   return response.data
 }

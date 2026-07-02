@@ -8,6 +8,7 @@ import {
   Star,
   UserRound,
 } from 'lucide-react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
 import { Button } from '@/shared/components/ui/button'
@@ -118,6 +119,14 @@ function PodiumCard({ expert }: { expert: PodiumExpert }) {
 }
 
 export const LeaderboardPage = () => {
+  const navigate = useNavigate()
+  const location = useLocation()
+  const metricsPath = location.pathname.startsWith('/venues')
+    ? '/venues/dashboard/metrics'
+    : location.pathname.startsWith('/services')
+      ? '/services/dashboard/metrics'
+      : '/experts/dashboard/metrics'
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -127,7 +136,7 @@ export const LeaderboardPage = () => {
             Top ranked experts based on platform performance
           </p>
         </div>
-        <Button onClick={() => toast.message('Metrics configuration coming soon')}>
+        <Button onClick={() => navigate(metricsPath)}>
           <BarChart3 className="size-4" />
           Manage Metrics
         </Button>

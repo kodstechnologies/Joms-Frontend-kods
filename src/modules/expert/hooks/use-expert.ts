@@ -13,6 +13,7 @@ export const useExperts = (params?: {
   limit?: number
   search?: string
   status?: string
+  serviceType?: string
 }) => {
   return useQuery({
     queryKey: ['experts', params],

@@ -106,7 +106,7 @@ export const VenueOnboardingFinalReviewStep = ({
   const businessKyc = kyc?.businessKyc
 
   return (
-    <div className="mx-auto max-w-5xl space-y-6">
+    <div className="mx-auto w-full max-w-[850px] space-y-6">
       <div className="overflow-hidden rounded-lg border border-white/5 bg-[#151515]">
         <div className="relative h-40 bg-gradient-to-r from-cyan-900 to-blue-800">
           {coverUrl && (

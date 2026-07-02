@@ -52,7 +52,7 @@ export function VenueCategoryManagementPage() {
                 </div>
 
                 <div className="flex w-full flex-col items-center gap-3 md:w-auto md:flex-row">
-                    <Button className="w-full md:w-auto">
+          <Button className="w-full md:w-auto" onClick={() => navigate('/venues/dashboard/metrics')}>
                         Manage Metrics
                     </Button>
 

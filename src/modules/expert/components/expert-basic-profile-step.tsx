@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { ChevronDown, ImageIcon, Search, Upload, XCircle } from 'lucide-react'
 
 import { useServiceCategoriesByType } from '../hooks/use-service-categories'
@@ -16,9 +16,14 @@ const SERVICE_TYPE_OPTIONS = [
 type Props = {
   formData: ExpertOnboardingFormData
   setFormData: React.Dispatch<React.SetStateAction<ExpertOnboardingFormData>>
+  lockedServiceType?: 'concierge' | 'venue'
 }
 
-export const ExpertBasicProfileStep = ({ formData, setFormData }: Props) => {
+export const ExpertBasicProfileStep = ({
+  formData,
+  setFormData,
+  lockedServiceType,
+}: Props) => {
   const coverInputRef = useRef<HTMLInputElement>(null)
   const profileInputRef = useRef<HTMLInputElement>(null)
   const sampleFileInputRef = useRef<HTMLInputElement>(null)
@@ -57,6 +62,8 @@ export const ExpertBasicProfileStep = ({ formData, setFormData }: Props) => {
   }
 
   const handleServiceTypeChange = (value: string) => {
+    if (lockedServiceType) return
+
     setFormData((prev) => ({
       ...prev,
       serviceType: value,
@@ -73,6 +80,17 @@ export const ExpertBasicProfileStep = ({ formData, setFormData }: Props) => {
         : [...prev.serviceCategory, categoryName],
     }))
   }
+
+  useEffect(() => {
+    if (!lockedServiceType || formData.serviceType === lockedServiceType) return
+
+    setFormData((prev) => ({
+      ...prev,
+      serviceType: lockedServiceType,
+      serviceCategory: prev.serviceType === lockedServiceType ? prev.serviceCategory : [],
+    }))
+    setCategorySearch('')
+  }, [formData.serviceType, lockedServiceType, setFormData])
 
   const addOffering = (value: string, reset: () => void) => {
     const trimmed = value.trim()
@@ -290,7 +308,14 @@ export const ExpertBasicProfileStep = ({ formData, setFormData }: Props) => {
                 <select
                   value={formData.serviceType}
                   onChange={(e) => handleServiceTypeChange(e.target.value)}
-                  className={`${fieldClass} cursor-pointer appearance-none pr-10`}
+                  disabled={Boolean(lockedServiceType)}
+                  className={cn(
+                    fieldClass,
+                    'appearance-none pr-10',
+                    lockedServiceType
+                      ? 'cursor-not-allowed text-[#888] opacity-70'
+                      : 'cursor-pointer',
+                  )}
                 >
                   <option value="" disabled>
                     Select service type

@@ -1,29 +1,64 @@
-import { type ReactNode } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate, useParams } from 'react-router-dom'
+import { toast } from 'sonner'
 import {
-  Accessibility,
   ArrowLeft,
-  CalendarX,
+  BarChart3,
   CheckCircle2,
-  Clock,
+ EyeOff,
+  ImageOff,
   MapPin,
-  MoreVertical,
-  ParkingCircle,
-  Sparkles,
+  PauseCircle,
+  RotateCcw,
   Star,
-  UtensilsCrossed,
 } from 'lucide-react'
 
+import {
+  fetchAmenityMasters,
+  updateVenueSpaceVisibility,
+  type UpdateVenueSpaceVisibilityPayload,
+} from '../../api/venue-api'
 import { useVenueFullView } from '../../hooks/use-venues'
-import type {
-  VenueFullView,
-  VenueFullViewSpaceSummary,
-} from '../../type/venue-full-view'
+import type { VenueFullView, VenueFullViewGalleryImage } from '../../type/venue-full-view'
+import {
+  DecisionActionModal,
+  type DecisionActionModalOption,
+} from '@/shared/components/modal/decision-action-modal'
+import {
+  TableActionsDropdown,
+  TableActionsItem,
+} from '@/shared/components/table/table-actions-dropdown'
 import { cn } from '@/shared/lib/cn'
+
+type AmenitySubCategory = {
+  _id: string
+  name: string
+  image?: string
+}
+
+type AmenityCategory = {
+  _id: string
+  category: string
+  subCategories?: AmenitySubCategory[]
+}
+
+type SpaceAction = 'hide' | 'suspend'
+
+const ACTION_MENU_CLASS = 'border border-slate-200 bg-white shadow-xl'
+const ACTION_ITEM_CLASS = 'text-slate-800 hover:bg-slate-100 hover:text-slate-900'
+
+const SPACE_REASON_OPTIONS: DecisionActionModalOption[] = [
+  { label: 'Temporary operational issue', value: 'temporary_operational_issue' },
+  { label: 'Scheduled maintenance', value: 'scheduled_maintenance' },
+  { label: 'Availability issue', value: 'availability_issue' },
+  { label: 'System verification in progress', value: 'system_verification_in_progress' },
+  { label: 'Admin review required', value: 'admin_review_required' },
+]
 
 const getApiErrorMessage = (error: unknown) => {
   const err = error as { response?: { data?: { message?: string } } }
-  return err?.response?.data?.message || 'Unable to load space details.'
+  return err?.response?.data?.message || 'Something went wrong. Please try again.'
 }
 
 const formatCurrency = (value?: number | null) => {
@@ -31,14 +66,34 @@ const formatCurrency = (value?: number | null) => {
   return `₹${value.toLocaleString('en-IN')}`
 }
 
-const formatBlockedDate = (value: string) => {
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return value
-  return date.toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  })
+function SafeImage({
+  src,
+  alt,
+  className,
+}: {
+  src?: string | null
+  alt: string
+  className?: string
+}) {
+  const [errored, setErrored] = useState(false)
+
+  if (!src || errored) {
+    return (
+      <div className={cn('flex items-center justify-center bg-black text-[#666]', className)}>
+        <ImageOff className="size-5" />
+      </div>
+    )
+  }
+
+  return (
+    <img
+      src={src}
+      alt={alt}
+      className={className}
+      loading="lazy"
+      onError={() => setErrored(true)}
+    />
+  )
 }
 
 function Card({
@@ -51,60 +106,186 @@ function Card({
   className?: string
 }) {
   return (
-    <div
-      className={cn('rounded-xl border border-white/5 bg-[#111111] p-5', className)}
-    >
-      {title && (
-        <h3 className="mb-4 text-[13px] font-semibold text-white">{title}</h3>
-      )}
+    <section className={cn('rounded-lg border border-white/5 bg-[#111111] p-5', className)}>
+      {title && <h2 className="mb-4 text-[13px] font-bold text-white">{title}</h2>}
       {children}
-    </div>
+    </section>
   )
 }
 
-function ServiceItem({
-  label,
-  enabled,
-}: {
-  label: string
-  enabled?: boolean
-}) {
+function Chip({ children }: { children: ReactNode }) {
+  return (
+    <span className="inline-flex items-center gap-1 rounded-md bg-black px-3 py-1.5 text-[11px] font-semibold text-white">
+      {children}
+    </span>
+  )
+}
+
+function ServiceItem({ label, enabled }: { label: string; enabled?: boolean }) {
   return (
     <div className="flex items-center gap-2 text-[12px]">
-      <CheckCircle2
-        className={cn('size-4', enabled ? 'text-emerald-500' : 'text-[#555]')}
-      />
-      <span className={enabled ? 'text-white' : 'text-[#777] line-through'}>
-        {label}
-      </span>
+      <CheckCircle2 className={cn('size-3.5', enabled ? 'text-emerald-400' : 'text-[#555]')} />
+      <span className={enabled ? 'text-[#bbb]' : 'text-[#777] line-through'}>{label}</span>
     </div>
   )
 }
 
-function AmenityTile({
-  label,
-  icon,
-}: {
-  label: string
-  icon: ReactNode
-}) {
-  return (
-    <div className="flex items-center gap-2 rounded-md border border-white/5 bg-black px-3 py-2.5 text-[11px] font-medium text-white">
-      <span className="text-[#FBC078]">{icon}</span>
-      {label}
-    </div>
-  )
+function resolveAmenities(data: VenueFullView, masters: AmenityCategory[]) {
+  const categories = new Map(masters.map((category) => [category._id, category]))
+  const subCategories = new Map<string, AmenitySubCategory & { categoryName?: string }>()
+
+  masters.forEach((category) => {
+    category.subCategories?.forEach((subCategory) => {
+      subCategories.set(subCategory._id, {
+        ...subCategory,
+        categoryName: category.category,
+      })
+    })
+  })
+
+  return (data.overview.amenities?.amenities || []).flatMap((amenity) => {
+    const category = categories.get(amenity.categoryId)
+
+    return amenity.subCategoryIds.map((subCategoryId) => {
+      const subCategory = subCategories.get(subCategoryId)
+      return {
+        id: `${amenity.categoryId}-${subCategoryId}`,
+        categoryName: category?.category || amenity.categoryId,
+        name: subCategory?.name || subCategoryId,
+        image: subCategory?.image,
+      }
+    })
+  })
 }
 
 export function SpaceDetailsPage() {
   const navigate = useNavigate()
-  const { venueId, spaceId } = useParams<{
-    venueId: string
-    spaceId: string
-  }>()
+  const { venueId, spaceId } = useParams<{ venueId: string; spaceId: string }>()
+  const queryClient = useQueryClient()
+  const [actionsOpen, setActionsOpen] = useState(false)
+  const [modalAction, setModalAction] = useState<SpaceAction | null>(null)
+  const [selectedReasons, setSelectedReasons] = useState<string[]>([])
+  const [reasonDetails, setReasonDetails] = useState('')
+  const [adminNotes, setAdminNotes] = useState('')
+  const [startDate, setStartDate] = useState('')
+  const [endDate, setEndDate] = useState('')
+  const [suspendIndefinitely, setSuspendIndefinitely] = useState(false)
 
   const { data, isLoading, isError, error } = useVenueFullView(venueId)
-  const fullView = data?.data as VenueFullView | undefined
+  const { data: amenityMasters } = useQuery({
+    queryKey: ['amenities-master'],
+    queryFn: fetchAmenityMasters,
+  })
+
+  const fullView = data?.data
+  const resolvedAmenities = useMemo(
+    () => (fullView ? resolveAmenities(fullView, amenityMasters?.data || []) : []),
+    [amenityMasters?.data, fullView],
+  )
+
+  const visibilityMutation = useMutation({
+    mutationFn: ({
+      targetSpaceId,
+      payload,
+    }: {
+      targetSpaceId: string
+      payload: UpdateVenueSpaceVisibilityPayload
+    }) => updateVenueSpaceVisibility(targetSpaceId, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['venue-full-view', venueId] })
+      queryClient.invalidateQueries({ queryKey: ['venues'] })
+    },
+  })
+
+  const backToProfile = () => navigate(`/venues/management/profile/${venueId}`)
+
+  const resetModal = () => {
+    setSelectedReasons([])
+    setReasonDetails('')
+    setAdminNotes('')
+    setStartDate('')
+    setEndDate('')
+    setSuspendIndefinitely(false)
+  }
+
+  const openActionModal = (action: SpaceAction) => {
+    resetModal()
+    setActionsOpen(false)
+    setModalAction(action)
+  }
+
+  const closeModal = () => setModalAction(null)
+
+  const toggleReason = (value: string) => {
+    setSelectedReasons((current) =>
+      current.includes(value)
+        ? current.filter((reason) => reason !== value)
+        : [...current, value],
+    )
+  }
+
+  const submitVisibilityAction = () => {
+    if (!spaceId || !modalAction) return
+
+    if (selectedReasons.length === 0) {
+      toast.error('Please select at least one reason.')
+      return
+    }
+
+    if (modalAction === 'suspend' && !suspendIndefinitely && (!startDate || !endDate)) {
+      toast.error('Please provide a suspension timeline or choose to suspend indefinitely.')
+      return
+    }
+
+    if (!adminNotes.trim()) {
+      toast.error('Admin notes are required.')
+      return
+    }
+
+    const toIso = (value: string) =>
+      value ? new Date(`${value}T00:00:00.000Z`).toISOString() : undefined
+
+    const payload: UpdateVenueSpaceVisibilityPayload =
+      modalAction === 'hide'
+        ? {
+          action: 'hide',
+          selectedReasons,
+          reasonDetails: reasonDetails.trim(),
+          adminNotes: adminNotes.trim(),
+        }
+        : {
+          action: 'suspend',
+          selectedReasons,
+          suspendIndefinitely,
+          startDate: suspendIndefinitely ? undefined : toIso(startDate),
+          endDate: suspendIndefinitely ? undefined : toIso(endDate),
+          reasonDetails: reasonDetails.trim(),
+          adminNotes: adminNotes.trim(),
+        }
+
+    visibilityMutation.mutate(
+      { targetSpaceId: spaceId, payload },
+      {
+        onSuccess: () => {
+          toast.success(modalAction === 'hide' ? 'Space hidden successfully' : 'Space suspended successfully')
+          closeModal()
+        },
+        onError: (err) => toast.error(getApiErrorMessage(err)),
+      },
+    )
+  }
+
+  const activateSpace = () => {
+    if (!spaceId) return
+    setActionsOpen(false)
+    visibilityMutation.mutate(
+      { targetSpaceId: spaceId, payload: { action: 'activate' } },
+      {
+        onSuccess: () => toast.success('Space activated successfully'),
+        onError: (err) => toast.error(getApiErrorMessage(err)),
+      },
+    )
+  }
 
   if (isLoading) {
     return (
@@ -113,9 +294,6 @@ export function SpaceDetailsPage() {
       </div>
     )
   }
-
-  const backToProfile = () =>
-    navigate(`/venues/management/profile/${venueId}`)
 
   if (isError || !fullView) {
     return (
@@ -136,21 +314,21 @@ export function SpaceDetailsPage() {
   }
 
   const { venue, space, gallery, terms, availability } = fullView.overview
-  const summary: VenueFullViewSpaceSummary | undefined = fullView.spaces.find(
-    (item) => item.spaceId === spaceId,
-  )
-  const detailSpace = space && space._id === spaceId ? space : null
-
-  const spaceName =
-    detailSpace?.name || summary?.spaceName || 'Space Details'
-
-  const galleryImages =
-    gallery?.galleryImages?.map((image) => image.url) ??
-    venue.venueImages ??
-    []
+  const summary = fullView.spaces.find((item) => item.spaceId === spaceId) || fullView.spaces[0]
+  const detailSpace = space?._id === spaceId ? space : space
+  const spaceName = detailSpace?.name || summary?.spaceName || 'Space Details'
+  const galleryImages: VenueFullViewGalleryImage[] = [
+    ...(gallery?.venueCoverImages || []),
+    ...(gallery?.spaceCoverImages || []),
+    ...(gallery?.galleryImages || []),
+  ]
   const coverImage =
-    galleryImages[0] || summary?.coverImage || venue.coverImageUrl || null
-
+    gallery?.spaceCoverImages?.[0]?.url ||
+    summary?.coverImage ||
+    gallery?.venueCoverImages?.[0]?.url ||
+    venue.coverImageUrl ||
+    gallery?.galleryImages?.[0]?.url ||
+    null
   const location = detailSpace?.location || venue.location
   const addressLine = [
     location?.address,
@@ -160,20 +338,12 @@ export function SpaceDetailsPage() {
   ]
     .filter(Boolean)
     .join(', ')
-
-  const weekday = summary?.weekdayPrice ?? null
-  const weekend = summary?.weekendPrice ?? null
-
-  const weeklyAvailability =
-    detailSpace && availability ? availability.weeklyAvailability ?? [] : summary?.availability?.weeklyAvailability ?? []
-  const blockedDates =
-    detailSpace && availability ? availability.blockedDates ?? [] : summary?.availability?.blockedDates ?? []
-
-  const capacity =
-    detailSpace?.guestLimit ?? detailSpace?.capacityRange ?? summary?.capacity
+  const capacity = detailSpace?.guestLimit ?? detailSpace?.capacityRange ?? summary?.capacity
+  const isHidden = Boolean(detailSpace?.isHidden || summary?.isHidden)
+  const isSuspended = Boolean(detailSpace?.isSuspend || summary?.isSuspend)
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="mx-auto flex max-w-[1120px] flex-col gap-5">
       <header className="flex items-start justify-between">
         <div className="flex flex-col gap-2">
           <button
@@ -185,30 +355,63 @@ export function SpaceDetailsPage() {
             <span>Space Details</span>
           </button>
           <div className="flex items-center gap-1.5 pl-7 text-[12px] font-medium text-[#777777]">
-            <button
-              type="button"
-              onClick={backToProfile}
-              className="transition-colors hover:text-white"
-            >
+            <button type="button" onClick={backToProfile} className="transition-colors hover:text-white">
               {venue.name}
             </button>
             <span className="text-[#333333]">/</span>
             <span className="font-bold text-white">{spaceName}</span>
           </div>
         </div>
-        <span className="p-1 text-[#777]">
-          <MoreVertical className="size-5" />
-        </span>
+
+        <TableActionsDropdown
+          label="Open space actions"
+          isOpen={actionsOpen}
+          onOpenChange={setActionsOpen}
+          menuClassName={ACTION_MENU_CLASS}
+          menuWidth={180}
+        >
+          {isHidden || isSuspended ? (
+            <TableActionsItem
+              icon={<RotateCcw className="size-3.5 text-slate-700" />}
+              className={ACTION_ITEM_CLASS}
+              onClick={activateSpace}
+            >
+              Active Space
+            </TableActionsItem>
+          ) : (
+            <TableActionsItem
+              icon={<EyeOff className="size-3.5 text-slate-700" />}
+              className={ACTION_ITEM_CLASS}
+              onClick={() => openActionModal('hide')}
+            >
+              Hide Space
+            </TableActionsItem>
+          )}
+          <TableActionsItem
+            icon={<BarChart3 className="size-3.5 text-slate-700" />}
+            className={ACTION_ITEM_CLASS}
+            onClick={() => navigate(`/venues/management/profile/${venueId}/space/${spaceId}/analytics`)}
+          >
+            Analytics
+          </TableActionsItem>
+          <TableActionsItem
+            icon={<PauseCircle className="size-3.5 text-slate-700" />}
+            className={ACTION_ITEM_CLASS}
+            onClick={() => openActionModal('suspend')}
+          >
+            Suspend Space
+          </TableActionsItem>
+        </TableActionsDropdown>
       </header>
 
-      <div className="relative h-56 w-full overflow-hidden rounded-xl border border-white/5 bg-[#1a1a1a]">
-        {coverImage && (
-          <img
-            src={coverImage}
-            alt={spaceName}
-            className="size-full object-cover"
-          />
-        )}
+      {(isHidden || isSuspended) && (
+        <div className="rounded-lg border border-amber-400/30 bg-amber-400/10 px-4 py-3 text-[12px] font-semibold text-amber-200">
+          This space is currently {isSuspended ? 'suspended' : 'hidden'} and is not visible in partner-facing listings.
+        </div>
+      )}
+
+      <div className="relative h-64 w-full overflow-hidden rounded-lg border border-white/5 bg-[#111111]">
+        <SafeImage src={coverImage} alt={spaceName} className="size-full object-cover" />
         {galleryImages.length > 0 && (
           <span className="absolute bottom-3 right-3 rounded-md bg-black/70 px-2 py-1 text-[11px] font-medium text-white">
             {galleryImages.length} photo{galleryImages.length === 1 ? '' : 's'}
@@ -216,94 +419,70 @@ export function SpaceDetailsPage() {
         )}
       </div>
 
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1fr_360px]">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1.25fr_1fr]">
         <Card>
-          <p className="text-[11px] text-[#999]">{venue.name}</p>
-          <div className="mt-1 flex items-center justify-between gap-3">
-            <h2 className="text-xl font-bold text-white">{spaceName}</h2>
-            {venue.ratings !== undefined && (
-              <span className="inline-flex items-center gap-1 text-[13px] font-semibold text-white">
-                <Star className="size-4 fill-[#FBC078] text-[#FBC078]" />
-                {venue.ratings}
-              </span>
-            )}
+          <p className="text-[11px] font-semibold text-[#777]">{venue.name}</p>
+          <div className="mt-2 flex items-center justify-between gap-3">
+            <h1 className="text-xl font-bold text-white">{spaceName}</h1>
+            <span className="inline-flex items-center gap-1 text-[13px] font-semibold text-white">
+              <Star className="size-4 fill-[#FBC078] text-[#FBC078]" />
+              {venue.ratings ?? '—'}
+            </span>
           </div>
-
           <div className="mt-3 flex flex-wrap gap-2">
-            {detailSpace?.spaceType && (
-              <span className="rounded-md bg-[#FBC078]/15 px-2.5 py-1 text-[11px] font-semibold capitalize text-[#FBC078]">
-                {detailSpace.spaceType}
-              </span>
-            )}
-            {detailSpace?.seatingStyle && (
-              <span className="rounded-md bg-black px-2.5 py-1 text-[11px] font-semibold text-[#bbb]">
-                {detailSpace.seatingStyle}
-              </span>
-            )}
-            {capacity !== undefined && capacity !== null && (
-              <span className="rounded-md bg-black px-2.5 py-1 text-[11px] font-semibold text-[#bbb]">
-                {typeof capacity === 'number' ? `${capacity} guests` : capacity}
-              </span>
-            )}
-            {detailSpace?.areaSqFeet && (
-              <span className="rounded-md bg-black px-2.5 py-1 text-[11px] font-semibold text-[#bbb]">
-                {detailSpace.areaSqFeet} sq.ft
-              </span>
+            <Chip>{venue.venueType || 'Venue'}</Chip>
+            <Chip>{detailSpace?.spaceType || 'Space'}</Chip>
+            {capacity !== null && capacity !== undefined && (
+              <Chip>{typeof capacity === 'number' ? `${capacity} guests` : capacity}</Chip>
             )}
           </div>
-
-          <div className="mt-4 space-y-2">
-            {weeklyAvailability.length > 0 && (
-              <p className="flex items-start gap-2 text-[12px] text-emerald-400">
-                <Clock className="mt-0.5 size-3.5 shrink-0" />
-                <span>
-                  Available:{' '}
-                  <span className="text-[#ccc]">
-                    {weeklyAvailability
-                      .map((slot) => `${slot.day} ${slot.from}-${slot.to}`)
-                      .join(', ')}
-                  </span>
-                </span>
-              </p>
-            )}
-            {blockedDates.length > 0 && (
-              <p className="flex items-start gap-2 text-[12px] text-red-400">
-                <CalendarX className="mt-0.5 size-3.5 shrink-0" />
-                <span>
-                  Unavailable:{' '}
-                  <span className="text-[#ccc]">
-                    {blockedDates
-                      .map(
-                        (slot) =>
-                          `${formatBlockedDate(slot.date)} ${slot.from}-${slot.to}`,
-                      )
-                      .join(', ')}
-                  </span>
-                </span>
-              </p>
-            )}
-          </div>
+          <p className="mt-4 text-[12px] font-semibold text-emerald-400">
+            Available:{' '}
+            <span className="text-white">
+              {availability?.weeklyAvailability?.length
+                ? availability.weeklyAvailability
+                  .map((slot) => `${slot.day} ${slot.from}-${slot.to}`)
+                  .join(', ')
+                : '—'}
+            </span>
+          </p>
+          <p className="mt-1 text-[12px] font-semibold text-red-400">
+            Unavailable:{' '}
+            <span className="text-white">
+              {availability?.blockedDates?.length
+                ? availability.blockedDates
+                  .map((slot) => `${slot.date} ${slot.from}-${slot.to}`)
+                  .join(', ')
+                : '—'}
+            </span>
+          </p>
         </Card>
 
-        <div className="flex flex-col gap-5">
+        <div className="grid grid-cols-1 gap-5">
           <Card title="Location">
-            <div className="flex items-start gap-2">
-              <MapPin className="mt-0.5 size-4 shrink-0 text-[#FBC078]" />
-              <p className="text-[12px] text-[#ccc]">{addressLine || '—'}</p>
+            <div className="flex items-start gap-3 rounded-md bg-black p-3">
+              <MapPin className="mt-0.5 size-4 text-red-400" />
+              <div>
+                <p className="text-[12px] font-semibold text-white">
+                  {location?.city || summary?.city || '—'}
+                </p>
+                <p className="mt-1 text-[10px] text-[#777]">{addressLine || '—'}</p>
+              </div>
             </div>
           </Card>
+
           <Card title="Pricing">
             <div className="grid grid-cols-2 gap-3">
-              <div className="rounded-lg border border-white/5 bg-black p-3">
+              <div className="rounded-md bg-black p-3">
                 <p className="text-[10px] text-[#777]">Weekday</p>
-                <p className="mt-1 text-[14px] font-bold text-white">
-                  {formatCurrency(weekday)}
+                <p className="mt-1 text-[12px] font-bold text-white">
+                  {formatCurrency(summary?.weekdayPrice)}
                 </p>
               </div>
-              <div className="rounded-lg border border-white/5 bg-black p-3">
+              <div className="rounded-md bg-black p-3">
                 <p className="text-[10px] text-[#777]">Weekend</p>
-                <p className="mt-1 text-[14px] font-bold text-white">
-                  {formatCurrency(weekend)}
+                <p className="mt-1 text-[12px] font-bold text-white">
+                  {formatCurrency(summary?.weekendPrice)}
                 </p>
               </div>
             </div>
@@ -311,92 +490,112 @@ export function SpaceDetailsPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1.2fr_1fr]">
         <Card title="About the venue">
-          <p className="text-[12px] leading-relaxed text-[#bbb]">
-            {venue.aboutVenue || 'No description provided.'}
+          <p className="text-[12px] leading-relaxed text-[#aaa]">
+            {venue.aboutVenue || 'No venue description provided.'}
           </p>
-
-          <h4 className="mb-3 mt-6 text-[13px] font-semibold text-white">
-            Service Included
-          </h4>
-          <div className="grid grid-cols-2 gap-3">
-            <ServiceItem
-              label="Parking Available"
-              enabled={detailSpace?.parkingAvailable ?? venue.parkingAvailable}
-            />
-            <ServiceItem
-              label="Catering service available"
-              enabled={detailSpace?.inHouseCatering ?? venue.inHouseCatering}
-            />
-            <ServiceItem
-              label="Decoration available"
-              enabled={detailSpace?.decorationAvailable ?? venue.decorationAvailable}
-            />
-            <ServiceItem
-              label="Accessibility"
-              enabled={detailSpace?.accessibility ?? venue.accessibility}
-            />
+          <h3 className="mt-5 text-[12px] font-bold text-white">Service Included</h3>
+          <div className="mt-3 space-y-2">
+            <ServiceItem label="Parking Available" enabled={detailSpace?.parkingAvailable ?? venue.parkingAvailable} />
+            <ServiceItem label="Catering service available" enabled={detailSpace?.inHouseCatering ?? venue.inHouseCatering} />
+            <ServiceItem label="Decoration available" enabled={detailSpace?.decorationAvailable ?? venue.decorationAvailable} />
+            <ServiceItem label="Accessibility" enabled={detailSpace?.accessibility ?? venue.accessibility} />
           </div>
         </Card>
 
         <Card title="Amenities">
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-            {(detailSpace?.parkingAvailable ?? venue.parkingAvailable) && (
-              <AmenityTile label="Parking" icon={<ParkingCircle className="size-4" />} />
-            )}
-            {(detailSpace?.inHouseCatering ?? venue.inHouseCatering) && (
-              <AmenityTile label="In-house Catering" icon={<UtensilsCrossed className="size-4" />} />
-            )}
-            {(detailSpace?.decorationAvailable ?? venue.decorationAvailable) && (
-              <AmenityTile label="Decoration" icon={<Sparkles className="size-4" />} />
-            )}
-            {(detailSpace?.accessibility ?? venue.accessibility) && (
-              <AmenityTile label="Accessibility" icon={<Accessibility className="size-4" />} />
+          <div className="grid grid-cols-2 gap-3">
+            {resolvedAmenities.length > 0 ? (
+              resolvedAmenities.map((amenity) => (
+                <div
+                  key={amenity.id}
+                  className="flex items-center gap-2 rounded-md bg-black px-3 py-2 text-[11px] font-semibold text-white"
+                  title={amenity.categoryName}
+                >
+                  {amenity.image ? (
+                    <img src={amenity.image} alt="" className="size-4 object-contain" />
+                  ) : (
+                    <CheckCircle2 className="size-4 text-[#FBC078]" />
+                  )}
+                  <span className="truncate">{amenity.name}</span>
+                </div>
+              ))
+            ) : (
+              <p className="col-span-2 text-[12px] text-[#777]">No amenities listed.</p>
             )}
           </div>
-          {!venue.parkingAvailable &&
-            !venue.inHouseCatering &&
-            !venue.decorationAvailable &&
-            !venue.accessibility && (
-              <p className="text-[12px] text-[#777]">No amenities listed.</p>
-            )}
         </Card>
       </div>
 
-      {galleryImages.length > 0 && (
-        <Card title="Gallery">
+      <Card title="Gallery">
+        {galleryImages.length > 0 ? (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-6">
-            {galleryImages.map((src, index) => (
+            {galleryImages.slice(0, 6).map((image, index) => (
               <a
-                key={`${src}-${index}`}
-                href={src}
+                key={`${image.url}-${index}`}
+                href={image.url}
                 target="_blank"
                 rel="noreferrer"
-                className="block aspect-square overflow-hidden rounded-lg border border-white/5"
+                className="block aspect-[4/3] overflow-hidden rounded-md border border-white/5 bg-black"
               >
-                <img src={src} alt={`Gallery ${index + 1}`} className="size-full object-cover" />
+                <SafeImage src={image.url} alt={`Gallery ${index + 1}`} className="size-full object-cover" />
               </a>
             ))}
           </div>
-        </Card>
-      )}
+        ) : (
+          <p className="text-[12px] text-[#777]">No gallery images uploaded.</p>
+        )}
+      </Card>
 
-      {(terms?.terms?.length || terms?.cancellation) && (
-        <Card title="Terms & Conditions">
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            {terms?.cancellation && (
-              <ServiceItem
-                label={`Free cancellation up to ${terms.cancellation.freeCancellationHours ?? 0} hrs before booking (${terms.cancellation.refundPercentage ?? 0}% refund)`}
-                enabled
-              />
-            )}
-            {terms?.terms?.map((term, index) => (
-              <ServiceItem key={`${term}-${index}`} label={term} enabled />
-            ))}
-          </div>
-        </Card>
-      )}
+      <Card title="Terms & Conditions">
+        <div className="flex flex-wrap gap-4">
+          {(terms?.terms || []).map((term) => (
+            <div key={term} className="flex items-center gap-2 text-[11px] text-[#bbb]">
+              <CheckCircle2 className="size-3.5 text-emerald-400" />
+              {term}
+            </div>
+          ))}
+          {terms?.cancellation && (
+            <div className="flex items-center gap-2 text-[11px] text-[#bbb]">
+              <CheckCircle2 className="size-3.5 text-emerald-400" />
+              Free cancellation up to {terms.cancellation.freeCancellationHours ?? 0} hrs before booking
+            </div>
+          )}
+          {!terms?.terms?.length && !terms?.cancellation && (
+            <p className="text-[12px] text-[#777]">No terms added.</p>
+          )}
+        </div>
+      </Card>
+
+      <DecisionActionModal
+        open={Boolean(modalAction)}
+        variant="suspend"
+        title={modalAction === 'hide' ? 'Hide Space' : 'Suspend Space'}
+        description={
+          modalAction === 'hide'
+            ? 'Are you sure you want to hide this space? This will prevent it from appearing in partner-facing listings.'
+            : 'Are you sure you want to suspend this space? This will temporarily restrict booking visibility.'
+        }
+        submitLabel={modalAction === 'hide' ? 'Hide' : 'Suspend'}
+        reasonOptions={SPACE_REASON_OPTIONS}
+        selectedReasons={selectedReasons}
+        onReasonToggle={toggleReason}
+        reason={reasonDetails}
+        onReasonChange={setReasonDetails}
+        adminNotes={adminNotes}
+        onAdminNotesChange={setAdminNotes}
+        showTimeline={modalAction === 'suspend'}
+        startDate={startDate}
+        onStartDateChange={setStartDate}
+        endDate={endDate}
+        onEndDateChange={setEndDate}
+        indefinite={suspendIndefinitely}
+        onIndefiniteChange={setSuspendIndefinitely}
+        onClose={closeModal}
+        onSubmit={submitVisibilityAction}
+        isSubmitting={visibilityMutation.isPending}
+      />
     </div>
   )
 }

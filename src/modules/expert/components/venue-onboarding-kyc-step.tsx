@@ -105,7 +105,7 @@ export const VenueOnboardingKycStep = ({ formData, setFormData }: Props) => {
   }
 
   return (
-    <div className="mx-auto max-w-5xl space-y-6">
+    <div className="mx-auto w-full max-w-[850px] space-y-6">
       <div className="animate-in fade-in slide-in-from-right-4 rounded-lg border border-white/5 bg-[#151515] p-6 duration-300">
         <h3 className="mb-4 text-sm font-bold text-white">Government ID Verification</h3>
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2">

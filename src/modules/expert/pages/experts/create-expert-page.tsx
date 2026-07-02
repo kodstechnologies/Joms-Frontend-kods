@@ -69,7 +69,7 @@ export const CreateExpertPage = () => {
   const [currentStep, setCurrentStep] = useState(1)
   const [expertId, setExpertId] = useState<string | null>(expertIdParam)
   const [formData, setFormData] = useState<ExpertOnboardingFormData>(
-    createEmptyExpertOnboardingForm,
+    () => ({ ...createEmptyExpertOnboardingForm(), serviceType: 'concierge' }),
   )
 
   const {
@@ -200,7 +200,11 @@ export const CreateExpertPage = () => {
       }}
     >
       {currentStep === 1 && (
-        <ExpertBasicProfileStep formData={formData} setFormData={setFormData} />
+        <ExpertBasicProfileStep
+          formData={formData}
+          setFormData={setFormData}
+          lockedServiceType="concierge"
+        />
       )}
       {currentStep === 2 && (
         <ExpertIdentityVerificationStep formData={formData} setFormData={setFormData} />

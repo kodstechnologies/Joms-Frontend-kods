@@ -78,6 +78,8 @@ export interface VenueFullViewSpaceDetail {
   inHouseCatering?: boolean
   decorationAvailable?: boolean
   status?: string
+  isHidden?: boolean
+  isSuspend?: boolean
   reasonFor?: string[]
   rejectionReason?: string | null
   adminNote?: string | null
@@ -170,6 +172,8 @@ export interface VenueFullViewSpaceSummary {
   weekdayPrice: number | null
   weekendPrice: number | null
   availability: VenueFullViewAvailability | null
+  isHidden?: boolean
+  isSuspend?: boolean
 }
 
 export interface VenueFullView {

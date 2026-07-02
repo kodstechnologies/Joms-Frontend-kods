@@ -11,6 +11,7 @@ import {
   YAxis,
 } from 'recharts'
 import { BarChart3, ChevronDown, Download, RefreshCw, Star, TrendingDown, TrendingUp } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
 import { Button } from '@/shared/components/ui/button'
@@ -129,6 +130,8 @@ function MetricCard({ metric }: { metric: Metric }) {
 }
 
 export const VenueDashboardPage = () => {
+  const navigate = useNavigate()
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -139,7 +142,7 @@ export const VenueDashboardPage = () => {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          <Button onClick={() => toast.message('Metrics configuration coming soon')}>
+          <Button onClick={() => navigate('/venues/dashboard/metrics')}>
             <BarChart3 className="size-4" />
             Manage Metrics
           </Button>

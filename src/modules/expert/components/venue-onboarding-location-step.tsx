@@ -43,7 +43,7 @@ export const VenueOnboardingLocationStep = ({ formData, setFormData }: Props) =>
   const totalImages = formData.venueImages.length + formData.venueImageUrls.length
 
   return (
-    <div className="mx-auto max-w-5xl space-y-6">
+    <div className="mx-auto w-full max-w-[850px] space-y-6">
       <div className="animate-in fade-in slide-in-from-right-4 rounded-lg border border-white/5 bg-[#151515] p-6 duration-300">
         <div className="mb-6">
           <h2 className="text-sm font-bold text-white">Add Venue Location</h2>
@@ -176,12 +176,7 @@ export const VenueOnboardingLocationStep = ({ formData, setFormData }: Props) =>
           <div className="flex h-48 items-center justify-center bg-gradient-to-br from-slate-800 to-slate-900">
             <div className="text-center">
               <MapPin className="mx-auto mb-2 size-8 text-red-500" />
-              <p className="text-xs text-[#888]">
-                {formData.city || 'Bengaluru'}
-                {formData.latitude != null && formData.longitude != null
-                  ? ` (${formData.latitude.toFixed(4)}, ${formData.longitude.toFixed(4)})`
-                  : ''}
-              </p>
+              <p className="text-xs text-[#888]">{formData.city || 'Bengaluru'}</p>
             </div>
           </div>
           <button
@@ -190,41 +185,6 @@ export const VenueOnboardingLocationStep = ({ formData, setFormData }: Props) =>
           >
             <Maximize2 className="size-4" />
           </button>
-        </div>
-
-        <div className="mt-4 grid grid-cols-2 gap-3">
-          <div>
-            <label className="mb-1 block text-[10px] text-[#777]">Latitude</label>
-            <input
-              value={formData.latitude ?? ''}
-              onChange={(e) =>
-                setFormData((prev) => ({
-                  ...prev,
-                  latitude: e.target.value ? Number(e.target.value) : null,
-                }))
-              }
-              placeholder="12.9352"
-              type="number"
-              step="any"
-              className={fieldClass}
-            />
-          </div>
-          <div>
-            <label className="mb-1 block text-[10px] text-[#777]">Longitude</label>
-            <input
-              value={formData.longitude ?? ''}
-              onChange={(e) =>
-                setFormData((prev) => ({
-                  ...prev,
-                  longitude: e.target.value ? Number(e.target.value) : null,
-                }))
-              }
-              placeholder="77.6245"
-              type="number"
-              step="any"
-              className={fieldClass}
-            />
-          </div>
         </div>
       </div>
     </div>

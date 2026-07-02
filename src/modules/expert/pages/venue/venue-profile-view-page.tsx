@@ -94,6 +94,7 @@ function SidebarRow({
 
 function ProfileSidebar({
   data,
+  venueId,
 }: {
   data: VenueFullView
   venueId: string
@@ -155,7 +156,7 @@ function ProfileSidebar({
                 toast.error('No KYC record linked to this venue.')
                 return
               }
-              navigate(`/venues/management/application/${profile.kycId}`)
+              navigate(`/venues/management/application/${venueId}`)
             }}
             className="rounded-md bg-[#FBC078]/15 px-3 py-1 text-[11px] font-bold text-[#FBC078] transition-colors hover:bg-[#FBC078]/25"
           >

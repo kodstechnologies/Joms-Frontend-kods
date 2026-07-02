@@ -9,6 +9,7 @@ import {
   VenueOnboardingKycStep,
   VenueOnboardingFinalReviewStep,
 } from '@/modules/expert/components'
+import { createExpertBasicProfile } from '@/modules/expert/api/expert-onboarding-api'
 import {
   useVenueOnboardingMutations,
   useVenueOnboardingReview,
@@ -18,6 +19,7 @@ import {
   buildBasicProfileFormData,
   buildKycFormData,
   buildLocationFormData,
+  buildVenuePartnerProfileFormData,
   createEmptyVenueOnboardingForm,
   type VenueOnboardingFormData,
 } from '@/modules/expert/utils/venue-onboarding-form'
@@ -45,17 +47,17 @@ const inferStepFromCurrentStep = (currentStep?: string) => {
 export const CreateVenueOnboardingPage = () => {
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
-  const partnerId = searchParams.get('partnerId') || ''
+  const partnerIdParam = searchParams.get('partnerId') || ''
   const venueIdParam = searchParams.get('venueId')
 
   const [currentStep, setCurrentStep] = useState(1)
+  const [partnerId, setPartnerId] = useState(partnerIdParam)
   const [venueId, setVenueId] = useState<string | null>(venueIdParam)
   const [formData, setFormData] = useState<VenueOnboardingFormData>(
     createEmptyVenueOnboardingForm,
   )
   const [hasInitializedStep, setHasInitializedStep] = useState(false)
-
-  const [error, setError] = useState<string | null>(null)
+  const [isCreatingPartner, setIsCreatingPartner] = useState(false)
 
   const { saveBasicProfile, saveLocation, saveKyc, createAccount } =
     useVenueOnboardingMutations()
@@ -66,6 +68,10 @@ export const CreateVenueOnboardingPage = () => {
     if (!venueIdParam) return
     setVenueId(venueIdParam)
   }, [venueIdParam])
+
+  useEffect(() => {
+    setPartnerId(partnerIdParam)
+  }, [partnerIdParam])
 
   useEffect(() => {
     if (!reviewData?.data?.venue) return
@@ -123,17 +129,18 @@ export const CreateVenueOnboardingPage = () => {
     setHasInitializedStep(true)
   }, [venueIdParam, reviewData?.data?.venue, hasInitializedStep])
 
-  const updateVenueIdInUrl = (id: string) => {
+  const updateVenueIdInUrl = (id: string, nextPartnerId = partnerId) => {
     const params = new URLSearchParams(searchParams)
     params.set('venueId', id)
-    if (partnerId) params.set('partnerId', partnerId)
+    if (nextPartnerId) params.set('partnerId', nextPartnerId)
     setSearchParams(params, { replace: true })
   }
 
   const validateStep = (step: number): string | null => {
     if (step === 1) {
-      if (!partnerId) return 'Partner ID is required. Add ?partnerId=<id> to the URL.'
       if (!formData.name.trim()) return 'Venue name is required.'
+      if (!formData.phone.trim()) return 'Phone number is required.'
+      if (!formData.email.trim()) return 'Email is required.'
       if (!formData.venueCategoryId) return 'Category is required.'
     }
     if (step === 2) {
@@ -157,21 +164,31 @@ export const CreateVenueOnboardingPage = () => {
   const handleNextStep = async () => {
     const validationError = validateStep(currentStep)
     if (validationError) {
-      setError(validationError)
+      toast.error(validationError)
       return
     }
-
-    setError(null)
 
     try {
       if (currentStep === 1) {
         if (!venueId) {
+          let activePartnerId = partnerId
+
+          if (!activePartnerId) {
+            setIsCreatingPartner(true)
+            const partnerResponse = await createExpertBasicProfile(
+              buildVenuePartnerProfileFormData(formData),
+            )
+            activePartnerId = partnerResponse.data._id
+            setPartnerId(activePartnerId)
+            setIsCreatingPartner(false)
+          }
+
           const response = await saveBasicProfile.mutateAsync(
-            buildBasicProfileFormData(partnerId, formData),
+            buildBasicProfileFormData(activePartnerId, formData),
           )
           const newVenueId = response.data._id
           setVenueId(newVenueId)
-          updateVenueIdInUrl(newVenueId)
+          updateVenueIdInUrl(newVenueId, activePartnerId)
         }
         setCurrentStep(2)
         return
@@ -209,7 +226,8 @@ export const CreateVenueOnboardingPage = () => {
         return
       }
     } catch (err) {
-      setError(getApiErrorMessage(err))
+      setIsCreatingPartner(false)
+      toast.error(getApiErrorMessage(err))
     }
   }
 
@@ -225,7 +243,8 @@ export const CreateVenueOnboardingPage = () => {
     saveBasicProfile.isPending ||
     saveLocation.isPending ||
     saveKyc.isPending ||
-    createAccount.isPending
+    createAccount.isPending ||
+    isCreatingPartner
 
   const primaryLabel = (() => {
     if (isLoading) return 'Saving…'
@@ -235,10 +254,10 @@ export const CreateVenueOnboardingPage = () => {
 
   return (
     <CreateListingWizard
-      title="User Profile Creation"
+      title="Venue Profile Creation"
       breadcrumbs={[
-        { label: 'User management' },
-        { label: 'Manage User' },
+        { label: 'Venue management' },
+        { label: 'Manage Venues' },
         { label: 'Create Account', isActive: true },
       ]}
       steps={ONBOARDING_STEPS}
@@ -254,19 +273,6 @@ export const CreateVenueOnboardingPage = () => {
             : undefined,
       }}
     >
-      {!partnerId && currentStep === 1 && (
-        <div className="mx-auto mb-4 max-w-5xl rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
-          Add <code className="text-amber-100">?partnerId=&lt;id&gt;</code> to the URL
-          before creating a venue account.
-        </div>
-      )}
-
-      {error && (
-        <div className="mx-auto mb-4 max-w-5xl rounded-lg border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-400">
-          {error}
-        </div>
-      )}
-
       {currentStep === 1 && (
         <VenueOnboardingBasicProfileStep formData={formData} setFormData={setFormData} />
       )}

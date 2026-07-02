@@ -480,9 +480,12 @@ function OverviewTab({ profile }: { profile: ExpertProfileDetail }) {
 
 function ConsultationDetailCard({
   consultation,
+  expertId,
 }: {
   consultation: ExpertConsultation
+  expertId: string
 }) {
+  const navigate = useNavigate()
   const outlineItems = (consultation.sessionOutline || '')
     .split(/[.\n]/)
     .map((item) => item.trim())
@@ -589,7 +592,11 @@ function ConsultationDetailCard({
 
       <button
         type="button"
-        onClick={() => comingSoon('Consultation Performance')}
+        onClick={() =>
+          navigate(
+            `/experts/management/profile/${expertId}/service/${consultation._id}?type=consultation`,
+          )
+        }
         className="mt-5 flex w-full items-center justify-between rounded-lg border border-white/5 bg-black px-4 py-3 text-[12px] font-semibold text-white transition-colors hover:bg-white/5"
       >
         Consultation Performance
@@ -642,7 +649,7 @@ function ServicesSubTab({ expertId }: { expertId: string }) {
       {!isLoading && !isError && services.length > 0 && (
         <div className="space-y-3">
           {services.map((service) => (
-            <ServiceListCard key={service._id} service={service} />
+            <ServiceListCard key={service._id} service={service} expertId={expertId} />
           ))}
         </div>
       )}
@@ -650,7 +657,14 @@ function ServicesSubTab({ expertId }: { expertId: string }) {
   )
 }
 
-function ServiceListCard({ service }: { service: ExpertService }) {
+function ServiceListCard({
+  service,
+  expertId,
+}: {
+  service: ExpertService
+  expertId: string
+}) {
+  const navigate = useNavigate()
   const status = (service.status || '').toLowerCase()
   const statusLabel =
     status === 'live'
@@ -666,7 +680,13 @@ function ServiceListCard({ service }: { service: ExpertService }) {
         : 'bg-amber-500'
 
   return (
-    <div className="flex items-center gap-4 rounded-xl border border-white/5 bg-[#111111] p-4">
+    <button
+      type="button"
+      onClick={() =>
+        navigate(`/experts/management/profile/${expertId}/service/${service._id}`)
+      }
+      className="flex w-full items-center gap-4 rounded-xl border border-white/5 bg-[#111111] p-4 text-left transition-colors hover:bg-[#161616]"
+    >
       <div className="relative size-16 shrink-0 overflow-hidden rounded-lg bg-[#1a1a1a]">
         {statusLabel && (
           <span
@@ -701,7 +721,7 @@ function ServiceListCard({ service }: { service: ExpertService }) {
         </p>
       </div>
       <ChevronRight className="size-4 text-[#666]" />
-    </div>
+    </button>
   )
 }
 
@@ -737,6 +757,7 @@ function ConsultationsSubTab({ expertId }: { expertId: string }) {
           <ConsultationDetailCard
             key={consultation._id}
             consultation={consultation}
+            expertId={expertId}
           />
         ))}
     </>
@@ -861,6 +882,7 @@ function AvailabilityTab() {
 }
 
 function AnalyticsTab() {
+  const navigate = useNavigate()
   const cards = [
     { label: 'Events Hosted', value: '24' },
     { label: 'Total Attendees', value: '1,840+' },
@@ -877,7 +899,7 @@ function AnalyticsTab() {
       <div className="mb-4 flex justify-end">
         <button
           type="button"
-          onClick={() => comingSoon('Manage Metrics')}
+          onClick={() => navigate('/experts/dashboard/metrics')}
           className="flex items-center gap-1.5 rounded-lg bg-[#FBC078]/15 px-3 py-2 text-[11px] font-semibold text-[#FBC078]"
         >
           <Gauge className="size-3.5" />

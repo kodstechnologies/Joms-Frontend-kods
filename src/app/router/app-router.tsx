@@ -16,6 +16,9 @@ const ExecutiveOverviewPage = lazy(() =>
 const ServiceMarketplacePage = lazy(() =>
   import('@/modules/expert').then((m) => ({ default: m.ServiceMarketplacePage })),
 )
+const ServiceMetricsPage = lazy(() =>
+  import('@/modules/expert').then((m) => ({ default: m.ServiceMetricsPage })),
+)
 const PendingApprovalsPage = lazy(() =>
   import('@/modules/expert').then((m) => ({ default: m.PendingApprovalsPage })),
 )
@@ -92,6 +95,11 @@ const VenueDashboardPage = lazy(() =>
     default: m.VenueDashboardPage,
   })),
 )
+const VenueMetricsPage = lazy(() =>
+  import('@/modules/expert').then((m) => ({
+    default: m.VenueMetricsPage,
+  })),
+)
 const VenueManagementPage = lazy(() =>
   import('@/modules/expert').then((m) => ({
     default: m.VenueManagementPage,
@@ -126,6 +134,11 @@ const ApplicationDetailsPage = lazy(() =>
 const VenueProfileViewPage = lazy(() =>
   import('@/modules/expert').then((m) => ({
     default: m.VenueProfileViewPage,
+  })),
+)
+const SpaceAnalyticsPage = lazy(() =>
+  import('@/modules/expert').then((m) => ({
+    default: m.SpaceAnalyticsPage,
   })),
 )
 const ReferralManagementPage = lazy(() =>
@@ -340,6 +353,10 @@ export function AppRouter() {
                   element={<ExpertProfileViewPage />}
                 />
                 <Route
+                  path="/experts/management/profile/:expertId/service/:serviceId"
+                  element={<ServiceViewPage />}
+                />
+                <Route
                   path="/experts/management/application/:id"
                   element={<ExpertApplicationViewPage />}
                 />
@@ -365,6 +382,7 @@ export function AppRouter() {
 
               <Route element={<PermissionRoute module="services" />}>
                 <Route path="/services/dashboard" element={<ServiceMarketplacePage />} />
+                <Route path="/services/dashboard/metrics" element={<ServiceMetricsPage />} />
                 <Route path="/services/management" element={<ServiceManagementPage />} />
                 <Route path="/services/management/pending" element={<PendingApprovalsPage />} />
                 <Route path="/services/management/suspended" element={<SuspendedServicesPage />} />
@@ -389,6 +407,7 @@ export function AppRouter() {
 
               <Route element={<PermissionRoute module="venues" />}>
                 <Route path="/venues/dashboard" element={<VenueDashboardPage />} />
+                <Route path="/venues/dashboard/metrics" element={<VenueMetricsPage />} />
                 <Route path="/venues/leaderboard" element={<LeaderboardPage />} />
                 <Route path="/venues/management" element={<VenueManagementPage />} />
                 <Route
@@ -402,6 +421,10 @@ export function AppRouter() {
                 <Route
                   path="/venues/management/profile/:venueId/space/:spaceId"
                   element={<SpaceDetailsPage />}
+                />
+                <Route
+                  path="/venues/management/profile/:venueId/space/:spaceId/analytics"
+                  element={<SpaceAnalyticsPage />}
                 />
                 <Route
                   path="/communication/management"

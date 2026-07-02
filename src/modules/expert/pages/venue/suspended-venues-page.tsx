@@ -1,9 +1,10 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { ArrowLeft, Eye } from 'lucide-react'
+import { ArrowLeft, PlayCircle } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import { toast } from 'sonner'
 
-import { useVenues } from '../../hooks/use-venues'
+import { useActivateVenue, useVenues } from '../../hooks/use-venues'
 import type { Venue } from '../../type/venue'
 import {
   getVenueApiId,
@@ -30,6 +31,8 @@ export function VenueSuspendedPage() {
     search: searchQuery,
   })
 
+  const activateVenueMutation = useActivateVenue()
+
   const venues = data?.data || []
   const meta = data?.meta
   const visibleVenueIds = useMemo(() => venues.map((venue) => venue._id), [venues])
@@ -54,6 +57,22 @@ export function VenueSuspendedPage() {
         : [...currentIds, venueId],
     )
   }, [])
+
+  const handleActivate = useCallback(
+    (venue: Venue) => {
+      activateVenueMutation.mutate(getVenueApiId(venue), {
+        onSuccess: () => {
+          toast.success('Venue activated successfully')
+        },
+        onError: (error: any) => {
+          toast.error(
+            error?.response?.data?.message || 'Failed to activate venue. Please try again.',
+          )
+        },
+      })
+    },
+    [activateVenueMutation],
+  )
 
   const columns = useMemo<ColumnDef<Venue>[]>(
     () => [
@@ -141,13 +160,13 @@ export function VenueSuspendedPage() {
               menuWidth={160}
             >
               <TableActionsItem
-                icon={<Eye className="size-3.5" aria-hidden="true" />}
+                icon={<PlayCircle className="size-3.5" aria-hidden="true" />}
                 onClick={() => {
                   setActiveDropdownId(null)
-                  navigate(`/venues/management/create?venueId=${getVenueApiId(venue)}&view=true`)
+                  handleActivate(venue)
                 }}
               >
-                View Details
+                Active Venue
               </TableActionsItem>
             </TableActionsDropdown>
           )
@@ -157,7 +176,7 @@ export function VenueSuspendedPage() {
     [
       activeDropdownId,
       allVisibleVenuesSelected,
-      navigate,
+      handleActivate,
       selectedVenueIds,
       someVisibleVenuesSelected,
       toggleVenueSelection,

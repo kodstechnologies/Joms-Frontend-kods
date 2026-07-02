@@ -11,6 +11,7 @@ export const fetchExperts = async (params?: {
   limit?: number
   search?: string
   status?: string
+  serviceType?: string
 }) => {
     
   const response = await adminApiClient.get<ExpertResponse>(

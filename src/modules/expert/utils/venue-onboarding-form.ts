@@ -125,6 +125,23 @@ export const buildBasicProfileFormData = (
   return formData
 }
 
+export const buildVenuePartnerProfileFormData = (
+  form: VenueOnboardingFormData,
+): FormData => {
+  const formData = new FormData()
+
+  formData.append('fullname', form.name.trim())
+  formData.append('email', form.email.trim())
+  formData.append('phoneNumber', form.phone.trim())
+  formData.append('serviceType', 'venue')
+
+  if (form.pocName) formData.append('bio', form.pocName.trim())
+  if (form.coverImage) formData.append('coverImage', form.coverImage)
+  if (form.profileImage) formData.append('profileImage', form.profileImage)
+
+  return formData
+}
+
 export const buildLocationFormData = (form: VenueOnboardingFormData): FormData => {
   const formData = new FormData()
 

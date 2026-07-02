@@ -4,6 +4,7 @@ import {
   fetchVenueById,
   fetchVenueFullView,
   suspendVenue,
+  activateVenue,
   type SuspendVenuePayload,
 } from '../api/venue-api.ts'
 import type { VenueStatus } from '../type/venue'
@@ -47,6 +48,17 @@ export const useSuspendVenue = () => {
       venueId: string
       payload: SuspendVenuePayload
     }) => suspendVenue(venueId, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['venues'] })
+    },
+  })
+}
+
+export const useActivateVenue = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (venueId: string) => activateVenue(venueId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['venues'] })
     },

@@ -2,7 +2,6 @@ import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 import { ArrowLeft, BarChart3 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
-import { toast } from 'sonner'
 
 import type { Expert } from '../../type/expert'
 import { Button } from '@/shared/components/ui/button'
@@ -51,7 +50,7 @@ export function ExpertListHeader({
       </header>
       <Button
         className="w-full bg-[#E6BE73] text-black hover:bg-[#D9AE5A] md:w-auto"
-        onClick={() => toast.message('Manage Metrics is coming soon')}
+        onClick={() => navigate('/experts/dashboard/metrics')}
       >
         <BarChart3 className="size-4" />
         Manage Metrics

@@ -1,4 +1,4 @@
-import { useVenueCategories } from '../hooks/use-venue-categories'
+import { useServiceCategoriesByType } from '../hooks/use-service-categories'
 
 interface VenueDetailsStepProps {
   venueData: {
@@ -14,8 +14,10 @@ export const VenueDetailsStep = ({
   venueData,
   setVenueData,
 }: VenueDetailsStepProps) => {
-  const { data: categoriesData } = useVenueCategories()
-  const categories = categoriesData?.data || []
+  const { data: categoriesData, isLoading: isCategoriesLoading } =
+    useServiceCategoriesByType('venue')
+  const categoryGroups = categoriesData?.data || {}
+  const categories = Object.values(categoryGroups).flat()
 
   return (
     <div className="animate-in fade-in slide-in-from-right-4 mx-auto w-full max-w-[850px] rounded-lg border border-white/5 bg-[#151515] p-6 shadow-xl duration-300">
@@ -66,9 +68,16 @@ export const VenueDetailsStep = ({
               }
               className="w-full rounded-md border border-white/10 bg-black px-4 py-3 text-[12px] text-white outline-none focus:border-[#FBC078]"
             >
-              <option value="">Select category</option>
-              {categories.map((cat: { _id: string; name: string }) => (
-                <option key={cat._id} value={cat._id}>
+              <option value="">
+                {isCategoriesLoading ? 'Loading categories...' : 'Select category'}
+              </option>
+              {!isCategoriesLoading && categories.length === 0 && (
+                <option value="" disabled>
+                  No venue categories found
+                </option>
+              )}
+              {categories.map((cat) => (
+                <option key={cat.id} value={cat.id}>
                   {cat.name}
                 </option>
               ))}

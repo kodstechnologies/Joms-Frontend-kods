@@ -1,5 +1,6 @@
 export * from './service-management-page'
 export * from './service-marketplace-page'
+export * from './service-metrics-page'
 export * from './pending-approvals-page'
 export * from './suspended-services-page'
 export * from './service-view-page'

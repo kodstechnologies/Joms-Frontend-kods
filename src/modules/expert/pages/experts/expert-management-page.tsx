@@ -80,6 +80,7 @@ export const ExpertManagementPage = () => {
         limit: 10,
         status: activeStatus !== 'all' ? activeStatus : undefined,
         search: searchQuery,
+        serviceType: 'concierge',
     })
     const experts = data?.data || []
     const meta = data?.meta
