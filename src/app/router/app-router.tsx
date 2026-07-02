@@ -2,8 +2,6 @@ import { lazy, Suspense } from 'react'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { DashboardLayout } from '@/app/layouts/dashboard-layout'
 import { ProtectedRoute } from '@/app/router/protected-route'
-import { DeletedExpertsPage } from '@/modules/expert'
-import { SuspendedExpertsPage } from '@/modules/expert'
 const LoginPage = lazy(() =>
   import('@/modules/auth/pages/login-page').then((m) => ({ default: m.LoginPage })),
 )
@@ -31,6 +29,16 @@ const CreateServiceListingPage = lazy(() =>
   import('@/modules/expert').then((m) => ({ default: m.CreateServiceListingPage })),
 )
 
+const ExpertDashboardPage = lazy(() =>
+  import('@/modules/expert').then((m) => ({
+    default: m.ExpertDashboardPage,
+  })),
+)
+const ExpertMetricsPage = lazy(() =>
+  import('@/modules/expert').then((m) => ({
+    default: m.ExpertMetricsPage,
+  })),
+)
 const ExpertManagementPage = lazy(() =>
   import('@/modules/expert').then((m) => ({
     default: m.ExpertManagementPage,
@@ -49,6 +57,26 @@ const ExpertApplicationViewPage = lazy(() =>
 const ExpertProfileViewPage = lazy(() =>
   import('@/modules/expert').then((m) => ({
     default: m.ExpertProfileViewPage,
+  })),
+)
+const ExpertPendingApprovalsPage = lazy(() =>
+  import('@/modules/expert').then((m) => ({
+    default: m.ExpertPendingApprovalsPage,
+  })),
+)
+const ExpertSuspendedExpertsPage = lazy(() =>
+  import('@/modules/expert').then((m) => ({
+    default: m.ExpertSuspendedExpertsPage,
+  })),
+)
+const ExpertDeletedExpertsPage = lazy(() =>
+  import('@/modules/expert').then((m) => ({
+    default: m.ExpertDeletedExpertsPage,
+  })),
+)
+const ExpertReportedExpertsPage = lazy(() =>
+  import('@/modules/expert').then((m) => ({
+    default: m.ExpertReportedExpertsPage,
   })),
 )
 const LeaderboardPage = lazy(() =>
@@ -172,7 +200,8 @@ export function AppRouter() {
               <Route path="/dashboard" element={<Navigate to="/dashboard/executive" replace />} />
               <Route path="/dashboard/executive" element={<ExecutiveOverviewPage />} />
               <Route path="/services/dashboard" element={<ServiceMarketplacePage />} />
-              <Route path="/experts/management" element={<ExpertManagementPage />} />
+              <Route path="/experts/dashboard" element={<ExpertDashboardPage />} />
+              <Route path="/experts/dashboard/metrics" element={<ExpertMetricsPage />} />
               <Route path="/experts/management" element={<ExpertManagementPage />} />
               <Route path="/services/dashboard" element={<ServiceMarketplacePage />} />
               <Route path="/services/management" element={<ServiceManagementPage />} />
@@ -188,9 +217,13 @@ export function AppRouter() {
                 path="/experts/management/profile/:id"
                 element={<ExpertProfileViewPage />}
               />
-              <Route path="/experts/suspended" element={<SuspendedExpertsPage />} />
-              <Route path="/experts/deleted" element={<DeletedExpertsPage />} />
-              <Route path="/experts/pending-approvals" element={<PendingApprovalsPage />} />
+              <Route path="/experts/suspended" element={<ExpertSuspendedExpertsPage />} />
+              <Route path="/experts/deleted" element={<ExpertDeletedExpertsPage />} />
+              <Route path="/experts/reported" element={<ExpertReportedExpertsPage />} />
+              <Route
+                path="/experts/pending-approvals"
+                element={<ExpertPendingApprovalsPage />}
+              />
               <Route path="/services/management/view/:id" element={<ServiceViewPage />} />
               <Route path="/services/leaderboard" element={<LeaderboardPage />} />
               <Route

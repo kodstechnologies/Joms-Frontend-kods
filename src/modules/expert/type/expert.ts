@@ -3,10 +3,14 @@ export interface Expert {
   expertId: string
   name: string
   email: string
+  profession?: string | null
   serviceType: string | null
   status: string
+  reason?: string | null
   createdAt: string
   lastActive: string | null
+  reportedAt?: string | null
+  deletedAt?: string | null
 }
 export interface ExpertResponse {
   data: Expert[]

@@ -6,22 +6,19 @@ import {
     BarChart3,
     Bell,
     CheckSquare,
-    Eye,
-    FileText,
     Hourglass,
     Mail,
     PauseCircle,
     Plus,
     ShieldCheck,
     Trash2,
-    UserPlus,
-    ListPlus,
+    User,
     type LucideIcon,
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
-import { useExperts } from '../../hooks/use-expert'
+import { useDeactivateExpert, useExperts, useSuspendExpert } from '../../hooks/use-expert'
 import { useExpertStore } from '../../store/expert-store'
 import type { Expert } from '../../type/expert'
 import { DataTable } from '@/shared/components/table/data-table'
@@ -29,8 +26,24 @@ import {
     TableActionsDropdown,
     TableActionsItem,
 } from '@/shared/components/table/table-actions-dropdown'
+import {
+    DecisionActionModal,
+    type DecisionActionModalOption,
+} from '@/shared/components/modal/decision-action-modal'
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
+
+const ACTION_MENU_CLASS = 'border border-slate-200 bg-white shadow-xl'
+const ACTION_ITEM_CLASS =
+    'text-slate-800 hover:bg-slate-100 hover:text-slate-900'
+
+const SUSPEND_REASON_OPTIONS: DecisionActionModalOption[] = [
+    { label: 'Policy violation', value: 'policy_violation' },
+    { label: 'Temporary operational issue', value: 'temporary_operational_issue' },
+    { label: 'Quality concern', value: 'quality_concern' },
+    { label: 'System verification in progress', value: 'system_verification_in_progress' },
+    { label: 'Admin review required', value: 'admin_review_required' },
+]
 
 const displayValue = (value: unknown): string => {
     if (value === null || value === undefined) return 'N/A'
@@ -41,14 +54,25 @@ const displayValue = (value: unknown): string => {
 export const ExpertManagementPage = () => {
     const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
     const [selectedExpertIds, setSelectedExpertIds] = useState<string[]>([])
+    const [suspendExpertTarget, setSuspendExpertTarget] = useState<Expert | null>(null)
+    const [deleteExpertTarget, setDeleteExpertTarget] = useState<Expert | null>(null)
+    const [suspendReasons, setSuspendReasons] = useState<string[]>([])
+    const [suspendStartDate, setSuspendStartDate] = useState('')
+    const [suspendEndDate, setSuspendEndDate] = useState('')
+    const [suspendIndefinitely, setSuspendIndefinitely] = useState(false)
+    const [suspendReasonDetails, setSuspendReasonDetails] = useState('')
+    const [suspendAdminNotes, setSuspendAdminNotes] = useState('')
+    const [deleteReason, setDeleteReason] = useState('')
+    const [deleteAdminNotes, setDeleteAdminNotes] = useState('')
     const navigate = useNavigate()
+    const suspendExpertMutation = useSuspendExpert()
+    const deactivateExpertMutation = useDeactivateExpert()
     const {
         searchQuery,
         setSearchQuery,
         currentPage,
         setCurrentPage,
         activeStatus,
-        setActiveStatus,
     } = useExpertStore()
 
     const { data, isLoading } = useExperts({
@@ -91,6 +115,133 @@ export const ExpertManagementPage = () => {
                 : [...currentIds, serviceId],
         )
     }, [])
+
+    const openSuspendModal = useCallback((expert: Expert) => {
+        setSuspendExpertTarget(expert)
+        setSuspendReasons([])
+        setSuspendStartDate('')
+        setSuspendEndDate('')
+        setSuspendIndefinitely(false)
+        setSuspendReasonDetails('')
+        setSuspendAdminNotes('')
+    }, [])
+
+    const closeSuspendModal = useCallback(() => {
+        setSuspendExpertTarget(null)
+    }, [])
+
+    const openDeleteModal = useCallback((expert: Expert) => {
+        setDeleteExpertTarget(expert)
+        setDeleteReason('')
+        setDeleteAdminNotes('')
+    }, [])
+
+    const closeDeleteModal = useCallback(() => {
+        setDeleteExpertTarget(null)
+    }, [])
+
+    const toggleSuspendReason = useCallback((value: string) => {
+        setSuspendReasons((current) =>
+            current.includes(value)
+                ? current.filter((reason) => reason !== value)
+                : [...current, value],
+        )
+    }, [])
+
+    const handleSuspendSubmit = useCallback(() => {
+        if (!suspendExpertTarget) return
+
+        if (suspendReasons.length === 0) {
+            toast.error('Please select at least one reason.')
+            return
+        }
+
+        if (!suspendIndefinitely && (!suspendStartDate || !suspendEndDate)) {
+            toast.error('Please provide a suspension timeline or choose to suspend indefinitely.')
+            return
+        }
+
+        if (!suspendAdminNotes.trim()) {
+            toast.error('Admin notes are required.')
+            return
+        }
+
+        const toIso = (value: string) =>
+            value ? new Date(`${value}T00:00:00.000Z`).toISOString() : undefined
+
+        suspendExpertMutation.mutate(
+            {
+                id: suspendExpertTarget.id,
+                payload: {
+                    selectedReasons: suspendReasons,
+                    suspendIndefinitely,
+                    startDate: suspendIndefinitely ? undefined : toIso(suspendStartDate),
+                    endDate: suspendIndefinitely ? undefined : toIso(suspendEndDate),
+                    reasonDetails: suspendReasonDetails.trim(),
+                    adminNotes: suspendAdminNotes.trim(),
+                },
+            },
+            {
+                onSuccess: () => {
+                    toast.success('Expert suspended successfully')
+                    closeSuspendModal()
+                },
+                onError: (error: unknown) => {
+                    const err = error as { response?: { data?: { message?: string } } }
+                    toast.error(
+                        err?.response?.data?.message || 'Failed to suspend expert. Please try again.',
+                    )
+                },
+            },
+        )
+    }, [
+        closeSuspendModal,
+        suspendAdminNotes,
+        suspendEndDate,
+        suspendIndefinitely,
+        suspendExpertMutation,
+        suspendExpertTarget,
+        suspendReasonDetails,
+        suspendReasons,
+        suspendStartDate,
+    ])
+
+    const handleDeleteSubmit = useCallback(() => {
+        if (!deleteExpertTarget) return
+
+        if (!deleteAdminNotes.trim()) {
+            toast.error('Admin notes are required.')
+            return
+        }
+
+        deactivateExpertMutation.mutate(
+            {
+                id: deleteExpertTarget.id,
+                payload: {
+                    reason: deleteReason.trim(),
+                    adminNotes: deleteAdminNotes.trim(),
+                },
+            },
+            {
+                onSuccess: () => {
+                    toast.success('Expert deleted successfully')
+                    closeDeleteModal()
+                },
+                onError: (error: unknown) => {
+                    const err = error as { response?: { data?: { message?: string } } }
+                    toast.error(
+                        err?.response?.data?.message || 'Failed to delete expert. Please try again.',
+                    )
+                },
+            },
+        )
+    }, [
+        closeDeleteModal,
+        deactivateExpertMutation,
+        deleteAdminNotes,
+        deleteExpertTarget,
+        deleteReason,
+    ])
 
     const columns = useMemo<ColumnDef<Expert>[]>(
         () => [
@@ -202,7 +353,28 @@ export const ExpertManagementPage = () => {
             {
                 accessorKey: 'lastActive',
                 header: 'Last Active',
-                cell: ({ row }) => displayValue(row.original.lastActive),
+                cell: ({ row }) => {
+                    if (!row.original.lastActive) return 'N/A'
+                    const lastActive = new Date(row.original.lastActive)
+
+                    return (
+                        <div className="flex flex-col">
+                            <span>
+                                {lastActive.toLocaleDateString('en-US', {
+                                    month: 'short',
+                                    day: 'numeric',
+                                    year: 'numeric',
+                                })}
+                            </span>
+                            <span className="text-[10px] text-slate-500">
+                                {lastActive.toLocaleTimeString('en-US', {
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                })}
+                            </span>
+                        </div>
+                    )
+                },
             },
             {
                 id: 'actions',
@@ -220,10 +392,12 @@ export const ExpertManagementPage = () => {
                             label={`Open actions for ${expert.name}`}
                             isOpen={isOpen}
                             onOpenChange={(open) => setActiveDropdownId(open ? expert.expertId : null)}
-                            menuWidth={192}
+                            menuWidth={220}
+                            menuClassName={ACTION_MENU_CLASS}
                         >
                             <TableActionsItem
-                                icon={<Eye className="size-3.5" aria-hidden="true" />}
+                                icon={<User className="size-3.5 text-slate-700" aria-hidden="true" />}
+                                className={ACTION_ITEM_CLASS}
                                 onClick={() => {
                                     setActiveDropdownId(null)
                                     navigate(`/experts/management/profile/${expert.id}`)
@@ -232,46 +406,43 @@ export const ExpertManagementPage = () => {
                                 View Profile
                             </TableActionsItem>
                             <TableActionsItem
-                                icon={<FileText className="size-3.5" aria-hidden="true" />}
+                                icon={<User className="size-3.5 text-slate-700" aria-hidden="true" />}
+                                className={ACTION_ITEM_CLASS}
                                 onClick={() => {
                                     setActiveDropdownId(null)
-                                    navigate(`/experts/management/application/${expert.id}`)
+                                    toast.message('View Payout History is coming soon')
                                 }}
                             >
-                                Application View
-                            </TableActionsItem>
-                            <TableActionsItem
-                                icon={<UserPlus className="size-3.5" aria-hidden="true" />}
-                                onClick={() => {
-                                    setActiveDropdownId(null)
-                                    navigate(
-                                        `/venues/management/onboarding?partnerId=${encodeURIComponent(expert.expertId)}`,
-                                    )
-                                }}
-                            >
-                                Create Profile
-                            </TableActionsItem>
-                            <TableActionsItem
-                                icon={<ListPlus className="size-3.5" aria-hidden="true" />}
-                                onClick={() => {
-                                    setActiveDropdownId(null)
-                                    navigate(
-                                        `/venues/management/create?partnerId=${encodeURIComponent(expert.expertId)}`,
-                                    )
-                                }}
-                            >
-                                Venue Listing
-                            </TableActionsItem>
-                            <TableActionsItem onClick={() => setActiveDropdownId(null)}>
                                 View Payout History
                             </TableActionsItem>
-                            <TableActionsItem onClick={() => setActiveDropdownId(null)}>
+                            <TableActionsItem
+                                icon={<User className="size-3.5 text-slate-700" aria-hidden="true" />}
+                                className={ACTION_ITEM_CLASS}
+                                onClick={() => {
+                                    setActiveDropdownId(null)
+                                    openSuspendModal(expert)
+                                }}
+                            >
                                 Suspend Expert
                             </TableActionsItem>
-                            <TableActionsItem onClick={() => setActiveDropdownId(null)}>
+                            <TableActionsItem
+                                icon={<User className="size-3.5 text-slate-700" aria-hidden="true" />}
+                                className={ACTION_ITEM_CLASS}
+                                onClick={() => {
+                                    setActiveDropdownId(null)
+                                    openDeleteModal(expert)
+                                }}
+                            >
                                 Delete Expert
                             </TableActionsItem>
-                            <TableActionsItem onClick={() => setActiveDropdownId(null)}>
+                            <TableActionsItem
+                                icon={<User className="size-3.5 text-slate-700" aria-hidden="true" />}
+                                className={ACTION_ITEM_CLASS}
+                                onClick={() => {
+                                    setActiveDropdownId(null)
+                                    toast.message('Report Expert is coming soon')
+                                }}
+                            >
                                 Report Expert
                             </TableActionsItem>
                         </TableActionsDropdown>
@@ -283,6 +454,8 @@ export const ExpertManagementPage = () => {
             activeDropdownId,
             allVisibleExpertsSelected,
             navigate,
+            openDeleteModal,
+            openSuspendModal,
             selectedExpertIds,
             someVisibleExpertsSelected,
             toggleExpertSelection,
@@ -353,7 +526,11 @@ export const ExpertManagementPage = () => {
                     </p>
                 </div>
                 <div className="flex w-full flex-col items-center gap-3 md:w-auto md:flex-row">
-                    <Button variant="secondary" className="w-full md:w-auto">
+                    <Button
+                        variant="secondary"
+                        className="w-full md:w-auto"
+                        onClick={() => navigate('/experts/dashboard/metrics')}
+                    >
                         <BarChart3 className="size-4" />
                         Manage Metrics
                     </Button>
@@ -383,12 +560,15 @@ export const ExpertManagementPage = () => {
                                 return
                             }
 
+                            if (card.status === 'reported') {
+                                navigate('/experts/reported')
+                                return
+                            }
+
                             if (card.status === 'deactivated') {
                                 navigate('/experts/deleted')
                                 return
                             }
-
-                            setActiveStatus(activeStatus === card.status ? 'all' : card.status)
                         }}
                         className={cn(
                             'flex min-w-[220px] flex-1 items-center justify-between gap-3 rounded-xl border p-4 transition-all hover:brightness-110',
@@ -452,6 +632,46 @@ export const ExpertManagementPage = () => {
                 }}
                 resourceLabel="experts"
                 emptyMessage="No experts found."
+            />
+
+            <DecisionActionModal
+                open={Boolean(suspendExpertTarget)}
+                variant="suspend"
+                title="Suspend Expert"
+                description="Are you sure you want to suspend this expert? This action will restrict their account access and hide their services."
+                submitLabel="Suspend"
+                reasonOptions={SUSPEND_REASON_OPTIONS}
+                selectedReasons={suspendReasons}
+                onReasonToggle={toggleSuspendReason}
+                showTimeline
+                startDate={suspendStartDate}
+                onStartDateChange={setSuspendStartDate}
+                endDate={suspendEndDate}
+                onEndDateChange={setSuspendEndDate}
+                indefinite={suspendIndefinitely}
+                onIndefiniteChange={setSuspendIndefinitely}
+                reason={suspendReasonDetails}
+                onReasonChange={setSuspendReasonDetails}
+                adminNotes={suspendAdminNotes}
+                onAdminNotesChange={setSuspendAdminNotes}
+                onClose={closeSuspendModal}
+                onSubmit={handleSuspendSubmit}
+                isSubmitting={suspendExpertMutation.isPending}
+            />
+
+            <DecisionActionModal
+                open={Boolean(deleteExpertTarget)}
+                variant="reject"
+                title="Delete Expert"
+                description="Are you sure you want to delete this expert? This action will deactivate their account and move them to deleted experts."
+                submitLabel="Delete"
+                reason={deleteReason}
+                onReasonChange={setDeleteReason}
+                adminNotes={deleteAdminNotes}
+                onAdminNotesChange={setDeleteAdminNotes}
+                onClose={closeDeleteModal}
+                onSubmit={handleDeleteSubmit}
+                isSubmitting={deactivateExpertMutation.isPending}
             />
         </div>
     )

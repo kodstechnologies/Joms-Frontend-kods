@@ -39,6 +39,8 @@ const validateStep = (step: number, form: ExpertOnboardingFormData): string | nu
     if (!form.fullname.trim()) return 'Full name is required.'
     if (!form.phoneNumber.trim()) return 'Phone number is required.'
     if (!form.email.trim()) return 'Email is required.'
+    if (!form.serviceType) return 'Service type is required.'
+    if (form.serviceCategory.length === 0) return 'At least one service category is required.'
   }
   if (step === 2) {
     if (!form.idType) return 'ID type is required.'

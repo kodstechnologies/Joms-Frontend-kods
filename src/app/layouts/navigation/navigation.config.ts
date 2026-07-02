@@ -63,7 +63,7 @@ export const navigationConfig: NavItem[] = [
           {
             key: 'expert.management.dashboard',
             label: 'Dashboard',
-            badge: { label: 'Soon', variant: 'warning' },
+            to: '/experts/dashboard',
           },
           {
             key: 'expert.management.list',

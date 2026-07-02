@@ -270,7 +270,14 @@ export const ExpertFinalReviewStep = ({ formData, setFormData }: Props) => {
             label="Experience"
             value={formatExperience(formData.experienceYears, formData.experienceMonths)}
           />
-          <InfoRow label="Service Type" value="Concierge" />
+          <InfoRow
+            label="Service Type"
+            value={
+              formData.serviceType
+                ? formData.serviceType.charAt(0).toUpperCase() + formData.serviceType.slice(1)
+                : 'N/A'
+            }
+          />
           <InfoRow
             label="Service Category"
             value={
