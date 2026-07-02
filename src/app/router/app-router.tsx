@@ -290,6 +290,24 @@ const VenueSubCategoryViewPage = lazy(() =>
 );
 
 
+const CommunicationListPage = lazy(() =>
+  import("@/modules/communication").then((m) => ({
+    default: m.CommunicationListPage,
+  }))
+);
+
+const CreateCommunicationPage = lazy(() =>
+  import("@/modules/communication").then((m) => ({
+    default: m.CreateCommunicationPage,
+  }))
+);
+
+const ViewCommunicationPage = lazy(() =>
+  import("@/modules/communication").then((m) => ({
+    default: m.ViewCommunicationPage,
+  }))
+);
+
 const PageLoader = () => (
   <div className="flex h-dvh w-full items-center justify-center bg-slate-950">
     <div className="flex flex-col items-center gap-4">
@@ -385,6 +403,20 @@ export function AppRouter() {
                   path="/venues/management/profile/:venueId/space/:spaceId"
                   element={<SpaceDetailsPage />}
                 />
+                <Route
+                  path="/communication/management"
+                  element={<CommunicationListPage />}
+                />
+                <Route
+                  path="/communication/create"
+                  element={<CreateCommunicationPage />}
+                />
+
+
+                <Route
+  path="/communication/view"
+  element={<ViewCommunicationPage />}
+/>
                 <Route path="/venues/management/pending" element={<VenuePendingApprovalsPage />} />
                 <Route path="/venues/management/suspended" element={<VenueSuspendedPage />} />
                 <Route path="/venues/management/onboarding" element={<CreateVenueOnboardingPage />} />
