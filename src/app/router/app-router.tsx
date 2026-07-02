@@ -125,6 +125,36 @@ const VenueProfileViewPage = lazy(() =>
     default: m.VenueProfileViewPage,
   })),
 )
+const MembershipPlansPage = lazy(() =>
+  import('@/modules/memberships').then((m) => ({
+    default: m.MembershipPlansPage,
+  })),
+)
+const MembershipPausedPlansPage = lazy(() =>
+  import('@/modules/memberships').then((m) => ({
+    default: m.MembershipPausedPlansPage,
+  })),
+)
+const MembershipInactivePlansPage = lazy(() =>
+  import('@/modules/memberships').then((m) => ({
+    default: m.MembershipInactivePlansPage,
+  })),
+)
+const MembershipDeletedPlansPage = lazy(() =>
+  import('@/modules/memberships').then((m) => ({
+    default: m.MembershipDeletedPlansPage,
+  })),
+)
+const ExpertMembershipsPage = lazy(() =>
+  import('@/modules/memberships').then((m) => ({
+    default: m.ExpertMembershipsPage,
+  })),
+)
+const MembershipDetailsPage = lazy(() =>
+  import('@/modules/memberships').then((m) => ({
+    default: m.MembershipDetailsPage,
+  })),
+)
 const SpaceDetailsPage = lazy(() =>
   import('@/modules/expert').then((m) => ({
     default: m.SpaceDetailsPage,
@@ -177,6 +207,55 @@ const SubCategoryViewPage = lazy(() =>
     default: m.SubCategoryViewPage,
   }))
 );
+
+const VenueCategoryManagementPage = lazy(() =>
+  import("@/modules/expert").then((m) => ({
+    default: m.VenueCategoryManagementPage,
+  }))
+);
+
+const CreateVenueCategoryPage = lazy(() =>
+  import("@/modules/expert").then((m) => ({
+    default: m.CreateVenueCategoryPage,
+  }))
+);
+
+const CreateVenueSubCategoryPage = lazy(() =>
+  import("@/modules/expert").then((m) => ({
+    default: m.CreateVenueSubCategoryPage,
+  }))
+);
+
+const PausedVenueCategoriesPage = lazy(() =>
+  import("@/modules/expert").then((m) => ({
+    default: m.PausedVenueCategoriesPage,
+  }))
+);
+
+const DeletedVenueCategoriesPage = lazy(() =>
+  import("@/modules/expert").then((m) => ({
+    default: m.DeletedVenueCategoriesPage,
+  }))
+);
+
+const RenameVenueCategoryPage = lazy(() =>
+  import("@/modules/expert").then((m) => ({
+    default: m.RenameVenueCategoryPage,
+  }))
+);
+
+const VenueCategoryViewPage = lazy(() =>
+  import("@/modules/expert").then((m) => ({
+    default: m.VenueCategoryViewPage,
+  }))
+);
+
+const VenueSubCategoryViewPage = lazy(() =>
+  import("@/modules/expert").then((m) => ({
+    default: m.VenueSubCategoryViewPage,
+  }))
+);
+
 
 const PageLoader = () => (
   <div className="flex h-dvh w-full items-center justify-center bg-slate-950">
@@ -258,9 +337,49 @@ export function AppRouter() {
                 element={<CategoryViewPage />}
               />
               <Route
-  path="/categories/management/:id/subcategory/:subCategoryId"
-  element={<SubCategoryViewPage />}
-/>
+                path="/categories/management/:id/subcategory/:subCategoryId"
+                element={<SubCategoryViewPage />}
+              />
+              <Route
+                path="/venues/categories/management"
+                element={<VenueCategoryManagementPage />}
+              />
+
+              <Route
+                path="/venues/categories/management/create"
+                element={<CreateVenueCategoryPage />}
+              />
+
+              <Route
+                path="/venues/categories/management/paused"
+                element={<PausedVenueCategoriesPage />}
+              />
+
+              <Route
+                path="/venues/categories/management/deleted"
+                element={<DeletedVenueCategoriesPage />}
+              />
+
+              <Route
+                path="/venues/categories/management/rename/:id"
+                element={<RenameVenueCategoryPage />}
+              />
+
+              <Route
+                path="/venues/categories/management/create-subcategory/:id"
+                element={<CreateVenueSubCategoryPage />}
+              />
+
+              <Route
+                path="/venues/categories/management/view/:id"
+                element={<VenueCategoryViewPage />}
+              />
+
+              <Route
+                path="/venues/categories/management/:id/subcategory/:subCategoryId"
+                element={<VenueSubCategoryViewPage />}
+              />
+
 
               <Route path="/venues/dashboard" element={<VenueDashboardPage />} />
               <Route path="/venues/leaderboard" element={<LeaderboardPage />} />
@@ -282,6 +401,13 @@ export function AppRouter() {
 
               <Route path="/venues/management/onboarding" element={<CreateVenueOnboardingPage />} />
               <Route path="/venues/management/create" element={<CreateVenueListingPage />} />
+
+              <Route path="/memberships/plans" element={<MembershipPlansPage />} />
+              <Route path="/memberships/plans/paused" element={<MembershipPausedPlansPage />} />
+              <Route path="/memberships/plans/inactive" element={<MembershipInactivePlansPage />} />
+              <Route path="/memberships/plans/deleted" element={<MembershipDeletedPlansPage />} />
+              <Route path="/memberships/experts" element={<ExpertMembershipsPage />} />
+              <Route path="/memberships/experts/:id" element={<MembershipDetailsPage />} />
             </Route>
           </Route>
 

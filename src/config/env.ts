@@ -7,4 +7,5 @@ export const env = {
   adminApiBaseUrl: getEnv('VITE_ADMIN_API_BASE_URL', 'http://localhost:8001'),
   venueApiBaseUrl: getEnv('VITE_VENUE_API_BASE_URL', 'http://localhost:8005'),
   kycApiBaseUrl: getEnv('VITE_KYC_API_BASE_URL', 'http://localhost:8003'),
+  membershipApiBaseUrl: getEnv('VITE_MEMBERSHIP_API_BASE_URL', 'http://localhost:8006'),
 }

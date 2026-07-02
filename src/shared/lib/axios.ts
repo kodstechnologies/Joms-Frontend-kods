@@ -30,3 +30,8 @@ export const kycApiClient = axios.create({
   ...defaultConfigs,
   baseURL: env.kycApiBaseUrl,
 })
+
+export const membershipApiClient = axios.create({
+  ...defaultConfigs,
+  baseURL: env.membershipApiBaseUrl,
+})
