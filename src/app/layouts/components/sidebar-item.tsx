@@ -83,7 +83,7 @@ export function SidebarItem({
         to={to}
         onClick={onNavigate}
         aria-label={compact ? label : undefined}
-        className="block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/30"
+        className="block cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/30"
       >
         {({ isActive }) => renderContent(isActive)}
       </NavLink>
@@ -91,14 +91,14 @@ export function SidebarItem({
   }
 
   if (!onToggle) {
-    return renderContent()
+    return <div className="cursor-pointer">{renderContent()}</div>
   }
 
   return (
     <button
       type="button"
       onClick={onToggle}
-      className="w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/30"
+      className="w-full cursor-pointer text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/30"
       aria-label={compact ? label : undefined}
     >
       {renderContent()}
