@@ -144,7 +144,7 @@ export const navigationConfig: NavItem[] = [
       { key: 'finance.dashboard', label: 'Dashboard', to: '/finance/dashboard' },
       { key: 'finance.revenue', label: 'Revenue Overview', to: '/finance/revenue' },
       { key: 'finance.events', label: 'Events', badge: { label: 'Soon', variant: 'warning' } },
-      { key: 'finance.services', label: 'Services', badge: { label: 'Soon', variant: 'warning' } },
+      { key: 'finance.services', label: 'Services', to: '/finance/services' },
       { key: 'finance.venues', label: 'Venues', badge: { label: 'Soon', variant: 'warning' } },
       { key: 'finance.memberships', label: 'Memberships', badge: { label: 'Soon', variant: 'warning' } },
       { key: 'finance.payment', label: 'Payment Management', badge: { label: 'Soon', variant: 'warning' } },
