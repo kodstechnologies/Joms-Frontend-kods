@@ -5,8 +5,6 @@ import { ProtectedRoute } from '@/app/router/protected-route'
 import { PermissionRoute } from '@/app/router/permission-route'
 import { HomeRedirect } from '@/app/router/home-redirect'
 import { SuperAdminRoute } from '@/app/router/super-admin-route'
-import { DeletedExpertsPage } from '@/modules/expert'
-import { SuspendedExpertsPage } from '@/modules/expert'
 const LoginPage = lazy(() =>
   import('@/modules/auth/pages/login-page').then((m) => ({ default: m.LoginPage })),
 )
@@ -317,9 +315,9 @@ export function AppRouter() {
                 <Route path="/dashboard/executive" element={<ExecutiveOverviewPage />} />
                 <Route path="/experts/management" element={<ExpertManagementPage />} />
                 <Route path="/experts/management/create" element={<CreateExpertPage />} />
-                <Route path="/experts/suspended" element={<SuspendedExpertsPage />} />
-                <Route path="/experts/deleted" element={<DeletedExpertsPage />} />
-                <Route path="/experts/pending-approvals" element={<PendingApprovalsPage />} />
+                <Route path="/experts/suspended" element={<ExpertSuspendedExpertsPage />} />
+                <Route path="/experts/deleted" element={<ExpertDeletedExpertsPage />} />
+                <Route path="/experts/pending-approvals" element={<ExpertPendingApprovalsPage />} />
                 <Route path="/referrals/management" element={<ReferralManagementPage />} />
                 <Route path="/memberships/plans" element={<MembershipPlansPage />} />
                 <Route path="/memberships/plans/create" element={<MembershipPlanFormPage />} />
