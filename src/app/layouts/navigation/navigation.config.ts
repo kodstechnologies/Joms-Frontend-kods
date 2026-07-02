@@ -1,8 +1,6 @@
 import type { LucideIcon } from 'lucide-react'
 import {
   BadgePercent,
-  Bell,
-  Boxes,
   Building2,
   ChartNoAxesCombined,
   CreditCard,
@@ -11,15 +9,16 @@ import {
   MessageCircle,
   Settings,
   Shield,
-  Users,
 } from 'lucide-react'
 
 export type NavBadge =
   | {
-    label: string
-    variant?: 'default' | 'success' | 'warning'
-  }
+      label: string
+      variant?: 'default' | 'success' | 'warning'
+    }
   | undefined
+
+export type PermissionModule = 'venues' | 'services'
 
 export type NavItem = {
   key: string
@@ -28,6 +27,8 @@ export type NavItem = {
   to?: string
   badge?: NavBadge
   roles?: Array<'admin' | 'manager'>
+  superAdminOnly?: boolean
+  permissionModule?: PermissionModule
   children?: NavItem[]
 }
 
@@ -42,16 +43,6 @@ export const navigationConfig: NavItem[] = [
     ],
   },
   {
-    key: 'user-application',
-    label: 'User Application',
-    icon: Users,
-    children: [
-      { key: 'user.dashboard', label: 'Dashboard', badge: { label: 'Soon', variant: 'warning' } },
-      { key: 'user.management', label: 'User Management', badge: { label: 'Soon', variant: 'warning' } },
-      { key: 'user.connection', label: 'Connection Request', badge: { label: 'Soon', variant: 'warning' } },
-    ],
-  },
-  {
     key: 'expert-application',
     label: 'Expert Application',
     icon: Shield,
@@ -59,6 +50,7 @@ export const navigationConfig: NavItem[] = [
       {
         key: 'expert.management-group',
         label: 'Expert',
+        superAdminOnly: true,
         children: [
           {
             key: 'expert.management.dashboard',
@@ -75,6 +67,7 @@ export const navigationConfig: NavItem[] = [
       {
         key: 'expert.services-group',
         label: 'Services',
+        permissionModule: 'services',
         children: [
           { key: 'expert.services.dashboard', label: 'Dashboard', to: '/services/dashboard' },
           { key: 'expert.services.management', label: 'Service Management', to: '/services/management' },
@@ -88,6 +81,7 @@ export const navigationConfig: NavItem[] = [
       {
         key: 'expert.venues-group',
         label: 'Venues',
+        permissionModule: 'venues',
         children: [
           { key: 'expert.venues.dashboard', label: 'Dashboard', to: '/venues/dashboard' },
           { key: 'expert.venue.management', label: 'Venue Management', to: '/venues/management' },
@@ -97,25 +91,17 @@ export const navigationConfig: NavItem[] = [
     ],
   },
   {
-    key: 'content-moderation',
-    label: 'Content Moderation',
-    icon: Boxes,
-    children: [
-      { key: 'content.overview', label: 'Content Overview', badge: { label: 'Soon', variant: 'warning' } },
-      { key: 'content.community', label: 'Community Chat', badge: { label: 'Soon', variant: 'warning' } },
-      { key: 'content.media', label: 'Media Library', badge: { label: 'Soon', variant: 'warning' } },
-    ],
-  },
-  {
     key: 'communication',
     label: 'Communication',
     icon: MessageCircle,
+    superAdminOnly: true,
     children: [{ key: 'communication.notifications', label: 'Broadcasts', badge: { label: 'Soon', variant: 'warning' } }],
   },
   {
     key: 'membership',
     label: 'Membership',
     icon: Building2,
+    superAdminOnly: true,
     children: [
       { key: 'membership.plans', label: 'Membership Plans', to: '/memberships/plans' },
       {
@@ -137,42 +123,44 @@ export const navigationConfig: NavItem[] = [
     key: 'referral',
     label: 'Referral & Rewards',
     icon: BadgePercent,
-    children: [{ key: 'referral.dashboard', label: 'Dashboard', badge: { label: 'Soon', variant: 'warning' } }],
+    superAdminOnly: true,
+    children: [
+      { key: 'referral.management', label: 'Referral Management', to: '/referrals/management' },
+    ],
   },
   {
     key: 'promotion',
     label: 'In-App Promotion',
     icon: Megaphone,
+    superAdminOnly: true,
     children: [{ key: 'promotion.dashboard', label: 'Dashboard', badge: { label: 'Soon', variant: 'warning' } }],
   },
   {
     key: 'finance',
     label: 'Payment & Finance',
     icon: CreditCard,
+    superAdminOnly: true,
     children: [{ key: 'finance.dashboard', label: 'Dashboard', badge: { label: 'Soon', variant: 'warning' } }],
   },
   {
     key: 'support',
     label: 'Support',
     icon: LifeBuoy,
+    superAdminOnly: true,
     children: [{ key: 'support.tickets', label: 'Tickets', badge: { label: 'Soon', variant: 'warning' } }],
-  },
-  {
-    key: 'resources',
-    label: 'Resources',
-    icon: Boxes,
-    children: [{ key: 'resources.docs', label: 'Documentation', badge: { label: 'Soon', variant: 'warning' } }],
   },
   {
     key: 'settings',
     label: 'Settings',
     icon: Settings,
-    children: [{ key: 'settings.general', label: 'General', badge: { label: 'Soon', variant: 'warning' } }],
-  },
-  {
-    key: 'notifications',
-    label: 'Notifications',
-    icon: Bell,
-    children: [{ key: 'notifications.center', label: 'Notification Center', badge: { label: 'Soon', variant: 'warning' } }],
+    superAdminOnly: true,
+    children: [
+      {
+        key: 'settings.access',
+        label: 'Role Based Access',
+        to: '/settings/access',
+      },
+      { key: 'settings.general', label: 'General', badge: { label: 'Soon', variant: 'warning' } },
+    ],
   },
 ]

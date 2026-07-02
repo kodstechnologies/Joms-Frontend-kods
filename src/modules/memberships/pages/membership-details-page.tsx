@@ -1,9 +1,10 @@
-import { ArrowLeft, ArrowDown, ArrowUp, Calendar, X } from 'lucide-react'
+import { ArrowDown, ArrowLeft, ArrowUp, ExternalLink } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 
 import { MembershipActionModals } from '../components/membership-action-modals'
+import { MembershipHistoryModal } from '../components/membership-history-modal'
 import {
   useCancelSubscription,
   useDowngradeSubscription,
@@ -11,14 +12,17 @@ import {
   useSubscription,
   useUpgradeSubscription,
 } from '../hooks/use-membership-subscriptions'
-import { formatCurrency, formatMembershipDate } from '../utils/membership-format'
-import { Button } from '@/shared/components/ui/button'
+import {
+  formatCurrency,
+  formatMembershipDateTime,
+} from '../utils/membership-format'
 import { cn } from '@/shared/lib/cn'
 
 export function MembershipDetailsPage() {
   const { id = '' } = useParams()
   const navigate = useNavigate()
   const [actionType, setActionType] = useState<'upgrade' | 'downgrade' | 'extend' | 'cancel' | null>(null)
+  const [historyOpen, setHistoryOpen] = useState(false)
 
   const { data, isLoading } = useSubscription(id)
   const subscription = data?.data
@@ -36,123 +40,139 @@ export function MembershipDetailsPage() {
     return <p className="text-sm text-rose-300">Membership not found.</p>
   }
 
+  const upgradedByLabel =
+    subscription.upgradedBy === 'admin'
+      ? 'Platform'
+      : subscription.upgradedBy === 'partner'
+        ? 'User'
+        : subscription.upgradedBy ?? 'User'
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-3">
+    <div className="flex min-h-[calc(100vh-8rem)] flex-col">
+      <div className="mb-6 flex items-center gap-3">
         <button
           type="button"
           onClick={() => navigate('/memberships/experts')}
-          className="rounded-lg border border-white/10 p-2 text-slate-300 hover:bg-white/5"
+          className="rounded-lg p-2 text-slate-300 transition-colors hover:bg-white/5"
         >
-          <ArrowLeft className="size-4" />
+          <ArrowLeft className="size-5" />
         </button>
         <div>
-          <p className="text-xs text-slate-400">Membership Management / View Details</p>
           <h1 className="text-2xl font-semibold text-white">Membership Details</h1>
+          <p className="text-sm text-slate-400">Membership Management / View Details</p>
         </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <DetailCard title="Current Membership Details" subtitle="Manage expert membership plan">
-          <DetailRow label="Plan ID" value={subscription.subscriptionId} />
-          <DetailRow label="Plan Name" value={subscription.planName} link />
-          <DetailRow label="Billing Type" value={subscription.billingCycleName} />
-          <DetailRow label="Purchased Price" value={formatCurrency(subscription.purchasedPrice)} />
-          <DetailRow label="Purchased On" value={formatMembershipDate(subscription.startedAt)} />
-          <DetailRow label="Next billing date" value={formatMembershipDate(subscription.nextBillingDate)} />
-          <DetailRow
-            label="Status"
-            value={
-              <span
-                className={cn(
-                  'rounded-full px-2.5 py-1 text-[11px] font-semibold capitalize',
-                  subscription.status === 'active'
-                    ? 'bg-emerald-500/15 text-emerald-300'
-                    : 'bg-orange-500/15 text-orange-300',
-                )}
-              >
-                {subscription.status}
-              </span>
-            }
+      <div className="grid flex-1 gap-6 lg:grid-cols-2">
+        <DetailCard title="Current Membership Details" subtitle="Manage users membership plans">
+          <DetailGrid
+            items={[
+              { label: 'Plan ID', value: subscription.subscriptionId },
+              {
+                label: 'Plan Name',
+                value: (
+                  <span className="inline-flex items-center gap-1.5 text-amber-300">
+                    {subscription.planName}
+                    <ExternalLink className="size-3.5" />
+                  </span>
+                ),
+              },
+              { label: 'Billing Type', value: subscription.billingCycleName },
+              { label: 'Purchased Price', value: formatCurrency(subscription.purchasedPrice) },
+              { label: 'Purchased On', value: formatMembershipDateTime(subscription.startedAt) },
+              {
+                label: 'Next billing date',
+                value: formatMembershipDateTime(subscription.nextBillingDate),
+              },
+              { label: 'Payment method', value: '—' },
+              {
+                label: 'Invoice Link',
+                value: (
+                  <button
+                    type="button"
+                    onClick={() => toast.info('Invoice view coming soon')}
+                    className="text-sm text-amber-300 underline underline-offset-2 hover:text-amber-200"
+                  >
+                    View Invoice
+                  </button>
+                ),
+              },
+            ]}
           />
-          <button
-            type="button"
-            onClick={() => toast.info('Invoice view coming soon')}
-            className="text-sm text-amber-300 hover:underline"
-          >
-            View Invoice
-          </button>
         </DetailCard>
 
         <DetailCard title="More Details" subtitle="Get more insights about membership">
-          <DetailRow label="Expert ID" value={`EXP-${String(subscription.partnerId).slice(-5)}`} />
-          <DetailRow label="Expert Name" value={subscription.partnerName} link />
-          <DetailRow label="Source App" value="Expert App" />
-          <DetailRow label="Upgraded by" value={subscription.upgradedBy ?? 'Partner'} />
-          <DetailRow
-            label="Previous Membership"
-            value={
-              subscription.previousMembership?.planName ? (
-                <span>{subscription.previousMembership.planName}</span>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => toast.info('Membership history coming soon')}
-                  className="text-sm text-amber-300 hover:underline"
-                >
-                  Check history
-                </button>
-              )
-            }
+          <DetailGrid
+            items={[
+              {
+                label: 'User ID',
+                value: `USR-${String(subscription.partnerId).slice(-3).padStart(3, '0')}`,
+              },
+              {
+                label: 'Username',
+                value: (
+                  <span className="inline-flex items-center gap-1.5 text-amber-300">
+                    {subscription.partnerName}
+                    <ExternalLink className="size-3.5" />
+                  </span>
+                ),
+              },
+              {
+                label: 'Source App',
+                value: subscription.sourceApp === 'expert' ? 'Expert App' : 'User App',
+              },
+              { label: 'Upgraded by', value: upgradedByLabel },
+              {
+                label: 'Previous Membership',
+                value: (
+                  <button
+                    type="button"
+                    onClick={() => setHistoryOpen(true)}
+                    className="text-sm text-amber-300 underline underline-offset-2 hover:text-amber-200"
+                  >
+                    Check history
+                  </button>
+                ),
+              },
+            ]}
           />
-          <DetailRow label="Auto Renewal" value={subscription.autoRenew ? 'Yes' : 'No'} />
         </DetailCard>
       </div>
 
-      {subscription.actionHistory?.length ? (
-        <DetailCard title="Activity History" subtitle="Recent membership actions">
-          <div className="space-y-3">
-            {subscription.actionHistory.map((entry, index) => (
-              <div key={`${entry.action}-${index}`} className="rounded-lg border border-white/10 bg-black/30 p-3 text-sm text-slate-300">
-                <p className="font-medium capitalize text-white">{entry.action}</p>
-                <p>
-                  {entry.fromPlanName ? `${entry.fromPlanName} → ` : ''}
-                  {entry.toPlanName}
-                </p>
-                <p className="text-xs text-slate-500">
-                  {entry.performedBy} · {formatMembershipDate(entry.performedAt)}
-                </p>
-              </div>
-            ))}
-          </div>
-        </DetailCard>
-      ) : null}
-
-      <div className="sticky bottom-0 flex flex-wrap gap-3 rounded-2xl border border-white/10 bg-[#111111]/95 p-4 backdrop-blur">
-        <Button onClick={() => setActionType('upgrade')}>
-          <ArrowUp className="size-4" />
-          Upgrade Membership
-        </Button>
-        <Button variant="secondary" onClick={() => setActionType('downgrade')}>
-          <ArrowDown className="size-4" />
-          Downgrade Membership
-        </Button>
-        <Button variant="secondary" onClick={() => setActionType('extend')}>
-          <Calendar className="size-4" />
-          Extend Membership
-        </Button>
-        <Button
-          variant="secondary"
-          className="text-rose-300"
-          onClick={() => setActionType('cancel')}
+      <div className="mt-8 flex justify-end gap-3 pb-4">
+        <button
+          type="button"
+          onClick={() => setActionType('upgrade')}
+          className={cn(
+            'inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold text-white transition-colors',
+            'bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600',
+          )}
         >
-          <X className="size-4" />
-          Cancel Membership
-        </Button>
-        <Button variant="ghost" onClick={() => navigate('/memberships/experts')}>
-          Back to list
-        </Button>
+          <span className="flex size-5 items-center justify-center rounded-full bg-white/20">
+            <ArrowUp className="size-3" />
+          </span>
+          Upgrade Membership
+        </button>
+        <button
+          type="button"
+          onClick={() => setActionType('downgrade')}
+          className={cn(
+            'inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold text-black transition-colors',
+            'bg-[#F0C27B] hover:bg-[#f4cc91] active:bg-[#eebf73]',
+          )}
+        >
+          <span className="flex size-5 items-center justify-center rounded-full bg-black/10">
+            <ArrowDown className="size-3" />
+          </span>
+          Downgrade Membership
+        </button>
       </div>
+
+      <MembershipHistoryModal
+        open={historyOpen}
+        onClose={() => setHistoryOpen(false)}
+        subscription={subscription}
+      />
 
       <MembershipActionModals
         subscription={subscription}
@@ -227,27 +247,27 @@ function DetailCard({
   children: ReactNode
 }) {
   return (
-    <section className="rounded-2xl border border-white/10 bg-[#111111] p-5">
+    <section className="rounded-2xl border border-white/10 bg-[#111111] p-6">
       <h2 className="text-lg font-semibold text-white">{title}</h2>
-      <p className="mb-4 text-xs text-slate-400">{subtitle}</p>
-      <div className="space-y-3">{children}</div>
+      <p className="mb-6 text-sm text-slate-400">{subtitle}</p>
+      {children}
     </section>
   )
 }
 
-function DetailRow({
-  label,
-  value,
-  link = false,
+function DetailGrid({
+  items,
 }: {
-  label: string
-  value: ReactNode
-  link?: boolean
+  items: Array<{ label: string; value: ReactNode }>
 }) {
   return (
-    <div className="flex items-start justify-between gap-4 border-b border-white/5 pb-3 last:border-0">
-      <span className="text-sm text-slate-400">{label}</span>
-      <span className={cn('text-sm text-right text-white', link && 'text-amber-300')}>{value}</span>
+    <div className="grid grid-cols-2 gap-x-6 gap-y-6 sm:grid-cols-3 xl:grid-cols-4">
+      {items.map((item) => (
+        <div key={item.label}>
+          <p className="mb-2 text-xs text-slate-500">{item.label}</p>
+          <div className="text-sm font-medium text-white">{item.value}</div>
+        </div>
+      ))}
     </div>
   )
 }

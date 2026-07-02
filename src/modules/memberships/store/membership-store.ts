@@ -5,8 +5,8 @@ import type { MembershipStatus } from '../types/membership'
 type MembershipStore = {
   searchQuery: string
   setSearchQuery: (query: string) => void
-  activeStatus: MembershipStatus | 'all'
-  setActiveStatus: (status: MembershipStatus | 'all') => void
+  activeStatus: MembershipStatus
+  setActiveStatus: (status: MembershipStatus) => void
   currentPage: number
   setCurrentPage: (page: number) => void
 }
@@ -14,7 +14,7 @@ type MembershipStore = {
 export const useMembershipStore = create<MembershipStore>((set) => ({
   searchQuery: '',
   setSearchQuery: (query) => set({ searchQuery: query, currentPage: 1 }),
-  activeStatus: 'all',
+  activeStatus: 'active',
   setActiveStatus: (status) => set({ activeStatus: status, currentPage: 1 }),
   currentPage: 1,
   setCurrentPage: (page) => set({ currentPage: page }),

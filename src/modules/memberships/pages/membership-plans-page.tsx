@@ -1,11 +1,12 @@
-import { Download, Plus, Search } from 'lucide-react'
+import { BarChart3, Ban, Clock, Download, Hourglass, Plus, Search, Trash2 } from 'lucide-react'
 import { useMemo, useState, type ComponentProps, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
+import type { LucideIcon } from 'lucide-react'
 
 import { CreateMembershipModal } from '../components/create-membership-modal'
 import { MembershipPlanCard } from '../components/membership-plan-card'
-import { MembershipPlanStatsBar, MembershipStatsBar } from '../components/membership-stats-bar'
+import { MembershipStatsBar } from '../components/membership-stats-bar'
 import {
   useActivateMembership,
   useDeactivateMembership,
@@ -24,7 +25,6 @@ import {
 import { useMembershipStore } from '../store/membership-store'
 import type { MembershipPlan, MembershipStatus } from '../types/membership'
 import { getFeatureLines } from '../utils/membership-format'
-import { SectionHeader } from '@/shared/components/dashboard/section-header'
 import {
   DecisionActionModal,
 } from '@/shared/components/modal/decision-action-modal'
@@ -32,12 +32,13 @@ import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
 import { cn } from '@/shared/lib/cn'
 
-const STATUS_FILTERS: Array<{ key: MembershipStatus | 'all'; label: string; to?: string }> = [
-  { key: 'all', label: 'Active Plans' },
-  { key: 'inactive', label: 'Inactive Plans', to: '/memberships/plans/inactive' },
-  { key: 'cancelled', label: 'Cancelled Plans' },
-  { key: 'deleted', label: 'Deleted Plans', to: '/memberships/plans/deleted' },
-]
+const STATUS_ROUTE_MAP = {
+  active: '/memberships/plans',
+  inactive: '/memberships/plans/inactive',
+  paused: '/memberships/plans/paused',
+  cancelled: '/memberships/plans',
+  deleted: '/memberships/plans/deleted',
+} as const
 
 type MembershipPlansPageProps = {
   fixedStatus?: MembershipStatus
@@ -65,7 +66,7 @@ export function MembershipPlansPage({
 
   const { searchQuery, setSearchQuery, activeStatus, setActiveStatus } = useMembershipStore()
 
-  const statusFilter = fixedStatus ?? (activeStatus === 'all' ? undefined : activeStatus)
+  const statusFilter = fixedStatus ?? activeStatus
 
   const { data, isLoading } = useMemberships({
     search: searchQuery || undefined,
@@ -84,6 +85,78 @@ export function MembershipPlansPage({
   const versionsQuery = useMembershipVersions(selectedPlan?._id ?? '', modalType === 'versions')
 
   const memberships = data?.data?.memberships ?? []
+  const meta = data?.data?.meta
+  const counts = meta?.counts ?? {
+    active: 0,
+    inactive: 0,
+    paused: 0,
+    cancelled: 0,
+    deleted: 0,
+    total: 0,
+  }
+
+  const statusCards: Array<{
+    label: string
+    count: number
+    color: string
+    bg: string
+    border: string
+    icon: LucideIcon
+    status: MembershipStatus
+  }> = [
+    {
+      label: 'Active Plans',
+      count: counts.active,
+      color: 'text-amber-400',
+      bg: 'bg-amber-400/10',
+      border: 'border-amber-400/20',
+      icon: Hourglass,
+      status: 'active',
+    },
+    {
+      label: 'Inactive Plans',
+      count: counts.inactive,
+      color: 'text-red-400',
+      bg: 'bg-red-400/10',
+      border: 'border-red-400/20',
+      icon: Ban,
+      status: 'inactive',
+    },
+    {
+      label: 'Cancelled Plans',
+      count: counts.cancelled,
+      color: 'text-red-400',
+      bg: 'bg-red-400/10',
+      border: 'border-red-400/20',
+      icon: Clock,
+      status: 'cancelled',
+    },
+    {
+      label: 'Deleted Plans',
+      count: counts.deleted,
+      color: 'text-slate-400',
+      bg: 'bg-slate-400/10',
+      border: 'border-slate-400/20',
+      icon: Trash2,
+      status: 'deleted',
+    },
+  ]
+
+  const handleStatusCardClick = (status: MembershipStatus) => {
+    setActiveStatus(status)
+
+    const route = STATUS_ROUTE_MAP[status]
+    if (route && window.location.pathname !== route) {
+      navigate(route)
+    }
+  }
+
+  const selectedStatus = fixedStatus ?? activeStatus
+  const totalItems = meta?.total ?? memberships.length
+  const page = meta?.page ?? 1
+  const limit = meta?.limit ?? 50
+  const rangeStart = totalItems === 0 ? 0 : (page - 1) * limit + 1
+  const rangeEnd = Math.min(page * limit, totalItems)
   const userPlans = useMemo(
     () => memberships.filter((plan) => plan.type === 'user'),
     [memberships],
@@ -219,29 +292,33 @@ export function MembershipPlansPage({
   }
 
   return (
-    <div className="space-y-6">
-      <SectionHeader
-        title={title}
-        subtitle={subtitle}
-        actions={[
-          {
-            label: 'Manage Metrics',
-            onClick: () => toast.info('Metrics configuration coming soon'),
-          },
-        ]}
-      />
+    <div className="flex flex-col gap-4 md:gap-6">
+      <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
+        <div>
+          <h1 className="text-2xl font-bold text-white md:text-3xl">{title}</h1>
+          <p className="mt-1 text-sm text-slate-400 md:text-base">{subtitle}</p>
+        </div>
+        <Button
+          className="w-full bg-[#E6BE73] text-black hover:bg-[#D9AE5A] md:w-auto"
+          onClick={() => toast.info('Metrics configuration coming soon')}
+        >
+          <BarChart3 className="size-4" />
+          Manage Metrics
+        </Button>
+      </div>
 
       <MembershipStatsBar />
-      <MembershipPlanStatsBar />
 
-      <div className="flex flex-wrap gap-2 border-b border-white/10 pb-4">
-        <TabButton active>Membership Plans</TabButton>
-        <TabButton onClick={() => toast.info('Users memberships management is not available')}>
-          Users Memberships Management
-        </TabButton>
-        <TabButton onClick={() => navigate('/memberships/experts')}>
-          Expert Memberships Management
-        </TabButton>
+      <div className="flex justify-center">
+        <div className="inline-flex flex-wrap items-center justify-center gap-1 rounded-xl border border-white/10 bg-black/40 p-1">
+          <TabButton active>Membership Plans</TabButton>
+          <TabButton onClick={() => toast.info('Users memberships management is not available')}>
+            Users Memberships Management
+          </TabButton>
+          <TabButton onClick={() => navigate('/memberships/experts')}>
+            Expert Memberships Management
+          </TabButton>
+        </div>
       </div>
 
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
@@ -259,53 +336,64 @@ export function MembershipPlansPage({
             <Download className="size-4" />
             Export Data
           </Button>
-          <Button onClick={() => setCreateOpen(true)}>
+          <Button onClick={() => navigate('/memberships/plans/create')}>
             <Plus className="size-4" />
             Add New Plan
           </Button>
         </div>
       </div>
 
-      {!fixedStatus ? (
-        <div className="flex flex-wrap gap-2">
-          {STATUS_FILTERS.map((filter) => (
+      <div className="flex flex-col gap-4">
+        <p className="text-sm text-slate-400">
+          Showing {rangeStart}-{rangeEnd} of {totalItems} users
+        </p>
+
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {statusCards.map((card) => (
             <button
-              key={filter.key}
+              key={card.label}
               type="button"
-              onClick={() => {
-                if (filter.to) {
-                  navigate(filter.to)
-                  return
-                }
-                setActiveStatus(filter.key)
-              }}
+              onClick={() => handleStatusCardClick(card.status)}
               className={cn(
-                'rounded-full border px-4 py-2 text-xs font-medium transition-colors',
-                activeStatus === filter.key
-                  ? 'border-amber-400/40 bg-amber-400/10 text-amber-200'
-                  : 'border-white/10 text-slate-400 hover:text-white',
+                'flex items-center justify-between rounded-xl border p-4 transition-all hover:scale-[1.02]',
+                card.bg,
+                card.border,
+                selectedStatus === card.status && 'ring-2 ring-amber-400/50',
               )}
             >
-              {filter.label}
+              <div className="flex items-center gap-3">
+                <div className={cn('rounded-lg p-2', card.bg)}>
+                  <card.icon className={cn('size-5', card.color)} />
+                </div>
+                <span className="text-sm font-medium text-slate-300">{card.label}</span>
+              </div>
+              <span className={cn('text-lg font-bold', card.color)}>
+                {String(card.count).padStart(2, '0')}
+              </span>
             </button>
           ))}
-          <button
-            type="button"
-            onClick={() => navigate('/memberships/plans/paused')}
-            className="rounded-full border border-white/10 px-4 py-2 text-xs font-medium text-slate-400 hover:text-white"
-          >
-            Paused Plans
-          </button>
         </div>
-      ) : null}
+      </div>
 
       {isLoading ? (
         <p className="text-sm text-slate-400">Loading membership plans...</p>
+      ) : !memberships.length ? (
+        <div className="rounded-2xl border border-dashed border-white/10 bg-[#111111] px-6 py-12 text-center">
+          <p className="text-base font-medium text-white">No membership plans found</p>
+          <p className="mt-2 text-sm text-slate-400">
+            Create your first plan to start managing memberships.
+          </p>
+          <Button className="mt-5" onClick={() => navigate('/memberships/plans/create')}>
+            <Plus className="size-4" />
+            Add New Plan
+          </Button>
+        </div>
       ) : (
         <>
           <PlanSection
             title="Users Membership Plans"
             plans={userPlans}
+            onEdit={(plan) => navigate(`/memberships/plans/${plan._id}/edit`)}
             onPause={(plan) => openModal(plan, 'pause')}
             onResume={(plan) => openModal(plan, 'resume')}
             onDelete={(plan) => openModal(plan, 'delete')}
@@ -318,6 +406,7 @@ export function MembershipPlansPage({
           <PlanSection
             title="Experts Membership Plans"
             plans={expertPlans}
+            onEdit={(plan) => navigate(`/memberships/plans/${plan._id}/edit`)}
             onPause={(plan) => openModal(plan, 'pause')}
             onResume={(plan) => openModal(plan, 'resume')}
             onDelete={(plan) => openModal(plan, 'delete')}
@@ -510,8 +599,10 @@ function TabButton({
       type="button"
       onClick={onClick}
       className={cn(
-        'rounded-lg px-4 py-2 text-sm font-medium transition-colors',
-        active ? 'bg-amber-400/10 text-amber-200' : 'text-slate-400 hover:text-white',
+        'rounded-lg px-4 py-2.5 text-sm font-medium transition-colors',
+        active
+          ? 'bg-[#1a1a1a] text-white shadow-sm'
+          : 'text-slate-400 hover:text-white',
       )}
     >
       {children}

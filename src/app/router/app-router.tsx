@@ -2,6 +2,9 @@ import { lazy, Suspense } from 'react'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { DashboardLayout } from '@/app/layouts/dashboard-layout'
 import { ProtectedRoute } from '@/app/router/protected-route'
+import { PermissionRoute } from '@/app/router/permission-route'
+import { HomeRedirect } from '@/app/router/home-redirect'
+import { SuperAdminRoute } from '@/app/router/super-admin-route'
 import { DeletedExpertsPage } from '@/modules/expert'
 import { SuspendedExpertsPage } from '@/modules/expert'
 const LoginPage = lazy(() =>
@@ -97,9 +100,19 @@ const VenueProfileViewPage = lazy(() =>
     default: m.VenueProfileViewPage,
   })),
 )
+const ReferralManagementPage = lazy(() =>
+  import('@/modules/referrals').then((m) => ({
+    default: m.ReferralManagementPage,
+  })),
+)
 const MembershipPlansPage = lazy(() =>
   import('@/modules/memberships').then((m) => ({
     default: m.MembershipPlansPage,
+  })),
+)
+const MembershipPlanFormPage = lazy(() =>
+  import('@/modules/memberships').then((m) => ({
+    default: m.MembershipPlanFormPage,
   })),
 )
 const MembershipPausedPlansPage = lazy(() =>
@@ -125,6 +138,26 @@ const ExpertMembershipsPage = lazy(() =>
 const MembershipDetailsPage = lazy(() =>
   import('@/modules/memberships').then((m) => ({
     default: m.MembershipDetailsPage,
+  })),
+)
+const RbacHubPage = lazy(() =>
+  import('@/modules/rbac').then((m) => ({
+    default: m.RbacHubPage,
+  })),
+)
+const CreateRolePage = lazy(() =>
+  import('@/modules/rbac').then((m) => ({
+    default: m.CreateRolePage,
+  })),
+)
+const CreateSubAdminPage = lazy(() =>
+  import('@/modules/rbac').then((m) => ({
+    default: m.CreateSubAdminPage,
+  })),
+)
+const SubAdminDetailPage = lazy(() =>
+  import('@/modules/rbac').then((m) => ({
+    default: m.SubAdminDetailPage,
   })),
 )
 const SpaceDetailsPage = lazy(() =>
@@ -191,105 +224,74 @@ const PageLoader = () => (
 
 export function AppRouter() {
   return (
-    <BrowserRouter>
+    <BrowserRouter future={{ v7_relativeSplatPath: true }}>
       <Suspense fallback={<PageLoader />}>
         <Routes>
           <Route path="/auth/login" element={<LoginPage />} />
 
           <Route element={<ProtectedRoute />}>
             <Route element={<DashboardLayout />}>
-              <Route path="/" element={<Navigate to="/dashboard" replace />} />
-              <Route path="/dashboard" element={<Navigate to="/dashboard/executive" replace />} />
-              <Route path="/dashboard/executive" element={<ExecutiveOverviewPage />} />
-              <Route path="/services/dashboard" element={<ServiceMarketplacePage />} />
-              <Route path="/experts/management" element={<ExpertManagementPage />} />
-              <Route path="/experts/management" element={<ExpertManagementPage />} />
-              <Route path="/services/dashboard" element={<ServiceMarketplacePage />} />
-              <Route path="/services/management" element={<ServiceManagementPage />} />
-              <Route path="/services/management/pending" element={<PendingApprovalsPage />} />
-              <Route path="/services/management/suspended" element={<SuspendedServicesPage />} />
-              <Route path="/services/management/create" element={<CreateServiceListingPage />} />
-              <Route path="/experts/management/create" element={<CreateExpertPage />} />
-              <Route
-                path="/experts/management/application/:id"
-                element={<ExpertApplicationViewPage />}
-              />
-              <Route
-                path="/experts/management/profile/:id"
-                element={<ExpertProfileViewPage />}
-              />
-              <Route path="/experts/suspended" element={<SuspendedExpertsPage />} />
-              <Route path="/experts/deleted" element={<DeletedExpertsPage />} />
-              <Route path="/experts/pending-approvals" element={<PendingApprovalsPage />} />
-              <Route path="/services/management/view/:id" element={<ServiceViewPage />} />
-              <Route path="/services/leaderboard" element={<LeaderboardPage />} />
-              <Route
-                path="/categories/management"
-                element={<CategoryManagementPage />}
-              />
-              <Route
-                path="/categories/management/create"
-                element={<CreateCategoryPage />}
-              />
-              <Route
-                path="/categories/management/paused"
-                element={<PausedCategoriesPage />}
-              />
+              <Route path="/" element={<HomeRedirect />} />
+              <Route path="/dashboard" element={<HomeRedirect />} />
 
-              <Route
-                path="/categories/management/rename/:id"
-                element={<RenameCategoryPage />}
-              />
-              <Route
-                path="/categories/management/deleted"
-                element={<DeletedCategoriesPage />}
-              />
+              <Route element={<SuperAdminRoute />}>
+                <Route path="/dashboard/executive" element={<ExecutiveOverviewPage />} />
+                <Route path="/experts/management" element={<ExpertManagementPage />} />
+                <Route path="/experts/management/create" element={<CreateExpertPage />} />
+                <Route path="/experts/suspended" element={<SuspendedExpertsPage />} />
+                <Route path="/experts/deleted" element={<DeletedExpertsPage />} />
+                <Route path="/experts/pending-approvals" element={<PendingApprovalsPage />} />
+                <Route path="/referrals/management" element={<ReferralManagementPage />} />
+                <Route path="/memberships/plans" element={<MembershipPlansPage />} />
+                <Route path="/memberships/plans/create" element={<MembershipPlanFormPage />} />
+                <Route path="/memberships/plans/:id/edit" element={<MembershipPlanFormPage />} />
+                <Route path="/memberships/plans/paused" element={<MembershipPausedPlansPage />} />
+                <Route path="/memberships/plans/inactive" element={<MembershipInactivePlansPage />} />
+                <Route path="/memberships/plans/deleted" element={<MembershipDeletedPlansPage />} />
+                <Route path="/memberships/experts" element={<ExpertMembershipsPage />} />
+                <Route path="/memberships/experts/:id" element={<MembershipDetailsPage />} />
+                <Route path="/settings/access" element={<RbacHubPage />} />
+                <Route path="/settings/access/roles/create" element={<CreateRolePage />} />
+                <Route path="/settings/access/roles/:id/edit" element={<CreateRolePage />} />
+                <Route path="/settings/access/users/create" element={<CreateSubAdminPage />} />
+                <Route path="/settings/access/users/:id" element={<SubAdminDetailPage />} />
+              </Route>
 
-              <Route
-                path="/categories/management/create-subcategory/:id"
-                element={<CreateSubCategoryPage />}
-              />
+              <Route element={<PermissionRoute module="services" />}>
+                <Route path="/services/dashboard" element={<ServiceMarketplacePage />} />
+                <Route path="/services/management" element={<ServiceManagementPage />} />
+                <Route path="/services/management/pending" element={<PendingApprovalsPage />} />
+                <Route path="/services/management/suspended" element={<SuspendedServicesPage />} />
+                <Route path="/services/management/create" element={<CreateServiceListingPage />} />
+                <Route path="/services/management/view/:id" element={<ServiceViewPage />} />
+                <Route path="/services/leaderboard" element={<LeaderboardPage />} />
+              </Route>
 
-              <Route
-                path="/categories/management/view/:id"
-                element={<CategoryViewPage />}
-              />
-              <Route
-  path="/categories/management/:id/subcategory/:subCategoryId"
-  element={<SubCategoryViewPage />}
-/>
-
-              <Route path="/venues/dashboard" element={<VenueDashboardPage />} />
-              <Route path="/venues/leaderboard" element={<LeaderboardPage />} />
-              <Route path="/venues/management" element={<VenueManagementPage />} />
-              <Route
-                path="/venues/management/application/:id"
-                element={<ApplicationDetailsPage />}
-              />
-              <Route
-                path="/venues/management/profile/:venueId"
-                element={<VenueProfileViewPage />}
-              />
-              <Route
-                path="/venues/management/profile/:venueId/space/:spaceId"
-                element={<SpaceDetailsPage />}
-              />
-              <Route path="/venues/management/pending" element={<VenuePendingApprovalsPage />} />
-              <Route path="/venues/management/suspended" element={<VenueSuspendedPage />} />
-
-              <Route path="/venues/management/onboarding" element={<CreateVenueOnboardingPage />} />
-              <Route path="/venues/management/create" element={<CreateVenueListingPage />} />
-
-              <Route path="/memberships/plans" element={<MembershipPlansPage />} />
-              <Route path="/memberships/plans/paused" element={<MembershipPausedPlansPage />} />
-              <Route path="/memberships/plans/inactive" element={<MembershipInactivePlansPage />} />
-              <Route path="/memberships/plans/deleted" element={<MembershipDeletedPlansPage />} />
-              <Route path="/memberships/experts" element={<ExpertMembershipsPage />} />
-              <Route path="/memberships/experts/:id" element={<MembershipDetailsPage />} />
+              <Route element={<PermissionRoute module="venues" />}>
+                <Route path="/venues/dashboard" element={<VenueDashboardPage />} />
+                <Route path="/venues/leaderboard" element={<LeaderboardPage />} />
+                <Route path="/venues/management" element={<VenueManagementPage />} />
+                <Route
+                  path="/venues/management/application/:id"
+                  element={<ApplicationDetailsPage />}
+                />
+                <Route
+                  path="/venues/management/profile/:venueId"
+                  element={<VenueProfileViewPage />}
+                />
+                <Route
+                  path="/venues/management/profile/:venueId/space/:spaceId"
+                  element={<SpaceDetailsPage />}
+                />
+                <Route path="/venues/management/pending" element={<VenuePendingApprovalsPage />} />
+                <Route path="/venues/management/suspended" element={<VenueSuspendedPage />} />
+                <Route path="/venues/management/onboarding" element={<CreateVenueOnboardingPage />} />
+                <Route path="/venues/management/create" element={<CreateVenueListingPage />} />
+              </Route>
             </Route>
           </Route>
 
-          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          <Route path="*" element={<HomeRedirect />} />
         </Routes>
       </Suspense>
     </BrowserRouter>

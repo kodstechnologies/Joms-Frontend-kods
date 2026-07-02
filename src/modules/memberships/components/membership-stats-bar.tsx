@@ -13,31 +13,39 @@ export function MembershipStatsBar() {
     <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
       <StatCard
         title="Total Members"
-        value={mock.totalMembers.value}
+        value={String(apiStats?.totalActivePlans ?? mock.totalMembers.value)}
         icon={Users}
         trend={mock.totalMembers.trend}
       />
       <StatCard
         title="Expired Memberships"
-        value={mock.expiredMemberships.value}
+        value={String(apiStats?.expiredMemberships ?? mock.expiredMemberships.value)}
         icon={RefreshCw}
         hint={mock.expiredMemberships.hint}
       />
       <StatCard
         title="Total Revenue"
-        value={mock.totalRevenue.value}
+        value={
+          apiStats?.totalRevenue
+            ? `₹${apiStats.totalRevenue.toLocaleString('en-IN')}`
+            : mock.totalRevenue.value
+        }
         icon={TrendingUp}
         trend={mock.totalRevenue.trend}
       />
       <StatCard
         title="Renewal Rate"
-        value={mock.renewalRate.value}
+        value={
+          apiStats?.renewalRate
+            ? `${apiStats.renewalRate}%`
+            : mock.renewalRate.value
+        }
         icon={BarChart3}
         trend={mock.renewalRate.trend}
       />
       <StatCard
         title="Most Subscribed Plan"
-        value={apiStats?.mostSubscribedPlan ?? mock.mostSubscribedPlan.value}
+        value={apiStats?.mostSubscribedPlan ?? mock.mostSubscribedPlan.value ?? '—'}
         icon={Crown}
         hint={mock.mostSubscribedPlan.hint}
       />
