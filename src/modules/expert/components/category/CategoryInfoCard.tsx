@@ -4,6 +4,7 @@ import {
   categoryViewTheme,
 } from "./category-view.theme";
 
+
 interface Props {
   category: {
     id: string;
