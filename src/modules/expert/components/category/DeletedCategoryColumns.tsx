@@ -1,81 +1,79 @@
 import type { ColumnDef } from "@tanstack/react-table";
 
 import DeletedCategoryActions from "./DeletedCategoryActions";
+import { categoryManagementTheme } from "./category-management.theme";
+import type { Category } from "./category-table-columns";
 
-export interface DeletedCategory {
-  id: string;
-  name: string;
-  status: string;
-  subCategory: number;
-  services: number;
-  experts: number;
-  revenue: string;
-}
+const statusStyles = {
+  Accepted: categoryManagementTheme.statusAccepted,
+  Pending: categoryManagementTheme.statusPending,
+  Deleted: categoryManagementTheme.statusDeleted,
+} as const;
 
-const StatusBadge = ({
-  status,
-}: {
-  status: string;
-}) => {
-  const styles: Record<string, string> = {
-    Accepted: "bg-green-500/20 text-green-400",
-    Pending: "bg-yellow-500/20 text-yellow-400",
-    Deleted: "bg-red-500/20 text-red-400",
-    Paused: "bg-yellow-700/20 text-yellow-300",
-  };
+function StatusBadge({ status }: { status: string }) {
+  const style =
+    statusStyles[status as keyof typeof statusStyles] ??
+    "border border-white/10 bg-white/5 text-[#CCCCCC]";
 
   return (
     <span
-      className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${
-        styles[status] ?? "bg-slate-500/20 text-slate-300"
-      }`}
+      className={`inline-flex rounded-md px-2.5 py-1 text-[11px] font-semibold ${style}`}
     >
       {status}
     </span>
   );
-};
+}
 
-export const deletedCategoryColumns: ColumnDef<DeletedCategory>[] = [
+function getDisplayStatus(category: Category) {
+  return category.previousStatus ?? category.status;
+}
+
+export const deletedCategoryColumns: ColumnDef<Category>[] = [
   {
     accessorKey: "id",
     header: "Category ID",
+    meta: { cellClassName: "text-white font-medium" },
   },
   {
     accessorKey: "name",
     header: "Category Name",
+    meta: { cellClassName: "text-white" },
   },
   {
     accessorKey: "status",
     header: "Status",
     cell: ({ row }) => (
-      <StatusBadge status={row.original.status} />
+      <StatusBadge status={getDisplayStatus(row.original)} />
     ),
   },
   {
     accessorKey: "subCategory",
-    header: "No. Of Sub Category",
+    header: "No. of Sub Category",
+    meta: { cellClassName: "text-white" },
   },
   {
     accessorKey: "services",
     header: "No.Of Services",
+    meta: { cellClassName: "text-white" },
   },
   {
     accessorKey: "experts",
     header: "No.Of Experts",
+    meta: { cellClassName: "text-white" },
   },
   {
     accessorKey: "revenue",
     header: "Revenue Generated",
+    meta: { cellClassName: "text-white font-medium" },
   },
   {
     id: "actions",
     header: "Actions",
+    meta: { headerClassName: "text-right", cellClassName: "text-right" },
     enableSorting: false,
     enableHiding: false,
-    cell: ({ row }) => (
-      <DeletedCategoryActions
-        category={row.original}
-      />
-    ),
+    cell: ({ row }) => <DeletedCategoryActions category={row.original} />,
   },
 ];
+
+export type { Category as DeletedCategory };

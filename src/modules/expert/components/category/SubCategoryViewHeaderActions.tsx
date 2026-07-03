@@ -1,38 +1,38 @@
 import { Eye, Pencil, Pause, Trash2 } from "lucide-react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+
 import { Button } from "@/shared/components/ui/button";
 
+import { categoryViewTheme } from "./category-view.theme";
+
 export const SubCategoryViewHeaderActions = () => {
+  const navigate = useNavigate();
 
-    const navigate = useNavigate();
-    const { id } = useParams();
+  return (
+    <div className="flex flex-wrap items-center justify-end gap-3">
+      <Button
+        variant="secondary"
+        className={categoryViewTheme.outlineButtonClass}
+        onClick={() => navigate("/services/management")}
+      >
+        <Eye className="size-4" aria-hidden="true" />
+        View Services
+      </Button>
 
-    return (
-        <div className="mb-6 flex justify-end gap-3">
-            <Button
-                variant="secondary"
-                onClick={() =>
-                    navigate(`/categories/management/view/${id}`)
-                }
-            >
-                <Eye size={16} />
-                View Services
-            </Button>
+      <Button variant="secondary" className={categoryViewTheme.outlineButtonClass}>
+        <Pencil className="size-4" aria-hidden="true" />
+        Edit Sub-Category
+      </Button>
 
-            <Button variant="secondary">
-                <Pencil size={16} />
-                Edit Sub-Category
-            </Button>
+      <Button variant="secondary" className={categoryViewTheme.outlineButtonClass}>
+        <Pause className="size-4" aria-hidden="true" />
+        Pause
+      </Button>
 
-            <Button variant="secondary">
-                <Pause size={16} />
-                Pause
-            </Button>
-
-            <Button className="bg-[#EF4444] hover:bg-[#DC2626] text-white">
-                <Trash2 size={16} />
-                Delete
-            </Button>
-        </div>
-    );
+      <Button className={categoryViewTheme.deleteButtonClass}>
+        <Trash2 className="size-4" aria-hidden="true" />
+        Delete
+      </Button>
+    </div>
+  );
 };

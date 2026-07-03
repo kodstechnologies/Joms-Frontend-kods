@@ -10,11 +10,12 @@ const ViewCategoryButton = ({ id }: Props) => {
 
   return (
     <button
-      onClick={() =>
-        navigate(`/categories/management/view/${id}`)
-      }
+      type="button"
+      aria-label="View category"
+      onClick={() => navigate(`/categories/management/view/${id}`)}
+      className="grid size-8 place-items-center rounded-lg text-[#888888] transition-colors hover:bg-white/5 hover:text-[#FFC16B]"
     >
-      <Eye className="size-4 text-white hover:text-[#F5C16C]" />
+      <Eye className="size-4" />
     </button>
   );
 };

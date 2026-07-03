@@ -1,3 +1,5 @@
+import { categoryFormTheme } from "./category-form.theme";
+
 interface Props {
   onSubmit: () => void;
   submitText?: string;
@@ -6,13 +8,16 @@ interface Props {
 const FooterActions = ({
   onSubmit,
   submitText = "Create Category",
-  
 }: Props) => {
   return (
-    <div className="mt-8 flex justify-end rounded-xl bg-[#181818] p-5">
+    <div
+      className="mt-6 flex justify-end rounded-xl border border-[#242424] px-6 py-5"
+      style={{ backgroundColor: categoryFormTheme.surface }}
+    >
       <button
+        type="button"
         onClick={onSubmit}
-        className="rounded-lg bg-[#F5C16C] px-6 py-2.5 text-sm font-semibold text-black transition hover:bg-[#E9B85D]"
+        className={`rounded-lg px-8 py-2.5 text-[13px] font-semibold ${categoryFormTheme.accentGradient} ${categoryFormTheme.accentGradientHover} text-black transition-all`}
       >
         {submitText}
       </button>

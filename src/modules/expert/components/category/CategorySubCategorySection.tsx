@@ -1,4 +1,5 @@
 import CategorySubCategoryCard from "./CategorySubCategoryCard";
+import { categoryViewTheme } from "./category-view.theme";
 
 interface Props {
   subCategories: {
@@ -10,16 +11,12 @@ interface Props {
   }[];
 }
 
-const CategorySubCategorySection = ({
-  subCategories,
-}: Props) => {
+const CategorySubCategorySection = ({ subCategories }: Props) => {
   return (
     <div className="mt-8">
-      <h3 className="mb-4 text-lg font-semibold text-white">
-        Sub-Categories
-      </h3>
+      <h3 className={categoryViewTheme.sectionTitleClass}>Sub-Categories</h3>
 
-      <div className="grid grid-cols-3 gap-5">
+      <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
         {subCategories.map((item) => (
           <CategorySubCategoryCard
             key={item.id}
