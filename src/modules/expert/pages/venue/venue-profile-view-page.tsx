@@ -401,7 +401,8 @@ function SpacesTab({
   )
 }
 
-function AnalyticsTab({ data }: { data: VenueFullView }) {
+function AnalyticsTab({ data, venueId }: { data: VenueFullView; venueId: string }) {
+  const navigate = useNavigate()
   const insights = data.overview.venue.insights ?? {}
 
   const cards: { label: string; value: string; icon: ReactNode }[] = [
@@ -455,7 +456,7 @@ function AnalyticsTab({ data }: { data: VenueFullView }) {
         ))}
         <button
           type="button"
-          onClick={() => comingSoon('Detailed analytics')}
+          onClick={() => navigate(`/venues/management/profile/${venueId}/analytics`)}
           className="flex items-center justify-center gap-1.5 rounded-lg border border-white/5 bg-black p-4 text-[12px] font-semibold text-white transition-colors hover:bg-white/5"
         >
           More
@@ -664,7 +665,9 @@ export function VenueProfileViewPage() {
           {activeTab === 'spaces' && (
             <SpacesTab data={fullView} venueId={venueId} />
           )}
-          {activeTab === 'analytics' && <AnalyticsTab data={fullView} />}
+          {activeTab === 'analytics' && (
+            <AnalyticsTab data={fullView} venueId={venueId ?? ''} />
+          )}
           {activeTab === 'health' && <HealthTab data={fullView} />}
         </div>
       </div>

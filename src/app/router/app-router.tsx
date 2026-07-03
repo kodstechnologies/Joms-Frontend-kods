@@ -141,6 +141,11 @@ const SpaceAnalyticsPage = lazy(() =>
     default: m.SpaceAnalyticsPage,
   })),
 )
+const VenueProfileAnalyticsPage = lazy(() =>
+  import('@/modules/expert').then((m) => ({
+    default: m.VenueProfileAnalyticsPage,
+  })),
+)
 const ReferralManagementPage = lazy(() =>
   import('@/modules/referrals').then((m) => ({
     default: m.ReferralManagementPage,
@@ -417,6 +422,10 @@ export function AppRouter() {
                 <Route
                   path="/venues/management/profile/:venueId"
                   element={<VenueProfileViewPage />}
+                />
+                <Route
+                  path="/venues/management/profile/:venueId/analytics"
+                  element={<VenueProfileAnalyticsPage />}
                 />
                 <Route
                   path="/venues/management/profile/:venueId/space/:spaceId"

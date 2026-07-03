@@ -1,5 +1,12 @@
 export type ApplicationStatus = 'PENDING' | 'APPROVED' | 'REJECTED'
 
+export type ConciergeRejectionReason =
+  | 'Reason1'
+  | 'Reason2'
+  | 'Reason3'
+  | 'Reason4'
+  | 'Reason5'
+
 export type ApplicationViewResponse = {
   success?: boolean
   message?: string
@@ -122,7 +129,7 @@ export type KycDecisionPayload =
   | { status: 'APPROVED' }
   | {
       status: 'REJECTED'
-      reasonFor: string[]
+      reasonFor: ConciergeRejectionReason[]
       rejectionReason: string
     }
 
@@ -130,7 +137,7 @@ export type BankingDecisionPayload =
   | { status: 'APPROVED' }
   | {
       status: 'REJECTED'
-      reasonFor: string[]
+      reasonFor: ConciergeRejectionReason[]
       rejectionReason: string
       adminNote?: string
     }

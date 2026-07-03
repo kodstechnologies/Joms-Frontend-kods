@@ -9,6 +9,7 @@ export { ApplicationDetailsPage } from "./application-details-page.tsx";
 export * from "./venue-profile-view-page";
 export * from "./space-details-page";
 export * from "./space-analytics-page";
+export * from "./venue-profile-analytics-page";
 
 export { VenueCategoryManagementPage } from "./category-management-page";
 export { VenueCategoryViewPage } from "./category-view-page";

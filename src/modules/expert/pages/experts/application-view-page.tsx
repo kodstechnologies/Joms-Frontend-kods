@@ -17,7 +17,10 @@ import {
   useUpdateExpertBankingStatus,
   useUpdateExpertKycStatus,
 } from '../../hooks/use-expert-application-view'
-import type { ApplicationStatus } from '../../type/expert-application-view'
+import type {
+  ApplicationStatus,
+  ConciergeRejectionReason,
+} from '../../type/expert-application-view'
 import {
   DecisionActionModal,
   type DecisionActionModalOption,
@@ -35,17 +38,17 @@ const TABS: { key: TabKey; label: string }[] = [
 ]
 
 const KYC_REJECT_REASONS: DecisionActionModalOption[] = [
-  { label: 'Incomplete documents', value: 'incomplete_documents' },
-  { label: 'ID mismatch', value: 'id_mismatch' },
-  { label: 'PAN mismatch', value: 'pan_mismatch' },
-  { label: 'GST details invalid', value: 'invalid_gst' },
+  { label: 'Incomplete documents', value: 'Reason1' },
+  { label: 'ID mismatch', value: 'Reason2' },
+  { label: 'PAN mismatch', value: 'Reason3' },
+  { label: 'GST details invalid', value: 'Reason4' },
 ]
 
 const BANKING_REJECT_REASONS: DecisionActionModalOption[] = [
-  { label: 'Cheque unreadable', value: 'cheque_unreadable' },
-  { label: 'Name mismatch', value: 'name_mismatch' },
-  { label: 'Account details invalid', value: 'invalid_account' },
-  { label: 'IFSC mismatch', value: 'ifsc_mismatch' },
+  { label: 'Cheque unreadable', value: 'Reason1' },
+  { label: 'Name mismatch', value: 'Reason2' },
+  { label: 'Account details invalid', value: 'Reason3' },
+  { label: 'IFSC mismatch', value: 'Reason4' },
 ]
 
 const getApiErrorMessage = (error: unknown) => {
@@ -201,13 +204,13 @@ export function ExpertApplicationViewPage() {
         : modalTarget === 'banking'
           ? {
               status: 'REJECTED' as const,
-              reasonFor: selectedReasons,
+              reasonFor: selectedReasons as ConciergeRejectionReason[],
               rejectionReason: rejectionReason.trim(),
               adminNote: adminNotes.trim() || undefined,
             }
           : {
               status: 'REJECTED' as const,
-              reasonFor: selectedReasons,
+              reasonFor: selectedReasons as ConciergeRejectionReason[],
               rejectionReason: rejectionReason.trim(),
             }
 
