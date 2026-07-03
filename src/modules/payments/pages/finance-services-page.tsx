@@ -8,7 +8,7 @@ import {
   Tag,
   Trash2,
 } from 'lucide-react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
 import {
@@ -35,6 +35,7 @@ function getStatusClassName(status: FinanceServiceRow['status']) {
 }
 
 export function FinanceServicesPage() {
+  const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState<FinanceServiceTab>('all')
   const [searchQuery, setSearchQuery] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
@@ -106,7 +107,7 @@ export function FinanceServicesPage() {
             className="text-slate-800 hover:bg-slate-100 hover:text-slate-900"
             onClick={() => {
               setActiveDropdownId(null)
-              toast.message(`View details for ${record.name}`)
+              navigate(`/finance/services/${record.id}`)
             }}
           >
             View Details
@@ -154,7 +155,7 @@ export function FinanceServicesPage() {
         </TableActionsDropdown>
       )
     },
-    [activeDropdownId],
+    [activeDropdownId, navigate],
   )
 
   const columns = useMemo<ColumnDef<FinanceServiceRow>[]>(
