@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-import { dummyData } from "../components/dummy-data";
+import { categoryManagementSeed } from "../mock/category-management.mock";
 import type { Category } from "../components/category/category-table-columns";
 
 interface CategoryStore {
@@ -23,7 +23,7 @@ interface CategoryStore {
 export const useCategoryStore = create<CategoryStore>()(
     persist(
         (set) => ({
-            categories: dummyData,
+            categories: categoryManagementSeed,
 
             createCategory: (category) =>
                 set((state) => ({
@@ -91,7 +91,7 @@ export const useCategoryStore = create<CategoryStore>()(
                 })),
         }),
         {
-            name: "category-storage",
+            name: "category-storage-v6",
         }
     )
 );

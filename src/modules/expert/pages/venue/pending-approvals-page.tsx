@@ -180,7 +180,7 @@ export function VenuePendingApprovalsPage() {
         <button
           type="button"
           onClick={() => navigate('/venues/management')}
-          className="group flex w-fit items-center gap-2 text-[20px] font-bold tracking-tight text-white transition-colors hover:text-[#FBC078]"
+          className="group flex w-fit items-center gap-2 font-heading text-[20px] font-bold tracking-tight text-white transition-colors hover:text-[#FBC078]"
         >
           <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
           <span>Pending Approvals</span>

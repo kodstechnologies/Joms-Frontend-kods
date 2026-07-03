@@ -1,19 +1,23 @@
 type StatCardProps = {
   title: string;
   value: string;
+  className?: string;
 };
 
 export function StatCard({
   title,
   value,
+  className,
 }: StatCardProps) {
   return (
-    <div className="h-[96px] rounded-2xl bg-[#171717] px-6 py-4">
-      <p className="text-[13px] font-medium text-[#8A8A8A]">
+    <div
+      className={`rounded-xl border border-[#242424] bg-[#181818] px-5 py-4 ${className ?? ""}`}
+    >
+      <p className="text-[12px] font-medium text-[#888888]">
         {title}
       </p>
 
-      <h2 className="mt-3 text-[18px] font-semibold text-white">
+      <h2 className="mt-2 text-[20px] font-semibold text-white">
         {value}
       </h2>
     </div>

@@ -1,20 +1,22 @@
+import { categoryViewTheme } from "./category-view.theme";
+
 interface Props {
   notes: string;
 }
 
-const CategoryAdminNotesCard = ({
-  notes,
-}: Props) => {
+const CategoryAdminNotesCard = ({ notes }: Props) => {
   return (
     <div className="mt-8">
-      <h3 className="mb-4 text-lg font-semibold text-white">
-        Admin Notes
-      </h3>
+      <h3 className={categoryViewTheme.sectionTitleClass}>Admin Notes</h3>
 
-      <div className="rounded-2xl bg-[#181818] p-6">
-        <p className="text-sm leading-7 text-[#CFCFCF]">
-          {notes}
-        </p>
+      <div
+        className="mt-3 rounded-xl border p-6"
+        style={{
+          backgroundColor: categoryViewTheme.surface,
+          borderColor: categoryViewTheme.surfaceBorder,
+        }}
+      >
+        <p className={categoryViewTheme.bodyTextClass}>{notes}</p>
       </div>
     </div>
   );

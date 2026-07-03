@@ -7,50 +7,43 @@ import CategoryInfoCard from "../../components/category/CategoryInfoCard";
 import CategoryDescriptionCard from "../../components/category/CategoryDescriptionCard";
 import CategorySubCategorySection from "../../components/category/CategorySubCategorySection";
 import CategoryAdminNotesCard from "../../components/category/CategoryAdminNotesCard";
+import { categoryViewTheme } from "../../components/category/category-view.theme";
 
 export const CategoryViewPage = () => {
   const { id } = useParams();
 
   const category = useCategoryStore((state) =>
-    state.categories.find((item) => item.id === id)
+    state.categories.find((item) => item.id === id),
   );
 
   if (!category) {
     return (
-      <div className="p-10 text-white">
+      <div className="p-10 text-white" style={{ backgroundColor: "#000000" }}>
         Category not found
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#0B0B0B] px-8 py-2">
-      <div className="mx-auto max-w-7xl">
-        <CategoryHeader
-          title={category.name}
-          breadcrumb={category.name}
-        />
-
-        <div className="mt-6">
+    <div
+      className="min-h-screen px-4 pb-8 pt-2 sm:px-6 lg:px-8"
+      style={{ backgroundColor: categoryViewTheme.pageBg }}
+    >
+      <div className="mx-auto max-w-6xl">
+        <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-start">
+          <CategoryHeader title={category.name} breadcrumb={category.name} />
           <CategoryViewHeaderActions />
         </div>
 
-        <div className="mt-6">
+        <div className="mt-2">
           <CategoryInfoCard category={category} />
         </div>
 
-        <CategoryDescriptionCard
-          description={category.description}
-        />
+        <CategoryDescriptionCard description={category.description} />
 
-        <CategorySubCategorySection
-          subCategories={category.subCategories}
-        />
+        <CategorySubCategorySection subCategories={category.subCategories} />
 
-        <CategoryAdminNotesCard
-          notes={category.adminNotes}
-        />
-
+        <CategoryAdminNotesCard notes={category.adminNotes} />
       </div>
     </div>
   );

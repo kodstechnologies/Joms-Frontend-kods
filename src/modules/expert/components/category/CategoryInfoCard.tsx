@@ -1,131 +1,119 @@
+import { categoryManagementTheme } from "./category-management.theme";
+import {
+  CATEGORY_VIEW_PLACEHOLDER_IMAGE,
+  categoryViewTheme,
+} from "./category-view.theme";
+
 interface Props {
   category: {
     id: string;
     name: string;
     image?: string;
     status: string;
-
     services: number;
     experts: number;
-    revenue: string;
-
     createdAt: string;
     updatedAt: string;
     createdBy: string;
   };
 }
 
+function getStatusLabel(status: string) {
+  if (status === "Accepted") return "Active";
+  return status;
+}
+
+function getStatusClass(status: string) {
+  if (status === "Accepted") return categoryViewTheme.statusActive;
+  if (status === "Paused" || status === "Pending") {
+    return categoryViewTheme.statusPaused;
+  }
+  return categoryManagementTheme.statusDeleted;
+}
+
 const CategoryInfoCard = ({ category }: Props) => {
+  const bannerSrc = category.image || CATEGORY_VIEW_PLACEHOLDER_IMAGE;
+
   return (
-    <div className="grid grid-cols-[52%_48%] gap-6">
-      {/* Banner */}
-      <div className="overflow-hidden rounded-2xl bg-[#181818]">
-        {category.image ? (
+    <div
+      className="overflow-hidden rounded-xl border"
+      style={{
+        backgroundColor: categoryViewTheme.surface,
+        borderColor: categoryViewTheme.surfaceBorder,
+      }}
+    >
+      <div className="grid grid-cols-1 lg:grid-cols-[48%_52%]">
+        <div className="overflow-hidden">
           <img
-            src={category.image}
+            src={bannerSrc}
             alt={category.name}
-            className="h-[260px] w-full object-cover"
+            className="h-full min-h-[260px] w-full object-cover"
           />
-        ) : (
-          <div className="flex h-[260px] items-center justify-center text-slate-500">
-            No Image
-          </div>
-        )}
-      </div>
-
-      {/* Info Card */}
-      <div className="rounded-2xl bg-[#181818] p-8">
-        {/* Top */}
-        <div className="mb-12 flex items-start justify-between">
-          <div className="flex flex-1 justify-between pr-8">
-            <div>
-              <p className="text-sm text-[#8B8B8B]">
-                Category Name
-              </p>
-
-              <p className="mt-3 text-[20px] font-semibold text-white">
-                {category.name}
-              </p>
-            </div>
-
-            <div>
-              <p className="text-sm text-[#8B8B8B]">
-                Created At
-              </p>
-
-              <p className="mt-3 whitespace-nowrap text-lg text-white">
-                {category.createdAt}
-              </p>
-            </div>
-
-            <div>
-              <p className="text-sm text-[#8B8B8B]">
-                Created By
-              </p>
-
-              <p className="mt-3 whitespace-nowrap text-lg font-medium underline text-white">
-                {category.createdBy}
-              </p>
-            </div>
-          </div>
-
-          <span
-            className={`rounded-full px-5 py-2 text-sm font-medium text-white ${
-              category.status === "Accepted"
-                ? "bg-[#08B143]"
-                : category.status === "Pending"
-                ? "bg-[#D4A017]"
-                : category.status === "Paused"
-                ? "bg-[#D4A017]"
-                : "bg-[#E53935]"
-            }`}
-          >
-            {category.status === "Accepted"
-              ? "Active"
-              : category.status}
-          </span>
         </div>
 
-        {/* Bottom */}
-        <div className="flex justify-between">
-          <div>
-            <p className="text-sm text-[#8B8B8B]">
-              Category ID
-            </p>
+        <div className="p-6 lg:p-8">
+          <div className="mb-8 flex items-start justify-between gap-4">
+            <div className="grid flex-1 grid-cols-1 gap-6 sm:grid-cols-3">
+              <div>
+                <p className={categoryViewTheme.labelClass}>Category Name</p>
+                <p className={`mt-2 ${categoryViewTheme.valueLgClass}`}>
+                  {category.name}
+                </p>
+              </div>
 
-            <p className="mt-3 text-xl font-semibold text-white">
-              {category.id}
-            </p>
+              <div>
+                <p className={categoryViewTheme.labelClass}>Created At</p>
+                <p className={`mt-2 ${categoryViewTheme.valueClass}`}>
+                  {category.createdAt}
+                </p>
+              </div>
+
+              <div>
+                <p className={categoryViewTheme.labelClass}>Created By</p>
+                <button
+                  type="button"
+                  className={`mt-2 underline underline-offset-2 ${categoryViewTheme.valueClass}`}
+                >
+                  {category.createdBy}
+                </button>
+              </div>
+            </div>
+
+            <span
+              className={`inline-flex shrink-0 rounded-md px-3 py-1 text-[11px] font-semibold ${getStatusClass(category.status)}`}
+            >
+              {getStatusLabel(category.status)}
+            </span>
           </div>
 
-          <div>
-            <p className="text-sm text-[#8B8B8B]">
-              Last Updated At
-            </p>
+          <div className="grid grid-cols-2 gap-6 sm:grid-cols-4">
+            <div>
+              <p className={categoryViewTheme.labelClass}>Category ID</p>
+              <p className={`mt-2 ${categoryViewTheme.valueLgClass}`}>
+                {category.id}
+              </p>
+            </div>
 
-            <p className="mt-3 whitespace-nowrap text-lg text-white">
-              {category.updatedAt}
-            </p>
-          </div>
+            <div>
+              <p className={categoryViewTheme.labelClass}>Last Updated At</p>
+              <p className={`mt-2 ${categoryViewTheme.valueClass}`}>
+                {category.updatedAt}
+              </p>
+            </div>
 
-          <div>
-            <p className="text-sm text-[#8B8B8B]">
-              Number Of Services
-            </p>
+            <div>
+              <p className={categoryViewTheme.labelClass}>Number Of Services</p>
+              <p className={`mt-2 ${categoryViewTheme.valueLgClass}`}>
+                {category.services}
+              </p>
+            </div>
 
-            <p className="mt-3 text-xl font-semibold text-white">
-              {category.services}
-            </p>
-          </div>
-
-          <div>
-            <p className="text-sm text-[#8B8B8B]">
-              Number Of Experts
-            </p>
-
-            <p className="mt-3 text-xl font-semibold text-white">
-              {category.experts}
-            </p>
+            <div>
+              <p className={categoryViewTheme.labelClass}>Number Of Experts</p>
+              <p className={`mt-2 ${categoryViewTheme.valueLgClass}`}>
+                {category.experts}
+              </p>
+            </div>
           </div>
         </div>
       </div>

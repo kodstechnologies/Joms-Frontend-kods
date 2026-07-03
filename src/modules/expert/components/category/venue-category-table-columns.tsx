@@ -1,120 +1,96 @@
 import type { ColumnDef } from "@tanstack/react-table";
+
 import VenueViewCategoryButton from "./venue-view-category-button";
 import { VenueCategoryActionsDropdown } from "./venue-category-actions-dropdown";
-
+import { categoryManagementTheme } from "./category-management.theme";
 
 export type VenueCategory = {
   id: string;
-
   name: string;
-
   description: string;
-
   icon?: string;
-
   image?: string;
-
   status: string;
-
   previousStatus?: string;
-
   subCategory: number;
-
   venues: number;
-
   revenue: string;
-
   createdAt: string;
-
   updatedAt: string;
-
   createdBy: string;
-
   adminNotes: string;
-
   subCategories: {
     id: string;
-
     name: string;
-
     status: "Active" | "Paused";
-
     description: string;
-
     adminNotes: string;
-
     icon?: string;
-
     addedOn: string;
-
     createdBy: string;
-
     updatedAt: string;
-
     venues: number;
   }[];
 };
 
-const StatusBadge = ({ status }: { status: string }) => {
-  const styles = {
-    Accepted: "bg-green-900/40 text-green-400",
-    Pending: "bg-yellow-900/40 text-yellow-400",
-    Deleted: "bg-red-900/40 text-red-400",
-  };
+const statusStyles = {
+  Accepted: categoryManagementTheme.statusAccepted,
+  Pending: categoryManagementTheme.statusPending,
+  Deleted: categoryManagementTheme.statusDeleted,
+} as const;
+
+function StatusBadge({ status }: { status: string }) {
+  const style =
+    statusStyles[status as keyof typeof statusStyles] ??
+    "bg-white/5 text-[#CCCCCC]";
 
   return (
-    <span
-      className={`rounded-full px-2 py-1 text-[10px] font-semibold ${
-        styles[status as keyof typeof styles]
-      }`}
-    >
+    <span className={`inline-flex rounded-md px-2.5 py-1 text-[11px] font-semibold ${style}`}>
       {status}
     </span>
   );
-};
+}
 
 export const venueCategoryColumns: ColumnDef<VenueCategory>[] = [
   {
     accessorKey: "id",
     header: "Category ID",
+    meta: { cellClassName: "text-white font-medium" },
   },
   {
     accessorKey: "name",
     header: "Category Name",
+    meta: { cellClassName: "text-white" },
   },
   {
     accessorKey: "status",
     header: "Status",
-    cell: ({ row }) => (
-      <StatusBadge status={row.original.status} />
-    ),
+    cell: ({ row }) => <StatusBadge status={row.original.status} />,
   },
   {
     accessorKey: "subCategory",
-    header: "No. Of Sub Category",
+    header: "No. of Sub Category",
+    meta: { cellClassName: "text-[#CCCCCC]" },
   },
   {
     accessorKey: "venues",
     header: "No. Of Venues",
+    meta: { cellClassName: "text-[#CCCCCC]" },
   },
   {
     accessorKey: "revenue",
     header: "Revenue Generated",
-  },
-  {
-    id: "view",
-    header: "",
-    cell: ({ row }) => (
-      <VenueViewCategoryButton id={row.original.id} />
-    ),
+    meta: { cellClassName: "text-white font-medium" },
   },
   {
     id: "actions",
     header: "Actions",
+    meta: { headerClassName: "text-right", cellClassName: "text-right" },
     cell: ({ row }) => (
-      <VenueCategoryActionsDropdown
-        category={row.original as any}
-      />
+      <div className="flex items-center justify-end gap-2">
+        <VenueViewCategoryButton id={row.original.id} />
+        <VenueCategoryActionsDropdown category={row.original} />
+      </div>
     ),
   },
 ];

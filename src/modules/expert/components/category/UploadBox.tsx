@@ -1,62 +1,54 @@
 import { useRef } from "react";
 import { UploadCloud, X } from "lucide-react";
 
+import InfoTooltip from "./InfoTooltip";
+import { categoryFormTheme } from "./category-form.theme";
+
 interface UploadBoxProps {
   preview?: string;
   onChange: (file: File | null) => void;
   label?: string;
   helperText?: string;
-  showPreview?: boolean;
+  placeholderText?: string;
+  variant?: "default" | "compact";
   disabled?: boolean;
 }
 
 const UploadBox = ({
   label,
   helperText,
+  placeholderText = "Upload here",
   preview,
   onChange,
+  variant = "default",
   disabled = false,
 }: UploadBoxProps) => {
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const handleFile = (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
+  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-
     if (!file) return;
-
     onChange(file);
   };
 
-  const handleRemove = (
-    e: React.MouseEvent<HTMLButtonElement>
-  ) => {
+  const handleRemove = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
-
     if (inputRef.current) {
       inputRef.current.value = "";
     }
-
     onChange(null);
   };
 
+  const isCompact = variant === "compact";
 
   return (
     <div className="space-y-2">
-      {label && (
-        <div className="flex items-center gap-2">
-          <label className="text-xs font-medium text-white">
-            {label}
-          </label>
-
-          {helperText && (
-            <span className="rounded bg-[#F2F2F2] px-2 py-1 text-[9px] text-black shadow">
-              {helperText}
-            </span>
-          )}
+      {label ? (
+        <div className="flex items-center gap-1.5">
+          <label className="text-xs font-medium text-white">{label}</label>
+          {helperText ? <InfoTooltip text={helperText} /> : null}
         </div>
-      )}
+      ) : null}
 
       <input
         ref={inputRef}
@@ -73,43 +65,48 @@ const UploadBox = ({
             inputRef.current?.click();
           }
         }}
-        className={`relative flex h-14 w-full items-center justify-center overflow-hidden rounded-lg border border-dashed bg-[#090909] transition-colors ${disabled
-          ? "cursor-not-allowed opacity-60"
-          : "cursor-pointer"
-          } ${preview
-            ? "border-[#16C15D]"
-            : "border-[#444] hover:border-[#F5C16C]"
-          }`}
+        className={`relative flex w-full items-center justify-center overflow-hidden rounded-lg border border-dashed transition-colors ${
+          isCompact ? "h-11" : "h-[72px]"
+        } ${
+          disabled
+            ? "cursor-not-allowed opacity-60"
+            : "cursor-pointer hover:border-[#FFC16B]"
+        } ${preview ? "border-[#FFC16B]/60" : "border-[#333333]"}`}
+        style={{ backgroundColor: categoryFormTheme.uploadBg }}
       >
         {preview ? (
           <>
-            <div className="h-full w-full overflow-hidden rounded-md">
-              <img
-                src={preview}
-                alt="preview"
-                className="h-full w-full rounded-md object-cover"
-              />
-            </div>
+            <img
+              src={preview}
+              alt="preview"
+              className="h-full w-full object-cover"
+            />
 
-            {!disabled && (
+            {!disabled ? (
               <button
                 type="button"
                 onClick={handleRemove}
-                className="absolute right-2 top-2 z-50 flex h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-white shadow-lg"
+                className="absolute right-1.5 top-1.5 z-10 grid size-6 place-items-center rounded-full bg-white shadow-md"
               >
-                <X
-                  size={18}
-                  strokeWidth={3}
-                  className="text-red-600"
-                />
+                <X size={14} strokeWidth={3} className="text-red-600" />
               </button>
-            )}
+            ) : null}
           </>
         ) : (
-          <UploadCloud
-            size={18}
-            className="text-[#8B8B8B]"
-          />
+          <div
+            className={`flex items-center justify-center gap-2 text-[#888888] ${
+              isCompact ? "px-2" : "flex-col gap-1"
+            }`}
+          >
+            <UploadCloud
+              size={isCompact ? 16 : 18}
+              className="shrink-0"
+              aria-hidden="true"
+            />
+            {!isCompact ? (
+              <span className="text-[11px]">{placeholderText}</span>
+            ) : null}
+          </div>
         )}
       </div>
     </div>

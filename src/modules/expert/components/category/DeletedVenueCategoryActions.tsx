@@ -1,8 +1,6 @@
 import { useState } from "react";
-import {
-  Eye,
-  RotateCcw,
-} from "lucide-react";
+import { Eye, RotateCcw, Trash2 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 import {
   TableActionsDropdown,
@@ -10,31 +8,32 @@ import {
 } from "@/shared/components/table/table-actions-dropdown";
 
 import { useVenueCategoryStore } from "../../store/venue-category-store";
-import type { DeletedVenueCategory } from "./DeletedVenueCategoryColumns";
+import type { VenueCategory } from "./venue-category-table-columns";
 
 interface Props {
-  category: DeletedVenueCategory;
+  category: VenueCategory;
 }
 
-const DeletedVenueCategoryActions = ({
-  category,
-}: Props) => {
+const DeletedVenueCategoryActions = ({ category }: Props) => {
   const [open, setOpen] = useState(false);
+  const navigate = useNavigate();
 
-  const revokeCategory = useVenueCategoryStore(
-    (state) => state.revokeCategory
-  );
+  const revokeCategory = useVenueCategoryStore((state) => state.revokeCategory);
+  const removeCategory = useVenueCategoryStore((state) => state.removeCategory);
 
   return (
     <TableActionsDropdown
       label="Category Actions"
       isOpen={open}
       onOpenChange={setOpen}
+      tone="light"
+      menuWidth={210}
     >
       <TableActionsItem
-        icon={<Eye size={14} />}
+        tone="light"
+        icon={<Eye className="size-4 text-slate-700" />}
         onClick={() => {
-          console.log("View", category.id);
+          navigate(`/venues/categories/management/view/${category.id}`);
           setOpen(false);
         }}
       >
@@ -42,7 +41,8 @@ const DeletedVenueCategoryActions = ({
       </TableActionsItem>
 
       <TableActionsItem
-        icon={<RotateCcw size={14} />}
+        tone="light"
+        icon={<RotateCcw className="size-4 text-slate-700" />}
         onClick={() => {
           revokeCategory(category.id);
           setOpen(false);
@@ -51,7 +51,17 @@ const DeletedVenueCategoryActions = ({
         Revoke Category
       </TableActionsItem>
 
-      
+      <TableActionsItem
+        tone="light"
+        icon={<Trash2 className="size-4 text-red-500" />}
+        className="text-red-500 hover:bg-red-50 hover:text-red-600"
+        onClick={() => {
+          removeCategory(category.id);
+          setOpen(false);
+        }}
+      >
+        <span className="text-red-500">Delete Category</span>
+      </TableActionsItem>
     </TableActionsDropdown>
   );
 };
