@@ -1,0 +1,38 @@
+================================================================================
+JOMS FRONTEND - PRODUCTION ENV
+Frontend Host: http://3.108.162.112
+Backend Host:  http://52.66.76.145
+================================================================================
+
+--------------------------------------------------------------------------------
+.env.production (used automatically on: npm run build / Docker build)
+--------------------------------------------------------------------------------
+VITE_API_BASE_URL=http://52.66.76.145
+
+--------------------------------------------------------------------------------
+Resolved API URLs (auto from VITE_API_BASE_URL + port)
+--------------------------------------------------------------------------------
+VITE_AUTH_API_BASE_URL       -> http://52.66.76.145:8000
+VITE_ADMIN_API_BASE_URL      -> http://52.66.76.145:8001
+VITE_KYC_API_BASE_URL        -> http://52.66.76.145:8003
+VITE_SERVICE_API_BASE_URL    -> http://52.66.76.145:8004
+VITE_VENUE_API_BASE_URL      -> http://52.66.76.145:8005
+VITE_MEMBERSHIP_API_BASE_URL -> http://52.66.76.145:8006
+
+--------------------------------------------------------------------------------
+Local development (.env)
+--------------------------------------------------------------------------------
+VITE_API_BASE_URL=http://localhost
+
+================================================================================
+COMMANDS
+================================================================================
+Switch local:       npm run env:local
+Switch production:  npm run env:production
+Toggle:             npm run env:flip
+
+Rebuild on EC2 after deploy:
+  cd ~/Joms-Frontend
+  docker build -t joms-frontend .
+  docker stop joms-frontend && docker rm joms-frontend
+  docker run -d --name joms-frontend --restart unless-stopped -p 80:80 joms-frontend

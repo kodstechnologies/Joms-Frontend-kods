@@ -1,11 +1,21 @@
-const getEnv = (key: string, fallback = '') =>
-  (import.meta.env as Record<string, string | undefined>)[key] ?? fallback
+const trimTrailingSlash = (value: string) => value.replace(/\/+$/, '')
+
+const DEFAULT_API_BASE_URL = import.meta.env.PROD
+  ? 'http://52.66.76.145'
+  : 'http://localhost'
+
+const apiBaseUrl = trimTrailingSlash(
+  import.meta.env.VITE_API_BASE_URL || DEFAULT_API_BASE_URL,
+)
+
+const resolveApiUrl = (override: string | undefined, port: number) =>
+  override ? trimTrailingSlash(override) : `${apiBaseUrl}:${port}`
 
 export const env = {
-  authApiBaseUrl: getEnv('VITE_AUTH_API_BASE_URL', 'http://localhost:8001'),
-  serviceApiBaseUrl: getEnv('VITE_SERVICE_API_BASE_URL', 'http://localhost:8004'),
-  adminApiBaseUrl: getEnv('VITE_ADMIN_API_BASE_URL', 'http://localhost:8001'),
-  venueApiBaseUrl: getEnv('VITE_VENUE_API_BASE_URL', 'http://localhost:8005'),
-  kycApiBaseUrl: getEnv('VITE_KYC_API_BASE_URL', 'http://localhost:8003'),
-  membershipApiBaseUrl: getEnv('VITE_MEMBERSHIP_API_BASE_URL', 'http://localhost:8006'),
+  authApiBaseUrl: resolveApiUrl(import.meta.env.VITE_AUTH_API_BASE_URL, 8000),
+  adminApiBaseUrl: resolveApiUrl(import.meta.env.VITE_ADMIN_API_BASE_URL, 8001),
+  serviceApiBaseUrl: resolveApiUrl(import.meta.env.VITE_SERVICE_API_BASE_URL, 8004),
+  venueApiBaseUrl: resolveApiUrl(import.meta.env.VITE_VENUE_API_BASE_URL, 8005),
+  kycApiBaseUrl: resolveApiUrl(import.meta.env.VITE_KYC_API_BASE_URL, 8003),
+  membershipApiBaseUrl: resolveApiUrl(import.meta.env.VITE_MEMBERSHIP_API_BASE_URL, 8006),
 }
