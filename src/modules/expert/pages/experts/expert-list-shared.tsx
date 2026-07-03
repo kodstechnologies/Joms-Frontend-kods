@@ -13,6 +13,11 @@ export const displayExpertValue = (value: unknown): string => {
   return String(value)
 }
 
+export const formatListingExpertId = (id?: string | null) => {
+  if (!id?.trim()) return 'N/A'
+  return `EXP-${id.slice(-4).toUpperCase()}`
+}
+
 export const formatExpertDateTime = (value?: string | null) => {
   if (!value) return 'N/A'
   const date = new Date(value)

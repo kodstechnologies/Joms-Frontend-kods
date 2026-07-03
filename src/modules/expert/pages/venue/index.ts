@@ -5,6 +5,7 @@ export * from "./create-venue-onboarding-page";
 export * from "./venue-management-page";
 export * from "./pending-approvals-page";
 export * from "./suspended-venues-page";
+export * from "./deleted-venues-page";
 export { ApplicationDetailsPage } from "./application-details-page.tsx";
 export * from "./venue-profile-view-page";
 export * from "./space-details-page";

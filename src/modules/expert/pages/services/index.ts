@@ -3,6 +3,7 @@ export * from './service-marketplace-page'
 export * from './service-metrics-page'
 export * from './pending-approvals-page'
 export * from './suspended-services-page'
+export * from './deleted-services-page'
 export * from './service-view-page'
 export * from './create-service-listing-page'
 export * from "./category-management-page";

@@ -7,12 +7,15 @@ import {
   updateConsultationStatus,
   suspendService,
   activateService,
+  deleteService,
+  restoreService,
 } from '../api/service-api'
 import type {
   SuspendServicePayload,
   UpdateConsultationStatusPayload,
   UpdateServiceStatusPayload,
 } from '../type/service'
+import type { DeleteServicePayload } from '../api/service-api'
 
 export const useServices = (params?: {
   page?: number
@@ -20,9 +23,12 @@ export const useServices = (params?: {
   status?: string
   search?: string
 }) => {
+  const isDeletedList = params?.status === 'deleted'
+
   return useQuery({
-    queryKey: ['services', params],
+    queryKey: isDeletedList ? ['services', 'deleted', params] : ['services', params],
     queryFn: () => fetchServices(params),
+    refetchOnMount: isDeletedList ? 'always' : true,
   })
 }
 
@@ -72,6 +78,29 @@ export const useActivateService = () => {
 
   return useMutation({
     mutationFn: (id: string) => activateService(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['services'] })
+    },
+  })
+}
+
+export const useDeleteService = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ id, payload }: { id: string; payload: DeleteServicePayload }) =>
+      deleteService(id, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['services'] })
+    },
+  })
+}
+
+export const useRestoreService = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (id: string) => restoreService(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['services'] })
     },
