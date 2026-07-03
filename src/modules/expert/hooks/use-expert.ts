@@ -3,6 +3,7 @@ import {
   deactivateExpert,
   fetchExperts,
   fetchExpertById,
+  restoreExpert,
   suspendExpert,
   type DeactivateExpertPayload,
   type SuspendExpertPayload,
@@ -15,9 +16,13 @@ export const useExperts = (params?: {
   status?: string
   serviceType?: string
 }) => {
+  const isDeletedList =
+    params?.status === 'deactivated' || params?.status === 'deleted'
+
   return useQuery({
-    queryKey: ['experts', params],
+    queryKey: isDeletedList ? ['experts', 'deleted', params] : ['experts', params],
     queryFn: () => fetchExperts(params),
+    refetchOnMount: isDeletedList ? 'always' : true,
   })
 }
 
@@ -47,6 +52,17 @@ export const useDeactivateExpert = () => {
   return useMutation({
     mutationFn: ({ id, payload }: { id: string; payload: DeactivateExpertPayload }) =>
       deactivateExpert(id, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['experts'] })
+    },
+  })
+}
+
+export const useRestoreExpert = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (id: string) => restoreExpert(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['experts'] })
     },

@@ -29,6 +29,8 @@ export interface Venue {
   updatedAt?: string
   city?: string
   weekdayPrice?: number
+  reason?: string | null
+  deletedAt?: string | null
 }
 
 export interface VenueMeta {

@@ -19,6 +19,7 @@ import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
 import { useDeactivateExpert, useExperts, useSuspendExpert } from '../../hooks/use-expert'
+import { ADMIN_DELETE_REASON_OPTIONS } from '../../constants/soft-delete'
 import { useExpertStore } from '../../store/expert-store'
 import type { Expert } from '../../type/expert'
 import { DataTable } from '@/shared/components/table/data-table'
@@ -62,6 +63,7 @@ export const ExpertManagementPage = () => {
     const [suspendIndefinitely, setSuspendIndefinitely] = useState(false)
     const [suspendReasonDetails, setSuspendReasonDetails] = useState('')
     const [suspendAdminNotes, setSuspendAdminNotes] = useState('')
+    const [deleteReasons, setDeleteReasons] = useState<string[]>([])
     const [deleteReason, setDeleteReason] = useState('')
     const [deleteAdminNotes, setDeleteAdminNotes] = useState('')
     const navigate = useNavigate()
@@ -133,12 +135,22 @@ export const ExpertManagementPage = () => {
 
     const openDeleteModal = useCallback((expert: Expert) => {
         setDeleteExpertTarget(expert)
+        setDeleteReasons([])
         setDeleteReason('')
         setDeleteAdminNotes('')
     }, [])
 
     const closeDeleteModal = useCallback(() => {
         setDeleteExpertTarget(null)
+        setDeleteReasons([])
+    }, [])
+
+    const toggleDeleteReason = useCallback((value: string) => {
+        setDeleteReasons((current) =>
+            current.includes(value)
+                ? current.filter((reason) => reason !== value)
+                : [...current, value],
+        )
     }, [])
 
     const toggleSuspendReason = useCallback((value: string) => {
@@ -210,6 +222,11 @@ export const ExpertManagementPage = () => {
     const handleDeleteSubmit = useCallback(() => {
         if (!deleteExpertTarget) return
 
+        if (deleteReasons.length === 0) {
+            toast.error('Please select at least one reason.')
+            return
+        }
+
         if (!deleteAdminNotes.trim()) {
             toast.error('Admin notes are required.')
             return
@@ -219,7 +236,8 @@ export const ExpertManagementPage = () => {
             {
                 id: deleteExpertTarget.id,
                 payload: {
-                    reason: deleteReason.trim(),
+                    selectedReasons: deleteReasons,
+                    reasonDetails: deleteReason.trim(),
                     adminNotes: deleteAdminNotes.trim(),
                 },
             },
@@ -242,6 +260,7 @@ export const ExpertManagementPage = () => {
         deleteAdminNotes,
         deleteExpertTarget,
         deleteReason,
+        deleteReasons,
     ])
 
     const columns = useMemo<ColumnDef<Expert>[]>(
@@ -664,8 +683,11 @@ export const ExpertManagementPage = () => {
                 open={Boolean(deleteExpertTarget)}
                 variant="reject"
                 title="Delete Expert"
-                description="Are you sure you want to delete this expert? This action will deactivate their account and move them to deleted experts."
-                submitLabel="Delete"
+                description="Are you sure you want to delete this user? This will result in removal of the account after 21 days unless restored."
+                submitLabel="Delete Expert"
+                reasonOptions={ADMIN_DELETE_REASON_OPTIONS}
+                selectedReasons={deleteReasons}
+                onReasonToggle={toggleDeleteReason}
                 reason={deleteReason}
                 onReasonChange={setDeleteReason}
                 adminNotes={deleteAdminNotes}

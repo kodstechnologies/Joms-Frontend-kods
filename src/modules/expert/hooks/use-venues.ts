@@ -5,7 +5,10 @@ import {
   fetchVenueFullView,
   suspendVenue,
   activateVenue,
+  deleteVenue,
+  restoreVenue,
   type SuspendVenuePayload,
+  type DeleteVenuePayload,
 } from '../api/venue-api.ts'
 import type { VenueStatus } from '../type/venue'
 
@@ -15,9 +18,12 @@ export const useVenues = (params?: {
   status?: VenueStatus | 'reported'
   search?: string
 }) => {
+  const isDeletedList = params?.status === 'deleted'
+
   return useQuery({
-    queryKey: ['venues', params],
+    queryKey: isDeletedList ? ['venues', 'deleted', params] : ['venues', params],
     queryFn: () => fetchVenues(params),
+    refetchOnMount: isDeletedList ? 'always' : true,
   })
 }
 
@@ -59,6 +65,34 @@ export const useActivateVenue = () => {
 
   return useMutation({
     mutationFn: (venueId: string) => activateVenue(venueId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['venues'] })
+    },
+  })
+}
+
+export const useDeleteVenue = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({
+      venueId,
+      payload,
+    }: {
+      venueId: string
+      payload: DeleteVenuePayload
+    }) => deleteVenue(venueId, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['venues'] })
+    },
+  })
+}
+
+export const useRestoreVenue = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (venueId: string) => restoreVenue(venueId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['venues'] })
     },

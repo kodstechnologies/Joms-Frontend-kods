@@ -17,6 +17,7 @@ import {
   useUpdateExpertBankingStatus,
   useUpdateExpertKycStatus,
 } from '../../hooks/use-expert-application-view'
+import { formatListingExpertId } from './expert-list-shared'
 import type {
   ApplicationStatus,
   ConciergeRejectionReason,
@@ -172,8 +173,16 @@ export function ExpertApplicationViewPage() {
   const updateKyc = useUpdateExpertKycStatus(application?.kyc?._id)
   const updateBanking = useUpdateExpertBankingStatus(application?.banking?._id)
 
-  const currentStatus =
-    modalTarget === 'banking' ? application?.banking?.status : application?.kyc?.status
+  const decisionTargetForTab: DecisionTarget =
+    activeTab === 'banking' ? 'banking' : 'kyc'
+
+  const activeDecisionStatus =
+    decisionTargetForTab === 'banking'
+      ? application?.banking?.status
+      : application?.kyc?.status
+
+  const activeMutation = decisionTargetForTab === 'banking' ? updateBanking : updateKyc
+
   const mutation = modalTarget === 'banking' ? updateBanking : updateKyc
 
   const openDecisionModal = (target: DecisionTarget, variant: DecisionVariant) => {
@@ -227,7 +236,8 @@ export function ExpertApplicationViewPage() {
     })
   }
 
-  const decisionDisabled = currentStatus !== 'PENDING' || mutation.isPending
+  const decisionDisabled =
+    activeDecisionStatus !== 'PENDING' || activeMutation.isPending
 
   const modalTitle = useMemo(() => {
     const target = modalTarget === 'banking' ? 'Banking' : 'KYC'
@@ -322,15 +332,23 @@ export function ExpertApplicationViewPage() {
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <StatusPill status={kyc?.status} />
-            <StatusPill status={banking?.status} />
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-medium uppercase tracking-wide text-[#666]">KYC</span>
+              <StatusPill status={kyc?.status} />
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-medium uppercase tracking-wide text-[#666]">Banking</span>
+              <StatusPill status={banking?.status} />
+            </div>
           </div>
         </div>
 
         <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-3">
           <div className="rounded-lg border border-white/5 bg-black p-4">
             <p className="text-[11px] text-[#777]">Expert ID</p>
-            <p className="mt-1 text-[13px] font-semibold text-white">{displayValue(application.expert?._id)}</p>
+            <p className="mt-1 font-mono text-[13px] font-semibold text-white">
+              {formatListingExpertId(application.expert?._id || id)}
+            </p>
           </div>
           <div className="rounded-lg border border-white/5 bg-black p-4">
             <p className="text-[11px] text-[#777]">Submitted</p>
@@ -377,7 +395,13 @@ export function ExpertApplicationViewPage() {
         </div>
       )}
 
-      {activeTab === 'kyc' && (
+      {activeTab === 'kyc' && !kyc && (
+        <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-[13px] text-amber-200">
+          KYC is not submitted by partner
+        </div>
+      )}
+
+      {activeTab === 'kyc' && kyc && (
         <div className="space-y-5">
           <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
             <SectionCard title="KYC Details" icon={<ClipboardList className="size-4 text-[#FBC078]" />}>
@@ -463,16 +487,23 @@ export function ExpertApplicationViewPage() {
         </SectionCard>
 
         <SectionCard title="Decision Controls" icon={<ShieldCheck className="size-4 text-[#FBC078]" />}>
-          {currentStatus !== 'PENDING' && (
+          <p className="mb-3 text-[11px] font-medium text-[#888]">
+            Reviewing:{' '}
+            <span className="text-white">
+              {decisionTargetForTab === 'banking' ? 'Banking Details' : 'KYC Details'}
+            </span>
+          </p>
+          {activeDecisionStatus !== 'PENDING' && (
             <p className="mb-4 rounded-md border border-white/5 bg-black px-3 py-2 text-[11px] font-medium text-[#999]">
-              This section is already {String(currentStatus).toLowerCase()}.
+              {decisionTargetForTab === 'banking' ? 'Banking' : 'KYC'} is already{' '}
+              {String(activeDecisionStatus).toLowerCase()}.
             </p>
           )}
           <div className="flex flex-wrap gap-3">
             <button
               type="button"
               disabled={decisionDisabled}
-              onClick={() => openDecisionModal(activeTab === 'banking' ? 'banking' : 'kyc', 'approve')}
+              onClick={() => openDecisionModal(decisionTargetForTab, 'approve')}
               className="rounded-md bg-[#00B761] px-4 py-2.5 text-[11px] font-bold text-white disabled:cursor-not-allowed disabled:opacity-50"
             >
               Approve
@@ -494,7 +525,7 @@ export function ExpertApplicationViewPage() {
             <button
               type="button"
               disabled={decisionDisabled}
-              onClick={() => openDecisionModal(activeTab === 'banking' ? 'banking' : 'kyc', 'reject')}
+              onClick={() => openDecisionModal(decisionTargetForTab, 'reject')}
               className="rounded-md bg-[#F02D2D] px-4 py-2.5 text-[11px] font-bold text-white disabled:cursor-not-allowed disabled:opacity-50"
             >
               Reject Application

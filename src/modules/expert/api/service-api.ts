@@ -43,6 +43,27 @@ export const suspendService = async (id: string, payload: SuspendServicePayload)
   return response.data
 }
 
+export type DeleteServicePayload = {
+  selectedReasons: string[]
+  reasonDetails?: string
+  adminNotes: string
+}
+
+export const deleteService = async (id: string, payload: DeleteServicePayload) => {
+  const response = await expertApiClient.patch(
+    `/services/internal/admin/services/${id}/delete`,
+    payload,
+  )
+  return response.data
+}
+
+export const restoreService = async (id: string) => {
+  const response = await expertApiClient.patch(
+    `/services/internal/admin/services/${id}/restore`,
+  )
+  return response.data
+}
+
 export const activateService = async (id: string) => {
   const response = await expertApiClient.patch<ServiceSuspendActivateResponse>(
     `/services/internal/admin/services/${id}/activate`,

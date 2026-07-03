@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useMemo } from 'react'
 import {
   Briefcase,
   MessageCircle,
@@ -26,6 +26,7 @@ import {
   useUpdateServiceGallery,
   useUpdateServicePricing,
 } from '@/modules/expert/hooks/use-create-listing'
+import { useExpertProfile } from '@/modules/expert/hooks/use-expert-profile'
 import {
   CONSULTATION_MODES,
   DURATION_OPTIONS,
@@ -82,6 +83,11 @@ export const CreateServiceListingPage = () => {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const partnerId = searchParams.get('partnerId') || ''
+  const { data: expertProfileResponse } = useExpertProfile(partnerId || undefined)
+  const expertName =
+    expertProfileResponse?.data?.basicProfile?.fullname ||
+    expertProfileResponse?.data?.fullname ||
+    'Expert'
   const [currentStep, setCurrentStep] = useState(1)
   const [selectedType, setSelectedType] = useState<'service' | 'consultation' | null>('service')
   const [listingId, setListingId] = useState<string | null>(null)
@@ -925,12 +931,15 @@ export const CreateServiceListingPage = () => {
     )
   }
 
-  const breadcrumbs = [
-    { label: 'Expert management' },
-    { label: 'Manage Experts' },
-    { label: 'Sarah Johnson' },
-    { label: 'Create Listing', isActive: true },
-  ]
+  const breadcrumbs = useMemo(
+    () => [
+      { label: 'Expert management' },
+      { label: 'Manage Experts' },
+      { label: expertName },
+      { label: 'Create Listing', isActive: true },
+    ],
+    [expertName],
+  )
 
   const primaryActionLabel =
     currentStep === 1 ? (

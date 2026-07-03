@@ -20,7 +20,8 @@ import {
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
-import { useServices, useSuspendService } from '../../hooks/use-services'
+import { useServices, useSuspendService, useDeleteService } from '../../hooks/use-services'
+import { ADMIN_DELETE_REASON_OPTIONS } from '../../constants/soft-delete'
 import { useServiceStore } from '../../store/service-store'
 import type { Service } from '../../type/service'
 import { DataTable } from '@/shared/components/table/data-table'
@@ -65,7 +66,13 @@ export const ServiceManagementPage = () => {
   const [suspendReasonDetails, setSuspendReasonDetails] = useState('')
   const [suspendAdminNotes, setSuspendAdminNotes] = useState('')
 
+  const [deleteServiceTarget, setDeleteServiceTarget] = useState<Service | null>(null)
+  const [deleteReasons, setDeleteReasons] = useState<string[]>([])
+  const [deleteReasonDetails, setDeleteReasonDetails] = useState('')
+  const [deleteAdminNotes, setDeleteAdminNotes] = useState('')
+
   const suspendServiceMutation = useSuspendService()
+  const deleteServiceMutation = useDeleteService()
 
   const navigate = useNavigate()
   const {
@@ -129,6 +136,66 @@ export const ServiceManagementPage = () => {
   const closeSuspendModal = useCallback(() => {
     setSuspendServiceTarget(null)
   }, [])
+
+  const openDeleteModal = useCallback((service: Service) => {
+    setDeleteServiceTarget(service)
+    setDeleteReasons([])
+    setDeleteReasonDetails('')
+    setDeleteAdminNotes('')
+  }, [])
+
+  const closeDeleteModal = useCallback(() => {
+    setDeleteServiceTarget(null)
+    setDeleteReasons([])
+  }, [])
+
+  const toggleDeleteReason = useCallback((value: string) => {
+    setDeleteReasons((current) =>
+      current.includes(value) ? current.filter((reason) => reason !== value) : [...current, value],
+    )
+  }, [])
+
+  const handleDeleteSubmit = useCallback(() => {
+    if (!deleteServiceTarget) return
+
+    if (deleteReasons.length === 0) {
+      toast.error('Please select at least one reason.')
+      return
+    }
+
+    if (!deleteAdminNotes.trim()) {
+      toast.error('Admin notes are required.')
+      return
+    }
+
+    deleteServiceMutation.mutate(
+      {
+        id: deleteServiceTarget._id,
+        payload: {
+          selectedReasons: deleteReasons,
+          reasonDetails: deleteReasonDetails.trim(),
+          adminNotes: deleteAdminNotes.trim(),
+        },
+      },
+      {
+        onSuccess: () => {
+          toast.success('Service deleted successfully')
+          closeDeleteModal()
+        },
+        onError: (error: unknown) => {
+          const err = error as { response?: { data?: { message?: string } } }
+          toast.error(err?.response?.data?.message || 'Failed to delete service.')
+        },
+      },
+    )
+  }, [
+    closeDeleteModal,
+    deleteAdminNotes,
+    deleteReasonDetails,
+    deleteReasons,
+    deleteServiceMutation,
+    deleteServiceTarget,
+  ])
 
   const toggleSuspendReason = useCallback((value: string) => {
     setSuspendReasons((current) =>
@@ -360,6 +427,15 @@ export const ServiceManagementPage = () => {
               >
                 Suspend Service
               </TableActionsItem>
+              <TableActionsItem
+                icon={<Trash2 className="size-3.5" aria-hidden="true" />}
+                onClick={() => {
+                  setActiveDropdownId(null)
+                  openDeleteModal(service)
+                }}
+              >
+                Delete Service
+              </TableActionsItem>
             </TableActionsDropdown>
           )
         },
@@ -369,6 +445,7 @@ export const ServiceManagementPage = () => {
       activeDropdownId,
       allVisibleServicesSelected,
       navigate,
+      openDeleteModal,
       openSuspendModal,
       selectedServiceIds,
       someVisibleServicesSelected,
@@ -452,7 +529,11 @@ export const ServiceManagementPage = () => {
             key={card.label}
             type="button"
             onClick={() => {
-              if (card.status === 'reported' || card.status === 'deleted') {
+              if (card.status === 'reported') {
+                return
+              }
+              if (card.status === 'deleted') {
+                navigate('/services/management/deleted')
                 return
               }
               if (card.status === 'pending') {
@@ -553,6 +634,24 @@ export const ServiceManagementPage = () => {
         onClose={closeSuspendModal}
         onSubmit={handleSuspendSubmit}
         isSubmitting={suspendServiceMutation.isPending}
+      />
+
+      <DecisionActionModal
+        open={Boolean(deleteServiceTarget)}
+        variant="reject"
+        title="Delete Service"
+        description="Are you sure you want to delete this service? It will be permanently removed after 21 days unless restored."
+        submitLabel="Delete Service"
+        reasonOptions={ADMIN_DELETE_REASON_OPTIONS}
+        selectedReasons={deleteReasons}
+        onReasonToggle={toggleDeleteReason}
+        reason={deleteReasonDetails}
+        onReasonChange={setDeleteReasonDetails}
+        adminNotes={deleteAdminNotes}
+        onAdminNotesChange={setDeleteAdminNotes}
+        onClose={closeDeleteModal}
+        onSubmit={handleDeleteSubmit}
+        isSubmitting={deleteServiceMutation.isPending}
       />
     </div>
   )

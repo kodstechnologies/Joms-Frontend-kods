@@ -54,6 +54,27 @@ export const suspendVenue = async (
   return response.data
 }
 
+export type DeleteVenuePayload = {
+  selectedReasons: string[]
+  reasonDetails?: string
+  adminNotes: string
+}
+
+export const deleteVenue = async (venueId: string, payload: DeleteVenuePayload) => {
+  const response = await venueApiClient.patch(
+    `/venues/admin/delete/${venueId}`,
+    payload,
+  )
+  return response.data
+}
+
+export const restoreVenue = async (venueId: string) => {
+  const response = await venueApiClient.patch(
+    `/venues/admin/restore/${venueId}`,
+  )
+  return response.data
+}
+
 export const activateVenue = async (venueId: string) => {
   const response = await venueApiClient.patch(
     `/venues/admin/activate/${venueId}`,
