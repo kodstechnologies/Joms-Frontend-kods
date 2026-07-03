@@ -151,6 +151,31 @@ const ReferralManagementPage = lazy(() =>
     default: m.ReferralManagementPage,
   })),
 )
+const SupportDashboardPage = lazy(() =>
+  import('@/modules/support-management').then((m) => ({
+    default: m.SupportDashboardPage,
+  })),
+)
+const TicketManagementPage = lazy(() =>
+  import('@/modules/support-management').then((m) => ({
+    default: m.TicketManagementPage,
+  })),
+)
+const SupportWorkspacePage = lazy(() =>
+  import('@/modules/support-management').then((m) => ({
+    default: m.SupportWorkspacePage,
+  })),
+)
+const PastTicketsPage = lazy(() =>
+  import('@/modules/support-management').then((m) => ({
+    default: m.PastTicketsPage,
+  })),
+)
+const TicketDetailPage = lazy(() =>
+  import('@/modules/support-management').then((m) => ({
+    default: m.TicketDetailPage,
+  })),
+)
 const MembershipPlansPage = lazy(() =>
   import('@/modules/memberships').then((m) => ({
     default: m.MembershipPlansPage,
@@ -370,6 +395,11 @@ export function AppRouter() {
                 <Route path="/experts/reported" element={<ExpertReportedExpertsPage />} />
                 <Route path="/experts/pending-approvals" element={<ExpertPendingApprovalsPage />} />
                 <Route path="/referrals/management" element={<ReferralManagementPage />} />
+                <Route path="/support/dashboard" element={<SupportDashboardPage />} />
+                <Route path="/support/tickets" element={<TicketManagementPage />} />
+                <Route path="/support/tickets/:id" element={<TicketDetailPage />} />
+                <Route path="/support/workspace" element={<SupportWorkspacePage />} />
+                <Route path="/support/past-tickets/:userId" element={<PastTicketsPage />} />
                 <Route path="/memberships/plans" element={<MembershipPlansPage />} />
                 <Route path="/memberships/plans/create" element={<MembershipPlanFormPage />} />
                 <Route path="/memberships/plans/:id/edit" element={<MembershipPlanFormPage />} />
