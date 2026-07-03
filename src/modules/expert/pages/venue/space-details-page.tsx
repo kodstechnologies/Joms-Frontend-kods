@@ -301,7 +301,7 @@ export function SpaceDetailsPage() {
         <button
           type="button"
           onClick={backToProfile}
-          className="group flex w-fit items-center gap-2 text-[20px] font-bold text-white transition-colors hover:text-[#FBC078]"
+          className="group flex w-fit items-center gap-2 font-heading text-[20px] font-bold text-white transition-colors hover:text-[#FBC078]"
         >
           <ArrowLeft className="size-5" />
           <span>Space Details</span>
@@ -349,7 +349,7 @@ export function SpaceDetailsPage() {
           <button
             type="button"
             onClick={backToProfile}
-            className="group flex w-fit items-center gap-2 text-[20px] font-bold tracking-tight text-white transition-colors hover:text-[#FBC078]"
+            className="group flex w-fit items-center gap-2 font-heading text-[20px] font-bold tracking-tight text-white transition-colors hover:text-[#FBC078]"
           >
             <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
             <span>Space Details</span>

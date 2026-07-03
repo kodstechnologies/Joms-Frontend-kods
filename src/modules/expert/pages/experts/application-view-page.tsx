@@ -83,7 +83,21 @@ const formatDateTime = (value?: string | null) => {
   })
 }
 
-function StatusPill({ status }: { status?: ApplicationStatus }) {
+function StatusPill({
+  status,
+  notSubmitted,
+}: {
+  status?: ApplicationStatus
+  notSubmitted?: boolean
+}) {
+  if (notSubmitted) {
+    return (
+      <span className="rounded-md bg-white/5 px-3 py-1.5 text-[11px] font-semibold text-[#888]">
+        Not Submitted
+      </span>
+    )
+  }
+
   const className =
     status === 'APPROVED'
       ? 'bg-emerald-500/15 text-emerald-400'
@@ -176,6 +190,12 @@ export function ExpertApplicationViewPage() {
   const decisionTargetForTab: DecisionTarget =
     activeTab === 'banking' ? 'banking' : 'kyc'
 
+  const isKycSubmitted = Boolean(application?.kyc?._id)
+  const isBankingSubmitted = Boolean(application?.banking?._id)
+
+  const activeSectionSubmitted =
+    decisionTargetForTab === 'banking' ? isBankingSubmitted : isKycSubmitted
+
   const activeDecisionStatus =
     decisionTargetForTab === 'banking'
       ? application?.banking?.status
@@ -237,7 +257,9 @@ export function ExpertApplicationViewPage() {
   }
 
   const decisionDisabled =
-    activeDecisionStatus !== 'PENDING' || activeMutation.isPending
+    !activeSectionSubmitted ||
+    activeDecisionStatus !== 'PENDING' ||
+    activeMutation.isPending
 
   const modalTitle = useMemo(() => {
     const target = modalTarget === 'banking' ? 'Banking' : 'KYC'
@@ -261,7 +283,7 @@ export function ExpertApplicationViewPage() {
         <button
           type="button"
           onClick={() => navigate('/experts/management')}
-          className="group flex w-fit items-center gap-2 text-[20px] font-bold text-white transition-colors hover:text-[#FBC078]"
+          className="group flex w-fit items-center gap-2 font-heading text-[20px] font-bold text-white transition-colors hover:text-[#FBC078]"
         >
           <ArrowLeft className="size-5" />
           <span>Application View</span>
@@ -305,7 +327,7 @@ export function ExpertApplicationViewPage() {
         <button
           type="button"
           onClick={() => navigate('/experts/management')}
-          className="group flex w-fit items-center gap-2 text-[20px] font-bold tracking-tight text-white transition-colors hover:text-[#FBC078]"
+          className="group flex w-fit items-center gap-2 font-heading text-[20px] font-bold tracking-tight text-white transition-colors hover:text-[#FBC078]"
         >
           <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
           <span>Application View</span>
@@ -334,11 +356,11 @@ export function ExpertApplicationViewPage() {
           <div className="flex flex-wrap items-center gap-2">
             <div className="flex items-center gap-2">
               <span className="text-[10px] font-medium uppercase tracking-wide text-[#666]">KYC</span>
-              <StatusPill status={kyc?.status} />
+              <StatusPill status={kyc?.status} notSubmitted={!isKycSubmitted} />
             </div>
             <div className="flex items-center gap-2">
               <span className="text-[10px] font-medium uppercase tracking-wide text-[#666]">Banking</span>
-              <StatusPill status={banking?.status} />
+              <StatusPill status={banking?.status} notSubmitted={!isBankingSubmitted} />
             </div>
           </div>
         </div>
@@ -462,6 +484,12 @@ export function ExpertApplicationViewPage() {
         </div>
       )}
 
+      {activeTab === 'banking' && !banking && (
+        <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-[13px] text-amber-200">
+          Banking details are not submitted by partner
+        </div>
+      )}
+
       {activeTab === 'banking' && (
         <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
           <SectionCard title="Account Information" icon={<Banknote className="size-4 text-[#FBC078]" />}>
@@ -493,7 +521,13 @@ export function ExpertApplicationViewPage() {
               {decisionTargetForTab === 'banking' ? 'Banking Details' : 'KYC Details'}
             </span>
           </p>
-          {activeDecisionStatus !== 'PENDING' && (
+          {!activeSectionSubmitted && (
+            <p className="mb-4 rounded-md border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-[11px] font-medium text-amber-200">
+              {decisionTargetForTab === 'banking' ? 'Banking' : 'KYC'} is not submitted by partner.
+              Approve and reject actions are unavailable until submission.
+            </p>
+          )}
+          {activeSectionSubmitted && activeDecisionStatus !== 'PENDING' && (
             <p className="mb-4 rounded-md border border-white/5 bg-black px-3 py-2 text-[11px] font-medium text-[#999]">
               {decisionTargetForTab === 'banking' ? 'Banking' : 'KYC'} is already{' '}
               {String(activeDecisionStatus).toLowerCase()}.
