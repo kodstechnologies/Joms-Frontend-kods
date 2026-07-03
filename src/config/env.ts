@@ -8,8 +8,13 @@ const apiBaseUrl = trimTrailingSlash(
   import.meta.env.VITE_API_BASE_URL || DEFAULT_API_BASE_URL,
 )
 
-const resolveApiUrl = (override: string | undefined, port: number) =>
-  override ? trimTrailingSlash(override) : `${apiBaseUrl}:${port}`
+// Production uses nginx on port 80 (no :8000, :8001, etc.)
+// Local dev uses direct service ports.
+const resolveApiUrl = (override: string | undefined, port: number) => {
+  if (override) return trimTrailingSlash(override)
+  if (import.meta.env.PROD) return apiBaseUrl
+  return `${apiBaseUrl}:${port}`
+}
 
 export const env = {
   authApiBaseUrl: resolveApiUrl(import.meta.env.VITE_AUTH_API_BASE_URL, 8000),
