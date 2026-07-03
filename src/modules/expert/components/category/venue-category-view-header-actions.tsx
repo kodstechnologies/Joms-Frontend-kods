@@ -1,72 +1,97 @@
-import {
-  Eye,
-  Pencil,
-  Pause,
-  Plus,
-  Trash2,
-} from "lucide-react";
-import { useVenueCategoryStore } from "../../store/venue-category-store";
-import { Button } from "@/shared/components/ui/button";
+import { useState } from "react";
+import { Eye, Pencil, Pause, Plus, Trash2 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
-export const VenueCategoryViewHeaderActions = () => {
 
+import { Button } from "@/shared/components/ui/button";
+
+import { useVenueCategoryStore } from "../../store/venue-category-store";
+import { categoryViewTheme } from "./category-view.theme";
+import { DeleteCategoryModal } from "./delete-category-modal";
+import { PauseCategoryModal } from "./pause-category-modal";
+
+export const VenueCategoryViewHeaderActions = () => {
   const navigate = useNavigate();
   const { id } = useParams();
-  const pauseCategory = useVenueCategoryStore(
-    (state) => state.pauseCategory
-  );
+  const [pauseModalOpen, setPauseModalOpen] = useState(false);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+
+  const pauseCategory = useVenueCategoryStore((state) => state.pauseCategory);
+  const removeCategory = useVenueCategoryStore((state) => state.removeCategory);
+
   return (
-    <div className="mb-6 flex justify-end gap-3">
-      <Button
-        onClick={() =>
-          navigate(`/venues/categories/management/create-subcategory/${id}`)
-        }
-      >
-        <Plus size={16} />
-        Add Sub-Category
-      </Button>
+    <>
+      <div className="flex flex-wrap items-center justify-end gap-3">
+        <Button
+          className={categoryViewTheme.accentButtonClass}
+          onClick={() =>
+            navigate(`/venues/categories/management/create-subcategory/${id}`)
+          }
+        >
+          <Plus className="size-4" aria-hidden="true" />
+          Add Sub-Category
+        </Button>
 
-      <Button
-        variant="secondary"
-        onClick={() =>
-          navigate(`/venues/management`)
-        }
-      >
-        <Eye size={16} />
-        View Venues
-      </Button>
+        <Button
+          variant="secondary"
+          className={categoryViewTheme.outlineButtonClass}
+          onClick={() => navigate("/venues/management")}
+        >
+          <Eye className="size-4" aria-hidden="true" />
+          View Venues
+        </Button>
 
-      <Button
-        variant="secondary"
-        onClick={() =>
-          navigate(`/venues/categories/management/rename/${id}`)
-        }
-      >
-        <Pencil size={16} />
-        Edit Category
-      </Button>
+        <Button
+          variant="secondary"
+          className={categoryViewTheme.outlineButtonClass}
+          onClick={() =>
+            navigate(`/venues/categories/management/rename/${id}`)
+          }
+        >
+          <Pencil className="size-4" aria-hidden="true" />
+          Edit Category
+        </Button>
 
-      <Button
-        variant="secondary"
-        onClick={() => {
+        <Button
+          variant="secondary"
+          className={categoryViewTheme.outlineButtonClass}
+          onClick={() => setPauseModalOpen(true)}
+        >
+          <Pause className="size-4" aria-hidden="true" />
+          Pause
+        </Button>
+
+        <Button
+          className={categoryViewTheme.deleteButtonClass}
+          onClick={() => setDeleteModalOpen(true)}
+        >
+          <Trash2 className="size-4" aria-hidden="true" />
+          Delete
+        </Button>
+      </div>
+
+      <PauseCategoryModal
+        open={pauseModalOpen}
+        onClose={() => setPauseModalOpen(false)}
+        onConfirm={() => {
           if (id) {
             pauseCategory(id);
           }
+          setPauseModalOpen(false);
+          navigate("/venues/categories/management/paused");
         }}
-      >
-        <Pause size={16} />
-        Pause
-      </Button>
+      />
 
-      <Button
-        className="bg-[#EF4444] text-white hover:bg-[#DC2626]"
-        onClick={() =>
-          navigate("/venues/categories/management/deleted")
-        }
-      >
-        <Trash2 size={16} />
-        Delete
-      </Button>
-    </div>
+      <DeleteCategoryModal
+        open={deleteModalOpen}
+        onClose={() => setDeleteModalOpen(false)}
+        onConfirm={() => {
+          if (id) {
+            removeCategory(id);
+          }
+          setDeleteModalOpen(false);
+          navigate("/venues/categories/management/deleted");
+        }}
+      />
+    </>
   );
 };

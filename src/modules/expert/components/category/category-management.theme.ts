@@ -1,0 +1,17 @@
+export const categoryManagementTheme = {
+  pageBg: "#000000",
+  surface: "#181818",
+  surfaceBorder: "#242424",
+  textPrimary: "#FFFFFF",
+  textSecondary: "#888888",
+  textMuted: "#666666",
+  accent: "#FFC16B",
+  accentHover: "#F5C27B",
+  inputBg: "#000000",
+  inputBorder: "#2A2A2A",
+  statusAccepted: "bg-[#112B1F] text-[#2ECC71]",
+  statusPending: "bg-[#2C2117] text-[#E67E22]",
+  statusDeleted: "bg-[#341515] text-[#E74C3C]",
+  pausedBar: "border-[#8B6811]/60 bg-[#3D2E14]",
+  deletedBar: "border-[#6B1A1A] bg-[#341515]",
+} as const;

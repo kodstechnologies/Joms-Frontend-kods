@@ -1,5 +1,7 @@
 import { Hourglass, Trash2 } from "lucide-react";
 
+import { categoryManagementTheme } from "./category/category-management.theme";
+
 type SummaryCardProps = {
   title: string;
   value: string;
@@ -14,29 +16,26 @@ export function SummaryCard({
   onClick,
 }: SummaryCardProps) {
   return (
-    <div
-    onClick={onClick}
-      className={`flex h-11 items-center justify-center rounded-xl border ${
+    <button
+      type="button"
+      onClick={onClick}
+      className={`flex h-11 w-full items-center justify-center gap-2.5 rounded-xl border px-4 transition-opacity hover:opacity-90 ${
         color === "yellow"
-          ? "border-[#E0B43A] bg-[#8B6811]"
-          : "border-[#A71A1A] bg-[#861313]"
+          ? categoryManagementTheme.pausedBar
+          : categoryManagementTheme.deletedBar
       }`}
     >
-      <div className="flex items-center gap-2">
-        {color === "yellow" ? (
-          <Hourglass className="h-4 w-4 text-white" />
-        ) : (
-          <Trash2 className="h-4 w-4 text-white" />
-        )}
+      {color === "yellow" ? (
+        <Hourglass className="size-4 text-white" aria-hidden="true" />
+      ) : (
+        <Trash2 className="size-4 text-white" aria-hidden="true" />
+      )}
 
-        <span className="text-[13px] text-white">
-          {title}
-        </span>
+      <span className="text-[13px] text-white">{title}</span>
 
-        <span className="text-[13px] font-semibold text-white">
-          {value}
-        </span>
-      </div>
-    </div>
+      <span className="text-[13px] font-semibold text-white">
+        {value.padStart(2, "0")}
+      </span>
+    </button>
   );
 }

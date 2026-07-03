@@ -110,7 +110,7 @@ export const useVenueCategoryStore =
                     })),
             }),
             {
-                name: "venue-category-storage",
+                name: "venue-category-storage-v3",
             }
         )
     );

@@ -1,5 +1,7 @@
 import { Plus, Trash2 } from "lucide-react";
+
 import UploadBox from "./UploadBox";
+import { categoryFormTheme } from "./category-form.theme";
 
 export interface SubCategory {
   id: number;
@@ -10,26 +12,14 @@ export interface SubCategory {
 
 interface Props {
   subCategories: SubCategory[];
-
   onAdd: () => void;
-
   onRemove: (id: number) => void;
-
-  onNameChange: (
-    id: number,
-    value: string
-  ) => void;
-
-  onDescriptionChange: (
-    id: number,
-    value: string
-  ) => void;
-
-  onIconChange: (
-    id: number,
-    file: File | null
-  ) => void;
+  onNameChange: (id: number, value: string) => void;
+  onDescriptionChange: (id: number, value: string) => void;
+  onIconChange: (id: number, file: File | null) => void;
 }
+
+const accentButtonClass = `${categoryFormTheme.accentGradient} ${categoryFormTheme.accentGradientHover} text-black transition-all`;
 
 const SubCategoryCard = ({
   subCategories,
@@ -40,113 +30,78 @@ const SubCategoryCard = ({
   onIconChange,
 }: Props) => {
   return (
-    <div className="rounded-xl bg-[#181818] p-6">
-      {/* Header */}
-
-      <div className="flex items-start justify-between">
+    <div
+      className="rounded-xl border border-[#242424] p-6"
+      style={{ backgroundColor: categoryFormTheme.surface }}
+    >
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h2 className="text-sm font-semibold text-white">
-            Sub-Category
-          </h2>
-
-          <p className="mt-1 text-xs text-[#8B8B8B]">
+          <h2 className={categoryFormTheme.sectionTitleClass}>Sub-Category</h2>
+          <p className={`mt-1 ${categoryFormTheme.sectionSubtitleClass}`}>
             Add any sub category under the main category
           </p>
         </div>
 
         <button
           type="button"
-          onClick={() => {
-            console.log("Button clicked");
-            onAdd();
-          }}
-          className="flex h-10 items-center gap-2 rounded-lg bg-[#F5C16C] px-4 text-xs font-semibold text-black transition hover:bg-[#E9B85D]"
+          onClick={onAdd}
+          className={`flex h-10 shrink-0 items-center gap-2 rounded-lg px-4 text-[12px] font-semibold ${accentButtonClass}`}
         >
-          <Plus size={16} />
+          <Plus className="size-4" aria-hidden="true" />
           Add Sub-Category
         </button>
       </div>
 
-      {/* Dynamic Rows */}
-
       <div className="mt-6 space-y-8">
-        {subCategories.map((item) => (
+        {subCategories.map((item, index) => (
           <div
             key={item.id}
-            className="rounded-lg border border-[#2A2A2A] p-5"
+            className={index > 0 ? "border-t border-[#242424] pt-8" : undefined}
           >
-            <div className="mb-5 flex items-start justify-between">
-              <h3 className="text-sm font-medium text-white">
-                Sub-Category
-              </h3>
-
-              {subCategories.length > 1 && (
-                <button
-                  onClick={() => onRemove(item.id)}
-                  className="rounded-md bg-[#F5C16C] p-2 transition hover:bg-[#E9B85D]"
-                >
-                  <Trash2
-                    size={16}
-                    className="text-red-500"
-                  />
-                </button>
-              )}
-            </div>
-
-            <div className="grid grid-cols-[1fr_260px] gap-6">
-              {/* Name */}
-
+            <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1fr_auto] lg:items-end">
               <div>
-                <label className="mb-2 block text-xs font-medium text-white">
-                  Sub-categories *
+                <label className="mb-2 block text-[12px] font-medium text-white">
+                  Sub-categories <span className="text-white">*</span>
                 </label>
 
                 <input
                   value={item.name}
-                  onChange={(e) =>
-                    onNameChange(item.id, e.target.value)
-                  }
+                  onChange={(e) => onNameChange(item.id, e.target.value)}
                   placeholder="Sub-category name"
-                  className="h-11 w-full rounded-md border border-[#2A2A2A] bg-[#0B0B0B] px-4 text-sm text-white outline-none transition focus:border-[#F5C16C]"
+                  className={categoryFormTheme.inputClass}
                 />
               </div>
 
-              {/* Upload */}
-
-              <div>
-                <label className="mb-2 block text-xs font-medium text-white">
+              <div className="lg:w-[200px]">
+                <label className="mb-2 block text-[12px] font-medium text-white">
                   Upload Vector Icon
                 </label>
 
-                <div className="flex items-center gap-3">
+                <div className="flex items-end gap-3">
                   <div className="w-[140px]">
                     <UploadBox
+                      variant="compact"
                       preview={item.icon}
-                      onChange={(file) =>
-                        onIconChange(item.id, file)
-                      }
+                      onChange={(file) => onIconChange(item.id, file)}
                     />
                   </div>
 
                   <button
                     type="button"
                     onClick={() => onRemove(item.id)}
-                    className="flex h-11 w-11 items-center justify-center rounded-md bg-[#F5C16C] hover:bg-[#E8B255]"
+                    disabled={subCategories.length === 1}
+                    aria-label="Remove sub-category"
+                    className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-lg ${accentButtonClass} disabled:cursor-not-allowed disabled:opacity-40`}
                   >
-                    <Trash2
-                      size={18}
-                      className="text-red-600"
-                    />
+                    <Trash2 className="size-[18px] text-red-600" aria-hidden="true" />
                   </button>
                 </div>
               </div>
             </div>
 
-            {/* Description */}
-
             <div className="mt-5">
-              <label className="mb-2 block text-xs font-medium text-white">
-                Description *
+              <label className="mb-2 block text-[12px] font-medium text-white">
+                Description <span className="text-white">*</span>
               </label>
 
               <textarea
@@ -155,8 +110,8 @@ const SubCategoryCard = ({
                 onChange={(e) =>
                   onDescriptionChange(item.id, e.target.value)
                 }
-                placeholder="Enter description"
-                className="w-full resize-none rounded-md border border-[#2A2A2A] bg-[#0B0B0B] px-4 py-3 text-sm text-white outline-none transition focus:border-[#F5C16C]"
+                placeholder="Enter email address here"
+                className={categoryFormTheme.textareaClass}
               />
             </div>
           </div>

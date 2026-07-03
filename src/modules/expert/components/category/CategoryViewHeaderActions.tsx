@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   Eye,
   Pencil,
@@ -5,68 +6,96 @@ import {
   Plus,
   Trash2,
 } from "lucide-react";
-import { useCategoryStore } from "../../store/category-store";
-import { Button } from "@/shared/components/ui/button";
 import { useNavigate, useParams } from "react-router-dom";
-export const CategoryViewHeaderActions = () => {
 
+import { Button } from "@/shared/components/ui/button";
+
+import { useCategoryStore } from "../../store/category-store";
+import { categoryViewTheme } from "./category-view.theme";
+import { DeleteCategoryModal } from "./delete-category-modal";
+import { PauseCategoryModal } from "./pause-category-modal";
+
+export const CategoryViewHeaderActions = () => {
   const navigate = useNavigate();
   const { id } = useParams();
-  const pauseCategory = useCategoryStore(
-    (state) => state.pauseCategory
-  );
+  const [pauseModalOpen, setPauseModalOpen] = useState(false);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+
+  const pauseCategory = useCategoryStore((state) => state.pauseCategory);
+  const removeCategory = useCategoryStore((state) => state.removeCategory);
+
   return (
-    <div className="mb-6 flex justify-end gap-3">
-      <Button
-        onClick={() =>
-          navigate(`/categories/management/create-subcategory/${id}`)
-        }
-      >
-        <Plus size={16} />
-        Add Sub-Category
-      </Button>
+    <>
+      <div className="flex flex-wrap items-center justify-end gap-3">
+        <Button
+          className={categoryViewTheme.accentButtonClass}
+          onClick={() =>
+            navigate(`/categories/management/create-subcategory/${id}`)
+          }
+        >
+          <Plus className="size-4" aria-hidden="true" />
+          Add Sub-Category
+        </Button>
 
-      <Button
-        variant="secondary"
-        onClick={() =>
-          navigate(`/services/management`)
-        }
-      >
-        <Eye size={16} />
-        View Services
-      </Button>
+        <Button
+          variant="secondary"
+          className={categoryViewTheme.outlineButtonClass}
+          onClick={() => navigate("/services/management")}
+        >
+          <Eye className="size-4" aria-hidden="true" />
+          View Services
+        </Button>
 
-      <Button
-        variant="secondary"
-        onClick={() =>
-          navigate(`/categories/management/rename/${id}`)
-        }
-      >
-        <Pencil size={16} />
-        Edit Category
-      </Button>
+        <Button
+          variant="secondary"
+          className={categoryViewTheme.outlineButtonClass}
+          onClick={() => navigate(`/categories/management/rename/${id}`)}
+        >
+          <Pencil className="size-4" aria-hidden="true" />
+          Edit Category
+        </Button>
 
-      <Button
-        variant="secondary"
-        onClick={() => {
+        <Button
+          variant="secondary"
+          className={categoryViewTheme.outlineButtonClass}
+          onClick={() => setPauseModalOpen(true)}
+        >
+          <Pause className="size-4" aria-hidden="true" />
+          Pause
+        </Button>
+
+        <Button
+          className={categoryViewTheme.deleteButtonClass}
+          onClick={() => setDeleteModalOpen(true)}
+        >
+          <Trash2 className="size-4" aria-hidden="true" />
+          Delete
+        </Button>
+      </div>
+
+      <PauseCategoryModal
+        open={pauseModalOpen}
+        onClose={() => setPauseModalOpen(false)}
+        onConfirm={() => {
           if (id) {
             pauseCategory(id);
           }
+          setPauseModalOpen(false);
+          navigate("/categories/management/paused");
         }}
-      >
-        <Pause size={16} />
-        Pause
-      </Button>
+      />
 
-      <Button
-        className="bg-[#EF4444] text-white hover:bg-[#DC2626]"
-        onClick={() =>
-          navigate("/categories/management/deleted")
-        }
-      >
-        <Trash2 size={16} />
-        Delete
-      </Button>
-    </div>
+      <DeleteCategoryModal
+        open={deleteModalOpen}
+        onClose={() => setDeleteModalOpen(false)}
+        onConfirm={() => {
+          if (id) {
+            removeCategory(id);
+          }
+          setDeleteModalOpen(false);
+          navigate("/categories/management/deleted");
+        }}
+      />
+    </>
   );
 };

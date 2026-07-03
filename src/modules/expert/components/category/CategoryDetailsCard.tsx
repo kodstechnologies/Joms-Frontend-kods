@@ -1,21 +1,14 @@
 import UploadBox from "./UploadBox";
+import { categoryFormTheme } from "./category-form.theme";
 
 interface CategoryDetailsCardProps {
   categoryName: string;
   description: string;
-
   iconPreview?: string;
   imagePreview?: string;
   readOnly?: boolean;
-
-  onCategoryNameChange: (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => void;
-
-  onDescriptionChange: (
-    e: React.ChangeEvent<HTMLTextAreaElement>
-  ) => void;
-
+  onCategoryNameChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onDescriptionChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
   onIconChange: (file: File | null) => void;
   onImageChange: (file: File | null) => void;
 }
@@ -32,22 +25,19 @@ const CategoryDetailsCard = ({
   onImageChange,
 }: CategoryDetailsCardProps) => {
   return (
-    <div className="rounded-xl bg-[#181818] p-6">
-      
+    <div
+      className="rounded-xl border border-[#242424] p-6"
+      style={{ backgroundColor: categoryFormTheme.surface }}
+    >
+      <h2 className={categoryFormTheme.sectionTitleClass}>Category Details</h2>
 
-      <h2 className="text-sm font-semibold text-white">
-        Category Details
-      </h2>
-
-      <p className="mt-1 text-xs text-[#8B8B8B]">
+      <p className={`mt-1 ${categoryFormTheme.sectionSubtitleClass}`}>
         Provide basic details of category & sub category
       </p>
 
-      
-
       <div className="mt-6">
-        <label className="mb-2 block text-xs font-medium text-white">
-          Category Name *
+        <label className="mb-2 block text-[12px] font-medium text-white">
+          Category Name <span className="text-white">*</span>
         </label>
 
         <input
@@ -55,15 +45,13 @@ const CategoryDetailsCard = ({
           disabled={readOnly}
           onChange={onCategoryNameChange}
           placeholder="Enter Category Name"
-          className="h-11 w-full rounded-md border border-[#2A2A2A] bg-[#0B0B0B] px-4 text-sm text-white outline-none transition focus:border-[#F5C16C]"
+          className={categoryFormTheme.inputClass}
         />
       </div>
 
-      
-
       <div className="mt-5">
-        <label className="mb-2 block text-xs font-medium text-white">
-          Description *
+        <label className="mb-2 block text-[12px] font-medium text-white">
+          Description <span className="text-white">*</span>
         </label>
 
         <textarea
@@ -72,16 +60,15 @@ const CategoryDetailsCard = ({
           onChange={onDescriptionChange}
           placeholder="Enter description here"
           rows={4}
-          className="w-full resize-none rounded-md border border-[#2A2A2A] bg-[#0B0B0B] px-4 py-3 text-sm text-white outline-none transition focus:border-[#F5C16C]"
+          className={categoryFormTheme.textareaClass}
         />
       </div>
 
-      
-
-      <div className="mt-6 grid grid-cols-2 gap-6">
+      <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2">
         <UploadBox
           label="3D Icon"
           helperText="Displayed as a clickable 3D-style icon"
+          placeholderText="Upload icon here"
           preview={iconPreview}
           onChange={onIconChange}
           disabled={readOnly}
@@ -90,6 +77,7 @@ const CategoryDetailsCard = ({
         <UploadBox
           label="Image"
           helperText="Displayed as the header image on the category detail screen"
+          placeholderText="Upload Image here"
           preview={imagePreview}
           onChange={onImageChange}
           disabled={readOnly}
