@@ -4,19 +4,21 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/shared/components/ui/button";
 
 import { categoryViewTheme } from "./category-view.theme";
+import { useCategoryManagementScope } from "./category-management-scope";
 
 export const SubCategoryViewHeaderActions = () => {
   const navigate = useNavigate();
+  const scope = useCategoryManagementScope();
 
   return (
     <div className="flex flex-wrap items-center justify-end gap-3">
       <Button
         variant="secondary"
         className={categoryViewTheme.outlineButtonClass}
-        onClick={() => navigate("/services/management")}
+        onClick={() => navigate(scope.relatedListPath)}
       >
         <Eye className="size-4" aria-hidden="true" />
-        View Services
+        {scope.relatedListLabel}
       </Button>
 
       <Button variant="secondary" className={categoryViewTheme.outlineButtonClass}>

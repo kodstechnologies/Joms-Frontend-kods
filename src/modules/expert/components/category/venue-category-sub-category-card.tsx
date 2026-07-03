@@ -1,7 +1,8 @@
-
 import { ChevronRight, PenTool } from "lucide-react";
+import { useNavigate, useParams } from "react-router-dom";
 
 import VenueCategoryViewSubCategoryActions from "./venue-category-view-sub-category-actions";
+import { categoryViewTheme } from "./category-view.theme";
 
 interface Props {
   id: string;
@@ -11,54 +12,61 @@ interface Props {
   icon?: string;
 }
 
-const CategorySubCategoryCard = ({
+const VenueCategorySubCategoryCard = ({
   id,
   name,
   status,
   addedOn,
 }: Props) => {
+  const navigate = useNavigate();
+  const { id: categoryId } = useParams();
+
   return (
-    <div className="relative rounded-2xl bg-[#181818] px-6 py-5">
-      {/* Right Arrow */}
-      <button className="absolute right-5 top-5">
-        <ChevronRight
-          size={18}
-          className="text-white"
-        />
+    <div
+      className="relative rounded-xl border px-5 py-5"
+      style={{
+        backgroundColor: categoryViewTheme.surface,
+        borderColor: categoryViewTheme.surfaceBorder,
+      }}
+    >
+      <button
+        type="button"
+        aria-label={`Open ${name}`}
+        onClick={() =>
+          navigate(
+            `/venues/categories/management/${categoryId}/subcategory/${id}`,
+          )
+        }
+        className="absolute right-5 top-5 text-white transition-opacity hover:opacity-70"
+      >
+        <ChevronRight className="size-[18px]" aria-hidden="true" />
       </button>
 
-      {/* 3 Dot Menu */}
       <div className="absolute bottom-5 right-5">
         <VenueCategoryViewSubCategoryActions id={id} />
       </div>
 
-      <div className="flex items-center gap-5">
-        {/* Icon */}
-        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-black">
-          <PenTool
-            size={20}
-            className="text-white"
-          />
+      <div className="flex items-center gap-4 pr-10">
+        <div className="flex size-14 shrink-0 items-center justify-center rounded-full bg-black">
+          <PenTool className="size-5 text-white" aria-hidden="true" />
         </div>
 
-        {/* Text */}
         <div>
-          <div className="flex items-center gap-3">
-            <h4 className="text-xl font-semibold text-white">
+          <div className="flex flex-wrap items-center gap-2">
+            <h4 className="font-sans text-[16px] font-semibold leading-5 text-white">
               {name}
             </h4>
 
             <span
-              className={`text-sm font-semibold ${status === "Active"
-                  ? "text-[#08B143]"
-                  : "text-[#F6B500]"
-                }`}
+              className={`text-[12px] font-semibold leading-[17px] ${
+                status === "Active" ? "text-[#2ECC71]" : "text-[#E67E22]"
+              }`}
             >
               {status}
             </span>
           </div>
 
-          <p className="mt-2 text-[15px] text-[#9A9A9A]">
+          <p className={`mt-1.5 ${categoryViewTheme.labelClass}`}>
             Added On {addedOn}
           </p>
         </div>
@@ -67,4 +75,4 @@ const CategorySubCategoryCard = ({
   );
 };
 
-export default CategorySubCategoryCard;
+export default VenueCategorySubCategoryCard;

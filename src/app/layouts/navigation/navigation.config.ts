@@ -62,6 +62,11 @@ export const navigationConfig: NavItem[] = [
             label: 'Expert Management',
             to: '/experts/management',
           },
+          {
+            key: 'expert.management.categories',
+            label: 'Category Management',
+            to: '/experts/categories/management',
+          },
         ],
       },
       {
