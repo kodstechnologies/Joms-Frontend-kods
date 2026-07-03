@@ -158,7 +158,11 @@ export const navigationConfig: NavItem[] = [
     label: 'Support',
     icon: LifeBuoy,
     superAdminOnly: true,
-    children: [{ key: 'support.tickets', label: 'Tickets', badge: { label: 'Soon', variant: 'warning' } }],
+    children: [
+      { key: 'support.dashboard', label: 'Dashboard', to: '/support/dashboard' },
+      { key: 'support.tickets', label: 'Ticket Management', to: '/support/tickets' },
+      { key: 'support.workspace', label: 'Support Workspace', to: '/support/workspace' },
+    ],
   },
   {
     key: 'settings',

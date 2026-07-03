@@ -1,0 +1,5 @@
+export { SupportDashboardPage } from './pages/support-dashboard-page'
+export { TicketManagementPage } from './pages/ticket-management-page'
+export { SupportWorkspacePage } from './pages/support-workspace-page'
+export { PastTicketsPage } from './pages/past-tickets-page'
+export { TicketDetailPage } from './pages/ticket-detail-page'
