@@ -22,6 +22,7 @@ type TableActionsDropdownProps = {
   children: ReactNode
   menuClassName?: string
   menuWidth?: number
+  tone?: 'dark' | 'light'
 }
 
 export function TableActionsDropdown({
@@ -31,6 +32,7 @@ export function TableActionsDropdown({
   children,
   menuClassName,
   menuWidth = 192,
+  tone = 'dark',
 }: TableActionsDropdownProps) {
   const triggerRef = useRef<HTMLButtonElement>(null)
   const menuRef = useRef<HTMLDivElement>(null)
@@ -81,7 +83,12 @@ export function TableActionsDropdown({
           event.stopPropagation()
           onOpenChange(!isOpen)
         }}
-        className="rounded p-1 text-brand-muted transition-colors hover:bg-white/10 hover:text-brand-text"
+        className={cn(
+          'rounded p-1 transition-colors',
+          tone === 'light'
+            ? 'text-[#777] hover:bg-white/10 hover:text-white'
+            : 'text-brand-muted hover:bg-white/10 hover:text-brand-text',
+        )}
       >
         <MoreVertical className="size-4" aria-hidden="true" />
       </button>
@@ -98,7 +105,10 @@ export function TableActionsDropdown({
               ref={menuRef}
               style={{ top: position.top, left: position.left, minWidth: menuWidth }}
               className={cn(
-                'fixed z-[101] rounded-brand-md border border-white/10 bg-brand-surface py-1.5 text-left shadow-2xl',
+                'fixed z-[101] rounded-brand-md py-1.5 text-left shadow-2xl',
+                tone === 'light'
+                  ? 'border border-slate-200 bg-white'
+                  : 'border border-white/10 bg-brand-surface',
                 menuClassName,
               )}
             >
@@ -116,6 +126,7 @@ type TableActionsItemProps = {
   children: ReactNode
   icon?: ReactNode
   className?: string
+  tone?: 'dark' | 'light'
 }
 
 export function TableActionsItem({
@@ -123,13 +134,17 @@ export function TableActionsItem({
   children,
   icon,
   className,
+  tone = 'dark',
 }: TableActionsItemProps) {
   return (
     <button
       type="button"
       onClick={onClick}
       className={cn(
-        'flex w-full items-center gap-2 px-4 py-2.5 text-left text-xs font-semibold text-brand-stroke transition-all hover:bg-white/10 hover:text-brand-accent',
+        'flex w-full items-center gap-2 px-4 py-2.5 text-left text-xs font-semibold transition-all',
+        tone === 'light'
+          ? 'text-slate-800 hover:bg-slate-50 hover:text-slate-900'
+          : 'text-brand-stroke hover:bg-white/10 hover:text-brand-accent',
         className,
       )}
     >

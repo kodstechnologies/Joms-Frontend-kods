@@ -19,7 +19,8 @@ import {
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
-import { useVenues, useSuspendVenue } from '../../hooks/use-venues'
+import { useVenues, useSuspendVenue, useDeleteVenue } from '../../hooks/use-venues'
+import { ADMIN_DELETE_REASON_OPTIONS } from '../../constants/soft-delete'
 import { useVenueStore } from '../../store'
 import type { Venue, VenueStatus } from '../../type/venue'
 import { DataTable } from '@/shared/components/table/data-table'
@@ -65,7 +66,13 @@ export const VenueManagementPage = () => {
     const [suspendReasonDetails, setSuspendReasonDetails] = useState('')
     const [suspendAdminNotes, setSuspendAdminNotes] = useState('')
 
+    const [deleteVenueTarget, setDeleteVenueTarget] = useState<Venue | null>(null)
+    const [deleteReasons, setDeleteReasons] = useState<string[]>([])
+    const [deleteReasonDetails, setDeleteReasonDetails] = useState('')
+    const [deleteAdminNotes, setDeleteAdminNotes] = useState('')
+
     const suspendVenueMutation = useSuspendVenue()
+    const deleteVenueMutation = useDeleteVenue()
 
     const navigate = useNavigate()
 
@@ -126,6 +133,68 @@ export const VenueManagementPage = () => {
     const closeSuspendModal = useCallback(() => {
         setSuspendVenueTarget(null)
     }, [])
+
+    const openDeleteModal = useCallback((venue: Venue) => {
+        setDeleteVenueTarget(venue)
+        setDeleteReasons([])
+        setDeleteReasonDetails('')
+        setDeleteAdminNotes('')
+    }, [])
+
+    const closeDeleteModal = useCallback(() => {
+        setDeleteVenueTarget(null)
+        setDeleteReasons([])
+    }, [])
+
+    const toggleDeleteReason = useCallback((value: string) => {
+        setDeleteReasons((current) =>
+            current.includes(value)
+                ? current.filter((reason) => reason !== value)
+                : [...current, value],
+        )
+    }, [])
+
+    const handleDeleteSubmit = useCallback(() => {
+        if (!deleteVenueTarget) return
+
+        if (deleteReasons.length === 0) {
+            toast.error('Please select at least one reason.')
+            return
+        }
+
+        if (!deleteAdminNotes.trim()) {
+            toast.error('Admin notes are required.')
+            return
+        }
+
+        deleteVenueMutation.mutate(
+            {
+                venueId: getVenueApiId(deleteVenueTarget),
+                payload: {
+                    selectedReasons: deleteReasons,
+                    reasonDetails: deleteReasonDetails.trim(),
+                    adminNotes: deleteAdminNotes.trim(),
+                },
+            },
+            {
+                onSuccess: () => {
+                    toast.success('Venue deleted successfully')
+                    closeDeleteModal()
+                },
+                onError: (error: unknown) => {
+                    const err = error as { response?: { data?: { message?: string } } }
+                    toast.error(err?.response?.data?.message || 'Failed to delete venue.')
+                },
+            },
+        )
+    }, [
+        closeDeleteModal,
+        deleteAdminNotes,
+        deleteReasonDetails,
+        deleteReasons,
+        deleteVenueMutation,
+        deleteVenueTarget,
+    ])
 
     const toggleSuspendReason = useCallback((value: string) => {
         setSuspendReasons((current) =>
@@ -384,6 +453,17 @@ export const VenueManagementPage = () => {
                             >
                                 Suspend Venue
                             </TableActionsItem>
+
+                            <TableActionsItem
+                                icon={<Trash2 className="size-3.5 text-slate-700" />}
+                                className={ACTION_ITEM_CLASS}
+                                onClick={() => {
+                                    setActiveDropdownId(null)
+                                    openDeleteModal(venue)
+                                }}
+                            >
+                                Delete Venue
+                            </TableActionsItem>
                         </TableActionsDropdown>
                     )
                 },
@@ -393,6 +473,7 @@ export const VenueManagementPage = () => {
             activeDropdownId,
             allVisibleVenuesSelected,
             navigate,
+            openDeleteModal,
             openSuspendModal,
             selectedVenueIds,
             someVisibleVenuesSelected,
@@ -444,7 +525,11 @@ export const VenueManagementPage = () => {
                         key={card.label}
                         type="button"
                         onClick={() => {
-                            if (card.status === 'reported' || card.status === 'deleted') {
+                            if (card.status === 'reported') {
+                                return
+                            }
+                            if (card.status === 'deleted') {
+                                navigate('/venues/management/deleted')
                                 return
                             }
                             if (card.status === 'pending') {
@@ -544,6 +629,24 @@ export const VenueManagementPage = () => {
                 onClose={closeSuspendModal}
                 onSubmit={handleSuspendSubmit}
                 isSubmitting={suspendVenueMutation.isPending}
+            />
+
+            <DecisionActionModal
+                open={Boolean(deleteVenueTarget)}
+                variant="reject"
+                title="Delete Venue"
+                description="Are you sure you want to delete this venue? It will be permanently removed after 21 days unless restored."
+                submitLabel="Delete Venue"
+                reasonOptions={ADMIN_DELETE_REASON_OPTIONS}
+                selectedReasons={deleteReasons}
+                onReasonToggle={toggleDeleteReason}
+                reason={deleteReasonDetails}
+                onReasonChange={setDeleteReasonDetails}
+                adminNotes={deleteAdminNotes}
+                onAdminNotesChange={setDeleteAdminNotes}
+                onClose={closeDeleteModal}
+                onSubmit={handleDeleteSubmit}
+                isSubmitting={deleteVenueMutation.isPending}
             />
         </div>
     )

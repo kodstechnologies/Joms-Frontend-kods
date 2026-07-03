@@ -70,8 +70,17 @@ export type SuspendExpertPayload = {
 }
 
 export type DeactivateExpertPayload = {
+  selectedReasons?: string[]
   reason?: string
+  reasonDetails?: string
   adminNotes: string
+}
+
+export const restoreExpert = async (id: string) => {
+  const response = await adminApiClient.patch(
+    `/admin/internal/admin/partners/${id}/restore`,
+  )
+  return response.data
 }
 
 export const suspendExpert = async (id: string, payload: SuspendExpertPayload) => {

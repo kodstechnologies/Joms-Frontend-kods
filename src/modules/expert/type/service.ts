@@ -15,6 +15,8 @@ export interface Service {
   expertName: string
   expertid?: string
   partnerName?: string
+  reason?: string | null
+  deletedAt?: string | null
 }
 
 export interface SuspendServicePayload {

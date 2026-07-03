@@ -4,7 +4,7 @@ import { Eye, RotateCcw, Upload } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
-import { useExperts } from '../../hooks/use-expert'
+import { useExperts, useRestoreExpert } from '../../hooks/use-expert'
 import type { Expert } from '../../type/expert'
 import {
   createExpertBaseColumns,
@@ -33,6 +33,7 @@ export function ExpertDeletedExpertsPage() {
     status: 'deactivated',
     search: searchQuery,
   })
+  const restoreExpertMutation = useRestoreExpert()
 
   const experts = data?.data || []
   const meta = data?.meta
@@ -84,7 +85,16 @@ export function ExpertDeletedExpertsPage() {
                 icon={<RotateCcw className="size-3.5" aria-hidden="true" />}
                 onClick={() => {
                   setActiveDropdownId(null)
-                  toast.message('Retrieve Account is coming soon')
+                  restoreExpertMutation.mutate(expert.id, {
+                    onSuccess: () => toast.success('Expert account restored successfully'),
+                    onError: (error: unknown) => {
+                      const err = error as { response?: { data?: { message?: string } } }
+                      toast.error(
+                        err?.response?.data?.message ||
+                          'Failed to restore expert. Please try again.',
+                      )
+                    },
+                  })
                 }}
               >
                 Retrieve Account
@@ -103,7 +113,7 @@ export function ExpertDeletedExpertsPage() {
         },
       },
     ],
-    [activeDropdownId, navigate, selection],
+    [activeDropdownId, navigate, restoreExpertMutation, selection],
   )
 
   return (

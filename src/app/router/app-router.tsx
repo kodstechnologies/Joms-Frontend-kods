@@ -25,6 +25,9 @@ const PendingApprovalsPage = lazy(() =>
 const SuspendedServicesPage = lazy(() =>
   import('@/modules/expert').then((m) => ({ default: m.SuspendedServicesPage })),
 )
+const DeletedServicesPage = lazy(() =>
+  import('@/modules/expert').then((m) => ({ default: m.DeletedServicesPage })),
+)
 const ServiceManagementPage = lazy(() =>
   import('@/modules/expert').then((m) => ({ default: m.ServiceManagementPage })),
 )
@@ -124,6 +127,11 @@ const VenuePendingApprovalsPage = lazy(() =>
 const VenueSuspendedPage = lazy(() =>
   import('@/modules/expert').then((m) => ({
     default: m.VenueSuspendedPage,
+  })),
+)
+const VenueDeletedPage = lazy(() =>
+  import('@/modules/expert').then((m) => ({
+    default: m.VenueDeletedPage,
   })),
 )
 const ApplicationDetailsPage = lazy(() =>
@@ -421,6 +429,7 @@ export function AppRouter() {
                 <Route path="/services/management" element={<ServiceManagementPage />} />
                 <Route path="/services/management/pending" element={<PendingApprovalsPage />} />
                 <Route path="/services/management/suspended" element={<SuspendedServicesPage />} />
+                <Route path="/services/management/deleted" element={<DeletedServicesPage />} />
                 <Route path="/services/management/create" element={<CreateServiceListingPage />} />
                 <Route path="/services/management/view/:id" element={<ServiceViewPage />} />
                 <Route path="/services/leaderboard" element={<LeaderboardPage />} />
@@ -481,6 +490,7 @@ export function AppRouter() {
 />
                 <Route path="/venues/management/pending" element={<VenuePendingApprovalsPage />} />
                 <Route path="/venues/management/suspended" element={<VenueSuspendedPage />} />
+                <Route path="/venues/management/deleted" element={<VenueDeletedPage />} />
                 <Route path="/venues/management/onboarding" element={<CreateVenueOnboardingPage />} />
                 <Route path="/venues/management/create" element={<CreateVenueListingPage />} />
                 <Route

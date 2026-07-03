@@ -1,8 +1,10 @@
-import { useState, type ReactNode } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useCallback, useState, type ReactNode } from 'react'
+import { useNavigate, useParams, type NavigateFunction } from 'react-router-dom'
+import { useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import {
   ArrowLeft,
+  Ban,
   Briefcase,
   Check,
   ChevronRight,
@@ -10,9 +12,13 @@ import {
   Eye,
   FileText,
   Gauge,
+  GitMerge,
   ImageOff,
+  KeyRound,
   Languages,
+  LogOut,
   MoreVertical,
+  Pencil,
   Phone,
   Plus,
   Search,
@@ -20,10 +26,16 @@ import {
   SlidersHorizontal,
   Star,
   Tag,
+  Trash2,
   Upload,
   User,
+  Users,
 } from 'lucide-react'
 
+import { fetchExpertApplicationView } from '../../api/expert-application-api'
+import { fetchConsultationById, fetchServiceById } from '../../api/service-api'
+import { ADMIN_DELETE_REASON_OPTIONS } from '../../constants/soft-delete'
+import { useDeactivateExpert, useSuspendExpert } from '../../hooks/use-expert'
 import {
   useExpertConsultations,
   useExpertProfile,
@@ -35,6 +47,15 @@ import type {
   ExpertService,
   ExpertWorkExperience,
 } from '../../type/expert-profile'
+import {
+  DecisionActionModal,
+  type DecisionActionModalOption,
+} from '@/shared/components/modal/decision-action-modal'
+import {
+  TableActionsDropdown,
+  TableActionsItem,
+} from '@/shared/components/table/table-actions-dropdown'
+import { formatListingExpertId } from './expert-list-shared'
 import { cn } from '@/shared/lib/cn'
 
 type TabKey =
@@ -90,10 +111,70 @@ const getApiErrorMessage = (error: unknown) => {
 
 const comingSoon = (label: string) => toast.message(`${label} is coming soon`)
 
-const formatExpertId = (id: string) => {
-  const tail = id.slice(-6).toUpperCase()
-  return `EXP${tail}`
+const SUSPEND_REASON_OPTIONS: DecisionActionModalOption[] = [
+  { label: 'Policy violation', value: 'policy_violation' },
+  { label: 'Temporary operational issue', value: 'temporary_operational_issue' },
+  { label: 'Quality concern', value: 'quality_concern' },
+  { label: 'System verification in progress', value: 'system_verification_in_progress' },
+  { label: 'Admin review required', value: 'admin_review_required' },
+]
+
+const toIso = (date: string) => new Date(date).toISOString()
+
+const viewExpertKyc = async (partnerId: string, navigate: NavigateFunction) => {
+  try {
+    const response = await fetchExpertApplicationView(partnerId)
+    if (!response?.data?.kyc?._id) {
+      toast.error('KYC is not submitted by partner')
+      return
+    }
+    navigate(`/experts/management/application/${partnerId}`)
+  } catch {
+    toast.error('KYC is not submitted by partner')
+  }
 }
+
+const viewExpertService = async (
+  service: ExpertService,
+  expertId: string,
+  navigate: NavigateFunction,
+) => {
+  if (!service._id) {
+    toast.error('Service not found')
+    return
+  }
+
+  try {
+    await fetchServiceById(service._id)
+    navigate(
+      `/experts/management/profile/${expertId}/service/${service._id}?type=${encodeURIComponent('service')}`,
+    )
+  } catch {
+    toast.error('Service not found')
+  }
+}
+
+const viewExpertConsultation = async (
+  consultation: ExpertConsultation,
+  expertId: string,
+  navigate: NavigateFunction,
+) => {
+  if (!consultation._id) {
+    toast.error('Consultation not found')
+    return
+  }
+
+  try {
+    await fetchConsultationById(consultation._id)
+    navigate(
+      `/experts/management/profile/${expertId}/service/${consultation._id}?type=${encodeURIComponent('consultation')}`,
+    )
+  } catch {
+    toast.error('Consultation not found')
+  }
+}
+
+const formatExpertId = formatListingExpertId
 
 const formatExperience = (years?: number, months?: number) => {
   if (!years && !months) return '—'
@@ -268,9 +349,7 @@ function ProfileSidebar({
         <SidebarRow label="KYC">
           <button
             type="button"
-            onClick={() =>
-              navigate(`/experts/management/application/${partnerId}`)
-            }
+            onClick={() => viewExpertKyc(partnerId, navigate)}
             className="rounded-md bg-[#FBC078]/15 px-3 py-1 text-[11px] font-bold text-[#FBC078] transition-colors hover:bg-[#FBC078]/25"
           >
             View
@@ -592,11 +671,7 @@ function ConsultationDetailCard({
 
       <button
         type="button"
-        onClick={() =>
-          navigate(
-            `/experts/management/profile/${expertId}/service/${consultation._id}?type=consultation`,
-          )
-        }
+        onClick={() => viewExpertConsultation(consultation, expertId, navigate)}
         className="mt-5 flex w-full items-center justify-between rounded-lg border border-white/5 bg-black px-4 py-3 text-[12px] font-semibold text-white transition-colors hover:bg-white/5"
       >
         Consultation Performance
@@ -638,12 +713,12 @@ function ServicesSubTab({ expertId }: { expertId: string }) {
       )}
       {isError && (
         <div className="rounded-lg border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-400">
-          Unable to load services.
+          Service not found
         </div>
       )}
       {!isLoading && !isError && services.length === 0 && (
         <div className="rounded-xl border border-white/5 bg-[#111111] p-8 text-center text-[13px] text-[#777]">
-          No services found for this expert.
+          Service not found
         </div>
       )}
       {!isLoading && !isError && services.length > 0 && (
@@ -682,9 +757,7 @@ function ServiceListCard({
   return (
     <button
       type="button"
-      onClick={() =>
-        navigate(`/experts/management/profile/${expertId}/service/${service._id}`)
-      }
+      onClick={() => viewExpertService(service, expertId, navigate)}
       className="flex w-full items-center gap-4 rounded-xl border border-white/5 bg-[#111111] p-4 text-left transition-colors hover:bg-[#161616]"
     >
       <div className="relative size-16 shrink-0 overflow-hidden rounded-lg bg-[#1a1a1a]">
@@ -743,12 +816,12 @@ function ConsultationsSubTab({ expertId }: { expertId: string }) {
       )}
       {isError && (
         <div className="rounded-lg border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-400">
-          Unable to load consultations.
+          Consultation not found
         </div>
       )}
       {!isLoading && !isError && consultations.length === 0 && (
         <div className="rounded-xl border border-white/5 bg-[#111111] p-8 text-center text-[13px] text-[#777]">
-          No consultations found for this expert.
+          Consultation not found
         </div>
       )}
       {!isLoading &&
@@ -768,10 +841,12 @@ function ServiceListingsTab({
   expertId,
   listingSubTab,
   onSubTabChange,
+  onCreateListing,
 }: {
   expertId: string
   listingSubTab: ListingSubTab
   onSubTabChange: (tab: ListingSubTab) => void
+  onCreateListing: () => void
 }) {
   return (
     <div className="flex flex-col gap-4">
@@ -803,7 +878,7 @@ function ServiceListingsTab({
           </button>
           <button
             type="button"
-            onClick={() => comingSoon('Create Listings')}
+            onClick={onCreateListing}
             className="flex items-center gap-1.5 rounded-lg bg-[#FBC078]/15 px-3 py-2 text-[11px] font-semibold text-[#FBC078]"
           >
             <Plus className="size-3.5" />
@@ -1047,9 +1122,25 @@ function HealthTab() {
 
 export function ExpertProfileViewPage() {
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const { id } = useParams<{ id: string }>()
   const [activeTab, setActiveTab] = useState<TabKey>('overview')
   const [listingSubTab, setListingSubTab] = useState<ListingSubTab>('services')
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false)
+  const [suspendModalOpen, setSuspendModalOpen] = useState(false)
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false)
+  const [suspendReasons, setSuspendReasons] = useState<string[]>([])
+  const [suspendStartDate, setSuspendStartDate] = useState('')
+  const [suspendEndDate, setSuspendEndDate] = useState('')
+  const [suspendIndefinitely, setSuspendIndefinitely] = useState(false)
+  const [suspendReasonDetails, setSuspendReasonDetails] = useState('')
+  const [suspendAdminNotes, setSuspendAdminNotes] = useState('')
+  const [deleteReasons, setDeleteReasons] = useState<string[]>([])
+  const [deleteReason, setDeleteReason] = useState('')
+  const [deleteAdminNotes, setDeleteAdminNotes] = useState('')
+
+  const suspendExpertMutation = useSuspendExpert()
+  const deactivateExpertMutation = useDeactivateExpert()
 
   const {
     data: profileResponse,
@@ -1059,6 +1150,143 @@ export function ExpertProfileViewPage() {
   } = useExpertProfile(id)
 
   const profile = profileResponse?.data
+
+  const navigateToCreateListing = useCallback(() => {
+    if (!id) return
+    navigate(`/services/management/create?partnerId=${encodeURIComponent(id)}`)
+  }, [id, navigate])
+
+  const closeSuspendModal = useCallback(() => {
+    setSuspendModalOpen(false)
+    setSuspendReasons([])
+    setSuspendStartDate('')
+    setSuspendEndDate('')
+    setSuspendIndefinitely(false)
+    setSuspendReasonDetails('')
+    setSuspendAdminNotes('')
+  }, [])
+
+  const closeDeleteModal = useCallback(() => {
+    setDeleteModalOpen(false)
+    setDeleteReasons([])
+    setDeleteReason('')
+    setDeleteAdminNotes('')
+  }, [])
+
+  const toggleSuspendReason = useCallback((value: string) => {
+    setSuspendReasons((current) =>
+      current.includes(value) ? current.filter((reason) => reason !== value) : [...current, value],
+    )
+  }, [])
+
+  const toggleDeleteReason = useCallback((value: string) => {
+    setDeleteReasons((current) =>
+      current.includes(value) ? current.filter((reason) => reason !== value) : [...current, value],
+    )
+  }, [])
+
+  const handleSuspendSubmit = useCallback(() => {
+    if (!id) return
+
+    if (suspendReasons.length === 0) {
+      toast.error('Please select at least one reason.')
+      return
+    }
+
+    if (!suspendIndefinitely && (!suspendStartDate || !suspendEndDate)) {
+      toast.error('Please provide a suspension timeline or choose to suspend indefinitely.')
+      return
+    }
+
+    if (!suspendAdminNotes.trim()) {
+      toast.error('Admin notes are required.')
+      return
+    }
+
+    suspendExpertMutation.mutate(
+      {
+        id,
+        payload: {
+          selectedReasons: suspendReasons,
+          suspendIndefinitely,
+          startDate: suspendIndefinitely ? undefined : toIso(suspendStartDate),
+          endDate: suspendIndefinitely ? undefined : toIso(suspendEndDate),
+          reasonDetails: suspendReasonDetails.trim(),
+          adminNotes: suspendAdminNotes.trim(),
+        },
+      },
+      {
+        onSuccess: () => {
+          toast.success('Expert suspended successfully')
+          closeSuspendModal()
+          setProfileMenuOpen(false)
+          queryClient.invalidateQueries({ queryKey: ['expert-profile', id] })
+        },
+        onError: (error: unknown) => {
+          const err = error as { response?: { data?: { message?: string } } }
+          toast.error(err?.response?.data?.message || 'Failed to suspend expert. Please try again.')
+        },
+      },
+    )
+  }, [
+    closeSuspendModal,
+    id,
+    queryClient,
+    suspendAdminNotes,
+    suspendEndDate,
+    suspendIndefinitely,
+    suspendExpertMutation,
+    suspendReasonDetails,
+    suspendReasons,
+    suspendStartDate,
+  ])
+
+  const handleDeleteSubmit = useCallback(() => {
+    if (!id) return
+
+    if (deleteReasons.length === 0) {
+      toast.error('Please select at least one reason.')
+      return
+    }
+
+    if (!deleteAdminNotes.trim()) {
+      toast.error('Admin notes are required.')
+      return
+    }
+
+    deactivateExpertMutation.mutate(
+      {
+        id,
+        payload: {
+          selectedReasons: deleteReasons,
+          reasonDetails: deleteReason.trim(),
+          adminNotes: deleteAdminNotes.trim(),
+        },
+      },
+      {
+        onSuccess: () => {
+          toast.success('Expert deleted successfully')
+          closeDeleteModal()
+          setProfileMenuOpen(false)
+          queryClient.invalidateQueries({ queryKey: ['expert-profile', id] })
+          navigate('/experts/management')
+        },
+        onError: (error: unknown) => {
+          const err = error as { response?: { data?: { message?: string } } }
+          toast.error(err?.response?.data?.message || 'Failed to delete expert. Please try again.')
+        },
+      },
+    )
+  }, [
+    closeDeleteModal,
+    deactivateExpertMutation,
+    deleteAdminNotes,
+    deleteReason,
+    deleteReasons,
+    id,
+    navigate,
+    queryClient,
+  ])
 
   if (profileLoading) {
     return (
@@ -1096,7 +1324,7 @@ export function ExpertProfileViewPage() {
     {
       label: 'Create Listings',
       icon: Plus,
-      onClick: () => comingSoon('Create Listings'),
+      onClick: navigateToCreateListing,
     },
     {
       label: 'Add Notes',
@@ -1134,21 +1362,104 @@ export function ExpertProfileViewPage() {
               onClick={() => navigate('/experts/management')}
               className="transition-colors hover:text-white"
             >
-              Expert management
+              User management
             </button>
             <span className="text-[#333333]">/</span>
-            <span>Manage Expert</span>
+            <span>Manage Users</span>
             <span className="text-[#333333]">/</span>
             <span className="font-bold text-white">{displayName}</span>
           </div>
         </div>
-        <button
-          type="button"
-          onClick={() => comingSoon('Profile menu')}
-          className="p-1 text-[#777] hover:text-white"
+        <TableActionsDropdown
+          label="Open expert profile actions"
+          isOpen={profileMenuOpen}
+          onOpenChange={setProfileMenuOpen}
+          menuWidth={220}
+          tone="light"
+          menuClassName="rounded-lg py-2 shadow-[0_8px_24px_rgba(0,0,0,0.12)]"
         >
-          <MoreVertical className="size-5" />
-        </button>
+          <TableActionsItem
+            tone="light"
+            icon={<Pencil className="size-3.5" />}
+            onClick={() => {
+              setProfileMenuOpen(false)
+              comingSoon('Edit Profile')
+            }}
+          >
+            Edit Profile
+          </TableActionsItem>
+          <TableActionsItem
+            tone="light"
+            icon={<Users className="size-3.5" />}
+            onClick={() => {
+              setProfileMenuOpen(false)
+              comingSoon('View Clientele')
+            }}
+          >
+            View Clientele
+          </TableActionsItem>
+          <TableActionsItem
+            tone="light"
+            icon={<GitMerge className="size-3.5" />}
+            onClick={() => {
+              setProfileMenuOpen(false)
+              comingSoon('Merge Records')
+            }}
+          >
+            Merge Records
+          </TableActionsItem>
+          <TableActionsItem
+            tone="light"
+            icon={<KeyRound className="size-3.5" />}
+            onClick={() => {
+              setProfileMenuOpen(false)
+              comingSoon('Reset Password')
+            }}
+          >
+            Reset Password
+          </TableActionsItem>
+          <TableActionsItem
+            tone="light"
+            icon={<LogOut className="size-3.5" />}
+            onClick={() => {
+              setProfileMenuOpen(false)
+              comingSoon('Logout User')
+            }}
+          >
+            Logout User
+          </TableActionsItem>
+          <TableActionsItem
+            tone="light"
+            icon={<Ban className="size-3.5" />}
+            onClick={() => {
+              setProfileMenuOpen(false)
+              setSuspendModalOpen(true)
+            }}
+          >
+            Suspend User
+          </TableActionsItem>
+          <TableActionsItem
+            tone="light"
+            icon={<Ban className="size-3.5" />}
+            onClick={() => {
+              setProfileMenuOpen(false)
+              comingSoon('Block User')
+            }}
+          >
+            Block User
+          </TableActionsItem>
+          <TableActionsItem
+            tone="light"
+            icon={<Trash2 className="size-3.5" />}
+            className="text-red-500 hover:bg-red-50 hover:text-red-600 [&_svg]:text-red-500"
+            onClick={() => {
+              setProfileMenuOpen(false)
+              setDeleteModalOpen(true)
+            }}
+          >
+            Delete User
+          </TableActionsItem>
+        </TableActionsDropdown>
       </header>
 
       <div className="relative overflow-hidden rounded-xl border border-white/5 bg-[#111111]">
@@ -1233,6 +1544,7 @@ export function ExpertProfileViewPage() {
               expertId={id}
               listingSubTab={listingSubTab}
               onSubTabChange={setListingSubTab}
+              onCreateListing={navigateToCreateListing}
             />
           )}
           {activeTab === 'availability' && <AvailabilityTab />}
@@ -1240,6 +1552,49 @@ export function ExpertProfileViewPage() {
           {activeTab === 'health' && <HealthTab />}
         </div>
       </div>
+
+      <DecisionActionModal
+        open={suspendModalOpen}
+        variant="suspend"
+        title="Suspend User"
+        description="Are you sure you want to suspend this expert? This action will restrict their account access and hide their services."
+        submitLabel="Suspend"
+        reasonOptions={SUSPEND_REASON_OPTIONS}
+        selectedReasons={suspendReasons}
+        onReasonToggle={toggleSuspendReason}
+        showTimeline
+        startDate={suspendStartDate}
+        onStartDateChange={setSuspendStartDate}
+        endDate={suspendEndDate}
+        onEndDateChange={setSuspendEndDate}
+        indefinite={suspendIndefinitely}
+        onIndefiniteChange={setSuspendIndefinitely}
+        reason={suspendReasonDetails}
+        onReasonChange={setSuspendReasonDetails}
+        adminNotes={suspendAdminNotes}
+        onAdminNotesChange={setSuspendAdminNotes}
+        onClose={closeSuspendModal}
+        onSubmit={handleSuspendSubmit}
+        isSubmitting={suspendExpertMutation.isPending}
+      />
+
+      <DecisionActionModal
+        open={deleteModalOpen}
+        variant="reject"
+        title="Delete User"
+        description="Are you sure you want to delete this expert? The account will be soft-deleted for 21 days before permanent removal."
+        submitLabel="Delete User"
+        reasonOptions={ADMIN_DELETE_REASON_OPTIONS}
+        selectedReasons={deleteReasons}
+        onReasonToggle={toggleDeleteReason}
+        reason={deleteReason}
+        onReasonChange={setDeleteReason}
+        adminNotes={deleteAdminNotes}
+        onAdminNotesChange={setDeleteAdminNotes}
+        onClose={closeDeleteModal}
+        onSubmit={handleDeleteSubmit}
+        isSubmitting={deactivateExpertMutation.isPending}
+      />
     </div>
   )
 }
