@@ -9,7 +9,10 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "env:local": "node scripts/flip-env.js local",
+    "env:production": "node scripts/flip-env.js production",
+    "env:flip": "node scripts/flip-env.js toggle"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
