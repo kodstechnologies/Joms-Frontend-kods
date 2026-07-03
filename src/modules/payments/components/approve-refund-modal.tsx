@@ -34,8 +34,11 @@ type ApproveRefundModalProps = {
   }) => void
 }
 
-const fieldInputClass =
-  'h-11 w-full rounded-lg border border-white/[0.06] bg-[#0F0F0F] px-4 text-sm text-white placeholder:text-[#666666] focus-visible:ring-1 focus-visible:ring-white/20'
+const partialRefundInputClass =
+  'h-[38px] w-full max-w-[382px] rounded-[10px] border-0 bg-[#141414] px-4 font-figtree text-[14px] font-normal leading-[20px] tracking-normal text-white placeholder:text-[#666666] focus-visible:ring-1 focus-visible:ring-white/20'
+
+const confirmButtonClass =
+  'inline-flex h-10 w-full items-center justify-center gap-[10px] rounded-[10px] bg-[#00A63E] p-[10px] font-figtree text-[12px] font-semibold leading-[20px] tracking-normal text-[#050505] transition-colors hover:bg-[#009636] sm:ml-auto sm:w-[238px]'
 
 const outlineButtonClass =
   'inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-white/20 bg-transparent px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-white/5'
@@ -133,7 +136,10 @@ export function ApproveRefundModal({ open, data, onClose, onConfirm }: ApproveRe
         aria-labelledby="approve-refund-title"
       >
         <div className="flex shrink-0 items-center justify-between border-b border-white/[0.06] px-4 py-4 sm:px-6 sm:py-5">
-          <h2 id="approve-refund-title" className="text-[15px] font-bold text-white sm:text-[16px]">
+          <h2
+            id="approve-refund-title"
+            className="font-figtree text-[24px] font-semibold leading-6 tracking-normal text-white"
+          >
             Approve Refund
           </h2>
           <button
@@ -149,10 +155,13 @@ export function ApproveRefundModal({ open, data, onClose, onConfirm }: ApproveRe
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 sm:px-6 sm:py-6">
           <div className="space-y-5">
             <div className="text-center">
-              <div className="mx-auto grid size-12 place-items-center rounded-full bg-emerald-600">
-                <Check className="size-6 text-white" aria-hidden="true" />
+              <div
+                className="mx-auto grid size-[70px] place-items-center rounded-full bg-[#00A63E33]"
+                aria-hidden="true"
+              >
+                <Check className="size-8 text-[#00A63E]" strokeWidth={2.5} />
               </div>
-              <p className="mt-4 text-[13px] leading-relaxed text-white">
+              <p className="mx-auto mt-4 max-w-[343px] text-center font-figtree text-[14px] font-semibold leading-6 tracking-normal text-white">
                 {refundType === 'full'
                   ? 'You are about to approve a full refund for this dispute.'
                   : 'You are about to approve a partial refund for this dispute.'}
@@ -172,9 +181,13 @@ export function ApproveRefundModal({ open, data, onClose, onConfirm }: ApproveRe
             </div>
 
             <div className="rounded-xl border border-white/[0.06] bg-[#121212] p-4 sm:p-5">
-              <h3 className="text-[13px] font-bold text-white">Admin Decisions</h3>
+              <h3 className="font-figtree text-[14px] font-semibold leading-[20px] tracking-normal text-white">
+                Admin Decisions
+              </h3>
 
-              <p className="mt-4 text-[12px] text-[#888888]">Select Refund Type</p>
+              <p className="mt-4 font-figtree text-[14px] font-medium leading-[20px] tracking-normal text-white">
+                Select Refund Type
+              </p>
               <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-6">
                 <RadioOption
                   label="Full Refund"
@@ -194,7 +207,10 @@ export function ApproveRefundModal({ open, data, onClose, onConfirm }: ApproveRe
                   disabled={refundType === 'full'}
                   onChange={(event) => setPartialAmount(event.target.value.replace(/[^\d.]/g, ''))}
                   placeholder="Enter Partial Refund"
-                  className={cn(fieldInputClass, refundType === 'full' && 'opacity-50')}
+                  className={cn(
+                    partialRefundInputClass,
+                    refundType === 'full' && 'opacity-50',
+                  )}
                 />
                 <p className="mt-2 text-[11px] text-[#666666]">Platform will retain: {retainedAmount}</p>
               </div>
@@ -241,13 +257,9 @@ export function ApproveRefundModal({ open, data, onClose, onConfirm }: ApproveRe
           <button type="button" onClick={handleClose} className={outlineButtonClass}>
             Cancel
           </button>
-          <button
-            type="button"
-            onClick={handleConfirm}
-            className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-emerald-500 px-4 py-2.5 text-sm font-semibold text-black transition-colors hover:bg-emerald-400"
-          >
+          <button type="button" onClick={handleConfirm} className={confirmButtonClass}>
             Confirm Decision
-            <Check className="size-4" aria-hidden="true" />
+            <Check className="size-[16.67px] shrink-0 text-[#050505]" strokeWidth={2.5} aria-hidden="true" />
           </button>
         </div>
       </div>
@@ -256,11 +268,17 @@ export function ApproveRefundModal({ open, data, onClose, onConfirm }: ApproveRe
   )
 }
 
+const detailLabelClass =
+  'font-figtree text-[14px] font-normal leading-[20px] tracking-normal text-[#888888]'
+
+const detailValueClass =
+  'block shrink-0 text-right font-figtree text-[14px] font-normal leading-[20px] tracking-normal text-white'
+
 function DetailRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center justify-between gap-4 border-b border-white/5 py-2.5 last:border-b-0">
-      <span className="text-[12px] text-[#888888]">{label}</span>
-      <span className="max-w-[60%] text-right text-[12px] font-medium text-white">{value}</span>
+      <span className={detailLabelClass}>{label}</span>
+      <span className={detailValueClass}>{value}</span>
     </div>
   )
 }
@@ -285,7 +303,9 @@ function RadioOption({
       >
         {checked ? <span className="size-1.5 rounded-full bg-black" /> : null}
       </span>
-      <span className="text-[12px] font-medium text-white">{label}</span>
+      <span className="font-figtree text-[14px] font-normal leading-[20px] tracking-normal text-white">
+        {label}
+      </span>
     </label>
   )
 }

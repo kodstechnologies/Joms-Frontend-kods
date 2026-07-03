@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ArrowLeft, Check, CircleDollarSign } from 'lucide-react'
+import { ArrowLeft, CircleDollarSign, Check } from 'lucide-react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 
@@ -10,29 +10,61 @@ import {
 } from '@/modules/payments/mock/refund-escalation.mock'
 import { cn } from '@/shared/lib/cn'
 
+const labelClass = 'font-figtree text-[11px] font-normal leading-[20px] text-[#888888]'
+const valueClass = 'font-figtree text-[12px] font-medium leading-[20px] text-white'
+
 function InfoItem({
   label,
   value,
   href,
+  className,
 }: {
   label: string
   value: string
   href?: string
+  className?: string
 }) {
   return (
-    <div className="min-w-[120px] shrink-0 space-y-1.5 sm:min-w-0 sm:shrink">
-      <p className="text-[11px] text-[#888888]">{label}</p>
+    <div className={cn('min-w-0 space-y-1', className)}>
+      <p className={labelClass}>{label}</p>
       {href ? (
         <Link
           to={href}
-          className="block text-[12px] font-medium text-white underline underline-offset-2"
+          className={cn(valueClass, 'block underline underline-offset-2')}
         >
           {value}
         </Link>
       ) : (
-        <p className="text-[12px] font-medium text-white">{value}</p>
+        <p className={cn(valueClass, 'truncate')}>{value}</p>
       )}
     </div>
+  )
+}
+
+function PermissionItem({ label, active }: { label: string; active: boolean }) {
+  return (
+    <li className="flex items-center gap-2.5">
+      <span
+        className={cn(
+          'grid size-4 shrink-0 place-items-center rounded-full border',
+          active ? 'border-white/30' : 'border-white/15',
+        )}
+      >
+        <Check
+          className={cn('size-2.5', active ? 'text-white' : 'text-[#666666]')}
+          strokeWidth={2.5}
+          aria-hidden="true"
+        />
+      </span>
+      <span
+        className={cn(
+          'font-figtree text-[11px] font-normal leading-[20px]',
+          active ? 'text-[#CCCCCC]' : 'text-[#777777]',
+        )}
+      >
+        {label}
+      </span>
+    </li>
   )
 }
 
@@ -50,30 +82,48 @@ function RoleCard({
       type="button"
       onClick={onSelect}
       className={cn(
-        'flex h-full w-full flex-col rounded-xl border p-4 text-left transition-colors sm:p-5',
+        'flex min-h-[228px] w-full flex-col rounded-[10px] border p-5 text-left transition-colors',
         selected
           ? 'border-white bg-[#1A1A1A]'
-          : 'border-transparent bg-[#141414] hover:bg-[#1A1A1A]',
+          : 'border-transparent bg-[#141414] hover:bg-[#181818]',
       )}
     >
-      <div className="mb-4 flex items-start gap-3">
-        <div className="grid size-9 shrink-0 place-items-center rounded-full border border-white/10 bg-[#0F0F0F] text-[#888888]">
-          <CircleDollarSign className="size-4" />
+      <div className="flex items-start gap-3">
+        <div
+          className={cn(
+            'grid size-10 shrink-0 place-items-center rounded-full border border-white/10 bg-[#0F0F0F]',
+            selected ? 'text-[#AAAAAA]' : 'text-[#666666]',
+          )}
+        >
+          <CircleDollarSign className="size-[18px]" strokeWidth={1.75} />
         </div>
-        <div className="min-w-0">
-          <h3 className="text-[14px] font-bold text-white">{role.title}</h3>
-          <p className="mt-1 text-[11px] leading-relaxed text-[#888888]">{role.description}</p>
+        <div className="min-w-0 flex-1">
+          <h3
+            className={cn(
+              'font-figtree text-[14px] font-semibold leading-[20px]',
+              selected ? 'text-white' : 'text-[#DDDDDD]',
+            )}
+          >
+            {role.title}
+          </h3>
+          <p className="mt-1 font-figtree text-[11px] font-normal leading-[18px] text-[#888888]">
+            {role.description}
+          </p>
         </div>
       </div>
 
-      <div className="mt-auto">
-        <p className="mb-3 text-[12px] font-semibold text-white">Permissions</p>
+      <div className="mt-5 flex-1">
+        <p
+          className={cn(
+            'mb-3 font-figtree text-[12px] font-semibold leading-[20px]',
+            selected ? 'text-white' : 'text-[#CCCCCC]',
+          )}
+        >
+          Permissions
+        </p>
         <ul className="space-y-2.5">
           {role.permissions.map((permission) => (
-            <li key={permission} className="flex items-start gap-2.5 text-[11px] text-[#CCCCCC]">
-              <Check className="mt-0.5 size-3.5 shrink-0 text-white" aria-hidden="true" />
-              <span>{permission}</span>
-            </li>
+            <PermissionItem key={permission} label={permission} active={selected} />
           ))}
         </ul>
       </div>
@@ -83,100 +133,99 @@ function RoleCard({
 
 export function AssignRefundAuthorityPage() {
   const navigate = useNavigate()
-  const { id = 'refund-01' } = useParams<{ id: string }>()
+  const { id = 'refund-02' } = useParams<{ id: string }>()
   const request = getRefundEscalationRequestById(id)
-  const [selectedRoleId, setSelectedRoleId] = useState(refundAuthorityRolesMock[0]?.id ?? '')
+  const [selectedRoleId, setSelectedRoleId] = useState('finance-admin')
 
   const handleContinue = () => {
     const selectedRole = refundAuthorityRolesMock.find((role) => role.id === selectedRoleId)
-    toast.success(`Refund authority assigned to ${selectedRole?.title ?? 'selected role'}`)
-    navigate(`/finance/refunds/${id}`)
+    toast.success(`Dispute authority assigned to ${selectedRole?.title ?? 'selected role'}`)
+    navigate(`/finance/refunds/${id}/dispute`)
   }
 
   return (
-    <div className="flex min-h-full flex-col gap-5 pb-6">
-      <header>
-        <button
-          type="button"
-          onClick={() => navigate(`/finance/refunds/${id}`)}
-          className="group flex w-fit items-center gap-2 text-[20px] font-bold tracking-tight text-white transition-colors hover:text-[#FBC078]"
-        >
-          <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
-          <span>Escalation</span>
-        </button>
-        <p className="mt-2 pl-7 text-[12px] text-[#777777]">
-          <Link to="/finance/refunds" className="transition-colors hover:text-white">
-            Refunds & Chargebacks
-          </Link>
-          <span> / </span>
-          <Link to={`/finance/refunds/${id}`} className="transition-colors hover:text-white">
-            Payment View Details
-          </Link>
-          <span> / </span>
-          <span className="font-semibold text-white">Refunds</span>
-        </p>
-      </header>
-
-      <section className="rounded-xl border border-white/[0.06] bg-[#1A1A1A] p-4 sm:p-5">
-        <div>
-          <h1 className="text-[18px] font-bold text-white sm:text-[20px]">Assign Refund Authority</h1>
-          <p className="mt-1 text-[12px] text-[#888888]">
-            Select the role responsible for reviewing and processing this refund request.
+    <div className="-mx-4 -my-4 flex min-h-[calc(100dvh-4rem)] flex-col bg-black sm:-mx-6 lg:-mx-8 lg:-my-6">
+      <div className="flex flex-1 flex-col gap-5 px-4 py-4 sm:px-6 lg:px-8 lg:py-6">
+        <header>
+          <button
+            type="button"
+            onClick={() => navigate(`/finance/refunds/${id}/dispute`)}
+            className="group flex w-fit items-center gap-2 font-figtree text-[20px] font-bold leading-7 tracking-tight text-white transition-colors hover:text-[#FBC078]"
+          >
+            <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
+            <span>Escalation</span>
+          </button>
+          <p className="mt-2 pl-7 font-figtree text-[12px] font-normal leading-[20px] text-[#777777]">
+            <Link to="/finance/refunds" className="transition-colors hover:text-white">
+              Finance Management
+            </Link>
+            <span> / </span>
+            <Link
+              to={`/finance/refunds/${id}/dispute`}
+              className="transition-colors hover:text-white"
+            >
+              Payment View Details
+            </Link>
           </p>
-        </div>
+        </header>
 
-        <div className="my-5 border-b border-white/[0.06]" />
+        <section className="rounded-[10px] border border-white/[0.06] bg-[#1A1A1A] px-5 py-5">
+          <div>
+            <h1 className="font-figtree text-[18px] font-semibold leading-[24px] text-white">
+              Assign Dispute Authority
+            </h1>
+            <p className="mt-1 font-figtree text-[12px] font-normal leading-[20px] text-[#888888]">
+              Select the role responsible for reviewing and processing this refund request
+            </p>
+          </div>
 
-        <div className="-mx-1 overflow-x-auto px-1 pb-1">
-          <div className="flex min-w-max gap-6 sm:grid sm:min-w-0 sm:grid-cols-4 lg:grid-cols-7">
+          <div className="my-5 border-b border-white/[0.06]" />
+
+          <div className="grid grid-cols-2 gap-x-6 gap-y-5 sm:grid-cols-3 lg:grid-cols-7">
             <InfoItem label="Request ID" value={request.requestId} />
-            <InfoItem label="Customer ID" value={request.customerId} href="#" />
-            <InfoItem label="Customer Name" value={request.customerName} href="#" />
-            <InfoItem label="Membership Status" value={request.membershipStatus} />
-            <InfoItem label="Module" value={request.module} />
-            <InfoItem label="Category" value={request.category} />
+            <InfoItem label="Customer" value={request.customerName} href="#" />
             <InfoItem label="Amount" value={request.amount} />
+            <InfoItem label="Reason" value={request.reason} className="sm:col-span-2 lg:col-span-1" />
+            <InfoItem label="Module type" value={request.moduleType} />
+            <InfoItem label="Service type" value={request.serviceType} />
+            <InfoItem label="Payment mode" value={request.paymentMode} />
           </div>
-        </div>
+        </section>
 
-        <div className="mt-4 rounded-lg border border-white/[0.04] bg-[#121212] p-4">
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-3 md:gap-6">
-            <InfoItem label="Routed By" value={request.routedBy} />
-            <InfoItem label="Customer Comments" value={request.customerComments} />
-            <InfoItem label="Internal Notes" value={request.internalNotes} />
+        <section className="flex-1 pb-4">
+          <p className="mb-4 font-figtree text-[12px] font-medium leading-[20px] text-white">
+            Select and assign the refund:
+          </p>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {refundAuthorityRolesMock.map((role) => (
+              <RoleCard
+                key={role.id}
+                role={role}
+                selected={selectedRoleId === role.id}
+                onSelect={() => setSelectedRoleId(role.id)}
+              />
+            ))}
           </div>
-        </div>
-      </section>
+        </section>
+      </div>
 
-      <section className="flex-1">
-        <p className="mb-4 text-[12px] font-medium text-white">Select and assign the refund:</p>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {refundAuthorityRolesMock.map((role) => (
-            <RoleCard
-              key={role.id}
-              role={role}
-              selected={selectedRoleId === role.id}
-              onSelect={() => setSelectedRoleId(role.id)}
-            />
-          ))}
+      <footer className="mt-auto border-t border-white/[0.06] bg-[#0B0F14] px-4 py-4 sm:px-6 lg:px-8">
+        <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <button
+            type="button"
+            onClick={() => navigate(`/finance/refunds/${id}/dispute`)}
+            className="inline-flex h-10 w-full items-center justify-center rounded-[10px] border border-white/20 bg-transparent px-6 font-figtree text-[12px] font-semibold leading-[20px] text-white transition-colors hover:bg-white/5 sm:w-auto sm:min-w-[120px]"
+          >
+            Close
+          </button>
+          <button
+            type="button"
+            onClick={handleContinue}
+            className="inline-flex h-10 w-full items-center justify-center rounded-[10px] border border-white/10 bg-[#2A2A2A] px-6 font-figtree text-[12px] font-semibold leading-[20px] text-white transition-colors hover:bg-[#333333] sm:ml-auto sm:w-auto sm:min-w-[120px]"
+          >
+            Continue
+          </button>
         </div>
-      </section>
-
-      <footer className="mt-auto flex flex-col-reverse gap-3 border-t border-white/[0.06] pt-5 sm:flex-row sm:items-center sm:justify-between">
-        <button
-          type="button"
-          onClick={() => navigate(`/finance/refunds/${id}`)}
-          className="inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-white/20 bg-transparent px-6 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-white/5 sm:w-auto"
-        >
-          Close
-        </button>
-        <button
-          type="button"
-          onClick={handleContinue}
-          className="inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-white/10 bg-[#2A2A2A] px-6 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#333333] sm:w-auto"
-        >
-          Continue
-        </button>
       </footer>
     </div>
   )

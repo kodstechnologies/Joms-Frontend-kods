@@ -8,29 +8,23 @@ export type RefundAuthorityRole = {
 export type RefundEscalationRequest = {
   id: string
   requestId: string
-  customerId: string
   customerName: string
-  membershipStatus: string
-  module: string
-  category: string
   amount: string
-  routedBy: string
-  customerComments: string
-  internalNotes: string
+  reason: string
+  moduleType: string
+  serviceType: string
+  paymentMode: string
 }
 
 const defaultEscalationRequest: RefundEscalationRequest = {
-  id: 'refund-01',
+  id: 'refund-02',
   requestId: 'REF-001',
-  customerId: 'SJ_00111',
   customerName: 'Sarah Johnson',
-  membershipStatus: 'Basic',
-  module: 'Services',
-  category: 'Legal',
   amount: '₹5,499',
-  routedBy: 'SUPAG_12',
-  customerComments: 'Product defect - camera not working',
-  internalNotes: 'Product defect - camera not working',
+  reason: 'Product defect - camera not working',
+  moduleType: 'Service',
+  serviceType: 'Consultation',
+  paymentMode: 'UPI/Credit Card',
 }
 
 const roleDescription = 'Can approve and issue refunds within policy limits'
