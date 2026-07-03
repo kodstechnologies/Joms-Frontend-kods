@@ -9,7 +9,10 @@ import { StatCard } from "../../components/stat-card";
 import { SummaryCard } from "../../components/summary-card";
 import { categoryColumns } from "../../components/category/category-table-columns";
 import { categoryManagementTheme } from "../../components/category/category-management.theme";
-import { useCategoryStore } from "../../store/category-store";
+import {
+  categoryPath,
+  useCategoryManagementScope,
+} from "../../components/category/category-management-scope";
 
 const PAGE_SIZE = 10;
 
@@ -18,8 +21,9 @@ export function CategoryManagementPage() {
   const [page, setPage] = useState(1);
 
   const navigate = useNavigate();
+  const scope = useCategoryManagementScope();
 
-  const categories = useCategoryStore((state) => state.categories);
+  const categories = scope.useStore((state) => state.categories);
 
   const tableCategories = useMemo(() => {
     const visible = categories.filter((category) => category.status !== "Paused");
@@ -61,7 +65,7 @@ export function CategoryManagementPage() {
           <Button
             variant="secondary"
             className="h-10 w-full gap-2 rounded-xl border border-[#FFC16B] bg-transparent px-4 text-[13px] font-semibold text-[#FFC16B] shadow-none hover:bg-[#FFC16B]/10 sm:w-auto"
-            onClick={() => navigate("/services/dashboard/metrics")}
+            onClick={() => navigate(scope.metricsPath)}
           >
             <SlidersHorizontal className="size-4" aria-hidden="true" />
             Manage Metrics
@@ -69,7 +73,7 @@ export function CategoryManagementPage() {
 
           <Button
             className="h-10 w-full gap-2 rounded-xl bg-[#FFC16B] px-4 text-[13px] font-semibold text-black shadow-none hover:bg-[#F5C27B] sm:w-auto"
-            onClick={() => navigate("/categories/management/create")}
+            onClick={() => navigate(categoryPath(scope, "create"))}
           >
             <Plus className="size-4" aria-hidden="true" />
             Add New Category
@@ -86,14 +90,14 @@ export function CategoryManagementPage() {
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <SummaryCard
-          onClick={() => navigate("/categories/management/paused")}
+          onClick={() => navigate(categoryPath(scope, "paused"))}
           title="Paused Category"
           value="08"
           color="yellow"
         />
 
         <SummaryCard
-          onClick={() => navigate("/categories/management/deleted")}
+          onClick={() => navigate(categoryPath(scope, "deleted"))}
           title="Deleted Category"
           value="09"
           color="red"

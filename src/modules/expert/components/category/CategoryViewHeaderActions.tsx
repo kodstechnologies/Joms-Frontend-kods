@@ -10,7 +10,10 @@ import { useNavigate, useParams } from "react-router-dom";
 
 import { Button } from "@/shared/components/ui/button";
 
-import { useCategoryStore } from "../../store/category-store";
+import {
+  categoryPath,
+  useCategoryManagementScope,
+} from "./category-management-scope";
 import { categoryViewTheme } from "./category-view.theme";
 import { DeleteCategoryModal } from "./delete-category-modal";
 import { PauseCategoryModal } from "./pause-category-modal";
@@ -18,11 +21,12 @@ import { PauseCategoryModal } from "./pause-category-modal";
 export const CategoryViewHeaderActions = () => {
   const navigate = useNavigate();
   const { id } = useParams();
+  const scope = useCategoryManagementScope();
   const [pauseModalOpen, setPauseModalOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
 
-  const pauseCategory = useCategoryStore((state) => state.pauseCategory);
-  const removeCategory = useCategoryStore((state) => state.removeCategory);
+  const pauseCategory = scope.useStore((state) => state.pauseCategory);
+  const removeCategory = scope.useStore((state) => state.removeCategory);
 
   return (
     <>
@@ -30,7 +34,7 @@ export const CategoryViewHeaderActions = () => {
         <Button
           className={categoryViewTheme.accentButtonClass}
           onClick={() =>
-            navigate(`/categories/management/create-subcategory/${id}`)
+            navigate(categoryPath(scope, `create-subcategory/${id}`))
           }
         >
           <Plus className="size-4" aria-hidden="true" />
@@ -40,16 +44,16 @@ export const CategoryViewHeaderActions = () => {
         <Button
           variant="secondary"
           className={categoryViewTheme.outlineButtonClass}
-          onClick={() => navigate("/services/management")}
+          onClick={() => navigate(scope.relatedListPath)}
         >
           <Eye className="size-4" aria-hidden="true" />
-          View Services
+          {scope.relatedListLabel}
         </Button>
 
         <Button
           variant="secondary"
           className={categoryViewTheme.outlineButtonClass}
-          onClick={() => navigate(`/categories/management/rename/${id}`)}
+          onClick={() => navigate(categoryPath(scope, `rename/${id}`))}
         >
           <Pencil className="size-4" aria-hidden="true" />
           Edit Category
@@ -81,7 +85,7 @@ export const CategoryViewHeaderActions = () => {
             pauseCategory(id);
           }
           setPauseModalOpen(false);
-          navigate("/categories/management/paused");
+          navigate(categoryPath(scope, "paused"));
         }}
       />
 
@@ -93,7 +97,7 @@ export const CategoryViewHeaderActions = () => {
             removeCategory(id);
           }
           setDeleteModalOpen(false);
-          navigate("/categories/management/deleted");
+          navigate(categoryPath(scope, "deleted"));
         }}
       />
     </>

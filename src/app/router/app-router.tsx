@@ -88,6 +88,46 @@ const ExpertReportedExpertsPage = lazy(() =>
     default: m.ExpertReportedExpertsPage,
   })),
 )
+const ExpertCategoryManagementPage = lazy(() =>
+  import('@/modules/expert').then((m) => ({
+    default: m.ExpertCategoryManagementPage,
+  })),
+)
+const ExpertCreateCategoryPage = lazy(() =>
+  import('@/modules/expert').then((m) => ({
+    default: m.ExpertCreateCategoryPage,
+  })),
+)
+const ExpertCreateSubCategoryPage = lazy(() =>
+  import('@/modules/expert').then((m) => ({
+    default: m.ExpertCreateSubCategoryPage,
+  })),
+)
+const ExpertPausedCategoriesPage = lazy(() =>
+  import('@/modules/expert').then((m) => ({
+    default: m.ExpertPausedCategoriesPage,
+  })),
+)
+const ExpertDeletedCategoriesPage = lazy(() =>
+  import('@/modules/expert').then((m) => ({
+    default: m.ExpertDeletedCategoriesPage,
+  })),
+)
+const ExpertRenameCategoryPage = lazy(() =>
+  import('@/modules/expert').then((m) => ({
+    default: m.ExpertRenameCategoryPage,
+  })),
+)
+const ExpertCategoryViewPage = lazy(() =>
+  import('@/modules/expert').then((m) => ({
+    default: m.ExpertCategoryViewPage,
+  })),
+)
+const ExpertSubCategoryViewPage = lazy(() =>
+  import('@/modules/expert').then((m) => ({
+    default: m.ExpertSubCategoryViewPage,
+  })),
+)
 const LeaderboardPage = lazy(() =>
   import('@/modules/expert').then((m) => ({
     default: m.LeaderboardPage,
@@ -402,6 +442,38 @@ export function AppRouter() {
                 <Route path="/experts/deleted" element={<ExpertDeletedExpertsPage />} />
                 <Route path="/experts/reported" element={<ExpertReportedExpertsPage />} />
                 <Route path="/experts/pending-approvals" element={<ExpertPendingApprovalsPage />} />
+                <Route
+                  path="/experts/categories/management"
+                  element={<ExpertCategoryManagementPage />}
+                />
+                <Route
+                  path="/experts/categories/management/create"
+                  element={<ExpertCreateCategoryPage />}
+                />
+                <Route
+                  path="/experts/categories/management/create-subcategory/:id"
+                  element={<ExpertCreateSubCategoryPage />}
+                />
+                <Route
+                  path="/experts/categories/management/paused"
+                  element={<ExpertPausedCategoriesPage />}
+                />
+                <Route
+                  path="/experts/categories/management/deleted"
+                  element={<ExpertDeletedCategoriesPage />}
+                />
+                <Route
+                  path="/experts/categories/management/rename/:id"
+                  element={<ExpertRenameCategoryPage />}
+                />
+                <Route
+                  path="/experts/categories/management/view/:id"
+                  element={<ExpertCategoryViewPage />}
+                />
+                <Route
+                  path="/experts/categories/management/:id/subcategory/:subCategoryId"
+                  element={<ExpertSubCategoryViewPage />}
+                />
                 <Route path="/referrals/management" element={<ReferralManagementPage />} />
                 <Route path="/support/dashboard" element={<SupportDashboardPage />} />
                 <Route path="/support/tickets" element={<TicketManagementPage />} />

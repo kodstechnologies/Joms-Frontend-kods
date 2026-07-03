@@ -1,5 +1,8 @@
 import { useEffect, useState } from "react";
-import { useCategoryStore } from "../../store/category-store";
+import {
+  categoryPath,
+  useCategoryManagementScope,
+} from "../../components/category/category-management-scope";
 import CategoryHeader from "../../components/category/CategoryHeader";
 import CategoryDetailsCard from "../../components/category/CategoryDetailsCard";
 import FooterActions from "../../components/category/FooterActions";
@@ -16,16 +19,17 @@ export const CategoryFormPage = ({
 }: CategoryFormPageProps) => {
     const navigate = useNavigate();
     const { id } = useParams();
+    const scope = useCategoryManagementScope();
 
-    const createCategory = useCategoryStore(
+    const createCategory = scope.useStore(
         (state) => state.createCategory
     );
 
-    const updateCategory = useCategoryStore(
+    const updateCategory = scope.useStore(
         (state) => state.updateCategory
     );
 
-    const categories = useCategoryStore(
+    const categories = scope.useStore(
         (state) => state.categories
     );
 
@@ -191,7 +195,7 @@ export const CategoryFormPage = ({
             });
         }
 
-        navigate("/categories/management");
+        navigate(categoryPath(scope));
     };
 
     return (

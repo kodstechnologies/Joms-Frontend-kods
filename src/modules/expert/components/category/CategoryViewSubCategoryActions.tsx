@@ -7,6 +7,11 @@ import {
   TableActionsItem,
 } from "@/shared/components/table/table-actions-dropdown";
 
+import {
+  categoryPath,
+  useCategoryManagementScope,
+} from "./category-management-scope";
+
 interface Props {
   id: string;
 }
@@ -15,6 +20,7 @@ const CategoryViewSubCategoryActions = ({ id: subCategoryId }: Props) => {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
   const { id: categoryId } = useParams();
+  const scope = useCategoryManagementScope();
 
   return (
     <TableActionsDropdown
@@ -29,7 +35,7 @@ const CategoryViewSubCategoryActions = ({ id: subCategoryId }: Props) => {
         icon={<Eye className="size-4 text-slate-700" />}
         onClick={() => {
           navigate(
-            `/categories/management/${categoryId}/subcategory/${subCategoryId}`,
+            categoryPath(scope, `${categoryId}/subcategory/${subCategoryId}`),
           );
           setOpen(false);
         }}

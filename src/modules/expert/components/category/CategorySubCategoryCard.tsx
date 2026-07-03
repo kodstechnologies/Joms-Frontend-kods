@@ -1,6 +1,10 @@
 import { ChevronRight, PenTool } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 
+import {
+  categoryPath,
+  useCategoryManagementScope,
+} from "./category-management-scope";
 import CategoryViewSubCategoryActions from "./CategoryViewSubCategoryActions";
 import { categoryViewTheme } from "./category-view.theme";
 
@@ -20,6 +24,7 @@ const CategorySubCategoryCard = ({
 }: Props) => {
   const navigate = useNavigate();
   const { id: categoryId } = useParams();
+  const scope = useCategoryManagementScope();
 
   return (
     <div
@@ -33,7 +38,7 @@ const CategorySubCategoryCard = ({
         type="button"
         aria-label={`Open ${name}`}
         onClick={() =>
-          navigate(`/categories/management/${categoryId}/subcategory/${id}`)
+          navigate(categoryPath(scope, `${categoryId}/subcategory/${id}`))
         }
         className="absolute right-5 top-5 text-white transition-opacity hover:opacity-70"
       >

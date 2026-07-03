@@ -7,7 +7,10 @@ import {
   TableActionsItem,
 } from "@/shared/components/table/table-actions-dropdown";
 
-import { useCategoryStore } from "../../store/category-store";
+import {
+  categoryPath,
+  useCategoryManagementScope,
+} from "./category-management-scope";
 import type { Category } from "./category-table-columns";
 
 interface Props {
@@ -17,9 +20,10 @@ interface Props {
 const DeletedCategoryActions = ({ category }: Props) => {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
+  const scope = useCategoryManagementScope();
 
-  const revokeCategory = useCategoryStore((state) => state.revokeCategory);
-  const removeCategory = useCategoryStore((state) => state.removeCategory);
+  const revokeCategory = scope.useStore((state) => state.revokeCategory);
+  const removeCategory = scope.useStore((state) => state.removeCategory);
 
   return (
     <TableActionsDropdown
@@ -33,7 +37,7 @@ const DeletedCategoryActions = ({ category }: Props) => {
         tone="light"
         icon={<Eye className="size-4 text-slate-700" />}
         onClick={() => {
-          navigate(`/categories/management/view/${category.id}`);
+          navigate(categoryPath(scope, `view/${category.id}`));
           setOpen(false);
         }}
       >
