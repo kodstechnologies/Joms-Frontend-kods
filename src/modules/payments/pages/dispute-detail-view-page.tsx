@@ -15,6 +15,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 
 import { EscalateToSuperAdminModal } from '@/modules/payments/components/escalate-to-super-admin-modal'
+import { ApproveRefundModal } from '@/modules/payments/components/approve-refund-modal'
 import { getDisputeDetailById } from '@/modules/payments/mock/dispute-detail.mock'
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
@@ -92,6 +93,7 @@ export function DisputeDetailViewPage() {
   const detail = getDisputeDetailById(id)
   const [selectedEvidenceId, setSelectedEvidenceId] = useState(detail.evidenceFiles[0]?.id ?? '')
   const [isEscalateOpen, setIsEscalateOpen] = useState(false)
+  const [isApproveRefundOpen, setIsApproveRefundOpen] = useState(false)
 
   return (
     <div className="flex flex-col gap-5 pb-6">
@@ -216,7 +218,7 @@ export function DisputeDetailViewPage() {
             <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
               <button
                 type="button"
-                onClick={() => toast.success('Dispute resolved')}
+                onClick={() => setIsApproveRefundOpen(true)}
                 className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-emerald-500"
               >
                 <Check className="size-4" />
@@ -300,6 +302,24 @@ export function DisputeDetailViewPage() {
         amount={detail.amount}
         onClose={() => setIsEscalateOpen(false)}
         onSubmit={() => navigate(`/finance/refunds/${id}/escalate`)}
+      />
+
+      <ApproveRefundModal
+        open={isApproveRefundOpen}
+        data={{
+          disputeId: detail.disputeId,
+          transactionId: detail.transactionId,
+          userName: detail.userName,
+          userId: detail.userId,
+          moduleType: detail.moduleType,
+          paymentMethod: detail.paymentMode,
+          refundAmount: detail.amount,
+          supportRecommendation: detail.supportRecommendation,
+          reason: detail.disputeReason,
+          maxRefundableAmount: detail.maxRefundableAmount,
+          platformRetainAmount: detail.platformRetainAmount,
+        }}
+        onClose={() => setIsApproveRefundOpen(false)}
       />
     </div>
   )

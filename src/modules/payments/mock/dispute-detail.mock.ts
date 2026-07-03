@@ -35,6 +35,8 @@ export type DisputeDetail = {
   disputeReason: string
   assignedTo: string
   amount: string
+  maxRefundableAmount: number
+  platformRetainAmount: string
   userMessage: string
   timeline: DisputeTimelineItem[]
 }
@@ -68,6 +70,8 @@ const defaultDisputeDetail: DisputeDetail = {
   disputeReason: 'Quality issue in the service',
   assignedTo: 'Admin Team',
   amount: '₹11,000',
+  maxRefundableAmount: 15000,
+  platformRetainAmount: '$500',
   userMessage:
     'The service delivered did not match what was promised during booking. Multiple deliverables were incomplete and the expert was unresponsive after payment.',
   timeline: [
