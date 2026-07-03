@@ -1,0 +1,46 @@
+name: Deploy Frontend to AWS EC2
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Source
+        uses: actions/checkout@v4
+
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            cd ~/Joms-Frontend
+
+            echo "Fetching latest code..."
+            git fetch origin
+            git reset --hard origin/main
+
+            echo "Building Docker image..."
+            docker build -t joms-frontend .
+
+            echo "Stopping old container..."
+            docker stop joms-frontend || true
+            docker rm joms-frontend || true
+
+            echo "Starting new container..."
+            docker run -d \
+              --name joms-frontend \
+              --restart unless-stopped \
+              -p 80:80 \
+              joms-frontend
+
+            echo "Removing unused Docker images..."
+            docker image prune -f
+
+            echo "Deployment completed successfully!"
