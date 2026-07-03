@@ -1,37 +1,40 @@
 import axios from 'axios'
+import type { AxiosInstance } from 'axios'
 
 import { env } from '@/config/env'
+import { useAuthStore } from '@/modules/auth/store/auth-store'
 
 const defaultConfigs = {
   timeout: 30000,
   withCredentials: true,
 }
 
-export const authApiClient = axios.create({
-  ...defaultConfigs,
-  baseURL: env.authApiBaseUrl,
-})
+function attachAuthInterceptor(client: AxiosInstance) {
+  client.interceptors.request.use((config) => {
+    const token = useAuthStore.getState().token
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`
+    }
+    return config
+  })
+}
 
-export const expertApiClient = axios.create({
-  ...defaultConfigs,
-  baseURL: env.serviceApiBaseUrl,
-})
+function createApiClient(baseURL: string) {
+  const client = axios.create({
+    ...defaultConfigs,
+    baseURL,
+  })
+  attachAuthInterceptor(client)
+  return client
+}
 
-export const adminApiClient = axios.create({
-  ...defaultConfigs,
-  baseURL: env.adminApiBaseUrl,
-})
-export const venueApiClient = axios.create({
-  ...defaultConfigs,
-  baseURL: env.venueApiBaseUrl,
-})
+export const authApiClient = createApiClient(env.authApiBaseUrl)
 
-export const kycApiClient = axios.create({
-  ...defaultConfigs,
-  baseURL: env.kycApiBaseUrl,
-})
+export const expertApiClient = createApiClient(env.serviceApiBaseUrl)
 
-export const membershipApiClient = axios.create({
-  ...defaultConfigs,
-  baseURL: env.membershipApiBaseUrl,
-})
+export const adminApiClient = createApiClient(env.adminApiBaseUrl)
+export const venueApiClient = createApiClient(env.venueApiBaseUrl)
+
+export const kycApiClient = createApiClient(env.kycApiBaseUrl)
+
+export const membershipApiClient = createApiClient(env.membershipApiBaseUrl)

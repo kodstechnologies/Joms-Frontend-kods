@@ -1,10 +1,17 @@
 ================================================================================
-JOMS FRONTEND - PRODUCTION ENV
+JOMS FRONTEND - PRODUCTION ENV (EC2: 3.108.162.112)
 Frontend Host: http://3.108.162.112
 Backend API Gateway: http://52.66.76.145 (nginx port 80, no service ports)
 ================================================================================
 
-.env.production
+Use ONLY VITE_API_BASE_URL in production. Do NOT set VITE_AUTH_API_BASE_URL to
+http://52.66.76.145/auth — that double-prefixes paths like /auth/admin/login.
+
+~/Joms-Frontend/.env  (used during docker build — keep minimal)
+--------------------------------------------------------------------------------
+VITE_API_BASE_URL=http://52.66.76.145
+
+~/Joms-Frontend/.env.production
 --------------------------------------------------------------------------------
 VITE_API_BASE_URL=http://52.66.76.145
 
@@ -17,10 +24,8 @@ Venues:       http://52.66.76.145/venues/...
 KYC:          http://52.66.76.145/venue-kyc
 Memberships:  http://52.66.76.145/memberships
 
-Local development (.env)
---------------------------------------------------------------------------------
-VITE_API_BASE_URL=http://localhost
-(uses ports :8000, :8001, etc. automatically)
-
-Rebuild frontend on EC2 after deploy:
-  cd ~/Joms-Frontend && docker build -t joms-frontend . && ...
+Rebuild frontend on EC2 after changing .env:
+  cd ~/Joms-Frontend
+  docker build -t joms-frontend .
+  docker rm -f joms-frontend || true
+  docker run -d --name joms-frontend -p 80:80 joms-frontend

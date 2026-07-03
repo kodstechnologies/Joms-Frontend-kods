@@ -66,7 +66,15 @@ export function LoginPage() {
 
     try {
       const response = await verifyOtp({ email: pendingEmail, otp: values.code })
-      const admin = response?.data?.admin
+      const session = response?.data
+      const admin = session?.admin
+      const token = session?.token
+
+      if (!token) {
+        toast.error('Login succeeded but no auth token was returned')
+        return
+      }
+
       let sessionUser
 
       if (admin) {
@@ -80,7 +88,7 @@ export function LoginPage() {
           mfaEnabled: admin.mfaEnabled,
           status: admin.status,
         }
-        setSession(sessionUser)
+        setSession(sessionUser, token)
       } else {
         sessionUser = {
           id: '',
@@ -90,7 +98,7 @@ export function LoginPage() {
           isSuperAdmin: true,
           permissions: [],
         }
-        setSession(sessionUser)
+        setSession(sessionUser, token)
       }
       toast.success('Welcome back')
       navigate(getDefaultHomeRoute(sessionUser), { replace: true })

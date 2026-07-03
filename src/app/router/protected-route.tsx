@@ -10,5 +10,10 @@ export function ProtectedRoute() {
     return <Navigate to="/auth/login" replace state={{ from: location }} />
   }
 
+  const token = useAuthStore((state) => state.token)
+  if (!token) {
+    return <Navigate to="/auth/login" replace state={{ from: location }} />
+  }
+
   return <Outlet />
 }
