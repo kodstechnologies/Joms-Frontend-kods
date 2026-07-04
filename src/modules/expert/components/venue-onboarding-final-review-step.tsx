@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Eye, EyeOff, Trash2 } from 'lucide-react'
 
+import { useServiceCategoriesByType } from '../hooks/use-service-categories'
 import type {
   VenueOnboardingKyc,
   VenueOnboardingReviewVenue,
@@ -48,21 +49,25 @@ function MaskedValue({ value }: { value: string }) {
 function DocumentPreview({
   label,
   url,
+  fileName,
 }: {
   label: string
   url?: string
+  fileName?: string
 }) {
   return (
     <div className="flex h-24 flex-col items-center justify-center rounded-md border border-dashed border-[#444] bg-black p-2">
       <p className="mb-1 text-[10px] text-[#777]">{label}</p>
       {url ? (
         <div className="flex w-full items-center justify-between gap-2 px-1">
-          <span className="truncate text-xs text-[#aaa]">Uploaded</span>
+          <span className="truncate text-xs text-[#aaa]">
+            {fileName || 'Uploaded'}
+          </span>
           <a
             href={url}
             target="_blank"
             rel="noreferrer"
-            className="text-[10px] text-[#FBC078] underline"
+            className="shrink-0 text-[10px] text-[#FBC078] underline"
           >
             View
           </a>
@@ -74,6 +79,15 @@ function DocumentPreview({
   )
 }
 
+function resolveDocumentPreview(
+  apiUrl?: string | null,
+  file?: File | null,
+): { url?: string; fileName?: string } {
+  if (apiUrl) return { url: apiUrl, fileName: 'Uploaded' }
+  if (file) return { url: URL.createObjectURL(file), fileName: file.name }
+  return {}
+}
+
 export const VenueOnboardingFinalReviewStep = ({
   formData,
   setFormData,
@@ -82,13 +96,23 @@ export const VenueOnboardingFinalReviewStep = ({
 }: Props) => {
   const venue = reviewVenue
   const kyc = reviewKyc
+  const { data: categoriesData } = useServiceCategoriesByType('venue')
+  const categories = useMemo(
+    () => Object.values(categoriesData?.data || {}).flat(),
+    [categoriesData?.data],
+  )
 
-  const categoryName = (() => {
+  const categoryName = useMemo(() => {
     const cats = venue?.venueCategoryId
-    if (!cats?.length) return formData.venueCategoryId || '-'
-    const first = cats[0]
-    return typeof first === 'string' ? first : first.name
-  })()
+    if (cats?.length) {
+      const first = cats[0]
+      if (typeof first === 'object' && first?.name) return first.name
+    }
+    if (formData.venueCategoryName) return formData.venueCategoryName
+    const matched = categories.find((cat) => cat.id === formData.venueCategoryId)
+    if (matched?.name) return matched.name
+    return '-'
+  }, [venue?.venueCategoryId, formData.venueCategoryName, formData.venueCategoryId, categories])
 
   const hostingSince = venue?.hostingSince
     ? formatHostingSince(venue.hostingSince.years, venue.hostingSince.months)
@@ -104,6 +128,50 @@ export const VenueOnboardingFinalReviewStep = ({
     : formData.venueImageUrls
 
   const businessKyc = kyc?.businessKyc
+
+  const panCardPreview = useMemo(
+    () => resolveDocumentPreview(businessKyc?.panCard, formData.panCard),
+    [businessKyc?.panCard, formData.panCard],
+  )
+  const tradeLicensePreview = useMemo(
+    () => resolveDocumentPreview(businessKyc?.tradeLicense, formData.tradeLicense),
+    [businessKyc?.tradeLicense, formData.tradeLicense],
+  )
+  const gstCertificatePreview = useMemo(
+    () =>
+      resolveDocumentPreview(businessKyc?.gstCertificate, formData.gstCertificate),
+    [businessKyc?.gstCertificate, formData.gstCertificate],
+  )
+  const gstUndertakingPreview = useMemo(
+    () =>
+      resolveDocumentPreview(
+        businessKyc?.gstUndertakingDocument || businessKyc?.gstUndertaking,
+        formData.gstUndertaking,
+      ),
+    [
+      businessKyc?.gstUndertakingDocument,
+      businessKyc?.gstUndertaking,
+      formData.gstUndertaking,
+    ],
+  )
+
+  const otherCertificatePreviews = useMemo(() => {
+    if (businessKyc?.otherCertificates?.length) {
+      return businessKyc.otherCertificates.map((url, index) => ({
+        key: `api-${index}`,
+        label: `Other Document ${index + 1}`,
+        url,
+        fileName: 'Uploaded',
+      }))
+    }
+
+    return formData.otherCertificates.map((file, index) => ({
+      key: `file-${file.name}-${index}`,
+      label: `Other Document ${index + 1}`,
+      url: URL.createObjectURL(file),
+      fileName: file.name,
+    }))
+  }, [businessKyc?.otherCertificates, formData.otherCertificates])
 
   return (
     <div className="mx-auto w-full max-w-[850px] space-y-6">
@@ -218,17 +286,51 @@ export const VenueOnboardingFinalReviewStep = ({
           Business identity verification documents
         </h3>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <DocumentPreview label="PAN Card" url={businessKyc?.panCard} />
           <DocumentPreview
-            label="Permits/Certificates"
-            url={businessKyc?.tradeLicense}
+            label="PAN Card"
+            url={panCardPreview.url}
+            fileName={panCardPreview.fileName}
           />
           <DocumentPreview
-            label="GST Certificates"
-            url={businessKyc?.gstCertificate || businessKyc?.gstUndertaking}
+            label="Permits/Certificates"
+            url={tradeLicensePreview.url}
+            fileName={tradeLicensePreview.fileName}
+          />
+          <DocumentPreview
+            label={
+              businessKyc?.hasGST ?? formData.hasGST
+                ? 'GST Certificates'
+                : 'GST Undertaking Document'
+            }
+            url={
+              (businessKyc?.hasGST ?? formData.hasGST)
+                ? gstCertificatePreview.url
+                : gstUndertakingPreview.url
+            }
+            fileName={
+              (businessKyc?.hasGST ?? formData.hasGST)
+                ? gstCertificatePreview.fileName
+                : gstUndertakingPreview.fileName
+            }
           />
         </div>
       </div>
+
+      {otherCertificatePreviews.length > 0 && (
+        <div className="rounded-lg border border-white/5 bg-[#151515] p-6">
+          <h3 className="mb-3 text-xs font-bold text-white">Other Documents</h3>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            {otherCertificatePreviews.map((doc) => (
+              <DocumentPreview
+                key={doc.key}
+                label={doc.label}
+                url={doc.url}
+                fileName={doc.fileName}
+              />
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="rounded-lg border border-white/5 bg-[#151515] p-6">
         <label className="mb-2 block text-xs font-medium text-white">

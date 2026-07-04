@@ -68,6 +68,11 @@ const ExpertProfileViewPage = lazy(() =>
     default: m.ExpertProfileViewPage,
   })),
 )
+const ExpertProfileAnalyticsPage = lazy(() =>
+  import('@/modules/expert').then((m) => ({
+    default: m.ExpertProfileAnalyticsPage,
+  })),
+)
 const ExpertPendingApprovalsPage = lazy(() =>
   import('@/modules/expert').then((m) => ({
     default: m.ExpertPendingApprovalsPage,
@@ -387,6 +392,10 @@ export function AppRouter() {
                 <Route
                   path="/experts/management/profile/:id"
                   element={<ExpertProfileViewPage />}
+                />
+                <Route
+                  path="/experts/management/profile/:id/analytics"
+                  element={<ExpertProfileAnalyticsPage />}
                 />
                 <Route
                   path="/experts/management/profile/:expertId/service/:serviceId"

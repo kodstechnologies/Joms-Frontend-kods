@@ -119,7 +119,7 @@ const suspendReasonOptions = [
   { label: 'Other', value: 'other' },
 ]
 
-type ServiceDecisionAction = 'approve' | 'reject' | 'suspend'
+type ServiceDecisionAction = 'approve' | 'reject' | 'requestChanges' | 'suspend'
 
 const toIso = (date: string) => new Date(date).toISOString()
 
@@ -340,13 +340,20 @@ export const ServiceViewPage = () => {
       return
     }
 
-    if (activeDecisionAction === 'approve' || activeDecisionAction === 'reject') {
+    if (
+      activeDecisionAction === 'approve' ||
+      activeDecisionAction === 'reject' ||
+      activeDecisionAction === 'requestChanges'
+    ) {
       if (!decisionAdminNotes.trim()) {
         toast.error('Admin notes are required.')
         return
       }
 
-      if (activeDecisionAction === 'reject') {
+      const isRejectFlow =
+        activeDecisionAction === 'reject' || activeDecisionAction === 'requestChanges'
+
+      if (isRejectFlow) {
         if (!decisionReason.trim()) {
           toast.error('Rejection reason is required.')
           return
@@ -379,7 +386,11 @@ export const ServiceViewPage = () => {
                 adminNote: decisionAdminNotes.trim(),
               },
             })
-            toast.success('Consultation rejected')
+            toast.success(
+              activeDecisionAction === 'requestChanges'
+                ? 'Resubmission requested successfully'
+                : 'Consultation rejected',
+            )
           }
         } else if (activeDecisionAction === 'approve') {
           await updateServiceStatus({
@@ -397,7 +408,11 @@ export const ServiceViewPage = () => {
               adminNote: decisionAdminNotes.trim(),
             },
           })
-          toast.success('Service rejected')
+          toast.success(
+            activeDecisionAction === 'requestChanges'
+              ? 'Resubmission requested successfully'
+              : 'Service rejected',
+          )
         }
         closeDecisionModal()
       } catch (err) {
@@ -510,6 +525,14 @@ export const ServiceViewPage = () => {
             'Are you sure you want to reject this application? The applicant will be notified via email.',
           submitLabel: isConsultation ? 'Reject Consultation' : 'Reject Service',
           variant: 'reject' as const,
+          reasonOptions: decisionReasonOptions,
+        },
+        requestChanges: {
+          title: 'Request Changes',
+          description:
+            'Are you sure you want to Request Changes to this application? The applicant will be notified via email.',
+          submitLabel: 'Request Changes',
+          variant: 'requestChanges' as const,
           reasonOptions: decisionReasonOptions,
         },
         suspend: {
@@ -831,7 +854,9 @@ export const ServiceViewPage = () => {
           onAdminNotesChange={setDecisionAdminNotes}
           reason={decisionReason}
           onReasonChange={
-            activeDecisionAction === 'reject' || activeDecisionAction === 'suspend'
+            activeDecisionAction === 'reject' ||
+            activeDecisionAction === 'requestChanges' ||
+            activeDecisionAction === 'suspend'
               ? setDecisionReason
               : undefined
           }
@@ -972,7 +997,7 @@ export const ServiceViewPage = () => {
               </button>
               <button
                 type="button"
-                onClick={() => toast.message('Ask for Re-Submit is coming soon')}
+                onClick={() => openDecisionModal('requestChanges')}
                 className="flex items-center gap-2 rounded-md bg-[#FBC078] px-4 py-2.5 text-[11px] font-bold text-black"
               >
                 Ask for Re-Submit

@@ -10,7 +10,6 @@ import {
   Eye,
   Hourglass,
   Image,
-  ListPlus,
   Mail,
   PauseCircle,
   ShieldCheck,
@@ -401,21 +400,6 @@ export const ServiceManagementPage = () => {
                 }}
               >
                 View Details
-              </TableActionsItem>
-              <TableActionsItem
-                icon={<ListPlus className="size-3.5" aria-hidden="true" />}
-                onClick={() => {
-                  setActiveDropdownId(null)
-                  if (!service.partnerId) {
-                    toast.error('Partner ID not found for this service.')
-                    return
-                  }
-                  navigate(
-                    `/services/management/create?partnerId=${encodeURIComponent(service.partnerId)}`,
-                  )
-                }}
-              >
-                Create Listing
               </TableActionsItem>
               <TableActionsItem
                 icon={<PauseCircle className="size-3.5" aria-hidden="true" />}

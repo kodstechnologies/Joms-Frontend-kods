@@ -55,6 +55,7 @@ export type VenueOnboardingKyc = {
     fssaiLicense?: string
     otherCertificates?: string[]
     gstUndertaking?: string
+    gstUndertakingDocument?: string
   }
   status?: string
   currentStep?: string

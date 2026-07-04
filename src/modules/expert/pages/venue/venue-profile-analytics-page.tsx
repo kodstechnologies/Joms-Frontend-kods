@@ -64,14 +64,14 @@ export function VenueProfileAnalyticsPage() {
         </div>
       </header>
 
-      <nav className="flex flex-wrap gap-1 rounded-lg border border-white/5 bg-[#111111] p-1">
+      <nav className="flex w-full gap-1 rounded-lg border border-white/5 bg-[#111111] p-1">
         {TABS.map((tab) => (
           <button
             key={tab.key}
             type="button"
             onClick={() => setActiveTab(tab.key)}
             className={cn(
-              'rounded-md px-4 py-2 text-[12px] font-semibold transition-colors',
+              'flex-1 whitespace-nowrap rounded-lg px-4 py-2 text-[12px] font-semibold transition-colors',
               activeTab === tab.key
                 ? 'bg-black text-white'
                 : 'text-[#777] hover:text-white',

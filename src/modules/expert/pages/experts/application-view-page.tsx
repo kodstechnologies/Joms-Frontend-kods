@@ -29,7 +29,7 @@ import {
 import { cn } from '@/shared/lib/cn'
 
 type TabKey = 'overview' | 'kyc' | 'banking'
-type DecisionVariant = 'approve' | 'reject'
+type DecisionVariant = 'approve' | 'reject' | 'requestChanges'
 type DecisionTarget = 'kyc' | 'banking'
 
 const TABS: { key: TabKey; label: string }[] = [
@@ -39,10 +39,11 @@ const TABS: { key: TabKey; label: string }[] = [
 ]
 
 const KYC_REJECT_REASONS: DecisionActionModalOption[] = [
-  { label: 'Incomplete documents', value: 'Reason1' },
-  { label: 'ID mismatch', value: 'Reason2' },
-  { label: 'PAN mismatch', value: 'Reason3' },
-  { label: 'GST details invalid', value: 'Reason4' },
+  { label: 'Unclear Image', value: 'Reason1' },
+  { label: 'Content Issue', value: 'Reason2' },
+  { label: 'Invalid documents', value: 'Reason3' },
+  { label: 'Invalid PAN', value: 'Reason4' },
+  { label: 'Invalid GST', value: 'Reason5' },
 ]
 
 const BANKING_REJECT_REASONS: DecisionActionModalOption[] = [
@@ -222,14 +223,22 @@ export function ExpertApplicationViewPage() {
 
   const handleSubmitDecision = () => {
     if (!application) return
-    if (modalVariant === 'reject') {
+
+    const isRejectFlow =
+      modalVariant === 'reject' || modalVariant === 'requestChanges'
+
+    if (isRejectFlow) {
       if (selectedReasons.length === 0) return toast.error('Please select at least one reason.')
       if (!rejectionReason.trim()) return toast.error('Please provide a rejection reason.')
     }
 
+    if (!adminNotes.trim()) {
+      return toast.error('Admin notes are required.')
+    }
+
     const payload =
       modalVariant === 'approve'
-        ? { status: 'APPROVED' as const }
+        ? { status: 'APPROVED' as const, adminNote: adminNotes.trim() }
         : modalTarget === 'banking'
           ? {
               status: 'REJECTED' as const,
@@ -241,6 +250,7 @@ export function ExpertApplicationViewPage() {
               status: 'REJECTED' as const,
               reasonFor: selectedReasons as ConciergeRejectionReason[],
               rejectionReason: rejectionReason.trim(),
+              adminNote: adminNotes.trim(),
             }
 
     mutation.mutate(payload, {
@@ -248,7 +258,9 @@ export function ExpertApplicationViewPage() {
         toast.success(
           modalVariant === 'approve'
             ? 'Status updated to APPROVED'
-            : 'Status updated to REJECTED',
+            : modalVariant === 'requestChanges'
+              ? 'Resubmission requested successfully'
+              : 'Status updated to REJECTED',
         )
         setModalOpen(false)
       },
@@ -263,8 +275,13 @@ export function ExpertApplicationViewPage() {
 
   const modalTitle = useMemo(() => {
     const target = modalTarget === 'banking' ? 'Banking' : 'KYC'
-    return modalVariant === 'approve' ? `Approve ${target}` : `Reject ${target}`
+    if (modalVariant === 'approve') return `Approve ${target}`
+    if (modalVariant === 'requestChanges') return 'Request Changes'
+    return `Reject ${target}`
   }, [modalTarget, modalVariant])
+
+  const isRejectFlow =
+    modalVariant === 'reject' || modalVariant === 'requestChanges'
 
   if (isLoading) {
     return (
@@ -544,8 +561,9 @@ export function ExpertApplicationViewPage() {
             </button>
             <button
               type="button"
-              onClick={() => toast.message('Ask for Re-Submit is coming soon')}
-              className="rounded-md bg-[#1f1f1f] px-4 py-2.5 text-[11px] font-bold text-white"
+              disabled={decisionDisabled}
+              onClick={() => openDecisionModal(decisionTargetForTab, 'requestChanges')}
+              className="rounded-md bg-[#FBC078] px-4 py-2.5 text-[11px] font-bold text-black disabled:cursor-not-allowed disabled:opacity-50"
             >
               Ask for Re-Submit
             </button>
@@ -575,14 +593,28 @@ export function ExpertApplicationViewPage() {
         description={
           modalVariant === 'approve'
             ? `Are you sure you want to approve this ${modalTarget === 'banking' ? 'banking' : 'KYC'} section?`
-            : `Are you sure you want to reject this ${modalTarget === 'banking' ? 'banking' : 'KYC'} section?`
+            : modalVariant === 'requestChanges'
+              ? 'Are you sure you want to Request Changes to this application? The applicant will be notified via email.'
+              : `Are you sure you want to reject this ${modalTarget === 'banking' ? 'banking' : 'KYC'} section?`
         }
-        submitLabel={modalVariant === 'approve' ? 'Approve' : 'Reject'}
-        reasonOptions={modalVariant === 'reject' ? (modalTarget === 'banking' ? BANKING_REJECT_REASONS : KYC_REJECT_REASONS) : []}
+        submitLabel={
+          modalVariant === 'approve'
+            ? 'Approve'
+            : modalVariant === 'requestChanges'
+              ? 'Request Changes'
+              : 'Reject'
+        }
+        reasonOptions={
+          isRejectFlow
+            ? modalTarget === 'banking'
+              ? BANKING_REJECT_REASONS
+              : KYC_REJECT_REASONS
+            : []
+        }
         selectedReasons={selectedReasons}
         onReasonToggle={toggleReason}
-        reason={modalVariant === 'reject' ? rejectionReason : undefined}
-        onReasonChange={modalVariant === 'reject' ? setRejectionReason : undefined}
+        reason={isRejectFlow ? rejectionReason : undefined}
+        onReasonChange={isRejectFlow ? setRejectionReason : undefined}
         adminNotes={adminNotes}
         onAdminNotesChange={setAdminNotes}
         onClose={() => setModalOpen(false)}

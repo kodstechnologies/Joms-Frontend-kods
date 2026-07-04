@@ -5,7 +5,6 @@ import {
   ChartNoAxesCombined,
   CreditCard,
   LifeBuoy,
-  Megaphone,
   MessageCircle,
   Settings,
   Shield,
@@ -142,13 +141,6 @@ export const navigationConfig: NavItem[] = [
     children: [
       { key: 'referral.management', label: 'Referral Management', to: '/referrals/management' },
     ],
-  },
-  {
-    key: 'promotion',
-    label: 'In-App Promotion',
-    icon: Megaphone,
-    superAdminOnly: true,
-    children: [{ key: 'promotion.dashboard', label: 'Dashboard', badge: { label: 'Soon', variant: 'warning' } }],
   },
   {
     key: 'finance',

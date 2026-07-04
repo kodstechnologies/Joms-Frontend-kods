@@ -2,6 +2,7 @@ export type VenueOnboardingFormData = {
   name: string
   venueType: string
   venueCategoryId: string
+  venueCategoryName: string
   hostingSinceYears: string
   hostingSinceMonths: string
   pocName: string
@@ -49,6 +50,7 @@ export const createEmptyVenueOnboardingForm = (): VenueOnboardingFormData => ({
   name: '',
   venueType: 'Venue Partner',
   venueCategoryId: '',
+  venueCategoryName: '',
   hostingSinceYears: '',
   hostingSinceMonths: '0',
   pocName: '',

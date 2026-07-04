@@ -967,7 +967,7 @@ function AvailabilityTab() {
   )
 }
 
-function AnalyticsTab() {
+function AnalyticsTab({ expertId }: { expertId?: string }) {
   const navigate = useNavigate()
   const cards = [
     { label: 'Events Hosted', value: '24' },
@@ -1007,7 +1007,10 @@ function AnalyticsTab() {
         ))}
         <button
           type="button"
-          onClick={() => comingSoon('Detailed analytics')}
+          onClick={() => {
+            if (!expertId) return
+            navigate(`/experts/management/profile/${expertId}/analytics`)
+          }}
           className="flex items-center justify-center gap-1.5 rounded-lg border border-white/5 bg-black p-4 text-[12px] font-semibold text-white transition-colors hover:bg-white/5"
         >
           More
@@ -1559,7 +1562,7 @@ export function ExpertProfileViewPage() {
             />
           )}
           {activeTab === 'availability' && <AvailabilityTab />}
-          {activeTab === 'analytics' && <AnalyticsTab />}
+          {activeTab === 'analytics' && <AnalyticsTab expertId={id} />}
           {activeTab === 'health' && <HealthTab />}
         </div>
       </div>

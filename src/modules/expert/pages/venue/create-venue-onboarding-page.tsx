@@ -88,6 +88,10 @@ export function CreateVenueOnboardingPage() {
         (typeof venue.venueCategoryId?.[0] === 'object'
           ? (venue.venueCategoryId[0] as VenueCategory)._id
           : (venue.venueCategoryId?.[0] as string)) || prev.venueCategoryId,
+      venueCategoryName:
+        (typeof venue.venueCategoryId?.[0] === 'object'
+          ? (venue.venueCategoryId[0] as VenueCategory).name
+          : prev.venueCategoryName) || prev.venueCategoryName,
       hostingSinceYears: venue.hostingSince?.years
         ? String(venue.hostingSince.years)
         : prev.hostingSinceYears,

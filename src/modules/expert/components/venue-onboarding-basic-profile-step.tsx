@@ -158,9 +158,15 @@ export const VenueOnboardingBasicProfileStep = ({ formData, setFormData }: Props
               <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#777]" />
               <select
                 value={formData.venueCategoryId}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, venueCategoryId: e.target.value }))
-                }
+                onChange={(e) => {
+                  const selectedId = e.target.value
+                  const selectedCategory = categories.find((cat) => cat.id === selectedId)
+                  setFormData((prev) => ({
+                    ...prev,
+                    venueCategoryId: selectedId,
+                    venueCategoryName: selectedCategory?.name || '',
+                  }))
+                }}
                 className={`${fieldClass} appearance-none pl-10`}
               >
                 <option value="">

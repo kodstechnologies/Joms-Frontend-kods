@@ -17,7 +17,7 @@ import {
 } from '@/shared/components/modal/decision-action-modal'
 import { cn } from '@/shared/lib/cn'
 
-type DecisionVariant = 'approve' | 'reject'
+type DecisionVariant = 'approve' | 'reject' | 'requestChanges'
 
 type AmenitySubCategory = {
   _id: string
@@ -235,6 +235,9 @@ export function ApplicationDetailsPage() {
     venue.accessibility ? 'Accessibility' : null,
   ].filter(Boolean)
 
+  const isRejectFlow =
+    modalVariant === 'reject' || modalVariant === 'requestChanges'
+
   const handleSubmitDecision = () => {
     const spaceId = space?._id
     if (!spaceId) {
@@ -245,7 +248,7 @@ export function ApplicationDetailsPage() {
       toast.error('Admin notes are required.')
       return
     }
-    if (modalVariant === 'reject') {
+    if (isRejectFlow) {
       if (selectedReasons.length === 0) {
         toast.error('Please select at least one reason.')
         return
@@ -273,7 +276,9 @@ export function ApplicationDetailsPage() {
           toast.success(
             modalVariant === 'approve'
               ? 'Space approved successfully'
-              : 'Space rejected successfully',
+              : modalVariant === 'requestChanges'
+                ? 'Resubmission requested successfully'
+                : 'Space rejected successfully',
           )
           setModalOpen(false)
         },
@@ -468,8 +473,9 @@ export function ApplicationDetailsPage() {
             </button>
             <button
               type="button"
-              onClick={() => toast.message('Ask for Re-Submit is coming soon')}
-              className="rounded-md bg-[#FBC078] px-4 py-2.5 text-[11px] font-bold text-black transition-colors hover:bg-[#eeb46a]"
+              onClick={() => openModal('requestChanges')}
+              disabled={spaceStatusMutation.isPending || !space?._id}
+              className="rounded-md bg-[#FBC078] px-4 py-2.5 text-[11px] font-bold text-black transition-colors hover:bg-[#eeb46a] disabled:cursor-not-allowed disabled:opacity-50"
             >
               Ask for Re-Submit
             </button>
@@ -496,14 +502,28 @@ export function ApplicationDetailsPage() {
       <DecisionActionModal
         open={modalOpen}
         variant={modalVariant}
-        title={modalVariant === 'approve' ? 'Approve Space' : 'Reject Space'}
+        title={
+          modalVariant === 'approve'
+            ? 'Approve Space'
+            : modalVariant === 'requestChanges'
+              ? 'Request Changes'
+              : 'Reject Space'
+        }
         description={
           modalVariant === 'approve'
             ? 'Are you sure you want to approve this venue space?'
-            : 'Please choose the rejection reasons and add notes for this venue space.'
+            : modalVariant === 'requestChanges'
+              ? 'Are you sure you want to Request Changes to this application? The applicant will be notified via email.'
+              : 'Please choose the rejection reasons and add notes for this venue space.'
         }
-        submitLabel={modalVariant === 'approve' ? 'Approve' : 'Reject'}
-        reasonOptions={modalVariant === 'reject' ? REJECT_REASONS : []}
+        submitLabel={
+          modalVariant === 'approve'
+            ? 'Approve'
+            : modalVariant === 'requestChanges'
+              ? 'Request Changes'
+              : 'Reject'
+        }
+        reasonOptions={isRejectFlow ? REJECT_REASONS : []}
         selectedReasons={selectedReasons}
         onReasonToggle={(value) =>
           setSelectedReasons((current) =>
@@ -512,8 +532,8 @@ export function ApplicationDetailsPage() {
               : [...current, value],
           )
         }
-        reason={modalVariant === 'reject' ? rejectionReason : undefined}
-        onReasonChange={modalVariant === 'reject' ? setRejectionReason : undefined}
+        reason={isRejectFlow ? rejectionReason : undefined}
+        onReasonChange={isRejectFlow ? setRejectionReason : undefined}
         adminNotes={adminNotes}
         onAdminNotesChange={setAdminNotes}
         onClose={() => setModalOpen(false)}

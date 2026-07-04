@@ -21,7 +21,6 @@ import {
 
 import {
   useApplicationDetails,
-  useApproveVenueKyc,
   useUpdateVenueBankingStatus,
   useUpdateVenueKycStatus,
 } from '../../hooks/use-venue-kyc'
@@ -33,7 +32,7 @@ import {
 import { cn } from '@/shared/lib/cn'
 
 type TabKey = 'overview' | 'kyc' | 'banking'
-type DecisionVariant = 'approve' | 'reject'
+type DecisionVariant = 'approve' | 'reject' | 'requestChanges'
 type DecisionTarget = 'kyc' | 'banking'
 
 const TABS: { key: TabKey; label: string }[] = [
@@ -274,7 +273,6 @@ export function VenueKycApplicationViewPage() {
   const { data, isLoading, isError, error } = useApplicationDetails(id)
   const application = data?.data
 
-  const approveKyc = useApproveVenueKyc(id)
   const updateKyc = useUpdateVenueKycStatus(id)
   const updateBanking = useUpdateVenueBankingStatus(id)
 
@@ -289,7 +287,7 @@ export function VenueKycApplicationViewPage() {
   const activeMutationPending =
     decisionTargetForTab === 'banking'
       ? updateBanking.isPending
-      : approveKyc.isPending || updateKyc.isPending
+      : updateKyc.isPending
 
   const openDecisionModal = (target: DecisionTarget, variant: DecisionVariant) => {
     setModalTarget(target)
@@ -306,10 +304,13 @@ export function VenueKycApplicationViewPage() {
     )
   }
 
+  const isRejectFlow =
+    modalVariant === 'reject' || modalVariant === 'requestChanges'
+
   const handleSubmitDecision = () => {
     if (!application) return
 
-    if (modalVariant === 'reject') {
+    if (isRejectFlow) {
       if (selectedReasons.length === 0) {
         toast.error('Please select at least one reason.')
         return
@@ -341,7 +342,9 @@ export function VenueKycApplicationViewPage() {
           toast.success(
             modalVariant === 'approve'
               ? 'Banking details approved successfully'
-              : 'Banking details rejected successfully',
+              : modalVariant === 'requestChanges'
+                ? 'Resubmission requested for banking details'
+                : 'Banking details rejected successfully',
           )
           setModalOpen(false)
         },
@@ -351,14 +354,8 @@ export function VenueKycApplicationViewPage() {
     }
 
     if (modalVariant === 'approve') {
-      const partnerId = application.header.partnerId
-      if (!partnerId) {
-        toast.error('Partner ID is missing for this venue KYC.')
-        return
-      }
-
-      approveKyc.mutate(
-        { partnerId, adminNote: adminNotes.trim() },
+      updateKyc.mutate(
+        { status: 'APPROVED', adminNote: adminNotes.trim() },
         {
           onSuccess: () => {
             toast.success('Venue KYC approved successfully')
@@ -379,7 +376,11 @@ export function VenueKycApplicationViewPage() {
       },
       {
         onSuccess: () => {
-          toast.success('Venue KYC rejected successfully')
+          toast.success(
+            modalVariant === 'requestChanges'
+              ? 'Resubmission requested successfully'
+              : 'Venue KYC rejected successfully',
+          )
           setModalOpen(false)
         },
         onError: (err) => toast.error(getApiErrorMessage(err)),
@@ -392,13 +393,15 @@ export function VenueKycApplicationViewPage() {
 
   const modalTitle = useMemo(() => {
     const target = modalTarget === 'banking' ? 'Banking' : 'Venue KYC'
-    return modalVariant === 'approve' ? `Approve ${target}` : `Reject ${target}`
+    if (modalVariant === 'approve') return `Approve ${target}`
+    if (modalVariant === 'requestChanges') return 'Request Changes'
+    return `Reject ${target}`
   }, [modalTarget, modalVariant])
 
   const isSubmitting =
     modalTarget === 'banking'
       ? updateBanking.isPending
-      : approveKyc.isPending || updateKyc.isPending
+      : updateKyc.isPending
 
   if (isLoading) {
     return (
@@ -800,8 +803,9 @@ export function VenueKycApplicationViewPage() {
             </button>
             <button
               type="button"
-              onClick={() => toast.message('Ask for Re-Submit is coming soon')}
-              className="flex items-center gap-2 rounded-md bg-[#FBC078] px-4 py-2.5 text-[11px] font-bold text-black transition-colors hover:bg-[#eeb46a]"
+              disabled={decisionDisabled}
+              onClick={() => openDecisionModal(decisionTargetForTab, 'requestChanges')}
+              className="flex items-center gap-2 rounded-md bg-[#FBC078] px-4 py-2.5 text-[11px] font-bold text-black transition-colors hover:bg-[#eeb46a] disabled:cursor-not-allowed disabled:opacity-50"
             >
               Ask for Re-Submit
               <RotateCcw className="size-3.5" />
@@ -834,11 +838,19 @@ export function VenueKycApplicationViewPage() {
         description={
           modalVariant === 'approve'
             ? `Are you sure you want to approve this ${modalTarget === 'banking' ? 'banking' : 'venue KYC'} section?`
-            : `Are you sure you want to reject this ${modalTarget === 'banking' ? 'banking' : 'venue KYC'} section?`
+            : modalVariant === 'requestChanges'
+              ? 'Are you sure you want to Request Changes to this application? The applicant will be notified via email.'
+              : `Are you sure you want to reject this ${modalTarget === 'banking' ? 'banking' : 'venue KYC'} section?`
         }
-        submitLabel={modalVariant === 'approve' ? 'Approve' : 'Reject'}
+        submitLabel={
+          modalVariant === 'approve'
+            ? 'Approve'
+            : modalVariant === 'requestChanges'
+              ? 'Request Changes'
+              : 'Reject'
+        }
         reasonOptions={
-          modalVariant === 'reject'
+          isRejectFlow
             ? modalTarget === 'banking'
               ? BANKING_REJECT_REASONS
               : KYC_REJECT_REASONS
@@ -846,8 +858,8 @@ export function VenueKycApplicationViewPage() {
         }
         selectedReasons={selectedReasons}
         onReasonToggle={toggleReason}
-        reason={modalVariant === 'reject' ? rejectionReason : undefined}
-        onReasonChange={modalVariant === 'reject' ? setRejectionReason : undefined}
+        reason={isRejectFlow ? rejectionReason : undefined}
+        onReasonChange={isRejectFlow ? setRejectionReason : undefined}
         adminNotes={adminNotes}
         onAdminNotesChange={setAdminNotes}
         onClose={() => setModalOpen(false)}

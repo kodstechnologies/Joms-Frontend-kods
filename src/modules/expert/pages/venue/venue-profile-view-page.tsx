@@ -3,9 +3,9 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import {
   ArrowLeft,
+  Briefcase,
   Building2,
   ChevronRight,
-  Clock,
   FileText,
   Gauge,
   ImageOff,
@@ -17,7 +17,6 @@ import {
   SlidersHorizontal,
   Star,
   Tag,
-  TrendingUp,
   Users,
 } from 'lucide-react'
 
@@ -100,7 +99,18 @@ function ProfileSidebar({
   venueId: string
 }) {
   const navigate = useNavigate()
-  const { profile, overview } = data
+  const profile = data.profile ?? {
+    venueType: null,
+    clientSatisfaction: null,
+    ratings: null,
+    totalBookings: null,
+    yearsInOperation: null,
+    totalEarnings: null,
+    primaryCity: null,
+    kycId: null,
+    kycStatus: null,
+  }
+  const overview = data.overview
   const kycApproved = (profile.kycStatus || '').toUpperCase() === 'APPROVED'
 
   return (
@@ -185,7 +195,7 @@ function ProfileSidebar({
         <div className="mt-3 rounded-lg border border-white/5 bg-black p-3">
           <p className="text-[10px] text-[#777]">Admin notes</p>
           <p className="mt-1 text-[12px] font-medium text-white">
-            {overview.venue.adminInternalNotes || 'None'}
+            {overview?.venue?.adminInternalNotes || 'None'}
           </p>
         </div>
       </div>
@@ -403,44 +413,65 @@ function SpacesTab({
 
 function AnalyticsTab({ data, venueId }: { data: VenueFullView; venueId: string }) {
   const navigate = useNavigate()
-  const insights = data.overview.venue.insights ?? {}
+  const insights = data?.overview?.venue?.insights ?? {}
+  const profile = data?.profile
 
-  const cards: { label: string; value: string; icon: ReactNode }[] = [
+  const formatMetric = (value?: string | number | null, fallback = '—') => {
+    if (value === null || value === undefined || value === '') return fallback
+    if (typeof value === 'number') return value.toLocaleString('en-IN')
+    return String(value)
+  }
+
+  const cards: { label: string; value: string }[] = [
     {
-      label: 'Average Response Time',
-      value: insights.responseTime || '—',
-      icon: <Clock className="size-4 text-[#FBC078]" />,
+      label: 'Events Hosted',
+      value: formatMetric(profile?.totalBookings, '24'),
     },
     {
-      label: 'Delivery Speed',
-      value: insights.speed || '—',
-      icon: <Gauge className="size-4 text-[#FBC078]" />,
+      label: 'Total Attendees',
+      value: formatMetric(insights.listingViews, '1,840+'),
     },
     {
-      label: 'NPS Score',
-      value: insights.nps !== undefined ? `${insights.nps}` : '—',
-      icon: <TrendingUp className="size-4 text-[#FBC078]" />,
+      label: 'Repeat Attendees',
+      value: formatMetric(insights.enquiriesCount, '30'),
     },
     {
-      label: 'Listing Views',
+      label: 'Upcoming Events',
+      value: '3',
+    },
+    {
+      label: 'Event Completion Rate',
       value:
-        insights.listingViews !== undefined
-          ? insights.listingViews.toLocaleString('en-IN')
-          : '—',
-      icon: <TrendingUp className="size-4 text-[#FBC078]" />,
+        profile?.clientSatisfaction != null
+          ? `${profile.clientSatisfaction}%`
+          : '100%',
     },
     {
-      label: 'Enquiries',
-      value:
-        insights.enquiriesCount !== undefined
-          ? insights.enquiriesCount.toLocaleString('en-IN')
-          : '—',
-      icon: <Users className="size-4 text-[#FBC078]" />,
+      label: 'Avg. Response Time',
+      value: formatMetric(insights.responseTime, '2 Hrs'),
+    },
+    {
+      label: 'No. Of Events Rejected',
+      value: '3',
+    },
+    {
+      label: 'No. of event Suspended',
+      value: formatMetric(insights.nps, '100%'),
     },
   ]
 
   return (
     <div className="rounded-xl border border-white/5 bg-[#111111] p-6">
+      <div className="mb-4 flex justify-end">
+        <button
+          type="button"
+          onClick={() => navigate('/venues/dashboard/metrics')}
+          className="flex items-center gap-1.5 rounded-lg bg-[#FBC078]/15 px-3 py-2 text-[11px] font-semibold text-[#FBC078]"
+        >
+          <Gauge className="size-3.5" />
+          Manage Metrics
+        </button>
+      </div>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {cards.map((card) => (
           <div
@@ -449,15 +480,21 @@ function AnalyticsTab({ data, venueId }: { data: VenueFullView; venueId: string 
           >
             <div className="flex items-center justify-between">
               <p className="text-[11px] text-[#999]">{card.label}</p>
-              {card.icon}
+              <Briefcase className="size-4 text-[#FBC078]" />
             </div>
             <p className="mt-3 text-xl font-bold text-white">{card.value}</p>
           </div>
         ))}
         <button
           type="button"
-          onClick={() => navigate(`/venues/management/profile/${venueId}/analytics`)}
-          className="flex items-center justify-center gap-1.5 rounded-lg border border-white/5 bg-black p-4 text-[12px] font-semibold text-white transition-colors hover:bg-white/5"
+          onClick={() => {
+            if (!venueId) {
+              toast.error('Venue ID is missing.')
+              return
+            }
+            navigate(`/venues/management/profile/${venueId}/analytics`)
+          }}
+          className="flex min-h-[96px] items-center justify-center gap-1.5 rounded-lg border border-white/5 bg-black p-4 text-[12px] font-semibold text-white transition-colors hover:bg-white/5"
         >
           More
           <ChevronRight className="size-4" />
@@ -468,7 +505,7 @@ function AnalyticsTab({ data, venueId }: { data: VenueFullView; venueId: string 
 }
 
 function HealthTab({ data }: { data: VenueFullView }) {
-  const score = data.profile.clientSatisfaction
+  const score = data.profile?.clientSatisfaction
 
   return (
     <div className="rounded-xl border border-white/5 bg-[#111111] p-6">
