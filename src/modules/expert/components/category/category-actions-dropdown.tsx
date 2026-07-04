@@ -8,7 +8,10 @@ import { Pencil, Pause, PlusSquare, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 import type { Category } from "./category-table-columns";
-import { useCategoryStore } from "../../store/category-store";
+import {
+  categoryPath,
+  useCategoryManagementScope,
+} from "./category-management-scope";
 
 interface Props {
   category: Category;
@@ -17,8 +20,9 @@ interface Props {
 export function CategoryActionsDropdown({ category }: Props) {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
-  const pauseCategory = useCategoryStore((state) => state.pauseCategory);
-  const removeCategory = useCategoryStore((state) => state.removeCategory);
+  const scope = useCategoryManagementScope();
+  const pauseCategory = scope.useStore((state) => state.pauseCategory);
+  const removeCategory = scope.useStore((state) => state.removeCategory);
 
   return (
     <TableActionsDropdown
@@ -31,7 +35,7 @@ export function CategoryActionsDropdown({ category }: Props) {
       <TableActionsItem
         tone="light"
         onClick={() => {
-          navigate(`/categories/management/create-subcategory/${category.id}`);
+          navigate(categoryPath(scope, `create-subcategory/${category.id}`));
           setOpen(false);
         }}
         icon={<PlusSquare className="size-4 text-slate-700" />}
@@ -42,7 +46,7 @@ export function CategoryActionsDropdown({ category }: Props) {
       <TableActionsItem
         tone="light"
         onClick={() => {
-          navigate(`/categories/management/rename/${category.id}`);
+          navigate(categoryPath(scope, `rename/${category.id}`));
           setOpen(false);
         }}
         icon={<Pencil className="size-4 text-slate-700" />}

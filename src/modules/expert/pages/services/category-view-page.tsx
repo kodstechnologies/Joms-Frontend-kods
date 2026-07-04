@@ -1,6 +1,6 @@
 import { useParams } from "react-router-dom";
 
-import { useCategoryStore } from "../../store/category-store";
+import { useCategoryManagementScope } from "../../components/category/category-management-scope";
 import CategoryHeader from "../../components/category/CategoryHeader";
 import { CategoryViewHeaderActions } from "../../components/category/CategoryViewHeaderActions";
 import CategoryInfoCard from "../../components/category/CategoryInfoCard";
@@ -11,8 +11,9 @@ import { categoryViewTheme } from "../../components/category/category-view.theme
 
 export const CategoryViewPage = () => {
   const { id } = useParams();
+  const scope = useCategoryManagementScope();
 
-  const category = useCategoryStore((state) =>
+  const category = scope.useStore((state) =>
     state.categories.find((item) => item.id === id),
   );
 

@@ -1,38 +1,31 @@
 ================================================================================
-JOMS FRONTEND - PRODUCTION ENV
+JOMS FRONTEND - PRODUCTION ENV (EC2: 3.108.162.112)
 Frontend Host: http://3.108.162.112
-Backend Host:  http://52.66.76.145
+Backend API Gateway: http://52.66.76.145 (nginx port 80, no service ports)
 ================================================================================
 
---------------------------------------------------------------------------------
-.env.production (used automatically on: npm run build / Docker build)
+Use ONLY VITE_API_BASE_URL in production. Do NOT set VITE_AUTH_API_BASE_URL to
+http://52.66.76.145/auth — that double-prefixes paths like /auth/admin/login.
+
+~/Joms-Frontend/.env  (used during docker build — keep minimal)
 --------------------------------------------------------------------------------
 VITE_API_BASE_URL=http://52.66.76.145
 
+~/Joms-Frontend/.env.production
 --------------------------------------------------------------------------------
-Resolved API URLs (auto from VITE_API_BASE_URL + port)
---------------------------------------------------------------------------------
-VITE_AUTH_API_BASE_URL       -> http://52.66.76.145:8000
-VITE_ADMIN_API_BASE_URL      -> http://52.66.76.145:8001
-VITE_KYC_API_BASE_URL        -> http://52.66.76.145:8003
-VITE_SERVICE_API_BASE_URL    -> http://52.66.76.145:8004
-VITE_VENUE_API_BASE_URL      -> http://52.66.76.145:8005
-VITE_MEMBERSHIP_API_BASE_URL -> http://52.66.76.145:8006
+VITE_API_BASE_URL=http://52.66.76.145
 
+Resolved URLs (all via nginx on port 80)
 --------------------------------------------------------------------------------
-Local development (.env)
---------------------------------------------------------------------------------
-VITE_API_BASE_URL=http://localhost
+Login:        http://52.66.76.145/auth/admin/login
+Admin APIs:   http://52.66.76.145/admin/...
+Services:     http://52.66.76.145/services/...
+Venues:       http://52.66.76.145/venues/...
+KYC:          http://52.66.76.145/venue-kyc
+Memberships:  http://52.66.76.145/memberships
 
-================================================================================
-COMMANDS
-================================================================================
-Switch local:       npm run env:local
-Switch production:  npm run env:production
-Toggle:             npm run env:flip
-
-Rebuild on EC2 after deploy:
+Rebuild frontend on EC2 after changing .env:
   cd ~/Joms-Frontend
   docker build -t joms-frontend .
-  docker stop joms-frontend && docker rm joms-frontend
-  docker run -d --name joms-frontend --restart unless-stopped -p 80:80 joms-frontend
+  docker rm -f joms-frontend || true
+  docker run -d --name joms-frontend -p 80:80 joms-frontend

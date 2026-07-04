@@ -15,7 +15,8 @@ export type AdminUser = {
 type AuthState = {
   isAuthenticated: boolean
   user: AdminUser | null
-  setSession: (user: AdminUser) => void
+  token: string | null
+  setSession: (user: AdminUser, token: string) => void
   updateUser: (partial: Partial<AdminUser>) => void
   clearSession: () => void
   hasPermission: (key: string) => boolean
@@ -27,12 +28,13 @@ export const useAuthStore = create<AuthState>()(
     (set, get) => ({
       isAuthenticated: false,
       user: null,
-      setSession: (user) => set({ isAuthenticated: true, user }),
+      token: null,
+      setSession: (user, token) => set({ isAuthenticated: true, user, token }),
       updateUser: (partial) =>
         set((state) => ({
           user: state.user ? { ...state.user, ...partial } : state.user,
         })),
-      clearSession: () => set({ isAuthenticated: false, user: null }),
+      clearSession: () => set({ isAuthenticated: false, user: null, token: null }),
       hasPermission: (key) => {
         const user = get().user
         if (!user) return false

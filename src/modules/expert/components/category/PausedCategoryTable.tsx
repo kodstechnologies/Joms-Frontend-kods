@@ -9,6 +9,18 @@ import {
   type PausedCategory,
 } from "./PausedCategoryColumns";
 
+const pausedCategoryDefaults = {
+  description: "",
+  createdAt: "2024-01-01",
+  updatedAt: "2024-01-01",
+  createdBy: "Admin",
+  adminNotes: "",
+  subCategories: [],
+} satisfies Pick<
+  PausedCategory,
+  "description" | "createdAt" | "updatedAt" | "createdBy" | "adminNotes" | "subCategories"
+>;
+
 const data: PausedCategory[] = [
   {
     id: "CAT001",
@@ -18,6 +30,7 @@ const data: PausedCategory[] = [
     services: 42,
     experts: 42,
     revenue: "₹3,45,000",
+    ...pausedCategoryDefaults,
   },
   {
     id: "CAT002",
@@ -27,6 +40,7 @@ const data: PausedCategory[] = [
     services: 58,
     experts: 58,
     revenue: "₹3,45,000",
+    ...pausedCategoryDefaults,
   },
   {
     id: "CAT003",
@@ -36,6 +50,7 @@ const data: PausedCategory[] = [
     services: 89,
     experts: 89,
     revenue: "₹3,45,000",
+    ...pausedCategoryDefaults,
   },
 ];
 const PausedCategoryTable = () => {

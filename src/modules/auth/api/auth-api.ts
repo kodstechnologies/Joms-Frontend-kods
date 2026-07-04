@@ -11,11 +11,11 @@ export type VerifyOtpPayload = {
 }
 
 export async function login(payload: LoginPayload) {
-  const response = await authApiClient.post('/admin/login', payload)
+  const response = await authApiClient.post('/auth/admin/login', payload)
   return response.data
 }
 
 export async function verifyOtp(payload: VerifyOtpPayload) {
-  const response = await authApiClient.post('/admin/verify-otp', payload)
+  const response = await authApiClient.post('/auth/admin/verify-otp', payload)
   return response.data
 }

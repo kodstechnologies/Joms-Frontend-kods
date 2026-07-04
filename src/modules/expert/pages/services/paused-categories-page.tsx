@@ -8,16 +8,20 @@ import { DataTable } from "@/shared/components/table/data-table";
 import CategoryHeader from "../../components/category/CategoryHeader";
 import { pausedCategoryColumns } from "../../components/category/PausedCategoryColumns";
 import { categoryManagementTheme } from "../../components/category/category-management.theme";
-import { useCategoryStore } from "../../store/category-store";
+import {
+  categoryPath,
+  useCategoryManagementScope,
+} from "../../components/category/category-management-scope";
 
 const PAGE_SIZE = 10;
 
 export const PausedCategoriesPage = () => {
   const navigate = useNavigate();
+  const scope = useCategoryManagementScope();
   const [searchValue, setSearchValue] = useState("");
   const [page, setPage] = useState(1);
 
-  const categories = useCategoryStore((state) => state.categories);
+  const categories = scope.useStore((state) => state.categories);
 
   const pausedCategories = useMemo(() => {
     const paused = categories.filter((category) => category.status === "Paused");
@@ -54,7 +58,7 @@ export const PausedCategoriesPage = () => {
         <div className="flex w-full flex-col gap-3 sm:flex-row lg:w-auto">
           <Button
             className="h-10 w-full gap-2 rounded-xl bg-[#FFC16B] px-4 text-[13px] font-semibold text-black shadow-none hover:bg-[#F5C27B] sm:w-auto"
-            onClick={() => navigate("/services/dashboard/metrics")}
+            onClick={() => navigate(scope.metricsPath)}
           >
             <SlidersHorizontal className="size-4" aria-hidden="true" />
             Manage Metrics
@@ -62,7 +66,7 @@ export const PausedCategoriesPage = () => {
 
           <Button
             className="h-10 w-full gap-2 rounded-xl bg-[#FFC16B] px-4 text-[13px] font-semibold text-black shadow-none hover:bg-[#F5C27B] sm:w-auto"
-            onClick={() => navigate("/categories/management/create")}
+            onClick={() => navigate(categoryPath(scope, "create"))}
           >
             <Plus className="size-4" aria-hidden="true" />
             Add New Category
