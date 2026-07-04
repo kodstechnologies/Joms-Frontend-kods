@@ -2,13 +2,25 @@ import { useMemo } from 'react'
 
 import { SidebarGroup } from '@/app/layouts/components/sidebar-group'
 import { getVisibleNavigation } from '@/app/layouts/navigation/navigation.filter'
+import { useLogoutMutation } from '@/modules/auth/hooks/use-logout-mutation'
 import { useAuthStore } from '@/modules/auth/store/auth-store'
 import { LogOut } from 'lucide-react'
 
 export function Sidebar({ onNavigate, compact = false }: { onNavigate?: () => void; compact?: boolean }) {
   const clearSession = useAuthStore((state) => state.clearSession)
   const user = useAuthStore((state) => state.user)
+  const { mutateAsync: logout, isPending: isLoggingOut } = useLogoutMutation()
   const visibleNavigation = useMemo(() => getVisibleNavigation(user), [user])
+
+  const handleLogout = async () => {
+    try {
+      await logout()
+    } catch {
+    } finally {
+      clearSession()
+      onNavigate?.()
+    }
+  }
 
   return (
     <div className="flex h-[calc(100vh-3.5rem)] flex-col px-3 pb-6 pt-1 md:h-[calc(100dvh-3.5rem)]">
@@ -32,14 +44,14 @@ export function Sidebar({ onNavigate, compact = false }: { onNavigate?: () => vo
       <button
         type="button"
         onClick={() => {
-          clearSession()
-          onNavigate?.()
+          void handleLogout()
         }}
-        className="mt-2 flex items-center gap-2 rounded-brand-md border border-brand-danger/30 bg-brand-danger/10 px-3 py-2.5 text-sm font-semibold text-brand-danger transition-colors hover:bg-brand-danger/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent/30"
+        disabled={isLoggingOut}
+        className="mt-2 flex items-center gap-2 rounded-brand-md border border-brand-danger/30 bg-brand-danger/10 px-3 py-2.5 text-sm font-semibold text-brand-danger transition-colors hover:bg-brand-danger/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent/30 disabled:cursor-not-allowed disabled:opacity-60"
         aria-label={compact ? 'Log Out' : 'Log Out'}
       >
         <LogOut className="size-4" />
-        {!compact ? <span className="truncate">Log Out</span> : null}
+        {!compact ? <span className="truncate">{isLoggingOut ? 'Logging out…' : 'Log Out'}</span> : null}
       </button>
     </div>
   )
