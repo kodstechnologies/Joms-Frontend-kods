@@ -1,22 +1,26 @@
-import { useState } from "react";
-import { Eye, Pencil, Pause, Plus, Trash2 } from "lucide-react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useState } from 'react'
+import { Eye, Pencil, Pause, Plus, Trash2 } from 'lucide-react'
+import { useNavigate, useParams } from 'react-router-dom'
+import { toast } from 'sonner'
 
-import { Button } from "@/shared/components/ui/button";
+import { Button } from '@/shared/components/ui/button'
 
-import { useVenueCategoryStore } from "../../store/venue-category-store";
-import { categoryViewTheme } from "./category-view.theme";
-import { DeleteCategoryModal } from "./delete-category-modal";
-import { PauseCategoryModal } from "./pause-category-modal";
+import { categoryViewTheme } from './category-view.theme'
+import { DeleteCategoryModal } from './delete-category-modal'
+import { PauseCategoryModal } from './pause-category-modal'
+import {
+  usePauseVenueCategory,
+  useSoftDeleteVenueCategory,
+} from '../../hooks/use-venue-category-management'
+import { getErrorMessage } from '../../utils/category-mapper'
 
 export const VenueCategoryViewHeaderActions = () => {
-  const navigate = useNavigate();
-  const { id } = useParams();
-  const [pauseModalOpen, setPauseModalOpen] = useState(false);
-  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-
-  const pauseCategory = useVenueCategoryStore((state) => state.pauseCategory);
-  const removeCategory = useVenueCategoryStore((state) => state.removeCategory);
+  const navigate = useNavigate()
+  const { id } = useParams()
+  const [pauseModalOpen, setPauseModalOpen] = useState(false)
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false)
+  const pauseMutation = usePauseVenueCategory()
+  const softDeleteMutation = useSoftDeleteVenueCategory()
 
   return (
     <>
@@ -34,7 +38,7 @@ export const VenueCategoryViewHeaderActions = () => {
         <Button
           variant="secondary"
           className={categoryViewTheme.outlineButtonClass}
-          onClick={() => navigate("/venues/management")}
+          onClick={() => navigate('/venues/management')}
         >
           <Eye className="size-4" aria-hidden="true" />
           View Venues
@@ -43,9 +47,7 @@ export const VenueCategoryViewHeaderActions = () => {
         <Button
           variant="secondary"
           className={categoryViewTheme.outlineButtonClass}
-          onClick={() =>
-            navigate(`/venues/categories/management/rename/${id}`)
-          }
+          onClick={() => navigate(`/venues/categories/management/rename/${id}`)}
         >
           <Pencil className="size-4" aria-hidden="true" />
           Edit Category
@@ -73,11 +75,17 @@ export const VenueCategoryViewHeaderActions = () => {
         open={pauseModalOpen}
         onClose={() => setPauseModalOpen(false)}
         onConfirm={() => {
-          if (id) {
-            pauseCategory(id);
-          }
-          setPauseModalOpen(false);
-          navigate("/venues/categories/management/paused");
+          if (!id) return
+          pauseMutation.mutate(id, {
+            onSuccess: () => {
+              toast.success('Category paused successfully')
+              setPauseModalOpen(false)
+              navigate('/venues/categories/management/paused')
+            },
+            onError: (error) => {
+              toast.error(getErrorMessage(error, 'Failed to pause category'))
+            },
+          })
         }}
       />
 
@@ -85,13 +93,19 @@ export const VenueCategoryViewHeaderActions = () => {
         open={deleteModalOpen}
         onClose={() => setDeleteModalOpen(false)}
         onConfirm={() => {
-          if (id) {
-            removeCategory(id);
-          }
-          setDeleteModalOpen(false);
-          navigate("/venues/categories/management/deleted");
+          if (!id) return
+          softDeleteMutation.mutate(id, {
+            onSuccess: () => {
+              toast.success('Category moved to deleted')
+              setDeleteModalOpen(false)
+              navigate('/venues/categories/management/deleted')
+            },
+            onError: (error) => {
+              toast.error(getErrorMessage(error, 'Failed to delete category'))
+            },
+          })
         }}
       />
     </>
-  );
-};
+  )
+}

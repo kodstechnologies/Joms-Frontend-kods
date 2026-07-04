@@ -1,46 +1,58 @@
-import { useMemo, useState } from "react";
-import { Plus, SlidersHorizontal } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useMemo, useState } from 'react'
+import { Plus, SlidersHorizontal } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 
-import { Button } from "@/shared/components/ui/button";
-import { DataTable } from "@/shared/components/table/data-table";
+import { Button } from '@/shared/components/ui/button'
+import { DataTable } from '@/shared/components/table/data-table'
 
-import { StatCard } from "../../components/stat-card";
-import { SummaryCard } from "../../components/summary-card";
-import { venueCategoryColumns } from "../../components/category/venue-category-table-columns";
-import { categoryManagementTheme } from "../../components/category/category-management.theme";
-import { useVenueCategoryStore } from "../../store/venue-category-store";
+import { StatCard } from '../../components/stat-card'
+import { SummaryCard } from '../../components/summary-card'
+import { venueCategoryColumns } from '../../components/category/venue-category-table-columns'
+import { categoryManagementTheme } from '../../components/category/category-management.theme'
+import {
+  useDeletedVenueCategoryList,
+  usePausedVenueCategoryList,
+  useVenueCategoryDetails,
+  useVenueCategoryManagementList,
+} from '../../hooks/use-venue-category-management'
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 10
 
 export function VenueCategoryManagementPage() {
-  const [searchValue, setSearchValue] = useState("");
-  const [page, setPage] = useState(1);
+  const [searchValue, setSearchValue] = useState('')
+  const [page, setPage] = useState(1)
+  const navigate = useNavigate()
 
-  const navigate = useNavigate();
+  const { data, isLoading, isError } = useVenueCategoryManagementList({
+    search: searchValue.trim() || undefined,
+  })
 
-  const categories = useVenueCategoryStore((state) => state.categories);
+  const { data: pausedCategories = [] } = usePausedVenueCategoryList()
+  const { data: deletedCategories = [] } = useDeletedVenueCategoryList()
+  const { data: details = [] } = useVenueCategoryDetails()
 
-  const tableCategories = useMemo(() => {
-    const visible = categories.filter((category) => category.status !== "Paused");
-    const query = searchValue.trim().toLowerCase();
-
-    if (!query) return visible;
-
-    return visible.filter(
-      (category) =>
-        category.id.toLowerCase().includes(query) ||
-        category.name.toLowerCase().includes(query),
-    );
-  }, [categories, searchValue]);
-
-  const totalPages = Math.max(1, Math.ceil(tableCategories.length / PAGE_SIZE));
-  const currentPage = Math.min(page, totalPages);
-
+  const categories = data?.categories ?? []
+  const totalItems = categories.length
+  const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE))
+  const currentPage = Math.min(page, totalPages)
   const paginatedCategories = useMemo(() => {
-    const start = (currentPage - 1) * PAGE_SIZE;
-    return tableCategories.slice(start, start + PAGE_SIZE);
-  }, [currentPage, tableCategories]);
+    const start = (currentPage - 1) * PAGE_SIZE
+    return categories.slice(start, start + PAGE_SIZE)
+  }, [categories, currentPage])
+
+  const activeCount = useMemo(
+    () =>
+      details.filter((item) => {
+        const status = item.status?.toUpperCase()
+        return status === 'ACTIVE'
+      }).length,
+    [details],
+  )
+
+  const totalSubCategories = useMemo(
+    () => details.reduce((sum, item) => sum + (item.subCategoryCount || 0), 0),
+    [details],
+  )
 
   return (
     <div
@@ -61,7 +73,7 @@ export function VenueCategoryManagementPage() {
           <Button
             variant="secondary"
             className="h-10 w-full gap-2 rounded-xl border border-[#FFC16B] bg-transparent px-4 text-[13px] font-semibold text-[#FFC16B] shadow-none hover:bg-[#FFC16B]/10 sm:w-auto"
-            onClick={() => navigate("/venues/dashboard/metrics")}
+            onClick={() => navigate('/venues/dashboard/metrics')}
           >
             <SlidersHorizontal className="size-4" aria-hidden="true" />
             Manage Metrics
@@ -69,7 +81,7 @@ export function VenueCategoryManagementPage() {
 
           <Button
             className="h-10 w-full gap-2 rounded-xl bg-[#FFC16B] px-4 text-[13px] font-semibold text-black shadow-none hover:bg-[#F5C27B] sm:w-auto"
-            onClick={() => navigate("/venues/categories/management/create")}
+            onClick={() => navigate('/venues/categories/management/create')}
           >
             <Plus className="size-4" aria-hidden="true" />
             Add New Category
@@ -78,27 +90,31 @@ export function VenueCategoryManagementPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard title="Total categories" value="247" />
-        <StatCard title="Active Categories" value="38" />
-        <StatCard title="Total Sub-Category" value="156" />
-        <StatCard title="Top Category" value="Technology" />
+        <StatCard title="Total categories" value={String(details.length || totalItems)} />
+        <StatCard title="Active Categories" value={String(activeCount || totalItems)} />
+        <StatCard title="Total Sub-Category" value={String(totalSubCategories)} />
+        <StatCard title="Top Category" value={categories[0]?.name || '—'} />
       </div>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <SummaryCard
-          onClick={() => navigate("/venues/categories/management/paused")}
+          onClick={() => navigate('/venues/categories/management/paused')}
           title="Paused Category"
-          value="08"
+          value={String(pausedCategories.length).padStart(2, '0')}
           color="yellow"
         />
 
         <SummaryCard
-          onClick={() => navigate("/venues/categories/management/deleted")}
+          onClick={() => navigate('/venues/categories/management/deleted')}
           title="Deleted Category"
-          value="09"
+          value={String(deletedCategories.length).padStart(2, '0')}
           color="red"
         />
       </div>
+
+      {isError ? (
+        <p className="text-sm text-red-400">Failed to load venue categories.</p>
+      ) : null}
 
       <DataTable
         columns={venueCategoryColumns}
@@ -106,8 +122,8 @@ export function VenueCategoryManagementPage() {
         getRowId={(row) => row.id}
         searchValue={searchValue}
         onSearchChange={(value) => {
-          setSearchValue(value);
-          setPage(1);
+          setSearchValue(value)
+          setPage(1)
         }}
         searchPlaceholder="Search by name, ID or profession"
         onAdvancedFilter={() => {}}
@@ -115,15 +131,16 @@ export function VenueCategoryManagementPage() {
         onExport={() => {}}
         showSortIcons={false}
         tone="category"
+        isLoading={isLoading}
         pagination={{
           page: currentPage,
           pageSize: PAGE_SIZE,
-          totalItems: tableCategories.length,
+          totalItems,
           totalPages,
           onPageChange: setPage,
         }}
-        resourceLabel="users"
+        resourceLabel="categories"
       />
     </div>
-  );
+  )
 }

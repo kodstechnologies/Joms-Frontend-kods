@@ -1,25 +1,31 @@
-import { useState } from "react";
-import { Eye, Play, Trash2, X } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useState } from 'react'
+import { Eye, Play, Trash2, X } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { toast } from 'sonner'
 
 import {
   TableActionsDropdown,
   TableActionsItem,
-} from "@/shared/components/table/table-actions-dropdown";
+} from '@/shared/components/table/table-actions-dropdown'
 
-import { useVenueCategoryStore } from "../../store/venue-category-store";
-import type { VenueCategory } from "./venue-category-table-columns";
+import type { VenueCategory } from './venue-category-table-columns'
+import {
+  useHardDeleteVenueCategory,
+  useResumeVenueCategory,
+  useSoftDeleteVenueCategory,
+} from '../../hooks/use-venue-category-management'
+import { getErrorMessage } from '../../utils/category-mapper'
 
 interface Props {
-  category: VenueCategory;
+  category: VenueCategory
 }
 
 const VenueCategoryTableActions = ({ category }: Props) => {
-  const [open, setOpen] = useState(false);
-  const navigate = useNavigate();
-
-  const resumeCategory = useVenueCategoryStore((state) => state.resumeCategory);
-  const removeCategory = useVenueCategoryStore((state) => state.removeCategory);
+  const [open, setOpen] = useState(false)
+  const navigate = useNavigate()
+  const resumeMutation = useResumeVenueCategory()
+  const softDeleteMutation = useSoftDeleteVenueCategory()
+  const hardDeleteMutation = useHardDeleteVenueCategory()
 
   return (
     <TableActionsDropdown
@@ -33,8 +39,8 @@ const VenueCategoryTableActions = ({ category }: Props) => {
         tone="light"
         icon={<Eye className="size-4 text-slate-700" />}
         onClick={() => {
-          navigate(`/venues/categories/management/view/${category.id}`);
-          setOpen(false);
+          navigate(`/venues/categories/management/view/${category.id}`)
+          setOpen(false)
         }}
       >
         View Category
@@ -44,8 +50,15 @@ const VenueCategoryTableActions = ({ category }: Props) => {
         tone="light"
         icon={<Play className="size-4 text-slate-700" />}
         onClick={() => {
-          resumeCategory(category.id);
-          setOpen(false);
+          resumeMutation.mutate(category.id, {
+            onSuccess: () => {
+              toast.success('Category resumed successfully')
+              setOpen(false)
+            },
+            onError: (error) => {
+              toast.error(getErrorMessage(error, 'Failed to resume category'))
+            },
+          })
         }}
       >
         Resume Category
@@ -55,8 +68,15 @@ const VenueCategoryTableActions = ({ category }: Props) => {
         tone="light"
         icon={<X className="size-4 text-slate-700" />}
         onClick={() => {
-          removeCategory(category.id);
-          setOpen(false);
+          softDeleteMutation.mutate(category.id, {
+            onSuccess: () => {
+              toast.success('Category moved to deleted')
+              setOpen(false)
+            },
+            onError: (error) => {
+              toast.error(getErrorMessage(error, 'Failed to remove category'))
+            },
+          })
         }}
       >
         Remove Category
@@ -67,14 +87,21 @@ const VenueCategoryTableActions = ({ category }: Props) => {
         icon={<Trash2 className="size-4 text-red-500" />}
         className="text-red-500 hover:bg-red-50 hover:text-red-600"
         onClick={() => {
-          removeCategory(category.id);
-          setOpen(false);
+          hardDeleteMutation.mutate(category.id, {
+            onSuccess: () => {
+              toast.success('Category permanently deleted')
+              setOpen(false)
+            },
+            onError: (error) => {
+              toast.error(getErrorMessage(error, 'Failed to delete category'))
+            },
+          })
         }}
       >
         <span className="text-red-500">Delete Category</span>
       </TableActionsItem>
     </TableActionsDropdown>
-  );
-};
+  )
+}
 
-export default VenueCategoryTableActions;
+export default VenueCategoryTableActions

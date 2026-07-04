@@ -1,41 +1,38 @@
-import { useState } from "react";
-import {
-  Eye,
-  Pencil,
-  Pause,
-  Plus,
-  Trash2,
-} from "lucide-react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useState } from 'react'
+import { Eye, Pencil, Pause, Plus, Trash2 } from 'lucide-react'
+import { useNavigate, useParams } from 'react-router-dom'
+import { toast } from 'sonner'
 
-import { Button } from "@/shared/components/ui/button";
+import { Button } from '@/shared/components/ui/button'
 
 import {
   categoryPath,
   useCategoryManagementScope,
-} from "./category-management-scope";
-import { categoryViewTheme } from "./category-view.theme";
-import { DeleteCategoryModal } from "./delete-category-modal";
-import { PauseCategoryModal } from "./pause-category-modal";
+} from './category-management-scope'
+import { categoryViewTheme } from './category-view.theme'
+import { DeleteCategoryModal } from './delete-category-modal'
+import { PauseCategoryModal } from './pause-category-modal'
+import {
+  usePauseServiceCategory,
+  useSoftDeleteServiceCategory,
+} from '../../hooks/use-category-management'
+import { getErrorMessage } from '../../utils/category-mapper'
 
 export const CategoryViewHeaderActions = () => {
-  const navigate = useNavigate();
-  const { id } = useParams();
-  const scope = useCategoryManagementScope();
-  const [pauseModalOpen, setPauseModalOpen] = useState(false);
-  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-
-  const pauseCategory = scope.useStore((state) => state.pauseCategory);
-  const removeCategory = scope.useStore((state) => state.removeCategory);
+  const navigate = useNavigate()
+  const { id } = useParams()
+  const scope = useCategoryManagementScope()
+  const [pauseModalOpen, setPauseModalOpen] = useState(false)
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false)
+  const pauseMutation = usePauseServiceCategory()
+  const softDeleteMutation = useSoftDeleteServiceCategory()
 
   return (
     <>
       <div className="flex flex-wrap items-center justify-end gap-3">
         <Button
           className={categoryViewTheme.accentButtonClass}
-          onClick={() =>
-            navigate(categoryPath(scope, `create-subcategory/${id}`))
-          }
+          onClick={() => navigate(categoryPath(scope, `create-subcategory/${id}`))}
         >
           <Plus className="size-4" aria-hidden="true" />
           Add Sub-Category
@@ -81,11 +78,17 @@ export const CategoryViewHeaderActions = () => {
         open={pauseModalOpen}
         onClose={() => setPauseModalOpen(false)}
         onConfirm={() => {
-          if (id) {
-            pauseCategory(id);
-          }
-          setPauseModalOpen(false);
-          navigate(categoryPath(scope, "paused"));
+          if (!id) return
+          pauseMutation.mutate(id, {
+            onSuccess: () => {
+              toast.success('Category paused successfully')
+              setPauseModalOpen(false)
+              navigate(categoryPath(scope, 'paused'))
+            },
+            onError: (error) => {
+              toast.error(getErrorMessage(error, 'Failed to pause category'))
+            },
+          })
         }}
       />
 
@@ -93,13 +96,19 @@ export const CategoryViewHeaderActions = () => {
         open={deleteModalOpen}
         onClose={() => setDeleteModalOpen(false)}
         onConfirm={() => {
-          if (id) {
-            removeCategory(id);
-          }
-          setDeleteModalOpen(false);
-          navigate(categoryPath(scope, "deleted"));
+          if (!id) return
+          softDeleteMutation.mutate(id, {
+            onSuccess: () => {
+              toast.success('Category moved to deleted')
+              setDeleteModalOpen(false)
+              navigate(categoryPath(scope, 'deleted'))
+            },
+            onError: (error) => {
+              toast.error(getErrorMessage(error, 'Failed to delete category'))
+            },
+          })
         }}
       />
     </>
-  );
-};
+  )
+}

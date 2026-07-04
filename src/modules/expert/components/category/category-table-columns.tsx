@@ -6,6 +6,7 @@ import { categoryManagementTheme } from "./category-management.theme";
 
 export type Category = {
   id: string;
+  categoryId?: string;
   name: string;
   description: string;
   icon?: string;
@@ -22,6 +23,7 @@ export type Category = {
   adminNotes: string;
   subCategories: {
     id: string;
+    subCategoryId?: string;
     name: string;
     status: "Active" | "Paused";
     description: string;
@@ -57,8 +59,9 @@ function StatusBadge({ status }: { status: string }) {
 
 export const categoryColumns: ColumnDef<Category>[] = [
   {
-    accessorKey: "id",
+    id: "categoryId",
     header: "Category ID",
+    accessorFn: (row) => row.categoryId || row.id,
     meta: { cellClassName: "text-white font-medium" },
   },
   {

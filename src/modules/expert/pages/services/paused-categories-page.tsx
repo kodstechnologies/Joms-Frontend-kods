@@ -1,48 +1,45 @@
-import { useMemo, useState } from "react";
-import { Plus, SlidersHorizontal } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useMemo, useState } from 'react'
+import { Plus, SlidersHorizontal } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 
-import { Button } from "@/shared/components/ui/button";
-import { DataTable } from "@/shared/components/table/data-table";
+import { Button } from '@/shared/components/ui/button'
+import { DataTable } from '@/shared/components/table/data-table'
 
-import CategoryHeader from "../../components/category/CategoryHeader";
-import { pausedCategoryColumns } from "../../components/category/PausedCategoryColumns";
-import { categoryManagementTheme } from "../../components/category/category-management.theme";
+import CategoryHeader from '../../components/category/CategoryHeader'
+import { pausedCategoryColumns } from '../../components/category/PausedCategoryColumns'
+import { categoryManagementTheme } from '../../components/category/category-management.theme'
 import {
   categoryPath,
   useCategoryManagementScope,
-} from "../../components/category/category-management-scope";
+} from '../../components/category/category-management-scope'
+import { useServiceCategories } from '../../hooks/use-category-management'
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 10
 
 export const PausedCategoriesPage = () => {
-  const navigate = useNavigate();
-  const scope = useCategoryManagementScope();
-  const [searchValue, setSearchValue] = useState("");
-  const [page, setPage] = useState(1);
+  const navigate = useNavigate()
+  const scope = useCategoryManagementScope()
+  const [searchValue, setSearchValue] = useState('')
+  const [page, setPage] = useState(1)
 
-  const categories = scope.useStore((state) => state.categories);
+  const { data, isLoading, isError } = useServiceCategories({
+    status: 'PAUSED',
+    search: searchValue.trim() || undefined,
+    page,
+    limit: PAGE_SIZE,
+  })
 
-  const pausedCategories = useMemo(() => {
-    const paused = categories.filter((category) => category.status === "Paused");
-    const query = searchValue.trim().toLowerCase();
+  const pausedCategories = data?.categories ?? []
+  const totalItems = data?.pagination?.total ?? pausedCategories.length
+  const totalPages = Math.max(
+    1,
+    data?.pagination?.pages ?? Math.ceil(totalItems / PAGE_SIZE),
+  )
 
-    if (!query) return paused;
-
-    return paused.filter(
-      (category) =>
-        category.id.toLowerCase().includes(query) ||
-        category.name.toLowerCase().includes(query),
-    );
-  }, [categories, searchValue]);
-
-  const totalPages = Math.max(1, Math.ceil(pausedCategories.length / PAGE_SIZE));
-  const currentPage = Math.min(page, totalPages);
-
-  const paginatedCategories = useMemo(() => {
-    const start = (currentPage - 1) * PAGE_SIZE;
-    return pausedCategories.slice(start, start + PAGE_SIZE);
-  }, [currentPage, pausedCategories]);
+  const emptyMessage = useMemo(
+    () => (isError ? 'Failed to load paused categories.' : 'No paused categories found.'),
+    [isError],
+  )
 
   return (
     <div
@@ -50,10 +47,7 @@ export const PausedCategoriesPage = () => {
       style={{ backgroundColor: categoryManagementTheme.pageBg }}
     >
       <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-start">
-        <CategoryHeader
-          title="Paused Categories"
-          breadcrumb="Paused Categories"
-        />
+        <CategoryHeader title="Paused Categories" breadcrumb="Paused Categories" />
 
         <div className="flex w-full flex-col gap-3 sm:flex-row lg:w-auto">
           <Button
@@ -66,7 +60,7 @@ export const PausedCategoriesPage = () => {
 
           <Button
             className="h-10 w-full gap-2 rounded-xl bg-[#FFC16B] px-4 text-[13px] font-semibold text-black shadow-none hover:bg-[#F5C27B] sm:w-auto"
-            onClick={() => navigate(categoryPath(scope, "create"))}
+            onClick={() => navigate(categoryPath(scope, 'create'))}
           >
             <Plus className="size-4" aria-hidden="true" />
             Add New Category
@@ -76,12 +70,12 @@ export const PausedCategoriesPage = () => {
 
       <DataTable
         columns={pausedCategoryColumns}
-        data={paginatedCategories}
+        data={pausedCategories}
         getRowId={(row) => row.id}
         searchValue={searchValue}
         onSearchChange={(value) => {
-          setSearchValue(value);
-          setPage(1);
+          setSearchValue(value)
+          setPage(1)
         }}
         searchPlaceholder="Search by name, ID or profession"
         onAdvancedFilter={() => {}}
@@ -89,15 +83,17 @@ export const PausedCategoriesPage = () => {
         onExport={() => {}}
         showSortIcons={false}
         tone="category"
+        isLoading={isLoading}
+        emptyMessage={emptyMessage}
         pagination={{
-          page: currentPage,
+          page,
           pageSize: PAGE_SIZE,
-          totalItems: pausedCategories.length,
+          totalItems,
           totalPages,
           onPageChange: setPage,
         }}
-        resourceLabel="users"
+        resourceLabel="categories"
       />
     </div>
-  );
-};
+  )
+}

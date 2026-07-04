@@ -1,29 +1,36 @@
-import { useState } from "react";
-import { Eye, Play, Trash2, X } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useState } from 'react'
+import { Eye, Play, Trash2, X } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { toast } from 'sonner'
 
 import {
   TableActionsDropdown,
   TableActionsItem,
-} from "@/shared/components/table/table-actions-dropdown";
+} from '@/shared/components/table/table-actions-dropdown'
 
 import {
   categoryPath,
   useCategoryManagementScope,
-} from "./category-management-scope";
-import type { Category } from "./category-table-columns";
+} from './category-management-scope'
+import type { Category } from './category-table-columns'
+import {
+  usePermanentDeleteServiceCategory,
+  useResumeServiceCategory,
+  useSoftDeleteServiceCategory,
+} from '../../hooks/use-category-management'
+import { getErrorMessage } from '../../utils/category-mapper'
 
 interface Props {
-  category: Category;
+  category: Category
 }
 
 const CategoryTableActions = ({ category }: Props) => {
-  const [open, setOpen] = useState(false);
-  const navigate = useNavigate();
-  const scope = useCategoryManagementScope();
-
-  const resumeCategory = scope.useStore((state) => state.resumeCategory);
-  const removeCategory = scope.useStore((state) => state.removeCategory);
+  const [open, setOpen] = useState(false)
+  const navigate = useNavigate()
+  const scope = useCategoryManagementScope()
+  const resumeMutation = useResumeServiceCategory()
+  const softDeleteMutation = useSoftDeleteServiceCategory()
+  const permanentDeleteMutation = usePermanentDeleteServiceCategory()
 
   return (
     <TableActionsDropdown
@@ -37,8 +44,8 @@ const CategoryTableActions = ({ category }: Props) => {
         tone="light"
         icon={<Eye className="size-4 text-slate-700" />}
         onClick={() => {
-          navigate(categoryPath(scope, `view/${category.id}`));
-          setOpen(false);
+          navigate(categoryPath(scope, `view/${category.id}`))
+          setOpen(false)
         }}
       >
         View Category
@@ -48,8 +55,15 @@ const CategoryTableActions = ({ category }: Props) => {
         tone="light"
         icon={<Play className="size-4 text-slate-700" />}
         onClick={() => {
-          resumeCategory(category.id);
-          setOpen(false);
+          resumeMutation.mutate(category.id, {
+            onSuccess: () => {
+              toast.success('Category resumed successfully')
+              setOpen(false)
+            },
+            onError: (error) => {
+              toast.error(getErrorMessage(error, 'Failed to resume category'))
+            },
+          })
         }}
       >
         Resume Category
@@ -59,8 +73,15 @@ const CategoryTableActions = ({ category }: Props) => {
         tone="light"
         icon={<X className="size-4 text-slate-700" />}
         onClick={() => {
-          removeCategory(category.id);
-          setOpen(false);
+          softDeleteMutation.mutate(category.id, {
+            onSuccess: () => {
+              toast.success('Category moved to deleted')
+              setOpen(false)
+            },
+            onError: (error) => {
+              toast.error(getErrorMessage(error, 'Failed to remove category'))
+            },
+          })
         }}
       >
         Remove Category
@@ -71,14 +92,21 @@ const CategoryTableActions = ({ category }: Props) => {
         icon={<Trash2 className="size-4 text-red-500" />}
         className="text-red-500 hover:bg-red-50 hover:text-red-600"
         onClick={() => {
-          removeCategory(category.id);
-          setOpen(false);
+          permanentDeleteMutation.mutate(category.id, {
+            onSuccess: () => {
+              toast.success('Category permanently deleted')
+              setOpen(false)
+            },
+            onError: (error) => {
+              toast.error(getErrorMessage(error, 'Failed to delete category'))
+            },
+          })
         }}
       >
         <span className="text-red-500">Delete Category</span>
       </TableActionsItem>
     </TableActionsDropdown>
-  );
-};
+  )
+}
 
-export default CategoryTableActions;
+export default CategoryTableActions

@@ -1,31 +1,33 @@
-import { useParams } from "react-router-dom";
+import { useParams } from 'react-router-dom'
 
-import { useVenueCategoryStore } from "../../store/venue-category-store";
-
-import CategoryHeader from "../../components/category/CategoryHeader";
-import { SubCategoryViewHeaderActions } from "../../components/category/SubCategoryViewHeaderActions";
-import VenueSubCategoryInfoCard from "../../components/category/VenueSubCategoryInfoCard";
-import CategoryDescriptionCard from "../../components/category/CategoryDescriptionCard";
-import CategoryAdminNotesCard from "../../components/category/CategoryAdminNotesCard";
-import { categoryViewTheme } from "../../components/category/category-view.theme";
+import CategoryHeader from '../../components/category/CategoryHeader'
+import { VenueSubCategoryViewHeaderActions } from '../../components/category/venue-sub-category-view-header-actions'
+import VenueSubCategoryInfoCard from '../../components/category/VenueSubCategoryInfoCard'
+import CategoryDescriptionCard from '../../components/category/CategoryDescriptionCard'
+import CategoryAdminNotesCard from '../../components/category/CategoryAdminNotesCard'
+import { categoryViewTheme } from '../../components/category/category-view.theme'
+import { useVenueCategory } from '../../hooks/use-venue-category-management'
 
 export const VenueSubCategoryViewPage = () => {
-  const { id, subCategoryId } = useParams();
+  const { id, subCategoryId } = useParams()
+  const { data: category, isLoading, isError } = useVenueCategory(id)
 
-  const category = useVenueCategoryStore((state) =>
-    state.categories.find((item) => item.id === id),
-  );
+  const subCategory = category?.subCategories.find((item) => item.id === subCategoryId)
 
-  const subCategory = category?.subCategories.find(
-    (item) => item.id === subCategoryId,
-  );
-
-  if (!category || !subCategory) {
+  if (isLoading) {
     return (
-      <div className="p-10 text-white" style={{ backgroundColor: "#000000" }}>
+      <div className="p-10 text-white" style={{ backgroundColor: '#000000' }}>
+        Loading sub-category…
+      </div>
+    )
+  }
+
+  if (isError || !category || !subCategory) {
+    return (
+      <div className="p-10 text-white" style={{ backgroundColor: '#000000' }}>
         Sub Category Not Found
       </div>
-    );
+    )
   }
 
   return (
@@ -39,18 +41,15 @@ export const VenueSubCategoryViewPage = () => {
             title={category.name}
             breadcrumbItems={[category.name, subCategory.name]}
           />
-          <SubCategoryViewHeaderActions />
+          <VenueSubCategoryViewHeaderActions />
         </div>
 
-        <VenueSubCategoryInfoCard
-          category={category}
-          subCategory={subCategory}
-        />
+        <VenueSubCategoryInfoCard category={category} subCategory={subCategory} />
 
         <CategoryDescriptionCard description={subCategory.description} />
 
         <CategoryAdminNotesCard notes={subCategory.adminNotes} />
       </div>
     </div>
-  );
-};
+  )
+}

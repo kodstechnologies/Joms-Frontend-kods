@@ -1,32 +1,33 @@
-import { useParams } from "react-router-dom";
+import { useParams } from 'react-router-dom'
 
-import { useCategoryManagementScope } from "../../components/category/category-management-scope";
-
-import CategoryHeader from "../../components/category/CategoryHeader";
-import { SubCategoryViewHeaderActions } from "../../components/category/SubCategoryViewHeaderActions";
-import SubCategoryInfoCard from "../../components/category/SubCategoryInfoCard";
-import CategoryDescriptionCard from "../../components/category/CategoryDescriptionCard";
-import CategoryAdminNotesCard from "../../components/category/CategoryAdminNotesCard";
-import { categoryViewTheme } from "../../components/category/category-view.theme";
+import CategoryHeader from '../../components/category/CategoryHeader'
+import { SubCategoryViewHeaderActions } from '../../components/category/SubCategoryViewHeaderActions'
+import SubCategoryInfoCard from '../../components/category/SubCategoryInfoCard'
+import CategoryDescriptionCard from '../../components/category/CategoryDescriptionCard'
+import CategoryAdminNotesCard from '../../components/category/CategoryAdminNotesCard'
+import { categoryViewTheme } from '../../components/category/category-view.theme'
+import { useServiceCategory } from '../../hooks/use-category-management'
 
 export const SubCategoryViewPage = () => {
-  const { id, subCategoryId } = useParams();
-  const scope = useCategoryManagementScope();
+  const { id, subCategoryId } = useParams()
+  const { data: category, isLoading, isError } = useServiceCategory(id)
 
-  const category = scope.useStore((state) =>
-    state.categories.find((item) => item.id === id),
-  );
+  const subCategory = category?.subCategories.find((item) => item.id === subCategoryId)
 
-  const subCategory = category?.subCategories.find(
-    (item) => item.id === subCategoryId,
-  );
-
-  if (!category || !subCategory) {
+  if (isLoading) {
     return (
-      <div className="p-10 text-white" style={{ backgroundColor: "#000000" }}>
+      <div className="p-10 text-white" style={{ backgroundColor: '#000000' }}>
+        Loading sub-category…
+      </div>
+    )
+  }
+
+  if (isError || !category || !subCategory) {
+    return (
+      <div className="p-10 text-white" style={{ backgroundColor: '#000000' }}>
         Sub Category Not Found
       </div>
-    );
+    )
   }
 
   return (
@@ -50,5 +51,5 @@ export const SubCategoryViewPage = () => {
         <CategoryAdminNotesCard notes={subCategory.adminNotes} />
       </div>
     </div>
-  );
-};
+  )
+}

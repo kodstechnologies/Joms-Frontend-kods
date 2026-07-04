@@ -7,6 +7,7 @@ import {
 interface Props {
   category: {
     id: string;
+    categoryId?: string;
     name: string;
     image?: string;
     status: string;
@@ -90,7 +91,7 @@ const VenueCategoryInfoCard = ({ category }: Props) => {
             <div>
               <p className={categoryViewTheme.labelClass}>Category ID</p>
               <p className={`mt-2 ${categoryViewTheme.valueLgClass}`}>
-                {category.id}
+                {category.categoryId || category.id}
               </p>
             </div>
 

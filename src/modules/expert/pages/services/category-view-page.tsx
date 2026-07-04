@@ -1,28 +1,32 @@
-import { useParams } from "react-router-dom";
+import { useParams } from 'react-router-dom'
 
-import { useCategoryManagementScope } from "../../components/category/category-management-scope";
-import CategoryHeader from "../../components/category/CategoryHeader";
-import { CategoryViewHeaderActions } from "../../components/category/CategoryViewHeaderActions";
-import CategoryInfoCard from "../../components/category/CategoryInfoCard";
-import CategoryDescriptionCard from "../../components/category/CategoryDescriptionCard";
-import CategorySubCategorySection from "../../components/category/CategorySubCategorySection";
-import CategoryAdminNotesCard from "../../components/category/CategoryAdminNotesCard";
-import { categoryViewTheme } from "../../components/category/category-view.theme";
+import CategoryHeader from '../../components/category/CategoryHeader'
+import { CategoryViewHeaderActions } from '../../components/category/CategoryViewHeaderActions'
+import CategoryInfoCard from '../../components/category/CategoryInfoCard'
+import CategoryDescriptionCard from '../../components/category/CategoryDescriptionCard'
+import CategorySubCategorySection from '../../components/category/CategorySubCategorySection'
+import CategoryAdminNotesCard from '../../components/category/CategoryAdminNotesCard'
+import { categoryViewTheme } from '../../components/category/category-view.theme'
+import { useServiceCategory } from '../../hooks/use-category-management'
 
 export const CategoryViewPage = () => {
-  const { id } = useParams();
-  const scope = useCategoryManagementScope();
+  const { id } = useParams()
+  const { data: category, isLoading, isError } = useServiceCategory(id)
 
-  const category = scope.useStore((state) =>
-    state.categories.find((item) => item.id === id),
-  );
-
-  if (!category) {
+  if (isLoading) {
     return (
-      <div className="p-10 text-white" style={{ backgroundColor: "#000000" }}>
+      <div className="p-10 text-white" style={{ backgroundColor: '#000000' }}>
+        Loading category…
+      </div>
+    )
+  }
+
+  if (isError || !category) {
+    return (
+      <div className="p-10 text-white" style={{ backgroundColor: '#000000' }}>
         Category not found
       </div>
-    );
+    )
   }
 
   return (
@@ -47,5 +51,5 @@ export const CategoryViewPage = () => {
         <CategoryAdminNotesCard notes={category.adminNotes} />
       </div>
     </div>
-  );
-};
+  )
+}

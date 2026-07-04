@@ -3,11 +3,15 @@ import { categoryFormTheme } from "./category-form.theme";
 interface Props {
   onSubmit: () => void;
   submitText?: string;
+  isSubmitting?: boolean;
+  disabled?: boolean;
 }
 
 const FooterActions = ({
   onSubmit,
   submitText = "Create Category",
+  isSubmitting = false,
+  disabled = false,
 }: Props) => {
   return (
     <div
@@ -17,9 +21,10 @@ const FooterActions = ({
       <button
         type="button"
         onClick={onSubmit}
-        className={`rounded-lg px-8 py-2.5 text-[13px] font-semibold ${categoryFormTheme.accentGradient} ${categoryFormTheme.accentGradientHover} text-black transition-all`}
+        disabled={disabled || isSubmitting}
+        className={`rounded-lg px-8 py-2.5 text-[13px] font-semibold ${categoryFormTheme.accentGradient} ${categoryFormTheme.accentGradientHover} text-black transition-all disabled:cursor-not-allowed disabled:opacity-60`}
       >
-        {submitText}
+        {isSubmitting ? "Saving…" : submitText}
       </button>
     </div>
   );

@@ -5,11 +5,13 @@ import { categoryViewTheme } from "./category-view.theme";
 interface Props {
   category: {
     id: string;
+    categoryId?: string;
     name: string;
   };
 
   subCategory: {
     id: string;
+    subCategoryId?: string;
     name: string;
     status: "Active" | "Paused";
     icon?: string;
@@ -64,9 +66,9 @@ const SubCategoryInfoCard = ({ category, subCategory }: Props) => {
           </div>
 
           <div>
-            <p className={categoryViewTheme.labelClass}>Category ID</p>
+            <p className={categoryViewTheme.labelClass}>Sub-Category ID</p>
             <p className={`mt-2 ${categoryViewTheme.valueLgClass}`}>
-              {category.id}
+              {subCategory.subCategoryId || subCategory.id}
             </p>
           </div>
 

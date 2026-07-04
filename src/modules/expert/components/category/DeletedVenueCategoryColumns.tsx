@@ -30,8 +30,9 @@ function getDisplayStatus(category: VenueCategory) {
 
 export const deletedVenueCategoryColumns: ColumnDef<VenueCategory>[] = [
   {
-    accessorKey: "id",
+    id: "categoryId",
     header: "Category ID",
+    accessorFn: (row) => row.categoryId || row.id,
     meta: { cellClassName: "text-white font-medium" },
   },
   {
