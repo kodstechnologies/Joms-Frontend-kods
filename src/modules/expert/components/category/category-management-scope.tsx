@@ -14,13 +14,6 @@ export const SERVICE_CATEGORY_SCOPE: CategoryManagementScope = {
   relatedListLabel: 'View Services',
 }
 
-export const EXPERT_CATEGORY_SCOPE: CategoryManagementScope = {
-  basePath: '/experts/categories/management',
-  metricsPath: '/experts/dashboard/metrics',
-  relatedListPath: '/experts/management',
-  relatedListLabel: 'View Experts',
-}
-
 const CategoryManagementScopeContext =
   createContext<CategoryManagementScope>(SERVICE_CATEGORY_SCOPE)
 

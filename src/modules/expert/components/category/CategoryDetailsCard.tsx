@@ -64,7 +64,11 @@ const CategoryDetailsCard = ({
         />
       </div>
 
-      <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2">
+      <p className={`mt-6 ${categoryFormTheme.sectionSubtitleClass}`}>
+        Upload either a 3D icon or an image — not both. Choosing one replaces the other.
+      </p>
+
+      <div className="mt-3 grid grid-cols-1 gap-6 md:grid-cols-2">
         <UploadBox
           label="3D Icon"
           helperText="Displayed as a clickable 3D-style icon"

@@ -121,11 +121,18 @@ function StatusPill({
       ? 'bg-[#1B4332] text-[#74C69D]'
       : status === 'REJECTED'
         ? 'bg-[#4A1515] text-[#F87171]'
-        : 'bg-[#4A2C17] text-[#E8A86B]'
+        : status === 'DRAFT'
+          ? 'bg-white/10 text-[#AAAAAA]'
+          : 'bg-[#4A2C17] text-[#E8A86B]'
+
+  const displayLabel =
+    label ||
+    (status === 'DRAFT' ? 'Not Submitted' : status) ||
+    'PENDING'
 
   return (
     <span className={cn('rounded-md px-3 py-1.5 text-[11px] font-semibold', className)}>
-      {displayValue(label || status || 'PENDING')}
+      {displayValue(displayLabel)}
     </span>
   )
 }
@@ -427,6 +434,9 @@ export function VenueKycApplicationViewPage() {
   const account = bankingDetails.account
   const otherCertificates = documents?.otherCertificates || []
   const venueImages = overview.venueImages || []
+  const isBankingSubmitted = ['PENDING', 'APPROVED', 'REJECTED'].includes(
+    bankingDetails.status || header.bankingStatus || '',
+  )
 
   const applicantName = header.applicantName || applicant?.fullName || 'Venue Partner'
   const appliedLabel = formatRelativeApplied(header.appliedAt)
@@ -699,40 +709,52 @@ export function VenueKycApplicationViewPage() {
         </div>
       )}
 
-      {activeTab === 'banking' && (
-        <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
-          <SectionCard
-            title="Account Information"
-            icon={<Banknote className="size-4 text-[#FBC078]" />}
-          >
-            <div className="grid grid-cols-1 gap-x-8 gap-y-5 sm:grid-cols-2">
-              <InfoField label="Beneficiary Name" value={account?.beneficiaryName} />
-              <InfoField label="Account Type" value={account?.accountType} />
-              <InfoField label="Bank Name" value={account?.bankName} />
-              <InfoField label="Account Number" value={account?.accountNumber} />
-              <InfoField label="IFSC Code" value={account?.ifscCode} />
-              {account?.providedName != null && account.providedName !== '' && (
-                <InfoField label="Provided Name" value={account.providedName} />
-              )}
-              {account?.nameMatchScore != null && account.nameMatchScore !== '' && (
-                <InfoField label="Name Match Score" value={account.nameMatchScore} />
-              )}
-            </div>
-          </SectionCard>
+      {activeTab === 'banking' &&
+        (isBankingSubmitted ? (
+          <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+            <SectionCard
+              title="Account Information"
+              icon={<Banknote className="size-4 text-[#FBC078]" />}
+            >
+              <div className="grid grid-cols-1 gap-x-8 gap-y-5 sm:grid-cols-2">
+                <InfoField label="Beneficiary Name" value={account?.beneficiaryName} />
+                <InfoField label="Account Type" value={account?.accountType} />
+                <InfoField label="Bank Name" value={account?.bankName} />
+                <InfoField label="Account Number" value={account?.accountNumber} />
+                <InfoField label="IFSC Code" value={account?.ifscCode} />
+                {account?.providedName != null && account.providedName !== '' && (
+                  <InfoField label="Provided Name" value={account.providedName} />
+                )}
+                {account?.nameMatchScore != null && account.nameMatchScore !== '' && (
+                  <InfoField label="Name Match Score" value={account.nameMatchScore} />
+                )}
+              </div>
+            </SectionCard>
 
-          <SectionCard
-            title="Bank Verification Document"
-            icon={<FileText className="size-4 text-[#FBC078]" />}
-          >
-            <div className="max-w-sm">
-              <DocumentCard
-                label="Cancelled Cheque"
-                url={bankingDetails.cancelledCheque}
-              />
-            </div>
-          </SectionCard>
-        </div>
-      )}
+            <SectionCard
+              title="Bank Verification Document"
+              icon={<FileText className="size-4 text-[#FBC078]" />}
+            >
+              <div className="max-w-sm">
+                <DocumentCard
+                  label="Cancelled Cheque"
+                  url={bankingDetails.cancelledCheque}
+                />
+              </div>
+            </SectionCard>
+          </div>
+        ) : (
+          <div className="rounded-xl border border-white/5 bg-[#111111] px-6 py-10 text-center">
+            <Banknote className="mx-auto size-8 text-[#555]" aria-hidden="true" />
+            <p className="mt-3 text-[14px] font-semibold text-white">
+              Banking details not submitted
+            </p>
+            <p className="mt-1.5 text-[12px] text-[#777]">
+              Account information and documents will appear here once the partner
+              submits banking for review.
+            </p>
+          </div>
+        ))}
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
         <div className="rounded-xl border border-white/5 bg-[#111111] p-5">
@@ -751,7 +773,15 @@ export function VenueKycApplicationViewPage() {
             <h3>Decision Controls</h3>
           </div>
 
-          {activeDecisionStatus !== 'PENDING' && (
+          {decisionTargetForTab === 'banking' && !isBankingSubmitted && (
+            <p className="mb-4 rounded-md border border-white/5 bg-black px-3 py-2 text-[11px] font-medium text-[#999]">
+              Banking has not been submitted yet. Approve and reject are available
+              only after the partner submits banking details.
+            </p>
+          )}
+
+          {activeDecisionStatus !== 'PENDING' &&
+            !(decisionTargetForTab === 'banking' && !isBankingSubmitted) && (
             <p className="mb-4 rounded-md border border-white/5 bg-black px-3 py-2 text-[11px] font-medium text-[#999]">
               {decisionTargetForTab === 'banking' ? 'Banking' : 'KYC'} is already{' '}
               {String(activeDecisionStatus).toLowerCase()}.

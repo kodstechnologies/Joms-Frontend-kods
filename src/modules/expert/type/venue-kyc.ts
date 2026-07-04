@@ -1,4 +1,4 @@
-export type VenueKycStatus = 'PENDING' | 'APPROVED' | 'REJECTED'
+export type VenueKycStatus = 'DRAFT' | 'PENDING' | 'APPROVED' | 'REJECTED'
 
 export interface ApplicationHeader {
   applicationId: string

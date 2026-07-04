@@ -147,6 +147,11 @@ export const CategoryFormPage = ({ mode }: CategoryFormPageProps) => {
           return
         }
 
+        if (iconFile && headerFile) {
+          toast.error('Provide either a 3D icon or category image, not both')
+          return
+        }
+
         const invalidSub = subCategories.some(
           (sub) => !sub.name.trim() || !sub.description.trim() || !sub.iconFile,
         )
