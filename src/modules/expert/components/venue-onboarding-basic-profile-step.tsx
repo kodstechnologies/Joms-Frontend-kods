@@ -3,6 +3,7 @@ import { Search, Upload } from 'lucide-react'
 
 import { useServiceCategoriesByType } from '../hooks/use-service-categories'
 import type { VenueOnboardingFormData } from '../utils/venue-onboarding-form'
+import { sanitizeMobileNumber } from '@/shared/lib/phone'
 
 const fieldClass =
   'h-10 w-full rounded-md border border-white/10 bg-black px-3 text-sm text-white outline-none placeholder:text-[#666] focus:border-[#FBC078]'
@@ -210,11 +211,17 @@ export const VenueOnboardingBasicProfileStep = ({ formData, setFormData }: Props
               Phone Number *
             </label>
             <input
+              type="tel"
+              inputMode="numeric"
+              maxLength={10}
               value={formData.phone}
               onChange={(e) =>
-                setFormData((prev) => ({ ...prev, phone: e.target.value }))
+                setFormData((prev) => ({
+                  ...prev,
+                  phone: sanitizeMobileNumber(e.target.value),
+                }))
               }
-              placeholder="Enter phone number"
+              placeholder="Enter 10-digit mobile number"
               className={fieldClass}
             />
           </div>

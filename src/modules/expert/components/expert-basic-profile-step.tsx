@@ -4,6 +4,7 @@ import { ChevronDown, ImageIcon, Search, Upload, XCircle } from 'lucide-react'
 import { useServiceCategoriesByType } from '../hooks/use-service-categories'
 import type { ExpertOnboardingFormData } from '../utils/expert-onboarding-form'
 import { cn } from '@/shared/lib/cn'
+import { sanitizeMobileNumber } from '@/shared/lib/phone'
 
 const fieldClass =
   'h-11 w-full rounded-md bg-black px-3 text-sm text-white outline-none placeholder:text-[#666] focus:ring-1 focus:ring-[#FBC078]/40'
@@ -454,11 +455,17 @@ export const ExpertBasicProfileStep = ({
                     Phone Number *
                   </label>
                   <input
+                    type="tel"
+                    inputMode="numeric"
+                    maxLength={10}
                     value={formData.phoneNumber}
                     onChange={(e) =>
-                      setFormData((prev) => ({ ...prev, phoneNumber: e.target.value }))
+                      setFormData((prev) => ({
+                        ...prev,
+                        phoneNumber: sanitizeMobileNumber(e.target.value),
+                      }))
                     }
-                    placeholder="Enter phone number"
+                    placeholder="Enter 10-digit mobile number"
                     className={fieldClass}
                   />
                 </div>

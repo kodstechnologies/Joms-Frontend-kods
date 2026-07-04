@@ -233,11 +233,14 @@ export interface ConsultationDetailResponse {
 
 export type UpdateConsultationStatusApprovePayload = {
   status: 'live'
+  adminNote?: string
 }
 
 export type UpdateConsultationStatusRejectPayload = {
   status: 'rejected'
-  reason: string
+  reasonFor: ServiceRejectionReason[]
+  rejectionReason: string
+  adminNote?: string
 }
 
 export type UpdateConsultationStatusPayload =

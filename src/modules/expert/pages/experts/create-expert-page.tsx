@@ -20,6 +20,7 @@ import {
   createEmptyExpertOnboardingForm,
   type ExpertOnboardingFormData,
 } from '../../utils/expert-onboarding-form'
+import { validateMobileNumber } from '@/shared/lib/phone'
 
 const STEPS = [
   { id: '01', title: 'Basic Profile', description: 'Core Information' },
@@ -37,7 +38,8 @@ const getApiErrorMessage = (error: unknown) => {
 const validateStep = (step: number, form: ExpertOnboardingFormData): string | null => {
   if (step === 1) {
     if (!form.fullname.trim()) return 'Full name is required.'
-    if (!form.phoneNumber.trim()) return 'Phone number is required.'
+    const phoneError = validateMobileNumber(form.phoneNumber)
+    if (phoneError) return phoneError
     if (!form.email.trim()) return 'Email is required.'
     if (!form.serviceType) return 'Service type is required.'
     if (form.serviceCategory.length === 0) return 'At least one service category is required.'

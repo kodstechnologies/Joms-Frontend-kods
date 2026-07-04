@@ -23,6 +23,7 @@ import {
   createEmptyVenueOnboardingForm,
   type VenueOnboardingFormData,
 } from '@/modules/expert/utils/venue-onboarding-form'
+import { sanitizeMobileNumber, validateMobileNumber } from '@/shared/lib/phone'
 
 const ONBOARDING_STEPS = [
   { id: '01', title: 'Basic Profile', description: 'Core Information' },
@@ -95,7 +96,7 @@ export function CreateVenueOnboardingPage() {
         : prev.hostingSinceMonths,
       pocName: venue.pocName || prev.pocName,
       pocContactNumber: venue.pocContactNumber || prev.pocContactNumber,
-      phone: venue.phone || prev.phone,
+      phone: venue.phone ? sanitizeMobileNumber(venue.phone) : prev.phone,
       email: venue.email || prev.email,
       profileImageUrl: venue.profileImageUrl || prev.profileImageUrl,
       coverImageUrl: venue.coverImageUrl || prev.coverImageUrl,
@@ -139,7 +140,8 @@ export function CreateVenueOnboardingPage() {
   const validateStep = (step: number): string | null => {
     if (step === 1) {
       if (!formData.name.trim()) return 'Venue name is required.'
-      if (!formData.phone.trim()) return 'Phone number is required.'
+      const phoneError = validateMobileNumber(formData.phone)
+      if (phoneError) return phoneError
       if (!formData.email.trim()) return 'Email is required.'
       if (!formData.venueCategoryId) return 'Category is required.'
     }

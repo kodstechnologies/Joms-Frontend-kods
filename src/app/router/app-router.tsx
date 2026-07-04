@@ -400,6 +400,7 @@ export function AppRouter() {
                 <Route path="/experts/deleted" element={<ExpertDeletedExpertsPage />} />
                 <Route path="/experts/reported" element={<ExpertReportedExpertsPage />} />
                 <Route path="/experts/pending-approvals" element={<ExpertPendingApprovalsPage />} />
+                <Route path="/experts/leaderboard" element={<LeaderboardPage />} />
                 <Route path="/referrals/management" element={<ReferralManagementPage />} />
                 <Route path="/support/dashboard" element={<SupportDashboardPage />} />
                 <Route path="/support/tickets" element={<TicketManagementPage />} />
@@ -430,7 +431,6 @@ export function AppRouter() {
                 <Route path="/services/management/deleted" element={<DeletedServicesPage />} />
                 <Route path="/services/management/create" element={<CreateServiceListingPage />} />
                 <Route path="/services/management/view/:id" element={<ServiceViewPage />} />
-                <Route path="/services/leaderboard" element={<LeaderboardPage />} />
                 <Route path="/categories/management" element={<CategoryManagementPage />} />
                 <Route path="/categories/management/create" element={<CreateCategoryPage />} />
                 <Route

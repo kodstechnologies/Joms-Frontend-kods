@@ -341,33 +341,6 @@ export const ServiceViewPage = () => {
     }
 
     if (activeDecisionAction === 'approve' || activeDecisionAction === 'reject') {
-      if (shouldFetchConsultation) {
-        if (activeDecisionAction === 'reject' && !decisionReason.trim()) {
-          toast.error('Rejection reason is required.')
-          return
-        }
-
-        try {
-          if (activeDecisionAction === 'approve') {
-            await updateConsultationStatus({ id: resolvedServiceId, payload: { status: 'live' } })
-            toast.success('Consultation approved successfully')
-          } else {
-            await updateConsultationStatus({
-              id: resolvedServiceId,
-              payload: { status: 'rejected', reason: decisionReason.trim() },
-            })
-            toast.success('Consultation rejected')
-          }
-          closeDecisionModal()
-        } catch (err) {
-          const message = axios.isAxiosError(err)
-            ? err.response?.data?.message || 'Failed to update consultation status.'
-            : 'Failed to update consultation status.'
-          toast.error(message)
-        }
-        return
-      }
-
       if (!decisionAdminNotes.trim()) {
         toast.error('Admin notes are required.')
         return
@@ -384,18 +357,37 @@ export const ServiceViewPage = () => {
         }
       }
 
+      const reasonFor = selectedReasons
+        .map((reasonValue) => SERVICE_REJECTION_REASON_BY_VALUE[reasonValue])
+        .filter((reason): reason is ServiceRejectionReason => Boolean(reason))
+
       try {
-        if (activeDecisionAction === 'approve') {
+        if (shouldFetchConsultation) {
+          if (activeDecisionAction === 'approve') {
+            await updateConsultationStatus({
+              id: resolvedServiceId,
+              payload: { status: 'live', adminNote: decisionAdminNotes.trim() },
+            })
+            toast.success('Consultation approved successfully')
+          } else {
+            await updateConsultationStatus({
+              id: resolvedServiceId,
+              payload: {
+                status: 'rejected',
+                reasonFor,
+                rejectionReason: decisionReason.trim(),
+                adminNote: decisionAdminNotes.trim(),
+              },
+            })
+            toast.success('Consultation rejected')
+          }
+        } else if (activeDecisionAction === 'approve') {
           await updateServiceStatus({
             id: resolvedServiceId,
             payload: { status: 'live', adminNote: decisionAdminNotes.trim() },
           })
           toast.success('Service approved successfully')
         } else {
-          const reasonFor = selectedReasons
-            .map((reasonValue) => SERVICE_REJECTION_REASON_BY_VALUE[reasonValue])
-            .filter((reason): reason is ServiceRejectionReason => Boolean(reason))
-
           await updateServiceStatus({
             id: resolvedServiceId,
             payload: {
@@ -410,8 +402,13 @@ export const ServiceViewPage = () => {
         closeDecisionModal()
       } catch (err) {
         const message = axios.isAxiosError(err)
-          ? err.response?.data?.message || 'Failed to update service status.'
-          : 'Failed to update service status.'
+          ? err.response?.data?.message ||
+            (shouldFetchConsultation
+              ? 'Failed to update consultation status.'
+              : 'Failed to update service status.')
+          : shouldFetchConsultation
+            ? 'Failed to update consultation status.'
+            : 'Failed to update service status.'
         toast.error(message)
       }
     }

@@ -62,6 +62,11 @@ export const navigationConfig: NavItem[] = [
             label: 'Expert Management',
             to: '/experts/management',
           },
+          {
+            key: 'expert.management.leaderboard',
+            label: 'Leaderboard',
+            to: '/experts/leaderboard',
+          },
         ],
       },
       {
@@ -71,7 +76,6 @@ export const navigationConfig: NavItem[] = [
         children: [
           { key: 'expert.services.dashboard', label: 'Dashboard', to: '/services/dashboard' },
           { key: 'expert.services.management', label: 'Service Management', to: '/services/management' },
-          { key: 'expert.services.leaderboard', label: 'Leaderboard', to: '/services/leaderboard' },
           {
             key: "expert.services.categories",
             label: "Category Management",
