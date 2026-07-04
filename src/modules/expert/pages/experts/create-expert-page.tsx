@@ -144,7 +144,7 @@ export const CreateExpertPage = () => {
           id: expertId,
           payload: buildSubmitPayload(formData),
         })
-        toast.success('Application submitted successfully')
+        toast.success('Expert created and KYC approved successfully')
         navigate('/experts/management')
         return
       }

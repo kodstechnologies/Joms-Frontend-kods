@@ -41,7 +41,11 @@ export type ExpertProfileDetail = {
   identityVerification?: Record<string, unknown>
   workExperience?: ExpertWorkExperience[]
   gallery?: { images?: string[] }
-  finalReview?: { internalNotes?: string; isVerified?: boolean }
+  finalReview?: {
+    internalNotes?: string
+    isVerified?: boolean
+    approvalStatus?: 'pending' | 'approved'
+  }
   subCategory?: unknown[]
   createdAt?: string
   updatedAt?: string

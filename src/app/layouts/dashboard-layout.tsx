@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
 import { cn } from '@/shared/lib/cn'
 
+import { NotificationPanel } from '@/app/layouts/components/notification-dropdown'
 import { Sidebar } from '@/app/layouts/components/sidebar'
 import { SidebarMobile } from '@/app/layouts/components/sidebar-mobile'
 import { Topbar } from '@/app/layouts/components/topbar'
@@ -12,6 +13,7 @@ import { uiTokens } from '@/shared/lib/design-tokens'
 export function DashboardLayout() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const [isCollapsed, setIsCollapsed] = useState(false)
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false)
   const location = useLocation()
   const isTabletCompact = useMediaQuery('(min-width: 768px) and (max-width: 1023px)')
   const isDesktopShell = useMediaQuery('(min-width: 768px)')
@@ -19,6 +21,7 @@ export function DashboardLayout() {
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsSidebarOpen(false)
+    setIsNotificationsOpen(false)
   }, [location.pathname])
 
   const showCompact = isCollapsed || isTabletCompact
@@ -44,6 +47,10 @@ export function DashboardLayout() {
       </aside>
 
       <SidebarMobile open={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+      <NotificationPanel
+        open={isNotificationsOpen}
+        onClose={() => setIsNotificationsOpen(false)}
+      />
 
       <div
         className={cn(
@@ -54,6 +61,8 @@ export function DashboardLayout() {
         <Topbar
           onMenuClick={() => setIsSidebarOpen((prev) => !prev)}
           onToggleCollapse={() => setIsCollapsed((prev) => !prev)}
+          notificationsOpen={isNotificationsOpen}
+          onNotificationsOpen={() => setIsNotificationsOpen(true)}
         />
         <main
           className="min-h-0 flex-1 overflow-y-auto overscroll-contain scroll-smooth"

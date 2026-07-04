@@ -1,11 +1,12 @@
-import { Bell, Menu } from 'lucide-react'
+import { Menu } from 'lucide-react'
 import { useLocation } from 'react-router-dom'
 
+import { NotificationTrigger } from '@/app/layouts/components/notification-dropdown'
 import { getVisibleNavigation } from '@/app/layouts/navigation/navigation.filter'
+import type { NavItem } from '@/app/layouts/navigation/navigation.config'
 import { useAuthStore } from '@/modules/auth/store/auth-store'
 import { cn } from '@/shared/lib/cn'
 import { uiTokens } from '@/shared/lib/design-tokens'
-import type { NavItem } from '@/app/layouts/navigation/navigation.config'
 
 function findTitleInNav(items: NavItem[], pathname: string): string | null {
   for (const item of items) {
@@ -24,7 +25,17 @@ function getTitleFromNav(pathname: string, items: NavItem[]) {
   return findTitleInNav(items, pathname) ?? 'Dashboard'
 }
 
-export function Topbar({ onMenuClick, onToggleCollapse }: { onMenuClick: () => void; onToggleCollapse: () => void }) {
+export function Topbar({
+  onMenuClick,
+  onToggleCollapse,
+  notificationsOpen,
+  onNotificationsOpen,
+}: {
+  onMenuClick: () => void
+  onToggleCollapse: () => void
+  notificationsOpen: boolean
+  onNotificationsOpen: () => void
+}) {
   const location = useLocation()
   const user = useAuthStore((state) => state.user)
   const visibleNavigation = getVisibleNavigation(user)
@@ -62,14 +73,7 @@ export function Topbar({ onMenuClick, onToggleCollapse }: { onMenuClick: () => v
         </div>
 
         <div className="flex items-center gap-3">
-          <button
-            type="button"
-            className="relative grid size-10 place-items-center rounded-brand-md border border-white/10 bg-brand-surface text-brand-stroke transition-colors hover:border-brand-accent-muted hover:bg-white/7 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent/30"
-            aria-label="Notifications"
-          >
-            <Bell className="size-5" />
-            <span className="absolute right-1.5 top-1.5 size-2 rounded-full bg-brand-accent" />
-          </button>
+          <NotificationTrigger open={notificationsOpen} onOpen={onNotificationsOpen} />
 
           <div className="flex items-center gap-3">
             <div className={cn('hidden text-right sm:block')}>

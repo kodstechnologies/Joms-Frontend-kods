@@ -214,8 +214,11 @@ const formatLastActive = (value?: string) => {
   })
 }
 
-const getKycBadge = (isVerified?: boolean) => {
-  if (isVerified) {
+const getKycBadge = (finalReview?: {
+  isVerified?: boolean
+  approvalStatus?: string
+}) => {
+  if (finalReview?.approvalStatus === 'approved') {
     return { label: 'KYC Verified', className: 'bg-emerald-500/15 text-emerald-400' }
   }
   return { label: 'Review Pending', className: 'bg-amber-500/15 text-amber-300' }
@@ -300,7 +303,7 @@ function ProfileSidebar({
 }) {
   const navigate = useNavigate()
   const basic = profile.basicProfile
-  const kycBadge = getKycBadge(profile.finalReview?.isVerified)
+  const kycBadge = getKycBadge(profile.finalReview)
 
   return (
     <div className="flex flex-col gap-4">
