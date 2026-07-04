@@ -5,6 +5,9 @@ export interface Expert {
   email: string
   profession?: string | null
   serviceType: string | null
+  venueKycId?: string | null
+  venueKycStatus?: string | null
+  venueBankingStatus?: string | null
   status: string
   reason?: string | null
   createdAt: string

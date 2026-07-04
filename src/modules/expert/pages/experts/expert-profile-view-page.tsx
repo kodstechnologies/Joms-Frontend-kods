@@ -32,8 +32,9 @@ import {
   Users,
 } from 'lucide-react'
 
-import { fetchExpertApplicationView } from '../../api/expert-application-api'
 import { fetchConsultationById, fetchServiceById } from '../../api/service-api'
+import { getServiceManagementViewPath } from '../../lib/service-navigation'
+import { openExpertKycFromProfile } from '../../utils/expert-application-navigation'
 import { ADMIN_DELETE_REASON_OPTIONS } from '../../constants/soft-delete'
 import { useDeactivateExpert, useSuspendExpert } from '../../hooks/use-expert'
 import {
@@ -121,18 +122,11 @@ const SUSPEND_REASON_OPTIONS: DecisionActionModalOption[] = [
 
 const toIso = (date: string) => new Date(date).toISOString()
 
-const viewExpertKyc = async (partnerId: string, navigate: NavigateFunction) => {
-  try {
-    const response = await fetchExpertApplicationView(partnerId)
-    if (!response?.data?.kyc?._id) {
-      toast.error('KYC is not submitted by partner')
-      return
-    }
-    navigate(`/experts/management/application/${partnerId}`)
-  } catch {
-    toast.error('KYC is not submitted by partner')
-  }
-}
+const viewExpertKyc = (
+  partnerId: string,
+  serviceType: string | null | undefined,
+  navigate: NavigateFunction,
+) => openExpertKycFromProfile(partnerId, serviceType, navigate)
 
 const viewExpertService = async (
   service: ExpertService,
@@ -147,7 +141,11 @@ const viewExpertService = async (
   try {
     await fetchServiceById(service._id)
     navigate(
-      `/experts/management/profile/${expertId}/service/${service._id}?type=${encodeURIComponent('service')}`,
+      getServiceManagementViewPath({
+        _id: service._id,
+        serviceType: 'Service',
+        partnerId: expertId,
+      }),
     )
   } catch {
     toast.error('Service not found')
@@ -167,7 +165,11 @@ const viewExpertConsultation = async (
   try {
     await fetchConsultationById(consultation._id)
     navigate(
-      `/experts/management/profile/${expertId}/service/${consultation._id}?type=${encodeURIComponent('consultation')}`,
+      getServiceManagementViewPath({
+        _id: consultation._id,
+        serviceType: 'Consultation',
+        partnerId: expertId,
+      }),
     )
   } catch {
     toast.error('Consultation not found')
@@ -349,7 +351,13 @@ function ProfileSidebar({
         <SidebarRow label="KYC">
           <button
             type="button"
-            onClick={() => viewExpertKyc(partnerId, navigate)}
+            onClick={() =>
+              viewExpertKyc(
+                partnerId,
+                profile.servicetype || basic?.serviceType,
+                navigate,
+              )
+            }
             className="rounded-md bg-[#FBC078]/15 px-3 py-1 text-[11px] font-bold text-[#FBC078] transition-colors hover:bg-[#FBC078]/25"
           >
             View

@@ -21,6 +21,7 @@ import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
 import { useServices, useSuspendService, useDeleteService } from '../../hooks/use-services'
+import { getServiceManagementViewPath } from '../../lib/service-navigation'
 import { ADMIN_DELETE_REASON_OPTIONS } from '../../constants/soft-delete'
 import { useServiceStore } from '../../store/service-store'
 import type { Service } from '../../type/service'
@@ -396,9 +397,7 @@ export const ServiceManagementPage = () => {
                 icon={<Eye className="size-3.5" aria-hidden="true" />}
                 onClick={() => {
                   setActiveDropdownId(null)
-                  navigate(
-                    `/services/management/view/${service._id}?type=${encodeURIComponent(service.serviceType)}`,
-                  )
+                  navigate(getServiceManagementViewPath(service))
                 }}
               >
                 View Details

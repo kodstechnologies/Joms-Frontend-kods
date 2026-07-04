@@ -498,11 +498,12 @@ export const VenueManagementPage = () => {
                 <div>
                     <h1 className="text-2xl font-bold text-white md:text-3xl">Venue Management</h1>
                     <p className="mt-1 text-sm text-slate-400 md:text-base">
-                        Manage venue listings, approvals and venue details
+                        Comprehensive user data and admin controls
                     </p>
                 </div>
                 <div className="flex w-full flex-col items-center gap-3 md:w-auto md:flex-row">
                     <Button
+                        variant="secondary"
                         className="w-full md:w-auto"
                         onClick={() => navigate('/venues/dashboard/metrics')}
                     >
@@ -510,6 +511,7 @@ export const VenueManagementPage = () => {
                         Manage Metrics
                     </Button>
                     <Button
+                        type="button"
                         className="w-full md:w-auto"
                         onClick={() => navigate('/venues/management/onboarding')}
                     >

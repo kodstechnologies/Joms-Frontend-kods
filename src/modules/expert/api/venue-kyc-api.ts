@@ -11,11 +11,30 @@ export const fetchApplicationDetails = async (id: string) => {
   return response.data
 }
 
+export const fetchVenueKycByPartnerId = async (partnerId: string) => {
+  const response = await kycApiClient.get<{
+    success?: boolean
+    data?: { _id?: string }
+  }>(`/venue-kyc/admin/partner/${partnerId}`)
+  return response.data
+}
+
 export const updateVenueKycStatus = async (
   id: string,
   payload: VenueKycStatusPayload,
 ) => {
   const response = await kycApiClient.patch(`/venue-kyc/status/${id}`, payload)
+  return response.data
+}
+
+export const approveVenueKycByPartnerId = async (
+  partnerId: string,
+  payload: Pick<VenueKycStatusPayload, 'adminNote'>,
+) => {
+  const response = await kycApiClient.post(
+    `/venue-kyc/admin/${partnerId}/approve`,
+    payload,
+  )
   return response.data
 }
 

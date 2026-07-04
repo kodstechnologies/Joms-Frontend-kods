@@ -44,7 +44,7 @@ const inferStepFromCurrentStep = (currentStep?: string) => {
   return 2
 }
 
-export const CreateVenueOnboardingPage = () => {
+export function CreateVenueOnboardingPage() {
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const partnerIdParam = searchParams.get('partnerId') || ''
@@ -258,7 +258,7 @@ export const CreateVenueOnboardingPage = () => {
       breadcrumbs={[
         { label: 'Venue management' },
         { label: 'Manage Venues' },
-        { label: 'Create Account', isActive: true },
+        { label: 'Create Profile', isActive: true },
       ]}
       steps={ONBOARDING_STEPS}
       currentStep={currentStep}
@@ -293,3 +293,5 @@ export const CreateVenueOnboardingPage = () => {
     </CreateListingWizard>
   )
 }
+
+export default CreateVenueOnboardingPage

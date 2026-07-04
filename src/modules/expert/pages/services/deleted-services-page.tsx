@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 
 import { formatDeletedAt } from '../../constants/soft-delete'
 import { useRestoreService, useServices } from '../../hooks/use-services'
+import { getServiceManagementViewPath } from '../../lib/service-navigation'
 import type { Service } from '../../type/service'
 import { DataTable } from '@/shared/components/table/data-table'
 import {
@@ -84,9 +85,7 @@ export function DeletedServicesPage() {
                 icon={<Eye className="size-3.5" />}
                 onClick={() => {
                   setActiveDropdownId(null)
-                  navigate(
-                    `/services/management/view/${service._id}?type=${encodeURIComponent(service.serviceType)}`,
-                  )
+                  navigate(getServiceManagementViewPath(service))
                 }}
               >
                 View Details

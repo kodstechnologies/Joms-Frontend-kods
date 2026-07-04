@@ -168,6 +168,18 @@ export function ApplicationDetailsPage() {
     },
   })
 
+  const resetModal = () => {
+    setAdminNotes('')
+    setSelectedReasons([])
+    setRejectionReason('')
+  }
+
+  const openModal = (variant: DecisionVariant) => {
+    resetModal()
+    setModalVariant(variant)
+    setModalOpen(true)
+  }
+
   if (isLoading) {
     return (
       <div className="flex h-[60vh] items-center justify-center">
@@ -222,18 +234,6 @@ export function ApplicationDetailsPage() {
     venue.decorationAvailable ? 'Decoration available' : null,
     venue.accessibility ? 'Accessibility' : null,
   ].filter(Boolean)
-
-  const resetModal = () => {
-    setAdminNotes('')
-    setSelectedReasons([])
-    setRejectionReason('')
-  }
-
-  const openModal = (variant: DecisionVariant) => {
-    resetModal()
-    setModalVariant(variant)
-    setModalOpen(true)
-  }
 
   const handleSubmitDecision = () => {
     const spaceId = space?._id

@@ -32,7 +32,7 @@ export function TableActionsDropdown({
   children,
   menuClassName,
   menuWidth = 192,
-  tone = 'dark',
+  tone = 'light',
 }: TableActionsDropdownProps) {
   const triggerRef = useRef<HTMLButtonElement>(null)
   const menuRef = useRef<HTMLDivElement>(null)
@@ -134,7 +134,7 @@ export function TableActionsItem({
   children,
   icon,
   className,
-  tone = 'dark',
+  tone = 'light',
 }: TableActionsItemProps) {
   return (
     <button

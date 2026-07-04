@@ -58,9 +58,9 @@ const CreateExpertPage = lazy(() =>
     default: m.CreateExpertPage,
   })),
 )
-const ExpertApplicationViewPage = lazy(() =>
+const ExpertApplicationRoute = lazy(() =>
   import('@/modules/expert').then((m) => ({
-    default: m.ExpertApplicationViewPage,
+    default: m.ExpertApplicationRoute,
   })),
 )
 const ExpertProfileViewPage = lazy(() =>
@@ -114,10 +114,8 @@ const CreateVenueListingPage = lazy(() =>
     default: m.CreateVenueListingPage,
   })),
 )
-const CreateVenueOnboardingPage = lazy(() =>
-  import('@/modules/expert').then((m) => ({
-    default: m.CreateVenueOnboardingPage,
-  })),
+const CreateVenueOnboardingPage = lazy(
+  () => import('@/modules/expert/pages/venue/create-venue-onboarding-page'),
 )
 const VenuePendingApprovalsPage = lazy(() =>
   import('@/modules/expert').then((m) => ({
@@ -396,7 +394,7 @@ export function AppRouter() {
                 />
                 <Route
                   path="/experts/management/application/:id"
-                  element={<ExpertApplicationViewPage />}
+                  element={<ExpertApplicationRoute />}
                 />
                 <Route path="/experts/suspended" element={<ExpertSuspendedExpertsPage />} />
                 <Route path="/experts/deleted" element={<ExpertDeletedExpertsPage />} />

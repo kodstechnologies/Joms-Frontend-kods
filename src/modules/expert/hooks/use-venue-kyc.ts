@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
 import {
+  approveVenueKycByPartnerId,
   fetchApplicationDetails,
   updateVenueBankingStatus,
   updateVenueKycStatus,
@@ -24,6 +25,25 @@ export const useUpdateVenueKycStatus = (id?: string) => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['venue-kyc-application', id] })
       queryClient.invalidateQueries({ queryKey: ['venues'] })
+    },
+  })
+}
+
+export const useApproveVenueKyc = (id?: string) => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({
+      partnerId,
+      adminNote,
+    }: {
+      partnerId: string
+      adminNote?: string
+    }) => approveVenueKycByPartnerId(partnerId, { adminNote }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['venue-kyc-application', id] })
+      queryClient.invalidateQueries({ queryKey: ['venues'] })
+      queryClient.invalidateQueries({ queryKey: ['experts'] })
     },
   })
 }

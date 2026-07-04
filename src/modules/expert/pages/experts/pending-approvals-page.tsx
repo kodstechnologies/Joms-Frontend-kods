@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 
 import { useExperts } from '../../hooks/use-expert'
 import type { Expert } from '../../type/expert'
+import { openExpertApplicationView } from '../../utils/expert-application-navigation'
 import {
   createExpertBaseColumns,
   createExpertCreatedAtColumn,
@@ -63,6 +64,7 @@ export function ExpertPendingApprovalsPage() {
         cell: ({ row }) => {
           const expert = row.original
           const isOpen = activeDropdownId === expert.expertId
+          const isVenue = expert.serviceType?.toLowerCase() === 'venue'
 
           return (
             <TableActionsDropdown
@@ -73,23 +75,25 @@ export function ExpertPendingApprovalsPage() {
               }
               menuWidth={192}
             >
-              <TableActionsItem
-                icon={<Eye className="size-3.5" aria-hidden="true" />}
-                onClick={() => {
-                  setActiveDropdownId(null)
-                  navigate(`/experts/management/profile/${expert.id}`)
-                }}
-              >
-                View Expert
-              </TableActionsItem>
+              {!isVenue && (
+                <TableActionsItem
+                  icon={<Eye className="size-3.5" aria-hidden="true" />}
+                  onClick={() => {
+                    setActiveDropdownId(null)
+                    navigate(`/experts/management/profile/${expert.id}`)
+                  }}
+                >
+                  View Expert
+                </TableActionsItem>
+              )}
               <TableActionsItem
                 icon={<FileText className="size-3.5" aria-hidden="true" />}
                 onClick={() => {
                   setActiveDropdownId(null)
-                  navigate(`/experts/management/application/${expert.id}`)
+                  openExpertApplicationView(expert, navigate)
                 }}
               >
-                Application View
+                {isVenue ? 'Venue KYC View' : 'Application View'}
               </TableActionsItem>
             </TableActionsDropdown>
           )

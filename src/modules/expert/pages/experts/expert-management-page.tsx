@@ -22,6 +22,7 @@ import { useDeactivateExpert, useExperts, useSuspendExpert } from '../../hooks/u
 import { ADMIN_DELETE_REASON_OPTIONS } from '../../constants/soft-delete'
 import { useExpertStore } from '../../store/expert-store'
 import type { Expert } from '../../type/expert'
+import { openExpertApplicationView } from '../../utils/expert-application-navigation'
 import { DataTable } from '@/shared/components/table/data-table'
 import {
     TableActionsDropdown,
@@ -82,7 +83,6 @@ export const ExpertManagementPage = () => {
         limit: 10,
         status: activeStatus !== 'all' ? activeStatus : undefined,
         search: searchQuery,
-        serviceType: 'concierge',
     })
     const experts = data?.data || []
     const meta = data?.meta
@@ -406,6 +406,7 @@ export const ExpertManagementPage = () => {
                 cell: ({ row }) => {
                     const expert = row.original
                     const isOpen = activeDropdownId === expert.expertId
+                    const isVenue = expert.serviceType?.toLowerCase() === 'venue'
 
                     return (
                         <TableActionsDropdown
@@ -415,15 +416,27 @@ export const ExpertManagementPage = () => {
                             menuWidth={220}
                             menuClassName={ACTION_MENU_CLASS}
                         >
+                            {!isVenue && (
+                                <TableActionsItem
+                                    icon={<User className="size-3.5 text-slate-700" aria-hidden="true" />}
+                                    className={ACTION_ITEM_CLASS}
+                                    onClick={() => {
+                                        setActiveDropdownId(null)
+                                        navigate(`/experts/management/profile/${expert.id}`)
+                                    }}
+                                >
+                                    View Profile
+                                </TableActionsItem>
+                            )}
                             <TableActionsItem
                                 icon={<User className="size-3.5 text-slate-700" aria-hidden="true" />}
                                 className={ACTION_ITEM_CLASS}
                                 onClick={() => {
                                     setActiveDropdownId(null)
-                                    navigate(`/experts/management/profile/${expert.id}`)
+                                    openExpertApplicationView(expert, navigate)
                                 }}
                             >
-                                View Profile
+                                {isVenue ? 'View Venue KYC' : 'Application View'}
                             </TableActionsItem>
                             <TableActionsItem
                                 icon={<User className="size-3.5 text-slate-700" aria-hidden="true" />}
