@@ -17,7 +17,7 @@ import {
   useUpdateExpertBankingStatus,
   useUpdateExpertKycStatus,
 } from '../../hooks/use-expert-application-view'
-import { formatListingExpertId } from './expert-list-shared'
+import { formatApplicationExpertId } from './expert-list-shared'
 import type {
   ApplicationStatus,
   ConciergeRejectionReason,
@@ -386,7 +386,7 @@ export function ExpertApplicationViewPage() {
           <div className="rounded-lg border border-white/5 bg-black p-4">
             <p className="text-[11px] text-[#777]">Expert ID</p>
             <p className="mt-1 font-mono text-[13px] font-semibold text-white">
-              {formatListingExpertId(application.expert?._id || id)}
+              {formatApplicationExpertId(application.expert?._id || id)}
             </p>
           </div>
           <div className="rounded-lg border border-white/5 bg-black p-4">
@@ -498,12 +498,6 @@ export function ExpertApplicationViewPage() {
               <DocumentCard label="Sample Work" url={kycSampleWorkUrl} />
             </div>
           </SectionCard>
-        </div>
-      )}
-
-      {activeTab === 'banking' && !banking && (
-        <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-[13px] text-amber-200">
-          Banking details are not submitted by partner
         </div>
       )}
 

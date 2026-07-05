@@ -263,10 +263,13 @@ export function ExpertProfileAnalyticsPage() {
                   <YAxis hide />
                   <Tooltip
                     contentStyle={CHART_TOOLTIP}
-                    formatter={(value: number) => [
-                      `${Math.floor(value)}hr ${Math.round((value % 1) * 60)}m Daily Average`,
-                      'Peak',
-                    ]}
+                    formatter={(value) => {
+                      const hours = Number(value ?? 0)
+                      return [
+                        `${Math.floor(hours)}hr ${Math.round((hours % 1) * 60)}m Daily Average`,
+                        'Peak',
+                      ]
+                    }}
                   />
                   <Bar dataKey="hours" radius={[6, 6, 0, 0]}>
                     {MOST_ACTIVE_TIME.map((entry) => (
@@ -383,8 +386,8 @@ export function ExpertProfileAnalyticsPage() {
                 />
                 <Tooltip
                   contentStyle={CHART_TOOLTIP}
-                  formatter={(value: number, _name, item) => [
-                    `₹${Number(value).toLocaleString('en-IN', {
+                  formatter={(value, _name, item) => [
+                    `₹${Number(value ?? 0).toLocaleString('en-IN', {
                       minimumFractionDigits: 2,
                       maximumFractionDigits: 2,
                     })}`,

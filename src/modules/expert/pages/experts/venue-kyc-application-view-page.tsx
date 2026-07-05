@@ -30,6 +30,7 @@ import {
   type DecisionActionModalOption,
 } from '@/shared/components/modal/decision-action-modal'
 import { cn } from '@/shared/lib/cn'
+import { formatApplicationExpertId } from './expert-list-shared'
 
 type TabKey = 'overview' | 'kyc' | 'banking'
 type DecisionVariant = 'approve' | 'reject' | 'requestChanges'
@@ -91,14 +92,6 @@ const formatRelativeApplied = (value?: string | null) => {
   if (days <= 0) return 'Applied today'
   if (days === 1) return 'Applied 1 day ago'
   return `Applied ${days} days ago`
-}
-
-const formatExpertId = (partnerId?: string | null, applicationId?: string | null) => {
-  const source = partnerId || applicationId
-  if (!source) return 'N/A'
-  const digits = source.replace(/\D/g, '')
-  const suffix = (digits || source).slice(-5).toUpperCase()
-  return `#Expert ${suffix}`
 }
 
 const getDocumentMeta = (url?: string | null) => {
@@ -388,8 +381,14 @@ export function VenueKycApplicationViewPage() {
     )
   }
 
+  const isBankingSubmitted = ['PENDING', 'APPROVED', 'REJECTED'].includes(
+    application?.bankingDetails?.status || application?.header?.bankingStatus || '',
+  )
+
   const decisionDisabled =
-    activeDecisionStatus !== 'PENDING' || activeMutationPending
+    (decisionTargetForTab === 'banking' && !isBankingSubmitted) ||
+    activeDecisionStatus !== 'PENDING' ||
+    activeMutationPending
 
   const modalTitle = useMemo(() => {
     const target = modalTarget === 'banking' ? 'Banking' : 'Venue KYC'
@@ -437,9 +436,6 @@ export function VenueKycApplicationViewPage() {
   const account = bankingDetails.account
   const otherCertificates = documents?.otherCertificates || []
   const venueImages = overview.venueImages || []
-  const isBankingSubmitted = ['PENDING', 'APPROVED', 'REJECTED'].includes(
-    bankingDetails.status || header.bankingStatus || '',
-  )
 
   const applicantName = header.applicantName || applicant?.fullName || 'Venue Partner'
   const appliedLabel = formatRelativeApplied(header.appliedAt)
@@ -510,7 +506,14 @@ export function VenueKycApplicationViewPage() {
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <StatusPill status={header.kycStatus} label={header.kycStatusLabel} />
-            <StatusPill status={header.bankingStatus} label={header.bankingStatusLabel} />
+            <StatusPill
+              status={header.bankingStatus}
+              label={
+                isBankingSubmitted
+                  ? header.bankingStatusLabel
+                  : 'Not Submitted'
+              }
+            />
           </div>
         </div>
 
@@ -518,7 +521,7 @@ export function VenueKycApplicationViewPage() {
           <div className="rounded-lg border border-white/5 bg-black p-4">
             <p className="text-[11px] text-[#777]">Expert ID</p>
             <p className="mt-1 font-mono text-[13px] font-semibold text-white">
-              {formatExpertId(header.partnerId, header.applicationId)}
+              {formatApplicationExpertId(header.partnerId || header.applicationId)}
             </p>
           </div>
           <div className="rounded-lg border border-white/5 bg-black p-4">
@@ -712,8 +715,7 @@ export function VenueKycApplicationViewPage() {
         </div>
       )}
 
-      {activeTab === 'banking' &&
-        (isBankingSubmitted ? (
+      {activeTab === 'banking' && (
           <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
             <SectionCard
               title="Account Information"
@@ -725,10 +727,10 @@ export function VenueKycApplicationViewPage() {
                 <InfoField label="Bank Name" value={account?.bankName} />
                 <InfoField label="Account Number" value={account?.accountNumber} />
                 <InfoField label="IFSC Code" value={account?.ifscCode} />
-                {account?.providedName != null && account.providedName !== '' && (
+                {isBankingSubmitted && account?.providedName != null && account.providedName !== '' && (
                   <InfoField label="Provided Name" value={account.providedName} />
                 )}
-                {account?.nameMatchScore != null && account.nameMatchScore !== '' && (
+                {isBankingSubmitted && account?.nameMatchScore != null && account.nameMatchScore !== '' && (
                   <InfoField label="Name Match Score" value={account.nameMatchScore} />
                 )}
               </div>
@@ -741,23 +743,12 @@ export function VenueKycApplicationViewPage() {
               <div className="max-w-sm">
                 <DocumentCard
                   label="Cancelled Cheque"
-                  url={bankingDetails.cancelledCheque}
+                  url={isBankingSubmitted ? bankingDetails.cancelledCheque : null}
                 />
               </div>
             </SectionCard>
           </div>
-        ) : (
-          <div className="rounded-xl border border-white/5 bg-[#111111] px-6 py-10 text-center">
-            <Banknote className="mx-auto size-8 text-[#555]" aria-hidden="true" />
-            <p className="mt-3 text-[14px] font-semibold text-white">
-              Banking details not submitted
-            </p>
-            <p className="mt-1.5 text-[12px] text-[#777]">
-              Account information and documents will appear here once the partner
-              submits banking for review.
-            </p>
-          </div>
-        ))}
+        )}
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
         <div className="rounded-xl border border-white/5 bg-[#111111] p-5">
