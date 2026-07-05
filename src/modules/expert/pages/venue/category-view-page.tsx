@@ -6,7 +6,6 @@ import VenueCategoryInfoCard from '../../components/category/VenueCategoryInfoCa
 import CategoryDescriptionCard from '../../components/category/CategoryDescriptionCard'
 import CategoryAdminNotesCard from '../../components/category/CategoryAdminNotesCard'
 import VenueCategorySubCategorySection from '../../components/category/venue-category-sub-category-section'
-import { categoryViewTheme } from '../../components/category/category-view.theme'
 import { useVenueCategory } from '../../hooks/use-venue-category-management'
 
 export const VenueCategoryViewPage = () => {
@@ -14,26 +13,15 @@ export const VenueCategoryViewPage = () => {
   const { data: category, isLoading, isError } = useVenueCategory(id)
 
   if (isLoading) {
-    return (
-      <div className="p-10 text-white" style={{ backgroundColor: '#000000' }}>
-        Loading category…
-      </div>
-    )
+    return <div className="p-10 text-white">Loading category…</div>
   }
 
   if (isError || !category) {
-    return (
-      <div className="p-10 text-white" style={{ backgroundColor: '#000000' }}>
-        Category not found
-      </div>
-    )
+    return <div className="p-10 text-white">Category not found</div>
   }
 
   return (
-    <div
-      className="min-h-screen px-4 pb-8 pt-2 sm:px-6 lg:px-8"
-      style={{ backgroundColor: categoryViewTheme.pageBg }}
-    >
+    <div className="min-h-screen px-4 pb-8 pt-2 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-6xl">
         <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-start">
           <CategoryHeader title={category.name} breadcrumb={category.name} />

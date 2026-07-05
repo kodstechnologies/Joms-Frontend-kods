@@ -4,8 +4,8 @@ import { ArrowLeft, BarChart3 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
 import type { Expert } from '../../type/expert'
+import { getManagementStatusDisplay } from '../../utils/management-status'
 import { Button } from '@/shared/components/ui/button'
-import { cn } from '@/shared/lib/cn'
 
 export const displayExpertValue = (value: unknown): string => {
   if (value === null || value === undefined) return 'N/A'
@@ -65,21 +65,9 @@ export function ExpertListHeader({
 }
 
 export function ExpertStatusBadge({ status }: { status?: string }) {
-  const normalized = (status || '').toLowerCase().replace(/_/g, ' ')
+  const { label, className } = getManagementStatusDisplay(status)
 
-  const className = cn(
-    'rounded px-2 py-0.5 text-[10px] font-bold capitalize',
-    normalized.includes('pending') && 'bg-amber-500/15 text-amber-300',
-    normalized.includes('changes') && 'bg-amber-700/20 text-amber-200',
-    normalized.includes('suspended') && 'bg-orange-500/15 text-orange-300',
-    normalized.includes('active') && 'bg-green-500/10 text-green-400',
-    normalized.includes('rejected') && 'bg-red-500/15 text-red-400',
-    !normalized && 'bg-slate-500/10 text-slate-400',
-  )
-
-  return (
-    <span className={className}>{displayExpertValue(status || 'N/A')}</span>
-  )
+  return <span className={className}>{displayExpertValue(label)}</span>
 }
 
 export function useExpertListSelection(experts: Expert[]) {
@@ -193,11 +181,6 @@ export function createExpertBaseColumns(): ColumnDef<Expert>[] {
       accessorKey: 'email',
       header: 'Email ID',
       cell: ({ row }) => displayExpertValue(row.original.email),
-    },
-    {
-      accessorKey: 'profession',
-      header: 'Profession',
-      cell: ({ row }) => displayExpertValue(row.original.profession),
     },
   ]
 }

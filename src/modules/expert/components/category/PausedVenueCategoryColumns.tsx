@@ -1,77 +1,61 @@
-import type { ColumnDef } from "@tanstack/react-table";
+import type { ColumnDef } from '@tanstack/react-table'
 
-import VenueCategoryTableActions from "./VenueCategoryTableActions";
-import { categoryManagementTheme } from "./category-management.theme";
-import type { VenueCategory } from "./venue-category-table-columns";
-
-const statusStyles = {
-  Accepted: categoryManagementTheme.statusAccepted,
-  Pending: categoryManagementTheme.statusPending,
-  Deleted: categoryManagementTheme.statusDeleted,
-} as const;
-
-function StatusBadge({ status }: { status: string }) {
-  const style =
-    statusStyles[status as keyof typeof statusStyles] ??
-    "border border-white/10 bg-white/5 text-[#CCCCCC]";
-
-  return (
-    <span
-      className={`inline-flex rounded-md px-2.5 py-1 text-[11px] font-semibold ${style}`}
-    >
-      {status}
-    </span>
-  );
-}
+import VenueCategoryTableActions from './VenueCategoryTableActions'
+import VenueViewCategoryButton from './venue-view-category-button'
+import { CategoryStatusBadge } from './category-list-shared'
+import type { VenueCategory } from './venue-category-table-columns'
 
 function getDisplayStatus(category: VenueCategory) {
-  return category.previousStatus ?? category.status;
+  return category.previousStatus ?? category.status
 }
 
 export const pausedVenueCategoryColumns: ColumnDef<VenueCategory>[] = [
   {
-    id: "categoryId",
-    header: "Category ID",
+    id: 'categoryId',
+    header: 'Category ID',
     accessorFn: (row) => row.categoryId || row.id,
-    meta: { cellClassName: "text-white font-medium" },
+    meta: { cellClassName: 'text-white font-medium' },
   },
   {
-    accessorKey: "name",
-    header: "Category Name",
-    meta: { cellClassName: "text-white" },
+    accessorKey: 'name',
+    header: 'Category Name',
+    meta: { cellClassName: 'text-white' },
   },
   {
-    accessorKey: "status",
-    header: "Status",
+    accessorKey: 'status',
+    header: 'Status',
     cell: ({ row }) => (
-      <StatusBadge status={getDisplayStatus(row.original)} />
+      <CategoryStatusBadge status={getDisplayStatus(row.original)} />
     ),
   },
   {
-    accessorKey: "subCategory",
-    header: "No. of Sub Category",
-    meta: { cellClassName: "text-white" },
+    accessorKey: 'subCategory',
+    header: 'No. of Sub Category',
+    meta: { cellClassName: 'text-white' },
   },
   {
-    accessorKey: "venues",
-    header: "No.Of Venues",
-    meta: { cellClassName: "text-white" },
+    accessorKey: 'venues',
+    header: 'No.Of Venues',
+    meta: { cellClassName: 'text-white' },
   },
   {
-    accessorKey: "revenue",
-    header: "Revenue Generated",
-    meta: { cellClassName: "text-white font-medium" },
+    accessorKey: 'revenue',
+    header: 'Revenue Generated',
+    meta: { cellClassName: 'text-white font-medium' },
   },
   {
-    id: "actions",
-    header: "Actions",
-    meta: { headerClassName: "text-right", cellClassName: "text-right" },
+    id: 'actions',
+    header: 'Actions',
+    meta: { headerClassName: 'text-right', cellClassName: 'text-right' },
     enableSorting: false,
     enableHiding: false,
     cell: ({ row }) => (
-      <VenueCategoryTableActions category={row.original} />
+      <div className="flex items-center justify-end gap-2">
+        <VenueViewCategoryButton id={row.original.id} />
+        <VenueCategoryTableActions category={row.original} />
+      </div>
     ),
   },
-];
+]
 
-export type { VenueCategory as PausedVenueCategory };
+export type { VenueCategory as PausedVenueCategory }

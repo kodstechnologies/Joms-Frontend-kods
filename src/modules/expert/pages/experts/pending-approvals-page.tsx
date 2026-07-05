@@ -1,11 +1,16 @@
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { Eye, FileText } from 'lucide-react'
+import { Ban, Eye, FileText } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
+import {
+  fetchExpertApplicationView,
+  updateExpertKycStatus,
+} from '../../api/expert-application-api'
 import { useExperts } from '../../hooks/use-expert'
 import type { Expert } from '../../type/expert'
+import type { ConciergeRejectionReason } from '../../type/expert-application-view'
 import { openExpertApplicationView } from '../../utils/expert-application-navigation'
 import {
   createExpertBaseColumns,
@@ -17,17 +22,36 @@ import {
   ExpertListHeader,
   useExpertListSelection,
 } from './expert-list-shared'
+import {
+  DecisionActionModal,
+  type DecisionActionModalOption,
+} from '@/shared/components/modal/decision-action-modal'
 import { DataTable } from '@/shared/components/table/data-table'
 import {
   TableActionsDropdown,
   TableActionsItem,
 } from '@/shared/components/table/table-actions-dropdown'
+import { useQueryClient } from '@tanstack/react-query'
+
+const REVOKE_REASON_OPTIONS: DecisionActionModalOption[] = [
+  { label: 'Unclear Image', value: 'Reason1' },
+  { label: 'Content Issue', value: 'Reason2' },
+  { label: 'Invalid documents', value: 'Reason3' },
+  { label: 'Invalid PAN', value: 'Reason4' },
+  { label: 'Invalid GST', value: 'Reason5' },
+]
 
 export function ExpertPendingApprovalsPage() {
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const [searchQuery, setSearchQuery] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
+  const [revokeExpertTarget, setRevokeExpertTarget] = useState<Expert | null>(null)
+  const [revokeReasons, setRevokeReasons] = useState<string[]>([])
+  const [revokeReasonDetails, setRevokeReasonDetails] = useState('')
+  const [revokeAdminNotes, setRevokeAdminNotes] = useState('')
+  const [isRevoking, setIsRevoking] = useState(false)
 
   const { data, isLoading } = useExperts({
     page: currentPage,
@@ -39,6 +63,82 @@ export function ExpertPendingApprovalsPage() {
   const experts = data?.data || []
   const meta = data?.meta
   const selection = useExpertListSelection(experts)
+
+  const toggleRevokeReason = useCallback((value: string) => {
+    setRevokeReasons((current) =>
+      current.includes(value)
+        ? current.filter((reason) => reason !== value)
+        : [...current, value],
+    )
+  }, [])
+
+  const closeRevokeModal = useCallback(() => {
+    setRevokeExpertTarget(null)
+    setRevokeReasons([])
+    setRevokeReasonDetails('')
+    setRevokeAdminNotes('')
+  }, [])
+
+  const handleRevokeSubmit = useCallback(async () => {
+    if (!revokeExpertTarget) return
+
+    if (revokeExpertTarget.serviceType?.toLowerCase() === 'venue') {
+      closeRevokeModal()
+      await openExpertApplicationView(revokeExpertTarget, navigate)
+      return
+    }
+
+    if (revokeReasons.length === 0) {
+      toast.error('Please select at least one reason.')
+      return
+    }
+
+    if (!revokeReasonDetails.trim()) {
+      toast.error('Please provide a rejection reason.')
+      return
+    }
+
+    if (!revokeAdminNotes.trim()) {
+      toast.error('Admin notes are required.')
+      return
+    }
+
+    setIsRevoking(true)
+
+    try {
+      const applicationResponse = await fetchExpertApplicationView(revokeExpertTarget.id)
+      const kycId = applicationResponse?.data?.kyc?._id
+
+      if (!kycId) {
+        toast.error('KYC is not submitted by partner')
+        return
+      }
+
+      await updateExpertKycStatus(kycId, {
+        status: 'REJECTED',
+        reasonFor: revokeReasons as ConciergeRejectionReason[],
+        rejectionReason: revokeReasonDetails.trim(),
+        adminNote: revokeAdminNotes.trim(),
+      })
+
+      toast.success('Application revoked successfully')
+      closeRevokeModal()
+      queryClient.invalidateQueries({ queryKey: ['experts'] })
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } }
+      toast.error(err?.response?.data?.message || 'Failed to revoke application. Please try again.')
+    } finally {
+      setIsRevoking(false)
+    }
+  }, [
+    closeRevokeModal,
+    navigate,
+    queryClient,
+    revokeAdminNotes,
+    revokeExpertTarget,
+    revokeReasonDetails,
+    revokeReasons,
+  ])
 
   const columns = useMemo<ColumnDef<Expert>[]>(
     () => [
@@ -95,6 +195,22 @@ export function ExpertPendingApprovalsPage() {
               >
                 {isVenue ? 'Venue KYC View' : 'Application View'}
               </TableActionsItem>
+              <TableActionsItem
+                icon={<Ban className="size-3.5 text-red-400" aria-hidden="true" />}
+                onClick={() => {
+                  setActiveDropdownId(null)
+                  if (isVenue) {
+                    openExpertApplicationView(expert, navigate)
+                    return
+                  }
+                  setRevokeExpertTarget(expert)
+                  setRevokeReasons([])
+                  setRevokeReasonDetails('')
+                  setRevokeAdminNotes('')
+                }}
+              >
+                Revoke Application
+              </TableActionsItem>
             </TableActionsDropdown>
           )
         },
@@ -120,7 +236,7 @@ export function ExpertPendingApprovalsPage() {
           setSearchQuery(value)
           setCurrentPage(1)
         }}
-        searchPlaceholder="Search by name, ID or profession"
+        searchPlaceholder="Search by name or ID"
         onAdvancedFilter={() => toast.message('Advanced filters are coming soon')}
         onExport={() => toast.message('Expert export is coming soon')}
         pagination={{
@@ -132,6 +248,24 @@ export function ExpertPendingApprovalsPage() {
         }}
         resourceLabel="users"
         emptyMessage="No pending approvals found."
+      />
+
+      <DecisionActionModal
+        open={Boolean(revokeExpertTarget)}
+        variant="reject"
+        title="Revoke Application"
+        description="Are you sure you want to revoke this expert application? The partner will need to resubmit after rejection."
+        submitLabel="Revoke Application"
+        reasonOptions={REVOKE_REASON_OPTIONS}
+        selectedReasons={revokeReasons}
+        onReasonToggle={toggleRevokeReason}
+        reason={revokeReasonDetails}
+        onReasonChange={setRevokeReasonDetails}
+        adminNotes={revokeAdminNotes}
+        onAdminNotesChange={setRevokeAdminNotes}
+        onClose={closeRevokeModal}
+        onSubmit={handleRevokeSubmit}
+        isSubmitting={isRevoking}
       />
     </div>
   )

@@ -35,10 +35,10 @@ export const useVenue = (id: string) => {
   })
 }
 
-export const useVenueFullView = (venueId?: string) => {
+export const useVenueFullView = (venueId?: string, spaceId?: string) => {
   return useQuery({
-    queryKey: ['venue-full-view', venueId],
-    queryFn: () => fetchVenueFullView(venueId as string),
+    queryKey: ['venue-full-view', venueId, spaceId],
+    queryFn: () => fetchVenueFullView(venueId as string, spaceId),
     enabled: !!venueId,
   })
 }

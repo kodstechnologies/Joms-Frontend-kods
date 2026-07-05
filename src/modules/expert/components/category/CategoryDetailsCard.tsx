@@ -25,10 +25,7 @@ const CategoryDetailsCard = ({
   onImageChange,
 }: CategoryDetailsCardProps) => {
   return (
-    <div
-      className="rounded-xl border border-[#242424] p-6"
-      style={{ backgroundColor: categoryFormTheme.surface }}
-    >
+    <div className="rounded-xl border border-white/10 bg-brand-surface p-6">
       <h2 className={categoryFormTheme.sectionTitleClass}>Category Details</h2>
 
       <p className={`mt-1 ${categoryFormTheme.sectionSubtitleClass}`}>

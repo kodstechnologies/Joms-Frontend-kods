@@ -174,6 +174,10 @@ export interface VenueFullViewSpaceSummary {
   availability: VenueFullViewAvailability | null
   isHidden?: boolean
   isSuspend?: boolean
+  status?: 'submitted' | 'approved' | 'rejected'
+  adminNote?: string | null
+  rejectionReason?: string | null
+  reasonFor?: string[]
 }
 
 export interface VenueFullView {

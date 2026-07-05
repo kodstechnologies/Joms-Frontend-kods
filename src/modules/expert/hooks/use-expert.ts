@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
+  activateExpert,
   deactivateExpert,
   fetchExperts,
   fetchExpertById,
@@ -40,6 +41,17 @@ export const useSuspendExpert = () => {
   return useMutation({
     mutationFn: ({ id, payload }: { id: string; payload: SuspendExpertPayload }) =>
       suspendExpert(id, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['experts'] })
+    },
+  })
+}
+
+export const useActivateExpert = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (id: string) => activateExpert(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['experts'] })
     },

@@ -133,7 +133,7 @@ export function ExpertDeletedExpertsPage() {
           setSearchQuery(value)
           setCurrentPage(1)
         }}
-        searchPlaceholder="Search by name, ID or profession"
+        searchPlaceholder="Search by name or ID"
         onAdvancedFilter={() => toast.message('Advanced filters are coming soon')}
         onExport={() => toast.message('Expert export is coming soon')}
         pagination={{

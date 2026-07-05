@@ -23,6 +23,7 @@ import { ADMIN_DELETE_REASON_OPTIONS } from '../../constants/soft-delete'
 import { useExpertStore } from '../../store/expert-store'
 import type { Expert } from '../../type/expert'
 import { openExpertApplicationView } from '../../utils/expert-application-navigation'
+import { getManagementStatusDisplay } from '../../utils/management-status'
 import { DataTable } from '@/shared/components/table/data-table'
 import {
     TableActionsDropdown,
@@ -322,21 +323,9 @@ export const ExpertManagementPage = () => {
                 accessorKey: 'status',
                 header: 'Status',
                 cell: ({ row }) => {
-                    const status = (row.original.status || '').toLowerCase()
-                    const isActive = status === 'active'
+                    const { label, className } = getManagementStatusDisplay(row.original.status)
 
-                    return (
-                        <span
-                            className={cn(
-                                'rounded px-2 py-0.5 text-[10px] font-bold uppercase',
-                                isActive
-                                    ? 'bg-green-500/10 text-green-500'
-                                    : 'bg-slate-500/10 text-slate-400',
-                            )}
-                        >
-                            {displayValue(row.original.status)}
-                        </span>
-                    )
+                    return <span className={className}>{label}</span>
                 },
             },
             {

@@ -135,6 +135,7 @@ export type KycDecisionPayload =
       status: 'REJECTED'
       reasonFor: ConciergeRejectionReason[]
       rejectionReason: string
+      adminNote?: string
     }
 
 export type BankingDecisionPayload =

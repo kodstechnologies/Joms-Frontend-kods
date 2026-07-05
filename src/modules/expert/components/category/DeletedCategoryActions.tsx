@@ -1,6 +1,5 @@
 import { useState } from 'react'
-import { Eye, RotateCcw, Trash2 } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
+import { RotateCcw, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 
 import {
@@ -9,9 +8,9 @@ import {
 } from '@/shared/components/table/table-actions-dropdown'
 
 import {
-  categoryPath,
-  useCategoryManagementScope,
-} from './category-management-scope'
+  CATEGORY_ACTION_ITEM_CLASS,
+  CATEGORY_ACTION_MENU_CLASS,
+} from './category-list-shared'
 import type { Category } from './category-table-columns'
 import {
   usePermanentDeleteServiceCategory,
@@ -25,33 +24,20 @@ interface Props {
 
 const DeletedCategoryActions = ({ category }: Props) => {
   const [open, setOpen] = useState(false)
-  const navigate = useNavigate()
-  const scope = useCategoryManagementScope()
   const revokeMutation = useRevokeServiceCategory()
   const permanentDeleteMutation = usePermanentDeleteServiceCategory()
 
   return (
     <TableActionsDropdown
-      label="Category Actions"
+      label={`Open actions for ${category.name}`}
       isOpen={open}
       onOpenChange={setOpen}
-      tone="light"
-      menuWidth={210}
+      menuWidth={220}
+      menuClassName={CATEGORY_ACTION_MENU_CLASS}
     >
       <TableActionsItem
-        tone="light"
-        icon={<Eye className="size-4 text-slate-700" />}
-        onClick={() => {
-          navigate(categoryPath(scope, `view/${category.id}`))
-          setOpen(false)
-        }}
-      >
-        View Category
-      </TableActionsItem>
-
-      <TableActionsItem
-        tone="light"
-        icon={<RotateCcw className="size-4 text-slate-700" />}
+        className={CATEGORY_ACTION_ITEM_CLASS}
+        icon={<RotateCcw className="size-3.5 text-slate-700" aria-hidden="true" />}
         onClick={() => {
           revokeMutation.mutate(category.id, {
             onSuccess: () => {
@@ -68,9 +54,8 @@ const DeletedCategoryActions = ({ category }: Props) => {
       </TableActionsItem>
 
       <TableActionsItem
-        tone="light"
-        icon={<Trash2 className="size-4 text-red-500" />}
         className="text-red-500 hover:bg-red-50 hover:text-red-600"
+        icon={<Trash2 className="size-3.5 text-red-500" aria-hidden="true" />}
         onClick={() => {
           permanentDeleteMutation.mutate(category.id, {
             onSuccess: () => {

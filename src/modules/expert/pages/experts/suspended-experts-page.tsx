@@ -1,10 +1,10 @@
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { Eye } from 'lucide-react'
+import { Eye, PlayCircle } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
-import { useExperts } from '../../hooks/use-expert'
+import { useActivateExpert, useExperts } from '../../hooks/use-expert'
 import type { Expert } from '../../type/expert'
 import {
   createExpertBaseColumns,
@@ -38,6 +38,24 @@ export function ExpertSuspendedExpertsPage() {
   const experts = data?.data || []
   const meta = data?.meta
   const selection = useExpertListSelection(experts)
+  const activateExpertMutation = useActivateExpert()
+
+  const handleActivate = useCallback(
+    (expert: Expert) => {
+      activateExpertMutation.mutate(expert.id, {
+        onSuccess: () => {
+          toast.success('Expert activated successfully')
+        },
+        onError: (error: unknown) => {
+          const err = error as { response?: { data?: { message?: string } } }
+          toast.error(
+            err?.response?.data?.message || 'Failed to activate expert. Please try again.',
+          )
+        },
+      })
+    },
+    [activateExpertMutation],
+  )
 
   const columns = useMemo<ColumnDef<Expert>[]>(
     () => [
@@ -71,7 +89,7 @@ export function ExpertSuspendedExpertsPage() {
               onOpenChange={(open) =>
                 setActiveDropdownId(open ? expert.expertId : null)
               }
-              menuWidth={176}
+              menuWidth={192}
             >
               <TableActionsItem
                 icon={<Eye className="size-3.5" aria-hidden="true" />}
@@ -82,12 +100,21 @@ export function ExpertSuspendedExpertsPage() {
               >
                 View Expert
               </TableActionsItem>
+              <TableActionsItem
+                icon={<PlayCircle className="size-3.5" aria-hidden="true" />}
+                onClick={() => {
+                  setActiveDropdownId(null)
+                  handleActivate(expert)
+                }}
+              >
+                Activate Expert
+              </TableActionsItem>
             </TableActionsDropdown>
           )
         },
       },
     ],
-    [activeDropdownId, navigate, selection],
+    [activeDropdownId, handleActivate, navigate, selection],
   )
 
   return (
@@ -107,7 +134,7 @@ export function ExpertSuspendedExpertsPage() {
           setSearchQuery(value)
           setCurrentPage(1)
         }}
-        searchPlaceholder="Search by name, ID or profession"
+        searchPlaceholder="Search by name or ID"
         onAdvancedFilter={() => toast.message('Advanced filters are coming soon')}
         onExport={() => toast.message('Expert export is coming soon')}
         pagination={{

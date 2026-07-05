@@ -5,7 +5,7 @@ export interface Service {
   serviceid?: string
   title: string
   partnerId: string
-  status: 'live' | 'in_review' | 'suspended' | 'deleted' | 'pending' | 'preview'
+  status: 'live' | 'in_review' | 'suspended' | 'deleted' | 'pending' | 'preview' | 'rejected'
   serviceStatus?: ServiceRawStatus
   isSuspend?: boolean
   createdAt: string

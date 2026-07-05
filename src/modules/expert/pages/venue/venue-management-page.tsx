@@ -38,9 +38,8 @@ import {
     getVenueApiId,
     getVenueDisplayId,
     getVenueDisplaySpaceId,
-    getVenueDisplayStatus,
-    getVenueDisplayStatusClassName,
 } from '../../utils/venue-list'
+import { getManagementStatusDisplay } from '../../utils/management-status'
 
 const SUSPEND_REASON_OPTIONS: DecisionActionModalOption[] = [
     { label: 'Temporary operational issue', value: 'temporary_operational_issue' },
@@ -374,15 +373,14 @@ export const VenueManagementPage = () => {
                 cell: ({ row }) => row.original.spaceName || '—',
             },
             {
-                accessorKey: 'venueStatus',
+                accessorKey: 'status',
                 header: 'Status',
                 cell: ({ row }) => {
-                    const venueStatus = getVenueDisplayStatus(row.original)
-                    return (
-                        <span className={getVenueDisplayStatusClassName(venueStatus)}>
-                            {venueStatus}
-                        </span>
-                    )
+                    const { label, className } = getManagementStatusDisplay(row.original.status, {
+                        isSuspend: row.original.isSuspend,
+                    })
+
+                    return <span className={className}>{label}</span>
                 },
             },
             {

@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Plus, SlidersHorizontal } from 'lucide-react'
+import { Plus, BarChart3 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
 import { Button } from '@/shared/components/ui/button'
@@ -7,59 +7,65 @@ import { DataTable } from '@/shared/components/table/data-table'
 
 import CategoryHeader from '../../components/category/CategoryHeader'
 import { deletedVenueCategoryColumns } from '../../components/category/DeletedVenueCategoryColumns'
-import { categoryManagementTheme } from '../../components/category/category-management.theme'
 import { useDeletedVenueCategoryList } from '../../hooks/use-venue-category-management'
 
 const PAGE_SIZE = 10
 
-export const DeletedVenueCategoriesPage = () => {
+export function DeletedVenueCategoriesPage() {
   const navigate = useNavigate()
   const [searchValue, setSearchValue] = useState('')
   const [page, setPage] = useState(1)
 
-  const { data: categories = [], isLoading, isError } = useDeletedVenueCategoryList()
+  const { data: deletedCategories = [], isLoading, isError } = useDeletedVenueCategoryList()
 
-  const deletedCategories = useMemo(() => {
+  const filteredCategories = useMemo(() => {
     const query = searchValue.trim().toLowerCase()
-    if (!query) return categories
+    if (!query) return deletedCategories
 
-    return categories.filter(
-      (category) =>
-        category.id.toLowerCase().includes(query) ||
-        (category.categoryId || '').toLowerCase().includes(query) ||
-        category.name.toLowerCase().includes(query),
-    )
-  }, [categories, searchValue])
+    return deletedCategories.filter((category) => {
+      const id = (category.categoryId || category.id || '').toLowerCase()
+      const name = (category.name || '').toLowerCase()
+      return id.includes(query) || name.includes(query)
+    })
+  }, [deletedCategories, searchValue])
 
-  const totalPages = Math.max(1, Math.ceil(deletedCategories.length / PAGE_SIZE))
+  const totalItems = filteredCategories.length
+  const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE))
   const currentPage = Math.min(page, totalPages)
   const paginatedCategories = useMemo(() => {
     const start = (currentPage - 1) * PAGE_SIZE
-    return deletedCategories.slice(start, start + PAGE_SIZE)
-  }, [currentPage, deletedCategories])
+    return filteredCategories.slice(start, start + PAGE_SIZE)
+  }, [filteredCategories, currentPage])
+
+  const emptyMessage = useMemo(
+    () => (isError ? 'Failed to load deleted categories.' : 'No deleted categories found.'),
+    [isError],
+  )
 
   return (
-    <div
-      className="flex flex-col gap-5 pb-6 md:gap-6"
-      style={{ backgroundColor: categoryManagementTheme.pageBg }}
-    >
-      <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-start">
-        <CategoryHeader title="Deleted Categories" breadcrumb="Deleted Categories" />
+    <div className="flex flex-col gap-4 p-0 md:gap-6">
+      <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
+        <CategoryHeader
+          title="Deleted Categories"
+          breadcrumb="Deleted Categories"
+          backPath="/venues/categories/management"
+        />
 
-        <div className="flex w-full flex-col gap-3 sm:flex-row lg:w-auto">
+        <div className="flex w-full flex-col items-center gap-3 md:w-auto md:flex-row">
           <Button
-            className="h-10 w-full gap-2 rounded-xl bg-[#FFC16B] px-4 text-[13px] font-semibold text-black shadow-none hover:bg-[#F5C27B] sm:w-auto"
+            variant="secondary"
+            className="w-full md:w-auto"
             onClick={() => navigate('/venues/dashboard/metrics')}
           >
-            <SlidersHorizontal className="size-4" aria-hidden="true" />
+            <BarChart3 className="size-4" />
             Manage Metrics
           </Button>
 
           <Button
-            className="h-10 w-full gap-2 rounded-xl bg-[#FFC16B] px-4 text-[13px] font-semibold text-black shadow-none hover:bg-[#F5C27B] sm:w-auto"
+            className="w-full md:w-auto"
             onClick={() => navigate('/venues/categories/management/create')}
           >
-            <Plus className="size-4" aria-hidden="true" />
+            <Plus className="size-4" />
             Add New Category
           </Button>
         </div>
@@ -74,20 +80,15 @@ export const DeletedVenueCategoriesPage = () => {
           setSearchValue(value)
           setPage(1)
         }}
-        searchPlaceholder="Search by name, ID or profession"
+        searchPlaceholder="Search by name or ID"
         onAdvancedFilter={() => {}}
-        advancedFiltersLabel="Advance Filters"
         onExport={() => {}}
-        showSortIcons={false}
-        tone="category"
         isLoading={isLoading}
-        emptyMessage={
-          isError ? 'Failed to load deleted categories.' : 'No deleted categories found.'
-        }
+        emptyMessage={emptyMessage}
         pagination={{
           page: currentPage,
           pageSize: PAGE_SIZE,
-          totalItems: deletedCategories.length,
+          totalItems,
           totalPages,
           onPageChange: setPage,
         }}

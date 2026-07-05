@@ -24,6 +24,7 @@ import { getServiceManagementViewPath } from '../../lib/service-navigation'
 import { ADMIN_DELETE_REASON_OPTIONS } from '../../constants/soft-delete'
 import { useServiceStore } from '../../store/service-store'
 import type { Service } from '../../type/service'
+import { getManagementStatusDisplay } from '../../utils/management-status'
 import { DataTable } from '@/shared/components/table/data-table'
 import {
   TableActionsDropdown,
@@ -51,8 +52,6 @@ const SUSPEND_REASON_OPTIONS: DecisionActionModalOption[] = [
   { label: 'Admin review required', value: 'admin_review_required' },
 ]
 
-const getServiceDisplayStatus = (service: Service): 'active' | 'inactive' =>
-  service.serviceStatus === 'active' ? 'active' : 'inactive'
 
 export const ServiceManagementPage = () => {
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
@@ -330,23 +329,15 @@ export const ServiceManagementPage = () => {
         header: 'Expert Name',
       },
       {
-        accessorKey: 'serviceStatus',
+        accessorKey: 'status',
         header: 'Status',
         cell: ({ row }) => {
-          const serviceStatus = getServiceDisplayStatus(row.original)
+          const { label, className } = getManagementStatusDisplay(row.original.status, {
+            isSuspend: row.original.isSuspend,
+            isDeleted: row.original.status === 'deleted',
+          })
 
-          return (
-            <span
-              className={cn(
-                'rounded px-2 py-0.5 text-[10px] font-bold uppercase',
-                serviceStatus === 'active'
-                  ? 'bg-green-500/10 text-green-500'
-                  : 'bg-slate-500/10 text-slate-400',
-              )}
-            >
-              {serviceStatus}
-            </span>
-          )
+          return <span className={className}>{label}</span>
         },
       },
       {

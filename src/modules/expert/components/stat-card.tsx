@@ -1,25 +1,16 @@
 type StatCardProps = {
-  title: string;
-  value: string;
-  className?: string;
-};
+  title: string
+  value: string
+  className?: string
+}
 
-export function StatCard({
-  title,
-  value,
-  className,
-}: StatCardProps) {
+export function StatCard({ title, value, className }: StatCardProps) {
   return (
     <div
-      className={`rounded-xl border border-[#242424] bg-[#181818] px-5 py-4 ${className ?? ""}`}
+      className={`rounded-brand-lg border border-white/10 bg-brand-surface px-5 py-4 ${className ?? ''}`}
     >
-      <p className="text-[12px] font-medium text-[#888888]">
-        {title}
-      </p>
-
-      <h2 className="mt-2 text-[20px] font-semibold text-white">
-        {value}
-      </h2>
+      <p className="text-xs font-medium text-slate-400 md:text-sm">{title}</p>
+      <h2 className="mt-2 text-xl font-semibold text-white md:text-2xl">{value}</h2>
     </div>
-  );
+  )
 }

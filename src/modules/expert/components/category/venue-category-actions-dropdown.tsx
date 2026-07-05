@@ -10,6 +10,10 @@ import {
 
 import type { VenueCategory } from './venue-category-table-columns'
 import {
+  CATEGORY_ACTION_ITEM_CLASS,
+  CATEGORY_ACTION_MENU_CLASS,
+} from './category-list-shared'
+import {
   usePauseVenueCategory,
   useSoftDeleteVenueCategory,
 } from '../../hooks/use-venue-category-management'
@@ -27,36 +31,36 @@ export function VenueCategoryActionsDropdown({ category }: Props) {
 
   return (
     <TableActionsDropdown
-      label="Category Actions"
+      label={`Open actions for ${category.name}`}
       isOpen={open}
       onOpenChange={setOpen}
-      tone="light"
-      menuWidth={210}
+      menuWidth={220}
+      menuClassName={CATEGORY_ACTION_MENU_CLASS}
     >
       <TableActionsItem
-        tone="light"
+        className={CATEGORY_ACTION_ITEM_CLASS}
         onClick={() => {
           navigate(`/venues/categories/management/create-subcategory/${category.id}`)
           setOpen(false)
         }}
-        icon={<PlusSquare className="size-4 text-slate-700" />}
+        icon={<PlusSquare className="size-3.5 text-slate-700" aria-hidden="true" />}
       >
         Add Sub Category
       </TableActionsItem>
 
       <TableActionsItem
-        tone="light"
+        className={CATEGORY_ACTION_ITEM_CLASS}
         onClick={() => {
           navigate(`/venues/categories/management/rename/${category.id}`)
           setOpen(false)
         }}
-        icon={<Pencil className="size-4 text-slate-700" />}
+        icon={<Pencil className="size-3.5 text-slate-700" aria-hidden="true" />}
       >
         Rename Category
       </TableActionsItem>
 
       <TableActionsItem
-        tone="light"
+        className={CATEGORY_ACTION_ITEM_CLASS}
         onClick={() => {
           pauseMutation.mutate(category.id, {
             onSuccess: () => {
@@ -68,13 +72,13 @@ export function VenueCategoryActionsDropdown({ category }: Props) {
             },
           })
         }}
-        icon={<Pause className="size-4 text-slate-700" />}
+        icon={<Pause className="size-3.5 text-slate-700" aria-hidden="true" />}
       >
         Pause Category
       </TableActionsItem>
 
       <TableActionsItem
-        tone="light"
+        className="text-red-500 hover:bg-red-50 hover:text-red-600"
         onClick={() => {
           softDeleteMutation.mutate(category.id, {
             onSuccess: () => {
@@ -86,8 +90,7 @@ export function VenueCategoryActionsDropdown({ category }: Props) {
             },
           })
         }}
-        icon={<X className="size-4 text-red-500" />}
-        className="text-red-500 hover:bg-red-50 hover:text-red-600"
+        icon={<X className="size-3.5 text-red-500" aria-hidden="true" />}
       >
         <span className="text-red-500">Remove Category</span>
       </TableActionsItem>

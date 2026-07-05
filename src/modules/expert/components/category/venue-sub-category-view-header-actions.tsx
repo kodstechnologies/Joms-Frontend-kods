@@ -5,7 +5,6 @@ import { toast } from 'sonner'
 
 import { Button } from '@/shared/components/ui/button'
 
-import { categoryViewTheme } from './category-view.theme'
 import { DeleteCategoryModal } from './delete-category-modal'
 import { PauseCategoryModal } from './pause-category-modal'
 import {
@@ -25,26 +24,18 @@ export const VenueSubCategoryViewHeaderActions = () => {
   return (
     <>
       <div className="flex flex-wrap items-center justify-end gap-3">
-        <Button
-          variant="secondary"
-          className={categoryViewTheme.outlineButtonClass}
-          onClick={() => navigate('/venues/management')}
-        >
+        <Button variant="secondary" onClick={() => navigate('/venues/management')}>
           <Eye className="size-4" aria-hidden="true" />
           View Venues
         </Button>
 
-        <Button
-          variant="secondary"
-          className={categoryViewTheme.outlineButtonClass}
-          onClick={() => setPauseModalOpen(true)}
-        >
+        <Button variant="secondary" onClick={() => setPauseModalOpen(true)}>
           <Pause className="size-4" aria-hidden="true" />
           Pause
         </Button>
 
         <Button
-          className={categoryViewTheme.deleteButtonClass}
+          className="border-0 bg-red-600 text-white hover:bg-red-700 active:bg-red-800"
           onClick={() => setDeleteModalOpen(true)}
         >
           <Trash2 className="size-4" aria-hidden="true" />

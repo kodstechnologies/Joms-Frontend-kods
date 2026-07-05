@@ -87,9 +87,12 @@ export const fetchVenueById = async (id: string) => {
   return response.data
 }
 
-export const fetchVenueFullView = async (venueId: string) => {
+export const fetchVenueFullView = async (venueId: string, spaceId?: string) => {
   const response = await venueApiClient.get<VenueFullViewResponse>(
     `/venues/admin/${venueId}/full-view`,
+    {
+      params: spaceId ? { spaceId } : undefined,
+    },
   )
   return response.data
 }

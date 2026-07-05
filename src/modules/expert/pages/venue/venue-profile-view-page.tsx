@@ -91,14 +91,34 @@ function SidebarRow({
   )
 }
 
+const formatVenueKycStatusLabel = (status?: string | null) => {
+  const normalized = (status || '').toLowerCase()
+  if (!normalized) return 'KYC Pending'
+  if (normalized === 'approved') return 'KYC Verified'
+  if (normalized === 'live') return 'Live'
+  if (normalized === 'in_review' || normalized === 'pending') return 'KYC Pending'
+  if (normalized === 'rejected') return 'Rejected'
+  if (normalized === 'suspended') return 'Suspended'
+  if (normalized === 'draft') return 'Draft'
+  return normalized.charAt(0).toUpperCase() + normalized.slice(1).replace(/_/g, ' ')
+}
+
+const getVenueKycStatusTone = (status?: string | null) => {
+  const normalized = (status || '').toLowerCase()
+  if (normalized === 'approved' || normalized === 'live') {
+    return 'bg-emerald-500/15 text-emerald-400'
+  }
+  if (normalized === 'rejected' || normalized === 'suspended') {
+    return 'bg-red-500/15 text-red-400'
+  }
+  return 'bg-amber-500/15 text-amber-300'
+}
+
 function ProfileSidebar({
   data,
-  venueId,
 }: {
   data: VenueFullView
-  venueId: string
 }) {
-  const navigate = useNavigate()
   const profile = data.profile ?? {
     venueType: null,
     clientSatisfaction: null,
@@ -111,7 +131,9 @@ function ProfileSidebar({
     kycStatus: null,
   }
   const overview = data.overview
-  const kycApproved = (profile.kycStatus || '').toUpperCase() === 'APPROVED'
+  const venueStatus = overview?.venue?.status
+  const kycStatusLabel = formatVenueKycStatusLabel(venueStatus)
+  const kycStatusTone = getVenueKycStatusTone(venueStatus)
 
   return (
     <div className="flex flex-col gap-4">
@@ -123,12 +145,10 @@ function ProfileSidebar({
           <span
             className={cn(
               'rounded-md px-2.5 py-1 text-[10px] font-bold',
-              kycApproved
-                ? 'bg-emerald-500/15 text-emerald-400'
-                : 'bg-amber-500/15 text-amber-300',
+              kycStatusTone,
             )}
           >
-            {kycApproved ? 'KYC Verified' : profile.kycStatus || 'KYC Pending'}
+            {kycStatusLabel}
           </span>
         </div>
 
@@ -161,14 +181,9 @@ function ProfileSidebar({
         <SidebarRow label="KYC">
           <button
             type="button"
-            onClick={() => {
-              if (!profile.kycId) {
-                toast.error('No KYC record linked to this venue.')
-                return
-              }
-              navigate(`/venues/management/application/${venueId}`)
-            }}
-            className="rounded-md bg-[#FBC078]/15 px-3 py-1 text-[11px] font-bold text-[#FBC078] transition-colors hover:bg-[#FBC078]/25"
+            disabled
+            aria-disabled="true"
+            className="cursor-not-allowed rounded-md bg-[#FBC078]/10 px-3 py-1 text-[11px] font-bold text-[#FBC078]/50"
           >
             View
           </button>
@@ -325,6 +340,18 @@ function SpacesTab({
     return typeof capacity === 'number' ? `${capacity}` : capacity
   }
 
+  const getSpaceStatusLabel = (status?: VenueFullViewSpaceSummary['status']) => {
+    if (status === 'approved') return 'Approved'
+    if (status === 'rejected') return 'Rejected'
+    return 'Pending Review'
+  }
+
+  const getSpaceStatusClass = (status?: VenueFullViewSpaceSummary['status']) => {
+    if (status === 'approved') return 'bg-emerald-500/15 text-emerald-400'
+    if (status === 'rejected') return 'bg-red-500/15 text-red-400'
+    return 'bg-amber-500/15 text-amber-300'
+  }
+
   return (
     <div className="rounded-xl border border-white/5 bg-[#111111] p-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -386,9 +413,19 @@ function SpacesTab({
                 />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="truncate text-[13px] font-semibold text-white">
-                  {space.spaceName}
-                </p>
+                <div className="flex items-center gap-2">
+                  <p className="truncate text-[13px] font-semibold text-white">
+                    {space.spaceName}
+                  </p>
+                  <span
+                    className={cn(
+                      'shrink-0 rounded px-2 py-0.5 text-[10px] font-bold',
+                      getSpaceStatusClass(space.status),
+                    )}
+                  >
+                    {getSpaceStatusLabel(space.status)}
+                  </span>
+                </div>
                 <p className="mt-0.5 text-[11px] text-[#999]">
                   {[space.city, space.state].filter(Boolean).join(', ') || '—'}
                 </p>
@@ -677,7 +714,7 @@ export function VenueProfileViewPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[320px_1fr]">
-        <ProfileSidebar data={fullView} venueId={venueId} />
+        <ProfileSidebar data={fullView} />
 
         <div className="flex flex-col gap-5">
           <div className="flex items-center gap-1 overflow-x-auto rounded-xl border border-white/5 bg-[#111111] p-1.5">

@@ -216,10 +216,7 @@ export const CategoryFormPage = ({ mode }: CategoryFormPageProps) => {
   }
 
   return (
-    <div
-      className="min-h-screen px-4 pb-8 pt-2 sm:px-6 lg:px-8"
-      style={{ backgroundColor: '#000000' }}
-    >
+    <div className="min-h-screen px-4 pb-8 pt-2 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-6xl">
         <CategoryHeader
           title={

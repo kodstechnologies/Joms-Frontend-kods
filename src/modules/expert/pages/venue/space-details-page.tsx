@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
@@ -6,17 +6,22 @@ import {
   ArrowLeft,
   BarChart3,
   CheckCircle2,
- EyeOff,
+  ChevronLeft,
+  ChevronRight,
+  EyeOff,
   ImageOff,
   MapPin,
   PauseCircle,
   RotateCcw,
   Star,
+  XCircle,
 } from 'lucide-react'
 
 import {
   fetchAmenityMasters,
+  updateVenueSpaceStatus,
   updateVenueSpaceVisibility,
+  type UpdateVenueSpaceStatusPayload,
   type UpdateVenueSpaceVisibilityPayload,
 } from '../../api/venue-api'
 import { useVenueFullView } from '../../hooks/use-venues'
@@ -44,6 +49,7 @@ type AmenityCategory = {
 }
 
 type SpaceAction = 'hide' | 'suspend'
+type DecisionVariant = 'approve' | 'reject' | 'requestChanges'
 
 const ACTION_MENU_CLASS = 'border border-slate-200 bg-white shadow-xl'
 const ACTION_ITEM_CLASS = 'text-slate-800 hover:bg-slate-100 hover:text-slate-900'
@@ -54,6 +60,14 @@ const SPACE_REASON_OPTIONS: DecisionActionModalOption[] = [
   { label: 'Availability issue', value: 'availability_issue' },
   { label: 'System verification in progress', value: 'system_verification_in_progress' },
   { label: 'Admin review required', value: 'admin_review_required' },
+]
+
+const REJECT_REASONS: DecisionActionModalOption[] = [
+  { label: 'Unclear Image', value: 'Unclear Image' },
+  { label: 'Content issue', value: 'Content issue' },
+  { label: 'Invalid Documents', value: 'Invalid Documents' },
+  { label: 'Invalid PAN', value: 'IndiaPAN' },
+  { label: 'Invalid GST', value: 'InvalidGST' },
 ]
 
 const getApiErrorMessage = (error: unknown) => {
@@ -163,21 +177,49 @@ export function SpaceDetailsPage() {
   const { venueId, spaceId } = useParams<{ venueId: string; spaceId: string }>()
   const queryClient = useQueryClient()
   const [actionsOpen, setActionsOpen] = useState(false)
+  const [activeImageIndex, setActiveImageIndex] = useState(0)
   const [modalAction, setModalAction] = useState<SpaceAction | null>(null)
+  const [decisionModalOpen, setDecisionModalOpen] = useState(false)
+  const [decisionVariant, setDecisionVariant] = useState<DecisionVariant>('approve')
   const [selectedReasons, setSelectedReasons] = useState<string[]>([])
   const [reasonDetails, setReasonDetails] = useState('')
   const [adminNotes, setAdminNotes] = useState('')
+  const [decisionAdminNotes, setDecisionAdminNotes] = useState('')
+  const [decisionSelectedReasons, setDecisionSelectedReasons] = useState<string[]>([])
+  const [decisionRejectionReason, setDecisionRejectionReason] = useState('')
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
   const [suspendIndefinitely, setSuspendIndefinitely] = useState(false)
 
-  const { data, isLoading, isError, error } = useVenueFullView(venueId)
+  const { data, isLoading, isError, error } = useVenueFullView(venueId, spaceId)
   const { data: amenityMasters } = useQuery({
     queryKey: ['amenities-master'],
     queryFn: fetchAmenityMasters,
   })
 
   const fullView = data?.data
+  const carouselImages = useMemo(() => {
+    if (!fullView) return []
+
+    const { gallery, venue } = fullView.overview
+    const summaryItem =
+      fullView.spaces.find((item) => item.spaceId === spaceId) || fullView.spaces[0]
+
+    const urls = [
+      ...(gallery?.venueCoverImages || []).map((image) => image.url),
+      ...(gallery?.spaceCoverImages || []).map((image) => image.url),
+      ...(gallery?.galleryImages || []).map((image) => image.url),
+      summaryItem?.coverImage,
+      venue.coverImageUrl,
+    ].filter((url): url is string => Boolean(url))
+
+    return [...new Set(urls)]
+  }, [fullView, spaceId])
+
+  useEffect(() => {
+    setActiveImageIndex(0)
+  }, [spaceId, carouselImages.length])
+
   const resolvedAmenities = useMemo(
     () => (fullView ? resolveAmenities(fullView, amenityMasters?.data || []) : []),
     [amenityMasters?.data, fullView],
@@ -192,7 +234,21 @@ export function SpaceDetailsPage() {
       payload: UpdateVenueSpaceVisibilityPayload
     }) => updateVenueSpaceVisibility(targetSpaceId, payload),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['venue-full-view', venueId] })
+      queryClient.invalidateQueries({ queryKey: ['venue-full-view', venueId, spaceId] })
+      queryClient.invalidateQueries({ queryKey: ['venues'] })
+    },
+  })
+
+  const spaceStatusMutation = useMutation({
+    mutationFn: ({
+      targetSpaceId,
+      payload,
+    }: {
+      targetSpaceId: string
+      payload: UpdateVenueSpaceStatusPayload
+    }) => updateVenueSpaceStatus(targetSpaceId, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['venue-full-view', venueId, spaceId] })
       queryClient.invalidateQueries({ queryKey: ['venues'] })
     },
   })
@@ -287,6 +343,79 @@ export function SpaceDetailsPage() {
     )
   }
 
+  const resetDecisionModal = () => {
+    setDecisionAdminNotes('')
+    setDecisionSelectedReasons([])
+    setDecisionRejectionReason('')
+  }
+
+  const openDecisionModal = (variant: DecisionVariant) => {
+    resetDecisionModal()
+    setDecisionVariant(variant)
+    setDecisionModalOpen(true)
+  }
+
+  const toggleDecisionReason = (value: string) => {
+    setDecisionSelectedReasons((current) =>
+      current.includes(value)
+        ? current.filter((reason) => reason !== value)
+        : [...current, value],
+    )
+  }
+
+  const isDecisionRejectFlow =
+    decisionVariant === 'reject' || decisionVariant === 'requestChanges'
+
+  const handleSubmitDecision = () => {
+    if (!spaceId) {
+      toast.error('No space found for this venue.')
+      return
+    }
+
+    if (!decisionAdminNotes.trim()) {
+      toast.error('Admin notes are required.')
+      return
+    }
+
+    if (isDecisionRejectFlow) {
+      if (decisionSelectedReasons.length === 0) {
+        toast.error('Please select at least one reason.')
+        return
+      }
+      if (!decisionRejectionReason.trim()) {
+        toast.error('Please provide a rejection reason.')
+        return
+      }
+    }
+
+    const payload: UpdateVenueSpaceStatusPayload =
+      decisionVariant === 'approve'
+        ? { status: 'approved', adminNote: decisionAdminNotes.trim() }
+        : {
+            status: 'rejected',
+            reasonFor: decisionSelectedReasons,
+            rejectionReason: decisionRejectionReason.trim(),
+            adminNote: decisionAdminNotes.trim(),
+          }
+
+    spaceStatusMutation.mutate(
+      { targetSpaceId: spaceId, payload },
+      {
+        onSuccess: () => {
+          toast.success(
+            decisionVariant === 'approve'
+              ? 'Space approved successfully'
+              : decisionVariant === 'requestChanges'
+                ? 'Resubmission requested successfully'
+                : 'Space rejected successfully',
+          )
+          setDecisionModalOpen(false)
+        },
+        onError: (err) => toast.error(getApiErrorMessage(err)),
+      },
+    )
+  }
+
   if (isLoading) {
     return (
       <div className="flex h-[60vh] items-center justify-center">
@@ -314,21 +443,30 @@ export function SpaceDetailsPage() {
   }
 
   const { venue, space, gallery, terms, availability } = fullView.overview
-  const summary = fullView.spaces.find((item) => item.spaceId === spaceId) || fullView.spaces[0]
-  const detailSpace = space?._id === spaceId ? space : space
-  const spaceName = detailSpace?.name || summary?.spaceName || 'Space Details'
+  const summary = fullView.spaces.find((item) => item.spaceId === spaceId)
+  const detailSpace =
+    space && String(space._id) === String(spaceId) ? space : null
+  const spaceName =
+    detailSpace?.name || summary?.spaceName || 'Space Details'
   const galleryImages: VenueFullViewGalleryImage[] = [
     ...(gallery?.venueCoverImages || []),
     ...(gallery?.spaceCoverImages || []),
     ...(gallery?.galleryImages || []),
   ]
-  const coverImage =
-    gallery?.spaceCoverImages?.[0]?.url ||
-    summary?.coverImage ||
-    gallery?.venueCoverImages?.[0]?.url ||
-    venue.coverImageUrl ||
-    gallery?.galleryImages?.[0]?.url ||
-    null
+  const imageCount = carouselImages.length
+  const activeImage =
+    imageCount > 0 ? carouselImages[Math.min(activeImageIndex, imageCount - 1)] : null
+
+  const handlePrevImage = () => {
+    if (imageCount <= 1) return
+    setActiveImageIndex((prev) => (prev === 0 ? imageCount - 1 : prev - 1))
+  }
+
+  const handleNextImage = () => {
+    if (imageCount <= 1) return
+    setActiveImageIndex((prev) => (prev === imageCount - 1 ? 0 : prev + 1))
+  }
+
   const location = detailSpace?.location || venue.location
   const addressLine = [
     location?.address,
@@ -341,6 +479,10 @@ export function SpaceDetailsPage() {
   const capacity = detailSpace?.guestLimit ?? detailSpace?.capacityRange ?? summary?.capacity
   const isHidden = Boolean(detailSpace?.isHidden || summary?.isHidden)
   const isSuspended = Boolean(detailSpace?.isSuspend || summary?.isSuspend)
+  const spaceStatus = detailSpace?.status ?? summary?.status ?? 'submitted'
+  const isDecisionPending = spaceStatus === 'submitted'
+  const decisionDisabled =
+    !isDecisionPending || spaceStatusMutation.isPending || !spaceId
 
   return (
     <div className="mx-auto flex max-w-[1120px] flex-col gap-5">
@@ -411,10 +553,34 @@ export function SpaceDetailsPage() {
       )}
 
       <div className="relative h-64 w-full overflow-hidden rounded-lg border border-white/5 bg-[#111111]">
-        <SafeImage src={coverImage} alt={spaceName} className="size-full object-cover" />
-        {galleryImages.length > 0 && (
+        <SafeImage src={activeImage} alt={spaceName} className="size-full object-cover" />
+
+        {imageCount > 1 && (
+          <>
+            <button
+              type="button"
+              aria-label="Previous image"
+              onClick={handlePrevImage}
+              className="absolute top-1/2 left-3 flex size-8 -translate-y-1/2 items-center justify-center rounded-full bg-black/75 text-white transition-colors hover:bg-black"
+            >
+              <ChevronLeft className="size-4" />
+            </button>
+            <button
+              type="button"
+              aria-label="Next image"
+              onClick={handleNextImage}
+              className="absolute top-1/2 right-3 flex size-8 -translate-y-1/2 items-center justify-center rounded-full bg-black/75 text-white transition-colors hover:bg-black"
+            >
+              <ChevronRight className="size-4" />
+            </button>
+          </>
+        )}
+
+        {imageCount > 0 && (
           <span className="absolute bottom-3 right-3 rounded-md bg-black/70 px-2 py-1 text-[11px] font-medium text-white">
-            {galleryImages.length} photo{galleryImages.length === 1 ? '' : 's'}
+            {imageCount > 1
+              ? `${activeImageIndex + 1}/${imageCount}`
+              : `${imageCount} photo${imageCount === 1 ? '' : 's'}`}
           </span>
         )}
       </div>
@@ -567,6 +733,94 @@ export function SpaceDetailsPage() {
           )}
         </div>
       </Card>
+
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+        <Card title="Application Notes">
+          <div className="rounded-md bg-black p-3 text-[12px] leading-relaxed text-[#777] whitespace-pre-wrap">
+            {detailSpace?.adminNote || venue.adminInternalNotes || 'No notes yet.'}
+          </div>
+        </Card>
+
+        <Card title="Decision Controls">
+          {!isDecisionPending && (
+            <p className="mb-3 rounded-md bg-black px-3 py-2 text-[11px] font-medium text-[#999]">
+              This space is currently{' '}
+              <span className="font-bold text-white">{spaceStatus || '—'}</span>.
+            </p>
+          )}
+          <div className="flex flex-wrap gap-3">
+            <button
+              type="button"
+              onClick={() => openDecisionModal('approve')}
+              disabled={decisionDisabled}
+              className="flex items-center gap-1.5 rounded-md bg-[#00B761] px-4 py-2.5 text-[11px] font-bold text-white transition-colors hover:bg-[#08a85d] disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Approve
+              <CheckCircle2 className="size-3.5" />
+            </button>
+            <button
+              type="button"
+              onClick={() => openDecisionModal('requestChanges')}
+              disabled={decisionDisabled}
+              className="rounded-md bg-[#FBC078] px-4 py-2.5 text-[11px] font-bold text-black transition-colors hover:bg-[#eeb46a] disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Ask for Re-Submit
+            </button>
+            <button
+              type="button"
+              onClick={() => toast.message('Escalate is coming soon')}
+              className="rounded-md bg-[#1D4ED8] px-4 py-2.5 text-[11px] font-bold text-white transition-colors hover:bg-[#1e40af]"
+            >
+              Escalate
+            </button>
+            <button
+              type="button"
+              onClick={() => openDecisionModal('reject')}
+              disabled={decisionDisabled}
+              className="flex items-center gap-1.5 rounded-md bg-[#F02D2D] px-4 py-2.5 text-[11px] font-bold text-white transition-colors hover:bg-[#d92727] disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Reject Application
+              <XCircle className="size-3.5" />
+            </button>
+          </div>
+        </Card>
+      </div>
+
+      <DecisionActionModal
+        open={decisionModalOpen}
+        variant={decisionVariant}
+        title={
+          decisionVariant === 'approve'
+            ? 'Approve Space'
+            : decisionVariant === 'requestChanges'
+              ? 'Request Changes'
+              : 'Reject Space'
+        }
+        description={
+          decisionVariant === 'approve'
+            ? 'Are you sure you want to approve this venue space?'
+            : decisionVariant === 'requestChanges'
+              ? 'Are you sure you want to Request Changes to this application? The applicant will be notified via email.'
+              : 'Please choose the rejection reasons and add notes for this venue space.'
+        }
+        submitLabel={
+          decisionVariant === 'approve'
+            ? 'Approve'
+            : decisionVariant === 'requestChanges'
+              ? 'Request Changes'
+              : 'Reject'
+        }
+        reasonOptions={isDecisionRejectFlow ? REJECT_REASONS : []}
+        selectedReasons={decisionSelectedReasons}
+        onReasonToggle={toggleDecisionReason}
+        reason={isDecisionRejectFlow ? decisionRejectionReason : undefined}
+        onReasonChange={isDecisionRejectFlow ? setDecisionRejectionReason : undefined}
+        adminNotes={decisionAdminNotes}
+        onAdminNotesChange={setDecisionAdminNotes}
+        onClose={() => setDecisionModalOpen(false)}
+        onSubmit={handleSubmitDecision}
+        isSubmitting={spaceStatusMutation.isPending}
+      />
 
       <DecisionActionModal
         open={Boolean(modalAction)}

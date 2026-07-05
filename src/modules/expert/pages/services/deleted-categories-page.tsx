@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Plus, SlidersHorizontal } from 'lucide-react'
+import { Plus, BarChart3 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
 import { Button } from '@/shared/components/ui/button'
@@ -7,7 +7,6 @@ import { DataTable } from '@/shared/components/table/data-table'
 
 import CategoryHeader from '../../components/category/CategoryHeader'
 import { deletedCategoryColumns } from '../../components/category/DeletedCategoryColumns'
-import { categoryManagementTheme } from '../../components/category/category-management.theme'
 import {
   categoryPath,
   useCategoryManagementScope,
@@ -42,27 +41,26 @@ export const DeletedCategoriesPage = () => {
   )
 
   return (
-    <div
-      className="flex flex-col gap-5 pb-6 md:gap-6"
-      style={{ backgroundColor: categoryManagementTheme.pageBg }}
-    >
-      <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-start">
-        <CategoryHeader title="Deleted Categories" breadcrumb="Deleted Categories" />
+    <div className="flex flex-col gap-4 p-0 md:gap-6">
+      <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
+        <CategoryHeader
+          title="Deleted Categories"
+          breadcrumb="Deleted Categories"
+          backPath={scope.basePath}
+        />
 
-        <div className="flex w-full flex-col gap-3 sm:flex-row lg:w-auto">
+        <div className="flex w-full flex-col items-center gap-3 md:w-auto md:flex-row">
           <Button
-            className="h-10 w-full gap-2 rounded-xl bg-[#FFC16B] px-4 text-[13px] font-semibold text-black shadow-none hover:bg-[#F5C27B] sm:w-auto"
+            variant="secondary"
+            className="w-full md:w-auto"
             onClick={() => navigate(scope.metricsPath)}
           >
-            <SlidersHorizontal className="size-4" aria-hidden="true" />
+            <BarChart3 className="size-4" />
             Manage Metrics
           </Button>
 
-          <Button
-            className="h-10 w-full gap-2 rounded-xl bg-[#FFC16B] px-4 text-[13px] font-semibold text-black shadow-none hover:bg-[#F5C27B] sm:w-auto"
-            onClick={() => navigate(categoryPath(scope, 'create'))}
-          >
-            <Plus className="size-4" aria-hidden="true" />
+          <Button className="w-full md:w-auto" onClick={() => navigate(categoryPath(scope, 'create'))}>
+            <Plus className="size-4" />
             Add New Category
           </Button>
         </div>
@@ -77,12 +75,9 @@ export const DeletedCategoriesPage = () => {
           setSearchValue(value)
           setPage(1)
         }}
-        searchPlaceholder="Search by name, ID or profession"
+        searchPlaceholder="Search by name or ID"
         onAdvancedFilter={() => {}}
-        advancedFiltersLabel="Advance Filters"
         onExport={() => {}}
-        showSortIcons={false}
-        tone="category"
         isLoading={isLoading}
         emptyMessage={emptyMessage}
         pagination={{

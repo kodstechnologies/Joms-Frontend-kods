@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Trash2, X } from "lucide-react";
 
+import { Button } from "@/shared/components/ui/button";
 import { cn } from "@/shared/lib/cn";
 
 const REASON_OPTIONS = [
@@ -169,14 +170,10 @@ export function DeleteCategoryModal({
           </label>
 
           <div className="mt-5 grid grid-cols-2 gap-3">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex h-[34px] w-full items-center justify-center rounded-lg border border-white/25 bg-transparent font-sans text-[12px] font-normal leading-[17px] tracking-normal text-white transition-colors hover:bg-white/5"
-            >
+            <Button type="button" variant="secondary" onClick={onClose} className="h-[34px] w-full text-xs">
               Cancel
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
               disabled={!canSubmit || isSubmitting}
               onClick={() =>
@@ -185,10 +182,10 @@ export function DeleteCategoryModal({
                   adminNotes: adminNotes.trim(),
                 })
               }
-              className="flex h-[34px] w-full items-center justify-center rounded-lg bg-[#E8AC73] font-sans text-[12px] font-normal leading-[17px] tracking-normal text-black transition-colors hover:bg-[#F0B87E] disabled:cursor-not-allowed disabled:opacity-50"
+              className="h-[34px] w-full text-xs"
             >
               Disable Role
-            </button>
+            </Button>
           </div>
         </div>
       </div>

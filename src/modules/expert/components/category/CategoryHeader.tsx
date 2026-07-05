@@ -1,31 +1,33 @@
-import { ArrowLeft } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { ArrowLeft } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 
 interface CategoryHeaderProps {
-  title: string;
-  breadcrumb?: string;
-  breadcrumbItems?: string[];
+  title: string
+  breadcrumb?: string
+  breadcrumbItems?: string[]
+  backPath?: string
 }
 
 const CategoryHeader = ({
   title,
   breadcrumb,
   breadcrumbItems,
+  backPath,
 }: CategoryHeaderProps) => {
-  const navigate = useNavigate();
+  const navigate = useNavigate()
 
   return (
-    <div className="mb-6">
+    <header className="flex flex-col gap-2">
       <button
         type="button"
-        onClick={() => navigate(-1)}
-        className="mb-2 flex items-center gap-2 text-white transition-opacity hover:opacity-80"
+        onClick={() => (backPath ? navigate(backPath) : navigate(-1))}
+        className="group flex w-fit items-center gap-2 font-heading text-[20px] font-bold tracking-tight text-white transition-colors hover:text-[#FBC078]"
       >
-        <ArrowLeft className="size-[18px]" aria-hidden="true" />
-        <span className="text-[20px] font-bold">{title}</span>
+        <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
+        <span>{title}</span>
       </button>
 
-      <p className="text-[12px] text-[#888888]">
+      <p className="pl-7 text-[12px] font-medium text-[#777777]">
         Category Management
         {breadcrumbItems && breadcrumbItems.length > 0 ? (
           breadcrumbItems.map((item, index) => (
@@ -33,9 +35,7 @@ const CategoryHeader = ({
               <span className="mx-1 text-[#666666]">/</span>
               <span
                 className={
-                  index === breadcrumbItems.length - 1
-                    ? "text-white"
-                    : "text-[#888888]"
+                  index === breadcrumbItems.length - 1 ? 'text-white' : 'text-[#888888]'
                 }
               >
                 {item}
@@ -43,14 +43,16 @@ const CategoryHeader = ({
             </span>
           ))
         ) : (
-          <>
-            <span className="mx-1 text-[#666666]">/</span>
-            <span className="text-white">{breadcrumb}</span>
-          </>
+          breadcrumb && (
+            <>
+              <span className="mx-1 text-[#666666]">/</span>
+              <span className="text-white">{breadcrumb}</span>
+            </>
+          )
         )}
       </p>
-    </div>
-  );
-};
+    </header>
+  )
+}
 
-export default CategoryHeader;
+export default CategoryHeader
