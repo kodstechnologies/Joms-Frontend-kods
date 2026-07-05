@@ -18,6 +18,11 @@ import {
   useUpdateExpertKycStatus,
 } from '../../hooks/use-expert-application-view'
 import { formatApplicationExpertId } from './expert-list-shared'
+import {
+  getDisplayKycStatus,
+  isAdminKycApproved,
+  isKycSubmittedForApplication,
+} from '../../utils/expert-application-helpers'
 import type {
   ApplicationStatus,
   ConciergeRejectionReason,
@@ -191,8 +196,10 @@ export function ExpertApplicationViewPage() {
   const decisionTargetForTab: DecisionTarget =
     activeTab === 'banking' ? 'banking' : 'kyc'
 
-  const isKycSubmitted = Boolean(application?.kyc?._id)
+  const isKycSubmitted = isKycSubmittedForApplication(application?.expert, application?.kyc)
   const isBankingSubmitted = Boolean(application?.banking?._id)
+  const displayKycStatus = getDisplayKycStatus(application?.expert, application?.kyc)
+  const showKycDetails = Boolean(application?.kyc) || isAdminKycApproved(application?.expert)
 
   const activeSectionSubmitted =
     decisionTargetForTab === 'banking' ? isBankingSubmitted : isKycSubmitted
@@ -200,7 +207,7 @@ export function ExpertApplicationViewPage() {
   const activeDecisionStatus =
     decisionTargetForTab === 'banking'
       ? application?.banking?.status
-      : application?.kyc?.status
+      : displayKycStatus
 
   const activeMutation = decisionTargetForTab === 'banking' ? updateBanking : updateKyc
 
@@ -373,7 +380,7 @@ export function ExpertApplicationViewPage() {
           <div className="flex flex-wrap items-center gap-2">
             <div className="flex items-center gap-2">
               <span className="text-[10px] font-medium uppercase tracking-wide text-[#666]">KYC</span>
-              <StatusPill status={kyc?.status} notSubmitted={!isKycSubmitted} />
+              <StatusPill status={displayKycStatus} notSubmitted={!isKycSubmitted} />
             </div>
             <div className="flex items-center gap-2">
               <span className="text-[10px] font-medium uppercase tracking-wide text-[#666]">Banking</span>
@@ -434,13 +441,13 @@ export function ExpertApplicationViewPage() {
         </div>
       )}
 
-      {activeTab === 'kyc' && !kyc && (
+      {activeTab === 'kyc' && !showKycDetails && (
         <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-[13px] text-amber-200">
           KYC is not submitted by partner
         </div>
       )}
 
-      {activeTab === 'kyc' && kyc && (
+      {activeTab === 'kyc' && showKycDetails && (
         <div className="space-y-5">
           <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
             <SectionCard title="KYC Details" icon={<ClipboardList className="size-4 text-[#FBC078]" />}>

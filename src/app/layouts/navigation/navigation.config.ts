@@ -119,11 +119,6 @@ export const navigationConfig: NavItem[] = [
     children: [
       { key: 'membership.plans', label: 'Membership Plans', to: '/memberships/plans' },
       {
-        key: 'membership.users',
-        label: 'Users Memberships Management',
-        badge: { label: 'Soon', variant: 'warning' },
-      },
-      {
         key: 'membership.experts',
         label: 'Expert Memberships Management',
         to: '/memberships/experts',

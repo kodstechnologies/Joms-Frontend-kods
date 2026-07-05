@@ -115,7 +115,7 @@ export function ReferralManagementPage() {
               setEditExpert(record)
             }}
           >
-            Edit Recipient Details
+            Edit Expert Details
           </TableActionsItem>
           <TableActionsItem
             icon={<Trash2 className="size-3.5 text-rose-300" />}
@@ -184,12 +184,13 @@ export function ReferralManagementPage() {
         <div className="flex w-full flex-col gap-2 sm:flex-row md:w-auto">
           <Button
             variant="secondary"
+            className="w-full md:w-auto"
             onClick={() => toast.info('Metrics configuration coming soon')}
           >
             <BarChart3 className="size-4" />
             Manage Metrics
           </Button>
-          <Button onClick={() => setInviteOpen(true)}>
+          <Button className="w-full md:w-auto" onClick={() => setInviteOpen(true)}>
             <UserPlus className="size-4" />
             Refer Expert
           </Button>

@@ -49,7 +49,7 @@ type MembershipPlansPageProps = {
 export function MembershipPlansPage({
   fixedStatus,
   title = 'Membership Management',
-  subtitle = 'Centralized membership system supporting User App and Expert App with analytics, plan configuration, and lifecycle controls.',
+  subtitle = 'Centralized expert membership system with analytics, plan configuration, and lifecycle controls.',
 }: MembershipPlansPageProps) {
   const navigate = useNavigate()
   const [createOpen, setCreateOpen] = useState(false)
@@ -157,10 +157,6 @@ export function MembershipPlansPage({
   const limit = meta?.limit ?? 50
   const rangeStart = totalItems === 0 ? 0 : (page - 1) * limit + 1
   const rangeEnd = Math.min(page * limit, totalItems)
-  const userPlans = useMemo(
-    () => memberships.filter((plan) => plan.type === 'user'),
-    [memberships],
-  )
   const expertPlans = useMemo(
     () => memberships.filter((plan) => plan.type === 'expert'),
     [memberships],
@@ -299,7 +295,8 @@ export function MembershipPlansPage({
           <p className="mt-1 text-sm text-slate-400 md:text-base">{subtitle}</p>
         </div>
         <Button
-          className="w-full bg-[#E6BE73] text-black hover:bg-[#D9AE5A] md:w-auto"
+          variant="secondary"
+          className="w-full md:w-auto"
           onClick={() => toast.info('Metrics configuration coming soon')}
         >
           <BarChart3 className="size-4" />
@@ -312,9 +309,6 @@ export function MembershipPlansPage({
       <div className="flex justify-center">
         <div className="inline-flex flex-wrap items-center justify-center gap-1 rounded-xl border border-white/10 bg-black/40 p-1">
           <TabButton active>Membership Plans</TabButton>
-          <TabButton onClick={() => toast.info('Users memberships management is not available')}>
-            Users Memberships Management
-          </TabButton>
           <TabButton onClick={() => navigate('/memberships/experts')}>
             Expert Memberships Management
           </TabButton>
@@ -345,7 +339,7 @@ export function MembershipPlansPage({
 
       <div className="flex flex-col gap-4">
         <p className="text-sm text-slate-400">
-          Showing {rangeStart}-{rangeEnd} of {totalItems} users
+          Showing {rangeStart}-{rangeEnd} of {totalItems} plans
         </p>
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -391,20 +385,7 @@ export function MembershipPlansPage({
       ) : (
         <>
           <PlanSection
-            title="Users Membership Plans"
-            plans={userPlans}
-            onEdit={(plan) => navigate(`/memberships/plans/${plan._id}/edit`)}
-            onPause={(plan) => openModal(plan, 'pause')}
-            onResume={(plan) => openModal(plan, 'resume')}
-            onDelete={(plan) => openModal(plan, 'delete')}
-            onDeactivate={(plan) => openModal(plan, 'deactivate')}
-            onActivate={(plan) => openModal(plan, 'activate')}
-            onViewFeatures={(plan) => openModal(plan, 'features')}
-            onViewVersions={(plan) => openModal(plan, 'versions')}
-            onSetValidity={(plan) => openModal(plan, 'validity')}
-          />
-          <PlanSection
-            title="Experts Membership Plans"
+            title="Expert Membership Plans"
             plans={expertPlans}
             onEdit={(plan) => navigate(`/memberships/plans/${plan._id}/edit`)}
             onPause={(plan) => openModal(plan, 'pause')}

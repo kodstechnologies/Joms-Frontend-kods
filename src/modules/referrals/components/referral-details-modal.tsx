@@ -8,6 +8,7 @@ import {
   getReferralStatusLabel,
 } from '../utils/referral-format'
 import { cn } from '@/shared/lib/cn'
+import { uiTokens } from '@/shared/lib/design-tokens'
 
 type ReferralDetailsModalProps = {
   open: boolean
@@ -30,15 +31,18 @@ export function ReferralDetailsModal({
       onClick={onClose}
     >
       <div
-        className="w-full max-w-2xl rounded-2xl border border-white/10 bg-[#111111] shadow-2xl"
+        className={cn(
+          'w-full max-w-2xl border border-white/10 bg-brand-surface shadow-2xl',
+          uiTokens.radiusCard,
+        )}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between border-b border-white/10 px-6 py-5">
-          <h2 className="text-lg font-semibold text-white">Invites Details</h2>
+          <h2 className="text-lg font-semibold text-brand-text">Expert Invite Details</h2>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg p-1.5 text-slate-400 hover:bg-white/5 hover:text-white"
+            className="rounded-brand-md p-1.5 text-brand-muted hover:bg-white/5 hover:text-brand-text"
           >
             <X className="size-5" />
           </button>
@@ -76,8 +80,8 @@ export function ReferralDetailsModal({
 function DetailCell({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="space-y-2">
-      <p className="text-sm text-slate-500">{label}</p>
-      <div className="text-sm font-semibold text-white">{value}</div>
+      <p className="text-sm text-brand-muted">{label}</p>
+      <div className="text-sm font-semibold text-brand-text">{value}</div>
     </div>
   )
 }

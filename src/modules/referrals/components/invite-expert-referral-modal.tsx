@@ -5,6 +5,7 @@ import type { BulkExpertInvitePayload, ExpertInvitePayload } from '../types/refe
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
 import { cn } from '@/shared/lib/cn'
+import { uiTokens } from '@/shared/lib/design-tokens'
 
 type InviteExpertReferralModalProps = {
   open: boolean
@@ -39,7 +40,7 @@ const parseCsvRecipients = (text: string): BulkRecipient[] => {
 }
 
 const fieldInputClass =
-  'h-11 rounded-lg border-0 bg-[#1a1a1a] px-4 text-sm text-white placeholder:text-slate-500 focus-visible:ring-1 focus-visible:ring-white/20'
+  'h-11 border-white/10 bg-brand-bg px-4 text-sm text-brand-text placeholder:text-brand-muted focus-visible:ring-brand-accent/40'
 
 export function InviteExpertReferralModal({
   open,
@@ -92,22 +93,27 @@ export function InviteExpertReferralModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
-      <div className="relative w-full max-w-xl rounded-2xl border border-white/10 bg-[#111111] shadow-2xl">
+      <div
+        className={cn(
+          'relative w-full max-w-xl border border-white/10 bg-brand-surface shadow-2xl',
+          uiTokens.radiusCard,
+        )}
+      >
         <button
           type="button"
           onClick={handleClose}
-          className="absolute right-4 top-4 z-10 rounded-lg p-1.5 text-slate-400 hover:bg-white/5 hover:text-white"
+          className="absolute right-4 top-4 z-10 rounded-brand-md p-1.5 text-brand-muted hover:bg-white/5 hover:text-brand-text"
         >
           <X className="size-4" />
         </button>
 
         <div className="border-b border-white/10 p-4 pt-5">
-          <div className="grid grid-cols-2 gap-1 rounded-xl bg-[#0a0a0a] p-1">
+          <div className="grid grid-cols-2 gap-1 rounded-brand-md bg-brand-bg p-1">
             <TabButton active={mode === 'manual'} onClick={() => setMode('manual')}>
               Manual Referral
             </TabButton>
             <TabButton active={mode === 'bulk'} onClick={() => setMode('bulk')}>
-              Bulk referral
+              Bulk Referral
             </TabButton>
           </div>
         </div>
@@ -145,7 +151,7 @@ export function InviteExpertReferralModal({
             </>
           ) : (
             <Field label="Upload Excel*">
-              <label className="flex min-h-36 cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed border-white/10 bg-[#1a1a1a] p-6 text-center">
+              <label className="flex min-h-36 cursor-pointer flex-col items-center justify-center rounded-brand-md border border-dashed border-white/10 bg-brand-bg p-6 text-center">
                 {fileName ? (
                   <>
                     <CheckCircle2 className="mb-2 size-8 text-emerald-400" />
@@ -187,28 +193,20 @@ export function InviteExpertReferralModal({
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               placeholder="Enter here"
-              className="h-32 w-full resize-none rounded-lg border-0 bg-[#1a1a1a] px-4 py-3 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-white/20"
+              className="h-32 w-full resize-none rounded-brand-md border border-white/10 bg-brand-bg px-4 py-3 text-sm text-brand-text placeholder:text-brand-muted focus:outline-none focus:ring-2 focus:ring-brand-accent/40"
             />
           </Field>
 
-          <p className="text-xs leading-relaxed text-slate-500">
-            Note: The users will get referral code to their email ID &amp; notified through SMS/Whatsapp.
+          <p className="text-xs leading-relaxed text-brand-muted">
+            Note: Experts will receive the referral invite on their email and through SMS/WhatsApp.
           </p>
         </div>
 
         <div className="flex justify-end gap-3 border-t border-white/10 px-6 py-5">
-          <button
-            type="button"
-            onClick={handleClose}
-            className="rounded-lg border border-white/20 bg-transparent px-6 py-2.5 text-sm font-medium text-white transition-colors hover:bg-white/5"
-          >
+          <Button type="button" variant="secondary" onClick={handleClose}>
             Cancel
-          </button>
-          <Button
-            onClick={handleSubmit}
-            disabled={isSubmitting}
-            className="min-w-[120px] px-6"
-          >
+          </Button>
+          <Button onClick={handleSubmit} disabled={isSubmitting} className="min-w-[120px]">
             {isSubmitting ? 'Sending...' : 'Send Invite'}
           </Button>
         </div>
@@ -231,8 +229,8 @@ function TabButton({
       type="button"
       onClick={onClick}
       className={cn(
-        'rounded-lg py-2.5 text-center text-sm font-medium transition-colors',
-        active ? 'bg-[#2a2a2a] text-white' : 'text-slate-500 hover:text-slate-300',
+        'rounded-brand-md py-2.5 text-center text-sm font-semibold transition-colors',
+        active ? 'bg-brand-surface-2 text-brand-text' : 'text-brand-muted hover:text-brand-text',
       )}
     >
       {children}
@@ -243,7 +241,7 @@ function TabButton({
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="block space-y-2.5">
-      <span className="text-sm font-medium text-white">{label}</span>
+      <span className="text-sm font-medium text-brand-text">{label}</span>
       {children}
     </label>
   )

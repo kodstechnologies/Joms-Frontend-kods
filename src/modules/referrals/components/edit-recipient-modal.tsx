@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react'
 import type { UpdateRecipientPayload } from '../types/referral'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
+import { cn } from '@/shared/lib/cn'
+import { uiTokens } from '@/shared/lib/design-tokens'
 
 type EditRecipientModalProps = {
   open: boolean
@@ -19,7 +21,7 @@ type EditRecipientModalProps = {
 }
 
 const fieldInputClass =
-  'h-11 rounded-lg border-0 bg-[#1a1a1a] px-4 text-sm text-white placeholder:text-slate-500 focus-visible:ring-1 focus-visible:ring-white/20'
+  'h-11 border-white/10 bg-brand-bg px-4 text-sm text-brand-text placeholder:text-brand-muted focus-visible:ring-brand-accent/40'
 
 export function EditRecipientModal({
   open,
@@ -46,10 +48,19 @@ export function EditRecipientModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
-      <div className="w-full max-w-xl rounded-2xl border border-white/10 bg-[#111111] shadow-2xl">
+      <div
+        className={cn(
+          'w-full max-w-xl border border-white/10 bg-brand-surface shadow-2xl',
+          uiTokens.radiusCard,
+        )}
+      >
         <div className="flex items-center justify-between border-b border-white/10 px-6 py-5">
-          <h2 className="text-lg font-semibold text-white">Edit Recipient Details</h2>
-          <button type="button" onClick={onClose} className="rounded-lg p-1.5 text-slate-400 hover:text-white">
+          <h2 className="text-lg font-semibold text-brand-text">Edit Expert Details</h2>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-brand-md p-1.5 text-brand-muted hover:bg-white/5 hover:text-brand-text"
+          >
             <X className="size-5" />
           </button>
         </div>
@@ -71,19 +82,15 @@ export function EditRecipientModal({
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               placeholder="Enter here"
-              className="h-28 w-full resize-none rounded-lg border-0 bg-[#1a1a1a] px-4 py-3 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-white/20"
+              className="h-28 w-full resize-none rounded-brand-md border border-white/10 bg-brand-bg px-4 py-3 text-sm text-brand-text placeholder:text-brand-muted focus:outline-none focus:ring-2 focus:ring-brand-accent/40"
             />
           </Field>
         </div>
 
         <div className="flex justify-end gap-3 border-t border-white/10 px-6 py-5">
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-lg border border-white/20 bg-transparent px-6 py-2.5 text-sm font-medium text-white hover:bg-white/5"
-          >
+          <Button type="button" variant="secondary" onClick={onClose}>
             Cancel
-          </button>
+          </Button>
           <Button onClick={() => onSubmit({ name, email, phone, message })} disabled={isSubmitting}>
             <Save className="size-4" />
             {isSubmitting ? 'Saving...' : 'Save Changes'}
@@ -97,7 +104,7 @@ export function EditRecipientModal({
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="block space-y-2.5">
-      <span className="text-sm font-medium text-white">{label}</span>
+      <span className="text-sm font-medium text-brand-text">{label}</span>
       {children}
     </label>
   )

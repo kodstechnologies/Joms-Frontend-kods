@@ -3,6 +3,7 @@ import { toast } from 'sonner'
 
 import { fetchExpertApplicationView } from '../api/expert-application-api'
 import { fetchVenueKycByPartnerId } from '../api/venue-kyc-api'
+import { isKycSubmittedForApplication } from '../utils/expert-application-helpers'
 
 const isVenueServiceType = (serviceType?: string | null) =>
   serviceType?.toLowerCase() === 'venue'
@@ -68,7 +69,7 @@ export const openExpertKycFromProfile = async (
 
   try {
     const response = await fetchExpertApplicationView(partnerId)
-    if (!response?.data?.kyc?._id) {
+    if (!isKycSubmittedForApplication(response?.data?.expert, response?.data?.kyc)) {
       toast.error('KYC is not submitted by partner')
       return
     }

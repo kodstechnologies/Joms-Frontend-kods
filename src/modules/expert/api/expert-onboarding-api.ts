@@ -1,4 +1,4 @@
-import { authApiClient } from '@/shared/lib/axios'
+import { adminApiClient, authApiClient } from '@/shared/lib/axios'
 
 export type ExpertOnboardingApiResponse<T = unknown> = {
   success: boolean
@@ -60,8 +60,8 @@ export const submitExpertApplication = async (
   id: string,
   payload: { internalNotes?: string; isVerified: boolean },
 ) => {
-  const response = await authApiClient.patch<ExpertOnboardingApiResponse>(
-    `/auth/internal/partners/${id}/submit`,
+  const response = await adminApiClient.patch<ExpertOnboardingApiResponse>(
+    `/admin/internal/admin/partners/${id}/submit`,
     payload,
   )
   return response.data

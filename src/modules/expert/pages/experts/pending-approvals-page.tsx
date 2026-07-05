@@ -11,6 +11,7 @@ import {
 import { useExperts } from '../../hooks/use-expert'
 import type { Expert } from '../../type/expert'
 import type { ConciergeRejectionReason } from '../../type/expert-application-view'
+import { isKycSubmittedForApplication } from '../../utils/expert-application-helpers'
 import { openExpertApplicationView } from '../../utils/expert-application-navigation'
 import {
   createExpertBaseColumns,
@@ -107,10 +108,16 @@ export function ExpertPendingApprovalsPage() {
 
     try {
       const applicationResponse = await fetchExpertApplicationView(revokeExpertTarget.id)
-      const kycId = applicationResponse?.data?.kyc?._id
+      const application = applicationResponse?.data
+      const kycId = application?.kyc?._id
+
+      if (!isKycSubmittedForApplication(application?.expert, application?.kyc)) {
+        toast.error('KYC is not submitted by partner')
+        return
+      }
 
       if (!kycId) {
-        toast.error('KYC is not submitted by partner')
+        toast.error('Unable to update KYC status. Please refresh and try again.')
         return
       }
 

@@ -64,7 +64,7 @@ export function MembershipDetailsPage() {
       </div>
 
       <div className="grid flex-1 gap-6 lg:grid-cols-2">
-        <DetailCard title="Current Membership Details" subtitle="Manage users membership plans">
+        <DetailCard title="Current Membership Details" subtitle="Manage expert membership subscription">
           <DetailGrid
             items={[
               { label: 'Plan ID', value: subscription.subscriptionId },

@@ -178,8 +178,7 @@ export function ExpertMembershipsPage() {
       <MembershipStatsBar />
 
       <div className="flex flex-wrap gap-2 border-b border-white/10 pb-4">
-        <TabLink active to="/memberships/plans">Membership Plans</TabLink>
-        <TabLink disabled>Users Memberships Management</TabLink>
+        <TabLink to="/memberships/plans">Membership Plans</TabLink>
         <TabLink active to="/memberships/experts">Expert Memberships Management</TabLink>
       </div>
 
@@ -293,30 +292,22 @@ function TabLink({
   children,
   to,
   active = false,
-  disabled = false,
 }: {
   children: ReactNode
   to?: string
   active?: boolean
-  disabled?: boolean
 }) {
   const navigate = useNavigate()
 
   return (
     <button
       type="button"
-      disabled={disabled}
       onClick={() => {
-        if (disabled) {
-          toast.info('Users memberships management is not available')
-          return
-        }
         if (to) navigate(to)
       }}
       className={cn(
         'rounded-lg px-4 py-2 text-sm font-medium transition-colors',
         active ? 'bg-amber-400/10 text-amber-200' : 'text-slate-400',
-        disabled && 'cursor-not-allowed opacity-50',
       )}
     >
       {children}
