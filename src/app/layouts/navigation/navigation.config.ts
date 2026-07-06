@@ -160,7 +160,21 @@ export const navigationConfig: NavItem[] = [
     label: 'Payment & Finance',
     icon: CreditCard,
     superAdminOnly: true,
-    children: [{ key: 'finance.dashboard', label: 'Dashboard', badge: { label: 'Soon', variant: 'warning' } }],
+    children: [
+      { key: 'finance.dashboard', label: 'Dashboard', to: '/finance/dashboard' },
+      { key: 'finance.revenue', label: 'Revenue Overview', to: '/finance/revenue' },
+      { key: 'finance.events', label: 'Events', badge: { label: 'Soon', variant: 'warning' } },
+      { key: 'finance.services', label: 'Services', to: '/finance/services' },
+      { key: 'finance.escrow', label: 'Escrow Management', to: '/finance/escrow' },
+      { key: 'finance.venues', label: 'Venues', to: '/finance/venues' },
+      { key: 'finance.memberships', label: 'Memberships', badge: { label: 'Soon', variant: 'warning' } },
+      { key: 'finance.payment', label: 'Payment Management', badge: { label: 'Soon', variant: 'warning' } },
+      { key: 'finance.refunds', label: 'Refunds & Chargebacks', to: '/finance/refunds' },
+      { key: 'finance.tax', label: 'Tax & Compliance', to: '/finance/tax' },
+      { key: 'finance.invoices', label: 'Invoices & Billing', badge: { label: 'Soon', variant: 'warning' } },
+      { key: 'finance.reconciliation', label: 'Financial Reconciliation', to: '/finance/reconciliation' },
+      { key: 'finance.category', label: 'Category Management', badge: { label: 'Soon', variant: 'warning' } },
+    ],
   },
   {
     key: 'support',
@@ -180,11 +194,40 @@ export const navigationConfig: NavItem[] = [
     superAdminOnly: true,
     children: [
       {
+        key: 'settings.health',
+        label: 'Platform Health Dashboard',
+        to: '/settings/health',
+      },
+      {
+        key: 'settings.main',
+        label: 'Main Settings',
+        to: '/settings/main',
+      },
+      {
         key: 'settings.access',
-        label: 'Role Based Access',
+        label: 'Role Based Access Control',
         to: '/settings/access',
       },
-      { key: 'settings.general', label: 'General', badge: { label: 'Soon', variant: 'warning' } },
+      {
+        key: 'settings.categories',
+        label: 'Category Management',
+        to: '/settings/categories',
+      },
+      {
+        key: 'settings.system',
+        label: 'System Configuration',
+        to: '/settings/system',
+      },
+      {
+        key: 'settings.escalations',
+        label: 'Escalations',
+        to: '/settings/escalations',
+      },
+      {
+        key: 'settings.api-keys',
+        label: 'API Key Management',
+        to: '/settings/api-keys',
+      },
     ],
   },
 ]

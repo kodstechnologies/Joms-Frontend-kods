@@ -23,4 +23,5 @@ export const env = {
   venueApiBaseUrl: resolveApiUrl(import.meta.env.VITE_VENUE_API_BASE_URL, 8005),
   kycApiBaseUrl: resolveApiUrl(import.meta.env.VITE_KYC_API_BASE_URL, 8003),
   membershipApiBaseUrl: resolveApiUrl(import.meta.env.VITE_MEMBERSHIP_API_BASE_URL, 8006),
+  settingsApiBaseUrl: resolveApiUrl(import.meta.env.VITE_SETTINGS_API_BASE_URL, 8007),
 }

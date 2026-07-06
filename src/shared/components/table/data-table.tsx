@@ -1,10 +1,9 @@
 import type { ReactNode } from 'react'
 import type { ColumnDef, RowData } from '@tanstack/react-table'
 import { flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table'
-import { ArrowUpDown, Download, Filter, Search } from 'lucide-react'
+import { ArrowUpDown, Filter, Search, Upload } from 'lucide-react'
 
 import { Button } from '@/shared/components/ui/button'
-import { Input } from '@/shared/components/ui/input'
 import { cn } from '@/shared/lib/cn'
 
 declare module '@tanstack/react-table' {
@@ -34,8 +33,8 @@ export type DataTableProps<TData> = {
   searchValue: string
   onSearchChange: (value: string) => void
   searchPlaceholder?: string
+  advancedFilterLabel?: string
   onAdvancedFilter?: () => void
-  advancedFiltersLabel?: string
   onExport?: () => void
   isExporting?: boolean
   pagination: DataTablePagination
@@ -68,8 +67,8 @@ export function DataTable<TData>({
   searchValue,
   onSearchChange,
   searchPlaceholder = 'Search records',
+  advancedFilterLabel = 'Advanced Filters',
   onAdvancedFilter,
-  advancedFiltersLabel = 'Advanced Filters',
   onExport,
   isExporting = false,
   pagination,
@@ -123,7 +122,7 @@ export function DataTable<TData>({
             )}
             aria-hidden="true"
           />
-          <Input
+          <input
             type="search"
             value={searchValue}
             onChange={(event) => onSearchChange(event.target.value)}
@@ -138,7 +137,7 @@ export function DataTable<TData>({
           />
         </div>
 
-        <div className="flex w-full items-center justify-end gap-2 sm:w-auto">
+        <div className="flex w-full shrink-0 items-center justify-end gap-3 lg:w-auto">
           {toolbarContent}
           <Button
             type="button"
@@ -153,7 +152,7 @@ export function DataTable<TData>({
             )}
           >
             <Filter className="size-3.5" aria-hidden="true" />
-            {advancedFiltersLabel}
+            {advancedFilterLabel}
           </Button>
           <Button
             type="button"
@@ -166,7 +165,7 @@ export function DataTable<TData>({
                 : 'bg-brand-accent text-brand-text-dark hover:bg-brand-gold-from',
             )}
           >
-            <Download className="size-3.5" aria-hidden="true" />
+            <Upload className="size-4" aria-hidden="true" />
             {isExporting ? 'Exporting...' : 'Export Data'}
           </Button>
         </div>

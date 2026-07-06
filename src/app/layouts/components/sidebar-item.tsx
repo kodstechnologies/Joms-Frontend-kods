@@ -93,7 +93,7 @@ export function SidebarItem({
   }
 
   if (!onToggle) {
-    return renderContent()
+    return <div className="cursor-pointer">{renderContent()}</div>
   }
 
   return (
