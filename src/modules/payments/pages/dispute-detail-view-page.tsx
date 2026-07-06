@@ -12,7 +12,6 @@ import {
   X,
 } from 'lucide-react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { toast } from 'sonner'
 
 import { ApproveRefundModal } from '@/modules/payments/components/approve-refund-modal'
 import { RejectRefundModal } from '@/modules/payments/components/reject-refund-modal'

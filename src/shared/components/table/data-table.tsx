@@ -35,7 +35,6 @@ export type DataTableProps<TData> = {
   searchPlaceholder?: string
   advancedFilterLabel?: string
   onAdvancedFilter?: () => void
-  advancedFiltersLabel?: string
   onExport?: () => void
   isExporting?: boolean
   pagination: DataTablePagination
@@ -70,7 +69,6 @@ export function DataTable<TData>({
   searchPlaceholder = 'Search records',
   advancedFilterLabel = 'Advanced Filters',
   onAdvancedFilter,
-  advancedFiltersLabel = 'Advanced Filters',
   onExport,
   isExporting = false,
   pagination,
@@ -154,7 +152,7 @@ export function DataTable<TData>({
             )}
           >
             <Filter className="size-3.5" aria-hidden="true" />
-            {advancedFiltersLabel}
+            {advancedFilterLabel}
           </Button>
           <Button
             type="button"
