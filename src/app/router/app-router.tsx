@@ -319,6 +319,108 @@ const CategoryViewPage = lazy(() =>
   }))
 );
 
+const FinanceDashboardPage = lazy(() =>
+  import('@/modules/payments').then((m) => ({
+    default: m.FinanceDashboardPage,
+  })),
+);
+
+const RevenueOverviewPage = lazy(() =>
+  import('@/modules/payments').then((m) => ({
+    default: m.RevenueOverviewPage,
+  })),
+);
+
+const PaymentDetailViewPage = lazy(() =>
+  import('@/modules/payments').then((m) => ({
+    default: m.PaymentDetailViewPage,
+  })),
+);
+
+const FinanceServicesPage = lazy(() =>
+  import('@/modules/payments').then((m) => ({
+    default: m.FinanceServicesPage,
+  })),
+);
+
+const ServicePaymentDetailViewPage = lazy(() =>
+  import('@/modules/payments').then((m) => ({
+    default: m.ServicePaymentDetailViewPage,
+  })),
+);
+
+const FinanceVenuesPage = lazy(() =>
+  import('@/modules/payments').then((m) => ({
+    default: m.FinanceVenuesPage,
+  })),
+);
+
+const VenuePaymentDetailViewPage = lazy(() =>
+  import('@/modules/payments').then((m) => ({
+    default: m.VenuePaymentDetailViewPage,
+  })),
+);
+
+const FinanceTaxCompliancePage = lazy(() =>
+  import('@/modules/payments').then((m) => ({
+    default: m.FinanceTaxCompliancePage,
+  })),
+);
+
+const TaxComplianceDetailViewPage = lazy(() =>
+  import('@/modules/payments').then((m) => ({
+    default: m.TaxComplianceDetailViewPage,
+  })),
+);
+
+const FinanceReconciliationPage = lazy(() =>
+  import('@/modules/payments').then((m) => ({
+    default: m.FinanceReconciliationPage,
+  })),
+);
+
+const ReconciliationDetailViewPage = lazy(() =>
+  import('@/modules/payments').then((m) => ({
+    default: m.ReconciliationDetailViewPage,
+  })),
+);
+
+const EscrowManagementPage = lazy(() =>
+  import('@/modules/payments').then((m) => ({
+    default: m.EscrowManagementPage,
+  })),
+);
+
+const EscrowDetailViewPage = lazy(() =>
+  import('@/modules/payments').then((m) => ({
+    default: m.EscrowDetailViewPage,
+  })),
+);
+
+const FinanceRefundsPage = lazy(() =>
+  import('@/modules/payments').then((m) => ({
+    default: m.FinanceRefundsPage,
+  })),
+);
+
+const RefundDetailViewPage = lazy(() =>
+  import('@/modules/payments').then((m) => ({
+    default: m.RefundDetailViewPage,
+  })),
+);
+
+const DisputeDetailViewPage = lazy(() =>
+  import('@/modules/payments').then((m) => ({
+    default: m.DisputeDetailViewPage,
+  })),
+);
+
+const AssignRefundAuthorityPage = lazy(() =>
+  import('@/modules/payments').then((m) => ({
+    default: m.AssignRefundAuthorityPage,
+  })),
+);
+
 const SubCategoryViewPage = lazy(() =>
   import("@/modules/expert").then((m) => ({
     default: m.SubCategoryViewPage,
@@ -465,6 +567,23 @@ export function AppRouter() {
                 <Route path="/settings/access/roles/:id/edit" element={<CreateRolePage />} />
                 <Route path="/settings/access/users/create" element={<CreateSubAdminPage />} />
                 <Route path="/settings/access/users/:id" element={<SubAdminDetailPage />} />
+                <Route path="/finance/dashboard" element={<FinanceDashboardPage />} />
+                <Route path="/finance/revenue" element={<RevenueOverviewPage />} />
+                <Route path="/finance/revenue/:id" element={<PaymentDetailViewPage />} />
+                <Route path="/finance/services" element={<FinanceServicesPage />} />
+                <Route path="/finance/services/:id" element={<ServicePaymentDetailViewPage />} />
+                <Route path="/finance/venues" element={<FinanceVenuesPage />} />
+                <Route path="/finance/venues/:id" element={<VenuePaymentDetailViewPage />} />
+                <Route path="/finance/tax" element={<FinanceTaxCompliancePage />} />
+                <Route path="/finance/tax/:id" element={<TaxComplianceDetailViewPage />} />
+                <Route path="/finance/reconciliation" element={<FinanceReconciliationPage />} />
+                <Route path="/finance/reconciliation/:id" element={<ReconciliationDetailViewPage />} />
+                <Route path="/finance/escrow" element={<EscrowManagementPage />} />
+                <Route path="/finance/escrow/:id" element={<EscrowDetailViewPage />} />
+                <Route path="/finance/refunds" element={<FinanceRefundsPage />} />
+                <Route path="/finance/refunds/:id/escalate" element={<AssignRefundAuthorityPage />} />
+                <Route path="/finance/refunds/:id/dispute" element={<DisputeDetailViewPage />} />
+                <Route path="/finance/refunds/:id" element={<RefundDetailViewPage />} />
               </Route>
 
               <Route element={<PermissionRoute module="services" />}>
