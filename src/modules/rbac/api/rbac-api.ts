@@ -1,5 +1,6 @@
 import { adminApiClient } from '@/shared/lib/axios'
 import type {
+  AdminLogSubject,
   AdminProfile,
   AuditLog,
   CreateRolePayload,
@@ -8,6 +9,7 @@ import type {
   RbacStats,
   Role,
   SubAdmin,
+  SubAdminInvite,
 } from '../types/rbac'
 
 type ListParams = {
@@ -116,8 +118,54 @@ export const deleteSubAdmin = async (id: string) => {
 export const fetchSubAdminLogs = async (id: string, params?: ListParams) => {
   const response = await adminApiClient.get<{
     success: boolean
-    data: { subAdmin: SubAdmin; logs: AuditLog[] }
+    data: { subject: AdminLogSubject; subAdmin: SubAdmin; logs: AuditLog[] }
     meta: { page: number; limit: number; total: number; totalPages: number }
   }>(`/admin/rbac/sub-admins/${id}/logs`, { params })
+  return response.data
+}
+
+export const fetchRoleLogs = async (id: string, params?: ListParams) => {
+  const response = await adminApiClient.get<{
+    success: boolean
+    data: { subject: AdminLogSubject; role: Role; logs: AuditLog[] }
+    meta: { page: number; limit: number; total: number; totalPages: number }
+  }>(`/admin/rbac/roles/${id}/logs`, { params })
+  return response.data
+}
+
+export const fetchAuditLog = async (logId: string) => {
+  const response = await adminApiClient.get<{ success: boolean; data: AuditLog }>(
+    `/admin/rbac/logs/${logId}`,
+  )
+  return response.data
+}
+
+export const flagAuditLog = async (logId: string) => {
+  const response = await adminApiClient.patch<{ success: boolean; data: AuditLog }>(
+    `/admin/rbac/logs/${logId}/flag`,
+  )
+  return response.data
+}
+
+export const fetchSubAdminInvites = async (id: string, params?: ListParams) => {
+  const response = await adminApiClient.get<{
+    success: boolean
+    data: { subAdmin: SubAdmin; invites: SubAdminInvite[] }
+    meta: { page: number; limit: number; total: number; totalPages: number }
+  }>(`/admin/rbac/sub-admins/${id}/invites`, { params })
+  return response.data
+}
+
+export const reinviteSubAdmin = async (inviteId: string) => {
+  const response = await adminApiClient.post<{ success: boolean; data: SubAdminInvite }>(
+    `/admin/rbac/invites/${inviteId}/reinvite`,
+  )
+  return response.data
+}
+
+export const revokeSubAdminInvite = async (inviteId: string) => {
+  const response = await adminApiClient.patch<{ success: boolean; data: SubAdminInvite }>(
+    `/admin/rbac/invites/${inviteId}/revoke`,
+  )
   return response.data
 }

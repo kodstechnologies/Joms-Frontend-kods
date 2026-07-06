@@ -24,8 +24,10 @@ export type Role = {
   mfaRequired: boolean
   status: 'active' | 'disabled'
   userCount: number
+  createdBy?: string
   createdAt?: string
   updatedAt?: string
+  lastActionAt?: string
 }
 
 export type SubAdminRole = Pick<Role, 'id' | 'roleCode' | 'name' | 'permissions' | 'scopes'>
@@ -51,9 +53,29 @@ export type SubAdmin = {
   authAdminId?: string
   status: 'active' | 'suspended' | 'disabled'
   lastActionAt?: string
+  createdBy?: string
   createdAt?: string
   updatedAt?: string
   tempPassword?: string
+}
+
+export type AdminLogSubject =
+  | ({ type: 'subAdmin' } & SubAdmin)
+  | ({ type: 'role' } & Role)
+
+export type AuditLog = {
+  id: string
+  _id?: string
+  action: string
+  username: string
+  module: string
+  status: 'success' | 'failed' | string
+  ipAddress: string
+  adminNote: string
+  performedBy: string
+  flagged?: boolean
+  metadata?: Record<string, unknown>
+  createdAt: string
 }
 
 export type RbacStats = {
@@ -63,18 +85,6 @@ export type RbacStats = {
   suspendedUsers: number
   totalRolesAvailable: number
   invitesSent: number
-}
-
-export type AuditLog = {
-  _id: string
-  action: string
-  username: string
-  module: string
-  status: string
-  ipAddress: string
-  adminNote: string
-  performedBy: string
-  createdAt: string
 }
 
 export type CreateRolePayload = {
@@ -106,4 +116,22 @@ export type AdminProfile = {
   kind: 'superadmin' | 'subadmin'
   isSuperAdmin: boolean
   permissions: string[]
+}
+
+export type SubAdminInvite = {
+  id: string
+  inviteId: string
+  username: string
+  roleId: string
+  roleCode: string
+  roleName: string
+  email: string
+  status: 'pending' | 'accepted' | 'revoked'
+  timestamp?: string
+  sentAt: string
+  sentBy?: string
+  acceptedAt?: string | null
+  revokedAt?: string | null
+  createdAt?: string
+  updatedAt?: string
 }

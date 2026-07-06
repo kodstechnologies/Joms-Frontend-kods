@@ -104,26 +104,26 @@ export function CreateSubAdminPage() {
         <button
           type="button"
           onClick={() => navigate('/settings/access')}
-          className="rounded-lg border border-white/10 p-2 text-slate-300 hover:text-white"
+          className="rounded-brand-md border border-white/10 p-2 text-brand-muted transition-colors hover:bg-white/5 hover:text-brand-text"
         >
           <ArrowLeft className="size-4" />
         </button>
         <div>
-          <h1 className="text-2xl font-bold text-white">Create New User</h1>
-          <p className="text-sm text-slate-400">Role based Access / Create New User</p>
+          <h1 className="text-2xl font-bold text-brand-text">Create New User</h1>
+          <p className="text-sm text-brand-muted">Role Based Access / Create New User</p>
         </div>
       </div>
 
       {step === 'review' ? (
-        <div className="rounded-xl border border-amber-400/20 bg-amber-400/10 px-4 py-3 text-sm text-amber-100">
+        <div className="rounded-brand-lg border border-brand-accent-muted bg-brand-accent/10 px-4 py-3 text-sm text-brand-text">
           Warning: Assigned permissions will apply immediately after role assignment.
         </div>
       ) : null}
 
       {step === 'details' ? (
-        <div className="rounded-xl border border-white/10 bg-[#141414] p-5 md:p-6">
-          <h2 className="text-lg font-semibold text-white">User Details</h2>
-          <p className="mt-1 text-sm text-slate-400">
+        <div className="rounded-brand-lg border border-white/10 bg-brand-surface p-5 md:p-6">
+          <h2 className="text-lg font-semibold text-brand-text">User Details</h2>
+          <p className="mt-1 text-sm text-brand-muted">
             Enter the admin user&apos;s basic information to get started.
           </p>
           <div className="mt-5 grid gap-4 md:grid-cols-2">
@@ -139,7 +139,7 @@ export function CreateSubAdminPage() {
               ['location', 'Location *', 'Enter location'],
             ].map(([key, label, placeholder]) => (
               <div key={key} className="space-y-2">
-                <label className="text-sm text-slate-300">{label}</label>
+                <label className="text-sm font-medium text-brand-text">{label}</label>
                 <Input
                   value={String(form[key as keyof CreateSubAdminPayload] ?? '')}
                   onChange={(e) =>
@@ -150,7 +150,7 @@ export function CreateSubAdminPage() {
               </div>
             ))}
             <div className="space-y-2">
-              <label className="text-sm text-slate-300">Password *</label>
+              <label className="text-sm font-medium text-brand-text">Password *</label>
               <Input
                 type="password"
                 value={form.password}
@@ -158,12 +158,12 @@ export function CreateSubAdminPage() {
                 placeholder="Set login password (min 6 characters)"
                 autoComplete="new-password"
               />
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-brand-muted">
                 This password will be used on the admin login page with the user&apos;s email.
               </p>
             </div>
             <div className="space-y-2">
-              <label className="text-sm text-slate-300">Confirm Password *</label>
+              <label className="text-sm font-medium text-brand-text">Confirm Password *</label>
               <Input
                 type="password"
                 value={confirmPassword}
@@ -172,10 +172,10 @@ export function CreateSubAdminPage() {
                 autoComplete="new-password"
               />
             </div>
-            <div className="flex items-center justify-between rounded-lg border border-white/10 px-4 py-3 md:col-span-2">
+            <div className="flex items-center justify-between rounded-brand-md border border-white/10 px-4 py-3 md:col-span-2">
               <div>
-                <p className="text-sm font-medium text-white">2 Factor Authentication</p>
-                <p className="text-xs text-slate-400">
+                <p className="text-sm font-medium text-brand-text">2 Factor Authentication</p>
+                <p className="text-xs text-brand-muted">
                   Every time the user tries to login they need verify via 2FA
                 </p>
               </div>
@@ -184,7 +184,7 @@ export function CreateSubAdminPage() {
                 onClick={() => updateField('mfaEnabled', !form.mfaEnabled)}
                 className={cn(
                   'relative h-7 w-12 rounded-full transition-colors',
-                  form.mfaEnabled ? 'bg-amber-400' : 'bg-slate-600',
+                  form.mfaEnabled ? 'bg-brand-accent' : 'bg-white/20',
                 )}
               >
                 <span
@@ -200,9 +200,9 @@ export function CreateSubAdminPage() {
       ) : null}
 
       {step === 'roles' ? (
-        <div className="rounded-xl border border-white/10 bg-[#141414] p-5 md:p-6">
-          <h2 className="text-lg font-semibold text-white">Assign Role</h2>
-          <p className="mt-1 text-sm text-slate-400">
+        <div className="rounded-brand-lg border border-white/10 bg-brand-surface p-5 md:p-6">
+          <h2 className="text-lg font-semibold text-brand-text">Assign Role</h2>
+          <p className="mt-1 text-sm text-brand-muted">
             Select roles to define the admin user&apos;s permissions and access level.
           </p>
 
@@ -212,7 +212,7 @@ export function CreateSubAdminPage() {
               return (
                 <div
                   key={role.id}
-                  className="flex items-start justify-between gap-4 rounded-lg border border-white/10 px-4 py-3"
+                  className="flex items-start justify-between gap-4 rounded-brand-md border border-white/10 px-4 py-3"
                 >
                   <label className="flex cursor-pointer items-start gap-3">
                     <input
@@ -222,13 +222,13 @@ export function CreateSubAdminPage() {
                       className="mt-1"
                     />
                     <div>
-                      <p className="font-medium text-white">{role.name}</p>
-                      <p className="text-sm text-slate-400">{role.description}</p>
+                      <p className="font-medium text-brand-text">{role.name}</p>
+                      <p className="text-sm text-brand-muted">{role.description}</p>
                     </div>
                   </label>
                   <button
                     type="button"
-                    className="text-sm text-amber-300 hover:underline"
+                    className="text-sm text-brand-accent hover:underline"
                     onClick={() => toast.info(role.permissions.join(', ') || 'No permissions')}
                   >
                     View Permission
@@ -241,19 +241,19 @@ export function CreateSubAdminPage() {
           {selectedRoles.length ? (
             <div className="mt-6 grid gap-3 md:grid-cols-2">
               {selectedRoles.map((role) => (
-                <div key={role.id} className="rounded-lg border border-white/10 p-4">
+                <div key={role.id} className="rounded-brand-md border border-white/10 p-4">
                   <div className="flex items-center justify-between">
-                    <p className="font-medium text-white">{role.name}</p>
-                    <span className="rounded bg-white/10 px-2 py-0.5 text-xs text-slate-300">
+                    <p className="font-medium text-brand-text">{role.name}</p>
+                    <span className="rounded bg-white/10 px-2 py-0.5 text-xs text-brand-muted">
                       {role.scopes.includes('venues') && role.scopes.includes('services')
                         ? 'Full Access'
                         : 'Limited Access'}
                     </span>
                   </div>
-                  <div className="mt-3 space-y-1 text-sm text-slate-300">
+                  <div className="mt-3 space-y-1 text-sm text-brand-muted">
                     {role.scopes.map((scope) => (
                       <div key={scope} className="flex items-center gap-2 capitalize">
-                        <Check className="size-3.5 text-emerald-400" />
+                        <Check className="size-3.5 text-brand-success" />
                         {scope} Management
                       </div>
                     ))}
@@ -267,36 +267,36 @@ export function CreateSubAdminPage() {
 
       {step === 'review' ? (
         <div className="grid gap-4 lg:grid-cols-2">
-          <div className="rounded-xl border border-white/10 bg-[#141414] p-5">
-            <h3 className="font-semibold text-white">Summary</h3>
+          <div className="rounded-brand-lg border border-white/10 bg-brand-surface p-5">
+            <h3 className="font-semibold text-brand-text">Summary</h3>
             <dl className="mt-4 space-y-2 text-sm">
               <div className="flex justify-between gap-4">
-                <dt className="text-slate-400">Name</dt>
-                <dd className="text-white">
+                <dt className="text-brand-muted">Name</dt>
+                <dd className="text-brand-text">
                   {form.firstName} {form.lastName}
                 </dd>
               </div>
               <div className="flex justify-between gap-4">
-                <dt className="text-slate-400">Email</dt>
-                <dd className="text-white">{form.email}</dd>
+                <dt className="text-brand-muted">Email</dt>
+                <dd className="text-brand-text">{form.email}</dd>
               </div>
               <div className="flex justify-between gap-4">
-                <dt className="text-slate-400">Login</dt>
-                <dd className="text-right text-white">
+                <dt className="text-brand-muted">Login</dt>
+                <dd className="text-right text-brand-text">
                   Same email + password on the admin login screen
                 </dd>
               </div>
               <div className="flex justify-between gap-4">
-                <dt className="text-slate-400">Department</dt>
-                <dd className="text-white">{form.department || '—'}</dd>
+                <dt className="text-brand-muted">Department</dt>
+                <dd className="text-brand-text">{form.department || '—'}</dd>
               </div>
               <div className="flex justify-between gap-4">
-                <dt className="text-slate-400">Roles</dt>
+                <dt className="text-brand-muted">Roles</dt>
                 <dd className="flex flex-wrap justify-end gap-1">
                   {selectedRoles.map((role) => (
                     <span
                       key={role.id}
-                      className="rounded-full bg-amber-400/20 px-2 py-0.5 text-xs text-amber-200"
+                      className="rounded-full bg-brand-accent/20 px-2 py-0.5 text-xs text-brand-accent"
                     >
                       {role.name}
                     </span>
@@ -304,15 +304,15 @@ export function CreateSubAdminPage() {
                 </dd>
               </div>
               <div className="flex justify-between gap-4">
-                <dt className="text-slate-400">2FA</dt>
-                <dd className="text-white">{form.mfaEnabled ? 'Enabled' : 'Disabled'}</dd>
+                <dt className="text-brand-muted">2FA</dt>
+                <dd className="text-brand-text">{form.mfaEnabled ? 'Enabled' : 'Disabled'}</dd>
               </div>
             </dl>
           </div>
 
-          <div className="rounded-xl border border-white/10 bg-[#141414] p-5">
-            <h3 className="font-semibold text-white">What happens next?</h3>
-            <ul className="mt-4 list-disc space-y-2 pl-5 text-sm text-slate-300">
+          <div className="rounded-brand-lg border border-white/10 bg-brand-surface p-5">
+            <h3 className="font-semibold text-brand-text">What happens next?</h3>
+            <ul className="mt-4 list-disc space-y-2 pl-5 text-sm text-brand-muted">
               <li>Admin user creation with assigned role</li>
               <li>System notification email sent (stubbed)</li>
               <li>Actions logged in Audit logs</li>
@@ -342,19 +342,19 @@ export function CreateSubAdminPage() {
 
       {confirmOpen ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-          <div className="w-full max-w-md rounded-xl border border-white/10 bg-[#141414] p-6">
-            <h3 className="text-lg font-semibold text-white">New User</h3>
-            <p className="mt-3 text-sm text-slate-300">
+          <div className="w-full max-w-md rounded-brand-lg border border-white/10 bg-brand-surface p-6 shadow-2xl">
+            <h3 className="text-lg font-semibold text-brand-text">New User</h3>
+            <p className="mt-3 text-sm text-brand-muted">
               Are you sure you want to assign{' '}
               {selectedRoles.map((r) => r.name).join(', ') || 'roles'} to {form.firstName}{' '}
               {form.lastName}? They will immediately get access to the system.
             </p>
-            <label className="mt-4 block text-sm text-slate-300">Admin notes</label>
+            <label className="mt-4 block text-sm font-medium text-brand-text">Admin notes</label>
             <textarea
               value={adminNote}
               onChange={(e) => setAdminNote(e.target.value)}
               rows={3}
-              className="mt-2 w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-white outline-none"
+              className="mt-2 w-full resize-none rounded-brand-md border border-white/10 bg-brand-bg px-4 py-3 text-sm text-brand-text placeholder:text-brand-muted outline-none focus:ring-2 focus:ring-brand-accent/40"
             />
             <div className="mt-5 flex justify-end gap-2">
               <Button variant="secondary" onClick={() => setConfirmOpen(false)}>

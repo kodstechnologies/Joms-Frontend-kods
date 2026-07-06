@@ -1,143 +1,218 @@
-import { ArrowLeft } from 'lucide-react'
-import { useMemo } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
+import { ArrowLeft, BarChart3, RotateCcw, XCircle } from 'lucide-react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { toast } from 'sonner'
 
-import { useSubAdmin, useSubAdminLogs } from '../hooks/use-rbac'
-import type { AuditLog } from '../types/rbac'
+import {
+  useReinviteSubAdmin,
+  useRevokeSubAdminInvite,
+  useSubAdminInvites,
+} from '../hooks/use-rbac'
+import type { SubAdminInvite } from '../types/rbac'
 import { DataTable } from '@/shared/components/table/data-table'
+import {
+  TableActionsDropdown,
+  TableActionsItem,
+} from '@/shared/components/table/table-actions-dropdown'
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
 
-const formatDateTime = (value?: string) => {
+const PAGE_SIZE = 10
+
+const formatTimestamp = (value?: string) => {
   if (!value) return '—'
-  return new Date(value).toLocaleString('en-IN', {
-    hour: '2-digit',
+  const date = new Date(value)
+  const time = date.toLocaleString('en-IN', {
+    hour: 'numeric',
     minute: '2-digit',
-    day: '2-digit',
-    month: 'short',
+    hour12: true,
+  })
+  const day = date.toLocaleString('en-IN', {
+    day: 'numeric',
+    month: 'numeric',
     year: 'numeric',
   })
+  return `${time} ${day}`
+}
+
+function InviteStatusBadge({ status }: { status: SubAdminInvite['status'] }) {
+  const isAccepted = status === 'accepted'
+  const isPending = status === 'pending'
+
+  return (
+    <span
+      className={cn(
+        'inline-flex rounded-full border px-2.5 py-0.5 text-[11px] font-semibold capitalize',
+        isAccepted && 'border-brand-success/25 bg-brand-success/10 text-brand-success',
+        isPending && 'border-brand-accent-muted bg-brand-accent/15 text-brand-accent',
+        !isAccepted && !isPending && 'border-brand-danger/25 bg-brand-danger/10 text-brand-danger',
+      )}
+    >
+      {isAccepted ? 'Accepted' : isPending ? 'Pending' : 'Revoked'}
+    </span>
+  )
 }
 
 export function SubAdminDetailPage() {
   const { id = '' } = useParams()
   const navigate = useNavigate()
 
-  const { data: subAdminData, isLoading } = useSubAdmin(id)
-  const { data: logsData, isLoading: logsLoading } = useSubAdminLogs(id, { page: 1, limit: 20 })
+  const [page, setPage] = useState(1)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
 
-  const subAdmin = subAdminData?.data
-  const logs = logsData?.data.logs ?? []
+  const { data, isLoading } = useSubAdminInvites(id, {
+    page,
+    limit: PAGE_SIZE,
+    search: searchQuery || undefined,
+  })
 
-  const columns = useMemo<ColumnDef<AuditLog>[]>(
+  const reinviteMutation = useReinviteSubAdmin()
+  const revokeMutation = useRevokeSubAdminInvite()
+
+  const subAdmin = data?.data.subAdmin
+  const invites = data?.data.invites ?? []
+  const meta = data?.meta
+
+  const handleReinvite = useCallback(
+    async (inviteId: string) => {
+      try {
+        await reinviteMutation.mutateAsync(inviteId)
+        toast.success('Invite resent successfully')
+      } catch {
+        toast.error('Failed to resend invite')
+      }
+      setActiveDropdownId(null)
+    },
+    [reinviteMutation],
+  )
+
+  const handleRevoke = useCallback(
+    async (inviteId: string) => {
+      try {
+        await revokeMutation.mutateAsync(inviteId)
+        toast.success('Invite revoked successfully')
+      } catch {
+        toast.error('Failed to revoke invite')
+      }
+      setActiveDropdownId(null)
+    },
+    [revokeMutation],
+  )
+
+  const columns = useMemo<ColumnDef<SubAdminInvite>[]>(
     () => [
-      { accessorKey: 'action', header: 'Action' },
+      { accessorKey: 'inviteId', header: 'Invite ID' },
       { accessorKey: 'username', header: 'Username' },
-      { accessorKey: 'module', header: 'Module' },
+      { accessorKey: 'roleId', header: 'Role ID' },
+      { accessorKey: 'roleName', header: 'RoleName' },
+      { accessorKey: 'email', header: 'Email ID' },
       {
-        accessorKey: 'createdAt',
-        header: 'Date & Time',
-        cell: ({ row }) => formatDateTime(row.original.createdAt),
+        accessorKey: 'sentAt',
+        header: 'Time stamp',
+        cell: ({ row }) => formatTimestamp(row.original.sentAt || row.original.timestamp),
       },
       {
         accessorKey: 'status',
         header: 'Status',
+        cell: ({ row }) => <InviteStatusBadge status={row.original.status} />,
+      },
+      {
+        id: 'actions',
+        header: 'Actions',
+        enableSorting: false,
+        meta: { headerClassName: 'pr-5 text-right', cellClassName: 'relative pr-5 text-right' },
         cell: ({ row }) => (
-          <span
-            className={cn(
-              'rounded-full border px-2.5 py-0.5 text-[11px] font-semibold capitalize',
-              row.original.status === 'success'
-                ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300'
-                : 'border-rose-500/30 bg-rose-500/10 text-rose-300',
-            )}
+          <TableActionsDropdown
+            label="Open invite actions"
+            isOpen={activeDropdownId === row.original.id}
+            onOpenChange={(open) => setActiveDropdownId(open ? row.original.id : null)}
           >
-            {row.original.status}
-          </span>
+            <TableActionsItem
+              icon={<RotateCcw className="size-3.5" />}
+              onClick={() => handleReinvite(row.original.id)}
+            >
+              Re-Invite
+            </TableActionsItem>
+            <TableActionsItem
+              icon={<XCircle className="size-3.5 text-brand-danger" />}
+              onClick={() => handleRevoke(row.original.id)}
+            >
+              <span className="text-brand-danger">Revoke Invite</span>
+            </TableActionsItem>
+          </TableActionsDropdown>
         ),
       },
-      { accessorKey: 'ipAddress', header: 'IP Address' },
-      { accessorKey: 'adminNote', header: 'Admin Note' },
     ],
-    [],
+    [activeDropdownId, handleReinvite, handleRevoke],
   )
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex items-center gap-3">
-        <button
-          type="button"
-          onClick={() => navigate('/settings/access')}
-          className="rounded-lg border border-white/10 p-2 text-slate-300 hover:text-white"
-        >
-          <ArrowLeft className="size-4" />
-        </button>
-        <div>
-          <h1 className="text-2xl font-bold text-white">{subAdmin?.fullname ?? 'Admin User'}</h1>
-          <p className="text-sm text-slate-400">Role Based Access / {subAdmin?.fullname ?? 'User'}</p>
-        </div>
-      </div>
-
-      <div className="rounded-xl border border-white/10 bg-[#141414] p-5">
-        <h2 className="text-lg font-semibold text-white">Admin Info</h2>
-        {isLoading ? (
-          <p className="mt-4 text-sm text-slate-400">Loading…</p>
-        ) : (
-          <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <div>
-              <p className="text-xs text-slate-400">Role</p>
-              <p className="text-white">{subAdmin?.roles.map((r) => r.name).join(', ') || '—'}</p>
-            </div>
-            <div>
-              <p className="text-xs text-slate-400">Status</p>
-              <span
-                className={cn(
-                  'inline-flex rounded-full border px-2.5 py-0.5 text-[11px] font-semibold capitalize',
-                  subAdmin?.status === 'active'
-                    ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300'
-                    : 'border-rose-500/30 bg-rose-500/10 text-rose-300',
-                )}
-              >
-                {subAdmin?.status}
-              </span>
-            </div>
-            <div>
-              <p className="text-xs text-slate-400">Created At</p>
-              <p className="text-white">{formatDateTime(subAdmin?.createdAt)}</p>
-            </div>
-            <div>
-              <p className="text-xs text-slate-400">Last Action</p>
-              <p className="text-white">{formatDateTime(subAdmin?.lastActionAt)}</p>
-            </div>
+    <div className="flex flex-col gap-4 md:gap-6">
+      <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
+        <div className="flex flex-col gap-2">
+          <button
+            type="button"
+            onClick={() => navigate('/settings/access')}
+            className="group flex w-fit items-center gap-2 font-heading text-[20px] font-bold tracking-tight text-white transition-colors hover:text-[#FBC078]"
+          >
+            <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
+            <span>User Details</span>
+          </button>
+          <div className="flex items-center gap-1.5 pl-7 text-[12px] font-medium text-[#777777]">
+            <button
+              type="button"
+              onClick={() => navigate('/settings/access')}
+              className="transition-colors hover:text-white"
+            >
+              Role Based Access
+            </button>
+            <span className="text-[#333333]">/</span>
+            <span>User</span>
+            <span className="text-[#333333]">/</span>
+            <span className="font-bold text-white">Invites</span>
           </div>
-        )}
+        </div>
+
+        <Button variant="secondary" onClick={() => toast.info('Metrics configuration coming soon')}>
+          <BarChart3 className="size-4" />
+          Manage Metrics
+        </Button>
       </div>
 
       <div>
-        <h2 className="mb-3 text-lg font-semibold text-white">Action Logs</h2>
-        <DataTable
-          columns={columns}
-          data={logs}
-          getRowId={(row) => row._id}
-          isLoading={logsLoading}
-          searchValue=""
-          onSearchChange={() => {}}
-          searchPlaceholder=""
-          pagination={{
-            page: 1,
-            pageSize: 20,
-            totalItems: logs.length,
-            totalPages: 1,
-            onPageChange: () => {},
-          }}
-          resourceLabel="logs"
-          emptyMessage="No logs found for this user."
-        />
+        <h2 className="text-lg font-semibold text-brand-text">Invite Overview</h2>
+        {subAdmin ? (
+          <p className="mt-1 text-sm text-brand-muted">
+            Invite history for <span className="font-medium text-brand-text">{subAdmin.fullname}</span>
+          </p>
+        ) : null}
       </div>
 
-      <Button variant="secondary" onClick={() => navigate('/settings/access')}>
-        Back to Role Based Access
-      </Button>
+      <DataTable
+        columns={columns}
+        data={invites}
+        getRowId={(row) => row.id}
+        isLoading={isLoading}
+        searchValue={searchQuery}
+        onSearchChange={(value) => {
+          setSearchQuery(value)
+          setPage(1)
+        }}
+        searchPlaceholder="Search by name, ID or profession"
+        onAdvancedFilter={() => toast.info('Advanced filters coming soon')}
+        onExport={() => toast.info('Export coming soon')}
+        pagination={{
+          page,
+          pageSize: PAGE_SIZE,
+          totalItems: meta?.total ?? 0,
+          totalPages: meta?.totalPages ?? 1,
+          onPageChange: setPage,
+        }}
+        resourceLabel="requests"
+        emptyMessage="No invites found for this user."
+      />
     </div>
   )
 }

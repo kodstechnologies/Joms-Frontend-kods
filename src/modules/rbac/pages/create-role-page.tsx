@@ -70,25 +70,27 @@ export function CreateRolePage() {
         <button
           type="button"
           onClick={() => navigate('/settings/access')}
-          className="rounded-lg border border-white/10 p-2 text-slate-300 hover:text-white"
+          className="rounded-brand-md border border-white/10 p-2 text-brand-muted transition-colors hover:bg-white/5 hover:text-brand-text"
         >
           <ArrowLeft className="size-4" />
         </button>
         <div>
-          <h1 className="text-2xl font-bold text-white">
+          <h1 className="text-2xl font-bold text-brand-text">
             {isEdit ? 'Edit Role' : 'Create New Role'}
           </h1>
-          <p className="text-sm text-slate-400">Role based Access / {isEdit ? 'Edit Role' : 'Create New Role'}</p>
+          <p className="text-sm text-brand-muted">
+            Role Based Access / {isEdit ? 'Edit Role' : 'Create New Role'}
+          </p>
         </div>
       </div>
 
-      <div className="rounded-xl border border-white/10 bg-[#141414] p-5 md:p-6">
-        <h2 className="text-lg font-semibold text-white">Role Details</h2>
-        <p className="mt-1 text-sm text-slate-400">Provide basic information about this role.</p>
+      <div className="rounded-brand-lg border border-white/10 bg-brand-surface p-5 md:p-6">
+        <h2 className="text-lg font-semibold text-brand-text">Role Details</h2>
+        <p className="mt-1 text-sm text-brand-muted">Provide basic information about this role.</p>
 
         <div className="mt-5 grid gap-4 md:grid-cols-2">
           <div className="space-y-2">
-            <label className="text-sm text-slate-300">Role Name *</label>
+            <label className="text-sm font-medium text-brand-text">Role Name *</label>
             <Input
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -97,21 +99,21 @@ export function CreateRolePage() {
             />
           </div>
           <div className="space-y-2 md:col-span-2">
-            <label className="text-sm text-slate-300">Description *</label>
+            <label className="text-sm font-medium text-brand-text">Description *</label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Describe what this role is responsible for"
               rows={3}
-              className="w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-white outline-none focus:border-amber-400/50"
+              className="w-full resize-none rounded-brand-md border border-white/10 bg-brand-bg px-4 py-3 text-sm text-brand-text placeholder:text-brand-muted outline-none focus:ring-2 focus:ring-brand-accent/40"
             />
           </div>
         </div>
       </div>
 
-      <div className="rounded-xl border border-white/10 bg-[#141414] p-5 md:p-6">
-        <h2 className="text-lg font-semibold text-white">Assign Permissions</h2>
-        <p className="mt-1 text-sm text-slate-400">
+      <div className="rounded-brand-lg border border-white/10 bg-brand-surface p-5 md:p-6">
+        <h2 className="text-lg font-semibold text-brand-text">Assign Permissions</h2>
+        <p className="mt-1 text-sm text-brand-muted">
           Enable permissions for Venues and Services modules only.
         </p>
 
@@ -123,7 +125,7 @@ export function CreateRolePage() {
               onChange={setPermissions}
             />
           ) : (
-            <p className="text-sm text-slate-400">Loading permission catalog…</p>
+            <p className="text-sm text-brand-muted">Loading permission catalog…</p>
           )}
         </div>
       </div>

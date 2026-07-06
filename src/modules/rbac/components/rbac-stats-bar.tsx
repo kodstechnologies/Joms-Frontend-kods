@@ -20,10 +20,15 @@ export function RbacStatsBar({ stats, isLoading }: RbacStatsBarProps) {
       {cards.map((card) => (
         <div
           key={card.key}
-          className="rounded-xl border border-white/10 bg-[#141414] px-4 py-4"
+          className="rounded-brand-lg border border-white/10 bg-brand-surface px-4 py-4"
         >
-          <p className="text-sm text-slate-400">{card.label}</p>
-          <p className={cn('mt-2 text-2xl font-semibold text-white', isLoading && 'animate-pulse')}>
+          <p className="text-xs font-medium text-brand-muted md:text-sm">{card.label}</p>
+          <p
+            className={cn(
+              'mt-2 text-2xl font-semibold tracking-tight text-brand-text',
+              isLoading && 'animate-pulse',
+            )}
+          >
             {isLoading ? '—' : String(stats?.[card.key] ?? 0).padStart(2, '0')}
           </p>
         </div>

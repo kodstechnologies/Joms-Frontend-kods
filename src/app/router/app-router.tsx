@@ -242,6 +242,11 @@ const SubAdminDetailPage = lazy(() =>
     default: m.SubAdminDetailPage,
   })),
 )
+const AdminLogsPage = lazy(() =>
+  import('@/modules/rbac').then((m) => ({
+    default: m.AdminLogsPage,
+  })),
+)
 const SpaceDetailsPage = lazy(() =>
   import('@/modules/expert').then((m) => ({
     default: m.SpaceDetailsPage,
@@ -428,7 +433,9 @@ export function AppRouter() {
                 <Route path="/settings/access/roles/create" element={<CreateRolePage />} />
                 <Route path="/settings/access/roles/:id/edit" element={<CreateRolePage />} />
                 <Route path="/settings/access/users/create" element={<CreateSubAdminPage />} />
+                <Route path="/settings/access/users/:id/logs" element={<AdminLogsPage />} />
                 <Route path="/settings/access/users/:id" element={<SubAdminDetailPage />} />
+                <Route path="/settings/access/roles/:id/logs" element={<AdminLogsPage />} />
               </Route>
 
               <Route element={<PermissionRoute module="services" />}>

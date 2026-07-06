@@ -42,10 +42,10 @@ export function PermissionAccordions({ catalog, selected, onChange }: Permission
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-4 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-300">
+      <div className="flex flex-wrap items-center gap-4 rounded-brand-lg border border-white/10 bg-white/5 px-4 py-3 text-sm text-brand-muted">
         <span>{enabledScopes} Scopes Enabled</span>
         <span>{selected.length} Permissions Enabled</span>
-        <span className="text-amber-400">{highRiskCount} High-Risk Permissions</span>
+        <span className="text-brand-accent">{highRiskCount} High-Risk Permissions</span>
       </div>
 
       {modules.map(([moduleKey, module]) => {
@@ -56,12 +56,12 @@ export function PermissionAccordions({ catalog, selected, onChange }: Permission
         return (
           <div
             key={moduleKey}
-            className="overflow-hidden rounded-xl border border-white/10 bg-[#141414]"
+            className="overflow-hidden rounded-brand-lg border border-white/10 bg-brand-surface"
           >
             <div className="flex items-center justify-between gap-4 border-b border-white/10 px-5 py-4">
               <div>
-                <h3 className="text-base font-semibold text-white">{module.label}</h3>
-                <p className="text-sm text-slate-400">
+                <h3 className="text-base font-semibold text-brand-text">{module.label}</h3>
+                <p className="text-sm text-brand-muted">
                   {enabledCount}/{moduleKeys.length} Enabled
                 </p>
               </div>
@@ -70,7 +70,7 @@ export function PermissionAccordions({ catalog, selected, onChange }: Permission
                 onClick={() => toggleModule(moduleKey, !allEnabled)}
                 className={cn(
                   'relative h-7 w-12 rounded-full transition-colors',
-                  allEnabled ? 'bg-amber-400' : 'bg-slate-600',
+                  allEnabled ? 'bg-brand-accent' : 'bg-white/20',
                 )}
               >
                 <span
@@ -91,9 +91,9 @@ export function PermissionAccordions({ catalog, selected, onChange }: Permission
                     className="flex items-center justify-between gap-4 px-5 py-3"
                   >
                     <div className="flex items-center gap-2">
-                      <span className="text-sm text-slate-200">{permission.label}</span>
+                      <span className="text-sm text-brand-text">{permission.label}</span>
                       {permission.risk === 'high' ? (
-                        <span className="rounded bg-red-500/20 px-2 py-0.5 text-xs text-red-300">
+                        <span className="rounded bg-brand-danger/20 px-2 py-0.5 text-xs text-brand-danger">
                           High Risk
                         </span>
                       ) : null}
@@ -103,7 +103,7 @@ export function PermissionAccordions({ catalog, selected, onChange }: Permission
                       onClick={() => togglePermission(permission.key)}
                       className={cn(
                         'relative h-6 w-10 rounded-full transition-colors',
-                        isOn ? 'bg-amber-400' : 'bg-slate-600',
+                        isOn ? 'bg-brand-accent' : 'bg-white/20',
                       )}
                     >
                       <span
