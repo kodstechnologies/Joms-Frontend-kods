@@ -1,5 +1,5 @@
 import { EscalationDetails } from "../../components";
 
-export function EscalationListPage() {
+export function EscalationPage() {
   return <EscalationDetails />;
 }

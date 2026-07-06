@@ -106,8 +106,7 @@ const PausedCategoryTable = () => {
         </tbody>
       </table>
 
-      {/* Pagination Placeholder */}
-
+    
       <div className="mt-6 flex items-center justify-between">
         <button className="rounded border border-[#444] px-4 py-2 text-white">
           Previous

@@ -7,7 +7,7 @@ import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
 
 declare module '@tanstack/react-table' {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  
   interface ColumnMeta<TData extends RowData, TValue> {
     headerClassName?: string
     cellClassName?: string
@@ -79,7 +79,7 @@ export function DataTable<TData>({
   contentClassName,
   tone = 'default',
 }: DataTableProps<TData>) {
-  // eslint-disable-next-line react-hooks/incompatible-library
+
   const table = useReactTable({
     data,
     columns,

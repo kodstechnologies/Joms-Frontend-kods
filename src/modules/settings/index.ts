@@ -6,3 +6,6 @@ export {
   EscalationsSettingsPage,
   ApiKeyManagementPage,
 } from './pages/static-soon-page'
+
+export * from "./components";
+export * from "./pages";

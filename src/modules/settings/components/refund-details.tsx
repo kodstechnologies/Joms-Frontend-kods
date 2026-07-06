@@ -13,7 +13,7 @@ export function RefundDetails() {
 
     return (
         <div className="mx-20 flex flex-col gap-5 pb-8">
-           
+
             <div>
                 <div className="-ml-10 mb-4 flex items-center gap-3">
                     <button
@@ -49,10 +49,10 @@ export function RefundDetails() {
                 </div>
 
 
-                <div className="mt-6 grid grid-cols-1 items-stretch gap-5 lg:grid-cols-2">
-                    
+                <div className="mt-6 grid grid-cols-1 items-start gap-5 lg:grid-cols-2">
 
-                    <div className="flex flex-col rounded-xl bg-black p-5">
+
+                    <div className="self-start rounded-xl bg-black p-5">
                         <h3 className="mb-6 text-sm font-semibold text-white">
                             Refund Information
                         </h3>
@@ -108,15 +108,15 @@ export function RefundDetails() {
                                         John Doe
                                     </span>
 
-                                    <span className="rounded-full bg-[#F6C978] px-2 py-1 text-[10px] font-semibold text-black">
-                                        Admin
-                                    </span>
+                                    <span className="inline-flex items-center rounded-full bg-[#F6C978] px-2.5 py-0.5 text-[10px] font-semibold leading-4 text-black">
+                                Admin
+                            </span>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                   
+
 
                     <div className="flex flex-col rounded-xl bg-black p-5">
                         <h3 className="mb-6 text-sm font-semibold text-white">
@@ -169,9 +169,9 @@ export function RefundDetails() {
 
 
                 <div className="mt-5 grid grid-cols-1 gap-5 lg:grid-cols-2">
-                    
 
-                    <div className="rounded-xl bg-black p-5">
+
+                    <div className="mt-6 rounded-xl bg-black p-5">
                         <h3 className="mb-4 flex items-center gap-2 text-sm font-semibold text-white">
                             <History className="h-4 w-4" />
                             Reason
@@ -184,9 +184,7 @@ export function RefundDetails() {
                         </div>
                     </div>
 
-                   
-
-                    <div className="rounded-xl bg-black p-5">
+                    <div className="rounded-xl bg-black p-5 -mt-16 h-40">
                         <h3 className="mb-4 flex items-center gap-2 text-sm font-semibold text-white">
                             <History className="h-4 w-4" />
                             Admin Notes
@@ -202,12 +200,10 @@ export function RefundDetails() {
                 </div>
             </div>
 
-           
-
             <div className="rounded-xl border border-[#242424] bg-[#171717] px-5 py-4">
                 <div className="flex items-center justify-between">
                     <button
-                        onClick={() => navigate(-1)}
+                        onClick={() => navigate("")}
                         className="rounded-lg border border-[#444] px-5 py-2 text-sm text-white transition hover:border-[#F0C27B]"
                     >
                         Close

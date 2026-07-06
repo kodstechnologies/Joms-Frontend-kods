@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
-import { Eye } from "lucide-react";
+import {  User } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 import {
@@ -23,15 +23,15 @@ function EscalationActions({ escalation }: EscalationActionsProps) {
 
     switch (escalation.escalationType) {
       case "Refund Delay":
-        navigate("/my-task/refund-details");
+        navigate("/settings/refund-details");
         break;
 
       case "Membership Upgrade":
-        navigate("/my-task/membership-upgrade-details");
+        navigate("/settings/membership-upgrade-details");
         break;
 
       default:
-        navigate("/my-task/escalations");
+        navigate("/settings/escalations");
     }
   };
 
@@ -43,7 +43,7 @@ function EscalationActions({ escalation }: EscalationActionsProps) {
         onOpenChange={setOpen}
       >
         <TableActionsItem
-          icon={<Eye className="size-4" />}
+          icon={<User className="h-4 w-4 text-slate-700" />}
           onClick={handleView}
         >
           View Details

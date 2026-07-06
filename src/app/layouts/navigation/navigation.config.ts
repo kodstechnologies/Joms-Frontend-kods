@@ -46,18 +46,7 @@ export const navigationConfig: NavItem[] = [
   key: "my-task",
   label: "My Task",
   icon: ClipboardList,
-  children: [
-    {
-      key: "my-task.tasks",
-      label: "Tasks",
-      to: "/my-task/tasks",
-    },
-    {
-      key: "my-task.escalations",
-      label: "Escalations",
-      to: "/my-task/escalations",
-    },
-  ],
+ 
 },
   {
     key: 'expert-application',

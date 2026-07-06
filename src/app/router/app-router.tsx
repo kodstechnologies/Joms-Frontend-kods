@@ -494,20 +494,26 @@ const ViewCommunicationPage = lazy(() =>
   }))
 );
 
-const EscalationListPage = lazy(() =>
-  import("@/modules/my-task").then((m) => ({
-    default: m.EscalationListPage,
+const EscalationPage = lazy(() =>
+  import("@/modules/settings").then((m) => ({
+    default: m.EscalationPage,
+  })),
+);
+
+const ViewEscalationPage = lazy(() =>
+  import("@/modules/settings").then((m) => ({
+    default: m.ViewEscalationPage,
   })),
 );
 
 const RefundDetailsPage = lazy(() =>
-  import("@/modules/my-task").then((m) => ({
+  import("@/modules/settings").then((m) => ({
     default: m.RefundDetailsPage,
   })),
 );
 
 const MembershipUpgradeDetailsPage = lazy(() =>
-  import("@/modules/my-task").then((m) => ({
+  import("@/modules/settings").then((m) => ({
     default: m.MembershipUpgradeDetailsPage,
   })),
 );
@@ -578,7 +584,7 @@ export function AppRouter() {
                 <Route path="/settings/main" element={<MainSettingsPage />} />
                 <Route path="/settings/categories" element={<CategoryHubPage />} />
                 <Route path="/settings/system" element={<SystemConfigurationPage />} />
-                <Route path="/settings/escalations" element={<EscalationsSettingsPage />} />
+                
                 <Route path="/settings/api-keys" element={<ApiKeyManagementPage />} />
                 <Route path="/settings/access" element={<RbacHubPage />} />
                 <Route path="/settings/access/roles/create" element={<CreateRolePage />} />
@@ -670,22 +676,17 @@ export function AppRouter() {
                 />
 
                 <Route
-                  path="/my-task/escalations"
-                  element={<EscalationListPage />}
+                  path="/settings/escalations"
+                  element={<EscalationPage />}
                 />
 
                 <Route
-                  path="/my-task/escalations"
-                  element={<EscalationListPage />}
-                />
-
-                <Route
-                  path="/my-task/refund-details"
+                  path="/settings/refund-details"
                   element={<RefundDetailsPage />}
                 />
 
                 <Route
-                  path="/my-task/membership-upgrade-details"
+                  path="/settings/membership-upgrade-details"
                   element={<MembershipUpgradeDetailsPage />}
                 />
                 <Route path="/venues/management/pending" element={<VenuePendingApprovalsPage />} />
