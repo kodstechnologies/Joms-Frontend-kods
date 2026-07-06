@@ -162,11 +162,40 @@ export const navigationConfig: NavItem[] = [
     superAdminOnly: true,
     children: [
       {
+        key: 'settings.health',
+        label: 'Platform Health Dashboard',
+        to: '/settings/health',
+      },
+      {
+        key: 'settings.main',
+        label: 'Main Settings',
+        to: '/settings/main',
+      },
+      {
         key: 'settings.access',
-        label: 'Role Based Access',
+        label: 'Role Based Access Control',
         to: '/settings/access',
       },
-      { key: 'settings.general', label: 'General', badge: { label: 'Soon', variant: 'warning' } },
+      {
+        key: 'settings.categories',
+        label: 'Category Management',
+        to: '/settings/categories',
+      },
+      {
+        key: 'settings.system',
+        label: 'System Configuration',
+        to: '/settings/system',
+      },
+      {
+        key: 'settings.escalations',
+        label: 'Escalations',
+        to: '/settings/escalations',
+      },
+      {
+        key: 'settings.api-keys',
+        label: 'API Key Management',
+        to: '/settings/api-keys',
+      },
     ],
   },
 ]

@@ -167,6 +167,36 @@ const SupportDashboardPage = lazy(() =>
     default: m.SupportDashboardPage,
   })),
 )
+const MainSettingsPage = lazy(() =>
+  import('@/modules/settings').then((m) => ({
+    default: m.MainSettingsPage,
+  })),
+)
+const PlatformHealthPage = lazy(() =>
+  import('@/modules/settings').then((m) => ({
+    default: m.PlatformHealthPage,
+  })),
+)
+const CategoryHubPage = lazy(() =>
+  import('@/modules/settings').then((m) => ({
+    default: m.CategoryHubPage,
+  })),
+)
+const SystemConfigurationPage = lazy(() =>
+  import('@/modules/settings').then((m) => ({
+    default: m.SystemConfigurationPage,
+  })),
+)
+const EscalationsSettingsPage = lazy(() =>
+  import('@/modules/settings').then((m) => ({
+    default: m.EscalationsSettingsPage,
+  })),
+)
+const ApiKeyManagementPage = lazy(() =>
+  import('@/modules/settings').then((m) => ({
+    default: m.ApiKeyManagementPage,
+  })),
+)
 const TicketManagementPage = lazy(() =>
   import('@/modules/support-management').then((m) => ({
     default: m.TicketManagementPage,
@@ -424,6 +454,12 @@ export function AppRouter() {
                 <Route path="/memberships/plans/deleted" element={<MembershipDeletedPlansPage />} />
                 <Route path="/memberships/experts" element={<ExpertMembershipsPage />} />
                 <Route path="/memberships/experts/:id" element={<MembershipDetailsPage />} />
+                <Route path="/settings/health" element={<PlatformHealthPage />} />
+                <Route path="/settings/main" element={<MainSettingsPage />} />
+                <Route path="/settings/categories" element={<CategoryHubPage />} />
+                <Route path="/settings/system" element={<SystemConfigurationPage />} />
+                <Route path="/settings/escalations" element={<EscalationsSettingsPage />} />
+                <Route path="/settings/api-keys" element={<ApiKeyManagementPage />} />
                 <Route path="/settings/access" element={<RbacHubPage />} />
                 <Route path="/settings/access/roles/create" element={<CreateRolePage />} />
                 <Route path="/settings/access/roles/:id/edit" element={<CreateRolePage />} />

@@ -38,3 +38,5 @@ export const venueApiClient = createApiClient(env.venueApiBaseUrl)
 export const kycApiClient = createApiClient(env.kycApiBaseUrl)
 
 export const membershipApiClient = createApiClient(env.membershipApiBaseUrl)
+
+export const settingsApiClient = createApiClient(env.settingsApiBaseUrl)
