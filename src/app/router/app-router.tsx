@@ -362,6 +362,24 @@ const ViewCommunicationPage = lazy(() =>
   }))
 );
 
+const EscalationListPage = lazy(() =>
+  import("@/modules/my-task").then((m) => ({
+    default: m.EscalationListPage,
+  })),
+);
+
+const RefundDetailsPage = lazy(() =>
+  import("@/modules/my-task").then((m) => ({
+    default: m.RefundDetailsPage,
+  })),
+);
+
+const MembershipUpgradeDetailsPage = lazy(() =>
+  import("@/modules/my-task").then((m) => ({
+    default: m.MembershipUpgradeDetailsPage,
+  })),
+);
+
 const PageLoader = () => (
   <div className="flex h-dvh w-full items-center justify-center bg-brand-bg">
     <div className="flex flex-col items-center gap-4">
@@ -492,9 +510,29 @@ export function AppRouter() {
 
 
                 <Route
-  path="/communication/view"
-  element={<ViewCommunicationPage />}
-/>
+                  path="/communication/view"
+                  element={<ViewCommunicationPage />}
+                />
+
+                <Route
+                  path="/my-task/escalations"
+                  element={<EscalationListPage />}
+                />
+
+                <Route
+                  path="/my-task/escalations"
+                  element={<EscalationListPage />}
+                />
+
+                <Route
+                  path="/my-task/refund-details"
+                  element={<RefundDetailsPage />}
+                />
+
+                <Route
+                  path="/my-task/membership-upgrade-details"
+                  element={<MembershipUpgradeDetailsPage />}
+                />
                 <Route path="/venues/management/pending" element={<VenuePendingApprovalsPage />} />
                 <Route path="/venues/management/suspended" element={<VenueSuspendedPage />} />
                 <Route path="/venues/management/deleted" element={<VenueDeletedPage />} />

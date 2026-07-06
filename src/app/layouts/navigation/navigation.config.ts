@@ -8,6 +8,7 @@ import {
   MessageCircle,
   Settings,
   Shield,
+  ClipboardList,
 } from 'lucide-react'
 
 export type NavBadge =
@@ -41,6 +42,23 @@ export const navigationConfig: NavItem[] = [
       { key: 'executive.metrics', label: 'Manage Metrics', badge: { label: 'Soon', variant: 'warning' } },
     ],
   },
+  {
+  key: "my-task",
+  label: "My Task",
+  icon: ClipboardList,
+  children: [
+    {
+      key: "my-task.tasks",
+      label: "Tasks",
+      to: "/my-task/tasks",
+    },
+    {
+      key: "my-task.escalations",
+      label: "Escalations",
+      to: "/my-task/escalations",
+    },
+  ],
+},
   {
     key: 'expert-application',
     label: 'Expert Application',
