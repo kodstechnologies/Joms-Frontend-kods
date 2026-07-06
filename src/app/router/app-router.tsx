@@ -421,6 +421,54 @@ const AssignRefundAuthorityPage = lazy(() =>
   })),
 );
 
+const FinanceEventsPage = lazy(() =>
+  import('@/modules/payments').then((m) => ({
+    default: m.FinanceEventsPage,
+  })),
+);
+
+const MembershipManagementPage = lazy(() =>
+  import('@/modules/payments').then((m) => ({
+    default: m.MembershipManagementPage,
+  })),
+);
+
+const MembershipDetailViewPage = lazy(() =>
+  import('@/modules/payments').then((m) => ({
+    default: m.MembershipDetailViewPage,
+  })),
+);
+
+const PayoutManagementPage = lazy(() =>
+  import('@/modules/payments').then((m) => ({
+    default: m.PayoutManagementPage,
+  })),
+);
+
+const PayoutDetailViewPage = lazy(() =>
+  import('@/modules/payments').then((m) => ({
+    default: m.PayoutDetailViewPage,
+  })),
+);
+
+const InvoicesBillingPage = lazy(() =>
+  import('@/modules/payments').then((m) => ({
+    default: m.InvoicesBillingPage,
+  })),
+);
+
+const InvoiceDetailViewPage = lazy(() =>
+  import('@/modules/payments').then((m) => ({
+    default: m.InvoiceDetailViewPage,
+  })),
+);
+
+const FinanceCategoryPage = lazy(() =>
+  import('@/modules/payments').then((m) => ({
+    default: m.FinanceCategoryPage,
+  })),
+);
+
 const SubCategoryViewPage = lazy(() =>
   import("@/modules/expert").then((m) => ({
     default: m.SubCategoryViewPage,
@@ -570,14 +618,22 @@ export function AppRouter() {
                 <Route path="/finance/dashboard" element={<FinanceDashboardPage />} />
                 <Route path="/finance/revenue" element={<RevenueOverviewPage />} />
                 <Route path="/finance/revenue/:id" element={<PaymentDetailViewPage />} />
+                <Route path="/finance/events" element={<FinanceEventsPage />} />
                 <Route path="/finance/services" element={<FinanceServicesPage />} />
                 <Route path="/finance/services/:id" element={<ServicePaymentDetailViewPage />} />
                 <Route path="/finance/venues" element={<FinanceVenuesPage />} />
                 <Route path="/finance/venues/:id" element={<VenuePaymentDetailViewPage />} />
+                <Route path="/finance/memberships" element={<MembershipManagementPage />} />
+                <Route path="/finance/memberships/:id" element={<MembershipDetailViewPage />} />
+                <Route path="/finance/payouts" element={<PayoutManagementPage />} />
+                <Route path="/finance/payouts/:id" element={<PayoutDetailViewPage />} />
                 <Route path="/finance/tax" element={<FinanceTaxCompliancePage />} />
                 <Route path="/finance/tax/:id" element={<TaxComplianceDetailViewPage />} />
+                <Route path="/finance/invoices" element={<InvoicesBillingPage />} />
+                <Route path="/finance/invoices/:id" element={<InvoiceDetailViewPage />} />
                 <Route path="/finance/reconciliation" element={<FinanceReconciliationPage />} />
                 <Route path="/finance/reconciliation/:id" element={<ReconciliationDetailViewPage />} />
+                <Route path="/finance/categories" element={<FinanceCategoryPage />} />
                 <Route path="/finance/escrow" element={<EscrowManagementPage />} />
                 <Route path="/finance/escrow/:id" element={<EscrowDetailViewPage />} />
                 <Route path="/finance/refunds" element={<FinanceRefundsPage />} />
