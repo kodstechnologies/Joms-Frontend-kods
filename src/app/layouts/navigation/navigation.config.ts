@@ -142,7 +142,20 @@ export const navigationConfig: NavItem[] = [
     label: 'Payment & Finance',
     icon: CreditCard,
     superAdminOnly: true,
-    children: [{ key: 'finance.dashboard', label: 'Dashboard', badge: { label: 'Soon', variant: 'warning' } }],
+    children: [
+      { key: 'finance.dashboard', label: 'Dashboard', to: '/finance/dashboard' },
+      { key: 'finance.revenue', label: 'Revenue Overview', to: '/finance/revenue' },
+      { key: 'finance.events', label: 'Events', to: '/finance/events' },
+      { key: 'finance.services', label: 'Services', to: '/finance/services' },
+      { key: 'finance.venues', label: 'Venues', to: '/finance/venues' },
+      { key: 'finance.memberships', label: 'Memberships', to: '/finance/memberships' },
+      { key: 'finance.payouts', label: 'Payout Management', to: '/finance/payouts' },
+      { key: 'finance.refunds', label: 'Refunds & Chargebacks', to: '/finance/refunds' },
+      { key: 'finance.tax', label: 'Tax & Compliance', to: '/finance/tax' },
+      { key: 'finance.invoices', label: 'Invoices & Billing', to: '/finance/invoices' },
+      { key: 'finance.reconciliation', label: 'Financial Reconciliation', to: '/finance/reconciliation' },
+      { key: 'finance.category', label: 'Category Management', to: '/finance/categories' },
+    ],
   },
   {
     key: 'support',
@@ -162,11 +175,40 @@ export const navigationConfig: NavItem[] = [
     superAdminOnly: true,
     children: [
       {
+        key: 'settings.health',
+        label: 'Platform Health Dashboard',
+        to: '/settings/health',
+      },
+      {
+        key: 'settings.main',
+        label: 'Main Settings',
+        to: '/settings/main',
+      },
+      {
         key: 'settings.access',
-        label: 'Role Based Access',
+        label: 'Role Based Access Control',
         to: '/settings/access',
       },
-      { key: 'settings.general', label: 'General', badge: { label: 'Soon', variant: 'warning' } },
+      {
+        key: 'settings.categories',
+        label: 'Category Management',
+        to: '/settings/categories',
+      },
+      {
+        key: 'settings.system',
+        label: 'System Configuration',
+        to: '/settings/system',
+      },
+      {
+        key: 'settings.escalations',
+        label: 'Escalations',
+        to: '/settings/escalations',
+      },
+      {
+        key: 'settings.api-keys',
+        label: 'API Key Management',
+        to: '/settings/api-keys',
+      },
     ],
   },
 ]

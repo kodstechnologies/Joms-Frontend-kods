@@ -1,28 +1,29 @@
 ================================================================================
-JOMS FRONTEND - PRODUCTION ENV (EC2: 3.108.162.112)
-Frontend Host: http://3.108.162.112
-Backend API Gateway: http://52.66.76.145 (nginx port 80, no service ports)
+JOMS FRONTEND - PRODUCTION ENV
+Frontend: https://kods.online
+Backend API Gateway: https://api.kods.online
 ================================================================================
 
 Use ONLY VITE_API_BASE_URL in production. Do NOT set VITE_AUTH_API_BASE_URL to
-http://52.66.76.145/auth — that double-prefixes paths like /auth/admin/login.
+https://api.kods.online/auth — that double-prefixes paths like /auth/admin/login.
 
 ~/Joms-Frontend/.env  (used during docker build — keep minimal)
 --------------------------------------------------------------------------------
-VITE_API_BASE_URL=http://52.66.76.145
+VITE_API_BASE_URL=https://api.kods.online
 
 ~/Joms-Frontend/.env.production
 --------------------------------------------------------------------------------
-VITE_API_BASE_URL=http://52.66.76.145
+VITE_API_BASE_URL=https://api.kods.online
 
-Resolved URLs (all via nginx on port 80)
+Resolved URLs (via nginx API gateway)
 --------------------------------------------------------------------------------
-Login:        http://52.66.76.145/auth/admin/login
-Admin APIs:   http://52.66.76.145/admin/...
-Services:     http://52.66.76.145/services/...
-Venues:       http://52.66.76.145/venues/...
-KYC:          http://52.66.76.145/venue-kyc
-Memberships:  http://52.66.76.145/memberships
+Login:        https://api.kods.online/auth/admin/login
+Admin APIs:   https://api.kods.online/admin/...
+Services:     https://api.kods.online/services/...
+Venues:       https://api.kods.online/venues/...
+KYC:          https://api.kods.online/venue-kyc
+Memberships:  https://api.kods.online/memberships
+Settings:     https://api.kods.online/settings
 
 Rebuild frontend on EC2 after changing .env:
   cd ~/Joms-Frontend

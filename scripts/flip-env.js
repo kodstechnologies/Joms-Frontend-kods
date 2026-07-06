@@ -7,7 +7,7 @@ const frontendRoot = join(__dirname, '..')
 const envPath = join(frontendRoot, '.env')
 const productionEnvPath = join(frontendRoot, '.env.production')
 
-const PROD_BASE = 'http://52.66.76.145'
+const PROD_BASE = 'https://api.kods.online'
 const LOCAL_BASE = 'http://localhost'
 
 function getActiveBaseUrl(content) {
