@@ -197,6 +197,21 @@ const ApiKeyManagementPage = lazy(() =>
     default: m.ApiKeyManagementPage,
   })),
 )
+const PolicyManagementPage = lazy(() =>
+  import('@/modules/settings').then((m) => ({
+    default: m.PolicyManagementPage,
+  })),
+)
+const PolicyTimelinePage = lazy(() =>
+  import('@/modules/settings').then((m) => ({
+    default: m.PolicyTimelinePage,
+  })),
+)
+const PolicyDetailPage = lazy(() =>
+  import('@/modules/settings').then((m) => ({
+    default: m.PolicyDetailPage,
+  })),
+)
 const TicketManagementPage = lazy(() =>
   import('@/modules/support-management').then((m) => ({
     default: m.TicketManagementPage,
@@ -611,6 +626,9 @@ export function AppRouter() {
                 <Route path="/memberships/experts/:id" element={<MembershipDetailsPage />} />
                 <Route path="/settings/health" element={<PlatformHealthPage />} />
                 <Route path="/settings/main" element={<MainSettingsPage />} />
+                <Route path="/settings/policies" element={<PolicyManagementPage />} />
+                <Route path="/settings/policies/:id/timeline" element={<PolicyTimelinePage />} />
+                <Route path="/settings/policies/:id" element={<PolicyDetailPage />} />
                 <Route path="/settings/categories" element={<CategoryHubPage />} />
                 <Route path="/settings/system" element={<SystemConfigurationPage />} />
                 <Route path="/settings/escalations" element={<EscalationsSettingsPage />} />

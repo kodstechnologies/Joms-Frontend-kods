@@ -5,6 +5,8 @@ type SettingsFooterActionsProps = {
   onSave: () => void
   isSaving?: boolean
   isResetting?: boolean
+  saveDisabled?: boolean
+  resetDisabled?: boolean
 }
 
 export function SettingsFooterActions({
@@ -12,13 +14,19 @@ export function SettingsFooterActions({
   onSave,
   isSaving = false,
   isResetting = false,
+  saveDisabled = false,
+  resetDisabled = false,
 }: SettingsFooterActionsProps) {
   return (
     <div className="flex items-center justify-between gap-3 border-t border-white/10 pt-6">
-      <Button variant="secondary" onClick={onReset} disabled={isResetting || isSaving}>
+      <Button
+        variant="secondary"
+        onClick={onReset}
+        disabled={resetDisabled || isResetting || isSaving}
+      >
         {isResetting ? 'Resetting...' : 'Reset'}
       </Button>
-      <Button onClick={onSave} disabled={isSaving || isResetting}>
+      <Button onClick={onSave} disabled={saveDisabled || isSaving || isResetting}>
         {isSaving ? 'Saving...' : 'Save Changes'}
       </Button>
     </div>
