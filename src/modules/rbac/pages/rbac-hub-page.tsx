@@ -141,7 +141,7 @@ export function RbacHubPage() {
         accessorKey: 'riskLevel',
         header: 'Risk level',
         cell: ({ row }) => (
-          <span className="capitalize text-amber-300">
+          <span className="capitalize text-brand-accent">
             {row.original.riskLevel.replace('_', ' ')}
           </span>
         ),
@@ -159,8 +159,8 @@ export function RbacHubPage() {
             className={cn(
               'rounded-full border px-2.5 py-0.5 text-[11px] font-semibold',
               row.original.status === 'active'
-                ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300'
-                : 'border-slate-500/30 bg-slate-500/10 text-slate-300',
+                ? 'border-brand-success/25 bg-brand-success/10 text-brand-success'
+                : 'border-brand-muted/25 bg-white/5 text-brand-muted',
             )}
           >
             {row.original.status === 'active' ? 'Active' : 'Disabled'}
@@ -189,10 +189,10 @@ export function RbacHubPage() {
               Edit permission
             </TableActionsItem>
             <TableActionsItem
-              icon={<Trash2 className="size-3.5 text-rose-300" />}
+              icon={<Trash2 className="size-3.5 text-brand-danger" />}
               onClick={() => handleDeleteRole(row.original.id)}
             >
-              <span className="text-rose-300">Remove Role</span>
+              <span className="text-brand-danger">Remove Role</span>
             </TableActionsItem>
             <TableActionsItem
               icon={<ShieldOff className="size-3.5" />}
@@ -208,7 +208,7 @@ export function RbacHubPage() {
             </TableActionsItem>
             <TableActionsItem
               icon={<Eye className="size-3.5" />}
-              onClick={() => toast.info('Role logs coming soon')}
+              onClick={() => navigate(`/settings/access/roles/${row.original.id}/logs`)}
             >
               View Logs
             </TableActionsItem>
@@ -256,8 +256,8 @@ export function RbacHubPage() {
             className={cn(
               'rounded-full border px-2.5 py-0.5 text-[11px] font-semibold',
               row.original.status === 'active'
-                ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300'
-                : 'border-rose-500/30 bg-rose-500/10 text-rose-300',
+                ? 'border-brand-success/25 bg-brand-success/10 text-brand-success'
+                : 'border-brand-danger/25 bg-brand-danger/10 text-brand-danger',
             )}
           >
             {row.original.status === 'active' ? 'Active' : row.original.status}
@@ -293,7 +293,7 @@ export function RbacHubPage() {
             </TableActionsItem>
             <TableActionsItem
               icon={<Eye className="size-3.5" />}
-              onClick={() => navigate(`/settings/access/users/${row.original.id}`)}
+              onClick={() => navigate(`/settings/access/users/${row.original.id}/logs`)}
             >
               View user logs
             </TableActionsItem>
@@ -304,16 +304,16 @@ export function RbacHubPage() {
               Password reset
             </TableActionsItem>
             <TableActionsItem
-              icon={<Trash2 className="size-3.5 text-rose-300" />}
+              icon={<Trash2 className="size-3.5 text-brand-danger" />}
               onClick={() => handleDeleteUser(row.original.id)}
             >
-              <span className="text-rose-300">Remove User</span>
+              <span className="text-brand-danger">Remove User</span>
             </TableActionsItem>
             <TableActionsItem
-              icon={<ShieldOff className="size-3.5 text-rose-300" />}
+              icon={<ShieldOff className="size-3.5 text-brand-danger" />}
               onClick={() => handleSuspendUser(row.original.id)}
             >
-              <span className="text-rose-300">Suspend user</span>
+              <span className="text-brand-danger">Suspend user</span>
             </TableActionsItem>
           </TableActionsDropdown>
         ),
@@ -330,8 +330,8 @@ export function RbacHubPage() {
     <div className="flex flex-col gap-4 md:gap-6">
       <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
         <div>
-          <h1 className="text-2xl font-bold text-white md:text-3xl">Role Based Access</h1>
-          <p className="mt-1 text-sm text-slate-400 md:text-base">
+          <h1 className="text-2xl font-bold text-brand-text md:text-3xl">Role Based Access</h1>
+          <p className="mt-1 text-sm text-brand-muted md:text-base">
             Comprehensive user data and admin controls.
           </p>
         </div>
@@ -353,30 +353,28 @@ export function RbacHubPage() {
 
       <RbacStatsBar stats={statsData?.data} isLoading={statsLoading} />
 
-      <div className="flex justify-center">
-        <div className="inline-flex rounded-full border border-white/10 bg-[#141414] p-1">
-          {(['roles', 'users'] as const).map((tab) => (
-            <button
-              key={tab}
-              type="button"
-              onClick={() => setActiveTab(tab)}
-              className={cn(
-                'rounded-full px-6 py-2 text-sm font-medium transition-colors',
-                activeTab === tab
-                  ? 'bg-amber-400 text-black'
-                  : 'text-slate-300 hover:text-white',
-              )}
-            >
-              {tab === 'roles' ? 'Admin Roles' : 'Users'}
-            </button>
-          ))}
-        </div>
+      <div className="flex w-full gap-1 rounded-xl border border-white/10 bg-[#111111] p-1">
+        {(['roles', 'users'] as const).map((tab) => (
+          <button
+            key={tab}
+            type="button"
+            onClick={() => setActiveTab(tab)}
+            className={cn(
+              'flex-1 rounded-lg px-4 py-2.5 text-sm font-medium transition-colors',
+              activeTab === tab
+                ? 'bg-[#1a1a1a] text-white shadow-sm'
+                : 'text-slate-400 hover:text-white',
+            )}
+          >
+            {tab === 'roles' ? 'Admin Roles' : 'Users'}
+          </button>
+        ))}
       </div>
 
       {!isRolesTab && (statsData?.data?.invitesSent ?? 0) >= 0 ? (
-        <div className="flex items-center justify-between rounded-xl border border-amber-400/20 bg-amber-400/10 px-4 py-3 text-sm text-amber-100">
+        <div className="flex items-center justify-between rounded-brand-lg border border-brand-accent-muted bg-brand-accent/10 px-4 py-3 text-sm text-brand-text">
           <span>Invites Sent — {String(statsData?.data?.invitesSent ?? 0).padStart(2, '0')}</span>
-          <Button variant="secondary" onClick={() => toast.info('Review invites coming soon')}>
+          <Button variant="secondary" onClick={() => navigate('/settings/access')}>
             Review
           </Button>
         </div>

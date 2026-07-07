@@ -1,7 +1,7 @@
 const trimTrailingSlash = (value: string) => value.replace(/\/+$/, '')
 
 const DEFAULT_API_BASE_URL = import.meta.env.PROD
-  ? 'http://52.66.76.145'
+  ? 'https://api.kods.online'
   : 'http://localhost'
 
 const apiBaseUrl = trimTrailingSlash(

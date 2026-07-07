@@ -13,6 +13,12 @@ import {
   fetchRoles,
   fetchSubAdmin,
   fetchSubAdminLogs,
+  fetchRoleLogs,
+  fetchAuditLog,
+  flagAuditLog,
+  fetchSubAdminInvites,
+  reinviteSubAdmin,
+  revokeSubAdminInvite,
   fetchSubAdmins,
   suspendSubAdmin,
   updateRole,
@@ -30,6 +36,9 @@ export const rbacKeys = {
   subAdmins: (params?: object) => ['rbac', 'sub-admins', params] as const,
   subAdmin: (id: string) => ['rbac', 'sub-admin', id] as const,
   logs: (id: string, params?: object) => ['rbac', 'logs', id, params] as const,
+  roleLogs: (id: string, params?: object) => ['rbac', 'role-logs', id, params] as const,
+  auditLog: (id: string) => ['rbac', 'audit-log', id] as const,
+  invites: (id: string, params?: object) => ['rbac', 'invites', id, params] as const,
 }
 
 export function useRbacMe() {
@@ -84,11 +93,76 @@ export function useSubAdmin(id: string) {
   })
 }
 
-export function useSubAdminLogs(id: string, params?: { page?: number; limit?: number }) {
+export function useSubAdminLogs(
+  id: string,
+  params?: { page?: number; limit?: number; search?: string },
+  options?: { enabled?: boolean },
+) {
   return useQuery({
     queryKey: rbacKeys.logs(id, params),
     queryFn: () => fetchSubAdminLogs(id, params),
+    enabled: options?.enabled ?? Boolean(id),
+  })
+}
+
+export function useRoleLogs(
+  id: string,
+  params?: { page?: number; limit?: number; search?: string },
+  options?: { enabled?: boolean },
+) {
+  return useQuery({
+    queryKey: rbacKeys.roleLogs(id, params),
+    queryFn: () => fetchRoleLogs(id, params),
+    enabled: options?.enabled ?? Boolean(id),
+  })
+}
+
+export function useAuditLog(logId: string) {
+  return useQuery({
+    queryKey: rbacKeys.auditLog(logId),
+    queryFn: () => fetchAuditLog(logId),
+    enabled: Boolean(logId),
+  })
+}
+
+export function useFlagAuditLog() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (logId: string) => flagAuditLog(logId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: rbacKeys.all })
+    },
+  })
+}
+
+export function useSubAdminInvites(
+  id: string,
+  params?: { page?: number; limit?: number; search?: string; status?: string },
+) {
+  return useQuery({
+    queryKey: rbacKeys.invites(id, params),
+    queryFn: () => fetchSubAdminInvites(id, params),
     enabled: Boolean(id),
+  })
+}
+
+export function useReinviteSubAdmin() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (inviteId: string) => reinviteSubAdmin(inviteId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: rbacKeys.all })
+    },
+  })
+}
+
+export function useRevokeSubAdminInvite() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (inviteId: string) => revokeSubAdminInvite(inviteId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: rbacKeys.all })
+    },
   })
 }
 
