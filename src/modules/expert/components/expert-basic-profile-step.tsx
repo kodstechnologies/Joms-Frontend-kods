@@ -218,14 +218,24 @@ export const ExpertBasicProfileStep = ({
               <label className="mb-2 block text-xs font-medium text-white">
                 Sample Work Link
               </label>
-              <input
-                value={formData.sampleWorkLink}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, sampleWorkLink: e.target.value }))
-                }
-                placeholder="Enter Link"
-                className={fieldClass}
-              />
+
+              <div className="flex gap-2">
+                <input
+                  value={formData.sampleWorkLink}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, sampleWorkLink: e.target.value }))
+                  }
+                  placeholder="Enter Link"
+                  className={cn(fieldClass, 'flex-1')}
+                />
+
+                <button
+                  type="button"
+                  className="h-11 rounded-md bg-[#FBC078] px-4 text-xs font-semibold text-black transition hover:bg-[#EEB46A]"
+                >
+                  Verify Link
+                </button>
+              </div>
             </div>
 
             <div>
@@ -454,36 +464,56 @@ export const ExpertBasicProfileStep = ({
                   <label className="mb-2 block text-xs font-medium text-white">
                     Phone Number *
                   </label>
-                  <input
-                    type="tel"
-                    inputMode="numeric"
-                    maxLength={10}
-                    value={formData.phoneNumber}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        phoneNumber: sanitizeMobileNumber(e.target.value),
-                      }))
-                    }
-                    placeholder="Enter 10-digit mobile number"
-                    className={fieldClass}
-                  />
+
+                  <div className="flex items-end gap-3">
+                    <input
+                      type="tel"
+                      inputMode="numeric"
+                      maxLength={10}
+                      value={formData.phoneNumber}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          phoneNumber: sanitizeMobileNumber(e.target.value),
+                        }))
+                      }
+                      placeholder="Enter phone number"
+                      className={`${fieldClass} flex-1`}
+                    />
+
+                    <button
+                      type="button"
+                      className="h-11 rounded-md bg-[#FBC078] px-5 text-xs font-semibold text-black transition-colors hover:bg-[#EEB46A]"
+                    >
+                      Verify
+                    </button>
+                  </div>
                 </div>
 
                 <div>
-                  <label className="mb-2 block text-xs font-medium text-white">
-                    Email ID *
-                  </label>
-                  <input
-                    value={formData.email}
-                    onChange={(e) =>
-                      setFormData((prev) => ({ ...prev, email: e.target.value }))
-                    }
-                    placeholder="Enter Email ID"
-                    type="email"
-                    className={fieldClass}
-                  />
-                </div>
+  <label className="mb-2 block text-xs font-medium text-white">
+    Email ID *
+  </label>
+
+  <div className="flex items-end gap-3">
+    <input
+      value={formData.email}
+      onChange={(e) =>
+        setFormData((prev) => ({ ...prev, email: e.target.value }))
+      }
+      placeholder="Enter Email ID"
+      type="email"
+      className={`${fieldClass} flex-1`}
+    />
+
+    <button
+      type="button"
+      className="h-11 rounded-md bg-[#FBC078] px-5 text-xs font-semibold text-black transition-colors hover:bg-[#EEB46A]"
+    >
+      Verify
+    </button>
+  </div>
+</div>
               </div>
             </div>
           </div>
