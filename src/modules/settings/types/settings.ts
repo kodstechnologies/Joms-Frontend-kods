@@ -1,4 +1,24 @@
-export type SettingsModule = 'expert' | 'venue' | 'service'
+export type SettingsModule = 'platform' | 'expert' | 'venue' | 'service'
+
+export type PlatformSettings = {
+  applicationSettings: {
+    applicationName: string
+  }
+  displayPreferences: {
+    timezone: string
+    dateTimeFormat: string
+    defaultCurrency: string
+    language: string
+  }
+  generalSettings: {
+    autoRefreshInterval: string
+    defaultExportFormat: string
+    maintenanceMode: boolean
+    customErrorMessage: string
+    supportEmail: string
+    supportPhone: string
+  }
+}
 
 export type FinancialSettings = {
   platformCommissionPercent: number
@@ -97,6 +117,7 @@ export type ServiceSettings = {
 }
 
 export type ModuleSettingsMap = {
+  platform: PlatformSettings
   expert: ExpertSettings
   venue: VenueSettings
   service: ServiceSettings

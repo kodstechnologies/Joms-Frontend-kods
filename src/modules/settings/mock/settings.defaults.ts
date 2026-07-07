@@ -1,9 +1,30 @@
 import type {
   ExpertSettings,
   LockedAccountRow,
+  PlatformSettings,
   ServiceSettings,
   VenueSettings,
 } from '../types/settings'
+
+export const platformDefaults: PlatformSettings = {
+  applicationSettings: {
+    applicationName: 'Web admin Panel',
+  },
+  displayPreferences: {
+    timezone: 'IST, +5:30, Kolkata, India',
+    dateTimeFormat: 'DD/MM/YY',
+    defaultCurrency: '$ USD',
+    language: 'English',
+  },
+  generalSettings: {
+    autoRefreshInterval: '30 Seconds',
+    defaultExportFormat: 'CSV',
+    maintenanceMode: false,
+    customErrorMessage: "System maintenance in progress. We'll be back shortly.",
+    supportEmail: 'support@joms.com',
+    supportPhone: '+91 1234567890',
+  },
+}
 
 export const expertDefaults: ExpertSettings = {
   accountCreation: {
