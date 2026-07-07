@@ -14,3 +14,4 @@ export * from "./deleted-categories-page";
 export * from "./create-subcategory-page";
 export * from "./category-view-page";
 export * from "./sub-category-view-page";
+export * from "./service-category-filter-page";

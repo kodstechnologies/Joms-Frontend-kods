@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 
 import { DataTable } from '@/shared/components/table/data-table'
 
@@ -19,6 +20,7 @@ const PAGE_SIZE = 10
 export function CategoryManagementPage() {
   const [searchValue, setSearchValue] = useState('')
   const [page, setPage] = useState(1)
+  const navigate = useNavigate()
 
   const scope = useCategoryManagementScope()
 
@@ -92,7 +94,7 @@ export function CategoryManagementPage() {
           setPage(1)
         }}
         searchPlaceholder="Search by name or ID"
-        onAdvancedFilter={() => {}}
+        onAdvancedFilter={() => navigate(categoryPath(scope, 'filter'))}
         onExport={() => {}}
         isLoading={isLoading}
         pagination={{

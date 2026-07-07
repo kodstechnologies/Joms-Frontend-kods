@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 
 import { DataTable } from '@/shared/components/table/data-table'
 
@@ -20,6 +21,7 @@ const PAGE_SIZE = 10
 export function VenueCategoryManagementPage() {
   const [searchValue, setSearchValue] = useState('')
   const [page, setPage] = useState(1)
+  const navigate = useNavigate()
 
   const { data, isLoading, isError } = useVenueCategoryManagementList({
     search: searchValue.trim() || undefined,
@@ -86,7 +88,7 @@ export function VenueCategoryManagementPage() {
           setPage(1)
         }}
         searchPlaceholder="Search by name or ID"
-        onAdvancedFilter={() => {}}
+        onAdvancedFilter={() => navigate('/venues/categories/management/filter')}
         onExport={() => {}}
         isLoading={isLoading}
         pagination={{

@@ -20,3 +20,4 @@ export { DeletedVenueCategoriesPage } from "./deleted-categories-page";
 export { PausedVenueCategoriesPage } from "./paused-categories-page";
 export { RenameVenueCategoryPage } from "./rename-category-page";
 export { VenueSubCategoryViewPage } from "./sub-category-view-page";
+export { VenueCategoryFilterPage } from "./venue-category-filter-page";
