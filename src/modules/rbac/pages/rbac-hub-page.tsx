@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
 import { RbacStatsBar } from '../components/rbac-stats-bar'
+import { UpdatePasswordModal } from '../components/update-password-modal'
 import {
   useDeleteRole,
   useDisableRole,
@@ -13,6 +14,7 @@ import {
   useRbacStats,
   useSubAdmins,
   useSuspendSubAdmin,
+  useUpdateSubAdminPassword,
 } from '../hooks/use-rbac'
 import { useRbacStore } from '../store/rbac-store'
 import type { Role, SubAdmin } from '../types/rbac'
@@ -47,6 +49,7 @@ export function RbacHubPage() {
     useRbacStore()
 
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
+  const [passwordResetUser, setPasswordResetUser] = useState<SubAdmin | null>(null)
 
   const { data: statsData, isLoading: statsLoading } = useRbacStats()
   const { data: rolesData, isLoading: rolesLoading } = useRoles({
@@ -64,6 +67,7 @@ export function RbacHubPage() {
   const deleteRoleMutation = useDeleteRole()
   const suspendMutation = useSuspendSubAdmin()
   const deleteSubAdminMutation = useDeleteSubAdmin()
+  const updatePasswordMutation = useUpdateSubAdminPassword()
 
   const roles = rolesData?.data ?? []
   const rolesMeta = rolesData?.meta
@@ -120,6 +124,51 @@ export function RbacHubPage() {
       setActiveDropdownId(null)
     },
     [deleteSubAdminMutation],
+  )
+
+  const handlePasswordReset = useCallback(
+    async (payload: {
+      oldPassword: string
+      newPassword: string
+      confirmNewPassword: string
+    }) => {
+      if (!passwordResetUser) return
+
+      if (payload.newPassword.length < 6) {
+        toast.error('Password must be at least 6 characters')
+        return
+      }
+
+      if (payload.newPassword !== payload.confirmNewPassword) {
+        toast.error('New password and confirmation do not match')
+        return
+      }
+
+      try {
+        await updatePasswordMutation.mutateAsync({
+          id: passwordResetUser.id,
+          payload,
+        })
+        toast.success('Password updated successfully')
+        setPasswordResetUser(null)
+      } catch (error: unknown) {
+        const message =
+          error &&
+          typeof error === 'object' &&
+          'response' in error &&
+          error.response &&
+          typeof error.response === 'object' &&
+          'data' in error.response &&
+          error.response.data &&
+          typeof error.response.data === 'object' &&
+          'message' in error.response.data &&
+          typeof error.response.data.message === 'string'
+            ? error.response.data.message
+            : 'Failed to update password'
+        toast.error(message)
+      }
+    },
+    [passwordResetUser, updatePasswordMutation],
   )
 
   const roleColumns = useMemo<ColumnDef<Role>[]>(
@@ -299,7 +348,10 @@ export function RbacHubPage() {
             </TableActionsItem>
             <TableActionsItem
               icon={<Settings className="size-3.5" />}
-              onClick={() => toast.info('Password reset email stubbed')}
+              onClick={() => {
+                setPasswordResetUser(row.original)
+                setActiveDropdownId(null)
+              }}
             >
               Password reset
             </TableActionsItem>
@@ -423,6 +475,14 @@ export function RbacHubPage() {
           emptyMessage="No sub-admins found."
         />
       )}
+
+      <UpdatePasswordModal
+        open={Boolean(passwordResetUser)}
+        userName={passwordResetUser?.fullname}
+        isSubmitting={updatePasswordMutation.isPending}
+        onClose={() => setPasswordResetUser(null)}
+        onSubmit={handlePasswordReset}
+      />
     </div>
   )
 }

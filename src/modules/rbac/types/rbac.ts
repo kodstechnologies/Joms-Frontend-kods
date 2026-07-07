@@ -110,6 +110,12 @@ export type CreateSubAdminPayload = {
   adminNote?: string
 }
 
+export type UpdateSubAdminPasswordPayload = {
+  oldPassword: string
+  newPassword: string
+  confirmNewPassword: string
+}
+
 export type AdminProfile = {
   id: string
   name: string

@@ -187,11 +187,7 @@ const SystemConfigurationPage = lazy(() =>
     default: m.SystemConfigurationPage,
   })),
 )
-const EscalationsSettingsPage = lazy(() =>
-  import('@/modules/settings').then((m) => ({
-    default: m.EscalationsSettingsPage,
-  })),
-)
+
 const ApiKeyManagementPage = lazy(() =>
   import('@/modules/settings').then((m) => ({
     default: m.ApiKeyManagementPage,
@@ -553,11 +549,6 @@ const EscalationPage = lazy(() =>
   })),
 );
 
-const ViewEscalationPage = lazy(() =>
-  import("@/modules/settings").then((m) => ({
-    default: m.ViewEscalationPage,
-  })),
-);
 
 const RefundDetailsPage = lazy(() =>
   import("@/modules/settings").then((m) => ({

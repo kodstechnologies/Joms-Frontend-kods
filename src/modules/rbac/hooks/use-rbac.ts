@@ -23,8 +23,9 @@ import {
   suspendSubAdmin,
   updateRole,
   updateSubAdmin,
+  updateSubAdminPassword,
 } from '../api/rbac-api'
-import type { CreateRolePayload, CreateSubAdminPayload } from '../types/rbac'
+import type { CreateRolePayload, CreateSubAdminPayload, UpdateSubAdminPasswordPayload } from '../types/rbac'
 
 export const rbacKeys = {
   all: ['rbac'] as const,
@@ -242,6 +243,22 @@ export function useDeleteSubAdmin() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (id: string) => deleteSubAdmin(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: rbacKeys.all })
+    },
+  })
+}
+
+export function useUpdateSubAdminPassword() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({
+      id,
+      payload,
+    }: {
+      id: string
+      payload: UpdateSubAdminPasswordPayload
+    }) => updateSubAdminPassword(id, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: rbacKeys.all })
     },

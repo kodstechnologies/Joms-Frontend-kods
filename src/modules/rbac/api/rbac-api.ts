@@ -10,6 +10,7 @@ import type {
   Role,
   SubAdmin,
   SubAdminInvite,
+  UpdateSubAdminPasswordPayload,
 } from '../types/rbac'
 
 type ListParams = {
@@ -112,6 +113,17 @@ export const suspendSubAdmin = async (id: string) => {
 
 export const deleteSubAdmin = async (id: string) => {
   const response = await adminApiClient.delete(`/admin/rbac/sub-admins/${id}`)
+  return response.data
+}
+
+export const updateSubAdminPassword = async (
+  id: string,
+  payload: UpdateSubAdminPasswordPayload,
+) => {
+  const response = await adminApiClient.patch<{ success: boolean; data: SubAdmin }>(
+    `/admin/rbac/sub-admins/${id}/password`,
+    payload,
+  )
   return response.data
 }
 
