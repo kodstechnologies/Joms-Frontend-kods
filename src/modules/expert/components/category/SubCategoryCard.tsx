@@ -82,10 +82,10 @@ const SubCategoryCard = ({
                   <Button
                     type="button"
                     variant="secondary"
-                    onClick={() => onRemove(item.id)}
-                    disabled={subCategories.length === 1}
-                    aria-label="Remove sub-category"
-                    className="size-11 shrink-0 p-0"
+                    onClick={() => onIconChange(item.id, null)}
+                    disabled={!item.icon}
+                    aria-label="Remove uploaded icon"
+                    className="size-11 shrink-0 border-0 !bg-[#FBCF7A] p-0 hover:!bg-[#F5C86A]"
                   >
                     <Trash2 className="size-[18px] text-red-500" aria-hidden="true" />
                   </Button>

@@ -19,10 +19,11 @@ const FooterActions = ({
         type="button"
         onClick={onSubmit}
         disabled={disabled || isSubmitting}
-        className="h-11 rounded-lg border border-[#3A3A3A] bg-[#FBC46B] px-6 text-white hover:bg-[#FBC46B] hover:text-black active:bg-[#F0BC52] active:text-black disabled:opacity-50"
+        className="h-11 rounded-lg px-6"
       >
         {isSubmitting ? 'Saving…' : submitText}
       </Button>
+
     </div>
   )
 }
