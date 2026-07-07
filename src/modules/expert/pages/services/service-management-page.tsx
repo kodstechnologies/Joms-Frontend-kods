@@ -12,7 +12,6 @@ import {
   Image,
   Mail,
   PauseCircle,
-  Plus,
   ShieldCheck,
   Trash2,
   type LucideIcon,
@@ -497,15 +496,6 @@ export const ServiceManagementPage = () => {
           >
             <BarChart3 className="size-4" />
             Manage Metrics
-          </Button>
-
-          <Button
-            type="button"
-            className="h-9 w-full bg-[#FBC078] text-black hover:bg-[#eeb46a] md:w-auto"
-            onClick={() => navigate('/services/management/onboarding')}
-          >
-            <Plus className="size-4" />
-            Create Account
           </Button>
         </div>
       </div>

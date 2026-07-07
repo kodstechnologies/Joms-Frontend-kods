@@ -114,74 +114,75 @@ export function DataTable<TData>({
       aria-label={`${resourceLabel} table`}
     >
       <div className={cn('px-4 pt-4 sm:px-5 sm:pt-5', contentClassName)}>
-      <div className="flex flex-wrap items-center justify-between gap-3 pb-2">
-        <div className="relative w-full sm:max-w-[360px] sm:flex-1">
-          <Search
-            className={cn(
-              'absolute top-1/2 left-3 size-3.5 -translate-y-1/2',
-              isCategoryTone ? 'text-[#666666]' : 'text-brand-muted',
+        <div className="flex flex-wrap items-center justify-between gap-3 pb-2">
+          <div className="relative w-full sm:max-w-[360px] sm:flex-1">
+            <Search
+              className={cn(
+                'absolute top-1/2 left-3 size-3.5 -translate-y-1/2',
+                isCategoryTone ? 'text-[#666666]' : 'text-brand-muted',
+              )}
+              aria-hidden="true"
+            />
+            <Input
+              type="search"
+              value={searchValue}
+              onChange={(event) => onSearchChange(event.target.value)}
+              placeholder={searchPlaceholder}
+              aria-label={`Search ${resourceLabel}`}
+              className={cn(
+                'h-10 rounded-xl pl-9 text-[12px] focus-visible:ring-1',
+                isCategoryTone
+                  ? 'border-[#2A2A2A] bg-black text-white placeholder:text-[#666666] focus-visible:ring-[#FFC16B]/40'
+                  : 'border-white/10 bg-[#0F0F0F] text-brand-text placeholder:text-[#666666] focus-visible:ring-brand-accent/40',
+              )}
+            />
+          </div>
+
+          <div className="flex w-full items-center justify-end gap-2 sm:w-auto">
+            {toolbarContent}
+            {onAdvancedFilter && (
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={onAdvancedFilter}
+                className={cn(
+                  'h-10 flex-1 gap-2 rounded-xl border bg-transparent px-4 text-[12px] font-semibold shadow-none sm:flex-none',
+                  isCategoryTone
+                    ? 'border-white/25 text-white hover:border-[#FFC16B] hover:bg-white/5'
+                    : 'border-white/45 text-brand-text hover:border-brand-accent hover:bg-white/5',
+                )}
+              >
+                <Filter className="size-3.5" aria-hidden="true" />
+                {advancedFiltersLabel}
+              </Button>
             )}
-            aria-hidden="true"
-          />
-          <Input
-            type="search"
-            value={searchValue}
-            onChange={(event) => onSearchChange(event.target.value)}
-            placeholder={searchPlaceholder}
-            aria-label={`Search ${resourceLabel}`}
-            className={cn(
-              'h-10 rounded-xl pl-9 text-[12px] focus-visible:ring-1',
-              isCategoryTone
-                ? 'border-[#2A2A2A] bg-black text-white placeholder:text-[#666666] focus-visible:ring-[#FFC16B]/40'
-                : 'border-white/10 bg-[#0F0F0F] text-brand-text placeholder:text-[#666666] focus-visible:ring-brand-accent/40',
-            )}
-          />
+            <Button
+              type="button"
+              onClick={onExport}
+              disabled={!onExport || isExporting}
+              className={cn(
+                'h-10 flex-1 gap-2 rounded-xl px-4 text-[12px] font-bold shadow-none sm:flex-none',
+                isCategoryTone
+                  ? 'bg-[#FFC16B] text-black hover:bg-[#F5C27B]'
+                  : 'bg-[#FBC078] text-black hover:bg-[#eeb46a]',
+              )}
+            >
+              <Upload className="size-3.5" aria-hidden="true" />
+              {isExporting ? 'Exporting...' : 'Export Data'}
+            </Button>
+          </div>
         </div>
 
-        <div className="flex w-full items-center justify-end gap-2 sm:w-auto">
-          {toolbarContent}
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={onAdvancedFilter}
-            disabled={!onAdvancedFilter}
+        <div className="pb-4" aria-live="polite">
+          <p
             className={cn(
-              'h-10 flex-1 gap-2 rounded-xl border bg-transparent px-4 text-[12px] font-semibold shadow-none sm:flex-none',
-              isCategoryTone
-                ? 'border-white/25 text-white hover:border-[#FFC16B] hover:bg-white/5'
-                : 'border-white/45 text-brand-text hover:border-brand-accent hover:bg-white/5',
+              'text-[12px] leading-none',
+              isCategoryTone ? 'text-[#888888]' : 'text-[#CCCCCC]',
             )}
           >
-            <Filter className="size-3.5" aria-hidden="true" />
-            {advancedFiltersLabel}
-          </Button>
-          <Button
-            type="button"
-            onClick={onExport}
-            disabled={!onExport || isExporting}
-            className={cn(
-              'h-10 flex-1 gap-2 rounded-xl px-4 text-[12px] font-bold shadow-none sm:flex-none',
-              isCategoryTone
-                ? 'bg-[#FFC16B] text-black hover:bg-[#F5C27B]'
-                : 'bg-[#FBC078] text-black hover:bg-[#eeb46a]',
-            )}
-          >
-            <Upload className="size-3.5" aria-hidden="true" />
-            {isExporting ? 'Exporting...' : 'Export Data'}
-          </Button>
+            Showing {firstItem}-{lastItem} of {pagination.totalItems} {resourceLabel}
+          </p>
         </div>
-      </div>
-
-      <div className="pb-4" aria-live="polite">
-        <p
-          className={cn(
-            'text-[12px] leading-none',
-            isCategoryTone ? 'text-[#888888]' : 'text-[#CCCCCC]',
-          )}
-        >
-          Showing {firstItem}-{lastItem} of {pagination.totalItems} {resourceLabel}
-        </p>
-      </div>
       </div>
 
       <div className="overflow-x-auto px-4 sm:px-5">
@@ -218,8 +219,8 @@ export function DataTable<TData>({
                         {header.column.id !== 'select' &&
                           header.column.id !== 'actions' &&
                           showSortIcons && (
-                          <ArrowUpDown className="size-3 text-white/80" aria-hidden="true" />
-                        )}
+                            <ArrowUpDown className="size-3 text-white/80" aria-hidden="true" />
+                          )}
                       </span>
                     )}
                   </th>

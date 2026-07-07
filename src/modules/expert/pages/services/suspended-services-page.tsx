@@ -255,25 +255,6 @@ export function SuspendedServicesPage() {
             <span className="font-bold text-white">Suspended Services</span>
           </div>
         </header>
-
-        <div className="flex w-full flex-col items-center gap-3 md:w-auto md:flex-row">
-          <Button
-            className="h-9 w-full bg-[#FBC078] text-black hover:bg-[#eeb46a] md:w-auto"
-            onClick={() => navigate('/services/dashboard/metrics')}
-          >
-            <SlidersHorizontal className="size-4" />
-            Manage Metrics
-          </Button>
-
-          <Button
-            type="button"
-            className="h-9 w-full bg-[#FBC078] text-black hover:bg-[#eeb46a] md:w-auto"
-            onClick={() => navigate('/services/management/onboarding')}
-          >
-            <Plus className="size-4" />
-            Create Account
-          </Button>
-        </div>
       </div>
 
       <DataTable
