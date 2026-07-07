@@ -17,6 +17,7 @@ import {
   SlidersHorizontal,
   Star,
   Tag,
+  Upload,
   Users,
 } from 'lucide-react'
 
@@ -86,7 +87,7 @@ function SidebarRow({
   return (
     <div className="flex items-center justify-between border-b border-white/5 py-3 last:border-0">
       <span className="text-[12px] text-[#999]">{label}</span>
-      <span className="text-[13px] font-semibold text-white">{children}</span>
+      <span className="text-[12px] font-semibold text-white">{children}</span>
     </div>
   )
 }
@@ -181,9 +182,8 @@ function ProfileSidebar({
         <SidebarRow label="KYC">
           <button
             type="button"
-            disabled
-            aria-disabled="true"
-            className="cursor-not-allowed rounded-md bg-[#FBC078]/10 px-3 py-1 text-[11px] font-bold text-[#FBC078]/50"
+            onClick={() => comingSoon('KYC Document')}
+            className="rounded-md bg-[#FBC078] px-3 py-1 text-[11px] font-bold text-black transition-colors hover:bg-[#eeb46a]"
           >
             View
           </button>
@@ -192,7 +192,7 @@ function ProfileSidebar({
           <button
             type="button"
             onClick={() => comingSoon('Timelines')}
-            className="rounded-md bg-[#FBC078]/15 px-3 py-1 text-[11px] font-bold text-[#FBC078] transition-colors hover:bg-[#FBC078]/25"
+            className="rounded-md bg-[#FBC078] px-3 py-1 text-[11px] font-bold text-black transition-colors hover:bg-[#eeb46a]"
           >
             Check Timelines
           </button>
@@ -247,6 +247,8 @@ function OverviewTab({ data }: { data: VenueFullView }) {
         <p className="mt-1 text-[12px] text-[#999]">{addressLine || '—'}</p>
       </div>
 
+      <hr className="border-white/5" />
+
       <div>
         <h3 className="text-[13px] font-semibold text-white">POC details</h3>
         <p className="mt-2 text-[13px] font-medium text-white">
@@ -259,6 +261,8 @@ function OverviewTab({ data }: { data: VenueFullView }) {
           <p className="mt-0.5 text-[12px] text-[#999]">{poc.email}</p>
         )}
       </div>
+
+      <hr className="border-white/5" />
 
       <div>
         <h3 className="mb-3 text-[13px] font-semibold text-white">Gallery</h3>
@@ -296,14 +300,14 @@ function OverviewTab({ data }: { data: VenueFullView }) {
             Reviews &amp; Ratings
           </h3>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="ml-auto flex flex-wrap items-center gap-4">
           {['All Reviews', 'Most Recent', 'Top Reviews'].map((chip, index) => (
             <span
               key={chip}
               className={cn(
                 'rounded-md px-3 py-1.5 text-[11px] font-semibold',
                 index === 0
-                  ? 'bg-[#FBC078]/15 text-[#FBC078]'
+                  ? 'bg-[#FBC078] text-black'
                   : 'bg-black text-[#999]',
               )}
             >
@@ -330,6 +334,7 @@ function SpacesTab({
 }) {
   const navigate = useNavigate()
   const [search, setSearch] = useState('')
+  const [selectedSpaceId, setSelectedSpaceId] = useState<string | null>(null)
 
   const spaces = data.spaces.filter((space) =>
     space.spaceName.toLowerCase().includes(search.toLowerCase()),
@@ -393,14 +398,21 @@ function SpacesTab({
             <button
               key={space.spaceId}
               type="button"
-              onClick={() =>
-                navigate(
-                  `/venues/management/profile/${venueId}/space/${space.spaceId}`,
-                )
-              }
-              className="flex w-full items-center gap-4 rounded-lg border border-white/5 bg-black p-3 text-left transition-colors hover:border-[#FBC078]/30"
+              onClick={() => {
+                setSelectedSpaceId(space.spaceId)
+                navigate(`/venues/management/profile/${venueId}/space/${space.spaceId}`)
+              }}
+              className="flex w-full items-center rounded-xl bg-black px-5 py-5 transition-colors hover:border hover:border-[#FBC078]/30"
             >
-              <div className="size-16 shrink-0 overflow-hidden rounded-md bg-[#1a1a1a]">
+              <input
+                type="checkbox"
+                onClick={(e) => e.stopPropagation()}
+                className="h-6 w-6 rounded border-white/30 accent-[#FBC078]"
+              />
+
+              <div className="ml-3 h-28 w-32 shrink-0 overflow-hidden rounded-xl">
+
+
                 <SafeImage
                   src={space.coverImage}
                   alt={space.spaceName}
@@ -412,34 +424,44 @@ function SpacesTab({
                   }
                 />
               </div>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <p className="truncate text-[13px] font-semibold text-white">
+
+              <div className="ml-4 flex flex-1 items-center justify-between">
+                <div>
+                  <p className="text-[14px] font-semibold text-white">
                     {space.spaceName}
                   </p>
-                  <span
-                    className={cn(
-                      'shrink-0 rounded px-2 py-0.5 text-[10px] font-bold',
-                      getSpaceStatusClass(space.status),
-                    )}
-                  >
-                    {getSpaceStatusLabel(space.status)}
-                  </span>
-                </div>
-                <p className="mt-0.5 text-[11px] text-[#999]">
-                  {[space.city, space.state].filter(Boolean).join(', ') || '—'}
-                </p>
-                <div className="mt-1.5 flex flex-wrap items-center gap-3 text-[11px] text-[#bbb]">
-                  <span className="inline-flex items-center gap-1">
-                    <Users className="size-3.5 text-[#777]" />
-                    {renderCapacity(space.capacity)}
-                  </span>
-                  <span className="font-semibold text-white">
+
+                  <p className="mt-1 text-[12px] text-[#A0A0A0]">
+                    {[space.city, space.state].filter(Boolean).join(', ') || '—'}
+                  </p>
+
+                  <div className="mt-2 flex items-center gap-3 text-[11px] text-[#8E8E8E]">
+                    <span className="inline-flex items-center gap-1">
+                      <Users className="size-3.5" />
+                      {renderCapacity(space.capacity)}
+                    </span>
+
+                    <span className="inline-flex items-center gap-1">
+                      <MapPin className="size-3.5" />
+                      21 Sep - 30 Sep
+                    </span>
+                  </div>
+
+                  <p className="mt-2 text-[15px] font-semibold text-white">
                     {formatCurrency(space.weekdayPrice)}
-                  </span>
+                  </p>
                 </div>
+
+                <ChevronRight
+                  className={cn(
+                    "ml-auto size-5 shrink-0 transition-colors duration-200",
+                    selectedSpaceId === space.spaceId
+                      ? "text-[#AEEBFF]"
+                      : "text-white"
+                  )}
+                />
               </div>
-              <ChevronRight className="size-5 shrink-0 text-[#666]" />
+
             </button>
           ))
         )}
@@ -517,7 +539,9 @@ function AnalyticsTab({ data, venueId }: { data: VenueFullView; venueId: string 
           >
             <div className="flex items-center justify-between">
               <p className="text-[11px] text-[#999]">{card.label}</p>
-              <Briefcase className="size-4 text-[#FBC078]" />
+              <div className="flex h-8 w-8 items-center justify-center rounded-md bg-[#1A1A1A]">
+                <Briefcase className="size-4 text-white" />
+              </div>
             </div>
             <p className="mt-3 text-xl font-bold text-white">{card.value}</p>
           </div>
@@ -547,7 +571,7 @@ function HealthTab({ data }: { data: VenueFullView }) {
   return (
     <div className="rounded-xl border border-white/5 bg-[#111111] p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap gap-2">
+        <div className="ml-auto flex flex-wrap items-center gap-4">
           {['All', 'Reported Against', 'Flagged by'].map((chip, index) => (
             <span
               key={chip}
@@ -628,7 +652,7 @@ export function VenueProfileViewPage() {
     { label: 'Create Space', icon: Plus, onClick: () => navigate(`/venues/management/create?venueId=${venueId}`) },
     { label: 'Add Notes', icon: FileText, onClick: () => comingSoon('Add Notes') },
     { label: 'Add Tags', icon: Tag, onClick: () => comingSoon('Add Tags') },
-    { label: 'Export Data', icon: FileText, onClick: () => comingSoon('Export Data') },
+    { label: 'Export Data', icon: Upload, onClick: () => comingSoon('Export Data') },
     { label: 'Share Profile', icon: Share2, onClick: () => comingSoon('Share Profile') },
   ]
 
@@ -697,13 +721,13 @@ export function VenueProfileViewPage() {
               </p>
             </div>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-4">
             {headerActions.map((action) => (
               <button
                 key={action.label}
                 type="button"
                 onClick={action.onClick}
-                className="flex items-center gap-1.5 rounded-full bg-[#FBC078]/15 px-3 py-1.5 text-[11px] font-semibold text-[#FBC078] transition-colors hover:bg-[#FBC078]/25"
+                className="flex items-center gap-1.5 rounded-full bg-[#FBC078] px-3 py-1.5 text-[11px] font-semibold text-black transition-colors hover:bg-[#eeb46a]"
               >
                 <action.icon className="size-3.5" />
                 {action.label}
@@ -717,17 +741,17 @@ export function VenueProfileViewPage() {
         <ProfileSidebar data={fullView} />
 
         <div className="flex flex-col gap-5">
-          <div className="flex items-center gap-1 overflow-x-auto rounded-xl border border-white/5 bg-[#111111] p-1.5">
+          <div className="flex items-center gap-1 overflow-x-auto rounded-xl border border-white/5 bg-[#111111] px-1.5">
             {TABS.map((tab) => (
               <button
                 key={tab.key}
                 type="button"
                 onClick={() => setActiveTab(tab.key)}
                 className={cn(
-                  'flex-1 whitespace-nowrap rounded-lg px-4 py-2.5 text-[13px] font-semibold transition-colors',
+                  'flex-1 whitespace-nowrap px-4 py-3 text-[13px] font-semibold transition-colors border-b-2',
                   activeTab === tab.key
-                    ? 'bg-[#FBC078]/10 text-[#FBC078]'
-                    : 'text-[#888] hover:text-white',
+                    ? 'border-[#FBC078] text-white'
+                    : 'border-transparent text-[#888] hover:text-white',
                 )}
               >
                 {tab.label}

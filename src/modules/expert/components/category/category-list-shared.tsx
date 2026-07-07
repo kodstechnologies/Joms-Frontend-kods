@@ -1,5 +1,5 @@
 import type { LucideIcon } from 'lucide-react'
-import { BarChart3, Hourglass, Plus, Trash2 } from 'lucide-react'
+import { BarChart3, Hourglass, Plus, Trash2,SlidersHorizontal } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
 import { Button } from '@/shared/components/ui/button'
@@ -56,18 +56,20 @@ export function CategoryManagementPageHeader({
         <h1 className="text-2xl font-bold text-white md:text-3xl">{title}</h1>
         <p className="mt-1 text-sm text-slate-400 md:text-base">{subtitle}</p>
       </div>
-
       <div className="flex w-full flex-col items-center gap-3 md:w-auto md:flex-row">
         <Button
-          variant="secondary"
-          className="w-full md:w-auto"
-          onClick={() => navigate(metricsPath)}
+          className="h-9 w-full bg-[#FBC078] text-black hover:bg-[#eeb46a] md:w-auto"
+          onClick={() => navigate('/services/dashboard/metrics')}
         >
-          <BarChart3 className="size-4" />
+          <SlidersHorizontal className="size-4" />
           Manage Metrics
         </Button>
 
-        <Button className="w-full md:w-auto" onClick={() => navigate(createPath)}>
+        <Button
+          type="button"
+          className="h-9 w-full bg-[#FBC078] text-black hover:bg-[#eeb46a] md:w-auto"
+          onClick={() => navigate('/venues/categories/management/create')}
+        >
           <Plus className="size-4" />
           Add New Category
         </Button>
@@ -96,14 +98,14 @@ export function CategoryQuickLinkCard({
       type="button"
       onClick={onClick}
       className={cn(
-        'flex min-w-[220px] flex-1 items-center justify-between gap-3 rounded-xl border p-4 transition-all hover:brightness-110',
+        'flex min-h-[72px] min-w-[220px] flex-1 items-center justify-between rounded-xl border px-6 py-5 transition-all hover:brightness-110',
         gradient,
         border,
       )}
     >
-      <div className="flex items-center gap-3">
-        <Icon className="size-5 text-white" aria-hidden="true" />
-        <span className="text-sm font-medium text-white">{title}</span>
+      <div className="flex items-center gap-4">
+        <Icon className="size-6 text-white" aria-hidden="true" />
+        <span className="text-base font-semibold text-white">{title}</span>
       </div>
       <span className="text-lg font-bold text-white">{value.padStart(2, '0')}</span>
     </button>

@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Plus, BarChart3 } from 'lucide-react'
+import { Plus, BarChart3,SlidersHorizontal } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
 import { Button } from '@/shared/components/ui/button'
@@ -53,16 +53,15 @@ export function DeletedVenueCategoriesPage() {
 
         <div className="flex w-full flex-col items-center gap-3 md:w-auto md:flex-row">
           <Button
-            variant="secondary"
-            className="w-full md:w-auto"
+            className="w-full md:w-auto h-9 bg-[#FBC078] text-black "
             onClick={() => navigate('/venues/dashboard/metrics')}
           >
-            <BarChart3 className="size-4" />
+            <SlidersHorizontal className="size-4" />
             Manage Metrics
           </Button>
-
           <Button
-            className="w-full md:w-auto"
+            type="button"
+            className="w-full md:w-auto h-9 bg-[#FBC078] text-black "
             onClick={() => navigate('/venues/categories/management/create')}
           >
             <Plus className="size-4" />
@@ -81,8 +80,8 @@ export function DeletedVenueCategoriesPage() {
           setPage(1)
         }}
         searchPlaceholder="Search by name or ID"
-        onAdvancedFilter={() => {}}
-        onExport={() => {}}
+        onAdvancedFilter={() => { }}
+        onExport={() => { }}
         isLoading={isLoading}
         emptyMessage={emptyMessage}
         pagination={{

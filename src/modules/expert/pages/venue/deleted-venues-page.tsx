@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { ArrowLeft, RotateCcw, Upload } from 'lucide-react'
+import { ArrowLeft, Plus, RotateCcw, SlidersHorizontal, Upload } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
@@ -17,6 +17,7 @@ import {
   TableActionsDropdown,
   TableActionsItem,
 } from '@/shared/components/table/table-actions-dropdown'
+import { Button } from '@/shared/components/ui/button'
 
 export function VenueDeletedPage() {
   const navigate = useNavigate()
@@ -185,21 +186,47 @@ export function VenueDeletedPage() {
 
   return (
     <div className="flex flex-col gap-5 md:gap-6">
-      <header className="flex flex-col gap-2">
-        <button
-          type="button"
-          onClick={() => navigate('/venues/management')}
-          className="group flex w-fit items-center gap-2 font-heading text-[20px] font-bold tracking-tight text-white transition-colors hover:text-[#FBC078]"
-        >
-          <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
-          <span>Deleted Venues</span>
-        </button>
-        <div className="flex items-center gap-1.5 pl-7 text-[12px] font-medium text-[#777777]">
-          <span>Venue Management</span>
-          <span className="text-[#333333]">/</span>
-          <span className="font-bold text-white">Deleted Venues</span>
+      <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
+        <header className="flex flex-col gap-2">
+          <button
+            type="button"
+            onClick={() => navigate('/venues/management')}
+            className="group flex w-fit items-center gap-2 font-heading text-[20px] font-bold tracking-tight text-white transition-colors hover:text-[#FBC078]"
+          >
+            <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
+            <span>Deleted Venues</span>
+          </button>
+          <div className="flex items-center gap-1.5 pl-7 text-[12px] font-medium text-[#777777]">
+            <button
+              type="button"
+              onClick={() => navigate('/venues/management')}
+              className="transition-colors hover:text-white"
+            >
+              Venue Management
+            </button>
+            <span className="text-[#333333]">/</span>
+            <span className="font-bold text-white">Deleted Venues</span>
+          </div>
+        </header>
+
+        <div className="flex w-full flex-col items-center gap-3 md:w-auto md:flex-row">
+          <Button
+            className="w-full md:w-auto h-9 bg-[#FBC078] text-black "
+            onClick={() => navigate('/venues/dashboard/metrics')}
+          >
+            <SlidersHorizontal className="size-4" />
+            Manage Metrics
+          </Button>
+          <Button
+            type="button"
+            className="w-full md:w-auto h-9 bg-[#FBC078] text-black "
+            onClick={() => navigate('/venues/management/onboarding')}
+          >
+            <Plus className="size-4" />
+            Create Account
+          </Button>
         </div>
-      </header>
+      </div>
 
       <DataTable
         columns={columns}

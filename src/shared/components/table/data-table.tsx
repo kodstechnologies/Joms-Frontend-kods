@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import type { ColumnDef, RowData } from '@tanstack/react-table'
 import { flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table'
-import { ArrowUpDown, Download, Filter, Search } from 'lucide-react'
+import { ArrowUpDown, Filter, Search, Upload } from 'lucide-react'
 
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
@@ -163,10 +163,10 @@ export function DataTable<TData>({
               'h-10 flex-1 gap-2 rounded-xl px-4 text-[12px] font-bold shadow-none sm:flex-none',
               isCategoryTone
                 ? 'bg-[#FFC16B] text-black hover:bg-[#F5C27B]'
-                : 'bg-brand-accent text-brand-text-dark hover:bg-brand-gold-from',
+                : 'bg-[#FBC078] text-black hover:bg-[#eeb46a]',
             )}
           >
-            <Download className="size-3.5" aria-hidden="true" />
+            <Upload className="size-3.5" aria-hidden="true" />
             {isExporting ? 'Exporting...' : 'Export Data'}
           </Button>
         </div>

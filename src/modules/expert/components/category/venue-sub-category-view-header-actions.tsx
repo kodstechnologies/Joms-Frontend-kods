@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Eye, Pause, Trash2 } from 'lucide-react'
+import { Eye, Pause, Trash2,Pencil } from 'lucide-react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 
@@ -29,6 +29,17 @@ export const VenueSubCategoryViewHeaderActions = () => {
           View Venues
         </Button>
 
+        <Button
+          variant="secondary"
+          onClick={() =>
+            navigate(
+              `/venues/categories/management/rename-subcategory/${categoryId}/${subCategoryId}`,
+            )
+          }
+        >
+          <Pencil className="size-4" />
+          Edit Sub-Category
+        </Button>
         <Button variant="secondary" onClick={() => setPauseModalOpen(true)}>
           <Pause className="size-4" aria-hidden="true" />
           Pause

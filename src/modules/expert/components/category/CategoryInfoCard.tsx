@@ -36,91 +36,98 @@ function getStatusClass(status: string) {
 const CategoryInfoCard = ({ category }: Props) => {
   const bannerSrc = category.image || CATEGORY_VIEW_PLACEHOLDER_IMAGE;
 
-  return (
+  
+    return (
+  <div className="grid items-start grid-cols-1 gap-6 lg:grid-cols-[47%_51%]">
     <div
-      className="overflow-hidden rounded-xl border"
+      className="flex overflow-hidden rounded-xl border"
       style={{
         backgroundColor: categoryViewTheme.surface,
         borderColor: categoryViewTheme.surfaceBorder,
       }}
     >
-      <div className="grid grid-cols-1 lg:grid-cols-[48%_52%]">
-        <div className="overflow-hidden">
-          <img
-            src={bannerSrc}
-            alt={category.name}
-            className="h-full min-h-[260px] w-full object-cover"
-          />
+      <img
+        src={bannerSrc}
+        alt={category.name}
+        className="h-[240px] w-full object-cover lg:h-auto lg:flex-1"
+      />
+    </div>
+
+    <div
+      className="rounded-xl border p-6 lg:p-8"
+      style={{
+        backgroundColor: categoryViewTheme.surface,
+        borderColor: categoryViewTheme.surfaceBorder,
+      }}
+    >
+      <div className="mb-8 flex items-start justify-between gap-4">
+        <div className="grid flex-1 grid-cols-1 gap-6 sm:grid-cols-3">
+          <div>
+            <p className={categoryViewTheme.labelClass}>Category Name</p>
+            <p className={`mt-2 ${categoryViewTheme.valueLgClass}`}>
+              {category.name}
+            </p>
+          </div>
+
+          <div>
+            <p className={categoryViewTheme.labelClass}>Created At</p>
+            <p className={`mt-2 ${categoryViewTheme.valueClass}`}>
+              {category.createdAt}
+            </p>
+          </div>
+
+          <div>
+            <p className={categoryViewTheme.labelClass}>Created By</p>
+            <button
+              type="button"
+              className={`mt-2 underline underline-offset-2 ${categoryViewTheme.valueClass}`}
+            >
+              {category.createdBy}
+            </button>
+          </div>
         </div>
 
-        <div className="p-6 lg:p-8">
-          <div className="mb-8 flex items-start justify-between gap-4">
-            <div className="grid flex-1 grid-cols-1 gap-6 sm:grid-cols-3">
-              <div>
-                <p className={categoryViewTheme.labelClass}>Category Name</p>
-                <p className={`mt-2 ${categoryViewTheme.valueLgClass}`}>
-                  {category.name}
-                </p>
-              </div>
+        <span
+          className={`inline-flex shrink-0 rounded-md px-3 py-1 text-[11px] font-semibold ${getStatusClass(
+            category.status,
+          )}`}
+        >
+          {getStatusLabel(category.status)}
+        </span>
+      </div>
 
-              <div>
-                <p className={categoryViewTheme.labelClass}>Created At</p>
-                <p className={`mt-2 ${categoryViewTheme.valueClass}`}>
-                  {category.createdAt}
-                </p>
-              </div>
+      <div className="grid grid-cols-2 gap-6 sm:grid-cols-4">
+        <div>
+          <p className={categoryViewTheme.labelClass}>Category ID</p>
+          <p className={`mt-2 ${categoryViewTheme.valueLgClass}`}>
+            {category.categoryId || category.id}
+          </p>
+        </div>
 
-              <div>
-                <p className={categoryViewTheme.labelClass}>Created By</p>
-                <button
-                  type="button"
-                  className={`mt-2 underline underline-offset-2 ${categoryViewTheme.valueClass}`}
-                >
-                  {category.createdBy}
-                </button>
-              </div>
-            </div>
+        <div>
+          <p className={categoryViewTheme.labelClass}>Last Updated At</p>
+          <p className={`mt-2 ${categoryViewTheme.valueClass}`}>
+            {category.updatedAt}
+          </p>
+        </div>
 
-            <span
-              className={`inline-flex shrink-0 rounded-md px-3 py-1 text-[11px] font-semibold ${getStatusClass(category.status)}`}
-            >
-              {getStatusLabel(category.status)}
-            </span>
-          </div>
+        <div>
+          <p className={categoryViewTheme.labelClass}>Number Of Services</p>
+          <p className={`mt-2 ${categoryViewTheme.valueLgClass}`}>
+            {category.services}
+          </p>
+        </div>
 
-          <div className="grid grid-cols-2 gap-6 sm:grid-cols-4">
-            <div>
-              <p className={categoryViewTheme.labelClass}>Category ID</p>
-              <p className={`mt-2 ${categoryViewTheme.valueLgClass}`}>
-                {category.categoryId || category.id}
-              </p>
-            </div>
-
-            <div>
-              <p className={categoryViewTheme.labelClass}>Last Updated At</p>
-              <p className={`mt-2 ${categoryViewTheme.valueClass}`}>
-                {category.updatedAt}
-              </p>
-            </div>
-
-            <div>
-              <p className={categoryViewTheme.labelClass}>Number Of Services</p>
-              <p className={`mt-2 ${categoryViewTheme.valueLgClass}`}>
-                {category.services}
-              </p>
-            </div>
-
-            <div>
-              <p className={categoryViewTheme.labelClass}>Number Of Experts</p>
-              <p className={`mt-2 ${categoryViewTheme.valueLgClass}`}>
-                {category.experts}
-              </p>
-            </div>
-          </div>
+        <div>
+          <p className={categoryViewTheme.labelClass}>Number Of Experts</p>
+          <p className={`mt-2 ${categoryViewTheme.valueLgClass}`}>
+            {category.experts}
+          </p>
         </div>
       </div>
     </div>
-  );
+  </div>
+);       
 };
 
 export default CategoryInfoCard;
