@@ -19,7 +19,7 @@ export function PolicyManagementPage() {
         actions={[
           {
             label: 'Settings Logs',
-            onClick: () => toast.message('Settings logs coming soon'),
+            onClick: () => navigate('/settings/logs'),
             variant: 'secondary',
           },
         ]}

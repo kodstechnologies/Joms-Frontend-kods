@@ -30,6 +30,22 @@ export type FinancialSettings = {
   taxType: string
 }
 
+export type SettingsLogAction = 'update' | 'reset'
+export type SettingsLogStatus = 'success' | 'failed'
+
+export type SettingsLog = {
+  id: string
+  action: SettingsLogAction
+  module: SettingsModule
+  status: SettingsLogStatus
+  adminId: string | null
+  performedBy: string
+  ipAddress: string
+  adminNote: string
+  metadata: Record<string, unknown>
+  createdAt: string
+}
+
 export type ExpertSettings = {
   accountCreation: {
     allowNewAccounts: boolean

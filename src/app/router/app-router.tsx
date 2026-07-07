@@ -177,6 +177,11 @@ const PlatformHealthPage = lazy(() =>
     default: m.PlatformHealthPage,
   })),
 )
+const SettingsLogsPage = lazy(() =>
+  import('@/modules/settings').then((m) => ({
+    default: m.SettingsLogsPage,
+  })),
+)
 const CategoryHubPage = lazy(() =>
   import('@/modules/settings').then((m) => ({
     default: m.CategoryHubPage,
@@ -650,6 +655,7 @@ export function AppRouter() {
                 <Route path="/memberships/experts" element={<ExpertMembershipsPage />} />
                 <Route path="/memberships/experts/:id" element={<MembershipDetailsPage />} />
                 <Route path="/settings/health" element={<PlatformHealthPage />} />
+                <Route path="/settings/logs" element={<SettingsLogsPage />} />
                 <Route path="/settings/main" element={<MainSettingsPage />} />
                 <Route path="/settings/policies" element={<PolicyManagementPage />} />
                 <Route path="/settings/policies/:id/timeline" element={<PolicyTimelinePage />} />

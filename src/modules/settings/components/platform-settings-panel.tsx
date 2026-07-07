@@ -173,15 +173,15 @@ export function PlatformSettingsPanel({ value, onChange }: PlatformSettingsPanel
           onChange={(checked) => updateGeneral({ maintenanceMode: checked })}
         />
         <SettingsFieldRow label="Custom Error Messages">
-          <div className="flex flex-col gap-2 sm:flex-row">
+          <div className="grid gap-2 sm:grid-cols-[1fr_auto] sm:items-start">
             <textarea
-              className="min-h-[88px] w-full flex-1 rounded-lg border border-white/10 bg-[#1a1a1a] px-3 py-2 text-sm text-white outline-none focus:ring-1 focus:ring-white/20"
+              className="min-h-[88px] w-full rounded-lg border border-white/10 bg-[#1a1a1a] px-3 py-2 text-sm text-white outline-none focus:ring-1 focus:ring-white/20"
               value={value.generalSettings.customErrorMessage}
               onChange={(event) => updateGeneral({ customErrorMessage: event.target.value })}
             />
             <Button
               variant="secondary"
-              className="shrink-0"
+              className="h-10 shrink-0"
               onClick={() => setErrorTemplateOpen(true)}
             >
               Choose Template

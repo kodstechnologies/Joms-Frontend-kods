@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
 import { EventManagementPanel } from '../components/event-management-panel'
@@ -53,6 +54,7 @@ const TABS: { key: SettingsTab; label: string }[] = [
 ]
 
 export function MainSettingsPage() {
+  const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState<SettingsTab>('platform')
 
   const platformQuery = useSettingsModule('platform')
@@ -169,28 +171,30 @@ export function MainSettingsPage() {
         actions={[
           {
             label: 'Settings Logs',
-            onClick: () => toast.message('Settings logs coming soon'),
+            onClick: () => navigate('/settings/logs'),
             variant: 'secondary',
           },
         ]}
       />
 
-      <div className="flex flex-wrap gap-1 rounded-xl border border-white/10 bg-[#111111] p-1">
-        {TABS.map((tab) => (
-          <button
-            key={tab.key}
-            type="button"
-            onClick={() => setActiveTab(tab.key)}
-            className={cn(
-              'rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
-              activeTab === tab.key
-                ? 'bg-[#1a1a1a] text-white'
-                : 'text-slate-400 hover:text-white',
-            )}
-          >
-            {tab.label}
-          </button>
-        ))}
+      <div className="rounded-2xl border border-white/10 bg-[#111111] p-3 sm:p-4">
+        <div className="flex flex-wrap gap-1 rounded-xl border border-white/10 bg-[#0F0F0F] p-1">
+          {TABS.map((tab) => (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => setActiveTab(tab.key)}
+              className={cn(
+                'rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
+                activeTab === tab.key
+                  ? 'bg-[#1a1a1a] text-white shadow-[0_10px_30px_rgba(0,0,0,0.45)]'
+                  : 'text-slate-400 hover:text-white',
+              )}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {isLoading && isApiTab ? (
