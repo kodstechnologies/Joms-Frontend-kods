@@ -327,3 +327,44 @@ export type LoginTrailRow = {
   location: string
   device: string
 }
+
+export type SettingsMetric = {
+  title: string
+  value: string
+  trend?: { direction: 'up' | 'down'; percentage: number; label: string }
+  hint?: string
+}
+
+export type PaginationMeta = {
+  page: number
+  limit: number
+  total: number
+  totalPages: number
+}
+
+export type PolicyStatus = 'Active' | 'Draft' | 'Archived'
+
+export type PolicyItem = {
+  id: string
+  slug?: string
+  title: string
+  status: PolicyStatus
+  version: string
+  effectiveDate: string
+  lastUpdated: string
+  content?: string
+  author?: string
+  changeSummary?: string
+}
+
+export type PolicyVersion = {
+  id: string
+  policyId: string
+  version: string
+  status: PolicyStatus
+  effectiveDate: string
+  lastUpdated: string
+  author: string
+  changeSummary: string
+  content: string
+}

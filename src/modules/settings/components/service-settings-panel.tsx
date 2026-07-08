@@ -24,6 +24,11 @@ export function ServiceSettingsPanel({ value, onChange }: ServiceSettingsPanelPr
 
   return (
     <div className="space-y-5">
+      <div>
+        <h2 className="text-lg font-semibold text-white">Service Marketplace Settings</h2>
+        <p className="text-sm text-slate-400">Configure listings, pricing models, proposals, and promotions</p>
+      </div>
+
       <SettingsSectionCard title="Service Listing Details">
         <SettingsToggleRow
           label="Allow new service Listings"

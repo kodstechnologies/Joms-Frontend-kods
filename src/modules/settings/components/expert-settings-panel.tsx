@@ -19,10 +19,21 @@ export function ExpertSettingsPanel({ value, onChange }: ExpertSettingsPanelProp
 
   return (
     <div className="space-y-5">
+      <div>
+        <h2 className="text-lg font-semibold text-white">Expert Application Settings</h2>
+        <p className="text-sm text-slate-400">Manage expert onboarding, suspension rules, and payouts</p>
+      </div>
+
       <SettingsSectionCard
         title="Account Creation"
         description="Allow new users to create accounts"
       >
+        <SettingsToggleRow
+          label="Allow New Accounts"
+          description="Let new experts register and create accounts on the platform"
+          checked={value.accountCreation.allowNewAccounts}
+          onChange={(checked) => patchAccount({ allowNewAccounts: checked })}
+        />
         <SettingsFieldRow
           label="Max Devices Per User"
           description="Maximum number of devices a user can register"
@@ -183,6 +194,7 @@ export function ExpertSettingsPanel({ value, onChange }: ExpertSettingsPanelProp
       </SettingsSectionCard>
 
       <FinancialSettingsFields
+        title="Expert Financial & Transaction Settings"
         value={value.financial}
         onChange={(financial) => onChange({ ...value, financial })}
       />

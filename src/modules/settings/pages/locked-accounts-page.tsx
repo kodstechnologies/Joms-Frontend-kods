@@ -4,7 +4,7 @@ import { ArrowLeft } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
-import { lockedAccountsMock } from '../mock/settings.defaults'
+import { useLockedAccounts, useUnlockAccount } from '../hooks/use-security'
 import type { LockedAccountRow } from '../types/settings'
 import { SectionHeader } from '@/shared/components/dashboard/section-header'
 import { DataTable } from '@/shared/components/table/data-table'
@@ -16,11 +16,13 @@ function AccountDetailsModal({
   account,
   onClose,
   onUnlock,
+  isUnlocking,
 }: {
   open: boolean
   account: LockedAccountRow | null
   onClose: () => void
   onUnlock: () => void
+  isUnlocking: boolean
 }) {
   if (!open || !account) return null
 
@@ -51,10 +53,11 @@ function AccountDetailsModal({
           </button>
           <button
             type="button"
+            disabled={isUnlocking}
             onClick={onUnlock}
-            className="rounded-xl bg-[#F0C27B] px-5 py-2.5 text-sm font-semibold text-[#050505]"
+            className="rounded-xl bg-[#F0C27B] px-5 py-2.5 text-sm font-semibold text-[#050505] disabled:opacity-50"
           >
-            Unlock
+            {isUnlocking ? 'Unlocking…' : 'Unlock'}
           </button>
         </div>
       </div>
@@ -81,30 +84,27 @@ function DetailRow({
 
 export function LockedAccountsPage() {
   const navigate = useNavigate()
-  const [accounts, setAccounts] = useState(lockedAccountsMock)
   const [selected, setSelected] = useState<LockedAccountRow | null>(null)
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
 
-  const filtered = useMemo(() => {
-    const query = search.trim().toLowerCase()
-    if (!query) return accounts
-    return accounts.filter(
-      (row) =>
-        row.admin.toLowerCase().includes(query) ||
-        row.role.toLowerCase().includes(query) ||
-        row.reason.toLowerCase().includes(query),
-    )
-  }, [accounts, search])
-
   const pageSize = 10
-  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize))
-  const rows = filtered.slice((page - 1) * pageSize, page * pageSize)
+  const { data: accountsResult, isLoading } = useLockedAccounts({ page, limit: pageSize, search })
+  const unlockMutation = useUnlockAccount()
+
+  const rows = accountsResult?.data ?? []
+  const meta = accountsResult?.meta
+  const totalPages = meta?.totalPages ?? 1
+  const totalItems = meta?.total ?? 0
 
   const handleUnlock = (id: string) => {
-    setAccounts((current) => current.filter((account) => account.id !== id))
-    setSelected(null)
-    toast.success('Account unlocked')
+    unlockMutation.mutate(id, {
+      onSuccess: () => {
+        setSelected(null)
+        toast.success('Account unlocked')
+      },
+      onError: () => toast.error('Failed to unlock account'),
+    })
   }
 
   const columns = useMemo<ColumnDef<LockedAccountRow>[]>(
@@ -188,6 +188,7 @@ export function LockedAccountsPage() {
           columns={columns}
           data={rows}
           getRowId={(row) => row.id}
+          isLoading={isLoading}
           searchValue={search}
           onSearchChange={(value) => {
             setSearch(value)
@@ -197,7 +198,7 @@ export function LockedAccountsPage() {
           pagination={{
             page,
             pageSize,
-            totalItems: filtered.length,
+            totalItems,
             totalPages,
             onPageChange: setPage,
           }}
@@ -210,6 +211,7 @@ export function LockedAccountsPage() {
         account={selected}
         onClose={() => setSelected(null)}
         onUnlock={() => selected && handleUnlock(selected.id)}
+        isUnlocking={unlockMutation.isPending}
       />
     </div>
   )

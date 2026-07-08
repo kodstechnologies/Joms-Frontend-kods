@@ -9,7 +9,7 @@ type RestoreBackupModalProps = {
   open: boolean
   backup: BackupHistoryRow | null
   onClose: () => void
-  onSubmit: () => void
+  onSubmit: (mode: string) => void
 }
 
 const restoreOptions = [
@@ -115,7 +115,7 @@ export function RestoreBackupModal({ open, backup, onClose, onSubmit }: RestoreB
           <button
             type="button"
             disabled={!canSubmit}
-            onClick={onSubmit}
+            onClick={() => onSubmit(selected)}
             className="rounded-xl bg-[#F0C27B] px-5 py-2.5 text-sm font-semibold text-[#050505] disabled:opacity-50"
           >
             Restore Now

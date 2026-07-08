@@ -4,7 +4,7 @@ import { ClipboardList } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { AssignUserModal } from './assign-user-modal'
-import { incidentMetricsMock, incidentsMock } from '../mock/incident-tracking.mock'
+import { useAssignIncident, useIncidentMetrics, useIncidents } from '../hooks/use-incidents'
 import type { IncidentRow, IncidentSeverity, IncidentStatus } from '../types/settings'
 import { StatCard } from '@/shared/components/dashboard/stat-card'
 import { DataTable } from '@/shared/components/table/data-table'
@@ -43,24 +43,18 @@ function StatusBadge({ status }: { status: IncidentStatus }) {
 }
 
 export function IncidentTrackingPanel() {
-  const [incidents, setIncidents] = useState(incidentsMock)
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
   const [selected, setSelected] = useState<IncidentRow | null>(null)
 
-  const filtered = useMemo(() => {
-    const query = search.trim().toLowerCase()
-    if (!query) return incidents
-    return incidents.filter(
-      (row) =>
-        row.incidentId.toLowerCase().includes(query) ||
-        row.module.toLowerCase().includes(query) ||
-        row.assignee.toLowerCase().includes(query),
-    )
-  }, [incidents, search])
+  const { data: metrics = [], isLoading: metricsLoading } = useIncidentMetrics()
+  const { data: incidentsResult, isLoading } = useIncidents({ page, limit: PAGE_SIZE, search })
+  const assignMutation = useAssignIncident()
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
-  const rows = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+  const rows = incidentsResult?.data ?? []
+  const meta = incidentsResult?.meta
+  const totalPages = meta?.totalPages ?? 1
+  const totalItems = meta?.total ?? 0
 
   const columns = useMemo<ColumnDef<IncidentRow>[]>(
     () => [
@@ -125,15 +119,19 @@ export function IncidentTrackingPanel() {
       </div>
 
       <ResponsiveGrid mobileCols={1} tabletCols={2} desktopCols={4} gap={4}>
-        {incidentMetricsMock.map((metric) => (
-          <StatCard
-            key={metric.title}
-            title={metric.title}
-            value={metric.value}
-            trend={metric.trend}
-            hint={metric.hint}
-          />
-        ))}
+        {(metricsLoading ? Array.from({ length: 4 }) : metrics).map((metric, index) =>
+          metricsLoading ? (
+            <div key={index} className="h-24 animate-pulse rounded-xl bg-white/5" />
+          ) : (
+            <StatCard
+              key={metric.title}
+              title={metric.title}
+              value={metric.value}
+              trend={metric.trend}
+              hint={metric.hint}
+            />
+          ),
+        )}
       </ResponsiveGrid>
 
       <div className={cn(uiTokens.radiusCard, uiTokens.borderSubtle, 'bg-brand-surface p-4 sm:p-5')}>
@@ -141,6 +139,7 @@ export function IncidentTrackingPanel() {
           columns={columns}
           data={rows}
           getRowId={(row) => row.id}
+          isLoading={isLoading}
           searchValue={search}
           onSearchChange={(value) => {
             setSearch(value)
@@ -152,7 +151,7 @@ export function IncidentTrackingPanel() {
           pagination={{
             page,
             pageSize: PAGE_SIZE,
-            totalItems: filtered.length,
+            totalItems,
             totalPages,
             onPageChange: setPage,
           }}
@@ -166,13 +165,16 @@ export function IncidentTrackingPanel() {
         onClose={() => setSelected(null)}
         onSubmit={(department, user) => {
           if (!selected) return
-          setIncidents((current) =>
-            current.map((row) =>
-              row.id === selected.id ? { ...row, assignee: user } : row,
-            ),
+          assignMutation.mutate(
+            { id: selected.id, department, assignee: user },
+            {
+              onSuccess: () => {
+                setSelected(null)
+                toast.success(`Assigned ${user} from ${department}`)
+              },
+              onError: () => toast.error('Failed to assign incident'),
+            },
           )
-          setSelected(null)
-          toast.success(`Assigned ${user} from ${department}`)
         }}
       />
     </div>

@@ -4,7 +4,7 @@ import { ArrowLeft } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
-import { loginTrailsMock } from '../mock/settings.defaults'
+import { useLoginTrails } from '../hooks/use-security'
 import type { LoginTrailRow } from '../types/settings'
 import { SectionHeader } from '@/shared/components/dashboard/section-header'
 import { DataTable } from '@/shared/components/table/data-table'
@@ -34,19 +34,16 @@ export function LoginTrailsPage() {
   const [search, setSearch] = useState('')
   const [loginAlerts, setLoginAlerts] = useState(true)
 
-  const filtered = useMemo(() => {
-    const query = search.trim().toLowerCase()
-    if (!query) return loginTrailsMock
-    return loginTrailsMock.filter(
-      (row) =>
-        row.ipAddress.toLowerCase().includes(query) ||
-        row.date.includes(query) ||
-        row.action.toLowerCase().includes(query),
-    )
-  }, [search])
+  const { data: trailsResult, isLoading, refetch, isFetching } = useLoginTrails({
+    page,
+    limit: PAGE_SIZE,
+    search,
+  })
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
-  const rows = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+  const rows = trailsResult?.data ?? []
+  const meta = trailsResult?.meta
+  const totalPages = meta?.totalPages ?? 1
+  const totalItems = meta?.total ?? 0
 
   const columns = useMemo<ColumnDef<LoginTrailRow>[]>(
     () => [
@@ -110,6 +107,7 @@ export function LoginTrailsPage() {
           columns={columns}
           data={rows}
           getRowId={(row) => row.id}
+          isLoading={isLoading}
           searchValue={search}
           onSearchChange={(value) => {
             setSearch(value)
@@ -120,7 +118,7 @@ export function LoginTrailsPage() {
           pagination={{
             page,
             pageSize: PAGE_SIZE,
-            totalItems: filtered.length,
+            totalItems,
             totalPages,
             onPageChange: setPage,
           }}
@@ -147,8 +145,13 @@ export function LoginTrailsPage() {
                 </button>
                 Login Alerts
               </label>
-              <Button variant="secondary" className="h-8 text-xs" onClick={() => toast.message('Data refreshed')}>
-                Refresh
+              <Button
+                variant="secondary"
+                className="h-8 text-xs"
+                disabled={isFetching}
+                onClick={() => void refetch()}
+              >
+                {isFetching ? 'Refreshing…' : 'Refresh'}
               </Button>
               <Button variant="secondary" className="h-8 text-xs" onClick={() => toast.message('Filters applied')}>
                 Apply Filter

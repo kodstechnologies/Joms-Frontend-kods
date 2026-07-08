@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
 import { RestoreBackupModal } from './restore-backup-modal'
-import { backupHistoryMock, backupMetricsMock } from '../mock/backup.mock'
+import { useBackupMetrics, useBackups, useDeleteBackup, useRestoreBackup, useRunBackup } from '../hooks/use-backups'
 import type { BackupHistoryRow } from '../types/settings'
 import { StatCard } from '@/shared/components/dashboard/stat-card'
 import { DataTable } from '@/shared/components/table/data-table'
@@ -31,25 +31,21 @@ function StatusBadge({ status }: { status: BackupHistoryRow['status'] }) {
 
 export function BackupRestorePanel() {
   const navigate = useNavigate()
-  const [backups, setBackups] = useState(backupHistoryMock)
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null)
   const [restoreTarget, setRestoreTarget] = useState<BackupHistoryRow | null>(null)
 
-  const filtered = useMemo(() => {
-    const query = search.trim().toLowerCase()
-    if (!query) return backups
-    return backups.filter(
-      (row) =>
-        row.name.toLowerCase().includes(query) ||
-        row.createdBy.toLowerCase().includes(query) ||
-        row.scope.toLowerCase().includes(query),
-    )
-  }, [backups, search])
+  const { data: metrics = [], isLoading: metricsLoading } = useBackupMetrics()
+  const { data: backupsResult, isLoading } = useBackups({ page, limit: PAGE_SIZE, search })
+  const runBackupMutation = useRunBackup()
+  const restoreMutation = useRestoreBackup()
+  const deleteMutation = useDeleteBackup()
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
-  const rows = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+  const rows = backupsResult?.data ?? []
+  const meta = backupsResult?.meta
+  const totalPages = meta?.totalPages ?? 1
+  const totalItems = meta?.total ?? 0
 
   const columns = useMemo<ColumnDef<BackupHistoryRow>[]>(
     () => [
@@ -118,9 +114,13 @@ export function BackupRestorePanel() {
                   type="button"
                   className="block w-full px-3 py-2 text-left text-xs text-rose-300 hover:bg-white/5"
                   onClick={() => {
-                    setBackups((current) => current.filter((item) => item.id !== row.original.id))
-                    setMenuOpenId(null)
-                    toast.success('Backup deleted')
+                    deleteMutation.mutate(row.original.id, {
+                      onSuccess: () => {
+                        setMenuOpenId(null)
+                        toast.success('Backup deleted')
+                      },
+                      onError: () => toast.error('Failed to delete backup'),
+                    })
                   }}
                 >
                   Delete
@@ -131,7 +131,7 @@ export function BackupRestorePanel() {
         ),
       },
     ],
-    [menuOpenId],
+    [menuOpenId, deleteMutation],
   )
 
   return (
@@ -142,22 +142,33 @@ export function BackupRestorePanel() {
           <p className="text-sm text-slate-400">Manage system backups and restoration</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button variant="secondary" onClick={() => toast.message('Manage backup coming soon')}>
-            Manage Backup
+          <Button
+            variant="secondary"
+            disabled={runBackupMutation.isPending}
+            onClick={() =>
+              runBackupMutation.mutate(
+                { name: 'Manual Backup', scope: 'Partial' },
+                {
+                  onSuccess: () => toast.success('Backup started'),
+                  onError: () => toast.error('Failed to start backup'),
+                },
+              )
+            }
+          >
+            {runBackupMutation.isPending ? 'Running…' : 'Run Backup'}
           </Button>
           <Button onClick={() => navigate('/settings/backup/configure')}>Configure Backup</Button>
         </div>
       </div>
 
       <ResponsiveGrid mobileCols={1} tabletCols={2} desktopCols={4} gap={4}>
-        {backupMetricsMock.map((metric) => (
-          <StatCard
-            key={metric.title}
-            title={metric.title}
-            value={metric.value}
-            trend={metric.trend}
-          />
-        ))}
+        {(metricsLoading ? Array.from({ length: 4 }) : metrics).map((metric, index) =>
+          metricsLoading ? (
+            <div key={index} className="h-24 animate-pulse rounded-xl bg-white/5" />
+          ) : (
+            <StatCard key={metric.title} title={metric.title} value={metric.value} trend={metric.trend} />
+          ),
+        )}
       </ResponsiveGrid>
 
       <div className={cn(uiTokens.radiusCard, uiTokens.borderSubtle, 'bg-brand-surface p-4 sm:p-5')}>
@@ -165,6 +176,7 @@ export function BackupRestorePanel() {
           columns={columns}
           data={rows}
           getRowId={(row) => row.id}
+          isLoading={isLoading}
           searchValue={search}
           onSearchChange={(value) => {
             setSearch(value)
@@ -175,7 +187,7 @@ export function BackupRestorePanel() {
           pagination={{
             page,
             pageSize: PAGE_SIZE,
-            totalItems: filtered.length,
+            totalItems,
             totalPages,
             onPageChange: setPage,
           }}
@@ -187,9 +199,18 @@ export function BackupRestorePanel() {
         open={Boolean(restoreTarget)}
         backup={restoreTarget}
         onClose={() => setRestoreTarget(null)}
-        onSubmit={() => {
-          setRestoreTarget(null)
-          toast.success('Restore initiated (static preview)')
+        onSubmit={(mode) => {
+          if (!restoreTarget) return
+          restoreMutation.mutate(
+            { id: restoreTarget.id, mode },
+            {
+              onSuccess: () => {
+                setRestoreTarget(null)
+                toast.success('Restore initiated')
+              },
+              onError: () => toast.error('Failed to initiate restore'),
+            },
+          )
         }}
       />
     </div>

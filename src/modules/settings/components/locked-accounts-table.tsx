@@ -1,7 +1,10 @@
-import { lockedAccountsMock } from '../mock/settings.defaults'
+import { useLockedAccounts } from '../hooks/use-security'
 import { SettingsSectionCard } from './settings-section-card'
 
 export function LockedAccountsTable() {
+  const { data, isLoading } = useLockedAccounts({ page: 1, limit: 5 })
+  const rows = data?.data ?? []
+
   return (
     <SettingsSectionCard
       title="Locked Account"
@@ -19,15 +22,29 @@ export function LockedAccountsTable() {
             </tr>
           </thead>
           <tbody>
-            {lockedAccountsMock.map((row) => (
-              <tr key={row.id} className="border-t border-white/5 text-slate-200">
-                <td className="px-4 py-3">{row.admin}</td>
-                <td className="px-4 py-3 text-slate-400">{row.role}</td>
-                <td className="px-4 py-3">{row.reason}</td>
-                <td className="px-4 py-3">{row.lockedSince}</td>
-                <td className="px-4 py-3">{row.duration}</td>
+            {isLoading ? (
+              <tr>
+                <td colSpan={5} className="px-4 py-6 text-center text-slate-500">
+                  Loading…
+                </td>
               </tr>
-            ))}
+            ) : rows.length === 0 ? (
+              <tr>
+                <td colSpan={5} className="px-4 py-6 text-center text-slate-500">
+                  No locked accounts
+                </td>
+              </tr>
+            ) : (
+              rows.map((row) => (
+                <tr key={row.id} className="border-t border-white/5 text-slate-200">
+                  <td className="px-4 py-3">{row.admin}</td>
+                  <td className="px-4 py-3 text-slate-400">{row.role}</td>
+                  <td className="px-4 py-3">{row.reason}</td>
+                  <td className="px-4 py-3">{row.lockedSince}</td>
+                  <td className="px-4 py-3">{row.duration}</td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>

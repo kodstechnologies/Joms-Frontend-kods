@@ -18,6 +18,11 @@ export function VenueSettingsPanel({ value, onChange }: VenueSettingsPanelProps)
 
   return (
     <div className="space-y-5">
+      <div>
+        <h2 className="text-lg font-semibold text-white">Venue Management Settings</h2>
+        <p className="text-sm text-slate-400">Configure venue controls, booking rules, and pricing</p>
+      </div>
+
       <SettingsSectionCard
         title="Venue Controls"
         description="Manage venue creation and ownership settings"
@@ -144,6 +149,7 @@ export function VenueSettingsPanel({ value, onChange }: VenueSettingsPanelProps)
       </SettingsSectionCard>
 
       <FinancialSettingsFields
+        title="Venue Financial & Transaction Settings"
         value={value.financial}
         onChange={(financial) => onChange({ ...value, financial })}
       />
