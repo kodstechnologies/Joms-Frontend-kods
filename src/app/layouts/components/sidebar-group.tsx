@@ -43,13 +43,14 @@ useEffect(() => {
     <div className="space-y-1">
       <SidebarItem
         label={item.label}
+        to={hasChildren ? undefined : item.to}
         icon={item.icon}
         badge={item.badge}
-        active={isChildActive}
+        active={isChildActive || Boolean(item.to && matchPath({ path: item.to, end: false }, location.pathname))}
         expandable={hasChildren}
         expanded={isOpen}
         compact={compact}
-        onToggle={() => setIsOpen((prev) => !prev)}
+        onToggle={hasChildren ? () => setIsOpen((prev) => !prev) : undefined}
         onNavigate={onNavigate}
       />
 

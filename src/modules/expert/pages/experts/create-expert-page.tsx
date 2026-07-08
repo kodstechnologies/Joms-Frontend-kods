@@ -187,10 +187,6 @@ export const CreateExpertPage = () => {
       steps={STEPS}
       currentStep={currentStep}
       onBack={handleBack}
-      secondaryAction={{
-        label: 'Save as Draft',
-        onClick: () => toast.message('Draft saving is coming soon'),
-      }}
       primaryAction={{
         label: primaryLabel,
         onClick: handleNextStep,

@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import {
@@ -24,16 +24,23 @@ import {
   useUpdateVenueBankingStatus,
   useUpdateVenueKycStatus,
 } from '../../hooks/use-venue-kyc'
+import {
+  useEscalateExpertApplication,
+  useEscalationAssignees,
+  useExpertApplicationView,
+  useStartEscalationReviewOnView,
+} from '../../hooks/use-expert-application-view'
 import type { VenueKycStatus } from '../../type/venue-kyc'
 import {
   DecisionActionModal,
   type DecisionActionModalOption,
 } from '@/shared/components/modal/decision-action-modal'
 import { cn } from '@/shared/lib/cn'
+import { useAuthStore } from '@/modules/auth/store/auth-store'
 import { formatApplicationExpertId } from './expert-list-shared'
 
 type TabKey = 'overview' | 'kyc' | 'banking'
-type DecisionVariant = 'approve' | 'reject' | 'requestChanges'
+type DecisionVariant = 'approve' | 'reject' | 'requestChanges' | 'escalate'
 type DecisionTarget = 'kyc' | 'banking'
 
 const TABS: { key: TabKey; label: string }[] = [
@@ -254,6 +261,8 @@ function VenueImage({ src, alt }: { src: string; alt: string }) {
 export function VenueKycApplicationViewPage() {
   const navigate = useNavigate()
   const { id } = useParams<{ id: string }>()
+  const user = useAuthStore((state) => state.user)
+  const isSuperAdmin = Boolean(user?.isSuperAdmin)
 
   const [activeTab, setActiveTab] = useState<TabKey>('overview')
   const [modalOpen, setModalOpen] = useState(false)
@@ -262,12 +271,22 @@ export function VenueKycApplicationViewPage() {
   const [selectedReasons, setSelectedReasons] = useState<string[]>([])
   const [rejectionReason, setRejectionReason] = useState('')
   const [adminNotes, setAdminNotes] = useState('')
+  const [selectedEscalationOption, setSelectedEscalationOption] = useState('')
 
   const { data, isLoading, isError, error } = useApplicationDetails(id)
+  const { data: expertViewData } = useExpertApplicationView(id)
+  const { data: assigneesData } = useEscalationAssignees()
   const application = data?.data
 
   const updateKyc = useUpdateVenueKycStatus(id)
   const updateBanking = useUpdateVenueBankingStatus(id)
+  const escalateApplication = useEscalateExpertApplication(id)
+  const startEscalationReview = useStartEscalationReviewOnView(id)
+
+  useEffect(() => {
+    if (!id || isSuperAdmin) return
+    startEscalationReview.mutate()
+  }, [id, isSuperAdmin])
 
   const decisionTargetForTab: DecisionTarget =
     activeTab === 'banking' ? 'banking' : 'kyc'
@@ -288,6 +307,7 @@ export function VenueKycApplicationViewPage() {
     setSelectedReasons([])
     setRejectionReason('')
     setAdminNotes('')
+    setSelectedEscalationOption('')
     setModalOpen(true)
   }
 
@@ -302,6 +322,35 @@ export function VenueKycApplicationViewPage() {
 
   const handleSubmitDecision = () => {
     if (!application) return
+
+    if (modalVariant === 'escalate') {
+      if (!selectedEscalationOption) {
+        toast.error('Please select a sub-admin to assign.')
+        return
+      }
+      if (!adminNotes.trim()) {
+        toast.error('Admin notes are required.')
+        return
+      }
+
+      const selectedAssignee = assigneesData?.data.find((item) => item.id === selectedEscalationOption)
+      escalateApplication.mutate(
+        {
+          assigneeSubAdminId: selectedEscalationOption,
+          assigneeName: selectedAssignee?.fullname || '',
+          adminNote: adminNotes.trim(),
+          escalationTarget: modalTarget,
+        },
+        {
+          onSuccess: () => {
+            toast.success('Application assigned successfully')
+            setModalOpen(false)
+          },
+          onError: (err) => toast.error(getApiErrorMessage(err)),
+        },
+      )
+      return
+    }
 
     if (isRejectFlow) {
       if (selectedReasons.length === 0) {
@@ -390,17 +439,29 @@ export function VenueKycApplicationViewPage() {
     activeDecisionStatus !== 'PENDING' ||
     activeMutationPending
 
+  const escalateDisabled =
+    activeDecisionStatus === 'APPROVED' || escalateApplication.isPending
+
   const modalTitle = useMemo(() => {
     const target = modalTarget === 'banking' ? 'Banking' : 'Venue KYC'
     if (modalVariant === 'approve') return `Approve ${target}`
     if (modalVariant === 'requestChanges') return 'Request Changes'
+    if (modalVariant === 'escalate') return 'Escalate Application'
     return `Reject ${target}`
   }, [modalTarget, modalVariant])
 
   const isSubmitting =
-    modalTarget === 'banking'
+    modalVariant === 'escalate'
+      ? escalateApplication.isPending
+      : modalTarget === 'banking'
       ? updateBanking.isPending
       : updateKyc.isPending
+  const isEscalateFlow = modalVariant === 'escalate'
+  const escalationOptions: DecisionActionModalOption[] =
+    assigneesData?.data.map((item) => ({
+      label: `[${item.fullname}]`,
+      value: item.id,
+    })) ?? []
 
   if (isLoading) {
     return (
@@ -454,7 +515,18 @@ export function VenueKycApplicationViewPage() {
     { label: 'FSSAI License', url: documents?.fssaiLicense },
   ]
 
-  const notesContent = overview.applicationNotes?.trim() || 'No notes yet.'
+  const notesContent = useMemo(() => {
+    const finalReview = expertViewData?.data?.expert?.finalReview
+    const lines = [
+      overview.applicationNotes?.trim() || null,
+      finalReview?.escalatedByName
+        ? `Escalated by ${finalReview.escalatedByName}${finalReview.escalatedToName ? ` to ${finalReview.escalatedToName}` : ''}.`
+        : null,
+      finalReview?.escalationNote ? `Note: ${finalReview.escalationNote}` : null,
+    ].filter(Boolean)
+
+    return lines.length ? lines.join('\n') : 'No notes yet.'
+  }, [expertViewData?.data?.expert?.finalReview, overview.applicationNotes])
 
   return (
     <div className="relative flex w-full flex-col gap-5 pb-8 text-white">
@@ -801,14 +873,17 @@ export function VenueKycApplicationViewPage() {
               Ask for Re-Submit
               <RotateCcw className="size-3.5" />
             </button>
-            <button
-              type="button"
-              onClick={() => toast.message('Escalate is coming soon')}
-              className="flex items-center gap-2 rounded-md bg-[#1D4ED8] px-4 py-2.5 text-[11px] font-bold text-white transition-colors hover:bg-[#1e40af]"
-            >
-              Escalate
-              <ArrowUpRight className="size-3.5" />
-            </button>
+            {isSuperAdmin ? (
+              <button
+                type="button"
+                disabled={escalateDisabled}
+                onClick={() => openDecisionModal(decisionTargetForTab, 'escalate')}
+                className="flex items-center gap-2 rounded-md bg-[#1D4ED8] px-4 py-2.5 text-[11px] font-bold text-white transition-colors hover:bg-[#1e40af] disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Escalate
+                <ArrowUpRight className="size-3.5" />
+              </button>
+            ) : null}
             <button
               type="button"
               disabled={decisionDisabled}
@@ -827,6 +902,9 @@ export function VenueKycApplicationViewPage() {
         variant={modalVariant}
         title={modalTitle}
         description={
+          modalVariant === 'escalate'
+            ? 'Are you sure you want to escalate this application? This post will be reviewed by the selected parties.'
+            :
           modalVariant === 'approve'
             ? `Are you sure you want to approve this ${modalTarget === 'banking' ? 'banking' : 'venue KYC'} section?`
             : modalVariant === 'requestChanges'
@@ -834,7 +912,9 @@ export function VenueKycApplicationViewPage() {
               : `Are you sure you want to reject this ${modalTarget === 'banking' ? 'banking' : 'venue KYC'} section?`
         }
         submitLabel={
-          modalVariant === 'approve'
+          modalVariant === 'escalate'
+            ? 'Escalate'
+            : modalVariant === 'approve'
             ? 'Approve'
             : modalVariant === 'requestChanges'
               ? 'Request Changes'
@@ -849,8 +929,11 @@ export function VenueKycApplicationViewPage() {
         }
         selectedReasons={selectedReasons}
         onReasonToggle={toggleReason}
-        reason={isRejectFlow ? rejectionReason : undefined}
+        reason={isRejectFlow ? rejectionReason : ''}
         onReasonChange={isRejectFlow ? setRejectionReason : undefined}
+        escalationOptions={isEscalateFlow ? escalationOptions : []}
+        selectedEscalationOption={isEscalateFlow ? selectedEscalationOption : undefined}
+        onEscalationOptionChange={isEscalateFlow ? setSelectedEscalationOption : undefined}
         adminNotes={adminNotes}
         onAdminNotesChange={setAdminNotes}
         onClose={() => setModalOpen(false)}

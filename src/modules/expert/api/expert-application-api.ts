@@ -34,3 +34,36 @@ export const updateExpertBankingStatus = async (
   )
   return response.data
 }
+
+export type EscalationAssignee = {
+  id: string
+  fullname: string
+  email?: string
+}
+
+export const fetchEscalationAssignees = async (permission = 'experts.*') => {
+  const response = await adminApiClient.get<{
+    success: boolean
+    data: EscalationAssignee[]
+    meta: { page: number; limit: number; total: number; totalPages: number }
+  }>('/admin/rbac/sub-admins', {
+    params: { page: 1, limit: 100, status: 'active', permission },
+  })
+  return response.data
+}
+
+export const escalateExpertApplication = async (
+  id: string,
+  payload: {
+    assigneeSubAdminId: string
+    assigneeName?: string
+    adminNote: string
+    escalationTarget?: 'kyc' | 'banking' | 'application'
+  },
+) => {
+  const response = await adminApiClient.patch(
+    `/admin/internal/admin/partners/${id}/escalate`,
+    payload,
+  )
+  return response.data
+}

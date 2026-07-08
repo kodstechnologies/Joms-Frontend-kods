@@ -89,6 +89,7 @@ export function LoginPage() {
           permissions: normalizeUserPermissions(admin.permissions ?? []),
           mfaEnabled: admin.mfaEnabled,
           status: admin.status,
+          subAdminId: admin.subAdminId,
         }
         setSession(sessionUser, token)
       } else {
@@ -108,10 +109,17 @@ export function LoginPage() {
           const profileResponse = await fetchRbacMe()
           const profile = profileResponse.data
           updateUser({
-            subAdminId: profile.subAdminId,
+            subAdminId: profile.subAdminId || admin.subAdminId,
+            permissions: normalizeUserPermissions(profile.permissions ?? []),
             requiresContactSetup: Boolean(profile.requiresContactSetup),
             contactSetupCompleted: Boolean(profile.contactSetupCompleted),
           })
+
+          sessionUser = {
+            ...sessionUser,
+            subAdminId: profile.subAdminId || admin?.subAdminId,
+            permissions: normalizeUserPermissions(profile.permissions ?? []),
+          }
 
           if (profile.requiresContactSetup) {
             toast.success('Please complete your contact information')
@@ -119,7 +127,6 @@ export function LoginPage() {
             return
           }
         } catch {
-          // Fall through to default home route if profile lookup fails.
         }
       }
 

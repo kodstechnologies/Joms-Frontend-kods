@@ -68,6 +68,13 @@ export type ExpertApplicationExpert = {
     internalNotes?: string
     isVerified?: boolean
     approvalStatus?: 'pending' | 'approved'
+    escalatedToSubAdminId?: string
+    escalatedToName?: string
+    escalatedAt?: string
+    escalationNote?: string
+    escalationTarget?: 'kyc' | 'banking' | 'application'
+    escalatedByName?: string
+    escalationStatus?: 'assigned' | 'in_progress' | 'completed'
   }
   subCategory?: unknown[]
   createdAt?: string

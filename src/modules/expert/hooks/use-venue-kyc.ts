@@ -25,6 +25,7 @@ export const useUpdateVenueKycStatus = (id?: string) => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['venue-kyc-application', id] })
       queryClient.invalidateQueries({ queryKey: ['venues'] })
+      queryClient.invalidateQueries({ queryKey: ['my-tasks'] })
     },
   })
 }
@@ -44,6 +45,7 @@ export const useApproveVenueKyc = (id?: string) => {
       queryClient.invalidateQueries({ queryKey: ['venue-kyc-application', id] })
       queryClient.invalidateQueries({ queryKey: ['venues'] })
       queryClient.invalidateQueries({ queryKey: ['experts'] })
+      queryClient.invalidateQueries({ queryKey: ['my-tasks'] })
     },
   })
 }
@@ -57,6 +59,7 @@ export const useUpdateVenueBankingStatus = (id?: string) => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['venue-kyc-application', id] })
       queryClient.invalidateQueries({ queryKey: ['venues'] })
+      queryClient.invalidateQueries({ queryKey: ['my-tasks'] })
     },
   })
 }

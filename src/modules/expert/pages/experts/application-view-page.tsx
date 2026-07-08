@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import {
@@ -13,7 +13,10 @@ import {
 } from 'lucide-react'
 
 import {
+  useEscalateExpertApplication,
+  useEscalationAssignees,
   useExpertApplicationView,
+  useStartEscalationReviewOnView,
   useUpdateExpertBankingStatus,
   useUpdateExpertKycStatus,
 } from '../../hooks/use-expert-application-view'
@@ -32,9 +35,10 @@ import {
   type DecisionActionModalOption,
 } from '@/shared/components/modal/decision-action-modal'
 import { cn } from '@/shared/lib/cn'
+import { useAuthStore } from '@/modules/auth/store/auth-store'
 
 type TabKey = 'overview' | 'kyc' | 'banking'
-type DecisionVariant = 'approve' | 'reject' | 'requestChanges'
+type DecisionVariant = 'approve' | 'reject' | 'requestChanges' | 'escalate'
 type DecisionTarget = 'kyc' | 'banking'
 
 const TABS: { key: TabKey; label: string }[] = [
@@ -178,6 +182,8 @@ function DocumentCard({ label, url }: { label: string; url?: string | null }) {
 export function ExpertApplicationViewPage() {
   const navigate = useNavigate()
   const { id } = useParams<{ id: string }>()
+  const user = useAuthStore((state) => state.user)
+  const isSuperAdmin = Boolean(user?.isSuperAdmin)
 
   const [activeTab, setActiveTab] = useState<TabKey>('overview')
   const [modalOpen, setModalOpen] = useState(false)
@@ -186,12 +192,21 @@ export function ExpertApplicationViewPage() {
   const [selectedReasons, setSelectedReasons] = useState<string[]>([])
   const [rejectionReason, setRejectionReason] = useState('')
   const [adminNotes, setAdminNotes] = useState('')
+  const [selectedEscalationOption, setSelectedEscalationOption] = useState('')
 
   const { data, isLoading, isError, error } = useExpertApplicationView(id)
+  const { data: assigneesData } = useEscalationAssignees()
   const application = data?.data
 
   const updateKyc = useUpdateExpertKycStatus(application?.kyc?._id)
   const updateBanking = useUpdateExpertBankingStatus(application?.banking?._id)
+  const escalateApplication = useEscalateExpertApplication(id)
+  const startEscalationReview = useStartEscalationReviewOnView(id)
+
+  useEffect(() => {
+    if (!id || isSuperAdmin) return
+    startEscalationReview.mutate()
+  }, [id, isSuperAdmin])
 
   const decisionTargetForTab: DecisionTarget =
     activeTab === 'banking' ? 'banking' : 'kyc'
@@ -219,6 +234,7 @@ export function ExpertApplicationViewPage() {
     setSelectedReasons([])
     setRejectionReason('')
     setAdminNotes('')
+    setSelectedEscalationOption('')
     setModalOpen(true)
   }
 
@@ -230,6 +246,33 @@ export function ExpertApplicationViewPage() {
 
   const handleSubmitDecision = () => {
     if (!application) return
+
+    if (modalVariant === 'escalate') {
+      if (!selectedEscalationOption) {
+        return toast.error('Please select a sub-admin to assign.')
+      }
+      if (!adminNotes.trim()) {
+        return toast.error('Admin notes are required.')
+      }
+
+      const selectedAssignee = assigneesData?.data.find((item) => item.id === selectedEscalationOption)
+      escalateApplication.mutate(
+        {
+          assigneeSubAdminId: selectedEscalationOption,
+          assigneeName: selectedAssignee?.fullname || '',
+          adminNote: adminNotes.trim(),
+          escalationTarget: modalTarget,
+        },
+        {
+          onSuccess: () => {
+            toast.success('Application assigned successfully')
+            setModalOpen(false)
+          },
+          onError: (err) => toast.error(getApiErrorMessage(err)),
+        },
+      )
+      return
+    }
 
     const isRejectFlow =
       modalVariant === 'reject' || modalVariant === 'requestChanges'
@@ -280,15 +323,42 @@ export function ExpertApplicationViewPage() {
     activeDecisionStatus !== 'PENDING' ||
     activeMutation.isPending
 
+  const escalateDisabled =
+    activeDecisionStatus === 'APPROVED' || escalateApplication.isPending
+
   const modalTitle = useMemo(() => {
     const target = modalTarget === 'banking' ? 'Banking' : 'KYC'
     if (modalVariant === 'approve') return `Approve ${target}`
     if (modalVariant === 'requestChanges') return 'Request Changes'
+    if (modalVariant === 'escalate') return 'Escalate Application'
     return `Reject ${target}`
   }, [modalTarget, modalVariant])
 
   const isRejectFlow =
     modalVariant === 'reject' || modalVariant === 'requestChanges'
+  const isEscalateFlow = modalVariant === 'escalate'
+  const escalationOptions: DecisionActionModalOption[] =
+    assigneesData?.data.map((item) => ({
+      label: `[${item.fullname}]`,
+      value: item.id,
+    })) ?? []
+
+  const applicationNotes = useMemo(() => {
+    const finalReview = application?.expert?.finalReview
+    if (!finalReview?.escalationNote && !finalReview?.escalatedToName) {
+      return 'No notes yet.'
+    }
+
+    const lines = [
+      finalReview.escalatedByName
+        ? `Escalated by ${finalReview.escalatedByName}${finalReview.escalatedToName ? ` to ${finalReview.escalatedToName}` : ''}.`
+        : null,
+      finalReview.escalationNote ? `Note: ${finalReview.escalationNote}` : null,
+      finalReview.internalNotes ? `Internal: ${finalReview.internalNotes}` : null,
+    ].filter(Boolean)
+
+    return lines.join('\n')
+  }, [application?.expert?.finalReview])
 
   if (isLoading) {
     return (
@@ -436,7 +506,9 @@ export function ExpertApplicationViewPage() {
             </div>
           </SectionCard>
           <SectionCard title="Application Notes" icon={<History className="size-4 text-[#FBC078]" />}>
-            <div className="rounded-lg border border-white/5 bg-black p-4 text-[12px] text-[#777]">No notes yet.</div>
+            <div className="rounded-lg border border-white/5 bg-black p-4 text-[12px] whitespace-pre-wrap text-[#777]">
+              {applicationNotes}
+            </div>
           </SectionCard>
         </div>
       )}
@@ -529,7 +601,9 @@ export function ExpertApplicationViewPage() {
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
         <SectionCard title="Application Notes" icon={<History className="size-4 text-[#FBC078]" />}>
-          <div className="rounded-lg border border-white/5 bg-black p-4 text-[12px] text-[#777]">No notes yet.</div>
+          <div className="rounded-lg border border-white/5 bg-black p-4 text-[12px] whitespace-pre-wrap text-[#777]">
+            {applicationNotes}
+          </div>
         </SectionCard>
 
         <SectionCard title="Decision Controls" icon={<ShieldCheck className="size-4 text-[#FBC078]" />}>
@@ -568,13 +642,16 @@ export function ExpertApplicationViewPage() {
             >
               Ask for Re-Submit
             </button>
-            <button
-              type="button"
-              onClick={() => toast.message('Escalate is coming soon')}
-              className="rounded-md bg-[#1D4ED8] px-4 py-2.5 text-[11px] font-bold text-white"
-            >
-              Escalate
-            </button>
+            {isSuperAdmin ? (
+              <button
+                type="button"
+                disabled={escalateDisabled}
+                onClick={() => openDecisionModal(decisionTargetForTab, 'escalate')}
+                className="rounded-md bg-[#1D4ED8] px-4 py-2.5 text-[11px] font-bold text-white disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Escalate
+              </button>
+            ) : null}
             <button
               type="button"
               disabled={decisionDisabled}
@@ -592,6 +669,9 @@ export function ExpertApplicationViewPage() {
         variant={modalVariant}
         title={modalTitle}
         description={
+          modalVariant === 'escalate'
+            ? 'Are you sure you want to escalate this application? This post will be reviewed by the selected parties.'
+            :
           modalVariant === 'approve'
             ? `Are you sure you want to approve this ${modalTarget === 'banking' ? 'banking' : 'KYC'} section?`
             : modalVariant === 'requestChanges'
@@ -599,7 +679,9 @@ export function ExpertApplicationViewPage() {
               : `Are you sure you want to reject this ${modalTarget === 'banking' ? 'banking' : 'KYC'} section?`
         }
         submitLabel={
-          modalVariant === 'approve'
+          modalVariant === 'escalate'
+            ? 'Escalate'
+            : modalVariant === 'approve'
             ? 'Approve'
             : modalVariant === 'requestChanges'
               ? 'Request Changes'
@@ -614,13 +696,16 @@ export function ExpertApplicationViewPage() {
         }
         selectedReasons={selectedReasons}
         onReasonToggle={toggleReason}
-        reason={isRejectFlow ? rejectionReason : undefined}
+        reason={isRejectFlow ? rejectionReason : ''}
         onReasonChange={isRejectFlow ? setRejectionReason : undefined}
+        escalationOptions={isEscalateFlow ? escalationOptions : []}
+        selectedEscalationOption={isEscalateFlow ? selectedEscalationOption : undefined}
+        onEscalationOptionChange={isEscalateFlow ? setSelectedEscalationOption : undefined}
         adminNotes={adminNotes}
         onAdminNotesChange={setAdminNotes}
         onClose={() => setModalOpen(false)}
         onSubmit={handleSubmitDecision}
-        isSubmitting={mutation.isPending}
+        isSubmitting={isEscalateFlow ? escalateApplication.isPending : mutation.isPending}
       />
     </div>
   )

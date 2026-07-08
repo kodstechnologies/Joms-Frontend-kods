@@ -9,6 +9,7 @@ import { Topbar } from '@/app/layouts/components/topbar'
 import { PageContainer } from '@/shared/components/responsive/page-container'
 import { useMediaQuery } from '@/shared/hooks/use-media-query'
 import { uiTokens } from '@/shared/lib/design-tokens'
+import { useSyncSubAdminPermissions } from '@/modules/auth/hooks/use-sync-sub-admin-permissions'
 
 export function DashboardLayout() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
@@ -17,6 +18,8 @@ export function DashboardLayout() {
   const location = useLocation()
   const isTabletCompact = useMediaQuery('(min-width: 768px) and (max-width: 1023px)')
   const isDesktopShell = useMediaQuery('(min-width: 768px)')
+
+  useSyncSubAdminPermissions()
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect

@@ -334,6 +334,11 @@ const MyProfilePage = lazy(() =>
     default: m.MyProfilePage,
   })),
 )
+const MyTasksPage = lazy(() =>
+  import('@/modules/my-tasks').then((m) => ({
+    default: m.MyTasksPage,
+  })),
+)
 const SpaceDetailsPage = lazy(() =>
   import('@/modules/expert').then((m) => ({
     default: m.SpaceDetailsPage,
@@ -657,34 +662,10 @@ export function AppRouter() {
               <Route path="/" element={<HomeRedirect />} />
               <Route path="/dashboard" element={<HomeRedirect />} />
               <Route path="/settings/access/my-profile" element={<MyProfilePage />} />
+              <Route path="/my-tasks" element={<MyTasksPage />} />
 
               <Route element={<SuperAdminRoute />}>
                 <Route path="/dashboard/executive" element={<ExecutiveOverviewPage />} />
-                <Route path="/experts/dashboard" element={<ExpertDashboardPage />} />
-                <Route path="/experts/dashboard/metrics" element={<ExpertMetricsPage />} />
-                <Route path="/experts/management" element={<ExpertManagementPage />} />
-                <Route path="/experts/management/create" element={<CreateExpertPage />} />
-                <Route
-                  path="/experts/management/profile/:id"
-                  element={<ExpertProfileViewPage />}
-                />
-                <Route
-                  path="/experts/management/profile/:id/analytics"
-                  element={<ExpertProfileAnalyticsPage />}
-                />
-                <Route
-                  path="/experts/management/profile/:expertId/service/:serviceId"
-                  element={<ServiceViewPage />}
-                />
-                <Route
-                  path="/experts/management/application/:id"
-                  element={<ExpertApplicationRoute />}
-                />
-                <Route path="/experts/suspended" element={<ExpertSuspendedExpertsPage />} />
-                <Route path="/experts/deleted" element={<ExpertDeletedExpertsPage />} />
-                <Route path="/experts/reported" element={<ExpertReportedExpertsPage />} />
-                <Route path="/experts/pending-approvals" element={<ExpertPendingApprovalsPage />} />
-                <Route path="/experts/leaderboard" element={<LeaderboardPage />} />
                 <Route path="/referrals/management" element={<ReferralManagementPage />} />
                 <Route path="/support/dashboard" element={<SupportDashboardPage />} />
                 <Route path="/support/tickets" element={<TicketManagementPage />} />
@@ -747,6 +728,34 @@ export function AppRouter() {
                 <Route path="/finance/refunds/:id/escalate" element={<AssignRefundAuthorityPage />} />
                 <Route path="/finance/refunds/:id/dispute" element={<DisputeDetailViewPage />} />
                 <Route path="/finance/refunds/:id" element={<RefundDetailViewPage />} />
+              </Route>
+
+              <Route element={<PermissionRoute module="experts" />}>
+                <Route path="/experts/dashboard" element={<ExpertDashboardPage />} />
+                <Route path="/experts/dashboard/metrics" element={<ExpertMetricsPage />} />
+                <Route path="/experts/management" element={<ExpertManagementPage />} />
+                <Route path="/experts/management/create" element={<CreateExpertPage />} />
+                <Route
+                  path="/experts/management/profile/:id"
+                  element={<ExpertProfileViewPage />}
+                />
+                <Route
+                  path="/experts/management/profile/:id/analytics"
+                  element={<ExpertProfileAnalyticsPage />}
+                />
+                <Route
+                  path="/experts/management/profile/:expertId/service/:serviceId"
+                  element={<ServiceViewPage />}
+                />
+                <Route
+                  path="/experts/management/application/:id"
+                  element={<ExpertApplicationRoute />}
+                />
+                <Route path="/experts/suspended" element={<ExpertSuspendedExpertsPage />} />
+                <Route path="/experts/deleted" element={<ExpertDeletedExpertsPage />} />
+                <Route path="/experts/reported" element={<ExpertReportedExpertsPage />} />
+                <Route path="/experts/pending-approvals" element={<ExpertPendingApprovalsPage />} />
+                <Route path="/experts/leaderboard" element={<LeaderboardPage />} />
               </Route>
 
               <Route element={<PermissionRoute module="services" />}>

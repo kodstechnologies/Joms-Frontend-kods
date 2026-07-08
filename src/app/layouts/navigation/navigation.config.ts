@@ -18,7 +18,7 @@ export type NavBadge =
   }
   | undefined
 
-export type PermissionModule = 'venues' | 'services'
+export type PermissionModule = 'venues' | 'services' | 'experts'
 
 export type NavItem = {
   key: string
@@ -43,11 +43,11 @@ export const navigationConfig: NavItem[] = [
     ],
   },
   {
-  key: "my-task",
-  label: "My Task",
-  icon: ClipboardList,
- 
-},
+    key: "my-task",
+    label: "My Task",
+    icon: ClipboardList,
+    to: "/my-tasks",
+  },
   {
     key: 'expert-application',
     label: 'Expert Application',
@@ -56,7 +56,7 @@ export const navigationConfig: NavItem[] = [
       {
         key: 'expert.management-group',
         label: 'Expert',
-        superAdminOnly: true,
+        permissionModule: 'experts',
         children: [
           {
             key: 'expert.management.dashboard',

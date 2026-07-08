@@ -51,6 +51,10 @@ function isNavItemVisible(
     return hasModuleAccess(user, item.permissionModule)
   }
 
+  if (item.key === 'my-task') {
+    return true
+  }
+
   if (!isSuperAdmin && context.allowedModule) {
     return hasModuleAccess(user, context.allowedModule)
   }
@@ -113,5 +117,9 @@ export function getDefaultHomeRoute(user: AdminUser | null | undefined): string 
     return '/venues/dashboard'
   }
 
-  return '/auth/login'
+  if (hasModuleAccess(user, 'experts')) {
+    return '/experts/management'
+  }
+
+  return '/my-tasks'
 }

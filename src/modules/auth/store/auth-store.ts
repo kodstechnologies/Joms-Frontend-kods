@@ -23,7 +23,7 @@ type AuthState = {
   updateUser: (partial: Partial<AdminUser>) => void
   clearSession: () => void
   hasPermission: (key: string) => boolean
-  hasModuleAccess: (module: 'venues' | 'services') => boolean
+  hasModuleAccess: (module: 'venues' | 'services' | 'experts') => boolean
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -37,9 +37,14 @@ export const useAuthStore = create<AuthState>()(
         set((state) => {
           if (!state.user) return state
 
-          const hasChanges = Object.entries(partial).some(
-            ([key, value]) => state.user?.[key as keyof AdminUser] !== value,
-          )
+          const hasChanges = Object.entries(partial).some(([key, value]) => {
+            const current = state.user?.[key as keyof AdminUser]
+            if (Array.isArray(current) && Array.isArray(value)) {
+              if (current.length !== value.length) return true
+              return current.some((item, index) => item !== value[index])
+            }
+            return current !== value
+          })
 
           if (!hasChanges) return state
 
@@ -54,7 +59,7 @@ export const useAuthStore = create<AuthState>()(
         if (user.isSuperAdmin) return true
         return user.permissions.includes(key)
       },
-      hasModuleAccess: (module: 'venues' | 'services') => {
+      hasModuleAccess: (module: 'venues' | 'services' | 'experts') => {
         const user = get().user
         if (!user) return false
         if (user.isSuperAdmin) return true
