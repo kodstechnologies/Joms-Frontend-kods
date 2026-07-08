@@ -21,7 +21,7 @@ export function SettingsSectionCard({
         className,
       )}
     >
-      <div className="mb-5 space-y-1">
+      <div className="mb-5 space-y-1 border-b border-white/10 pb-4">
         <h2 className="text-lg font-semibold text-white">{title}</h2>
         {description ? <p className="text-sm text-slate-400">{description}</p> : null}
       </div>

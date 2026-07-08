@@ -6,6 +6,7 @@ type SettingsToggleRowProps = {
   checked: boolean
   onChange: (checked: boolean) => void
   indented?: boolean
+  className?: string
 }
 
 export function SettingsToggleRow({
@@ -14,12 +15,14 @@ export function SettingsToggleRow({
   checked,
   onChange,
   indented = false,
+  className,
 }: SettingsToggleRowProps) {
   return (
     <div
       className={cn(
         'flex items-start justify-between gap-4 border-b border-white/5 py-3 last:border-b-0',
         indented && 'ml-4 border-l border-white/10 pl-4',
+        className,
       )}
     >
       <div className="min-w-0 space-y-1">

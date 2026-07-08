@@ -4,6 +4,7 @@ import type {
   ExpertSettings,
   ModuleSettingsMap,
   ServiceSettings,
+  SettingsLog,
   SettingsModule,
   SettingsResponse,
   VenueSettings,
@@ -13,6 +14,7 @@ type ApiEnvelope<T> = {
   success: boolean
   message: string
   data: T
+  meta?: unknown
 }
 
 export const fetchSettings = async <M extends SettingsModule>(module: M) => {
@@ -37,6 +39,29 @@ export const resetSettings = async <M extends SettingsModule>(module: M) => {
     ApiEnvelope<SettingsResponse<ModuleSettingsMap[M]>>
   >(`/settings/${module}/reset`)
   return response.data.data
+}
+
+export const fetchSettingsLogs = async (params?: {
+  page?: number
+  limit?: number
+  search?: string
+  module?: SettingsModule
+  action?: 'update' | 'reset'
+}) => {
+  const response = await settingsApiClient.get<{
+    success: boolean
+    message: string
+    data: SettingsLog[]
+    meta: { page: number; limit: number; total: number; totalPages: number }
+  }>('/settings/logs', { params })
+  return response.data
+}
+
+export const fetchSettingsLog = async (id: string) => {
+  const response = await settingsApiClient.get<{ success: boolean; message: string; data: SettingsLog }>(
+    `/settings/logs/${id}`,
+  )
+  return response.data
 }
 
 export type { ExpertSettings, VenueSettings, ServiceSettings }

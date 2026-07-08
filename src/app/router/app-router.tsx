@@ -178,6 +178,26 @@ const PlatformHealthPage = lazy(() =>
     default: m.PlatformHealthPage,
   })),
 )
+const SettingsLogsPage = lazy(() =>
+  import('@/modules/settings').then((m) => ({
+    default: m.SettingsLogsPage,
+  })),
+)
+const BackupConfigurationPage = lazy(() =>
+  import('@/modules/settings').then((m) => ({
+    default: m.BackupConfigurationPage,
+  })),
+)
+const LockedAccountsPage = lazy(() =>
+  import('@/modules/settings').then((m) => ({
+    default: m.LockedAccountsPage,
+  })),
+)
+const LoginTrailsPage = lazy(() =>
+  import('@/modules/settings').then((m) => ({
+    default: m.LoginTrailsPage,
+  })),
+)
 const CategoryHubPage = lazy(() =>
   import('@/modules/settings').then((m) => ({
     default: m.CategoryHubPage,
@@ -197,6 +217,11 @@ const ApiKeyManagementPage = lazy(() =>
 const PolicyManagementPage = lazy(() =>
   import('@/modules/settings').then((m) => ({
     default: m.PolicyManagementPage,
+  })),
+)
+const PolicyCreatePage = lazy(() =>
+  import('@/modules/settings').then((m) => ({
+    default: m.PolicyCreatePage,
   })),
 )
 const PolicyTimelinePage = lazy(() =>
@@ -669,8 +694,13 @@ export function AppRouter() {
                 <Route path="/memberships/experts" element={<ExpertMembershipsPage />} />
                 <Route path="/memberships/experts/:id" element={<MembershipDetailsPage />} />
                 <Route path="/settings/health" element={<PlatformHealthPage />} />
+                <Route path="/settings/logs" element={<SettingsLogsPage />} />
+                <Route path="/settings/backup/configure" element={<BackupConfigurationPage />} />
+                <Route path="/settings/security/locked-accounts" element={<LockedAccountsPage />} />
+                <Route path="/settings/security/login-trails" element={<LoginTrailsPage />} />
                 <Route path="/settings/main" element={<MainSettingsPage />} />
                 <Route path="/settings/policies" element={<PolicyManagementPage />} />
+                <Route path="/settings/policies/create" element={<PolicyCreatePage />} />
                 <Route path="/settings/policies/:id/timeline" element={<PolicyTimelinePage />} />
                 <Route path="/settings/policies/:id" element={<PolicyDetailPage />} />
                 <Route path="/settings/categories" element={<CategoryHubPage />} />
