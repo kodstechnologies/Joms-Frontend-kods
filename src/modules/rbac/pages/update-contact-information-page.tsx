@@ -9,7 +9,8 @@ import {
   useCompleteContactSetup,
   useContactSetupProfile,
 } from '../hooks/use-rbac'
-import type { PermissionCatalog, Role } from '../types/rbac'
+import { RbacLoader } from '../components/rbac-loader'
+import type { PermissionCatalog, SubAdminRole } from '../types/rbac'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
 import { cn } from '@/shared/lib/cn'
@@ -18,7 +19,7 @@ import { uiTokens } from '@/shared/lib/design-tokens'
 type ModuleAccess = 'full' | 'limited' | 'none'
 
 const getModuleAccess = (
-  role: Role,
+  role: SubAdminRole,
   moduleKey: string,
   catalog: PermissionCatalog,
 ): ModuleAccess => {
@@ -57,7 +58,7 @@ export function UpdateContactInformationPage() {
   const [bloodGroup, setBloodGroup] = useState('')
   const [mfaCode, setMfaCode] = useState('')
   const [profileImageUrl, setProfileImageUrl] = useState('')
-  const [permissionViewRole, setPermissionViewRole] = useState<Role | null>(null)
+  const [permissionViewRole, setPermissionViewRole] = useState<SubAdminRole | null>(null)
 
   useEffect(() => {
     if (!user) return
@@ -158,11 +159,7 @@ export function UpdateContactInformationPage() {
   }
 
   if (profileQuery.isLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-brand-bg text-brand-muted">
-        Loading contact information...
-      </div>
-    )
+    return <RbacLoader label="Loading contact information..." fullScreen />
   }
 
   return (

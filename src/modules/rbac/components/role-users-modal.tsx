@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 
 import { useRoleUsers } from '../hooks/use-rbac'
 import type { SubAdmin } from '../types/rbac'
+import { RbacLoader } from './rbac-loader'
 
 type RoleUsersModalProps = {
   open: boolean
@@ -91,7 +92,7 @@ export function RoleUsersModal({ open, roleId, onClose }: RoleUsersModalProps) {
 
         <div className="flex-1 space-y-3 overflow-y-auto px-6 py-5">
           {isLoading ? (
-            <p className="py-4 text-center text-sm text-brand-muted">Loading users…</p>
+            <RbacLoader label="Loading users..." className="min-h-[120px]" />
           ) : users.length === 0 ? (
             <p className="py-4 text-center text-sm text-brand-muted">No users assigned to this role.</p>
           ) : (

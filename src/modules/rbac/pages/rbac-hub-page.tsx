@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { BarChart3, Eye, Pencil, Plus, Settings, ShieldOff, Trash2, UserPlus } from 'lucide-react'
+import { BarChart3, Eye, Pencil, Plus, Settings, Shield, ShieldOff, Trash2, UserCheck, UserPlus } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
@@ -9,12 +9,14 @@ import { UpdatePasswordModal } from '../components/update-password-modal'
 import {
   useDeleteRole,
   useDisableRole,
+  useEnableRole,
   useDeleteSubAdmin,
   useRoleUsers,
   useRoles,
   useRbacStats,
   useSubAdmins,
   useSuspendSubAdmin,
+  useReactivateSubAdmin,
   useUpdateSubAdminPassword,
 } from '../hooks/use-rbac'
 import { useRbacStore } from '../store/rbac-store'
@@ -85,8 +87,10 @@ export function RbacHubPage() {
   )
 
   const disableRoleMutation = useDisableRole()
+  const enableRoleMutation = useEnableRole()
   const deleteRoleMutation = useDeleteRole()
   const suspendMutation = useSuspendSubAdmin()
+  const reactivateMutation = useReactivateSubAdmin()
   const deleteSubAdminMutation = useDeleteSubAdmin()
   const updatePasswordMutation = useUpdateSubAdminPassword()
 
@@ -107,6 +111,19 @@ export function RbacHubPage() {
       setActiveDropdownId(null)
     },
     [disableRoleMutation],
+  )
+
+  const handleEnableRole = useCallback(
+    async (id: string) => {
+      try {
+        await enableRoleMutation.mutateAsync(id)
+        toast.success('Role enabled')
+      } catch {
+        toast.error('Failed to enable role')
+      }
+      setActiveDropdownId(null)
+    },
+    [enableRoleMutation],
   )
 
   const handleDeleteRole = useCallback(
@@ -133,6 +150,19 @@ export function RbacHubPage() {
       setActiveDropdownId(null)
     },
     [suspendMutation],
+  )
+
+  const handleReactivateUser = useCallback(
+    async (id: string) => {
+      try {
+        await reactivateMutation.mutateAsync(id)
+        toast.success('User reactivated')
+      } catch {
+        toast.error('Failed to reactivate user')
+      }
+      setActiveDropdownId(null)
+    },
+    [reactivateMutation],
   )
 
   const handleDeleteUser = useCallback(
@@ -265,12 +295,21 @@ export function RbacHubPage() {
             >
               <span className="text-brand-danger">Remove Role</span>
             </TableActionsItem>
-            <TableActionsItem
-              icon={<ShieldOff className="size-3.5" />}
-              onClick={() => handleDisableRole(row.original.id)}
-            >
-              Disable Role
-            </TableActionsItem>
+            {row.original.status === 'active' ? (
+              <TableActionsItem
+                icon={<ShieldOff className="size-3.5" />}
+                onClick={() => handleDisableRole(row.original.id)}
+              >
+                Disable Role
+              </TableActionsItem>
+            ) : (
+              <TableActionsItem
+                icon={<Shield className="size-3.5 text-brand-success" />}
+                onClick={() => handleEnableRole(row.original.id)}
+              >
+                <span className="text-brand-success">Enable Role</span>
+              </TableActionsItem>
+            )}
             <TableActionsItem
               icon={<UserPlus className="size-3.5" />}
               onClick={() => navigate('/settings/access/users/create')}
@@ -287,7 +326,7 @@ export function RbacHubPage() {
         ),
       },
     ],
-    [activeDropdownId, handleDeleteRole, handleDisableRole, navigate],
+    [activeDropdownId, handleDeleteRole, handleDisableRole, handleEnableRole, navigate],
   )
 
   const userColumns = useMemo<ColumnDef<SubAdmin>[]>(
@@ -383,17 +422,26 @@ export function RbacHubPage() {
             >
               <span className="text-brand-danger">Remove User</span>
             </TableActionsItem>
-            <TableActionsItem
-              icon={<ShieldOff className="size-3.5 text-brand-danger" />}
-              onClick={() => handleSuspendUser(row.original.id)}
-            >
-              <span className="text-brand-danger">Suspend user</span>
-            </TableActionsItem>
+            {row.original.status === 'active' ? (
+              <TableActionsItem
+                icon={<ShieldOff className="size-3.5 text-brand-danger" />}
+                onClick={() => handleSuspendUser(row.original.id)}
+              >
+                <span className="text-brand-danger">Suspend user</span>
+              </TableActionsItem>
+            ) : (
+              <TableActionsItem
+                icon={<UserCheck className="size-3.5 text-brand-success" />}
+                onClick={() => handleReactivateUser(row.original.id)}
+              >
+                <span className="text-brand-success">Reactivate user</span>
+              </TableActionsItem>
+            )}
           </TableActionsDropdown>
         ),
       },
     ],
-    [activeDropdownId, handleDeleteUser, handleSuspendUser, navigate],
+    [activeDropdownId, handleDeleteUser, handleReactivateUser, handleSuspendUser, navigate],
   )
 
   const isRolesTab = activeTab === 'roles'

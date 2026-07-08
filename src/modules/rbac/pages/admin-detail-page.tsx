@@ -1,16 +1,18 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { ArrowLeft, ArrowLeftRight, Clock, Trash2, UserRound, X } from 'lucide-react'
+import { ArrowLeft, ArrowLeftRight, Clock, Trash2, UserCheck, UserRound, X } from 'lucide-react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 
 import { AdminNoteModal } from '../components/admin-note-modal'
+import { RbacLoader } from '../components/rbac-loader'
 import { UpdatePasswordModal } from '../components/update-password-modal'
 import {
   useDeleteSubAdmin,
   useSubAdmin,
   useSubAdminLogs,
   useSuspendSubAdmin,
+  useReactivateSubAdmin,
   useUpdateSubAdminPassword,
 } from '../hooks/use-rbac'
 import type { AuditLog } from '../types/rbac'
@@ -102,6 +104,7 @@ export function AdminDetailPage() {
   })
 
   const suspendMutation = useSuspendSubAdmin()
+  const reactivateMutation = useReactivateSubAdmin()
   const deleteMutation = useDeleteSubAdmin()
   const updatePasswordMutation = useUpdateSubAdminPassword()
 
@@ -148,6 +151,16 @@ export function AdminDetailPage() {
     }
   }, [id, suspendMutation])
 
+  const handleReactivate = useCallback(async () => {
+    if (!id) return
+    try {
+      await reactivateMutation.mutateAsync(id)
+      toast.success('User reactivated')
+    } catch {
+      toast.error('Failed to reactivate user')
+    }
+  }, [id, reactivateMutation])
+
   const handleDelete = useCallback(async () => {
     if (!id) return
     try {
@@ -178,11 +191,7 @@ export function AdminDetailPage() {
   )
 
   if (isLoading || !subAdmin) {
-    return (
-      <div className="flex min-h-[40vh] items-center justify-center text-brand-muted">
-        Loading admin details...
-      </div>
-    )
+    return <RbacLoader label="Loading admin details..." />
   }
 
   return (
@@ -236,12 +245,19 @@ export function AdminDetailPage() {
             <ArrowLeftRight className="size-4" />
             Change Role
           </button>
-          <button type="button" className={dangerActionButtonClass} onClick={handleSuspend}>
-            <span className="grid size-5 place-items-center rounded-full bg-white/20">
-              <X className="size-3" />
-            </span>
-            Suspend
-          </button>
+          {subAdmin?.status === 'active' ? (
+            <button type="button" className={dangerActionButtonClass} onClick={handleSuspend}>
+              <span className="grid size-5 place-items-center rounded-full bg-white/20">
+                <X className="size-3" />
+              </span>
+              Suspend
+            </button>
+          ) : (
+            <button type="button" className={goldActionButtonClass} onClick={handleReactivate}>
+              <UserCheck className="size-4" />
+              Reactivate
+            </button>
+          )}
           <button type="button" className={dangerActionButtonClass} onClick={handleDelete}>
             <span className="grid size-5 place-items-center rounded-full bg-white/20">
               <Trash2 className="size-3" />

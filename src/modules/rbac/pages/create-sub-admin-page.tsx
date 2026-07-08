@@ -8,6 +8,7 @@ import {
   usePermissionCatalog,
   useRoles,
 } from '../hooks/use-rbac'
+import { RbacLoader } from '../components/rbac-loader'
 import type { CreateSubAdminPayload, PermissionCatalog, Role } from '../types/rbac'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
@@ -318,7 +319,7 @@ export function CreateSubAdminPage() {
               {roleListOpen ? (
                 <div className="max-h-72 space-y-3 overflow-auto rounded-brand-md border border-white/10 p-2">
                   {rolesLoading ? (
-                    <p className="px-2 py-3 text-sm text-brand-muted">Loading roles...</p>
+                    <RbacLoader label="Loading roles..." className="min-h-[120px]" />
                   ) : filteredRoles.length ? (
                     filteredRoles.map((role) => {
                       const checked = form.roleIds.includes(role.id)
@@ -361,7 +362,7 @@ export function CreateSubAdminPage() {
 
               {selectedRoles.length > 0 ? (
                 catalogLoading ? (
-                  <p className="text-sm text-brand-muted">Loading permissions...</p>
+                  <RbacLoader label="Loading permissions..." className="min-h-[120px]" />
                 ) : (
                   <div className="grid gap-4 lg:grid-cols-2">
                     {selectedRoles.map((role) => (

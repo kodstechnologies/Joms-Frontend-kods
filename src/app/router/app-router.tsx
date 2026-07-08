@@ -329,6 +329,11 @@ const UpdateContactInformationPage = lazy(() =>
     default: m.UpdateContactInformationPage,
   })),
 )
+const MyProfilePage = lazy(() =>
+  import('@/modules/rbac').then((m) => ({
+    default: m.MyProfilePage,
+  })),
+)
 const SpaceDetailsPage = lazy(() =>
   import('@/modules/expert').then((m) => ({
     default: m.SpaceDetailsPage,
@@ -651,6 +656,7 @@ export function AppRouter() {
               <Route element={<DashboardLayout />}>
               <Route path="/" element={<HomeRedirect />} />
               <Route path="/dashboard" element={<HomeRedirect />} />
+              <Route path="/settings/access/my-profile" element={<MyProfilePage />} />
 
               <Route element={<SuperAdminRoute />}>
                 <Route path="/dashboard/executive" element={<ExecutiveOverviewPage />} />

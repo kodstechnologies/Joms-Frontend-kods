@@ -7,6 +7,7 @@ import {
   deleteRole,
   deleteSubAdmin,
   disableRole,
+  enableRole,
   fetchContactSetupProfile,
   fetchPermissionCatalog,
   fetchRbacMe,
@@ -16,6 +17,7 @@ import {
   fetchRoles,
   fetchSubAdmin,
   fetchSubAdminLogs,
+  fetchMySubAdminLogs,
   fetchRoleLogs,
   fetchAuditLog,
   flagAuditLog,
@@ -24,6 +26,7 @@ import {
   revokeSubAdminInvite,
   fetchSubAdmins,
   suspendSubAdmin,
+  reactivateSubAdmin,
   updateRole,
   updateSubAdmin,
   updateSubAdminPassword,
@@ -47,6 +50,7 @@ export const rbacKeys = {
   subAdmins: (params?: object) => ['rbac', 'sub-admins', params] as const,
   subAdmin: (id: string) => ['rbac', 'sub-admin', id] as const,
   logs: (id: string, params?: object) => ['rbac', 'logs', id, params] as const,
+  myLogs: (params?: object) => ['rbac', 'my-logs', params] as const,
   roleLogs: (id: string, params?: object) => ['rbac', 'role-logs', id, params] as const,
   auditLog: (id: string) => ['rbac', 'audit-log', id] as const,
   invites: (id: string, params?: object) => ['rbac', 'invites', id, params] as const,
@@ -160,6 +164,13 @@ export function useSubAdminLogs(
   })
 }
 
+export function useMySubAdminLogs(params?: { page?: number; limit?: number; search?: string }) {
+  return useQuery({
+    queryKey: rbacKeys.myLogs(params),
+    queryFn: () => fetchMySubAdminLogs(params),
+  })
+}
+
 export function useRoleLogs(
   id: string,
   params?: { page?: number; limit?: number; search?: string },
@@ -252,6 +263,16 @@ export function useDisableRole() {
   })
 }
 
+export function useEnableRole() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => enableRole(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: rbacKeys.all })
+    },
+  })
+}
+
 export function useDeleteRole() {
   const queryClient = useQueryClient()
   return useMutation({
@@ -287,6 +308,16 @@ export function useSuspendSubAdmin() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (id: string) => suspendSubAdmin(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: rbacKeys.all })
+    },
+  })
+}
+
+export function useReactivateSubAdmin() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => reactivateSubAdmin(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: rbacKeys.all })
     },

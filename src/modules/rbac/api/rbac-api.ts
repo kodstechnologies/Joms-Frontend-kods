@@ -90,6 +90,11 @@ export const disableRole = async (id: string) => {
   return response.data
 }
 
+export const enableRole = async (id: string) => {
+  const response = await adminApiClient.patch(`/admin/rbac/roles/${id}/enable`)
+  return response.data
+}
+
 export const deleteRole = async (id: string) => {
   const response = await adminApiClient.delete(`/admin/rbac/roles/${id}`)
   return response.data
@@ -129,6 +134,11 @@ export const suspendSubAdmin = async (id: string) => {
   return response.data
 }
 
+export const reactivateSubAdmin = async (id: string) => {
+  const response = await adminApiClient.patch(`/admin/rbac/sub-admins/${id}/reactivate`)
+  return response.data
+}
+
 export const deleteSubAdmin = async (id: string) => {
   const response = await adminApiClient.delete(`/admin/rbac/sub-admins/${id}`)
   return response.data
@@ -151,6 +161,15 @@ export const fetchSubAdminLogs = async (id: string, params?: ListParams) => {
     data: { subject: AdminLogSubject; subAdmin: SubAdmin; logs: AuditLog[] }
     meta: { page: number; limit: number; total: number; totalPages: number }
   }>(`/admin/rbac/sub-admins/${id}/logs`, { params })
+  return response.data
+}
+
+export const fetchMySubAdminLogs = async (params?: ListParams) => {
+  const response = await adminApiClient.get<{
+    success: boolean
+    data: { subject: AdminLogSubject; subAdmin: SubAdmin; logs: AuditLog[] }
+    meta: { page: number; limit: number; total: number; totalPages: number }
+  }>('/admin/rbac/me/logs', { params })
   return response.data
 }
 

@@ -18,6 +18,7 @@ import {
 } from '../hooks/use-rbac'
 import type { AdminLogSubject, AuditLog } from '../types/rbac'
 import { AdminNoteModal } from '../components/admin-note-modal'
+import { RbacLoader } from '../components/rbac-loader'
 import { RoleUsersModal } from '../components/role-users-modal'
 import { DataTable } from '@/shared/components/table/data-table'
 import {
@@ -121,7 +122,7 @@ function UserOverviewCard({
   if (!subject || subject.type !== 'subAdmin') {
     return (
       <div className={cn(uiTokens.radiusCard, uiTokens.borderSubtle, 'bg-brand-surface p-6')}>
-        <p className="text-sm text-brand-muted">Loading overview…</p>
+        <RbacLoader label="Loading overview..." className="min-h-[120px]" />
       </div>
     )
   }
@@ -204,7 +205,7 @@ function RoleOverviewCard({
   if (!subject || subject.type !== 'role') {
     return (
       <div className={cn(uiTokens.radiusCard, uiTokens.borderSubtle, 'bg-brand-surface p-6')}>
-        <p className="text-sm text-brand-muted">Loading overview…</p>
+        <RbacLoader label="Loading overview..." className="min-h-[120px]" />
       </div>
     )
   }

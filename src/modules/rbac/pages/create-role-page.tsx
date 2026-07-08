@@ -4,6 +4,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 
 import { PermissionAccordions } from '../components/permission-accordions'
+import { RbacLoader } from '../components/rbac-loader'
 import {
   useCreateRole,
   usePermissionCatalog,
@@ -125,7 +126,7 @@ export function CreateRolePage() {
               onChange={setPermissions}
             />
           ) : (
-            <p className="text-sm text-brand-muted">Loading permission catalog…</p>
+            <RbacLoader label="Loading permission catalog..." className="min-h-[140px]" />
           )}
         </div>
       </div>
