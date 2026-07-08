@@ -5,7 +5,7 @@ import { toast } from 'sonner'
 
 import { AssignUserModal } from './assign-user-modal'
 import { useAssignIncident, useIncidentMetrics, useIncidents } from '../hooks/use-incidents'
-import type { IncidentRow, IncidentSeverity, IncidentStatus } from '../types/settings'
+import type { IncidentRow, IncidentSeverity, IncidentStatus, SettingsMetric } from '../types/settings'
 import { StatCard } from '@/shared/components/dashboard/stat-card'
 import { DataTable } from '@/shared/components/table/data-table'
 import { ResponsiveGrid } from '@/shared/components/responsive/responsive-grid'
@@ -48,6 +48,7 @@ export function IncidentTrackingPanel() {
   const [selected, setSelected] = useState<IncidentRow | null>(null)
 
   const { data: metrics = [], isLoading: metricsLoading } = useIncidentMetrics()
+  const metricCards: SettingsMetric[] = metricsLoading ? [] : metrics
   const { data: incidentsResult, isLoading } = useIncidents({ page, limit: PAGE_SIZE, search })
   const assignMutation = useAssignIncident()
 
@@ -119,19 +120,19 @@ export function IncidentTrackingPanel() {
       </div>
 
       <ResponsiveGrid mobileCols={1} tabletCols={2} desktopCols={4} gap={4}>
-        {(metricsLoading ? Array.from({ length: 4 }) : metrics).map((metric, index) =>
-          metricsLoading ? (
-            <div key={index} className="h-24 animate-pulse rounded-xl bg-white/5" />
-          ) : (
-            <StatCard
-              key={metric.title}
-              title={metric.title}
-              value={metric.value}
-              trend={metric.trend}
-              hint={metric.hint}
-            />
-          ),
-        )}
+        {metricsLoading
+          ? Array.from({ length: 4 }).map((_, index) => (
+              <div key={index} className="h-24 animate-pulse rounded-xl bg-white/5" />
+            ))
+          : metricCards.map((metric) => (
+              <StatCard
+                key={metric.title}
+                title={metric.title}
+                value={metric.value}
+                trend={metric.trend}
+                hint={metric.hint}
+              />
+            ))}
       </ResponsiveGrid>
 
       <div className={cn(uiTokens.radiusCard, uiTokens.borderSubtle, 'bg-brand-surface p-4 sm:p-5')}>

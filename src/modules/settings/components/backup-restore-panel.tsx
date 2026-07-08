@@ -6,7 +6,7 @@ import { toast } from 'sonner'
 
 import { RestoreBackupModal } from './restore-backup-modal'
 import { useBackupMetrics, useBackups, useDeleteBackup, useRestoreBackup, useRunBackup } from '../hooks/use-backups'
-import type { BackupHistoryRow } from '../types/settings'
+import type { BackupHistoryRow, SettingsMetric } from '../types/settings'
 import { StatCard } from '@/shared/components/dashboard/stat-card'
 import { DataTable } from '@/shared/components/table/data-table'
 import { ResponsiveGrid } from '@/shared/components/responsive/responsive-grid'
@@ -37,6 +37,7 @@ export function BackupRestorePanel() {
   const [restoreTarget, setRestoreTarget] = useState<BackupHistoryRow | null>(null)
 
   const { data: metrics = [], isLoading: metricsLoading } = useBackupMetrics()
+  const metricCards: SettingsMetric[] = metricsLoading ? [] : metrics
   const { data: backupsResult, isLoading } = useBackups({ page, limit: PAGE_SIZE, search })
   const runBackupMutation = useRunBackup()
   const restoreMutation = useRestoreBackup()
@@ -162,13 +163,13 @@ export function BackupRestorePanel() {
       </div>
 
       <ResponsiveGrid mobileCols={1} tabletCols={2} desktopCols={4} gap={4}>
-        {(metricsLoading ? Array.from({ length: 4 }) : metrics).map((metric, index) =>
-          metricsLoading ? (
-            <div key={index} className="h-24 animate-pulse rounded-xl bg-white/5" />
-          ) : (
-            <StatCard key={metric.title} title={metric.title} value={metric.value} trend={metric.trend} />
-          ),
-        )}
+        {metricsLoading
+          ? Array.from({ length: 4 }).map((_, index) => (
+              <div key={index} className="h-24 animate-pulse rounded-xl bg-white/5" />
+            ))
+          : metricCards.map((metric) => (
+              <StatCard key={metric.title} title={metric.title} value={metric.value} trend={metric.trend} />
+            ))}
       </ResponsiveGrid>
 
       <div className={cn(uiTokens.radiusCard, uiTokens.borderSubtle, 'bg-brand-surface p-4 sm:p-5')}>
