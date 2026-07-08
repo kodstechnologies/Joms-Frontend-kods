@@ -95,7 +95,7 @@ export function CategoryManagementPage() {
         }}
         searchPlaceholder="Search by name or ID"
         onAdvancedFilter={() => navigate(categoryPath(scope, 'filter'))}
-        onExport={() => {}}
+        onExport={() => { }}
         isLoading={isLoading}
         pagination={{
           page,

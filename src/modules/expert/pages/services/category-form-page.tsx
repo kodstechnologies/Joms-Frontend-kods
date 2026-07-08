@@ -23,6 +23,7 @@ type CategoryFormPageProps = {
   mode: 'create' | 'rename' | 'subcategory'
 }
 
+
 export const CategoryFormPage = ({ mode }: CategoryFormPageProps) => {
   const navigate = useNavigate()
   const { id } = useParams()
