@@ -1,10 +1,9 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { CloudUpload } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { ChooseErrorTemplateModal } from './choose-error-template-modal'
-import { ScheduleMaintenanceModal } from './schedule-maintenance-modal'
 import { SettingsFieldRow, settingsControlClass } from './settings-field-row'
 import { SettingsSectionCard } from './settings-section-card'
 import { SettingsToggleRow } from './settings-toggle-row'
@@ -25,8 +24,8 @@ type PlatformSettingsPanelProps = {
 }
 
 export function PlatformSettingsPanel({ value, onChange }: PlatformSettingsPanelProps) {
+  const navigate = useNavigate()
   const [errorTemplateOpen, setErrorTemplateOpen] = useState(false)
-  const [maintenanceOpen, setMaintenanceOpen] = useState(false)
 
   const updateApplication = (patch: Partial<PlatformSettings['applicationSettings']>) => {
     onChange({
@@ -64,16 +63,17 @@ export function PlatformSettingsPanel({ value, onChange }: PlatformSettingsPanel
         </SettingsFieldRow>
         <div className="grid gap-4 pt-2 sm:grid-cols-2">
           {['Logo', 'Favicon'].map((label) => (
-            <button
-              key={label}
-              type="button"
-              onClick={() => toast.message(`${label} upload coming soon`)}
-              className="flex min-h-[120px] flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-white/15 bg-[#141414] text-slate-400 transition-colors hover:border-white/25 hover:text-white"
-            >
-              <CloudUpload className="size-6" />
-              <span className="text-sm font-medium">{label}</span>
-              <span className="text-xs">Upload</span>
-            </button>
+            <div key={label} className="space-y-2">
+              <p className="text-xs font-medium text-slate-300">{label}</p>
+              <button
+                type="button"
+                onClick={() => toast.message(`${label} upload coming soon`)}
+                className="flex h-[72px] w-[72px] flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-white/20 bg-[#0E0E0E] text-slate-300 transition-colors hover:border-white/35 hover:text-white"
+              >
+                <CloudUpload className="size-4" />
+                <span className="text-[10px]">Upload</span>
+              </button>
+            </div>
           ))}
         </div>
       </SettingsSectionCard>
@@ -171,6 +171,7 @@ export function PlatformSettingsPanel({ value, onChange }: PlatformSettingsPanel
           description="Enable or disable system maintenance mode"
           checked={value.generalSettings.maintenanceMode}
           onChange={(checked) => updateGeneral({ maintenanceMode: checked })}
+          className="rounded-lg border border-white/10 bg-[#0D0D0D] px-3"
         />
         <SettingsFieldRow label="Custom Error Messages">
           <div className="flex flex-col gap-2 sm:flex-row">
@@ -204,27 +205,22 @@ export function PlatformSettingsPanel({ value, onChange }: PlatformSettingsPanel
         </SettingsFieldRow>
         <div className="space-y-3 border-t border-white/5 pt-4">
           <p className="text-sm font-medium text-white">Policy Management</p>
-          <div className="space-y-2">
-            {['User Application Policy', 'Expert Application Policy'].map((label) => (
+          <div className="grid gap-2 sm:grid-cols-2">
+            {[
+              { label: 'Policy Management', to: '/settings/policies' },
+              { label: 'Terms & Condition Management', to: '/settings/policies/terms' },
+            ].map((item) => (
               <div
-                key={label}
+                key={item.label}
                 className="flex items-center justify-between rounded-lg border border-white/5 bg-[#141414] px-4 py-3"
               >
-                <span className="text-sm text-slate-300">{label}</span>
-                <Button variant="secondary" onClick={() => toast.message('Policy view coming soon')}>
+                <span className="text-sm text-slate-300">{item.label}</span>
+                <Button variant="secondary" onClick={() => navigate(item.to)}>
                   View
                 </Button>
               </div>
             ))}
           </div>
-          <Link to="/settings/policies">
-            <Button variant="secondary">Open Policy Management</Button>
-          </Link>
-        </div>
-        <div className="pt-2">
-          <Button variant="secondary" onClick={() => setMaintenanceOpen(true)}>
-            Schedule Maintenance
-          </Button>
         </div>
       </SettingsSectionCard>
 
@@ -236,10 +232,6 @@ export function PlatformSettingsPanel({ value, onChange }: PlatformSettingsPanel
           updateGeneral({ customErrorMessage: message })
           setErrorTemplateOpen(false)
         }}
-      />
-      <ScheduleMaintenanceModal
-        open={maintenanceOpen}
-        onClose={() => setMaintenanceOpen(false)}
       />
     </div>
   )

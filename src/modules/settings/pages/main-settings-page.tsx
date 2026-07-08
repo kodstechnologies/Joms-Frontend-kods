@@ -1,13 +1,16 @@
 import { useEffect, useState } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
-import { EventManagementPanel } from '../components/event-management-panel'
+import { BackupRestorePanel } from '../components/backup-restore-panel'
 import { ExpertSettingsPanel } from '../components/expert-settings-panel'
+import { FinanceTransactionalPanel } from '../components/finance-transactional-panel'
+import { IncidentTrackingPanel } from '../components/incident-tracking-panel'
+import { NotificationSettingsPanel } from '../components/notification-settings-panel'
 import { PlatformSettingsPanel } from '../components/platform-settings-panel'
 import { SecurityAccessPanel } from '../components/security-access-panel'
 import { ServiceSettingsPanel } from '../components/service-settings-panel'
 import { SettingsFooterActions } from '../components/settings-footer-actions'
-import { UserApplicationPanel } from '../components/user-application-panel'
 import { VenueSettingsPanel } from '../components/venue-settings-panel'
 import {
   useResetSettings,
@@ -16,13 +19,19 @@ import {
 } from '../hooks/use-settings'
 import {
   expertDefaults,
+  financeDefaults,
+  notificationsDefaults,
   platformDefaults,
+  securityDefaults,
   serviceDefaults,
   venueDefaults,
 } from '../mock/settings.defaults'
 import type {
   ExpertSettings,
+  FinanceTransactionalSettings,
+  NotificationSettings,
   PlatformSettings,
+  SecuritySettings,
   ServiceSettings,
   SettingsModule,
   VenueSettings,
@@ -34,33 +43,64 @@ import { cn } from '@/shared/lib/cn'
 type SettingsTab =
   | 'platform'
   | 'security'
-  | 'user'
+  | 'notifications'
+  | 'finance'
+  | 'incident'
+  | 'backup'
   | 'expert'
-  | 'event'
   | 'venue'
   | 'service'
 
-const API_TABS: SettingsModule[] = ['platform', 'expert', 'venue', 'service']
+const API_TABS: SettingsModule[] = [
+  'platform',
+  'security',
+  'notifications',
+  'finance',
+  'expert',
+  'venue',
+  'service',
+]
+
+const STATIC_TABS: SettingsTab[] = ['incident', 'backup']
 
 const TABS: { key: SettingsTab; label: string }[] = [
   { key: 'platform', label: 'Platform Controls' },
   { key: 'security', label: 'Security & Access' },
-  { key: 'user', label: 'User Application' },
+  { key: 'notifications', label: 'Notifications' },
+  { key: 'finance', label: 'Finance & Transactional' },
+  { key: 'incident', label: 'Incident Tracking' },
+  { key: 'backup', label: 'Backup Configuration' },
   { key: 'expert', label: 'Expert Application' },
-  { key: 'event', label: 'Event Management' },
   { key: 'venue', label: 'Venue Management' },
   { key: 'service', label: 'Service Marketplace' },
 ]
 
 export function MainSettingsPage() {
+  const location = useLocation()
+  const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState<SettingsTab>('platform')
 
+  useEffect(() => {
+    const routedTab = (location.state as { settingsTab?: SettingsTab } | null)?.settingsTab
+    if (routedTab && TABS.some((tab) => tab.key === routedTab)) {
+      setActiveTab(routedTab)
+    }
+  }, [location.state])
+
   const platformQuery = useSettingsModule('platform')
+  const securityQuery = useSettingsModule('security')
+  const notificationsQuery = useSettingsModule('notifications')
+  const financeQuery = useSettingsModule('finance')
   const expertQuery = useSettingsModule('expert')
   const venueQuery = useSettingsModule('venue')
   const serviceQuery = useSettingsModule('service')
 
   const [platformConfig, setPlatformConfig] = useState<PlatformSettings>(platformDefaults)
+  const [securityConfig, setSecurityConfig] = useState<SecuritySettings>(securityDefaults)
+  const [notificationsConfig, setNotificationsConfig] =
+    useState<NotificationSettings>(notificationsDefaults)
+  const [financeConfig, setFinanceConfig] =
+    useState<FinanceTransactionalSettings>(financeDefaults)
   const [expertConfig, setExpertConfig] = useState<ExpertSettings>(expertDefaults)
   const [venueConfig, setVenueConfig] = useState<VenueSettings>(venueDefaults)
   const [serviceConfig, setServiceConfig] = useState<ServiceSettings>(serviceDefaults)
@@ -68,6 +108,18 @@ export function MainSettingsPage() {
   useEffect(() => {
     if (platformQuery.data?.config) setPlatformConfig(platformQuery.data.config)
   }, [platformQuery.data])
+
+  useEffect(() => {
+    if (securityQuery.data?.config) setSecurityConfig(securityQuery.data.config)
+  }, [securityQuery.data])
+
+  useEffect(() => {
+    if (notificationsQuery.data?.config) setNotificationsConfig(notificationsQuery.data.config)
+  }, [notificationsQuery.data])
+
+  useEffect(() => {
+    if (financeQuery.data?.config) setFinanceConfig(financeQuery.data.config)
+  }, [financeQuery.data])
 
   useEffect(() => {
     if (expertQuery.data?.config) setExpertConfig(expertQuery.data.config)
@@ -82,30 +134,46 @@ export function MainSettingsPage() {
   }, [serviceQuery.data])
 
   const updatePlatform = useUpdateSettings('platform')
+  const updateSecurity = useUpdateSettings('security')
+  const updateNotifications = useUpdateSettings('notifications')
+  const updateFinance = useUpdateSettings('finance')
   const updateExpert = useUpdateSettings('expert')
   const updateVenue = useUpdateSettings('venue')
   const updateService = useUpdateSettings('service')
   const resetPlatform = useResetSettings('platform')
+  const resetSecurity = useResetSettings('security')
+  const resetNotifications = useResetSettings('notifications')
+  const resetFinance = useResetSettings('finance')
   const resetExpert = useResetSettings('expert')
   const resetVenue = useResetSettings('venue')
   const resetService = useResetSettings('service')
 
   const isApiTab = API_TABS.includes(activeTab as SettingsModule)
+  const showFooter = isApiTab && !STATIC_TABS.includes(activeTab)
 
   const isLoading =
     (activeTab === 'platform' && platformQuery.isLoading) ||
+    (activeTab === 'security' && securityQuery.isLoading) ||
+    (activeTab === 'notifications' && notificationsQuery.isLoading) ||
+    (activeTab === 'finance' && financeQuery.isLoading) ||
     (activeTab === 'expert' && expertQuery.isLoading) ||
     (activeTab === 'venue' && venueQuery.isLoading) ||
     (activeTab === 'service' && serviceQuery.isLoading)
 
   const isSaving =
     updatePlatform.isPending ||
+    updateSecurity.isPending ||
+    updateNotifications.isPending ||
+    updateFinance.isPending ||
     updateExpert.isPending ||
     updateVenue.isPending ||
     updateService.isPending
 
   const isResetting =
     resetPlatform.isPending ||
+    resetSecurity.isPending ||
+    resetNotifications.isPending ||
+    resetFinance.isPending ||
     resetExpert.isPending ||
     resetVenue.isPending ||
     resetService.isPending
@@ -119,6 +187,12 @@ export function MainSettingsPage() {
     try {
       if (activeTab === 'platform') {
         await updatePlatform.mutateAsync(platformConfig)
+      } else if (activeTab === 'security') {
+        await updateSecurity.mutateAsync(securityConfig)
+      } else if (activeTab === 'notifications') {
+        await updateNotifications.mutateAsync(notificationsConfig)
+      } else if (activeTab === 'finance') {
+        await updateFinance.mutateAsync(financeConfig)
       } else if (activeTab === 'expert') {
         await updateExpert.mutateAsync(expertConfig)
       } else if (activeTab === 'venue') {
@@ -142,6 +216,15 @@ export function MainSettingsPage() {
       if (activeTab === 'platform') {
         const result = await resetPlatform.mutateAsync()
         setPlatformConfig(result.config)
+      } else if (activeTab === 'security') {
+        const result = await resetSecurity.mutateAsync()
+        setSecurityConfig(result.config)
+      } else if (activeTab === 'notifications') {
+        const result = await resetNotifications.mutateAsync()
+        setNotificationsConfig(result.config)
+      } else if (activeTab === 'finance') {
+        const result = await resetFinance.mutateAsync()
+        setFinanceConfig(result.config)
       } else if (activeTab === 'expert') {
         const result = await resetExpert.mutateAsync()
         setExpertConfig(result.config)
@@ -159,7 +242,13 @@ export function MainSettingsPage() {
   }
 
   const hasQueryError =
-    platformQuery.isError || expertQuery.isError || venueQuery.isError || serviceQuery.isError
+    platformQuery.isError ||
+    securityQuery.isError ||
+    notificationsQuery.isError ||
+    financeQuery.isError ||
+    expertQuery.isError ||
+    venueQuery.isError ||
+    serviceQuery.isError
 
   return (
     <div className="space-y-6">
@@ -175,22 +264,24 @@ export function MainSettingsPage() {
         ]}
       />
 
-      <div className="flex flex-wrap gap-1 rounded-xl border border-white/10 bg-[#111111] p-1">
-        {TABS.map((tab) => (
-          <button
-            key={tab.key}
-            type="button"
-            onClick={() => setActiveTab(tab.key)}
-            className={cn(
-              'rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
-              activeTab === tab.key
-                ? 'bg-[#1a1a1a] text-white'
-                : 'text-slate-400 hover:text-white',
-            )}
-          >
-            {tab.label}
-          </button>
-        ))}
+      <div className="overflow-x-auto rounded-xl border border-white/10 bg-[#111111] p-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="flex w-max min-w-full gap-1">
+          {TABS.map((tab) => (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => setActiveTab(tab.key)}
+              className={cn(
+                'shrink-0 rounded-lg px-3 py-2 text-xs font-medium whitespace-nowrap transition-colors',
+                activeTab === tab.key
+                  ? 'bg-[#0B0B0B] text-white'
+                  : 'text-slate-400 hover:text-white',
+              )}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {isLoading && isApiTab ? (
@@ -202,12 +293,23 @@ export function MainSettingsPage() {
           {activeTab === 'platform' ? (
             <PlatformSettingsPanel value={platformConfig} onChange={setPlatformConfig} />
           ) : null}
-          {activeTab === 'security' ? <SecurityAccessPanel /> : null}
-          {activeTab === 'user' ? <UserApplicationPanel /> : null}
+          {activeTab === 'security' ? (
+            <SecurityAccessPanel value={securityConfig} onChange={setSecurityConfig} />
+          ) : null}
+          {activeTab === 'notifications' ? (
+            <NotificationSettingsPanel
+              value={notificationsConfig}
+              onChange={setNotificationsConfig}
+            />
+          ) : null}
+          {activeTab === 'finance' ? (
+            <FinanceTransactionalPanel value={financeConfig} onChange={setFinanceConfig} />
+          ) : null}
+          {activeTab === 'incident' ? <IncidentTrackingPanel /> : null}
+          {activeTab === 'backup' ? <BackupRestorePanel /> : null}
           {activeTab === 'expert' ? (
             <ExpertSettingsPanel value={expertConfig} onChange={setExpertConfig} />
           ) : null}
-          {activeTab === 'event' ? <EventManagementPanel /> : null}
           {activeTab === 'venue' ? (
             <VenueSettingsPanel value={venueConfig} onChange={setVenueConfig} />
           ) : null}
@@ -215,14 +317,14 @@ export function MainSettingsPage() {
             <ServiceSettingsPanel value={serviceConfig} onChange={setServiceConfig} />
           ) : null}
 
-          <SettingsFooterActions
-            onReset={handleReset}
-            onSave={handleSave}
-            isSaving={isSaving}
-            isResetting={isResetting}
-            saveDisabled={!isApiTab}
-            resetDisabled={!isApiTab}
-          />
+          {showFooter ? (
+            <SettingsFooterActions
+              onReset={handleReset}
+              onSave={handleSave}
+              isSaving={isSaving}
+              isResetting={isResetting}
+            />
+          ) : null}
         </>
       )}
 
@@ -235,6 +337,9 @@ export function MainSettingsPage() {
             variant="secondary"
             onClick={() => {
               void platformQuery.refetch()
+              void securityQuery.refetch()
+              void notificationsQuery.refetch()
+              void financeQuery.refetch()
               void expertQuery.refetch()
               void venueQuery.refetch()
               void serviceQuery.refetch()
