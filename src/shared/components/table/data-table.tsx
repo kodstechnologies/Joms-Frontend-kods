@@ -44,6 +44,7 @@ export type DataTableProps<TData> = {
   showSortIcons?: boolean
   contentClassName?: string
   tone?: 'default' | 'category'
+  onRowClick?: (row: TData) => void
 }
 
 const getVisiblePages = (currentPage: number, totalPages: number) => {
@@ -78,6 +79,7 @@ export function DataTable<TData>({
   showSortIcons = true,
   contentClassName,
   tone = 'default',
+  onRowClick,
 }: DataTableProps<TData>) {
 
   const table = useReactTable({
@@ -253,8 +255,10 @@ export function DataTable<TData>({
               table.getRowModel().rows.map((row) => (
                 <tr
                   key={row.id}
+                  onClick={onRowClick ? () => onRowClick(row.original) : undefined}
                   className={cn(
                     'transition-colors hover:bg-white/[0.03]',
+                    onRowClick && 'cursor-pointer',
                     isCategoryTone ? 'text-white' : 'text-brand-stroke',
                   )}
                 >

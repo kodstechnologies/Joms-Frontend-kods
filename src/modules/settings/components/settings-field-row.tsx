@@ -8,7 +8,7 @@ type SettingsFieldRowProps = {
 
 export function SettingsFieldRow({ label, description, children }: SettingsFieldRowProps) {
   return (
-    <div className="grid gap-2 border-b border-white/5 py-3 last:border-b-0 sm:grid-cols-[1fr_220px] sm:items-center sm:gap-4">
+    <div className="grid gap-2 border-b border-white/5 py-3 last:border-b-0 sm:grid-cols-[minmax(220px,1fr)_minmax(320px,1fr)] sm:items-center sm:gap-4">
       <div className="space-y-1">
         <p className="text-sm font-medium text-white">{label}</p>
         {description ? <p className="text-xs text-slate-500">{description}</p> : null}

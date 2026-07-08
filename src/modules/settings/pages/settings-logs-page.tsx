@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { ArrowLeft, Eye } from 'lucide-react'
+import { ArrowLeft, Eye, X } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
 import { useSettingsLogs } from '../hooks/use-settings'
@@ -53,6 +53,7 @@ export function SettingsLogsPage() {
   const navigate = useNavigate()
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
+  const [selectedLog, setSelectedLog] = useState<SettingsLog | null>(null)
 
   const { data, isLoading } = useSettingsLogs({ page, limit: PAGE_SIZE, search })
 
@@ -152,8 +153,63 @@ export function SettingsLogsPage() {
               Platform Health
             </Button>
           }
+          onRowClick={(row) => setSelectedLog(row)}
         />
       </div>
+
+      {selectedLog ? (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-black/70 p-4">
+          <div className={cn(uiTokens.radiusCard, uiTokens.borderSubtle, 'w-full max-w-2xl bg-brand-surface p-5 sm:p-6')}>
+            <div className="mb-4 flex items-start justify-between gap-3">
+              <div>
+                <h3 className="text-lg font-semibold text-brand-text">Action Details</h3>
+                <p className="mt-1 text-sm text-brand-muted">
+                  {selectedLog.module} - {selectedLog.action}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedLog(null)}
+                className="rounded-md p-1 text-brand-muted hover:bg-white/10 hover:text-brand-text"
+                aria-label="Close details"
+              >
+                <X className="size-4" />
+              </button>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              <InfoRow label="Timestamp" value={formatDateTime(selectedLog.createdAt)} />
+              <InfoRow label="Status" value={selectedLog.status} />
+              <InfoRow label="Performed By" value={selectedLog.performedBy || '—'} />
+              <InfoRow label="IP Address" value={selectedLog.ipAddress || '—'} />
+              <InfoRow label="Module" value={selectedLog.module} />
+              <InfoRow label="Action" value={selectedLog.action} />
+            </div>
+
+            <div className="mt-4 rounded-xl border border-white/10 bg-[#0F0F0F] p-3">
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-brand-muted">Metadata</p>
+              <pre className="max-h-64 overflow-auto text-xs text-brand-text">
+                {JSON.stringify(selectedLog.metadata ?? {}, null, 2)}
+              </pre>
+            </div>
+
+            <div className="mt-5 flex justify-end">
+              <Button variant="secondary" onClick={() => setSelectedLog(null)}>
+                Close
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+    </div>
+  )
+}
+
+function InfoRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-lg border border-white/10 bg-[#111111] p-3">
+      <p className="text-[11px] uppercase tracking-wide text-brand-muted">{label}</p>
+      <p className="mt-1 text-sm text-brand-text">{value}</p>
     </div>
   )
 }

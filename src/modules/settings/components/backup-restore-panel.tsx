@@ -1,0 +1,197 @@
+import { useMemo, useState } from 'react'
+import type { ColumnDef } from '@tanstack/react-table'
+import { MoreVertical } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { toast } from 'sonner'
+
+import { RestoreBackupModal } from './restore-backup-modal'
+import { backupHistoryMock, backupMetricsMock } from '../mock/backup.mock'
+import type { BackupHistoryRow } from '../types/settings'
+import { StatCard } from '@/shared/components/dashboard/stat-card'
+import { DataTable } from '@/shared/components/table/data-table'
+import { ResponsiveGrid } from '@/shared/components/responsive/responsive-grid'
+import { Button } from '@/shared/components/ui/button'
+import { cn } from '@/shared/lib/cn'
+import { uiTokens } from '@/shared/lib/design-tokens'
+
+const PAGE_SIZE = 8
+
+function StatusBadge({ status }: { status: BackupHistoryRow['status'] }) {
+  const styles = {
+    Completed: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300',
+    Pending: 'border-amber-500/30 bg-amber-500/10 text-amber-300',
+    Failed: 'border-rose-500/30 bg-rose-500/10 text-rose-300',
+  }
+  return (
+    <span className={cn('rounded-full border px-2.5 py-0.5 text-[11px] font-semibold', styles[status])}>
+      {status}
+    </span>
+  )
+}
+
+export function BackupRestorePanel() {
+  const navigate = useNavigate()
+  const [backups, setBackups] = useState(backupHistoryMock)
+  const [search, setSearch] = useState('')
+  const [page, setPage] = useState(1)
+  const [menuOpenId, setMenuOpenId] = useState<string | null>(null)
+  const [restoreTarget, setRestoreTarget] = useState<BackupHistoryRow | null>(null)
+
+  const filtered = useMemo(() => {
+    const query = search.trim().toLowerCase()
+    if (!query) return backups
+    return backups.filter(
+      (row) =>
+        row.name.toLowerCase().includes(query) ||
+        row.createdBy.toLowerCase().includes(query) ||
+        row.scope.toLowerCase().includes(query),
+    )
+  }, [backups, search])
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
+  const rows = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+
+  const columns = useMemo<ColumnDef<BackupHistoryRow>[]>(
+    () => [
+      {
+        accessorKey: 'name',
+        header: 'Backup ID / Name',
+        cell: ({ row }) => <span className="font-medium text-white">{row.original.name}</span>,
+      },
+      {
+        accessorKey: 'type',
+        header: 'Type',
+        cell: ({ row }) => <span className="text-slate-400">{row.original.type}</span>,
+      },
+      {
+        accessorKey: 'scope',
+        header: 'Scope',
+        cell: ({ row }) => <span className="text-slate-300">{row.original.scope}</span>,
+      },
+      {
+        accessorKey: 'createdBy',
+        header: 'Created By',
+        cell: ({ row }) => <span className="text-slate-400">{row.original.createdBy}</span>,
+      },
+      {
+        accessorKey: 'timestamp',
+        header: 'Timestamp',
+        cell: ({ row }) => <span className="text-slate-400">{row.original.timestamp}</span>,
+      },
+      {
+        accessorKey: 'size',
+        header: 'Size',
+        cell: ({ row }) => <span className="text-slate-300">{row.original.size}</span>,
+      },
+      {
+        accessorKey: 'status',
+        header: 'Status',
+        cell: ({ row }) => <StatusBadge status={row.original.status} />,
+      },
+      {
+        id: 'actions',
+        header: 'Actions',
+        cell: ({ row }) => (
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() =>
+                setMenuOpenId((current) => (current === row.original.id ? null : row.original.id))
+              }
+              className="rounded p-1 text-slate-500 hover:bg-white/5 hover:text-white"
+            >
+              <MoreVertical className="size-4" />
+            </button>
+            {menuOpenId === row.original.id ? (
+              <div className="absolute right-0 z-10 mt-1 min-w-[120px] rounded-lg border border-white/10 bg-[#1a1a1a] py-1 shadow-xl">
+                <button
+                  type="button"
+                  className="block w-full px-3 py-2 text-left text-xs text-white hover:bg-white/5"
+                  onClick={() => {
+                    setRestoreTarget(row.original)
+                    setMenuOpenId(null)
+                  }}
+                >
+                  Restore
+                </button>
+                <button
+                  type="button"
+                  className="block w-full px-3 py-2 text-left text-xs text-rose-300 hover:bg-white/5"
+                  onClick={() => {
+                    setBackups((current) => current.filter((item) => item.id !== row.original.id))
+                    setMenuOpenId(null)
+                    toast.success('Backup deleted')
+                  }}
+                >
+                  Delete
+                </button>
+              </div>
+            ) : null}
+          </div>
+        ),
+      },
+    ],
+    [menuOpenId],
+  )
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 className="text-lg font-semibold text-white">Backups & Restore</h2>
+          <p className="text-sm text-slate-400">Manage system backups and restoration</p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="secondary" onClick={() => toast.message('Manage backup coming soon')}>
+            Manage Backup
+          </Button>
+          <Button onClick={() => navigate('/settings/backup/configure')}>Configure Backup</Button>
+        </div>
+      </div>
+
+      <ResponsiveGrid mobileCols={1} tabletCols={2} desktopCols={4} gap={4}>
+        {backupMetricsMock.map((metric) => (
+          <StatCard
+            key={metric.title}
+            title={metric.title}
+            value={metric.value}
+            trend={metric.trend}
+          />
+        ))}
+      </ResponsiveGrid>
+
+      <div className={cn(uiTokens.radiusCard, uiTokens.borderSubtle, 'bg-brand-surface p-4 sm:p-5')}>
+        <DataTable
+          columns={columns}
+          data={rows}
+          getRowId={(row) => row.id}
+          searchValue={search}
+          onSearchChange={(value) => {
+            setSearch(value)
+            setPage(1)
+          }}
+          searchPlaceholder="Search by name, ID or profession"
+          onExport={() => toast.success('Export started')}
+          pagination={{
+            page,
+            pageSize: PAGE_SIZE,
+            totalItems: filtered.length,
+            totalPages,
+            onPageChange: setPage,
+          }}
+          resourceLabel="backups"
+        />
+      </div>
+
+      <RestoreBackupModal
+        open={Boolean(restoreTarget)}
+        backup={restoreTarget}
+        onClose={() => setRestoreTarget(null)}
+        onSubmit={() => {
+          setRestoreTarget(null)
+          toast.success('Restore initiated (static preview)')
+        }}
+      />
+    </div>
+  )
+}
