@@ -87,14 +87,14 @@ export function UpdatePasswordModal({
           {userName ? (
             <p className="mb-5 text-sm text-brand-muted">
               Reset password for <span className="font-medium text-brand-text">{userName}</span>.
-              Enter your super admin password to confirm this action.
+              Enter the user&apos;s current password, then set a new one.
             </p>
           ) : null}
 
           <div className="space-y-4">
             <div className="space-y-2">
               <label className="text-sm font-medium text-brand-text" htmlFor="old-password">
-                Enter Old Password<span className="text-brand-danger">*</span>
+                User&apos;s Current Password<span className="text-brand-danger">*</span>
               </label>
               <Input
                 id="old-password"

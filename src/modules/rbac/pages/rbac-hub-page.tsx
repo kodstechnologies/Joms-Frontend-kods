@@ -10,6 +10,7 @@ import {
   useDeleteRole,
   useDisableRole,
   useDeleteSubAdmin,
+  useRoleUsers,
   useRoles,
   useRbacStats,
   useSubAdmins,
@@ -45,8 +46,16 @@ const formatDateTime = (value?: string) => {
 
 export function RbacHubPage() {
   const navigate = useNavigate()
-  const { activeTab, setActiveTab, searchQuery, setSearchQuery, currentPage, setCurrentPage } =
-    useRbacStore()
+  const {
+    activeTab,
+    setActiveTab,
+    searchQuery,
+    setSearchQuery,
+    currentPage,
+    setCurrentPage,
+    roleFilterId,
+    setRoleFilterId,
+  } = useRbacStore()
 
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [passwordResetUser, setPasswordResetUser] = useState<SubAdmin | null>(null)
@@ -57,11 +66,23 @@ export function RbacHubPage() {
     limit: 10,
     search: searchQuery || undefined,
   })
-  const { data: subAdminsData, isLoading: subAdminsLoading } = useSubAdmins({
-    page: currentPage,
-    limit: 10,
-    search: searchQuery || undefined,
-  })
+  const { data: subAdminsData, isLoading: subAdminsLoading } = useSubAdmins(
+    {
+      page: currentPage,
+      limit: 10,
+      search: searchQuery || undefined,
+    },
+    { enabled: activeTab === 'users' && !roleFilterId },
+  )
+  const { data: roleUsersData, isLoading: roleUsersLoading } = useRoleUsers(
+    roleFilterId || '',
+    {
+      page: currentPage,
+      limit: 10,
+      search: searchQuery || undefined,
+    },
+    { enabled: activeTab === 'users' && Boolean(roleFilterId) },
+  )
 
   const disableRoleMutation = useDisableRole()
   const deleteRoleMutation = useDeleteRole()
@@ -71,8 +92,9 @@ export function RbacHubPage() {
 
   const roles = rolesData?.data ?? []
   const rolesMeta = rolesData?.meta
-  const subAdmins = subAdminsData?.data ?? []
-  const subAdminsMeta = subAdminsData?.meta
+  const subAdmins = roleFilterId ? (roleUsersData?.data.users ?? []) : (subAdminsData?.data ?? [])
+  const subAdminsMeta = roleFilterId ? roleUsersData?.meta : subAdminsData?.meta
+  const filteredRoleName = roleFilterId ? roleUsersData?.data.role.name : null
 
   const handleDisableRole = useCallback(
     async (id: string) => {
@@ -376,7 +398,7 @@ export function RbacHubPage() {
 
   const isRolesTab = activeTab === 'roles'
   const meta = isRolesTab ? rolesMeta : subAdminsMeta
-  const isLoading = isRolesTab ? rolesLoading : subAdminsLoading
+  const isLoading = isRolesTab ? rolesLoading : roleFilterId ? roleUsersLoading : subAdminsLoading
 
   return (
     <div className="flex flex-col gap-4 md:gap-6">
@@ -410,7 +432,12 @@ export function RbacHubPage() {
           <button
             key={tab}
             type="button"
-            onClick={() => setActiveTab(tab)}
+            onClick={() => {
+              if (tab === 'roles') {
+                setRoleFilterId(null)
+              }
+              setActiveTab(tab)
+            }}
             className={cn(
               'flex-1 rounded-lg px-4 py-2.5 text-sm font-medium transition-colors',
               activeTab === tab
@@ -422,6 +449,21 @@ export function RbacHubPage() {
           </button>
         ))}
       </div>
+
+      {!isRolesTab && roleFilterId && filteredRoleName ? (
+        <div className="flex items-center justify-between rounded-brand-lg border border-white/10 bg-white/5 px-4 py-3 text-sm text-brand-text">
+          <span>
+            Showing users assigned to <span className="font-semibold">{filteredRoleName}</span>
+          </span>
+          <button
+            type="button"
+            onClick={() => setRoleFilterId(null)}
+            className="text-brand-accent underline underline-offset-2 hover:text-brand-gold-from"
+          >
+            Clear filter
+          </button>
+        </div>
+      ) : null}
 
       {!isRolesTab && (statsData?.data?.invitesSent ?? 0) >= 0 ? (
         <div className="flex items-center justify-between rounded-brand-lg border border-brand-accent-muted bg-brand-accent/10 px-4 py-3 text-sm text-brand-text">

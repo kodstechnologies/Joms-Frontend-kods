@@ -1,5 +1,8 @@
 export { AdminLogsPage } from './pages/admin-logs-page'
+export { AdminDetailPage } from './pages/admin-detail-page'
+export { RoleUsersPage } from './pages/role-users-page'
 export { RbacHubPage } from './pages/rbac-hub-page'
 export { CreateRolePage } from './pages/create-role-page'
 export { CreateSubAdminPage } from './pages/create-sub-admin-page'
 export { SubAdminDetailPage } from './pages/sub-admin-detail-page'
+export { UpdateContactInformationPage } from './pages/update-contact-information-page'

@@ -10,6 +10,9 @@ export type AdminUser = {
   permissions: string[]
   mfaEnabled?: boolean
   status?: string
+  subAdminId?: string
+  requiresContactSetup?: boolean
+  contactSetupCompleted?: boolean
 }
 
 type AuthState = {
@@ -31,9 +34,19 @@ export const useAuthStore = create<AuthState>()(
       token: null,
       setSession: (user, token) => set({ isAuthenticated: true, user, token }),
       updateUser: (partial) =>
-        set((state) => ({
-          user: state.user ? { ...state.user, ...partial } : state.user,
-        })),
+        set((state) => {
+          if (!state.user) return state
+
+          const hasChanges = Object.entries(partial).some(
+            ([key, value]) => state.user?.[key as keyof AdminUser] !== value,
+          )
+
+          if (!hasChanges) return state
+
+          return {
+            user: { ...state.user, ...partial },
+          }
+        }),
       clearSession: () => set({ isAuthenticated: false, user: null, token: null }),
       hasPermission: (key) => {
         const user = get().user

@@ -1,0 +1,44 @@
+import { Navigate, Outlet, useLocation } from 'react-router-dom'
+
+import { useAuthStore } from '@/modules/auth/store/auth-store'
+import { useRbacMe } from '@/modules/rbac/hooks/use-rbac'
+
+export function ContactSetupRoute() {
+  const location = useLocation()
+  const user = useAuthStore((state) => state.user)
+  const profileQuery = useRbacMe()
+
+  if (!user) {
+    return <Navigate to="/auth/login" replace state={{ from: location }} />
+  }
+
+  if (user.isSuperAdmin) {
+    return <Outlet />
+  }
+
+  const isContactSetupPage = location.pathname === '/auth/contact-information'
+
+  if (profileQuery.isLoading && user.requiresContactSetup === undefined) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-brand-bg text-brand-muted">
+        Loading...
+      </div>
+    )
+  }
+
+  const needsContactSetup = user.contactSetupCompleted
+    ? false
+    : profileQuery.data?.data
+      ? Boolean(profileQuery.data.data.requiresContactSetup)
+      : Boolean(user.requiresContactSetup)
+
+  if (needsContactSetup && !isContactSetupPage) {
+    return <Navigate to="/auth/contact-information" replace />
+  }
+
+  if (!needsContactSetup && isContactSetupPage) {
+    return <Navigate to="/" replace />
+  }
+
+  return <Outlet />
+}

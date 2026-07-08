@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
 import { useAuthStore } from '@/modules/auth/store/auth-store'
+import { fetchRbacMe } from '@/modules/rbac/api/rbac-api'
 import { getDefaultHomeRoute, normalizeUserPermissions } from '@/app/layouts/navigation/navigation.filter'
 import { useLoginMutation } from '@/modules/auth/hooks/use-login-mutation'
 import { useVerifyOtpMutation } from '@/modules/auth/hooks/use-verify-otp-mutation'
@@ -20,6 +21,7 @@ import { Input } from '@/shared/components/ui/input'
 export function LoginPage() {
   const navigate = useNavigate()
   const setSession = useAuthStore((state) => state.setSession)
+  const updateUser = useAuthStore((state) => state.updateUser)
   const { mutateAsync: login, isPending: isLoginPending } = useLoginMutation()
   const { mutateAsync: verifyOtp, isPending: isVerifyPending } = useVerifyOtpMutation()
   const [step, setStep] = useState<'credentials' | 'otp'>('credentials')
@@ -100,6 +102,27 @@ export function LoginPage() {
         }
         setSession(sessionUser, token)
       }
+
+      if (!sessionUser.isSuperAdmin) {
+        try {
+          const profileResponse = await fetchRbacMe()
+          const profile = profileResponse.data
+          updateUser({
+            subAdminId: profile.subAdminId,
+            requiresContactSetup: Boolean(profile.requiresContactSetup),
+            contactSetupCompleted: Boolean(profile.contactSetupCompleted),
+          })
+
+          if (profile.requiresContactSetup) {
+            toast.success('Please complete your contact information')
+            navigate('/auth/contact-information', { replace: true })
+            return
+          }
+        } catch {
+          // Fall through to default home route if profile lookup fails.
+        }
+      }
+
       toast.success('Welcome back')
       navigate(getDefaultHomeRoute(sessionUser), { replace: true })
     } catch {

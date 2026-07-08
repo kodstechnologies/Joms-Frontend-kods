@@ -45,7 +45,15 @@ export type SubAdmin = {
   employmentType: string
   workplaceFlexibility: string
   location: string
+  phone?: string
+  emergencyContact?: string
+  emergencyContactName?: string
+  dateOfBirth?: string | null
+  bloodGroup?: string
+  profileImageUrl?: string
   mfaEnabled: boolean
+  mfaSecret?: string
+  contactSetupCompleted?: boolean
   roleIds: string[]
   roles: SubAdminRole[]
   scopes: string[]
@@ -122,6 +130,25 @@ export type AdminProfile = {
   kind: 'superadmin' | 'subadmin'
   isSuperAdmin: boolean
   permissions: string[]
+  subAdminId?: string
+  requiresContactSetup?: boolean
+  contactSetupCompleted?: boolean
+}
+
+export type ContactSetupProfileResponse = {
+  profile: SubAdmin
+  permissionCatalog: PermissionCatalog
+  requiresContactSetup: boolean
+}
+
+export type CompleteContactSetupPayload = {
+  phone: string
+  emergencyContact: string
+  emergencyContactName: string
+  dateOfBirth?: string
+  bloodGroup?: string
+  profileImageUrl?: string
+  mfaCode?: string
 }
 
 export type SubAdminInvite = {

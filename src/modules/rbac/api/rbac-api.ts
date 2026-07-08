@@ -3,6 +3,8 @@ import type {
   AdminLogSubject,
   AdminProfile,
   AuditLog,
+  CompleteContactSetupPayload,
+  ContactSetupProfileResponse,
   CreateRolePayload,
   CreateSubAdminPayload,
   PermissionCatalog,
@@ -23,6 +25,22 @@ type ListParams = {
 export const fetchRbacMe = async () => {
   const response = await adminApiClient.get<{ success: boolean; data: AdminProfile }>(
     '/admin/rbac/me',
+  )
+  return response.data
+}
+
+export const fetchContactSetupProfile = async () => {
+  const response = await adminApiClient.get<{
+    success: boolean
+    data: ContactSetupProfileResponse
+  }>('/admin/rbac/me/contact-setup')
+  return response.data
+}
+
+export const completeContactSetup = async (payload: CompleteContactSetupPayload) => {
+  const response = await adminApiClient.patch<{ success: boolean; data: SubAdmin }>(
+    '/admin/rbac/me/contact-setup',
+    payload,
   )
   return response.data
 }
@@ -165,6 +183,15 @@ export const fetchSubAdminInvites = async (id: string, params?: ListParams) => {
     data: { subAdmin: SubAdmin; invites: SubAdminInvite[] }
     meta: { page: number; limit: number; total: number; totalPages: number }
   }>(`/admin/rbac/sub-admins/${id}/invites`, { params })
+  return response.data
+}
+
+export const fetchRoleUsers = async (id: string, params?: ListParams) => {
+  const response = await adminApiClient.get<{
+    success: boolean
+    data: { role: Role; users: SubAdmin[] }
+    meta: { page: number; limit: number; total: number; totalPages: number }
+  }>(`/admin/rbac/roles/${id}/users`, { params })
   return response.data
 }
 

@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react'
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import { DashboardLayout } from '@/app/layouts/dashboard-layout'
 import { ProtectedRoute } from '@/app/router/protected-route'
+import { ContactSetupRoute } from '@/app/router/contact-setup-route'
 import { PermissionRoute } from '@/app/router/permission-route'
 import { HomeRedirect } from '@/app/router/home-redirect'
 import { SuperAdminRoute } from '@/app/router/super-admin-route'
@@ -283,9 +284,24 @@ const SubAdminDetailPage = lazy(() =>
     default: m.SubAdminDetailPage,
   })),
 )
+const AdminDetailPage = lazy(() =>
+  import('@/modules/rbac').then((m) => ({
+    default: m.AdminDetailPage,
+  })),
+)
+const RoleUsersPage = lazy(() =>
+  import('@/modules/rbac').then((m) => ({
+    default: m.RoleUsersPage,
+  })),
+)
 const AdminLogsPage = lazy(() =>
   import('@/modules/rbac').then((m) => ({
     default: m.AdminLogsPage,
+  })),
+)
+const UpdateContactInformationPage = lazy(() =>
+  import('@/modules/rbac').then((m) => ({
+    default: m.UpdateContactInformationPage,
   })),
 )
 const SpaceDetailsPage = lazy(() =>
@@ -604,7 +620,10 @@ export function AppRouter() {
           <Route path="/auth/login" element={<LoginPage />} />
 
           <Route element={<ProtectedRoute />}>
-            <Route element={<DashboardLayout />}>
+            <Route path="/auth/contact-information" element={<UpdateContactInformationPage />} />
+
+            <Route element={<ContactSetupRoute />}>
+              <Route element={<DashboardLayout />}>
               <Route path="/" element={<HomeRedirect />} />
               <Route path="/dashboard" element={<HomeRedirect />} />
 
@@ -663,7 +682,9 @@ export function AppRouter() {
                 <Route path="/settings/access/roles/:id/edit" element={<CreateRolePage />} />
                 <Route path="/settings/access/users/create" element={<CreateSubAdminPage />} />
                 <Route path="/settings/access/users/:id/logs" element={<AdminLogsPage />} />
-                <Route path="/settings/access/users/:id" element={<SubAdminDetailPage />} />
+                <Route path="/settings/access/users/:id/invites" element={<SubAdminDetailPage />} />
+                <Route path="/settings/access/users/:id" element={<AdminDetailPage />} />
+                <Route path="/settings/access/roles/:id/users" element={<RoleUsersPage />} />
                 <Route path="/settings/access/roles/:id/logs" element={<AdminLogsPage />} />
                 <Route path="/finance/dashboard" element={<FinanceDashboardPage />} />
                 <Route path="/finance/revenue" element={<RevenueOverviewPage />} />
@@ -817,6 +838,7 @@ export function AppRouter() {
                   element={<VenueSubCategoryViewPage />}
                 />
               </Route>
+            </Route>
             </Route>
           </Route>
 

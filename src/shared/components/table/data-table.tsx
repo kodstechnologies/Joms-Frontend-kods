@@ -37,6 +37,8 @@ export type DataTableProps<TData> = {
   onAdvancedFilter?: () => void
   onExport?: () => void
   isExporting?: boolean
+  showAdvancedFilter?: boolean
+  showExport?: boolean
   pagination: DataTablePagination
   resourceLabel?: string
   toolbarContent?: ReactNode
@@ -71,6 +73,8 @@ export function DataTable<TData>({
   onAdvancedFilter,
   onExport,
   isExporting = false,
+  showAdvancedFilter = true,
+  showExport = true,
   pagination,
   resourceLabel = 'records',
   toolbarContent,
@@ -139,35 +143,39 @@ export function DataTable<TData>({
 
         <div className="flex w-full shrink-0 items-center justify-end gap-3 lg:w-auto">
           {toolbarContent}
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={onAdvancedFilter}
-            disabled={!onAdvancedFilter}
-            className={cn(
-              'h-10 flex-1 gap-2 rounded-xl border bg-transparent px-4 text-[12px] font-semibold shadow-none sm:flex-none',
-              isCategoryTone
-                ? 'border-white/25 text-white hover:border-[#FFC16B] hover:bg-white/5'
-                : 'border-white/45 text-brand-text hover:border-brand-accent hover:bg-white/5',
-            )}
-          >
-            <Filter className="size-3.5" aria-hidden="true" />
-            {advancedFilterLabel}
-          </Button>
-          <Button
-            type="button"
-            onClick={onExport}
-            disabled={!onExport || isExporting}
-            className={cn(
-              'h-10 flex-1 gap-2 rounded-xl px-4 text-[12px] font-bold shadow-none sm:flex-none',
-              isCategoryTone
-                ? 'bg-[#FFC16B] text-black hover:bg-[#F5C27B]'
-                : 'bg-brand-accent text-brand-text-dark hover:bg-brand-gold-from',
-            )}
-          >
-            <Upload className="size-4" aria-hidden="true" />
-            {isExporting ? 'Exporting...' : 'Export Data'}
-          </Button>
+          {showAdvancedFilter ? (
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={onAdvancedFilter}
+              disabled={!onAdvancedFilter}
+              className={cn(
+                'h-10 flex-1 gap-2 rounded-xl border bg-transparent px-4 text-[12px] font-semibold shadow-none sm:flex-none',
+                isCategoryTone
+                  ? 'border-white/25 text-white hover:border-[#FFC16B] hover:bg-white/5'
+                  : 'border-white/45 text-brand-text hover:border-brand-accent hover:bg-white/5',
+              )}
+            >
+              <Filter className="size-3.5" aria-hidden="true" />
+              {advancedFilterLabel}
+            </Button>
+          ) : null}
+          {showExport ? (
+            <Button
+              type="button"
+              onClick={onExport}
+              disabled={!onExport || isExporting}
+              className={cn(
+                'h-10 flex-1 gap-2 rounded-xl px-4 text-[12px] font-bold shadow-none sm:flex-none',
+                isCategoryTone
+                  ? 'bg-[#FFC16B] text-black hover:bg-[#F5C27B]'
+                  : 'bg-brand-accent text-brand-text-dark hover:bg-brand-gold-from',
+              )}
+            >
+              <Upload className="size-4" aria-hidden="true" />
+              {isExporting ? 'Exporting...' : 'Export Data'}
+            </Button>
+          ) : null}
         </div>
       </div>
 

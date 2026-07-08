@@ -17,6 +17,8 @@ import {
   useSubAdminLogs,
 } from '../hooks/use-rbac'
 import type { AdminLogSubject, AuditLog } from '../types/rbac'
+import { AdminNoteModal } from '../components/admin-note-modal'
+import { RoleUsersModal } from '../components/role-users-modal'
 import { DataTable } from '@/shared/components/table/data-table'
 import {
   TableActionsDropdown,
@@ -37,6 +39,22 @@ const formatDateTime = (value?: string) => {
     month: 'short',
     year: 'numeric',
   })
+}
+
+const formatOverviewDate = (value?: string) => {
+  if (!value) return '—'
+  const date = new Date(value)
+  const day = date.toLocaleString('en-GB', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  })
+  const time = date.toLocaleString('en-IN', {
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  })
+  return `${day}, ${time}`
 }
 
 function StatusBadge({ status }: { status: string }) {
@@ -93,7 +111,13 @@ function PreVersionModal({
   )
 }
 
-function UserOverviewCard({ subject }: { subject?: AdminLogSubject }) {
+function UserOverviewCard({
+  subject,
+  onOpenUser,
+}: {
+  subject?: AdminLogSubject
+  onOpenUser: (userId: string) => void
+}) {
   if (!subject || subject.type !== 'subAdmin') {
     return (
       <div className={cn(uiTokens.radiusCard, uiTokens.borderSubtle, 'bg-brand-surface p-6')}>
@@ -118,7 +142,7 @@ function UserOverviewCard({ subject }: { subject?: AdminLogSubject }) {
           </div>
           <p className="text-xs text-brand-muted">
             Created At:{' '}
-            <span className="font-medium text-brand-text">{formatDateTime(subject.createdAt)}</span>
+            <span className="font-medium text-brand-text">{formatOverviewDate(subject.createdAt)}</span>
           </p>
         </div>
 
@@ -126,9 +150,13 @@ function UserOverviewCard({ subject }: { subject?: AdminLogSubject }) {
           <div className="space-y-4">
             <div>
               <p className="text-xs text-brand-muted">Name</p>
-              <p className="mt-1 text-base font-semibold text-brand-text underline decoration-brand-muted/40 underline-offset-4">
+              <button
+                type="button"
+                onClick={() => onOpenUser(subject.id)}
+                className="mt-1 text-base font-semibold text-brand-text underline decoration-brand-muted/40 underline-offset-4 transition-colors hover:text-brand-accent"
+              >
                 {subject.fullname}
-              </p>
+              </button>
             </div>
             <div>
               <p className="text-xs text-brand-muted">Role</p>
@@ -166,7 +194,13 @@ function UserOverviewCard({ subject }: { subject?: AdminLogSubject }) {
   )
 }
 
-function RoleOverviewCard({ subject }: { subject?: AdminLogSubject }) {
+function RoleOverviewCard({
+  subject,
+  onViewRoleUsers,
+}: {
+  subject?: AdminLogSubject
+  onViewRoleUsers: (roleId: string) => void
+}) {
   if (!subject || subject.type !== 'role') {
     return (
       <div className={cn(uiTokens.radiusCard, uiTokens.borderSubtle, 'bg-brand-surface p-6')}>
@@ -190,16 +224,11 @@ function RoleOverviewCard({ subject }: { subject?: AdminLogSubject }) {
           </div>
           <p className="text-xs text-brand-muted">
             Created At:{' '}
-            <span className="font-medium text-brand-text">{formatDateTime(subject.createdAt)}</span>
+            <span className="font-medium text-brand-text">{formatOverviewDate(subject.createdAt)}</span>
           </p>
         </div>
 
-        <div className="border-b border-white/10 pb-5">
-          <p className="text-xs font-medium text-brand-muted">Role Name</p>
-          <p className="mt-1 text-xl font-semibold text-brand-text">{subject.name}</p>
-        </div>
-
-        <div className="mt-5 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+        <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
           <div>
             <p className="text-xs text-brand-muted">Role</p>
             <span className="mt-2 inline-flex rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold text-brand-text">
@@ -221,15 +250,20 @@ function RoleOverviewCard({ subject }: { subject?: AdminLogSubject }) {
           </div>
           <div>
             <p className="text-xs text-brand-muted">No. Of Users</p>
-            <p className="mt-2 flex items-center gap-1.5 text-sm font-semibold text-brand-text">
+            <button
+              type="button"
+              onClick={() => onViewRoleUsers(subject.id)}
+              className="mt-2 flex items-center gap-1.5 text-sm font-semibold text-brand-text transition-colors hover:text-brand-accent"
+              aria-label={`View users assigned to ${subject.name}`}
+            >
               {String(subject.userCount).padStart(2, '0')}
-              <ExternalLink className="size-3.5 text-brand-muted" />
-            </p>
+              <ExternalLink className="size-3.5" />
+            </button>
           </div>
           <div>
             <p className="text-xs text-brand-muted">Last Action</p>
             <p className="mt-2 text-sm font-medium text-brand-text">
-              {formatDateTime(subject.lastActionAt)}
+              {formatOverviewDate(subject.lastActionAt)}
             </p>
           </div>
         </div>
@@ -252,6 +286,8 @@ export function AdminLogsPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [previewLog, setPreviewLog] = useState<AuditLog | null>(null)
+  const [selectedAdminNote, setSelectedAdminNote] = useState<string | null>(null)
+  const [roleUsersModalId, setRoleUsersModalId] = useState<string | null>(null)
 
   const logParams = {
     page,
@@ -283,6 +319,17 @@ export function AdminLogsPage() {
           ? 'Admin'
           : 'User'
 
+  const handleViewRoleUsers = useCallback((roleId: string) => {
+    setRoleUsersModalId(roleId)
+  }, [])
+
+  const handleOpenUser = useCallback(
+    (userId: string) => {
+      navigate(`/settings/access/users/${userId}`)
+    },
+    [navigate],
+  )
+
   const handleFlag = useCallback(
     async (logId: string) => {
       try {
@@ -296,6 +343,23 @@ export function AdminLogsPage() {
     },
     [flagMutation, logsQuery],
   )
+
+  const renderAdminNoteCell = useCallback((note?: string) => {
+    if (!note?.trim()) {
+      return <span className="text-brand-muted">—</span>
+    }
+
+    return (
+      <button
+        type="button"
+        onClick={() => setSelectedAdminNote(note)}
+        className="max-w-[220px] truncate text-left text-xs font-medium text-brand-accent underline decoration-brand-accent/40 underline-offset-2 hover:text-brand-gold-from"
+        title={note}
+      >
+        {note}
+      </button>
+    )
+  }, [])
 
   const userColumns = useMemo<ColumnDef<AuditLog>[]>(
     () => [
@@ -335,10 +399,10 @@ export function AdminLogsPage() {
       {
         accessorKey: 'adminNote',
         header: 'Admin Note',
-        cell: ({ row }) => row.original.adminNote || '—',
+        cell: ({ row }) => renderAdminNoteCell(row.original.adminNote),
       },
     ],
-    [],
+    [renderAdminNoteCell],
   )
 
   const roleColumns = useMemo<ColumnDef<AuditLog>[]>(
@@ -380,7 +444,7 @@ export function AdminLogsPage() {
       {
         accessorKey: 'adminNote',
         header: 'Admin Note',
-        cell: ({ row }) => row.original.adminNote || '—',
+        cell: ({ row }) => renderAdminNoteCell(row.original.adminNote),
       },
       {
         id: 'actions',
@@ -417,7 +481,7 @@ export function AdminLogsPage() {
         },
       },
     ],
-    [activeDropdownId, handleFlag],
+    [activeDropdownId, handleFlag, renderAdminNoteCell],
   )
 
   const columns = isRole ? roleColumns : userColumns
@@ -453,7 +517,11 @@ export function AdminLogsPage() {
         </Button>
       </div>
 
-      {isRole ? <RoleOverviewCard subject={subject} /> : <UserOverviewCard subject={subject} />}
+      {isRole ? (
+        <RoleOverviewCard subject={subject} onViewRoleUsers={handleViewRoleUsers} />
+      ) : (
+        <UserOverviewCard subject={subject} onOpenUser={handleOpenUser} />
+      )}
 
       <div>
         <h2 className="text-lg font-semibold text-brand-text">Action Logs</h2>
@@ -487,6 +555,16 @@ export function AdminLogsPage() {
       />
 
       <PreVersionModal log={previewLog} onClose={() => setPreviewLog(null)} />
+      <AdminNoteModal
+        open={Boolean(selectedAdminNote)}
+        note={selectedAdminNote ?? undefined}
+        onClose={() => setSelectedAdminNote(null)}
+      />
+      <RoleUsersModal
+        open={Boolean(roleUsersModalId)}
+        roleId={roleUsersModalId ?? ''}
+        onClose={() => setRoleUsersModalId(null)}
+      />
     </div>
   )
 }
