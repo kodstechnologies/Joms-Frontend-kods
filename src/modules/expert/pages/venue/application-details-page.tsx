@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
@@ -16,8 +16,15 @@ import {
   type DecisionActionModalOption,
 } from '@/shared/components/modal/decision-action-modal'
 import { cn } from '@/shared/lib/cn'
+import { useAuthStore } from '@/modules/auth/store/auth-store'
+import {
+  useAdminEscalation,
+  useEscalateVenueSpaceApplication,
+  useEscalationAssignees,
+  useStartAdminEscalationReview,
+} from '@/modules/my-tasks/hooks/use-admin-escalation'
 
-type DecisionVariant = 'approve' | 'reject' | 'requestChanges'
+type DecisionVariant = 'approve' | 'reject' | 'requestChanges' | 'escalate'
 
 type AmenitySubCategory = {
   _id: string
@@ -141,6 +148,10 @@ export function ApplicationDetailsPage() {
   const [adminNotes, setAdminNotes] = useState('')
   const [selectedReasons, setSelectedReasons] = useState<string[]>([])
   const [rejectionReason, setRejectionReason] = useState('')
+  const [selectedEscalationOption, setSelectedEscalationOption] = useState('')
+
+  const user = useAuthStore((state) => state.user)
+  const isSuperAdmin = Boolean(user?.isSuperAdmin)
 
   const { data, isLoading, isError, error } = useVenueFullView(id)
   const { data: amenityMasters } = useQuery({
@@ -165,6 +176,7 @@ export function ApplicationDetailsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['venue-full-view', id] })
       queryClient.invalidateQueries({ queryKey: ['venues'] })
+      queryClient.invalidateQueries({ queryKey: ['my-tasks'] })
     },
   })
 
@@ -172,7 +184,19 @@ export function ApplicationDetailsPage() {
     setAdminNotes('')
     setSelectedReasons([])
     setRejectionReason('')
+    setSelectedEscalationOption('')
   }
+
+  const spaceId = fullView?.overview?.space?._id
+  const { data: assigneesData } = useEscalationAssignees('venues.*')
+  const { data: escalationData } = useAdminEscalation('venue_space', spaceId)
+  const escalateVenueSpace = useEscalateVenueSpaceApplication(spaceId, id)
+  const startEscalationReview = useStartAdminEscalationReview('venue_space', spaceId)
+
+  useEffect(() => {
+    if (!spaceId || isSuperAdmin) return
+    startEscalationReview.mutate()
+  }, [spaceId, isSuperAdmin])
 
   const openModal = (variant: DecisionVariant) => {
     resetModal()
@@ -237,8 +261,55 @@ export function ApplicationDetailsPage() {
 
   const isRejectFlow =
     modalVariant === 'reject' || modalVariant === 'requestChanges'
+  const isEscalateFlow = modalVariant === 'escalate'
+  const escalation = escalationData?.data
+  const escalationOptions: DecisionActionModalOption[] =
+    assigneesData?.data.map((assignee) => ({
+      label: assignee.fullname,
+      value: assignee.id,
+    })) || []
+  const escalateDisabled =
+    space?.status === 'approved' || escalateVenueSpace.isPending || !space?._id
 
   const handleSubmitDecision = () => {
+    if (isEscalateFlow) {
+      if (!space?._id) {
+        toast.error('No space found for this venue.')
+        return
+      }
+      if (!selectedEscalationOption) {
+        toast.error('Please select a sub-admin to assign.')
+        return
+      }
+      if (!adminNotes.trim()) {
+        toast.error('Admin notes are required.')
+        return
+      }
+
+      const selectedAssignee = assigneesData?.data.find(
+        (item) => item.id === selectedEscalationOption,
+      )
+
+      escalateVenueSpace.mutate(
+        {
+          assigneeSubAdminId: selectedEscalationOption,
+          assigneeName: selectedAssignee?.fullname || '',
+          adminNote: adminNotes.trim(),
+          venueId: id,
+          applicationUrl: `/venues/management/application/${id}`,
+          entityTitle: space?.name || venue.name,
+        },
+        {
+          onSuccess: () => {
+            toast.success('Application assigned successfully')
+            setModalOpen(false)
+          },
+          onError: (err) => toast.error(getApiErrorMessage(err)),
+        },
+      )
+      return
+    }
+
     const spaceId = space?._id
     if (!spaceId) {
       toast.error('No space found for this venue.')
@@ -452,6 +523,13 @@ export function ApplicationDetailsPage() {
         <SectionCard title="Application Notes">
           <div className="rounded-md bg-black p-3 text-[12px] text-[#777]">
             {venue.adminInternalNotes || space?.adminNote || 'No notes yet.'}
+            {escalation?.escalatedByName ? (
+              <p className="mt-3 text-[11px] text-[#999]">
+                Escalated by {escalation.escalatedByName}
+                {escalation.escalatedToName ? ` to ${escalation.escalatedToName}` : ''}.
+                {escalation.escalationNote ? ` Note: ${escalation.escalationNote}` : ''}
+              </p>
+            ) : null}
           </div>
         </SectionCard>
 
@@ -479,13 +557,16 @@ export function ApplicationDetailsPage() {
             >
               Ask for Re-Submit
             </button>
-            <button
-              type="button"
-              onClick={() => toast.message('Escalate is coming soon')}
-              className="rounded-md bg-[#1D4ED8] px-4 py-2.5 text-[11px] font-bold text-white transition-colors hover:bg-[#1e40af]"
-            >
-              Escalate
-            </button>
+            {isSuperAdmin ? (
+              <button
+                type="button"
+                disabled={escalateDisabled}
+                onClick={() => openModal('escalate')}
+                className="rounded-md bg-[#1D4ED8] px-4 py-2.5 text-[11px] font-bold text-white transition-colors hover:bg-[#1e40af] disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Escalate
+              </button>
+            ) : null}
             <button
               type="button"
               onClick={() => openModal('reject')}
@@ -507,21 +588,27 @@ export function ApplicationDetailsPage() {
             ? 'Approve Space'
             : modalVariant === 'requestChanges'
               ? 'Request Changes'
-              : 'Reject Space'
+              : modalVariant === 'escalate'
+                ? 'Escalate Application'
+                : 'Reject Space'
         }
         description={
           modalVariant === 'approve'
             ? 'Are you sure you want to approve this venue space?'
             : modalVariant === 'requestChanges'
               ? 'Are you sure you want to Request Changes to this application? The applicant will be notified via email.'
-              : 'Please choose the rejection reasons and add notes for this venue space.'
+              : modalVariant === 'escalate'
+                ? 'Are you sure you want to escalate this application? This post will be reviewed by the selected parties.'
+                : 'Please choose the rejection reasons and add notes for this venue space.'
         }
         submitLabel={
           modalVariant === 'approve'
             ? 'Approve'
             : modalVariant === 'requestChanges'
               ? 'Request Changes'
-              : 'Reject'
+              : modalVariant === 'escalate'
+                ? 'Escalate'
+                : 'Reject'
         }
         reasonOptions={isRejectFlow ? REJECT_REASONS : []}
         selectedReasons={selectedReasons}
@@ -536,9 +623,14 @@ export function ApplicationDetailsPage() {
         onReasonChange={isRejectFlow ? setRejectionReason : undefined}
         adminNotes={adminNotes}
         onAdminNotesChange={setAdminNotes}
+        escalationOptions={isEscalateFlow ? escalationOptions : []}
+        selectedEscalationOption={selectedEscalationOption}
+        onEscalationOptionChange={setSelectedEscalationOption}
         onClose={() => setModalOpen(false)}
         onSubmit={handleSubmitDecision}
-        isSubmitting={spaceStatusMutation.isPending}
+        isSubmitting={
+          isEscalateFlow ? escalateVenueSpace.isPending : spaceStatusMutation.isPending
+        }
       />
     </div>
   )

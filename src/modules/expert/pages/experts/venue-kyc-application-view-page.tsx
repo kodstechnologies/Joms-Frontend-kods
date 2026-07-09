@@ -30,6 +30,7 @@ import {
   useExpertApplicationView,
   useStartEscalationReviewOnView,
 } from '../../hooks/use-expert-application-view'
+import { useAdminEscalation } from '@/modules/my-tasks/hooks/use-admin-escalation'
 import type { VenueKycStatus } from '../../type/venue-kyc'
 import {
   DecisionActionModal,
@@ -282,6 +283,7 @@ export function VenueKycApplicationViewPage() {
   const updateBanking = useUpdateVenueBankingStatus(id)
   const escalateApplication = useEscalateExpertApplication(id)
   const startEscalationReview = useStartEscalationReviewOnView(id)
+  const { data: escalationData } = useAdminEscalation('partner', id)
 
   useEffect(() => {
     if (!id || isSuperAdmin) return
@@ -516,17 +518,19 @@ export function VenueKycApplicationViewPage() {
   ]
 
   const notesContent = useMemo(() => {
+    const escalation = escalationData?.data
     const finalReview = expertViewData?.data?.expert?.finalReview
+    const source = escalation || finalReview
     const lines = [
       overview.applicationNotes?.trim() || null,
-      finalReview?.escalatedByName
-        ? `Escalated by ${finalReview.escalatedByName}${finalReview.escalatedToName ? ` to ${finalReview.escalatedToName}` : ''}.`
+      source?.escalatedByName
+        ? `Escalated by ${source.escalatedByName}${source.escalatedToName ? ` to ${source.escalatedToName}` : ''}.`
         : null,
-      finalReview?.escalationNote ? `Note: ${finalReview.escalationNote}` : null,
+      source?.escalationNote ? `Note: ${source.escalationNote}` : null,
     ].filter(Boolean)
 
     return lines.length ? lines.join('\n') : 'No notes yet.'
-  }, [expertViewData?.data?.expert?.finalReview, overview.applicationNotes])
+  }, [escalationData?.data, expertViewData?.data?.expert?.finalReview, overview.applicationNotes])
 
   return (
     <div className="relative flex w-full flex-col gap-5 pb-8 text-white">

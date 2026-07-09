@@ -1,12 +1,14 @@
 import { ArrowLeft, AlertTriangle, Check, ChevronDown, Search, X } from 'lucide-react'
-import { useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useEffect, useMemo, useState } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
 
 import {
   useCreateSubAdmin,
   usePermissionCatalog,
   useRoles,
+  useSubAdmin,
+  useUpdateSubAdmin,
 } from '../hooks/use-rbac'
 import { RbacLoader } from '../components/rbac-loader'
 import type { CreateSubAdminPayload, PermissionCatalog, Role } from '../types/rbac'
@@ -57,6 +59,10 @@ const accessLabel = (access: ModuleAccess) => {
 
 export function CreateSubAdminPage() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const editId = searchParams.get('edit') || ''
+  const isEditMode = Boolean(editId)
+
   const [step, setStep] = useState<Step>('form')
   const [form, setForm] = useState<CreateSubAdminPayload>(emptyForm)
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -65,7 +71,9 @@ export function CreateSubAdminPage() {
   const [roleSearch, setRoleSearch] = useState('')
   const [roleListOpen, setRoleListOpen] = useState(true)
   const [permissionViewRole, setPermissionViewRole] = useState<Role | null>(null)
+  const [formHydrated, setFormHydrated] = useState(false)
 
+  const { data: subAdminData, isLoading: subAdminLoading } = useSubAdmin(editId)
   const { data: rolesData, isLoading: rolesLoading } = useRoles({
     page: 1,
     limit: 100,
@@ -76,6 +84,42 @@ export function CreateSubAdminPage() {
     enabled: hasSelectedRoles || Boolean(permissionViewRole),
   })
   const createMutation = useCreateSubAdmin()
+  const updateMutation = useUpdateSubAdmin()
+
+  useEffect(() => {
+    setFormHydrated(false)
+    if (!isEditMode) {
+      setForm(emptyForm)
+      setConfirmPassword('')
+      setStep('form')
+      setAdminNote('')
+    }
+  }, [editId, isEditMode])
+
+  useEffect(() => {
+    if (!isEditMode || !subAdminData?.data || formHydrated) return
+
+    const subAdmin = subAdminData.data
+    setForm({
+      firstName: subAdmin.firstName || '',
+      lastName: subAdmin.lastName || '',
+      email: subAdmin.email || '',
+      password: '',
+      department: subAdmin.department || '',
+      jobTitle: subAdmin.jobTitle || '',
+      employeeId: subAdmin.employeeId || '',
+      employmentType: subAdmin.employmentType || '',
+      workplaceFlexibility: subAdmin.workplaceFlexibility || '',
+      location: subAdmin.location || '',
+      mfaEnabled: Boolean(subAdmin.mfaEnabled),
+      roleIds:
+        subAdmin.roleIds?.length > 0
+          ? subAdmin.roleIds
+          : subAdmin.roles?.map((role) => role.id) || [],
+    })
+    setRoleListOpen(false)
+    setFormHydrated(true)
+  }, [formHydrated, isEditMode, subAdminData?.data])
 
   const roles = rolesData?.data ?? []
   const catalog = catalogData?.data ?? {}
@@ -133,13 +177,15 @@ export function CreateSubAdminPage() {
       toast.error('First name, last name and email are required')
       return false
     }
-    if (!form.password || form.password.length < 6) {
-      toast.error('Password must be at least 6 characters')
-      return false
-    }
-    if (form.password !== confirmPassword) {
-      toast.error('Passwords do not match')
-      return false
+    if (!isEditMode) {
+      if (!form.password || form.password.length < 6) {
+        toast.error('Password must be at least 6 characters')
+        return false
+      }
+      if (form.password !== confirmPassword) {
+        toast.error('Passwords do not match')
+        return false
+      }
     }
     if (!form.roleIds.length) {
       toast.error('Select at least one role')
@@ -164,6 +210,43 @@ export function CreateSubAdminPage() {
     }
   }
 
+  const handleUpdate = async () => {
+    if (!editId) return
+
+    try {
+      const { password: _password, email: _email, ...payload } = form
+      await updateMutation.mutateAsync({
+        id: editId,
+        payload: {
+          ...payload,
+          roleIds: form.roleIds,
+        },
+      })
+      setConfirmOpen(false)
+      toast.success('User updated successfully. Role and permissions are now in effect.')
+      navigate('/settings/access')
+    } catch {
+      toast.error('Failed to update user')
+    }
+  }
+
+  const handleSubmit = () => {
+    if (isEditMode) {
+      void handleUpdate()
+      return
+    }
+    void handleCreate()
+  }
+
+  if (isEditMode && (subAdminLoading || !formHydrated)) {
+    return <RbacLoader label="Loading user details..." className="min-h-[320px]" />
+  }
+
+  const pageTitle = isEditMode ? 'Edit User' : 'Create New User'
+  const pageSubtitle = isEditMode
+    ? 'Role Based Access / Edit User'
+    : 'Role Based Access / Create New User'
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-2">
@@ -173,9 +256,9 @@ export function CreateSubAdminPage() {
           className="group flex w-fit items-center gap-2 font-heading text-[20px] font-bold tracking-tight text-white transition-colors hover:text-[#FBC078]"
         >
           <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
-          <span>Create New User</span>
+          <span>{pageTitle}</span>
         </button>
-        <p className="pl-7 text-sm text-brand-muted">Role Based Access / Create New User</p>
+        <p className="pl-7 text-sm text-brand-muted">{pageSubtitle}</p>
       </div>
 
       {step === 'form' ? (
@@ -183,7 +266,9 @@ export function CreateSubAdminPage() {
           <div className="rounded-brand-lg border border-white/10 bg-brand-surface p-5 md:p-6">
             <h2 className="text-lg font-semibold text-brand-text">User Details</h2>
             <p className="mt-1 text-sm text-brand-muted">
-              Enter the admin user&apos;s basic information to get started.
+              {isEditMode
+                ? 'Update this admin user’s details and assigned roles.'
+                : 'Enter the admin user&apos;s basic information to get started.'}
             </p>
             <div className="mt-5 grid gap-4 md:grid-cols-2">
               {[
@@ -205,29 +290,34 @@ export function CreateSubAdminPage() {
                       updateField(key as keyof CreateSubAdminPayload, e.target.value)
                     }
                     placeholder={placeholder}
+                    disabled={isEditMode && key === 'email'}
                   />
                 </div>
               ))}
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-brand-text">Password *</label>
-                <Input
-                  type="password"
-                  value={form.password}
-                  onChange={(e) => updateField('password', e.target.value)}
-                  placeholder="Set login password (min 6 characters)"
-                  autoComplete="new-password"
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-brand-text">Confirm Password *</label>
-                <Input
-                  type="password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="Re-enter password"
-                  autoComplete="new-password"
-                />
-              </div>
+              {!isEditMode ? (
+                <>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-brand-text">Password *</label>
+                    <Input
+                      type="password"
+                      value={form.password}
+                      onChange={(e) => updateField('password', e.target.value)}
+                      placeholder="Set login password (min 6 characters)"
+                      autoComplete="new-password"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-brand-text">Confirm Password *</label>
+                    <Input
+                      type="password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      placeholder="Re-enter password"
+                      autoComplete="new-password"
+                    />
+                  </div>
+                </>
+              ) : null}
               <div className="flex items-center justify-between rounded-brand-md border border-white/10 px-4 py-3 md:col-span-2">
                 <div>
                   <p className="text-sm font-medium text-brand-text">2 Factor Authentication</p>
@@ -255,9 +345,13 @@ export function CreateSubAdminPage() {
           </div>
 
           <div className="rounded-brand-lg border border-white/10 bg-brand-surface p-5 md:p-6">
-            <h2 className="text-lg font-semibold text-brand-text">Assign Role</h2>
+            <h2 className="text-lg font-semibold text-brand-text">
+              {isEditMode ? 'Role & Permissions' : 'Assign Role'}
+            </h2>
             <p className="mt-1 text-sm text-brand-muted">
-              Select a role to define the admin user&apos;s permissions and access level.
+              {isEditMode
+                ? 'Change the role to update this user’s permissions and access level.'
+                : 'Select a role to define the admin user&apos;s permissions and access level.'}
             </p>
 
             <div className="mt-5 space-y-4">
@@ -475,10 +569,20 @@ export function CreateSubAdminPage() {
           <div className="rounded-brand-lg border border-brand-accent-muted bg-brand-accent/10 p-5">
             <h3 className="font-semibold text-brand-text">What happens next?</h3>
             <ul className="mt-3 list-disc space-y-2 pl-5 text-sm text-brand-muted">
-              <li>Admin user will be created with the assigned role</li>
-              <li>System notification email will be sent</li>
-              <li>All actions will be logged in audit logs</li>
-              <li>User can use their credentials to log in & create account</li>
+              {isEditMode ? (
+                <>
+                  <li>User profile and role assignment will be updated immediately</li>
+                  <li>Updated permissions will apply on the user&apos;s next session refresh</li>
+                  <li>All actions will be logged in audit logs</li>
+                </>
+              ) : (
+                <>
+                  <li>Admin user will be created with the assigned role</li>
+                  <li>System notification email will be sent</li>
+                  <li>All actions will be logged in audit logs</li>
+                  <li>User can use their credentials to log in & create account</li>
+                </>
+              )}
             </ul>
           </div>
         </>
@@ -495,9 +599,13 @@ export function CreateSubAdminPage() {
           Previous
         </Button>
         {step === 'form' ? (
-          <Button onClick={goToReview}>Invite New User</Button>
+          <Button onClick={goToReview}>
+            {isEditMode ? 'Review Changes' : 'Invite New User'}
+          </Button>
         ) : (
-          <Button onClick={() => setConfirmOpen(true)}>Continue</Button>
+          <Button onClick={() => setConfirmOpen(true)}>
+            {isEditMode ? 'Update User' : 'Continue'}
+          </Button>
         )}
       </div>
 
@@ -573,7 +681,9 @@ export function CreateSubAdminPage() {
             )}
           >
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-brand-text">New User</h3>
+              <h3 className="text-lg font-semibold text-brand-text">
+                {isEditMode ? 'Update User' : 'New User'}
+              </h3>
               <button
                 type="button"
                 onClick={() => setConfirmOpen(false)}
@@ -588,32 +698,59 @@ export function CreateSubAdminPage() {
               </span>
             </div>
             <p className="mt-4 text-center text-sm text-brand-muted">
-              Are you sure you want to assign{' '}
-              <span className="font-semibold text-brand-text">
-                &apos;{selectedRoles.map((r) => r.name).join(', ') || 'roles'}&apos;
-              </span>{' '}
-              role to{' '}
-              <span className="font-semibold text-brand-text">
-                &apos;{form.firstName} {form.lastName}&apos;
-              </span>
-              . They will immediately get access to the system.
+              {isEditMode ? (
+                <>
+                  Are you sure you want to update{' '}
+                  <span className="font-semibold text-brand-text">
+                    &apos;{form.firstName} {form.lastName}&apos;
+                  </span>{' '}
+                  with role{' '}
+                  <span className="font-semibold text-brand-text">
+                    &apos;{selectedRoles.map((r) => r.name).join(', ') || 'roles'}&apos;
+                  </span>
+                  ? Their permissions will change immediately.
+                </>
+              ) : (
+                <>
+                  Are you sure you want to assign{' '}
+                  <span className="font-semibold text-brand-text">
+                    &apos;{selectedRoles.map((r) => r.name).join(', ') || 'roles'}&apos;
+                  </span>{' '}
+                  role to{' '}
+                  <span className="font-semibold text-brand-text">
+                    &apos;{form.firstName} {form.lastName}&apos;
+                  </span>
+                  . They will immediately get access to the system.
+                </>
+              )}
             </p>
-            <label className="mt-4 block text-sm font-medium text-brand-text">
-              Admin notes *
-            </label>
-            <textarea
-              value={adminNote}
-              onChange={(e) => setAdminNote(e.target.value)}
-              rows={3}
-              placeholder="Enter here.."
-              className="mt-2 w-full resize-none rounded-brand-md border border-white/10 bg-brand-bg px-4 py-3 text-sm text-brand-text placeholder:text-brand-muted outline-none focus:ring-2 focus:ring-brand-accent/40"
-            />
+            {!isEditMode ? (
+              <>
+                <label className="mt-4 block text-sm font-medium text-brand-text">
+                  Admin notes *
+                </label>
+                <textarea
+                  value={adminNote}
+                  onChange={(e) => setAdminNote(e.target.value)}
+                  rows={3}
+                  placeholder="Enter here.."
+                  className="mt-2 w-full resize-none rounded-brand-md border border-white/10 bg-brand-bg px-4 py-3 text-sm text-brand-text placeholder:text-brand-muted outline-none focus:ring-2 focus:ring-brand-accent/40"
+                />
+              </>
+            ) : null}
             <div className="mt-5 flex justify-end gap-2">
               <Button variant="secondary" onClick={() => setConfirmOpen(false)}>
                 Cancel
               </Button>
-              <Button onClick={handleCreate} disabled={createMutation.isPending}>
-                {createMutation.isPending ? 'Creating...' : 'Confirm'}
+              <Button
+                onClick={handleSubmit}
+                disabled={createMutation.isPending || updateMutation.isPending}
+              >
+                {createMutation.isPending || updateMutation.isPending
+                  ? isEditMode
+                    ? 'Updating...'
+                    : 'Creating...'
+                  : 'Confirm'}
               </Button>
             </div>
           </div>

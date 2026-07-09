@@ -20,6 +20,7 @@ import {
   useUpdateExpertBankingStatus,
   useUpdateExpertKycStatus,
 } from '../../hooks/use-expert-application-view'
+import { useAdminEscalation } from '@/modules/my-tasks/hooks/use-admin-escalation'
 import { formatApplicationExpertId } from './expert-list-shared'
 import {
   getDisplayKycStatus,
@@ -202,6 +203,7 @@ export function ExpertApplicationViewPage() {
   const updateBanking = useUpdateExpertBankingStatus(application?.banking?._id)
   const escalateApplication = useEscalateExpertApplication(id)
   const startEscalationReview = useStartEscalationReviewOnView(id)
+  const { data: escalationData } = useAdminEscalation('partner', id)
 
   useEffect(() => {
     if (!id || isSuperAdmin) return
@@ -344,21 +346,24 @@ export function ExpertApplicationViewPage() {
     })) ?? []
 
   const applicationNotes = useMemo(() => {
+    const escalation = escalationData?.data
     const finalReview = application?.expert?.finalReview
-    if (!finalReview?.escalationNote && !finalReview?.escalatedToName) {
-      return 'No notes yet.'
+    const source = escalation || finalReview
+
+    if (!source?.escalationNote && !source?.escalatedToName) {
+      return application?.expert?.finalReview?.internalNotes || 'No notes yet.'
     }
 
     const lines = [
-      finalReview.escalatedByName
-        ? `Escalated by ${finalReview.escalatedByName}${finalReview.escalatedToName ? ` to ${finalReview.escalatedToName}` : ''}.`
+      source.escalatedByName
+        ? `Escalated by ${source.escalatedByName}${source.escalatedToName ? ` to ${source.escalatedToName}` : ''}.`
         : null,
-      finalReview.escalationNote ? `Note: ${finalReview.escalationNote}` : null,
-      finalReview.internalNotes ? `Internal: ${finalReview.internalNotes}` : null,
+      source.escalationNote ? `Note: ${source.escalationNote}` : null,
+      finalReview?.internalNotes ? `Internal: ${finalReview.internalNotes}` : null,
     ].filter(Boolean)
 
     return lines.join('\n')
-  }, [application?.expert?.finalReview])
+  }, [application?.expert?.finalReview, escalationData?.data])
 
   if (isLoading) {
     return (

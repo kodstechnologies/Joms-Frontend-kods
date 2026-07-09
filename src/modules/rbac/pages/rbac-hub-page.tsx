@@ -397,7 +397,9 @@ export function RbacHubPage() {
             </TableActionsItem>
             <TableActionsItem
               icon={<Pencil className="size-3.5" />}
-              onClick={() => navigate('/settings/access/users/create')}
+              onClick={() =>
+                navigate(`/settings/access/users/create?edit=${row.original.id}`)
+              }
             >
               Change role
             </TableActionsItem>

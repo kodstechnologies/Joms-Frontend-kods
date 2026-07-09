@@ -57,6 +57,7 @@ export const useUpdateServiceStatus = () => {
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['service', variables.id] })
       queryClient.invalidateQueries({ queryKey: ['services'] })
+      queryClient.invalidateQueries({ queryKey: ['my-tasks'] })
     },
   })
 }
@@ -116,6 +117,7 @@ export const useUpdateConsultationStatus = () => {
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['consultation', variables.id] })
       queryClient.invalidateQueries({ queryKey: ['services'] })
+      queryClient.invalidateQueries({ queryKey: ['my-tasks'] })
     },
   })
 }

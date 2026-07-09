@@ -240,7 +240,7 @@ export function AdminDetailPage() {
           <button
             type="button"
             className={darkOutlineActionButtonClass}
-            onClick={() => toast.info('Change role coming soon')}
+            onClick={() => navigate(`/settings/access/users/create?edit=${id}`)}
           >
             <ArrowLeftRight className="size-4" />
             Change Role

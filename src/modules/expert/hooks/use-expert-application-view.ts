@@ -1,13 +1,15 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
 import {
-  escalateExpertApplication,
-  fetchEscalationAssignees,
   fetchExpertApplicationView,
   updateExpertBankingStatus,
   updateExpertKycStatus,
 } from '../api/expert-application-api'
-import { startEscalationReview } from '@/modules/my-tasks/api/my-tasks-api'
+import {
+  useEscalatePartnerApplication,
+  useEscalationAssignees as useSharedEscalationAssignees,
+  useStartAdminEscalationReview,
+} from '@/modules/my-tasks/hooks/use-admin-escalation'
 import type {
   BankingDecisionPayload,
   KycDecisionPayload,
@@ -28,6 +30,8 @@ export const useUpdateExpertKycStatus = (id?: string) => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['expert-application-view', id] })
       queryClient.invalidateQueries({ queryKey: ['my-tasks'] })
+      queryClient.invalidateQueries({ queryKey: ['all-escalations'] })
+      queryClient.invalidateQueries({ queryKey: ['escalation-metrics'] })
     },
   })
 }
@@ -40,42 +44,17 @@ export const useUpdateExpertBankingStatus = (id?: string) => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['expert-application-view', id] })
       queryClient.invalidateQueries({ queryKey: ['my-tasks'] })
+      queryClient.invalidateQueries({ queryKey: ['all-escalations'] })
+      queryClient.invalidateQueries({ queryKey: ['escalation-metrics'] })
     },
   })
 }
 
 export const useEscalationAssignees = (permission = 'experts.*') =>
-  useQuery({
-    queryKey: ['expert-escalation-assignees', permission],
-    queryFn: () => fetchEscalationAssignees(permission),
-  })
+  useSharedEscalationAssignees(permission)
 
-export const useEscalateExpertApplication = (id?: string) => {
-  const queryClient = useQueryClient()
-  return useMutation({
-    mutationFn: (payload: {
-      assigneeSubAdminId: string
-      assigneeName?: string
-      adminNote: string
-      escalationTarget?: 'kyc' | 'banking' | 'application'
-    }) => escalateExpertApplication(id as string, payload),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['expert-application-view', id] })
-      queryClient.invalidateQueries({ queryKey: ['venue-kyc-application', id] })
-      queryClient.invalidateQueries({ queryKey: ['my-tasks'] })
-    },
-  })
-}
+export const useEscalateExpertApplication = (id?: string) =>
+  useEscalatePartnerApplication(id)
 
-export const useStartEscalationReviewOnView = (id?: string) => {
-  const queryClient = useQueryClient()
-
-  return useMutation({
-    mutationFn: () => startEscalationReview(id as string),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['my-tasks'] })
-      queryClient.invalidateQueries({ queryKey: ['expert-application-view', id] })
-      queryClient.invalidateQueries({ queryKey: ['venue-kyc-application', id] })
-    },
-  })
-}
+export const useStartEscalationReviewOnView = (id?: string) =>
+  useStartAdminEscalationReview('partner', id)

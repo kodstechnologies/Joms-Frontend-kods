@@ -5,6 +5,9 @@ export type TaskTab = 'all' | TaskStatus | 'escalated_by_you'
 export type MyTask = {
   id: string
   partnerId: string
+  entityType?: 'partner' | 'service' | 'consultation' | 'venue_space'
+  entityId?: string
+  venueId?: string
   title: string
   description: string
   module: string

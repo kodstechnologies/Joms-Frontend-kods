@@ -36,8 +36,17 @@ import {
 import { Button } from '@/shared/components/ui/button'
 import {
   DecisionActionModal,
+  type DecisionActionModalOption,
 } from '@/shared/components/modal/decision-action-modal'
 import { cn } from '@/shared/lib/cn'
+import { useAuthStore } from '@/modules/auth/store/auth-store'
+import {
+  useAdminEscalation,
+  useEscalateConsultationApplication,
+  useEscalateServiceApplication,
+  useEscalationAssignees,
+  useStartAdminEscalationReview,
+} from '@/modules/my-tasks/hooks/use-admin-escalation'
 import type {
   ConsultationDetail,
   ConsultationPricingOption,
@@ -119,7 +128,14 @@ const suspendReasonOptions = [
   { label: 'Other', value: 'other' },
 ]
 
-type ServiceDecisionAction = 'approve' | 'reject' | 'requestChanges' | 'suspend'
+type ServiceDecisionAction = 'approve' | 'reject' | 'requestChanges' | 'suspend' | 'escalate'
+
+const getApiErrorMessage = (error: unknown) => {
+  if (axios.isAxiosError(error)) {
+    return error.response?.data?.message || 'Something went wrong. Please try again.'
+  }
+  return 'Something went wrong. Please try again.'
+}
 
 const toIso = (date: string) => new Date(date).toISOString()
 
@@ -235,6 +251,28 @@ export const ServiceViewPage = () => {
   const [suspendIndefinitely, setSuspendIndefinitely] = useState(false)
   const [suspendStartDate, setSuspendStartDate] = useState('')
   const [suspendEndDate, setSuspendEndDate] = useState('')
+  const [selectedEscalationOption, setSelectedEscalationOption] = useState('')
+
+  const user = useAuthStore((state) => state.user)
+  const isSuperAdmin = Boolean(user?.isSuperAdmin)
+  const escalationEntityType = shouldFetchConsultation ? 'consultation' : 'service'
+  const { data: assigneesData } = useEscalationAssignees('services.*')
+  const { data: escalationData } = useAdminEscalation(escalationEntityType, resolvedServiceId)
+  const escalateService = useEscalateServiceApplication(
+    shouldFetchConsultation ? undefined : resolvedServiceId,
+  )
+  const escalateConsultation = useEscalateConsultationApplication(
+    shouldFetchConsultation ? resolvedServiceId : undefined,
+  )
+  const startEscalationReview = useStartAdminEscalationReview(
+    escalationEntityType,
+    resolvedServiceId,
+  )
+
+  useEffect(() => {
+    if (!resolvedServiceId || isSuperAdmin) return
+    startEscalationReview.mutate()
+  }, [resolvedServiceId, isSuperAdmin])
 
   useEffect(() => {
     setActiveImageIndex(0)
@@ -275,6 +313,7 @@ export const ServiceViewPage = () => {
     setSelectedReasons(
       action === 'suspend' ? [] : action === 'approve' ? [] : ['unclear-image', 'content-issue'],
     )
+    setSelectedEscalationOption('')
     setSuspendIndefinitely(false)
     setSuspendStartDate('')
     setSuspendEndDate('')
@@ -302,6 +341,40 @@ export const ServiceViewPage = () => {
 
   const submitDecisionAction = async () => {
     if (!activeDecisionAction || !resolvedServiceId) return
+
+    if (activeDecisionAction === 'escalate') {
+      if (!selectedEscalationOption) {
+        toast.error('Please select a sub-admin to assign.')
+        return
+      }
+      if (!decisionAdminNotes.trim()) {
+        toast.error('Admin notes are required.')
+        return
+      }
+
+      const selectedAssignee = assigneesData?.data.find(
+        (item) => item.id === selectedEscalationOption,
+      )
+      const payload = {
+        assigneeSubAdminId: selectedEscalationOption,
+        assigneeName: selectedAssignee?.fullname || '',
+        adminNote: decisionAdminNotes.trim(),
+        entityTitle: service?.title || service?.consultationTitle || '',
+        applicationUrl: shouldFetchConsultation
+          ? `/services/management/view/${resolvedServiceId}?type=consultation`
+          : `/services/management/view/${resolvedServiceId}`,
+      }
+      const escalateMutation = shouldFetchConsultation ? escalateConsultation : escalateService
+
+      try {
+        await escalateMutation.mutateAsync(payload)
+        toast.success('Application assigned successfully')
+        closeDecisionModal()
+      } catch (err) {
+        toast.error(getApiErrorMessage(err))
+      }
+      return
+    }
 
     if (activeDecisionAction === 'suspend') {
       if (selectedReasons.length === 0) {
@@ -475,6 +548,17 @@ export const ServiceViewPage = () => {
     ? service.consultationCategory || ''
     : service.category?.name || service.consultationCategory || ''
   const showApprovalControls = isPendingReview(service.status, isConsultation)
+  const escalateDisabled =
+    !isPendingReview(service.status, isConsultation) ||
+    escalateService.isPending ||
+    escalateConsultation.isPending
+  const escalation = escalationData?.data
+  const escalationOptions: DecisionActionModalOption[] =
+    assigneesData?.data.map((assignee) => ({
+      label: assignee.fullname,
+      value: assignee.id,
+    })) || []
+  const isEscalateFlow = activeDecisionAction === 'escalate'
   const statusBadge = getReviewStatusBadge(service.status)
   const submittedAt = service.submittedAt || service.createdAt
   const profilePartnerId = resolvedPartnerId || service.partnerId
@@ -542,6 +626,13 @@ export const ServiceViewPage = () => {
           submitLabel: 'Suspend Service',
           variant: 'suspend' as const,
           reasonOptions: suspendReasonOptions,
+        },
+        escalate: {
+          title: 'Escalate Application',
+          description:
+            'Are you sure you want to escalate this application? This post will be reviewed by the selected parties.',
+          submitLabel: 'Escalate',
+          variant: 'escalate' as const,
         },
       }[activeDecisionAction]
     : null
@@ -872,7 +963,14 @@ export const ServiceViewPage = () => {
           onIndefiniteChange={setSuspendIndefinitely}
           onClose={closeDecisionModal}
           onSubmit={submitDecisionAction}
-          isSubmitting={isUpdatingStatus || suspendServiceMutation.isPending}
+          escalationOptions={isEscalateFlow ? escalationOptions : []}
+          selectedEscalationOption={selectedEscalationOption}
+          onEscalationOptionChange={setSelectedEscalationOption}
+          isSubmitting={
+            isEscalateFlow
+              ? escalateService.isPending || escalateConsultation.isPending
+              : isUpdatingStatus || suspendServiceMutation.isPending
+          }
         />
       )}
 
@@ -977,6 +1075,13 @@ export const ServiceViewPage = () => {
           </div>
           <div className="min-h-[120px] rounded-lg border border-white/5 bg-black p-4 text-[12px] text-[#777]">
             {service.adminNote?.trim() || 'No notes yet.'}
+            {escalation?.escalatedByName ? (
+              <p className="mt-3 text-[11px] text-[#999]">
+                Escalated by {escalation.escalatedByName}
+                {escalation.escalatedToName ? ` to ${escalation.escalatedToName}` : ''}.
+                {escalation.escalationNote ? ` Note: ${escalation.escalationNote}` : ''}
+              </p>
+            ) : null}
           </div>
         </div>
 
@@ -1003,14 +1108,17 @@ export const ServiceViewPage = () => {
                 Ask for Re-Submit
                 <RotateCcw className="size-3.5" />
               </button>
-              <button
-                type="button"
-                onClick={() => toast.message('Escalate is coming soon')}
-                className="flex items-center gap-2 rounded-md bg-[#1D4ED8] px-4 py-2.5 text-[11px] font-bold text-white"
-              >
-                Escalate
-                <ArrowUp className="size-3.5" />
-              </button>
+              {isSuperAdmin ? (
+                <button
+                  type="button"
+                  disabled={escalateDisabled}
+                  onClick={() => openDecisionModal('escalate')}
+                  className="flex items-center gap-2 rounded-md bg-[#1D4ED8] px-4 py-2.5 text-[11px] font-bold text-white disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Escalate
+                  <ArrowUp className="size-3.5" />
+                </button>
+              ) : null}
               <button
                 type="button"
                 onClick={() => openDecisionModal('reject')}

@@ -40,16 +40,19 @@ export function Topbar({
   const location = useLocation()
   const navigate = useNavigate()
   const user = useAuthStore((state) => state.user)
-  const profileQuery = useContactSetupProfile(Boolean(user && !user.isSuperAdmin))
+  const isSubAdmin = Boolean(user && !user.isSuperAdmin)
+  const profileQuery = useContactSetupProfile(isSubAdmin)
   const visibleNavigation = getVisibleNavigation(user)
   const title = getTitleFromNav(location.pathname, visibleNavigation)
   const displayName = user?.fullname ?? 'Admin'
   const profileRoleLabel =
     profileQuery.data?.data.profile.roles.map((role) => role.name).join(', ') || 'Sub Admin'
   const roleLabel = user?.isSuperAdmin ? 'Super Admin' : profileRoleLabel
-  const profileImageUrl = profileQuery.data?.data.profile.profileImageUrl
+  const profileImageUrl = isSubAdmin
+    ? profileQuery.data?.data.profile.profileImageUrl
+    : undefined
   const userInitial = displayName.charAt(0).toUpperCase()
-  const canOpenProfile = Boolean(user && !user.isSuperAdmin)
+  const canOpenProfile = isSubAdmin
 
   return (
     <header className={cn('sticky top-0 z-30 backdrop-blur', uiTokens.headerBg)}>

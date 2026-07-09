@@ -35,6 +35,13 @@ import {
   TableActionsItem,
 } from '@/shared/components/table/table-actions-dropdown'
 import { cn } from '@/shared/lib/cn'
+import { useAuthStore } from '@/modules/auth/store/auth-store'
+import {
+  useAdminEscalation,
+  useEscalateVenueSpaceApplication,
+  useEscalationAssignees,
+  useStartAdminEscalationReview,
+} from '@/modules/my-tasks/hooks/use-admin-escalation'
 
 type AmenitySubCategory = {
   _id: string
@@ -49,7 +56,7 @@ type AmenityCategory = {
 }
 
 type SpaceAction = 'hide' | 'suspend'
-type DecisionVariant = 'approve' | 'reject' | 'requestChanges'
+type DecisionVariant = 'approve' | 'reject' | 'requestChanges' | 'escalate'
 
 const ACTION_MENU_CLASS = 'border border-slate-200 bg-white shadow-xl'
 const ACTION_ITEM_CLASS = 'text-slate-800 hover:bg-slate-100 hover:text-slate-900'
@@ -190,6 +197,10 @@ export function SpaceDetailsPage() {
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
   const [suspendIndefinitely, setSuspendIndefinitely] = useState(false)
+  const [selectedEscalationOption, setSelectedEscalationOption] = useState('')
+
+  const user = useAuthStore((state) => state.user)
+  const isSuperAdmin = Boolean(user?.isSuperAdmin)
 
   const { data, isLoading, isError, error } = useVenueFullView(venueId, spaceId)
   const { data: amenityMasters } = useQuery({
@@ -250,8 +261,19 @@ export function SpaceDetailsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['venue-full-view', venueId, spaceId] })
       queryClient.invalidateQueries({ queryKey: ['venues'] })
+      queryClient.invalidateQueries({ queryKey: ['my-tasks'] })
     },
   })
+
+  const { data: assigneesData } = useEscalationAssignees('venues.*')
+  const { data: escalationData } = useAdminEscalation('venue_space', spaceId)
+  const escalateVenueSpace = useEscalateVenueSpaceApplication(spaceId, venueId)
+  const startEscalationReview = useStartAdminEscalationReview('venue_space', spaceId)
+
+  useEffect(() => {
+    if (!spaceId || isSuperAdmin) return
+    startEscalationReview.mutate()
+  }, [spaceId, isSuperAdmin])
 
   const backToProfile = () => navigate(`/venues/management/profile/${venueId}`)
 
@@ -347,6 +369,7 @@ export function SpaceDetailsPage() {
     setDecisionAdminNotes('')
     setDecisionSelectedReasons([])
     setDecisionRejectionReason('')
+    setSelectedEscalationOption('')
   }
 
   const openDecisionModal = (variant: DecisionVariant) => {
@@ -369,6 +392,40 @@ export function SpaceDetailsPage() {
   const handleSubmitDecision = () => {
     if (!spaceId) {
       toast.error('No space found for this venue.')
+      return
+    }
+
+    if (decisionVariant === 'escalate') {
+      if (!selectedEscalationOption) {
+        toast.error('Please select a sub-admin to assign.')
+        return
+      }
+      if (!decisionAdminNotes.trim()) {
+        toast.error('Admin notes are required.')
+        return
+      }
+
+      const selectedAssignee = assigneesData?.data.find(
+        (item) => item.id === selectedEscalationOption,
+      )
+
+      escalateVenueSpace.mutate(
+        {
+          assigneeSubAdminId: selectedEscalationOption,
+          assigneeName: selectedAssignee?.fullname || '',
+          adminNote: decisionAdminNotes.trim(),
+          venueId,
+          applicationUrl: `/venues/management/profile/${venueId}/space/${spaceId}`,
+          entityTitle: fullView?.overview?.venue?.name || 'Venue Space',
+        },
+        {
+          onSuccess: () => {
+            toast.success('Application assigned successfully')
+            setDecisionModalOpen(false)
+          },
+          onError: (err) => toast.error(getApiErrorMessage(err)),
+        },
+      )
       return
     }
 
@@ -483,6 +540,15 @@ export function SpaceDetailsPage() {
   const isDecisionPending = spaceStatus === 'submitted'
   const decisionDisabled =
     !isDecisionPending || spaceStatusMutation.isPending || !spaceId
+  const escalateDisabled =
+    !isDecisionPending || escalateVenueSpace.isPending || !spaceId
+  const escalation = escalationData?.data
+  const isEscalateFlow = decisionVariant === 'escalate'
+  const escalationOptions: DecisionActionModalOption[] =
+    assigneesData?.data.map((assignee) => ({
+      label: assignee.fullname,
+      value: assignee.id,
+    })) || []
 
   return (
     <div className="mx-auto flex max-w-[1120px] flex-col gap-5">
@@ -738,6 +804,13 @@ export function SpaceDetailsPage() {
         <Card title="Application Notes">
           <div className="rounded-md bg-black p-3 text-[12px] leading-relaxed text-[#777] whitespace-pre-wrap">
             {detailSpace?.adminNote || venue.adminInternalNotes || 'No notes yet.'}
+            {escalation?.escalatedByName ? (
+              <p className="mt-3 text-[11px] text-[#999]">
+                Escalated by {escalation.escalatedByName}
+                {escalation.escalatedToName ? ` to ${escalation.escalatedToName}` : ''}.
+                {escalation.escalationNote ? ` Note: ${escalation.escalationNote}` : ''}
+              </p>
+            ) : null}
           </div>
         </Card>
 
@@ -766,13 +839,16 @@ export function SpaceDetailsPage() {
             >
               Ask for Re-Submit
             </button>
-            <button
-              type="button"
-              onClick={() => toast.message('Escalate is coming soon')}
-              className="rounded-md bg-[#1D4ED8] px-4 py-2.5 text-[11px] font-bold text-white transition-colors hover:bg-[#1e40af]"
-            >
-              Escalate
-            </button>
+            {isSuperAdmin ? (
+              <button
+                type="button"
+                disabled={escalateDisabled}
+                onClick={() => openDecisionModal('escalate')}
+                className="rounded-md bg-[#1D4ED8] px-4 py-2.5 text-[11px] font-bold text-white transition-colors hover:bg-[#1e40af] disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Escalate
+              </button>
+            ) : null}
             <button
               type="button"
               onClick={() => openDecisionModal('reject')}
@@ -794,21 +870,27 @@ export function SpaceDetailsPage() {
             ? 'Approve Space'
             : decisionVariant === 'requestChanges'
               ? 'Request Changes'
-              : 'Reject Space'
+              : decisionVariant === 'escalate'
+                ? 'Escalate Application'
+                : 'Reject Space'
         }
         description={
           decisionVariant === 'approve'
             ? 'Are you sure you want to approve this venue space?'
             : decisionVariant === 'requestChanges'
               ? 'Are you sure you want to Request Changes to this application? The applicant will be notified via email.'
-              : 'Please choose the rejection reasons and add notes for this venue space.'
+              : decisionVariant === 'escalate'
+                ? 'Are you sure you want to escalate this application? This post will be reviewed by the selected parties.'
+                : 'Please choose the rejection reasons and add notes for this venue space.'
         }
         submitLabel={
           decisionVariant === 'approve'
             ? 'Approve'
             : decisionVariant === 'requestChanges'
               ? 'Request Changes'
-              : 'Reject'
+              : decisionVariant === 'escalate'
+                ? 'Escalate'
+                : 'Reject'
         }
         reasonOptions={isDecisionRejectFlow ? REJECT_REASONS : []}
         selectedReasons={decisionSelectedReasons}
@@ -817,9 +899,14 @@ export function SpaceDetailsPage() {
         onReasonChange={isDecisionRejectFlow ? setDecisionRejectionReason : undefined}
         adminNotes={decisionAdminNotes}
         onAdminNotesChange={setDecisionAdminNotes}
+        escalationOptions={isEscalateFlow ? escalationOptions : []}
+        selectedEscalationOption={selectedEscalationOption}
+        onEscalationOptionChange={setSelectedEscalationOption}
         onClose={() => setDecisionModalOpen(false)}
         onSubmit={handleSubmitDecision}
-        isSubmitting={spaceStatusMutation.isPending}
+        isSubmitting={
+          isEscalateFlow ? escalateVenueSpace.isPending : spaceStatusMutation.isPending
+        }
       />
 
       <DecisionActionModal

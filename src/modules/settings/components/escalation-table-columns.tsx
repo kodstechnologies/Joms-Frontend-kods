@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
-import {  User } from "lucide-react";
+import { User } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 import {
@@ -21,18 +21,12 @@ function EscalationActions({ escalation }: EscalationActionsProps) {
   const handleView = () => {
     setOpen(false);
 
-    switch (escalation.escalationType) {
-      case "Refund Delay":
-        navigate("/settings/refund-details");
-        break;
-
-      case "Membership Upgrade":
-        navigate("/settings/membership-upgrade-details");
-        break;
-
-      default:
-        navigate("/settings/escalations");
+    if (escalation.applicationUrl) {
+      navigate(escalation.applicationUrl);
+      return;
     }
+
+    navigate("/settings/escalations");
   };
 
   return (
@@ -60,7 +54,7 @@ export const escalationColumns: ColumnDef<Escalation>[] = [
   },
   {
     accessorKey: "roleId",
-    header: "Role ID",
+    header: "Roles ID",
   },
   {
     accessorKey: "roleName",
