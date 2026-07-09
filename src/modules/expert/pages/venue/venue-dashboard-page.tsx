@@ -142,11 +142,18 @@ export const VenueDashboardPage = () => {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          <Button onClick={() => navigate('/venues/dashboard/metrics')}>
+          <Button
+            className="h-9 bg-[#FBC078] text-black hover:bg-[#eeb46a]"
+            onClick={() => navigate('/venues/dashboard/metrics')}
+          >
             <BarChart3 className="size-4" />
             Manage Metrics
           </Button>
-          <Button onClick={() => toast.message('Export coming soon')}>
+
+          <Button
+            className="h-9 bg-[#FBC078] text-black hover:bg-[#eeb46a]"
+            onClick={() => toast.message('Export coming soon')}
+          >
             <Download className="size-4" />
             Export Data
           </Button>

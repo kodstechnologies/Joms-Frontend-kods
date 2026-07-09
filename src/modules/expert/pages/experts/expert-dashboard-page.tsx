@@ -144,7 +144,7 @@ function ChartCard({
   onRefresh?: () => void
 }) {
   return (
-    <div className="rounded-xl border border-white/[0.06] bg-[#121212] p-5">
+    <div className="rounded-xl border border-white/[0.06] bg-[#121212] px-5 py-6">
       <div className="mb-4 flex items-center justify-between">
         <h2 className="text-[14px] font-bold text-white">{title}</h2>
         {onRefresh ? (
@@ -152,7 +152,7 @@ function ChartCard({
             type="button"
             aria-label="Refresh chart"
             onClick={onRefresh}
-            className="grid size-9 place-items-center rounded-lg border border-white/10 bg-black text-slate-300 transition-colors hover:bg-white/5"
+            className="grid h-8 w-8 place-items-center rounded-lg border border-white/10 bg-black text-slate-300 transition-colors hover:bg-white/5"
           >
             <RefreshCw className="size-3.5" />
           </button>
@@ -196,8 +196,8 @@ export const ExpertDashboardPage = () => {
   }, [growthRange])
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+    <div className="space-y-7">
+      <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-white md:text-3xl">
             Expert Management
@@ -206,23 +206,25 @@ export const ExpertDashboardPage = () => {
             Comprehensive member analytics and engagement metrics
           </p>
         </div>
-        <div className="flex w-full flex-col items-stretch gap-3 sm:w-auto sm:flex-row sm:items-center">
-          <Button
-            variant="secondary"
-            className="w-full border-[#FBC078]/60 text-[#FBC078] hover:bg-[#FBC078]/10 sm:w-auto"
-            onClick={() => navigate('/experts/dashboard/metrics')}
-          >
-            <BarChart3 className="size-4" />
-            Manage Metrics
-          </Button>
-          <Button
-            className="w-full bg-[#FBC078] text-black hover:bg-[#f4b96d] sm:w-auto"
-            onClick={() => navigate('/experts/management/create')}
-          >
-            <Plus className="size-4" />
-            Create Expert Account
-          </Button>
-        </div>
+      <div className="flex w-full flex-col items-stretch gap-3 sm:w-auto sm:flex-row sm:items-center">
+  <Button
+    type="button"
+    className="h-11 rounded-xl bg-[#FBC078] px-6 text-sm font-semibold text-black shadow-none transition-colors hover:bg-[#EEB46A] sm:w-auto"
+    onClick={() => navigate('/experts/dashboard/metrics')}
+  >
+    <BarChart3 className="size-4" />
+    Manage Metrics
+  </Button>
+
+  <Button
+    type="button"
+    className="h-11 rounded-xl bg-[#FBC078] px-6 text-sm font-semibold text-black shadow-none transition-colors hover:bg-[#EEB46A] sm:w-auto"
+    onClick={() => navigate('/experts/management/create')}
+  >
+    <Plus className="size-4" />
+    Create Expert Account
+  </Button>
+</div>
       </div>
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4">
@@ -231,7 +233,7 @@ export const ExpertDashboardPage = () => {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+      <div className="grid grid-cols-1 gap-5  xl:grid-cols-2">
         <ChartCard
           title="Experts by Category"
           onRefresh={() => toast.message('Chart refreshed')}
@@ -252,7 +254,7 @@ export const ExpertDashboardPage = () => {
                   tick={{ fill: 'rgba(148,163,184,0.85)', fontSize: 11 }}
                 />
                 <Tooltip contentStyle={tooltipStyle} cursor={{ fill: 'rgba(46,125,255,0.08)' }} />
-                <Bar dataKey="count" fill={CHART_BLUE} radius={[4, 4, 0, 0]} barSize={36} />
+                <Bar dataKey="count" fill={CHART_BLUE} radius={[4, 4, 0, 0]} barSize={42} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -262,7 +264,7 @@ export const ExpertDashboardPage = () => {
           title="Revenue by Category"
           onRefresh={() => toast.message('Chart refreshed')}
         >
-          <div className="space-y-3 pt-1">
+          <div className="space-y-5 pt-2 px-2">
             {REVENUE_BY_CATEGORY.map((item) => (
               <div key={item.category} className="flex items-center gap-3">
                 <span className="w-20 shrink-0 text-[11px] text-[#888888]">{item.category}</span>
@@ -280,8 +282,8 @@ export const ExpertDashboardPage = () => {
         </ChartCard>
       </div>
 
-      <div className="rounded-xl border border-white/[0.06] bg-[#121212] p-5">
-        <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="rounded-xl border border-white/[0.06] bg-[#121212] px-5 py-6">
+        <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <h2 className="text-[14px] font-bold text-white">Revenue Growth Over Time</h2>
           <div className="flex items-center gap-2">
             <div className="relative">
@@ -300,16 +302,16 @@ export const ExpertDashboardPage = () => {
               type="button"
               aria-label="Refresh revenue chart"
               onClick={() => toast.message('Chart refreshed')}
-              className="grid size-9 place-items-center rounded-lg border border-white/10 bg-black text-slate-300 transition-colors hover:bg-white/5"
+              className="grid h-8 w-8  place-items-center rounded-lg border border-white/10 bg-black text-slate-300 transition-colors hover:bg-white/5"
             >
               <RefreshCw className="size-3.5" />
             </button>
           </div>
         </div>
 
-        <div className="h-[280px] w-full">
+        <div className="h-[330px] w-full">
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={growthData} margin={{ left: 8, right: 8, top: 8, bottom: 8 }}>
+            <LineChart data={growthData} margin={{ left: 20, right: 20, top: 20, bottom: 20 }}>
               <CartesianGrid stroke="rgba(255,255,255,0.05)" vertical={false} />
               <XAxis
                 dataKey="month"
@@ -337,7 +339,7 @@ export const ExpertDashboardPage = () => {
         </div>
       </div>
 
-      <div className="rounded-xl border border-white/[0.06] bg-[#121212] p-5">
+      <div className="rounded-xl border border-white/[0.06] bg-[#121212] px-5 py-6">
         <div className="mb-4">
           <h2 className="text-[14px] font-bold text-white">Top Performing Hosts</h2>
         </div>
@@ -346,12 +348,12 @@ export const ExpertDashboardPage = () => {
           <table className="w-full min-w-[760px] border-collapse text-left">
             <thead>
               <tr className="border-b border-white/5 text-[10px] font-semibold tracking-wide text-[#777777] uppercase">
-                <th className="px-3 py-3">Expert Name</th>
-                <th className="px-3 py-3">Category</th>
-                <th className="px-3 py-3">No. Of Order</th>
-                <th className="px-3 py-3">Ratings</th>
-                <th className="px-3 py-3">Total Attendees</th>
-                <th className="px-3 py-3">Revenue</th>
+                <th className="px-3 py-2.5">Expert Name</th>
+                <th className="px-3 py-2.5">Category</th>
+                <th className="px-3 py-2.5">No. Of Order</th>
+                <th className="px-3 py-2.5">Ratings</th>
+                <th className="px-3 py-2.5">Total Attendees</th>
+                <th className="px-3 py-2.5">Revenue</th>
               </tr>
             </thead>
             <tbody>
@@ -360,17 +362,17 @@ export const ExpertDashboardPage = () => {
                   key={host.name}
                   className="border-b border-white/5 text-[12px] text-slate-200 transition-colors hover:bg-white/[0.02]"
                 >
-                  <td className="px-3 py-3.5 font-semibold text-white">{host.name}</td>
-                  <td className="px-3 py-3.5 text-[#999999]">{host.category}</td>
-                  <td className="px-3 py-3.5">{host.orders}</td>
-                  <td className="px-3 py-3.5">
+                  <td className="px-3 py-3 font-semibold text-white">{host.name}</td>
+                  <td className="px-3 py-3 text-[#999999]">{host.category}</td>
+                  <td className="px-3 py-3">{host.orders}</td>
+                  <td className="px-3 py-3">
                     <span className="inline-flex items-center gap-1">
                       <Star className="size-3.5 fill-[#FBC078] text-[#FBC078]" />
                       <span className="font-semibold text-white">{host.rating}</span>
                     </span>
                   </td>
-                  <td className="px-3 py-3.5">{host.attendees.toLocaleString('en-IN')}</td>
-                  <td className="px-3 py-3.5 font-semibold text-white">{host.revenue}</td>
+                  <td className="px-3 py-3">{host.attendees.toLocaleString('en-IN')}</td>
+                  <td className="px-3 py-3 font-semibold text-white">{host.revenue}</td>
                 </tr>
               ))}
             </tbody>

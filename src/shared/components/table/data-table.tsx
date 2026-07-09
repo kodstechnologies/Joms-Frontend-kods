@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import type { ColumnDef, RowData } from '@tanstack/react-table'
 import { flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table'
 import { ArrowUpDown, Filter, Search, Upload } from 'lucide-react'
+import { ArrowUpDown, Filter, Search, Upload } from 'lucide-react'
 
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
@@ -181,16 +182,16 @@ export function DataTable<TData>({
         </div>
       </div>
 
-      <div className="pb-4" aria-live="polite">
-        <p
-          className={cn(
-            'text-[12px] leading-none',
-            isCategoryTone ? 'text-[#888888]' : 'text-[#CCCCCC]',
-          )}
-        >
-          Showing {firstItem}-{lastItem} of {pagination.totalItems} {resourceLabel}
-        </p>
-      </div>
+        <div className="pb-4" aria-live="polite">
+          <p
+            className={cn(
+              'text-[12px] leading-none',
+              isCategoryTone ? 'text-[#888888]' : 'text-[#CCCCCC]',
+            )}
+          >
+            Showing {firstItem}-{lastItem} of {pagination.totalItems} {resourceLabel}
+          </p>
+        </div>
       </div>
 
       <div className="overflow-x-auto px-4 sm:px-5">
@@ -227,8 +228,8 @@ export function DataTable<TData>({
                         {header.column.id !== 'select' &&
                           header.column.id !== 'actions' &&
                           showSortIcons && (
-                          <ArrowUpDown className="size-3 text-white/80" aria-hidden="true" />
-                        )}
+                            <ArrowUpDown className="size-3 text-white/80" aria-hidden="true" />
+                          )}
                       </span>
                     )}
                   </th>

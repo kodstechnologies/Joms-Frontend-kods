@@ -1,8 +1,15 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { ArrowLeft, Eye, PlayCircle } from 'lucide-react'
+import {
+  ArrowLeft,
+  Eye,
+  PlayCircle,
+  Plus,
+  SlidersHorizontal,
+} from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
+import { Button } from '@/shared/components/ui/button'
 
 import { useActivateService, useServices } from '../../hooks/use-services'
 import { getServiceManagementViewPath } from '../../lib/service-navigation'
@@ -225,28 +232,30 @@ export function SuspendedServicesPage() {
 
   return (
     <div className="flex flex-col gap-5 md:gap-6">
-      <header className="flex flex-col gap-2">
-        <button
-          type="button"
-          onClick={() => navigate('/services/management')}
-          className="group flex w-fit items-center gap-2 font-heading text-[20px] font-bold tracking-tight text-white transition-colors hover:text-[#FBC078]"
-        >
-          <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
-          <span>Suspended Services</span>
-        </button>
-
-        <div className="flex items-center gap-1.5 pl-7 text-[12px] font-medium text-[#777777]">
+      <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
+        <header className="flex flex-col gap-2">
           <button
             type="button"
             onClick={() => navigate('/services/management')}
-            className="transition-colors hover:text-white"
+            className="group flex w-fit items-center gap-2 font-heading text-[20px] font-bold tracking-tight text-white transition-colors hover:text-[#FBC078]"
           >
-            Service Management
+            <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
+            <span>Suspended Services</span>
           </button>
-          <span className="text-[#333333]">/</span>
-          <span className="font-bold text-white">Suspended Services</span>
-        </div>
-      </header>
+
+          <div className="flex items-center gap-1.5 pl-7 text-[12px] font-medium text-[#777777]">
+            <button
+              type="button"
+              onClick={() => navigate('/services/management')}
+              className="transition-colors hover:text-white"
+            >
+              Service Management
+            </button>
+            <span className="text-[#333333]">/</span>
+            <span className="font-bold text-white">Suspended Services</span>
+          </div>
+        </header>
+      </div>
 
       <DataTable
         columns={columns}

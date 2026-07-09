@@ -23,16 +23,20 @@ interface Props {
 }
 
 const VenueSubCategoryInfoCard = ({ category, subCategory }: Props) => {
+  
   return (
-    <div
-      className="rounded-xl border p-6 lg:p-8"
-      style={{
-        backgroundColor: categoryViewTheme.surface,
-        borderColor: categoryViewTheme.surfaceBorder,
-      }}
-    >
-      <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:justify-between">
-        <div className="grid flex-1 grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">
+  <div
+    className="rounded-xl border p-6"
+    style={{
+      backgroundColor: categoryViewTheme.surface,
+      borderColor: categoryViewTheme.surfaceBorder,
+    }}
+  >
+    <div className="flex items-start justify-between gap-10">
+      {/* Left Content */}
+      <div className="flex-1">
+        <div className="grid grid-cols-4 gap-x-12 gap-y-10">
+          {/* Row 1 */}
           <div>
             <p className={categoryViewTheme.labelClass}>Main Category Name</p>
             <p className={`mt-2 ${categoryViewTheme.valueLgClass}`}>
@@ -64,10 +68,11 @@ const VenueSubCategoryInfoCard = ({ category, subCategory }: Props) => {
             </button>
           </div>
 
+          {/* Row 2 */}
           <div>
-            <p className={categoryViewTheme.labelClass}>Sub-Category ID</p>
+            <p className={categoryViewTheme.labelClass}>Category ID</p>
             <p className={`mt-2 ${categoryViewTheme.valueLgClass}`}>
-              {subCategory.subCategoryId || subCategory.id}
+              {category.categoryId || category.id}
             </p>
           </div>
 
@@ -84,37 +89,43 @@ const VenueSubCategoryInfoCard = ({ category, subCategory }: Props) => {
               {subCategory.venues}
             </p>
           </div>
-        </div>
 
-        <div className="flex shrink-0 flex-col items-end gap-5">
-          <span
-            className={`inline-flex rounded-md px-3 py-1 text-[11px] font-semibold ${
-              subCategory.status === "Active"
-                ? categoryViewTheme.statusActive
-                : categoryViewTheme.statusPaused
-            }`}
-          >
-            {subCategory.status}
-          </span>
-
-          <div className="flex flex-col items-center gap-2">
-            <p className={categoryViewTheme.labelClass}>Icon</p>
-            <div className="flex size-20 items-center justify-center rounded-full border border-dashed border-[#444444] bg-black">
-              {subCategory.icon ? (
-                <img
-                  src={subCategory.icon}
-                  alt={subCategory.name}
-                  className="size-10 object-contain"
-                />
-              ) : (
-                <PenTool className="size-5 text-white" aria-hidden="true" />
-              )}
-            </div>
-          </div>
+          {/* Empty column to match design */}
+          <div />
         </div>
       </div>
+
+      {/* Right Side */}
+      <div className="flex shrink-0 items-start gap-8">
+        <div className="flex flex-col items-center">
+          <p className={categoryViewTheme.labelClass}>Icon</p>
+
+          <div className="mt-3 flex size-20 items-center justify-center rounded-full border border-dashed border-[#444444] bg-black">
+            {subCategory.icon ? (
+              <img
+                src={subCategory.icon}
+                alt={subCategory.name}
+                className="size-10 object-contain"
+              />
+            ) : (
+              <PenTool className="size-5 text-white" />
+            )}
+          </div>
+        </div>
+
+        <span
+          className={`inline-flex rounded-md px-3 py-1 text-[11px] font-semibold ${
+            subCategory.status === "Active"
+              ? categoryViewTheme.statusActive
+              : categoryViewTheme.statusPaused
+          }`}
+        >
+          {subCategory.status}
+        </span>
+      </div>
     </div>
-  );
+  </div>
+);
 };
 
 export default VenueSubCategoryInfoCard;

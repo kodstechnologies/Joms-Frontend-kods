@@ -446,39 +446,39 @@ export const ServiceManagementPage = () => {
     icon: LucideIcon
     status: string
   }[] = [
-    {
-      label: 'Approvals Pending',
-      count: counts.approvalsPending,
-      gradient: 'bg-gradient-to-r from-amber-700/55 to-transparent',
-      border: 'border-amber-600/60',
-      icon: Hourglass,
-      status: 'pending',
-    },
-    {
-      label: 'Reported Services',
-      count: counts.reportedServices,
-      gradient: 'bg-gradient-to-r from-red-800/55 to-transparent',
-      border: 'border-red-800/60',
-      icon: AlertCircle,
-      status: 'reported',
-    },
-    {
-      label: 'Suspended Services',
-      count: counts.suspendedServices,
-      gradient: 'bg-gradient-to-r from-red-800/55 to-transparent',
-      border: 'border-red-800/60',
-      icon: Ban,
-      status: 'suspended',
-    },
-    {
-      label: 'Deleted Services',
-      count: counts.deletedServices,
-      gradient: 'bg-gradient-to-r from-red-800/55 to-transparent',
-      border: 'border-red-800/60',
-      icon: Trash2,
-      status: 'deleted',
-    },
-  ]
+      {
+        label: 'Approvals Pending',
+        count: counts.approvalsPending,
+        gradient: 'bg-gradient-to-r from-amber-700/55 to-transparent',
+        border: 'border-amber-600/60',
+        icon: Hourglass,
+        status: 'pending',
+      },
+      {
+        label: 'Reported Services',
+        count: counts.reportedServices,
+        gradient: 'bg-gradient-to-r from-red-800/55 to-transparent',
+        border: 'border-red-800/60',
+        icon: AlertCircle,
+        status: 'reported',
+      },
+      {
+        label: 'Suspended Services',
+        count: counts.suspendedServices,
+        gradient: 'bg-gradient-to-r from-red-800/55 to-transparent',
+        border: 'border-red-800/60',
+        icon: Ban,
+        status: 'suspended',
+      },
+      {
+        label: 'Deleted Services',
+        count: counts.deletedServices,
+        gradient: 'bg-gradient-to-r from-red-800/55 to-transparent',
+        border: 'border-red-800/60',
+        icon: Trash2,
+        status: 'deleted',
+      },
+    ]
 
   return (
     <div className="flex flex-col gap-4 p-0 md:gap-6">
@@ -490,7 +490,10 @@ export const ServiceManagementPage = () => {
           </p>
         </div>
         <div className="flex w-full flex-col items-center gap-3 md:w-auto md:flex-row">
-          <Button className="w-full md:w-auto" onClick={() => navigate('/services/dashboard/metrics')}>
+          <Button
+            className="h-9 w-full bg-[#FBC078] text-black hover:bg-[#eeb46a] md:w-auto"
+            onClick={() => navigate('/services/dashboard/metrics')}
+          >
             <BarChart3 className="size-4" />
             Manage Metrics
           </Button>
