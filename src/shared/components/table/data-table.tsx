@@ -2,7 +2,6 @@ import type { ReactNode } from 'react'
 import type { ColumnDef, RowData } from '@tanstack/react-table'
 import { flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table'
 import { ArrowUpDown, Filter, Search, Upload } from 'lucide-react'
-import { ArrowUpDown, Filter, Search, Upload } from 'lucide-react'
 
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'

@@ -83,10 +83,11 @@ export const navigationConfig: NavItem[] = [
           { key: 'expert.services.dashboard', label: 'Dashboard', to: '/services/dashboard' },
           { key: 'expert.services.management', label: 'Service Management', to: '/services/management' },
           {
-            key: "expert.services.categories",
-            label: "Category Management",
-            to: "/categories/management",
-          },],
+            key: 'expert.services.categories',
+            label: 'Category Management',
+            to: '/categories/management',
+          },
+        ],
       },
       {
         key: 'expert.venues-group',

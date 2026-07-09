@@ -1,9 +1,8 @@
 import type { AdminUser } from '@/modules/auth/store/auth-store'
 
-import type { NavItem, PermissionModule } from './navigation.config'
+import { navigationConfig, type NavItem, type PermissionModule } from './navigation.config'
 
 export type { PermissionModule } from './navigation.config'
-import { navigationConfig } from './navigation.config'
 
 const LEGACY_PERMISSION_MAP: Record<string, string> = {
   'events.view': 'venues.view',
