@@ -18,6 +18,7 @@ This document tracks each Settings tab/page and whether it is connected to backe
 | Finance & Transactional | API Connected (Mixed) | `GET/PUT/POST /settings/finance` | Uses API for save/reset; a few UI option arrays are local constants. |
 | Incident Tracking | API Connected (Mixed) | `GET /settings/incidents/metrics`, `GET /settings/incidents`, `GET /settings/incidents/:id`, `PATCH /settings/incidents/:id/assign` | Incident data/metrics are live; assign modal department/user lists are local constants. |
 | Backup Configuration (summary panel) | API Connected | `GET /settings/backups/metrics`, `GET /settings/backups`, `POST /settings/backups/run`, `POST /settings/backups/:id/restore`, `DELETE /settings/backups/:id` | Live backup jobs + actions. |
+| Templates | API Connected | `GET/PATCH /settings/templates/categories`, `GET /settings/templates/categories/:categoryId/reasons`, `POST/PATCH/DELETE /settings/templates/reasons`, `PATCH /settings/templates/reasons/:id/toggle` | Moderation categories + reasons with default message templates. |
 | Expert Application | API Connected | `GET/PUT/POST /settings/expert` | Save/reset works with settings-service. |
 | Venue Management | API Connected | `GET/PUT/POST /settings/venue` | Save/reset works with settings-service. |
 | Service Marketplace | API Connected | `GET/PUT/POST /settings/service` | Save/reset works with settings-service. |
@@ -34,6 +35,7 @@ This document tracks each Settings tab/page and whether it is connected to backe
 | `/settings/policies/create` | Policy Create | API Connected | `POST /settings/policies` | Creates draft/active policies. |
 | `/settings/policies/:id` | Policy Detail | API Connected | `GET /settings/policies/:slug`, `PUT /settings/policies/:slug` | Detail + content update are live. |
 | `/settings/policies/:id/timeline` | Policy Timeline | API Connected | `GET /settings/policies/:slug`, `GET /settings/policies/:slug/versions` | Version history is live. |
+| `/settings/templates` (and Settings → Templates tab) | Moderation Reason Manager | API Connected | `GET/PATCH /settings/templates/categories`, `GET /settings/templates/categories/:categoryId/reasons`, `POST/PATCH/DELETE /settings/templates/reasons`, `PATCH /settings/templates/reasons/:id/toggle` | Categories + reasons with message templates, activate/disable, edit, delete. |
 | `/settings/health` | Platform Health | Static/Mock | - | Uses `healthMetricsMock` and hardcoded chart datasets. |
 | `/settings/system` | System Configuration | Static/Mock | - | Placeholder page (coming soon). |
 | `/settings/api-keys` | API Key Management | Static/Mock | - | Placeholder page (coming soon). |

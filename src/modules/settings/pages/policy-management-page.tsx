@@ -1,6 +1,15 @@
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ChevronDown, FileText, Plus, UserRound } from 'lucide-react'
+import {
+  Calendar,
+  Clock,
+  Eye,
+  FileText,
+  History,
+  Plus,
+  RotateCw,
+  UserRound,
+} from 'lucide-react'
 import { toast } from 'sonner'
 
 import { SettingsFooterActions } from '../components/settings-footer-actions'
@@ -16,45 +25,48 @@ import { SectionHeader } from '@/shared/components/dashboard/section-header'
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
 
-const SETTINGS_TOP_TABS: Array<{
+const POLICY_SETTINGS_TABS: Array<{
   key:
     | 'platform'
     | 'security'
-    | 'notifications'
-    | 'finance'
-    | 'incident'
-    | 'backup'
+    | 'user'
     | 'expert'
+    | 'event'
     | 'venue'
     | 'service'
   label: string
+  routeTab?: string
 }> = [
-  { key: 'platform', label: 'Platform Controls' },
-  { key: 'security', label: 'Security & Access' },
-  { key: 'notifications', label: 'Notifications' },
-  { key: 'finance', label: 'Finance & Transactional' },
-  { key: 'incident', label: 'Incident Tracking' },
-  { key: 'backup', label: 'Backup Configuration' },
-  { key: 'expert', label: 'Expert Application' },
-  { key: 'venue', label: 'Venue Management' },
-  { key: 'service', label: 'Service Marketplace' },
+  { key: 'platform', label: 'Platform Controls', routeTab: 'platform' },
+  { key: 'security', label: 'Security & Access', routeTab: 'security' },
+  { key: 'user', label: 'User Application' },
+  { key: 'expert', label: 'Expert Application', routeTab: 'expert' },
+  { key: 'event', label: 'Event Management' },
+  { key: 'venue', label: 'Venue Management', routeTab: 'venue' },
+  { key: 'service', label: 'Service Marketplace', routeTab: 'service' },
 ]
 
-function SettingsTopTabs() {
+function PolicySettingsTopTabs({ activeKey = 'service' }: { activeKey?: string }) {
   const navigate = useNavigate()
 
   return (
     <div className="rounded-xl border border-white/10 bg-[#101010] p-2">
       <div className="overflow-x-auto rounded-lg bg-[#0B0B0B] p-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         <div className="flex w-max min-w-full gap-1">
-          {SETTINGS_TOP_TABS.map((item) => (
+          {POLICY_SETTINGS_TABS.map((item) => (
             <button
               key={item.key}
               type="button"
-              onClick={() => navigate('/settings/main', { state: { settingsTab: item.key } })}
+              onClick={() => {
+                if (item.routeTab) {
+                  navigate('/settings/main', { state: { settingsTab: item.routeTab } })
+                }
+              }}
               className={cn(
-                'shrink-0 rounded-md px-3 py-1.5 text-[11px] font-medium whitespace-nowrap',
-                item.key === 'platform' ? 'bg-[#171717] text-white' : 'text-slate-400',
+                'shrink-0 rounded-md px-3 py-1.5 text-[11px] font-medium whitespace-nowrap transition-colors',
+                item.key === activeKey
+                  ? 'border border-white/20 bg-[#171717] text-white'
+                  : 'text-slate-400 hover:text-white',
               )}
             >
               {item.label}
@@ -66,54 +78,77 @@ function SettingsTopTabs() {
   )
 }
 
-function PolicyPreview({ policyId }: { policyId: string }) {
-  const { data: policy } = usePolicy(policyId)
-
+function PolicyActionButton({
+  label,
+  icon: Icon,
+  onClick,
+}: {
+  label: string
+  icon: typeof Eye
+  onClick: () => void
+}) {
   return (
-    <p className="line-clamp-2 text-xs text-slate-400">
-      {policy?.content ?? 'Policy content preview will appear here for quick review.'}
-    </p>
+    <button
+      type="button"
+      onClick={onClick}
+      className="inline-flex items-center gap-2 rounded-lg border border-[#F0C27B]/35 bg-[#1A1A1A] px-3 py-2 text-xs font-medium text-white hover:border-[#F0C27B]/60"
+    >
+      <Icon className="size-3.5 text-[#F0C27B]" />
+      {label}
+    </button>
   )
 }
 
-function PolicyCard({ policy, index }: { policy: PolicyItem; index: number }) {
+function PolicyRow({ policy }: { policy: PolicyItem }) {
   const navigate = useNavigate()
 
   return (
-    <section className="rounded-xl border border-white/10 bg-[#151515]">
-      <div className="flex items-center justify-between gap-3 px-4 py-3">
-        <div className="min-w-0">
-          <div className="flex items-center gap-2">
-            <h3 className="truncate text-sm font-semibold text-white">{policy.title}</h3>
-            <span className="rounded-full border border-amber-500/25 bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-300">
-              {policy.version}
-            </span>
-            <span className="rounded-full border border-emerald-500/25 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-400">
+    <article className="flex flex-col gap-4 rounded-xl border border-white/10 bg-[#151515] px-4 py-4 lg:flex-row lg:items-center lg:justify-between">
+      <div className="flex min-w-0 items-start gap-3">
+        <div className="grid size-10 shrink-0 place-items-center rounded-lg border border-white/10 bg-[#101010]">
+          <FileText className="size-4 text-slate-400" />
+        </div>
+        <div className="min-w-0 space-y-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <h3 className="text-sm font-semibold text-white">{policy.title}</h3>
+            <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5 text-[10px] font-semibold text-emerald-400">
               {policy.status}
             </span>
+            <span className="rounded-full border border-[#F0C27B]/30 bg-[#F0C27B]/10 px-2.5 py-0.5 text-[10px] font-semibold text-[#F0C27B]">
+              {policy.version}
+            </span>
           </div>
-          <p className="mt-1 text-[11px] text-slate-500">
-            Policy reviewed on {policy.lastUpdated} • Effective {policy.effectiveDate}
-          </p>
+          <div className="flex flex-wrap items-center gap-4 text-[11px] text-slate-500">
+            <span className="inline-flex items-center gap-1.5">
+              <Calendar className="size-3.5" />
+              Effective: {policy.effectiveDate}
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <Clock className="size-3.5" />
+              Last Updated: {policy.lastUpdated}
+            </span>
+          </div>
         </div>
-        <ChevronDown className="size-4 text-slate-500" />
       </div>
 
-      {index < 2 ? (
-        <div className="space-y-3 border-t border-white/10 px-4 py-3">
-          <div className="rounded-lg border border-white/10 bg-[#0E0E0E] p-3">
-            <p className="mb-2 text-xs font-semibold text-white">Policy Content</p>
-            <PolicyPreview policyId={policy.id} />
-          </div>
-          <div className="flex justify-end gap-2">
-            <Button variant="secondary" onClick={() => navigate(`/settings/policies/${policy.id}/timeline`)}>
-              View Timeline
-            </Button>
-            <Button onClick={() => navigate(`/settings/policies/${policy.id}`)}>View</Button>
-          </div>
-        </div>
-      ) : null}
-    </section>
+      <div className="flex flex-wrap gap-2 lg:justify-end">
+        <PolicyActionButton
+          label="View"
+          icon={Eye}
+          onClick={() => navigate(`/settings/policies/${policy.id}`)}
+        />
+        <PolicyActionButton
+          label="View Timeline"
+          icon={History}
+          onClick={() => navigate(`/settings/policies/${policy.id}/timeline`)}
+        />
+        <PolicyActionButton
+          label="Update"
+          icon={RotateCw}
+          onClick={() => navigate(`/settings/policies/${policy.id}`)}
+        />
+      </div>
+    </article>
   )
 }
 
@@ -123,37 +158,38 @@ export function PolicyManagementPage() {
 
   return (
     <div className="space-y-6">
-      <SectionHeader
-        title="Settings"
-        subtitle="Track revenue, payouts, and financial performance"
-        actions={[
-          {
-            label: 'Settings Logs',
-            onClick: () => navigate('/settings/logs'),
-            variant: 'secondary',
-          },
-        ]}
-      />
+      <PolicySettingsTopTabs activeKey="service" />
 
-      <SettingsTopTabs />
-
-      <div className="space-y-3 rounded-2xl border border-white/10 bg-[#111111] p-4">
-        <div className="flex items-center justify-between">
-          <p className="text-sm font-semibold text-white">Policy Management</p>
-          <Button onClick={() => navigate('/settings/policies/create')}>
+      <div className="space-y-4 rounded-2xl border border-white/10 bg-[#111111] p-4 sm:p-5">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <h2 className="text-lg font-semibold text-white">Policy Management</h2>
+            <p className="mt-1 text-sm text-slate-400">
+              Manage platform policies, terms, and legal documents
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => navigate('/settings/policies/create')}
+            className="inline-flex items-center gap-2 rounded-xl bg-[#F0C27B] px-4 py-2.5 text-sm font-semibold text-[#050505] hover:bg-[#E6B46C]"
+          >
             <Plus className="size-4" />
-            Create Policy
-          </Button>
+            Create New Policy
+          </button>
         </div>
 
         {isLoading ? (
           <div className="space-y-3">
-            {Array.from({ length: 4 }).map((_, index) => (
-              <div key={index} className="h-20 animate-pulse rounded-xl bg-white/5" />
+            {Array.from({ length: 5 }).map((_, index) => (
+              <div key={index} className="h-24 animate-pulse rounded-xl bg-white/5" />
             ))}
           </div>
         ) : (
-          policies.map((policy, index) => <PolicyCard key={policy.id} policy={policy} index={index} />)
+          <div className="space-y-3">
+            {policies.map((policy) => (
+              <PolicyRow key={policy.id} policy={policy} />
+            ))}
+          </div>
         )}
 
         <SettingsFooterActions
@@ -207,7 +243,7 @@ export function PolicyCreatePage() {
   return (
     <div className="space-y-6">
       <SectionHeader title="Settings" subtitle="Track revenue, payouts, and financial performance" />
-      <SettingsTopTabs />
+      <PolicySettingsTopTabs activeKey="service" />
 
       <div className="space-y-4 rounded-2xl border border-white/10 bg-[#111111] p-4">
         <p className="text-xs text-slate-500">Platform Control / Policy Management / Create Policy</p>

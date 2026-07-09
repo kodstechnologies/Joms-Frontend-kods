@@ -234,6 +234,11 @@ const PolicyDetailPage = lazy(() =>
     default: m.PolicyDetailPage,
   })),
 )
+const TemplatesPage = lazy(() =>
+  import('@/modules/settings').then((m) => ({
+    default: m.TemplatesPage,
+  })),
+)
 const TicketManagementPage = lazy(() =>
   import('@/modules/support-management').then((m) => ({
     default: m.TicketManagementPage,
@@ -690,6 +695,7 @@ export function AppRouter() {
                 <Route path="/settings/policies/create" element={<PolicyCreatePage />} />
                 <Route path="/settings/policies/:id/timeline" element={<PolicyTimelinePage />} />
                 <Route path="/settings/policies/:id" element={<PolicyDetailPage />} />
+                <Route path="/settings/templates" element={<TemplatesPage />} />
                 <Route path="/settings/categories" element={<CategoryHubPage />} />
                 <Route path="/settings/system" element={<SystemConfigurationPage />} />
                 

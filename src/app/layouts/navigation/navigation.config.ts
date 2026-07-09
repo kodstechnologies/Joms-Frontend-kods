@@ -192,6 +192,11 @@ export const navigationConfig: NavItem[] = [
         to: '/settings/main',
       },
       {
+        key: 'settings.templates',
+        label: 'Templates',
+        to: '/settings/templates',
+      },
+      {
         key: 'settings.access',
         label: 'Role Based Access Control',
         to: '/settings/access',

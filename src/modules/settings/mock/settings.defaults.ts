@@ -295,13 +295,28 @@ export const loginTrailsMock: LoginTrailRow[] = Array.from({ length: 20 }, (_, i
   }
 })
 
-export const healthMetricsMock = [
-  { title: 'System Uptime', value: '99.97%', change: '+6.7%', up: true },
-  { title: 'Failed Transactions', value: '1,247', change: '-2.1%', up: false },
-  { title: 'Compliance Flags', value: '38', change: '+1.2%', up: true },
-  { title: 'Open Support Tickets', value: '214', change: '+4.5%', up: true },
-  { title: 'Admin Actions (MTD)', value: '892', change: '+3.1%', up: true },
-  { title: 'Critical Actions Logged', value: '12', change: '-0.8%', up: false },
-  { title: 'Avg. Approval Time', value: '2.4h', change: '-5.2%', up: false },
-  { title: 'API Response Time', value: '148ms', change: '+1.1%', up: true },
+export type HealthMetric = {
+  title: string
+  value: string
+  trend?: { text: string; tone: 'positive' | 'negative' }
+  hint?: string
+  status?: string
+}
+
+export const healthMetricsMock: HealthMetric[] = [
+  { title: 'System Uptime', value: '99.97%', trend: { text: '+6.7% vs last quarter', tone: 'positive' } },
+  { title: 'Failed Transactions', value: '23', trend: { text: '-5.5% vs last quarter', tone: 'positive' } },
+  { title: 'Compliance Flags', value: '05', trend: { text: '+8.2% vs last month', tone: 'positive' } },
+  { title: 'Open Support Tickets', value: '47', trend: { text: '+12.5% vs last month', tone: 'positive' } },
+  { title: 'Admin Actions (MTD)', value: '1,247', trend: { text: '+6.7% vs last quarter', tone: 'positive' } },
+  { title: 'Critical Actions Logged', value: '23', trend: { text: '+8.2% vs last month', tone: 'positive' } },
+  { title: 'Avg. Approval Time', value: '2.8 hrs', trend: { text: '+8.2% vs last month', tone: 'positive' } },
+  { title: 'Impersonation Sessions', value: '47', hint: 'For user support' },
+  { title: 'API Response Time', value: '127ms', trend: { text: '-18ms vs last quarter', tone: 'negative' } },
+  { title: 'Error Rate', value: '0.12%', trend: { text: '-0.05% vs last quarter', tone: 'negative' } },
+  { title: 'Database Query Time', value: '45ms', trend: { text: '-16ms vs last month', tone: 'negative' } },
+  { title: 'Data Backup Success', value: '100%', status: 'All backups completed' },
+  { title: 'Avg. Ticket Resolution Time', value: '4.2 hrs', trend: { text: '-1.2hrs vs last quarter', tone: 'negative' } },
+  { title: 'First Response Time', value: '23 min', trend: { text: '-7 min vs last quarter', tone: 'negative' } },
+  { title: 'Customer Satisfaction (CSAT)', value: '94%', trend: { text: '+3.2% vs last quarter', tone: 'positive' } },
 ]

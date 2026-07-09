@@ -5,6 +5,7 @@ export { BackupConfigurationPage } from './pages/backup-configuration-page'
 export { LockedAccountsPage } from './pages/locked-accounts-page'
 export { LoginTrailsPage } from './pages/login-trails-page'
 export { CategoryHubPage } from './pages/category-hub-page'
+export { TemplatesPage } from './pages/templates-page'
 export {
   PolicyCreatePage,
   PolicyDetailPage,

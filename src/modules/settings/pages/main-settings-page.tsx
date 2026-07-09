@@ -12,6 +12,7 @@ import { SecurityAccessPanel } from '../components/security-access-panel'
 import { ServiceSettingsPanel } from '../components/service-settings-panel'
 import { SettingsFooterActions } from '../components/settings-footer-actions'
 import { VenueSettingsPanel } from '../components/venue-settings-panel'
+import { TemplatesPage } from './templates-page'
 import {
   useResetSettings,
   useSettingsModule,
@@ -47,6 +48,7 @@ type SettingsTab =
   | 'finance'
   | 'incident'
   | 'backup'
+  | 'templates'
   | 'expert'
   | 'venue'
   | 'service'
@@ -61,7 +63,7 @@ const API_TABS: SettingsModule[] = [
   'service',
 ]
 
-const STATIC_TABS: SettingsTab[] = ['incident', 'backup']
+const STATIC_TABS: SettingsTab[] = ['incident', 'backup', 'templates']
 
 const TABS: { key: SettingsTab; label: string }[] = [
   { key: 'platform', label: 'Platform Controls' },
@@ -70,6 +72,7 @@ const TABS: { key: SettingsTab; label: string }[] = [
   { key: 'finance', label: 'Finance & Transactional' },
   { key: 'incident', label: 'Incident Tracking' },
   { key: 'backup', label: 'Backup Configuration' },
+  { key: 'templates', label: 'Templates' },
   { key: 'expert', label: 'Expert Application' },
   { key: 'venue', label: 'Venue Management' },
   { key: 'service', label: 'Service Marketplace' },
@@ -307,6 +310,7 @@ export function MainSettingsPage() {
           ) : null}
           {activeTab === 'incident' ? <IncidentTrackingPanel /> : null}
           {activeTab === 'backup' ? <BackupRestorePanel /> : null}
+          {activeTab === 'templates' ? <TemplatesPage embedded /> : null}
           {activeTab === 'expert' ? (
             <ExpertSettingsPanel value={expertConfig} onChange={setExpertConfig} />
           ) : null}
