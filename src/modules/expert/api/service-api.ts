@@ -72,21 +72,18 @@ export const activateService = async (id: string) => {
 }
 
 export const fetchServiceById = async (id: string) => {
-  const response = await expertApiClient.get<ServiceDetailResponse>(`/services/admin/services/${id}`)
+  const response = await expertApiClient.get<ServiceDetailResponse>(`/api/admin/services/${id}`)
   return response.data
 }
 
 export const createService = async (payload: CreateServicePayload) => {
-  const response = await expertApiClient.post<CreateServiceResponse>(
-    '/services/admin/services',
-    payload,
-  )
+  const response = await expertApiClient.post<CreateServiceResponse>('/api/admin/services', payload)
   return response.data
 }
 
 export const updateServicePricing = async (id: string, payload: UpdateServicePricingPayload) => {
   const response = await expertApiClient.patch<ServiceDetailResponse>(
-    `/services/admin/services/${id}/pricing`,
+    `/api/admin/services/${id}/pricing`,
     payload,
   )
   return response.data
@@ -97,7 +94,7 @@ export const updateServiceGallery = async (id: string, images: File[]) => {
   images.forEach((file) => formData.append('images', file))
 
   const response = await expertApiClient.patch<ServiceDetailResponse>(
-    `/services/admin/services/${id}/gallery`,
+    `/api/admin/services/${id}/gallery`,
     formData,
     { headers: { 'Content-Type': 'multipart/form-data' } },
   )
@@ -106,7 +103,7 @@ export const updateServiceGallery = async (id: string, images: File[]) => {
 
 export const publishService = async (id: string) => {
   const response = await expertApiClient.patch<PublishResponse<ServiceDetail>>(
-    `/services/admin/services/${id}/publish`,
+    `/api/admin/services/${id}/publish`,
   )
   return response.data
 }
