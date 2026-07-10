@@ -101,7 +101,7 @@ export const REVENUE_KPIS = [
 
 export const REVENUE_BREAKDOWN = [
   { label: 'Events Revenue', value: 82400, percent: 66, color: '#1A73E8' },
-  { label: 'Meetup Revenue', value: 42180, percent: 34, color: '#FBC078' },
+  { label: 'Meetup Revenue', value: 42180, percent: 34, color: 'var(--brand-accent)' },
 ]
 
 export const TOP_REVENUE_SPACES = [

@@ -51,8 +51,8 @@ const ROWS: LeaderRow[] = [
 ]
 
 const RANK_BADGE_STYLES: Record<number, string> = {
-  1: 'bg-[#FBC078] text-black',
-  2: 'bg-[#E0B873] text-black',
+  1: 'bg-brand-accent text-brand-text-dark',
+  2: 'bg-brand-gold-from text-brand-text-dark',
   3: 'bg-[#C88A4B] text-black',
 }
 
@@ -80,7 +80,7 @@ function Avatar({ size = 'md' }: { size?: 'md' | 'lg' }) {
   return (
     <div
       className={cn(
-        'grid place-items-center rounded-full bg-gradient-to-br from-[#FBC078]/30 to-[#222] ring-2 ring-white/10',
+        'grid place-items-center rounded-full bg-gradient-to-br from-brand-accent/30 to-[#222] ring-2 ring-white/10',
         size === 'lg' ? 'size-16' : 'size-12',
       )}
     >
@@ -95,7 +95,7 @@ function PodiumCard({ expert }: { expert: PodiumExpert }) {
     <div className={cn('flex flex-col items-center', isFirst ? 'pt-0' : 'pt-10')}>
       <div className="relative">
         {isFirst && (
-          <Crown className="absolute -top-6 left-1/2 size-6 -translate-x-1/2 fill-[#FBC078] text-[#FBC078]" />
+          <Crown className="absolute -top-6 left-1/2 size-6 -translate-x-1/2 fill-brand-accent text-brand-accent" />
         )}
         <Avatar size={isFirst ? 'lg' : 'md'} />
       </div>
@@ -105,11 +105,11 @@ function PodiumCard({ expert }: { expert: PodiumExpert }) {
       <div
         className={cn(
           'mt-3 flex w-full flex-col items-center gap-2 rounded-xl border bg-[#161616] px-4 py-5',
-          isFirst ? 'border-[#FBC078]/40' : 'border-white/[0.06]',
+          isFirst ? 'border-brand-accent/40' : 'border-white/[0.06]',
         )}
       >
         <div className="grid size-12 place-items-center rounded-full bg-black/40">
-          <UserRound className="size-6 text-[#FBC078]" />
+          <UserRound className="size-6 text-brand-accent" />
         </div>
         <span className="text-[10px] font-medium tracking-wide text-[#888888] uppercase">Score</span>
         <span className="text-[20px] font-bold text-white">{expert.score}</span>
@@ -157,7 +157,7 @@ export const LeaderboardPage = () => {
             <input
               type="text"
               placeholder="Search by name, ID or profession"
-              className="h-10 w-full rounded-lg border border-white/10 bg-black pl-9 pr-3 text-[12px] text-white outline-none transition-colors placeholder:text-[#555555] focus:border-[#FBC078]/50"
+              className="h-10 w-full rounded-lg border border-white/10 bg-black pl-9 pr-3 text-[12px] text-white outline-none transition-colors placeholder:text-[#555555] focus:border-brand-accent/50"
             />
           </div>
 
@@ -230,7 +230,7 @@ export const LeaderboardPage = () => {
                   <td className="px-3 py-3">{row.events}</td>
                   <td className="px-3 py-3">
                     <span className="inline-flex items-center gap-1">
-                      <Star className="size-3.5 fill-[#FBC078] text-[#FBC078]" />
+                      <Star className="size-3.5 fill-brand-accent text-brand-accent" />
                       <span className="font-semibold text-white">{row.rating}</span>
                     </span>
                   </td>
@@ -253,7 +253,7 @@ export const LeaderboardPage = () => {
                 className={cn(
                   'grid size-8 place-items-center rounded-md text-[11px] font-bold transition-colors',
                   index === 0
-                    ? 'bg-[#FBC078] text-black'
+                    ? 'bg-brand-accent text-brand-text-dark'
                     : 'border border-white/10 bg-white/5 text-slate-300 hover:bg-white/10',
                 )}
               >

@@ -110,7 +110,7 @@ export function ServiceMarketplacePage() {
 
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
           <Button
-            className="h-9 bg-[#FBC078] text-black hover:bg-[#eeb46a]"
+            className="h-9"
             onClick={() => navigate('/services/dashboard/metrics')}
           >
             <BarChart3 className="size-4" />
@@ -118,7 +118,7 @@ export function ServiceMarketplacePage() {
           </Button>
 
           <Button
-            className="h-9 bg-[#FBC078] text-black hover:bg-[#eeb46a]"
+            className="h-9"
             onClick={() => toast.message('Export coming soon')}
           >
             <Download className="size-4" />

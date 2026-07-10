@@ -6,7 +6,7 @@ import type { VenueOnboardingFormData } from '../utils/venue-onboarding-form'
 import { sanitizeMobileNumber } from '@/shared/lib/phone'
 
 const fieldClass =
-  'h-10 w-full rounded-md border border-white/10 bg-black px-3 text-sm text-white outline-none placeholder:text-[#666] focus:border-[#FBC078]'
+  'h-10 w-full rounded-md border border-white/10 bg-black px-3 text-sm text-white outline-none placeholder:text-[#666] focus:border-brand-accent'
 
 type Props = {
   formData: VenueOnboardingFormData
@@ -53,7 +53,7 @@ export const VenueOnboardingBasicProfileStep = ({ formData, setFormData }: Props
             <button
               type="button"
               onClick={() => coverInputRef.current?.click()}
-              className="flex h-32 w-full items-center justify-center rounded-md border border-dashed border-[#444] bg-black transition-colors hover:border-[#FBC078]/50"
+              className="flex h-32 w-full items-center justify-center rounded-md border border-dashed border-[#444] bg-black transition-colors hover:border-brand-accent/50"
             >
               {formData.coverImageUrl ? (
                 <img

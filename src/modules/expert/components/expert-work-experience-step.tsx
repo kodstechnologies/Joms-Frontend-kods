@@ -7,7 +7,7 @@ import {
 } from '../utils/expert-onboarding-form'
 
 const fieldClass =
-  'h-11 w-full rounded-md bg-black px-3 text-sm text-white outline-none placeholder:text-[#666] focus:ring-1 focus:ring-[#FBC078]/40'
+  'h-11 w-full rounded-md bg-black px-3 text-sm text-white outline-none placeholder:text-[#666] focus:ring-1 focus:ring-brand-accent/40'
 
 const EMPLOYMENT_TYPES = ['Full Time', 'Part Time', 'Contract', 'Freelance', 'Internship']
 
@@ -163,7 +163,7 @@ export const ExpertWorkExperienceStep = ({ formData, setFormData }: Props) => {
                   value={entry.description}
                   onChange={(e) => updateEntry(index, { description: e.target.value })}
                   placeholder="Short Description"
-                  className="h-28 w-full rounded-md bg-black p-3 text-sm text-white outline-none placeholder:text-[#666] focus:ring-1 focus:ring-[#FBC078]/40"
+                  className="h-28 w-full rounded-md bg-black p-3 text-sm text-white outline-none placeholder:text-[#666] focus:ring-1 focus:ring-brand-accent/40"
                 />
               </div>
 
@@ -178,7 +178,7 @@ export const ExpertWorkExperienceStep = ({ formData, setFormData }: Props) => {
           <button
             type="button"
             onClick={addEntry}
-            className="flex items-center gap-2 rounded-md bg-[#FBC078] px-4 py-2 text-[11px] font-bold text-black transition-colors hover:bg-[#eeb46a]"
+            className="flex items-center gap-2 rounded-md bg-brand-accent px-4 py-2 text-[11px] font-bold text-brand-text-dark transition-colors hover:bg-brand-gold-from"
           >
             <Plus className="size-3.5" />
             Add More

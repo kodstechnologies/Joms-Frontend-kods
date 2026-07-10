@@ -135,7 +135,7 @@ export function DeleteCategoryModal({
                     className={cn(
                       "rounded-lg px-4 py-2 font-sans text-[12px] font-normal leading-[17px] tracking-normal transition-colors",
                       isSelected
-                        ? "bg-[#E8AC73] text-black"
+                        ? "bg-brand-accent text-brand-text-dark"
                         : "border border-[#444444] bg-black text-white hover:border-[#666666]",
                     )}
                   >
@@ -151,7 +151,7 @@ export function DeleteCategoryModal({
               type="checkbox"
               checked={confirmed}
               onChange={(event) => setConfirmed(event.target.checked)}
-              className="mt-0.5 size-4 shrink-0 rounded-sm border border-white/80 bg-transparent accent-[#E8AC73]"
+              className="mt-0.5 size-4 shrink-0 rounded-sm border border-white/80 bg-transparent accent-brand-accent"
             />
             <span className="font-sans text-[12px] font-normal leading-[17px] tracking-normal text-white">
               I confirm the documents are not approved due to above reasons.

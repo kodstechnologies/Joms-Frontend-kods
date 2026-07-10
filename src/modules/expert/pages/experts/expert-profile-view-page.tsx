@@ -330,14 +330,14 @@ function ProfileSidebar({
           <a
             href="#"
             onClick={(event) => event.preventDefault()}
-            className="text-[#FBC078] underline"
+            className="text-brand-accent underline"
           >
             https://joms/expert_profile
           </a>
         </SidebarRow>
         <SidebarRow label="Ratings">
           <span className="inline-flex items-center gap-1">
-            <Star className="size-3.5 fill-[#FBC078] text-[#FBC078]" />
+            <Star className="size-3.5 fill-brand-accent text-brand-accent" />
             4.8
             <span className="text-[11px] font-normal text-[#777]">(1.9K)</span>
           </span>
@@ -361,7 +361,7 @@ function ProfileSidebar({
                 navigate,
               )
             }
-            className="rounded-md bg-[#FBC078]/15 px-3 py-1 text-[11px] font-bold text-[#FBC078] transition-colors hover:bg-[#FBC078]/25"
+            className="rounded-md bg-brand-accent/15 px-3 py-1 text-[11px] font-bold text-brand-accent transition-colors hover:bg-brand-accent/25"
           >
             View
           </button>
@@ -370,7 +370,7 @@ function ProfileSidebar({
           <button
             type="button"
             onClick={() => comingSoon('Timelines')}
-            className="rounded-md bg-[#FBC078]/15 px-3 py-1 text-[11px] font-bold text-[#FBC078] transition-colors hover:bg-[#FBC078]/25"
+            className="rounded-md bg-brand-accent/15 px-3 py-1 text-[11px] font-bold text-brand-accent transition-colors hover:bg-brand-accent/25"
           >
             Check Timelines
           </button>
@@ -435,7 +435,7 @@ function OverviewTab({ profile }: { profile: ExpertProfileDetail }) {
                 key={item}
                 className="flex items-center gap-2 text-[13px] text-[#ddd]"
               >
-                <Check className="size-4 shrink-0 text-[#FBC078]" />
+                <Check className="size-4 shrink-0 text-brand-accent" />
                 {item}
               </li>
             ))}
@@ -480,7 +480,7 @@ function OverviewTab({ profile }: { profile: ExpertProfileDetail }) {
                 className="flex gap-3 rounded-lg border border-white/5 bg-black p-4"
               >
                 <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-[#1a1a1a]">
-                  <Briefcase className="size-4 text-[#FBC078]" />
+                  <Briefcase className="size-4 text-brand-accent" />
                 </div>
                 <div>
                   <p className="text-[13px] font-semibold text-white">
@@ -518,7 +518,7 @@ function OverviewTab({ profile }: { profile: ExpertProfileDetail }) {
               className={cn(
                 'rounded-full px-3 py-1.5 text-[11px] font-semibold transition-colors',
                 reviewFilter === filter.key
-                  ? 'bg-[#FBC078]/15 text-[#FBC078]'
+                  ? 'bg-brand-accent/15 text-brand-accent'
                   : 'bg-black text-[#888] hover:text-white',
               )}
             >
@@ -549,7 +549,7 @@ function OverviewTab({ profile }: { profile: ExpertProfileDetail }) {
                     {Array.from({ length: review.rating }).map((_, index) => (
                       <Star
                         key={index}
-                        className="size-3 fill-[#FBC078] text-[#FBC078]"
+                        className="size-3 fill-brand-accent text-brand-accent"
                       />
                     ))}
                   </div>
@@ -637,21 +637,21 @@ function ConsultationDetailCard({
         </p>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           <div className="rounded-lg border border-white/5 bg-black p-3 text-center">
-            <Phone className="mx-auto size-4 text-[#FBC078]" />
+            <Phone className="mx-auto size-4 text-brand-accent" />
             <p className="mt-2 text-[11px] text-[#999]">Mode</p>
             <p className="text-[12px] font-semibold capitalize text-white">
               {consultation.mode || '—'}
             </p>
           </div>
           <div className="rounded-lg border border-white/5 bg-black p-3 text-center">
-            <Languages className="mx-auto size-4 text-[#FBC078]" />
+            <Languages className="mx-auto size-4 text-brand-accent" />
             <p className="mt-2 text-[11px] text-[#999]">Language</p>
             <p className="text-[12px] font-semibold text-white">
               {(consultation.languages ?? []).join(', ') || '—'}
             </p>
           </div>
           <div className="rounded-lg border border-white/5 bg-black p-3 text-center">
-            <Clock className="mx-auto size-4 text-[#FBC078]" />
+            <Clock className="mx-auto size-4 text-brand-accent" />
             <p className="mt-2 text-[11px] text-[#999]">FollowUps</p>
             <p className="text-[12px] font-semibold text-white">
               {consultation.hasFollowUp && consultation.followUpDays
@@ -719,7 +719,7 @@ function ServicesSubTab({ expertId }: { expertId: string }) {
 
       {isLoading && (
         <div className="flex h-40 items-center justify-center">
-          <div className="size-8 animate-spin rounded-full border-4 border-[#FBC078] border-t-transparent" />
+          <div className="size-8 animate-spin rounded-full border-4 border-brand-accent border-t-transparent" />
         </div>
       )}
       {isError && (
@@ -822,7 +822,7 @@ function ConsultationsSubTab({ expertId }: { expertId: string }) {
     <>
       {isLoading && (
         <div className="flex h-40 items-center justify-center">
-          <div className="size-8 animate-spin rounded-full border-4 border-[#FBC078] border-t-transparent" />
+          <div className="size-8 animate-spin rounded-full border-4 border-brand-accent border-t-transparent" />
         </div>
       )}
       {isError && (
@@ -871,7 +871,7 @@ function ServiceListingsTab({
               className={cn(
                 'rounded-lg px-4 py-2 text-[12px] font-semibold capitalize transition-colors',
                 listingSubTab === tab
-                  ? 'bg-[#FBC078]/15 text-[#FBC078]'
+                  ? 'bg-brand-accent/15 text-brand-accent'
                   : 'bg-[#111111] text-[#888] hover:text-white',
               )}
             >
@@ -890,7 +890,7 @@ function ServiceListingsTab({
           <button
             type="button"
             onClick={onCreateListing}
-            className="flex items-center gap-1.5 rounded-lg bg-[#FBC078]/15 px-3 py-2 text-[11px] font-semibold text-[#FBC078]"
+            className="flex items-center gap-1.5 rounded-lg bg-brand-accent/15 px-3 py-2 text-[11px] font-semibold text-brand-accent"
           >
             <Plus className="size-3.5" />
             Create Listings
@@ -986,7 +986,7 @@ function AnalyticsTab({ expertId }: { expertId?: string }) {
         <button
           type="button"
           onClick={() => navigate('/experts/dashboard/metrics')}
-          className="flex items-center gap-1.5 rounded-lg bg-[#FBC078]/15 px-3 py-2 text-[11px] font-semibold text-[#FBC078]"
+          className="flex items-center gap-1.5 rounded-lg bg-brand-accent/15 px-3 py-2 text-[11px] font-semibold text-brand-accent"
         >
           <Gauge className="size-3.5" />
           Manage Metrics
@@ -1000,7 +1000,7 @@ function AnalyticsTab({ expertId }: { expertId?: string }) {
           >
             <div className="flex items-center justify-between">
               <p className="text-[11px] text-[#999]">{card.label}</p>
-              <Briefcase className="size-4 text-[#FBC078]" />
+              <Briefcase className="size-4 text-brand-accent" />
             </div>
             <p className="mt-3 text-xl font-bold text-white">{card.value}</p>
           </div>
@@ -1068,7 +1068,7 @@ function HealthTab() {
               className={cn(
                 'rounded-md px-3 py-1.5 text-[11px] font-semibold transition-colors',
                 filter === chip.key
-                  ? 'bg-[#FBC078]/15 text-[#FBC078]'
+                  ? 'bg-brand-accent/15 text-brand-accent'
                   : 'bg-black text-[#999] hover:text-white',
               )}
             >
@@ -1121,7 +1121,7 @@ function HealthTab() {
               <button
                 type="button"
                 onClick={() => comingSoon(incident.action)}
-                className="flex items-center gap-1.5 rounded-lg bg-[#FBC078]/15 px-3 py-2 text-[11px] font-semibold text-[#FBC078]"
+                className="flex items-center gap-1.5 rounded-lg bg-brand-accent/15 px-3 py-2 text-[11px] font-semibold text-brand-accent"
               >
                 <incident.icon className="size-3.5" />
                 {incident.action}
@@ -1305,7 +1305,7 @@ export function ExpertProfileViewPage() {
   if (profileLoading) {
     return (
       <div className="flex h-[60vh] items-center justify-center">
-        <div className="size-9 animate-spin rounded-full border-4 border-[#FBC078] border-t-transparent" />
+        <div className="size-9 animate-spin rounded-full border-4 border-brand-accent border-t-transparent" />
       </div>
     )
   }
@@ -1316,7 +1316,7 @@ export function ExpertProfileViewPage() {
         <button
           type="button"
           onClick={() => navigate('/experts/management')}
-          className="group flex w-fit items-center gap-2 font-heading text-[20px] font-bold text-white transition-colors hover:text-[#FBC078]"
+          className="group flex w-fit items-center gap-2 font-heading text-[20px] font-bold text-white transition-colors hover:text-brand-accent"
         >
           <ArrowLeft className="size-5" />
           <span>Expert Profile View</span>
@@ -1365,7 +1365,7 @@ export function ExpertProfileViewPage() {
           <button
             type="button"
             onClick={() => navigate('/experts/management')}
-            className="group flex w-fit items-center gap-2 font-heading text-[20px] font-bold tracking-tight text-white transition-colors hover:text-[#FBC078]"
+            className="group flex w-fit items-center gap-2 font-heading text-[20px] font-bold tracking-tight text-white transition-colors hover:text-brand-accent"
           >
             <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
             <span>Expert Profile View</span>
@@ -1517,7 +1517,7 @@ export function ExpertProfileViewPage() {
                 key={action.label}
                 type="button"
                 onClick={action.onClick}
-                className="flex items-center gap-1.5 rounded-full bg-[#FBC078]/15 px-3 py-1.5 text-[11px] font-semibold text-[#FBC078] transition-colors hover:bg-[#FBC078]/25"
+                className="flex items-center gap-1.5 rounded-full bg-brand-accent/15 px-3 py-1.5 text-[11px] font-semibold text-brand-accent transition-colors hover:bg-brand-accent/25"
               >
                 <action.icon className="size-3.5" />
                 {action.label}
@@ -1543,7 +1543,7 @@ export function ExpertProfileViewPage() {
                 className={cn(
                   'flex-1 whitespace-nowrap rounded-lg px-4 py-2.5 text-[13px] font-semibold transition-colors',
                   activeTab === tab.key
-                    ? 'bg-[#FBC078]/10 text-[#FBC078]'
+                    ? 'bg-brand-accent/10 text-brand-accent'
                     : 'text-[#888] hover:text-white',
                 )}
               >

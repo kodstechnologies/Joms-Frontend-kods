@@ -40,7 +40,7 @@ export const SpacesStep = ({
                 }))
               }
               placeholder="e.g NDA Review & Legal Advisory"
-              className="w-full rounded-xl border border-white/10 bg-black p-4 text-white outline-none focus:border-[#F5C37A]"
+              className="w-full rounded-xl border border-white/10 bg-black p-4 text-white outline-none focus:border-brand-accent"
             />
           </div>
 
@@ -59,7 +59,7 @@ export const SpacesStep = ({
                     spaceType: e.target.value,
                   }))
                 }
-                className="w-full rounded-xl border border-white/10 bg-black p-4 text-white outline-none focus:border-[#F5C37A]"
+                className="w-full rounded-xl border border-white/10 bg-black p-4 text-white outline-none focus:border-brand-accent"
               >
                 <option value="">
                   Select Space Type
@@ -91,7 +91,7 @@ export const SpacesStep = ({
                     }))
                   }
                   placeholder="100-200"
-                  className="w-full rounded-xl border border-white/10 bg-black p-4 text-white outline-none focus:border-[#F5C37A]"
+                  className="w-full rounded-xl border border-white/10 bg-black p-4 text-white outline-none focus:border-brand-accent"
                 />
               </div>
             ) : (
@@ -163,7 +163,7 @@ export const SpacesStep = ({
                     }))
                   }
                   placeholder="Enter Text"
-                  className="w-full rounded-xl border border-white/10 bg-black p-4 text-white outline-none focus:border-[#F5C37A]"
+                  className="w-full rounded-xl border border-white/10 bg-black p-4 text-white outline-none focus:border-brand-accent"
                 />
               </div>
             )}
@@ -186,7 +186,7 @@ export const SpacesStep = ({
                         }))
                       }
                       placeholder="100-150"
-                      className="w-full rounded-xl border border-white/10 bg-black p-4 text-white outline-none focus:border-[#F5C37A]"
+                      className="w-full rounded-xl border border-white/10 bg-black p-4 text-white outline-none focus:border-brand-accent"
                     />
                   </div>
 
@@ -205,7 +205,7 @@ export const SpacesStep = ({
                         }))
                       }
                       placeholder="Theatre Seating"
-                      className="w-full rounded-xl border border-white/10 bg-black p-4 text-white outline-none focus:border-[#F5C37A]"
+                      className="w-full rounded-xl border border-white/10 bg-black p-4 text-white outline-none focus:border-brand-accent"
                     />
                   </div>
                 </>
@@ -263,7 +263,7 @@ export const SpacesStep = ({
 
               <textarea
                 rows={3}
-                className="w-full rounded-xl border border-white/10 bg-black p-4 text-white outline-none focus:border-[#F5C37A]"
+                className="w-full rounded-xl border border-white/10 bg-black p-4 text-white outline-none focus:border-brand-accent"
               />
             </div>
           )}
@@ -361,7 +361,7 @@ export const SpacesStep = ({
             <input
               type="text"
               placeholder="Search by Location"
-              className="w-64 rounded-lg border border-white/10 bg-black px-3 py-2 text-sm text-white outline-none focus:border-[#F5C37A]"
+              className="w-64 rounded-lg border border-white/10 bg-black px-3 py-2 text-sm text-white outline-none focus:border-brand-accent"
             />
           </div>
 

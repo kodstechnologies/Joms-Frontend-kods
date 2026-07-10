@@ -67,7 +67,7 @@ export function SpacesTab() {
                     <td className="px-5 py-3.5 text-[#999]">{space.bookings}</td>
                     <td className="px-5 py-3.5">
                       <span className="inline-flex items-center gap-1">
-                        <Star className="size-3 fill-[#FBC078] text-[#FBC078]" />
+                        <Star className="size-3 fill-brand-accent text-brand-accent" />
                         {space.rating}
                       </span>
                     </td>
@@ -75,7 +75,7 @@ export function SpacesTab() {
                       <div className="flex items-center gap-2">
                         <div className="h-1.5 w-16 overflow-hidden rounded-full bg-black">
                           <div
-                            className="h-full rounded-full bg-[#FBC078]"
+                            className="h-full rounded-full bg-brand-accent"
                             style={{ width: `${space.utilization}%` }}
                           />
                         </div>

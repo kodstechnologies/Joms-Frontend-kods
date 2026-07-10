@@ -9,13 +9,13 @@ export const categoryFormTheme = {
   textSecondary: "#888888",
   textMuted: "#666666",
   accentGradient:
-    "bg-gradient-to-b from-[#FFD0A1] via-[#F5C78E] to-[#E8A55C]",
+    "bg-gradient-to-b from-brand-gold-from via-brand-accent to-brand-gold-to",
   accentGradientHover:
-    "hover:from-[#FFE0B8] hover:via-[#FFC16B] hover:to-[#F4A261]",
+    "hover:from-brand-gold-from hover:via-brand-accent hover:to-brand-gold-to",
   inputClass:
-    "h-11 w-full rounded-lg border border-[#2A2A2A] bg-black px-4 text-sm text-white outline-none transition placeholder:text-[#666666] focus:border-[#FFC16B]",
+    "h-11 w-full rounded-lg border border-[#2A2A2A] bg-black px-4 text-sm text-white outline-none transition placeholder:text-[#666666] focus:border-brand-accent",
   textareaClass:
-    "w-full resize-none rounded-lg border border-[#2A2A2A] bg-black px-4 py-3 text-sm text-white outline-none transition placeholder:text-[#666666] focus:border-[#FFC16B]",
+    "w-full resize-none rounded-lg border border-[#2A2A2A] bg-black px-4 py-3 text-sm text-white outline-none transition placeholder:text-[#666666] focus:border-brand-accent",
   sectionTitleClass:
     "font-sans text-[16px] font-semibold leading-5 tracking-normal text-white",
   sectionSubtitleClass:

@@ -89,7 +89,7 @@ export function PeriodSelect({
       <select
         value={value}
         onChange={(e) => onChange?.(e.target.value)}
-        className="h-8 appearance-none rounded-lg border border-white/10 bg-[#FBC078] px-3 pr-8 text-[11px] font-semibold text-black outline-none"
+        className="h-8 appearance-none rounded-lg border border-white/10 bg-brand-accent px-3 pr-8 text-[11px] font-semibold text-brand-text-dark outline-none"
       >
         {options.map((opt) => (
           <option key={opt} value={opt}>
@@ -121,7 +121,7 @@ export function SubTabPills({
           className={cn(
             'rounded-full px-4 py-1.5 text-[12px] font-semibold transition-colors',
             active === tab.key
-              ? 'bg-[#FBC078] text-black'
+              ? 'bg-brand-accent text-brand-text-dark'
               : 'border border-white/10 text-white hover:bg-white/5',
           )}
         >

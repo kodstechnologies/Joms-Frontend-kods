@@ -209,7 +209,7 @@ export const ExpertDashboardPage = () => {
       <div className="flex w-full flex-col items-stretch gap-3 sm:w-auto sm:flex-row sm:items-center">
   <Button
     type="button"
-    className="h-11 rounded-xl bg-[#FBC078] px-6 text-sm font-semibold text-black shadow-none transition-colors hover:bg-[#EEB46A] sm:w-auto"
+    className="h-11 rounded-xl px-6 text-sm font-semibold sm:w-auto"
     onClick={() => navigate('/experts/dashboard/metrics')}
   >
     <BarChart3 className="size-4" />
@@ -218,7 +218,7 @@ export const ExpertDashboardPage = () => {
 
   <Button
     type="button"
-    className="h-11 rounded-xl bg-[#FBC078] px-6 text-sm font-semibold text-black shadow-none transition-colors hover:bg-[#EEB46A] sm:w-auto"
+    className="h-11 rounded-xl px-6 text-sm font-semibold sm:w-auto"
     onClick={() => navigate('/experts/management/create')}
   >
     <Plus className="size-4" />
@@ -290,7 +290,7 @@ export const ExpertDashboardPage = () => {
               <select
                 value={growthRange}
                 onChange={(event) => setGrowthRange(event.target.value)}
-                className="h-9 cursor-pointer appearance-none rounded-lg border border-white/10 bg-black px-3 pr-8 text-[11px] font-medium text-white outline-none focus:border-[#FBC078]/50"
+                className="h-9 cursor-pointer appearance-none rounded-lg border border-white/10 bg-black px-3 pr-8 text-[11px] font-medium text-white outline-none focus:border-brand-accent/50"
               >
                 <option value="3">Last 3 Months</option>
                 <option value="6">Last 6 Months</option>
@@ -329,10 +329,10 @@ export const ExpertDashboardPage = () => {
               <Line
                 type="monotone"
                 dataKey="revenue"
-                stroke="#FBC078"
+                stroke="var(--brand-accent)"
                 strokeWidth={2}
-                dot={{ r: 4, fill: '#FBC078', strokeWidth: 0 }}
-                activeDot={{ r: 6, fill: '#FBC078' }}
+                dot={{ r: 4, fill: 'var(--brand-accent)', strokeWidth: 0 }}
+                activeDot={{ r: 6, fill: 'var(--brand-accent)' }}
               />
             </LineChart>
           </ResponsiveContainer>
@@ -367,7 +367,7 @@ export const ExpertDashboardPage = () => {
                   <td className="px-3 py-3">{host.orders}</td>
                   <td className="px-3 py-3">
                     <span className="inline-flex items-center gap-1">
-                      <Star className="size-3.5 fill-[#FBC078] text-[#FBC078]" />
+                      <Star className="size-3.5 fill-brand-accent text-brand-accent" />
                       <span className="font-semibold text-white">{host.rating}</span>
                     </span>
                   </td>

@@ -96,11 +96,11 @@ export const FinalCheckStep = ({
           </h2>
 
           <div className="mt-4 flex flex-wrap gap-2">
-            <span className="rounded-full bg-[#F5E8B7] px-3 py-1 text-xs text-black">
+            <span className="rounded-full bg-brand-accent/30 px-3 py-1 text-xs text-brand-text-dark">
               {venueData.spaceName || 'Space'}
             </span>
 
-            <span className="rounded-full bg-[#FBC078] px-3 py-1 text-xs text-black">
+            <span className="rounded-full bg-brand-accent px-3 py-1 text-xs text-brand-text-dark">
               Premium
             </span>
 
@@ -131,7 +131,7 @@ export const FinalCheckStep = ({
             </div>
 
             <div className="flex items-center gap-2">
-              <span className="font-semibold text-[#FBC078]">
+              <span className="font-semibold text-brand-accent">
                 Unavailable:
               </span>
               <span className="text-white">
@@ -157,7 +157,7 @@ export const FinalCheckStep = ({
 
 
             <div className="flex items-start gap-3 rounded-lg bg-black p-4">
-              <MapPin className="mt-1 h-4 w-4 text-[#FBC078]" />
+              <MapPin className="mt-1 h-4 w-4 text-brand-accent" />
 
               <div>
                 <p className="text-sm text-white">
@@ -230,7 +230,7 @@ export const FinalCheckStep = ({
                       key={service.label}
                       className="flex items-center gap-3"
                     >
-                      <Icon className="h-4 w-4 text-[#FBC078]" />
+                      <Icon className="h-4 w-4 text-brand-accent" />
 
                       <span className="text-sm text-slate-300">
                         {service.label}
@@ -295,7 +295,7 @@ px-3
               Gallery
             </h3>
 
-            <button className="text-sm text-[#FBC078]">
+            <button className="text-sm text-brand-accent">
               See More
             </button>
           </div>

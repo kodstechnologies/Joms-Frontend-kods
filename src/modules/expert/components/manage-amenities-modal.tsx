@@ -108,7 +108,7 @@ export const ManageAmenitiesModal = ({
 
             <button
               onClick={onAddAmenity}
-              className="flex items-center gap-2 rounded-md bg-[#F5C37A] px-4 text-sm font-medium text-black"
+              className="flex items-center gap-2 rounded-md bg-brand-accent px-4 text-sm font-medium text-brand-text-dark"
             >
               <Plus size={16} />
               Add Amenities

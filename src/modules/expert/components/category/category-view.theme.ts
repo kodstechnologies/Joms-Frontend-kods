@@ -6,10 +6,10 @@ export const categoryViewTheme = {
   surface: categoryManagementTheme.surface,
   surfaceBorder: categoryManagementTheme.surfaceBorder,
   textSecondary: categoryManagementTheme.textSecondary,
-  accent: "#F5C48D",
-  accentHover: "#FFC16B",
-  delete: "#E53935",
-  deleteHover: "#C62828",
+  accent: "var(--brand-accent)",
+  accentHover: "var(--brand-gold-from)",
+  delete: "var(--brand-danger)",
+  deleteHover: "var(--brand-danger)",
   sectionTitleClass: categoryFormTheme.sectionTitleClass,
   bodyTextClass:
     "font-sans text-[14px] font-normal leading-5 tracking-normal text-[#888888]",
@@ -22,9 +22,9 @@ export const categoryViewTheme = {
   outlineButtonClass:
     "h-10 gap-2 rounded-xl border border-white/25 bg-black px-4 text-[12px] font-semibold text-white shadow-none hover:bg-white/5",
   accentButtonClass:
-    "h-10 gap-2 rounded-xl bg-[#F5C48D] px-4 text-[12px] font-semibold text-black shadow-none hover:bg-[#FFC16B]",
+    "h-10 gap-2 rounded-xl bg-brand-accent px-4 text-[12px] font-semibold text-brand-text-dark shadow-none hover:bg-brand-gold-from",
   deleteButtonClass:
-    "h-10 gap-2 rounded-xl bg-[#E53935] px-4 text-[12px] font-semibold text-white shadow-none hover:bg-[#C62828]",
+    "h-10 gap-2 rounded-xl bg-brand-danger px-4 text-[12px] font-semibold text-white shadow-none hover:opacity-90",
   statusActive: categoryManagementTheme.statusAccepted,
   statusPaused: categoryManagementTheme.statusPending,
 } as const;

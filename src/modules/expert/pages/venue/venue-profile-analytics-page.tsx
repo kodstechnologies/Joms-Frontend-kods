@@ -38,7 +38,7 @@ export function VenueProfileAnalyticsPage() {
           <button
             type="button"
             onClick={() => navigate(`/venues/management/profile/${venueId}`)}
-            className="group flex w-fit items-center gap-2 font-heading text-[20px] font-bold tracking-tight text-white transition-colors hover:text-[#FBC078]"
+            className="group flex w-fit items-center gap-2 font-heading text-[20px] font-bold tracking-tight text-white transition-colors hover:text-brand-accent"
           >
             <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
             <span>Profile Analytics</span>
@@ -51,13 +51,13 @@ export function VenueProfileAnalyticsPage() {
         </div>
         <div className="flex flex-wrap gap-3">
           <Button
-            className="h-9 bg-[#FBC078] text-black hover:bg-[#eeb46a]"
+            className="h-9"
             onClick={() => navigate('/venues/dashboard/metrics')}
           >
             <SlidersHorizontal className="size-4" />
             Manage Metrics
           </Button>
-          <Button className="h-9 bg-[#FBC078] text-black hover:bg-[#eeb46a]">
+          <Button className="h-9">
             <Upload className="size-4" />
             Export Data
           </Button>

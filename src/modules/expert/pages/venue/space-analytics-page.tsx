@@ -64,7 +64,7 @@ export function SpaceAnalyticsPage() {
           <button
             type="button"
             onClick={() => navigate(`/venues/management/profile/${venueId}/space/${spaceId}`)}
-            className="group flex w-fit items-center gap-2 font-heading text-[20px] font-bold tracking-tight text-white transition-colors hover:text-[#FBC078]"
+            className="group flex w-fit items-center gap-2 font-heading text-[20px] font-bold tracking-tight text-white transition-colors hover:text-brand-accent"
           >
             <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
             <span>View Analytics</span>
@@ -79,13 +79,13 @@ export function SpaceAnalyticsPage() {
         </div>
         <div className="flex flex-wrap gap-3">
           <Button
-            className="h-9 bg-[#FBC078] text-black hover:bg-[#eeb46a]"
+            className="h-9"
             onClick={() => navigate('/venues/dashboard/metrics')}
           >
             <SlidersHorizontal className="size-4" />
             Manage Metrics
           </Button>
-          <Button className="h-9 bg-[#FBC078] text-black hover:bg-[#eeb46a]">
+          <Button className="h-9">
             <Download className="size-4" />
             Export Data
           </Button>
@@ -165,10 +165,10 @@ export function SpaceAnalyticsPage() {
               <div key={rating.stars} className="grid grid-cols-[32px_1fr_36px] items-center gap-3 text-[11px] text-white">
                 <span className="inline-flex items-center gap-1">
                   {rating.stars}
-                  <Star className="size-3 fill-[#FBC078] text-[#FBC078]" />
+                  <Star className="size-3 fill-brand-accent text-brand-accent" />
                 </span>
                 <div className="h-3 overflow-hidden rounded-full bg-black">
-                  <div className="h-full rounded-full bg-[#FBC078]" style={{ width: `${rating.percent}%` }} />
+                  <div className="h-full rounded-full bg-brand-accent" style={{ width: `${rating.percent}%` }} />
                 </div>
                 <span>{rating.percent}%</span>
               </div>

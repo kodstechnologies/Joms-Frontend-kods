@@ -161,7 +161,7 @@ function ProfileSidebar({
         </SidebarRow>
         <SidebarRow label="Ratings">
           <span className="inline-flex items-center gap-1">
-            <Star className="size-3.5 fill-[#FBC078] text-[#FBC078]" />
+            <Star className="size-3.5 fill-brand-accent text-brand-accent" />
             {profile.ratings ?? '—'}
           </span>
         </SidebarRow>
@@ -183,7 +183,7 @@ function ProfileSidebar({
           <button
             type="button"
             onClick={() => comingSoon('KYC Document')}
-            className="rounded-md bg-[#FBC078] px-3 py-1 text-[11px] font-bold text-black transition-colors hover:bg-[#eeb46a]"
+            className="rounded-md bg-brand-accent px-3 py-1 text-[11px] font-bold text-brand-text-dark transition-colors hover:bg-brand-gold-from"
           >
             View
           </button>
@@ -192,7 +192,7 @@ function ProfileSidebar({
           <button
             type="button"
             onClick={() => comingSoon('Timelines')}
-            className="rounded-md bg-[#FBC078] px-3 py-1 text-[11px] font-bold text-black transition-colors hover:bg-[#eeb46a]"
+            className="rounded-md bg-brand-accent px-3 py-1 text-[11px] font-bold text-brand-text-dark transition-colors hover:bg-brand-gold-from"
           >
             Check Timelines
           </button>
@@ -307,7 +307,7 @@ function OverviewTab({ data }: { data: VenueFullView }) {
               className={cn(
                 'rounded-md px-3 py-1.5 text-[11px] font-semibold',
                 index === 0
-                  ? 'bg-[#FBC078] text-black'
+                  ? 'bg-brand-accent text-brand-text-dark'
                   : 'bg-black text-[#999]',
               )}
             >
@@ -366,7 +366,7 @@ function SpacesTab({
             value={search}
             onChange={(event) => setSearch(event.target.value)}
             placeholder="Search by service title"
-            className="h-10 w-full rounded-md border border-white/10 bg-black pl-9 pr-3 text-[13px] text-white outline-none placeholder:text-[#666] focus:border-[#FBC078]/50"
+            className="h-10 w-full rounded-md border border-white/10 bg-black pl-9 pr-3 text-[13px] text-white outline-none placeholder:text-[#666] focus:border-brand-accent/50"
           />
         </div>
         <button
@@ -402,12 +402,12 @@ function SpacesTab({
                 setSelectedSpaceId(space.spaceId)
                 navigate(`/venues/management/profile/${venueId}/space/${space.spaceId}`)
               }}
-              className="flex w-full items-center rounded-xl bg-black px-5 py-5 transition-colors hover:border hover:border-[#FBC078]/30"
+              className="flex w-full items-center rounded-xl bg-black px-5 py-5 transition-colors hover:border hover:border-brand-accent/30"
             >
               <input
                 type="checkbox"
                 onClick={(e) => e.stopPropagation()}
-                className="h-6 w-6 rounded border-white/30 accent-[#FBC078]"
+                className="h-6 w-6 rounded border-white/30 accent-brand-accent"
               />
 
               <div className="ml-3 h-28 w-32 shrink-0 overflow-hidden rounded-xl">
@@ -525,7 +525,7 @@ function AnalyticsTab({ data, venueId }: { data: VenueFullView; venueId: string 
         <button
           type="button"
           onClick={() => navigate('/venues/dashboard/metrics')}
-          className="flex items-center gap-1.5 rounded-lg bg-[#FBC078]/15 px-3 py-2 text-[11px] font-semibold text-[#FBC078]"
+          className="flex items-center gap-1.5 rounded-lg bg-brand-accent/15 px-3 py-2 text-[11px] font-semibold text-brand-accent"
         >
           <Gauge className="size-3.5" />
           Manage Metrics
@@ -578,7 +578,7 @@ function HealthTab({ data }: { data: VenueFullView }) {
               className={cn(
                 'rounded-md px-3 py-1.5 text-[11px] font-semibold',
                 index === 0
-                  ? 'bg-[#FBC078]/15 text-[#FBC078]'
+                  ? 'bg-brand-accent/15 text-brand-accent'
                   : 'bg-black text-[#999]',
               )}
             >
@@ -611,7 +611,7 @@ export function VenueProfileViewPage() {
   if (isLoading) {
     return (
       <div className="flex h-[60vh] items-center justify-center">
-        <div className="size-9 animate-spin rounded-full border-4 border-[#FBC078] border-t-transparent" />
+        <div className="size-9 animate-spin rounded-full border-4 border-brand-accent border-t-transparent" />
       </div>
     )
   }
@@ -622,7 +622,7 @@ export function VenueProfileViewPage() {
         <button
           type="button"
           onClick={() => navigate('/venues/management')}
-          className="group flex w-fit items-center gap-2 font-heading text-[20px] font-bold text-white transition-colors hover:text-[#FBC078]"
+          className="group flex w-fit items-center gap-2 font-heading text-[20px] font-bold text-white transition-colors hover:text-brand-accent"
         >
           <ArrowLeft className="size-5" />
           <span>Venue Profile View</span>
@@ -663,7 +663,7 @@ export function VenueProfileViewPage() {
           <button
             type="button"
             onClick={() => navigate('/venues/management')}
-            className="group flex w-fit items-center gap-2 font-heading text-[20px] font-bold tracking-tight text-white transition-colors hover:text-[#FBC078]"
+            className="group flex w-fit items-center gap-2 font-heading text-[20px] font-bold tracking-tight text-white transition-colors hover:text-brand-accent"
           >
             <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
             <span>Venue Profile View</span>
@@ -727,7 +727,7 @@ export function VenueProfileViewPage() {
                 key={action.label}
                 type="button"
                 onClick={action.onClick}
-                className="flex items-center gap-1.5 rounded-full bg-[#FBC078] px-3 py-1.5 text-[11px] font-semibold text-black transition-colors hover:bg-[#eeb46a]"
+                className="flex items-center gap-1.5 rounded-full bg-brand-accent px-3 py-1.5 text-[11px] font-semibold text-brand-text-dark transition-colors hover:bg-brand-gold-from"
               >
                 <action.icon className="size-3.5" />
                 {action.label}
@@ -750,7 +750,7 @@ export function VenueProfileViewPage() {
                 className={cn(
                   'flex-1 whitespace-nowrap px-4 py-3 text-[13px] font-semibold transition-colors border-b-2',
                   activeTab === tab.key
-                    ? 'border-[#FBC078] text-white'
+                    ? 'border-brand-accent text-white'
                     : 'border-transparent text-[#888] hover:text-white',
                 )}
               >

@@ -66,7 +66,7 @@ export const VenueDetailsStep = ({
                   venueCategory: e.target.value,
                 }))
               }
-              className="w-full rounded-md border border-white/10 bg-black px-4 py-3 text-[12px] text-white outline-none focus:border-[#FBC078]"
+              className="w-full rounded-md border border-white/10 bg-black px-4 py-3 text-[12px] text-white outline-none focus:border-brand-accent"
             >
               <option value="">
                 {isCategoriesLoading ? 'Loading categories...' : 'Select category'}
@@ -99,7 +99,7 @@ export const VenueDetailsStep = ({
               }))
             }
             maxLength={350}
-            className="w-full resize-none rounded-md border border-white/10 bg-black px-4 py-3 text-[12px] text-white outline-none focus:border-[#FBC078]"
+            className="w-full resize-none rounded-md border border-white/10 bg-black px-4 py-3 text-[12px] text-white outline-none focus:border-brand-accent"
           />
           <div className="text-right text-[11px] text-[#777777]">
             {venueData.aboutVenue.length}/350

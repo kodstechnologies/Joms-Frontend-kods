@@ -273,10 +273,6 @@ export function CreateVenueOnboardingPage() {
         label: primaryLabel,
         onClick: handleNextStep,
         disabled: isLoading,
-        className:
-          currentStep === 4
-            ? 'bg-emerald-500 text-black hover:bg-emerald-400'
-            : undefined,
       }}
     >
       {currentStep === 1 && (

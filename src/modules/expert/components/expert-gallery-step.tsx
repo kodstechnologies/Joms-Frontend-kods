@@ -82,7 +82,7 @@ export const ExpertGalleryStep = ({ formData, setFormData }: Props) => {
           onDragLeave={() => setIsDragging(false)}
           onDrop={handleDrop}
           className={`flex h-44 w-full flex-col items-center justify-center rounded-md border border-dashed transition-colors ${
-            isDragging ? 'border-[#FBC078] bg-[#FBC078]/5' : 'border-[#444] bg-black'
+            isDragging ? 'border-brand-accent bg-brand-accent/5' : 'border-[#444] bg-black'
           }`}
         >
           <div className="mb-3 flex size-10 items-center justify-center rounded-full bg-white/5">

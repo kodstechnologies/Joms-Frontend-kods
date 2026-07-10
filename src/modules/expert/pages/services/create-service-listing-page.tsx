@@ -473,9 +473,9 @@ export const CreateServiceListingPage = () => {
   const activeSteps = selectedType === 'consultation' ? consultationSteps : serviceSteps
 
   const consultationInputClass =
-    'h-9 w-full rounded-md border border-white/5 bg-black px-3 text-[11px] text-white outline-none transition-colors placeholder:text-[#555555] focus:border-[#FBC078]/50'
+    'h-9 w-full rounded-md border border-white/5 bg-black px-3 text-[11px] text-white outline-none transition-colors placeholder:text-[#555555] focus:border-brand-accent/50'
   const consultationTextareaClass =
-    'min-h-[92px] w-full resize-none rounded-md border border-white/5 bg-black p-3 text-[11px] leading-relaxed text-white outline-none transition-colors placeholder:text-[#555555] focus:border-[#FBC078]/50'
+    'min-h-[92px] w-full resize-none rounded-md border border-white/5 bg-black p-3 text-[11px] leading-relaxed text-white outline-none transition-colors placeholder:text-[#555555] focus:border-brand-accent/50'
 
   const renderConsultationStep = () => {
     if (currentStep === 2) {
@@ -546,7 +546,7 @@ export const CreateServiceListingPage = () => {
                   type="button"
                   onClick={handleCreateTopic}
                   disabled={createTopicMutation.isPending}
-                  className="h-9 bg-[#FBC078] text-[11px] font-bold text-black hover:bg-[#eeb46a]"
+                  className="h-9 text-[11px] font-bold"
                 >
                   {createTopicMutation.isPending ? 'Creating...' : 'Create'}
                 </Button>
@@ -836,7 +836,7 @@ export const CreateServiceListingPage = () => {
     return (
       <div className="animate-in fade-in slide-in-from-right-4 mx-auto w-full max-w-[850px] rounded-lg border border-white/5 bg-[#151515] p-7 duration-300">
         <div className="grid grid-cols-1 gap-7 md:grid-cols-[1fr_0.9fr]">
-          <div className="border-l-4 border-[#FBC078] pl-4">
+          <div className="border-l-4 border-brand-accent pl-4">
             <h2 className="text-[20px] font-bold text-white">
               {consultationTitle.trim() || 'Untitled Consultation'}
             </h2>
@@ -998,7 +998,7 @@ export const CreateServiceListingPage = () => {
                 className={cn(
                   "group relative flex flex-col items-center gap-4 overflow-hidden rounded-lg border p-7 text-center transition-all duration-300",
                   selectedType === 'service'
-                    ? "bg-[#FBC078] border-[#FBC078] text-black shadow-lg"
+                    ? "bg-brand-accent border-brand-accent text-brand-text-dark shadow-lg"
                     : "bg-black border-white/5 text-[#888888] hover:border-white/10"
                 )}
               >
@@ -1083,7 +1083,7 @@ export const CreateServiceListingPage = () => {
                   placeholder="e.g NDA Review & Legal Advisory"
                   value={serviceTitle}
                   onChange={(e) => setServiceTitle(e.target.value)}
-                  className="h-10 w-full rounded-lg border border-white/5 bg-black px-3 text-[12px] text-white outline-none transition-colors placeholder:text-[#444444] focus:border-[#FBC078]/50"
+                  className="h-10 w-full rounded-lg border border-white/5 bg-black px-3 text-[12px] text-white outline-none transition-colors placeholder:text-[#444444] focus:border-brand-accent/50"
                 />
               </div>
 
@@ -1100,7 +1100,7 @@ export const CreateServiceListingPage = () => {
                         setSelectedSubCategoryIds([])
                       }}
                       disabled={isCategoriesLoading}
-                      className="h-10 w-full cursor-pointer appearance-none rounded-lg border border-white/5 bg-black px-3 pr-10 text-[12px] text-white outline-none transition-colors focus:border-[#FBC078]/50 disabled:opacity-50"
+                      className="h-10 w-full cursor-pointer appearance-none rounded-lg border border-white/5 bg-black px-3 pr-10 text-[12px] text-white outline-none transition-colors focus:border-brand-accent/50 disabled:opacity-50"
                     >
                       <option value="" disabled>
                         {isCategoriesLoading ? 'Loading categories...' : 'Select category'}
@@ -1136,7 +1136,7 @@ export const CreateServiceListingPage = () => {
                             className={cn(
                               'rounded-md border px-2.5 py-1 text-[10px] font-semibold transition-colors',
                               selectedSubCategoryIds.includes(subCategory._id)
-                                ? 'border-[#FBC078] bg-[#FBC078]/10 text-[#FBC078]'
+                                ? 'border-brand-accent bg-brand-accent/10 text-brand-accent'
                                 : 'border-white/10 text-[#888888] hover:border-white/30',
                             )}
                           >
@@ -1157,7 +1157,7 @@ export const CreateServiceListingPage = () => {
                   placeholder="Describe your service offering..."
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  className="min-h-[72px] w-full resize-none rounded-lg border border-white/5 bg-black p-3 text-[12px] leading-relaxed text-white outline-none transition-colors placeholder:text-[#444444] focus:border-[#FBC078]/50"
+                  className="min-h-[72px] w-full resize-none rounded-lg border border-white/5 bg-black p-3 text-[12px] leading-relaxed text-white outline-none transition-colors placeholder:text-[#444444] focus:border-brand-accent/50"
                 />
               </div>
 
@@ -1169,7 +1169,7 @@ export const CreateServiceListingPage = () => {
                   placeholder="Describe what you will deliver to your client. Be specific about outputs, formats, and any revisions included..."
                   value={deliverables}
                   onChange={(e) => setDeliverables(e.target.value)}
-                  className="min-h-[88px] w-full resize-none rounded-lg border border-white/5 bg-black p-3 text-[12px] leading-relaxed text-white outline-none transition-colors placeholder:text-[#444444] focus:border-[#FBC078]/50"
+                  className="min-h-[88px] w-full resize-none rounded-lg border border-white/5 bg-black p-3 text-[12px] leading-relaxed text-white outline-none transition-colors placeholder:text-[#444444] focus:border-brand-accent/50"
                 />
               </div>
             </div>
@@ -1270,7 +1270,7 @@ export const CreateServiceListingPage = () => {
                           placeholder="Enter Price"
                           value={fixedPrice}
                           onChange={(e) => setFixedPrice(e.target.value)}
-                          className="h-9 w-full rounded-lg border border-white/5 bg-black px-3 text-[11px] text-white outline-none transition-colors placeholder:text-[#444444] focus:border-[#FBC078]/50"
+                          className="h-9 w-full rounded-lg border border-white/5 bg-black px-3 text-[11px] text-white outline-none transition-colors placeholder:text-[#444444] focus:border-brand-accent/50"
                         />
                       </div>
 
@@ -1281,13 +1281,13 @@ export const CreateServiceListingPage = () => {
                             type="text"
                             value={fixedTimeline}
                             onChange={(e) => setFixedTimeline(e.target.value)}
-                            className="h-9 w-full rounded-lg border border-white/5 bg-black px-3 text-[11px] text-white outline-none transition-colors focus:border-[#FBC078]/50"
+                            className="h-9 w-full rounded-lg border border-white/5 bg-black px-3 text-[11px] text-white outline-none transition-colors focus:border-brand-accent/50"
                           />
                           <div className="group relative w-20 shrink-0">
                             <select
                               value={fixedTimelineUnit}
                               onChange={(e) => setFixedTimelineUnit(e.target.value)}
-                              className="h-9 w-full cursor-pointer appearance-none rounded-lg border border-white/5 bg-black px-3 pr-8 text-[11px] text-white outline-none transition-colors focus:border-[#FBC078]/50"
+                              className="h-9 w-full cursor-pointer appearance-none rounded-lg border border-white/5 bg-black px-3 pr-8 text-[11px] text-white outline-none transition-colors focus:border-brand-accent/50"
                             >
                               <option>Days</option>
                               <option>Weeks</option>
@@ -1349,7 +1349,7 @@ export const CreateServiceListingPage = () => {
                           placeholder="Enter price"
                           value={customPrice}
                           onChange={(e) => setCustomPrice(e.target.value)}
-                          className="h-9 w-full rounded-lg border border-white/5 bg-black px-3 text-[11px] text-white outline-none transition-colors placeholder:text-[#444444] focus:border-[#FBC078]/50"
+                          className="h-9 w-full rounded-lg border border-white/5 bg-black px-3 text-[11px] text-white outline-none transition-colors placeholder:text-[#444444] focus:border-brand-accent/50"
                         />
                       </div>
 
@@ -1399,20 +1399,20 @@ export const CreateServiceListingPage = () => {
                             type="text"
                             value={customTimelineMin}
                             onChange={(e) => setCustomTimelineMin(e.target.value)}
-                            className="h-9 w-24 rounded-lg border border-white/5 bg-black px-3 text-center text-[11px] text-white outline-none transition-colors focus:border-[#FBC078]/50"
+                            className="h-9 w-24 rounded-lg border border-white/5 bg-black px-3 text-center text-[11px] text-white outline-none transition-colors focus:border-brand-accent/50"
                           />
                           <span className="text-[11px] font-medium text-[#555555]">To</span>
                           <input
                             type="text"
                             value={customTimelineMax}
                             onChange={(e) => setCustomTimelineMax(e.target.value)}
-                            className="h-9 w-24 rounded-lg border border-white/5 bg-black px-3 text-center text-[11px] text-white outline-none transition-colors focus:border-[#FBC078]/50"
+                            className="h-9 w-24 rounded-lg border border-white/5 bg-black px-3 text-center text-[11px] text-white outline-none transition-colors focus:border-brand-accent/50"
                           />
                           <div className="group relative w-20 shrink-0">
                             <select
                               value={customTimelineUnit}
                               onChange={(e) => setCustomTimelineUnit(e.target.value)}
-                              className="h-9 w-full cursor-pointer appearance-none rounded-lg border border-white/5 bg-black px-3 pr-8 text-[11px] text-white outline-none transition-colors focus:border-[#FBC078]/50"
+                              className="h-9 w-full cursor-pointer appearance-none rounded-lg border border-white/5 bg-black px-3 pr-8 text-[11px] text-white outline-none transition-colors focus:border-brand-accent/50"
                             >
                               <option value="Days">Days</option>
                               <option value="Weeks">Weeks</option>
@@ -1465,7 +1465,7 @@ export const CreateServiceListingPage = () => {
                             placeholder={`Describe what the ${tier.name} tier includes...`}
                             value={tier.description}
                             onChange={(e) => updateTier(tier.name, 'description', e.target.value)}
-                            className="min-h-[64px] w-full resize-none rounded-lg border border-white/5 bg-[#151515] p-3 text-[11px] leading-relaxed text-white outline-none transition-colors placeholder:text-[#444444] focus:border-[#FBC078]/50"
+                            className="min-h-[64px] w-full resize-none rounded-lg border border-white/5 bg-[#151515] p-3 text-[11px] leading-relaxed text-white outline-none transition-colors placeholder:text-[#444444] focus:border-brand-accent/50"
                           />
                         </div>
 
@@ -1479,7 +1479,7 @@ export const CreateServiceListingPage = () => {
                               placeholder="₹0.00"
                               value={tier.price}
                               onChange={(e) => updateTier(tier.name, 'price', e.target.value)}
-                              className="h-9 w-full rounded-lg border border-white/5 bg-[#151515] px-3 text-[11px] text-white outline-none transition-colors placeholder:text-[#444444] focus:border-[#FBC078]/50"
+                              className="h-9 w-full rounded-lg border border-white/5 bg-[#151515] px-3 text-[11px] text-white outline-none transition-colors placeholder:text-[#444444] focus:border-brand-accent/50"
                             />
                           </div>
 
@@ -1495,7 +1495,7 @@ export const CreateServiceListingPage = () => {
                                 onChange={(e) =>
                                   updateTier(tier.name, 'timelineValue', e.target.value)
                                 }
-                                className="h-9 w-full rounded-lg border border-white/5 bg-[#151515] px-3 text-center text-[11px] text-white outline-none transition-colors focus:border-[#FBC078]/50"
+                                className="h-9 w-full rounded-lg border border-white/5 bg-[#151515] px-3 text-center text-[11px] text-white outline-none transition-colors focus:border-brand-accent/50"
                               />
                               <div className="group relative w-20 shrink-0">
                                 <select
@@ -1503,7 +1503,7 @@ export const CreateServiceListingPage = () => {
                                   onChange={(e) =>
                                     updateTier(tier.name, 'timelineUnit', e.target.value)
                                   }
-                                  className="h-9 w-full cursor-pointer appearance-none rounded-lg border border-white/5 bg-[#151515] px-3 pr-8 text-[11px] text-white outline-none transition-colors focus:border-[#FBC078]/50"
+                                  className="h-9 w-full cursor-pointer appearance-none rounded-lg border border-white/5 bg-[#151515] px-3 pr-8 text-[11px] text-white outline-none transition-colors focus:border-brand-accent/50"
                                 >
                                   <option>Days</option>
                                   <option>Weeks</option>
@@ -1543,10 +1543,10 @@ export const CreateServiceListingPage = () => {
               className={cn(
                   "flex cursor-pointer select-none flex-col items-center justify-center gap-2 rounded-md border border-dashed py-8 transition-all duration-300",
                   isDragging
-                    ? "border-[#FBC078]/60 bg-[#FBC078]/5"
+                    ? "border-brand-accent/60 bg-brand-accent/5"
                     : uploadedImages.length >= MAX_IMAGES
                       ? "border-white/5 bg-black/30 cursor-not-allowed opacity-50"
-                      : "border-white/40 bg-black hover:border-[#FBC078]/40 hover:bg-[#FBC078]/5"
+                      : "border-white/40 bg-black hover:border-brand-accent/40 hover:bg-brand-accent/5"
                 )}
               >
                 <div className="flex size-9 items-center justify-center rounded-full bg-[#161616]">

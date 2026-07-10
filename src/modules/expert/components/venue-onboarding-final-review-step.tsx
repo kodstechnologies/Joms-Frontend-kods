@@ -38,7 +38,7 @@ function MaskedValue({ value }: { value: string }) {
       <button
         type="button"
         onClick={() => setVisible((v) => !v)}
-        className="text-[#FBC078] hover:text-[#eeb46a]"
+        className="text-brand-accent hover:text-brand-gold-from"
       >
         {visible ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
       </button>
@@ -67,7 +67,7 @@ function DocumentPreview({
             href={url}
             target="_blank"
             rel="noreferrer"
-            className="shrink-0 text-[10px] text-[#FBC078] underline"
+            className="shrink-0 text-[10px] text-brand-accent underline"
           >
             View
           </a>
@@ -196,7 +196,7 @@ export const VenueOnboardingFinalReviewStep = ({
       </div>
 
       <div className="rounded-lg border border-white/5 bg-[#151515] p-6">
-        <h3 className="mb-2 text-xs font-bold uppercase tracking-wide text-[#FBC078]">
+        <h3 className="mb-2 text-xs font-bold uppercase tracking-wide text-brand-accent">
           Basic Profile Information
         </h3>
         <ReviewRow label="Full Name" value={venue?.name || formData.name} />
@@ -210,7 +210,7 @@ export const VenueOnboardingFinalReviewStep = ({
       </div>
 
       <div className="rounded-lg border border-white/5 bg-[#151515] p-6">
-        <h3 className="mb-2 text-xs font-bold uppercase tracking-wide text-[#FBC078]">
+        <h3 className="mb-2 text-xs font-bold uppercase tracking-wide text-brand-accent">
           Venue Location Details
         </h3>
         <ReviewRow
@@ -225,7 +225,7 @@ export const VenueOnboardingFinalReviewStep = ({
       </div>
 
       <div className="rounded-lg border border-white/5 bg-[#151515] p-6">
-        <h3 className="mb-2 text-xs font-bold uppercase tracking-wide text-[#FBC078]">
+        <h3 className="mb-2 text-xs font-bold uppercase tracking-wide text-brand-accent">
           KYC Details
         </h3>
         <ReviewRow
@@ -343,7 +343,7 @@ export const VenueOnboardingFinalReviewStep = ({
             setFormData((prev) => ({ ...prev, internalNotes: e.target.value }))
           }
           placeholder="Add admin verification notes..."
-          className="w-full resize-none rounded-md border border-white/10 bg-black p-3 text-sm text-white outline-none focus:border-[#FBC078]"
+          className="w-full resize-none rounded-md border border-white/10 bg-black p-3 text-sm text-white outline-none focus:border-brand-accent"
         />
 
         <label className="mt-4 flex cursor-pointer items-start gap-3">
@@ -353,7 +353,7 @@ export const VenueOnboardingFinalReviewStep = ({
             onChange={(e) =>
               setFormData((prev) => ({ ...prev, isVerified: e.target.checked }))
             }
-            className="mt-0.5 size-4 rounded border-white/20 accent-[#FBC078]"
+            className="mt-0.5 size-4 rounded border-white/20 accent-brand-accent"
           />
           <span className="text-xs text-[#aaa]">
             I confirm that the details in this profile are being verified thoroughly.

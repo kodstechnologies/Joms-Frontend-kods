@@ -51,7 +51,7 @@ export function CreateListingWizard({
         <button
           type="button"
           onClick={onBack}
-          className="group flex w-fit items-center gap-2 text-white transition-colors hover:text-[#FBC078]"
+          className="group flex w-fit items-center gap-2 text-white transition-colors hover:text-brand-accent"
         >
           <ChevronLeft className="size-5 transition-transform group-hover:-translate-x-1" />
           <h1 className="text-[20px] font-bold tracking-tight">{title}</h1>
@@ -85,9 +85,9 @@ export function CreateListingWizard({
                   className={cn(
                     'relative z-10 flex size-9 items-center justify-center rounded-full text-[12px] font-bold transition-all duration-300',
                     isActive
-                      ? 'bg-[#FBC078] text-black shadow-[0_0_20px_rgba(251,192,120,0.1)]'
+                      ? 'bg-brand-accent text-brand-text-dark shadow-[0_0_20px_rgba(255,200,73,0.15)]'
                       : isCompleted
-                        ? 'bg-emerald-500 text-white'
+                        ? 'bg-brand-success text-white'
                         : 'border border-[#080808] bg-black text-white',
                   )}
                 >
@@ -135,7 +135,7 @@ export function CreateListingWizard({
             onClick={primaryAction.onClick}
             disabled={primaryAction.disabled}
             className={cn(
-              'h-8 rounded-md bg-[#FBC078] px-5 py-0 text-[11px] font-bold text-black shadow-md transition-all hover:bg-[#eeb46a]',
+              'h-8 rounded-md px-5 py-0 text-[11px] font-bold',
               primaryAction.className,
             )}
           >

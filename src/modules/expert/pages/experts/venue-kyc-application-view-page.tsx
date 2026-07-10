@@ -27,7 +27,6 @@ import {
 import {
   useEscalateExpertApplication,
   useEscalationAssignees,
-  useExpertApplicationView,
   useStartEscalationReviewOnView,
 } from '../../hooks/use-expert-application-view'
 import { useAdminEscalation } from '@/modules/my-tasks/hooks/use-admin-escalation'
@@ -275,20 +274,20 @@ export function VenueKycApplicationViewPage() {
   const [selectedEscalationOption, setSelectedEscalationOption] = useState('')
 
   const { data, isLoading, isError, error } = useApplicationDetails(id)
-  const { data: expertViewData } = useExpertApplicationView(id)
   const { data: assigneesData } = useEscalationAssignees()
   const application = data?.data
+  const partnerId = application?.header?.partnerId ?? undefined
 
   const updateKyc = useUpdateVenueKycStatus(id)
   const updateBanking = useUpdateVenueBankingStatus(id)
-  const escalateApplication = useEscalateExpertApplication(id)
-  const startEscalationReview = useStartEscalationReviewOnView(id)
-  const { data: escalationData } = useAdminEscalation('partner', id)
+  const escalateApplication = useEscalateExpertApplication(partnerId)
+  const startEscalationReview = useStartEscalationReviewOnView(partnerId)
+  const { data: escalationData } = useAdminEscalation('partner', partnerId)
 
   useEffect(() => {
-    if (!id || isSuperAdmin) return
+    if (!partnerId || isSuperAdmin) return
     startEscalationReview.mutate()
-  }, [id, isSuperAdmin])
+  }, [partnerId, isSuperAdmin])
 
   const decisionTargetForTab: DecisionTarget =
     activeTab === 'banking' ? 'banking' : 'kyc'
@@ -452,6 +451,19 @@ export function VenueKycApplicationViewPage() {
     return `Reject ${target}`
   }, [modalTarget, modalVariant])
 
+  const notesContent = useMemo(() => {
+    const escalation = escalationData?.data
+    const lines = [
+      application?.overview?.applicationNotes?.trim() || null,
+      escalation?.escalatedByName
+        ? `Escalated by ${escalation.escalatedByName}${escalation.escalatedToName ? ` to ${escalation.escalatedToName}` : ''}.`
+        : null,
+      escalation?.escalationNote ? `Note: ${escalation.escalationNote}` : null,
+    ].filter(Boolean)
+
+    return lines.length ? lines.join('\n') : 'No notes yet.'
+  }, [application?.overview?.applicationNotes, escalationData?.data])
+
   const isSubmitting =
     modalVariant === 'escalate'
       ? escalateApplication.isPending
@@ -468,7 +480,7 @@ export function VenueKycApplicationViewPage() {
   if (isLoading) {
     return (
       <div className="flex h-[60vh] items-center justify-center">
-        <div className="size-9 animate-spin rounded-full border-4 border-[#FBC078] border-t-transparent" />
+        <div className="size-9 animate-spin rounded-full border-4 border-brand-accent border-t-transparent" />
       </div>
     )
   }
@@ -479,7 +491,7 @@ export function VenueKycApplicationViewPage() {
         <button
           type="button"
           onClick={() => navigate('/experts/management')}
-          className="group flex w-fit items-center gap-2 font-heading text-[20px] font-bold text-white transition-colors hover:text-[#FBC078]"
+          className="group flex w-fit items-center gap-2 font-heading text-[20px] font-bold text-white transition-colors hover:text-brand-accent"
         >
           <ArrowLeft className="size-5" />
           <span>Venue Application View</span>
@@ -517,28 +529,13 @@ export function VenueKycApplicationViewPage() {
     { label: 'FSSAI License', url: documents?.fssaiLicense },
   ]
 
-  const notesContent = useMemo(() => {
-    const escalation = escalationData?.data
-    const finalReview = expertViewData?.data?.expert?.finalReview
-    const source = escalation || finalReview
-    const lines = [
-      overview.applicationNotes?.trim() || null,
-      source?.escalatedByName
-        ? `Escalated by ${source.escalatedByName}${source.escalatedToName ? ` to ${source.escalatedToName}` : ''}.`
-        : null,
-      source?.escalationNote ? `Note: ${source.escalationNote}` : null,
-    ].filter(Boolean)
-
-    return lines.length ? lines.join('\n') : 'No notes yet.'
-  }, [escalationData?.data, expertViewData?.data?.expert?.finalReview, overview.applicationNotes])
-
   return (
     <div className="relative flex w-full flex-col gap-5 pb-8 text-white">
       <header className="flex flex-col gap-2">
         <button
           type="button"
           onClick={() => navigate('/experts/management')}
-          className="group flex w-fit items-center gap-2 font-heading text-[20px] font-bold tracking-tight text-white transition-colors hover:text-[#FBC078]"
+          className="group flex w-fit items-center gap-2 font-heading text-[20px] font-bold tracking-tight text-white transition-colors hover:text-brand-accent"
         >
           <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
           <span>Venue Application View</span>
@@ -569,7 +566,7 @@ export function VenueKycApplicationViewPage() {
                 <button
                   type="button"
                   onClick={() => navigate(`/experts/management/profile/${header.partnerId}`)}
-                  className="rounded-md p-1 text-[#888] transition-colors hover:bg-white/5 hover:text-[#FBC078]"
+                  className="rounded-md p-1 text-[#888] transition-colors hover:bg-white/5 hover:text-brand-accent"
                   aria-label="Open expert profile"
                 >
                   <ExternalLink className="size-4" />
@@ -624,11 +621,11 @@ export function VenueKycApplicationViewPage() {
               key={tab.key}
               type="button"
               onClick={() => setActiveTab(tab.key)}
-              className="relative flex-1 px-4 py-3.5 text-center text-[13px] font-semibold text-white transition-colors hover:text-[#FBC078]"
+              className="relative flex-1 px-4 py-3.5 text-center text-[13px] font-semibold text-white transition-colors hover:text-brand-accent"
             >
               {tab.label}
               {isActive && (
-                <span className="absolute bottom-2 left-1/2 h-[3px] w-10 -translate-x-1/2 rounded-full bg-[#FBC078]" />
+                <span className="absolute bottom-2 left-1/2 h-[3px] w-10 -translate-x-1/2 rounded-full bg-brand-accent" />
               )}
             </button>
           )
@@ -640,7 +637,7 @@ export function VenueKycApplicationViewPage() {
           <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
             <SectionCard
               title="Applicant Information"
-              icon={<User className="size-4 text-[#FBC078]" />}
+              icon={<User className="size-4 text-brand-accent" />}
             >
               <div className="grid grid-cols-1 gap-x-8 gap-y-5 sm:grid-cols-2">
                 <InfoField label="Full Name/Organization" value={applicant?.fullName} />
@@ -657,7 +654,7 @@ export function VenueKycApplicationViewPage() {
 
             <SectionCard
               title="Venue Information"
-              icon={<ClipboardList className="size-4 text-[#FBC078]" />}
+              icon={<ClipboardList className="size-4 text-brand-accent" />}
             >
               <div className="grid grid-cols-1 gap-x-8 gap-y-5 sm:grid-cols-2">
                 <InfoField label="Venue Name" value={venue?.venueName} />
@@ -671,7 +668,7 @@ export function VenueKycApplicationViewPage() {
 
           <SectionCard
             title="Venue Images"
-            icon={<FileText className="size-4 text-[#FBC078]" />}
+            icon={<FileText className="size-4 text-brand-accent" />}
           >
             {venueImages.length > 0 ? (
               <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:max-w-[520px]">
@@ -695,7 +692,7 @@ export function VenueKycApplicationViewPage() {
           <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
             <SectionCard
               title="KYC Details"
-              icon={<ClipboardList className="size-4 text-[#FBC078]" />}
+              icon={<ClipboardList className="size-4 text-brand-accent" />}
             >
               <div className="grid grid-cols-1 gap-x-8 gap-y-5 sm:grid-cols-2">
                 <InfoField
@@ -717,7 +714,7 @@ export function VenueKycApplicationViewPage() {
 
             <SectionCard
               title="Compliance & Declaration"
-              icon={<ShieldCheck className="size-4 text-[#FBC078]" />}
+              icon={<ShieldCheck className="size-4 text-brand-accent" />}
             >
               <div className="space-y-5">
                 <div className="flex items-center justify-between gap-3">
@@ -761,7 +758,7 @@ export function VenueKycApplicationViewPage() {
 
           <SectionCard
             title="Uploaded Documents"
-            icon={<FileText className="size-4 text-[#FBC078]" />}
+            icon={<FileText className="size-4 text-brand-accent" />}
           >
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {uploadedDocuments.map((document) => (
@@ -776,7 +773,7 @@ export function VenueKycApplicationViewPage() {
 
           <SectionCard
             title="Other Document"
-            icon={<FileText className="size-4 text-[#FBC078]" />}
+            icon={<FileText className="size-4 text-brand-accent" />}
           >
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {otherDocuments.map((document) => (
@@ -795,7 +792,7 @@ export function VenueKycApplicationViewPage() {
           <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
             <SectionCard
               title="Account Information"
-              icon={<Banknote className="size-4 text-[#FBC078]" />}
+              icon={<Banknote className="size-4 text-brand-accent" />}
             >
               <div className="grid grid-cols-1 gap-x-8 gap-y-5 sm:grid-cols-2">
                 <InfoField label="Beneficiary Name" value={account?.beneficiaryName} />
@@ -814,7 +811,7 @@ export function VenueKycApplicationViewPage() {
 
             <SectionCard
               title="Bank Verification Document"
-              icon={<FileText className="size-4 text-[#FBC078]" />}
+              icon={<FileText className="size-4 text-brand-accent" />}
             >
               <div className="max-w-sm">
                 <DocumentCard
@@ -829,7 +826,7 @@ export function VenueKycApplicationViewPage() {
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
         <div className="rounded-xl border border-white/5 bg-[#111111] p-5">
           <div className="mb-4 flex items-center gap-2 text-[14px] font-semibold text-white">
-            <History className="size-4 text-[#FBC078]" aria-hidden="true" />
+            <History className="size-4 text-brand-accent" aria-hidden="true" />
             <h3>Application Notes</h3>
           </div>
           <div className="min-h-[120px] rounded-lg border border-white/5 bg-black p-4 text-[12px] leading-relaxed text-[#777] whitespace-pre-wrap">
@@ -839,7 +836,7 @@ export function VenueKycApplicationViewPage() {
 
         <div className="rounded-xl border border-white/5 bg-[#111111] p-5">
           <div className="mb-4 flex items-center gap-2 text-[14px] font-semibold text-white">
-            <Gavel className="size-4 text-[#FBC078]" aria-hidden="true" />
+            <Gavel className="size-4 text-brand-accent" aria-hidden="true" />
             <h3>Decision Controls</h3>
           </div>
 
@@ -863,7 +860,7 @@ export function VenueKycApplicationViewPage() {
               type="button"
               disabled={decisionDisabled}
               onClick={() => openDecisionModal(decisionTargetForTab, 'approve')}
-              className="flex items-center gap-2 rounded-md bg-[#00B761] px-4 py-2.5 text-[11px] font-bold text-white transition-colors hover:bg-[#08a85d] disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex items-center gap-2 rounded-md bg-brand-success px-4 py-2.5 text-[11px] font-bold text-white transition-colors hover:bg-[#08a85d] disabled:cursor-not-allowed disabled:opacity-50"
             >
               Approve
               <Check className="size-3.5" />
@@ -872,7 +869,7 @@ export function VenueKycApplicationViewPage() {
               type="button"
               disabled={decisionDisabled}
               onClick={() => openDecisionModal(decisionTargetForTab, 'requestChanges')}
-              className="flex items-center gap-2 rounded-md bg-[#FBC078] px-4 py-2.5 text-[11px] font-bold text-black transition-colors hover:bg-[#eeb46a] disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex items-center gap-2 rounded-md bg-brand-accent px-4 py-2.5 text-[11px] font-bold text-brand-text-dark hover:bg-brand-gold-from transition-colors hover:bg-brand-gold-from disabled:cursor-not-allowed disabled:opacity-50"
             >
               Ask for Re-Submit
               <RotateCcw className="size-3.5" />
@@ -882,7 +879,7 @@ export function VenueKycApplicationViewPage() {
                 type="button"
                 disabled={escalateDisabled}
                 onClick={() => openDecisionModal(decisionTargetForTab, 'escalate')}
-                className="flex items-center gap-2 rounded-md bg-[#1D4ED8] px-4 py-2.5 text-[11px] font-bold text-white transition-colors hover:bg-[#1e40af] disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex items-center gap-2 rounded-md bg-brand-action px-4 py-2.5 text-[11px] font-bold text-white transition-colors hover:bg-[#1e40af] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Escalate
                 <ArrowUpRight className="size-3.5" />
@@ -892,7 +889,7 @@ export function VenueKycApplicationViewPage() {
               type="button"
               disabled={decisionDisabled}
               onClick={() => openDecisionModal(decisionTargetForTab, 'reject')}
-              className="flex items-center gap-2 rounded-md bg-[#F02D2D] px-4 py-2.5 text-[11px] font-bold text-white transition-colors hover:bg-[#d92727] disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex items-center gap-2 rounded-md bg-brand-danger px-4 py-2.5 text-[11px] font-bold text-white transition-colors hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
             >
               Reject Application
               <X className="size-3.5" />

@@ -85,7 +85,7 @@ const SubCategoryCard = ({
                     onClick={() => onIconChange(item.id, null)}
                     disabled={!item.icon}
                     aria-label="Remove uploaded icon"
-                    className="size-11 shrink-0 border-0 !bg-[#FBCF7A] p-0 hover:!bg-[#F5C86A]"
+                    className="size-11 shrink-0 border-0 !bg-brand-accent p-0 hover:!bg-brand-gold-from"
                   >
                     <Trash2 className="size-[18px] text-red-500" aria-hidden="true" />
                   </Button>

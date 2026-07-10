@@ -7,7 +7,7 @@ import { cn } from '@/shared/lib/cn'
 import { sanitizeMobileNumber } from '@/shared/lib/phone'
 
 const fieldClass =
-  'h-11 w-full rounded-md bg-black px-3 text-sm text-white outline-none placeholder:text-[#666] focus:ring-1 focus:ring-[#FBC078]/40'
+  'h-11 w-full rounded-md bg-black px-3 text-sm text-white outline-none placeholder:text-[#666] focus:ring-1 focus:ring-brand-accent/40'
 
 const SERVICE_TYPE_OPTIONS = [
   { value: 'concierge', label: 'Concierge' },
@@ -127,7 +127,7 @@ export const ExpertBasicProfileStep = ({
               <button
                 type="button"
                 onClick={() => coverInputRef.current?.click()}
-                className="flex h-32 w-full items-center justify-center rounded-md border border-dashed border-[#444] bg-black transition-colors hover:border-[#FBC078]/50"
+                className="flex h-32 w-full items-center justify-center rounded-md border border-dashed border-[#444] bg-black transition-colors hover:border-brand-accent/50"
               >
                 {formData.coverImageUrl ? (
                   <img
@@ -210,7 +210,7 @@ export const ExpertBasicProfileStep = ({
                 value={formData.bio}
                 onChange={(e) => setFormData((prev) => ({ ...prev, bio: e.target.value }))}
                 placeholder="Write a short bio"
-                className="h-32 w-full rounded-md bg-black p-3 text-sm text-white outline-none placeholder:text-[#666] focus:ring-1 focus:ring-[#FBC078]/40"
+                className="h-32 w-full rounded-md bg-black p-3 text-sm text-white outline-none placeholder:text-[#666] focus:ring-1 focus:ring-brand-accent/40"
               />
             </div>
 
@@ -219,23 +219,14 @@ export const ExpertBasicProfileStep = ({
                 Sample Work Link
               </label>
 
-              <div className="flex gap-2">
-                <input
-                  value={formData.sampleWorkLink}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, sampleWorkLink: e.target.value }))
-                  }
-                  placeholder="Enter Link"
-                  className={cn(fieldClass, 'flex-1')}
-                />
-
-                <button
-                  type="button"
-                  className="h-11 rounded-md bg-[#FBC078] px-4 text-xs font-semibold text-black transition hover:bg-[#EEB46A]"
-                >
-                  Verify Link
-                </button>
-              </div>
+              <input
+                value={formData.sampleWorkLink}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, sampleWorkLink: e.target.value }))
+                }
+                placeholder="Enter Link"
+                className={fieldClass}
+              />
             </div>
 
             <div>
@@ -245,7 +236,7 @@ export const ExpertBasicProfileStep = ({
               <button
                 type="button"
                 onClick={() => sampleFileInputRef.current?.click()}
-                className="rounded-md border border-dashed border-[#444] px-8 py-3 text-xs text-[#999] transition-colors hover:border-[#FBC078]/50"
+                className="rounded-md border border-dashed border-[#444] px-8 py-3 text-xs text-[#999] transition-colors hover:border-brand-accent/50"
               >
                 {formData.sampleWorkFileName || 'Upload here'}
               </button>
@@ -387,7 +378,7 @@ export const ExpertBasicProfileStep = ({
                                     className={cn(
                                       'rounded-md border px-2.5 py-1 text-[10px] font-semibold transition-colors',
                                       isSelected
-                                        ? 'border-[#FBC078] bg-[#FBC078]/10 text-[#FBC078]'
+                                        ? 'border-brand-accent bg-brand-accent/10 text-brand-accent'
                                         : 'border-white/10 text-[#888888] hover:border-white/30',
                                     )}
                                   >
@@ -465,55 +456,37 @@ export const ExpertBasicProfileStep = ({
                     Phone Number *
                   </label>
 
-                  <div className="flex items-end gap-3">
-                    <input
-                      type="tel"
-                      inputMode="numeric"
-                      maxLength={10}
-                      value={formData.phoneNumber}
-                      onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          phoneNumber: sanitizeMobileNumber(e.target.value),
-                        }))
-                      }
-                      placeholder="Enter phone number"
-                      className={`${fieldClass} flex-1`}
-                    />
-
-                    <button
-                      type="button"
-                      className="h-11 rounded-md bg-[#FBC078] px-5 text-xs font-semibold text-black transition-colors hover:bg-[#EEB46A]"
-                    >
-                      Verify
-                    </button>
-                  </div>
+                  <input
+                    type="tel"
+                    inputMode="numeric"
+                    maxLength={10}
+                    value={formData.phoneNumber}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        phoneNumber: sanitizeMobileNumber(e.target.value),
+                      }))
+                    }
+                    placeholder="Enter phone number"
+                    className={fieldClass}
+                  />
                 </div>
 
                 <div>
-  <label className="mb-2 block text-xs font-medium text-white">
-    Email ID *
-  </label>
+                  <label className="mb-2 block text-xs font-medium text-white">
+                    Email ID *
+                  </label>
 
-  <div className="flex items-end gap-3">
-    <input
-      value={formData.email}
-      onChange={(e) =>
-        setFormData((prev) => ({ ...prev, email: e.target.value }))
-      }
-      placeholder="Enter Email ID"
-      type="email"
-      className={`${fieldClass} flex-1`}
-    />
-
-    <button
-      type="button"
-      className="h-11 rounded-md bg-[#FBC078] px-5 text-xs font-semibold text-black transition-colors hover:bg-[#EEB46A]"
-    >
-      Verify
-    </button>
-  </div>
-</div>
+                  <input
+                    value={formData.email}
+                    onChange={(e) =>
+                      setFormData((prev) => ({ ...prev, email: e.target.value }))
+                    }
+                    placeholder="Enter Email ID"
+                    type="email"
+                    className={fieldClass}
+                  />
+                </div>
               </div>
             </div>
           </div>

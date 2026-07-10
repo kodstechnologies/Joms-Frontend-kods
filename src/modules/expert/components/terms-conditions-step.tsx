@@ -255,7 +255,7 @@ export const TermsConditionsStep = ({
           <button
             type="button"
             onClick={addFaq}
-            className="rounded-md bg-[#F5C37A] px-3 py-2 text-xs font-medium text-black"
+            className="rounded-md bg-brand-accent px-3 py-2 text-xs font-medium text-brand-text-dark"
           >
             + Add More
           </button>

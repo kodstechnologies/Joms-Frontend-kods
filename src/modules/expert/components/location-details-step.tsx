@@ -35,11 +35,10 @@ export const LocationDetailsStep = ({
                 address: e.target.value,
               }))
             }
-            className="w-full rounded-md border border-white/10 bg-black px-4 py-3 text-[12px] text-white outline-none focus:border-[#FBC078]"
+            className="w-full rounded-md border border-white/10 bg-black px-4 py-3 text-[12px] text-white outline-none focus:border-brand-accent"
           />
         </div>
 
-        {/* Landmark & City */}
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           <div className="space-y-2.5">
             <label className="text-[12px] font-bold tracking-tight text-white">
@@ -55,7 +54,7 @@ export const LocationDetailsStep = ({
                   landmark: e.target.value,
                 }))
               }
-              className="w-full rounded-md border border-white/10 bg-black px-4 py-3 text-[12px] text-white outline-none focus:border-[#FBC078]"
+              className="w-full rounded-md border border-white/10 bg-black px-4 py-3 text-[12px] text-white outline-none focus:border-brand-accent"
             />
           </div>
 
@@ -73,12 +72,11 @@ export const LocationDetailsStep = ({
                   city: e.target.value,
                 }))
               }
-              className="w-full rounded-md border border-white/10 bg-black px-4 py-3 text-[12px] text-white outline-none focus:border-[#FBC078]"
+              className="w-full rounded-md border border-white/10 bg-black px-4 py-3 text-[12px] text-white outline-none focus:border-brand-accent"
             />
           </div>
         </div>
 
-        {/* Parking & Accessibility */}
         <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
           <div className="flex items-start justify-between">
             <div>
@@ -172,7 +170,6 @@ export const LocationDetailsStep = ({
             </label>
           </div>
         </div>
-        {/* Map */}
          <div className="rounded-lg border border-white/5 bg-black/40 p-5">
           <div className="mb-4 flex items-center justify-between">
             <div>
@@ -188,7 +185,7 @@ export const LocationDetailsStep = ({
             <input
               type="text"
               placeholder="Search by Location"
-              className="w-64 rounded-lg border border-white/10 bg-black px-3 py-2 text-sm text-white outline-none focus:border-[#F5C37A]"
+              className="w-64 rounded-lg border border-white/10 bg-black px-3 py-2 text-sm text-white outline-none focus:border-brand-accent"
             />
           </div>
 

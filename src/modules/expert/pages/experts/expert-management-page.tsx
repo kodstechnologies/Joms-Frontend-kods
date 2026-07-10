@@ -314,13 +314,18 @@ export const ExpertManagementPage = () => {
                     </span>
                 ),
             },
-            {
-                accessorKey: 'email',
-                header: 'Email ID',
-                cell: ({ row }) => displayValue(row.original.email),
-            },
-            {
-                accessorKey: 'status',
+    {
+      accessorKey: 'email',
+      header: 'Email ID',
+      cell: ({ row }) => displayValue(row.original.email),
+    },
+    {
+      accessorKey: 'profession',
+      header: 'Profession',
+      cell: ({ row }) => displayValue(row.original.profession),
+    },
+    {
+      accessorKey: 'status',
                 header: 'Status',
                 cell: ({ row }) => {
                     const { label, className } = getManagementStatusDisplay(row.original.status)
@@ -549,7 +554,7 @@ export const ExpertManagementPage = () => {
                 </div>
                 <div className="flex w-full flex-col items-center gap-3 md:w-auto md:flex-row">
                     <Button
-                        className="h-9 w-full bg-[#FBC078] text-black hover:bg-[#eeb46a] md:w-auto"
+                        className="h-9 w-full md:w-auto"
                         onClick={() => navigate('/experts/dashboard/metrics')}
                     >
                         <BarChart3 className="size-4" />
@@ -558,7 +563,7 @@ export const ExpertManagementPage = () => {
 
                     <Button
                         type="button"
-                        className="h-9 w-full bg-[#FBC078] text-black hover:bg-[#eeb46a] md:w-auto"
+                        className="h-9 w-full md:w-auto"
                         onClick={() => navigate('/experts/management/create')}
                     >
                         <Plus className="size-4" />

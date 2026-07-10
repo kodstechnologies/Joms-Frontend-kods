@@ -53,7 +53,7 @@ export function PausedVenueCategoriesPage() {
 
         <div className="flex w-full flex-col items-center gap-3 md:w-auto md:flex-row">
          <Button
-            className="w-full md:w-auto h-9 bg-[#FBC078] text-black "
+            className="h-9 w-full md:w-auto"
             onClick={() => navigate('/venues/dashboard/metrics')}
           >
             <SlidersHorizontal className="size-4" />
@@ -61,7 +61,7 @@ export function PausedVenueCategoriesPage() {
           </Button>
           <Button
             type="button"
-            className="w-full md:w-auto h-9 bg-[#FBC078] text-black "
+            className="h-9 w-full md:w-auto"
             onClick={() => navigate('/venues/categories/management/create')}
           >
             <Plus className="size-4" />

@@ -51,7 +51,7 @@ export function ExpertListHeader({
         <button
           type="button"
           onClick={() => navigate('/experts/management')}
-          className="group flex w-fit items-center gap-2 font-heading text-[20px] font-bold tracking-tight text-white transition-colors hover:text-[#FBC078]"
+          className="group flex w-fit items-center gap-2 font-heading text-[20px] font-bold tracking-tight text-white transition-colors hover:text-brand-accent"
         >
           <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
           <span>{title}</span>
@@ -59,7 +59,7 @@ export function ExpertListHeader({
         <p className="pl-7 text-[12px] font-medium text-[#777777]">{breadcrumb}</p>
       </header>
       <Button
-        className="w-full bg-[#E6BE73] text-black hover:bg-[#D9AE5A] md:w-auto"
+        className="h-9 w-full md:w-auto"
         onClick={() => navigate('/experts/dashboard/metrics')}
       >
         <BarChart3 className="size-4" />
@@ -187,7 +187,20 @@ export function createExpertBaseColumns(): ColumnDef<Expert>[] {
       header: 'Email ID',
       cell: ({ row }) => displayExpertValue(row.original.email),
     },
+    {
+      accessorKey: 'profession',
+      header: 'Profession',
+      cell: ({ row }) => displayExpertValue(row.original.profession),
+    },
   ]
+}
+
+export function createExpertProfessionColumn(): ColumnDef<Expert> {
+  return {
+    accessorKey: 'profession',
+    header: 'Profession',
+    cell: ({ row }) => displayExpertValue(row.original.profession),
+  }
 }
 
 export function createExpertServiceTypeColumn(): ColumnDef<Expert> {

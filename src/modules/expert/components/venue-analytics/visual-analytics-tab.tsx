@@ -99,7 +99,7 @@ export function VisualAnalyticsTab() {
                   </span>
                 </div>
                 <div
-                  className="h-8 rounded-md bg-[#FBC078]"
+                  className="h-8 rounded-md bg-brand-accent"
                   style={{
                     width: `${100 - index * 28}%`,
                     minWidth: '40%',
@@ -127,7 +127,7 @@ export function VisualAnalyticsTab() {
                   outerRadius={85}
                   stroke="rgba(255,255,255,0.08)"
                 >
-                  <Cell fill="#FBC078" />
+                  <Cell fill="var(--brand-accent)" />
                   <Cell fill="#C4956A" />
                 </Pie>
                 <Legend
@@ -174,7 +174,7 @@ export function VisualAnalyticsTab() {
                   <span style={{ color: '#999' }}>{value === 'events' ? 'Events' : 'Meet Ups'}</span>
                 )}
               />
-              <Bar dataKey="events" fill="#FBC078" radius={[4, 4, 0, 0]} name="events" />
+              <Bar dataKey="events" fill="var(--brand-accent)" radius={[4, 4, 0, 0]} name="events" />
               <Bar dataKey="meetups" fill="#1A73E8" radius={[4, 4, 0, 0]} name="meetups" />
             </BarChart>
           </ResponsiveContainer>

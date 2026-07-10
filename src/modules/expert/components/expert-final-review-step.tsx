@@ -150,7 +150,7 @@ const WorkExperienceDetailModal = ({
           type="button"
           onClick={onClose}
           aria-label="Close work experience details"
-          className="text-white transition-colors hover:text-[#FBC078]"
+          className="text-white transition-colors hover:text-brand-accent"
         >
           <X className="size-5" />
         </button>
@@ -204,7 +204,7 @@ const WorkHistoryCard = ({
   <button
     type="button"
     onClick={onClick}
-    className="w-full rounded-lg border border-white/10 bg-black p-4 text-left transition-colors hover:border-[#FBC078]/30 hover:bg-[#111111]"
+    className="w-full rounded-lg border border-white/10 bg-black p-4 text-left transition-colors hover:border-brand-accent/30 hover:bg-[#111111]"
   >
     <div className="flex items-start justify-between gap-3">
       <p className="text-sm font-bold text-white">{naValue(jobTitle)}</p>
@@ -293,7 +293,7 @@ export const ExpertFinalReviewStep = ({ formData, setFormData }: Props) => {
                 formData.offerings.map((offering) => (
                   <span
                     key={offering}
-                    className="rounded-full bg-[#FBC078]/15 px-2.5 py-1 text-[10px] font-medium text-[#FBC078]"
+                    className="rounded-full bg-brand-accent/15 px-2.5 py-1 text-[10px] font-medium text-brand-accent"
                   >
                     {offering}
                   </span>
@@ -311,7 +311,7 @@ export const ExpertFinalReviewStep = ({ formData, setFormData }: Props) => {
                   href={formData.sampleWorkLink}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-[#FBC078] underline"
+                  className="text-brand-accent underline"
                 >
                   {formData.sampleWorkLink}
                 </a>
@@ -408,7 +408,7 @@ export const ExpertFinalReviewStep = ({ formData, setFormData }: Props) => {
             setFormData((prev) => ({ ...prev, internalNotes: e.target.value }))
           }
           placeholder="Enter Text"
-          className="h-24 w-full rounded-md bg-black p-3 text-sm text-white outline-none placeholder:text-[#666] focus:ring-1 focus:ring-[#FBC078]/40"
+          className="h-24 w-full rounded-md bg-black p-3 text-sm text-white outline-none placeholder:text-[#666] focus:ring-1 focus:ring-brand-accent/40"
         />
 
         <label className="mt-4 flex items-center gap-2 text-xs text-white">

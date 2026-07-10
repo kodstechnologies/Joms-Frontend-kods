@@ -491,7 +491,7 @@ export const ServiceManagementPage = () => {
         </div>
         <div className="flex w-full flex-col items-center gap-3 md:w-auto md:flex-row">
           <Button
-            className="h-9 w-full bg-[#FBC078] text-black hover:bg-[#eeb46a] md:w-auto"
+            className="h-9 w-full md:w-auto"
             onClick={() => navigate('/services/dashboard/metrics')}
           >
             <BarChart3 className="size-4" />

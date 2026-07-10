@@ -84,7 +84,7 @@ export const AddAmenityModal = ({
                     e.target.value,
                   )
                 }
-                className="h-10 w-full rounded-md border border-[#1F1F1F] bg-black px-3 text-sm text-white outline-none focus:border-[#F5C37A]"
+                className="h-10 w-full rounded-md border border-[#1F1F1F] bg-black px-3 text-sm text-white outline-none focus:border-brand-accent"
               />
             </div>
 
@@ -112,7 +112,7 @@ export const AddAmenityModal = ({
                 onClick={() =>
                   fileInputRef.current?.click()
                 }
-                className="flex h-[84px] w-[84px] cursor-pointer items-center justify-center rounded-md border border-dashed border-[#666666] hover:border-[#F5C37A]"
+                className="flex h-[84px] w-[84px] cursor-pointer items-center justify-center rounded-md border border-dashed border-[#666666] hover:border-brand-accent"
               >
                 {iconFile ? (
                   <img
@@ -128,7 +128,6 @@ export const AddAmenityModal = ({
               </div>
             </div>
 
-            {/* Venue Category */}
             <div>
               <label className="mb-2 block text-[13px] font-medium text-white">
                 Venue category *
@@ -141,11 +140,10 @@ export const AddAmenityModal = ({
                     e.target.value,
                   )
                 }
-                className="h-10 w-full rounded-md border border-[#1F1F1F] bg-black px-3 text-sm text-white outline-none focus:border-[#F5C37A]"
+                className="h-10 w-full rounded-md border border-[#1F1F1F] bg-black px-3 text-sm text-white outline-none focus:border-brand-accent"
               />
             </div>
 
-            {/* Sub Category */}
             <div>
               <label className="mb-2 block text-[13px] font-medium text-white">
                 Sub-category (optional)
@@ -158,7 +156,7 @@ export const AddAmenityModal = ({
                     e.target.value,
                   )
                 }
-                className="h-10 w-full rounded-md border border-[#1F1F1F] bg-black px-3 text-sm text-white outline-none focus:border-[#F5C37A]"
+                className="h-10 w-full rounded-md border border-[#1F1F1F] bg-black px-3 text-sm text-white outline-none focus:border-brand-accent"
               />
             </div>
           </div>
@@ -168,7 +166,7 @@ export const AddAmenityModal = ({
               type="button"
               onClick={handleSave}
               disabled={isPending}
-              className="flex h-10 items-center gap-2 rounded-lg bg-[#F5C37A] px-5 text-sm font-medium text-black disabled:cursor-not-allowed disabled:opacity-60"
+              className="flex h-10 items-center gap-2 rounded-lg bg-brand-accent px-5 text-sm font-medium text-brand-text-dark disabled:cursor-not-allowed disabled:opacity-60"
             >
               <Save size={15} />
               {isPending ? 'Saving…' : 'Save amenity'}

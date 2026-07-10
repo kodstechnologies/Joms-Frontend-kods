@@ -164,7 +164,7 @@ export const AmenitiesMediaStep = ({
             <button
               type="button"
               onClick={() => setShowManageAmenities(true)}
-              className="h-8 rounded-md bg-[#F5C37A] px-3 text-[11px] font-medium text-black"
+              className="h-8 rounded-md bg-brand-accent px-3 text-[11px] font-medium text-brand-text-dark"
             >
               Manage Amenities
             </button>
@@ -400,7 +400,7 @@ export const AmenitiesMediaStep = ({
             <button
               type="button"
               onClick={addContact}
-              className="flex h-8 items-center gap-1.5 rounded-md bg-[#F5C37A] px-3 text-[11px] font-medium text-black"
+              className="flex h-8 items-center gap-1.5 rounded-md bg-brand-accent px-3 text-[11px] font-medium text-brand-text-dark"
             >
               <Plus size={13} />
               Add contact
@@ -413,7 +413,7 @@ export const AmenitiesMediaStep = ({
               <div className="mb-2 flex items-center justify-between">
                 <p className="text-xs font-medium text-white">
                   Contact{' '}
-                  <span className="text-[#F5C37A]">{index + 1}</span>
+                  <span className="text-brand-accent">{index + 1}</span>
                 </p>
 
                 {contacts.length > 1 && (

@@ -4,7 +4,7 @@ import { Upload, X } from 'lucide-react'
 import type { VenueOnboardingFormData } from '../utils/venue-onboarding-form'
 
 const fieldClass =
-  'h-10 w-full rounded-md border border-white/10 bg-black px-3 text-sm text-white outline-none placeholder:text-[#666] focus:border-[#FBC078]'
+  'h-10 w-full rounded-md border border-white/10 bg-black px-3 text-sm text-white outline-none placeholder:text-[#666] focus:border-brand-accent'
 
 const selectClass = `${fieldClass} appearance-none`
 
@@ -58,7 +58,7 @@ function FileUploadBox({
         <button
           type="button"
           onClick={() => inputRef.current?.click()}
-          className="flex h-24 w-full items-center justify-center rounded-md border border-dashed border-[#444] bg-black text-xs text-[#777] transition-colors hover:border-[#FBC078]/50"
+          className="flex h-24 w-full items-center justify-center rounded-md border border-dashed border-[#444] bg-black text-xs text-[#777] transition-colors hover:border-brand-accent/50"
         >
           {file ? (
             <span className="truncate px-2">{file.name}</span>
@@ -358,7 +358,7 @@ export const VenueOnboardingKycStep = ({ formData, setFormData }: Props) => {
             <button
               type="button"
               onClick={() => otherCertsRef.current?.click()}
-              className="flex h-24 items-center justify-center rounded-md border border-dashed border-[#444] bg-black text-xs text-[#777] hover:border-[#FBC078]/50"
+              className="flex h-24 items-center justify-center rounded-md border border-dashed border-[#444] bg-black text-xs text-[#777] hover:border-brand-accent/50"
             >
               <Upload className="mr-1 size-4" />
               [Venue Based Certificate]

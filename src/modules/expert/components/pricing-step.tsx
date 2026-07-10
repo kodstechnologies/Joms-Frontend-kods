@@ -339,7 +339,7 @@ export const PricingStep = ({ venueData, setVenueData }: PricingStepProps) => {
 
                 <button
                   onClick={() => setShowAvailabilityModal(false)}
-                  className="w-40 rounded-lg bg-[#F5C37A] py-3 text-sm font-medium text-black"
+                  className="w-40 rounded-lg bg-brand-accent py-3 text-sm font-medium text-brand-text-dark"
                 >
                   Done
                 </button>

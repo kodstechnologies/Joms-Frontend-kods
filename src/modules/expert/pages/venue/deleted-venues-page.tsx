@@ -191,7 +191,7 @@ export function VenueDeletedPage() {
           <button
             type="button"
             onClick={() => navigate('/venues/management')}
-            className="group flex w-fit items-center gap-2 font-heading text-[20px] font-bold tracking-tight text-white transition-colors hover:text-[#FBC078]"
+            className="group flex w-fit items-center gap-2 font-heading text-[20px] font-bold tracking-tight text-white transition-colors hover:text-brand-accent"
           >
             <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
             <span>Deleted Venues</span>
@@ -211,7 +211,7 @@ export function VenueDeletedPage() {
 
         <div className="flex w-full flex-col items-center gap-3 md:w-auto md:flex-row">
           <Button
-            className="w-full md:w-auto h-9 bg-[#FBC078] text-black "
+            className="h-9 w-full md:w-auto"
             onClick={() => navigate('/venues/dashboard/metrics')}
           >
             <SlidersHorizontal className="size-4" />
@@ -219,7 +219,7 @@ export function VenueDeletedPage() {
           </Button>
           <Button
             type="button"
-            className="w-full md:w-auto h-9 bg-[#FBC078] text-black "
+            className="h-9 w-full md:w-auto"
             onClick={() => navigate('/venues/management/onboarding')}
           >
             <Plus className="size-4" />

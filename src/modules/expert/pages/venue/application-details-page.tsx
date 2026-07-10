@@ -207,7 +207,7 @@ export function ApplicationDetailsPage() {
   if (isLoading) {
     return (
       <div className="flex h-[60vh] items-center justify-center">
-        <div className="size-9 animate-spin rounded-full border-4 border-[#FBC078] border-t-transparent" />
+        <div className="size-9 animate-spin rounded-full border-4 border-brand-accent border-t-transparent" />
       </div>
     )
   }
@@ -218,7 +218,7 @@ export function ApplicationDetailsPage() {
         <button
           type="button"
           onClick={() => navigate('/venues/management')}
-          className="group flex w-fit items-center gap-2 font-heading text-[20px] font-bold text-white transition-colors hover:text-[#FBC078]"
+          className="group flex w-fit items-center gap-2 font-heading text-[20px] font-bold text-white transition-colors hover:text-brand-accent"
         >
           <ArrowLeft className="size-5" />
           <span>Venue Application View</span>
@@ -364,7 +364,7 @@ export function ApplicationDetailsPage() {
         <button
           type="button"
           onClick={() => navigate('/venues/management')}
-          className="group flex w-fit items-center gap-2 font-heading text-[20px] font-bold tracking-tight text-white transition-colors hover:text-[#FBC078]"
+          className="group flex w-fit items-center gap-2 font-heading text-[20px] font-bold tracking-tight text-white transition-colors hover:text-brand-accent"
         >
           <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
           <span>Venue Application View</span>
@@ -463,7 +463,7 @@ export function ApplicationDetailsPage() {
                   {amenity.image ? (
                     <img src={amenity.image} alt="" className="size-4 object-contain" />
                   ) : (
-                    <CheckCircle2 className="size-4 text-[#FBC078]" />
+                    <CheckCircle2 className="size-4 text-brand-accent" />
                   )}
                   <span className="truncate">{amenity.name}</span>
                 </div>
@@ -544,7 +544,7 @@ export function ApplicationDetailsPage() {
               type="button"
               onClick={() => openModal('approve')}
               disabled={spaceStatusMutation.isPending || !space?._id}
-              className="flex items-center gap-1.5 rounded-md bg-[#00B761] px-4 py-2.5 text-[11px] font-bold text-white transition-colors hover:bg-[#08a85d] disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex items-center gap-1.5 rounded-md bg-brand-success px-4 py-2.5 text-[11px] font-bold text-white transition-colors hover:bg-[#08a85d] disabled:cursor-not-allowed disabled:opacity-50"
             >
               Approve
               <CheckCircle2 className="size-3.5" />
@@ -553,7 +553,7 @@ export function ApplicationDetailsPage() {
               type="button"
               onClick={() => openModal('requestChanges')}
               disabled={spaceStatusMutation.isPending || !space?._id}
-              className="rounded-md bg-[#FBC078] px-4 py-2.5 text-[11px] font-bold text-black transition-colors hover:bg-[#eeb46a] disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-md bg-brand-accent px-4 py-2.5 text-[11px] font-bold text-brand-text-dark hover:bg-brand-gold-from transition-colors hover:bg-brand-gold-from disabled:cursor-not-allowed disabled:opacity-50"
             >
               Ask for Re-Submit
             </button>
@@ -562,7 +562,7 @@ export function ApplicationDetailsPage() {
                 type="button"
                 disabled={escalateDisabled}
                 onClick={() => openModal('escalate')}
-                className="rounded-md bg-[#1D4ED8] px-4 py-2.5 text-[11px] font-bold text-white transition-colors hover:bg-[#1e40af] disabled:cursor-not-allowed disabled:opacity-50"
+                className="rounded-md bg-brand-action px-4 py-2.5 text-[11px] font-bold text-white transition-colors hover:bg-[#1e40af] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Escalate
               </button>
@@ -571,7 +571,7 @@ export function ApplicationDetailsPage() {
               type="button"
               onClick={() => openModal('reject')}
               disabled={spaceStatusMutation.isPending || !space?._id}
-              className="flex items-center gap-1.5 rounded-md bg-[#F02D2D] px-4 py-2.5 text-[11px] font-bold text-white transition-colors hover:bg-[#d92727] disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex items-center gap-1.5 rounded-md bg-brand-danger px-4 py-2.5 text-[11px] font-bold text-white transition-colors hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
             >
               Reject Application
               <XCircle className="size-3.5" />

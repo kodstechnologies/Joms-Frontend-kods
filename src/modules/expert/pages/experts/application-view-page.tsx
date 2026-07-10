@@ -20,12 +20,17 @@ import {
   useUpdateExpertBankingStatus,
   useUpdateExpertKycStatus,
 } from '../../hooks/use-expert-application-view'
+import { useServiceCategoriesByType } from '../../hooks/use-service-categories'
 import { useAdminEscalation } from '@/modules/my-tasks/hooks/use-admin-escalation'
 import { formatApplicationExpertId } from './expert-list-shared'
 import {
+  formatServiceTypeDisplay,
   getDisplayKycStatus,
+  getExpertCurrentRole,
+  getExpertServiceType,
   isAdminKycApproved,
   isKycSubmittedForApplication,
+  resolveExpertServiceCategoryDisplay,
 } from '../../utils/expert-application-helpers'
 import type {
   ApplicationStatus,
@@ -198,6 +203,18 @@ export function ExpertApplicationViewPage() {
   const { data, isLoading, isError, error } = useExpertApplicationView(id)
   const { data: assigneesData } = useEscalationAssignees()
   const application = data?.data
+  const expert = application?.expert
+  const serviceType = getExpertServiceType(expert)
+  const normalizedServiceType =
+    serviceType.toLowerCase() === 'venue' ? 'venue' : serviceType.toLowerCase() === 'concierge' ? 'concierge' : ''
+  const { data: categoriesResponse } = useServiceCategoriesByType(normalizedServiceType)
+
+  const applicantServiceType = formatServiceTypeDisplay(serviceType)
+  const applicantCurrentRole = getExpertCurrentRole(expert)
+  const applicantServiceCategory = useMemo(
+    () => resolveExpertServiceCategoryDisplay(expert, categoriesResponse?.data),
+    [categoriesResponse?.data, expert],
+  )
 
   const updateKyc = useUpdateExpertKycStatus(application?.kyc?._id)
   const updateBanking = useUpdateExpertBankingStatus(application?.banking?._id)
@@ -368,7 +385,7 @@ export function ExpertApplicationViewPage() {
   if (isLoading) {
     return (
       <div className="flex h-[60vh] items-center justify-center">
-        <div className="size-9 animate-spin rounded-full border-4 border-[#FBC078] border-t-transparent" />
+        <div className="size-9 animate-spin rounded-full border-4 border-brand-accent border-t-transparent" />
       </div>
     )
   }
@@ -382,7 +399,7 @@ export function ExpertApplicationViewPage() {
         <button
           type="button"
           onClick={() => navigate('/experts/management')}
-          className="group flex w-fit items-center gap-2 font-heading text-[20px] font-bold text-white transition-colors hover:text-[#FBC078]"
+          className="group flex w-fit items-center gap-2 font-heading text-[20px] font-bold text-white transition-colors hover:text-brand-accent"
         >
           <ArrowLeft className="size-5" />
           <span>Application View</span>
@@ -426,7 +443,7 @@ export function ExpertApplicationViewPage() {
         <button
           type="button"
           onClick={() => navigate('/experts/management')}
-          className="group flex w-fit items-center gap-2 font-heading text-[20px] font-bold tracking-tight text-white transition-colors hover:text-[#FBC078]"
+          className="group flex w-fit items-center gap-2 font-heading text-[20px] font-bold tracking-tight text-white transition-colors hover:text-brand-accent"
         >
           <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
           <span>Application View</span>
@@ -490,7 +507,7 @@ export function ExpertApplicationViewPage() {
             onClick={() => setActiveTab(tab.key)}
             className={cn(
               'flex-1 rounded-lg px-4 py-2.5 text-[13px] font-semibold transition-colors',
-              activeTab === tab.key ? 'bg-[#FBC078]/10 text-[#FBC078]' : 'text-[#888] hover:text-white',
+              activeTab === tab.key ? 'bg-brand-accent/10 text-brand-accent' : 'text-[#888] hover:text-white',
             )}
           >
             {tab.label}
@@ -499,23 +516,16 @@ export function ExpertApplicationViewPage() {
       </div>
 
       {activeTab === 'overview' && (
-        <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
-          <SectionCard title="Applicant Information" icon={<User className="size-4 text-[#FBC078]" />}>
-            <div className="grid grid-cols-2 gap-x-6 gap-y-5">
-              <InfoField label="Full Name" value={application.expert?.fullname} />
-              <InfoField label="Phone number" value={application.expert?.phone} />
-              <InfoField label="Work Email" value={application.expert?.email} />
-              <InfoField label="Service Type" value={profile?.serviceType} />
-              <InfoField label="Current role" value={profile?.industry} />
-              <InfoField label="Service Category" value={profile?.serviceCategory?.join(', ')} />
-            </div>
-          </SectionCard>
-          <SectionCard title="Application Notes" icon={<History className="size-4 text-[#FBC078]" />}>
-            <div className="rounded-lg border border-white/5 bg-black p-4 text-[12px] whitespace-pre-wrap text-[#777]">
-              {applicationNotes}
-            </div>
-          </SectionCard>
-        </div>
+        <SectionCard title="Applicant Information" icon={<User className="size-4 text-brand-accent" />}>
+          <div className="grid grid-cols-2 gap-x-6 gap-y-5">
+            <InfoField label="Full Name" value={application.expert?.fullname} />
+            <InfoField label="Phone number" value={application.expert?.phone} />
+            <InfoField label="Work Email" value={application.expert?.email} />
+            <InfoField label="Service Type" value={applicantServiceType} />
+            <InfoField label="Current role" value={applicantCurrentRole} />
+            <InfoField label="Service Category" value={applicantServiceCategory} />
+          </div>
+        </SectionCard>
       )}
 
       {activeTab === 'kyc' && !showKycDetails && (
@@ -527,7 +537,7 @@ export function ExpertApplicationViewPage() {
       {activeTab === 'kyc' && showKycDetails && (
         <div className="space-y-5">
           <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
-            <SectionCard title="KYC Details" icon={<ClipboardList className="size-4 text-[#FBC078]" />}>
+            <SectionCard title="KYC Details" icon={<ClipboardList className="size-4 text-brand-accent" />}>
               <div className="grid grid-cols-2 gap-x-6 gap-y-5">
               <InfoField
                 label="Individual Name / Organisation Name"
@@ -552,7 +562,7 @@ export function ExpertApplicationViewPage() {
               />
               </div>
             </SectionCard>
-            <SectionCard title="Compliance & Declaration" icon={<ShieldCheck className="size-4 text-[#FBC078]" />}>
+            <SectionCard title="Compliance & Declaration" icon={<ShieldCheck className="size-4 text-brand-accent" />}>
               <div className="space-y-5">
                 <div className="flex items-center justify-between">
                   <span className="text-[12px] font-medium text-[#bbb]">Filed last 2 years IT Returns</span>
@@ -574,7 +584,7 @@ export function ExpertApplicationViewPage() {
               </div>
             </SectionCard>
           </div>
-          <SectionCard title="Uploaded Documents" icon={<FileText className="size-4 text-[#FBC078]" />}>
+          <SectionCard title="Uploaded Documents" icon={<FileText className="size-4 text-brand-accent" />}>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
               <DocumentCard label="PAN Card" url={kycPanUrl} />
               <DocumentCard label="GST Certificate" url={kycGstUrl} />
@@ -587,7 +597,7 @@ export function ExpertApplicationViewPage() {
 
       {activeTab === 'banking' && (
         <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
-          <SectionCard title="Account Information" icon={<Banknote className="size-4 text-[#FBC078]" />}>
+          <SectionCard title="Account Information" icon={<Banknote className="size-4 text-brand-accent" />}>
             <div className="grid grid-cols-2 gap-x-6 gap-y-5">
               <InfoField label="Beneficiary Name" value={banking?.beneficiaryName} />
               <InfoField label="Provided Name" value={banking?.providedName} />
@@ -598,20 +608,20 @@ export function ExpertApplicationViewPage() {
               <InfoField label="IFSC Code" value={banking?.ifscCode} />
             </div>
           </SectionCard>
-          <SectionCard title="Bank Verification Document" icon={<FileText className="size-4 text-[#FBC078]" />}>
+          <SectionCard title="Bank Verification Document" icon={<FileText className="size-4 text-brand-accent" />}>
             <DocumentCard label="Cancelled Cheque" url={cancelledChequeUrl} />
           </SectionCard>
         </div>
       )}
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
-        <SectionCard title="Application Notes" icon={<History className="size-4 text-[#FBC078]" />}>
+        <SectionCard title="Application Notes" icon={<History className="size-4 text-brand-accent" />}>
           <div className="rounded-lg border border-white/5 bg-black p-4 text-[12px] whitespace-pre-wrap text-[#777]">
             {applicationNotes}
           </div>
         </SectionCard>
 
-        <SectionCard title="Decision Controls" icon={<ShieldCheck className="size-4 text-[#FBC078]" />}>
+        <SectionCard title="Decision Controls" icon={<ShieldCheck className="size-4 text-brand-accent" />}>
           <p className="mb-3 text-[11px] font-medium text-[#888]">
             Reviewing:{' '}
             <span className="text-white">
@@ -635,7 +645,7 @@ export function ExpertApplicationViewPage() {
               type="button"
               disabled={decisionDisabled}
               onClick={() => openDecisionModal(decisionTargetForTab, 'approve')}
-              className="rounded-md bg-[#00B761] px-4 py-2.5 text-[11px] font-bold text-white disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-md bg-brand-success px-4 py-2.5 text-[11px] font-bold text-white disabled:cursor-not-allowed disabled:opacity-50"
             >
               Approve
             </button>
@@ -643,7 +653,7 @@ export function ExpertApplicationViewPage() {
               type="button"
               disabled={decisionDisabled}
               onClick={() => openDecisionModal(decisionTargetForTab, 'requestChanges')}
-              className="rounded-md bg-[#FBC078] px-4 py-2.5 text-[11px] font-bold text-black disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-md bg-brand-accent px-4 py-2.5 text-[11px] font-bold text-brand-text-dark hover:bg-brand-gold-from disabled:cursor-not-allowed disabled:opacity-50"
             >
               Ask for Re-Submit
             </button>
@@ -652,7 +662,7 @@ export function ExpertApplicationViewPage() {
                 type="button"
                 disabled={escalateDisabled}
                 onClick={() => openDecisionModal(decisionTargetForTab, 'escalate')}
-                className="rounded-md bg-[#1D4ED8] px-4 py-2.5 text-[11px] font-bold text-white disabled:cursor-not-allowed disabled:opacity-50"
+                className="rounded-md bg-brand-action px-4 py-2.5 text-[11px] font-bold text-white disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Escalate
               </button>
@@ -661,7 +671,7 @@ export function ExpertApplicationViewPage() {
               type="button"
               disabled={decisionDisabled}
               onClick={() => openDecisionModal(decisionTargetForTab, 'reject')}
-              className="rounded-md bg-[#F02D2D] px-4 py-2.5 text-[11px] font-bold text-white disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-md bg-brand-danger px-4 py-2.5 text-[11px] font-bold text-white disabled:cursor-not-allowed disabled:opacity-50"
             >
               Reject Application
             </button>

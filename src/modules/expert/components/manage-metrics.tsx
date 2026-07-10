@@ -52,7 +52,7 @@ const HIDDEN_COLUMNS: AvailableItem[] = [
 
 function TypeBadge({ type }: { type: string }) {
   return (
-    <span className="rounded bg-[#F0C27B]/10 px-2 py-0.5 text-[10px] font-semibold text-[#F0C27B]">
+    <span className="rounded bg-brand-accent/10 px-2 py-0.5 text-[10px] font-semibold text-brand-accent">
       {type}
     </span>
   )
@@ -81,7 +81,7 @@ function DraggableItem({ label, type, removable }: ListItem & { removable?: bool
 
 function AvailableCard({ title, description }: AvailableItem) {
   return (
-    <div className="flex items-center gap-3 rounded-lg border border-white/5 bg-white/[0.03] px-3 py-2.5 transition-colors hover:border-[#F0C27B]/30 hover:bg-white/[0.05]">
+    <div className="flex items-center gap-3 rounded-lg border border-white/5 bg-white/[0.03] px-3 py-2.5 transition-colors hover:border-brand-accent/30 hover:bg-white/[0.05]">
       <GripVertical className="size-4 shrink-0 cursor-grab text-slate-500" aria-hidden="true" />
       <div className="min-w-0">
         <p className="truncate text-sm font-medium text-slate-200">{title}</p>
@@ -90,7 +90,7 @@ function AvailableCard({ title, description }: AvailableItem) {
       <button
         type="button"
         aria-label={`Add ${title}`}
-        className="ml-auto grid size-7 shrink-0 place-items-center rounded-md bg-white/5 text-[#F0C27B] transition-colors hover:bg-[#F0C27B] hover:text-black"
+        className="ml-auto grid size-7 shrink-0 place-items-center rounded-md bg-white/5 text-brand-accent transition-colors hover:bg-brand-accent hover:text-brand-text-dark"
       >
         <Plus className="size-4" aria-hidden="true" />
       </button>

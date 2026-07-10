@@ -91,7 +91,7 @@ export function ExpertProfileAnalyticsPage() {
           <button
             type="button"
             onClick={() => navigate(`/experts/management/profile/${id}`)}
-            className="group flex w-fit items-center gap-2 font-heading text-[20px] font-bold tracking-tight text-white transition-colors hover:text-[#FBC078]"
+            className="group flex w-fit items-center gap-2 font-heading text-[20px] font-bold tracking-tight text-white transition-colors hover:text-brand-accent"
           >
             <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
             <span>Expert Profile Analytics</span>
@@ -118,13 +118,13 @@ export function ExpertProfileAnalyticsPage() {
         </div>
         <div className="flex flex-wrap gap-3">
           <Button
-            className="h-9 bg-[#FBC078] text-black hover:bg-[#eeb46a]"
+            className="h-9"
             onClick={() => navigate('/experts/dashboard/metrics')}
           >
             <SlidersHorizontal className="size-4" />
             Manage Metrics
           </Button>
-          <Button className="h-9 bg-[#FBC078] text-black hover:bg-[#eeb46a]">
+          <Button className="h-9">
             <Upload className="size-4" />
             Export Data
           </Button>
@@ -148,7 +148,7 @@ export function ExpertProfileAnalyticsPage() {
             <div>
               <div className="flex flex-wrap items-center gap-2">
                 <h2 className="text-lg font-bold text-white">{profile.name}</h2>
-                <span className="rounded-md bg-[#FBC078]/15 px-2 py-0.5 text-[10px] font-semibold text-[#FBC078]">
+                <span className="rounded-md bg-brand-accent/15 px-2 py-0.5 text-[10px] font-semibold text-brand-accent">
                   {profile.profession}
                 </span>
               </div>
@@ -156,7 +156,7 @@ export function ExpertProfileAnalyticsPage() {
                 <span>{profile.role}</span>
                 <span className="text-[#333]">•</span>
                 <span className="inline-flex items-center gap-1 text-white">
-                  <Star className="size-3 fill-[#FBC078] text-[#FBC078]" />
+                  <Star className="size-3 fill-brand-accent text-brand-accent" />
                   {profile.rating}
                 </span>
                 <span className="rounded-md bg-emerald-500/15 px-2 py-0.5 text-[10px] font-semibold text-emerald-400">
@@ -275,7 +275,7 @@ export function ExpertProfileAnalyticsPage() {
                     {MOST_ACTIVE_TIME.map((entry) => (
                       <Cell
                         key={entry.day}
-                        fill={entry.day === 'Thu' ? '#FBC078' : '#3A3A3A'}
+                        fill={entry.day === 'Thu' ? 'var(--brand-accent)' : '#3A3A3A'}
                       />
                     ))}
                   </Bar>
@@ -295,7 +295,7 @@ export function ExpertProfileAnalyticsPage() {
                   </div>
                   <div className="h-2 overflow-hidden rounded-full bg-black">
                     <div
-                      className="h-full rounded-full bg-[#FBC078]"
+                      className="h-full rounded-full bg-brand-accent"
                       style={{ width: `${item.percent * 3}%` }}
                     />
                   </div>
@@ -368,8 +368,8 @@ export function ExpertProfileAnalyticsPage() {
               >
                 <defs>
                   <linearGradient id="expertRevenueFill" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#FBC078" stopOpacity={0.45} />
-                    <stop offset="100%" stopColor="#FBC078" stopOpacity={0.02} />
+                    <stop offset="0%" stopColor="var(--brand-accent)" stopOpacity={0.45} />
+                    <stop offset="100%" stopColor="var(--brand-accent)" stopOpacity={0.02} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid stroke="#2a2a2a" strokeDasharray="4 4" />
@@ -397,7 +397,7 @@ export function ExpertProfileAnalyticsPage() {
                 <Area
                   type="monotone"
                   dataKey="revenue"
-                  stroke="#FBC078"
+                  stroke="var(--brand-accent)"
                   strokeWidth={2}
                   fill="url(#expertRevenueFill)"
                 />

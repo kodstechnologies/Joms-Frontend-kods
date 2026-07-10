@@ -156,7 +156,7 @@ const getReviewStatusBadge = (status?: string) => {
   const normalized = (status || '').toLowerCase()
 
   if (normalized === 'in_review' || normalized === 'pending' || normalized === 'submitted') {
-    return { label: 'Review Pending', className: 'bg-[#FBC078]/15 text-[#FBC078]' }
+    return { label: 'Review Pending', className: 'bg-brand-accent/15 text-brand-accent' }
   }
 
   if (normalized === 'live') {
@@ -734,7 +734,7 @@ export const ServiceViewPage = () => {
     <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
       <div className="space-y-5">
         <div>
-          <h1 className="text-[22px] font-semibold leading-tight text-white underline decoration-[#FBC078] decoration-2 underline-offset-4">
+          <h1 className="text-[22px] font-semibold leading-tight text-white underline decoration-brand-accent decoration-2 underline-offset-4">
             {consultationTitle}
           </h1>
           {categoryName && <p className="mt-2 text-[12px] text-[#777]">{categoryName}</p>}
@@ -788,19 +788,19 @@ export const ServiceViewPage = () => {
       <div className="space-y-5">
         <div className="grid grid-cols-3 gap-3">
           <div className="flex flex-col items-center gap-2 rounded-lg border border-white/5 bg-black p-4 text-center">
-            <Phone className="size-4 text-[#FBC078]" aria-hidden="true" />
+            <Phone className="size-4 text-brand-accent" aria-hidden="true" />
             <span className="text-[10px] text-[#777]">Mode</span>
             <span className="text-[11px] font-semibold text-white">
               {formatConsultationMode(service.mode || service.modeOfConsultation)}
             </span>
           </div>
           <div className="flex flex-col items-center gap-2 rounded-lg border border-white/5 bg-black p-4 text-center">
-            <Languages className="size-4 text-[#FBC078]" aria-hidden="true" />
+            <Languages className="size-4 text-brand-accent" aria-hidden="true" />
             <span className="text-[10px] text-[#777]">Language</span>
             <span className="text-[11px] font-semibold text-white">{consultationLanguages}</span>
           </div>
           <div className="flex flex-col items-center gap-2 rounded-lg border border-white/5 bg-black p-4 text-center">
-            <Clock className="size-4 text-[#FBC078]" aria-hidden="true" />
+            <Clock className="size-4 text-brand-accent" aria-hidden="true" />
             <span className="text-[10px] text-[#777]">FollowUps</span>
             <span className="text-[11px] font-semibold text-white">{followUpLabel}</span>
           </div>
@@ -978,7 +978,7 @@ export const ServiceViewPage = () => {
         <button
           type="button"
           onClick={handleBack}
-          className="group flex w-fit items-center gap-2 font-heading text-[20px] font-bold tracking-tight text-white transition-colors hover:text-[#FBC078]"
+          className="group flex w-fit items-center gap-2 font-heading text-[20px] font-bold tracking-tight text-white transition-colors hover:text-brand-accent"
         >
           <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
           <span>{pageTitle}</span>
@@ -1070,7 +1070,7 @@ export const ServiceViewPage = () => {
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
         <div className="rounded-xl border border-white/5 bg-[#111111] p-5">
           <div className="mb-4 flex items-center gap-2 text-[14px] font-semibold text-white">
-            <History className="size-4 text-[#FBC078]" aria-hidden="true" />
+            <History className="size-4 text-brand-accent" aria-hidden="true" />
             <h3>Internal Notes *</h3>
           </div>
           <div className="min-h-[120px] rounded-lg border border-white/5 bg-black p-4 text-[12px] text-[#777]">
@@ -1088,14 +1088,14 @@ export const ServiceViewPage = () => {
         {showApprovalControls && (
           <div className="rounded-xl border border-white/5 bg-[#111111] p-5">
             <div className="mb-4 flex items-center gap-2 text-[14px] font-semibold text-white">
-              <ShieldCheck className="size-4 text-[#FBC078]" aria-hidden="true" />
+              <ShieldCheck className="size-4 text-brand-accent" aria-hidden="true" />
               <h3>Decision Controls</h3>
             </div>
             <div className="flex flex-wrap gap-3">
               <button
                 type="button"
                 onClick={() => openDecisionModal('approve')}
-                className="flex items-center gap-2 rounded-md bg-[#00B761] px-4 py-2.5 text-[11px] font-bold text-white"
+                className="flex items-center gap-2 rounded-md bg-brand-success px-4 py-2.5 text-[11px] font-bold text-white"
               >
                 Approve
                 <Check className="size-3.5" />
@@ -1103,7 +1103,7 @@ export const ServiceViewPage = () => {
               <button
                 type="button"
                 onClick={() => openDecisionModal('requestChanges')}
-                className="flex items-center gap-2 rounded-md bg-[#FBC078] px-4 py-2.5 text-[11px] font-bold text-black"
+                className="flex items-center gap-2 rounded-md bg-brand-accent px-4 py-2.5 text-[11px] font-bold text-brand-text-dark hover:bg-brand-gold-from"
               >
                 Ask for Re-Submit
                 <RotateCcw className="size-3.5" />
@@ -1113,7 +1113,7 @@ export const ServiceViewPage = () => {
                   type="button"
                   disabled={escalateDisabled}
                   onClick={() => openDecisionModal('escalate')}
-                  className="flex items-center gap-2 rounded-md bg-[#1D4ED8] px-4 py-2.5 text-[11px] font-bold text-white disabled:cursor-not-allowed disabled:opacity-50"
+                  className="flex items-center gap-2 rounded-md bg-brand-action px-4 py-2.5 text-[11px] font-bold text-white disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   Escalate
                   <ArrowUp className="size-3.5" />
@@ -1122,7 +1122,7 @@ export const ServiceViewPage = () => {
               <button
                 type="button"
                 onClick={() => openDecisionModal('reject')}
-                className="flex items-center gap-2 rounded-md bg-[#F02D2D] px-4 py-2.5 text-[11px] font-bold text-white"
+                className="flex items-center gap-2 rounded-md bg-brand-danger px-4 py-2.5 text-[11px] font-bold text-white"
               >
                 Reject Application
                 <X className="size-3.5" />

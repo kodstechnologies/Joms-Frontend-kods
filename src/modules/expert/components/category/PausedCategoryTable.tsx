@@ -113,7 +113,7 @@ const PausedCategoryTable = () => {
         </button>
 
         <div className="flex gap-2">
-          <button className="h-9 w-9 rounded bg-[#F6C97A] text-black">
+          <button className="h-9 w-9 rounded bg-brand-accent text-brand-text-dark">
             1
           </button>
 

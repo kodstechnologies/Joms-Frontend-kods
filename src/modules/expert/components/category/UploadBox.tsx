@@ -70,8 +70,8 @@ const UploadBox = ({
         } ${
           disabled
             ? "cursor-not-allowed opacity-60"
-            : "cursor-pointer hover:border-[#FFC16B]"
-        } ${preview ? "border-[#FFC16B]/60" : "border-[#333333]"}`}
+            : "cursor-pointer hover:border-brand-accent"
+        } ${preview ? "border-brand-accent/60" : "border-[#333333]"}`}
         style={{ backgroundColor: categoryFormTheme.uploadBg }}
       >
         {preview ? (

@@ -501,7 +501,7 @@ export const VenueManagementPage = () => {
                 </div>
                 <div className="flex w-full flex-col items-center gap-3 md:w-auto md:flex-row">
                     <Button
-                        className="w-full md:w-auto h-9 bg-[#FBC078] text-black hover:bg-[#eeb46a]"
+                        className="h-9 w-full md:w-auto"
                         onClick={() => navigate('/venues/dashboard/metrics')}
                     >
                         <BarChart3 className="size-4" />
@@ -509,7 +509,7 @@ export const VenueManagementPage = () => {
                     </Button>
                     <Button
                         type="button"
-                        className="w-full md:w-auto h-9 bg-[#FBC078] text-black hover:bg-[#eeb46a]"
+                        className="h-9 w-full md:w-auto"
                         onClick={() => navigate('/venues/management/onboarding')}
                     >
                         <Plus className="size-4" />

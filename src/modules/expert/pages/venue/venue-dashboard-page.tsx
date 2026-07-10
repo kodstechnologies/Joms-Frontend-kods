@@ -143,7 +143,7 @@ export const VenueDashboardPage = () => {
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <Button
-            className="h-9 bg-[#FBC078] text-black hover:bg-[#eeb46a]"
+            className="h-9"
             onClick={() => navigate('/venues/dashboard/metrics')}
           >
             <BarChart3 className="size-4" />
@@ -151,7 +151,7 @@ export const VenueDashboardPage = () => {
           </Button>
 
           <Button
-            className="h-9 bg-[#FBC078] text-black hover:bg-[#eeb46a]"
+            className="h-9"
             onClick={() => toast.message('Export coming soon')}
           >
             <Download className="size-4" />
@@ -178,7 +178,7 @@ export const VenueDashboardPage = () => {
             <div className="relative">
               <select
                 defaultValue="3"
-                className="h-9 cursor-pointer appearance-none rounded-lg border border-white/10 bg-black px-3 pr-8 text-[11px] font-medium text-white outline-none focus:border-[#FBC078]/50"
+                className="h-9 cursor-pointer appearance-none rounded-lg border border-white/10 bg-black px-3 pr-8 text-[11px] font-medium text-white outline-none focus:border-brand-accent/50"
               >
                 <option value="3">Last 3 Months</option>
                 <option value="6">Last 6 Months</option>
@@ -249,9 +249,9 @@ export const VenueDashboardPage = () => {
                 type="monotone"
                 name="Avg Revenue/Venue"
                 dataKey="avgRevenue"
-                stroke="#FBC078"
+                stroke="var(--brand-accent)"
                 strokeWidth={2}
-                dot={{ r: 3, fill: '#FBC078' }}
+                dot={{ r: 3, fill: 'var(--brand-accent)' }}
               />
             </ComposedChart>
           </ResponsiveContainer>
@@ -307,7 +307,7 @@ export const VenueDashboardPage = () => {
                     <div className="flex items-center gap-2">
                       <div className="h-1.5 w-20 overflow-hidden rounded-full bg-white/10">
                         <div
-                          className="h-full rounded-full bg-[#FBC078]"
+                          className="h-full rounded-full bg-brand-accent"
                           style={{ width: `${venue.utilization}%` }}
                         />
                       </div>
@@ -317,7 +317,7 @@ export const VenueDashboardPage = () => {
                   <td className="px-3 py-3 font-semibold text-white">{venue.revenue}</td>
                   <td className="px-3 py-3">
                     <span className="inline-flex items-center gap-1">
-                      <Star className="size-3.5 fill-[#FBC078] text-[#FBC078]" />
+                      <Star className="size-3.5 fill-brand-accent text-brand-accent" />
                       <span className="font-semibold text-white">{venue.rating}</span>
                     </span>
                   </td>

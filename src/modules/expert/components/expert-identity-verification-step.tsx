@@ -4,7 +4,7 @@ import { Upload } from 'lucide-react'
 import type { ExpertOnboardingFormData } from '../utils/expert-onboarding-form'
 
 const fieldClass =
-  'h-11 w-full rounded-md bg-black px-3 text-sm text-white outline-none placeholder:text-[#666] focus:ring-1 focus:ring-[#FBC078]/40'
+  'h-11 w-full rounded-md bg-black px-3 text-sm text-white outline-none placeholder:text-[#666] focus:ring-1 focus:ring-brand-accent/40'
 
 const ID_TYPE_OPTIONS = ['Aadhaar', 'PAN', 'Passport', 'Driving License', 'Voter ID']
 
@@ -44,10 +44,10 @@ export const ExpertIdentityVerificationStep = ({ formData, setFormData }: Props)
       <button
         type="button"
         onClick={() => ref.current?.click()}
-        className="flex h-16 w-full items-center justify-center rounded-md border border-dashed border-[#444] bg-black px-3 text-center text-[11px] text-[#999] transition-colors hover:border-[#FBC078]/50"
+        className="flex h-16 w-full items-center justify-center rounded-md border border-dashed border-[#444] bg-black px-3 text-center text-[11px] text-[#999] transition-colors hover:border-brand-accent/50"
       >
         {formData[nameKey] ? (
-          <span className="truncate text-[#FBC078]">{formData[nameKey]}</span>
+          <span className="truncate text-brand-accent">{formData[nameKey]}</span>
         ) : (
           <span className="flex items-center gap-2">
             <Upload className="size-3.5" />

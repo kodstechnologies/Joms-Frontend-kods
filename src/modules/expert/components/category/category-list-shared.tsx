@@ -58,7 +58,7 @@ export function CategoryManagementPageHeader({
       </div>
       <div className="flex w-full flex-col items-center gap-3 md:w-auto md:flex-row">
         <Button
-          className="h-9 w-full bg-[#FBC078] text-black hover:bg-[#eeb46a] md:w-auto"
+          className="h-9 w-full md:w-auto"
           onClick={() => navigate('/services/dashboard/metrics')}
         >
           <SlidersHorizontal className="size-4" />
@@ -67,7 +67,7 @@ export function CategoryManagementPageHeader({
 
         <Button
           type="button"
-          className="h-9 w-full bg-[#FBC078] text-black hover:bg-[#eeb46a] md:w-auto"
+          className="h-9 w-full md:w-auto"
           onClick={() => navigate('/venues/categories/management/create')}
         >
           <Plus className="size-4" />
