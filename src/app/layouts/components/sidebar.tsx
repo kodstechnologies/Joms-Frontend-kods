@@ -31,8 +31,8 @@ export function Sidebar({ onNavigate, compact = false }: { onNavigate?: () => vo
   }
 
   return (
-    <div className="flex h-[calc(100vh-4rem)] flex-col px-3 pb-6 pt-2 md:h-[calc(100dvh-4rem)]">
-      <nav className="flex-1 space-y-1 overflow-y-auto pb-4">
+    <div className="flex h-full flex-col px-3 pb-6 pt-2">
+      <nav className="flex-1 space-y-0.5 overflow-y-auto pb-4 [scrollbar-width:thin] [scrollbar-color:rgba(255,255,255,0.2)_transparent]">
         {visibleNavigation.map((item) => (
           <SidebarGroup
             key={item.key}

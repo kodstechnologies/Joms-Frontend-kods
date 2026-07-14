@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
+import { PanelLeftClose } from 'lucide-react'
 import { cn } from '@/shared/lib/cn'
 
 import { NotificationPanel } from '@/app/layouts/components/notification-dropdown'
@@ -28,21 +29,57 @@ export function DashboardLayout() {
     setIsNotificationsOpen(false)
   }, [location.pathname])
 
-  const showCompact = isCollapsed || isTabletCompact
+  useEffect(() => {
+    if (isTabletCompact) {
+      setIsCollapsed(true)
+    }
+  }, [isTabletCompact])
+
+  const showCompact = isCollapsed
 
   return (
     <div className={cn('relative h-dvh overflow-hidden text-brand-text', uiTokens.shellBg)}>
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 z-40 hidden border-r border-white/10 md:block transition-[width] duration-300 ease-in-out overflow-hidden',
+          'fixed inset-y-0 left-0 z-40 hidden border-r border-white/10 md:flex md:flex-col transition-[width] duration-300 ease-in-out overflow-hidden',
           uiTokens.sidebarBg,
-          showCompact ? 'w-[5.75rem]' : 'w-[18.5rem]'
+          showCompact ? 'w-[5.75rem]' : 'w-[18.5rem]',
         )}
       >
-        <div className="flex h-16 items-center border-b border-white/5 px-3">
-          {showCompact ? null : <SidebarBrand />}
+        {/* Sidebar header: brand + PanelLeftClose stay inside the sidebar */}
+        <div
+          className={cn(
+            'relative z-10 flex h-16 shrink-0 items-center border-b border-white/5',
+            showCompact ? 'justify-center px-2' : 'gap-2 px-3 pr-2',
+          )}
+        >
+          {showCompact ? (
+            <button
+              type="button"
+              onClick={() => setIsCollapsed(false)}
+              className="grid size-10 place-items-center rounded-xl text-white/70 transition-colors hover:bg-white/5 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent/30"
+              aria-label="Expand sidebar"
+            >
+              <PanelLeftClose className="size-5" strokeWidth={1.75} />
+            </button>
+          ) : (
+            <>
+              <SidebarBrand className="min-w-0 flex-1 overflow-hidden" />
+              <button
+                type="button"
+                onClick={() => setIsCollapsed(true)}
+                className="grid size-9 shrink-0 place-items-center rounded-lg text-white/70 transition-colors hover:bg-white/5 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent/30"
+                aria-label="Collapse sidebar"
+              >
+                <PanelLeftClose className="size-5" strokeWidth={1.75} />
+              </button>
+            </>
+          )}
         </div>
-        <Sidebar compact={showCompact} />
+
+        <div className="min-h-0 flex-1">
+          <Sidebar compact={showCompact} />
+        </div>
       </aside>
 
       <SidebarMobile open={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
@@ -53,13 +90,12 @@ export function DashboardLayout() {
 
       <div
         className={cn(
-          "relative flex h-dvh min-w-0 flex-1 flex-col overflow-hidden transition-[padding] duration-300 ease-in-out",
-          showCompact ? "md:pl-[5.75rem]" : "md:pl-[18.5rem]"
+          'relative flex h-dvh min-w-0 flex-1 flex-col overflow-hidden transition-[padding] duration-300 ease-in-out',
+          showCompact ? 'md:pl-[5.75rem]' : 'md:pl-[18.5rem]',
         )}
       >
         <Topbar
           onMenuClick={() => setIsSidebarOpen((prev) => !prev)}
-          onToggleCollapse={() => setIsCollapsed((prev) => !prev)}
           notificationsOpen={isNotificationsOpen}
           onNotificationsOpen={() => setIsNotificationsOpen(true)}
           showCompact={showCompact}
@@ -70,7 +106,7 @@ export function DashboardLayout() {
         >
           <div className="py-4 lg:py-6">
             <PageContainer>
-              <Outlet/>
+              <Outlet />
             </PageContainer>
           </div>
         </main>

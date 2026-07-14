@@ -13,7 +13,7 @@ type SidebarItemProps = {
   active?: boolean
   expandable?: boolean
   expanded?: boolean
-  dimmed?: boolean
+  disabled?: boolean
   moduleActive?: boolean
   onToggle?: () => void
   onNavigate?: () => void
@@ -29,7 +29,7 @@ export function SidebarItem({
   active,
   expandable,
   expanded,
-  dimmed = false,
+  disabled = false,
   moduleActive = false,
   onToggle,
   onNavigate,
@@ -53,18 +53,15 @@ export function SidebarItem({
           'flex items-center gap-3 text-sm transition-all duration-200',
           compact ? 'justify-center py-1.5' : 'py-2 pr-3',
           paddingLeft,
-          dimmed && !compact && 'opacity-35',
           showCompactActive
             ? 'mx-auto size-10 rounded-xl bg-white text-brand-text-dark shadow-sm'
             : compact
-              ? 'mx-auto size-10 text-white/35'
-              : resolvedActive && depth > 0
+              ? 'mx-auto size-10 text-white/55'
+              : resolvedActive
                 ? 'text-white'
-                : resolvedActive
-                  ? 'text-white'
-                  : depth > 0
-                    ? 'text-white/45 hover:text-white/70'
-                    : 'text-white/80 hover:text-white',
+                : depth > 0
+                  ? 'text-white/45 hover:text-white/70'
+                  : 'text-white/80 hover:text-white',
         )}
       >
         {Icon ? (
@@ -109,7 +106,7 @@ export function SidebarItem({
     )
   }
 
-  if (to) {
+  if (to && !disabled) {
     return (
       <NavLink
         to={to}
@@ -119,6 +116,18 @@ export function SidebarItem({
       >
         {({ isActive }) => renderContent(isActive)}
       </NavLink>
+    )
+  }
+
+  if (disabled) {
+    return (
+      <div
+        aria-disabled="true"
+        aria-label={compact ? label : undefined}
+        className="cursor-default select-none"
+      >
+        {renderContent(active)}
+      </div>
     )
   }
 
