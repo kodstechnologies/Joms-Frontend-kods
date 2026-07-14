@@ -1,16 +1,24 @@
 import { useMemo } from 'react'
+import { useLocation } from 'react-router-dom'
+import { LogOut } from 'lucide-react'
 
 import { SidebarGroup } from '@/app/layouts/components/sidebar-group'
 import { getVisibleNavigation } from '@/app/layouts/navigation/navigation.filter'
+import { findActiveTopLevelKey } from '@/app/layouts/navigation/sidebar-utils'
 import { useLogoutMutation } from '@/modules/auth/hooks/use-logout-mutation'
 import { useAuthStore } from '@/modules/auth/store/auth-store'
-import { LogOut } from 'lucide-react'
+import { cn } from '@/shared/lib/cn'
 
 export function Sidebar({ onNavigate, compact = false }: { onNavigate?: () => void; compact?: boolean }) {
   const clearSession = useAuthStore((state) => state.clearSession)
   const user = useAuthStore((state) => state.user)
+  const location = useLocation()
   const { mutateAsync: logout, isPending: isLoggingOut } = useLogoutMutation()
   const visibleNavigation = useMemo(() => getVisibleNavigation(user), [user])
+  const activeTopLevelKey = useMemo(
+    () => findActiveTopLevelKey(visibleNavigation, location.pathname),
+    [location.pathname, visibleNavigation],
+  )
 
   const handleLogout = async () => {
     try {
@@ -23,21 +31,16 @@ export function Sidebar({ onNavigate, compact = false }: { onNavigate?: () => vo
   }
 
   return (
-    <div className="flex h-[calc(100vh-3.5rem)] flex-col px-3 pb-6 pt-1 md:h-[calc(100dvh-3.5rem)]">
-      <div className={compact ? 'mb-4 flex items-center justify-center' : 'mb-5 mt-2 px-2'}>
-        <div className="flex items-center gap-2">
-          <div className="size-2 rounded-full bg-brand-accent" />
-          {!compact ? (
-            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-brand-muted">
-              JOMS Applications
-            </p>
-          ) : null}
-        </div>
-      </div>
-
-      <nav className="flex-1 space-y-2 overflow-y-auto pb-4">
+    <div className="flex h-[calc(100vh-4rem)] flex-col px-3 pb-6 pt-2 md:h-[calc(100dvh-4rem)]">
+      <nav className="flex-1 space-y-1 overflow-y-auto pb-4">
         {visibleNavigation.map((item) => (
-          <SidebarGroup key={item.key} item={item} compact={compact} onNavigate={onNavigate} />
+          <SidebarGroup
+            key={item.key}
+            item={item}
+            compact={compact}
+            activeTopLevelKey={activeTopLevelKey}
+            onNavigate={onNavigate}
+          />
         ))}
       </nav>
 
@@ -47,8 +50,11 @@ export function Sidebar({ onNavigate, compact = false }: { onNavigate?: () => vo
           void handleLogout()
         }}
         disabled={isLoggingOut}
-        className="mt-2 flex items-center gap-2 rounded-brand-md border border-brand-danger/30 bg-brand-danger/10 px-3 py-2.5 text-sm font-semibold text-brand-danger transition-colors hover:bg-brand-danger/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent/30 disabled:cursor-not-allowed disabled:opacity-60"
-        aria-label={compact ? 'Log Out' : 'Log Out'}
+        className={cn(
+          'mt-2 flex items-center text-sm font-semibold text-brand-danger transition-colors hover:text-brand-danger/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent/30 disabled:cursor-not-allowed disabled:opacity-60',
+          compact ? 'justify-center py-3' : 'gap-2 rounded-brand-md px-3 py-2.5',
+        )}
+        aria-label="Log Out"
       >
         <LogOut className="size-4" />
         {!compact ? <span className="truncate">{isLoggingOut ? 'Logging out…' : 'Log Out'}</span> : null}

@@ -35,6 +35,7 @@ import {
 } from '@/shared/components/modal/decision-action-modal'
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
+import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 
 const ACTION_MENU_CLASS = 'border border-slate-200 bg-white shadow-xl'
 const ACTION_ITEM_CLASS =
@@ -78,6 +79,10 @@ export const ExpertManagementPage = () => {
         setCurrentPage,
         activeStatus,
     } = useExpertStore()
+
+    const { onAdvancedFilter, onExport, modals: exportFilterModals } = useModuleExportFilters({
+        moduleKey: 'expert-management',
+    })
 
     const { data, isLoading } = useExperts({
         page: currentPage,
@@ -648,8 +653,8 @@ export const ExpertManagementPage = () => {
                 searchValue={searchQuery}
                 onSearchChange={setSearchQuery}
                 searchPlaceholder="Search by name or expert ID"
-                onAdvancedFilter={() => toast.message('Advanced filters are coming soon')}
-                onExport={() => toast.message('Expert export is coming soon')}
+                onAdvancedFilter={onAdvancedFilter}
+                onExport={onExport}
                 pagination={{
                     page: currentPage,
                     pageSize: meta?.pagination.limit || 10,
@@ -660,6 +665,8 @@ export const ExpertManagementPage = () => {
                 resourceLabel="experts"
                 emptyMessage="No experts found."
             />
+
+            {exportFilterModals}
 
             <DecisionActionModal
                 open={Boolean(suspendExpertTarget)}

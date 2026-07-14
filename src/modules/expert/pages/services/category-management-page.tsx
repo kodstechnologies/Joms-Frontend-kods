@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 
 import { DataTable } from '@/shared/components/table/data-table'
+import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 
 import { StatCard } from '../../components/stat-card'
 import { categoryColumns } from '../../components/category/category-table-columns'
@@ -20,9 +20,12 @@ const PAGE_SIZE = 10
 export function CategoryManagementPage() {
   const [searchValue, setSearchValue] = useState('')
   const [page, setPage] = useState(1)
-  const navigate = useNavigate()
 
   const scope = useCategoryManagementScope()
+
+  const { onAdvancedFilter, onExport, modals: exportFilterModals } = useModuleExportFilters({
+    moduleKey: 'service-category-management',
+  })
 
   const { data, isLoading, isError } = useServiceCategories({
     status: 'ACTIVE',
@@ -94,8 +97,8 @@ export function CategoryManagementPage() {
           setPage(1)
         }}
         searchPlaceholder="Search by name or ID"
-        onAdvancedFilter={() => navigate(categoryPath(scope, 'filter'))}
-        onExport={() => {}}
+        onAdvancedFilter={onAdvancedFilter}
+        onExport={onExport}
         isLoading={isLoading}
         pagination={{
           page,
@@ -106,6 +109,8 @@ export function CategoryManagementPage() {
         }}
         resourceLabel="categories"
       />
+
+      {exportFilterModals}
     </div>
   )
 }

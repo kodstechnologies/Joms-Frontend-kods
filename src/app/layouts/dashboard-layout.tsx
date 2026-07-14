@@ -4,6 +4,7 @@ import { cn } from '@/shared/lib/cn'
 
 import { NotificationPanel } from '@/app/layouts/components/notification-dropdown'
 import { Sidebar } from '@/app/layouts/components/sidebar'
+import { SidebarBrand } from '@/app/layouts/components/sidebar-brand'
 import { SidebarMobile } from '@/app/layouts/components/sidebar-mobile'
 import { Topbar } from '@/app/layouts/components/topbar'
 import { PageContainer } from '@/shared/components/responsive/page-container'
@@ -38,13 +39,8 @@ export function DashboardLayout() {
           showCompact ? 'w-[5.75rem]' : 'w-[18.5rem]'
         )}
       >
-        <div className="flex h-16 items-center px-3 overflow-hidden whitespace-nowrap">
-          <div className="flex items-center gap-2">
-            <div className="size-2 rounded-full bg-brand-accent shrink-0" />
-            {!showCompact ? (
-              <p className="text-sm font-semibold tracking-tight text-brand-text uppercase">JOMS</p>
-            ) : null}
-          </div>
+        <div className="flex h-16 items-center border-b border-white/5 px-3">
+          {showCompact ? null : <SidebarBrand />}
         </div>
         <Sidebar compact={showCompact} />
       </aside>
@@ -66,6 +62,7 @@ export function DashboardLayout() {
           onToggleCollapse={() => setIsCollapsed((prev) => !prev)}
           notificationsOpen={isNotificationsOpen}
           onNotificationsOpen={() => setIsNotificationsOpen(true)}
+          showCompact={showCompact}
         />
         <main
           className="min-h-0 flex-1 overflow-y-auto overscroll-contain scroll-smooth"

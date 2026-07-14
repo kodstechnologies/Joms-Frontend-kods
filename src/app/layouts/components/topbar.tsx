@@ -2,6 +2,7 @@ import { Menu } from 'lucide-react'
 import { useLocation, useNavigate } from 'react-router-dom'
 
 import { NotificationTrigger } from '@/app/layouts/components/notification-dropdown'
+import { SidebarBrand } from '@/app/layouts/components/sidebar-brand'
 import { getVisibleNavigation } from '@/app/layouts/navigation/navigation.filter'
 import type { NavItem } from '@/app/layouts/navigation/navigation.config'
 import { useAuthStore } from '@/modules/auth/store/auth-store'
@@ -31,11 +32,13 @@ export function Topbar({
   onToggleCollapse,
   notificationsOpen,
   onNotificationsOpen,
+  showCompact = false,
 }: {
   onMenuClick: () => void
   onToggleCollapse: () => void
   notificationsOpen: boolean
   onNotificationsOpen: () => void
+  showCompact?: boolean
 }) {
   const location = useLocation()
   const navigate = useNavigate()
@@ -71,15 +74,19 @@ export function Topbar({
           <button
             type="button"
             onClick={onToggleCollapse}
-            className="hidden rounded-brand-md p-2 text-brand-stroke hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent/30 md:flex"
+            className="hidden rounded-brand-md p-2 text-white/60 hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent/30 md:flex"
             aria-label="Toggle sidebar"
           >
             <Menu className="size-5" />
           </button>
-          <div>
-            <p className="text-[15px] font-semibold tracking-tight text-brand-text">{title}</p>
-            <p className="text-xs leading-relaxed text-brand-muted">Command Operations Centre</p>
-          </div>
+          {showCompact ? (
+            <SidebarBrand />
+          ) : (
+            <div>
+              <p className="text-[15px] font-semibold tracking-tight text-brand-text">{title}</p>
+              <p className="text-xs leading-relaxed text-brand-muted">Command Operations Centre</p>
+            </div>
+          )}
         </div>
 
         <div className="flex items-center gap-3">

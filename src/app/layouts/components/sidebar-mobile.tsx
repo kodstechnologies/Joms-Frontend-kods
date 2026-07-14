@@ -2,6 +2,7 @@ import { X } from 'lucide-react'
 import { useEffect } from 'react'
 
 import { Sidebar } from '@/app/layouts/components/sidebar'
+import { SidebarBrand } from '@/app/layouts/components/sidebar-brand'
 import { cn } from '@/shared/lib/cn'
 
 type SidebarMobileProps = {
@@ -34,11 +35,8 @@ export function SidebarMobile({ open, onClose }: SidebarMobileProps) {
         aria-modal="true"
         aria-label="Sidebar navigation"
       >
-        <div className="flex h-14 items-center justify-between px-4">
-          <div className="flex items-center gap-2">
-            <div className="size-2 rounded-full bg-brand-accent" />
-            <p className="text-sm font-semibold text-brand-text">JOMS</p>
-          </div>
+        <div className="flex h-16 items-center justify-between border-b border-white/5 px-4">
+          <SidebarBrand />
           <button
             type="button"
             onClick={onClose}

@@ -34,6 +34,7 @@ import {
 } from '@/shared/components/modal/decision-action-modal'
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
+import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 import {
     getVenueApiId,
     getVenueDisplayId,
@@ -83,6 +84,10 @@ export const VenueManagementPage = () => {
         activeStatus,
         setActiveStatus,
     } = useVenueStore()
+
+    const { onAdvancedFilter, onExport, modals: exportFilterModals } = useModuleExportFilters({
+        moduleKey: 'venue-management',
+    })
 
     const { data, isLoading } = useVenues({
         page: currentPage,
@@ -592,8 +597,8 @@ export const VenueManagementPage = () => {
                 searchValue={searchQuery}
                 onSearchChange={setSearchQuery}
                 searchPlaceholder="Search by venue name or venue ID"
-                onAdvancedFilter={() => toast.message('Advanced filters are coming soon')}
-                onExport={() => toast.message('Venue export is coming soon')}
+                onAdvancedFilter={onAdvancedFilter}
+                onExport={onExport}
                 pagination={{
                     page: currentPage,
                     pageSize: meta?.pagination.limit || 10,
@@ -604,6 +609,8 @@ export const VenueManagementPage = () => {
                 resourceLabel="venues"
                 emptyMessage="No venues found."
             />
+
+            {exportFilterModals}
 
             <DecisionActionModal
                 open={Boolean(suspendVenueTarget)}

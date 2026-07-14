@@ -36,6 +36,7 @@ import {
 } from '@/shared/components/modal/decision-action-modal'
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
+import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 
 const formatPrice = (price: number) =>
   new Intl.NumberFormat('en-IN', {
@@ -82,6 +83,10 @@ export const ServiceManagementPage = () => {
     activeStatus,
     setActiveStatus,
   } = useServiceStore()
+
+  const { onAdvancedFilter, onExport, modals: exportFilterModals } = useModuleExportFilters({
+    moduleKey: 'service-management',
+  })
 
   const { data, isLoading } = useServices({
     page: currentPage,
@@ -575,8 +580,8 @@ export const ServiceManagementPage = () => {
         searchValue={searchQuery}
         onSearchChange={setSearchQuery}
         searchPlaceholder="Search by name, ID or profession"
-        onAdvancedFilter={() => toast.message('Advanced filters are coming soon')}
-        onExport={() => toast.message('Service export is coming soon')}
+        onAdvancedFilter={onAdvancedFilter}
+        onExport={onExport}
         pagination={{
           page: currentPage,
           pageSize: meta?.pagination.limit || 10,
@@ -587,6 +592,8 @@ export const ServiceManagementPage = () => {
         resourceLabel="services"
         emptyMessage="No services found."
       />
+
+      {exportFilterModals}
 
       <DecisionActionModal
         open={Boolean(suspendServiceTarget)}
