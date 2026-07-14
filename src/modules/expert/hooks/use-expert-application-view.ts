@@ -22,30 +22,50 @@ export const useExpertApplicationView = (id?: string) =>
     enabled: Boolean(id),
   })
 
-export const useUpdateExpertKycStatus = (id?: string) => {
+const invalidateExpertApplicationQueries = (
+  queryClient: ReturnType<typeof useQueryClient>,
+  partnerId?: string,
+) => {
+  if (partnerId) {
+    void queryClient.invalidateQueries({
+      queryKey: ['expert-application-view', partnerId],
+    })
+    void queryClient.refetchQueries({
+      queryKey: ['expert-application-view', partnerId],
+    })
+  } else {
+    void queryClient.invalidateQueries({ queryKey: ['expert-application-view'] })
+  }
+  void queryClient.invalidateQueries({ queryKey: ['my-tasks'] })
+  void queryClient.invalidateQueries({ queryKey: ['all-escalations'] })
+  void queryClient.invalidateQueries({ queryKey: ['escalation-metrics'] })
+  void queryClient.invalidateQueries({ queryKey: ['experts'] })
+}
+
+export const useUpdateExpertKycStatus = (
+  kycId?: string,
+  partnerId?: string,
+) => {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (payload: KycDecisionPayload) =>
-      updateExpertKycStatus(id as string, payload),
+      updateExpertKycStatus(kycId as string, payload),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['expert-application-view', id] })
-      queryClient.invalidateQueries({ queryKey: ['my-tasks'] })
-      queryClient.invalidateQueries({ queryKey: ['all-escalations'] })
-      queryClient.invalidateQueries({ queryKey: ['escalation-metrics'] })
+      invalidateExpertApplicationQueries(queryClient, partnerId)
     },
   })
 }
 
-export const useUpdateExpertBankingStatus = (id?: string) => {
+export const useUpdateExpertBankingStatus = (
+  bankingId?: string,
+  partnerId?: string,
+) => {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (payload: BankingDecisionPayload) =>
-      updateExpertBankingStatus(id as string, payload),
+      updateExpertBankingStatus(bankingId as string, payload),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['expert-application-view', id] })
-      queryClient.invalidateQueries({ queryKey: ['my-tasks'] })
-      queryClient.invalidateQueries({ queryKey: ['all-escalations'] })
-      queryClient.invalidateQueries({ queryKey: ['escalation-metrics'] })
+      invalidateExpertApplicationQueries(queryClient, partnerId)
     },
   })
 }

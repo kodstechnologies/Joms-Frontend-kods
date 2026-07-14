@@ -216,8 +216,8 @@ export function ExpertApplicationViewPage() {
     [categoriesResponse?.data, expert],
   )
 
-  const updateKyc = useUpdateExpertKycStatus(application?.kyc?._id)
-  const updateBanking = useUpdateExpertBankingStatus(application?.banking?._id)
+  const updateKyc = useUpdateExpertKycStatus(application?.kyc?._id, id)
+  const updateBanking = useUpdateExpertBankingStatus(application?.banking?._id, id)
   const escalateApplication = useEscalateExpertApplication(id)
   const startEscalationReview = useStartEscalationReviewOnView(id)
   const { data: escalationData } = useAdminEscalation('partner', id)
@@ -499,20 +499,24 @@ export function ExpertApplicationViewPage() {
         </div>
       </div>
 
-      <div className="flex items-center gap-2 rounded-xl border border-white/5 bg-[#111111] p-1.5">
-        {TABS.map((tab) => (
-          <button
-            key={tab.key}
-            type="button"
-            onClick={() => setActiveTab(tab.key)}
-            className={cn(
-              'flex-1 rounded-lg px-4 py-2.5 text-[13px] font-semibold transition-colors',
-              activeTab === tab.key ? 'bg-brand-accent/10 text-brand-accent' : 'text-[#888] hover:text-white',
-            )}
-          >
-            {tab.label}
-          </button>
-        ))}
+      <div className="flex w-full items-center rounded-xl bg-[#1A1A1A]">
+        {TABS.map((tab) => {
+          const isActive = activeTab === tab.key
+
+          return (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => setActiveTab(tab.key)}
+              className="relative flex-1 px-4 py-3.5 text-center text-[13px] font-semibold text-white transition-colors hover:text-brand-accent"
+            >
+              {tab.label}
+              {isActive && (
+                <span className="absolute bottom-2 left-1/2 h-[3px] w-10 -translate-x-1/2 rounded-full bg-brand-accent" />
+              )}
+            </button>
+          )
+        })}
       </div>
 
       {activeTab === 'overview' && (
