@@ -19,3 +19,18 @@ export function findActiveTopLevelKey(items: NavItem[], pathname: string): strin
 
   return null
 }
+
+export function getFirstNavigableTo(navItem: NavItem): string | undefined {
+  if (navItem.to) {
+    return navItem.to
+  }
+
+  for (const child of navItem.children ?? []) {
+    const nested = getFirstNavigableTo(child)
+    if (nested) {
+      return nested
+    }
+  }
+
+  return undefined
+}

@@ -29,13 +29,11 @@ function getTitleFromNav(pathname: string, items: NavItem[]) {
 
 export function Topbar({
   onMenuClick,
-  onToggleCollapse,
   notificationsOpen,
   onNotificationsOpen,
   showCompact = false,
 }: {
   onMenuClick: () => void
-  onToggleCollapse: () => void
   notificationsOpen: boolean
   onNotificationsOpen: () => void
   showCompact?: boolean
@@ -67,15 +65,6 @@ export function Topbar({
             onClick={onMenuClick}
             className="rounded-brand-md p-2 text-brand-stroke hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent/30 md:hidden"
             aria-label="Open sidebar"
-          >
-            <Menu className="size-5" />
-          </button>
-          
-          <button
-            type="button"
-            onClick={onToggleCollapse}
-            className="hidden rounded-brand-md p-2 text-white/60 hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent/30 md:flex"
-            aria-label="Toggle sidebar"
           >
             <Menu className="size-5" />
           </button>
