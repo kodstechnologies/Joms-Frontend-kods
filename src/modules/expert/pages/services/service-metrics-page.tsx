@@ -1,19 +1,20 @@
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
-import { ManageMetrics } from '../../components/manage-metrics'
+import { ManageMetrics } from '@/shared/components/manage-metrics'
 
 export const ServiceMetricsPage = () => {
   const navigate = useNavigate()
+  const goBack = () => navigate('/services/dashboard')
 
   return (
     <ManageMetrics
       moduleName="Service Management"
-      onBack={() => navigate('/services/dashboard')}
-      onCancel={() => navigate('/services/dashboard')}
+      onBack={goBack}
+      onCancel={goBack}
       onSave={() => {
-        toast.success('Metrics configuration saved')
-        navigate('/services/dashboard')
+        toast.message('Service column preferences coming soon')
+        goBack()
       }}
     />
   )

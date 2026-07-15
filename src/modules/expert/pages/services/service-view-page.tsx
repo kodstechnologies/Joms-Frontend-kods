@@ -29,10 +29,7 @@ import {
   useUpdateServiceStatus,
 } from '../../hooks/use-services'
 import { useExpertProfile } from '../../hooks/use-expert-profile'
-import {
-  formatExpertDateTime,
-  formatListingExpertId,
-} from '../experts/expert-list-shared'
+import { formatExpertDateTime, formatListingExpertId } from '../experts/expert-list-format'
 import { Button } from '@/shared/components/ui/button'
 import {
   DecisionActionModal,
@@ -101,7 +98,10 @@ const formatConsultationPrice = (option: ConsultationPricingOption) => {
 }
 
 const parseDescription = (description = '') => {
-  const [summary, ...features] = description.split('+').map((part) => part.trim()).filter(Boolean)
+  const [summary, ...features] = description
+    .split('+')
+    .map((part) => part.trim())
+    .filter(Boolean)
 
   return { summary, features }
 }
@@ -268,15 +268,18 @@ export const ServiceViewPage = () => {
     escalationEntityType,
     resolvedServiceId,
   )
+  const { mutate: startEscalationReviewMutate } = startEscalationReview
 
   useEffect(() => {
     if (!resolvedServiceId || isSuperAdmin) return
-    startEscalationReview.mutate()
-  }, [resolvedServiceId, isSuperAdmin])
+    startEscalationReviewMutate()
+  }, [resolvedServiceId, isSuperAdmin, startEscalationReviewMutate])
 
-  useEffect(() => {
+  const [imageCarouselServiceId, setImageCarouselServiceId] = useState(resolvedServiceId)
+  if (resolvedServiceId !== imageCarouselServiceId) {
+    setImageCarouselServiceId(resolvedServiceId)
     setActiveImageIndex(0)
-  }, [resolvedServiceId])
+  }
 
   const apiResponse = shouldFetchConsultation ? consultationResponse : serviceResponse
   const isLoading = shouldFetchConsultation ? isConsultationLoading : isServiceLoading
@@ -543,10 +546,14 @@ export const ServiceViewPage = () => {
     shouldFetchConsultation || (service.serviceType || '').toLowerCase().includes('consultation')
   const images = service.images || []
   const imageCount = images.length
-  const activeImage = imageCount > 0 ? images[Math.min(activeImageIndex, imageCount - 1)] : undefined
+  const activeImage =
+    imageCount > 0 ? images[Math.min(activeImageIndex, imageCount - 1)] : undefined
   const consultationTopics = service.topics || []
   const categoryName = isConsultation
-    ? consultationTopics.map((topic) => topic.name).filter(Boolean).join(', ') ||
+    ? consultationTopics
+        .map((topic) => topic.name)
+        .filter(Boolean)
+        .join(', ') ||
       service.consultationCategory ||
       ''
     : service.category?.name || service.consultationCategory || ''
@@ -575,9 +582,7 @@ export const ServiceViewPage = () => {
     ? service.languages.join(', ')
     : EMPTY_VALUE
   const followUpLabel =
-    service.hasFollowUp && service.followUpDays
-      ? `${service.followUpDays} Days`
-      : EMPTY_VALUE
+    service.hasFollowUp && service.followUpDays ? `${service.followUpDays} Days` : EMPTY_VALUE
   const consultationDurations =
     service.pricingOptions?.map((option) => ({
       key: `${option.durationMinutes}-${option.price ?? 'free'}`,
@@ -679,10 +684,7 @@ export const ServiceViewPage = () => {
         value={formatMoney(service.customPricing?.minPrice || service.pricing)}
         label="Starting From"
       />
-      <DetailChip
-        value={formatCustomTimeline(service.customPricing)}
-        label="Timelines"
-      />
+      <DetailChip value={formatCustomTimeline(service.customPricing)} label="Timelines" />
     </div>
   )
 
@@ -736,7 +738,7 @@ export const ServiceViewPage = () => {
     <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
       <div className="space-y-5">
         <div>
-          <h1 className="text-[22px] font-semibold leading-tight text-white underline decoration-brand-accent decoration-2 underline-offset-4">
+          <h1 className="decoration-brand-accent text-[22px] leading-tight font-semibold text-white underline decoration-2 underline-offset-4">
             {consultationTitle}
           </h1>
           {categoryName && <p className="mt-2 text-[12px] text-[#777]">{categoryName}</p>}
@@ -790,19 +792,19 @@ export const ServiceViewPage = () => {
       <div className="space-y-5">
         <div className="grid grid-cols-3 gap-3">
           <div className="flex flex-col items-center gap-2 rounded-lg border border-white/5 bg-black p-4 text-center">
-            <Phone className="size-4 text-brand-accent" aria-hidden="true" />
+            <Phone className="text-brand-accent size-4" aria-hidden="true" />
             <span className="text-[10px] text-[#777]">Mode</span>
             <span className="text-[11px] font-semibold text-white">
               {formatConsultationMode(service.mode || service.modeOfConsultation)}
             </span>
           </div>
           <div className="flex flex-col items-center gap-2 rounded-lg border border-white/5 bg-black p-4 text-center">
-            <Languages className="size-4 text-brand-accent" aria-hidden="true" />
+            <Languages className="text-brand-accent size-4" aria-hidden="true" />
             <span className="text-[10px] text-[#777]">Language</span>
             <span className="text-[11px] font-semibold text-white">{consultationLanguages}</span>
           </div>
           <div className="flex flex-col items-center gap-2 rounded-lg border border-white/5 bg-black p-4 text-center">
-            <Clock className="size-4 text-brand-accent" aria-hidden="true" />
+            <Clock className="text-brand-accent size-4" aria-hidden="true" />
             <span className="text-[10px] text-[#777]">FollowUps</span>
             <span className="text-[11px] font-semibold text-white">{followUpLabel}</span>
           </div>
@@ -851,7 +853,7 @@ export const ServiceViewPage = () => {
       <div className="mb-4 flex justify-end">
         <span
           className={cn(
-            'rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wide',
+            'rounded-full px-3 py-1 text-[10px] font-bold tracking-wide uppercase',
             statusBadge.className,
           )}
         >
@@ -902,7 +904,9 @@ export const ServiceViewPage = () => {
         <div className="flex min-w-0 flex-col">
           <div className="mb-1 flex items-start justify-between gap-4">
             <div>
-              <h1 className="text-[22px] font-semibold leading-tight text-white">{service.title}</h1>
+              <h1 className="text-[22px] leading-tight font-semibold text-white">
+                {service.title}
+              </h1>
               {categoryName && <p className="mt-1 text-[12px] text-[#777]">{categoryName}</p>}
             </div>
           </div>
@@ -980,7 +984,7 @@ export const ServiceViewPage = () => {
         <button
           type="button"
           onClick={handleBack}
-          className="group flex w-fit items-center gap-2 font-heading text-[20px] font-bold tracking-tight text-white transition-colors hover:text-brand-accent"
+          className="group font-heading hover:text-brand-accent flex w-fit items-center gap-2 text-[20px] font-bold tracking-tight text-white transition-colors"
         >
           <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
           <span>{pageTitle}</span>
@@ -1072,7 +1076,7 @@ export const ServiceViewPage = () => {
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
         <div className="rounded-xl border border-white/5 bg-[#111111] p-5">
           <div className="mb-4 flex items-center gap-2 text-[14px] font-semibold text-white">
-            <History className="size-4 text-brand-accent" aria-hidden="true" />
+            <History className="text-brand-accent size-4" aria-hidden="true" />
             <h3>Internal Notes *</h3>
           </div>
           <div className="min-h-[120px] rounded-lg border border-white/5 bg-black p-4 text-[12px] text-[#777]">
@@ -1090,14 +1094,14 @@ export const ServiceViewPage = () => {
         {showApprovalControls && (
           <div className="rounded-xl border border-white/5 bg-[#111111] p-5">
             <div className="mb-4 flex items-center gap-2 text-[14px] font-semibold text-white">
-              <ShieldCheck className="size-4 text-brand-accent" aria-hidden="true" />
+              <ShieldCheck className="text-brand-accent size-4" aria-hidden="true" />
               <h3>Decision Controls</h3>
             </div>
             <div className="flex flex-wrap gap-3">
               <button
                 type="button"
                 onClick={() => openDecisionModal('approve')}
-                className="flex items-center gap-2 rounded-md bg-brand-success px-4 py-2.5 text-[11px] font-bold text-white"
+                className="bg-brand-success flex items-center gap-2 rounded-md px-4 py-2.5 text-[11px] font-bold text-white"
               >
                 Approve
                 <Check className="size-3.5" />
@@ -1105,7 +1109,7 @@ export const ServiceViewPage = () => {
               <button
                 type="button"
                 onClick={() => openDecisionModal('requestChanges')}
-                className="flex items-center gap-2 rounded-md bg-brand-accent px-4 py-2.5 text-[11px] font-bold text-brand-text-dark hover:bg-brand-gold-from"
+                className="bg-brand-accent text-brand-text-dark hover:bg-brand-gold-from flex items-center gap-2 rounded-md px-4 py-2.5 text-[11px] font-bold"
               >
                 Ask for Re-Submit
                 <RotateCcw className="size-3.5" />
@@ -1115,7 +1119,7 @@ export const ServiceViewPage = () => {
                   type="button"
                   disabled={escalateDisabled}
                   onClick={() => openDecisionModal('escalate')}
-                  className="flex items-center gap-2 rounded-md bg-brand-action px-4 py-2.5 text-[11px] font-bold text-white disabled:cursor-not-allowed disabled:opacity-50"
+                  className="bg-brand-action flex items-center gap-2 rounded-md px-4 py-2.5 text-[11px] font-bold text-white disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   Escalate
                   <ArrowUp className="size-3.5" />
@@ -1124,7 +1128,7 @@ export const ServiceViewPage = () => {
               <button
                 type="button"
                 onClick={() => openDecisionModal('reject')}
-                className="flex items-center gap-2 rounded-md bg-brand-danger px-4 py-2.5 text-[11px] font-bold text-white"
+                className="bg-brand-danger flex items-center gap-2 rounded-md px-4 py-2.5 text-[11px] font-bold text-white"
               >
                 Reject Application
                 <X className="size-3.5" />

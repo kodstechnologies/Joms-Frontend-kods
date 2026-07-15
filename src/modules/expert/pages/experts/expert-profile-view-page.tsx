@@ -56,15 +56,10 @@ import {
   TableActionsDropdown,
   TableActionsItem,
 } from '@/shared/components/table/table-actions-dropdown'
-import { formatListingExpertId } from './expert-list-shared'
+import { formatListingExpertId } from './expert-list-format'
 import { cn } from '@/shared/lib/cn'
 
-type TabKey =
-  | 'overview'
-  | 'service-listings'
-  | 'availability'
-  | 'analytics'
-  | 'health'
+type TabKey = 'overview' | 'service-listings' | 'availability' | 'analytics' | 'health'
 
 type ListingSubTab = 'services' | 'consultations'
 
@@ -76,15 +71,7 @@ const TABS: { key: TabKey; label: string }[] = [
   { key: 'health', label: 'Profile Health' },
 ]
 
-const DAYS = [
-  'Monday',
-  'Tuesday',
-  'Wednesday',
-  'Thursday',
-  'Friday',
-  'Saturday',
-  'Sunday',
-]
+const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 
 const MOCK_REVIEWS = [
   {
@@ -195,9 +182,7 @@ const formatWorkDate = (value?: string | null) => {
 
 const formatWorkPeriod = (entry: ExpertWorkExperience) => {
   const start = formatWorkDate(entry.startDate)
-  const end = entry.currentlyWorking
-    ? 'Present'
-    : formatWorkDate(entry.endDate) || '—'
+  const end = entry.currentlyWorking ? 'Present' : formatWorkDate(entry.endDate) || '—'
   if (!start) return '—'
   return `${start} - ${end}`
 }
@@ -214,10 +199,7 @@ const formatLastActive = (value?: string) => {
   })
 }
 
-const getKycBadge = (finalReview?: {
-  isVerified?: boolean
-  approvalStatus?: string
-}) => {
+const getKycBadge = (finalReview?: { isVerified?: boolean; approvalStatus?: string }) => {
   if (finalReview?.approvalStatus === 'approved') {
     return { label: 'KYC Verified', className: 'bg-emerald-500/15 text-emerald-400' }
   }
@@ -237,11 +219,7 @@ const formatPricingType = (value?: string) => {
     .join(' ')
 }
 
-const formatPricing = (option: {
-  durationMinutes: number
-  pricingType: string
-  price: number
-}) => {
+const formatPricing = (option: { durationMinutes: number; pricingType: string; price: number }) => {
   const mins = `${option.durationMinutes}mins`
   if (option.pricingType === 'free' || option.price === 0) {
     return `${mins} (Free)`
@@ -277,13 +255,7 @@ function SafeImage({
   )
 }
 
-function SidebarRow({
-  label,
-  children,
-}: {
-  label: string
-  children: ReactNode
-}) {
+function SidebarRow({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="flex items-center justify-between border-b border-white/5 py-3 last:border-0">
       <span className="text-[12px] text-[#999]">{label}</span>
@@ -309,15 +281,8 @@ function ProfileSidebar({
     <div className="flex flex-col gap-4">
       <div className="rounded-xl border border-white/5 bg-[#111111] p-5">
         <div className="mb-2 flex items-center justify-between">
-          <h3 className="text-[13px] font-semibold text-white">
-            Profile &amp; Account
-          </h3>
-          <span
-            className={cn(
-              'rounded-md px-2.5 py-1 text-[10px] font-bold',
-              kycBadge.className,
-            )}
-          >
+          <h3 className="text-[13px] font-semibold text-white">Profile &amp; Account</h3>
+          <span className={cn('rounded-md px-2.5 py-1 text-[10px] font-bold', kycBadge.className)}>
             {kycBadge.label}
           </span>
         </div>
@@ -337,7 +302,7 @@ function ProfileSidebar({
         </SidebarRow>
         <SidebarRow label="Ratings">
           <span className="inline-flex items-center gap-1">
-            <Star className="size-3.5 fill-brand-accent text-brand-accent" />
+            <Star className="fill-brand-accent text-brand-accent size-3.5" />
             4.8
             <span className="text-[11px] font-normal text-[#777]">(1.9K)</span>
           </span>
@@ -348,20 +313,14 @@ function ProfileSidebar({
         </SidebarRow>
         <SidebarRow label="Total Earnings">500,000</SidebarRow>
         <SidebarRow label="Total Order Completed">50</SidebarRow>
-        <SidebarRow label="Last Active">
-          {formatLastActive(profile.updatedAt)}
-        </SidebarRow>
+        <SidebarRow label="Last Active">{formatLastActive(profile.updatedAt)}</SidebarRow>
         <SidebarRow label="KYC">
           <button
             type="button"
             onClick={() =>
-              viewExpertKyc(
-                partnerId,
-                profile.servicetype || basic?.serviceType,
-                navigate,
-              )
+              viewExpertKyc(partnerId, profile.servicetype || basic?.serviceType, navigate)
             }
-            className="rounded-md bg-brand-accent/15 px-3 py-1 text-[11px] font-bold text-brand-accent transition-colors hover:bg-brand-accent/25"
+            className="bg-brand-accent/15 text-brand-accent hover:bg-brand-accent/25 rounded-md px-3 py-1 text-[11px] font-bold transition-colors"
           >
             View
           </button>
@@ -370,7 +329,7 @@ function ProfileSidebar({
           <button
             type="button"
             onClick={() => comingSoon('Timelines')}
-            className="rounded-md bg-brand-accent/15 px-3 py-1 text-[11px] font-bold text-brand-accent transition-colors hover:bg-brand-accent/25"
+            className="bg-brand-accent/15 text-brand-accent hover:bg-brand-accent/25 rounded-md px-3 py-1 text-[11px] font-bold transition-colors"
           >
             Check Timelines
           </button>
@@ -378,9 +337,7 @@ function ProfileSidebar({
       </div>
 
       <div className="rounded-xl border border-white/5 bg-[#111111] p-5">
-        <h3 className="mb-4 text-[13px] font-semibold text-white">
-          Support &amp; Admin
-        </h3>
+        <h3 className="mb-4 text-[13px] font-semibold text-white">Support &amp; Admin</h3>
         <div className="rounded-lg border border-white/5 bg-black p-3">
           <p className="text-[10px] text-[#777]">Active Tickets</p>
           <p className="mt-1 text-[12px] font-medium text-white">None</p>
@@ -426,16 +383,11 @@ function OverviewTab({ profile }: { profile: ExpertProfileDetail }) {
 
       {offerings.length > 0 && (
         <div className="rounded-xl border border-white/5 bg-[#111111] p-6">
-          <h3 className="mb-4 text-[14px] font-semibold text-white">
-            Core Offerings
-          </h3>
+          <h3 className="mb-4 text-[14px] font-semibold text-white">Core Offerings</h3>
           <ul className="space-y-2.5">
             {offerings.map((item) => (
-              <li
-                key={item}
-                className="flex items-center gap-2 text-[13px] text-[#ddd]"
-              >
-                <Check className="size-4 shrink-0 text-brand-accent" />
+              <li key={item} className="flex items-center gap-2 text-[13px] text-[#ddd]">
+                <Check className="text-brand-accent size-4 shrink-0" />
                 {item}
               </li>
             ))}
@@ -470,9 +422,7 @@ function OverviewTab({ profile }: { profile: ExpertProfileDetail }) {
 
       {workExperience.length > 0 && (
         <div className="rounded-xl border border-white/5 bg-[#111111] p-6">
-          <h3 className="mb-4 text-[14px] font-semibold text-white">
-            Work Experience
-          </h3>
+          <h3 className="mb-4 text-[14px] font-semibold text-white">Work Experience</h3>
           <div className="space-y-3">
             {workExperience.map((entry) => (
               <div
@@ -480,19 +430,15 @@ function OverviewTab({ profile }: { profile: ExpertProfileDetail }) {
                 className="flex gap-3 rounded-lg border border-white/5 bg-black p-4"
               >
                 <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-[#1a1a1a]">
-                  <Briefcase className="size-4 text-brand-accent" />
+                  <Briefcase className="text-brand-accent size-4" />
                 </div>
                 <div>
-                  <p className="text-[13px] font-semibold text-white">
-                    {entry.jobTitle || '—'}
-                  </p>
+                  <p className="text-[13px] font-semibold text-white">{entry.jobTitle || '—'}</p>
                   <p className="text-[12px] text-[#999]">
                     {entry.companyName || '—'} | {formatWorkPeriod(entry)}
                   </p>
                   {entry.description && (
-                    <p className="mt-1 text-[12px] text-[#777]">
-                      {entry.description}
-                    </p>
+                    <p className="mt-1 text-[12px] text-[#777]">{entry.description}</p>
                   )}
                 </div>
               </div>
@@ -502,9 +448,7 @@ function OverviewTab({ profile }: { profile: ExpertProfileDetail }) {
       )}
 
       <div className="rounded-xl border border-white/5 bg-[#111111] p-6">
-        <h3 className="mb-4 text-[14px] font-semibold text-white">
-          Reviews &amp; Ratings
-        </h3>
+        <h3 className="mb-4 text-[14px] font-semibold text-white">Reviews &amp; Ratings</h3>
         <div className="mb-4 flex flex-wrap gap-2">
           {[
             { key: 'all', label: 'All Reviews' },
@@ -528,37 +472,27 @@ function OverviewTab({ profile }: { profile: ExpertProfileDetail }) {
         </div>
         <div className="space-y-3">
           {MOCK_REVIEWS.map((review) => (
-            <div
-              key={review.name}
-              className="rounded-lg border border-white/5 bg-black p-4"
-            >
+            <div key={review.name} className="rounded-lg border border-white/5 bg-black p-4">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-3">
                   <div className="flex size-9 items-center justify-center rounded-full bg-[#1a1a1a]">
                     <User className="size-4 text-[#888]" />
                   </div>
                   <div>
-                    <p className="text-[13px] font-semibold text-white">
-                      {review.name}
-                    </p>
+                    <p className="text-[13px] font-semibold text-white">{review.name}</p>
                     <p className="text-[11px] text-[#777]">{review.title}</p>
                   </div>
                 </div>
                 <div className="text-right">
                   <div className="flex items-center gap-0.5">
                     {Array.from({ length: review.rating }).map((_, index) => (
-                      <Star
-                        key={index}
-                        className="size-3 fill-brand-accent text-brand-accent"
-                      />
+                      <Star key={index} className="fill-brand-accent text-brand-accent size-3" />
                     ))}
                   </div>
                   <p className="mt-1 text-[10px] text-[#666]">{review.date}</p>
                 </div>
               </div>
-              <p className="mt-2 text-[11px] text-[#777]">
-                Service Availed: {review.service}
-              </p>
+              <p className="mt-2 text-[11px] text-[#777]">Service Availed: {review.service}</p>
               <p className="mt-2 text-[12px] text-[#bbb]">{review.body}</p>
             </div>
           ))}
@@ -611,9 +545,7 @@ function ConsultationDetailCard({
 
       {outlineItems.length > 0 && (
         <div className="mt-5">
-          <p className="mb-2 text-[12px] font-semibold text-white">
-            Session outline
-          </p>
+          <p className="mb-2 text-[12px] font-semibold text-white">Session outline</p>
           <ul className="list-disc space-y-1 pl-5 text-[12px] text-[#bbb]">
             {outlineItems.map((item) => (
               <li key={item}>{item}</li>
@@ -624,34 +556,30 @@ function ConsultationDetailCard({
 
       {consultation.whoItsFor && (
         <div className="mt-5">
-          <p className="mb-2 text-[12px] font-semibold text-white">
-            Who is it for?
-          </p>
+          <p className="mb-2 text-[12px] font-semibold text-white">Who is it for?</p>
           <p className="text-[12px] text-[#bbb]">{consultation.whoItsFor}</p>
         </div>
       )}
 
       <div className="mt-5">
-        <p className="mb-3 text-[12px] font-semibold text-white">
-          Additional Information
-        </p>
+        <p className="mb-3 text-[12px] font-semibold text-white">Additional Information</p>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           <div className="rounded-lg border border-white/5 bg-black p-3 text-center">
-            <Phone className="mx-auto size-4 text-brand-accent" />
+            <Phone className="text-brand-accent mx-auto size-4" />
             <p className="mt-2 text-[11px] text-[#999]">Mode</p>
-            <p className="text-[12px] font-semibold capitalize text-white">
+            <p className="text-[12px] font-semibold text-white capitalize">
               {consultation.mode || '—'}
             </p>
           </div>
           <div className="rounded-lg border border-white/5 bg-black p-3 text-center">
-            <Languages className="mx-auto size-4 text-brand-accent" />
+            <Languages className="text-brand-accent mx-auto size-4" />
             <p className="mt-2 text-[11px] text-[#999]">Language</p>
             <p className="text-[12px] font-semibold text-white">
               {(consultation.languages ?? []).join(', ') || '—'}
             </p>
           </div>
           <div className="rounded-lg border border-white/5 bg-black p-3 text-center">
-            <Clock className="mx-auto size-4 text-brand-accent" />
+            <Clock className="text-brand-accent mx-auto size-4" />
             <p className="mt-2 text-[11px] text-[#999]">FollowUps</p>
             <p className="text-[12px] font-semibold text-white">
               {consultation.hasFollowUp && consultation.followUpDays
@@ -664,9 +592,7 @@ function ConsultationDetailCard({
 
       {(consultation.pricingOptions ?? []).length > 0 && (
         <div className="mt-5">
-          <p className="mb-3 text-[12px] font-semibold text-white">
-            Duration &amp; Pricing
-          </p>
+          <p className="mb-3 text-[12px] font-semibold text-white">Duration &amp; Pricing</p>
           <div className="flex flex-wrap gap-2">
             {(consultation.pricingOptions ?? []).map((option) => (
               <span
@@ -719,7 +645,7 @@ function ServicesSubTab({ expertId }: { expertId: string }) {
 
       {isLoading && (
         <div className="flex h-40 items-center justify-center">
-          <div className="size-8 animate-spin rounded-full border-4 border-brand-accent border-t-transparent" />
+          <div className="border-brand-accent size-8 animate-spin rounded-full border-4 border-t-transparent" />
         </div>
       )}
       {isError && (
@@ -743,27 +669,13 @@ function ServicesSubTab({ expertId }: { expertId: string }) {
   )
 }
 
-function ServiceListCard({
-  service,
-  expertId,
-}: {
-  service: ExpertService
-  expertId: string
-}) {
+function ServiceListCard({ service, expertId }: { service: ExpertService; expertId: string }) {
   const navigate = useNavigate()
   const status = (service.status || '').toLowerCase()
   const statusLabel =
-    status === 'live'
-      ? 'Live'
-      : status
-        ? status.charAt(0).toUpperCase() + status.slice(1)
-        : null
+    status === 'live' ? 'Live' : status ? status.charAt(0).toUpperCase() + status.slice(1) : null
   const statusClass =
-    status === 'live'
-      ? 'bg-emerald-500'
-      : status === 'rejected'
-        ? 'bg-red-500'
-        : 'bg-amber-500'
+    status === 'live' ? 'bg-emerald-500' : status === 'rejected' ? 'bg-red-500' : 'bg-amber-500'
 
   return (
     <button
@@ -775,7 +687,7 @@ function ServiceListCard({
         {statusLabel && (
           <span
             className={cn(
-              'absolute left-1 top-1 rounded px-1.5 py-0.5 text-[9px] font-bold text-white',
+              'absolute top-1 left-1 rounded px-1.5 py-0.5 text-[9px] font-bold text-white',
               statusClass,
             )}
           >
@@ -787,21 +699,13 @@ function ServiceListCard({
         </div>
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-[14px] font-bold text-white">
-          {service.title || 'Untitled Service'}
-        </p>
-        <p className="text-[12px] text-[#888]">
-          {service.category?.name || '—'}
-        </p>
-        <p className="text-[11px] text-[#666]">
-          {formatPricingType(service.pricingType)}
-        </p>
+        <p className="text-[14px] font-bold text-white">{service.title || 'Untitled Service'}</p>
+        <p className="text-[12px] text-[#888]">{service.category?.name || '—'}</p>
+        <p className="text-[11px] text-[#666]">{formatPricingType(service.pricingType)}</p>
       </div>
       <div className="text-right">
         <p className="text-[14px] font-bold text-white">
-          {service.priceStarts != null
-            ? `₹${service.priceStarts.toLocaleString('en-IN')}`
-            : '—'}
+          {service.priceStarts != null ? `₹${service.priceStarts.toLocaleString('en-IN')}` : '—'}
         </p>
       </div>
       <ChevronRight className="size-4 text-[#666]" />
@@ -810,19 +714,14 @@ function ServiceListCard({
 }
 
 function ConsultationsSubTab({ expertId }: { expertId: string }) {
-  const { data, isLoading, isError } = useExpertConsultations(
-    expertId,
-    1,
-    10,
-    true,
-  )
+  const { data, isLoading, isError } = useExpertConsultations(expertId, 1, 10, true)
   const consultations = data?.data ?? []
 
   return (
     <>
       {isLoading && (
         <div className="flex h-40 items-center justify-center">
-          <div className="size-8 animate-spin rounded-full border-4 border-brand-accent border-t-transparent" />
+          <div className="border-brand-accent size-8 animate-spin rounded-full border-4 border-t-transparent" />
         </div>
       )}
       {isError && (
@@ -890,7 +789,7 @@ function ServiceListingsTab({
           <button
             type="button"
             onClick={onCreateListing}
-            className="flex items-center gap-1.5 rounded-lg bg-brand-accent/15 px-3 py-2 text-[11px] font-semibold text-brand-accent"
+            className="bg-brand-accent/15 text-brand-accent flex items-center gap-1.5 rounded-lg px-3 py-2 text-[11px] font-semibold"
           >
             <Plus className="size-3.5" />
             Create Listings
@@ -900,9 +799,7 @@ function ServiceListingsTab({
 
       {listingSubTab === 'services' && <ServicesSubTab expertId={expertId} />}
 
-      {listingSubTab === 'consultations' && (
-        <ConsultationsSubTab expertId={expertId} />
-      )}
+      {listingSubTab === 'consultations' && <ConsultationsSubTab expertId={expertId} />}
     </div>
   )
 }
@@ -912,9 +809,7 @@ function AvailabilityTab() {
     <div className="rounded-xl border border-white/5 bg-[#111111] p-6">
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <div>
-          <h3 className="mb-4 text-[14px] font-semibold text-white">
-            Availability
-          </h3>
+          <h3 className="mb-4 text-[14px] font-semibold text-white">Availability</h3>
           <div className="overflow-hidden rounded-lg border border-white/5">
             <div className="grid grid-cols-3 bg-black px-4 py-2 text-[11px] font-semibold text-[#888]">
               <span>Days</span>
@@ -940,9 +835,7 @@ function AvailabilityTab() {
           </div>
         </div>
         <div>
-          <h3 className="mb-4 text-[14px] font-semibold text-white">
-            Unavailability
-          </h3>
+          <h3 className="mb-4 text-[14px] font-semibold text-white">Unavailability</h3>
           <div className="overflow-hidden rounded-lg border border-white/5">
             <div className="grid grid-cols-3 bg-black px-4 py-2 text-[11px] font-semibold text-[#888]">
               <span>Date</span>
@@ -986,7 +879,7 @@ function AnalyticsTab({ expertId }: { expertId?: string }) {
         <button
           type="button"
           onClick={() => navigate('/experts/dashboard/metrics')}
-          className="flex items-center gap-1.5 rounded-lg bg-brand-accent/15 px-3 py-2 text-[11px] font-semibold text-brand-accent"
+          className="bg-brand-accent/15 text-brand-accent flex items-center gap-1.5 rounded-lg px-3 py-2 text-[11px] font-semibold"
         >
           <Gauge className="size-3.5" />
           Manage Metrics
@@ -994,13 +887,10 @@ function AnalyticsTab({ expertId }: { expertId?: string }) {
       </div>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {cards.map((card) => (
-          <div
-            key={card.label}
-            className="rounded-lg border border-white/5 bg-black p-4"
-          >
+          <div key={card.label} className="rounded-lg border border-white/5 bg-black p-4">
             <div className="flex items-center justify-between">
               <p className="text-[11px] text-[#999]">{card.label}</p>
-              <Briefcase className="size-4 text-brand-accent" />
+              <Briefcase className="text-brand-accent size-4" />
             </div>
             <p className="mt-3 text-xl font-bold text-white">{card.value}</p>
           </div>
@@ -1076,17 +966,12 @@ function HealthTab() {
             </button>
           ))}
         </div>
-        <span className="text-[12px] font-bold text-red-400">
-          Profile Health: At Risk
-        </span>
+        <span className="text-[12px] font-bold text-red-400">Profile Health: At Risk</span>
       </div>
 
       <div className="mt-4 space-y-3">
         {incidents.map((incident) => (
-          <div
-            key={incident.type}
-            className="rounded-lg border border-white/5 bg-black p-4"
-          >
+          <div key={incident.type} className="rounded-lg border border-white/5 bg-black p-4">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <div className="flex flex-wrap items-center gap-2">
@@ -1107,12 +992,9 @@ function HealthTab() {
                     {incident.status}
                   </span>
                 </div>
-                <p className="mt-2 text-[13px] font-semibold text-white">
-                  Spam Content Detected
-                </p>
+                <p className="mt-2 text-[13px] font-semibold text-white">Spam Content Detected</p>
                 <p className="mt-1 text-[12px] text-[#777]">
-                  Multiple identical messages sent to different users within
-                  short timeframe
+                  Multiple identical messages sent to different users within short timeframe
                 </p>
                 <p className="mt-2 text-[10px] text-[#666]">
                   Raised On: 2024-02-10 14:32 · Last Updated: 2 hours ago
@@ -1121,7 +1003,7 @@ function HealthTab() {
               <button
                 type="button"
                 onClick={() => comingSoon(incident.action)}
-                className="flex items-center gap-1.5 rounded-lg bg-brand-accent/15 px-3 py-2 text-[11px] font-semibold text-brand-accent"
+                className="bg-brand-accent/15 text-brand-accent flex items-center gap-1.5 rounded-lg px-3 py-2 text-[11px] font-semibold"
               >
                 <incident.icon className="size-3.5" />
                 {incident.action}
@@ -1305,7 +1187,7 @@ export function ExpertProfileViewPage() {
   if (profileLoading) {
     return (
       <div className="flex h-[60vh] items-center justify-center">
-        <div className="size-9 animate-spin rounded-full border-4 border-brand-accent border-t-transparent" />
+        <div className="border-brand-accent size-9 animate-spin rounded-full border-4 border-t-transparent" />
       </div>
     )
   }
@@ -1316,7 +1198,7 @@ export function ExpertProfileViewPage() {
         <button
           type="button"
           onClick={() => navigate('/experts/management')}
-          className="group flex w-fit items-center gap-2 font-heading text-[20px] font-bold text-white transition-colors hover:text-brand-accent"
+          className="group font-heading hover:text-brand-accent flex w-fit items-center gap-2 text-[20px] font-bold text-white transition-colors"
         >
           <ArrowLeft className="size-5" />
           <span>Expert Profile View</span>
@@ -1365,7 +1247,7 @@ export function ExpertProfileViewPage() {
           <button
             type="button"
             onClick={() => navigate('/experts/management')}
-            className="group flex w-fit items-center gap-2 font-heading text-[20px] font-bold tracking-tight text-white transition-colors hover:text-brand-accent"
+            className="group font-heading hover:text-brand-accent flex w-fit items-center gap-2 text-[20px] font-bold tracking-tight text-white transition-colors"
           >
             <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
             <span>Expert Profile View</span>
@@ -1517,7 +1399,7 @@ export function ExpertProfileViewPage() {
                 key={action.label}
                 type="button"
                 onClick={action.onClick}
-                className="flex items-center gap-1.5 rounded-full bg-brand-accent/15 px-3 py-1.5 text-[11px] font-semibold text-brand-accent transition-colors hover:bg-brand-accent/25"
+                className="bg-brand-accent/15 text-brand-accent hover:bg-brand-accent/25 flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-semibold transition-colors"
               >
                 <action.icon className="size-3.5" />
                 {action.label}
@@ -1528,10 +1410,7 @@ export function ExpertProfileViewPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[320px_1fr]">
-        <ProfileSidebar
-          profile={profile}
-          partnerId={id}
-        />
+        <ProfileSidebar profile={profile} partnerId={id} />
 
         <div className="flex flex-col gap-5">
           <div className="flex items-center gap-1 overflow-x-auto rounded-xl border border-white/5 bg-[#111111] p-1.5">
@@ -1541,7 +1420,7 @@ export function ExpertProfileViewPage() {
                 type="button"
                 onClick={() => setActiveTab(tab.key)}
                 className={cn(
-                  'flex-1 whitespace-nowrap rounded-lg px-4 py-2.5 text-[13px] font-semibold transition-colors',
+                  'flex-1 rounded-lg px-4 py-2.5 text-[13px] font-semibold whitespace-nowrap transition-colors',
                   activeTab === tab.key
                     ? 'bg-brand-accent/10 text-brand-accent'
                     : 'text-[#888] hover:text-white',

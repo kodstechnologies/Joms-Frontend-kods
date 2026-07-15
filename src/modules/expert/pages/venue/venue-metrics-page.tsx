@@ -1,19 +1,20 @@
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
-import { ManageMetrics } from '../../components/manage-metrics'
+import { ManageMetrics } from '@/shared/components/manage-metrics'
 
 export const VenueMetricsPage = () => {
   const navigate = useNavigate()
+  const goBack = () => navigate('/venues/dashboard')
 
   return (
     <ManageMetrics
       moduleName="Venue Management"
-      onBack={() => navigate('/venues/dashboard')}
-      onCancel={() => navigate('/venues/dashboard')}
+      onBack={goBack}
+      onCancel={goBack}
       onSave={() => {
-        toast.success('Metrics configuration saved')
-        navigate('/venues/dashboard')
+        toast.message('Venue column preferences coming soon')
+        goBack()
       }}
     />
   )

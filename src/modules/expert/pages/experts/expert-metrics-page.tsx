@@ -1,19 +1,38 @@
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
-import { ManageMetrics } from '../../components/manage-metrics'
+import {
+  EXPERT_ACTIVE_METRICS,
+  EXPERT_AVAILABLE_METRICS,
+  EXPERT_HIDDEN_COLUMNS,
+  EXPERT_VISIBLE_COLUMNS,
+} from '../../mock/expert-manage-metrics.mock'
+import { ManageMetrics } from '@/shared/components/manage-metrics'
 
-export const ExpertMetricsPage = () => {
+type ExpertMetricsPageProps = {
+  returnTo?: string
+}
+
+export const ExpertMetricsPage = ({ returnTo = '/experts/dashboard' }: ExpertMetricsPageProps) => {
   const navigate = useNavigate()
+  const goBack = () => navigate(returnTo)
 
   return (
     <ManageMetrics
       moduleName="Expert Management"
-      onBack={() => navigate('/experts/dashboard')}
-      onCancel={() => navigate('/experts/dashboard')}
+      dashboard={{
+        active: EXPERT_ACTIVE_METRICS,
+        available: EXPERT_AVAILABLE_METRICS,
+      }}
+      tableColumns={{
+        visible: EXPERT_VISIBLE_COLUMNS,
+        hidden: EXPERT_HIDDEN_COLUMNS,
+      }}
+      onBack={goBack}
+      onCancel={goBack}
       onSave={() => {
         toast.success('Metrics configuration saved')
-        navigate('/experts/dashboard')
+        goBack()
       }}
     />
   )

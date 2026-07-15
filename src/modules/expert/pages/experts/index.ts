@@ -1,6 +1,7 @@
 export * from './expert-management-page'
 export { ExpertDashboardPage } from './expert-dashboard-page'
 export { ExpertMetricsPage } from './expert-metrics-page'
+export { ExpertManagementMetricsPage } from './expert-management-metrics-page'
 export { ExpertPendingApprovalsPage } from './pending-approvals-page'
 export { ExpertSuspendedExpertsPage } from './suspended-experts-page'
 export { ExpertDeletedExpertsPage } from './deleted-experts-page'

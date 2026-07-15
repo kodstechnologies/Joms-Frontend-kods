@@ -13,9 +13,9 @@ import {
   createExpertSelectColumn,
   createExpertServiceTypeColumn,
   createExpertStatusColumn,
-  ExpertListHeader,
-  useExpertListSelection,
-} from './expert-list-shared'
+} from './expert-list-columns'
+import { ExpertListHeader } from './expert-list-shared'
+import { useExpertListSelection } from './use-expert-list-selection'
 import { DataTable } from '@/shared/components/table/data-table'
 import {
   TableActionsDropdown,
@@ -86,9 +86,7 @@ export function ExpertSuspendedExpertsPage() {
             <TableActionsDropdown
               label={`Open actions for ${expert.name}`}
               isOpen={isOpen}
-              onOpenChange={(open) =>
-                setActiveDropdownId(open ? expert.expertId : null)
-              }
+              onOpenChange={(open) => setActiveDropdownId(open ? expert.expertId : null)}
               menuWidth={192}
             >
               <TableActionsItem
@@ -119,10 +117,7 @@ export function ExpertSuspendedExpertsPage() {
 
   return (
     <div className="flex flex-col gap-5 md:gap-6">
-      <ExpertListHeader
-        title="Suspended Experts"
-        breadcrumb="User Management / Suspended Users"
-      />
+      <ExpertListHeader title="Suspended Experts" breadcrumb="User Management / Suspended Users" />
 
       <DataTable
         columns={columns}
