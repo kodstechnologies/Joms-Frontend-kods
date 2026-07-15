@@ -1,29 +1,32 @@
 ================================================================================
 JOMS FRONTEND - PRODUCTION ENV
 Frontend: https://kods.online
-Backend API Gateway: https://api.kods.online
+Backend: per-service API subdomains (not api.kods.online gateway)
 ================================================================================
 
-Use ONLY VITE_API_BASE_URL in production. Do NOT set VITE_AUTH_API_BASE_URL to
-https://api.kods.online/auth — that double-prefixes paths like /auth/admin/login.
+Do NOT set a shared VITE_API_BASE_URL for production.
+Use one base URL per service. Do NOT append path prefixes like /auth or
+/services to the base URL — clients already request those paths.
 
-~/Joms-Frontend/.env  (used during docker build — keep minimal)
+~/Joms-Frontend/.env  (used during docker build)
 --------------------------------------------------------------------------------
-VITE_API_BASE_URL=https://api.kods.online
+VITE_AUTH_API_BASE_URL=https://auth.api.kods.online
+VITE_ADMIN_API_BASE_URL=https://admin.api.kods.online
+VITE_SERVICE_API_BASE_URL=https://services.api.kods.online
+VITE_VENUE_API_BASE_URL=https://venues.api.kods.online
+VITE_KYC_API_BASE_URL=https://kyc.api.kods.online
+VITE_MEMBERSHIP_API_BASE_URL=https://membership.api.kods.online
+VITE_SETTINGS_API_BASE_URL=https://settings.api.kods.online
 
-~/Joms-Frontend/.env.production
+Resolved URLs
 --------------------------------------------------------------------------------
-VITE_API_BASE_URL=https://api.kods.online
-
-Resolved URLs (via nginx API gateway)
---------------------------------------------------------------------------------
-Login:        https://api.kods.online/auth/admin/login
-Admin APIs:   https://api.kods.online/admin/...
-Services:     https://api.kods.online/services/...
-Venues:       https://api.kods.online/venues/...
-KYC:          https://api.kods.online/venue-kyc
-Memberships:  https://api.kods.online/memberships
-Settings:     https://api.kods.online/settings
+Login:        https://auth.api.kods.online/auth/admin/login
+Admin APIs:   https://admin.api.kods.online/admin/...
+Services:     https://services.api.kods.online/services/...
+Venues:       https://venues.api.kods.online/venues/...
+KYC:          https://kyc.api.kods.online/venue-kyc
+Memberships:  https://membership.api.kods.online/memberships
+Settings:     https://settings.api.kods.online/settings
 
 Rebuild frontend on EC2 after changing .env:
   cd ~/Joms-Frontend

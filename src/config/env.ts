@@ -1,27 +1,57 @@
 const trimTrailingSlash = (value: string) => value.replace(/\/+$/, '')
 
-const DEFAULT_API_BASE_URL = import.meta.env.PROD
-  ? 'https://api.kods.online'
-  : 'http://localhost'
+const LOCAL_API_BASE_URL = 'http://localhost'
 
-const apiBaseUrl = trimTrailingSlash(
-  import.meta.env.VITE_API_BASE_URL || DEFAULT_API_BASE_URL,
-)
+const PROD_SERVICE_URLS = {
+  auth: 'https://auth.api.kods.online',
+  admin: 'https://admin.api.kods.online',
+  service: 'https://services.api.kods.online',
+  venue: 'https://venues.api.kods.online',
+  kyc: 'https://kyc.api.kods.online',
+  membership: 'https://membership.api.kods.online',
+  settings: 'https://settings.api.kods.online',
+} as const
 
-// Production uses nginx on port 80 (no :8000, :8001, etc.)
-// Local dev uses direct service ports.
-const resolveApiUrl = (override: string | undefined, port: number) => {
+const localApiBaseUrl = trimTrailingSlash(import.meta.env.VITE_API_BASE_URL || LOCAL_API_BASE_URL)
+
+// Production uses per-service subdomains.
+// Local dev uses direct service ports unless an override is set.
+const resolveApiUrl = (override: string | undefined, port: number, prodDefault: string) => {
   if (override) return trimTrailingSlash(override)
-  if (import.meta.env.PROD) return apiBaseUrl
-  return `${apiBaseUrl}:${port}`
+  if (import.meta.env.PROD) return prodDefault
+  return `${localApiBaseUrl}:${port}`
 }
 
 export const env = {
-  authApiBaseUrl: resolveApiUrl(import.meta.env.VITE_AUTH_API_BASE_URL, 8000),
-  adminApiBaseUrl: resolveApiUrl(import.meta.env.VITE_ADMIN_API_BASE_URL, 8001),
-  serviceApiBaseUrl: resolveApiUrl(import.meta.env.VITE_SERVICE_API_BASE_URL, 8004),
-  venueApiBaseUrl: resolveApiUrl(import.meta.env.VITE_VENUE_API_BASE_URL, 8005),
-  kycApiBaseUrl: resolveApiUrl(import.meta.env.VITE_KYC_API_BASE_URL, 8003),
-  membershipApiBaseUrl: resolveApiUrl(import.meta.env.VITE_MEMBERSHIP_API_BASE_URL, 8006),
-  settingsApiBaseUrl: resolveApiUrl(import.meta.env.VITE_SETTINGS_API_BASE_URL, 8007),
+  authApiBaseUrl: resolveApiUrl(
+    import.meta.env.VITE_AUTH_API_BASE_URL,
+    8000,
+    PROD_SERVICE_URLS.auth,
+  ),
+  adminApiBaseUrl: resolveApiUrl(
+    import.meta.env.VITE_ADMIN_API_BASE_URL,
+    8001,
+    PROD_SERVICE_URLS.admin,
+  ),
+  serviceApiBaseUrl: resolveApiUrl(
+    import.meta.env.VITE_SERVICE_API_BASE_URL,
+    8004,
+    PROD_SERVICE_URLS.service,
+  ),
+  venueApiBaseUrl: resolveApiUrl(
+    import.meta.env.VITE_VENUE_API_BASE_URL,
+    8005,
+    PROD_SERVICE_URLS.venue,
+  ),
+  kycApiBaseUrl: resolveApiUrl(import.meta.env.VITE_KYC_API_BASE_URL, 8003, PROD_SERVICE_URLS.kyc),
+  membershipApiBaseUrl: resolveApiUrl(
+    import.meta.env.VITE_MEMBERSHIP_API_BASE_URL,
+    8006,
+    PROD_SERVICE_URLS.membership,
+  ),
+  settingsApiBaseUrl: resolveApiUrl(
+    import.meta.env.VITE_SETTINGS_API_BASE_URL,
+    8007,
+    PROD_SERVICE_URLS.settings,
+  ),
 }

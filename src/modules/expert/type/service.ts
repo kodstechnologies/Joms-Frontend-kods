@@ -186,12 +186,6 @@ export interface TopicListResponse {
   }
 }
 
-export interface CreateTopicResponse {
-  success: boolean
-  message: string
-  data: ConsultationTopic
-}
-
 export interface ConsultationPricingOption {
   durationMinutes: number
   pricingType: 'free' | 'paid'
@@ -343,4 +337,3 @@ export interface PublishResponse<T = ServiceDetail | ConsultationDetail> {
   message: string
   data: T
 }
-
