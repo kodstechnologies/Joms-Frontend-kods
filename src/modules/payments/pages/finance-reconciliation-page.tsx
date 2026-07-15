@@ -80,9 +80,7 @@ export function FinanceReconciliationPage() {
 
   const toggleRowSelection = useCallback((rowId: string) => {
     setSelectedRowIds((currentIds) =>
-      currentIds.includes(rowId)
-        ? currentIds.filter((id) => id !== rowId)
-        : [...currentIds, rowId],
+      currentIds.includes(rowId) ? currentIds.filter((id) => id !== rowId) : [...currentIds, rowId],
     )
   }, [])
 
@@ -149,7 +147,7 @@ export function FinanceReconciliationPage() {
         accessorKey: 'reconciliationId',
         header: 'Reconciliation ID',
         cell: ({ row }) => (
-          <span className="font-mono text-[11px] uppercase text-white">
+          <span className="font-mono text-[11px] text-white uppercase">
             {row.original.reconciliationId}
           </span>
         ),
@@ -166,18 +164,24 @@ export function FinanceReconciliationPage() {
         accessorKey: 'platformRecordId',
         header: 'Platform Record ID',
         cell: ({ row }) => (
-          <span className="font-mono text-[11px] text-[#888888]">{row.original.platformRecordId}</span>
+          <span className="font-mono text-[11px] text-[#888888]">
+            {row.original.platformRecordId}
+          </span>
         ),
       },
       {
         accessorKey: 'gatewayAmount',
         header: 'Gateway Amount',
-        cell: ({ row }) => <span className="font-semibold text-white">{row.original.gatewayAmount}</span>,
+        cell: ({ row }) => (
+          <span className="font-semibold text-white">{row.original.gatewayAmount}</span>
+        ),
       },
       {
         accessorKey: 'platformAmount',
         header: 'Platform Amount',
-        cell: ({ row }) => <span className="font-semibold text-white">{row.original.platformAmount}</span>,
+        cell: ({ row }) => (
+          <span className="font-semibold text-white">{row.original.platformAmount}</span>
+        ),
       },
       {
         accessorKey: 'difference',
@@ -214,7 +218,9 @@ export function FinanceReconciliationPage() {
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-[28px] font-bold tracking-tight text-white">Financial Reconciliation</h1>
+          <h1 className="text-[28px] font-bold tracking-tight text-white">
+            Financial Reconciliation
+          </h1>
           <p className="mt-1 text-[13px] text-[#888888]">
             Reconcile gateway settlements with platform payment records
           </p>

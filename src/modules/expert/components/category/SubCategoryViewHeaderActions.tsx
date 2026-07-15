@@ -5,10 +5,7 @@ import { toast } from 'sonner'
 
 import { Button } from '@/shared/components/ui/button'
 
-import {
-  categoryPath,
-  useCategoryManagementScope,
-} from './category-management-scope'
+import { categoryPath, useCategoryManagementScope } from './category-management-scope'
 import { DeleteCategoryModal } from './delete-category-modal'
 import { PauseCategoryModal } from './pause-category-modal'
 import {

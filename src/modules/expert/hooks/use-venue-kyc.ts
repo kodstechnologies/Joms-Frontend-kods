@@ -20,8 +20,7 @@ export const useUpdateVenueKycStatus = (id?: string) => {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: (payload: VenueKycStatusPayload) =>
-      updateVenueKycStatus(id as string, payload),
+    mutationFn: (payload: VenueKycStatusPayload) => updateVenueKycStatus(id as string, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['venue-kyc-application', id] })
       queryClient.invalidateQueries({ queryKey: ['venues'] })
@@ -34,13 +33,8 @@ export const useApproveVenueKyc = (id?: string) => {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: ({
-      partnerId,
-      adminNote,
-    }: {
-      partnerId: string
-      adminNote?: string
-    }) => approveVenueKycByPartnerId(partnerId, { adminNote }),
+    mutationFn: ({ partnerId, adminNote }: { partnerId: string; adminNote?: string }) =>
+      approveVenueKycByPartnerId(partnerId, { adminNote }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['venue-kyc-application', id] })
       queryClient.invalidateQueries({ queryKey: ['venues'] })
@@ -54,8 +48,7 @@ export const useUpdateVenueBankingStatus = (id?: string) => {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: (payload: VenueKycStatusPayload) =>
-      updateVenueBankingStatus(id as string, payload),
+    mutationFn: (payload: VenueKycStatusPayload) => updateVenueBankingStatus(id as string, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['venue-kyc-application', id] })
       queryClient.invalidateQueries({ queryKey: ['venues'] })

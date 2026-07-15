@@ -5,7 +5,13 @@ import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
 import { RestoreBackupModal } from './restore-backup-modal'
-import { useBackupMetrics, useBackups, useDeleteBackup, useRestoreBackup, useRunBackup } from '../hooks/use-backups'
+import {
+  useBackupMetrics,
+  useBackups,
+  useDeleteBackup,
+  useRestoreBackup,
+  useRunBackup,
+} from '../hooks/use-backups'
 import type { BackupHistoryRow, SettingsMetric } from '../types/settings'
 import { StatCard } from '@/shared/components/dashboard/stat-card'
 import { DataTable } from '@/shared/components/table/data-table'
@@ -23,7 +29,9 @@ function StatusBadge({ status }: { status: BackupHistoryRow['status'] }) {
     Failed: 'border-rose-500/30 bg-rose-500/10 text-rose-300',
   }
   return (
-    <span className={cn('rounded-full border px-2.5 py-0.5 text-[11px] font-semibold', styles[status])}>
+    <span
+      className={cn('rounded-full border px-2.5 py-0.5 text-[11px] font-semibold', styles[status])}
+    >
       {status}
     </span>
   )
@@ -168,11 +176,18 @@ export function BackupRestorePanel() {
               <div key={index} className="h-24 animate-pulse rounded-xl bg-white/5" />
             ))
           : metricCards.map((metric) => (
-              <StatCard key={metric.title} title={metric.title} value={metric.value} trend={metric.trend} />
+              <StatCard
+                key={metric.title}
+                title={metric.title}
+                value={metric.value}
+                trend={metric.trend}
+              />
             ))}
       </ResponsiveGrid>
 
-      <div className={cn(uiTokens.radiusCard, uiTokens.borderSubtle, 'bg-brand-surface p-4 sm:p-5')}>
+      <div
+        className={cn(uiTokens.radiusCard, uiTokens.borderSubtle, 'bg-brand-surface p-4 sm:p-5')}
+      >
         <DataTable
           columns={columns}
           data={rows}

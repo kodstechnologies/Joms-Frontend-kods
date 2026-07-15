@@ -95,20 +95,20 @@ export function InviteExpertReferralModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
       <div
         className={cn(
-          'relative w-full max-w-xl border border-white/10 bg-brand-surface shadow-2xl',
+          'bg-brand-surface relative w-full max-w-xl border border-white/10 shadow-2xl',
           uiTokens.radiusCard,
         )}
       >
         <button
           type="button"
           onClick={handleClose}
-          className="absolute right-4 top-4 z-10 rounded-brand-md p-1.5 text-brand-muted hover:bg-white/5 hover:text-brand-text"
+          className="rounded-brand-md text-brand-muted hover:text-brand-text absolute top-4 right-4 z-10 p-1.5 hover:bg-white/5"
         >
           <X className="size-4" />
         </button>
 
         <div className="border-b border-white/10 p-4 pt-5">
-          <div className="grid grid-cols-2 gap-1 rounded-brand-md bg-brand-bg p-1">
+          <div className="rounded-brand-md bg-brand-bg grid grid-cols-2 gap-1 p-1">
             <TabButton active={mode === 'manual'} onClick={() => setMode('manual')}>
               Manual Referral
             </TabButton>
@@ -151,7 +151,7 @@ export function InviteExpertReferralModal({
             </>
           ) : (
             <Field label="Upload Excel*">
-              <label className="flex min-h-36 cursor-pointer flex-col items-center justify-center rounded-brand-md border border-dashed border-white/10 bg-brand-bg p-6 text-center">
+              <label className="rounded-brand-md bg-brand-bg flex min-h-36 cursor-pointer flex-col items-center justify-center border border-dashed border-white/10 p-6 text-center">
                 {fileName ? (
                   <>
                     <CheckCircle2 className="mb-2 size-8 text-emerald-400" />
@@ -170,12 +170,16 @@ export function InviteExpertReferralModal({
                         <Trash2 className="size-3.5" />
                       </button>
                     </div>
-                    <p className="mt-1 text-xs text-slate-500">{recipients.length} experts parsed</p>
+                    <p className="mt-1 text-xs text-slate-500">
+                      {recipients.length} experts parsed
+                    </p>
                   </>
                 ) : (
                   <>
                     <CloudUpload className="mb-2 size-8 text-slate-500" />
-                    <p className="text-sm text-slate-400">Upload CSV with name, email, phone columns</p>
+                    <p className="text-sm text-slate-400">
+                      Upload CSV with name, email, phone columns
+                    </p>
                   </>
                 )}
                 <input
@@ -193,11 +197,11 @@ export function InviteExpertReferralModal({
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               placeholder="Enter here"
-              className="h-32 w-full resize-none rounded-brand-md border border-white/10 bg-brand-bg px-4 py-3 text-sm text-brand-text placeholder:text-brand-muted focus:outline-none focus:ring-2 focus:ring-brand-accent/40"
+              className="rounded-brand-md bg-brand-bg text-brand-text placeholder:text-brand-muted focus:ring-brand-accent/40 h-32 w-full resize-none border border-white/10 px-4 py-3 text-sm focus:ring-2 focus:outline-none"
             />
           </Field>
 
-          <p className="text-xs leading-relaxed text-brand-muted">
+          <p className="text-brand-muted text-xs leading-relaxed">
             Note: Experts will receive the referral invite on their email and through SMS/WhatsApp.
           </p>
         </div>
@@ -241,7 +245,7 @@ function TabButton({
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="block space-y-2.5">
-      <span className="text-sm font-medium text-brand-text">{label}</span>
+      <span className="text-brand-text text-sm font-medium">{label}</span>
       {children}
     </label>
   )

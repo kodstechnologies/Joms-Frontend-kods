@@ -1,5 +1,5 @@
-import { VenueAdvancedFilter } from "../../components/venue";
+import { VenueAdvancedFilter } from '../../components/venue'
 
 export function VenueCategoryFilterPage() {
-  return <VenueAdvancedFilter />;
+  return <VenueAdvancedFilter />
 }

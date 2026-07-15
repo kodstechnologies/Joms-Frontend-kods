@@ -8,10 +8,7 @@ import {
   TableActionsItem,
 } from '@/shared/components/table/table-actions-dropdown'
 
-import {
-  categoryPath,
-  useCategoryManagementScope,
-} from './category-management-scope'
+import { categoryPath, useCategoryManagementScope } from './category-management-scope'
 import {
   usePauseServiceSubCategory,
   useSoftDeleteServiceSubCategory,

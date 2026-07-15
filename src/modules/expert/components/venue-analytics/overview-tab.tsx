@@ -6,12 +6,7 @@ import {
   REVENUE_SNAPSHOT,
   VISIBILITY_METRICS,
 } from '../../mock/venue-profile-analytics.mock'
-import {
-  AnalyticsCard,
-  MetricCard,
-  PeriodSelect,
-  SectionTitle,
-} from './analytics-ui'
+import { AnalyticsCard, MetricCard, PeriodSelect, SectionTitle } from './analytics-ui'
 
 export function OverviewTab() {
   const [period, setPeriod] = useState('Last 7 Days')
@@ -37,12 +32,7 @@ export function OverviewTab() {
         />
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           {VISIBILITY_METRICS.map((item) => (
-            <MetricCard
-              key={item.label}
-              label={item.label}
-              value={item.value}
-              trend={item.trend}
-            />
+            <MetricCard key={item.label} label={item.label} value={item.value} trend={item.trend} />
           ))}
         </div>
       </div>
@@ -51,12 +41,7 @@ export function OverviewTab() {
         <SectionTitle title="Booking Snapshot" subtitle="Venue booking analysis" />
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {BOOKING_SNAPSHOT.map((item) => (
-            <MetricCard
-              key={item.label}
-              label={item.label}
-              value={item.value}
-              trend={item.trend}
-            />
+            <MetricCard key={item.label} label={item.label} value={item.value} trend={item.trend} />
           ))}
         </div>
       </div>
@@ -65,12 +50,7 @@ export function OverviewTab() {
         <SectionTitle title="Revenue Snapshot" subtitle="Communication and interaction metrics" />
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {REVENUE_SNAPSHOT.map((item) => (
-            <MetricCard
-              key={item.label}
-              label={item.label}
-              value={item.value}
-              trend={item.trend}
-            />
+            <MetricCard key={item.label} label={item.label} value={item.value} trend={item.trend} />
           ))}
         </div>
       </div>

@@ -22,10 +22,20 @@ const serviceNames = [
   'Financial Planning Session',
 ]
 
-const expertNames = ['Sarah Jhonson', 'Michael Chen', 'Emma Rodriguez', 'Alex Smith', 'Priya Sharma']
+const expertNames = [
+  'Sarah Jhonson',
+  'Michael Chen',
+  'Emma Rodriguez',
+  'Alex Smith',
+  'Priya Sharma',
+]
 const userNames = ['Alex Smith', 'John Carter', 'Maria Lopez', 'David Kim', 'Sophie Turner']
 
-function createRows(tab: FinanceServiceTab, count: number, startIndex: number): FinanceServiceRow[] {
+function createRows(
+  tab: FinanceServiceTab,
+  count: number,
+  startIndex: number,
+): FinanceServiceRow[] {
   return Array.from({ length: count }, (_, index) => {
     const rowIndex = startIndex + index + 1
     const nameIndex = index % serviceNames.length

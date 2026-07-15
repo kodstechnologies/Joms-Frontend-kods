@@ -35,14 +35,13 @@ export function PermissionAccordions({ catalog, selected, onChange }: Permission
 
   const highRiskCount = modules.reduce((count, [, mod]) => {
     return (
-      count +
-      mod.permissions.filter((p) => p.risk === 'high' && selected.includes(p.key)).length
+      count + mod.permissions.filter((p) => p.risk === 'high' && selected.includes(p.key)).length
     )
   }, 0)
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-4 rounded-brand-lg border border-white/10 bg-white/5 px-4 py-3 text-sm text-brand-muted">
+      <div className="rounded-brand-lg text-brand-muted flex flex-wrap items-center gap-4 border border-white/10 bg-white/5 px-4 py-3 text-sm">
         <span>{enabledScopes} Scopes Enabled</span>
         <span>{selected.length} Permissions Enabled</span>
         <span className="text-brand-accent">{highRiskCount} High-Risk Permissions</span>
@@ -56,12 +55,12 @@ export function PermissionAccordions({ catalog, selected, onChange }: Permission
         return (
           <div
             key={moduleKey}
-            className="overflow-hidden rounded-brand-lg border border-white/10 bg-brand-surface"
+            className="rounded-brand-lg bg-brand-surface overflow-hidden border border-white/10"
           >
             <div className="flex items-center justify-between gap-4 border-b border-white/10 px-5 py-4">
               <div>
-                <h3 className="text-base font-semibold text-brand-text">{module.label}</h3>
-                <p className="text-sm text-brand-muted">
+                <h3 className="text-brand-text text-base font-semibold">{module.label}</h3>
+                <p className="text-brand-muted text-sm">
                   {enabledCount}/{moduleKeys.length} Enabled
                 </p>
               </div>
@@ -91,9 +90,9 @@ export function PermissionAccordions({ catalog, selected, onChange }: Permission
                     className="flex items-center justify-between gap-4 px-5 py-3"
                   >
                     <div className="flex items-center gap-2">
-                      <span className="text-sm text-brand-text">{permission.label}</span>
+                      <span className="text-brand-text text-sm">{permission.label}</span>
                       {permission.risk === 'high' ? (
-                        <span className="rounded bg-brand-danger/20 px-2 py-0.5 text-xs text-brand-danger">
+                        <span className="bg-brand-danger/20 text-brand-danger rounded px-2 py-0.5 text-xs">
                           High Risk
                         </span>
                       ) : null}

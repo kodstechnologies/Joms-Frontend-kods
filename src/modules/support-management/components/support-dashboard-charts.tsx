@@ -34,7 +34,12 @@ const tooltipStyle = {
 }
 
 const pieColors = ['#F59E0B', '#60A5FA', '#34D399', '#E2E8F0']
-const moduleColors = { networking: '#92400E', events: '#3B82F6', services: '#1E40AF', venues: '#10B981' }
+const moduleColors = {
+  networking: '#92400E',
+  events: '#3B82F6',
+  services: '#1E40AF',
+  venues: '#10B981',
+}
 
 export function SupportDashboardCharts() {
   const totalReasonTickets = ticketsByReasonMock.reduce((sum, r) => sum + r.count, 0)
@@ -47,18 +52,44 @@ export function SupportDashboardCharts() {
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={ticketTrendsMock} margin={{ left: 8, right: 8, top: 8, bottom: 8 }}>
                 <CartesianGrid stroke="rgba(255,255,255,0.05)" vertical={false} />
-                <XAxis dataKey="day" tickLine={false} axisLine={false} tick={{ fill: 'rgba(148,163,184,0.85)', fontSize: 12 }} />
-                <YAxis tickLine={false} axisLine={false} tick={{ fill: 'rgba(148,163,184,0.85)', fontSize: 12 }} />
+                <XAxis
+                  dataKey="day"
+                  tickLine={false}
+                  axisLine={false}
+                  tick={{ fill: 'rgba(148,163,184,0.85)', fontSize: 12 }}
+                />
+                <YAxis
+                  tickLine={false}
+                  axisLine={false}
+                  tick={{ fill: 'rgba(148,163,184,0.85)', fontSize: 12 }}
+                />
                 <Tooltip contentStyle={tooltipStyle} />
                 <Legend wrapperStyle={{ color: 'rgba(148,163,184,0.85)' }} />
-                <Area type="monotone" dataKey="total" stackId="1" stroke="#60A5FA" fill="#60A5FA" fillOpacity={0.3} />
-                <Area type="monotone" dataKey="resolved" stackId="1" stroke="#34D399" fill="#34D399" fillOpacity={0.3} />
+                <Area
+                  type="monotone"
+                  dataKey="total"
+                  stackId="1"
+                  stroke="#60A5FA"
+                  fill="#60A5FA"
+                  fillOpacity={0.3}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="resolved"
+                  stackId="1"
+                  stroke="#34D399"
+                  fill="#34D399"
+                  fillOpacity={0.3}
+                />
               </AreaChart>
             </ResponsiveContainer>
           </div>
         </ChartCard>
 
-        <ChartCard title="Tickets by User Type" description="Distribution across platform user segments">
+        <ChartCard
+          title="Tickets by User Type"
+          description="Distribution across platform user segments"
+        >
           <div className="h-[260px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
@@ -89,8 +120,17 @@ export function SupportDashboardCharts() {
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={ticketsByModuleMock} margin={{ left: 8, right: 8, top: 8, bottom: 8 }}>
               <CartesianGrid stroke="rgba(255,255,255,0.05)" vertical={false} />
-              <XAxis dataKey="month" tickLine={false} axisLine={false} tick={{ fill: 'rgba(148,163,184,0.85)', fontSize: 12 }} />
-              <YAxis tickLine={false} axisLine={false} tick={{ fill: 'rgba(148,163,184,0.85)', fontSize: 12 }} />
+              <XAxis
+                dataKey="month"
+                tickLine={false}
+                axisLine={false}
+                tick={{ fill: 'rgba(148,163,184,0.85)', fontSize: 12 }}
+              />
+              <YAxis
+                tickLine={false}
+                axisLine={false}
+                tick={{ fill: 'rgba(148,163,184,0.85)', fontSize: 12 }}
+              />
               <Tooltip contentStyle={tooltipStyle} />
               <Legend wrapperStyle={{ color: 'rgba(148,163,184,0.85)' }} />
               <Bar dataKey="networking" fill={moduleColors.networking} radius={[4, 4, 0, 0]} />
@@ -131,8 +171,17 @@ export function SupportDashboardCharts() {
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={escalationsMock} margin={{ left: 8, right: 8, top: 8, bottom: 8 }}>
                 <CartesianGrid stroke="rgba(255,255,255,0.05)" vertical={false} />
-                <XAxis dataKey="day" tickLine={false} axisLine={false} tick={{ fill: 'rgba(148,163,184,0.85)', fontSize: 12 }} />
-                <YAxis tickLine={false} axisLine={false} tick={{ fill: 'rgba(148,163,184,0.85)', fontSize: 12 }} />
+                <XAxis
+                  dataKey="day"
+                  tickLine={false}
+                  axisLine={false}
+                  tick={{ fill: 'rgba(148,163,184,0.85)', fontSize: 12 }}
+                />
+                <YAxis
+                  tickLine={false}
+                  axisLine={false}
+                  tick={{ fill: 'rgba(148,163,184,0.85)', fontSize: 12 }}
+                />
                 <Tooltip contentStyle={tooltipStyle} />
                 <Legend wrapperStyle={{ color: 'rgba(148,163,184,0.85)' }} />
                 <Bar dataKey="teamA" fill="#34D399" radius={[4, 4, 0, 0]} />

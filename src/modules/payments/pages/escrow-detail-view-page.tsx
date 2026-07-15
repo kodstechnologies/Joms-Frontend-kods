@@ -29,7 +29,9 @@ function DetailRow({
   return (
     <div className="flex items-center justify-between gap-4 border-b border-white/5 py-3 last:border-b-0">
       <span className="text-[12px] text-[#888888]">{label}</span>
-      <span className={cn('text-right text-[12px] font-medium text-white', valueClassName)}>{value}</span>
+      <span className={cn('text-right text-[12px] font-medium text-white', valueClassName)}>
+        {value}
+      </span>
     </div>
   )
 }
@@ -123,7 +125,9 @@ export function EscrowDetailViewPage() {
         <Button variant="secondary" onClick={() => navigate('/finance/escrow')}>
           Close
         </Button>
-        <Button onClick={() => toast.message('Download invoice coming soon')}>Download Invoice</Button>
+        <Button onClick={() => toast.message('Download invoice coming soon')}>
+          Download Invoice
+        </Button>
       </footer>
     </div>
   )

@@ -1,15 +1,16 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { Eye, TrendingUp } from 'lucide-react'
+import { Eye } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
+import { useExpertSubscriptions } from '@/modules/memberships/hooks/use-membership-subscriptions'
+import type { SubscriptionStatus } from '@/modules/memberships/types/membership-subscription'
 import {
-  membershipRowsMock,
-  membershipSummaryMetricsMock,
-  type MembershipRow,
-  type MembershipStatus,
-} from '@/modules/payments/mock/membership-management.mock'
+  mapSubscriptionToFinanceRow,
+  type FinanceMembershipRow,
+  type FinanceMembershipStatus,
+} from '@/modules/payments/utils/finance-membership-mapper'
 import { DataTable } from '@/shared/components/table/data-table'
 import {
   TableActionsDropdown,
@@ -19,67 +20,44 @@ import { cn } from '@/shared/lib/cn'
 
 const PAGE_SIZE = 10
 
-function SummaryCard({
-  label,
-  value,
-  change,
-  changeNote,
-}: {
-  label: string
-  value: string
-  change: string
-  changeNote: string
-}) {
-  return (
-    <div className="rounded-xl border border-white/[0.06] bg-[#1A1A1A] p-5">
-      <p className="text-[11px] font-medium text-[#888888]">{label}</p>
-      <p className="mt-2 text-[26px] font-bold tracking-tight text-white">{value}</p>
-      <div className="mt-3 flex flex-wrap items-center gap-2">
-        <span className="inline-flex items-center gap-1 rounded-md bg-emerald-500/15 px-2 py-0.5 text-[10px] font-bold text-emerald-400">
-          <TrendingUp className="size-3" />
-          {change}
-        </span>
-        <span className="text-[10px] text-[#666666]">{changeNote}</span>
-      </div>
-    </div>
-  )
-}
+const STATUS_FILTERS: Array<{ label: string; value: SubscriptionStatus | 'all' }> = [
+  { label: 'All', value: 'all' },
+  { label: 'Active', value: 'active' },
+  { label: 'Paused', value: 'paused' },
+  { label: 'Cancelled', value: 'cancelled' },
+  { label: 'Expired', value: 'expired' },
+]
 
-function getStatusClassName(status: MembershipStatus) {
+function getStatusClassName(status: FinanceMembershipStatus) {
   if (status === 'Active') return 'border-emerald-500/25 bg-emerald-500/10 text-emerald-400'
   if (status === 'Paused') return 'border-amber-500/25 bg-amber-500/10 text-amber-400'
   if (status === 'Cancelled') return 'border-rose-500/25 bg-rose-500/10 text-rose-400'
-  return 'border-slate-500/25 bg-slate-500/10 text-slate-400'
+  return 'border-blue-500/25 bg-blue-500/10 text-blue-300'
 }
 
 export function MembershipManagementPage() {
   const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
+  const [statusFilter, setStatusFilter] = useState<SubscriptionStatus | 'all'>('all')
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [selectedRowIds, setSelectedRowIds] = useState<string[]>([])
 
-  const filteredRows = useMemo(() => {
-    const query = searchQuery.trim().toLowerCase()
-    if (!query) return membershipRowsMock
-    return membershipRowsMock.filter((row) =>
-      [row.subscriptionId, row.name, row.planName, row.amount, row.billingCycle, row.status]
-        .join(' ')
-        .toLowerCase()
-        .includes(query),
-    )
-  }, [searchQuery])
+  const { data, isLoading, isFetching } = useExpertSubscriptions({
+    search: searchQuery.trim() || undefined,
+    status: statusFilter === 'all' ? undefined : statusFilter,
+    page: currentPage,
+    limit: PAGE_SIZE,
+  })
 
-  const totalItems = filteredRows.length
-  const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE))
-  const safePage = Math.min(currentPage, totalPages)
+  const rows = useMemo(
+    () => (data?.data?.subscriptions ?? []).map(mapSubscriptionToFinanceRow),
+    [data],
+  )
+  const meta = data?.data?.meta
+  const counts = meta?.counts
 
-  const pageRows = useMemo(() => {
-    const start = (safePage - 1) * PAGE_SIZE
-    return filteredRows.slice(start, start + PAGE_SIZE)
-  }, [filteredRows, safePage])
-
-  const visibleRowIds = useMemo(() => pageRows.map((row) => row.id), [pageRows])
+  const visibleRowIds = useMemo(() => rows.map((row) => row.id), [rows])
   const allVisibleSelected =
     visibleRowIds.length > 0 && visibleRowIds.every((id) => selectedRowIds.includes(id))
   const someVisibleSelected = visibleRowIds.some((id) => selectedRowIds.includes(id))
@@ -98,7 +76,7 @@ export function MembershipManagementPage() {
   }, [])
 
   const renderActions = useCallback(
-    (record: MembershipRow) => (
+    (record: FinanceMembershipRow) => (
       <TableActionsDropdown
         label="Open subscription actions"
         isOpen={activeDropdownId === record.id}
@@ -121,7 +99,7 @@ export function MembershipManagementPage() {
     [activeDropdownId, navigate],
   )
 
-  const columns = useMemo<ColumnDef<MembershipRow>[]>(
+  const columns = useMemo<ColumnDef<FinanceMembershipRow>[]>(
     () => [
       {
         id: 'select',
@@ -153,7 +131,9 @@ export function MembershipManagementPage() {
         accessorKey: 'subscriptionId',
         header: 'Subscription ID',
         cell: ({ row }) => (
-          <span className="font-mono text-[11px] uppercase text-white">{row.original.subscriptionId}</span>
+          <span className="font-mono text-[11px] text-white uppercase">
+            {row.original.subscriptionId}
+          </span>
         ),
       },
       { accessorKey: 'name', header: 'Name' },
@@ -206,23 +186,44 @@ export function MembershipManagementPage() {
         </p>
         <p className="mt-3 text-[12px] text-[#888888]">
           <Link to="/finance/dashboard" className="transition-colors hover:text-white">
-            Payment & Finance
+            Finance Management
           </Link>
           <span> / </span>
           <span className="font-semibold text-white">Memberships</span>
         </p>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {membershipSummaryMetricsMock.map((metric) => (
-          <SummaryCard key={metric.label} {...metric} />
-        ))}
+      <div className="flex flex-wrap gap-2">
+        {STATUS_FILTERS.map((filter) => {
+          const countLabel = filter.value === 'all' ? '' : ` (${counts?.[filter.value] ?? 0})`
+
+          return (
+            <button
+              key={filter.value}
+              type="button"
+              onClick={() => {
+                setStatusFilter(filter.value)
+                setCurrentPage(1)
+              }}
+              className={cn(
+                'rounded-full border px-4 py-2 text-xs font-medium',
+                statusFilter === filter.value
+                  ? 'border-[#EBC38C]/40 bg-[#EBC38C]/10 text-[#EBC38C]'
+                  : 'border-white/10 text-slate-400',
+              )}
+            >
+              {filter.label}
+              {countLabel}
+            </button>
+          )
+        })}
       </div>
 
       <DataTable
         columns={columns}
-        data={pageRows}
+        data={rows}
         getRowId={(row) => row.id}
+        isLoading={isLoading || isFetching}
         searchValue={searchQuery}
         onSearchChange={(value) => {
           setSearchQuery(value)
@@ -233,10 +234,10 @@ export function MembershipManagementPage() {
         onAdvancedFilter={() => toast.message('Advance filters coming soon')}
         onExport={() => toast.message('Export coming soon')}
         pagination={{
-          page: safePage,
-          pageSize: PAGE_SIZE,
-          totalItems,
-          totalPages,
+          page: meta?.page ?? currentPage,
+          pageSize: meta?.limit ?? PAGE_SIZE,
+          totalItems: meta?.total ?? 0,
+          totalPages: meta?.totalPages ?? 1,
           onPageChange: setCurrentPage,
         }}
         resourceLabel="subscriptions"

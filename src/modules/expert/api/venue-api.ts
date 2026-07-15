@@ -16,10 +16,7 @@ import type {
 } from '../type/venue-onboarding.ts'
 import type { VenueFullViewResponse } from '../type/venue-full-view.ts'
 import type { VenueFormData } from '../utils/venue-form.ts'
-import {
-  mapCancellationPolicyToHours,
-  mapSpaceTypeToApi,
-} from '../utils/venue-form.ts'
+import { mapCancellationPolicyToHours, mapSpaceTypeToApi } from '../utils/venue-form.ts'
 
 export const fetchVenues = async (params?: {
   page?: number
@@ -27,10 +24,9 @@ export const fetchVenues = async (params?: {
   status?: VenueStatus | 'reported'
   search?: string
 }) => {
-  const response = await venueApiClient.get<VenueResponse>(
-    '/venues/internal/admin/venues',
-    { params },
-  )
+  const response = await venueApiClient.get<VenueResponse>('/venues/internal/admin/venues', {
+    params,
+  })
   return response.data
 }
 
@@ -43,14 +39,8 @@ export type SuspendVenuePayload = {
   adminNotes: string
 }
 
-export const suspendVenue = async (
-  venueId: string,
-  payload: SuspendVenuePayload,
-) => {
-  const response = await venueApiClient.patch(
-    `/venues/admin/suspend/${venueId}`,
-    payload,
-  )
+export const suspendVenue = async (venueId: string, payload: SuspendVenuePayload) => {
+  const response = await venueApiClient.patch(`/venues/admin/suspend/${venueId}`, payload)
   return response.data
 }
 
@@ -61,24 +51,17 @@ export type DeleteVenuePayload = {
 }
 
 export const deleteVenue = async (venueId: string, payload: DeleteVenuePayload) => {
-  const response = await venueApiClient.patch(
-    `/venues/admin/delete/${venueId}`,
-    payload,
-  )
+  const response = await venueApiClient.patch(`/venues/admin/delete/${venueId}`, payload)
   return response.data
 }
 
 export const restoreVenue = async (venueId: string) => {
-  const response = await venueApiClient.patch(
-    `/venues/admin/restore/${venueId}`,
-  )
+  const response = await venueApiClient.patch(`/venues/admin/restore/${venueId}`)
   return response.data
 }
 
 export const activateVenue = async (venueId: string) => {
-  const response = await venueApiClient.patch(
-    `/venues/admin/activate/${venueId}`,
-  )
+  const response = await venueApiClient.patch(`/venues/admin/activate/${venueId}`)
   return response.data
 }
 
@@ -99,24 +82,21 @@ export const fetchVenueFullView = async (venueId: string, spaceId?: string) => {
 
 export type UpdateVenueSpaceStatusPayload =
   | {
-    status: 'approved'
-    adminNote?: string
-  }
+      status: 'approved'
+      adminNote?: string
+    }
   | {
-    status: 'rejected'
-    reasonFor: string[]
-    rejectionReason: string
-    adminNote?: string
-  }
+      status: 'rejected'
+      reasonFor: string[]
+      rejectionReason: string
+      adminNote?: string
+    }
 
 export const updateVenueSpaceStatus = async (
   spaceId: string,
   payload: UpdateVenueSpaceStatusPayload,
 ) => {
-  const response = await venueApiClient.patch(
-    `/venues/space/admin/status/${spaceId}`,
-    payload,
-  )
+  const response = await venueApiClient.patch(`/venues/space/admin/status/${spaceId}`, payload)
   return response.data
 }
 
@@ -134,10 +114,7 @@ export const updateVenueSpaceVisibility = async (
   spaceId: string,
   payload: UpdateVenueSpaceVisibilityPayload,
 ) => {
-  const response = await venueApiClient.patch(
-    `/venues/space/admin/visibility/${spaceId}`,
-    payload,
-  )
+  const response = await venueApiClient.patch(`/venues/space/admin/visibility/${spaceId}`, payload)
   return response.data
 }
 
@@ -158,8 +135,6 @@ export const fetchVenueCategories = async () => {
   return response.data
 }
 
-
-
 export const createAdminVenue = async (payload: {
   partnerId: string
   name: string
@@ -171,15 +146,11 @@ export const createAdminVenue = async (payload: {
   return response.data
 }
 
-
 export const updateAdminVenueDetails = async (
   venueId: string,
   payload: { venueCategoryId?: string[]; aboutVenue?: string },
 ) => {
-  const response = await venueApiClient.patch(
-    `/venues/admin/details/${venueId}`,
-    payload,
-  )
+  const response = await venueApiClient.patch(`/venues/admin/details/${venueId}`, payload)
   return response.data
 }
 
@@ -201,24 +172,14 @@ export const updateAdminVenueLocation = async (
     accessibility?: boolean
   },
 ) => {
-  const response = await venueApiClient.patch(
-    `/venues/admin/location/${venueId}`,
-    payload,
-  )
+  const response = await venueApiClient.patch(`/venues/admin/location/${venueId}`, payload)
   return response.data
 }
 
-export const createAdminSpace = async (
-  venueId: string,
-  payload: Record<string, unknown>,
-) => {
-  const response = await venueApiClient.post(
-    `/venues/admin/space/${venueId}`,
-    payload,
-  )
+export const createAdminSpace = async (venueId: string, payload: Record<string, unknown>) => {
+  const response = await venueApiClient.post(`/venues/admin/space/${venueId}`, payload)
   return response.data
 }
-
 
 export const createAdminVenueAmenity = async (
   venueId: string,
@@ -230,36 +191,23 @@ export const createAdminVenueAmenity = async (
     }>
   },
 ) => {
-  const response = await venueApiClient.post(
-    `/venues/admin/amenities/${venueId}`,
-    payload,
-  )
+  const response = await venueApiClient.post(`/venues/admin/amenities/${venueId}`, payload)
   return response.data
 }
-
 
 export const createAdminVenueGallery = async (
   venueId: string,
   spaceId: string,
   payload: FormData,
 ) => {
-  const response = await venueApiClient.post(
-    `/venues/admin/gallery/${venueId}`,
-    payload,
-    {
-      params: { spaceId },
-      headers: { 'Content-Type': 'multipart/form-data' },
-    },
-  )
+  const response = await venueApiClient.post(`/venues/admin/gallery/${venueId}`, payload, {
+    params: { spaceId },
+    headers: { 'Content-Type': 'multipart/form-data' },
+  })
   return response.data
 }
 
-
-
-export const createPricing = async (
-  spaceId: string,
-  payload: Record<string, unknown>,
-) => {
+export const createPricing = async (spaceId: string, payload: Record<string, unknown>) => {
   const response = await venueApiClient.post(`/venues/pricing/${spaceId}`, payload)
   return response.data
 }
@@ -271,17 +219,11 @@ export const createAdminAvailability = async (
     blockedDates: Array<{ date: string; from: string; to: string }>
   },
 ) => {
-  const response = await venueApiClient.post(
-    `/venues/admin/availability/${spaceId}`,
-    payload,
-  )
+  const response = await venueApiClient.post(`/venues/admin/availability/${spaceId}`, payload)
   return response.data
 }
 
-export const createVenueTerms = async (
-  venueId: string,
-  payload: Record<string, unknown>,
-) => {
+export const createVenueTerms = async (venueId: string, payload: Record<string, unknown>) => {
   const response = await venueApiClient.post(`/venues/venue-terms/${venueId}`, payload)
   return response.data
 }
@@ -291,19 +233,11 @@ export const submitVenue = async (venueId: string) => {
   return response.data
 }
 
-
-export const submitAdminVenue = async (
-  venueId: string,
-) => {
-  const response =
-    await venueApiClient.post(
-      `/venues/admin/submit/${venueId}`,
-    )
+export const submitAdminVenue = async (venueId: string) => {
+  const response = await venueApiClient.post(`/venues/admin/submit/${venueId}`)
 
   return response.data
 }
-
-
 
 export const buildSpacePayload = (venueData: VenueFormData) => {
   const spaceType = mapSpaceTypeToApi(venueData.spaceType)
@@ -314,29 +248,22 @@ export const buildSpacePayload = (venueData: VenueFormData) => {
 
     ...(spaceType === 'auditorium'
       ? {
-        capacityMode: venueData.capacityType || 'seated',
+          capacityMode: venueData.capacityType || 'seated',
 
-        seatingStyle:
-          venueData.capacityType === 'seated'
-            ? venueData.seatingType
-            : undefined,
+          seatingStyle: venueData.capacityType === 'seated' ? venueData.seatingType : undefined,
 
-        areaSqFeet: venueData.areaSqFt
-          ? Number(venueData.areaSqFt)
-          : undefined,
-      }
+          areaSqFeet: venueData.areaSqFt ? Number(venueData.areaSqFt) : undefined,
+        }
       : {
-        guestLimit: venueData.guestCount
-          ? Number(venueData.guestCount)
-          : undefined,
-      }),
+          guestLimit: venueData.guestCount ? Number(venueData.guestCount) : undefined,
+        }),
 
     isSameAsVenueLocation: venueData.locationType === 'same',
 
     ...(venueData.locationType === 'different'
       ? {
-        location: null,
-      }
+          location: null,
+        }
       : {}),
 
     parkingAvailable: venueData.parkingAvailable,
@@ -373,16 +300,13 @@ export const buildTermsPayload = (venueData: VenueFormData) => ({
   },
 })
 
-
 export const buildGalleryFormData = (venueData: VenueFormData): FormData => {
   const formData = new FormData()
 
   formData.append(
     'contact',
     JSON.stringify({
-      contacts: venueData.contacts.filter(
-        (c) => c.name || c.phone || c.email,
-      ),
+      contacts: venueData.contacts.filter((c) => c.name || c.phone || c.email),
     }),
   )
 
@@ -401,14 +325,10 @@ export const buildGalleryFormData = (venueData: VenueFormData): FormData => {
   return formData
 }
 
-
-
 export const fetchAmenityMasters = async () => {
   const response = await venueApiClient.get('/amenities-master')
   return response.data
 }
-
-
 
 export const createVenue = async (payload: {
   venueCategoryId?: string[]
@@ -444,11 +364,7 @@ export const createVenueAmenity = async (
   return response.data
 }
 
-export const createVenueGallery = async (
-  venueId: string,
-  spaceId: string,
-  payload: FormData,
-) => {
+export const createVenueGallery = async (venueId: string, spaceId: string, payload: FormData) => {
   const response = await venueApiClient.post(`/venues/gallery/${venueId}`, payload, {
     params: { spaceId },
     headers: { 'Content-Type': 'multipart/form-data' },
@@ -456,10 +372,7 @@ export const createVenueGallery = async (
   return response.data
 }
 
-export const createSpace = async (
-  venueId: string,
-  payload: Record<string, unknown>,
-) => {
+export const createSpace = async (venueId: string, payload: Record<string, unknown>) => {
   const response = await venueApiClient.post(`/venues/space/${venueId}`, payload)
   return response.data
 }
@@ -467,8 +380,11 @@ export const createSpace = async (
 export const updateVenueProfile = async (
   payload: {
     location?: {
-      address?: string; landmark?: string; city?: string
-      latitude?: number; longitude?: number
+      address?: string
+      landmark?: string
+      city?: string
+      latitude?: number
+      longitude?: number
     }
     aboutVenue?: string
     parkingAvailable?: boolean
@@ -481,20 +397,12 @@ export const updateVenueProfile = async (
   })
   return response.data
 }
-export const createAmenityCategory = async (payload: {
-  category: string
-}) => {
-  const response = await venueApiClient.post(
-    '/amenities-master',
-    payload,
-  )
+export const createAmenityCategory = async (payload: { category: string }) => {
+  const response = await venueApiClient.post('/amenities-master', payload)
   return response.data
 }
 
-export const addAmenitySubCategory = async (
-  categoryId: string,
-  payload: FormData,
-) => {
+export const addAmenitySubCategory = async (categoryId: string, payload: FormData) => {
   const response = await venueApiClient.post(
     `/amenities-master/${categoryId}/sub-category`,
     payload,
@@ -509,13 +417,9 @@ export const addAmenitySubCategory = async (
 }
 
 export const addAmenity = async (payload: FormData) => {
-  const response = await venueApiClient.post(
-    '/amenities-master/add-amenity',
-    payload,
-    {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    },
-  )
+  const response = await venueApiClient.post('/amenities-master/add-amenity', payload, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  })
   return response.data
 }
 
@@ -527,10 +431,7 @@ export const saveVenueOnboardingBasicProfile = async (payload: FormData) => {
   return response.data
 }
 
-export const saveVenueOnboardingLocation = async (
-  venueId: string,
-  payload: FormData,
-) => {
+export const saveVenueOnboardingLocation = async (venueId: string, payload: FormData) => {
   const response = await venueApiClient.patch<VenueOnboardingLocationResponse>(
     `/venues/admin/onboarding/${venueId}/location`,
     payload,
@@ -538,10 +439,7 @@ export const saveVenueOnboardingLocation = async (
   return response.data
 }
 
-export const saveVenueOnboardingKyc = async (
-  venueId: string,
-  payload: FormData,
-) => {
+export const saveVenueOnboardingKyc = async (venueId: string, payload: FormData) => {
   const response = await venueApiClient.patch<VenueOnboardingKycResponse>(
     `/venues/admin/onboarding/${venueId}/kyc`,
     payload,

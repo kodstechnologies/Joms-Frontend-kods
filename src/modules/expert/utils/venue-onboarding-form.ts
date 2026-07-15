@@ -127,9 +127,7 @@ export const buildBasicProfileFormData = (
   return formData
 }
 
-export const buildVenuePartnerProfileFormData = (
-  form: VenueOnboardingFormData,
-): FormData => {
+export const buildVenuePartnerProfileFormData = (form: VenueOnboardingFormData): FormData => {
   const formData = new FormData()
 
   formData.append('fullname', form.name.trim())
@@ -180,10 +178,7 @@ export const buildKycFormData = (form: VenueOnboardingFormData): FormData => {
     if (form.gstCertificate) formData.append('gstCertificate', form.gstCertificate)
     if (form.fssaiLicense) formData.append('fssaiLicense', form.fssaiLicense)
   } else {
-    formData.append(
-      'itReturnsFiledLast2Years',
-      form.itReturnsFiledLast2Years ? 'true' : 'false',
-    )
+    formData.append('itReturnsFiledLast2Years', form.itReturnsFiledLast2Years ? 'true' : 'false')
     if (form.gstUndertakingEmail) {
       formData.append('gstUndertakingEmail', form.gstUndertakingEmail)
     }
@@ -208,9 +203,5 @@ export const formatHostingSince = (years?: number, months?: number) => {
 export const maskSensitiveValue = (value: string, visibleStart = 2, visibleEnd = 1) => {
   if (!value || value.length <= visibleStart + visibleEnd) return value
   const maskedLength = Math.max(value.length - visibleStart - visibleEnd, 4)
-  return (
-    value.slice(0, visibleStart) +
-    '*'.repeat(maskedLength) +
-    value.slice(-visibleEnd)
-  )
+  return value.slice(0, visibleStart) + '*'.repeat(maskedLength) + value.slice(-visibleEnd)
 }

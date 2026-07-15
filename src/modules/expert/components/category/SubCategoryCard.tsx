@@ -29,7 +29,7 @@ const SubCategoryCard = ({
   onIconChange,
 }: Props) => {
   return (
-    <div className="rounded-xl border border-white/10 bg-brand-surface p-6">
+    <div className="bg-brand-surface rounded-xl border border-white/10 p-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h2 className={categoryFormTheme.sectionTitleClass}>Sub-Category</h2>
@@ -46,10 +46,7 @@ const SubCategoryCard = ({
 
       <div className="mt-6 space-y-8">
         {subCategories.map((item, index) => (
-          <div
-            key={item.id}
-            className={index > 0 ? 'border-t border-white/10 pt-8' : undefined}
-          >
+          <div key={item.id} className={index > 0 ? 'border-t border-white/10 pt-8' : undefined}>
             <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1fr_auto] lg:items-end">
               <div>
                 <label className="mb-2 block text-[12px] font-medium text-white">
@@ -84,7 +81,7 @@ const SubCategoryCard = ({
                     onClick={() => onIconChange(item.id, null)}
                     disabled={!item.icon}
                     aria-label="Remove uploaded icon"
-                    className="size-11 shrink-0 border-0 !bg-brand-accent p-0 hover:!bg-brand-gold-from"
+                    className="!bg-brand-accent hover:!bg-brand-gold-from size-11 shrink-0 border-0 p-0"
                   >
                     <Trash2 className="size-[18px] text-red-500" aria-hidden="true" />
                   </Button>

@@ -2,6 +2,7 @@ import { membershipApiClient } from '@/shared/lib/axios'
 import type {
   BuyMembershipPayload,
   CancelSubscriptionPayload,
+  PauseSubscriptionPayload,
   ChangePlanPayload,
   ExtendSubscriptionPayload,
   SubscriptionDetailResponse,
@@ -22,9 +23,7 @@ export const fetchExpertSubscriptions = async (params?: {
 }
 
 export const fetchSubscriptionById = async (id: string) => {
-  const response = await membershipApiClient.get<SubscriptionDetailResponse>(
-    `/subscriptions/${id}`,
-  )
+  const response = await membershipApiClient.get<SubscriptionDetailResponse>(`/subscriptions/${id}`)
   return response.data
 }
 
@@ -63,6 +62,14 @@ export const extendSubscription = async (id: string, payload: ExtendSubscription
 export const cancelSubscription = async (id: string, payload: CancelSubscriptionPayload) => {
   const response = await membershipApiClient.patch<SubscriptionDetailResponse>(
     `/subscriptions/${id}/cancel`,
+    payload,
+  )
+  return response.data
+}
+
+export const pauseSubscription = async (id: string, payload: PauseSubscriptionPayload) => {
+  const response = await membershipApiClient.patch<SubscriptionDetailResponse>(
+    `/subscriptions/${id}/pause`,
     payload,
   )
   return response.data

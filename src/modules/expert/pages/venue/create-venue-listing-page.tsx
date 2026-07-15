@@ -18,7 +18,59 @@ import { fetchAdminDraftVenue } from '../../api/venue-api'
 import {
   createDefaultWeeklyAvailability,
   mapHoursToCancellationPolicy,
+  type VenueFormData,
 } from '../../utils/venue-form'
+
+type DraftWeeklyAvailabilityEntry = { day: string; from?: string; to?: string; enabled?: boolean }
+type DraftBlockedDate = { date?: string; from?: string; to?: string }
+type DraftAmenitySubCategory = { _id?: string; name?: string; image?: string } | string
+type DraftAmenity = {
+  categoryId?: string | { _id: string }
+  subCategoryIds?: DraftAmenitySubCategory[]
+  subCategories?: DraftAmenitySubCategory[]
+}
+type DraftContact = { name?: string; phone?: string; email?: string }
+type DraftFaq = { question?: string; answer?: string }
+type DraftPricing = {
+  weekdayPrice?: number
+  weekendPrice?: number
+  discount?: number
+  reservationFee?: number
+}
+type DraftVenueSpace = {
+  _id?: string
+  pricing?: DraftPricing[]
+  availability?: {
+    weeklyAvailability?: DraftWeeklyAvailabilityEntry[]
+    blockedDates?: DraftBlockedDate[]
+  }
+}
+type DraftVenue = {
+  name?: string
+  venueType?: string
+  venueCategoryId?: Array<string | { _id: string }>
+  aboutVenue?: string
+  location?: { address?: string; landmark?: string; city?: string }
+  parkingAvailable?: boolean
+  accessibility?: boolean
+  amenities?: { amenities?: DraftAmenity[] }
+  gallery?: {
+    venueCoverImages?: Array<{ url: string }>
+    spaceCoverImages?: Array<{ url: string }>
+    galleryImages?: Array<{ url: string }>
+    contact?: { contacts?: DraftContact[] }
+  }
+  spaces?: DraftVenueSpace[]
+  pricing?: DraftPricing[]
+  terms?: {
+    terms?: string[] | string
+    cancellation?: { freeCancellationHours?: number; refundPercentage?: number }
+    faqs?: DraftFaq[]
+  }
+}
+
+const toEntityId = (value?: string | { _id: string }) =>
+  typeof value === 'object' ? value?._id : value
 
 export const CreateVenueListingPage = () => {
   const [searchParams] = useSearchParams()
@@ -40,7 +92,7 @@ export const CreateVenueListingPage = () => {
     submitVenueListing,
   } = useVenueStepMutations()
 
-  const [venueData, setVenueData] = useState({
+  const [venueData, setVenueData] = useState<VenueFormData>({
     venueName: '',
     venueType: '',
     venueCategory: '',
@@ -69,7 +121,9 @@ export const CreateVenueListingPage = () => {
       image: string
     }[],
     contacts: [{ name: '', phone: '', email: '' }] as {
-      name: string; phone: string; email: string
+      name: string
+      phone: string
+      email: string
     }[],
     venueCoverImage: null as File | null,
     venueImage: null as File | null,
@@ -87,7 +141,8 @@ export const CreateVenueListingPage = () => {
     cancellationPolicy: '48hrs',
     refundPercentage: '0',
     faqs: [{ question: '', answer: '' }] as {
-      question: string; answer: string
+      question: string
+      answer: string
     }[],
     weeklyAvailability: createDefaultWeeklyAvailability(),
     blockedDates: [] as { date: string; from: string; to: string }[],
@@ -107,9 +162,9 @@ export const CreateVenueListingPage = () => {
     const loadVenue = async () => {
       try {
         const response = await fetchAdminDraftVenue(venueId)
-        const venue = response?.data
+        const venue = response?.data as DraftVenue | undefined
         const gallery = venue?.gallery
-        const spaces = (venue?.spaces || []) as any[]
+        const spaces = venue?.spaces || []
         const space = spaces[0]
         const pricing = space?.pricing?.[0] ?? venue?.pricing?.[0]
         const terms = venue?.terms
@@ -117,27 +172,23 @@ export const CreateVenueListingPage = () => {
         const defaultDays = createDefaultWeeklyAvailability()
         const savedWeekly = space?.availability?.weeklyAvailability ?? []
         const weeklyAvailability = defaultDays.map((entry) => {
-          const match = savedWeekly.find((d: any) => d.day === entry.day)
+          const match = savedWeekly.find((d) => d.day === entry.day)
           return match
-            ? { ...entry, from: match.from, to: match.to, enabled: true }
+            ? { ...entry, from: match.from || entry.from, to: match.to || entry.to, enabled: true }
             : { ...entry, enabled: savedWeekly.length === 0 ? entry.enabled : false }
         })
-        const blockedDates = (space?.availability?.blockedDates ?? []).map(
-          (d: any) => ({
-            date: d.date ? String(d.date).slice(0, 10) : '',
-            from: d.from || '',
-            to: d.to || '',
-          }),
-        )
+        const blockedDates = (space?.availability?.blockedDates ?? []).map((d) => ({
+          date: d.date ? String(d.date).slice(0, 10) : '',
+          from: d.from || '',
+          to: d.to || '',
+        }))
 
         if (space?._id) setSpaceId(String(space._id))
-        setVenueData(prev => ({
+        setVenueData((prev) => ({
           ...prev,
           venueName: venue?.name || '',
           venueType: venue?.venueType || '',
-          venueCategory: venue?.venueCategoryId?.[0]?._id
-            || venue?.venueCategoryId?.[0]
-            || '',
+          venueCategory: toEntityId(venue?.venueCategoryId?.[0]) || '',
           aboutVenue: venue?.aboutVenue || '',
           address: venue?.location?.address || '',
           landmark: venue?.location?.landmark || '',
@@ -155,60 +206,48 @@ export const CreateVenueListingPage = () => {
           decorationAvailable: false,
 
           amenities: Array.isArray(venue?.amenities?.amenities)
-            ? venue.amenities.amenities.flatMap((amenity: any) => {
-              const subs = amenity.subCategoryIds || amenity.subCategories || []
-              return subs.map((subCategory: any) => {
-                const subId =
-                  typeof subCategory === 'object'
-                    ? subCategory._id
-                    : subCategory
-                return {
-                  categoryId:
-                    typeof amenity.categoryId === 'object'
-                      ? amenity.categoryId._id
-                      : amenity.categoryId,
-                  subCategoryId: String(subId || ''),
-                  name: subCategory?.name || '',
-                  image: subCategory?.image || '',
-                }
+            ? venue.amenities.amenities.flatMap((amenity) => {
+                const subs = amenity.subCategoryIds || amenity.subCategories || []
+                return subs.map((subCategory) => {
+                  const subId = typeof subCategory === 'object' ? subCategory._id : subCategory
+                  return {
+                    categoryId: toEntityId(amenity.categoryId) || '',
+                    subCategoryId: String(subId || ''),
+                    name: typeof subCategory === 'object' ? subCategory.name || '' : '',
+                    image: typeof subCategory === 'object' ? subCategory.image || '' : '',
+                  }
+                })
               })
-            })
             : [],
 
           venueCoverImageUrl: gallery?.venueCoverImages?.[0]?.url || '',
           venueImageUrl: gallery?.spaceCoverImages?.[0]?.url || '',
-          galleryImageUrls: (gallery?.galleryImages || []).map(
-            (img: { url: string }) => img.url,
-          ),
+          galleryImageUrls: (gallery?.galleryImages || []).map((img: { url: string }) => img.url),
           contacts:
-            gallery?.contact?.contacts?.length > 0
-              ? gallery.contact.contacts.map((contact: any) => ({
-                name: contact.name || '',
-                phone: contact.phone || '',
-                email: contact.email || '',
-              }))
+            gallery?.contact?.contacts && gallery.contact.contacts.length > 0
+              ? gallery.contact.contacts.map((contact) => ({
+                  name: contact.name || '',
+                  phone: contact.phone || '',
+                  email: contact.email || '',
+                }))
               : [{ name: '', phone: '', email: '' }],
-
 
           weekdayPrice: pricing?.weekdayPrice ? String(pricing.weekdayPrice) : '',
           weekendPrice: pricing?.weekendPrice ? String(pricing.weekendPrice) : '',
           discount: pricing?.discount ? String(pricing.discount) : '',
           reservationFee: pricing?.reservationFee ? String(pricing.reservationFee) : '',
 
-
-          terms: Array.isArray(terms?.terms)
-            ? terms.terms.join('\n')
-            : String(terms?.terms || ''),
+          terms: Array.isArray(terms?.terms) ? terms.terms.join('\n') : String(terms?.terms || ''),
           cancellationPolicy: mapHoursToCancellationPolicy(
             terms?.cancellation?.freeCancellationHours,
           ),
           refundPercentage: String(terms?.cancellation?.refundPercentage ?? '0'),
           faqs:
-            terms?.faqs?.length > 0
-              ? terms.faqs.map((faq: any) => ({
-                question: faq.question || '',
-                answer: faq.answer || '',
-              }))
+            terms?.faqs && terms.faqs.length > 0
+              ? terms.faqs.map((faq) => ({
+                  question: faq.question || '',
+                  answer: faq.answer || '',
+                }))
               : [{ question: '', answer: '' }],
 
           weeklyAvailability,
@@ -221,7 +260,6 @@ export const CreateVenueListingPage = () => {
 
     loadVenue()
   }, [venueId])
-
 
   const handleNextStep = async () => {
     try {
@@ -274,10 +312,11 @@ export const CreateVenueListingPage = () => {
 
         return
       }
-      setCurrentStep(prev => Math.min(prev + 1, 7))
-    } catch (err: any) {
+      setCurrentStep((prev) => Math.min(prev + 1, 7))
+    } catch (err: unknown) {
       console.error('Step save failed', err)
-      toast.error(err?.response?.data?.message || 'Failed to save. Please try again.')
+      const error = err as { response?: { data?: { message?: string } } }
+      toast.error(error?.response?.data?.message || 'Failed to save. Please try again.')
     }
   }
   const isLoading =
@@ -322,27 +361,19 @@ export const CreateVenueListingPage = () => {
         onClick: handleNextStep,
       }}
     >
-      {currentStep === 1 && (
-        <VenueDetailsStep venueData={venueData} setVenueData={setVenueData} />
-      )}
+      {currentStep === 1 && <VenueDetailsStep venueData={venueData} setVenueData={setVenueData} />}
       {currentStep === 2 && (
         <LocationDetailsStep venueData={venueData} setVenueData={setVenueData} />
       )}
-      {currentStep === 3 && (
-        <SpacesStep venueData={venueData} setVenueData={setVenueData} />
-      )}
+      {currentStep === 3 && <SpacesStep venueData={venueData} setVenueData={setVenueData} />}
       {currentStep === 4 && (
         <AmenitiesMediaStep venueData={venueData} setVenueData={setVenueData} />
       )}
-      {currentStep === 5 && (
-        <PricingStep venueData={venueData} setVenueData={setVenueData} />
-      )}
+      {currentStep === 5 && <PricingStep venueData={venueData} setVenueData={setVenueData} />}
       {currentStep === 6 && (
         <TermsConditionsStep venueData={venueData} setVenueData={setVenueData} />
       )}
-      {currentStep === 7 && (
-        <FinalCheckStep venueData={venueData} />
-      )}
+      {currentStep === 7 && <FinalCheckStep venueData={venueData} />}
     </CreateListingWizard>
   )
 }

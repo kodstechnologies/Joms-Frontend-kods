@@ -1,11 +1,4 @@
-import {
-  ArrowDownCircle,
-  ArrowUpCircle,
-  Calendar,
-  ShoppingCart,
-  X,
-  XCircle,
-} from 'lucide-react'
+import { ArrowDownCircle, ArrowUpCircle, Calendar, ShoppingCart, X, XCircle } from 'lucide-react'
 import type { ComponentType } from 'react'
 import { toast } from 'sonner'
 

@@ -1,16 +1,18 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 
 import {
   categoryPath,
   useCategoryManagementScope,
+  type CategoryManagementScope,
 } from '../../components/category/category-management-scope'
 import CategoryHeader from '../../components/category/CategoryHeader'
 import CategoryDetailsCard from '../../components/category/CategoryDetailsCard'
 import FooterActions from '../../components/category/FooterActions'
 import SubCategoryCard from '../../components/category/SubCategoryCard'
 import type { SubCategory } from '../../components/category/SubCategoryCard'
+import type { Category } from '../../components/category/category-table-columns'
 import {
   useAddServiceSubCategory,
   useCreateServiceCategory,
@@ -23,25 +25,70 @@ type CategoryFormPageProps = {
   mode: 'create' | 'rename' | 'subcategory'
 }
 
+const getFormTitle = (mode: CategoryFormPageProps['mode']) =>
+  mode === 'create'
+    ? 'Create New Category'
+    : mode === 'rename'
+      ? 'Rename Category'
+      : 'Create New Sub-Category'
+
 export const CategoryFormPage = ({ mode }: CategoryFormPageProps) => {
-  const navigate = useNavigate()
   const { id } = useParams()
   const scope = useCategoryManagementScope()
+  const { data: category, isLoading } = useServiceCategory(mode === 'create' ? undefined : id)
 
-  const { data: category } = useServiceCategory(mode === 'create' ? undefined : id)
+  if (mode !== 'create' && (isLoading || !category)) {
+    return (
+      <div className="min-h-screen px-4 pt-2 pb-8 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-6xl">
+          <CategoryHeader title={getFormTitle(mode)} breadcrumb={getFormTitle(mode)} />
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <CategoryFormContent
+      key={id ?? 'create'}
+      mode={mode}
+      id={id}
+      scope={scope}
+      category={category}
+    />
+  )
+}
+
+type CategoryFormContentProps = {
+  mode: CategoryFormPageProps['mode']
+  id?: string
+  scope: CategoryManagementScope
+  category?: Category
+}
+
+const CategoryFormContent = ({ mode, id, scope, category }: CategoryFormContentProps) => {
+  const navigate = useNavigate()
+
   const createMutation = useCreateServiceCategory()
   const updateMutation = useUpdateServiceCategory()
   const addSubCategoryMutation = useAddServiceSubCategory()
 
-  const [categoryName, setCategoryName] = useState('')
-  const [description, setDescription] = useState('')
-  const [iconPreview, setIconPreview] = useState<string>()
-  const [headerPreview, setHeaderPreview] = useState<string>()
+  const [categoryName, setCategoryName] = useState(() =>
+    mode === 'rename' || mode === 'subcategory' ? (category?.name ?? '') : '',
+  )
+  const [description, setDescription] = useState(() =>
+    mode === 'subcategory' ? (category?.description ?? '') : '',
+  )
+  const [iconPreview, setIconPreview] = useState<string | undefined>(() =>
+    mode === 'subcategory' ? category?.icon : undefined,
+  )
+  const [headerPreview, setHeaderPreview] = useState<string | undefined>(() =>
+    mode === 'subcategory' ? category?.image : undefined,
+  )
   const [iconFile, setIconFile] = useState<File | null>(null)
   const [headerFile, setHeaderFile] = useState<File | null>(null)
   const [subCategories, setSubCategories] = useState<
     Array<SubCategory & { iconFile?: File | null }>
-  >([
+  >(() => [
     {
       id: Date.now(),
       name: '',
@@ -51,25 +98,8 @@ export const CategoryFormPage = ({ mode }: CategoryFormPageProps) => {
     },
   ])
 
-  useEffect(() => {
-    if (!category) return
-
-    if (mode === 'rename') {
-      setCategoryName(category.name)
-    }
-
-    if (mode === 'subcategory') {
-      setCategoryName(category.name)
-      setDescription(category.description)
-      setIconPreview(category.icon)
-      setHeaderPreview(category.image)
-    }
-  }, [mode, category])
-
   const isSubmitting =
-    createMutation.isPending ||
-    updateMutation.isPending ||
-    addSubCategoryMutation.isPending
+    createMutation.isPending || updateMutation.isPending || addSubCategoryMutation.isPending
 
   const handleCategoryIcon = (file: File | null) => {
     if (!file) return
@@ -112,9 +142,7 @@ export const CategoryFormPage = ({ mode }: CategoryFormPageProps) => {
 
   const handleDescriptionChange = (subId: number, value: string) => {
     setSubCategories((prev) =>
-      prev.map((item) =>
-        item.id === subId ? { ...item, description: value } : item,
-      ),
+      prev.map((item) => (item.id === subId ? { ...item, description: value } : item)),
     )
   }
 
@@ -216,24 +244,9 @@ export const CategoryFormPage = ({ mode }: CategoryFormPageProps) => {
   }
 
   return (
-    <div className="min-h-screen px-4 pb-8 pt-2 sm:px-6 lg:px-8">
+    <div className="min-h-screen px-4 pt-2 pb-8 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-6xl">
-        <CategoryHeader
-          title={
-            mode === 'create'
-              ? 'Create New Category'
-              : mode === 'rename'
-                ? 'Rename Category'
-                : 'Create New Sub-Category'
-          }
-          breadcrumb={
-            mode === 'create'
-              ? 'Create New Category'
-              : mode === 'rename'
-                ? 'Rename Category'
-                : 'Create New Sub-Category'
-          }
-        />
+        <CategoryHeader title={getFormTitle(mode)} breadcrumb={getFormTitle(mode)} />
 
         <div className="mt-6 space-y-6">
           <CategoryDetailsCard

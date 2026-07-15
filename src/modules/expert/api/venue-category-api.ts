@@ -28,9 +28,7 @@ const buildVenueCategoryFormData = (payload: CreateCategoryPayload) => {
   const subCategories = payload.subCategories.map((sub) => ({
     name: sub.name,
     description: sub.description,
-    ...(sub.vectorIconUrl && !sub.vectorIconFile
-      ? { vectorIcon: sub.vectorIconUrl }
-      : {}),
+    ...(sub.vectorIconUrl && !sub.vectorIconFile ? { vectorIcon: sub.vectorIconUrl } : {}),
   }))
 
   formData.append('subCategories', JSON.stringify(subCategories))
@@ -47,10 +45,9 @@ const buildVenueCategoryFormData = (payload: CreateCategoryPayload) => {
 export const fetchVenueCategoryList = async (
   params?: Pick<CategoryListParams, 'search' | 'page' | 'limit'>,
 ) => {
-  const response = await venueApiClient.get<VenueCategoryListResponse>(
-    '/venue-categories',
-    { params },
-  )
+  const response = await venueApiClient.get<VenueCategoryListResponse>('/venue-categories', {
+    params,
+  })
   return response.data
 }
 
@@ -140,9 +137,7 @@ export const addVenueSubCategories = async (
   const createdSubs = newSubCategories.map((sub) => ({
     name: sub.name,
     description: sub.description,
-    ...(sub.vectorIconUrl && !sub.vectorIconFile
-      ? { vectorIcon: sub.vectorIconUrl }
-      : {}),
+    ...(sub.vectorIconUrl && !sub.vectorIconFile ? { vectorIcon: sub.vectorIconUrl } : {}),
   }))
 
   const formData = new FormData()
@@ -211,10 +206,7 @@ export const resumeVenueSubCategory = async (categoryId: string, subCategoryId: 
   return response.data
 }
 
-export const softDeleteVenueSubCategory = async (
-  categoryId: string,
-  subCategoryId: string,
-) => {
+export const softDeleteVenueSubCategory = async (categoryId: string, subCategoryId: string) => {
   const response = await venueApiClient.patch<ApiSuccessResponse<VenueCategoryApi>>(
     `/venue-categories/${categoryId}/subcategories/${subCategoryId}/soft-delete`,
   )
@@ -228,20 +220,14 @@ export const revokeVenueSubCategory = async (categoryId: string, subCategoryId: 
   return response.data
 }
 
-export const hardDeleteVenueSubCategory = async (
-  categoryId: string,
-  subCategoryId: string,
-) => {
+export const hardDeleteVenueSubCategory = async (categoryId: string, subCategoryId: string) => {
   const response = await venueApiClient.delete<ApiSuccessResponse<VenueCategoryApi>>(
     `/venue-categories/${categoryId}/subcategories/${subCategoryId}/hard-delete`,
   )
   return response.data
 }
 
-export const fetchVenueSubCategoryById = async (
-  categoryId: string,
-  subCategoryId: string,
-) => {
+export const fetchVenueSubCategoryById = async (categoryId: string, subCategoryId: string) => {
   const response = await venueApiClient.get<
     ApiSuccessResponse<VenueCategoryApi['subCategories'][number]>
   >(`/venue-categories/${categoryId}/subcategories/${subCategoryId}`)

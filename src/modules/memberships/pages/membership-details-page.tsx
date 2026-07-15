@@ -12,16 +12,15 @@ import {
   useSubscription,
   useUpgradeSubscription,
 } from '../hooks/use-membership-subscriptions'
-import {
-  formatCurrency,
-  formatMembershipDateTime,
-} from '../utils/membership-format'
+import { formatCurrency, formatMembershipDateTime } from '../utils/membership-format'
 import { cn } from '@/shared/lib/cn'
 
 export function MembershipDetailsPage() {
   const { id = '' } = useParams()
   const navigate = useNavigate()
-  const [actionType, setActionType] = useState<'upgrade' | 'downgrade' | 'extend' | 'cancel' | null>(null)
+  const [actionType, setActionType] = useState<
+    'upgrade' | 'downgrade' | 'extend' | 'cancel' | null
+  >(null)
   const [historyOpen, setHistoryOpen] = useState(false)
 
   const { data, isLoading } = useSubscription(id)
@@ -45,7 +44,7 @@ export function MembershipDetailsPage() {
       ? 'Platform'
       : subscription.upgradedBy === 'partner'
         ? 'User'
-        : subscription.upgradedBy ?? 'User'
+        : (subscription.upgradedBy ?? 'User')
 
   return (
     <div className="flex min-h-[calc(100vh-8rem)] flex-col">
@@ -64,7 +63,10 @@ export function MembershipDetailsPage() {
       </div>
 
       <div className="grid flex-1 gap-6 lg:grid-cols-2">
-        <DetailCard title="Current Membership Details" subtitle="Manage expert membership subscription">
+        <DetailCard
+          title="Current Membership Details"
+          subtitle="Manage expert membership subscription"
+        >
           <DetailGrid
             items={[
               { label: 'Plan ID', value: subscription.subscriptionId },
@@ -255,11 +257,7 @@ function DetailCard({
   )
 }
 
-function DetailGrid({
-  items,
-}: {
-  items: Array<{ label: string; value: ReactNode }>
-}) {
+function DetailGrid({ items }: { items: Array<{ label: string; value: ReactNode }> }) {
   return (
     <div className="grid grid-cols-2 gap-x-6 gap-y-6 sm:grid-cols-3 xl:grid-cols-4">
       {items.map((item) => (

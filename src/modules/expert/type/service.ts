@@ -343,4 +343,3 @@ export interface PublishResponse<T = ServiceDetail | ConsultationDetail> {
   message: string
   data: T
 }
-

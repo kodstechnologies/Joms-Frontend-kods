@@ -43,9 +43,7 @@ export const VenueOnboardingBasicProfileStep = ({ formData, setFormData }: Props
       <div className="animate-in fade-in slide-in-from-right-4 rounded-lg border border-white/5 bg-[#151515] p-6 duration-300">
         <div className="mb-6">
           <h2 className="text-sm font-bold text-white">Basic Profile Setup</h2>
-          <p className="mt-1 text-xs text-[#777777]">
-            Core identity details and profile media
-          </p>
+          <p className="mt-1 text-xs text-[#777777]">Core identity details and profile media</p>
         </div>
 
         <div className="mb-8">
@@ -53,7 +51,7 @@ export const VenueOnboardingBasicProfileStep = ({ formData, setFormData }: Props
             <button
               type="button"
               onClick={() => coverInputRef.current?.click()}
-              className="flex h-32 w-full items-center justify-center rounded-md border border-dashed border-[#444] bg-black transition-colors hover:border-brand-accent/50"
+              className="hover:border-brand-accent/50 flex h-32 w-full items-center justify-center rounded-md border border-dashed border-[#444] bg-black transition-colors"
             >
               {formData.coverImageUrl ? (
                 <img
@@ -73,9 +71,7 @@ export const VenueOnboardingBasicProfileStep = ({ formData, setFormData }: Props
               type="file"
               accept="image/*"
               className="hidden"
-              onChange={(e) =>
-                handleImageChange('coverImage', e.target.files?.[0] ?? null)
-              }
+              onChange={(e) => handleImageChange('coverImage', e.target.files?.[0] ?? null)}
             />
 
             <button
@@ -100,32 +96,24 @@ export const VenueOnboardingBasicProfileStep = ({ formData, setFormData }: Props
               type="file"
               accept="image/*"
               className="hidden"
-              onChange={(e) =>
-                handleImageChange('profileImage', e.target.files?.[0] ?? null)
-              }
+              onChange={(e) => handleImageChange('profileImage', e.target.files?.[0] ?? null)}
             />
           </div>
         </div>
 
         <div className="mt-12 grid grid-cols-1 gap-5 md:grid-cols-2">
           <div>
-            <label className="mb-2 block text-xs font-medium text-white">
-              Venue Name *
-            </label>
+            <label className="mb-2 block text-xs font-medium text-white">Venue Name *</label>
             <input
               value={formData.name}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, name: e.target.value }))
-              }
+              onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
               placeholder="Full Name"
               className={fieldClass}
             />
           </div>
 
           <div>
-            <label className="mb-2 block text-xs font-medium text-white">
-              Service Type
-            </label>
+            <label className="mb-2 block text-xs font-medium text-white">Service Type</label>
             <input
               value={formData.venueType}
               disabled
@@ -135,9 +123,7 @@ export const VenueOnboardingBasicProfileStep = ({ formData, setFormData }: Props
           </div>
 
           <div>
-            <label className="mb-2 block text-xs font-medium text-white">
-              Hosting since
-            </label>
+            <label className="mb-2 block text-xs font-medium text-white">Hosting since</label>
             <input
               value={formData.hostingSinceYears}
               onChange={(e) =>
@@ -151,11 +137,9 @@ export const VenueOnboardingBasicProfileStep = ({ formData, setFormData }: Props
           </div>
 
           <div>
-            <label className="mb-2 block text-xs font-medium text-white">
-              Category *
-            </label>
+            <label className="mb-2 block text-xs font-medium text-white">Category *</label>
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#777]" />
+              <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-[#777]" />
               <select
                 value={formData.venueCategoryId}
                 onChange={(e) => {
@@ -169,9 +153,7 @@ export const VenueOnboardingBasicProfileStep = ({ formData, setFormData }: Props
                 }}
                 className={`${fieldClass} appearance-none pl-10`}
               >
-                <option value="">
-                  {isCategoriesLoading ? 'Loading categories...' : 'Search'}
-                </option>
+                <option value="">{isCategoriesLoading ? 'Loading categories...' : 'Search'}</option>
                 {!isCategoriesLoading && categories.length === 0 && (
                   <option value="" disabled>
                     No venue categories found
@@ -190,18 +172,14 @@ export const VenueOnboardingBasicProfileStep = ({ formData, setFormData }: Props
             <label className="mb-2 block text-xs font-medium text-white">POC Name</label>
             <input
               value={formData.pocName}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, pocName: e.target.value }))
-              }
+              onChange={(e) => setFormData((prev) => ({ ...prev, pocName: e.target.value }))}
               placeholder="Enter Name"
               className={fieldClass}
             />
           </div>
 
           <div>
-            <label className="mb-2 block text-xs font-medium text-white">
-              POC Contact
-            </label>
+            <label className="mb-2 block text-xs font-medium text-white">POC Contact</label>
             <input
               value={formData.pocContactNumber}
               onChange={(e) =>
@@ -213,9 +191,7 @@ export const VenueOnboardingBasicProfileStep = ({ formData, setFormData }: Props
           </div>
 
           <div>
-            <label className="mb-2 block text-xs font-medium text-white">
-              Phone Number *
-            </label>
+            <label className="mb-2 block text-xs font-medium text-white">Phone Number *</label>
             <input
               type="tel"
               inputMode="numeric"
@@ -233,14 +209,10 @@ export const VenueOnboardingBasicProfileStep = ({ formData, setFormData }: Props
           </div>
 
           <div>
-            <label className="mb-2 block text-xs font-medium text-white">
-              Email ID *
-            </label>
+            <label className="mb-2 block text-xs font-medium text-white">Email ID *</label>
             <input
               value={formData.email}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, email: e.target.value }))
-              }
+              onChange={(e) => setFormData((prev) => ({ ...prev, email: e.target.value }))}
               placeholder="Enter Email ID"
               type="email"
               className={fieldClass}

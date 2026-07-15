@@ -37,41 +37,34 @@ export const ManageAmenitiesModal = ({
     queryFn: fetchAmenityMasters,
   })
 
-  const categories =
-    (amenitiesResponse?.data || []) as AmenityCategory[]
+  const categories = (amenitiesResponse?.data || []) as AmenityCategory[]
 
   const toggleAmenity = (
     categoryId: string,
     subCategoryId: string,
-    name : string,
-    image : string,
+    name: string,
+    image: string,
   ) => {
     setVenueData((prev) => {
       const exists = prev.amenities.some(
-        (item) =>
-          item.categoryId === categoryId &&
-          item.subCategoryId === subCategoryId,
+        (item) => item.categoryId === categoryId && item.subCategoryId === subCategoryId,
       )
 
       return {
         ...prev,
         amenities: exists
           ? prev.amenities.filter(
-            (item) =>
-              !(
-                item.categoryId === categoryId &&
-                item.subCategoryId === subCategoryId
-              ),
-          )
+              (item) => !(item.categoryId === categoryId && item.subCategoryId === subCategoryId),
+            )
           : [
-            ...prev.amenities,
-            {
-              categoryId,
-              subCategoryId,
-              name,
-              image,
-            },
-          ],
+              ...prev.amenities,
+              {
+                categoryId,
+                subCategoryId,
+                name,
+                image,
+              },
+            ],
       }
     })
   }
@@ -80,9 +73,7 @@ export const ManageAmenitiesModal = ({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
       <div className="max-h-[80vh] w-full max-w-4xl overflow-y-auto rounded-2xl border border-slate-800 bg-[#121212]">
         <div className="sticky top-0 flex items-center justify-between border-b border-slate-800 bg-[#121212] p-5">
-          <h2 className="text-xl font-semibold text-white">
-            Manage amenities
-          </h2>
+          <h2 className="text-xl font-semibold text-white">Manage amenities</h2>
 
           <button onClick={onClose}>
             <X className="h-5 w-5 text-white" />
@@ -90,63 +81,48 @@ export const ManageAmenitiesModal = ({
         </div>
 
         <div className="p-5">
-          <label className="mb-2 block text-xs text-white">
-            Search amenities
-          </label>
+          <label className="mb-2 block text-xs text-white">Search amenities</label>
 
           <div className="mb-5 flex gap-3">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+              <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-slate-500" />
 
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search amenities"
-                className="h-10 w-full rounded-md border border-slate-700 bg-black pl-10 pr-4 text-sm text-white outline-none"
+                className="h-10 w-full rounded-md border border-slate-700 bg-black pr-4 pl-10 text-sm text-white outline-none"
               />
             </div>
 
             <button
               onClick={onAddAmenity}
-              className="flex items-center gap-2 rounded-md bg-brand-accent px-4 text-sm font-medium text-brand-text-dark"
+              className="bg-brand-accent text-brand-text-dark flex items-center gap-2 rounded-md px-4 text-sm font-medium"
             >
               <Plus size={16} />
               Add Amenities
             </button>
           </div>
 
-          {isLoading && (
-            <p className="text-sm text-slate-400">
-              Loading amenities...
-            </p>
-          )}
+          {isLoading && <p className="text-sm text-slate-400">Loading amenities...</p>}
 
           {!isLoading &&
             categories.map((category) => {
-              const filteredSubCategories =
-                category.subCategories.filter((item) =>
-                  item.name
-                    .toLowerCase()
-                    .includes(search.toLowerCase()),
-                )
+              const filteredSubCategories = category.subCategories.filter((item) =>
+                item.name.toLowerCase().includes(search.toLowerCase()),
+              )
 
               if (!filteredSubCategories.length) return null
 
               return (
-                <div
-                  key={category._id}
-                  className="mb-6"
-                >
-                  <h3 className="mb-3 text-sm font-medium text-white">
-                    {category.category}
-                  </h3>
+                <div key={category._id} className="mb-6">
+                  <h3 className="mb-3 text-sm font-medium text-white">{category.category}</h3>
 
                   <div className="flex flex-wrap gap-3">
                     {filteredSubCategories.map((item) => {
                       const isSelected = selectedAmenities.some(
                         (amenity) =>
-                          amenity.categoryId === category._id &&
-                          amenity.subCategoryId === item._id,
+                          amenity.categoryId === category._id && amenity.subCategoryId === item._id,
                       )
 
                       return (
@@ -154,17 +130,13 @@ export const ManageAmenitiesModal = ({
                           key={item._id}
                           type="button"
                           onClick={() =>
-                            toggleAmenity(
-                              category._id,
-                              item._id,
-                              item.name,
-                              item.image,
-                            )
+                            toggleAmenity(category._id, item._id, item.name, item.image)
                           }
-                          className={`flex items-center gap-2 rounded-md border px-4 py-2 text-xs transition ${isSelected
-                            ? 'border-white bg-white text-black'
-                            : 'border-slate-700 bg-black text-white'
-                            }`}
+                          className={`flex items-center gap-2 rounded-md border px-4 py-2 text-xs transition ${
+                            isSelected
+                              ? 'border-white bg-white text-black'
+                              : 'border-slate-700 bg-black text-white'
+                          }`}
                         >
                           {item.image && (
                             <img
@@ -174,9 +146,7 @@ export const ManageAmenitiesModal = ({
                             />
                           )}
 
-                          {isSelected && (
-                            <span>×</span>
-                          )}
+                          {isSelected && <span>×</span>}
 
                           {item.name}
                         </button>

@@ -350,304 +350,302 @@ const SpaceDetailsPage = lazy(() =>
   })),
 )
 const CategoryManagementPage = lazy(() =>
-  import("@/modules/expert").then((m) => ({
+  import('@/modules/expert').then((m) => ({
     default: m.CategoryManagementPage,
-  }))
-);
+  })),
+)
 
 const CreateCategoryPage = lazy(() =>
-  import("@/modules/expert").then((m) => ({
+  import('@/modules/expert').then((m) => ({
     default: m.CreateCategoryPage,
-  }))
-);
+  })),
+)
 
 const CreateSubCategoryPage = lazy(() =>
-  import("@/modules/expert").then((m) => ({
+  import('@/modules/expert').then((m) => ({
     default: m.CreateSubCategoryPage,
-  }))
-);
+  })),
+)
 
 const PausedCategoriesPage = lazy(() =>
-  import("@/modules/expert").then((m) => ({
+  import('@/modules/expert').then((m) => ({
     default: m.PausedCategoriesPage,
-  }))
-);
+  })),
+)
 
 const RenameCategoryPage = lazy(() =>
-  import("@/modules/expert").then((m) => ({
+  import('@/modules/expert').then((m) => ({
     default: m.RenameCategoryPage,
-  }))
-);
+  })),
+)
 
 const DeletedCategoriesPage = lazy(() =>
-  import("@/modules/expert").then((m) => ({
+  import('@/modules/expert').then((m) => ({
     default: m.DeletedCategoriesPage,
-  }))
-);
+  })),
+)
 
 const CategoryViewPage = lazy(() =>
-  import("@/modules/expert").then((m) => ({
+  import('@/modules/expert').then((m) => ({
     default: m.CategoryViewPage,
-  }))
-);
+  })),
+)
 
 const FinanceDashboardPage = lazy(() =>
   import('@/modules/payments').then((m) => ({
     default: m.FinanceDashboardPage,
   })),
-);
+)
 
 const RevenueOverviewPage = lazy(() =>
   import('@/modules/payments').then((m) => ({
     default: m.RevenueOverviewPage,
   })),
-);
+)
 
 const PaymentDetailViewPage = lazy(() =>
   import('@/modules/payments').then((m) => ({
     default: m.PaymentDetailViewPage,
   })),
-);
+)
 
 const FinanceServicesPage = lazy(() =>
   import('@/modules/payments').then((m) => ({
     default: m.FinanceServicesPage,
   })),
-);
+)
 
 const ServicePaymentDetailViewPage = lazy(() =>
   import('@/modules/payments').then((m) => ({
     default: m.ServicePaymentDetailViewPage,
   })),
-);
+)
 
 const FinanceVenuesPage = lazy(() =>
   import('@/modules/payments').then((m) => ({
     default: m.FinanceVenuesPage,
   })),
-);
+)
 
 const VenuePaymentDetailViewPage = lazy(() =>
   import('@/modules/payments').then((m) => ({
     default: m.VenuePaymentDetailViewPage,
   })),
-);
+)
 
 const FinanceTaxCompliancePage = lazy(() =>
   import('@/modules/payments').then((m) => ({
     default: m.FinanceTaxCompliancePage,
   })),
-);
+)
 
 const TaxComplianceDetailViewPage = lazy(() =>
   import('@/modules/payments').then((m) => ({
     default: m.TaxComplianceDetailViewPage,
   })),
-);
+)
 
 const FinanceReconciliationPage = lazy(() =>
   import('@/modules/payments').then((m) => ({
     default: m.FinanceReconciliationPage,
   })),
-);
+)
 
 const ReconciliationDetailViewPage = lazy(() =>
   import('@/modules/payments').then((m) => ({
     default: m.ReconciliationDetailViewPage,
   })),
-);
+)
 
 const EscrowManagementPage = lazy(() =>
   import('@/modules/payments').then((m) => ({
     default: m.EscrowManagementPage,
   })),
-);
+)
 
 const EscrowDetailViewPage = lazy(() =>
   import('@/modules/payments').then((m) => ({
     default: m.EscrowDetailViewPage,
   })),
-);
+)
 
 const FinanceRefundsPage = lazy(() =>
   import('@/modules/payments').then((m) => ({
     default: m.FinanceRefundsPage,
   })),
-);
+)
 
 const RefundDetailViewPage = lazy(() =>
   import('@/modules/payments').then((m) => ({
     default: m.RefundDetailViewPage,
   })),
-);
+)
 
 const DisputeDetailViewPage = lazy(() =>
   import('@/modules/payments').then((m) => ({
     default: m.DisputeDetailViewPage,
   })),
-);
+)
 
 const AssignRefundAuthorityPage = lazy(() =>
   import('@/modules/payments').then((m) => ({
     default: m.AssignRefundAuthorityPage,
   })),
-);
+)
 
 const FinanceEventsPage = lazy(() =>
   import('@/modules/payments').then((m) => ({
     default: m.FinanceEventsPage,
   })),
-);
+)
 
 const MembershipManagementPage = lazy(() =>
   import('@/modules/payments').then((m) => ({
     default: m.MembershipManagementPage,
   })),
-);
+)
 
 const MembershipDetailViewPage = lazy(() =>
   import('@/modules/payments').then((m) => ({
     default: m.MembershipDetailViewPage,
   })),
-);
+)
 
 const PayoutManagementPage = lazy(() =>
   import('@/modules/payments').then((m) => ({
     default: m.PayoutManagementPage,
   })),
-);
+)
 
 const PayoutDetailViewPage = lazy(() =>
   import('@/modules/payments').then((m) => ({
     default: m.PayoutDetailViewPage,
   })),
-);
+)
 
 const InvoicesBillingPage = lazy(() =>
   import('@/modules/payments').then((m) => ({
     default: m.InvoicesBillingPage,
   })),
-);
+)
 
 const InvoiceDetailViewPage = lazy(() =>
   import('@/modules/payments').then((m) => ({
     default: m.InvoiceDetailViewPage,
   })),
-);
+)
 
 const FinanceCategoryPage = lazy(() =>
   import('@/modules/payments').then((m) => ({
     default: m.FinanceCategoryPage,
   })),
-);
+)
 
 const SubCategoryViewPage = lazy(() =>
-  import("@/modules/expert").then((m) => ({
+  import('@/modules/expert').then((m) => ({
     default: m.SubCategoryViewPage,
-  }))
-);
+  })),
+)
 const ServiceCategoryFilterPage = lazy(() =>
-  import("@/modules/expert").then((m) => ({
+  import('@/modules/expert').then((m) => ({
     default: m.ServiceCategoryFilterPage,
-  }))
-);
+  })),
+)
 
 const VenueCategoryManagementPage = lazy(() =>
-  import("@/modules/expert").then((m) => ({
+  import('@/modules/expert').then((m) => ({
     default: m.VenueCategoryManagementPage,
-  }))
-);
+  })),
+)
 
 const CreateVenueCategoryPage = lazy(() =>
-  import("@/modules/expert").then((m) => ({
+  import('@/modules/expert').then((m) => ({
     default: m.CreateVenueCategoryPage,
-  }))
-);
+  })),
+)
 
 const CreateVenueSubCategoryPage = lazy(() =>
-  import("@/modules/expert").then((m) => ({
+  import('@/modules/expert').then((m) => ({
     default: m.CreateVenueSubCategoryPage,
-  }))
-);
+  })),
+)
 
 const PausedVenueCategoriesPage = lazy(() =>
-  import("@/modules/expert").then((m) => ({
+  import('@/modules/expert').then((m) => ({
     default: m.PausedVenueCategoriesPage,
-  }))
-);
+  })),
+)
 
 const DeletedVenueCategoriesPage = lazy(() =>
-  import("@/modules/expert").then((m) => ({
+  import('@/modules/expert').then((m) => ({
     default: m.DeletedVenueCategoriesPage,
-  }))
-);
+  })),
+)
 
 const RenameVenueCategoryPage = lazy(() =>
-  import("@/modules/expert").then((m) => ({
+  import('@/modules/expert').then((m) => ({
     default: m.RenameVenueCategoryPage,
-  }))
-);
+  })),
+)
 
 const VenueCategoryViewPage = lazy(() =>
-  import("@/modules/expert").then((m) => ({
+  import('@/modules/expert').then((m) => ({
     default: m.VenueCategoryViewPage,
-  }))
-);
+  })),
+)
 
 const VenueSubCategoryViewPage = lazy(() =>
-  import("@/modules/expert").then((m) => ({
+  import('@/modules/expert').then((m) => ({
     default: m.VenueSubCategoryViewPage,
-  }))
-);
+  })),
+)
 const VenueCategoryFilterPage = lazy(() =>
-  import("@/modules/expert").then((m) => ({
+  import('@/modules/expert').then((m) => ({
     default: m.VenueCategoryFilterPage,
-  }))
-);
-
+  })),
+)
 
 const CommunicationListPage = lazy(() =>
-  import("@/modules/communication").then((m) => ({
+  import('@/modules/communication').then((m) => ({
     default: m.CommunicationListPage,
-  }))
-);
+  })),
+)
 
 const CreateCommunicationPage = lazy(() =>
-  import("@/modules/communication").then((m) => ({
+  import('@/modules/communication').then((m) => ({
     default: m.CreateCommunicationPage,
-  }))
-);
+  })),
+)
 
 const ViewCommunicationPage = lazy(() =>
-  import("@/modules/communication").then((m) => ({
+  import('@/modules/communication').then((m) => ({
     default: m.ViewCommunicationPage,
-  }))
-);
+  })),
+)
 
 const EscalationPage = lazy(() =>
-  import("@/modules/settings").then((m) => ({
+  import('@/modules/settings').then((m) => ({
     default: m.EscalationPage,
   })),
-);
-
+)
 
 const RefundDetailsPage = lazy(() =>
-  import("@/modules/settings").then((m) => ({
+  import('@/modules/settings').then((m) => ({
     default: m.RefundDetailsPage,
   })),
-);
+)
 
 const MembershipUpgradeDetailsPage = lazy(() =>
-  import("@/modules/settings").then((m) => ({
+  import('@/modules/settings').then((m) => ({
     default: m.MembershipUpgradeDetailsPage,
   })),
-);
+)
 
 const PageLoader = () => (
-  <div className="flex h-dvh w-full items-center justify-center bg-brand-bg">
+  <div className="bg-brand-bg flex h-dvh w-full items-center justify-center">
     <div className="flex flex-col items-center gap-4">
-      <div className="size-10 animate-spin rounded-full border-4 border-brand-accent border-t-transparent" />
-      <p className="animate-pulse text-sm font-medium text-brand-muted">Loading...</p>
+      <div className="border-brand-accent size-10 animate-spin rounded-full border-4 border-t-transparent" />
+      <p className="text-brand-muted animate-pulse text-sm font-medium">Loading...</p>
     </div>
   </div>
 )
@@ -677,10 +675,10 @@ export function AppRouter() {
 
           <Route element={<ContactSetupRoute />}>
             <Route element={<DashboardLayout />}>
-            <Route path="/" element={<HomeRedirect />} />
-            <Route path="/dashboard" element={<HomeRedirect />} />
-            <Route path="/settings/access/my-profile" element={<MyProfilePage />} />
-            <Route path="/my-tasks" element={<MyTasksPage />} />
+              <Route path="/" element={<HomeRedirect />} />
+              <Route path="/dashboard" element={<HomeRedirect />} />
+              <Route path="/settings/access/my-profile" element={<MyProfilePage />} />
+              <Route path="/my-tasks" element={<MyTasksPage />} />
 
               <Route element={<SuperAdminRoute />}>
                 <Route path="/dashboard/executive" element={<ExecutiveOverviewPage />} />
@@ -694,7 +692,10 @@ export function AppRouter() {
                 <Route path="/memberships/plans/create" element={<MembershipPlanFormPage />} />
                 <Route path="/memberships/plans/:id/edit" element={<MembershipPlanFormPage />} />
                 <Route path="/memberships/plans/paused" element={<MembershipPausedPlansPage />} />
-                <Route path="/memberships/plans/inactive" element={<MembershipInactivePlansPage />} />
+                <Route
+                  path="/memberships/plans/inactive"
+                  element={<MembershipInactivePlansPage />}
+                />
                 <Route path="/memberships/plans/deleted" element={<MembershipDeletedPlansPage />} />
                 <Route path="/memberships/experts" element={<ExpertMembershipsPage />} />
                 <Route path="/memberships/experts/:id" element={<MembershipDetailsPage />} />
@@ -711,7 +712,7 @@ export function AppRouter() {
                 <Route path="/settings/templates" element={<TemplatesPage />} />
                 <Route path="/settings/categories" element={<CategoryHubPage />} />
                 <Route path="/settings/system" element={<SystemConfigurationPage />} />
-                
+
                 <Route path="/settings/api-keys" element={<ApiKeyManagementPage />} />
                 <Route path="/settings/access" element={<RbacHubPage />} />
                 <Route path="/settings/access/roles/create" element={<CreateRolePage />} />
@@ -739,12 +740,18 @@ export function AppRouter() {
                 <Route path="/finance/invoices" element={<InvoicesBillingPage />} />
                 <Route path="/finance/invoices/:id" element={<InvoiceDetailViewPage />} />
                 <Route path="/finance/reconciliation" element={<FinanceReconciliationPage />} />
-                <Route path="/finance/reconciliation/:id" element={<ReconciliationDetailViewPage />} />
+                <Route
+                  path="/finance/reconciliation/:id"
+                  element={<ReconciliationDetailViewPage />}
+                />
                 <Route path="/finance/categories" element={<FinanceCategoryPage />} />
                 <Route path="/finance/escrow" element={<EscrowManagementPage />} />
                 <Route path="/finance/escrow/:id" element={<EscrowDetailViewPage />} />
                 <Route path="/finance/refunds" element={<FinanceRefundsPage />} />
-                <Route path="/finance/refunds/:id/escalate" element={<AssignRefundAuthorityPage />} />
+                <Route
+                  path="/finance/refunds/:id/escalate"
+                  element={<AssignRefundAuthorityPage />}
+                />
                 <Route path="/finance/refunds/:id/dispute" element={<DisputeDetailViewPage />} />
                 <Route path="/finance/refunds/:id" element={<RefundDetailViewPage />} />
               </Route>
@@ -754,10 +761,7 @@ export function AppRouter() {
                 <Route path="/experts/dashboard/metrics" element={<ExpertMetricsPage />} />
                 <Route path="/experts/management" element={<ExpertManagementPage />} />
                 <Route path="/experts/management/create" element={<CreateExpertPage />} />
-                <Route
-                  path="/experts/management/profile/:id"
-                  element={<ExpertProfileViewPage />}
-                />
+                <Route path="/experts/management/profile/:id" element={<ExpertProfileViewPage />} />
                 <Route
                   path="/experts/management/profile/:id/analytics"
                   element={<ExpertProfileAnalyticsPage />}
@@ -831,30 +835,14 @@ export function AppRouter() {
                   path="/venues/management/profile/:venueId/space/:spaceId/analytics"
                   element={<SpaceAnalyticsPage />}
                 />
-                <Route
-                  path="/communication/management"
-                  element={<CommunicationListPage />}
-                />
-                <Route
-                  path="/communication/create"
-                  element={<CreateCommunicationPage />}
-                />
+                <Route path="/communication/management" element={<CommunicationListPage />} />
+                <Route path="/communication/create" element={<CreateCommunicationPage />} />
 
+                <Route path="/communication/view" element={<ViewCommunicationPage />} />
 
-                <Route
-                  path="/communication/view"
-                  element={<ViewCommunicationPage />}
-                />
+                <Route path="/settings/escalations" element={<EscalationPage />} />
 
-                <Route
-                  path="/settings/escalations"
-                  element={<EscalationPage />}
-                />
-
-                <Route
-                  path="/settings/refund-details"
-                  element={<RefundDetailsPage />}
-                />
+                <Route path="/settings/refund-details" element={<RefundDetailsPage />} />
 
                 <Route
                   path="/settings/membership-upgrade-details"
@@ -863,7 +851,10 @@ export function AppRouter() {
                 <Route path="/venues/management/pending" element={<VenuePendingApprovalsPage />} />
                 <Route path="/venues/management/suspended" element={<VenueSuspendedPage />} />
                 <Route path="/venues/management/deleted" element={<VenueDeletedPage />} />
-                <Route path="/venues/management/onboarding" element={<CreateVenueOnboardingPage />} />
+                <Route
+                  path="/venues/management/onboarding"
+                  element={<CreateVenueOnboardingPage />}
+                />
                 <Route path="/venues/management/create" element={<CreateVenueListingPage />} />
                 <Route
                   path="/venues/categories/management"
@@ -903,11 +894,11 @@ export function AppRouter() {
                 />
               </Route>
             </Route>
-            </Route>
           </Route>
+        </Route>
 
-          <Route path="*" element={<HomeRedirect />} />
-        </Routes>
+        <Route path="*" element={<HomeRedirect />} />
+      </Routes>
     </BrowserRouter>
   )
 }

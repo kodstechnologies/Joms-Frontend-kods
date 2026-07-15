@@ -9,7 +9,11 @@ type ApiEnvelope<T> = {
   meta?: PaginationMeta
 }
 
-export const fetchLockedAccounts = async (params?: { page?: number; limit?: number; search?: string }) => {
+export const fetchLockedAccounts = async (params?: {
+  page?: number
+  limit?: number
+  search?: string
+}) => {
   const response = await settingsApiClient.get<ApiEnvelope<LockedAccountRow[]>>(
     '/settings/security/locked-accounts',
     { params },
@@ -31,9 +35,16 @@ export const unlockAccount = async (id: string) => {
   return response.data.data
 }
 
-export const fetchLoginTrails = async (params?: { page?: number; limit?: number; search?: string }) => {
-  const response = await settingsApiClient.get<ApiEnvelope<LoginTrailRow[]>>('/settings/security/login-trails', {
-    params,
-  })
+export const fetchLoginTrails = async (params?: {
+  page?: number
+  limit?: number
+  search?: string
+}) => {
+  const response = await settingsApiClient.get<ApiEnvelope<LoginTrailRow[]>>(
+    '/settings/security/login-trails',
+    {
+      params,
+    },
+  )
   return { data: response.data.data, meta: response.data.meta! }
 }

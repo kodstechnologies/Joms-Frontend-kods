@@ -1,12 +1,7 @@
 import { ArrowUpDown, Star } from 'lucide-react'
 
 import { ALL_SPACES, SPACE_ANALYSIS } from '../../mock/venue-profile-analytics.mock'
-import {
-  AnalyticsCard,
-  MetricCard,
-  SectionTitle,
-  StatusBadge,
-} from './analytics-ui'
+import { AnalyticsCard, MetricCard, SectionTitle, StatusBadge } from './analytics-ui'
 
 export function SpacesTab() {
   return (
@@ -15,12 +10,7 @@ export function SpacesTab() {
         <SectionTitle title="Space Analysis" subtitle="Learn more about Space's performance" />
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {SPACE_ANALYSIS.map((item) => (
-            <MetricCard
-              key={item.label}
-              label={item.label}
-              value={item.value}
-              trend={item.trend}
-            />
+            <MetricCard key={item.label} label={item.label} value={item.value} trend={item.trend} />
           ))}
         </div>
       </div>
@@ -67,7 +57,7 @@ export function SpacesTab() {
                     <td className="px-5 py-3.5 text-[#999]">{space.bookings}</td>
                     <td className="px-5 py-3.5">
                       <span className="inline-flex items-center gap-1">
-                        <Star className="size-3 fill-brand-accent text-brand-accent" />
+                        <Star className="fill-brand-accent text-brand-accent size-3" />
                         {space.rating}
                       </span>
                     </td>
@@ -75,7 +65,7 @@ export function SpacesTab() {
                       <div className="flex items-center gap-2">
                         <div className="h-1.5 w-16 overflow-hidden rounded-full bg-black">
                           <div
-                            className="h-full rounded-full bg-brand-accent"
+                            className="bg-brand-accent h-full rounded-full"
                             style={{ width: `${space.utilization}%` }}
                           />
                         </div>

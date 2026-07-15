@@ -52,11 +52,11 @@ export type VenueFormData = {
   inHouseCatering: boolean
   decorationAvailable: boolean
   amenities: Array<{
-  categoryId: string
-  subCategoryId: string
-  name: string
-  image: string
-}>
+    categoryId: string
+    subCategoryId: string
+    name: string
+    image: string
+  }>
   serviceType: string
   setDays: string
   weekdayPrice: string
@@ -152,8 +152,7 @@ const cancellationHoursMap: Record<string, number> = {
   '12hrs': 12,
 }
 
-export const mapCancellationPolicyToHours = (policy: string) =>
-  cancellationHoursMap[policy] ?? 48
+export const mapCancellationPolicyToHours = (policy: string) => cancellationHoursMap[policy] ?? 48
 
 const reverseCancellationHoursMap: Record<number, string> = {
   168: '7days',
@@ -177,10 +176,7 @@ export const mapDraftToVenueFormData = (
   profile?: Record<string, unknown> | null,
 ): VenueFormData => {
   const base = createEmptyVenueFormData()
-  const location = (draft.location || profile?.location || {}) as Record<
-    string,
-    unknown
-  >
+  const location = (draft.location || profile?.location || {}) as Record<string, unknown>
   const categories = (profile?.categories || draft.venueCategoryId || []) as Array<
     Record<string, unknown> | string
   >
@@ -200,21 +196,18 @@ export const mapDraftToVenueFormData = (
     | Record<string, unknown>
     | undefined
 
-const amenityLabels = Array.isArray(amenitiesDoc)
-  ? amenitiesDoc.flatMap((item) =>
-      ((item.amenities as Array<Record<string, unknown>>) || []).flatMap(
-        (a) =>
-          (((a.subCategoryIds as Array<Record<string, unknown>>) || []).map(
-            (subCategory) => ({
-              categoryId: String(a.categoryId || ''),
-              subCategoryId: String(subCategory._id || ''),
-              name: String(subCategory.name || ''),
-              image: String(subCategory.image || ''),
-            }),
-          )),
-      ),
-    )
-  : []
+  const amenityLabels = Array.isArray(amenitiesDoc)
+    ? amenitiesDoc.flatMap((item) =>
+        ((item.amenities as Array<Record<string, unknown>>) || []).flatMap((a) =>
+          ((a.subCategoryIds as Array<Record<string, unknown>>) || []).map((subCategory) => ({
+            categoryId: String(a.categoryId || ''),
+            subCategoryId: String(subCategory._id || ''),
+            name: String(subCategory.name || ''),
+            image: String(subCategory.image || ''),
+          })),
+        ),
+      )
+    : []
 
   return {
     ...base,
@@ -225,12 +218,8 @@ const amenityLabels = Array.isArray(amenitiesDoc)
     address: String(location.address || ''),
     landmark: String(location.landmark || ''),
     city: String(location.city || ''),
-    parkingAvailable: Boolean(
-      draft.parkingAvailable ?? profile?.parkingAvailable ?? false,
-    ),
-    accessibility: Boolean(
-      draft.accessibility ?? profile?.accessibility ?? false,
-    ),
+    parkingAvailable: Boolean(draft.parkingAvailable ?? profile?.parkingAvailable ?? false),
+    accessibility: Boolean(draft.accessibility ?? profile?.accessibility ?? false),
     spaceName: String(space?.name || ''),
     spaceType: mapSpaceTypeFromApi(String(space?.spaceType || '')),
     capacityType: String(space?.capacityMode || 'seated'),
@@ -238,13 +227,9 @@ const amenityLabels = Array.isArray(amenitiesDoc)
     seatingType: String(space?.seatingStyle || ''),
     areaSqFt: space?.areaSqFeet ? String(space.areaSqFeet) : '',
     seatedCapacity:
-      space?.capacityMode === 'seated' && space?.capacityRange
-        ? String(space.capacityRange)
-        : '',
+      space?.capacityMode === 'seated' && space?.capacityRange ? String(space.capacityRange) : '',
     standingCapacity:
-      space?.capacityMode === 'standing' && space?.capacityRange
-        ? String(space.capacityRange)
-        : '',
+      space?.capacityMode === 'standing' && space?.capacityRange ? String(space.capacityRange) : '',
     locationType: space?.isSameAsVenueLocation === false ? 'different' : 'same',
     inHouseCatering: Boolean(space?.inHouseCatering ?? false),
     decorationAvailable: Boolean(space?.decorationAvailable ?? false),
@@ -254,19 +239,17 @@ const amenityLabels = Array.isArray(amenitiesDoc)
     weekdayPrice: pricing?.weekdayPrice ? String(pricing.weekdayPrice) : '',
     weekendPrice: pricing?.weekendPrice ? String(pricing.weekendPrice) : '',
     discount: pricing?.discount ? String(pricing.discount) : '',
-    reservationFee: pricing?.reservationFee
-      ? String(pricing.reservationFee)
-      : '',
+    reservationFee: pricing?.reservationFee ? String(pricing.reservationFee) : '',
     terms: Array.isArray(terms?.terms)
       ? (terms?.terms as string[]).join('\n')
       : String(terms?.terms || ''),
     cancellationPolicy: mapHoursToCancellationPolicy(
-      (terms?.cancellation as Record<string, unknown> | undefined)
-        ?.freeCancellationHours as number | undefined,
+      (terms?.cancellation as Record<string, unknown> | undefined)?.freeCancellationHours as
+        | number
+        | undefined,
     ),
     refundPercentage: String(
-      (terms?.cancellation as Record<string, unknown> | undefined)
-        ?.refundPercentage ?? '',
+      (terms?.cancellation as Record<string, unknown> | undefined)?.refundPercentage ?? '',
     ),
     faqs: (terms?.faqs as VenueFormData['faqs']) || base.faqs,
     contacts:

@@ -26,9 +26,7 @@ export const VenueCategoryViewHeaderActions = () => {
       <div className="flex flex-wrap items-center justify-end gap-3">
         <Button
           className="h-10 px-5"
-          onClick={() =>
-            navigate(`/venues/categories/management/create-subcategory/${id}`)
-          }
+          onClick={() => navigate(`/venues/categories/management/create-subcategory/${id}`)}
         >
           <Plus className="mr-2 size-4" aria-hidden="true" />
           Add Sub-Category

@@ -78,8 +78,7 @@ const mapLogToRoleHistory = (log: AuditLog): RoleHistoryRow => {
   return {
     id: log.id || log._id || log.action,
     previousRole:
-      (log.metadata?.previousRole as string) ||
-      (previousVersion ? 'Previous assignment' : '—'),
+      (log.metadata?.previousRole as string) || (previousVersion ? 'Previous assignment' : '—'),
     changedTo: (log.metadata?.changedTo as string) || log.action,
     changedOn: formatOverviewDate(log.createdAt),
     changedBy: log.performedBy || '—',
@@ -129,7 +128,7 @@ export function AdminDetailPage() {
             <button
               type="button"
               onClick={() => setSelectedAdminNote(row.original.adminNote)}
-              className="max-w-[260px] truncate text-left text-xs font-medium text-brand-accent underline decoration-brand-accent/40 underline-offset-2 hover:text-brand-gold-from"
+              className="text-brand-accent decoration-brand-accent/40 hover:text-brand-gold-from max-w-[260px] truncate text-left text-xs font-medium underline underline-offset-2"
             >
               {row.original.adminNote}
             </button>
@@ -173,11 +172,7 @@ export function AdminDetailPage() {
   }, [deleteMutation, id, navigate])
 
   const handlePasswordUpdate = useCallback(
-    async (payload: {
-      oldPassword: string
-      newPassword: string
-      confirmNewPassword: string
-    }) => {
+    async (payload: { oldPassword: string; newPassword: string; confirmNewPassword: string }) => {
       if (!id) return
       try {
         await updatePasswordMutation.mutateAsync({ id, payload })
@@ -200,7 +195,7 @@ export function AdminDetailPage() {
         <button
           type="button"
           onClick={() => navigate('/settings/access')}
-          className="group flex w-fit items-center gap-2 font-heading text-[20px] font-bold tracking-tight text-white transition-colors hover:text-[#FBC078]"
+          className="group font-heading flex w-fit items-center gap-2 text-[20px] font-bold tracking-tight text-white transition-colors hover:text-[#FBC078]"
         >
           <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
           <span>Admin Details</span>
@@ -219,7 +214,7 @@ export function AdminDetailPage() {
       </div>
 
       <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
-        <h2 className="text-sm font-semibold text-brand-text">Admin Overview</h2>
+        <h2 className="text-brand-text text-sm font-semibold">Admin Overview</h2>
         <div className="flex flex-wrap gap-2">
           <button
             type="button"
@@ -271,10 +266,10 @@ export function AdminDetailPage() {
         <div className={cn(uiTokens.radiusCard, uiTokens.borderSubtle, 'bg-brand-surface p-6')}>
           <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
             <div className="flex items-center gap-2">
-              <div className="grid size-9 place-items-center rounded-brand-md bg-brand-accent/10 text-brand-accent">
+              <div className="rounded-brand-md bg-brand-accent/10 text-brand-accent grid size-9 place-items-center">
                 <UserRound className="size-4" />
               </div>
-              <h3 className="text-base font-semibold text-brand-text">Admin Info</h3>
+              <h3 className="text-brand-text text-base font-semibold">Admin Info</h3>
             </div>
             <span
               className={cn(
@@ -297,7 +292,7 @@ export function AdminDetailPage() {
                   className="size-full object-cover"
                 />
               ) : (
-                <UserRound className="size-10 text-brand-muted" />
+                <UserRound className="text-brand-muted size-10" />
               )}
             </div>
 
@@ -312,22 +307,22 @@ export function AdminDetailPage() {
                 ['Workplace', subAdmin.workplaceFlexibility || '—'],
               ].map(([label, value]) => (
                 <div key={label}>
-                  <p className="text-xs text-brand-muted">{label}</p>
+                  <p className="text-brand-muted text-xs">{label}</p>
                   {label === 'Role' ? (
-                    <span className="mt-2 inline-flex rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold text-brand-text">
+                    <span className="text-brand-text mt-2 inline-flex rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold">
                       {value}
                     </span>
                   ) : (
-                    <p className="mt-1 text-sm font-medium text-brand-text">{value}</p>
+                    <p className="text-brand-text mt-1 text-sm font-medium">{value}</p>
                   )}
                 </div>
               ))}
             </div>
 
-            <div className="text-right text-xs text-brand-muted lg:min-w-[180px]">
+            <div className="text-brand-muted text-right text-xs lg:min-w-[180px]">
               <p>
                 Last Active:{' '}
-                <span className="font-medium text-brand-text">
+                <span className="text-brand-text font-medium">
                   {formatOverviewDate(subAdmin.lastActionAt)}
                 </span>
               </p>
@@ -337,7 +332,7 @@ export function AdminDetailPage() {
       </section>
 
       <section>
-        <h2 className="mb-3 text-sm font-semibold text-brand-text">More Details</h2>
+        <h2 className="text-brand-text mb-3 text-sm font-semibold">More Details</h2>
         <div className={cn(uiTokens.radiusCard, uiTokens.borderSubtle, 'bg-brand-surface p-6')}>
           <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
             {[
@@ -353,19 +348,19 @@ export function AdminDetailPage() {
               ['Contact details', subAdmin.emergencyContact || '—'],
             ].map(([label, value]) => (
               <div key={label}>
-                <p className="text-xs text-brand-muted">{label}</p>
-                <p className="mt-1 text-sm font-medium text-brand-text">{value}</p>
+                <p className="text-brand-muted text-xs">{label}</p>
+                <p className="text-brand-text mt-1 text-sm font-medium">{value}</p>
               </div>
             ))}
 
             <div>
-              <p className="text-xs text-brand-muted">Password Updated</p>
-              <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-brand-text">
+              <p className="text-brand-muted text-xs">Password Updated</p>
+              <div className="text-brand-text mt-1 flex flex-wrap items-center gap-2 text-sm">
                 <span>{formatOverviewDate(subAdmin.updatedAt)}</span>
                 <button
                   type="button"
                   onClick={() => setPasswordModalOpen(true)}
-                  className="text-brand-accent underline underline-offset-2 hover:text-brand-gold-from"
+                  className="text-brand-accent hover:text-brand-gold-from underline underline-offset-2"
                 >
                   Change Password
                 </button>
@@ -377,8 +372,8 @@ export function AdminDetailPage() {
 
       <section>
         <div className="mb-3">
-          <h2 className="text-lg font-semibold text-brand-text">Role History &amp; Change Log</h2>
-          <p className="mt-1 text-sm text-brand-muted">
+          <h2 className="text-brand-text text-lg font-semibold">Role History &amp; Change Log</h2>
+          <p className="text-brand-muted mt-1 text-sm">
             Complete history of actions performed on this admin
           </p>
         </div>

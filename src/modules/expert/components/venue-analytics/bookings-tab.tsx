@@ -6,13 +6,7 @@ import {
   EVENT_METRICS,
   MEETUP_METRICS,
 } from '../../mock/venue-profile-analytics.mock'
-import {
-  AnalyticsCard,
-  MetricCard,
-  SectionTitle,
-  StatusBadge,
-  SubTabPills,
-} from './analytics-ui'
+import { AnalyticsCard, MetricCard, SectionTitle, StatusBadge, SubTabPills } from './analytics-ui'
 
 type BookingCategory = 'events' | 'meetup'
 
@@ -40,12 +34,7 @@ export function BookingsTab() {
         <SectionTitle title={sectionTitle} subtitle={sectionSubtitle} />
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {metrics.map((item) => (
-            <MetricCard
-              key={item.label}
-              label={item.label}
-              value={item.value}
-              trend={item.trend}
-            />
+            <MetricCard key={item.label} label={item.label} value={item.value} trend={item.trend} />
           ))}
         </div>
       </div>

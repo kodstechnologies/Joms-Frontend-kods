@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 
 import type { NavItem } from '@/app/layouts/navigation/navigation.config'
@@ -32,15 +32,17 @@ export function SidebarGroup({
   const isActiveModule = isTopLevel && activeTopLevelKey === item.key
   const isInactiveModule = isTopLevel && Boolean(activeTopLevelKey) && !isActiveModule
 
-  const [isOpen, setIsOpen] = useState(false)
+  const syncKey = `${isActiveModule}:${isInactiveModule}:${isChildActive}`
+  const [openOverride, setOpenOverride] = useState<boolean | null>(null)
+  const [prevSyncKey, setPrevSyncKey] = useState(syncKey)
 
-  useEffect(() => {
-    if (isActiveModule && isChildActive) {
-      setIsOpen(true)
-    } else if (isInactiveModule) {
-      setIsOpen(false)
-    }
-  }, [isActiveModule, isChildActive, isInactiveModule])
+  if (prevSyncKey !== syncKey) {
+    setPrevSyncKey(syncKey)
+    setOpenOverride(null)
+  }
+
+  const defaultOpen = isActiveModule && isChildActive && !isInactiveModule
+  const isOpen = openOverride ?? defaultOpen
 
   const children = item.children ?? []
   const hasChildren = children.length > 0
@@ -87,7 +89,9 @@ export function SidebarGroup({
         expanded={Boolean(shouldShowChildren)}
         compact={compact}
         onToggle={
-          canExpandOwnSubmenu && !itemTo ? () => setIsOpen((prev) => !prev) : undefined
+          canExpandOwnSubmenu && !itemTo
+            ? () => setOpenOverride((prev) => !(prev ?? defaultOpen))
+            : undefined
         }
         onNavigate={onNavigate}
       />

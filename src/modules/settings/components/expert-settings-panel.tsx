@@ -21,7 +21,9 @@ export function ExpertSettingsPanel({ value, onChange }: ExpertSettingsPanelProp
     <div className="space-y-5">
       <div>
         <h2 className="text-lg font-semibold text-white">Expert Application Settings</h2>
-        <p className="text-sm text-slate-400">Manage expert onboarding, suspension rules, and payouts</p>
+        <p className="text-sm text-slate-400">
+          Manage expert onboarding, suspension rules, and payouts
+        </p>
       </div>
 
       <SettingsSectionCard
@@ -51,7 +53,8 @@ export function ExpertSettingsPanel({ value, onChange }: ExpertSettingsPanelProp
             value={value.accountCreation.phoneVerification}
             onChange={(e) =>
               patchAccount({
-                phoneVerification: e.target.value as ExpertSettings['accountCreation']['phoneVerification'],
+                phoneVerification: e.target
+                  .value as ExpertSettings['accountCreation']['phoneVerification'],
               })
             }
           >

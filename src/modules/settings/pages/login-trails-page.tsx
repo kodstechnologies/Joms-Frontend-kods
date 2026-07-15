@@ -21,7 +21,7 @@ function StatusDot({ status }: { status: LoginTrailRow['status'] }) {
     warning: 'bg-amber-400',
   }
   return (
-    <span className="inline-flex items-center gap-2 capitalize text-slate-300">
+    <span className="inline-flex items-center gap-2 text-slate-300 capitalize">
       <span className={cn('size-2 rounded-full', colors[status])} />
       {status}
     </span>
@@ -34,7 +34,12 @@ export function LoginTrailsPage() {
   const [search, setSearch] = useState('')
   const [loginAlerts, setLoginAlerts] = useState(true)
 
-  const { data: trailsResult, isLoading, refetch, isFetching } = useLoginTrails({
+  const {
+    data: trailsResult,
+    isLoading,
+    refetch,
+    isFetching,
+  } = useLoginTrails({
     page,
     limit: PAGE_SIZE,
     search,
@@ -102,7 +107,9 @@ export function LoginTrailsPage() {
         subtitle="Monitor all admin login activities and security events"
       />
 
-      <div className={cn(uiTokens.radiusCard, uiTokens.borderSubtle, 'bg-brand-surface p-4 sm:p-5')}>
+      <div
+        className={cn(uiTokens.radiusCard, uiTokens.borderSubtle, 'bg-brand-surface p-4 sm:p-5')}
+      >
         <DataTable
           columns={columns}
           data={rows}
@@ -153,7 +160,11 @@ export function LoginTrailsPage() {
               >
                 {isFetching ? 'Refreshing…' : 'Refresh'}
               </Button>
-              <Button variant="secondary" className="h-8 text-xs" onClick={() => toast.message('Filters applied')}>
+              <Button
+                variant="secondary"
+                className="h-8 text-xs"
+                onClick={() => toast.message('Filters applied')}
+              >
                 Apply Filter
               </Button>
             </div>

@@ -6,11 +6,7 @@ import {
   MembershipPlanForm,
   type MembershipPlanFormValues,
 } from '../components/membership-plan-form'
-import {
-  useCreateMembership,
-  useMembership,
-  useUpdateMembership,
-} from '../hooks/use-memberships'
+import { useCreateMembership, useMembership, useUpdateMembership } from '../hooks/use-memberships'
 import { Button } from '@/shared/components/ui/button'
 
 export function MembershipPlanFormPage() {
@@ -73,7 +69,9 @@ export function MembershipPlanFormPage() {
 
       navigate('/memberships/plans')
     } catch {
-      toast.error(isEditMode ? 'Failed to update membership plan' : 'Failed to create membership plan')
+      toast.error(
+        isEditMode ? 'Failed to update membership plan' : 'Failed to create membership plan',
+      )
     }
   }
 

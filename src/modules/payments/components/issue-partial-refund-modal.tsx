@@ -11,11 +11,7 @@ type IssuePartialRefundModalProps = {
   originalAmount: string
   maxRefundableAmount: number
   onClose: () => void
-  onSubmit?: (payload: {
-    refundAmount: string
-    reason: string
-    adminNotes: string
-  }) => void
+  onSubmit?: (payload: { refundAmount: string; reason: string; adminNotes: string }) => void
 }
 
 const fieldInputClass =
@@ -39,6 +35,9 @@ export function IssuePartialRefundModal({
   const [adminNotes, setAdminNotes] = useState('')
 
   const handleClose = useCallback(() => {
+    setRefundAmount('')
+    setReason('')
+    setAdminNotes('')
     onClose()
   }, [onClose])
 
@@ -61,14 +60,6 @@ export function IssuePartialRefundModal({
       window.removeEventListener('keydown', onKeyDown)
     }
   }, [open, handleClose])
-
-  useEffect(() => {
-    if (open) {
-      setRefundAmount('')
-      setReason('')
-      setAdminNotes('')
-    }
-  }, [open])
 
   const handleSubmit = () => {
     const amount = Number(refundAmount.replace(/,/g, ''))
@@ -115,7 +106,7 @@ export function IssuePartialRefundModal({
         <div className="flex shrink-0 items-start justify-between gap-3 border-b border-white/[0.06] px-4 py-4 sm:px-6 sm:py-5">
           <h2
             id="issue-partial-refund-title"
-            className="pr-2 text-[15px] font-bold leading-snug text-white sm:text-[16px]"
+            className="pr-2 text-[15px] leading-snug font-bold text-white sm:text-[16px]"
           >
             Issue Partial Refund
           </h2>
@@ -137,7 +128,7 @@ export function IssuePartialRefundModal({
               </div>
               <div className="min-w-0">
                 <p className="text-[13px] font-semibold text-white">Partial Refund</p>
-                <p className="mt-0.5 break-words text-[12px] text-[#888888]">
+                <p className="mt-0.5 text-[12px] break-words text-[#888888]">
                   Original amount: {originalAmount}
                 </p>
               </div>
@@ -145,7 +136,7 @@ export function IssuePartialRefundModal({
 
             <Field label="Refund Amount (Required)">
               <div className="relative">
-                <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-sm text-[#888888]">
+                <span className="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-sm text-[#888888]">
                   ₹
                 </span>
                 <Input
@@ -168,9 +159,9 @@ export function IssuePartialRefundModal({
                   rows={3}
                   onChange={(event) => setReason(event.target.value.slice(0, MAX_REASON_LENGTH))}
                   placeholder="State Reason for Partial Refund"
-                  className="min-h-24 w-full resize-none rounded-lg border border-white/[0.06] bg-[#0F0F0F] px-4 py-3 pb-8 text-sm text-white placeholder:text-[#666666] focus:outline-none focus:ring-1 focus:ring-white/20 sm:min-h-20"
+                  className="min-h-24 w-full resize-none rounded-lg border border-white/[0.06] bg-[#0F0F0F] px-4 py-3 pb-8 text-sm text-white placeholder:text-[#666666] focus:ring-1 focus:ring-white/20 focus:outline-none sm:min-h-20"
                 />
-                <span className="pointer-events-none absolute bottom-3 right-3 text-[10px] text-[#666666]">
+                <span className="pointer-events-none absolute right-3 bottom-3 text-[10px] text-[#666666]">
                   {reason.length}/{MAX_REASON_LENGTH}
                 </span>
               </div>
@@ -183,9 +174,9 @@ export function IssuePartialRefundModal({
                   rows={4}
                   onChange={(event) => setAdminNotes(event.target.value.slice(0, MAX_NOTES_LENGTH))}
                   placeholder="Enter Text Here"
-                  className="min-h-28 w-full resize-none rounded-lg border border-white/[0.06] bg-[#0F0F0F] px-4 py-3 pb-8 text-sm text-white placeholder:text-[#666666] focus:outline-none focus:ring-1 focus:ring-white/20"
+                  className="min-h-28 w-full resize-none rounded-lg border border-white/[0.06] bg-[#0F0F0F] px-4 py-3 pb-8 text-sm text-white placeholder:text-[#666666] focus:ring-1 focus:ring-white/20 focus:outline-none"
                 />
-                <span className="pointer-events-none absolute bottom-3 right-3 text-[10px] text-[#666666]">
+                <span className="pointer-events-none absolute right-3 bottom-3 text-[10px] text-[#666666]">
                   {adminNotes.length}/{MAX_NOTES_LENGTH}
                 </span>
               </div>

@@ -86,7 +86,8 @@ const defaultDisputeDetail: DisputeDetail = {
       title: 'Dispute Created',
       actor: 'Emma Davis',
       timestamp: '01/12/2026 - 09:45 AM',
-      description: 'Customer raised a dispute regarding service quality and incomplete deliverables.',
+      description:
+        'Customer raised a dispute regarding service quality and incomplete deliverables.',
     },
     {
       step: '02',

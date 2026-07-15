@@ -6,22 +6,31 @@ import { Button } from '@/shared/components/ui/button'
 type SectionHeaderProps = PropsWithChildren<{
   title: string
   subtitle?: string
-  actions?: Array<{ label: string; onClick: () => void; variant?: 'default' | 'secondary' | 'ghost' }>
+  actions?: Array<{
+    label: string
+    onClick: () => void
+    variant?: 'default' | 'secondary' | 'ghost'
+  }>
   className?: string
 }>
 
-export function SectionHeader({ title, subtitle, actions, className, children }: SectionHeaderProps) {
+export function SectionHeader({
+  title,
+  subtitle,
+  actions,
+  className,
+  children,
+}: SectionHeaderProps) {
   return (
     <div
-      className={cn(
-        'flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between',
-        className,
-      )}
+      className={cn('flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between', className)}
     >
       <div className="space-y-1">
-        <h1 className="text-3xl font-semibold tracking-tight text-brand-text sm:text-4xl">{title}</h1>
+        <h1 className="text-brand-text text-3xl font-semibold tracking-tight sm:text-4xl">
+          {title}
+        </h1>
         {subtitle ? (
-          <p className="text-sm leading-relaxed text-brand-stroke sm:text-base">{subtitle}</p>
+          <p className="text-brand-stroke text-sm leading-relaxed sm:text-base">{subtitle}</p>
         ) : null}
         {children}
       </div>
@@ -29,7 +38,11 @@ export function SectionHeader({ title, subtitle, actions, className, children }:
       {actions?.length ? (
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
           {actions.map((action) => (
-            <Button key={action.label} variant={action.variant ?? 'secondary'} onClick={action.onClick}>
+            <Button
+              key={action.label}
+              variant={action.variant ?? 'secondary'}
+              onClick={action.onClick}
+            >
               {action.label}
             </Button>
           ))}

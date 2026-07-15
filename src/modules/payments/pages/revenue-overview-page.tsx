@@ -1,13 +1,6 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import {
-  AlertTriangle,
-  Eye,
-  SlidersHorizontal,
-  SquarePen,
-  Tag,
-  Trash2,
-} from 'lucide-react'
+import { AlertTriangle, Eye, SlidersHorizontal, SquarePen, Tag, Trash2 } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
@@ -87,9 +80,7 @@ export function RevenueOverviewPage() {
 
   const toggleRowSelection = useCallback((rowId: string) => {
     setSelectedRowIds((currentIds) =>
-      currentIds.includes(rowId)
-        ? currentIds.filter((id) => id !== rowId)
-        : [...currentIds, rowId],
+      currentIds.includes(rowId) ? currentIds.filter((id) => id !== rowId) : [...currentIds, rowId],
     )
   }, [])
 
@@ -198,13 +189,17 @@ export function RevenueOverviewPage() {
         accessorKey: 'entityId',
         header: 'Entity ID',
         cell: ({ row }) => (
-          <span className="font-mono text-[11px] uppercase text-white">{row.original.entityId}</span>
+          <span className="font-mono text-[11px] text-white uppercase">
+            {row.original.entityId}
+          </span>
         ),
       },
       {
         accessorKey: 'entityName',
         header: 'Entity Name',
-        cell: ({ row }) => <span className="font-medium text-white">{row.original.entityName}</span>,
+        cell: ({ row }) => (
+          <span className="font-medium text-white">{row.original.entityName}</span>
+        ),
       },
       { accessorKey: 'category', header: 'Category' },
       { accessorKey: 'ownerType', header: 'Owner Type' },
@@ -212,7 +207,9 @@ export function RevenueOverviewPage() {
       {
         accessorKey: 'grossAmount',
         header: 'Gross Amount',
-        cell: ({ row }) => <span className="font-semibold text-white">{row.original.grossAmount}</span>,
+        cell: ({ row }) => (
+          <span className="font-semibold text-white">{row.original.grossAmount}</span>
+        ),
       },
       {
         accessorKey: 'status',

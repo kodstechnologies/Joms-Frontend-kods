@@ -7,7 +7,7 @@ import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
 
 declare module '@tanstack/react-table' {
-  
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- required to match upstream ColumnMeta signature for declaration merging
   interface ColumnMeta<TData extends RowData, TValue> {
     headerClassName?: string
     cellClassName?: string
@@ -85,7 +85,6 @@ export function DataTable<TData>({
   tone = 'default',
   onRowClick,
 }: DataTableProps<TData>) {
-
   const table = useReactTable({
     data,
     columns,
@@ -111,75 +110,73 @@ export function DataTable<TData>({
     <section
       className={cn(
         'overflow-hidden rounded-2xl border',
-        isCategoryTone
-          ? 'border-[#242424] bg-[#181818]'
-          : 'border-white/10 bg-brand-surface',
+        isCategoryTone ? 'border-[#242424] bg-[#181818]' : 'bg-brand-surface border-white/10',
         className,
       )}
       aria-label={`${resourceLabel} table`}
     >
       <div className={cn('px-4 pt-4 sm:px-5 sm:pt-5', contentClassName)}>
-      <div className="flex flex-wrap items-center justify-between gap-3 pb-2">
-        <div className="relative w-full sm:max-w-[360px] sm:flex-1">
-          <Search
-            className={cn(
-              'absolute top-1/2 left-3 size-3.5 -translate-y-1/2',
-              isCategoryTone ? 'text-[#666666]' : 'text-brand-muted',
-            )}
-            aria-hidden="true"
-          />
-          <input
-            type="search"
-            value={searchValue}
-            onChange={(event) => onSearchChange(event.target.value)}
-            placeholder={searchPlaceholder}
-            aria-label={`Search ${resourceLabel}`}
-            className={cn(
-              'h-10 rounded-xl pl-9 text-[12px] focus-visible:ring-1',
-              isCategoryTone
-                ? 'border-[#2A2A2A] bg-black text-white placeholder:text-[#666666] focus-visible:ring-[#FFC16B]/40'
-                : 'border-white/10 bg-[#0F0F0F] text-brand-text placeholder:text-[#666666] focus-visible:ring-brand-accent/40',
-            )}
-          />
-        </div>
+        <div className="flex flex-wrap items-center justify-between gap-3 pb-2">
+          <div className="relative w-full sm:max-w-[360px] sm:flex-1">
+            <Search
+              className={cn(
+                'absolute top-1/2 left-3 size-3.5 -translate-y-1/2',
+                isCategoryTone ? 'text-[#666666]' : 'text-brand-muted',
+              )}
+              aria-hidden="true"
+            />
+            <input
+              type="search"
+              value={searchValue}
+              onChange={(event) => onSearchChange(event.target.value)}
+              placeholder={searchPlaceholder}
+              aria-label={`Search ${resourceLabel}`}
+              className={cn(
+                'h-10 rounded-xl pl-9 text-[12px] focus-visible:ring-1',
+                isCategoryTone
+                  ? 'border-[#2A2A2A] bg-black text-white placeholder:text-[#666666] focus-visible:ring-[#FFC16B]/40'
+                  : 'text-brand-text focus-visible:ring-brand-accent/40 border-white/10 bg-[#0F0F0F] placeholder:text-[#666666]',
+              )}
+            />
+          </div>
 
-        <div className="flex w-full shrink-0 items-center justify-end gap-3 lg:w-auto">
-          {toolbarContent}
-          {showAdvancedFilter ? (
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={onAdvancedFilter}
-              disabled={!onAdvancedFilter}
-              className={cn(
-                'h-10 flex-1 gap-2 rounded-xl border bg-transparent px-4 text-[12px] font-semibold shadow-none sm:flex-none',
-                isCategoryTone
-                  ? 'border-white/25 text-white hover:border-[#FFC16B] hover:bg-white/5'
-                  : 'border-white/45 text-brand-text hover:border-brand-accent hover:bg-white/5',
-              )}
-            >
-              <Filter className="size-3.5" aria-hidden="true" />
-              {advancedFilterLabel}
-            </Button>
-          ) : null}
-          {showExport ? (
-            <Button
-              type="button"
-              onClick={onExport}
-              disabled={!onExport || isExporting}
-              className={cn(
-                'h-10 flex-1 gap-2 rounded-xl px-4 text-[12px] font-bold shadow-none sm:flex-none',
-                isCategoryTone
-                  ? 'bg-[#FFC16B] text-black hover:bg-[#F5C27B]'
-                  : 'bg-brand-accent text-brand-text-dark hover:bg-brand-gold-from',
-              )}
-            >
-              <Upload className="size-4" aria-hidden="true" />
-              {isExporting ? 'Exporting...' : 'Export Data'}
-            </Button>
-          ) : null}
+          <div className="flex w-full shrink-0 items-center justify-end gap-3 lg:w-auto">
+            {toolbarContent}
+            {showAdvancedFilter ? (
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={onAdvancedFilter}
+                disabled={!onAdvancedFilter}
+                className={cn(
+                  'h-10 flex-1 gap-2 rounded-xl border bg-transparent px-4 text-[12px] font-semibold shadow-none sm:flex-none',
+                  isCategoryTone
+                    ? 'border-white/25 text-white hover:border-[#FFC16B] hover:bg-white/5'
+                    : 'text-brand-text hover:border-brand-accent border-white/45 hover:bg-white/5',
+                )}
+              >
+                <Filter className="size-3.5" aria-hidden="true" />
+                {advancedFilterLabel}
+              </Button>
+            ) : null}
+            {showExport ? (
+              <Button
+                type="button"
+                onClick={onExport}
+                disabled={!onExport || isExporting}
+                className={cn(
+                  'h-10 flex-1 gap-2 rounded-xl px-4 text-[12px] font-bold shadow-none sm:flex-none',
+                  isCategoryTone
+                    ? 'bg-[#FFC16B] text-black hover:bg-[#F5C27B]'
+                    : 'bg-brand-accent text-brand-text-dark hover:bg-brand-gold-from',
+                )}
+              >
+                <Upload className="size-4" aria-hidden="true" />
+                {isExporting ? 'Exporting...' : 'Export Data'}
+              </Button>
+            ) : null}
+          </div>
         </div>
-      </div>
 
         <div className="pb-4" aria-live="polite">
           <p
@@ -198,19 +195,14 @@ export function DataTable<TData>({
           <thead
             className={cn(
               'border-y',
-              isCategoryTone
-                ? 'border-[#242424] bg-[#181818]'
-                : 'border-white/10 bg-brand-surface',
+              isCategoryTone ? 'border-[#242424] bg-[#181818]' : 'bg-brand-surface border-white/10',
               stickyHeader && 'sticky top-0 z-10',
             )}
           >
             {table.getHeaderGroups().map((headerGroup) => (
               <tr
                 key={headerGroup.id}
-                className={cn(
-                  'text-[11px]',
-                  isCategoryTone ? 'text-[#888888]' : 'text-brand-text',
-                )}
+                className={cn('text-[11px]', isCategoryTone ? 'text-[#888888]' : 'text-brand-text')}
               >
                 {headerGroup.headers.map((header) => (
                   <th
@@ -236,7 +228,9 @@ export function DataTable<TData>({
               </tr>
             ))}
           </thead>
-          <tbody className={cn('divide-y', isCategoryTone ? 'divide-[#242424]' : 'divide-white/10')}>
+          <tbody
+            className={cn('divide-y', isCategoryTone ? 'divide-[#242424]' : 'divide-white/10')}
+          >
             {isLoading ? (
               Array.from({ length: loadingRowCount }, (_, rowIndex) => (
                 <tr key={rowIndex} className="animate-pulse">
@@ -254,7 +248,7 @@ export function DataTable<TData>({
               <tr>
                 <td
                   colSpan={table.getVisibleLeafColumns().length}
-                  className="px-5 py-12 text-center text-brand-muted"
+                  className="text-brand-muted px-5 py-12 text-center"
                 >
                   {emptyMessage}
                 </td>
@@ -300,10 +294,10 @@ export function DataTable<TData>({
           onClick={() => changePage(currentPage - 1)}
           disabled={isLoading || currentPage <= 1}
           className={cn(
-            'h-8 w-full rounded-brand-md border bg-transparent px-3 text-[11px] font-medium shadow-none sm:w-auto',
+            'rounded-brand-md h-8 w-full border bg-transparent px-3 text-[11px] font-medium shadow-none sm:w-auto',
             isCategoryTone
               ? 'border-white/25 text-white hover:border-[#FFC16B] hover:bg-white/5'
-              : 'border-white/25 text-brand-text hover:border-brand-accent hover:bg-white/5',
+              : 'text-brand-text hover:border-brand-accent border-white/25 hover:bg-white/5',
           )}
         >
           Previous
@@ -319,7 +313,7 @@ export function DataTable<TData>({
 
             return (
               <div key={page} className="flex items-center gap-1 md:gap-2">
-                {hasGap && <span className="px-1 text-brand-muted">...</span>}
+                {hasGap && <span className="text-brand-muted px-1">...</span>}
                 <button
                   type="button"
                   onClick={() => changePage(page)}
@@ -327,14 +321,14 @@ export function DataTable<TData>({
                   aria-current={currentPage === page ? 'page' : undefined}
                   aria-label={`Go to page ${page}`}
                   className={cn(
-                    'flex size-8 items-center justify-center rounded-brand-md border text-[11px] font-semibold transition-colors disabled:opacity-50',
+                    'rounded-brand-md flex size-8 items-center justify-center border text-[11px] font-semibold transition-colors disabled:opacity-50',
                     currentPage === page
                       ? isCategoryTone
                         ? 'border-[#FFC16B] bg-[#FFC16B] text-black'
                         : 'border-brand-accent bg-brand-accent text-brand-text-dark'
                       : isCategoryTone
                         ? 'border-white/25 bg-transparent text-white hover:border-[#FFC16B] hover:bg-white/5'
-                        : 'border-white/25 bg-transparent text-brand-text hover:border-brand-accent hover:bg-white/5',
+                        : 'text-brand-text hover:border-brand-accent border-white/25 bg-transparent hover:bg-white/5',
                   )}
                 >
                   {page.toString().padStart(2, '0')}
@@ -350,10 +344,10 @@ export function DataTable<TData>({
           onClick={() => changePage(currentPage + 1)}
           disabled={isLoading || currentPage >= Math.max(pagination.totalPages, 1)}
           className={cn(
-            'h-8 w-full rounded-brand-md border bg-transparent px-3 text-[11px] font-medium shadow-none sm:w-auto',
+            'rounded-brand-md h-8 w-full border bg-transparent px-3 text-[11px] font-medium shadow-none sm:w-auto',
             isCategoryTone
               ? 'border-white/25 text-white hover:border-[#FFC16B] hover:bg-white/5'
-              : 'border-white/25 text-brand-text hover:border-brand-accent hover:bg-white/5',
+              : 'text-brand-text hover:border-brand-accent border-white/25 hover:bg-white/5',
           )}
         >
           Next

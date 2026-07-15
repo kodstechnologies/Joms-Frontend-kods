@@ -8,14 +8,24 @@ export const supportDashboardStats = [
   { title: 'Resolved Today', value: '487,650', change: '+6.7%', changeType: 'up' as const },
   { title: 'Priority Tickets', value: '487,650', change: '+6.7%', changeType: 'up' as const },
   { title: 'Avg. Response Time', value: '2.03 mins', change: '+6.7%', changeType: 'up' as const },
-  { title: 'Avg. Resolution Time', value: '2 hr 30 mins', change: '+6.7%', changeType: 'up' as const },
+  {
+    title: 'Avg. Resolution Time',
+    value: '2 hr 30 mins',
+    change: '+6.7%',
+    changeType: 'up' as const,
+  },
 ]
 
 export const ticketManagementStats = [
   { title: 'My Open Tickets', value: '43', change: '+6.7%', changeType: 'up' as const },
   { title: 'Tickets In-Progress', value: '34', change: '+6.7%', changeType: 'up' as const },
   { title: 'Avg. Response Time', value: '2.03 mins', change: '+6.7%', changeType: 'up' as const },
-  { title: 'Avg. Resolution Time', value: '2 hr 30 mins', change: '+6.7%', changeType: 'up' as const },
+  {
+    title: 'Avg. Resolution Time',
+    value: '2 hr 30 mins',
+    change: '+6.7%',
+    changeType: 'up' as const,
+  },
 ]
 
 export const ticketTrendsMock = [

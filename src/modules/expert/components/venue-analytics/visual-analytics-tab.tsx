@@ -22,7 +22,8 @@ import {
   BOOKINGS_TREND,
   REVENUE_TREND,
 } from '../../mock/venue-profile-analytics.mock'
-import { AnalyticsCard, CHART_TOOLTIP, PeriodSelect, SectionTitle } from './analytics-ui'
+import { AnalyticsCard, PeriodSelect, SectionTitle } from './analytics-ui'
+import { CHART_TOOLTIP } from './analytics-constants'
 
 export function VisualAnalyticsTab() {
   const [revenuePeriod, setRevenuePeriod] = useState('This Week')
@@ -62,7 +63,9 @@ export function VisualAnalyticsTab() {
               <Legend
                 wrapperStyle={{ fontSize: 11, color: '#999' }}
                 formatter={(value) => (
-                  <span style={{ color: '#999' }}>{value === 'events' ? 'Events' : 'Meet Ups'}</span>
+                  <span style={{ color: '#999' }}>
+                    {value === 'events' ? 'Events' : 'Meet Ups'}
+                  </span>
                 )}
               />
               <Line
@@ -99,7 +102,7 @@ export function VisualAnalyticsTab() {
                   </span>
                 </div>
                 <div
-                  className="h-8 rounded-md bg-brand-accent"
+                  className="bg-brand-accent h-8 rounded-md"
                   style={{
                     width: `${100 - index * 28}%`,
                     minWidth: '40%',
@@ -158,7 +161,11 @@ export function VisualAnalyticsTab() {
         </div>
         <div className="h-72">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={BOOKINGS_TREND} barGap={4} margin={{ left: 0, right: 8, top: 8, bottom: 0 }}>
+            <BarChart
+              data={BOOKINGS_TREND}
+              barGap={4}
+              margin={{ left: 0, right: 8, top: 8, bottom: 0 }}
+            >
               <CartesianGrid stroke="#2a2a2a" strokeDasharray="4 4" />
               <XAxis
                 dataKey="week"
@@ -171,10 +178,17 @@ export function VisualAnalyticsTab() {
               <Legend
                 wrapperStyle={{ fontSize: 11, color: '#999' }}
                 formatter={(value) => (
-                  <span style={{ color: '#999' }}>{value === 'events' ? 'Events' : 'Meet Ups'}</span>
+                  <span style={{ color: '#999' }}>
+                    {value === 'events' ? 'Events' : 'Meet Ups'}
+                  </span>
                 )}
               />
-              <Bar dataKey="events" fill="var(--brand-accent)" radius={[4, 4, 0, 0]} name="events" />
+              <Bar
+                dataKey="events"
+                fill="var(--brand-accent)"
+                radius={[4, 4, 0, 0]}
+                name="events"
+              />
               <Bar dataKey="meetups" fill="#1A73E8" radius={[4, 4, 0, 0]} name="meetups" />
             </BarChart>
           </ResponsiveContainer>

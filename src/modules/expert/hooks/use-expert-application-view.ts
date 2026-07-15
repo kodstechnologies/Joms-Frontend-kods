@@ -10,10 +10,7 @@ import {
   useEscalationAssignees as useSharedEscalationAssignees,
   useStartAdminEscalationReview,
 } from '@/modules/my-tasks/hooks/use-admin-escalation'
-import type {
-  BankingDecisionPayload,
-  KycDecisionPayload,
-} from '../type/expert-application-view'
+import type { BankingDecisionPayload, KycDecisionPayload } from '../type/expert-application-view'
 
 export const useExpertApplicationView = (id?: string) =>
   useQuery({
@@ -42,24 +39,17 @@ const invalidateExpertApplicationQueries = (
   void queryClient.invalidateQueries({ queryKey: ['experts'] })
 }
 
-export const useUpdateExpertKycStatus = (
-  kycId?: string,
-  partnerId?: string,
-) => {
+export const useUpdateExpertKycStatus = (kycId?: string, partnerId?: string) => {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (payload: KycDecisionPayload) =>
-      updateExpertKycStatus(kycId as string, payload),
+    mutationFn: (payload: KycDecisionPayload) => updateExpertKycStatus(kycId as string, payload),
     onSuccess: () => {
       invalidateExpertApplicationQueries(queryClient, partnerId)
     },
   })
 }
 
-export const useUpdateExpertBankingStatus = (
-  bankingId?: string,
-  partnerId?: string,
-) => {
+export const useUpdateExpertBankingStatus = (bankingId?: string, partnerId?: string) => {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (payload: BankingDecisionPayload) =>
@@ -73,8 +63,7 @@ export const useUpdateExpertBankingStatus = (
 export const useEscalationAssignees = (permission = 'experts.*') =>
   useSharedEscalationAssignees(permission)
 
-export const useEscalateExpertApplication = (id?: string) =>
-  useEscalatePartnerApplication(id)
+export const useEscalateExpertApplication = (id?: string) => useEscalatePartnerApplication(id)
 
 export const useStartEscalationReviewOnView = (id?: string) =>
   useStartAdminEscalationReview('partner', id)

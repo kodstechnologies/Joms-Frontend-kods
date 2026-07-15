@@ -20,12 +20,12 @@ export function RbacStatsBar({ stats, isLoading }: RbacStatsBarProps) {
       {cards.map((card) => (
         <div
           key={card.key}
-          className="rounded-brand-lg border border-white/10 bg-brand-surface px-4 py-4"
+          className="rounded-brand-lg bg-brand-surface border border-white/10 px-4 py-4"
         >
-          <p className="text-xs font-medium text-brand-muted md:text-sm">{card.label}</p>
+          <p className="text-brand-muted text-xs font-medium md:text-sm">{card.label}</p>
           <p
             className={cn(
-              'mt-2 text-2xl font-semibold tracking-tight text-brand-text',
+              'text-brand-text mt-2 text-2xl font-semibold tracking-tight',
               isLoading && 'animate-pulse',
             )}
           >

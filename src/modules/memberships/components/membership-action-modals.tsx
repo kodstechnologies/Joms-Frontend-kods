@@ -3,10 +3,7 @@ import { useState } from 'react'
 
 import { useMemberships } from '../hooks/use-memberships'
 import type { MembershipSubscription } from '../types/membership-subscription'
-import {
-  DELETE_REASON_OPTIONS,
-  PAUSE_REASON_OPTIONS,
-} from '../mock/membership-metrics.mock'
+import { DELETE_REASON_OPTIONS, PAUSE_REASON_OPTIONS } from '../mock/membership-metrics.mock'
 import { formatCurrency } from '../utils/membership-format'
 import { DecisionActionModal } from '@/shared/components/modal/decision-action-modal'
 import { Button } from '@/shared/components/ui/button'
@@ -64,9 +61,7 @@ export function MembershipActionModals({
 
   const toggleReason = (value: string) => {
     setSelectedReasons((current) =>
-      current.includes(value)
-        ? current.filter((item) => item !== value)
-        : [...current, value],
+      current.includes(value) ? current.filter((item) => item !== value) : [...current, value],
     )
   }
 
@@ -86,22 +81,44 @@ export function MembershipActionModals({
           <div className="mb-4 flex items-center justify-between">
             <div>
               <h3 className="text-lg font-semibold text-white">Extend</h3>
-              <p className="text-xs text-slate-400">Extend membership plan for {subscription.partnerName}</p>
+              <p className="text-xs text-slate-400">
+                Extend membership plan for {subscription.partnerName}
+              </p>
             </div>
-            <button type="button" onClick={resetAndClose} className="text-slate-400 hover:text-white">
+            <button
+              type="button"
+              onClick={resetAndClose}
+              className="text-slate-400 hover:text-white"
+            >
               <X className="size-5" />
             </button>
           </div>
 
           <div className="mb-4 rounded-xl border border-amber-500/20 bg-amber-500/5 p-4 text-sm text-slate-300">
-            <p>Current Plan: <span className="font-semibold text-white">{subscription.planName}</span></p>
-            <p>Current Cycle: <span className="font-semibold text-white">{subscription.billingCycleName}</span></p>
-            <p>Price: <span className="font-semibold text-white">{formatCurrency(subscription.purchasedPrice)}</span></p>
+            <p>
+              Current Plan:{' '}
+              <span className="font-semibold text-white">{subscription.planName}</span>
+            </p>
+            <p>
+              Current Cycle:{' '}
+              <span className="font-semibold text-white">{subscription.billingCycleName}</span>
+            </p>
+            <p>
+              Price:{' '}
+              <span className="font-semibold text-white">
+                {formatCurrency(subscription.purchasedPrice)}
+              </span>
+            </p>
           </div>
 
           <label className="mb-4 block space-y-2">
             <span className="text-xs text-slate-400">End Date *</span>
-            <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="border-white/10 bg-black text-white" />
+            <Input
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              className="border-white/10 bg-black text-white"
+            />
           </label>
 
           <ReasonTags selected={selectedReasons} onToggle={toggleReason} />
@@ -120,7 +137,9 @@ export function MembershipActionModals({
           </p>
 
           <div className="mt-5 flex justify-end gap-3">
-            <Button variant="secondary" onClick={resetAndClose}>Cancel</Button>
+            <Button variant="secondary" onClick={resetAndClose}>
+              Cancel
+            </Button>
             <Button
               disabled={isSubmitting}
               onClick={() =>
@@ -152,10 +171,15 @@ export function MembershipActionModals({
                 {action === 'upgrade' ? 'Upgrade Plan' : 'Downgrade Plan'}
               </h3>
               <p className="text-xs text-slate-400">
-                {action === 'upgrade' ? 'Upgrade' : 'Downgrade'} membership for {subscription.partnerName}
+                {action === 'upgrade' ? 'Upgrade' : 'Downgrade'} membership for{' '}
+                {subscription.partnerName}
               </p>
             </div>
-            <button type="button" onClick={resetAndClose} className="text-slate-400 hover:text-white">
+            <button
+              type="button"
+              onClick={resetAndClose}
+              className="text-slate-400 hover:text-white"
+            >
               <X className="size-5" />
             </button>
           </div>
@@ -222,7 +246,9 @@ export function MembershipActionModals({
           </label>
 
           <div className="mt-5 flex justify-end gap-3">
-            <Button variant="secondary" onClick={resetAndClose}>Cancel</Button>
+            <Button variant="secondary" onClick={resetAndClose}>
+              Cancel
+            </Button>
             <Button
               disabled={isSubmitting || !selectedPlanId || !selectedReasons.length}
               onClick={() => {

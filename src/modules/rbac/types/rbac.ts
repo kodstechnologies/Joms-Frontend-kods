@@ -67,9 +67,7 @@ export type SubAdmin = {
   tempPassword?: string
 }
 
-export type AdminLogSubject =
-  | ({ type: 'subAdmin' } & SubAdmin)
-  | ({ type: 'role' } & Role)
+export type AdminLogSubject = ({ type: 'subAdmin' } & SubAdmin) | ({ type: 'role' } & Role)
 
 export type AuditLog = {
   id: string

@@ -15,15 +15,15 @@ export function RbacLoader({
     <div
       className={cn(
         'flex items-center justify-center',
-        fullScreen ? 'min-h-screen bg-brand-bg' : 'min-h-[40vh]',
+        fullScreen ? 'bg-brand-bg min-h-screen' : 'min-h-[40vh]',
         className,
       )}
       role="status"
       aria-live="polite"
     >
       <div className="flex flex-col items-center gap-3">
-        <div className="size-9 animate-spin rounded-full border-4 border-brand-accent border-t-transparent" />
-        <p className="text-sm font-medium text-brand-muted">{label}</p>
+        <div className="border-brand-accent size-9 animate-spin rounded-full border-4 border-t-transparent" />
+        <p className="text-brand-muted text-sm font-medium">{label}</p>
       </div>
     </div>
   )

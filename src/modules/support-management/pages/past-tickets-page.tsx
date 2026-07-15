@@ -43,7 +43,10 @@ export function PastTicketsPage() {
         accessorKey: 'id',
         header: 'Ticket ID',
         cell: ({ row }) => (
-          <Link to={`/support/tickets/${row.original.id}`} className="font-mono text-xs text-amber-400 hover:underline">
+          <Link
+            to={`/support/tickets/${row.original.id}`}
+            className="font-mono text-xs text-amber-400 hover:underline"
+          >
             #{row.original.id}
           </Link>
         ),
@@ -90,7 +93,10 @@ export function PastTicketsPage() {
           title="Past Tickets"
           subtitle={userId ? `User ID: ${userId}` : 'John Doe'}
           actions={[
-            { label: 'Manage Metrics', onClick: () => toast.message('Metrics configuration coming soon') },
+            {
+              label: 'Manage Metrics',
+              onClick: () => toast.message('Metrics configuration coming soon'),
+            },
           ]}
         />
       </div>

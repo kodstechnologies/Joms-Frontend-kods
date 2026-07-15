@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
 
@@ -52,87 +52,79 @@ export function CreateVenueOnboardingPage() {
   const venueIdParam = searchParams.get('venueId')
 
   const [currentStep, setCurrentStep] = useState(1)
-  const [partnerId, setPartnerId] = useState(partnerIdParam)
-  const [venueId, setVenueId] = useState<string | null>(venueIdParam)
-  const [formData, setFormData] = useState<VenueOnboardingFormData>(
-    createEmptyVenueOnboardingForm,
-  )
+  const [createdPartnerId, setCreatedPartnerId] = useState('')
+  const [createdVenueId, setCreatedVenueId] = useState<string | null>(null)
+  const [formData, setFormData] = useState<VenueOnboardingFormData>(createEmptyVenueOnboardingForm)
   const [hasInitializedStep, setHasInitializedStep] = useState(false)
   const [isCreatingPartner, setIsCreatingPartner] = useState(false)
 
-  const { saveBasicProfile, saveLocation, saveKyc, createAccount } =
-    useVenueOnboardingMutations()
+  const partnerId = partnerIdParam || createdPartnerId
+  const venueId = venueIdParam || createdVenueId
+
+  const { saveBasicProfile, saveLocation, saveKyc, createAccount } = useVenueOnboardingMutations()
 
   const { data: reviewData, refetch: refetchReview } = useVenueOnboardingReview(venueId)
 
-  useEffect(() => {
-    if (!venueIdParam) return
-    setVenueId(venueIdParam)
-  }, [venueIdParam])
+  const [lastSyncedReview, setLastSyncedReview] = useState(reviewData)
+  if (reviewData !== lastSyncedReview) {
+    setLastSyncedReview(reviewData)
 
-  useEffect(() => {
-    setPartnerId(partnerIdParam)
-  }, [partnerIdParam])
+    if (reviewData?.data?.venue) {
+      const venue = reviewData.data.venue
+      const kyc = reviewData.data.kyc
 
-  useEffect(() => {
-    if (!reviewData?.data?.venue) return
+      setFormData((prev) => ({
+        ...prev,
+        name: venue.name || prev.name,
+        venueType: venue.venueType || prev.venueType,
+        venueCategoryId:
+          (typeof venue.venueCategoryId?.[0] === 'object'
+            ? (venue.venueCategoryId[0] as VenueCategory)._id
+            : (venue.venueCategoryId?.[0] as string)) || prev.venueCategoryId,
+        venueCategoryName:
+          (typeof venue.venueCategoryId?.[0] === 'object'
+            ? (venue.venueCategoryId[0] as VenueCategory).name
+            : prev.venueCategoryName) || prev.venueCategoryName,
+        hostingSinceYears: venue.hostingSince?.years
+          ? String(venue.hostingSince.years)
+          : prev.hostingSinceYears,
+        hostingSinceMonths: venue.hostingSince?.months
+          ? String(venue.hostingSince.months)
+          : prev.hostingSinceMonths,
+        pocName: venue.pocName || prev.pocName,
+        pocContactNumber: venue.pocContactNumber || prev.pocContactNumber,
+        phone: venue.phone ? sanitizeMobileNumber(venue.phone) : prev.phone,
+        email: venue.email || prev.email,
+        profileImageUrl: venue.profileImageUrl || prev.profileImageUrl,
+        coverImageUrl: venue.coverImageUrl || prev.coverImageUrl,
+        address: venue.location?.address || prev.address,
+        city: venue.location?.city || prev.city,
+        pincode: venue.location?.pincode || prev.pincode,
+        state: venue.location?.state || prev.state,
+        country: venue.location?.country || prev.country,
+        landmark: venue.location?.landmark || prev.landmark,
+        latitude: venue.location?.latitude ?? prev.latitude,
+        longitude: venue.location?.longitude ?? prev.longitude,
+        venueImageUrls: venue.venueImages || prev.venueImageUrls,
+        idType: kyc?.governmentId?.idType || prev.idType,
+        idNumber: kyc?.governmentId?.idNumber || prev.idNumber,
+        hasGST: kyc?.businessKyc?.hasGST ?? prev.hasGST,
+        gstNumber: kyc?.businessKyc?.gstNumber || prev.gstNumber,
+        kycState: kyc?.businessKyc?.state || prev.kycState,
+        panNumber: kyc?.businessKyc?.panNumber || prev.panNumber,
+        typeOfVenue: kyc?.businessKyc?.typeOfVenue || prev.typeOfVenue,
+        itReturnsFiledLast2Years:
+          kyc?.businessKyc?.itReturnsFiledLast2Years ?? prev.itReturnsFiledLast2Years,
+        gstUndertakingEmail: kyc?.businessKyc?.gstUndertakingEmail || prev.gstUndertakingEmail,
+        internalNotes: venue.adminInternalNotes || prev.internalNotes,
+      }))
 
-    const venue = reviewData.data.venue
-    const kyc = reviewData.data.kyc
-
-    setFormData((prev) => ({
-      ...prev,
-      name: venue.name || prev.name,
-      venueType: venue.venueType || prev.venueType,
-      venueCategoryId:
-        (typeof venue.venueCategoryId?.[0] === 'object'
-          ? (venue.venueCategoryId[0] as VenueCategory)._id
-          : (venue.venueCategoryId?.[0] as string)) || prev.venueCategoryId,
-      venueCategoryName:
-        (typeof venue.venueCategoryId?.[0] === 'object'
-          ? (venue.venueCategoryId[0] as VenueCategory).name
-          : prev.venueCategoryName) || prev.venueCategoryName,
-      hostingSinceYears: venue.hostingSince?.years
-        ? String(venue.hostingSince.years)
-        : prev.hostingSinceYears,
-      hostingSinceMonths: venue.hostingSince?.months
-        ? String(venue.hostingSince.months)
-        : prev.hostingSinceMonths,
-      pocName: venue.pocName || prev.pocName,
-      pocContactNumber: venue.pocContactNumber || prev.pocContactNumber,
-      phone: venue.phone ? sanitizeMobileNumber(venue.phone) : prev.phone,
-      email: venue.email || prev.email,
-      profileImageUrl: venue.profileImageUrl || prev.profileImageUrl,
-      coverImageUrl: venue.coverImageUrl || prev.coverImageUrl,
-      address: venue.location?.address || prev.address,
-      city: venue.location?.city || prev.city,
-      pincode: venue.location?.pincode || prev.pincode,
-      state: venue.location?.state || prev.state,
-      country: venue.location?.country || prev.country,
-      landmark: venue.location?.landmark || prev.landmark,
-      latitude: venue.location?.latitude ?? prev.latitude,
-      longitude: venue.location?.longitude ?? prev.longitude,
-      venueImageUrls: venue.venueImages || prev.venueImageUrls,
-      idType: kyc?.governmentId?.idType || prev.idType,
-      idNumber: kyc?.governmentId?.idNumber || prev.idNumber,
-      hasGST: kyc?.businessKyc?.hasGST ?? prev.hasGST,
-      gstNumber: kyc?.businessKyc?.gstNumber || prev.gstNumber,
-      kycState: kyc?.businessKyc?.state || prev.kycState,
-      panNumber: kyc?.businessKyc?.panNumber || prev.panNumber,
-      typeOfVenue: kyc?.businessKyc?.typeOfVenue || prev.typeOfVenue,
-      itReturnsFiledLast2Years:
-        kyc?.businessKyc?.itReturnsFiledLast2Years ?? prev.itReturnsFiledLast2Years,
-      gstUndertakingEmail:
-        kyc?.businessKyc?.gstUndertakingEmail || prev.gstUndertakingEmail,
-      internalNotes: venue.adminInternalNotes || prev.internalNotes,
-    }))
-  }, [reviewData])
-
-  useEffect(() => {
-    if (!venueIdParam || !reviewData?.data?.venue || hasInitializedStep) return
-    setCurrentStep(inferStepFromCurrentStep(reviewData.data.venue.currentStep))
-    setHasInitializedStep(true)
-  }, [venueIdParam, reviewData?.data?.venue, hasInitializedStep])
+      if (venueIdParam && !hasInitializedStep) {
+        setHasInitializedStep(true)
+        setCurrentStep(inferStepFromCurrentStep(venue.currentStep))
+      }
+    }
+  }
 
   const updateVenueIdInUrl = (id: string, nextPartnerId = partnerId) => {
     const params = new URLSearchParams(searchParams)
@@ -185,7 +177,7 @@ export function CreateVenueOnboardingPage() {
               buildVenuePartnerProfileFormData(formData),
             )
             activePartnerId = partnerResponse.data._id
-            setPartnerId(activePartnerId)
+            setCreatedPartnerId(activePartnerId)
             setIsCreatingPartner(false)
           }
 
@@ -193,7 +185,7 @@ export function CreateVenueOnboardingPage() {
             buildBasicProfileFormData(activePartnerId, formData),
           )
           const newVenueId = response.data._id
-          setVenueId(newVenueId)
+          setCreatedVenueId(newVenueId)
           updateVenueIdInUrl(newVenueId, activePartnerId)
         }
         setCurrentStep(2)

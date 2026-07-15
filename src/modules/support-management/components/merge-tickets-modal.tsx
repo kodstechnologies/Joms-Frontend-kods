@@ -24,7 +24,11 @@ export function MergeTicketsModal({ open, onClose }: MergeTicketsModalProps) {
       <div className="w-full max-w-lg rounded-2xl border border-white/10 bg-[#111111] shadow-2xl">
         <div className="flex items-center justify-between border-b border-white/10 px-6 py-5">
           <h2 className="text-lg font-semibold text-white">Merge Tickets</h2>
-          <button type="button" onClick={onClose} className="rounded-lg p-1.5 text-slate-400 hover:text-white">
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-lg p-1.5 text-slate-400 hover:text-white"
+          >
             <X className="size-5" />
           </button>
         </div>
@@ -34,14 +38,15 @@ export function MergeTicketsModal({ open, onClose }: MergeTicketsModalProps) {
             <GitMerge className="size-6" />
           </div>
           <p className="text-sm leading-relaxed text-slate-400">
-            You are merging 2 tickets of &apos;Sara Johnson&apos; regarding &apos;Payment Issue&apos;
+            You are merging 2 tickets of &apos;Sara Johnson&apos; regarding &apos;Payment
+            Issue&apos;
           </p>
 
           <div className="space-y-0 text-left">
             {mergeTickets.map((ticket, index) => (
               <div key={index} className="relative flex gap-4">
                 {index < mergeTickets.length - 1 ? (
-                  <div className="absolute left-[11px] top-8 h-full w-px bg-white/10" />
+                  <div className="absolute top-8 left-[11px] h-full w-px bg-white/10" />
                 ) : null}
                 <div className="relative z-10 mt-1 size-6 shrink-0 rounded-full border border-amber-500/40 bg-amber-500/10" />
                 <div className="pb-6">
@@ -59,7 +64,7 @@ export function MergeTicketsModal({ open, onClose }: MergeTicketsModalProps) {
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder="Enter here"
-              className="h-28 w-full resize-none rounded-lg border-0 bg-[#1a1a1a] px-4 py-3 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-white/20"
+              className="h-28 w-full resize-none rounded-lg border-0 bg-[#1a1a1a] px-4 py-3 text-sm text-white placeholder:text-slate-500 focus:ring-1 focus:ring-white/20 focus:outline-none"
             />
           </label>
         </div>

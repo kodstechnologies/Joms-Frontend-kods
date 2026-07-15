@@ -1,48 +1,34 @@
-import { Plus } from "lucide-react";
+import { Plus } from 'lucide-react'
 
-import { Input } from "@/shared/components/ui/input";
+import { Input } from '@/shared/components/ui/input'
 
 export function ByBookingsFilter() {
   return (
-    <section className="rounded-xl border border-white/10 bg-brand-surface-2 p-8 space-y-8">
+    <section className="bg-brand-surface-2 space-y-8 rounded-xl border border-white/10 p-8">
       {/* Header */}
 
       <div className="flex items-center justify-between">
-        <h2 className="text-sm font-medium text-brand-text">
-          By Bookings
-        </h2>
+        <h2 className="text-brand-text text-sm font-medium">By Bookings</h2>
 
-        <Plus className="h-5 w-5 cursor-pointer text-brand-text" />
+        <Plus className="text-brand-text h-5 w-5 cursor-pointer" />
       </div>
 
       {/* Total Number Of Bookings */}
 
       <div className="space-y-4">
-        <h3 className="text-sm font-medium text-brand-text">
-          Total Number Of Bookings
-        </h3>
+        <h3 className="text-brand-text text-sm font-medium">Total Number Of Bookings</h3>
 
         <div className="grid grid-cols-2 gap-6">
           <div className="space-y-2">
-            <label className="text-xs text-brand-muted-light">
-              From
-            </label>
+            <label className="text-brand-muted-light text-xs">From</label>
 
-            <Input
-              placeholder="0"
-              className="bg-brand-surface border-white/10"
-            />
+            <Input placeholder="0" className="bg-brand-surface border-white/10" />
           </div>
 
           <div className="space-y-2">
-            <label className="text-xs text-brand-muted-light">
-              To
-            </label>
+            <label className="text-brand-muted-light text-xs">To</label>
 
-            <Input
-              placeholder="500"
-              className="bg-brand-surface border-white/10"
-            />
+            <Input placeholder="500" className="bg-brand-surface border-white/10" />
           </div>
         </div>
       </div>
@@ -50,11 +36,9 @@ export function ByBookingsFilter() {
       {/* Booking Status */}
 
       <div className="space-y-3">
-        <h3 className="text-sm font-medium text-brand-text">
-          Booking Status
-        </h3>
+        <h3 className="text-brand-text text-sm font-medium">Booking Status</h3>
 
-        <div className="flex flex-wrap gap-8 text-sm text-brand-text">
+        <div className="text-brand-text flex flex-wrap gap-8 text-sm">
           <label className="flex items-center gap-2">
             <input type="checkbox" />
             Confirmed
@@ -90,11 +74,9 @@ export function ByBookingsFilter() {
       {/* Payment Status */}
 
       <div className="space-y-3">
-        <h3 className="text-sm font-medium text-brand-text">
-          Payment Status
-        </h3>
+        <h3 className="text-brand-text text-sm font-medium">Payment Status</h3>
 
-        <div className="flex flex-wrap gap-8 text-sm text-brand-text">
+        <div className="text-brand-text flex flex-wrap gap-8 text-sm">
           <label className="flex items-center gap-2">
             <input type="checkbox" />
             Paid
@@ -120,11 +102,9 @@ export function ByBookingsFilter() {
       {/* Payment Method */}
 
       <div className="space-y-3">
-        <h3 className="text-sm font-medium text-brand-text">
-          Payment Method
-        </h3>
+        <h3 className="text-brand-text text-sm font-medium">Payment Method</h3>
 
-        <div className="flex flex-wrap gap-8 text-sm text-brand-text">
+        <div className="text-brand-text flex flex-wrap gap-8 text-sm">
           <label className="flex items-center gap-2">
             <input type="checkbox" />
             Card
@@ -145,11 +125,9 @@ export function ByBookingsFilter() {
       {/* Refunded Status */}
 
       <div className="space-y-3">
-        <h3 className="text-sm font-medium text-brand-text">
-          Refunded Status
-        </h3>
+        <h3 className="text-brand-text text-sm font-medium">Refunded Status</h3>
 
-        <div className="flex flex-wrap gap-8 text-sm text-brand-text">
+        <div className="text-brand-text flex flex-wrap gap-8 text-sm">
           <label className="flex items-center gap-2">
             <input type="checkbox" />
             Pending
@@ -167,5 +145,5 @@ export function ByBookingsFilter() {
         </div>
       </div>
     </section>
-  );
+  )
 }

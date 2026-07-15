@@ -5,8 +5,7 @@ import { fetchExpertApplicationView } from '../api/expert-application-api'
 import { fetchVenueKycByPartnerId } from '../api/venue-kyc-api'
 import { isKycSubmittedForApplication } from '../utils/expert-application-helpers'
 
-const isVenueServiceType = (serviceType?: string | null) =>
-  serviceType?.toLowerCase() === 'venue'
+const isVenueServiceType = (serviceType?: string | null) => serviceType?.toLowerCase() === 'venue'
 
 export const getExpertApplicationPath = (expert: {
   id: string

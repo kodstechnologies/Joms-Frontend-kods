@@ -1,10 +1,7 @@
 import { Eye } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
-import {
-  categoryPath,
-  useCategoryManagementScope,
-} from './category-management-scope'
+import { categoryPath, useCategoryManagementScope } from './category-management-scope'
 import { CATEGORY_TABLE_VIEW_BUTTON_CLASS } from './category-list-shared'
 
 interface Props {

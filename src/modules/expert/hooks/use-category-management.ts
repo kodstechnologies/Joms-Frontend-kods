@@ -68,13 +68,8 @@ export const useUpdateServiceCategory = () => {
 export const useAddServiceSubCategory = () => {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: ({
-      categoryId,
-      payload,
-    }: {
-      categoryId: string
-      payload: AddSubCategoryPayload
-    }) => addSubCategory(categoryId, payload),
+    mutationFn: ({ categoryId, payload }: { categoryId: string; payload: AddSubCategoryPayload }) =>
+      addSubCategory(categoryId, payload),
     onSuccess: () => invalidateCategories(queryClient),
   })
 }
@@ -122,13 +117,8 @@ export const usePermanentDeleteServiceCategory = () => {
 export const usePauseServiceSubCategory = () => {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: ({
-      categoryId,
-      subCategoryId,
-    }: {
-      categoryId: string
-      subCategoryId: string
-    }) => pauseSubCategory(categoryId, subCategoryId),
+    mutationFn: ({ categoryId, subCategoryId }: { categoryId: string; subCategoryId: string }) =>
+      pauseSubCategory(categoryId, subCategoryId),
     onSuccess: () => invalidateCategories(queryClient),
   })
 }
@@ -136,13 +126,8 @@ export const usePauseServiceSubCategory = () => {
 export const useResumeServiceSubCategory = () => {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: ({
-      categoryId,
-      subCategoryId,
-    }: {
-      categoryId: string
-      subCategoryId: string
-    }) => resumeSubCategory(categoryId, subCategoryId),
+    mutationFn: ({ categoryId, subCategoryId }: { categoryId: string; subCategoryId: string }) =>
+      resumeSubCategory(categoryId, subCategoryId),
     onSuccess: () => invalidateCategories(queryClient),
   })
 }
@@ -150,13 +135,8 @@ export const useResumeServiceSubCategory = () => {
 export const useSoftDeleteServiceSubCategory = () => {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: ({
-      categoryId,
-      subCategoryId,
-    }: {
-      categoryId: string
-      subCategoryId: string
-    }) => softDeleteSubCategory(categoryId, subCategoryId),
+    mutationFn: ({ categoryId, subCategoryId }: { categoryId: string; subCategoryId: string }) =>
+      softDeleteSubCategory(categoryId, subCategoryId),
     onSuccess: () => invalidateCategories(queryClient),
   })
 }
@@ -164,13 +144,8 @@ export const useSoftDeleteServiceSubCategory = () => {
 export const useRevokeServiceSubCategory = () => {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: ({
-      categoryId,
-      subCategoryId,
-    }: {
-      categoryId: string
-      subCategoryId: string
-    }) => revokeSubCategory(categoryId, subCategoryId),
+    mutationFn: ({ categoryId, subCategoryId }: { categoryId: string; subCategoryId: string }) =>
+      revokeSubCategory(categoryId, subCategoryId),
     onSuccess: () => invalidateCategories(queryClient),
   })
 }
@@ -178,13 +153,8 @@ export const useRevokeServiceSubCategory = () => {
 export const usePermanentDeleteServiceSubCategory = () => {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: ({
-      categoryId,
-      subCategoryId,
-    }: {
-      categoryId: string
-      subCategoryId: string
-    }) => permanentDeleteSubCategory(categoryId, subCategoryId),
+    mutationFn: ({ categoryId, subCategoryId }: { categoryId: string; subCategoryId: string }) =>
+      permanentDeleteSubCategory(categoryId, subCategoryId),
     onSuccess: () => invalidateCategories(queryClient),
   })
 }

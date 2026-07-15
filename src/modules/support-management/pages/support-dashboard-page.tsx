@@ -19,8 +19,15 @@ export function SupportDashboardPage() {
         title="Support Management"
         subtitle="Decision-centric workspace for high-impact tickets requiring approval, enforcement, or oversight."
         actions={[
-          { label: 'Export Data', onClick: () => toast.message('Export coming soon'), variant: 'secondary' },
-          { label: 'Manage Metrics', onClick: () => toast.message('Metrics configuration coming soon') },
+          {
+            label: 'Export Data',
+            onClick: () => toast.message('Export coming soon'),
+            variant: 'secondary',
+          },
+          {
+            label: 'Manage Metrics',
+            onClick: () => toast.message('Metrics configuration coming soon'),
+          },
         ]}
       />
 

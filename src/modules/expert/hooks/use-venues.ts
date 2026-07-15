@@ -47,13 +47,8 @@ export const useSuspendVenue = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: ({
-      venueId,
-      payload,
-    }: {
-      venueId: string
-      payload: SuspendVenuePayload
-    }) => suspendVenue(venueId, payload),
+    mutationFn: ({ venueId, payload }: { venueId: string; payload: SuspendVenuePayload }) =>
+      suspendVenue(venueId, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['venues'] })
     },
@@ -75,13 +70,8 @@ export const useDeleteVenue = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: ({
-      venueId,
-      payload,
-    }: {
-      venueId: string
-      payload: DeleteVenuePayload
-    }) => deleteVenue(venueId, payload),
+    mutationFn: ({ venueId, payload }: { venueId: string; payload: DeleteVenuePayload }) =>
+      deleteVenue(venueId, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['venues'] })
     },

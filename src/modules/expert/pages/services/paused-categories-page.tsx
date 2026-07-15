@@ -30,10 +30,7 @@ export const PausedCategoriesPage = () => {
 
   const pausedCategories = data?.categories ?? []
   const totalItems = data?.pagination?.total ?? pausedCategories.length
-  const totalPages = Math.max(
-    1,
-    data?.pagination?.pages ?? Math.ceil(totalItems / PAGE_SIZE),
-  )
+  const totalPages = Math.max(1, data?.pagination?.pages ?? Math.ceil(totalItems / PAGE_SIZE))
 
   const emptyMessage = useMemo(
     () => (isError ? 'Failed to load paused categories.' : 'No paused categories found.'),
@@ -59,7 +56,10 @@ export const PausedCategoriesPage = () => {
             Manage Metrics
           </Button>
 
-          <Button className="w-full md:w-auto" onClick={() => navigate(categoryPath(scope, 'create'))}>
+          <Button
+            className="w-full md:w-auto"
+            onClick={() => navigate(categoryPath(scope, 'create'))}
+          >
             <Plus className="size-4" />
             Add New Category
           </Button>

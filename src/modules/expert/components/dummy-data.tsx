@@ -1,686 +1,636 @@
-import type { Category } from "./category/category-table-columns";
+import type { Category } from './category/category-table-columns'
 
 export const dummyData: Category[] = [
   {
-    id: "CAT001",
-    name: "Photography",
-    description: "Professional photography services",
-    icon: "",
-    image: "",
-    status: "Accepted",
+    id: 'CAT001',
+    name: 'Photography',
+    description: 'Professional photography services',
+    icon: '',
+    image: '',
+    status: 'Accepted',
     subCategory: 5,
     services: 42,
     experts: 42,
-    revenue: "₹3,45,000",
-    createdAt: "15 Jan 2025",
-    updatedAt: "20 Jan 2025",
-    createdBy: "Super Admin",
-    adminNotes:
-      "Category approved after reviewing all uploaded details.",
+    revenue: '₹3,45,000',
+    createdAt: '15 Jan 2025',
+    updatedAt: '20 Jan 2025',
+    createdBy: 'Super Admin',
+    adminNotes: 'Category approved after reviewing all uploaded details.',
     subCategories: [
-  {
-    id: "SUB001",
-    name: "Wedding",
+      {
+        id: 'SUB001',
+        name: 'Wedding',
 
-    status: "Active",
+        status: 'Active',
 
-    description:
-      "Professional wedding photography services.",
+        description: 'Professional wedding photography services.',
 
-    adminNotes:
-      "Approved after document verification.",
+        adminNotes: 'Approved after document verification.',
 
-    icon: "",
+        icon: '',
 
-    addedOn: "15 Jan 2025",
+        addedOn: '15 Jan 2025',
 
-    createdBy: "Super Admin",
+        createdBy: 'Super Admin',
 
-    updatedAt: "20 Jan 2025",
+        updatedAt: '20 Jan 2025',
 
-    services: 25,
+        services: 25,
 
-    experts: 18,
-  },
+        experts: 18,
+      },
 
-  {
-    id: "SUB002",
-    name: "Fashion",
+      {
+        id: 'SUB002',
+        name: 'Fashion',
 
-    status: "Paused",
+        status: 'Paused',
 
-    description:
-      "Professional fashion photography.",
+        description: 'Professional fashion photography.',
 
-    adminNotes:
-      "Temporarily paused by admin.",
+        adminNotes: 'Temporarily paused by admin.',
 
-    icon: "",
+        icon: '',
 
-    addedOn: "18 Jan 2025",
+        addedOn: '18 Jan 2025',
 
-    createdBy: "Super Admin",
+        createdBy: 'Super Admin',
 
-    updatedAt: "22 Jan 2025",
+        updatedAt: '22 Jan 2025',
 
-    services: 10,
+        services: 10,
 
-    experts: 8,
-  },
-],
+        experts: 8,
+      },
+    ],
   },
   {
-    id: "CAT002",
-    name: "Makeup Artists",
-    description: "Professional photography services",
-    icon: "",
-    image: "",
-    status: "Accepted",
+    id: 'CAT002',
+    name: 'Makeup Artists',
+    description: 'Professional photography services',
+    icon: '',
+    image: '',
+    status: 'Accepted',
     subCategory: 5,
     services: 58,
     experts: 58,
-    revenue: "₹3,45,000",
-    createdAt: "15 Jan 2025",
-    updatedAt: "20 Jan 2025",
-    createdBy: "Super Admin",
-    adminNotes:
-      "Category approved after reviewing all uploaded details.",
+    revenue: '₹3,45,000',
+    createdAt: '15 Jan 2025',
+    updatedAt: '20 Jan 2025',
+    createdBy: 'Super Admin',
+    adminNotes: 'Category approved after reviewing all uploaded details.',
     subCategories: [
-  {
-    id: "SUB001",
-    name: "Wedding",
+      {
+        id: 'SUB001',
+        name: 'Wedding',
 
-    status: "Active",
+        status: 'Active',
 
-    description:
-      "Professional wedding photography services.",
+        description: 'Professional wedding photography services.',
 
-    adminNotes:
-      "Approved after document verification.",
+        adminNotes: 'Approved after document verification.',
 
-    icon: "",
+        icon: '',
 
-    addedOn: "15 Jan 2025",
+        addedOn: '15 Jan 2025',
 
-    createdBy: "Super Admin",
+        createdBy: 'Super Admin',
 
-    updatedAt: "20 Jan 2025",
+        updatedAt: '20 Jan 2025',
 
-    services: 25,
+        services: 25,
 
-    experts: 18,
-  },
+        experts: 18,
+      },
 
-  {
-    id: "SUB002",
-    name: "Fashion",
+      {
+        id: 'SUB002',
+        name: 'Fashion',
 
-    status: "Paused",
+        status: 'Paused',
 
-    description:
-      "Professional fashion photography.",
+        description: 'Professional fashion photography.',
 
-    adminNotes:
-      "Temporarily paused by admin.",
+        adminNotes: 'Temporarily paused by admin.',
 
-    icon: "",
+        icon: '',
 
-    addedOn: "18 Jan 2025",
+        addedOn: '18 Jan 2025',
 
-    createdBy: "Super Admin",
+        createdBy: 'Super Admin',
 
-    updatedAt: "22 Jan 2025",
+        updatedAt: '22 Jan 2025',
 
-    services: 10,
+        services: 10,
 
-    experts: 8,
-  },
-],
+        experts: 8,
+      },
+    ],
   },
   {
-    id: "CAT003",
-    name: "Photography",
-    description: "Professional photography services",
-    icon: "",
-    image: "",
-    status: "Pending",
+    id: 'CAT003',
+    name: 'Photography',
+    description: 'Professional photography services',
+    icon: '',
+    image: '',
+    status: 'Pending',
     subCategory: 5,
     services: 89,
     experts: 89,
-    revenue: "₹3,45,000",
-    createdAt: "15 Jan 2025",
-    updatedAt: "20 Jan 2025",
-    createdBy: "Super Admin",
-    adminNotes:
-      "Category approved after reviewing all uploaded details.",
+    revenue: '₹3,45,000',
+    createdAt: '15 Jan 2025',
+    updatedAt: '20 Jan 2025',
+    createdBy: 'Super Admin',
+    adminNotes: 'Category approved after reviewing all uploaded details.',
     subCategories: [
-  {
-    id: "SUB001",
-    name: "Wedding",
+      {
+        id: 'SUB001',
+        name: 'Wedding',
 
-    status: "Active",
+        status: 'Active',
 
-    description:
-      "Professional wedding photography services.",
+        description: 'Professional wedding photography services.',
 
-    adminNotes:
-      "Approved after document verification.",
+        adminNotes: 'Approved after document verification.',
 
-    icon: "",
+        icon: '',
 
-    addedOn: "15 Jan 2025",
+        addedOn: '15 Jan 2025',
 
-    createdBy: "Super Admin",
+        createdBy: 'Super Admin',
 
-    updatedAt: "20 Jan 2025",
+        updatedAt: '20 Jan 2025',
 
-    services: 25,
+        services: 25,
 
-    experts: 18,
-  },
+        experts: 18,
+      },
 
-  {
-    id: "SUB002",
-    name: "Fashion",
+      {
+        id: 'SUB002',
+        name: 'Fashion',
 
-    status: "Paused",
+        status: 'Paused',
 
-    description:
-      "Professional fashion photography.",
+        description: 'Professional fashion photography.',
 
-    adminNotes:
-      "Temporarily paused by admin.",
+        adminNotes: 'Temporarily paused by admin.',
 
-    icon: "",
+        icon: '',
 
-    addedOn: "18 Jan 2025",
+        addedOn: '18 Jan 2025',
 
-    createdBy: "Super Admin",
+        createdBy: 'Super Admin',
 
-    updatedAt: "22 Jan 2025",
+        updatedAt: '22 Jan 2025',
 
-    services: 10,
+        services: 10,
 
-    experts: 8,
-  },
-],
+        experts: 8,
+      },
+    ],
   },
   {
-    id: "CAT004",
-    name: "Photography",
-    description: "Professional photography services",
-    icon: "",
-    image: "",
-    status: "Deleted",
+    id: 'CAT004',
+    name: 'Photography',
+    description: 'Professional photography services',
+    icon: '',
+    image: '',
+    status: 'Deleted',
     subCategory: 5,
     services: 10,
     experts: 10,
-    revenue: "₹3,45,000",
-    createdAt: "15 Jan 2025",
-    updatedAt: "20 Jan 2025",
-    createdBy: "Super Admin",
-    adminNotes:
-      "Category approved after reviewing all uploaded details.",
+    revenue: '₹3,45,000',
+    createdAt: '15 Jan 2025',
+    updatedAt: '20 Jan 2025',
+    createdBy: 'Super Admin',
+    adminNotes: 'Category approved after reviewing all uploaded details.',
     subCategories: [
-  {
-    id: "SUB001",
-    name: "Wedding",
+      {
+        id: 'SUB001',
+        name: 'Wedding',
 
-    status: "Active",
+        status: 'Active',
 
-    description:
-      "Professional wedding photography services.",
+        description: 'Professional wedding photography services.',
 
-    adminNotes:
-      "Approved after document verification.",
+        adminNotes: 'Approved after document verification.',
 
-    icon: "",
+        icon: '',
 
-    addedOn: "15 Jan 2025",
+        addedOn: '15 Jan 2025',
 
-    createdBy: "Super Admin",
+        createdBy: 'Super Admin',
 
-    updatedAt: "20 Jan 2025",
+        updatedAt: '20 Jan 2025',
 
-    services: 25,
+        services: 25,
 
-    experts: 18,
-  },
+        experts: 18,
+      },
 
-  {
-    id: "SUB002",
-    name: "Fashion",
+      {
+        id: 'SUB002',
+        name: 'Fashion',
 
-    status: "Paused",
+        status: 'Paused',
 
-    description:
-      "Professional fashion photography.",
+        description: 'Professional fashion photography.',
 
-    adminNotes:
-      "Temporarily paused by admin.",
+        adminNotes: 'Temporarily paused by admin.',
 
-    icon: "",
+        icon: '',
 
-    addedOn: "18 Jan 2025",
+        addedOn: '18 Jan 2025',
 
-    createdBy: "Super Admin",
+        createdBy: 'Super Admin',
 
-    updatedAt: "22 Jan 2025",
+        updatedAt: '22 Jan 2025',
 
-    services: 10,
+        services: 10,
 
-    experts: 8,
-  },
-],
+        experts: 8,
+      },
+    ],
   },
   {
-    id: "CAT005",
-    name: "Photography",
-    description: "Professional photography services",
-    icon: "",
-    image: "",
-    status: "Accepted",
+    id: 'CAT005',
+    name: 'Photography',
+    description: 'Professional photography services',
+    icon: '',
+    image: '',
+    status: 'Accepted',
     subCategory: 5,
     services: 42,
     experts: 42,
-    revenue: "₹3,45,000",
-    createdAt: "15 Jan 2025",
-    updatedAt: "20 Jan 2025",
-    createdBy: "Super Admin",
-    adminNotes:
-      "Category approved after reviewing all uploaded details.",
+    revenue: '₹3,45,000',
+    createdAt: '15 Jan 2025',
+    updatedAt: '20 Jan 2025',
+    createdBy: 'Super Admin',
+    adminNotes: 'Category approved after reviewing all uploaded details.',
     subCategories: [
-  {
-    id: "SUB001",
-    name: "Wedding",
+      {
+        id: 'SUB001',
+        name: 'Wedding',
 
-    status: "Active",
+        status: 'Active',
 
-    description:
-      "Professional wedding photography services.",
+        description: 'Professional wedding photography services.',
 
-    adminNotes:
-      "Approved after document verification.",
+        adminNotes: 'Approved after document verification.',
 
-    icon: "",
+        icon: '',
 
-    addedOn: "15 Jan 2025",
+        addedOn: '15 Jan 2025',
 
-    createdBy: "Super Admin",
+        createdBy: 'Super Admin',
 
-    updatedAt: "20 Jan 2025",
+        updatedAt: '20 Jan 2025',
 
-    services: 25,
+        services: 25,
 
-    experts: 18,
-  },
+        experts: 18,
+      },
 
-  {
-    id: "SUB002",
-    name: "Fashion",
+      {
+        id: 'SUB002',
+        name: 'Fashion',
 
-    status: "Paused",
+        status: 'Paused',
 
-    description:
-      "Professional fashion photography.",
+        description: 'Professional fashion photography.',
 
-    adminNotes:
-      "Temporarily paused by admin.",
+        adminNotes: 'Temporarily paused by admin.',
 
-    icon: "",
+        icon: '',
 
-    addedOn: "18 Jan 2025",
+        addedOn: '18 Jan 2025',
 
-    createdBy: "Super Admin",
+        createdBy: 'Super Admin',
 
-    updatedAt: "22 Jan 2025",
+        updatedAt: '22 Jan 2025',
 
-    services: 10,
+        services: 10,
 
-    experts: 8,
-  },
-],
+        experts: 8,
+      },
+    ],
   },
   {
-    id: "CAT006",
-    name: "Photography",
-    description: "Professional photography services",
-    icon: "",
-    image: "",
-    status: "Pending",
+    id: 'CAT006',
+    name: 'Photography',
+    description: 'Professional photography services',
+    icon: '',
+    image: '',
+    status: 'Pending',
     subCategory: 5,
     services: 232,
     experts: 232,
-    revenue: "₹3,45,000",
-    createdAt: "15 Jan 2025",
-    updatedAt: "20 Jan 2025",
-    createdBy: "Super Admin",
-    adminNotes:
-      "Category approved after reviewing all uploaded details.",
-     subCategories: [
-  {
-    id: "SUB001",
-    name: "Wedding",
+    revenue: '₹3,45,000',
+    createdAt: '15 Jan 2025',
+    updatedAt: '20 Jan 2025',
+    createdBy: 'Super Admin',
+    adminNotes: 'Category approved after reviewing all uploaded details.',
+    subCategories: [
+      {
+        id: 'SUB001',
+        name: 'Wedding',
 
-    status: "Active",
+        status: 'Active',
 
-    description:
-      "Professional wedding photography services.",
+        description: 'Professional wedding photography services.',
 
-    adminNotes:
-      "Approved after document verification.",
+        adminNotes: 'Approved after document verification.',
 
-    icon: "",
+        icon: '',
 
-    addedOn: "15 Jan 2025",
+        addedOn: '15 Jan 2025',
 
-    createdBy: "Super Admin",
+        createdBy: 'Super Admin',
 
-    updatedAt: "20 Jan 2025",
+        updatedAt: '20 Jan 2025',
 
-    services: 25,
+        services: 25,
 
-    experts: 18,
-  },
+        experts: 18,
+      },
 
-  {
-    id: "SUB002",
-    name: "Fashion",
+      {
+        id: 'SUB002',
+        name: 'Fashion',
 
-    status: "Paused",
+        status: 'Paused',
 
-    description:
-      "Professional fashion photography.",
+        description: 'Professional fashion photography.',
 
-    adminNotes:
-      "Temporarily paused by admin.",
+        adminNotes: 'Temporarily paused by admin.',
 
-    icon: "",
+        icon: '',
 
-    addedOn: "18 Jan 2025",
+        addedOn: '18 Jan 2025',
 
-    createdBy: "Super Admin",
+        createdBy: 'Super Admin',
 
-    updatedAt: "22 Jan 2025",
+        updatedAt: '22 Jan 2025',
 
-    services: 10,
+        services: 10,
 
-    experts: 8,
-  },
-],
+        experts: 8,
+      },
+    ],
   },
   {
-    id: "CAT007",
-    name: "Photography",
-    description: "Professional photography services",
-    icon: "",
-    image: "",
-    status: "Pending",
+    id: 'CAT007',
+    name: 'Photography',
+    description: 'Professional photography services',
+    icon: '',
+    image: '',
+    status: 'Pending',
     subCategory: 5,
     services: 67,
     experts: 67,
-    revenue: "₹3,45,000",
-    createdAt: "15 Jan 2025",
-    updatedAt: "20 Jan 2025",
-    createdBy: "Super Admin",
-    adminNotes:
-      "Category approved after reviewing all uploaded details.",
-   subCategories: [
-  {
-    id: "SUB001",
-    name: "Wedding",
+    revenue: '₹3,45,000',
+    createdAt: '15 Jan 2025',
+    updatedAt: '20 Jan 2025',
+    createdBy: 'Super Admin',
+    adminNotes: 'Category approved after reviewing all uploaded details.',
+    subCategories: [
+      {
+        id: 'SUB001',
+        name: 'Wedding',
 
-    status: "Active",
+        status: 'Active',
 
-    description:
-      "Professional wedding photography services.",
+        description: 'Professional wedding photography services.',
 
-    adminNotes:
-      "Approved after document verification.",
+        adminNotes: 'Approved after document verification.',
 
-    icon: "",
+        icon: '',
 
-    addedOn: "15 Jan 2025",
+        addedOn: '15 Jan 2025',
 
-    createdBy: "Super Admin",
+        createdBy: 'Super Admin',
 
-    updatedAt: "20 Jan 2025",
+        updatedAt: '20 Jan 2025',
 
-    services: 25,
+        services: 25,
 
-    experts: 18,
+        experts: 18,
+      },
+
+      {
+        id: 'SUB002',
+        name: 'Fashion',
+
+        status: 'Paused',
+
+        description: 'Professional fashion photography.',
+
+        adminNotes: 'Temporarily paused by admin.',
+
+        icon: '',
+
+        addedOn: '18 Jan 2025',
+
+        createdBy: 'Super Admin',
+
+        updatedAt: '22 Jan 2025',
+
+        services: 10,
+
+        experts: 8,
+      },
+    ],
   },
-
   {
-    id: "SUB002",
-    name: "Fashion",
-
-    status: "Paused",
-
-    description:
-      "Professional fashion photography.",
-
-    adminNotes:
-      "Temporarily paused by admin.",
-
-    icon: "",
-
-    addedOn: "18 Jan 2025",
-
-    createdBy: "Super Admin",
-
-    updatedAt: "22 Jan 2025",
-
-    services: 10,
-
-    experts: 8,
-  },
-],
-    },
-  {
-    id: "CAT008",
-    name: "Photography",
-    description: "Professional photography services",
-    icon: "",
-    image: "",
-    status: "Accepted",
+    id: 'CAT008',
+    name: 'Photography',
+    description: 'Professional photography services',
+    icon: '',
+    image: '',
+    status: 'Accepted',
     subCategory: 5,
     services: 34,
     experts: 34,
-    revenue: "₹3,45,000",
-    createdAt: "15 Jan 2025",
-    updatedAt: "20 Jan 2025",
-    createdBy: "Super Admin",
-    adminNotes:
-      "Category approved after reviewing all uploaded details.",
-  
-   subCategories: [
-  {
-    id: "SUB001",
-    name: "Wedding",
+    revenue: '₹3,45,000',
+    createdAt: '15 Jan 2025',
+    updatedAt: '20 Jan 2025',
+    createdBy: 'Super Admin',
+    adminNotes: 'Category approved after reviewing all uploaded details.',
 
-    status: "Active",
+    subCategories: [
+      {
+        id: 'SUB001',
+        name: 'Wedding',
 
-    description:
-      "Professional wedding photography services.",
+        status: 'Active',
 
-    adminNotes:
-      "Approved after document verification.",
+        description: 'Professional wedding photography services.',
 
-    icon: "",
+        adminNotes: 'Approved after document verification.',
 
-    addedOn: "15 Jan 2025",
+        icon: '',
 
-    createdBy: "Super Admin",
+        addedOn: '15 Jan 2025',
 
-    updatedAt: "20 Jan 2025",
+        createdBy: 'Super Admin',
 
-    services: 25,
+        updatedAt: '20 Jan 2025',
 
-    experts: 18,
-  },
+        services: 25,
 
-  {
-    id: "SUB002",
-    name: "Fashion",
+        experts: 18,
+      },
 
-    status: "Paused",
+      {
+        id: 'SUB002',
+        name: 'Fashion',
 
-    description:
-      "Professional fashion photography.",
+        status: 'Paused',
 
-    adminNotes:
-      "Temporarily paused by admin.",
+        description: 'Professional fashion photography.',
 
-    icon: "",
+        adminNotes: 'Temporarily paused by admin.',
 
-    addedOn: "18 Jan 2025",
+        icon: '',
 
-    createdBy: "Super Admin",
+        addedOn: '18 Jan 2025',
 
-    updatedAt: "22 Jan 2025",
+        createdBy: 'Super Admin',
 
-    services: 10,
+        updatedAt: '22 Jan 2025',
 
-    experts: 8,
-  },
-],
+        services: 10,
+
+        experts: 8,
+      },
+    ],
   },
   {
-    id: "CAT009",
-    name: "Photography",
-    description: "Professional photography services",
-    icon: "",
-    image: "",
-    status: "Accepted",
+    id: 'CAT009',
+    name: 'Photography',
+    description: 'Professional photography services',
+    icon: '',
+    image: '',
+    status: 'Accepted',
     subCategory: 5,
     services: 42,
     experts: 42,
-    revenue: "₹3,45,000",
-    createdAt: "15 Jan 2025",
-    updatedAt: "20 Jan 2025",
-    createdBy: "Super Admin",
-    adminNotes:
-      "Category approved after reviewing all uploaded details.",
-     subCategories: [
-  {
-    id: "SUB001",
-    name: "Wedding",
+    revenue: '₹3,45,000',
+    createdAt: '15 Jan 2025',
+    updatedAt: '20 Jan 2025',
+    createdBy: 'Super Admin',
+    adminNotes: 'Category approved after reviewing all uploaded details.',
+    subCategories: [
+      {
+        id: 'SUB001',
+        name: 'Wedding',
 
-    status: "Active",
+        status: 'Active',
 
-    description:
-      "Professional wedding photography services.",
+        description: 'Professional wedding photography services.',
 
-    adminNotes:
-      "Approved after document verification.",
+        adminNotes: 'Approved after document verification.',
 
-    icon: "",
+        icon: '',
 
-    addedOn: "15 Jan 2025",
+        addedOn: '15 Jan 2025',
 
-    createdBy: "Super Admin",
+        createdBy: 'Super Admin',
 
-    updatedAt: "20 Jan 2025",
+        updatedAt: '20 Jan 2025',
 
-    services: 25,
+        services: 25,
 
-    experts: 18,
+        experts: 18,
+      },
+
+      {
+        id: 'SUB002',
+        name: 'Fashion',
+
+        status: 'Paused',
+
+        description: 'Professional fashion photography.',
+
+        adminNotes: 'Temporarily paused by admin.',
+
+        icon: '',
+
+        addedOn: '18 Jan 2025',
+
+        createdBy: 'Super Admin',
+
+        updatedAt: '22 Jan 2025',
+
+        services: 10,
+
+        experts: 8,
+      },
+    ],
   },
-
   {
-    id: "SUB002",
-    name: "Fashion",
-
-    status: "Paused",
-
-    description:
-      "Professional fashion photography.",
-
-    adminNotes:
-      "Temporarily paused by admin.",
-
-    icon: "",
-
-    addedOn: "18 Jan 2025",
-
-    createdBy: "Super Admin",
-
-    updatedAt: "22 Jan 2025",
-
-    services: 10,
-
-    experts: 8,
-  },
-],
-    },
-  {
-    id: "CAT0010",
-    name: "Photography",
-    description: "Professional photography services",
-    icon: "",
-    image: "",
-    status: "Accepted",
+    id: 'CAT0010',
+    name: 'Photography',
+    description: 'Professional photography services',
+    icon: '',
+    image: '',
+    status: 'Accepted',
     subCategory: 5,
     services: 42,
     experts: 42,
-    revenue: "₹3,45,000",
-    createdAt: "15 Jan 2025",
-    updatedAt: "20 Jan 2025",
-    createdBy: "Super Admin",
-    adminNotes:
-      "Category approved after reviewing all uploaded details.",
-  
-   subCategories: [
-  {
-    id: "SUB001",
-    name: "Wedding",
+    revenue: '₹3,45,000',
+    createdAt: '15 Jan 2025',
+    updatedAt: '20 Jan 2025',
+    createdBy: 'Super Admin',
+    adminNotes: 'Category approved after reviewing all uploaded details.',
 
-    status: "Active",
+    subCategories: [
+      {
+        id: 'SUB001',
+        name: 'Wedding',
 
-    description:
-      "Professional wedding photography services.",
+        status: 'Active',
 
-    adminNotes:
-      "Approved after document verification.",
+        description: 'Professional wedding photography services.',
 
-    icon: "",
+        adminNotes: 'Approved after document verification.',
 
-    addedOn: "15 Jan 2025",
+        icon: '',
 
-    createdBy: "Super Admin",
+        addedOn: '15 Jan 2025',
 
-    updatedAt: "20 Jan 2025",
+        createdBy: 'Super Admin',
 
-    services: 25,
+        updatedAt: '20 Jan 2025',
 
-    experts: 18,
+        services: 25,
+
+        experts: 18,
+      },
+
+      {
+        id: 'SUB002',
+        name: 'Fashion',
+
+        status: 'Paused',
+
+        description: 'Professional fashion photography.',
+
+        adminNotes: 'Temporarily paused by admin.',
+
+        icon: '',
+
+        addedOn: '18 Jan 2025',
+
+        createdBy: 'Super Admin',
+
+        updatedAt: '22 Jan 2025',
+
+        services: 10,
+
+        experts: 8,
+      },
+    ],
   },
-
-  {
-    id: "SUB002",
-    name: "Fashion",
-
-    status: "Paused",
-
-    description:
-      "Professional fashion photography.",
-
-    adminNotes:
-      "Temporarily paused by admin.",
-
-    icon: "",
-
-    addedOn: "18 Jan 2025",
-
-    createdBy: "Super Admin",
-
-    updatedAt: "22 Jan 2025",
-
-    services: 10,
-
-    experts: 8,
-  },
-],
-  },
-];
+]

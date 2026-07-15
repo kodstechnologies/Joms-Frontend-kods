@@ -80,8 +80,8 @@ export function DeletedVenueCategoriesPage() {
           setPage(1)
         }}
         searchPlaceholder="Search by name or ID"
-        onAdvancedFilter={() => { }}
-        onExport={() => { }}
+        onAdvancedFilter={() => {}}
+        onExport={() => {}}
         isLoading={isLoading}
         emptyMessage={emptyMessage}
         pagination={{

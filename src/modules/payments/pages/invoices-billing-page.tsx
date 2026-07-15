@@ -162,7 +162,9 @@ export function InvoicesBillingPage() {
         accessorKey: 'invoiceId',
         header: 'Invoice ID',
         cell: ({ row }) => (
-          <span className="font-mono text-[11px] uppercase text-white">{row.original.invoiceId}</span>
+          <span className="font-mono text-[11px] text-white uppercase">
+            {row.original.invoiceId}
+          </span>
         ),
       },
       { accessorKey: 'clientName', header: 'Client Name' },

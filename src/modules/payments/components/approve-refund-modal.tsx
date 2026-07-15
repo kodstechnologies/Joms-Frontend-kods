@@ -50,6 +50,10 @@ export function ApproveRefundModal({ open, data, onClose, onConfirm }: ApproveRe
   const [confirmed, setConfirmed] = useState(false)
 
   const handleClose = useCallback(() => {
+    setRefundType('full')
+    setPartialAmount('')
+    setDecisionNotes('')
+    setConfirmed(false)
     onClose()
   }, [onClose])
 
@@ -72,15 +76,6 @@ export function ApproveRefundModal({ open, data, onClose, onConfirm }: ApproveRe
       window.removeEventListener('keydown', onKeyDown)
     }
   }, [open, handleClose])
-
-  useEffect(() => {
-    if (open) {
-      setRefundType('full')
-      setPartialAmount('')
-      setDecisionNotes('')
-      setConfirmed(false)
-    }
-  }, [open])
 
   const retainedAmount = useMemo(() => {
     if (refundType === 'full') return data.platformRetainAmount
@@ -138,7 +133,7 @@ export function ApproveRefundModal({ open, data, onClose, onConfirm }: ApproveRe
         <div className="flex shrink-0 items-center justify-between border-b border-white/[0.06] px-4 py-4 sm:px-6 sm:py-5">
           <h2
             id="approve-refund-title"
-            className="font-figtree text-[24px] font-semibold leading-6 tracking-normal text-white"
+            className="font-figtree text-[24px] leading-6 font-semibold tracking-normal text-white"
           >
             Approve Refund
           </h2>
@@ -161,7 +156,7 @@ export function ApproveRefundModal({ open, data, onClose, onConfirm }: ApproveRe
               >
                 <Check className="size-8 text-[#00A63E]" strokeWidth={2.5} />
               </div>
-              <p className="mx-auto mt-4 max-w-[343px] text-center font-figtree text-[14px] font-semibold leading-6 tracking-normal text-white">
+              <p className="font-figtree mx-auto mt-4 max-w-[343px] text-center text-[14px] leading-6 font-semibold tracking-normal text-white">
                 {refundType === 'full'
                   ? 'You are about to approve a full refund for this dispute.'
                   : 'You are about to approve a partial refund for this dispute.'}
@@ -181,11 +176,11 @@ export function ApproveRefundModal({ open, data, onClose, onConfirm }: ApproveRe
             </div>
 
             <div className="rounded-xl border border-white/[0.06] bg-[#121212] p-4 sm:p-5">
-              <h3 className="font-figtree text-[14px] font-semibold leading-[20px] tracking-normal text-white">
+              <h3 className="font-figtree text-[14px] leading-[20px] font-semibold tracking-normal text-white">
                 Admin Decisions
               </h3>
 
-              <p className="mt-4 font-figtree text-[14px] font-medium leading-[20px] tracking-normal text-white">
+              <p className="font-figtree mt-4 text-[14px] leading-[20px] font-medium tracking-normal text-white">
                 Select Refund Type
               </p>
               <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-6">
@@ -207,12 +202,11 @@ export function ApproveRefundModal({ open, data, onClose, onConfirm }: ApproveRe
                   disabled={refundType === 'full'}
                   onChange={(event) => setPartialAmount(event.target.value.replace(/[^\d.]/g, ''))}
                   placeholder="Enter Partial Refund"
-                  className={cn(
-                    partialRefundInputClass,
-                    refundType === 'full' && 'opacity-50',
-                  )}
+                  className={cn(partialRefundInputClass, refundType === 'full' && 'opacity-50')}
                 />
-                <p className="mt-2 text-[11px] text-[#666666]">Platform will retain: {retainedAmount}</p>
+                <p className="mt-2 text-[11px] text-[#666666]">
+                  Platform will retain: {retainedAmount}
+                </p>
               </div>
 
               <div className="mt-4 rounded-lg border border-amber-500/20 bg-[#0F0F0F] p-4">
@@ -235,7 +229,7 @@ export function ApproveRefundModal({ open, data, onClose, onConfirm }: ApproveRe
                 onChange={(event) => setDecisionNotes(event.target.value)}
                 placeholder="Provide reason for approving full/partial refund for audit and compliance."
                 rows={4}
-                className="min-h-28 w-full resize-none rounded-lg border border-white/[0.06] bg-[#0F0F0F] px-4 py-3 text-sm text-white placeholder:text-[#666666] focus:outline-none focus:ring-1 focus:ring-white/20"
+                className="min-h-28 w-full resize-none rounded-lg border border-white/[0.06] bg-[#0F0F0F] px-4 py-3 text-sm text-white placeholder:text-[#666666] focus:ring-1 focus:ring-white/20 focus:outline-none"
               />
             </label>
 
@@ -259,7 +253,11 @@ export function ApproveRefundModal({ open, data, onClose, onConfirm }: ApproveRe
           </button>
           <button type="button" onClick={handleConfirm} className={confirmButtonClass}>
             Confirm Decision
-            <Check className="size-[16.67px] shrink-0 text-[#050505]" strokeWidth={2.5} aria-hidden="true" />
+            <Check
+              className="size-[16.67px] shrink-0 text-[#050505]"
+              strokeWidth={2.5}
+              aria-hidden="true"
+            />
           </button>
         </div>
       </div>
@@ -303,7 +301,7 @@ function RadioOption({
       >
         {checked ? <span className="size-1.5 rounded-full bg-black" /> : null}
       </span>
-      <span className="font-figtree text-[14px] font-normal leading-[20px] tracking-normal text-white">
+      <span className="font-figtree text-[14px] leading-[20px] font-normal tracking-normal text-white">
         {label}
       </span>
     </label>

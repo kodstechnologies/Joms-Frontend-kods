@@ -67,19 +67,22 @@ const statuses: RefundChargebackStatus[] = ['Resolved', 'Pending', 'Open', 'In R
 const types: RefundChargebackType[] = ['Refund', 'Dispute']
 const entities = ['Event', 'Service', 'Venue', 'Membership']
 
-export const refundChargebackRowsMock: RefundChargebackRow[] = Array.from({ length: 20 }, (_, index) => {
-  const rowIndex = index + 1
-  const dataIndex = index % reasons.length
+export const refundChargebackRowsMock: RefundChargebackRow[] = Array.from(
+  { length: 20 },
+  (_, index) => {
+    const rowIndex = index + 1
+    const dataIndex = index % reasons.length
 
-  return {
-    id: `refund-${rowIndex.toString().padStart(2, '0')}`,
-    recordId: `PMT_${5520 + rowIndex}`,
-    type: types[index % types.length],
-    relatedEntity: entities[dataIndex],
-    amount: '$12,500',
-    reason: reasons[dataIndex],
-    initiatedDate: '01/02/2025',
-    description: descriptions[dataIndex],
-    status: statuses[index % statuses.length],
-  }
-})
+    return {
+      id: `refund-${rowIndex.toString().padStart(2, '0')}`,
+      recordId: `PMT_${5520 + rowIndex}`,
+      type: types[index % types.length],
+      relatedEntity: entities[dataIndex],
+      amount: '$12,500',
+      reason: reasons[dataIndex],
+      initiatedDate: '01/02/2025',
+      description: descriptions[dataIndex],
+      status: statuses[index % statuses.length],
+    }
+  },
+)

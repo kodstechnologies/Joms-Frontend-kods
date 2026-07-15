@@ -1,5 +1,5 @@
-import { CommunicationDetails } from "../../components";
+import { CommunicationDetails } from '../../components'
 
 export function ViewCommunicationPage() {
-  return <CommunicationDetails />;
+  return <CommunicationDetails />
 }

@@ -1,6 +1,12 @@
+import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
-import { fetchSettings, fetchSettingsLogs, resetSettings, updateSettings } from '../api/settings-api'
+import {
+  fetchSettings,
+  fetchSettingsLogs,
+  resetSettings,
+  updateSettings,
+} from '../api/settings-api'
 import type { ModuleSettingsMap, SettingsModule } from '../types/settings'
 
 export const settingsKeys = {
@@ -35,6 +41,23 @@ export const useResetSettings = <M extends SettingsModule>(module: M) => {
       void queryClient.invalidateQueries({ queryKey: settingsKeys.module(module) })
     },
   })
+}
+
+/**
+ * Local editable draft of a settings config, seeded from query data once it
+ * loads (and re-seeded whenever the query data reference changes, e.g. after
+ * a reset). Syncing happens during render rather than in an effect.
+ */
+export function useSettingsDraft<T>(queryData: { config: T } | undefined, defaults: T) {
+  const [draft, setDraft] = useState<T>(defaults)
+  const [hydratedData, setHydratedData] = useState(queryData)
+
+  if (queryData && queryData !== hydratedData) {
+    setHydratedData(queryData)
+    setDraft(queryData.config)
+  }
+
+  return [draft, setDraft] as const
 }
 
 export function useSettingsLogs(params?: {

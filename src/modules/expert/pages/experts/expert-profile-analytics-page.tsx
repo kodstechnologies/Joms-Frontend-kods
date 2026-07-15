@@ -28,11 +28,11 @@ import {
 } from '../../mock/expert-profile-analytics.mock'
 import {
   AnalyticsCard,
-  CHART_TOOLTIP,
   MetricCard,
   PeriodSelect,
   SectionTitle,
 } from '../../components/venue-analytics/analytics-ui'
+import { CHART_TOOLTIP } from '../../components/venue-analytics/analytics-constants'
 import { Button } from '@/shared/components/ui/button'
 
 const FUNNEL_COLORS = ['#1A73E8', '#2B7DE9', '#3D88EA', '#4E92EB', '#609DEC']
@@ -52,8 +52,7 @@ export function ExpertProfileAnalyticsPage() {
       expert?.basicProfile?.industry ||
       expert?.basicProfile?.serviceCategory?.[0] ||
       EXPERT_ANALYTICS_PROFILE.profession
-    const avatarUrl =
-      expert?.basicProfile?.profileImage || EXPERT_ANALYTICS_PROFILE.avatarUrl
+    const avatarUrl = expert?.basicProfile?.profileImage || EXPERT_ANALYTICS_PROFILE.avatarUrl
 
     const accountStatus = expert?.isDeactivated
       ? 'Inactive'
@@ -91,7 +90,7 @@ export function ExpertProfileAnalyticsPage() {
           <button
             type="button"
             onClick={() => navigate(`/experts/management/profile/${id}`)}
-            className="group flex w-fit items-center gap-2 font-heading text-[20px] font-bold tracking-tight text-white transition-colors hover:text-brand-accent"
+            className="group font-heading hover:text-brand-accent flex w-fit items-center gap-2 text-[20px] font-bold tracking-tight text-white transition-colors"
           >
             <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
             <span>Expert Profile Analytics</span>
@@ -117,10 +116,7 @@ export function ExpertProfileAnalyticsPage() {
           </div>
         </div>
         <div className="flex flex-wrap gap-3">
-          <Button
-            className="h-9"
-            onClick={() => navigate('/experts/dashboard/metrics')}
-          >
+          <Button className="h-9" onClick={() => navigate('/experts/dashboard/metrics')}>
             <SlidersHorizontal className="size-4" />
             Manage Metrics
           </Button>
@@ -148,7 +144,7 @@ export function ExpertProfileAnalyticsPage() {
             <div>
               <div className="flex flex-wrap items-center gap-2">
                 <h2 className="text-lg font-bold text-white">{profile.name}</h2>
-                <span className="rounded-md bg-brand-accent/15 px-2 py-0.5 text-[10px] font-semibold text-brand-accent">
+                <span className="bg-brand-accent/15 text-brand-accent rounded-md px-2 py-0.5 text-[10px] font-semibold">
                   {profile.profession}
                 </span>
               </div>
@@ -156,7 +152,7 @@ export function ExpertProfileAnalyticsPage() {
                 <span>{profile.role}</span>
                 <span className="text-[#333]">•</span>
                 <span className="inline-flex items-center gap-1 text-white">
-                  <Star className="size-3 fill-brand-accent text-brand-accent" />
+                  <Star className="fill-brand-accent text-brand-accent size-3" />
                   {profile.rating}
                 </span>
                 <span className="rounded-md bg-emerald-500/15 px-2 py-0.5 text-[10px] font-semibold text-emerald-400">
@@ -212,10 +208,7 @@ export function ExpertProfileAnalyticsPage() {
       </div>
 
       <div>
-        <SectionTitle
-          title="Expert Listings"
-          subtitle="Expert analytics and growth"
-        />
+        <SectionTitle title="Expert Listings" subtitle="Expert analytics and growth" />
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {EXPERT_LISTINGS_METRICS.map((item) => (
             <MetricCard
@@ -229,10 +222,7 @@ export function ExpertProfileAnalyticsPage() {
       </div>
 
       <div>
-        <SectionTitle
-          title="Ticketing Insights"
-          subtitle="Communication and interaction metrics"
-        />
+        <SectionTitle title="Ticketing Insights" subtitle="Communication and interaction metrics" />
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {TICKETING_INSIGHTS.map((item) => (
             <MetricCard
@@ -252,7 +242,10 @@ export function ExpertProfileAnalyticsPage() {
             <p className="mb-4 text-[12px] font-semibold text-white">Most Active Time</p>
             <div className="h-56">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={MOST_ACTIVE_TIME} margin={{ left: -20, right: 8, top: 8, bottom: 0 }}>
+                <BarChart
+                  data={MOST_ACTIVE_TIME}
+                  margin={{ left: -20, right: 8, top: 8, bottom: 0 }}
+                >
                   <CartesianGrid stroke="#2a2a2a" strokeDasharray="4 4" vertical={false} />
                   <XAxis
                     dataKey="day"
@@ -295,7 +288,7 @@ export function ExpertProfileAnalyticsPage() {
                   </div>
                   <div className="h-2 overflow-hidden rounded-full bg-black">
                     <div
-                      className="h-full rounded-full bg-brand-accent"
+                      className="bg-brand-accent h-full rounded-full"
                       style={{ width: `${item.percent * 3}%` }}
                     />
                   </div>
@@ -379,11 +372,7 @@ export function ExpertProfileAnalyticsPage() {
                   axisLine={false}
                   tickLine={false}
                 />
-                <YAxis
-                  tick={{ fill: '#999', fontSize: 11 }}
-                  axisLine={false}
-                  tickLine={false}
-                />
+                <YAxis tick={{ fill: '#999', fontSize: 11 }} axisLine={false} tickLine={false} />
                 <Tooltip
                   contentStyle={CHART_TOOLTIP}
                   formatter={(value, _name, item) => [

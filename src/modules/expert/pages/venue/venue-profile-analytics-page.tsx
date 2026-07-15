@@ -38,7 +38,7 @@ export function VenueProfileAnalyticsPage() {
           <button
             type="button"
             onClick={() => navigate(`/venues/management/profile/${venueId}`)}
-            className="group flex w-fit items-center gap-2 font-heading text-[20px] font-bold tracking-tight text-white transition-colors hover:text-brand-accent"
+            className="group font-heading hover:text-brand-accent flex w-fit items-center gap-2 text-[20px] font-bold tracking-tight text-white transition-colors"
           >
             <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
             <span>Profile Analytics</span>
@@ -50,10 +50,7 @@ export function VenueProfileAnalyticsPage() {
           </div>
         </div>
         <div className="flex flex-wrap gap-3">
-          <Button
-            className="h-9"
-            onClick={() => navigate('/venues/dashboard/metrics')}
-          >
+          <Button className="h-9" onClick={() => navigate('/venues/dashboard/metrics')}>
             <SlidersHorizontal className="size-4" />
             Manage Metrics
           </Button>
@@ -71,10 +68,8 @@ export function VenueProfileAnalyticsPage() {
             type="button"
             onClick={() => setActiveTab(tab.key)}
             className={cn(
-              'flex-1 whitespace-nowrap rounded-lg px-4 py-2 text-[12px] font-semibold transition-colors',
-              activeTab === tab.key
-                ? 'bg-black text-white'
-                : 'text-[#777] hover:text-white',
+              'flex-1 rounded-lg px-4 py-2 text-[12px] font-semibold whitespace-nowrap transition-colors',
+              activeTab === tab.key ? 'bg-black text-white' : 'text-[#777] hover:text-white',
             )}
           >
             {tab.label}

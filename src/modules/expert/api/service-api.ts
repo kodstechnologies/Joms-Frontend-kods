@@ -58,9 +58,7 @@ export const deleteService = async (id: string, payload: DeleteServicePayload) =
 }
 
 export const restoreService = async (id: string) => {
-  const response = await expertApiClient.patch(
-    `/services/internal/admin/services/${id}/restore`,
-  )
+  const response = await expertApiClient.patch(`/services/internal/admin/services/${id}/restore`)
   return response.data
 }
 
@@ -118,7 +116,9 @@ export const fetchConsultationTopics = async (params?: {
 }
 
 export const createConsultationTopic = async (name: string) => {
-  const response = await expertApiClient.post<CreateTopicResponse>('/consultations/topics', { name })
+  const response = await expertApiClient.post<CreateTopicResponse>('/consultations/topics', {
+    name,
+  })
   return response.data
 }
 
@@ -182,4 +182,3 @@ export const updateConsultationStatus = async (
   )
   return response.data
 }
-

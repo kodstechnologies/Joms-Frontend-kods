@@ -1,10 +1,6 @@
 import type { FilterSectionConfig, ModuleFilterConfig } from '@/shared/types/data-filter'
 
-import {
-  byCustomersSection,
-  byLocationSection,
-  prefixSectionFields,
-} from './base-filter-sections'
+import { byCustomersSection, byLocationSection, prefixSectionFields } from './base-filter-sections'
 
 const yesNoOptions = [
   { label: 'Yes', value: 'yes' },
@@ -44,7 +40,12 @@ const serviceByServicesSection: FilterSectionConfig = {
         { label: 'Pending Approval', value: 'pending-approval' },
       ],
     },
-    { id: 'servicePromoted', label: 'Service Promoted', type: 'checkbox-group', options: yesNoOptions },
+    {
+      id: 'servicePromoted',
+      label: 'Service Promoted',
+      type: 'checkbox-group',
+      options: yesNoOptions,
+    },
     {
       id: 'pricingModel',
       label: 'Service Pricing Model',
@@ -118,7 +119,12 @@ const serviceByServicesSection: FilterSectionConfig = {
       fromPlaceholder: 'Enter Number',
       toPlaceholder: 'Enter Number',
     },
-    { id: 'discountApplied', label: 'Discount Applied', type: 'checkbox-group', options: yesNoOptions },
+    {
+      id: 'discountApplied',
+      label: 'Discount Applied',
+      type: 'checkbox-group',
+      options: yesNoOptions,
+    },
   ],
 }
 
@@ -127,7 +133,12 @@ const serviceByExpertsSection: FilterSectionConfig = {
   title: 'By Experts',
   fields: [
     { id: 'expertId', label: 'Expert ID', type: 'text', placeholder: 'Enter Expert ID' },
-    { id: 'organizationId', label: 'Organization ID', type: 'text', placeholder: 'Enter Organization ID' },
+    {
+      id: 'organizationId',
+      label: 'Organization ID',
+      type: 'text',
+      placeholder: 'Enter Organization ID',
+    },
     { id: 'category', label: 'Category', type: 'search', placeholder: 'Search by name' },
     {
       id: 'categoryStatus',
@@ -238,7 +249,12 @@ const serviceByOwnerSection: FilterSectionConfig = {
   fields: [
     { id: 'ownerId', label: 'Owner ID', type: 'text', placeholder: 'Enter Owner ID' },
     { id: 'ownerName', label: 'Owner Name', type: 'search', placeholder: 'Search by name' },
-    { id: 'organizationId', label: 'Organization ID', type: 'text', placeholder: 'Enter Organization ID' },
+    {
+      id: 'organizationId',
+      label: 'Organization ID',
+      type: 'text',
+      placeholder: 'Enter Organization ID',
+    },
     {
       id: 'accountStatus',
       label: 'Account Status',

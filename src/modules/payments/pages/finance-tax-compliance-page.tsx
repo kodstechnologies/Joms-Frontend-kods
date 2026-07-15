@@ -1,13 +1,6 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import {
-  AlertTriangle,
-  Eye,
-  SlidersHorizontal,
-  SquarePen,
-  Tag,
-  Trash2,
-} from 'lucide-react'
+import { AlertTriangle, Eye, SlidersHorizontal, SquarePen, Tag, Trash2 } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
@@ -76,9 +69,7 @@ export function FinanceTaxCompliancePage() {
 
   const toggleRowSelection = useCallback((rowId: string) => {
     setSelectedRowIds((currentIds) =>
-      currentIds.includes(rowId)
-        ? currentIds.filter((id) => id !== rowId)
-        : [...currentIds, rowId],
+      currentIds.includes(rowId) ? currentIds.filter((id) => id !== rowId) : [...currentIds, rowId],
     )
   }, [])
 
@@ -185,7 +176,9 @@ export function FinanceTaxCompliancePage() {
         accessorKey: 'recordId',
         header: 'Record ID',
         cell: ({ row }) => (
-          <span className="font-mono text-[11px] uppercase text-white">{row.original.recordId}</span>
+          <span className="font-mono text-[11px] text-white uppercase">
+            {row.original.recordId}
+          </span>
         ),
       },
       { accessorKey: 'entityType', header: 'Entity Type' },
@@ -193,7 +186,9 @@ export function FinanceTaxCompliancePage() {
         accessorKey: 'entityId',
         header: 'Entity ID',
         cell: ({ row }) => (
-          <span className="font-mono text-[11px] uppercase text-white">{row.original.entityId}</span>
+          <span className="font-mono text-[11px] text-white uppercase">
+            {row.original.entityId}
+          </span>
         ),
       },
       { accessorKey: 'owner', header: 'Owner' },
@@ -201,7 +196,9 @@ export function FinanceTaxCompliancePage() {
         accessorKey: 'bookingId',
         header: 'Booking ID',
         cell: ({ row }) => (
-          <span className="font-mono text-[11px] uppercase text-white">{row.original.bookingId}</span>
+          <span className="font-mono text-[11px] text-white uppercase">
+            {row.original.bookingId}
+          </span>
         ),
       },
       { accessorKey: 'bookingTitle', header: 'Booking Title' },

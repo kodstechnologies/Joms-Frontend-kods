@@ -1,16 +1,11 @@
 import { ArrowLeft, Save } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 
 import { PermissionAccordions } from '../components/permission-accordions'
 import { RbacLoader } from '../components/rbac-loader'
-import {
-  useCreateRole,
-  usePermissionCatalog,
-  useRole,
-  useUpdateRole,
-} from '../hooks/use-rbac'
+import { useCreateRole, usePermissionCatalog, useRole, useUpdateRole } from '../hooks/use-rbac'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
 
@@ -28,15 +23,15 @@ export function CreateRolePage() {
   const [description, setDescription] = useState('')
   const [permissions, setPermissions] = useState<string[]>([])
   const [mfaRequired, setMfaRequired] = useState(true)
+  const [hydratedRole, setHydratedRole] = useState(roleData?.data)
 
-  useEffect(() => {
-    if (roleData?.data) {
-      setName(roleData.data.name)
-      setDescription(roleData.data.description)
-      setPermissions(roleData.data.permissions)
-      setMfaRequired(roleData.data.mfaRequired)
-    }
-  }, [roleData])
+  if (roleData?.data && roleData.data !== hydratedRole) {
+    setHydratedRole(roleData.data)
+    setName(roleData.data.name)
+    setDescription(roleData.data.description)
+    setPermissions(roleData.data.permissions)
+    setMfaRequired(roleData.data.mfaRequired)
+  }
 
   const catalog = catalogData?.data ?? {}
 
@@ -71,27 +66,27 @@ export function CreateRolePage() {
         <button
           type="button"
           onClick={() => navigate('/settings/access')}
-          className="rounded-brand-md border border-white/10 p-2 text-brand-muted transition-colors hover:bg-white/5 hover:text-brand-text"
+          className="rounded-brand-md text-brand-muted hover:text-brand-text border border-white/10 p-2 transition-colors hover:bg-white/5"
         >
           <ArrowLeft className="size-4" />
         </button>
         <div>
-          <h1 className="text-2xl font-bold text-brand-text">
+          <h1 className="text-brand-text text-2xl font-bold">
             {isEdit ? 'Edit Role' : 'Create New Role'}
           </h1>
-          <p className="text-sm text-brand-muted">
+          <p className="text-brand-muted text-sm">
             Role Based Access / {isEdit ? 'Edit Role' : 'Create New Role'}
           </p>
         </div>
       </div>
 
-      <div className="rounded-brand-lg border border-white/10 bg-brand-surface p-5 md:p-6">
-        <h2 className="text-lg font-semibold text-brand-text">Role Details</h2>
-        <p className="mt-1 text-sm text-brand-muted">Provide basic information about this role.</p>
+      <div className="rounded-brand-lg bg-brand-surface border border-white/10 p-5 md:p-6">
+        <h2 className="text-brand-text text-lg font-semibold">Role Details</h2>
+        <p className="text-brand-muted mt-1 text-sm">Provide basic information about this role.</p>
 
         <div className="mt-5 grid gap-4 md:grid-cols-2">
           <div className="space-y-2">
-            <label className="text-sm font-medium text-brand-text">Role Name *</label>
+            <label className="text-brand-text text-sm font-medium">Role Name *</label>
             <Input
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -100,21 +95,21 @@ export function CreateRolePage() {
             />
           </div>
           <div className="space-y-2 md:col-span-2">
-            <label className="text-sm font-medium text-brand-text">Description *</label>
+            <label className="text-brand-text text-sm font-medium">Description *</label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Describe what this role is responsible for"
               rows={3}
-              className="w-full resize-none rounded-brand-md border border-white/10 bg-brand-bg px-4 py-3 text-sm text-brand-text placeholder:text-brand-muted outline-none focus:ring-2 focus:ring-brand-accent/40"
+              className="rounded-brand-md bg-brand-bg text-brand-text placeholder:text-brand-muted focus:ring-brand-accent/40 w-full resize-none border border-white/10 px-4 py-3 text-sm outline-none focus:ring-2"
             />
           </div>
         </div>
       </div>
 
-      <div className="rounded-brand-lg border border-white/10 bg-brand-surface p-5 md:p-6">
-        <h2 className="text-lg font-semibold text-brand-text">Assign Permissions</h2>
-        <p className="mt-1 text-sm text-brand-muted">
+      <div className="rounded-brand-lg bg-brand-surface border border-white/10 p-5 md:p-6">
+        <h2 className="text-brand-text text-lg font-semibold">Assign Permissions</h2>
+        <p className="text-brand-muted mt-1 text-sm">
           Enable permissions for Venues and Services modules only.
         </p>
 

@@ -72,7 +72,14 @@ const extraRows: RevenueOverviewRow[] = Array.from({ length: 16 }, (_, index) =>
   return {
     id: `rev-${rowNumber.toString().padStart(2, '0')}`,
     module,
-    entityType: module === 'Events' ? 'Ticketing' : module === 'Service' ? 'Consultation' : module === 'Venue' ? 'Rental' : 'Premium',
+    entityType:
+      module === 'Events'
+        ? 'Ticketing'
+        : module === 'Service'
+          ? 'Consultation'
+          : module === 'Venue'
+            ? 'Rental'
+            : 'Premium',
     entityId: `NM_${(rowNumber + 10).toString().padStart(2, '0')}`,
     entityName: `${module} Transaction ${rowNumber}`,
     category: ['Technology', 'Legal', 'Consulting', 'Arts'][index % 4],

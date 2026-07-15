@@ -47,9 +47,7 @@ export const VenueOnboardingLocationStep = ({ formData, setFormData }: Props) =>
       <div className="animate-in fade-in slide-in-from-right-4 rounded-lg border border-white/5 bg-[#151515] p-6 duration-300">
         <div className="mb-6">
           <h2 className="text-sm font-bold text-white">Add Venue Location</h2>
-          <p className="mt-1 text-xs text-[#777777]">
-            Provide details about your service offering
-          </p>
+          <p className="mt-1 text-xs text-[#777777]">Provide details about your service offering</p>
         </div>
 
         <div className="space-y-5">
@@ -57,9 +55,7 @@ export const VenueOnboardingLocationStep = ({ formData, setFormData }: Props) =>
             <label className="mb-2 block text-xs font-medium text-white">Address *</label>
             <input
               value={formData.address}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, address: e.target.value }))
-              }
+              onChange={(e) => setFormData((prev) => ({ ...prev, address: e.target.value }))}
               placeholder="e.g NDA Review & Legal Advisory"
               className={fieldClass}
             />
@@ -70,22 +66,16 @@ export const VenueOnboardingLocationStep = ({ formData, setFormData }: Props) =>
               <label className="mb-2 block text-xs font-medium text-white">City *</label>
               <input
                 value={formData.city}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, city: e.target.value }))
-                }
+                onChange={(e) => setFormData((prev) => ({ ...prev, city: e.target.value }))}
                 placeholder="Enter name here"
                 className={fieldClass}
               />
             </div>
             <div>
-              <label className="mb-2 block text-xs font-medium text-white">
-                Pin code *
-              </label>
+              <label className="mb-2 block text-xs font-medium text-white">Pin code *</label>
               <input
                 value={formData.pincode}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, pincode: e.target.value }))
-                }
+                onChange={(e) => setFormData((prev) => ({ ...prev, pincode: e.target.value }))}
                 placeholder="Enter name here"
                 className={fieldClass}
               />
@@ -106,7 +96,7 @@ export const VenueOnboardingLocationStep = ({ formData, setFormData }: Props) =>
                   <button
                     type="button"
                     onClick={() => removeExistingImage(index)}
-                    className="absolute right-1 top-1 rounded-full bg-black/70 p-1 text-white"
+                    className="absolute top-1 right-1 rounded-full bg-black/70 p-1 text-white"
                   >
                     <X className="size-3" />
                   </button>
@@ -125,7 +115,7 @@ export const VenueOnboardingLocationStep = ({ formData, setFormData }: Props) =>
                   <button
                     type="button"
                     onClick={() => removeImage(index)}
-                    className="absolute right-1 top-1 rounded-full bg-black/70 p-1 text-white"
+                    className="absolute top-1 right-1 rounded-full bg-black/70 p-1 text-white"
                   >
                     <X className="size-3" />
                   </button>
@@ -135,7 +125,7 @@ export const VenueOnboardingLocationStep = ({ formData, setFormData }: Props) =>
                 <button
                   type="button"
                   onClick={() => imageInputRef.current?.click()}
-                  className="flex h-24 items-center justify-center rounded-md border border-dashed border-[#444] bg-black text-xs text-[#777] transition-colors hover:border-brand-accent/50"
+                  className="hover:border-brand-accent/50 flex h-24 items-center justify-center rounded-md border border-dashed border-[#444] bg-black text-xs text-[#777] transition-colors"
                 >
                   <Upload className="mr-1 size-4" />
                   Upload here
@@ -161,12 +151,10 @@ export const VenueOnboardingLocationStep = ({ formData, setFormData }: Props) =>
         </div>
 
         <div className="relative mb-4">
-          <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#777]" />
+          <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-[#777]" />
           <input
             value={formData.landmark}
-            onChange={(e) =>
-              setFormData((prev) => ({ ...prev, landmark: e.target.value }))
-            }
+            onChange={(e) => setFormData((prev) => ({ ...prev, landmark: e.target.value }))}
             placeholder="Search by Location"
             className={`${fieldClass} pl-10`}
           />
@@ -181,7 +169,7 @@ export const VenueOnboardingLocationStep = ({ formData, setFormData }: Props) =>
           </div>
           <button
             type="button"
-            className="absolute right-2 top-2 rounded-md bg-black/60 p-1.5 text-white"
+            className="absolute top-2 right-2 rounded-md bg-black/60 p-1.5 text-white"
           >
             <Maximize2 className="size-4" />
           </button>

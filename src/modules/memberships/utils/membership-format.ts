@@ -74,10 +74,7 @@ export const getHistoryActionTitle = (action: string) => {
   }
 }
 
-export const getHistoryActionDescription = (
-  entry: HistoryEntry,
-  fallbackPrice?: number,
-) => {
+export const getHistoryActionDescription = (entry: HistoryEntry, fallbackPrice?: number) => {
   const priceText = fallbackPrice ? formatCurrency(fallbackPrice) : ''
   const cycleSuffix = entry.billingCycleName
     ? `${priceText ? `${priceText}/` : ''}${entry.billingCycleName}`

@@ -1,5 +1,5 @@
-import { MembershipUpgradeDetails } from "../../components";
+import { MembershipUpgradeDetails } from '../../components'
 
 export function MembershipUpgradeDetailsPage() {
-  return <MembershipUpgradeDetails />;
+  return <MembershipUpgradeDetails />
 }

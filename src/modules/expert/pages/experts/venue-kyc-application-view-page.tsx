@@ -37,7 +37,7 @@ import {
 } from '@/shared/components/modal/decision-action-modal'
 import { cn } from '@/shared/lib/cn'
 import { useAuthStore } from '@/modules/auth/store/auth-store'
-import { formatApplicationExpertId } from './expert-list-shared'
+import { formatApplicationExpertId } from './expert-list-shared-utils'
 
 type TabKey = 'overview' | 'kyc' | 'banking'
 type DecisionVariant = 'approve' | 'reject' | 'requestChanges' | 'escalate'
@@ -108,13 +108,7 @@ const getDocumentMeta = (url?: string | null) => {
   return `${type} Document`
 }
 
-function StatusPill({
-  status,
-  label,
-}: {
-  status?: VenueKycStatus | null
-  label?: string | null
-}) {
+function StatusPill({ status, label }: { status?: VenueKycStatus | null; label?: string | null }) {
   const className =
     status === 'APPROVED'
       ? 'bg-[#1B4332] text-[#74C69D]'
@@ -124,10 +118,7 @@ function StatusPill({
           ? 'bg-white/10 text-[#AAAAAA]'
           : 'bg-[#4A2C17] text-[#E8A86B]'
 
-  const displayLabel =
-    label ||
-    (status === 'DRAFT' ? 'Not Submitted' : status) ||
-    'PENDING'
+  const displayLabel = label || (status === 'DRAFT' ? 'Not Submitted' : status) || 'PENDING'
 
   return (
     <span className={cn('rounded-md px-3 py-1.5 text-[11px] font-semibold', className)}>
@@ -289,8 +280,7 @@ export function VenueKycApplicationViewPage() {
     startEscalationReview.mutate()
   }, [partnerId, isSuperAdmin])
 
-  const decisionTargetForTab: DecisionTarget =
-    activeTab === 'banking' ? 'banking' : 'kyc'
+  const decisionTargetForTab: DecisionTarget = activeTab === 'banking' ? 'banking' : 'kyc'
 
   const activeDecisionStatus =
     decisionTargetForTab === 'banking'
@@ -298,9 +288,7 @@ export function VenueKycApplicationViewPage() {
       : application?.kycDetails.status
 
   const activeMutationPending =
-    decisionTargetForTab === 'banking'
-      ? updateBanking.isPending
-      : updateKyc.isPending
+    decisionTargetForTab === 'banking' ? updateBanking.isPending : updateKyc.isPending
 
   const openDecisionModal = (target: DecisionTarget, variant: DecisionVariant) => {
     setModalTarget(target)
@@ -318,8 +306,7 @@ export function VenueKycApplicationViewPage() {
     )
   }
 
-  const isRejectFlow =
-    modalVariant === 'reject' || modalVariant === 'requestChanges'
+  const isRejectFlow = modalVariant === 'reject' || modalVariant === 'requestChanges'
 
   const handleSubmitDecision = () => {
     if (!application) return
@@ -334,7 +321,9 @@ export function VenueKycApplicationViewPage() {
         return
       }
 
-      const selectedAssignee = assigneesData?.data.find((item) => item.id === selectedEscalationOption)
+      const selectedAssignee = assigneesData?.data.find(
+        (item) => item.id === selectedEscalationOption,
+      )
       escalateApplication.mutate(
         {
           assigneeSubAdminId: selectedEscalationOption,
@@ -440,8 +429,7 @@ export function VenueKycApplicationViewPage() {
     activeDecisionStatus !== 'PENDING' ||
     activeMutationPending
 
-  const escalateDisabled =
-    activeDecisionStatus === 'APPROVED' || escalateApplication.isPending
+  const escalateDisabled = activeDecisionStatus === 'APPROVED' || escalateApplication.isPending
 
   const modalTitle = useMemo(() => {
     const target = modalTarget === 'banking' ? 'Banking' : 'Venue KYC'
@@ -468,8 +456,8 @@ export function VenueKycApplicationViewPage() {
     modalVariant === 'escalate'
       ? escalateApplication.isPending
       : modalTarget === 'banking'
-      ? updateBanking.isPending
-      : updateKyc.isPending
+        ? updateBanking.isPending
+        : updateKyc.isPending
   const isEscalateFlow = modalVariant === 'escalate'
   const escalationOptions: DecisionActionModalOption[] =
     assigneesData?.data.map((item) => ({
@@ -480,7 +468,7 @@ export function VenueKycApplicationViewPage() {
   if (isLoading) {
     return (
       <div className="flex h-[60vh] items-center justify-center">
-        <div className="size-9 animate-spin rounded-full border-4 border-brand-accent border-t-transparent" />
+        <div className="border-brand-accent size-9 animate-spin rounded-full border-4 border-t-transparent" />
       </div>
     )
   }
@@ -491,7 +479,7 @@ export function VenueKycApplicationViewPage() {
         <button
           type="button"
           onClick={() => navigate('/experts/management')}
-          className="group flex w-fit items-center gap-2 font-heading text-[20px] font-bold text-white transition-colors hover:text-brand-accent"
+          className="group font-heading hover:text-brand-accent flex w-fit items-center gap-2 text-[20px] font-bold text-white transition-colors"
         >
           <ArrowLeft className="size-5" />
           <span>Venue Application View</span>
@@ -535,7 +523,7 @@ export function VenueKycApplicationViewPage() {
         <button
           type="button"
           onClick={() => navigate('/experts/management')}
-          className="group flex w-fit items-center gap-2 font-heading text-[20px] font-bold tracking-tight text-white transition-colors hover:text-brand-accent"
+          className="group font-heading hover:text-brand-accent flex w-fit items-center gap-2 text-[20px] font-bold tracking-tight text-white transition-colors"
         >
           <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
           <span>Venue Application View</span>
@@ -566,26 +554,20 @@ export function VenueKycApplicationViewPage() {
                 <button
                   type="button"
                   onClick={() => navigate(`/experts/management/profile/${header.partnerId}`)}
-                  className="rounded-md p-1 text-[#888] transition-colors hover:bg-white/5 hover:text-brand-accent"
+                  className="hover:text-brand-accent rounded-md p-1 text-[#888] transition-colors hover:bg-white/5"
                   aria-label="Open expert profile"
                 >
                   <ExternalLink className="size-4" />
                 </button>
               )}
             </div>
-            {appliedLabel && (
-              <p className="mt-1 text-[12px] text-[#777]">{appliedLabel}</p>
-            )}
+            {appliedLabel && <p className="mt-1 text-[12px] text-[#777]">{appliedLabel}</p>}
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <StatusPill status={header.kycStatus} label={header.kycStatusLabel} />
             <StatusPill
               status={header.bankingStatus}
-              label={
-                isBankingSubmitted
-                  ? header.bankingStatusLabel
-                  : 'Not Submitted'
-              }
+              label={isBankingSubmitted ? header.bankingStatusLabel : 'Not Submitted'}
             />
           </div>
         </div>
@@ -621,11 +603,11 @@ export function VenueKycApplicationViewPage() {
               key={tab.key}
               type="button"
               onClick={() => setActiveTab(tab.key)}
-              className="relative flex-1 px-4 py-3.5 text-center text-[13px] font-semibold text-white transition-colors hover:text-brand-accent"
+              className="hover:text-brand-accent relative flex-1 px-4 py-3.5 text-center text-[13px] font-semibold text-white transition-colors"
             >
               {tab.label}
               {isActive && (
-                <span className="absolute bottom-2 left-1/2 h-[3px] w-10 -translate-x-1/2 rounded-full bg-brand-accent" />
+                <span className="bg-brand-accent absolute bottom-2 left-1/2 h-[3px] w-10 -translate-x-1/2 rounded-full" />
               )}
             </button>
           )
@@ -637,7 +619,7 @@ export function VenueKycApplicationViewPage() {
           <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
             <SectionCard
               title="Applicant Information"
-              icon={<User className="size-4 text-brand-accent" />}
+              icon={<User className="text-brand-accent size-4" />}
             >
               <div className="grid grid-cols-1 gap-x-8 gap-y-5 sm:grid-cols-2">
                 <InfoField label="Full Name/Organization" value={applicant?.fullName} />
@@ -645,16 +627,13 @@ export function VenueKycApplicationViewPage() {
                 <InfoField label="Work Email" value={applicant?.email} />
                 <InfoField label="Service Type" value={applicant?.serviceType || 'Venue'} />
                 <InfoField label="Current role" value={applicant?.currentRole} />
-                <InfoField
-                  label="Service Category"
-                  value={applicant?.serviceCategory || 'Venue'}
-                />
+                <InfoField label="Service Category" value={applicant?.serviceCategory || 'Venue'} />
               </div>
             </SectionCard>
 
             <SectionCard
               title="Venue Information"
-              icon={<ClipboardList className="size-4 text-brand-accent" />}
+              icon={<ClipboardList className="text-brand-accent size-4" />}
             >
               <div className="grid grid-cols-1 gap-x-8 gap-y-5 sm:grid-cols-2">
                 <InfoField label="Venue Name" value={venue?.venueName} />
@@ -668,16 +647,12 @@ export function VenueKycApplicationViewPage() {
 
           <SectionCard
             title="Venue Images"
-            icon={<FileText className="size-4 text-brand-accent" />}
+            icon={<FileText className="text-brand-accent size-4" />}
           >
             {venueImages.length > 0 ? (
               <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:max-w-[520px]">
                 {venueImages.slice(0, 6).map((image, index) => (
-                  <VenueImage
-                    key={`${image}-${index}`}
-                    src={image}
-                    alt={`Venue ${index + 1}`}
-                  />
+                  <VenueImage key={`${image}-${index}`} src={image} alt={`Venue ${index + 1}`} />
                 ))}
               </div>
             ) : (
@@ -692,7 +667,7 @@ export function VenueKycApplicationViewPage() {
           <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
             <SectionCard
               title="KYC Details"
-              icon={<ClipboardList className="size-4 text-brand-accent" />}
+              icon={<ClipboardList className="text-brand-accent size-4" />}
             >
               <div className="grid grid-cols-1 gap-x-8 gap-y-5 sm:grid-cols-2">
                 <InfoField
@@ -706,15 +681,13 @@ export function VenueKycApplicationViewPage() {
                   <YesNoBadge value={kycDetails.hasGST} />
                 </InfoField>
                 <InfoField label="GST Number" value={kycDetails.gstNumber} />
-                {kycDetails.address && (
-                  <InfoField label="Address" value={kycDetails.address} />
-                )}
+                {kycDetails.address && <InfoField label="Address" value={kycDetails.address} />}
               </div>
             </SectionCard>
 
             <SectionCard
               title="Compliance & Declaration"
-              icon={<ShieldCheck className="size-4 text-brand-accent" />}
+              icon={<ShieldCheck className="text-brand-accent size-4" />}
             >
               <div className="space-y-5">
                 <div className="flex items-center justify-between gap-3">
@@ -724,9 +697,7 @@ export function VenueKycApplicationViewPage() {
                   <YesNoBadge value={compliance?.itReturnsFiledLast2Years} />
                 </div>
                 <div className="flex items-center justify-between gap-3">
-                  <span className="text-[12px] font-medium text-[#bbb]">
-                    Undertaking Signed
-                  </span>
+                  <span className="text-[12px] font-medium text-[#bbb]">Undertaking Signed</span>
                   <YesNoBadge value={compliance?.undertakingSigned} />
                 </div>
                 {compliance?.gstUndertakingDocument && (
@@ -758,30 +729,22 @@ export function VenueKycApplicationViewPage() {
 
           <SectionCard
             title="Uploaded Documents"
-            icon={<FileText className="size-4 text-brand-accent" />}
+            icon={<FileText className="text-brand-accent size-4" />}
           >
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {uploadedDocuments.map((document) => (
-                <DocumentCard
-                  key={document.label}
-                  label={document.label}
-                  url={document.url}
-                />
+                <DocumentCard key={document.label} label={document.label} url={document.url} />
               ))}
             </div>
           </SectionCard>
 
           <SectionCard
             title="Other Document"
-            icon={<FileText className="size-4 text-brand-accent" />}
+            icon={<FileText className="text-brand-accent size-4" />}
           >
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {otherDocuments.map((document) => (
-                <DocumentCard
-                  key={document.label}
-                  label={document.label}
-                  url={document.url}
-                />
+                <DocumentCard key={document.label} label={document.label} url={document.url} />
               ))}
             </div>
           </SectionCard>
@@ -789,78 +752,82 @@ export function VenueKycApplicationViewPage() {
       )}
 
       {activeTab === 'banking' && (
-          <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
-            <SectionCard
-              title="Account Information"
-              icon={<Banknote className="size-4 text-brand-accent" />}
-            >
-              <div className="grid grid-cols-1 gap-x-8 gap-y-5 sm:grid-cols-2">
-                <InfoField label="Beneficiary Name" value={account?.beneficiaryName} />
-                <InfoField label="Account Type" value={account?.accountType} />
-                <InfoField label="Bank Name" value={account?.bankName} />
-                <InfoField label="Account Number" value={account?.accountNumber} />
-                <InfoField label="IFSC Code" value={account?.ifscCode} />
-                {isBankingSubmitted && account?.providedName != null && account.providedName !== '' && (
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+          <SectionCard
+            title="Account Information"
+            icon={<Banknote className="text-brand-accent size-4" />}
+          >
+            <div className="grid grid-cols-1 gap-x-8 gap-y-5 sm:grid-cols-2">
+              <InfoField label="Beneficiary Name" value={account?.beneficiaryName} />
+              <InfoField label="Account Type" value={account?.accountType} />
+              <InfoField label="Bank Name" value={account?.bankName} />
+              <InfoField label="Account Number" value={account?.accountNumber} />
+              <InfoField label="IFSC Code" value={account?.ifscCode} />
+              {isBankingSubmitted &&
+                account?.providedName != null &&
+                account.providedName !== '' && (
                   <InfoField label="Provided Name" value={account.providedName} />
                 )}
-                {isBankingSubmitted && account?.nameMatchScore != null && account.nameMatchScore !== '' && (
+              {isBankingSubmitted &&
+                account?.nameMatchScore != null &&
+                account.nameMatchScore !== '' && (
                   <InfoField label="Name Match Score" value={account.nameMatchScore} />
                 )}
-              </div>
-            </SectionCard>
+            </div>
+          </SectionCard>
 
-            <SectionCard
-              title="Bank Verification Document"
-              icon={<FileText className="size-4 text-brand-accent" />}
-            >
-              <div className="max-w-sm">
-                <DocumentCard
-                  label="Cancelled Cheque"
-                  url={isBankingSubmitted ? bankingDetails.cancelledCheque : null}
-                />
-              </div>
-            </SectionCard>
-          </div>
-        )}
+          <SectionCard
+            title="Bank Verification Document"
+            icon={<FileText className="text-brand-accent size-4" />}
+          >
+            <div className="max-w-sm">
+              <DocumentCard
+                label="Cancelled Cheque"
+                url={isBankingSubmitted ? bankingDetails.cancelledCheque : null}
+              />
+            </div>
+          </SectionCard>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
         <div className="rounded-xl border border-white/5 bg-[#111111] p-5">
           <div className="mb-4 flex items-center gap-2 text-[14px] font-semibold text-white">
-            <History className="size-4 text-brand-accent" aria-hidden="true" />
+            <History className="text-brand-accent size-4" aria-hidden="true" />
             <h3>Application Notes</h3>
           </div>
-          <div className="min-h-[120px] rounded-lg border border-white/5 bg-black p-4 text-[12px] leading-relaxed text-[#777] whitespace-pre-wrap">
+          <div className="min-h-[120px] rounded-lg border border-white/5 bg-black p-4 text-[12px] leading-relaxed whitespace-pre-wrap text-[#777]">
             {notesContent}
           </div>
         </div>
 
         <div className="rounded-xl border border-white/5 bg-[#111111] p-5">
           <div className="mb-4 flex items-center gap-2 text-[14px] font-semibold text-white">
-            <Gavel className="size-4 text-brand-accent" aria-hidden="true" />
+            <Gavel className="text-brand-accent size-4" aria-hidden="true" />
             <h3>Decision Controls</h3>
           </div>
 
           {decisionTargetForTab === 'banking' && !isBankingSubmitted && (
             <p className="mb-4 rounded-md border border-white/5 bg-black px-3 py-2 text-[11px] font-medium text-[#999]">
-              Banking has not been submitted yet. Approve and reject are available
-              only after the partner submits banking details.
+              Banking has not been submitted yet. Approve and reject are available only after the
+              partner submits banking details.
             </p>
           )}
 
           {activeDecisionStatus !== 'PENDING' &&
             !(decisionTargetForTab === 'banking' && !isBankingSubmitted) && (
-            <p className="mb-4 rounded-md border border-white/5 bg-black px-3 py-2 text-[11px] font-medium text-[#999]">
-              {decisionTargetForTab === 'banking' ? 'Banking' : 'KYC'} is already{' '}
-              {String(activeDecisionStatus).toLowerCase()}.
-            </p>
-          )}
+              <p className="mb-4 rounded-md border border-white/5 bg-black px-3 py-2 text-[11px] font-medium text-[#999]">
+                {decisionTargetForTab === 'banking' ? 'Banking' : 'KYC'} is already{' '}
+                {String(activeDecisionStatus).toLowerCase()}.
+              </p>
+            )}
 
           <div className="flex flex-wrap gap-3">
             <button
               type="button"
               disabled={decisionDisabled}
               onClick={() => openDecisionModal(decisionTargetForTab, 'approve')}
-              className="flex items-center gap-2 rounded-md bg-brand-success px-4 py-2.5 text-[11px] font-bold text-white transition-colors hover:bg-[#08a85d] disabled:cursor-not-allowed disabled:opacity-50"
+              className="bg-brand-success flex items-center gap-2 rounded-md px-4 py-2.5 text-[11px] font-bold text-white transition-colors hover:bg-[#08a85d] disabled:cursor-not-allowed disabled:opacity-50"
             >
               Approve
               <Check className="size-3.5" />
@@ -869,7 +836,7 @@ export function VenueKycApplicationViewPage() {
               type="button"
               disabled={decisionDisabled}
               onClick={() => openDecisionModal(decisionTargetForTab, 'requestChanges')}
-              className="flex items-center gap-2 rounded-md bg-brand-accent px-4 py-2.5 text-[11px] font-bold text-brand-text-dark hover:bg-brand-gold-from transition-colors hover:bg-brand-gold-from disabled:cursor-not-allowed disabled:opacity-50"
+              className="bg-brand-accent text-brand-text-dark hover:bg-brand-gold-from hover:bg-brand-gold-from flex items-center gap-2 rounded-md px-4 py-2.5 text-[11px] font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-50"
             >
               Ask for Re-Submit
               <RotateCcw className="size-3.5" />
@@ -879,7 +846,7 @@ export function VenueKycApplicationViewPage() {
                 type="button"
                 disabled={escalateDisabled}
                 onClick={() => openDecisionModal(decisionTargetForTab, 'escalate')}
-                className="flex items-center gap-2 rounded-md bg-brand-action px-4 py-2.5 text-[11px] font-bold text-white transition-colors hover:bg-[#1e40af] disabled:cursor-not-allowed disabled:opacity-50"
+                className="bg-brand-action flex items-center gap-2 rounded-md px-4 py-2.5 text-[11px] font-bold text-white transition-colors hover:bg-[#1e40af] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Escalate
                 <ArrowUpRight className="size-3.5" />
@@ -889,7 +856,7 @@ export function VenueKycApplicationViewPage() {
               type="button"
               disabled={decisionDisabled}
               onClick={() => openDecisionModal(decisionTargetForTab, 'reject')}
-              className="flex items-center gap-2 rounded-md bg-brand-danger px-4 py-2.5 text-[11px] font-bold text-white transition-colors hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+              className="bg-brand-danger flex items-center gap-2 rounded-md px-4 py-2.5 text-[11px] font-bold text-white transition-colors hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
             >
               Reject Application
               <X className="size-3.5" />
@@ -905,21 +872,20 @@ export function VenueKycApplicationViewPage() {
         description={
           modalVariant === 'escalate'
             ? 'Are you sure you want to escalate this application? This post will be reviewed by the selected parties.'
-            :
-          modalVariant === 'approve'
-            ? `Are you sure you want to approve this ${modalTarget === 'banking' ? 'banking' : 'venue KYC'} section?`
-            : modalVariant === 'requestChanges'
-              ? 'Are you sure you want to Request Changes to this application? The applicant will be notified via email.'
-              : `Are you sure you want to reject this ${modalTarget === 'banking' ? 'banking' : 'venue KYC'} section?`
+            : modalVariant === 'approve'
+              ? `Are you sure you want to approve this ${modalTarget === 'banking' ? 'banking' : 'venue KYC'} section?`
+              : modalVariant === 'requestChanges'
+                ? 'Are you sure you want to Request Changes to this application? The applicant will be notified via email.'
+                : `Are you sure you want to reject this ${modalTarget === 'banking' ? 'banking' : 'venue KYC'} section?`
         }
         submitLabel={
           modalVariant === 'escalate'
             ? 'Escalate'
             : modalVariant === 'approve'
-            ? 'Approve'
-            : modalVariant === 'requestChanges'
-              ? 'Request Changes'
-              : 'Reject'
+              ? 'Approve'
+              : modalVariant === 'requestChanges'
+                ? 'Request Changes'
+                : 'Reject'
         }
         reasonOptions={
           isRejectFlow

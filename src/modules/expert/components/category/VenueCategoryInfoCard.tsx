@@ -1,42 +1,39 @@
-import { categoryManagementTheme } from "./category-management.theme";
-import {
-  CATEGORY_VIEW_PLACEHOLDER_IMAGE,
-  categoryViewTheme,
-} from "./category-view.theme";
+import { categoryManagementTheme } from './category-management.theme'
+import { CATEGORY_VIEW_PLACEHOLDER_IMAGE, categoryViewTheme } from './category-view.theme'
 
 interface Props {
   category: {
-    id: string;
-    categoryId?: string;
-    name: string;
-    image?: string;
-    status: string;
-    venues: number;
-    revenue: string;
-    createdAt: string;
-    updatedAt: string;
-    createdBy: string;
-  };
+    id: string
+    categoryId?: string
+    name: string
+    image?: string
+    status: string
+    venues: number
+    revenue: string
+    createdAt: string
+    updatedAt: string
+    createdBy: string
+  }
 }
 
 function getStatusLabel(status: string) {
-  if (status === "Accepted") return "Active";
-  return status;
+  if (status === 'Accepted') return 'Active'
+  return status
 }
 
 function getStatusClass(status: string) {
-  if (status === "Accepted") return categoryViewTheme.statusActive;
-  if (status === "Paused" || status === "Pending") {
-    return categoryViewTheme.statusPaused;
+  if (status === 'Accepted') return categoryViewTheme.statusActive
+  if (status === 'Paused' || status === 'Pending') {
+    return categoryViewTheme.statusPaused
   }
-  return categoryManagementTheme.statusDeleted;
+  return categoryManagementTheme.statusDeleted
 }
 
 const VenueCategoryInfoCard = ({ category }: Props) => {
-  const bannerSrc = category.image || CATEGORY_VIEW_PLACEHOLDER_IMAGE;
+  const bannerSrc = category.image || CATEGORY_VIEW_PLACEHOLDER_IMAGE
 
   return (
-    <div className="grid items-start grid-cols-1 gap-6 lg:grid-cols-[47%_51%]">
+    <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[47%_51%]">
       <div
         className="flex overflow-hidden rounded-xl border"
         style={{
@@ -62,16 +59,12 @@ const VenueCategoryInfoCard = ({ category }: Props) => {
           <div className="grid flex-1 grid-cols-1 gap-6 sm:grid-cols-3">
             <div>
               <p className={categoryViewTheme.labelClass}>Category Name</p>
-              <p className={`mt-2 ${categoryViewTheme.valueLgClass}`}>
-                {category.name}
-              </p>
+              <p className={`mt-2 ${categoryViewTheme.valueLgClass}`}>{category.name}</p>
             </div>
 
             <div>
               <p className={categoryViewTheme.labelClass}>Created At</p>
-              <p className={`mt-2 ${categoryViewTheme.valueClass}`}>
-                {category.createdAt}
-              </p>
+              <p className={`mt-2 ${categoryViewTheme.valueClass}`}>{category.createdAt}</p>
             </div>
 
             <div>
@@ -102,28 +95,22 @@ const VenueCategoryInfoCard = ({ category }: Props) => {
 
           <div>
             <p className={categoryViewTheme.labelClass}>Last Updated At</p>
-            <p className={`mt-2 ${categoryViewTheme.valueClass}`}>
-              {category.updatedAt}
-            </p>
+            <p className={`mt-2 ${categoryViewTheme.valueClass}`}>{category.updatedAt}</p>
           </div>
 
           <div>
             <p className={categoryViewTheme.labelClass}>Number Of Venues</p>
-            <p className={`mt-2 ${categoryViewTheme.valueLgClass}`}>
-              {category.venues}
-            </p>
+            <p className={`mt-2 ${categoryViewTheme.valueLgClass}`}>{category.venues}</p>
           </div>
 
           <div>
             <p className={categoryViewTheme.labelClass}>Revenue Generated</p>
-            <p className={`mt-2 ${categoryViewTheme.valueLgClass}`}>
-              {category.revenue}
-            </p>
+            <p className={`mt-2 ${categoryViewTheme.valueLgClass}`}>{category.revenue}</p>
           </div>
         </div>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default VenueCategoryInfoCard;
+export default VenueCategoryInfoCard

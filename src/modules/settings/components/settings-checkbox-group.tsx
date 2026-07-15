@@ -24,7 +24,10 @@ export function SettingsCheckboxGroup({
       {label ? <p className="text-sm font-medium text-white">{label}</p> : null}
       <div className="flex flex-wrap gap-x-6 gap-y-3">
         {options.map((option) => (
-          <label key={option.key} className="flex cursor-pointer items-center gap-2 text-sm text-slate-300">
+          <label
+            key={option.key}
+            className="flex cursor-pointer items-center gap-2 text-sm text-slate-300"
+          >
             <input
               type="checkbox"
               checked={values[option.key] ?? false}

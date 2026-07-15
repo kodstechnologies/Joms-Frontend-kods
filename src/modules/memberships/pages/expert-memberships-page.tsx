@@ -35,11 +35,21 @@ const PLAN_BADGE_COLORS = [
 export function ExpertMembershipsPage() {
   const navigate = useNavigate()
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
-  const [selectedSubscription, setSelectedSubscription] = useState<MembershipSubscription | null>(null)
-  const [actionType, setActionType] = useState<'upgrade' | 'downgrade' | 'extend' | 'cancel' | null>(null)
+  const [selectedSubscription, setSelectedSubscription] = useState<MembershipSubscription | null>(
+    null,
+  )
+  const [actionType, setActionType] = useState<
+    'upgrade' | 'downgrade' | 'extend' | 'cancel' | null
+  >(null)
 
-  const { searchQuery, setSearchQuery, activeStatus, setActiveStatus, currentPage, setCurrentPage } =
-    useExpertMembershipStore()
+  const {
+    searchQuery,
+    setSearchQuery,
+    activeStatus,
+    setActiveStatus,
+    currentPage,
+    setCurrentPage,
+  } = useExpertMembershipStore()
 
   const { data, isLoading } = useExpertSubscriptions({
     search: searchQuery || undefined,
@@ -56,11 +66,14 @@ export function ExpertMembershipsPage() {
   const subscriptions = data?.data?.subscriptions ?? []
   const meta = data?.data?.meta
 
-  const openAction = useCallback((subscription: MembershipSubscription, action: typeof actionType) => {
-    setSelectedSubscription(subscription)
-    setActionType(action)
-    setActiveDropdownId(null)
-  }, [])
+  const openAction = useCallback(
+    (subscription: MembershipSubscription, action: typeof actionType) => {
+      setSelectedSubscription(subscription)
+      setActionType(action)
+      setActiveDropdownId(null)
+    },
+    [],
+  )
 
   const closeAction = () => {
     setSelectedSubscription(null)
@@ -110,9 +123,10 @@ export function ExpertMembershipsPage() {
           <span
             className={cn(
               'rounded-full px-2.5 py-1 text-[11px] font-semibold capitalize',
-              row.original.status === 'active'
-                ? 'bg-emerald-500/15 text-emerald-300'
-                : 'bg-orange-500/15 text-orange-300',
+              row.original.status === 'active' && 'bg-emerald-500/15 text-emerald-300',
+              row.original.status === 'paused' && 'bg-amber-500/15 text-amber-300',
+              row.original.status === 'cancelled' && 'bg-rose-500/15 text-rose-300',
+              row.original.status === 'expired' && 'bg-blue-500/15 text-blue-300',
             )}
           >
             {row.original.status}
@@ -179,26 +193,40 @@ export function ExpertMembershipsPage() {
 
       <div className="flex flex-wrap gap-2 border-b border-white/10 pb-4">
         <TabLink to="/memberships/plans">Membership Plans</TabLink>
-        <TabLink active to="/memberships/experts">Expert Memberships Management</TabLink>
+        <TabLink active to="/memberships/experts">
+          Expert Memberships Management
+        </TabLink>
       </div>
 
       <div className="flex flex-wrap gap-2">
-        {(['all', 'active', 'expired'] as const).map((status) => (
-          <button
-            key={status}
-            type="button"
-            onClick={() => setActiveStatus(status)}
-            className={cn(
-              'rounded-full border px-4 py-2 text-xs font-medium capitalize',
-              activeStatus === status
-                ? 'border-amber-400/40 bg-amber-400/10 text-amber-200'
-                : 'border-white/10 text-slate-400',
-            )}
-          >
-            {status === 'all' ? 'All' : status}
-            {status !== 'all' && meta?.counts ? ` (${meta.counts[status]})` : ''}
-          </button>
-        ))}
+        {(
+          [
+            { label: 'All', value: 'all' as const },
+            { label: 'Active', value: 'active' as const },
+            { label: 'Paused', value: 'paused' as const },
+            { label: 'Cancelled', value: 'cancelled' as const },
+            { label: 'Expired', value: 'expired' as const },
+          ] as const
+        ).map((filter) => {
+          const countLabel = filter.value === 'all' ? '' : ` (${meta?.counts?.[filter.value] ?? 0})`
+
+          return (
+            <button
+              key={filter.value}
+              type="button"
+              onClick={() => setActiveStatus(filter.value)}
+              className={cn(
+                'rounded-full border px-4 py-2 text-xs font-medium',
+                activeStatus === filter.value
+                  ? 'border-amber-400/40 bg-amber-400/10 text-amber-200'
+                  : 'border-white/10 text-slate-400',
+              )}
+            >
+              {filter.label}
+              {countLabel}
+            </button>
+          )
+        })}
       </div>
 
       <DataTable

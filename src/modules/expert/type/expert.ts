@@ -18,12 +18,12 @@ export interface Expert {
 export interface ExpertResponse {
   data: Expert[]
   meta?: {
-     counts: {
-    approvalsPending: number
-    reportedExperts: number
-    suspendedExperts: number
-    deletedExperts: number
-  }
+    counts: {
+      approvalsPending: number
+      reportedExperts: number
+      suspendedExperts: number
+      deletedExperts: number
+    }
     pagination: {
       page: number
       limit: number

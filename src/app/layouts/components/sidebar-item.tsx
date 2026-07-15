@@ -35,13 +35,7 @@ export function SidebarItem({
   onNavigate,
   compact = false,
 }: SidebarItemProps) {
-  const paddingLeft = compact
-    ? 'px-0'
-    : depth === 0
-      ? 'pl-3'
-      : depth === 1
-        ? 'pl-8'
-        : 'pl-11'
+  const paddingLeft = compact ? 'px-0' : depth === 0 ? 'pl-3' : depth === 1 ? 'pl-8' : 'pl-11'
 
   const renderContent = (isActive?: boolean) => {
     const resolvedActive = isActive ?? active
@@ -54,7 +48,7 @@ export function SidebarItem({
           compact ? 'justify-center py-1.5' : 'py-2 pr-3',
           paddingLeft,
           showCompactActive
-            ? 'mx-auto size-10 rounded-xl bg-white text-brand-text-dark shadow-sm'
+            ? 'text-brand-text-dark mx-auto size-10 rounded-xl bg-white shadow-sm'
             : compact
               ? 'mx-auto size-10 text-white/55'
               : resolvedActive
@@ -89,9 +83,12 @@ export function SidebarItem({
           <span
             className={cn(
               'rounded-full border px-2 py-0.5 text-[11px] font-semibold',
-              badge.variant === 'success' && 'border-brand-success/30 bg-brand-success/10 text-brand-success',
-              badge.variant === 'warning' && 'border-brand-accent/30 bg-brand-accent/10 text-brand-accent',
-              (!badge.variant || badge.variant === 'default') && 'border-white/10 bg-white/10 text-white/60',
+              badge.variant === 'success' &&
+                'border-brand-success/30 bg-brand-success/10 text-brand-success',
+              badge.variant === 'warning' &&
+                'border-brand-accent/30 bg-brand-accent/10 text-brand-accent',
+              (!badge.variant || badge.variant === 'default') &&
+                'border-white/10 bg-white/10 text-white/60',
             )}
           >
             {badge.label}
@@ -99,7 +96,10 @@ export function SidebarItem({
         ) : null}
         {!compact && expandable ? (
           <ChevronDown
-            className={cn('size-4 shrink-0 transition-transform', expanded ? 'rotate-180' : 'rotate-0')}
+            className={cn(
+              'size-4 shrink-0 transition-transform',
+              expanded ? 'rotate-180' : 'rotate-0',
+            )}
           />
         ) : null}
       </div>
@@ -112,7 +112,7 @@ export function SidebarItem({
         to={to}
         onClick={onNavigate}
         aria-label={compact ? label : undefined}
-        className="block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent/30"
+        className="focus-visible:ring-brand-accent/30 block focus-visible:ring-2 focus-visible:outline-none"
       >
         {({ isActive }) => renderContent(isActive)}
       </NavLink>
@@ -139,7 +139,7 @@ export function SidebarItem({
     <button
       type="button"
       onClick={onToggle}
-      className="w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent/30"
+      className="focus-visible:ring-brand-accent/30 w-full text-left focus-visible:ring-2 focus-visible:outline-none"
       aria-label={compact ? label : undefined}
     >
       {renderContent()}

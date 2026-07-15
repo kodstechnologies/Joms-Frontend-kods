@@ -20,7 +20,9 @@ export function VenueSettingsPanel({ value, onChange }: VenueSettingsPanelProps)
     <div className="space-y-5">
       <div>
         <h2 className="text-lg font-semibold text-white">Venue Management Settings</h2>
-        <p className="text-sm text-slate-400">Configure venue controls, booking rules, and pricing</p>
+        <p className="text-sm text-slate-400">
+          Configure venue controls, booking rules, and pricing
+        </p>
       </div>
 
       <SettingsSectionCard

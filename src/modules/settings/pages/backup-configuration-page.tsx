@@ -1,4 +1,3 @@
-import { useEffect, useState } from 'react'
 import { ArrowLeft } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
@@ -7,11 +6,11 @@ import { BackupConfigurationPanel } from '../components/backup-configuration-pan
 import { SettingsFooterActions } from '../components/settings-footer-actions'
 import {
   useResetSettings,
+  useSettingsDraft,
   useSettingsModule,
   useUpdateSettings,
 } from '../hooks/use-settings'
 import { backupDefaults } from '../mock/settings.defaults'
-import type { BackupSettings } from '../types/settings'
 import { SectionHeader } from '@/shared/components/dashboard/section-header'
 
 export function BackupConfigurationPage() {
@@ -19,11 +18,7 @@ export function BackupConfigurationPage() {
   const backupQuery = useSettingsModule('backup')
   const updateBackup = useUpdateSettings('backup')
   const resetBackup = useResetSettings('backup')
-  const [backupConfig, setBackupConfig] = useState<BackupSettings>(backupDefaults)
-
-  useEffect(() => {
-    if (backupQuery.data?.config) setBackupConfig(backupQuery.data.config)
-  }, [backupQuery.data])
+  const [backupConfig, setBackupConfig] = useSettingsDraft(backupQuery.data, backupDefaults)
 
   const handleSave = async () => {
     try {

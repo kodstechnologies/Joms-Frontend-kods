@@ -1,5 +1,5 @@
-import { CategoryAdvancedFilter } from "../../components/category";
+import { CategoryAdvancedFilter } from '../../components/category'
 
 export function ServiceCategoryFilterPage() {
-  return <CategoryAdvancedFilter />;
+  return <CategoryAdvancedFilter />
 }

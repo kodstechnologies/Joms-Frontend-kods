@@ -52,7 +52,11 @@ export function ExecutiveOverviewPage() {
             onClick: () => toast.message('Metrics configuration coming soon'),
             variant: 'default',
           },
-          { label: 'Export Data', onClick: () => toast.message('Export coming soon'), variant: 'secondary' },
+          {
+            label: 'Export Data',
+            onClick: () => toast.message('Export coming soon'),
+            variant: 'secondary',
+          },
         ]}
       />
 
@@ -67,9 +71,12 @@ export function ExecutiveOverviewPage() {
           isLoading={isLoading}
           isEmpty={!revenueMemberGrowthMock.length}
         >
-          <div className="h-[220px] w-full min-h-[220px] sm:h-[260px]">
+          <div className="h-[220px] min-h-[220px] w-full sm:h-[260px]">
             <ResponsiveContainer width="100%" height="100%" minHeight={220}>
-              <LineChart data={revenueMemberGrowthMock} margin={{ left: 8, right: 8, top: 8, bottom: 8 }}>
+              <LineChart
+                data={revenueMemberGrowthMock}
+                margin={{ left: 8, right: 8, top: 8, bottom: 8 }}
+              >
                 <CartesianGrid stroke="rgba(255,255,255,0.05)" vertical={false} />
                 <XAxis
                   dataKey="month"
@@ -87,8 +94,20 @@ export function ExecutiveOverviewPage() {
                   labelStyle={{ color: 'rgba(226,232,240,0.95)', fontWeight: 600 }}
                 />
                 <Legend wrapperStyle={{ color: 'rgba(148,163,184,0.85)' }} />
-                <Line type="monotone" dataKey="newMembers" stroke="#60A5FA" strokeWidth={2} dot={false} />
-                <Line type="monotone" dataKey="revenue" stroke="#FBBF24" strokeWidth={2} dot={false} />
+                <Line
+                  type="monotone"
+                  dataKey="newMembers"
+                  stroke="#60A5FA"
+                  strokeWidth={2}
+                  dot={false}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="revenue"
+                  stroke="#FBBF24"
+                  strokeWidth={2}
+                  dot={false}
+                />
               </LineChart>
             </ResponsiveContainer>
           </div>
@@ -100,9 +119,12 @@ export function ExecutiveOverviewPage() {
           isLoading={isLoading}
           isEmpty={!membershipTrendsMock.length}
         >
-          <div className="h-[220px] w-full min-h-[220px] sm:h-[260px]">
+          <div className="h-[220px] min-h-[220px] w-full sm:h-[260px]">
             <ResponsiveContainer width="100%" height="100%" minHeight={220}>
-              <BarChart data={membershipTrendsMock} margin={{ left: 8, right: 8, top: 8, bottom: 8 }}>
+              <BarChart
+                data={membershipTrendsMock}
+                margin={{ left: 8, right: 8, top: 8, bottom: 8 }}
+              >
                 <CartesianGrid stroke="rgba(255,255,255,0.05)" vertical={false} />
                 <XAxis
                   dataKey="month"
@@ -110,10 +132,12 @@ export function ExecutiveOverviewPage() {
                   axisLine={false}
                   tick={{ fill: 'rgba(148,163,184,0.85)', fontSize: 12 }}
                 />
-                <YAxis tickLine={false} axisLine={false} tick={{ fill: 'rgba(148,163,184,0.85)', fontSize: 12 }} />
-                <Tooltip
-                  contentStyle={tooltipStyle}
+                <YAxis
+                  tickLine={false}
+                  axisLine={false}
+                  tick={{ fill: 'rgba(148,163,184,0.85)', fontSize: 12 }}
                 />
+                <Tooltip contentStyle={tooltipStyle} />
                 <Legend wrapperStyle={{ color: 'rgba(148,163,184,0.85)' }} />
                 <Bar dataKey="active" fill="#60A5FA" radius={[6, 6, 0, 0]} />
                 <Bar dataKey="expired" fill="#F87171" radius={[6, 6, 0, 0]} />
@@ -129,15 +153,28 @@ export function ExecutiveOverviewPage() {
           isLoading={isLoading}
           isEmpty={!conversionFunnelMock.length}
         >
-          <div className="h-[220px] w-full min-h-[220px] sm:h-[260px]">
+          <div className="h-[220px] min-h-[220px] w-full sm:h-[260px]">
             <ResponsiveContainer width="100%" height="100%" minHeight={220}>
-              <BarChart data={conversionFunnelMock} layout="vertical" margin={{ left: 12, right: 12, top: 8, bottom: 8 }}>
+              <BarChart
+                data={conversionFunnelMock}
+                layout="vertical"
+                margin={{ left: 12, right: 12, top: 8, bottom: 8 }}
+              >
                 <CartesianGrid stroke="rgba(255,255,255,0.05)" horizontal={false} />
-                <XAxis type="number" tickLine={false} axisLine={false} tick={{ fill: 'rgba(148,163,184,0.85)', fontSize: 12 }} />
-                <YAxis type="category" dataKey="stage" tickLine={false} axisLine={false} tick={{ fill: 'rgba(148,163,184,0.85)', fontSize: 12 }} />
-                <Tooltip
-                  contentStyle={tooltipStyle}
+                <XAxis
+                  type="number"
+                  tickLine={false}
+                  axisLine={false}
+                  tick={{ fill: 'rgba(148,163,184,0.85)', fontSize: 12 }}
                 />
+                <YAxis
+                  type="category"
+                  dataKey="stage"
+                  tickLine={false}
+                  axisLine={false}
+                  tick={{ fill: 'rgba(148,163,184,0.85)', fontSize: 12 }}
+                />
+                <Tooltip contentStyle={tooltipStyle} />
                 <Bar dataKey="value" fill="#3B82F6" radius={[10, 10, 10, 10]} />
               </BarChart>
             </ResponsiveContainer>
@@ -150,12 +187,10 @@ export function ExecutiveOverviewPage() {
           isLoading={isLoading}
           isEmpty={!serviceDistributionMock.length}
         >
-          <div className="h-[220px] w-full min-h-[220px] sm:h-[260px]">
+          <div className="h-[220px] min-h-[220px] w-full sm:h-[260px]">
             <ResponsiveContainer width="100%" height="100%" minHeight={220}>
               <PieChart>
-                <Tooltip
-                  contentStyle={tooltipStyle}
-                />
+                <Tooltip contentStyle={tooltipStyle} />
                 <Legend wrapperStyle={{ color: 'rgba(148,163,184,0.85)' }} />
                 <Pie
                   data={serviceDistributionMock}

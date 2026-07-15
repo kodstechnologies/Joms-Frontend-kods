@@ -46,12 +46,17 @@ export function CreateListingWizard({
   className,
 }: CreateListingWizardProps) {
   return (
-    <div className={cn('mx-auto flex w-full max-w-[1240px] flex-col gap-7 px-4 pb-8 text-white', className)}>
+    <div
+      className={cn(
+        'mx-auto flex w-full max-w-[1240px] flex-col gap-7 px-4 pb-8 text-white',
+        className,
+      )}
+    >
       <div className="flex flex-col gap-4 pt-1">
         <button
           type="button"
           onClick={onBack}
-          className="group flex w-fit items-center gap-2 text-white transition-colors hover:text-brand-accent"
+          className="group hover:text-brand-accent flex w-fit items-center gap-2 text-white transition-colors"
         >
           <ChevronLeft className="size-5 transition-transform group-hover:-translate-x-1" />
           <h1 className="text-[20px] font-bold tracking-tight">{title}</h1>
@@ -97,7 +102,7 @@ export function CreateListingWizard({
                   <p className="text-[12px] font-bold tracking-tight text-white transition-colors">
                     {step.title}
                   </p>
-                  <p className="whitespace-nowrap text-[11px] font-medium text-[#777777]">
+                  <p className="text-[11px] font-medium whitespace-nowrap text-[#777777]">
                     {step.description}
                   </p>
                 </div>

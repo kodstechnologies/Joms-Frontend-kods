@@ -17,7 +17,12 @@ export const byExpertsSection: FilterSectionConfig = {
   defaultExpanded: true,
   fields: [
     { id: 'expertId', label: 'Expert ID', type: 'text', placeholder: 'Enter Expert ID' },
-    { id: 'organizationId', label: 'Organization ID', type: 'text', placeholder: 'Enter Organization ID' },
+    {
+      id: 'organizationId',
+      label: 'Organization ID',
+      type: 'text',
+      placeholder: 'Enter Organization ID',
+    },
     { id: 'category', label: 'Category', type: 'search', placeholder: 'Search by name' },
     { id: 'profession', label: 'Profession', type: 'search', placeholder: 'Search by name' },
     {
@@ -221,7 +226,12 @@ export const byServicesSection: FilterSectionConfig = {
         { label: 'Pending Approval', value: 'pending-approval' },
       ],
     },
-    { id: 'servicePromoted', label: 'Service Promoted', type: 'checkbox-group', options: yesNoOptions },
+    {
+      id: 'servicePromoted',
+      label: 'Service Promoted',
+      type: 'checkbox-group',
+      options: yesNoOptions,
+    },
     {
       id: 'pricingModel',
       label: 'Service Pricing Model',
@@ -295,7 +305,12 @@ export const byServicesSection: FilterSectionConfig = {
       fromPlaceholder: 'Enter Number',
       toPlaceholder: 'Enter Number',
     },
-    { id: 'discountApplied', label: 'Discount Applied', type: 'checkbox-group', options: yesNoOptions },
+    {
+      id: 'discountApplied',
+      label: 'Discount Applied',
+      type: 'checkbox-group',
+      options: yesNoOptions,
+    },
   ],
 }
 

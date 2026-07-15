@@ -6,15 +6,15 @@ import { toast } from 'sonner'
 
 import { useExperts, useRestoreExpert } from '../../hooks/use-expert'
 import type { Expert } from '../../type/expert'
+import { ExpertListHeader } from './expert-list-shared'
 import {
   createExpertBaseColumns,
   createExpertDeletedAtColumn,
   createExpertReasonColumn,
   createExpertSelectColumn,
   createExpertServiceTypeColumn,
-  ExpertListHeader,
   useExpertListSelection,
-} from './expert-list-shared'
+} from './expert-list-shared-utils'
 import { DataTable } from '@/shared/components/table/data-table'
 import {
   TableActionsDropdown,
@@ -67,9 +67,7 @@ export function ExpertDeletedExpertsPage() {
             <TableActionsDropdown
               label={`Open actions for ${expert.name}`}
               isOpen={isOpen}
-              onOpenChange={(open) =>
-                setActiveDropdownId(open ? expert.expertId : null)
-              }
+              onOpenChange={(open) => setActiveDropdownId(open ? expert.expertId : null)}
               menuWidth={192}
             >
               <TableActionsItem
@@ -118,10 +116,7 @@ export function ExpertDeletedExpertsPage() {
 
   return (
     <div className="flex flex-col gap-5 md:gap-6">
-      <ExpertListHeader
-        title="Deleted Experts"
-        breadcrumb="User Management / Deleted Experts"
-      />
+      <ExpertListHeader title="Deleted Experts" breadcrumb="User Management / Deleted Experts" />
 
       <DataTable
         columns={columns}

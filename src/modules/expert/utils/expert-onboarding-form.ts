@@ -140,9 +140,7 @@ export const buildBasicProfileFormData = (form: ExpertOnboardingFormData): FormD
   return formData
 }
 
-export const buildIdentityVerificationFormData = (
-  form: ExpertOnboardingFormData,
-): FormData => {
+export const buildIdentityVerificationFormData = (form: ExpertOnboardingFormData): FormData => {
   const formData = new FormData()
 
   formData.append('idType', form.idType)

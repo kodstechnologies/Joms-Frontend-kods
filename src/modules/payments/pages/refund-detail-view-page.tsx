@@ -10,7 +10,15 @@ import { getRefundDetailById } from '@/modules/payments/mock/refund-detail.mock'
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
 
-function InnerCard({ title, icon, children }: { title: string; icon?: ReactNode; children: ReactNode }) {
+function InnerCard({
+  title,
+  icon,
+  children,
+}: {
+  title: string
+  icon?: ReactNode
+  children: ReactNode
+}) {
   return (
     <section className="rounded-xl border border-white/[0.06] bg-[#121212] p-5">
       <div className="mb-3 flex items-center gap-2">
@@ -35,7 +43,9 @@ function DetailRow({
   return (
     <div className="flex items-center justify-between gap-4 border-b border-white/5 py-3 last:border-b-0">
       <span className="text-[12px] text-[#888888]">{label}</span>
-      <span className={cn('max-w-[60%] text-right text-[12px] font-medium text-white', valueClassName)}>
+      <span
+        className={cn('max-w-[60%] text-right text-[12px] font-medium text-white', valueClassName)}
+      >
         {value}
       </span>
     </div>
@@ -95,16 +105,28 @@ export function RefundDetailViewPage() {
         <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
           <InnerCard title="Refund Information">
             <DetailRow label="Refund ID" value={detail.refundInformationPrimary.refundId} />
-            <DetailRow label="Transaction ID" value={detail.refundInformationPrimary.transactionId} />
-            <DetailRow label="Requested Date" value={detail.refundInformationPrimary.requestedDate} />
+            <DetailRow
+              label="Transaction ID"
+              value={detail.refundInformationPrimary.transactionId}
+            />
+            <DetailRow
+              label="Requested Date"
+              value={detail.refundInformationPrimary.requestedDate}
+            />
             <DetailRow label="Status" value={<PendingBadge />} />
           </InnerCard>
 
           <InnerCard title="Refund Information">
             <DetailRow label="Requested By" value={detail.refundInformationSecondary.requestedBy} />
             <DetailRow label="Service" value={detail.refundInformationSecondary.service} />
-            <DetailRow label="Refund Amount" value={detail.refundInformationSecondary.refundAmount} />
-            <DetailRow label="Payment Method" value={detail.refundInformationSecondary.paymentMethod} />
+            <DetailRow
+              label="Refund Amount"
+              value={detail.refundInformationSecondary.refundAmount}
+            />
+            <DetailRow
+              label="Payment Method"
+              value={detail.refundInformationSecondary.paymentMethod}
+            />
           </InnerCard>
 
           <InnerCard

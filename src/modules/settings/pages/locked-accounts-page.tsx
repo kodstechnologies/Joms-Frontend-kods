@@ -183,7 +183,9 @@ export function LockedAccountsPage() {
         ]}
       />
 
-      <div className={cn(uiTokens.radiusCard, uiTokens.borderSubtle, 'bg-brand-surface p-4 sm:p-5')}>
+      <div
+        className={cn(uiTokens.radiusCard, uiTokens.borderSubtle, 'bg-brand-surface p-4 sm:p-5')}
+      >
         <DataTable
           columns={columns}
           data={rows}

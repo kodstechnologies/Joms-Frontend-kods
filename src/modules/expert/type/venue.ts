@@ -1,10 +1,4 @@
-export type VenueStatus =
-  | 'live'
-  | 'in_review'
-  | 'suspended'
-  | 'deleted'
-  | 'pending'
-  | 'rejected'
+export type VenueStatus = 'live' | 'in_review' | 'suspended' | 'deleted' | 'pending' | 'rejected'
 
 export type VenueRawStatus = 'active' | 'inactive'
 

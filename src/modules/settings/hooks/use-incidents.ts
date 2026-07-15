@@ -30,8 +30,15 @@ export const useAssignIncident = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: ({ id, department, assignee }: { id: string; department: string; assignee: string }) =>
-      assignIncident(id, { department, assignee }),
+    mutationFn: ({
+      id,
+      department,
+      assignee,
+    }: {
+      id: string
+      department: string
+      assignee: string
+    }) => assignIncident(id, { department, assignee }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: incidentKeys.all })
     },

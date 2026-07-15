@@ -50,7 +50,10 @@ export type LocationFilterValue = {
   city: string
 }
 
-export type FilterValues = Record<string, string | string[] | RangeFilterValue | LocationFilterValue>
+export type FilterValues = Record<
+  string,
+  string | string[] | RangeFilterValue | LocationFilterValue
+>
 
 export type ModuleFilterKey =
   | 'expert-management'

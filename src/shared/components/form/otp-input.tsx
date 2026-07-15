@@ -29,23 +29,26 @@ export function OtpInput({ value, onChange, length = 6, className }: OtpInputPro
             onChange(next.join('').replace(/\s/g, ''))
 
             if (nextChar) {
-              const nextInput = document.getElementById(`${id}-${index + 1}`) as HTMLInputElement | null
+              const nextInput = document.getElementById(
+                `${id}-${index + 1}`,
+              ) as HTMLInputElement | null
               nextInput?.focus()
             }
           }}
           onKeyDown={(event) => {
             if (event.key === 'Backspace' && !chars[index].trim()) {
-              const prevInput = document.getElementById(`${id}-${index - 1}`) as HTMLInputElement | null
+              const prevInput = document.getElementById(
+                `${id}-${index - 1}`,
+              ) as HTMLInputElement | null
               prevInput?.focus()
             }
           }}
           id={`${id}-${index}`}
           className={cn(
-            'h-12 w-10 rounded-brand-md border border-white/10 bg-brand-surface text-center text-lg font-semibold text-brand-text outline-none focus:border-brand-accent/50 focus:ring-2 focus:ring-brand-accent/20',
+            'rounded-brand-md bg-brand-surface text-brand-text focus:border-brand-accent/50 focus:ring-brand-accent/20 h-12 w-10 border border-white/10 text-center text-lg font-semibold outline-none focus:ring-2',
           )}
         />
       ))}
     </div>
   )
 }
-

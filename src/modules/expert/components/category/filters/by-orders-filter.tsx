@@ -1,25 +1,20 @@
 export function ByOrdersFilter() {
   return (
-   <section className="rounded-xl border border-white/10 bg-brand-surface-2 p-8 space-y-8">
-
+    <section className="bg-brand-surface-2 space-y-8 rounded-xl border border-white/10 p-8">
       {/* Header */}
 
       <div className="flex items-center justify-between">
-        <h2 className="text-sm font-medium text-brand-text">
-          By Orders
-        </h2>
+        <h2 className="text-brand-text text-sm font-medium">By Orders</h2>
 
-        <button className="text-xl text-brand-text">+</button>
+        <button className="text-brand-text text-xl">+</button>
       </div>
 
       {/* Service Order Status */}
 
       <div className="space-y-3">
-        <h3 className="text-sm font-medium text-brand-text">
-          Service Order Status
-        </h3>
+        <h3 className="text-brand-text text-sm font-medium">Service Order Status</h3>
 
-        <div className="flex flex-wrap gap-8 text-sm text-brand-text">
+        <div className="text-brand-text flex flex-wrap gap-8 text-sm">
           <label className="flex items-center gap-2">
             <input type="checkbox" /> Completed
           </label>
@@ -41,11 +36,11 @@ export function ByOrdersFilter() {
       {/* Delays Beyond SLA */}
 
       <div className="space-y-3">
-        <h3 className="text-sm font-medium text-brand-text">
+        <h3 className="text-brand-text text-sm font-medium">
           Delays Beyond SLA (Service Timelines Extended)
         </h3>
 
-        <div className="flex gap-8 text-sm text-brand-text">
+        <div className="text-brand-text flex gap-8 text-sm">
           <label className="flex items-center gap-2">
             <input type="checkbox" /> Yes
           </label>
@@ -58,11 +53,9 @@ export function ByOrdersFilter() {
       {/* Payment Status */}
 
       <div className="space-y-3">
-        <h3 className="text-sm font-medium text-brand-text">
-          Payment Status
-        </h3>
+        <h3 className="text-brand-text text-sm font-medium">Payment Status</h3>
 
-        <div className="flex flex-wrap gap-8 text-sm text-brand-text">
+        <div className="text-brand-text flex flex-wrap gap-8 text-sm">
           <label className="flex items-center gap-2">
             <input type="checkbox" /> Paid
           </label>
@@ -84,11 +77,9 @@ export function ByOrdersFilter() {
       {/* Payment Method */}
 
       <div className="space-y-3">
-        <h3 className="text-sm font-medium text-brand-text">
-          Payment Method
-        </h3>
+        <h3 className="text-brand-text text-sm font-medium">Payment Method</h3>
 
-        <div className="flex flex-wrap gap-8 text-sm text-brand-text">
+        <div className="text-brand-text flex flex-wrap gap-8 text-sm">
           <label className="flex items-center gap-2">
             <input type="checkbox" /> Card
           </label>
@@ -104,11 +95,9 @@ export function ByOrdersFilter() {
       {/* Payout Status */}
 
       <div className="space-y-3">
-        <h3 className="text-sm font-medium text-brand-text">
-          Payout Status
-        </h3>
+        <h3 className="text-brand-text text-sm font-medium">Payout Status</h3>
 
-        <div className="flex flex-wrap gap-8 text-sm text-brand-text">
+        <div className="text-brand-text flex flex-wrap gap-8 text-sm">
           <label className="flex items-center gap-2">
             <input type="checkbox" /> Pending
           </label>
@@ -130,11 +119,9 @@ export function ByOrdersFilter() {
       {/* Dispute Status */}
 
       <div className="space-y-3">
-        <h3 className="text-sm font-medium text-brand-text">
-          Dispute Status
-        </h3>
+        <h3 className="text-brand-text text-sm font-medium">Dispute Status</h3>
 
-        <div className="flex gap-8 text-sm text-brand-text">
+        <div className="text-brand-text flex gap-8 text-sm">
           <label className="flex items-center gap-2">
             <input type="checkbox" /> Pending
           </label>
@@ -147,11 +134,9 @@ export function ByOrdersFilter() {
       {/* Refund Status */}
 
       <div className="space-y-3">
-        <h3 className="text-sm font-medium text-brand-text">
-          Refund Status
-        </h3>
+        <h3 className="text-brand-text text-sm font-medium">Refund Status</h3>
 
-        <div className="flex flex-wrap gap-8 text-sm text-brand-text">
+        <div className="text-brand-text flex flex-wrap gap-8 text-sm">
           <label className="flex items-center gap-2">
             <input type="checkbox" /> Pending
           </label>
@@ -173,11 +158,11 @@ export function ByOrdersFilter() {
       {/* Risk */}
 
       <div className="space-y-3">
-        <h3 className="text-sm font-medium text-brand-text">
+        <h3 className="text-brand-text text-sm font-medium">
           Risk based (Service Timelines Extended)
         </h3>
 
-        <div className="flex gap-8 text-sm text-brand-text">
+        <div className="text-brand-text flex gap-8 text-sm">
           <label className="flex items-center gap-2">
             <input type="checkbox" /> SEV1
           </label>
@@ -187,5 +172,5 @@ export function ByOrdersFilter() {
         </div>
       </div>
     </section>
-  );
+  )
 }

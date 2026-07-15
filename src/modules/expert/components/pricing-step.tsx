@@ -33,9 +33,7 @@ export const PricingStep = ({ venueData, setVenueData }: PricingStepProps) => {
       weeklyAvailability: (prev.weeklyAvailability?.length
         ? prev.weeklyAvailability
         : createDefaultWeeklyAvailability()
-      ).map((entry, i) =>
-        i === index ? { ...entry, [field]: value } : entry,
-      ),
+      ).map((entry, i) => (i === index ? { ...entry, [field]: value } : entry)),
     }))
   }
 
@@ -49,11 +47,7 @@ export const PricingStep = ({ venueData, setVenueData }: PricingStepProps) => {
     }))
   }
 
-  const updateBlockedDate = (
-    index: number,
-    field: keyof BlockedDateEntry,
-    value: string,
-  ) => {
+  const updateBlockedDate = (index: number, field: keyof BlockedDateEntry, value: string) => {
     setVenueData((prev) => ({
       ...prev,
       blockedDates: (prev.blockedDates || []).map((entry, i) =>
@@ -77,15 +71,11 @@ export const PricingStep = ({ venueData, setVenueData }: PricingStepProps) => {
         <div className="animate-in fade-in slide-in-from-right-4 rounded-lg border border-white/5 bg-[#151515] p-6 shadow-xl duration-300">
           <h2 className="text-lg font-semibold text-white">Set Pricing</h2>
 
-          <p className="mb-8 text-sm text-slate-400">
-            Provide details about your service offering
-          </p>
+          <p className="mb-8 text-sm text-slate-400">Provide details about your service offering</p>
 
           <div className="grid grid-cols-2 gap-6">
             <div>
-              <label className="mb-2 block text-sm font-medium text-white">
-                Service *
-              </label>
+              <label className="mb-2 block text-sm font-medium text-white">Service *</label>
 
               <select
                 value={venueData.serviceType || 'entire_space'}
@@ -103,9 +93,7 @@ export const PricingStep = ({ venueData, setVenueData }: PricingStepProps) => {
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-medium text-white">
-                Set Days *
-              </label>
+              <label className="mb-2 block text-sm font-medium text-white">Set Days *</label>
 
               <input
                 type="number"
@@ -122,9 +110,7 @@ export const PricingStep = ({ venueData, setVenueData }: PricingStepProps) => {
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-medium text-white">
-                Weekday *
-              </label>
+              <label className="mb-2 block text-sm font-medium text-white">Weekday *</label>
 
               <input
                 type="text"
@@ -141,9 +127,7 @@ export const PricingStep = ({ venueData, setVenueData }: PricingStepProps) => {
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-medium text-white">
-                Weekend *
-              </label>
+              <label className="mb-2 block text-sm font-medium text-white">Weekend *</label>
 
               <input
                 type="text"
@@ -169,10 +153,7 @@ export const PricingStep = ({ venueData, setVenueData }: PricingStepProps) => {
                   Set Availability
                   <span className="ml-2 text-xs text-slate-500">
                     ({enabledDaysCount} days
-                    {blockedDates.length > 0
-                      ? `, ${blockedDates.length} blocked`
-                      : ''}
-                    )
+                    {blockedDates.length > 0 ? `, ${blockedDates.length} blocked` : ''})
                   </span>
                 </span>
 
@@ -188,9 +169,7 @@ export const PricingStep = ({ venueData, setVenueData }: PricingStepProps) => {
           <div className="max-h-[90vh] w-[650px] overflow-y-auto rounded-2xl bg-[#121212]">
             <div className="flex items-center justify-between border-b border-slate-800 p-6">
               <div>
-                <h2 className="text-2xl font-semibold text-white">
-                  Schedule Date & Time
-                </h2>
+                <h2 className="text-2xl font-semibold text-white">Schedule Date & Time</h2>
 
                 <p className="mt-1 text-sm text-slate-400">
                   Set time & date regarding availability
@@ -212,17 +191,12 @@ export const PricingStep = ({ venueData, setVenueData }: PricingStepProps) => {
 
                 <div className="space-y-3">
                   {weeklyAvailability.map((entry, index) => (
-                    <div
-                      key={entry.day}
-                      className="grid grid-cols-3 items-center gap-4"
-                    >
+                    <div key={entry.day} className="grid grid-cols-3 items-center gap-4">
                       <label className="flex items-center gap-2 text-sm text-white">
                         <input
                           type="checkbox"
                           checked={entry.enabled}
-                          onChange={(e) =>
-                            updateDay(index, 'enabled', e.target.checked)
-                          }
+                          onChange={(e) => updateDay(index, 'enabled', e.target.checked)}
                         />
                         {entry.day}
                       </label>
@@ -231,9 +205,7 @@ export const PricingStep = ({ venueData, setVenueData }: PricingStepProps) => {
                         type="time"
                         value={entry.from}
                         disabled={!entry.enabled}
-                        onChange={(e) =>
-                          updateDay(index, 'from', e.target.value)
-                        }
+                        onChange={(e) => updateDay(index, 'from', e.target.value)}
                         className="rounded bg-black px-2 py-1 text-xs text-white disabled:opacity-40"
                       />
 
@@ -251,9 +223,7 @@ export const PricingStep = ({ venueData, setVenueData }: PricingStepProps) => {
 
               <div>
                 <div className="mb-3 flex items-center justify-between">
-                  <h3 className="text-sm font-semibold text-white">
-                    Unavailability
-                  </h3>
+                  <h3 className="text-sm font-semibold text-white">Unavailability</h3>
                   <button
                     type="button"
                     onClick={addBlockedDate}
@@ -270,48 +240,33 @@ export const PricingStep = ({ venueData, setVenueData }: PricingStepProps) => {
                 ) : (
                   <div className="space-y-3">
                     {blockedDates.map((entry, index) => (
-                      <div
-                        key={index}
-                        className="flex items-end gap-3 rounded-lg bg-black p-3"
-                      >
+                      <div key={index} className="flex items-end gap-3 rounded-lg bg-black p-3">
                         <div>
-                          <label className="mb-1 block text-xs text-slate-400">
-                            Date
-                          </label>
+                          <label className="mb-1 block text-xs text-slate-400">Date</label>
                           <input
                             type="date"
                             value={entry.date}
-                            onChange={(e) =>
-                              updateBlockedDate(index, 'date', e.target.value)
-                            }
+                            onChange={(e) => updateBlockedDate(index, 'date', e.target.value)}
                             className="rounded bg-[#1a1a1a] px-3 py-2 text-xs text-white"
                           />
                         </div>
 
                         <div>
-                          <label className="mb-1 block text-xs text-slate-400">
-                            Time
-                          </label>
+                          <label className="mb-1 block text-xs text-slate-400">Time</label>
                           <input
                             type="time"
                             value={entry.from}
-                            onChange={(e) =>
-                              updateBlockedDate(index, 'from', e.target.value)
-                            }
+                            onChange={(e) => updateBlockedDate(index, 'from', e.target.value)}
                             className="rounded bg-[#1a1a1a] px-3 py-2 text-xs text-white"
                           />
                         </div>
 
                         <div>
-                          <label className="mb-1 block text-xs text-slate-400">
-                            To
-                          </label>
+                          <label className="mb-1 block text-xs text-slate-400">To</label>
                           <input
                             type="time"
                             value={entry.to}
-                            onChange={(e) =>
-                              updateBlockedDate(index, 'to', e.target.value)
-                            }
+                            onChange={(e) => updateBlockedDate(index, 'to', e.target.value)}
                             className="rounded bg-[#1a1a1a] px-3 py-2 text-xs text-white"
                           />
                         </div>
@@ -339,7 +294,7 @@ export const PricingStep = ({ venueData, setVenueData }: PricingStepProps) => {
 
                 <button
                   onClick={() => setShowAvailabilityModal(false)}
-                  className="w-40 rounded-lg bg-brand-accent py-3 text-sm font-medium text-brand-text-dark"
+                  className="bg-brand-accent text-brand-text-dark w-40 rounded-lg py-3 text-sm font-medium"
                 >
                   Done
                 </button>

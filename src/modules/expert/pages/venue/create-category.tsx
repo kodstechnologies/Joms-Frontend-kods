@@ -1,5 +1,5 @@
-import { CategoryFormPage } from "./category-form-page";
+import { CategoryFormPage } from './category-form-page'
 
 export const CreateVenueCategoryPage = () => {
-  return <CategoryFormPage mode="create" />;
-};
+  return <CategoryFormPage mode="create" />
+}

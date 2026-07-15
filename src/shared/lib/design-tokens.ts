@@ -18,4 +18,3 @@ export const uiTokens = {
   focusRing: 'focus-visible:ring-2 focus-visible:ring-brand-accent/40',
   goldGradient: 'bg-gradient-to-r from-brand-gold-from to-brand-gold-to',
 } as const
-

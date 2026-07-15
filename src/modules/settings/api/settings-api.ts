@@ -18,9 +18,9 @@ type ApiEnvelope<T> = {
 }
 
 export const fetchSettings = async <M extends SettingsModule>(module: M) => {
-  const response = await settingsApiClient.get<
-    ApiEnvelope<SettingsResponse<ModuleSettingsMap[M]>>
-  >(`/settings/${module}`)
+  const response = await settingsApiClient.get<ApiEnvelope<SettingsResponse<ModuleSettingsMap[M]>>>(
+    `/settings/${module}`,
+  )
   return response.data.data
 }
 
@@ -28,9 +28,10 @@ export const updateSettings = async <M extends SettingsModule>(
   module: M,
   config: ModuleSettingsMap[M],
 ) => {
-  const response = await settingsApiClient.put<
-    ApiEnvelope<SettingsResponse<ModuleSettingsMap[M]>>
-  >(`/settings/${module}`, config)
+  const response = await settingsApiClient.put<ApiEnvelope<SettingsResponse<ModuleSettingsMap[M]>>>(
+    `/settings/${module}`,
+    config,
+  )
   return response.data.data
 }
 
@@ -58,9 +59,11 @@ export const fetchSettingsLogs = async (params?: {
 }
 
 export const fetchSettingsLog = async (id: string) => {
-  const response = await settingsApiClient.get<{ success: boolean; message: string; data: SettingsLog }>(
-    `/settings/logs/${id}`,
-  )
+  const response = await settingsApiClient.get<{
+    success: boolean
+    message: string
+    data: SettingsLog
+  }>(`/settings/logs/${id}`)
   return response.data
 }
 

@@ -1,14 +1,10 @@
 export const errorMessageTemplatesMock = [
-  "We are currently experiencing technical difficulties. Please try again later.",
+  'We are currently experiencing technical difficulties. Please try again later.',
   "System maintenance in progress. We'll be back shortly.",
   'Service temporarily unavailable. Our team has been notified.',
 ]
 
-export const timezoneOptions = [
-  'IST, +5:30, Kolkata, India',
-  'UTC',
-  'EST, -5:00, New York, USA',
-]
+export const timezoneOptions = ['IST, +5:30, Kolkata, India', 'UTC', 'EST, -5:00, New York, USA']
 
 export const dateFormatOptions = ['DD/MM/YY', 'MM/DD/YY', 'YYYY-MM-DD']
 

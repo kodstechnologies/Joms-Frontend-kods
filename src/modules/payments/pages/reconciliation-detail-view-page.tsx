@@ -28,7 +28,9 @@ function DetailRow({
   return (
     <div className="flex items-center justify-between gap-4 border-b border-white/5 py-3 last:border-b-0">
       <span className="text-[12px] text-[#888888]">{label}</span>
-      <span className={cn('max-w-[60%] text-right text-[12px] font-medium text-white', valueClassName)}>
+      <span
+        className={cn('max-w-[60%] text-right text-[12px] font-medium text-white', valueClassName)}
+      >
         {value}
       </span>
     </div>
@@ -115,7 +117,10 @@ export function ReconciliationDetailViewPage() {
             value={detail.reconciliationInformation.reconciliationId}
           />
           <DetailRow label="Gateway" value={detail.reconciliationInformation.gateway} />
-          <DetailRow label="Transaction ID" value={detail.reconciliationInformation.transactionId} />
+          <DetailRow
+            label="Transaction ID"
+            value={detail.reconciliationInformation.transactionId}
+          />
           <DetailRow
             label="Platform Record ID"
             value={detail.reconciliationInformation.platformRecordId}
@@ -124,8 +129,14 @@ export function ReconciliationDetailViewPage() {
             label="Settlement Batch ID"
             value={detail.reconciliationInformation.settlementBatchId}
           />
-          <DetailRow label="Settlement Date" value={detail.reconciliationInformation.settlementDate} />
-          <DetailRow label="Bank Credit Date" value={detail.reconciliationInformation.bankCreditDate} />
+          <DetailRow
+            label="Settlement Date"
+            value={detail.reconciliationInformation.settlementDate}
+          />
+          <DetailRow
+            label="Bank Credit Date"
+            value={detail.reconciliationInformation.bankCreditDate}
+          />
           <DetailRow label="Reconciled By" value={detail.reconciliationInformation.reconciledBy} />
           <DetailRow
             label="Reconciliation Date"
@@ -157,7 +168,10 @@ export function ReconciliationDetailViewPage() {
               label="Platform Gross Amount"
               value={detail.platformRecordSummary.platformGrossAmount}
             />
-            <DetailRow label="Refund Recorded" value={detail.platformRecordSummary.refundRecorded} />
+            <DetailRow
+              label="Refund Recorded"
+              value={detail.platformRecordSummary.refundRecorded}
+            />
             <DetailRow
               label="Platform Commission"
               value={detail.platformRecordSummary.platformCommission}

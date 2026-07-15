@@ -28,8 +28,7 @@ export function SecurityAccessPanel({ value, onChange }: SecurityAccessPanelProp
 
   const patch = (patchValue: Partial<SecuritySettings>) => onChange({ ...value, ...patchValue })
 
-  const patchSession = (durationMinutes: number) =>
-    patch({ sessionTimeout: { durationMinutes } })
+  const patchSession = (durationMinutes: number) => patch({ sessionTimeout: { durationMinutes } })
 
   const patchPassword = (patchValue: Partial<SecuritySettings['passwordPolicy']>) =>
     patch({ passwordPolicy: { ...value.passwordPolicy, ...patchValue } })
@@ -86,7 +85,9 @@ export function SecurityAccessPanel({ value, onChange }: SecurityAccessPanelProp
             <select
               className={settingsControlClass}
               value={value.passwordPolicy.passwordExpiryDays}
-              onChange={(event) => patchPassword({ passwordExpiryDays: Number(event.target.value) })}
+              onChange={(event) =>
+                patchPassword({ passwordExpiryDays: Number(event.target.value) })
+              }
             >
               {passwordExpiryOptions.map((option) => (
                 <option key={option.value} value={option.value}>

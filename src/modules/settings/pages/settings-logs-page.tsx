@@ -43,7 +43,7 @@ function StatusBadge({ status }: { status: string }) {
 function ActionBadge({ action }: { action: string }) {
   const label = action === 'reset' ? 'Reset' : 'Update'
   return (
-    <span className="inline-flex rounded-full border border-white/10 bg-white/6 px-2.5 py-0.5 text-[11px] font-semibold text-brand-text">
+    <span className="text-brand-text inline-flex rounded-full border border-white/10 bg-white/6 px-2.5 py-0.5 text-[11px] font-semibold">
       {label}
     </span>
   )
@@ -65,13 +65,17 @@ export function SettingsLogsPage() {
       {
         accessorKey: 'createdAt',
         header: 'Timestamp',
-        cell: ({ row }) => <span className="text-sm text-brand-text">{formatDateTime(row.original.createdAt)}</span>,
+        cell: ({ row }) => (
+          <span className="text-brand-text text-sm">{formatDateTime(row.original.createdAt)}</span>
+        ),
       },
       {
         accessorKey: 'module',
         header: 'Module',
         cell: ({ row }) => (
-          <span className="text-sm font-medium capitalize text-brand-text">{row.original.module}</span>
+          <span className="text-brand-text text-sm font-medium capitalize">
+            {row.original.module}
+          </span>
         ),
       },
       {
@@ -88,13 +92,15 @@ export function SettingsLogsPage() {
         accessorKey: 'performedBy',
         header: 'Performed By',
         cell: ({ row }) => (
-          <span className="text-sm text-brand-muted">{row.original.performedBy || '—'}</span>
+          <span className="text-brand-muted text-sm">{row.original.performedBy || '—'}</span>
         ),
       },
       {
         accessorKey: 'ipAddress',
         header: 'IP',
-        cell: ({ row }) => <span className="text-sm text-brand-muted">{row.original.ipAddress || '—'}</span>,
+        cell: ({ row }) => (
+          <span className="text-brand-muted text-sm">{row.original.ipAddress || '—'}</span>
+        ),
       },
     ],
     [],
@@ -121,7 +127,9 @@ export function SettingsLogsPage() {
         </div>
       </SectionHeader>
 
-      <div className={cn(uiTokens.radiusCard, uiTokens.borderSubtle, 'bg-brand-surface p-4 sm:p-5')}>
+      <div
+        className={cn(uiTokens.radiusCard, uiTokens.borderSubtle, 'bg-brand-surface p-4 sm:p-5')}
+      >
         <DataTable
           columns={columns}
           data={rows}
@@ -159,18 +167,24 @@ export function SettingsLogsPage() {
 
       {selectedLog ? (
         <div className="fixed inset-0 z-50 grid place-items-center bg-black/70 p-4">
-          <div className={cn(uiTokens.radiusCard, uiTokens.borderSubtle, 'w-full max-w-2xl bg-brand-surface p-5 sm:p-6')}>
+          <div
+            className={cn(
+              uiTokens.radiusCard,
+              uiTokens.borderSubtle,
+              'bg-brand-surface w-full max-w-2xl p-5 sm:p-6',
+            )}
+          >
             <div className="mb-4 flex items-start justify-between gap-3">
               <div>
-                <h3 className="text-lg font-semibold text-brand-text">Action Details</h3>
-                <p className="mt-1 text-sm text-brand-muted">
+                <h3 className="text-brand-text text-lg font-semibold">Action Details</h3>
+                <p className="text-brand-muted mt-1 text-sm">
                   {selectedLog.module} - {selectedLog.action}
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setSelectedLog(null)}
-                className="rounded-md p-1 text-brand-muted hover:bg-white/10 hover:text-brand-text"
+                className="text-brand-muted hover:text-brand-text rounded-md p-1 hover:bg-white/10"
                 aria-label="Close details"
               >
                 <X className="size-4" />
@@ -187,8 +201,10 @@ export function SettingsLogsPage() {
             </div>
 
             <div className="mt-4 rounded-xl border border-white/10 bg-[#0F0F0F] p-3">
-              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-brand-muted">Metadata</p>
-              <pre className="max-h-64 overflow-auto text-xs text-brand-text">
+              <p className="text-brand-muted mb-2 text-xs font-semibold tracking-wide uppercase">
+                Metadata
+              </p>
+              <pre className="text-brand-text max-h-64 overflow-auto text-xs">
                 {JSON.stringify(selectedLog.metadata ?? {}, null, 2)}
               </pre>
             </div>
@@ -208,9 +224,8 @@ export function SettingsLogsPage() {
 function InfoRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-lg border border-white/10 bg-[#111111] p-3">
-      <p className="text-[11px] uppercase tracking-wide text-brand-muted">{label}</p>
-      <p className="mt-1 text-sm text-brand-text">{value}</p>
+      <p className="text-brand-muted text-[11px] tracking-wide uppercase">{label}</p>
+      <p className="text-brand-text mt-1 text-sm">{value}</p>
     </div>
   )
 }
-

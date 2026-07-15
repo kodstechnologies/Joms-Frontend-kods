@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { ArrowLeft, Pencil, Plus, Search, Trash2, X } from 'lucide-react'
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
@@ -76,10 +76,12 @@ function ReasonFormModal({
   isSubmitting: boolean
 }) {
   const [form, setForm] = useState(initial)
+  const [wasOpen, setWasOpen] = useState(open)
 
-  useEffect(() => {
+  if (open !== wasOpen) {
+    setWasOpen(open)
     if (open) setForm(initial)
-  }, [open, initial])
+  }
 
   if (!open) return null
 
@@ -107,7 +109,9 @@ function ReasonFormModal({
             </span>
             <input
               value={form.title}
-              onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))}
+              onChange={(event) =>
+                setForm((current) => ({ ...current, title: event.target.value }))
+              }
               placeholder="e.g. Harassment or Bullying"
               className="h-10 w-full rounded-lg border border-white/10 bg-[#0C0C0C] px-3 text-sm text-white"
             />
@@ -192,13 +196,15 @@ function CategoryEditModal({
 }) {
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
+  const [wasOpen, setWasOpen] = useState(open)
 
-  useEffect(() => {
+  if (open !== wasOpen) {
+    setWasOpen(open)
     if (open && category) {
       setTitle(category.title)
       setDescription(category.description)
     }
-  }, [open, category])
+  }
 
   if (!open || !category) return null
 
@@ -273,11 +279,9 @@ export function TemplatesPage({ embedded = false }: { embedded?: boolean }) {
   const deleteReasonMutation = useDeleteModerationReason(activeCategoryId)
   const updateCategoryMutation = useUpdateModerationCategory()
 
-  useEffect(() => {
-    if (!selectedCategoryId && categories[0]?.id) {
-      setSelectedCategoryId(categories[0].id)
-    }
-  }, [categories, selectedCategoryId])
+  if (!selectedCategoryId && categories[0]?.id) {
+    setSelectedCategoryId(categories[0].id)
+  }
 
   const reasonFormInitial = useMemo<ReasonFormState>(() => {
     if (!editingReason) return emptyForm
@@ -398,7 +402,9 @@ export function TemplatesPage({ embedded = false }: { embedded?: boolean }) {
           </div>
         </aside>
 
-        <section className={cn(uiTokens.radiusCard, 'border border-white/10 bg-[#111111] p-4 sm:p-5')}>
+        <section
+          className={cn(uiTokens.radiusCard, 'border border-white/10 bg-[#111111] p-4 sm:p-5')}
+        >
           {selectedCategory ? (
             <>
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">

@@ -39,4 +39,6 @@ export const kycApiClient = createApiClient(env.kycApiBaseUrl)
 
 export const membershipApiClient = createApiClient(env.membershipApiBaseUrl)
 
+export const paymentApiClient = createApiClient(env.paymentApiBaseUrl)
+
 export const settingsApiClient = createApiClient(env.settingsApiBaseUrl)

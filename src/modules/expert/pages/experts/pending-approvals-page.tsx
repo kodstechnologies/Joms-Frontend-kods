@@ -4,15 +4,13 @@ import { Ban, Eye, FileText } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
-import {
-  fetchExpertApplicationView,
-  updateExpertKycStatus,
-} from '../../api/expert-application-api'
+import { fetchExpertApplicationView, updateExpertKycStatus } from '../../api/expert-application-api'
 import { useExperts } from '../../hooks/use-expert'
 import type { Expert } from '../../type/expert'
 import type { ConciergeRejectionReason } from '../../type/expert-application-view'
 import { isKycSubmittedForApplication } from '../../utils/expert-application-helpers'
 import { openExpertApplicationView } from '../../utils/expert-application-navigation'
+import { ExpertListHeader } from './expert-list-shared'
 import {
   createExpertBaseColumns,
   createExpertCreatedAtColumn,
@@ -20,9 +18,8 @@ import {
   createExpertSelectColumn,
   createExpertServiceTypeColumn,
   createExpertStatusColumn,
-  ExpertListHeader,
   useExpertListSelection,
-} from './expert-list-shared'
+} from './expert-list-shared-utils'
 import {
   DecisionActionModal,
   type DecisionActionModalOption,
@@ -67,9 +64,7 @@ export function ExpertPendingApprovalsPage() {
 
   const toggleRevokeReason = useCallback((value: string) => {
     setRevokeReasons((current) =>
-      current.includes(value)
-        ? current.filter((reason) => reason !== value)
-        : [...current, value],
+      current.includes(value) ? current.filter((reason) => reason !== value) : [...current, value],
     )
   }, [])
 
@@ -177,9 +172,7 @@ export function ExpertPendingApprovalsPage() {
             <TableActionsDropdown
               label={`Open actions for ${expert.name}`}
               isOpen={isOpen}
-              onOpenChange={(open) =>
-                setActiveDropdownId(open ? expert.expertId : null)
-              }
+              onOpenChange={(open) => setActiveDropdownId(open ? expert.expertId : null)}
               menuWidth={192}
             >
               {!isVenue && (

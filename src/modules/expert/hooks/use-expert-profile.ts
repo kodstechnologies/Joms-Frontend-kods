@@ -13,27 +13,16 @@ export const useExpertProfile = (id?: string) =>
     enabled: Boolean(id),
   })
 
-export const useExpertServices = (
-  expertId?: string,
-  page = 1,
-  limit = 10,
-  enabled = false,
-) =>
+export const useExpertServices = (expertId?: string, page = 1, limit = 10, enabled = false) =>
   useQuery({
     queryKey: ['expert-services', expertId, page, limit],
     queryFn: () => fetchExpertServices(expertId as string, { page, limit }),
     enabled: Boolean(expertId) && enabled,
   })
 
-export const useExpertConsultations = (
-  expertId?: string,
-  page = 1,
-  limit = 10,
-  enabled = false,
-) =>
+export const useExpertConsultations = (expertId?: string, page = 1, limit = 10, enabled = false) =>
   useQuery({
     queryKey: ['expert-consultations', expertId, page, limit],
-    queryFn: () =>
-      fetchExpertConsultations(expertId as string, { page, limit }),
+    queryFn: () => fetchExpertConsultations(expertId as string, { page, limit }),
     enabled: Boolean(expertId) && enabled,
   })

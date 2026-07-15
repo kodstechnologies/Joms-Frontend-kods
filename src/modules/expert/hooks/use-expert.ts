@@ -17,8 +17,7 @@ export const useExperts = (params?: {
   status?: string
   serviceType?: string
 }) => {
-  const isDeletedList =
-    params?.status === 'deactivated' || params?.status === 'deleted'
+  const isDeletedList = params?.status === 'deactivated' || params?.status === 'deleted'
 
   return useQuery({
     queryKey: isDeletedList ? ['experts', 'deleted', params] : ['experts', params],

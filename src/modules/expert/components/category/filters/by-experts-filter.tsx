@@ -1,32 +1,24 @@
-import { Input } from "@/shared/components/ui/input";
+import { Input } from '@/shared/components/ui/input'
 
 export function ByExpertsFilter() {
   return (
     <section className="space-y-8 pt-10">
-
       {/* Header */}
-      <h2 className="text-sm font-medium text-brand-text">
-        By Experts
-      </h2>
+      <h2 className="text-brand-text text-sm font-medium">By Experts</h2>
 
       {/* Expert Search */}
       <div className="space-y-2">
-        <label className="text-sm font-medium text-brand-text">
-          Category
-        </label>
+        <label className="text-brand-text text-sm font-medium">Category</label>
 
-        <Input
-          placeholder="Search by name"
-          className="bg-brand-surface border-white/10"
-        />
+        <Input placeholder="Search by name" className="bg-brand-surface border-white/10" />
 
         {/* Selected Chips */}
         <div className="flex flex-wrap gap-2 pt-2">
-          <div className="rounded-full bg-white/10 px-3 py-1 text-xs text-brand-text">
+          <div className="text-brand-text rounded-full bg-white/10 px-3 py-1 text-xs">
             Sarah Johnson ✕
           </div>
 
-          <div className="rounded-full bg-white/10 px-3 py-1 text-xs text-brand-text">
+          <div className="text-brand-text rounded-full bg-white/10 px-3 py-1 text-xs">
             David Kim ✕
           </div>
         </div>
@@ -34,11 +26,9 @@ export function ByExpertsFilter() {
 
       {/* Category Status */}
       <div className="space-y-3">
-        <h3 className="text-sm font-medium text-brand-text">
-          Category Status
-        </h3>
+        <h3 className="text-brand-text text-sm font-medium">Category Status</h3>
 
-        <div className="flex flex-wrap gap-8 text-sm text-brand-text">
+        <div className="text-brand-text flex flex-wrap gap-8 text-sm">
           <label className="flex items-center gap-2">
             <input type="checkbox" /> Active
           </label>
@@ -56,11 +46,9 @@ export function ByExpertsFilter() {
 
       {/* Service Performance */}
       <div className="space-y-3">
-        <h3 className="text-sm font-medium text-brand-text">
-          Service Performance
-        </h3>
+        <h3 className="text-brand-text text-sm font-medium">Service Performance</h3>
 
-        <div className="flex flex-wrap gap-8 text-sm text-brand-text">
+        <div className="text-brand-text flex flex-wrap gap-8 text-sm">
           <label className="flex items-center gap-2">
             <input type="checkbox" /> Trending
           </label>
@@ -78,11 +66,9 @@ export function ByExpertsFilter() {
 
       {/* Account Status */}
       <div className="space-y-3">
-        <h3 className="text-sm font-medium text-brand-text">
-          Account Status
-        </h3>
+        <h3 className="text-brand-text text-sm font-medium">Account Status</h3>
 
-        <div className="flex flex-wrap gap-8 text-sm text-brand-text">
+        <div className="text-brand-text flex flex-wrap gap-8 text-sm">
           <label className="flex items-center gap-2">
             <input type="checkbox" /> Active
           </label>
@@ -103,11 +89,9 @@ export function ByExpertsFilter() {
 
       {/* Verification Status */}
       <div className="space-y-3">
-        <h3 className="text-sm font-medium text-brand-text">
-          Verification Status
-        </h3>
+        <h3 className="text-brand-text text-sm font-medium">Verification Status</h3>
 
-        <div className="flex flex-wrap gap-8 text-sm text-brand-text">
+        <div className="text-brand-text flex flex-wrap gap-8 text-sm">
           <label className="flex items-center gap-2">
             <input type="checkbox" /> Email Verified
           </label>
@@ -128,11 +112,9 @@ export function ByExpertsFilter() {
 
       {/* Organisation Type */}
       <div className="space-y-3">
-        <h3 className="text-sm font-medium text-brand-text">
-          Organisation Type
-        </h3>
+        <h3 className="text-brand-text text-sm font-medium">Organisation Type</h3>
 
-        <div className="flex flex-wrap gap-8 text-sm text-brand-text">
+        <div className="text-brand-text flex flex-wrap gap-8 text-sm">
           <label className="flex items-center gap-2">
             <input type="checkbox" /> Individual
           </label>
@@ -150,11 +132,9 @@ export function ByExpertsFilter() {
 
       {/* Pending Payouts */}
       <div className="space-y-3">
-        <h3 className="text-sm font-medium text-brand-text">
-          Pending Payouts
-        </h3>
+        <h3 className="text-brand-text text-sm font-medium">Pending Payouts</h3>
 
-        <div className="flex flex-wrap gap-8 text-sm text-brand-text">
+        <div className="text-brand-text flex flex-wrap gap-8 text-sm">
           <label className="flex items-center gap-2">
             <input type="checkbox" /> Yes
           </label>
@@ -169,11 +149,9 @@ export function ByExpertsFilter() {
 
       {/* Membership Purchased */}
       <div className="space-y-3">
-        <h3 className="text-sm font-medium text-brand-text">
-          Membership Purchased
-        </h3>
+        <h3 className="text-brand-text text-sm font-medium">Membership Purchased</h3>
 
-        <div className="flex flex-wrap gap-8 text-sm text-brand-text">
+        <div className="text-brand-text flex flex-wrap gap-8 text-sm">
           <label className="flex items-center gap-2">
             <input type="checkbox" /> Yes
           </label>
@@ -185,11 +163,9 @@ export function ByExpertsFilter() {
 
       {/* Membership Type */}
       <div className="space-y-3">
-        <h3 className="text-sm font-medium text-brand-text">
-          Membership Type
-        </h3>
+        <h3 className="text-brand-text text-sm font-medium">Membership Type</h3>
 
-        <div className="flex flex-wrap gap-8 text-sm text-brand-text">
+        <div className="text-brand-text flex flex-wrap gap-8 text-sm">
           <label className="flex items-center gap-2">
             <input type="checkbox" /> Basic
           </label>
@@ -207,7 +183,6 @@ export function ByExpertsFilter() {
           </label>
         </div>
       </div>
-
     </section>
-  );
+  )
 }

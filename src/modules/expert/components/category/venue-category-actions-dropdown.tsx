@@ -9,10 +9,7 @@ import {
 } from '@/shared/components/table/table-actions-dropdown'
 
 import type { VenueCategory } from './venue-category-table-columns'
-import {
-  CATEGORY_ACTION_ITEM_CLASS,
-  CATEGORY_ACTION_MENU_CLASS,
-} from './category-list-shared'
+import { CATEGORY_ACTION_ITEM_CLASS, CATEGORY_ACTION_MENU_CLASS } from './category-list-shared'
 import {
   usePauseVenueCategory,
   useSoftDeleteVenueCategory,

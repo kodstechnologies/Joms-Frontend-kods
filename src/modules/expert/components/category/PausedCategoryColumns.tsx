@@ -24,9 +24,7 @@ export const pausedCategoryColumns: ColumnDef<Category>[] = [
   {
     accessorKey: 'status',
     header: 'Status',
-    cell: ({ row }) => (
-      <CategoryStatusBadge status={getDisplayStatus(row.original)} />
-    ),
+    cell: ({ row }) => <CategoryStatusBadge status={getDisplayStatus(row.original)} />,
   },
   {
     accessorKey: 'subCategory',

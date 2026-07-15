@@ -12,7 +12,7 @@ export function LockedAccountsTable() {
     >
       <div className="overflow-x-auto rounded-xl border border-white/10">
         <table className="min-w-full text-left text-sm">
-          <thead className="bg-white/5 text-xs uppercase tracking-wide text-slate-400">
+          <thead className="bg-white/5 text-xs tracking-wide text-slate-400 uppercase">
             <tr>
               <th className="px-4 py-3 font-medium">Admin</th>
               <th className="px-4 py-3 font-medium">Role</th>

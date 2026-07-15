@@ -79,13 +79,8 @@ export const useUpdateConsultationAdditionalInfo = () =>
 
 export const useUpdateConsultationPricing = () =>
   useMutation({
-    mutationFn: ({
-      id,
-      payload,
-    }: {
-      id: string
-      payload: UpdateConsultationPricingPayload
-    }) => updateConsultationPricing(id, payload),
+    mutationFn: ({ id, payload }: { id: string; payload: UpdateConsultationPricingPayload }) =>
+      updateConsultationPricing(id, payload),
   })
 
 export const usePublishConsultation = () =>

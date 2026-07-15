@@ -1,6 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
-import { deleteBackup, fetchBackupMetrics, fetchBackups, restoreBackup, runBackup } from '../api/backups-api'
+import {
+  deleteBackup,
+  fetchBackupMetrics,
+  fetchBackups,
+  restoreBackup,
+  runBackup,
+} from '../api/backups-api'
 
 export const backupKeys = {
   all: ['settings', 'backups'] as const,

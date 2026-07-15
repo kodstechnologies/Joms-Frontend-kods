@@ -87,14 +87,19 @@ export function BackupConfigurationPanel({ value, onChange }: BackupConfiguratio
             ]}
             values={value.automaticBackup.modules}
             onChange={(key, checked) =>
-              patchModules({ [key]: checked } as Partial<BackupSettings['automaticBackup']['modules']>)
+              patchModules({ [key]: checked } as Partial<
+                BackupSettings['automaticBackup']['modules']
+              >)
             }
             className="mt-4 border-t border-white/10 pt-4"
           />
         ) : null}
       </SettingsSectionCard>
 
-      <SettingsSectionCard title="Scheduling & Retention" description="Configure backup schedule and storage">
+      <SettingsSectionCard
+        title="Scheduling & Retention"
+        description="Configure backup schedule and storage"
+      >
         <div className="grid gap-4 sm:grid-cols-2">
           <SettingsFieldRow label="Backup Frequency">
             <select

@@ -146,10 +146,12 @@ function RevenueFeeTooltip({
     <div style={tooltipStyle}>
       <p className="mb-2 text-xs font-semibold text-white">{label}</p>
       <p className="text-[11px] text-blue-300">
-        Platform fee: <span className="font-semibold text-white">₹{platformFee?.toLocaleString('en-IN')}</span>
+        Platform fee:{' '}
+        <span className="font-semibold text-white">₹{platformFee?.toLocaleString('en-IN')}</span>
       </p>
       <p className="text-[11px] text-emerald-300">
-        Revenue: <span className="font-semibold text-white">₹{revenue?.toLocaleString('en-IN')}</span>
+        Revenue:{' '}
+        <span className="font-semibold text-white">₹{revenue?.toLocaleString('en-IN')}</span>
       </p>
     </div>
   )
@@ -177,10 +179,12 @@ function MonthlyComparisonTooltip({
         MRR: <span className="font-semibold text-white">₹{mrr?.toLocaleString('en-IN')}</span>
       </p>
       <p className="text-[11px] text-orange-300">
-        Net Profit: <span className="font-semibold text-white">₹{netProfit?.toLocaleString('en-IN')}</span>
+        Net Profit:{' '}
+        <span className="font-semibold text-white">₹{netProfit?.toLocaleString('en-IN')}</span>
       </p>
       <p className="text-[11px] text-emerald-300">
-        Total Revenue: <span className="font-semibold text-white">₹{totalRevenue?.toLocaleString('en-IN')}</span>
+        Total Revenue:{' '}
+        <span className="font-semibold text-white">₹{totalRevenue?.toLocaleString('en-IN')}</span>
       </p>
     </div>
   )
@@ -201,7 +205,10 @@ function WeeklyPayoutTooltip({
     <div style={tooltipStyle}>
       <p className="mb-1 text-xs font-semibold text-white">{label}</p>
       <p className="text-[11px] text-slate-300">
-        Amount: <span className="font-semibold text-white">₹{payload[0]?.value?.toLocaleString('en-IN')}</span>
+        Amount:{' '}
+        <span className="font-semibold text-white">
+          ₹{payload[0]?.value?.toLocaleString('en-IN')}
+        </span>
       </p>
     </div>
   )
@@ -236,7 +243,9 @@ export function FinanceDashboardPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-[28px] font-bold tracking-tight text-white">Finance Dashboard</h1>
-          <p className="mt-1 text-[13px] text-[#888888]">Track revenue, payouts, and financial performance</p>
+          <p className="mt-1 text-[13px] text-[#888888]">
+            Track revenue, payouts, and financial performance
+          </p>
         </div>
         <Button onClick={() => toast.message('Metrics configuration coming soon')}>
           <SlidersHorizontal className="size-4" />
@@ -281,7 +290,10 @@ export function FinanceDashboardPage() {
         <ChartCard title="Revenue & Fee Trends">
           <div className="h-[260px] w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart data={revenueFeeTrendsMock} margin={{ left: 0, right: 8, top: 8, bottom: 0 }}>
+              <ComposedChart
+                data={revenueFeeTrendsMock}
+                margin={{ left: 0, right: 8, top: 8, bottom: 0 }}
+              >
                 <defs>
                   <linearGradient id="revenueAreaFill" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stopColor="#22C55E" stopOpacity={0.35} />
@@ -358,7 +370,11 @@ export function FinanceDashboardPage() {
       <ChartCard title="Monthly Comparison">
         <div className="h-[300px] w-full">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={monthlyComparisonMock} margin={{ left: 0, right: 8, top: 8, bottom: 0 }} barGap={2}>
+            <BarChart
+              data={monthlyComparisonMock}
+              margin={{ left: 0, right: 8, top: 8, bottom: 0 }}
+              barGap={2}
+            >
               <CartesianGrid stroke="rgba(255,255,255,0.04)" vertical={false} />
               <XAxis
                 dataKey="month"
@@ -380,8 +396,20 @@ export function FinanceDashboardPage() {
                 formatter={(value) => <span className="text-[11px] text-[#888888]">{value}</span>}
               />
               <Bar dataKey="mrr" name="MRR" fill="#3B82F6" radius={[3, 3, 0, 0]} maxBarSize={18} />
-              <Bar dataKey="netProfit" name="Net Profit" fill="#F97316" radius={[3, 3, 0, 0]} maxBarSize={18} />
-              <Bar dataKey="totalRevenue" name="Total Revenue" fill="#22C55E" radius={[3, 3, 0, 0]} maxBarSize={18} />
+              <Bar
+                dataKey="netProfit"
+                name="Net Profit"
+                fill="#F97316"
+                radius={[3, 3, 0, 0]}
+                maxBarSize={18}
+              />
+              <Bar
+                dataKey="totalRevenue"
+                name="Total Revenue"
+                fill="#22C55E"
+                radius={[3, 3, 0, 0]}
+                maxBarSize={18}
+              />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -410,7 +438,9 @@ export function FinanceDashboardPage() {
             })}
             <div className="flex items-center justify-between border-t border-white/10 pt-4">
               <span className="text-[13px] font-semibold text-white">Total in Escrow</span>
-              <span className="text-[14px] font-bold text-white">{formatInr(totalEscrowAmount)}</span>
+              <span className="text-[14px] font-bold text-white">
+                {formatInr(totalEscrowAmount)}
+              </span>
             </div>
           </div>
         </ChartCard>
@@ -418,7 +448,10 @@ export function FinanceDashboardPage() {
         <ChartCard title="Weekly Payout Schedule">
           <div className="h-[260px] w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={weeklyPayoutScheduleMock} margin={{ left: 0, right: 8, top: 8, bottom: 0 }}>
+              <BarChart
+                data={weeklyPayoutScheduleMock}
+                margin={{ left: 0, right: 8, top: 8, bottom: 0 }}
+              >
                 <CartesianGrid stroke="rgba(255,255,255,0.04)" vertical={false} />
                 <XAxis
                   dataKey="day"
@@ -435,7 +468,13 @@ export function FinanceDashboardPage() {
                   tickFormatter={(v) => v.toLocaleString('en-IN')}
                 />
                 <Tooltip content={<WeeklyPayoutTooltip />} />
-                <Bar dataKey="amount" name="Amount" fill="#F0C27B" radius={[4, 4, 0, 0]} maxBarSize={40} />
+                <Bar
+                  dataKey="amount"
+                  name="Amount"
+                  fill="#F0C27B"
+                  radius={[4, 4, 0, 0]}
+                  maxBarSize={40}
+                />
               </BarChart>
             </ResponsiveContainer>
           </div>

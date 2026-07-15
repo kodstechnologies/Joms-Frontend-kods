@@ -28,7 +28,9 @@ function DetailRow({
   return (
     <div className="flex items-center justify-between gap-4 border-b border-white/5 py-3 last:border-b-0">
       <span className="text-[12px] text-[#888888]">{label}</span>
-      <span className={cn('text-right text-[12px] font-medium text-white', valueClassName)}>{value}</span>
+      <span className={cn('text-right text-[12px] font-medium text-white', valueClassName)}>
+        {value}
+      </span>
     </div>
   )
 }
@@ -117,7 +119,10 @@ export function ServicePaymentDetailViewPage() {
             <DetailRow label="Payment Method" value={detail.paymentInformation.paymentMethod} />
             <DetailRow label="Payment Gateway" value={detail.paymentInformation.paymentGateway} />
             <DetailRow label="Created On" value={detail.paymentInformation.createdOn} />
-            <DetailRow label="Settlement Status" value={detail.paymentInformation.settlementStatus} />
+            <DetailRow
+              label="Settlement Status"
+              value={detail.paymentInformation.settlementStatus}
+            />
             <DetailRow
               label="Payment Status"
               value={<StatusBadge status={detail.paymentInformation.paymentStatus} />}
@@ -131,7 +136,10 @@ export function ServicePaymentDetailViewPage() {
               label="Service Completed On"
               value={detail.timelineInformation.serviceCompletedOn}
             />
-            <DetailRow label="Payout Released On" value={detail.timelineInformation.payoutReleasedOn} />
+            <DetailRow
+              label="Payout Released On"
+              value={detail.timelineInformation.payoutReleasedOn}
+            />
           </DetailCard>
 
           <DetailCard title="Financial Breakdown">

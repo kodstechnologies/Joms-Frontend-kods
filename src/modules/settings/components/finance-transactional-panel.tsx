@@ -33,8 +33,9 @@ export function FinanceTransactionalPanel({ value, onChange }: FinanceTransactio
   const patchGateways = (patchValue: Partial<FinanceTransactionalSettings['paymentGateways']>) =>
     patch({ paymentGateways: { ...value.paymentGateways, ...patchValue } })
 
-  const patchSuspension = (patchValue: Partial<FinanceTransactionalSettings['membershipSuspension']>) =>
-    patch({ membershipSuspension: { ...value.membershipSuspension, ...patchValue } })
+  const patchSuspension = (
+    patchValue: Partial<FinanceTransactionalSettings['membershipSuspension']>,
+  ) => patch({ membershipSuspension: { ...value.membershipSuspension, ...patchValue } })
 
   return (
     <div className="space-y-6">
@@ -64,7 +65,9 @@ export function FinanceTransactionalPanel({ value, onChange }: FinanceTransactio
               monthly: value.expertsPayout.monthly,
             }}
             onChange={(key, checked) =>
-              patchPayout({ [key]: checked } as Partial<FinanceTransactionalSettings['expertsPayout']>)
+              patchPayout({ [key]: checked } as Partial<
+                FinanceTransactionalSettings['expertsPayout']
+              >)
             }
           />
           <SettingsFieldRow label="Custom">

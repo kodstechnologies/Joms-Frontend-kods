@@ -23,9 +23,12 @@ export function TicketDetailPage() {
           <ArrowLeft className="size-4" />
         </Link>
         <div>
-          <h1 className="text-3xl font-semibold tracking-tight text-slate-100">Ticket Management</h1>
+          <h1 className="text-3xl font-semibold tracking-tight text-slate-100">
+            Ticket Management
+          </h1>
           <p className="mt-1 text-sm text-slate-400">
-            Decision-centric workspace for high-impact tickets requiring approval, enforcement, or oversight.
+            Decision-centric workspace for high-impact tickets requiring approval, enforcement, or
+            oversight.
           </p>
         </div>
       </div>

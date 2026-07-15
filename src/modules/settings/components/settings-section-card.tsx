@@ -16,10 +16,7 @@ export function SettingsSectionCard({
 }: SettingsSectionCardProps) {
   return (
     <section
-      className={cn(
-        'rounded-2xl border border-white/10 bg-[#111111] p-5 sm:p-6',
-        className,
-      )}
+      className={cn('rounded-2xl border border-white/10 bg-[#111111] p-5 sm:p-6', className)}
     >
       <div className="mb-5 space-y-1 border-b border-white/10 pb-4">
         <h2 className="text-lg font-semibold text-white">{title}</h2>

@@ -70,9 +70,10 @@ export const CreateExpertPage = () => {
 
   const [currentStep, setCurrentStep] = useState(1)
   const [expertId, setExpertId] = useState<string | null>(expertIdParam)
-  const [formData, setFormData] = useState<ExpertOnboardingFormData>(
-    () => ({ ...createEmptyExpertOnboardingForm(), serviceType: 'concierge' }),
-  )
+  const [formData, setFormData] = useState<ExpertOnboardingFormData>(() => ({
+    ...createEmptyExpertOnboardingForm(),
+    serviceType: 'concierge',
+  }))
 
   const {
     saveBasicProfile,
@@ -98,9 +99,7 @@ export const CreateExpertPage = () => {
     try {
       if (currentStep === 1) {
         if (!expertId) {
-          const response = await saveBasicProfile.mutateAsync(
-            buildBasicProfileFormData(formData),
-          )
+          const response = await saveBasicProfile.mutateAsync(buildBasicProfileFormData(formData))
           const newId = response.data._id
           setExpertId(newId)
           updateExpertIdInUrl(newId)
@@ -206,12 +205,8 @@ export const CreateExpertPage = () => {
       {currentStep === 3 && (
         <ExpertWorkExperienceStep formData={formData} setFormData={setFormData} />
       )}
-      {currentStep === 4 && (
-        <ExpertGalleryStep formData={formData} setFormData={setFormData} />
-      )}
-      {currentStep === 5 && (
-        <ExpertFinalReviewStep formData={formData} setFormData={setFormData} />
-      )}
+      {currentStep === 4 && <ExpertGalleryStep formData={formData} setFormData={setFormData} />}
+      {currentStep === 5 && <ExpertFinalReviewStep formData={formData} setFormData={setFormData} />}
     </CreateListingWizard>
   )
 }

@@ -23,15 +23,15 @@ export function CommunicationDetails() {
         <button
           type="button"
           onClick={() => navigate(-1)}
-          className="mb-3 flex items-center gap-2 text-sm font-semibold text-brand-text transition-colors hover:text-brand-accent"
+          className="text-brand-text hover:text-brand-accent mb-3 flex items-center gap-2 text-sm font-semibold transition-colors"
         >
           <ArrowLeft className="size-4" />
           Communication Management
         </button>
 
-        <p className="text-sm text-brand-muted">
+        <p className="text-brand-muted text-sm">
           Communication management /
-          <span className="ml-1 font-medium text-brand-text">Create Communication</span>
+          <span className="text-brand-text ml-1 font-medium">Create Communication</span>
         </p>
       </div>
 
@@ -44,8 +44,8 @@ export function CommunicationDetails() {
       >
         <div className="flex items-start justify-between gap-4 border-b border-white/10 pb-6">
           <div>
-            <h2 className="text-2xl font-semibold text-brand-text">Order Confirmation (Copy)</h2>
-            <div className="mt-4 flex flex-wrap items-center gap-6 text-sm text-brand-muted">
+            <h2 className="text-brand-text text-2xl font-semibold">Order Confirmation (Copy)</h2>
+            <div className="text-brand-muted mt-4 flex flex-wrap items-center gap-6 text-sm">
               <div className="flex items-center gap-2">
                 <User className="size-4" />
                 System Auto
@@ -57,32 +57,32 @@ export function CommunicationDetails() {
             </div>
           </div>
 
-          <span className="rounded-full border border-brand-success/25 bg-brand-success/10 px-4 py-1.5 text-sm font-semibold text-brand-success">
+          <span className="border-brand-success/25 bg-brand-success/10 text-brand-success rounded-full border px-4 py-1.5 text-sm font-semibold">
             Sent
           </span>
         </div>
 
-        <div className="mt-6 rounded-brand-lg border border-white/10 bg-[#0F0F0F] px-6 py-5 sm:px-8">
+        <div className="rounded-brand-lg mt-6 border border-white/10 bg-[#0F0F0F] px-6 py-5 sm:px-8">
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
             <div>
-              <p className="text-xs text-brand-muted">Type</p>
-              <p className="mt-2 text-sm font-medium text-brand-text">Email</p>
+              <p className="text-brand-muted text-xs">Type</p>
+              <p className="text-brand-text mt-2 text-sm font-medium">Email</p>
             </div>
             <div>
-              <p className="text-xs text-brand-muted">Audience</p>
-              <p className="mt-2 text-sm font-medium text-brand-text">User</p>
+              <p className="text-brand-muted text-xs">Audience</p>
+              <p className="text-brand-text mt-2 text-sm font-medium">User</p>
             </div>
             <div>
-              <p className="text-xs text-brand-muted">Channel</p>
-              <p className="mt-2 text-sm font-medium text-brand-text">Transaction</p>
+              <p className="text-brand-muted text-xs">Channel</p>
+              <p className="text-brand-text mt-2 text-sm font-medium">Transaction</p>
             </div>
           </div>
         </div>
 
         <div className="mt-8">
-          <h3 className="mb-3 text-sm font-semibold text-brand-text">Message Content</h3>
+          <h3 className="text-brand-text mb-3 text-sm font-semibold">Message Content</h3>
           <div className="rounded-brand-lg border border-white/10 bg-[#0F0F0F] px-5 py-4">
-            <p className="text-sm leading-6 text-brand-text">
+            <p className="text-brand-text text-sm leading-6">
               Thank you for your order! Your order #45678 has been confirmed and is being processed.
             </p>
           </div>
@@ -90,26 +90,24 @@ export function CommunicationDetails() {
 
         <div className="my-8 border-t border-white/10" />
 
-        <h3 className="mb-5 text-sm font-semibold text-brand-text">Delivery Analytics</h3>
+        <h3 className="text-brand-text mb-5 text-sm font-semibold">Delivery Analytics</h3>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {analyticsMetrics.map((item) => (
             <div
               key={item.label}
-              className={cn(
-                uiTokens.radiusCard,
-                uiTokens.borderSubtle,
-                'bg-[#0F0F0F] p-5',
-              )}
+              className={cn(uiTokens.radiusCard, uiTokens.borderSubtle, 'bg-[#0F0F0F] p-5')}
             >
-              <p className="text-xs font-semibold tracking-wide text-brand-muted">{item.label}</p>
-              <p className="mt-2 text-3xl font-semibold tracking-tight text-brand-text">{item.value}</p>
+              <p className="text-brand-muted text-xs font-semibold tracking-wide">{item.label}</p>
+              <p className="text-brand-text mt-2 text-3xl font-semibold tracking-tight">
+                {item.value}
+              </p>
               <div className="mt-4 flex flex-wrap items-center gap-2">
-                <span className="inline-flex items-center gap-1 rounded-full border border-brand-success/25 bg-brand-success/10 px-2 py-0.5 text-[11px] font-semibold text-brand-success">
+                <span className="border-brand-success/25 bg-brand-success/10 text-brand-success inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-semibold">
                   <TrendingUp className="size-3" />
                   6.7%
                 </span>
-                <span className="text-xs text-brand-muted">vs last month</span>
+                <span className="text-brand-muted text-xs">vs last month</span>
               </div>
             </div>
           ))}

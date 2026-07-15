@@ -122,9 +122,7 @@ export function EscrowManagementPage() {
 
   const toggleRowSelection = useCallback((rowId: string) => {
     setSelectedRowIds((currentIds) =>
-      currentIds.includes(rowId)
-        ? currentIds.filter((id) => id !== rowId)
-        : [...currentIds, rowId],
+      currentIds.includes(rowId) ? currentIds.filter((id) => id !== rowId) : [...currentIds, rowId],
     )
   }, [])
 
@@ -216,7 +214,9 @@ export function EscrowManagementPage() {
         accessorKey: 'escrowId',
         header: 'Escrow ID',
         cell: ({ row }) => (
-          <span className="font-mono text-[11px] uppercase text-white">{row.original.escrowId}</span>
+          <span className="font-mono text-[11px] text-white uppercase">
+            {row.original.escrowId}
+          </span>
         ),
       },
       {
@@ -298,7 +298,9 @@ export function EscrowManagementPage() {
         accessorKey: 'serviceId',
         header: 'Service ID',
         cell: ({ row }) => (
-          <span className="font-mono text-[11px] uppercase text-white">{row.original.serviceId}</span>
+          <span className="font-mono text-[11px] text-white uppercase">
+            {row.original.serviceId}
+          </span>
         ),
       },
       {
@@ -311,7 +313,9 @@ export function EscrowManagementPage() {
         accessorKey: 'bookingId',
         header: 'Booking ID',
         cell: ({ row }) => (
-          <span className="font-mono text-[11px] uppercase text-white">{row.original.bookingId}</span>
+          <span className="font-mono text-[11px] text-white uppercase">
+            {row.original.bookingId}
+          </span>
         ),
       },
       { accessorKey: 'userName', header: 'User Name' },
@@ -388,9 +392,7 @@ export function EscrowManagementPage() {
             }}
             className={cn(
               'rounded-lg px-4 py-2 text-[12px] font-semibold transition-colors',
-              activeTab === tab.id
-                ? 'bg-[#2A2A2A] text-white'
-                : 'text-[#888888] hover:text-white',
+              activeTab === tab.id ? 'bg-[#2A2A2A] text-white' : 'text-[#888888] hover:text-white',
             )}
           >
             {tab.label}

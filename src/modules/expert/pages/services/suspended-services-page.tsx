@@ -1,10 +1,6 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import {
-  ArrowLeft,
-  Eye,
-  PlayCircle,
-} from 'lucide-react'
+import { ArrowLeft, Eye, PlayCircle } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
@@ -57,7 +53,9 @@ export function SuspendedServicesPage() {
   const visibleServiceIds = useMemo(() => services.map((service) => service._id), [services])
   const allVisibleServicesSelected =
     visibleServiceIds.length > 0 && visibleServiceIds.every((id) => selectedServiceIds.includes(id))
-  const someVisibleServicesSelected = visibleServiceIds.some((id) => selectedServiceIds.includes(id))
+  const someVisibleServicesSelected = visibleServiceIds.some((id) =>
+    selectedServiceIds.includes(id),
+  )
 
   const toggleVisibleServices = useCallback(() => {
     setSelectedServiceIds((currentIds) => {
@@ -83,9 +81,10 @@ export function SuspendedServicesPage() {
         onSuccess: () => {
           toast.success('Service activated successfully')
         },
-        onError: (error: any) => {
+        onError: (error: unknown) => {
+          const err = error as { response?: { data?: { message?: string } } }
           toast.error(
-            error?.response?.data?.message || 'Failed to activate service. Please try again.',
+            err?.response?.data?.message || 'Failed to activate service. Please try again.',
           )
         },
       })
@@ -103,7 +102,8 @@ export function SuspendedServicesPage() {
             aria-label="Select all suspended services"
             checked={allVisibleServicesSelected}
             ref={(input) => {
-              if (input) input.indeterminate = someVisibleServicesSelected && !allVisibleServicesSelected
+              if (input)
+                input.indeterminate = someVisibleServicesSelected && !allVisibleServicesSelected
             }}
             onChange={toggleVisibleServices}
             className="rounded border-slate-700 bg-transparent"
@@ -128,7 +128,9 @@ export function SuspendedServicesPage() {
         accessorKey: 'serviceid',
         header: 'Service ID',
         cell: ({ row }) => (
-          <span className="font-mono text-xs uppercase">{row.original.serviceid || row.original._id}</span>
+          <span className="font-mono text-xs uppercase">
+            {row.original.serviceid || row.original._id}
+          </span>
         ),
       },
       {
@@ -169,7 +171,7 @@ export function SuspendedServicesPage() {
         accessorKey: 'status',
         header: 'Status',
         cell: () => (
-          <span className="rounded-full bg-purple-500/10 px-2.5 py-0.5 text-[10px] font-semibold uppercase text-purple-400">
+          <span className="rounded-full bg-purple-500/10 px-2.5 py-0.5 text-[10px] font-semibold text-purple-400 uppercase">
             Suspended
           </span>
         ),
@@ -239,7 +241,7 @@ export function SuspendedServicesPage() {
           <button
             type="button"
             onClick={() => navigate('/services/management')}
-            className="group flex w-fit items-center gap-2 font-heading text-[20px] font-bold tracking-tight text-white transition-colors hover:text-brand-accent"
+            className="group font-heading hover:text-brand-accent flex w-fit items-center gap-2 text-[20px] font-bold tracking-tight text-white transition-colors"
           >
             <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
             <span>Suspended Services</span>

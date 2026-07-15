@@ -41,6 +41,8 @@ export function EscalateToSuperAdminModal({
   const [adminNotes, setAdminNotes] = useState('')
 
   const handleClose = useCallback(() => {
+    setPriority('normal')
+    setAdminNotes('')
     onClose()
   }, [onClose])
 
@@ -63,13 +65,6 @@ export function EscalateToSuperAdminModal({
       window.removeEventListener('keydown', onKeyDown)
     }
   }, [open, handleClose])
-
-  useEffect(() => {
-    if (open) {
-      setPriority('normal')
-      setAdminNotes('')
-    }
-  }, [open])
 
   const handleSubmit = () => {
     onSubmit?.({ priority, adminNotes })
@@ -96,7 +91,10 @@ export function EscalateToSuperAdminModal({
         aria-labelledby="escalate-super-admin-title"
       >
         <div className="flex shrink-0 items-center justify-between border-b border-white/[0.06] px-4 py-4 sm:px-6 sm:py-5">
-          <h2 id="escalate-super-admin-title" className="text-[15px] font-bold text-white sm:text-[16px]">
+          <h2
+            id="escalate-super-admin-title"
+            className="text-[15px] font-bold text-white sm:text-[16px]"
+          >
             Escalate to Super Admin
           </h2>
           <button
@@ -181,7 +179,7 @@ export function EscalateToSuperAdminModal({
                 onChange={(event) => setAdminNotes(event.target.value)}
                 placeholder="Enter Text Here"
                 rows={4}
-                className="min-h-28 w-full resize-none rounded-lg border border-white/[0.06] bg-[#0F0F0F] px-4 py-3 text-sm text-white placeholder:text-[#666666] focus:outline-none focus:ring-1 focus:ring-white/20"
+                className="min-h-28 w-full resize-none rounded-lg border border-white/[0.06] bg-[#0F0F0F] px-4 py-3 text-sm text-white placeholder:text-[#666666] focus:ring-1 focus:ring-white/20 focus:outline-none"
               />
             </label>
           </div>

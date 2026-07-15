@@ -38,7 +38,9 @@ const formatTaskTime = (value?: string) => {
     hour12: true,
   })
 
-  return isToday ? `Today, ${time}` : date.toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' })
+  return isToday
+    ? `Today, ${time}`
+    : date.toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' })
 }
 
 function TaskCard({ task, onOpen }: { task: MyTask; onOpen: (task: MyTask) => void }) {
@@ -120,9 +122,7 @@ export function MyTasksPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-[24px] font-bold text-white">My Tasks</h1>
-        <p className="mt-1 text-[13px] text-[#8D8D8D]">
-          Manage all the task assigned to you.
-        </p>
+        <p className="mt-1 text-[13px] text-[#8D8D8D]">Manage all the task assigned to you.</p>
       </div>
 
       <div className="flex flex-wrap gap-6 border-b border-white/10">
@@ -162,7 +162,9 @@ export function MyTasksPage() {
               onOpen={handleOpenTask}
             />
           ))}
-          {!grouped?.todo?.length && !grouped?.in_progress?.length && !grouped?.completed?.length ? (
+          {!grouped?.todo?.length &&
+          !grouped?.in_progress?.length &&
+          !grouped?.completed?.length ? (
             <div className="rounded-xl border border-white/5 bg-[#111111] px-4 py-8 text-center text-[13px] text-[#777]">
               No tasks assigned yet.
               <p className="mt-2 text-[12px] text-[#555]">

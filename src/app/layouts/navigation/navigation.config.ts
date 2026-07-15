@@ -13,9 +13,9 @@ import {
 
 export type NavBadge =
   | {
-    label: string
-    variant?: 'default' | 'success' | 'warning'
-  }
+      label: string
+      variant?: 'default' | 'success' | 'warning'
+    }
   | undefined
 
 export type PermissionModule = 'venues' | 'services' | 'experts'
@@ -39,14 +39,18 @@ export const navigationConfig: NavItem[] = [
     icon: ChartNoAxesCombined,
     children: [
       { key: 'executive.overview', label: 'Executive Overview', to: '/dashboard/executive' },
-      { key: 'executive.metrics', label: 'Manage Metrics', badge: { label: 'Soon', variant: 'warning' } },
+      {
+        key: 'executive.metrics',
+        label: 'Manage Metrics',
+        badge: { label: 'Soon', variant: 'warning' },
+      },
     ],
   },
   {
-    key: "my-task",
-    label: "My Task",
+    key: 'my-task',
+    label: 'My Task',
     icon: ClipboardList,
-    to: "/my-tasks",
+    to: '/my-tasks',
   },
   {
     key: 'expert-application',
@@ -81,7 +85,11 @@ export const navigationConfig: NavItem[] = [
         permissionModule: 'services',
         children: [
           { key: 'expert.services.dashboard', label: 'Dashboard', to: '/services/dashboard' },
-          { key: 'expert.services.management', label: 'Service Management', to: '/services/management' },
+          {
+            key: 'expert.services.management',
+            label: 'Service Management',
+            to: '/services/management',
+          },
           {
             key: 'expert.services.categories',
             label: 'Category Management',
@@ -98,24 +106,24 @@ export const navigationConfig: NavItem[] = [
           { key: 'expert.venue.management', label: 'Venue Management', to: '/venues/management' },
           { key: 'expert.venues.leaderboard', label: 'Leaderboard', to: '/venues/leaderboard' },
           {
-            key: "expert.venues.categories",
-            label: "Category Management",
-            to: "/venues/categories/management",
+            key: 'expert.venues.categories',
+            label: 'Category Management',
+            to: '/venues/categories/management',
           },
         ],
       },
     ],
   },
   {
-    key: "communication",
-    label: "Communication",
+    key: 'communication',
+    label: 'Communication',
     icon: MessageCircle,
     superAdminOnly: true,
     children: [
       {
-        key: "communication.management",
-        label: "Communication Management",
-        to: "/communication/management",
+        key: 'communication.management',
+        label: 'Communication Management',
+        to: '/communication/management',
       },
     ],
   },
@@ -151,7 +159,11 @@ export const navigationConfig: NavItem[] = [
       { key: 'finance.refunds', label: 'Refunds & Chargebacks', to: '/finance/refunds' },
       { key: 'finance.tax', label: 'Tax & Compliance', to: '/finance/tax' },
       { key: 'finance.invoices', label: 'Invoices & Billing', to: '/finance/invoices' },
-      { key: 'finance.reconciliation', label: 'Financial Reconciliation', to: '/finance/reconciliation' },
+      {
+        key: 'finance.reconciliation',
+        label: 'Financial Reconciliation',
+        to: '/finance/reconciliation',
+      },
       { key: 'finance.category', label: 'Category Management', to: '/finance/categories' },
     ],
   },

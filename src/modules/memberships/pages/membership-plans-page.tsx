@@ -1,4 +1,13 @@
-import { AlertCircle, Ban, BarChart3, Download, Hourglass, Plus, Search, Trash2 } from 'lucide-react'
+import {
+  AlertCircle,
+  Ban,
+  BarChart3,
+  Download,
+  Hourglass,
+  Plus,
+  Search,
+  Trash2,
+} from 'lucide-react'
 import { useMemo, useState, type ComponentProps, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
@@ -18,16 +27,11 @@ import {
   useResumeMembership,
   useSetMembershipValidity,
 } from '../hooks/use-memberships'
-import {
-  DELETE_REASON_OPTIONS,
-  PAUSE_REASON_OPTIONS,
-} from '../mock/membership-metrics.mock'
+import { DELETE_REASON_OPTIONS, PAUSE_REASON_OPTIONS } from '../mock/membership-metrics.mock'
 import { useMembershipStore } from '../store/membership-store'
 import type { MembershipPlan, MembershipStatus } from '../types/membership'
 import { getFeatureLines } from '../utils/membership-format'
-import {
-  DecisionActionModal,
-} from '@/shared/components/modal/decision-action-modal'
+import { DecisionActionModal } from '@/shared/components/modal/decision-action-modal'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
 import { cn } from '@/shared/lib/cn'
@@ -49,14 +53,21 @@ type MembershipPlansPageProps = {
 export function MembershipPlansPage({
   fixedStatus,
   title = 'Membership Management',
-  subtitle =
-    'Centralized expert membership system with analytics, plan configuration, and lifecycle controls',
+  subtitle = 'Centralized expert membership system with analytics, plan configuration, and lifecycle controls',
 }: MembershipPlansPageProps) {
   const navigate = useNavigate()
   const [createOpen, setCreateOpen] = useState(false)
   const [selectedPlan, setSelectedPlan] = useState<MembershipPlan | null>(null)
   const [modalType, setModalType] = useState<
-    'pause' | 'resume' | 'delete' | 'deactivate' | 'activate' | 'validity' | 'features' | 'versions' | null
+    | 'pause'
+    | 'resume'
+    | 'delete'
+    | 'deactivate'
+    | 'activate'
+    | 'validity'
+    | 'features'
+    | 'versions'
+    | null
   >(null)
   const [adminNotes, setAdminNotes] = useState('')
   const [selectedReasons, setSelectedReasons] = useState<string[]>([])
@@ -282,7 +293,9 @@ export function MembershipPlansPage({
     <div className="flex flex-col gap-5 md:gap-6">
       <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
         <div className="max-w-3xl">
-          <h1 className="text-[28px] font-bold tracking-tight text-white md:text-[32px]">{title}</h1>
+          <h1 className="text-[28px] font-bold tracking-tight text-white md:text-[32px]">
+            {title}
+          </h1>
           <p className="mt-2 text-sm leading-relaxed text-[#9A9A9A] md:text-[15px]">{subtitle}</p>
         </div>
         <Button
@@ -307,7 +320,7 @@ export function MembershipPlansPage({
 
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div className="relative max-w-md flex-1">
-          <Search className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-[#7A7A7A]" />
+          <Search className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-[#7A7A7A]" />
           <Input
             value={searchQuery}
             onChange={(event) => setSearchQuery(event.target.value)}
@@ -356,7 +369,7 @@ export function MembershipPlansPage({
                 className={cn(
                   'flex items-center justify-between rounded-xl border px-4 py-3.5 transition-all',
                   isGold
-                    ? 'border-[#EBC38C]/45 bg-[#EBC38C]/08 text-[#EBC38C]'
+                    ? 'bg-[#EBC38C]/08 border-[#EBC38C]/45 text-[#EBC38C]'
                     : 'border-[#C62828]/45 bg-[#C62828]/12 text-[#E35D5D]',
                   isSelected && (isGold ? 'ring-2 ring-[#EBC38C]/40' : 'ring-2 ring-[#C62828]/35'),
                 )}
@@ -502,11 +515,21 @@ export function MembershipPlansPage({
             <h3 className="text-lg font-semibold text-white">Set Plan Validity</h3>
             <p className="mt-1 text-xs text-[#8A8A8A]">{selectedPlan?.planName}</p>
             <div className="mt-4 grid grid-cols-2 gap-3">
-              <Input type="date" value={validityStart} onChange={(e) => setValidityStart(e.target.value)} />
-              <Input type="date" value={validityEnd} onChange={(e) => setValidityEnd(e.target.value)} />
+              <Input
+                type="date"
+                value={validityStart}
+                onChange={(e) => setValidityStart(e.target.value)}
+              />
+              <Input
+                type="date"
+                value={validityEnd}
+                onChange={(e) => setValidityEnd(e.target.value)}
+              />
             </div>
             <div className="mt-5 flex justify-end gap-3">
-              <Button variant="secondary" onClick={closeModal}>Cancel</Button>
+              <Button variant="secondary" onClick={closeModal}>
+                Cancel
+              </Button>
               <Button
                 className="border-0 bg-[#EBC38C] text-black hover:bg-[#E0B57A]"
                 onClick={handleSetValidity}
@@ -522,14 +545,19 @@ export function MembershipPlansPage({
       {modalType === 'features' ? (
         <InfoModal title="Feature List" onClose={closeModal}>
           <ul className="space-y-2">
-            {getFeatureLines(featuresQuery.data?.data?.features ?? selectedPlan?.features ?? {
-              accessToBasicNetworkingFeatures: false,
-              joinCommunities: { enabled: false, count: 0 },
-              platformHostedEvents: { enabled: false, count: 0 },
-              profileCustomization: false,
-              dedicatedAccountManager: false,
-            }).map((feature) => (
-              <li key={feature} className="text-sm text-[#CFCFCF]">• {feature}</li>
+            {getFeatureLines(
+              featuresQuery.data?.data?.features ??
+                selectedPlan?.features ?? {
+                  accessToBasicNetworkingFeatures: false,
+                  joinCommunities: { enabled: false, count: 0 },
+                  platformHostedEvents: { enabled: false, count: 0 },
+                  profileCustomization: false,
+                  dedicatedAccountManager: false,
+                },
+            ).map((feature) => (
+              <li key={feature} className="text-sm text-[#CFCFCF]">
+                • {feature}
+              </li>
             ))}
           </ul>
         </InfoModal>
@@ -539,11 +567,17 @@ export function MembershipPlansPage({
         <InfoModal title="Version History" onClose={closeModal}>
           <div className="space-y-3">
             {(versionsQuery.data?.data?.versionHistory ?? []).length ? (
-              versionsQuery.data?.data?.versionHistory.map((entry: { version: number; updatedAt?: string; updatedBy?: string }) => (
-                <div key={entry.version} className="rounded-lg border border-white/10 bg-black/30 p-3 text-sm text-[#CFCFCF]">
-                  Version {entry.version} · {entry.updatedBy ?? 'Admin'} · {entry.updatedAt ?? '—'}
-                </div>
-              ))
+              versionsQuery.data?.data?.versionHistory.map(
+                (entry: { version: number; updatedAt?: string; updatedBy?: string }) => (
+                  <div
+                    key={entry.version}
+                    className="rounded-lg border border-white/10 bg-black/30 p-3 text-sm text-[#CFCFCF]"
+                  >
+                    Version {entry.version} · {entry.updatedBy ?? 'Admin'} ·{' '}
+                    {entry.updatedAt ?? '—'}
+                  </div>
+                ),
+              )
             ) : (
               <p className="text-sm text-[#8A8A8A]">No previous versions yet.</p>
             )}
@@ -591,9 +625,7 @@ function TabButton({
       onClick={onClick}
       className={cn(
         'rounded-lg px-5 py-2.5 text-sm font-medium transition-colors',
-        active
-          ? 'bg-black text-white shadow-sm'
-          : 'text-[#8A8A8A] hover:text-white',
+        active ? 'bg-black text-white shadow-sm' : 'text-[#8A8A8A] hover:text-white',
       )}
     >
       {children}

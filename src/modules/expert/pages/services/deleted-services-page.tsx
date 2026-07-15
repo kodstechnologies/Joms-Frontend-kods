@@ -1,11 +1,6 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import {
-  ArrowLeft,
-  Eye,
-  RotateCcw,
-  Upload,
-} from 'lucide-react'
+import { ArrowLeft, Eye, RotateCcw, Upload } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
@@ -123,30 +118,30 @@ export function DeletedServicesPage() {
 
   return (
     <div className="flex flex-col gap-5 md:gap-6">
-    <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
-  <header className="flex flex-col gap-2">
-    <button
-      type="button"
-      onClick={() => navigate('/services/management')}
-      className="group flex w-fit items-center gap-2 font-heading text-[20px] font-bold tracking-tight text-white transition-colors hover:text-brand-accent"
-    >
-      <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
-      <span>Deleted Services</span>
-    </button>
+      <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
+        <header className="flex flex-col gap-2">
+          <button
+            type="button"
+            onClick={() => navigate('/services/management')}
+            className="group font-heading hover:text-brand-accent flex w-fit items-center gap-2 text-[20px] font-bold tracking-tight text-white transition-colors"
+          >
+            <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
+            <span>Deleted Services</span>
+          </button>
 
-    <div className="flex items-center gap-1.5 pl-7 text-[12px] font-medium text-[#777777]">
-      <button
-        type="button"
-        onClick={() => navigate('/services/management')}
-        className="transition-colors hover:text-white"
-      >
-        Service Management
-      </button>
-      <span className="text-[#333333]">/</span>
-      <span className="font-bold text-white">Deleted Services</span>
-    </div>
-  </header>
-</div>
+          <div className="flex items-center gap-1.5 pl-7 text-[12px] font-medium text-[#777777]">
+            <button
+              type="button"
+              onClick={() => navigate('/services/management')}
+              className="transition-colors hover:text-white"
+            >
+              Service Management
+            </button>
+            <span className="text-[#333333]">/</span>
+            <span className="font-bold text-white">Deleted Services</span>
+          </div>
+        </header>
+      </div>
 
       <DataTable
         columns={columns}

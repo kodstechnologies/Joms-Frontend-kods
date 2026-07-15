@@ -29,16 +29,12 @@ import { mapVenueCategoryToUi } from '../utils/category-mapper'
 
 const VENUE_CATEGORY_QUERY_KEY = 'venue-category-management'
 
-const invalidateVenueCategories = (
-  queryClient: ReturnType<typeof useQueryClient>,
-) => {
+const invalidateVenueCategories = (queryClient: ReturnType<typeof useQueryClient>) => {
   queryClient.invalidateQueries({ queryKey: [VENUE_CATEGORY_QUERY_KEY] })
   queryClient.invalidateQueries({ queryKey: ['venue-categories'] })
 }
 
-export const useVenueCategoryManagementList = (params?: {
-  search?: string
-}) =>
+export const useVenueCategoryManagementList = (params?: { search?: string }) =>
   useQuery({
     queryKey: [VENUE_CATEGORY_QUERY_KEY, 'list', params],
     queryFn: () =>
@@ -161,13 +157,8 @@ export const useHardDeleteVenueCategory = () => {
 export const usePauseVenueSubCategory = () => {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: ({
-      categoryId,
-      subCategoryId,
-    }: {
-      categoryId: string
-      subCategoryId: string
-    }) => pauseVenueSubCategory(categoryId, subCategoryId),
+    mutationFn: ({ categoryId, subCategoryId }: { categoryId: string; subCategoryId: string }) =>
+      pauseVenueSubCategory(categoryId, subCategoryId),
     onSuccess: () => invalidateVenueCategories(queryClient),
   })
 }
@@ -175,13 +166,8 @@ export const usePauseVenueSubCategory = () => {
 export const useResumeVenueSubCategory = () => {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: ({
-      categoryId,
-      subCategoryId,
-    }: {
-      categoryId: string
-      subCategoryId: string
-    }) => resumeVenueSubCategory(categoryId, subCategoryId),
+    mutationFn: ({ categoryId, subCategoryId }: { categoryId: string; subCategoryId: string }) =>
+      resumeVenueSubCategory(categoryId, subCategoryId),
     onSuccess: () => invalidateVenueCategories(queryClient),
   })
 }
@@ -189,13 +175,8 @@ export const useResumeVenueSubCategory = () => {
 export const useSoftDeleteVenueSubCategory = () => {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: ({
-      categoryId,
-      subCategoryId,
-    }: {
-      categoryId: string
-      subCategoryId: string
-    }) => softDeleteVenueSubCategory(categoryId, subCategoryId),
+    mutationFn: ({ categoryId, subCategoryId }: { categoryId: string; subCategoryId: string }) =>
+      softDeleteVenueSubCategory(categoryId, subCategoryId),
     onSuccess: () => invalidateVenueCategories(queryClient),
   })
 }
@@ -203,13 +184,8 @@ export const useSoftDeleteVenueSubCategory = () => {
 export const useRevokeVenueSubCategory = () => {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: ({
-      categoryId,
-      subCategoryId,
-    }: {
-      categoryId: string
-      subCategoryId: string
-    }) => revokeVenueSubCategory(categoryId, subCategoryId),
+    mutationFn: ({ categoryId, subCategoryId }: { categoryId: string; subCategoryId: string }) =>
+      revokeVenueSubCategory(categoryId, subCategoryId),
     onSuccess: () => invalidateVenueCategories(queryClient),
   })
 }
@@ -217,13 +193,8 @@ export const useRevokeVenueSubCategory = () => {
 export const useHardDeleteVenueSubCategory = () => {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: ({
-      categoryId,
-      subCategoryId,
-    }: {
-      categoryId: string
-      subCategoryId: string
-    }) => hardDeleteVenueSubCategory(categoryId, subCategoryId),
+    mutationFn: ({ categoryId, subCategoryId }: { categoryId: string; subCategoryId: string }) =>
+      hardDeleteVenueSubCategory(categoryId, subCategoryId),
     onSuccess: () => invalidateVenueCategories(queryClient),
   })
 }

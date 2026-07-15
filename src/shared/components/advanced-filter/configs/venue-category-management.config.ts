@@ -1,6 +1,10 @@
 import type { FilterSectionConfig, ModuleFilterConfig } from '@/shared/types/data-filter'
 
-import { byLocationSection, createStandardModuleSections, prefixSectionFields } from './base-filter-sections'
+import {
+  byLocationSection,
+  createStandardModuleSections,
+  prefixSectionFields,
+} from './base-filter-sections'
 
 const venueCategoryByVenuesSection: FilterSectionConfig = {
   id: 'by-venues',

@@ -227,9 +227,11 @@ export function SpaceDetailsPage() {
     return [...new Set(urls)]
   }, [fullView, spaceId])
 
-  useEffect(() => {
+  const [imageResetKey, setImageResetKey] = useState({ spaceId, length: carouselImages.length })
+  if (imageResetKey.spaceId !== spaceId || imageResetKey.length !== carouselImages.length) {
+    setImageResetKey({ spaceId, length: carouselImages.length })
     setActiveImageIndex(0)
-  }, [spaceId, carouselImages.length])
+  }
 
   const resolvedAmenities = useMemo(
     () => (fullView ? resolveAmenities(fullView, amenityMasters?.data || []) : []),
@@ -296,9 +298,7 @@ export function SpaceDetailsPage() {
 
   const toggleReason = (value: string) => {
     setSelectedReasons((current) =>
-      current.includes(value)
-        ? current.filter((reason) => reason !== value)
-        : [...current, value],
+      current.includes(value) ? current.filter((reason) => reason !== value) : [...current, value],
     )
   }
 
@@ -326,26 +326,28 @@ export function SpaceDetailsPage() {
     const payload: UpdateVenueSpaceVisibilityPayload =
       modalAction === 'hide'
         ? {
-          action: 'hide',
-          selectedReasons,
-          reasonDetails: reasonDetails.trim(),
-          adminNotes: adminNotes.trim(),
-        }
+            action: 'hide',
+            selectedReasons,
+            reasonDetails: reasonDetails.trim(),
+            adminNotes: adminNotes.trim(),
+          }
         : {
-          action: 'suspend',
-          selectedReasons,
-          suspendIndefinitely,
-          startDate: suspendIndefinitely ? undefined : toIso(startDate),
-          endDate: suspendIndefinitely ? undefined : toIso(endDate),
-          reasonDetails: reasonDetails.trim(),
-          adminNotes: adminNotes.trim(),
-        }
+            action: 'suspend',
+            selectedReasons,
+            suspendIndefinitely,
+            startDate: suspendIndefinitely ? undefined : toIso(startDate),
+            endDate: suspendIndefinitely ? undefined : toIso(endDate),
+            reasonDetails: reasonDetails.trim(),
+            adminNotes: adminNotes.trim(),
+          }
 
     visibilityMutation.mutate(
       { targetSpaceId: spaceId, payload },
       {
         onSuccess: () => {
-          toast.success(modalAction === 'hide' ? 'Space hidden successfully' : 'Space suspended successfully')
+          toast.success(
+            modalAction === 'hide' ? 'Space hidden successfully' : 'Space suspended successfully',
+          )
           closeModal()
         },
         onError: (err) => toast.error(getApiErrorMessage(err)),
@@ -380,14 +382,11 @@ export function SpaceDetailsPage() {
 
   const toggleDecisionReason = (value: string) => {
     setDecisionSelectedReasons((current) =>
-      current.includes(value)
-        ? current.filter((reason) => reason !== value)
-        : [...current, value],
+      current.includes(value) ? current.filter((reason) => reason !== value) : [...current, value],
     )
   }
 
-  const isDecisionRejectFlow =
-    decisionVariant === 'reject' || decisionVariant === 'requestChanges'
+  const isDecisionRejectFlow = decisionVariant === 'reject' || decisionVariant === 'requestChanges'
 
   const handleSubmitDecision = () => {
     if (!spaceId) {
@@ -476,7 +475,7 @@ export function SpaceDetailsPage() {
   if (isLoading) {
     return (
       <div className="flex h-[60vh] items-center justify-center">
-        <div className="size-9 animate-spin rounded-full border-4 border-brand-accent border-t-transparent" />
+        <div className="border-brand-accent size-9 animate-spin rounded-full border-4 border-t-transparent" />
       </div>
     )
   }
@@ -487,7 +486,7 @@ export function SpaceDetailsPage() {
         <button
           type="button"
           onClick={backToProfile}
-          className="group flex w-fit items-center gap-2 font-heading text-[20px] font-bold text-white transition-colors hover:text-brand-accent"
+          className="group font-heading hover:text-brand-accent flex w-fit items-center gap-2 text-[20px] font-bold text-white transition-colors"
         >
           <ArrowLeft className="size-5" />
           <span>Space Details</span>
@@ -501,10 +500,8 @@ export function SpaceDetailsPage() {
 
   const { venue, space, gallery, terms, availability } = fullView.overview
   const summary = fullView.spaces.find((item) => item.spaceId === spaceId)
-  const detailSpace =
-    space && String(space._id) === String(spaceId) ? space : null
-  const spaceName =
-    detailSpace?.name || summary?.spaceName || 'Space Details'
+  const detailSpace = space && String(space._id) === String(spaceId) ? space : null
+  const spaceName = detailSpace?.name || summary?.spaceName || 'Space Details'
   const galleryImages: VenueFullViewGalleryImage[] = [
     ...(gallery?.venueCoverImages || []),
     ...(gallery?.spaceCoverImages || []),
@@ -525,12 +522,7 @@ export function SpaceDetailsPage() {
   }
 
   const location = detailSpace?.location || venue.location
-  const addressLine = [
-    location?.address,
-    location?.city,
-    location?.state,
-    location?.pincode,
-  ]
+  const addressLine = [location?.address, location?.city, location?.state, location?.pincode]
     .filter(Boolean)
     .join(', ')
   const capacity = detailSpace?.guestLimit ?? detailSpace?.capacityRange ?? summary?.capacity
@@ -538,10 +530,8 @@ export function SpaceDetailsPage() {
   const isSuspended = Boolean(detailSpace?.isSuspend || summary?.isSuspend)
   const spaceStatus = detailSpace?.status ?? summary?.status ?? 'submitted'
   const isDecisionPending = spaceStatus === 'submitted'
-  const decisionDisabled =
-    !isDecisionPending || spaceStatusMutation.isPending || !spaceId
-  const escalateDisabled =
-    !isDecisionPending || escalateVenueSpace.isPending || !spaceId
+  const decisionDisabled = !isDecisionPending || spaceStatusMutation.isPending || !spaceId
+  const escalateDisabled = !isDecisionPending || escalateVenueSpace.isPending || !spaceId
   const escalation = escalationData?.data
   const isEscalateFlow = decisionVariant === 'escalate'
   const escalationOptions: DecisionActionModalOption[] =
@@ -557,13 +547,17 @@ export function SpaceDetailsPage() {
           <button
             type="button"
             onClick={backToProfile}
-            className="group flex w-fit items-center gap-2 font-heading text-[20px] font-bold tracking-tight text-white transition-colors hover:text-brand-accent"
+            className="group font-heading hover:text-brand-accent flex w-fit items-center gap-2 text-[20px] font-bold tracking-tight text-white transition-colors"
           >
             <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
             <span>Space Details</span>
           </button>
           <div className="flex items-center gap-1.5 pl-7 text-[12px] font-medium text-[#777777]">
-            <button type="button" onClick={backToProfile} className="transition-colors hover:text-white">
+            <button
+              type="button"
+              onClick={backToProfile}
+              className="transition-colors hover:text-white"
+            >
               {venue.name}
             </button>
             <span className="text-[#333333]">/</span>
@@ -598,7 +592,9 @@ export function SpaceDetailsPage() {
           <TableActionsItem
             icon={<BarChart3 className="size-3.5 text-slate-700" />}
             className={ACTION_ITEM_CLASS}
-            onClick={() => navigate(`/venues/management/profile/${venueId}/space/${spaceId}/analytics`)}
+            onClick={() =>
+              navigate(`/venues/management/profile/${venueId}/space/${spaceId}/analytics`)
+            }
           >
             Analytics
           </TableActionsItem>
@@ -614,7 +610,8 @@ export function SpaceDetailsPage() {
 
       {(isHidden || isSuspended) && (
         <div className="rounded-lg border border-amber-400/30 bg-amber-400/10 px-4 py-3 text-[12px] font-semibold text-amber-200">
-          This space is currently {isSuspended ? 'suspended' : 'hidden'} and is not visible in partner-facing listings.
+          This space is currently {isSuspended ? 'suspended' : 'hidden'} and is not visible in
+          partner-facing listings.
         </div>
       )}
 
@@ -643,7 +640,7 @@ export function SpaceDetailsPage() {
         )}
 
         {imageCount > 0 && (
-          <span className="absolute bottom-3 right-3 rounded-md bg-black/70 px-2 py-1 text-[11px] font-medium text-white">
+          <span className="absolute right-3 bottom-3 rounded-md bg-black/70 px-2 py-1 text-[11px] font-medium text-white">
             {imageCount > 1
               ? `${activeImageIndex + 1}/${imageCount}`
               : `${imageCount} photo${imageCount === 1 ? '' : 's'}`}
@@ -657,7 +654,7 @@ export function SpaceDetailsPage() {
           <div className="mt-2 flex items-center justify-between gap-3">
             <h1 className="text-xl font-bold text-white">{spaceName}</h1>
             <span className="inline-flex items-center gap-1 text-[13px] font-semibold text-white">
-              <Star className="size-4 fill-brand-accent text-brand-accent" />
+              <Star className="fill-brand-accent text-brand-accent size-4" />
               {venue.ratings ?? '—'}
             </span>
           </div>
@@ -673,8 +670,8 @@ export function SpaceDetailsPage() {
             <span className="text-white">
               {availability?.weeklyAvailability?.length
                 ? availability.weeklyAvailability
-                  .map((slot) => `${slot.day} ${slot.from}-${slot.to}`)
-                  .join(', ')
+                    .map((slot) => `${slot.day} ${slot.from}-${slot.to}`)
+                    .join(', ')
                 : '—'}
             </span>
           </p>
@@ -683,8 +680,8 @@ export function SpaceDetailsPage() {
             <span className="text-white">
               {availability?.blockedDates?.length
                 ? availability.blockedDates
-                  .map((slot) => `${slot.date} ${slot.from}-${slot.to}`)
-                  .join(', ')
+                    .map((slot) => `${slot.date} ${slot.from}-${slot.to}`)
+                    .join(', ')
                 : '—'}
             </span>
           </p>
@@ -729,10 +726,22 @@ export function SpaceDetailsPage() {
           </p>
           <h3 className="mt-5 text-[12px] font-bold text-white">Service Included</h3>
           <div className="mt-3 space-y-2">
-            <ServiceItem label="Parking Available" enabled={detailSpace?.parkingAvailable ?? venue.parkingAvailable} />
-            <ServiceItem label="Catering service available" enabled={detailSpace?.inHouseCatering ?? venue.inHouseCatering} />
-            <ServiceItem label="Decoration available" enabled={detailSpace?.decorationAvailable ?? venue.decorationAvailable} />
-            <ServiceItem label="Accessibility" enabled={detailSpace?.accessibility ?? venue.accessibility} />
+            <ServiceItem
+              label="Parking Available"
+              enabled={detailSpace?.parkingAvailable ?? venue.parkingAvailable}
+            />
+            <ServiceItem
+              label="Catering service available"
+              enabled={detailSpace?.inHouseCatering ?? venue.inHouseCatering}
+            />
+            <ServiceItem
+              label="Decoration available"
+              enabled={detailSpace?.decorationAvailable ?? venue.decorationAvailable}
+            />
+            <ServiceItem
+              label="Accessibility"
+              enabled={detailSpace?.accessibility ?? venue.accessibility}
+            />
           </div>
         </Card>
 
@@ -748,7 +757,7 @@ export function SpaceDetailsPage() {
                   {amenity.image ? (
                     <img src={amenity.image} alt="" className="size-4 object-contain" />
                   ) : (
-                    <CheckCircle2 className="size-4 text-brand-accent" />
+                    <CheckCircle2 className="text-brand-accent size-4" />
                   )}
                   <span className="truncate">{amenity.name}</span>
                 </div>
@@ -771,7 +780,11 @@ export function SpaceDetailsPage() {
                 rel="noreferrer"
                 className="block aspect-[4/3] overflow-hidden rounded-md border border-white/5 bg-black"
               >
-                <SafeImage src={image.url} alt={`Gallery ${index + 1}`} className="size-full object-cover" />
+                <SafeImage
+                  src={image.url}
+                  alt={`Gallery ${index + 1}`}
+                  className="size-full object-cover"
+                />
               </a>
             ))}
           </div>
@@ -791,7 +804,8 @@ export function SpaceDetailsPage() {
           {terms?.cancellation && (
             <div className="flex items-center gap-2 text-[11px] text-[#bbb]">
               <CheckCircle2 className="size-3.5 text-emerald-400" />
-              Free cancellation up to {terms.cancellation.freeCancellationHours ?? 0} hrs before booking
+              Free cancellation up to {terms.cancellation.freeCancellationHours ?? 0} hrs before
+              booking
             </div>
           )}
           {!terms?.terms?.length && !terms?.cancellation && (
@@ -802,7 +816,7 @@ export function SpaceDetailsPage() {
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
         <Card title="Application Notes">
-          <div className="rounded-md bg-black p-3 text-[12px] leading-relaxed text-[#777] whitespace-pre-wrap">
+          <div className="rounded-md bg-black p-3 text-[12px] leading-relaxed whitespace-pre-wrap text-[#777]">
             {detailSpace?.adminNote || venue.adminInternalNotes || 'No notes yet.'}
             {escalation?.escalatedByName ? (
               <p className="mt-3 text-[11px] text-[#999]">
@@ -826,7 +840,7 @@ export function SpaceDetailsPage() {
               type="button"
               onClick={() => openDecisionModal('approve')}
               disabled={decisionDisabled}
-              className="flex items-center gap-1.5 rounded-md bg-brand-success px-4 py-2.5 text-[11px] font-bold text-white transition-colors hover:bg-[#08a85d] disabled:cursor-not-allowed disabled:opacity-50"
+              className="bg-brand-success flex items-center gap-1.5 rounded-md px-4 py-2.5 text-[11px] font-bold text-white transition-colors hover:bg-[#08a85d] disabled:cursor-not-allowed disabled:opacity-50"
             >
               Approve
               <CheckCircle2 className="size-3.5" />
@@ -835,7 +849,7 @@ export function SpaceDetailsPage() {
               type="button"
               onClick={() => openDecisionModal('requestChanges')}
               disabled={decisionDisabled}
-              className="rounded-md bg-brand-accent px-4 py-2.5 text-[11px] font-bold text-brand-text-dark hover:bg-brand-gold-from transition-colors hover:bg-brand-gold-from disabled:cursor-not-allowed disabled:opacity-50"
+              className="bg-brand-accent text-brand-text-dark hover:bg-brand-gold-from hover:bg-brand-gold-from rounded-md px-4 py-2.5 text-[11px] font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-50"
             >
               Ask for Re-Submit
             </button>
@@ -844,7 +858,7 @@ export function SpaceDetailsPage() {
                 type="button"
                 disabled={escalateDisabled}
                 onClick={() => openDecisionModal('escalate')}
-                className="rounded-md bg-brand-action px-4 py-2.5 text-[11px] font-bold text-white transition-colors hover:bg-[#1e40af] disabled:cursor-not-allowed disabled:opacity-50"
+                className="bg-brand-action rounded-md px-4 py-2.5 text-[11px] font-bold text-white transition-colors hover:bg-[#1e40af] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Escalate
               </button>
@@ -853,7 +867,7 @@ export function SpaceDetailsPage() {
               type="button"
               onClick={() => openDecisionModal('reject')}
               disabled={decisionDisabled}
-              className="flex items-center gap-1.5 rounded-md bg-brand-danger px-4 py-2.5 text-[11px] font-bold text-white transition-colors hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+              className="bg-brand-danger flex items-center gap-1.5 rounded-md px-4 py-2.5 text-[11px] font-bold text-white transition-colors hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
             >
               Reject Application
               <XCircle className="size-3.5" />
@@ -904,9 +918,7 @@ export function SpaceDetailsPage() {
         onEscalationOptionChange={setSelectedEscalationOption}
         onClose={() => setDecisionModalOpen(false)}
         onSubmit={handleSubmitDecision}
-        isSubmitting={
-          isEscalateFlow ? escalateVenueSpace.isPending : spaceStatusMutation.isPending
-        }
+        isSubmitting={isEscalateFlow ? escalateVenueSpace.isPending : spaceStatusMutation.isPending}
       />
 
       <DecisionActionModal

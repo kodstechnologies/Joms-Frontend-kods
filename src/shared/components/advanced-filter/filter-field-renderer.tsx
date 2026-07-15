@@ -1,11 +1,6 @@
 import type { FilterFieldConfig, FilterValues } from '@/shared/types/data-filter'
 
-import {
-  CheckboxGroupField,
-  LocationField,
-  RangeField,
-  SearchField,
-} from './filter-fields'
+import { CheckboxGroupField, LocationField, RangeField, SearchField } from './filter-fields'
 import { Input } from '@/shared/components/ui/input'
 
 type FilterFieldRendererProps = {
@@ -97,9 +92,7 @@ export function FilterFieldRenderer({ field, values, onChange }: FilterFieldRend
       {field.type === 'location' ? (
         <LocationField
           value={
-            typeof value === 'object' && value && 'state' in value
-              ? value
-              : { state: '', city: '' }
+            typeof value === 'object' && value && 'state' in value ? value : { state: '', city: '' }
           }
           onChange={(nextValue) => onChange(field.id, nextValue)}
           statePlaceholder={field.statePlaceholder}
