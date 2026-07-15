@@ -544,8 +544,11 @@ export const ServiceViewPage = () => {
   const images = service.images || []
   const imageCount = images.length
   const activeImage = imageCount > 0 ? images[Math.min(activeImageIndex, imageCount - 1)] : undefined
+  const consultationTopics = service.topics || []
   const categoryName = isConsultation
-    ? service.consultationCategory || ''
+    ? consultationTopics.map((topic) => topic.name).filter(Boolean).join(', ') ||
+      service.consultationCategory ||
+      ''
     : service.category?.name || service.consultationCategory || ''
   const showApprovalControls = isPendingReview(service.status, isConsultation)
   const escalateDisabled =
@@ -565,7 +568,6 @@ export const ServiceViewPage = () => {
   const pageTitle = isConsultation ? 'Consultation View' : 'Service View'
   const detailsSectionTitle = isConsultation ? 'Consultation Details' : 'Service Details'
   const consultationTitle = service.title || service.consultationTitle || 'Untitled Consultation'
-  const consultationTopics = service.topics || []
   const sessionContent = splitSessionContent(service.sessionOutline)
   const outlineItems = parseOutlineItems(sessionContent.outline)
   const benefitItems = parseOutlineItems(sessionContent.benefits)

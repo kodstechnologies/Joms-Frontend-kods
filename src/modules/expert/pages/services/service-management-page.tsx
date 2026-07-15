@@ -312,6 +312,11 @@ export const ServiceManagementPage = () => {
       {
         accessorKey: 'categoryName',
         header: 'Service Category',
+        cell: ({ row }) => {
+          const value = row.original.categoryName
+          if (!value) return <span className="text-[#777]">—</span>
+          return <span>{value}</span>
+        },
       },
       {
         accessorKey: 'serviceType',
