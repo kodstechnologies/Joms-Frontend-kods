@@ -32,7 +32,14 @@ export function FinanceCategoryPage() {
     const query = searchQuery.trim().toLowerCase()
     if (!query) return financeCategoryRowsMock
     return financeCategoryRowsMock.filter((row) =>
-      [row.categoryName, row.module, row.platformFee, row.commissionRate, row.payoutCycle, row.status]
+      [
+        row.categoryName,
+        row.module,
+        row.platformFee,
+        row.commissionRate,
+        row.payoutCycle,
+        row.status,
+      ]
         .join(' ')
         .toLowerCase()
         .includes(query),

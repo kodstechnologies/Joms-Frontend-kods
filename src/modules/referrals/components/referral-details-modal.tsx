@@ -16,11 +16,7 @@ type ReferralDetailsModalProps = {
   expertInvite?: ExpertInvite | null
 }
 
-export function ReferralDetailsModal({
-  open,
-  onClose,
-  expertInvite,
-}: ReferralDetailsModalProps) {
+export function ReferralDetailsModal({ open, onClose, expertInvite }: ReferralDetailsModalProps) {
   if (!open || !expertInvite) return null
 
   const status = expertInvite.status
@@ -32,17 +28,17 @@ export function ReferralDetailsModal({
     >
       <div
         className={cn(
-          'w-full max-w-2xl border border-white/10 bg-brand-surface shadow-2xl',
+          'bg-brand-surface w-full max-w-2xl border border-white/10 shadow-2xl',
           uiTokens.radiusCard,
         )}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between border-b border-white/10 px-6 py-5">
-          <h2 className="text-lg font-semibold text-brand-text">Expert Invite Details</h2>
+          <h2 className="text-brand-text text-lg font-semibold">Expert Invite Details</h2>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-brand-md p-1.5 text-brand-muted hover:bg-white/5 hover:text-brand-text"
+            className="rounded-brand-md text-brand-muted hover:text-brand-text p-1.5 hover:bg-white/5"
           >
             <X className="size-5" />
           </button>
@@ -80,8 +76,8 @@ export function ReferralDetailsModal({
 function DetailCell({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="space-y-2">
-      <p className="text-sm text-brand-muted">{label}</p>
-      <div className="text-sm font-semibold text-brand-text">{value}</div>
+      <p className="text-brand-muted text-sm">{label}</p>
+      <div className="text-brand-text text-sm font-semibold">{value}</div>
     </div>
   )
 }

@@ -1,26 +1,26 @@
-import { PenTool } from "lucide-react";
+import { PenTool } from 'lucide-react'
 
-import { categoryViewTheme } from "./category-view.theme";
+import { categoryViewTheme } from './category-view.theme'
 
 interface Props {
   category: {
-    id: string;
-    categoryId?: string;
-    name: string;
-  };
+    id: string
+    categoryId?: string
+    name: string
+  }
 
   subCategory: {
-    id: string;
-    subCategoryId?: string;
-    name: string;
-    status: "Active" | "Paused";
-    icon?: string;
-    addedOn: string;
-    createdBy: string;
-    updatedAt: string;
-    services: number;
-    experts: number;
-  };
+    id: string
+    subCategoryId?: string
+    name: string
+    status: 'Active' | 'Paused'
+    icon?: string
+    addedOn: string
+    createdBy: string
+    updatedAt: string
+    services: number
+    experts: number
+  }
 }
 
 const SubCategoryInfoCard = ({ category, subCategory }: Props) => {
@@ -39,23 +39,17 @@ const SubCategoryInfoCard = ({ category, subCategory }: Props) => {
             {/* Row 1 */}
             <div>
               <p className={categoryViewTheme.labelClass}>Main Category Name</p>
-              <p className={`mt-2 ${categoryViewTheme.valueLgClass}`}>
-                {category.name}
-              </p>
+              <p className={`mt-2 ${categoryViewTheme.valueLgClass}`}>{category.name}</p>
             </div>
 
             <div>
               <p className={categoryViewTheme.labelClass}>Sub-Category Name</p>
-              <p className={`mt-2 ${categoryViewTheme.valueLgClass}`}>
-                {subCategory.name}
-              </p>
+              <p className={`mt-2 ${categoryViewTheme.valueLgClass}`}>{subCategory.name}</p>
             </div>
 
             <div>
               <p className={categoryViewTheme.labelClass}>Created At</p>
-              <p className={`mt-2 ${categoryViewTheme.valueClass}`}>
-                January 15 2025
-              </p>
+              <p className={`mt-2 ${categoryViewTheme.valueClass}`}>January 15 2025</p>
             </div>
 
             <div>
@@ -78,23 +72,17 @@ const SubCategoryInfoCard = ({ category, subCategory }: Props) => {
 
             <div>
               <p className={categoryViewTheme.labelClass}>Last Updated At</p>
-              <p className={`mt-2 ${categoryViewTheme.valueClass}`}>
-                {subCategory.updatedAt}
-              </p>
+              <p className={`mt-2 ${categoryViewTheme.valueClass}`}>{subCategory.updatedAt}</p>
             </div>
 
             <div>
               <p className={categoryViewTheme.labelClass}>Number Of Services</p>
-              <p className={`mt-2 ${categoryViewTheme.valueLgClass}`}>
-                {subCategory.services}
-              </p>
+              <p className={`mt-2 ${categoryViewTheme.valueLgClass}`}>{subCategory.services}</p>
             </div>
 
             <div>
               <p className={categoryViewTheme.labelClass}>Number Of Experts</p>
-              <p className={`mt-2 ${categoryViewTheme.valueLgClass}`}>
-                {subCategory.experts}
-              </p>
+              <p className={`mt-2 ${categoryViewTheme.valueLgClass}`}>{subCategory.experts}</p>
             </div>
           </div>
         </div>
@@ -118,17 +106,18 @@ const SubCategoryInfoCard = ({ category, subCategory }: Props) => {
           </div>
 
           <span
-            className={`inline-flex rounded-md px-3 py-1 text-[11px] font-semibold ${subCategory.status === "Active"
+            className={`inline-flex rounded-md px-3 py-1 text-[11px] font-semibold ${
+              subCategory.status === 'Active'
                 ? categoryViewTheme.statusActive
                 : categoryViewTheme.statusPaused
-              }`}
+            }`}
           >
             {subCategory.status}
           </span>
         </div>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default SubCategoryInfoCard;
+export default SubCategoryInfoCard

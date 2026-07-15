@@ -1,13 +1,5 @@
 import { useNavigate, useParams } from 'react-router-dom'
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from 'recharts'
+import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { ArrowLeft, Download, RefreshCw, SlidersHorizontal, Star } from 'lucide-react'
 
 import { Button } from '@/shared/components/ui/button'
@@ -64,7 +56,7 @@ export function SpaceAnalyticsPage() {
           <button
             type="button"
             onClick={() => navigate(`/venues/management/profile/${venueId}/space/${spaceId}`)}
-            className="group flex w-fit items-center gap-2 font-heading text-[20px] font-bold tracking-tight text-white transition-colors hover:text-brand-accent"
+            className="group font-heading hover:text-brand-accent flex w-fit items-center gap-2 text-[20px] font-bold tracking-tight text-white transition-colors"
           >
             <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
             <span>View Analytics</span>
@@ -78,10 +70,7 @@ export function SpaceAnalyticsPage() {
           </div>
         </div>
         <div className="flex flex-wrap gap-3">
-          <Button
-            className="h-9"
-            onClick={() => navigate('/venues/dashboard/metrics')}
-          >
+          <Button className="h-9" onClick={() => navigate('/venues/dashboard/metrics')}>
             <SlidersHorizontal className="size-4" />
             Manage Metrics
           </Button>
@@ -114,7 +103,12 @@ export function SpaceAnalyticsPage() {
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={CASH_FLOW} barGap={4}>
               <CartesianGrid stroke="#2a2a2a" strokeDasharray="4 4" vertical />
-              <XAxis dataKey="month" tick={{ fill: '#999', fontSize: 11 }} axisLine={false} tickLine={false} />
+              <XAxis
+                dataKey="month"
+                tick={{ fill: '#999', fontSize: 11 }}
+                axisLine={false}
+                tickLine={false}
+              />
               <YAxis tick={{ fill: '#999', fontSize: 11 }} axisLine={false} tickLine={false} />
               <Tooltip
                 cursor={{ fill: 'rgba(255,255,255,0.04)' }}
@@ -143,7 +137,10 @@ export function SpaceAnalyticsPage() {
               <span>Revenue</span>
             </div>
             {TIME_SLOTS.map((row) => (
-              <div key={row.slot} className="grid grid-cols-3 border-b border-white/10 py-3 text-[12px] text-white last:border-0">
+              <div
+                key={row.slot}
+                className="grid grid-cols-3 border-b border-white/10 py-3 text-[12px] text-white last:border-0"
+              >
                 <span>{row.slot}</span>
                 <span>{row.bookings}</span>
                 <span>{row.revenue}</span>
@@ -162,13 +159,19 @@ export function SpaceAnalyticsPage() {
           </div>
           <div className="space-y-3">
             {RATINGS.map((rating) => (
-              <div key={rating.stars} className="grid grid-cols-[32px_1fr_36px] items-center gap-3 text-[11px] text-white">
+              <div
+                key={rating.stars}
+                className="grid grid-cols-[32px_1fr_36px] items-center gap-3 text-[11px] text-white"
+              >
                 <span className="inline-flex items-center gap-1">
                   {rating.stars}
-                  <Star className="size-3 fill-brand-accent text-brand-accent" />
+                  <Star className="fill-brand-accent text-brand-accent size-3" />
                 </span>
                 <div className="h-3 overflow-hidden rounded-full bg-black">
-                  <div className="h-full rounded-full bg-brand-accent" style={{ width: `${rating.percent}%` }} />
+                  <div
+                    className="bg-brand-accent h-full rounded-full"
+                    style={{ width: `${rating.percent}%` }}
+                  />
                 </div>
                 <span>{rating.percent}%</span>
               </div>

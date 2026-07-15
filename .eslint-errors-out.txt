@@ -1,0 +1,552 @@
+﻿
+D:\kods-projects\Joms-All\Joms-Frontend\src\modules\expert\pages\experts\expert-list-shared.tsx
+   10:14  error  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+   16:14  error  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+   21:14  error  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+   26:14  error  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+   72:17  error  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+  107:17  error  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+  153:17  error  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+  184:17  error  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+  192:17  error  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+  200:17  error  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+  208:17  error  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+  216:17  error  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+  224:17  error  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+  232:17  error  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+  240:17  error  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+Γ£û 15 problems (15 errors, 0 warnings)
+
+
+
+D:\kods-projects\Joms-All\Joms-Frontend\src\modules\expert\pages\services\category-form-page.tsx
+  46:11  error  Error: Cannot call impure function during render
+
+`Date.now` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+D:\kods-projects\Joms-All\Joms-Frontend\src\modules\expert\pages\services\category-form-page.tsx:46:11
+  44 |   >([
+  45 |     {
+> 46 |       id: Date.now(),
+     |           ^^^^^^^^^^ Cannot call impure function
+  47 |       name: '',
+  48 |       description: '',
+  49 |       icon: '',                                                                                                                                                                                                                                                                                                                                                                                                                              react-hooks/purity
+  58:7   error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+D:\kods-projects\Joms-All\Joms-Frontend\src\modules\expert\pages\services\category-form-page.tsx:58:7
+  56 |
+  57 |     if (mode === 'rename') {
+> 58 |       setCategoryName(category.name)
+     |       ^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  59 |     }
+  60 |
+  61 |     if (mode === 'subcategory') {  react-hooks/set-state-in-effect
+
+D:\kods-projects\Joms-All\Joms-Frontend\src\modules\expert\pages\services\service-management-page.tsx
+  253:26  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\kods-projects\Joms-All\Joms-Frontend\src\modules\expert\pages\services\service-view-page.tsx
+  278:5  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+D:\kods-projects\Joms-All\Joms-Frontend\src\modules\expert\pages\services\service-view-page.tsx:278:5
+  276 |
+  277 |   useEffect(() => {
+> 278 |     setActiveImageIndex(0)
+      |     ^^^^^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  279 |   }, [resolvedServiceId])
+  280 |
+  281 |   const apiResponse = shouldFetchConsultation ? consultationResponse : serviceResponse  react-hooks/set-state-in-effect
+
+D:\kods-projects\Joms-All\Joms-Frontend\src\modules\expert\pages\services\suspended-services-page.tsx
+  84:26  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\kods-projects\Joms-All\Joms-Frontend\src\modules\expert\pages\venue\category-form-page.tsx
+  41:11  error  Error: Cannot call impure function during render
+
+`Date.now` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+D:\kods-projects\Joms-All\Joms-Frontend\src\modules\expert\pages\venue\category-form-page.tsx:41:11
+  39 |   >([
+  40 |     {
+> 41 |       id: Date.now(),
+     |           ^^^^^^^^^^ Cannot call impure function
+  42 |       name: '',
+  43 |       description: '',
+  44 |       icon: '',                                                                                                                                                                                                                                                                                                                                                                                                                              react-hooks/purity
+  53:7   error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+D:\kods-projects\Joms-All\Joms-Frontend\src\modules\expert\pages\venue\category-form-page.tsx:53:7
+  51 |
+  52 |     if (mode === 'rename') {
+> 53 |       setCategoryName(category.name)
+     |       ^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  54 |     }
+  55 |
+  56 |     if (mode === 'subcategory') {  react-hooks/set-state-in-effect
+
+D:\kods-projects\Joms-All\Joms-Frontend\src\modules\expert\pages\venue\create-venue-listing-page.tsx
+  116:49  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  124:46  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  129:80  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  158:59  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  160:47  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  180:56  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  199:38  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  268:19  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\kods-projects\Joms-All\Joms-Frontend\src\modules\expert\pages\venue\create-venue-onboarding-page.tsx
+   67:5  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+D:\kods-projects\Joms-All\Joms-Frontend\src\modules\expert\pages\venue\create-venue-onboarding-page.tsx:67:5
+  65 |   useEffect(() => {
+  66 |     if (!venueIdParam) return
+> 67 |     setVenueId(venueIdParam)
+     |     ^^^^^^^^^^ Avoid calling setState() directly within an effect
+  68 |   }, [venueIdParam])
+  69 |
+  70 |   useEffect(() => {                                                                                                                                                                            react-hooks/set-state-in-effect
+   71:5  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+D:\kods-projects\Joms-All\Joms-Frontend\src\modules\expert\pages\venue\create-venue-onboarding-page.tsx:71:5
+  69 |
+  70 |   useEffect(() => {
+> 71 |     setPartnerId(partnerIdParam)
+     |     ^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  72 |   }, [partnerIdParam])
+  73 |
+  74 |   useEffect(() => {                                                                                                                                                                                                  react-hooks/set-state-in-effect
+   80:5  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+D:\kods-projects\Joms-All\Joms-Frontend\src\modules\expert\pages\venue\create-venue-onboarding-page.tsx:80:5
+  78 |     const kyc = reviewData.data.kyc
+  79 |
+> 80 |     setFormData((prev) => ({
+     |     ^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  81 |       ...prev,
+  82 |       name: venue.name || prev.name,
+  83 |       venueType: venue.venueType || prev.venueType,                                                                                                                          react-hooks/set-state-in-effect
+  129:5  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+D:\kods-projects\Joms-All\Joms-Frontend\src\modules\expert\pages\venue\create-venue-onboarding-page.tsx:129:5
+  127 |   useEffect(() => {
+  128 |     if (!venueIdParam || !reviewData?.data?.venue || hasInitializedStep) return
+> 129 |     setCurrentStep(inferStepFromCurrentStep(reviewData.data.venue.currentStep))
+      |     ^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  130 |     setHasInitializedStep(true)
+  131 |   }, [venueIdParam, reviewData?.data?.venue, hasInitializedStep])
+  132 |  react-hooks/set-state-in-effect
+
+D:\kods-projects\Joms-All\Joms-Frontend\src\modules\expert\pages\venue\space-details-page.tsx
+  231:5  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+D:\kods-projects\Joms-All\Joms-Frontend\src\modules\expert\pages\venue\space-details-page.tsx:231:5
+  229 |
+  230 |   useEffect(() => {
+> 231 |     setActiveImageIndex(0)
+      |     ^^^^^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  232 |   }, [spaceId, carouselImages.length])
+  233 |
+  234 |   const resolvedAmenities = useMemo(  react-hooks/set-state-in-effect
+
+D:\kods-projects\Joms-All\Joms-Frontend\src\modules\expert\pages\venue\suspended-venues-page.tsx
+  64:26  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\kods-projects\Joms-All\Joms-Frontend\src\modules\expert\pages\venue\venue-management-page.tsx
+  241:26  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+Γ£û 22 problems (22 errors, 0 warnings)
+
+
+
+D:\kods-projects\Joms-All\Joms-Frontend\src\modules\rbac\components\update-password-modal.tsx
+  44:7  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+D:\kods-projects\Joms-All\Joms-Frontend\src\modules\rbac\components\update-password-modal.tsx:44:7
+  42 |   useEffect(() => {
+  43 |     if (!open) {
+> 44 |       resetForm()
+     |       ^^^^^^^^^ Avoid calling setState() directly within an effect
+  45 |     }
+  46 |   }, [open])
+  47 |  react-hooks/set-state-in-effect
+
+D:\kods-projects\Joms-All\Joms-Frontend\src\modules\rbac\pages\create-role-page.tsx
+  29:7  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+D:\kods-projects\Joms-All\Joms-Frontend\src\modules\rbac\pages\create-role-page.tsx:29:7
+  27 |   useEffect(() => {
+  28 |     if (roleData?.data) {
+> 29 |       setName(roleData.data.name)
+     |       ^^^^^^^ Avoid calling setState() directly within an effect
+  30 |       setDescription(roleData.data.description)
+  31 |       setPermissions(roleData.data.permissions)
+  32 |       setMfaRequired(roleData.data.mfaRequired)  react-hooks/set-state-in-effect
+
+D:\kods-projects\Joms-All\Joms-Frontend\src\modules\rbac\pages\create-sub-admin-page.tsx
+   90:5   error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+D:\kods-projects\Joms-All\Joms-Frontend\src\modules\rbac\pages\create-sub-admin-page.tsx:90:5
+  88 |
+  89 |   useEffect(() => {
+> 90 |     setFormHydrated(false)
+     |     ^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  91 |     if (!isEditMode) {
+  92 |       setForm(emptyForm)
+  93 |       setConfirmPassword('')                                                  react-hooks/set-state-in-effect
+  103:5   error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+D:\kods-projects\Joms-All\Joms-Frontend\src\modules\rbac\pages\create-sub-admin-page.tsx:103:5
+  101 |
+  102 |     const subAdmin = subAdminData.data
+> 103 |     setForm({
+      |     ^^^^^^^ Avoid calling setState() directly within an effect
+  104 |       firstName: subAdmin.firstName || '',
+  105 |       lastName: subAdmin.lastName || '',
+  106 |       email: subAdmin.email || '',  react-hooks/set-state-in-effect
+  217:25  error  '_password' is assigned a value but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        @typescript-eslint/no-unused-vars
+  217:43  error  '_email' is assigned a value but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           @typescript-eslint/no-unused-vars
+
+D:\kods-projects\Joms-All\Joms-Frontend\src\modules\rbac\pages\update-contact-information-page.tsx
+  73:5  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+D:\kods-projects\Joms-All\Joms-Frontend\src\modules\rbac\pages\update-contact-information-page.tsx:73:5
+  71 |   useEffect(() => {
+  72 |     if (!profile) return
+> 73 |     setPhone(profile.phone || '')
+     |     ^^^^^^^^ Avoid calling setState() directly within an effect
+  74 |     setEmergencyContact(profile.emergencyContact || '')
+  75 |     setEmergencyContactName(profile.emergencyContactName || '')
+  76 |     setBloodGroup(profile.bloodGroup || '')  react-hooks/set-state-in-effect
+
+D:\kods-projects\Joms-All\Joms-Frontend\src\modules\referrals\components\edit-recipient-modal.tsx
+  40:7  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+D:\kods-projects\Joms-All\Joms-Frontend\src\modules\referrals\components\edit-recipient-modal.tsx:40:7
+  38 |   useEffect(() => {
+  39 |     if (open && initialValues) {
+> 40 |       setName(initialValues.name)
+     |       ^^^^^^^ Avoid calling setState() directly within an effect
+  41 |       setEmail(initialValues.email ?? '')
+  42 |       setPhone(initialValues.phone ?? '')
+  43 |       setMessage(initialValues.message ?? '')  react-hooks/set-state-in-effect
+
+D:\kods-projects\Joms-All\Joms-Frontend\src\modules\settings\components\assign-user-modal.tsx
+  22:7  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+D:\kods-projects\Joms-All\Joms-Frontend\src\modules\settings\components\assign-user-modal.tsx:22:7
+  20 |   useEffect(() => {
+  21 |     if (open) {
+> 22 |       setDepartment('')
+     |       ^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  23 |       setUser('')
+  24 |     }
+  25 |   }, [open])  react-hooks/set-state-in-effect
+
+D:\kods-projects\Joms-All\Joms-Frontend\src\modules\settings\components\escalation-table-columns.tsx
+  17:10  error  Fast refresh only works when a file only exports components. Move your component(s) to a separate file. If all exports are HOCs, add them to the `extraHOCs` option  react-refresh/only-export-components
+
+Γ£û 10 problems (10 errors, 0 warnings)
+
+
+
+D:\kods-projects\Joms-All\Joms-Frontend\src\modules\settings\pages\backup-configuration-page.tsx
+  21:35  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+D:\kods-projects\Joms-All\Joms-Frontend\src\modules\settings\pages\backup-configuration-page.tsx:21:35
+  19 |
+  20 |   useEffect(() => {
+> 21 |     if (backupQuery.data?.config) setBackupConfig(backupQuery.data.config)
+     |                                   ^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  22 |   }, [backupQuery.data])
+  23 |
+  24 |   const handleSave = async () => {  react-hooks/set-state-in-effect
+
+D:\kods-projects\Joms-All\Joms-Frontend\src\modules\settings\pages\main-settings-page.tsx
+   85:7   error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+D:\kods-projects\Joms-All\Joms-Frontend\src\modules\settings\pages\main-settings-page.tsx:85:7
+  83 |     const routedTab = (location.state as { settingsTab?: SettingsTab } | null)?.settingsTab
+  84 |     if (routedTab && TABS.some((tab) => tab.key === routedTab)) {
+> 85 |       setActiveTab(routedTab)
+     |       ^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  86 |     }
+  87 |   }, [location.state])
+  88 |       react-hooks/set-state-in-effect
+  107:37  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+D:\kods-projects\Joms-All\Joms-Frontend\src\modules\settings\pages\main-settings-page.tsx:107:37
+  105 |
+  106 |   useEffect(() => {
+> 107 |     if (platformQuery.data?.config) setPlatformConfig(platformQuery.data.config)
+      |                                     ^^^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  108 |   }, [platformQuery.data])
+  109 |
+  110 |   useEffect(() => {                                react-hooks/set-state-in-effect
+  111:37  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+D:\kods-projects\Joms-All\Joms-Frontend\src\modules\settings\pages\main-settings-page.tsx:111:37
+  109 |
+  110 |   useEffect(() => {
+> 111 |     if (securityQuery.data?.config) setSecurityConfig(securityQuery.data.config)
+      |                                     ^^^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  112 |   }, [securityQuery.data])
+  113 |
+  114 |   useEffect(() => {                                react-hooks/set-state-in-effect
+  115:42  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+D:\kods-projects\Joms-All\Joms-Frontend\src\modules\settings\pages\main-settings-page.tsx:115:42
+  113 |
+  114 |   useEffect(() => {
+> 115 |     if (notificationsQuery.data?.config) setNotificationsConfig(notificationsQuery.data.config)
+      |                                          ^^^^^^^^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  116 |   }, [notificationsQuery.data])
+  117 |
+  118 |   useEffect(() => {  react-hooks/set-state-in-effect
+  119:36  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+D:\kods-projects\Joms-All\Joms-Frontend\src\modules\settings\pages\main-settings-page.tsx:119:36
+  117 |
+  118 |   useEffect(() => {
+> 119 |     if (financeQuery.data?.config) setFinanceConfig(financeQuery.data.config)
+      |                                    ^^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  120 |   }, [financeQuery.data])
+  121 |
+  122 |   useEffect(() => {                                      react-hooks/set-state-in-effect
+  123:35  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+D:\kods-projects\Joms-All\Joms-Frontend\src\modules\settings\pages\main-settings-page.tsx:123:35
+  121 |
+  122 |   useEffect(() => {
+> 123 |     if (expertQuery.data?.config) setExpertConfig(expertQuery.data.config)
+      |                                   ^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  124 |   }, [expertQuery.data])
+  125 |
+  126 |   useEffect(() => {                                            react-hooks/set-state-in-effect
+  127:34  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+D:\kods-projects\Joms-All\Joms-Frontend\src\modules\settings\pages\main-settings-page.tsx:127:34
+  125 |
+  126 |   useEffect(() => {
+> 127 |     if (venueQuery.data?.config) setVenueConfig(venueQuery.data.config)
+      |                                  ^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  128 |   }, [venueQuery.data])
+  129 |
+  130 |   useEffect(() => {                                                  react-hooks/set-state-in-effect
+  131:36  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+D:\kods-projects\Joms-All\Joms-Frontend\src\modules\settings\pages\main-settings-page.tsx:131:36
+  129 |
+  130 |   useEffect(() => {
+> 131 |     if (serviceQuery.data?.config) setServiceConfig(serviceQuery.data.config)
+      |                                    ^^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  132 |   }, [serviceQuery.data])
+  133 |
+  134 |   const updatePlatform = useUpdateSettings('platform')   react-hooks/set-state-in-effect
+
+D:\kods-projects\Joms-All\Joms-Frontend\src\modules\settings\pages\templates-page.tsx
+   81:15  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+D:\kods-projects\Joms-All\Joms-Frontend\src\modules\settings\pages\templates-page.tsx:81:15
+  79 |
+  80 |   useEffect(() => {
+> 81 |     if (open) setForm(initial)
+     |               ^^^^^^^ Avoid calling setState() directly within an effect
+  82 |   }, [open, initial])
+  83 |
+  84 |   if (!open) return null                                                                                react-hooks/set-state-in-effect
+  200:7   error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+D:\kods-projects\Joms-All\Joms-Frontend\src\modules\settings\pages\templates-page.tsx:200:7
+  198 |   useEffect(() => {
+  199 |     if (open && category) {
+> 200 |       setTitle(category.title)
+      |       ^^^^^^^^ Avoid calling setState() directly within an effect
+  201 |       setDescription(category.description)
+  202 |     }
+  203 |   }, [open, category])                           react-hooks/set-state-in-effect
+  280:7   error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+D:\kods-projects\Joms-All\Joms-Frontend\src\modules\settings\pages\templates-page.tsx:280:7
+  278 |   useEffect(() => {
+  279 |     if (!selectedCategoryId && categories[0]?.id) {
+> 280 |       setSelectedCategoryId(categories[0].id)
+      |       ^^^^^^^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  281 |     }
+  282 |   }, [categories, selectedCategoryId])
+  283 |  react-hooks/set-state-in-effect
+
+Γ£û 12 problems (12 errors, 0 warnings)
+
+
+
+D:\kods-projects\Joms-All\Joms-Frontend\src\shared\components\table\data-table.tsx
+  10:24  error  'TData' is defined but never used   @typescript-eslint/no-unused-vars
+  10:47  error  'TValue' is defined but never used  @typescript-eslint/no-unused-vars
+
+Γ£û 2 problems (2 errors, 0 warnings)
+
+

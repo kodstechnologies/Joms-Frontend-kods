@@ -337,13 +337,8 @@ export function useDeleteSubAdmin() {
 export function useUpdateSubAdminPassword() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: ({
-      id,
-      payload,
-    }: {
-      id: string
-      payload: UpdateSubAdminPasswordPayload
-    }) => updateSubAdminPassword(id, payload),
+    mutationFn: ({ id, payload }: { id: string; payload: UpdateSubAdminPasswordPayload }) =>
+      updateSubAdminPassword(id, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: rbacKeys.all })
     },

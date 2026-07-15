@@ -18,5 +18,5 @@ export {
   ApiKeyManagementPage,
 } from './pages/static-soon-page'
 
-export * from "./components";
-export * from "./pages";
+export * from './components'
+export * from './pages'

@@ -10,7 +10,9 @@ type ApiEnvelope<T> = {
 }
 
 export const fetchIncidentMetrics = async () => {
-  const response = await settingsApiClient.get<ApiEnvelope<SettingsMetric[]>>('/settings/incidents/metrics')
+  const response = await settingsApiClient.get<ApiEnvelope<SettingsMetric[]>>(
+    '/settings/incidents/metrics',
+  )
   return response.data.data
 }
 
@@ -21,16 +23,23 @@ export const fetchIncidents = async (params?: {
   severity?: string
   status?: string
 }) => {
-  const response = await settingsApiClient.get<ApiEnvelope<IncidentRow[]>>('/settings/incidents', { params })
+  const response = await settingsApiClient.get<ApiEnvelope<IncidentRow[]>>('/settings/incidents', {
+    params,
+  })
   return { data: response.data.data, meta: response.data.meta! }
 }
 
 export const fetchIncident = async (id: string) => {
-  const response = await settingsApiClient.get<ApiEnvelope<IncidentRow>>(`/settings/incidents/${id}`)
+  const response = await settingsApiClient.get<ApiEnvelope<IncidentRow>>(
+    `/settings/incidents/${id}`,
+  )
   return response.data.data
 }
 
-export const assignIncident = async (id: string, payload: { department: string; assignee: string }) => {
+export const assignIncident = async (
+  id: string,
+  payload: { department: string; assignee: string },
+) => {
   const response = await settingsApiClient.patch<ApiEnvelope<IncidentRow>>(
     `/settings/incidents/${id}/assign`,
     payload,

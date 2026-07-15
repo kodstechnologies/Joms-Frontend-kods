@@ -1,21 +1,10 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import {
-  ArrowLeft,
-  BarChart3,
-  ClipboardList,
-  ExternalLink,
-  Flag,
-  UserRound,
-} from 'lucide-react'
+import { ArrowLeft, BarChart3, ClipboardList, ExternalLink, Flag, UserRound } from 'lucide-react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 
-import {
-  useFlagAuditLog,
-  useRoleLogs,
-  useSubAdminLogs,
-} from '../hooks/use-rbac'
+import { useFlagAuditLog, useRoleLogs, useSubAdminLogs } from '../hooks/use-rbac'
 import type { AdminLogSubject, AuditLog } from '../types/rbac'
 import { AdminNoteModal } from '../components/admin-note-modal'
 import { RbacLoader } from '../components/rbac-loader'
@@ -74,13 +63,7 @@ function StatusBadge({ status }: { status: string }) {
   )
 }
 
-function PreVersionModal({
-  log,
-  onClose,
-}: {
-  log: AuditLog | null
-  onClose: () => void
-}) {
+function PreVersionModal({ log, onClose }: { log: AuditLog | null; onClose: () => void }) {
   if (!log) return null
 
   const previousVersion = log.metadata?.previousVersion as Record<string, unknown> | undefined
@@ -92,14 +75,14 @@ function PreVersionModal({
         className={cn(
           uiTokens.radiusCard,
           uiTokens.borderSubtle,
-          'w-full max-w-lg bg-brand-surface p-6 shadow-[0_18px_60px_rgba(0,0,0,0.55)]',
+          'bg-brand-surface w-full max-w-lg p-6 shadow-[0_18px_60px_rgba(0,0,0,0.55)]',
         )}
       >
-        <h3 className="text-lg font-semibold text-brand-text">Pre-Version Snapshot</h3>
-        <p className="mt-1 text-sm text-brand-muted">
+        <h3 className="text-brand-text text-lg font-semibold">Pre-Version Snapshot</h3>
+        <p className="text-brand-muted mt-1 text-sm">
           Previous state captured for action: <span className="text-brand-text">{log.action}</span>
         </p>
-        <pre className="mt-4 max-h-72 overflow-auto rounded-brand-md border border-white/10 bg-[#0F0F0F] p-4 text-xs text-brand-text">
+        <pre className="rounded-brand-md text-brand-text mt-4 max-h-72 overflow-auto border border-white/10 bg-[#0F0F0F] p-4 text-xs">
           {JSON.stringify(snapshot, null, 2)}
         </pre>
         <div className="mt-6 flex justify-end">
@@ -132,41 +115,43 @@ function UserOverviewCard({
 
   return (
     <section>
-      <h2 className="mb-3 text-sm font-semibold text-brand-text">Admin Overview</h2>
+      <h2 className="text-brand-text mb-3 text-sm font-semibold">Admin Overview</h2>
       <div className={cn(uiTokens.radiusCard, uiTokens.borderSubtle, 'bg-brand-surface p-6')}>
         <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
           <div className="flex items-center gap-2">
-            <div className="grid size-9 place-items-center rounded-brand-md bg-brand-accent/10 text-brand-accent">
+            <div className="rounded-brand-md bg-brand-accent/10 text-brand-accent grid size-9 place-items-center">
               <UserRound className="size-4" />
             </div>
-            <h3 className="text-base font-semibold text-brand-text">Admin Info</h3>
+            <h3 className="text-brand-text text-base font-semibold">Admin Info</h3>
           </div>
-          <p className="text-xs text-brand-muted">
+          <p className="text-brand-muted text-xs">
             Created At:{' '}
-            <span className="font-medium text-brand-text">{formatOverviewDate(subject.createdAt)}</span>
+            <span className="text-brand-text font-medium">
+              {formatOverviewDate(subject.createdAt)}
+            </span>
           </p>
         </div>
 
         <div className="grid gap-6 md:grid-cols-2">
           <div className="space-y-4">
             <div>
-              <p className="text-xs text-brand-muted">Name</p>
+              <p className="text-brand-muted text-xs">Name</p>
               <button
                 type="button"
                 onClick={() => onOpenUser(subject.id)}
-                className="mt-1 text-base font-semibold text-brand-text underline decoration-brand-muted/40 underline-offset-4 transition-colors hover:text-brand-accent"
+                className="text-brand-text decoration-brand-muted/40 hover:text-brand-accent mt-1 text-base font-semibold underline underline-offset-4 transition-colors"
               >
                 {subject.fullname}
               </button>
             </div>
             <div>
-              <p className="text-xs text-brand-muted">Role</p>
-              <span className="mt-2 inline-flex rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold text-brand-text">
+              <p className="text-brand-muted text-xs">Role</p>
+              <span className="text-brand-text mt-2 inline-flex rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold">
                 {roleLabel}
               </span>
             </div>
             <div>
-              <p className="text-xs text-brand-muted">Status</p>
+              <p className="text-brand-muted text-xs">Status</p>
               <span
                 className={cn(
                   'mt-2 inline-flex rounded-full border px-2.5 py-0.5 text-[11px] font-semibold capitalize',
@@ -179,14 +164,14 @@ function UserOverviewCard({
               </span>
             </div>
             <div>
-              <p className="text-xs text-brand-muted">Email ID</p>
-              <p className="mt-1 text-sm font-medium text-brand-text">{subject.email}</p>
+              <p className="text-brand-muted text-xs">Email ID</p>
+              <p className="text-brand-text mt-1 text-sm font-medium">{subject.email}</p>
             </div>
           </div>
 
           <div className="flex flex-col items-end justify-end">
-            <p className="text-xs text-brand-muted">
-              Created By: <span className="font-semibold text-brand-text">{createdBy}</span>
+            <p className="text-brand-muted text-xs">
+              Created By: <span className="text-brand-text font-semibold">{createdBy}</span>
             </p>
           </div>
         </div>
@@ -214,30 +199,32 @@ function RoleOverviewCard({
 
   return (
     <section>
-      <h2 className="mb-3 text-sm font-semibold text-brand-text">Admin Overview</h2>
+      <h2 className="text-brand-text mb-3 text-sm font-semibold">Admin Overview</h2>
       <div className={cn(uiTokens.radiusCard, uiTokens.borderSubtle, 'bg-brand-surface p-6')}>
         <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
           <div className="flex items-center gap-2">
-            <div className="grid size-9 place-items-center rounded-brand-md bg-brand-accent/10 text-brand-accent">
+            <div className="rounded-brand-md bg-brand-accent/10 text-brand-accent grid size-9 place-items-center">
               <UserRound className="size-4" />
             </div>
-            <h3 className="text-base font-semibold text-brand-text">Admin Info</h3>
+            <h3 className="text-brand-text text-base font-semibold">Admin Info</h3>
           </div>
-          <p className="text-xs text-brand-muted">
+          <p className="text-brand-muted text-xs">
             Created At:{' '}
-            <span className="font-medium text-brand-text">{formatOverviewDate(subject.createdAt)}</span>
+            <span className="text-brand-text font-medium">
+              {formatOverviewDate(subject.createdAt)}
+            </span>
           </p>
         </div>
 
         <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
           <div>
-            <p className="text-xs text-brand-muted">Role</p>
-            <span className="mt-2 inline-flex rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold text-brand-text">
+            <p className="text-brand-muted text-xs">Role</p>
+            <span className="text-brand-text mt-2 inline-flex rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold">
               {subject.name}
             </span>
           </div>
           <div>
-            <p className="text-xs text-brand-muted">Status</p>
+            <p className="text-brand-muted text-xs">Status</p>
             <span
               className={cn(
                 'mt-2 inline-flex rounded-full border px-2.5 py-0.5 text-[11px] font-semibold capitalize',
@@ -250,11 +237,11 @@ function RoleOverviewCard({
             </span>
           </div>
           <div>
-            <p className="text-xs text-brand-muted">No. Of Users</p>
+            <p className="text-brand-muted text-xs">No. Of Users</p>
             <button
               type="button"
               onClick={() => onViewRoleUsers(subject.id)}
-              className="mt-2 flex items-center gap-1.5 text-sm font-semibold text-brand-text transition-colors hover:text-brand-accent"
+              className="text-brand-text hover:text-brand-accent mt-2 flex items-center gap-1.5 text-sm font-semibold transition-colors"
               aria-label={`View users assigned to ${subject.name}`}
             >
               {String(subject.userCount).padStart(2, '0')}
@@ -262,15 +249,15 @@ function RoleOverviewCard({
             </button>
           </div>
           <div>
-            <p className="text-xs text-brand-muted">Last Action</p>
-            <p className="mt-2 text-sm font-medium text-brand-text">
+            <p className="text-brand-muted text-xs">Last Action</p>
+            <p className="text-brand-text mt-2 text-sm font-medium">
               {formatOverviewDate(subject.lastActionAt)}
             </p>
           </div>
         </div>
 
-        <p className="mt-5 text-right text-xs text-brand-muted">
-          Created By: <span className="font-medium text-brand-text">{createdBy}</span>
+        <p className="text-brand-muted mt-5 text-right text-xs">
+          Created By: <span className="text-brand-text font-medium">{createdBy}</span>
         </p>
       </div>
     </section>
@@ -354,7 +341,7 @@ export function AdminLogsPage() {
       <button
         type="button"
         onClick={() => setSelectedAdminNote(note)}
-        className="max-w-[220px] truncate text-left text-xs font-medium text-brand-accent underline decoration-brand-accent/40 underline-offset-2 hover:text-brand-gold-from"
+        className="text-brand-accent decoration-brand-accent/40 hover:text-brand-gold-from max-w-[220px] truncate text-left text-xs font-medium underline underline-offset-2"
         title={note}
       >
         {note}
@@ -371,7 +358,7 @@ export function AdminLogsPage() {
           <button
             type="button"
             onClick={() => setPreviewLog(row.original)}
-            className="text-left text-xs font-semibold text-brand-accent underline decoration-brand-accent/40 underline-offset-2 hover:text-brand-gold-from"
+            className="text-brand-accent decoration-brand-accent/40 hover:text-brand-gold-from text-left text-xs font-semibold underline underline-offset-2"
           >
             {row.original.action}
           </button>
@@ -381,7 +368,7 @@ export function AdminLogsPage() {
         accessorKey: 'module',
         header: 'Module',
         cell: ({ row }) => (
-          <span className="inline-flex rounded-full border border-white/10 bg-white/5 px-2.5 py-0.5 text-[11px] font-medium text-brand-text">
+          <span className="text-brand-text inline-flex rounded-full border border-white/10 bg-white/5 px-2.5 py-0.5 text-[11px] font-medium">
             {row.original.module}
           </span>
         ),
@@ -415,7 +402,7 @@ export function AdminLogsPage() {
           <button
             type="button"
             onClick={() => setPreviewLog(row.original)}
-            className="text-left text-xs font-semibold text-brand-accent hover:underline"
+            className="text-brand-accent text-left text-xs font-semibold hover:underline"
           >
             {row.original.action}
           </button>
@@ -426,7 +413,7 @@ export function AdminLogsPage() {
         accessorKey: 'module',
         header: 'Module',
         cell: ({ row }) => (
-          <span className="inline-flex rounded-full border border-white/10 bg-white/5 px-2.5 py-0.5 text-[11px] font-medium text-brand-text">
+          <span className="text-brand-text inline-flex rounded-full border border-white/10 bg-white/5 px-2.5 py-0.5 text-[11px] font-medium">
             {row.original.module}
           </span>
         ),
@@ -470,7 +457,7 @@ export function AdminLogsPage() {
                 View Pre-Version
               </TableActionsItem>
               <TableActionsItem
-                icon={<Flag className="size-3.5 text-brand-danger" />}
+                icon={<Flag className="text-brand-danger size-3.5" />}
                 onClick={() => handleFlag(logId)}
               >
                 <span className={row.original.flagged ? 'text-brand-muted' : 'text-brand-danger'}>
@@ -494,7 +481,7 @@ export function AdminLogsPage() {
           <button
             type="button"
             onClick={() => navigate('/settings/access')}
-            className="group flex w-fit items-center gap-2 font-heading text-[20px] font-bold tracking-tight text-white transition-colors hover:text-[#FBC078]"
+            className="group font-heading flex w-fit items-center gap-2 text-[20px] font-bold tracking-tight text-white transition-colors hover:text-[#FBC078]"
           >
             <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
             <span>{pageTitle}</span>
@@ -525,8 +512,8 @@ export function AdminLogsPage() {
       )}
 
       <div>
-        <h2 className="text-lg font-semibold text-brand-text">Action Logs</h2>
-        <p className="mt-1 text-sm text-brand-muted">
+        <h2 className="text-brand-text text-lg font-semibold">Action Logs</h2>
+        <p className="text-brand-muted mt-1 text-sm">
           Complete history of actions performed by this admin
         </p>
       </div>

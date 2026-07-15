@@ -10,7 +10,15 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
-import { BarChart3, ChevronDown, Download, RefreshCw, Star, TrendingDown, TrendingUp } from 'lucide-react'
+import {
+  BarChart3,
+  ChevronDown,
+  Download,
+  RefreshCw,
+  Star,
+  TrendingDown,
+  TrendingUp,
+} from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
@@ -27,20 +35,80 @@ type Metric = {
 }
 
 const METRICS: Metric[] = [
-  { label: 'Total Venues', value: '45', change: '12%', changeType: 'up', changeNote: 'vs last quarter' },
-  { label: 'Active Venues', value: '38', change: '8.4%', changeType: 'up', changeNote: 'vs last quarter' },
-  { label: 'Avg Utilization Rate', value: '71.3%', change: '5.2%', changeType: 'up', changeNote: 'vs last month' },
-  { label: 'Events Per Venue', value: '27.6', change: '18%', changeType: 'up', changeNote: 'vs last month' },
-  { label: 'Revenue Contribution', value: '₹342,567', change: '9.8%', changeType: 'up', changeNote: 'vs last month' },
-  { label: 'Venue Cancellation Rate', value: '5.4%', change: '2.1%', changeType: 'down', changeNote: 'vs last quarter' },
-  { label: 'Avg Venue Rating', value: '4.4/5', change: '0.3', changeType: 'up', changeNote: 'vs last quarter' },
-  { label: 'Venue Satisfaction Score', value: '88%', change: '4%', changeType: 'up', changeNote: 'vs last quarter' },
+  {
+    label: 'Total Venues',
+    value: '45',
+    change: '12%',
+    changeType: 'up',
+    changeNote: 'vs last quarter',
+  },
+  {
+    label: 'Active Venues',
+    value: '38',
+    change: '8.4%',
+    changeType: 'up',
+    changeNote: 'vs last quarter',
+  },
+  {
+    label: 'Avg Utilization Rate',
+    value: '71.3%',
+    change: '5.2%',
+    changeType: 'up',
+    changeNote: 'vs last month',
+  },
+  {
+    label: 'Events Per Venue',
+    value: '27.6',
+    change: '18%',
+    changeType: 'up',
+    changeNote: 'vs last month',
+  },
+  {
+    label: 'Revenue Contribution',
+    value: '₹342,567',
+    change: '9.8%',
+    changeType: 'up',
+    changeNote: 'vs last month',
+  },
+  {
+    label: 'Venue Cancellation Rate',
+    value: '5.4%',
+    change: '2.1%',
+    changeType: 'down',
+    changeNote: 'vs last quarter',
+  },
+  {
+    label: 'Avg Venue Rating',
+    value: '4.4/5',
+    change: '0.3',
+    changeType: 'up',
+    changeNote: 'vs last quarter',
+  },
+  {
+    label: 'Venue Satisfaction Score',
+    value: '88%',
+    change: '4%',
+    changeType: 'up',
+    changeNote: 'vs last quarter',
+  },
   { label: 'Peak Utilization Hours', value: '6-8 PM', note: '99% utilization' },
   { label: 'Avg Booking Lead Time', value: '12 days', note: 'fewer reservations' },
   { label: 'Venue Turnover Rate', value: '2.3 hrs', note: 'avg. setup + cleanup' },
   { label: 'Off-Peak Utilization', value: '34%', note: 'Unused capacity 9-5' },
-  { label: 'Repeat Booking Rate', value: '67%', change: '5.1%', changeType: 'up', changeNote: 'vs last quarter' },
-  { label: 'Avg Revenue Per Venue', value: '8.3%', change: '3.2%', changeType: 'up', changeNote: 'vs last month' },
+  {
+    label: 'Repeat Booking Rate',
+    value: '67%',
+    change: '5.1%',
+    changeType: 'up',
+    changeNote: 'vs last quarter',
+  },
+  {
+    label: 'Avg Revenue Per Venue',
+    value: '8.3%',
+    change: '3.2%',
+    changeType: 'up',
+    changeNote: 'vs last month',
+  },
 ]
 
 type TrendPoint = {
@@ -72,11 +140,66 @@ type VenueRow = {
 }
 
 const TOP_VENUES: VenueRow[] = [
-  { name: 'Taj Hotel', city: 'Bangalore', totalVisits: 85, eventAttendance: 320, bookings: 35, repeatVisitors: 35, utilization: 88, revenue: '₹45,230', rating: 4.8, status: 'High Performing' },
-  { name: 'Marlot Hotel', city: 'Kolkata', totalVisits: 100, eventAttendance: 100, bookings: 100, repeatVisitors: 100, utilization: 78, revenue: '₹38,180', rating: 4.9, status: 'High Performing' },
-  { name: 'Oberoi Hotel', city: 'Haryana', totalVisits: 50, eventAttendance: 50, bookings: 50, repeatVisitors: 50, utilization: 78, revenue: '₹36,065', rating: 4.2, status: 'Stable' },
-  { name: 'Atithia Bettapur Hotel', city: 'Mumbai', totalVisits: 30, eventAttendance: 30, bookings: 30, repeatVisitors: 50, utilization: 64, revenue: '₹32,140', rating: 4.6, status: 'Stable' },
-  { name: 'Sheraton Grand Hotel', city: 'Delhi', totalVisits: 20, eventAttendance: 20, bookings: 20, repeatVisitors: 40, utilization: 53, revenue: '₹28,450', rating: 4.6, status: 'Needs Attention' },
+  {
+    name: 'Taj Hotel',
+    city: 'Bangalore',
+    totalVisits: 85,
+    eventAttendance: 320,
+    bookings: 35,
+    repeatVisitors: 35,
+    utilization: 88,
+    revenue: '₹45,230',
+    rating: 4.8,
+    status: 'High Performing',
+  },
+  {
+    name: 'Marlot Hotel',
+    city: 'Kolkata',
+    totalVisits: 100,
+    eventAttendance: 100,
+    bookings: 100,
+    repeatVisitors: 100,
+    utilization: 78,
+    revenue: '₹38,180',
+    rating: 4.9,
+    status: 'High Performing',
+  },
+  {
+    name: 'Oberoi Hotel',
+    city: 'Haryana',
+    totalVisits: 50,
+    eventAttendance: 50,
+    bookings: 50,
+    repeatVisitors: 50,
+    utilization: 78,
+    revenue: '₹36,065',
+    rating: 4.2,
+    status: 'Stable',
+  },
+  {
+    name: 'Atithia Bettapur Hotel',
+    city: 'Mumbai',
+    totalVisits: 30,
+    eventAttendance: 30,
+    bookings: 30,
+    repeatVisitors: 50,
+    utilization: 64,
+    revenue: '₹32,140',
+    rating: 4.6,
+    status: 'Stable',
+  },
+  {
+    name: 'Sheraton Grand Hotel',
+    city: 'Delhi',
+    totalVisits: 20,
+    eventAttendance: 20,
+    bookings: 20,
+    repeatVisitors: 40,
+    utilization: 53,
+    revenue: '₹28,450',
+    rating: 4.6,
+    status: 'Needs Attention',
+  },
 ]
 
 const STATUS_STYLES: Record<VenueRow['status'], string> = {
@@ -142,18 +265,12 @@ export const VenueDashboardPage = () => {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          <Button
-            className="h-9"
-            onClick={() => navigate('/venues/dashboard/metrics')}
-          >
+          <Button className="h-9" onClick={() => navigate('/venues/dashboard/metrics')}>
             <BarChart3 className="size-4" />
             Manage Metrics
           </Button>
 
-          <Button
-            className="h-9"
-            onClick={() => toast.message('Export coming soon')}
-          >
+          <Button className="h-9" onClick={() => toast.message('Export coming soon')}>
             <Download className="size-4" />
             Export Data
           </Button>
@@ -169,7 +286,9 @@ export const VenueDashboardPage = () => {
       <div className="rounded-xl border border-white/[0.06] bg-[#121212] p-5">
         <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className="text-[14px] font-bold text-white">Venue Utilization &amp; Revenue Trends</h2>
+            <h2 className="text-[14px] font-bold text-white">
+              Venue Utilization &amp; Revenue Trends
+            </h2>
             <p className="mt-0.5 text-[11px] text-[#777777]">
               Monthly utilization and revenue performance
             </p>
@@ -178,7 +297,7 @@ export const VenueDashboardPage = () => {
             <div className="relative">
               <select
                 defaultValue="3"
-                className="h-9 cursor-pointer appearance-none rounded-lg border border-white/10 bg-black px-3 pr-8 text-[11px] font-medium text-white outline-none focus:border-brand-accent/50"
+                className="focus:border-brand-accent/50 h-9 cursor-pointer appearance-none rounded-lg border border-white/10 bg-black px-3 pr-8 text-[11px] font-medium text-white outline-none"
               >
                 <option value="3">Last 3 Months</option>
                 <option value="6">Last 6 Months</option>
@@ -307,7 +426,7 @@ export const VenueDashboardPage = () => {
                     <div className="flex items-center gap-2">
                       <div className="h-1.5 w-20 overflow-hidden rounded-full bg-white/10">
                         <div
-                          className="h-full rounded-full bg-brand-accent"
+                          className="bg-brand-accent h-full rounded-full"
                           style={{ width: `${venue.utilization}%` }}
                         />
                       </div>
@@ -317,7 +436,7 @@ export const VenueDashboardPage = () => {
                   <td className="px-3 py-3 font-semibold text-white">{venue.revenue}</td>
                   <td className="px-3 py-3">
                     <span className="inline-flex items-center gap-1">
-                      <Star className="size-3.5 fill-brand-accent text-brand-accent" />
+                      <Star className="fill-brand-accent text-brand-accent size-3.5" />
                       <span className="font-semibold text-white">{venue.rating}</span>
                     </span>
                   </td>

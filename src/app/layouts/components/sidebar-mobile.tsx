@@ -24,11 +24,13 @@ export function SidebarMobile({ open, onClose }: SidebarMobileProps) {
 
   return (
     <>
-      {open ? <div className="fixed inset-0 z-40 bg-black/60 lg:hidden" onClick={onClose} aria-hidden /> : null}
+      {open ? (
+        <div className="fixed inset-0 z-40 bg-black/60 lg:hidden" onClick={onClose} aria-hidden />
+      ) : null}
 
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 z-50 w-[18.5rem] border-r border-white/10 bg-brand-surface shadow-[0_20px_70px_rgba(0,0,0,0.55)] transition-transform lg:hidden',
+          'bg-brand-surface fixed inset-y-0 left-0 z-50 w-[18.5rem] border-r border-white/10 shadow-[0_20px_70px_rgba(0,0,0,0.55)] transition-transform lg:hidden',
           open ? 'translate-x-0' : '-translate-x-full',
         )}
         role="dialog"
@@ -40,7 +42,7 @@ export function SidebarMobile({ open, onClose }: SidebarMobileProps) {
           <button
             type="button"
             onClick={onClose}
-            className="rounded-brand-md p-2 text-brand-stroke hover:bg-white/5"
+            className="rounded-brand-md text-brand-stroke p-2 hover:bg-white/5"
             aria-label="Close sidebar"
           >
             <X className="size-4" />

@@ -10,8 +10,16 @@ type NotificationSettingsPanelProps = {
 }
 
 const GENERAL_ITEMS = [
-  { key: 'inApp', label: 'In-App Notifications', description: 'Show notifications within the application' },
-  { key: 'push', label: 'Push Notifications', description: 'Send push notifications to mobile devices' },
+  {
+    key: 'inApp',
+    label: 'In-App Notifications',
+    description: 'Show notifications within the application',
+  },
+  {
+    key: 'push',
+    label: 'Push Notifications',
+    description: 'Send push notifications to mobile devices',
+  },
   { key: 'email', label: 'Email Notifications', description: 'Send email notifications to users' },
   {
     key: 'venue',
@@ -26,7 +34,11 @@ const GENERAL_ITEMS = [
 ]
 
 const TIME_SENSITIVE_ITEMS = [
-  { key: 'sms', label: 'SMS Notifications', description: 'Send SMS text messages (requires SMS provider)' },
+  {
+    key: 'sms',
+    label: 'SMS Notifications',
+    description: 'Send SMS text messages (requires SMS provider)',
+  },
   {
     key: 'event',
     label: 'Event Notifications',
@@ -42,7 +54,11 @@ const TIME_SENSITIVE_ITEMS = [
     label: 'Membership & Subscription Notifications',
     description: 'Alerts related to plan activation, renewals, expiry, and suspension',
   },
-  { key: 'bulkEmail', label: 'Bulk Email Operations', description: 'Send mass emails to multiple user segments' },
+  {
+    key: 'bulkEmail',
+    label: 'Bulk Email Operations',
+    description: 'Send mass emails to multiple user segments',
+  },
   { key: 'dataExport', label: 'Data Export', description: 'Allow exporting user and system data' },
 ]
 

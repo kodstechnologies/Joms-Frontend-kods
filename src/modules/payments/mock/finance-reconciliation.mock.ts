@@ -12,7 +12,13 @@ export type FinanceReconciliationRow = {
 }
 
 const gateways = ['Razorpay', 'Stripe', 'PayU', 'Cashfree', 'PhonePe']
-const differences: ReconciliationDifference[] = ['Matched', 'Matched', 'Matched', 'Mismatch', 'Pending']
+const differences: ReconciliationDifference[] = [
+  'Matched',
+  'Matched',
+  'Matched',
+  'Mismatch',
+  'Pending',
+]
 
 export const financeReconciliationRowsMock: FinanceReconciliationRow[] = Array.from(
   { length: 20 },

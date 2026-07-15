@@ -1,87 +1,52 @@
-import { Plus } from "lucide-react";
+import { Plus } from 'lucide-react'
 
-import { Input } from "@/shared/components/ui/input";
+import { Input } from '@/shared/components/ui/input'
 
 export function ByVenuesFilter() {
   return (
-    <section className="rounded-xl border border-white/10 bg-brand-surface-2 p-8 space-y-8">
-
+    <section className="bg-brand-surface-2 space-y-8 rounded-xl border border-white/10 p-8">
       {/* Header */}
 
       <div className="flex items-center justify-between">
+        <h2 className="text-brand-text text-sm font-medium">By Venues</h2>
 
-        <h2 className="text-sm font-medium text-brand-text">
-          By Venues
-        </h2>
-
-        <Plus className="h-5 w-5 cursor-pointer text-brand-text" />
-
+        <Plus className="text-brand-text h-5 w-5 cursor-pointer" />
       </div>
 
       {/* Category */}
 
       <div className="space-y-2">
+        <label className="text-brand-text text-sm font-medium">Category</label>
 
-        <label className="text-sm font-medium text-brand-text">
-          Category
-        </label>
-
-        <Input
-          placeholder="Search by name"
-          className="bg-brand-surface border-white/10"
-        />
-
+        <Input placeholder="Search by name" className="bg-brand-surface border-white/10" />
       </div>
 
       {/* Sub Category */}
 
       <div className="space-y-2">
+        <label className="text-brand-text text-sm font-medium">Sub-category</label>
 
-        <label className="text-sm font-medium text-brand-text">
-          Sub-category
-        </label>
-
-        <Input
-          placeholder="Search by name"
-          className="bg-brand-surface border-white/10"
-        />
-
+        <Input placeholder="Search by name" className="bg-brand-surface border-white/10" />
       </div>
 
       {/* Location */}
 
       <div className="space-y-3">
-
-        <h3 className="text-sm font-medium text-brand-text">
-          Location
-        </h3>
+        <h3 className="text-brand-text text-sm font-medium">Location</h3>
 
         <div className="grid grid-cols-2 gap-6">
+          <Input placeholder="State/Region" className="bg-brand-surface border-white/10" />
 
-          <Input
-            placeholder="State/Region"
-            className="bg-brand-surface border-white/10"
-          />
-
-          <Input
-            placeholder="City"
-            className="bg-brand-surface border-white/10"
-          />
-
+          <Input placeholder="City" className="bg-brand-surface border-white/10" />
         </div>
-
       </div>
 
       {/* Venue Type */}
 
       <div className="space-y-3">
+        <h3 className="text-brand-text text-sm font-medium">Venue Type</h3>
 
-        <h3 className="text-sm font-medium text-brand-text">
-          Venue Type
-        </h3>
-
-        <div className="flex gap-8 text-sm text-brand-text">
-
+        <div className="text-brand-text flex gap-8 text-sm">
           <label className="flex items-center gap-2">
             <input type="checkbox" />
             Indoor
@@ -91,21 +56,15 @@ export function ByVenuesFilter() {
             <input type="checkbox" />
             Outdoor
           </label>
-
         </div>
-
       </div>
 
       {/* Venue Status */}
 
       <div className="space-y-3">
+        <h3 className="text-brand-text text-sm font-medium">Venue Status</h3>
 
-        <h3 className="text-sm font-medium text-brand-text">
-          Venue Status
-        </h3>
-
-        <div className="flex flex-wrap gap-8 text-sm text-brand-text">
-
+        <div className="text-brand-text flex flex-wrap gap-8 text-sm">
           <label className="flex items-center gap-2">
             <input type="checkbox" />
             Active
@@ -120,21 +79,15 @@ export function ByVenuesFilter() {
             <input type="checkbox" />
             Suspended
           </label>
-
         </div>
-
       </div>
 
       {/* Approval Status */}
 
       <div className="space-y-3">
+        <h3 className="text-brand-text text-sm font-medium">Approval Status</h3>
 
-        <h3 className="text-sm font-medium text-brand-text">
-          Approval Status
-        </h3>
-
-        <div className="flex flex-wrap gap-8 text-sm text-brand-text">
-
+        <div className="text-brand-text flex flex-wrap gap-8 text-sm">
           <label className="flex items-center gap-2">
             <input type="checkbox" />
             Approved
@@ -149,21 +102,15 @@ export function ByVenuesFilter() {
             <input type="checkbox" />
             Rejected
           </label>
-
         </div>
-
       </div>
 
       {/* Type */}
 
       <div className="space-y-3">
+        <h3 className="text-brand-text text-sm font-medium">Type</h3>
 
-        <h3 className="text-sm font-medium text-brand-text">
-          Type
-        </h3>
-
-        <div className="flex flex-wrap gap-8 text-sm text-brand-text">
-
+        <div className="text-brand-text flex flex-wrap gap-8 text-sm">
           <label className="flex items-center gap-2">
             <input type="checkbox" />
             Conference Rooms
@@ -188,21 +135,15 @@ export function ByVenuesFilter() {
             <input type="checkbox" />
             Hall
           </label>
-
         </div>
-
       </div>
 
       {/* Availability */}
 
       <div className="space-y-3">
+        <h3 className="text-brand-text text-sm font-medium">Availability</h3>
 
-        <h3 className="text-sm font-medium text-brand-text">
-          Availability
-        </h3>
-
-        <div className="flex flex-wrap gap-8 text-sm text-brand-text">
-
+        <div className="text-brand-text flex flex-wrap gap-8 text-sm">
           <label className="flex items-center gap-2">
             <input type="checkbox" />
             Available Now
@@ -227,21 +168,15 @@ export function ByVenuesFilter() {
             <input type="checkbox" />
             By Appointment
           </label>
-
         </div>
-
       </div>
 
       {/* Amenities */}
 
       <div className="space-y-3">
+        <h3 className="text-brand-text text-sm font-medium">Amenities</h3>
 
-        <h3 className="text-sm font-medium text-brand-text">
-          Amenities
-        </h3>
-
-        <div className="flex flex-wrap gap-8 text-sm text-brand-text">
-
+        <div className="text-brand-text flex flex-wrap gap-8 text-sm">
           <label className="flex items-center gap-2">
             <input type="checkbox" />
             Wifi
@@ -266,51 +201,28 @@ export function ByVenuesFilter() {
             <input type="checkbox" />
             AV Equipment
           </label>
-
         </div>
-
       </div>
 
       {/* Number of Spaces */}
 
       <div className="space-y-4">
-
-        <h3 className="text-sm font-medium text-brand-text">
-          Number of Spaces
-        </h3>
+        <h3 className="text-brand-text text-sm font-medium">Number of Spaces</h3>
 
         <div className="grid grid-cols-2 gap-6">
-
           <div className="space-y-2">
+            <label className="text-brand-muted-light text-xs">Max</label>
 
-            <label className="text-xs text-brand-muted-light">
-              Max
-            </label>
-
-            <Input
-              placeholder="Enter Number"
-              className="bg-brand-surface border-white/10"
-            />
-
+            <Input placeholder="Enter Number" className="bg-brand-surface border-white/10" />
           </div>
 
           <div className="space-y-2">
+            <label className="text-brand-muted-light text-xs">Min</label>
 
-            <label className="text-xs text-brand-muted-light">
-              Min
-            </label>
-
-            <Input
-              placeholder="Enter Number"
-              className="bg-brand-surface border-white/10"
-            />
-
+            <Input placeholder="Enter Number" className="bg-brand-surface border-white/10" />
           </div>
-
         </div>
-
       </div>
-
     </section>
-  );
+  )
 }

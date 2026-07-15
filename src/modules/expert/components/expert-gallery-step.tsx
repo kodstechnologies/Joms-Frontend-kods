@@ -123,7 +123,7 @@ export const ExpertGalleryStep = ({ formData, setFormData }: Props) => {
                   <button
                     type="button"
                     onClick={() => removeImage(index)}
-                    className="absolute right-1 top-1 flex items-center gap-1 rounded bg-red-500 px-1.5 py-0.5 text-[9px] font-bold text-white"
+                    className="absolute top-1 right-1 flex items-center gap-1 rounded bg-red-500 px-1.5 py-0.5 text-[9px] font-bold text-white"
                   >
                     <X className="size-2.5" />
                     Remove

@@ -13,10 +13,12 @@ export function AnalyticsWidget({ title, metrics }: { title: string; metrics: An
         {metrics.map((metric) => (
           <div
             key={metric.label}
-            className="rounded-brand-md border border-white/10 bg-brand-surface-2 px-4 py-4 transition-colors hover:border-brand-accent-muted"
+            className="rounded-brand-md bg-brand-surface-2 hover:border-brand-accent-muted border border-white/10 px-4 py-4 transition-colors"
           >
-            <p className="text-[11px] font-semibold tracking-wide text-brand-muted">{metric.label}</p>
-            <p className="mt-1 text-sm font-semibold text-brand-text">{metric.value}</p>
+            <p className="text-brand-muted text-[11px] font-semibold tracking-wide">
+              {metric.label}
+            </p>
+            <p className="text-brand-text mt-1 text-sm font-semibold">{metric.value}</p>
           </div>
         ))}
       </ResponsiveGrid>

@@ -49,9 +49,7 @@ export function Topbar({
   const profileRoleLabel =
     profileQuery.data?.data.profile.roles.map((role) => role.name).join(', ') || 'Sub Admin'
   const roleLabel = user?.isSuperAdmin ? 'Super Admin' : profileRoleLabel
-  const profileImageUrl = isSubAdmin
-    ? profileQuery.data?.data.profile.profileImageUrl
-    : undefined
+  const profileImageUrl = isSubAdmin ? profileQuery.data?.data.profile.profileImageUrl : undefined
   const userInitial = displayName.charAt(0).toUpperCase()
   const canOpenProfile = isSubAdmin
 
@@ -63,7 +61,7 @@ export function Topbar({
           <button
             type="button"
             onClick={onMenuClick}
-            className="rounded-brand-md p-2 text-brand-stroke hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent/30 md:hidden"
+            className="rounded-brand-md text-brand-stroke focus-visible:ring-brand-accent/30 p-2 hover:bg-white/5 focus-visible:ring-2 focus-visible:outline-none md:hidden"
             aria-label="Open sidebar"
           >
             <Menu className="size-5" />
@@ -72,8 +70,8 @@ export function Topbar({
             <SidebarBrand />
           ) : (
             <div>
-              <p className="text-[15px] font-semibold tracking-tight text-brand-text">{title}</p>
-              <p className="text-xs leading-relaxed text-brand-muted">Command Operations Centre</p>
+              <p className="text-brand-text text-[15px] font-semibold tracking-tight">{title}</p>
+              <p className="text-brand-muted text-xs leading-relaxed">Command Operations Centre</p>
             </div>
           )}
         </div>
@@ -90,18 +88,18 @@ export function Topbar({
             }}
             disabled={!canOpenProfile}
             className={cn(
-              'flex items-center gap-3 rounded-brand-md transition-colors',
+              'rounded-brand-md flex items-center gap-3 transition-colors',
               canOpenProfile
-                ? 'cursor-pointer hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent/30'
+                ? 'focus-visible:ring-brand-accent/30 cursor-pointer hover:bg-white/5 focus-visible:ring-2 focus-visible:outline-none'
                 : 'cursor-default',
             )}
             aria-label={canOpenProfile ? 'Open my profile' : 'Profile'}
           >
             <div className={cn('hidden text-right sm:block')}>
-              <p className="text-sm font-semibold text-brand-text">{displayName}</p>
-              <p className="text-[11px] text-brand-muted">{roleLabel}</p>
+              <p className="text-brand-text text-sm font-semibold">{displayName}</p>
+              <p className="text-brand-muted text-[11px]">{roleLabel}</p>
             </div>
-            <div className="grid size-10 place-items-center overflow-hidden rounded-full border border-white/10 bg-gradient-to-br from-brand-gold-from/30 to-brand-gold-to/20 text-sm font-semibold text-brand-text shadow-[0_12px_35px_rgba(0,0,0,0.45)]">
+            <div className="from-brand-gold-from/30 to-brand-gold-to/20 text-brand-text grid size-10 place-items-center overflow-hidden rounded-full border border-white/10 bg-gradient-to-br text-sm font-semibold shadow-[0_12px_35px_rgba(0,0,0,0.45)]">
               {profileImageUrl ? (
                 <img src={profileImageUrl} alt={displayName} className="size-full object-cover" />
               ) : (

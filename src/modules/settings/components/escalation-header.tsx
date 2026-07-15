@@ -1,14 +1,12 @@
-import { SlidersHorizontal } from "lucide-react";
+import { SlidersHorizontal } from 'lucide-react'
 
-import { Button } from "@/shared/components/ui/button";
+import { Button } from '@/shared/components/ui/button'
 
 export function EscalationHeader() {
   return (
     <div className="flex items-start justify-between">
       <div>
-        <h1 className="text-[32px] font-semibold text-white">
-          All Escalation
-        </h1>
+        <h1 className="text-[32px] font-semibold text-white">All Escalation</h1>
 
         <p className="mt-1 text-sm text-[#8A8A8A]">
           Track revenue, payouts, and financial performance
@@ -20,5 +18,5 @@ export function EscalationHeader() {
         Manage Metrics
       </Button>
     </div>
-  );
+  )
 }

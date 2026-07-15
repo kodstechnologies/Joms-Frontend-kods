@@ -23,9 +23,7 @@ export function CategoryHubPage() {
         </div>
         <div className="rounded-2xl border border-white/10 bg-[#111111] p-6">
           <h2 className="text-lg font-semibold text-white">Venue Categories</h2>
-          <p className="mt-2 text-sm text-slate-400">
-            Manage venue categories and subcategories.
-          </p>
+          <p className="mt-2 text-sm text-slate-400">Manage venue categories and subcategories.</p>
           <Link to="/venues/categories/management" className="mt-4 inline-block">
             <Button>Open Venue Categories</Button>
           </Link>

@@ -27,11 +27,7 @@ const formatReviewDate = (value?: string) => {
   return `${year}-${month}`
 }
 
-const formatWorkDateRange = (
-  startDate?: string,
-  endDate?: string,
-  currentlyWorking?: boolean,
-) => {
+const formatWorkDateRange = (startDate?: string, endDate?: string, currentlyWorking?: boolean) => {
   const start = formatReviewDate(startDate)
   const end = currentlyWorking ? 'Present' : formatReviewDate(endDate)
   return `${start} - ${end}`
@@ -66,7 +62,7 @@ const VerifiedRow = ({ label, value }: { label: string; value: string }) => (
 )
 
 const SectionTitle = ({ children }: { children: React.ReactNode }) => (
-  <h3 className="mb-3 mt-6 border-b border-white/5 pb-2 text-sm font-bold text-white">
+  <h3 className="mt-6 mb-3 border-b border-white/5 pb-2 text-sm font-bold text-white">
     {children}
   </h3>
 )
@@ -81,10 +77,7 @@ const DocumentCard = ({
   fileName: string
 }) => {
   const hasFile = Boolean(file || fileName.trim())
-  const previewUrl = useMemo(
-    () => (file ? URL.createObjectURL(file) : null),
-    [file],
-  )
+  const previewUrl = useMemo(() => (file ? URL.createObjectURL(file) : null), [file])
 
   useEffect(() => {
     return () => {
@@ -150,7 +143,7 @@ const WorkExperienceDetailModal = ({
           type="button"
           onClick={onClose}
           aria-label="Close work experience details"
-          className="text-white transition-colors hover:text-brand-accent"
+          className="hover:text-brand-accent text-white transition-colors"
         >
           <X className="size-5" />
         </button>
@@ -165,19 +158,13 @@ const WorkExperienceDetailModal = ({
           <DetailRow label="Employment Type" value={entry.employmentType} />
           <DetailRow
             label="Date"
-            value={formatWorkDateRange(
-              entry.startDate,
-              entry.endDate,
-              entry.currentlyWorking,
-            )}
+            value={formatWorkDateRange(entry.startDate, entry.endDate, entry.currentlyWorking)}
           />
 
           <div className="my-4 border-t border-white/10" />
 
           <p className="mb-2 text-xs text-[#999]">Description</p>
-          <p className="text-sm leading-relaxed text-white">
-            {naValue(entry.description)}
-          </p>
+          <p className="text-sm leading-relaxed text-white">{naValue(entry.description)}</p>
         </div>
       </div>
     </div>
@@ -204,7 +191,7 @@ const WorkHistoryCard = ({
   <button
     type="button"
     onClick={onClick}
-    className="w-full rounded-lg border border-white/10 bg-black p-4 text-left transition-colors hover:border-brand-accent/30 hover:bg-[#111111]"
+    className="hover:border-brand-accent/30 w-full rounded-lg border border-white/10 bg-black p-4 text-left transition-colors hover:bg-[#111111]"
   >
     <div className="flex items-start justify-between gap-3">
       <p className="text-sm font-bold text-white">{naValue(jobTitle)}</p>
@@ -233,197 +220,184 @@ export const ExpertFinalReviewStep = ({ formData, setFormData }: Props) => {
       )}
 
       <div className="mx-auto w-full max-w-[850px] space-y-4">
-      <div className="overflow-hidden rounded-lg border border-white/5 bg-[#151515]">
-        <div className="relative h-28 bg-gradient-to-r from-slate-700 to-slate-900">
-          {formData.coverImageUrl && (
-            <img
-              src={formData.coverImageUrl}
-              alt="Cover"
-              className="h-full w-full object-cover"
-            />
-          )}
-          <div className="absolute -bottom-7 left-6 size-16 overflow-hidden rounded-full border-4 border-[#151515] bg-slate-600">
-            {formData.profileImageUrl && (
+        <div className="overflow-hidden rounded-lg border border-white/5 bg-[#151515]">
+          <div className="relative h-28 bg-gradient-to-r from-slate-700 to-slate-900">
+            {formData.coverImageUrl && (
               <img
-                src={formData.profileImageUrl}
-                alt="Profile"
+                src={formData.coverImageUrl}
+                alt="Cover"
                 className="h-full w-full object-cover"
               />
             )}
-          </div>
-        </div>
-
-        <div className="px-6 pb-6 pt-10">
-          <h2 className="text-sm font-bold text-white">Review &amp; Create Account</h2>
-          <p className="mt-1 text-xs text-[#777777]">
-            User verification before account creation
-          </p>
-
-          <SectionTitle>Basic Profile Information</SectionTitle>
-          <InfoRow label="Full Name" value={naValue(formData.fullname)} />
-          <InfoRow label="Location" value={naValue(formData.location)} />
-          <InfoRow label="Profile Bio" value={naValue(formData.bio)} />
-
-          <SectionTitle>Professional Information</SectionTitle>
-          <InfoRow label="Industry" value={naValue(formData.industry)} />
-          <InfoRow
-            label="Experience"
-            value={formatExperience(formData.experienceYears, formData.experienceMonths)}
-          />
-          <InfoRow
-            label="Service Type"
-            value={
-              formData.serviceType
-                ? formData.serviceType.charAt(0).toUpperCase() + formData.serviceType.slice(1)
-                : 'N/A'
-            }
-          />
-          <InfoRow
-            label="Service Category"
-            value={
-              formData.serviceCategory.length > 0
-                ? formData.serviceCategory.join(', ')
-                : 'N/A'
-            }
-          />
-          <div className="py-2">
-            <span className="text-xs text-[#999]">Service Offerings</span>
-            <div className="mt-2 flex flex-wrap justify-end gap-2">
-              {formData.offerings.length > 0 ? (
-                formData.offerings.map((offering) => (
-                  <span
-                    key={offering}
-                    className="rounded-full bg-brand-accent/15 px-2.5 py-1 text-[10px] font-medium text-brand-accent"
-                  >
-                    {offering}
-                  </span>
-                ))
-              ) : (
-                <span className="text-xs font-medium text-white">N/A</span>
+            <div className="absolute -bottom-7 left-6 size-16 overflow-hidden rounded-full border-4 border-[#151515] bg-slate-600">
+              {formData.profileImageUrl && (
+                <img
+                  src={formData.profileImageUrl}
+                  alt="Profile"
+                  className="h-full w-full object-cover"
+                />
               )}
             </div>
           </div>
-          <InfoRow
-            label="Sample Work Link"
-            value={
-              formData.sampleWorkLink ? (
-                <a
-                  href={formData.sampleWorkLink}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-brand-accent underline"
-                >
-                  {formData.sampleWorkLink}
-                </a>
-              ) : (
-                'N/A'
-              )
-            }
-          />
 
-          <SectionTitle>Primary Verification</SectionTitle>
-          <VerifiedRow label="Email" value={formData.email} />
-          <VerifiedRow label="Phone" value={formData.phoneNumber} />
+          <div className="px-6 pt-10 pb-6">
+            <h2 className="text-sm font-bold text-white">Review &amp; Create Account</h2>
+            <p className="mt-1 text-xs text-[#777777]">User verification before account creation</p>
 
-          <SectionTitle>Identity Verification</SectionTitle>
-          <VerifiedRow label="ID Type" value={formData.idType} />
-          <VerifiedRow label="ID Number" value={formData.idNumber} />
-          <InfoRow
-            label="GST Availability"
-            value={formData.gstAvailable ? 'Yes' : 'No'}
-          />
-          {formData.gstAvailable && (
-            <VerifiedRow label="GST Number" value={formData.gstNumber} />
-          )}
-          <VerifiedRow label="PAN Number" value={formData.panNumber} />
+            <SectionTitle>Basic Profile Information</SectionTitle>
+            <InfoRow label="Full Name" value={naValue(formData.fullname)} />
+            <InfoRow label="Location" value={naValue(formData.location)} />
+            <InfoRow label="Profile Bio" value={naValue(formData.bio)} />
 
-          <SectionTitle>Documents Uploaded</SectionTitle>
-          <div className="flex flex-col gap-4 sm:flex-row">
-            <DocumentCard
-              label="PAN Card"
-              file={formData.panCardFile}
-              fileName={formData.panCardFileName}
+            <SectionTitle>Professional Information</SectionTitle>
+            <InfoRow label="Industry" value={naValue(formData.industry)} />
+            <InfoRow
+              label="Experience"
+              value={formatExperience(formData.experienceYears, formData.experienceMonths)}
             />
-            <DocumentCard
-              label="Certificates or License & Permits"
-              file={formData.certificateFile}
-              fileName={formData.certificateFileName}
+            <InfoRow
+              label="Service Type"
+              value={
+                formData.serviceType
+                  ? formData.serviceType.charAt(0).toUpperCase() + formData.serviceType.slice(1)
+                  : 'N/A'
+              }
             />
-            {formData.gstAvailable && (
+            <InfoRow
+              label="Service Category"
+              value={
+                formData.serviceCategory.length > 0 ? formData.serviceCategory.join(', ') : 'N/A'
+              }
+            />
+            <div className="py-2">
+              <span className="text-xs text-[#999]">Service Offerings</span>
+              <div className="mt-2 flex flex-wrap justify-end gap-2">
+                {formData.offerings.length > 0 ? (
+                  formData.offerings.map((offering) => (
+                    <span
+                      key={offering}
+                      className="bg-brand-accent/15 text-brand-accent rounded-full px-2.5 py-1 text-[10px] font-medium"
+                    >
+                      {offering}
+                    </span>
+                  ))
+                ) : (
+                  <span className="text-xs font-medium text-white">N/A</span>
+                )}
+              </div>
+            </div>
+            <InfoRow
+              label="Sample Work Link"
+              value={
+                formData.sampleWorkLink ? (
+                  <a
+                    href={formData.sampleWorkLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-brand-accent underline"
+                  >
+                    {formData.sampleWorkLink}
+                  </a>
+                ) : (
+                  'N/A'
+                )
+              }
+            />
+
+            <SectionTitle>Primary Verification</SectionTitle>
+            <VerifiedRow label="Email" value={formData.email} />
+            <VerifiedRow label="Phone" value={formData.phoneNumber} />
+
+            <SectionTitle>Identity Verification</SectionTitle>
+            <VerifiedRow label="ID Type" value={formData.idType} />
+            <VerifiedRow label="ID Number" value={formData.idNumber} />
+            <InfoRow label="GST Availability" value={formData.gstAvailable ? 'Yes' : 'No'} />
+            {formData.gstAvailable && <VerifiedRow label="GST Number" value={formData.gstNumber} />}
+            <VerifiedRow label="PAN Number" value={formData.panNumber} />
+
+            <SectionTitle>Documents Uploaded</SectionTitle>
+            <div className="flex flex-col gap-4 sm:flex-row">
               <DocumentCard
-                label="GST Certificate"
-                file={formData.gstCertificateFile}
-                fileName={formData.gstCertificateFileName}
+                label="PAN Card"
+                file={formData.panCardFile}
+                fileName={formData.panCardFileName}
               />
+              <DocumentCard
+                label="Certificates or License & Permits"
+                file={formData.certificateFile}
+                fileName={formData.certificateFileName}
+              />
+              {formData.gstAvailable && (
+                <DocumentCard
+                  label="GST Certificate"
+                  file={formData.gstCertificateFile}
+                  fileName={formData.gstCertificateFileName}
+                />
+              )}
+            </div>
+
+            <SectionTitle>Work History ({workHistoryEntries.length})</SectionTitle>
+            {workHistoryEntries.length > 0 ? (
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                {workHistoryEntries.map((entry, index) => (
+                  <WorkHistoryCard
+                    key={index}
+                    jobTitle={entry.jobTitle}
+                    companyName={entry.companyName}
+                    employmentType={entry.employmentType}
+                    startDate={entry.startDate}
+                    endDate={entry.endDate}
+                    currentlyWorking={entry.currentlyWorking}
+                    onClick={() => setSelectedWorkExperience(entry)}
+                  />
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs text-[#666]">No work history added.</p>
+            )}
+
+            <SectionTitle>Gallery ({formData.galleryPreviews.length})</SectionTitle>
+            {formData.galleryPreviews.length > 0 ? (
+              <div className="flex flex-wrap gap-3">
+                {formData.galleryPreviews.map((preview, index) => (
+                  <div
+                    key={preview}
+                    className="size-16 overflow-hidden rounded-md border border-white/10"
+                  >
+                    <img
+                      src={preview}
+                      alt={`Gallery ${index + 1}`}
+                      className="h-full w-full object-cover"
+                    />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs text-[#666]">No gallery images uploaded.</p>
             )}
           </div>
+        </div>
 
-          <SectionTitle>Work History ({workHistoryEntries.length})</SectionTitle>
-          {workHistoryEntries.length > 0 ? (
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              {workHistoryEntries.map((entry, index) => (
-                <WorkHistoryCard
-                  key={index}
-                  jobTitle={entry.jobTitle}
-                  companyName={entry.companyName}
-                  employmentType={entry.employmentType}
-                  startDate={entry.startDate}
-                  endDate={entry.endDate}
-                  currentlyWorking={entry.currentlyWorking}
-                  onClick={() => setSelectedWorkExperience(entry)}
-                />
-              ))}
-            </div>
-          ) : (
-            <p className="text-xs text-[#666]">No work history added.</p>
-          )}
+        <div className="rounded-lg border border-white/5 bg-[#151515] p-6">
+          <label className="mb-2 block text-xs font-medium text-white">Internal notes</label>
+          <textarea
+            value={formData.internalNotes}
+            onChange={(e) => setFormData((prev) => ({ ...prev, internalNotes: e.target.value }))}
+            placeholder="Enter Text"
+            className="focus:ring-brand-accent/40 h-24 w-full rounded-md bg-black p-3 text-sm text-white outline-none placeholder:text-[#666] focus:ring-1"
+          />
 
-          <SectionTitle>Gallery ({formData.galleryPreviews.length})</SectionTitle>
-          {formData.galleryPreviews.length > 0 ? (
-            <div className="flex flex-wrap gap-3">
-              {formData.galleryPreviews.map((preview, index) => (
-                <div
-                  key={preview}
-                  className="size-16 overflow-hidden rounded-md border border-white/10"
-                >
-                  <img
-                    src={preview}
-                    alt={`Gallery ${index + 1}`}
-                    className="h-full w-full object-cover"
-                  />
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-xs text-[#666]">No gallery images uploaded.</p>
-          )}
+          <label className="mt-4 flex items-center gap-2 text-xs text-white">
+            <input
+              type="checkbox"
+              checked={formData.isVerified}
+              onChange={(e) => setFormData((prev) => ({ ...prev, isVerified: e.target.checked }))}
+              className="rounded border-slate-700 bg-transparent"
+            />
+            I confirm that the details in this platform are being verified thoroughly
+          </label>
         </div>
       </div>
-
-      <div className="rounded-lg border border-white/5 bg-[#151515] p-6">
-        <label className="mb-2 block text-xs font-medium text-white">Internal notes</label>
-        <textarea
-          value={formData.internalNotes}
-          onChange={(e) =>
-            setFormData((prev) => ({ ...prev, internalNotes: e.target.value }))
-          }
-          placeholder="Enter Text"
-          className="h-24 w-full rounded-md bg-black p-3 text-sm text-white outline-none placeholder:text-[#666] focus:ring-1 focus:ring-brand-accent/40"
-        />
-
-        <label className="mt-4 flex items-center gap-2 text-xs text-white">
-          <input
-            type="checkbox"
-            checked={formData.isVerified}
-            onChange={(e) =>
-              setFormData((prev) => ({ ...prev, isVerified: e.target.checked }))
-            }
-            className="rounded border-slate-700 bg-transparent"
-          />
-          I confirm that the details in this platform are being verified thoroughly
-        </label>
-      </div>
-    </div>
     </>
   )
 }

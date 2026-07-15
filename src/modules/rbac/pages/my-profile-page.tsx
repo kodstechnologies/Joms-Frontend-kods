@@ -93,7 +93,7 @@ export function MyProfilePage() {
         accessorKey: 'changedTo',
         header: 'Changed To',
         cell: ({ row }) => (
-          <span className="inline-flex rounded-full border border-white/10 bg-white/5 px-2.5 py-0.5 text-[11px] font-semibold text-brand-text">
+          <span className="text-brand-text inline-flex rounded-full border border-white/10 bg-white/5 px-2.5 py-0.5 text-[11px] font-semibold">
             {row.original.changedTo}
           </span>
         ),
@@ -104,7 +104,9 @@ export function MyProfilePage() {
         accessorKey: 'adminNote',
         header: 'Admin Note',
         cell: ({ row }) => (
-          <span className="line-clamp-2 max-w-[340px] text-xs text-brand-text">{row.original.adminNote}</span>
+          <span className="text-brand-text line-clamp-2 max-w-[340px] text-xs">
+            {row.original.adminNote}
+          </span>
         ),
       },
     ],
@@ -113,7 +115,7 @@ export function MyProfilePage() {
 
   if (user?.isSuperAdmin) {
     return (
-      <div className="flex min-h-[40vh] items-center justify-center text-brand-muted">
+      <div className="text-brand-muted flex min-h-[40vh] items-center justify-center">
         This page is available for sub-admin accounts only.
       </div>
     )
@@ -129,7 +131,7 @@ export function MyProfilePage() {
         <button
           type="button"
           onClick={() => navigate(-1)}
-          className="group flex w-fit items-center gap-2 font-heading text-[20px] font-bold tracking-tight text-white transition-colors hover:text-[#FBC078]"
+          className="group font-heading flex w-fit items-center gap-2 text-[20px] font-bold tracking-tight text-white transition-colors hover:text-[#FBC078]"
         >
           <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
           <span>My Profile</span>
@@ -142,20 +144,22 @@ export function MyProfilePage() {
       </div>
 
       <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
-        <h2 className="text-sm font-semibold text-brand-text">Admin Overview</h2>
+        <h2 className="text-brand-text text-sm font-semibold">Admin Overview</h2>
         <div className="flex flex-wrap gap-2">
           <button
             type="button"
             onClick={() => toast.info('All tasks coming soon')}
-            className="inline-flex items-center gap-2 rounded-brand-md bg-[#E8C489] px-4 py-2.5 text-sm font-semibold text-[#1A1A1A] transition-colors hover:bg-[#F0D4A4]"
+            className="rounded-brand-md inline-flex items-center gap-2 bg-[#E8C489] px-4 py-2.5 text-sm font-semibold text-[#1A1A1A] transition-colors hover:bg-[#F0D4A4]"
           >
             <Clock className="size-4" />
             All Tasks
           </button>
           <button
             type="button"
-            onClick={() => historySectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-            className="inline-flex items-center gap-2 rounded-brand-md border border-[#E8C489] bg-transparent px-4 py-2.5 text-sm font-semibold text-[#E8C489] transition-colors hover:bg-[#E8C489]/10"
+            onClick={() =>
+              historySectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+            }
+            className="rounded-brand-md inline-flex items-center gap-2 border border-[#E8C489] bg-transparent px-4 py-2.5 text-sm font-semibold text-[#E8C489] transition-colors hover:bg-[#E8C489]/10"
           >
             <Clock className="size-4" />
             View Activity Logs
@@ -166,10 +170,10 @@ export function MyProfilePage() {
       <section className={cn(uiTokens.radiusCard, uiTokens.borderSubtle, 'bg-brand-surface p-6')}>
         <div className="mb-5 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="grid size-9 place-items-center rounded-brand-md bg-brand-accent/10 text-brand-accent">
+            <div className="rounded-brand-md bg-brand-accent/10 text-brand-accent grid size-9 place-items-center">
               <UserRound className="size-4" />
             </div>
-            <h3 className="text-base font-semibold text-brand-text">Admin Info</h3>
+            <h3 className="text-brand-text text-base font-semibold">Admin Info</h3>
           </div>
           <span
             className={cn(
@@ -186,118 +190,140 @@ export function MyProfilePage() {
         <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-5">
           <div className="grid size-20 place-items-center overflow-hidden rounded-full border border-white/10 bg-[#111111]">
             {subAdmin.profileImageUrl ? (
-              <img src={subAdmin.profileImageUrl} alt={subAdmin.fullname} className="size-full object-cover" />
+              <img
+                src={subAdmin.profileImageUrl}
+                alt={subAdmin.fullname}
+                className="size-full object-cover"
+              />
             ) : (
-              <UserRound className="size-9 text-brand-muted" />
+              <UserRound className="text-brand-muted size-9" />
             )}
           </div>
           <div>
-            <p className="text-xs text-brand-muted">First Name</p>
-            <p className="mt-1 text-sm font-medium text-brand-text">{subAdmin.firstName || '—'}</p>
+            <p className="text-brand-muted text-xs">First Name</p>
+            <p className="text-brand-text mt-1 text-sm font-medium">{subAdmin.firstName || '—'}</p>
           </div>
           <div>
-            <p className="text-xs text-brand-muted">Last Name</p>
-            <p className="mt-1 text-sm font-medium text-brand-text">{subAdmin.lastName || '—'}</p>
+            <p className="text-brand-muted text-xs">Last Name</p>
+            <p className="text-brand-text mt-1 text-sm font-medium">{subAdmin.lastName || '—'}</p>
           </div>
           <div>
-            <p className="text-xs text-brand-muted">Role</p>
-            <span className="mt-2 inline-flex rounded-full border border-white/10 bg-white/5 px-2.5 py-0.5 text-[11px] font-semibold text-brand-text">
+            <p className="text-brand-muted text-xs">Role</p>
+            <span className="text-brand-text mt-2 inline-flex rounded-full border border-white/10 bg-white/5 px-2.5 py-0.5 text-[11px] font-semibold">
               {roleLabel}
             </span>
           </div>
           <div>
-            <p className="text-xs text-brand-muted">Job title</p>
-            <p className="mt-1 text-sm font-medium text-brand-text">{subAdmin.jobTitle || '—'}</p>
+            <p className="text-brand-muted text-xs">Job title</p>
+            <p className="text-brand-text mt-1 text-sm font-medium">{subAdmin.jobTitle || '—'}</p>
           </div>
           <div>
-            <p className="text-xs text-brand-muted">Employee ID</p>
-            <p className="mt-1 text-sm font-medium text-brand-text">{subAdmin.employeeId || '—'}</p>
+            <p className="text-brand-muted text-xs">Employee ID</p>
+            <p className="text-brand-text mt-1 text-sm font-medium">{subAdmin.employeeId || '—'}</p>
           </div>
           <div>
-            <p className="text-xs text-brand-muted">Department</p>
-            <p className="mt-1 text-sm font-medium text-brand-text">{subAdmin.department || '—'}</p>
+            <p className="text-brand-muted text-xs">Department</p>
+            <p className="text-brand-text mt-1 text-sm font-medium">{subAdmin.department || '—'}</p>
           </div>
           <div>
-            <p className="text-xs text-brand-muted">2FA Status</p>
-            <p className="mt-1 text-sm font-medium text-brand-text">{subAdmin.mfaEnabled ? 'Enabled' : 'Disabled'}</p>
+            <p className="text-brand-muted text-xs">2FA Status</p>
+            <p className="text-brand-text mt-1 text-sm font-medium">
+              {subAdmin.mfaEnabled ? 'Enabled' : 'Disabled'}
+            </p>
           </div>
           <div>
-            <p className="text-xs text-brand-muted">Workplace</p>
-            <p className="mt-1 text-sm font-medium text-brand-text">{subAdmin.workplaceFlexibility || '—'}</p>
+            <p className="text-brand-muted text-xs">Workplace</p>
+            <p className="text-brand-text mt-1 text-sm font-medium">
+              {subAdmin.workplaceFlexibility || '—'}
+            </p>
           </div>
           <div className="text-right">
-            <p className="text-xs text-brand-muted">Last Active</p>
-            <p className="mt-1 text-sm font-medium text-brand-text">{formatDateTime(subAdmin.lastActionAt || subAdmin.updatedAt)}</p>
+            <p className="text-brand-muted text-xs">Last Active</p>
+            <p className="text-brand-text mt-1 text-sm font-medium">
+              {formatDateTime(subAdmin.lastActionAt || subAdmin.updatedAt)}
+            </p>
           </div>
         </div>
       </section>
 
       <section className={cn(uiTokens.radiusCard, uiTokens.borderSubtle, 'bg-brand-surface p-6')}>
         <div className="mb-5 flex items-center gap-2">
-          <div className="grid size-9 place-items-center rounded-brand-md bg-brand-accent/10 text-brand-accent">
+          <div className="rounded-brand-md bg-brand-accent/10 text-brand-accent grid size-9 place-items-center">
             <UserRound className="size-4" />
           </div>
-          <h3 className="text-base font-semibold text-brand-text">More Details</h3>
+          <h3 className="text-brand-text text-base font-semibold">More Details</h3>
         </div>
         <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-5">
           <div>
-            <p className="text-xs text-brand-muted">Date Of Birth</p>
-            <p className="mt-1 text-sm font-medium text-brand-text">{formatDateOnly(subAdmin.dateOfBirth)}</p>
+            <p className="text-brand-muted text-xs">Date Of Birth</p>
+            <p className="text-brand-text mt-1 text-sm font-medium">
+              {formatDateOnly(subAdmin.dateOfBirth)}
+            </p>
           </div>
           <div>
-            <p className="text-xs text-brand-muted">Email ID</p>
-            <p className="mt-1 text-sm font-medium text-brand-text">{subAdmin.email || '—'}</p>
+            <p className="text-brand-muted text-xs">Email ID</p>
+            <p className="text-brand-text mt-1 text-sm font-medium">{subAdmin.email || '—'}</p>
           </div>
           <div>
-            <p className="text-xs text-brand-muted">Phone number</p>
-            <p className="mt-1 text-sm font-medium text-brand-text">{subAdmin.phone || '—'}</p>
+            <p className="text-brand-muted text-xs">Phone number</p>
+            <p className="text-brand-text mt-1 text-sm font-medium">{subAdmin.phone || '—'}</p>
           </div>
           <div>
-            <p className="text-xs text-brand-muted">Blood Group</p>
-            <p className="mt-1 text-sm font-medium text-brand-text">{subAdmin.bloodGroup || '—'}</p>
+            <p className="text-brand-muted text-xs">Blood Group</p>
+            <p className="text-brand-text mt-1 text-sm font-medium">{subAdmin.bloodGroup || '—'}</p>
           </div>
           <div>
-            <p className="text-xs text-brand-muted">Created By</p>
-            <p className="mt-1 text-sm font-medium text-brand-text">{subAdmin.createdBy || 'Super Admin'}</p>
+            <p className="text-brand-muted text-xs">Created By</p>
+            <p className="text-brand-text mt-1 text-sm font-medium">
+              {subAdmin.createdBy || 'Super Admin'}
+            </p>
           </div>
           <div>
-            <p className="text-xs text-brand-muted">Location</p>
-            <p className="mt-1 text-sm font-medium text-brand-text">{subAdmin.location || '—'}</p>
+            <p className="text-brand-muted text-xs">Location</p>
+            <p className="text-brand-text mt-1 text-sm font-medium">{subAdmin.location || '—'}</p>
           </div>
           <div>
-            <p className="text-xs text-brand-muted">Previous Role</p>
-            <p className="mt-1 text-sm font-medium text-brand-text">—</p>
+            <p className="text-brand-muted text-xs">Previous Role</p>
+            <p className="text-brand-text mt-1 text-sm font-medium">—</p>
           </div>
           <div>
-            <p className="text-xs text-brand-muted">Created At</p>
-            <p className="mt-1 text-sm font-medium text-brand-text">{formatDateTime(subAdmin.createdAt)}</p>
+            <p className="text-brand-muted text-xs">Created At</p>
+            <p className="text-brand-text mt-1 text-sm font-medium">
+              {formatDateTime(subAdmin.createdAt)}
+            </p>
           </div>
           <div>
-            <p className="text-xs text-brand-muted">Password Updated</p>
-            <p className="mt-1 text-sm font-medium text-brand-text">{formatDateTime(passwordUpdatedAt)}</p>
+            <p className="text-brand-muted text-xs">Password Updated</p>
+            <p className="text-brand-text mt-1 text-sm font-medium">
+              {formatDateTime(passwordUpdatedAt)}
+            </p>
             <button
               type="button"
               onClick={() => toast.info('Password change from profile will be enabled soon')}
-              className="mt-1 text-[11px] text-brand-accent underline decoration-brand-accent/40 underline-offset-2"
+              className="text-brand-accent decoration-brand-accent/40 mt-1 text-[11px] underline underline-offset-2"
             >
               Change Password
             </button>
           </div>
           <div>
-            <p className="text-xs text-brand-muted">Emergency contact name</p>
-            <p className="mt-1 text-sm font-medium text-brand-text">{subAdmin.emergencyContactName || '—'}</p>
+            <p className="text-brand-muted text-xs">Emergency contact name</p>
+            <p className="text-brand-text mt-1 text-sm font-medium">
+              {subAdmin.emergencyContactName || '—'}
+            </p>
           </div>
           <div>
-            <p className="text-xs text-brand-muted">Contact details</p>
-            <p className="mt-1 text-sm font-medium text-brand-text">{subAdmin.emergencyContact || '—'}</p>
+            <p className="text-brand-muted text-xs">Contact details</p>
+            <p className="text-brand-text mt-1 text-sm font-medium">
+              {subAdmin.emergencyContact || '—'}
+            </p>
           </div>
         </div>
       </section>
 
       <section ref={historySectionRef}>
         <div className="mb-3">
-          <h3 className="text-lg font-semibold text-brand-text">Role History &amp; Change Log</h3>
-          <p className="mt-1 text-sm text-brand-muted">
+          <h3 className="text-brand-text text-lg font-semibold">Role History &amp; Change Log</h3>
+          <p className="text-brand-muted mt-1 text-sm">
             Complete history of actions performed on this admin
           </p>
         </div>

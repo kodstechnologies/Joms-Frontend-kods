@@ -1,14 +1,14 @@
-import VenueCategorySubCategoryCard from "./venue-category-sub-category-card";
-import { categoryViewTheme } from "./category-view.theme";
+import VenueCategorySubCategoryCard from './venue-category-sub-category-card'
+import { categoryViewTheme } from './category-view.theme'
 
 interface Props {
   subCategories: {
-    id: string;
-    name: string;
-    status: "Active" | "Paused";
-    addedOn: string;
-    icon?: string;
-  }[];
+    id: string
+    name: string
+    status: 'Active' | 'Paused'
+    addedOn: string
+    icon?: string
+  }[]
 }
 
 const VenueCategorySubCategorySection = ({ subCategories }: Props) => {
@@ -29,7 +29,7 @@ const VenueCategorySubCategorySection = ({ subCategories }: Props) => {
         ))}
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default VenueCategorySubCategorySection;
+export default VenueCategorySubCategorySection

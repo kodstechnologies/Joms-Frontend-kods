@@ -1,17 +1,20 @@
-export type SubscriptionStatus = 'active' | 'expired'
+export type SubscriptionStatus = 'active' | 'paused' | 'cancelled' | 'expired'
 
 export type MembershipSubscription = {
   _id: string
   subscriptionId: string
   partnerId: string
   partnerName: string
-  membershipPlanId: string | {
-    _id: string
-    planId: string
-    planName: string
-    type: string
-    pricing?: Array<{ billingCycleName: string; price: number; discount: number }>
-  }
+  membershipPlanId:
+    | string
+    | {
+        _id: string
+        planId: string
+        planName: string
+        type: string
+        pricing?: Array<{ billingCycleName: string; price: number; discount: number }>
+        features?: import('./membership').MembershipFeatures
+      }
   planId: string
   planName: string
   billingCycleName: string
@@ -44,6 +47,23 @@ export type MembershipSubscription = {
     cancelledAt?: string
     cancelledBy?: string
   }
+  pauseInfo?: {
+    fromDate?: string
+    toDate?: string | null
+    reasons?: string[]
+    adminNotes?: string
+    pausedAt?: string
+    pausedBy?: string
+  }
+  paymentInfo?: {
+    paymentId?: string
+    orderId?: string
+    razorpayOrderId?: string
+    razorpayPaymentId?: string
+    paymentMethod?: string
+    lastPaymentAt?: string
+    amount?: number
+  }
   createdAt?: string
   updatedAt?: string
   updatedBy?: string | null
@@ -61,6 +81,8 @@ export type SubscriptionListResponse = {
       totalPages: number
       counts: {
         active: number
+        paused: number
+        cancelled: number
         expired: number
         total: number
       }
@@ -102,3 +124,5 @@ export type CancelSubscriptionPayload = {
   toDate?: string
   updatedBy?: string
 }
+
+export type PauseSubscriptionPayload = CancelSubscriptionPayload

@@ -22,9 +22,7 @@ export function ScheduleMaintenanceModal({ open, onClose }: ScheduleMaintenanceM
         <div className="flex items-start justify-between gap-4">
           <div>
             <h2 className="text-[18px] font-bold text-white">Schedule Maintenance</h2>
-            <p className="mt-1 text-[12px] text-[#888888]">
-              Enter Start Date & End Date and time
-            </p>
+            <p className="mt-1 text-[12px] text-[#888888]">Enter Start Date & End Date and time</p>
           </div>
           <button type="button" onClick={onClose} className="text-[#888888] hover:text-white">
             <X className="size-5" />

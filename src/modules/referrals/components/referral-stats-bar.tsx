@@ -1,12 +1,4 @@
-import {
-  BarChart3,
-  Clock,
-  Crown,
-  RefreshCw,
-  Target,
-  TrendingUp,
-  UserPlus,
-} from 'lucide-react'
+import { BarChart3, Clock, Crown, RefreshCw, Target, TrendingUp, UserPlus } from 'lucide-react'
 
 import type { ReferralMetrics } from '../types/referral'
 import { StatCard } from '@/shared/components/dashboard/stat-card'
@@ -51,7 +43,11 @@ export function ReferralStatsBar({ metrics }: ReferralStatsBarProps) {
     { title: 'Referral Expiry Rate', value: `${metrics.referralExpiryRate}%`, icon: Clock },
     { title: 'Top Source Performance', value: metrics.topSourcePerformance, icon: Crown },
     { title: 'Total Goals Completed', value: String(metrics.totalGoalsCompleted), icon: Target },
-    { title: 'Expert Memberships Unlocked', value: String(metrics.membershipsUnlocked), icon: Crown },
+    {
+      title: 'Expert Memberships Unlocked',
+      value: String(metrics.membershipsUnlocked),
+      icon: Crown,
+    },
     {
       title: 'Average referrals per expert',
       value: String(metrics.averageReferralsPerUser),

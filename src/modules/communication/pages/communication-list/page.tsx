@@ -41,14 +41,19 @@ export function CommunicationListPage() {
     <div className="flex flex-col gap-4 md:gap-6">
       <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
         <div>
-          <h1 className="text-2xl font-bold text-brand-text md:text-3xl">Communication Management</h1>
-          <p className="mt-1 text-sm text-brand-muted md:text-base">
+          <h1 className="text-brand-text text-2xl font-bold md:text-3xl">
+            Communication Management
+          </h1>
+          <p className="text-brand-muted mt-1 text-sm md:text-base">
             Comprehensive user data and admin controls.
           </p>
         </div>
 
         <div className="flex w-full flex-col gap-2 sm:flex-row md:w-auto">
-          <Button variant="secondary" onClick={() => toast.info('Metrics configuration coming soon')}>
+          <Button
+            variant="secondary"
+            onClick={() => toast.info('Metrics configuration coming soon')}
+          >
             <BarChart3 className="size-4" />
             Manage Metrics
           </Button>

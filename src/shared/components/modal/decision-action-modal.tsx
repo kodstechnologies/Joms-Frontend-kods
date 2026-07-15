@@ -140,7 +140,10 @@ export function DecisionActionModal({
         onClick={(event) => event.stopPropagation()}
       >
         <div className="flex shrink-0 items-center justify-between border-b border-white/10 px-6 py-4">
-          <h2 id="decision-action-modal-title" className="text-xl font-semibold tracking-tight text-white">
+          <h2
+            id="decision-action-modal-title"
+            className="text-xl font-semibold tracking-tight text-white"
+          >
             {title}
           </h2>
           <button
@@ -162,16 +165,20 @@ export function DecisionActionModal({
                 </span>
               ) : (
                 <span className="flex size-16 items-center justify-center rounded-full bg-[#5C4630]">
-                  <ArrowUpRight className="size-7 text-[#E5B678]" strokeWidth={2} aria-hidden="true" />
+                  <ArrowUpRight
+                    className="size-7 text-[#E5B678]"
+                    strokeWidth={2}
+                    aria-hidden="true"
+                  />
                 </span>
               )}
             </div>
           ) : null}
 
           <div className="mx-auto max-w-[340px] space-y-1 text-center">
-            <p className="text-[15px] font-medium leading-snug text-white">{primary}</p>
+            <p className="text-[15px] leading-snug font-medium text-white">{primary}</p>
             {secondary ? (
-              <p className="text-sm font-normal leading-relaxed text-white/90">{secondary}</p>
+              <p className="text-sm leading-relaxed font-normal text-white/90">{secondary}</p>
             ) : null}
           </div>
 
@@ -213,14 +220,14 @@ export function DecisionActionModal({
                   value={startDate}
                   disabled={indefinite}
                   onChange={(event) => onStartDateChange?.(event.target.value)}
-                  className="h-11 w-full rounded-lg border border-white/10 bg-black px-3 text-sm text-white outline-none [color-scheme:dark] focus:border-white/30 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="h-11 w-full rounded-lg border border-white/10 bg-black px-3 text-sm text-white [color-scheme:dark] outline-none focus:border-white/30 disabled:cursor-not-allowed disabled:opacity-50"
                 />
                 <input
                   type="date"
                   value={endDate}
                   disabled={indefinite}
                   onChange={(event) => onEndDateChange?.(event.target.value)}
-                  className="h-11 w-full rounded-lg border border-white/10 bg-black px-3 text-sm text-white outline-none [color-scheme:dark] focus:border-white/30 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="h-11 w-full rounded-lg border border-white/10 bg-black px-3 text-sm text-white [color-scheme:dark] outline-none focus:border-white/30 disabled:cursor-not-allowed disabled:opacity-50"
                 />
               </div>
               <label className="mt-3 flex cursor-pointer items-center gap-2.5 text-sm text-white">

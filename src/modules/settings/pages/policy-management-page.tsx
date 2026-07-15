@@ -1,15 +1,6 @@
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import {
-  Calendar,
-  Clock,
-  Eye,
-  FileText,
-  History,
-  Plus,
-  RotateCw,
-  UserRound,
-} from 'lucide-react'
+import { Calendar, Clock, Eye, FileText, History, Plus, RotateCw, UserRound } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { SettingsFooterActions } from '../components/settings-footer-actions'
@@ -26,14 +17,7 @@ import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
 
 const POLICY_SETTINGS_TABS: Array<{
-  key:
-    | 'platform'
-    | 'security'
-    | 'user'
-    | 'expert'
-    | 'event'
-    | 'venue'
-    | 'service'
+  key: 'platform' | 'security' | 'user' | 'expert' | 'event' | 'venue' | 'service'
   label: string
   routeTab?: string
 }> = [
@@ -242,11 +226,16 @@ export function PolicyCreatePage() {
 
   return (
     <div className="space-y-6">
-      <SectionHeader title="Settings" subtitle="Track revenue, payouts, and financial performance" />
+      <SectionHeader
+        title="Settings"
+        subtitle="Track revenue, payouts, and financial performance"
+      />
       <PolicySettingsTopTabs activeKey="service" />
 
       <div className="space-y-4 rounded-2xl border border-white/10 bg-[#111111] p-4">
-        <p className="text-xs text-slate-500">Platform Control / Policy Management / Create Policy</p>
+        <p className="text-xs text-slate-500">
+          Platform Control / Policy Management / Create Policy
+        </p>
 
         <section className="space-y-4 rounded-xl border border-white/10 bg-[#151515] p-4">
           <p className="text-sm font-semibold text-white">Policy Information</p>
@@ -302,20 +291,28 @@ export function PolicyCreatePage() {
           </div>
 
           <div>
-            <label className="mb-1 block text-[11px] text-slate-400">Summary Of What Was Changed</label>
+            <label className="mb-1 block text-[11px] text-slate-400">
+              Summary Of What Was Changed
+            </label>
             <textarea
               rows={2}
               value={changeSummary}
               onChange={(event) => setChangeSummary(event.target.value)}
               className="w-full rounded-lg border border-white/10 bg-[#0C0C0C] px-3 py-2 text-sm text-white"
             />
-            <p className="mt-1 text-[11px] text-slate-500">This field is required for version publishing</p>
+            <p className="mt-1 text-[11px] text-slate-500">
+              This field is required for version publishing
+            </p>
           </div>
         </section>
       </div>
 
       <div className="flex justify-between rounded-xl border border-white/10 bg-[#111111] px-3 py-2.5">
-        <Button variant="secondary" className="h-8 text-xs" onClick={() => navigate('/settings/policies')}>
+        <Button
+          variant="secondary"
+          className="h-8 text-xs"
+          onClick={() => navigate('/settings/policies')}
+        >
           Cancel
         </Button>
         <div className="flex gap-2">

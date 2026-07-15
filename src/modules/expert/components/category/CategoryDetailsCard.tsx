@@ -1,16 +1,16 @@
-import UploadBox from "./UploadBox";
-import { categoryFormTheme } from "./category-form.theme";
+import UploadBox from './UploadBox'
+import { categoryFormTheme } from './category-form.theme'
 
 interface CategoryDetailsCardProps {
-  categoryName: string;
-  description: string;
-  iconPreview?: string;
-  imagePreview?: string;
-  readOnly?: boolean;
-  onCategoryNameChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  onDescriptionChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
-  onIconChange: (file: File | null) => void;
-  onImageChange: (file: File | null) => void;
+  categoryName: string
+  description: string
+  iconPreview?: string
+  imagePreview?: string
+  readOnly?: boolean
+  onCategoryNameChange: (e: React.ChangeEvent<HTMLInputElement>) => void
+  onDescriptionChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void
+  onIconChange: (file: File | null) => void
+  onImageChange: (file: File | null) => void
 }
 
 const CategoryDetailsCard = ({
@@ -25,7 +25,7 @@ const CategoryDetailsCard = ({
   onImageChange,
 }: CategoryDetailsCardProps) => {
   return (
-    <div className="rounded-xl border border-white/10 bg-brand-surface p-6">
+    <div className="bg-brand-surface rounded-xl border border-white/10 p-6">
       <h2 className={categoryFormTheme.sectionTitleClass}>Category Details</h2>
 
       <p className={`mt-1 ${categoryFormTheme.sectionSubtitleClass}`}>
@@ -85,7 +85,7 @@ const CategoryDetailsCard = ({
         />
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default CategoryDetailsCard;
+export default CategoryDetailsCard

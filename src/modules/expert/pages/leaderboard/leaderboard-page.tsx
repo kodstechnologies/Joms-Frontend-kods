@@ -38,16 +38,96 @@ type LeaderRow = {
 }
 
 const ROWS: LeaderRow[] = [
-  { rank: 1, expertId: 'EXP-0003', name: 'Sara Johnson', category: 'Legal', events: 116, rating: 4.8, score: 999 },
-  { rank: 2, expertId: 'EXP-0003', name: 'Sara Johnson', category: 'Legal', events: 67, rating: 4.8, score: 995 },
-  { rank: 3, expertId: 'EXP-0003', name: 'Sara Johnson', category: 'Legal', events: 90, rating: 4.8, score: 991 },
-  { rank: 4, expertId: 'EXP-0003', name: 'Sara Johnson', category: 'Legal', events: 101, rating: 4.8, score: 986 },
-  { rank: 5, expertId: 'EXP-0003', name: 'Sara Johnson', category: 'Legal', events: 18, rating: 4.8, score: 981 },
-  { rank: 6, expertId: 'EXP-0003', name: 'Sara Johnson', category: 'Legal', events: 38, rating: 4.8, score: 975 },
-  { rank: 7, expertId: 'EXP-0003', name: 'Sara Johnson', category: 'Legal', events: 38, rating: 4.8, score: 970 },
-  { rank: 8, expertId: 'EXP-0003', name: 'Sara Johnson', category: 'Legal', events: 38, rating: 4.8, score: 964 },
-  { rank: 9, expertId: 'EXP-0003', name: 'Sara Johnson', category: 'Legal', events: 38, rating: 4.8, score: 959 },
-  { rank: 10, expertId: 'EXP-0003', name: 'Sara Johnson', category: 'Legal', events: 38, rating: 4.8, score: 953 },
+  {
+    rank: 1,
+    expertId: 'EXP-0003',
+    name: 'Sara Johnson',
+    category: 'Legal',
+    events: 116,
+    rating: 4.8,
+    score: 999,
+  },
+  {
+    rank: 2,
+    expertId: 'EXP-0003',
+    name: 'Sara Johnson',
+    category: 'Legal',
+    events: 67,
+    rating: 4.8,
+    score: 995,
+  },
+  {
+    rank: 3,
+    expertId: 'EXP-0003',
+    name: 'Sara Johnson',
+    category: 'Legal',
+    events: 90,
+    rating: 4.8,
+    score: 991,
+  },
+  {
+    rank: 4,
+    expertId: 'EXP-0003',
+    name: 'Sara Johnson',
+    category: 'Legal',
+    events: 101,
+    rating: 4.8,
+    score: 986,
+  },
+  {
+    rank: 5,
+    expertId: 'EXP-0003',
+    name: 'Sara Johnson',
+    category: 'Legal',
+    events: 18,
+    rating: 4.8,
+    score: 981,
+  },
+  {
+    rank: 6,
+    expertId: 'EXP-0003',
+    name: 'Sara Johnson',
+    category: 'Legal',
+    events: 38,
+    rating: 4.8,
+    score: 975,
+  },
+  {
+    rank: 7,
+    expertId: 'EXP-0003',
+    name: 'Sara Johnson',
+    category: 'Legal',
+    events: 38,
+    rating: 4.8,
+    score: 970,
+  },
+  {
+    rank: 8,
+    expertId: 'EXP-0003',
+    name: 'Sara Johnson',
+    category: 'Legal',
+    events: 38,
+    rating: 4.8,
+    score: 964,
+  },
+  {
+    rank: 9,
+    expertId: 'EXP-0003',
+    name: 'Sara Johnson',
+    category: 'Legal',
+    events: 38,
+    rating: 4.8,
+    score: 959,
+  },
+  {
+    rank: 10,
+    expertId: 'EXP-0003',
+    name: 'Sara Johnson',
+    category: 'Legal',
+    events: 38,
+    rating: 4.8,
+    score: 953,
+  },
 ]
 
 const RANK_BADGE_STYLES: Record<number, string> = {
@@ -80,7 +160,7 @@ function Avatar({ size = 'md' }: { size?: 'md' | 'lg' }) {
   return (
     <div
       className={cn(
-        'grid place-items-center rounded-full bg-gradient-to-br from-brand-accent/30 to-[#222] ring-2 ring-white/10',
+        'from-brand-accent/30 grid place-items-center rounded-full bg-gradient-to-br to-[#222] ring-2 ring-white/10',
         size === 'lg' ? 'size-16' : 'size-12',
       )}
     >
@@ -95,7 +175,7 @@ function PodiumCard({ expert }: { expert: PodiumExpert }) {
     <div className={cn('flex flex-col items-center', isFirst ? 'pt-0' : 'pt-10')}>
       <div className="relative">
         {isFirst && (
-          <Crown className="absolute -top-6 left-1/2 size-6 -translate-x-1/2 fill-brand-accent text-brand-accent" />
+          <Crown className="fill-brand-accent text-brand-accent absolute -top-6 left-1/2 size-6 -translate-x-1/2" />
         )}
         <Avatar size={isFirst ? 'lg' : 'md'} />
       </div>
@@ -109,9 +189,11 @@ function PodiumCard({ expert }: { expert: PodiumExpert }) {
         )}
       >
         <div className="grid size-12 place-items-center rounded-full bg-black/40">
-          <UserRound className="size-6 text-brand-accent" />
+          <UserRound className="text-brand-accent size-6" />
         </div>
-        <span className="text-[10px] font-medium tracking-wide text-[#888888] uppercase">Score</span>
+        <span className="text-[10px] font-medium tracking-wide text-[#888888] uppercase">
+          Score
+        </span>
         <span className="text-[20px] font-bold text-white">{expert.score}</span>
       </div>
     </div>
@@ -157,7 +239,7 @@ export const LeaderboardPage = () => {
             <input
               type="text"
               placeholder="Search by name, ID or profession"
-              className="h-10 w-full rounded-lg border border-white/10 bg-black pl-9 pr-3 text-[12px] text-white outline-none transition-colors placeholder:text-[#555555] focus:border-brand-accent/50"
+              className="focus:border-brand-accent/50 h-10 w-full rounded-lg border border-white/10 bg-black pr-3 pl-9 text-[12px] text-white transition-colors outline-none placeholder:text-[#555555]"
             />
           </div>
 
@@ -180,7 +262,11 @@ export const LeaderboardPage = () => {
             <thead>
               <tr className="border-b border-white/5 text-[10px] font-semibold tracking-wide text-[#777777] uppercase">
                 <th className="px-3 py-3">
-                  <input type="checkbox" aria-label="Select all" className="rounded border-slate-700 bg-transparent" />
+                  <input
+                    type="checkbox"
+                    aria-label="Select all"
+                    className="rounded border-slate-700 bg-transparent"
+                  />
                 </th>
                 <th className="px-3 py-3">Rank</th>
                 <th className="px-3 py-3">Expert ID</th>
@@ -230,7 +316,7 @@ export const LeaderboardPage = () => {
                   <td className="px-3 py-3">{row.events}</td>
                   <td className="px-3 py-3">
                     <span className="inline-flex items-center gap-1">
-                      <Star className="size-3.5 fill-brand-accent text-brand-accent" />
+                      <Star className="fill-brand-accent text-brand-accent size-3.5" />
                       <span className="font-semibold text-white">{row.rating}</span>
                     </span>
                   </td>

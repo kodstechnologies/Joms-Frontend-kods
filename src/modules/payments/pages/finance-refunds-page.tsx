@@ -123,9 +123,7 @@ export function FinanceRefundsPage() {
 
   const toggleRowSelection = useCallback((rowId: string) => {
     setSelectedRowIds((currentIds) =>
-      currentIds.includes(rowId)
-        ? currentIds.filter((id) => id !== rowId)
-        : [...currentIds, rowId],
+      currentIds.includes(rowId) ? currentIds.filter((id) => id !== rowId) : [...currentIds, rowId],
     )
   }, [])
 
@@ -249,7 +247,9 @@ export function FinanceRefundsPage() {
         accessorKey: 'recordId',
         header: 'ID',
         cell: ({ row }) => (
-          <span className="font-mono text-[11px] uppercase text-white">{row.original.recordId}</span>
+          <span className="font-mono text-[11px] text-white uppercase">
+            {row.original.recordId}
+          </span>
         ),
       },
       { accessorKey: 'type', header: 'Type' },

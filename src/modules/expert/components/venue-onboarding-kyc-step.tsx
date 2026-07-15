@@ -26,12 +26,7 @@ type Props = {
   setFormData: React.Dispatch<React.SetStateAction<VenueOnboardingFormData>>
 }
 
-type FileField =
-  | 'panCard'
-  | 'gstCertificate'
-  | 'tradeLicense'
-  | 'fssaiLicense'
-  | 'gstUndertaking'
+type FileField = 'panCard' | 'gstCertificate' | 'tradeLicense' | 'fssaiLicense' | 'gstUndertaking'
 
 function FileUploadBox({
   label,
@@ -58,19 +53,15 @@ function FileUploadBox({
         <button
           type="button"
           onClick={() => inputRef.current?.click()}
-          className="flex h-24 w-full items-center justify-center rounded-md border border-dashed border-[#444] bg-black text-xs text-[#777] transition-colors hover:border-brand-accent/50"
+          className="hover:border-brand-accent/50 flex h-24 w-full items-center justify-center rounded-md border border-dashed border-[#444] bg-black text-xs text-[#777] transition-colors"
         >
-          {file ? (
-            <span className="truncate px-2">{file.name}</span>
-          ) : (
-            'Upload here'
-          )}
+          {file ? <span className="truncate px-2">{file.name}</span> : 'Upload here'}
         </button>
         {file && (
           <button
             type="button"
             onClick={onClear}
-            className="absolute right-2 top-2 rounded-full bg-black/70 p-1 text-white"
+            className="absolute top-2 right-2 rounded-full bg-black/70 p-1 text-white"
           >
             <X className="size-3" />
           </button>
@@ -110,14 +101,10 @@ export const VenueOnboardingKycStep = ({ formData, setFormData }: Props) => {
         <h3 className="mb-4 text-sm font-bold text-white">Government ID Verification</h3>
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
           <div>
-            <label className="mb-2 block text-xs font-medium text-white">
-              Select ID type *
-            </label>
+            <label className="mb-2 block text-xs font-medium text-white">Select ID type *</label>
             <select
               value={formData.idType}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, idType: e.target.value }))
-              }
+              onChange={(e) => setFormData((prev) => ({ ...prev, idType: e.target.value }))}
               className={selectClass}
             >
               <option value="">Choose ID type</option>
@@ -129,14 +116,10 @@ export const VenueOnboardingKycStep = ({ formData, setFormData }: Props) => {
             </select>
           </div>
           <div>
-            <label className="mb-2 block text-xs font-medium text-white">
-              ID Number *
-            </label>
+            <label className="mb-2 block text-xs font-medium text-white">ID Number *</label>
             <input
               value={formData.idNumber}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, idNumber: e.target.value }))
-              }
+              onChange={(e) => setFormData((prev) => ({ ...prev, idNumber: e.target.value }))}
               placeholder="ABCDE1234F"
               className={fieldClass}
             />
@@ -149,9 +132,7 @@ export const VenueOnboardingKycStep = ({ formData, setFormData }: Props) => {
         <h3 className="mb-4 text-sm font-bold text-white">KYC Verification</h3>
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
           <div>
-            <label className="mb-2 block text-xs font-medium text-white">
-              GST Availability *
-            </label>
+            <label className="mb-2 block text-xs font-medium text-white">GST Availability *</label>
             <select
               value={formData.hasGST ? 'yes' : 'no'}
               onChange={(e) =>
@@ -170,28 +151,20 @@ export const VenueOnboardingKycStep = ({ formData, setFormData }: Props) => {
           {formData.hasGST ? (
             <>
               <div>
-                <label className="mb-2 block text-xs font-medium text-white">
-                  GST Number *
-                </label>
+                <label className="mb-2 block text-xs font-medium text-white">GST Number *</label>
                 <input
                   value={formData.gstNumber}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, gstNumber: e.target.value }))
-                  }
+                  onChange={(e) => setFormData((prev) => ({ ...prev, gstNumber: e.target.value }))}
                   placeholder="23AAACC1206D2ZN"
                   className={fieldClass}
                 />
                 <p className="mt-1 text-[10px] text-[#666]">Format: 29ABCDE1234F1Z5</p>
               </div>
               <div>
-                <label className="mb-2 block text-xs font-medium text-white">
-                  State *
-                </label>
+                <label className="mb-2 block text-xs font-medium text-white">State *</label>
                 <select
                   value={formData.kycState}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, kycState: e.target.value }))
-                  }
+                  onChange={(e) => setFormData((prev) => ({ ...prev, kycState: e.target.value }))}
                   className={selectClass}
                 >
                   {INDIAN_STATES.map((state) => (
@@ -243,14 +216,10 @@ export const VenueOnboardingKycStep = ({ formData, setFormData }: Props) => {
           )}
 
           <div>
-            <label className="mb-2 block text-xs font-medium text-white">
-              Type of Venue *
-            </label>
+            <label className="mb-2 block text-xs font-medium text-white">Type of Venue *</label>
             <select
               value={formData.typeOfVenue}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, typeOfVenue: e.target.value }))
-              }
+              onChange={(e) => setFormData((prev) => ({ ...prev, typeOfVenue: e.target.value }))}
               className={selectClass}
             >
               <option value="">Choose here</option>
@@ -268,9 +237,7 @@ export const VenueOnboardingKycStep = ({ formData, setFormData }: Props) => {
             </label>
             <input
               value={formData.panNumber}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, panNumber: e.target.value }))
-              }
+              onChange={(e) => setFormData((prev) => ({ ...prev, panNumber: e.target.value }))}
               placeholder="ABCDE1234F"
               className={fieldClass}
             />
@@ -343,12 +310,10 @@ export const VenueOnboardingKycStep = ({ formData, setFormData }: Props) => {
                 onClick={() =>
                   setFormData((prev) => ({
                     ...prev,
-                    otherCertificates: prev.otherCertificates.filter(
-                      (_, i) => i !== index,
-                    ),
+                    otherCertificates: prev.otherCertificates.filter((_, i) => i !== index),
                   }))
                 }
-                className="absolute right-2 top-2 rounded-full bg-black/70 p-1 text-white"
+                className="absolute top-2 right-2 rounded-full bg-black/70 p-1 text-white"
               >
                 <X className="size-3" />
               </button>
@@ -358,7 +323,7 @@ export const VenueOnboardingKycStep = ({ formData, setFormData }: Props) => {
             <button
               type="button"
               onClick={() => otherCertsRef.current?.click()}
-              className="flex h-24 items-center justify-center rounded-md border border-dashed border-[#444] bg-black text-xs text-[#777] hover:border-brand-accent/50"
+              className="hover:border-brand-accent/50 flex h-24 items-center justify-center rounded-md border border-dashed border-[#444] bg-black text-xs text-[#777]"
             >
               <Upload className="mr-1 size-4" />
               [Venue Based Certificate]

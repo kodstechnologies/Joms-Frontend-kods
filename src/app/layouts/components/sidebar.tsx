@@ -9,7 +9,13 @@ import { useLogoutMutation } from '@/modules/auth/hooks/use-logout-mutation'
 import { useAuthStore } from '@/modules/auth/store/auth-store'
 import { cn } from '@/shared/lib/cn'
 
-export function Sidebar({ onNavigate, compact = false }: { onNavigate?: () => void; compact?: boolean }) {
+export function Sidebar({
+  onNavigate,
+  compact = false,
+}: {
+  onNavigate?: () => void
+  compact?: boolean
+}) {
   const clearSession = useAuthStore((state) => state.clearSession)
   const user = useAuthStore((state) => state.user)
   const location = useLocation()
@@ -24,6 +30,7 @@ export function Sidebar({ onNavigate, compact = false }: { onNavigate?: () => vo
     try {
       await logout()
     } catch {
+      // Logout still clears local session below
     } finally {
       clearSession()
       onNavigate?.()
@@ -31,8 +38,8 @@ export function Sidebar({ onNavigate, compact = false }: { onNavigate?: () => vo
   }
 
   return (
-    <div className="flex h-full flex-col px-3 pb-6 pt-2">
-      <nav className="flex-1 space-y-0.5 overflow-y-auto pb-4 [scrollbar-width:thin] [scrollbar-color:rgba(255,255,255,0.2)_transparent]">
+    <div className="flex h-full flex-col px-3 pt-2 pb-6">
+      <nav className="flex-1 space-y-0.5 overflow-y-auto pb-4 [scrollbar-color:rgba(255,255,255,0.2)_transparent] [scrollbar-width:thin]">
         {visibleNavigation.map((item) => (
           <SidebarGroup
             key={item.key}
@@ -51,13 +58,15 @@ export function Sidebar({ onNavigate, compact = false }: { onNavigate?: () => vo
         }}
         disabled={isLoggingOut}
         className={cn(
-          'mt-2 flex items-center text-sm font-semibold text-brand-danger transition-colors hover:text-brand-danger/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent/30 disabled:cursor-not-allowed disabled:opacity-60',
-          compact ? 'justify-center py-3' : 'gap-2 rounded-brand-md px-3 py-2.5',
+          'text-brand-danger hover:text-brand-danger/80 focus-visible:ring-brand-accent/30 mt-2 flex items-center text-sm font-semibold transition-colors focus-visible:ring-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-60',
+          compact ? 'justify-center py-3' : 'rounded-brand-md gap-2 px-3 py-2.5',
         )}
         aria-label="Log Out"
       >
         <LogOut className="size-4" />
-        {!compact ? <span className="truncate">{isLoggingOut ? 'Logging out…' : 'Log Out'}</span> : null}
+        {!compact ? (
+          <span className="truncate">{isLoggingOut ? 'Logging out…' : 'Log Out'}</span>
+        ) : null}
       </button>
     </div>
   )

@@ -38,13 +38,11 @@ export const useEscalationMetrics = () =>
     queryFn: () => fetchEscalationMetrics(),
   })
 
-export const useAdminEscalation = (
-  entityType?: AdminEscalationEntityType,
-  entityId?: string,
-) =>
+export const useAdminEscalation = (entityType?: AdminEscalationEntityType, entityId?: string) =>
   useQuery({
     queryKey: ['admin-escalation', entityType, entityId],
-    queryFn: () => fetchAdminEscalation(entityType as AdminEscalationEntityType, entityId as string),
+    queryFn: () =>
+      fetchAdminEscalation(entityType as AdminEscalationEntityType, entityId as string),
     enabled: Boolean(entityType && entityId),
   })
 

@@ -44,7 +44,9 @@ export function RestoreBackupModal({ open, backup, onClose, onSubmit }: RestoreB
         <div className="flex items-start justify-between gap-4">
           <div>
             <h2 className="text-lg font-bold text-white">Restore System Backup</h2>
-            <p className="mt-1 text-xs text-slate-500">Choose how you want to restore this backup</p>
+            <p className="mt-1 text-xs text-slate-500">
+              Choose how you want to restore this backup
+            </p>
           </div>
           <button type="button" onClick={onClose} className="text-slate-500 hover:text-white">
             <X className="size-5" />

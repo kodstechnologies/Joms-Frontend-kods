@@ -102,10 +102,7 @@ export function ReferralManagementPage() {
           >
             View Details
           </TableActionsItem>
-          <TableActionsItem
-            icon={<Mail className="size-3.5" />}
-            onClick={() => handleResend(id)}
-          >
+          <TableActionsItem icon={<Mail className="size-3.5" />} onClick={() => handleResend(id)}>
             Resend Invitation
           </TableActionsItem>
           <TableActionsItem
@@ -153,9 +150,7 @@ export function ReferralManagementPage() {
       {
         accessorKey: 'inviteStatus',
         header: 'Referral Type',
-        cell: ({ row }) => (
-          <span className="capitalize">{row.original.inviteStatus}</span>
-        ),
+        cell: ({ row }) => <span className="capitalize">{row.original.inviteStatus}</span>,
       },
       {
         accessorKey: 'createdAt',
@@ -259,11 +254,11 @@ export function ReferralManagementPage() {
         initialValues={
           editExpert
             ? {
-              name: editExpert.invitedExpertName,
-              email: editExpert.email,
-              phone: editExpert.phone,
-              message: editExpert.message,
-            }
+                name: editExpert.invitedExpertName,
+                email: editExpert.email,
+                phone: editExpert.phone,
+                message: editExpert.message,
+              }
             : undefined
         }
         isSubmitting={updateExpertMutation.isPending}

@@ -1,14 +1,14 @@
-import CategorySubCategoryCard from "./CategorySubCategoryCard";
-import { categoryViewTheme } from "./category-view.theme";
+import CategorySubCategoryCard from './CategorySubCategoryCard'
+import { categoryViewTheme } from './category-view.theme'
 
 interface Props {
   subCategories: {
-    id: string;
-    name: string;
-    status: "Active" | "Paused";
-    addedOn: string;
-    icon?: string;
-  }[];
+    id: string
+    name: string
+    status: 'Active' | 'Paused'
+    addedOn: string
+    icon?: string
+  }[]
 }
 
 const CategorySubCategorySection = ({ subCategories }: Props) => {
@@ -29,7 +29,7 @@ const CategorySubCategorySection = ({ subCategories }: Props) => {
         ))}
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default CategorySubCategorySection;
+export default CategorySubCategorySection

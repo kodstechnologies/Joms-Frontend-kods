@@ -66,7 +66,9 @@ function HealthMetricCard({ metric }: { metric: HealthMetric }) {
   return (
     <div className={cn(uiTokens.radiusCard, 'border border-white/10 bg-[#111111] p-4 sm:p-5')}>
       <p className="text-xs text-slate-500">{metric.title}</p>
-      <p className="mt-2 text-2xl font-semibold tracking-tight text-white sm:text-[28px]">{metric.value}</p>
+      <p className="mt-2 text-2xl font-semibold tracking-tight text-white sm:text-[28px]">
+        {metric.value}
+      </p>
       <div className="mt-3 min-h-[28px]">
         {metric.trend ? (
           <span
@@ -182,7 +184,10 @@ export function PlatformHealthPage() {
       <ChartPanel title="Platform Health Trends" onRefresh={() => toast.message('Refreshed')}>
         <div className="h-[300px] w-full">
           <ResponsiveContainer width="100%" height="100%">
-            <ComposedChart data={healthTrendsMock} margin={{ left: 4, right: 8, top: 8, bottom: 0 }}>
+            <ComposedChart
+              data={healthTrendsMock}
+              margin={{ left: 4, right: 8, top: 8, bottom: 0 }}
+            >
               <CartesianGrid stroke="rgba(255,255,255,0.06)" strokeDasharray="3 3" vertical />
               <XAxis
                 dataKey="day"
@@ -206,7 +211,9 @@ export function PlatformHealthPage() {
                 tick={{ fill: 'rgba(148,163,184,0.85)', fontSize: 12 }}
               />
               <Tooltip contentStyle={tooltipStyle} />
-              <Legend wrapperStyle={{ color: 'rgba(148,163,184,0.9)', fontSize: 12, paddingTop: 12 }} />
+              <Legend
+                wrapperStyle={{ color: 'rgba(148,163,184,0.9)', fontSize: 12, paddingTop: 12 }}
+              />
               <Bar
                 yAxisId="left"
                 dataKey="transactions"
@@ -264,7 +271,9 @@ export function PlatformHealthPage() {
                 tick={{ fill: 'rgba(148,163,184,0.85)', fontSize: 12 }}
               />
               <Tooltip contentStyle={tooltipStyle} />
-              <Legend wrapperStyle={{ color: 'rgba(148,163,184,0.9)', fontSize: 12, paddingTop: 12 }} />
+              <Legend
+                wrapperStyle={{ color: 'rgba(148,163,184,0.9)', fontSize: 12, paddingTop: 12 }}
+              />
               <Area
                 yAxisId="left"
                 type="monotone"
@@ -299,11 +308,18 @@ export function PlatformHealthPage() {
         </div>
       </ChartPanel>
 
-      <ChartPanel title="Security & Compliance Tracking" onRefresh={() => toast.message('Refreshed')}>
+      <ChartPanel
+        title="Security & Compliance Tracking"
+        onRefresh={() => toast.message('Refreshed')}
+      >
         <div className="h-[300px] w-full">
           <ResponsiveContainer width="100%" height="100%">
             <ComposedChart data={complianceMock} margin={{ left: 4, right: 8, top: 8, bottom: 0 }}>
-              <CartesianGrid stroke="rgba(255,255,255,0.06)" strokeDasharray="3 3" vertical={false} />
+              <CartesianGrid
+                stroke="rgba(255,255,255,0.06)"
+                strokeDasharray="3 3"
+                vertical={false}
+              />
               <XAxis
                 dataKey="month"
                 tickLine={false}
@@ -317,16 +333,38 @@ export function PlatformHealthPage() {
                 tick={{ fill: 'rgba(148,163,184,0.85)', fontSize: 12 }}
               />
               <Tooltip contentStyle={tooltipStyle} />
-              <Legend wrapperStyle={{ color: 'rgba(148,163,184,0.9)', fontSize: 12, paddingTop: 12 }} />
-              <Bar dataKey="flags" name="Compliance Flags" fill="#F59E0B" radius={[6, 6, 0, 0]} barSize={18} />
-              <Bar dataKey="resolved" name="Issues Resolved" fill="#22C55E" radius={[6, 6, 0, 0]} barSize={18} />
-              <Bar dataKey="incidents" name="Security Incidents" fill="#EF4444" radius={[6, 6, 0, 0]} barSize={18} />
+              <Legend
+                wrapperStyle={{ color: 'rgba(148,163,184,0.9)', fontSize: 12, paddingTop: 12 }}
+              />
+              <Bar
+                dataKey="flags"
+                name="Compliance Flags"
+                fill="#F59E0B"
+                radius={[6, 6, 0, 0]}
+                barSize={18}
+              />
+              <Bar
+                dataKey="resolved"
+                name="Issues Resolved"
+                fill="#22C55E"
+                radius={[6, 6, 0, 0]}
+                barSize={18}
+              />
+              <Bar
+                dataKey="incidents"
+                name="Security Incidents"
+                fill="#EF4444"
+                radius={[6, 6, 0, 0]}
+                barSize={18}
+              />
             </ComposedChart>
           </ResponsiveContainer>
         </div>
       </ChartPanel>
 
-      <section className={cn(uiTokens.radiusCard, 'border border-white/10 bg-[#111111] p-4 sm:p-5')}>
+      <section
+        className={cn(uiTokens.radiusCard, 'border border-white/10 bg-[#111111] p-4 sm:p-5')}
+      >
         <div className="mb-4 flex items-center justify-between gap-3">
           <h2 className="text-sm font-semibold text-white">Infrastructure Health</h2>
           <button
@@ -353,11 +391,11 @@ export function PlatformHealthPage() {
                 </div>
               </div>
               <div>
-                <p className="text-[10px] uppercase tracking-wide text-slate-500">Uptime</p>
+                <p className="text-[10px] tracking-wide text-slate-500 uppercase">Uptime</p>
                 <p className="mt-1 text-sm font-semibold text-white">{row.uptime}</p>
               </div>
               <div>
-                <p className="text-[10px] uppercase tracking-wide text-slate-500">Load</p>
+                <p className="text-[10px] tracking-wide text-slate-500 uppercase">Load</p>
                 <p className="mt-1 text-sm font-semibold text-white">{row.load}%</p>
               </div>
               <LoadBar value={row.load} />

@@ -1,5 +1,5 @@
-import { CommunicationForm } from "../../components";
+import { CommunicationForm } from '../../components'
 
 export function CreateCommunicationPage() {
-  return <CommunicationForm />;
+  return <CommunicationForm />
 }

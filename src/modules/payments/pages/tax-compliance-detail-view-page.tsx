@@ -28,7 +28,9 @@ function DetailRow({
   return (
     <div className="flex items-center justify-between gap-4 border-b border-white/5 py-3 last:border-b-0">
       <span className="text-[12px] text-[#888888]">{label}</span>
-      <span className={cn('max-w-[60%] text-right text-[12px] font-medium text-white', valueClassName)}>
+      <span
+        className={cn('max-w-[60%] text-right text-[12px] font-medium text-white', valueClassName)}
+      >
         {value}
       </span>
     </div>
@@ -188,7 +190,10 @@ export function TaxComplianceDetailViewPage() {
               label="Regulatory Authority"
               value={detail.complianceInformation.regulatoryAuthority}
             />
-            <DetailRow label="Filing Frequency" value={detail.complianceInformation.filingFrequency} />
+            <DetailRow
+              label="Filing Frequency"
+              value={detail.complianceInformation.filingFrequency}
+            />
             <DetailRow
               label="Reporting Category Code"
               value={detail.complianceInformation.reportingCategoryCode}
@@ -207,7 +212,7 @@ export function TaxComplianceDetailViewPage() {
         <button
           type="button"
           onClick={() => toast.success('Marked as filed')}
-          className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-emerald-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/30"
+          className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-emerald-500 focus-visible:ring-2 focus-visible:ring-emerald-400/30 focus-visible:outline-none"
         >
           <Check className="size-4" />
           Mark as Filed

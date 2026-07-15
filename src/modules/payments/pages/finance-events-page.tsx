@@ -151,7 +151,7 @@ export function FinanceEventsPage() {
         accessorKey: 'eventId',
         header: 'Event ID',
         cell: ({ row }) => (
-          <span className="font-mono text-[11px] uppercase text-white">{row.original.eventId}</span>
+          <span className="font-mono text-[11px] text-white uppercase">{row.original.eventId}</span>
         ),
       },
       { accessorKey: 'eventName', header: 'Event Name' },
@@ -159,7 +159,9 @@ export function FinanceEventsPage() {
       {
         accessorKey: 'ticketSales',
         header: 'Ticket Sales',
-        cell: ({ row }) => <span className="font-semibold text-white">{row.original.ticketSales}</span>,
+        cell: ({ row }) => (
+          <span className="font-semibold text-white">{row.original.ticketSales}</span>
+        ),
       },
       { accessorKey: 'platformFee', header: 'Platform Fee' },
       { accessorKey: 'netRevenue', header: 'Net Revenue' },

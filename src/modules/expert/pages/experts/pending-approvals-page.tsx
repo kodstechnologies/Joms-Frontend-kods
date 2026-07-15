@@ -10,6 +10,7 @@ import type { Expert } from '../../type/expert'
 import type { ConciergeRejectionReason } from '../../type/expert-application-view'
 import { isKycSubmittedForApplication } from '../../utils/expert-application-helpers'
 import { openExpertApplicationView } from '../../utils/expert-application-navigation'
+import { ExpertListHeader } from './expert-list-shared'
 import {
   createExpertBaseColumns,
   createExpertCreatedAtColumn,
@@ -18,7 +19,6 @@ import {
   createExpertServiceTypeColumn,
   createExpertStatusColumn,
 } from './expert-list-columns'
-import { ExpertListHeader } from './expert-list-shared'
 import { useExpertListSelection } from './use-expert-list-selection'
 import {
   DecisionActionModal,

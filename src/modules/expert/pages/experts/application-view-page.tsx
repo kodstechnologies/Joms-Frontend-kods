@@ -22,7 +22,7 @@ import {
 } from '../../hooks/use-expert-application-view'
 import { useServiceCategoriesByType } from '../../hooks/use-service-categories'
 import { useAdminEscalation } from '@/modules/my-tasks/hooks/use-admin-escalation'
-import { formatApplicationExpertId } from './expert-list-format'
+import { formatApplicationExpertId } from './expert-list-shared-utils'
 import {
   formatServiceTypeDisplay,
   getDisplayKycStatus,

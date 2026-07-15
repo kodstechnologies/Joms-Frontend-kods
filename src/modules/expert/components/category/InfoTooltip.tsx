@@ -1,14 +1,14 @@
-import { useState } from "react";
-import { Info } from "lucide-react";
+import { useState } from 'react'
+import { Info } from 'lucide-react'
 
-import { categoryFormTheme } from "./category-form.theme";
+import { categoryFormTheme } from './category-form.theme'
 
 interface InfoTooltipProps {
-  text: string;
+  text: string
 }
 
 const InfoTooltip = ({ text }: InfoTooltipProps) => {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(false)
 
   return (
     <div
@@ -31,11 +31,11 @@ const InfoTooltip = ({ text }: InfoTooltipProps) => {
           className={`absolute bottom-[calc(100%+6px)] left-1/2 z-20 -translate-x-1/2 ${categoryFormTheme.tooltipClass}`}
         >
           {text}
-          <span className="absolute left-1/2 top-full -translate-x-1/2 border-4 border-transparent border-t-black" />
+          <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-black" />
         </div>
       ) : null}
     </div>
-  );
-};
+  )
+}
 
-export default InfoTooltip;
+export default InfoTooltip

@@ -17,6 +17,7 @@ VITE_VENUE_API_BASE_URL=https://venues.api.kods.online
 VITE_KYC_API_BASE_URL=https://kyc.api.kods.online
 VITE_MEMBERSHIP_API_BASE_URL=https://membership.api.kods.online
 VITE_SETTINGS_API_BASE_URL=https://settings.api.kods.online
+VITE_PAYMENT_API_BASE_URL=https://payment.api.kods.online
 
 Resolved URLs
 --------------------------------------------------------------------------------
@@ -27,6 +28,7 @@ Venues:       https://venues.api.kods.online/venues/...
 KYC:          https://kyc.api.kods.online/venue-kyc
 Memberships:  https://membership.api.kods.online/memberships
 Settings:     https://settings.api.kods.online/settings
+Payments:     https://payment.api.kods.online/payments
 
 Rebuild frontend on EC2 after changing .env:
   cd ~/Joms-Frontend

@@ -29,7 +29,7 @@ function CompactMetricCard({ label, value, trend }: MarketplaceMetric) {
 
   return (
     <div className="rounded-xl border border-white/10 bg-white/5 px-3 py-3 sm:px-4 sm:py-4">
-      <p className="text-[11px] font-medium leading-snug text-slate-400">{label}</p>
+      <p className="text-[11px] leading-snug font-medium text-slate-400">{label}</p>
       <p className="mt-1 text-lg font-semibold tracking-tight text-slate-100 sm:text-xl">{value}</p>
       {trend ? (
         <p
@@ -79,12 +79,16 @@ function TrendsTooltip({ active, payload, label }: TrendsTooltipProps) {
       <p className="mb-2 font-semibold text-slate-900">{label}</p>
       <div className="space-y-1">
         <p className="text-emerald-600">
-          Consultation completed: <span className="font-semibold">{data.consultationsCompleted}</span>
+          Consultation completed:{' '}
+          <span className="font-semibold">{data.consultationsCompleted}</span>
         </p>
         <p className="text-amber-600">
           Revenue (₹):{' '}
           <span className="font-semibold">
-            {data.revenue?.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            {data.revenue?.toLocaleString('en-IN', {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            })}
           </span>
         </p>
         <p className="text-blue-600">
@@ -102,25 +106,21 @@ export function ServiceMarketplacePage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="space-y-1">
-          <h1 className="text-3xl font-semibold tracking-tight text-slate-100 sm:text-4xl">Service Marketplace</h1>
+          <h1 className="text-3xl font-semibold tracking-tight text-slate-100 sm:text-4xl">
+            Service Marketplace
+          </h1>
           <p className="text-sm leading-relaxed text-slate-300 sm:text-base">
             Service delivery analytics and marketplace performance metrics
           </p>
         </div>
 
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-          <Button
-            className="h-9"
-            onClick={() => navigate('/services/dashboard/metrics')}
-          >
+          <Button className="h-9" onClick={() => navigate('/services/dashboard/metrics')}>
             <BarChart3 className="size-4" />
             Manage Metrics
           </Button>
 
-          <Button
-            className="h-9"
-            onClick={() => toast.message('Export coming soon')}
-          >
+          <Button className="h-9" onClick={() => toast.message('Export coming soon')}>
             <Download className="size-4" />
             Export Data
           </Button>
@@ -139,13 +139,13 @@ export function ServiceMarketplacePage() {
             <div className="relative">
               <select
                 defaultValue="last-3-months"
-                className="appearance-none rounded-lg border border-white/10 bg-white/5 py-1.5 pl-3 pr-8 text-xs font-medium text-slate-200 outline-none focus:border-white/20"
+                className="appearance-none rounded-lg border border-white/10 bg-white/5 py-1.5 pr-8 pl-3 text-xs font-medium text-slate-200 outline-none focus:border-white/20"
               >
                 <option value="last-3-months">Last 3 Months</option>
                 <option value="last-6-months">Last 6 Months</option>
                 <option value="last-12-months">Last 12 Months</option>
               </select>
-              <ChevronDown className="pointer-events-none absolute right-2 top-1/2 size-3.5 -translate-y-1/2 text-slate-400" />
+              <ChevronDown className="pointer-events-none absolute top-1/2 right-2 size-3.5 -translate-y-1/2 text-slate-400" />
             </div>
             <button
               type="button"

@@ -21,7 +21,8 @@ import { cn } from '@/shared/lib/cn'
 
 const cardClass = 'rounded-[10px] border border-white/[0.06] bg-[#141414] p-4 sm:p-5'
 const sectionTitleClass = 'font-figtree text-[14px] font-semibold leading-[20px] text-white'
-const sectionSubtitleClass = 'mt-1 font-figtree text-[12px] font-normal leading-[20px] text-[#888888]'
+const sectionSubtitleClass =
+  'mt-1 font-figtree text-[12px] font-normal leading-[20px] text-[#888888]'
 const labelClass = 'font-figtree text-[12px] font-normal leading-[20px] text-[#888888]'
 const valueClass = 'font-figtree text-[12px] font-normal leading-[20px] text-white'
 const textPanelClass =
@@ -84,7 +85,7 @@ function AssessmentBlock({
 
 function UnderReviewBadge() {
   return (
-    <span className="inline-flex rounded-full border border-[#FFC16B]/40 bg-[#FFC16B]/10 px-2.5 py-0.5 font-figtree text-[11px] font-semibold leading-[20px] text-[#FFC16B]">
+    <span className="font-figtree inline-flex rounded-full border border-[#FFC16B]/40 bg-[#FFC16B]/10 px-2.5 py-0.5 text-[11px] leading-[20px] font-semibold text-[#FFC16B]">
       Under Review
     </span>
   )
@@ -110,7 +111,7 @@ export function DisputeDetailViewPage() {
           <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
           <span>Payment Detail View</span>
         </button>
-        <p className="mt-2 pl-7 font-figtree text-[12px] font-normal leading-[20px] text-[#777777]">
+        <p className="font-figtree mt-2 pl-7 text-[12px] leading-[20px] font-normal text-[#777777]">
           <Link to="/finance/refunds" className="transition-colors hover:text-white">
             Refunds & Chargebacks
           </Link>
@@ -129,7 +130,7 @@ export function DisputeDetailViewPage() {
               Complete information related to the reported refund dispute.
             </p>
           </div>
-          <span className="inline-flex w-fit items-center gap-2 rounded-full border border-white/15 bg-[#0F0F0F] px-3 py-1.5 font-figtree text-[11px] font-medium leading-[20px] text-white">
+          <span className="font-figtree inline-flex w-fit items-center gap-2 rounded-full border border-white/15 bg-[#0F0F0F] px-3 py-1.5 text-[11px] leading-[20px] font-medium text-white">
             <Flag className="size-3.5" aria-hidden="true" />
             Escalated to Admin
           </span>
@@ -160,7 +161,10 @@ export function DisputeDetailViewPage() {
             </div>
 
             <div className="space-y-5">
-              <AssessmentBlock icon={<FileText className="size-4" />} title="Support Review Summary">
+              <AssessmentBlock
+                icon={<FileText className="size-4" />}
+                title="Support Review Summary"
+              >
                 <TextPanel>{detail.supportReviewSummary}</TextPanel>
               </AssessmentBlock>
 
@@ -168,15 +172,21 @@ export function DisputeDetailViewPage() {
                 <TextPanel>{detail.escalationReason}</TextPanel>
               </AssessmentBlock>
 
-              <AssessmentBlock icon={<Lightbulb className="size-4" />} title="Support's Recommendation">
+              <AssessmentBlock
+                icon={<Lightbulb className="size-4" />}
+                title="Support's Recommendation"
+              >
                 <TextPanel>
-                  <span className="font-figtree text-[12px] font-semibold leading-[20px] text-[#00A63E]">
+                  <span className="font-figtree text-[12px] leading-[20px] font-semibold text-[#00A63E]">
                     {detail.supportRecommendation}
                   </span>
                 </TextPanel>
               </AssessmentBlock>
 
-              <AssessmentBlock icon={<FileText className="size-4" />} title="Detailed Notes from Support">
+              <AssessmentBlock
+                icon={<FileText className="size-4" />}
+                title="Detailed Notes from Support"
+              >
                 <TextPanel>{detail.detailedNotes}</TextPanel>
               </AssessmentBlock>
             </div>
@@ -218,7 +228,7 @@ export function DisputeDetailViewPage() {
           <Card>
             <div className="mb-4 flex items-center gap-2">
               <Gavel className="size-4 text-[#888888]" aria-hidden="true" />
-              <h2 className="font-figtree text-[12px] font-semibold leading-[20px] text-white">
+              <h2 className="font-figtree text-[12px] leading-[20px] font-semibold text-white">
                 Decision Controls
               </h2>
             </div>

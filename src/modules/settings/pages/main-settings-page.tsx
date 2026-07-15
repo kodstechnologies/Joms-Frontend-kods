@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
@@ -15,6 +15,7 @@ import { VenueSettingsPanel } from '../components/venue-settings-panel'
 import { TemplatesPage } from './templates-page'
 import {
   useResetSettings,
+  useSettingsDraft,
   useSettingsModule,
   useUpdateSettings,
 } from '../hooks/use-settings'
@@ -27,16 +28,7 @@ import {
   serviceDefaults,
   venueDefaults,
 } from '../mock/settings.defaults'
-import type {
-  ExpertSettings,
-  FinanceTransactionalSettings,
-  NotificationSettings,
-  PlatformSettings,
-  SecuritySettings,
-  ServiceSettings,
-  SettingsModule,
-  VenueSettings,
-} from '../types/settings'
+import type { SettingsModule } from '../types/settings'
 import { SectionHeader } from '@/shared/components/dashboard/section-header'
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
@@ -82,13 +74,15 @@ export function MainSettingsPage() {
   const location = useLocation()
   const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState<SettingsTab>('platform')
+  const [hydratedLocationState, setHydratedLocationState] = useState(location.state)
 
-  useEffect(() => {
+  if (location.state !== hydratedLocationState) {
+    setHydratedLocationState(location.state)
     const routedTab = (location.state as { settingsTab?: SettingsTab } | null)?.settingsTab
     if (routedTab && TABS.some((tab) => tab.key === routedTab)) {
       setActiveTab(routedTab)
     }
-  }, [location.state])
+  }
 
   const platformQuery = useSettingsModule('platform')
   const securityQuery = useSettingsModule('security')
@@ -98,43 +92,16 @@ export function MainSettingsPage() {
   const venueQuery = useSettingsModule('venue')
   const serviceQuery = useSettingsModule('service')
 
-  const [platformConfig, setPlatformConfig] = useState<PlatformSettings>(platformDefaults)
-  const [securityConfig, setSecurityConfig] = useState<SecuritySettings>(securityDefaults)
-  const [notificationsConfig, setNotificationsConfig] =
-    useState<NotificationSettings>(notificationsDefaults)
-  const [financeConfig, setFinanceConfig] =
-    useState<FinanceTransactionalSettings>(financeDefaults)
-  const [expertConfig, setExpertConfig] = useState<ExpertSettings>(expertDefaults)
-  const [venueConfig, setVenueConfig] = useState<VenueSettings>(venueDefaults)
-  const [serviceConfig, setServiceConfig] = useState<ServiceSettings>(serviceDefaults)
-
-  useEffect(() => {
-    if (platformQuery.data?.config) setPlatformConfig(platformQuery.data.config)
-  }, [platformQuery.data])
-
-  useEffect(() => {
-    if (securityQuery.data?.config) setSecurityConfig(securityQuery.data.config)
-  }, [securityQuery.data])
-
-  useEffect(() => {
-    if (notificationsQuery.data?.config) setNotificationsConfig(notificationsQuery.data.config)
-  }, [notificationsQuery.data])
-
-  useEffect(() => {
-    if (financeQuery.data?.config) setFinanceConfig(financeQuery.data.config)
-  }, [financeQuery.data])
-
-  useEffect(() => {
-    if (expertQuery.data?.config) setExpertConfig(expertQuery.data.config)
-  }, [expertQuery.data])
-
-  useEffect(() => {
-    if (venueQuery.data?.config) setVenueConfig(venueQuery.data.config)
-  }, [venueQuery.data])
-
-  useEffect(() => {
-    if (serviceQuery.data?.config) setServiceConfig(serviceQuery.data.config)
-  }, [serviceQuery.data])
+  const [platformConfig, setPlatformConfig] = useSettingsDraft(platformQuery.data, platformDefaults)
+  const [securityConfig, setSecurityConfig] = useSettingsDraft(securityQuery.data, securityDefaults)
+  const [notificationsConfig, setNotificationsConfig] = useSettingsDraft(
+    notificationsQuery.data,
+    notificationsDefaults,
+  )
+  const [financeConfig, setFinanceConfig] = useSettingsDraft(financeQuery.data, financeDefaults)
+  const [expertConfig, setExpertConfig] = useSettingsDraft(expertQuery.data, expertDefaults)
+  const [venueConfig, setVenueConfig] = useSettingsDraft(venueQuery.data, venueDefaults)
+  const [serviceConfig, setServiceConfig] = useSettingsDraft(serviceQuery.data, serviceDefaults)
 
   const updatePlatform = useUpdateSettings('platform')
   const updateSecurity = useUpdateSettings('security')

@@ -20,7 +20,7 @@ export function ContactSetupRoute() {
 
   if (profileQuery.isLoading && user.requiresContactSetup === undefined) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-brand-bg text-brand-muted">
+      <div className="bg-brand-bg text-brand-muted flex min-h-screen items-center justify-center">
         Loading...
       </div>
     )

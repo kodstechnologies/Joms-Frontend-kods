@@ -6,11 +6,7 @@ import { toast } from 'sonner'
 
 import { useActivateVenue, useVenues } from '../../hooks/use-venues'
 import type { Venue } from '../../type/venue'
-import {
-  getVenueApiId,
-  getVenueDisplayId,
-  getVenueDisplaySpaceId,
-} from '../../utils/venue-list'
+import { getVenueApiId, getVenueDisplayId, getVenueDisplaySpaceId } from '../../utils/venue-list'
 import { DataTable } from '@/shared/components/table/data-table'
 import {
   TableActionsDropdown,
@@ -65,10 +61,9 @@ export function VenueSuspendedPage() {
         onSuccess: () => {
           toast.success('Venue activated successfully')
         },
-        onError: (error: any) => {
-          toast.error(
-            error?.response?.data?.message || 'Failed to activate venue. Please try again.',
-          )
+        onError: (error: unknown) => {
+          const err = error as { response?: { data?: { message?: string } } }
+          toast.error(err?.response?.data?.message || 'Failed to activate venue. Please try again.')
         },
       })
     },
@@ -85,7 +80,8 @@ export function VenueSuspendedPage() {
             aria-label="Select all suspended venues"
             checked={allVisibleVenuesSelected}
             ref={(input) => {
-              if (input) input.indeterminate = someVisibleVenuesSelected && !allVisibleVenuesSelected
+              if (input)
+                input.indeterminate = someVisibleVenuesSelected && !allVisibleVenuesSelected
             }}
             onChange={toggleVisibleVenues}
             className="rounded border-slate-700 bg-transparent"
@@ -110,9 +106,7 @@ export function VenueSuspendedPage() {
         accessorKey: 'venueid',
         header: 'Venue ID',
         cell: ({ row }) => (
-          <span className="font-mono text-xs uppercase">
-            {getVenueDisplayId(row.original)}
-          </span>
+          <span className="font-mono text-xs uppercase">{getVenueDisplayId(row.original)}</span>
         ),
       },
       {
@@ -192,7 +186,7 @@ export function VenueSuspendedPage() {
           <button
             type="button"
             onClick={() => navigate('/venues/management')}
-            className="group flex w-fit items-center gap-2 font-heading text-[20px] font-bold tracking-tight text-white transition-colors hover:text-brand-accent"
+            className="group font-heading hover:text-brand-accent flex w-fit items-center gap-2 text-[20px] font-bold tracking-tight text-white transition-colors"
           >
             <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
             <span>Suspended Venues</span>

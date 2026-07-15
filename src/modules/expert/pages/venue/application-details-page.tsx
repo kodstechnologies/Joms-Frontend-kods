@@ -207,7 +207,7 @@ export function ApplicationDetailsPage() {
   if (isLoading) {
     return (
       <div className="flex h-[60vh] items-center justify-center">
-        <div className="size-9 animate-spin rounded-full border-4 border-brand-accent border-t-transparent" />
+        <div className="border-brand-accent size-9 animate-spin rounded-full border-4 border-t-transparent" />
       </div>
     )
   }
@@ -218,7 +218,7 @@ export function ApplicationDetailsPage() {
         <button
           type="button"
           onClick={() => navigate('/venues/management')}
-          className="group flex w-fit items-center gap-2 font-heading text-[20px] font-bold text-white transition-colors hover:text-brand-accent"
+          className="group font-heading hover:text-brand-accent flex w-fit items-center gap-2 text-[20px] font-bold text-white transition-colors"
         >
           <ArrowLeft className="size-5" />
           <span>Venue Application View</span>
@@ -259,8 +259,7 @@ export function ApplicationDetailsPage() {
     venue.accessibility ? 'Accessibility' : null,
   ].filter(Boolean)
 
-  const isRejectFlow =
-    modalVariant === 'reject' || modalVariant === 'requestChanges'
+  const isRejectFlow = modalVariant === 'reject' || modalVariant === 'requestChanges'
   const isEscalateFlow = modalVariant === 'escalate'
   const escalation = escalationData?.data
   const escalationOptions: DecisionActionModalOption[] =
@@ -334,11 +333,11 @@ export function ApplicationDetailsPage() {
       modalVariant === 'approve'
         ? { status: 'approved', adminNote: adminNotes.trim() }
         : {
-          status: 'rejected',
-          reasonFor: selectedReasons,
-          rejectionReason: rejectionReason.trim(),
-          adminNote: adminNotes.trim(),
-        }
+            status: 'rejected',
+            reasonFor: selectedReasons,
+            rejectionReason: rejectionReason.trim(),
+            adminNote: adminNotes.trim(),
+          }
 
     spaceStatusMutation.mutate(
       { spaceId, payload },
@@ -364,7 +363,7 @@ export function ApplicationDetailsPage() {
         <button
           type="button"
           onClick={() => navigate('/venues/management')}
-          className="group flex w-fit items-center gap-2 font-heading text-[20px] font-bold tracking-tight text-white transition-colors hover:text-brand-accent"
+          className="group font-heading hover:text-brand-accent flex w-fit items-center gap-2 text-[20px] font-bold tracking-tight text-white transition-colors"
         >
           <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
           <span>Venue Application View</span>
@@ -388,9 +387,7 @@ export function ApplicationDetailsPage() {
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1.25fr_1fr]">
         <SectionCard>
-          <p className="text-[11px] font-semibold text-[#777]">
-            {venue.pocName || venue.name}
-          </p>
+          <p className="text-[11px] font-semibold text-[#777]">{venue.pocName || venue.name}</p>
           <h1 className="mt-2 text-xl font-bold text-white">{space?.name || venue.name}</h1>
           <div className="mt-3 flex flex-wrap gap-2">
             <Chip>{venue.venueType || 'Venue'}</Chip>
@@ -463,7 +460,7 @@ export function ApplicationDetailsPage() {
                   {amenity.image ? (
                     <img src={amenity.image} alt="" className="size-4 object-contain" />
                   ) : (
-                    <CheckCircle2 className="size-4 text-brand-accent" />
+                    <CheckCircle2 className="text-brand-accent size-4" />
                   )}
                   <span className="truncate">{amenity.name}</span>
                 </div>
@@ -510,7 +507,8 @@ export function ApplicationDetailsPage() {
           {terms?.cancellation && (
             <div className="flex items-center gap-2 text-[11px] text-[#bbb]">
               <CheckCircle2 className="size-3.5 text-emerald-400" />
-              Free cancellation up to {terms.cancellation.freeCancellationHours ?? 0} days before event
+              Free cancellation up to {terms.cancellation.freeCancellationHours ?? 0} days before
+              event
             </div>
           )}
           {!terms?.terms?.length && !terms?.cancellation && (
@@ -536,7 +534,8 @@ export function ApplicationDetailsPage() {
         <SectionCard title="Decision Controls">
           {space?.status !== 'submitted' && (
             <p className="mb-3 rounded-md bg-black px-3 py-2 text-[11px] font-medium text-[#999]">
-              This space is currently <span className="font-bold text-white">{space?.status || '—'}</span>.
+              This space is currently{' '}
+              <span className="font-bold text-white">{space?.status || '—'}</span>.
             </p>
           )}
           <div className="flex flex-wrap gap-3">
@@ -544,7 +543,7 @@ export function ApplicationDetailsPage() {
               type="button"
               onClick={() => openModal('approve')}
               disabled={spaceStatusMutation.isPending || !space?._id}
-              className="flex items-center gap-1.5 rounded-md bg-brand-success px-4 py-2.5 text-[11px] font-bold text-white transition-colors hover:bg-[#08a85d] disabled:cursor-not-allowed disabled:opacity-50"
+              className="bg-brand-success flex items-center gap-1.5 rounded-md px-4 py-2.5 text-[11px] font-bold text-white transition-colors hover:bg-[#08a85d] disabled:cursor-not-allowed disabled:opacity-50"
             >
               Approve
               <CheckCircle2 className="size-3.5" />
@@ -553,7 +552,7 @@ export function ApplicationDetailsPage() {
               type="button"
               onClick={() => openModal('requestChanges')}
               disabled={spaceStatusMutation.isPending || !space?._id}
-              className="rounded-md bg-brand-accent px-4 py-2.5 text-[11px] font-bold text-brand-text-dark hover:bg-brand-gold-from transition-colors hover:bg-brand-gold-from disabled:cursor-not-allowed disabled:opacity-50"
+              className="bg-brand-accent text-brand-text-dark hover:bg-brand-gold-from hover:bg-brand-gold-from rounded-md px-4 py-2.5 text-[11px] font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-50"
             >
               Ask for Re-Submit
             </button>
@@ -562,7 +561,7 @@ export function ApplicationDetailsPage() {
                 type="button"
                 disabled={escalateDisabled}
                 onClick={() => openModal('escalate')}
-                className="rounded-md bg-brand-action px-4 py-2.5 text-[11px] font-bold text-white transition-colors hover:bg-[#1e40af] disabled:cursor-not-allowed disabled:opacity-50"
+                className="bg-brand-action rounded-md px-4 py-2.5 text-[11px] font-bold text-white transition-colors hover:bg-[#1e40af] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Escalate
               </button>
@@ -571,7 +570,7 @@ export function ApplicationDetailsPage() {
               type="button"
               onClick={() => openModal('reject')}
               disabled={spaceStatusMutation.isPending || !space?._id}
-              className="flex items-center gap-1.5 rounded-md bg-brand-danger px-4 py-2.5 text-[11px] font-bold text-white transition-colors hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+              className="bg-brand-danger flex items-center gap-1.5 rounded-md px-4 py-2.5 text-[11px] font-bold text-white transition-colors hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
             >
               Reject Application
               <XCircle className="size-3.5" />
@@ -628,9 +627,7 @@ export function ApplicationDetailsPage() {
         onEscalationOptionChange={setSelectedEscalationOption}
         onClose={() => setModalOpen(false)}
         onSubmit={handleSubmitDecision}
-        isSubmitting={
-          isEscalateFlow ? escalateVenueSpace.isPending : spaceStatusMutation.isPending
-        }
+        isSubmitting={isEscalateFlow ? escalateVenueSpace.isPending : spaceStatusMutation.isPending}
       />
     </div>
   )

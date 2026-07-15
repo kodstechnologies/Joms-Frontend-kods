@@ -37,9 +37,7 @@ const VenueCategoryViewSubCategoryActions = ({ id: subCategoryId }: Props) => {
         tone="light"
         icon={<Eye className="size-4 text-slate-700" />}
         onClick={() => {
-          navigate(
-            `/venues/categories/management/${categoryId}/subcategory/${subCategoryId}`,
-          )
+          navigate(`/venues/categories/management/${categoryId}/subcategory/${subCategoryId}`)
           setOpen(false)
         }}
       >

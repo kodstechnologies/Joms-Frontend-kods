@@ -17,8 +17,8 @@ function PageContentLoader() {
   return (
     <div className="flex min-h-[50vh] w-full items-center justify-center py-16">
       <div className="flex flex-col items-center gap-4">
-        <div className="size-9 animate-spin rounded-full border-4 border-brand-accent border-t-transparent" />
-        <p className="animate-pulse text-sm font-medium text-brand-muted">Loading...</p>
+        <div className="border-brand-accent size-9 animate-spin rounded-full border-4 border-t-transparent" />
+        <p className="text-brand-muted animate-pulse text-sm font-medium">Loading...</p>
       </div>
     </div>
   )
@@ -35,24 +35,18 @@ export function DashboardLayout() {
   useSyncSubAdminPermissions()
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- close overlays on route change
     setIsSidebarOpen(false)
     setIsNotificationsOpen(false)
   }, [location.pathname])
 
-  useEffect(() => {
-    if (isTabletCompact) {
-      setIsCollapsed(true)
-    }
-  }, [isTabletCompact])
-
-  const showCompact = isCollapsed
+  const showCompact = isTabletCompact || isCollapsed
 
   return (
-    <div className={cn('relative h-dvh overflow-hidden text-brand-text', uiTokens.shellBg)}>
+    <div className={cn('text-brand-text relative h-dvh overflow-hidden', uiTokens.shellBg)}>
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 z-40 hidden border-r border-white/10 md:flex md:flex-col transition-[width] duration-300 ease-in-out overflow-hidden',
+          'fixed inset-y-0 left-0 z-40 hidden overflow-hidden border-r border-white/10 transition-[width] duration-300 ease-in-out md:flex md:flex-col',
           uiTokens.sidebarBg,
           showCompact ? 'w-[5.75rem]' : 'w-[18.5rem]',
         )}
@@ -67,7 +61,7 @@ export function DashboardLayout() {
             <button
               type="button"
               onClick={() => setIsCollapsed(false)}
-              className="grid size-10 place-items-center rounded-xl text-white/70 transition-colors hover:bg-white/5 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent/30"
+              className="focus-visible:ring-brand-accent/30 grid size-10 place-items-center rounded-xl text-white/70 transition-colors hover:bg-white/5 hover:text-white focus-visible:ring-2 focus-visible:outline-none"
               aria-label="Expand sidebar"
             >
               <PanelLeftClose className="size-5" strokeWidth={1.75} />
@@ -78,7 +72,7 @@ export function DashboardLayout() {
               <button
                 type="button"
                 onClick={() => setIsCollapsed(true)}
-                className="grid size-9 shrink-0 place-items-center rounded-lg text-white/70 transition-colors hover:bg-white/5 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent/30"
+                className="focus-visible:ring-brand-accent/30 grid size-9 shrink-0 place-items-center rounded-lg text-white/70 transition-colors hover:bg-white/5 hover:text-white focus-visible:ring-2 focus-visible:outline-none"
                 aria-label="Collapse sidebar"
               >
                 <PanelLeftClose className="size-5" strokeWidth={1.75} />
@@ -93,10 +87,7 @@ export function DashboardLayout() {
       </aside>
 
       <SidebarMobile open={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
-      <NotificationPanel
-        open={isNotificationsOpen}
-        onClose={() => setIsNotificationsOpen(false)}
-      />
+      <NotificationPanel open={isNotificationsOpen} onClose={() => setIsNotificationsOpen(false)} />
 
       <div
         className={cn(

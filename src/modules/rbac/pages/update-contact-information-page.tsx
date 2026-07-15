@@ -5,10 +5,7 @@ import { toast } from 'sonner'
 
 import { useAuthStore } from '@/modules/auth/store/auth-store'
 import { getDefaultHomeRoute } from '@/app/layouts/navigation/navigation.filter'
-import {
-  useCompleteContactSetup,
-  useContactSetupProfile,
-} from '../hooks/use-rbac'
+import { useCompleteContactSetup, useContactSetupProfile } from '../hooks/use-rbac'
 import { RbacLoader } from '../components/rbac-loader'
 import type { PermissionCatalog, SubAdminRole } from '../types/rbac'
 import { Button } from '@/shared/components/ui/button'
@@ -59,6 +56,7 @@ export function UpdateContactInformationPage() {
   const [mfaCode, setMfaCode] = useState('')
   const [profileImageUrl, setProfileImageUrl] = useState('')
   const [permissionViewRole, setPermissionViewRole] = useState<SubAdminRole | null>(null)
+  const [hydratedProfile, setHydratedProfile] = useState(profile)
 
   useEffect(() => {
     if (!user) return
@@ -71,8 +69,8 @@ export function UpdateContactInformationPage() {
     }
   }, [navigate, user])
 
-  useEffect(() => {
-    if (!profile) return
+  if (profile && profile !== hydratedProfile) {
+    setHydratedProfile(profile)
     setPhone(profile.phone || '')
     setEmergencyContact(profile.emergencyContact || '')
     setEmergencyContactName(profile.emergencyContactName || '')
@@ -84,7 +82,7 @@ export function UpdateContactInformationPage() {
         setDateOfBirth(date.toISOString().slice(0, 10))
       }
     }
-  }, [profile])
+  }
 
   const moduleRows = useMemo(() => {
     if (!primaryRole) return []
@@ -163,13 +161,13 @@ export function UpdateContactInformationPage() {
   }
 
   return (
-    <div className="min-h-screen bg-brand-bg px-4 py-6 text-brand-text md:px-8">
+    <div className="bg-brand-bg text-brand-text min-h-screen px-4 py-6 md:px-8">
       <div className="mx-auto flex max-w-6xl flex-col gap-6">
         <div className="flex flex-col gap-2">
           <button
             type="button"
             onClick={() => navigate('/auth/login')}
-            className="group flex w-fit items-center gap-2 font-heading text-[20px] font-bold tracking-tight text-white transition-colors hover:text-[#FBC078]"
+            className="group font-heading flex w-fit items-center gap-2 text-[20px] font-bold tracking-tight text-white transition-colors hover:text-[#FBC078]"
           >
             <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
             <span>Update Contact Information</span>
@@ -184,8 +182,8 @@ export function UpdateContactInformationPage() {
         <div className={cn(uiTokens.radiusCard, uiTokens.borderSubtle, 'bg-brand-surface p-6')}>
           <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
             <div>
-              <h2 className="text-lg font-semibold text-brand-text">Contact Details</h2>
-              <p className="mt-1 text-sm text-brand-muted">
+              <h2 className="text-brand-text text-lg font-semibold">Contact Details</h2>
+              <p className="text-brand-muted mt-1 text-sm">
                 Mandatory entry gate - Identity verification required to proceed.
               </p>
             </div>
@@ -201,16 +199,16 @@ export function UpdateContactInformationPage() {
                 {profileImageUrl ? (
                   <img src={profileImageUrl} alt="Profile" className="size-full object-cover" />
                 ) : (
-                  <ImageIcon className="size-6 text-brand-muted" />
+                  <ImageIcon className="text-brand-muted size-6" />
                 )}
               </div>
-              <span className="text-xs text-brand-muted">Profile Picture</span>
+              <span className="text-brand-muted text-xs">Profile Picture</span>
             </label>
           </div>
 
           <div className="mt-6 grid gap-5 md:grid-cols-2">
             <div className="space-y-2">
-              <label className="text-sm font-medium text-brand-text">
+              <label className="text-brand-text text-sm font-medium">
                 Phone Number <span className="text-brand-danger">*</span>
               </label>
               <Input
@@ -221,7 +219,7 @@ export function UpdateContactInformationPage() {
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium text-brand-text">
+              <label className="text-brand-text text-sm font-medium">
                 Emergency contact <span className="text-brand-danger">*</span>
               </label>
               <Input
@@ -232,7 +230,7 @@ export function UpdateContactInformationPage() {
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium text-brand-text">
+              <label className="text-brand-text text-sm font-medium">
                 Emergency contact name <span className="text-brand-danger">*</span>
               </label>
               <Input
@@ -243,7 +241,7 @@ export function UpdateContactInformationPage() {
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium text-brand-text">Date of Birth</label>
+              <label className="text-brand-text text-sm font-medium">Date of Birth</label>
               <div className="relative">
                 <Input
                   type="date"
@@ -251,12 +249,12 @@ export function UpdateContactInformationPage() {
                   onChange={(event) => setDateOfBirth(event.target.value)}
                   className="pr-10"
                 />
-                <CalendarDays className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-brand-muted" />
+                <CalendarDays className="text-brand-muted pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2" />
               </div>
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium text-brand-text">Blood Group</label>
+              <label className="text-brand-text text-sm font-medium">Blood Group</label>
               <Input
                 value={bloodGroup}
                 onChange={(event) => setBloodGroup(event.target.value)}
@@ -265,14 +263,16 @@ export function UpdateContactInformationPage() {
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium text-brand-text">Assigned role</label>
+              <label className="text-brand-text text-sm font-medium">Assigned role</label>
               <Input value={primaryRole?.name || '—'} readOnly className="bg-[#111111]" />
             </div>
 
             {profile?.mfaEnabled ? (
               <>
                 <div className="space-y-2 md:col-span-2">
-                  <label className="text-sm font-medium text-brand-text">Authenticator app code</label>
+                  <label className="text-brand-text text-sm font-medium">
+                    Authenticator app code
+                  </label>
                   <div className="flex items-center gap-3">
                     <Input
                       value={profile.mfaSecret || ''}
@@ -282,7 +282,7 @@ export function UpdateContactInformationPage() {
                     <button
                       type="button"
                       onClick={handleCopySecret}
-                      className="rounded-brand-md border border-white/10 p-2 text-brand-muted transition-colors hover:bg-white/10 hover:text-brand-text"
+                      className="rounded-brand-md text-brand-muted hover:text-brand-text border border-white/10 p-2 transition-colors hover:bg-white/10"
                       aria-label="Copy authenticator code"
                     >
                       <Copy className="size-4" />
@@ -291,7 +291,7 @@ export function UpdateContactInformationPage() {
                 </div>
 
                 <div className="space-y-2 md:col-span-2">
-                  <label className="text-sm font-medium text-brand-text">
+                  <label className="text-brand-text text-sm font-medium">
                     Enter 6 digit code here <span className="text-brand-danger">*</span>
                   </label>
                   <Input
@@ -309,31 +309,33 @@ export function UpdateContactInformationPage() {
         </div>
 
         <section>
-          <h2 className="text-lg font-semibold text-brand-text">Your Role &amp; Permissions</h2>
-          <div className="mt-4 rounded-brand-lg border border-brand-accent-muted bg-brand-accent/10 p-5">
-            <p className="text-base font-semibold text-brand-text">{primaryRole?.name || 'Admin'}</p>
-            <p className="mt-4 text-sm font-medium text-brand-text">Key Permissions</p>
+          <h2 className="text-brand-text text-lg font-semibold">Your Role &amp; Permissions</h2>
+          <div className="rounded-brand-lg border-brand-accent-muted bg-brand-accent/10 mt-4 border p-5">
+            <p className="text-brand-text text-base font-semibold">
+              {primaryRole?.name || 'Admin'}
+            </p>
+            <p className="text-brand-text mt-4 text-sm font-medium">Key Permissions</p>
 
             <div className="mt-3 space-y-3">
               {moduleRows.length ? (
                 moduleRows.map((row) => (
                   <div
                     key={row.key}
-                    className="flex flex-wrap items-center justify-between gap-3 rounded-brand-md border border-white/10 bg-brand-surface px-4 py-3"
+                    className="rounded-brand-md bg-brand-surface flex flex-wrap items-center justify-between gap-3 border border-white/10 px-4 py-3"
                   >
                     <div className="flex items-center gap-3">
-                      <span className="grid size-5 place-items-center rounded-full bg-brand-success/15 text-brand-success">
+                      <span className="bg-brand-success/15 text-brand-success grid size-5 place-items-center rounded-full">
                         <Check className="size-3" />
                       </span>
-                      <span className="text-sm font-medium text-brand-text">{row.label}</span>
-                      <span className="rounded-full bg-brand-accent/20 px-2.5 py-0.5 text-[11px] font-semibold text-brand-accent">
+                      <span className="text-brand-text text-sm font-medium">{row.label}</span>
+                      <span className="bg-brand-accent/20 text-brand-accent rounded-full px-2.5 py-0.5 text-[11px] font-semibold">
                         {accessLabel(row.access)}
                       </span>
                     </div>
                     {primaryRole ? (
                       <button
                         type="button"
-                        className="text-xs text-brand-muted underline underline-offset-2 hover:text-brand-accent"
+                        className="text-brand-muted hover:text-brand-accent text-xs underline underline-offset-2"
                         onClick={() => setPermissionViewRole(primaryRole)}
                       >
                         View Permission
@@ -342,7 +344,7 @@ export function UpdateContactInformationPage() {
                   </div>
                 ))
               ) : (
-                <p className="text-sm text-brand-muted">No permissions assigned to this role.</p>
+                <p className="text-brand-muted text-sm">No permissions assigned to this role.</p>
               )}
             </div>
           </div>
@@ -362,19 +364,19 @@ export function UpdateContactInformationPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
           <div
             className={cn(
-              'w-full max-w-lg border border-white/10 bg-brand-surface p-6',
+              'bg-brand-surface w-full max-w-lg border border-white/10 p-6',
               uiTokens.radiusCard,
               uiTokens.shadowElevated,
             )}
           >
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-brand-text">
+              <h3 className="text-brand-text text-lg font-semibold">
                 {permissionViewRole.name} Permissions
               </h3>
               <button
                 type="button"
                 onClick={() => setPermissionViewRole(null)}
-                className="rounded-full p-1 text-brand-muted hover:bg-white/10 hover:text-brand-text"
+                className="text-brand-muted hover:text-brand-text rounded-full p-1 hover:bg-white/10"
               >
                 ×
               </button>
@@ -389,17 +391,14 @@ export function UpdateContactInformationPage() {
                   return (
                     <div
                       key={moduleKey}
-                      className="overflow-hidden rounded-brand-md border border-white/10"
+                      className="rounded-brand-md overflow-hidden border border-white/10"
                     >
-                      <p className="border-b border-white/10 bg-white/5 px-3 py-2 text-sm font-medium text-brand-text">
+                      <p className="text-brand-text border-b border-white/10 bg-white/5 px-3 py-2 text-sm font-medium">
                         {mod.label}
                       </p>
                       <div className="divide-y divide-white/5">
                         {rolePerms.map((permission) => (
-                          <div
-                            key={permission.key}
-                            className="px-3 py-2 text-sm text-brand-text"
-                          >
+                          <div key={permission.key} className="text-brand-text px-3 py-2 text-sm">
                             {permission.label}
                           </div>
                         ))}
@@ -408,7 +407,7 @@ export function UpdateContactInformationPage() {
                   )
                 })
               ) : (
-                <p className="text-sm text-brand-muted">No permissions assigned to this role.</p>
+                <p className="text-brand-muted text-sm">No permissions assigned to this role.</p>
               )}
             </div>
           </div>

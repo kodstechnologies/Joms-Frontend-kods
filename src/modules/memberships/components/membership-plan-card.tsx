@@ -212,7 +212,7 @@ export function MembershipPlanCard({
       </div>
 
       <div className="mt-5 rounded-xl border border-white/5 bg-black/30 p-3">
-        <p className="mb-3 text-[10px] font-semibold uppercase tracking-wide text-[#6B6B6B]">
+        <p className="mb-3 text-[10px] font-semibold tracking-wide text-[#6B6B6B] uppercase">
           Subscription Stats
         </p>
         <div className="grid grid-cols-4 gap-2">
@@ -298,9 +298,7 @@ function MenuButton({
       onClick={onClick}
       className={cn(
         'flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium transition-colors',
-        danger
-          ? 'text-[#C62828] hover:bg-[#C62828]/8'
-          : 'text-black hover:bg-black/5',
+        danger ? 'text-[#C62828] hover:bg-[#C62828]/8' : 'text-black hover:bg-black/5',
       )}
     >
       <Icon className="size-4 shrink-0" strokeWidth={1.85} />

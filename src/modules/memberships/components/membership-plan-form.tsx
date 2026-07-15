@@ -1,7 +1,12 @@
 import { useMemo, useState, type FormEvent } from 'react'
 
 import { DEFAULT_BILLING_CYCLES } from '../mock/membership-metrics.mock'
-import type { MembershipFeatures, MembershipPlan, MembershipPricing, MembershipType } from '../types/membership'
+import type {
+  MembershipFeatures,
+  MembershipPlan,
+  MembershipPricing,
+  MembershipType,
+} from '../types/membership'
 import { Input } from '@/shared/components/ui/input'
 import { cn } from '@/shared/lib/cn'
 
@@ -41,10 +46,7 @@ const buildPricingState = (pricing: MembershipPricing[] = []) => {
   const pricingMap = Object.fromEntries(
     DEFAULT_BILLING_CYCLES.map((cycle) => {
       const existing = pricing.find((item) => item.billingCycleName === cycle)
-      return [
-        cycle,
-        existing ?? { billingCycleName: cycle, price: 2499, discount: 0 },
-      ]
+      return [cycle, existing ?? { billingCycleName: cycle, price: 2499, discount: 0 }]
     }),
   )
 
@@ -57,12 +59,18 @@ const buildPricingState = (pricing: MembershipPricing[] = []) => {
   return { selectedCycles, pricingMap }
 }
 
-export function MembershipPlanForm({ initialPlan, defaultType = 'expert', onSubmit }: MembershipPlanFormProps) {
+export function MembershipPlanForm({
+  initialPlan,
+  defaultType = 'expert',
+  onSubmit,
+}: MembershipPlanFormProps) {
   const initialPricing = buildPricingState(initialPlan?.pricing)
 
   const [planName, setPlanName] = useState(initialPlan?.planName ?? '')
   const [selectedCycles, setSelectedCycles] = useState<string[]>(initialPricing.selectedCycles)
-  const [pricing, setPricing] = useState<Record<string, MembershipPricing>>(initialPricing.pricingMap)
+  const [pricing, setPricing] = useState<Record<string, MembershipPricing>>(
+    initialPricing.pricingMap,
+  )
   const [features, setFeatures] = useState<MembershipFeatures>(
     initialPlan?.features ?? defaultFeatures(),
   )

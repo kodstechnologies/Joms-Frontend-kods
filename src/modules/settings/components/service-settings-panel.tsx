@@ -15,9 +15,7 @@ export function ServiceSettingsPanel({ value, onChange }: ServiceSettingsPanelPr
   const patchPricing = (partial: Partial<ServiceSettings['pricingDetails']>) =>
     onChange({ ...value, pricingDetails: { ...value.pricingDetails, ...partial } })
 
-  const patchPayout = (
-    partial: Partial<ServiceSettings['pricingDetails']['payoutFrequency']>,
-  ) =>
+  const patchPayout = (partial: Partial<ServiceSettings['pricingDetails']['payoutFrequency']>) =>
     patchPricing({
       payoutFrequency: { ...value.pricingDetails.payoutFrequency, ...partial },
     })
@@ -26,7 +24,9 @@ export function ServiceSettingsPanel({ value, onChange }: ServiceSettingsPanelPr
     <div className="space-y-5">
       <div>
         <h2 className="text-lg font-semibold text-white">Service Marketplace Settings</h2>
-        <p className="text-sm text-slate-400">Configure listings, pricing models, proposals, and promotions</p>
+        <p className="text-sm text-slate-400">
+          Configure listings, pricing models, proposals, and promotions
+        </p>
       </div>
 
       <SettingsSectionCard title="Service Listing Details">
@@ -88,9 +88,7 @@ export function ServiceSettingsPanel({ value, onChange }: ServiceSettingsPanelPr
           <select
             className={settingsControlClass}
             value={value.pricingDetails.maxListingDiscountPercent}
-            onChange={(e) =>
-              patchPricing({ maxListingDiscountPercent: Number(e.target.value) })
-            }
+            onChange={(e) => patchPricing({ maxListingDiscountPercent: Number(e.target.value) })}
           >
             {[10, 20, 30, 40, 50].map((pct) => (
               <option key={pct} value={pct}>
@@ -173,17 +171,12 @@ export function ServiceSettingsPanel({ value, onChange }: ServiceSettingsPanelPr
             type="number"
             className={settingsControlClass}
             value={value.pricingDetails.maxConsultationFollowUpDays}
-            onChange={(e) =>
-              patchPricing({ maxConsultationFollowUpDays: Number(e.target.value) })
-            }
+            onChange={(e) => patchPricing({ maxConsultationFollowUpDays: Number(e.target.value) })}
           />
         </SettingsFieldRow>
       </SettingsSectionCard>
 
-      <SettingsSectionCard
-        title="Proposal Details"
-        description="Manage proposal features here."
-      >
+      <SettingsSectionCard title="Proposal Details" description="Manage proposal features here.">
         <SettingsToggleRow
           label="Create One time payment Proposal"
           description="Letting experts create one time payment proposals on the platform."

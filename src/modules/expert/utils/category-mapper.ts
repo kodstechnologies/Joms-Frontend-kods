@@ -1,10 +1,6 @@
 import type { Category } from '../components/category/category-table-columns'
 import type { VenueCategory } from '../components/category/venue-category-table-columns'
-import type {
-  CategoryApiSubCategory,
-  ServiceCategoryApi,
-  VenueCategoryApi,
-} from '../type/category'
+import type { CategoryApiSubCategory, ServiceCategoryApi, VenueCategoryApi } from '../type/category'
 
 const formatDate = (value?: string | null) => {
   if (!value) return '—'
@@ -39,12 +35,9 @@ const mapSubStatus = (
 const toCategoryId = (category: { _id: string; categoryId?: string }) =>
   category.categoryId || `CAT${category._id.toString().slice(-3).toUpperCase()}`
 
-const toSubCategoryId = (subId: string) =>
-  `SUB${subId.toString().slice(-3).toUpperCase()}`
+const toSubCategoryId = (subId: string) => `SUB${subId.toString().slice(-3).toUpperCase()}`
 
-const mapServiceSubCategory = (
-  sub: CategoryApiSubCategory,
-): Category['subCategories'][number] => ({
+const mapServiceSubCategory = (sub: CategoryApiSubCategory): Category['subCategories'][number] => ({
   id: sub._id,
   subCategoryId: toSubCategoryId(sub._id),
   name: sub.name,
@@ -76,9 +69,7 @@ const mapVenueSubCategory = (
 })
 
 export const mapServiceCategoryToUi = (category: ServiceCategoryApi): Category => {
-  const activeSubs = (category.subCategories || []).filter(
-    (sub) => sub.status !== 'DELETED',
-  )
+  const activeSubs = (category.subCategories || []).filter((sub) => sub.status !== 'DELETED')
 
   return {
     id: category._id,
@@ -101,11 +92,7 @@ export const mapServiceCategoryToUi = (category: ServiceCategoryApi): Category =
 }
 
 export const mapVenueCategoryToUi = (category: VenueCategoryApi): VenueCategory => {
-  const status = category.isDeleted
-    ? 'Deleted'
-    : category.isPaused
-      ? 'Paused'
-      : 'Accepted'
+  const status = category.isDeleted ? 'Deleted' : category.isPaused ? 'Paused' : 'Accepted'
 
   const activeSubs = (category.subCategories || []).filter((sub) => !sub.isDeleted)
 
@@ -133,8 +120,8 @@ export const getErrorMessage = (error: unknown, fallback: string) => {
     typeof error === 'object' &&
     error !== null &&
     'response' in error &&
-    typeof (error as { response?: { data?: { message?: string } } }).response?.data
-      ?.message === 'string'
+    typeof (error as { response?: { data?: { message?: string } } }).response?.data?.message ===
+      'string'
   ) {
     return (error as { response: { data: { message: string } } }).response.data.message
   }

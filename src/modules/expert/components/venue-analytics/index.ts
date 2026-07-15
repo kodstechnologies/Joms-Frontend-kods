@@ -1,4 +1,5 @@
 export * from './analytics-ui'
+export * from './analytics-constants'
 export * from './overview-tab'
 export * from './spaces-tab'
 export * from './bookings-tab'

@@ -61,7 +61,7 @@ export function TicketQueuePanel({
 
       <div className="border-b border-white/5 px-4 py-3">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-500" />
+          <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-slate-500" />
           <Input
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
@@ -80,7 +80,7 @@ export function TicketQueuePanel({
             className={cn(
               'w-full rounded-xl border p-3 text-left transition-colors',
               selectedId === ticket.id
-                ? 'border-l-4 border-l-amber-400 border-white/10 bg-[#1a1a1a]'
+                ? 'border-l-4 border-white/10 border-l-amber-400 bg-[#1a1a1a]'
                 : 'border-white/5 bg-[#0d0d0d] hover:border-white/10',
             )}
           >

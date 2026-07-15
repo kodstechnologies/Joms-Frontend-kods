@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { ChevronDown, ImageIcon, Search, Upload, XCircle } from 'lucide-react'
 
 import { useServiceCategoriesByType } from '../hooks/use-service-categories'
@@ -20,11 +20,7 @@ type Props = {
   lockedServiceType?: 'concierge' | 'venue'
 }
 
-export const ExpertBasicProfileStep = ({
-  formData,
-  setFormData,
-  lockedServiceType,
-}: Props) => {
+export const ExpertBasicProfileStep = ({ formData, setFormData, lockedServiceType }: Props) => {
   const coverInputRef = useRef<HTMLInputElement>(null)
   const profileInputRef = useRef<HTMLInputElement>(null)
   const sampleFileInputRef = useRef<HTMLInputElement>(null)
@@ -32,16 +28,15 @@ export const ExpertBasicProfileStep = ({
   const [categorySearch, setCategorySearch] = useState('')
   const [offeringInput, setOfferingInput] = useState('')
 
-  const serviceType = formData.serviceType as 'concierge' | 'venue' | ''
-  const { data: categoriesResponse, isLoading: isCategoriesLoading } =
-    useServiceCategoriesByType(serviceType, categorySearch.trim() || undefined)
+  const serviceType = (lockedServiceType ?? formData.serviceType) as 'concierge' | 'venue' | ''
+  const { data: categoriesResponse, isLoading: isCategoriesLoading } = useServiceCategoriesByType(
+    serviceType,
+    categorySearch.trim() || undefined,
+  )
 
-  const categoryGroups = categoriesResponse?.data || {}
+  const categoryGroups = useMemo(() => categoriesResponse?.data || {}, [categoriesResponse?.data])
   const flattenedCategories = useMemo(
-    () =>
-      Object.values(categoryGroups).flatMap((items) =>
-        items.map((item) => item.name),
-      ),
+    () => Object.values(categoryGroups).flatMap((items) => items.map((item) => item.name)),
     [categoryGroups],
   )
 
@@ -82,17 +77,6 @@ export const ExpertBasicProfileStep = ({
     }))
   }
 
-  useEffect(() => {
-    if (!lockedServiceType || formData.serviceType === lockedServiceType) return
-
-    setFormData((prev) => ({
-      ...prev,
-      serviceType: lockedServiceType,
-      serviceCategory: prev.serviceType === lockedServiceType ? prev.serviceCategory : [],
-    }))
-    setCategorySearch('')
-  }, [formData.serviceType, lockedServiceType, setFormData])
-
   const addOffering = (value: string, reset: () => void) => {
     const trimmed = value.trim()
     if (!trimmed) return
@@ -116,9 +100,7 @@ export const ExpertBasicProfileStep = ({
       <div className="animate-in fade-in slide-in-from-right-4 rounded-lg border border-white/5 bg-[#151515] p-6 duration-300">
         <div className="mb-6">
           <h2 className="text-sm font-bold text-white">Basic Profile Setup</h2>
-          <p className="mt-1 text-xs text-[#777777]">
-            Core identity details and profile media
-          </p>
+          <p className="mt-1 text-xs text-[#777777]">Core identity details and profile media</p>
         </div>
 
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
@@ -127,7 +109,7 @@ export const ExpertBasicProfileStep = ({
               <button
                 type="button"
                 onClick={() => coverInputRef.current?.click()}
-                className="flex h-32 w-full items-center justify-center rounded-md border border-dashed border-[#444] bg-black transition-colors hover:border-brand-accent/50"
+                className="hover:border-brand-accent/50 flex h-32 w-full items-center justify-center rounded-md border border-dashed border-[#444] bg-black transition-colors"
               >
                 {formData.coverImageUrl ? (
                   <img
@@ -172,21 +154,15 @@ export const ExpertBasicProfileStep = ({
                 type="file"
                 accept="image/*"
                 className="hidden"
-                onChange={(e) =>
-                  handleImageChange('profileImage', e.target.files?.[0] ?? null)
-                }
+                onChange={(e) => handleImageChange('profileImage', e.target.files?.[0] ?? null)}
               />
             </div>
 
             <div className="pt-10">
-              <label className="mb-2 block text-xs font-medium text-white">
-                Full Name *
-              </label>
+              <label className="mb-2 block text-xs font-medium text-white">Full Name *</label>
               <input
                 value={formData.fullname}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, fullname: e.target.value }))
-                }
+                onChange={(e) => setFormData((prev) => ({ ...prev, fullname: e.target.value }))}
                 placeholder="Full Name"
                 className={fieldClass}
               />
@@ -196,9 +172,7 @@ export const ExpertBasicProfileStep = ({
               <label className="mb-2 block text-xs font-medium text-white">Location</label>
               <input
                 value={formData.location}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, location: e.target.value }))
-                }
+                onChange={(e) => setFormData((prev) => ({ ...prev, location: e.target.value }))}
                 placeholder="Enter Location"
                 className={fieldClass}
               />
@@ -210,14 +184,12 @@ export const ExpertBasicProfileStep = ({
                 value={formData.bio}
                 onChange={(e) => setFormData((prev) => ({ ...prev, bio: e.target.value }))}
                 placeholder="Write a short bio"
-                className="h-32 w-full rounded-md bg-black p-3 text-sm text-white outline-none placeholder:text-[#666] focus:ring-1 focus:ring-brand-accent/40"
+                className="focus:ring-brand-accent/40 h-32 w-full rounded-md bg-black p-3 text-sm text-white outline-none placeholder:text-[#666] focus:ring-1"
               />
             </div>
 
             <div>
-              <label className="mb-2 block text-xs font-medium text-white">
-                Sample Work Link
-              </label>
+              <label className="mb-2 block text-xs font-medium text-white">Sample Work Link</label>
 
               <input
                 value={formData.sampleWorkLink}
@@ -236,7 +208,7 @@ export const ExpertBasicProfileStep = ({
               <button
                 type="button"
                 onClick={() => sampleFileInputRef.current?.click()}
-                className="rounded-md border border-dashed border-[#444] px-8 py-3 text-xs text-[#999] transition-colors hover:border-brand-accent/50"
+                className="hover:border-brand-accent/50 rounded-md border border-dashed border-[#444] px-8 py-3 text-xs text-[#999] transition-colors"
               >
                 {formData.sampleWorkFileName || 'Upload here'}
               </button>
@@ -262,12 +234,10 @@ export const ExpertBasicProfileStep = ({
             <div>
               <label className="mb-2 block text-xs font-medium text-white">Industry</label>
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#777]" />
+                <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-[#777]" />
                 <input
                   value={formData.industry}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, industry: e.target.value }))
-                  }
+                  onChange={(e) => setFormData((prev) => ({ ...prev, industry: e.target.value }))}
                   placeholder="Search industry"
                   className={`${fieldClass} pl-10`}
                 />
@@ -303,12 +273,10 @@ export const ExpertBasicProfileStep = ({
             </div>
 
             <div>
-              <label className="mb-2 block text-xs font-medium text-white">
-                Service Type *
-              </label>
+              <label className="mb-2 block text-xs font-medium text-white">Service Type *</label>
               <div className="relative">
                 <select
-                  value={formData.serviceType}
+                  value={serviceType}
                   onChange={(e) => handleServiceTypeChange(e.target.value)}
                   disabled={Boolean(lockedServiceType)}
                   className={cn(
@@ -328,7 +296,7 @@ export const ExpertBasicProfileStep = ({
                     </option>
                   ))}
                 </select>
-                <ChevronDown className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-[#777]" />
+                <ChevronDown className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-[#777]" />
               </div>
             </div>
 
@@ -336,14 +304,14 @@ export const ExpertBasicProfileStep = ({
               <label className="mb-2 block text-xs font-medium text-white">
                 Service Category *
               </label>
-              {!formData.serviceType ? (
+              {!serviceType ? (
                 <p className="rounded-md bg-black px-3 py-2.5 text-xs text-[#777]">
                   Select a service type first
                 </p>
               ) : (
                 <>
                   <div className="relative">
-                    <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#777]" />
+                    <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-[#777]" />
                     <input
                       value={categorySearch}
                       onChange={(e) => setCategorySearch(e.target.value)}
@@ -361,14 +329,12 @@ export const ExpertBasicProfileStep = ({
                       <div className="space-y-4">
                         {Object.entries(categoryGroups).map(([groupName, items]) => (
                           <div key={groupName}>
-                            <p className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-[#777]">
+                            <p className="mb-2 text-[10px] font-semibold tracking-wide text-[#777] uppercase">
                               {groupName}
                             </p>
                             <div className="flex flex-wrap gap-2">
                               {items.map((category) => {
-                                const isSelected = formData.serviceCategory.includes(
-                                  category.name,
-                                )
+                                const isSelected = formData.serviceCategory.includes(category.name)
 
                                 return (
                                   <button
@@ -416,7 +382,7 @@ export const ExpertBasicProfileStep = ({
             <div>
               <label className="mb-2 block text-xs font-medium text-white">Offerings</label>
               <div className="relative mb-3">
-                <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#777]" />
+                <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-[#777]" />
                 <input
                   value={offeringInput}
                   onChange={(e) => setOfferingInput(e.target.value)}
@@ -473,15 +439,11 @@ export const ExpertBasicProfileStep = ({
                 </div>
 
                 <div>
-                  <label className="mb-2 block text-xs font-medium text-white">
-                    Email ID *
-                  </label>
+                  <label className="mb-2 block text-xs font-medium text-white">Email ID *</label>
 
                   <input
                     value={formData.email}
-                    onChange={(e) =>
-                      setFormData((prev) => ({ ...prev, email: e.target.value }))
-                    }
+                    onChange={(e) => setFormData((prev) => ({ ...prev, email: e.target.value }))}
                     placeholder="Enter Email ID"
                     type="email"
                     className={fieldClass}

@@ -152,7 +152,9 @@ export function PayoutManagementPage() {
         accessorKey: 'payoutId',
         header: 'Payout ID',
         cell: ({ row }) => (
-          <span className="font-mono text-[11px] uppercase text-white">{row.original.payoutId}</span>
+          <span className="font-mono text-[11px] text-white uppercase">
+            {row.original.payoutId}
+          </span>
         ),
       },
       { accessorKey: 'recipient', header: 'Recipient' },

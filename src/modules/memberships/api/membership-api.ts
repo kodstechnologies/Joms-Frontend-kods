@@ -102,10 +102,7 @@ export const createMembership = async (payload: CreateMembershipPayload) => {
   return response.data
 }
 
-export const updateMembership = async (
-  id: string,
-  payload: Partial<CreateMembershipPayload>,
-) => {
+export const updateMembership = async (id: string, payload: Partial<CreateMembershipPayload>) => {
   const formData = buildUpdateMembershipFormData(payload)
 
   const response = await membershipApiClient.patch<MembershipDetailResponse>(

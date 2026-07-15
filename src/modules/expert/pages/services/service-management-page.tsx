@@ -53,7 +53,6 @@ const SUSPEND_REASON_OPTIONS: DecisionActionModalOption[] = [
   { label: 'Admin review required', value: 'admin_review_required' },
 ]
 
-
 export const ServiceManagementPage = () => {
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [selectedServiceIds, setSelectedServiceIds] = useState<string[]>([])
@@ -84,7 +83,11 @@ export const ServiceManagementPage = () => {
     setActiveStatus,
   } = useServiceStore()
 
-  const { onAdvancedFilter, onExport, modals: exportFilterModals } = useModuleExportFilters({
+  const {
+    onAdvancedFilter,
+    onExport,
+    modals: exportFilterModals,
+  } = useModuleExportFilters({
     moduleKey: 'service-management',
   })
 
@@ -101,7 +104,9 @@ export const ServiceManagementPage = () => {
   const selectedServiceCount = selectedServiceIds.length
   const allVisibleServicesSelected =
     visibleServiceIds.length > 0 && visibleServiceIds.every((id) => selectedServiceIds.includes(id))
-  const someVisibleServicesSelected = visibleServiceIds.some((id) => selectedServiceIds.includes(id))
+  const someVisibleServicesSelected = visibleServiceIds.some((id) =>
+    selectedServiceIds.includes(id),
+  )
   const counts = meta?.counts || {
     approvalsPending: 0,
     reportedServices: 0,
@@ -203,9 +208,7 @@ export const ServiceManagementPage = () => {
 
   const toggleSuspendReason = useCallback((value: string) => {
     setSuspendReasons((current) =>
-      current.includes(value)
-        ? current.filter((reason) => reason !== value)
-        : [...current, value],
+      current.includes(value) ? current.filter((reason) => reason !== value) : [...current, value],
     )
   }, [])
 
@@ -247,9 +250,10 @@ export const ServiceManagementPage = () => {
           toast.success('Service suspended successfully')
           closeSuspendModal()
         },
-        onError: (error: any) => {
+        onError: (error: unknown) => {
+          const err = error as { response?: { data?: { message?: string } } }
           toast.error(
-            error?.response?.data?.message || 'Failed to suspend service. Please try again.',
+            err?.response?.data?.message || 'Failed to suspend service. Please try again.',
           )
         },
       },
@@ -276,7 +280,8 @@ export const ServiceManagementPage = () => {
             aria-label="Select all services"
             checked={allVisibleServicesSelected}
             ref={(input) => {
-              if (input) input.indeterminate = someVisibleServicesSelected && !allVisibleServicesSelected
+              if (input)
+                input.indeterminate = someVisibleServicesSelected && !allVisibleServicesSelected
             }}
             onChange={toggleVisibleServices}
             className="rounded border-slate-700 bg-transparent"
@@ -301,7 +306,9 @@ export const ServiceManagementPage = () => {
         accessorKey: 'serviceid',
         header: 'Service ID',
         cell: ({ row }) => (
-          <span className="font-mono text-xs uppercase">{row.original.serviceid || row.original._id}</span>
+          <span className="font-mono text-xs uppercase">
+            {row.original.serviceid || row.original._id}
+          </span>
         ),
       },
       {
@@ -456,39 +463,39 @@ export const ServiceManagementPage = () => {
     icon: LucideIcon
     status: string
   }[] = [
-      {
-        label: 'Approvals Pending',
-        count: counts.approvalsPending,
-        gradient: 'bg-gradient-to-r from-amber-700/55 to-transparent',
-        border: 'border-amber-600/60',
-        icon: Hourglass,
-        status: 'pending',
-      },
-      {
-        label: 'Reported Services',
-        count: counts.reportedServices,
-        gradient: 'bg-gradient-to-r from-red-800/55 to-transparent',
-        border: 'border-red-800/60',
-        icon: AlertCircle,
-        status: 'reported',
-      },
-      {
-        label: 'Suspended Services',
-        count: counts.suspendedServices,
-        gradient: 'bg-gradient-to-r from-red-800/55 to-transparent',
-        border: 'border-red-800/60',
-        icon: Ban,
-        status: 'suspended',
-      },
-      {
-        label: 'Deleted Services',
-        count: counts.deletedServices,
-        gradient: 'bg-gradient-to-r from-red-800/55 to-transparent',
-        border: 'border-red-800/60',
-        icon: Trash2,
-        status: 'deleted',
-      },
-    ]
+    {
+      label: 'Approvals Pending',
+      count: counts.approvalsPending,
+      gradient: 'bg-gradient-to-r from-amber-700/55 to-transparent',
+      border: 'border-amber-600/60',
+      icon: Hourglass,
+      status: 'pending',
+    },
+    {
+      label: 'Reported Services',
+      count: counts.reportedServices,
+      gradient: 'bg-gradient-to-r from-red-800/55 to-transparent',
+      border: 'border-red-800/60',
+      icon: AlertCircle,
+      status: 'reported',
+    },
+    {
+      label: 'Suspended Services',
+      count: counts.suspendedServices,
+      gradient: 'bg-gradient-to-r from-red-800/55 to-transparent',
+      border: 'border-red-800/60',
+      icon: Ban,
+      status: 'suspended',
+    },
+    {
+      label: 'Deleted Services',
+      count: counts.deletedServices,
+      gradient: 'bg-gradient-to-r from-red-800/55 to-transparent',
+      border: 'border-red-800/60',
+      icon: Trash2,
+      status: 'deleted',
+    },
+  ]
 
   return (
     <div className="flex flex-col gap-4 p-0 md:gap-6">

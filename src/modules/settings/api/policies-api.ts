@@ -14,12 +14,16 @@ export const fetchPolicies = async () => {
 }
 
 export const fetchPolicy = async (slug: string) => {
-  const response = await settingsApiClient.get<ApiEnvelope<PolicyItem>>(`/settings/policies/${slug}`)
+  const response = await settingsApiClient.get<ApiEnvelope<PolicyItem>>(
+    `/settings/policies/${slug}`,
+  )
   return response.data.data
 }
 
 export const fetchPolicyVersions = async (slug: string) => {
-  const response = await settingsApiClient.get<ApiEnvelope<PolicyVersion[]>>(`/settings/policies/${slug}/versions`)
+  const response = await settingsApiClient.get<ApiEnvelope<PolicyVersion[]>>(
+    `/settings/policies/${slug}/versions`,
+  )
   return response.data.data
 }
 
@@ -33,7 +37,10 @@ export const createPolicy = async (payload: {
   changeSummary?: string
   content?: string
 }) => {
-  const response = await settingsApiClient.post<ApiEnvelope<PolicyItem>>('/settings/policies', payload)
+  const response = await settingsApiClient.post<ApiEnvelope<PolicyItem>>(
+    '/settings/policies',
+    payload,
+  )
   return response.data.data
 }
 
@@ -41,7 +48,10 @@ export const updatePolicy = async (
   slug: string,
   payload: { content?: string; changeSummary?: string; author?: string },
 ) => {
-  const response = await settingsApiClient.put<ApiEnvelope<PolicyItem>>(`/settings/policies/${slug}`, payload)
+  const response = await settingsApiClient.put<ApiEnvelope<PolicyItem>>(
+    `/settings/policies/${slug}`,
+    payload,
+  )
   return response.data.data
 }
 
@@ -64,8 +74,11 @@ export const createPolicyVersion = async (
 }
 
 export const publishPolicy = async (slug: string, versionId: string) => {
-  const response = await settingsApiClient.patch<ApiEnvelope<PolicyItem>>(`/settings/policies/${slug}/publish`, {
-    versionId,
-  })
+  const response = await settingsApiClient.patch<ApiEnvelope<PolicyItem>>(
+    `/settings/policies/${slug}/publish`,
+    {
+      versionId,
+    },
+  )
   return response.data.data
 }

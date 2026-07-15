@@ -17,10 +17,7 @@ type Props = {
 }
 
 export const ExpertWorkExperienceStep = ({ formData, setFormData }: Props) => {
-  const updateEntry = (
-    index: number,
-    patch: Partial<ExpertWorkExperienceEntry>,
-  ) => {
+  const updateEntry = (index: number, patch: Partial<ExpertWorkExperienceEntry>) => {
     setFormData((prev) => ({
       ...prev,
       workExperience: prev.workExperience.map((entry, i) =>
@@ -48,9 +45,7 @@ export const ExpertWorkExperienceStep = ({ formData, setFormData }: Props) => {
       <div className="animate-in fade-in slide-in-from-right-4 rounded-lg border border-white/5 bg-[#151515] p-6 duration-300">
         <div className="mb-6">
           <h2 className="text-sm font-bold text-white">Update Experts Experience</h2>
-          <p className="mt-1 text-xs text-[#777777]">
-            Work history and experience - What they do
-          </p>
+          <p className="mt-1 text-xs text-[#777777]">Work history and experience - What they do</p>
         </div>
 
         <div className="space-y-8">
@@ -71,9 +66,7 @@ export const ExpertWorkExperienceStep = ({ formData, setFormData }: Props) => {
 
               <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
                 <div>
-                  <label className="mb-2 block text-xs font-medium text-white">
-                    Job Title
-                  </label>
+                  <label className="mb-2 block text-xs font-medium text-white">Job Title</label>
                   <input
                     value={entry.jobTitle}
                     onChange={(e) => updateEntry(index, { jobTitle: e.target.value })}
@@ -83,9 +76,7 @@ export const ExpertWorkExperienceStep = ({ formData, setFormData }: Props) => {
                 </div>
 
                 <div>
-                  <label className="mb-2 block text-xs font-medium text-white">
-                    Company name
-                  </label>
+                  <label className="mb-2 block text-xs font-medium text-white">Company name</label>
                   <input
                     value={entry.companyName}
                     onChange={(e) => updateEntry(index, { companyName: e.target.value })}
@@ -96,9 +87,7 @@ export const ExpertWorkExperienceStep = ({ formData, setFormData }: Props) => {
               </div>
 
               <div>
-                <label className="mb-2 block text-xs font-medium text-white">
-                  Employment Type
-                </label>
+                <label className="mb-2 block text-xs font-medium text-white">Employment Type</label>
                 <select
                   value={entry.employmentType}
                   onChange={(e) => updateEntry(index, { employmentType: e.target.value })}
@@ -127,9 +116,7 @@ export const ExpertWorkExperienceStep = ({ formData, setFormData }: Props) => {
                 </div>
 
                 <div>
-                  <label className="mb-2 block text-xs font-medium text-white">
-                    To( End Date)
-                  </label>
+                  <label className="mb-2 block text-xs font-medium text-white">To( End Date)</label>
                   <input
                     type="date"
                     value={entry.endDate}
@@ -156,14 +143,12 @@ export const ExpertWorkExperienceStep = ({ formData, setFormData }: Props) => {
               </label>
 
               <div>
-                <label className="mb-2 block text-xs font-medium text-white">
-                  Description
-                </label>
+                <label className="mb-2 block text-xs font-medium text-white">Description</label>
                 <textarea
                   value={entry.description}
                   onChange={(e) => updateEntry(index, { description: e.target.value })}
                   placeholder="Short Description"
-                  className="h-28 w-full rounded-md bg-black p-3 text-sm text-white outline-none placeholder:text-[#666] focus:ring-1 focus:ring-brand-accent/40"
+                  className="focus:ring-brand-accent/40 h-28 w-full rounded-md bg-black p-3 text-sm text-white outline-none placeholder:text-[#666] focus:ring-1"
                 />
               </div>
 
@@ -178,7 +163,7 @@ export const ExpertWorkExperienceStep = ({ formData, setFormData }: Props) => {
           <button
             type="button"
             onClick={addEntry}
-            className="flex items-center gap-2 rounded-md bg-brand-accent px-4 py-2 text-[11px] font-bold text-brand-text-dark transition-colors hover:bg-brand-gold-from"
+            className="bg-brand-accent text-brand-text-dark hover:bg-brand-gold-from flex items-center gap-2 rounded-md px-4 py-2 text-[11px] font-bold transition-colors"
           >
             <Plus className="size-3.5" />
             Add More

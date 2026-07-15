@@ -18,9 +18,7 @@ export function AddTagModal({ open, onClose }: AddTagModalProps) {
   if (!open) return null
 
   const toggleTag = (tag: string) => {
-    setSelectedTags((prev) =>
-      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag],
-    )
+    setSelectedTags((prev) => (prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]))
   }
 
   return (
@@ -28,7 +26,11 @@ export function AddTagModal({ open, onClose }: AddTagModalProps) {
       <div className="w-full max-w-lg rounded-2xl border border-white/10 bg-[#111111] shadow-2xl">
         <div className="flex items-center justify-between border-b border-white/10 px-6 py-5">
           <h2 className="text-lg font-semibold text-white">Add a tag</h2>
-          <button type="button" onClick={onClose} className="rounded-lg p-1.5 text-slate-400 hover:text-white">
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-lg p-1.5 text-slate-400 hover:text-white"
+          >
             <X className="size-5" />
           </button>
         </div>
@@ -38,8 +40,8 @@ export function AddTagModal({ open, onClose }: AddTagModalProps) {
             <Tag className="size-6" />
           </div>
           <p className="text-sm leading-relaxed text-slate-400">
-            You are adding a &apos;Tag&apos; for this user make sure you choose a right tag which can be used for
-            internal purpose.
+            You are adding a &apos;Tag&apos; for this user make sure you choose a right tag which
+            can be used for internal purpose.
           </p>
 
           <div className="flex flex-wrap justify-center gap-2">
@@ -66,7 +68,7 @@ export function AddTagModal({ open, onClose }: AddTagModalProps) {
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder="Enter here"
-              className="h-28 w-full resize-none rounded-lg border-0 bg-[#1a1a1a] px-4 py-3 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-white/20"
+              className="h-28 w-full resize-none rounded-lg border-0 bg-[#1a1a1a] px-4 py-3 text-sm text-white placeholder:text-slate-500 focus:ring-1 focus:ring-white/20 focus:outline-none"
             />
           </label>
         </div>

@@ -35,11 +35,7 @@ export function MembershipStatsBar() {
       />
       <StatCard
         title="Renewal Rate"
-        value={
-          apiStats?.renewalRate
-            ? `${apiStats.renewalRate}%`
-            : mock.renewalRate.value
-        }
+        value={apiStats?.renewalRate ? `${apiStats.renewalRate}%` : mock.renewalRate.value}
         icon={BarChart3}
         trend={mock.renewalRate.trend}
       />

@@ -13,20 +13,14 @@ export const fetchExperts = async (params?: {
   status?: string
   serviceType?: string
 }) => {
-    
-  const response = await adminApiClient.get<ExpertResponse>(
-    '/admin/internal/admin/partners',
-    {
-      params,
-    },
-  )
+  const response = await adminApiClient.get<ExpertResponse>('/admin/internal/admin/partners', {
+    params,
+  })
 
   return response.data
 }
 export const fetchExpertById = async (id: string) => {
-  const response = await adminApiClient.get(
-    `/internal/admin/partners/${id}`
-  )
+  const response = await adminApiClient.get(`/internal/admin/partners/${id}`)
 
   return response.data
 }
@@ -77,9 +71,7 @@ export type DeactivateExpertPayload = {
 }
 
 export const restoreExpert = async (id: string) => {
-  const response = await adminApiClient.patch(
-    `/admin/internal/admin/partners/${id}/restore`,
-  )
+  const response = await adminApiClient.patch(`/admin/internal/admin/partners/${id}/restore`)
   return response.data
 }
 
@@ -92,9 +84,7 @@ export const suspendExpert = async (id: string, payload: SuspendExpertPayload) =
 }
 
 export const activateExpert = async (id: string) => {
-  const response = await adminApiClient.patch(
-    `/admin/internal/admin/partners/${id}/activate`,
-  )
+  const response = await adminApiClient.patch(`/admin/internal/admin/partners/${id}/activate`)
   return response.data
 }
 

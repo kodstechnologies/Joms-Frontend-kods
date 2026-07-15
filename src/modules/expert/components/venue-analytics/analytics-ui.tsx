@@ -89,7 +89,7 @@ export function PeriodSelect({
       <select
         value={value}
         onChange={(e) => onChange?.(e.target.value)}
-        className="h-8 appearance-none rounded-lg border border-white/10 bg-brand-accent px-3 pr-8 text-[11px] font-semibold text-brand-text-dark outline-none"
+        className="bg-brand-accent text-brand-text-dark h-8 appearance-none rounded-lg border border-white/10 px-3 pr-8 text-[11px] font-semibold outline-none"
       >
         {options.map((opt) => (
           <option key={opt} value={opt}>
@@ -97,7 +97,7 @@ export function PeriodSelect({
           </option>
         ))}
       </select>
-      <ChevronDown className="pointer-events-none absolute right-2 top-1/2 size-3.5 -translate-y-1/2 text-black" />
+      <ChevronDown className="pointer-events-none absolute top-1/2 right-2 size-3.5 -translate-y-1/2 text-black" />
     </div>
   )
 }
@@ -152,12 +152,4 @@ export function StatusBadge({ status }: { status: string }) {
       {status}
     </span>
   )
-}
-
-export const CHART_TOOLTIP = {
-  background: 'rgba(2,6,23,0.92)',
-  border: '1px solid rgba(255,255,255,0.10)',
-  borderRadius: 8,
-  padding: '8px 12px',
-  color: 'rgba(226,232,240,0.95)',
 }

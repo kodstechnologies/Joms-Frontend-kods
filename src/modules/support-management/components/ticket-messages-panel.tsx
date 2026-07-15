@@ -47,7 +47,12 @@ export function TicketMessagesPanel({
             className={cn('flex gap-3', msg.role === 'agent' ? 'flex-row-reverse' : 'flex-row')}
           >
             <div className="size-8 shrink-0 rounded-full bg-slate-700" />
-            <div className={cn('max-w-[80%] space-y-1', msg.role === 'agent' ? 'text-right' : 'text-left')}>
+            <div
+              className={cn(
+                'max-w-[80%] space-y-1',
+                msg.role === 'agent' ? 'text-right' : 'text-left',
+              )}
+            >
               <div className="flex items-center gap-2">
                 <span className="text-xs font-semibold text-white">{msg.sender}</span>
                 <span
@@ -78,11 +83,11 @@ export function TicketMessagesPanel({
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
             placeholder="Start Typing..."
-            className="h-11 w-full rounded-xl border border-white/10 bg-[#1a1a1a] px-4 pr-12 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-white/20"
+            className="h-11 w-full rounded-xl border border-white/10 bg-[#1a1a1a] px-4 pr-12 text-sm text-white placeholder:text-slate-500 focus:ring-1 focus:ring-white/20 focus:outline-none"
           />
           <button
             type="button"
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-amber-400 hover:text-amber-300"
+            className="absolute top-1/2 right-3 -translate-y-1/2 text-amber-400 hover:text-amber-300"
           >
             <Send className="size-4" />
           </button>

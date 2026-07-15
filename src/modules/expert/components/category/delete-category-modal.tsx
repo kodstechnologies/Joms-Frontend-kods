@@ -1,27 +1,27 @@
-import { useEffect, useState } from "react";
-import { Trash2, X } from "lucide-react";
+import { useEffect, useState } from 'react'
+import { Trash2, X } from 'lucide-react'
 
-import { Button } from "@/shared/components/ui/button";
-import { cn } from "@/shared/lib/cn";
+import { Button } from '@/shared/components/ui/button'
+import { cn } from '@/shared/lib/cn'
 
 const REASON_OPTIONS = [
-  { label: "[Reason]", value: "reason-1" },
-  { label: "[Reason]", value: "reason-2" },
-  { label: "[Reason]", value: "reason-3" },
-  { label: "[Reason]", value: "reason-4" },
-] as const;
+  { label: '[Reason]', value: 'reason-1' },
+  { label: '[Reason]', value: 'reason-2' },
+  { label: '[Reason]', value: 'reason-3' },
+  { label: '[Reason]', value: 'reason-4' },
+] as const
 
 export type DeleteCategoryModalPayload = {
-  reasons: string[];
-  adminNotes: string;
-};
+  reasons: string[]
+  adminNotes: string
+}
 
 type DeleteCategoryModalProps = {
-  open: boolean;
-  onClose: () => void;
-  onConfirm: (payload: DeleteCategoryModalPayload) => void;
-  isSubmitting?: boolean;
-};
+  open: boolean
+  onClose: () => void
+  onConfirm: (payload: DeleteCategoryModalPayload) => void
+  isSubmitting?: boolean
+}
 
 export function DeleteCategoryModal({
   open,
@@ -29,50 +29,43 @@ export function DeleteCategoryModal({
   onConfirm,
   isSubmitting = false,
 }: DeleteCategoryModalProps) {
-  const [selectedReasons, setSelectedReasons] = useState<string[]>([
-    "reason-1",
-    "reason-2",
-  ]);
-  const [confirmed, setConfirmed] = useState(false);
-  const [adminNotes, setAdminNotes] = useState("");
+  const [selectedReasons, setSelectedReasons] = useState<string[]>(['reason-1', 'reason-2'])
+  const [confirmed, setConfirmed] = useState(false)
+  const [adminNotes, setAdminNotes] = useState('')
+
+  const handleClose = () => {
+    setSelectedReasons(['reason-1', 'reason-2'])
+    setConfirmed(false)
+    setAdminNotes('')
+    onClose()
+  }
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) return
 
-    setSelectedReasons(["reason-1", "reason-2"]);
-    setConfirmed(false);
-    setAdminNotes("");
-  }, [open]);
-
-  useEffect(() => {
-    if (!open) return;
-
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
 
     return () => {
-      document.body.style.overflow = previousOverflow;
-    };
-  }, [open]);
+      document.body.style.overflow = previousOverflow
+    }
+  }, [open])
 
-  if (!open) return null;
+  if (!open) return null
 
   const toggleReason = (value: string) => {
     setSelectedReasons((current) =>
-      current.includes(value)
-        ? current.filter((item) => item !== value)
-        : [...current, value],
-    );
-  };
+      current.includes(value) ? current.filter((item) => item !== value) : [...current, value],
+    )
+  }
 
-  const canSubmit =
-    confirmed && adminNotes.trim().length > 0 && selectedReasons.length > 0;
+  const canSubmit = confirmed && adminNotes.trim().length > 0 && selectedReasons.length > 0
 
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden bg-black/80 px-4"
       role="presentation"
-      onClick={onClose}
+      onClick={handleClose}
     >
       <div
         role="dialog"
@@ -82,17 +75,17 @@ export function DeleteCategoryModal({
         onClick={(event) => event.stopPropagation()}
       >
         <div className="shrink-0">
-          <div className="flex items-center justify-between px-6 pb-4 pt-5">
+          <div className="flex items-center justify-between px-6 pt-5 pb-4">
             <h2
               id="delete-category-modal-title"
-              className="font-sans text-[16px] font-semibold leading-5 tracking-normal text-white"
+              className="font-sans text-[16px] leading-5 font-semibold tracking-normal text-white"
             >
               Delete Category
             </h2>
             <button
               type="button"
               aria-label="Close modal"
-              onClick={onClose}
+              onClick={handleClose}
               className="text-white transition-opacity hover:opacity-70"
             >
               <X className="size-5" strokeWidth={1.5} aria-hidden="true" />
@@ -101,31 +94,28 @@ export function DeleteCategoryModal({
           <div className="h-px w-full bg-[#2A2A2A]" />
         </div>
 
-        <div className="px-6 pb-6 pt-5">
+        <div className="px-6 pt-5 pb-6">
           <div className="flex flex-col items-center text-center">
             <span className="mb-3 flex size-12 items-center justify-center rounded-full bg-[#341515]">
-              <Trash2
-                className="size-5 text-[#E74C3C]"
-                aria-hidden="true"
-              />
+              <Trash2 className="size-5 text-[#E74C3C]" aria-hidden="true" />
             </span>
 
-            <p className="font-sans text-[14px] font-normal leading-5 tracking-normal text-white">
+            <p className="font-sans text-[14px] leading-5 font-normal tracking-normal text-white">
               Are you sure you want Delete this Category?
             </p>
-            <p className="mt-1.5 font-sans text-[12px] font-normal leading-[17px] tracking-normal text-[#888888]">
+            <p className="mt-1.5 font-sans text-[12px] leading-[17px] font-normal tracking-normal text-[#888888]">
               This will result in removing this category from the App.
             </p>
           </div>
 
           <div className="mt-5">
-            <span className="mb-3 block font-sans text-[12px] font-normal leading-[17px] tracking-normal text-[#888888]">
+            <span className="mb-3 block font-sans text-[12px] leading-[17px] font-normal tracking-normal text-[#888888]">
               Reasons
             </span>
 
             <div className="flex flex-wrap gap-3">
               {REASON_OPTIONS.map((option) => {
-                const isSelected = selectedReasons.includes(option.value);
+                const isSelected = selectedReasons.includes(option.value)
 
                 return (
                   <button
@@ -133,15 +123,15 @@ export function DeleteCategoryModal({
                     type="button"
                     onClick={() => toggleReason(option.value)}
                     className={cn(
-                      "rounded-lg px-4 py-2 font-sans text-[12px] font-normal leading-[17px] tracking-normal transition-colors",
+                      'rounded-lg px-4 py-2 font-sans text-[12px] leading-[17px] font-normal tracking-normal transition-colors',
                       isSelected
-                        ? "bg-brand-accent text-brand-text-dark"
-                        : "border border-[#444444] bg-black text-white hover:border-[#666666]",
+                        ? 'bg-brand-accent text-brand-text-dark'
+                        : 'border border-[#444444] bg-black text-white hover:border-[#666666]',
                     )}
                   >
                     {option.label}
                   </button>
-                );
+                )
               })}
             </div>
           </div>
@@ -151,26 +141,31 @@ export function DeleteCategoryModal({
               type="checkbox"
               checked={confirmed}
               onChange={(event) => setConfirmed(event.target.checked)}
-              className="mt-0.5 size-4 shrink-0 rounded-sm border border-white/80 bg-transparent accent-brand-accent"
+              className="accent-brand-accent mt-0.5 size-4 shrink-0 rounded-sm border border-white/80 bg-transparent"
             />
-            <span className="font-sans text-[12px] font-normal leading-[17px] tracking-normal text-white">
+            <span className="font-sans text-[12px] leading-[17px] font-normal tracking-normal text-white">
               I confirm the documents are not approved due to above reasons.
             </span>
           </label>
 
           <label className="mt-4 block">
-            <span className="mb-2 block font-sans text-[12px] font-normal leading-[17px] tracking-normal text-white">
+            <span className="mb-2 block font-sans text-[12px] leading-[17px] font-normal tracking-normal text-white">
               Admin notes <span className="text-red-500">*</span>
             </span>
             <textarea
               value={adminNotes}
               onChange={(event) => setAdminNotes(event.target.value)}
-              className="h-[72px] w-full resize-none overflow-hidden rounded-lg border border-[#2A2A2A] bg-black px-4 py-3 font-sans text-[12px] font-normal leading-[17px] tracking-normal text-white outline-none placeholder:text-[#666666] focus:border-[#444444]"
+              className="h-[72px] w-full resize-none overflow-hidden rounded-lg border border-[#2A2A2A] bg-black px-4 py-3 font-sans text-[12px] leading-[17px] font-normal tracking-normal text-white outline-none placeholder:text-[#666666] focus:border-[#444444]"
             />
           </label>
 
           <div className="mt-5 grid grid-cols-2 gap-3">
-            <Button type="button" variant="secondary" onClick={onClose} className="h-[34px] w-full text-xs">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={handleClose}
+              className="h-[34px] w-full text-xs"
+            >
               Cancel
             </Button>
             <Button
@@ -190,5 +185,5 @@ export function DeleteCategoryModal({
         </div>
       </div>
     </div>
-  );
+  )
 }

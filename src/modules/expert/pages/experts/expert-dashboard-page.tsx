@@ -34,19 +34,97 @@ type Metric = {
 }
 
 const METRICS: Metric[] = [
-  { label: 'Total Expert', value: '12,845', change: '8.8%', changeType: 'up', changeNote: 'vs last month' },
-  { label: 'Active Experts', value: '10,320', change: '4.2%', changeType: 'up', changeNote: 'vs last month' },
-  { label: 'Inactive Experts', value: '2,525', change: '2.1%', changeType: 'down', changeNote: 'vs last month' },
-  { label: 'New Expert (MTD)', value: '145', change: '12.5%', changeType: 'up', changeNote: 'vs last month' },
-  { label: 'Total Revenue', value: '₹487,250', change: '10.8%', changeType: 'up', changeNote: 'vs last month' },
-  { label: 'Avg. Listings/Expert', value: '4.3', change: '0.5%', changeType: 'up', changeNote: 'vs last month' },
-  { label: 'Avg. Revenue/Expert', value: '₹38,420', change: '3.1%', changeType: 'up', changeNote: 'vs last month' },
-  { label: 'Avg. Ratings/Expert', value: '4.5/5', change: '0.2%', changeType: 'up', changeNote: 'vs last month' },
-  { label: 'Avg. Consultation/Expert', value: '22', change: '5.0%', changeType: 'up', changeNote: 'vs last month' },
-  { label: 'Avg. Response Time/Expert', value: '2.5 hrs', change: '0.5%', changeType: 'down', changeNote: 'faster' },
-  { label: 'Avg. Client/Expert', value: '18', change: '6.0%', changeType: 'up', changeNote: 'vs last month' },
-  { label: 'Category coverage % Expert', value: '85%', change: '3.2%', changeType: 'up', changeNote: 'vs last month' },
-  { label: 'Total Order Completed', value: '58,400', change: '15.2%', changeType: 'up', changeNote: 'vs last month' },
+  {
+    label: 'Total Expert',
+    value: '12,845',
+    change: '8.8%',
+    changeType: 'up',
+    changeNote: 'vs last month',
+  },
+  {
+    label: 'Active Experts',
+    value: '10,320',
+    change: '4.2%',
+    changeType: 'up',
+    changeNote: 'vs last month',
+  },
+  {
+    label: 'Inactive Experts',
+    value: '2,525',
+    change: '2.1%',
+    changeType: 'down',
+    changeNote: 'vs last month',
+  },
+  {
+    label: 'New Expert (MTD)',
+    value: '145',
+    change: '12.5%',
+    changeType: 'up',
+    changeNote: 'vs last month',
+  },
+  {
+    label: 'Total Revenue',
+    value: '₹487,250',
+    change: '10.8%',
+    changeType: 'up',
+    changeNote: 'vs last month',
+  },
+  {
+    label: 'Avg. Listings/Expert',
+    value: '4.3',
+    change: '0.5%',
+    changeType: 'up',
+    changeNote: 'vs last month',
+  },
+  {
+    label: 'Avg. Revenue/Expert',
+    value: '₹38,420',
+    change: '3.1%',
+    changeType: 'up',
+    changeNote: 'vs last month',
+  },
+  {
+    label: 'Avg. Ratings/Expert',
+    value: '4.5/5',
+    change: '0.2%',
+    changeType: 'up',
+    changeNote: 'vs last month',
+  },
+  {
+    label: 'Avg. Consultation/Expert',
+    value: '22',
+    change: '5.0%',
+    changeType: 'up',
+    changeNote: 'vs last month',
+  },
+  {
+    label: 'Avg. Response Time/Expert',
+    value: '2.5 hrs',
+    change: '0.5%',
+    changeType: 'down',
+    changeNote: 'faster',
+  },
+  {
+    label: 'Avg. Client/Expert',
+    value: '18',
+    change: '6.0%',
+    changeType: 'up',
+    changeNote: 'vs last month',
+  },
+  {
+    label: 'Category coverage % Expert',
+    value: '85%',
+    change: '3.2%',
+    changeType: 'up',
+    changeNote: 'vs last month',
+  },
+  {
+    label: 'Total Order Completed',
+    value: '58,400',
+    change: '15.2%',
+    changeType: 'up',
+    changeNote: 'vs last month',
+  },
 ]
 
 const EXPERTS_BY_CATEGORY = [
@@ -85,11 +163,46 @@ type TopHost = {
 }
 
 const TOP_HOSTS: TopHost[] = [
-  { name: 'Sarah Johnson', category: 'Marketing', orders: 21, rating: 4.9, attendees: 1240, revenue: '₹223,450' },
-  { name: 'Michael Chen', category: 'Finance', orders: 21, rating: 4.8, attendees: 980, revenue: '₹198,320' },
-  { name: 'Emily Davis', category: 'Legal', orders: 21, rating: 4.7, attendees: 860, revenue: '₹176,540' },
-  { name: 'David Wilson', category: 'Technology', orders: 21, rating: 4.6, attendees: 720, revenue: '₹154,890' },
-  { name: 'Jessica Brown', category: 'Fitness', orders: 21, rating: 4.5, attendees: 640, revenue: '₹142,760' },
+  {
+    name: 'Sarah Johnson',
+    category: 'Marketing',
+    orders: 21,
+    rating: 4.9,
+    attendees: 1240,
+    revenue: '₹223,450',
+  },
+  {
+    name: 'Michael Chen',
+    category: 'Finance',
+    orders: 21,
+    rating: 4.8,
+    attendees: 980,
+    revenue: '₹198,320',
+  },
+  {
+    name: 'Emily Davis',
+    category: 'Legal',
+    orders: 21,
+    rating: 4.7,
+    attendees: 860,
+    revenue: '₹176,540',
+  },
+  {
+    name: 'David Wilson',
+    category: 'Technology',
+    orders: 21,
+    rating: 4.6,
+    attendees: 720,
+    revenue: '₹154,890',
+  },
+  {
+    name: 'Jessica Brown',
+    category: 'Fitness',
+    orders: 21,
+    rating: 4.5,
+    attendees: 640,
+    revenue: '₹142,760',
+  },
 ]
 
 const CHART_BLUE = '#2E7DFF'
@@ -206,25 +319,25 @@ export const ExpertDashboardPage = () => {
             Comprehensive member analytics and engagement metrics
           </p>
         </div>
-      <div className="flex w-full flex-col items-stretch gap-3 sm:w-auto sm:flex-row sm:items-center">
-  <Button
-    type="button"
-    className="h-11 rounded-xl px-6 text-sm font-semibold sm:w-auto"
-    onClick={() => navigate('/experts/dashboard/metrics')}
-  >
-    <BarChart3 className="size-4" />
-    Manage Metrics
-  </Button>
+        <div className="flex w-full flex-col items-stretch gap-3 sm:w-auto sm:flex-row sm:items-center">
+          <Button
+            type="button"
+            className="h-11 rounded-xl px-6 text-sm font-semibold sm:w-auto"
+            onClick={() => navigate('/experts/dashboard/metrics')}
+          >
+            <BarChart3 className="size-4" />
+            Manage Metrics
+          </Button>
 
-  <Button
-    type="button"
-    className="h-11 rounded-xl px-6 text-sm font-semibold sm:w-auto"
-    onClick={() => navigate('/experts/management/create')}
-  >
-    <Plus className="size-4" />
-    Create Expert Account
-  </Button>
-</div>
+          <Button
+            type="button"
+            className="h-11 rounded-xl px-6 text-sm font-semibold sm:w-auto"
+            onClick={() => navigate('/experts/management/create')}
+          >
+            <Plus className="size-4" />
+            Create Expert Account
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4">
@@ -233,14 +346,14 @@ export const ExpertDashboardPage = () => {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 gap-5  xl:grid-cols-2">
-        <ChartCard
-          title="Experts by Category"
-          onRefresh={() => toast.message('Chart refreshed')}
-        >
+      <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
+        <ChartCard title="Experts by Category" onRefresh={() => toast.message('Chart refreshed')}>
           <div className="h-[260px] w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={EXPERTS_BY_CATEGORY} margin={{ left: 0, right: 8, top: 8, bottom: 0 }}>
+              <BarChart
+                data={EXPERTS_BY_CATEGORY}
+                margin={{ left: 0, right: 8, top: 8, bottom: 0 }}
+              >
                 <CartesianGrid stroke="rgba(255,255,255,0.05)" vertical={false} />
                 <XAxis
                   dataKey="category"
@@ -260,11 +373,8 @@ export const ExpertDashboardPage = () => {
           </div>
         </ChartCard>
 
-        <ChartCard
-          title="Revenue by Category"
-          onRefresh={() => toast.message('Chart refreshed')}
-        >
-          <div className="space-y-5 pt-2 px-2">
+        <ChartCard title="Revenue by Category" onRefresh={() => toast.message('Chart refreshed')}>
+          <div className="space-y-5 px-2 pt-2">
             {REVENUE_BY_CATEGORY.map((item) => (
               <div key={item.category} className="flex items-center gap-3">
                 <span className="w-20 shrink-0 text-[11px] text-[#888888]">{item.category}</span>
@@ -290,7 +400,7 @@ export const ExpertDashboardPage = () => {
               <select
                 value={growthRange}
                 onChange={(event) => setGrowthRange(event.target.value)}
-                className="h-9 cursor-pointer appearance-none rounded-lg border border-white/10 bg-black px-3 pr-8 text-[11px] font-medium text-white outline-none focus:border-brand-accent/50"
+                className="focus:border-brand-accent/50 h-9 cursor-pointer appearance-none rounded-lg border border-white/10 bg-black px-3 pr-8 text-[11px] font-medium text-white outline-none"
               >
                 <option value="3">Last 3 Months</option>
                 <option value="6">Last 6 Months</option>
@@ -302,7 +412,7 @@ export const ExpertDashboardPage = () => {
               type="button"
               aria-label="Refresh revenue chart"
               onClick={() => toast.message('Chart refreshed')}
-              className="grid h-8 w-8  place-items-center rounded-lg border border-white/10 bg-black text-slate-300 transition-colors hover:bg-white/5"
+              className="grid h-8 w-8 place-items-center rounded-lg border border-white/10 bg-black text-slate-300 transition-colors hover:bg-white/5"
             >
               <RefreshCw className="size-3.5" />
             </button>
@@ -367,7 +477,7 @@ export const ExpertDashboardPage = () => {
                   <td className="px-3 py-3">{host.orders}</td>
                   <td className="px-3 py-3">
                     <span className="inline-flex items-center gap-1">
-                      <Star className="size-3.5 fill-brand-accent text-brand-accent" />
+                      <Star className="fill-brand-accent text-brand-accent size-3.5" />
                       <span className="font-semibold text-white">{host.rating}</span>
                     </span>
                   </td>

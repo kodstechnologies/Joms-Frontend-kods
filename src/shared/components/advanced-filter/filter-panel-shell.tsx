@@ -56,7 +56,9 @@ export function FilterPanelShell({
         <div className="min-h-0 flex-1 overflow-y-auto px-6 py-6">{children}</div>
 
         {footer ? (
-          <footer className="shrink-0 border-t border-[#2A2A2A] bg-black px-6 py-5">{footer}</footer>
+          <footer className="shrink-0 border-t border-[#2A2A2A] bg-black px-6 py-5">
+            {footer}
+          </footer>
         ) : null}
       </div>
     </div>

@@ -13,21 +13,12 @@ export const fetchExpertApplicationView = async (id: string) => {
   return response.data
 }
 
-export const updateExpertKycStatus = async (
-  id: string,
-  payload: KycDecisionPayload,
-) => {
-  const response = await kycApiClient.patch(
-    `/concierge-kyc/concierge/${id}/status`,
-    payload,
-  )
+export const updateExpertKycStatus = async (id: string, payload: KycDecisionPayload) => {
+  const response = await kycApiClient.patch(`/concierge-kyc/concierge/${id}/status`, payload)
   return response.data
 }
 
-export const updateExpertBankingStatus = async (
-  id: string,
-  payload: BankingDecisionPayload,
-) => {
+export const updateExpertBankingStatus = async (id: string, payload: BankingDecisionPayload) => {
   const response = await kycApiClient.patch(
     `/concierge-banking/concierge/banking/${id}/status`,
     payload,

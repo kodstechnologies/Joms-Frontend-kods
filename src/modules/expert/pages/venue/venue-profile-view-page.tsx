@@ -22,10 +22,7 @@ import {
 } from 'lucide-react'
 
 import { useVenueFullView } from '../../hooks/use-venues'
-import type {
-  VenueFullView,
-  VenueFullViewSpaceSummary,
-} from '../../type/venue-full-view'
+import type { VenueFullView, VenueFullViewSpaceSummary } from '../../type/venue-full-view'
 import { cn } from '@/shared/lib/cn'
 
 type TabKey = 'overview' | 'spaces' | 'analytics' | 'health'
@@ -77,13 +74,7 @@ function SafeImage({
   )
 }
 
-function SidebarRow({
-  label,
-  children,
-}: {
-  label: string
-  children: ReactNode
-}) {
+function SidebarRow({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="flex items-center justify-between border-b border-white/5 py-3 last:border-0">
       <span className="text-[12px] text-[#999]">{label}</span>
@@ -115,11 +106,7 @@ const getVenueKycStatusTone = (status?: string | null) => {
   return 'bg-amber-500/15 text-amber-300'
 }
 
-function ProfileSidebar({
-  data,
-}: {
-  data: VenueFullView
-}) {
+function ProfileSidebar({ data }: { data: VenueFullView }) {
   const profile = data.profile ?? {
     venueType: null,
     clientSatisfaction: null,
@@ -143,47 +130,32 @@ function ProfileSidebar({
           <h3 className="text-[13px] font-semibold text-white">
             Organisation Profile &amp; Account
           </h3>
-          <span
-            className={cn(
-              'rounded-md px-2.5 py-1 text-[10px] font-bold',
-              kycStatusTone,
-            )}
-          >
+          <span className={cn('rounded-md px-2.5 py-1 text-[10px] font-bold', kycStatusTone)}>
             {kycStatusLabel}
           </span>
         </div>
 
         <SidebarRow label="Venue Type">{profile.venueType || '—'}</SidebarRow>
         <SidebarRow label="Client Satisfaction">
-          {profile.clientSatisfaction !== null
-            ? `${profile.clientSatisfaction}%`
-            : '—'}
+          {profile.clientSatisfaction !== null ? `${profile.clientSatisfaction}%` : '—'}
         </SidebarRow>
         <SidebarRow label="Ratings">
           <span className="inline-flex items-center gap-1">
-            <Star className="size-3.5 fill-brand-accent text-brand-accent" />
+            <Star className="fill-brand-accent text-brand-accent size-3.5" />
             {profile.ratings ?? '—'}
           </span>
         </SidebarRow>
-        <SidebarRow label="Total Bookings">
-          {profile.totalBookings ?? '—'}
-        </SidebarRow>
+        <SidebarRow label="Total Bookings">{profile.totalBookings ?? '—'}</SidebarRow>
         <SidebarRow label="Years in Operation">
-          {profile.yearsInOperation
-            ? `${profile.yearsInOperation.years} Years`
-            : '—'}
+          {profile.yearsInOperation ? `${profile.yearsInOperation.years} Years` : '—'}
         </SidebarRow>
-        <SidebarRow label="Total Earnings">
-          {formatCurrency(profile.totalEarnings)}
-        </SidebarRow>
-        <SidebarRow label="Primary City">
-          {profile.primaryCity || '—'}
-        </SidebarRow>
+        <SidebarRow label="Total Earnings">{formatCurrency(profile.totalEarnings)}</SidebarRow>
+        <SidebarRow label="Primary City">{profile.primaryCity || '—'}</SidebarRow>
         <SidebarRow label="KYC">
           <button
             type="button"
             onClick={() => comingSoon('KYC Document')}
-            className="rounded-md bg-brand-accent px-3 py-1 text-[11px] font-bold text-brand-text-dark transition-colors hover:bg-brand-gold-from"
+            className="bg-brand-accent text-brand-text-dark hover:bg-brand-gold-from rounded-md px-3 py-1 text-[11px] font-bold transition-colors"
           >
             View
           </button>
@@ -192,7 +164,7 @@ function ProfileSidebar({
           <button
             type="button"
             onClick={() => comingSoon('Timelines')}
-            className="rounded-md bg-brand-accent px-3 py-1 text-[11px] font-bold text-brand-text-dark transition-colors hover:bg-brand-gold-from"
+            className="bg-brand-accent text-brand-text-dark hover:bg-brand-gold-from rounded-md px-3 py-1 text-[11px] font-bold transition-colors"
           >
             Check Timelines
           </button>
@@ -200,9 +172,7 @@ function ProfileSidebar({
       </div>
 
       <div className="rounded-xl border border-white/5 bg-[#111111] p-5">
-        <h3 className="mb-4 text-[13px] font-semibold text-white">
-          Support &amp; Admin
-        </h3>
+        <h3 className="mb-4 text-[13px] font-semibold text-white">Support &amp; Admin</h3>
         <div className="rounded-lg border border-white/5 bg-black p-3">
           <p className="text-[10px] text-[#777]">Active Tickets</p>
           <p className="mt-1 text-[12px] font-medium text-white">None</p>
@@ -223,10 +193,7 @@ function OverviewTab({ data }: { data: VenueFullView }) {
   const location = venue.location
   const poc = gallery?.contact?.contacts?.[0]
 
-  const galleryImages =
-    gallery?.galleryImages?.map((image) => image.url) ??
-    venue.venueImages ??
-    []
+  const galleryImages = gallery?.galleryImages?.map((image) => image.url) ?? venue.venueImages ?? []
 
   const addressLine = [
     location?.address,
@@ -257,9 +224,7 @@ function OverviewTab({ data }: { data: VenueFullView }) {
         <p className="mt-1 text-[12px] text-[#999]">
           {poc?.phone || venue.pocContactNumber || '—'}
         </p>
-        {poc?.email && (
-          <p className="mt-0.5 text-[12px] text-[#999]">{poc.email}</p>
-        )}
+        {poc?.email && <p className="mt-0.5 text-[12px] text-[#999]">{poc.email}</p>}
       </div>
 
       <hr className="border-white/5" />
@@ -296,9 +261,7 @@ function OverviewTab({ data }: { data: VenueFullView }) {
 
       <div>
         <div className="mb-3 flex items-center gap-3">
-          <h3 className="text-[13px] font-semibold text-white">
-            Reviews &amp; Ratings
-          </h3>
+          <h3 className="text-[13px] font-semibold text-white">Reviews &amp; Ratings</h3>
         </div>
         <div className="ml-auto flex flex-wrap items-center gap-4">
           {['All Reviews', 'Most Recent', 'Top Reviews'].map((chip, index) => (
@@ -306,9 +269,7 @@ function OverviewTab({ data }: { data: VenueFullView }) {
               key={chip}
               className={cn(
                 'rounded-md px-3 py-1.5 text-[11px] font-semibold',
-                index === 0
-                  ? 'bg-brand-accent text-brand-text-dark'
-                  : 'bg-black text-[#999]',
+                index === 0 ? 'bg-brand-accent text-brand-text-dark' : 'bg-black text-[#999]',
               )}
             >
               {chip}
@@ -325,13 +286,7 @@ function OverviewTab({ data }: { data: VenueFullView }) {
   )
 }
 
-function SpacesTab({
-  data,
-  venueId,
-}: {
-  data: VenueFullView
-  venueId: string
-}) {
+function SpacesTab({ data, venueId }: { data: VenueFullView; venueId: string }) {
   const navigate = useNavigate()
   const [search, setSearch] = useState('')
   const [selectedSpaceId, setSelectedSpaceId] = useState<string | null>(null)
@@ -349,12 +304,12 @@ function SpacesTab({
     <div className="rounded-xl border border-white/5 bg-[#111111] p-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#666]" />
+          <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-[#666]" />
           <input
             value={search}
             onChange={(event) => setSearch(event.target.value)}
             placeholder="Search by service title"
-            className="h-10 w-full rounded-md border border-white/10 bg-black pl-9 pr-3 text-[13px] text-white outline-none placeholder:text-[#666] focus:border-brand-accent/50"
+            className="focus:border-brand-accent/50 h-10 w-full rounded-md border border-white/10 bg-black pr-3 pl-9 text-[13px] text-white outline-none placeholder:text-[#666]"
           />
         </div>
         <button
@@ -390,17 +345,15 @@ function SpacesTab({
                 setSelectedSpaceId(space.spaceId)
                 navigate(`/venues/management/profile/${venueId}/space/${space.spaceId}`)
               }}
-              className="flex w-full items-center rounded-xl bg-black px-5 py-5 transition-colors hover:border hover:border-brand-accent/30"
+              className="hover:border-brand-accent/30 flex w-full items-center rounded-xl bg-black px-5 py-5 transition-colors hover:border"
             >
               <input
                 type="checkbox"
                 onClick={(e) => e.stopPropagation()}
-                className="h-6 w-6 rounded border-white/30 accent-brand-accent"
+                className="accent-brand-accent h-6 w-6 rounded border-white/30"
               />
 
               <div className="ml-3 h-28 w-32 shrink-0 overflow-hidden rounded-xl">
-
-
                 <SafeImage
                   src={space.coverImage}
                   alt={space.spaceName}
@@ -415,9 +368,7 @@ function SpacesTab({
 
               <div className="ml-4 flex flex-1 items-center justify-between">
                 <div>
-                  <p className="text-[14px] font-semibold text-white">
-                    {space.spaceName}
-                  </p>
+                  <p className="text-[14px] font-semibold text-white">{space.spaceName}</p>
 
                   <p className="mt-1 text-[12px] text-[#A0A0A0]">
                     {[space.city, space.state].filter(Boolean).join(', ') || '—'}
@@ -442,14 +393,11 @@ function SpacesTab({
 
                 <ChevronRight
                   className={cn(
-                    "ml-auto size-5 shrink-0 transition-colors duration-200",
-                    selectedSpaceId === space.spaceId
-                      ? "text-[#AEEBFF]"
-                      : "text-white"
+                    'ml-auto size-5 shrink-0 transition-colors duration-200',
+                    selectedSpaceId === space.spaceId ? 'text-[#AEEBFF]' : 'text-white',
                   )}
                 />
               </div>
-
             </button>
           ))
         )}
@@ -488,10 +436,7 @@ function AnalyticsTab({ data, venueId }: { data: VenueFullView; venueId: string 
     },
     {
       label: 'Event Completion Rate',
-      value:
-        profile?.clientSatisfaction != null
-          ? `${profile.clientSatisfaction}%`
-          : '100%',
+      value: profile?.clientSatisfaction != null ? `${profile.clientSatisfaction}%` : '100%',
     },
     {
       label: 'Avg. Response Time',
@@ -513,7 +458,7 @@ function AnalyticsTab({ data, venueId }: { data: VenueFullView; venueId: string 
         <button
           type="button"
           onClick={() => navigate('/venues/dashboard/metrics')}
-          className="flex items-center gap-1.5 rounded-lg bg-brand-accent/15 px-3 py-2 text-[11px] font-semibold text-brand-accent"
+          className="bg-brand-accent/15 text-brand-accent flex items-center gap-1.5 rounded-lg px-3 py-2 text-[11px] font-semibold"
         >
           <Gauge className="size-3.5" />
           Manage Metrics
@@ -521,10 +466,7 @@ function AnalyticsTab({ data, venueId }: { data: VenueFullView; venueId: string 
       </div>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {cards.map((card) => (
-          <div
-            key={card.label}
-            className="rounded-lg border border-white/5 bg-black p-4"
-          >
+          <div key={card.label} className="rounded-lg border border-white/5 bg-black p-4">
             <div className="flex items-center justify-between">
               <p className="text-[11px] text-[#999]">{card.label}</p>
               <div className="flex h-8 w-8 items-center justify-center rounded-md bg-[#1A1A1A]">
@@ -565,9 +507,7 @@ function HealthTab({ data }: { data: VenueFullView }) {
               key={chip}
               className={cn(
                 'rounded-md px-3 py-1.5 text-[11px] font-semibold',
-                index === 0
-                  ? 'bg-brand-accent/15 text-brand-accent'
-                  : 'bg-black text-[#999]',
+                index === 0 ? 'bg-brand-accent/15 text-brand-accent' : 'bg-black text-[#999]',
               )}
             >
               {chip}
@@ -599,7 +539,7 @@ export function VenueProfileViewPage() {
   if (isLoading) {
     return (
       <div className="flex h-[60vh] items-center justify-center">
-        <div className="size-9 animate-spin rounded-full border-4 border-brand-accent border-t-transparent" />
+        <div className="border-brand-accent size-9 animate-spin rounded-full border-4 border-t-transparent" />
       </div>
     )
   }
@@ -610,7 +550,7 @@ export function VenueProfileViewPage() {
         <button
           type="button"
           onClick={() => navigate('/venues/management')}
-          className="group flex w-fit items-center gap-2 font-heading text-[20px] font-bold text-white transition-colors hover:text-brand-accent"
+          className="group font-heading hover:text-brand-accent flex w-fit items-center gap-2 text-[20px] font-bold text-white transition-colors"
         >
           <ArrowLeft className="size-5" />
           <span>Venue Profile View</span>
@@ -637,7 +577,11 @@ export function VenueProfileViewPage() {
     null
 
   const headerActions = [
-    { label: 'Create Space', icon: Plus, onClick: () => navigate(`/venues/management/create?venueId=${venueId}`) },
+    {
+      label: 'Create Space',
+      icon: Plus,
+      onClick: () => navigate(`/venues/management/create?venueId=${venueId}`),
+    },
     { label: 'Add Notes', icon: FileText, onClick: () => comingSoon('Add Notes') },
     { label: 'Add Tags', icon: Tag, onClick: () => comingSoon('Add Tags') },
     { label: 'Export Data', icon: Upload, onClick: () => comingSoon('Export Data') },
@@ -651,7 +595,7 @@ export function VenueProfileViewPage() {
           <button
             type="button"
             onClick={() => navigate('/venues/management')}
-            className="group flex w-fit items-center gap-2 font-heading text-[20px] font-bold tracking-tight text-white transition-colors hover:text-brand-accent"
+            className="group font-heading hover:text-brand-accent flex w-fit items-center gap-2 text-[20px] font-bold tracking-tight text-white transition-colors"
           >
             <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
             <span>Venue Profile View</span>
@@ -703,9 +647,7 @@ export function VenueProfileViewPage() {
             <div>
               <h2 className="text-lg font-bold text-white">{venue.name}</h2>
               <p className="text-[12px] text-[#999]">
-                {[venue.location?.city, venue.location?.country]
-                  .filter(Boolean)
-                  .join(', ') || '—'}
+                {[venue.location?.city, venue.location?.country].filter(Boolean).join(', ') || '—'}
               </p>
             </div>
           </div>
@@ -715,7 +657,7 @@ export function VenueProfileViewPage() {
                 key={action.label}
                 type="button"
                 onClick={action.onClick}
-                className="flex items-center gap-1.5 rounded-full bg-brand-accent px-3 py-1.5 text-[11px] font-semibold text-brand-text-dark transition-colors hover:bg-brand-gold-from"
+                className="bg-brand-accent text-brand-text-dark hover:bg-brand-gold-from flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-semibold transition-colors"
               >
                 <action.icon className="size-3.5" />
                 {action.label}
@@ -736,7 +678,7 @@ export function VenueProfileViewPage() {
                 type="button"
                 onClick={() => setActiveTab(tab.key)}
                 className={cn(
-                  'flex-1 whitespace-nowrap px-4 py-3 text-[13px] font-semibold transition-colors border-b-2',
+                  'flex-1 border-b-2 px-4 py-3 text-[13px] font-semibold whitespace-nowrap transition-colors',
                   activeTab === tab.key
                     ? 'border-brand-accent text-white'
                     : 'border-transparent text-[#888] hover:text-white',
@@ -748,12 +690,8 @@ export function VenueProfileViewPage() {
           </div>
 
           {activeTab === 'overview' && <OverviewTab data={fullView} />}
-          {activeTab === 'spaces' && (
-            <SpacesTab data={fullView} venueId={venueId} />
-          )}
-          {activeTab === 'analytics' && (
-            <AnalyticsTab data={fullView} venueId={venueId ?? ''} />
-          )}
+          {activeTab === 'spaces' && <SpacesTab data={fullView} venueId={venueId} />}
+          {activeTab === 'analytics' && <AnalyticsTab data={fullView} venueId={venueId ?? ''} />}
           {activeTab === 'health' && <HealthTab data={fullView} />}
         </div>
       </div>

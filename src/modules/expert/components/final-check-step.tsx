@@ -1,18 +1,12 @@
-import {
-  MapPin,
-  ParkingCircle,
-  Accessibility,
-  Wifi,
-  Camera,
-} from 'lucide-react'
+import { MapPin, ParkingCircle, Accessibility, Wifi, Camera } from 'lucide-react'
+
+import type { BlockedDateEntry, VenueFormData, WeeklyAvailabilityEntry } from '../utils/venue-form'
 
 interface FinalCheckStepProps {
-  venueData: any
+  venueData: VenueFormData
 }
 
-export const FinalCheckStep = ({
-  venueData,
-}: FinalCheckStepProps) => {
+export const FinalCheckStep = ({ venueData }: FinalCheckStepProps) => {
   const services = [
     {
       label: 'Parking Available',
@@ -43,21 +37,21 @@ export const FinalCheckStep = ({
       : venueData.venueCoverImageUrl || venueData.venueImageUrl || ''
 
   const availableDays = (venueData.weeklyAvailability || []).filter(
-    (day: any) => day.enabled,
+    (day: WeeklyAvailabilityEntry) => day.enabled,
   )
-  const blockedDates = venueData.blockedDates || []
+  const blockedDates: BlockedDateEntry[] = venueData.blockedDates || []
 
   const summariseAvailability = () => {
     if (availableDays.length === 0) return 'No availability set'
     const first = availableDays[0]
     const sameTime = availableDays.every(
-      (d: any) => d.from === first.from && d.to === first.to,
+      (d: WeeklyAvailabilityEntry) => d.from === first.from && d.to === first.to,
     )
-    const dayList = availableDays.map((d: any) => d.day.slice(0, 3)).join(', ')
+    const dayList = availableDays.map((d: WeeklyAvailabilityEntry) => d.day.slice(0, 3)).join(', ')
     return sameTime
       ? `${dayList}, ${first.from} - ${first.to}`
       : availableDays
-          .map((d: any) => `${d.day.slice(0, 3)} ${d.from}-${d.to}`)
+          .map((d: WeeklyAvailabilityEntry) => `${d.day.slice(0, 3)} ${d.from}-${d.to}`)
           .join(', ')
   }
 
@@ -69,14 +63,9 @@ export const FinalCheckStep = ({
 
   return (
     <div className="mx-auto w-full max-w-[850px] space-y-6">
-
       <div className="overflow-hidden rounded-xl border border-white/10 bg-[#151515]">
         {coverSrc ? (
-          <img
-            src={coverSrc}
-            alt="Venue"
-            className="h-[420px] w-full object-cover"
-          />
+          <img src={coverSrc} alt="Venue" className="h-[420px] w-full object-cover" />
         ) : (
           <div className="flex h-[420px] w-full items-center justify-center text-sm text-slate-600">
             No cover image uploaded
@@ -84,23 +73,18 @@ export const FinalCheckStep = ({
         )}
       </div>
 
-
       <div className="grid gap-6 lg:grid-cols-[1.4fr_0.8fr]">
         <div className="rounded-xl border border-white/10 bg-[#151515] p-6">
-          <p className="mb-2 text-xs text-[#777]">
-            {venueData.venueType || 'Indoor'}
-          </p>
+          <p className="mb-2 text-xs text-[#777]">{venueData.venueType || 'Indoor'}</p>
 
-          <h2 className="text-3xl font-bold text-white">
-            {venueData.venueName || 'Venue Name'}
-          </h2>
+          <h2 className="text-3xl font-bold text-white">{venueData.venueName || 'Venue Name'}</h2>
 
           <div className="mt-4 flex flex-wrap gap-2">
-            <span className="rounded-full bg-brand-accent/30 px-3 py-1 text-xs text-brand-text-dark">
+            <span className="bg-brand-accent/30 text-brand-text-dark rounded-full px-3 py-1 text-xs">
               {venueData.spaceName || 'Space'}
             </span>
 
-            <span className="rounded-full bg-brand-accent px-3 py-1 text-xs text-brand-text-dark">
+            <span className="bg-brand-accent text-brand-text-dark rounded-full px-3 py-1 text-xs">
               Premium
             </span>
 
@@ -118,28 +102,22 @@ export const FinalCheckStep = ({
           </div>
 
           <p className="mt-5 text-sm leading-6 text-slate-400">
-            {venueData.aboutVenue ||
-              'No description available'}
+            {venueData.aboutVenue || 'No description available'}
           </p>
 
           <div className="mt-6 space-y-3">
             <div className="flex items-center gap-2">
-              <span className="font-semibold text-green-500">
-                Available:
-              </span>
+              <span className="font-semibold text-green-500">Available:</span>
               <span className="text-white">{summariseAvailability()}</span>
             </div>
 
             <div className="flex items-center gap-2">
-              <span className="font-semibold text-brand-accent">
-                Unavailable:
-              </span>
+              <span className="text-brand-accent font-semibold">Unavailable:</span>
               <span className="text-white">
                 {blockedDates.length > 0
                   ? blockedDates
                       .map(
-                        (d: any) =>
-                          `${d.date}${d.from ? ` ${d.from}-${d.to}` : ''}`,
+                        (d: BlockedDateEntry) => `${d.date}${d.from ? ` ${d.from}-${d.to}` : ''}`,
                       )
                       .join(', ')
                   : 'None'}
@@ -148,21 +126,15 @@ export const FinalCheckStep = ({
           </div>
         </div>
 
-
         <div className="space-y-6">
           <div className="rounded-xl border border-white/10 bg-[#151515] p-5">
-            <h3 className="mb-3 text-sm font-semibold text-white">
-              Location
-            </h3>
-
+            <h3 className="mb-3 text-sm font-semibold text-white">Location</h3>
 
             <div className="flex items-start gap-3 rounded-lg bg-black p-4">
-              <MapPin className="mt-1 h-4 w-4 text-brand-accent" />
+              <MapPin className="text-brand-accent mt-1 h-4 w-4" />
 
               <div>
-                <p className="text-sm text-white">
-                  {venueData.address}
-                </p>
+                <p className="text-sm text-white">{venueData.address}</p>
 
                 <p className="text-xs text-slate-500">
                   {venueData.landmark} {venueData.city}
@@ -172,15 +144,11 @@ export const FinalCheckStep = ({
           </div>
 
           <div className="rounded-xl border border-white/10 bg-[#151515] p-5">
-            <h3 className="mb-4 text-lg font-semibold text-white">
-              Pricing
-            </h3>
+            <h3 className="mb-4 text-lg font-semibold text-white">Pricing</h3>
 
             <div className="grid grid-cols-2 gap-3">
               <div className="rounded-lg bg-black p-4">
-                <p className="text-xs text-slate-500">
-                  Weekday
-                </p>
+                <p className="text-xs text-slate-500">Weekday</p>
 
                 <p className="mt-1 text-lg font-semibold text-white">
                   ₹ {venueData.weekdayPrice || '-'}
@@ -188,9 +156,7 @@ export const FinalCheckStep = ({
               </div>
 
               <div className="rounded-lg bg-black p-4">
-                <p className="text-xs text-slate-500">
-                  Weekend
-                </p>
+                <p className="text-xs text-slate-500">Weekend</p>
 
                 <p className="mt-1 text-lg font-semibold text-white">
                   ₹ {venueData.weekendPrice || '-'}
@@ -201,23 +167,16 @@ export const FinalCheckStep = ({
         </div>
       </div>
 
-
       <div className="grid gap-6 lg:grid-cols-2">
-
         <div className="rounded-xl border border-white/10 bg-[#151515] p-6">
-          <h3 className="mb-4 text-lg font-semibold text-white">
-            About Venue
-          </h3>
+          <h3 className="mb-4 text-lg font-semibold text-white">About Venue</h3>
 
           <p className="text-sm leading-6 text-slate-400">
-            {venueData.aboutVenue ||
-              'No venue description available'}
+            {venueData.aboutVenue || 'No venue description available'}
           </p>
 
           <div className="mt-6">
-            <h4 className="mb-3 text-sm font-semibold text-white">
-              Services Included
-            </h4>
+            <h4 className="mb-3 text-sm font-semibold text-white">Services Included</h4>
 
             <div className="space-y-3">
               {services
@@ -226,15 +185,10 @@ export const FinalCheckStep = ({
                   const Icon = service.icon
 
                   return (
-                    <div
-                      key={service.label}
-                      className="flex items-center gap-3"
-                    >
-                      <Icon className="h-4 w-4 text-brand-accent" />
+                    <div key={service.label} className="flex items-center gap-3">
+                      <Icon className="text-brand-accent h-4 w-4" />
 
-                      <span className="text-sm text-slate-300">
-                        {service.label}
-                      </span>
+                      <span className="text-sm text-slate-300">{service.label}</span>
                     </div>
                   )
                 })}
@@ -243,24 +197,13 @@ export const FinalCheckStep = ({
         </div>
 
         <div className="rounded-xl border border-white/10 bg-[#151515] p-6">
-          <h3 className="mb-6 text-xl font-semibold text-white">
-            Amenities
-          </h3>
+          <h3 className="mb-6 text-xl font-semibold text-white">Amenities</h3>
 
           <div className="grid grid-cols-3 gap-3">
-            {venueData.amenities?.map((item: any, index: number) => (
+            {venueData.amenities?.map((item, index) => (
               <div
                 key={index}
-                className="
-flex items-center
-justify-center
-gap-2
-h-[42px]
-rounded-lg
-border border-[#2A2A2A]
-bg-[#0F0F0F]
-px-3
-"
+                className="flex h-[42px] items-center justify-center gap-2 rounded-lg border border-[#2A2A2A] bg-[#0F0F0F] px-3"
               >
                 {item.image ? (
                   <img
@@ -277,27 +220,19 @@ px-3
                   <div className="h-5 w-5" />
                 )}
 
-                <span className="text-sm font-medium text-white">
-                  {item.name}
-                </span>
+                <span className="text-sm font-medium text-white">{item.name}</span>
               </div>
             ))}
           </div>
         </div>
       </div>
 
-
       <div className="space-y-6">
-
         <div className="rounded-xl border border-white/10 bg-[#151515] p-6">
           <div className="mb-5 flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-white">
-              Gallery
-            </h3>
+            <h3 className="text-lg font-semibold text-white">Gallery</h3>
 
-            <button className="text-sm text-brand-accent">
-              See More
-            </button>
+            <button className="text-brand-accent text-sm">See More</button>
           </div>
 
           <div className="flex gap-3 overflow-x-auto">
@@ -316,21 +251,15 @@ px-3
           </div>
         </div>
 
-
         <div className="rounded-xl border border-white/10 bg-[#151515] p-6">
-          <h3 className="mb-5 text-sm font-semibold text-white">
-            Terms & Conditions
-          </h3>
+          <h3 className="mb-5 text-sm font-semibold text-white">Terms & Conditions</h3>
 
           <div className="flex flex-wrap items-center gap-6 text-xs text-slate-300">
             {(venueData.terms || '')
               .split('\n')
               .filter(Boolean)
               .map((term: string, index: number) => (
-                <div
-                  key={index}
-                  className="flex items-center gap-2"
-                >
+                <div key={index} className="flex items-center gap-2">
                   <div className="h-2 w-2 rounded-full bg-green-500" />
 
                   <span>{term}</span>
@@ -339,10 +268,7 @@ px-3
           </div>
 
           <div className="mt-5 text-center">
-            <button
-              type="button"
-              className="text-xs text-slate-400 underline"
-            >
+            <button type="button" className="text-xs text-slate-400 underline">
               View Full Terms & Conditions
             </button>
           </div>

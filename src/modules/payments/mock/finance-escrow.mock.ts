@@ -28,7 +28,12 @@ export type EscrowBookingRow = {
 }
 
 const serviceTypes = ['Fixed Service', 'Custom Service']
-const holdReasons = ['Dispute filed by customer', 'On-Going Project', 'Pending verification', 'Awaiting completion']
+const holdReasons = [
+  'Dispute filed by customer',
+  'On-Going Project',
+  'Pending verification',
+  'Awaiting completion',
+]
 const statuses: EscrowHoldStatus[] = ['Active', 'Released', 'Dispute', 'Active', 'Released']
 
 const serviceNames = [
@@ -39,7 +44,13 @@ const serviceNames = [
   'Financial Planning Session',
 ]
 
-const expertNames = ['Sarah Jhonson', 'Michael Chen', 'Emma Rodriguez', 'Alex Smith', 'Priya Sharma']
+const expertNames = [
+  'Sarah Jhonson',
+  'Michael Chen',
+  'Emma Rodriguez',
+  'Alex Smith',
+  'Priya Sharma',
+]
 const userNames = ['Alex Smith', 'John Carter', 'Maria Lopez', 'David Kim', 'Sophie Turner']
 
 function createEscrowRows(tab: EscrowManagementTab, count: number): EscrowHoldRow[] {

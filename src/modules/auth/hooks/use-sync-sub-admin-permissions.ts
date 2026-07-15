@@ -30,6 +30,7 @@ export function useSyncSubAdminPermissions() {
           contactSetupCompleted: Boolean(profile.contactSetupCompleted),
         })
       } catch {
+        // Fall through to default home if profile sync fails
       }
     }
 

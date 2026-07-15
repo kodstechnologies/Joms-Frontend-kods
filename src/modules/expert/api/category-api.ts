@@ -59,9 +59,7 @@ const buildCategoryFormData = (payload: CreateCategoryPayload) => {
   const subCategories = payload.subCategories.map((sub) => ({
     name: sub.name,
     description: sub.description,
-    ...(sub.vectorIconUrl && !sub.vectorIconFile
-      ? { vectorIcon: sub.vectorIconUrl }
-      : {}),
+    ...(sub.vectorIconUrl && !sub.vectorIconFile ? { vectorIcon: sub.vectorIconUrl } : {}),
   }))
 
   formData.append('subCategories', JSON.stringify(subCategories))
@@ -231,10 +229,7 @@ export const revokeSubCategory = async (categoryId: string, subCategoryId: strin
   return response.data
 }
 
-export const permanentDeleteSubCategory = async (
-  categoryId: string,
-  subCategoryId: string,
-) => {
+export const permanentDeleteSubCategory = async (categoryId: string, subCategoryId: string) => {
   const response = await expertApiClient.delete<ApiSuccessResponse<null>>(
     `/categories/${categoryId}/subcategories/${subCategoryId}/permanent-delete`,
   )

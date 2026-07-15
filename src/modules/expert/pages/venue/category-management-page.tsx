@@ -22,7 +22,11 @@ export function VenueCategoryManagementPage() {
   const [searchValue, setSearchValue] = useState('')
   const [page, setPage] = useState(1)
 
-  const { onAdvancedFilter, onExport, modals: exportFilterModals } = useModuleExportFilters({
+  const {
+    onAdvancedFilter,
+    onExport,
+    modals: exportFilterModals,
+  } = useModuleExportFilters({
     moduleKey: 'venue-category-management',
   })
 

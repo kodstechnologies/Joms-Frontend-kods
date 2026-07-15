@@ -9,25 +9,18 @@ interface AddAmenityModalProps {
   onClose: () => void
 }
 
-export const AddAmenityModal = ({
-  onClose,
-}: AddAmenityModalProps) => {
+export const AddAmenityModal = ({ onClose }: AddAmenityModalProps) => {
   const queryClient = useQueryClient()
 
-  const fileInputRef =
-    useRef<HTMLInputElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const [amenityName, setAmenityName] =
-    useState('')
+  const [amenityName, setAmenityName] = useState('')
 
-  const [venueCategory, setVenueCategory] =
-    useState('')
+  const [venueCategory, setVenueCategory] = useState('')
 
-  const [subCategory, setSubCategory] =
-    useState('')
+  const [subCategory, setSubCategory] = useState('')
 
-  const [iconFile, setIconFile] =
-    useState<File | null>(null)
+  const [iconFile, setIconFile] = useState<File | null>(null)
 
   const { mutate: saveAmenity, isPending } = useMutation({
     mutationFn: (formData: FormData) => addAmenity(formData),
@@ -36,10 +29,21 @@ export const AddAmenityModal = ({
       toast.success('Amenity added successfully')
       onClose()
     },
-    onError: (error: any) => {
-      toast.error(
-        error?.response?.data?.message || 'Failed to add amenity',
-      )
+    onError: (error: unknown) => {
+      const message =
+        error &&
+        typeof error === 'object' &&
+        'response' in error &&
+        error.response &&
+        typeof error.response === 'object' &&
+        'data' in error.response &&
+        error.response.data &&
+        typeof error.response.data === 'object' &&
+        'message' in error.response.data &&
+        typeof error.response.data.message === 'string'
+          ? error.response.data.message
+          : 'Failed to add amenity'
+      toast.error(message)
     },
   })
 
@@ -61,9 +65,7 @@ export const AddAmenityModal = ({
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/75">
       <div className="w-[580px] rounded-2xl bg-[#161616] shadow-2xl">
         <div className="flex items-center justify-between border-b border-[#2A2A2A] px-6 py-5">
-          <h2 className="text-[18px] font-semibold text-white">
-            Add amenities
-          </h2>
+          <h2 className="text-[18px] font-semibold text-white">Add amenities</h2>
 
           <button onClick={onClose}>
             <X className="h-5 w-5 text-white" />
@@ -79,28 +81,21 @@ export const AddAmenityModal = ({
 
               <input
                 value={amenityName}
-                onChange={e =>
-                  setAmenityName(
-                    e.target.value,
-                  )
-                }
-                className="h-10 w-full rounded-md border border-[#1F1F1F] bg-black px-3 text-sm text-white outline-none focus:border-brand-accent"
+                onChange={(e) => setAmenityName(e.target.value)}
+                className="focus:border-brand-accent h-10 w-full rounded-md border border-[#1F1F1F] bg-black px-3 text-sm text-white outline-none"
               />
             </div>
 
             <div>
-              <label className="mb-2 block text-[13px] font-medium text-white">
-                Upload icon *
-              </label>
+              <label className="mb-2 block text-[13px] font-medium text-white">Upload icon *</label>
 
               <input
                 ref={fileInputRef}
                 type="file"
                 accept="image/*"
                 className="hidden"
-                onChange={e => {
-                  const file =
-                    e.target.files?.[0]
+                onChange={(e) => {
+                  const file = e.target.files?.[0]
 
                   if (file) {
                     setIconFile(file)
@@ -109,16 +104,12 @@ export const AddAmenityModal = ({
               />
 
               <div
-                onClick={() =>
-                  fileInputRef.current?.click()
-                }
-                className="flex h-[84px] w-[84px] cursor-pointer items-center justify-center rounded-md border border-dashed border-[#666666] hover:border-brand-accent"
+                onClick={() => fileInputRef.current?.click()}
+                className="hover:border-brand-accent flex h-[84px] w-[84px] cursor-pointer items-center justify-center rounded-md border border-dashed border-[#666666]"
               >
                 {iconFile ? (
                   <img
-                    src={URL.createObjectURL(
-                      iconFile,
-                    )}
+                    src={URL.createObjectURL(iconFile)}
                     alt="icon"
                     className="h-full w-full rounded-md object-cover"
                   />
@@ -135,12 +126,8 @@ export const AddAmenityModal = ({
 
               <input
                 value={venueCategory}
-                onChange={e =>
-                  setVenueCategory(
-                    e.target.value,
-                  )
-                }
-                className="h-10 w-full rounded-md border border-[#1F1F1F] bg-black px-3 text-sm text-white outline-none focus:border-brand-accent"
+                onChange={(e) => setVenueCategory(e.target.value)}
+                className="focus:border-brand-accent h-10 w-full rounded-md border border-[#1F1F1F] bg-black px-3 text-sm text-white outline-none"
               />
             </div>
 
@@ -151,12 +138,8 @@ export const AddAmenityModal = ({
 
               <input
                 value={subCategory}
-                onChange={e =>
-                  setSubCategory(
-                    e.target.value,
-                  )
-                }
-                className="h-10 w-full rounded-md border border-[#1F1F1F] bg-black px-3 text-sm text-white outline-none focus:border-brand-accent"
+                onChange={(e) => setSubCategory(e.target.value)}
+                className="focus:border-brand-accent h-10 w-full rounded-md border border-[#1F1F1F] bg-black px-3 text-sm text-white outline-none"
               />
             </div>
           </div>
@@ -166,7 +149,7 @@ export const AddAmenityModal = ({
               type="button"
               onClick={handleSave}
               disabled={isPending}
-              className="flex h-10 items-center gap-2 rounded-lg bg-brand-accent px-5 text-sm font-medium text-brand-text-dark disabled:cursor-not-allowed disabled:opacity-60"
+              className="bg-brand-accent text-brand-text-dark flex h-10 items-center gap-2 rounded-lg px-5 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-60"
             >
               <Save size={15} />
               {isPending ? 'Saving…' : 'Save amenity'}

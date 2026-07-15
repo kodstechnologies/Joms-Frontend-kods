@@ -34,7 +34,9 @@ export function TicketCasePanel({
     <div className="flex h-full flex-col rounded-2xl border border-white/10 bg-[#111111]">
       <div className="space-y-5 border-b border-white/5 p-4">
         <div>
-          <p className="text-[11px] font-bold uppercase tracking-widest text-slate-500">Case Reporter</p>
+          <p className="text-[11px] font-bold tracking-widest text-slate-500 uppercase">
+            Case Reporter
+          </p>
           <div className="mt-3 flex items-center gap-3">
             <div className="size-10 rounded-full bg-slate-700" />
             <div>
@@ -61,7 +63,9 @@ export function TicketCasePanel({
 
         <div>
           <div className="flex items-center justify-between">
-            <p className="text-[11px] font-bold uppercase tracking-widest text-slate-500">Assigned To</p>
+            <p className="text-[11px] font-bold tracking-widest text-slate-500 uppercase">
+              Assigned To
+            </p>
             <button type="button" className="text-xs text-amber-400 hover:underline">
               Reassign
             </button>

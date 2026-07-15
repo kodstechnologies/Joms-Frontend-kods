@@ -23,7 +23,11 @@ export function CategoryManagementPage() {
 
   const scope = useCategoryManagementScope()
 
-  const { onAdvancedFilter, onExport, modals: exportFilterModals } = useModuleExportFilters({
+  const {
+    onAdvancedFilter,
+    onExport,
+    modals: exportFilterModals,
+  } = useModuleExportFilters({
     moduleKey: 'service-category-management',
   })
 
@@ -53,10 +57,7 @@ export function CategoryManagementPage() {
 
   const categories = data?.categories ?? []
   const totalItems = data?.pagination?.total ?? categories.length
-  const totalPages = Math.max(
-    1,
-    data?.pagination?.pages ?? Math.ceil(totalItems / PAGE_SIZE),
-  )
+  const totalPages = Math.max(1, data?.pagination?.pages ?? Math.ceil(totalItems / PAGE_SIZE))
 
   const totalSubCategories = useMemo(
     () => categories.reduce((sum, category) => sum + category.subCategory, 0),
@@ -72,7 +73,10 @@ export function CategoryManagementPage() {
       />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard title="Total categories" value={String(allData?.pagination?.total ?? totalItems)} />
+        <StatCard
+          title="Total categories"
+          value={String(allData?.pagination?.total ?? totalItems)}
+        />
         <StatCard title="Active Categories" value={String(totalItems)} />
         <StatCard title="Total Sub-Category" value={String(totalSubCategories)} />
         <StatCard title="Top Category" value={categories[0]?.name || '—'} />

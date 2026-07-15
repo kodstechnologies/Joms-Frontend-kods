@@ -14,7 +14,7 @@ const FooterActions = ({
   disabled = false,
 }: Props) => {
   return (
-    <div className="mt-6 flex justify-end rounded-xl border border-white/10 bg-brand-surface px-6 py-5">
+    <div className="bg-brand-surface mt-6 flex justify-end rounded-xl border border-white/10 px-6 py-5">
       <Button
         type="button"
         onClick={onSubmit}
@@ -23,7 +23,6 @@ const FooterActions = ({
       >
         {isSubmitting ? 'Saving…' : submitText}
       </Button>
-
     </div>
   )
 }

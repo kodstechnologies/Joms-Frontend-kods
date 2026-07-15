@@ -45,6 +45,8 @@ export function RequestMoreInformationModal({
   const [adminNotes, setAdminNotes] = useState('')
 
   const handleClose = useCallback(() => {
+    setRequestInformation('')
+    setAdminNotes('')
     onClose()
   }, [onClose])
 
@@ -67,13 +69,6 @@ export function RequestMoreInformationModal({
       window.removeEventListener('keydown', onKeyDown)
     }
   }, [open, handleClose])
-
-  useEffect(() => {
-    if (open) {
-      setRequestInformation('')
-      setAdminNotes('')
-    }
-  }, [open])
 
   const handleSubmit = () => {
     if (!requestInformation.trim()) {
@@ -107,7 +102,7 @@ export function RequestMoreInformationModal({
         <div className="flex shrink-0 items-center justify-between border-b border-white/[0.06] px-4 py-4 sm:px-6 sm:py-5">
           <h2
             id="request-more-info-title"
-            className="font-figtree text-[24px] font-semibold leading-7 tracking-normal text-white"
+            className="font-figtree text-[24px] leading-7 font-semibold tracking-normal text-white"
           >
             Request More Information
           </h2>
@@ -123,7 +118,7 @@ export function RequestMoreInformationModal({
 
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 sm:px-6 sm:py-6">
           <div className="space-y-5">
-            <p className="font-figtree text-[14px] font-normal leading-6 tracking-normal text-white">
+            <p className="font-figtree text-[14px] leading-6 font-normal tracking-normal text-white">
               You are about to deny the refund request of{' '}
               <span className="font-semibold">{data.denyAmount}</span> from{' '}
               <span className="font-semibold">{data.denyFromName}</span>
@@ -139,18 +134,18 @@ export function RequestMoreInformationModal({
             </div>
 
             <div className="rounded-[10px] border border-[#FFC849]/20 bg-[#3D3520] p-4">
-              <p className="font-figtree text-[14px] font-normal leading-[20px] tracking-normal text-[#FFC849]">
+              <p className="font-figtree text-[14px] leading-[20px] font-normal tracking-normal text-[#FFC849]">
                 What happens next:
               </p>
-              <p className="mt-2 max-w-[475px] font-figtree text-[14px] font-normal leading-[20px] tracking-normal text-white">
+              <p className="font-figtree mt-2 max-w-[475px] text-[14px] leading-[20px] font-normal tracking-normal text-white">
                 The dispute status will change to &quot;Pending User Response&quot; and the user
-                will be notified to provide the requested information. The SLA timer will be
-                paused until they respond.
+                will be notified to provide the requested information. The SLA timer will be paused
+                until they respond.
               </p>
             </div>
 
             <label className="block space-y-2.5">
-              <span className="font-figtree text-[14px] font-semibold leading-[20px] text-white">
+              <span className="font-figtree text-[14px] leading-[20px] font-semibold text-white">
                 Request Information <span className="text-[#D3191C]">*</span>
               </span>
               <input
@@ -163,7 +158,7 @@ export function RequestMoreInformationModal({
             </label>
 
             <label className="block space-y-2.5">
-              <span className="font-figtree text-[14px] font-semibold leading-[20px] text-white">
+              <span className="font-figtree text-[14px] leading-[20px] font-semibold text-white">
                 Admin Notes
               </span>
               <textarea

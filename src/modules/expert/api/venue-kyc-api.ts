@@ -1,8 +1,5 @@
 import { kycApiClient } from '@/shared/lib/axios'
-import type {
-  ApplicationDetailsResponse,
-  VenueKycStatusPayload,
-} from '../type/venue-kyc.ts'
+import type { ApplicationDetailsResponse, VenueKycStatusPayload } from '../type/venue-kyc.ts'
 
 export const fetchApplicationDetails = async (id: string) => {
   const response = await kycApiClient.get<ApplicationDetailsResponse>(
@@ -19,10 +16,7 @@ export const fetchVenueKycByPartnerId = async (partnerId: string) => {
   return response.data
 }
 
-export const updateVenueKycStatus = async (
-  id: string,
-  payload: VenueKycStatusPayload,
-) => {
+export const updateVenueKycStatus = async (id: string, payload: VenueKycStatusPayload) => {
   const response = await kycApiClient.patch(`/venue-kyc/status/${id}`, payload)
   return response.data
 }
@@ -31,20 +25,11 @@ export const approveVenueKycByPartnerId = async (
   partnerId: string,
   payload: Pick<VenueKycStatusPayload, 'adminNote'>,
 ) => {
-  const response = await kycApiClient.post(
-    `/venue-kyc/admin/${partnerId}/approve`,
-    payload,
-  )
+  const response = await kycApiClient.post(`/venue-kyc/admin/${partnerId}/approve`, payload)
   return response.data
 }
 
-export const updateVenueBankingStatus = async (
-  id: string,
-  payload: VenueKycStatusPayload,
-) => {
-  const response = await kycApiClient.patch(
-    `/venue-kyc/banking/status/${id}`,
-    payload,
-  )
+export const updateVenueBankingStatus = async (id: string, payload: VenueKycStatusPayload) => {
+  const response = await kycApiClient.patch(`/venue-kyc/banking/status/${id}`, payload)
   return response.data
 }

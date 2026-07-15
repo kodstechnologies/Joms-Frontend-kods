@@ -3,5 +3,9 @@ export { FilterPanelShell } from './filter-panel-shell'
 export { FilterSectionAccordion } from './filter-section-accordion'
 export { FilterFieldRenderer } from './filter-field-renderer'
 export { getModuleFilterConfig, moduleFilterConfigs } from './configs'
-export { createEmptyFilterValues, createEmptyFilterValuesForConfig, hasActiveFilters } from './filter-utils'
+export {
+  createEmptyFilterValues,
+  createEmptyFilterValuesForConfig,
+  hasActiveFilters,
+} from './filter-utils'
 export { useModuleExportFilters } from './use-module-export-filters'

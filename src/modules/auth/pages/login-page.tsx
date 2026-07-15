@@ -7,7 +7,10 @@ import { toast } from 'sonner'
 
 import { useAuthStore } from '@/modules/auth/store/auth-store'
 import { fetchRbacMe } from '@/modules/rbac/api/rbac-api'
-import { getDefaultHomeRoute, normalizeUserPermissions } from '@/app/layouts/navigation/navigation.filter'
+import {
+  getDefaultHomeRoute,
+  normalizeUserPermissions,
+} from '@/app/layouts/navigation/navigation.filter'
 import { useLoginMutation } from '@/modules/auth/hooks/use-login-mutation'
 import { useVerifyOtpMutation } from '@/modules/auth/hooks/use-verify-otp-mutation'
 import { type LoginSchema, loginSchema } from '@/modules/auth/validations/login-schema'
@@ -127,6 +130,7 @@ export function LoginPage() {
             return
           }
         } catch {
+          // Fall through to default home if profile fetch fails
         }
       }
 
@@ -145,7 +149,7 @@ export function LoginPage() {
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-gradient-to-r from-[#6F6857] via-[#B8AF9A] to-[#F2E1B9]">
-      <header className="absolute left-6 top-6 flex items-center gap-3">
+      <header className="absolute top-6 left-6 flex items-center gap-3">
         <div className="size-9 rounded-full bg-amber-400" />
         <p className="text-lg font-semibold tracking-wide text-white">JOMS</p>
       </header>
@@ -168,7 +172,10 @@ export function LoginPage() {
           </div>
 
           {step === 'credentials' ? (
-            <form className="mt-8 space-y-5" onSubmit={credentialsForm.handleSubmit(onSubmitCredentials)}>
+            <form
+              className="mt-8 space-y-5"
+              onSubmit={credentialsForm.handleSubmit(onSubmitCredentials)}
+            >
               <FormField label="Email ID" error={credentialsForm.formState.errors.email?.message}>
                 <Input
                   type="email"
@@ -178,7 +185,10 @@ export function LoginPage() {
                 />
               </FormField>
 
-              <FormField label="Password" error={credentialsForm.formState.errors.password?.message}>
+              <FormField
+                label="Password"
+                error={credentialsForm.formState.errors.password?.message}
+              >
                 <Input
                   type="password"
                   className="border-0 border-b border-white/10 bg-transparent text-slate-100 shadow-none focus-visible:ring-0"
@@ -197,12 +207,12 @@ export function LoginPage() {
                 <Controller
                   control={otpForm.control}
                   name="code"
-                  render={({ field }) => (
-                    <OtpInput value={field.value} onChange={field.onChange} />
-                  )}
+                  render={({ field }) => <OtpInput value={field.value} onChange={field.onChange} />}
                 />
                 {otpForm.formState.errors.code?.message ? (
-                  <p className="text-center text-xs text-rose-300">{otpForm.formState.errors.code.message}</p>
+                  <p className="text-center text-xs text-rose-300">
+                    {otpForm.formState.errors.code.message}
+                  </p>
                 ) : null}
               </div>
 
@@ -225,7 +235,7 @@ export function LoginPage() {
         </Card>
       </div>
 
-      <footer className="absolute bottom-0 left-0 right-0 border-t border-black/20 bg-black/10 px-6 py-3 text-[11px] text-slate-800">
+      <footer className="absolute right-0 bottom-0 left-0 border-t border-black/20 bg-black/10 px-6 py-3 text-[11px] text-slate-800">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
             <span className="font-semibold">Email: hello@joms.in</span>

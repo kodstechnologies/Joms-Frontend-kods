@@ -1,13 +1,6 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import {
-  AlertTriangle,
-  Eye,
-  SlidersHorizontal,
-  SquarePen,
-  Tag,
-  Trash2,
-} from 'lucide-react'
+import { AlertTriangle, Eye, SlidersHorizontal, SquarePen, Tag, Trash2 } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
@@ -79,9 +72,7 @@ export function FinanceVenuesPage() {
 
   const toggleRowSelection = useCallback((rowId: string) => {
     setSelectedRowIds((currentIds) =>
-      currentIds.includes(rowId)
-        ? currentIds.filter((id) => id !== rowId)
-        : [...currentIds, rowId],
+      currentIds.includes(rowId) ? currentIds.filter((id) => id !== rowId) : [...currentIds, rowId],
     )
   }, [])
 
@@ -188,7 +179,7 @@ export function FinanceVenuesPage() {
         accessorKey: 'venueId',
         header: 'Venue ID',
         cell: ({ row }) => (
-          <span className="font-mono text-[11px] uppercase text-white">{row.original.venueId}</span>
+          <span className="font-mono text-[11px] text-white uppercase">{row.original.venueId}</span>
         ),
       },
       {
@@ -201,7 +192,9 @@ export function FinanceVenuesPage() {
         accessorKey: 'bookingId',
         header: 'Booking ID',
         cell: ({ row }) => (
-          <span className="font-mono text-[11px] uppercase text-white">{row.original.bookingId}</span>
+          <span className="font-mono text-[11px] text-white uppercase">
+            {row.original.bookingId}
+          </span>
         ),
       },
       { accessorKey: 'bookingTitle', header: 'Booking Title' },

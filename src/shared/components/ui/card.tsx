@@ -10,7 +10,7 @@ export function Card({ className, ...props }: CardProps) {
     <div
       className={cn(
         uiTokens.radiusCard,
-        'border border-white/10 bg-brand-surface p-4 text-brand-text shadow-sm',
+        'bg-brand-surface text-brand-text border border-white/10 p-4 shadow-sm',
         className,
       )}
       {...props}

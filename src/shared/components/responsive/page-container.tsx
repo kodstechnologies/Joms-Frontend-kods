@@ -9,4 +9,3 @@ export function PageContainer({ className, children }: PropsWithChildren<{ class
     </div>
   )
 }
-

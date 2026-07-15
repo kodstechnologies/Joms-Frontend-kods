@@ -1,13 +1,6 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import {
-  AlertTriangle,
-  Eye,
-  SlidersHorizontal,
-  SquarePen,
-  Tag,
-  Trash2,
-} from 'lucide-react'
+import { AlertTriangle, Eye, SlidersHorizontal, SquarePen, Tag, Trash2 } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
@@ -84,9 +77,7 @@ export function FinanceServicesPage() {
 
   const toggleRowSelection = useCallback((rowId: string) => {
     setSelectedRowIds((currentIds) =>
-      currentIds.includes(rowId)
-        ? currentIds.filter((id) => id !== rowId)
-        : [...currentIds, rowId],
+      currentIds.includes(rowId) ? currentIds.filter((id) => id !== rowId) : [...currentIds, rowId],
     )
   }, [])
 
@@ -193,7 +184,9 @@ export function FinanceServicesPage() {
         accessorKey: 'serviceId',
         header: 'Service ID',
         cell: ({ row }) => (
-          <span className="font-mono text-[11px] uppercase text-white">{row.original.serviceId}</span>
+          <span className="font-mono text-[11px] text-white uppercase">
+            {row.original.serviceId}
+          </span>
         ),
       },
       {
@@ -206,7 +199,9 @@ export function FinanceServicesPage() {
         accessorKey: 'bookingId',
         header: 'Booking ID',
         cell: ({ row }) => (
-          <span className="font-mono text-[11px] uppercase text-white">{row.original.bookingId}</span>
+          <span className="font-mono text-[11px] text-white uppercase">
+            {row.original.bookingId}
+          </span>
         ),
       },
       { accessorKey: 'userName', header: 'User Name' },
@@ -281,9 +276,7 @@ export function FinanceServicesPage() {
             }}
             className={cn(
               'rounded-lg px-4 py-2 text-[12px] font-semibold transition-colors',
-              activeTab === tab.id
-                ? 'bg-[#2A2A2A] text-white'
-                : 'text-[#888888] hover:text-white',
+              activeTab === tab.id ? 'bg-[#2A2A2A] text-white' : 'text-[#888888] hover:text-white',
             )}
           >
             {tab.label}

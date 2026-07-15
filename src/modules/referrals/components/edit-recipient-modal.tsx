@@ -1,5 +1,5 @@
 import { Save, X } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 
 import type { UpdateRecipientPayload } from '../types/referral'
 import { Button } from '@/shared/components/ui/button'
@@ -34,15 +34,17 @@ export function EditRecipientModal({
   const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
   const [message, setMessage] = useState('')
+  const [wasOpen, setWasOpen] = useState(open)
 
-  useEffect(() => {
+  if (open !== wasOpen) {
+    setWasOpen(open)
     if (open && initialValues) {
       setName(initialValues.name)
       setEmail(initialValues.email ?? '')
       setPhone(initialValues.phone ?? '')
       setMessage(initialValues.message ?? '')
     }
-  }, [open, initialValues])
+  }
 
   if (!open) return null
 
@@ -50,16 +52,16 @@ export function EditRecipientModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
       <div
         className={cn(
-          'w-full max-w-xl border border-white/10 bg-brand-surface shadow-2xl',
+          'bg-brand-surface w-full max-w-xl border border-white/10 shadow-2xl',
           uiTokens.radiusCard,
         )}
       >
         <div className="flex items-center justify-between border-b border-white/10 px-6 py-5">
-          <h2 className="text-lg font-semibold text-brand-text">Edit Expert Details</h2>
+          <h2 className="text-brand-text text-lg font-semibold">Edit Expert Details</h2>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-brand-md p-1.5 text-brand-muted hover:bg-white/5 hover:text-brand-text"
+            className="rounded-brand-md text-brand-muted hover:text-brand-text p-1.5 hover:bg-white/5"
           >
             <X className="size-5" />
           </button>
@@ -67,14 +69,26 @@ export function EditRecipientModal({
 
         <div className="space-y-5 px-6 py-6">
           <Field label="Enter Name*">
-            <Input value={name} onChange={(e) => setName(e.target.value)} className={fieldInputClass} />
+            <Input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className={fieldInputClass}
+            />
           </Field>
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
             <Field label="Email ID">
-              <Input value={email} onChange={(e) => setEmail(e.target.value)} className={fieldInputClass} />
+              <Input
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className={fieldInputClass}
+              />
             </Field>
             <Field label="Phone number">
-              <Input value={phone} onChange={(e) => setPhone(e.target.value)} className={fieldInputClass} />
+              <Input
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                className={fieldInputClass}
+              />
             </Field>
           </div>
           <Field label="Write a message*">
@@ -82,7 +96,7 @@ export function EditRecipientModal({
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               placeholder="Enter here"
-              className="h-28 w-full resize-none rounded-brand-md border border-white/10 bg-brand-bg px-4 py-3 text-sm text-brand-text placeholder:text-brand-muted focus:outline-none focus:ring-2 focus:ring-brand-accent/40"
+              className="rounded-brand-md bg-brand-bg text-brand-text placeholder:text-brand-muted focus:ring-brand-accent/40 h-28 w-full resize-none border border-white/10 px-4 py-3 text-sm focus:ring-2 focus:outline-none"
             />
           </Field>
         </div>
@@ -104,7 +118,7 @@ export function EditRecipientModal({
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="block space-y-2.5">
-      <span className="text-sm font-medium text-brand-text">{label}</span>
+      <span className="text-brand-text text-sm font-medium">{label}</span>
       {children}
     </label>
   )

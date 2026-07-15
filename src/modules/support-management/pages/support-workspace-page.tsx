@@ -19,21 +19,23 @@ export function SupportWorkspacePage() {
     setShowFilters,
   } = useSupportStore()
 
-  const selected =
-    queueTicketsMock.find((t) => t.id === selectedTicketId) ?? queueTicketsMock[0]
+  const selected = queueTicketsMock.find((t) => t.id === selectedTicketId) ?? queueTicketsMock[0]
 
   return (
     <div className="space-y-4">
       <div>
         <div className="flex flex-wrap items-center gap-3">
-          <h1 className="text-3xl font-semibold tracking-tight text-slate-100">Support Management</h1>
+          <h1 className="text-3xl font-semibold tracking-tight text-slate-100">
+            Support Management
+          </h1>
           <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-300">
             <span className="size-1.5 rounded-full bg-emerald-400" />
             Live Context Active
           </span>
         </div>
         <p className="mt-1 text-sm text-slate-400">
-          Decision-centric workspace for high-impact tickets requiring approval, enforcement, or oversight.
+          Decision-centric workspace for high-impact tickets requiring approval, enforcement, or
+          oversight.
         </p>
       </div>
 
@@ -65,7 +67,9 @@ export function SupportWorkspacePage() {
                 onClick={() => setWorkspaceTab(tab)}
                 className={cn(
                   'flex-1 rounded-md px-4 py-2 text-sm font-medium capitalize transition-colors',
-                  workspaceTab === tab ? 'bg-[#1a1a1a] text-white' : 'text-slate-400 hover:text-white',
+                  workspaceTab === tab
+                    ? 'bg-[#1a1a1a] text-white'
+                    : 'text-slate-400 hover:text-white',
                 )}
               >
                 {tab}

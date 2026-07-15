@@ -24,11 +24,7 @@ type RejectRefundModalProps = {
   open: boolean
   data: RejectRefundModalData
   onClose: () => void
-  onConfirm?: (payload: {
-    rejectionReason: string
-    adminNotes: string
-    confirmed: boolean
-  }) => void
+  onConfirm?: (payload: { rejectionReason: string; adminNotes: string; confirmed: boolean }) => void
 }
 
 const textareaClass =
@@ -80,13 +76,7 @@ function ProCancelIcon({
       className={cn('shrink-0', className)}
     >
       <g transform={`translate(${offset} ${offset})`}>
-        <circle
-          cx={center}
-          cy={center}
-          r={radius}
-          stroke={color}
-          strokeWidth="1.5"
-        />
+        <circle cx={center} cy={center} r={radius} stroke={color} strokeWidth="1.5" />
         <path
           d={`M${center - arm} ${center - arm}L${center + arm} ${center + arm}M${center + arm} ${center - arm}L${center - arm} ${center + arm}`}
           stroke={color}
@@ -115,6 +105,9 @@ export function RejectRefundModal({ open, data, onClose, onConfirm }: RejectRefu
   const [confirmed, setConfirmed] = useState(false)
 
   const handleClose = useCallback(() => {
+    setRejectionReason('')
+    setAdminNotes('')
+    setConfirmed(false)
     onClose()
   }, [onClose])
 
@@ -137,14 +130,6 @@ export function RejectRefundModal({ open, data, onClose, onConfirm }: RejectRefu
       window.removeEventListener('keydown', onKeyDown)
     }
   }, [open, handleClose])
-
-  useEffect(() => {
-    if (open) {
-      setRejectionReason('')
-      setAdminNotes('')
-      setConfirmed(false)
-    }
-  }, [open])
 
   const handleConfirm = () => {
     if (!rejectionReason.trim()) {
@@ -183,7 +168,7 @@ export function RejectRefundModal({ open, data, onClose, onConfirm }: RejectRefu
         <div className="flex shrink-0 items-center justify-between border-b border-white/[0.06] px-4 py-4 sm:px-6 sm:py-5">
           <h2
             id="reject-refund-title"
-            className="font-figtree text-[24px] font-semibold leading-6 tracking-normal text-white"
+            className="font-figtree text-[24px] leading-6 font-semibold tracking-normal text-white"
           >
             Reject Refund
           </h2>
@@ -201,7 +186,7 @@ export function RejectRefundModal({ open, data, onClose, onConfirm }: RejectRefu
           <div className="space-y-5">
             <div className="text-center">
               <RejectStatusIcon />
-              <p className="mx-auto mt-4 max-w-[343px] text-center font-figtree text-[14px] font-normal leading-6 tracking-normal text-white">
+              <p className="font-figtree mx-auto mt-4 max-w-[343px] text-center text-[14px] leading-6 font-normal tracking-normal text-white">
                 You are about to deny the refund request of{' '}
                 <span className="font-semibold">{data.denyAmount}</span> from{' '}
                 <span className="font-semibold">{data.denyFromName}</span>.
@@ -221,11 +206,11 @@ export function RejectRefundModal({ open, data, onClose, onConfirm }: RejectRefu
             </div>
 
             <div className="space-y-2.5">
-              <p className="font-figtree text-[14px] font-semibold leading-[20px] text-white">
+              <p className="font-figtree text-[14px] leading-[20px] font-semibold text-white">
                 User Statement
               </p>
               <div className="rounded-[10px] border border-white/[0.06] bg-[#141414] p-4">
-                <p className="font-figtree text-[14px] font-normal leading-[20px] text-[#CCCCCC]">
+                <p className="font-figtree text-[14px] leading-[20px] font-normal text-[#CCCCCC]">
                   {data.userStatement}
                 </p>
               </div>
@@ -234,7 +219,7 @@ export function RejectRefundModal({ open, data, onClose, onConfirm }: RejectRefu
             <div className="rounded-[10px] border border-[#D3191C]/20 bg-[#141414] p-4">
               <div className="flex items-center gap-2">
                 <AlertCircle className="size-4 shrink-0 text-[#D3191C]" aria-hidden="true" />
-                <p className="font-figtree text-[14px] font-semibold leading-[20px] text-[#D3191C]">
+                <p className="font-figtree text-[14px] leading-[20px] font-semibold text-[#D3191C]">
                   Important Notice
                 </p>
               </div>
@@ -242,7 +227,7 @@ export function RejectRefundModal({ open, data, onClose, onConfirm }: RejectRefu
                 {IMPORTANT_NOTICE_ITEMS.map((item) => (
                   <li
                     key={item}
-                    className="list-disc font-figtree text-[12px] font-normal leading-[20px] text-[#CCCCCC]"
+                    className="font-figtree list-disc text-[12px] leading-[20px] font-normal text-[#CCCCCC]"
                   >
                     {item}
                   </li>
@@ -251,7 +236,7 @@ export function RejectRefundModal({ open, data, onClose, onConfirm }: RejectRefu
             </div>
 
             <label className="block space-y-2.5">
-              <span className="font-figtree text-[14px] font-semibold leading-[20px] text-white">
+              <span className="font-figtree text-[14px] leading-[20px] font-semibold text-white">
                 Rejection Reason (Required)
               </span>
               <textarea
@@ -264,7 +249,7 @@ export function RejectRefundModal({ open, data, onClose, onConfirm }: RejectRefu
             </label>
 
             <label className="block space-y-2.5">
-              <span className="font-figtree text-[14px] font-semibold leading-[20px] text-white">
+              <span className="font-figtree text-[14px] leading-[20px] font-semibold text-white">
                 Admin Notes
               </span>
               <textarea
@@ -283,7 +268,7 @@ export function RejectRefundModal({ open, data, onClose, onConfirm }: RejectRefu
                 onChange={(event) => setConfirmed(event.target.checked)}
                 className="mt-1 rounded border-slate-600 bg-transparent"
               />
-              <span className="font-figtree text-[12px] font-normal leading-[20px] text-white">
+              <span className="font-figtree text-[12px] leading-[20px] font-normal text-white">
                 I confirm I have reviewed all evidence before rejecting this dispute.
               </span>
             </label>

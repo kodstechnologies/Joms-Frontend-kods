@@ -30,10 +30,7 @@ export const DeletedCategoriesPage = () => {
 
   const deletedCategories = data?.categories ?? []
   const totalItems = data?.pagination?.total ?? deletedCategories.length
-  const totalPages = Math.max(
-    1,
-    data?.pagination?.pages ?? Math.ceil(totalItems / PAGE_SIZE),
-  )
+  const totalPages = Math.max(1, data?.pagination?.pages ?? Math.ceil(totalItems / PAGE_SIZE))
 
   const emptyMessage = useMemo(
     () => (isError ? 'Failed to load deleted categories.' : 'No deleted categories found.'),
@@ -59,7 +56,10 @@ export const DeletedCategoriesPage = () => {
             Manage Metrics
           </Button>
 
-          <Button className="w-full md:w-auto" onClick={() => navigate(categoryPath(scope, 'create'))}>
+          <Button
+            className="w-full md:w-auto"
+            onClick={() => navigate(categoryPath(scope, 'create'))}
+          >
             <Plus className="size-4" />
             Add New Category
           </Button>

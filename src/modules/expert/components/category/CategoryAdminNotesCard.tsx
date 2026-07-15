@@ -1,7 +1,7 @@
-import { categoryViewTheme } from "./category-view.theme";
+import { categoryViewTheme } from './category-view.theme'
 
 interface Props {
-  notes: string;
+  notes: string
 }
 
 const CategoryAdminNotesCard = ({ notes }: Props) => {
@@ -19,7 +19,7 @@ const CategoryAdminNotesCard = ({ notes }: Props) => {
         <p className={categoryViewTheme.bodyTextClass}>{notes}</p>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default CategoryAdminNotesCard;
+export default CategoryAdminNotesCard

@@ -1,11 +1,6 @@
 import { cn } from '@/shared/lib/cn'
 
-export type ManagementStatusKey =
-  | 'pending'
-  | 'approved'
-  | 'suspended'
-  | 'deleted'
-  | 'rejected'
+export type ManagementStatusKey = 'pending' | 'approved' | 'suspended' | 'deleted' | 'rejected'
 
 const normalizeStatusToken = (status: string | null | undefined) =>
   (status || '').toLowerCase().replace(/_/g, ' ').trim()
@@ -31,9 +26,7 @@ export const normalizeManagementStatus = (
   if (['approved', 'approve', 'live', 'active'].includes(normalized)) {
     return 'approved'
   }
-  if (
-    ['pending', 'in review', 'preview', 'draft', 'submitted'].includes(normalized)
-  ) {
+  if (['pending', 'in review', 'preview', 'draft', 'submitted'].includes(normalized)) {
     return 'pending'
   }
 

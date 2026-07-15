@@ -7,7 +7,15 @@ import { getInvoiceDetailById } from '@/modules/payments/mock/invoice-detail.moc
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
 
-function DetailCard({ title, subtitle, children }: { title: string; subtitle?: string; children: ReactNode }) {
+function DetailCard({
+  title,
+  subtitle,
+  children,
+}: {
+  title: string
+  subtitle?: string
+  children: ReactNode
+}) {
   return (
     <section className="rounded-xl border border-white/[0.06] bg-[#1A1A1A] p-5">
       <h2 className="text-[14px] font-bold text-white">{title}</h2>
@@ -17,11 +25,21 @@ function DetailCard({ title, subtitle, children }: { title: string; subtitle?: s
   )
 }
 
-function DetailRow({ label, value, valueClassName }: { label: string; value: ReactNode; valueClassName?: string }) {
+function DetailRow({
+  label,
+  value,
+  valueClassName,
+}: {
+  label: string
+  value: ReactNode
+  valueClassName?: string
+}) {
   return (
     <div className="flex items-center justify-between gap-4 border-b border-white/5 py-3 last:border-b-0">
       <span className="text-[12px] text-[#888888]">{label}</span>
-      <span className={cn('text-right text-[12px] font-medium text-white', valueClassName)}>{value}</span>
+      <span className={cn('text-right text-[12px] font-medium text-white', valueClassName)}>
+        {value}
+      </span>
     </div>
   )
 }
@@ -107,7 +125,11 @@ export function InvoiceDetailViewPage() {
             <h3 className="mb-3 text-[13px] font-semibold text-white">Financial Summary</h3>
             <DetailRow label="Subtotal" value={detail.subtotal} />
             <DetailRow label="Tax (18% GST)" value={detail.tax} />
-            <DetailRow label="Total Amount" value={detail.totalAmount} valueClassName="text-[14px] font-bold" />
+            <DetailRow
+              label="Total Amount"
+              value={detail.totalAmount}
+              valueClassName="text-[14px] font-bold"
+            />
           </section>
         </div>
       </DetailCard>

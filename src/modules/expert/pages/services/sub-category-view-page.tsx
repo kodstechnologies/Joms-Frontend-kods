@@ -32,7 +32,7 @@ export const SubCategoryViewPage = () => {
 
   return (
     <div
-      className="min-h-screen px-4 pb-8 pt-2 sm:px-6 lg:px-8"
+      className="min-h-screen px-4 pt-2 pb-8 sm:px-6 lg:px-8"
       style={{ backgroundColor: categoryViewTheme.pageBg }}
     >
       <div className="mx-auto max-w-6xl">

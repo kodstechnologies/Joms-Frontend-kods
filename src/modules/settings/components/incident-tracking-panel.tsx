@@ -5,7 +5,12 @@ import { toast } from 'sonner'
 
 import { AssignUserModal } from './assign-user-modal'
 import { useAssignIncident, useIncidentMetrics, useIncidents } from '../hooks/use-incidents'
-import type { IncidentRow, IncidentSeverity, IncidentStatus, SettingsMetric } from '../types/settings'
+import type {
+  IncidentRow,
+  IncidentSeverity,
+  IncidentStatus,
+  SettingsMetric,
+} from '../types/settings'
 import { StatCard } from '@/shared/components/dashboard/stat-card'
 import { DataTable } from '@/shared/components/table/data-table'
 import { ResponsiveGrid } from '@/shared/components/responsive/responsive-grid'
@@ -23,7 +28,12 @@ function SeverityBadge({ severity }: { severity: IncidentSeverity }) {
     Critical: 'border-rose-500/30 bg-rose-500/10 text-rose-300',
   }
   return (
-    <span className={cn('rounded-full border px-2.5 py-0.5 text-[11px] font-semibold', styles[severity])}>
+    <span
+      className={cn(
+        'rounded-full border px-2.5 py-0.5 text-[11px] font-semibold',
+        styles[severity],
+      )}
+    >
       {severity}
     </span>
   )
@@ -36,7 +46,9 @@ function StatusBadge({ status }: { status: IncidentStatus }) {
     Resolved: 'border-amber-500/30 bg-amber-500/10 text-amber-300',
   }
   return (
-    <span className={cn('rounded-full border px-2.5 py-0.5 text-[11px] font-semibold', styles[status])}>
+    <span
+      className={cn('rounded-full border px-2.5 py-0.5 text-[11px] font-semibold', styles[status])}
+    >
       {status}
     </span>
   )
@@ -62,7 +74,9 @@ export function IncidentTrackingPanel() {
       {
         accessorKey: 'incidentId',
         header: 'Incident ID',
-        cell: ({ row }) => <span className="font-medium text-white">{row.original.incidentId}</span>,
+        cell: ({ row }) => (
+          <span className="font-medium text-white">{row.original.incidentId}</span>
+        ),
       },
       {
         accessorKey: 'severity',
@@ -114,7 +128,10 @@ export function IncidentTrackingPanel() {
           <h2 className="text-lg font-semibold text-white">Error Reporting & Incident Tracking</h2>
           <p className="text-sm text-slate-400">Track errors & incident in the platform</p>
         </div>
-        <Button variant="secondary" onClick={() => toast.message('Metrics configuration coming soon')}>
+        <Button
+          variant="secondary"
+          onClick={() => toast.message('Metrics configuration coming soon')}
+        >
           Manage Metrics
         </Button>
       </div>
@@ -135,7 +152,9 @@ export function IncidentTrackingPanel() {
             ))}
       </ResponsiveGrid>
 
-      <div className={cn(uiTokens.radiusCard, uiTokens.borderSubtle, 'bg-brand-surface p-4 sm:p-5')}>
+      <div
+        className={cn(uiTokens.radiusCard, uiTokens.borderSubtle, 'bg-brand-surface p-4 sm:p-5')}
+      >
         <DataTable
           columns={columns}
           data={rows}

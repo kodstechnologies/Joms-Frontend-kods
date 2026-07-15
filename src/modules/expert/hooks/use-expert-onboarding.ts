@@ -27,13 +27,8 @@ export const useExpertOnboardingMutations = () => {
   })
 
   const saveWorkExperience = useMutation({
-    mutationFn: ({
-      id,
-      payload,
-    }: {
-      id: string
-      payload: { workExperience: unknown[] }
-    }) => updateExpertWorkExperience(id, payload),
+    mutationFn: ({ id, payload }: { id: string; payload: { workExperience: unknown[] } }) =>
+      updateExpertWorkExperience(id, payload),
     onSuccess: invalidate,
   })
 

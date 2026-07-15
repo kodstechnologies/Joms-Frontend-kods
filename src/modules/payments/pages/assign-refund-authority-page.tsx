@@ -28,10 +28,7 @@ function InfoItem({
     <div className={cn('min-w-0 space-y-1', className)}>
       <p className={labelClass}>{label}</p>
       {href ? (
-        <Link
-          to={href}
-          className={cn(valueClass, 'block underline underline-offset-2')}
-        >
+        <Link to={href} className={cn(valueClass, 'block underline underline-offset-2')}>
           {value}
         </Link>
       ) : (
@@ -58,7 +55,7 @@ function PermissionItem({ label, active }: { label: string; active: boolean }) {
       </span>
       <span
         className={cn(
-          'font-figtree text-[11px] font-normal leading-[20px]',
+          'font-figtree text-[11px] leading-[20px] font-normal',
           active ? 'text-[#CCCCCC]' : 'text-[#777777]',
         )}
       >
@@ -100,13 +97,13 @@ function RoleCard({
         <div className="min-w-0 flex-1">
           <h3
             className={cn(
-              'font-figtree text-[14px] font-semibold leading-[20px]',
+              'font-figtree text-[14px] leading-[20px] font-semibold',
               selected ? 'text-white' : 'text-[#DDDDDD]',
             )}
           >
             {role.title}
           </h3>
-          <p className="mt-1 font-figtree text-[11px] font-normal leading-[18px] text-[#888888]">
+          <p className="font-figtree mt-1 text-[11px] leading-[18px] font-normal text-[#888888]">
             {role.description}
           </p>
         </div>
@@ -115,7 +112,7 @@ function RoleCard({
       <div className="mt-5 flex-1">
         <p
           className={cn(
-            'mb-3 font-figtree text-[12px] font-semibold leading-[20px]',
+            'font-figtree mb-3 text-[12px] leading-[20px] font-semibold',
             selected ? 'text-white' : 'text-[#CCCCCC]',
           )}
         >
@@ -150,12 +147,12 @@ export function AssignRefundAuthorityPage() {
           <button
             type="button"
             onClick={() => navigate(`/finance/refunds/${id}/dispute`)}
-            className="group flex w-fit items-center gap-2 font-figtree text-[20px] font-bold leading-7 tracking-tight text-white transition-colors hover:text-[#FBC078]"
+            className="group font-figtree flex w-fit items-center gap-2 text-[20px] leading-7 font-bold tracking-tight text-white transition-colors hover:text-[#FBC078]"
           >
             <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
             <span>Escalation</span>
           </button>
-          <p className="mt-2 pl-7 font-figtree text-[12px] font-normal leading-[20px] text-[#777777]">
+          <p className="font-figtree mt-2 pl-7 text-[12px] leading-[20px] font-normal text-[#777777]">
             <Link to="/finance/refunds" className="transition-colors hover:text-white">
               Finance Management
             </Link>
@@ -171,10 +168,10 @@ export function AssignRefundAuthorityPage() {
 
         <section className="rounded-[10px] border border-white/[0.06] bg-[#1A1A1A] px-5 py-5">
           <div>
-            <h1 className="font-figtree text-[18px] font-semibold leading-[24px] text-white">
+            <h1 className="font-figtree text-[18px] leading-[24px] font-semibold text-white">
               Assign Dispute Authority
             </h1>
-            <p className="mt-1 font-figtree text-[12px] font-normal leading-[20px] text-[#888888]">
+            <p className="font-figtree mt-1 text-[12px] leading-[20px] font-normal text-[#888888]">
               Select the role responsible for reviewing and processing this refund request
             </p>
           </div>
@@ -185,7 +182,11 @@ export function AssignRefundAuthorityPage() {
             <InfoItem label="Request ID" value={request.requestId} />
             <InfoItem label="Customer" value={request.customerName} href="#" />
             <InfoItem label="Amount" value={request.amount} />
-            <InfoItem label="Reason" value={request.reason} className="sm:col-span-2 lg:col-span-1" />
+            <InfoItem
+              label="Reason"
+              value={request.reason}
+              className="sm:col-span-2 lg:col-span-1"
+            />
             <InfoItem label="Module type" value={request.moduleType} />
             <InfoItem label="Service type" value={request.serviceType} />
             <InfoItem label="Payment mode" value={request.paymentMode} />
@@ -193,7 +194,7 @@ export function AssignRefundAuthorityPage() {
         </section>
 
         <section className="flex-1 pb-4">
-          <p className="mb-4 font-figtree text-[12px] font-medium leading-[20px] text-white">
+          <p className="font-figtree mb-4 text-[12px] leading-[20px] font-medium text-white">
             Select and assign the refund:
           </p>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -214,14 +215,14 @@ export function AssignRefundAuthorityPage() {
           <button
             type="button"
             onClick={() => navigate(`/finance/refunds/${id}/dispute`)}
-            className="inline-flex h-10 w-full items-center justify-center rounded-[10px] border border-white/20 bg-transparent px-6 font-figtree text-[12px] font-semibold leading-[20px] text-white transition-colors hover:bg-white/5 sm:w-auto sm:min-w-[120px]"
+            className="font-figtree inline-flex h-10 w-full items-center justify-center rounded-[10px] border border-white/20 bg-transparent px-6 text-[12px] leading-[20px] font-semibold text-white transition-colors hover:bg-white/5 sm:w-auto sm:min-w-[120px]"
           >
             Close
           </button>
           <button
             type="button"
             onClick={handleContinue}
-            className="inline-flex h-10 w-full items-center justify-center rounded-[10px] border border-white/10 bg-[#2A2A2A] px-6 font-figtree text-[12px] font-semibold leading-[20px] text-white transition-colors hover:bg-[#333333] sm:ml-auto sm:w-auto sm:min-w-[120px]"
+            className="font-figtree inline-flex h-10 w-full items-center justify-center rounded-[10px] border border-white/10 bg-[#2A2A2A] px-6 text-[12px] leading-[20px] font-semibold text-white transition-colors hover:bg-[#333333] sm:ml-auto sm:w-auto sm:min-w-[120px]"
           >
             Continue
           </button>

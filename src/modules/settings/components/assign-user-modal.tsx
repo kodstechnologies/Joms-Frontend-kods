@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { X } from 'lucide-react'
 import { createPortal } from 'react-dom'
 
@@ -16,17 +16,19 @@ type AssignUserModalProps = {
 export function AssignUserModal({ open, incident, onClose, onSubmit }: AssignUserModalProps) {
   const [department, setDepartment] = useState('')
   const [user, setUser] = useState('')
+  const [wasOpen, setWasOpen] = useState(open)
 
-  useEffect(() => {
+  if (open !== wasOpen) {
+    setWasOpen(open)
     if (open) {
       setDepartment('')
       setUser('')
     }
-  }, [open])
+  }
 
   if (!open) return null
 
-  const users = department ? userOptionsByDepartment[department] ?? [] : []
+  const users = department ? (userOptionsByDepartment[department] ?? []) : []
 
   return createPortal(
     <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/70 p-4">

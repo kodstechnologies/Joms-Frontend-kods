@@ -6,8 +6,7 @@ import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
 
 export const CATEGORY_ACTION_MENU_CLASS = 'border border-slate-200 bg-white shadow-xl'
-export const CATEGORY_ACTION_ITEM_CLASS =
-  'text-slate-800 hover:bg-slate-100 hover:text-slate-900'
+export const CATEGORY_ACTION_ITEM_CLASS = 'text-slate-800 hover:bg-slate-100 hover:text-slate-900'
 export const CATEGORY_TABLE_VIEW_BUTTON_CLASS =
   'rounded p-1 text-[#777] transition-colors hover:bg-white/10 hover:text-white'
 
@@ -27,12 +26,7 @@ export function CategoryStatusBadge({ status }: { status: string }) {
             : 'bg-slate-500/10 text-slate-400',
   )
 
-  const label =
-    normalized === 'accepted'
-      ? 'Active'
-      : normalized === 'active'
-        ? 'Active'
-        : status
+  const label = normalized === 'accepted' ? 'Active' : normalized === 'active' ? 'Active' : status
 
   return <span className={className}>{label}</span>
 }
@@ -57,19 +51,12 @@ export function CategoryManagementPageHeader({
         <p className="mt-1 text-sm text-slate-400 md:text-base">{subtitle}</p>
       </div>
       <div className="flex w-full flex-col items-center gap-3 md:w-auto md:flex-row">
-        <Button
-          className="h-9 w-full md:w-auto"
-          onClick={() => navigate(metricsPath)}
-        >
+        <Button className="h-9 w-full md:w-auto" onClick={() => navigate(metricsPath)}>
           <SlidersHorizontal className="size-4" />
           Manage Metrics
         </Button>
 
-        <Button
-          type="button"
-          className="h-9 w-full md:w-auto"
-          onClick={() => navigate(createPath)}
-        >
+        <Button type="button" className="h-9 w-full md:w-auto" onClick={() => navigate(createPath)}>
           <Plus className="size-4" />
           Add New Category
         </Button>

@@ -7,11 +7,7 @@ type SidebarBrandProps = {
   className?: string
 }
 
-export function SidebarBrand({
-  compact = false,
-  showTitles = true,
-  className,
-}: SidebarBrandProps) {
+export function SidebarBrand({ compact = false, showTitles = true, className }: SidebarBrandProps) {
   return (
     <div className={cn('flex min-w-0 items-center gap-3', className)}>
       <img
@@ -21,7 +17,7 @@ export function SidebarBrand({
       />
       {showTitles ? (
         <div className="min-w-0">
-          <p className="truncate text-sm font-semibold tracking-tight text-brand-text">
+          <p className="text-brand-text truncate text-sm font-semibold tracking-tight">
             Command Operations Centre
           </p>
           <p className="truncate text-xs text-white/50">JOMS Applications</p>

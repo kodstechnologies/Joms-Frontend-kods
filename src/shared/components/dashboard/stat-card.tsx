@@ -25,11 +25,11 @@ export function StatCard({ title, value, icon: Icon, trend, hint }: StatCardProp
     <DashboardCard className="p-5 sm:p-6">
       <div className="flex items-start justify-between gap-3">
         <div className="space-y-1">
-          <p className="text-xs font-semibold tracking-wide text-brand-muted">{title}</p>
-          <p className="text-2xl font-semibold tracking-tight text-brand-text">{value}</p>
+          <p className="text-brand-muted text-xs font-semibold tracking-wide">{title}</p>
+          <p className="text-brand-text text-2xl font-semibold tracking-tight">{value}</p>
         </div>
         {Icon ? (
-          <div className="grid size-10 place-items-center rounded-brand-md bg-brand-accent/10 text-brand-accent">
+          <div className="rounded-brand-md bg-brand-accent/10 text-brand-accent grid size-10 place-items-center">
             <Icon className="size-4" />
           </div>
         ) : null}
@@ -49,12 +49,12 @@ export function StatCard({ title, value, icon: Icon, trend, hint }: StatCardProp
               {isUp ? <TrendingUp className="size-3" /> : <TrendingDown className="size-3" />}
               {trend.percentage}%
             </span>
-            <span className="text-[11px] text-brand-muted">{trend.label}</span>
+            <span className="text-brand-muted text-[11px]">{trend.label}</span>
           </div>
         ) : (
           <span />
         )}
-        {hint ? <span className="text-[11px] text-brand-muted">{hint}</span> : null}
+        {hint ? <span className="text-brand-muted text-[11px]">{hint}</span> : null}
       </div>
     </DashboardCard>
   )

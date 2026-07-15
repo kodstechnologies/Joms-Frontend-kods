@@ -1,29 +1,29 @@
 export interface CategoryFilter {
-  serviceName: string;
-  category: string;
-  subCategory: string;
+  serviceName: string
+  category: string
+  subCategory: string
 
-  state: string;
-  city: string;
+  state: string
+  city: string
 
-  serviceType: string[];
+  serviceType: string[]
 
-  viewStatus: string[];
+  viewStatus: string[]
 
-  approvalStatus: string[];
+  approvalStatus: string[]
 
-  type: string[];
+  type: string[]
 
-  availability: string[];
+  availability: string[]
 
-  amenities: string[];
+  amenities: string[]
 
-  expertsMin?: number;
-  expertsMax?: number;
+  expertsMin?: number
+  expertsMax?: number
 
-  revenueMin?: number;
-  revenueMax?: number;
+  revenueMin?: number
+  revenueMax?: number
 
-  createdFrom?: string;
-  createdTo?: string;
+  createdFrom?: string
+  createdTo?: string
 }

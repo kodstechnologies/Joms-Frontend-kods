@@ -10,6 +10,7 @@ const PROD_SERVICE_URLS = {
   kyc: 'https://kyc.api.kods.online',
   membership: 'https://membership.api.kods.online',
   settings: 'https://settings.api.kods.online',
+  payment: 'https://payment.api.kods.online',
 } as const
 
 const localApiBaseUrl = trimTrailingSlash(import.meta.env.VITE_API_BASE_URL || LOCAL_API_BASE_URL)
@@ -53,5 +54,10 @@ export const env = {
     import.meta.env.VITE_SETTINGS_API_BASE_URL,
     8007,
     PROD_SERVICE_URLS.settings,
+  ),
+  paymentApiBaseUrl: resolveApiUrl(
+    import.meta.env.VITE_PAYMENT_API_BASE_URL,
+    8008,
+    PROD_SERVICE_URLS.payment,
   ),
 }

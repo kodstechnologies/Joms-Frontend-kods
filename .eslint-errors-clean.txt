@@ -1,0 +1,83 @@
+﻿D:\kods-projects\Joms-All\Joms-Frontend\src\modules\expert\pages\experts\expert-list-shared.tsx
+   10:14  error  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+   16:14  error  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+   21:14  error  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+   26:14  error  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+   72:17  error  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+  107:17  error  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+  153:17  error  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+  184:17  error  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+  192:17  error  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+  200:17  error  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+  208:17  error  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+  216:17  error  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+  224:17  error  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+  232:17  error  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+  240:17  error  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+D:\kods-projects\Joms-All\Joms-Frontend\src\modules\expert\pages\services\category-form-page.tsx
+  46:11  error  Error: Cannot call impure function during render
+  58:7   error  Error: Calling setState synchronously within an effect can trigger cascading renders
+D:\kods-projects\Joms-All\Joms-Frontend\src\modules\expert\pages\services\service-management-page.tsx
+  253:26  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+D:\kods-projects\Joms-All\Joms-Frontend\src\modules\expert\pages\services\service-view-page.tsx
+  278:5  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+D:\kods-projects\Joms-All\Joms-Frontend\src\modules\expert\pages\services\suspended-services-page.tsx
+  84:26  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+D:\kods-projects\Joms-All\Joms-Frontend\src\modules\expert\pages\venue\category-form-page.tsx
+  41:11  error  Error: Cannot call impure function during render
+  53:7   error  Error: Calling setState synchronously within an effect can trigger cascading renders
+D:\kods-projects\Joms-All\Joms-Frontend\src\modules\expert\pages\venue\create-venue-listing-page.tsx
+  116:49  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  124:46  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  129:80  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  158:59  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  160:47  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  180:56  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  199:38  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  268:19  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+D:\kods-projects\Joms-All\Joms-Frontend\src\modules\expert\pages\venue\create-venue-onboarding-page.tsx
+   67:5  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+   71:5  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+   80:5  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  129:5  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+D:\kods-projects\Joms-All\Joms-Frontend\src\modules\expert\pages\venue\space-details-page.tsx
+  231:5  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+D:\kods-projects\Joms-All\Joms-Frontend\src\modules\expert\pages\venue\suspended-venues-page.tsx
+  64:26  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+D:\kods-projects\Joms-All\Joms-Frontend\src\modules\expert\pages\venue\venue-management-page.tsx
+  241:26  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+D:\kods-projects\Joms-All\Joms-Frontend\src\modules\rbac\components\update-password-modal.tsx
+  44:7  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+D:\kods-projects\Joms-All\Joms-Frontend\src\modules\rbac\pages\create-role-page.tsx
+  29:7  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+D:\kods-projects\Joms-All\Joms-Frontend\src\modules\rbac\pages\create-sub-admin-page.tsx
+   90:5   error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  103:5   error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  217:25  error  '_password' is assigned a value but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        @typescript-eslint/no-unused-vars
+  217:43  error  '_email' is assigned a value but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           @typescript-eslint/no-unused-vars
+D:\kods-projects\Joms-All\Joms-Frontend\src\modules\rbac\pages\update-contact-information-page.tsx
+  73:5  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+D:\kods-projects\Joms-All\Joms-Frontend\src\modules\referrals\components\edit-recipient-modal.tsx
+  40:7  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+D:\kods-projects\Joms-All\Joms-Frontend\src\modules\settings\components\assign-user-modal.tsx
+  22:7  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+D:\kods-projects\Joms-All\Joms-Frontend\src\modules\settings\components\escalation-table-columns.tsx
+  17:10  error  Fast refresh only works when a file only exports components. Move your component(s) to a separate file. If all exports are HOCs, add them to the `extraHOCs` option  react-refresh/only-export-components
+D:\kods-projects\Joms-All\Joms-Frontend\src\modules\settings\pages\backup-configuration-page.tsx
+  21:35  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+D:\kods-projects\Joms-All\Joms-Frontend\src\modules\settings\pages\main-settings-page.tsx
+   85:7   error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  107:37  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  111:37  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  115:42  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  119:36  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  123:35  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  127:34  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  131:36  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+D:\kods-projects\Joms-All\Joms-Frontend\src\modules\settings\pages\templates-page.tsx
+   81:15  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  200:7   error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  280:7   error  Error: Calling setState synchronously within an effect can trigger cascading renders
+D:\kods-projects\Joms-All\Joms-Frontend\src\shared\components\table\data-table.tsx
+  10:24  error  'TData' is defined but never used   @typescript-eslint/no-unused-vars
+  10:47  error  'TValue' is defined but never used  @typescript-eslint/no-unused-vars

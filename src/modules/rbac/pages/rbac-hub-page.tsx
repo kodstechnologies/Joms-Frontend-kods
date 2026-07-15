@@ -1,6 +1,17 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { BarChart3, Eye, Pencil, Plus, Settings, Shield, ShieldOff, Trash2, UserCheck, UserPlus } from 'lucide-react'
+import {
+  BarChart3,
+  Eye,
+  Pencil,
+  Plus,
+  Settings,
+  Shield,
+  ShieldOff,
+  Trash2,
+  UserCheck,
+  UserPlus,
+} from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
@@ -179,11 +190,7 @@ export function RbacHubPage() {
   )
 
   const handlePasswordReset = useCallback(
-    async (payload: {
-      oldPassword: string
-      newPassword: string
-      confirmNewPassword: string
-    }) => {
+    async (payload: { oldPassword: string; newPassword: string; confirmNewPassword: string }) => {
       if (!passwordResetUser) return
 
       if (payload.newPassword.length < 6) {
@@ -242,7 +249,7 @@ export function RbacHubPage() {
         accessorKey: 'riskLevel',
         header: 'Risk level',
         cell: ({ row }) => (
-          <span className="capitalize text-brand-accent">
+          <span className="text-brand-accent capitalize">
             {row.original.riskLevel.replace('_', ' ')}
           </span>
         ),
@@ -261,7 +268,7 @@ export function RbacHubPage() {
               'rounded-full border px-2.5 py-0.5 text-[11px] font-semibold',
               row.original.status === 'active'
                 ? 'border-brand-success/25 bg-brand-success/10 text-brand-success'
-                : 'border-brand-muted/25 bg-white/5 text-brand-muted',
+                : 'border-brand-muted/25 text-brand-muted bg-white/5',
             )}
           >
             {row.original.status === 'active' ? 'Active' : 'Disabled'}
@@ -290,7 +297,7 @@ export function RbacHubPage() {
               Edit permission
             </TableActionsItem>
             <TableActionsItem
-              icon={<Trash2 className="size-3.5 text-brand-danger" />}
+              icon={<Trash2 className="text-brand-danger size-3.5" />}
               onClick={() => handleDeleteRole(row.original.id)}
             >
               <span className="text-brand-danger">Remove Role</span>
@@ -304,7 +311,7 @@ export function RbacHubPage() {
               </TableActionsItem>
             ) : (
               <TableActionsItem
-                icon={<Shield className="size-3.5 text-brand-success" />}
+                icon={<Shield className="text-brand-success size-3.5" />}
                 onClick={() => handleEnableRole(row.original.id)}
               >
                 <span className="text-brand-success">Enable Role</span>
@@ -397,9 +404,7 @@ export function RbacHubPage() {
             </TableActionsItem>
             <TableActionsItem
               icon={<Pencil className="size-3.5" />}
-              onClick={() =>
-                navigate(`/settings/access/users/create?edit=${row.original.id}`)
-              }
+              onClick={() => navigate(`/settings/access/users/create?edit=${row.original.id}`)}
             >
               Change role
             </TableActionsItem>
@@ -419,21 +424,21 @@ export function RbacHubPage() {
               Password reset
             </TableActionsItem>
             <TableActionsItem
-              icon={<Trash2 className="size-3.5 text-brand-danger" />}
+              icon={<Trash2 className="text-brand-danger size-3.5" />}
               onClick={() => handleDeleteUser(row.original.id)}
             >
               <span className="text-brand-danger">Remove User</span>
             </TableActionsItem>
             {row.original.status === 'active' ? (
               <TableActionsItem
-                icon={<ShieldOff className="size-3.5 text-brand-danger" />}
+                icon={<ShieldOff className="text-brand-danger size-3.5" />}
                 onClick={() => handleSuspendUser(row.original.id)}
               >
                 <span className="text-brand-danger">Suspend user</span>
               </TableActionsItem>
             ) : (
               <TableActionsItem
-                icon={<UserCheck className="size-3.5 text-brand-success" />}
+                icon={<UserCheck className="text-brand-success size-3.5" />}
                 onClick={() => handleReactivateUser(row.original.id)}
               >
                 <span className="text-brand-success">Reactivate user</span>
@@ -454,19 +459,24 @@ export function RbacHubPage() {
     <div className="flex flex-col gap-4 md:gap-6">
       <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
         <div>
-          <h1 className="text-2xl font-bold text-brand-text md:text-3xl">Role Based Access</h1>
-          <p className="mt-1 text-sm text-brand-muted md:text-base">
+          <h1 className="text-brand-text text-2xl font-bold md:text-3xl">Role Based Access</h1>
+          <p className="text-brand-muted mt-1 text-sm md:text-base">
             Comprehensive user data and admin controls.
           </p>
         </div>
         <div className="flex w-full flex-col gap-2 sm:flex-row md:w-auto">
-          <Button variant="secondary" onClick={() => toast.info('Metrics configuration coming soon')}>
+          <Button
+            variant="secondary"
+            onClick={() => toast.info('Metrics configuration coming soon')}
+          >
             <BarChart3 className="size-4" />
             Manage Metrics
           </Button>
           <Button
             onClick={() =>
-              navigate(isRolesTab ? '/settings/access/roles/create' : '/settings/access/users/create')
+              navigate(
+                isRolesTab ? '/settings/access/roles/create' : '/settings/access/users/create',
+              )
             }
           >
             <Plus className="size-4" />
@@ -501,14 +511,14 @@ export function RbacHubPage() {
       </div>
 
       {!isRolesTab && roleFilterId && filteredRoleName ? (
-        <div className="flex items-center justify-between rounded-brand-lg border border-white/10 bg-white/5 px-4 py-3 text-sm text-brand-text">
+        <div className="rounded-brand-lg text-brand-text flex items-center justify-between border border-white/10 bg-white/5 px-4 py-3 text-sm">
           <span>
             Showing users assigned to <span className="font-semibold">{filteredRoleName}</span>
           </span>
           <button
             type="button"
             onClick={() => setRoleFilterId(null)}
-            className="text-brand-accent underline underline-offset-2 hover:text-brand-gold-from"
+            className="text-brand-accent hover:text-brand-gold-from underline underline-offset-2"
           >
             Clear filter
           </button>
@@ -516,7 +526,7 @@ export function RbacHubPage() {
       ) : null}
 
       {!isRolesTab && (statsData?.data?.invitesSent ?? 0) >= 0 ? (
-        <div className="flex items-center justify-between rounded-brand-lg border border-brand-accent-muted bg-brand-accent/10 px-4 py-3 text-sm text-brand-text">
+        <div className="rounded-brand-lg border-brand-accent-muted bg-brand-accent/10 text-brand-text flex items-center justify-between border px-4 py-3 text-sm">
           <span>Invites Sent — {String(statsData?.data?.invitesSent ?? 0).padStart(2, '0')}</span>
           <Button variant="secondary" onClick={() => navigate('/settings/access')}>
             Review

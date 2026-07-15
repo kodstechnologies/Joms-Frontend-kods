@@ -7,11 +7,7 @@ import { toast } from 'sonner'
 import { formatDeletedAt } from '../../constants/soft-delete'
 import { useRestoreVenue, useVenues } from '../../hooks/use-venues'
 import type { Venue } from '../../type/venue'
-import {
-  getVenueApiId,
-  getVenueDisplayId,
-  getVenueDisplaySpaceId,
-} from '../../utils/venue-list'
+import { getVenueApiId, getVenueDisplayId, getVenueDisplaySpaceId } from '../../utils/venue-list'
 import { DataTable } from '@/shared/components/table/data-table'
 import {
   TableActionsDropdown,
@@ -81,7 +77,8 @@ export function VenueDeletedPage() {
             aria-label="Select all deleted venues"
             checked={allVisibleVenuesSelected}
             ref={(input) => {
-              if (input) input.indeterminate = someVisibleVenuesSelected && !allVisibleVenuesSelected
+              if (input)
+                input.indeterminate = someVisibleVenuesSelected && !allVisibleVenuesSelected
             }}
             onChange={toggleVisibleVenues}
             className="rounded border-slate-700 bg-transparent"
@@ -119,7 +116,11 @@ export function VenueDeletedPage() {
           <span className="font-mono text-xs">{getVenueDisplaySpaceId(row.original)}</span>
         ),
       },
-      { accessorKey: 'spaceName', header: 'Space Name', cell: ({ row }) => row.original.spaceName || '—' },
+      {
+        accessorKey: 'spaceName',
+        header: 'Space Name',
+        cell: ({ row }) => row.original.spaceName || '—',
+      },
       {
         accessorKey: 'reason',
         header: 'Reason',
@@ -191,7 +192,7 @@ export function VenueDeletedPage() {
           <button
             type="button"
             onClick={() => navigate('/venues/management')}
-            className="group flex w-fit items-center gap-2 font-heading text-[20px] font-bold tracking-tight text-white transition-colors hover:text-brand-accent"
+            className="group font-heading hover:text-brand-accent flex w-fit items-center gap-2 text-[20px] font-bold tracking-tight text-white transition-colors"
           >
             <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
             <span>Deleted Venues</span>

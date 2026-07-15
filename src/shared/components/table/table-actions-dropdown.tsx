@@ -1,10 +1,4 @@
-import {
-  useCallback,
-  useLayoutEffect,
-  useRef,
-  useState,
-  type ReactNode,
-} from 'react'
+import { useCallback, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { MoreVertical } from 'lucide-react'
 
@@ -48,7 +42,8 @@ export function TableActionsDropdown({
     const gap = 4
 
     const spaceBelow = window.innerHeight - rect.bottom
-    const openUpward = menuHeight > 0 && spaceBelow < menuHeight + gap && rect.top > menuHeight + gap
+    const openUpward =
+      menuHeight > 0 && spaceBelow < menuHeight + gap && rect.top > menuHeight + gap
 
     const top = openUpward ? rect.top - menuHeight - gap : rect.bottom + gap
     const left = Math.min(Math.max(8, rect.right - width), window.innerWidth - width - 8)
@@ -87,7 +82,7 @@ export function TableActionsDropdown({
           'rounded p-1 transition-colors',
           tone === 'light'
             ? 'text-[#777] hover:bg-white/10 hover:text-white'
-            : 'text-brand-muted hover:bg-white/10 hover:text-brand-text',
+            : 'text-brand-muted hover:text-brand-text hover:bg-white/10',
         )}
       >
         <MoreVertical className="size-4" aria-hidden="true" />
@@ -105,10 +100,10 @@ export function TableActionsDropdown({
               ref={menuRef}
               style={{ top: position.top, left: position.left, minWidth: menuWidth }}
               className={cn(
-                'fixed z-[101] rounded-brand-md py-1.5 text-left shadow-2xl',
+                'rounded-brand-md fixed z-[101] py-1.5 text-left shadow-2xl',
                 tone === 'light'
                   ? 'border border-slate-200 bg-white'
-                  : 'border border-white/10 bg-brand-surface',
+                  : 'bg-brand-surface border border-white/10',
                 menuClassName,
               )}
             >
@@ -144,7 +139,7 @@ export function TableActionsItem({
         'flex w-full items-center gap-2 px-4 py-2.5 text-left text-xs font-semibold transition-all',
         tone === 'light'
           ? 'text-slate-800 hover:bg-slate-50 hover:text-slate-900'
-          : 'text-brand-stroke hover:bg-white/10 hover:text-brand-accent',
+          : 'text-brand-stroke hover:text-brand-accent hover:bg-white/10',
         className,
       )}
     >

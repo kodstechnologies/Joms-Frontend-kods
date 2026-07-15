@@ -49,12 +49,7 @@ export function NotificationGroupCard({
 
   return (
     <section className="overflow-hidden rounded-2xl border border-white/10 bg-[#111111]">
-      <div
-        className={cn(
-          'flex items-center justify-between border-b px-5 py-3',
-          styles.header,
-        )}
-      >
+      <div className={cn('flex items-center justify-between border-b px-5 py-3', styles.header)}>
         <div className="flex items-center gap-2">
           <Icon className={cn('size-4', styles.icon)} />
           <h3 className="text-sm font-semibold">{title}</h3>

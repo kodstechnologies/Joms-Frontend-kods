@@ -41,9 +41,7 @@ export function ExtendSuspensionModal({ open, onClose, onSubmit }: ExtendSuspens
                     <span
                       key={day}
                       className={
-                        highlighted
-                          ? 'rounded-md bg-[#F0C27B]/20 py-1 text-[#F0C27B]'
-                          : 'py-1'
+                        highlighted ? 'rounded-md bg-[#F0C27B]/20 py-1 text-[#F0C27B]' : 'py-1'
                       }
                     >
                       {day}

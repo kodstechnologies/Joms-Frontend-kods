@@ -20,16 +20,14 @@ export type ExpertBasicProfileData = {
 }
 
 export const createExpertBasicProfile = async (payload: FormData) => {
-  const response = await authApiClient.post<
-    ExpertOnboardingApiResponse<ExpertBasicProfileData>
-  >('/auth/partners/basic-profile', payload)
+  const response = await authApiClient.post<ExpertOnboardingApiResponse<ExpertBasicProfileData>>(
+    '/auth/partners/basic-profile',
+    payload,
+  )
   return response.data
 }
 
-export const updateExpertIdentityVerification = async (
-  id: string,
-  payload: FormData,
-) => {
+export const updateExpertIdentityVerification = async (id: string, payload: FormData) => {
   const response = await authApiClient.patch<ExpertOnboardingApiResponse>(
     `/auth/partners/${id}/identity-verification`,
     payload,

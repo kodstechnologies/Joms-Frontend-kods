@@ -1,15 +1,7 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 import { useNavigate } from 'react-router-dom'
-import {
-  Eye,
-  GitMerge,
-  MessageSquarePlus,
-  Pencil,
-  Tag,
-  Trash2,
-  TrendingUp,
-} from 'lucide-react'
+import { Eye, GitMerge, MessageSquarePlus, Pencil, Tag, Trash2, TrendingUp } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { AddTagModal } from '../components/add-tag-modal'
@@ -91,16 +83,28 @@ export function TicketManagementPage() {
           >
             View Details
           </TableActionsItem>
-          <TableActionsItem icon={<Pencil className="size-3.5" />} onClick={() => toast.message('Edit coming soon')}>
+          <TableActionsItem
+            icon={<Pencil className="size-3.5" />}
+            onClick={() => toast.message('Edit coming soon')}
+          >
             Edit Ticket
           </TableActionsItem>
-          <TableActionsItem icon={<TrendingUp className="size-3.5" />} onClick={() => toast.message('Status change coming soon')}>
+          <TableActionsItem
+            icon={<TrendingUp className="size-3.5" />}
+            onClick={() => toast.message('Status change coming soon')}
+          >
             Change Status
           </TableActionsItem>
-          <TableActionsItem icon={<TrendingUp className="size-3.5" />} onClick={() => toast.message('Priority change coming soon')}>
+          <TableActionsItem
+            icon={<TrendingUp className="size-3.5" />}
+            onClick={() => toast.message('Priority change coming soon')}
+          >
             Change Priority
           </TableActionsItem>
-          <TableActionsItem icon={<MessageSquarePlus className="size-3.5" />} onClick={() => toast.message('Note added (static)')}>
+          <TableActionsItem
+            icon={<MessageSquarePlus className="size-3.5" />}
+            onClick={() => toast.message('Note added (static)')}
+          >
             Add internal note
           </TableActionsItem>
           <TableActionsItem
@@ -112,10 +116,16 @@ export function TicketManagementPage() {
           >
             Add Tags
           </TableActionsItem>
-          <TableActionsItem icon={<TrendingUp className="size-3.5" />} onClick={() => toast.message('Escalation coming soon')}>
+          <TableActionsItem
+            icon={<TrendingUp className="size-3.5" />}
+            onClick={() => toast.message('Escalation coming soon')}
+          >
             Escalate
           </TableActionsItem>
-          <TableActionsItem icon={<Trash2 className="size-3.5" />} onClick={() => toast.message('Delete coming soon')}>
+          <TableActionsItem
+            icon={<Trash2 className="size-3.5" />}
+            onClick={() => toast.message('Delete coming soon')}
+          >
             Delete
           </TableActionsItem>
           <TableActionsItem
@@ -144,9 +154,15 @@ export function TicketManagementPage() {
       {
         accessorKey: 'id',
         header: 'Ticket ID',
-        cell: ({ row }) => <span className="font-mono text-xs text-amber-400">#{row.original.id}</span>,
+        cell: ({ row }) => (
+          <span className="font-mono text-xs text-amber-400">#{row.original.id}</span>
+        ),
       },
-      { accessorKey: 'subject', header: 'Subject', cell: ({ row }) => <span className="text-sm">{row.original.subject}</span> },
+      {
+        accessorKey: 'subject',
+        header: 'Subject',
+        cell: ({ row }) => <span className="text-sm">{row.original.subject}</span>,
+      },
       {
         accessorKey: 'status',
         header: 'Status',
@@ -177,8 +193,15 @@ export function TicketManagementPage() {
         title="Ticket Management"
         subtitle="Decision-centric workspace for high-impact tickets requiring approval, enforcement, or oversight."
         actions={[
-          { label: 'Export Data', onClick: () => toast.message('Export coming soon'), variant: 'secondary' },
-          { label: 'Manage Metrics', onClick: () => toast.message('Metrics configuration coming soon') },
+          {
+            label: 'Export Data',
+            onClick: () => toast.message('Export coming soon'),
+            variant: 'secondary',
+          },
+          {
+            label: 'Manage Metrics',
+            onClick: () => toast.message('Metrics configuration coming soon'),
+          },
         ]}
       />
 

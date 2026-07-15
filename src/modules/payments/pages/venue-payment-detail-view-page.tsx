@@ -28,13 +28,20 @@ function DetailRow({
   return (
     <div className="flex items-center justify-between gap-4 border-b border-white/5 py-3 last:border-b-0">
       <span className="text-[12px] text-[#888888]">{label}</span>
-      <span className={cn('text-right text-[12px] font-medium text-white', valueClassName)}>{value}</span>
+      <span className={cn('text-right text-[12px] font-medium text-white', valueClassName)}>
+        {value}
+      </span>
     </div>
   )
 }
 
 function getStatusBadgeClass(status: string) {
-  if (status === 'Successful' || status === 'Completed' || status === 'Confirmed' || status === 'Approved') {
+  if (
+    status === 'Successful' ||
+    status === 'Completed' ||
+    status === 'Confirmed' ||
+    status === 'Approved'
+  ) {
     return 'border-emerald-500/25 bg-emerald-600/20 text-emerald-400'
   }
   if (status === 'Pending' || status === 'In Progress') {

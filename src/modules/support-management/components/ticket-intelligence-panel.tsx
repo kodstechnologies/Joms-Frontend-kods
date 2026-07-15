@@ -94,7 +94,7 @@ function ContextCard({
     <div className="rounded-xl border border-white/5 bg-[#1a1a1a] p-4">
       <div className="flex items-center gap-2 text-xs text-slate-500">
         {icon}
-        <span className="font-semibold uppercase tracking-wide">{label}</span>
+        <span className="font-semibold tracking-wide uppercase">{label}</span>
       </div>
       <p className="mt-2 text-sm font-semibold text-white">{title}</p>
       <p className="mt-1 text-xs text-slate-400">{subtitle}</p>

@@ -47,9 +47,7 @@ export const useVenueStepMutations = () => {
       venueData: Pick<VenueFormData, 'venueCategory' | 'aboutVenue'>
     }) =>
       updateAdminVenueDetails(venueId, {
-        venueCategoryId: venueData.venueCategory
-          ? [venueData.venueCategory]
-          : undefined,
+        venueCategoryId: venueData.venueCategory ? [venueData.venueCategory] : undefined,
         aboutVenue: venueData.aboutVenue,
       }),
     onSuccess: invalidateDraft,
@@ -57,13 +55,7 @@ export const useVenueStepMutations = () => {
 
   // Step 2 — save location
   const saveLocation = useMutation({
-    mutationFn: ({
-      venueId,
-      venueData,
-    }: {
-      venueId: string
-      venueData: Partial<VenueFormData>
-    }) =>
+    mutationFn: ({ venueId, venueData }: { venueId: string; venueData: Partial<VenueFormData> }) =>
       updateAdminVenueLocation(venueId, {
         location: {
           address: venueData.address,
@@ -78,13 +70,8 @@ export const useVenueStepMutations = () => {
 
   // Step 3 — create space
   const saveSpace = useMutation({
-    mutationFn: ({
-      venueId,
-      venueData,
-    }: {
-      venueId: string
-      venueData: VenueFormData
-    }) => createAdminSpace(venueId, buildSpacePayload(venueData)),
+    mutationFn: ({ venueId, venueData }: { venueId: string; venueData: VenueFormData }) =>
+      createAdminSpace(venueId, buildSpacePayload(venueData)),
     onSuccess: invalidateDraft,
   })
 
@@ -103,38 +90,36 @@ export const useVenueStepMutations = () => {
       // venueData.amenities holds subCategoryIds selected by user
       // For now send as flat structure; backend expects [{categoryId, subCategoryIds}]
       const groupedAmenities = Object.values(
-  venueData.amenities.reduce(
-    (
-      acc: Record<
-        string,
-        {
-          categoryId: string
-          subCategoryIds: string[]
-        }
-      >,
-      amenity,
-    ) => {
-      if (!acc[amenity.categoryId]) {
-        acc[amenity.categoryId] = {
-          categoryId: amenity.categoryId,
-          subCategoryIds: [],
-        }
-      }
+        venueData.amenities.reduce(
+          (
+            acc: Record<
+              string,
+              {
+                categoryId: string
+                subCategoryIds: string[]
+              }
+            >,
+            amenity,
+          ) => {
+            if (!acc[amenity.categoryId]) {
+              acc[amenity.categoryId] = {
+                categoryId: amenity.categoryId,
+                subCategoryIds: [],
+              }
+            }
 
-      acc[amenity.categoryId].subCategoryIds.push(
-        amenity.subCategoryId,
+            acc[amenity.categoryId].subCategoryIds.push(amenity.subCategoryId)
+
+            return acc
+          },
+          {},
+        ),
       )
 
-      return acc
-    },
-    {},
-  ),
-)
-
-await createAdminVenueAmenity(venueId, {
-  spaceId,
-  amenities: groupedAmenities,
-})
+      await createAdminVenueAmenity(venueId, {
+        spaceId,
+        amenities: groupedAmenities,
+      })
       return createAdminVenueGallery(venueId, spaceId, buildGalleryFormData(venueData))
     },
     onSuccess: invalidateDraft,
@@ -142,13 +127,7 @@ await createAdminVenueAmenity(venueId, {
 
   // Step 5 — save pricing then availability
   const savePricing = useMutation({
-    mutationFn: async ({
-      spaceId,
-      venueData,
-    }: {
-      spaceId: string
-      venueData: VenueFormData
-    }) => {
+    mutationFn: async ({ spaceId, venueData }: { spaceId: string; venueData: VenueFormData }) => {
       await createPricing(spaceId, buildPricingPayload(venueData))
 
       const availabilityPayload = buildAvailabilityPayload(venueData)
@@ -164,21 +143,15 @@ await createAdminVenueAmenity(venueId, {
 
   // Step 6 — save terms
   const saveTerms = useMutation({
-    mutationFn: ({
-      venueId,
-      venueData,
-    }: {
-      venueId: string
-      venueData: VenueFormData
-    }) => createVenueTerms(venueId, buildTermsPayload(venueData)),
+    mutationFn: ({ venueId, venueData }: { venueId: string; venueData: VenueFormData }) =>
+      createVenueTerms(venueId, buildTermsPayload(venueData)),
     onSuccess: invalidateDraft,
   })
 
   const submitVenueListing = useMutation({
-  mutationFn: (venueId: string) =>
-    submitAdminVenue(venueId),
-  onSuccess: invalidateDraft,
-})
+    mutationFn: (venueId: string) => submitAdminVenue(venueId),
+    onSuccess: invalidateDraft,
+  })
 
   return {
     saveVenueDetails,

@@ -4,11 +4,7 @@ import { ArrowLeft, BarChart3, RotateCcw, XCircle } from 'lucide-react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 
-import {
-  useReinviteSubAdmin,
-  useRevokeSubAdminInvite,
-  useSubAdminInvites,
-} from '../hooks/use-rbac'
+import { useReinviteSubAdmin, useRevokeSubAdminInvite, useSubAdminInvites } from '../hooks/use-rbac'
 import type { SubAdminInvite } from '../types/rbac'
 import { DataTable } from '@/shared/components/table/data-table'
 import {
@@ -136,7 +132,7 @@ export function SubAdminDetailPage() {
               Re-Invite
             </TableActionsItem>
             <TableActionsItem
-              icon={<XCircle className="size-3.5 text-brand-danger" />}
+              icon={<XCircle className="text-brand-danger size-3.5" />}
               onClick={() => handleRevoke(row.original.id)}
             >
               <span className="text-brand-danger">Revoke Invite</span>
@@ -155,7 +151,7 @@ export function SubAdminDetailPage() {
           <button
             type="button"
             onClick={() => navigate('/settings/access')}
-            className="group flex w-fit items-center gap-2 font-heading text-[20px] font-bold tracking-tight text-white transition-colors hover:text-[#FBC078]"
+            className="group font-heading flex w-fit items-center gap-2 text-[20px] font-bold tracking-tight text-white transition-colors hover:text-[#FBC078]"
           >
             <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
             <span>User Details</span>
@@ -182,10 +178,11 @@ export function SubAdminDetailPage() {
       </div>
 
       <div>
-        <h2 className="text-lg font-semibold text-brand-text">Invite Overview</h2>
+        <h2 className="text-brand-text text-lg font-semibold">Invite Overview</h2>
         {subAdmin ? (
-          <p className="mt-1 text-sm text-brand-muted">
-            Invite history for <span className="font-medium text-brand-text">{subAdmin.fullname}</span>
+          <p className="text-brand-muted mt-1 text-sm">
+            Invite history for{' '}
+            <span className="text-brand-text font-medium">{subAdmin.fullname}</span>
           </p>
         ) : null}
       </div>

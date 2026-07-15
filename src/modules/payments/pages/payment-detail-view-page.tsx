@@ -28,7 +28,9 @@ function DetailRow({
   return (
     <div className="flex items-center justify-between gap-4 border-b border-white/5 py-3 last:border-b-0">
       <span className="text-[12px] text-[#888888]">{label}</span>
-      <span className={cn('text-right text-[12px] font-medium text-white', valueClassName)}>{value}</span>
+      <span className={cn('text-right text-[12px] font-medium text-white', valueClassName)}>
+        {value}
+      </span>
     </div>
   )
 }
@@ -141,8 +143,14 @@ export function PaymentDetailViewPage() {
           </DetailCard>
 
           <DetailCard title="Tax & Fee Breakdown">
-            <DetailRow label="Tax Collected (GST 18%)" value={detail.taxFeeBreakdown.taxCollected} />
-            <DetailRow label="Payment Gateway Fee" value={detail.taxFeeBreakdown.paymentGatewayFee} />
+            <DetailRow
+              label="Tax Collected (GST 18%)"
+              value={detail.taxFeeBreakdown.taxCollected}
+            />
+            <DetailRow
+              label="Payment Gateway Fee"
+              value={detail.taxFeeBreakdown.paymentGatewayFee}
+            />
             <DetailRow label="Platform Fee (20%)" value={detail.taxFeeBreakdown.platformFee} />
             <DetailRow
               label="Net Platform Earnings"
@@ -177,8 +185,14 @@ export function PaymentDetailViewPage() {
               label="Gateway Transaction ID"
               value={detail.transactionReferences.gatewayTransactionId}
             />
-            <DetailRow label="Platform Record ID" value={detail.transactionReferences.platformRecordId} />
-            <DetailRow label="Settlement Date" value={detail.transactionReferences.settlementDate} />
+            <DetailRow
+              label="Platform Record ID"
+              value={detail.transactionReferences.platformRecordId}
+            />
+            <DetailRow
+              label="Settlement Date"
+              value={detail.transactionReferences.settlementDate}
+            />
           </DetailCard>
         </div>
       </div>

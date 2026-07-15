@@ -37,7 +37,7 @@ export function RoleUsersPage() {
           <button
             type="button"
             onClick={() => navigate(`/settings/access/users/${row.original.id}`)}
-            className="text-left text-sm font-medium text-brand-accent underline decoration-brand-accent/40 underline-offset-2 hover:text-brand-gold-from"
+            className="text-brand-accent decoration-brand-accent/40 hover:text-brand-gold-from text-left text-sm font-medium underline underline-offset-2"
           >
             {row.original.fullname}
           </button>
@@ -58,7 +58,7 @@ export function RoleUsersPage() {
             type="button"
             aria-label={`Open ${row.original.fullname} details`}
             onClick={() => navigate(`/settings/access/users/${row.original.id}`)}
-            className="text-brand-muted transition-colors hover:text-brand-accent"
+            className="text-brand-muted hover:text-brand-accent transition-colors"
           >
             <ExternalLink className="size-4" />
           </button>
@@ -74,7 +74,7 @@ export function RoleUsersPage() {
         <button
           type="button"
           onClick={() => navigate(`/settings/access/roles/${id}/logs`)}
-          className="group flex w-fit items-center gap-2 font-heading text-[20px] font-bold tracking-tight text-white transition-colors hover:text-[#FBC078]"
+          className="group font-heading flex w-fit items-center gap-2 text-[20px] font-bold tracking-tight text-white transition-colors hover:text-[#FBC078]"
         >
           <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
           <span>{role?.name || 'Role'} Users</span>
@@ -93,8 +93,8 @@ export function RoleUsersPage() {
       </div>
 
       <div className={cn(uiTokens.radiusCard, uiTokens.borderSubtle, 'bg-brand-surface p-6')}>
-        <p className="text-sm text-brand-muted">
-          Users assigned to <span className="font-medium text-brand-text">{role?.name}</span>
+        <p className="text-brand-muted text-sm">
+          Users assigned to <span className="text-brand-text font-medium">{role?.name}</span>
         </p>
       </div>
 

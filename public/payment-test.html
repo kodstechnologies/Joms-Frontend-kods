@@ -1,0 +1,770 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>JOMS Payment Test Harness</title>
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #0b0b0f;
+        --panel: #14141a;
+        --panel-2: #1b1b24;
+        --border: rgba(255, 255, 255, 0.08);
+        --text: #f4f4f5;
+        --muted: #a1a1aa;
+        --gold: #ebc38c;
+        --gold-dim: rgba(235, 195, 140, 0.12);
+        --green: #34d399;
+        --red: #f87171;
+        --blue: #60a5fa;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family:
+          Inter,
+          system-ui,
+          -apple-system,
+          Segoe UI,
+          sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        line-height: 1.5;
+      }
+
+      .wrap {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 24px;
+      }
+
+      header {
+        margin-bottom: 24px;
+      }
+
+      h1 {
+        margin: 0 0 8px;
+        font-size: 1.75rem;
+      }
+
+      .subtitle {
+        color: var(--muted);
+        margin: 0;
+      }
+
+      .grid {
+        display: grid;
+        gap: 16px;
+        grid-template-columns: 1fr 1fr;
+      }
+
+      @media (max-width: 960px) {
+        .grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .card {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 20px;
+      }
+
+      .card h2 {
+        margin: 0 0 16px;
+        font-size: 1rem;
+        color: var(--gold);
+      }
+
+      label {
+        display: block;
+        font-size: 12px;
+        color: var(--muted);
+        margin-bottom: 6px;
+      }
+
+      input,
+      select,
+      textarea {
+        width: 100%;
+        background: var(--panel-2);
+        border: 1px solid var(--border);
+        color: var(--text);
+        border-radius: 10px;
+        padding: 10px 12px;
+        font: inherit;
+      }
+
+      textarea {
+        min-height: 88px;
+        resize: vertical;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 12px;
+      }
+
+      .field {
+        margin-bottom: 14px;
+      }
+
+      .row {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      button {
+        border: 0;
+        border-radius: 10px;
+        padding: 10px 14px;
+        font: inherit;
+        font-weight: 600;
+        cursor: pointer;
+      }
+
+      .btn-primary {
+        background: var(--gold);
+        color: #111;
+      }
+
+      .btn-secondary {
+        background: transparent;
+        color: var(--text);
+        border: 1px solid var(--border);
+      }
+
+      .btn-danger {
+        background: rgba(248, 113, 113, 0.15);
+        color: var(--red);
+        border: 1px solid rgba(248, 113, 113, 0.25);
+      }
+
+      .btn:disabled,
+      button:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+      }
+
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        border-radius: 999px;
+        padding: 4px 10px;
+        font-size: 12px;
+        background: var(--gold-dim);
+        color: var(--gold);
+      }
+
+      .status-created {
+        color: var(--blue);
+      }
+      .status-paid {
+        color: #fbbf24;
+      }
+      .status-fulfilled {
+        color: var(--green);
+      }
+      .status-failed {
+        color: var(--red);
+      }
+
+      .log {
+        background: #09090d;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 12px;
+        min-height: 320px;
+        max-height: 520px;
+        overflow: auto;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 12px;
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
+
+      .log-entry {
+        margin-bottom: 12px;
+        padding-bottom: 12px;
+        border-bottom: 1px dashed rgba(255, 255, 255, 0.06);
+      }
+
+      .log-time {
+        color: var(--muted);
+      }
+
+      .log-ok {
+        color: var(--green);
+      }
+      .log-error {
+        color: var(--red);
+      }
+      .log-info {
+        color: var(--blue);
+      }
+
+      .hint {
+        font-size: 12px;
+        color: var(--muted);
+        margin-top: 6px;
+      }
+
+      .module-fields {
+        border-top: 1px solid var(--border);
+        margin-top: 8px;
+        padding-top: 12px;
+      }
+
+      .summary {
+        display: grid;
+        gap: 8px;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .summary-item {
+        background: var(--panel-2);
+        border-radius: 10px;
+        padding: 10px 12px;
+      }
+
+      .summary-item span {
+        display: block;
+        font-size: 11px;
+        color: var(--muted);
+      }
+
+      .summary-item strong {
+        font-size: 13px;
+      }
+
+      .future-note {
+        margin-top: 12px;
+        padding: 10px 12px;
+        border-radius: 10px;
+        background: rgba(96, 165, 250, 0.08);
+        color: #bfdbfe;
+        font-size: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <h1>JOMS Payment Test Harness</h1>
+        <p class="subtitle">
+          Partner-side payment sandbox for membership and future modules. Open at
+          <code>/payment-test.html</code> while the frontend dev server is running.
+        </p>
+      </header>
+
+      <div class="grid">
+        <section class="card">
+          <h2>Connection</h2>
+          <div class="field">
+            <label for="paymentApiUrl">Payment API base URL</label>
+            <input id="paymentApiUrl" value="http://localhost:8008" />
+            <p class="hint">Production: https://api.kods.online (nginx routes /payments)</p>
+          </div>
+          <div class="field">
+            <label for="membershipApiUrl">Membership API base URL (optional — load plans)</label>
+            <input id="membershipApiUrl" value="http://localhost:8006" />
+          </div>
+          <div class="field">
+            <label for="partnerToken">Partner JWT (Bearer token)</label>
+            <textarea
+              id="partnerToken"
+              placeholder="Paste partner access token from auth login"
+            ></textarea>
+            <p class="hint">
+              Login as partner in the app, copy token from localStorage/auth store, or use Bearer
+              from network tab.
+            </p>
+          </div>
+          <div class="row">
+            <button class="btn-secondary" id="saveConfigBtn" type="button">
+              Save config locally
+            </button>
+            <button class="btn-secondary" id="clearLogBtn" type="button">Clear log</button>
+          </div>
+        </section>
+
+        <section class="card">
+          <h2>Current order</h2>
+          <div class="summary" id="orderSummary">
+            <div class="summary-item"><span>Status</span><strong id="sumStatus">—</strong></div>
+            <div class="summary-item"><span>Order ID</span><strong id="sumOrderId">—</strong></div>
+            <div class="summary-item">
+              <span>Razorpay order</span><strong id="sumRzpOrder">—</strong>
+            </div>
+            <div class="summary-item"><span>Amount</span><strong id="sumAmount">—</strong></div>
+          </div>
+          <div class="future-note">
+            Module registry is extensible — add new modules in the script block below (venue,
+            service, etc.).
+          </div>
+        </section>
+      </div>
+
+      <div class="grid" style="margin-top: 16px">
+        <section class="card">
+          <h2>Create payment order</h2>
+          <div class="field">
+            <label for="moduleSelect">Module</label>
+            <select id="moduleSelect"></select>
+          </div>
+          <div class="module-fields" id="moduleFields"></div>
+          <div class="field">
+            <label for="rawModuleData">Advanced moduleData JSON (optional override)</label>
+            <textarea
+              id="rawModuleData"
+              placeholder='{"membershipPlanId":"...","billingCycleName":"Monthly"}'
+            ></textarea>
+          </div>
+          <div class="row">
+            <button class="btn-primary" id="createOrderBtn" type="button">1. Create order</button>
+            <button class="btn-primary" id="payBtn" type="button" disabled>
+              2. Pay with Razorpay
+            </button>
+            <button class="btn-secondary" id="verifyBtn" type="button" disabled>
+              3. Verify manually
+            </button>
+            <button class="btn-secondary" id="pollBtn" type="button" disabled>
+              4. Poll status
+            </button>
+          </div>
+          <div class="row" style="margin-top: 10px">
+            <button class="btn-secondary" id="myPaymentsBtn" type="button">My payments</button>
+            <button class="btn-secondary" id="loadPlansBtn" type="button">Load expert plans</button>
+          </div>
+        </section>
+
+        <section class="card">
+          <h2>Manual verify fields</h2>
+          <div class="field">
+            <label for="manualOrderId">orderId</label>
+            <input id="manualOrderId" />
+          </div>
+          <div class="field">
+            <label for="manualRzpOrderId">razorpayOrderId</label>
+            <input id="manualRzpOrderId" />
+          </div>
+          <div class="field">
+            <label for="manualRzpPaymentId">razorpayPaymentId</label>
+            <input id="manualRzpPaymentId" />
+          </div>
+          <div class="field">
+            <label for="manualRzpSignature">razorpaySignature</label>
+            <input id="manualRzpSignature" />
+          </div>
+          <p class="hint">
+            Filled automatically after Razorpay checkout success. Use manual verify if checkout
+            callback fails.
+          </p>
+        </section>
+      </div>
+
+      <section class="card" style="margin-top: 16px">
+        <h2>Activity log</h2>
+        <div class="log" id="log"></div>
+      </section>
+    </div>
+
+    <script>
+      /**
+       * Module registry — add future modules here.
+       * Each module defines UI fields and how to build moduleData.
+       */
+      const MODULE_REGISTRY = {
+        membership: {
+          label: 'Membership (expert plan purchase)',
+          fields: [
+            {
+              id: 'membershipPlanId',
+              label: 'Membership plan ID (Mongo ObjectId)',
+              type: 'text',
+              placeholder: '665abc123...',
+              required: true,
+            },
+            {
+              id: 'billingCycleName',
+              label: 'Billing cycle',
+              type: 'select',
+              options: [
+                'Monthly',
+                'Weekly',
+                '3 months',
+                '6 months',
+                'Annual',
+                'Yearly',
+                'Lifetime',
+              ],
+              required: true,
+            },
+            {
+              id: 'autoRenew',
+              label: 'Auto renew',
+              type: 'checkbox',
+            },
+            {
+              id: 'partnerName',
+              label: 'Partner name override (optional)',
+              type: 'text',
+              placeholder: 'Uses JWT name if empty',
+            },
+          ],
+          buildModuleData(values) {
+            const data = {
+              membershipPlanId: values.membershipPlanId?.trim(),
+              billingCycleName: values.billingCycleName,
+            }
+            if (values.autoRenew) data.autoRenew = true
+            if (values.partnerName?.trim()) data.partnerName = values.partnerName.trim()
+            return data
+          },
+        },
+        // Future modules — uncomment and implement when backend registry is ready:
+        // venue: { label: 'Venue booking', fields: [...], buildModuleData(values) { return values; } },
+        // service: { label: 'Service booking', fields: [...], buildModuleData(values) { return values; } },
+      }
+
+      const STORAGE_KEY = 'joms-payment-test-config'
+      let currentOrder = null
+
+      const els = {
+        paymentApiUrl: document.getElementById('paymentApiUrl'),
+        membershipApiUrl: document.getElementById('membershipApiUrl'),
+        partnerToken: document.getElementById('partnerToken'),
+        moduleSelect: document.getElementById('moduleSelect'),
+        moduleFields: document.getElementById('moduleFields'),
+        rawModuleData: document.getElementById('rawModuleData'),
+        log: document.getElementById('log'),
+        sumStatus: document.getElementById('sumStatus'),
+        sumOrderId: document.getElementById('sumOrderId'),
+        sumRzpOrder: document.getElementById('sumRzpOrder'),
+        sumAmount: document.getElementById('sumAmount'),
+        manualOrderId: document.getElementById('manualOrderId'),
+        manualRzpOrderId: document.getElementById('manualRzpOrderId'),
+        manualRzpPaymentId: document.getElementById('manualRzpPaymentId'),
+        manualRzpSignature: document.getElementById('manualRzpSignature'),
+        createOrderBtn: document.getElementById('createOrderBtn'),
+        payBtn: document.getElementById('payBtn'),
+        verifyBtn: document.getElementById('verifyBtn'),
+        pollBtn: document.getElementById('pollBtn'),
+      }
+
+      function log(message, type = 'info', data) {
+        const entry = document.createElement('div')
+        entry.className = 'log-entry'
+        const time = new Date().toLocaleTimeString()
+        const dataBlock = data !== undefined ? `\n${JSON.stringify(data, null, 2)}` : ''
+        entry.innerHTML = `<div class="log-time">[${time}] <span class="log-${type}">${message}</span></div>${escapeHtml(dataBlock)}`
+        els.log.prepend(entry)
+      }
+
+      function escapeHtml(text) {
+        return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      }
+
+      function saveConfig() {
+        localStorage.setItem(
+          STORAGE_KEY,
+          JSON.stringify({
+            paymentApiUrl: els.paymentApiUrl.value.trim(),
+            membershipApiUrl: els.membershipApiUrl.value.trim(),
+            partnerToken: els.partnerToken.value.trim(),
+            module: els.moduleSelect.value,
+          }),
+        )
+        log('Config saved to localStorage', 'ok')
+      }
+
+      function loadConfig() {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY)
+          if (!raw) return
+          const cfg = JSON.parse(raw)
+          if (cfg.paymentApiUrl) els.paymentApiUrl.value = cfg.paymentApiUrl
+          if (cfg.membershipApiUrl) els.membershipApiUrl.value = cfg.membershipApiUrl
+          if (cfg.partnerToken) els.partnerToken.value = cfg.partnerToken
+          if (cfg.module && MODULE_REGISTRY[cfg.module]) els.moduleSelect.value = cfg.module
+        } catch (error) {
+          log('Failed to load saved config', 'error', { error: error.message })
+        }
+      }
+
+      function getAuthHeaders() {
+        const token = els.partnerToken.value.trim()
+        if (!token) throw new Error('Partner JWT is required')
+        return {
+          'Content-Type': 'application/json',
+          Authorization: token.startsWith('Bearer ') ? token : `Bearer ${token}`,
+        }
+      }
+
+      function paymentBase() {
+        return els.paymentApiUrl.value.trim().replace(/\/+$/, '')
+      }
+
+      function membershipBase() {
+        return els.membershipApiUrl.value.trim().replace(/\/+$/, '')
+      }
+
+      async function apiRequest(url, options = {}) {
+        log(
+          `${options.method || 'GET'} ${url}`,
+          'info',
+          options.body ? JSON.parse(options.body) : undefined,
+        )
+        const response = await fetch(url, options)
+        const payload = await response.json().catch(() => null)
+        if (!response.ok) {
+          log(`HTTP ${response.status}`, 'error', payload)
+          throw new Error(payload?.message || `Request failed (${response.status})`)
+        }
+        log('Success', 'ok', payload)
+        return payload
+      }
+
+      function renderModuleSelect() {
+        els.moduleSelect.innerHTML = Object.entries(MODULE_REGISTRY)
+          .map(([key, mod]) => `<option value="${key}">${mod.label}</option>`)
+          .join('')
+        renderModuleFields()
+      }
+
+      function renderModuleFields() {
+        const moduleKey = els.moduleSelect.value
+        const mod = MODULE_REGISTRY[moduleKey]
+        els.moduleFields.innerHTML = mod.fields
+          .map((field) => {
+            if (field.type === 'select') {
+              return `
+                <div class="field">
+                  <label for="field-${field.id}">${field.label}</label>
+                  <select id="field-${field.id}">
+                    ${field.options.map((opt) => `<option value="${opt}">${opt}</option>`).join('')}
+                  </select>
+                </div>`
+            }
+            if (field.type === 'checkbox') {
+              return `
+                <div class="field">
+                  <label><input type="checkbox" id="field-${field.id}" /> ${field.label}</label>
+                </div>`
+            }
+            return `
+              <div class="field">
+                <label for="field-${field.id}">${field.label}</label>
+                <input id="field-${field.id}" type="text" placeholder="${field.placeholder || ''}" />
+              </div>`
+          })
+          .join('')
+      }
+
+      function collectModuleValues() {
+        const moduleKey = els.moduleSelect.value
+        const mod = MODULE_REGISTRY[moduleKey]
+        const values = {}
+        for (const field of mod.fields) {
+          const el = document.getElementById(`field-${field.id}`)
+          if (!el) continue
+          values[field.id] = field.type === 'checkbox' ? el.checked : el.value
+          if (field.required && !values[field.id]) {
+            throw new Error(`${field.label} is required`)
+          }
+        }
+        return mod.buildModuleData(values)
+      }
+
+      function buildCreateOrderPayload() {
+        const moduleKey = els.moduleSelect.value
+        let moduleData
+        const raw = els.rawModuleData.value.trim()
+        if (raw) {
+          moduleData = JSON.parse(raw)
+        } else {
+          moduleData = collectModuleValues()
+        }
+        return { module: moduleKey, moduleData }
+      }
+
+      function updateOrderSummary(order, status) {
+        els.sumStatus.textContent = status || order?.status || '—'
+        els.sumStatus.className = status ? `status-${status}` : ''
+        els.sumOrderId.textContent = order?.orderId || '—'
+        els.sumRzpOrder.textContent = order?.razorpayOrderId || '—'
+        els.sumAmount.textContent = order ? `₹${order.amount} (${order.amountPaise} paise)` : '—'
+        els.payBtn.disabled = !order?.razorpayOrderId
+        els.verifyBtn.disabled = !order?.orderId
+        els.pollBtn.disabled = !order?.orderId
+      }
+
+      function fillManualVerify(response) {
+        els.manualOrderId.value = currentOrder?.orderId || ''
+        els.manualRzpOrderId.value =
+          response.razorpay_order_id || currentOrder?.razorpayOrderId || ''
+        els.manualRzpPaymentId.value = response.razorpay_payment_id || ''
+        els.manualRzpSignature.value = response.razorpay_signature || ''
+      }
+
+      async function createOrder() {
+        const payload = buildCreateOrderPayload()
+        const result = await apiRequest(`${paymentBase()}/payments/orders`, {
+          method: 'POST',
+          headers: getAuthHeaders(),
+          body: JSON.stringify(payload),
+        })
+        currentOrder = result.data
+        updateOrderSummary(currentOrder, 'created')
+        els.manualOrderId.value = currentOrder.orderId
+        els.manualRzpOrderId.value = currentOrder.razorpayOrderId
+        saveConfig()
+      }
+
+      function openRazorpayCheckout() {
+        if (!currentOrder) throw new Error('Create an order first')
+        if (typeof Razorpay === 'undefined') throw new Error('Razorpay checkout script not loaded')
+
+        const options = {
+          key: currentOrder.keyId,
+          amount: currentOrder.amountPaise,
+          currency: currentOrder.currency || 'INR',
+          name: 'JOMS',
+          description: currentOrder.description || `${currentOrder.module} payment`,
+          order_id: currentOrder.razorpayOrderId,
+          prefill: currentOrder.prefill || {},
+          theme: { color: '#EBC38C' },
+          handler(response) {
+            log('Razorpay checkout success', 'ok', response)
+            fillManualVerify(response)
+            verifyPayment(response)
+          },
+          modal: {
+            ondismiss() {
+              log('Razorpay checkout dismissed', 'error')
+            },
+          },
+        }
+
+        log('Opening Razorpay checkout', 'info', options)
+        const rzp = new Razorpay(options)
+        rzp.on('payment.failed', (response) => {
+          log('Razorpay payment failed', 'error', response.error)
+        })
+        rzp.open()
+      }
+
+      async function verifyPayment(razorpayResponse) {
+        const body = {
+          orderId: els.manualOrderId.value.trim() || currentOrder?.orderId,
+          razorpayOrderId: razorpayResponse?.razorpay_order_id || els.manualRzpOrderId.value.trim(),
+          razorpayPaymentId:
+            razorpayResponse?.razorpay_payment_id || els.manualRzpPaymentId.value.trim(),
+          razorpaySignature:
+            razorpayResponse?.razorpay_signature || els.manualRzpSignature.value.trim(),
+        }
+
+        if (
+          !body.orderId ||
+          !body.razorpayOrderId ||
+          !body.razorpayPaymentId ||
+          !body.razorpaySignature
+        ) {
+          throw new Error('All verify fields are required')
+        }
+
+        const result = await apiRequest(`${paymentBase()}/payments/verify`, {
+          method: 'POST',
+          headers: getAuthHeaders(),
+          body: JSON.stringify(body),
+        })
+
+        const status = result.data?.status || 'fulfilled'
+        updateOrderSummary(currentOrder, status)
+        if (result.data?.fulfillmentResult) {
+          log('Fulfillment result', 'ok', result.data.fulfillmentResult)
+        }
+      }
+
+      async function pollStatus() {
+        const orderId = currentOrder?.orderId || els.manualOrderId.value.trim()
+        if (!orderId) throw new Error('orderId is required')
+        const result = await apiRequest(`${paymentBase()}/payments/orders/${orderId}/status`, {
+          method: 'GET',
+          headers: getAuthHeaders(),
+        })
+        updateOrderSummary(currentOrder, result.data?.status)
+      }
+
+      async function fetchMyPayments() {
+        await apiRequest(`${paymentBase()}/payments/me`, {
+          method: 'GET',
+          headers: getAuthHeaders(),
+        })
+      }
+
+      async function loadExpertPlans() {
+        const result = await apiRequest(
+          `${membershipBase()}/memberships?type=expert&status=active&limit=20`,
+          {
+            method: 'GET',
+            headers: getAuthHeaders(),
+          },
+        )
+        const plans = result.data?.memberships || result.data || []
+        log(
+          `Loaded ${plans.length} expert plan(s)`,
+          'ok',
+          plans.map((p) => ({
+            _id: p._id,
+            planId: p.planId,
+            planName: p.planName,
+            pricing: p.pricing,
+          })),
+        )
+        if (plans[0]?._id) {
+          const planField = document.getElementById('field-membershipPlanId')
+          if (planField) planField.value = plans[0]._id
+        }
+      }
+
+      els.moduleSelect.addEventListener('change', renderModuleFields)
+      document.getElementById('saveConfigBtn').addEventListener('click', saveConfig)
+      document.getElementById('clearLogBtn').addEventListener('click', () => {
+        els.log.innerHTML = ''
+      })
+      els.createOrderBtn.addEventListener('click', () =>
+        createOrder().catch((e) => log(e.message, 'error')),
+      )
+      els.payBtn.addEventListener('click', () => {
+        try {
+          openRazorpayCheckout()
+        } catch (e) {
+          log(e.message, 'error')
+        }
+      })
+      els.verifyBtn.addEventListener('click', () =>
+        verifyPayment().catch((e) => log(e.message, 'error')),
+      )
+      els.pollBtn.addEventListener('click', () =>
+        pollStatus().catch((e) => log(e.message, 'error')),
+      )
+      document
+        .getElementById('myPaymentsBtn')
+        .addEventListener('click', () => fetchMyPayments().catch((e) => log(e.message, 'error')))
+      document
+        .getElementById('loadPlansBtn')
+        .addEventListener('click', () => loadExpertPlans().catch((e) => log(e.message, 'error')))
+
+      renderModuleSelect()
+      loadConfig()
+      log('Payment test harness ready', 'ok')
+    </script>
+  </body>
+</html>
