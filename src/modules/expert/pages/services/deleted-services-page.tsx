@@ -5,10 +5,7 @@ import {
   Eye,
   RotateCcw,
   Upload,
-  Plus,
-  SlidersHorizontal,
 } from 'lucide-react'
-import { Button } from '@/shared/components/ui/button'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 

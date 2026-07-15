@@ -24,7 +24,6 @@ interface Props {
 const SubCategoryCard = ({
   subCategories,
   onAdd,
-  onRemove,
   onNameChange,
   onDescriptionChange,
   onIconChange,

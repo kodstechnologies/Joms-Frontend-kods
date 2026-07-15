@@ -345,18 +345,6 @@ function SpacesTab({
     return typeof capacity === 'number' ? `${capacity}` : capacity
   }
 
-  const getSpaceStatusLabel = (status?: VenueFullViewSpaceSummary['status']) => {
-    if (status === 'approved') return 'Approved'
-    if (status === 'rejected') return 'Rejected'
-    return 'Pending Review'
-  }
-
-  const getSpaceStatusClass = (status?: VenueFullViewSpaceSummary['status']) => {
-    if (status === 'approved') return 'bg-emerald-500/15 text-emerald-400'
-    if (status === 'rejected') return 'bg-red-500/15 text-red-400'
-    return 'bg-amber-500/15 text-amber-300'
-  }
-
   return (
     <div className="rounded-xl border border-white/5 bg-[#111111] p-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">

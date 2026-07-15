@@ -1,5 +1,5 @@
 import type { LucideIcon } from 'lucide-react'
-import { BarChart3, Hourglass, Plus, Trash2,SlidersHorizontal } from 'lucide-react'
+import { Hourglass, Plus, Trash2, SlidersHorizontal } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
 import { Button } from '@/shared/components/ui/button'
@@ -59,7 +59,7 @@ export function CategoryManagementPageHeader({
       <div className="flex w-full flex-col items-center gap-3 md:w-auto md:flex-row">
         <Button
           className="h-9 w-full md:w-auto"
-          onClick={() => navigate('/services/dashboard/metrics')}
+          onClick={() => navigate(metricsPath)}
         >
           <SlidersHorizontal className="size-4" />
           Manage Metrics
@@ -68,7 +68,7 @@ export function CategoryManagementPageHeader({
         <Button
           type="button"
           className="h-9 w-full md:w-auto"
-          onClick={() => navigate('/venues/categories/management/create')}
+          onClick={() => navigate(createPath)}
         >
           <Plus className="size-4" />
           Add New Category
