@@ -17,7 +17,6 @@ import { useCategories, useSubcategories } from '@/modules/expert/hooks/use-cate
 import {
   useConsultationTopics,
   useCreateConsultation,
-  useCreateConsultationTopic,
   useCreateService,
   usePublishConsultation,
   usePublishService,
@@ -36,7 +35,6 @@ import {
 } from '@/modules/expert/lib/listing-form-utils'
 import type { ConsultationTopic } from '@/modules/expert/type/service'
 import type { UpdateServicePricingPayload } from '@/modules/expert/type/service'
-import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
 import { CreateListingWizard } from '@/modules/expert/components'
 
@@ -101,7 +99,6 @@ export const CreateServiceListingPage = () => {
 
   const [consultationTitle, setConsultationTitle] = useState('')
   const [topics, setTopics] = useState<ConsultationTopic[]>([])
-  const [newTopicName, setNewTopicName] = useState('')
   const [sessionOutline, setSessionOutline] = useState('')
   const [whoItsFor, setWhoItsFor] = useState('')
   const [languages, setLanguages] = useState('')
@@ -134,7 +131,6 @@ export const CreateServiceListingPage = () => {
   const createConsultationMutation = useCreateConsultation()
   const { data: topicsResponse, isLoading: isTopicsLoading } = useConsultationTopics({ limit: 100 })
   const topicOptions = topicsResponse?.data || []
-  const createTopicMutation = useCreateConsultationTopic()
   const updateConsultationAdditionalInfoMutation = useUpdateConsultationAdditionalInfo()
   const updateConsultationPricingMutation = useUpdateConsultationPricing()
   const publishConsultationMutation = usePublishConsultation()
@@ -221,30 +217,6 @@ export const CreateServiceListingPage = () => {
     if (!topic) return
     if (topics.some((selected) => selected._id === topic._id)) return
     setTopics((current) => [...current, topic])
-  }
-
-  const handleCreateTopic = async () => {
-    const name = newTopicName.trim()
-    if (!name) {
-      toast.error('Topic name is required.')
-      return
-    }
-    if (topicOptions.some((option) => option.name.toLowerCase() === name.toLowerCase())) {
-      toast.error('This topic already exists. Select it from the dropdown.')
-      return
-    }
-    try {
-      const response = await createTopicMutation.mutateAsync(name)
-      setTopics((current) =>
-        current.some((selected) => selected._id === response.data._id)
-          ? current
-          : [...current, response.data],
-      )
-      setNewTopicName('')
-      toast.success('Topic created and added')
-    } catch (error) {
-      toast.error(getApiErrorMessage(error, 'Failed to create topic'))
-    }
   }
 
   const removeTopic = (topicId: string) => {
@@ -520,7 +492,7 @@ export const CreateServiceListingPage = () => {
                     {isTopicsLoading
                       ? 'Loading topics...'
                       : topicOptions.length === 0
-                        ? 'No topics yet — create one below'
+                        ? 'No topics available'
                         : 'Select a topic'}
                   </option>
                   {topicOptions
@@ -532,29 +504,6 @@ export const CreateServiceListingPage = () => {
                     ))}
                 </select>
                 <ChevronDown className="pointer-events-none absolute top-1/2 right-3 size-3 -translate-y-1/2 text-white" />
-              </div>
-              <div className="grid grid-cols-1 gap-2 md:grid-cols-[1fr_auto]">
-                <input
-                  type="text"
-                  placeholder="Or create a new topic"
-                  value={newTopicName}
-                  onChange={(e) => setNewTopicName(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault()
-                      handleCreateTopic()
-                    }
-                  }}
-                  className={consultationInputClass}
-                />
-                <Button
-                  type="button"
-                  onClick={handleCreateTopic}
-                  disabled={createTopicMutation.isPending}
-                  className="h-9 text-[11px] font-bold"
-                >
-                  {createTopicMutation.isPending ? 'Creating...' : 'Create'}
-                </Button>
               </div>
               {topics.length > 0 && (
                 <div className="flex flex-wrap gap-2 pt-1">

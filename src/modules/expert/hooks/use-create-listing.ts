@@ -1,7 +1,6 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import {
   createConsultation,
-  createConsultationTopic,
   createService,
   fetchConsultationTopics,
   publishConsultation,
@@ -50,16 +49,6 @@ export const useConsultationTopics = (params?: {
     queryKey: ['consultation-topics', params],
     queryFn: () => fetchConsultationTopics(params),
   })
-
-export const useCreateConsultationTopic = () => {
-  const queryClient = useQueryClient()
-  return useMutation({
-    mutationFn: (name: string) => createConsultationTopic(name),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['consultation-topics'] })
-    },
-  })
-}
 
 export const useCreateConsultation = () =>
   useMutation({

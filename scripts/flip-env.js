@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync, existsSync } from 'node:fs'
+import { writeFileSync, existsSync, readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -7,18 +7,26 @@ const frontendRoot = join(__dirname, '..')
 const envPath = join(frontendRoot, '.env')
 const productionEnvPath = join(frontendRoot, '.env.production')
 
-const PROD_BASE = 'https://api.kods.online'
-const LOCAL_BASE = 'http://localhost'
+const LOCAL_ENV = `VITE_AUTH_API_BASE_URL=http://localhost:8000
+VITE_ADMIN_API_BASE_URL=http://localhost:8001
+VITE_SERVICE_API_BASE_URL=http://localhost:8004
+VITE_VENUE_API_BASE_URL=http://localhost:8005
+VITE_KYC_API_BASE_URL=http://localhost:8003
+VITE_MEMBERSHIP_API_BASE_URL=http://localhost:8006
+VITE_SETTINGS_API_BASE_URL=http://localhost:8007
+`
 
-function getActiveBaseUrl(content) {
-  const match = content.match(/^VITE_API_BASE_URL=(.+)$/m)
-  return match?.[1]?.trim() ?? null
-}
+const PROD_ENV = `VITE_AUTH_API_BASE_URL=https://auth.api.kods.online
+VITE_ADMIN_API_BASE_URL=https://admin.api.kods.online
+VITE_SERVICE_API_BASE_URL=https://services.api.kods.online
+VITE_VENUE_API_BASE_URL=https://venues.api.kods.online
+VITE_KYC_API_BASE_URL=https://kyc.api.kods.online
+VITE_MEMBERSHIP_API_BASE_URL=https://membership.api.kods.online
+VITE_SETTINGS_API_BASE_URL=https://settings.api.kods.online
+`
 
 function detectMode(content) {
-  const activeBase = getActiveBaseUrl(content)
-  if (!activeBase) return 'production'
-  return activeBase.includes('localhost') ? 'local' : 'production'
+  return content.includes('localhost') ? 'local' : 'production'
 }
 
 function resolveTargetMode(arg) {
@@ -38,30 +46,17 @@ function resolveTargetMode(arg) {
   process.exit(1)
 }
 
-function flipContent(content, target) {
-  const activeBase = target === 'local' ? LOCAL_BASE : PROD_BASE
-
-  if (/^VITE_API_BASE_URL=/m.test(content)) {
-    return content.replace(/^VITE_API_BASE_URL=.*$/m, `VITE_API_BASE_URL=${activeBase}`)
-  }
-
-  return `VITE_API_BASE_URL=${activeBase}\n${content}`
-}
-
 function main() {
   const target = resolveTargetMode(process.argv[2])
-  const activeBase = target === 'local' ? LOCAL_BASE : PROD_BASE
+  const content = target === 'local' ? LOCAL_ENV : PROD_ENV
 
-  for (const filePath of [envPath, productionEnvPath]) {
-    if (!existsSync(filePath)) continue
-
-    const original = readFileSync(filePath, 'utf8')
-    const updated = flipContent(original, target)
-    writeFileSync(filePath, updated.endsWith('\n') ? updated : `${updated}\n`, 'utf8')
+  writeFileSync(envPath, content, 'utf8')
+  if (existsSync(productionEnvPath)) {
+    writeFileSync(productionEnvPath, content, 'utf8')
   }
 
   console.log(`Frontend environment switched to: ${target.toUpperCase()}`)
-  console.log(`VITE_API_BASE_URL=${activeBase}`)
+  console.log(content.trim())
   console.log('Updated: .env' + (existsSync(productionEnvPath) ? ', .env.production' : ''))
 }
 

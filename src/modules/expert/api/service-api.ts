@@ -5,7 +5,6 @@ import type {
   ConsultationStatusUpdateResponse,
   CreateConsultationPayload,
   CreateConsultationResponse,
-  CreateTopicResponse,
   TopicListResponse,
   CreateServicePayload,
   CreateServiceResponse,
@@ -112,13 +111,6 @@ export const fetchConsultationTopics = async (params?: {
   limit?: number
 }) => {
   const response = await expertApiClient.get<TopicListResponse>('/consultations/topics', { params })
-  return response.data
-}
-
-export const createConsultationTopic = async (name: string) => {
-  const response = await expertApiClient.post<CreateTopicResponse>('/consultations/topics', {
-    name,
-  })
   return response.data
 }
 
