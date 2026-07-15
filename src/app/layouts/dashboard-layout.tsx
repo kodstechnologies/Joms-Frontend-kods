@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
 import { PanelLeftClose } from 'lucide-react'
 import { cn } from '@/shared/lib/cn'
@@ -12,6 +12,17 @@ import { PageContainer } from '@/shared/components/responsive/page-container'
 import { useMediaQuery } from '@/shared/hooks/use-media-query'
 import { uiTokens } from '@/shared/lib/design-tokens'
 import { useSyncSubAdminPermissions } from '@/modules/auth/hooks/use-sync-sub-admin-permissions'
+
+function PageContentLoader() {
+  return (
+    <div className="flex min-h-[50vh] w-full items-center justify-center py-16">
+      <div className="flex flex-col items-center gap-4">
+        <div className="size-9 animate-spin rounded-full border-4 border-brand-accent border-t-transparent" />
+        <p className="animate-pulse text-sm font-medium text-brand-muted">Loading...</p>
+      </div>
+    </div>
+  )
+}
 
 export function DashboardLayout() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
@@ -46,7 +57,6 @@ export function DashboardLayout() {
           showCompact ? 'w-[5.75rem]' : 'w-[18.5rem]',
         )}
       >
-        {/* Sidebar header: brand + PanelLeftClose stay inside the sidebar */}
         <div
           className={cn(
             'relative z-10 flex h-16 shrink-0 items-center border-b border-white/5',
@@ -106,7 +116,9 @@ export function DashboardLayout() {
         >
           <div className="py-4 lg:py-6">
             <PageContainer>
-              <Outlet />
+              <Suspense fallback={<PageContentLoader />}>
+                <Outlet />
+              </Suspense>
             </PageContainer>
           </div>
         </main>

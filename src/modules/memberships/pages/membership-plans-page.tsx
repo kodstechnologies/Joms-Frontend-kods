@@ -1,4 +1,4 @@
-import { BarChart3, Ban, Clock, Download, Hourglass, Plus, Search, Trash2 } from 'lucide-react'
+import { AlertCircle, Ban, BarChart3, Download, Hourglass, Plus, Search, Trash2 } from 'lucide-react'
 import { useMemo, useState, type ComponentProps, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
@@ -49,7 +49,8 @@ type MembershipPlansPageProps = {
 export function MembershipPlansPage({
   fixedStatus,
   title = 'Membership Management',
-  subtitle = 'Centralized expert membership system with analytics, plans configuration, and lifecycle controls.',
+  subtitle =
+    'Centralized expert membership system with analytics, plan configuration, and lifecycle controls',
 }: MembershipPlansPageProps) {
   const navigate = useNavigate()
   const [createOpen, setCreateOpen] = useState(false)
@@ -98,45 +99,35 @@ export function MembershipPlansPage({
   const statusCards: Array<{
     label: string
     count: number
-    color: string
-    bg: string
-    border: string
+    tone: 'gold' | 'danger'
     icon: LucideIcon
     status: MembershipStatus
   }> = [
     {
       label: 'Active Plans',
       count: counts.active,
-      color: 'text-amber-400',
-      bg: 'bg-amber-400/10',
-      border: 'border-amber-400/20',
+      tone: 'gold',
       icon: Hourglass,
       status: 'active',
     },
     {
       label: 'Inactive Plans',
       count: counts.inactive,
-      color: 'text-red-400',
-      bg: 'bg-red-400/10',
-      border: 'border-red-400/20',
+      tone: 'danger',
       icon: Ban,
       status: 'inactive',
     },
     {
       label: 'Cancelled Plans',
       count: counts.cancelled,
-      color: 'text-red-400',
-      bg: 'bg-red-400/10',
-      border: 'border-red-400/20',
-      icon: Clock,
+      tone: 'danger',
+      icon: AlertCircle,
       status: 'cancelled',
     },
     {
       label: 'Deleted Plans',
       count: counts.deleted,
-      color: 'text-slate-400',
-      bg: 'bg-slate-400/10',
-      border: 'border-slate-400/20',
+      tone: 'danger',
       icon: Trash2,
       status: 'deleted',
     },
@@ -288,15 +279,14 @@ export function MembershipPlansPage({
   }
 
   return (
-    <div className="flex flex-col gap-4 md:gap-6">
+    <div className="flex flex-col gap-5 md:gap-6">
       <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
-        <div>
-          <h1 className="text-2xl font-bold text-white md:text-3xl">{title}</h1>
-          <p className="mt-1 text-sm text-slate-400 md:text-base">{subtitle}</p>
+        <div className="max-w-3xl">
+          <h1 className="text-[28px] font-bold tracking-tight text-white md:text-[32px]">{title}</h1>
+          <p className="mt-2 text-sm leading-relaxed text-[#9A9A9A] md:text-[15px]">{subtitle}</p>
         </div>
         <Button
-          variant="secondary"
-          className="w-full md:w-auto"
+          className="w-full shrink-0 border-0 bg-[#EBC38C] text-black hover:bg-[#E0B57A] active:bg-[#D4A86C] md:w-auto"
           onClick={() => toast.info('Metrics configuration coming soon')}
         >
           <BarChart3 className="size-4" />
@@ -307,7 +297,7 @@ export function MembershipPlansPage({
       <MembershipStatsBar />
 
       <div className="flex justify-center">
-        <div className="inline-flex flex-wrap items-center justify-center gap-1 rounded-xl border border-white/10 bg-black/40 p-1">
+        <div className="inline-flex flex-wrap items-center justify-center gap-1 rounded-xl border border-white/10 bg-[#0A0A0A] p-1">
           <TabButton active>Membership Plans</TabButton>
           <TabButton onClick={() => navigate('/memberships/experts')}>
             Expert Memberships Management
@@ -317,20 +307,27 @@ export function MembershipPlansPage({
 
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div className="relative max-w-md flex-1">
-          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
+          <Search className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-[#7A7A7A]" />
           <Input
             value={searchQuery}
             onChange={(event) => setSearchQuery(event.target.value)}
             placeholder="Search by membership"
-            className="border-white/10 bg-black/40 pl-10 text-white"
+            className="h-11 rounded-full border-white/10 bg-[#0A0A0A] pl-11 text-sm text-white placeholder:text-[#6B6B6B]"
           />
         </div>
-        <div className="flex flex-wrap gap-2">
-          <Button variant="secondary" onClick={() => toast.info('Export coming soon')}>
+        <div className="flex flex-wrap gap-2.5">
+          <Button
+            variant="secondary"
+            className="h-11 border-white/40 bg-transparent text-white hover:border-white hover:bg-white/5"
+            onClick={() => toast.info('Export coming soon')}
+          >
             <Download className="size-4" />
             Export Data
           </Button>
-          <Button onClick={() => navigate('/memberships/plans/create')}>
+          <Button
+            className="h-11 border-0 bg-[#EBC38C] text-black hover:bg-[#E0B57A] active:bg-[#D4A86C]"
+            onClick={() => navigate('/memberships/plans/create')}
+          >
             <Plus className="size-4" />
             Add New Plan
           </Button>
@@ -338,66 +335,75 @@ export function MembershipPlansPage({
       </div>
 
       <div className="flex flex-col gap-4">
-        <p className="text-sm text-slate-400">
-          Showing {rangeStart}-{rangeEnd} of {totalItems} plans
+        <p className="text-sm text-[#8A8A8A]">
+          Showing{' '}
+          <span className="font-semibold text-white">
+            {rangeStart}-{rangeEnd}
+          </span>{' '}
+          of <span className="font-semibold text-white">{totalItems}</span> users
         </p>
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {statusCards.map((card) => (
-            <button
-              key={card.label}
-              type="button"
-              onClick={() => handleStatusCardClick(card.status)}
-              className={cn(
-                'flex items-center justify-between rounded-xl border p-4 transition-all hover:scale-[1.02]',
-                card.bg,
-                card.border,
-                selectedStatus === card.status && 'ring-2 ring-amber-400/50',
-              )}
-            >
-              <div className="flex items-center gap-3">
-                <div className={cn('rounded-lg p-2', card.bg)}>
-                  <card.icon className={cn('size-5', card.color)} />
+          {statusCards.map((card) => {
+            const isSelected = selectedStatus === card.status
+            const isGold = card.tone === 'gold'
+
+            return (
+              <button
+                key={card.label}
+                type="button"
+                onClick={() => handleStatusCardClick(card.status)}
+                className={cn(
+                  'flex items-center justify-between rounded-xl border px-4 py-3.5 transition-all',
+                  isGold
+                    ? 'border-[#EBC38C]/45 bg-[#EBC38C]/08 text-[#EBC38C]'
+                    : 'border-[#C62828]/45 bg-[#C62828]/12 text-[#E35D5D]',
+                  isSelected && (isGold ? 'ring-2 ring-[#EBC38C]/40' : 'ring-2 ring-[#C62828]/35'),
+                )}
+              >
+                <div className="flex items-center gap-3">
+                  <card.icon className="size-5 shrink-0" strokeWidth={1.75} />
+                  <span className="text-sm font-medium">{card.label}</span>
                 </div>
-                <span className="text-sm font-medium text-slate-300">{card.label}</span>
-              </div>
-              <span className={cn('text-lg font-bold', card.color)}>
-                {String(card.count).padStart(2, '0')}
-              </span>
-            </button>
-          ))}
+                <span className="text-base font-bold tabular-nums">
+                  {String(card.count).padStart(2, '0')}
+                </span>
+              </button>
+            )
+          })}
         </div>
       </div>
 
       {isLoading ? (
-        <p className="text-sm text-slate-400">Loading membership plans...</p>
+        <p className="text-sm text-[#8A8A8A]">Loading membership plans...</p>
       ) : !memberships.length ? (
         <div className="rounded-2xl border border-dashed border-white/10 bg-[#111111] px-6 py-12 text-center">
           <p className="text-base font-medium text-white">No membership plans found</p>
-          <p className="mt-2 text-sm text-slate-400">
+          <p className="mt-2 text-sm text-[#8A8A8A]">
             Create your first plan to start managing memberships.
           </p>
-          <Button className="mt-5" onClick={() => navigate('/memberships/plans/create')}>
+          <Button
+            className="mt-5 border-0 bg-[#EBC38C] text-black hover:bg-[#E0B57A]"
+            onClick={() => navigate('/memberships/plans/create')}
+          >
             <Plus className="size-4" />
             Add New Plan
           </Button>
         </div>
       ) : (
-        <>
-          <PlanSection
-            title="Expert Membership Plans"
-            plans={expertPlans}
-            onEdit={(plan) => navigate(`/memberships/plans/${plan._id}/edit`)}
-            onPause={(plan) => openModal(plan, 'pause')}
-            onResume={(plan) => openModal(plan, 'resume')}
-            onDelete={(plan) => openModal(plan, 'delete')}
-            onDeactivate={(plan) => openModal(plan, 'deactivate')}
-            onActivate={(plan) => openModal(plan, 'activate')}
-            onViewFeatures={(plan) => openModal(plan, 'features')}
-            onViewVersions={(plan) => openModal(plan, 'versions')}
-            onSetValidity={(plan) => openModal(plan, 'validity')}
-          />
-        </>
+        <PlanSection
+          title="Expert Membership Plans"
+          plans={expertPlans}
+          onEdit={(plan) => navigate(`/memberships/plans/${plan._id}/edit`)}
+          onPause={(plan) => openModal(plan, 'pause')}
+          onResume={(plan) => openModal(plan, 'resume')}
+          onDelete={(plan) => openModal(plan, 'delete')}
+          onDeactivate={(plan) => openModal(plan, 'deactivate')}
+          onActivate={(plan) => openModal(plan, 'activate')}
+          onViewFeatures={(plan) => openModal(plan, 'features')}
+          onViewVersions={(plan) => openModal(plan, 'versions')}
+          onSetValidity={(plan) => openModal(plan, 'validity')}
+        />
       )}
 
       <CreateMembershipModal open={createOpen} onClose={() => setCreateOpen(false)} />
@@ -492,16 +498,20 @@ export function MembershipPlansPage({
 
       {modalType === 'validity' ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
-          <div className="w-full max-w-md rounded-2xl border border-white/10 bg-[#111111] p-6">
+          <div className="w-full max-w-md rounded-2xl border border-white/10 bg-[#121212] p-6">
             <h3 className="text-lg font-semibold text-white">Set Plan Validity</h3>
-            <p className="mt-1 text-xs text-slate-400">{selectedPlan?.planName}</p>
+            <p className="mt-1 text-xs text-[#8A8A8A]">{selectedPlan?.planName}</p>
             <div className="mt-4 grid grid-cols-2 gap-3">
               <Input type="date" value={validityStart} onChange={(e) => setValidityStart(e.target.value)} />
               <Input type="date" value={validityEnd} onChange={(e) => setValidityEnd(e.target.value)} />
             </div>
             <div className="mt-5 flex justify-end gap-3">
               <Button variant="secondary" onClick={closeModal}>Cancel</Button>
-              <Button onClick={handleSetValidity} disabled={validityMutation.isPending}>
+              <Button
+                className="border-0 bg-[#EBC38C] text-black hover:bg-[#E0B57A]"
+                onClick={handleSetValidity}
+                disabled={validityMutation.isPending}
+              >
                 Save Validity
               </Button>
             </div>
@@ -519,7 +529,7 @@ export function MembershipPlansPage({
               profileCustomization: false,
               dedicatedAccountManager: false,
             }).map((feature) => (
-              <li key={feature} className="text-sm text-slate-300">• {feature}</li>
+              <li key={feature} className="text-sm text-[#CFCFCF]">• {feature}</li>
             ))}
           </ul>
         </InfoModal>
@@ -530,12 +540,12 @@ export function MembershipPlansPage({
           <div className="space-y-3">
             {(versionsQuery.data?.data?.versionHistory ?? []).length ? (
               versionsQuery.data?.data?.versionHistory.map((entry: { version: number; updatedAt?: string; updatedBy?: string }) => (
-                <div key={entry.version} className="rounded-lg border border-white/10 bg-black/30 p-3 text-sm text-slate-300">
+                <div key={entry.version} className="rounded-lg border border-white/10 bg-black/30 p-3 text-sm text-[#CFCFCF]">
                   Version {entry.version} · {entry.updatedBy ?? 'Admin'} · {entry.updatedAt ?? '—'}
                 </div>
               ))
             ) : (
-              <p className="text-sm text-slate-400">No previous versions yet.</p>
+              <p className="text-sm text-[#8A8A8A]">No previous versions yet.</p>
             )}
           </div>
         </InfoModal>
@@ -580,10 +590,10 @@ function TabButton({
       type="button"
       onClick={onClick}
       className={cn(
-        'rounded-lg px-4 py-2.5 text-sm font-medium transition-colors',
+        'rounded-lg px-5 py-2.5 text-sm font-medium transition-colors',
         active
-          ? 'bg-[#1a1a1a] text-white shadow-sm'
-          : 'text-slate-400 hover:text-white',
+          ? 'bg-black text-white shadow-sm'
+          : 'text-[#8A8A8A] hover:text-white',
       )}
     >
       {children}
@@ -602,10 +612,10 @@ function InfoModal({
 }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
-      <div className="w-full max-w-lg rounded-2xl border border-white/10 bg-[#111111] p-6">
+      <div className="w-full max-w-lg rounded-2xl border border-white/10 bg-[#121212] p-6">
         <div className="mb-4 flex items-center justify-between">
           <h3 className="text-lg font-semibold text-white">{title}</h3>
-          <button type="button" onClick={onClose} className="text-slate-400 hover:text-white">
+          <button type="button" onClick={onClose} className="text-[#8A8A8A] hover:text-white">
             Close
           </button>
         </div>

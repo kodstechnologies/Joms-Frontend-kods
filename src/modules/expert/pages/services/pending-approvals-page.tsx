@@ -3,13 +3,10 @@ import type { ColumnDef } from '@tanstack/react-table'
 import {
   ArrowLeft,
   Eye,
-  Plus,
-  SlidersHorizontal,
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
-import { Button } from '@/shared/components/ui/button'
 import { useServices } from '../../hooks/use-services'
 import { getServiceManagementViewPath } from '../../lib/service-navigation'
 import type { Service } from '../../type/service'

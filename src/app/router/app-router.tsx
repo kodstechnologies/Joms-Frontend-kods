@@ -655,19 +655,32 @@ const PageLoader = () => (
 export function AppRouter() {
   return (
     <BrowserRouter future={{ v7_relativeSplatPath: true }}>
-      <Suspense fallback={<PageLoader />}>
-        <Routes>
-          <Route path="/auth/login" element={<LoginPage />} />
+      <Routes>
+        <Route
+          path="/auth/login"
+          element={
+            <Suspense fallback={<PageLoader />}>
+              <LoginPage />
+            </Suspense>
+          }
+        />
 
-          <Route element={<ProtectedRoute />}>
-            <Route path="/auth/contact-information" element={<UpdateContactInformationPage />} />
+        <Route element={<ProtectedRoute />}>
+          <Route
+            path="/auth/contact-information"
+            element={
+              <Suspense fallback={<PageLoader />}>
+                <UpdateContactInformationPage />
+              </Suspense>
+            }
+          />
 
-            <Route element={<ContactSetupRoute />}>
-              <Route element={<DashboardLayout />}>
-              <Route path="/" element={<HomeRedirect />} />
-              <Route path="/dashboard" element={<HomeRedirect />} />
-              <Route path="/settings/access/my-profile" element={<MyProfilePage />} />
-              <Route path="/my-tasks" element={<MyTasksPage />} />
+          <Route element={<ContactSetupRoute />}>
+            <Route element={<DashboardLayout />}>
+            <Route path="/" element={<HomeRedirect />} />
+            <Route path="/dashboard" element={<HomeRedirect />} />
+            <Route path="/settings/access/my-profile" element={<MyProfilePage />} />
+            <Route path="/my-tasks" element={<MyTasksPage />} />
 
               <Route element={<SuperAdminRoute />}>
                 <Route path="/dashboard/executive" element={<ExecutiveOverviewPage />} />
@@ -895,7 +908,6 @@ export function AppRouter() {
 
           <Route path="*" element={<HomeRedirect />} />
         </Routes>
-      </Suspense>
     </BrowserRouter>
   )
 }

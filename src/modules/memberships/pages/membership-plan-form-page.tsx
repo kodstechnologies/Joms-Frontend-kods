@@ -57,7 +57,7 @@ export function MembershipPlanFormPage() {
         toast.success('Membership plan updated')
       } else {
         await createMutation.mutateAsync({
-          type: values.type,
+          type: 'expert',
           planName: values.planName,
           pricing: values.pricing,
           features: values.features,
@@ -119,7 +119,7 @@ export function MembershipPlanFormPage() {
         </div>
       </div>
 
-      <MembershipPlanForm initialPlan={plan ?? null} onSubmit={handleSubmit} />
+      <MembershipPlanForm initialPlan={plan ?? null} defaultType="expert" onSubmit={handleSubmit} />
     </div>
   )
 }

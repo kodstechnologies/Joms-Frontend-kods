@@ -57,10 +57,9 @@ const buildPricingState = (pricing: MembershipPricing[] = []) => {
   return { selectedCycles, pricingMap }
 }
 
-export function MembershipPlanForm({ initialPlan, defaultType = 'user', onSubmit }: MembershipPlanFormProps) {
+export function MembershipPlanForm({ initialPlan, defaultType = 'expert', onSubmit }: MembershipPlanFormProps) {
   const initialPricing = buildPricingState(initialPlan?.pricing)
 
-  const [type, setType] = useState<MembershipType>(initialPlan?.type ?? defaultType)
   const [planName, setPlanName] = useState(initialPlan?.planName ?? '')
   const [selectedCycles, setSelectedCycles] = useState<string[]>(initialPricing.selectedCycles)
   const [pricing, setPricing] = useState<Record<string, MembershipPricing>>(initialPricing.pricingMap)
@@ -99,7 +98,7 @@ export function MembershipPlanForm({ initialPlan, defaultType = 'user', onSubmit
     event.preventDefault()
 
     onSubmit({
-      type,
+      type: initialPlan?.type ?? defaultType,
       planName: planName.trim(),
       pricing: pricingList,
       features,
@@ -128,15 +127,9 @@ export function MembershipPlanForm({ initialPlan, defaultType = 'user', onSubmit
           </label>
           <label className="block space-y-2">
             <span className="text-xs text-slate-400">Type *</span>
-            <select
-              value={type}
-              disabled={!!initialPlan}
-              onChange={(event) => setType(event.target.value as MembershipType)}
-              className="h-10 w-full rounded-md border border-white/10 bg-black px-3 text-sm text-white disabled:opacity-60"
-            >
-              <option value="user">Users</option>
-              <option value="expert">Experts</option>
-            </select>
+            <div className="flex h-10 items-center rounded-md border border-white/10 bg-black px-3 text-sm text-white">
+              Experts
+            </div>
           </label>
         </div>
 

@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Plus, BarChart3,SlidersHorizontal } from 'lucide-react'
+import { Plus, SlidersHorizontal } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
 import { Button } from '@/shared/components/ui/button'

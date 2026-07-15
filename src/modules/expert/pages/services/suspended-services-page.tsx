@@ -4,12 +4,9 @@ import {
   ArrowLeft,
   Eye,
   PlayCircle,
-  Plus,
-  SlidersHorizontal,
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
-import { Button } from '@/shared/components/ui/button'
 
 import { useActivateService, useServices } from '../../hooks/use-services'
 import { getServiceManagementViewPath } from '../../lib/service-navigation'
