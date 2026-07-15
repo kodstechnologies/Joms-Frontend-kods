@@ -14,7 +14,7 @@ type CreateMembershipModalProps = {
 
 export function CreateMembershipModal({
   open,
-  defaultType = 'user',
+  defaultType = 'expert',
   onClose,
 }: CreateMembershipModalProps) {
   const createMutation = useCreateMembership()
@@ -34,7 +34,7 @@ export function CreateMembershipModal({
 
     try {
       await createMutation.mutateAsync({
-        type: values.type || defaultType,
+        type: 'expert',
         planName: values.planName.trim(),
         pricing: values.pricing,
         features: values.features,
