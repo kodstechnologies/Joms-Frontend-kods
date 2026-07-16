@@ -8,8 +8,7 @@ RUN npm install
 
 COPY . .
 
-RUN npm run build
-
+RUN npm install --ignore-scripts
 FROM nginx:alpine
 
 COPY --from=build /app/dist /usr/share/nginx/html
