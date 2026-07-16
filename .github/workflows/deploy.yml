@@ -34,7 +34,7 @@ jobs:
             EOF
 
             echo "Building Docker image..."
-            docker build --no-cache -t joms-frontend .
+            docker build -t joms-frontend .
 
             echo "Stopping old container..."
             docker stop joms-frontend || true
