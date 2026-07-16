@@ -34,8 +34,8 @@ import {
   DecisionActionModal,
   type DecisionActionModalOption,
 } from '@/shared/components/modal/decision-action-modal'
+import { StatusQuickLinkCard, StatusQuickLinkRow } from '@/shared/components/status-quick-link-card'
 import { Button } from '@/shared/components/ui/button'
-import { cn } from '@/shared/lib/cn'
 import { statusCardTones } from '@/shared/lib/design-tokens'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 import { getVenueApiId, getVenueDisplayId, getVenueDisplaySpaceId } from '../../utils/venue-list'
@@ -542,11 +542,16 @@ export const VenueManagementPage = () => {
         </div>
       </div>
 
-      <div className="flex gap-3 overflow-x-auto pb-1 md:gap-4">
+      <StatusQuickLinkRow>
         {statusCards.map((card) => (
-          <button
+          <StatusQuickLinkCard
             key={card.label}
-            type="button"
+            title={card.label}
+            value={card.count ?? 0}
+            icon={card.icon}
+            background={card.gradient}
+            border={card.border}
+            selected={activeStatus === card.status}
             onClick={() => {
               if (card.status === 'reported') {
                 return
@@ -565,23 +570,9 @@ export const VenueManagementPage = () => {
               }
               setActiveStatus(activeStatus === card.status ? 'all' : card.status)
             }}
-            className={cn(
-              'flex min-w-[220px] flex-1 items-center justify-between gap-3 rounded-xl border p-4 transition-all hover:brightness-110',
-              card.gradient,
-              card.border,
-              activeStatus === card.status && 'ring-2 ring-amber-400/50',
-            )}
-          >
-            <div className="flex items-center gap-3">
-              <card.icon className="size-5 text-white" />
-              <span className="text-sm font-medium text-white">{card.label}</span>
-            </div>
-            <span className="text-lg font-bold text-white">
-              {String(card.count ?? 0).padStart(2, '0')}
-            </span>
-          </button>
+          />
         ))}
-      </div>
+      </StatusQuickLinkRow>
 
       {selectedVenueCount > 0 && (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-blue-500 bg-blue-950/80 px-4 py-2.5">
