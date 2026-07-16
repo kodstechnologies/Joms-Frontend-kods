@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 import { ArrowLeft } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
@@ -98,15 +98,18 @@ export function LockedAccountsPage() {
   const totalPages = meta?.totalPages ?? 1
   const totalItems = meta?.total ?? 0
 
-  const handleUnlock = (id: string) => {
-    unlockMutation.mutate(id, {
-      onSuccess: () => {
-        setSelected(null)
-        toast.success('Account unlocked')
-      },
-      onError: () => toast.error('Failed to unlock account'),
-    })
-  }
+  const handleUnlock = useCallback(
+    (id: string) => {
+      unlockMutation.mutate(id, {
+        onSuccess: () => {
+          setSelected(null)
+          toast.success('Account unlocked')
+        },
+        onError: () => toast.error('Failed to unlock account'),
+      })
+    },
+    [unlockMutation],
+  )
 
   const columns = useMemo<ColumnDef<LockedAccountRow>[]>(
     () => [
@@ -158,7 +161,7 @@ export function LockedAccountsPage() {
         ),
       },
     ],
-    [],
+    [handleUnlock],
   )
 
   return (

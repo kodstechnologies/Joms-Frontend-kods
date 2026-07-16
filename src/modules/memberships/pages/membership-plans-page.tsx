@@ -97,7 +97,7 @@ export function MembershipPlansPage({
   const featuresQuery = useMembershipFeatures(selectedPlan?._id ?? '', modalType === 'features')
   const versionsQuery = useMembershipVersions(selectedPlan?._id ?? '', modalType === 'versions')
 
-  const memberships = data?.data?.memberships ?? []
+  const memberships = useMemo(() => data?.data?.memberships ?? [], [data?.data?.memberships])
   const meta = data?.data?.meta
   const counts = meta?.counts ?? {
     active: 0,

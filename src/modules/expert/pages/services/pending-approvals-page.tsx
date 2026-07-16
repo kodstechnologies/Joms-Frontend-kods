@@ -48,7 +48,7 @@ export function PendingApprovalsPage() {
     search: searchQuery,
   })
 
-  const services = data?.data || []
+  const services = useMemo(() => data?.data ?? [], [data?.data])
   const meta = data?.meta
   const visibleServiceIds = useMemo(() => services.map((service) => service._id), [services])
   const allVisibleServicesSelected =

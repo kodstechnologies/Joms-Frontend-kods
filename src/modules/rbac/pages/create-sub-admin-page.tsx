@@ -123,8 +123,8 @@ export function CreateSubAdminPage() {
     setFormHydrated(true)
   }
 
-  const roles = rolesData?.data ?? []
-  const catalog = catalogData?.data ?? {}
+  const roles = useMemo(() => rolesData?.data ?? [], [rolesData?.data])
+  const catalog = useMemo(() => catalogData?.data ?? {}, [catalogData?.data])
 
   const selectedRoles = useMemo(
     () => roles.filter((role) => form.roleIds.includes(role.id)),

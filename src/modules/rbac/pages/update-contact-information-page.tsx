@@ -46,7 +46,10 @@ export function UpdateContactInformationPage() {
   const completeMutation = useCompleteContactSetup()
 
   const profile = profileQuery.data?.data.profile
-  const catalog = profileQuery.data?.data.permissionCatalog ?? {}
+  const catalog = useMemo(
+    () => profileQuery.data?.data.permissionCatalog ?? {},
+    [profileQuery.data?.data.permissionCatalog],
+  )
   const primaryRole = profile?.roles?.[0]
 
   const [phone, setPhone] = useState('')

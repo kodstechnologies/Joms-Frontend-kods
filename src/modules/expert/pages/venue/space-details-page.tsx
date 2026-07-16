@@ -277,7 +277,7 @@ export function SpaceDetailsPage() {
   useEffect(() => {
     if (!spaceId || isSuperAdmin) return
     startEscalationReview.mutate()
-  }, [spaceId, isSuperAdmin])
+  }, [spaceId, isSuperAdmin, startEscalationReview])
 
   const backToProfile = () =>
     navigateBackOrFallback(navigate, `/venues/management/profile/${venueId}`)

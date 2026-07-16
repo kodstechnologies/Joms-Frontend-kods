@@ -198,7 +198,7 @@ export function ApplicationDetailsPage() {
   useEffect(() => {
     if (!spaceId || isSuperAdmin) return
     startEscalationReview.mutate()
-  }, [spaceId, isSuperAdmin])
+  }, [spaceId, isSuperAdmin, startEscalationReview])
 
   const openModal = (variant: DecisionVariant) => {
     resetModal()

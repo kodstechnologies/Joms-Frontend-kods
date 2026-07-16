@@ -45,7 +45,7 @@ export function VenueCategoryManagementPage() {
   const { data: deletedCategories = [] } = useDeletedVenueCategoryList()
   const { data: details = [] } = useVenueCategoryDetails()
 
-  const categories = data?.categories ?? []
+  const categories = useMemo(() => data?.categories ?? [], [data?.categories])
   const totalItems = categories.length
   const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE))
   const currentPage = Math.min(page, totalPages)

@@ -32,7 +32,7 @@ export function VenueDeletedPage() {
   })
   const restoreVenueMutation = useRestoreVenue()
 
-  const venues = data?.data || []
+  const venues = useMemo(() => data?.data ?? [], [data?.data])
   const meta = data?.meta
   const visibleVenueIds = useMemo(() => venues.map((venue) => venue._id), [venues])
   const allVisibleVenuesSelected =

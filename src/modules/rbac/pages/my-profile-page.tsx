@@ -76,7 +76,7 @@ export function MyProfilePage() {
   })
 
   const subAdmin = profileData?.data.profile
-  const logs = logsData?.data.logs ?? []
+  const logs = useMemo(() => logsData?.data.logs ?? [], [logsData?.data.logs])
   const logsMeta = logsData?.meta
   const roleLabel = subAdmin?.roles.map((role) => role.name).join(', ') || '—'
 

@@ -109,7 +109,7 @@ export function AdminDetailPage() {
   const updatePasswordMutation = useUpdateSubAdminPassword()
 
   const subAdmin = subAdminData?.data
-  const logs = logsData?.data.logs ?? []
+  const logs = useMemo(() => logsData?.data.logs ?? [], [logsData?.data.logs])
   const logsMeta = logsData?.meta
   const roleLabel = subAdmin?.roles.map((role) => role.name).join(', ') || '—'
 

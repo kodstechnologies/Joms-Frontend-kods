@@ -59,7 +59,7 @@ export function CategoryManagementPage() {
     limit: 1,
   })
 
-  const categories = data?.categories ?? []
+  const categories = useMemo(() => data?.categories ?? [], [data?.categories])
   const totalItems = data?.pagination?.total ?? categories.length
   const totalPages = Math.max(1, data?.pagination?.pages ?? Math.ceil(totalItems / PAGE_SIZE))
 

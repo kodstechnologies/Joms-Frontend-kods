@@ -98,7 +98,7 @@ export const VenueManagementPage = () => {
     status: activeStatus !== 'all' ? (activeStatus as VenueStatus | 'reported') : undefined,
     search: searchQuery,
   })
-  const venues = data?.data || []
+  const venues = useMemo(() => data?.data ?? [], [data?.data])
   const meta = data?.meta
   const visibleVenueIds = useMemo(() => venues.map((venue) => venue._id), [venues])
   const selectedVenueCount = selectedVenueIds.length
