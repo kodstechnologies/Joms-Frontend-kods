@@ -8,6 +8,7 @@ import { RbacLoader } from '../components/rbac-loader'
 import { useCreateRole, usePermissionCatalog, useRole, useUpdateRole } from '../hooks/use-rbac'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
+import { navigateBackOrFallback } from '@/shared/lib/navigation'
 
 export function CreateRolePage() {
   const { id } = useParams()
@@ -65,7 +66,7 @@ export function CreateRolePage() {
       <div className="flex items-center gap-3">
         <button
           type="button"
-          onClick={() => navigate('/settings/access')}
+          onClick={() => navigateBackOrFallback(navigate, '/settings/access')}
           className="rounded-brand-md text-brand-muted hover:text-brand-text border border-white/10 p-2 transition-colors hover:bg-white/5"
         >
           <ArrowLeft className="size-4" />
@@ -127,7 +128,10 @@ export function CreateRolePage() {
       </div>
 
       <div className="flex items-center justify-between">
-        <Button variant="secondary" onClick={() => navigate('/settings/access')}>
+        <Button
+          variant="secondary"
+          onClick={() => navigateBackOrFallback(navigate, '/settings/access')}
+        >
           Previous
         </Button>
         <Button onClick={handleSubmit} disabled={isSubmitting}>

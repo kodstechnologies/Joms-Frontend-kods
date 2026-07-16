@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
+
+import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import { toast } from 'sonner'
 
 import {
@@ -234,7 +236,7 @@ export function CreateVenueOnboardingPage() {
       setCurrentStep((prev) => prev - 1)
       return
     }
-    navigate('/venues/management')
+    navigateBackOrFallback(navigate, '/venues/management')
   }
 
   const isLoading =

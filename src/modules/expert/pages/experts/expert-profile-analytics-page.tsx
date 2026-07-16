@@ -1,5 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+
+import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import {
   Area,
   AreaChart,
@@ -89,7 +91,7 @@ export function ExpertProfileAnalyticsPage() {
         <div>
           <button
             type="button"
-            onClick={() => navigate(`/experts/management/profile/${id}`)}
+            onClick={() => navigateBackOrFallback(navigate, `/experts/management/profile/${id}`)}
             className="group font-heading hover:text-brand-accent flex w-fit items-center gap-2 text-[20px] font-bold tracking-tight text-white transition-colors"
           >
             <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
@@ -98,7 +100,7 @@ export function ExpertProfileAnalyticsPage() {
           <div className="mt-2 flex items-center gap-1.5 pl-7 text-[12px] font-medium text-[#777777]">
             <button
               type="button"
-              onClick={() => navigate('/experts/management')}
+              onClick={() => navigateBackOrFallback(navigate, '/experts/management')}
               className="transition-colors hover:text-white"
             >
               Back
@@ -106,7 +108,7 @@ export function ExpertProfileAnalyticsPage() {
             <span className="text-[#333333]">/</span>
             <button
               type="button"
-              onClick={() => navigate(`/experts/management/profile/${id}`)}
+              onClick={() => navigateBackOrFallback(navigate, `/experts/management/profile/${id}`)}
               className="transition-colors hover:text-white"
             >
               {profile.name}

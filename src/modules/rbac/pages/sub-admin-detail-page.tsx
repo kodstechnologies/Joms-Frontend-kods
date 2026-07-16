@@ -13,6 +13,7 @@ import {
 } from '@/shared/components/table/table-actions-dropdown'
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
+import { navigateBackOrFallback } from '@/shared/lib/navigation'
 
 const PAGE_SIZE = 10
 
@@ -150,7 +151,7 @@ export function SubAdminDetailPage() {
         <div className="flex flex-col gap-2">
           <button
             type="button"
-            onClick={() => navigate('/settings/access')}
+            onClick={() => navigateBackOrFallback(navigate, '/settings/access')}
             className="group font-heading flex w-fit items-center gap-2 text-[20px] font-bold tracking-tight text-white transition-colors hover:text-[#FBC078]"
           >
             <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
@@ -159,7 +160,7 @@ export function SubAdminDetailPage() {
           <div className="flex items-center gap-1.5 pl-7 text-[12px] font-medium text-[#777777]">
             <button
               type="button"
-              onClick={() => navigate('/settings/access')}
+              onClick={() => navigateBackOrFallback(navigate, '/settings/access')}
               className="transition-colors hover:text-white"
             >
               Role Based Access

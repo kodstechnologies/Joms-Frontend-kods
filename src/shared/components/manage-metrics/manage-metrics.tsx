@@ -281,8 +281,36 @@ export function ManageMetrics({
 
   if (isLoading) {
     return (
-      <div className={cn('flex min-h-[40vh] items-center justify-center', className)}>
-        <p className="text-sm text-slate-400">{loadingLabel}</p>
+      <div className={cn('flex flex-col gap-6 pb-24', className)}>
+        <div className="flex items-center gap-3">
+          <div className="size-9 animate-pulse rounded-lg border border-white/10 bg-white/5" />
+          <div className="space-y-2">
+            <div className="h-4 w-32 animate-pulse rounded bg-white/10" />
+            <div className="h-3 w-48 animate-pulse rounded bg-white/5" />
+          </div>
+        </div>
+
+        <section className="rounded-xl border border-white/10 bg-white/[0.02] p-4 sm:p-5">
+          <div className="mb-5 flex items-center justify-between gap-3">
+            <div className="h-4 w-28 animate-pulse rounded bg-white/10" />
+            <div className="h-7 w-28 animate-pulse rounded-md bg-white/5" />
+          </div>
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+            <div className="space-y-2">
+              {Array.from({ length: 4 }).map((_, index) => (
+                <div key={`left-${index}`} className="h-12 animate-pulse rounded-lg bg-white/5" />
+              ))}
+            </div>
+            <div className="space-y-2">
+              <div className="h-10 animate-pulse rounded-lg bg-white/5" />
+              {Array.from({ length: 4 }).map((_, index) => (
+                <div key={`right-${index}`} className="h-12 animate-pulse rounded-lg bg-white/5" />
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <p className="sr-only">{loadingLabel}</p>
       </div>
     )
   }

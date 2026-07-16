@@ -1,5 +1,9 @@
 import { useParams } from 'react-router-dom'
 
+import {
+  categoryPath,
+  useCategoryManagementScope,
+} from '../../components/category/category-management-scope'
 import CategoryHeader from '../../components/category/CategoryHeader'
 import { SubCategoryViewHeaderActions } from '../../components/category/SubCategoryViewHeaderActions'
 import SubCategoryInfoCard from '../../components/category/SubCategoryInfoCard'
@@ -10,6 +14,7 @@ import { useServiceCategory } from '../../hooks/use-category-management'
 
 export const SubCategoryViewPage = () => {
   const { id, subCategoryId } = useParams()
+  const scope = useCategoryManagementScope()
   const { data: category, isLoading, isError } = useServiceCategory(id)
 
   const subCategory = category?.subCategories.find((item) => item.id === subCategoryId)
@@ -40,6 +45,7 @@ export const SubCategoryViewPage = () => {
           <CategoryHeader
             title={category.name}
             breadcrumbItems={[category.name, subCategory.name]}
+            backPath={id ? categoryPath(scope, `view/${id}`) : scope.basePath}
           />
           <SubCategoryViewHeaderActions />
         </div>

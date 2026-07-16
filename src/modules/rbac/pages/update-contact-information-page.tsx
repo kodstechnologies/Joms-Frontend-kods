@@ -11,6 +11,7 @@ import type { PermissionCatalog, SubAdminRole } from '../types/rbac'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
 import { cn } from '@/shared/lib/cn'
+import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import { uiTokens } from '@/shared/lib/design-tokens'
 
 type ModuleAccess = 'full' | 'limited' | 'none'
@@ -166,7 +167,7 @@ export function UpdateContactInformationPage() {
         <div className="flex flex-col gap-2">
           <button
             type="button"
-            onClick={() => navigate('/auth/login')}
+            onClick={() => navigateBackOrFallback(navigate, '/auth/login')}
             className="group font-heading flex w-fit items-center gap-2 text-[20px] font-bold tracking-tight text-white transition-colors hover:text-[#FBC078]"
           >
             <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
@@ -351,7 +352,10 @@ export function UpdateContactInformationPage() {
         </section>
 
         <div className="flex items-center justify-between">
-          <Button variant="secondary" onClick={() => navigate('/auth/login')}>
+          <Button
+            variant="secondary"
+            onClick={() => navigateBackOrFallback(navigate, '/auth/login')}
+          >
             Previous
           </Button>
           <Button onClick={handleSubmit} disabled={completeMutation.isPending}>

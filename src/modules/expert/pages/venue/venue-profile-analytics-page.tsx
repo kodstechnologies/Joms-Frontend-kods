@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+
+import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import { ArrowLeft, SlidersHorizontal, Upload } from 'lucide-react'
 
 import { useVenueFullView } from '../../hooks/use-venues'
@@ -37,7 +39,9 @@ export function VenueProfileAnalyticsPage() {
         <div>
           <button
             type="button"
-            onClick={() => navigate(`/venues/management/profile/${venueId}`)}
+            onClick={() =>
+              navigateBackOrFallback(navigate, `/venues/management/profile/${venueId}`)
+            }
             className="group font-heading hover:text-brand-accent flex w-fit items-center gap-2 text-[20px] font-bold tracking-tight text-white transition-colors"
           >
             <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />

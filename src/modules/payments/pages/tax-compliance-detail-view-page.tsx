@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 import { getTaxComplianceDetailById } from '@/modules/payments/mock/tax-compliance-detail.mock'
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
+import { navigateBackOrFallback } from '@/shared/lib/navigation'
 
 function DetailCard({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -70,7 +71,7 @@ export function TaxComplianceDetailViewPage() {
       <header>
         <button
           type="button"
-          onClick={() => navigate('/finance/tax')}
+          onClick={() => navigateBackOrFallback(navigate, '/finance/tax')}
           className="group flex w-fit items-center gap-2 text-[20px] font-bold tracking-tight text-white transition-colors hover:text-[#FBC078]"
         >
           <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
@@ -206,7 +207,10 @@ export function TaxComplianceDetailViewPage() {
       </div>
 
       <footer className="flex items-center justify-between rounded-xl border border-white/[0.06] bg-[#1A1A1A] px-5 py-4">
-        <Button variant="secondary" onClick={() => navigate('/finance/tax')}>
+        <Button
+          variant="secondary"
+          onClick={() => navigateBackOrFallback(navigate, '/finance/tax')}
+        >
           Close
         </Button>
         <button

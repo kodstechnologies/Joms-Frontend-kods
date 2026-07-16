@@ -35,6 +35,7 @@ import { DecisionActionModal } from '@/shared/components/modal/decision-action-m
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
 import { cn } from '@/shared/lib/cn'
+import { statusCardTones } from '@/shared/lib/design-tokens'
 
 const STATUS_ROUTE_MAP = {
   active: '/memberships/plans',
@@ -367,11 +368,11 @@ export function MembershipPlansPage({
                 type="button"
                 onClick={() => handleStatusCardClick(card.status)}
                 className={cn(
-                  'flex items-center justify-between rounded-xl border px-4 py-3.5 transition-all',
+                  'flex items-center justify-between rounded-xl border px-4 py-3.5 text-white transition-all',
                   isGold
-                    ? 'bg-[#EBC38C]/08 border-[#EBC38C]/45 text-[#EBC38C]'
-                    : 'border-[#C62828]/45 bg-[#C62828]/12 text-[#E35D5D]',
-                  isSelected && (isGold ? 'ring-2 ring-[#EBC38C]/40' : 'ring-2 ring-[#C62828]/35'),
+                    ? `${statusCardTones.warning.background} ${statusCardTones.warning.border}`
+                    : `${statusCardTones.danger.background} ${statusCardTones.danger.border}`,
+                  isSelected && (isGold ? 'ring-2 ring-[#B8963E]/50' : 'ring-2 ring-[#8A1A1A]/50'),
                 )}
               >
                 <div className="flex items-center gap-3">

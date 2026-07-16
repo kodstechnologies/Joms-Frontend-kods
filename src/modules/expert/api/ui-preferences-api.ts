@@ -1,6 +1,10 @@
 import { adminApiClient } from '@/shared/lib/axios'
 
 export const EXPERT_MANAGEMENT_MODULE_KEY = 'expert-management'
+export const SERVICE_MANAGEMENT_MODULE_KEY = 'service-management'
+export const SERVICE_CATEGORY_MANAGEMENT_MODULE_KEY = 'service-category-management'
+export const VENUE_MANAGEMENT_MODULE_KEY = 'venue-management'
+export const VENUE_CATEGORY_MANAGEMENT_MODULE_KEY = 'venue-category-management'
 
 export type TableColumnCatalogItem = {
   id: string

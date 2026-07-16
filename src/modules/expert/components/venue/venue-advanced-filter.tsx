@@ -2,6 +2,7 @@ import { ArrowLeft, Funnel, RotateCcw, X } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
 import { Button } from '@/shared/components/ui/button'
+import { navigateBackOrFallback } from '@/shared/lib/navigation'
 
 import { ByBookingsFilter, ByCustomersFilter, ByLocationFilter, ByVenuesFilter } from './filters'
 
@@ -14,14 +15,22 @@ export function VenueAdvancedFilter() {
 
       <div className="flex items-center justify-between border-b border-white/10 px-8 py-5">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" className="h-10 w-10 p-0" onClick={() => navigate(-1)}>
+          <Button
+            variant="ghost"
+            className="h-10 w-10 p-0"
+            onClick={() => navigateBackOrFallback(navigate, '/venues/categories/management')}
+          >
             <ArrowLeft size={18} />
           </Button>
 
           <h1 className="text-2xl font-semibold">Advanced Filters - Venue Category Management</h1>
         </div>
 
-        <Button variant="ghost" className="h-10 w-10 p-0" onClick={() => navigate(-1)}>
+        <Button
+          variant="ghost"
+          className="h-10 w-10 p-0"
+          onClick={() => navigateBackOrFallback(navigate, '/venues/categories/management')}
+        >
           <X size={20} />
         </Button>
       </div>

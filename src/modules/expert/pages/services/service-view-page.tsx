@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
+
+import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import axios from 'axios'
 import {
   ArrowLeft,
@@ -336,10 +338,10 @@ export const ServiceViewPage = () => {
 
   const handleBack = () => {
     if (fromExpert && expertId) {
-      navigate(`/experts/management/profile/${expertId}`)
+      navigateBackOrFallback(navigate, `/experts/management/profile/${expertId}`)
       return
     }
-    navigate('/services/management')
+    navigateBackOrFallback(navigate, '/services/management')
   }
 
   const submitDecisionAction = async () => {
@@ -995,7 +997,7 @@ export const ServiceViewPage = () => {
             <>
               <button
                 type="button"
-                onClick={() => navigate('/experts/management')}
+                onClick={() => navigateBackOrFallback(navigate, '/experts/management')}
                 className="transition-colors hover:text-white"
               >
                 All Experts
@@ -1015,7 +1017,7 @@ export const ServiceViewPage = () => {
             <>
               <button
                 type="button"
-                onClick={() => navigate('/services/management')}
+                onClick={() => navigateBackOrFallback(navigate, '/services/management')}
                 className="transition-colors hover:text-white"
               >
                 Service management

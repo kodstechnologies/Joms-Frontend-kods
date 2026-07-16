@@ -1,6 +1,7 @@
 import { ArrowLeft, Calendar, TrendingUp, User } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
+import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
 import { uiTokens } from '@/shared/lib/design-tokens'
@@ -22,7 +23,7 @@ export function CommunicationDetails() {
       <div>
         <button
           type="button"
-          onClick={() => navigate(-1)}
+          onClick={() => navigateBackOrFallback(navigate, '/communication/management')}
           className="text-brand-text hover:text-brand-accent mb-3 flex items-center gap-2 text-sm font-semibold transition-colors"
         >
           <ArrowLeft className="size-4" />
@@ -122,7 +123,11 @@ export function CommunicationDetails() {
         )}
       >
         <div className="flex items-center justify-between gap-3">
-          <Button type="button" variant="secondary" onClick={() => navigate(-1)}>
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={() => navigateBackOrFallback(navigate, '/communication/management')}
+          >
             Close
           </Button>
           <Button type="button" onClick={() => navigate('/communication/create')}>

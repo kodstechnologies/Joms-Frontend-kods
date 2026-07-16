@@ -1,4 +1,6 @@
 import { useNavigate, useParams } from 'react-router-dom'
+
+import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { ArrowLeft, Download, RefreshCw, SlidersHorizontal, Star } from 'lucide-react'
 
@@ -55,7 +57,12 @@ export function SpaceAnalyticsPage() {
         <div>
           <button
             type="button"
-            onClick={() => navigate(`/venues/management/profile/${venueId}/space/${spaceId}`)}
+            onClick={() =>
+              navigateBackOrFallback(
+                navigate,
+                `/venues/management/profile/${venueId}/space/${spaceId}`,
+              )
+            }
             className="group font-heading hover:text-brand-accent flex w-fit items-center gap-2 text-[20px] font-bold tracking-tight text-white transition-colors"
           >
             <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />

@@ -1,6 +1,8 @@
 import { ArrowLeft, Check, X, ExternalLink } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
+import { navigateBackOrFallback } from '@/shared/lib/navigation'
+
 export function MembershipUpgradeDetails() {
   const navigate = useNavigate()
 
@@ -8,7 +10,7 @@ export function MembershipUpgradeDetails() {
     <div className="mx-20 flex flex-col gap-5 pb-8">
       <div>
         <button
-          onClick={() => navigate(-1)}
+          onClick={() => navigateBackOrFallback(navigate, '/my-tasks')}
           className="mb-3 flex items-center gap-2 text-sm text-white transition hover:text-[#F0C27B]"
         >
           <ArrowLeft className="-ml-10 h-4 w-4" />
@@ -97,7 +99,7 @@ export function MembershipUpgradeDetails() {
       <div className="rounded-xl border border-[#242424] bg-[#171717] px-5 py-4">
         <div className="flex items-center justify-between">
           <button
-            onClick={() => navigate(-1)}
+            onClick={() => navigateBackOrFallback(navigate, '/my-tasks')}
             className="rounded-lg border border-[#444] px-5 py-2 text-sm text-white transition hover:border-[#F0C27B]"
           >
             Close

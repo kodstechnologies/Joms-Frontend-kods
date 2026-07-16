@@ -43,26 +43,31 @@ export const venueCategoryColumns: ColumnDef<VenueCategory>[] = [
     meta: { cellClassName: 'text-white font-medium' },
   },
   {
+    id: 'name',
     accessorKey: 'name',
     header: 'Category Name',
     meta: { cellClassName: 'text-white' },
   },
   {
+    id: 'status',
     accessorKey: 'status',
     header: 'Status',
     cell: ({ row }) => <CategoryStatusBadge status={row.original.status} />,
   },
   {
+    id: 'subCategory',
     accessorKey: 'subCategory',
     header: 'No. of Sub Category',
     meta: { cellClassName: 'text-white' },
   },
   {
+    id: 'venues',
     accessorKey: 'venues',
     header: 'No. Of Venues',
     meta: { cellClassName: 'text-white' },
   },
   {
+    id: 'revenue',
     accessorKey: 'revenue',
     header: 'Revenue Generated',
     meta: { cellClassName: 'text-white font-medium' },

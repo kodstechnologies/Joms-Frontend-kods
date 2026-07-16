@@ -10,6 +10,7 @@ import type { AuditLog } from '../types/rbac'
 import { DataTable } from '@/shared/components/table/data-table'
 import { useAuthStore } from '@/modules/auth/store/auth-store'
 import { cn } from '@/shared/lib/cn'
+import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import { uiTokens } from '@/shared/lib/design-tokens'
 
 const PAGE_SIZE = 10
@@ -130,7 +131,7 @@ export function MyProfilePage() {
       <div className="flex flex-col gap-2">
         <button
           type="button"
-          onClick={() => navigate(-1)}
+          onClick={() => navigateBackOrFallback(navigate, '/settings/access')}
           className="group font-heading flex w-fit items-center gap-2 text-[20px] font-bold tracking-tight text-white transition-colors hover:text-[#FBC078]"
         >
           <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />

@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 import { getEscrowDetailById } from '@/modules/payments/mock/escrow-detail.mock'
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
+import { navigateBackOrFallback } from '@/shared/lib/navigation'
 
 function InnerCard({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -62,7 +63,7 @@ export function EscrowDetailViewPage() {
       <header>
         <button
           type="button"
-          onClick={() => navigate('/finance/escrow')}
+          onClick={() => navigateBackOrFallback(navigate, '/finance/escrow')}
           className="group flex w-fit items-center gap-2 text-[20px] font-bold tracking-tight text-white transition-colors hover:text-[#FBC078]"
         >
           <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
@@ -122,7 +123,10 @@ export function EscrowDetailViewPage() {
       </section>
 
       <footer className="flex items-center justify-between rounded-xl border border-white/[0.06] bg-[#1A1A1A] px-5 py-4">
-        <Button variant="secondary" onClick={() => navigate('/finance/escrow')}>
+        <Button
+          variant="secondary"
+          onClick={() => navigateBackOrFallback(navigate, '/finance/escrow')}
+        >
           Close
         </Button>
         <Button onClick={() => toast.message('Download invoice coming soon')}>

@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 import { getInvoiceDetailById } from '@/modules/payments/mock/invoice-detail.mock'
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
+import { navigateBackOrFallback } from '@/shared/lib/navigation'
 
 function DetailCard({
   title,
@@ -61,7 +62,7 @@ export function InvoiceDetailViewPage() {
         <div>
           <button
             type="button"
-            onClick={() => navigate('/finance/invoices')}
+            onClick={() => navigateBackOrFallback(navigate, '/finance/invoices')}
             className="group flex w-fit items-center gap-2 text-[20px] font-bold tracking-tight text-white transition-colors hover:text-[#FBC078]"
           >
             <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
@@ -135,7 +136,10 @@ export function InvoiceDetailViewPage() {
       </DetailCard>
 
       <div className="flex justify-end">
-        <Button variant="secondary" onClick={() => navigate('/finance/invoices')}>
+        <Button
+          variant="secondary"
+          onClick={() => navigateBackOrFallback(navigate, '/finance/invoices')}
+        >
           Close
         </Button>
       </div>

@@ -37,6 +37,7 @@ import {
 } from '@/shared/components/modal/decision-action-modal'
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
+import { statusCardTones } from '@/shared/lib/design-tokens'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 
 const ACTION_MENU_CLASS = 'border border-slate-200 bg-white shadow-xl'
@@ -528,32 +529,32 @@ export const ExpertManagementPage = () => {
     {
       label: 'Approvals Pending',
       count: counts.approvalsPending,
-      gradient: 'bg-gradient-to-r from-amber-700/55 to-transparent',
-      border: 'border-amber-600/60',
+      gradient: statusCardTones.warning.background,
+      border: statusCardTones.warning.border,
       icon: Hourglass,
       status: 'pending',
     },
     {
       label: 'Reported Experts',
       count: counts.reportedExperts,
-      gradient: 'bg-gradient-to-r from-red-800/55 to-transparent',
-      border: 'border-red-800/60',
+      gradient: statusCardTones.danger.background,
+      border: statusCardTones.danger.border,
       icon: AlertCircle,
       status: 'reported',
     },
     {
       label: 'Suspended Experts',
       count: counts.suspendedExperts,
-      gradient: 'bg-gradient-to-r from-red-800/55 to-transparent',
-      border: 'border-red-800/60',
+      gradient: statusCardTones.danger.background,
+      border: statusCardTones.danger.border,
       icon: Ban,
       status: 'suspended',
     },
     {
       label: 'Deleted Experts',
       count: counts.deletedExperts,
-      gradient: 'bg-gradient-to-r from-red-800/55 to-transparent',
-      border: 'border-red-800/60',
+      gradient: statusCardTones.danger.background,
+      border: statusCardTones.danger.border,
       icon: Trash2,
       status: 'deactivated',
     },

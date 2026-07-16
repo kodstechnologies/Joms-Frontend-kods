@@ -15,6 +15,7 @@ import { PauseSubscriptionModal } from '@/modules/payments/components/pause-subs
 import { mapSubscriptionToFinanceDetail } from '@/modules/payments/utils/finance-membership-mapper'
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
+import { navigateBackOrFallback } from '@/shared/lib/navigation'
 
 function getErrorMessage(error: unknown, fallback: string) {
   if (axios.isAxiosError(error)) {
@@ -71,7 +72,10 @@ export function MembershipDetailViewPage() {
     return (
       <div className="space-y-4">
         <p className="text-sm text-rose-300">Membership subscription not found.</p>
-        <Button variant="secondary" onClick={() => navigate('/finance/memberships')}>
+        <Button
+          variant="secondary"
+          onClick={() => navigateBackOrFallback(navigate, '/finance/memberships')}
+        >
           Back to Memberships
         </Button>
       </div>
@@ -84,7 +88,7 @@ export function MembershipDetailViewPage() {
         <div>
           <button
             type="button"
-            onClick={() => navigate('/finance/memberships')}
+            onClick={() => navigateBackOrFallback(navigate, '/finance/memberships')}
             className="group flex w-fit items-center gap-2 text-[20px] font-bold tracking-tight text-white transition-colors hover:text-[#FBC078]"
           >
             <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
@@ -165,7 +169,10 @@ export function MembershipDetailViewPage() {
       </DetailCard>
 
       <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <Button variant="secondary" onClick={() => navigate('/finance/memberships')}>
+        <Button
+          variant="secondary"
+          onClick={() => navigateBackOrFallback(navigate, '/finance/memberships')}
+        >
           Close
         </Button>
         <div className="flex flex-col gap-3 sm:flex-row">

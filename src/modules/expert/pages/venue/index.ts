@@ -13,6 +13,7 @@ export * from './space-analytics-page'
 export * from './venue-profile-analytics-page'
 
 export { VenueCategoryManagementPage } from './category-management-page'
+export { VenueCategoryManagementMetricsPage } from './venue-category-management-metrics-page'
 export { VenueCategoryViewPage } from './category-view-page'
 export { CreateVenueCategoryPage } from './create-category'
 export { CreateVenueSubCategoryPage } from './create-subcategory-page'

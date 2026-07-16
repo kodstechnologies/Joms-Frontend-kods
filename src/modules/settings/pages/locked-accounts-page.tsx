@@ -7,6 +7,7 @@ import { toast } from 'sonner'
 import { useLockedAccounts, useUnlockAccount } from '../hooks/use-security'
 import type { LockedAccountRow } from '../types/settings'
 import { SectionHeader } from '@/shared/components/dashboard/section-header'
+import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import { DataTable } from '@/shared/components/table/data-table'
 import { cn } from '@/shared/lib/cn'
 import { uiTokens } from '@/shared/lib/design-tokens'
@@ -164,7 +165,9 @@ export function LockedAccountsPage() {
     <div className="space-y-6">
       <button
         type="button"
-        onClick={() => navigate('/settings/main', { state: { settingsTab: 'security' } })}
+        onClick={() =>
+          navigateBackOrFallback(navigate, '/settings/main', { state: { settingsTab: 'security' } })
+        }
         className="inline-flex items-center gap-2 text-sm text-slate-400 hover:text-white"
       >
         <ArrowLeft className="size-4" />

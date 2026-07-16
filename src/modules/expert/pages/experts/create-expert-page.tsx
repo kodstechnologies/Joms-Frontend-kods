@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
+
+import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import { toast } from 'sonner'
 
 import {
@@ -159,7 +161,7 @@ export const CreateExpertPage = () => {
       setCurrentStep((prev) => prev - 1)
       return
     }
-    navigate('/experts/management')
+    navigateBackOrFallback(navigate, '/experts/management')
   }
 
   const isLoading =

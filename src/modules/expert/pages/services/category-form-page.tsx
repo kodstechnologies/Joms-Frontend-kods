@@ -41,7 +41,11 @@ export const CategoryFormPage = ({ mode }: CategoryFormPageProps) => {
     return (
       <div className="min-h-screen px-4 pt-2 pb-8 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-6xl">
-          <CategoryHeader title={getFormTitle(mode)} breadcrumb={getFormTitle(mode)} />
+          <CategoryHeader
+            title={getFormTitle(mode)}
+            breadcrumb={getFormTitle(mode)}
+            backPath={scope.basePath}
+          />
         </div>
       </div>
     )
@@ -246,7 +250,11 @@ const CategoryFormContent = ({ mode, id, scope, category }: CategoryFormContentP
   return (
     <div className="min-h-screen px-4 pt-2 pb-8 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-6xl">
-        <CategoryHeader title={getFormTitle(mode)} breadcrumb={getFormTitle(mode)} />
+        <CategoryHeader
+          title={getFormTitle(mode)}
+          breadcrumb={getFormTitle(mode)}
+          backPath={scope.basePath}
+        />
 
         <div className="mt-6 space-y-6">
           <CategoryDetailsCard

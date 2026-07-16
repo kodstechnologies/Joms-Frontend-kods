@@ -8,6 +8,7 @@ import {
 } from '../components/membership-plan-form'
 import { useCreateMembership, useMembership, useUpdateMembership } from '../hooks/use-memberships'
 import { Button } from '@/shared/components/ui/button'
+import { navigateBackOrFallback } from '@/shared/lib/navigation'
 
 export function MembershipPlanFormPage() {
   const { id } = useParams()
@@ -67,7 +68,7 @@ export function MembershipPlanFormPage() {
         toast.success('Membership plan created')
       }
 
-      navigate('/memberships/plans')
+      navigateBackOrFallback(navigate, '/memberships/plans')
     } catch {
       toast.error(
         isEditMode ? 'Failed to update membership plan' : 'Failed to create membership plan',
@@ -89,7 +90,7 @@ export function MembershipPlanFormPage() {
         <div className="flex items-center gap-3">
           <button
             type="button"
-            onClick={() => navigate('/memberships/plans')}
+            onClick={() => navigateBackOrFallback(navigate, '/memberships/plans')}
             className="rounded-lg p-2 text-slate-300 transition-colors hover:bg-white/5"
           >
             <ArrowLeft className="size-5" />
@@ -107,7 +108,10 @@ export function MembershipPlanFormPage() {
         </div>
 
         <div className="flex gap-3">
-          <Button variant="secondary" onClick={() => navigate('/memberships/plans')}>
+          <Button
+            variant="secondary"
+            onClick={() => navigateBackOrFallback(navigate, '/memberships/plans')}
+          >
             Cancel
           </Button>
           <Button type="submit" form="membership-plan-form" disabled={isSubmitting}>

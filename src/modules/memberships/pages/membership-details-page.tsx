@@ -14,6 +14,7 @@ import {
 } from '../hooks/use-membership-subscriptions'
 import { formatCurrency, formatMembershipDateTime } from '../utils/membership-format'
 import { cn } from '@/shared/lib/cn'
+import { navigateBackOrFallback } from '@/shared/lib/navigation'
 
 export function MembershipDetailsPage() {
   const { id = '' } = useParams()
@@ -51,7 +52,7 @@ export function MembershipDetailsPage() {
       <div className="mb-6 flex items-center gap-3">
         <button
           type="button"
-          onClick={() => navigate('/memberships/experts')}
+          onClick={() => navigateBackOrFallback(navigate, '/memberships/experts')}
           className="rounded-lg p-2 text-slate-300 transition-colors hover:bg-white/5"
         >
           <ArrowLeft className="size-5" />

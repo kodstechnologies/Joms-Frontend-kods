@@ -13,10 +13,11 @@ import {
   type ManageMetricsAvailableItem,
   type ManageMetricsListItem,
 } from '@/shared/components/manage-metrics'
+import { navigateBackOrFallback } from '@/shared/lib/navigation'
 
 export const ExpertManagementMetricsPage = () => {
   const navigate = useNavigate()
-  const goBack = () => navigate('/experts/management')
+  const goBack = () => navigateBackOrFallback(navigate, '/experts/management')
 
   const preferencesQuery = useTableColumnPreferences(EXPERT_MANAGEMENT_MODULE_KEY)
   const saveMutation = useSaveTableColumnPreferences(EXPERT_MANAGEMENT_MODULE_KEY)

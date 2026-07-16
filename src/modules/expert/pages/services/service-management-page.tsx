@@ -19,7 +19,9 @@ import {
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
+import { SERVICE_MANAGEMENT_MODULE_KEY } from '../../api/ui-preferences-api'
 import { useServices, useSuspendService, useDeleteService } from '../../hooks/use-services'
+import { useTableColumnPreferences } from '../../hooks/use-ui-preferences'
 import { getServiceManagementViewPath } from '../../lib/service-navigation'
 import { ADMIN_DELETE_REASON_OPTIONS } from '../../constants/soft-delete'
 import { useServiceStore } from '../../store/service-store'
@@ -36,6 +38,7 @@ import {
 } from '@/shared/components/modal/decision-action-modal'
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
+import { statusCardTones } from '@/shared/lib/design-tokens'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 
 const formatPrice = (price: number) =>
@@ -74,6 +77,7 @@ export const ServiceManagementPage = () => {
   const deleteServiceMutation = useDeleteService()
 
   const navigate = useNavigate()
+  const tableColumnPreferencesQuery = useTableColumnPreferences(SERVICE_MANAGEMENT_MODULE_KEY)
   const {
     searchQuery,
     setSearchQuery,
@@ -270,39 +274,41 @@ export const ServiceManagementPage = () => {
     suspendStartDate,
   ])
 
-  const columns = useMemo<ColumnDef<Service>[]>(
-    () => [
-      {
-        id: 'select',
-        header: () => (
-          <input
-            type="checkbox"
-            aria-label="Select all services"
-            checked={allVisibleServicesSelected}
-            ref={(input) => {
-              if (input)
-                input.indeterminate = someVisibleServicesSelected && !allVisibleServicesSelected
-            }}
-            onChange={toggleVisibleServices}
-            className="rounded border-slate-700 bg-transparent"
-          />
-        ),
-        cell: ({ row }) => (
-          <input
-            type="checkbox"
-            aria-label={`Select ${row.original.title}`}
-            checked={selectedServiceIds.includes(row.original._id)}
-            onChange={() => toggleServiceSelection(row.original._id)}
-            onClick={(event) => event.stopPropagation()}
-            className="rounded border-slate-700 bg-transparent"
-          />
-        ),
-        meta: {
-          headerClassName: 'pl-5',
-          cellClassName: 'pl-5',
-        },
+  const columns = useMemo<ColumnDef<Service>[]>(() => {
+    const selectColumn: ColumnDef<Service> = {
+      id: 'select',
+      header: () => (
+        <input
+          type="checkbox"
+          aria-label="Select all services"
+          checked={allVisibleServicesSelected}
+          ref={(input) => {
+            if (input)
+              input.indeterminate = someVisibleServicesSelected && !allVisibleServicesSelected
+          }}
+          onChange={toggleVisibleServices}
+          className="rounded border-slate-700 bg-transparent"
+        />
+      ),
+      cell: ({ row }) => (
+        <input
+          type="checkbox"
+          aria-label={`Select ${row.original.title}`}
+          checked={selectedServiceIds.includes(row.original._id)}
+          onChange={() => toggleServiceSelection(row.original._id)}
+          onClick={(event) => event.stopPropagation()}
+          className="rounded border-slate-700 bg-transparent"
+        />
+      ),
+      meta: {
+        headerClassName: 'pl-5',
+        cellClassName: 'pl-5',
       },
-      {
+    }
+
+    const dataColumnsById: Record<string, ColumnDef<Service>> = {
+      'service-id': {
+        id: 'service-id',
         accessorKey: 'serviceid',
         header: 'Service ID',
         cell: ({ row }) => (
@@ -311,12 +317,14 @@ export const ServiceManagementPage = () => {
           </span>
         ),
       },
-      {
+      name: {
+        id: 'name',
         accessorKey: 'title',
         header: 'Service Name',
         cell: ({ row }) => <span className="font-medium text-white">{row.original.title}</span>,
       },
-      {
+      category: {
+        id: 'category',
         accessorKey: 'categoryName',
         header: 'Service Category',
         cell: ({ row }) => {
@@ -325,27 +333,32 @@ export const ServiceManagementPage = () => {
           return <span>{value}</span>
         },
       },
-      {
+      type: {
+        id: 'type',
         accessorKey: 'serviceType',
         header: 'Service Type',
       },
-      {
+      pricing: {
+        id: 'pricing',
         accessorKey: 'pricing',
         header: 'Pricing',
         cell: ({ row }) => formatPrice(row.original.pricing),
       },
-      {
+      'expert-id': {
+        id: 'expert-id',
         accessorKey: 'expertid',
         header: 'Expert ID',
         cell: ({ row }) => (
           <span className="font-mono text-xs">{row.original.expertid || 'Not provided'}</span>
         ),
       },
-      {
+      'expert-name': {
+        id: 'expert-name',
         accessorKey: 'expertName',
         header: 'Expert Name',
       },
-      {
+      status: {
+        id: 'status',
         accessorKey: 'status',
         header: 'Status',
         cell: ({ row }) => {
@@ -357,7 +370,8 @@ export const ServiceManagementPage = () => {
           return <span className={className}>{label}</span>
         },
       },
-      {
+      'created-at': {
+        id: 'created-at',
         accessorKey: 'createdAt',
         header: 'Created At',
         cell: ({ row }) => {
@@ -382,68 +396,89 @@ export const ServiceManagementPage = () => {
           )
         },
       },
-      {
-        id: 'actions',
-        header: 'Actions',
-        meta: {
-          headerClassName: 'pr-5 text-right',
-          cellClassName: 'relative pr-5 text-right',
-        },
-        cell: ({ row }) => {
-          const service = row.original
-          const isOpen = activeDropdownId === service._id
+    }
 
-          return (
-            <TableActionsDropdown
-              label={`Open actions for ${service.title}`}
-              isOpen={isOpen}
-              onOpenChange={(open) => setActiveDropdownId(open ? service._id : null)}
-              menuWidth={192}
-            >
-              <TableActionsItem
-                icon={<Eye className="size-3.5" aria-hidden="true" />}
-                onClick={() => {
-                  setActiveDropdownId(null)
-                  navigate(getServiceManagementViewPath(service))
-                }}
-              >
-                View Details
-              </TableActionsItem>
-              <TableActionsItem
-                icon={<PauseCircle className="size-3.5" aria-hidden="true" />}
-                onClick={() => {
-                  setActiveDropdownId(null)
-                  openSuspendModal(service)
-                }}
-              >
-                Suspend Service
-              </TableActionsItem>
-              <TableActionsItem
-                icon={<Trash2 className="size-3.5" aria-hidden="true" />}
-                onClick={() => {
-                  setActiveDropdownId(null)
-                  openDeleteModal(service)
-                }}
-              >
-                Delete Service
-              </TableActionsItem>
-            </TableActionsDropdown>
-          )
-        },
+    const defaultVisibleIds = [
+      'service-id',
+      'name',
+      'category',
+      'type',
+      'pricing',
+      'expert-id',
+      'expert-name',
+      'status',
+      'created-at',
+    ]
+
+    const visibleIds = tableColumnPreferencesQuery.data?.visibleColumnIds?.length
+      ? tableColumnPreferencesQuery.data.visibleColumnIds
+      : defaultVisibleIds
+
+    const preferenceColumns = visibleIds.map((id) => dataColumnsById[id]).filter(Boolean)
+
+    const actionsColumn: ColumnDef<Service> = {
+      id: 'actions',
+      header: 'Actions',
+      meta: {
+        headerClassName: 'pr-5 text-right',
+        cellClassName: 'relative pr-5 text-right',
       },
-    ],
-    [
-      activeDropdownId,
-      allVisibleServicesSelected,
-      navigate,
-      openDeleteModal,
-      openSuspendModal,
-      selectedServiceIds,
-      someVisibleServicesSelected,
-      toggleServiceSelection,
-      toggleVisibleServices,
-    ],
-  )
+      cell: ({ row }) => {
+        const service = row.original
+        const isOpen = activeDropdownId === service._id
+
+        return (
+          <TableActionsDropdown
+            label={`Open actions for ${service.title}`}
+            isOpen={isOpen}
+            onOpenChange={(open) => setActiveDropdownId(open ? service._id : null)}
+            menuWidth={192}
+          >
+            <TableActionsItem
+              icon={<Eye className="size-3.5" aria-hidden="true" />}
+              onClick={() => {
+                setActiveDropdownId(null)
+                navigate(getServiceManagementViewPath(service))
+              }}
+            >
+              View Details
+            </TableActionsItem>
+            <TableActionsItem
+              icon={<PauseCircle className="size-3.5" aria-hidden="true" />}
+              onClick={() => {
+                setActiveDropdownId(null)
+                openSuspendModal(service)
+              }}
+            >
+              Suspend Service
+            </TableActionsItem>
+            <TableActionsItem
+              icon={<Trash2 className="size-3.5" aria-hidden="true" />}
+              onClick={() => {
+                setActiveDropdownId(null)
+                openDeleteModal(service)
+              }}
+            >
+              Delete Service
+            </TableActionsItem>
+          </TableActionsDropdown>
+        )
+      },
+    }
+
+    return [selectColumn, ...preferenceColumns, actionsColumn]
+  }, [
+    activeDropdownId,
+    allVisibleServicesSelected,
+    navigate,
+    openDeleteModal,
+    openSuspendModal,
+    selectedServiceIds,
+    someVisibleServicesSelected,
+    tableColumnPreferencesQuery.data,
+    toggleServiceSelection,
+    toggleVisibleServices,
+  ])
 
   const bulkActions = [
     { label: 'Delete selected services', icon: Trash2 },
@@ -466,32 +501,32 @@ export const ServiceManagementPage = () => {
     {
       label: 'Approvals Pending',
       count: counts.approvalsPending,
-      gradient: 'bg-gradient-to-r from-amber-700/55 to-transparent',
-      border: 'border-amber-600/60',
+      gradient: statusCardTones.warning.background,
+      border: statusCardTones.warning.border,
       icon: Hourglass,
       status: 'pending',
     },
     {
       label: 'Reported Services',
       count: counts.reportedServices,
-      gradient: 'bg-gradient-to-r from-red-800/55 to-transparent',
-      border: 'border-red-800/60',
+      gradient: statusCardTones.danger.background,
+      border: statusCardTones.danger.border,
       icon: AlertCircle,
       status: 'reported',
     },
     {
       label: 'Suspended Services',
       count: counts.suspendedServices,
-      gradient: 'bg-gradient-to-r from-red-800/55 to-transparent',
-      border: 'border-red-800/60',
+      gradient: statusCardTones.danger.background,
+      border: statusCardTones.danger.border,
       icon: Ban,
       status: 'suspended',
     },
     {
       label: 'Deleted Services',
       count: counts.deletedServices,
-      gradient: 'bg-gradient-to-r from-red-800/55 to-transparent',
-      border: 'border-red-800/60',
+      gradient: statusCardTones.danger.background,
+      border: statusCardTones.danger.border,
       icon: Trash2,
       status: 'deleted',
     },

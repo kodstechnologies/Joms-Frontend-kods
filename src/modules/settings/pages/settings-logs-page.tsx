@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom'
 import { useSettingsLogs } from '../hooks/use-settings'
 import type { SettingsLog } from '../types/settings'
 import { SectionHeader } from '@/shared/components/dashboard/section-header'
+import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import { DataTable } from '@/shared/components/table/data-table'
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
@@ -114,13 +115,17 @@ export function SettingsLogsPage() {
         actions={[
           {
             label: 'Back to Settings',
-            onClick: () => navigate('/settings/main'),
+            onClick: () => navigateBackOrFallback(navigate, '/settings/main'),
             variant: 'secondary',
           },
         ]}
       >
         <div className="mt-3 flex flex-wrap items-center gap-2">
-          <Button variant="ghost" className="gap-2" onClick={() => navigate('/settings/main')}>
+          <Button
+            variant="ghost"
+            className="gap-2"
+            onClick={() => navigateBackOrFallback(navigate, '/settings/main')}
+          >
             <ArrowLeft className="size-4" />
             Settings
           </Button>

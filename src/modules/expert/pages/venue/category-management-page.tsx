@@ -1,10 +1,15 @@
 import { useMemo, useState } from 'react'
+import type { ColumnDef } from '@tanstack/react-table'
 
+import { VENUE_CATEGORY_MANAGEMENT_MODULE_KEY } from '../../api/ui-preferences-api'
 import { DataTable } from '@/shared/components/table/data-table'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 
 import { StatCard } from '../../components/stat-card'
-import { venueCategoryColumns } from '../../components/category/venue-category-table-columns'
+import {
+  type VenueCategory,
+  venueCategoryColumns,
+} from '../../components/category/venue-category-table-columns'
 import {
   CategoryManagementPageHeader,
   CategoryQuickLinks,
@@ -15,12 +20,14 @@ import {
   useVenueCategoryDetails,
   useVenueCategoryManagementList,
 } from '../../hooks/use-venue-category-management'
+import { useTableColumnPreferences } from '../../hooks/use-ui-preferences'
 
 const PAGE_SIZE = 10
 
 export function VenueCategoryManagementPage() {
   const [searchValue, setSearchValue] = useState('')
   const [page, setPage] = useState(1)
+  const preferencesQuery = useTableColumnPreferences(VENUE_CATEGORY_MANAGEMENT_MODULE_KEY)
 
   const {
     onAdvancedFilter,
@@ -61,11 +68,26 @@ export function VenueCategoryManagementPage() {
     [details],
   )
 
+  const columns = useMemo<ColumnDef<VenueCategory>[]>(() => {
+    const defaultVisibleIds = ['categoryId', 'name', 'status', 'subCategory', 'venues', 'revenue']
+    const visibleIds = preferencesQuery.data?.visibleColumnIds?.length
+      ? preferencesQuery.data.visibleColumnIds
+      : defaultVisibleIds
+
+    const dataColumnsById = Object.fromEntries(
+      venueCategoryColumns.map((column) => [column.id, column] as const),
+    ) as Record<string, ColumnDef<VenueCategory>>
+    const selectedDataColumns = visibleIds.map((id) => dataColumnsById[id]).filter(Boolean)
+    const actionsColumn = dataColumnsById.actions
+
+    return actionsColumn ? [...selectedDataColumns, actionsColumn] : selectedDataColumns
+  }, [preferencesQuery.data])
+
   return (
     <div className="flex flex-col gap-4 p-0 md:gap-6">
       <CategoryManagementPageHeader
         title="Category Management"
-        metricsPath="/venues/dashboard/metrics"
+        metricsPath="/venues/categories/management/metrics"
         createPath="/venues/categories/management/create"
       />
 
@@ -86,7 +108,7 @@ export function VenueCategoryManagementPage() {
       {isError ? <p className="text-sm text-red-400">Failed to load venue categories.</p> : null}
 
       <DataTable
-        columns={venueCategoryColumns}
+        columns={columns}
         data={paginatedCategories}
         getRowId={(row) => row.id}
         searchValue={searchValue}

@@ -24,7 +24,11 @@ export const VenueCategoryViewPage = () => {
     <div className="min-h-screen px-4 pt-2 pb-8 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-6xl">
         <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-start">
-          <CategoryHeader title={category.name} breadcrumb={category.name} />
+          <CategoryHeader
+            title={category.name}
+            breadcrumb={category.name}
+            backPath="/venues/categories/management"
+          />
           <VenueCategoryViewHeaderActions />
         </div>
 

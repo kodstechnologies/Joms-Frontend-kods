@@ -12,6 +12,7 @@ import {
 } from '../hooks/use-settings'
 import { backupDefaults } from '../mock/settings.defaults'
 import { SectionHeader } from '@/shared/components/dashboard/section-header'
+import { navigateBackOrFallback } from '@/shared/lib/navigation'
 
 export function BackupConfigurationPage() {
   const navigate = useNavigate()
@@ -43,7 +44,9 @@ export function BackupConfigurationPage() {
     <div className="space-y-6">
       <button
         type="button"
-        onClick={() => navigate('/settings/main', { state: { settingsTab: 'backup' } })}
+        onClick={() =>
+          navigateBackOrFallback(navigate, '/settings/main', { state: { settingsTab: 'backup' } })
+        }
         className="inline-flex items-center gap-2 text-sm text-slate-400 hover:text-white"
       >
         <ArrowLeft className="size-4" />

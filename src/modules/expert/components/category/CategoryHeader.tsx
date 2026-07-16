@@ -1,5 +1,6 @@
 import { ArrowLeft } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import { navigateBackOrFallback } from '@/shared/lib/navigation'
 
 interface CategoryHeaderProps {
   title: string
@@ -15,7 +16,13 @@ const CategoryHeader = ({ title, breadcrumb, breadcrumbItems, backPath }: Catego
     <header className="flex flex-col gap-2">
       <button
         type="button"
-        onClick={() => (backPath ? navigate(backPath) : navigate(-1))}
+        onClick={() => {
+          if (backPath) {
+            navigateBackOrFallback(navigate, backPath)
+            return
+          }
+          navigate(-1)
+        }}
         className="group font-heading hover:text-brand-accent flex w-fit items-center gap-2 text-[20px] font-bold tracking-tight text-white transition-colors"
       >
         <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />

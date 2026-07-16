@@ -9,6 +9,7 @@ import {
   type RefundAuthorityRole,
 } from '@/modules/payments/mock/refund-escalation.mock'
 import { cn } from '@/shared/lib/cn'
+import { navigateBackOrFallback } from '@/shared/lib/navigation'
 
 const labelClass = 'font-figtree text-[11px] font-normal leading-[20px] text-[#888888]'
 const valueClass = 'font-figtree text-[12px] font-medium leading-[20px] text-white'
@@ -146,7 +147,7 @@ export function AssignRefundAuthorityPage() {
         <header>
           <button
             type="button"
-            onClick={() => navigate(`/finance/refunds/${id}/dispute`)}
+            onClick={() => navigateBackOrFallback(navigate, `/finance/refunds/${id}/dispute`)}
             className="group font-figtree flex w-fit items-center gap-2 text-[20px] leading-7 font-bold tracking-tight text-white transition-colors hover:text-[#FBC078]"
           >
             <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
@@ -214,7 +215,7 @@ export function AssignRefundAuthorityPage() {
         <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
           <button
             type="button"
-            onClick={() => navigate(`/finance/refunds/${id}/dispute`)}
+            onClick={() => navigateBackOrFallback(navigate, `/finance/refunds/${id}/dispute`)}
             className="font-figtree inline-flex h-10 w-full items-center justify-center rounded-[10px] border border-white/20 bg-transparent px-6 text-[12px] leading-[20px] font-semibold text-white transition-colors hover:bg-white/5 sm:w-auto sm:min-w-[120px]"
           >
             Close

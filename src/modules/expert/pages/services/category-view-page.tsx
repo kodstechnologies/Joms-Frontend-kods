@@ -1,5 +1,6 @@
 import { useParams } from 'react-router-dom'
 
+import { useCategoryManagementScope } from '../../components/category/category-management-scope'
 import CategoryHeader from '../../components/category/CategoryHeader'
 import { CategoryViewHeaderActions } from '../../components/category/CategoryViewHeaderActions'
 import CategoryInfoCard from '../../components/category/CategoryInfoCard'
@@ -10,6 +11,7 @@ import { useServiceCategory } from '../../hooks/use-category-management'
 
 export const CategoryViewPage = () => {
   const { id } = useParams()
+  const scope = useCategoryManagementScope()
   const { data: category, isLoading, isError } = useServiceCategory(id)
 
   if (isLoading) {
@@ -24,7 +26,11 @@ export const CategoryViewPage = () => {
     <div className="min-h-screen px-4 pt-2 pb-8 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-6xl">
         <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-start">
-          <CategoryHeader title={category.name} breadcrumb={category.name} />
+          <CategoryHeader
+            title={category.name}
+            breadcrumb={category.name}
+            backPath={scope.basePath}
+          />
           <CategoryViewHeaderActions />
         </div>
 

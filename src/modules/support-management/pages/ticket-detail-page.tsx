@@ -1,13 +1,15 @@
 import { ArrowLeft } from 'lucide-react'
-import { Link, useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 
 import { TicketPriorityBadge } from '../components/ticket-priority-badge'
 import { TicketStatusBadge } from '../components/ticket-status-badge'
 import { chatMessagesMock, closedTicketMock, supportTicketsMock } from '../mock/support.mock'
 import { Button } from '@/shared/components/ui/button'
+import { navigateBackOrFallback } from '@/shared/lib/navigation'
 
 export function TicketDetailPage() {
+  const navigate = useNavigate()
   const { id } = useParams<{ id: string }>()
   const ticket =
     supportTicketsMock.find((t) => t.id === id) ??
@@ -16,12 +18,13 @@ export function TicketDetailPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-start gap-3">
-        <Link
-          to="/support/tickets"
+        <button
+          type="button"
+          onClick={() => navigateBackOrFallback(navigate, '/support/tickets')}
           className="mt-1 rounded-lg border border-white/10 p-2 text-slate-400 hover:text-white"
         >
           <ArrowLeft className="size-4" />
-        </Link>
+        </button>
         <div>
           <h1 className="text-3xl font-semibold tracking-tight text-slate-100">
             Ticket Management

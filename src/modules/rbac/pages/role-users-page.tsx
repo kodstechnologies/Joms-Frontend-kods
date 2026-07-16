@@ -7,6 +7,7 @@ import { useRoleUsers } from '../hooks/use-rbac'
 import type { SubAdmin } from '../types/rbac'
 import { DataTable } from '@/shared/components/table/data-table'
 import { cn } from '@/shared/lib/cn'
+import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import { uiTokens } from '@/shared/lib/design-tokens'
 
 const PAGE_SIZE = 10
@@ -82,7 +83,7 @@ export function RoleUsersPage() {
         <div className="flex items-center gap-1.5 pl-7 text-[12px] font-medium text-[#777777]">
           <button
             type="button"
-            onClick={() => navigate('/settings/access')}
+            onClick={() => navigateBackOrFallback(navigate, '/settings/access')}
             className="transition-colors hover:text-white"
           >
             Role Based Access

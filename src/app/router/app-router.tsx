@@ -359,6 +359,11 @@ const CategoryManagementPage = lazy(() =>
     default: m.CategoryManagementPage,
   })),
 )
+const CategoryManagementMetricsPage = lazy(() =>
+  import('@/modules/expert').then((m) => ({
+    default: m.CategoryManagementMetricsPage,
+  })),
+)
 
 const CreateCategoryPage = lazy(() =>
   import('@/modules/expert').then((m) => ({
@@ -560,6 +565,11 @@ const ServiceCategoryFilterPage = lazy(() =>
 const VenueCategoryManagementPage = lazy(() =>
   import('@/modules/expert').then((m) => ({
     default: m.VenueCategoryManagementPage,
+  })),
+)
+const VenueCategoryManagementMetricsPage = lazy(() =>
+  import('@/modules/expert').then((m) => ({
+    default: m.VenueCategoryManagementMetricsPage,
   })),
 )
 
@@ -800,6 +810,10 @@ export function AppRouter() {
                 <Route path="/services/management/create" element={<CreateServiceListingPage />} />
                 <Route path="/services/management/view/:id" element={<ServiceViewPage />} />
                 <Route path="/categories/management" element={<CategoryManagementPage />} />
+                <Route
+                  path="/categories/management/metrics"
+                  element={<CategoryManagementMetricsPage />}
+                />
                 <Route path="/categories/management/create" element={<CreateCategoryPage />} />
                 <Route
                   path="/categories/management/create-subcategory/:id"
@@ -868,6 +882,10 @@ export function AppRouter() {
                 <Route
                   path="/venues/categories/management"
                   element={<VenueCategoryManagementPage />}
+                />
+                <Route
+                  path="/venues/categories/management/metrics"
+                  element={<VenueCategoryManagementMetricsPage />}
                 />
                 <Route
                   path="/venues/categories/management/create"

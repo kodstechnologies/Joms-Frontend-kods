@@ -1,10 +1,12 @@
 import { useMemo, useState } from 'react'
+import type { ColumnDef } from '@tanstack/react-table'
 
+import { SERVICE_CATEGORY_MANAGEMENT_MODULE_KEY } from '../../api/ui-preferences-api'
 import { DataTable } from '@/shared/components/table/data-table'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 
 import { StatCard } from '../../components/stat-card'
-import { categoryColumns } from '../../components/category/category-table-columns'
+import { type Category, categoryColumns } from '../../components/category/category-table-columns'
 import {
   categoryPath,
   useCategoryManagementScope,
@@ -14,6 +16,7 @@ import {
   CategoryQuickLinks,
 } from '../../components/category/category-list-shared'
 import { useServiceCategories } from '../../hooks/use-category-management'
+import { useTableColumnPreferences } from '../../hooks/use-ui-preferences'
 
 const PAGE_SIZE = 10
 
@@ -22,6 +25,7 @@ export function CategoryManagementPage() {
   const [page, setPage] = useState(1)
 
   const scope = useCategoryManagementScope()
+  const preferencesQuery = useTableColumnPreferences(SERVICE_CATEGORY_MANAGEMENT_MODULE_KEY)
 
   const {
     onAdvancedFilter,
@@ -64,6 +68,29 @@ export function CategoryManagementPage() {
     [categories],
   )
 
+  const columns = useMemo<ColumnDef<Category>[]>(() => {
+    const defaultVisibleIds = [
+      'categoryId',
+      'name',
+      'status',
+      'subCategory',
+      'services',
+      'experts',
+      'revenue',
+    ]
+    const visibleIds = preferencesQuery.data?.visibleColumnIds?.length
+      ? preferencesQuery.data.visibleColumnIds
+      : defaultVisibleIds
+
+    const dataColumnsById = Object.fromEntries(
+      categoryColumns.map((column) => [column.id, column] as const),
+    ) as Record<string, ColumnDef<Category>>
+    const selectedDataColumns = visibleIds.map((id) => dataColumnsById[id]).filter(Boolean)
+    const actionsColumn = dataColumnsById.actions
+
+    return actionsColumn ? [...selectedDataColumns, actionsColumn] : selectedDataColumns
+  }, [preferencesQuery.data])
+
   return (
     <div className="flex flex-col gap-4 p-0 md:gap-6">
       <CategoryManagementPageHeader
@@ -92,7 +119,7 @@ export function CategoryManagementPage() {
       {isError ? <p className="text-sm text-red-400">Failed to load categories.</p> : null}
 
       <DataTable
-        columns={categoryColumns}
+        columns={columns}
         data={categories}
         getRowId={(row) => row.id}
         searchValue={searchValue}

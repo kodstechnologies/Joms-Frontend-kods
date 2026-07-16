@@ -18,3 +18,14 @@ export const uiTokens = {
   focusRing: 'focus-visible:ring-2 focus-visible:ring-brand-accent/40',
   goldGradient: 'bg-gradient-to-r from-brand-gold-from to-brand-gold-to',
 } as const
+
+export const statusCardTones = {
+  warning: {
+    background: 'bg-[#43391B]',
+    border: 'border-[#B8963E]',
+  },
+  danger: {
+    background: 'bg-[#320E0E]',
+    border: 'border-[#8A1A1A]',
+  },
+} as const

@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate, useParams } from 'react-router-dom'
+
+import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import { toast } from 'sonner'
 import {
   ArrowLeft,
@@ -277,7 +279,8 @@ export function SpaceDetailsPage() {
     startEscalationReview.mutate()
   }, [spaceId, isSuperAdmin])
 
-  const backToProfile = () => navigate(`/venues/management/profile/${venueId}`)
+  const backToProfile = () =>
+    navigateBackOrFallback(navigate, `/venues/management/profile/${venueId}`)
 
   const resetModal = () => {
     setSelectedReasons([])

@@ -2,6 +2,8 @@ import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 import { ArrowLeft, Plus, RotateCcw, SlidersHorizontal, Upload } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+
+import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import { toast } from 'sonner'
 
 import { formatDeletedAt } from '../../constants/soft-delete'
@@ -191,7 +193,7 @@ export function VenueDeletedPage() {
         <header className="flex flex-col gap-2">
           <button
             type="button"
-            onClick={() => navigate('/venues/management')}
+            onClick={() => navigateBackOrFallback(navigate, '/venues/management')}
             className="group font-heading hover:text-brand-accent flex w-fit items-center gap-2 text-[20px] font-bold tracking-tight text-white transition-colors"
           >
             <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
@@ -200,7 +202,7 @@ export function VenueDeletedPage() {
           <div className="flex items-center gap-1.5 pl-7 text-[12px] font-medium text-[#777777]">
             <button
               type="button"
-              onClick={() => navigate('/venues/management')}
+              onClick={() => navigateBackOrFallback(navigate, '/venues/management')}
               className="transition-colors hover:text-white"
             >
               Venue Management

@@ -13,6 +13,7 @@ import {
 import { RbacLoader } from '../components/rbac-loader'
 import type { CreateSubAdminPayload, PermissionCatalog, Role } from '../types/rbac'
 import { Button } from '@/shared/components/ui/button'
+import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import { Input } from '@/shared/components/ui/input'
 import { cn } from '@/shared/lib/cn'
 import { uiTokens } from '@/shared/lib/design-tokens'
@@ -272,7 +273,7 @@ export function CreateSubAdminPage() {
       <div className="flex flex-col gap-2">
         <button
           type="button"
-          onClick={() => navigate('/settings/access')}
+          onClick={() => navigateBackOrFallback(navigate, '/settings/access')}
           className="group font-heading flex w-fit items-center gap-2 text-[20px] font-bold tracking-tight text-white transition-colors hover:text-[#FBC078]"
         >
           <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
@@ -614,7 +615,7 @@ export function CreateSubAdminPage() {
         <Button
           variant="secondary"
           onClick={() => {
-            if (step === 'form') navigate('/settings/access')
+            if (step === 'form') navigateBackOrFallback(navigate, '/settings/access')
             else setStep('form')
           }}
         >

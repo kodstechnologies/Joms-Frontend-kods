@@ -40,6 +40,9 @@ export const VenueSubCategoryViewPage = () => {
           <CategoryHeader
             title={category.name}
             breadcrumbItems={[category.name, subCategory.name]}
+            backPath={
+              id ? `/venues/categories/management/view/${id}` : '/venues/categories/management'
+            }
           />
           <VenueSubCategoryViewHeaderActions />
         </div>

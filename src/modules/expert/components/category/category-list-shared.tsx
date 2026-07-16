@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
+import { statusCardTones } from '@/shared/lib/design-tokens'
 
 export const CATEGORY_ACTION_MENU_CLASS = 'border border-slate-200 bg-white shadow-xl'
 export const CATEGORY_ACTION_ITEM_CLASS = 'text-slate-800 hover:bg-slate-100 hover:text-slate-900'
@@ -118,16 +119,16 @@ export function CategoryQuickLinks({
         title="Paused Category"
         value={String(pausedCount)}
         icon={Hourglass}
-        gradient="bg-gradient-to-r from-amber-700/55 to-transparent"
-        border="border-amber-600/60"
+        gradient={statusCardTones.warning.background}
+        border={statusCardTones.warning.border}
         onClick={() => navigate(pausedPath)}
       />
       <CategoryQuickLinkCard
         title="Deleted Category"
         value={String(deletedCount)}
         icon={Trash2}
-        gradient="bg-gradient-to-r from-red-800/55 to-transparent"
-        border="border-red-800/60"
+        gradient={statusCardTones.danger.background}
+        border={statusCardTones.danger.border}
         onClick={() => navigate(deletedPath)}
       />
     </div>

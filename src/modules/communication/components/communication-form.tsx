@@ -2,6 +2,7 @@ import { ArrowLeft } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useState } from 'react'
 
+import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
 import { cn } from '@/shared/lib/cn'
@@ -19,7 +20,7 @@ export function CommunicationForm() {
       <div>
         <button
           type="button"
-          onClick={() => navigate(-1)}
+          onClick={() => navigateBackOrFallback(navigate, '/communication/management')}
           className="text-brand-text hover:text-brand-accent mb-3 flex items-center gap-2 text-sm font-semibold transition-colors"
         >
           <ArrowLeft className="size-4" />
@@ -186,7 +187,11 @@ export function CommunicationForm() {
         )}
       >
         <div className="flex items-center justify-between gap-3">
-          <Button type="button" variant="secondary" onClick={() => navigate(-1)}>
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={() => navigateBackOrFallback(navigate, '/communication/management')}
+          >
             Close
           </Button>
           <Button type="submit">Submit</Button>

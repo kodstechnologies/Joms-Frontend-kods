@@ -18,6 +18,7 @@ import { RejectRefundModal } from '@/modules/payments/components/reject-refund-m
 import { RequestMoreInformationModal } from '@/modules/payments/components/request-more-information-modal'
 import { getDisputeDetailById } from '@/modules/payments/mock/dispute-detail.mock'
 import { cn } from '@/shared/lib/cn'
+import { navigateBackOrFallback } from '@/shared/lib/navigation'
 
 const cardClass = 'rounded-[10px] border border-white/[0.06] bg-[#141414] p-4 sm:p-5'
 const sectionTitleClass = 'font-figtree text-[14px] font-semibold leading-[20px] text-white'
@@ -105,7 +106,7 @@ export function DisputeDetailViewPage() {
       <header>
         <button
           type="button"
-          onClick={() => navigate('/finance/refunds')}
+          onClick={() => navigateBackOrFallback(navigate, '/finance/refunds')}
           className="group flex w-fit items-center gap-2 text-[20px] font-bold tracking-tight text-white transition-colors hover:text-[#FBC078]"
         >
           <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />

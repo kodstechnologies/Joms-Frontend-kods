@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 import { getServicePaymentDetailById } from '@/modules/payments/mock/service-payment-detail.mock'
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
+import { navigateBackOrFallback } from '@/shared/lib/navigation'
 
 function DetailCard({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -68,7 +69,7 @@ export function ServicePaymentDetailViewPage() {
       <header>
         <button
           type="button"
-          onClick={() => navigate('/finance/services')}
+          onClick={() => navigateBackOrFallback(navigate, '/finance/services')}
           className="group flex w-fit items-center gap-2 text-[20px] font-bold tracking-tight text-white transition-colors hover:text-[#FBC078]"
         >
           <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />

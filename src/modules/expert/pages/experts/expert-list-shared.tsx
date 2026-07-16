@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 
 import { getManagementStatusDisplay } from '../../utils/management-status'
 import { displayExpertValue } from './expert-list-format'
+import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import { Button } from '@/shared/components/ui/button'
 
 export function ExpertListHeader({ title, breadcrumb }: { title: string; breadcrumb: string }) {
@@ -13,7 +14,7 @@ export function ExpertListHeader({ title, breadcrumb }: { title: string; breadcr
       <header className="flex flex-col gap-2">
         <button
           type="button"
-          onClick={() => navigate('/experts/management')}
+          onClick={() => navigateBackOrFallback(navigate, '/experts/management')}
           className="group font-heading hover:text-brand-accent flex w-fit items-center gap-2 text-[20px] font-bold tracking-tight text-white transition-colors"
         >
           <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />

@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components -- context module exports scope helpers with the provider */
 import { createContext, useContext, type ReactNode } from 'react'
 
 export type CategoryManagementScope = {
@@ -9,7 +10,7 @@ export type CategoryManagementScope = {
 
 export const SERVICE_CATEGORY_SCOPE: CategoryManagementScope = {
   basePath: '/categories/management',
-  metricsPath: '/services/dashboard/metrics',
+  metricsPath: '/categories/management/metrics',
   relatedListPath: '/services/management',
   relatedListLabel: 'View Services',
 }

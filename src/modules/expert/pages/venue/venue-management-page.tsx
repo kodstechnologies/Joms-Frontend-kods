@@ -19,7 +19,9 @@ import {
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
+import { VENUE_MANAGEMENT_MODULE_KEY } from '../../api/ui-preferences-api'
 import { useVenues, useSuspendVenue, useDeleteVenue } from '../../hooks/use-venues'
+import { useTableColumnPreferences } from '../../hooks/use-ui-preferences'
 import { ADMIN_DELETE_REASON_OPTIONS } from '../../constants/soft-delete'
 import { useVenueStore } from '../../store'
 import type { Venue, VenueStatus } from '../../type/venue'
@@ -34,6 +36,7 @@ import {
 } from '@/shared/components/modal/decision-action-modal'
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
+import { statusCardTones } from '@/shared/lib/design-tokens'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 import { getVenueApiId, getVenueDisplayId, getVenueDisplaySpaceId } from '../../utils/venue-list'
 import { getManagementStatusDisplay } from '../../utils/management-status'
@@ -68,6 +71,7 @@ export const VenueManagementPage = () => {
 
   const suspendVenueMutation = useSuspendVenue()
   const deleteVenueMutation = useDeleteVenue()
+  const tableColumnPreferencesQuery = useTableColumnPreferences(VENUE_MANAGEMENT_MODULE_KEY)
 
   const navigate = useNavigate()
 
@@ -274,98 +278,103 @@ export const VenueManagementPage = () => {
     {
       label: 'Approvals Pending',
       count: counts.approvalsPending,
-      gradient: 'bg-gradient-to-r from-amber-700/55 to-transparent',
-      border: 'border-amber-600/60',
+      gradient: statusCardTones.warning.background,
+      border: statusCardTones.warning.border,
       icon: Hourglass,
       status: 'pending',
     },
     {
       label: 'Reported Venues',
       count: counts.reportedVenues,
-      gradient: 'bg-gradient-to-r from-red-800/55 to-transparent',
-      border: 'border-red-800/60',
+      gradient: statusCardTones.danger.background,
+      border: statusCardTones.danger.border,
       icon: AlertCircle,
       status: 'reported',
     },
     {
       label: 'Suspended Venues',
       count: counts.suspendedVenues,
-      gradient: 'bg-gradient-to-r from-red-800/55 to-transparent',
-      border: 'border-red-800/60',
+      gradient: statusCardTones.danger.background,
+      border: statusCardTones.danger.border,
       icon: Ban,
       status: 'suspended',
     },
     {
       label: 'Deleted Venues',
       count: counts.deletedVenues,
-      gradient: 'bg-gradient-to-r from-red-800/55 to-transparent',
-      border: 'border-red-800/60',
+      gradient: statusCardTones.danger.background,
+      border: statusCardTones.danger.border,
       icon: Trash2,
       status: 'deleted',
     },
   ]
 
-  const columns = useMemo<ColumnDef<Venue>[]>(
-    () => [
-      {
-        id: 'select',
-        header: () => (
-          <input
-            type="checkbox"
-            aria-label="Select all venues"
-            checked={allVisibleVenuesSelected}
-            ref={(input) => {
-              if (input)
-                input.indeterminate = someVisibleVenuesSelected && !allVisibleVenuesSelected
-            }}
-            onChange={toggleVisibleVenues}
-            className="rounded border-slate-700 bg-transparent"
-          />
-        ),
-        cell: ({ row }) => (
-          <input
-            type="checkbox"
-            aria-label={`Select ${row.original.venueName}`}
-            checked={selectedVenueIds.includes(row.original._id)}
-            onChange={() => toggleVenueSelection(row.original._id)}
-            onClick={(event) => event.stopPropagation()}
-            className="rounded border-slate-700 bg-transparent"
-          />
-        ),
-        meta: {
-          headerClassName: 'pl-5',
-          cellClassName: 'pl-5',
-        },
+  const columns = useMemo<ColumnDef<Venue>[]>(() => {
+    const selectColumn: ColumnDef<Venue> = {
+      id: 'select',
+      header: () => (
+        <input
+          type="checkbox"
+          aria-label="Select all venues"
+          checked={allVisibleVenuesSelected}
+          ref={(input) => {
+            if (input) input.indeterminate = someVisibleVenuesSelected && !allVisibleVenuesSelected
+          }}
+          onChange={toggleVisibleVenues}
+          className="rounded border-slate-700 bg-transparent"
+        />
+      ),
+      cell: ({ row }) => (
+        <input
+          type="checkbox"
+          aria-label={`Select ${row.original.venueName}`}
+          checked={selectedVenueIds.includes(row.original._id)}
+          onChange={() => toggleVenueSelection(row.original._id)}
+          onClick={(event) => event.stopPropagation()}
+          className="rounded border-slate-700 bg-transparent"
+        />
+      ),
+      meta: {
+        headerClassName: 'pl-5',
+        cellClassName: 'pl-5',
       },
-      {
+    }
+    const dataColumnsById: Record<string, ColumnDef<Venue>> = {
+      'venue-id': {
+        id: 'venue-id',
         accessorKey: 'venueid',
         header: 'Venue ID',
         cell: ({ row }) => (
           <span className="font-mono text-xs uppercase">{getVenueDisplayId(row.original)}</span>
         ),
       },
-      {
+      name: {
+        id: 'name',
         accessorKey: 'venueName',
         header: 'Venue Name',
         cell: ({ row }) => <span className="font-medium text-white">{row.original.venueName}</span>,
       },
-      {
+      category: {
+        id: 'category',
         accessorKey: 'venueCategory',
         header: 'Venue Category',
       },
-      {
+      'space-id': {
+        id: 'space-id',
         accessorKey: 'spaceid',
         header: 'Space ID',
         cell: ({ row }) => (
           <span className="font-mono text-xs">{getVenueDisplaySpaceId(row.original)}</span>
         ),
       },
-      {
+      'space-name': {
+        id: 'space-name',
         accessorKey: 'spaceName',
         header: 'Space Name',
         cell: ({ row }) => row.original.spaceName || '—',
       },
-      {
+      status: {
+        id: 'status',
         accessorKey: 'status',
         header: 'Status',
         cell: ({ row }) => {
@@ -376,11 +385,13 @@ export const VenueManagementPage = () => {
           return <span className={className}>{label}</span>
         },
       },
-      {
+      'event-type': {
+        id: 'event-type',
         accessorKey: 'eventType',
         header: 'Event Type',
       },
-      {
+      'created-at': {
+        id: 'created-at',
         accessorKey: 'createdAt',
         header: 'Created At',
         cell: ({ row }) => {
@@ -405,73 +416,93 @@ export const VenueManagementPage = () => {
           )
         },
       },
-      {
-        id: 'actions',
-        header: 'Actions',
-        meta: {
-          headerClassName: 'pr-5 text-right',
-          cellClassName: 'relative pr-5 text-right',
-        },
-        cell: ({ row }) => {
-          const venue = row.original
-          const isOpen = activeDropdownId === venue._id
+    }
 
-          return (
-            <TableActionsDropdown
-              label={`Open actions for ${venue.venueName}`}
-              isOpen={isOpen}
-              onOpenChange={(open) => setActiveDropdownId(open ? venue._id : null)}
-              menuClassName={ACTION_MENU_CLASS}
-            >
-              <TableActionsItem
-                icon={<LayoutDashboard className="size-3.5 text-slate-700" />}
-                className={ACTION_ITEM_CLASS}
-                onClick={() => {
-                  setActiveDropdownId(null)
-                  navigate(`/venues/management/profile/${getVenueApiId(venue)}`)
-                }}
-              >
-                View Profile
-              </TableActionsItem>
+    const defaultVisibleIds = [
+      'venue-id',
+      'name',
+      'category',
+      'space-id',
+      'space-name',
+      'status',
+      'event-type',
+      'created-at',
+    ]
 
-              <TableActionsItem
-                icon={<PauseCircle className="size-3.5 text-slate-700" />}
-                className={ACTION_ITEM_CLASS}
-                onClick={() => {
-                  setActiveDropdownId(null)
-                  openSuspendModal(venue)
-                }}
-              >
-                Suspend Venue
-              </TableActionsItem>
+    const visibleIds = tableColumnPreferencesQuery.data?.visibleColumnIds?.length
+      ? tableColumnPreferencesQuery.data.visibleColumnIds
+      : defaultVisibleIds
 
-              <TableActionsItem
-                icon={<Trash2 className="size-3.5 text-slate-700" />}
-                className={ACTION_ITEM_CLASS}
-                onClick={() => {
-                  setActiveDropdownId(null)
-                  openDeleteModal(venue)
-                }}
-              >
-                Delete Venue
-              </TableActionsItem>
-            </TableActionsDropdown>
-          )
-        },
+    const preferenceColumns = visibleIds.map((id) => dataColumnsById[id]).filter(Boolean)
+
+    const actionsColumn: ColumnDef<Venue> = {
+      id: 'actions',
+      header: 'Actions',
+      meta: {
+        headerClassName: 'pr-5 text-right',
+        cellClassName: 'relative pr-5 text-right',
       },
-    ],
-    [
-      activeDropdownId,
-      allVisibleVenuesSelected,
-      navigate,
-      openDeleteModal,
-      openSuspendModal,
-      selectedVenueIds,
-      someVisibleVenuesSelected,
-      toggleVenueSelection,
-      toggleVisibleVenues,
-    ],
-  )
+      cell: ({ row }) => {
+        const venue = row.original
+        const isOpen = activeDropdownId === venue._id
+
+        return (
+          <TableActionsDropdown
+            label={`Open actions for ${venue.venueName}`}
+            isOpen={isOpen}
+            onOpenChange={(open) => setActiveDropdownId(open ? venue._id : null)}
+            menuClassName={ACTION_MENU_CLASS}
+          >
+            <TableActionsItem
+              icon={<LayoutDashboard className="size-3.5 text-slate-700" />}
+              className={ACTION_ITEM_CLASS}
+              onClick={() => {
+                setActiveDropdownId(null)
+                navigate(`/venues/management/profile/${getVenueApiId(venue)}`)
+              }}
+            >
+              View Profile
+            </TableActionsItem>
+
+            <TableActionsItem
+              icon={<PauseCircle className="size-3.5 text-slate-700" />}
+              className={ACTION_ITEM_CLASS}
+              onClick={() => {
+                setActiveDropdownId(null)
+                openSuspendModal(venue)
+              }}
+            >
+              Suspend Venue
+            </TableActionsItem>
+
+            <TableActionsItem
+              icon={<Trash2 className="size-3.5 text-slate-700" />}
+              className={ACTION_ITEM_CLASS}
+              onClick={() => {
+                setActiveDropdownId(null)
+                openDeleteModal(venue)
+              }}
+            >
+              Delete Venue
+            </TableActionsItem>
+          </TableActionsDropdown>
+        )
+      },
+    }
+
+    return [selectColumn, ...preferenceColumns, actionsColumn]
+  }, [
+    activeDropdownId,
+    allVisibleVenuesSelected,
+    navigate,
+    openDeleteModal,
+    openSuspendModal,
+    selectedVenueIds,
+    someVisibleVenuesSelected,
+    tableColumnPreferencesQuery.data,
+    toggleVenueSelection,
+    toggleVisibleVenues,
+  ])
 
   const bulkActions = [
     { label: 'Delete selected venues', icon: Trash2 },

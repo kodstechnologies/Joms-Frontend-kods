@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
+
+import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import { toast } from 'sonner'
 
 import {
@@ -330,7 +332,7 @@ export const CreateVenueListingPage = () => {
 
   const handleBack = () => {
     if (currentStep > 1) setCurrentStep((prev) => prev - 1)
-    else navigate(-1)
+    else navigateBackOrFallback(navigate, '/venues/management')
   }
 
   const breadcrumbs = [

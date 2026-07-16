@@ -1,6 +1,8 @@
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, History, Check, X, Flag } from 'lucide-react'
 
+import { navigateBackOrFallback } from '@/shared/lib/navigation'
+
 export function RefundDetails() {
   const navigate = useNavigate()
 
@@ -10,7 +12,7 @@ export function RefundDetails() {
         <div className="mb-4 -ml-10 flex items-center gap-3">
           <button
             type="button"
-            onClick={() => navigate(-1)}
+            onClick={() => navigateBackOrFallback(navigate, '/my-tasks')}
             className="rounded-md p-1 text-white transition hover:bg-white/10"
           >
             <ArrowLeft className="h-5 w-5" />

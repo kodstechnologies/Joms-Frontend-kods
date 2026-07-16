@@ -1,5 +1,7 @@
 import { useCallback, useState, type ReactNode } from 'react'
 import { useNavigate, useParams, type NavigateFunction } from 'react-router-dom'
+
+import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import { useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import {
@@ -1197,7 +1199,7 @@ export function ExpertProfileViewPage() {
       <div className="space-y-4">
         <button
           type="button"
-          onClick={() => navigate('/experts/management')}
+          onClick={() => navigateBackOrFallback(navigate, '/experts/management')}
           className="group font-heading hover:text-brand-accent flex w-fit items-center gap-2 text-[20px] font-bold text-white transition-colors"
         >
           <ArrowLeft className="size-5" />
@@ -1246,7 +1248,7 @@ export function ExpertProfileViewPage() {
         <div className="flex flex-col gap-2">
           <button
             type="button"
-            onClick={() => navigate('/experts/management')}
+            onClick={() => navigateBackOrFallback(navigate, '/experts/management')}
             className="group font-heading hover:text-brand-accent flex w-fit items-center gap-2 text-[20px] font-bold tracking-tight text-white transition-colors"
           >
             <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
@@ -1255,7 +1257,7 @@ export function ExpertProfileViewPage() {
           <div className="flex items-center gap-1.5 pl-7 text-[12px] font-medium text-[#777777]">
             <button
               type="button"
-              onClick={() => navigate('/experts/management')}
+              onClick={() => navigateBackOrFallback(navigate, '/experts/management')}
               className="transition-colors hover:text-white"
             >
               User management

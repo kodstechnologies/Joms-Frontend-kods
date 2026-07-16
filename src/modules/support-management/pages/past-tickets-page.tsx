@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 import { ArrowLeft } from 'lucide-react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 
 import { TicketPriorityBadge } from '../components/ticket-priority-badge'
@@ -11,8 +11,10 @@ import { useSupportStore } from '../store/support-store'
 import type { SupportTicket } from '../types/support'
 import { DataTable } from '@/shared/components/table/data-table'
 import { SectionHeader } from '@/shared/components/dashboard/section-header'
+import { navigateBackOrFallback } from '@/shared/lib/navigation'
 
 export function PastTicketsPage() {
+  const navigate = useNavigate()
   const { userId } = useParams<{ userId: string }>()
   const { searchQuery, setSearchQuery, currentPage, setCurrentPage } = useSupportStore()
 
@@ -83,12 +85,13 @@ export function PastTicketsPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-start gap-3">
-        <Link
-          to="/support/workspace"
+        <button
+          type="button"
+          onClick={() => navigateBackOrFallback(navigate, '/support/workspace')}
           className="mt-1 rounded-lg border border-white/10 p-2 text-slate-400 hover:text-white"
         >
           <ArrowLeft className="size-4" />
-        </Link>
+        </button>
         <SectionHeader
           title="Past Tickets"
           subtitle={userId ? `User ID: ${userId}` : 'John Doe'}

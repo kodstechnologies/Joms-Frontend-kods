@@ -15,6 +15,7 @@ import {
 } from '../hooks/use-templates'
 import type { ModerationCategory, ModerationReason } from '../api/templates-api'
 import { cn } from '@/shared/lib/cn'
+import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import { uiTokens } from '@/shared/lib/design-tokens'
 
 type ReasonFormState = {
@@ -333,7 +334,11 @@ export function TemplatesPage({ embedded = false }: { embedded?: boolean }) {
       {!embedded ? (
         <button
           type="button"
-          onClick={() => navigate('/settings/main', { state: { settingsTab: 'templates' } })}
+          onClick={() =>
+            navigateBackOrFallback(navigate, '/settings/main', {
+              state: { settingsTab: 'templates' },
+            })
+          }
           className="inline-flex items-center gap-2 text-sm text-slate-400 hover:text-white"
         >
           <ArrowLeft className="size-4" />

@@ -2,6 +2,7 @@ import { ArrowLeft, Funnel, RotateCcw, X } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
 import { Button } from '@/shared/components/ui/button'
+import { navigateBackOrFallback } from '@/shared/lib/navigation'
 
 import {
   ByCustomersFilter,
@@ -16,24 +17,29 @@ export function CategoryAdvancedFilter() {
 
   return (
     <div className="bg-brand-bg text-brand-text min-h-screen">
-      {/* Header */}
       <div className="flex items-center justify-between border-b border-white/10 px-8 py-5">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" className="h-10 w-10 p-0" onClick={() => navigate(-1)}>
+          <Button
+            variant="ghost"
+            className="h-10 w-10 p-0"
+            onClick={() => navigateBackOrFallback(navigate, '/categories/management')}
+          >
             <ArrowLeft size={18} />
           </Button>
 
           <h1 className="text-2xl font-semibold">Advanced Filters - Service Category Management</h1>
         </div>
 
-        <Button variant="ghost" className="h-10 w-10 p-0" onClick={() => navigate(-1)}>
+        <Button
+          variant="ghost"
+          className="h-10 w-10 p-0"
+          onClick={() => navigateBackOrFallback(navigate, '/categories/management')}
+        >
           <X size={20} />
         </Button>
       </div>
 
-      {/* Body */}
       <div className="mx-auto max-w-7xl space-y-6 px-8 py-8">
-        {/* Services + Experts */}
         <div className="rounded-brand-lg bg-brand-surface border border-white/10 p-8">
           <ByServicesFilter />
 
@@ -42,17 +48,13 @@ export function CategoryAdvancedFilter() {
           </div>
         </div>
 
-        {/* Orders */}
         <ByOrdersFilter />
 
-        {/* Customers */}
         <ByCustomersFilter />
 
-        {/* Location */}
         <ByLocationFilter />
       </div>
 
-      {/* Footer */}
       <div className="bg-brand-bg sticky bottom-0 border-t border-white/10 px-8 py-5">
         <div className="flex items-center justify-between">
           <Button

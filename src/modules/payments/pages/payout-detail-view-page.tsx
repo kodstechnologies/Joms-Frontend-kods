@@ -5,6 +5,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { getPayoutDetailById } from '@/modules/payments/mock/payout-detail.mock'
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
+import { navigateBackOrFallback } from '@/shared/lib/navigation'
 
 function DetailCard({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -40,7 +41,7 @@ export function PayoutDetailViewPage() {
       <header>
         <button
           type="button"
-          onClick={() => navigate('/finance/payouts')}
+          onClick={() => navigateBackOrFallback(navigate, '/finance/payouts')}
           className="group flex w-fit items-center gap-2 text-[20px] font-bold tracking-tight text-white transition-colors hover:text-[#FBC078]"
         >
           <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
@@ -88,7 +89,10 @@ export function PayoutDetailViewPage() {
       </div>
 
       <div className="flex justify-end">
-        <Button variant="secondary" onClick={() => navigate('/finance/payouts')}>
+        <Button
+          variant="secondary"
+          onClick={() => navigateBackOrFallback(navigate, '/finance/payouts')}
+        >
           Close
         </Button>
       </div>

@@ -9,6 +9,7 @@ import { EscalateToSuperAdminModal } from '@/modules/payments/components/escalat
 import { getRefundDetailById } from '@/modules/payments/mock/refund-detail.mock'
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
+import { navigateBackOrFallback } from '@/shared/lib/navigation'
 
 function InnerCard({
   title,
@@ -80,7 +81,7 @@ export function RefundDetailViewPage() {
       <header>
         <button
           type="button"
-          onClick={() => navigate('/finance/refunds')}
+          onClick={() => navigateBackOrFallback(navigate, '/finance/refunds')}
           className="group flex w-fit items-center gap-2 text-[20px] font-bold tracking-tight text-white transition-colors hover:text-[#FBC078]"
         >
           <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
@@ -145,7 +146,10 @@ export function RefundDetailViewPage() {
         </div>
 
         <footer className="mt-5 flex flex-col gap-3 border-t border-white/5 pt-5 sm:flex-row sm:items-center sm:justify-between">
-          <Button variant="secondary" onClick={() => navigate('/finance/refunds')}>
+          <Button
+            variant="secondary"
+            onClick={() => navigateBackOrFallback(navigate, '/finance/refunds')}
+          >
             Close
           </Button>
           <div className="flex flex-wrap items-center gap-3">

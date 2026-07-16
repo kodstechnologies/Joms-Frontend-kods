@@ -8,6 +8,7 @@ import {
   EXPERT_VISIBLE_COLUMNS,
 } from '../../mock/expert-manage-metrics.mock'
 import { ManageMetrics } from '@/shared/components/manage-metrics'
+import { navigateBackOrFallback } from '@/shared/lib/navigation'
 
 type ExpertMetricsPageProps = {
   returnTo?: string
@@ -15,7 +16,7 @@ type ExpertMetricsPageProps = {
 
 export const ExpertMetricsPage = ({ returnTo = '/experts/dashboard' }: ExpertMetricsPageProps) => {
   const navigate = useNavigate()
-  const goBack = () => navigate(returnTo)
+  const goBack = () => navigateBackOrFallback(navigate, returnTo)
 
   return (
     <ManageMetrics

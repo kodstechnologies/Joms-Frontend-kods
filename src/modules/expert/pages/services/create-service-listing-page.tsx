@@ -12,6 +12,8 @@ import {
   X,
 } from 'lucide-react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
+
+import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import { toast } from 'sonner'
 import { useCategories, useSubcategories } from '@/modules/expert/hooks/use-categories'
 import {
@@ -200,7 +202,7 @@ export const CreateServiceListingPage = () => {
 
   const handleBack = () => {
     if (currentStep > 1) setCurrentStep(currentStep - 1)
-    else navigate(-1)
+    else navigateBackOrFallback(navigate, '/services/management')
   }
 
   const toggleSubCategory = (subCategoryId: string) => {
