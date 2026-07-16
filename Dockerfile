@@ -1,6 +1,9 @@
 # Build Stage
 FROM node:20-alpine AS build
 
+# Install git (required by lefthook)
+RUN apk add --no-cache git
+
 WORKDIR /app
 
 COPY package*.json ./
