@@ -49,21 +49,18 @@ export function SidebarGroup({
   const firstTo = getFirstNavigableTo(item)
 
   // Expanded: inactive modules cannot open their submenu (only switch by navigating).
-  // Collapsed: inactive modules are fully blocked.
-  const blockInactive = isInactiveModule && compact
+  // Collapsed: all icons stay clickable and jump to that module (Figma).
   const canExpandOwnSubmenu =
     hasChildren && !compact && !isInactiveModule && (isActiveModule || !isTopLevel)
 
   const shouldShowChildren = canExpandOwnSubmenu && isOpen
 
   let itemTo: string | undefined
-  if (blockInactive) {
-    itemTo = undefined
-  } else if (isInactiveModule && !compact) {
+  if (isInactiveModule && !compact) {
     // Clicking a dimmed module switches into it — never opens its submenu here
     itemTo = firstTo
   } else if (hasChildren) {
-    itemTo = compact && isActiveModule ? firstTo : undefined
+    itemTo = compact ? firstTo : undefined
   } else {
     itemTo = item.to
   }
@@ -72,8 +69,7 @@ export function SidebarGroup({
     <div
       className={cn(
         'space-y-1 transition-opacity duration-200',
-        isInactiveModule && 'opacity-40',
-        blockInactive && 'pointer-events-none select-none',
+        isInactiveModule && !compact && 'opacity-40',
       )}
     >
       <SidebarItem
@@ -84,7 +80,6 @@ export function SidebarGroup({
         depth={depth}
         active={isChildActive}
         moduleActive={isActiveModule}
-        disabled={blockInactive}
         expandable={hasChildren && !compact}
         expanded={Boolean(shouldShowChildren)}
         compact={compact}

@@ -38,8 +38,13 @@ export function Sidebar({
   }
 
   return (
-    <div className="flex h-full flex-col px-3 pt-2 pb-6">
-      <nav className="flex-1 space-y-0.5 overflow-y-auto pb-4 [scrollbar-color:rgba(255,255,255,0.2)_transparent] [scrollbar-width:thin]">
+    <div className={cn('flex h-full flex-col pt-2 pb-6', compact ? 'px-1' : 'px-3')}>
+      <nav
+        className={cn(
+          'flex-1 overflow-y-auto pb-4 [scrollbar-color:rgba(255,255,255,0.2)_transparent] [scrollbar-width:thin]',
+          compact ? 'space-y-1' : 'space-y-0.5',
+        )}
+      >
         {visibleNavigation.map((item) => (
           <SidebarGroup
             key={item.key}
@@ -59,11 +64,11 @@ export function Sidebar({
         disabled={isLoggingOut}
         className={cn(
           'text-brand-danger hover:text-brand-danger/80 focus-visible:ring-brand-accent/30 mt-2 flex items-center text-sm font-semibold transition-colors focus-visible:ring-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-60',
-          compact ? 'justify-center py-3' : 'rounded-brand-md gap-2 px-3 py-2.5',
+          compact ? 'mx-auto justify-center py-3' : 'rounded-brand-md gap-2 px-3 py-2.5',
         )}
         aria-label="Log Out"
       >
-        <LogOut className="size-4" />
+        <LogOut className={cn(compact ? 'size-5' : 'size-4')} strokeWidth={compact ? 1.75 : 2} />
         {!compact ? (
           <span className="truncate">{isLoggingOut ? 'Logging out…' : 'Log Out'}</span>
         ) : null}
