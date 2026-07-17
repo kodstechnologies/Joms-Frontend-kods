@@ -7,7 +7,10 @@ export function isNavItemActive(navItem: NavItem, pathname: string): boolean {
     return true
   }
 
-  // Single Membership sidebar entry should stay active on all membership routes
+  if (navItem.matchPaths?.some((path) => matchPath({ path, end: false }, pathname))) {
+    return true
+  }
+
   if (navItem.key === 'membership' && pathname.startsWith('/memberships')) {
     return true
   }

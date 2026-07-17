@@ -5,8 +5,6 @@ import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import axios from 'axios'
 import {
   ArrowLeft,
-  ArrowUp,
-  Check,
   ChevronLeft,
   ChevronRight,
   Clock,
@@ -17,9 +15,6 @@ import {
   Languages,
   Loader2,
   Phone,
-  RotateCcw,
-  ShieldCheck,
-  X,
 } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -33,6 +28,10 @@ import {
 import { useExpertProfile } from '../../hooks/use-expert-profile'
 import { formatExpertDateTime, formatListingExpertId } from '../experts/expert-list-format'
 import { Button } from '@/shared/components/ui/button'
+import {
+  DecisionControlButtons,
+  DecisionControlsHeader,
+} from '@/shared/components/decision-controls'
 import {
   DecisionActionModal,
   type DecisionActionModalOption,
@@ -615,13 +614,15 @@ export const ServiceViewPage = () => {
         reject: {
           title: isConsultation ? 'Reject Consultation' : 'Reject Service',
           description:
-            'Are you sure you want to reject this application? The applicant will be notified via email.',
+            'Are you sure you want to Reject Approval to this application? The applicant will be notified via email.',
           submitLabel: isConsultation ? 'Reject Consultation' : 'Reject Service',
           variant: 'reject' as const,
           reasonOptions: decisionReasonOptions,
         },
         requestChanges: {
-          title: 'Request Changes',
+          title: isConsultation
+            ? 'Request Changes – Consultation Approval'
+            : 'Request Changes – Service Approval',
           description:
             'Are you sure you want to Request Changes to this application? The applicant will be notified via email.',
           submitLabel: 'Request Changes',
@@ -639,7 +640,7 @@ export const ServiceViewPage = () => {
         escalate: {
           title: 'Escalate Application',
           description:
-            'Are you sure you want to escalate this application? This post will be reviewed by the selected parties.',
+            'Are you sure you want to escalate this Application? This Post will be reviewed by the selected parties.',
           submitLabel: 'Escalate',
           variant: 'escalate' as const,
         },
@@ -1095,47 +1096,15 @@ export const ServiceViewPage = () => {
 
         {showApprovalControls && (
           <div className="rounded-xl border border-white/5 bg-[#111111] p-5">
-            <div className="mb-4 flex items-center gap-2 text-[14px] font-semibold text-white">
-              <ShieldCheck className="text-brand-accent size-4" aria-hidden="true" />
-              <h3>Decision Controls</h3>
-            </div>
-            <div className="flex flex-wrap gap-3">
-              <button
-                type="button"
-                onClick={() => openDecisionModal('approve')}
-                className="bg-brand-success flex items-center gap-2 rounded-md px-4 py-2.5 text-[11px] font-bold text-white"
-              >
-                Approve
-                <Check className="size-3.5" />
-              </button>
-              <button
-                type="button"
-                onClick={() => openDecisionModal('requestChanges')}
-                className="bg-brand-accent text-brand-text-dark hover:bg-brand-gold-from flex items-center gap-2 rounded-md px-4 py-2.5 text-[11px] font-bold"
-              >
-                Ask for Re-Submit
-                <RotateCcw className="size-3.5" />
-              </button>
-              {isSuperAdmin ? (
-                <button
-                  type="button"
-                  disabled={escalateDisabled}
-                  onClick={() => openDecisionModal('escalate')}
-                  className="bg-brand-action flex items-center gap-2 rounded-md px-4 py-2.5 text-[11px] font-bold text-white disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  Escalate
-                  <ArrowUp className="size-3.5" />
-                </button>
-              ) : null}
-              <button
-                type="button"
-                onClick={() => openDecisionModal('reject')}
-                className="bg-brand-danger flex items-center gap-2 rounded-md px-4 py-2.5 text-[11px] font-bold text-white"
-              >
-                Reject Application
-                <X className="size-3.5" />
-              </button>
-            </div>
+            <DecisionControlsHeader className="mb-4" />
+            <DecisionControlButtons
+              onApprove={() => openDecisionModal('approve')}
+              onRequestChanges={() => openDecisionModal('requestChanges')}
+              onEscalate={() => openDecisionModal('escalate')}
+              onReject={() => openDecisionModal('reject')}
+              showEscalate={isSuperAdmin}
+              escalateDisabled={escalateDisabled}
+            />
           </div>
         )}
       </div>

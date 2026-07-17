@@ -5,20 +5,15 @@ import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import { toast } from 'sonner'
 import {
   ArrowLeft,
-  ArrowUpRight,
   Banknote,
-  Check,
   CheckCircle2,
   ClipboardList,
   ExternalLink,
   FileText,
-  Gavel,
   History,
   ImageOff,
-  RotateCcw,
   ShieldCheck,
   User,
-  X,
 } from 'lucide-react'
 
 import {
@@ -33,6 +28,10 @@ import {
 } from '../../hooks/use-expert-application-view'
 import { useAdminEscalation } from '@/modules/my-tasks/hooks/use-admin-escalation'
 import type { VenueKycStatus } from '../../type/venue-kyc'
+import {
+  DecisionControlButtons,
+  DecisionControlsHeader,
+} from '@/shared/components/decision-controls'
 import {
   DecisionActionModal,
   type DecisionActionModalOption,
@@ -53,17 +52,18 @@ const TABS: { key: TabKey; label: string }[] = [
 
 const KYC_REJECT_REASONS: DecisionActionModalOption[] = [
   { label: 'Unclear Image', value: 'Unclear Image' },
-  { label: 'Content issue', value: 'Content issue' },
-  { label: 'Invalid Documents', value: 'Invalid Documents' },
-  { label: 'Invalid PAN', value: 'IndiaPAN' },
-  { label: 'Invalid GST', value: 'InvalidGST' },
+  { label: 'Content Issue', value: 'Content Issue' },
+  { label: 'Invalid documents', value: 'Invalid documents' },
+  { label: 'Invalid PAN', value: 'Invalid PAN' },
+  { label: 'Invalid GST', value: 'Invalid GST' },
 ]
 
 const BANKING_REJECT_REASONS: DecisionActionModalOption[] = [
-  { label: 'Cheque unreadable', value: 'Cheque unreadable' },
-  { label: 'Name mismatch', value: 'Name mismatch' },
-  { label: 'Account details invalid', value: 'Account details invalid' },
-  { label: 'IFSC mismatch', value: 'IFSC mismatch' },
+  { label: 'Unclear Image', value: 'Unclear Image' },
+  { label: 'Content Issue', value: 'Content Issue' },
+  { label: 'Invalid documents', value: 'Invalid documents' },
+  { label: 'Invalid PAN', value: 'Invalid PAN' },
+  { label: 'Invalid GST', value: 'Invalid GST' },
 ]
 
 const getApiErrorMessage = (error: unknown) => {
@@ -265,6 +265,7 @@ export function VenueKycApplicationViewPage() {
   const [rejectionReason, setRejectionReason] = useState('')
   const [adminNotes, setAdminNotes] = useState('')
   const [selectedEscalationOption, setSelectedEscalationOption] = useState('')
+  const [rejectConfirmed, setRejectConfirmed] = useState(false)
 
   const { data, isLoading, isError, error } = useApplicationDetails(id)
   const { data: assigneesData } = useEscalationAssignees()
@@ -300,6 +301,7 @@ export function VenueKycApplicationViewPage() {
     setRejectionReason('')
     setAdminNotes('')
     setSelectedEscalationOption('')
+    setRejectConfirmed(false)
     setModalOpen(true)
   }
 
@@ -350,8 +352,12 @@ export function VenueKycApplicationViewPage() {
         toast.error('Please select at least one reason.')
         return
       }
-      if (!rejectionReason.trim()) {
-        toast.error('Please provide a rejection reason.')
+      if (modalVariant === 'reject' && !rejectConfirmed) {
+        toast.error('Please confirm the documents are not approved.')
+        return
+      }
+      if (modalVariant === 'requestChanges' && !rejectionReason.trim()) {
+        toast.error('Please provide a request changes reason.')
         return
       }
     }
@@ -361,6 +367,14 @@ export function VenueKycApplicationViewPage() {
       return
     }
 
+    const resolvedRejectionReason =
+      modalVariant === 'reject'
+        ? (modalTarget === 'banking' ? BANKING_REJECT_REASONS : KYC_REJECT_REASONS)
+            .filter((option) => selectedReasons.includes(option.value))
+            .map((option) => option.label)
+            .join(', ') || selectedReasons.join(', ')
+        : rejectionReason.trim()
+
     if (modalTarget === 'banking') {
       const payload =
         modalVariant === 'approve'
@@ -368,7 +382,7 @@ export function VenueKycApplicationViewPage() {
           : {
               status: 'REJECTED' as const,
               reasonFor: selectedReasons,
-              rejectionReason: rejectionReason.trim(),
+              rejectionReason: resolvedRejectionReason,
               adminNote: adminNotes.trim(),
             }
 
@@ -406,7 +420,7 @@ export function VenueKycApplicationViewPage() {
       {
         status: 'REJECTED',
         reasonFor: selectedReasons,
-        rejectionReason: rejectionReason.trim(),
+        rejectionReason: resolvedRejectionReason,
         adminNote: adminNotes.trim(),
       },
       {
@@ -435,12 +449,11 @@ export function VenueKycApplicationViewPage() {
   const escalateDisabled = activeDecisionStatus === 'APPROVED' || escalateApplication.isPending
 
   const modalTitle = useMemo(() => {
-    const target = modalTarget === 'banking' ? 'Banking' : 'Venue KYC'
-    if (modalVariant === 'approve') return `Approve ${target}`
+    if (modalVariant === 'approve') return 'Confirm Application'
     if (modalVariant === 'requestChanges') return 'Request Changes'
     if (modalVariant === 'escalate') return 'Escalate Application'
-    return `Reject ${target}`
-  }, [modalTarget, modalVariant])
+    return 'Reject Application'
+  }, [modalVariant])
 
   const notesContent = useMemo(() => {
     const escalation = escalationData?.data
@@ -805,10 +818,7 @@ export function VenueKycApplicationViewPage() {
         </div>
 
         <div className="rounded-xl border border-white/5 bg-[#111111] p-5">
-          <div className="mb-4 flex items-center gap-2 text-[14px] font-semibold text-white">
-            <Gavel className="text-brand-accent size-4" aria-hidden="true" />
-            <h3>Decision Controls</h3>
-          </div>
+          <DecisionControlsHeader className="mb-4" />
 
           {decisionTargetForTab === 'banking' && !isBankingSubmitted && (
             <p className="mb-4 rounded-md border border-white/5 bg-black px-3 py-2 text-[11px] font-medium text-[#999]">
@@ -825,46 +835,17 @@ export function VenueKycApplicationViewPage() {
               </p>
             )}
 
-          <div className="flex flex-wrap gap-3">
-            <button
-              type="button"
-              disabled={decisionDisabled}
-              onClick={() => openDecisionModal(decisionTargetForTab, 'approve')}
-              className="bg-brand-success flex items-center gap-2 rounded-md px-4 py-2.5 text-[11px] font-bold text-white transition-colors hover:bg-[#08a85d] disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              Approve
-              <Check className="size-3.5" />
-            </button>
-            <button
-              type="button"
-              disabled={decisionDisabled}
-              onClick={() => openDecisionModal(decisionTargetForTab, 'requestChanges')}
-              className="bg-brand-accent text-brand-text-dark hover:bg-brand-gold-from hover:bg-brand-gold-from flex items-center gap-2 rounded-md px-4 py-2.5 text-[11px] font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              Ask for Re-Submit
-              <RotateCcw className="size-3.5" />
-            </button>
-            {isSuperAdmin ? (
-              <button
-                type="button"
-                disabled={escalateDisabled}
-                onClick={() => openDecisionModal(decisionTargetForTab, 'escalate')}
-                className="bg-brand-action flex items-center gap-2 rounded-md px-4 py-2.5 text-[11px] font-bold text-white transition-colors hover:bg-[#1e40af] disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                Escalate
-                <ArrowUpRight className="size-3.5" />
-              </button>
-            ) : null}
-            <button
-              type="button"
-              disabled={decisionDisabled}
-              onClick={() => openDecisionModal(decisionTargetForTab, 'reject')}
-              className="bg-brand-danger flex items-center gap-2 rounded-md px-4 py-2.5 text-[11px] font-bold text-white transition-colors hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              Reject Application
-              <X className="size-3.5" />
-            </button>
-          </div>
+          <DecisionControlButtons
+            onApprove={() => openDecisionModal(decisionTargetForTab, 'approve')}
+            onRequestChanges={() => openDecisionModal(decisionTargetForTab, 'requestChanges')}
+            onEscalate={() => openDecisionModal(decisionTargetForTab, 'escalate')}
+            onReject={() => openDecisionModal(decisionTargetForTab, 'reject')}
+            showEscalate={isSuperAdmin}
+            approveDisabled={decisionDisabled}
+            requestChangesDisabled={decisionDisabled}
+            escalateDisabled={escalateDisabled}
+            rejectDisabled={decisionDisabled}
+          />
         </div>
       </div>
 
@@ -872,23 +853,28 @@ export function VenueKycApplicationViewPage() {
         open={modalOpen}
         variant={modalVariant}
         title={modalTitle}
+        warning={
+          modalVariant === 'reject'
+            ? 'This action cannot be reversed. And it will impact the user'
+            : undefined
+        }
         description={
           modalVariant === 'escalate'
-            ? 'Are you sure you want to escalate this application? This post will be reviewed by the selected parties.'
+            ? 'Are you sure you want to escalate this Application? This Post will be reviewed by the selected parties.'
             : modalVariant === 'approve'
-              ? `Are you sure you want to approve this ${modalTarget === 'banking' ? 'banking' : 'venue KYC'} section?`
+              ? 'Are you sure you want to approve this application? The applicant will be notified via email.'
               : modalVariant === 'requestChanges'
                 ? 'Are you sure you want to Request Changes to this application? The applicant will be notified via email.'
-                : `Are you sure you want to reject this ${modalTarget === 'banking' ? 'banking' : 'venue KYC'} section?`
+                : 'Please select the reason to ask the user to re-submit the documents and go through verification again'
         }
         submitLabel={
           modalVariant === 'escalate'
             ? 'Escalate'
             : modalVariant === 'approve'
-              ? 'Approve'
+              ? 'Confirm Approval'
               : modalVariant === 'requestChanges'
                 ? 'Request Changes'
-                : 'Reject'
+                : 'Reject Approval'
         }
         reasonOptions={
           isRejectFlow
@@ -899,8 +885,16 @@ export function VenueKycApplicationViewPage() {
         }
         selectedReasons={selectedReasons}
         onReasonToggle={toggleReason}
-        reason={isRejectFlow ? rejectionReason : ''}
-        onReasonChange={isRejectFlow ? setRejectionReason : undefined}
+        reason={modalVariant === 'requestChanges' ? rejectionReason : ''}
+        onReasonChange={modalVariant === 'requestChanges' ? setRejectionReason : undefined}
+        reasonLabel="Request Changes"
+        confirmationLabel={
+          modalVariant === 'reject'
+            ? 'I confirm the documents are not approved due to above reasons.'
+            : undefined
+        }
+        confirmationChecked={rejectConfirmed}
+        onConfirmationChange={modalVariant === 'reject' ? setRejectConfirmed : undefined}
         escalationOptions={isEscalateFlow ? escalationOptions : []}
         selectedEscalationOption={isEscalateFlow ? selectedEscalationOption : undefined}
         onEscalationOptionChange={isEscalateFlow ? setSelectedEscalationOption : undefined}
@@ -909,6 +903,7 @@ export function VenueKycApplicationViewPage() {
         onClose={() => setModalOpen(false)}
         onSubmit={handleSubmitDecision}
         isSubmitting={isSubmitting}
+        submitIcon={modalVariant === 'reject' ? 'check' : undefined}
       />
     </div>
   )

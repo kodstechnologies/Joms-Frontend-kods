@@ -1,4 +1,4 @@
-import { ArrowUpRight, Check, X } from 'lucide-react'
+import { Check, MoveDiagonal, X } from 'lucide-react'
 
 import { cn } from '@/shared/lib/cn'
 
@@ -25,11 +25,16 @@ type DecisionActionModalProps = {
   onClose: () => void
   onSubmit: () => void
   cancelLabel?: string
+  warning?: string
   reason?: string
   onReasonChange?: (value: string) => void
+  reasonLabel?: string
   reasonOptions?: DecisionActionModalOption[]
   selectedReasons?: string[]
   onReasonToggle?: (value: string) => void
+  confirmationLabel?: string
+  confirmationChecked?: boolean
+  onConfirmationChange?: (checked: boolean) => void
   escalationOptions?: DecisionActionModalOption[]
   selectedEscalationOption?: string
   onEscalationOptionChange?: (value: string) => void
@@ -42,6 +47,7 @@ type DecisionActionModalProps = {
   indefinite?: boolean
   onIndefiniteChange?: (value: boolean) => void
   indefiniteLabel?: string
+  submitIcon?: 'check' | 'x' | 'none'
 }
 
 const variantStyles: Record<
@@ -50,12 +56,14 @@ const variantStyles: Record<
     submit: string
     selectedChip: string
     submitIcon?: 'check' | 'x'
+    checkIconColor?: string
   }
 > = {
   approve: {
     submit: 'bg-[#16A34A] text-white hover:bg-[#15803D]',
     selectedChip: 'bg-[#E8B884] text-black',
     submitIcon: 'check',
+    checkIconColor: 'text-[#16A34A]',
   },
   reject: {
     submit: 'bg-[#E11D2E] text-white hover:bg-[#C41424]',
@@ -63,9 +71,10 @@ const variantStyles: Record<
     submitIcon: 'x',
   },
   requestChanges: {
-    submit: 'bg-[#C45A16] text-white hover:bg-[#A84A12]',
+    submit: 'bg-[#FF842B] text-white hover:bg-[#F07520]',
     selectedChip: 'bg-[#E8B884] text-black',
     submitIcon: 'check',
+    checkIconColor: 'text-[#FF842B]',
   },
   escalate: {
     submit: 'bg-[#E5B678] text-black hover:bg-[#D9A866]',
@@ -86,6 +95,12 @@ function splitDescription(description: string): { primary: string; secondary?: s
   return { primary: description }
 }
 
+function formatEscalationLabel(label: string) {
+  const trimmed = label.trim()
+  if (trimmed.startsWith('[') && trimmed.endsWith(']')) return trimmed
+  return `[${trimmed}]`
+}
+
 export function DecisionActionModal({
   open,
   variant,
@@ -97,11 +112,16 @@ export function DecisionActionModal({
   onClose,
   onSubmit,
   cancelLabel = 'Cancel',
+  warning,
   reason = '',
   onReasonChange,
+  reasonLabel = 'Reason',
   reasonOptions = [],
   selectedReasons = [],
   onReasonToggle,
+  confirmationLabel,
+  confirmationChecked = false,
+  onConfirmationChange,
   escalationOptions = [],
   selectedEscalationOption,
   onEscalationOptionChange,
@@ -114,6 +134,7 @@ export function DecisionActionModal({
   indefinite = false,
   onIndefiniteChange,
   indefiniteLabel = 'Suspend indefinitely (until manually reactivated)',
+  submitIcon,
 }: DecisionActionModalProps) {
   if (!open) return null
 
@@ -121,14 +142,15 @@ export function DecisionActionModal({
   const showReasons = reasonOptions.length > 0
   const showReasonInput = Boolean(onReasonChange)
   const showEscalationOptions = escalationOptions.length > 0
+  const showConfirmation = Boolean(confirmationLabel && onConfirmationChange)
   const showHeroIcon = variant === 'approve' || variant === 'escalate'
-  const { primary, secondary } = showHeroIcon
-    ? splitDescription(description)
-    : { primary: description, secondary: undefined }
+  const isDocumentRejectLayout = Boolean(warning) || showConfirmation
+  const resolvedSubmitIcon = submitIcon ?? styles.submitIcon
+  const { primary, secondary } = splitDescription(description)
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 px-4 py-6"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-6"
       role="presentation"
       onClick={onClose}
     >
@@ -136,13 +158,13 @@ export function DecisionActionModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="decision-action-modal-title"
-        className="flex max-h-[90vh] w-full max-w-[440px] flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#121212] text-white shadow-[0_24px_80px_rgba(0,0,0,0.65)]"
+        className="flex max-h-[90vh] w-full max-w-[520px] flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#1A1A1A] text-white shadow-[0_24px_80px_rgba(0,0,0,0.65)]"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="flex shrink-0 items-center justify-between border-b border-white/10 px-6 py-4">
           <h2
             id="decision-action-modal-title"
-            className="text-xl font-semibold tracking-tight text-white"
+            className="text-[18px] font-semibold tracking-tight text-white"
           >
             {title}
           </h2>
@@ -157,17 +179,19 @@ export function DecisionActionModal({
         </div>
 
         <div className="flex-1 space-y-5 overflow-y-auto px-6 py-6">
+          {warning ? <p className="text-[13px] leading-relaxed text-[#9A9A9A]">{warning}</p> : null}
+
           {showHeroIcon ? (
             <div className="flex justify-center">
               {variant === 'approve' ? (
-                <span className="flex size-16 items-center justify-center rounded-full bg-[#1F9D55]">
-                  <Check className="size-8 text-[#0B3D24]" strokeWidth={3} aria-hidden="true" />
+                <span className="flex size-[72px] items-center justify-center rounded-full bg-[#1F9D55]">
+                  <Check className="size-9 text-white" strokeWidth={3} aria-hidden="true" />
                 </span>
               ) : (
-                <span className="flex size-16 items-center justify-center rounded-full bg-[#5C4630]">
-                  <ArrowUpRight
-                    className="size-7 text-[#E5B678]"
-                    strokeWidth={2}
+                <span className="flex size-[72px] items-center justify-center rounded-full bg-[#E8B884]">
+                  <MoveDiagonal
+                    className="size-8 text-[#3D2A16]"
+                    strokeWidth={2.25}
                     aria-hidden="true"
                   />
                 </span>
@@ -175,16 +199,32 @@ export function DecisionActionModal({
             </div>
           ) : null}
 
-          <div className="mx-auto max-w-[340px] space-y-1 text-center">
-            <p className="text-[15px] leading-snug font-medium text-white">{primary}</p>
+          <div
+            className={cn(
+              'space-y-1',
+              isDocumentRejectLayout ? 'text-left' : 'mx-auto max-w-[380px] text-center',
+            )}
+          >
+            <p
+              className={cn(
+                'leading-snug text-white',
+                showHeroIcon
+                  ? 'text-[15px] font-semibold'
+                  : isDocumentRejectLayout
+                    ? 'text-[14px] font-normal'
+                    : 'text-[14px] font-medium',
+              )}
+            >
+              {primary}
+            </p>
             {secondary ? (
-              <p className="text-sm leading-relaxed font-normal text-white/90">{secondary}</p>
+              <p className="text-[14px] leading-relaxed text-white/85">{secondary}</p>
             ) : null}
           </div>
 
           {showReasons ? (
             <div>
-              <span className="mb-2.5 block text-[13px] font-medium text-[#8A8A8A]">Reasons</span>
+              <span className="mb-2.5 block text-[13px] font-medium text-[#9A9A9A]">Reasons</span>
               <div className="flex flex-wrap gap-2.5">
                 {reasonOptions.map((option) => {
                   const isSelected = selectedReasons.includes(option.value)
@@ -198,7 +238,7 @@ export function DecisionActionModal({
                         'rounded-lg px-3.5 py-2 text-[13px] font-medium transition-colors',
                         isSelected
                           ? styles.selectedChip
-                          : 'border border-white/15 bg-black text-white hover:border-white/30',
+                          : 'border border-white/15 bg-[#0D0D0D] text-white hover:border-white/30',
                       )}
                     >
                       {option.label}
@@ -209,9 +249,21 @@ export function DecisionActionModal({
             </div>
           ) : null}
 
+          {showConfirmation ? (
+            <label className="flex cursor-pointer items-start gap-3 text-[13px] leading-snug text-white">
+              <input
+                type="checkbox"
+                checked={confirmationChecked}
+                onChange={(event) => onConfirmationChange?.(event.target.checked)}
+                className="mt-0.5 size-4 shrink-0 accent-[#E5B678]"
+              />
+              <span>{confirmationLabel}</span>
+            </label>
+          ) : null}
+
           {showTimeline ? (
             <div>
-              <span className="mb-2.5 block text-[13px] font-medium text-[#8A8A8A]">
+              <span className="mb-2.5 block text-[13px] font-medium text-[#9A9A9A]">
                 Suspension Timeline
               </span>
               <div className="grid grid-cols-2 gap-3">
@@ -254,11 +306,11 @@ export function DecisionActionModal({
                   >
                     <span
                       className={cn(
-                        'grid size-5 place-items-center rounded-full border-2 border-white',
-                        isSelected && 'border-white',
+                        'grid size-5 place-items-center rounded-full border-2',
+                        isSelected ? 'border-[#E5B678]' : 'border-white/70',
                       )}
                     >
-                      {isSelected ? <span className="size-2.5 rounded-full bg-white" /> : null}
+                      {isSelected ? <span className="size-2.5 rounded-full bg-[#E5B678]" /> : null}
                     </span>
                     <input
                       type="radio"
@@ -268,7 +320,7 @@ export function DecisionActionModal({
                       onChange={() => onEscalationOptionChange?.(option.value)}
                       className="sr-only"
                     />
-                    <span>{option.label}</span>
+                    <span>{formatEscalationLabel(option.label)}</span>
                   </label>
                 )
               })}
@@ -278,12 +330,12 @@ export function DecisionActionModal({
           {showReasonInput ? (
             <label className="block">
               <span className="mb-2 block text-[13px] font-medium text-white">
-                Reason <span className="text-[#E11D2E]">*</span>
+                {reasonLabel} <span className="text-[#E11D2E]">*</span>
               </span>
               <textarea
                 value={reason}
                 onChange={(event) => onReasonChange?.(event.target.value)}
-                className="h-14 w-full resize-none rounded-lg border border-white/10 bg-black px-4 py-3 text-sm text-white outline-none placeholder:text-white/35 focus:border-white/25"
+                className="min-h-[72px] w-full resize-none rounded-xl border border-white/10 bg-black px-4 py-3 text-sm text-white outline-none placeholder:text-white/35 focus:border-white/25"
               />
             </label>
           ) : null}
@@ -295,47 +347,44 @@ export function DecisionActionModal({
             <textarea
               value={adminNotes}
               onChange={(event) => onAdminNotesChange(event.target.value)}
-              className="h-24 w-full resize-none rounded-lg border border-white/10 bg-black px-4 py-3 text-sm text-white outline-none placeholder:text-white/35 focus:border-white/25"
+              className="min-h-[110px] w-full resize-none rounded-xl border border-white/10 bg-black px-4 py-3 text-sm text-white outline-none placeholder:text-white/35 focus:border-white/25"
             />
           </label>
+        </div>
 
-          <div className="grid grid-cols-2 gap-3 pt-1">
-            <button
-              type="button"
-              onClick={onClose}
-              className="h-12 rounded-xl border border-white bg-transparent text-[15px] font-semibold text-white transition-colors hover:bg-white/5"
-            >
-              {cancelLabel}
-            </button>
-            <button
-              type="button"
-              onClick={onSubmit}
-              disabled={isSubmitting}
-              className={cn(
-                'flex h-12 items-center justify-center gap-2 rounded-xl px-4 text-[15px] font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-60',
-                styles.submit,
-              )}
-            >
-              {submitLabel}
-              {styles.submitIcon === 'check' ? (
-                <span className="flex size-5 items-center justify-center rounded-full bg-white">
-                  <Check
-                    className={cn(
-                      'size-3',
-                      variant === 'approve' ? 'text-[#16A34A]' : 'text-[#C45A16]',
-                    )}
-                    strokeWidth={3}
-                    aria-hidden="true"
-                  />
-                </span>
-              ) : null}
-              {styles.submitIcon === 'x' ? (
-                <span className="flex size-5 items-center justify-center rounded-full bg-white">
-                  <X className="size-3 text-[#E11D2E]" strokeWidth={3} aria-hidden="true" />
-                </span>
-              ) : null}
-            </button>
-          </div>
+        <div className="grid shrink-0 grid-cols-2 gap-3 px-6 pt-1 pb-6">
+          <button
+            type="button"
+            onClick={onClose}
+            className="h-12 rounded-xl border border-white bg-transparent text-[15px] font-semibold text-white transition-colors hover:bg-white/5"
+          >
+            {cancelLabel}
+          </button>
+          <button
+            type="button"
+            onClick={onSubmit}
+            disabled={isSubmitting}
+            className={cn(
+              'flex h-12 items-center justify-center gap-2 rounded-xl px-4 text-[15px] font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-60',
+              styles.submit,
+            )}
+          >
+            {submitLabel}
+            {resolvedSubmitIcon === 'check' ? (
+              <span className="flex size-5 items-center justify-center rounded-full bg-white">
+                <Check
+                  className={cn('size-3', styles.checkIconColor ?? 'text-[#E11D2E]')}
+                  strokeWidth={3}
+                  aria-hidden="true"
+                />
+              </span>
+            ) : null}
+            {resolvedSubmitIcon === 'x' ? (
+              <span className="flex size-5 items-center justify-center rounded-full bg-white">
+                <X className="size-3 text-[#E11D2E]" strokeWidth={3} aria-hidden="true" />
+              </span>
+            ) : null}
+          </button>
         </div>
       </div>
     </div>

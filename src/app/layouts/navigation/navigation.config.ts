@@ -29,6 +29,7 @@ export type NavItem = {
   roles?: Array<'admin' | 'manager'>
   superAdminOnly?: boolean
   permissionModule?: PermissionModule
+  matchPaths?: string[]
   children?: NavItem[]
 }
 
@@ -71,6 +72,12 @@ export const navigationConfig: NavItem[] = [
             key: 'expert.management.list',
             label: 'Expert Management',
             to: '/experts/management',
+            matchPaths: [
+              '/experts/pending-approvals',
+              '/experts/suspended',
+              '/experts/reported',
+              '/experts/deleted',
+            ],
           },
           {
             key: 'expert.management.leaderboard',

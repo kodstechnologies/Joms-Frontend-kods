@@ -16,7 +16,6 @@ import {
   PauseCircle,
   RotateCcw,
   Star,
-  XCircle,
 } from 'lucide-react'
 
 import {
@@ -32,6 +31,10 @@ import {
   DecisionActionModal,
   type DecisionActionModalOption,
 } from '@/shared/components/modal/decision-action-modal'
+import {
+  DecisionControlButtons,
+  DecisionControlsHeader,
+} from '@/shared/components/decision-controls'
 import {
   TableActionsDropdown,
   TableActionsItem,
@@ -831,51 +834,25 @@ export function SpaceDetailsPage() {
           </div>
         </Card>
 
-        <Card title="Decision Controls">
+        <Card>
+          <DecisionControlsHeader className="mb-4" />
           {!isDecisionPending && (
             <p className="mb-3 rounded-md bg-black px-3 py-2 text-[11px] font-medium text-[#999]">
               This space is currently{' '}
               <span className="font-bold text-white">{spaceStatus || '—'}</span>.
             </p>
           )}
-          <div className="flex flex-wrap gap-3">
-            <button
-              type="button"
-              onClick={() => openDecisionModal('approve')}
-              disabled={decisionDisabled}
-              className="bg-brand-success flex items-center gap-1.5 rounded-md px-4 py-2.5 text-[11px] font-bold text-white transition-colors hover:bg-[#08a85d] disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              Approve
-              <CheckCircle2 className="size-3.5" />
-            </button>
-            <button
-              type="button"
-              onClick={() => openDecisionModal('requestChanges')}
-              disabled={decisionDisabled}
-              className="bg-brand-accent text-brand-text-dark hover:bg-brand-gold-from hover:bg-brand-gold-from rounded-md px-4 py-2.5 text-[11px] font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              Ask for Re-Submit
-            </button>
-            {isSuperAdmin ? (
-              <button
-                type="button"
-                disabled={escalateDisabled}
-                onClick={() => openDecisionModal('escalate')}
-                className="bg-brand-action rounded-md px-4 py-2.5 text-[11px] font-bold text-white transition-colors hover:bg-[#1e40af] disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                Escalate
-              </button>
-            ) : null}
-            <button
-              type="button"
-              onClick={() => openDecisionModal('reject')}
-              disabled={decisionDisabled}
-              className="bg-brand-danger flex items-center gap-1.5 rounded-md px-4 py-2.5 text-[11px] font-bold text-white transition-colors hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              Reject Application
-              <XCircle className="size-3.5" />
-            </button>
-          </div>
+          <DecisionControlButtons
+            onApprove={() => openDecisionModal('approve')}
+            onRequestChanges={() => openDecisionModal('requestChanges')}
+            onEscalate={() => openDecisionModal('escalate')}
+            onReject={() => openDecisionModal('reject')}
+            showEscalate={isSuperAdmin}
+            approveDisabled={decisionDisabled}
+            requestChangesDisabled={decisionDisabled}
+            escalateDisabled={escalateDisabled}
+            rejectDisabled={decisionDisabled}
+          />
         </Card>
       </div>
 
@@ -884,36 +861,37 @@ export function SpaceDetailsPage() {
         variant={decisionVariant}
         title={
           decisionVariant === 'approve'
-            ? 'Approve Space'
+            ? 'Confirm Application'
             : decisionVariant === 'requestChanges'
               ? 'Request Changes'
               : decisionVariant === 'escalate'
                 ? 'Escalate Application'
-                : 'Reject Space'
+                : 'Reject Application'
         }
         description={
           decisionVariant === 'approve'
-            ? 'Are you sure you want to approve this venue space?'
+            ? 'Are you sure you want to approve this application? The applicant will be notified via email.'
             : decisionVariant === 'requestChanges'
               ? 'Are you sure you want to Request Changes to this application? The applicant will be notified via email.'
               : decisionVariant === 'escalate'
-                ? 'Are you sure you want to escalate this application? This post will be reviewed by the selected parties.'
+                ? 'Are you sure you want to escalate this Application? This Post will be reviewed by the selected parties.'
                 : 'Please choose the rejection reasons and add notes for this venue space.'
         }
         submitLabel={
           decisionVariant === 'approve'
-            ? 'Approve'
+            ? 'Confirm Approval'
             : decisionVariant === 'requestChanges'
               ? 'Request Changes'
               : decisionVariant === 'escalate'
                 ? 'Escalate'
-                : 'Reject'
+                : 'Reject Application'
         }
         reasonOptions={isDecisionRejectFlow ? REJECT_REASONS : []}
         selectedReasons={decisionSelectedReasons}
         onReasonToggle={toggleDecisionReason}
         reason={isDecisionRejectFlow ? decisionRejectionReason : undefined}
         onReasonChange={isDecisionRejectFlow ? setDecisionRejectionReason : undefined}
+        reasonLabel={decisionVariant === 'requestChanges' ? 'Request Changes' : 'Reason'}
         adminNotes={decisionAdminNotes}
         onAdminNotesChange={setDecisionAdminNotes}
         escalationOptions={isEscalateFlow ? escalationOptions : []}

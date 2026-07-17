@@ -17,8 +17,8 @@
   --color-brand-muted: #ffffff80;
   --color-brand-muted-light: #6e6e73;
   --color-brand-stroke: #e6e8ec;
-  --color-brand-accent: #ffc849;
-  --color-brand-accent-muted: #ffc84980;
+  --color-brand-accent: #f6cb86;
+  --color-brand-accent-muted: #f6cb8680;
   --color-brand-gold-from: #f6cb86;
   --color-brand-gold-to: #e0a263;
   --color-brand-success: #50c878;
@@ -47,7 +47,7 @@
   --brand-muted: rgb(255 255 255 / 50%);
   --brand-muted-light: #6e6e73;
   --brand-stroke: #e6e8ec;
-  --brand-accent: #ffc849;
+  --brand-accent: #f6cb86;
   --brand-accent-muted: rgb(255 200 73 / 50%);
   --brand-gold-gradient: linear-gradient(135deg, #f6cb86 0%, #e0a263 100%);
   --brand-success: #50c878;

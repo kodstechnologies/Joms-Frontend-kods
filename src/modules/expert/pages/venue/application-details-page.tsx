@@ -4,7 +4,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import { toast } from 'sonner'
-import { ArrowLeft, CheckCircle2, ImageOff, MapPin, XCircle } from 'lucide-react'
+import { ArrowLeft, CheckCircle2, ImageOff, MapPin } from 'lucide-react'
 
 import {
   fetchAmenityMasters,
@@ -13,6 +13,10 @@ import {
 } from '../../api/venue-api'
 import { useVenueFullView } from '../../hooks/use-venues'
 import type { VenueFullView, VenueFullViewGalleryImage } from '../../type/venue-full-view'
+import {
+  DecisionControlButtons,
+  DecisionControlsHeader,
+} from '@/shared/components/decision-controls'
 import {
   DecisionActionModal,
   type DecisionActionModalOption,
@@ -533,51 +537,25 @@ export function ApplicationDetailsPage() {
           </div>
         </SectionCard>
 
-        <SectionCard title="Decision Controls">
+        <SectionCard>
+          <DecisionControlsHeader className="mb-4" />
           {space?.status !== 'submitted' && (
             <p className="mb-3 rounded-md bg-black px-3 py-2 text-[11px] font-medium text-[#999]">
               This space is currently{' '}
               <span className="font-bold text-white">{space?.status || '—'}</span>.
             </p>
           )}
-          <div className="flex flex-wrap gap-3">
-            <button
-              type="button"
-              onClick={() => openModal('approve')}
-              disabled={spaceStatusMutation.isPending || !space?._id}
-              className="bg-brand-success flex items-center gap-1.5 rounded-md px-4 py-2.5 text-[11px] font-bold text-white transition-colors hover:bg-[#08a85d] disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              Approve
-              <CheckCircle2 className="size-3.5" />
-            </button>
-            <button
-              type="button"
-              onClick={() => openModal('requestChanges')}
-              disabled={spaceStatusMutation.isPending || !space?._id}
-              className="bg-brand-accent text-brand-text-dark hover:bg-brand-gold-from hover:bg-brand-gold-from rounded-md px-4 py-2.5 text-[11px] font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              Ask for Re-Submit
-            </button>
-            {isSuperAdmin ? (
-              <button
-                type="button"
-                disabled={escalateDisabled}
-                onClick={() => openModal('escalate')}
-                className="bg-brand-action rounded-md px-4 py-2.5 text-[11px] font-bold text-white transition-colors hover:bg-[#1e40af] disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                Escalate
-              </button>
-            ) : null}
-            <button
-              type="button"
-              onClick={() => openModal('reject')}
-              disabled={spaceStatusMutation.isPending || !space?._id}
-              className="bg-brand-danger flex items-center gap-1.5 rounded-md px-4 py-2.5 text-[11px] font-bold text-white transition-colors hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              Reject Application
-              <XCircle className="size-3.5" />
-            </button>
-          </div>
+          <DecisionControlButtons
+            onApprove={() => openModal('approve')}
+            onRequestChanges={() => openModal('requestChanges')}
+            onEscalate={() => openModal('escalate')}
+            onReject={() => openModal('reject')}
+            showEscalate={isSuperAdmin}
+            approveDisabled={spaceStatusMutation.isPending || !space?._id}
+            requestChangesDisabled={spaceStatusMutation.isPending || !space?._id}
+            escalateDisabled={escalateDisabled}
+            rejectDisabled={spaceStatusMutation.isPending || !space?._id}
+          />
         </SectionCard>
       </div>
 
@@ -586,30 +564,30 @@ export function ApplicationDetailsPage() {
         variant={modalVariant}
         title={
           modalVariant === 'approve'
-            ? 'Approve Space'
+            ? 'Confirm Application'
             : modalVariant === 'requestChanges'
               ? 'Request Changes'
               : modalVariant === 'escalate'
                 ? 'Escalate Application'
-                : 'Reject Space'
+                : 'Reject Application'
         }
         description={
           modalVariant === 'approve'
-            ? 'Are you sure you want to approve this venue space?'
+            ? 'Are you sure you want to approve this application? The applicant will be notified via email.'
             : modalVariant === 'requestChanges'
               ? 'Are you sure you want to Request Changes to this application? The applicant will be notified via email.'
               : modalVariant === 'escalate'
-                ? 'Are you sure you want to escalate this application? This post will be reviewed by the selected parties.'
+                ? 'Are you sure you want to escalate this Application? This Post will be reviewed by the selected parties.'
                 : 'Please choose the rejection reasons and add notes for this venue space.'
         }
         submitLabel={
           modalVariant === 'approve'
-            ? 'Approve'
+            ? 'Confirm Approval'
             : modalVariant === 'requestChanges'
               ? 'Request Changes'
               : modalVariant === 'escalate'
                 ? 'Escalate'
-                : 'Reject'
+                : 'Reject Application'
         }
         reasonOptions={isRejectFlow ? REJECT_REASONS : []}
         selectedReasons={selectedReasons}
@@ -622,6 +600,7 @@ export function ApplicationDetailsPage() {
         }
         reason={isRejectFlow ? rejectionReason : undefined}
         onReasonChange={isRejectFlow ? setRejectionReason : undefined}
+        reasonLabel={modalVariant === 'requestChanges' ? 'Request Changes' : 'Reason'}
         adminNotes={adminNotes}
         onAdminNotesChange={setAdminNotes}
         escalationOptions={isEscalateFlow ? escalationOptions : []}

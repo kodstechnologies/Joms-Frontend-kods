@@ -117,7 +117,7 @@ export function DataTable<TData>({
     >
       <div className={cn('px-4 pt-4 sm:px-5 sm:pt-5', contentClassName)}>
         <div className="flex flex-wrap items-center justify-between gap-3 pb-2">
-          <div className="relative w-full sm:max-w-[360px] sm:flex-1">
+          <div className="relative w-full sm:max-w-[320px] sm:flex-1">
             <Search
               className={cn(
                 'absolute top-1/2 left-3 size-3.5 -translate-y-1/2',
@@ -132,7 +132,7 @@ export function DataTable<TData>({
               placeholder={searchPlaceholder}
               aria-label={`Search ${resourceLabel}`}
               className={cn(
-                'h-10 rounded-xl pl-9 text-[12px] focus-visible:ring-1',
+                'h-10 w-full rounded-xl border pr-3 pl-9 text-[12px] focus-visible:ring-1',
                 isCategoryTone
                   ? 'border-[#2A2A2A] bg-black text-white placeholder:text-[#666666] focus-visible:ring-[#FFC16B]/40'
                   : 'text-brand-text focus-visible:ring-brand-accent/40 border-white/10 bg-[#0F0F0F] placeholder:text-[#666666]',

@@ -42,6 +42,10 @@ import {
   DecisionActionModal,
   type DecisionActionModalOption,
 } from '@/shared/components/modal/decision-action-modal'
+import {
+  DecisionControlButtons,
+  DecisionControlsHeader,
+} from '@/shared/components/decision-controls'
 import { cn } from '@/shared/lib/cn'
 import { useAuthStore } from '@/modules/auth/store/auth-store'
 
@@ -64,10 +68,11 @@ const KYC_REJECT_REASONS: DecisionActionModalOption[] = [
 ]
 
 const BANKING_REJECT_REASONS: DecisionActionModalOption[] = [
-  { label: 'Cheque unreadable', value: 'Reason1' },
-  { label: 'Name mismatch', value: 'Reason2' },
-  { label: 'Account details invalid', value: 'Reason3' },
-  { label: 'IFSC mismatch', value: 'Reason4' },
+  { label: 'Unclear Image', value: 'Reason1' },
+  { label: 'Content Issue', value: 'Reason2' },
+  { label: 'Invalid documents', value: 'Reason3' },
+  { label: 'Invalid PAN', value: 'Reason4' },
+  { label: 'Invalid GST', value: 'Reason5' },
 ]
 
 const getApiErrorMessage = (error: unknown) => {
@@ -134,16 +139,18 @@ function SectionCard({
   icon,
   children,
 }: {
-  title: string
+  title?: string
   icon?: ReactNode
   children: ReactNode
 }) {
   return (
     <div className="rounded-xl border border-white/5 bg-[#111111] p-5">
-      <div className="mb-5 flex items-center gap-2 text-sm font-semibold text-white">
-        {icon}
-        <span>{title}</span>
-      </div>
+      {title ? (
+        <div className="mb-5 flex items-center gap-2 text-sm font-semibold text-white">
+          {icon}
+          <span>{title}</span>
+        </div>
+      ) : null}
       {children}
     </div>
   )
@@ -652,10 +659,8 @@ export function ExpertApplicationViewPage() {
           </div>
         </SectionCard>
 
-        <SectionCard
-          title="Decision Controls"
-          icon={<ShieldCheck className="text-brand-accent size-4" />}
-        >
+        <SectionCard>
+          <DecisionControlsHeader className="mb-4" />
           <p className="mb-3 text-[11px] font-medium text-[#888]">
             Reviewing:{' '}
             <span className="text-white">
@@ -674,42 +679,17 @@ export function ExpertApplicationViewPage() {
               {String(activeDecisionStatus).toLowerCase()}.
             </p>
           )}
-          <div className="flex flex-wrap gap-3">
-            <button
-              type="button"
-              disabled={decisionDisabled}
-              onClick={() => openDecisionModal(decisionTargetForTab, 'approve')}
-              className="bg-brand-success rounded-md px-4 py-2.5 text-[11px] font-bold text-white disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              Approve
-            </button>
-            <button
-              type="button"
-              disabled={decisionDisabled}
-              onClick={() => openDecisionModal(decisionTargetForTab, 'requestChanges')}
-              className="bg-brand-accent text-brand-text-dark hover:bg-brand-gold-from rounded-md px-4 py-2.5 text-[11px] font-bold disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              Ask for Re-Submit
-            </button>
-            {isSuperAdmin ? (
-              <button
-                type="button"
-                disabled={escalateDisabled}
-                onClick={() => openDecisionModal(decisionTargetForTab, 'escalate')}
-                className="bg-brand-action rounded-md px-4 py-2.5 text-[11px] font-bold text-white disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                Escalate
-              </button>
-            ) : null}
-            <button
-              type="button"
-              disabled={decisionDisabled}
-              onClick={() => openDecisionModal(decisionTargetForTab, 'reject')}
-              className="bg-brand-danger rounded-md px-4 py-2.5 text-[11px] font-bold text-white disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              Reject Application
-            </button>
-          </div>
+          <DecisionControlButtons
+            onApprove={() => openDecisionModal(decisionTargetForTab, 'approve')}
+            onRequestChanges={() => openDecisionModal(decisionTargetForTab, 'requestChanges')}
+            onEscalate={() => openDecisionModal(decisionTargetForTab, 'escalate')}
+            onReject={() => openDecisionModal(decisionTargetForTab, 'reject')}
+            showEscalate={isSuperAdmin}
+            approveDisabled={decisionDisabled}
+            requestChangesDisabled={decisionDisabled}
+            escalateDisabled={escalateDisabled}
+            rejectDisabled={decisionDisabled}
+          />
         </SectionCard>
       </div>
 

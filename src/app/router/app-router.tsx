@@ -35,6 +35,12 @@ const ServiceManagementPage = lazy(() =>
 const ServiceViewPage = lazy(() =>
   import('@/modules/expert').then((m) => ({ default: m.ServiceViewPage })),
 )
+const ConsultationViewPage = lazy(() =>
+  import('@/modules/expert').then((m) => ({ default: m.ConsultationViewPage })),
+)
+const ServiceManagementViewRoute = lazy(() =>
+  import('@/modules/expert').then((m) => ({ default: m.ServiceManagementViewRoute })),
+)
 const CreateServiceListingPage = lazy(() =>
   import('@/modules/expert').then((m) => ({ default: m.CreateServiceListingPage })),
 )
@@ -808,7 +814,14 @@ export function AppRouter() {
                 <Route path="/services/management/suspended" element={<SuspendedServicesPage />} />
                 <Route path="/services/management/deleted" element={<DeletedServicesPage />} />
                 <Route path="/services/management/create" element={<CreateServiceListingPage />} />
-                <Route path="/services/management/view/:id" element={<ServiceViewPage />} />
+                <Route
+                  path="/services/management/view/:id"
+                  element={<ServiceManagementViewRoute />}
+                />
+                <Route
+                  path="/services/management/consultation/:id"
+                  element={<ConsultationViewPage />}
+                />
                 <Route path="/categories/management" element={<CategoryManagementPage />} />
                 <Route
                   path="/categories/management/metrics"
