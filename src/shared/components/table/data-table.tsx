@@ -85,8 +85,7 @@ export function DataTable<TData>({
   tone = 'default',
   onRowClick,
 }: DataTableProps<TData>) {
-  'use no memo'
-
+  // eslint-disable-next-line react-hooks/incompatible-library -- useReactTable is intentionally opted out
   const table = useReactTable({
     data,
     columns,
