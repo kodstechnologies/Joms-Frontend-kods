@@ -39,35 +39,37 @@ export function SidebarItem({
 
   const renderContent = (isActive?: boolean) => {
     const resolvedActive = isActive ?? active
+    // Collapsed (Figma): no white pill — active icon is brighter, others stay evenly visible
     const showCompactActive = compact && depth === 0 && (moduleActive || resolvedActive)
 
     return (
       <div
         className={cn(
           'flex items-center gap-3 text-sm transition-all duration-200',
-          compact ? 'justify-center py-1.5' : 'py-2 pr-3',
+          compact ? 'mx-auto justify-center py-2' : 'py-2 pr-3',
           paddingLeft,
-          showCompactActive
-            ? 'text-brand-text-dark mx-auto size-10 rounded-xl bg-white shadow-sm'
-            : compact
-              ? 'mx-auto size-10 text-white/55'
-              : resolvedActive
-                ? 'text-white'
-                : depth > 0
-                  ? 'text-white/45 hover:text-white/70'
-                  : 'text-white/80 hover:text-white',
+          compact
+            ? showCompactActive
+              ? 'size-10 rounded-xl text-white'
+              : 'size-10 text-white/70 hover:text-white'
+            : resolvedActive
+              ? 'text-white'
+              : depth > 0
+                ? 'text-white/45 hover:text-white/70'
+                : 'text-white/80 hover:text-white',
         )}
       >
         {Icon ? (
           <Icon
             className={cn(
               'shrink-0 transition-colors duration-200',
-              compact ? 'size-[18px]' : 'size-4',
-              showCompactActive ? 'text-brand-text-dark' : '',
+              compact ? 'size-5' : 'size-4',
+              showCompactActive ? 'text-white' : '',
             )}
+            strokeWidth={compact ? 1.75 : 2}
           />
         ) : (
-          <span className={cn('shrink-0', compact ? 'size-[18px]' : 'size-4')} />
+          <span className={cn('shrink-0', compact ? 'size-5' : 'size-4')} />
         )}
         {!compact ? (
           <span

@@ -1,105 +1,80 @@
 import { useEffect, useMemo } from 'react'
-import { Bell, CalendarDays, FileText, UserRound, X } from 'lucide-react'
+import { AlertTriangle, Bell, ExternalLink, X } from 'lucide-react'
 
+import { INITIAL_ALERTS, type AlertItem } from '@/app/layouts/mock/alerts.mock'
 import { cn } from '@/shared/lib/cn'
 
-type NotificationCategory = 'user' | 'events' | 'moderation'
-
-type NotificationItem = {
-  id: string
-  category: NotificationCategory
-  title: string
-  message: string
-  requester: string
-  createdAt: string
-  group: 'today' | 'older'
-}
-
-const INITIAL_NOTIFICATIONS: NotificationItem[] = [
-  {
-    id: '1',
-    category: 'user',
-    title: 'User Management',
-    message: 'Application Review Requested',
-    requester: 'Admin',
-    createdAt: '5 hr ago',
-    group: 'today',
-  },
-  {
-    id: '2',
-    category: 'events',
-    title: 'Events',
-    message: 'Event Host Application Review',
-    requester: 'Manager',
-    createdAt: '5 hr ago',
-    group: 'today',
-  },
-  {
-    id: '3',
-    category: 'moderation',
-    title: 'Content Moderation',
-    message: 'Content Flagged for Review',
-    requester: 'Admin',
-    createdAt: '5 hr ago',
-    group: 'today',
-  },
-  {
-    id: '4',
-    category: 'user',
-    title: 'User Management',
-    message: 'Application Review Requested',
-    requester: 'Admin',
-    createdAt: '1 day ago',
-    group: 'older',
-  },
-  {
-    id: '5',
-    category: 'events',
-    title: 'Events',
-    message: 'Event Host Application Review',
-    requester: 'Manager',
-    createdAt: '1 day ago',
-    group: 'older',
-  },
-]
-
-const CATEGORY_ICONS: Record<NotificationCategory, typeof Bell> = {
-  user: UserRound,
-  events: CalendarDays,
-  moderation: FileText,
-}
-
-function NotificationIcon({ category }: { category: NotificationCategory }) {
-  const Icon = CATEGORY_ICONS[category]
-
+function AlertAvatars({ initials }: { initials: string[] }) {
   return (
-    <div className="text-brand-stroke grid size-11 shrink-0 place-items-center rounded-full bg-white/10">
-      <Icon className="size-5" aria-hidden="true" strokeWidth={1.75} />
+    <div className="mt-2.5 flex items-center">
+      {initials.map((letter, index) => (
+        <span
+          key={`${letter}-${index}`}
+          className={cn(
+            'grid size-7 place-items-center rounded-full border-2 border-[#121212] text-[11px] font-semibold text-white',
+            index === 0 ? 'bg-[#E879A9]' : 'bg-[#EAB308]',
+            index > 0 && '-ml-2',
+          )}
+        >
+          {letter}
+        </span>
+      ))}
     </div>
   )
 }
 
-function NotificationRow({ item }: { item: NotificationItem }) {
+function AlertRow({ item }: { item: AlertItem }) {
+  const isWarning = item.severity === 'warning'
+
   return (
     <li className="border-b border-white/10 last:border-b-0">
-      <div className="flex gap-3.5 px-5 py-4">
-        <NotificationIcon category={item.category} />
+      <div
+        className={cn(
+          'relative flex gap-3 px-5 py-4',
+          isWarning && 'border-l-[3px] border-l-[#F5A524] bg-[#F5A524]/[0.04]',
+        )}
+      >
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-3">
-            <p className="text-brand-text text-[15px] leading-snug font-semibold">{item.title}</p>
+            <div className="flex min-w-0 items-center gap-1.5">
+              {isWarning ? (
+                <AlertTriangle
+                  className="size-3.5 shrink-0 text-[#F5A524]"
+                  aria-hidden="true"
+                  strokeWidth={2}
+                />
+              ) : (
+                <Bell className="text-brand-muted size-3.5 shrink-0" aria-hidden="true" />
+              )}
+              <p
+                className={cn(
+                  'text-[13px] leading-snug font-semibold',
+                  isWarning ? 'text-[#F5A524]' : 'text-brand-text',
+                )}
+              >
+                {isWarning ? 'Warning' : 'Info'}
+              </p>
+              <ExternalLink
+                className="text-brand-muted size-3.5 shrink-0 opacity-70"
+                aria-hidden="true"
+              />
+            </div>
             <span className="text-brand-muted shrink-0 pt-0.5 text-xs">{item.createdAt}</span>
           </div>
-          <p className="text-brand-muted mt-1 text-sm leading-relaxed">{item.message}</p>
-          <p className="text-brand-muted mt-1 text-sm leading-relaxed">
-            Requester: {item.requester}
+
+          <p className="text-brand-text mt-2 text-[15px] leading-snug font-semibold">
+            {item.title}
           </p>
+          <p className="text-brand-muted mt-1 text-sm leading-relaxed">{item.message}</p>
+
+          {item.avatars?.length ? <AlertAvatars initials={item.avatars} /> : null}
         </div>
       </div>
     </li>
   )
 }
 
-function NotificationSection({ label, items }: { label: string; items: NotificationItem[] }) {
+function AlertSection({ label, items }: { label: string; items: AlertItem[] }) {
   if (items.length === 0) return null
 
   return (
@@ -109,7 +84,7 @@ function NotificationSection({ label, items }: { label: string; items: Notificat
       </p>
       <ul>
         {items.map((item) => (
-          <NotificationRow key={item.id} item={item} />
+          <AlertRow key={item.id} item={item} />
         ))}
       </ul>
     </section>
@@ -122,18 +97,12 @@ type NotificationPanelProps = {
 }
 
 export function NotificationPanel({ open, onClose }: NotificationPanelProps) {
-  const notifications = INITIAL_NOTIFICATIONS
-  const totalCount = notifications.length
+  const alerts = INITIAL_ALERTS
+  const totalCount = alerts.length
 
-  const todayItems = useMemo(
-    () => notifications.filter((item) => item.group === 'today'),
-    [notifications],
-  )
+  const todayItems = useMemo(() => alerts.filter((item) => item.group === 'today'), [alerts])
 
-  const olderItems = useMemo(
-    () => notifications.filter((item) => item.group === 'older'),
-    [notifications],
-  )
+  const olderItems = useMemo(() => alerts.filter((item) => item.group === 'older'), [alerts])
 
   useEffect(() => {
     if (!open) return
@@ -165,38 +134,38 @@ export function NotificationPanel({ open, onClose }: NotificationPanelProps) {
         )}
         role="dialog"
         aria-modal="true"
-        aria-label="Notifications"
+        aria-label="Alerts"
         aria-hidden={!open}
       >
         <div className="flex items-center justify-between gap-3 border-b border-white/10 px-5 py-5">
           <h2 className="text-brand-text text-lg font-semibold tracking-tight">
-            Notifications ({totalCount})
+            Alerts ({totalCount})
           </h2>
           <button
             type="button"
             onClick={onClose}
             className="rounded-brand-md text-brand-muted hover:text-brand-text focus-visible:ring-brand-accent/30 grid size-9 place-items-center transition-colors hover:bg-white/5 focus-visible:ring-2 focus-visible:outline-none"
-            aria-label="Close notifications panel"
+            aria-label="Close alerts panel"
           >
             <X className="size-5" />
           </button>
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
-          {notifications.length === 0 ? (
+          {alerts.length === 0 ? (
             <div className="flex flex-col items-center justify-center gap-2 px-6 py-16 text-center">
               <div className="text-brand-muted grid size-12 place-items-center rounded-full bg-white/5">
                 <Bell className="size-5" aria-hidden="true" />
               </div>
-              <p className="text-brand-text text-sm font-semibold">No notifications</p>
+              <p className="text-brand-text text-sm font-semibold">No alerts</p>
               <p className="text-brand-muted text-xs leading-relaxed">
-                New activity from operations will show up here.
+                Platform warnings and payment gateway issues will show up here.
               </p>
             </div>
           ) : (
             <>
-              <NotificationSection label="Today" items={todayItems} />
-              <NotificationSection label="Older" items={olderItems} />
+              <AlertSection label="Today" items={todayItems} />
+              <AlertSection label="Older" items={olderItems} />
             </>
           )}
         </div>
@@ -214,12 +183,12 @@ type NotificationTriggerProps = {
 export function NotificationTrigger({
   open,
   onOpen,
-  count = INITIAL_NOTIFICATIONS.length,
+  count = INITIAL_ALERTS.length,
 }: NotificationTriggerProps) {
   return (
     <button
       type="button"
-      aria-label={count > 0 ? `Notifications, ${count} items` : 'Notifications'}
+      aria-label={count > 0 ? `Alerts, ${count} items` : 'Alerts'}
       aria-expanded={open}
       aria-haspopup="dialog"
       onClick={onOpen}

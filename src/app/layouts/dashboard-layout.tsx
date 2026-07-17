@@ -48,13 +48,14 @@ export function DashboardLayout() {
         className={cn(
           'fixed inset-y-0 left-0 z-40 hidden overflow-hidden border-r border-white/10 transition-[width] duration-300 ease-in-out md:flex md:flex-col',
           uiTokens.sidebarBg,
-          showCompact ? 'w-[5.75rem]' : 'w-[18.5rem]',
+          // Collapsed rail matches Figma icon column (~64px), not the wider white-pill rail
+          showCompact ? 'w-16' : 'w-[18.5rem]',
         )}
       >
         <div
           className={cn(
             'relative z-10 flex h-16 shrink-0 items-center border-b border-white/5',
-            showCompact ? 'justify-center px-2' : 'gap-2 px-3 pr-2',
+            showCompact ? 'justify-center px-1' : 'gap-2 px-3 pr-2',
           )}
         >
           {showCompact ? (
@@ -92,7 +93,7 @@ export function DashboardLayout() {
       <div
         className={cn(
           'relative flex h-dvh min-w-0 flex-1 flex-col overflow-hidden transition-[padding] duration-300 ease-in-out',
-          showCompact ? 'md:pl-[5.75rem]' : 'md:pl-[18.5rem]',
+          showCompact ? 'md:pl-16' : 'md:pl-[18.5rem]',
         )}
       >
         <Topbar

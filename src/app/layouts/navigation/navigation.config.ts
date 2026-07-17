@@ -38,14 +38,7 @@ export const navigationConfig: NavItem[] = [
     key: 'executive',
     label: 'Executive Dashboard',
     icon: ChartNoAxesCombined,
-    children: [
-      { key: 'executive.overview', label: 'Executive Overview', to: '/dashboard/executive' },
-      {
-        key: 'executive.metrics',
-        label: 'Manage Metrics',
-        badge: { label: 'Soon', variant: 'warning' },
-      },
-    ],
+    to: '/dashboard/executive',
   },
   {
     key: 'my-task',
