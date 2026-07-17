@@ -85,6 +85,8 @@ export function DataTable<TData>({
   tone = 'default',
   onRowClick,
 }: DataTableProps<TData>) {
+  'use no memo'
+
   const table = useReactTable({
     data,
     columns,
