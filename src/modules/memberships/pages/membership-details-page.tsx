@@ -1,4 +1,4 @@
-import { ArrowDown, ArrowLeft, ArrowUp, ExternalLink } from 'lucide-react'
+import { ArrowLeft, CircleArrowDown, CircleArrowUp, ExternalLink } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
@@ -13,7 +13,6 @@ import {
   useUpgradeSubscription,
 } from '../hooks/use-membership-subscriptions'
 import { formatCurrency, formatMembershipDateTime } from '../utils/membership-format'
-import { cn } from '@/shared/lib/cn'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 
 export function MembershipDetailsPage() {
@@ -33,7 +32,7 @@ export function MembershipDetailsPage() {
   const cancelMutation = useCancelSubscription()
 
   if (isLoading) {
-    return <p className="text-sm text-slate-400">Loading membership details...</p>
+    return <p className="text-sm text-white/50">Loading membership details...</p>
   }
 
   if (!subscription) {
@@ -47,127 +46,138 @@ export function MembershipDetailsPage() {
         ? 'User'
         : (subscription.upgradedBy ?? 'User')
 
+  const paymentMethod = subscription.paymentInfo?.paymentMethod || 'Credit Card'
+
   return (
     <div className="flex min-h-[calc(100vh-8rem)] flex-col">
-      <div className="mb-6 flex items-center gap-3">
+      <div className="mb-6 flex items-start gap-3">
         <button
           type="button"
           onClick={() => navigateBackOrFallback(navigate, '/memberships/experts')}
-          className="rounded-lg p-2 text-slate-300 transition-colors hover:bg-white/5"
+          className="mt-1 rounded-[8px] p-1.5 text-white transition-colors hover:bg-white/5"
+          aria-label="Go back"
         >
-          <ArrowLeft className="size-5" />
+          <ArrowLeft className="size-5" strokeWidth={1.75} />
         </button>
         <div>
-          <h1 className="text-2xl font-semibold text-white">Membership Details</h1>
-          <p className="text-sm text-slate-400">Membership Management / View Details</p>
+          <h1 className="text-[24px] leading-8 font-semibold text-white">Membership Details</h1>
+          <p className="mt-1 text-[13px] leading-5 text-white/45">
+            Membership Management / <span className="text-white">View Details</span>
+          </p>
         </div>
       </div>
 
-      <div className="grid flex-1 gap-6 lg:grid-cols-2">
-        <DetailCard
-          title="Current Membership Details"
-          subtitle="Manage expert membership subscription"
-        >
-          <DetailGrid
-            items={[
-              { label: 'Plan ID', value: subscription.subscriptionId },
-              {
-                label: 'Plan Name',
-                value: (
-                  <span className="inline-flex items-center gap-1.5 text-amber-300">
-                    {subscription.planName}
-                    <ExternalLink className="size-3.5" />
-                  </span>
-                ),
-              },
-              { label: 'Billing Type', value: subscription.billingCycleName },
-              { label: 'Purchased Price', value: formatCurrency(subscription.purchasedPrice) },
-              { label: 'Purchased On', value: formatMembershipDateTime(subscription.startedAt) },
-              {
-                label: 'Next billing date',
-                value: formatMembershipDateTime(subscription.nextBillingDate),
-              },
-              { label: 'Payment method', value: '—' },
-              {
-                label: 'Invoice Link',
-                value: (
-                  <button
-                    type="button"
-                    onClick={() => toast.info('Invoice view coming soon')}
-                    className="text-sm text-amber-300 underline underline-offset-2 hover:text-amber-200"
-                  >
-                    View Invoice
-                  </button>
-                ),
-              },
-            ]}
-          />
-        </DetailCard>
+      <div className="flex flex-1 flex-col gap-4">
+        {/* Current Membership Details — Figma: #141414, 10px radius, ~258px */}
+        <section className="rounded-[10px] bg-[#141414] px-6 pt-5 pb-6">
+          <h2 className="text-[16px] leading-6 font-semibold text-white">
+            Current Membership Details
+          </h2>
+          <p className="mt-0.5 text-[13px] leading-5 text-white/45">
+            Manage user&apos;s membership plans
+          </p>
 
-        <DetailCard title="More Details" subtitle="Get more insights about membership">
-          <DetailGrid
-            items={[
-              {
-                label: 'User ID',
-                value: `USR-${String(subscription.partnerId).slice(-3).padStart(3, '0')}`,
-              },
-              {
-                label: 'Username',
-                value: (
-                  <span className="inline-flex items-center gap-1.5 text-amber-300">
-                    {subscription.partnerName}
-                    <ExternalLink className="size-3.5" />
-                  </span>
-                ),
-              },
-              {
-                label: 'Source App',
-                value: subscription.sourceApp === 'expert' ? 'Expert App' : 'User App',
-              },
-              { label: 'Upgraded by', value: upgradedByLabel },
-              {
-                label: 'Previous Membership',
-                value: (
-                  <button
-                    type="button"
-                    onClick={() => setHistoryOpen(true)}
-                    className="text-sm text-amber-300 underline underline-offset-2 hover:text-amber-200"
-                  >
-                    Check history
-                  </button>
-                ),
-              },
-            ]}
-          />
-        </DetailCard>
+          {/*
+            Figma grid:
+            Row 1: Plan ID | Plan Name | Billing Type | Purchased Price | Purchased On
+            Row 2: Next billing date | Payment method | View Invoice
+          */}
+          <div className="mt-6 grid grid-cols-2 gap-x-8 gap-y-7 sm:grid-cols-3 lg:grid-cols-5">
+            <DetailField label="Plan ID" value={subscription.subscriptionId} />
+            <DetailField
+              label="Plan Name"
+              value={
+                <span className="inline-flex items-center gap-1.5">
+                  {subscription.planName}
+                  <ExternalLink className="size-3.5 text-white" strokeWidth={1.75} />
+                </span>
+              }
+            />
+            <DetailField label="Billing Type" value={subscription.billingCycleName} />
+            <DetailField
+              label="Purchased Price"
+              value={formatCurrency(subscription.purchasedPrice)}
+            />
+            <DetailField
+              label="Purchased On"
+              value={formatMembershipDateTime(subscription.startedAt)}
+            />
+            <DetailField
+              label="Next billing date"
+              value={formatMembershipDateTime(subscription.nextBillingDate)}
+            />
+            <DetailField label="Payment method" value={paymentMethod} />
+            <div className="flex items-end pb-0.5">
+              <button
+                type="button"
+                onClick={() => toast.info('Invoice view coming soon')}
+                className="text-[14px] leading-5 font-medium text-white underline underline-offset-[3px] hover:text-white/80"
+              >
+                View Invoice
+              </button>
+            </div>
+          </div>
+        </section>
+
+        {/* More Details — Figma: #141414, 10px radius, ~170px */}
+        <section className="rounded-[10px] bg-[#141414] px-6 pt-5 pb-6">
+          <h2 className="text-[16px] leading-6 font-semibold text-white">More Details</h2>
+          <p className="mt-0.5 text-[13px] leading-5 text-white/45">
+            Get more insights about membership
+          </p>
+
+          <div className="mt-6 grid grid-cols-2 gap-x-8 gap-y-7 sm:grid-cols-3 lg:grid-cols-5">
+            <DetailField
+              label="User ID"
+              value={`USR-${String(subscription.partnerId).slice(-3).padStart(3, '0')}`}
+            />
+            <DetailField
+              label="Username"
+              value={
+                <span className="inline-flex items-center gap-1.5">
+                  {subscription.partnerName}
+                  <ExternalLink className="size-3.5 text-white" strokeWidth={1.75} />
+                </span>
+              }
+            />
+            <DetailField
+              label="Source App"
+              value={subscription.sourceApp === 'expert' ? 'Expert App' : 'User App'}
+            />
+            <DetailField label="Upgraded by" value={upgradedByLabel} />
+            <DetailField
+              label="Previous Membership"
+              value={
+                <button
+                  type="button"
+                  onClick={() => setHistoryOpen(true)}
+                  className="text-[14px] leading-5 font-medium text-white underline underline-offset-[3px] hover:text-white/80"
+                >
+                  Check history
+                </button>
+              }
+            />
+          </div>
+        </section>
       </div>
 
-      <div className="mt-8 flex justify-end gap-3 pb-4">
+      {/* Bottom action bar — full-width #141414 strip, buttons right */}
+      <div className="mt-6 flex items-center justify-end gap-3 rounded-[10px] bg-[#141414] px-5 py-4">
         <button
           type="button"
           onClick={() => setActionType('upgrade')}
-          className={cn(
-            'inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold text-white transition-colors',
-            'bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600',
-          )}
+          className="inline-flex h-10 items-center gap-2 rounded-[8px] bg-[#00A63E] px-4 text-[13px] font-semibold text-white transition-colors hover:bg-[#00b344] active:bg-[#009338]"
         >
-          <span className="flex size-5 items-center justify-center rounded-full bg-white/20">
-            <ArrowUp className="size-3" />
-          </span>
           Upgrade Membership
+          <CircleArrowUp className="size-5" strokeWidth={1.75} />
         </button>
         <button
           type="button"
           onClick={() => setActionType('downgrade')}
-          className={cn(
-            'inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold text-black transition-colors',
-            'bg-[#F0C27B] hover:bg-[#f4cc91] active:bg-[#eebf73]',
-          )}
+          className="inline-flex h-10 items-center gap-2 rounded-[8px] bg-[#FFD29D] px-4 text-[13px] font-semibold text-black transition-colors hover:bg-[#ffe0b5] active:bg-[#f4c48a]"
         >
-          <span className="flex size-5 items-center justify-center rounded-full bg-black/10">
-            <ArrowDown className="size-3" />
-          </span>
           Downgrade Membership
+          <CircleArrowDown className="size-5" strokeWidth={1.75} />
         </button>
       </div>
 
@@ -240,33 +250,11 @@ export function MembershipDetailsPage() {
   )
 }
 
-function DetailCard({
-  title,
-  subtitle,
-  children,
-}: {
-  title: string
-  subtitle: string
-  children: ReactNode
-}) {
+function DetailField({ label, value }: { label: string; value: ReactNode }) {
   return (
-    <section className="rounded-2xl border border-white/10 bg-[#111111] p-6">
-      <h2 className="text-lg font-semibold text-white">{title}</h2>
-      <p className="mb-6 text-sm text-slate-400">{subtitle}</p>
-      {children}
-    </section>
-  )
-}
-
-function DetailGrid({ items }: { items: Array<{ label: string; value: ReactNode }> }) {
-  return (
-    <div className="grid grid-cols-2 gap-x-6 gap-y-6 sm:grid-cols-3 xl:grid-cols-4">
-      {items.map((item) => (
-        <div key={item.label}>
-          <p className="mb-2 text-xs text-slate-500">{item.label}</p>
-          <div className="text-sm font-medium text-white">{item.value}</div>
-        </div>
-      ))}
+    <div className="min-w-0">
+      <p className="mb-1.5 text-[12px] leading-4 text-white/45">{label}</p>
+      <div className="text-[14px] leading-5 font-medium text-white">{value}</div>
     </div>
   )
 }
