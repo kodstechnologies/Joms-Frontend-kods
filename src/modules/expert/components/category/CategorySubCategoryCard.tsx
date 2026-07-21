@@ -13,7 +13,7 @@ interface Props {
   icon?: string
 }
 
-const CategorySubCategoryCard = ({ id, name, status, addedOn }: Props) => {
+const CategorySubCategoryCard = ({ id, name, status, addedOn, icon }: Props) => {
   const navigate = useNavigate()
   const { id: categoryId } = useParams()
   const scope = useCategoryManagementScope()
@@ -40,8 +40,12 @@ const CategorySubCategoryCard = ({ id, name, status, addedOn }: Props) => {
       </div>
 
       <div className="flex items-center gap-4 pr-10">
-        <div className="flex size-14 shrink-0 items-center justify-center rounded-full bg-black">
-          <PenTool className="size-5 text-white" aria-hidden="true" />
+        <div className="flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-full bg-black">
+          {icon ? (
+            <img src={icon} alt="" className="size-8 object-contain" />
+          ) : (
+            <PenTool className="size-5 text-white" aria-hidden="true" />
+          )}
         </div>
 
         <div>

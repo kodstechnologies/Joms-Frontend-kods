@@ -6,6 +6,7 @@ interface Props {
     id: string
     categoryId?: string
     name: string
+    icon?: string
     image?: string
     status: string
     services: number
@@ -30,12 +31,14 @@ function getStatusClass(status: string) {
 }
 
 const CategoryInfoCard = ({ category }: Props) => {
-  const bannerSrc = category.image || CATEGORY_VIEW_PLACEHOLDER_IMAGE
+  const mediaSrc = category.image || category.icon
+  const bannerSrc = mediaSrc || CATEGORY_VIEW_PLACEHOLDER_IMAGE
+  const isIconOnly = Boolean(category.icon && !category.image)
 
   return (
-    <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[47%_51%]">
+    <div className="grid grid-cols-1 items-stretch gap-6 lg:grid-cols-[47%_51%]">
       <div
-        className="flex overflow-hidden rounded-xl border"
+        className="h-[240px] overflow-hidden rounded-xl border"
         style={{
           backgroundColor: categoryViewTheme.surface,
           borderColor: categoryViewTheme.surfaceBorder,
@@ -44,18 +47,20 @@ const CategoryInfoCard = ({ category }: Props) => {
         <img
           src={bannerSrc}
           alt={category.name}
-          className="h-[240px] w-full object-cover lg:h-auto lg:flex-1"
+          className={
+            isIconOnly ? 'h-full w-full object-contain p-10' : 'h-full w-full object-cover'
+          }
         />
       </div>
 
       <div
-        className="rounded-xl border p-6 lg:p-8"
+        className="flex h-[240px] flex-col justify-between rounded-xl border p-6 lg:p-8"
         style={{
           backgroundColor: categoryViewTheme.surface,
           borderColor: categoryViewTheme.surfaceBorder,
         }}
       >
-        <div className="mb-8 flex items-start justify-between gap-4">
+        <div className="flex items-start justify-between gap-4">
           <div className="grid flex-1 grid-cols-1 gap-6 sm:grid-cols-3">
             <div>
               <p className={categoryViewTheme.labelClass}>Category Name</p>
