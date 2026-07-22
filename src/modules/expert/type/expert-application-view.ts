@@ -2,6 +2,25 @@ export type ApplicationStatus = 'PENDING' | 'APPROVED' | 'REJECTED'
 
 export type ConciergeRejectionReason = 'Reason1' | 'Reason2' | 'Reason3' | 'Reason4' | 'Reason5'
 
+export type DocumentReviewEntry = {
+  status?: ApplicationStatus
+  reasonFor?: string[]
+  rejectionReason?: string | null
+  adminNote?: string | null
+  reviewedAt?: string | null
+}
+
+export type DocumentReviewsMap = Record<string, DocumentReviewEntry>
+
+export type DocumentStatusPayload =
+  | { status: 'APPROVED'; adminNote?: string }
+  | {
+      status: 'REJECTED'
+      reasonFor: string[]
+      rejectionReason: string
+      adminNote?: string
+    }
+
 export type ApplicationViewResponse = {
   success?: boolean
   message?: string
@@ -94,6 +113,7 @@ export type ExpertApplicationKyc = {
     licenceOrCertificateUrl?: string
     sampleWorkFileUrl?: string
   }
+  documentReviews?: DocumentReviewsMap
   reasonFor?: string[]
   rejectionReason?: string | null
   adminNote?: string | null
@@ -117,6 +137,7 @@ export type ExpertApplicationBanking = {
   documents?: {
     cancelledChequeUrl?: string
   }
+  documentReviews?: DocumentReviewsMap
   status?: ApplicationStatus
   reasonFor?: string[]
   rejectionReason?: string | null

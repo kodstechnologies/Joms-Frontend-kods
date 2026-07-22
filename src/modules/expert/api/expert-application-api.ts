@@ -3,6 +3,7 @@ import { adminApiClient, kycApiClient } from '@/shared/lib/axios'
 import type {
   ApplicationViewResponse,
   BankingDecisionPayload,
+  DocumentStatusPayload,
   KycDecisionPayload,
 } from '../type/expert-application-view'
 
@@ -21,6 +22,30 @@ export const updateExpertKycStatus = async (id: string, payload: KycDecisionPayl
 export const updateExpertBankingStatus = async (id: string, payload: BankingDecisionPayload) => {
   const response = await kycApiClient.patch(
     `/concierge-banking/concierge/banking/${id}/status`,
+    payload,
+  )
+  return response.data
+}
+
+export const updateExpertKycDocumentStatus = async (
+  id: string,
+  documentKey: string,
+  payload: DocumentStatusPayload,
+) => {
+  const response = await kycApiClient.patch(
+    `/concierge-kyc/concierge/${id}/documents/${documentKey}/status`,
+    payload,
+  )
+  return response.data
+}
+
+export const updateExpertBankingDocumentStatus = async (
+  id: string,
+  documentKey: string,
+  payload: DocumentStatusPayload,
+) => {
+  const response = await kycApiClient.patch(
+    `/concierge-banking/concierge/banking/${id}/documents/${documentKey}/status`,
     payload,
   )
   return response.data

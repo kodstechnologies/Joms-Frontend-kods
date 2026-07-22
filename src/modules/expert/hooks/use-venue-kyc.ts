@@ -3,7 +3,9 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   approveVenueKycByPartnerId,
   fetchApplicationDetails,
+  updateVenueBankingDocumentStatus,
   updateVenueBankingStatus,
+  updateVenueKycDocumentStatus,
   updateVenueKycStatus,
 } from '../api/venue-kyc-api.ts'
 import type { VenueKycStatusPayload } from '../type/venue-kyc.ts'
@@ -49,6 +51,44 @@ export const useUpdateVenueBankingStatus = (id?: string) => {
 
   return useMutation({
     mutationFn: (payload: VenueKycStatusPayload) => updateVenueBankingStatus(id as string, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['venue-kyc-application', id] })
+      queryClient.invalidateQueries({ queryKey: ['venues'] })
+      queryClient.invalidateQueries({ queryKey: ['my-tasks'] })
+    },
+  })
+}
+
+export const useUpdateVenueKycDocumentStatus = (id?: string) => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({
+      documentKey,
+      payload,
+    }: {
+      documentKey: string
+      payload: VenueKycStatusPayload
+    }) => updateVenueKycDocumentStatus(id as string, documentKey, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['venue-kyc-application', id] })
+      queryClient.invalidateQueries({ queryKey: ['venues'] })
+      queryClient.invalidateQueries({ queryKey: ['my-tasks'] })
+    },
+  })
+}
+
+export const useUpdateVenueBankingDocumentStatus = (id?: string) => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({
+      documentKey,
+      payload,
+    }: {
+      documentKey: string
+      payload: VenueKycStatusPayload
+    }) => updateVenueBankingDocumentStatus(id as string, documentKey, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['venue-kyc-application', id] })
       queryClient.invalidateQueries({ queryKey: ['venues'] })

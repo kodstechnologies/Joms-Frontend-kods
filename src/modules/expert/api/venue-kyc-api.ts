@@ -1,5 +1,6 @@
 import { kycApiClient } from '@/shared/lib/axios'
 import type { ApplicationDetailsResponse, VenueKycStatusPayload } from '../type/venue-kyc.ts'
+import type { DocumentStatusPayload } from '../type/expert-application-view'
 
 export const fetchApplicationDetails = async (id: string) => {
   const response = await kycApiClient.get<ApplicationDetailsResponse>(
@@ -31,5 +32,29 @@ export const approveVenueKycByPartnerId = async (
 
 export const updateVenueBankingStatus = async (id: string, payload: VenueKycStatusPayload) => {
   const response = await kycApiClient.patch(`/venue-kyc/banking/status/${id}`, payload)
+  return response.data
+}
+
+export const updateVenueKycDocumentStatus = async (
+  id: string,
+  documentKey: string,
+  payload: DocumentStatusPayload | VenueKycStatusPayload,
+) => {
+  const response = await kycApiClient.patch(
+    `/venue-kyc/${id}/documents/${documentKey}/status`,
+    payload,
+  )
+  return response.data
+}
+
+export const updateVenueBankingDocumentStatus = async (
+  id: string,
+  documentKey: string,
+  payload: DocumentStatusPayload | VenueKycStatusPayload,
+) => {
+  const response = await kycApiClient.patch(
+    `/venue-kyc/banking/${id}/documents/${documentKey}/status`,
+    payload,
+  )
   return response.data
 }

@@ -2,7 +2,9 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
 import {
   fetchExpertApplicationView,
+  updateExpertBankingDocumentStatus,
   updateExpertBankingStatus,
+  updateExpertKycDocumentStatus,
   updateExpertKycStatus,
 } from '../api/expert-application-api'
 import {
@@ -10,7 +12,11 @@ import {
   useEscalationAssignees as useSharedEscalationAssignees,
   useStartAdminEscalationReview,
 } from '@/modules/my-tasks/hooks/use-admin-escalation'
-import type { BankingDecisionPayload, KycDecisionPayload } from '../type/expert-application-view'
+import type {
+  BankingDecisionPayload,
+  DocumentStatusPayload,
+  KycDecisionPayload,
+} from '../type/expert-application-view'
 
 export const useExpertApplicationView = (id?: string) =>
   useQuery({
@@ -54,6 +60,38 @@ export const useUpdateExpertBankingStatus = (bankingId?: string, partnerId?: str
   return useMutation({
     mutationFn: (payload: BankingDecisionPayload) =>
       updateExpertBankingStatus(bankingId as string, payload),
+    onSuccess: () => {
+      invalidateExpertApplicationQueries(queryClient, partnerId)
+    },
+  })
+}
+
+export const useUpdateExpertKycDocumentStatus = (kycId?: string, partnerId?: string) => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({
+      documentKey,
+      payload,
+    }: {
+      documentKey: string
+      payload: DocumentStatusPayload
+    }) => updateExpertKycDocumentStatus(kycId as string, documentKey, payload),
+    onSuccess: () => {
+      invalidateExpertApplicationQueries(queryClient, partnerId)
+    },
+  })
+}
+
+export const useUpdateExpertBankingDocumentStatus = (bankingId?: string, partnerId?: string) => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({
+      documentKey,
+      payload,
+    }: {
+      documentKey: string
+      payload: DocumentStatusPayload
+    }) => updateExpertBankingDocumentStatus(bankingId as string, documentKey, payload),
     onSuccess: () => {
       invalidateExpertApplicationQueries(queryClient, partnerId)
     },

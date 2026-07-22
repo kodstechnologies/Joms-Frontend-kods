@@ -6,7 +6,6 @@ import { toast } from 'sonner'
 import {
   ArrowLeft,
   Banknote,
-  CheckCircle2,
   ClipboardList,
   ExternalLink,
   FileText,
@@ -18,7 +17,9 @@ import {
 
 import {
   useApplicationDetails,
+  useUpdateVenueBankingDocumentStatus,
   useUpdateVenueBankingStatus,
+  useUpdateVenueKycDocumentStatus,
   useUpdateVenueKycStatus,
 } from '../../hooks/use-venue-kyc'
 import {
@@ -27,7 +28,7 @@ import {
   useStartEscalationReviewOnView,
 } from '../../hooks/use-expert-application-view'
 import { useAdminEscalation } from '@/modules/my-tasks/hooks/use-admin-escalation'
-import type { VenueKycStatus } from '../../type/venue-kyc'
+import type { VenueKycStatus, VenueKycStatusPayload } from '../../type/venue-kyc'
 import {
   DecisionControlButtons,
   DecisionControlsHeader,
@@ -36,6 +37,12 @@ import {
   DecisionActionModal,
   type DecisionActionModalOption,
 } from '@/shared/components/modal/decision-action-modal'
+import {
+  DocumentReviewViewer,
+  ReviewableDocumentCard,
+  type DocumentDecisionVariant,
+  type DocumentReviewStatus,
+} from '../../components/document-review-viewer'
 import { cn } from '@/shared/lib/cn'
 import { useAuthStore } from '@/modules/auth/store/auth-store'
 import { formatApplicationExpertId } from './expert-list-format'
@@ -43,6 +50,14 @@ import { formatApplicationExpertId } from './expert-list-format'
 type TabKey = 'overview' | 'kyc' | 'banking'
 type DecisionVariant = 'approve' | 'reject' | 'requestChanges' | 'escalate'
 type DecisionTarget = 'kyc' | 'banking'
+
+type ViewerDocument = {
+  key: string
+  label: string
+  url: string
+  target: DecisionTarget
+  reviewStatus?: DocumentReviewStatus | null
+}
 
 const TABS: { key: TabKey; label: string }[] = [
   { key: 'overview', label: 'Overview' },
@@ -191,37 +206,6 @@ function InfoField({
   )
 }
 
-function DocumentCard({ label, url }: { label: string; url?: string | null }) {
-  return (
-    <div className="rounded-xl border border-white/5 bg-black p-4">
-      <div className="flex items-start gap-2.5">
-        <CheckCircle2
-          className={cn('mt-0.5 size-4 shrink-0', url ? 'text-[#00B761]' : 'text-[#555]')}
-        />
-        <div className="min-w-0">
-          <p className="truncate text-[13px] font-semibold text-white">{label}</p>
-          <p className="mt-0.5 text-[10px] text-[#777]">{getDocumentMeta(url)}</p>
-        </div>
-      </div>
-      {url ? (
-        <a
-          href={url}
-          target="_blank"
-          rel="noreferrer"
-          className="mt-4 flex w-full items-center justify-center gap-1.5 rounded-md bg-[#1f1f1f] py-2.5 text-[11px] font-semibold text-white transition-colors hover:bg-[#2a2a2a]"
-        >
-          <FileText className="size-3.5" />
-          View Document
-        </a>
-      ) : (
-        <div className="mt-4 flex w-full items-center justify-center rounded-md bg-[#1a1a1a] py-2.5 text-[11px] font-medium text-[#666]">
-          Not uploaded
-        </div>
-      )}
-    </div>
-  )
-}
-
 function VenueImage({ src, alt }: { src: string; alt: string }) {
   const [errored, setErrored] = useState(false)
 
@@ -266,6 +250,7 @@ export function VenueKycApplicationViewPage() {
   const [adminNotes, setAdminNotes] = useState('')
   const [selectedEscalationOption, setSelectedEscalationOption] = useState('')
   const [rejectConfirmed, setRejectConfirmed] = useState(false)
+  const [viewerDocument, setViewerDocument] = useState<ViewerDocument | null>(null)
 
   const { data, isLoading, isError, error } = useApplicationDetails(id)
   const { data: assigneesData } = useEscalationAssignees()
@@ -274,6 +259,8 @@ export function VenueKycApplicationViewPage() {
 
   const updateKyc = useUpdateVenueKycStatus(id)
   const updateBanking = useUpdateVenueBankingStatus(id)
+  const updateKycDocument = useUpdateVenueKycDocumentStatus(id)
+  const updateBankingDocument = useUpdateVenueBankingDocumentStatus(id)
   const escalateApplication = useEscalateExpertApplication(partnerId)
   const startEscalationReview = useStartEscalationReviewOnView(partnerId)
   const { mutate: startEscalationReviewMutate } = startEscalationReview
@@ -437,6 +424,33 @@ export function VenueKycApplicationViewPage() {
     )
   }
 
+  const handleDocumentDecision = (
+    variant: DocumentDecisionVariant,
+    payload: VenueKycStatusPayload,
+  ) => {
+    if (!viewerDocument) return
+
+    const mutationFn =
+      viewerDocument.target === 'banking' ? updateBankingDocument : updateKycDocument
+
+    mutationFn.mutate(
+      { documentKey: viewerDocument.key, payload },
+      {
+        onSuccess: () => {
+          toast.success(
+            variant === 'approve'
+              ? 'Document approved'
+              : variant === 'requestChanges'
+                ? 'Document changes requested'
+                : 'Document rejected',
+          )
+          setViewerDocument(null)
+        },
+        onError: (err) => toast.error(getApiErrorMessage(err)),
+      },
+    )
+  }
+
   const isBankingSubmitted = ['PENDING', 'APPROVED', 'REJECTED'].includes(
     application?.bankingDetails?.status || application?.header?.bankingStatus || '',
   )
@@ -520,18 +534,62 @@ export function VenueKycApplicationViewPage() {
   const appliedLabel = formatRelativeApplied(header.appliedAt)
 
   const uploadedDocuments = [
-    { label: 'PAN Card', url: documents?.panCard },
-    { label: 'GST Certificate', url: documents?.gstCertificate },
+    {
+      label: 'PAN Card',
+      key: 'panCard',
+      url: documents?.panCard,
+      reviewStatus: (kycDetails.documentReviews?.panCard?.status ||
+        null) as DocumentReviewStatus | null,
+    },
+    {
+      label: 'GST Certificate',
+      key: 'gstCertificate',
+      url: documents?.gstCertificate,
+      reviewStatus: (kycDetails.documentReviews?.gstCertificate?.status ||
+        null) as DocumentReviewStatus | null,
+    },
     {
       label: 'Certificate / License',
+      key: 'otherCertificates',
       url: otherCertificates[0] || null,
+      reviewStatus: (kycDetails.documentReviews?.otherCertificates?.status ||
+        null) as DocumentReviewStatus | null,
     },
   ]
 
   const otherDocuments = [
-    { label: 'Trade License', url: documents?.tradeLicense },
-    { label: 'FSSAI License', url: documents?.fssaiLicense },
+    {
+      label: 'Trade License',
+      key: 'tradeLicense',
+      url: documents?.tradeLicense,
+      reviewStatus: (kycDetails.documentReviews?.tradeLicense?.status ||
+        null) as DocumentReviewStatus | null,
+    },
+    {
+      label: 'FSSAI License',
+      key: 'fssaiLicense',
+      url: documents?.fssaiLicense,
+      reviewStatus: (kycDetails.documentReviews?.fssaiLicense?.status ||
+        null) as DocumentReviewStatus | null,
+    },
   ]
+
+  const openDocumentViewer = (document: {
+    key: string
+    label: string
+    url?: string | null
+    reviewStatus?: DocumentReviewStatus | null
+    target?: DecisionTarget
+  }) => {
+    if (!document.url) return
+    setViewerDocument({
+      key: document.key,
+      label: document.label,
+      url: document.url,
+      target: document.target || 'kyc',
+      reviewStatus: document.reviewStatus,
+    })
+  }
 
   return (
     <div className="relative flex w-full flex-col gap-5 pb-8 text-white">
@@ -749,7 +807,14 @@ export function VenueKycApplicationViewPage() {
           >
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {uploadedDocuments.map((document) => (
-                <DocumentCard key={document.label} label={document.label} url={document.url} />
+                <ReviewableDocumentCard
+                  key={document.label}
+                  label={document.label}
+                  url={document.url}
+                  reviewStatus={document.reviewStatus}
+                  uploadedAt={header.submittedAt || header.appliedAt}
+                  onView={() => openDocumentViewer(document)}
+                />
               ))}
             </div>
           </SectionCard>
@@ -760,7 +825,14 @@ export function VenueKycApplicationViewPage() {
           >
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {otherDocuments.map((document) => (
-                <DocumentCard key={document.label} label={document.label} url={document.url} />
+                <ReviewableDocumentCard
+                  key={document.label}
+                  label={document.label}
+                  url={document.url}
+                  reviewStatus={document.reviewStatus}
+                  uploadedAt={header.submittedAt || header.appliedAt}
+                  onView={() => openDocumentViewer(document)}
+                />
               ))}
             </div>
           </SectionCard>
@@ -797,9 +869,24 @@ export function VenueKycApplicationViewPage() {
             icon={<FileText className="text-brand-accent size-4" />}
           >
             <div className="max-w-sm">
-              <DocumentCard
+              <ReviewableDocumentCard
                 label="Cancelled Cheque"
                 url={isBankingSubmitted ? bankingDetails.cancelledCheque : null}
+                reviewStatus={
+                  (bankingDetails.documentReviews?.cancelledCheque?.status ||
+                    null) as DocumentReviewStatus | null
+                }
+                uploadedAt={header.submittedAt || header.appliedAt}
+                onView={() =>
+                  openDocumentViewer({
+                    key: 'cancelledCheque',
+                    label: 'Cancelled Cheque',
+                    url: bankingDetails.cancelledCheque,
+                    reviewStatus: (bankingDetails.documentReviews?.cancelledCheque?.status ||
+                      null) as DocumentReviewStatus | null,
+                    target: 'banking',
+                  })
+                }
               />
             </div>
           </SectionCard>
@@ -904,6 +991,19 @@ export function VenueKycApplicationViewPage() {
         onSubmit={handleSubmitDecision}
         isSubmitting={isSubmitting}
         submitIcon={modalVariant === 'reject' ? 'check' : undefined}
+      />
+
+      <DocumentReviewViewer
+        open={Boolean(viewerDocument)}
+        url={viewerDocument?.url || ''}
+        filename={viewerDocument?.label || 'Document'}
+        reviewStatus={viewerDocument?.reviewStatus}
+        reasonOptions={
+          viewerDocument?.target === 'banking' ? BANKING_REJECT_REASONS : KYC_REJECT_REASONS
+        }
+        isSubmitting={updateKycDocument.isPending || updateBankingDocument.isPending}
+        onClose={() => setViewerDocument(null)}
+        onSubmitDecision={handleDocumentDecision}
       />
     </div>
   )

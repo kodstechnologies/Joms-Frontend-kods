@@ -6,7 +6,6 @@ import { toast } from 'sonner'
 import {
   ArrowLeft,
   Banknote,
-  CheckCircle2,
   ClipboardList,
   FileText,
   History,
@@ -19,7 +18,9 @@ import {
   useEscalationAssignees,
   useExpertApplicationView,
   useStartEscalationReviewOnView,
+  useUpdateExpertBankingDocumentStatus,
   useUpdateExpertBankingStatus,
+  useUpdateExpertKycDocumentStatus,
   useUpdateExpertKycStatus,
 } from '../../hooks/use-expert-application-view'
 import { useServiceCategoriesByType } from '../../hooks/use-service-categories'
@@ -37,6 +38,7 @@ import {
 import type {
   ApplicationStatus,
   ConciergeRejectionReason,
+  DocumentStatusPayload,
 } from '../../type/expert-application-view'
 import {
   DecisionActionModal,
@@ -46,12 +48,26 @@ import {
   DecisionControlButtons,
   DecisionControlsHeader,
 } from '@/shared/components/decision-controls'
+import {
+  DocumentReviewViewer,
+  ReviewableDocumentCard,
+  type DocumentDecisionVariant,
+  type DocumentReviewStatus,
+} from '../../components/document-review-viewer'
 import { cn } from '@/shared/lib/cn'
 import { useAuthStore } from '@/modules/auth/store/auth-store'
 
 type TabKey = 'overview' | 'kyc' | 'banking'
 type DecisionVariant = 'approve' | 'reject' | 'requestChanges' | 'escalate'
 type DecisionTarget = 'kyc' | 'banking'
+
+type ViewerDocument = {
+  key: string
+  label: string
+  url: string
+  target: DecisionTarget
+  reviewStatus?: DocumentReviewStatus | null
+}
 
 const TABS: { key: TabKey; label: string }[] = [
   { key: 'overview', label: 'Overview' },
@@ -165,35 +181,6 @@ function InfoField({ label, value }: { label: string; value?: string | number | 
   )
 }
 
-function DocumentCard({ label, url }: { label: string; url?: string | null }) {
-  return (
-    <div className="rounded-lg border border-white/5 bg-black p-4">
-      <div className="flex items-start gap-2">
-        <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-emerald-500" />
-        <div className="min-w-0">
-          <p className="truncate text-[12px] font-semibold text-white">{label}</p>
-          <p className="text-[10px] text-[#777]">Document</p>
-        </div>
-      </div>
-      {url ? (
-        <a
-          href={url}
-          target="_blank"
-          rel="noreferrer"
-          className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-md bg-[#1f1f1f] py-2 text-[11px] font-semibold text-white transition-colors hover:bg-[#2a2a2a]"
-        >
-          <FileText className="size-3.5" />
-          View Document
-        </a>
-      ) : (
-        <div className="mt-3 flex w-full items-center justify-center rounded-md bg-[#1a1a1a] py-2 text-[11px] font-medium text-[#666]">
-          Not uploaded
-        </div>
-      )}
-    </div>
-  )
-}
-
 export function ExpertApplicationViewPage() {
   const navigate = useNavigate()
   const { id } = useParams<{ id: string }>()
@@ -208,6 +195,7 @@ export function ExpertApplicationViewPage() {
   const [rejectionReason, setRejectionReason] = useState('')
   const [adminNotes, setAdminNotes] = useState('')
   const [selectedEscalationOption, setSelectedEscalationOption] = useState('')
+  const [viewerDocument, setViewerDocument] = useState<ViewerDocument | null>(null)
 
   const { data, isLoading, isError, error } = useExpertApplicationView(id)
   const { data: assigneesData } = useEscalationAssignees()
@@ -231,6 +219,8 @@ export function ExpertApplicationViewPage() {
 
   const updateKyc = useUpdateExpertKycStatus(application?.kyc?._id, id)
   const updateBanking = useUpdateExpertBankingStatus(application?.banking?._id, id)
+  const updateKycDocument = useUpdateExpertKycDocumentStatus(application?.kyc?._id, id)
+  const updateBankingDocument = useUpdateExpertBankingDocumentStatus(application?.banking?._id, id)
   const escalateApplication = useEscalateExpertApplication(id)
   const startEscalationReview = useStartEscalationReviewOnView(id)
   const { mutate: startEscalationReviewMutate } = startEscalationReview
@@ -349,6 +339,33 @@ export function ExpertApplicationViewPage() {
     })
   }
 
+  const handleDocumentDecision = (
+    variant: DocumentDecisionVariant,
+    payload: DocumentStatusPayload,
+  ) => {
+    if (!viewerDocument) return
+
+    const mutationFn =
+      viewerDocument.target === 'banking' ? updateBankingDocument : updateKycDocument
+
+    mutationFn.mutate(
+      { documentKey: viewerDocument.key, payload },
+      {
+        onSuccess: () => {
+          toast.success(
+            variant === 'approve'
+              ? 'Document approved'
+              : variant === 'requestChanges'
+                ? 'Document changes requested'
+                : 'Document rejected',
+          )
+          setViewerDocument(null)
+        },
+        onError: (err) => toast.error(getApiErrorMessage(err)),
+      },
+    )
+  }
+
   const decisionDisabled =
     !activeSectionSubmitted || activeDecisionStatus !== 'PENDING' || activeMutation.isPending
 
@@ -441,6 +458,36 @@ export function ExpertApplicationViewPage() {
     kyc?.sampleWorkLink ||
     profile?.sampleWorkLink
   const cancelledChequeUrl = banking?.documents?.cancelledChequeUrl
+
+  const getKycReviewStatus = (key: string): DocumentReviewStatus | null => {
+    const reviews = kyc?.documentReviews as
+      | Record<string, { status?: DocumentReviewStatus }>
+      | Map<string, { status?: DocumentReviewStatus }>
+      | undefined
+    if (!reviews) return null
+    const entry =
+      typeof (reviews as Map<string, unknown>).get === 'function'
+        ? (reviews as Map<string, { status?: DocumentReviewStatus }>).get(key)
+        : (reviews as Record<string, { status?: DocumentReviewStatus }>)[key]
+    return entry?.status || null
+  }
+
+  const getBankingReviewStatus = (key: string): DocumentReviewStatus | null => {
+    const reviews = banking?.documentReviews as
+      | Record<string, { status?: DocumentReviewStatus }>
+      | Map<string, { status?: DocumentReviewStatus }>
+      | undefined
+    if (!reviews) return null
+    const entry =
+      typeof (reviews as Map<string, unknown>).get === 'function'
+        ? (reviews as Map<string, { status?: DocumentReviewStatus }>).get(key)
+        : (reviews as Record<string, { status?: DocumentReviewStatus }>)[key]
+    return entry?.status || null
+  }
+
+  const openDocumentViewer = (document: ViewerDocument) => {
+    setViewerDocument(document)
+  }
 
   return (
     <div className="flex flex-col gap-5">
@@ -615,10 +662,72 @@ export function ExpertApplicationViewPage() {
             icon={<FileText className="text-brand-accent size-4" />}
           >
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
-              <DocumentCard label="PAN Card" url={kycPanUrl} />
-              <DocumentCard label="GST Certificate" url={kycGstUrl} />
-              <DocumentCard label="Certificate / License" url={kycCertificateUrl} />
-              <DocumentCard label="Sample Work" url={kycSampleWorkUrl} />
+              <ReviewableDocumentCard
+                label="PAN Card"
+                url={kycPanUrl}
+                reviewStatus={getKycReviewStatus('panCardUrl')}
+                uploadedAt={kyc?.createdAt || kyc?.updatedAt}
+                onView={() =>
+                  kycPanUrl &&
+                  openDocumentViewer({
+                    key: 'panCardUrl',
+                    label: 'PAN Card',
+                    url: kycPanUrl,
+                    target: 'kyc',
+                    reviewStatus: getKycReviewStatus('panCardUrl'),
+                  })
+                }
+              />
+              <ReviewableDocumentCard
+                label="GST Certificate"
+                url={kycGstUrl}
+                reviewStatus={getKycReviewStatus('gstCertificateUrl')}
+                uploadedAt={kyc?.createdAt || kyc?.updatedAt}
+                onView={() =>
+                  kycGstUrl &&
+                  openDocumentViewer({
+                    key: 'gstCertificateUrl',
+                    label: 'GST Certificate',
+                    url: kycGstUrl,
+                    target: 'kyc',
+                    reviewStatus: getKycReviewStatus('gstCertificateUrl'),
+                  })
+                }
+              />
+              <ReviewableDocumentCard
+                label="Certificate / License"
+                url={kycCertificateUrl}
+                reviewStatus={getKycReviewStatus('licenceOrCertificateUrl')}
+                uploadedAt={kyc?.createdAt || kyc?.updatedAt}
+                onView={() =>
+                  kycCertificateUrl &&
+                  openDocumentViewer({
+                    key: 'licenceOrCertificateUrl',
+                    label: 'Certificate / License',
+                    url: kycCertificateUrl,
+                    target: 'kyc',
+                    reviewStatus: getKycReviewStatus('licenceOrCertificateUrl'),
+                  })
+                }
+              />
+              <ReviewableDocumentCard
+                label="Sample Work"
+                url={kycSampleWorkUrl}
+                reviewStatus={getKycReviewStatus('sampleWorkFileUrl')}
+                uploadedAt={kyc?.createdAt || kyc?.updatedAt}
+                onView={() => {
+                  const fileUrl = kyc?.documents?.sampleWorkFileUrl || profile?.sampleWorkFile
+                  const previewUrl = fileUrl || kycSampleWorkUrl
+                  if (!previewUrl) return
+                  openDocumentViewer({
+                    key: 'sampleWorkFileUrl',
+                    label: 'Sample Work',
+                    url: previewUrl,
+                    target: 'kyc',
+                    reviewStatus: getKycReviewStatus('sampleWorkFileUrl'),
+                  })
+                }}
+              />
             </div>
           </SectionCard>
         </div>
@@ -644,7 +753,22 @@ export function ExpertApplicationViewPage() {
             title="Bank Verification Document"
             icon={<FileText className="text-brand-accent size-4" />}
           >
-            <DocumentCard label="Cancelled Cheque" url={cancelledChequeUrl} />
+            <ReviewableDocumentCard
+              label="Cancelled Cheque"
+              url={cancelledChequeUrl}
+              reviewStatus={getBankingReviewStatus('cancelledChequeUrl')}
+              uploadedAt={banking?.createdAt || banking?.updatedAt}
+              onView={() =>
+                cancelledChequeUrl &&
+                openDocumentViewer({
+                  key: 'cancelledChequeUrl',
+                  label: 'Cancelled Cheque',
+                  url: cancelledChequeUrl,
+                  target: 'banking',
+                  reviewStatus: getBankingReviewStatus('cancelledChequeUrl'),
+                })
+              }
+            />
           </SectionCard>
         </div>
       )}
@@ -734,6 +858,19 @@ export function ExpertApplicationViewPage() {
         onClose={() => setModalOpen(false)}
         onSubmit={handleSubmitDecision}
         isSubmitting={isEscalateFlow ? escalateApplication.isPending : mutation.isPending}
+      />
+
+      <DocumentReviewViewer
+        open={Boolean(viewerDocument)}
+        url={viewerDocument?.url || ''}
+        filename={viewerDocument?.label || 'Document'}
+        reviewStatus={viewerDocument?.reviewStatus}
+        reasonOptions={
+          viewerDocument?.target === 'banking' ? BANKING_REJECT_REASONS : KYC_REJECT_REASONS
+        }
+        isSubmitting={updateKycDocument.isPending || updateBankingDocument.isPending}
+        onClose={() => setViewerDocument(null)}
+        onSubmitDecision={handleDocumentDecision}
       />
     </div>
   )

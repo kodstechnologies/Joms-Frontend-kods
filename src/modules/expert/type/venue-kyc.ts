@@ -55,6 +55,16 @@ export interface ApplicationKycDocuments {
   otherCertificates: string[]
 }
 
+export type VenueDocumentReviewEntry = {
+  status?: VenueKycStatus
+  reasonFor?: string[]
+  rejectionReason?: string | null
+  adminNote?: string | null
+  reviewedAt?: string | null
+}
+
+export type VenueDocumentReviewsMap = Record<string, VenueDocumentReviewEntry>
+
 export interface ApplicationKycDetails {
   individualOrOrgName: string | null
   address: string | null
@@ -66,6 +76,7 @@ export interface ApplicationKycDetails {
   gstNumber: string | null
   compliance: ApplicationKycCompliance
   documents: ApplicationKycDocuments
+  documentReviews?: VenueDocumentReviewsMap
   status: VenueKycStatus
   reasonFor: string[]
   rejectionReason: string | null
@@ -87,6 +98,7 @@ export interface ApplicationBankingAccount {
 export interface ApplicationBankingDetails {
   account: ApplicationBankingAccount
   cancelledCheque: string | null
+  documentReviews?: VenueDocumentReviewsMap
   status: VenueKycStatus
   reasonFor: string[]
   rejectionReason: string | null
