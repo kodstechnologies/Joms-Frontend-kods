@@ -53,7 +53,7 @@ function StatusBadge({ status }: { status: string }) {
   return (
     <span
       className={cn(
-        'inline-flex rounded-full border px-2.5 py-0.5 text-[11px] font-semibold capitalize',
+        'text-body-sm-semibold inline-flex rounded-full border px-2.5 py-0.5 capitalize',
         isSuccess
           ? 'border-brand-success/25 bg-brand-success/10 text-brand-success'
           : 'border-brand-danger/25 bg-brand-danger/10 text-brand-danger',
@@ -83,7 +83,7 @@ function PreVersionModal({ log, onClose }: { log: AuditLog | null; onClose: () =
         <p className="text-brand-muted mt-1 text-sm">
           Previous state captured for action: <span className="text-brand-text">{log.action}</span>
         </p>
-        <pre className="rounded-brand-md text-brand-text mt-4 max-h-72 overflow-auto border border-white/10 bg-[#0F0F0F] p-4 text-xs">
+        <pre className="rounded-brand-md text-brand-text bg-brand-bg mt-4 max-h-72 overflow-auto border border-white/10 p-4 text-xs">
           {JSON.stringify(snapshot, null, 2)}
         </pre>
         <div className="mt-6 flex justify-end">
@@ -155,7 +155,7 @@ function UserOverviewCard({
               <p className="text-brand-muted text-xs">Status</p>
               <span
                 className={cn(
-                  'mt-2 inline-flex rounded-full border px-2.5 py-0.5 text-[11px] font-semibold capitalize',
+                  'text-body-sm-semibold mt-2 inline-flex rounded-full border px-2.5 py-0.5 capitalize',
                   subject.status === 'active'
                     ? 'border-brand-success/25 bg-brand-success/10 text-brand-success'
                     : 'border-brand-danger/25 bg-brand-danger/10 text-brand-danger',
@@ -228,7 +228,7 @@ function RoleOverviewCard({
             <p className="text-brand-muted text-xs">Status</p>
             <span
               className={cn(
-                'mt-2 inline-flex rounded-full border px-2.5 py-0.5 text-[11px] font-semibold capitalize',
+                'text-body-sm-semibold mt-2 inline-flex rounded-full border px-2.5 py-0.5 capitalize',
                 subject.status === 'active'
                   ? 'border-brand-success/25 bg-brand-success/10 text-brand-success'
                   : 'border-brand-danger/25 bg-brand-danger/10 text-brand-danger',
@@ -369,7 +369,7 @@ export function AdminLogsPage() {
         accessorKey: 'module',
         header: 'Module',
         cell: ({ row }) => (
-          <span className="text-brand-text inline-flex rounded-full border border-white/10 bg-white/5 px-2.5 py-0.5 text-[11px] font-medium">
+          <span className="text-brand-text text-body-sm-semibold inline-flex rounded-full border border-white/10 bg-white/5 px-2.5 py-0.5 font-medium">
             {row.original.module}
           </span>
         ),
@@ -414,7 +414,7 @@ export function AdminLogsPage() {
         accessorKey: 'module',
         header: 'Module',
         cell: ({ row }) => (
-          <span className="text-brand-text inline-flex rounded-full border border-white/10 bg-white/5 px-2.5 py-0.5 text-[11px] font-medium">
+          <span className="text-brand-text text-body-sm-semibold inline-flex rounded-full border border-white/10 bg-white/5 px-2.5 py-0.5 font-medium">
             {row.original.module}
           </span>
         ),
@@ -482,21 +482,21 @@ export function AdminLogsPage() {
           <button
             type="button"
             onClick={() => navigateBackOrFallback(navigate, '/settings/access')}
-            className="group font-heading flex w-fit items-center gap-2 text-[20px] font-bold tracking-tight text-white transition-colors hover:text-[#FBC078]"
+            className="group font-heading text-h3 text-brand-text hover:text-brand-accent flex w-fit items-center gap-2 font-bold tracking-tight transition-colors"
           >
             <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
             <span>{pageTitle}</span>
           </button>
-          <div className="flex items-center gap-1.5 pl-7 text-[12px] font-medium text-[#777777]">
+          <div className="text-body-sm-medium text-muted flex items-center gap-1.5 pl-7">
             <button
               type="button"
               onClick={() => navigateBackOrFallback(navigate, '/settings/access')}
-              className="transition-colors hover:text-white"
+              className="hover:text-brand-text transition-colors"
             >
               Role Based Access
             </button>
-            <span className="text-[#333333]">/</span>
-            <span className="font-bold text-white">{breadcrumbName}</span>
+            <span className="text-brand-text/30">/</span>
+            <span className="text-brand-text font-bold">{breadcrumbName}</span>
           </div>
         </div>
 

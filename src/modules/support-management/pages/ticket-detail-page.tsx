@@ -21,26 +21,26 @@ export function TicketDetailPage() {
         <button
           type="button"
           onClick={() => navigateBackOrFallback(navigate, '/support/tickets')}
-          className="mt-1 rounded-lg border border-white/10 p-2 text-slate-400 hover:text-white"
+          className="text-muted hover:text-brand-text mt-1 rounded-lg border border-white/10 p-2"
         >
           <ArrowLeft className="size-4" />
         </button>
         <div>
-          <h1 className="text-3xl font-semibold tracking-tight text-slate-100">
+          <h1 className="text-h2 text-brand-text font-semibold tracking-tight">
             Ticket Management
           </h1>
-          <p className="mt-1 text-sm text-slate-400">
+          <p className="text-body-md text-muted mt-1">
             Decision-centric workspace for high-impact tickets requiring approval, enforcement, or
             oversight.
           </p>
         </div>
       </div>
 
-      <div className="rounded-2xl border border-white/10 bg-[#111111] p-6">
+      <div className="radius-lg bg-brand-surface border border-white/10 p-6">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="text-xs text-slate-500">Ticket ID</p>
-            <p className="font-mono text-lg font-semibold text-amber-400">#{ticket.id}</p>
+            <p className="text-body-sm text-muted">Ticket ID</p>
+            <p className="text-body-lg text-brand-accent font-mono font-semibold">#{ticket.id}</p>
           </div>
           <TicketStatusBadge status={ticket.status} />
         </div>
@@ -49,7 +49,7 @@ export function TicketDetailPage() {
           <DetailField label="Subject" value={ticket.subject} />
           <DetailField label="Category" value={ticket.category} />
           <div>
-            <p className="text-xs text-slate-500">Priority</p>
+            <p className="text-body-sm text-muted">Priority</p>
             <div className="mt-1">
               <TicketPriorityBadge priority={ticket.priority} />
             </div>
@@ -65,26 +65,26 @@ export function TicketDetailPage() {
       </div>
 
       <section className="space-y-3">
-        <h2 className="text-sm font-semibold text-white">Description</h2>
-        <div className="rounded-xl border border-white/10 bg-[#111111] p-4 text-sm text-slate-300">
+        <h2 className="text-body-md-semibold text-brand-text">Description</h2>
+        <div className="radius-lg bg-brand-surface text-body-md text-brand-text/80 border border-white/10 p-4">
           {ticket.description ?? 'No description provided.'}
         </div>
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-sm font-semibold text-white">Conversation History</h2>
-        <div className="space-y-4 rounded-xl border border-white/10 bg-[#111111] p-5">
+        <h2 className="text-body-md-semibold text-brand-text">Conversation History</h2>
+        <div className="radius-lg bg-brand-surface space-y-4 border border-white/10 p-5">
           {chatMessagesMock.map((msg) => (
             <div
               key={msg.id}
               className={`flex gap-3 ${msg.role === 'agent' ? 'flex-row-reverse' : 'flex-row'}`}
             >
-              <div className="size-8 shrink-0 rounded-full bg-slate-700" />
+              <div className="size-8 shrink-0 rounded-full bg-white/10" />
               <div className={`max-w-[75%] ${msg.role === 'agent' ? 'text-right' : 'text-left'}`}>
-                <div className="rounded-xl border border-white/5 bg-[#1a1a1a] px-4 py-3 text-sm text-slate-300">
+                <div className="radius-lg bg-brand-surface text-body-md text-brand-text/80 border border-white/5 px-4 py-3">
                   {msg.content}
                 </div>
-                <span className="mt-1 block text-[10px] text-slate-500">{msg.time}</span>
+                <span className="text-body-sm text-muted mt-1 block">{msg.time}</span>
               </div>
             </div>
           ))}
@@ -93,8 +93,8 @@ export function TicketDetailPage() {
 
       {ticket.resolution ? (
         <section className="space-y-3">
-          <h2 className="text-sm font-semibold text-white">Resolution</h2>
-          <div className="rounded-xl border border-white/10 bg-[#111111] p-4 text-sm text-slate-300">
+          <h2 className="text-body-md-semibold text-brand-text">Resolution</h2>
+          <div className="radius-lg bg-brand-surface text-body-md text-brand-text/80 border border-white/10 p-4">
             {ticket.resolution}
           </div>
         </section>
@@ -113,8 +113,8 @@ export function TicketDetailPage() {
 function DetailField({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <p className="text-xs text-slate-500">{label}</p>
-      <p className="mt-1 text-sm text-white">{value}</p>
+      <p className="text-body-sm text-muted">{label}</p>
+      <p className="text-body-md text-brand-text mt-1">{value}</p>
     </div>
   )
 }

@@ -45,18 +45,18 @@ export function SidebarItem({
     return (
       <div
         className={cn(
-          'flex items-center gap-3 text-sm transition-all duration-200',
+          'text-body-md flex items-center gap-3 transition-all duration-200',
           compact ? 'mx-auto justify-center py-2' : 'py-2 pr-3',
           paddingLeft,
           compact
             ? showCompactActive
               ? 'size-10 rounded-xl text-white'
-              : 'size-10 text-white/70 hover:text-white'
+              : 'text-muted size-10 hover:text-white'
             : resolvedActive
               ? 'text-white'
               : depth > 0
-                ? 'text-white/45 hover:text-white/70'
-                : 'text-white/80 hover:text-white',
+                ? 'text-muted hover:text-white'
+                : 'text-muted hover:text-white',
         )}
       >
         {Icon ? (
@@ -84,7 +84,7 @@ export function SidebarItem({
         {!compact && badge ? (
           <span
             className={cn(
-              'rounded-full border px-2 py-0.5 text-[11px] font-semibold',
+              'text-body-sm-semibold rounded-full border px-2 py-0.5',
               badge.variant === 'success' &&
                 'border-brand-success/30 bg-brand-success/10 text-brand-success',
               badge.variant === 'warning' &&

@@ -11,16 +11,13 @@ export const categoryViewTheme = {
   delete: 'var(--brand-danger)',
   deleteHover: 'var(--brand-danger)',
   sectionTitleClass: categoryFormTheme.sectionTitleClass,
-  bodyTextClass: 'font-sans text-[14px] font-normal leading-5 tracking-normal text-[#888888]',
-  labelClass: 'font-sans text-[12px] font-normal leading-[17px] tracking-normal text-[#888888]',
-  valueClass: 'font-sans text-[14px] font-normal leading-5 tracking-normal text-white',
-  valueLgClass: 'font-sans text-[16px] font-semibold leading-5 tracking-normal text-white',
-  outlineButtonClass:
-    'h-10 gap-2 rounded-xl border border-white/25 bg-black px-4 text-[12px] font-semibold text-white shadow-none hover:bg-white/5',
-  accentButtonClass:
-    'h-10 gap-2 rounded-xl bg-brand-accent px-4 text-[12px] font-semibold text-brand-text-dark shadow-none hover:bg-brand-gold-from',
-  deleteButtonClass:
-    'h-10 gap-2 rounded-xl bg-brand-danger px-4 text-[12px] font-semibold text-white shadow-none hover:opacity-90',
+  bodyTextClass: 'text-body-md text-muted',
+  labelClass: 'text-body-sm text-muted',
+  valueClass: 'text-body-md text-brand-text',
+  valueLgClass: 'text-body-lg font-semibold text-brand-text',
+  outlineButtonClass: 'ui-cta ui-cta-outline gap-2',
+  accentButtonClass: 'ui-cta ui-cta-primary gap-2',
+  deleteButtonClass: 'ui-cta ui-cta-negative gap-2',
   statusActive: categoryManagementTheme.statusAccepted,
   statusPaused: categoryManagementTheme.statusPending,
 } as const

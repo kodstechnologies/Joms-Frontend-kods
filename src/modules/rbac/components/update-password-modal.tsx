@@ -1,10 +1,6 @@
 import { useState } from 'react'
 import { X } from 'lucide-react'
 
-import { Button } from '@/shared/components/ui/button'
-import { Input } from '@/shared/components/ui/input'
-import { cn } from '@/shared/lib/cn'
-
 const PASSWORD_RULES = [
   'Password must be at least 6 characters long.',
   'New password must be different from the current password.',
@@ -60,7 +56,7 @@ export function UpdatePasswordModal({
 
   return (
     <div
-      className="text-brand-text fixed inset-0 z-50 flex items-center justify-center bg-black/80 px-4 py-6"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-6"
       role="presentation"
       onClick={handleClose}
     >
@@ -68,81 +64,82 @@ export function UpdatePasswordModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="update-password-modal-title"
-        className="rounded-brand-md bg-brand-surface flex max-h-[90vh] w-full max-w-[470px] flex-col overflow-hidden border border-white/10 shadow-2xl"
+        className="ui-modal-shell"
         onClick={(event) => event.stopPropagation()}
       >
-        <div className="flex shrink-0 items-center justify-between border-b border-white/10 px-6 py-4">
-          <h2
-            id="update-password-modal-title"
-            className="text-brand-text text-[18px] font-semibold"
-          >
+        <div className="ui-modal-header">
+          <h2 id="update-password-modal-title" className="text-h2 text-brand-text">
             Update Password
           </h2>
           <button
             type="button"
             aria-label="Close modal"
             onClick={handleClose}
-            className="text-brand-text rounded-full p-1 transition-colors hover:bg-white/10"
+            className="text-brand-muted rounded-full p-1.5 transition-colors hover:bg-white/10 hover:text-white"
           >
-            <X className="size-5" aria-hidden="true" />
+            <X className="icon-lg" aria-hidden="true" />
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-6 py-6">
+        <div className="ui-modal-body space-y-4">
           {userName ? (
-            <p className="text-brand-muted mb-5 text-sm">
-              Reset password for <span className="text-brand-text font-medium">{userName}</span>.
-              Enter the user&apos;s current password, then set a new one.
+            <p className="text-body-md text-muted">
+              Reset password for{' '}
+              <span className="text-body-md-medium text-brand-text">{userName}</span>. Enter the
+              user&apos;s current password, then set a new one.
             </p>
           ) : null}
 
           <div className="space-y-4">
             <div className="space-y-2">
-              <label className="text-brand-text text-sm font-medium" htmlFor="old-password">
+              <label className="text-body-sm-medium text-brand-text" htmlFor="old-password">
                 User&apos;s Current Password<span className="text-brand-danger">*</span>
               </label>
-              <Input
+              <input
                 id="old-password"
                 type="password"
                 value={oldPassword}
                 onChange={(event) => setOldPassword(event.target.value)}
                 placeholder="Enter here.."
                 autoComplete="current-password"
+                className="ui-input"
               />
             </div>
 
             <div className="space-y-2">
-              <label className="text-brand-text text-sm font-medium" htmlFor="new-password">
+              <label className="text-body-sm-medium text-brand-text" htmlFor="new-password">
                 Enter New Password<span className="text-brand-danger">*</span>
               </label>
-              <Input
+              <input
                 id="new-password"
                 type="password"
                 value={newPassword}
                 onChange={(event) => setNewPassword(event.target.value)}
                 placeholder="Enter here.."
                 autoComplete="new-password"
+                className="ui-input"
               />
             </div>
 
             <div className="space-y-2">
-              <label className="text-brand-text text-sm font-medium" htmlFor="confirm-new-password">
+              <label className="text-body-sm-medium text-brand-text" htmlFor="confirm-new-password">
                 Confirm New Password<span className="text-brand-danger">*</span>
               </label>
-              <Input
+              <input
                 id="confirm-new-password"
                 type="password"
                 value={confirmNewPassword}
                 onChange={(event) => setConfirmNewPassword(event.target.value)}
                 placeholder="Enter here.."
                 autoComplete="new-password"
+                className="ui-input"
               />
             </div>
           </div>
 
-          <div className="rounded-brand-md bg-brand-bg mt-5 border border-white/10 px-4 py-3">
-            <p className="text-brand-text text-sm font-semibold">Password Format &amp; Rules</p>
-            <ul className="text-brand-muted mt-2 list-disc space-y-1 pl-4 text-xs">
+          <div className="radius-md bg-brand-bg border border-white/10 px-4 py-3">
+            <p className="text-body-md-semibold text-brand-text">Password Format &amp; Rules</p>
+            <ul className="text-body-sm text-muted mt-2 list-disc space-y-1 pl-4">
               {PASSWORD_RULES.map((rule) => (
                 <li key={rule}>{rule}</li>
               ))}
@@ -150,18 +147,23 @@ export function UpdatePasswordModal({
           </div>
         </div>
 
-        <div className="flex shrink-0 items-center justify-end gap-3 border-t border-white/10 px-6 py-4">
-          <Button type="button" variant="secondary" onClick={handleClose} disabled={isSubmitting}>
+        <div className="ui-modal-footer">
+          <button
+            type="button"
+            onClick={handleClose}
+            disabled={isSubmitting}
+            className="ui-modal-btn ui-modal-btn-cancel"
+          >
             Cancel
-          </Button>
-          <Button
+          </button>
+          <button
             type="button"
             onClick={handleSubmit}
             disabled={isSubmitting}
-            className={cn(isSubmitting && 'opacity-70')}
+            className="ui-modal-btn ui-modal-btn-gold"
           >
             {isSubmitting ? 'Updating...' : 'Change Password'}
-          </Button>
+          </button>
         </div>
       </div>
     </div>

@@ -59,10 +59,10 @@ export function CreateListingWizard({
           className="group hover:text-brand-accent flex w-fit items-center gap-2 text-white transition-colors"
         >
           <ChevronLeft className="size-5 transition-transform group-hover:-translate-x-1" />
-          <h1 className="text-[20px] font-bold tracking-tight">{title}</h1>
+          <h1 className="text-h3 font-bold tracking-tight">{title}</h1>
         </button>
 
-        <div className="flex items-center gap-1.5 pl-7 text-[12px] font-medium text-[#777777]">
+        <div className="text-body-sm text-muted flex items-center gap-1.5 pl-7 font-medium">
           {breadcrumbs.map((breadcrumb, index) => (
             <span key={`${breadcrumb.label}-${index}`} className="contents">
               {index > 0 && <span className="text-[#333333]">/</span>}
@@ -74,7 +74,7 @@ export function CreateListingWizard({
         </div>
       </div>
 
-      <div className="relative w-full overflow-hidden rounded-lg border border-white/5 bg-[#151515] px-5 py-7 shadow-xl md:px-10">
+      <div className="bg-brand-surface relative w-full overflow-hidden rounded-lg border border-white/5 px-5 py-7 shadow-xl md:px-10">
         <div className="relative mx-auto flex w-full items-start">
           {steps.map((step, index) => {
             const stepNum = index + 1
@@ -88,7 +88,7 @@ export function CreateListingWizard({
                 )}
                 <div
                   className={cn(
-                    'relative z-10 flex size-9 items-center justify-center rounded-full text-[12px] font-bold transition-all duration-300',
+                    'text-body-sm relative z-10 flex size-9 items-center justify-center rounded-full font-bold transition-all duration-300',
                     isActive
                       ? 'bg-brand-accent text-brand-text-dark shadow-[0_0_20px_rgba(255,200,73,0.15)]'
                       : isCompleted
@@ -99,10 +99,10 @@ export function CreateListingWizard({
                   {step.id}
                 </div>
                 <div className="hidden text-center sm:block">
-                  <p className="text-[12px] font-bold tracking-tight text-white transition-colors">
+                  <p className="text-body-sm font-bold tracking-tight text-white transition-colors">
                     {step.title}
                   </p>
-                  <p className="text-[11px] font-medium whitespace-nowrap text-[#777777]">
+                  <p className="text-body-sm text-muted font-medium whitespace-nowrap">
                     {step.description}
                   </p>
                 </div>
@@ -114,11 +114,11 @@ export function CreateListingWizard({
 
       <div className="mx-auto w-full">{children}</div>
 
-      <div className="mx-auto flex w-full max-w-[850px] items-center justify-between rounded-lg border border-white/5 bg-[#151515] p-4 shadow-lg">
+      <div className="bg-brand-surface mx-auto flex w-full max-w-[850px] items-center justify-between rounded-lg border border-white/5 p-4 shadow-lg">
         <Button
           variant="secondary"
           onClick={onBack}
-          className="h-8 rounded-md border border-white/50 bg-transparent px-4 py-0 text-[11px] font-semibold text-white transition-all hover:border-white hover:bg-white/5"
+          className="ui-cta ui-cta-outline h-8 px-4 py-0"
         >
           Previous
         </Button>
@@ -129,7 +129,7 @@ export function CreateListingWizard({
               onClick={secondaryAction.onClick}
               disabled={secondaryAction.disabled}
               className={cn(
-                'h-8 rounded-md border border-white/20 bg-transparent px-4 py-0 text-[11px] font-semibold text-[#777777] transition-all hover:bg-white/5',
+                'ui-cta ui-cta-outline text-muted h-8 px-4 py-0',
                 secondaryAction.className,
               )}
             >
@@ -139,10 +139,7 @@ export function CreateListingWizard({
           <Button
             onClick={primaryAction.onClick}
             disabled={primaryAction.disabled}
-            className={cn(
-              'h-8 rounded-md px-5 py-0 text-[11px] font-bold',
-              primaryAction.className,
-            )}
+            className={cn('ui-cta ui-cta-primary h-8 px-5 py-0', primaryAction.className)}
           >
             {primaryAction.label}
           </Button>

@@ -63,31 +63,33 @@ export const AddAmenityModal = ({ onClose }: AddAmenityModalProps) => {
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/75">
-      <div className="w-[580px] rounded-2xl bg-[#161616] shadow-2xl">
-        <div className="flex items-center justify-between border-b border-[#2A2A2A] px-6 py-5">
-          <h2 className="text-[18px] font-semibold text-white">Add amenities</h2>
+      <div className="ui-modal-shell w-[580px] max-w-[580px]">
+        <div className="ui-modal-header">
+          <h2 className="text-h4 font-semibold text-white">Add amenities</h2>
 
-          <button onClick={onClose}>
+          <button type="button" onClick={onClose} aria-label="Close">
             <X className="h-5 w-5 text-white" />
           </button>
         </div>
 
-        <div className="px-6 py-5">
+        <div className="ui-modal-body">
           <div className="grid grid-cols-2 gap-x-8 gap-y-6">
             <div>
-              <label className="mb-2 block text-[13px] font-medium text-white">
+              <label className="text-body-md mb-2 block font-medium text-white">
                 Amenities name *
               </label>
 
               <input
                 value={amenityName}
                 onChange={(e) => setAmenityName(e.target.value)}
-                className="focus:border-brand-accent h-10 w-full rounded-md border border-[#1F1F1F] bg-black px-3 text-sm text-white outline-none"
+                className="ui-input"
               />
             </div>
 
             <div>
-              <label className="mb-2 block text-[13px] font-medium text-white">Upload icon *</label>
+              <label className="text-body-md mb-2 block font-medium text-white">
+                Upload icon *
+              </label>
 
               <input
                 ref={fileInputRef}
@@ -105,7 +107,7 @@ export const AddAmenityModal = ({ onClose }: AddAmenityModalProps) => {
 
               <div
                 onClick={() => fileInputRef.current?.click()}
-                className="hover:border-brand-accent flex h-[84px] w-[84px] cursor-pointer items-center justify-center rounded-md border border-dashed border-[#666666]"
+                className="hover:border-brand-accent flex h-[84px] w-[84px] cursor-pointer items-center justify-center rounded-md border border-dashed border-white/20"
               >
                 {iconFile ? (
                   <img
@@ -114,47 +116,47 @@ export const AddAmenityModal = ({ onClose }: AddAmenityModalProps) => {
                     className="h-full w-full rounded-md object-cover"
                   />
                 ) : (
-                  <Upload className="h-5 w-5 text-slate-500" />
+                  <Upload className="text-muted h-5 w-5" />
                 )}
               </div>
             </div>
 
             <div>
-              <label className="mb-2 block text-[13px] font-medium text-white">
+              <label className="text-body-md mb-2 block font-medium text-white">
                 Venue category *
               </label>
 
               <input
                 value={venueCategory}
                 onChange={(e) => setVenueCategory(e.target.value)}
-                className="focus:border-brand-accent h-10 w-full rounded-md border border-[#1F1F1F] bg-black px-3 text-sm text-white outline-none"
+                className="ui-input"
               />
             </div>
 
             <div>
-              <label className="mb-2 block text-[13px] font-medium text-white">
+              <label className="text-body-md mb-2 block font-medium text-white">
                 Sub-category (optional)
               </label>
 
               <input
                 value={subCategory}
                 onChange={(e) => setSubCategory(e.target.value)}
-                className="focus:border-brand-accent h-10 w-full rounded-md border border-[#1F1F1F] bg-black px-3 text-sm text-white outline-none"
+                className="ui-input"
               />
             </div>
           </div>
+        </div>
 
-          <div className="mt-6 flex justify-end">
-            <button
-              type="button"
-              onClick={handleSave}
-              disabled={isPending}
-              className="bg-brand-accent text-brand-text-dark flex h-10 items-center gap-2 rounded-lg px-5 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              <Save size={15} />
-              {isPending ? 'Saving…' : 'Save amenity'}
-            </button>
-          </div>
+        <div className="ui-modal-footer justify-end">
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={isPending}
+            className="ui-modal-btn ui-modal-btn-gold flex w-auto flex-none items-center gap-2 px-5"
+          >
+            <Save size={15} />
+            {isPending ? 'Saving…' : 'Save amenity'}
+          </button>
         </div>
       </div>
     </div>

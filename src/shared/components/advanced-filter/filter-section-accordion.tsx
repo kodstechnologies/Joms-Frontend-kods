@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { Minus, Plus } from 'lucide-react'
 
 import type { FilterSectionConfig, FilterValues } from '@/shared/types/data-filter'
-import { cn } from '@/shared/lib/cn'
 
 import { FilterFieldRenderer } from './filter-field-renderer'
 
@@ -25,23 +24,23 @@ export function FilterSectionAccordion({
 
   if (variant === 'bar') {
     return (
-      <div className="overflow-hidden rounded-xl border border-[#2A2A2A] bg-[#141414]">
+      <div className="radius-lg bg-brand-surface overflow-hidden border border-white/10">
         <button
           type="button"
           onClick={() => setExpanded((current) => !current)}
           className="flex w-full items-center justify-between px-5 py-4 text-left"
           aria-expanded={expanded}
         >
-          <span className="text-sm font-medium text-white">{section.title}</span>
+          <span className="text-body-md-medium text-brand-text">{section.title}</span>
           {expanded ? (
-            <Minus className="size-4 text-white" aria-hidden="true" />
+            <Minus className="icon-sm text-brand-text" aria-hidden="true" />
           ) : (
-            <Plus className="size-4 text-white" aria-hidden="true" />
+            <Plus className="icon-sm text-brand-text" aria-hidden="true" />
           )}
         </button>
 
         {expanded ? (
-          <div className="space-y-6 border-t border-[#2A2A2A] px-5 py-5">
+          <div className="space-y-6 border-t border-white/10 px-5 py-5">
             {section.fields.map((field) => (
               <FilterFieldRenderer
                 key={field.id}
@@ -57,23 +56,18 @@ export function FilterSectionAccordion({
   }
 
   return (
-    <section
-      className={cn(
-        'overflow-hidden rounded-xl border border-white/10',
-        expanded ? 'bg-[#181818]' : 'bg-[#141414]',
-      )}
-    >
+    <section className="radius-lg bg-brand-surface overflow-hidden border border-white/10">
       <button
         type="button"
         onClick={() => setExpanded((current) => !current)}
         className="flex w-full items-center justify-between px-6 py-4 text-left"
         aria-expanded={expanded}
       >
-        <span className="text-sm font-medium text-white">{section.title}</span>
+        <span className="text-body-md-medium text-brand-text">{section.title}</span>
         {expanded ? (
-          <Minus className="size-4 text-white" aria-hidden="true" />
+          <Minus className="icon-sm text-brand-text" aria-hidden="true" />
         ) : (
-          <Plus className="size-4 text-white" aria-hidden="true" />
+          <Plus className="icon-sm text-brand-text" aria-hidden="true" />
         )}
       </button>
 

@@ -203,7 +203,7 @@ const formatLastActive = (value?: string) => {
 
 const getKycBadge = (finalReview?: { isVerified?: boolean; approvalStatus?: string }) => {
   if (finalReview?.approvalStatus === 'approved') {
-    return { label: 'KYC Verified', className: 'bg-emerald-500/15 text-emerald-400' }
+    return { label: 'KYC Verified', className: 'bg-brand-positive/15 text-brand-positive' }
   }
   return { label: 'Review Pending', className: 'bg-amber-500/15 text-amber-300' }
 }
@@ -260,7 +260,7 @@ function SafeImage({
 function SidebarRow({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="flex items-center justify-between border-b border-white/5 py-3 last:border-0">
-      <span className="text-[12px] text-[#999]">{label}</span>
+      <span className="text-body-sm text-muted">{label}</span>
       <span className="max-w-[58%] text-right text-[13px] font-semibold text-white">
         {children}
       </span>
@@ -281,7 +281,7 @@ function ProfileSidebar({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="rounded-xl border border-white/5 bg-[#111111] p-5">
+      <div className="bg-brand-bg rounded-xl border border-white/5 p-5">
         <div className="mb-2 flex items-center justify-between">
           <h3 className="text-[13px] font-semibold text-white">Profile &amp; Account</h3>
           <span className={cn('rounded-md px-2.5 py-1 text-[10px] font-bold', kycBadge.className)}>
@@ -306,7 +306,7 @@ function ProfileSidebar({
           <span className="inline-flex items-center gap-1">
             <Star className="fill-brand-accent text-brand-accent size-3.5" />
             4.8
-            <span className="text-[11px] font-normal text-[#777]">(1.9K)</span>
+            <span className="text-body-sm text-muted font-normal">(1.9K)</span>
           </span>
         </SidebarRow>
         <SidebarRow label="NPS">98</SidebarRow>
@@ -322,7 +322,7 @@ function ProfileSidebar({
             onClick={() =>
               viewExpertKyc(partnerId, profile.servicetype || basic?.serviceType, navigate)
             }
-            className="bg-brand-accent/15 text-brand-accent hover:bg-brand-accent/25 rounded-md px-3 py-1 text-[11px] font-bold transition-colors"
+            className="bg-brand-accent/15 text-brand-accent hover:bg-brand-accent/25 text-body-sm rounded-md px-3 py-1 font-bold transition-colors"
           >
             View
           </button>
@@ -331,22 +331,22 @@ function ProfileSidebar({
           <button
             type="button"
             onClick={() => comingSoon('Timelines')}
-            className="bg-brand-accent/15 text-brand-accent hover:bg-brand-accent/25 rounded-md px-3 py-1 text-[11px] font-bold transition-colors"
+            className="bg-brand-accent/15 text-brand-accent hover:bg-brand-accent/25 text-body-sm rounded-md px-3 py-1 font-bold transition-colors"
           >
             Check Timelines
           </button>
         </SidebarRow>
       </div>
 
-      <div className="rounded-xl border border-white/5 bg-[#111111] p-5">
+      <div className="bg-brand-bg rounded-xl border border-white/5 p-5">
         <h3 className="mb-4 text-[13px] font-semibold text-white">Support &amp; Admin</h3>
         <div className="rounded-lg border border-white/5 bg-black p-3">
-          <p className="text-[10px] text-[#777]">Active Tickets</p>
-          <p className="mt-1 text-[12px] font-medium text-white">None</p>
+          <p className="text-muted text-[10px]">Active Tickets</p>
+          <p className="text-body-sm mt-1 font-medium text-white">None</p>
         </div>
         <div className="mt-3 rounded-lg border border-white/5 bg-black p-3">
-          <p className="text-[10px] text-[#777]">Admin notes</p>
-          <p className="mt-1 text-[12px] font-medium text-white">
+          <p className="text-muted text-[10px]">Admin notes</p>
+          <p className="text-body-sm mt-1 font-medium text-white">
             {profile.finalReview?.internalNotes || 'None'}
           </p>
         </div>
@@ -364,19 +364,17 @@ function OverviewTab({ profile }: { profile: ExpertProfileDetail }) {
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="rounded-xl border border-white/5 bg-[#111111] p-6">
-        <h3 className="mb-3 text-[14px] font-semibold text-white">About</h3>
-        <p className="text-[13px] leading-relaxed text-[#bbb]">
-          {basic?.bio || 'No bio provided.'}
-        </p>
+      <div className="bg-brand-bg rounded-xl border border-white/5 p-6">
+        <h3 className="text-body-md mb-3 font-semibold text-white">About</h3>
+        <p className="text-muted text-[13px] leading-relaxed">{basic?.bio || 'No bio provided.'}</p>
         <div className="mt-4 flex flex-wrap gap-2">
           {profile.phoneVerified && (
-            <span className="rounded-md bg-emerald-500/15 px-2.5 py-1 text-[10px] font-bold text-emerald-400">
+            <span className="bg-brand-positive/15 text-brand-positive rounded-md px-2.5 py-1 text-[10px] font-bold">
               Phone Verified
             </span>
           )}
           {profile.emailVerified && (
-            <span className="rounded-md bg-emerald-500/15 px-2.5 py-1 text-[10px] font-bold text-emerald-400">
+            <span className="bg-brand-positive/15 text-brand-positive rounded-md px-2.5 py-1 text-[10px] font-bold">
               Email Verified
             </span>
           )}
@@ -384,11 +382,11 @@ function OverviewTab({ profile }: { profile: ExpertProfileDetail }) {
       </div>
 
       {offerings.length > 0 && (
-        <div className="rounded-xl border border-white/5 bg-[#111111] p-6">
-          <h3 className="mb-4 text-[14px] font-semibold text-white">Core Offerings</h3>
+        <div className="bg-brand-bg rounded-xl border border-white/5 p-6">
+          <h3 className="text-body-md mb-4 font-semibold text-white">Core Offerings</h3>
           <ul className="space-y-2.5">
             {offerings.map((item) => (
-              <li key={item} className="flex items-center gap-2 text-[13px] text-[#ddd]">
+              <li key={item} className="text-muted flex items-center gap-2 text-[13px]">
                 <Check className="text-brand-accent size-4 shrink-0" />
                 {item}
               </li>
@@ -398,8 +396,8 @@ function OverviewTab({ profile }: { profile: ExpertProfileDetail }) {
       )}
 
       {galleryImages.length > 0 && (
-        <div className="rounded-xl border border-white/5 bg-[#111111] p-6">
-          <h3 className="mb-4 text-[14px] font-semibold text-white">Gallery</h3>
+        <div className="bg-brand-bg rounded-xl border border-white/5 p-6">
+          <h3 className="text-body-md mb-4 font-semibold text-white">Gallery</h3>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5">
             {galleryImages.map((image, index) => (
               <div
@@ -411,7 +409,7 @@ function OverviewTab({ profile }: { profile: ExpertProfileDetail }) {
                   alt={`Gallery ${index + 1}`}
                   className="size-full object-cover"
                   fallback={
-                    <div className="flex size-full items-center justify-center text-[#555]">
+                    <div className="text-muted flex size-full items-center justify-center">
                       <ImageOff className="size-5" />
                     </div>
                   }
@@ -423,24 +421,24 @@ function OverviewTab({ profile }: { profile: ExpertProfileDetail }) {
       )}
 
       {workExperience.length > 0 && (
-        <div className="rounded-xl border border-white/5 bg-[#111111] p-6">
-          <h3 className="mb-4 text-[14px] font-semibold text-white">Work Experience</h3>
+        <div className="bg-brand-bg rounded-xl border border-white/5 p-6">
+          <h3 className="text-body-md mb-4 font-semibold text-white">Work Experience</h3>
           <div className="space-y-3">
             {workExperience.map((entry) => (
               <div
                 key={entry._id || `${entry.jobTitle}-${entry.companyName}`}
                 className="flex gap-3 rounded-lg border border-white/5 bg-black p-4"
               >
-                <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-[#1a1a1a]">
+                <div className="bg-brand-surface flex size-10 shrink-0 items-center justify-center rounded-lg">
                   <Briefcase className="text-brand-accent size-4" />
                 </div>
                 <div>
                   <p className="text-[13px] font-semibold text-white">{entry.jobTitle || '—'}</p>
-                  <p className="text-[12px] text-[#999]">
+                  <p className="text-body-sm text-muted">
                     {entry.companyName || '—'} | {formatWorkPeriod(entry)}
                   </p>
                   {entry.description && (
-                    <p className="mt-1 text-[12px] text-[#777]">{entry.description}</p>
+                    <p className="text-body-sm text-muted mt-1">{entry.description}</p>
                   )}
                 </div>
               </div>
@@ -449,8 +447,8 @@ function OverviewTab({ profile }: { profile: ExpertProfileDetail }) {
         </div>
       )}
 
-      <div className="rounded-xl border border-white/5 bg-[#111111] p-6">
-        <h3 className="mb-4 text-[14px] font-semibold text-white">Reviews &amp; Ratings</h3>
+      <div className="bg-brand-bg rounded-xl border border-white/5 p-6">
+        <h3 className="text-body-md mb-4 font-semibold text-white">Reviews &amp; Ratings</h3>
         <div className="mb-4 flex flex-wrap gap-2">
           {[
             { key: 'all', label: 'All Reviews' },
@@ -462,10 +460,10 @@ function OverviewTab({ profile }: { profile: ExpertProfileDetail }) {
               type="button"
               onClick={() => setReviewFilter(filter.key)}
               className={cn(
-                'rounded-full px-3 py-1.5 text-[11px] font-semibold transition-colors',
+                'text-body-sm rounded-full px-3 py-1.5 font-semibold transition-colors',
                 reviewFilter === filter.key
                   ? 'bg-brand-accent/15 text-brand-accent'
-                  : 'bg-black text-[#888] hover:text-white',
+                  : 'text-muted hover:text-brand-text bg-black',
               )}
             >
               {filter.label}
@@ -477,12 +475,12 @@ function OverviewTab({ profile }: { profile: ExpertProfileDetail }) {
             <div key={review.name} className="rounded-lg border border-white/5 bg-black p-4">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-3">
-                  <div className="flex size-9 items-center justify-center rounded-full bg-[#1a1a1a]">
-                    <User className="size-4 text-[#888]" />
+                  <div className="bg-brand-surface flex size-9 items-center justify-center rounded-full">
+                    <User className="text-muted size-4" />
                   </div>
                   <div>
                     <p className="text-[13px] font-semibold text-white">{review.name}</p>
-                    <p className="text-[11px] text-[#777]">{review.title}</p>
+                    <p className="text-body-sm text-muted">{review.title}</p>
                   </div>
                 </div>
                 <div className="text-right">
@@ -491,11 +489,11 @@ function OverviewTab({ profile }: { profile: ExpertProfileDetail }) {
                       <Star key={index} className="fill-brand-accent text-brand-accent size-3" />
                     ))}
                   </div>
-                  <p className="mt-1 text-[10px] text-[#666]">{review.date}</p>
+                  <p className="text-muted mt-1 text-[10px]">{review.date}</p>
                 </div>
               </div>
-              <p className="mt-2 text-[11px] text-[#777]">Service Availed: {review.service}</p>
-              <p className="mt-2 text-[12px] text-[#bbb]">{review.body}</p>
+              <p className="text-body-sm text-muted mt-2">Service Availed: {review.service}</p>
+              <p className="text-body-sm text-muted mt-2">{review.body}</p>
             </div>
           ))}
         </div>
@@ -518,18 +516,18 @@ function ConsultationDetailCard({
     .filter(Boolean)
 
   return (
-    <div className="rounded-xl border border-white/5 bg-[#111111] p-6">
+    <div className="bg-brand-bg rounded-xl border border-white/5 p-6">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h3 className="text-[16px] font-bold text-white">
+          <h3 className="text-body-lg font-bold text-white">
             {consultation.title || 'Untitled Consultation'}
           </h3>
-          <p className="mt-1 text-[12px] text-[#888]">Business</p>
+          <p className="text-body-sm text-muted mt-1">Business</p>
           <div className="mt-2 flex flex-wrap gap-2">
             {(consultation.topics ?? []).map((topic) => (
               <span
                 key={topic._id}
-                className="rounded-full bg-black px-3 py-1 text-[11px] text-[#ccc]"
+                className="text-body-sm text-muted rounded-full bg-black px-3 py-1"
               >
                 {topic.name}
               </span>
@@ -539,7 +537,7 @@ function ConsultationDetailCard({
         <button
           type="button"
           onClick={() => comingSoon('Consultation actions')}
-          className="text-[#777] hover:text-white"
+          className="text-muted hover:text-brand-text"
         >
           <MoreVertical className="size-5" />
         </button>
@@ -547,8 +545,8 @@ function ConsultationDetailCard({
 
       {outlineItems.length > 0 && (
         <div className="mt-5">
-          <p className="mb-2 text-[12px] font-semibold text-white">Session outline</p>
-          <ul className="list-disc space-y-1 pl-5 text-[12px] text-[#bbb]">
+          <p className="text-body-sm mb-2 font-semibold text-white">Session outline</p>
+          <ul className="text-body-sm text-muted list-disc space-y-1 pl-5">
             {outlineItems.map((item) => (
               <li key={item}>{item}</li>
             ))}
@@ -558,32 +556,32 @@ function ConsultationDetailCard({
 
       {consultation.whoItsFor && (
         <div className="mt-5">
-          <p className="mb-2 text-[12px] font-semibold text-white">Who is it for?</p>
-          <p className="text-[12px] text-[#bbb]">{consultation.whoItsFor}</p>
+          <p className="text-body-sm mb-2 font-semibold text-white">Who is it for?</p>
+          <p className="text-body-sm text-muted">{consultation.whoItsFor}</p>
         </div>
       )}
 
       <div className="mt-5">
-        <p className="mb-3 text-[12px] font-semibold text-white">Additional Information</p>
+        <p className="text-body-sm mb-3 font-semibold text-white">Additional Information</p>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           <div className="rounded-lg border border-white/5 bg-black p-3 text-center">
             <Phone className="text-brand-accent mx-auto size-4" />
-            <p className="mt-2 text-[11px] text-[#999]">Mode</p>
-            <p className="text-[12px] font-semibold text-white capitalize">
+            <p className="text-body-sm text-muted mt-2">Mode</p>
+            <p className="text-body-sm font-semibold text-white capitalize">
               {consultation.mode || '—'}
             </p>
           </div>
           <div className="rounded-lg border border-white/5 bg-black p-3 text-center">
             <Languages className="text-brand-accent mx-auto size-4" />
-            <p className="mt-2 text-[11px] text-[#999]">Language</p>
-            <p className="text-[12px] font-semibold text-white">
+            <p className="text-body-sm text-muted mt-2">Language</p>
+            <p className="text-body-sm font-semibold text-white">
               {(consultation.languages ?? []).join(', ') || '—'}
             </p>
           </div>
           <div className="rounded-lg border border-white/5 bg-black p-3 text-center">
             <Clock className="text-brand-accent mx-auto size-4" />
-            <p className="mt-2 text-[11px] text-[#999]">FollowUps</p>
-            <p className="text-[12px] font-semibold text-white">
+            <p className="text-body-sm text-muted mt-2">FollowUps</p>
+            <p className="text-body-sm font-semibold text-white">
               {consultation.hasFollowUp && consultation.followUpDays
                 ? `${consultation.followUpDays} Days`
                 : '—'}
@@ -594,12 +592,12 @@ function ConsultationDetailCard({
 
       {(consultation.pricingOptions ?? []).length > 0 && (
         <div className="mt-5">
-          <p className="mb-3 text-[12px] font-semibold text-white">Duration &amp; Pricing</p>
+          <p className="text-body-sm mb-3 font-semibold text-white">Duration &amp; Pricing</p>
           <div className="flex flex-wrap gap-2">
             {(consultation.pricingOptions ?? []).map((option) => (
               <span
                 key={`${option.durationMinutes}-${option.price}`}
-                className="rounded-lg border border-white/5 bg-black px-3 py-2 text-[11px] font-semibold text-white"
+                className="text-body-sm rounded-lg border border-white/5 bg-black px-3 py-2 font-semibold text-white"
               >
                 {formatPricing(option)}
               </span>
@@ -611,7 +609,7 @@ function ConsultationDetailCard({
       <button
         type="button"
         onClick={() => viewExpertConsultation(consultation, expertId, navigate)}
-        className="mt-5 flex w-full items-center justify-between rounded-lg border border-white/5 bg-black px-4 py-3 text-[12px] font-semibold text-white transition-colors hover:bg-white/5"
+        className="text-body-sm mt-5 flex w-full items-center justify-between rounded-lg border border-white/5 bg-black px-4 py-3 font-semibold text-white transition-colors hover:bg-white/5"
       >
         Consultation Performance
         <ChevronRight className="size-4" />
@@ -627,18 +625,18 @@ function ServicesSubTab({ expertId }: { expertId: string }) {
   return (
     <>
       <div className="flex flex-wrap items-center gap-3">
-        <div className="flex min-w-[220px] flex-1 items-center gap-2 rounded-lg border border-white/5 bg-[#111111] px-3 py-2">
-          <Search className="size-4 text-[#666]" />
+        <div className="bg-brand-bg flex min-w-[220px] flex-1 items-center gap-2 rounded-lg border border-white/5 px-3 py-2">
+          <Search className="text-muted size-4" />
           <input
             type="text"
             placeholder="Search by service title"
-            className="w-full bg-transparent text-[12px] text-white outline-none placeholder:text-[#666]"
+            className="text-body-sm placeholder:text-muted w-full bg-transparent text-white outline-none"
           />
         </div>
         <button
           type="button"
           onClick={() => comingSoon('Advance Filters')}
-          className="flex items-center gap-1.5 rounded-lg border border-white/5 bg-[#111111] px-3 py-2 text-[11px] font-semibold text-white"
+          className="bg-brand-bg text-body-sm flex items-center gap-1.5 rounded-lg border border-white/5 px-3 py-2 font-semibold text-white"
         >
           <SlidersHorizontal className="size-3.5" />
           Advance Filters
@@ -651,12 +649,12 @@ function ServicesSubTab({ expertId }: { expertId: string }) {
         </div>
       )}
       {isError && (
-        <div className="rounded-lg border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+        <div className="bg-brand-danger/10 rounded-lg border border-red-500/40 px-4 py-3 text-sm text-red-400">
           Service not found
         </div>
       )}
       {!isLoading && !isError && services.length === 0 && (
-        <div className="rounded-xl border border-white/5 bg-[#111111] p-8 text-center text-[13px] text-[#777]">
+        <div className="bg-brand-bg text-muted rounded-xl border border-white/5 p-8 text-center text-[13px]">
           Service not found
         </div>
       )}
@@ -677,15 +675,19 @@ function ServiceListCard({ service, expertId }: { service: ExpertService; expert
   const statusLabel =
     status === 'live' ? 'Live' : status ? status.charAt(0).toUpperCase() + status.slice(1) : null
   const statusClass =
-    status === 'live' ? 'bg-emerald-500' : status === 'rejected' ? 'bg-red-500' : 'bg-amber-500'
+    status === 'live'
+      ? 'bg-brand-positive'
+      : status === 'rejected'
+        ? 'bg-brand-danger'
+        : 'bg-amber-500'
 
   return (
     <button
       type="button"
       onClick={() => viewExpertService(service, expertId, navigate)}
-      className="flex w-full items-center gap-4 rounded-xl border border-white/5 bg-[#111111] p-4 text-left transition-colors hover:bg-[#161616]"
+      className="bg-brand-bg hover:bg-brand-surface flex w-full items-center gap-4 rounded-xl border border-white/5 p-4 text-left transition-colors"
     >
-      <div className="relative size-16 shrink-0 overflow-hidden rounded-lg bg-[#1a1a1a]">
+      <div className="bg-brand-surface relative size-16 shrink-0 overflow-hidden rounded-lg">
         {statusLabel && (
           <span
             className={cn(
@@ -696,21 +698,21 @@ function ServiceListCard({ service, expertId }: { service: ExpertService; expert
             {statusLabel}
           </span>
         )}
-        <div className="flex size-full items-center justify-center text-[#555]">
+        <div className="text-muted flex size-full items-center justify-center">
           <Briefcase className="size-5" />
         </div>
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-[14px] font-bold text-white">{service.title || 'Untitled Service'}</p>
-        <p className="text-[12px] text-[#888]">{service.category?.name || '—'}</p>
-        <p className="text-[11px] text-[#666]">{formatPricingType(service.pricingType)}</p>
+        <p className="text-body-md font-bold text-white">{service.title || 'Untitled Service'}</p>
+        <p className="text-body-sm text-muted">{service.category?.name || '—'}</p>
+        <p className="text-body-sm text-muted">{formatPricingType(service.pricingType)}</p>
       </div>
       <div className="text-right">
-        <p className="text-[14px] font-bold text-white">
+        <p className="text-body-md font-bold text-white">
           {service.priceStarts != null ? `₹${service.priceStarts.toLocaleString('en-IN')}` : '—'}
         </p>
       </div>
-      <ChevronRight className="size-4 text-[#666]" />
+      <ChevronRight className="text-muted size-4" />
     </button>
   )
 }
@@ -727,12 +729,12 @@ function ConsultationsSubTab({ expertId }: { expertId: string }) {
         </div>
       )}
       {isError && (
-        <div className="rounded-lg border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+        <div className="bg-brand-danger/10 rounded-lg border border-red-500/40 px-4 py-3 text-sm text-red-400">
           Consultation not found
         </div>
       )}
       {!isLoading && !isError && consultations.length === 0 && (
-        <div className="rounded-xl border border-white/5 bg-[#111111] p-8 text-center text-[13px] text-[#777]">
+        <div className="bg-brand-bg text-muted rounded-xl border border-white/5 p-8 text-center text-[13px]">
           Consultation not found
         </div>
       )}
@@ -770,10 +772,10 @@ function ServiceListingsTab({
               type="button"
               onClick={() => onSubTabChange(tab)}
               className={cn(
-                'rounded-lg px-4 py-2 text-[12px] font-semibold capitalize transition-colors',
+                'text-body-sm rounded-lg px-4 py-2 font-semibold capitalize transition-colors',
                 listingSubTab === tab
                   ? 'bg-brand-accent/15 text-brand-accent'
-                  : 'bg-[#111111] text-[#888] hover:text-white',
+                  : 'bg-brand-bg text-muted hover:text-brand-text',
               )}
             >
               {tab}
@@ -784,14 +786,14 @@ function ServiceListingsTab({
           <button
             type="button"
             onClick={() => comingSoon('View Clientele')}
-            className="rounded-lg border border-white/5 bg-[#111111] px-3 py-2 text-[11px] font-semibold text-white"
+            className="bg-brand-bg text-body-sm rounded-lg border border-white/5 px-3 py-2 font-semibold text-white"
           >
             View Clientele
           </button>
           <button
             type="button"
             onClick={onCreateListing}
-            className="bg-brand-accent/15 text-brand-accent flex items-center gap-1.5 rounded-lg px-3 py-2 text-[11px] font-semibold"
+            className="bg-brand-accent/15 text-brand-accent text-body-sm flex items-center gap-1.5 rounded-lg px-3 py-2 font-semibold"
           >
             <Plus className="size-3.5" />
             Create Listings
@@ -808,12 +810,12 @@ function ServiceListingsTab({
 
 function AvailabilityTab() {
   return (
-    <div className="rounded-xl border border-white/5 bg-[#111111] p-6">
+    <div className="bg-brand-bg rounded-xl border border-white/5 p-6">
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <div>
-          <h3 className="mb-4 text-[14px] font-semibold text-white">Availability</h3>
+          <h3 className="text-body-md mb-4 font-semibold text-white">Availability</h3>
           <div className="overflow-hidden rounded-lg border border-white/5">
-            <div className="grid grid-cols-3 bg-black px-4 py-2 text-[11px] font-semibold text-[#888]">
+            <div className="text-body-sm text-muted grid grid-cols-3 bg-black px-4 py-2 font-semibold">
               <span>Days</span>
               <span>From</span>
               <span>To</span>
@@ -821,14 +823,14 @@ function AvailabilityTab() {
             {DAYS.map((day) => (
               <div
                 key={day}
-                className="grid grid-cols-3 items-center border-t border-white/5 px-4 py-3 text-[12px]"
+                className="text-body-sm grid grid-cols-3 items-center border-t border-white/5 px-4 py-3"
               >
                 <span className="text-white">{day}</span>
-                <span className="inline-flex w-fit items-center gap-1 rounded-full bg-black px-3 py-1 text-[#ccc]">
+                <span className="text-muted inline-flex w-fit items-center gap-1 rounded-full bg-black px-3 py-1">
                   <Clock className="size-3" />
                   10:00 AM
                 </span>
-                <span className="inline-flex w-fit items-center gap-1 rounded-full bg-black px-3 py-1 text-[#ccc]">
+                <span className="text-muted inline-flex w-fit items-center gap-1 rounded-full bg-black px-3 py-1">
                   <Clock className="size-3" />
                   6:00 PM
                 </span>
@@ -837,20 +839,20 @@ function AvailabilityTab() {
           </div>
         </div>
         <div>
-          <h3 className="mb-4 text-[14px] font-semibold text-white">Unavailability</h3>
+          <h3 className="text-body-md mb-4 font-semibold text-white">Unavailability</h3>
           <div className="overflow-hidden rounded-lg border border-white/5">
-            <div className="grid grid-cols-3 bg-black px-4 py-2 text-[11px] font-semibold text-[#888]">
+            <div className="text-body-sm text-muted grid grid-cols-3 bg-black px-4 py-2 font-semibold">
               <span>Date</span>
               <span>From</span>
               <span>To</span>
             </div>
-            <div className="grid grid-cols-3 items-center border-t border-white/5 px-4 py-3 text-[12px]">
+            <div className="text-body-sm grid grid-cols-3 items-center border-t border-white/5 px-4 py-3">
               <span className="text-white">01/01/2025</span>
-              <span className="inline-flex w-fit items-center gap-1 rounded-full bg-black px-3 py-1 text-[#ccc]">
+              <span className="text-muted inline-flex w-fit items-center gap-1 rounded-full bg-black px-3 py-1">
                 <Clock className="size-3" />
                 10:00 AM
               </span>
-              <span className="inline-flex w-fit items-center gap-1 rounded-full bg-black px-3 py-1 text-[#ccc]">
+              <span className="text-muted inline-flex w-fit items-center gap-1 rounded-full bg-black px-3 py-1">
                 <Clock className="size-3" />
                 10:00 AM
               </span>
@@ -876,12 +878,12 @@ function AnalyticsTab({ expertId }: { expertId?: string }) {
   ]
 
   return (
-    <div className="rounded-xl border border-white/5 bg-[#111111] p-6">
+    <div className="bg-brand-bg rounded-xl border border-white/5 p-6">
       <div className="mb-4 flex justify-end">
         <button
           type="button"
           onClick={() => navigate('/experts/dashboard/metrics')}
-          className="bg-brand-accent/15 text-brand-accent flex items-center gap-1.5 rounded-lg px-3 py-2 text-[11px] font-semibold"
+          className="bg-brand-accent/15 text-brand-accent text-body-sm flex items-center gap-1.5 rounded-lg px-3 py-2 font-semibold"
         >
           <Gauge className="size-3.5" />
           Manage Metrics
@@ -891,7 +893,7 @@ function AnalyticsTab({ expertId }: { expertId?: string }) {
         {cards.map((card) => (
           <div key={card.label} className="rounded-lg border border-white/5 bg-black p-4">
             <div className="flex items-center justify-between">
-              <p className="text-[11px] text-[#999]">{card.label}</p>
+              <p className="text-body-sm text-muted">{card.label}</p>
               <Briefcase className="text-brand-accent size-4" />
             </div>
             <p className="mt-3 text-xl font-bold text-white">{card.value}</p>
@@ -903,7 +905,7 @@ function AnalyticsTab({ expertId }: { expertId?: string }) {
             if (!expertId) return
             navigate(`/experts/management/profile/${expertId}/analytics`)
           }}
-          className="flex items-center justify-center gap-1.5 rounded-lg border border-white/5 bg-black p-4 text-[12px] font-semibold text-white transition-colors hover:bg-white/5"
+          className="text-body-sm flex items-center justify-center gap-1.5 rounded-lg border border-white/5 bg-black p-4 font-semibold text-white transition-colors hover:bg-white/5"
         >
           More
           <ChevronRight className="size-4" />
@@ -919,7 +921,7 @@ function HealthTab() {
   const incidents = [
     {
       type: 'Violation',
-      typeClass: 'bg-red-500/15 text-red-400',
+      typeClass: 'bg-brand-danger/15 text-red-400',
       status: 'Open',
       statusClass: 'border-red-500/40 text-red-400',
       action: 'View Details',
@@ -937,14 +939,14 @@ function HealthTab() {
       type: 'Reported By',
       typeClass: 'bg-blue-500/15 text-blue-400',
       status: 'Resolved',
-      statusClass: 'border-emerald-500/40 text-emerald-400',
+      statusClass: 'border-emerald-500/40 text-brand-positive',
       action: 'View Ticket',
       icon: FileText,
     },
   ]
 
   return (
-    <div className="rounded-xl border border-white/5 bg-[#111111] p-6">
+    <div className="bg-brand-bg rounded-xl border border-white/5 p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap gap-2">
           {[
@@ -958,17 +960,17 @@ function HealthTab() {
               type="button"
               onClick={() => setFilter(chip.key)}
               className={cn(
-                'rounded-md px-3 py-1.5 text-[11px] font-semibold transition-colors',
+                'text-body-sm rounded-md px-3 py-1.5 font-semibold transition-colors',
                 filter === chip.key
                   ? 'bg-brand-accent/15 text-brand-accent'
-                  : 'bg-black text-[#999] hover:text-white',
+                  : 'text-muted hover:text-brand-text bg-black',
               )}
             >
               {chip.label}
             </button>
           ))}
         </div>
-        <span className="text-[12px] font-bold text-red-400">Profile Health: At Risk</span>
+        <span className="text-body-sm font-bold text-red-400">Profile Health: At Risk</span>
       </div>
 
       <div className="mt-4 space-y-3">
@@ -995,17 +997,17 @@ function HealthTab() {
                   </span>
                 </div>
                 <p className="mt-2 text-[13px] font-semibold text-white">Spam Content Detected</p>
-                <p className="mt-1 text-[12px] text-[#777]">
+                <p className="text-body-sm text-muted mt-1">
                   Multiple identical messages sent to different users within short timeframe
                 </p>
-                <p className="mt-2 text-[10px] text-[#666]">
+                <p className="text-muted mt-2 text-[10px]">
                   Raised On: 2024-02-10 14:32 · Last Updated: 2 hours ago
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => comingSoon(incident.action)}
-                className="bg-brand-accent/15 text-brand-accent flex items-center gap-1.5 rounded-lg px-3 py-2 text-[11px] font-semibold"
+                className="bg-brand-accent/15 text-brand-accent text-body-sm flex items-center gap-1.5 rounded-lg px-3 py-2 font-semibold"
               >
                 <incident.icon className="size-3.5" />
                 {incident.action}
@@ -1200,12 +1202,12 @@ export function ExpertProfileViewPage() {
         <button
           type="button"
           onClick={() => navigateBackOrFallback(navigate, '/experts/management')}
-          className="group font-heading hover:text-brand-accent flex w-fit items-center gap-2 text-[20px] font-bold text-white transition-colors"
+          className="group font-heading hover:text-brand-accent text-h3 flex w-fit items-center gap-2 font-bold text-white transition-colors"
         >
           <ArrowLeft className="size-5" />
           <span>Expert Profile View</span>
         </button>
-        <div className="rounded-lg border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+        <div className="bg-brand-danger/10 rounded-lg border border-red-500/40 px-4 py-3 text-sm text-red-400">
           {getApiErrorMessage(profileErrorDetail)}
         </div>
       </div>
@@ -1249,22 +1251,22 @@ export function ExpertProfileViewPage() {
           <button
             type="button"
             onClick={() => navigateBackOrFallback(navigate, '/experts/management')}
-            className="group font-heading hover:text-brand-accent flex w-fit items-center gap-2 text-[20px] font-bold tracking-tight text-white transition-colors"
+            className="group font-heading hover:text-brand-accent text-h3 flex w-fit items-center gap-2 font-bold tracking-tight text-white transition-colors"
           >
             <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
             <span>Expert Profile View</span>
           </button>
-          <div className="flex items-center gap-1.5 pl-7 text-[12px] font-medium text-[#777777]">
+          <div className="text-body-sm text-muted flex items-center gap-1.5 pl-7 font-medium">
             <button
               type="button"
               onClick={() => navigateBackOrFallback(navigate, '/experts/management')}
-              className="transition-colors hover:text-white"
+              className="hover:text-brand-text transition-colors"
             >
               User management
             </button>
-            <span className="text-[#333333]">/</span>
+            <span className="text-muted">/</span>
             <span>Manage Users</span>
-            <span className="text-[#333333]">/</span>
+            <span className="text-muted">/</span>
             <span className="font-bold text-white">{displayName}</span>
           </div>
         </div>
@@ -1360,26 +1362,26 @@ export function ExpertProfileViewPage() {
         </TableActionsDropdown>
       </header>
 
-      <div className="relative overflow-hidden rounded-xl border border-white/5 bg-[#111111]">
-        <div className="h-40 w-full bg-[#1a1a1a]">
+      <div className="bg-brand-bg relative overflow-hidden rounded-xl border border-white/5">
+        <div className="bg-brand-surface h-40 w-full">
           <SafeImage
             src={coverImage}
             alt={`${displayName} cover`}
             className="size-full object-cover"
             fallback={
-              <div className="flex size-full items-center justify-center bg-gradient-to-br from-[#2b3a8c] via-[#4b2f8c] to-[#1a1a1a]" />
+              <div className="to-brand-surface flex size-full items-center justify-center bg-gradient-to-br from-[#2b3a8c] via-[#4b2f8c]" />
             }
           />
         </div>
         <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-end sm:justify-between">
           <div className="flex items-end gap-3">
-            <div className="-mt-12 size-20 shrink-0 overflow-hidden rounded-full border-4 border-[#111111] bg-[#1a1a1a]">
+            <div className="border-brand-bg bg-brand-surface -mt-12 size-20 shrink-0 overflow-hidden rounded-full border-4">
               <SafeImage
                 src={avatarImage}
                 alt={displayName}
                 className="size-full object-cover"
                 fallback={
-                  <div className="flex size-full items-center justify-center text-[#555]">
+                  <div className="text-muted flex size-full items-center justify-center">
                     <User className="size-7" />
                   </div>
                 }
@@ -1388,11 +1390,11 @@ export function ExpertProfileViewPage() {
             <div>
               <div className="flex flex-wrap items-center gap-2">
                 <h2 className="text-lg font-bold text-white">{displayName}</h2>
-                <span className="rounded-md bg-emerald-500/15 px-2 py-0.5 text-[10px] font-bold text-emerald-400">
+                <span className="bg-brand-positive/15 text-brand-positive rounded-md px-2 py-0.5 text-[10px] font-bold">
                   # 1 Ranking
                 </span>
               </div>
-              <p className="text-[12px] text-[#999]">{subtitle || '—'}</p>
+              <p className="text-body-sm text-muted">{subtitle || '—'}</p>
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -1401,7 +1403,7 @@ export function ExpertProfileViewPage() {
                 key={action.label}
                 type="button"
                 onClick={action.onClick}
-                className="bg-brand-accent/15 text-brand-accent hover:bg-brand-accent/25 flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-semibold transition-colors"
+                className="bg-brand-accent/15 text-brand-accent hover:bg-brand-accent/25 text-body-sm flex items-center gap-1.5 rounded-full px-3 py-1.5 font-semibold transition-colors"
               >
                 <action.icon className="size-3.5" />
                 {action.label}
@@ -1415,7 +1417,7 @@ export function ExpertProfileViewPage() {
         <ProfileSidebar profile={profile} partnerId={id} />
 
         <div className="flex flex-col gap-5">
-          <div className="flex items-center gap-1 overflow-x-auto rounded-xl border border-white/5 bg-[#111111] p-1.5">
+          <div className="bg-brand-bg flex items-center gap-1 overflow-x-auto rounded-xl border border-white/5 p-1.5">
             {TABS.map((tab) => (
               <button
                 key={tab.key}
@@ -1425,7 +1427,7 @@ export function ExpertProfileViewPage() {
                   'flex-1 rounded-lg px-4 py-2.5 text-[13px] font-semibold whitespace-nowrap transition-colors',
                   activeTab === tab.key
                     ? 'bg-brand-accent/10 text-brand-accent'
-                    : 'text-[#888] hover:text-white',
+                    : 'text-muted hover:text-brand-text',
                 )}
               >
                 {tab.label}

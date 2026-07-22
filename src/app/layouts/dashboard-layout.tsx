@@ -18,7 +18,7 @@ function PageContentLoader() {
     <div className="flex min-h-[50vh] w-full items-center justify-center py-16">
       <div className="flex flex-col items-center gap-4">
         <div className="border-brand-accent size-9 animate-spin rounded-full border-4 border-t-transparent" />
-        <p className="text-brand-muted animate-pulse text-sm font-medium">Loading...</p>
+        <p className="text-muted text-body-md-medium animate-pulse">Loading...</p>
       </div>
     </div>
   )
@@ -48,14 +48,13 @@ export function DashboardLayout() {
         className={cn(
           'fixed inset-y-0 left-0 z-40 hidden overflow-hidden border-r border-white/10 transition-[width] duration-300 ease-in-out md:flex md:flex-col',
           uiTokens.sidebarBg,
-          // Collapsed rail matches Figma icon column (~64px), not the wider white-pill rail
-          showCompact ? 'w-16' : 'w-[18.5rem]',
+          showCompact ? 'w-[var(--brand-sidebar-collapsed)]' : 'w-[var(--brand-sidebar-width)]',
         )}
       >
         <div
           className={cn(
-            'relative z-10 flex h-16 shrink-0 items-center border-b border-white/5',
-            showCompact ? 'justify-center px-1' : 'gap-2 px-3 pr-2',
+            'relative z-10 flex h-[var(--brand-topbar-height)] shrink-0 items-center border-b border-white/10',
+            showCompact ? 'justify-center px-2' : 'gap-2 px-4 pr-2',
           )}
         >
           {showCompact ? (
@@ -65,7 +64,7 @@ export function DashboardLayout() {
               className="focus-visible:ring-brand-accent/30 grid size-10 place-items-center rounded-xl text-white/70 transition-colors hover:bg-white/5 hover:text-white focus-visible:ring-2 focus-visible:outline-none"
               aria-label="Expand sidebar"
             >
-              <PanelLeftClose className="size-5" strokeWidth={1.75} />
+              <PanelLeftClose className="icon-lg" strokeWidth={1.5} />
             </button>
           ) : (
             <>
@@ -73,10 +72,10 @@ export function DashboardLayout() {
               <button
                 type="button"
                 onClick={() => setIsCollapsed(true)}
-                className="focus-visible:ring-brand-accent/30 grid size-9 shrink-0 place-items-center rounded-lg text-white/70 transition-colors hover:bg-white/5 hover:text-white focus-visible:ring-2 focus-visible:outline-none"
+                className="focus-visible:ring-brand-accent/30 grid size-8 shrink-0 place-items-center rounded-lg text-white/70 transition-colors hover:bg-white/5 hover:text-white focus-visible:ring-2 focus-visible:outline-none"
                 aria-label="Collapse sidebar"
               >
-                <PanelLeftClose className="size-5" strokeWidth={1.75} />
+                <PanelLeftClose className="icon-lg" strokeWidth={1.5} />
               </button>
             </>
           )}
@@ -93,7 +92,9 @@ export function DashboardLayout() {
       <div
         className={cn(
           'relative flex h-dvh min-w-0 flex-1 flex-col overflow-hidden transition-[padding] duration-300 ease-in-out',
-          showCompact ? 'md:pl-16' : 'md:pl-[18.5rem]',
+          showCompact
+            ? 'md:pl-[var(--brand-sidebar-collapsed)]'
+            : 'md:pl-[var(--brand-sidebar-width)]',
         )}
       >
         <Topbar
@@ -106,7 +107,7 @@ export function DashboardLayout() {
           className="min-h-0 flex-1 overflow-y-auto overscroll-contain scroll-smooth"
           style={{ overflowY: !isDesktopShell && isSidebarOpen ? 'hidden' : 'auto' }}
         >
-          <div className="py-4 lg:py-6">
+          <div className="py-4 md:py-6">
             <PageContainer>
               <Suspense fallback={<PageContentLoader />}>
                 <Outlet />

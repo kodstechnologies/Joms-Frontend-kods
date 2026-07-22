@@ -40,85 +40,89 @@ export function RestoreBackupModal({ open, backup, onClose, onSubmit }: RestoreB
 
   return createPortal(
     <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/70 p-4">
-      <div className="max-h-[90vh] w-full max-w-[560px] overflow-y-auto rounded-2xl border border-white/10 bg-[#141414] p-6 shadow-2xl">
-        <div className="flex items-start justify-between gap-4">
+      <div className="ui-modal-shell">
+        <div className="ui-modal-header">
           <div>
-            <h2 className="text-lg font-bold text-white">Restore System Backup</h2>
-            <p className="mt-1 text-xs text-slate-500">
+            <h2 className="text-h2 text-brand-text">Restore System Backup</h2>
+            <p className="text-body-sm text-muted mt-1">
               Choose how you want to restore this backup
             </p>
           </div>
-          <button type="button" onClick={onClose} className="text-slate-500 hover:text-white">
-            <X className="size-5" />
-          </button>
-        </div>
-
-        <div className="mt-5 rounded-xl border border-white/10 bg-black/20 p-4 text-sm">
-          <div className="grid gap-2 sm:grid-cols-2">
-            <p className="text-slate-400">
-              Backup ID: <span className="text-white">#{backup.id.padStart(5, '0')}</span>
-            </p>
-            <p className="text-slate-400">
-              Scope: <span className="text-white">{backup.scope}</span>
-            </p>
-            <p className="text-slate-400">
-              Size: <span className="text-white">{backup.size}</span>
-            </p>
-            <p className="text-slate-400">
-              Date: <span className="text-white">{backup.timestamp}</span>
-            </p>
-          </div>
-        </div>
-
-        <div className="mt-5 space-y-2">
-          {restoreOptions.map((option) => (
-            <label
-              key={option.key}
-              className={cn(
-                'flex cursor-pointer items-start gap-3 rounded-xl border px-4 py-3 transition-colors',
-                selected === option.key
-                  ? 'border-[#F0C27B] bg-[#F0C27B]/10'
-                  : 'border-white/10 bg-black/20 hover:border-white/20',
-              )}
-            >
-              <input
-                type="radio"
-                name="restore-option"
-                checked={selected === option.key}
-                onChange={() => setSelected(option.key)}
-                className="mt-1"
-              />
-              <div>
-                <p className="text-sm font-medium text-white">{option.label}</p>
-                <p className="text-xs text-slate-500">{option.description}</p>
-              </div>
-            </label>
-          ))}
-        </div>
-
-        <label className="mt-5 block space-y-2 text-sm">
-          <span className="font-medium text-white">Type &apos;CONFIRM&apos; to Proceed</span>
-          <input
-            value={confirmText}
-            onChange={(event) => setConfirmText(event.target.value)}
-            placeholder="CONFIRM"
-            className="h-10 w-full rounded-lg border border-white/10 bg-[#1a1a1a] px-3 text-white"
-          />
-        </label>
-
-        <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
           <button
             type="button"
             onClick={onClose}
-            className="rounded-xl border border-white/20 px-5 py-2.5 text-sm font-semibold text-white"
+            className="text-brand-muted rounded-full p-1.5 transition-colors hover:bg-white/10 hover:text-white"
           >
+            <X className="icon-lg" aria-hidden="true" />
+          </button>
+        </div>
+
+        <div className="ui-modal-body space-y-5">
+          <div className="radius-lg bg-brand-bg border border-white/10 p-4">
+            <div className="grid gap-2 sm:grid-cols-2">
+              <p className="text-body-md text-muted">
+                Backup ID: <span className="text-brand-text">#{backup.id.padStart(5, '0')}</span>
+              </p>
+              <p className="text-body-md text-muted">
+                Scope: <span className="text-brand-text">{backup.scope}</span>
+              </p>
+              <p className="text-body-md text-muted">
+                Size: <span className="text-brand-text">{backup.size}</span>
+              </p>
+              <p className="text-body-md text-muted">
+                Date: <span className="text-brand-text">{backup.timestamp}</span>
+              </p>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            {restoreOptions.map((option) => (
+              <label
+                key={option.key}
+                className={cn(
+                  'radius-lg flex cursor-pointer items-start gap-3 border px-4 py-3 transition-colors',
+                  selected === option.key
+                    ? 'border-brand-accent bg-brand-accent/10'
+                    : 'bg-brand-bg border-white/10 hover:border-white/20',
+                )}
+              >
+                <input
+                  type="radio"
+                  name="restore-option"
+                  checked={selected === option.key}
+                  onChange={() => setSelected(option.key)}
+                  className="accent-brand-accent mt-1"
+                />
+                <div>
+                  <p className="text-body-md-medium text-brand-text">{option.label}</p>
+                  <p className="text-body-sm text-muted">{option.description}</p>
+                </div>
+              </label>
+            ))}
+          </div>
+
+          <label className="block space-y-2">
+            <span className="text-body-md-medium text-brand-text">
+              Type &apos;CONFIRM&apos; to Proceed
+            </span>
+            <input
+              value={confirmText}
+              onChange={(event) => setConfirmText(event.target.value)}
+              placeholder="CONFIRM"
+              className="ui-input"
+            />
+          </label>
+        </div>
+
+        <div className="ui-modal-footer">
+          <button type="button" onClick={onClose} className="ui-modal-btn ui-modal-btn-cancel">
             Cancel
           </button>
           <button
             type="button"
             disabled={!canSubmit}
             onClick={() => onSubmit(selected)}
-            className="rounded-xl bg-[#F0C27B] px-5 py-2.5 text-sm font-semibold text-[#050505] disabled:opacity-50"
+            className="ui-modal-btn ui-modal-btn-gold"
           >
             Restore Now
           </button>

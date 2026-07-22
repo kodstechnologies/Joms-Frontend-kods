@@ -26,20 +26,18 @@ export function TicketFilterPanel({ onApply, onClear }: TicketFilterPanelProps) 
 function FilterField({ label, value, badge }: { label: string; value: string; badge?: 'warning' }) {
   return (
     <label className="block space-y-1.5">
-      <span className="text-[11px] font-semibold tracking-wide text-slate-500 uppercase">
-        {label}
-      </span>
-      <div className="flex h-10 items-center justify-between rounded-lg border border-white/10 bg-[#1a1a1a] px-3">
+      <span className="text-body-sm-semibold text-muted tracking-wide uppercase">{label}</span>
+      <div className="radius-md bg-brand-surface flex h-10 items-center justify-between border border-white/10 px-3">
         <span
           className={
             badge === 'warning'
-              ? 'rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[11px] font-semibold text-amber-300'
-              : 'text-sm text-white'
+              ? 'text-body-sm-semibold border-brand-accent/30 bg-brand-accent/10 text-brand-accent rounded-full border px-2 py-0.5'
+              : 'text-body-md text-brand-text'
           }
         >
           {value}
         </span>
-        <span className="text-slate-500">▾</span>
+        <span className="text-muted">▾</span>
       </div>
     </label>
   )

@@ -1,7 +1,6 @@
 import { Filter, RotateCcw, Upload } from 'lucide-react'
 
 import type { FilterValues, ModuleFilterConfig } from '@/shared/types/data-filter'
-import { Button } from '@/shared/components/ui/button'
 
 import { FilterPanelShell } from './filter-panel-shell'
 import { FilterSectionAccordion } from './filter-section-accordion'
@@ -34,25 +33,24 @@ export function AdvancedFilterSheet({
       onClose={onClose}
       footer={
         <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <Button
+          <button
             type="button"
-            variant="secondary"
             onClick={onReset}
-            className="h-11 w-full border border-white/20 bg-transparent text-white hover:bg-white/5 sm:w-auto"
+            className="ui-cta ui-cta-outline w-full sm:w-auto"
           >
-            <RotateCcw className="size-4" aria-hidden="true" />
+            <RotateCcw className="icon-sm" aria-hidden="true" />
             Reset Filters
-          </Button>
+          </button>
 
-          <Button
+          <button
             type="button"
             onClick={onApply}
             disabled={isApplying}
-            className="h-11 w-full bg-[#FFC16B] text-black hover:bg-[#F5C27B] sm:w-auto"
+            className="ui-cta ui-cta-primary w-full sm:w-auto"
           >
-            <Filter className="size-4" aria-hidden="true" />
+            <Filter className="icon-sm" aria-hidden="true" />
             {isApplying ? 'Applying...' : 'Apply Filters'}
-          </Button>
+          </button>
         </div>
       }
     >
@@ -101,29 +99,28 @@ export function ExportDataModal({
       size="lg"
       footer={
         <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-end">
-          <Button
+          <button
             type="button"
-            variant="secondary"
             onClick={onClose}
-            className="h-11 w-full border border-white/20 bg-transparent text-white hover:bg-white/5 sm:w-auto"
+            className="ui-cta ui-cta-outline w-full sm:w-auto"
           >
             Cancel
-          </Button>
+          </button>
 
-          <Button
+          <button
             type="button"
             onClick={onExport}
             disabled={isExporting}
-            className="h-11 w-full bg-[#FFC16B] text-black hover:bg-[#F5C27B] sm:w-auto"
+            className="ui-cta ui-cta-primary w-full sm:w-auto"
           >
-            <Upload className="size-4" aria-hidden="true" />
+            <Upload className="icon-sm" aria-hidden="true" />
             {isExporting ? 'Exporting...' : 'Export Data'}
-          </Button>
+          </button>
         </div>
       }
     >
       <div className="space-y-3">
-        <p className="text-sm text-[#888888]">
+        <p className="text-body-md text-muted">
           Select the data dimensions to include in your export. Expand each section to configure
           filters.
         </p>

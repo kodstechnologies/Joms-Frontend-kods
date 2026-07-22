@@ -11,7 +11,7 @@ export function AdminNoteModal({ open, note, onClose }: AdminNoteModalProps) {
 
   return (
     <div
-      className="text-brand-text fixed inset-0 z-50 flex items-center justify-center bg-black/80 px-4 py-6"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-6"
       role="presentation"
       onClick={onClose}
     >
@@ -19,33 +19,29 @@ export function AdminNoteModal({ open, note, onClose }: AdminNoteModalProps) {
         role="dialog"
         aria-modal="true"
         aria-labelledby="admin-note-modal-title"
-        className="rounded-brand-md bg-brand-surface flex max-h-[90vh] w-full max-w-[470px] flex-col overflow-hidden border border-white/10 shadow-2xl"
+        className="ui-modal-shell"
         onClick={(event) => event.stopPropagation()}
       >
-        <div className="flex shrink-0 items-center justify-between border-b border-white/10 px-6 py-4">
-          <h2 id="admin-note-modal-title" className="text-brand-text text-[18px] font-semibold">
+        <div className="ui-modal-header">
+          <h2 id="admin-note-modal-title" className="text-h2 text-brand-text">
             Admin Note
           </h2>
           <button
             type="button"
             aria-label="Close modal"
             onClick={onClose}
-            className="text-brand-text rounded-full p-1 transition-colors hover:bg-white/10"
+            className="text-brand-muted rounded-full p-1.5 transition-colors hover:bg-white/10 hover:text-white"
           >
-            <X className="size-5" aria-hidden="true" />
+            <X className="icon-lg" aria-hidden="true" />
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-6 py-6">
+        <div className="ui-modal-body">
           <label className="block">
-            <span className="text-brand-text mb-2 block text-sm font-medium">
+            <span className="text-body-sm-medium text-brand-text mb-2 block">
               Notes <span className="text-brand-danger">*</span>
             </span>
-            <textarea
-              readOnly
-              value={note || ''}
-              className="rounded-brand-md bg-brand-bg text-brand-text h-[180px] w-full resize-none border border-transparent px-4 py-3 text-sm leading-6 outline-none"
-            />
+            <textarea readOnly value={note || ''} className="ui-textarea min-h-[180px]" />
           </label>
         </div>
       </div>

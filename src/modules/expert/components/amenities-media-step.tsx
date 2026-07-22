@@ -127,39 +127,37 @@ export const AmenitiesMediaStep = ({ venueData, setVenueData }: AmenitiesMediaSt
   return (
     <>
       <div className="mx-auto w-full max-w-[850px] space-y-5">
-        <div className="rounded-lg border border-white/5 bg-[#151515] p-5 shadow-xl">
+        <div className="bg-brand-surface rounded-lg border border-white/5 p-5 shadow-xl">
           <div className="mb-5 flex items-center justify-between">
             <div>
               <h2 className="text-sm font-semibold text-white">Amenities</h2>
-              <p className="text-[11px] text-slate-500">
-                Provide details about your service offering
-              </p>
+              <p className="text-body-sm text-muted">Provide details about your service offering</p>
             </div>
 
             <button
               type="button"
               onClick={() => setShowManageAmenities(true)}
-              className="bg-brand-accent text-brand-text-dark h-8 rounded-md px-3 text-[11px] font-medium"
+              className="ui-cta ui-cta-primary h-8 px-3"
             >
               Manage Amenities
             </button>
           </div>
 
-          <p className="mb-1 text-[11px] text-slate-400">Search amenities</p>
+          <p className="text-body-sm text-muted mb-1">Search amenities</p>
           <div className="relative mb-5">
-            <Search size={13} className="absolute top-1/2 left-3 -translate-y-1/2 text-slate-500" />
+            <Search size={13} className="text-muted absolute top-1/2 left-3 -translate-y-1/2" />
             <input
               value={amenitySearch}
               onChange={(e) => setAmenitySearch(e.target.value)}
               placeholder="Search"
-              className="h-9 w-full rounded-md border border-slate-700 bg-[#0a0a0a] pr-3 pl-9 text-xs text-white outline-none placeholder:text-slate-600"
+              className="ui-input h-9 pl-9"
             />
           </div>
 
-          {amenitiesLoading && <p className="text-xs text-slate-500">Loading amenities…</p>}
+          {amenitiesLoading && <p className="text-muted text-xs">Loading amenities…</p>}
 
           {!amenitiesLoading && amenityCategories.length === 0 && (
-            <p className="text-xs text-slate-500">No amenities found.</p>
+            <p className="text-muted text-xs">No amenities found.</p>
           )}
 
           {amenityCategories.map((category) => {
@@ -178,10 +176,10 @@ export const AmenitiesMediaStep = ({ venueData, setVenueData }: AmenitiesMediaSt
                       key={item._id}
                       type="button"
                       onClick={() => toggleAmenity(category._id, item._id, item.name, item.image)}
-                      className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[11px] font-medium transition-all ${
+                      className={`text-body-sm flex items-center gap-1.5 rounded-full border px-3 py-1.5 font-medium transition-all ${
                         selectedAmenities.some((a) => a.subCategoryId === item._id)
                           ? 'border-white bg-white text-black'
-                          : 'border-slate-700 bg-transparent text-white hover:border-slate-500'
+                          : 'border-white/10 bg-transparent text-white hover:border-white/30'
                       }`}
                     >
                       {item.image && (
@@ -200,9 +198,9 @@ export const AmenitiesMediaStep = ({ venueData, setVenueData }: AmenitiesMediaSt
           })}
         </div>
 
-        <div className="rounded-lg border border-white/5 bg-[#151515] p-5 shadow-xl">
+        <div className="bg-brand-surface rounded-lg border border-white/5 p-5 shadow-xl">
           <h2 className="text-sm font-semibold text-white">Gallery</h2>
-          <p className="mb-5 text-[11px] text-slate-500">
+          <p className="text-body-sm text-muted mb-5">
             Provide details about your service offering
           </p>
 
@@ -218,10 +216,10 @@ export const AmenitiesMediaStep = ({ venueData, setVenueData }: AmenitiesMediaSt
               />
               <div
                 onClick={() => coverImageRef.current?.click()}
-                className="flex h-[100px] cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-slate-700 bg-[#0a0a0a] hover:border-slate-500"
+                className="bg-brand-bg hover:border-brand-accent/50 flex h-[100px] cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-white/10"
               >
-                <Upload size={18} className="mb-1.5 text-slate-600" />
-                <span className="text-[11px] text-slate-600">Upload Image</span>
+                <Upload size={18} className="text-muted mb-1.5" />
+                <span className="text-body-sm text-muted">Upload Image</span>
               </div>
             </div>
 
@@ -236,10 +234,10 @@ export const AmenitiesMediaStep = ({ venueData, setVenueData }: AmenitiesMediaSt
               />
               <div
                 onClick={() => venueImageRef.current?.click()}
-                className="flex h-[100px] cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-slate-700 bg-[#0a0a0a] hover:border-slate-500"
+                className="bg-brand-bg hover:border-brand-accent/50 flex h-[100px] cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-white/10"
               >
-                <Upload size={18} className="mb-1.5 text-slate-600" />
-                <span className="text-[11px] text-slate-600">Upload Image</span>
+                <Upload size={18} className="text-muted mb-1.5" />
+                <span className="text-body-sm text-muted">Upload Image</span>
               </div>
             </div>
           </div>
@@ -256,10 +254,10 @@ export const AmenitiesMediaStep = ({ venueData, setVenueData }: AmenitiesMediaSt
             />
             <div
               onClick={() => galleryRef.current?.click()}
-              className="flex h-[100px] cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-slate-700 bg-[#0a0a0a] hover:border-slate-500"
+              className="bg-brand-bg hover:border-brand-accent/50 flex h-[100px] cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-white/10"
             >
-              <Upload size={18} className="mb-1.5 text-slate-600" />
-              <span className="text-[11px] text-slate-600">Upload Images</span>
+              <Upload size={18} className="text-muted mb-1.5" />
+              <span className="text-body-sm text-muted">Upload Images</span>
             </div>
           </div>
 
@@ -283,7 +281,7 @@ export const AmenitiesMediaStep = ({ venueData, setVenueData }: AmenitiesMediaSt
                     <button
                       type="button"
                       onClick={() => setVenueData((prev) => ({ ...prev, venueCoverImage: null }))}
-                      className="absolute top-1 right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white shadow"
+                      className="bg-brand-danger absolute top-1 right-1 flex h-5 w-5 items-center justify-center rounded-full text-white shadow"
                     >
                       <X size={10} />
                     </button>
@@ -302,7 +300,7 @@ export const AmenitiesMediaStep = ({ venueData, setVenueData }: AmenitiesMediaSt
                     <button
                       type="button"
                       onClick={() => setVenueData((prev) => ({ ...prev, venueImage: null }))}
-                      className="absolute top-1 right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white shadow"
+                      className="bg-brand-danger absolute top-1 right-1 flex h-5 w-5 items-center justify-center rounded-full text-white shadow"
                     >
                       <X size={10} />
                     </button>
@@ -321,7 +319,7 @@ export const AmenitiesMediaStep = ({ venueData, setVenueData }: AmenitiesMediaSt
                     <button
                       type="button"
                       onClick={() => removeGalleryImage(index)}
-                      className="absolute top-1 right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white shadow"
+                      className="bg-brand-danger absolute top-1 right-1 flex h-5 w-5 items-center justify-center rounded-full text-white shadow"
                     >
                       <X size={10} />
                     </button>
@@ -332,17 +330,17 @@ export const AmenitiesMediaStep = ({ venueData, setVenueData }: AmenitiesMediaSt
           )}
         </div>
 
-        <div className="rounded-lg border border-white/5 bg-[#151515] p-5 shadow-xl">
+        <div className="bg-brand-surface rounded-lg border border-white/5 p-5 shadow-xl">
           <div className="mb-4 flex items-center justify-between">
             <div>
               <h2 className="text-sm font-semibold text-white">Contact details</h2>
-              <p className="text-[11px] text-slate-500">Provide details about your venue</p>
+              <p className="text-body-sm text-muted">Provide details about your venue</p>
             </div>
 
             <button
               type="button"
               onClick={addContact}
-              className="bg-brand-accent text-brand-text-dark flex h-8 items-center gap-1.5 rounded-md px-3 text-[11px] font-medium"
+              className="ui-cta ui-cta-primary flex h-8 items-center gap-1.5 px-3"
             >
               <Plus size={13} />
               Add contact
@@ -360,7 +358,7 @@ export const AmenitiesMediaStep = ({ venueData, setVenueData }: AmenitiesMediaSt
                   <button
                     type="button"
                     onClick={() => removeContact(index)}
-                    className="flex h-6 w-6 items-center justify-center rounded-md bg-red-500 text-white"
+                    className="bg-brand-danger flex h-6 w-6 items-center justify-center rounded-md text-white"
                   >
                     <Trash2 size={12} />
                   </button>
@@ -369,41 +367,35 @@ export const AmenitiesMediaStep = ({ venueData, setVenueData }: AmenitiesMediaSt
 
               <div className="grid grid-cols-3 gap-3">
                 <div className="relative">
-                  <User
-                    size={13}
-                    className="absolute top-1/2 left-3 -translate-y-1/2 text-slate-500"
-                  />
+                  <User size={13} className="text-muted absolute top-1/2 left-3 -translate-y-1/2" />
                   <input
                     value={contact.name}
                     onChange={(e) => updateContact(index, 'name', e.target.value)}
                     placeholder="Enter name here..."
-                    className="h-9 w-full rounded-md border border-slate-700 bg-[#0a0a0a] pr-3 pl-9 text-xs text-white outline-none placeholder:text-slate-600"
+                    className="ui-input pl-9"
                   />
                 </div>
 
                 <div className="relative">
                   <Phone
                     size={13}
-                    className="absolute top-1/2 left-3 -translate-y-1/2 text-slate-500"
+                    className="text-muted absolute top-1/2 left-3 -translate-y-1/2"
                   />
                   <input
                     value={contact.phone}
                     onChange={(e) => updateContact(index, 'phone', e.target.value)}
                     placeholder="Phone"
-                    className="h-9 w-full rounded-md border border-slate-700 bg-[#0a0a0a] pr-3 pl-9 text-xs text-white outline-none placeholder:text-slate-600"
+                    className="ui-input pl-9"
                   />
                 </div>
 
                 <div className="relative">
-                  <Mail
-                    size={13}
-                    className="absolute top-1/2 left-3 -translate-y-1/2 text-slate-500"
-                  />
+                  <Mail size={13} className="text-muted absolute top-1/2 left-3 -translate-y-1/2" />
                   <input
                     value={contact.email}
                     onChange={(e) => updateContact(index, 'email', e.target.value)}
                     placeholder="Email ID"
-                    className="h-9 w-full rounded-md border border-slate-700 bg-[#0a0a0a] pr-3 pl-9 text-xs text-white outline-none placeholder:text-slate-600"
+                    className="ui-input pl-9"
                   />
                 </div>
               </div>

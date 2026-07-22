@@ -37,7 +37,13 @@ import {
 import { CHART_TOOLTIP } from '../../components/venue-analytics/analytics-constants'
 import { Button } from '@/shared/components/ui/button'
 
-const FUNNEL_COLORS = ['#1A73E8', '#2B7DE9', '#3D88EA', '#4E92EB', '#609DEC']
+const FUNNEL_COLORS = [
+  'var(--brand-action)',
+  'color-mix(in srgb, var(--brand-action) 85%, white)',
+  'color-mix(in srgb, var(--brand-action) 70%, white)',
+  'color-mix(in srgb, var(--brand-action) 55%, white)',
+  'color-mix(in srgb, var(--brand-action) 40%, white)',
+]
 
 export function ExpertProfileAnalyticsPage() {
   const navigate = useNavigate()
@@ -92,12 +98,12 @@ export function ExpertProfileAnalyticsPage() {
           <button
             type="button"
             onClick={() => navigateBackOrFallback(navigate, `/experts/management/profile/${id}`)}
-            className="group font-heading hover:text-brand-accent flex w-fit items-center gap-2 text-[20px] font-bold tracking-tight text-white transition-colors"
+            className="group font-heading hover:text-brand-accent text-h3 flex w-fit items-center gap-2 font-bold tracking-tight text-white transition-colors"
           >
             <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
             <span>Expert Profile Analytics</span>
           </button>
-          <div className="mt-2 flex items-center gap-1.5 pl-7 text-[12px] font-medium text-[#777777]">
+          <div className="text-body-sm text-muted mt-2 flex items-center gap-1.5 pl-7 font-medium">
             <button
               type="button"
               onClick={() => navigateBackOrFallback(navigate, '/experts/management')}
@@ -105,7 +111,7 @@ export function ExpertProfileAnalyticsPage() {
             >
               Back
             </button>
-            <span className="text-[#333333]">/</span>
+            <span className="text-muted/40">/</span>
             <button
               type="button"
               onClick={() => navigateBackOrFallback(navigate, `/experts/management/profile/${id}`)}
@@ -113,7 +119,7 @@ export function ExpertProfileAnalyticsPage() {
             >
               {profile.name}
             </button>
-            <span className="text-[#333333]">/</span>
+            <span className="text-muted/40">/</span>
             <span className="font-bold text-white">Profile Analytics</span>
           </div>
         </div>
@@ -140,7 +146,7 @@ export function ExpertProfileAnalyticsPage() {
                   className="size-full object-cover"
                 />
               ) : (
-                <User className="size-8 text-[#777]" />
+                <User className="text-muted size-8" />
               )}
             </div>
             <div>
@@ -150,21 +156,21 @@ export function ExpertProfileAnalyticsPage() {
                   {profile.profession}
                 </span>
               </div>
-              <div className="mt-1 flex flex-wrap items-center gap-2 text-[12px] text-[#999]">
+              <div className="text-body-sm text-muted mt-1 flex flex-wrap items-center gap-2">
                 <span>{profile.role}</span>
-                <span className="text-[#333]">•</span>
+                <span className="text-muted/40">•</span>
                 <span className="inline-flex items-center gap-1 text-white">
                   <Star className="fill-brand-accent text-brand-accent size-3" />
                   {profile.rating}
                 </span>
-                <span className="rounded-md bg-emerald-500/15 px-2 py-0.5 text-[10px] font-semibold text-emerald-400">
+                <span className="bg-brand-positive/15 text-brand-positive rounded-md px-2 py-0.5 text-[10px] font-semibold">
                   {profile.badge}
                 </span>
               </div>
-              <p className="mt-2 text-[11px] text-[#777]">
+              <p className="text-body-sm text-muted mt-2">
                 Account Status:{' '}
-                <span className="font-semibold text-emerald-400">{profile.accountStatus}</span>
-                <span className="mx-2 text-[#333]">|</span>
+                <span className="text-brand-positive font-semibold">{profile.accountStatus}</span>
+                <span className="text-muted/40 mx-2">|</span>
                 Last Active: <span className="text-white">{profile.lastActive}</span>
               </p>
             </div>
@@ -178,7 +184,7 @@ export function ExpertProfileAnalyticsPage() {
               { label: 'Revenue', value: profile.revenue },
             ].map((item) => (
               <div key={item.label}>
-                <p className="text-[10px] text-[#777]">{item.label}</p>
+                <p className="text-muted text-[10px]">{item.label}</p>
                 <p className="mt-1 text-[15px] font-bold text-white">{item.value}</p>
               </div>
             ))}
@@ -241,7 +247,7 @@ export function ExpertProfileAnalyticsPage() {
         <SectionTitle title="Behavioral Insights" />
         <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
           <AnalyticsCard>
-            <p className="mb-4 text-[12px] font-semibold text-white">Most Active Time</p>
+            <p className="text-body-sm mb-4 font-semibold text-white">Most Active Time</p>
             <div className="h-56">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
@@ -251,7 +257,7 @@ export function ExpertProfileAnalyticsPage() {
                   <CartesianGrid stroke="#2a2a2a" strokeDasharray="4 4" vertical={false} />
                   <XAxis
                     dataKey="day"
-                    tick={{ fill: '#999', fontSize: 11 }}
+                    tick={{ fill: 'var(--brand-muted)', fontSize: 11 }}
                     axisLine={false}
                     tickLine={false}
                   />
@@ -280,13 +286,13 @@ export function ExpertProfileAnalyticsPage() {
           </AnalyticsCard>
 
           <AnalyticsCard>
-            <p className="mb-4 text-[12px] font-semibold text-white">Top Views by Location</p>
+            <p className="text-body-sm mb-4 font-semibold text-white">Top Views by Location</p>
             <div className="space-y-3">
               {TOP_VIEWS_BY_LOCATION.map((item) => (
                 <div key={item.name}>
-                  <div className="mb-1 flex items-center justify-between text-[11px]">
+                  <div className="text-body-sm mb-1 flex items-center justify-between">
                     <span className="text-white">{item.name}</span>
-                    <span className="text-[#999]">{item.percent}%</span>
+                    <span className="text-muted">{item.percent}%</span>
                   </div>
                   <div className="h-2 overflow-hidden rounded-full bg-black">
                     <div
@@ -300,17 +306,17 @@ export function ExpertProfileAnalyticsPage() {
           </AnalyticsCard>
 
           <AnalyticsCard>
-            <p className="mb-4 text-[12px] font-semibold text-white">Top Views by Role</p>
+            <p className="text-body-sm mb-4 font-semibold text-white">Top Views by Role</p>
             <div className="space-y-3">
               {TOP_VIEWS_BY_ROLE.map((item) => (
                 <div key={item.name}>
-                  <div className="mb-1 flex items-center justify-between text-[11px]">
+                  <div className="text-body-sm mb-1 flex items-center justify-between">
                     <span className="text-white">{item.name}</span>
-                    <span className="text-[#999]">{item.percent}%</span>
+                    <span className="text-muted">{item.percent}%</span>
                   </div>
                   <div className="h-2 overflow-hidden rounded-full bg-black">
                     <div
-                      className="h-full rounded-full bg-[#60A5FA]"
+                      className="bg-brand-action h-full rounded-full"
                       style={{ width: `${item.percent * 2.5}%` }}
                     />
                   </div>
@@ -320,14 +326,14 @@ export function ExpertProfileAnalyticsPage() {
           </AnalyticsCard>
 
           <AnalyticsCard>
-            <p className="mb-4 text-[12px] font-semibold text-white">Conversion Funnel</p>
+            <p className="text-body-sm mb-4 font-semibold text-white">Conversion Funnel</p>
             <div className="flex flex-col items-center gap-1.5 py-2">
               {CONVERSION_FUNNEL.map((stage, index) => {
                 const widthPercent = 100 - index * 14
                 return (
                   <div
                     key={stage.stage}
-                    className="flex h-9 items-center justify-between rounded-md px-4 text-[11px] font-semibold text-white"
+                    className="text-body-sm flex h-9 items-center justify-between rounded-md px-4 font-semibold text-white"
                     style={{
                       width: `${widthPercent}%`,
                       backgroundColor: FUNNEL_COLORS[index],
@@ -370,11 +376,15 @@ export function ExpertProfileAnalyticsPage() {
                 <CartesianGrid stroke="#2a2a2a" strokeDasharray="4 4" />
                 <XAxis
                   dataKey="month"
-                  tick={{ fill: '#999', fontSize: 11 }}
+                  tick={{ fill: 'var(--brand-muted)', fontSize: 11 }}
                   axisLine={false}
                   tickLine={false}
                 />
-                <YAxis tick={{ fill: '#999', fontSize: 11 }} axisLine={false} tickLine={false} />
+                <YAxis
+                  tick={{ fill: 'var(--brand-muted)', fontSize: 11 }}
+                  axisLine={false}
+                  tickLine={false}
+                />
                 <Tooltip
                   contentStyle={CHART_TOOLTIP}
                   formatter={(value, _name, item) => [

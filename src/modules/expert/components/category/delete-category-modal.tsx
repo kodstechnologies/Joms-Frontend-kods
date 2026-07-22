@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Trash2, X } from 'lucide-react'
 
-import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
 
 const REASON_OPTIONS = [
@@ -63,7 +62,7 @@ export function DeleteCategoryModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden bg-black/80 px-4"
+      className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden bg-black/70 px-4 py-6"
       role="presentation"
       onClick={handleClose}
     >
@@ -71,49 +70,40 @@ export function DeleteCategoryModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="delete-category-modal-title"
-        className="w-full max-w-[470px] overflow-hidden rounded-xl border border-[#242424] bg-[#181818] shadow-2xl"
+        className="ui-modal-shell"
         onClick={(event) => event.stopPropagation()}
       >
-        <div className="shrink-0">
-          <div className="flex items-center justify-between px-6 pt-5 pb-4">
-            <h2
-              id="delete-category-modal-title"
-              className="font-sans text-[16px] leading-5 font-semibold tracking-normal text-white"
-            >
-              Delete Category
-            </h2>
-            <button
-              type="button"
-              aria-label="Close modal"
-              onClick={handleClose}
-              className="text-white transition-opacity hover:opacity-70"
-            >
-              <X className="size-5" strokeWidth={1.5} aria-hidden="true" />
-            </button>
-          </div>
-          <div className="h-px w-full bg-[#2A2A2A]" />
+        <div className="ui-modal-header">
+          <h2 id="delete-category-modal-title" className="text-h2 text-brand-text">
+            Delete Category
+          </h2>
+          <button
+            type="button"
+            aria-label="Close modal"
+            onClick={handleClose}
+            className="text-brand-muted rounded-full p-1.5 transition-colors hover:bg-white/10 hover:text-white"
+          >
+            <X className="icon-lg" aria-hidden="true" />
+          </button>
         </div>
 
-        <div className="px-6 pt-5 pb-6">
+        <div className="ui-modal-body space-y-4">
           <div className="flex flex-col items-center text-center">
-            <span className="mb-3 flex size-12 items-center justify-center rounded-full bg-[#341515]">
-              <Trash2 className="size-5 text-[#E74C3C]" aria-hidden="true" />
+            <span className="bg-brand-danger/20 mb-3 flex size-12 items-center justify-center rounded-full">
+              <Trash2 className="icon-md text-brand-danger" aria-hidden="true" />
             </span>
 
-            <p className="font-sans text-[14px] leading-5 font-normal tracking-normal text-white">
+            <p className="text-body-md-semibold text-brand-text">
               Are you sure you want Delete this Category?
             </p>
-            <p className="mt-1.5 font-sans text-[12px] leading-[17px] font-normal tracking-normal text-[#888888]">
+            <p className="text-body-sm text-muted mt-1.5">
               This will result in removing this category from the App.
             </p>
           </div>
 
-          <div className="mt-5">
-            <span className="mb-3 block font-sans text-[12px] leading-[17px] font-normal tracking-normal text-[#888888]">
-              Reasons
-            </span>
-
-            <div className="flex flex-wrap gap-3">
+          <div>
+            <span className="text-body-sm-medium text-muted mb-[10px] block">Reasons</span>
+            <div className="flex flex-wrap gap-[10px]">
               {REASON_OPTIONS.map((option) => {
                 const isSelected = selectedReasons.includes(option.value)
 
@@ -123,10 +113,8 @@ export function DeleteCategoryModal({
                     type="button"
                     onClick={() => toggleReason(option.value)}
                     className={cn(
-                      'rounded-lg px-4 py-2 font-sans text-[12px] leading-[17px] font-normal tracking-normal transition-colors',
-                      isSelected
-                        ? 'bg-brand-accent text-brand-text-dark'
-                        : 'border border-[#444444] bg-black text-white hover:border-[#666666]',
+                      'ui-modal-reason-chip',
+                      isSelected ? 'ui-modal-reason-chip-selected' : 'ui-modal-reason-chip-idle',
                     )}
                   >
                     {option.label}
@@ -136,52 +124,45 @@ export function DeleteCategoryModal({
             </div>
           </div>
 
-          <label className="mt-4 flex cursor-pointer items-start gap-2.5">
+          <label className="text-body-md text-brand-text flex cursor-pointer items-start gap-3">
             <input
               type="checkbox"
               checked={confirmed}
               onChange={(event) => setConfirmed(event.target.checked)}
-              className="accent-brand-accent mt-0.5 size-4 shrink-0 rounded-sm border border-white/80 bg-transparent"
+              className="accent-brand-accent mt-0.5 size-[15px] shrink-0"
             />
-            <span className="font-sans text-[12px] leading-[17px] font-normal tracking-normal text-white">
-              I confirm the documents are not approved due to above reasons.
-            </span>
+            <span>I confirm the documents are not approved due to above reasons.</span>
           </label>
 
-          <label className="mt-4 block">
-            <span className="mb-2 block font-sans text-[12px] leading-[17px] font-normal tracking-normal text-white">
-              Admin notes <span className="text-red-500">*</span>
+          <label className="block">
+            <span className="text-body-sm-medium text-brand-text mb-2 block">
+              Admin notes <span className="text-brand-danger">*</span>
             </span>
             <textarea
               value={adminNotes}
               onChange={(event) => setAdminNotes(event.target.value)}
-              className="h-[72px] w-full resize-none overflow-hidden rounded-lg border border-[#2A2A2A] bg-black px-4 py-3 font-sans text-[12px] leading-[17px] font-normal tracking-normal text-white outline-none placeholder:text-[#666666] focus:border-[#444444]"
+              className="ui-textarea min-h-[72px]"
             />
           </label>
+        </div>
 
-          <div className="mt-5 grid grid-cols-2 gap-3">
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={handleClose}
-              className="h-[34px] w-full text-xs"
-            >
-              Cancel
-            </Button>
-            <Button
-              type="button"
-              disabled={!canSubmit || isSubmitting}
-              onClick={() =>
-                onConfirm({
-                  reasons: selectedReasons,
-                  adminNotes: adminNotes.trim(),
-                })
-              }
-              className="h-[34px] w-full text-xs"
-            >
-              Disable Role
-            </Button>
-          </div>
+        <div className="ui-modal-footer">
+          <button type="button" onClick={handleClose} className="ui-modal-btn ui-modal-btn-cancel">
+            Cancel
+          </button>
+          <button
+            type="button"
+            disabled={!canSubmit || isSubmitting}
+            onClick={() =>
+              onConfirm({
+                reasons: selectedReasons,
+                adminNotes: adminNotes.trim(),
+              })
+            }
+            className="ui-modal-btn ui-modal-btn-negative"
+          >
+            Disable Role
+          </button>
         </div>
       </div>
     </div>

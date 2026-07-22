@@ -128,17 +128,17 @@ const getDocumentMeta = (url?: string | null) => {
 function StatusPill({ status, label }: { status?: VenueKycStatus | null; label?: string | null }) {
   const className =
     status === 'APPROVED'
-      ? 'bg-[#1B4332] text-[#74C69D]'
+      ? 'bg-brand-positive/20 text-brand-positive'
       : status === 'REJECTED'
-        ? 'bg-[#4A1515] text-[#F87171]'
+        ? 'bg-brand-danger/20 text-brand-danger'
         : status === 'DRAFT'
-          ? 'bg-white/10 text-[#AAAAAA]'
-          : 'bg-[#4A2C17] text-[#E8A86B]'
+          ? 'bg-white/10 text-muted'
+          : 'bg-brand-accent/15 text-brand-accent'
 
   const displayLabel = label || (status === 'DRAFT' ? 'Not Submitted' : status) || 'PENDING'
 
   return (
-    <span className={cn('rounded-md px-3 py-1.5 text-[11px] font-semibold', className)}>
+    <span className={cn('text-body-sm rounded-md px-3 py-1.5 font-semibold', className)}>
       {displayValue(displayLabel)}
     </span>
   )
@@ -147,7 +147,7 @@ function StatusPill({ status, label }: { status?: VenueKycStatus | null; label?:
 function YesNoBadge({ value }: { value?: boolean | null }) {
   if (value === null || value === undefined) {
     return (
-      <span className="inline-flex rounded-md bg-white/5 px-2.5 py-1 text-[11px] font-bold text-[#888]">
+      <span className="text-body-sm text-muted inline-flex rounded-md bg-white/5 px-2.5 py-1 font-bold">
         N/A
       </span>
     )
@@ -156,8 +156,8 @@ function YesNoBadge({ value }: { value?: boolean | null }) {
   return (
     <span
       className={cn(
-        'inline-flex rounded-md px-2.5 py-1 text-[11px] font-bold',
-        value ? 'bg-[#1B4332] text-[#74C69D]' : 'bg-[#4A1515] text-[#F87171]',
+        'text-body-sm inline-flex rounded-md px-2.5 py-1 font-bold',
+        value ? 'bg-brand-positive/20 text-brand-positive' : 'bg-brand-danger/20 text-brand-danger',
       )}
     >
       {value ? 'Yes' : 'No'}
@@ -177,8 +177,8 @@ function SectionCard({
   className?: string
 }) {
   return (
-    <div className={cn('rounded-xl border border-white/5 bg-[#111111] p-5', className)}>
-      <div className="mb-5 flex items-center gap-2 text-[14px] font-semibold text-white">
+    <div className={cn('bg-brand-bg rounded-xl border border-white/5 p-5', className)}>
+      <div className="text-body-md mb-5 flex items-center gap-2 font-semibold text-white">
         {icon}
         <h3>{title}</h3>
       </div>
@@ -198,7 +198,7 @@ function InfoField({
 }) {
   return (
     <div className="min-w-0">
-      <p className="text-[11px] font-medium text-[#777777]">{label}</p>
+      <p className="text-body-sm text-muted font-medium">{label}</p>
       <div className="mt-1.5 text-[13px] font-semibold text-white">
         {children ?? displayValue(value)}
       </div>
@@ -211,7 +211,7 @@ function VenueImage({ src, alt }: { src: string; alt: string }) {
 
   if (errored) {
     return (
-      <div className="flex aspect-square items-center justify-center rounded-xl border border-white/5 bg-black text-[#666]">
+      <div className="text-muted flex aspect-square items-center justify-center rounded-xl border border-white/5 bg-black">
         <ImageOff className="size-5" />
       </div>
     )
@@ -249,7 +249,7 @@ export function VenueKycApplicationViewPage() {
   const [rejectionReason, setRejectionReason] = useState('')
   const [adminNotes, setAdminNotes] = useState('')
   const [selectedEscalationOption, setSelectedEscalationOption] = useState('')
-  const [rejectConfirmed, setRejectConfirmed] = useState(false)
+  const [confirmationChecked, setConfirmationChecked] = useState(false)
   const [viewerDocument, setViewerDocument] = useState<ViewerDocument | null>(null)
 
   const { data, isLoading, isError, error } = useApplicationDetails(id)
@@ -288,7 +288,7 @@ export function VenueKycApplicationViewPage() {
     setRejectionReason('')
     setAdminNotes('')
     setSelectedEscalationOption('')
-    setRejectConfirmed(false)
+    setConfirmationChecked(false)
     setModalOpen(true)
   }
 
@@ -339,7 +339,7 @@ export function VenueKycApplicationViewPage() {
         toast.error('Please select at least one reason.')
         return
       }
-      if (modalVariant === 'reject' && !rejectConfirmed) {
+      if (modalVariant === 'reject' && !confirmationChecked) {
         toast.error('Please confirm the documents are not approved.')
         return
       }
@@ -347,6 +347,11 @@ export function VenueKycApplicationViewPage() {
         toast.error('Please provide a request changes reason.')
         return
       }
+    }
+
+    if (modalVariant === 'approve' && !confirmationChecked) {
+      toast.error('Please confirm that all details have been reviewed.')
+      return
     }
 
     if (!adminNotes.trim()) {
@@ -509,12 +514,12 @@ export function VenueKycApplicationViewPage() {
         <button
           type="button"
           onClick={() => navigateBackOrFallback(navigate, '/experts/management')}
-          className="group font-heading hover:text-brand-accent flex w-fit items-center gap-2 text-[20px] font-bold text-white transition-colors"
+          className="group font-heading hover:text-brand-accent text-h3 flex w-fit items-center gap-2 font-bold text-white transition-colors"
         >
           <ArrowLeft className="size-5" />
           <span>Venue Application View</span>
         </button>
-        <div className="rounded-lg border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+        <div className="bg-brand-danger/10 rounded-lg border border-red-500/40 px-4 py-3 text-sm text-red-400">
           {getApiErrorMessage(error)}
         </div>
       </div>
@@ -597,29 +602,29 @@ export function VenueKycApplicationViewPage() {
         <button
           type="button"
           onClick={() => navigateBackOrFallback(navigate, '/experts/management')}
-          className="group font-heading hover:text-brand-accent flex w-fit items-center gap-2 text-[20px] font-bold tracking-tight text-white transition-colors"
+          className="group font-heading hover:text-brand-accent text-h3 flex w-fit items-center gap-2 font-bold tracking-tight text-white transition-colors"
         >
           <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
           <span>Venue Application View</span>
         </button>
-        <div className="flex items-center gap-1.5 pl-7 text-[12px] font-medium text-[#777777]">
+        <div className="text-body-sm text-muted flex items-center gap-1.5 pl-7 font-medium">
           <button
             type="button"
             onClick={() => navigateBackOrFallback(navigate, '/experts/management')}
-            className="transition-colors hover:text-white"
+            className="hover:text-brand-text transition-colors"
           >
             Expert management
           </button>
-          <span className="text-[#333333]">/</span>
+          <span className="text-muted">/</span>
           <span>Manage Expert</span>
-          <span className="text-[#333333]">/</span>
+          <span className="text-muted">/</span>
           <span className="font-bold text-white">{applicantName}</span>
         </div>
       </header>
 
-      <h2 className="text-[16px] font-semibold text-white">Application Details</h2>
+      <h2 className="text-body-lg font-semibold text-white">Application Details</h2>
 
-      <div className="rounded-xl border border-white/5 bg-[#111111] p-6">
+      <div className="bg-brand-bg rounded-xl border border-white/5 p-6">
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div>
             <div className="flex items-center gap-2">
@@ -628,14 +633,14 @@ export function VenueKycApplicationViewPage() {
                 <button
                   type="button"
                   onClick={() => navigate(`/experts/management/profile/${header.partnerId}`)}
-                  className="hover:text-brand-accent rounded-md p-1 text-[#888] transition-colors hover:bg-white/5"
+                  className="hover:text-brand-accent text-muted rounded-md p-1 transition-colors hover:bg-white/5"
                   aria-label="Open expert profile"
                 >
                   <ExternalLink className="size-4" />
                 </button>
               )}
             </div>
-            {appliedLabel && <p className="mt-1 text-[12px] text-[#777]">{appliedLabel}</p>}
+            {appliedLabel && <p className="text-body-sm text-muted mt-1">{appliedLabel}</p>}
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <StatusPill status={header.kycStatus} label={header.kycStatusLabel} />
@@ -648,19 +653,19 @@ export function VenueKycApplicationViewPage() {
 
         <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-3">
           <div className="rounded-lg border border-white/5 bg-black p-4">
-            <p className="text-[11px] text-[#777]">Expert ID</p>
+            <p className="text-body-sm text-muted">Expert ID</p>
             <p className="mt-1 font-mono text-[13px] font-semibold text-white">
               {formatApplicationExpertId(header.partnerId || header.applicationId)}
             </p>
           </div>
           <div className="rounded-lg border border-white/5 bg-black p-4">
-            <p className="text-[11px] text-[#777]">Submitted</p>
+            <p className="text-body-sm text-muted">Submitted</p>
             <p className="mt-1 text-[13px] font-semibold text-white">
               {formatDateTime(header.submittedAt)}
             </p>
           </div>
           <div className="rounded-lg border border-white/5 bg-black p-4">
-            <p className="text-[11px] text-[#777]">Last Updated</p>
+            <p className="text-body-sm text-muted">Last Updated</p>
             <p className="mt-1 text-[13px] font-semibold text-white">
               {formatDateTime(header.lastUpdatedAt)}
             </p>
@@ -668,7 +673,7 @@ export function VenueKycApplicationViewPage() {
         </div>
       </div>
 
-      <div className="flex w-full items-center rounded-xl bg-[#1A1A1A]">
+      <div className="bg-brand-surface flex w-full items-center rounded-xl">
         {TABS.map((tab) => {
           const isActive = activeTab === tab.key
 
@@ -730,7 +735,7 @@ export function VenueKycApplicationViewPage() {
                 ))}
               </div>
             ) : (
-              <p className="text-[12px] text-[#777]">No venue images uploaded.</p>
+              <p className="text-body-sm text-muted">No venue images uploaded.</p>
             )}
           </SectionCard>
         </div>
@@ -765,24 +770,24 @@ export function VenueKycApplicationViewPage() {
             >
               <div className="space-y-5">
                 <div className="flex items-center justify-between gap-3">
-                  <span className="text-[12px] font-medium text-[#bbb]">
+                  <span className="text-body-sm text-muted font-medium">
                     Filed last 2 years IT Returns
                   </span>
                   <YesNoBadge value={compliance?.itReturnsFiledLast2Years} />
                 </div>
                 <div className="flex items-center justify-between gap-3">
-                  <span className="text-[12px] font-medium text-[#bbb]">Undertaking Signed</span>
+                  <span className="text-body-sm text-muted font-medium">Undertaking Signed</span>
                   <YesNoBadge value={compliance?.undertakingSigned} />
                 </div>
                 {compliance?.gstUndertakingDocument && (
                   <div className="rounded-lg border border-white/10 bg-white px-3 py-2.5">
                     <div className="flex items-center gap-2">
-                      <FileText className="size-4 shrink-0 text-[#E11D48]" />
+                      <FileText className="text-brand-danger size-4 shrink-0" />
                       <div className="min-w-0">
-                        <p className="truncate text-[12px] font-semibold text-black">
+                        <p className="text-body-sm truncate font-semibold text-black">
                           Undertaking Document
                         </p>
-                        <p className="text-[10px] text-[#666]">
+                        <p className="text-muted text-[10px]">
                           {getDocumentMeta(compliance.gstUndertakingDocument)}
                         </p>
                       </div>
@@ -790,7 +795,7 @@ export function VenueKycApplicationViewPage() {
                         href={compliance.gstUndertakingDocument}
                         target="_blank"
                         rel="noreferrer"
-                        className="ml-auto text-[11px] font-semibold text-[#1D4ED8] hover:underline"
+                        className="text-body-sm text-brand-action ml-auto font-semibold hover:underline"
                       >
                         View
                       </a>
@@ -894,21 +899,21 @@ export function VenueKycApplicationViewPage() {
       )}
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
-        <div className="rounded-xl border border-white/5 bg-[#111111] p-5">
-          <div className="mb-4 flex items-center gap-2 text-[14px] font-semibold text-white">
+        <div className="bg-brand-bg rounded-xl border border-white/5 p-5">
+          <div className="text-body-md mb-4 flex items-center gap-2 font-semibold text-white">
             <History className="text-brand-accent size-4" aria-hidden="true" />
             <h3>Application Notes</h3>
           </div>
-          <div className="min-h-[120px] rounded-lg border border-white/5 bg-black p-4 text-[12px] leading-relaxed whitespace-pre-wrap text-[#777]">
+          <div className="text-body-sm text-muted min-h-[120px] rounded-lg border border-white/5 bg-black p-4 leading-relaxed whitespace-pre-wrap">
             {notesContent}
           </div>
         </div>
 
-        <div className="rounded-xl border border-white/5 bg-[#111111] p-5">
+        <div className="bg-brand-bg rounded-xl border border-white/5 p-5">
           <DecisionControlsHeader className="mb-4" />
 
           {decisionTargetForTab === 'banking' && !isBankingSubmitted && (
-            <p className="mb-4 rounded-md border border-white/5 bg-black px-3 py-2 text-[11px] font-medium text-[#999]">
+            <p className="text-body-sm text-muted mb-4 rounded-md border border-white/5 bg-black px-3 py-2 font-medium">
               Banking has not been submitted yet. Approve and reject are available only after the
               partner submits banking details.
             </p>
@@ -916,7 +921,7 @@ export function VenueKycApplicationViewPage() {
 
           {activeDecisionStatus !== 'PENDING' &&
             !(decisionTargetForTab === 'banking' && !isBankingSubmitted) && (
-              <p className="mb-4 rounded-md border border-white/5 bg-black px-3 py-2 text-[11px] font-medium text-[#999]">
+              <p className="text-body-sm text-muted mb-4 rounded-md border border-white/5 bg-black px-3 py-2 font-medium">
                 {decisionTargetForTab === 'banking' ? 'Banking' : 'KYC'} is already{' '}
                 {String(activeDecisionStatus).toLowerCase()}.
               </p>
@@ -976,12 +981,18 @@ export function VenueKycApplicationViewPage() {
         onReasonChange={modalVariant === 'requestChanges' ? setRejectionReason : undefined}
         reasonLabel="Request Changes"
         confirmationLabel={
-          modalVariant === 'reject'
-            ? 'I confirm the documents are not approved due to above reasons.'
+          modalVariant === 'approve'
+            ? 'By approving this application, you confirm that all details have been reviewed.'
+            : modalVariant === 'reject'
+              ? 'I confirm the documents are not approved due to above reasons.'
+              : undefined
+        }
+        confirmationChecked={confirmationChecked}
+        onConfirmationChange={
+          modalVariant === 'approve' || modalVariant === 'reject'
+            ? setConfirmationChecked
             : undefined
         }
-        confirmationChecked={rejectConfirmed}
-        onConfirmationChange={modalVariant === 'reject' ? setRejectConfirmed : undefined}
         escalationOptions={isEscalateFlow ? escalationOptions : []}
         selectedEscalationOption={isEscalateFlow ? selectedEscalationOption : undefined}
         onEscalationOptionChange={isEscalateFlow ? setSelectedEscalationOption : undefined}

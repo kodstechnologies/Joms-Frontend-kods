@@ -37,10 +37,10 @@ export const SpacesStep = ({ venueData, setVenueData }: SpacesStepProps) => {
 
   return (
     <div className="mx-auto w-full max-w-[850px] space-y-6">
-      <div className="animate-in fade-in slide-in-from-right-4 rounded-lg border border-white/5 bg-[#151515] p-6 shadow-xl duration-300">
+      <div className="animate-in fade-in slide-in-from-right-4 bg-brand-surface rounded-lg border border-white/5 p-6 shadow-xl duration-300">
         <div className="mb-8">
           <h2 className="mb-1 text-[15px] font-bold text-white">Add Space Details</h2>
-          <p className="text-[12px] font-medium text-[#777777]">
+          <p className="text-body-sm text-muted font-medium">
             Provide details about your space offering
           </p>
         </div>
@@ -119,9 +119,7 @@ export const SpacesStep = ({ venueData, setVenueData }: SpacesStepProps) => {
                         }))
                       }
                       className={`flex-1 py-3 text-sm font-medium ${
-                        capacityType === 'seated'
-                          ? 'bg-[#2A2A2A] text-white'
-                          : 'bg-black text-white'
+                        capacityType === 'seated' ? 'bg-white/7 text-white' : 'bg-black text-white'
                       }`}
                     >
                       Seated
@@ -137,7 +135,7 @@ export const SpacesStep = ({ venueData, setVenueData }: SpacesStepProps) => {
                       }
                       className={`flex-1 py-3 text-sm font-medium ${
                         capacityType === 'standing'
-                          ? 'bg-[#2A2A2A] text-white'
+                          ? 'bg-white/7 text-white'
                           : 'bg-black text-white'
                       }`}
                     >
@@ -224,7 +222,7 @@ export const SpacesStep = ({ venueData, setVenueData }: SpacesStepProps) => {
                     }))
                   }
                   className={`flex-1 py-3 text-sm font-medium ${
-                    locationType === 'same' ? 'bg-[#2A2A2A] text-white' : 'bg-black text-white'
+                    locationType === 'same' ? 'bg-white/7 text-white' : 'bg-black text-white'
                   }`}
                 >
                   Same as venue
@@ -239,7 +237,7 @@ export const SpacesStep = ({ venueData, setVenueData }: SpacesStepProps) => {
                     }))
                   }
                   className={`flex-1 py-3 text-sm font-medium ${
-                    locationType === 'different' ? 'bg-[#2A2A2A] text-white' : 'bg-black text-white'
+                    locationType === 'different' ? 'bg-white/7 text-white' : 'bg-black text-white'
                   }`}
                 >
                   Different
@@ -265,7 +263,7 @@ export const SpacesStep = ({ venueData, setVenueData }: SpacesStepProps) => {
                 <div>
                   <h4 className="text-sm font-medium text-white">{item.title}</h4>
 
-                  <p className="mt-2 text-xs text-slate-500">{item.desc}</p>
+                  <p className="text-muted mt-2 text-xs">{item.desc}</p>
                 </div>
 
                 <label className="relative inline-flex cursor-pointer items-center">
@@ -290,22 +288,18 @@ export const SpacesStep = ({ venueData, setVenueData }: SpacesStepProps) => {
       </div>
 
       {locationType === 'different' && (
-        <div className="rounded-lg border border-white/5 bg-[#151515] p-5 shadow-xl">
+        <div className="bg-brand-surface rounded-lg border border-white/5 p-5 shadow-xl">
           <div className="mb-4 flex items-center justify-between">
             <div>
               <h3 className="text-sm font-semibold text-white">Location on Map</h3>
 
-              <p className="text-xs text-slate-500">Based on the address you provided</p>
+              <p className="text-muted text-xs">Based on the address you provided</p>
             </div>
 
-            <input
-              type="text"
-              placeholder="Search by Location"
-              className="focus:border-brand-accent w-64 rounded-lg border border-white/10 bg-black px-3 py-2 text-sm text-white outline-none"
-            />
+            <input type="text" placeholder="Search by Location" className="ui-input w-64" />
           </div>
 
-          <div className="flex h-[220px] items-center justify-center rounded-xl border border-white/10 bg-black text-slate-500">
+          <div className="text-muted flex h-[220px] items-center justify-center rounded-xl border border-white/10 bg-black">
             Google Map Here
           </div>
         </div>

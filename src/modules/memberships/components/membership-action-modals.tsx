@@ -6,8 +6,6 @@ import type { MembershipSubscription } from '../types/membership-subscription'
 import { DELETE_REASON_OPTIONS, PAUSE_REASON_OPTIONS } from '../mock/membership-metrics.mock'
 import { formatCurrency } from '../utils/membership-format'
 import { DecisionActionModal } from '@/shared/components/modal/decision-action-modal'
-import { Button } from '@/shared/components/ui/button'
-import { Input } from '@/shared/components/ui/input'
 import { cn } from '@/shared/lib/cn'
 
 type ActionType = 'upgrade' | 'downgrade' | 'extend' | 'cancel'
@@ -77,71 +75,81 @@ export function MembershipActionModals({
   if (action === 'extend') {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
-        <div className="w-full max-w-lg rounded-2xl border border-white/10 bg-[#111111] p-6">
-          <div className="mb-4 flex items-center justify-between">
+        <div className="ui-modal-shell max-w-lg">
+          <div className="ui-modal-header">
             <div>
-              <h3 className="text-lg font-semibold text-white">Extend</h3>
-              <p className="text-xs text-slate-400">
+              <h3 className="text-h4 text-brand-text">Extend</h3>
+              <p className="text-muted text-body-sm">
                 Extend membership plan for {subscription.partnerName}
               </p>
             </div>
             <button
               type="button"
               onClick={resetAndClose}
-              className="text-slate-400 hover:text-white"
+              className="text-muted hover:text-brand-text"
             >
               <X className="size-5" />
             </button>
           </div>
 
-          <div className="mb-4 rounded-xl border border-amber-500/20 bg-amber-500/5 p-4 text-sm text-slate-300">
-            <p>
-              Current Plan:{' '}
-              <span className="font-semibold text-white">{subscription.planName}</span>
-            </p>
-            <p>
-              Current Cycle:{' '}
-              <span className="font-semibold text-white">{subscription.billingCycleName}</span>
-            </p>
-            <p>
-              Price:{' '}
-              <span className="font-semibold text-white">
-                {formatCurrency(subscription.purchasedPrice)}
-              </span>
+          <div className="ui-modal-body space-y-4">
+            <div className="border-brand-accent/20 bg-brand-accent/5 text-body-sm text-muted rounded-xl border p-4">
+              <p>
+                Current Plan:{' '}
+                <span className="text-brand-text font-semibold">{subscription.planName}</span>
+              </p>
+              <p>
+                Current Cycle:{' '}
+                <span className="text-brand-text font-semibold">
+                  {subscription.billingCycleName}
+                </span>
+              </p>
+              <p>
+                Price:{' '}
+                <span className="text-brand-text font-semibold">
+                  {formatCurrency(subscription.purchasedPrice)}
+                </span>
+              </p>
+            </div>
+
+            <label className="block space-y-2">
+              <span className="text-muted text-body-sm">End Date *</span>
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="ui-input"
+              />
+            </label>
+
+            <ReasonTags selected={selectedReasons} onToggle={toggleReason} />
+
+            <label className="block space-y-2">
+              <span className="text-muted text-body-sm">Admin notes</span>
+              <textarea
+                value={adminNotes}
+                onChange={(e) => setAdminNotes(e.target.value)}
+                className="ui-textarea h-24 min-h-24"
+              />
+            </label>
+
+            <p className="text-muted text-body-sm">
+              Note: This action will be live once the super admin approves this action.
             </p>
           </div>
 
-          <label className="mb-4 block space-y-2">
-            <span className="text-xs text-slate-400">End Date *</span>
-            <Input
-              type="date"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              className="border-white/10 bg-black text-white"
-            />
-          </label>
-
-          <ReasonTags selected={selectedReasons} onToggle={toggleReason} />
-
-          <label className="mt-4 block space-y-2">
-            <span className="text-xs text-slate-400">Admin notes</span>
-            <textarea
-              value={adminNotes}
-              onChange={(e) => setAdminNotes(e.target.value)}
-              className="h-24 w-full rounded-md border border-white/10 bg-black px-3 py-2 text-sm text-white"
-            />
-          </label>
-
-          <p className="mt-4 text-[10px] text-slate-500">
-            Note: This action will be live once the super admin approves this action.
-          </p>
-
-          <div className="mt-5 flex justify-end gap-3">
-            <Button variant="secondary" onClick={resetAndClose}>
+          <div className="ui-modal-footer">
+            <button
+              type="button"
+              className="ui-modal-btn ui-modal-btn-cancel"
+              onClick={resetAndClose}
+            >
               Cancel
-            </Button>
-            <Button
+            </button>
+            <button
+              type="button"
               disabled={isSubmitting}
+              className="ui-modal-btn ui-modal-btn-gold"
               onClick={() =>
                 onExtend({
                   endDate,
@@ -152,7 +160,7 @@ export function MembershipActionModals({
             >
               <Calendar className="size-4" />
               Send for approval
-            </Button>
+            </button>
           </div>
         </div>
       </div>
@@ -164,13 +172,13 @@ export function MembershipActionModals({
 
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
-        <div className="w-full max-w-lg rounded-2xl border border-white/10 bg-[#111111] p-6">
-          <div className="mb-4 flex items-center justify-between">
+        <div className="ui-modal-shell max-w-lg">
+          <div className="ui-modal-header">
             <div>
-              <h3 className="text-lg font-semibold text-white">
+              <h3 className="text-h4 text-brand-text">
                 {action === 'upgrade' ? 'Upgrade Plan' : 'Downgrade Plan'}
               </h3>
-              <p className="text-xs text-slate-400">
+              <p className="text-muted text-body-sm">
                 {action === 'upgrade' ? 'Upgrade' : 'Downgrade'} membership for{' '}
                 {subscription.partnerName}
               </p>
@@ -178,79 +186,87 @@ export function MembershipActionModals({
             <button
               type="button"
               onClick={resetAndClose}
-              className="text-slate-400 hover:text-white"
+              className="text-muted hover:text-brand-text"
             >
               <X className="size-5" />
             </button>
           </div>
 
-          <div className="mb-4 flex items-center justify-center gap-4">
-            <PlanBadge label={subscription.planName} />
-            {action === 'upgrade' ? (
-              <ArrowUp className="size-5 text-emerald-400" />
-            ) : (
-              <ArrowDown className="size-5 text-amber-400" />
-            )}
-            <select
-              value={selectedPlanId}
-              onChange={(e) => {
-                setSelectedPlanId(e.target.value)
-                const plan = expertPlans.find((item) => item._id === e.target.value)
-                setBillingCycleName(plan?.pricing[0]?.billingCycleName ?? '')
-              }}
-              className="rounded-lg border border-white/10 bg-black px-3 py-2 text-sm text-white"
-            >
-              <option value="">Select plan</option>
-              {expertPlans
-                .filter((plan) => {
-                  const currentPlanId =
-                    typeof subscription.membershipPlanId === 'string'
-                      ? subscription.membershipPlanId
-                      : subscription.membershipPlanId._id
-                  return plan._id !== currentPlanId
-                })
-                .map((plan) => (
-                  <option key={plan._id} value={plan._id}>
-                    {plan.planName}
-                  </option>
-                ))}
-            </select>
+          <div className="ui-modal-body space-y-4">
+            <div className="flex items-center justify-center gap-4">
+              <PlanBadge label={subscription.planName} />
+              {action === 'upgrade' ? (
+                <ArrowUp className="text-brand-positive size-5" />
+              ) : (
+                <ArrowDown className="text-brand-accent size-5" />
+              )}
+              <select
+                value={selectedPlanId}
+                onChange={(e) => {
+                  setSelectedPlanId(e.target.value)
+                  const plan = expertPlans.find((item) => item._id === e.target.value)
+                  setBillingCycleName(plan?.pricing[0]?.billingCycleName ?? '')
+                }}
+                className="ui-input w-auto"
+              >
+                <option value="">Select plan</option>
+                {expertPlans
+                  .filter((plan) => {
+                    const currentPlanId =
+                      typeof subscription.membershipPlanId === 'string'
+                        ? subscription.membershipPlanId
+                        : subscription.membershipPlanId._id
+                    return plan._id !== currentPlanId
+                  })
+                  .map((plan) => (
+                    <option key={plan._id} value={plan._id}>
+                      {plan.planName}
+                    </option>
+                  ))}
+              </select>
+            </div>
+
+            {selectedPlan ? (
+              <label className="block space-y-2">
+                <span className="text-muted text-body-sm">Billing Cycle</span>
+                <select
+                  value={billingCycleName}
+                  onChange={(e) => setBillingCycleName(e.target.value)}
+                  className="ui-input"
+                >
+                  {selectedPlan.pricing.map((item) => (
+                    <option key={item.billingCycleName} value={item.billingCycleName}>
+                      {item.billingCycleName}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ) : null}
+
+            <ReasonTags selected={selectedReasons} onToggle={toggleReason} />
+
+            <label className="block space-y-2">
+              <span className="text-muted text-body-sm">Admin notes</span>
+              <textarea
+                value={adminNotes}
+                onChange={(e) => setAdminNotes(e.target.value)}
+                className="ui-textarea h-24 min-h-24"
+              />
+            </label>
           </div>
 
-          {selectedPlan ? (
-            <label className="mb-4 block space-y-2">
-              <span className="text-xs text-slate-400">Billing Cycle</span>
-              <select
-                value={billingCycleName}
-                onChange={(e) => setBillingCycleName(e.target.value)}
-                className="w-full rounded-lg border border-white/10 bg-black px-3 py-2 text-sm text-white"
-              >
-                {selectedPlan.pricing.map((item) => (
-                  <option key={item.billingCycleName} value={item.billingCycleName}>
-                    {item.billingCycleName}
-                  </option>
-                ))}
-              </select>
-            </label>
-          ) : null}
-
-          <ReasonTags selected={selectedReasons} onToggle={toggleReason} />
-
-          <label className="mt-4 block space-y-2">
-            <span className="text-xs text-slate-400">Admin notes</span>
-            <textarea
-              value={adminNotes}
-              onChange={(e) => setAdminNotes(e.target.value)}
-              className="h-24 w-full rounded-md border border-white/10 bg-black px-3 py-2 text-sm text-white"
-            />
-          </label>
-
-          <div className="mt-5 flex justify-end gap-3">
-            <Button variant="secondary" onClick={resetAndClose}>
+          <div className="ui-modal-footer">
+            <button
+              type="button"
+              className="ui-modal-btn ui-modal-btn-cancel"
+              onClick={resetAndClose}
+            >
               Cancel
-            </Button>
-            <Button
+            </button>
+            <button
+              type="button"
               disabled={isSubmitting || !selectedPlanId || !selectedReasons.length}
+              className="ui-modal-btn ui-modal-btn-gold"
               onClick={() => {
                 const payload = {
                   newMembershipPlanId: selectedPlanId,
@@ -263,7 +279,7 @@ export function MembershipActionModals({
               }}
             >
               Send for approval
-            </Button>
+            </button>
           </div>
         </div>
       </div>
@@ -296,9 +312,9 @@ export function MembershipActionModals({
 
 function PlanBadge({ label }: { label: string }) {
   return (
-    <div className="rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-center">
-      <p className="text-[10px] text-slate-400">Current</p>
-      <p className="text-sm font-semibold text-white">{label}</p>
+    <div className="bg-brand-bg/40 rounded-xl border border-white/10 px-4 py-3 text-center">
+      <p className="text-muted text-body-sm">Current</p>
+      <p className="text-body-md text-brand-text font-semibold">{label}</p>
     </div>
   )
 }
@@ -318,10 +334,10 @@ function ReasonTags({
           type="button"
           onClick={() => onToggle(option.value)}
           className={cn(
-            'rounded-md px-3 py-1.5 text-[10px] font-semibold',
+            'ui-modal-reason-chip',
             selected.includes(option.value)
-              ? 'bg-amber-400/20 text-amber-200'
-              : 'bg-black text-slate-300',
+              ? 'ui-modal-reason-chip-selected'
+              : 'ui-modal-reason-chip-idle',
           )}
         >
           {option.label}

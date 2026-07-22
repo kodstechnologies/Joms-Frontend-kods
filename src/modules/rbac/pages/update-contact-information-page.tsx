@@ -171,15 +171,15 @@ export function UpdateContactInformationPage() {
           <button
             type="button"
             onClick={() => navigateBackOrFallback(navigate, '/auth/login')}
-            className="group font-heading flex w-fit items-center gap-2 text-[20px] font-bold tracking-tight text-white transition-colors hover:text-[#FBC078]"
+            className="group font-heading text-h3 text-brand-text hover:text-brand-accent flex w-fit items-center gap-2 font-bold tracking-tight transition-colors"
           >
             <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
             <span>Update Contact Information</span>
           </button>
-          <div className="flex items-center gap-1.5 pl-7 text-[12px] font-medium text-[#777777]">
+          <div className="text-body-sm-medium text-muted flex items-center gap-1.5 pl-7">
             <span>Log In</span>
-            <span className="text-[#333333]">/</span>
-            <span className="font-bold text-white">Contact Information</span>
+            <span className="text-brand-text/30">/</span>
+            <span className="text-brand-text font-bold">Contact Information</span>
           </div>
         </div>
 
@@ -199,7 +199,7 @@ export function UpdateContactInformationPage() {
                 className="hidden"
                 onChange={handleProfileImageChange}
               />
-              <div className="grid size-20 place-items-center overflow-hidden rounded-full border border-white/10 bg-[#111111]">
+              <div className="bg-brand-surface grid size-20 place-items-center overflow-hidden rounded-full border border-white/10">
                 {profileImageUrl ? (
                   <img src={profileImageUrl} alt="Profile" className="size-full object-cover" />
                 ) : (
@@ -268,7 +268,7 @@ export function UpdateContactInformationPage() {
 
             <div className="space-y-2">
               <label className="text-brand-text text-sm font-medium">Assigned role</label>
-              <Input value={primaryRole?.name || '—'} readOnly className="bg-[#111111]" />
+              <Input value={primaryRole?.name || '—'} readOnly className="bg-brand-surface" />
             </div>
 
             {profile?.mfaEnabled ? (
@@ -281,7 +281,7 @@ export function UpdateContactInformationPage() {
                     <Input
                       value={profile.mfaSecret || ''}
                       readOnly
-                      className="bg-[#111111] font-mono tracking-[0.2em]"
+                      className="bg-brand-surface font-mono tracking-[0.2em]"
                     />
                     <button
                       type="button"
@@ -332,7 +332,7 @@ export function UpdateContactInformationPage() {
                         <Check className="size-3" />
                       </span>
                       <span className="text-brand-text text-sm font-medium">{row.label}</span>
-                      <span className="bg-brand-accent/20 text-brand-accent rounded-full px-2.5 py-0.5 text-[11px] font-semibold">
+                      <span className="bg-brand-accent/20 text-brand-accent text-body-sm-semibold rounded-full px-2.5 py-0.5">
                         {accessLabel(row.access)}
                       </span>
                     </div>

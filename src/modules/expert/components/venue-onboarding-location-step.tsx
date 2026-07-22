@@ -3,8 +3,7 @@ import { MapPin, Maximize2, Search, Upload, X } from 'lucide-react'
 
 import type { VenueOnboardingFormData } from '../utils/venue-onboarding-form'
 
-const fieldClass =
-  'h-10 w-full rounded-md border border-white/10 bg-black px-3 text-sm text-white outline-none placeholder:text-[#666] focus:border-brand-accent'
+const fieldClass = 'ui-input'
 
 const MAX_VENUE_IMAGES = 10
 
@@ -44,10 +43,10 @@ export const VenueOnboardingLocationStep = ({ formData, setFormData }: Props) =>
 
   return (
     <div className="mx-auto w-full max-w-[850px] space-y-6">
-      <div className="animate-in fade-in slide-in-from-right-4 rounded-lg border border-white/5 bg-[#151515] p-6 duration-300">
+      <div className="animate-in fade-in slide-in-from-right-4 bg-brand-surface rounded-lg border border-white/5 p-6 duration-300">
         <div className="mb-6">
           <h2 className="text-sm font-bold text-white">Add Venue Location</h2>
-          <p className="mt-1 text-xs text-[#777777]">Provide details about your service offering</p>
+          <p className="text-muted mt-1 text-xs">Provide details about your service offering</p>
         </div>
 
         <div className="space-y-5">
@@ -90,7 +89,7 @@ export const VenueOnboardingLocationStep = ({ formData, setFormData }: Props) =>
               {formData.venueImageUrls.map((url, index) => (
                 <div
                   key={`existing-${url}-${index}`}
-                  className="relative flex h-24 items-center justify-center overflow-hidden rounded-md border border-dashed border-[#444] bg-black"
+                  className="relative flex h-24 items-center justify-center overflow-hidden rounded-md border border-dashed border-white/20 bg-black"
                 >
                   <img src={url} alt="" className="h-full w-full object-cover" />
                   <button
@@ -105,7 +104,7 @@ export const VenueOnboardingLocationStep = ({ formData, setFormData }: Props) =>
               {formData.venueImages.map((file, index) => (
                 <div
                   key={`${file.name}-${index}`}
-                  className="relative flex h-24 items-center justify-center overflow-hidden rounded-md border border-dashed border-[#444] bg-black"
+                  className="relative flex h-24 items-center justify-center overflow-hidden rounded-md border border-dashed border-white/20 bg-black"
                 >
                   <img
                     src={URL.createObjectURL(file)}
@@ -125,7 +124,7 @@ export const VenueOnboardingLocationStep = ({ formData, setFormData }: Props) =>
                 <button
                   type="button"
                   onClick={() => imageInputRef.current?.click()}
-                  className="hover:border-brand-accent/50 flex h-24 items-center justify-center rounded-md border border-dashed border-[#444] bg-black text-xs text-[#777] transition-colors"
+                  className="hover:border-brand-accent/50 text-muted flex h-24 items-center justify-center rounded-md border border-dashed border-white/20 bg-black text-xs transition-colors"
                 >
                   <Upload className="mr-1 size-4" />
                   Upload here
@@ -144,14 +143,14 @@ export const VenueOnboardingLocationStep = ({ formData, setFormData }: Props) =>
         </div>
       </div>
 
-      <div className="rounded-lg border border-white/5 bg-[#151515] p-6">
+      <div className="bg-brand-surface rounded-lg border border-white/5 p-6">
         <div className="mb-4">
           <h3 className="text-sm font-bold text-white">Location on Map</h3>
-          <p className="mt-1 text-xs text-[#777777]">Based on the address you provided</p>
+          <p className="text-muted mt-1 text-xs">Based on the address you provided</p>
         </div>
 
         <div className="relative mb-4">
-          <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-[#777]" />
+          <Search className="text-muted absolute top-1/2 left-3 size-4 -translate-y-1/2" />
           <input
             value={formData.landmark}
             onChange={(e) => setFormData((prev) => ({ ...prev, landmark: e.target.value }))}
@@ -160,11 +159,11 @@ export const VenueOnboardingLocationStep = ({ formData, setFormData }: Props) =>
           />
         </div>
 
-        <div className="relative overflow-hidden rounded-md border border-white/10 bg-[#1a1a1a]">
+        <div className="bg-brand-surface relative overflow-hidden rounded-md border border-white/10">
           <div className="flex h-48 items-center justify-center bg-gradient-to-br from-slate-800 to-slate-900">
             <div className="text-center">
-              <MapPin className="mx-auto mb-2 size-8 text-red-500" />
-              <p className="text-xs text-[#888]">{formData.city || 'Bengaluru'}</p>
+              <MapPin className="text-brand-danger mx-auto mb-2 size-8" />
+              <p className="text-muted text-xs">{formData.city || 'Bengaluru'}</p>
             </div>
           </div>
           <button

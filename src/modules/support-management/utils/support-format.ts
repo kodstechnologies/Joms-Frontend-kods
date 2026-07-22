@@ -13,20 +13,20 @@ export const getStatusLabel = (status: TicketStatus) => {
 
 export const getStatusClassName = (status: TicketStatus) =>
   cn(
-    'rounded-full border px-2.5 py-0.5 text-[11px] font-semibold',
-    status === 'open' && 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300',
-    status === 'in_progress' && 'border-amber-500/30 bg-amber-500/10 text-amber-300',
-    status === 'on_hold' && 'border-rose-500/30 bg-rose-500/10 text-rose-300',
-    status === 'closed' && 'border-slate-500/30 bg-slate-500/10 text-slate-300',
+    'text-body-sm-semibold rounded-full border px-2.5 py-0.5',
+    status === 'open' && 'border-brand-positive/30 bg-brand-positive/10 text-brand-positive',
+    status === 'in_progress' && 'border-brand-accent/30 bg-brand-accent/10 text-brand-accent',
+    status === 'on_hold' && 'border-brand-danger/30 bg-brand-danger/10 text-brand-danger',
+    status === 'closed' && 'border-brand-muted/30 bg-brand-muted/10 text-muted',
   )
 
 export const getPriorityClassName = (priority: TicketPriority) =>
   cn(
-    'rounded-full border px-2.5 py-0.5 text-[11px] font-semibold capitalize',
-    priority === 'critical' && 'border-rose-500/30 bg-rose-500/10 text-rose-300',
-    priority === 'high' && 'border-orange-500/30 bg-orange-500/10 text-orange-300',
-    priority === 'medium' && 'border-amber-500/30 bg-amber-500/10 text-amber-300',
-    priority === 'low' && 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300',
+    'text-body-sm-semibold rounded-full border px-2.5 py-0.5 capitalize',
+    priority === 'critical' && 'border-brand-danger/30 bg-brand-danger/10 text-brand-danger',
+    priority === 'high' && 'border-brand-accent/30 bg-brand-accent/10 text-brand-accent',
+    priority === 'medium' && 'border-brand-accent/30 bg-brand-accent/10 text-brand-accent',
+    priority === 'low' && 'border-brand-positive/30 bg-brand-positive/10 text-brand-positive',
   )
 
 export const getReporterTypeLabel = (type: string) => {

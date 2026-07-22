@@ -92,7 +92,7 @@ const SubCategoryInfoCard = ({ category, subCategory }: Props) => {
           <div className="flex flex-col items-center">
             <p className={categoryViewTheme.labelClass}>Icon</p>
 
-            <div className="mt-3 flex size-20 items-center justify-center rounded-full border border-dashed border-[#444444] bg-black">
+            <div className="bg-brand-bg mt-3 flex size-20 items-center justify-center rounded-full border border-dashed border-white/20">
               {subCategory.icon ? (
                 <img
                   src={subCategory.icon}
@@ -106,7 +106,7 @@ const SubCategoryInfoCard = ({ category, subCategory }: Props) => {
           </div>
 
           <span
-            className={`inline-flex rounded-md px-3 py-1 text-[11px] font-semibold ${
+            className={`text-body-sm-semibold inline-flex rounded-md px-3 py-1 ${
               subCategory.status === 'Active'
                 ? categoryViewTheme.statusActive
                 : categoryViewTheme.statusPaused

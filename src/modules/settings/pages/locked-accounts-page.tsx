@@ -29,9 +29,11 @@ function AccountDetailsModal({
 
   return (
     <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/70 p-4">
-      <div className="w-full max-w-[480px] rounded-2xl border border-white/10 bg-[#141414] p-6 shadow-2xl">
-        <h2 className="text-lg font-bold text-white">Account Details</h2>
-        <div className="mt-5 space-y-3 text-sm">
+      <div className="ui-modal-shell max-w-[480px]">
+        <div className="ui-modal-header">
+          <h2 className="text-h4 text-brand-text">Account Details</h2>
+        </div>
+        <div className="ui-modal-body space-y-3">
           <DetailRow label="Admin" value={account.username ?? account.admin} />
           <DetailRow label="IP Address" value={account.ipAddress ?? '—'} />
           <DetailRow label="Locked Since" value={account.lockedSince} />
@@ -40,23 +42,19 @@ function AccountDetailsModal({
           <DetailRow
             label="Failed Attempts"
             value={String(account.failedAttempts ?? '—')}
-            valueClassName="text-rose-400"
+            valueClassName="text-brand-danger"
           />
           <DetailRow label="Reason" value={account.reason} />
         </div>
-        <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-xl border border-white/20 px-5 py-2.5 text-sm font-semibold text-white"
-          >
+        <div className="ui-modal-footer">
+          <button type="button" onClick={onClose} className="ui-modal-btn ui-modal-btn-cancel">
             Cancel
           </button>
           <button
             type="button"
             disabled={isUnlocking}
             onClick={onUnlock}
-            className="rounded-xl bg-[#F0C27B] px-5 py-2.5 text-sm font-semibold text-[#050505] disabled:opacity-50"
+            className="ui-modal-btn ui-modal-btn-gold"
           >
             {isUnlocking ? 'Unlocking…' : 'Unlock'}
           </button>
@@ -77,8 +75,8 @@ function DetailRow({
 }) {
   return (
     <div className="flex items-center justify-between gap-4 border-b border-white/5 py-2">
-      <span className="text-slate-500">{label}</span>
-      <span className={cn('font-medium text-white', valueClassName)}>{value}</span>
+      <span className="text-body-md text-muted">{label}</span>
+      <span className={cn('text-body-md-medium text-brand-text', valueClassName)}>{value}</span>
     </div>
   )
 }
@@ -121,22 +119,22 @@ export function LockedAccountsPage() {
       {
         accessorKey: 'role',
         header: 'Roles',
-        cell: ({ row }) => <span className="text-slate-400">{row.original.role}</span>,
+        cell: ({ row }) => <span className="text-muted">{row.original.role}</span>,
       },
       {
         accessorKey: 'reason',
         header: 'Reason',
-        cell: ({ row }) => <span className="text-slate-300">{row.original.reason}</span>,
+        cell: ({ row }) => <span className="text-brand-text/80">{row.original.reason}</span>,
       },
       {
         accessorKey: 'lockedSince',
         header: 'Locked Since',
-        cell: ({ row }) => <span className="text-slate-400">{row.original.lockedSince}</span>,
+        cell: ({ row }) => <span className="text-muted">{row.original.lockedSince}</span>,
       },
       {
         accessorKey: 'duration',
         header: 'Duration',
-        cell: ({ row }) => <span className="text-slate-400">{row.original.duration}</span>,
+        cell: ({ row }) => <span className="text-muted">{row.original.duration}</span>,
       },
       {
         id: 'actions',
@@ -146,14 +144,14 @@ export function LockedAccountsPage() {
             <button
               type="button"
               onClick={() => setSelected(row.original)}
-              className="rounded-lg border border-white/15 bg-white/5 px-3 py-1 text-xs font-medium text-white"
+              className="text-body-sm-medium rounded-lg border border-white/15 bg-white/5 px-3 py-1 text-white"
             >
               Review
             </button>
             <button
               type="button"
               onClick={() => handleUnlock(row.original.id)}
-              className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-300"
+              className="border-brand-positive/30 bg-brand-positive/10 text-body-sm-medium text-brand-positive rounded-lg border px-3 py-1"
             >
               Unlock
             </button>
@@ -171,7 +169,7 @@ export function LockedAccountsPage() {
         onClick={() =>
           navigateBackOrFallback(navigate, '/settings/main', { state: { settingsTab: 'security' } })
         }
-        className="inline-flex items-center gap-2 text-sm text-slate-400 hover:text-white"
+        className="text-body-md text-muted inline-flex items-center gap-2 hover:text-white"
       >
         <ArrowLeft className="size-4" />
         Settings / Security & Access / Locked Accounts

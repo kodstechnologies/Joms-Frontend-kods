@@ -33,15 +33,15 @@ const PAGE_SIZE = 10
 
 function getStatusClassName(status: RefundChargebackStatus) {
   if (status === 'Resolved') {
-    return 'border-emerald-500/25 bg-emerald-500/10 text-emerald-400'
+    return 'border-brand-positive/25 bg-brand-positive/10 text-brand-positive'
   }
   if (status === 'Pending') {
-    return 'border-teal-500/25 bg-teal-500/10 text-teal-400'
+    return 'border-brand-teal/25 bg-brand-teal/10 text-brand-teal'
   }
   if (status === 'Open') {
-    return 'border-amber-500/25 bg-amber-500/10 text-amber-400'
+    return 'border-brand-accent/25 bg-brand-accent/10 text-brand-accent'
   }
-  return 'border-blue-500/25 bg-blue-500/10 text-blue-400'
+  return 'border-brand-action/25 bg-brand-action/10 text-brand-action'
 }
 
 function SummaryCard({
@@ -56,15 +56,15 @@ function SummaryCard({
   changeNote: string
 }) {
   return (
-    <div className="rounded-xl border border-white/[0.06] bg-[#1A1A1A] p-5">
-      <p className="text-[11px] font-medium text-[#888888]">{label}</p>
-      <p className="mt-2 text-[26px] font-bold tracking-tight text-white">{value}</p>
+    <div className="radius-lg bg-brand-surface border border-white/[0.06] p-5">
+      <p className="text-body-sm-medium text-muted">{label}</p>
+      <p className="text-h2 text-brand-text mt-2 tracking-tight">{value}</p>
       <div className="mt-3 flex flex-wrap items-center gap-2">
-        <span className="inline-flex items-center gap-1 rounded-md bg-emerald-500/15 px-2 py-0.5 text-[10px] font-bold text-emerald-400">
+        <span className="text-body-sm-semibold bg-brand-positive/15 text-brand-positive inline-flex items-center gap-1 rounded-md px-2 py-0.5">
           <TrendingUp className="size-3" />
           {change}
         </span>
-        <span className="text-[10px] text-[#666666]">{changeNote}</span>
+        <span className="text-body-sm text-muted">{changeNote}</span>
       </div>
     </div>
   )
@@ -196,8 +196,8 @@ export function FinanceRefundsPage() {
             Escalate
           </TableActionsItem>
           <TableActionsItem
-            icon={<Trash2 className="size-3.5 text-rose-500" aria-hidden="true" />}
-            className="text-rose-600 hover:bg-rose-50 hover:text-rose-700"
+            icon={<Trash2 className="text-brand-danger size-3.5" aria-hidden="true" />}
+            className="text-brand-danger hover:bg-brand-danger/10 hover:text-brand-danger"
             onClick={() => toast.message('Delete coming soon')}
           >
             Delete
@@ -247,7 +247,7 @@ export function FinanceRefundsPage() {
         accessorKey: 'recordId',
         header: 'ID',
         cell: ({ row }) => (
-          <span className="font-mono text-[11px] text-white uppercase">
+          <span className="text-body-sm-semibold text-brand-text font-mono uppercase">
             {row.original.recordId}
           </span>
         ),
@@ -257,7 +257,9 @@ export function FinanceRefundsPage() {
       {
         accessorKey: 'amount',
         header: 'Amount',
-        cell: ({ row }) => <span className="font-semibold text-white">{row.original.amount}</span>,
+        cell: ({ row }) => (
+          <span className="text-brand-text font-semibold">{row.original.amount}</span>
+        ),
       },
       { accessorKey: 'reason', header: 'Reason' },
       { accessorKey: 'initiatedDate', header: 'Initiated Date' },
@@ -268,7 +270,7 @@ export function FinanceRefundsPage() {
         cell: ({ row }) => (
           <span
             className={cn(
-              'inline-flex rounded-full border px-2.5 py-0.5 text-[11px] font-semibold',
+              'text-body-sm-semibold inline-flex rounded-full border px-2.5 py-0.5',
               getStatusClassName(row.original.status),
             )}
           >
@@ -297,8 +299,8 @@ export function FinanceRefundsPage() {
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-[28px] font-bold tracking-tight text-white">Refunds & Chargebacks</h1>
-          <p className="mt-1 text-[13px] text-[#888888]">
+          <h1 className="text-h2 text-brand-text tracking-tight">Refunds & Chargebacks</h1>
+          <p className="text-body-md text-muted mt-1">
             Track revenue, payouts, and financial performance
           </p>
         </div>

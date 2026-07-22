@@ -14,14 +14,8 @@ type IssuePartialRefundModalProps = {
   onSubmit?: (payload: { refundAmount: string; reason: string; adminNotes: string }) => void
 }
 
-const fieldInputClass =
-  'h-11 w-full rounded-lg border border-white/[0.06] bg-[#0F0F0F] px-4 text-sm text-white placeholder:text-[#666666] focus-visible:ring-1 focus-visible:ring-white/20'
-
 const MAX_REASON_LENGTH = 150
 const MAX_NOTES_LENGTH = 150
-
-const footerButtonClass =
-  'inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-white/20 bg-transparent px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20'
 
 export function IssuePartialRefundModal({
   open,
@@ -94,105 +88,97 @@ export function IssuePartialRefundModal({
     >
       <div
         className={cn(
-          'flex w-full max-w-lg flex-col border border-white/[0.08] bg-[#1A1A1A] shadow-2xl',
-          'max-h-[92dvh] sm:max-h-[min(90dvh,720px)]',
-          'rounded-t-2xl sm:rounded-2xl',
+          'ui-modal-shell max-h-[92dvh] max-w-lg sm:max-h-[min(90dvh,720px)]',
+          'rounded-t-[var(--brand-radius-popup)] rounded-b-none sm:rounded-[var(--brand-radius-popup)]',
         )}
         onClick={(event) => event.stopPropagation()}
         role="dialog"
         aria-modal="true"
         aria-labelledby="issue-partial-refund-title"
       >
-        <div className="flex shrink-0 items-start justify-between gap-3 border-b border-white/[0.06] px-4 py-4 sm:px-6 sm:py-5">
-          <h2
-            id="issue-partial-refund-title"
-            className="pr-2 text-[15px] leading-snug font-bold text-white sm:text-[16px]"
-          >
+        <div className="ui-modal-header">
+          <h2 id="issue-partial-refund-title" className="text-h4 text-brand-text pr-2">
             Issue Partial Refund
           </h2>
           <button
             type="button"
             onClick={handleClose}
             aria-label="Close partial refund modal"
-            className="grid size-9 shrink-0 place-items-center rounded-lg text-[#888888] transition-colors hover:bg-white/5 hover:text-white"
+            className="text-muted hover:text-brand-text grid size-9 shrink-0 place-items-center rounded-lg transition-colors hover:bg-white/5"
           >
-            <X className="size-5" />
+            <X className="icon-md" />
           </button>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 sm:px-6 sm:py-6">
-          <div className="space-y-4 sm:space-y-5">
-            <div className="flex items-center gap-3 rounded-xl border border-white/[0.06] bg-[#121212] p-3.5 sm:gap-4 sm:p-4">
-              <div className="grid size-10 shrink-0 place-items-center rounded-full border border-white/10 bg-[#0F0F0F] text-[#888888] sm:size-11">
-                <IndianRupee className="size-4" />
-              </div>
-              <div className="min-w-0">
-                <p className="text-[13px] font-semibold text-white">Partial Refund</p>
-                <p className="mt-0.5 text-[12px] break-words text-[#888888]">
-                  Original amount: {originalAmount}
-                </p>
-              </div>
+        <div className="ui-modal-body space-y-4 sm:space-y-5">
+          <div className="radius-lg bg-brand-bg flex items-center gap-3 border border-white/10 p-3.5 sm:gap-4 sm:p-4">
+            <div className="bg-brand-bg text-muted grid size-10 shrink-0 place-items-center rounded-full border border-white/10 sm:size-11">
+              <IndianRupee className="icon-sm" />
             </div>
-
-            <Field label="Refund Amount (Required)">
-              <div className="relative">
-                <span className="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-sm text-[#888888]">
-                  ₹
-                </span>
-                <Input
-                  value={refundAmount}
-                  inputMode="decimal"
-                  onChange={(event) => setRefundAmount(event.target.value.replace(/[^\d.]/g, ''))}
-                  placeholder="Enter Refund Amount"
-                  className={cn(fieldInputClass, 'pl-8')}
-                />
-              </div>
-              <p className="mt-2 text-[11px] leading-relaxed text-[#666666]">
-                Maximum refundable amount: {originalAmount}
+            <div className="min-w-0">
+              <p className="text-body-md-semibold text-brand-text">Partial Refund</p>
+              <p className="text-body-sm text-muted mt-0.5 break-words">
+                Original amount: {originalAmount}
               </p>
-            </Field>
-
-            <Field label="Reason">
-              <div className="relative">
-                <textarea
-                  value={reason}
-                  rows={3}
-                  onChange={(event) => setReason(event.target.value.slice(0, MAX_REASON_LENGTH))}
-                  placeholder="State Reason for Partial Refund"
-                  className="min-h-24 w-full resize-none rounded-lg border border-white/[0.06] bg-[#0F0F0F] px-4 py-3 pb-8 text-sm text-white placeholder:text-[#666666] focus:ring-1 focus:ring-white/20 focus:outline-none sm:min-h-20"
-                />
-                <span className="pointer-events-none absolute right-3 bottom-3 text-[10px] text-[#666666]">
-                  {reason.length}/{MAX_REASON_LENGTH}
-                </span>
-              </div>
-            </Field>
-
-            <Field label="Admin Notes">
-              <div className="relative">
-                <textarea
-                  value={adminNotes}
-                  rows={4}
-                  onChange={(event) => setAdminNotes(event.target.value.slice(0, MAX_NOTES_LENGTH))}
-                  placeholder="Enter Text Here"
-                  className="min-h-28 w-full resize-none rounded-lg border border-white/[0.06] bg-[#0F0F0F] px-4 py-3 pb-8 text-sm text-white placeholder:text-[#666666] focus:ring-1 focus:ring-white/20 focus:outline-none"
-                />
-                <span className="pointer-events-none absolute right-3 bottom-3 text-[10px] text-[#666666]">
-                  {adminNotes.length}/{MAX_NOTES_LENGTH}
-                </span>
-              </div>
-            </Field>
+            </div>
           </div>
+
+          <Field label="Refund Amount (Required)">
+            <div className="relative">
+              <span className="text-body-md text-muted pointer-events-none absolute top-1/2 left-4 -translate-y-1/2">
+                ₹
+              </span>
+              <Input
+                value={refundAmount}
+                inputMode="decimal"
+                onChange={(event) => setRefundAmount(event.target.value.replace(/[^\d.]/g, ''))}
+                placeholder="Enter Refund Amount"
+                className="pl-8"
+              />
+            </div>
+            <p className="text-body-sm text-muted mt-2">
+              Maximum refundable amount: {originalAmount}
+            </p>
+          </Field>
+
+          <Field label="Reason">
+            <div className="relative">
+              <textarea
+                value={reason}
+                rows={3}
+                onChange={(event) => setReason(event.target.value.slice(0, MAX_REASON_LENGTH))}
+                placeholder="State Reason for Partial Refund"
+                className="ui-textarea min-h-24 pb-8 sm:min-h-20"
+              />
+              <span className="text-body-sm text-muted pointer-events-none absolute right-3 bottom-3">
+                {reason.length}/{MAX_REASON_LENGTH}
+              </span>
+            </div>
+          </Field>
+
+          <Field label="Admin Notes">
+            <div className="relative">
+              <textarea
+                value={adminNotes}
+                rows={4}
+                onChange={(event) => setAdminNotes(event.target.value.slice(0, MAX_NOTES_LENGTH))}
+                placeholder="Enter Text Here"
+                className="ui-textarea min-h-28 pb-8"
+              />
+              <span className="text-body-sm text-muted pointer-events-none absolute right-3 bottom-3">
+                {adminNotes.length}/{MAX_NOTES_LENGTH}
+              </span>
+            </div>
+          </Field>
         </div>
 
-        <div className="shrink-0 border-t border-white/[0.06] px-4 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:px-6 sm:py-5">
-          <div className="flex flex-col-reverse gap-3 sm:grid sm:grid-cols-2">
-            <button type="button" onClick={handleClose} className={footerButtonClass}>
-              Cancel
-            </button>
-            <button type="button" onClick={handleSubmit} className={footerButtonClass}>
-              Issue Refund
-            </button>
-          </div>
+        <div className="ui-modal-footer flex-col-reverse sm:flex-row">
+          <button type="button" onClick={handleClose} className="ui-modal-btn ui-modal-btn-cancel">
+            Cancel
+          </button>
+          <button type="button" onClick={handleSubmit} className="ui-modal-btn ui-modal-btn-cancel">
+            Issue Refund
+          </button>
         </div>
       </div>
     </div>,
@@ -203,7 +189,7 @@ export function IssuePartialRefundModal({
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="block space-y-2 sm:space-y-2.5">
-      <span className="text-[13px] font-medium text-white">{label}</span>
+      <span className="text-body-md-medium text-brand-text">{label}</span>
       {children}
     </label>
   )

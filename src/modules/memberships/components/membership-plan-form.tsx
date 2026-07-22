@@ -120,33 +120,31 @@ export function MembershipPlanForm({
 
   return (
     <form id="membership-plan-form" onSubmit={handleSubmit} className="space-y-6">
-      <section className="space-y-4 rounded-2xl border border-white/10 bg-[#111111] p-5">
+      <section className="bg-brand-bg space-y-4 rounded-2xl border border-white/10 p-5">
         <h3 className="text-sm font-semibold text-white">Basic Information</h3>
         <div className="grid gap-4 md:grid-cols-[1fr_auto]">
           <label className="block space-y-2">
-            <span className="text-xs text-slate-400">Plan Name *</span>
+            <span className="text-muted text-xs">Plan Name *</span>
             <Input
               value={planName}
               onChange={(event) => setPlanName(event.target.value)}
               placeholder="Basic Plan"
-              className="border-white/10 bg-black text-white"
+              className="ui-input"
               required
             />
           </label>
           <label className="block space-y-2">
-            <span className="text-xs text-slate-400">Type *</span>
+            <span className="text-muted text-xs">Type *</span>
             <div className="flex h-10 items-center rounded-md border border-white/10 bg-black px-3 text-sm text-white">
               Experts
             </div>
           </label>
         </div>
 
-        {initialPlan ? (
-          <p className="text-xs text-slate-500">Plan ID: {initialPlan.planId}</p>
-        ) : null}
+        {initialPlan ? <p className="text-muted text-xs">Plan ID: {initialPlan.planId}</p> : null}
 
         <div className="space-y-2">
-          <span className="text-xs text-slate-400">Billing Cycle format</span>
+          <span className="text-muted text-xs">Billing Cycle format</span>
           <div className="flex flex-wrap gap-2">
             {DEFAULT_BILLING_CYCLES.map((cycle) => (
               <button
@@ -156,8 +154,8 @@ export function MembershipPlanForm({
                 className={cn(
                   'rounded-full border px-3 py-1.5 text-xs font-medium',
                   selectedCycles.includes(cycle)
-                    ? 'border-amber-400/40 bg-amber-400/10 text-amber-200'
-                    : 'border-white/10 text-slate-400',
+                    ? 'border-brand-accent/40 bg-brand-accent/10 text-brand-accent'
+                    : 'text-muted border-white/10',
                 )}
               >
                 {cycle}
@@ -167,7 +165,7 @@ export function MembershipPlanForm({
         </div>
 
         <label className="block space-y-2">
-          <span className="text-xs text-slate-400">Plan Icon</span>
+          <span className="text-muted text-xs">Plan Icon</span>
           {initialPlan?.icon ? (
             <div className="mb-2 flex items-center gap-3">
               <img
@@ -175,24 +173,24 @@ export function MembershipPlanForm({
                 alt={initialPlan.planName}
                 className="size-12 rounded-full border border-white/10 object-cover"
               />
-              <span className="text-xs text-slate-500">Upload a new file to replace the icon</span>
+              <span className="text-muted text-xs">Upload a new file to replace the icon</span>
             </div>
           ) : null}
           <Input
             type="file"
             accept="image/*"
             onChange={(event) => setIconFile(event.target.files?.[0] ?? null)}
-            className="border-white/10 bg-black text-white"
+            className="ui-input"
           />
         </label>
       </section>
 
-      <section className="space-y-4 rounded-2xl border border-white/10 bg-[#111111] p-5">
+      <section className="bg-brand-bg space-y-4 rounded-2xl border border-white/10 p-5">
         <h3 className="text-sm font-semibold text-white">Pricing Information</h3>
         <div className="grid gap-4 md:grid-cols-3">
           {selectedCycles.map((cycle) => (
             <div key={cycle} className="rounded-xl border border-white/10 bg-black/40 p-3">
-              <p className="mb-3 text-xs font-medium text-slate-300">{cycle} Price *</p>
+              <p className="text-muted mb-3 text-xs font-medium">{cycle} Price *</p>
               <Input
                 type="number"
                 min={0}
@@ -207,10 +205,10 @@ export function MembershipPlanForm({
                     },
                   }))
                 }
-                className="mb-3 border-white/10 bg-black text-white"
+                className="ui-input mb-3"
                 required
               />
-              <p className="mb-2 text-xs text-slate-400">Discount %</p>
+              <p className="text-muted mb-2 text-xs">Discount %</p>
               <Input
                 type="number"
                 min={0}
@@ -226,14 +224,14 @@ export function MembershipPlanForm({
                     },
                   }))
                 }
-                className="border-white/10 bg-black text-white"
+                className="ui-input"
               />
             </div>
           ))}
         </div>
       </section>
 
-      <section className="space-y-3 rounded-2xl border border-white/10 bg-[#111111] p-5">
+      <section className="bg-brand-bg space-y-3 rounded-2xl border border-white/10 p-5">
         <h3 className="text-sm font-semibold text-white">Plan Features</h3>
         <FeatureToggle
           label="Access to basic networking features"
@@ -292,15 +290,15 @@ export function MembershipPlanForm({
         />
       </section>
 
-      <section className="grid gap-4 rounded-2xl border border-white/10 bg-[#111111] p-5 md:grid-cols-2">
+      <section className="bg-brand-bg grid gap-4 rounded-2xl border border-white/10 p-5 md:grid-cols-2">
         <label className="block space-y-2">
-          <span className="text-xs text-slate-400">Trial Period (days)</span>
+          <span className="text-muted text-xs">Trial Period (days)</span>
           <Input
             type="number"
             min={0}
             value={trialPeriodDays}
             onChange={(event) => setTrialPeriodDays(Number(event.target.value))}
-            className="border-white/10 bg-black text-white"
+            className="ui-input"
           />
         </label>
         <div className="space-y-2 rounded-xl border border-white/10 bg-black/30 p-4">
@@ -349,9 +347,9 @@ function FeatureToggle({
           type="checkbox"
           checked={checked}
           onChange={(event) => handleChange(event.target.checked)}
-          className="size-4 accent-amber-400"
+          className="accent-brand-accent size-4"
         />
-        <span className="text-sm text-slate-200">{label}</span>
+        <span className="text-brand-text text-sm">{label}</span>
       </div>
       {typeof count === 'number' ? (
         <Input
@@ -359,7 +357,7 @@ function FeatureToggle({
           min={0}
           value={count}
           onChange={(event) => onCountChange?.(Number(event.target.value))}
-          className="h-8 w-20 border-white/10 bg-black text-white"
+          className="ui-input h-8 w-20"
         />
       ) : null}
     </div>
@@ -376,12 +374,12 @@ function CheckboxRow({
   onChange: (checked: boolean) => void
 }) {
   return (
-    <label className="flex items-center gap-2 text-sm text-slate-200">
+    <label className="text-brand-text flex items-center gap-2 text-sm">
       <input
         type="checkbox"
         checked={checked}
         onChange={(event) => onChange(event.target.checked)}
-        className="size-4 accent-amber-400"
+        className="accent-brand-accent size-4"
       />
       {label}
     </label>

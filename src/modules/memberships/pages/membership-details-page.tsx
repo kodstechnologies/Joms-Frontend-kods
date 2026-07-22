@@ -32,11 +32,11 @@ export function MembershipDetailsPage() {
   const cancelMutation = useCancelSubscription()
 
   if (isLoading) {
-    return <p className="text-sm text-white/50">Loading membership details...</p>
+    return <p className="text-body-md text-muted">Loading membership details...</p>
   }
 
   if (!subscription) {
-    return <p className="text-sm text-rose-300">Membership not found.</p>
+    return <p className="text-body-md text-brand-danger">Membership not found.</p>
   }
 
   const upgradedByLabel =
@@ -54,34 +54,24 @@ export function MembershipDetailsPage() {
         <button
           type="button"
           onClick={() => navigateBackOrFallback(navigate, '/memberships/experts')}
-          className="mt-1 rounded-[8px] p-1.5 text-white transition-colors hover:bg-white/5"
+          className="radius-md text-brand-text mt-1 p-1.5 transition-colors hover:bg-white/5"
           aria-label="Go back"
         >
           <ArrowLeft className="size-5" strokeWidth={1.75} />
         </button>
         <div>
-          <h1 className="text-[24px] leading-8 font-semibold text-white">Membership Details</h1>
-          <p className="mt-1 text-[13px] leading-5 text-white/45">
-            Membership Management / <span className="text-white">View Details</span>
+          <h1 className="text-h2 text-brand-text font-semibold">Membership Details</h1>
+          <p className="text-body-md text-muted mt-1">
+            Membership Management / <span className="text-brand-text">View Details</span>
           </p>
         </div>
       </div>
 
       <div className="flex flex-1 flex-col gap-4">
-        {/* Current Membership Details — Figma: #141414, 10px radius, ~258px */}
-        <section className="rounded-[10px] bg-[#141414] px-6 pt-5 pb-6">
-          <h2 className="text-[16px] leading-6 font-semibold text-white">
-            Current Membership Details
-          </h2>
-          <p className="mt-0.5 text-[13px] leading-5 text-white/45">
-            Manage user&apos;s membership plans
-          </p>
+        <section className="radius-lg bg-brand-surface px-6 pt-5 pb-6">
+          <h2 className="text-body-lg text-brand-text font-semibold">Current Membership Details</h2>
+          <p className="text-body-md text-muted mt-0.5">Manage user&apos;s membership plans</p>
 
-          {/*
-            Figma grid:
-            Row 1: Plan ID | Plan Name | Billing Type | Purchased Price | Purchased On
-            Row 2: Next billing date | Payment method | View Invoice
-          */}
           <div className="mt-6 grid grid-cols-2 gap-x-8 gap-y-7 sm:grid-cols-3 lg:grid-cols-5">
             <DetailField label="Plan ID" value={subscription.subscriptionId} />
             <DetailField
@@ -89,7 +79,7 @@ export function MembershipDetailsPage() {
               value={
                 <span className="inline-flex items-center gap-1.5">
                   {subscription.planName}
-                  <ExternalLink className="size-3.5 text-white" strokeWidth={1.75} />
+                  <ExternalLink className="text-brand-text size-3.5" strokeWidth={1.75} />
                 </span>
               }
             />
@@ -111,7 +101,7 @@ export function MembershipDetailsPage() {
               <button
                 type="button"
                 onClick={() => toast.info('Invoice view coming soon')}
-                className="text-[14px] leading-5 font-medium text-white underline underline-offset-[3px] hover:text-white/80"
+                className="text-body-md-semibold text-brand-text hover:text-brand-text/80 underline underline-offset-[3px]"
               >
                 View Invoice
               </button>
@@ -119,12 +109,9 @@ export function MembershipDetailsPage() {
           </div>
         </section>
 
-        {/* More Details — Figma: #141414, 10px radius, ~170px */}
-        <section className="rounded-[10px] bg-[#141414] px-6 pt-5 pb-6">
-          <h2 className="text-[16px] leading-6 font-semibold text-white">More Details</h2>
-          <p className="mt-0.5 text-[13px] leading-5 text-white/45">
-            Get more insights about membership
-          </p>
+        <section className="radius-lg bg-brand-surface px-6 pt-5 pb-6">
+          <h2 className="text-body-lg text-brand-text font-semibold">More Details</h2>
+          <p className="text-body-md text-muted mt-0.5">Get more insights about membership</p>
 
           <div className="mt-6 grid grid-cols-2 gap-x-8 gap-y-7 sm:grid-cols-3 lg:grid-cols-5">
             <DetailField
@@ -136,7 +123,7 @@ export function MembershipDetailsPage() {
               value={
                 <span className="inline-flex items-center gap-1.5">
                   {subscription.partnerName}
-                  <ExternalLink className="size-3.5 text-white" strokeWidth={1.75} />
+                  <ExternalLink className="text-brand-text size-3.5" strokeWidth={1.75} />
                 </span>
               }
             />
@@ -151,7 +138,7 @@ export function MembershipDetailsPage() {
                 <button
                   type="button"
                   onClick={() => setHistoryOpen(true)}
-                  className="text-[14px] leading-5 font-medium text-white underline underline-offset-[3px] hover:text-white/80"
+                  className="text-body-md-semibold text-brand-text hover:text-brand-text/80 underline underline-offset-[3px]"
                 >
                   Check history
                 </button>
@@ -161,12 +148,11 @@ export function MembershipDetailsPage() {
         </section>
       </div>
 
-      {/* Bottom action bar — full-width #141414 strip, buttons right */}
-      <div className="mt-6 flex items-center justify-end gap-3 rounded-[10px] bg-[#141414] px-5 py-4">
+      <div className="radius-lg bg-brand-surface mt-6 flex items-center justify-end gap-3 px-5 py-4">
         <button
           type="button"
           onClick={() => setActionType('upgrade')}
-          className="inline-flex h-10 items-center gap-2 rounded-[8px] bg-[#00A63E] px-4 text-[13px] font-semibold text-white transition-colors hover:bg-[#00b344] active:bg-[#009338]"
+          className="ui-cta ui-cta-positive inline-flex h-10 items-center gap-2 px-4"
         >
           Upgrade Membership
           <CircleArrowUp className="size-5" strokeWidth={1.75} />
@@ -174,7 +160,7 @@ export function MembershipDetailsPage() {
         <button
           type="button"
           onClick={() => setActionType('downgrade')}
-          className="inline-flex h-10 items-center gap-2 rounded-[8px] bg-[#FFD29D] px-4 text-[13px] font-semibold text-black transition-colors hover:bg-[#ffe0b5] active:bg-[#f4c48a]"
+          className="ui-cta ui-cta-primary inline-flex h-10 items-center gap-2 px-4"
         >
           Downgrade Membership
           <CircleArrowDown className="size-5" strokeWidth={1.75} />
@@ -253,8 +239,8 @@ export function MembershipDetailsPage() {
 function DetailField({ label, value }: { label: string; value: ReactNode }) {
   return (
     <div className="min-w-0">
-      <p className="mb-1.5 text-[12px] leading-4 text-white/45">{label}</p>
-      <div className="text-[14px] leading-5 font-medium text-white">{value}</div>
+      <p className="text-body-sm text-muted mb-1.5">{label}</p>
+      <div className="text-body-md-semibold text-brand-text">{value}</div>
     </div>
   )
 }

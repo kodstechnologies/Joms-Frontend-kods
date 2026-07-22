@@ -20,12 +20,12 @@ const PAGE_SIZE = 10
 
 function getStatusClassName(status: FinanceVenueRow['status']) {
   if (status === 'Completed') {
-    return 'border-emerald-500/25 bg-emerald-500/10 text-emerald-400'
+    return 'border-brand-positive/25 bg-brand-positive/10 text-brand-positive'
   }
   if (status === 'Pending') {
-    return 'border-amber-500/25 bg-amber-500/10 text-amber-400'
+    return 'border-brand-accent/25 bg-brand-accent/10 text-brand-accent'
   }
-  return 'border-rose-500/25 bg-rose-500/10 text-rose-400'
+  return 'border-brand-danger/25 bg-brand-danger/10 text-brand-danger'
 }
 
 export function FinanceVenuesPage() {
@@ -129,8 +129,8 @@ export function FinanceVenuesPage() {
             Escalate
           </TableActionsItem>
           <TableActionsItem
-            icon={<Trash2 className="size-3.5 text-rose-500" aria-hidden="true" />}
-            className="text-rose-600 hover:bg-rose-50 hover:text-rose-700"
+            icon={<Trash2 className="text-brand-danger size-3.5" aria-hidden="true" />}
+            className="text-brand-danger hover:bg-brand-danger/10 hover:text-brand-danger"
             onClick={() => {
               setActiveDropdownId(null)
               toast.message('Delete coming soon')
@@ -179,20 +179,22 @@ export function FinanceVenuesPage() {
         accessorKey: 'venueId',
         header: 'Venue ID',
         cell: ({ row }) => (
-          <span className="font-mono text-[11px] text-white uppercase">{row.original.venueId}</span>
+          <span className="text-body-sm-semibold text-brand-text font-mono uppercase">
+            {row.original.venueId}
+          </span>
         ),
       },
       {
         accessorKey: 'name',
         header: 'Name',
-        cell: ({ row }) => <span className="font-medium text-white">{row.original.name}</span>,
+        cell: ({ row }) => <span className="text-brand-text font-medium">{row.original.name}</span>,
       },
       { accessorKey: 'owner', header: 'Owner' },
       {
         accessorKey: 'bookingId',
         header: 'Booking ID',
         cell: ({ row }) => (
-          <span className="font-mono text-[11px] text-white uppercase">
+          <span className="text-body-sm-semibold text-brand-text font-mono uppercase">
             {row.original.bookingId}
           </span>
         ),
@@ -204,7 +206,7 @@ export function FinanceVenuesPage() {
         cell: ({ row }) => (
           <span
             className={cn(
-              'inline-flex rounded-full border px-2.5 py-0.5 text-[11px] font-semibold',
+              'text-body-sm-semibold inline-flex rounded-full border px-2.5 py-0.5',
               getStatusClassName(row.original.status),
             )}
           >
@@ -215,7 +217,9 @@ export function FinanceVenuesPage() {
       {
         accessorKey: 'revenue',
         header: 'Revenue',
-        cell: ({ row }) => <span className="font-semibold text-white">{row.original.revenue}</span>,
+        cell: ({ row }) => (
+          <span className="text-brand-text font-semibold">{row.original.revenue}</span>
+        ),
       },
       {
         id: 'actions',
@@ -238,16 +242,16 @@ export function FinanceVenuesPage() {
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-[28px] font-bold tracking-tight text-white">Venues</h1>
-          <p className="mt-1 text-[13px] text-[#888888]">
+          <h1 className="text-h2 text-brand-text tracking-tight">Venues</h1>
+          <p className="text-body-md text-muted mt-1">
             Manage venue bookings, rentals, deposits, and payments
           </p>
-          <p className="mt-3 text-[12px] text-[#888888]">
-            <Link to="/finance/dashboard" className="transition-colors hover:text-white">
+          <p className="text-body-sm text-muted mt-3">
+            <Link to="/finance/dashboard" className="hover:text-brand-text transition-colors">
               Finance Management
             </Link>
             <span> / </span>
-            <span className="font-semibold text-white">Venues</span>
+            <span className="text-brand-text font-semibold">Venues</span>
           </p>
         </div>
         <Button onClick={() => toast.message('Metrics configuration coming soon')}>

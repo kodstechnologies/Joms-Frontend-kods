@@ -111,7 +111,7 @@ export function DataTable<TData>({
     <section
       className={cn(
         'overflow-hidden rounded-2xl border',
-        isCategoryTone ? 'border-[#242424] bg-[#181818]' : 'bg-brand-surface border-white/10',
+        isCategoryTone ? 'bg-brand-surface border-white/10' : 'bg-brand-surface border-white/10',
         className,
       )}
       aria-label={`${resourceLabel} table`}
@@ -122,7 +122,7 @@ export function DataTable<TData>({
             <Search
               className={cn(
                 'absolute top-1/2 left-3 size-3.5 -translate-y-1/2',
-                isCategoryTone ? 'text-[#666666]' : 'text-brand-muted',
+                isCategoryTone ? 'text-muted' : 'text-brand-muted',
               )}
               aria-hidden="true"
             />
@@ -133,10 +133,10 @@ export function DataTable<TData>({
               placeholder={searchPlaceholder}
               aria-label={`Search ${resourceLabel}`}
               className={cn(
-                'h-10 w-full rounded-xl border pr-3 pl-9 text-[12px] focus-visible:ring-1',
+                'text-body-sm h-10 w-full rounded-xl border pr-3 pl-9 focus-visible:ring-1',
                 isCategoryTone
-                  ? 'border-[#2A2A2A] bg-black text-white placeholder:text-[#666666] focus-visible:ring-[#FFC16B]/40'
-                  : 'text-brand-text focus-visible:ring-brand-accent/40 border-white/10 bg-[#0F0F0F] placeholder:text-[#666666]',
+                  ? 'bg-brand-bg placeholder:text-muted focus-visible:ring-brand-accent/40 border-white/10 text-white'
+                  : 'text-brand-text focus-visible:ring-brand-accent/40 bg-brand-bg placeholder:text-muted border-white/10',
               )}
             />
           </div>
@@ -150,9 +150,9 @@ export function DataTable<TData>({
                 onClick={onAdvancedFilter}
                 disabled={!onAdvancedFilter}
                 className={cn(
-                  'h-10 flex-1 gap-2 rounded-xl border bg-transparent px-4 text-[12px] font-semibold shadow-none sm:flex-none',
+                  'text-body-sm h-10 flex-1 gap-2 rounded-xl border bg-transparent px-4 font-semibold shadow-none sm:flex-none',
                   isCategoryTone
-                    ? 'border-white/25 text-white hover:border-[#FFC16B] hover:bg-white/5'
+                    ? 'hover:border-brand-accent border-white/25 text-white hover:bg-white/5'
                     : 'text-brand-text hover:border-brand-accent border-white/45 hover:bg-white/5',
                 )}
               >
@@ -163,16 +163,12 @@ export function DataTable<TData>({
             {showExport ? (
               <Button
                 type="button"
+                variant="primary"
                 onClick={onExport}
                 disabled={!onExport || isExporting}
-                className={cn(
-                  'h-10 flex-1 gap-2 rounded-xl px-4 text-[12px] font-bold shadow-none sm:flex-none',
-                  isCategoryTone
-                    ? 'bg-[#FFC16B] text-black hover:bg-[#F5C27B]'
-                    : 'bg-brand-accent text-brand-text-dark hover:bg-brand-gold-from',
-                )}
+                className="flex-1 gap-2 sm:flex-none"
               >
-                <Upload className="size-4" aria-hidden="true" />
+                <Upload className="icon-md" aria-hidden="true" />
                 {isExporting ? 'Exporting...' : 'Export Data'}
               </Button>
             ) : null}
@@ -182,8 +178,8 @@ export function DataTable<TData>({
         <div className="pb-4" aria-live="polite">
           <p
             className={cn(
-              'text-[12px] leading-none',
-              isCategoryTone ? 'text-[#888888]' : 'text-[#CCCCCC]',
+              'text-body-sm leading-none',
+              isCategoryTone ? 'text-muted' : 'text-muted',
             )}
           >
             Showing {firstItem}-{lastItem} of {pagination.totalItems} {resourceLabel}
@@ -192,18 +188,20 @@ export function DataTable<TData>({
       </div>
 
       <div className="overflow-x-auto px-4 sm:px-5">
-        <table className="w-full min-w-max border-collapse text-left text-[12px]">
+        <table className="text-body-sm w-full min-w-max border-collapse text-left">
           <thead
             className={cn(
               'border-y',
-              isCategoryTone ? 'border-[#242424] bg-[#181818]' : 'bg-brand-surface border-white/10',
+              isCategoryTone
+                ? 'bg-brand-surface border-white/10'
+                : 'bg-brand-surface border-white/10',
               stickyHeader && 'sticky top-0 z-10',
             )}
           >
             {table.getHeaderGroups().map((headerGroup) => (
               <tr
                 key={headerGroup.id}
-                className={cn('text-[11px]', isCategoryTone ? 'text-[#888888]' : 'text-brand-text')}
+                className={cn('text-body-sm', isCategoryTone ? 'text-muted' : 'text-brand-text')}
               >
                 {headerGroup.headers.map((header) => (
                   <th
@@ -229,9 +227,7 @@ export function DataTable<TData>({
               </tr>
             ))}
           </thead>
-          <tbody
-            className={cn('divide-y', isCategoryTone ? 'divide-[#242424]' : 'divide-white/10')}
-          >
+          <tbody className={cn('divide-y', isCategoryTone ? 'divide-white/10' : 'divide-white/10')}>
             {isLoading ? (
               Array.from({ length: loadingRowCount }, (_, rowIndex) => (
                 <tr key={rowIndex} className="animate-pulse">
@@ -286,7 +282,7 @@ export function DataTable<TData>({
       <div
         className={cn(
           'flex flex-col items-center justify-between gap-4 border-t px-4 py-4 sm:flex-row sm:px-5',
-          isCategoryTone ? 'border-[#242424]' : 'border-white/10',
+          isCategoryTone ? 'border-white/10' : 'border-white/10',
         )}
       >
         <Button
@@ -295,9 +291,9 @@ export function DataTable<TData>({
           onClick={() => changePage(currentPage - 1)}
           disabled={isLoading || currentPage <= 1}
           className={cn(
-            'rounded-brand-md h-8 w-full border bg-transparent px-3 text-[11px] font-medium shadow-none sm:w-auto',
+            'rounded-brand-md text-body-sm h-8 w-full border bg-transparent px-3 font-medium shadow-none sm:w-auto',
             isCategoryTone
-              ? 'border-white/25 text-white hover:border-[#FFC16B] hover:bg-white/5'
+              ? 'hover:border-brand-accent border-white/25 text-white hover:bg-white/5'
               : 'text-brand-text hover:border-brand-accent border-white/25 hover:bg-white/5',
           )}
         >
@@ -322,13 +318,13 @@ export function DataTable<TData>({
                   aria-current={currentPage === page ? 'page' : undefined}
                   aria-label={`Go to page ${page}`}
                   className={cn(
-                    'rounded-brand-md flex size-8 items-center justify-center border text-[11px] font-semibold transition-colors disabled:opacity-50',
+                    'rounded-brand-md text-body-sm flex size-8 items-center justify-center border font-semibold transition-colors disabled:opacity-50',
                     currentPage === page
                       ? isCategoryTone
-                        ? 'border-[#FFC16B] bg-[#FFC16B] text-black'
+                        ? 'border-brand-accent bg-brand-accent text-brand-text-dark'
                         : 'border-brand-accent bg-brand-accent text-brand-text-dark'
                       : isCategoryTone
-                        ? 'border-white/25 bg-transparent text-white hover:border-[#FFC16B] hover:bg-white/5'
+                        ? 'hover:border-brand-accent border-white/25 bg-transparent text-white hover:bg-white/5'
                         : 'text-brand-text hover:border-brand-accent border-white/25 bg-transparent hover:bg-white/5',
                   )}
                 >
@@ -345,9 +341,9 @@ export function DataTable<TData>({
           onClick={() => changePage(currentPage + 1)}
           disabled={isLoading || currentPage >= Math.max(pagination.totalPages, 1)}
           className={cn(
-            'rounded-brand-md h-8 w-full border bg-transparent px-3 text-[11px] font-medium shadow-none sm:w-auto',
+            'rounded-brand-md text-body-sm h-8 w-full border bg-transparent px-3 font-medium shadow-none sm:w-auto',
             isCategoryTone
-              ? 'border-white/25 text-white hover:border-[#FFC16B] hover:bg-white/5'
+              ? 'hover:border-brand-accent border-white/25 text-white hover:bg-white/5'
               : 'text-brand-text hover:border-brand-accent border-white/25 hover:bg-white/5',
           )}
         >

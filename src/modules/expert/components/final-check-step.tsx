@@ -63,19 +63,19 @@ export const FinalCheckStep = ({ venueData }: FinalCheckStepProps) => {
 
   return (
     <div className="mx-auto w-full max-w-[850px] space-y-6">
-      <div className="overflow-hidden rounded-xl border border-white/10 bg-[#151515]">
+      <div className="bg-brand-surface overflow-hidden rounded-xl border border-white/10">
         {coverSrc ? (
           <img src={coverSrc} alt="Venue" className="h-[420px] w-full object-cover" />
         ) : (
-          <div className="flex h-[420px] w-full items-center justify-center text-sm text-slate-600">
+          <div className="text-muted flex h-[420px] w-full items-center justify-center text-sm">
             No cover image uploaded
           </div>
         )}
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[1.4fr_0.8fr]">
-        <div className="rounded-xl border border-white/10 bg-[#151515] p-6">
-          <p className="mb-2 text-xs text-[#777]">{venueData.venueType || 'Indoor'}</p>
+        <div className="bg-brand-surface rounded-xl border border-white/10 p-6">
+          <p className="text-muted mb-2 text-xs">{venueData.venueType || 'Indoor'}</p>
 
           <h2 className="text-3xl font-bold text-white">{venueData.venueName || 'Venue Name'}</h2>
 
@@ -101,13 +101,13 @@ export const FinalCheckStep = ({ venueData }: FinalCheckStepProps) => {
             </span>
           </div>
 
-          <p className="mt-5 text-sm leading-6 text-slate-400">
+          <p className="text-muted mt-5 text-sm leading-6">
             {venueData.aboutVenue || 'No description available'}
           </p>
 
           <div className="mt-6 space-y-3">
             <div className="flex items-center gap-2">
-              <span className="font-semibold text-green-500">Available:</span>
+              <span className="text-brand-positive font-semibold">Available:</span>
               <span className="text-white">{summariseAvailability()}</span>
             </div>
 
@@ -127,7 +127,7 @@ export const FinalCheckStep = ({ venueData }: FinalCheckStepProps) => {
         </div>
 
         <div className="space-y-6">
-          <div className="rounded-xl border border-white/10 bg-[#151515] p-5">
+          <div className="bg-brand-surface rounded-xl border border-white/10 p-5">
             <h3 className="mb-3 text-sm font-semibold text-white">Location</h3>
 
             <div className="flex items-start gap-3 rounded-lg bg-black p-4">
@@ -136,19 +136,19 @@ export const FinalCheckStep = ({ venueData }: FinalCheckStepProps) => {
               <div>
                 <p className="text-sm text-white">{venueData.address}</p>
 
-                <p className="text-xs text-slate-500">
+                <p className="text-muted text-xs">
                   {venueData.landmark} {venueData.city}
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="rounded-xl border border-white/10 bg-[#151515] p-5">
+          <div className="bg-brand-surface rounded-xl border border-white/10 p-5">
             <h3 className="mb-4 text-lg font-semibold text-white">Pricing</h3>
 
             <div className="grid grid-cols-2 gap-3">
               <div className="rounded-lg bg-black p-4">
-                <p className="text-xs text-slate-500">Weekday</p>
+                <p className="text-muted text-xs">Weekday</p>
 
                 <p className="mt-1 text-lg font-semibold text-white">
                   ₹ {venueData.weekdayPrice || '-'}
@@ -156,7 +156,7 @@ export const FinalCheckStep = ({ venueData }: FinalCheckStepProps) => {
               </div>
 
               <div className="rounded-lg bg-black p-4">
-                <p className="text-xs text-slate-500">Weekend</p>
+                <p className="text-muted text-xs">Weekend</p>
 
                 <p className="mt-1 text-lg font-semibold text-white">
                   ₹ {venueData.weekendPrice || '-'}
@@ -168,10 +168,10 @@ export const FinalCheckStep = ({ venueData }: FinalCheckStepProps) => {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <div className="rounded-xl border border-white/10 bg-[#151515] p-6">
+        <div className="bg-brand-surface rounded-xl border border-white/10 p-6">
           <h3 className="mb-4 text-lg font-semibold text-white">About Venue</h3>
 
-          <p className="text-sm leading-6 text-slate-400">
+          <p className="text-muted text-sm leading-6">
             {venueData.aboutVenue || 'No venue description available'}
           </p>
 
@@ -188,7 +188,7 @@ export const FinalCheckStep = ({ venueData }: FinalCheckStepProps) => {
                     <div key={service.label} className="flex items-center gap-3">
                       <Icon className="text-brand-accent h-4 w-4" />
 
-                      <span className="text-sm text-slate-300">{service.label}</span>
+                      <span className="text-muted text-sm">{service.label}</span>
                     </div>
                   )
                 })}
@@ -196,14 +196,14 @@ export const FinalCheckStep = ({ venueData }: FinalCheckStepProps) => {
           </div>
         </div>
 
-        <div className="rounded-xl border border-white/10 bg-[#151515] p-6">
+        <div className="bg-brand-surface rounded-xl border border-white/10 p-6">
           <h3 className="mb-6 text-xl font-semibold text-white">Amenities</h3>
 
           <div className="grid grid-cols-3 gap-3">
             {venueData.amenities?.map((item, index) => (
               <div
                 key={index}
-                className="flex h-[42px] items-center justify-center gap-2 rounded-lg border border-[#2A2A2A] bg-[#0F0F0F] px-3"
+                className="bg-brand-bg flex h-[42px] items-center justify-center gap-2 rounded-lg border border-white/10 px-3"
               >
                 {item.image ? (
                   <img
@@ -228,7 +228,7 @@ export const FinalCheckStep = ({ venueData }: FinalCheckStepProps) => {
       </div>
 
       <div className="space-y-6">
-        <div className="rounded-xl border border-white/10 bg-[#151515] p-6">
+        <div className="bg-brand-surface rounded-xl border border-white/10 p-6">
           <div className="mb-5 flex items-center justify-between">
             <h3 className="text-lg font-semibold text-white">Gallery</h3>
 
@@ -246,21 +246,21 @@ export const FinalCheckStep = ({ venueData }: FinalCheckStepProps) => {
                 />
               ))
             ) : (
-              <p className="text-xs text-slate-600">No images uploaded.</p>
+              <p className="text-muted text-xs">No images uploaded.</p>
             )}
           </div>
         </div>
 
-        <div className="rounded-xl border border-white/10 bg-[#151515] p-6">
+        <div className="bg-brand-surface rounded-xl border border-white/10 p-6">
           <h3 className="mb-5 text-sm font-semibold text-white">Terms & Conditions</h3>
 
-          <div className="flex flex-wrap items-center gap-6 text-xs text-slate-300">
+          <div className="text-muted flex flex-wrap items-center gap-6 text-xs">
             {(venueData.terms || '')
               .split('\n')
               .filter(Boolean)
               .map((term: string, index: number) => (
                 <div key={index} className="flex items-center gap-2">
-                  <div className="h-2 w-2 rounded-full bg-green-500" />
+                  <div className="bg-brand-positive h-2 w-2 rounded-full" />
 
                   <span>{term}</span>
                 </div>
@@ -268,7 +268,7 @@ export const FinalCheckStep = ({ venueData }: FinalCheckStepProps) => {
           </div>
 
           <div className="mt-5 text-center">
-            <button type="button" className="text-xs text-slate-400 underline">
+            <button type="button" className="text-muted text-xs underline">
               View Full Terms & Conditions
             </button>
           </div>

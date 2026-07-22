@@ -48,23 +48,23 @@ function TaskCard({ task, onOpen }: { task: MyTask; onOpen: (task: MyTask) => vo
     <button
       type="button"
       onClick={() => onOpen(task)}
-      className="flex w-full items-start justify-between gap-4 rounded-xl border border-white/5 bg-[#151515] px-4 py-4 text-left transition-colors hover:border-[#FBC078]/30"
+      className="radius-lg bg-brand-surface hover:border-brand-accent/30 flex w-full items-start justify-between gap-4 border border-white/5 px-4 py-4 text-left transition-colors"
     >
       <div className="flex min-w-0 items-start gap-3">
-        <div className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-lg bg-black text-[#FBC078]">
+        <div className="bg-brand-bg text-brand-accent mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-lg">
           <ClipboardList className="size-4" />
         </div>
         <div className="min-w-0">
-          <p className="text-[14px] font-semibold text-white">{task.title}</p>
-          <p className="mt-1 text-[12px] leading-relaxed text-[#8D8D8D]">{task.description}</p>
+          <p className="text-body-md-semibold text-brand-text">{task.title}</p>
+          <p className="text-body-sm text-muted mt-1 leading-relaxed">{task.description}</p>
         </div>
       </div>
 
       <div className="flex shrink-0 flex-col items-end gap-2">
-        <span className="rounded-full bg-[#00B761]/15 px-2.5 py-1 text-[10px] font-semibold text-[#00B761]">
+        <span className="text-body-sm-semibold bg-brand-positive/15 text-brand-positive rounded-full px-2.5 py-1">
           {task.module}
         </span>
-        <span className="text-[11px] text-[#777]">{formatTaskTime(task.escalatedAt)}</span>
+        <span className="text-body-sm-semibold text-muted">{formatTaskTime(task.escalatedAt)}</span>
       </div>
     </button>
   )
@@ -86,8 +86,8 @@ function TaskSection({
   return (
     <section className="space-y-3">
       <div className="flex items-center gap-2">
-        <h2 className="text-[15px] font-semibold text-white">{title}</h2>
-        <span className="rounded-full bg-[#FBC078] px-2 py-0.5 text-[11px] font-bold text-black">
+        <h2 className="text-body-md-semibold text-brand-text">{title}</h2>
+        <span className="text-body-sm-semibold bg-brand-accent rounded-full px-2 py-0.5 font-bold text-black">
           {String(count).padStart(2, '0')}
         </span>
       </div>
@@ -121,8 +121,8 @@ export function MyTasksPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-[24px] font-bold text-white">My Tasks</h1>
-        <p className="mt-1 text-[13px] text-[#8D8D8D]">Manage all the task assigned to you.</p>
+        <h1 className="text-h2 text-brand-text font-bold">My Tasks</h1>
+        <p className="text-body-md text-muted mt-1">Manage all the task assigned to you.</p>
       </div>
 
       <div className="flex flex-wrap gap-6 border-b border-white/10">
@@ -132,10 +132,10 @@ export function MyTasksPage() {
             type="button"
             onClick={() => setActiveTab(tab.key)}
             className={cn(
-              'pb-3 text-[13px] font-semibold transition-colors',
+              'text-body-md-semibold pb-3 transition-colors',
               activeTab === tab.key
-                ? 'border-b-2 border-[#FBC078] text-[#FBC078]'
-                : 'text-[#8D8D8D] hover:text-white',
+                ? 'border-brand-accent text-brand-accent border-b-2'
+                : 'text-muted hover:text-brand-text',
             )}
           >
             {tab.label}
@@ -145,10 +145,10 @@ export function MyTasksPage() {
 
       {isLoading ? (
         <div className="flex h-[40vh] items-center justify-center">
-          <div className="size-9 animate-spin rounded-full border-4 border-[#FBC078] border-t-transparent" />
+          <div className="border-brand-accent size-9 animate-spin rounded-full border-4 border-t-transparent" />
         </div>
       ) : isError ? (
-        <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-[13px] text-red-200">
+        <div className="radius-lg border-brand-danger/30 bg-brand-danger/10 text-body-md text-brand-danger border px-4 py-3">
           Failed to load tasks.
         </div>
       ) : activeTab === 'all' ? (
@@ -165,9 +165,9 @@ export function MyTasksPage() {
           {!grouped?.todo?.length &&
           !grouped?.in_progress?.length &&
           !grouped?.completed?.length ? (
-            <div className="rounded-xl border border-white/5 bg-[#111111] px-4 py-8 text-center text-[13px] text-[#777]">
+            <div className="radius-lg bg-brand-surface text-body-md text-muted border border-white/5 px-4 py-8 text-center">
               No tasks assigned yet.
-              <p className="mt-2 text-[12px] text-[#555]">
+              <p className="text-body-sm text-muted mt-2">
                 Escalated expert applications assigned to you will appear here.
               </p>
             </div>
@@ -180,7 +180,7 @@ export function MyTasksPage() {
           ))}
         </div>
       ) : (
-        <div className="rounded-xl border border-white/5 bg-[#111111] px-4 py-8 text-center text-[13px] text-[#777]">
+        <div className="radius-lg bg-brand-surface text-body-md text-muted border border-white/5 px-4 py-8 text-center">
           No tasks in this section.
         </div>
       )}

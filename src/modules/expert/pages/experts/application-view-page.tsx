@@ -131,7 +131,7 @@ function StatusPill({
 }) {
   if (notSubmitted) {
     return (
-      <span className="rounded-md bg-white/5 px-3 py-1.5 text-[11px] font-semibold text-[#888]">
+      <span className="text-body-sm text-muted rounded-md bg-white/5 px-3 py-1.5 font-semibold">
         Not Submitted
       </span>
     )
@@ -139,12 +139,12 @@ function StatusPill({
 
   const className =
     status === 'APPROVED'
-      ? 'bg-emerald-500/15 text-emerald-400'
+      ? 'bg-brand-positive/15 text-brand-positive'
       : status === 'REJECTED'
-        ? 'bg-red-500/15 text-red-400'
+        ? 'bg-brand-danger/15 text-red-400'
         : 'bg-amber-500/15 text-amber-300'
   return (
-    <span className={cn('rounded-md px-3 py-1.5 text-[11px] font-semibold', className)}>
+    <span className={cn('text-body-sm rounded-md px-3 py-1.5 font-semibold', className)}>
       {displayValue(status || 'PENDING')}
     </span>
   )
@@ -160,7 +160,7 @@ function SectionCard({
   children: ReactNode
 }) {
   return (
-    <div className="rounded-xl border border-white/5 bg-[#111111] p-5">
+    <div className="bg-brand-bg rounded-xl border border-white/5 p-5">
       {title ? (
         <div className="mb-5 flex items-center gap-2 text-sm font-semibold text-white">
           {icon}
@@ -175,7 +175,7 @@ function SectionCard({
 function InfoField({ label, value }: { label: string; value?: string | number | null }) {
   return (
     <div>
-      <p className="text-[11px] font-medium text-[#777777]">{label}</p>
+      <p className="text-body-sm text-muted font-medium">{label}</p>
       <div className="mt-1 text-[13px] font-semibold text-white">{displayValue(value)}</div>
     </div>
   )
@@ -195,6 +195,7 @@ export function ExpertApplicationViewPage() {
   const [rejectionReason, setRejectionReason] = useState('')
   const [adminNotes, setAdminNotes] = useState('')
   const [selectedEscalationOption, setSelectedEscalationOption] = useState('')
+  const [confirmationChecked, setConfirmationChecked] = useState(false)
   const [viewerDocument, setViewerDocument] = useState<ViewerDocument | null>(null)
 
   const { data, isLoading, isError, error } = useExpertApplicationView(id)
@@ -255,6 +256,7 @@ export function ExpertApplicationViewPage() {
     setRejectionReason('')
     setAdminNotes('')
     setSelectedEscalationOption('')
+    setConfirmationChecked(false)
     setModalOpen(true)
   }
 
@@ -301,6 +303,10 @@ export function ExpertApplicationViewPage() {
     if (isRejectFlow) {
       if (selectedReasons.length === 0) return toast.error('Please select at least one reason.')
       if (!rejectionReason.trim()) return toast.error('Please provide a rejection reason.')
+    }
+
+    if (modalVariant === 'approve' && !confirmationChecked) {
+      return toast.error('Please confirm that all details have been reviewed.')
     }
 
     if (!adminNotes.trim()) {
@@ -372,11 +378,10 @@ export function ExpertApplicationViewPage() {
   const escalateDisabled = activeDecisionStatus === 'APPROVED' || escalateApplication.isPending
 
   const modalTitle = useMemo(() => {
-    const target = modalTarget === 'banking' ? 'Banking' : 'KYC'
-    if (modalVariant === 'approve') return `Approve ${target}`
+    if (modalVariant === 'approve') return 'Confirm Application'
     if (modalVariant === 'requestChanges') return 'Request Changes'
     if (modalVariant === 'escalate') return 'Escalate Application'
-    return `Reject ${target}`
+    return `Reject ${modalTarget === 'banking' ? 'Banking' : 'KYC'}`
   }, [modalTarget, modalVariant])
 
   const isRejectFlow = modalVariant === 'reject' || modalVariant === 'requestChanges'
@@ -424,19 +429,19 @@ export function ExpertApplicationViewPage() {
         <button
           type="button"
           onClick={() => navigateBackOrFallback(navigate, '/experts/management')}
-          className="group font-heading hover:text-brand-accent flex w-fit items-center gap-2 text-[20px] font-bold text-white transition-colors"
+          className="group font-heading hover:text-brand-accent text-h3 flex w-fit items-center gap-2 font-bold text-white transition-colors"
         >
           <ArrowLeft className="size-5" />
           <span>Application View</span>
         </button>
-        <div className="rounded-lg border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+        <div className="bg-brand-danger/10 rounded-lg border border-red-500/40 px-4 py-3 text-sm text-red-400">
           {status ? `[${status}] ` : ''}
           {message || 'Unable to load application view.'}
         </div>
         {status === 404 && (
-          <p className="text-[12px] text-[#888]">
-            Partner ID used: <span className="font-mono text-[#ccc]">{id}</span>. The API returns
-            404 when the partner is not found, or when KYC or banking records are missing for this
+          <p className="text-body-sm text-muted">
+            Partner ID used: <span className="text-muted font-mono">{id}</span>. The API returns 404
+            when the partner is not found, or when KYC or banking records are missing for this
             expert (partial data is not returned).
           </p>
         )}
@@ -495,43 +500,43 @@ export function ExpertApplicationViewPage() {
         <button
           type="button"
           onClick={() => navigateBackOrFallback(navigate, '/experts/management')}
-          className="group font-heading hover:text-brand-accent flex w-fit items-center gap-2 text-[20px] font-bold tracking-tight text-white transition-colors"
+          className="group font-heading hover:text-brand-accent text-h3 flex w-fit items-center gap-2 font-bold tracking-tight text-white transition-colors"
         >
           <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
           <span>Application View</span>
         </button>
-        <div className="flex items-center gap-1.5 pl-7 text-[12px] font-medium text-[#777777]">
+        <div className="text-body-sm text-muted flex items-center gap-1.5 pl-7 font-medium">
           <button
             type="button"
             onClick={() => navigateBackOrFallback(navigate, '/experts/management')}
-            className="transition-colors hover:text-white"
+            className="hover:text-brand-text transition-colors"
           >
             Expert management
           </button>
-          <span className="text-[#333333]">/</span>
+          <span className="text-muted">/</span>
           <span className="font-bold text-white">{displayValue(application.expert?.fullname)}</span>
         </div>
       </header>
 
-      <div className="rounded-xl border border-white/5 bg-[#111111] p-6">
+      <div className="bg-brand-bg rounded-xl border border-white/5 p-6">
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div>
             <h2 className="text-2xl font-bold text-white">
               {displayValue(application.expert?.fullname)}
             </h2>
-            <p className="mt-1 text-[12px] text-[#777]">
+            <p className="text-body-sm text-muted mt-1">
               Created {formatDateTime(application.expert?.createdAt)}
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <div className="flex items-center gap-2">
-              <span className="text-[10px] font-medium tracking-wide text-[#666] uppercase">
+              <span className="text-muted text-[10px] font-medium tracking-wide uppercase">
                 KYC
               </span>
               <StatusPill status={displayKycStatus} notSubmitted={!isKycSubmitted} />
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-[10px] font-medium tracking-wide text-[#666] uppercase">
+              <span className="text-muted text-[10px] font-medium tracking-wide uppercase">
                 Banking
               </span>
               <StatusPill status={banking?.status} notSubmitted={!isBankingSubmitted} />
@@ -541,19 +546,19 @@ export function ExpertApplicationViewPage() {
 
         <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-3">
           <div className="rounded-lg border border-white/5 bg-black p-4">
-            <p className="text-[11px] text-[#777]">Expert ID</p>
+            <p className="text-body-sm text-muted">Expert ID</p>
             <p className="mt-1 font-mono text-[13px] font-semibold text-white">
               {formatApplicationExpertId(application.expert?._id || id)}
             </p>
           </div>
           <div className="rounded-lg border border-white/5 bg-black p-4">
-            <p className="text-[11px] text-[#777]">Submitted</p>
+            <p className="text-body-sm text-muted">Submitted</p>
             <p className="mt-1 text-[13px] font-semibold text-white">
               {formatDateTime(application.expert?.createdAt)}
             </p>
           </div>
           <div className="rounded-lg border border-white/5 bg-black p-4">
-            <p className="text-[11px] text-[#777]">Last Updated</p>
+            <p className="text-body-sm text-muted">Last Updated</p>
             <p className="mt-1 text-[13px] font-semibold text-white">
               {formatDateTime(application.expert?.updatedAt)}
             </p>
@@ -561,7 +566,7 @@ export function ExpertApplicationViewPage() {
         </div>
       </div>
 
-      <div className="flex w-full items-center rounded-xl bg-[#1A1A1A]">
+      <div className="bg-brand-surface flex w-full items-center rounded-xl">
         {TABS.map((tab) => {
           const isActive = activeTab === tab.key
 
@@ -634,14 +639,14 @@ export function ExpertApplicationViewPage() {
             >
               <div className="space-y-5">
                 <div className="flex items-center justify-between">
-                  <span className="text-[12px] font-medium text-[#bbb]">
+                  <span className="text-body-sm text-muted font-medium">
                     Filed last 2 years IT Returns
                   </span>
                   <span
                     className={cn(
-                      'inline-flex rounded-md px-2.5 py-1 text-[11px] font-bold',
+                      'text-body-sm inline-flex rounded-md px-2.5 py-1 font-bold',
                       kyc?.itReturnsFiled
-                        ? 'bg-emerald-500/15 text-emerald-400'
+                        ? 'bg-brand-positive/15 text-brand-positive'
                         : 'bg-amber-500/15 text-amber-300',
                     )}
                   >
@@ -649,8 +654,8 @@ export function ExpertApplicationViewPage() {
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-[12px] font-medium text-[#bbb]">Undertaking Signed</span>
-                  <span className="inline-flex rounded-md bg-emerald-500/15 px-2.5 py-1 text-[11px] font-bold text-emerald-400">
+                  <span className="text-body-sm text-muted font-medium">Undertaking Signed</span>
+                  <span className="bg-brand-positive/15 text-body-sm text-brand-positive inline-flex rounded-md px-2.5 py-1 font-bold">
                     Yes
                   </span>
                 </div>
@@ -778,27 +783,27 @@ export function ExpertApplicationViewPage() {
           title="Application Notes"
           icon={<History className="text-brand-accent size-4" />}
         >
-          <div className="rounded-lg border border-white/5 bg-black p-4 text-[12px] whitespace-pre-wrap text-[#777]">
+          <div className="text-body-sm text-muted rounded-lg border border-white/5 bg-black p-4 whitespace-pre-wrap">
             {applicationNotes}
           </div>
         </SectionCard>
 
         <SectionCard>
           <DecisionControlsHeader className="mb-4" />
-          <p className="mb-3 text-[11px] font-medium text-[#888]">
+          <p className="text-body-sm text-muted mb-3 font-medium">
             Reviewing:{' '}
             <span className="text-white">
               {decisionTargetForTab === 'banking' ? 'Banking Details' : 'KYC Details'}
             </span>
           </p>
           {!activeSectionSubmitted && (
-            <p className="mb-4 rounded-md border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-[11px] font-medium text-amber-200">
+            <p className="text-body-sm mb-4 rounded-md border border-amber-500/20 bg-amber-500/10 px-3 py-2 font-medium text-amber-200">
               {decisionTargetForTab === 'banking' ? 'Banking' : 'KYC'} is not submitted by partner.
               Approve and reject actions are unavailable until submission.
             </p>
           )}
           {activeSectionSubmitted && activeDecisionStatus !== 'PENDING' && (
-            <p className="mb-4 rounded-md border border-white/5 bg-black px-3 py-2 text-[11px] font-medium text-[#999]">
+            <p className="text-body-sm text-muted mb-4 rounded-md border border-white/5 bg-black px-3 py-2 font-medium">
               {decisionTargetForTab === 'banking' ? 'Banking' : 'KYC'} is already{' '}
               {String(activeDecisionStatus).toLowerCase()}.
             </p>
@@ -825,7 +830,7 @@ export function ExpertApplicationViewPage() {
           modalVariant === 'escalate'
             ? 'Are you sure you want to escalate this application? This post will be reviewed by the selected parties.'
             : modalVariant === 'approve'
-              ? `Are you sure you want to approve this ${modalTarget === 'banking' ? 'banking' : 'KYC'} section?`
+              ? 'Are you sure you want to approve this application? The applicant will be notified via email.'
               : modalVariant === 'requestChanges'
                 ? 'Are you sure you want to Request Changes to this application? The applicant will be notified via email.'
                 : `Are you sure you want to reject this ${modalTarget === 'banking' ? 'banking' : 'KYC'} section?`
@@ -834,7 +839,7 @@ export function ExpertApplicationViewPage() {
           modalVariant === 'escalate'
             ? 'Escalate'
             : modalVariant === 'approve'
-              ? 'Approve'
+              ? 'Confirm Approval'
               : modalVariant === 'requestChanges'
                 ? 'Request Changes'
                 : 'Reject'
@@ -850,6 +855,13 @@ export function ExpertApplicationViewPage() {
         onReasonToggle={toggleReason}
         reason={isRejectFlow ? rejectionReason : ''}
         onReasonChange={isRejectFlow ? setRejectionReason : undefined}
+        confirmationLabel={
+          modalVariant === 'approve'
+            ? 'By approving this application, you confirm that all details have been reviewed.'
+            : undefined
+        }
+        confirmationChecked={confirmationChecked}
+        onConfirmationChange={modalVariant === 'approve' ? setConfirmationChecked : undefined}
         escalationOptions={isEscalateFlow ? escalationOptions : []}
         selectedEscalationOption={isEscalateFlow ? selectedEscalationOption : undefined}
         onEscalationOptionChange={isEscalateFlow ? setSelectedEscalationOption : undefined}

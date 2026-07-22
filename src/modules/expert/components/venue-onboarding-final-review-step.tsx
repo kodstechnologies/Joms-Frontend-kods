@@ -19,7 +19,7 @@ type Props = {
 function ReviewRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-0.5 border-b border-white/5 py-3 sm:flex-row sm:items-center sm:justify-between">
-      <span className="text-xs text-[#777]">{label}</span>
+      <span className="text-muted text-xs">{label}</span>
       <span className="text-sm font-medium text-white">{value || '-'}</span>
     </div>
   )
@@ -53,11 +53,11 @@ function DocumentPreview({
   fileName?: string
 }) {
   return (
-    <div className="flex h-24 flex-col items-center justify-center rounded-md border border-dashed border-[#444] bg-black p-2">
-      <p className="mb-1 text-[10px] text-[#777]">{label}</p>
+    <div className="flex h-24 flex-col items-center justify-center rounded-md border border-dashed border-white/20 bg-black p-2">
+      <p className="text-muted mb-1 text-[10px]">{label}</p>
       {url ? (
         <div className="flex w-full items-center justify-between gap-2 px-1">
-          <span className="truncate text-xs text-[#aaa]">{fileName || 'Uploaded'}</span>
+          <span className="text-muted truncate text-xs">{fileName || 'Uploaded'}</span>
           <a
             href={url}
             target="_blank"
@@ -68,7 +68,7 @@ function DocumentPreview({
           </a>
         </div>
       ) : (
-        <span className="text-xs text-[#555]">Not uploaded</span>
+        <span className="text-muted text-xs">Not uploaded</span>
       )}
     </div>
   )
@@ -165,10 +165,10 @@ export const VenueOnboardingFinalReviewStep = ({
 
   return (
     <div className="mx-auto w-full max-w-[850px] space-y-6">
-      <div className="overflow-hidden rounded-lg border border-white/5 bg-[#151515]">
+      <div className="bg-brand-surface overflow-hidden rounded-lg border border-white/5">
         <div className="relative h-40 bg-gradient-to-r from-cyan-900 to-blue-800">
           {coverUrl && <img src={coverUrl} alt="Cover" className="h-full w-full object-cover" />}
-          <div className="absolute -bottom-10 left-6 size-20 overflow-hidden rounded-full border-4 border-[#151515] bg-slate-600">
+          <div className="border-brand-surface absolute -bottom-10 left-6 size-20 overflow-hidden rounded-full border-4 bg-slate-600">
             {profileUrl ? (
               <img src={profileUrl} alt="Profile" className="h-full w-full object-cover" />
             ) : null}
@@ -177,11 +177,11 @@ export const VenueOnboardingFinalReviewStep = ({
 
         <div className="px-6 pt-14 pb-6">
           <h2 className="text-sm font-bold text-white">Review & Create Account</h2>
-          <p className="mt-1 text-xs text-[#777777]">Final verification before account creation</p>
+          <p className="text-muted mt-1 text-xs">Final verification before account creation</p>
         </div>
       </div>
 
-      <div className="rounded-lg border border-white/5 bg-[#151515] p-6">
+      <div className="bg-brand-surface rounded-lg border border-white/5 p-6">
         <h3 className="text-brand-accent mb-2 text-xs font-bold tracking-wide uppercase">
           Basic Profile Information
         </h3>
@@ -195,7 +195,7 @@ export const VenueOnboardingFinalReviewStep = ({
         />
       </div>
 
-      <div className="rounded-lg border border-white/5 bg-[#151515] p-6">
+      <div className="bg-brand-surface rounded-lg border border-white/5 p-6">
         <h3 className="text-brand-accent mb-2 text-xs font-bold tracking-wide uppercase">
           Venue Location Details
         </h3>
@@ -204,7 +204,7 @@ export const VenueOnboardingFinalReviewStep = ({
         <ReviewRow label="Pin code" value={venue?.location?.pincode || formData.pincode} />
       </div>
 
-      <div className="rounded-lg border border-white/5 bg-[#151515] p-6">
+      <div className="bg-brand-surface rounded-lg border border-white/5 p-6">
         <h3 className="text-brand-accent mb-2 text-xs font-bold tracking-wide uppercase">
           KYC Details
         </h3>
@@ -233,26 +233,26 @@ export const VenueOnboardingFinalReviewStep = ({
         />
       </div>
 
-      <div className="rounded-lg border border-white/5 bg-[#151515] p-6">
+      <div className="bg-brand-surface rounded-lg border border-white/5 p-6">
         <h3 className="mb-3 text-xs font-bold text-white">Venue Images</h3>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           {(venueImages.length > 0 ? venueImages : [null, null, null]).map((url, index) => (
             <div
               key={url ?? `placeholder-${index}`}
-              className="relative flex h-20 items-center justify-center overflow-hidden rounded-md border border-dashed border-[#444] bg-black"
+              className="relative flex h-20 items-center justify-center overflow-hidden rounded-md border border-dashed border-white/20 bg-black"
             >
               {url ? (
                 <img src={url} alt="" className="h-full w-full object-cover" />
               ) : (
-                <span className="text-xs text-[#555]">Uploaded</span>
+                <span className="text-muted text-xs">Uploaded</span>
               )}
-              <Trash2 className="absolute top-2 right-2 size-4 text-[#666]" />
+              <Trash2 className="text-muted absolute top-2 right-2 size-4" />
             </div>
           ))}
         </div>
       </div>
 
-      <div className="rounded-lg border border-white/5 bg-[#151515] p-6">
+      <div className="bg-brand-surface rounded-lg border border-white/5 p-6">
         <h3 className="mb-3 text-xs font-bold text-white">
           Business identity verification documents
         </h3>
@@ -288,7 +288,7 @@ export const VenueOnboardingFinalReviewStep = ({
       </div>
 
       {otherCertificatePreviews.length > 0 && (
-        <div className="rounded-lg border border-white/5 bg-[#151515] p-6">
+        <div className="bg-brand-surface rounded-lg border border-white/5 p-6">
           <h3 className="mb-3 text-xs font-bold text-white">Other Documents</h3>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             {otherCertificatePreviews.map((doc) => (
@@ -303,14 +303,14 @@ export const VenueOnboardingFinalReviewStep = ({
         </div>
       )}
 
-      <div className="rounded-lg border border-white/5 bg-[#151515] p-6">
+      <div className="bg-brand-surface rounded-lg border border-white/5 p-6">
         <label className="mb-2 block text-xs font-medium text-white">Internal notes *</label>
         <textarea
           rows={4}
           value={formData.internalNotes}
           onChange={(e) => setFormData((prev) => ({ ...prev, internalNotes: e.target.value }))}
           placeholder="Add admin verification notes..."
-          className="focus:border-brand-accent w-full resize-none rounded-md border border-white/10 bg-black p-3 text-sm text-white outline-none"
+          className="ui-textarea"
         />
 
         <label className="mt-4 flex cursor-pointer items-start gap-3">
@@ -320,7 +320,7 @@ export const VenueOnboardingFinalReviewStep = ({
             onChange={(e) => setFormData((prev) => ({ ...prev, isVerified: e.target.checked }))}
             className="accent-brand-accent mt-0.5 size-4 rounded border-white/20"
           />
-          <span className="text-xs text-[#aaa]">
+          <span className="text-muted text-xs">
             I confirm that the details in this profile are being verified thoroughly.
           </span>
         </label>

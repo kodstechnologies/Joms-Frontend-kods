@@ -47,7 +47,7 @@ export function VenueProfileAnalyticsPage() {
             <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
             <span>Profile Analytics</span>
           </button>
-          <div className="mt-2 flex items-center gap-1.5 pl-7 text-[12px] font-medium text-[#777777]">
+          <div className="text-body-sm-medium text-muted mt-2 flex items-center gap-1.5 pl-7">
             <span>{venueName}</span>
             <span className="text-[#333333]">/</span>
             <span className="font-bold text-white">Profile Analytics</span>

@@ -41,7 +41,7 @@ const RATINGS = [
 
 function Card({ children, className = '' }: { children: React.ReactNode; className?: string }) {
   return (
-    <section className={`rounded-lg border border-white/5 bg-[#111111] p-5 ${className}`}>
+    <section className={`rounded-brand-lg bg-brand-surface border border-white/5 p-5 ${className}`}>
       {children}
     </section>
   )
@@ -63,16 +63,16 @@ export function SpaceAnalyticsPage() {
                 `/venues/management/profile/${venueId}/space/${spaceId}`,
               )
             }
-            className="group font-heading hover:text-brand-accent flex w-fit items-center gap-2 text-[20px] font-bold tracking-tight text-white transition-colors"
+            className="group font-heading hover:text-brand-accent text-h3 flex w-fit items-center gap-2 font-bold tracking-tight text-white transition-colors"
           >
             <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
             <span>View Analytics</span>
           </button>
-          <div className="mt-2 flex items-center gap-1.5 pl-7 text-[12px] font-medium text-[#777777]">
+          <div className="text-body-sm text-muted mt-2 flex items-center gap-1.5 pl-7 font-medium">
             <span>Venue Management</span>
-            <span className="text-[#333333]">/</span>
+            <span className="text-muted/40">/</span>
             <span>Venue Details</span>
-            <span className="text-[#333333]">/</span>
+            <span className="text-muted/40">/</span>
             <span className="font-bold text-white">View Analytics</span>
           </div>
         </div>
@@ -89,13 +89,13 @@ export function SpaceAnalyticsPage() {
       </header>
 
       <div>
-        <h2 className="mb-3 text-[13px] font-bold text-white">Overview</h2>
+        <h2 className="text-body-md mb-3 font-bold text-white">Overview</h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {OVERVIEW.map((item) => (
             <Card key={item.label}>
-              <p className="text-[11px] text-[#999]">{item.label}</p>
+              <p className="text-body-sm text-muted">{item.label}</p>
               <p className="mt-2 text-xl font-bold text-white">{item.value}</p>
-              <p className="mt-3 text-[11px] text-[#777]">{item.note}</p>
+              <p className="text-body-sm text-muted mt-3">{item.note}</p>
             </Card>
           ))}
         </div>
@@ -103,7 +103,7 @@ export function SpaceAnalyticsPage() {
 
       <Card>
         <div className="mb-5 flex items-center justify-between">
-          <h2 className="text-[13px] font-bold text-white">Cash Flow Analysis</h2>
+          <h2 className="text-body-md font-bold text-white">Cash Flow Analysis</h2>
           <RefreshCw className="size-4 text-white" />
         </div>
         <div className="h-72">
@@ -112,33 +112,37 @@ export function SpaceAnalyticsPage() {
               <CartesianGrid stroke="#2a2a2a" strokeDasharray="4 4" vertical />
               <XAxis
                 dataKey="month"
-                tick={{ fill: '#999', fontSize: 11 }}
+                tick={{ fill: 'var(--brand-muted)', fontSize: 11 }}
                 axisLine={false}
                 tickLine={false}
               />
-              <YAxis tick={{ fill: '#999', fontSize: 11 }} axisLine={false} tickLine={false} />
+              <YAxis
+                tick={{ fill: 'var(--brand-muted)', fontSize: 11 }}
+                axisLine={false}
+                tickLine={false}
+              />
               <Tooltip
                 cursor={{ fill: 'rgba(255,255,255,0.04)' }}
                 contentStyle={{ background: '#fff', border: 0, borderRadius: 6, color: '#111' }}
               />
-              <Bar dataKey="in" fill="#00A84F" radius={[2, 2, 0, 0]} />
-              <Bar dataKey="out" fill="#E31B23" radius={[2, 2, 0, 0]} />
-              <Bar dataKey="net" fill="#0F6CFF" radius={[2, 2, 0, 0]} />
+              <Bar dataKey="in" fill="var(--brand-positive)" radius={[2, 2, 0, 0]} />
+              <Bar dataKey="out" fill="var(--brand-danger)" radius={[2, 2, 0, 0]} />
+              <Bar dataKey="net" fill="var(--brand-action)" radius={[2, 2, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
-        <div className="mt-4 flex justify-center gap-6 text-[11px]">
-          <span className="text-emerald-400">+ Cash Inflow</span>
-          <span className="text-red-400">+ Cash Outflow</span>
-          <span className="text-blue-400">+ Net Cash flow</span>
+        <div className="text-body-sm mt-4 flex justify-center gap-6">
+          <span className="text-brand-positive">+ Cash Inflow</span>
+          <span className="text-brand-danger">+ Cash Outflow</span>
+          <span className="text-brand-action">+ Net Cash flow</span>
         </div>
       </Card>
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
         <Card>
-          <h2 className="mb-4 text-[13px] font-bold text-white">Time Slot Performance</h2>
+          <h2 className="text-body-md mb-4 font-bold text-white">Time Slot Performance</h2>
           <div className="space-y-1">
-            <div className="grid grid-cols-3 border-b border-white/10 pb-3 text-[11px] font-semibold text-white">
+            <div className="text-body-sm grid grid-cols-3 border-b border-white/10 pb-3 font-semibold text-white">
               <span>Time Slot</span>
               <span>Bookings</span>
               <span>Revenue</span>
@@ -146,7 +150,7 @@ export function SpaceAnalyticsPage() {
             {TIME_SLOTS.map((row) => (
               <div
                 key={row.slot}
-                className="grid grid-cols-3 border-b border-white/10 py-3 text-[12px] text-white last:border-0"
+                className="text-body-sm grid grid-cols-3 border-b border-white/10 py-3 text-white last:border-0"
               >
                 <span>{row.slot}</span>
                 <span>{row.bookings}</span>
@@ -154,21 +158,21 @@ export function SpaceAnalyticsPage() {
               </div>
             ))}
           </div>
-          <div className="mt-4 rounded-md bg-black px-3 py-2 text-[11px] font-semibold text-white">
+          <div className="text-body-sm mt-4 rounded-md bg-black px-3 py-2 font-semibold text-white">
             6PM-10PM generates 38% of total revenue
           </div>
         </Card>
 
         <Card>
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-[13px] font-bold text-white">Rating Distribution</h2>
+            <h2 className="text-body-md font-bold text-white">Rating Distribution</h2>
             <RefreshCw className="size-4 text-white" />
           </div>
           <div className="space-y-3">
             {RATINGS.map((rating) => (
               <div
                 key={rating.stars}
-                className="grid grid-cols-[32px_1fr_36px] items-center gap-3 text-[11px] text-white"
+                className="text-body-sm grid grid-cols-[32px_1fr_36px] items-center gap-3 text-white"
               >
                 <span className="inline-flex items-center gap-1">
                   {rating.stars}
@@ -188,13 +192,13 @@ export function SpaceAnalyticsPage() {
       </div>
 
       <Card className="max-w-[520px]">
-        <h2 className="mb-4 text-[13px] font-bold text-white">Cancellation Analytics</h2>
+        <h2 className="text-body-md mb-4 font-bold text-white">Cancellation Analytics</h2>
         <div className="space-y-3">
-          <div className="flex items-center justify-between rounded-md bg-black px-3 py-3 text-[12px] text-[#999]">
+          <div className="text-body-sm text-muted flex items-center justify-between rounded-md bg-black px-3 py-3">
             <span>Total Cancellations</span>
             <span className="font-bold text-white">30</span>
           </div>
-          <div className="flex items-center justify-between rounded-md bg-black px-3 py-3 text-[12px] text-[#999]">
+          <div className="text-body-sm text-muted flex items-center justify-between rounded-md bg-black px-3 py-3">
             <span>Revenue Lost</span>
             <span className="font-bold text-white">₹2,10,000</span>
           </div>

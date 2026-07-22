@@ -278,8 +278,8 @@ export const ConsultationViewPage = () => {
   if (isLoading) {
     return (
       <div className="flex h-96 w-full flex-col items-center justify-center gap-4">
-        <Loader2 className="size-10 animate-spin text-amber-400" />
-        <p className="text-sm font-medium text-slate-400">Fetching consultation information...</p>
+        <Loader2 className="text-brand-accent size-10 animate-spin" />
+        <p className="text-muted text-sm font-medium">Fetching consultation information...</p>
       </div>
     )
   }
@@ -287,17 +287,17 @@ export const ConsultationViewPage = () => {
   if (error || !consultation) {
     return (
       <div className="flex h-96 w-full flex-col items-center justify-center gap-4 px-4 text-center">
-        <div className="rounded-full bg-red-500/10 p-3 text-red-500">
+        <div className="bg-brand-danger/10 rounded-full p-3 text-red-500">
           <Info className="size-10" />
         </div>
         <h3 className="text-lg font-semibold text-white">Consultation Not Found</h3>
-        <p className="max-w-md text-sm text-slate-400">
+        <p className="text-muted max-w-md text-sm">
           {consultationResponse?.message ||
             'The consultation details could not be loaded. Please ensure the consultation ID is correct.'}
         </p>
         <Button
           variant="ghost"
-          className="mt-4 gap-2 text-amber-400 hover:bg-transparent hover:text-amber-300"
+          className="text-brand-accent mt-4 gap-2 hover:bg-transparent hover:text-amber-300"
           onClick={handleBack}
         >
           <ArrowLeft className="size-4" /> Go back
@@ -402,31 +402,31 @@ export const ConsultationViewPage = () => {
         <button
           type="button"
           onClick={handleBack}
-          className="group font-heading hover:text-brand-accent flex w-fit items-center gap-2 text-[20px] font-bold tracking-tight text-white transition-colors"
+          className="group font-heading hover:text-brand-accent text-h3 flex w-fit items-center gap-2 font-bold tracking-tight text-white transition-colors"
         >
           <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
           <span>Consultation View</span>
         </button>
 
-        <div className="flex items-center gap-1.5 pl-7 text-[12px] font-medium text-[#777777]">
+        <div className="text-body-sm text-muted flex items-center gap-1.5 pl-7 font-medium">
           {fromExpert ? (
             <>
               <button
                 type="button"
                 onClick={() => navigateBackOrFallback(navigate, '/experts/management')}
-                className="transition-colors hover:text-white"
+                className="hover:text-brand-text transition-colors"
               >
                 All Experts
               </button>
-              <span className="text-[#333333]">/</span>
+              <span className="text-muted">/</span>
               <button
                 type="button"
                 onClick={() => expertId && navigate(`/experts/management/profile/${expertId}`)}
-                className="transition-colors hover:text-white"
+                className="hover:text-brand-text transition-colors"
               >
                 {expertName}
               </button>
-              <span className="text-[#333333]">/</span>
+              <span className="text-muted">/</span>
               <span className="font-bold text-white">Consultation View</span>
             </>
           ) : (
@@ -434,32 +434,32 @@ export const ConsultationViewPage = () => {
               <button
                 type="button"
                 onClick={() => navigateBackOrFallback(navigate, '/services/management')}
-                className="transition-colors hover:text-white"
+                className="hover:text-brand-text transition-colors"
               >
                 Service management
               </button>
-              <span className="text-[#333333]">/</span>
+              <span className="text-muted">/</span>
               <span>Service View</span>
-              <span className="text-[#333333]">/</span>
+              <span className="text-muted">/</span>
               <span className="font-bold text-white">{expertName}</span>
             </>
           )}
         </div>
       </header>
 
-      <h2 className="text-[14px] font-semibold text-white">Consultation Details</h2>
+      <h2 className="text-body-md font-semibold text-white">Consultation Details</h2>
 
-      <div className="rounded-xl border border-white/5 bg-[#111111] p-6">
+      <div className="bg-brand-bg rounded-xl border border-white/5 p-6">
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div>
             <h2 className="text-[22px] font-bold text-white">{expertName}</h2>
-            <p className="mt-1 text-[12px] text-[#777]">{formatAppliedAgo(submittedAt)}</p>
+            <p className="text-body-sm text-muted mt-1">{formatAppliedAgo(submittedAt)}</p>
           </div>
           {resolvedPartnerId && (
             <button
               type="button"
               onClick={() => navigate(`/experts/management/profile/${resolvedPartnerId}`)}
-              className="inline-flex items-center gap-2 rounded-lg border border-white/10 px-4 py-2 text-[11px] font-semibold text-white transition-colors hover:bg-white/5"
+              className="text-body-sm inline-flex items-center gap-2 rounded-lg border border-white/10 px-4 py-2 font-semibold text-white transition-colors hover:bg-white/5"
             >
               <Eye className="size-3.5" aria-hidden="true" />
               View Profile
@@ -469,19 +469,19 @@ export const ConsultationViewPage = () => {
 
         <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-3">
           <div className="rounded-lg border border-white/5 bg-black p-4">
-            <p className="text-[11px] text-[#777]">Expert ID</p>
+            <p className="text-body-sm text-muted">Expert ID</p>
             <p className="mt-1 font-mono text-[13px] font-semibold text-white">
               {expertIdLabel.startsWith('#') ? expertIdLabel : `#${expertIdLabel}`}
             </p>
           </div>
           <div className="rounded-lg border border-white/5 bg-black p-4">
-            <p className="text-[11px] text-[#777]">Submitted</p>
+            <p className="text-body-sm text-muted">Submitted</p>
             <p className="mt-1 text-[13px] font-semibold text-white">
               {formatExpertDateTime(submittedAt)}
             </p>
           </div>
           <div className="rounded-lg border border-white/5 bg-black p-4">
-            <p className="text-[11px] text-[#777]">Last Updated</p>
+            <p className="text-body-sm text-muted">Last Updated</p>
             <p className="mt-1 text-[13px] font-semibold text-white">
               {formatExpertDateTime(consultation.updatedAt)}
             </p>
@@ -489,17 +489,17 @@ export const ConsultationViewPage = () => {
         </div>
       </div>
 
-      <div className="rounded-xl border border-white/5 bg-[#111111] p-6 lg:p-7">
+      <div className="bg-brand-bg rounded-xl border border-white/5 p-6 lg:p-7">
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(260px,0.78fr)] lg:gap-10">
           <div className="space-y-6">
             <div className="flex items-stretch gap-3">
               <span className="bg-brand-accent w-[3px] shrink-0 rounded-full" aria-hidden="true" />
               <div className="min-w-0">
-                <h1 className="text-[24px] leading-tight font-bold text-white">
+                <h1 className="text-h2 leading-tight font-bold text-white">
                   {consultation.title || 'Untitled Consultation'}
                 </h1>
                 {categoryName ? (
-                  <p className="mt-1 text-[13px] text-[#8A8A8A]">{categoryName}</p>
+                  <p className="text-muted mt-1 text-[13px]">{categoryName}</p>
                 ) : null}
               </div>
             </div>
@@ -509,7 +509,7 @@ export const ConsultationViewPage = () => {
                 {topics.map((topic) => (
                   <span
                     key={topic._id}
-                    className="rounded-md bg-[#7A7A7A] px-3.5 py-1.5 text-[11px] font-medium text-black"
+                    className="bg-brand-muted text-body-sm rounded-md px-3.5 py-1.5 font-medium text-black"
                   >
                     {topic.name}
                   </span>
@@ -520,7 +520,7 @@ export const ConsultationViewPage = () => {
             {outlineItems.length > 0 && (
               <div>
                 <h3 className="text-[13px] font-semibold text-white">Session outline</h3>
-                <ul className="mt-2.5 list-disc space-y-1.5 pl-4 text-[12px] leading-relaxed text-[#999]">
+                <ul className="text-body-sm text-muted mt-2.5 list-disc space-y-1.5 pl-4 leading-relaxed">
                   {outlineItems.map((item) => (
                     <li key={item}>{item}</li>
                   ))}
@@ -531,7 +531,7 @@ export const ConsultationViewPage = () => {
             {benefitItems.length > 0 && (
               <div>
                 <h3 className="text-[13px] font-semibold text-white">Benefits</h3>
-                <ul className="mt-2.5 list-disc space-y-1.5 pl-4 text-[12px] leading-relaxed text-[#999]">
+                <ul className="text-body-sm text-muted mt-2.5 list-disc space-y-1.5 pl-4 leading-relaxed">
                   {benefitItems.map((item) => (
                     <li key={item}>{item}</li>
                   ))}
@@ -542,7 +542,7 @@ export const ConsultationViewPage = () => {
             {(consultation.whoItsFor || consultation.whoIsItFor) && (
               <div>
                 <h3 className="text-[13px] font-semibold text-white">Who is it for?</h3>
-                <p className="mt-2.5 text-[12px] leading-relaxed text-[#999]">
+                <p className="text-body-sm text-muted mt-2.5 leading-relaxed">
                   {consultation.whoItsFor || consultation.whoIsItFor}
                 </p>
               </div>
@@ -552,39 +552,39 @@ export const ConsultationViewPage = () => {
           <div className="space-y-5 border-t border-white/10 pt-6 lg:border-t-0 lg:border-l lg:pt-0 lg:pl-8">
             <div className="flex flex-wrap gap-5">
               <div className="flex flex-col items-center gap-1.5">
-                <div className="flex h-10 min-w-12 items-center justify-center rounded-md bg-[#151515] px-4 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.05)]">
+                <div className="bg-brand-surface flex h-10 min-w-12 items-center justify-center rounded-md px-4 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.05)]">
                   <Phone className="size-4 text-white" aria-hidden="true" />
                 </div>
-                <span className="text-[10px] text-[#5C5C5C]">Mode</span>
+                <span className="text-muted text-[10px]">Mode</span>
               </div>
 
               <div className="flex flex-col items-center gap-1.5">
-                <div className="flex h-10 min-w-12 items-center justify-center rounded-md bg-[#151515] px-4 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.05)]">
+                <div className="bg-brand-surface flex h-10 min-w-12 items-center justify-center rounded-md px-4 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.05)]">
                   <Languages className="size-4 text-white" aria-hidden="true" />
                 </div>
-                <span className="text-[10px] text-[#5C5C5C]">{primaryLanguage}</span>
+                <span className="text-muted text-[10px]">{primaryLanguage}</span>
               </div>
 
               <div className="flex flex-col items-center gap-1.5">
-                <div className="flex h-10 min-w-12 items-center justify-center rounded-md bg-[#151515] px-4 text-[11px] font-semibold text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.05)]">
+                <div className="bg-brand-surface text-body-sm flex h-10 min-w-12 items-center justify-center rounded-md px-4 font-semibold text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.05)]">
                   {followUpLabel}
                 </div>
-                <span className="text-[10px] text-[#5C5C5C]">FollowUps</span>
+                <span className="text-muted text-[10px]">FollowUps</span>
               </div>
             </div>
 
             <div className="space-y-4">
               <div>
-                <p className="text-[12px] font-semibold text-white">Post-session requirement</p>
-                <p className="mt-1 text-[12px] leading-relaxed text-[#999]">
+                <p className="text-body-sm font-semibold text-white">Post-session requirement</p>
+                <p className="text-body-sm text-muted mt-1 leading-relaxed">
                   {consultation.hasPostSessionMessage && consultation.postSessionMessage?.trim()
                     ? consultation.postSessionMessage
                     : 'Keep your requirements and questions ready.'}
                 </p>
               </div>
               <div>
-                <p className="text-[12px] font-semibold text-white">Pre-session requirement</p>
-                <p className="mt-1 text-[12px] leading-relaxed text-[#999]">
+                <p className="text-body-sm font-semibold text-white">Pre-session requirement</p>
+                <p className="text-body-sm text-muted mt-1 leading-relaxed">
                   {consultation.hasPreSessionRequirement &&
                   consultation.preSessionRequirement?.trim()
                     ? consultation.preSessionRequirement
@@ -595,14 +595,14 @@ export const ConsultationViewPage = () => {
 
             {pricingOptions.length > 0 && (
               <div>
-                <h3 className="mb-3 text-[12px] font-semibold text-white">
+                <h3 className="text-body-sm mb-3 font-semibold text-white">
                   Duration &amp; Pricing
                 </h3>
                 <div className="flex flex-wrap gap-2.5">
                   {pricingOptions.map((option) => (
                     <span
                       key={`${option.durationMinutes}-${option.price ?? 'free'}`}
-                      className="rounded-md border border-white/10 bg-[#151515] px-3.5 py-2 text-[11px] font-semibold text-white"
+                      className="bg-brand-surface text-body-sm rounded-md border border-white/10 px-3.5 py-2 font-semibold text-white"
                     >
                       {option.durationMinutes}mins ({formatConsultationPrice(option)})
                     </span>
@@ -615,15 +615,15 @@ export const ConsultationViewPage = () => {
       </div>
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1.15fr_0.85fr]">
-        <div className="rounded-xl border border-white/5 bg-[#111111] p-5">
-          <div className="mb-4 flex items-center gap-2 text-[14px] font-semibold text-white">
+        <div className="bg-brand-bg rounded-xl border border-white/5 p-5">
+          <div className="text-body-md mb-4 flex items-center gap-2 font-semibold text-white">
             <History className="text-brand-accent size-4" aria-hidden="true" />
             <h3>Internal Notes</h3>
           </div>
-          <div className="min-h-[120px] rounded-lg border border-white/5 bg-black p-4 text-[12px] text-[#777]">
+          <div className="text-body-sm text-muted min-h-[120px] rounded-lg border border-white/5 bg-black p-4">
             {consultation.adminNote?.trim() || 'No notes yet.'}
             {escalation?.escalatedByName ? (
-              <p className="mt-3 text-[11px] text-[#999]">
+              <p className="text-body-sm text-muted mt-3">
                 Escalated by {escalation.escalatedByName}
                 {escalation.escalatedToName ? ` to ${escalation.escalatedToName}` : ''}.
                 {escalation.escalationNote ? ` Note: ${escalation.escalationNote}` : ''}
@@ -632,7 +632,7 @@ export const ConsultationViewPage = () => {
           </div>
         </div>
 
-        <div className="rounded-xl border border-white/5 bg-[#111111] p-5">
+        <div className="bg-brand-bg rounded-xl border border-white/5 p-5">
           <DecisionControlsHeader className="mb-4" />
           {showApprovalControls ? (
             <DecisionControlButtons
@@ -644,7 +644,7 @@ export const ConsultationViewPage = () => {
               escalateDisabled={escalateDisabled}
             />
           ) : (
-            <p className="rounded-md border border-white/5 bg-black px-3 py-2 text-[11px] font-medium text-[#999]">
+            <p className="text-body-sm text-muted rounded-md border border-white/5 bg-black px-3 py-2 font-medium">
               This consultation is currently{' '}
               <span className="font-bold text-white">{consultation.status || '—'}</span>.
             </p>

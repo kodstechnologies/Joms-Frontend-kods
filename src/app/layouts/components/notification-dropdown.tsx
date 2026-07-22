@@ -11,8 +11,8 @@ function AlertAvatars({ initials }: { initials: string[] }) {
         <span
           key={`${letter}-${index}`}
           className={cn(
-            'grid size-7 place-items-center rounded-full border-2 border-[#121212] text-[11px] font-semibold text-white',
-            index === 0 ? 'bg-[#E879A9]' : 'bg-[#EAB308]',
+            'text-body-sm-semibold border-brand-surface text-brand-text grid size-7 place-items-center rounded-full border-2',
+            index === 0 ? 'bg-brand-teal' : 'bg-brand-accent',
             index > 0 && '-ml-2',
           )}
         >
@@ -31,7 +31,7 @@ function AlertRow({ item }: { item: AlertItem }) {
       <div
         className={cn(
           'relative flex gap-3 px-5 py-4',
-          isWarning && 'border-l-[3px] border-l-[#F5A524] bg-[#F5A524]/[0.04]',
+          isWarning && 'border-l-brand-accent bg-brand-accent/[0.04] border-l-[3px]',
         )}
       >
         <div className="min-w-0 flex-1">
@@ -39,7 +39,7 @@ function AlertRow({ item }: { item: AlertItem }) {
             <div className="flex min-w-0 items-center gap-1.5">
               {isWarning ? (
                 <AlertTriangle
-                  className="size-3.5 shrink-0 text-[#F5A524]"
+                  className="text-brand-accent size-3.5 shrink-0"
                   aria-hidden="true"
                   strokeWidth={2}
                 />
@@ -48,8 +48,8 @@ function AlertRow({ item }: { item: AlertItem }) {
               )}
               <p
                 className={cn(
-                  'text-[13px] leading-snug font-semibold',
-                  isWarning ? 'text-[#F5A524]' : 'text-brand-text',
+                  'text-body-md-semibold leading-snug',
+                  isWarning ? 'text-brand-accent' : 'text-brand-text',
                 )}
               >
                 {isWarning ? 'Warning' : 'Info'}
@@ -59,13 +59,11 @@ function AlertRow({ item }: { item: AlertItem }) {
                 aria-hidden="true"
               />
             </div>
-            <span className="text-brand-muted shrink-0 pt-0.5 text-xs">{item.createdAt}</span>
+            <span className="text-brand-muted text-body-sm shrink-0 pt-0.5">{item.createdAt}</span>
           </div>
 
-          <p className="text-brand-text mt-2 text-[15px] leading-snug font-semibold">
-            {item.title}
-          </p>
-          <p className="text-brand-muted mt-1 text-sm leading-relaxed">{item.message}</p>
+          <p className="text-body-md-semibold text-brand-text mt-2 leading-snug">{item.title}</p>
+          <p className="text-brand-muted text-body-md mt-1 leading-relaxed">{item.message}</p>
 
           {item.avatars?.length ? <AlertAvatars initials={item.avatars} /> : null}
         </div>
@@ -79,7 +77,7 @@ function AlertSection({ label, items }: { label: string; items: AlertItem[] }) {
 
   return (
     <section>
-      <p className="text-brand-muted px-5 pt-5 pb-2 text-[11px] font-semibold tracking-[0.18em] uppercase">
+      <p className="text-brand-muted text-body-sm-semibold px-5 pt-5 pb-2 tracking-[0.18em] uppercase">
         {label}
       </p>
       <ul>
@@ -129,7 +127,7 @@ export function NotificationPanel({ open, onClose }: NotificationPanelProps) {
 
       <aside
         className={cn(
-          'fixed inset-y-0 right-0 z-50 flex w-full max-w-[26rem] flex-col border-l border-white/10 bg-[#121212] shadow-[-18px_0_50px_rgba(0,0,0,0.45)] transition-transform duration-200',
+          'bg-brand-surface fixed inset-y-0 right-0 z-50 flex w-full max-w-[26rem] flex-col border-l border-white/10 shadow-[-18px_0_50px_rgba(0,0,0,0.45)] transition-transform duration-200',
           open ? 'pointer-events-auto translate-x-0' : 'pointer-events-none translate-x-full',
         )}
         role="dialog"

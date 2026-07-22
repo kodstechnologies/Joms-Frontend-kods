@@ -60,10 +60,10 @@ export const ExpertGalleryStep = ({ formData, setFormData }: Props) => {
 
   return (
     <div className="mx-auto w-full max-w-[850px]">
-      <div className="animate-in fade-in slide-in-from-right-4 rounded-lg border border-white/5 bg-[#151515] p-6 duration-300">
+      <div className="animate-in fade-in slide-in-from-right-4 bg-brand-surface rounded-lg border border-white/5 p-6 duration-300">
         <div className="mb-2">
           <h2 className="text-sm font-bold text-white">Gallery</h2>
-          <p className="mt-1 text-xs text-[#777777]">
+          <p className="text-muted mt-1 text-xs">
             Upload visual assets to support your service (optional)
           </p>
         </div>
@@ -82,14 +82,14 @@ export const ExpertGalleryStep = ({ formData, setFormData }: Props) => {
           onDragLeave={() => setIsDragging(false)}
           onDrop={handleDrop}
           className={`flex h-44 w-full flex-col items-center justify-center rounded-md border border-dashed transition-colors ${
-            isDragging ? 'border-brand-accent bg-brand-accent/5' : 'border-[#444] bg-black'
+            isDragging ? 'border-brand-accent bg-brand-accent/5' : 'border-white/20 bg-black'
           }`}
         >
           <div className="mb-3 flex size-10 items-center justify-center rounded-full bg-white/5">
-            <Upload className="size-4 text-[#999]" />
+            <Upload className="text-muted size-4" />
           </div>
           <p className="text-sm text-white">Click to upload images</p>
-          <p className="mt-1 text-xs text-[#777]">Or drag &amp; drop</p>
+          <p className="text-muted mt-1 text-xs">Or drag &amp; drop</p>
         </button>
         <input
           ref={inputRef}
@@ -123,7 +123,7 @@ export const ExpertGalleryStep = ({ formData, setFormData }: Props) => {
                   <button
                     type="button"
                     onClick={() => removeImage(index)}
-                    className="absolute top-1 right-1 flex items-center gap-1 rounded bg-red-500 px-1.5 py-0.5 text-[9px] font-bold text-white"
+                    className="bg-brand-danger absolute top-1 right-1 flex items-center gap-1 rounded px-1.5 py-0.5 text-[9px] font-bold text-white"
                   >
                     <X className="size-2.5" />
                     Remove
@@ -132,7 +132,7 @@ export const ExpertGalleryStep = ({ formData, setFormData }: Props) => {
               ))}
             </div>
           ) : (
-            <p className="text-xs text-[#666]">No images uploaded yet.</p>
+            <p className="text-muted text-xs">No images uploaded yet.</p>
           )}
         </div>
       </div>

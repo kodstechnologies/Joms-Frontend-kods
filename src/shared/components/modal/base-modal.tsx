@@ -8,6 +8,7 @@ type BaseModalProps = PropsWithChildren<{
   title: string
   onClose: () => void
   className?: string
+  bodyClassName?: string
   showClose?: boolean
 }>
 
@@ -17,6 +18,7 @@ export function BaseModal({
   onClose,
   children,
   className,
+  bodyClassName,
   showClose = true,
 }: BaseModalProps) {
   if (!open) {
@@ -33,14 +35,11 @@ export function BaseModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="base-modal-title"
-        className={cn(
-          'w-full max-w-[440px] overflow-hidden rounded-2xl border border-white/10 bg-[#121212] text-white shadow-[0_24px_80px_rgba(0,0,0,0.65)]',
-          className,
-        )}
+        className={cn('ui-modal-shell', className)}
         onClick={(event) => event.stopPropagation()}
       >
-        <div className="flex items-center justify-between border-b border-white/10 px-6 py-4">
-          <h2 id="base-modal-title" className="text-xl font-semibold tracking-tight text-white">
+        <div className="ui-modal-header">
+          <h2 id="base-modal-title" className="text-h2 text-brand-text">
             {title}
           </h2>
           {showClose ? (
@@ -48,13 +47,13 @@ export function BaseModal({
               type="button"
               aria-label="Close modal"
               onClick={onClose}
-              className="rounded-full p-1.5 text-white/80 transition-colors hover:bg-white/10 hover:text-white"
+              className="text-brand-muted rounded-full p-1.5 transition-colors hover:bg-white/10 hover:text-white"
             >
-              <X className="size-5" aria-hidden="true" />
+              <X className="icon-lg" aria-hidden="true" />
             </button>
           ) : null}
         </div>
-        <div className="px-6 py-6">{children}</div>
+        <div className={cn('ui-modal-body', bodyClassName)}>{children}</div>
       </div>
     </div>
   )

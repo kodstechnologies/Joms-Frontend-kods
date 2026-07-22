@@ -94,7 +94,7 @@ export function MyProfilePage() {
         accessorKey: 'changedTo',
         header: 'Changed To',
         cell: ({ row }) => (
-          <span className="text-brand-text inline-flex rounded-full border border-white/10 bg-white/5 px-2.5 py-0.5 text-[11px] font-semibold">
+          <span className="text-brand-text text-body-sm-semibold inline-flex rounded-full border border-white/10 bg-white/5 px-2.5 py-0.5">
             {row.original.changedTo}
           </span>
         ),
@@ -132,15 +132,15 @@ export function MyProfilePage() {
         <button
           type="button"
           onClick={() => navigateBackOrFallback(navigate, '/settings/access')}
-          className="group font-heading flex w-fit items-center gap-2 text-[20px] font-bold tracking-tight text-white transition-colors hover:text-[#FBC078]"
+          className="group font-heading text-h3 text-brand-text hover:text-brand-accent flex w-fit items-center gap-2 font-bold tracking-tight transition-colors"
         >
           <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
           <span>My Profile</span>
         </button>
-        <div className="flex items-center gap-1.5 pl-7 text-[12px] font-medium text-[#777777]">
+        <div className="text-body-sm-medium text-muted flex items-center gap-1.5 pl-7">
           <span>Role Based Access</span>
-          <span className="text-[#333333]">/</span>
-          <span className="font-bold text-white">My Profile</span>
+          <span className="text-brand-text/30">/</span>
+          <span className="text-brand-text font-bold">My Profile</span>
         </div>
       </div>
 
@@ -150,7 +150,7 @@ export function MyProfilePage() {
           <button
             type="button"
             onClick={() => toast.info('All tasks coming soon')}
-            className="rounded-brand-md inline-flex items-center gap-2 bg-[#E8C489] px-4 py-2.5 text-sm font-semibold text-[#1A1A1A] transition-colors hover:bg-[#F0D4A4]"
+            className="ui-cta ui-cta-primary rounded-brand-md inline-flex items-center gap-2 px-4"
           >
             <Clock className="size-4" />
             All Tasks
@@ -160,7 +160,7 @@ export function MyProfilePage() {
             onClick={() =>
               historySectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
             }
-            className="rounded-brand-md inline-flex items-center gap-2 border border-[#E8C489] bg-transparent px-4 py-2.5 text-sm font-semibold text-[#E8C489] transition-colors hover:bg-[#E8C489]/10"
+            className="ui-cta ui-cta-outline rounded-brand-md border-brand-accent text-brand-accent hover:bg-brand-accent/10 inline-flex items-center gap-2 px-4"
           >
             <Clock className="size-4" />
             View Activity Logs
@@ -178,7 +178,7 @@ export function MyProfilePage() {
           </div>
           <span
             className={cn(
-              'inline-flex rounded-full border px-2.5 py-0.5 text-[11px] font-semibold capitalize',
+              'text-body-sm-semibold inline-flex rounded-full border px-2.5 py-0.5 capitalize',
               subAdmin.status === 'active'
                 ? 'border-brand-success/25 bg-brand-success/10 text-brand-success'
                 : 'border-brand-danger/25 bg-brand-danger/10 text-brand-danger',
@@ -189,7 +189,7 @@ export function MyProfilePage() {
         </div>
 
         <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-5">
-          <div className="grid size-20 place-items-center overflow-hidden rounded-full border border-white/10 bg-[#111111]">
+          <div className="bg-brand-surface grid size-20 place-items-center overflow-hidden rounded-full border border-white/10">
             {subAdmin.profileImageUrl ? (
               <img
                 src={subAdmin.profileImageUrl}
@@ -210,7 +210,7 @@ export function MyProfilePage() {
           </div>
           <div>
             <p className="text-brand-muted text-xs">Role</p>
-            <span className="text-brand-text mt-2 inline-flex rounded-full border border-white/10 bg-white/5 px-2.5 py-0.5 text-[11px] font-semibold">
+            <span className="text-brand-text text-body-sm-semibold mt-2 inline-flex rounded-full border border-white/10 bg-white/5 px-2.5 py-0.5">
               {roleLabel}
             </span>
           </div>
@@ -301,7 +301,7 @@ export function MyProfilePage() {
             <button
               type="button"
               onClick={() => toast.info('Password change from profile will be enabled soon')}
-              className="text-brand-accent decoration-brand-accent/40 mt-1 text-[11px] underline underline-offset-2"
+              className="text-brand-accent decoration-brand-accent/40 text-body-sm-semibold mt-1 underline underline-offset-2"
             >
               Change Password
             </button>

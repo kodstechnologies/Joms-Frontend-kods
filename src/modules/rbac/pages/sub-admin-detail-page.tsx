@@ -40,7 +40,7 @@ function InviteStatusBadge({ status }: { status: SubAdminInvite['status'] }) {
   return (
     <span
       className={cn(
-        'inline-flex rounded-full border px-2.5 py-0.5 text-[11px] font-semibold capitalize',
+        'text-body-sm-semibold inline-flex rounded-full border px-2.5 py-0.5 capitalize',
         isAccepted && 'border-brand-success/25 bg-brand-success/10 text-brand-success',
         isPending && 'border-brand-accent-muted bg-brand-accent/15 text-brand-accent',
         !isAccepted && !isPending && 'border-brand-danger/25 bg-brand-danger/10 text-brand-danger',
@@ -152,23 +152,23 @@ export function SubAdminDetailPage() {
           <button
             type="button"
             onClick={() => navigateBackOrFallback(navigate, '/settings/access')}
-            className="group font-heading flex w-fit items-center gap-2 text-[20px] font-bold tracking-tight text-white transition-colors hover:text-[#FBC078]"
+            className="group font-heading text-h3 text-brand-text hover:text-brand-accent flex w-fit items-center gap-2 font-bold tracking-tight transition-colors"
           >
             <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
             <span>User Details</span>
           </button>
-          <div className="flex items-center gap-1.5 pl-7 text-[12px] font-medium text-[#777777]">
+          <div className="text-body-sm-medium text-muted flex items-center gap-1.5 pl-7">
             <button
               type="button"
               onClick={() => navigateBackOrFallback(navigate, '/settings/access')}
-              className="transition-colors hover:text-white"
+              className="hover:text-brand-text transition-colors"
             >
               Role Based Access
             </button>
-            <span className="text-[#333333]">/</span>
+            <span className="text-brand-text/30">/</span>
             <span>User</span>
-            <span className="text-[#333333]">/</span>
-            <span className="font-bold text-white">Invites</span>
+            <span className="text-brand-text/30">/</span>
+            <span className="text-brand-text font-bold">Invites</span>
           </div>
         </div>
 

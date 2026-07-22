@@ -50,11 +50,11 @@ const CategorySubCategoryCard = ({ id, name, status, addedOn, icon }: Props) => 
 
         <div>
           <div className="flex flex-wrap items-center gap-2">
-            <h4 className="font-sans text-[16px] leading-5 font-semibold text-white">{name}</h4>
+            <h4 className="text-body-lg text-brand-text font-semibold">{name}</h4>
 
             <span
-              className={`text-[12px] leading-[17px] font-semibold ${
-                status === 'Active' ? 'text-[#2ECC71]' : 'text-[#E67E22]'
+              className={`text-body-sm-semibold ${
+                status === 'Active' ? 'text-brand-positive' : 'text-brand-accent'
               }`}
             >
               {status}

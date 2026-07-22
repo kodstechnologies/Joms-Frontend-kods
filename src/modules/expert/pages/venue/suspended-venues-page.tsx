@@ -194,7 +194,7 @@ export function VenueSuspendedPage() {
             <span>Suspended Venues</span>
           </button>
 
-          <div className="flex items-center gap-1.5 pl-7 text-[12px] font-medium text-[#777777]">
+          <div className="text-body-sm-medium text-muted flex items-center gap-1.5 pl-7">
             <button
               type="button"
               onClick={() => navigateBackOrFallback(navigate, '/venues/management')}

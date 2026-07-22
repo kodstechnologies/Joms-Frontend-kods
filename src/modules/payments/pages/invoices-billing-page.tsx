@@ -31,24 +31,24 @@ function SummaryCard({
   changeNote: string
 }) {
   return (
-    <div className="rounded-xl border border-white/[0.06] bg-[#1A1A1A] p-5">
-      <p className="text-[11px] font-medium text-[#888888]">{label}</p>
-      <p className="mt-2 text-[26px] font-bold tracking-tight text-white">{value}</p>
+    <div className="bg-brand-surface rounded-xl border border-white/[0.06] p-5">
+      <p className="text-body-sm-medium text-muted">{label}</p>
+      <p className="text-h2 text-brand-text mt-2 tracking-tight">{value}</p>
       <div className="mt-3 flex flex-wrap items-center gap-2">
-        <span className="inline-flex items-center gap-1 rounded-md bg-emerald-500/15 px-2 py-0.5 text-[10px] font-bold text-emerald-400">
+        <span className="text-body-sm-semibold bg-brand-positive/15 text-brand-positive inline-flex items-center gap-1 rounded-md px-2 py-0.5">
           <TrendingUp className="size-3" />
           {change}
         </span>
-        <span className="text-[10px] text-[#666666]">{changeNote}</span>
+        <span className="text-body-sm text-muted">{changeNote}</span>
       </div>
     </div>
   )
 }
 
 function getStatusClassName(status: InvoiceStatus) {
-  if (status === 'Paid') return 'border-emerald-500/25 bg-emerald-500/10 text-emerald-400'
-  if (status === 'Pending') return 'border-amber-500/25 bg-amber-500/10 text-amber-400'
-  return 'border-rose-500/25 bg-rose-500/10 text-rose-400'
+  if (status === 'Paid') return 'border-brand-positive/25 bg-brand-positive/10 text-brand-positive'
+  if (status === 'Pending') return 'border-brand-accent/25 bg-brand-accent/10 text-brand-accent'
+  return 'border-brand-danger/25 bg-brand-danger/10 text-brand-danger'
 }
 
 export function InvoicesBillingPage() {
@@ -162,7 +162,7 @@ export function InvoicesBillingPage() {
         accessorKey: 'invoiceId',
         header: 'Invoice ID',
         cell: ({ row }) => (
-          <span className="font-mono text-[11px] text-white uppercase">
+          <span className="text-body-sm-semibold text-brand-text font-mono uppercase">
             {row.original.invoiceId}
           </span>
         ),
@@ -182,7 +182,7 @@ export function InvoicesBillingPage() {
         cell: ({ row }) => (
           <span
             className={cn(
-              'inline-flex rounded-full border px-2.5 py-0.5 text-[11px] font-semibold',
+              'text-body-sm-semibold inline-flex rounded-full border px-2.5 py-0.5',
               getStatusClassName(row.original.status),
             )}
           >
@@ -210,16 +210,16 @@ export function InvoicesBillingPage() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-[28px] font-bold tracking-tight text-white">Invoices & Billing</h1>
-        <p className="mt-1 text-[13px] text-[#888888]">
+        <h1 className="text-h2 text-brand-text tracking-tight">Invoices & Billing</h1>
+        <p className="text-body-md text-muted mt-1">
           Track revenue, payouts, and financial performance
         </p>
-        <p className="mt-3 text-[12px] text-[#888888]">
-          <Link to="/finance/dashboard" className="transition-colors hover:text-white">
+        <p className="text-body-sm text-muted mt-3">
+          <Link to="/finance/dashboard" className="hover:text-brand-text transition-colors">
             Payment & Finance
           </Link>
           <span> / </span>
-          <span className="font-semibold text-white">Invoices & Billing</span>
+          <span className="text-brand-text font-semibold">Invoices & Billing</span>
         </p>
       </div>
 

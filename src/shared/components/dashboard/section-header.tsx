@@ -26,12 +26,8 @@ export function SectionHeader({
       className={cn('flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between', className)}
     >
       <div className="space-y-1">
-        <h1 className="text-brand-text text-3xl font-semibold tracking-tight sm:text-4xl">
-          {title}
-        </h1>
-        {subtitle ? (
-          <p className="text-brand-stroke text-sm leading-relaxed sm:text-base">{subtitle}</p>
-        ) : null}
+        <h1 className="text-h1 text-brand-text">{title}</h1>
+        {subtitle ? <p className="text-body-md text-muted">{subtitle}</p> : null}
         {children}
       </div>
 

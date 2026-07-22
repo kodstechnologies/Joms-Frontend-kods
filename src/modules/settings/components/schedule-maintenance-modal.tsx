@@ -18,57 +18,63 @@ export function ScheduleMaintenanceModal({ open, onClose }: ScheduleMaintenanceM
 
   return createPortal(
     <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/70 p-4">
-      <div className="w-full max-w-[560px] rounded-2xl border border-white/10 bg-[#141414] p-6 shadow-2xl">
-        <div className="flex items-start justify-between gap-4">
+      <div className="ui-modal-shell">
+        <div className="ui-modal-header">
           <div>
-            <h2 className="text-[18px] font-bold text-white">Schedule Maintenance</h2>
-            <p className="mt-1 text-[12px] text-[#888888]">Enter Start Date & End Date and time</p>
+            <h2 className="text-h2 text-brand-text">Schedule Maintenance</h2>
+            <p className="text-body-sm text-muted mt-1">Enter Start Date & End Date and time</p>
           </div>
-          <button type="button" onClick={onClose} className="text-[#888888] hover:text-white">
-            <X className="size-5" />
+          <button
+            type="button"
+            onClick={onClose}
+            className="text-brand-muted rounded-full p-1.5 transition-colors hover:bg-white/10 hover:text-white"
+          >
+            <X className="icon-lg" aria-hidden="true" />
           </button>
         </div>
 
-        <div className="mt-5 grid gap-4 sm:grid-cols-2">
-          <label className="space-y-2 text-sm text-slate-300">
-            Start Date
-            <input
-              type="date"
-              value={startDate}
-              onChange={(event) => setStartDate(event.target.value)}
-              className="h-10 w-full rounded-lg border border-white/10 bg-[#1a1a1a] px-3 text-white"
-            />
-          </label>
-          <label className="space-y-2 text-sm text-slate-300">
-            End Date
-            <input
-              type="date"
-              value={endDate}
-              onChange={(event) => setEndDate(event.target.value)}
-              className="h-10 w-full rounded-lg border border-white/10 bg-[#1a1a1a] px-3 text-white"
-            />
-          </label>
-          <label className="space-y-2 text-sm text-slate-300">
-            Start Time
-            <input
-              type="time"
-              value={startTime}
-              onChange={(event) => setStartTime(event.target.value)}
-              className="h-10 w-full rounded-lg border border-white/10 bg-[#1a1a1a] px-3 text-white"
-            />
-          </label>
-          <label className="space-y-2 text-sm text-slate-300">
-            End Time
-            <input
-              type="time"
-              value={endTime}
-              onChange={(event) => setEndTime(event.target.value)}
-              className="h-10 w-full rounded-lg border border-white/10 bg-[#1a1a1a] px-3 text-white"
-            />
-          </label>
+        <div className="ui-modal-body">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <label className="text-body-md text-brand-text space-y-2">
+              Start Date
+              <input
+                type="date"
+                value={startDate}
+                onChange={(event) => setStartDate(event.target.value)}
+                className="ui-input [color-scheme:dark]"
+              />
+            </label>
+            <label className="text-body-md text-brand-text space-y-2">
+              End Date
+              <input
+                type="date"
+                value={endDate}
+                onChange={(event) => setEndDate(event.target.value)}
+                className="ui-input [color-scheme:dark]"
+              />
+            </label>
+            <label className="text-body-md text-brand-text space-y-2">
+              Start Time
+              <input
+                type="time"
+                value={startTime}
+                onChange={(event) => setStartTime(event.target.value)}
+                className="ui-input [color-scheme:dark]"
+              />
+            </label>
+            <label className="text-body-md text-brand-text space-y-2">
+              End Time
+              <input
+                type="time"
+                value={endTime}
+                onChange={(event) => setEndTime(event.target.value)}
+                className="ui-input [color-scheme:dark]"
+              />
+            </label>
+          </div>
         </div>
 
-        <div className="mt-5 flex flex-col-reverse gap-3 sm:flex-row sm:justify-between">
+        <div className="ui-modal-footer flex-col-reverse sm:flex-row">
           <button
             type="button"
             onClick={() => {
@@ -77,15 +83,15 @@ export function ScheduleMaintenanceModal({ open, onClose }: ScheduleMaintenanceM
               setStartTime('19:00')
               setEndTime('20:00')
             }}
-            className="rounded-xl border border-white/20 px-5 py-2.5 text-sm font-semibold text-white"
+            className="ui-cta ui-cta-outline w-full sm:w-auto"
           >
             Reset
           </button>
-          <div className="flex flex-col-reverse gap-3 sm:flex-row">
+          <div className="flex w-full flex-col-reverse gap-3 sm:w-auto sm:flex-row">
             <button
               type="button"
               onClick={onClose}
-              className="rounded-xl border border-white/20 px-5 py-2.5 text-sm font-semibold text-white"
+              className="ui-cta ui-cta-outline w-full sm:w-auto"
             >
               Cancel
             </button>
@@ -95,7 +101,7 @@ export function ScheduleMaintenanceModal({ open, onClose }: ScheduleMaintenanceM
                 toast.success('Maintenance scheduled (static preview)')
                 onClose()
               }}
-              className="rounded-xl bg-[#F0C27B] px-5 py-2.5 text-sm font-semibold text-[#050505]"
+              className="ui-cta ui-cta-primary w-full sm:w-auto"
             >
               Submit
             </button>

@@ -6,8 +6,7 @@ import type { ExpertOnboardingFormData } from '../utils/expert-onboarding-form'
 import { cn } from '@/shared/lib/cn'
 import { sanitizeMobileNumber } from '@/shared/lib/phone'
 
-const fieldClass =
-  'h-11 w-full rounded-md bg-black px-3 text-sm text-white outline-none placeholder:text-[#666] focus:ring-1 focus:ring-brand-accent/40'
+const fieldClass = 'ui-input'
 
 const SERVICE_TYPE_OPTIONS = [
   { value: 'concierge', label: 'Concierge' },
@@ -97,10 +96,10 @@ export const ExpertBasicProfileStep = ({ formData, setFormData, lockedServiceTyp
 
   return (
     <div className="mx-auto w-full max-w-[850px]">
-      <div className="animate-in fade-in slide-in-from-right-4 rounded-lg border border-white/5 bg-[#151515] p-6 duration-300">
+      <div className="animate-in fade-in slide-in-from-right-4 bg-brand-surface rounded-lg border border-white/5 p-6 duration-300">
         <div className="mb-6">
           <h2 className="text-sm font-bold text-white">Basic Profile Setup</h2>
-          <p className="mt-1 text-xs text-[#777777]">Core identity details and profile media</p>
+          <p className="text-muted mt-1 text-xs">Core identity details and profile media</p>
         </div>
 
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
@@ -109,7 +108,7 @@ export const ExpertBasicProfileStep = ({ formData, setFormData, lockedServiceTyp
               <button
                 type="button"
                 onClick={() => coverInputRef.current?.click()}
-                className="hover:border-brand-accent/50 flex h-32 w-full items-center justify-center rounded-md border border-dashed border-[#444] bg-black transition-colors"
+                className="hover:border-brand-accent/50 flex h-32 w-full items-center justify-center rounded-md border border-dashed border-white/20 bg-black transition-colors"
               >
                 {formData.coverImageUrl ? (
                   <img
@@ -119,8 +118,8 @@ export const ExpertBasicProfileStep = ({ formData, setFormData, lockedServiceTyp
                   />
                 ) : (
                   <div className="text-center">
-                    <p className="mb-2 text-xs text-[#777]">Upload Cover Image</p>
-                    <ImageIcon className="mx-auto size-5 text-[#777]" />
+                    <p className="text-muted mb-2 text-xs">Upload Cover Image</p>
+                    <ImageIcon className="text-muted mx-auto size-5" />
                   </div>
                 )}
               </button>
@@ -135,7 +134,7 @@ export const ExpertBasicProfileStep = ({ formData, setFormData, lockedServiceTyp
               <button
                 type="button"
                 onClick={() => profileInputRef.current?.click()}
-                className="absolute -bottom-8 left-6 size-16 overflow-hidden rounded-full border-4 border-[#151515] bg-slate-600"
+                className="border-brand-surface absolute -bottom-8 left-6 size-16 overflow-hidden rounded-full border-4 bg-slate-600"
               >
                 {formData.profileImageUrl ? (
                   <img
@@ -145,7 +144,7 @@ export const ExpertBasicProfileStep = ({ formData, setFormData, lockedServiceTyp
                   />
                 ) : (
                   <div className="flex h-full w-full items-center justify-center">
-                    <Upload className="size-4 text-[#999]" />
+                    <Upload className="text-muted size-4" />
                   </div>
                 )}
               </button>
@@ -184,7 +183,7 @@ export const ExpertBasicProfileStep = ({ formData, setFormData, lockedServiceTyp
                 value={formData.bio}
                 onChange={(e) => setFormData((prev) => ({ ...prev, bio: e.target.value }))}
                 placeholder="Write a short bio"
-                className="focus:ring-brand-accent/40 h-32 w-full rounded-md bg-black p-3 text-sm text-white outline-none placeholder:text-[#666] focus:ring-1"
+                className="ui-textarea h-32"
               />
             </div>
 
@@ -208,7 +207,7 @@ export const ExpertBasicProfileStep = ({ formData, setFormData, lockedServiceTyp
               <button
                 type="button"
                 onClick={() => sampleFileInputRef.current?.click()}
-                className="hover:border-brand-accent/50 rounded-md border border-dashed border-[#444] px-8 py-3 text-xs text-[#999] transition-colors"
+                className="hover:border-brand-accent/50 text-muted rounded-md border border-dashed border-white/20 px-8 py-3 text-xs transition-colors"
               >
                 {formData.sampleWorkFileName || 'Upload here'}
               </button>
@@ -234,7 +233,7 @@ export const ExpertBasicProfileStep = ({ formData, setFormData, lockedServiceTyp
             <div>
               <label className="mb-2 block text-xs font-medium text-white">Industry</label>
               <div className="relative">
-                <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-[#777]" />
+                <Search className="text-muted absolute top-1/2 left-3 size-4 -translate-y-1/2" />
                 <input
                   value={formData.industry}
                   onChange={(e) => setFormData((prev) => ({ ...prev, industry: e.target.value }))}
@@ -283,7 +282,7 @@ export const ExpertBasicProfileStep = ({ formData, setFormData, lockedServiceTyp
                     fieldClass,
                     'appearance-none pr-10',
                     lockedServiceType
-                      ? 'cursor-not-allowed text-[#888] opacity-70'
+                      ? 'text-muted cursor-not-allowed opacity-70'
                       : 'cursor-pointer',
                   )}
                 >
@@ -296,7 +295,7 @@ export const ExpertBasicProfileStep = ({ formData, setFormData, lockedServiceTyp
                     </option>
                   ))}
                 </select>
-                <ChevronDown className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-[#777]" />
+                <ChevronDown className="text-muted pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2" />
               </div>
             </div>
 
@@ -305,13 +304,13 @@ export const ExpertBasicProfileStep = ({ formData, setFormData, lockedServiceTyp
                 Service Category *
               </label>
               {!serviceType ? (
-                <p className="rounded-md bg-black px-3 py-2.5 text-xs text-[#777]">
+                <p className="text-muted rounded-md bg-black px-3 py-2.5 text-xs">
                   Select a service type first
                 </p>
               ) : (
                 <>
                   <div className="relative">
-                    <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-[#777]" />
+                    <Search className="text-muted absolute top-1/2 left-3 size-4 -translate-y-1/2" />
                     <input
                       value={categorySearch}
                       onChange={(e) => setCategorySearch(e.target.value)}
@@ -322,14 +321,14 @@ export const ExpertBasicProfileStep = ({ formData, setFormData, lockedServiceTyp
 
                   <div className="mt-3 max-h-48 overflow-y-auto rounded-md border border-white/5 bg-black p-3">
                     {isCategoriesLoading ? (
-                      <p className="text-xs text-[#777]">Loading categories...</p>
+                      <p className="text-muted text-xs">Loading categories...</p>
                     ) : flattenedCategories.length === 0 ? (
-                      <p className="text-xs text-[#777]">No categories found</p>
+                      <p className="text-muted text-xs">No categories found</p>
                     ) : (
                       <div className="space-y-4">
                         {Object.entries(categoryGroups).map(([groupName, items]) => (
                           <div key={groupName}>
-                            <p className="mb-2 text-[10px] font-semibold tracking-wide text-[#777] uppercase">
+                            <p className="text-muted mb-2 text-[10px] font-semibold tracking-wide uppercase">
                               {groupName}
                             </p>
                             <div className="flex flex-wrap gap-2">
@@ -345,7 +344,7 @@ export const ExpertBasicProfileStep = ({ formData, setFormData, lockedServiceTyp
                                       'rounded-md border px-2.5 py-1 text-[10px] font-semibold transition-colors',
                                       isSelected
                                         ? 'border-brand-accent bg-brand-accent/10 text-brand-accent'
-                                        : 'border-white/10 text-[#888888] hover:border-white/30',
+                                        : 'text-muted border-white/10 hover:border-white/30',
                                     )}
                                   >
                                     {category.name}
@@ -370,7 +369,7 @@ export const ExpertBasicProfileStep = ({ formData, setFormData, lockedServiceTyp
                     >
                       {item}
                       <XCircle
-                        className="size-4 cursor-pointer text-[#999] hover:text-white"
+                        className="text-muted size-4 cursor-pointer hover:text-white"
                         onClick={() => toggleCategory(item)}
                       />
                     </div>
@@ -382,7 +381,7 @@ export const ExpertBasicProfileStep = ({ formData, setFormData, lockedServiceTyp
             <div>
               <label className="mb-2 block text-xs font-medium text-white">Offerings</label>
               <div className="relative mb-3">
-                <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-[#777]" />
+                <Search className="text-muted absolute top-1/2 left-3 size-4 -translate-y-1/2" />
                 <input
                   value={offeringInput}
                   onChange={(e) => setOfferingInput(e.target.value)}
@@ -405,7 +404,7 @@ export const ExpertBasicProfileStep = ({ formData, setFormData, lockedServiceTyp
                     >
                       {item}
                       <XCircle
-                        className="size-4 cursor-pointer text-[#999] hover:text-white"
+                        className="text-muted size-4 cursor-pointer hover:text-white"
                         onClick={() => removeOffering(item)}
                       />
                     </div>

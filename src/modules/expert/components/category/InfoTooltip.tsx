@@ -20,7 +20,7 @@ const InfoTooltip = ({ text }: InfoTooltipProps) => {
         type="button"
         tabIndex={-1}
         aria-label={text}
-        className="grid size-4 place-items-center rounded-full text-[#888888] transition-colors hover:text-white"
+        className="text-muted hover:text-brand-text grid size-4 place-items-center rounded-full transition-colors"
       >
         <Info className="size-3.5" aria-hidden="true" />
       </button>
@@ -31,7 +31,7 @@ const InfoTooltip = ({ text }: InfoTooltipProps) => {
           className={`absolute bottom-[calc(100%+6px)] left-1/2 z-20 -translate-x-1/2 ${categoryFormTheme.tooltipClass}`}
         >
           {text}
-          <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-black" />
+          <span className="border-t-brand-bg absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent" />
         </div>
       ) : null}
     </div>

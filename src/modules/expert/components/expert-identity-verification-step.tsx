@@ -3,8 +3,7 @@ import { Upload } from 'lucide-react'
 
 import type { ExpertOnboardingFormData } from '../utils/expert-onboarding-form'
 
-const fieldClass =
-  'h-11 w-full rounded-md bg-black px-3 text-sm text-white outline-none placeholder:text-[#666] focus:ring-1 focus:ring-brand-accent/40'
+const fieldClass = 'ui-input'
 
 const ID_TYPE_OPTIONS = ['Aadhaar', 'PAN', 'Passport', 'Driving License', 'Voter ID']
 
@@ -33,7 +32,7 @@ function DocumentUploadField({
       <button
         type="button"
         onClick={() => inputRef.current?.click()}
-        className="hover:border-brand-accent/50 flex h-16 w-full items-center justify-center rounded-md border border-dashed border-[#444] bg-black px-3 text-center text-[11px] text-[#999] transition-colors"
+        className="hover:border-brand-accent/50 text-body-sm text-muted flex h-16 w-full items-center justify-center rounded-md border border-dashed border-white/20 bg-black px-3 text-center transition-colors"
       >
         {fileName ? (
           <span className="text-brand-accent truncate">{fileName}</span>
@@ -66,10 +65,10 @@ export const ExpertIdentityVerificationStep = ({ formData, setFormData }: Props)
 
   return (
     <div className="mx-auto w-full max-w-[850px]">
-      <div className="animate-in fade-in slide-in-from-right-4 rounded-lg border border-white/5 bg-[#151515] p-6 duration-300">
+      <div className="animate-in fade-in slide-in-from-right-4 bg-brand-surface rounded-lg border border-white/5 p-6 duration-300">
         <div className="mb-4">
           <h2 className="text-sm font-bold text-white">Government ID Verification</h2>
-          <p className="mt-1 text-xs text-[#777777]">
+          <p className="text-muted mt-1 text-xs">
             Mandatory entry gate - Identity verification required to proceed
           </p>
         </div>
@@ -99,13 +98,13 @@ export const ExpertIdentityVerificationStep = ({ formData, setFormData }: Props)
               placeholder="ABC0E123F"
               className={fieldClass}
             />
-            <p className="mt-1 text-[10px] text-[#666]">Format: ABC0E1234F</p>
+            <p className="text-muted mt-1 text-[10px]">Format: ABC0E1234F</p>
           </div>
         </div>
 
         <div className="mt-8 mb-4">
           <h2 className="text-sm font-bold text-white">KYC Verification</h2>
-          <p className="mt-1 text-xs text-[#777777]">Identity verification required to proceed</p>
+          <p className="text-muted mt-1 text-xs">Identity verification required to proceed</p>
         </div>
 
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
@@ -135,7 +134,7 @@ export const ExpertIdentityVerificationStep = ({ formData, setFormData }: Props)
                 placeholder="23AAACC1206032ZN"
                 className={fieldClass}
               />
-              <p className="mt-1 text-[10px] text-[#666]">Format: ABC0E1234F</p>
+              <p className="text-muted mt-1 text-[10px]">Format: ABC0E1234F</p>
             </div>
           )}
 
@@ -149,7 +148,7 @@ export const ExpertIdentityVerificationStep = ({ formData, setFormData }: Props)
               placeholder="AAACC1206Q"
               className={fieldClass}
             />
-            <p className="mt-1 text-[10px] text-[#666]">Format: ABC0E1234F</p>
+            <p className="text-muted mt-1 text-[10px]">Format: ABC0E1234F</p>
           </div>
         </div>
 

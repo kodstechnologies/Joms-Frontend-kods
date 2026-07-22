@@ -161,18 +161,18 @@ const getReviewStatusBadge = (status?: string) => {
   }
 
   if (normalized === 'live') {
-    return { label: 'Live', className: 'bg-emerald-500/15 text-emerald-400' }
+    return { label: 'Live', className: 'bg-brand-positive/15 text-brand-positive' }
   }
 
   if (normalized === 'rejected') {
-    return { label: 'Rejected', className: 'bg-red-500/15 text-red-400' }
+    return { label: 'Rejected', className: 'bg-brand-danger/15 text-red-400' }
   }
 
   if (normalized === 'suspended') {
-    return { label: 'Suspended', className: 'bg-red-500/15 text-red-300' }
+    return { label: 'Suspended', className: 'bg-brand-danger/15 text-red-300' }
   }
 
-  return { label: status || 'Draft', className: 'bg-white/10 text-[#bbb]' }
+  return { label: status || 'Draft', className: 'bg-white/10 text-muted' }
 }
 
 const isPendingReview = (status: string | undefined, isConsultationListing: boolean) => {
@@ -509,8 +509,8 @@ export const ServiceViewPage = () => {
   if (isLoading) {
     return (
       <div className="flex h-96 w-full flex-col items-center justify-center gap-4">
-        <Loader2 className="size-10 animate-spin text-amber-400" />
-        <p className="text-sm font-medium text-slate-400">
+        <Loader2 className="text-brand-accent size-10 animate-spin" />
+        <p className="text-muted text-sm font-medium">
           {shouldFetchConsultation
             ? 'Fetching consultation information...'
             : 'Fetching service information...'}
@@ -522,19 +522,19 @@ export const ServiceViewPage = () => {
   if (error || !service) {
     return (
       <div className="flex h-96 w-full flex-col items-center justify-center gap-4 px-4 text-center">
-        <div className="rounded-full bg-red-500/10 p-3 text-red-500">
+        <div className="bg-brand-danger/10 rounded-full p-3 text-red-500">
           <Info className="size-10" />
         </div>
         <h3 className="text-lg font-semibold text-white">
           {shouldFetchConsultation ? 'Consultation Not Found' : 'Service Not Found'}
         </h3>
-        <p className="max-w-md text-sm text-slate-400">
+        <p className="text-muted max-w-md text-sm">
           {apiResponse?.message ||
             'The service details could not be loaded. Please ensure the service ID is correct.'}
         </p>
         <Button
           variant="ghost"
-          className="mt-4 gap-2 text-amber-400 hover:bg-transparent hover:text-amber-300"
+          className="text-brand-accent mt-4 gap-2 hover:bg-transparent hover:text-amber-300"
           onClick={handleBack}
         >
           <ArrowLeft className="size-4" /> Go back
@@ -649,10 +649,10 @@ export const ServiceViewPage = () => {
 
   const DetailChip = ({ value, label }: { value: string; label: string }) => (
     <div className="flex flex-col items-center gap-1.5">
-      <div className="rounded-md bg-[#151515] px-4 py-2.5 text-[11px] font-semibold text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.05)]">
+      <div className="bg-brand-surface text-body-sm rounded-md px-4 py-2.5 font-semibold text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.05)]">
         {value}
       </div>
-      <span className="text-[10px] text-[#5C5C5C]">{label}</span>
+      <span className="text-muted text-[10px]">{label}</span>
     </div>
   )
 
@@ -693,7 +693,7 @@ export const ServiceViewPage = () => {
 
   const renderTieredPricing = () => (
     <div className="mt-6 space-y-4">
-      <div className="flex w-full max-w-[360px] rounded-full bg-[#171717] p-0.5">
+      <div className="bg-brand-bg flex w-full max-w-[360px] rounded-full p-0.5">
         {service.tieredPricing?.tiers.map((tier, index) => (
           <button
             key={tier.name}
@@ -710,13 +710,13 @@ export const ServiceViewPage = () => {
       </div>
 
       {tierDetails?.description && (
-        <p className="max-w-[560px] text-[12px] leading-relaxed text-white">
+        <p className="text-body-sm max-w-[560px] leading-relaxed text-white">
           {tierDetails.description}
         </p>
       )}
 
       {Boolean(tierDetails?.features.length) && (
-        <ul className="list-disc space-y-1 pl-4 text-[11px] leading-relaxed text-white">
+        <ul className="text-body-sm list-disc space-y-1 pl-4 leading-relaxed text-white">
           {tierDetails?.features.map((feature) => (
             <li key={feature}>{feature}</li>
           ))}
@@ -744,7 +744,7 @@ export const ServiceViewPage = () => {
           <h1 className="decoration-brand-accent text-[22px] leading-tight font-semibold text-white underline decoration-2 underline-offset-4">
             {consultationTitle}
           </h1>
-          {categoryName && <p className="mt-2 text-[12px] text-[#777]">{categoryName}</p>}
+          {categoryName && <p className="text-body-sm text-muted mt-2">{categoryName}</p>}
         </div>
 
         {consultationTopics.length > 0 && (
@@ -752,7 +752,7 @@ export const ServiceViewPage = () => {
             {consultationTopics.map((topic) => (
               <span
                 key={topic._id}
-                className="rounded-full border border-white/20 px-3 py-1 text-[10px] font-medium text-[#ccc]"
+                className="text-muted rounded-full border border-white/20 px-3 py-1 text-[10px] font-medium"
               >
                 {topic.name}
               </span>
@@ -762,8 +762,8 @@ export const ServiceViewPage = () => {
 
         {outlineItems.length > 0 && (
           <div>
-            <h3 className="text-[12px] font-semibold text-white">Session outline</h3>
-            <ul className="mt-2 list-disc space-y-1.5 pl-4 text-[11px] leading-relaxed text-[#999]">
+            <h3 className="text-body-sm font-semibold text-white">Session outline</h3>
+            <ul className="text-body-sm text-muted mt-2 list-disc space-y-1.5 pl-4 leading-relaxed">
               {outlineItems.map((item) => (
                 <li key={item}>{item}</li>
               ))}
@@ -773,8 +773,8 @@ export const ServiceViewPage = () => {
 
         {benefitItems.length > 0 && (
           <div>
-            <h3 className="text-[12px] font-semibold text-white">Benefits</h3>
-            <ul className="mt-2 list-disc space-y-1.5 pl-4 text-[11px] leading-relaxed text-[#999]">
+            <h3 className="text-body-sm font-semibold text-white">Benefits</h3>
+            <ul className="text-body-sm text-muted mt-2 list-disc space-y-1.5 pl-4 leading-relaxed">
               {benefitItems.map((item) => (
                 <li key={item}>{item}</li>
               ))}
@@ -784,8 +784,8 @@ export const ServiceViewPage = () => {
 
         {(service.whoItsFor || service.whoIsItFor) && (
           <div>
-            <h3 className="text-[12px] font-semibold text-white">Who is it for?</h3>
-            <p className="mt-2 text-[11px] leading-relaxed text-[#999]">
+            <h3 className="text-body-sm font-semibold text-white">Who is it for?</h3>
+            <p className="text-body-sm text-muted mt-2 leading-relaxed">
               {service.whoItsFor || service.whoIsItFor}
             </p>
           </div>
@@ -796,35 +796,35 @@ export const ServiceViewPage = () => {
         <div className="grid grid-cols-3 gap-3">
           <div className="flex flex-col items-center gap-2 rounded-lg border border-white/5 bg-black p-4 text-center">
             <Phone className="text-brand-accent size-4" aria-hidden="true" />
-            <span className="text-[10px] text-[#777]">Mode</span>
-            <span className="text-[11px] font-semibold text-white">
+            <span className="text-muted text-[10px]">Mode</span>
+            <span className="text-body-sm font-semibold text-white">
               {formatConsultationMode(service.mode || service.modeOfConsultation)}
             </span>
           </div>
           <div className="flex flex-col items-center gap-2 rounded-lg border border-white/5 bg-black p-4 text-center">
             <Languages className="text-brand-accent size-4" aria-hidden="true" />
-            <span className="text-[10px] text-[#777]">Language</span>
-            <span className="text-[11px] font-semibold text-white">{consultationLanguages}</span>
+            <span className="text-muted text-[10px]">Language</span>
+            <span className="text-body-sm font-semibold text-white">{consultationLanguages}</span>
           </div>
           <div className="flex flex-col items-center gap-2 rounded-lg border border-white/5 bg-black p-4 text-center">
             <Clock className="text-brand-accent size-4" aria-hidden="true" />
-            <span className="text-[10px] text-[#777]">FollowUps</span>
-            <span className="text-[11px] font-semibold text-white">{followUpLabel}</span>
+            <span className="text-muted text-[10px]">FollowUps</span>
+            <span className="text-body-sm font-semibold text-white">{followUpLabel}</span>
           </div>
         </div>
 
         <div className="space-y-3">
           <div>
-            <p className="text-[11px] font-semibold text-white">Post-session requirement</p>
-            <p className="mt-1 text-[11px] leading-relaxed text-[#999]">
+            <p className="text-body-sm font-semibold text-white">Post-session requirement</p>
+            <p className="text-body-sm text-muted mt-1 leading-relaxed">
               {service.hasPostSessionMessage && service.postSessionMessage?.trim()
                 ? service.postSessionMessage
                 : 'Keep your requirements and questions ready.'}
             </p>
           </div>
           <div>
-            <p className="text-[11px] font-semibold text-white">Pre-session requirement</p>
-            <p className="mt-1 text-[11px] leading-relaxed text-[#999]">
+            <p className="text-body-sm font-semibold text-white">Pre-session requirement</p>
+            <p className="text-body-sm text-muted mt-1 leading-relaxed">
               {service.hasPreSessionRequirement && service.preSessionRequirement?.trim()
                 ? service.preSessionRequirement
                 : 'Keep your requirements and questions ready.'}
@@ -834,12 +834,12 @@ export const ServiceViewPage = () => {
 
         {consultationDurations.length > 0 && (
           <div>
-            <h3 className="mb-3 text-[12px] font-semibold text-white">Duration &amp; Pricing</h3>
+            <h3 className="text-body-sm mb-3 font-semibold text-white">Duration &amp; Pricing</h3>
             <div className="flex flex-wrap gap-3">
               {consultationDurations.map((duration) => (
                 <span
                   key={duration.key}
-                  className="rounded-md bg-[#151515] px-4 py-2.5 text-[10px] font-semibold text-white"
+                  className="bg-brand-surface rounded-md px-4 py-2.5 text-[10px] font-semibold text-white"
                 >
                   {duration.label}
                 </span>
@@ -866,11 +866,11 @@ export const ServiceViewPage = () => {
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[340px_minmax(0,1fr)]">
         <div className="flex flex-col gap-4">
-          <div className="relative h-[220px] w-full overflow-hidden rounded-lg bg-[#101010]">
+          <div className="bg-brand-bg relative h-[220px] w-full overflow-hidden rounded-lg">
             {activeImage ? (
               <img src={activeImage} alt={service.title} className="h-full w-full object-cover" />
             ) : (
-              <div className="flex h-full flex-col items-center justify-center gap-2 text-[#5C5C5C]">
+              <div className="text-muted flex h-full flex-col items-center justify-center gap-2">
                 <ImageIcon className="size-8" aria-hidden="true" />
                 <span className="text-[10px]">No images uploaded</span>
               </div>
@@ -910,12 +910,12 @@ export const ServiceViewPage = () => {
               <h1 className="text-[22px] leading-tight font-semibold text-white">
                 {service.title}
               </h1>
-              {categoryName && <p className="mt-1 text-[12px] text-[#777]">{categoryName}</p>}
+              {categoryName && <p className="text-body-sm text-muted mt-1">{categoryName}</p>}
             </div>
           </div>
 
           {service.description && (
-            <p className="mt-4 max-w-[640px] text-[12px] leading-relaxed text-white">
+            <p className="text-body-sm mt-4 max-w-[640px] leading-relaxed text-white">
               {service.description}
             </p>
           )}
@@ -987,31 +987,31 @@ export const ServiceViewPage = () => {
         <button
           type="button"
           onClick={handleBack}
-          className="group font-heading hover:text-brand-accent flex w-fit items-center gap-2 text-[20px] font-bold tracking-tight text-white transition-colors"
+          className="group font-heading hover:text-brand-accent text-h3 flex w-fit items-center gap-2 font-bold tracking-tight text-white transition-colors"
         >
           <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
           <span>{pageTitle}</span>
         </button>
 
-        <div className="flex items-center gap-1.5 pl-7 text-[12px] font-medium text-[#777777]">
+        <div className="text-body-sm text-muted flex items-center gap-1.5 pl-7 font-medium">
           {fromExpert ? (
             <>
               <button
                 type="button"
                 onClick={() => navigateBackOrFallback(navigate, '/experts/management')}
-                className="transition-colors hover:text-white"
+                className="hover:text-brand-text transition-colors"
               >
                 All Experts
               </button>
-              <span className="text-[#333333]">/</span>
+              <span className="text-muted">/</span>
               <button
                 type="button"
                 onClick={() => expertId && navigate(`/experts/management/profile/${expertId}`)}
-                className="transition-colors hover:text-white"
+                className="hover:text-brand-text transition-colors"
               >
                 {expertName}
               </button>
-              <span className="text-[#333333]">/</span>
+              <span className="text-muted">/</span>
               <span className="font-bold text-white">{pageTitle}</span>
             </>
           ) : (
@@ -1019,30 +1019,30 @@ export const ServiceViewPage = () => {
               <button
                 type="button"
                 onClick={() => navigateBackOrFallback(navigate, '/services/management')}
-                className="transition-colors hover:text-white"
+                className="hover:text-brand-text transition-colors"
               >
                 Service management
               </button>
-              <span className="text-[#333333]">/</span>
+              <span className="text-muted">/</span>
               <span>{pageTitle}</span>
-              <span className="text-[#333333]">/</span>
+              <span className="text-muted">/</span>
               <span className="font-bold text-white">{expertName}</span>
             </>
           )}
         </div>
       </header>
 
-      <div className="rounded-xl border border-white/5 bg-[#111111] p-6">
+      <div className="bg-brand-bg rounded-xl border border-white/5 p-6">
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div>
             <h2 className="text-2xl font-bold text-white">{expertName}</h2>
-            <p className="mt-1 text-[12px] text-[#777]">{formatAppliedAgo(submittedAt)}</p>
+            <p className="text-body-sm text-muted mt-1">{formatAppliedAgo(submittedAt)}</p>
           </div>
           {profilePartnerId && (
             <button
               type="button"
               onClick={() => navigate(`/experts/management/profile/${profilePartnerId}`)}
-              className="inline-flex items-center gap-2 rounded-lg border border-white/10 px-4 py-2 text-[11px] font-semibold text-white transition-colors hover:bg-white/5"
+              className="text-body-sm inline-flex items-center gap-2 rounded-lg border border-white/10 px-4 py-2 font-semibold text-white transition-colors hover:bg-white/5"
             >
               <Eye className="size-3.5" aria-hidden="true" />
               View Profile
@@ -1052,17 +1052,17 @@ export const ServiceViewPage = () => {
 
         <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-3">
           <div className="rounded-lg border border-white/5 bg-black p-4">
-            <p className="text-[11px] text-[#777]">Expert ID</p>
+            <p className="text-body-sm text-muted">Expert ID</p>
             <p className="mt-1 font-mono text-[13px] font-semibold text-white">#{expertIdLabel}</p>
           </div>
           <div className="rounded-lg border border-white/5 bg-black p-4">
-            <p className="text-[11px] text-[#777]">Submitted</p>
+            <p className="text-body-sm text-muted">Submitted</p>
             <p className="mt-1 text-[13px] font-semibold text-white">
               {formatExpertDateTime(submittedAt)}
             </p>
           </div>
           <div className="rounded-lg border border-white/5 bg-black p-4">
-            <p className="text-[11px] text-[#777]">Last Updated</p>
+            <p className="text-body-sm text-muted">Last Updated</p>
             <p className="mt-1 text-[13px] font-semibold text-white">
               {formatExpertDateTime(service.updatedAt)}
             </p>
@@ -1070,22 +1070,22 @@ export const ServiceViewPage = () => {
         </div>
       </div>
 
-      <h2 className="text-[14px] font-semibold text-white">{detailsSectionTitle}</h2>
+      <h2 className="text-body-md font-semibold text-white">{detailsSectionTitle}</h2>
 
-      <div className="rounded-xl border border-white/5 bg-[#111111] p-5">
+      <div className="bg-brand-bg rounded-xl border border-white/5 p-5">
         {isConsultation ? renderConsultationDetails() : renderServiceDetails()}
       </div>
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
-        <div className="rounded-xl border border-white/5 bg-[#111111] p-5">
-          <div className="mb-4 flex items-center gap-2 text-[14px] font-semibold text-white">
+        <div className="bg-brand-bg rounded-xl border border-white/5 p-5">
+          <div className="text-body-md mb-4 flex items-center gap-2 font-semibold text-white">
             <History className="text-brand-accent size-4" aria-hidden="true" />
             <h3>Internal Notes *</h3>
           </div>
-          <div className="min-h-[120px] rounded-lg border border-white/5 bg-black p-4 text-[12px] text-[#777]">
+          <div className="text-body-sm text-muted min-h-[120px] rounded-lg border border-white/5 bg-black p-4">
             {service.adminNote?.trim() || 'No notes yet.'}
             {escalation?.escalatedByName ? (
-              <p className="mt-3 text-[11px] text-[#999]">
+              <p className="text-body-sm text-muted mt-3">
                 Escalated by {escalation.escalatedByName}
                 {escalation.escalatedToName ? ` to ${escalation.escalatedToName}` : ''}.
                 {escalation.escalationNote ? ` Note: ${escalation.escalationNote}` : ''}
@@ -1095,7 +1095,7 @@ export const ServiceViewPage = () => {
         </div>
 
         {showApprovalControls && (
-          <div className="rounded-xl border border-white/5 bg-[#111111] p-5">
+          <div className="bg-brand-bg rounded-xl border border-white/5 p-5">
             <DecisionControlsHeader className="mb-4" />
             <DecisionControlButtons
               onApprove={() => openDecisionModal('approve')}

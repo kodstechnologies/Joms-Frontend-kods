@@ -81,11 +81,11 @@ export function TableActionsDropdown({
         className={cn(
           'rounded p-1 transition-colors',
           tone === 'light'
-            ? 'text-[#777] hover:bg-white/10 hover:text-white'
+            ? 'text-muted hover:text-brand-text hover:bg-white/10'
             : 'text-brand-muted hover:text-brand-text hover:bg-white/10',
         )}
       >
-        <MoreVertical className="size-4" aria-hidden="true" />
+        <MoreVertical className="icon-sm" aria-hidden="true" />
       </button>
 
       {isOpen &&
@@ -100,7 +100,7 @@ export function TableActionsDropdown({
               ref={menuRef}
               style={{ top: position.top, left: position.left, minWidth: menuWidth }}
               className={cn(
-                'rounded-brand-md fixed z-[101] py-1.5 text-left shadow-2xl',
+                'radius-md fixed z-[101] py-1.5 text-left shadow-2xl',
                 tone === 'light'
                   ? 'border border-slate-200 bg-white'
                   : 'bg-brand-surface border border-white/10',
@@ -136,7 +136,7 @@ export function TableActionsItem({
       type="button"
       onClick={onClick}
       className={cn(
-        'flex w-full items-center gap-2 px-4 py-2.5 text-left text-xs font-semibold transition-all',
+        'text-body-sm-semibold flex w-full items-center gap-2 px-4 py-2.5 text-left transition-all',
         tone === 'light'
           ? 'text-slate-800 hover:bg-slate-50 hover:text-slate-900'
           : 'text-brand-stroke hover:text-brand-accent hover:bg-white/10',

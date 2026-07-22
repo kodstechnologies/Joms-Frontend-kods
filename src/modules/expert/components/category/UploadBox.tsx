@@ -45,7 +45,7 @@ const UploadBox = ({
     <div className="space-y-2">
       {label ? (
         <div className="flex items-center gap-1.5">
-          <label className="text-xs font-medium text-white">{label}</label>
+          <label className="text-body-sm-medium text-brand-text">{label}</label>
           {helperText ? <InfoTooltip text={helperText} /> : null}
         </div>
       ) : null}
@@ -69,7 +69,7 @@ const UploadBox = ({
           isCompact ? 'h-11' : 'h-[72px]'
         } ${
           disabled ? 'cursor-not-allowed opacity-60' : 'hover:border-brand-accent cursor-pointer'
-        } ${preview ? 'border-brand-accent/60' : 'border-[#333333]'}`}
+        } ${preview ? 'border-brand-accent/60' : 'border-white/10'}`}
         style={{ backgroundColor: categoryFormTheme.uploadBg }}
       >
         {preview ? (
@@ -88,12 +88,12 @@ const UploadBox = ({
           </>
         ) : (
           <div
-            className={`flex items-center justify-center gap-2 text-[#888888] ${
+            className={`text-muted flex items-center justify-center gap-2 ${
               isCompact ? 'px-2' : 'flex-col gap-1'
             }`}
           >
             <UploadCloud size={isCompact ? 16 : 18} className="shrink-0" aria-hidden="true" />
-            {!isCompact ? <span className="text-[11px]">{placeholderText}</span> : null}
+            {!isCompact ? <span className="text-body-sm">{placeholderText}</span> : null}
           </div>
         )}
       </div>

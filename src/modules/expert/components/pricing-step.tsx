@@ -68,10 +68,10 @@ export const PricingStep = ({ venueData, setVenueData }: PricingStepProps) => {
   return (
     <>
       <div className="mx-auto w-full max-w-[850px]">
-        <div className="animate-in fade-in slide-in-from-right-4 rounded-lg border border-white/5 bg-[#151515] p-6 shadow-xl duration-300">
+        <div className="animate-in fade-in slide-in-from-right-4 bg-brand-surface rounded-lg border border-white/5 p-6 shadow-xl duration-300">
           <h2 className="text-lg font-semibold text-white">Set Pricing</h2>
 
-          <p className="mb-8 text-sm text-slate-400">Provide details about your service offering</p>
+          <p className="text-muted mb-8 text-sm">Provide details about your service offering</p>
 
           <div className="grid grid-cols-2 gap-6">
             <div>
@@ -151,7 +151,7 @@ export const PricingStep = ({ venueData, setVenueData }: PricingStepProps) => {
               >
                 <span>
                   Set Availability
-                  <span className="ml-2 text-xs text-slate-500">
+                  <span className="text-muted ml-2 text-xs">
                     ({enabledDaysCount} days
                     {blockedDates.length > 0 ? `, ${blockedDates.length} blocked` : ''})
                   </span>
@@ -166,22 +166,24 @@ export const PricingStep = ({ venueData, setVenueData }: PricingStepProps) => {
 
       {showAvailabilityModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80">
-          <div className="max-h-[90vh] w-[650px] overflow-y-auto rounded-2xl bg-[#121212]">
-            <div className="flex items-center justify-between border-b border-slate-800 p-6">
+          <div className="ui-modal-shell max-h-[90vh] w-[650px] max-w-[650px] overflow-y-auto">
+            <div className="ui-modal-header">
               <div>
-                <h2 className="text-2xl font-semibold text-white">Schedule Date & Time</h2>
+                <h2 className="text-h2 font-semibold text-white">Schedule Date & Time</h2>
 
-                <p className="mt-1 text-sm text-slate-400">
-                  Set time & date regarding availability
-                </p>
+                <p className="text-muted mt-1 text-sm">Set time & date regarding availability</p>
               </div>
 
-              <button onClick={() => setShowAvailabilityModal(false)}>
+              <button
+                type="button"
+                onClick={() => setShowAvailabilityModal(false)}
+                aria-label="Close"
+              >
                 <X size={22} className="text-white" />
               </button>
             </div>
 
-            <div className="p-6">
+            <div className="ui-modal-body">
               <div className="mb-6">
                 <div className="mb-4 grid grid-cols-3 text-sm font-medium text-white">
                   <span>Availability</span>
@@ -227,54 +229,52 @@ export const PricingStep = ({ venueData, setVenueData }: PricingStepProps) => {
                   <button
                     type="button"
                     onClick={addBlockedDate}
-                    className="rounded border border-slate-600 px-4 py-1.5 text-xs text-white hover:bg-white/5"
+                    className="ui-cta ui-cta-outline px-4 py-1.5 text-xs"
                   >
                     Add More
                   </button>
                 </div>
 
                 {blockedDates.length === 0 ? (
-                  <p className="rounded bg-black p-3 text-xs text-slate-500">
-                    No blocked dates added.
-                  </p>
+                  <p className="text-muted rounded bg-black p-3 text-xs">No blocked dates added.</p>
                 ) : (
                   <div className="space-y-3">
                     {blockedDates.map((entry, index) => (
                       <div key={index} className="flex items-end gap-3 rounded-lg bg-black p-3">
                         <div>
-                          <label className="mb-1 block text-xs text-slate-400">Date</label>
+                          <label className="text-muted mb-1 block text-xs">Date</label>
                           <input
                             type="date"
                             value={entry.date}
                             onChange={(e) => updateBlockedDate(index, 'date', e.target.value)}
-                            className="rounded bg-[#1a1a1a] px-3 py-2 text-xs text-white"
+                            className="ui-input bg-brand-surface rounded px-3 py-2 text-xs"
                           />
                         </div>
 
                         <div>
-                          <label className="mb-1 block text-xs text-slate-400">Time</label>
+                          <label className="text-muted mb-1 block text-xs">Time</label>
                           <input
                             type="time"
                             value={entry.from}
                             onChange={(e) => updateBlockedDate(index, 'from', e.target.value)}
-                            className="rounded bg-[#1a1a1a] px-3 py-2 text-xs text-white"
+                            className="ui-input bg-brand-surface rounded px-3 py-2 text-xs"
                           />
                         </div>
 
                         <div>
-                          <label className="mb-1 block text-xs text-slate-400">To</label>
+                          <label className="text-muted mb-1 block text-xs">To</label>
                           <input
                             type="time"
                             value={entry.to}
                             onChange={(e) => updateBlockedDate(index, 'to', e.target.value)}
-                            className="rounded bg-[#1a1a1a] px-3 py-2 text-xs text-white"
+                            className="ui-input bg-brand-surface rounded px-3 py-2 text-xs"
                           />
                         </div>
 
                         <button
                           type="button"
                           onClick={() => removeBlockedDate(index)}
-                          className="flex h-9 w-9 items-center justify-center rounded-md bg-red-500/90 text-white"
+                          className="ui-cta ui-cta-negative flex h-9 w-9 items-center justify-center p-0"
                         >
                           <Trash2 size={14} />
                         </button>
@@ -284,17 +284,19 @@ export const PricingStep = ({ venueData, setVenueData }: PricingStepProps) => {
                 )}
               </div>
 
-              <div className="mt-8 flex justify-between">
+              <div className="ui-modal-footer mt-8 justify-between">
                 <button
+                  type="button"
                   onClick={() => setShowAvailabilityModal(false)}
-                  className="w-32 rounded-lg border border-slate-500 py-3 text-sm text-white"
+                  className="ui-modal-btn ui-modal-btn-cancel w-32 flex-none"
                 >
                   Cancel
                 </button>
 
                 <button
+                  type="button"
                   onClick={() => setShowAvailabilityModal(false)}
-                  className="bg-brand-accent text-brand-text-dark w-40 rounded-lg py-3 text-sm font-medium"
+                  className="ui-modal-btn ui-modal-btn-gold w-40 flex-none"
                 >
                   Done
                 </button>

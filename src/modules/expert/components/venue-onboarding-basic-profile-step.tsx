@@ -5,8 +5,7 @@ import { useServiceCategoriesByType } from '../hooks/use-service-categories'
 import type { VenueOnboardingFormData } from '../utils/venue-onboarding-form'
 import { sanitizeMobileNumber } from '@/shared/lib/phone'
 
-const fieldClass =
-  'h-10 w-full rounded-md border border-white/10 bg-black px-3 text-sm text-white outline-none placeholder:text-[#666] focus:border-brand-accent'
+const fieldClass = 'ui-input'
 
 type Props = {
   formData: VenueOnboardingFormData
@@ -40,10 +39,10 @@ export const VenueOnboardingBasicProfileStep = ({ formData, setFormData }: Props
 
   return (
     <div className="mx-auto w-full max-w-[850px]">
-      <div className="animate-in fade-in slide-in-from-right-4 rounded-lg border border-white/5 bg-[#151515] p-6 duration-300">
+      <div className="animate-in fade-in slide-in-from-right-4 bg-brand-surface rounded-lg border border-white/5 p-6 duration-300">
         <div className="mb-6">
           <h2 className="text-sm font-bold text-white">Basic Profile Setup</h2>
-          <p className="mt-1 text-xs text-[#777777]">Core identity details and profile media</p>
+          <p className="text-muted mt-1 text-xs">Core identity details and profile media</p>
         </div>
 
         <div className="mb-8">
@@ -51,7 +50,7 @@ export const VenueOnboardingBasicProfileStep = ({ formData, setFormData }: Props
             <button
               type="button"
               onClick={() => coverInputRef.current?.click()}
-              className="hover:border-brand-accent/50 flex h-32 w-full items-center justify-center rounded-md border border-dashed border-[#444] bg-black transition-colors"
+              className="hover:border-brand-accent/50 flex h-32 w-full items-center justify-center rounded-md border border-dashed border-white/20 bg-black transition-colors"
             >
               {formData.coverImageUrl ? (
                 <img
@@ -61,8 +60,8 @@ export const VenueOnboardingBasicProfileStep = ({ formData, setFormData }: Props
                 />
               ) : (
                 <div className="text-center">
-                  <Upload className="mx-auto mb-2 size-5 text-[#777]" />
-                  <p className="text-xs text-[#777]">Upload Cover Image</p>
+                  <Upload className="text-muted mx-auto mb-2 size-5" />
+                  <p className="text-muted text-xs">Upload Cover Image</p>
                 </div>
               )}
             </button>
@@ -77,7 +76,7 @@ export const VenueOnboardingBasicProfileStep = ({ formData, setFormData }: Props
             <button
               type="button"
               onClick={() => profileInputRef.current?.click()}
-              className="absolute -bottom-8 left-6 size-16 overflow-hidden rounded-full border-4 border-[#151515] bg-slate-600"
+              className="border-brand-surface absolute -bottom-8 left-6 size-16 overflow-hidden rounded-full border-4 bg-slate-600"
             >
               {formData.profileImageUrl ? (
                 <img
@@ -87,7 +86,7 @@ export const VenueOnboardingBasicProfileStep = ({ formData, setFormData }: Props
                 />
               ) : (
                 <div className="flex h-full w-full items-center justify-center">
-                  <Upload className="size-4 text-[#999]" />
+                  <Upload className="text-muted size-4" />
                 </div>
               )}
             </button>
@@ -118,7 +117,7 @@ export const VenueOnboardingBasicProfileStep = ({ formData, setFormData }: Props
               value={formData.venueType}
               disabled
               placeholder="Venue Partner"
-              className={`${fieldClass} cursor-not-allowed text-[#888] opacity-70`}
+              className={`${fieldClass} text-muted cursor-not-allowed opacity-70`}
             />
           </div>
 
@@ -139,7 +138,7 @@ export const VenueOnboardingBasicProfileStep = ({ formData, setFormData }: Props
           <div>
             <label className="mb-2 block text-xs font-medium text-white">Category *</label>
             <div className="relative">
-              <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-[#777]" />
+              <Search className="text-muted absolute top-1/2 left-3 size-4 -translate-y-1/2" />
               <select
                 value={formData.venueCategoryId}
                 onChange={(e) => {

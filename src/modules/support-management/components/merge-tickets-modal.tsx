@@ -2,8 +2,6 @@ import { GitMerge, X } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 
-import { Button } from '@/shared/components/ui/button'
-
 type MergeTicketsModalProps = {
   open: boolean
   onClose: () => void
@@ -20,24 +18,24 @@ export function MergeTicketsModal({ open, onClose }: MergeTicketsModalProps) {
   if (!open) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
-      <div className="w-full max-w-lg rounded-2xl border border-white/10 bg-[#111111] shadow-2xl">
-        <div className="flex items-center justify-between border-b border-white/10 px-6 py-5">
-          <h2 className="text-lg font-semibold text-white">Merge Tickets</h2>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-6">
+      <div className="ui-modal-shell">
+        <div className="ui-modal-header">
+          <h2 className="text-h2 text-brand-text">Merge Tickets</h2>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg p-1.5 text-slate-400 hover:text-white"
+            className="text-brand-muted rounded-full p-1.5 transition-colors hover:bg-white/10 hover:text-white"
           >
-            <X className="size-5" />
+            <X className="icon-lg" aria-hidden="true" />
           </button>
         </div>
 
-        <div className="space-y-6 px-6 py-6 text-center">
-          <div className="mx-auto grid size-14 place-items-center rounded-full bg-amber-500/10 text-amber-400">
-            <GitMerge className="size-6" />
+        <div className="ui-modal-body space-y-6 text-center">
+          <div className="bg-brand-accent/10 text-brand-accent mx-auto grid size-14 place-items-center rounded-full">
+            <GitMerge className="icon-lg" />
           </div>
-          <p className="text-sm leading-relaxed text-slate-400">
+          <p className="text-body-md text-muted">
             You are merging 2 tickets of &apos;Sara Johnson&apos; regarding &apos;Payment
             Issue&apos;
           </p>
@@ -48,43 +46,43 @@ export function MergeTicketsModal({ open, onClose }: MergeTicketsModalProps) {
                 {index < mergeTickets.length - 1 ? (
                   <div className="absolute top-8 left-[11px] h-full w-px bg-white/10" />
                 ) : null}
-                <div className="relative z-10 mt-1 size-6 shrink-0 rounded-full border border-amber-500/40 bg-amber-500/10" />
+                <div className="border-brand-accent/40 bg-brand-accent/10 relative z-10 mt-1 size-6 shrink-0 rounded-full border" />
                 <div className="pb-6">
-                  <p className="text-sm font-semibold text-white">{ticket.user}</p>
-                  <p className="text-xs text-slate-400">{ticket.issue}</p>
-                  <p className="mt-1 text-[11px] text-slate-500">{ticket.time}</p>
+                  <p className="text-body-md-semibold text-brand-text">{ticket.user}</p>
+                  <p className="text-body-sm text-muted">{ticket.issue}</p>
+                  <p className="text-body-sm text-muted mt-1">{ticket.time}</p>
                 </div>
               </div>
             ))}
           </div>
 
-          <label className="block space-y-2.5 text-left">
-            <span className="text-sm font-medium text-white">Admin notes *</span>
+          <label className="block space-y-2 text-left">
+            <span className="text-body-sm-medium text-brand-text">
+              Admin notes <span className="text-brand-danger">*</span>
+            </span>
             <textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder="Enter here"
-              className="h-28 w-full resize-none rounded-lg border-0 bg-[#1a1a1a] px-4 py-3 text-sm text-white placeholder:text-slate-500 focus:ring-1 focus:ring-white/20 focus:outline-none"
+              className="ui-textarea"
             />
           </label>
         </div>
 
-        <div className="flex justify-end gap-3 border-t border-white/10 px-6 py-5">
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-lg border border-white/20 bg-transparent px-6 py-2.5 text-sm font-medium text-white hover:bg-white/5"
-          >
+        <div className="ui-modal-footer">
+          <button type="button" onClick={onClose} className="ui-modal-btn ui-modal-btn-cancel">
             Cancel
           </button>
-          <Button
+          <button
+            type="button"
             onClick={() => {
               toast.success('Tickets merged (static preview)')
               onClose()
             }}
+            className="ui-modal-btn ui-modal-btn-gold"
           >
             Merge Tickets
-          </Button>
+          </button>
         </div>
       </div>
     </div>

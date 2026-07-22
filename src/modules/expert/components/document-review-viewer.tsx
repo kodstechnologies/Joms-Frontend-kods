@@ -173,11 +173,11 @@ function DocumentReviewViewerContent({
             <X className="size-5" />
           </button>
           <div className="min-w-0">
-            <p className="truncate text-[14px] font-semibold text-white">{filename}</p>
+            <p className="text-body-md-semibold truncate text-white">{filename}</p>
             {reviewStatus === 'APPROVED' ? (
-              <p className="text-[11px] font-medium text-emerald-400">Approved</p>
+              <p className="text-body-sm text-brand-positive font-medium">Approved</p>
             ) : reviewStatus === 'REJECTED' ? (
-              <p className="text-[11px] font-medium text-red-400">Rejected</p>
+              <p className="text-body-sm text-brand-danger font-medium">Rejected</p>
             ) : null}
           </div>
         </div>
@@ -197,9 +197,9 @@ function DocumentReviewViewerContent({
               <button
                 type="button"
                 onClick={() => openDecisionModal('approve')}
-                className="flex w-full items-center gap-3 px-3.5 py-2.5 text-left text-[13px] font-medium hover:bg-black/5"
+                className="text-body-md flex w-full items-center gap-3 px-3.5 py-2.5 text-left font-medium hover:bg-black/5"
               >
-                <span className="flex size-6 items-center justify-center rounded-full bg-[#16A34A] text-white">
+                <span className="bg-brand-positive flex size-6 items-center justify-center rounded-full text-white">
                   <Check className="size-3.5" strokeWidth={3} />
                 </span>
                 Approve Document
@@ -207,9 +207,9 @@ function DocumentReviewViewerContent({
               <button
                 type="button"
                 onClick={() => openDecisionModal('reject')}
-                className="flex w-full items-center gap-3 px-3.5 py-2.5 text-left text-[13px] font-medium hover:bg-black/5"
+                className="text-body-md flex w-full items-center gap-3 px-3.5 py-2.5 text-left font-medium hover:bg-black/5"
               >
-                <span className="flex size-6 items-center justify-center rounded-full bg-[#E11D2E] text-white">
+                <span className="bg-brand-danger flex size-6 items-center justify-center rounded-full text-white">
                   <X className="size-3.5" strokeWidth={3} />
                 </span>
                 Reject Document
@@ -217,9 +217,9 @@ function DocumentReviewViewerContent({
               <button
                 type="button"
                 onClick={() => openDecisionModal('requestChanges')}
-                className="flex w-full items-center gap-3 px-3.5 py-2.5 text-left text-[13px] font-medium hover:bg-black/5"
+                className="text-body-md flex w-full items-center gap-3 px-3.5 py-2.5 text-left font-medium hover:bg-black/5"
               >
-                <span className="flex size-6 items-center justify-center rounded-full bg-[#0D9488] text-white">
+                <span className="bg-brand-teal flex size-6 items-center justify-center rounded-full text-white">
                   <RefreshCw className="size-3.5" strokeWidth={2.5} />
                 </span>
                 Request Changes
@@ -251,7 +251,7 @@ function DocumentReviewViewerContent({
               href={url}
               target="_blank"
               rel="noreferrer"
-              className="mt-3 inline-flex text-sm font-semibold text-[#E8B884] underline"
+              className="text-brand-accent mt-3 inline-flex text-sm font-semibold underline"
             >
               Open in new tab
             </a>
@@ -260,7 +260,7 @@ function DocumentReviewViewerContent({
       </div>
 
       <div className="pointer-events-none absolute inset-x-0 bottom-6 flex justify-center">
-        <div className="pointer-events-auto flex items-center gap-1 rounded-full border border-white/10 bg-[#1A1A1A]/95 px-2 py-1.5 shadow-lg backdrop-blur">
+        <div className="bg-brand-surface/95 pointer-events-auto flex items-center gap-1 rounded-full border border-white/10 px-2 py-1.5 shadow-lg backdrop-blur">
           <button
             type="button"
             aria-label="Zoom out"
@@ -337,30 +337,30 @@ export function ReviewableDocumentCard({
     <div className="rounded-lg border border-white/5 bg-black p-4">
       <div className="flex items-start gap-2">
         {status === 'APPROVED' ? (
-          <Check className="mt-0.5 size-4 shrink-0 text-[#00B761]" strokeWidth={3} />
+          <Check className="text-brand-positive mt-0.5 size-4 shrink-0" strokeWidth={3} />
         ) : status === 'REJECTED' ? (
-          <X className="mt-0.5 size-4 shrink-0 text-[#E11D2E]" strokeWidth={3} />
+          <X className="text-brand-danger mt-0.5 size-4 shrink-0" strokeWidth={3} />
         ) : status === 'PENDING' ? (
-          <Hourglass className="mt-0.5 size-4 shrink-0 text-[#E8A86B]" />
+          <Hourglass className="text-brand-accent mt-0.5 size-4 shrink-0" />
         ) : (
           <span className="mt-0.5 size-4 shrink-0 rounded-full border border-white/10" />
         )}
         <div className="min-w-0">
-          <p className="truncate text-[12px] font-semibold text-white">{label}</p>
-          <p className="text-[10px] text-[#777]">{meta}</p>
+          <p className="text-body-sm-semibold truncate text-white">{label}</p>
+          <p className="text-muted text-[10px]">{meta}</p>
         </div>
       </div>
       {url ? (
         <button
           type="button"
           onClick={onView}
-          className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-md bg-[#1f1f1f] py-2 text-[11px] font-semibold text-white transition-colors hover:bg-[#2a2a2a]"
+          className="text-body-sm bg-brand-surface mt-3 flex w-full items-center justify-center gap-1.5 rounded-md py-2 font-semibold text-white transition-colors hover:bg-white/7"
         >
           <FileText className="size-3.5" />
           View Document
         </button>
       ) : (
-        <div className="mt-3 flex w-full items-center justify-center rounded-md bg-[#1a1a1a] py-2 text-[11px] font-medium text-[#666]">
+        <div className="text-body-sm bg-brand-surface text-muted mt-3 flex w-full items-center justify-center rounded-md py-2 font-medium">
           Not uploaded
         </div>
       )}

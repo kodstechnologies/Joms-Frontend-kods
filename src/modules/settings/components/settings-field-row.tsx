@@ -19,4 +19,4 @@ export function SettingsFieldRow({ label, description, children }: SettingsField
 }
 
 export const settingsControlClass =
-  'h-10 w-full rounded-lg border border-white/10 bg-[#1a1a1a] px-3 text-sm text-white outline-none focus:ring-1 focus:ring-white/20'
+  'h-10 w-full rounded-lg border border-white/10 bg-brand-surface px-3 text-sm text-white outline-none focus:ring-1 focus:ring-white/20'

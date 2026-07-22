@@ -54,9 +54,14 @@ export function Topbar({
   const canOpenProfile = isSubAdmin
 
   return (
-    <header className={cn('sticky top-0 z-30 backdrop-blur', uiTokens.headerBg)}>
+    <header
+      className={cn(
+        'sticky top-0 z-30 h-[var(--brand-topbar-height)] shrink-0 backdrop-blur',
+        uiTokens.headerBg,
+      )}
+    >
       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
-      <div className="flex h-16 items-center justify-between px-4 lg:px-6">
+      <div className="flex h-full items-center justify-between px-4 md:px-6">
         <div className="flex items-center gap-3">
           <button
             type="button"
@@ -64,14 +69,14 @@ export function Topbar({
             className="rounded-brand-md text-brand-stroke focus-visible:ring-brand-accent/30 p-2 hover:bg-white/5 focus-visible:ring-2 focus-visible:outline-none md:hidden"
             aria-label="Open sidebar"
           >
-            <Menu className="size-5" />
+            <Menu className="icon-lg" strokeWidth={1.5} />
           </button>
           {showCompact ? (
             <SidebarBrand />
           ) : (
             <div>
-              <p className="text-brand-text text-[15px] font-semibold tracking-tight">{title}</p>
-              <p className="text-brand-muted text-xs leading-relaxed">Command Operations Centre</p>
+              <p className="text-body-md-semibold text-brand-text tracking-tight">{title}</p>
+              <p className="text-body-sm text-muted leading-[18px]">Command Operations Centre</p>
             </div>
           )}
         </div>
@@ -96,10 +101,10 @@ export function Topbar({
             aria-label={canOpenProfile ? 'Open my profile' : 'Profile'}
           >
             <div className={cn('hidden text-right sm:block')}>
-              <p className="text-brand-text text-sm font-semibold">{displayName}</p>
-              <p className="text-brand-muted text-[11px]">{roleLabel}</p>
+              <p className="text-body-md-semibold text-brand-text">{displayName}</p>
+              <p className="text-body-sm text-muted">{roleLabel}</p>
             </div>
-            <div className="from-brand-gold-from/30 to-brand-gold-to/20 text-brand-text grid size-10 place-items-center overflow-hidden rounded-full border border-white/10 bg-gradient-to-br text-sm font-semibold shadow-[0_12px_35px_rgba(0,0,0,0.45)]">
+            <div className="from-brand-gold-from/30 to-brand-gold-to/20 text-brand-text text-body-md-semibold grid size-10 place-items-center overflow-hidden rounded-full border border-white/10 bg-gradient-to-br shadow-[0_12px_35px_rgba(0,0,0,0.45)]">
               {profileImageUrl ? (
                 <img src={profileImageUrl} alt={displayName} className="size-full object-cover" />
               ) : (

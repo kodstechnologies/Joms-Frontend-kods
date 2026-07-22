@@ -25,16 +25,16 @@ const PAGE_SIZE = 10
 
 function getEscrowStatusClassName(status: EscrowHoldStatus) {
   if (status === 'Active' || status === 'Released') {
-    return 'border-emerald-500/25 bg-emerald-500/10 text-emerald-400'
+    return 'border-brand-positive/25 bg-brand-positive/10 text-brand-positive'
   }
-  return 'border-amber-600/25 bg-amber-600/15 text-amber-400'
+  return 'border-brand-accent/25 bg-brand-accent/10 text-brand-accent'
 }
 
 function getBookingStatusClassName(status: EscrowBookingRow['status']) {
   if (status === 'Paid') {
-    return 'border-emerald-500/25 bg-emerald-500/10 text-emerald-400'
+    return 'border-brand-positive/25 bg-brand-positive/10 text-brand-positive'
   }
-  return 'border-amber-500/25 bg-amber-500/10 text-amber-400'
+  return 'border-brand-accent/25 bg-brand-accent/10 text-brand-accent'
 }
 
 export function EscrowManagementPage() {
@@ -214,7 +214,7 @@ export function EscrowManagementPage() {
         accessorKey: 'escrowId',
         header: 'Escrow ID',
         cell: ({ row }) => (
-          <span className="font-mono text-[11px] text-white uppercase">
+          <span className="text-body-sm-semibold text-brand-text font-mono uppercase">
             {row.original.escrowId}
           </span>
         ),
@@ -223,14 +223,18 @@ export function EscrowManagementPage() {
         accessorKey: 'transactionId',
         header: 'Transaction ID',
         cell: ({ row }) => (
-          <span className="font-mono text-[11px] text-[#888888]">{row.original.transactionId}</span>
+          <span className="text-body-sm-semibold text-muted font-mono">
+            {row.original.transactionId}
+          </span>
         ),
       },
       { accessorKey: 'type', header: 'Type' },
       {
         accessorKey: 'amount',
         header: 'Amount',
-        cell: ({ row }) => <span className="font-semibold text-white">{row.original.amount}</span>,
+        cell: ({ row }) => (
+          <span className="text-brand-text font-semibold">{row.original.amount}</span>
+        ),
       },
       { accessorKey: 'holdReason', header: 'Hold Reason' },
       { accessorKey: 'initiatedDate', header: 'Initiated Date' },
@@ -241,7 +245,7 @@ export function EscrowManagementPage() {
         cell: ({ row }) => (
           <span
             className={cn(
-              'inline-flex rounded-full border px-2.5 py-0.5 text-[11px] font-semibold',
+              'text-body-sm-semibold inline-flex rounded-full border px-2.5 py-0.5',
               getEscrowStatusClassName(row.original.status),
             )}
           >
@@ -298,7 +302,7 @@ export function EscrowManagementPage() {
         accessorKey: 'serviceId',
         header: 'Service ID',
         cell: ({ row }) => (
-          <span className="font-mono text-[11px] text-white uppercase">
+          <span className="text-body-sm-semibold text-brand-text font-mono uppercase">
             {row.original.serviceId}
           </span>
         ),
@@ -306,14 +310,14 @@ export function EscrowManagementPage() {
       {
         accessorKey: 'name',
         header: 'Name',
-        cell: ({ row }) => <span className="font-medium text-white">{row.original.name}</span>,
+        cell: ({ row }) => <span className="text-brand-text font-medium">{row.original.name}</span>,
       },
       { accessorKey: 'expertName', header: 'Expert Name' },
       {
         accessorKey: 'bookingId',
         header: 'Booking ID',
         cell: ({ row }) => (
-          <span className="font-mono text-[11px] text-white uppercase">
+          <span className="text-body-sm-semibold text-brand-text font-mono uppercase">
             {row.original.bookingId}
           </span>
         ),
@@ -325,7 +329,7 @@ export function EscrowManagementPage() {
         cell: ({ row }) => (
           <span
             className={cn(
-              'inline-flex rounded-full border px-2.5 py-0.5 text-[11px] font-semibold',
+              'text-body-sm-semibold inline-flex rounded-full border px-2.5 py-0.5',
               getBookingStatusClassName(row.original.status),
             )}
           >
@@ -336,7 +340,9 @@ export function EscrowManagementPage() {
       {
         accessorKey: 'revenue',
         header: 'Revenue',
-        cell: ({ row }) => <span className="font-semibold text-white">{row.original.revenue}</span>,
+        cell: ({ row }) => (
+          <span className="text-brand-text font-semibold">{row.original.revenue}</span>
+        ),
       },
       {
         id: 'actions',
@@ -359,16 +365,16 @@ export function EscrowManagementPage() {
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-[28px] font-bold tracking-tight text-white">Escrow Management</h1>
-          <p className="mt-1 text-[13px] text-[#888888]">
+          <h1 className="text-h2 text-brand-text tracking-tight">Escrow Management</h1>
+          <p className="text-body-md text-muted mt-1">
             Track revenue, payouts, and financial performance
           </p>
-          <p className="mt-3 text-[12px] text-[#888888]">
-            <Link to="/finance/dashboard" className="transition-colors hover:text-white">
+          <p className="text-body-sm text-muted mt-3">
+            <Link to="/finance/dashboard" className="hover:text-brand-text transition-colors">
               Finance Management
             </Link>
             <span> / </span>
-            <Link to="/finance/services" className="transition-colors hover:text-white">
+            <Link to="/finance/services" className="hover:text-brand-text transition-colors">
               Services
             </Link>
           </p>
@@ -391,8 +397,10 @@ export function EscrowManagementPage() {
               setSelectedRowIds([])
             }}
             className={cn(
-              'rounded-lg px-4 py-2 text-[12px] font-semibold transition-colors',
-              activeTab === tab.id ? 'bg-[#2A2A2A] text-white' : 'text-[#888888] hover:text-white',
+              'radius-md text-body-sm-semibold px-4 py-2 transition-colors',
+              activeTab === tab.id
+                ? 'bg-brand-surface text-brand-text'
+                : 'text-muted hover:text-brand-text',
             )}
           >
             {tab.label}

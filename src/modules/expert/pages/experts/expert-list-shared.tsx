@@ -20,7 +20,7 @@ export function ExpertListHeader({ title, breadcrumb }: { title: string; breadcr
           <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
           <span>{title}</span>
         </button>
-        <p className="pl-7 text-[12px] font-medium text-[#777777]">{breadcrumb}</p>
+        <p className="text-body-sm-medium text-muted pl-7">{breadcrumb}</p>
       </header>
       <Button
         className="h-9 w-full md:w-auto"

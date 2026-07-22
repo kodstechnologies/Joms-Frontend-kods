@@ -133,7 +133,7 @@ const ROWS: LeaderRow[] = [
 const RANK_BADGE_STYLES: Record<number, string> = {
   1: 'bg-brand-accent text-brand-text-dark',
   2: 'bg-brand-gold-from text-brand-text-dark',
-  3: 'bg-[#C88A4B] text-black',
+  3: 'bg-brand-gold-to text-brand-text-dark',
 }
 
 function RankBadge({ rank }: { rank: number }) {
@@ -141,7 +141,7 @@ function RankBadge({ rank }: { rank: number }) {
     return (
       <span
         className={cn(
-          'inline-flex h-6 w-7 items-center justify-center rounded-md text-[11px] font-bold',
+          'text-body-sm inline-flex h-6 w-7 items-center justify-center rounded-md font-bold',
           RANK_BADGE_STYLES[rank],
         )}
       >
@@ -150,7 +150,7 @@ function RankBadge({ rank }: { rank: number }) {
     )
   }
   return (
-    <span className="inline-flex h-6 w-7 items-center justify-center rounded-md border border-white/10 bg-white/5 text-[11px] font-semibold text-slate-300">
+    <span className="text-body-sm text-muted inline-flex h-6 w-7 items-center justify-center rounded-md border border-white/10 bg-white/5 font-semibold">
       {String(rank).padStart(2, '0')}
     </span>
   )
@@ -160,7 +160,7 @@ function Avatar({ size = 'md' }: { size?: 'md' | 'lg' }) {
   return (
     <div
       className={cn(
-        'from-brand-accent/30 grid place-items-center rounded-full bg-gradient-to-br to-[#222] ring-2 ring-white/10',
+        'from-brand-accent/30 to-brand-surface grid place-items-center rounded-full bg-gradient-to-br ring-2 ring-white/10',
         size === 'lg' ? 'size-16' : 'size-12',
       )}
     >
@@ -179,22 +179,20 @@ function PodiumCard({ expert }: { expert: PodiumExpert }) {
         )}
         <Avatar size={isFirst ? 'lg' : 'md'} />
       </div>
-      <p className="mt-3 text-[13px] font-bold text-white">{expert.name}</p>
-      <p className="text-[11px] text-[#888888]">{expert.profession}</p>
+      <p className="text-body-md mt-3 font-bold text-white">{expert.name}</p>
+      <p className="text-body-sm text-muted">{expert.profession}</p>
 
       <div
         className={cn(
-          'mt-3 flex w-full flex-col items-center gap-2 rounded-xl border bg-[#161616] px-4 py-5',
+          'bg-brand-surface mt-3 flex w-full flex-col items-center gap-2 rounded-xl border px-4 py-5',
           isFirst ? 'border-brand-accent/40' : 'border-white/[0.06]',
         )}
       >
         <div className="grid size-12 place-items-center rounded-full bg-black/40">
           <UserRound className="text-brand-accent size-6" />
         </div>
-        <span className="text-[10px] font-medium tracking-wide text-[#888888] uppercase">
-          Score
-        </span>
-        <span className="text-[20px] font-bold text-white">{expert.score}</span>
+        <span className="text-muted text-[10px] font-medium tracking-wide uppercase">Score</span>
+        <span className="text-h3 font-bold text-white">{expert.score}</span>
       </div>
     </div>
   )
@@ -214,7 +212,7 @@ export const LeaderboardPage = () => {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-white">Expert Leader board</h1>
-          <p className="mt-1 text-[13px] text-[#888888]">
+          <p className="text-body-md text-muted mt-1">
             Top ranked experts based on platform performance
           </p>
         </div>
@@ -224,7 +222,7 @@ export const LeaderboardPage = () => {
         </Button>
       </div>
 
-      <div className="rounded-2xl border border-white/[0.06] bg-[#0f0f0f] px-6 py-8">
+      <div className="bg-brand-bg rounded-2xl border border-white/[0.06] px-6 py-8">
         <div className="mx-auto grid max-w-3xl grid-cols-3 items-end gap-4">
           {PODIUM.map((expert, index) => (
             <PodiumCard key={index} expert={expert} />
@@ -232,14 +230,14 @@ export const LeaderboardPage = () => {
         </div>
       </div>
 
-      <div className="rounded-2xl border border-white/[0.06] bg-[#121212] p-5">
+      <div className="rounded-brand-lg bg-brand-surface border border-white/[0.06] p-5">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div className="relative w-full lg:max-w-sm">
-            <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-[#666666]" />
+            <Search className="text-muted absolute top-1/2 left-3 size-4 -translate-y-1/2" />
             <input
               type="text"
               placeholder="Search by name, ID or profession"
-              className="focus:border-brand-accent/50 h-10 w-full rounded-lg border border-white/10 bg-black pr-3 pl-9 text-[12px] text-white transition-colors outline-none placeholder:text-[#555555]"
+              className="ui-input focus:border-brand-accent/50 text-body-sm pl-9 transition-colors outline-none"
             />
           </div>
 
@@ -255,12 +253,12 @@ export const LeaderboardPage = () => {
           </div>
         </div>
 
-        <p className="mt-4 text-[11px] text-[#777777]">Showing 1-10 of 20 users</p>
+        <p className="text-body-sm text-muted mt-4">Showing 1-10 of 20 users</p>
 
         <div className="mt-3 overflow-x-auto">
           <table className="w-full min-w-[820px] border-collapse text-left">
             <thead>
-              <tr className="border-b border-white/5 text-[10px] font-semibold tracking-wide text-[#777777] uppercase">
+              <tr className="text-muted text-[10px] font-semibold tracking-wide uppercase">
                 <th className="px-3 py-3">
                   <input
                     type="checkbox"
@@ -293,7 +291,7 @@ export const LeaderboardPage = () => {
               {ROWS.map((row, index) => (
                 <tr
                   key={index}
-                  className="border-b border-white/5 text-[12px] text-slate-200 transition-colors hover:bg-white/[0.02]"
+                  className="text-body-sm text-brand-text border-b border-white/5 transition-colors hover:bg-white/[0.02]"
                 >
                   <td className="px-3 py-3">
                     <input
@@ -306,10 +304,10 @@ export const LeaderboardPage = () => {
                   <td className="px-3 py-3">
                     <RankBadge rank={row.rank} />
                   </td>
-                  <td className="px-3 py-3 text-[#999999]">{row.expertId}</td>
+                  <td className="text-muted px-3 py-3">{row.expertId}</td>
                   <td className="px-3 py-3 font-semibold text-white">{row.name}</td>
                   <td className="px-3 py-3">
-                    <span className="inline-flex rounded-md border border-white/10 bg-white/5 px-2 py-1 text-[10px] font-semibold text-slate-200">
+                    <span className="text-body-sm text-brand-text inline-flex rounded-md border border-white/10 bg-white/5 px-2 py-1 font-semibold">
                       {row.category}
                     </span>
                   </td>
@@ -337,10 +335,10 @@ export const LeaderboardPage = () => {
                 key={page}
                 type="button"
                 className={cn(
-                  'grid size-8 place-items-center rounded-md text-[11px] font-bold transition-colors',
+                  'text-body-sm grid size-8 place-items-center rounded-md font-bold transition-colors',
                   index === 0
                     ? 'bg-brand-accent text-brand-text-dark'
-                    : 'border border-white/10 bg-white/5 text-slate-300 hover:bg-white/10',
+                    : 'text-muted border border-white/10 bg-white/5 hover:bg-white/10',
                 )}
               >
                 {page}

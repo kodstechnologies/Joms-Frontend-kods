@@ -64,28 +64,28 @@ const infraMock = [
 
 function HealthMetricCard({ metric }: { metric: HealthMetric }) {
   return (
-    <div className={cn(uiTokens.radiusCard, 'border border-white/10 bg-[#111111] p-4 sm:p-5')}>
-      <p className="text-xs text-slate-500">{metric.title}</p>
-      <p className="mt-2 text-2xl font-semibold tracking-tight text-white sm:text-[28px]">
+    <div className={cn(uiTokens.radiusCard, 'bg-brand-surface border border-white/10 p-4 sm:p-5')}>
+      <p className="text-body-sm text-muted">{metric.title}</p>
+      <p className="text-h2 text-brand-text sm:text-h2 mt-2 font-semibold tracking-tight">
         {metric.value}
       </p>
       <div className="mt-3 min-h-[28px]">
         {metric.trend ? (
           <span
             className={cn(
-              'inline-flex rounded-full px-2.5 py-1 text-[11px] font-medium',
+              'text-body-sm-semibold inline-flex rounded-full px-2.5 py-1',
               metric.trend.tone === 'positive'
-                ? 'bg-emerald-500/15 text-emerald-400'
-                : 'bg-rose-500/15 text-rose-400',
+                ? 'bg-brand-positive/15 text-brand-positive'
+                : 'bg-brand-danger/15 text-brand-danger',
             )}
           >
             {metric.trend.text}
           </span>
         ) : null}
-        {metric.hint ? <p className="text-[11px] text-slate-500">{metric.hint}</p> : null}
+        {metric.hint ? <p className="text-body-sm-semibold text-muted">{metric.hint}</p> : null}
         {metric.status ? (
-          <p className="inline-flex items-center gap-1.5 text-[11px] text-slate-400">
-            <Check className="size-3.5 text-white" />
+          <p className="text-body-sm-semibold text-muted inline-flex items-center gap-1.5">
+            <Check className="text-brand-text size-3.5" />
             {metric.status}
           </p>
         ) : null}
@@ -106,14 +106,16 @@ function ChartPanel({
   const [range, setRange] = useState('Last 3 Months')
 
   return (
-    <section className={cn(uiTokens.radiusCard, 'border border-white/10 bg-[#111111] p-4 sm:p-5')}>
+    <section
+      className={cn(uiTokens.radiusCard, 'bg-brand-surface border border-white/10 p-4 sm:p-5')}
+    >
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-sm font-semibold text-white">{title}</h2>
+        <h2 className="text-body-md-semibold text-brand-text">{title}</h2>
         <div className="flex items-center gap-2">
           <select
             value={range}
             onChange={(event) => setRange(event.target.value)}
-            className="h-9 rounded-lg border border-white/10 bg-[#0B0B0B] px-3 text-xs text-slate-300"
+            className="radius-md bg-brand-bg text-body-sm text-brand-text/80 h-9 border border-white/10 px-3"
           >
             <option>Last 3 Months</option>
             <option>Last 30 Days</option>
@@ -122,7 +124,7 @@ function ChartPanel({
           <button
             type="button"
             onClick={onRefresh}
-            className="grid size-9 place-items-center rounded-full border border-white/10 bg-[#0B0B0B] text-slate-400 hover:text-white"
+            className="bg-brand-bg text-muted hover:text-brand-text grid size-9 place-items-center rounded-full border border-white/10"
             aria-label="Refresh chart"
           >
             <RefreshCw className="size-4" />
@@ -135,7 +137,7 @@ function ChartPanel({
 }
 
 function LoadBar({ value }: { value: number }) {
-  const tone = value >= 60 ? 'bg-[#C98A3E]' : 'bg-emerald-500'
+  const tone = value >= 60 ? 'bg-brand-accent' : 'bg-brand-positive'
   return (
     <div className="h-2 w-full max-w-[180px] overflow-hidden rounded-full bg-white/10">
       <div className={cn('h-full rounded-full', tone)} style={{ width: `${value}%` }} />
@@ -148,10 +150,10 @@ export function PlatformHealthPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
-          <h1 className="text-3xl font-semibold tracking-tight text-white sm:text-4xl">
+          <h1 className="text-h1 text-brand-text sm:text-h1 font-semibold tracking-tight">
             Platform Health & Operations
           </h1>
-          <p className="mt-1 text-sm text-slate-400 sm:text-base">
+          <p className="text-body-md text-muted sm:text-body-lg mt-1">
             System performance, security metrics, and operational analytics
           </p>
         </div>
@@ -159,7 +161,7 @@ export function PlatformHealthPage() {
           <button
             type="button"
             onClick={() => toast.message('Export coming soon')}
-            className="inline-flex items-center gap-2 rounded-xl border border-[#F0C27B]/40 bg-[#1A1A1A] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#222222]"
+            className="ui-cta ui-cta-secondary inline-flex items-center gap-2 px-4"
           >
             <Upload className="size-4" />
             Export Data
@@ -167,7 +169,7 @@ export function PlatformHealthPage() {
           <button
             type="button"
             onClick={() => toast.message('Metrics configuration coming soon')}
-            className="inline-flex items-center gap-2 rounded-xl bg-[#F0C27B] px-4 py-2.5 text-sm font-semibold text-[#050505] hover:bg-[#E6B46C]"
+            className="ui-cta ui-cta-primary inline-flex items-center gap-2 px-4"
           >
             <Settings2 className="size-4" />
             Manage Metrics
@@ -218,7 +220,7 @@ export function PlatformHealthPage() {
                 yAxisId="left"
                 dataKey="transactions"
                 name="Transactions (K)"
-                fill="#3B82F6"
+                fill="#155dfc"
                 radius={[6, 6, 0, 0]}
                 barSize={36}
               />
@@ -226,7 +228,7 @@ export function PlatformHealthPage() {
                 yAxisId="left"
                 dataKey="supportTickets"
                 name="Support Tickets"
-                fill="#F59E0B"
+                fill="#f6cb86"
                 radius={[6, 6, 0, 0]}
                 barSize={18}
               />
@@ -235,9 +237,9 @@ export function PlatformHealthPage() {
                 type="monotone"
                 dataKey="uptime"
                 name="Uptime %"
-                stroke="#22C55E"
+                stroke="#00a63e"
                 strokeWidth={2}
-                dot={{ r: 4, fill: '#22C55E', strokeWidth: 0 }}
+                dot={{ r: 4, fill: '#00a63e', strokeWidth: 0 }}
               />
             </ComposedChart>
           </ResponsiveContainer>
@@ -279,8 +281,8 @@ export function PlatformHealthPage() {
                 type="monotone"
                 dataKey="memory"
                 name="Memory usage"
-                stroke="#F59E0B"
-                fill="#F59E0B"
+                stroke="#f6cb86"
+                fill="#f6cb86"
                 fillOpacity={0.22}
                 strokeWidth={2}
               />
@@ -289,8 +291,8 @@ export function PlatformHealthPage() {
                 type="monotone"
                 dataKey="cpu"
                 name="CPU Usage"
-                stroke="#3B82F6"
-                fill="#3B82F6"
+                stroke="#155dfc"
+                fill="#155dfc"
                 fillOpacity={0.22}
                 strokeWidth={2}
               />
@@ -299,9 +301,9 @@ export function PlatformHealthPage() {
                 type="monotone"
                 dataKey="requests"
                 name="Request/min"
-                stroke="#22C55E"
+                stroke="#00a63e"
                 strokeWidth={2}
-                dot={{ r: 4, fill: '#22C55E', strokeWidth: 0 }}
+                dot={{ r: 4, fill: '#00a63e', strokeWidth: 0 }}
               />
             </ComposedChart>
           </ResponsiveContainer>
@@ -339,21 +341,21 @@ export function PlatformHealthPage() {
               <Bar
                 dataKey="flags"
                 name="Compliance Flags"
-                fill="#F59E0B"
+                fill="#f6cb86"
                 radius={[6, 6, 0, 0]}
                 barSize={18}
               />
               <Bar
                 dataKey="resolved"
                 name="Issues Resolved"
-                fill="#22C55E"
+                fill="#00a63e"
                 radius={[6, 6, 0, 0]}
                 barSize={18}
               />
               <Bar
                 dataKey="incidents"
                 name="Security Incidents"
-                fill="#EF4444"
+                fill="#d3191c"
                 radius={[6, 6, 0, 0]}
                 barSize={18}
               />
@@ -363,14 +365,14 @@ export function PlatformHealthPage() {
       </ChartPanel>
 
       <section
-        className={cn(uiTokens.radiusCard, 'border border-white/10 bg-[#111111] p-4 sm:p-5')}
+        className={cn(uiTokens.radiusCard, 'bg-brand-surface border border-white/10 p-4 sm:p-5')}
       >
         <div className="mb-4 flex items-center justify-between gap-3">
-          <h2 className="text-sm font-semibold text-white">Infrastructure Health</h2>
+          <h2 className="text-body-md-semibold text-brand-text">Infrastructure Health</h2>
           <button
             type="button"
             onClick={() => toast.message('Refresh coming soon')}
-            className="grid size-9 place-items-center rounded-full border border-white/10 bg-[#0B0B0B] text-slate-400 hover:text-white"
+            className="bg-brand-bg text-muted hover:text-brand-text grid size-9 place-items-center rounded-full border border-white/10"
             aria-label="Refresh infrastructure"
           >
             <RefreshCw className="size-4" />
@@ -381,22 +383,22 @@ export function PlatformHealthPage() {
           {infraMock.map((row) => (
             <div
               key={row.label}
-              className="grid gap-4 rounded-xl border border-white/10 bg-[#0B0B0B] px-4 py-4 lg:grid-cols-[minmax(0,1.4fr)_120px_120px_minmax(0,1fr)] lg:items-center"
+              className="radius-lg bg-brand-bg grid gap-4 border border-white/10 px-4 py-4 lg:grid-cols-[minmax(0,1.4fr)_120px_120px_minmax(0,1fr)] lg:items-center"
             >
               <div className="flex items-start gap-3">
-                <span className="mt-1.5 inline-block size-2 rounded-full bg-emerald-400" />
+                <span className="bg-brand-positive mt-1.5 inline-block size-2 rounded-full" />
                 <div>
-                  <p className="text-sm font-semibold text-white">{row.label}</p>
-                  <p className="text-xs text-slate-500">Status: Healthy</p>
+                  <p className="text-body-md-semibold text-brand-text">{row.label}</p>
+                  <p className="text-body-sm text-muted">Status: Healthy</p>
                 </div>
               </div>
               <div>
-                <p className="text-[10px] tracking-wide text-slate-500 uppercase">Uptime</p>
-                <p className="mt-1 text-sm font-semibold text-white">{row.uptime}</p>
+                <p className="text-body-sm-semibold text-muted tracking-wide uppercase">Uptime</p>
+                <p className="text-body-md-semibold text-brand-text mt-1">{row.uptime}</p>
               </div>
               <div>
-                <p className="text-[10px] tracking-wide text-slate-500 uppercase">Load</p>
-                <p className="mt-1 text-sm font-semibold text-white">{row.load}%</p>
+                <p className="text-body-sm-semibold text-muted tracking-wide uppercase">Load</p>
+                <p className="text-body-md-semibold text-brand-text mt-1">{row.load}%</p>
               </div>
               <LoadBar value={row.load} />
             </div>

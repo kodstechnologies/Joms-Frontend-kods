@@ -29,10 +29,11 @@ const STATUS_FILTERS: Array<{ label: string; value: SubscriptionStatus | 'all' }
 ]
 
 function getStatusClassName(status: FinanceMembershipStatus) {
-  if (status === 'Active') return 'border-emerald-500/25 bg-emerald-500/10 text-emerald-400'
-  if (status === 'Paused') return 'border-amber-500/25 bg-amber-500/10 text-amber-400'
-  if (status === 'Cancelled') return 'border-rose-500/25 bg-rose-500/10 text-rose-400'
-  return 'border-blue-500/25 bg-blue-500/10 text-blue-300'
+  if (status === 'Active')
+    return 'border-brand-positive/25 bg-brand-positive/10 text-brand-positive'
+  if (status === 'Paused') return 'border-brand-accent/25 bg-brand-accent/10 text-brand-accent'
+  if (status === 'Cancelled') return 'border-brand-danger/25 bg-brand-danger/10 text-brand-danger'
+  return 'border-brand-teal/25 bg-brand-teal/10 text-brand-teal'
 }
 
 export function MembershipManagementPage() {
@@ -131,7 +132,7 @@ export function MembershipManagementPage() {
         accessorKey: 'subscriptionId',
         header: 'Subscription ID',
         cell: ({ row }) => (
-          <span className="font-mono text-[11px] text-white uppercase">
+          <span className="text-body-sm-semibold text-brand-text font-mono uppercase">
             {row.original.subscriptionId}
           </span>
         ),
@@ -152,7 +153,7 @@ export function MembershipManagementPage() {
         cell: ({ row }) => (
           <span
             className={cn(
-              'inline-flex rounded-full border px-2.5 py-0.5 text-[11px] font-semibold',
+              'text-body-sm-semibold inline-flex rounded-full border px-2.5 py-0.5',
               getStatusClassName(row.original.status),
             )}
           >
@@ -180,16 +181,16 @@ export function MembershipManagementPage() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-[28px] font-bold tracking-tight text-white">Membership Management</h1>
-        <p className="mt-1 text-[13px] text-[#888888]">
+        <h1 className="text-h2 text-brand-text tracking-tight">Membership Management</h1>
+        <p className="text-body-md text-muted mt-1">
           Track revenue, payouts, and financial performance
         </p>
-        <p className="mt-3 text-[12px] text-[#888888]">
-          <Link to="/finance/dashboard" className="transition-colors hover:text-white">
+        <p className="text-body-sm text-muted mt-3">
+          <Link to="/finance/dashboard" className="hover:text-brand-text transition-colors">
             Finance Management
           </Link>
           <span> / </span>
-          <span className="font-semibold text-white">Memberships</span>
+          <span className="text-brand-text font-semibold">Memberships</span>
         </p>
       </div>
 
@@ -208,8 +209,8 @@ export function MembershipManagementPage() {
               className={cn(
                 'rounded-full border px-4 py-2 text-xs font-medium',
                 statusFilter === filter.value
-                  ? 'border-[#EBC38C]/40 bg-[#EBC38C]/10 text-[#EBC38C]'
-                  : 'border-white/10 text-slate-400',
+                  ? 'border-brand-accent/40 bg-brand-accent/10 text-brand-accent'
+                  : 'text-muted border-white/10',
               )}
             >
               {filter.label}

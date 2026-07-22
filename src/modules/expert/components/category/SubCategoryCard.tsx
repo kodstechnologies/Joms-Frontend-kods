@@ -49,8 +49,8 @@ const SubCategoryCard = ({
           <div key={item.id} className={index > 0 ? 'border-t border-white/10 pt-8' : undefined}>
             <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1fr_auto] lg:items-end">
               <div>
-                <label className="mb-2 block text-[12px] font-medium text-white">
-                  Sub-categories <span className="text-white">*</span>
+                <label className="text-body-sm-medium text-brand-text mb-2 block">
+                  Sub-categories <span className="text-brand-text">*</span>
                 </label>
 
                 <input
@@ -62,7 +62,7 @@ const SubCategoryCard = ({
               </div>
 
               <div className="lg:w-[200px]">
-                <label className="mb-2 block text-[12px] font-medium text-white">
+                <label className="text-body-sm-medium text-brand-text mb-2 block">
                   Upload Vector Icon
                 </label>
 
@@ -83,15 +83,15 @@ const SubCategoryCard = ({
                     aria-label="Remove uploaded icon"
                     className="!bg-brand-accent hover:!bg-brand-gold-from size-11 shrink-0 border-0 p-0"
                   >
-                    <Trash2 className="size-[18px] text-red-500" aria-hidden="true" />
+                    <Trash2 className="text-brand-danger size-[18px]" aria-hidden="true" />
                   </Button>
                 </div>
               </div>
             </div>
 
             <div className="mt-5">
-              <label className="mb-2 block text-[12px] font-medium text-white">
-                Description <span className="text-white">*</span>
+              <label className="text-body-sm-medium text-brand-text mb-2 block">
+                Description <span className="text-brand-text">*</span>
               </label>
 
               <textarea

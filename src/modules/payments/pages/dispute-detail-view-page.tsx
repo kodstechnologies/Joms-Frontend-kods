@@ -20,23 +20,13 @@ import { getDisputeDetailById } from '@/modules/payments/mock/dispute-detail.moc
 import { cn } from '@/shared/lib/cn'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 
-const cardClass = 'rounded-[10px] border border-white/[0.06] bg-[#141414] p-4 sm:p-5'
-const sectionTitleClass = 'font-figtree text-[14px] font-semibold leading-[20px] text-white'
-const sectionSubtitleClass =
-  'mt-1 font-figtree text-[12px] font-normal leading-[20px] text-[#888888]'
-const labelClass = 'font-figtree text-[12px] font-normal leading-[20px] text-[#888888]'
-const valueClass = 'font-figtree text-[12px] font-normal leading-[20px] text-white'
+const cardClass = 'radius-lg border border-white/[0.06] bg-brand-surface p-4 sm:p-5'
+const sectionTitleClass = 'text-body-md-semibold text-brand-text'
+const sectionSubtitleClass = 'text-body-sm text-muted mt-1'
+const labelClass = 'text-body-sm text-muted'
+const valueClass = 'text-body-sm text-brand-text'
 const textPanelClass =
-  'rounded-[10px] border border-white/[0.06] bg-[#0F0F0F] p-4 font-figtree text-[12px] font-normal leading-[20px] text-[#CCCCCC]'
-
-const resolveDisputeButtonClass =
-  'inline-flex h-10 w-[138px] shrink-0 items-center justify-center gap-[10px] rounded-[10px] bg-[#00A63E] p-[10px] font-figtree text-[12px] font-semibold leading-[20px] tracking-normal text-white transition-colors hover:bg-[#009636]'
-
-const rejectDisputeButtonClass =
-  'inline-flex h-10 w-[131px] shrink-0 items-center justify-center gap-[10px] rounded-[10px] bg-[#D3191C] p-[10px] font-figtree text-[12px] font-semibold leading-[20px] tracking-normal text-white transition-colors hover:bg-[#B81417]'
-
-const secondaryDecisionButtonClass =
-  'inline-flex h-10 shrink-0 items-center justify-center gap-[10px] rounded-[10px] border border-white/20 bg-transparent p-[10px] font-figtree text-[12px] font-semibold leading-[20px] tracking-normal text-white transition-colors hover:bg-white/5'
+  'radius-lg border border-white/[0.06] bg-brand-bg p-4 text-body-sm text-brand-text/80'
 
 function Card({ className, children }: { className?: string; children: ReactNode }) {
   return <section className={cn(cardClass, className)}>{children}</section>
@@ -76,7 +66,7 @@ function AssessmentBlock({
   return (
     <div className="space-y-2.5">
       <div className="flex items-center gap-2">
-        <span className="text-[#888888]">{icon}</span>
+        <span className="text-muted">{icon}</span>
         <p className={sectionTitleClass}>{title}</p>
       </div>
       {children}
@@ -86,7 +76,7 @@ function AssessmentBlock({
 
 function UnderReviewBadge() {
   return (
-    <span className="font-figtree inline-flex rounded-full border border-[#FFC16B]/40 bg-[#FFC16B]/10 px-2.5 py-0.5 text-[11px] leading-[20px] font-semibold text-[#FFC16B]">
+    <span className="text-body-sm-semibold border-brand-accent/40 bg-brand-accent/10 text-brand-accent inline-flex rounded-full border px-2.5 py-0.5">
       Under Review
     </span>
   )
@@ -102,17 +92,17 @@ export function DisputeDetailViewPage() {
   const [isRequestMoreInfoOpen, setIsRequestMoreInfoOpen] = useState(false)
 
   return (
-    <div className="flex flex-col gap-5 bg-black pb-6">
+    <div className="bg-brand-bg flex flex-col gap-5 pb-6">
       <header>
         <button
           type="button"
           onClick={() => navigateBackOrFallback(navigate, '/finance/refunds')}
-          className="group flex w-fit items-center gap-2 text-[20px] font-bold tracking-tight text-white transition-colors hover:text-[#FBC078]"
+          className="group text-h3 hover:text-brand-accent text-brand-text flex w-fit items-center gap-2 tracking-tight transition-colors"
         >
           <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
           <span>Payment Detail View</span>
         </button>
-        <p className="font-figtree mt-2 pl-7 text-[12px] leading-[20px] font-normal text-[#777777]">
+        <p className="text-body-sm text-muted mt-2 pl-7">
           <Link to="/finance/refunds" className="transition-colors hover:text-white">
             Refunds & Chargebacks
           </Link>
@@ -131,7 +121,7 @@ export function DisputeDetailViewPage() {
               Complete information related to the reported refund dispute.
             </p>
           </div>
-          <span className="font-figtree inline-flex w-fit items-center gap-2 rounded-full border border-white/15 bg-[#0F0F0F] px-3 py-1.5 text-[11px] leading-[20px] font-medium text-white">
+          <span className="text-body-sm-medium bg-brand-bg text-brand-text inline-flex w-fit items-center gap-2 rounded-full border border-white/15 px-3 py-1.5">
             <Flag className="size-3.5" aria-hidden="true" />
             Escalated to Admin
           </span>
@@ -178,7 +168,7 @@ export function DisputeDetailViewPage() {
                 title="Support's Recommendation"
               >
                 <TextPanel>
-                  <span className="font-figtree text-[12px] leading-[20px] font-semibold text-[#00A63E]">
+                  <span className="text-body-sm-semibold text-brand-positive">
                     {detail.supportRecommendation}
                   </span>
                 </TextPanel>
@@ -211,13 +201,13 @@ export function DisputeDetailViewPage() {
                     type="button"
                     onClick={() => setSelectedEvidenceId(file.id)}
                     className={cn(
-                      'rounded-[10px] border bg-[#0F0F0F] p-4 text-left transition-colors',
+                      'radius-lg bg-brand-bg border p-4 text-left transition-colors',
                       selected ? 'border-white' : 'border-white/[0.06] hover:border-white/20',
                     )}
                   >
-                    <FileText className="mb-3 size-8 text-[#888888]" aria-hidden="true" />
-                    <p className="truncate text-[12px] font-medium text-white">{file.fileName}</p>
-                    <p className="mt-2 text-[10px] text-[#888888]">
+                    <FileText className="text-muted mb-3 size-8" aria-hidden="true" />
+                    <p className="text-body-sm-medium text-brand-text truncate">{file.fileName}</p>
+                    <p className="text-body-sm text-muted mt-2">
                       {file.fileSize} · {file.date}
                     </p>
                   </button>
@@ -228,21 +218,19 @@ export function DisputeDetailViewPage() {
 
           <Card>
             <div className="mb-4 flex items-center gap-2">
-              <Gavel className="size-4 text-[#888888]" aria-hidden="true" />
-              <h2 className="font-figtree text-[12px] leading-[20px] font-semibold text-white">
-                Decision Controls
-              </h2>
+              <Gavel className="text-muted size-4" aria-hidden="true" />
+              <h2 className="text-body-sm-semibold text-brand-text">Decision Controls</h2>
             </div>
 
             <div className="flex flex-col gap-[10px] sm:flex-row sm:flex-wrap">
               <button
                 type="button"
                 onClick={() => setIsApproveRefundOpen(true)}
-                className={resolveDisputeButtonClass}
+                className="ui-cta ui-cta-positive w-[138px] shrink-0"
               >
                 Resolve Dispute
                 <Check
-                  className="size-[16.67px] shrink-0 text-white"
+                  className="icon-sm shrink-0 text-white"
                   strokeWidth={2.5}
                   aria-hidden="true"
                 />
@@ -250,25 +238,21 @@ export function DisputeDetailViewPage() {
               <button
                 type="button"
                 onClick={() => setIsRejectRefundOpen(true)}
-                className={rejectDisputeButtonClass}
+                className="ui-cta ui-cta-negative w-[131px] shrink-0"
               >
                 Reject Dispute
-                <X
-                  className="h-[16.708px] w-[16.667px] shrink-0 text-white"
-                  strokeWidth={2.5}
-                  aria-hidden="true"
-                />
+                <X className="icon-sm shrink-0 text-white" strokeWidth={2.5} aria-hidden="true" />
               </button>
               <button
                 type="button"
                 onClick={() => setIsRequestMoreInfoOpen(true)}
-                className={secondaryDecisionButtonClass}
+                className="ui-cta ui-cta-secondary shrink-0"
               >
                 Request More Info
                 <Flag
                   fill="#FFFFFF"
                   stroke="#FFFFFF"
-                  className="h-[16.25px] w-[14.583px] shrink-0"
+                  className="icon-sm shrink-0"
                   strokeWidth={2}
                   aria-hidden="true"
                 />
@@ -276,13 +260,13 @@ export function DisputeDetailViewPage() {
               <button
                 type="button"
                 onClick={() => navigate(`/finance/refunds/${id}/escalate`)}
-                className={secondaryDecisionButtonClass}
+                className="ui-cta ui-cta-secondary shrink-0"
               >
                 Escalate
                 <Flag
                   fill="#FFFFFF"
                   stroke="#FFFFFF"
-                  className="h-[16.25px] w-[14.583px] shrink-0"
+                  className="icon-sm shrink-0"
                   strokeWidth={2}
                   aria-hidden="true"
                 />
@@ -317,7 +301,7 @@ export function DisputeDetailViewPage() {
               {detail.timeline.map((item, index) => (
                 <div key={item.step} className="flex gap-4">
                   <div className="flex flex-col items-center">
-                    <div className="grid size-8 shrink-0 place-items-center rounded-full border border-white/15 bg-[#121212] text-[11px] font-semibold text-white">
+                    <div className="text-body-sm-semibold bg-brand-surface text-brand-text grid size-8 shrink-0 place-items-center rounded-full border border-white/15">
                       {item.step}
                     </div>
                     {index < detail.timeline.length - 1 ? (
@@ -326,13 +310,13 @@ export function DisputeDetailViewPage() {
                   </div>
                   <div className="min-w-0 flex-1 pb-6">
                     <div className="flex flex-wrap items-center gap-2">
-                      <p className="text-[13px] font-semibold text-white">{item.title}</p>
-                      <span className="inline-flex items-center gap-1 text-[11px] text-[#888888]">
+                      <p className="text-body-md-semibold text-brand-text">{item.title}</p>
+                      <span className="text-body-sm text-muted inline-flex items-center gap-1">
                         <User className="size-3" aria-hidden="true" />
                         {item.actor}
                       </span>
                     </div>
-                    <p className="mt-1 text-[11px] text-[#666666]">{item.timestamp}</p>
+                    <p className="text-body-sm text-muted mt-1">{item.timestamp}</p>
                     <TextPanel className="mt-3">{item.description}</TextPanel>
                   </div>
                 </div>

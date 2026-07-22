@@ -205,7 +205,7 @@ const TOP_HOSTS: TopHost[] = [
   },
 ]
 
-const CHART_BLUE = '#2E7DFF'
+const CHART_BLUE = 'var(--brand-action)'
 
 const tooltipStyle = {
   background: '#ffffff',
@@ -218,17 +218,17 @@ const tooltipStyle = {
 
 function MetricCard({ metric }: { metric: Metric }) {
   return (
-    <div className="rounded-xl border border-white/[0.06] bg-[#121212] p-4 transition-colors hover:border-white/10">
-      <p className="text-[11px] font-medium text-[#888888]">{metric.label}</p>
-      <p className="mt-2 text-[20px] font-bold tracking-tight text-white">{metric.value}</p>
+    <div className="rounded-brand-lg bg-brand-surface border border-white/[0.06] p-4 transition-colors hover:border-white/10">
+      <p className="text-body-sm text-muted font-medium">{metric.label}</p>
+      <p className="text-h3 mt-2 font-bold tracking-tight text-white">{metric.value}</p>
       {metric.change ? (
         <div className="mt-2 flex items-center gap-2">
           <span
             className={cn(
               'inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-bold',
               metric.changeType === 'down'
-                ? 'bg-emerald-500/10 text-emerald-400'
-                : 'bg-emerald-500/10 text-emerald-400',
+                ? 'bg-brand-positive/15 text-brand-positive'
+                : 'bg-brand-positive/15 text-brand-positive',
             )}
           >
             {metric.changeType === 'down' ? (
@@ -238,9 +238,7 @@ function MetricCard({ metric }: { metric: Metric }) {
             )}
             {metric.change}
           </span>
-          {metric.changeNote && (
-            <span className="text-[10px] text-[#666666]">{metric.changeNote}</span>
-          )}
+          {metric.changeNote && <span className="text-muted text-[10px]">{metric.changeNote}</span>}
         </div>
       ) : null}
     </div>
@@ -257,15 +255,15 @@ function ChartCard({
   onRefresh?: () => void
 }) {
   return (
-    <div className="rounded-xl border border-white/[0.06] bg-[#121212] px-5 py-6">
+    <div className="rounded-brand-lg bg-brand-surface border border-white/[0.06] px-5 py-6">
       <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-[14px] font-bold text-white">{title}</h2>
+        <h2 className="text-body-md font-bold text-white">{title}</h2>
         {onRefresh ? (
           <button
             type="button"
             aria-label="Refresh chart"
             onClick={onRefresh}
-            className="grid h-8 w-8 place-items-center rounded-lg border border-white/10 bg-black text-slate-300 transition-colors hover:bg-white/5"
+            className="text-muted grid h-8 w-8 place-items-center rounded-lg border border-white/10 bg-black transition-colors hover:bg-white/5"
           >
             <RefreshCw className="size-3.5" />
           </button>
@@ -291,7 +289,7 @@ function RevenueGrowthTooltip({
 
   return (
     <div style={tooltipStyle}>
-      <p className="text-[11px] font-semibold text-slate-900">
+      <p className="text-body-sm font-semibold text-slate-900">
         {label} - Revenue: ₹{value.toLocaleString('en-IN')}
       </p>
     </div>
@@ -315,7 +313,7 @@ export const ExpertDashboardPage = () => {
           <h1 className="text-2xl font-bold tracking-tight text-white md:text-3xl">
             Expert Management
           </h1>
-          <p className="mt-1 text-sm text-[#888888] md:text-base">
+          <p className="text-body-md text-muted md:text-body-lg mt-1">
             Comprehensive member analytics and engagement metrics
           </p>
         </div>
@@ -366,7 +364,7 @@ export const ExpertDashboardPage = () => {
                   axisLine={false}
                   tick={{ fill: 'rgba(148,163,184,0.85)', fontSize: 11 }}
                 />
-                <Tooltip contentStyle={tooltipStyle} cursor={{ fill: 'rgba(46,125,255,0.08)' }} />
+                <Tooltip contentStyle={tooltipStyle} cursor={{ fill: 'rgba(21,93,252,0.08)' }} />
                 <Bar dataKey="count" fill={CHART_BLUE} radius={[4, 4, 0, 0]} barSize={42} />
               </BarChart>
             </ResponsiveContainer>
@@ -377,10 +375,10 @@ export const ExpertDashboardPage = () => {
           <div className="space-y-5 px-2 pt-2">
             {REVENUE_BY_CATEGORY.map((item) => (
               <div key={item.category} className="flex items-center gap-3">
-                <span className="w-20 shrink-0 text-[11px] text-[#888888]">{item.category}</span>
+                <span className="text-body-sm text-muted w-20 shrink-0">{item.category}</span>
                 <div className="relative h-7 flex-1 overflow-hidden rounded bg-white/5">
                   <div
-                    className="flex h-full min-w-[52px] items-center rounded bg-[#2E7DFF] px-2.5 text-[10px] font-bold text-white"
+                    className="bg-brand-action flex h-full min-w-[52px] items-center rounded px-2.5 text-[10px] font-bold text-white"
                     style={{ width: `${Math.max(28, (item.revenue / 78000) * 100)}%` }}
                   >
                     {item.label}
@@ -392,15 +390,15 @@ export const ExpertDashboardPage = () => {
         </ChartCard>
       </div>
 
-      <div className="rounded-xl border border-white/[0.06] bg-[#121212] px-5 py-6">
+      <div className="rounded-brand-lg bg-brand-surface border border-white/[0.06] px-5 py-6">
         <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <h2 className="text-[14px] font-bold text-white">Revenue Growth Over Time</h2>
+          <h2 className="text-body-md font-bold text-white">Revenue Growth Over Time</h2>
           <div className="flex items-center gap-2">
             <div className="relative">
               <select
                 value={growthRange}
                 onChange={(event) => setGrowthRange(event.target.value)}
-                className="focus:border-brand-accent/50 h-9 cursor-pointer appearance-none rounded-lg border border-white/10 bg-black px-3 pr-8 text-[11px] font-medium text-white outline-none"
+                className="ui-input focus:border-brand-accent/50 text-body-sm h-9 cursor-pointer appearance-none pr-8 font-medium outline-none"
               >
                 <option value="3">Last 3 Months</option>
                 <option value="6">Last 6 Months</option>
@@ -412,7 +410,7 @@ export const ExpertDashboardPage = () => {
               type="button"
               aria-label="Refresh revenue chart"
               onClick={() => toast.message('Chart refreshed')}
-              className="grid h-8 w-8 place-items-center rounded-lg border border-white/10 bg-black text-slate-300 transition-colors hover:bg-white/5"
+              className="text-muted grid h-8 w-8 place-items-center rounded-lg border border-white/10 bg-black transition-colors hover:bg-white/5"
             >
               <RefreshCw className="size-3.5" />
             </button>
@@ -449,15 +447,15 @@ export const ExpertDashboardPage = () => {
         </div>
       </div>
 
-      <div className="rounded-xl border border-white/[0.06] bg-[#121212] px-5 py-6">
+      <div className="rounded-brand-lg bg-brand-surface border border-white/[0.06] px-5 py-6">
         <div className="mb-4">
-          <h2 className="text-[14px] font-bold text-white">Top Performing Hosts</h2>
+          <h2 className="text-body-md font-bold text-white">Top Performing Hosts</h2>
         </div>
 
         <div className="overflow-x-auto">
           <table className="w-full min-w-[760px] border-collapse text-left">
             <thead>
-              <tr className="border-b border-white/5 text-[10px] font-semibold tracking-wide text-[#777777] uppercase">
+              <tr className="text-muted text-[10px] font-semibold tracking-wide uppercase">
                 <th className="px-3 py-2.5">Expert Name</th>
                 <th className="px-3 py-2.5">Category</th>
                 <th className="px-3 py-2.5">No. Of Order</th>
@@ -470,10 +468,10 @@ export const ExpertDashboardPage = () => {
               {TOP_HOSTS.map((host) => (
                 <tr
                   key={host.name}
-                  className="border-b border-white/5 text-[12px] text-slate-200 transition-colors hover:bg-white/[0.02]"
+                  className="text-body-sm text-brand-text border-b border-white/5 transition-colors hover:bg-white/[0.02]"
                 >
                   <td className="px-3 py-3 font-semibold text-white">{host.name}</td>
-                  <td className="px-3 py-3 text-[#999999]">{host.category}</td>
+                  <td className="text-muted px-3 py-3">{host.category}</td>
                   <td className="px-3 py-3">{host.orders}</td>
                   <td className="px-3 py-3">
                     <span className="inline-flex items-center gap-1">

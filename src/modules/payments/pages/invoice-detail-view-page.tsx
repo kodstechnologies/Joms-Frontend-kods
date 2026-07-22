@@ -8,6 +8,13 @@ import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 
+const cardClass = 'radius-lg border border-white/[0.06] bg-brand-surface p-4 sm:p-5'
+const sectionTitleClass = 'text-body-md-semibold text-brand-text'
+const sectionSubtitleClass = 'text-body-sm text-muted mt-1'
+const labelClass = 'text-body-sm text-muted'
+const valueClass = 'text-body-sm-medium text-brand-text'
+const innerPanelClass = 'radius-lg border border-white/[0.04] bg-brand-bg p-4'
+
 function DetailCard({
   title,
   subtitle,
@@ -18,9 +25,9 @@ function DetailCard({
   children: ReactNode
 }) {
   return (
-    <section className="rounded-xl border border-white/[0.06] bg-[#1A1A1A] p-5">
-      <h2 className="text-[14px] font-bold text-white">{title}</h2>
-      {subtitle ? <p className="mt-1 text-[12px] text-[#888888]">{subtitle}</p> : null}
+    <section className={cn(cardClass, 'p-5')}>
+      <h2 className={sectionTitleClass}>{title}</h2>
+      {subtitle ? <p className={sectionSubtitleClass}>{subtitle}</p> : null}
       <div className="mt-4">{children}</div>
     </section>
   )
@@ -37,18 +44,16 @@ function DetailRow({
 }) {
   return (
     <div className="flex items-center justify-between gap-4 border-b border-white/5 py-3 last:border-b-0">
-      <span className="text-[12px] text-[#888888]">{label}</span>
-      <span className={cn('text-right text-[12px] font-medium text-white', valueClassName)}>
-        {value}
-      </span>
+      <span className={labelClass}>{label}</span>
+      <span className={cn('text-right', valueClass, valueClassName)}>{value}</span>
     </div>
   )
 }
 
 function getStatusBadgeClass(status: string) {
-  if (status === 'Paid') return 'border-emerald-500/25 bg-emerald-600/20 text-emerald-400'
-  if (status === 'Pending') return 'border-amber-500/25 bg-amber-500/10 text-amber-400'
-  return 'border-rose-500/25 bg-rose-500/10 text-rose-400'
+  if (status === 'Paid') return 'border-brand-positive/25 bg-brand-positive/10 text-brand-positive'
+  if (status === 'Pending') return 'border-brand-accent/40 bg-brand-accent/10 text-brand-accent'
+  return 'border-brand-danger/25 bg-brand-danger/10 text-brand-danger'
 }
 
 export function InvoiceDetailViewPage() {
@@ -57,27 +62,27 @@ export function InvoiceDetailViewPage() {
   const detail = getInvoiceDetailById(id)
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="bg-brand-bg flex flex-col gap-5 pb-6">
       <header className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
           <button
             type="button"
             onClick={() => navigateBackOrFallback(navigate, '/finance/invoices')}
-            className="group flex w-fit items-center gap-2 text-[20px] font-bold tracking-tight text-white transition-colors hover:text-[#FBC078]"
+            className="group text-h3 hover:text-brand-accent text-brand-text flex w-fit items-center gap-2 tracking-tight transition-colors"
           >
             <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
             <span>Payment Detail View</span>
           </button>
-          <p className="mt-2 pl-7 text-[12px] text-[#777777]">
-            <Link to="/finance/dashboard" className="transition-colors hover:text-white">
+          <p className="text-body-sm text-muted mt-2 pl-7">
+            <Link to="/finance/dashboard" className="hover:text-brand-text transition-colors">
               Finance Management
             </Link>
             <span> / </span>
-            <Link to="/finance/invoices" className="transition-colors hover:text-white">
+            <Link to="/finance/invoices" className="hover:text-brand-text transition-colors">
               Invoices & Billing
             </Link>
             <span> / </span>
-            <span className="font-semibold text-white">Payment View Details</span>
+            <span className="text-brand-text font-semibold">Payment View Details</span>
           </p>
         </div>
         <Button onClick={() => toast.message('Download billing report coming soon')}>
@@ -88,8 +93,8 @@ export function InvoiceDetailViewPage() {
 
       <DetailCard title="Invoice Details" subtitle="Provide details about your Consultation">
         <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
-          <section className="rounded-lg border border-white/[0.04] bg-black/20 p-4">
-            <h3 className="mb-3 text-[13px] font-semibold text-white">Invoice Information</h3>
+          <section className={innerPanelClass}>
+            <h3 className="text-body-md-semibold text-brand-text mb-3">Invoice Information</h3>
             <DetailRow label="Invoice ID" value={detail.invoiceId} />
             <DetailRow label="Type" value={detail.type} />
             <DetailRow label="Issue Date" value={detail.issueDate} />
@@ -99,7 +104,7 @@ export function InvoiceDetailViewPage() {
               value={
                 <span
                   className={cn(
-                    'inline-flex rounded-full border px-2.5 py-0.5 text-[11px] font-semibold',
+                    'text-body-sm-semibold inline-flex rounded-full border px-2.5 py-0.5',
                     getStatusBadgeClass(detail.status),
                   )}
                 >
@@ -109,39 +114,40 @@ export function InvoiceDetailViewPage() {
             />
           </section>
 
-          <section className="rounded-lg border border-white/[0.04] bg-black/20 p-4">
-            <h3 className="mb-3 text-[13px] font-semibold text-white">Recipient Details</h3>
+          <section className={innerPanelClass}>
+            <h3 className="text-body-md-semibold text-brand-text mb-3">Recipient Details</h3>
             <DetailRow label="Name" value={detail.recipientName} />
             <DetailRow label="Email" value={detail.recipientEmail} />
           </section>
 
-          <section className="rounded-lg border border-white/[0.04] bg-black/20 p-4">
-            <h3 className="mb-3 text-[13px] font-semibold text-white">Invoice Items</h3>
+          <section className={innerPanelClass}>
+            <h3 className="text-body-md-semibold text-brand-text mb-3">Invoice Items</h3>
             <DetailRow label="Description" value={detail.itemDescription} />
             <DetailRow label="Platform Fee" value={detail.platformFee} />
             <DetailRow label="Unit Price" value={detail.unitPrice} />
           </section>
 
-          <section className="rounded-lg border border-white/[0.04] bg-black/20 p-4">
-            <h3 className="mb-3 text-[13px] font-semibold text-white">Financial Summary</h3>
+          <section className={innerPanelClass}>
+            <h3 className="text-body-md-semibold text-brand-text mb-3">Financial Summary</h3>
             <DetailRow label="Subtotal" value={detail.subtotal} />
             <DetailRow label="Tax (18% GST)" value={detail.tax} />
             <DetailRow
               label="Total Amount"
               value={detail.totalAmount}
-              valueClassName="text-[14px] font-bold"
+              valueClassName="text-body-md-semibold"
             />
           </section>
         </div>
       </DetailCard>
 
       <div className="flex justify-end">
-        <Button
-          variant="secondary"
+        <button
+          type="button"
           onClick={() => navigateBackOrFallback(navigate, '/finance/invoices')}
+          className="ui-cta ui-cta-secondary"
         >
           Close
-        </Button>
+        </button>
       </div>
     </div>
   )

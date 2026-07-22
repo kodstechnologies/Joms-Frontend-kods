@@ -11,8 +11,9 @@ import {
 import { cn } from '@/shared/lib/cn'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 
-const labelClass = 'font-figtree text-[11px] font-normal leading-[20px] text-[#888888]'
-const valueClass = 'font-figtree text-[12px] font-medium leading-[20px] text-white'
+const cardClass = 'radius-lg border border-white/[0.06] bg-brand-surface p-4 sm:p-5'
+const labelClass = 'text-body-sm text-muted'
+const valueClass = 'text-body-sm-medium text-brand-text'
 
 function InfoItem({
   label,
@@ -49,17 +50,12 @@ function PermissionItem({ label, active }: { label: string; active: boolean }) {
         )}
       >
         <Check
-          className={cn('size-2.5', active ? 'text-white' : 'text-[#666666]')}
+          className={cn('size-2.5', active ? 'text-brand-text' : 'text-muted')}
           strokeWidth={2.5}
           aria-hidden="true"
         />
       </span>
-      <span
-        className={cn(
-          'font-figtree text-[11px] leading-[20px] font-normal',
-          active ? 'text-[#CCCCCC]' : 'text-[#777777]',
-        )}
-      >
+      <span className={cn('text-body-sm', active ? 'text-brand-text/80' : 'text-muted')}>
         {label}
       </span>
     </li>
@@ -80,17 +76,17 @@ function RoleCard({
       type="button"
       onClick={onSelect}
       className={cn(
-        'flex min-h-[228px] w-full flex-col rounded-[10px] border p-5 text-left transition-colors',
+        'radius-lg flex min-h-[228px] w-full flex-col border p-5 text-left transition-colors',
         selected
-          ? 'border-white bg-[#1A1A1A]'
-          : 'border-transparent bg-[#141414] hover:bg-[#181818]',
+          ? 'bg-brand-surface border-white'
+          : 'bg-brand-surface hover:bg-brand-surface/80 border-transparent',
       )}
     >
       <div className="flex items-start gap-3">
         <div
           className={cn(
-            'grid size-10 shrink-0 place-items-center rounded-full border border-white/10 bg-[#0F0F0F]',
-            selected ? 'text-[#AAAAAA]' : 'text-[#666666]',
+            'bg-brand-bg grid size-10 shrink-0 place-items-center rounded-full border border-white/10',
+            selected ? 'text-brand-text/70' : 'text-muted',
           )}
         >
           <CircleDollarSign className="size-[18px]" strokeWidth={1.75} />
@@ -98,23 +94,21 @@ function RoleCard({
         <div className="min-w-0 flex-1">
           <h3
             className={cn(
-              'font-figtree text-[14px] leading-[20px] font-semibold',
-              selected ? 'text-white' : 'text-[#DDDDDD]',
+              'text-body-md-semibold',
+              selected ? 'text-brand-text' : 'text-brand-text/90',
             )}
           >
             {role.title}
           </h3>
-          <p className="font-figtree mt-1 text-[11px] leading-[18px] font-normal text-[#888888]">
-            {role.description}
-          </p>
+          <p className="text-body-sm text-muted mt-1">{role.description}</p>
         </div>
       </div>
 
       <div className="mt-5 flex-1">
         <p
           className={cn(
-            'font-figtree mb-3 text-[12px] leading-[20px] font-semibold',
-            selected ? 'text-white' : 'text-[#CCCCCC]',
+            'text-body-sm-semibold mb-3',
+            selected ? 'text-brand-text' : 'text-brand-text/80',
           )}
         >
           Permissions
@@ -142,37 +136,35 @@ export function AssignRefundAuthorityPage() {
   }
 
   return (
-    <div className="-mx-4 -my-4 flex min-h-[calc(100dvh-4rem)] flex-col bg-black sm:-mx-6 lg:-mx-8 lg:-my-6">
+    <div className="bg-brand-bg -mx-4 -my-4 flex min-h-[calc(100dvh-4rem)] flex-col sm:-mx-6 lg:-mx-8 lg:-my-6">
       <div className="flex flex-1 flex-col gap-5 px-4 py-4 sm:px-6 lg:px-8 lg:py-6">
         <header>
           <button
             type="button"
             onClick={() => navigateBackOrFallback(navigate, `/finance/refunds/${id}/dispute`)}
-            className="group font-figtree flex w-fit items-center gap-2 text-[20px] leading-7 font-bold tracking-tight text-white transition-colors hover:text-[#FBC078]"
+            className="group text-h3 hover:text-brand-accent text-brand-text flex w-fit items-center gap-2 tracking-tight transition-colors"
           >
             <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
             <span>Escalation</span>
           </button>
-          <p className="font-figtree mt-2 pl-7 text-[12px] leading-[20px] font-normal text-[#777777]">
-            <Link to="/finance/refunds" className="transition-colors hover:text-white">
+          <p className="text-body-sm text-muted mt-2 pl-7">
+            <Link to="/finance/refunds" className="hover:text-brand-text transition-colors">
               Finance Management
             </Link>
             <span> / </span>
             <Link
               to={`/finance/refunds/${id}/dispute`}
-              className="transition-colors hover:text-white"
+              className="hover:text-brand-text transition-colors"
             >
               Payment View Details
             </Link>
           </p>
         </header>
 
-        <section className="rounded-[10px] border border-white/[0.06] bg-[#1A1A1A] px-5 py-5">
+        <section className={cn(cardClass, 'px-5 py-5')}>
           <div>
-            <h1 className="font-figtree text-[18px] leading-[24px] font-semibold text-white">
-              Assign Dispute Authority
-            </h1>
-            <p className="font-figtree mt-1 text-[12px] leading-[20px] font-normal text-[#888888]">
+            <h1 className="text-h4 text-brand-text">Assign Dispute Authority</h1>
+            <p className="text-body-sm text-muted mt-1">
               Select the role responsible for reviewing and processing this refund request
             </p>
           </div>
@@ -195,9 +187,7 @@ export function AssignRefundAuthorityPage() {
         </section>
 
         <section className="flex-1 pb-4">
-          <p className="font-figtree mb-4 text-[12px] leading-[20px] font-medium text-white">
-            Select and assign the refund:
-          </p>
+          <p className="text-body-sm-medium text-brand-text mb-4">Select and assign the refund:</p>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
             {refundAuthorityRolesMock.map((role) => (
               <RoleCard
@@ -211,19 +201,19 @@ export function AssignRefundAuthorityPage() {
         </section>
       </div>
 
-      <footer className="mt-auto border-t border-white/[0.06] bg-[#0B0F14] px-4 py-4 sm:px-6 lg:px-8">
+      <footer className="bg-brand-bg mt-auto border-t border-white/[0.06] px-4 py-4 sm:px-6 lg:px-8">
         <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
           <button
             type="button"
             onClick={() => navigateBackOrFallback(navigate, `/finance/refunds/${id}/dispute`)}
-            className="font-figtree inline-flex h-10 w-full items-center justify-center rounded-[10px] border border-white/20 bg-transparent px-6 text-[12px] leading-[20px] font-semibold text-white transition-colors hover:bg-white/5 sm:w-auto sm:min-w-[120px]"
+            className="ui-cta ui-cta-secondary w-full sm:w-auto sm:min-w-[120px]"
           >
             Close
           </button>
           <button
             type="button"
             onClick={handleContinue}
-            className="font-figtree inline-flex h-10 w-full items-center justify-center rounded-[10px] border border-white/10 bg-[#2A2A2A] px-6 text-[12px] leading-[20px] font-semibold text-white transition-colors hover:bg-[#333333] sm:ml-auto sm:w-auto sm:min-w-[120px]"
+            className="ui-cta ui-cta-primary w-full sm:ml-auto sm:w-auto sm:min-w-[120px]"
           >
             Continue
           </button>

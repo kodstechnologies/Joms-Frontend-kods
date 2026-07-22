@@ -294,13 +294,11 @@ export function MembershipPlansPage({
     <div className="flex flex-col gap-5 md:gap-6">
       <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
         <div className="max-w-3xl">
-          <h1 className="text-[28px] font-bold tracking-tight text-white md:text-[32px]">
-            {title}
-          </h1>
-          <p className="mt-2 text-sm leading-relaxed text-[#9A9A9A] md:text-[15px]">{subtitle}</p>
+          <h1 className="text-h1 text-brand-text tracking-tight">{title}</h1>
+          <p className="text-body-md text-muted mt-2 leading-relaxed">{subtitle}</p>
         </div>
         <Button
-          className="w-full shrink-0 border-0 bg-[#EBC38C] text-black hover:bg-[#E0B57A] active:bg-[#D4A86C] md:w-auto"
+          className="ui-cta ui-cta-primary w-full shrink-0 md:w-auto"
           onClick={() => toast.info('Metrics configuration coming soon')}
         >
           <BarChart3 className="size-4" />
@@ -311,7 +309,7 @@ export function MembershipPlansPage({
       <MembershipStatsBar />
 
       <div className="flex justify-center">
-        <div className="inline-flex flex-wrap items-center justify-center gap-1 rounded-xl border border-white/10 bg-[#0A0A0A] p-1">
+        <div className="bg-brand-bg inline-flex flex-wrap items-center justify-center gap-1 rounded-xl border border-white/10 p-1">
           <TabButton active>Membership Plans</TabButton>
           <TabButton onClick={() => navigate('/memberships/experts')}>
             Expert Memberships Management
@@ -321,25 +319,25 @@ export function MembershipPlansPage({
 
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div className="relative max-w-md flex-1">
-          <Search className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-[#7A7A7A]" />
+          <Search className="text-muted pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2" />
           <Input
             value={searchQuery}
             onChange={(event) => setSearchQuery(event.target.value)}
             placeholder="Search by membership"
-            className="h-11 rounded-full border-white/10 bg-[#0A0A0A] pl-11 text-sm text-white placeholder:text-[#6B6B6B]"
+            className="bg-brand-bg text-body-md placeholder:text-muted h-11 rounded-full border-white/10 pl-11 text-white"
           />
         </div>
         <div className="flex flex-wrap gap-2.5">
           <Button
             variant="secondary"
-            className="h-11 border-white/40 bg-transparent text-white hover:border-white hover:bg-white/5"
+            className="ui-cta ui-cta-secondary"
             onClick={() => toast.info('Export coming soon')}
           >
             <Download className="size-4" />
             Export Data
           </Button>
           <Button
-            className="h-11 border-0 bg-[#EBC38C] text-black hover:bg-[#E0B57A] active:bg-[#D4A86C]"
+            className="ui-cta ui-cta-primary"
             onClick={() => navigate('/memberships/plans/create')}
           >
             <Plus className="size-4" />
@@ -349,7 +347,7 @@ export function MembershipPlansPage({
       </div>
 
       <div className="flex flex-col gap-4">
-        <p className="text-sm text-[#8A8A8A]">
+        <p className="text-body-md text-muted">
           Showing{' '}
           <span className="font-semibold text-white">
             {rangeStart}-{rangeEnd}
@@ -372,14 +370,15 @@ export function MembershipPlansPage({
                   isGold
                     ? `${statusCardTones.warning.background} ${statusCardTones.warning.border}`
                     : `${statusCardTones.danger.background} ${statusCardTones.danger.border}`,
-                  isSelected && (isGold ? 'ring-2 ring-[#B8963E]/50' : 'ring-2 ring-[#8A1A1A]/50'),
+                  isSelected &&
+                    (isGold ? 'ring-brand-accent/50 ring-2' : 'ring-brand-danger/50 ring-2'),
                 )}
               >
                 <div className="flex items-center gap-3">
                   <card.icon className="size-5 shrink-0" strokeWidth={1.75} />
-                  <span className="text-sm font-medium">{card.label}</span>
+                  <span className="text-body-md-medium">{card.label}</span>
                 </div>
-                <span className="text-base font-bold tabular-nums">
+                <span className="text-body-lg font-bold tabular-nums">
                   {String(card.count).padStart(2, '0')}
                 </span>
               </button>
@@ -389,15 +388,15 @@ export function MembershipPlansPage({
       </div>
 
       {isLoading ? (
-        <p className="text-sm text-[#8A8A8A]">Loading membership plans...</p>
+        <p className="text-body-md text-muted">Loading membership plans...</p>
       ) : !memberships.length ? (
-        <div className="rounded-2xl border border-dashed border-white/10 bg-[#111111] px-6 py-12 text-center">
-          <p className="text-base font-medium text-white">No membership plans found</p>
-          <p className="mt-2 text-sm text-[#8A8A8A]">
+        <div className="bg-brand-bg rounded-2xl border border-dashed border-white/10 px-6 py-12 text-center">
+          <p className="text-body-lg font-medium text-white">No membership plans found</p>
+          <p className="text-body-md text-muted mt-2">
             Create your first plan to start managing memberships.
           </p>
           <Button
-            className="mt-5 border-0 bg-[#EBC38C] text-black hover:bg-[#E0B57A]"
+            className="ui-cta ui-cta-primary mt-5"
             onClick={() => navigate('/memberships/plans/create')}
           >
             <Plus className="size-4" />
@@ -512,27 +511,37 @@ export function MembershipPlansPage({
 
       {modalType === 'validity' ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
-          <div className="w-full max-w-md rounded-2xl border border-white/10 bg-[#121212] p-6">
-            <h3 className="text-lg font-semibold text-white">Set Plan Validity</h3>
-            <p className="mt-1 text-xs text-[#8A8A8A]">{selectedPlan?.planName}</p>
-            <div className="mt-4 grid grid-cols-2 gap-3">
-              <Input
-                type="date"
-                value={validityStart}
-                onChange={(e) => setValidityStart(e.target.value)}
-              />
-              <Input
-                type="date"
-                value={validityEnd}
-                onChange={(e) => setValidityEnd(e.target.value)}
-              />
+          <div className="ui-modal-shell max-w-md">
+            <div className="ui-modal-header">
+              <div>
+                <h3 className="text-h4 text-brand-text">Set Plan Validity</h3>
+                <p className="text-body-sm text-muted mt-1">{selectedPlan?.planName}</p>
+              </div>
             </div>
-            <div className="mt-5 flex justify-end gap-3">
-              <Button variant="secondary" onClick={closeModal}>
+            <div className="ui-modal-body">
+              <div className="grid grid-cols-2 gap-3">
+                <Input
+                  type="date"
+                  value={validityStart}
+                  onChange={(e) => setValidityStart(e.target.value)}
+                />
+                <Input
+                  type="date"
+                  value={validityEnd}
+                  onChange={(e) => setValidityEnd(e.target.value)}
+                />
+              </div>
+            </div>
+            <div className="ui-modal-footer">
+              <Button
+                variant="secondary"
+                onClick={closeModal}
+                className="ui-modal-btn ui-modal-btn-cancel"
+              >
                 Cancel
               </Button>
               <Button
-                className="border-0 bg-[#EBC38C] text-black hover:bg-[#E0B57A]"
+                className="ui-modal-btn ui-modal-btn-gold"
                 onClick={handleSetValidity}
                 disabled={validityMutation.isPending}
               >
@@ -556,7 +565,7 @@ export function MembershipPlansPage({
                   dedicatedAccountManager: false,
                 },
             ).map((feature) => (
-              <li key={feature} className="text-sm text-[#CFCFCF]">
+              <li key={feature} className="text-body-md text-brand-text/80">
                 • {feature}
               </li>
             ))}
@@ -572,7 +581,7 @@ export function MembershipPlansPage({
                 (entry: { version: number; updatedAt?: string; updatedBy?: string }) => (
                   <div
                     key={entry.version}
-                    className="rounded-lg border border-white/10 bg-black/30 p-3 text-sm text-[#CFCFCF]"
+                    className="text-body-md text-brand-text/80 rounded-lg border border-white/10 bg-black/30 p-3"
                   >
                     Version {entry.version} · {entry.updatedBy ?? 'Admin'} ·{' '}
                     {entry.updatedAt ?? '—'}
@@ -580,7 +589,7 @@ export function MembershipPlansPage({
                 ),
               )
             ) : (
-              <p className="text-sm text-[#8A8A8A]">No previous versions yet.</p>
+              <p className="text-body-md text-muted">No previous versions yet.</p>
             )}
           </div>
         </InfoModal>
@@ -601,7 +610,7 @@ function PlanSection({
 
   return (
     <section className="space-y-4">
-      <h2 className="text-lg font-semibold text-white">{title}</h2>
+      <h2 className="text-h4 text-white">{title}</h2>
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-2 2xl:grid-cols-3">
         {plans.map((plan) => (
           <MembershipPlanCard key={plan._id} plan={plan} {...handlers} />
@@ -625,8 +634,8 @@ function TabButton({
       type="button"
       onClick={onClick}
       className={cn(
-        'rounded-lg px-5 py-2.5 text-sm font-medium transition-colors',
-        active ? 'bg-black text-white shadow-sm' : 'text-[#8A8A8A] hover:text-white',
+        'text-body-md-medium rounded-lg px-5 py-2.5 transition-colors',
+        active ? 'bg-black text-white shadow-sm' : 'text-muted hover:text-white',
       )}
     >
       {children}
@@ -645,14 +654,14 @@ function InfoModal({
 }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
-      <div className="w-full max-w-lg rounded-2xl border border-white/10 bg-[#121212] p-6">
-        <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-white">{title}</h3>
-          <button type="button" onClick={onClose} className="text-[#8A8A8A] hover:text-white">
+      <div className="ui-modal-shell max-w-lg">
+        <div className="ui-modal-header">
+          <h3 className="text-h4 text-brand-text">{title}</h3>
+          <button type="button" onClick={onClose} className="text-muted hover:text-brand-text">
             Close
           </button>
         </div>
-        {children}
+        <div className="ui-modal-body">{children}</div>
       </div>
     </div>
   )

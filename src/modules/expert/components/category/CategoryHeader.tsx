@@ -23,20 +23,22 @@ const CategoryHeader = ({ title, breadcrumb, breadcrumbItems, backPath }: Catego
           }
           navigate(-1)
         }}
-        className="group font-heading hover:text-brand-accent flex w-fit items-center gap-2 text-[20px] font-bold tracking-tight text-white transition-colors"
+        className="group font-heading text-h3 hover:text-brand-accent text-brand-text flex w-fit items-center gap-2 tracking-tight transition-colors"
       >
         <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
         <span>{title}</span>
       </button>
 
-      <p className="pl-7 text-[12px] font-medium text-[#777777]">
+      <p className="text-body-sm-medium text-muted pl-7">
         Category Management
         {breadcrumbItems && breadcrumbItems.length > 0
           ? breadcrumbItems.map((item, index) => (
               <span key={item}>
-                <span className="mx-1 text-[#666666]">/</span>
+                <span className="text-muted/50 mx-1">/</span>
                 <span
-                  className={index === breadcrumbItems.length - 1 ? 'text-white' : 'text-[#888888]'}
+                  className={
+                    index === breadcrumbItems.length - 1 ? 'text-brand-text' : 'text-muted'
+                  }
                 >
                   {item}
                 </span>
@@ -44,8 +46,8 @@ const CategoryHeader = ({ title, breadcrumb, breadcrumbItems, backPath }: Catego
             ))
           : breadcrumb && (
               <>
-                <span className="mx-1 text-[#666666]">/</span>
-                <span className="text-white">{breadcrumb}</span>
+                <span className="text-muted/50 mx-1">/</span>
+                <span className="text-brand-text">{breadcrumb}</span>
               </>
             )}
       </p>

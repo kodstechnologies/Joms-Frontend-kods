@@ -75,7 +75,7 @@ function SafeImage({
 
   if (!src || errored) {
     return (
-      <div className={cn('flex items-center justify-center bg-black text-[#666]', className)}>
+      <div className={cn('text-muted flex items-center justify-center bg-black', className)}>
         <ImageOff className="size-5" />
       </div>
     )
@@ -102,8 +102,10 @@ function SectionCard({
   className?: string
 }) {
   return (
-    <section className={cn('rounded-lg border border-white/5 bg-[#111111] p-5', className)}>
-      {title && <h2 className="mb-4 text-[13px] font-bold text-white">{title}</h2>}
+    <section
+      className={cn('rounded-brand-lg bg-brand-surface border border-white/5 p-5', className)}
+    >
+      {title && <h2 className="text-body-md mb-4 font-bold text-white">{title}</h2>}
       {children}
     </section>
   )
@@ -111,7 +113,7 @@ function SectionCard({
 
 function Chip({ children }: { children: ReactNode }) {
   return (
-    <span className="inline-flex items-center gap-1 rounded-md bg-black px-3 py-1.5 text-[11px] font-semibold text-white">
+    <span className="text-body-sm inline-flex items-center gap-1 rounded-md bg-black px-3 py-1.5 font-semibold text-white">
       {children}
     </span>
   )
@@ -224,12 +226,12 @@ export function ApplicationDetailsPage() {
         <button
           type="button"
           onClick={() => navigateBackOrFallback(navigate, '/venues/management')}
-          className="group font-heading hover:text-brand-accent flex w-fit items-center gap-2 text-[20px] font-bold text-white transition-colors"
+          className="group font-heading hover:text-brand-accent text-h3 flex w-fit items-center gap-2 font-bold text-white transition-colors"
         >
           <ArrowLeft className="size-5" />
           <span>Venue Application View</span>
         </button>
-        <div className="rounded-lg border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+        <div className="bg-brand-danger/10 text-brand-danger rounded-lg border border-red-500/40 px-4 py-3 text-sm">
           {getApiErrorMessage(error)}
         </div>
       </div>
@@ -369,12 +371,12 @@ export function ApplicationDetailsPage() {
         <button
           type="button"
           onClick={() => navigateBackOrFallback(navigate, '/venues/management')}
-          className="group font-heading hover:text-brand-accent flex w-fit items-center gap-2 text-[20px] font-bold tracking-tight text-white transition-colors"
+          className="group font-heading hover:text-brand-accent text-h3 flex w-fit items-center gap-2 font-bold tracking-tight text-white transition-colors"
         >
           <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
           <span>Venue Application View</span>
         </button>
-        <div className="flex items-center gap-1.5 pl-7 text-[12px] font-medium text-[#777777]">
+        <div className="text-body-sm text-muted flex items-center gap-1.5 pl-7 font-medium">
           <button
             type="button"
             onClick={() => navigateBackOrFallback(navigate, '/venues/management')}
@@ -382,18 +384,18 @@ export function ApplicationDetailsPage() {
           >
             Event Management
           </button>
-          <span className="text-[#333333]">/</span>
+          <span className="text-muted/40">/</span>
           <span className="font-bold text-white">{venue.venueType || venue.name}</span>
         </div>
       </header>
 
-      <div className="overflow-hidden rounded-lg border border-white/5 bg-[#111111]">
+      <div className="rounded-brand-lg bg-brand-surface overflow-hidden border border-white/5">
         <SafeImage src={coverImage} alt={venue.name} className="h-64 w-full object-cover" />
       </div>
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1.25fr_1fr]">
         <SectionCard>
-          <p className="text-[11px] font-semibold text-[#777]">{venue.pocName || venue.name}</p>
+          <p className="text-body-sm text-muted font-semibold">{venue.pocName || venue.name}</p>
           <h1 className="mt-2 text-xl font-bold text-white">{space?.name || venue.name}</h1>
           <div className="mt-3 flex flex-wrap gap-2">
             <Chip>{venue.venueType || 'Venue'}</Chip>
@@ -405,12 +407,12 @@ export function ApplicationDetailsPage() {
         <div className="grid grid-cols-1 gap-5">
           <SectionCard title="Location">
             <div className="flex items-start gap-3 rounded-md bg-black p-3">
-              <MapPin className="mt-0.5 size-4 text-red-400" />
+              <MapPin className="text-brand-danger mt-0.5 size-4" />
               <div>
-                <p className="text-[12px] font-semibold text-white">
+                <p className="text-body-sm font-semibold text-white">
                   {venue.location?.city || summary?.city || '—'}
                 </p>
-                <p className="mt-1 text-[10px] text-[#777]">{address || '—'}</p>
+                <p className="text-muted mt-1 text-[10px]">{address || '—'}</p>
               </div>
             </div>
           </SectionCard>
@@ -418,14 +420,14 @@ export function ApplicationDetailsPage() {
           <SectionCard title="Pricing">
             <div className="grid grid-cols-2 gap-3">
               <div className="rounded-md bg-black p-3">
-                <p className="text-[10px] text-[#777]">Weekday</p>
-                <p className="mt-1 text-[12px] font-bold text-white">
+                <p className="text-muted text-[10px]">Weekday</p>
+                <p className="text-body-sm mt-1 font-bold text-white">
                   {formatCurrency(summary?.weekdayPrice)}
                 </p>
               </div>
               <div className="rounded-md bg-black p-3">
-                <p className="text-[10px] text-[#777]">Weekend</p>
-                <p className="mt-1 text-[12px] font-bold text-white">
+                <p className="text-muted text-[10px]">Weekend</p>
+                <p className="text-body-sm mt-1 font-bold text-white">
                   {formatCurrency(summary?.weekendPrice)}
                 </p>
               </div>
@@ -436,20 +438,20 @@ export function ApplicationDetailsPage() {
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1.2fr_1fr]">
         <SectionCard title="About the venue">
-          <p className="text-[12px] leading-relaxed text-[#aaa]">
+          <p className="text-body-sm text-muted leading-relaxed">
             {venue.aboutVenue || 'No venue description provided.'}
           </p>
-          <h3 className="mt-5 text-[12px] font-bold text-white">Service Included</h3>
+          <h3 className="text-body-sm mt-5 font-bold text-white">Service Included</h3>
           <div className="mt-3 space-y-2">
             {serviceIncluded.length > 0 ? (
               serviceIncluded.map((service) => (
-                <div key={service} className="flex items-center gap-2 text-[12px] text-[#bbb]">
-                  <CheckCircle2 className="size-3.5 text-emerald-400" />
+                <div key={service} className="text-body-sm text-muted flex items-center gap-2">
+                  <CheckCircle2 className="text-brand-positive size-3.5" />
                   {service}
                 </div>
               ))
             ) : (
-              <p className="text-[12px] text-[#777]">No services listed.</p>
+              <p className="text-body-sm text-muted">No services listed.</p>
             )}
           </div>
         </SectionCard>
@@ -460,7 +462,7 @@ export function ApplicationDetailsPage() {
               amenities.map((amenity) => (
                 <div
                   key={amenity.id}
-                  className="flex items-center gap-2 rounded-md bg-black px-3 py-2 text-[11px] font-semibold text-white"
+                  className="text-body-sm flex items-center gap-2 rounded-md bg-black px-3 py-2 font-semibold text-white"
                   title={amenity.categoryName}
                 >
                   {amenity.image ? (
@@ -472,7 +474,7 @@ export function ApplicationDetailsPage() {
                 </div>
               ))
             ) : (
-              <p className="col-span-2 text-[12px] text-[#777]">No amenities listed.</p>
+              <p className="text-body-sm text-muted col-span-2">No amenities listed.</p>
             )}
           </div>
         </SectionCard>
@@ -498,37 +500,37 @@ export function ApplicationDetailsPage() {
             ))}
           </div>
         ) : (
-          <p className="text-[12px] text-[#777]">No gallery images uploaded.</p>
+          <p className="text-body-sm text-muted">No gallery images uploaded.</p>
         )}
       </SectionCard>
 
       <SectionCard title="Terms & Conditions">
         <div className="flex flex-wrap gap-4">
           {(terms?.terms || []).map((term) => (
-            <div key={term} className="flex items-center gap-2 text-[11px] text-[#bbb]">
-              <CheckCircle2 className="size-3.5 text-emerald-400" />
+            <div key={term} className="text-body-sm text-muted flex items-center gap-2">
+              <CheckCircle2 className="text-brand-positive size-3.5" />
               {term}
             </div>
           ))}
           {terms?.cancellation && (
-            <div className="flex items-center gap-2 text-[11px] text-[#bbb]">
-              <CheckCircle2 className="size-3.5 text-emerald-400" />
+            <div className="text-body-sm text-muted flex items-center gap-2">
+              <CheckCircle2 className="text-brand-positive size-3.5" />
               Free cancellation up to {terms.cancellation.freeCancellationHours ?? 0} days before
               event
             </div>
           )}
           {!terms?.terms?.length && !terms?.cancellation && (
-            <p className="text-[12px] text-[#777]">No terms added.</p>
+            <p className="text-body-sm text-muted">No terms added.</p>
           )}
         </div>
       </SectionCard>
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
         <SectionCard title="Application Notes">
-          <div className="rounded-md bg-black p-3 text-[12px] text-[#777]">
+          <div className="text-body-sm text-muted rounded-md bg-black p-3">
             {venue.adminInternalNotes || space?.adminNote || 'No notes yet.'}
             {escalation?.escalatedByName ? (
-              <p className="mt-3 text-[11px] text-[#999]">
+              <p className="text-body-sm text-muted mt-3">
                 Escalated by {escalation.escalatedByName}
                 {escalation.escalatedToName ? ` to ${escalation.escalatedToName}` : ''}.
                 {escalation.escalationNote ? ` Note: ${escalation.escalationNote}` : ''}
@@ -540,7 +542,7 @@ export function ApplicationDetailsPage() {
         <SectionCard>
           <DecisionControlsHeader className="mb-4" />
           {space?.status !== 'submitted' && (
-            <p className="mb-3 rounded-md bg-black px-3 py-2 text-[11px] font-medium text-[#999]">
+            <p className="text-body-sm text-muted mb-3 rounded-md bg-black px-3 py-2 font-medium">
               This space is currently{' '}
               <span className="font-bold text-white">{space?.status || '—'}</span>.
             </p>

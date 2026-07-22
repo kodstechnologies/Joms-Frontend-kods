@@ -71,40 +71,41 @@ export const ManageAmenitiesModal = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
-      <div className="max-h-[80vh] w-full max-w-4xl overflow-y-auto rounded-2xl border border-slate-800 bg-[#121212]">
-        <div className="sticky top-0 flex items-center justify-between border-b border-slate-800 bg-[#121212] p-5">
-          <h2 className="text-xl font-semibold text-white">Manage amenities</h2>
+      <div className="ui-modal-shell max-h-[80vh] max-w-4xl overflow-y-auto">
+        <div className="ui-modal-header bg-brand-surface sticky top-0">
+          <h2 className="text-h2 font-semibold text-white">Manage amenities</h2>
 
-          <button onClick={onClose}>
+          <button type="button" onClick={onClose} aria-label="Close">
             <X className="h-5 w-5 text-white" />
           </button>
         </div>
 
-        <div className="p-5">
-          <label className="mb-2 block text-xs text-white">Search amenities</label>
+        <div className="ui-modal-body">
+          <label className="text-body-sm mb-2 block text-white">Search amenities</label>
 
           <div className="mb-5 flex gap-3">
             <div className="relative flex-1">
-              <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-slate-500" />
+              <Search className="text-muted absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
 
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search amenities"
-                className="h-10 w-full rounded-md border border-slate-700 bg-black pr-4 pl-10 text-sm text-white outline-none"
+                className="ui-input pl-10"
               />
             </div>
 
             <button
+              type="button"
               onClick={onAddAmenity}
-              className="bg-brand-accent text-brand-text-dark flex items-center gap-2 rounded-md px-4 text-sm font-medium"
+              className="ui-cta ui-cta-primary flex items-center gap-2 px-4"
             >
               <Plus size={16} />
               Add Amenities
             </button>
           </div>
 
-          {isLoading && <p className="text-sm text-slate-400">Loading amenities...</p>}
+          {isLoading && <p className="text-body-md text-muted">Loading amenities...</p>}
 
           {!isLoading &&
             categories.map((category) => {
@@ -116,7 +117,7 @@ export const ManageAmenitiesModal = ({
 
               return (
                 <div key={category._id} className="mb-6">
-                  <h3 className="mb-3 text-sm font-medium text-white">{category.category}</h3>
+                  <h3 className="text-body-md mb-3 font-medium text-white">{category.category}</h3>
 
                   <div className="flex flex-wrap gap-3">
                     {filteredSubCategories.map((item) => {
@@ -132,10 +133,10 @@ export const ManageAmenitiesModal = ({
                           onClick={() =>
                             toggleAmenity(category._id, item._id, item.name, item.image)
                           }
-                          className={`flex items-center gap-2 rounded-md border px-4 py-2 text-xs transition ${
+                          className={`text-body-sm flex items-center gap-2 rounded-md border px-4 py-2 transition ${
                             isSelected
                               ? 'border-white bg-white text-black'
-                              : 'border-slate-700 bg-black text-white'
+                              : 'border-white/10 bg-black text-white'
                           }`}
                         >
                           {item.image && (

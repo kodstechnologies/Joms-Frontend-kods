@@ -7,9 +7,16 @@ import { toast } from 'sonner'
 import { IssuePartialRefundModal } from '@/modules/payments/components/issue-partial-refund-modal'
 import { EscalateToSuperAdminModal } from '@/modules/payments/components/escalate-to-super-admin-modal'
 import { getRefundDetailById } from '@/modules/payments/mock/refund-detail.mock'
-import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
+
+const cardClass = 'radius-lg border border-white/[0.06] bg-brand-surface p-4 sm:p-5'
+const sectionTitleClass = 'text-body-md-semibold text-brand-text'
+const sectionSubtitleClass = 'text-body-sm text-muted mt-1'
+const labelClass = 'text-body-sm text-muted'
+const valueClass = 'text-body-sm-medium text-brand-text'
+const textPanelClass =
+  'radius-lg border border-white/[0.06] bg-brand-bg p-4 text-body-sm text-brand-text/80'
 
 function InnerCard({
   title,
@@ -21,10 +28,10 @@ function InnerCard({
   children: ReactNode
 }) {
   return (
-    <section className="rounded-xl border border-white/[0.06] bg-[#121212] p-5">
+    <section className={cn(cardClass, 'p-5')}>
       <div className="mb-3 flex items-center gap-2">
         {icon}
-        <h3 className="text-[14px] font-bold text-white">{title}</h3>
+        <h3 className={sectionTitleClass}>{title}</h3>
       </div>
       <div className="mb-4 border-b border-white/5" />
       {children}
@@ -43,30 +50,22 @@ function DetailRow({
 }) {
   return (
     <div className="flex items-center justify-between gap-4 border-b border-white/5 py-3 last:border-b-0">
-      <span className="text-[12px] text-[#888888]">{label}</span>
-      <span
-        className={cn('max-w-[60%] text-right text-[12px] font-medium text-white', valueClassName)}
-      >
-        {value}
-      </span>
+      <span className={labelClass}>{label}</span>
+      <span className={cn('max-w-[60%] text-right', valueClass, valueClassName)}>{value}</span>
     </div>
   )
 }
 
 function PendingBadge() {
   return (
-    <span className="inline-flex rounded-full border border-amber-400/40 bg-amber-500/10 px-2.5 py-0.5 text-[11px] font-semibold text-amber-300">
+    <span className="text-body-sm-semibold border-brand-accent/40 bg-brand-accent/10 text-brand-accent inline-flex rounded-full border px-2.5 py-0.5">
       Pending
     </span>
   )
 }
 
 function TextBlock({ children }: { children: ReactNode }) {
-  return (
-    <div className="rounded-lg border border-white/[0.06] bg-[#0F0F0F] p-4 text-[12px] leading-relaxed text-[#CCCCCC]">
-      {children}
-    </div>
-  )
+  return <div className={textPanelClass}>{children}</div>
 }
 
 export function RefundDetailViewPage() {
@@ -77,29 +76,29 @@ export function RefundDetailViewPage() {
   const [isEscalateOpen, setIsEscalateOpen] = useState(false)
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="bg-brand-bg flex flex-col gap-5 pb-6">
       <header>
         <button
           type="button"
           onClick={() => navigateBackOrFallback(navigate, '/finance/refunds')}
-          className="group flex w-fit items-center gap-2 text-[20px] font-bold tracking-tight text-white transition-colors hover:text-[#FBC078]"
+          className="group text-h3 hover:text-brand-accent text-brand-text flex w-fit items-center gap-2 tracking-tight transition-colors"
         >
           <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
           <span>Payment Detail View</span>
         </button>
-        <p className="mt-2 pl-7 text-[12px] text-[#777777]">
-          <Link to="/finance/refunds" className="transition-colors hover:text-white">
+        <p className="text-body-sm text-muted mt-2 pl-7">
+          <Link to="/finance/refunds" className="hover:text-brand-text transition-colors">
             Refunds & Chargebacks
           </Link>
           <span> / </span>
-          <span className="font-semibold text-white">Payment View Details</span>
+          <span className="text-brand-text font-semibold">Payment View Details</span>
         </p>
       </header>
 
-      <section className="rounded-xl border border-white/[0.06] bg-[#1A1A1A] p-5">
+      <section className={cn(cardClass, 'p-5')}>
         <div className="mb-4">
-          <h2 className="text-[14px] font-bold text-white">Refund Details</h2>
-          <p className="mt-1 text-[12px] text-[#888888]">Provide details about your Consultation</p>
+          <h2 className={sectionTitleClass}>Refund Details</h2>
+          <p className={sectionSubtitleClass}>Provide details about your Consultation</p>
         </div>
         <div className="mb-5 border-b border-white/5" />
 
@@ -132,51 +131,60 @@ export function RefundDetailViewPage() {
 
           <InnerCard
             title="Reason"
-            icon={<Clock className="size-4 text-[#888888]" aria-hidden="true" />}
+            icon={<Clock className="text-muted size-4" aria-hidden="true" />}
           >
             <TextBlock>{detail.reason}</TextBlock>
           </InnerCard>
 
           <InnerCard
             title="Admin Notes"
-            icon={<Clock className="size-4 text-[#888888]" aria-hidden="true" />}
+            icon={<Clock className="text-muted size-4" aria-hidden="true" />}
           >
             <TextBlock>{detail.adminNotes}</TextBlock>
           </InnerCard>
         </div>
 
         <footer className="mt-5 flex flex-col gap-3 border-t border-white/5 pt-5 sm:flex-row sm:items-center sm:justify-between">
-          <Button
-            variant="secondary"
+          <button
+            type="button"
             onClick={() => navigateBackOrFallback(navigate, '/finance/refunds')}
+            className="ui-cta ui-cta-secondary"
           >
             Close
-          </Button>
+          </button>
           <div className="flex flex-wrap items-center gap-3">
             <button
               type="button"
               onClick={() => toast.success('Refund issued')}
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-emerald-500"
+              className="ui-cta ui-cta-positive"
             >
-              <Check className="size-4" />
+              <Check className="icon-sm shrink-0" />
               Issue Refund
             </button>
             <button
               type="button"
               onClick={() => toast.error('Refund denied')}
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-rose-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-rose-500"
+              className="ui-cta ui-cta-negative"
             >
-              <X className="size-4" />
+              <X className="icon-sm shrink-0" />
               Deny Refund
             </button>
-            <Button variant="secondary" onClick={() => setIsPartialRefundOpen(true)}>
-              <Flag className="size-4" />
+            <button
+              type="button"
+              onClick={() => setIsPartialRefundOpen(true)}
+              className="ui-cta ui-cta-secondary"
+            >
+              <Flag className="icon-sm shrink-0" />
               Partial Refund
-            </Button>
-            <Button variant="secondary" onClick={() => setIsEscalateOpen(true)}>
-              <Flag className="size-4" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsEscalateOpen(true)}
+              className="ui-cta ui-cta-secondary"
+            >
+              <Flag className="icon-sm shrink-0" />
               Escalate
-            </Button>
+            </button>
           </div>
         </footer>
       </section>

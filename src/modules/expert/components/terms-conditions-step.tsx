@@ -66,7 +66,7 @@ export const TermsConditionsStep = ({ venueData, setVenueData }: TermsConditions
 
   return (
     <div className="mx-auto w-full max-w-[850px] space-y-5">
-      <div className="rounded-lg border border-white/5 bg-[#151515] p-5 shadow-xl">
+      <div className="bg-brand-surface rounded-lg border border-white/5 p-5 shadow-xl">
         <h2 className="text-sm font-semibold text-white">Venue Terms</h2>
 
         <p className="mb-4 text-[11px] text-slate-500">Terms & Condition</p>
@@ -150,7 +150,7 @@ export const TermsConditionsStep = ({ venueData, setVenueData }: TermsConditions
         </div>
       </div>
 
-      <div className="rounded-lg border border-white/5 bg-[#151515] p-5 shadow-xl">
+      <div className="bg-brand-surface rounded-lg border border-white/5 p-5 shadow-xl">
         <h3 className="mb-4 text-sm font-semibold text-white">FAQ's</h3>
 
         {faqs.map((faq: FAQ, index: number) => (

@@ -84,7 +84,7 @@ const CategoryInfoCard = ({ category }: Props) => {
           </div>
 
           <span
-            className={`inline-flex shrink-0 rounded-md px-3 py-1 text-[11px] font-semibold ${getStatusClass(
+            className={`text-body-sm-semibold inline-flex shrink-0 rounded-md px-3 py-1 ${getStatusClass(
               category.status,
             )}`}
           >

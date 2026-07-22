@@ -176,7 +176,7 @@ export function PlatformSettingsPanel({ value, onChange }: PlatformSettingsPanel
         <SettingsFieldRow label="Custom Error Messages">
           <div className="grid gap-2 sm:grid-cols-[1fr_auto] sm:items-start">
             <textarea
-              className="min-h-[88px] w-full rounded-lg border border-white/10 bg-[#1a1a1a] px-3 py-2 text-sm text-white outline-none focus:ring-1 focus:ring-white/20"
+              className="bg-brand-surface min-h-[88px] w-full rounded-lg border border-white/10 px-3 py-2 text-sm text-white outline-none focus:ring-1 focus:ring-white/20"
               value={value.generalSettings.customErrorMessage}
               onChange={(event) => updateGeneral({ customErrorMessage: event.target.value })}
             />

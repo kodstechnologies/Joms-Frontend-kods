@@ -2,9 +2,6 @@ import { BadgeCheck, CircleArrowOutUpRight, Gavel, RotateCcw, XCircle } from 'lu
 
 import { cn } from '@/shared/lib/cn'
 
-const buttonBaseClass =
-  'inline-flex items-center gap-2 rounded-md px-4 py-2.5 text-[11px] font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-50'
-
 export type DecisionControlButtonsProps = {
   onApprove: () => void
   onRequestChanges: () => void
@@ -36,23 +33,20 @@ export function DecisionControlButtons({
         type="button"
         onClick={onApprove}
         disabled={approveDisabled}
-        className={cn(buttonBaseClass, 'bg-brand-success text-white hover:bg-[#08a85d]')}
+        className="ui-cta ui-cta-positive"
       >
         Approve
-        <BadgeCheck className="size-3.5 shrink-0" aria-hidden="true" />
+        <BadgeCheck className="icon-sm shrink-0" aria-hidden="true" />
       </button>
 
       <button
         type="button"
         onClick={onRequestChanges}
         disabled={requestChangesDisabled}
-        className={cn(
-          buttonBaseClass,
-          'bg-brand-accent text-brand-text-dark hover:bg-brand-gold-from',
-        )}
+        className="ui-cta ui-cta-primary"
       >
         Ask for Re-Submit
-        <RotateCcw className="size-3.5 shrink-0" aria-hidden="true" />
+        <RotateCcw className="icon-sm shrink-0" aria-hidden="true" />
       </button>
 
       {showEscalate ? (
@@ -60,10 +54,10 @@ export function DecisionControlButtons({
           type="button"
           onClick={onEscalate}
           disabled={escalateDisabled || !onEscalate}
-          className={cn(buttonBaseClass, 'bg-brand-action text-white hover:bg-[#1e40af]')}
+          className="ui-cta bg-brand-action text-white hover:bg-[color-mix(in_srgb,var(--brand-action)_85%,black)]"
         >
           Escalate
-          <CircleArrowOutUpRight className="size-3.5 shrink-0" aria-hidden="true" />
+          <CircleArrowOutUpRight className="icon-sm shrink-0" aria-hidden="true" />
         </button>
       ) : null}
 
@@ -71,10 +65,10 @@ export function DecisionControlButtons({
         type="button"
         onClick={onReject}
         disabled={rejectDisabled}
-        className={cn(buttonBaseClass, 'bg-brand-danger text-white hover:opacity-90')}
+        className="ui-cta ui-cta-negative"
       >
         Reject Application
-        <XCircle className="size-3.5 shrink-0" aria-hidden="true" />
+        <XCircle className="icon-sm shrink-0" aria-hidden="true" />
       </button>
     </div>
   )
@@ -88,8 +82,8 @@ export function DecisionControlsHeader({
   title?: string
 }) {
   return (
-    <div className={cn('flex items-center gap-2 text-[14px] font-semibold text-white', className)}>
-      <Gavel className="text-brand-accent size-4" aria-hidden="true" />
+    <div className={cn('text-body-md-semibold text-brand-text flex items-center gap-2', className)}>
+      <Gavel className="icon-md text-brand-accent" aria-hidden="true" />
       <h3>{title}</h3>
     </div>
   )

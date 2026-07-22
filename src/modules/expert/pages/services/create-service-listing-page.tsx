@@ -451,25 +451,23 @@ export const CreateServiceListingPage = () => {
 
   const activeSteps = selectedType === 'consultation' ? consultationSteps : serviceSteps
 
-  const consultationInputClass =
-    'h-9 w-full rounded-md border border-white/5 bg-black px-3 text-[11px] text-white outline-none transition-colors placeholder:text-[#555555] focus:border-brand-accent/50'
-  const consultationTextareaClass =
-    'min-h-[92px] w-full resize-none rounded-md border border-white/5 bg-black p-3 text-[11px] leading-relaxed text-white outline-none transition-colors placeholder:text-[#555555] focus:border-brand-accent/50'
+  const consultationInputClass = 'ui-input h-9'
+  const consultationTextareaClass = 'ui-textarea min-h-[92px]'
 
   const renderConsultationStep = () => {
     if (currentStep === 2) {
       return (
-        <div className="animate-in fade-in slide-in-from-right-4 mx-auto w-full max-w-[850px] rounded-lg border border-white/5 bg-[#151515] p-5 duration-300">
+        <div className="animate-in fade-in slide-in-from-right-4 bg-brand-surface mx-auto w-full max-w-[850px] rounded-lg border border-white/5 p-5 duration-300">
           <div className="mb-6">
             <h2 className="mb-1 text-[13px] font-bold text-white">About Consultation</h2>
-            <p className="text-[11px] font-medium text-[#777777]">
+            <p className="text-body-sm text-muted font-medium">
               Provide details about your Consultation
             </p>
           </div>
 
           <div className="space-y-5">
             <div className="space-y-2.5">
-              <label className="text-[11px] font-bold tracking-tight text-white">
+              <label className="text-body-sm font-bold tracking-tight text-white">
                 Consultation Title
               </label>
               <input
@@ -482,7 +480,7 @@ export const CreateServiceListingPage = () => {
             </div>
 
             <div className="space-y-2.5">
-              <label className="text-[11px] font-bold tracking-tight text-white">Add Topics</label>
+              <label className="text-body-sm font-bold tracking-tight text-white">Add Topics</label>
               <div className="relative">
                 <select
                   value=""
@@ -530,7 +528,7 @@ export const CreateServiceListingPage = () => {
 
             <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
               <div className="space-y-2.5">
-                <label className="text-[11px] font-bold tracking-tight text-white">
+                <label className="text-body-sm font-bold tracking-tight text-white">
                   Session Outline
                 </label>
                 <textarea
@@ -541,7 +539,7 @@ export const CreateServiceListingPage = () => {
                 />
               </div>
               <div className="space-y-2.5">
-                <label className="text-[11px] font-bold tracking-tight text-white">
+                <label className="text-body-sm font-bold tracking-tight text-white">
                   Who it is for?
                 </label>
                 <textarea
@@ -559,17 +557,17 @@ export const CreateServiceListingPage = () => {
 
     if (currentStep === 3) {
       return (
-        <div className="animate-in fade-in slide-in-from-right-4 mx-auto w-full max-w-[850px] rounded-lg border border-white/5 bg-[#151515] p-5 duration-300">
+        <div className="animate-in fade-in slide-in-from-right-4 bg-brand-surface mx-auto w-full max-w-[850px] rounded-lg border border-white/5 p-5 duration-300">
           <div className="mb-6">
             <h2 className="mb-1 text-[13px] font-bold text-white">Additional</h2>
-            <p className="text-[11px] font-medium text-[#777777]">
+            <p className="text-body-sm text-muted font-medium">
               Provide details about your Consultation
             </p>
           </div>
 
           <div className="space-y-5">
             <div className="space-y-2.5">
-              <label className="text-[11px] font-bold tracking-tight text-white">Languages</label>
+              <label className="text-body-sm font-bold tracking-tight text-white">Languages</label>
               <input
                 type="text"
                 placeholder="English, Hindi"
@@ -583,8 +581,8 @@ export const CreateServiceListingPage = () => {
               <div className="space-y-5">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-[11px] font-bold text-white">Pre-Requirement Session</p>
-                    <p className="mt-1 text-[10px] text-[#777777]">
+                    <p className="text-body-sm font-bold text-white">Pre-Requirement Session</p>
+                    <p className="text-muted mt-1 text-[10px]">
                       Mention any prerequisites that are essential.
                     </p>
                   </div>
@@ -593,13 +591,13 @@ export const CreateServiceListingPage = () => {
                     onClick={() => setHasPreSessionRequirement((current) => !current)}
                     className={cn(
                       'relative h-4 w-8 rounded-full transition-colors',
-                      hasPreSessionRequirement ? 'bg-white' : 'bg-[#777777]',
+                      hasPreSessionRequirement ? 'bg-white' : 'bg-brand-muted',
                     )}
                     aria-label="Toggle pre-requirement session"
                   >
                     <span
                       className={cn(
-                        'absolute top-0.5 size-3 rounded-full bg-[#151515] transition-all',
+                        'bg-brand-surface absolute top-0.5 size-3 rounded-full transition-all',
                         hasPreSessionRequirement ? 'right-0.5' : 'left-0.5',
                       )}
                     />
@@ -616,7 +614,7 @@ export const CreateServiceListingPage = () => {
 
                 <div className="space-y-2.5">
                   <div className="flex items-center justify-between">
-                    <label className="text-[11px] font-bold tracking-tight text-white">
+                    <label className="text-body-sm font-bold tracking-tight text-white">
                       Follow up Window
                     </label>
                     <button
@@ -624,13 +622,13 @@ export const CreateServiceListingPage = () => {
                       onClick={() => setHasFollowUp((current) => !current)}
                       className={cn(
                         'relative h-4 w-8 rounded-full transition-colors',
-                        hasFollowUp ? 'bg-white' : 'bg-[#777777]',
+                        hasFollowUp ? 'bg-white' : 'bg-brand-muted',
                       )}
                       aria-label="Toggle follow up"
                     >
                       <span
                         className={cn(
-                          'absolute top-0.5 size-3 rounded-full bg-[#151515] transition-all',
+                          'bg-brand-surface absolute top-0.5 size-3 rounded-full transition-all',
                           hasFollowUp ? 'right-0.5' : 'left-0.5',
                         )}
                       />
@@ -642,9 +640,9 @@ export const CreateServiceListingPage = () => {
                         type="text"
                         value={followUpDays}
                         onChange={(e) => setFollowUpDays(e.target.value)}
-                        className="h-9 w-20 rounded-md border border-white/5 bg-black px-3 text-[11px] text-white outline-none"
+                        className="text-body-sm h-9 w-20 rounded-md border border-white/5 bg-black px-3 text-white outline-none"
                       />
-                      <span className="flex h-9 items-center text-[11px] text-[#777777]">Days</span>
+                      <span className="text-body-sm text-muted flex h-9 items-center">Days</span>
                     </div>
                   )}
                 </div>
@@ -653,8 +651,8 @@ export const CreateServiceListingPage = () => {
               <div className="space-y-5">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-[11px] font-bold text-white">Post-Session Requirement</p>
-                    <p className="mt-1 text-[10px] text-[#777777]">
+                    <p className="text-body-sm font-bold text-white">Post-Session Requirement</p>
+                    <p className="text-muted mt-1 text-[10px]">
                       Customise message to your clients.
                     </p>
                   </div>
@@ -663,13 +661,13 @@ export const CreateServiceListingPage = () => {
                     onClick={() => setHasPostSessionMessage((current) => !current)}
                     className={cn(
                       'relative h-4 w-8 rounded-full transition-colors',
-                      hasPostSessionMessage ? 'bg-white' : 'bg-[#777777]',
+                      hasPostSessionMessage ? 'bg-white' : 'bg-brand-muted',
                     )}
                     aria-label="Toggle post-session requirement"
                   >
                     <span
                       className={cn(
-                        'absolute top-0.5 size-3 rounded-full bg-[#151515] transition-all',
+                        'bg-brand-surface absolute top-0.5 size-3 rounded-full transition-all',
                         hasPostSessionMessage ? 'right-0.5' : 'left-0.5',
                       )}
                     />
@@ -692,24 +690,24 @@ export const CreateServiceListingPage = () => {
 
     if (currentStep === 4) {
       return (
-        <div className="animate-in fade-in slide-in-from-right-4 mx-auto w-full max-w-[850px] rounded-lg border border-white/5 bg-[#151515] p-5 duration-300">
+        <div className="animate-in fade-in slide-in-from-right-4 bg-brand-surface mx-auto w-full max-w-[850px] rounded-lg border border-white/5 p-5 duration-300">
           <div className="mb-6">
             <h2 className="mb-1 text-[13px] font-bold text-white">Pricing &amp; Duration</h2>
-            <p className="text-[11px] font-medium text-[#777777]">
+            <p className="text-body-sm text-muted font-medium">
               Provide details about your Consultation
             </p>
           </div>
 
           <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
             <div className="space-y-2.5">
-              <label className="text-[11px] font-bold text-white">Mode Of Consultation</label>
+              <label className="text-body-sm font-bold text-white">Mode Of Consultation</label>
               <div className="relative">
                 <select
                   value={consultationMode}
                   onChange={(e) =>
                     setConsultationMode(e.target.value as 'audio' | 'video' | 'chat')
                   }
-                  className="h-9 w-full appearance-none rounded-md border border-white/5 bg-black px-3 pr-8 text-[11px] text-white outline-none"
+                  className="text-body-sm h-9 w-full appearance-none rounded-md border border-white/5 bg-black px-3 pr-8 text-white outline-none"
                 >
                   {CONSULTATION_MODES.map((mode) => (
                     <option key={mode.value} value={mode.value}>
@@ -722,12 +720,12 @@ export const CreateServiceListingPage = () => {
             </div>
 
             <div className="space-y-2.5">
-              <label className="text-[11px] font-bold text-white">Duration</label>
+              <label className="text-body-sm font-bold text-white">Duration</label>
               <div className="relative">
                 <select
                   value={consultationDuration}
                   onChange={(e) => setConsultationDuration(Number(e.target.value))}
-                  className="h-9 w-full appearance-none rounded-md border border-white/5 bg-black px-3 pr-8 text-[11px] text-white outline-none"
+                  className="text-body-sm h-9 w-full appearance-none rounded-md border border-white/5 bg-black px-3 pr-8 text-white outline-none"
                 >
                   {DURATION_OPTIONS.map((duration) => (
                     <option key={duration} value={duration}>
@@ -740,14 +738,14 @@ export const CreateServiceListingPage = () => {
             </div>
 
             <div className="space-y-2.5">
-              <label className="text-[11px] font-bold text-white">Pricing Option</label>
+              <label className="text-body-sm font-bold text-white">Pricing Option</label>
               <div className="overflow-hidden rounded-md border border-white/5 bg-black">
                 {(['paid', 'free'] as const).map((option) => (
                   <button
                     key={option}
                     type="button"
                     onClick={() => setConsultationPricingType(option)}
-                    className="flex h-8 w-full items-center justify-between px-3 text-[11px] font-bold text-white capitalize"
+                    className="text-body-sm flex h-8 w-full items-center justify-between px-3 font-bold text-white capitalize"
                   >
                     {option}
                     <span
@@ -766,7 +764,7 @@ export const CreateServiceListingPage = () => {
             </div>
 
             <div className="space-y-2.5">
-              <label className="text-[11px] font-bold text-white">Consultation Fees</label>
+              <label className="text-body-sm font-bold text-white">Consultation Fees</label>
               <input
                 type="text"
                 placeholder="₹0.00"
@@ -799,39 +797,41 @@ export const CreateServiceListingPage = () => {
           : '—'
 
     return (
-      <div className="animate-in fade-in slide-in-from-right-4 mx-auto w-full max-w-[850px] rounded-lg border border-white/5 bg-[#151515] p-7 duration-300">
+      <div className="animate-in fade-in slide-in-from-right-4 bg-brand-surface mx-auto w-full max-w-[850px] rounded-lg border border-white/5 p-7 duration-300">
         <div className="grid grid-cols-1 gap-7 md:grid-cols-[1fr_0.9fr]">
           <div className="border-brand-accent border-l-4 pl-4">
-            <h2 className="text-[20px] font-bold text-white">
+            <h2 className="text-h3 font-bold text-white">
               {consultationTitle.trim() || 'Untitled Consultation'}
             </h2>
             {topics.length > 0 && (
-              <p className="mt-1 text-[12px] text-[#777777]">
+              <p className="text-body-sm text-muted mt-1">
                 {topics.map((topic) => topic.name).join(', ')}
               </p>
             )}
 
             <div className="mt-6 space-y-5">
               <div>
-                <h3 className="mb-2 text-[12px] font-bold text-white">Session outline</h3>
-                <p className="text-[12px] leading-relaxed whitespace-pre-line text-[#9A9A9A]">
+                <h3 className="text-body-sm mb-2 font-bold text-white">Session outline</h3>
+                <p className="text-body-sm text-muted leading-relaxed whitespace-pre-line">
                   {sessionOutline.trim() || '—'}
                 </p>
               </div>
               {hasPreSessionRequirement && preSessionRequirement.trim() && (
                 <div>
-                  <h3 className="mb-2 text-[12px] font-bold text-white">Pre-Session Requirement</h3>
-                  <p className="text-[12px] whitespace-pre-line text-[#9A9A9A]">
+                  <h3 className="text-body-sm mb-2 font-bold text-white">
+                    Pre-Session Requirement
+                  </h3>
+                  <p className="text-body-sm text-muted whitespace-pre-line">
                     {preSessionRequirement.trim()}
                   </p>
                 </div>
               )}
               {hasPostSessionMessage && postSessionMessage.trim() && (
                 <div>
-                  <h3 className="mb-2 text-[12px] font-bold text-white">
+                  <h3 className="text-body-sm mb-2 font-bold text-white">
                     Post-Session Requirement
                   </h3>
-                  <p className="text-[12px] whitespace-pre-line text-[#9A9A9A]">
+                  <p className="text-body-sm text-muted whitespace-pre-line">
                     {postSessionMessage.trim()}
                   </p>
                 </div>
@@ -842,34 +842,34 @@ export const CreateServiceListingPage = () => {
           <div className="border-t border-white/10 pt-6 md:border-t-0 md:border-l md:pt-0 md:pl-8">
             <div className="space-y-6">
               <div>
-                <h3 className="mb-2 text-[12px] font-bold text-white">Who is it for?</h3>
-                <p className="text-[12px] whitespace-pre-line text-[#9A9A9A]">
+                <h3 className="text-body-sm mb-2 font-bold text-white">Who is it for?</h3>
+                <p className="text-body-sm text-muted whitespace-pre-line">
                   {whoItsFor.trim() || '—'}
                 </p>
               </div>
 
               <div>
-                <h3 className="mb-3 text-[12px] font-bold text-white">Additional Information</h3>
+                <h3 className="text-body-sm mb-3 font-bold text-white">Additional Information</h3>
                 <div className="flex flex-wrap gap-4">
                   <div className="flex flex-col gap-2">
                     <div className="flex h-10 min-w-12 items-center justify-center gap-2 rounded-md bg-black px-3">
                       <Phone className="size-4 text-white" />
-                      <span className="text-[12px] font-bold text-white capitalize">
+                      <span className="text-body-sm font-bold text-white capitalize">
                         {consultationMode}
                       </span>
                     </div>
-                    <span className="text-center text-[11px] text-[#777777]">Mode</span>
+                    <span className="text-body-sm text-muted text-center">Mode</span>
                   </div>
 
                   {reviewLanguages.length > 0 && (
                     <div className="flex flex-col gap-2">
                       <div className="flex h-10 min-w-12 items-center justify-center gap-2 rounded-md bg-black px-3">
                         <MessageCircle className="size-4 text-white" />
-                        <span className="text-[12px] font-bold text-white">
+                        <span className="text-body-sm font-bold text-white">
                           {reviewLanguages.join(', ')}
                         </span>
                       </div>
-                      <span className="text-center text-[11px] text-[#777777]">Languages</span>
+                      <span className="text-body-sm text-muted text-center">Languages</span>
                     </div>
                   )}
 
@@ -877,19 +877,19 @@ export const CreateServiceListingPage = () => {
                     <div className="flex flex-col gap-2">
                       <div className="flex h-10 min-w-12 items-center justify-center gap-2 rounded-md bg-black px-3">
                         <Languages className="size-4 text-white" />
-                        <span className="text-[12px] font-bold text-white">
+                        <span className="text-body-sm font-bold text-white">
                           {followUpDays} days
                         </span>
                       </div>
-                      <span className="text-center text-[11px] text-[#777777]">Follow Ups</span>
+                      <span className="text-body-sm text-muted text-center">Follow Ups</span>
                     </div>
                   )}
                 </div>
               </div>
 
               <div>
-                <h3 className="mb-3 text-[12px] font-bold text-white">Duration &amp; Pricing</h3>
-                <span className="inline-flex rounded-md border border-white/40 px-4 py-2 text-[12px] font-bold text-white">
+                <h3 className="text-body-sm mb-3 font-bold text-white">Duration &amp; Pricing</h3>
+                <span className="text-body-sm inline-flex rounded-md border border-white/40 px-4 py-2 font-bold text-white">
                   {consultationDuration}mins ({reviewPriceLabel})
                 </span>
               </div>
@@ -933,8 +933,7 @@ export const CreateServiceListingPage = () => {
       'Save & Continue'
     )
 
-  const primaryActionClassName =
-    currentStep === 5 ? 'bg-emerald-500 text-white hover:bg-emerald-600' : undefined
+  const primaryActionClassName = currentStep === 5 ? 'ui-cta-positive' : 'ui-cta-primary'
 
   return (
     <CreateListingWizard
@@ -958,10 +957,10 @@ export const CreateServiceListingPage = () => {
       }}
     >
       {currentStep === 1 ? (
-        <div className="mx-auto w-full max-w-[850px] rounded-lg border border-white/5 bg-[#151515] p-6 shadow-xl">
+        <div className="bg-brand-surface mx-auto w-full max-w-[850px] rounded-lg border border-white/5 p-6 shadow-xl">
           <div className="mb-8">
             <h2 className="mb-2 text-[15px] font-bold text-white">Choose Service Type</h2>
-            <p className="text-[12px] leading-relaxed font-medium text-[#777777]">
+            <p className="text-body-sm text-muted leading-relaxed font-medium">
               Select what kind of offering you're listing. This decision controls the rest of the
               form.
             </p>
@@ -974,13 +973,15 @@ export const CreateServiceListingPage = () => {
                 'group relative flex flex-col items-center gap-4 overflow-hidden rounded-lg border p-7 text-center transition-all duration-300',
                 selectedType === 'service'
                   ? 'bg-brand-accent border-brand-accent text-brand-text-dark shadow-lg'
-                  : 'border-white/5 bg-black text-[#888888] hover:border-white/10',
+                  : 'text-muted border-white/5 bg-black hover:border-white/10',
               )}
             >
               <div
                 className={cn(
                   'flex size-11 items-center justify-center rounded-full shadow-sm transition-all duration-300',
-                  selectedType === 'service' ? 'bg-black text-white' : 'bg-[#1A1A1A] text-white',
+                  selectedType === 'service'
+                    ? 'bg-black text-white'
+                    : 'bg-brand-surface text-white',
                 )}
               >
                 <Briefcase className="size-5" />
@@ -996,8 +997,8 @@ export const CreateServiceListingPage = () => {
                 </h3>
                 <p
                   className={cn(
-                    'max-w-[260px] text-[12px] leading-relaxed font-semibold',
-                    selectedType === 'service' ? 'text-black/80' : 'text-[#555555]',
+                    'text-body-sm max-w-[260px] leading-relaxed font-semibold',
+                    selectedType === 'service' ? 'text-black/80' : 'text-muted',
                   )}
                 >
                   Best for clearly defined offerings with deliverables, pricing, and timelines
@@ -1011,7 +1012,7 @@ export const CreateServiceListingPage = () => {
                 'group relative flex flex-col items-center gap-4 overflow-hidden rounded-lg border p-7 text-center transition-all duration-300',
                 selectedType === 'consultation'
                   ? 'border-white bg-white text-black shadow-lg'
-                  : 'border-white/5 bg-black text-[#888888] hover:border-white/10',
+                  : 'text-muted border-white/5 bg-black hover:border-white/10',
               )}
             >
               <div
@@ -1019,7 +1020,7 @@ export const CreateServiceListingPage = () => {
                   'flex size-11 items-center justify-center rounded-full shadow-sm transition-all duration-300',
                   selectedType === 'consultation'
                     ? 'bg-black text-white'
-                    : 'bg-[#1A1A1A] text-white',
+                    : 'bg-brand-surface text-white',
                 )}
               >
                 <MessageCircle className="size-5" />
@@ -1035,8 +1036,8 @@ export const CreateServiceListingPage = () => {
                 </h3>
                 <p
                   className={cn(
-                    'max-w-[260px] text-[12px] leading-relaxed font-medium',
-                    selectedType === 'consultation' ? 'text-black' : 'text-[#555555]',
+                    'text-body-sm max-w-[260px] leading-relaxed font-medium',
+                    selectedType === 'consultation' ? 'text-black' : 'text-muted',
                   )}
                 >
                   Best for time-based or advisory sessions without fixed deliverables
@@ -1048,24 +1049,24 @@ export const CreateServiceListingPage = () => {
       ) : selectedType === 'consultation' ? (
         renderConsultationStep()
       ) : currentStep === 2 ? (
-        <div className="animate-in fade-in slide-in-from-right-4 mx-auto w-full max-w-[850px] rounded-lg border border-white/5 bg-[#151515] p-6 duration-300">
+        <div className="animate-in fade-in slide-in-from-right-4 bg-brand-surface mx-auto w-full max-w-[850px] rounded-lg border border-white/5 p-6 duration-300">
           <div className="mb-8">
             <h2 className="mb-1 text-[15px] font-bold text-white">About Service</h2>
-            <p className="text-[12px] font-medium text-[#777777]">
+            <p className="text-body-sm text-muted font-medium">
               Provide details about your service offering
             </p>
           </div>
 
           <div className="space-y-6">
             {!partnerId && (
-              <p className="rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-[11px] text-amber-300">
+              <p className="text-body-sm rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-amber-300">
                 Add <code className="text-amber-200">?partnerId=&lt;id&gt;</code> to the URL before
                 creating a listing.
               </p>
             )}
 
             <div className="space-y-2.5">
-              <label className="text-[12px] font-bold tracking-tight text-white">
+              <label className="text-body-sm font-bold tracking-tight text-white">
                 Service title *
               </label>
               <input
@@ -1073,13 +1074,13 @@ export const CreateServiceListingPage = () => {
                 placeholder="e.g NDA Review & Legal Advisory"
                 value={serviceTitle}
                 onChange={(e) => setServiceTitle(e.target.value)}
-                className="focus:border-brand-accent/50 h-10 w-full rounded-lg border border-white/5 bg-black px-3 text-[12px] text-white transition-colors outline-none placeholder:text-[#444444]"
+                className="focus:border-brand-accent/50 text-body-sm placeholder:text-muted h-10 w-full rounded-lg border border-white/5 bg-black px-3 text-white transition-colors outline-none"
               />
             </div>
 
             <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
               <div className="space-y-2.5">
-                <label className="text-[12px] font-bold tracking-tight text-white">
+                <label className="text-body-sm font-bold tracking-tight text-white">
                   Service Category *
                 </label>
                 <div className="group relative">
@@ -1090,7 +1091,7 @@ export const CreateServiceListingPage = () => {
                       setSelectedSubCategoryIds([])
                     }}
                     disabled={isCategoriesLoading}
-                    className="focus:border-brand-accent/50 h-10 w-full cursor-pointer appearance-none rounded-lg border border-white/5 bg-black px-3 pr-10 text-[12px] text-white transition-colors outline-none disabled:opacity-50"
+                    className="focus:border-brand-accent/50 text-body-sm h-10 w-full cursor-pointer appearance-none rounded-lg border border-white/5 bg-black px-3 pr-10 text-white transition-colors outline-none disabled:opacity-50"
                   >
                     <option value="" disabled>
                       {isCategoriesLoading ? 'Loading categories...' : 'Select category'}
@@ -1101,21 +1102,21 @@ export const CreateServiceListingPage = () => {
                       </option>
                     ))}
                   </select>
-                  <ChevronDown className="pointer-events-none absolute top-1/2 right-4 size-4 -translate-y-1/2 text-[#444444] transition-colors group-hover:text-[#666666]" />
+                  <ChevronDown className="text-muted group-hover:text-muted pointer-events-none absolute top-1/2 right-4 size-4 -translate-y-1/2 transition-colors" />
                 </div>
               </div>
 
               <div className="space-y-2.5">
-                <label className="text-[12px] font-bold tracking-tight text-white">
+                <label className="text-body-sm font-bold tracking-tight text-white">
                   Service sub-category
                 </label>
                 <div className="min-h-10 rounded-lg border border-white/5 bg-black px-3 py-2">
                   {!selectedCategoryId ? (
-                    <p className="text-[11px] text-[#555555]">Select a category first</p>
+                    <p className="text-body-sm text-muted">Select a category first</p>
                   ) : isSubcategoriesLoading ? (
-                    <p className="text-[11px] text-[#555555]">Loading subcategories...</p>
+                    <p className="text-body-sm text-muted">Loading subcategories...</p>
                   ) : subcategories.length === 0 ? (
-                    <p className="text-[11px] text-[#555555]">No subcategories available</p>
+                    <p className="text-body-sm text-muted">No subcategories available</p>
                   ) : (
                     <div className="flex flex-wrap gap-2">
                       {subcategories.map((subCategory) => (
@@ -1127,7 +1128,7 @@ export const CreateServiceListingPage = () => {
                             'rounded-md border px-2.5 py-1 text-[10px] font-semibold transition-colors',
                             selectedSubCategoryIds.includes(subCategory._id)
                               ? 'border-brand-accent bg-brand-accent/10 text-brand-accent'
-                              : 'border-white/10 text-[#888888] hover:border-white/30',
+                              : 'text-muted border-white/10 hover:border-white/30',
                           )}
                         >
                           {subCategory.name}
@@ -1140,34 +1141,36 @@ export const CreateServiceListingPage = () => {
             </div>
 
             <div className="space-y-2.5">
-              <label className="text-[12px] font-bold tracking-tight text-white">Description</label>
+              <label className="text-body-sm font-bold tracking-tight text-white">
+                Description
+              </label>
               <textarea
                 placeholder="Describe your service offering..."
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="focus:border-brand-accent/50 min-h-[72px] w-full resize-none rounded-lg border border-white/5 bg-black p-3 text-[12px] leading-relaxed text-white transition-colors outline-none placeholder:text-[#444444]"
+                className="focus:border-brand-accent/50 text-body-sm placeholder:text-muted min-h-[72px] w-full resize-none rounded-lg border border-white/5 bg-black p-3 leading-relaxed text-white transition-colors outline-none"
               />
             </div>
 
             <div className="space-y-2.5">
-              <label className="text-[12px] font-bold tracking-tight text-white">
+              <label className="text-body-sm font-bold tracking-tight text-white">
                 Describe Deliverables
               </label>
               <textarea
                 placeholder="Describe what you will deliver to your client. Be specific about outputs, formats, and any revisions included..."
                 value={deliverables}
                 onChange={(e) => setDeliverables(e.target.value)}
-                className="focus:border-brand-accent/50 min-h-[88px] w-full resize-none rounded-lg border border-white/5 bg-black p-3 text-[12px] leading-relaxed text-white transition-colors outline-none placeholder:text-[#444444]"
+                className="focus:border-brand-accent/50 text-body-sm placeholder:text-muted min-h-[88px] w-full resize-none rounded-lg border border-white/5 bg-black p-3 leading-relaxed text-white transition-colors outline-none"
               />
             </div>
           </div>
         </div>
       ) : currentStep === 3 ? (
         <div className="animate-in fade-in slide-in-from-right-4 mx-auto w-full max-w-[850px] space-y-5 duration-300">
-          <div className="space-y-5 rounded-lg border border-white/5 bg-[#151515] p-5">
+          <div className="bg-brand-surface space-y-5 rounded-lg border border-white/5 p-5">
             <div>
               <h2 className="mb-1 text-[13px] font-bold text-white">Pricing Options</h2>
-              <p className="text-[11px] font-medium text-[#777777]">
+              <p className="text-body-sm text-muted font-medium">
                 Select one pricing model. Each model has its own fields.
               </p>
             </div>
@@ -1191,8 +1194,8 @@ export const CreateServiceListingPage = () => {
                   {pricingType === 'fixed' && <div className="size-1.5 rounded-full bg-white" />}
                 </div>
                 <div>
-                  <h3 className="mb-1 text-[11px] font-bold text-white">Fixed Pricing</h3>
-                  <p className="text-[10px] leading-snug text-[#777777]">
+                  <h3 className="text-body-sm mb-1 font-bold text-white">Fixed Pricing</h3>
+                  <p className="text-muted text-[10px] leading-snug">
                     Best for clearly defined scope, deliverables, and deadlines
                   </p>
                 </div>
@@ -1216,8 +1219,8 @@ export const CreateServiceListingPage = () => {
                   {pricingType === 'custom' && <div className="size-1.5 rounded-full bg-white" />}
                 </div>
                 <div>
-                  <h3 className="mb-1 text-[11px] font-bold text-white">Custom Pricing</h3>
-                  <p className="text-[10px] leading-snug text-[#777777]">
+                  <h3 className="text-body-sm mb-1 font-bold text-white">Custom Pricing</h3>
+                  <p className="text-muted text-[10px] leading-snug">
                     Best for flexible scope, evolving requirements, variable timelines
                   </p>
                 </div>
@@ -1241,8 +1244,8 @@ export const CreateServiceListingPage = () => {
                   {pricingType === 'tiered' && <div className="size-1.5 rounded-full bg-white" />}
                 </div>
                 <div>
-                  <h3 className="mb-1 text-[11px] font-bold text-white">Tiered Pricing</h3>
-                  <p className="text-[10px] leading-snug text-[#777777]">
+                  <h3 className="text-body-sm mb-1 font-bold text-white">Tiered Pricing</h3>
+                  <p className="text-muted text-[10px] leading-snug">
                     Best for multiple service levels with increasing value
                   </p>
                 </div>
@@ -1252,13 +1255,13 @@ export const CreateServiceListingPage = () => {
 
           <div>
             {pricingType === 'fixed' && (
-              <div className="animate-in fade-in slide-in-from-bottom-4 space-y-5 rounded-lg border border-white/5 bg-[#151515] p-5 duration-500">
+              <div className="animate-in fade-in slide-in-from-bottom-4 bg-brand-surface space-y-5 rounded-lg border border-white/5 p-5 duration-500">
                 <h2 className="text-[13px] font-bold text-white">Fixed Pricing Details</h2>
 
                 <div className="flex flex-col items-start gap-5 md:flex-row">
                   <div className="w-full flex-1 space-y-5">
                     <div className="space-y-2.5">
-                      <label className="text-[11px] font-bold tracking-tight text-white">
+                      <label className="text-body-sm font-bold tracking-tight text-white">
                         Price *
                       </label>
                       <input
@@ -1266,12 +1269,12 @@ export const CreateServiceListingPage = () => {
                         placeholder="Enter Price"
                         value={fixedPrice}
                         onChange={(e) => setFixedPrice(e.target.value)}
-                        className="focus:border-brand-accent/50 h-9 w-full rounded-lg border border-white/5 bg-black px-3 text-[11px] text-white transition-colors outline-none placeholder:text-[#444444]"
+                        className="focus:border-brand-accent/50 text-body-sm placeholder:text-muted h-9 w-full rounded-lg border border-white/5 bg-black px-3 text-white transition-colors outline-none"
                       />
                     </div>
 
                     <div className="space-y-2.5">
-                      <label className="text-[11px] font-bold tracking-tight text-white">
+                      <label className="text-body-sm font-bold tracking-tight text-white">
                         Set Timelines *
                       </label>
                       <div className="flex gap-3">
@@ -1279,29 +1282,29 @@ export const CreateServiceListingPage = () => {
                           type="text"
                           value={fixedTimeline}
                           onChange={(e) => setFixedTimeline(e.target.value)}
-                          className="focus:border-brand-accent/50 h-9 w-full rounded-lg border border-white/5 bg-black px-3 text-[11px] text-white transition-colors outline-none"
+                          className="focus:border-brand-accent/50 text-body-sm h-9 w-full rounded-lg border border-white/5 bg-black px-3 text-white transition-colors outline-none"
                         />
                         <div className="group relative w-20 shrink-0">
                           <select
                             value={fixedTimelineUnit}
                             onChange={(e) => setFixedTimelineUnit(e.target.value)}
-                            className="focus:border-brand-accent/50 h-9 w-full cursor-pointer appearance-none rounded-lg border border-white/5 bg-black px-3 pr-8 text-[11px] text-white transition-colors outline-none"
+                            className="focus:border-brand-accent/50 text-body-sm h-9 w-full cursor-pointer appearance-none rounded-lg border border-white/5 bg-black px-3 pr-8 text-white transition-colors outline-none"
                           >
                             <option>Days</option>
                             <option>Weeks</option>
                             <option>Months</option>
                           </select>
-                          <ChevronDown className="pointer-events-none absolute top-1/2 right-3 size-3 -translate-y-1/2 text-[#666666]" />
+                          <ChevronDown className="text-muted pointer-events-none absolute top-1/2 right-3 size-3 -translate-y-1/2" />
                         </div>
                       </div>
                     </div>
 
                     <div className="space-y-3">
                       <div className="flex items-center gap-2">
-                        <label className="text-[11px] font-bold tracking-tight text-white">
+                        <label className="text-body-sm font-bold tracking-tight text-white">
                           Discount (%)
                         </label>
-                        <Info className="size-3 cursor-help text-[#666666]" />
+                        <Info className="text-muted size-3 cursor-help" />
                       </div>
                       <div className="flex flex-wrap gap-3">
                         {['00%', '10%', '15%', '20%'].map((discount) => (
@@ -1309,10 +1312,10 @@ export const CreateServiceListingPage = () => {
                             key={discount}
                             onClick={() => setSelectedDiscount(discount)}
                             className={cn(
-                              'rounded-md px-4 py-2 text-[11px] font-bold transition-all duration-200',
+                              'text-body-sm rounded-md px-4 py-2 font-bold transition-all duration-200',
                               selectedDiscount === discount
                                 ? 'bg-white text-black shadow-lg'
-                                : 'border border-white/5 bg-[#1A1A1A] text-[#666666] hover:border-white/10',
+                                : 'bg-brand-surface text-muted border border-white/5 hover:border-white/10',
                             )}
                           >
                             {discount}
@@ -1323,8 +1326,8 @@ export const CreateServiceListingPage = () => {
                   </div>
 
                   <div className="w-full md:w-[260px]">
-                    <div className="flex gap-3 rounded-lg border border-emerald-500/15 bg-[#14521f] p-4">
-                      <div className="flex size-6 shrink-0 items-center justify-center rounded-full bg-emerald-900/60">
+                    <div className="border-brand-positive/15 bg-brand-positive/20 flex gap-3 rounded-lg border p-4">
+                      <div className="bg-brand-positive/40 flex size-6 shrink-0 items-center justify-center rounded-full">
                         <MapPin className="size-3.5 text-emerald-200" />
                       </div>
                       <p className="text-[10px] leading-relaxed font-medium text-white">
@@ -1338,13 +1341,13 @@ export const CreateServiceListingPage = () => {
             )}
 
             {pricingType === 'custom' && (
-              <div className="animate-in fade-in slide-in-from-bottom-4 space-y-5 rounded-lg border border-white/5 bg-[#151515] p-5 duration-500">
+              <div className="animate-in fade-in slide-in-from-bottom-4 bg-brand-surface space-y-5 rounded-lg border border-white/5 p-5 duration-500">
                 <h2 className="text-[13px] font-bold text-white">Custom Pricing Details</h2>
 
                 <div className="flex flex-col items-start gap-5 md:flex-row">
                   <div className="w-full flex-1 space-y-5">
                     <div className="space-y-2.5">
-                      <label className="text-[11px] font-bold tracking-tight text-white">
+                      <label className="text-body-sm font-bold tracking-tight text-white">
                         Set Price *
                       </label>
                       <input
@@ -1352,12 +1355,12 @@ export const CreateServiceListingPage = () => {
                         placeholder="Enter price"
                         value={customPrice}
                         onChange={(e) => setCustomPrice(e.target.value)}
-                        className="focus:border-brand-accent/50 h-9 w-full rounded-lg border border-white/5 bg-black px-3 text-[11px] text-white transition-colors outline-none placeholder:text-[#444444]"
+                        className="focus:border-brand-accent/50 text-body-sm placeholder:text-muted h-9 w-full rounded-lg border border-white/5 bg-black px-3 text-white transition-colors outline-none"
                       />
                     </div>
 
                     <div className="space-y-3">
-                      <label className="text-[11px] font-bold tracking-tight text-white">
+                      <label className="text-body-sm font-bold tracking-tight text-white">
                         Times lines *
                       </label>
                       <div className="flex gap-5">
@@ -1377,8 +1380,8 @@ export const CreateServiceListingPage = () => {
                           </div>
                           <span
                             className={cn(
-                              'text-[11px] font-medium transition-colors',
-                              timelineType === 'long' ? 'text-white' : 'text-[#777777]',
+                              'text-body-sm font-medium transition-colors',
+                              timelineType === 'long' ? 'text-white' : 'text-muted',
                             )}
                           >
                             Long term
@@ -1400,22 +1403,22 @@ export const CreateServiceListingPage = () => {
                           </div>
                           <span
                             className={cn(
-                              'text-[11px] font-medium transition-colors',
-                              timelineType === 'short' ? 'text-white' : 'text-[#777777]',
+                              'text-body-sm font-medium transition-colors',
+                              timelineType === 'short' ? 'text-white' : 'text-muted',
                             )}
                           >
                             Short term
                           </span>
                         </button>
                       </div>
-                      <p className="text-[10px] text-[#777777]">
+                      <p className="text-muted text-[10px]">
                         Best for services with flexible scope, evolving requirements, and variable
                         timelines.
                       </p>
                     </div>
 
                     <div className="space-y-2.5">
-                      <label className="text-[11px] font-bold tracking-tight text-white">
+                      <label className="text-body-sm font-bold tracking-tight text-white">
                         Set Timelines *
                       </label>
                       <div className="flex items-center gap-3">
@@ -1423,34 +1426,34 @@ export const CreateServiceListingPage = () => {
                           type="text"
                           value={customTimelineMin}
                           onChange={(e) => setCustomTimelineMin(e.target.value)}
-                          className="focus:border-brand-accent/50 h-9 w-24 rounded-lg border border-white/5 bg-black px-3 text-center text-[11px] text-white transition-colors outline-none"
+                          className="focus:border-brand-accent/50 text-body-sm h-9 w-24 rounded-lg border border-white/5 bg-black px-3 text-center text-white transition-colors outline-none"
                         />
-                        <span className="text-[11px] font-medium text-[#555555]">To</span>
+                        <span className="text-body-sm text-muted font-medium">To</span>
                         <input
                           type="text"
                           value={customTimelineMax}
                           onChange={(e) => setCustomTimelineMax(e.target.value)}
-                          className="focus:border-brand-accent/50 h-9 w-24 rounded-lg border border-white/5 bg-black px-3 text-center text-[11px] text-white transition-colors outline-none"
+                          className="focus:border-brand-accent/50 text-body-sm h-9 w-24 rounded-lg border border-white/5 bg-black px-3 text-center text-white transition-colors outline-none"
                         />
                         <div className="group relative w-20 shrink-0">
                           <select
                             value={customTimelineUnit}
                             onChange={(e) => setCustomTimelineUnit(e.target.value)}
-                            className="focus:border-brand-accent/50 h-9 w-full cursor-pointer appearance-none rounded-lg border border-white/5 bg-black px-3 pr-8 text-[11px] text-white transition-colors outline-none"
+                            className="focus:border-brand-accent/50 text-body-sm h-9 w-full cursor-pointer appearance-none rounded-lg border border-white/5 bg-black px-3 pr-8 text-white transition-colors outline-none"
                           >
                             <option value="Days">Days</option>
                             <option value="Weeks">Weeks</option>
                             <option value="Months">Months</option>
                           </select>
-                          <ChevronDown className="pointer-events-none absolute top-1/2 right-3 size-3 -translate-y-1/2 text-[#666666]" />
+                          <ChevronDown className="text-muted pointer-events-none absolute top-1/2 right-3 size-3 -translate-y-1/2" />
                         </div>
                       </div>
                     </div>
                   </div>
 
                   <div className="w-full md:w-[260px]">
-                    <div className="flex gap-3 rounded-lg border border-emerald-500/15 bg-[#14521f] p-4">
-                      <div className="flex size-6 shrink-0 items-center justify-center rounded-full bg-emerald-900/60">
+                    <div className="border-brand-positive/15 bg-brand-positive/20 flex gap-3 rounded-lg border p-4">
+                      <div className="bg-brand-positive/40 flex size-6 shrink-0 items-center justify-center rounded-full">
                         <MapPin className="size-3.5 text-emerald-200" />
                       </div>
                       <p className="text-[10px] leading-relaxed font-medium text-white">
@@ -1464,10 +1467,10 @@ export const CreateServiceListingPage = () => {
             )}
 
             {pricingType === 'tiered' && (
-              <div className="animate-in fade-in slide-in-from-bottom-4 space-y-5 rounded-lg border border-white/5 bg-[#151515] p-5 duration-500">
+              <div className="animate-in fade-in slide-in-from-bottom-4 bg-brand-surface space-y-5 rounded-lg border border-white/5 p-5 duration-500">
                 <div>
                   <h2 className="text-[13px] font-bold text-white">Tiered Pricing Details</h2>
-                  <p className="mt-1 text-[11px] font-medium text-[#777777]">
+                  <p className="text-body-sm text-muted mt-1 font-medium">
                     Fill the tiers you want to offer. Leave a tier&apos;s price empty to skip it.
                   </p>
                 </div>
@@ -1479,24 +1482,26 @@ export const CreateServiceListingPage = () => {
                       className="space-y-4 rounded-lg border border-white/5 bg-black p-4"
                     >
                       <div className="flex items-center justify-between">
-                        <h3 className="text-[12px] font-bold text-white capitalize">{tier.name}</h3>
+                        <h3 className="text-body-sm font-bold text-white capitalize">
+                          {tier.name}
+                        </h3>
                       </div>
 
                       <div className="space-y-2.5">
-                        <label className="text-[11px] font-bold tracking-tight text-white">
+                        <label className="text-body-sm font-bold tracking-tight text-white">
                           Description *
                         </label>
                         <textarea
                           placeholder={`Describe what the ${tier.name} tier includes...`}
                           value={tier.description}
                           onChange={(e) => updateTier(tier.name, 'description', e.target.value)}
-                          className="focus:border-brand-accent/50 min-h-[64px] w-full resize-none rounded-lg border border-white/5 bg-[#151515] p-3 text-[11px] leading-relaxed text-white transition-colors outline-none placeholder:text-[#444444]"
+                          className="focus:border-brand-accent/50 bg-brand-surface text-body-sm placeholder:text-muted min-h-[64px] w-full resize-none rounded-lg border border-white/5 p-3 leading-relaxed text-white transition-colors outline-none"
                         />
                       </div>
 
                       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                         <div className="space-y-2.5">
-                          <label className="text-[11px] font-bold tracking-tight text-white">
+                          <label className="text-body-sm font-bold tracking-tight text-white">
                             Price *
                           </label>
                           <input
@@ -1504,12 +1509,12 @@ export const CreateServiceListingPage = () => {
                             placeholder="₹0.00"
                             value={tier.price}
                             onChange={(e) => updateTier(tier.name, 'price', e.target.value)}
-                            className="focus:border-brand-accent/50 h-9 w-full rounded-lg border border-white/5 bg-[#151515] px-3 text-[11px] text-white transition-colors outline-none placeholder:text-[#444444]"
+                            className="focus:border-brand-accent/50 bg-brand-surface text-body-sm placeholder:text-muted h-9 w-full rounded-lg border border-white/5 px-3 text-white transition-colors outline-none"
                           />
                         </div>
 
                         <div className="space-y-2.5">
-                          <label className="text-[11px] font-bold tracking-tight text-white">
+                          <label className="text-body-sm font-bold tracking-tight text-white">
                             Set Timelines *
                           </label>
                           <div className="flex gap-3">
@@ -1520,7 +1525,7 @@ export const CreateServiceListingPage = () => {
                               onChange={(e) =>
                                 updateTier(tier.name, 'timelineValue', e.target.value)
                               }
-                              className="focus:border-brand-accent/50 h-9 w-full rounded-lg border border-white/5 bg-[#151515] px-3 text-center text-[11px] text-white transition-colors outline-none"
+                              className="focus:border-brand-accent/50 bg-brand-surface text-body-sm h-9 w-full rounded-lg border border-white/5 px-3 text-center text-white transition-colors outline-none"
                             />
                             <div className="group relative w-20 shrink-0">
                               <select
@@ -1528,13 +1533,13 @@ export const CreateServiceListingPage = () => {
                                 onChange={(e) =>
                                   updateTier(tier.name, 'timelineUnit', e.target.value)
                                 }
-                                className="focus:border-brand-accent/50 h-9 w-full cursor-pointer appearance-none rounded-lg border border-white/5 bg-[#151515] px-3 pr-8 text-[11px] text-white transition-colors outline-none"
+                                className="focus:border-brand-accent/50 bg-brand-surface text-body-sm h-9 w-full cursor-pointer appearance-none rounded-lg border border-white/5 px-3 pr-8 text-white transition-colors outline-none"
                               >
                                 <option>Days</option>
                                 <option>Weeks</option>
                                 <option>Months</option>
                               </select>
-                              <ChevronDown className="pointer-events-none absolute top-1/2 right-3 size-3 -translate-y-1/2 text-[#666666]" />
+                              <ChevronDown className="text-muted pointer-events-none absolute top-1/2 right-3 size-3 -translate-y-1/2" />
                             </div>
                           </div>
                         </div>
@@ -1547,16 +1552,16 @@ export const CreateServiceListingPage = () => {
           </div>
         </div>
       ) : currentStep === 4 ? (
-        <div className="animate-in fade-in slide-in-from-right-4 mx-auto w-full max-w-[850px] space-y-5 rounded-lg border border-white/5 bg-[#151515] p-5 duration-300">
+        <div className="animate-in fade-in slide-in-from-right-4 bg-brand-surface mx-auto w-full max-w-[850px] space-y-5 rounded-lg border border-white/5 p-5 duration-300">
           <div>
             <h2 className="mb-1 text-[13px] font-bold text-white">Gallery</h2>
-            <p className="text-[11px] font-medium text-[#777777]">
+            <p className="text-body-sm text-muted font-medium">
               Upload visual assets to support your service (optional)
             </p>
           </div>
 
           <div className="space-y-4">
-            <p className="text-[11px] font-bold text-white">
+            <p className="text-body-sm font-bold text-white">
               Maximum {MAX_IMAGES} images. Allowed formats: JPG, PNG, WebP
             </p>
 
@@ -1577,7 +1582,7 @@ export const CreateServiceListingPage = () => {
                     : 'hover:border-brand-accent/40 hover:bg-brand-accent/5 border-white/40 bg-black',
               )}
             >
-              <div className="flex size-9 items-center justify-center rounded-full bg-[#161616]">
+              <div className="bg-brand-surface flex size-9 items-center justify-center rounded-full">
                 <Upload className="size-4 text-white" />
               </div>
               <div className="text-center">
@@ -1587,7 +1592,7 @@ export const CreateServiceListingPage = () => {
                     : 'Click to upload Images'}
                 </p>
                 {uploadedImages.length < MAX_IMAGES && (
-                  <p className="mt-1 text-[10px] text-[#777777]">Or drag &amp; drop</p>
+                  <p className="text-muted mt-1 text-[10px]">Or drag &amp; drop</p>
                 )}
               </div>
             </div>
@@ -1603,7 +1608,7 @@ export const CreateServiceListingPage = () => {
 
             {uploadedImages.length > 0 && (
               <div className="space-y-3">
-                <p className="text-[11px] font-semibold text-white">
+                <p className="text-body-sm font-semibold text-white">
                   Uploaded Images ({uploadedImages.length}/{MAX_IMAGES})
                 </p>
                 <div className="flex flex-wrap gap-3">
@@ -1616,7 +1621,7 @@ export const CreateServiceListingPage = () => {
                       />
                       <button
                         onClick={() => handleRemoveImage(img.id)}
-                        className="absolute top-1.5 left-1.5 rounded-full bg-red-500 px-2 py-0.5 text-[8px] font-bold text-white shadow-lg transition-colors hover:bg-red-600"
+                        className="bg-brand-danger hover:bg-brand-danger absolute top-1.5 left-1.5 rounded-full px-2 py-0.5 text-[8px] font-bold text-white shadow-lg transition-colors"
                       >
                         Remove
                       </button>
@@ -1628,10 +1633,10 @@ export const CreateServiceListingPage = () => {
           </div>
         </div>
       ) : currentStep === 5 ? (
-        <div className="animate-in fade-in slide-in-from-right-4 mx-auto w-full max-w-[850px] space-y-5 rounded-lg border border-white/5 bg-[#151515] p-6 duration-300">
+        <div className="animate-in fade-in slide-in-from-right-4 bg-brand-surface mx-auto w-full max-w-[850px] space-y-5 rounded-lg border border-white/5 p-6 duration-300">
           <div>
             <h2 className="mb-1 text-[13px] font-bold text-white">Review &amp; Publish</h2>
-            <p className="text-[11px] font-medium text-[#777777]">
+            <p className="text-body-sm text-muted font-medium">
               Review your service listing details before publishing
             </p>
           </div>
@@ -1648,7 +1653,7 @@ export const CreateServiceListingPage = () => {
                   alt="cover"
                   className="h-full w-full object-cover"
                 />
-                <div className="absolute right-3 bottom-3 flex items-center gap-1.5 rounded-md border border-white/10 bg-black/70 px-2.5 py-1 text-[11px] font-bold text-white shadow-md backdrop-blur-sm">
+                <div className="text-body-sm absolute right-3 bottom-3 flex items-center gap-1.5 rounded-md border border-white/10 bg-black/70 px-2.5 py-1 font-bold text-white shadow-md backdrop-blur-sm">
                   <svg className="size-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path
                       strokeLinecap="round"
@@ -1666,7 +1671,7 @@ export const CreateServiceListingPage = () => {
                   const filledTiers = tiers.filter((tier) => tier.price.trim() !== '')
                   if (filledTiers.length === 0) {
                     return (
-                      <div className="rounded-lg border border-white/5 bg-black p-4 text-[11px] text-[#777777]">
+                      <div className="text-body-sm text-muted rounded-lg border border-white/5 bg-black p-4">
                         No tiers added yet.
                       </div>
                     )
@@ -1684,10 +1689,10 @@ export const CreateServiceListingPage = () => {
                             key={tier.name}
                             onClick={() => setSelectedTier(tier.name)}
                             className={cn(
-                              'flex-1 rounded-full px-5 py-2 text-center text-[11px] font-bold capitalize transition-all duration-300',
+                              'text-body-sm flex-1 rounded-full px-5 py-2 text-center font-bold capitalize transition-all duration-300',
                               current.name === tier.name
                                 ? 'bg-white font-bold text-black shadow-lg'
-                                : 'bg-transparent text-[#666666] hover:text-white',
+                                : 'text-muted hover:text-brand-text bg-transparent',
                             )}
                           >
                             {tier.name}
@@ -1696,27 +1701,27 @@ export const CreateServiceListingPage = () => {
                       </div>
 
                       <div className="space-y-3">
-                        <p className="text-[12px] font-medium whitespace-pre-line text-white">
+                        <p className="text-body-sm font-medium whitespace-pre-line text-white">
                           {current.description.trim() || 'No description provided.'}
                         </p>
                       </div>
 
                       <div className="flex gap-4 pt-1">
                         <div className="flex flex-col gap-1.5">
-                          <div className="flex min-w-[92px] items-center justify-center rounded-md border border-white/15 bg-[#151515] px-4 py-2">
-                            <span className="text-[11px] font-bold text-white">{priceLabel}</span>
+                          <div className="bg-brand-surface flex min-w-[92px] items-center justify-center rounded-md border border-white/15 px-4 py-2">
+                            <span className="text-body-sm font-bold text-white">{priceLabel}</span>
                           </div>
-                          <span className="text-center text-[11px] font-medium text-[#777777]">
+                          <span className="text-body-sm text-muted text-center font-medium">
                             Pricing
                           </span>
                         </div>
                         <div className="flex flex-col gap-1.5">
-                          <div className="flex min-w-[92px] items-center justify-center rounded-md border border-white/15 bg-[#151515] px-4 py-2">
-                            <span className="text-[11px] font-bold text-white">
+                          <div className="bg-brand-surface flex min-w-[92px] items-center justify-center rounded-md border border-white/15 px-4 py-2">
+                            <span className="text-body-sm font-bold text-white">
                               {current.timelineValue || '0'} {current.timelineUnit}
                             </span>
                           </div>
-                          <span className="text-center text-[11px] font-medium text-[#777777]">
+                          <span className="text-body-sm text-muted text-center font-medium">
                             Timelines
                           </span>
                         </div>
@@ -1732,7 +1737,7 @@ export const CreateServiceListingPage = () => {
                   <h3 className="mb-1 text-[21px] font-bold tracking-tight text-white">
                     {serviceTitle.trim() || 'Untitled Service'}
                   </h3>
-                  <span className="text-[12px] font-medium text-[#777777]">
+                  <span className="text-body-sm text-muted font-medium">
                     {categories.find((category) => category._id === selectedCategoryId)?.name ||
                       'Uncategorized'}
                   </span>
@@ -1744,8 +1749,8 @@ export const CreateServiceListingPage = () => {
 
                 {deliverables.trim() && (
                   <div>
-                    <h4 className="mb-1 text-[12px] font-bold text-white">Deliverables</h4>
-                    <p className="text-[12px] leading-relaxed whitespace-pre-line text-[#9A9A9A]">
+                    <h4 className="text-body-sm mb-1 font-bold text-white">Deliverables</h4>
+                    <p className="text-body-sm text-muted leading-relaxed whitespace-pre-line">
                       {deliverables.trim()}
                     </p>
                   </div>
@@ -1758,7 +1763,7 @@ export const CreateServiceListingPage = () => {
                       .map((subCategory) => (
                         <span
                           key={subCategory._id}
-                          className="rounded-md border border-white/20 bg-[#151515] px-3 py-1.5 text-[11px] font-bold text-white"
+                          className="bg-brand-surface text-body-sm rounded-md border border-white/20 px-3 py-1.5 font-bold text-white"
                         >
                           {subCategory.name}
                         </span>
@@ -1770,30 +1775,28 @@ export const CreateServiceListingPage = () => {
               {pricingType === 'fixed' && (
                 <div className="mt-auto flex flex-wrap gap-4 pt-6">
                   <div className="flex flex-col gap-1.5">
-                    <div className="flex min-w-[92px] items-center justify-center rounded-md border border-white/15 bg-[#151515] px-4 py-2">
-                      <span className="text-[11px] font-bold text-white">{fixedPrice}</span>
+                    <div className="bg-brand-surface flex min-w-[92px] items-center justify-center rounded-md border border-white/15 px-4 py-2">
+                      <span className="text-body-sm font-bold text-white">{fixedPrice}</span>
                     </div>
-                    <span className="text-center text-[11px] font-medium text-[#777777]">
-                      Pricing
-                    </span>
+                    <span className="text-body-sm text-muted text-center font-medium">Pricing</span>
                   </div>
                   <div className="flex flex-col gap-1.5">
-                    <div className="flex min-w-[92px] items-center justify-center rounded-md border border-white/15 bg-[#151515] px-4 py-2">
-                      <span className="text-[11px] font-bold text-white">
+                    <div className="bg-brand-surface flex min-w-[92px] items-center justify-center rounded-md border border-white/15 px-4 py-2">
+                      <span className="text-body-sm font-bold text-white">
                         {selectedDiscount} Off
                       </span>
                     </div>
-                    <span className="text-center text-[11px] font-medium text-[#777777]">
+                    <span className="text-body-sm text-muted text-center font-medium">
                       Discounts
                     </span>
                   </div>
                   <div className="flex flex-col gap-1.5">
-                    <div className="flex min-w-[92px] items-center justify-center rounded-md border border-white/15 bg-[#151515] px-4 py-2">
-                      <span className="text-[11px] font-bold text-white">
+                    <div className="bg-brand-surface flex min-w-[92px] items-center justify-center rounded-md border border-white/15 px-4 py-2">
+                      <span className="text-body-sm font-bold text-white">
                         {fixedTimeline} {fixedTimelineUnit}
                       </span>
                     </div>
-                    <span className="text-center text-[11px] font-medium text-[#777777]">
+                    <span className="text-body-sm text-muted text-center font-medium">
                       Timelines
                     </span>
                   </div>
@@ -1803,21 +1806,21 @@ export const CreateServiceListingPage = () => {
               {pricingType === 'custom' && (
                 <div className="mt-auto flex flex-wrap gap-4 pt-6">
                   <div className="flex flex-col gap-1.5">
-                    <div className="flex min-w-[92px] items-center justify-center rounded-md border border-white/15 bg-[#151515] px-4 py-2">
-                      <span className="text-[11px] font-bold text-white">{customPrice}</span>
+                    <div className="bg-brand-surface flex min-w-[92px] items-center justify-center rounded-md border border-white/15 px-4 py-2">
+                      <span className="text-body-sm font-bold text-white">{customPrice}</span>
                     </div>
-                    <span className="text-center text-[11px] font-medium text-[#777777]">
+                    <span className="text-body-sm text-muted text-center font-medium">
                       Starting From
                     </span>
                   </div>
                   <div className="flex flex-col gap-1.5">
-                    <div className="flex min-w-[92px] items-center justify-center rounded-md border border-white/15 bg-[#151515] px-4 py-2">
-                      <span className="text-[11px] font-bold text-white">
+                    <div className="bg-brand-surface flex min-w-[92px] items-center justify-center rounded-md border border-white/15 px-4 py-2">
+                      <span className="text-body-sm font-bold text-white">
                         {timelineType === 'long' ? 'Long term' : 'Short term'} ({customTimelineMin}-
                         {customTimelineMax} {customTimelineUnit})
                       </span>
                     </div>
-                    <span className="text-center text-[11px] font-medium text-[#777777]">
+                    <span className="text-body-sm text-muted text-center font-medium">
                       Timelines
                     </span>
                   </div>
@@ -1827,7 +1830,7 @@ export const CreateServiceListingPage = () => {
           </div>
         </div>
       ) : (
-        <div className="flex h-full items-center justify-center text-[#444444] italic">
+        <div className="text-muted flex h-full items-center justify-center italic">
           Step {currentStep} coming soon...
         </div>
       )}

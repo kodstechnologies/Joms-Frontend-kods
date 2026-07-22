@@ -265,7 +265,7 @@ export function RbacHubPage() {
         cell: ({ row }) => (
           <span
             className={cn(
-              'rounded-full border px-2.5 py-0.5 text-[11px] font-semibold',
+              'text-body-sm-semibold rounded-full border px-2.5 py-0.5',
               row.original.status === 'active'
                 ? 'border-brand-success/25 bg-brand-success/10 text-brand-success'
                 : 'border-brand-muted/25 text-brand-muted bg-white/5',
@@ -371,7 +371,7 @@ export function RbacHubPage() {
         cell: ({ row }) => (
           <span
             className={cn(
-              'rounded-full border px-2.5 py-0.5 text-[11px] font-semibold',
+              'text-body-sm-semibold rounded-full border px-2.5 py-0.5',
               row.original.status === 'active'
                 ? 'border-brand-success/25 bg-brand-success/10 text-brand-success'
                 : 'border-brand-danger/25 bg-brand-danger/10 text-brand-danger',
@@ -487,7 +487,7 @@ export function RbacHubPage() {
 
       <RbacStatsBar stats={statsData?.data} isLoading={statsLoading} />
 
-      <div className="flex w-full gap-1 rounded-xl border border-white/10 bg-[#111111] p-1">
+      <div className="bg-brand-surface flex w-full gap-1 rounded-xl border border-white/10 p-1">
         {(['roles', 'users'] as const).map((tab) => (
           <button
             key={tab}
@@ -501,8 +501,8 @@ export function RbacHubPage() {
             className={cn(
               'flex-1 rounded-lg px-4 py-2.5 text-sm font-medium transition-colors',
               activeTab === tab
-                ? 'bg-[#1a1a1a] text-white shadow-sm'
-                : 'text-slate-400 hover:text-white',
+                ? 'bg-brand-surface text-brand-text shadow-sm'
+                : 'text-muted hover:text-brand-text',
             )}
           >
             {tab === 'roles' ? 'Admin Roles' : 'Users'}

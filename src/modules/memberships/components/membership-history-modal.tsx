@@ -16,8 +16,6 @@ type MembershipHistoryModalProps = {
   subscription: MembershipSubscription
 }
 
-const TIMELINE_GOLD = '#D48D3B'
-
 const ACTION_ICONS: Record<string, ComponentType<{ className?: string; strokeWidth?: number }>> = {
   purchase: Monitor,
   upgrade: CircleArrowUp,
@@ -44,37 +42,33 @@ export function MembershipHistoryModal({
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
       onClick={onClose}
     >
-      {/* Figma: 723×519, #141414, radius 10 */}
       <div
-        className="flex h-[min(519px,85vh)] w-full max-w-[723px] flex-col overflow-hidden rounded-[10px] bg-[#141414]"
+        className="ui-modal-shell h-[min(519px,85vh)] max-w-[723px]"
         onClick={(event) => event.stopPropagation()}
         role="dialog"
         aria-modal="true"
         aria-labelledby="membership-history-title"
       >
-        <div className="flex shrink-0 items-start justify-between px-6 pt-5 pb-4">
+        <div className="ui-modal-header items-start">
           <div>
-            <h2
-              id="membership-history-title"
-              className="text-[20px] leading-7 font-semibold text-white"
-            >
+            <h2 id="membership-history-title" className="text-h3 text-brand-text">
               Membership History
             </h2>
-            <p className="mt-1 text-[13px] leading-5 text-white/45">
+            <p className="text-muted text-body-sm mt-1">
               View all membership transactions made by the user
             </p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-[8px] p-1.5 text-white/70 transition-colors hover:bg-white/5 hover:text-white"
+            className="text-muted hover:text-brand-text rounded-brand-md p-1.5 transition-colors hover:bg-white/5"
             aria-label="Close membership history"
           >
             <X className="size-5" strokeWidth={1.75} />
           </button>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto px-6 pb-6">
+        <div className="ui-modal-body">
           {history.length ? (
             <div className="relative">
               {history.map((entry, index) => {
@@ -87,43 +81,34 @@ export function MembershipHistoryModal({
                     key={`${entry.action}-${performedAt}-${index}`}
                     className="relative flex gap-4"
                   >
-                    {/* Date + calendar — left of timeline */}
                     <div className="flex w-[52px] shrink-0 flex-col items-center pt-0.5">
-                      <p className="text-[12px] leading-4 whitespace-nowrap text-white/45">
+                      <p className="text-muted text-body-sm leading-4 whitespace-nowrap">
                         {formatMembershipTimelineDate(performedAt)}
                       </p>
-                      <CalendarDays className="mt-1.5 size-3.5 text-white/40" strokeWidth={1.75} />
+                      <CalendarDays className="text-muted mt-1.5 size-3.5" strokeWidth={1.75} />
                     </div>
 
-                    {/* Timeline column */}
                     <div className="relative flex w-8 shrink-0 flex-col items-center">
                       {!isLast ? (
-                        <div
-                          className="absolute top-4 bottom-0 w-px"
-                          style={{ backgroundColor: TIMELINE_GOLD }}
-                        />
+                        <div className="bg-brand-accent absolute top-4 bottom-0 w-px" />
                       ) : null}
-                      <div
-                        className="relative z-10 flex size-8 items-center justify-center rounded-full border bg-[#141414]"
-                        style={{ borderColor: TIMELINE_GOLD }}
-                      >
-                        <Icon className="size-4 text-[#D48D3B]" strokeWidth={1.75} />
+                      <div className="border-brand-accent bg-brand-surface relative z-10 flex size-8 items-center justify-center rounded-full border">
+                        <Icon className="text-brand-accent size-4" strokeWidth={1.75} />
                       </div>
                     </div>
 
-                    {/* Content + invoice button */}
                     <div className={`min-w-0 flex-1 ${isLast ? 'pb-1' : 'pb-7'}`}>
                       <div className="flex items-start justify-between gap-4">
                         <div className="min-w-0 pt-1">
                           <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-                            <h3 className="text-[14px] leading-5 font-semibold text-white">
+                            <h3 className="text-body-md text-brand-text font-semibold">
                               {getHistoryActionTitle(entry.action)}
                             </h3>
-                            <span className="text-[12px] leading-4 text-white/45">
+                            <span className="text-muted text-body-sm leading-4">
                               {formatMembershipTimelineTime(performedAt)}
                             </span>
                           </div>
-                          <p className="mt-1 text-[13px] leading-5 text-white/45">
+                          <p className="text-muted text-body-sm mt-1">
                             {getHistoryActionDescription(entry, subscription.purchasedPrice)}
                           </p>
                         </div>
@@ -131,7 +116,7 @@ export function MembershipHistoryModal({
                         <button
                           type="button"
                           onClick={() => toast.info('Invoice view coming soon')}
-                          className="mt-0.5 inline-flex h-8 shrink-0 items-center justify-center rounded-full border border-white/40 px-3.5 text-[12px] font-medium text-white transition-colors hover:bg-white/5"
+                          className="ui-cta ui-cta-outline mt-0.5 h-8 shrink-0 rounded-full px-3.5"
                         >
                           View Invoice
                         </button>
@@ -142,7 +127,7 @@ export function MembershipHistoryModal({
               })}
             </div>
           ) : (
-            <p className="py-10 text-center text-[13px] text-white/45">
+            <p className="text-muted text-body-sm py-10 text-center">
               No membership history available yet.
             </p>
           )}

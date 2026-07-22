@@ -67,82 +67,84 @@ function PauseSubscriptionModalForm({
       role="dialog"
       aria-modal="true"
       aria-labelledby="pause-subscription-title"
-      className="w-full max-w-[520px] rounded-2xl border border-white/10 bg-[#141414] p-6 shadow-2xl"
+      className="ui-modal-shell max-w-[520px] p-0"
     >
-      <div className="flex items-start justify-between gap-4">
-        <h2 id="pause-subscription-title" className="text-[18px] font-bold text-white">
+      <div className="ui-modal-header">
+        <h2 id="pause-subscription-title" className="text-h4 text-brand-text">
           Pause Subscription
         </h2>
         <button
           type="button"
           onClick={onDismiss}
-          className="rounded-lg p-1 text-[#888888] transition-colors hover:bg-white/5 hover:text-white"
+          className="text-muted hover:text-brand-text rounded-lg p-1 transition-colors hover:bg-white/5"
           aria-label="Close"
         >
-          <X className="size-5" />
+          <X className="icon-md" />
         </button>
       </div>
 
-      <div className="mt-6 flex flex-col items-center text-center">
-        <div className="grid size-16 place-items-center rounded-full bg-[#EBC38C]/15 text-[#EBC38C]">
-          <Pause className="size-7" />
+      <div className="ui-modal-body">
+        <div className="flex flex-col items-center text-center">
+          <div className="bg-brand-accent/15 text-brand-accent grid size-16 place-items-center rounded-full">
+            <Pause className="size-7" />
+          </div>
+          <p className="text-body-md text-brand-text mt-4">
+            Pause subscription for <span className="font-semibold">{userName}</span>?
+          </p>
+          <p className="text-body-sm text-muted mt-1">
+            Billing will be paused and can be resumed later.
+          </p>
         </div>
-        <p className="mt-4 text-[14px] text-white">
-          Pause subscription for <span className="font-semibold">{userName}</span>?
-        </p>
-        <p className="mt-1 text-[12px] text-[#888888]">
-          Billing will be paused and can be resumed later.
-        </p>
+
+        <div className="mt-6">
+          <p className="text-body-sm-medium text-muted mb-2">Reasons</p>
+          <div className="flex flex-wrap gap-2">
+            {REASON_OPTIONS.map((reason) => (
+              <button
+                key={reason}
+                type="button"
+                onClick={() => toggleReason(reason)}
+                className={cn(
+                  'ui-modal-reason-chip',
+                  selectedReasons.includes(reason)
+                    ? 'ui-modal-reason-chip-selected'
+                    : 'ui-modal-reason-chip-idle',
+                )}
+              >
+                {reason}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <label className="text-body-sm text-brand-text/80 mt-5 flex items-start gap-3 text-left">
+          <input
+            type="checkbox"
+            checked={confirmed}
+            onChange={(event) => setConfirmed(event.target.checked)}
+            className="accent-brand-accent mt-0.5 rounded border-white/20"
+          />
+          I confirm the documents are not valid from above reasons.
+        </label>
+
+        <label className="text-body-sm text-muted mt-4 block text-left">
+          Admin notes
+          <textarea
+            value={adminNotes}
+            onChange={(event) => setAdminNotes(event.target.value)}
+            placeholder="Admin notes"
+            rows={4}
+            className="ui-textarea mt-2"
+          />
+        </label>
       </div>
 
-      <div className="mt-6">
-        <p className="mb-2 text-[12px] font-medium text-[#888888]">Reasons</p>
-        <div className="flex flex-wrap gap-2">
-          {REASON_OPTIONS.map((reason) => (
-            <button
-              key={reason}
-              type="button"
-              onClick={() => toggleReason(reason)}
-              className={cn(
-                'rounded-full border px-3 py-1.5 text-[11px] font-medium transition-colors',
-                selectedReasons.includes(reason)
-                  ? 'border-[#EBC38C] bg-[#EBC38C] text-[#111111]'
-                  : 'border-white/20 bg-transparent text-white hover:border-white/40',
-              )}
-            >
-              {reason}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <label className="mt-5 flex items-start gap-3 text-left text-[12px] text-[#CCCCCC]">
-        <input
-          type="checkbox"
-          checked={confirmed}
-          onChange={(event) => setConfirmed(event.target.checked)}
-          className="mt-0.5 rounded border-white/20"
-        />
-        I confirm the documents are not valid from above reasons.
-      </label>
-
-      <label className="mt-4 block text-left text-[12px] text-[#888888]">
-        Admin notes
-        <textarea
-          value={adminNotes}
-          onChange={(event) => setAdminNotes(event.target.value)}
-          placeholder="Admin notes"
-          rows={4}
-          className="mt-2 w-full resize-none rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-[13px] text-white placeholder:text-[#666666] focus:ring-1 focus:ring-[#EBC38C]/40 focus:outline-none"
-        />
-      </label>
-
-      <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+      <div className="ui-modal-footer flex-col-reverse sm:flex-row sm:justify-end">
         <button
           type="button"
           onClick={onDismiss}
           disabled={isSubmitting}
-          className="inline-flex min-h-11 items-center justify-center rounded-xl border border-white/20 px-5 text-sm font-semibold text-white transition-colors hover:bg-white/5 disabled:opacity-50"
+          className="ui-modal-btn ui-modal-btn-cancel"
         >
           Cancel
         </button>
@@ -152,9 +154,9 @@ function PauseSubscriptionModalForm({
             void handleSubmit()
           }}
           disabled={isSubmitting}
-          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#EBC38C] px-5 text-sm font-semibold text-[#050505] transition-colors hover:bg-[#e5b56e] disabled:opacity-50"
+          className="ui-modal-btn ui-modal-btn-gold"
         >
-          <Pause className="size-4" />
+          <Pause className="icon-sm" />
           {isSubmitting ? 'Pausing...' : 'Pause Subscription'}
         </button>
       </div>

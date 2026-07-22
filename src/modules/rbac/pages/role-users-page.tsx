@@ -75,21 +75,21 @@ export function RoleUsersPage() {
         <button
           type="button"
           onClick={() => navigate(`/settings/access/roles/${id}/logs`)}
-          className="group font-heading flex w-fit items-center gap-2 text-[20px] font-bold tracking-tight text-white transition-colors hover:text-[#FBC078]"
+          className="group font-heading text-h3 text-brand-text hover:text-brand-accent flex w-fit items-center gap-2 font-bold tracking-tight transition-colors"
         >
           <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
           <span>{role?.name || 'Role'} Users</span>
         </button>
-        <div className="flex items-center gap-1.5 pl-7 text-[12px] font-medium text-[#777777]">
+        <div className="text-body-sm-medium text-muted flex items-center gap-1.5 pl-7">
           <button
             type="button"
             onClick={() => navigateBackOrFallback(navigate, '/settings/access')}
-            className="transition-colors hover:text-white"
+            className="hover:text-brand-text transition-colors"
           >
             Role Based Access
           </button>
-          <span className="text-[#333333]">/</span>
-          <span className="font-bold text-white">{role?.name || 'Role'}</span>
+          <span className="text-brand-text/30">/</span>
+          <span className="text-brand-text font-bold">{role?.name || 'Role'}</span>
         </div>
       </div>
 

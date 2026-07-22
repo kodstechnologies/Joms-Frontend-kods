@@ -203,8 +203,8 @@ const TOP_VENUES: VenueRow[] = [
 ]
 
 const STATUS_STYLES: Record<VenueRow['status'], string> = {
-  'High Performing': 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-  Stable: 'bg-sky-500/10 text-sky-400 border-sky-500/20',
+  'High Performing': 'bg-brand-positive/15 text-brand-positive border-brand-positive/20',
+  Stable: 'bg-brand-action/10 text-brand-action border-brand-action/20',
   'Needs Attention': 'bg-amber-500/10 text-amber-400 border-amber-500/20',
 }
 
@@ -219,9 +219,9 @@ const tooltipStyle = {
 
 function MetricCard({ metric }: { metric: Metric }) {
   return (
-    <div className="rounded-xl border border-white/[0.06] bg-[#121212] p-4 transition-colors hover:border-white/10">
-      <p className="text-[11px] font-medium text-[#888888]">{metric.label}</p>
-      <p className="mt-2 text-[20px] font-bold tracking-tight text-white">{metric.value}</p>
+    <div className="rounded-brand-lg bg-brand-surface border border-white/[0.06] p-4 transition-colors hover:border-white/10">
+      <p className="text-body-sm text-muted font-medium">{metric.label}</p>
+      <p className="text-h3 mt-2 font-bold tracking-tight text-white">{metric.value}</p>
       <div className="mt-2 flex items-center gap-2">
         {metric.change ? (
           <>
@@ -229,8 +229,8 @@ function MetricCard({ metric }: { metric: Metric }) {
               className={cn(
                 'inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-bold',
                 metric.changeType === 'down'
-                  ? 'bg-rose-500/10 text-rose-400'
-                  : 'bg-emerald-500/10 text-emerald-400',
+                  ? 'bg-brand-danger/10 text-brand-danger'
+                  : 'bg-brand-positive/15 text-brand-positive',
               )}
             >
               {metric.changeType === 'down' ? (
@@ -241,11 +241,11 @@ function MetricCard({ metric }: { metric: Metric }) {
               {metric.change}
             </span>
             {metric.changeNote && (
-              <span className="text-[10px] text-[#666666]">{metric.changeNote}</span>
+              <span className="text-muted text-[10px]">{metric.changeNote}</span>
             )}
           </>
         ) : (
-          metric.note && <span className="text-[10px] text-[#666666]">{metric.note}</span>
+          metric.note && <span className="text-muted text-[10px]">{metric.note}</span>
         )}
       </div>
     </div>
@@ -260,7 +260,7 @@ export const VenueDashboardPage = () => {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-white">Venues</h1>
-          <p className="mt-1 text-[13px] text-[#888888]">
+          <p className="text-body-md text-muted mt-1">
             Venue performance, utilization analytics, and revenue metrics
           </p>
         </div>
@@ -283,13 +283,13 @@ export const VenueDashboardPage = () => {
         ))}
       </div>
 
-      <div className="rounded-xl border border-white/[0.06] bg-[#121212] p-5">
+      <div className="rounded-brand-lg bg-brand-surface border border-white/[0.06] p-5">
         <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className="text-[14px] font-bold text-white">
+            <h2 className="text-body-md font-bold text-white">
               Venue Utilization &amp; Revenue Trends
             </h2>
-            <p className="mt-0.5 text-[11px] text-[#777777]">
+            <p className="text-body-sm text-muted mt-0.5">
               Monthly utilization and revenue performance
             </p>
           </div>
@@ -297,7 +297,7 @@ export const VenueDashboardPage = () => {
             <div className="relative">
               <select
                 defaultValue="3"
-                className="focus:border-brand-accent/50 h-9 cursor-pointer appearance-none rounded-lg border border-white/10 bg-black px-3 pr-8 text-[11px] font-medium text-white outline-none"
+                className="ui-input focus:border-brand-accent/50 text-body-sm h-9 cursor-pointer appearance-none pr-8 font-medium outline-none"
               >
                 <option value="3">Last 3 Months</option>
                 <option value="6">Last 6 Months</option>
@@ -308,7 +308,7 @@ export const VenueDashboardPage = () => {
             <button
               type="button"
               aria-label="Refresh"
-              className="grid size-9 place-items-center rounded-lg border border-white/10 bg-black text-slate-300 transition-colors hover:bg-white/5"
+              className="text-muted grid size-9 place-items-center rounded-lg border border-white/10 bg-black transition-colors hover:bg-white/5"
             >
               <RefreshCw className="size-3.5" />
             </button>
@@ -320,8 +320,8 @@ export const VenueDashboardPage = () => {
             <ComposedChart data={TREND_DATA} margin={{ left: 8, right: 8, top: 8, bottom: 8 }}>
               <defs>
                 <linearGradient id="revenueFill" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#3B82F6" stopOpacity={0.45} />
-                  <stop offset="100%" stopColor="#3B82F6" stopOpacity={0.02} />
+                  <stop offset="0%" stopColor="var(--brand-action)" stopOpacity={0.45} />
+                  <stop offset="100%" stopColor="var(--brand-action)" stopOpacity={0.02} />
                 </linearGradient>
               </defs>
               <CartesianGrid stroke="rgba(255,255,255,0.05)" vertical={false} />
@@ -350,7 +350,7 @@ export const VenueDashboardPage = () => {
                 yAxisId="right"
                 name="Utilization %"
                 dataKey="utilization"
-                fill="#22C55E"
+                fill="var(--brand-positive)"
                 radius={[4, 4, 0, 0]}
                 barSize={28}
               />
@@ -359,7 +359,7 @@ export const VenueDashboardPage = () => {
                 type="monotone"
                 name="Revenue"
                 dataKey="revenue"
-                stroke="#3B82F6"
+                stroke="var(--brand-action)"
                 strokeWidth={2}
                 fill="url(#revenueFill)"
               />
@@ -377,18 +377,18 @@ export const VenueDashboardPage = () => {
         </div>
       </div>
 
-      <div className="rounded-xl border border-white/[0.06] bg-[#121212] p-5">
+      <div className="rounded-brand-lg bg-brand-surface border border-white/[0.06] p-5">
         <div className="mb-4 flex items-center justify-between">
           <div>
-            <h2 className="text-[14px] font-bold text-white">Top Performing Venues</h2>
-            <p className="mt-0.5 text-[11px] text-[#777777]">
+            <h2 className="text-body-md font-bold text-white">Top Performing Venues</h2>
+            <p className="text-body-sm text-muted mt-0.5">
               Ranked by utilization and revenue contribution
             </p>
           </div>
           <button
             type="button"
             aria-label="Refresh"
-            className="grid size-9 place-items-center rounded-lg border border-white/10 bg-black text-slate-300 transition-colors hover:bg-white/5"
+            className="text-muted grid size-9 place-items-center rounded-lg border border-white/10 bg-black transition-colors hover:bg-white/5"
           >
             <RefreshCw className="size-3.5" />
           </button>
@@ -397,7 +397,7 @@ export const VenueDashboardPage = () => {
         <div className="overflow-x-auto">
           <table className="w-full min-w-[900px] border-collapse text-left">
             <thead>
-              <tr className="border-b border-white/5 text-[10px] font-semibold tracking-wide text-[#777777] uppercase">
+              <tr className="text-muted text-[10px] font-semibold tracking-wide uppercase">
                 <th className="px-3 py-3">Venue Name</th>
                 <th className="px-3 py-3">City</th>
                 <th className="px-3 py-3">Total Visits</th>
@@ -414,10 +414,10 @@ export const VenueDashboardPage = () => {
               {TOP_VENUES.map((venue) => (
                 <tr
                   key={venue.name}
-                  className="border-b border-white/5 text-[12px] text-slate-200 transition-colors hover:bg-white/[0.02]"
+                  className="text-body-sm text-brand-text border-b border-white/5 transition-colors hover:bg-white/[0.02]"
                 >
                   <td className="px-3 py-3 font-semibold text-white">{venue.name}</td>
-                  <td className="px-3 py-3 text-[#999999]">{venue.city}</td>
+                  <td className="text-muted px-3 py-3">{venue.city}</td>
                   <td className="px-3 py-3">{venue.totalVisits}</td>
                   <td className="px-3 py-3">{venue.eventAttendance}</td>
                   <td className="px-3 py-3">{venue.bookings}</td>
@@ -430,7 +430,7 @@ export const VenueDashboardPage = () => {
                           style={{ width: `${venue.utilization}%` }}
                         />
                       </div>
-                      <span className="text-[11px] text-[#999999]">{venue.utilization}%</span>
+                      <span className="text-body-sm text-muted">{venue.utilization}%</span>
                     </div>
                   </td>
                   <td className="px-3 py-3 font-semibold text-white">{venue.revenue}</td>

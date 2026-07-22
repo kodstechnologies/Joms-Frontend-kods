@@ -55,41 +55,33 @@ const variantStyles: Record<
   DecisionActionModalVariant,
   {
     submit: string
-    selectedChip: string
     submitIcon?: 'check' | 'x'
     checkIconColor?: string
   }
 > = {
   approve: {
-    submit: 'bg-[#16A34A] text-white hover:bg-[#15803D]',
-    selectedChip: 'bg-[linear-gradient(90deg,#F6CB86_0%,#E0A263_100%)] text-black',
+    submit: 'ui-modal-btn-positive',
     submitIcon: 'check',
-    checkIconColor: 'text-[#16A34A]',
+    checkIconColor: 'text-brand-positive',
   },
   reject: {
-    submit: 'bg-[#E11D2E] text-white hover:bg-[#C41424]',
-    selectedChip: 'bg-[linear-gradient(90deg,#F6CB86_0%,#E0A263_100%)] text-black',
+    submit: 'ui-modal-btn-negative',
     submitIcon: 'x',
   },
   requestChanges: {
-    submit: 'bg-[#FF842B] text-white hover:bg-[#F07520]',
-    selectedChip: 'bg-[linear-gradient(90deg,#F6CB86_0%,#E0A263_100%)] text-black',
+    submit: 'ui-modal-btn-gold',
     submitIcon: 'check',
-    checkIconColor: 'text-[#FF842B]',
+    checkIconColor: 'text-[#B8843F]',
   },
   escalate: {
-    submit: 'bg-[#E5B678] text-black hover:bg-[#D9A866]',
-    selectedChip: 'bg-[linear-gradient(90deg,#F6CB86_0%,#E0A263_100%)] text-black',
+    submit: 'ui-modal-btn-gold',
   },
   suspend: {
-    submit: 'bg-[#E11D2E] text-white hover:bg-[#C41424]',
-    selectedChip: 'bg-[linear-gradient(90deg,#F6CB86_0%,#E0A263_100%)] text-black',
+    submit: 'ui-modal-btn-negative',
     submitIcon: 'x',
   },
-
   delete: {
-    submit: 'bg-[#D3191C] text-white hover:bg-[#C11619]',
-    selectedChip: 'bg-[linear-gradient(90deg,#F6CB86_0%,#E0A263_100%)] text-black',
+    submit: 'ui-modal-btn-negative',
     submitIcon: 'x',
   },
 }
@@ -165,44 +157,41 @@ export function DecisionActionModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="decision-action-modal-title"
-        className="flex max-h-[594px] w-full max-w-[551px] flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#1A1A1A] text-white shadow-[0_24px_80px_rgba(0,0,0,0.65)]"
+        className="ui-modal-shell"
         onClick={(event) => event.stopPropagation()}
       >
-        <div className="flex shrink-0 items-center justify-between border-b border-white/10 px-6 py-4">
-          <h2
-            id="decision-action-modal-title"
-            className="font-figtree text-[24px] leading-[24px] font-semibold tracking-[0] text-white"
-          >
+        <div className="ui-modal-header">
+          <h2 id="decision-action-modal-title" className="text-h2 text-brand-text">
             {title}
           </h2>
           <button
             type="button"
             aria-label="Close modal"
             onClick={onClose}
-            className="rounded-full p-1.5 text-white/80 transition-colors hover:bg-white/10 hover:text-white"
+            className="text-brand-muted rounded-full p-1.5 transition-colors hover:bg-white/10 hover:text-white"
           >
-            <X className="h-[24px] w-[24px]" aria-hidden="true" />
+            <X className="icon-lg" aria-hidden="true" />
           </button>
         </div>
 
-        <div className="flex-1 space-y-4 overflow-y-auto px-6 py-5">
-          {warning ? <p className="text-[13px] leading-relaxed text-[#9A9A9A]">{warning}</p> : null}
+        <div className="ui-modal-body space-y-4">
+          {warning ? <p className="text-body-sm text-muted">{warning}</p> : null}
 
           {showHeroIcon ? (
             <div className="flex justify-center">
               {variant === 'approve' ? (
-                <span className="flex h-[62px] w-[62px] items-center justify-center rounded-full bg-[#16A34A]">
+                <span className="bg-brand-positive flex h-[70px] w-[70px] items-center justify-center rounded-full">
                   <Check className="size-9 text-white" strokeWidth={3} aria-hidden="true" />
                 </span>
               ) : variant === 'delete' ? (
-                <span className="flex h-[62px] w-[62px] items-center justify-center rounded-full bg-[#651313]">
-                  <Trash2 className="h-[28px] w-[28px] text-[#FF4D4F]" strokeWidth={2.5} />
+                <span className="flex h-[62px] w-[62px] items-center justify-center rounded-full bg-[rgb(211_25_28_/_20%)]">
+                  <Trash2 className="text-brand-danger size-7" strokeWidth={1.5} />
                 </span>
               ) : (
-                <span className="flex size-[72px] items-center justify-center rounded-full bg-[#E8B884]">
+                <span className="flex size-[72px] items-center justify-center rounded-full bg-[linear-gradient(180deg,#F6CB86_0%,#E0A263_100%)]">
                   <MoveDiagonal
                     className="size-8 text-[#3D2A16]"
-                    strokeWidth={2.25}
+                    strokeWidth={1.5}
                     aria-hidden="true"
                   />
                 </span>
@@ -213,33 +202,16 @@ export function DecisionActionModal({
           <div
             className={cn(
               'space-y-1',
-              isDocumentRejectLayout ? 'text-left' : 'mx-auto max-w-[330px] text-center',
+              isDocumentRejectLayout ? 'text-left' : 'mx-auto max-w-[333px] text-center',
             )}
           >
-            <p
-              className={cn(
-                'leading-snug text-white',
-                showHeroIcon
-                  ? 'font-figtree text-[16px] leading-[24px] font-semibold'
-                  : isDocumentRejectLayout
-                    ? 'text-[14px] font-normal'
-                    : 'text-[14px] font-medium',
-              )}
-            >
-              {primary}
-            </p>
-            {secondary ? (
-              <p className="font-figtree text-[14px] leading-[22px] font-normal text-[#D1D5DB]">
-                {secondary}
-              </p>
-            ) : null}
+            <p className="text-body-md-semibold text-brand-text">{primary}</p>
+            {secondary ? <p className="text-body-md text-brand-text">{secondary}</p> : null}
           </div>
 
           {showReasons ? (
             <div>
-              <span className="font-figtree mb-[10px] block text-[13px] leading-[16px] font-medium text-[#9A9A9A]">
-                Reasons
-              </span>
+              <span className="text-body-sm-medium text-muted mb-[10px] block">Reasons</span>
               <div className="flex flex-wrap gap-[10px]">
                 {reasonOptions.map((option) => {
                   const isSelected = selectedReasons.includes(option.value)
@@ -250,10 +222,8 @@ export function DecisionActionModal({
                       type="button"
                       onClick={() => onReasonToggle?.(option.value)}
                       className={cn(
-                        'h-[37px] rounded-[8px] px-[10px] text-[13px] leading-[17px] font-medium transition-colors',
-                        isSelected
-                          ? styles.selectedChip
-                          : 'border border-[#2E2E2E] bg-[#101010] text-white hover:border-[#4A4A4A]',
+                        'ui-modal-reason-chip',
+                        isSelected ? 'ui-modal-reason-chip-selected' : 'ui-modal-reason-chip-idle',
                       )}
                     >
                       {option.label}
@@ -265,12 +235,12 @@ export function DecisionActionModal({
           ) : null}
 
           {showConfirmation ? (
-            <label className="flex cursor-pointer items-start gap-3 text-[13px] leading-snug text-white">
+            <label className="text-body-md text-brand-text flex cursor-pointer items-start gap-3">
               <input
                 type="checkbox"
                 checked={confirmationChecked}
                 onChange={(event) => onConfirmationChange?.(event.target.checked)}
-                className="mt-0.5 size-4 shrink-0 accent-[#E5B678]"
+                className="accent-brand-accent mt-0.5 size-[15px] shrink-0"
               />
               <span>{confirmationLabel}</span>
             </label>
@@ -278,7 +248,7 @@ export function DecisionActionModal({
 
           {showTimeline ? (
             <div>
-              <span className="font-figtree mb-[10px] block text-[13px] leading-[16px] font-medium text-[#9A9A9A]">
+              <span className="text-body-sm-medium text-muted mb-[10px] block">
                 Suspension Timeline
               </span>
               <div className="grid grid-cols-2 gap-3">
@@ -287,22 +257,22 @@ export function DecisionActionModal({
                   value={startDate}
                   disabled={indefinite}
                   onChange={(event) => onStartDateChange?.(event.target.value)}
-                  className="h-11 w-full rounded-lg border border-white/10 bg-black px-3 text-sm text-white [color-scheme:dark] outline-none focus:border-white/30 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="ui-input [color-scheme:dark] disabled:cursor-not-allowed disabled:opacity-50"
                 />
                 <input
                   type="date"
                   value={endDate}
                   disabled={indefinite}
                   onChange={(event) => onEndDateChange?.(event.target.value)}
-                  className="h-11 w-full rounded-lg border border-white/10 bg-black px-3 text-sm text-white [color-scheme:dark] outline-none focus:border-white/30 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="ui-input [color-scheme:dark] disabled:cursor-not-allowed disabled:opacity-50"
                 />
               </div>
-              <label className="mt-3 flex cursor-pointer items-center gap-2.5 text-sm text-white">
+              <label className="text-body-md text-brand-text mt-3 flex cursor-pointer items-center gap-2.5">
                 <input
                   type="checkbox"
                   checked={indefinite}
                   onChange={(event) => onIndefiniteChange?.(event.target.checked)}
-                  className="size-4 accent-[#E5B678]"
+                  className="accent-brand-accent size-4"
                 />
                 <span>{indefiniteLabel}</span>
               </label>
@@ -317,15 +287,17 @@ export function DecisionActionModal({
                 return (
                   <label
                     key={option.value}
-                    className="flex cursor-pointer items-center gap-3 text-[15px] text-white"
+                    className="text-body-md text-brand-text flex cursor-pointer items-center gap-3"
                   >
                     <span
                       className={cn(
                         'grid size-5 place-items-center rounded-full border-2',
-                        isSelected ? 'border-[#E5B678]' : 'border-white/70',
+                        isSelected ? 'border-brand-accent' : 'border-white/70',
                       )}
                     >
-                      {isSelected ? <span className="size-2.5 rounded-full bg-[#E5B678]" /> : null}
+                      {isSelected ? (
+                        <span className="bg-brand-accent size-2.5 rounded-full" />
+                      ) : null}
                     </span>
                     <input
                       type="radio"
@@ -344,67 +316,52 @@ export function DecisionActionModal({
 
           {showReasonInput ? (
             <label className="block">
-              <span className="font-figtree mb-2 block text-[13px] leading-[16px] font-medium text-white">
-                {reasonLabel} <span className="text-[#E11D2E]">*</span>
+              <span className="text-body-sm-medium text-brand-text mb-2 block">
+                {reasonLabel} <span className="text-brand-danger">*</span>
               </span>
               <textarea
                 value={reason}
                 onChange={(event) => onReasonChange?.(event.target.value)}
-                className="min-h-[72px] w-full resize-none rounded-[10px] border border-[#2A2A2A] bg-black px-3 py-3 text-[14px] text-white outline-none placeholder:text-[#7A7A7A] focus:border-white/25"
+                className="ui-textarea min-h-[72px]"
               />
             </label>
           ) : null}
 
           <label className="block">
-            <span className="font-figtree mb-2 block text-[13px] leading-[16px] font-medium text-white">
-              Admin notes <span className="text-[#E11D2E]">*</span>
+            <span className="text-body-sm-medium text-brand-text mb-2 block">
+              Admin notes <span className="text-brand-danger">*</span>
             </span>
             <textarea
               value={adminNotes}
               onChange={(event) => onAdminNotesChange(event.target.value)}
-              className="min-h-[72px] w-full resize-none rounded-[10px] border border-[#2A2A2A] bg-black px-3 py-3 text-[14px] text-white outline-none placeholder:text-[#7A7A7A] focus:border-white/25"
+              className="ui-textarea"
             />
           </label>
         </div>
 
-        <div className="grid shrink-0 grid-cols-2 gap-4 px-6 pt-2 pb-6">
-          <button
-            type="button"
-            onClick={onClose}
-            className="font-figtree h-[40px] w-[238px] rounded-[10px] border border-white bg-transparent text-[14px] leading-[20px] font-semibold text-white transition-colors hover:bg-white/5"
-          >
+        <div className="ui-modal-footer">
+          <button type="button" onClick={onClose} className="ui-modal-btn ui-modal-btn-cancel">
             {cancelLabel}
           </button>
           <button
             type="button"
             onClick={onSubmit}
             disabled={isSubmitting}
-            className={cn(
-              'font-figtree flex h-[40px] w-[238px] items-center justify-center gap-[10px] rounded-[10px] px-[10px] text-[14px] leading-[20px] font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-60',
-              styles.submit,
-            )}
+            className={cn('ui-modal-btn', styles.submit)}
           >
-            {submitLabel}
+            <span>{submitLabel}</span>
             {resolvedSubmitIcon === 'check' ? (
-              <span className="flex h-[18px] w-[18px] items-center justify-center rounded-full bg-white">
+              <span className="flex size-4 shrink-0 items-center justify-center rounded-full bg-white">
                 <Check
-                  className={cn(
-                    'h-[10px] w-[10px]',
-
-                    styles.checkIconColor ?? 'text-[#16A34A]',
-                  )}
+                  className={cn('size-2.5', styles.checkIconColor ?? 'text-brand-positive')}
                   strokeWidth={3}
                   aria-hidden="true"
                 />
               </span>
             ) : null}
             {resolvedSubmitIcon === 'x' ? (
-              <span className="flex h-[18px] w-[18px] items-center justify-center rounded-full bg-white">
-                <X
-                  className="h-[10px] w-[10px] text-[#D3191C]"
-                  strokeWidth={3}
-                  aria-hidden="true"
-                />
+              <span className="flex size-4 shrink-0 items-center justify-center rounded-full bg-white">
+                <X className="text-brand-danger size-2.5" strokeWidth={3} aria-hidden="true" />
               </span>
             ) : null}
           </button>

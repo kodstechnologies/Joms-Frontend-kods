@@ -31,7 +31,7 @@ export function DashboardCard({
       {title ? (
         <div className="mb-5 flex items-start justify-between gap-3">
           <div>
-            <p className="text-brand-text text-sm font-semibold tracking-tight">{title}</p>
+            <p className="text-body-md-semibold text-brand-text tracking-tight">{title}</p>
           </div>
           {rightSlot ? <div className="shrink-0">{rightSlot}</div> : null}
         </div>

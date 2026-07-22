@@ -31,33 +31,33 @@ export function RangeField({
   return (
     <div className="grid grid-cols-2 gap-4">
       <div className="space-y-2">
-        <label className="text-xs text-[#888888]">{fromLabel}</label>
+        <label className="text-body-sm text-muted">{fromLabel}</label>
         <div className="relative">
           <Input
             type={inputType}
             value={from}
             onChange={(event) => onFromChange(event.target.value)}
             placeholder={fromPlaceholder}
-            className="border-[#2A2A2A] bg-[#0F0F0F] pr-9"
+            className={cn(showCalendar && 'pr-9')}
           />
           {showCalendar ? (
-            <Calendar className="pointer-events-none absolute top-1/2 right-3 size-3.5 -translate-y-1/2 text-[#666666]" />
+            <Calendar className="icon-sm text-muted pointer-events-none absolute top-1/2 right-3 -translate-y-1/2" />
           ) : null}
         </div>
       </div>
 
       <div className="space-y-2">
-        <label className="text-xs text-[#888888]">{toLabel}</label>
+        <label className="text-body-sm text-muted">{toLabel}</label>
         <div className="relative">
           <Input
             type={inputType}
             value={to}
             onChange={(event) => onToChange(event.target.value)}
             placeholder={toPlaceholder}
-            className="border-[#2A2A2A] bg-[#0F0F0F] pr-9"
+            className={cn(showCalendar && 'pr-9')}
           />
           {showCalendar ? (
-            <Calendar className="pointer-events-none absolute top-1/2 right-3 size-3.5 -translate-y-1/2 text-[#666666]" />
+            <Calendar className="icon-sm text-muted pointer-events-none absolute top-1/2 right-3 -translate-y-1/2" />
           ) : null}
         </div>
       </div>
@@ -89,15 +89,15 @@ export function CheckboxGroupField({ options, value, onChange }: CheckboxGroupFi
         return (
           <label
             key={option.value}
-            className="flex cursor-pointer items-center gap-2 text-sm text-white"
+            className="text-body-md text-brand-text flex cursor-pointer items-center gap-2"
           >
             <input
               type="checkbox"
               checked={isChecked}
               onChange={() => toggleOption(option.value)}
-              className="size-4 rounded border-white/20 bg-[#0F0F0F] accent-[#FFC16B]"
+              className="bg-brand-bg accent-brand-accent size-4 rounded border-white/20"
             />
-            <span className={cn(isChecked && 'text-white')}>{option.label}</span>
+            <span className={cn(isChecked && 'text-brand-text')}>{option.label}</span>
           </label>
         )
       })}
@@ -126,7 +126,6 @@ export function SearchField({
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
-        className="border-[#2A2A2A] bg-[#0F0F0F]"
       />
 
       {selectedItems.length > 0 ? (
@@ -136,7 +135,7 @@ export function SearchField({
               key={item}
               type="button"
               onClick={() => onRemoveItem?.(item)}
-              className="rounded-full bg-white/10 px-3 py-1 text-xs text-white transition-colors hover:bg-white/15"
+              className="text-body-sm text-brand-text rounded-full bg-white/10 px-3 py-1 transition-colors hover:bg-white/15"
             >
               {item} ×
             </button>
@@ -166,13 +165,11 @@ export function LocationField({
         value={value.state}
         onChange={(event) => onChange({ ...value, state: event.target.value })}
         placeholder={statePlaceholder}
-        className="border-[#2A2A2A] bg-[#0F0F0F]"
       />
       <Input
         value={value.city}
         onChange={(event) => onChange({ ...value, city: event.target.value })}
         placeholder={cityPlaceholder}
-        className="border-[#2A2A2A] bg-[#0F0F0F]"
       />
     </div>
   )

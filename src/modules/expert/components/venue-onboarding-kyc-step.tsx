@@ -3,8 +3,7 @@ import { Upload, X } from 'lucide-react'
 
 import type { VenueOnboardingFormData } from '../utils/venue-onboarding-form'
 
-const fieldClass =
-  'h-10 w-full rounded-md border border-white/10 bg-black px-3 text-sm text-white outline-none placeholder:text-[#666] focus:border-brand-accent'
+const fieldClass = 'ui-input'
 
 const selectClass = `${fieldClass} appearance-none`
 
@@ -53,7 +52,7 @@ function FileUploadBox({
         <button
           type="button"
           onClick={() => inputRef.current?.click()}
-          className="hover:border-brand-accent/50 flex h-24 w-full items-center justify-center rounded-md border border-dashed border-[#444] bg-black text-xs text-[#777] transition-colors"
+          className="hover:border-brand-accent/50 text-muted flex h-24 w-full items-center justify-center rounded-md border border-dashed border-white/20 bg-black text-xs transition-colors"
         >
           {file ? <span className="truncate px-2">{file.name}</span> : 'Upload here'}
         </button>
@@ -97,7 +96,7 @@ export const VenueOnboardingKycStep = ({ formData, setFormData }: Props) => {
 
   return (
     <div className="mx-auto w-full max-w-[850px] space-y-6">
-      <div className="animate-in fade-in slide-in-from-right-4 rounded-lg border border-white/5 bg-[#151515] p-6 duration-300">
+      <div className="animate-in fade-in slide-in-from-right-4 bg-brand-surface rounded-lg border border-white/5 p-6 duration-300">
         <h3 className="mb-4 text-sm font-bold text-white">Government ID Verification</h3>
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
           <div>
@@ -123,12 +122,12 @@ export const VenueOnboardingKycStep = ({ formData, setFormData }: Props) => {
               placeholder="ABCDE1234F"
               className={fieldClass}
             />
-            <p className="mt-1 text-[10px] text-[#666]">Format: ABCDE1234F</p>
+            <p className="text-muted mt-1 text-[10px]">Format: ABCDE1234F</p>
           </div>
         </div>
       </div>
 
-      <div className="rounded-lg border border-white/5 bg-[#151515] p-6">
+      <div className="bg-brand-surface rounded-lg border border-white/5 p-6">
         <h3 className="mb-4 text-sm font-bold text-white">KYC Verification</h3>
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
           <div>
@@ -158,7 +157,7 @@ export const VenueOnboardingKycStep = ({ formData, setFormData }: Props) => {
                   placeholder="23AAACC1206D2ZN"
                   className={fieldClass}
                 />
-                <p className="mt-1 text-[10px] text-[#666]">Format: 29ABCDE1234F1Z5</p>
+                <p className="text-muted mt-1 text-[10px]">Format: 29ABCDE1234F1Z5</p>
               </div>
               <div>
                 <label className="mb-2 block text-xs font-medium text-white">State *</label>
@@ -241,7 +240,7 @@ export const VenueOnboardingKycStep = ({ formData, setFormData }: Props) => {
               placeholder="ABCDE1234F"
               className={fieldClass}
             />
-            <p className="mt-1 text-[10px] text-[#666]">Format: ABCDE1234F</p>
+            <p className="text-muted mt-1 text-[10px]">Format: ABCDE1234F</p>
           </div>
         </div>
 
@@ -257,7 +256,7 @@ export const VenueOnboardingKycStep = ({ formData, setFormData }: Props) => {
         )}
       </div>
 
-      <div className="rounded-lg border border-white/5 bg-[#151515] p-6">
+      <div className="bg-brand-surface rounded-lg border border-white/5 p-6">
         <h3 className="mb-4 text-sm font-bold text-white">
           Business Identity verification documents *
         </h3>
@@ -296,13 +295,13 @@ export const VenueOnboardingKycStep = ({ formData, setFormData }: Props) => {
         </div>
       </div>
 
-      <div className="rounded-lg border border-white/5 bg-[#151515] p-6">
+      <div className="bg-brand-surface rounded-lg border border-white/5 p-6">
         <h3 className="mb-4 text-sm font-bold text-white">Other Documents *</h3>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {formData.otherCertificates.map((file, index) => (
             <div
               key={`${file.name}-${index}`}
-              className="relative flex h-24 items-center justify-center rounded-md border border-dashed border-[#444] bg-black px-2 text-xs text-[#aaa]"
+              className="text-muted relative flex h-24 items-center justify-center rounded-md border border-dashed border-white/20 bg-black px-2 text-xs"
             >
               <span className="truncate">{file.name}</span>
               <button
@@ -323,7 +322,7 @@ export const VenueOnboardingKycStep = ({ formData, setFormData }: Props) => {
             <button
               type="button"
               onClick={() => otherCertsRef.current?.click()}
-              className="hover:border-brand-accent/50 flex h-24 items-center justify-center rounded-md border border-dashed border-[#444] bg-black text-xs text-[#777]"
+              className="hover:border-brand-accent/50 text-muted flex h-24 items-center justify-center rounded-md border border-dashed border-white/20 bg-black text-xs transition-colors"
             >
               <Upload className="mr-1 size-4" />
               [Venue Based Certificate]

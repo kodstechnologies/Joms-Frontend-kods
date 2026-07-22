@@ -2,10 +2,8 @@ import { CheckCircle2, CloudUpload, Trash2, X } from 'lucide-react'
 import { useState } from 'react'
 
 import type { BulkExpertInvitePayload, ExpertInvitePayload } from '../types/referral'
-import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
 import { cn } from '@/shared/lib/cn'
-import { uiTokens } from '@/shared/lib/design-tokens'
 
 type InviteExpertReferralModalProps = {
   open: boolean
@@ -39,8 +37,7 @@ const parseCsvRecipients = (text: string): BulkRecipient[] => {
     .filter((item) => item.name)
 }
 
-const fieldInputClass =
-  'h-11 border-white/10 bg-brand-bg px-4 text-sm text-brand-text placeholder:text-brand-muted focus-visible:ring-brand-accent/40'
+const fieldInputClass = 'ui-input h-11'
 
 export function InviteExpertReferralModal({
   open,
@@ -93,22 +90,17 @@ export function InviteExpertReferralModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
-      <div
-        className={cn(
-          'bg-brand-surface relative w-full max-w-xl border border-white/10 shadow-2xl',
-          uiTokens.radiusCard,
-        )}
-      >
+      <div className="ui-modal-shell relative max-w-xl">
         <button
           type="button"
           onClick={handleClose}
-          className="rounded-brand-md text-brand-muted hover:text-brand-text absolute top-4 right-4 z-10 p-1.5 hover:bg-white/5"
+          className="text-muted hover:text-brand-text rounded-brand-md absolute top-4 right-4 z-10 p-1.5 hover:bg-white/5"
         >
           <X className="size-4" />
         </button>
 
-        <div className="border-b border-white/10 p-4 pt-5">
-          <div className="rounded-brand-md bg-brand-bg grid grid-cols-2 gap-1 p-1">
+        <div className="ui-modal-header border-0 p-4 pt-5">
+          <div className="rounded-brand-md bg-brand-bg grid w-full grid-cols-2 gap-1 p-1">
             <TabButton active={mode === 'manual'} onClick={() => setMode('manual')}>
               Manual Referral
             </TabButton>
@@ -118,7 +110,7 @@ export function InviteExpertReferralModal({
           </div>
         </div>
 
-        <div className="space-y-5 px-6 py-6">
+        <div className="ui-modal-body space-y-5">
           {mode === 'manual' ? (
             <>
               <Field label="Enter Name*">
@@ -154,9 +146,9 @@ export function InviteExpertReferralModal({
               <label className="rounded-brand-md bg-brand-bg flex min-h-36 cursor-pointer flex-col items-center justify-center border border-dashed border-white/10 p-6 text-center">
                 {fileName ? (
                   <>
-                    <CheckCircle2 className="mb-2 size-8 text-emerald-400" />
-                    <p className="text-sm font-medium text-emerald-300">Sheet Uploaded</p>
-                    <div className="mt-2 flex items-center gap-2 text-xs text-slate-400">
+                    <CheckCircle2 className="text-brand-positive mb-2 size-8" />
+                    <p className="text-brand-positive text-body-md font-medium">Sheet Uploaded</p>
+                    <div className="text-muted text-body-sm mt-2 flex items-center gap-2">
                       <span>{fileName}</span>
                       <button
                         type="button"
@@ -165,19 +157,19 @@ export function InviteExpertReferralModal({
                           setFileName(null)
                           setRecipients([])
                         }}
-                        className="text-rose-300"
+                        className="text-brand-danger"
                       >
                         <Trash2 className="size-3.5" />
                       </button>
                     </div>
-                    <p className="mt-1 text-xs text-slate-500">
+                    <p className="text-muted text-body-sm mt-1">
                       {recipients.length} experts parsed
                     </p>
                   </>
                 ) : (
                   <>
-                    <CloudUpload className="mb-2 size-8 text-slate-500" />
-                    <p className="text-sm text-slate-400">
+                    <CloudUpload className="text-muted mb-2 size-8" />
+                    <p className="text-muted text-body-md">
                       Upload CSV with name, email, phone columns
                     </p>
                   </>
@@ -197,22 +189,27 @@ export function InviteExpertReferralModal({
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               placeholder="Enter here"
-              className="rounded-brand-md bg-brand-bg text-brand-text placeholder:text-brand-muted focus:ring-brand-accent/40 h-32 w-full resize-none border border-white/10 px-4 py-3 text-sm focus:ring-2 focus:outline-none"
+              className="ui-textarea h-32"
             />
           </Field>
 
-          <p className="text-brand-muted text-xs leading-relaxed">
+          <p className="text-muted text-body-sm leading-relaxed">
             Note: Experts will receive the referral invite on their email and through SMS/WhatsApp.
           </p>
         </div>
 
-        <div className="flex justify-end gap-3 border-t border-white/10 px-6 py-5">
-          <Button type="button" variant="secondary" onClick={handleClose}>
+        <div className="ui-modal-footer justify-end">
+          <button type="button" className="ui-cta ui-cta-outline" onClick={handleClose}>
             Cancel
-          </Button>
-          <Button onClick={handleSubmit} disabled={isSubmitting} className="min-w-[120px]">
+          </button>
+          <button
+            type="button"
+            className="ui-cta ui-cta-primary min-w-[120px]"
+            onClick={handleSubmit}
+            disabled={isSubmitting}
+          >
             {isSubmitting ? 'Sending...' : 'Send Invite'}
-          </Button>
+          </button>
         </div>
       </div>
     </div>

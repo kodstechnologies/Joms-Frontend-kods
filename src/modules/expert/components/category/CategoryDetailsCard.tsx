@@ -33,8 +33,8 @@ const CategoryDetailsCard = ({
       </p>
 
       <div className="mt-6">
-        <label className="mb-2 block text-[12px] font-medium text-white">
-          Category Name <span className="text-white">*</span>
+        <label className="text-body-sm-medium text-brand-text mb-2 block">
+          Category Name <span className="text-brand-text">*</span>
         </label>
 
         <input
@@ -47,8 +47,8 @@ const CategoryDetailsCard = ({
       </div>
 
       <div className="mt-5">
-        <label className="mb-2 block text-[12px] font-medium text-white">
-          Description <span className="text-white">*</span>
+        <label className="text-body-sm-medium text-brand-text mb-2 block">
+          Description <span className="text-brand-text">*</span>
         </label>
 
         <textarea

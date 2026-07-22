@@ -8,7 +8,6 @@ import {
   getReferralStatusLabel,
 } from '../utils/referral-format'
 import { cn } from '@/shared/lib/cn'
-import { uiTokens } from '@/shared/lib/design-tokens'
 
 type ReferralDetailsModalProps = {
   open: boolean
@@ -26,25 +25,19 @@ export function ReferralDetailsModal({ open, onClose, expertInvite }: ReferralDe
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
       onClick={onClose}
     >
-      <div
-        className={cn(
-          'bg-brand-surface w-full max-w-2xl border border-white/10 shadow-2xl',
-          uiTokens.radiusCard,
-        )}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between border-b border-white/10 px-6 py-5">
-          <h2 className="text-brand-text text-lg font-semibold">Expert Invite Details</h2>
+      <div className="ui-modal-shell max-w-2xl" onClick={(e) => e.stopPropagation()}>
+        <div className="ui-modal-header">
+          <h2 className="text-h4 text-brand-text">Expert Invite Details</h2>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-brand-md text-brand-muted hover:text-brand-text p-1.5 hover:bg-white/5"
+            className="text-muted hover:text-brand-text rounded-brand-md p-1.5 hover:bg-white/5"
           >
             <X className="size-5" />
           </button>
         </div>
 
-        <div className="grid grid-cols-1 gap-6 px-6 py-6 sm:grid-cols-2">
+        <div className="ui-modal-body grid grid-cols-1 gap-6 sm:grid-cols-2">
           <DetailCell label="Invite Link" value={expertInvite.inviteLink} />
           <DetailCell label="Invited Expert" value={expertInvite.invitedExpertName} />
           <DetailCell label="Invited by" value={getInvitedByLabel(expertInvite.invitedBy)} />
@@ -57,9 +50,9 @@ export function ReferralDetailsModal({ open, onClose, expertInvite }: ReferralDe
             value={
               <span
                 className={cn(
-                  'inline-flex rounded-full px-4 py-1 text-xs font-semibold',
+                  'text-body-sm inline-flex rounded-full px-4 py-1 font-semibold',
                   status === 'active' || status === 'accepted'
-                    ? 'bg-emerald-500 text-white'
+                    ? 'bg-brand-positive text-white'
                     : getReferralStatusClassName(status),
                 )}
               >
@@ -76,8 +69,8 @@ export function ReferralDetailsModal({ open, onClose, expertInvite }: ReferralDe
 function DetailCell({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="space-y-2">
-      <p className="text-brand-muted text-sm">{label}</p>
-      <div className="text-brand-text text-sm font-semibold">{value}</div>
+      <p className="text-muted text-body-md">{label}</p>
+      <div className="text-brand-text text-body-md font-semibold">{value}</div>
     </div>
   )
 }

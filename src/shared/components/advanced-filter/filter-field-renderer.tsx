@@ -14,14 +14,13 @@ export function FilterFieldRenderer({ field, values, onChange }: FilterFieldRend
 
   return (
     <div className="space-y-3">
-      <h3 className="text-sm font-medium text-white">{field.label}</h3>
+      <h3 className="text-body-md-medium text-brand-text">{field.label}</h3>
 
       {field.type === 'text' ? (
         <Input
           value={typeof value === 'string' ? value : ''}
           onChange={(event) => onChange(field.id, event.target.value)}
           placeholder={field.placeholder}
-          className="border-[#2A2A2A] bg-[#0F0F0F]"
         />
       ) : null}
 

@@ -25,12 +25,12 @@ export function StatCard({ title, value, icon: Icon, trend, hint }: StatCardProp
     <DashboardCard className="p-5 sm:p-6">
       <div className="flex items-start justify-between gap-3">
         <div className="space-y-1">
-          <p className="text-brand-muted text-xs font-semibold tracking-wide">{title}</p>
-          <p className="text-brand-text text-2xl font-semibold tracking-tight">{value}</p>
+          <p className="text-body-sm-semibold text-muted tracking-wide">{title}</p>
+          <p className="text-h3 text-brand-text tracking-tight">{value}</p>
         </div>
         {Icon ? (
-          <div className="rounded-brand-md bg-brand-accent/10 text-brand-accent grid size-10 place-items-center">
-            <Icon className="size-4" />
+          <div className="radius-md bg-brand-accent/10 text-brand-accent grid size-10 place-items-center">
+            <Icon className="icon-md" />
           </div>
         ) : null}
       </div>
@@ -40,21 +40,21 @@ export function StatCard({ title, value, icon: Icon, trend, hint }: StatCardProp
           <div className="flex items-center gap-2">
             <span
               className={cn(
-                'inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-semibold',
+                'text-body-sm-semibold inline-flex items-center gap-1 rounded-full border px-2 py-0.5',
                 isUp
-                  ? 'border-brand-success/25 bg-brand-success/10 text-brand-success'
+                  ? 'border-brand-positive/25 bg-brand-positive/10 text-brand-positive'
                   : 'border-brand-danger/25 bg-brand-danger/10 text-brand-danger',
               )}
             >
-              {isUp ? <TrendingUp className="size-3" /> : <TrendingDown className="size-3" />}
+              {isUp ? <TrendingUp className="icon-sm" /> : <TrendingDown className="icon-sm" />}
               {trend.percentage}%
             </span>
-            <span className="text-brand-muted text-[11px]">{trend.label}</span>
+            <span className="text-body-sm text-muted">{trend.label}</span>
           </div>
         ) : (
           <span />
         )}
-        {hint ? <span className="text-brand-muted text-[11px]">{hint}</span> : null}
+        {hint ? <span className="text-body-sm text-muted">{hint}</span> : null}
       </div>
     </DashboardCard>
   )

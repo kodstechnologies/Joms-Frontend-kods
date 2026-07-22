@@ -24,16 +24,16 @@ import { uiTokens } from '@/shared/lib/design-tokens'
 const PAGE_SIZE = 10
 
 const goldActionButtonClass =
-  'inline-flex items-center gap-2 rounded-brand-md bg-[#E8C489] px-4 py-2.5 text-sm font-semibold text-[#1A1A1A] transition-colors hover:bg-[#F0D4A4]'
+  'ui-cta ui-cta-primary rounded-brand-md inline-flex items-center gap-2 px-4 py-2.5'
 
 const goldOutlineActionButtonClass =
-  'inline-flex items-center gap-2 rounded-brand-md border border-[#E8C489] bg-transparent px-4 py-2.5 text-sm font-semibold text-[#E8C489] transition-colors hover:bg-[#E8C489]/10'
+  'ui-cta ui-cta-outline rounded-brand-md inline-flex items-center gap-2 border-brand-accent px-4 py-2.5 text-brand-accent hover:bg-brand-accent/10'
 
 const darkOutlineActionButtonClass =
   'inline-flex items-center gap-2 rounded-brand-md border border-white/80 bg-black px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-white/5'
 
 const dangerActionButtonClass =
-  'inline-flex items-center gap-2 rounded-brand-md bg-[#E86B5C] px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#D85A4B]'
+  'ui-cta ui-cta-negative rounded-brand-md inline-flex items-center gap-2 px-4 py-2.5'
 
 const formatOverviewDate = (value?: string) => {
   if (!value) return '—'
@@ -196,21 +196,21 @@ export function AdminDetailPage() {
         <button
           type="button"
           onClick={() => navigateBackOrFallback(navigate, '/settings/access')}
-          className="group font-heading flex w-fit items-center gap-2 text-[20px] font-bold tracking-tight text-white transition-colors hover:text-[#FBC078]"
+          className="group font-heading text-h3 text-brand-text hover:text-brand-accent flex w-fit items-center gap-2 font-bold tracking-tight transition-colors"
         >
           <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
           <span>Admin Details</span>
         </button>
-        <div className="flex items-center gap-1.5 pl-7 text-[12px] font-medium text-[#777777]">
+        <div className="text-body-sm-medium text-muted flex items-center gap-1.5 pl-7">
           <button
             type="button"
             onClick={() => navigateBackOrFallback(navigate, '/settings/access')}
-            className="transition-colors hover:text-white"
+            className="hover:text-brand-text transition-colors"
           >
             Role Based Access
           </button>
-          <span className="text-[#333333]">/</span>
-          <span className="font-bold text-white">{subAdmin.fullname}</span>
+          <span className="text-brand-text/30">/</span>
+          <span className="text-brand-text font-bold">{subAdmin.fullname}</span>
         </div>
       </div>
 
@@ -274,7 +274,7 @@ export function AdminDetailPage() {
             </div>
             <span
               className={cn(
-                'inline-flex rounded-full border px-2.5 py-0.5 text-[11px] font-semibold capitalize',
+                'text-body-sm-semibold inline-flex rounded-full border px-2.5 py-0.5 capitalize',
                 subAdmin.status === 'active'
                   ? 'border-brand-success/25 bg-brand-success/10 text-brand-success'
                   : 'border-brand-danger/25 bg-brand-danger/10 text-brand-danger',
@@ -285,7 +285,7 @@ export function AdminDetailPage() {
           </div>
 
           <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
-            <div className="grid size-24 shrink-0 place-items-center overflow-hidden rounded-full border border-white/10 bg-[#111111]">
+            <div className="bg-brand-surface grid size-24 shrink-0 place-items-center overflow-hidden rounded-full border border-white/10">
               {subAdmin.profileImageUrl ? (
                 <img
                   src={subAdmin.profileImageUrl}

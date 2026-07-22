@@ -54,7 +54,7 @@ const EMPTY_AVAILABLE_ITEMS: ManageMetricsAvailableItem[] = []
 
 function TypeBadge({ type }: { type: string }) {
   return (
-    <span className="bg-brand-accent/10 text-brand-accent rounded px-2 py-0.5 text-[10px] font-semibold">
+    <span className="bg-brand-accent/10 text-brand-accent text-body-sm-semibold rounded px-2 py-0.5">
       {type}
     </span>
   )
@@ -68,8 +68,8 @@ function DraggableItem({
 }: ManageMetricsListItem & { removable?: boolean; onRemove?: () => void }) {
   return (
     <div className="flex items-center gap-3 rounded-lg border border-white/5 bg-white/[0.03] px-3 py-3 transition-colors hover:border-white/10 hover:bg-white/[0.05]">
-      <GripVertical className="size-4 shrink-0 cursor-grab text-slate-500" aria-hidden="true" />
-      <span className="text-sm font-medium text-slate-200">{label}</span>
+      <GripVertical className="text-muted size-4 shrink-0 cursor-grab" aria-hidden="true" />
+      <span className="text-body-md-medium text-brand-text">{label}</span>
       <span className="ml-auto flex items-center gap-2">
         <TypeBadge type={type} />
         {removable ? (
@@ -77,7 +77,7 @@ function DraggableItem({
             type="button"
             aria-label={`Remove ${label}`}
             onClick={onRemove}
-            className="grid size-6 place-items-center rounded-md text-slate-500 transition-colors hover:bg-white/10 hover:text-white"
+            className="text-muted hover:text-brand-text grid size-6 place-items-center rounded-md transition-colors hover:bg-white/10"
           >
             <X className="size-3.5" aria-hidden="true" />
           </button>
@@ -94,10 +94,10 @@ function AvailableCard({
 }: ManageMetricsAvailableItem & { onAdd?: () => void }) {
   return (
     <div className="hover:border-brand-accent/30 flex items-center gap-3 rounded-lg border border-white/5 bg-white/[0.03] px-3 py-2.5 transition-colors hover:bg-white/[0.05]">
-      <GripVertical className="size-4 shrink-0 cursor-grab text-slate-500" aria-hidden="true" />
+      <GripVertical className="text-muted size-4 shrink-0 cursor-grab" aria-hidden="true" />
       <div className="min-w-0">
-        <p className="truncate text-sm font-medium text-slate-200">{title}</p>
-        <p className="truncate text-xs text-slate-500">{description}</p>
+        <p className="text-body-md-medium text-brand-text truncate">{title}</p>
+        <p className="text-body-sm text-muted truncate">{description}</p>
       </div>
       <button
         type="button"
@@ -116,7 +116,7 @@ function ResetButton({ onClick }: { onClick?: () => void }) {
     <button
       type="button"
       onClick={onClick}
-      className="rounded-md border border-white/10 bg-white/5 px-3 py-1.5 text-[11px] font-medium text-slate-300 transition-colors hover:border-white/20 hover:bg-white/10"
+      className="text-body-sm-semibold text-brand-text/80 rounded-md border border-white/10 bg-white/5 px-3 py-1.5 transition-colors hover:border-white/20 hover:bg-white/10"
     >
       Reset to Default
     </button>
@@ -135,7 +135,7 @@ function SearchField({
   return (
     <div className="relative">
       <Search
-        className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-slate-500"
+        className="text-muted absolute top-1/2 left-3 size-4 -translate-y-1/2"
         aria-hidden="true"
       />
       <Input
@@ -322,34 +322,34 @@ export function ManageMetrics({
           type="button"
           onClick={onBack}
           aria-label="Go back"
-          className="grid size-9 place-items-center rounded-lg border border-white/10 bg-white/5 text-slate-300 transition-colors hover:border-white/20 hover:bg-white/10"
+          className="text-brand-text/80 grid size-9 place-items-center rounded-lg border border-white/10 bg-white/5 transition-colors hover:border-white/20 hover:bg-white/10"
         >
           <ArrowLeft className="size-4" aria-hidden="true" />
         </button>
         <div>
-          <h1 className="text-xl font-semibold text-slate-100">Manage Metrics</h1>
-          <p className="text-xs text-slate-500">
-            {moduleName} <span className="text-slate-600">/</span> Manage Metrics
+          <h1 className="text-h3 text-brand-text">Manage Metrics</h1>
+          <p className="text-body-sm text-muted">
+            {moduleName} <span className="text-muted">/</span> Manage Metrics
           </p>
         </div>
       </div>
 
       {dashboard ? (
-        <section className="rounded-xl border border-white/10 bg-white/[0.02] p-4 sm:p-5">
+        <section className="radius-lg bg-brand-surface/50 border border-white/10 p-4 sm:p-5">
           <div className="mb-5 flex items-center justify-between gap-3">
-            <p className="text-sm font-semibold text-slate-100">Dashboard</p>
+            <p className="text-body-md-semibold text-brand-text">Dashboard</p>
             <ResetButton onClick={dashboard.onReset} />
           </div>
 
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
             <div>
-              <p className="text-sm font-semibold text-slate-200">Active Metrics</p>
-              <p className="mb-3 text-xs text-slate-500">
+              <p className="text-body-md-semibold text-brand-text">Active Metrics</p>
+              <p className="text-body-sm text-muted mb-3">
                 Showing {localActiveMetrics.length} metrics
               </p>
               <div className="space-y-2">
                 {localActiveMetrics.length === 0 ? (
-                  <p className="rounded-lg border border-dashed border-white/10 px-3 py-6 text-center text-xs text-slate-500">
+                  <p className="text-body-sm text-muted rounded-lg border border-dashed border-white/10 px-3 py-6 text-center">
                     No active metrics
                   </p>
                 ) : (
@@ -366,8 +366,8 @@ export function ManageMetrics({
             </div>
 
             <div>
-              <p className="text-sm font-semibold text-slate-200">Available Metrics</p>
-              <p className="mb-3 text-xs text-slate-500">Predefined metrics ready to add</p>
+              <p className="text-body-md-semibold text-brand-text">Available Metrics</p>
+              <p className="text-body-sm text-muted mb-3">Predefined metrics ready to add</p>
               <div className="space-y-3">
                 <SearchField
                   placeholder="Search Metrics"
@@ -376,7 +376,7 @@ export function ManageMetrics({
                 />
                 <div className="space-y-2">
                   {filteredAvailableMetrics.length === 0 ? (
-                    <p className="rounded-lg border border-dashed border-white/10 px-3 py-6 text-center text-xs text-slate-500">
+                    <p className="text-body-sm text-muted rounded-lg border border-dashed border-white/10 px-3 py-6 text-center">
                       No available metrics
                     </p>
                   ) : (
@@ -396,19 +396,19 @@ export function ManageMetrics({
       ) : null}
 
       {tableColumns ? (
-        <section className="rounded-xl border border-white/10 bg-white/[0.02] p-4 sm:p-5">
+        <section className="radius-lg bg-brand-surface/50 border border-white/10 p-4 sm:p-5">
           <div className="mb-5 flex items-center justify-between gap-3">
-            <p className="text-sm font-semibold text-slate-100">Table Columns</p>
+            <p className="text-body-md-semibold text-brand-text">Table Columns</p>
             <ResetButton onClick={tableColumns.onReset} />
           </div>
 
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
             <div>
-              <p className="text-sm font-semibold text-slate-200">Visible Columns</p>
-              <p className="mb-3 text-xs text-slate-500">Currently shown in table</p>
+              <p className="text-body-md-semibold text-brand-text">Visible Columns</p>
+              <p className="text-body-sm text-muted mb-3">Currently shown in table</p>
               <div className="space-y-2">
                 {localVisibleColumns.length === 0 ? (
-                  <p className="rounded-lg border border-dashed border-white/10 px-3 py-6 text-center text-xs text-slate-500">
+                  <p className="text-body-sm text-muted rounded-lg border border-dashed border-white/10 px-3 py-6 text-center">
                     No visible columns
                   </p>
                 ) : (
@@ -425,8 +425,8 @@ export function ManageMetrics({
             </div>
 
             <div>
-              <p className="text-sm font-semibold text-slate-200">Hidden Columns</p>
-              <p className="mb-3 text-xs text-slate-500">Available to add to table</p>
+              <p className="text-body-md-semibold text-brand-text">Hidden Columns</p>
+              <p className="text-body-sm text-muted mb-3">Available to add to table</p>
               <div className="space-y-3">
                 <SearchField
                   placeholder="Search Columns"
@@ -435,7 +435,7 @@ export function ManageMetrics({
                 />
                 <div className="space-y-2">
                   {filteredHiddenColumns.length === 0 ? (
-                    <p className="rounded-lg border border-dashed border-white/10 px-3 py-6 text-center text-xs text-slate-500">
+                    <p className="text-body-sm text-muted rounded-lg border border-dashed border-white/10 px-3 py-6 text-center">
                       No hidden columns
                     </p>
                   ) : (
@@ -454,7 +454,7 @@ export function ManageMetrics({
         </section>
       ) : null}
 
-      <div className="fixed inset-x-0 bottom-0 z-10 flex items-center justify-end gap-3 border-t border-white/10 bg-[#0b0e13]/95 px-4 py-3 backdrop-blur sm:px-6">
+      <div className="bg-brand-bg/95 fixed inset-x-0 bottom-0 z-10 flex items-center justify-end gap-3 border-t border-white/10 px-4 py-3 backdrop-blur sm:px-6">
         <Button variant="secondary" onClick={onCancel} disabled={isSaving}>
           Cancel
         </Button>

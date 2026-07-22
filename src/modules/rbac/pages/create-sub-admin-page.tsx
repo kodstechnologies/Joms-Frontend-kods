@@ -274,7 +274,7 @@ export function CreateSubAdminPage() {
         <button
           type="button"
           onClick={() => navigateBackOrFallback(navigate, '/settings/access')}
-          className="group font-heading flex w-fit items-center gap-2 text-[20px] font-bold tracking-tight text-white transition-colors hover:text-[#FBC078]"
+          className="group font-heading text-h3 text-brand-text hover:text-brand-accent flex w-fit items-center gap-2 font-bold tracking-tight transition-colors"
         >
           <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
           <span>{pageTitle}</span>
@@ -485,7 +485,7 @@ export function CreateSubAdminPage() {
                     {selectedRoles.map((role) => (
                       <div
                         key={role.id}
-                        className="rounded-brand-md border-brand-accent/40 border bg-[#111111] p-4"
+                        className="rounded-brand-md border-brand-accent/40 bg-brand-surface border p-4"
                       >
                         <p className="text-brand-text text-base font-semibold">{role.name}</p>
                         <p className="text-brand-muted mt-3 text-sm font-medium">Key Permissions</p>
@@ -507,7 +507,7 @@ export function CreateSubAdminPage() {
                                   <div className="flex items-center gap-2">
                                     <span
                                       className={cn(
-                                        'rounded-full px-2 py-0.5 text-[10px] font-semibold',
+                                        'text-body-sm-semibold rounded-full px-2 py-0.5',
                                         access === 'full'
                                           ? 'bg-brand-accent/20 text-brand-accent'
                                           : 'text-brand-muted bg-white/10',
@@ -555,7 +555,7 @@ export function CreateSubAdminPage() {
               Review the details before assigning the role to the admin user.
             </p>
 
-            <div className="rounded-brand-md mt-5 grid gap-4 border border-white/10 bg-[#111111] p-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="rounded-brand-md bg-brand-surface mt-5 grid gap-4 border border-white/10 p-4 sm:grid-cols-2 lg:grid-cols-3">
               {[
                 ['First Name', form.firstName],
                 ['Last Name', form.lastName],

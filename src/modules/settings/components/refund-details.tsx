@@ -13,64 +13,65 @@ export function RefundDetails() {
           <button
             type="button"
             onClick={() => navigateBackOrFallback(navigate, '/my-tasks')}
-            className="rounded-md p-1 text-white transition hover:bg-white/10"
+            className="text-brand-text rounded-md p-1 transition hover:bg-white/10"
           >
             <ArrowLeft className="h-5 w-5" />
           </button>
 
-          <h1 className="text-[28px] leading-none font-semibold text-white">Refund</h1>
+          <h1 className="text-h2 text-brand-text leading-none font-semibold">Refund</h1>
         </div>
 
-        <p className="-ml-10 text-sm text-slate-400">
-          My Tasks /<span className="ml-1 font-medium text-white">Refund Approvals</span>
+        <p className="text-body-md text-muted -ml-10">
+          My Tasks /
+          <span className="text-body-md-medium text-brand-text ml-1">Refund Approvals</span>
         </p>
       </div>
 
-      <div className="rounded-xl border border-[#242424] bg-[#171717] px-6 py-6">
-        <div className="border-b border-[#2A2A2A] pb-5">
-          <h2 className="text-xl font-semibold text-white">Refund Details</h2>
+      <div className="radius-lg bg-brand-surface border border-white/10 px-6 py-6">
+        <div className="border-b border-white/10 pb-5">
+          <h2 className="text-h3 text-brand-text">Refund Details</h2>
 
-          <p className="mt-2 text-sm text-slate-400">Provide details about your consultation</p>
+          <p className="text-body-md text-muted mt-2">Provide details about your consultation</p>
         </div>
 
         <div className="mt-6 grid grid-cols-1 items-start gap-5 lg:grid-cols-2">
-          <div className="self-start rounded-xl bg-black p-5">
-            <h3 className="mb-6 text-sm font-semibold text-white">Refund Information</h3>
+          <div className="bg-brand-bg self-start rounded-xl p-5">
+            <h3 className="text-body-md-semibold text-brand-text mb-6">Refund Information</h3>
 
             <div className="space-y-7">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-slate-400">Refund ID</span>
+                <span className="text-body-md text-muted">Refund ID</span>
 
-                <span className="text-sm text-white">PAY-2026-00045</span>
+                <span className="text-body-md text-brand-text">PAY-2026-00045</span>
               </div>
 
               <div className="flex items-center justify-between">
-                <span className="text-sm text-slate-400">Transaction ID</span>
+                <span className="text-body-md text-muted">Transaction ID</span>
 
-                <span className="text-sm text-white">TXN-987654321</span>
+                <span className="text-body-md text-brand-text">TXN-987654321</span>
               </div>
 
               <div className="flex items-center justify-between">
-                <span className="text-sm text-slate-400">Requested Date</span>
+                <span className="text-body-md text-muted">Requested Date</span>
 
-                <span className="text-sm text-white">2026-01-12</span>
+                <span className="text-body-md text-brand-text">2026-01-12</span>
               </div>
 
               <div className="flex items-center justify-between">
-                <span className="text-sm text-slate-400">Status</span>
+                <span className="text-body-md text-muted">Status</span>
 
-                <span className="rounded-full bg-[#4F3B12] px-3 py-1 text-xs font-semibold text-[#F6C978]">
+                <span className="text-body-sm-semibold bg-brand-accent/15 text-brand-accent rounded-full px-3 py-1">
                   Pending
                 </span>
               </div>
 
               <div className="flex items-center justify-between">
-                <span className="text-sm text-slate-400">Escalated By</span>
+                <span className="text-body-md text-muted">Escalated By</span>
 
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium text-white underline">John Doe</span>
+                  <span className="text-body-md-medium text-brand-text underline">John Doe</span>
 
-                  <span className="inline-flex items-center rounded-full bg-[#F6C978] px-2.5 py-0.5 text-[10px] leading-4 font-semibold text-black">
+                  <span className="text-body-sm-semibold bg-brand-accent inline-flex items-center rounded-full px-2.5 py-0.5 text-black">
                     Admin
                   </span>
                 </div>
@@ -78,59 +79,59 @@ export function RefundDetails() {
             </div>
           </div>
 
-          <div className="flex flex-col rounded-xl bg-black p-5">
-            <h3 className="mb-6 text-sm font-semibold text-white">Refund Information</h3>
+          <div className="bg-brand-bg flex flex-col rounded-xl p-5">
+            <h3 className="text-body-md-semibold text-brand-text mb-6">Refund Information</h3>
 
             <div className="space-y-5">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-slate-400">Requested By</span>
+                <span className="text-body-md text-muted">Requested By</span>
 
-                <span className="text-sm text-white">Rajesh Kumar</span>
+                <span className="text-body-md text-brand-text">Rajesh Kumar</span>
               </div>
 
               <div className="flex items-center justify-between">
-                <span className="text-sm text-slate-400">Service</span>
+                <span className="text-body-md text-muted">Service</span>
 
-                <span className="text-right text-sm text-white">
+                <span className="text-body-md text-brand-text text-right">
                   Financial Planning Consultation
                 </span>
               </div>
 
               <div className="flex items-center justify-between">
-                <span className="text-sm text-slate-400">Refund Amount</span>
+                <span className="text-body-md text-muted">Refund Amount</span>
 
-                <span className="text-sm font-semibold text-white">₹15,000</span>
+                <span className="text-body-md-semibold text-brand-text">₹15,000</span>
               </div>
 
               <div className="flex items-center justify-between">
-                <span className="text-sm text-slate-400">Payment Method</span>
+                <span className="text-body-md text-muted">Payment Method</span>
 
-                <span className="text-sm text-white">UPI</span>
+                <span className="text-body-md text-brand-text">UPI</span>
               </div>
             </div>
           </div>
         </div>
 
         <div className="mt-5 grid grid-cols-1 gap-5 lg:grid-cols-2">
-          <div className="mt-6 rounded-xl bg-black p-5">
-            <h3 className="mb-4 flex items-center gap-2 text-sm font-semibold text-white">
+          <div className="bg-brand-bg mt-6 rounded-xl p-5">
+            <h3 className="text-body-md-semibold text-brand-text mb-4 flex items-center gap-2">
               <History className="h-4 w-4" />
               Reason
             </h3>
 
-            <div className="rounded-lg bg-[#171717] p-4">
-              <p className="text-sm text-white">Service not delivered as promised</p>
+            <div className="radius-md bg-brand-surface p-4">
+              <p className="text-body-md text-brand-text">Service not delivered as promised</p>
             </div>
           </div>
 
-          <div className="-mt-16 h-40 rounded-xl bg-black p-5">
-            <h3 className="mb-4 flex items-center gap-2 text-sm font-semibold text-white">
+          <div className="bg-brand-bg -mt-16 h-40 rounded-xl p-5">
+            <h3 className="text-body-md-semibold text-brand-text mb-4 flex items-center gap-2">
               <History className="h-4 w-4" />
               Admin Notes
             </h3>
 
-            <div className="rounded-lg bg-[#171717] p-4">
-              <p className="text-sm leading-6 text-white">
+            <div className="radius-md bg-brand-surface p-4">
+              <p className="text-body-md text-brand-text leading-6">
                 Client claims expert did not show up for scheduled consultation.
               </p>
             </div>
@@ -138,31 +139,28 @@ export function RefundDetails() {
         </div>
       </div>
 
-      <div className="rounded-xl border border-[#242424] bg-[#171717] px-5 py-4">
+      <div className="radius-lg bg-brand-surface border border-white/10 px-5 py-4">
         <div className="flex items-center justify-between">
-          <button
-            onClick={() => navigate('')}
-            className="rounded-lg border border-[#444] px-5 py-2 text-sm text-white transition hover:border-[#F0C27B]"
-          >
+          <button onClick={() => navigate('')} className="ui-cta ui-cta-secondary px-5">
             Close
           </button>
 
           <div className="flex items-center gap-3">
-            <button className="flex items-center gap-2 rounded-lg bg-[#16A34A] px-5 py-2 text-sm font-medium text-white transition hover:bg-[#15803D]">
+            <button className="ui-cta ui-cta-positive inline-flex items-center gap-2 px-5">
               Issue Refund
               <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white/20">
                 <Check className="h-3 w-3" />
               </span>
             </button>
 
-            <button className="flex items-center gap-2 rounded-lg bg-[#DC2626] px-5 py-2 text-sm font-medium text-white transition hover:bg-[#B91C1C]">
+            <button className="ui-cta ui-cta-negative inline-flex items-center gap-2 px-5">
               Deny Refund
               <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white/20">
                 <X className="h-3 w-3" />
               </span>
             </button>
 
-            <button className="flex items-center gap-2 rounded-lg bg-[#0F0F0F] px-5 py-2 text-sm font-medium text-white transition hover:bg-[#1A1A1A]">
+            <button className="ui-cta ui-cta-secondary bg-brand-bg hover:bg-brand-surface inline-flex items-center gap-2 px-5">
               Partial Refund
               <Flag className="h-4 w-4" />
             </button>

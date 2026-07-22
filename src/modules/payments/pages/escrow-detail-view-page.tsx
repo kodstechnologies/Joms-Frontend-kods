@@ -4,14 +4,19 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 
 import { getEscrowDetailById } from '@/modules/payments/mock/escrow-detail.mock'
-import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 
+const cardClass = 'radius-lg border border-white/[0.06] bg-brand-surface p-4 sm:p-5'
+const sectionTitleClass = 'text-body-md-semibold text-brand-text'
+const sectionSubtitleClass = 'text-body-sm text-muted mt-1'
+const labelClass = 'text-body-sm text-muted'
+const valueClass = 'text-body-sm-medium text-brand-text'
+
 function InnerCard({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <section className="rounded-xl border border-white/[0.06] bg-[#121212] p-5">
-      <h3 className="mb-3 text-[14px] font-bold text-white">{title}</h3>
+    <section className={cn(cardClass, 'p-5')}>
+      <h3 className={cn(sectionTitleClass, 'mb-3')}>{title}</h3>
       <div className="mb-4 border-b border-white/5" />
       {children}
     </section>
@@ -29,10 +34,8 @@ function DetailRow({
 }) {
   return (
     <div className="flex items-center justify-between gap-4 border-b border-white/5 py-3 last:border-b-0">
-      <span className="text-[12px] text-[#888888]">{label}</span>
-      <span className={cn('text-right text-[12px] font-medium text-white', valueClassName)}>
-        {value}
-      </span>
+      <span className={labelClass}>{label}</span>
+      <span className={cn('text-right', valueClass, valueClassName)}>{value}</span>
     </div>
   )
 }
@@ -42,10 +45,10 @@ function StatusBadge({ status }: { status: string }) {
   return (
     <span
       className={cn(
-        'inline-flex rounded-full border px-2.5 py-0.5 text-[11px] font-semibold',
+        'text-body-sm-semibold inline-flex rounded-full border px-2.5 py-0.5',
         isActive
-          ? 'border-emerald-500/25 bg-emerald-600/20 text-emerald-400'
-          : 'border-amber-600/25 bg-amber-600/15 text-amber-400',
+          ? 'border-brand-positive/25 bg-brand-positive/10 text-brand-positive'
+          : 'border-brand-accent/40 bg-brand-accent/10 text-brand-accent',
       )}
     >
       {status}
@@ -59,29 +62,29 @@ export function EscrowDetailViewPage() {
   const detail = getEscrowDetailById(id)
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="bg-brand-bg flex flex-col gap-5 pb-6">
       <header>
         <button
           type="button"
           onClick={() => navigateBackOrFallback(navigate, '/finance/escrow')}
-          className="group flex w-fit items-center gap-2 text-[20px] font-bold tracking-tight text-white transition-colors hover:text-[#FBC078]"
+          className="group text-h3 hover:text-brand-accent text-brand-text flex w-fit items-center gap-2 tracking-tight transition-colors"
         >
           <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
           <span>Escrow Detail View</span>
         </button>
-        <p className="mt-2 pl-7 text-[12px] text-[#777777]">
-          <Link to="/finance/dashboard" className="transition-colors hover:text-white">
+        <p className="text-body-sm text-muted mt-2 pl-7">
+          <Link to="/finance/dashboard" className="hover:text-brand-text transition-colors">
             Finance Management
           </Link>
           <span> / </span>
-          <span className="font-semibold text-white">Escrow View Details</span>
+          <span className="text-brand-text font-semibold">Escrow View Details</span>
         </p>
       </header>
 
-      <section className="rounded-xl border border-white/[0.06] bg-[#1A1A1A] p-5">
+      <section className={cn(cardClass, 'p-5')}>
         <div className="mb-4">
-          <h2 className="text-[14px] font-bold text-white">Escrow Hold Details</h2>
-          <p className="mt-1 text-[12px] text-[#888888]">Provide details about your Consultation</p>
+          <h2 className={sectionTitleClass}>Escrow Hold Details</h2>
+          <p className={sectionSubtitleClass}>Provide details about your Consultation</p>
         </div>
         <div className="mb-5 border-b border-white/5" />
 
@@ -104,9 +107,11 @@ export function EscrowDetailViewPage() {
           </InnerCard>
 
           <InnerCard title="Release Information">
-            <p className="text-[12px] text-white">
+            <p className="text-body-sm text-brand-text">
               Expected release date:{' '}
-              <span className="font-medium">{detail.releaseInformation.expectedReleaseDate}</span>
+              <span className="text-body-sm-medium">
+                {detail.releaseInformation.expectedReleaseDate}
+              </span>
             </p>
           </InnerCard>
 
@@ -116,22 +121,27 @@ export function EscrowDetailViewPage() {
             <DetailRow
               label="Release Amount"
               value={detail.financialDetails.releaseAmount}
-              valueClassName="font-bold"
+              valueClassName="text-body-sm-semibold"
             />
           </InnerCard>
         </div>
       </section>
 
-      <footer className="flex items-center justify-between rounded-xl border border-white/[0.06] bg-[#1A1A1A] px-5 py-4">
-        <Button
-          variant="secondary"
+      <footer className={cn(cardClass, 'flex items-center justify-between px-5 py-4')}>
+        <button
+          type="button"
           onClick={() => navigateBackOrFallback(navigate, '/finance/escrow')}
+          className="ui-cta ui-cta-secondary"
         >
           Close
-        </Button>
-        <Button onClick={() => toast.message('Download invoice coming soon')}>
+        </button>
+        <button
+          type="button"
+          onClick={() => toast.message('Download invoice coming soon')}
+          className="ui-cta ui-cta-primary"
+        >
           Download Invoice
-        </Button>
+        </button>
       </footer>
     </div>
   )

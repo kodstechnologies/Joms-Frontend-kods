@@ -47,6 +47,7 @@ const data: PausedCategory[] = [
   },
 ]
 const PausedCategoryTable = () => {
+  // eslint-disable-next-line react-hooks/incompatible-library -- useReactTable is intentionally opted out
   const table = useReactTable({
     data,
     columns: pausedCategoryColumns,
@@ -54,13 +55,13 @@ const PausedCategoryTable = () => {
   })
 
   return (
-    <div className="rounded-xl bg-[#181818] p-6">
+    <div className="bg-brand-surface rounded-xl p-6">
       <table className="w-full">
         <thead>
           {table.getHeaderGroups().map((headerGroup) => (
-            <tr key={headerGroup.id} className="border-b border-[#2A2A2A]">
+            <tr key={headerGroup.id} className="border-b border-white/10">
               {headerGroup.headers.map((header) => (
-                <th key={header.id} className="py-4 text-left text-xs font-semibold text-[#B3B3B3]">
+                <th key={header.id} className="text-body-sm-semibold text-muted py-4 text-left">
                   {flexRender(header.column.columnDef.header, header.getContext())}
                 </th>
               ))}
@@ -70,9 +71,9 @@ const PausedCategoryTable = () => {
 
         <tbody>
           {table.getRowModel().rows.map((row) => (
-            <tr key={row.id} className="border-b border-[#2A2A2A]">
+            <tr key={row.id} className="border-b border-white/10">
               {row.getVisibleCells().map((cell) => (
-                <td key={cell.id} className="py-5 text-sm text-white">
+                <td key={cell.id} className="text-body-md text-brand-text py-5">
                   {flexRender(cell.column.columnDef.cell, cell.getContext())}
                 </td>
               ))}
@@ -82,15 +83,23 @@ const PausedCategoryTable = () => {
       </table>
 
       <div className="mt-6 flex items-center justify-between">
-        <button className="rounded border border-[#444] px-4 py-2 text-white">Previous</button>
+        <button type="button" className="ui-cta ui-cta-secondary">
+          Previous
+        </button>
 
         <div className="flex gap-2">
-          <button className="bg-brand-accent text-brand-text-dark h-9 w-9 rounded">1</button>
+          <button type="button" className="ui-cta ui-cta-primary h-9 max-h-9 min-h-9 w-9 p-0">
+            1
+          </button>
 
-          <button className="h-9 w-9 rounded border border-[#444] text-white">2</button>
+          <button type="button" className="ui-cta ui-cta-secondary h-9 max-h-9 min-h-9 w-9 p-0">
+            2
+          </button>
         </div>
 
-        <button className="rounded border border-[#444] px-4 py-2 text-white">Next</button>
+        <button type="button" className="ui-cta ui-cta-secondary">
+          Next
+        </button>
       </div>
     </div>
   )

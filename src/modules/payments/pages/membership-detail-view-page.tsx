@@ -17,6 +17,12 @@ import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 
+const cardClass = 'radius-lg border border-white/[0.06] bg-brand-surface p-4 sm:p-5'
+const sectionTitleClass = 'text-body-md-semibold text-brand-text'
+const labelClass = 'text-body-sm text-muted'
+const valueClass = 'text-body-sm-medium text-brand-text'
+const innerPanelClass = 'radius-lg border border-white/[0.04] bg-brand-bg p-4'
+
 function getErrorMessage(error: unknown, fallback: string) {
   if (axios.isAxiosError(error)) {
     const message = error.response?.data?.message
@@ -28,8 +34,8 @@ function getErrorMessage(error: unknown, fallback: string) {
 
 function DetailCard({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <section className="rounded-xl border border-white/[0.06] bg-[#1A1A1A] p-5">
-      <h2 className="mb-4 text-[14px] font-bold text-white">{title}</h2>
+    <section className={cn(cardClass, 'p-5')}>
+      <h2 className={cn(sectionTitleClass, 'mb-4')}>{title}</h2>
       {children}
     </section>
   )
@@ -38,17 +44,18 @@ function DetailCard({ title, children }: { title: string; children: ReactNode })
 function DetailRow({ label, value }: { label: string; value: ReactNode }) {
   return (
     <div className="flex items-center justify-between gap-4 border-b border-white/5 py-3 last:border-b-0">
-      <span className="text-[12px] text-[#888888]">{label}</span>
-      <span className="text-right text-[12px] font-medium text-white">{value}</span>
+      <span className={labelClass}>{label}</span>
+      <span className={cn(valueClass, 'text-right')}>{value}</span>
     </div>
   )
 }
 
 function getStatusBadgeClass(status: string) {
-  if (status === 'Active') return 'border-emerald-500/25 bg-emerald-600/20 text-emerald-400'
-  if (status === 'Paused') return 'border-amber-500/25 bg-amber-500/10 text-amber-400'
-  if (status === 'Expired') return 'border-blue-500/25 bg-blue-500/10 text-blue-300'
-  return 'border-rose-500/25 bg-rose-500/10 text-rose-400'
+  if (status === 'Active')
+    return 'border-brand-positive/25 bg-brand-positive/10 text-brand-positive'
+  if (status === 'Paused') return 'border-brand-accent/40 bg-brand-accent/10 text-brand-accent'
+  if (status === 'Expired') return 'border-white/15 bg-brand-bg text-muted'
+  return 'border-brand-danger/25 bg-brand-danger/10 text-brand-danger'
 }
 
 export function MembershipDetailViewPage() {
@@ -65,45 +72,46 @@ export function MembershipDetailViewPage() {
   const canManage = detail?.rawStatus === 'active'
 
   if (isLoading) {
-    return <p className="text-sm text-slate-400">Loading subscription details...</p>
+    return <p className="text-body-sm text-muted">Loading subscription details...</p>
   }
 
   if (isError || !detail) {
     return (
       <div className="space-y-4">
-        <p className="text-sm text-rose-300">Membership subscription not found.</p>
-        <Button
-          variant="secondary"
+        <p className="text-body-sm text-brand-danger">Membership subscription not found.</p>
+        <button
+          type="button"
           onClick={() => navigateBackOrFallback(navigate, '/finance/memberships')}
+          className="ui-cta ui-cta-secondary"
         >
           Back to Memberships
-        </Button>
+        </button>
       </div>
     )
   }
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="bg-brand-bg flex flex-col gap-5 pb-6">
       <header className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
           <button
             type="button"
             onClick={() => navigateBackOrFallback(navigate, '/finance/memberships')}
-            className="group flex w-fit items-center gap-2 text-[20px] font-bold tracking-tight text-white transition-colors hover:text-[#FBC078]"
+            className="group text-h3 hover:text-brand-accent text-brand-text flex w-fit items-center gap-2 tracking-tight transition-colors"
           >
             <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
             <span>Payment Detail View</span>
           </button>
-          <p className="mt-2 pl-7 text-[12px] text-[#777777]">
-            <Link to="/finance/dashboard" className="transition-colors hover:text-white">
+          <p className="text-body-sm text-muted mt-2 pl-7">
+            <Link to="/finance/dashboard" className="hover:text-brand-text transition-colors">
               Finance Management
             </Link>
             <span> / </span>
-            <Link to="/finance/memberships" className="transition-colors hover:text-white">
+            <Link to="/finance/memberships" className="hover:text-brand-text transition-colors">
               Memberships
             </Link>
             <span> / </span>
-            <span className="font-semibold text-white">Payment View Details</span>
+            <span className="text-brand-text font-semibold">Payment View Details</span>
           </p>
         </div>
         <Button onClick={() => toast.message('Download billing report coming soon')}>
@@ -114,8 +122,8 @@ export function MembershipDetailViewPage() {
 
       <DetailCard title="Subscription Details">
         <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
-          <section className="rounded-lg border border-white/[0.04] bg-black/20 p-4">
-            <h3 className="mb-3 text-[13px] font-semibold text-white">Subscription Information</h3>
+          <section className={innerPanelClass}>
+            <h3 className="text-body-md-semibold text-brand-text mb-3">Subscription Information</h3>
             <DetailRow label="Subscription ID" value={detail.subscriptionId} />
             <DetailRow label="Plan" value={detail.plan} />
             <DetailRow label="Start Date" value={detail.startDate} />
@@ -124,7 +132,7 @@ export function MembershipDetailViewPage() {
               value={
                 <span
                   className={cn(
-                    'inline-flex rounded-full border px-2.5 py-0.5 text-[11px] font-semibold',
+                    'text-body-sm-semibold inline-flex rounded-full border px-2.5 py-0.5',
                     getStatusBadgeClass(detail.status),
                   )}
                 >
@@ -134,8 +142,8 @@ export function MembershipDetailViewPage() {
             />
           </section>
 
-          <section className="rounded-lg border border-white/[0.04] bg-black/20 p-4">
-            <h3 className="mb-3 text-[13px] font-semibold text-white">Billing Details</h3>
+          <section className={innerPanelClass}>
+            <h3 className="text-body-md-semibold text-brand-text mb-3">Billing Details</h3>
             <DetailRow label="Billing Cycle" value={detail.billingCycle} />
             <DetailRow label="Amount" value={detail.amount} />
             <DetailRow label="Payment Method" value={detail.paymentMethod} />
@@ -143,56 +151,63 @@ export function MembershipDetailViewPage() {
             <DetailRow label="Next Renewal" value={detail.nextRenewal} />
           </section>
 
-          <section className="rounded-lg border border-white/[0.04] bg-black/20 p-4">
-            <h3 className="mb-3 text-[13px] font-semibold text-white">User Details</h3>
+          <section className={innerPanelClass}>
+            <h3 className="text-body-md-semibold text-brand-text mb-3">User Details</h3>
             <DetailRow label="User Name" value={detail.userName} />
             <DetailRow label="User ID" value={detail.userId} />
             <DetailRow label="User Type" value={detail.userType} />
           </section>
 
-          <section className="rounded-lg border border-white/[0.04] bg-black/20 p-4">
-            <h3 className="mb-3 text-[13px] font-semibold text-white">Plan Features</h3>
+          <section className={innerPanelClass}>
+            <h3 className="text-body-md-semibold text-brand-text mb-3">Plan Features</h3>
             {detail.planFeatures.length ? (
               <ul className="space-y-2">
                 {detail.planFeatures.map((feature) => (
-                  <li key={feature} className="flex items-start gap-2 text-[12px] text-[#CCCCCC]">
-                    <Check className="mt-0.5 size-3.5 shrink-0 text-emerald-400" />
+                  <li
+                    key={feature}
+                    className="text-body-sm text-brand-text/80 flex items-start gap-2"
+                  >
+                    <Check className="text-brand-positive mt-0.5 size-3.5 shrink-0" />
                     {feature}
                   </li>
                 ))}
               </ul>
             ) : (
-              <p className="text-[12px] text-[#888888]">No plan features available.</p>
+              <p className="text-body-sm text-muted">No plan features available.</p>
             )}
           </section>
         </div>
       </DetailCard>
 
       <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <Button
-          variant="secondary"
+        <button
+          type="button"
           onClick={() => navigateBackOrFallback(navigate, '/finance/memberships')}
+          className="ui-cta ui-cta-secondary"
         >
           Close
-        </Button>
+        </button>
         <div className="flex flex-col gap-3 sm:flex-row">
-          <Button
+          <button
+            type="button"
             disabled={!canManage || pauseMutation.isPending}
             onClick={() => setPauseOpen(true)}
+            className="ui-cta ui-cta-primary"
           >
             Pause Subscription
-          </Button>
-          <Button
-            className="bg-rose-600 hover:bg-rose-500"
+          </button>
+          <button
+            type="button"
             disabled={
               detail.rawStatus === 'cancelled' ||
               detail.rawStatus === 'expired' ||
               cancelMutation.isPending
             }
             onClick={() => setCancelOpen(true)}
+            className="ui-cta ui-cta-negative"
           >
             Cancel Subscription
-          </Button>
+          </button>
         </div>
       </div>
 

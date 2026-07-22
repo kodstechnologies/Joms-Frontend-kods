@@ -33,7 +33,7 @@ export function FilterPanelShell({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 sm:p-6">
       <div
         className={cn(
-          'flex max-h-[92vh] w-full flex-col overflow-hidden rounded-2xl border border-[#2A2A2A] bg-black shadow-[0_18px_60px_rgba(0,0,0,0.55)]',
+          'bg-brand-surface text-brand-text radius-popup flex max-h-[92vh] w-full flex-col overflow-hidden border border-white/10 shadow-[0_24px_80px_rgba(0,0,0,0.65)]',
           sizeClasses[size],
         )}
         role="dialog"
@@ -41,22 +41,22 @@ export function FilterPanelShell({
         aria-label={title}
         onClick={(event) => event.stopPropagation()}
       >
-        <header className="flex shrink-0 items-center justify-between border-b border-[#2A2A2A] px-6 py-5">
-          <h2 className="text-lg font-semibold text-white sm:text-xl">{title}</h2>
+        <header className="flex shrink-0 items-center justify-between gap-3 border-b border-white/10 px-6 py-4">
+          <h2 className="text-h2 text-brand-text">{title}</h2>
           <button
             type="button"
             onClick={onClose}
-            className="flex size-9 items-center justify-center rounded-lg text-white transition-colors hover:bg-white/10"
+            className="text-brand-text flex size-9 items-center justify-center rounded-lg transition-colors hover:bg-white/10"
             aria-label="Close"
           >
-            <X className="size-5" />
+            <X className="icon-lg" />
           </button>
         </header>
 
-        <div className="min-h-0 flex-1 overflow-y-auto px-6 py-6">{children}</div>
+        <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">{children}</div>
 
         {footer ? (
-          <footer className="shrink-0 border-t border-[#2A2A2A] bg-black px-6 py-5">
+          <footer className="bg-brand-surface shrink-0 border-t border-white/10 px-6 py-5">
             {footer}
           </footer>
         ) : null}

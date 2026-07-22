@@ -155,7 +155,7 @@ export function TicketManagementPage() {
         accessorKey: 'id',
         header: 'Ticket ID',
         cell: ({ row }) => (
-          <span className="font-mono text-xs text-amber-400">#{row.original.id}</span>
+          <span className="text-body-sm text-brand-accent font-mono">#{row.original.id}</span>
         ),
       },
       {
@@ -207,15 +207,17 @@ export function TicketManagementPage() {
 
       <StatGrid stats={stats} />
 
-      <div className="flex gap-1 rounded-xl border border-white/10 bg-[#111111] p-1">
+      <div className="radius-lg bg-brand-surface flex gap-1 border border-white/10 p-1">
         {TABS.map((tab) => (
           <button
             key={tab.key}
             type="button"
             onClick={() => setActiveTab(tab.key)}
             className={cn(
-              'flex-1 rounded-lg px-4 py-2.5 text-sm font-medium transition-colors',
-              activeTab === tab.key ? 'bg-[#1a1a1a] text-white' : 'text-slate-400 hover:text-white',
+              'text-body-md-medium flex-1 rounded-lg px-4 py-2.5 transition-colors',
+              activeTab === tab.key
+                ? 'bg-brand-bg text-brand-text'
+                : 'text-muted hover:text-brand-text',
             )}
           >
             {tab.label}

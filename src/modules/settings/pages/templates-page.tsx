@@ -48,7 +48,7 @@ function ToggleSwitch({
       onClick={onChange}
       className={cn(
         'relative h-5 w-9 rounded-full transition-colors disabled:opacity-50',
-        checked ? 'bg-emerald-500' : 'bg-white/20',
+        checked ? 'bg-brand-positive' : 'bg-white/20',
       )}
     >
       <span
@@ -93,20 +93,20 @@ function ReasonFormModal({
 
   return createPortal(
     <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/70 p-4">
-      <div className="w-full max-w-[560px] rounded-2xl border border-white/10 bg-[#141414] p-6 shadow-2xl">
-        <div className="flex items-start justify-between gap-4">
-          <h2 className="text-lg font-bold text-white">
+      <div className="ui-modal-shell max-w-[560px]">
+        <div className="ui-modal-header">
+          <h2 className="text-h4 text-brand-text">
             {mode === 'create' ? 'New Reason' : 'Edit Reason'}
           </h2>
-          <button type="button" onClick={onClose} className="text-slate-500 hover:text-white">
-            <X className="size-5" />
+          <button type="button" onClick={onClose} className="text-muted hover:text-brand-text">
+            <X className="icon-md" />
           </button>
         </div>
 
-        <div className="mt-5 space-y-4">
-          <label className="block space-y-2 text-sm">
-            <span className="font-medium text-white">
-              Reason title<span className="text-[#F0C27B]">*</span>
+        <div className="ui-modal-body space-y-4">
+          <label className="text-body-md block space-y-2">
+            <span className="text-body-md-medium text-brand-text">
+              Reason title<span className="text-brand-accent">*</span>
             </span>
             <input
               value={form.title}
@@ -114,13 +114,13 @@ function ReasonFormModal({
                 setForm((current) => ({ ...current, title: event.target.value }))
               }
               placeholder="e.g. Harassment or Bullying"
-              className="h-10 w-full rounded-lg border border-white/10 bg-[#0C0C0C] px-3 text-sm text-white"
+              className="ui-input"
             />
           </label>
 
-          <label className="block space-y-2 text-sm">
-            <span className="font-medium text-white">
-              Description<span className="text-[#F0C27B]">*</span>
+          <label className="text-body-md block space-y-2">
+            <span className="text-body-md-medium text-brand-text">
+              Description<span className="text-brand-accent">*</span>
             </span>
             <textarea
               rows={3}
@@ -129,14 +129,14 @@ function ReasonFormModal({
                 setForm((current) => ({ ...current, description: event.target.value }))
               }
               placeholder="Brief description of this moderation reason"
-              className="w-full rounded-lg border border-white/10 bg-[#0C0C0C] px-3 py-2 text-sm text-white"
+              className="ui-textarea"
             />
           </label>
 
-          <label className="block space-y-2 text-sm">
-            <span className="font-medium text-white">
-              Default Message Template<span className="text-[#F0C27B]">*</span>
-              <span className="ml-1 font-normal text-slate-500">(Shown to the user)</span>
+          <label className="text-body-md block space-y-2">
+            <span className="text-body-md-medium text-brand-text">
+              Default Message Template<span className="text-brand-accent">*</span>
+              <span className="text-body-md text-muted ml-1 font-normal">(Shown to the user)</span>
             </span>
             <textarea
               rows={5}
@@ -148,24 +148,20 @@ function ReasonFormModal({
                 }))
               }
               placeholder="Template message will be sent to the user when this reason is applied"
-              className="w-full rounded-lg border border-white/10 bg-[#0C0C0C] px-3 py-2 text-sm text-white"
+              className="ui-textarea"
             />
           </label>
         </div>
 
-        <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-xl border border-white/20 px-5 py-2.5 text-sm font-semibold text-white"
-          >
+        <div className="ui-modal-footer">
+          <button type="button" onClick={onClose} className="ui-modal-btn ui-modal-btn-cancel">
             Cancel
           </button>
           <button
             type="button"
             disabled={!canSubmit || isSubmitting}
             onClick={() => onSubmit(form)}
-            className="rounded-xl bg-[#F0C27B] px-5 py-2.5 text-sm font-semibold text-[#050505] disabled:opacity-50"
+            className="ui-modal-btn ui-modal-btn-gold"
           >
             {isSubmitting
               ? mode === 'create'
@@ -211,45 +207,41 @@ function CategoryEditModal({
 
   return createPortal(
     <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/70 p-4">
-      <div className="w-full max-w-[480px] rounded-2xl border border-white/10 bg-[#141414] p-6 shadow-2xl">
-        <div className="flex items-start justify-between gap-4">
-          <h2 className="text-lg font-bold text-white">Edit Category</h2>
-          <button type="button" onClick={onClose} className="text-slate-500 hover:text-white">
-            <X className="size-5" />
+      <div className="ui-modal-shell max-w-[480px]">
+        <div className="ui-modal-header">
+          <h2 className="text-h4 text-brand-text">Edit Category</h2>
+          <button type="button" onClick={onClose} className="text-muted hover:text-brand-text">
+            <X className="icon-md" />
           </button>
         </div>
-        <div className="mt-5 space-y-4">
-          <label className="block space-y-2 text-sm">
-            <span className="font-medium text-white">Title</span>
+        <div className="ui-modal-body space-y-4">
+          <label className="text-body-md block space-y-2">
+            <span className="text-body-md-medium text-brand-text">Title</span>
             <input
               value={title}
               onChange={(event) => setTitle(event.target.value)}
-              className="h-10 w-full rounded-lg border border-white/10 bg-[#0C0C0C] px-3 text-sm text-white"
+              className="ui-input"
             />
           </label>
-          <label className="block space-y-2 text-sm">
-            <span className="font-medium text-white">Description</span>
+          <label className="text-body-md block space-y-2">
+            <span className="text-body-md-medium text-brand-text">Description</span>
             <textarea
               rows={3}
               value={description}
               onChange={(event) => setDescription(event.target.value)}
-              className="w-full rounded-lg border border-white/10 bg-[#0C0C0C] px-3 py-2 text-sm text-white"
+              className="ui-textarea"
             />
           </label>
         </div>
-        <div className="mt-6 flex justify-end gap-3">
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-xl border border-white/20 px-5 py-2.5 text-sm font-semibold text-white"
-          >
+        <div className="ui-modal-footer">
+          <button type="button" onClick={onClose} className="ui-modal-btn ui-modal-btn-cancel">
             Cancel
           </button>
           <button
             type="button"
             disabled={!title.trim() || isSubmitting}
             onClick={() => onSubmit({ title: title.trim(), description: description.trim() })}
-            className="rounded-xl bg-[#F0C27B] px-5 py-2.5 text-sm font-semibold text-[#050505] disabled:opacity-50"
+            className="ui-modal-btn ui-modal-btn-gold"
           >
             {isSubmitting ? 'Saving…' : 'Save'}
           </button>
@@ -339,7 +331,7 @@ export function TemplatesPage({ embedded = false }: { embedded?: boolean }) {
               state: { settingsTab: 'templates' },
             })
           }
-          className="inline-flex items-center gap-2 text-sm text-slate-400 hover:text-white"
+          className="text-body-md text-muted inline-flex items-center gap-2 hover:text-white"
         >
           <ArrowLeft className="size-4" />
           Settings / Templates
@@ -350,24 +342,24 @@ export function TemplatesPage({ embedded = false }: { embedded?: boolean }) {
         <h1
           className={cn(
             'font-semibold tracking-tight text-white',
-            embedded ? 'text-lg' : 'text-3xl sm:text-4xl',
+            embedded ? 'text-h4' : 'text-h1',
           )}
         >
           Moderation Reason Manager
         </h1>
-        <p className="mt-1 text-sm text-slate-400">Manage action categories and reasons.</p>
+        <p className="text-body-md text-muted mt-1">Manage action categories and reasons.</p>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-[320px_minmax(0,1fr)]">
-        <aside className={cn(uiTokens.radiusCard, 'border border-white/10 bg-[#111111] p-4')}>
-          <p className="text-sm font-semibold text-white">Categories</p>
+        <aside className={cn(uiTokens.radiusCard, 'bg-brand-bg border border-white/10 p-4')}>
+          <p className="text-body-md-semibold text-white">Categories</p>
           <div className="relative mt-3">
-            <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-slate-500" />
+            <Search className="text-muted pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2" />
             <input
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               placeholder="Search Categories"
-              className="h-10 w-full rounded-lg border border-white/10 bg-[#0B0B0B] pr-3 pl-10 text-sm text-white"
+              className="ui-input pl-10"
             />
           </div>
 
@@ -377,7 +369,7 @@ export function TemplatesPage({ embedded = false }: { embedded?: boolean }) {
                 <div key={index} className="h-20 animate-pulse rounded-xl bg-white/5" />
               ))
             ) : categories.length === 0 ? (
-              <p className="px-2 py-6 text-center text-sm text-slate-500">No categories found</p>
+              <p className="text-body-md text-muted px-2 py-6 text-center">No categories found</p>
             ) : (
               categories.map((category) => {
                 const selected = category.id === activeCategoryId
@@ -389,17 +381,17 @@ export function TemplatesPage({ embedded = false }: { embedded?: boolean }) {
                     className={cn(
                       'w-full rounded-xl border px-3 py-3 text-left transition-colors',
                       selected
-                        ? 'border-[#F0C27B]/40 bg-[#F0C27B]/10'
-                        : 'border-white/10 bg-[#0B0B0B] hover:border-white/20',
+                        ? 'border-brand-accent/40 bg-brand-accent/10'
+                        : 'bg-brand-bg border-white/10 hover:border-white/20',
                     )}
                   >
                     <div className="flex items-start justify-between gap-2">
-                      <p className="text-sm font-semibold text-white">{category.title}</p>
-                      <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-semibold text-slate-300">
+                      <p className="text-body-md-semibold text-white">{category.title}</p>
+                      <span className="text-body-sm text-brand-text/80 rounded-full bg-white/10 px-2 py-0.5 font-semibold">
                         {category.reasonCount}
                       </span>
                     </div>
-                    <p className="mt-1 text-xs text-slate-500">{category.description}</p>
+                    <p className="text-body-sm text-muted mt-1">{category.description}</p>
                   </button>
                 )
               })
@@ -408,27 +400,27 @@ export function TemplatesPage({ embedded = false }: { embedded?: boolean }) {
         </aside>
 
         <section
-          className={cn(uiTokens.radiusCard, 'border border-white/10 bg-[#111111] p-4 sm:p-5')}
+          className={cn(uiTokens.radiusCard, 'bg-brand-bg border border-white/10 p-4 sm:p-5')}
         >
           {selectedCategory ? (
             <>
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
-                    <h2 className="text-lg font-semibold text-white">{selectedCategory.title}</h2>
+                    <h2 className="text-h4 text-white">{selectedCategory.title}</h2>
                     <button
                       type="button"
                       onClick={() => setCategoryEditOpen(true)}
-                      className="rounded p-1 text-slate-400 hover:bg-white/5 hover:text-white"
+                      className="text-muted rounded p-1 hover:bg-white/5 hover:text-white"
                       aria-label="Edit category"
                     >
                       <Pencil className="size-4" />
                     </button>
-                    <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5 text-[10px] font-semibold text-emerald-400">
+                    <span className="border-brand-positive/30 bg-brand-positive/10 text-body-sm text-brand-positive rounded-full border px-2.5 py-0.5 font-semibold">
                       active
                     </span>
                   </div>
-                  <p className="mt-1 text-sm text-slate-400">{selectedCategory.description}</p>
+                  <p className="text-body-md text-muted mt-1">{selectedCategory.description}</p>
                 </div>
                 <button
                   type="button"
@@ -436,7 +428,7 @@ export function TemplatesPage({ embedded = false }: { embedded?: boolean }) {
                     setEditingReason(null)
                     setReasonModalOpen(true)
                   }}
-                  className="inline-flex items-center gap-2 rounded-xl bg-[#F0C27B] px-4 py-2.5 text-sm font-semibold text-[#050505] hover:bg-[#E6B46C]"
+                  className="ui-cta ui-cta-primary"
                 >
                   <Plus className="size-4" />
                   New Reason
@@ -449,28 +441,28 @@ export function TemplatesPage({ embedded = false }: { embedded?: boolean }) {
                     <div key={index} className="h-24 animate-pulse rounded-xl bg-white/5" />
                   ))
                 ) : reasons.length === 0 ? (
-                  <div className="rounded-xl border border-dashed border-white/10 px-4 py-10 text-center text-sm text-slate-500">
+                  <div className="text-body-md text-muted rounded-xl border border-dashed border-white/10 px-4 py-10 text-center">
                     No reasons in this category yet. Create the first one.
                   </div>
                 ) : (
                   reasons.map((reason) => (
                     <article
                       key={reason.id}
-                      className="rounded-xl border border-white/10 bg-[#0B0B0B] px-4 py-4"
+                      className="bg-brand-bg rounded-xl border border-white/10 px-4 py-4"
                     >
                       <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                         <div className="min-w-0 space-y-2">
                           <div className="flex flex-wrap items-center gap-2">
-                            <h3 className="text-sm font-semibold text-white">{reason.title}</h3>
-                            <span className="rounded-full border border-[#F0C27B]/25 bg-[#F0C27B]/10 px-2.5 py-0.5 text-[10px] font-medium text-[#F0C27B]">
+                            <h3 className="text-body-md-semibold text-white">{reason.title}</h3>
+                            <span className="border-brand-accent/25 bg-brand-accent/10 text-body-sm text-brand-accent rounded-full border px-2.5 py-0.5 font-medium">
                               Used in {reason.usageCount} actions
                             </span>
                           </div>
-                          <p className="text-sm text-slate-400">{reason.description}</p>
+                          <p className="text-body-md text-muted">{reason.description}</p>
                         </div>
 
                         <div className="flex items-center gap-3">
-                          <div className="flex items-center gap-2 text-xs text-slate-300">
+                          <div className="text-body-sm text-brand-text/80 flex items-center gap-2">
                             <span>Active</span>
                             <ToggleSwitch
                               checked={reason.isActive}
@@ -492,7 +484,7 @@ export function TemplatesPage({ embedded = false }: { embedded?: boolean }) {
                               setEditingReason(reason)
                               setReasonModalOpen(true)
                             }}
-                            className="rounded p-1.5 text-slate-400 hover:bg-white/5 hover:text-white"
+                            className="text-muted rounded p-1.5 hover:bg-white/5 hover:text-white"
                             aria-label="Edit reason"
                           >
                             <Pencil className="size-4" />
@@ -505,7 +497,7 @@ export function TemplatesPage({ embedded = false }: { embedded?: boolean }) {
                                 onError: () => toast.error('Failed to delete reason'),
                               })
                             }
-                            className="rounded p-1.5 text-slate-400 hover:bg-white/5 hover:text-rose-300"
+                            className="text-muted hover:text-brand-danger rounded p-1.5 hover:bg-white/5"
                             aria-label="Delete reason"
                           >
                             <Trash2 className="size-4" />
@@ -518,7 +510,7 @@ export function TemplatesPage({ embedded = false }: { embedded?: boolean }) {
               </div>
             </>
           ) : (
-            <div className="py-16 text-center text-sm text-slate-500">
+            <div className="text-body-md text-muted py-16 text-center">
               Select a category to manage reasons.
             </div>
           )}

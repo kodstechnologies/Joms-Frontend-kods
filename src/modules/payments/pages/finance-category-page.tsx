@@ -19,8 +19,9 @@ import { cn } from '@/shared/lib/cn'
 const PAGE_SIZE = 10
 
 function getStatusClassName(status: FinanceCategoryStatus) {
-  if (status === 'Active') return 'border-emerald-500/25 bg-emerald-500/10 text-emerald-400'
-  return 'border-amber-500/25 bg-amber-500/10 text-amber-400'
+  if (status === 'Active')
+    return 'border-brand-positive/25 bg-brand-positive/10 text-brand-positive'
+  return 'border-brand-accent/25 bg-brand-accent/10 text-brand-accent'
 }
 
 export function FinanceCategoryPage() {
@@ -93,7 +94,7 @@ export function FinanceCategoryPage() {
         cell: ({ row }) => (
           <span
             className={cn(
-              'inline-flex rounded-full border px-2.5 py-0.5 text-[11px] font-semibold',
+              'text-body-sm-semibold inline-flex rounded-full border px-2.5 py-0.5',
               getStatusClassName(row.original.status),
             )}
           >
@@ -114,16 +115,16 @@ export function FinanceCategoryPage() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-[28px] font-bold tracking-tight text-white">Category Management</h1>
-        <p className="mt-1 text-[13px] text-[#888888]">
+        <h1 className="text-h2 text-brand-text tracking-tight">Category Management</h1>
+        <p className="text-body-md text-muted mt-1">
           Configure platform fees, commission rates, and payout cycles by category
         </p>
-        <p className="mt-3 text-[12px] text-[#888888]">
-          <Link to="/finance/dashboard" className="transition-colors hover:text-white">
+        <p className="text-body-sm text-muted mt-3">
+          <Link to="/finance/dashboard" className="hover:text-brand-text transition-colors">
             Payment & Finance
           </Link>
           <span> / </span>
-          <span className="font-semibold text-white">Category Management</span>
+          <span className="text-brand-text font-semibold">Category Management</span>
         </p>
       </div>
 

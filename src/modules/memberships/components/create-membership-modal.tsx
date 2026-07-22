@@ -4,8 +4,6 @@ import { toast } from 'sonner'
 import { MembershipPlanForm, type MembershipPlanFormValues } from './membership-plan-form'
 import { useCreateMembership } from '../hooks/use-memberships'
 import type { MembershipType } from '../types/membership'
-import { Button } from '@/shared/components/ui/button'
-
 type CreateMembershipModalProps = {
   open: boolean
   defaultType?: MembershipType
@@ -55,29 +53,40 @@ export function CreateMembershipModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
-      <div className="max-h-[92vh] w-full max-w-3xl overflow-y-auto rounded-2xl border border-white/10 bg-[#111111] shadow-2xl">
-        <div className="flex items-center justify-between border-b border-white/10 px-6 py-4">
+      <div className="ui-modal-shell max-h-[92vh] max-w-3xl overflow-y-auto">
+        <div className="ui-modal-header">
           <div>
-            <h2 className="text-lg font-semibold text-white">Create Membership</h2>
-            <p className="text-xs text-slate-400">Configure membership plan details and features</p>
+            <h2 className="text-h4 text-brand-text">Create Membership</h2>
+            <p className="text-muted text-body-sm">
+              Configure membership plan details and features
+            </p>
           </div>
-          <button type="button" onClick={onClose} className="rounded-lg p-2 hover:bg-white/10">
-            <X className="size-4 text-slate-300" />
+          <button
+            type="button"
+            onClick={onClose}
+            className="text-muted hover:text-brand-text rounded-brand-md p-2 hover:bg-white/10"
+          >
+            <X className="size-4" />
           </button>
         </div>
 
-        <div className="px-6 py-5">
+        <div className="ui-modal-body">
           <MembershipPlanForm defaultType={defaultType} onSubmit={handleSubmit} />
         </div>
 
-        <div className="flex justify-end gap-3 border-t border-white/10 px-6 py-4">
-          <Button variant="secondary" onClick={onClose}>
+        <div className="ui-modal-footer justify-end">
+          <button type="button" className="ui-cta ui-cta-outline" onClick={onClose}>
             Cancel
-          </Button>
-          <Button type="submit" form="membership-plan-form" disabled={createMutation.isPending}>
+          </button>
+          <button
+            type="submit"
+            form="membership-plan-form"
+            disabled={createMutation.isPending}
+            className="ui-cta ui-cta-primary"
+          >
             <Save className="size-4" />
             {createMutation.isPending ? 'Creating...' : 'Create'}
-          </Button>
+          </button>
         </div>
       </div>
     </div>

@@ -46,17 +46,17 @@ const formatFileMeta = (file: File | null, fileName: string) => {
 
 const InfoRow = ({ label, value }: { label: string; value: React.ReactNode }) => (
   <div className="flex items-start justify-between gap-4 py-2">
-    <span className="text-xs text-[#999]">{label}</span>
+    <span className="text-muted text-xs">{label}</span>
     <span className="max-w-[60%] text-right text-xs font-medium text-white">{value}</span>
   </div>
 )
 
 const VerifiedRow = ({ label, value }: { label: string; value: string }) => (
   <div className="flex items-center justify-between gap-4 py-2">
-    <span className="text-xs text-[#999]">{label}</span>
+    <span className="text-muted text-xs">{label}</span>
     <span className="flex items-center gap-2 text-xs font-medium text-white">
       {naValue(value)}
-      <CheckCircle2 className="size-4 text-emerald-500" />
+      <CheckCircle2 className="text-brand-positive size-4" />
     </span>
   </div>
 )
@@ -98,7 +98,7 @@ const DocumentCard = ({
         </div>
         <div className="min-w-0 flex-1">
           <p className="text-sm font-bold text-white">{label}</p>
-          <p className="mt-1 truncate text-[11px] text-[#777]">
+          <p className="text-body-sm text-muted mt-1 truncate">
             {hasFile ? formatFileMeta(file, fileName) : 'N/A'}
           </p>
         </div>
@@ -107,7 +107,7 @@ const DocumentCard = ({
         type="button"
         onClick={handleView}
         disabled={!hasFile}
-        className="w-full rounded-md bg-[#1f1f1f] py-2.5 text-xs font-semibold text-white transition-colors hover:bg-[#2a2a2a] disabled:cursor-not-allowed disabled:opacity-40"
+        className="bg-brand-surface w-full rounded-md py-2.5 text-xs font-semibold text-white transition-colors hover:bg-white/7 disabled:cursor-not-allowed disabled:opacity-40"
       >
         View
       </button>
@@ -117,7 +117,7 @@ const DocumentCard = ({
 
 const DetailRow = ({ label, value }: { label: string; value: string }) => (
   <div className="flex items-center justify-between gap-4 py-2.5">
-    <span className="text-xs text-[#999]">{label}</span>
+    <span className="text-muted text-xs">{label}</span>
     <span className="text-right text-xs font-medium text-white">{naValue(value)}</span>
   </div>
 )
@@ -134,10 +134,10 @@ const WorkExperienceDetailModal = ({
     onClick={onClose}
   >
     <div
-      className="w-full max-w-[520px] rounded-2xl border border-white/10 bg-[#161616] shadow-2xl"
+      className="ui-modal-shell w-full max-w-[520px]"
       onClick={(event) => event.stopPropagation()}
     >
-      <div className="flex items-center justify-between border-b border-[#2A2A2A] px-6 py-5">
+      <div className="ui-modal-header">
         <h2 className="text-lg font-semibold text-white">Work Experience</h2>
         <button
           type="button"
@@ -149,9 +149,9 @@ const WorkExperienceDetailModal = ({
         </button>
       </div>
 
-      <div className="px-6 py-5">
+      <div className="ui-modal-body">
         <div className="rounded-xl border border-white/10 bg-black p-5">
-          <p className="mb-4 text-xs text-[#777]">Work Experience Details</p>
+          <p className="text-muted mb-4 text-xs">Work Experience Details</p>
 
           <DetailRow label="Job Title" value={entry.jobTitle} />
           <DetailRow label="Company Name" value={entry.companyName} />
@@ -163,7 +163,7 @@ const WorkExperienceDetailModal = ({
 
           <div className="my-4 border-t border-white/10" />
 
-          <p className="mb-2 text-xs text-[#999]">Description</p>
+          <p className="text-muted mb-2 text-xs">Description</p>
           <p className="text-sm leading-relaxed text-white">{naValue(entry.description)}</p>
         </div>
       </div>
@@ -191,16 +191,16 @@ const WorkHistoryCard = ({
   <button
     type="button"
     onClick={onClick}
-    className="hover:border-brand-accent/30 w-full rounded-lg border border-white/10 bg-black p-4 text-left transition-colors hover:bg-[#111111]"
+    className="hover:border-brand-accent/30 hover:bg-brand-bg w-full rounded-lg border border-white/10 bg-black p-4 text-left transition-colors"
   >
     <div className="flex items-start justify-between gap-3">
       <p className="text-sm font-bold text-white">{naValue(jobTitle)}</p>
-      <span className="shrink-0 text-[11px] text-[#777]">
+      <span className="text-body-sm text-muted shrink-0">
         {formatWorkDateRange(startDate, endDate, currentlyWorking)}
       </span>
     </div>
-    <p className="mt-2 text-xs text-[#999]">{naValue(companyName)}</p>
-    <p className="mt-1 text-xs text-[#999]">{naValue(employmentType)}</p>
+    <p className="text-muted mt-2 text-xs">{naValue(companyName)}</p>
+    <p className="text-muted mt-1 text-xs">{naValue(employmentType)}</p>
   </button>
 )
 
@@ -220,7 +220,7 @@ export const ExpertFinalReviewStep = ({ formData, setFormData }: Props) => {
       )}
 
       <div className="mx-auto w-full max-w-[850px] space-y-4">
-        <div className="overflow-hidden rounded-lg border border-white/5 bg-[#151515]">
+        <div className="bg-brand-surface overflow-hidden rounded-lg border border-white/5">
           <div className="relative h-28 bg-gradient-to-r from-slate-700 to-slate-900">
             {formData.coverImageUrl && (
               <img
@@ -229,7 +229,7 @@ export const ExpertFinalReviewStep = ({ formData, setFormData }: Props) => {
                 className="h-full w-full object-cover"
               />
             )}
-            <div className="absolute -bottom-7 left-6 size-16 overflow-hidden rounded-full border-4 border-[#151515] bg-slate-600">
+            <div className="border-brand-surface absolute -bottom-7 left-6 size-16 overflow-hidden rounded-full border-4 bg-slate-600">
               {formData.profileImageUrl && (
                 <img
                   src={formData.profileImageUrl}
@@ -242,7 +242,7 @@ export const ExpertFinalReviewStep = ({ formData, setFormData }: Props) => {
 
           <div className="px-6 pt-10 pb-6">
             <h2 className="text-sm font-bold text-white">Review &amp; Create Account</h2>
-            <p className="mt-1 text-xs text-[#777777]">User verification before account creation</p>
+            <p className="text-muted mt-1 text-xs">User verification before account creation</p>
 
             <SectionTitle>Basic Profile Information</SectionTitle>
             <InfoRow label="Full Name" value={naValue(formData.fullname)} />
@@ -270,7 +270,7 @@ export const ExpertFinalReviewStep = ({ formData, setFormData }: Props) => {
               }
             />
             <div className="py-2">
-              <span className="text-xs text-[#999]">Service Offerings</span>
+              <span className="text-muted text-xs">Service Offerings</span>
               <div className="mt-2 flex flex-wrap justify-end gap-2">
                 {formData.offerings.length > 0 ? (
                   formData.offerings.map((offering) => (
@@ -353,7 +353,7 @@ export const ExpertFinalReviewStep = ({ formData, setFormData }: Props) => {
                 ))}
               </div>
             ) : (
-              <p className="text-xs text-[#666]">No work history added.</p>
+              <p className="text-muted text-xs">No work history added.</p>
             )}
 
             <SectionTitle>Gallery ({formData.galleryPreviews.length})</SectionTitle>
@@ -373,18 +373,18 @@ export const ExpertFinalReviewStep = ({ formData, setFormData }: Props) => {
                 ))}
               </div>
             ) : (
-              <p className="text-xs text-[#666]">No gallery images uploaded.</p>
+              <p className="text-muted text-xs">No gallery images uploaded.</p>
             )}
           </div>
         </div>
 
-        <div className="rounded-lg border border-white/5 bg-[#151515] p-6">
+        <div className="bg-brand-surface rounded-lg border border-white/5 p-6">
           <label className="mb-2 block text-xs font-medium text-white">Internal notes</label>
           <textarea
             value={formData.internalNotes}
             onChange={(e) => setFormData((prev) => ({ ...prev, internalNotes: e.target.value }))}
             placeholder="Enter Text"
-            className="focus:ring-brand-accent/40 h-24 w-full rounded-md bg-black p-3 text-sm text-white outline-none placeholder:text-[#666] focus:ring-1"
+            className="ui-textarea h-24"
           />
 
           <label className="mt-4 flex items-center gap-2 text-xs text-white">

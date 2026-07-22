@@ -67,79 +67,81 @@ function CancelSubscriptionModalForm({
       role="dialog"
       aria-modal="true"
       aria-labelledby="cancel-subscription-title"
-      className="w-full max-w-[520px] rounded-2xl border border-white/10 bg-[#141414] p-6 shadow-2xl"
+      className="ui-modal-shell max-w-[520px] p-0"
     >
-      <div className="flex items-start justify-between gap-4">
-        <h2 id="cancel-subscription-title" className="text-[18px] font-bold text-white">
+      <div className="ui-modal-header">
+        <h2 id="cancel-subscription-title" className="text-h4 text-brand-text">
           Cancel Subscription
         </h2>
         <button
           type="button"
           onClick={onDismiss}
-          className="rounded-lg p-1 text-[#888888] transition-colors hover:bg-white/5 hover:text-white"
+          className="text-muted hover:text-brand-text rounded-lg p-1 transition-colors hover:bg-white/5"
           aria-label="Close"
         >
-          <X className="size-5" />
+          <X className="icon-md" />
         </button>
       </div>
 
-      <div className="mt-6 flex flex-col items-center text-center">
-        <div className="grid size-16 place-items-center rounded-full bg-rose-500/15 text-rose-400">
-          <X className="size-7" />
+      <div className="ui-modal-body">
+        <div className="flex flex-col items-center text-center">
+          <div className="bg-brand-danger/15 text-brand-danger grid size-16 place-items-center rounded-full">
+            <X className="size-7" />
+          </div>
+          <p className="text-body-md text-brand-text mt-4">
+            Cancel subscription for <span className="font-semibold">{userName}</span>?
+          </p>
         </div>
-        <p className="mt-4 text-[14px] text-white">
-          Cancel subscription for <span className="font-semibold">{userName}</span>?
-        </p>
+
+        <div className="mt-6">
+          <p className="text-body-sm-medium text-muted mb-2">Reasons</p>
+          <div className="flex flex-wrap gap-2">
+            {REASON_OPTIONS.map((reason) => (
+              <button
+                key={reason}
+                type="button"
+                onClick={() => toggleReason(reason)}
+                className={cn(
+                  'ui-modal-reason-chip',
+                  selectedReasons.includes(reason)
+                    ? 'ui-modal-reason-chip-selected'
+                    : 'ui-modal-reason-chip-idle',
+                )}
+              >
+                {reason}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <label className="text-body-sm text-brand-text/80 mt-5 flex items-start gap-3 text-left">
+          <input
+            type="checkbox"
+            checked={confirmed}
+            onChange={(event) => setConfirmed(event.target.checked)}
+            className="accent-brand-accent mt-0.5 rounded border-white/20"
+          />
+          I confirm the documents are not valid from above reasons.
+        </label>
+
+        <label className="text-body-sm text-muted mt-4 block text-left">
+          Cancellation Reason (Required)
+          <textarea
+            value={cancelReason}
+            onChange={(event) => setCancelReason(event.target.value)}
+            placeholder="Cancellation Reason (Required)"
+            rows={4}
+            className="ui-textarea mt-2"
+          />
+        </label>
       </div>
 
-      <div className="mt-6">
-        <p className="mb-2 text-[12px] font-medium text-[#888888]">Reasons</p>
-        <div className="flex flex-wrap gap-2">
-          {REASON_OPTIONS.map((reason) => (
-            <button
-              key={reason}
-              type="button"
-              onClick={() => toggleReason(reason)}
-              className={cn(
-                'rounded-full border px-3 py-1.5 text-[11px] font-medium transition-colors',
-                selectedReasons.includes(reason)
-                  ? 'border-[#EBC38C] bg-[#EBC38C] text-[#111111]'
-                  : 'border-white/20 bg-transparent text-white hover:border-white/40',
-              )}
-            >
-              {reason}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <label className="mt-5 flex items-start gap-3 text-left text-[12px] text-[#CCCCCC]">
-        <input
-          type="checkbox"
-          checked={confirmed}
-          onChange={(event) => setConfirmed(event.target.checked)}
-          className="mt-0.5 rounded border-white/20"
-        />
-        I confirm the documents are not valid from above reasons.
-      </label>
-
-      <label className="mt-4 block text-left text-[12px] text-[#888888]">
-        Cancellation Reason (Required)
-        <textarea
-          value={cancelReason}
-          onChange={(event) => setCancelReason(event.target.value)}
-          placeholder="Cancellation Reason (Required)"
-          rows={4}
-          className="mt-2 w-full resize-none rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-[13px] text-white placeholder:text-[#666666] focus:ring-1 focus:ring-rose-400/40 focus:outline-none"
-        />
-      </label>
-
-      <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+      <div className="ui-modal-footer flex-col-reverse sm:flex-row sm:justify-end">
         <button
           type="button"
           onClick={onDismiss}
           disabled={isSubmitting}
-          className="inline-flex min-h-11 items-center justify-center rounded-xl border border-white/20 px-5 text-sm font-semibold text-white transition-colors hover:bg-white/5 disabled:opacity-50"
+          className="ui-modal-btn ui-modal-btn-cancel"
         >
           Cancel
         </button>
@@ -149,9 +151,9 @@ function CancelSubscriptionModalForm({
             void handleSubmit()
           }}
           disabled={isSubmitting}
-          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-rose-600 px-5 text-sm font-semibold text-white transition-colors hover:bg-rose-500 disabled:opacity-50"
+          className="ui-modal-btn ui-modal-btn-negative"
         >
-          <X className="size-4" />
+          <X className="icon-sm" />
           {isSubmitting ? 'Cancelling...' : 'Cancel Subscription'}
         </button>
       </div>

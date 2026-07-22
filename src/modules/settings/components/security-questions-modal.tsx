@@ -1,15 +1,17 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Pencil, Trash2, X } from 'lucide-react'
 import { createPortal } from 'react-dom'
 
 import { SettingsToggleRow } from './settings-toggle-row'
 import type { SecurityQuestion, SecuritySettings } from '../types/settings'
 
+type SecurityQuestionsConfig = SecuritySettings['securityQuestionsConfig']
+
 type SecurityQuestionsModalProps = {
   open: boolean
-  config: SecuritySettings['securityQuestionsConfig']
+  config: SecurityQuestionsConfig
   onClose: () => void
-  onSubmit: (config: SecuritySettings['securityQuestionsConfig']) => void
+  onSubmit: (config: SecurityQuestionsConfig) => void
 }
 
 export function SecurityQuestionsModal({
@@ -18,16 +20,32 @@ export function SecurityQuestionsModal({
   onClose,
   onSubmit,
 }: SecurityQuestionsModalProps) {
+  if (!open) return null
+
+  return createPortal(
+    <SecurityQuestionsModalContent
+      key={JSON.stringify(config)}
+      config={config}
+      onClose={onClose}
+      onSubmit={onSubmit}
+    />,
+    document.body,
+  )
+}
+
+function SecurityQuestionsModalContent({
+  config,
+  onClose,
+  onSubmit,
+}: {
+  config: SecurityQuestionsConfig
+  onClose: () => void
+  onSubmit: (config: SecurityQuestionsConfig) => void
+}) {
   const [draft, setDraft] = useState(config)
   const [newQuestion, setNewQuestion] = useState('')
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editingText, setEditingText] = useState('')
-
-  useEffect(() => {
-    if (open) setDraft(config)
-  }, [open, config])
-
-  if (!open) return null
 
   const handleAddQuestion = () => {
     const text = newQuestion.trim()
@@ -57,34 +75,34 @@ export function SecurityQuestionsModal({
     })
   }
 
-  return createPortal(
+  return (
     <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/70 p-4">
-      <div className="max-h-[90vh] w-full max-w-[560px] overflow-y-auto rounded-2xl border border-white/10 bg-[#141414] p-6 shadow-2xl">
-        <div className="flex items-start justify-between gap-4">
+      <div className="ui-modal-shell max-h-[90vh] max-w-[560px] overflow-y-auto">
+        <div className="ui-modal-header">
           <div>
-            <h2 className="text-lg font-bold text-white">Security Questions</h2>
-            <p className="mt-1 text-xs text-slate-500">Manage security verification questions</p>
+            <h2 className="text-h2 text-brand-text">Security Questions</h2>
+            <p className="text-body-sm text-muted mt-1">Manage security verification questions</p>
           </div>
-          <button type="button" onClick={onClose} className="text-slate-500 hover:text-white">
-            <X className="size-5" />
+          <button type="button" onClick={onClose} className="text-muted hover:text-brand-text">
+            <X className="icon-md" />
           </button>
         </div>
 
-        <div className="mt-5 space-y-3">
-          <p className="text-sm font-medium text-white">Security Questions</p>
+        <div className="ui-modal-body space-y-3">
+          <p className="text-body-md-medium text-brand-text">Security Questions</p>
           {draft.questions.map((question: SecurityQuestion) => (
             <div
               key={question.id}
-              className="flex items-center gap-2 rounded-xl border border-white/10 bg-black/20 px-3 py-2"
+              className="radius-lg flex items-center gap-2 border border-white/10 bg-black/20 px-3 py-2"
             >
               {editingId === question.id ? (
                 <input
                   value={editingText}
                   onChange={(event) => setEditingText(event.target.value)}
-                  className="flex-1 rounded-lg border border-white/10 bg-[#1a1a1a] px-2 py-1 text-sm text-white"
+                  className="ui-input flex-1"
                 />
               ) : (
-                <span className="flex-1 text-sm text-slate-300">{question.question}</span>
+                <span className="text-body-md text-brand-text/80 flex-1">{question.question}</span>
               )}
               <button
                 type="button"
@@ -96,16 +114,16 @@ export function SecurityQuestionsModal({
                     setEditingText(question.question)
                   }
                 }}
-                className="rounded p-1 text-slate-500 hover:text-white"
+                className="text-muted hover:text-brand-text rounded p-1"
               >
-                <Pencil className="size-4" />
+                <Pencil className="icon-sm" />
               </button>
               <button
                 type="button"
                 onClick={() => handleDelete(question.id)}
-                className="rounded p-1 text-slate-500 hover:text-rose-400"
+                className="text-muted hover:text-brand-danger rounded p-1"
               >
-                <Trash2 className="size-4" />
+                <Trash2 className="icon-sm" />
               </button>
             </div>
           ))}
@@ -114,55 +132,52 @@ export function SecurityQuestionsModal({
               value={newQuestion}
               onChange={(event) => setNewQuestion(event.target.value)}
               placeholder="New security question"
-              className="h-10 flex-1 rounded-lg border border-white/10 bg-[#1a1a1a] px-3 text-sm text-white"
+              className="ui-input flex-1"
             />
             <button
               type="button"
               onClick={handleAddQuestion}
-              className="rounded-lg border border-white/15 px-4 text-sm font-medium text-white hover:bg-white/5"
+              className="ui-cta ui-cta-secondary shrink-0"
             >
               + Add New Question
             </button>
           </div>
+
+          <div className="radius-lg space-y-1 border border-white/10 bg-black/20 p-4">
+            <p className="text-body-md-medium text-brand-text mb-2">Additional Security Settings</p>
+            <SettingsToggleRow
+              label="Require security questions for password reset"
+              checked={draft.requireForPasswordReset}
+              onChange={(checked) => setDraft({ ...draft, requireForPasswordReset: checked })}
+            />
+            <SettingsToggleRow
+              label="Require security questions for critical operations"
+              checked={draft.requireForCriticalOperations}
+              onChange={(checked) => setDraft({ ...draft, requireForCriticalOperations: checked })}
+            />
+            <SettingsToggleRow
+              label="Lock account after failed attempts"
+              checked={draft.lockAccountAfterFailedAttempts}
+              onChange={(checked) =>
+                setDraft({ ...draft, lockAccountAfterFailedAttempts: checked })
+              }
+            />
+          </div>
         </div>
 
-        <div className="mt-6 space-y-1 rounded-xl border border-white/10 bg-black/20 p-4">
-          <p className="mb-2 text-sm font-medium text-white">Additional Security Settings</p>
-          <SettingsToggleRow
-            label="Require security questions for password reset"
-            checked={draft.requireForPasswordReset}
-            onChange={(checked) => setDraft({ ...draft, requireForPasswordReset: checked })}
-          />
-          <SettingsToggleRow
-            label="Require security questions for critical operations"
-            checked={draft.requireForCriticalOperations}
-            onChange={(checked) => setDraft({ ...draft, requireForCriticalOperations: checked })}
-          />
-          <SettingsToggleRow
-            label="Lock account after failed attempts"
-            checked={draft.lockAccountAfterFailedAttempts}
-            onChange={(checked) => setDraft({ ...draft, lockAccountAfterFailedAttempts: checked })}
-          />
-        </div>
-
-        <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-xl border border-white/20 px-5 py-2.5 text-sm font-semibold text-white"
-          >
+        <div className="ui-modal-footer">
+          <button type="button" onClick={onClose} className="ui-modal-btn ui-modal-btn-cancel">
             Reset
           </button>
           <button
             type="button"
             onClick={() => onSubmit(draft)}
-            className="rounded-xl bg-[#F0C27B] px-5 py-2.5 text-sm font-semibold text-[#050505]"
+            className="ui-modal-btn ui-modal-btn-gold"
           >
             Submit
           </button>
         </div>
       </div>
-    </div>,
-    document.body,
+    </div>
   )
 }
