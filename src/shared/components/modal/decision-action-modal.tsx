@@ -1,4 +1,4 @@
-import { Check, MoveDiagonal, X } from 'lucide-react'
+import { Check, MoveDiagonal, Trash2, X } from 'lucide-react'
 
 import { cn } from '@/shared/lib/cn'
 
@@ -8,6 +8,7 @@ export type DecisionActionModalVariant =
   | 'requestChanges'
   | 'escalate'
   | 'suspend'
+  | 'delete'
 
 export type DecisionActionModalOption = {
   label: string
@@ -61,28 +62,34 @@ const variantStyles: Record<
 > = {
   approve: {
     submit: 'bg-[#16A34A] text-white hover:bg-[#15803D]',
-    selectedChip: 'bg-[#E8B884] text-black',
+    selectedChip: 'bg-[linear-gradient(90deg,#F6CB86_0%,#E0A263_100%)] text-black',
     submitIcon: 'check',
     checkIconColor: 'text-[#16A34A]',
   },
   reject: {
     submit: 'bg-[#E11D2E] text-white hover:bg-[#C41424]',
-    selectedChip: 'bg-[#E8B884] text-black',
+    selectedChip: 'bg-[linear-gradient(90deg,#F6CB86_0%,#E0A263_100%)] text-black',
     submitIcon: 'x',
   },
   requestChanges: {
     submit: 'bg-[#FF842B] text-white hover:bg-[#F07520]',
-    selectedChip: 'bg-[#E8B884] text-black',
+    selectedChip: 'bg-[linear-gradient(90deg,#F6CB86_0%,#E0A263_100%)] text-black',
     submitIcon: 'check',
     checkIconColor: 'text-[#FF842B]',
   },
   escalate: {
     submit: 'bg-[#E5B678] text-black hover:bg-[#D9A866]',
-    selectedChip: 'bg-[#E8B884] text-black',
+    selectedChip: 'bg-[linear-gradient(90deg,#F6CB86_0%,#E0A263_100%)] text-black',
   },
   suspend: {
     submit: 'bg-[#E11D2E] text-white hover:bg-[#C41424]',
-    selectedChip: 'bg-[#E8B884] text-black',
+    selectedChip: 'bg-[linear-gradient(90deg,#F6CB86_0%,#E0A263_100%)] text-black',
+    submitIcon: 'x',
+  },
+
+  delete: {
+    submit: 'bg-[#D3191C] text-white hover:bg-[#C11619]',
+    selectedChip: 'bg-[linear-gradient(90deg,#F6CB86_0%,#E0A263_100%)] text-black',
     submitIcon: 'x',
   },
 }
@@ -143,7 +150,7 @@ export function DecisionActionModal({
   const showReasonInput = Boolean(onReasonChange)
   const showEscalationOptions = escalationOptions.length > 0
   const showConfirmation = Boolean(confirmationLabel && onConfirmationChange)
-  const showHeroIcon = variant === 'approve' || variant === 'escalate'
+  const showHeroIcon = variant === 'approve' || variant === 'escalate' || variant === 'delete'
   const isDocumentRejectLayout = Boolean(warning) || showConfirmation
   const resolvedSubmitIcon = submitIcon ?? styles.submitIcon
   const { primary, secondary } = splitDescription(description)
@@ -158,13 +165,13 @@ export function DecisionActionModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="decision-action-modal-title"
-        className="flex max-h-[90vh] w-full max-w-[520px] flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#1A1A1A] text-white shadow-[0_24px_80px_rgba(0,0,0,0.65)]"
+        className="flex max-h-[594px] w-full max-w-[551px] flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#1A1A1A] text-white shadow-[0_24px_80px_rgba(0,0,0,0.65)]"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="flex shrink-0 items-center justify-between border-b border-white/10 px-6 py-4">
           <h2
             id="decision-action-modal-title"
-            className="text-[18px] font-semibold tracking-tight text-white"
+            className="font-figtree text-[24px] leading-[24px] font-semibold tracking-[0] text-white"
           >
             {title}
           </h2>
@@ -174,18 +181,22 @@ export function DecisionActionModal({
             onClick={onClose}
             className="rounded-full p-1.5 text-white/80 transition-colors hover:bg-white/10 hover:text-white"
           >
-            <X className="size-5" aria-hidden="true" />
+            <X className="h-[24px] w-[24px]" aria-hidden="true" />
           </button>
         </div>
 
-        <div className="flex-1 space-y-5 overflow-y-auto px-6 py-6">
+        <div className="flex-1 space-y-4 overflow-y-auto px-6 py-5">
           {warning ? <p className="text-[13px] leading-relaxed text-[#9A9A9A]">{warning}</p> : null}
 
           {showHeroIcon ? (
             <div className="flex justify-center">
               {variant === 'approve' ? (
-                <span className="flex size-[72px] items-center justify-center rounded-full bg-[#1F9D55]">
+                <span className="flex h-[62px] w-[62px] items-center justify-center rounded-full bg-[#16A34A]">
                   <Check className="size-9 text-white" strokeWidth={3} aria-hidden="true" />
+                </span>
+              ) : variant === 'delete' ? (
+                <span className="flex h-[62px] w-[62px] items-center justify-center rounded-full bg-[#651313]">
+                  <Trash2 className="h-[28px] w-[28px] text-[#FF4D4F]" strokeWidth={2.5} />
                 </span>
               ) : (
                 <span className="flex size-[72px] items-center justify-center rounded-full bg-[#E8B884]">
@@ -202,14 +213,14 @@ export function DecisionActionModal({
           <div
             className={cn(
               'space-y-1',
-              isDocumentRejectLayout ? 'text-left' : 'mx-auto max-w-[380px] text-center',
+              isDocumentRejectLayout ? 'text-left' : 'mx-auto max-w-[330px] text-center',
             )}
           >
             <p
               className={cn(
                 'leading-snug text-white',
                 showHeroIcon
-                  ? 'text-[15px] font-semibold'
+                  ? 'font-figtree text-[16px] leading-[24px] font-semibold'
                   : isDocumentRejectLayout
                     ? 'text-[14px] font-normal'
                     : 'text-[14px] font-medium',
@@ -218,14 +229,18 @@ export function DecisionActionModal({
               {primary}
             </p>
             {secondary ? (
-              <p className="text-[14px] leading-relaxed text-white/85">{secondary}</p>
+              <p className="font-figtree text-[14px] leading-[22px] font-normal text-[#D1D5DB]">
+                {secondary}
+              </p>
             ) : null}
           </div>
 
           {showReasons ? (
             <div>
-              <span className="mb-2.5 block text-[13px] font-medium text-[#9A9A9A]">Reasons</span>
-              <div className="flex flex-wrap gap-2.5">
+              <span className="font-figtree mb-[10px] block text-[13px] leading-[16px] font-medium text-[#9A9A9A]">
+                Reasons
+              </span>
+              <div className="flex flex-wrap gap-[10px]">
                 {reasonOptions.map((option) => {
                   const isSelected = selectedReasons.includes(option.value)
 
@@ -235,10 +250,10 @@ export function DecisionActionModal({
                       type="button"
                       onClick={() => onReasonToggle?.(option.value)}
                       className={cn(
-                        'rounded-lg px-3.5 py-2 text-[13px] font-medium transition-colors',
+                        'h-[37px] rounded-[8px] px-[10px] text-[13px] leading-[17px] font-medium transition-colors',
                         isSelected
                           ? styles.selectedChip
-                          : 'border border-white/15 bg-[#0D0D0D] text-white hover:border-white/30',
+                          : 'border border-[#2E2E2E] bg-[#101010] text-white hover:border-[#4A4A4A]',
                       )}
                     >
                       {option.label}
@@ -263,7 +278,7 @@ export function DecisionActionModal({
 
           {showTimeline ? (
             <div>
-              <span className="mb-2.5 block text-[13px] font-medium text-[#9A9A9A]">
+              <span className="font-figtree mb-[10px] block text-[13px] leading-[16px] font-medium text-[#9A9A9A]">
                 Suspension Timeline
               </span>
               <div className="grid grid-cols-2 gap-3">
@@ -329,34 +344,34 @@ export function DecisionActionModal({
 
           {showReasonInput ? (
             <label className="block">
-              <span className="mb-2 block text-[13px] font-medium text-white">
+              <span className="font-figtree mb-2 block text-[13px] leading-[16px] font-medium text-white">
                 {reasonLabel} <span className="text-[#E11D2E]">*</span>
               </span>
               <textarea
                 value={reason}
                 onChange={(event) => onReasonChange?.(event.target.value)}
-                className="min-h-[72px] w-full resize-none rounded-xl border border-white/10 bg-black px-4 py-3 text-sm text-white outline-none placeholder:text-white/35 focus:border-white/25"
+                className="min-h-[72px] w-full resize-none rounded-[10px] border border-[#2A2A2A] bg-black px-3 py-3 text-[14px] text-white outline-none placeholder:text-[#7A7A7A] focus:border-white/25"
               />
             </label>
           ) : null}
 
           <label className="block">
-            <span className="mb-2 block text-[13px] font-medium text-white">
+            <span className="font-figtree mb-2 block text-[13px] leading-[16px] font-medium text-white">
               Admin notes <span className="text-[#E11D2E]">*</span>
             </span>
             <textarea
               value={adminNotes}
               onChange={(event) => onAdminNotesChange(event.target.value)}
-              className="min-h-[110px] w-full resize-none rounded-xl border border-white/10 bg-black px-4 py-3 text-sm text-white outline-none placeholder:text-white/35 focus:border-white/25"
+              className="min-h-[72px] w-full resize-none rounded-[10px] border border-[#2A2A2A] bg-black px-3 py-3 text-[14px] text-white outline-none placeholder:text-[#7A7A7A] focus:border-white/25"
             />
           </label>
         </div>
 
-        <div className="grid shrink-0 grid-cols-2 gap-3 px-6 pt-1 pb-6">
+        <div className="grid shrink-0 grid-cols-2 gap-4 px-6 pt-2 pb-6">
           <button
             type="button"
             onClick={onClose}
-            className="h-12 rounded-xl border border-white bg-transparent text-[15px] font-semibold text-white transition-colors hover:bg-white/5"
+            className="font-figtree h-[40px] w-[238px] rounded-[10px] border border-white bg-transparent text-[14px] leading-[20px] font-semibold text-white transition-colors hover:bg-white/5"
           >
             {cancelLabel}
           </button>
@@ -365,23 +380,31 @@ export function DecisionActionModal({
             onClick={onSubmit}
             disabled={isSubmitting}
             className={cn(
-              'flex h-12 items-center justify-center gap-2 rounded-xl px-4 text-[15px] font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-60',
+              'font-figtree flex h-[40px] w-[238px] items-center justify-center gap-[10px] rounded-[10px] px-[10px] text-[14px] leading-[20px] font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-60',
               styles.submit,
             )}
           >
             {submitLabel}
             {resolvedSubmitIcon === 'check' ? (
-              <span className="flex size-5 items-center justify-center rounded-full bg-white">
+              <span className="flex h-[18px] w-[18px] items-center justify-center rounded-full bg-white">
                 <Check
-                  className={cn('size-3', styles.checkIconColor ?? 'text-[#E11D2E]')}
+                  className={cn(
+                    'h-[10px] w-[10px]',
+
+                    styles.checkIconColor ?? 'text-[#16A34A]',
+                  )}
                   strokeWidth={3}
                   aria-hidden="true"
                 />
               </span>
             ) : null}
             {resolvedSubmitIcon === 'x' ? (
-              <span className="flex size-5 items-center justify-center rounded-full bg-white">
-                <X className="size-3 text-[#E11D2E]" strokeWidth={3} aria-hidden="true" />
+              <span className="flex h-[18px] w-[18px] items-center justify-center rounded-full bg-white">
+                <X
+                  className="h-[10px] w-[10px] text-[#D3191C]"
+                  strokeWidth={3}
+                  aria-hidden="true"
+                />
               </span>
             ) : null}
           </button>

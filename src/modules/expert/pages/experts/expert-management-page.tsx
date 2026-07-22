@@ -699,7 +699,7 @@ export const ExpertManagementPage = () => {
 
       <DecisionActionModal
         open={Boolean(deleteExpertTarget)}
-        variant="reject"
+        variant="delete"
         title="Delete Expert"
         description="Are you sure you want to delete this user? This will result in removal of the account after 21 days unless restored."
         submitLabel="Delete Expert"
