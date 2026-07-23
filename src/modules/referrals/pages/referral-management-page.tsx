@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { BarChart3, Eye, Mail, Pencil, Trash2, UserPlus } from 'lucide-react'
+import { Eye, Mail, Pencil, Plus, SlidersHorizontal, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { EditRecipientModal } from '../components/edit-recipient-modal'
@@ -36,7 +36,7 @@ export function ReferralManagementPage() {
   const [detailsExpert, setDetailsExpert] = useState<ExpertInvite | null>(null)
   const [editExpert, setEditExpert] = useState<ExpertInvite | null>(null)
 
-  const { data: statsData } = useReferralStats()
+  const { data: statsData, isLoading: statsLoading } = useReferralStats()
   const { data: expertData, isLoading: expertLoading } = useExpertInvites({
     page: currentPage,
     limit: 10,
@@ -168,9 +168,9 @@ export function ReferralManagementPage() {
     <div className="flex flex-col gap-4 md:gap-6">
       <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
         <div>
-          <h1 className="text-2xl font-bold text-white md:text-3xl">Referral Management</h1>
-          <p className="mt-1 text-sm text-slate-400 md:text-base">
-            Track and manage platform-driven expert referrals
+          <h1 className="text-h1 text-brand-text">Referral Management</h1>
+          <p className="text-body-md text-muted md:text-body-lg mt-1">
+            Track and manage user-driven and platform-driven referrals
           </p>
         </div>
         <div className="flex w-full flex-col gap-2 sm:flex-row md:w-auto">
@@ -178,21 +178,18 @@ export function ReferralManagementPage() {
             className="ui-manage-metrics h-9 w-full rounded-xl bg-[#FBC078] px-5 text-sm font-semibold text-black shadow-none hover:bg-[#EEB46A] md:w-auto"
             onClick={() => toast.info('Metrics configuration coming soon')}
           >
-            <BarChart3 className="size-4" />
+            <SlidersHorizontal className="size-4" />
             Manage Metrics
           </Button>
 
-          <Button
-            className="h-9 w-full rounded-xl bg-[#FBC078] px-5 text-sm font-semibold text-black shadow-none hover:bg-[#EEB46A] md:w-auto"
-            onClick={() => setInviteOpen(true)}
-          >
-            <UserPlus className="size-4" />
-            Refer Expert
+          <Button type="button" className="w-full md:w-auto" onClick={() => setInviteOpen(true)}>
+            <Plus className="size-4" />
+            Invite New Expert
           </Button>
         </div>
       </div>
 
-      <ReferralStatsBar metrics={statsData?.data} />
+      <ReferralStatsBar metrics={statsData?.data} isLoading={statsLoading} />
 
       <DataTable
         columns={expertColumns}

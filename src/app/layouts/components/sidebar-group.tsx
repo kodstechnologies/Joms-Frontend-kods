@@ -68,7 +68,7 @@ export function SidebarGroup({
   return (
     <div
       className={cn(
-        'space-y-1 transition-opacity duration-200',
+        'space-y-0.5 transition-opacity duration-200',
         isInactiveModule && !compact && 'opacity-40',
       )}
     >
@@ -92,18 +92,17 @@ export function SidebarGroup({
       />
 
       {shouldShowChildren ? (
-        <div className="space-y-1 py-1">
+        <div className="space-y-0.5 pt-0.5 pb-0.5">
           {children.map((child) => {
             if (child.children && child.children.length > 0) {
               return (
-                <div key={child.key} style={{ paddingLeft: '0.75rem' }}>
-                  <SidebarGroup
-                    item={child}
-                    depth={depth + 1}
-                    activeTopLevelKey={activeTopLevelKey}
-                    onNavigate={onNavigate}
-                  />
-                </div>
+                <SidebarGroup
+                  key={child.key}
+                  item={child}
+                  depth={depth + 1}
+                  activeTopLevelKey={activeTopLevelKey}
+                  onNavigate={onNavigate}
+                />
               )
             }
 

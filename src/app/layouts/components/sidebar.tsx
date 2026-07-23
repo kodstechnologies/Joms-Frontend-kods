@@ -38,11 +38,11 @@ export function Sidebar({
   }
 
   return (
-    <div className={cn('flex h-full flex-col pt-2 pb-6', compact ? 'px-2' : 'px-3')}>
+    <div className={cn('flex h-full flex-col pt-1 pb-6', compact ? 'px-2' : 'px-3')}>
       <nav
         className={cn(
           'flex-1 overflow-y-auto pb-4 [scrollbar-color:rgba(255,255,255,0.2)_transparent] [scrollbar-width:thin]',
-          compact ? 'space-y-1' : 'space-y-1',
+          compact ? 'space-y-1' : 'space-y-0.5',
         )}
       >
         {visibleNavigation.map((item) => (

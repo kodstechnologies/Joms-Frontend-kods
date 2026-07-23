@@ -1,77 +1,150 @@
-import { BarChart3, Clock, Crown, RefreshCw, Target, TrendingUp, UserPlus } from 'lucide-react'
+import { TrendingDown, TrendingUp } from 'lucide-react'
 
 import type { ReferralMetrics } from '../types/referral'
-import { StatCard } from '@/shared/components/dashboard/stat-card'
 
 type ReferralStatsBarProps = {
   metrics?: ReferralMetrics
+  isLoading?: boolean
 }
 
-export function ReferralStatsBar({ metrics }: ReferralStatsBarProps) {
-  if (!metrics) return null
+type MetricTrend = {
+  direction: 'up' | 'down'
+  percentage: number
+  label?: string
+}
 
-  const primaryCards = [
+type MetricCardData = {
+  id: string
+  label: string
+  value: string
+  trend: MetricTrend
+}
+
+function buildMetricCards(metrics: ReferralMetrics): MetricCardData[] {
+  return [
     {
-      title: 'Total Expert Referrals',
-      value: metrics.totalReferralsGenerated.toLocaleString('en-IN'),
-      icon: UserPlus,
-      trend: { direction: 'up' as const, percentage: 5.2, label: 'vs last month' },
+      id: 'total-referrals',
+      label: 'Total Referrals Generated',
+      value: metrics.totalReferralsGenerated.toLocaleString('en-US'),
+      trend: { direction: 'up', percentage: 6.7 },
     },
     {
-      title: 'Active Expert Invites',
-      value: String(metrics.counts.activeExpertInvites),
-      icon: TrendingUp,
-      trend: { direction: 'up' as const, percentage: 3.2, label: 'vs last month' },
+      id: 'user-share-rate',
+      label: 'User-to-User Share Rate',
+      value: `${metrics.userToUserShareRate}%`,
+      trend: { direction: 'up', percentage: 6.7 },
     },
     {
-      title: 'Admin Send Success Rate',
+      id: 'admin-send-success',
+      label: 'Admin Send Success Rate',
       value: `${metrics.adminSendSuccessRate}%`,
-      icon: BarChart3,
-      trend: { direction: 'up' as const, percentage: 2.5, label: 'vs last month' },
+      trend: { direction: 'up', percentage: 6.7 },
     },
     {
-      title: 'Referral Acceptance Rate',
+      id: 'acceptance-rate',
+      label: 'Referral Acceptance Rate',
       value: `${metrics.referralAcceptanceRate}%`,
-      icon: RefreshCw,
-      trend: { direction: 'up' as const, percentage: 1.5, label: 'vs last month' },
+      trend: { direction: 'up', percentage: 12.5 },
     },
-  ]
-
-  const secondaryCards = [
-    { title: 'Expert Onboarding Rate', value: `${metrics.onboardingRate}%`, icon: UserPlus },
-    { title: 'Conversion Rate', value: `${metrics.conversionRate}%`, icon: TrendingUp },
-    { title: 'Referral Expiry Rate', value: `${metrics.referralExpiryRate}%`, icon: Clock },
-    { title: 'Top Source Performance', value: metrics.topSourcePerformance, icon: Crown },
-    { title: 'Total Goals Completed', value: String(metrics.totalGoalsCompleted), icon: Target },
     {
-      title: 'Expert Memberships Unlocked',
+      id: 'onboarding-rate',
+      label: 'Onboarding Rate',
+      value: `${metrics.onboardingRate}%`,
+      trend: { direction: 'up', percentage: 6.7 },
+    },
+    {
+      id: 'conversion-rate',
+      label: 'Conversion Rate',
+      value: `${metrics.conversionRate}%`,
+      trend: { direction: 'up', percentage: 6.7 },
+    },
+    {
+      id: 'expiry-rate',
+      label: 'Referral Expiry Rate',
+      value: `${metrics.referralExpiryRate}%`,
+      trend: { direction: 'up', percentage: 6.7 },
+    },
+    {
+      id: 'top-source',
+      label: 'Top Source Performance',
+      value: metrics.topSourcePerformance,
+      trend: { direction: 'up', percentage: 12.5 },
+    },
+    {
+      id: 'goals-completed',
+      label: 'Total Goals Completed (10/10)',
+      value: String(metrics.totalGoalsCompleted),
+      trend: { direction: 'up', percentage: 6.7 },
+    },
+    {
+      id: 'memberships-unlocked',
+      label: 'Memberships unlocked',
       value: String(metrics.membershipsUnlocked),
-      icon: Crown,
+      trend: { direction: 'up', percentage: 6.7 },
     },
     {
-      title: 'Average referrals per expert',
+      id: 'avg-referrals',
+      label: 'Average referrals per user',
       value: String(metrics.averageReferralsPerUser),
-      icon: UserPlus,
+      trend: { direction: 'up', percentage: 6.7 },
     },
     {
-      title: 'Average days to reach goal',
+      id: 'avg-days-to-goal',
+      label: 'Average days to reach goal',
       value: String(metrics.averageDaysToReachGoal),
-      icon: Clock,
+      trend: { direction: 'up', percentage: 12.5 },
     },
   ]
+}
+
+function ReferralMetricCard({ metric }: { metric: MetricCardData }) {
+  const isUp = metric.trend.direction === 'up'
 
   return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {primaryCards.map((card) => (
-          <StatCard key={card.title} {...card} />
+    <div className="rounded-brand-lg bg-brand-surface flex min-h-[130px] flex-col border border-white/[0.06] p-4 transition-colors hover:border-white/15">
+      <p className="text-body-sm text-muted font-medium">{metric.label}</p>
+      <p className="text-h3 mt-2 font-bold tracking-tight text-white">{metric.value}</p>
+      <div className="mt-auto flex items-center gap-2 pt-3">
+        <span className="bg-brand-positive/15 text-brand-positive inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-bold">
+          {isUp ? <TrendingUp className="size-3" /> : <TrendingDown className="size-3" />}
+          {metric.trend.percentage}%
+        </span>
+        <span className="text-muted text-[10px]">{metric.trend.label ?? 'vs last month'}</span>
+      </div>
+    </div>
+  )
+}
+
+function MetricCardSkeleton() {
+  return (
+    <div className="rounded-brand-lg bg-brand-surface min-h-[130px] border border-white/[0.06] p-4">
+      <div className="h-3 w-28 animate-pulse rounded bg-white/10" />
+      <div className="mt-3 h-7 w-20 animate-pulse rounded bg-white/10" />
+      <div className="mt-4 h-5 w-32 animate-pulse rounded bg-white/5" />
+    </div>
+  )
+}
+
+export function ReferralStatsBar({ metrics, isLoading }: ReferralStatsBarProps) {
+  const cards = metrics ? buildMetricCards(metrics) : []
+
+  if (isLoading) {
+    return (
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        {Array.from({ length: 12 }).map((_, index) => (
+          <MetricCardSkeleton key={index} />
         ))}
       </div>
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-4">
-        {secondaryCards.map((card) => (
-          <StatCard key={card.title} title={card.title} value={card.value} icon={card.icon} />
-        ))}
-      </div>
+    )
+  }
+
+  if (!metrics) return null
+
+  return (
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      {cards.map((card) => (
+        <ReferralMetricCard key={card.id} metric={card} />
+      ))}
     </div>
   )
 }

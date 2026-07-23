@@ -35,7 +35,8 @@ export function SidebarItem({
   onNavigate,
   compact = false,
 }: SidebarItemProps) {
-  const paddingLeft = compact ? 'px-0' : depth === 0 ? 'pl-3' : depth === 1 ? 'pl-8' : 'pl-11'
+  // Nested items: modest indent under parent label — no ghost icon column
+  const paddingLeft = compact ? 'px-0' : depth === 0 ? 'pl-3' : depth === 1 ? 'pl-6' : 'pl-8'
 
   const renderContent = (isActive?: boolean) => {
     const resolvedActive = isActive ?? active
@@ -45,8 +46,8 @@ export function SidebarItem({
     return (
       <div
         className={cn(
-          'text-body-md flex items-center gap-3 transition-all duration-200',
-          compact ? 'mx-auto justify-center py-2' : 'py-2 pr-3',
+          'text-body-sm flex items-center gap-2.5 transition-all duration-200',
+          compact ? 'mx-auto justify-center py-2' : 'py-1 pr-3',
           paddingLeft,
           compact
             ? showCompactActive
@@ -63,22 +64,23 @@ export function SidebarItem({
           <Icon
             className={cn(
               'shrink-0 transition-colors duration-200',
-              compact ? 'size-5' : 'size-4',
+              compact ? 'size-5' : 'size-3.5',
               showCompactActive ? 'text-white' : '',
             )}
             strokeWidth={compact ? 1.75 : 2}
           />
-        ) : (
-          <span className={cn('shrink-0', compact ? 'size-5' : 'size-4')} />
-        )}
+        ) : null}
         {!compact ? (
           <span
             className={cn(
-              'min-w-0 flex-1 truncate',
-              resolvedActive && depth > 0 && 'border-b border-white pb-0.5',
+              'min-w-0 truncate',
+              // Grow only when chevron/badge need to stay on the right edge
+              (depth === 0 || badge || expandable) && 'flex-1',
             )}
           >
-            {label}
+            <span className={cn(resolvedActive && depth > 0 && 'border-b border-white pb-px')}>
+              {label}
+            </span>
           </span>
         ) : null}
         {!compact && badge ? (
@@ -99,7 +101,7 @@ export function SidebarItem({
         {!compact && expandable ? (
           <ChevronDown
             className={cn(
-              'size-4 shrink-0 transition-transform',
+              'size-3.5 shrink-0 transition-transform',
               expanded ? 'rotate-180' : 'rotate-0',
             )}
           />

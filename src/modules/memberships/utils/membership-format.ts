@@ -110,17 +110,17 @@ export const getStatusLabel = (status: MembershipPlan['status']) =>
 export const getStatusClassName = (status: MembershipPlan['status']) => {
   switch (status) {
     case 'active':
-      return 'bg-[#EBC38C]/15 text-[#EBC38C] border-[#EBC38C]/30'
+      return 'bg-brand-teal/35 text-brand-progress border-brand-positive/25'
     case 'paused':
       return 'bg-amber-500/15 text-amber-300 border-amber-500/25'
     case 'inactive':
-      return 'bg-[#C62828]/15 text-[#E35D5D] border-[#C62828]/30'
+      return 'bg-brand-danger/15 text-brand-danger border-brand-danger/30'
     case 'cancelled':
-      return 'bg-[#C62828]/15 text-[#E35D5D] border-[#C62828]/30'
+      return 'bg-brand-danger/15 text-brand-danger border-brand-danger/30'
     case 'deleted':
-      return 'bg-[#C62828]/15 text-[#E35D5D] border-[#C62828]/30'
+      return 'bg-brand-danger/15 text-brand-danger border-brand-danger/30'
     default:
-      return 'bg-white/10 text-[#CFCFCF] border-white/10'
+      return 'bg-white/10 text-brand-muted border-white/10'
   }
 }
 
