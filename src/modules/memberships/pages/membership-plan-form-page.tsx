@@ -39,7 +39,7 @@ export function MembershipPlanFormPage() {
         await updateMutation.mutateAsync({
           id,
           payload: {
-            type: plan?.type ?? values.type,
+            type: 'expert',
             planName: values.planName,
             pricing: values.pricing,
             features: values.features,
@@ -121,7 +121,7 @@ export function MembershipPlanFormPage() {
         </div>
       </div>
 
-      <MembershipPlanForm initialPlan={plan ?? null} defaultType="expert" onSubmit={handleSubmit} />
+      <MembershipPlanForm initialPlan={plan ?? null} onSubmit={handleSubmit} />
     </div>
   )
 }

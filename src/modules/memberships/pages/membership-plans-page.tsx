@@ -332,10 +332,7 @@ export function MembershipPlansPage({
             <Download className="size-4" />
             Export Data
           </Button>
-          <Button
-            className="ui-cta ui-cta-primary"
-            onClick={() => navigate('/memberships/plans/create')}
-          >
+          <Button className="ui-cta ui-cta-primary" onClick={() => setCreateOpen(true)}>
             <Plus className="size-4" />
             Add New Plan
           </Button>
@@ -391,10 +388,7 @@ export function MembershipPlansPage({
           <p className="text-body-md text-muted mt-2">
             Create your first plan to start managing memberships.
           </p>
-          <Button
-            className="ui-cta ui-cta-primary mt-5"
-            onClick={() => navigate('/memberships/plans/create')}
-          >
+          <Button className="ui-cta ui-cta-primary mt-5" onClick={() => setCreateOpen(true)}>
             <Plus className="size-4" />
             Add New Plan
           </Button>
@@ -607,7 +601,7 @@ function PlanSection({
   return (
     <section className="space-y-4">
       <h2 className="text-h4 text-white">{title}</h2>
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-2 2xl:grid-cols-3">
+      <div className="grid grid-cols-1 justify-items-start gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {plans.map((plan) => (
           <MembershipPlanCard key={plan._id} plan={plan} {...handlers} />
         ))}
