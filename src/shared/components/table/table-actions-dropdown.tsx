@@ -100,10 +100,8 @@ export function TableActionsDropdown({
               ref={menuRef}
               style={{ top: position.top, left: position.left, minWidth: menuWidth }}
               className={cn(
-                'radius-md fixed z-[101] py-1.5 text-left shadow-2xl',
-                tone === 'light'
-                  ? 'border border-slate-200 bg-white'
-                  : 'bg-brand-surface border border-white/10',
+                'ui-table-actions-menu fixed z-[101]',
+                tone === 'dark' && 'ui-table-actions-menu-dark',
                 menuClassName,
               )}
             >
@@ -136,10 +134,8 @@ export function TableActionsItem({
       type="button"
       onClick={onClick}
       className={cn(
-        'text-body-sm-semibold flex w-full items-center gap-2 px-4 py-2.5 text-left transition-all',
-        tone === 'light'
-          ? 'text-slate-800 hover:bg-slate-50 hover:text-slate-900'
-          : 'text-brand-stroke hover:text-brand-accent hover:bg-white/10',
+        'ui-table-actions-item',
+        tone === 'dark' && 'ui-table-actions-item-dark',
         className,
       )}
     >

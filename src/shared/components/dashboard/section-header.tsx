@@ -33,15 +33,27 @@ export function SectionHeader({
 
       {actions?.length ? (
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-          {actions.map((action) => (
-            <Button
-              key={action.label}
-              variant={action.variant ?? 'secondary'}
-              onClick={action.onClick}
-            >
-              {action.label}
-            </Button>
-          ))}
+          {actions.map((action) => {
+            const isExportData = action.label === 'Export Data'
+            const isManageMetrics = action.label === 'Manage Metrics'
+
+            return (
+              <Button
+                key={action.label}
+                variant={isExportData ? 'primary' : (action.variant ?? 'secondary')}
+                onClick={action.onClick}
+                className={
+                  isManageMetrics
+                    ? 'ui-manage-metrics'
+                    : isExportData
+                      ? 'ui-export-data'
+                      : undefined
+                }
+              >
+                {action.label}
+              </Button>
+            )
+          })}
         </div>
       ) : null}
     </div>

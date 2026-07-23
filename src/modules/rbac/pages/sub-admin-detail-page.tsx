@@ -172,7 +172,11 @@ export function SubAdminDetailPage() {
           </div>
         </div>
 
-        <Button variant="secondary" onClick={() => toast.info('Metrics configuration coming soon')}>
+        <Button
+          variant="secondary"
+          className="ui-manage-metrics"
+          onClick={() => toast.info('Metrics configuration coming soon')}
+        >
           <BarChart3 className="size-4" />
           Manage Metrics
         </Button>

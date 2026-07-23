@@ -83,21 +83,24 @@ const PausedCategoryTable = () => {
       </table>
 
       <div className="mt-6 flex items-center justify-between">
-        <button type="button" className="ui-cta ui-cta-secondary">
+        <button type="button" className="ui-pagination-btn ui-pagination-prev">
           Previous
         </button>
 
         <div className="flex gap-2">
-          <button type="button" className="ui-cta ui-cta-primary h-9 max-h-9 min-h-9 w-9 p-0">
-            1
+          <button
+            type="button"
+            className="ui-pagination-btn ui-pagination-page ui-pagination-page-active"
+          >
+            01
           </button>
 
-          <button type="button" className="ui-cta ui-cta-secondary h-9 max-h-9 min-h-9 w-9 p-0">
-            2
+          <button type="button" className="ui-pagination-btn ui-pagination-page">
+            02
           </button>
         </div>
 
-        <button type="button" className="ui-cta ui-cta-secondary">
+        <button type="button" className="ui-pagination-btn ui-pagination-next">
           Next
         </button>
       </div>

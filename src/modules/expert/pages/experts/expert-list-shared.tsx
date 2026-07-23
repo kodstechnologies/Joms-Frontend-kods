@@ -23,7 +23,7 @@ export function ExpertListHeader({ title, breadcrumb }: { title: string; breadcr
         <p className="text-body-sm-medium text-muted pl-7">{breadcrumb}</p>
       </header>
       <Button
-        className="h-9 w-full md:w-auto"
+        className="ui-manage-metrics h-9 w-full md:w-auto"
         onClick={() => navigate('/experts/management/metrics')}
       >
         <BarChart3 className="size-4" />

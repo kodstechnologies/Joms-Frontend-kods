@@ -49,7 +49,7 @@ export const PausedCategoriesPage = () => {
         <div className="flex w-full flex-col items-center gap-3 md:w-auto md:flex-row">
           <Button
             variant="secondary"
-            className="w-full md:w-auto"
+            className="ui-manage-metrics w-full md:w-auto"
             onClick={() => navigate(scope.metricsPath)}
           >
             <BarChart3 className="size-4" />

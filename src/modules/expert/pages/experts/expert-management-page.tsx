@@ -572,7 +572,7 @@ export const ExpertManagementPage = () => {
         </div>
         <div className="flex w-full flex-col items-center gap-3 md:w-auto md:flex-row">
           <Button
-            className="h-9 w-full md:w-auto"
+            className="ui-manage-metrics h-9 w-full md:w-auto"
             onClick={() => navigate('/experts/management/metrics')}
           >
             <BarChart3 className="size-4" />

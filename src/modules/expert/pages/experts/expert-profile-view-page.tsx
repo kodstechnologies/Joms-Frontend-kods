@@ -636,7 +636,7 @@ function ServicesSubTab({ expertId }: { expertId: string }) {
         <button
           type="button"
           onClick={() => comingSoon('Advance Filters')}
-          className="bg-brand-bg text-body-sm flex items-center gap-1.5 rounded-lg border border-white/5 px-3 py-2 font-semibold text-white"
+          className="ui-advance-filters ui-cta ui-cta-outline text-body-sm gap-1.5 px-3 font-semibold"
         >
           <SlidersHorizontal className="size-3.5" />
           Advance Filters
@@ -883,7 +883,7 @@ function AnalyticsTab({ expertId }: { expertId?: string }) {
         <button
           type="button"
           onClick={() => navigate('/experts/dashboard/metrics')}
-          className="bg-brand-accent/15 text-brand-accent text-body-sm flex items-center gap-1.5 rounded-lg px-3 py-2 font-semibold"
+          className="ui-manage-metrics bg-brand-accent/15 text-brand-accent text-body-sm flex items-center gap-1.5 rounded-lg px-3 py-2 font-semibold"
         >
           <Gauge className="size-3.5" />
           Manage Metrics
@@ -1276,7 +1276,7 @@ export function ExpertProfileViewPage() {
           onOpenChange={setProfileMenuOpen}
           menuWidth={220}
           tone="light"
-          menuClassName="rounded-lg py-2 shadow-[0_8px_24px_rgba(0,0,0,0.12)]"
+          menuClassName="py-2 shadow-[0_8px_24px_rgba(0,0,0,0.12)]"
         >
           <TableActionsItem
             tone="light"

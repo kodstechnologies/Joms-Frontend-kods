@@ -111,7 +111,7 @@ export function ExportDataModal({
             type="button"
             onClick={onExport}
             disabled={isExporting}
-            className="ui-cta ui-cta-primary w-full sm:w-auto"
+            className="ui-export-data ui-cta ui-cta-primary w-full sm:w-auto"
           >
             <Upload className="icon-sm" aria-hidden="true" />
             {isExporting ? 'Exporting...' : 'Export Data'}

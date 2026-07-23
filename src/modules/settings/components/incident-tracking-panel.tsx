@@ -130,6 +130,7 @@ export function IncidentTrackingPanel() {
         </div>
         <Button
           variant="secondary"
+          className="ui-manage-metrics"
           onClick={() => toast.message('Metrics configuration coming soon')}
         >
           Manage Metrics

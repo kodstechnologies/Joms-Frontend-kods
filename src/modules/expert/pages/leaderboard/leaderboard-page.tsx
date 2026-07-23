@@ -216,7 +216,7 @@ export const LeaderboardPage = () => {
             Top ranked experts based on platform performance
           </p>
         </div>
-        <Button onClick={() => navigate(metricsPath)}>
+        <Button className="ui-manage-metrics" onClick={() => navigate(metricsPath)}>
           <BarChart3 className="size-4" />
           Manage Metrics
         </Button>
@@ -232,21 +232,24 @@ export const LeaderboardPage = () => {
 
       <div className="rounded-brand-lg bg-brand-surface border border-white/[0.06] p-5">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          <div className="relative w-full lg:max-w-sm">
-            <Search className="text-muted absolute top-1/2 left-3 size-4 -translate-y-1/2" />
+          <div className="ui-table-search-wrap">
+            <Search className="ui-table-search-icon" aria-hidden="true" />
             <input
               type="text"
               placeholder="Search by name, ID or profession"
-              className="ui-input focus:border-brand-accent/50 text-body-sm pl-9 transition-colors outline-none"
+              className="ui-table-search"
             />
           </div>
 
           <div className="flex items-center gap-3">
-            <Button variant="secondary" className="gap-2">
+            <Button variant="secondary" className="ui-advance-filters gap-2">
               <SlidersHorizontal className="size-4" />
               Advance Filters
             </Button>
-            <Button onClick={() => toast.message('Export coming soon')} className="gap-2">
+            <Button
+              onClick={() => toast.message('Export coming soon')}
+              className="ui-export-data gap-2"
+            >
               <Download className="size-4" />
               Export Data
             </Button>
@@ -326,28 +329,26 @@ export const LeaderboardPage = () => {
         </div>
 
         <div className="mt-5 flex items-center justify-between">
-          <Button variant="secondary" className="px-4">
+          <button type="button" className="ui-pagination-btn ui-pagination-prev">
             Previous
-          </Button>
+          </button>
           <div className="flex items-center gap-2">
             {['01', '02'].map((page, index) => (
               <button
                 key={page}
                 type="button"
                 className={cn(
-                  'text-body-sm grid size-8 place-items-center rounded-md font-bold transition-colors',
-                  index === 0
-                    ? 'bg-brand-accent text-brand-text-dark'
-                    : 'text-muted border border-white/10 bg-white/5 hover:bg-white/10',
+                  'ui-pagination-btn ui-pagination-page',
+                  index === 0 && 'ui-pagination-page-active',
                 )}
               >
                 {page}
               </button>
             ))}
           </div>
-          <Button variant="secondary" className="px-4">
+          <button type="button" className="ui-pagination-btn ui-pagination-next">
             Next
-          </Button>
+          </button>
         </div>
       </div>
     </div>

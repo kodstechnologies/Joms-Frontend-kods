@@ -38,7 +38,7 @@ export function EscalationDetails() {
           </p>
         </div>
 
-        <Button className="h-11 rounded-xl bg-[#F6C978] px-5 font-semibold text-black hover:bg-[#E6B85D] hover:text-black">
+        <Button className="ui-manage-metrics h-11 rounded-xl bg-[#F6C978] px-5 font-semibold text-black hover:bg-[#E6B85D] hover:text-black">
           <SlidersHorizontal className="mr-2 h-4 w-4" />
           Manage Metrics
         </Button>

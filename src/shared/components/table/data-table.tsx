@@ -70,7 +70,7 @@ export function DataTable<TData>({
   searchValue,
   onSearchChange,
   searchPlaceholder = 'Search records',
-  advancedFilterLabel = 'Advanced Filters',
+  advancedFilterLabel = 'Advance Filters',
   onAdvancedFilter,
   onExport,
   isExporting = false,
@@ -118,26 +118,15 @@ export function DataTable<TData>({
     >
       <div className={cn('px-4 pt-4 sm:px-5 sm:pt-5', contentClassName)}>
         <div className="flex flex-wrap items-center justify-between gap-3 pb-2">
-          <div className="relative w-full sm:max-w-[320px] sm:flex-1">
-            <Search
-              className={cn(
-                'absolute top-1/2 left-3 size-3.5 -translate-y-1/2',
-                isCategoryTone ? 'text-muted' : 'text-brand-muted',
-              )}
-              aria-hidden="true"
-            />
+          <div className="ui-table-search-wrap">
+            <Search className="ui-table-search-icon" aria-hidden="true" />
             <input
               type="search"
               value={searchValue}
               onChange={(event) => onSearchChange(event.target.value)}
               placeholder={searchPlaceholder}
               aria-label={`Search ${resourceLabel}`}
-              className={cn(
-                'text-body-sm h-10 w-full rounded-xl border pr-3 pl-9 focus-visible:ring-1',
-                isCategoryTone
-                  ? 'bg-brand-bg placeholder:text-muted focus-visible:ring-brand-accent/40 border-white/10 text-white'
-                  : 'text-brand-text focus-visible:ring-brand-accent/40 bg-brand-bg placeholder:text-muted border-white/10',
-              )}
+              className="ui-table-search"
             />
           </div>
 
@@ -150,7 +139,7 @@ export function DataTable<TData>({
                 onClick={onAdvancedFilter}
                 disabled={!onAdvancedFilter}
                 className={cn(
-                  'text-body-sm h-10 flex-1 gap-2 rounded-xl border bg-transparent px-4 font-semibold shadow-none sm:flex-none',
+                  'ui-advance-filters text-body-sm flex-1 gap-2 rounded-xl border bg-transparent px-4 font-semibold shadow-none sm:flex-none',
                   isCategoryTone
                     ? 'hover:border-brand-accent border-white/25 text-white hover:bg-white/5'
                     : 'text-brand-text hover:border-brand-accent border-white/45 hover:bg-white/5',
@@ -166,7 +155,7 @@ export function DataTable<TData>({
                 variant="primary"
                 onClick={onExport}
                 disabled={!onExport || isExporting}
-                className="flex-1 gap-2 sm:flex-none"
+                className="ui-export-data flex-1 gap-2 sm:flex-none"
               >
                 <Upload className="icon-md" aria-hidden="true" />
                 {isExporting ? 'Exporting...' : 'Export Data'}
@@ -176,13 +165,13 @@ export function DataTable<TData>({
         </div>
 
         <div className="pb-4" aria-live="polite">
-          <p
-            className={cn(
-              'text-body-sm leading-none',
-              isCategoryTone ? 'text-muted' : 'text-muted',
-            )}
-          >
-            Showing {firstItem}-{lastItem} of {pagination.totalItems} {resourceLabel}
+          <p className="ui-table-showing">
+            Showing{' '}
+            <span className="ui-table-showing-value">
+              {firstItem}-{lastItem}
+            </span>{' '}
+            of <span className="ui-table-showing-value">{pagination.totalItems}</span>{' '}
+            {resourceLabel}
           </p>
         </div>
       </div>
@@ -285,47 +274,33 @@ export function DataTable<TData>({
           isCategoryTone ? 'border-white/10' : 'border-white/10',
         )}
       >
-        <Button
+        <button
           type="button"
-          variant="secondary"
           onClick={() => changePage(currentPage - 1)}
           disabled={isLoading || currentPage <= 1}
-          className={cn(
-            'rounded-brand-md text-body-sm h-8 w-full border bg-transparent px-3 font-medium shadow-none sm:w-auto',
-            isCategoryTone
-              ? 'hover:border-brand-accent border-white/25 text-white hover:bg-white/5'
-              : 'text-brand-text hover:border-brand-accent border-white/25 hover:bg-white/5',
-          )}
+          className="ui-pagination-btn ui-pagination-prev"
         >
           Previous
-        </Button>
+        </button>
 
-        <nav
-          className="flex items-center gap-1 md:gap-2"
-          aria-label={`${resourceLabel} pagination`}
-        >
+        <nav className="flex items-center gap-2" aria-label={`${resourceLabel} pagination`}>
           {visiblePages.map((page, index) => {
             const previousPage = visiblePages[index - 1]
             const hasGap = previousPage !== undefined && page - previousPage > 1
+            const isActive = currentPage === page
 
             return (
-              <div key={page} className="flex items-center gap-1 md:gap-2">
+              <div key={page} className="flex items-center gap-2">
                 {hasGap && <span className="text-brand-muted px-1">...</span>}
                 <button
                   type="button"
                   onClick={() => changePage(page)}
                   disabled={isLoading}
-                  aria-current={currentPage === page ? 'page' : undefined}
+                  aria-current={isActive ? 'page' : undefined}
                   aria-label={`Go to page ${page}`}
                   className={cn(
-                    'rounded-brand-md text-body-sm flex size-8 items-center justify-center border font-semibold transition-colors disabled:opacity-50',
-                    currentPage === page
-                      ? isCategoryTone
-                        ? 'border-brand-accent bg-brand-accent text-brand-text-dark'
-                        : 'border-brand-accent bg-brand-accent text-brand-text-dark'
-                      : isCategoryTone
-                        ? 'hover:border-brand-accent border-white/25 bg-transparent text-white hover:bg-white/5'
-                        : 'text-brand-text hover:border-brand-accent border-white/25 bg-transparent hover:bg-white/5',
+                    'ui-pagination-btn ui-pagination-page',
+                    isActive && 'ui-pagination-page-active',
                   )}
                 >
                   {page.toString().padStart(2, '0')}
@@ -335,20 +310,14 @@ export function DataTable<TData>({
           })}
         </nav>
 
-        <Button
+        <button
           type="button"
-          variant="secondary"
           onClick={() => changePage(currentPage + 1)}
           disabled={isLoading || currentPage >= Math.max(pagination.totalPages, 1)}
-          className={cn(
-            'rounded-brand-md text-body-sm h-8 w-full border bg-transparent px-3 font-medium shadow-none sm:w-auto',
-            isCategoryTone
-              ? 'hover:border-brand-accent border-white/25 text-white hover:bg-white/5'
-              : 'text-brand-text hover:border-brand-accent border-white/25 hover:bg-white/5',
-          )}
+          className="ui-pagination-btn ui-pagination-next"
         >
           Next
-        </Button>
+        </button>
       </div>
     </section>
   )

@@ -178,7 +178,7 @@ export function ReferralManagementPage() {
         </div>
         <div className="flex w-full flex-col gap-2 sm:flex-row md:w-auto">
           <Button
-            className="h-9 w-full rounded-xl bg-[#FBC078] px-5 text-sm font-semibold text-black shadow-none hover:bg-[#EEB46A] md:w-auto"
+            className="ui-manage-metrics h-9 w-full rounded-xl bg-[#FBC078] px-5 text-sm font-semibold text-black shadow-none hover:bg-[#EEB46A] md:w-auto"
             onClick={() => toast.info('Metrics configuration coming soon')}
           >
             <BarChart3 className="size-4" />

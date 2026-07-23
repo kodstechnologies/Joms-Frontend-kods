@@ -115,12 +115,18 @@ export function ServiceMarketplacePage() {
         </div>
 
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-          <Button className="h-9" onClick={() => navigate('/services/dashboard/metrics')}>
+          <Button
+            className="ui-manage-metrics h-9"
+            onClick={() => navigate('/services/dashboard/metrics')}
+          >
             <BarChart3 className="size-4" />
             Manage Metrics
           </Button>
 
-          <Button className="h-9" onClick={() => toast.message('Export coming soon')}>
+          <Button
+            className="ui-export-data h-9"
+            onClick={() => toast.message('Export coming soon')}
+          >
             <Download className="size-4" />
             Export Data
           </Button>

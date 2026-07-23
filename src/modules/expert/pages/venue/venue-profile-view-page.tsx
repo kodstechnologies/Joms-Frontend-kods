@@ -317,7 +317,7 @@ function SpacesTab({ data, venueId }: { data: VenueFullView; venueId: string }) 
         <button
           type="button"
           onClick={() => comingSoon('Advance Filters')}
-          className="text-body-sm flex h-10 items-center justify-center gap-2 rounded-md border border-white/10 bg-black px-4 font-semibold text-white transition-colors hover:bg-white/5"
+          className="ui-advance-filters ui-cta ui-cta-outline text-body-sm gap-2 px-4 font-semibold"
         >
           <SlidersHorizontal className="size-4" />
           Advance Filters
@@ -460,7 +460,7 @@ function AnalyticsTab({ data, venueId }: { data: VenueFullView; venueId: string 
         <button
           type="button"
           onClick={() => navigate('/venues/dashboard/metrics')}
-          className="bg-brand-accent/15 text-brand-accent text-body-sm flex items-center gap-1.5 rounded-lg px-3 py-2 font-semibold"
+          className="ui-manage-metrics bg-brand-accent/15 text-brand-accent text-body-sm flex items-center gap-1.5 rounded-lg px-3 py-2 font-semibold"
         >
           <Gauge className="size-3.5" />
           Manage Metrics

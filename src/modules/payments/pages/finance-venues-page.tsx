@@ -254,7 +254,10 @@ export function FinanceVenuesPage() {
             <span className="text-brand-text font-semibold">Venues</span>
           </p>
         </div>
-        <Button onClick={() => toast.message('Metrics configuration coming soon')}>
+        <Button
+          className="ui-manage-metrics"
+          onClick={() => toast.message('Metrics configuration coming soon')}
+        >
           <SlidersHorizontal className="size-4" />
           Manage Metrics
         </Button>

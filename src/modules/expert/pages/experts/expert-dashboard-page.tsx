@@ -320,7 +320,7 @@ export const ExpertDashboardPage = () => {
         <div className="flex w-full flex-col items-stretch gap-3 sm:w-auto sm:flex-row sm:items-center">
           <Button
             type="button"
-            className="h-11 rounded-xl px-6 text-sm font-semibold sm:w-auto"
+            className="ui-manage-metrics h-11 rounded-xl px-6 text-sm font-semibold sm:w-auto"
             onClick={() => navigate('/experts/dashboard/metrics')}
           >
             <BarChart3 className="size-4" />

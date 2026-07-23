@@ -13,7 +13,7 @@ export function EscalationHeader() {
         </p>
       </div>
 
-      <Button className="bg-[#F0C27B] text-black hover:bg-[#f4cc91]">
+      <Button className="ui-manage-metrics bg-[#F0C27B] text-black hover:bg-[#f4cc91]">
         <SlidersHorizontal className="mr-2 h-4 w-4" />
         Manage Metrics
       </Button>

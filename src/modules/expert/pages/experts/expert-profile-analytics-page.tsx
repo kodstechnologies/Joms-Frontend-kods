@@ -124,11 +124,14 @@ export function ExpertProfileAnalyticsPage() {
           </div>
         </div>
         <div className="flex flex-wrap gap-3">
-          <Button className="h-9" onClick={() => navigate('/experts/dashboard/metrics')}>
+          <Button
+            className="ui-manage-metrics h-9"
+            onClick={() => navigate('/experts/dashboard/metrics')}
+          >
             <SlidersHorizontal className="size-4" />
             Manage Metrics
           </Button>
-          <Button className="h-9">
+          <Button className="ui-export-data h-9">
             <Upload className="size-4" />
             Export Data
           </Button>

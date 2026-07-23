@@ -161,7 +161,7 @@ export function PlatformHealthPage() {
           <button
             type="button"
             onClick={() => toast.message('Export coming soon')}
-            className="ui-cta ui-cta-secondary inline-flex items-center gap-2 px-4"
+            className="ui-export-data ui-cta ui-cta-primary inline-flex items-center gap-2 px-4"
           >
             <Upload className="size-4" />
             Export Data
@@ -169,7 +169,7 @@ export function PlatformHealthPage() {
           <button
             type="button"
             onClick={() => toast.message('Metrics configuration coming soon')}
-            className="ui-cta ui-cta-primary inline-flex items-center gap-2 px-4"
+            className="ui-manage-metrics ui-cta ui-cta-primary inline-flex items-center gap-2 px-4"
           >
             <Settings2 className="size-4" />
             Manage Metrics

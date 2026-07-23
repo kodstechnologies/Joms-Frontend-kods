@@ -352,6 +352,92 @@ button:disabled,
   background: #b81417;
 }
 
+.ui-advance-filters {
+  box-sizing: border-box;
+  height: var(--brand-cta-height);
+  min-height: var(--brand-cta-height);
+  max-height: var(--brand-cta-height);
+}
+
+.ui-pagination-btn {
+  display: inline-flex;
+  box-sizing: border-box;
+  height: var(--brand-cta-height);
+  min-height: var(--brand-cta-height);
+  max-height: var(--brand-cta-height);
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--brand-radius-sm);
+  border: 1px solid #ffffff;
+  background: #050505;
+  color: #ffffff;
+  padding: 0;
+  font-family: 'Figtree', ui-sans-serif, system-ui, sans-serif;
+  font-weight: 600;
+  font-size: 14px;
+  line-height: 22px;
+  letter-spacing: 0;
+  white-space: nowrap;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    opacity 0.15s ease;
+}
+
+.ui-pagination-btn:hover:not(:disabled) {
+  background: rgb(255 255 255 / 5%);
+}
+
+.ui-pagination-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.ui-pagination-prev {
+  width: 75px;
+  min-width: 75px;
+  max-width: 75px;
+}
+
+.ui-pagination-next {
+  width: 52px;
+  min-width: 52px;
+  max-width: 52px;
+}
+
+.ui-pagination-page {
+  width: 40px;
+  min-width: 40px;
+  max-width: 40px;
+}
+
+.ui-pagination-page-active,
+.ui-pagination-page-active:hover:not(:disabled) {
+  background: var(--brand-gold-to);
+  border-color: var(--brand-gold-to);
+  color: #000000;
+}
+
+@media (min-width: 1024px) {
+  .ui-manage-metrics {
+    width: 152px !important;
+    min-width: 152px !important;
+    max-width: 152px !important;
+  }
+
+  .ui-export-data {
+    width: 126px !important;
+    min-width: 126px !important;
+    max-width: 126px !important;
+  }
+
+  .ui-advance-filters {
+    width: 149px !important;
+    min-width: 149px !important;
+    max-width: 149px !important;
+  }
+}
+
 .ui-input {
   box-sizing: border-box;
   height: var(--brand-input-height);
@@ -374,6 +460,62 @@ button:disabled,
 
 .ui-input:focus {
   border-color: rgb(255 255 255 / 25%);
+}
+
+.ui-table-search-wrap {
+  position: relative;
+  width: 100%;
+  max-width: 378px;
+}
+
+.ui-table-search {
+  box-sizing: border-box;
+  height: 50px;
+  min-height: 50px;
+  max-height: 50px;
+  width: 100%;
+  border-radius: var(--brand-radius-lg);
+  border: 1px solid rgb(255 255 255 / 15%);
+  background: #050505;
+  padding: 0 16px 0 44px;
+  font-family: 'Figtree', ui-sans-serif, system-ui, sans-serif;
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 20px;
+  color: #ffffff;
+  outline: none;
+}
+
+.ui-table-search::placeholder {
+  color: rgb(255 255 255 / 50%);
+}
+
+.ui-table-search:focus {
+  border-color: rgb(255 255 255 / 30%);
+}
+
+.ui-table-search-icon {
+  position: absolute;
+  top: 50%;
+  left: 16px;
+  width: 18px;
+  height: 18px;
+  transform: translateY(-50%);
+  color: rgb(255 255 255 / 50%);
+  pointer-events: none;
+}
+
+.ui-table-showing {
+  font-family: 'Figtree', ui-sans-serif, system-ui, sans-serif;
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 22px;
+  color: rgb(255 255 255 / 50%);
+}
+
+.ui-table-showing-value {
+  color: #ffffff;
+  font-weight: 600;
 }
 
 .ui-textarea {
@@ -399,6 +541,57 @@ button:disabled,
 
 .ui-textarea:focus {
   border-color: rgb(255 255 255 / 25%);
+}
+
+.ui-table-actions-menu {
+  width: max-content;
+  max-width: min(280px, calc(100vw - 16px));
+  border-radius: 10px 0 10px 10px !important;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  padding: 6px 0;
+  text-align: left;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 12%);
+}
+
+.ui-table-actions-menu-dark {
+  border-color: rgb(255 255 255 / 10%);
+  background: var(--brand-surface);
+  box-shadow: 0 16px 40px rgb(0 0 0 / 45%);
+}
+
+.ui-table-actions-item {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border: none;
+  background: transparent;
+  font-family: 'Figtree', ui-sans-serif, system-ui, sans-serif;
+  font-weight: 500 !important;
+  font-size: 14px;
+  line-height: 14px;
+  letter-spacing: 0;
+  text-align: left;
+  color: #1e293b;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.ui-table-actions-item:hover {
+  background: #f8fafc;
+  color: #0f172a;
+}
+
+.ui-table-actions-item-dark {
+  color: var(--brand-stroke);
+}
+
+.ui-table-actions-item-dark:hover {
+  background: rgb(255 255 255 / 10%);
+  color: var(--brand-accent);
 }
 
 .ui-modal-shell {

@@ -298,7 +298,7 @@ export function MembershipPlansPage({
           <p className="text-body-md text-muted mt-2 leading-relaxed">{subtitle}</p>
         </div>
         <Button
-          className="ui-cta ui-cta-primary w-full shrink-0 md:w-auto"
+          className="ui-manage-metrics ui-cta ui-cta-primary w-full shrink-0 md:w-auto"
           onClick={() => toast.info('Metrics configuration coming soon')}
         >
           <BarChart3 className="size-4" />
@@ -328,11 +328,7 @@ export function MembershipPlansPage({
           />
         </div>
         <div className="flex flex-wrap gap-2.5">
-          <Button
-            variant="secondary"
-            className="ui-cta ui-cta-secondary"
-            onClick={() => toast.info('Export coming soon')}
-          >
+          <Button className="ui-export-data" onClick={() => toast.info('Export coming soon')}>
             <Download className="size-4" />
             Export Data
           </Button>

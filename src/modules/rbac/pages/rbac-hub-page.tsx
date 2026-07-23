@@ -467,6 +467,7 @@ export function RbacHubPage() {
         <div className="flex w-full flex-col gap-2 sm:flex-row md:w-auto">
           <Button
             variant="secondary"
+            className="ui-manage-metrics"
             onClick={() => toast.info('Metrics configuration coming soon')}
           >
             <BarChart3 className="size-4" />
