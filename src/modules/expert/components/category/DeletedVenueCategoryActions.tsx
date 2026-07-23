@@ -7,7 +7,7 @@ import {
   TableActionsItem,
 } from '@/shared/components/table/table-actions-dropdown'
 
-import { CATEGORY_ACTION_ITEM_CLASS, CATEGORY_ACTION_MENU_CLASS } from './category-list-shared'
+import { CATEGORY_ACTION_ITEM_CLASS } from './category-list-shared'
 import type { VenueCategory } from './venue-category-table-columns'
 import {
   useHardDeleteVenueCategory,
@@ -30,7 +30,6 @@ const DeletedVenueCategoryActions = ({ category }: Props) => {
       isOpen={open}
       onOpenChange={setOpen}
       menuWidth={220}
-      menuClassName={CATEGORY_ACTION_MENU_CLASS}
     >
       <TableActionsItem
         className={CATEGORY_ACTION_ITEM_CLASS}

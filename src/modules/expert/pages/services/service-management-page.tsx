@@ -28,6 +28,7 @@ import { useServiceStore } from '../../store/service-store'
 import type { Service } from '../../type/service'
 import { getManagementStatusDisplay } from '../../utils/management-status'
 import { DataTable } from '@/shared/components/table/data-table'
+import { TableDateTimeCell } from '@/shared/components/table/table-datetime-cell'
 import {
   TableActionsDropdown,
   TableActionsItem,
@@ -312,7 +313,7 @@ export const ServiceManagementPage = () => {
         accessorKey: 'serviceid',
         header: 'Service ID',
         cell: ({ row }) => (
-          <span className="font-mono text-xs uppercase">
+          <span className="ui-table-id uppercase">
             {row.original.serviceid || row.original._id}
           </span>
         ),
@@ -349,7 +350,7 @@ export const ServiceManagementPage = () => {
         accessorKey: 'expertid',
         header: 'Expert ID',
         cell: ({ row }) => (
-          <span className="font-mono text-xs">{row.original.expertid || 'Not provided'}</span>
+          <span className="ui-table-id">{row.original.expertid || 'Not provided'}</span>
         ),
       },
       'expert-name': {
@@ -374,27 +375,7 @@ export const ServiceManagementPage = () => {
         id: 'created-at',
         accessorKey: 'createdAt',
         header: 'Created At',
-        cell: ({ row }) => {
-          const createdAt = new Date(row.original.createdAt)
-
-          return (
-            <div className="flex flex-col">
-              <span>
-                {createdAt.toLocaleDateString('en-US', {
-                  month: 'short',
-                  day: 'numeric',
-                  year: 'numeric',
-                })}
-              </span>
-              <span className="text-[10px] text-slate-500">
-                {createdAt.toLocaleTimeString('en-US', {
-                  hour: '2-digit',
-                  minute: '2-digit',
-                })}
-              </span>
-            </div>
-          )
-        },
+        cell: ({ row }) => <TableDateTimeCell value={row.original.createdAt} />,
       },
     }
 
@@ -561,6 +542,7 @@ export const ServiceManagementPage = () => {
             icon={card.icon}
             background={card.gradient}
             border={card.border}
+            size="listing"
             selected={activeStatus === card.status}
             onClick={() => {
               if (card.status === 'reported') {

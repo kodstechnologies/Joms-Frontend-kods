@@ -52,7 +52,7 @@ export function DeletedServicesPage() {
         accessorKey: 'serviceid',
         header: 'Service ID',
         cell: ({ row }) => (
-          <span className="font-mono text-xs uppercase">{row.original.serviceid || '—'}</span>
+          <span className="ui-table-id uppercase">{row.original.serviceid || '—'}</span>
         ),
       },
       { accessorKey: 'title', header: 'Service Name' },

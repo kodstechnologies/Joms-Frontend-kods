@@ -1,7 +1,9 @@
 import type { ColumnDef } from '@tanstack/react-table'
 
 import type { Expert } from '../../type/expert'
-import { displayExpertValue, formatExpertDateTime } from './expert-list-format'
+import { TableDateTimeCell } from '@/shared/components/table/table-datetime-cell'
+
+import { displayExpertValue } from './expert-list-format'
 import { ExpertStatusBadge } from './expert-list-shared'
 
 export function createExpertSelectColumn({
@@ -56,9 +58,7 @@ export function createExpertBaseColumns(): ColumnDef<Expert>[] {
       accessorKey: 'expertId',
       header: 'Expert ID',
       cell: ({ row }) => (
-        <span className="font-mono text-xs uppercase">
-          {displayExpertValue(row.original.expertId)}
-        </span>
+        <span className="ui-table-id uppercase">{displayExpertValue(row.original.expertId)}</span>
       ),
     },
     {
@@ -101,7 +101,7 @@ export function createExpertCreatedAtColumn(): ColumnDef<Expert> {
   return {
     accessorKey: 'createdAt',
     header: 'Created at',
-    cell: ({ row }) => formatExpertDateTime(row.original.createdAt),
+    cell: ({ row }) => <TableDateTimeCell value={row.original.createdAt} emptyLabel="N/A" />,
   }
 }
 
@@ -109,7 +109,7 @@ export function createExpertLastActiveColumn(): ColumnDef<Expert> {
   return {
     accessorKey: 'lastActive',
     header: 'Last Active',
-    cell: ({ row }) => formatExpertDateTime(row.original.lastActive),
+    cell: ({ row }) => <TableDateTimeCell value={row.original.lastActive} emptyLabel="N/A" />,
   }
 }
 
@@ -125,7 +125,12 @@ export function createExpertReportedAtColumn(): ColumnDef<Expert> {
   return {
     accessorKey: 'reportedAt',
     header: 'Reported at',
-    cell: ({ row }) => formatExpertDateTime(row.original.reportedAt || row.original.createdAt),
+    cell: ({ row }) => (
+      <TableDateTimeCell
+        value={row.original.reportedAt || row.original.createdAt}
+        emptyLabel="N/A"
+      />
+    ),
   }
 }
 
@@ -133,7 +138,12 @@ export function createExpertDeletedAtColumn(): ColumnDef<Expert> {
   return {
     accessorKey: 'deletedAt',
     header: 'Deleted at',
-    cell: ({ row }) => formatExpertDateTime(row.original.deletedAt || row.original.createdAt),
+    cell: ({ row }) => (
+      <TableDateTimeCell
+        value={row.original.deletedAt || row.original.createdAt}
+        emptyLabel="N/A"
+      />
+    ),
   }
 }
 

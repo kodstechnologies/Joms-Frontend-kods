@@ -27,6 +27,7 @@ import type { Expert } from '../../type/expert'
 import { openExpertApplicationView } from '../../utils/expert-application-navigation'
 import { getManagementStatusDisplay } from '../../utils/management-status'
 import { DataTable } from '@/shared/components/table/data-table'
+import { TableDateTimeCell } from '@/shared/components/table/table-datetime-cell'
 import {
   TableActionsDropdown,
   TableActionsItem,
@@ -40,7 +41,6 @@ import { Button } from '@/shared/components/ui/button'
 import { statusCardTones } from '@/shared/lib/design-tokens'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 
-const ACTION_MENU_CLASS = 'border border-slate-200 bg-white shadow-xl'
 const ACTION_ITEM_CLASS = 'text-slate-800 hover:bg-slate-100 hover:text-slate-900'
 
 const SUSPEND_REASON_OPTIONS: DecisionActionModalOption[] = [
@@ -57,29 +57,9 @@ const displayValue = (value: unknown): string => {
   return String(value)
 }
 
-const formatDateTimeCell = (value?: string | null) => {
-  if (!value) return 'N/A'
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return 'N/A'
-
-  return (
-    <div className="flex flex-col">
-      <span>
-        {date.toLocaleDateString('en-US', {
-          month: 'short',
-          day: 'numeric',
-          year: 'numeric',
-        })}
-      </span>
-      <span className="text-[10px] text-slate-500">
-        {date.toLocaleTimeString('en-US', {
-          hour: '2-digit',
-          minute: '2-digit',
-        })}
-      </span>
-    </div>
-  )
-}
+const formatDateTimeCell = (value?: string | null) => (
+  <TableDateTimeCell value={value} emptyLabel="N/A" />
+)
 
 export const ExpertManagementPage = () => {
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
@@ -322,7 +302,7 @@ export const ExpertManagementPage = () => {
         accessorKey: 'expertId',
         header: 'Expert ID',
         cell: ({ row }) => (
-          <span className="font-mono text-xs uppercase">{displayValue(row.original.expertId)}</span>
+          <span className="ui-table-id uppercase">{displayValue(row.original.expertId)}</span>
         ),
       },
       name: {
@@ -427,7 +407,6 @@ export const ExpertManagementPage = () => {
             isOpen={isOpen}
             onOpenChange={(open) => setActiveDropdownId(open ? expert.expertId : null)}
             menuWidth={220}
-            menuClassName={ACTION_MENU_CLASS}
           >
             {!isVenue && (
               <TableActionsItem
@@ -599,6 +578,7 @@ export const ExpertManagementPage = () => {
             icon={card.icon}
             background={card.gradient}
             border={card.border}
+            size="listing"
             selected={activeStatus === card.status}
             onClick={() => {
               if (card.status === 'pending') {

@@ -102,7 +102,7 @@ export function VenueDeletedPage() {
         accessorKey: 'venueid',
         header: 'Venue ID',
         cell: ({ row }) => (
-          <span className="font-mono text-xs uppercase">{getVenueDisplayId(row.original)}</span>
+          <span className="ui-table-id uppercase">{getVenueDisplayId(row.original)}</span>
         ),
       },
       { accessorKey: 'venueName', header: 'Name' },
@@ -115,7 +115,7 @@ export function VenueDeletedPage() {
         accessorKey: 'spaceid',
         header: 'Space ID',
         cell: ({ row }) => (
-          <span className="font-mono text-xs">{getVenueDisplaySpaceId(row.original)}</span>
+          <span className="ui-table-id">{getVenueDisplaySpaceId(row.original)}</span>
         ),
       },
       {

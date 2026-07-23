@@ -7,7 +7,7 @@ import {
   TableActionsItem,
 } from '@/shared/components/table/table-actions-dropdown'
 
-import { CATEGORY_ACTION_ITEM_CLASS, CATEGORY_ACTION_MENU_CLASS } from './category-list-shared'
+import { CATEGORY_ACTION_ITEM_CLASS } from './category-list-shared'
 import type { Category } from './category-table-columns'
 import {
   usePermanentDeleteServiceCategory,
@@ -30,7 +30,6 @@ const DeletedCategoryActions = ({ category }: Props) => {
       isOpen={open}
       onOpenChange={setOpen}
       menuWidth={220}
-      menuClassName={CATEGORY_ACTION_MENU_CLASS}
     >
       <TableActionsItem
         className={CATEGORY_ACTION_ITEM_CLASS}

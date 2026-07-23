@@ -1276,7 +1276,6 @@ export function ExpertProfileViewPage() {
           onOpenChange={setProfileMenuOpen}
           menuWidth={220}
           tone="light"
-          menuClassName="py-2 shadow-[0_8px_24px_rgba(0,0,0,0.12)]"
         >
           <TableActionsItem
             tone="light"

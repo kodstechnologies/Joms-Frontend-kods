@@ -3,6 +3,7 @@ import type { ColumnDef } from '@tanstack/react-table'
 
 import type { Expert } from '../../type/expert'
 import { ExpertStatusBadge } from './expert-list-shared'
+import { TableDateTimeCell } from '@/shared/components/table/table-datetime-cell'
 
 export const displayExpertValue = (value: unknown): string => {
   if (value === null || value === undefined) return 'N/A'
@@ -20,18 +21,9 @@ export const formatApplicationExpertId = (id?: string | null) => {
   return `#EXP${id.slice(-4).toUpperCase()}`
 }
 
-export const formatExpertDateTime = (value?: string | null) => {
-  if (!value) return 'N/A'
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return 'N/A'
-  return date.toLocaleString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
-}
+export const formatExpertDateTime = (value?: string | null) => (
+  <TableDateTimeCell value={value} emptyLabel="N/A" />
+)
 
 export function useExpertListSelection(experts: Expert[]) {
   const [selectedExpertIds, setSelectedExpertIds] = useState<string[]>([])
@@ -120,9 +112,7 @@ export function createExpertBaseColumns(): ColumnDef<Expert>[] {
       accessorKey: 'expertId',
       header: 'Expert ID',
       cell: ({ row }) => (
-        <span className="font-mono text-xs uppercase">
-          {displayExpertValue(row.original.expertId)}
-        </span>
+        <span className="ui-table-id uppercase">{displayExpertValue(row.original.expertId)}</span>
       ),
     },
     {

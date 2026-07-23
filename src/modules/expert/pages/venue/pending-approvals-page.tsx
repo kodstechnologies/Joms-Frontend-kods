@@ -91,7 +91,7 @@ export function VenuePendingApprovalsPage() {
         accessorKey: 'venueid',
         header: 'Venue ID',
         cell: ({ row }) => (
-          <span className="font-mono text-xs uppercase">{getVenueDisplayId(row.original)}</span>
+          <span className="ui-table-id uppercase">{getVenueDisplayId(row.original)}</span>
         ),
       },
       {
@@ -107,7 +107,7 @@ export function VenuePendingApprovalsPage() {
         accessorKey: 'spaceid',
         header: 'Space ID',
         cell: ({ row }) => (
-          <span className="font-mono text-xs">{getVenueDisplaySpaceId(row.original)}</span>
+          <span className="ui-table-id">{getVenueDisplaySpaceId(row.original)}</span>
         ),
       },
       {

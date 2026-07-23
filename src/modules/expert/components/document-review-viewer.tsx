@@ -193,11 +193,11 @@ function DocumentReviewViewerContent({
           </button>
 
           {menuOpen ? (
-            <div className="absolute top-full right-0 z-10 mt-2 w-[220px] overflow-hidden rounded-xl border border-white/10 bg-white py-1.5 text-[#111] shadow-xl">
+            <div className="ui-table-actions-menu absolute top-full right-0 z-10 mt-2">
               <button
                 type="button"
                 onClick={() => openDecisionModal('approve')}
-                className="text-body-md flex w-full items-center gap-3 px-3.5 py-2.5 text-left font-medium hover:bg-black/5"
+                className="ui-table-actions-item"
               >
                 <span className="bg-brand-positive flex size-6 items-center justify-center rounded-full text-white">
                   <Check className="size-3.5" strokeWidth={3} />
@@ -207,7 +207,7 @@ function DocumentReviewViewerContent({
               <button
                 type="button"
                 onClick={() => openDecisionModal('reject')}
-                className="text-body-md flex w-full items-center gap-3 px-3.5 py-2.5 text-left font-medium hover:bg-black/5"
+                className="ui-table-actions-item"
               >
                 <span className="bg-brand-danger flex size-6 items-center justify-center rounded-full text-white">
                   <X className="size-3.5" strokeWidth={3} />
@@ -217,7 +217,7 @@ function DocumentReviewViewerContent({
               <button
                 type="button"
                 onClick={() => openDecisionModal('requestChanges')}
-                className="text-body-md flex w-full items-center gap-3 px-3.5 py-2.5 text-left font-medium hover:bg-black/5"
+                className="ui-table-actions-item"
               >
                 <span className="bg-brand-teal flex size-6 items-center justify-center rounded-full text-white">
                   <RefreshCw className="size-3.5" strokeWidth={2.5} />

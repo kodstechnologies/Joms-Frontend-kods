@@ -108,10 +108,10 @@ export function BackupRestorePanel() {
               <MoreVertical className="size-4" />
             </button>
             {menuOpenId === row.original.id ? (
-              <div className="bg-brand-surface absolute right-0 z-10 mt-1 min-w-[120px] rounded-lg border border-white/10 py-1 shadow-xl">
+              <div className="ui-table-actions-menu absolute right-0 z-10 mt-1">
                 <button
                   type="button"
-                  className="block w-full px-3 py-2 text-left text-xs text-white hover:bg-white/5"
+                  className="ui-table-actions-item"
                   onClick={() => {
                     setRestoreTarget(row.original)
                     setMenuOpenId(null)
@@ -121,7 +121,7 @@ export function BackupRestorePanel() {
                 </button>
                 <button
                   type="button"
-                  className="block w-full px-3 py-2 text-left text-xs text-rose-300 hover:bg-white/5"
+                  className="ui-table-actions-item text-rose-600 hover:bg-rose-50"
                   onClick={() => {
                     deleteMutation.mutate(row.original.id, {
                       onSuccess: () => {

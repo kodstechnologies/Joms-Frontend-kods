@@ -136,7 +136,6 @@ export function EscrowManagementPage() {
           isOpen={isOpen}
           onOpenChange={(open) => setActiveDropdownId(open ? record.id : null)}
           menuWidth={180}
-          menuClassName="border-slate-200 bg-white py-1.5 shadow-xl"
         >
           <TableActionsItem
             icon={<Eye className="size-3.5 text-slate-700" aria-hidden="true" />}
@@ -164,7 +163,6 @@ export function EscrowManagementPage() {
           isOpen={isOpen}
           onOpenChange={(open) => setActiveDropdownId(open ? record.id : null)}
           menuWidth={180}
-          menuClassName="border-slate-200 bg-white py-1.5 shadow-xl"
         >
           <TableActionsItem
             icon={<Eye className="size-3.5 text-slate-700" aria-hidden="true" />}

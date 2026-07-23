@@ -362,7 +362,7 @@ export function MembershipPlansPage({
                 type="button"
                 onClick={() => handleStatusCardClick(card.status)}
                 className={cn(
-                  'flex items-center justify-between rounded-xl border px-4 py-3.5 text-white transition-all',
+                  'flex items-center justify-between rounded-[10px] border px-4 py-3.5 text-white transition-all',
                   isGold
                     ? `${statusCardTones.warning.background} ${statusCardTones.warning.border}`
                     : `${statusCardTones.danger.background} ${statusCardTones.danger.border}`,

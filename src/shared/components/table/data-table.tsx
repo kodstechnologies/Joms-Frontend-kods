@@ -177,7 +177,7 @@ export function DataTable<TData>({
       </div>
 
       <div className="overflow-x-auto px-4 sm:px-5">
-        <table className="text-body-sm w-full min-w-max border-collapse text-left">
+        <table className="ui-data-table-table">
           <thead
             className={cn(
               'border-y',
@@ -190,14 +190,14 @@ export function DataTable<TData>({
             {table.getHeaderGroups().map((headerGroup) => (
               <tr
                 key={headerGroup.id}
-                className={cn('text-body-sm', isCategoryTone ? 'text-muted' : 'text-brand-text')}
+                className={cn(isCategoryTone ? 'text-muted' : 'text-brand-text')}
               >
                 {headerGroup.headers.map((header) => (
                   <th
                     key={header.id}
                     scope="col"
                     className={cn(
-                      'px-3 py-3 font-semibold whitespace-nowrap',
+                      'px-3 py-3 whitespace-nowrap',
                       header.column.columnDef.meta?.headerClassName,
                     )}
                   >
@@ -207,7 +207,7 @@ export function DataTable<TData>({
                         {header.column.id !== 'select' &&
                           header.column.id !== 'actions' &&
                           showSortIcons && (
-                            <ArrowUpDown className="size-3 text-white/80" aria-hidden="true" />
+                            <ArrowUpDown className="size-3.5 text-white/80" aria-hidden="true" />
                           )}
                       </span>
                     )}
@@ -254,7 +254,7 @@ export function DataTable<TData>({
                     <td
                       key={cell.id}
                       className={cn(
-                        'px-3 py-3 align-middle leading-tight',
+                        'px-3 py-3 align-middle',
                         cell.column.columnDef.meta?.cellClassName,
                       )}
                     >

@@ -6,7 +6,6 @@ import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
 import { statusCardTones } from '@/shared/lib/design-tokens'
 
-export const CATEGORY_ACTION_MENU_CLASS = 'border border-slate-200 bg-white shadow-xl'
 export const CATEGORY_ACTION_ITEM_CLASS = 'text-slate-800 hover:bg-slate-100 hover:text-slate-900'
 export const CATEGORY_TABLE_VIEW_BUTTON_CLASS =
   'rounded p-1 text-muted transition-colors hover:bg-white/10 hover:text-brand-text'
@@ -89,7 +88,7 @@ export function CategoryQuickLinkCard({
       type="button"
       onClick={onClick}
       className={cn(
-        'flex min-h-[72px] min-w-[220px] flex-1 items-center justify-between rounded-xl border px-6 py-5 transition-all hover:brightness-110',
+        'flex min-h-[72px] min-w-[220px] flex-1 items-center justify-between rounded-[10px] border px-6 py-5 transition-all hover:brightness-110',
         gradient,
         border,
       )}
@@ -117,7 +116,7 @@ export function CategoryQuickLinks({
   const navigate = useNavigate()
 
   return (
-    <div className="flex gap-3 overflow-x-auto pb-1 md:gap-4">
+    <div className="ui-status-card-row md:gap-4">
       <CategoryQuickLinkCard
         title="Paused Category"
         value={String(pausedCount)}

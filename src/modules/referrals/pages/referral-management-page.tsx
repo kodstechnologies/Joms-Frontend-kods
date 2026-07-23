@@ -18,12 +18,9 @@ import {
 } from '../hooks/use-referrals'
 import { useReferralStore } from '../store/referral-store'
 import type { ExpertInvite } from '../types/referral'
-import {
-  formatReferralDateTime,
-  getReferralStatusClassName,
-  getReferralStatusLabel,
-} from '../utils/referral-format'
+import { getReferralStatusClassName, getReferralStatusLabel } from '../utils/referral-format'
 import { DataTable } from '@/shared/components/table/data-table'
+import { TableDateTimeCell } from '@/shared/components/table/table-datetime-cell'
 import {
   TableActionsDropdown,
   TableActionsItem,
@@ -155,7 +152,7 @@ export function ReferralManagementPage() {
       {
         accessorKey: 'createdAt',
         header: 'Created At',
-        cell: ({ row }) => formatReferralDateTime(row.original.createdAt),
+        cell: ({ row }) => <TableDateTimeCell value={row.original.createdAt} />,
       },
       {
         id: 'actions',

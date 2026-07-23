@@ -63,7 +63,6 @@ type AmenityCategory = {
 type SpaceAction = 'hide' | 'suspend'
 type DecisionVariant = 'approve' | 'reject' | 'requestChanges' | 'escalate'
 
-const ACTION_MENU_CLASS = 'border border-slate-200 bg-white shadow-xl'
 const ACTION_ITEM_CLASS = 'text-slate-800 hover:bg-slate-100 hover:text-slate-900'
 
 const SPACE_REASON_OPTIONS: DecisionActionModalOption[] = [
@@ -577,7 +576,6 @@ export function SpaceDetailsPage() {
           label="Open space actions"
           isOpen={actionsOpen}
           onOpenChange={setActionsOpen}
-          menuClassName={ACTION_MENU_CLASS}
           menuWidth={180}
         >
           {isHidden || isSuspended ? (

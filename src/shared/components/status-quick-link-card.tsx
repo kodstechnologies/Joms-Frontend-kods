@@ -10,7 +10,7 @@ export function StatusQuickLinkRow({
   children: ReactNode
   className?: string
 }) {
-  return <div className={cn('flex gap-3 overflow-x-auto pb-1', className)}>{children}</div>
+  return <div className={cn('ui-status-card-row', className)}>{children}</div>
 }
 
 export function StatusQuickLinkCard({
@@ -22,6 +22,8 @@ export function StatusQuickLinkCard({
   onClick,
   selected = false,
   selectedRingClassName = 'ring-2 ring-brand-accent/50',
+  size = 'default',
+  className,
 }: {
   title: string
   value: string | number
@@ -31,16 +33,20 @@ export function StatusQuickLinkCard({
   onClick?: () => void
   selected?: boolean
   selectedRingClassName?: string
+  size?: 'default' | 'listing'
+  className?: string
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
       className={cn(
-        'radius-md inline-flex h-[42px] shrink-0 items-center gap-2.5 border px-4 transition-all hover:brightness-110',
+        'ui-status-card shrink-0',
+        size === 'listing' && 'ui-status-card-listing',
         background,
         border,
         selected && selectedRingClassName,
+        className,
       )}
     >
       <Icon className="icon-md text-brand-text shrink-0" strokeWidth={1.5} aria-hidden="true" />

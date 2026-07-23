@@ -117,7 +117,7 @@ export function MembershipPlanCard({
             </button>
 
             {menuOpen ? (
-              <div className="absolute right-0 z-30 mt-2 w-[230px] rounded-xl bg-white p-2 shadow-[0_16px_40px_rgba(0,0,0,0.35)]">
+              <div className="ui-table-actions-menu absolute right-0 z-30 mt-2">
                 <MenuButton
                   label="View Details"
                   icon={ClipboardList}
@@ -298,10 +298,7 @@ function MenuButton({
     <button
       type="button"
       onClick={onClick}
-      className={cn(
-        'flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium transition-colors',
-        danger ? 'text-brand-danger hover:bg-brand-danger/8' : 'text-black hover:bg-black/5',
-      )}
+      className={cn('ui-table-actions-item', danger && 'text-brand-danger hover:bg-brand-danger/8')}
     >
       <Icon className="size-4 shrink-0" strokeWidth={1.85} />
       <span>{label}</span>

@@ -26,6 +26,7 @@ import { ADMIN_DELETE_REASON_OPTIONS } from '../../constants/soft-delete'
 import { useVenueStore } from '../../store'
 import type { Venue, VenueStatus } from '../../type/venue'
 import { DataTable } from '@/shared/components/table/data-table'
+import { TableDateTimeCell } from '@/shared/components/table/table-datetime-cell'
 import {
   TableActionsDropdown,
   TableActionsItem,
@@ -49,7 +50,6 @@ const SUSPEND_REASON_OPTIONS: DecisionActionModalOption[] = [
   { label: 'Admin review required', value: 'admin_review_required' },
 ]
 
-const ACTION_MENU_CLASS = 'border border-slate-200 bg-white shadow-xl'
 const ACTION_ITEM_CLASS = 'text-slate-800 hover:bg-slate-100 hover:text-slate-900'
 
 export const VenueManagementPage = () => {
@@ -345,7 +345,7 @@ export const VenueManagementPage = () => {
         accessorKey: 'venueid',
         header: 'Venue ID',
         cell: ({ row }) => (
-          <span className="font-mono text-xs uppercase">{getVenueDisplayId(row.original)}</span>
+          <span className="ui-table-id uppercase">{getVenueDisplayId(row.original)}</span>
         ),
       },
       name: {
@@ -364,7 +364,7 @@ export const VenueManagementPage = () => {
         accessorKey: 'spaceid',
         header: 'Space ID',
         cell: ({ row }) => (
-          <span className="font-mono text-xs">{getVenueDisplaySpaceId(row.original)}</span>
+          <span className="ui-table-id">{getVenueDisplaySpaceId(row.original)}</span>
         ),
       },
       'space-name': {
@@ -394,27 +394,7 @@ export const VenueManagementPage = () => {
         id: 'created-at',
         accessorKey: 'createdAt',
         header: 'Created At',
-        cell: ({ row }) => {
-          if (!row.original.createdAt) return '—'
-          const createdAt = new Date(row.original.createdAt)
-          return (
-            <div className="flex flex-col">
-              <span>
-                {createdAt.toLocaleDateString('en-US', {
-                  month: 'short',
-                  day: 'numeric',
-                  year: 'numeric',
-                })}
-              </span>
-              <span className="text-[10px] text-slate-500">
-                {createdAt.toLocaleTimeString('en-US', {
-                  hour: '2-digit',
-                  minute: '2-digit',
-                })}
-              </span>
-            </div>
-          )
-        },
+        cell: ({ row }) => <TableDateTimeCell value={row.original.createdAt} />,
       },
     }
 
@@ -451,7 +431,6 @@ export const VenueManagementPage = () => {
             label={`Open actions for ${venue.venueName}`}
             isOpen={isOpen}
             onOpenChange={(open) => setActiveDropdownId(open ? venue._id : null)}
-            menuClassName={ACTION_MENU_CLASS}
           >
             <TableActionsItem
               icon={<LayoutDashboard className="size-3.5 text-slate-700" />}
@@ -551,6 +530,7 @@ export const VenueManagementPage = () => {
             icon={card.icon}
             background={card.gradient}
             border={card.border}
+            size="listing"
             selected={activeStatus === card.status}
             onClick={() => {
               if (card.status === 'reported') {

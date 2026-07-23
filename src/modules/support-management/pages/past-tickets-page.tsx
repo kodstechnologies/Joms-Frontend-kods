@@ -47,7 +47,7 @@ export function PastTicketsPage() {
         cell: ({ row }) => (
           <Link
             to={`/support/tickets/${row.original.id}`}
-            className="font-mono text-xs text-amber-400 hover:underline"
+            className="ui-table-id text-amber-400 hover:underline"
           >
             #{row.original.id}
           </Link>

@@ -22,11 +22,11 @@ export const uiTokens = {
 
 export const statusCardTones = {
   warning: {
-    background: 'bg-[color-mix(in_srgb,var(--brand-gold-from)_22%,black)]',
-    border: 'border-brand-accent-muted',
+    background: 'ui-status-card-tone-warning',
+    border: '',
   },
   danger: {
-    background: 'bg-[color-mix(in_srgb,var(--brand-danger)_18%,black)]',
-    border: 'border-brand-danger-muted',
+    background: 'ui-status-card-tone-danger',
+    border: '',
   },
 } as const

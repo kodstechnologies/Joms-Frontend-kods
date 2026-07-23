@@ -10,6 +10,7 @@ import { useServices } from '../../hooks/use-services'
 import { getServiceManagementViewPath } from '../../lib/service-navigation'
 import type { Service } from '../../type/service'
 import { DataTable } from '@/shared/components/table/data-table'
+import { TableDateTimeCell } from '@/shared/components/table/table-datetime-cell'
 import {
   TableActionsDropdown,
   TableActionsItem,
@@ -21,18 +22,6 @@ const formatPrice = (price: number) =>
     currency: 'INR',
     maximumFractionDigits: 0,
   }).format(price)
-
-const formatCreatedAt = (value: string) => {
-  const createdAt = new Date(value)
-
-  return createdAt.toLocaleString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
-}
 
 export function PendingApprovalsPage() {
   const navigate = useNavigate()
@@ -111,7 +100,7 @@ export function PendingApprovalsPage() {
         accessorKey: 'serviceid',
         header: 'Service ID',
         cell: ({ row }) => (
-          <span className="font-mono text-xs uppercase">{row.original.serviceid || 'SER001'}</span>
+          <span className="ui-table-id uppercase">{row.original.serviceid || 'SER001'}</span>
         ),
       },
       {
@@ -141,7 +130,7 @@ export function PendingApprovalsPage() {
         accessorKey: 'expertid',
         header: 'Expert ID',
         cell: ({ row }) => (
-          <span className="font-mono text-xs">{row.original.expertid || 'Not provided'}</span>
+          <span className="ui-table-id">{row.original.expertid || 'Not provided'}</span>
         ),
       },
       {
@@ -160,7 +149,7 @@ export function PendingApprovalsPage() {
       {
         accessorKey: 'createdAt',
         header: 'Created at',
-        cell: ({ row }) => formatCreatedAt(row.original.createdAt),
+        cell: ({ row }) => <TableDateTimeCell value={row.original.createdAt} />,
       },
       {
         id: 'actions',

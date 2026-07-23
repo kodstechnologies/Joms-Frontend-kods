@@ -9,7 +9,7 @@ import {
 } from '@/shared/components/table/table-actions-dropdown'
 
 import type { Category } from './category-table-columns'
-import { CATEGORY_ACTION_ITEM_CLASS, CATEGORY_ACTION_MENU_CLASS } from './category-list-shared'
+import { CATEGORY_ACTION_ITEM_CLASS } from './category-list-shared'
 import { categoryPath, useCategoryManagementScope } from './category-management-scope'
 import {
   usePauseServiceCategory,
@@ -34,7 +34,6 @@ export function CategoryActionsDropdown({ category }: Props) {
       isOpen={open}
       onOpenChange={setOpen}
       menuWidth={220}
-      menuClassName={CATEGORY_ACTION_MENU_CLASS}
     >
       <TableActionsItem
         className={CATEGORY_ACTION_ITEM_CLASS}
