@@ -15,6 +15,11 @@ import type { LucideIcon } from 'lucide-react'
 
 import { CreateMembershipModal } from '../components/create-membership-modal'
 import { MembershipPlanCard } from '../components/membership-plan-card'
+import {
+  DeletePlanModal,
+  PausePlanModal,
+  ResumePlanModal,
+} from '../components/membership-plan-lifecycle-modals'
 import { MembershipStatsBar } from '../components/membership-stats-bar'
 import {
   useActivateMembership,
@@ -27,7 +32,6 @@ import {
   useResumeMembership,
   useSetMembershipValidity,
 } from '../hooks/use-memberships'
-import { DELETE_REASON_OPTIONS, PAUSE_REASON_OPTIONS } from '../mock/membership-metrics.mock'
 import { useMembershipStore } from '../store/membership-store'
 import type { MembershipPlan, MembershipStatus } from '../types/membership'
 import { getFeatureLines } from '../utils/membership-format'
@@ -411,17 +415,11 @@ export function MembershipPlansPage({
 
       <CreateMembershipModal open={createOpen} onClose={() => setCreateOpen(false)} />
 
-      <DecisionActionModal
+      <PausePlanModal
         open={modalType === 'pause'}
-        variant="suspend"
-        title="Pause Plan"
-        description={`Are you sure you want to pause "${selectedPlan?.planName}"?`}
-        submitLabel="Pause Plan"
+        plan={selectedPlan}
         adminNotes={adminNotes}
         onAdminNotesChange={setAdminNotes}
-        onClose={closeModal}
-        onSubmit={handlePause}
-        reasonOptions={PAUSE_REASON_OPTIONS}
         selectedReasons={selectedReasons}
         onReasonToggle={(value) =>
           setSelectedReasons((current) =>
@@ -430,20 +428,18 @@ export function MembershipPlansPage({
               : [...current, value],
           )
         }
-        showTimeline
         startDate={startDate}
         onStartDateChange={setStartDate}
         endDate={endDate}
         onEndDateChange={setEndDate}
+        onClose={closeModal}
+        onSubmit={handlePause}
         isSubmitting={pauseMutation.isPending}
       />
 
-      <DecisionActionModal
+      <ResumePlanModal
         open={modalType === 'resume'}
-        variant="approve"
-        title="Resume Plan"
-        description={`Resume "${selectedPlan?.planName}"?`}
-        submitLabel="Resume Plan"
+        plan={selectedPlan}
         adminNotes={adminNotes}
         onAdminNotesChange={setAdminNotes}
         onClose={closeModal}
@@ -451,17 +447,11 @@ export function MembershipPlansPage({
         isSubmitting={resumeMutation.isPending}
       />
 
-      <DecisionActionModal
+      <DeletePlanModal
         open={modalType === 'delete'}
-        variant="reject"
-        title="Delete Plan"
-        description={`Permanently delete "${selectedPlan?.planName}"?`}
-        submitLabel="Delete Plan"
+        plan={selectedPlan}
         adminNotes={adminNotes}
         onAdminNotesChange={setAdminNotes}
-        onClose={closeModal}
-        onSubmit={handleDelete}
-        reasonOptions={DELETE_REASON_OPTIONS}
         selectedReasons={selectedReasons}
         onReasonToggle={(value) =>
           setSelectedReasons((current) =>
@@ -470,6 +460,8 @@ export function MembershipPlansPage({
               : [...current, value],
           )
         }
+        onClose={closeModal}
+        onSubmit={handleDelete}
         isSubmitting={deleteMutation.isPending}
       />
 

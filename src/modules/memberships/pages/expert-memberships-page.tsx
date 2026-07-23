@@ -42,18 +42,10 @@ export function ExpertMembershipsPage() {
     'upgrade' | 'downgrade' | 'extend' | 'cancel' | null
   >(null)
 
-  const {
-    searchQuery,
-    setSearchQuery,
-    activeStatus,
-    setActiveStatus,
-    currentPage,
-    setCurrentPage,
-  } = useExpertMembershipStore()
+  const { searchQuery, setSearchQuery, currentPage, setCurrentPage } = useExpertMembershipStore()
 
   const { data, isLoading } = useExpertSubscriptions({
     search: searchQuery || undefined,
-    status: activeStatus === 'all' ? undefined : activeStatus,
     page: currentPage,
     limit: 10,
   })
@@ -191,42 +183,13 @@ export function ExpertMembershipsPage() {
 
       <MembershipStatsBar />
 
-      <div className="flex flex-wrap gap-2 border-b border-white/10 pb-4">
-        <TabLink to="/memberships/plans">Membership Plans</TabLink>
-        <TabLink active to="/memberships/experts">
-          Expert Memberships Management
-        </TabLink>
-      </div>
-
-      <div className="flex flex-wrap gap-2">
-        {(
-          [
-            { label: 'All', value: 'all' as const },
-            { label: 'Active', value: 'active' as const },
-            { label: 'Paused', value: 'paused' as const },
-            { label: 'Cancelled', value: 'cancelled' as const },
-            { label: 'Expired', value: 'expired' as const },
-          ] as const
-        ).map((filter) => {
-          const countLabel = filter.value === 'all' ? '' : ` (${meta?.counts?.[filter.value] ?? 0})`
-
-          return (
-            <button
-              key={filter.value}
-              type="button"
-              onClick={() => setActiveStatus(filter.value)}
-              className={cn(
-                'rounded-full border px-4 py-2 text-xs font-medium',
-                activeStatus === filter.value
-                  ? 'border-amber-400/40 bg-amber-400/10 text-amber-200'
-                  : 'border-white/10 text-slate-400',
-              )}
-            >
-              {filter.label}
-              {countLabel}
-            </button>
-          )
-        })}
+      <div className="flex justify-center">
+        <div className="bg-brand-bg inline-flex flex-wrap items-center justify-center gap-1 rounded-xl border border-white/10 p-1">
+          <TabLink to="/memberships/plans">Membership Plans</TabLink>
+          <TabLink active to="/memberships/experts">
+            Expert Memberships Management
+          </TabLink>
+        </div>
       </div>
 
       <DataTable
@@ -237,7 +200,7 @@ export function ExpertMembershipsPage() {
         searchValue={searchQuery}
         onSearchChange={setSearchQuery}
         searchPlaceholder="Search by name, ID or profession"
-        onAdvancedFilter={() => toast.info('Advanced filters coming soon')}
+        showAdvancedFilter={false}
         onExport={() => toast.info('Export coming soon')}
         pagination={{
           page: currentPage,
@@ -334,8 +297,8 @@ function TabLink({
         if (to) navigate(to)
       }}
       className={cn(
-        'rounded-lg px-4 py-2 text-sm font-medium transition-colors',
-        active ? 'bg-amber-400/10 text-amber-200' : 'text-slate-400',
+        'text-body-md-medium rounded-lg px-5 py-2.5 transition-colors',
+        active ? 'bg-black text-white shadow-sm' : 'text-muted hover:text-white',
       )}
     >
       {children}
