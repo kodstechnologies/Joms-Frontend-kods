@@ -46,10 +46,10 @@ type AmenityCategory = {
 
 const REJECT_REASONS: DecisionActionModalOption[] = [
   { label: 'Unclear Image', value: 'Unclear Image' },
-  { label: 'Content issue', value: 'Content issue' },
-  { label: 'Invalid Documents', value: 'Invalid Documents' },
-  { label: 'Invalid PAN', value: 'IndiaPAN' },
-  { label: 'Invalid GST', value: 'InvalidGST' },
+  { label: 'Content Issue', value: 'Content Issue' },
+  { label: 'Invalid documents', value: 'Invalid documents' },
+  { label: 'Invalid PAN', value: 'Invalid PAN' },
+  { label: 'Invalid GST', value: 'Invalid GST' },
 ]
 
 const getApiErrorMessage = (error: unknown) => {
@@ -156,6 +156,7 @@ export function ApplicationDetailsPage() {
   const [adminNotes, setAdminNotes] = useState('')
   const [selectedReasons, setSelectedReasons] = useState<string[]>([])
   const [rejectionReason, setRejectionReason] = useState('')
+  const [decisionConfirmed, setDecisionConfirmed] = useState(false)
   const [selectedEscalationOption, setSelectedEscalationOption] = useState('')
 
   const user = useAuthStore((state) => state.user)
@@ -192,6 +193,7 @@ export function ApplicationDetailsPage() {
     setAdminNotes('')
     setSelectedReasons([])
     setRejectionReason('')
+    setDecisionConfirmed(false)
     setSelectedEscalationOption('')
   }
 
@@ -331,8 +333,12 @@ export function ApplicationDetailsPage() {
         toast.error('Please select at least one reason.')
         return
       }
-      if (!rejectionReason.trim()) {
-        toast.error('Please provide a rejection reason.')
+      if (modalVariant === 'reject' && !decisionConfirmed) {
+        toast.error('Please confirm the rejection reasons before continuing.')
+        return
+      }
+      if (modalVariant === 'requestChanges' && !rejectionReason.trim()) {
+        toast.error('Please provide request change details.')
         return
       }
     }
@@ -343,7 +349,10 @@ export function ApplicationDetailsPage() {
         : {
             status: 'rejected',
             reasonFor: selectedReasons,
-            rejectionReason: rejectionReason.trim(),
+            rejectionReason:
+              modalVariant === 'requestChanges'
+                ? rejectionReason.trim()
+                : selectedReasons.join(', '),
             adminNote: adminNotes.trim(),
           }
 
@@ -566,21 +575,26 @@ export function ApplicationDetailsPage() {
         variant={modalVariant}
         title={
           modalVariant === 'approve'
-            ? 'Confirm Space Application'
+            ? 'Confirm Application'
             : modalVariant === 'requestChanges'
-              ? 'Request Changes – Space Approval'
+              ? 'Request Changes'
               : modalVariant === 'escalate'
                 ? 'Escalate Application'
-                : 'Reject Space Application'
+                : 'Reject Application'
+        }
+        headerDescription={
+          modalVariant === 'reject'
+            ? 'This action cannot be reversed. And it will impact the user'
+            : undefined
         }
         description={
           modalVariant === 'approve'
-            ? 'Are you sure you want to approve this venue space? The applicant will be notified via email.'
+            ? 'Are you sure you want to approve this application? The applicant will be notified via email.'
             : modalVariant === 'requestChanges'
-              ? 'Are you sure you want to Request Changes to this venue space? The applicant will be notified via email.'
+              ? 'Are you sure you want to Request Changes to this application? The applicant will be notified via email.'
               : modalVariant === 'escalate'
                 ? 'Are you sure you want to escalate this Application? This Post will be reviewed by the selected parties.'
-                : 'Please choose the rejection reasons and add notes for this venue space.'
+                : 'Please select the reason to ask the user to re-submit the documents and go through verification again'
         }
         submitLabel={
           modalVariant === 'approve'
@@ -589,8 +603,9 @@ export function ApplicationDetailsPage() {
               ? 'Request Changes'
               : modalVariant === 'escalate'
                 ? 'Escalate'
-                : 'Reject Application'
+                : 'Reject Approval'
         }
+        submitIcon={modalVariant === 'reject' ? 'check' : undefined}
         reasonOptions={isRejectFlow ? REJECT_REASONS : []}
         selectedReasons={selectedReasons}
         onReasonToggle={(value) =>
@@ -600,9 +615,17 @@ export function ApplicationDetailsPage() {
               : [...current, value],
           )
         }
-        reason={isRejectFlow ? rejectionReason : undefined}
-        onReasonChange={isRejectFlow ? setRejectionReason : undefined}
-        reasonLabel={modalVariant === 'requestChanges' ? 'Request Changes' : 'Reason'}
+        reason={modalVariant === 'requestChanges' ? rejectionReason : undefined}
+        onReasonChange={modalVariant === 'requestChanges' ? setRejectionReason : undefined}
+        reasonLabel="Request Changes"
+        showReasonsLabel={isRejectFlow}
+        confirmationLabel={
+          modalVariant === 'reject'
+            ? 'I confirm the documents are not approved due to above reasons.'
+            : undefined
+        }
+        confirmationChecked={decisionConfirmed}
+        onConfirmationChange={modalVariant === 'reject' ? setDecisionConfirmed : undefined}
         adminNotes={adminNotes}
         onAdminNotesChange={setAdminNotes}
         escalationOptions={isEscalateFlow ? escalationOptions : []}

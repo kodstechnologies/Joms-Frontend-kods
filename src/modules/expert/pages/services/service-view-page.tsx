@@ -119,7 +119,6 @@ const decisionReasonOptions = [
   { label: 'Content Issue', value: 'content-issue' },
   { label: 'Invalid documents', value: 'invalid-documents' },
   { label: 'Invalid PAN', value: 'invalid-pan' },
-  { label: 'Invalid GST', value: 'invalid-gst' },
 ]
 
 type ServiceDecisionAction = 'approve' | 'reject' | 'requestChanges' | 'suspend' | 'escalate'
@@ -626,8 +625,8 @@ export const ServiceViewPage = () => {
         suspend: {
           title: 'Suspend Service',
           description:
-            'Are you sure you want to suspend this service? This will restrict visibility and notify the partner.',
-          submitLabel: 'Suspend Service',
+            'Are you sure you want to suspend this Service? This will result in removal of the account.',
+          submitLabel: 'Suspend User',
           variant: 'suspend' as const,
           reasonOptions: [
             { label: 'Policy Violation', value: 'policy-violation' },
@@ -953,9 +952,7 @@ export const ServiceViewPage = () => {
           onAdminNotesChange={setDecisionAdminNotes}
           reason={decisionReason}
           onReasonChange={
-            activeDecisionAction === 'reject' ||
-            activeDecisionAction === 'requestChanges' ||
-            activeDecisionAction === 'suspend'
+            activeDecisionAction === 'reject' || activeDecisionAction === 'requestChanges'
               ? setDecisionReason
               : undefined
           }

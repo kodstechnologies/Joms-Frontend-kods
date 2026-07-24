@@ -75,10 +75,10 @@ const SPACE_REASON_OPTIONS: DecisionActionModalOption[] = [
 
 const REJECT_REASONS: DecisionActionModalOption[] = [
   { label: 'Unclear Image', value: 'Unclear Image' },
-  { label: 'Content issue', value: 'Content issue' },
-  { label: 'Invalid Documents', value: 'Invalid Documents' },
-  { label: 'Invalid PAN', value: 'IndiaPAN' },
-  { label: 'Invalid GST', value: 'InvalidGST' },
+  { label: 'Content Issue', value: 'Content Issue' },
+  { label: 'Invalid documents', value: 'Invalid documents' },
+  { label: 'Invalid PAN', value: 'Invalid PAN' },
+  { label: 'Invalid GST', value: 'Invalid GST' },
 ]
 
 const getApiErrorMessage = (error: unknown) => {
@@ -200,6 +200,7 @@ export function SpaceDetailsPage() {
   const [decisionAdminNotes, setDecisionAdminNotes] = useState('')
   const [decisionSelectedReasons, setDecisionSelectedReasons] = useState<string[]>([])
   const [decisionRejectionReason, setDecisionRejectionReason] = useState('')
+  const [decisionConfirmed, setDecisionConfirmed] = useState(false)
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
   const [suspendIndefinitely, setSuspendIndefinitely] = useState(false)
@@ -378,6 +379,7 @@ export function SpaceDetailsPage() {
     setDecisionAdminNotes('')
     setDecisionSelectedReasons([])
     setDecisionRejectionReason('')
+    setDecisionConfirmed(false)
     setSelectedEscalationOption('')
   }
 
@@ -445,8 +447,12 @@ export function SpaceDetailsPage() {
         toast.error('Please select at least one reason.')
         return
       }
-      if (!decisionRejectionReason.trim()) {
-        toast.error('Please provide a rejection reason.')
+      if (decisionVariant === 'reject' && !decisionConfirmed) {
+        toast.error('Please confirm the rejection reasons before continuing.')
+        return
+      }
+      if (decisionVariant === 'requestChanges' && !decisionRejectionReason.trim()) {
+        toast.error('Please provide request change details.')
         return
       }
     }
@@ -457,7 +463,10 @@ export function SpaceDetailsPage() {
         : {
             status: 'rejected',
             reasonFor: decisionSelectedReasons,
-            rejectionReason: decisionRejectionReason.trim(),
+            rejectionReason:
+              decisionVariant === 'requestChanges'
+                ? decisionRejectionReason.trim()
+                : decisionSelectedReasons.join(', '),
             adminNote: decisionAdminNotes.trim(),
           }
 
@@ -861,21 +870,26 @@ export function SpaceDetailsPage() {
         variant={decisionVariant}
         title={
           decisionVariant === 'approve'
-            ? 'Confirm Space Application'
+            ? 'Confirm Application'
             : decisionVariant === 'requestChanges'
-              ? 'Request Changes – Space Approval'
+              ? 'Request Changes'
               : decisionVariant === 'escalate'
                 ? 'Escalate Application'
-                : 'Reject Space Application'
+                : 'Reject Application'
+        }
+        headerDescription={
+          decisionVariant === 'reject'
+            ? 'This action cannot be reversed. And it will impact the user'
+            : undefined
         }
         description={
           decisionVariant === 'approve'
-            ? 'Are you sure you want to approve this venue space? The applicant will be notified via email.'
+            ? 'Are you sure you want to approve this application? The applicant will be notified via email.'
             : decisionVariant === 'requestChanges'
-              ? 'Are you sure you want to Request Changes to this venue space? The applicant will be notified via email.'
+              ? 'Are you sure you want to Request Changes to this application? The applicant will be notified via email.'
               : decisionVariant === 'escalate'
                 ? 'Are you sure you want to escalate this Application? This Post will be reviewed by the selected parties.'
-                : 'Please choose the rejection reasons and add notes for this venue space.'
+                : 'Please select the reason to ask the user to re-submit the documents and go through verification again'
         }
         submitLabel={
           decisionVariant === 'approve'
@@ -884,14 +898,25 @@ export function SpaceDetailsPage() {
               ? 'Request Changes'
               : decisionVariant === 'escalate'
                 ? 'Escalate'
-                : 'Reject Application'
+                : 'Reject Approval'
         }
+        submitIcon={decisionVariant === 'reject' ? 'check' : undefined}
         reasonOptions={isDecisionRejectFlow ? REJECT_REASONS : []}
         selectedReasons={decisionSelectedReasons}
         onReasonToggle={toggleDecisionReason}
-        reason={isDecisionRejectFlow ? decisionRejectionReason : undefined}
-        onReasonChange={isDecisionRejectFlow ? setDecisionRejectionReason : undefined}
-        reasonLabel={decisionVariant === 'requestChanges' ? 'Request Changes' : 'Reason'}
+        reason={decisionVariant === 'requestChanges' ? decisionRejectionReason : undefined}
+        onReasonChange={
+          decisionVariant === 'requestChanges' ? setDecisionRejectionReason : undefined
+        }
+        reasonLabel="Request Changes"
+        showReasonsLabel={isDecisionRejectFlow}
+        confirmationLabel={
+          decisionVariant === 'reject'
+            ? 'I confirm the documents are not approved due to above reasons.'
+            : undefined
+        }
+        confirmationChecked={decisionConfirmed}
+        onConfirmationChange={decisionVariant === 'reject' ? setDecisionConfirmed : undefined}
         adminNotes={decisionAdminNotes}
         onAdminNotesChange={setDecisionAdminNotes}
         escalationOptions={isEscalateFlow ? escalationOptions : []}
@@ -906,17 +931,24 @@ export function SpaceDetailsPage() {
         open={Boolean(modalAction)}
         variant="suspend"
         title={modalAction === 'hide' ? 'Hide Space' : 'Suspend Space'}
-        description={
+        headerDescription={
           modalAction === 'hide'
             ? 'Are you sure you want to hide this space? This will prevent it from appearing in partner-facing listings.'
-            : 'Are you sure you want to suspend this space? This will temporarily restrict booking visibility.'
+            : 'Are you sure you want to suspend this space? This action will prevent new bookings and notify existing customers.'
         }
+        description=""
         submitLabel={modalAction === 'hide' ? 'Hide' : 'Suspend'}
+        showHeroIcon={false}
+        submitIcon="none"
         reasonOptions={SPACE_REASON_OPTIONS}
         selectedReasons={selectedReasons}
         onReasonToggle={toggleReason}
+        showReasonsLabel
         reason={reasonDetails}
         onReasonChange={setReasonDetails}
+        reasonLabel="Reasons"
+        reasonRequired={false}
+        reasonFieldType="input"
         adminNotes={adminNotes}
         onAdminNotesChange={setAdminNotes}
         showTimeline={modalAction === 'suspend'}

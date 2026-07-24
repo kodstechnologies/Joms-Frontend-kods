@@ -25,7 +25,6 @@ import { VENUE_MANAGEMENT_MODULE_KEY } from '../../api/ui-preferences-api'
 import { orderByActiveMetricIds, useActiveMetricIds } from '../../hooks/use-active-metric-ids'
 import { useVenues, useSuspendVenue, useDeleteVenue } from '../../hooks/use-venues'
 import { useTableColumnPreferences } from '../../hooks/use-ui-preferences'
-import { ADMIN_DELETE_REASON_OPTIONS } from '../../constants/soft-delete'
 import { useVenueStore } from '../../store'
 import type { Venue, VenueStatus } from '../../type/venue'
 import { DataTable } from '@/shared/components/table/data-table'
@@ -64,6 +63,14 @@ const SUSPEND_REASON_OPTIONS: DecisionActionModalOption[] = [
   { label: 'Admin review required', value: 'admin_review_required' },
 ]
 
+const VENUE_DELETE_REASON_OPTIONS: DecisionActionModalOption[] = [
+  { label: 'Unclear Image', value: 'unclear_image' },
+  { label: 'Content Issue', value: 'content_issue' },
+  { label: 'Invalid documents', value: 'invalid_documents' },
+  { label: 'Invalid PAN', value: 'invalid_pan' },
+  { label: 'Invalid GST', value: 'invalid_gst' },
+]
+
 const ACTION_ITEM_CLASS = 'text-slate-800 hover:bg-slate-100 hover:text-slate-900'
 
 export const VenueManagementPage = () => {
@@ -80,8 +87,8 @@ export const VenueManagementPage = () => {
 
   const [deleteVenueTarget, setDeleteVenueTarget] = useState<Venue | null>(null)
   const [deleteReasons, setDeleteReasons] = useState<string[]>([])
-  const [deleteReasonDetails, setDeleteReasonDetails] = useState('')
   const [deleteAdminNotes, setDeleteAdminNotes] = useState('')
+  const [deleteConfirmed, setDeleteConfirmed] = useState(false)
 
   const suspendVenueMutation = useSuspendVenue()
   const deleteVenueMutation = useDeleteVenue()
@@ -148,13 +155,14 @@ export const VenueManagementPage = () => {
   const openDeleteModal = useCallback((venue: Venue) => {
     setDeleteVenueTarget(venue)
     setDeleteReasons([])
-    setDeleteReasonDetails('')
     setDeleteAdminNotes('')
+    setDeleteConfirmed(false)
   }, [])
 
   const closeDeleteModal = useCallback(() => {
     setDeleteVenueTarget(null)
     setDeleteReasons([])
+    setDeleteConfirmed(false)
   }, [])
 
   const toggleDeleteReason = useCallback((value: string) => {
@@ -171,6 +179,11 @@ export const VenueManagementPage = () => {
       return
     }
 
+    if (!deleteConfirmed) {
+      toast.error('Please confirm the delete reasons before continuing.')
+      return
+    }
+
     if (!deleteAdminNotes.trim()) {
       toast.error('Admin notes are required.')
       return
@@ -181,7 +194,7 @@ export const VenueManagementPage = () => {
         venueId: getVenueApiId(deleteVenueTarget),
         payload: {
           selectedReasons: deleteReasons,
-          reasonDetails: deleteReasonDetails.trim(),
+          reasonDetails: '',
           adminNotes: deleteAdminNotes.trim(),
         },
       },
@@ -199,7 +212,7 @@ export const VenueManagementPage = () => {
   }, [
     closeDeleteModal,
     deleteAdminNotes,
-    deleteReasonDetails,
+    deleteConfirmed,
     deleteReasons,
     deleteVenueMutation,
     deleteVenueTarget,
@@ -752,11 +765,15 @@ export const VenueManagementPage = () => {
         open={Boolean(suspendVenueTarget)}
         variant="suspend"
         title="Suspend Venue"
-        description="Are you sure you want to suspend this venue? This action will prevent new bookings and notify existing customers."
-        submitLabel="Suspend Venue"
+        headerDescription="Are you sure you want to suspend this venue? This action will prevent new bookings and notify existing customers."
+        description=""
+        submitLabel="Suspend"
+        showHeroIcon={false}
+        submitIcon="none"
         reasonOptions={SUSPEND_REASON_OPTIONS}
         selectedReasons={suspendReasons}
         onReasonToggle={toggleSuspendReason}
+        showReasonsLabel
         showTimeline
         startDate={suspendStartDate}
         onStartDateChange={setSuspendStartDate}
@@ -766,6 +783,9 @@ export const VenueManagementPage = () => {
         onIndefiniteChange={setSuspendIndefinitely}
         reason={suspendReasonDetails}
         onReasonChange={setSuspendReasonDetails}
+        reasonLabel="Reasons"
+        reasonRequired={false}
+        reasonFieldType="input"
         adminNotes={suspendAdminNotes}
         onAdminNotesChange={setSuspendAdminNotes}
         onClose={closeSuspendModal}
@@ -777,13 +797,17 @@ export const VenueManagementPage = () => {
         open={Boolean(deleteVenueTarget)}
         variant="delete"
         title="Delete Venue"
-        description="Are you sure you want to delete this venue? It will be permanently removed after 21 days unless restored."
-        submitLabel="Delete Venue"
-        reasonOptions={ADMIN_DELETE_REASON_OPTIONS}
+        headerDescription="Are you sure you want to delete this venue? This action will prevent new bookings and notify existing customers."
+        description="Are you sure you want to delete this user? This will result in removal of the account."
+        submitLabel="Delete User"
+        heroLayout="stack"
+        reasonOptions={VENUE_DELETE_REASON_OPTIONS}
         selectedReasons={deleteReasons}
         onReasonToggle={toggleDeleteReason}
-        reason={deleteReasonDetails}
-        onReasonChange={setDeleteReasonDetails}
+        showReasonsLabel
+        confirmationLabel="I confirm the documents are not approved due to above reasons."
+        confirmationChecked={deleteConfirmed}
+        onConfirmationChange={setDeleteConfirmed}
         adminNotes={deleteAdminNotes}
         onAdminNotesChange={setDeleteAdminNotes}
         onClose={closeDeleteModal}

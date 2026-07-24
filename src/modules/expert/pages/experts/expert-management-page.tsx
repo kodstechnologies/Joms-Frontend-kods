@@ -718,9 +718,11 @@ export const ExpertManagementPage = () => {
         title="Delete Expert"
         description="Are you sure you want to delete this user? This will result in removal of the account."
         submitLabel="Delete Expert"
+        heroLayout="stack"
         reasonOptions={ADMIN_DELETE_REASON_OPTIONS}
         selectedReasons={deleteReasons}
         onReasonToggle={toggleDeleteReason}
+        showReasonsLabel={false}
         adminNotes={deleteAdminNotes}
         onAdminNotesChange={setDeleteAdminNotes}
         onClose={closeDeleteModal}

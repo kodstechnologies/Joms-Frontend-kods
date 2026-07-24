@@ -25,7 +25,6 @@ import { orderByActiveMetricIds, useActiveMetricIds } from '../../hooks/use-acti
 import { useServices, useSuspendService, useDeleteService } from '../../hooks/use-services'
 import { useTableColumnPreferences } from '../../hooks/use-ui-preferences'
 import { getServiceManagementViewPath } from '../../lib/service-navigation'
-import { ADMIN_DELETE_REASON_OPTIONS } from '../../constants/soft-delete'
 import { useServiceStore } from '../../store/service-store'
 import type { Service } from '../../type/service'
 import { getManagementStatusDisplay } from '../../utils/management-status'
@@ -52,11 +51,18 @@ const formatPrice = (price: number) =>
   }).format(price)
 
 const SUSPEND_REASON_OPTIONS: DecisionActionModalOption[] = [
-  { label: 'Policy violation', value: 'policy_violation' },
-  { label: 'Temporary operational issue', value: 'temporary_operational_issue' },
-  { label: 'Quality concern', value: 'quality_concern' },
-  { label: 'System verification in progress', value: 'system_verification_in_progress' },
-  { label: 'Admin review required', value: 'admin_review_required' },
+  { label: 'Policy Violation', value: 'policy_violation' },
+  { label: 'Quality Issues', value: 'quality_issues' },
+  { label: 'Customer Complaints', value: 'customer_complaints' },
+  { label: 'Other', value: 'other' },
+]
+
+const SERVICE_DELETE_REASON_OPTIONS: DecisionActionModalOption[] = [
+  { label: 'Unclear Image', value: 'unclear_image' },
+  { label: 'Content Issue', value: 'content_issue' },
+  { label: 'Invalid documents', value: 'invalid_documents' },
+  { label: 'Invalid PAN', value: 'invalid_pan' },
+  { label: 'Invalid GST', value: 'invalid_gst' },
 ]
 
 export const ServiceManagementPage = () => {
@@ -68,13 +74,12 @@ export const ServiceManagementPage = () => {
   const [suspendStartDate, setSuspendStartDate] = useState('')
   const [suspendEndDate, setSuspendEndDate] = useState('')
   const [suspendIndefinitely, setSuspendIndefinitely] = useState(false)
-  const [suspendReasonDetails, setSuspendReasonDetails] = useState('')
   const [suspendAdminNotes, setSuspendAdminNotes] = useState('')
 
   const [deleteServiceTarget, setDeleteServiceTarget] = useState<Service | null>(null)
   const [deleteReasons, setDeleteReasons] = useState<string[]>([])
-  const [deleteReasonDetails, setDeleteReasonDetails] = useState('')
   const [deleteAdminNotes, setDeleteAdminNotes] = useState('')
+  const [deleteConfirmed, setDeleteConfirmed] = useState(false)
 
   const suspendServiceMutation = useSuspendService()
   const deleteServiceMutation = useDeleteService()
@@ -145,7 +150,6 @@ export const ServiceManagementPage = () => {
     setSuspendStartDate('')
     setSuspendEndDate('')
     setSuspendIndefinitely(false)
-    setSuspendReasonDetails('')
     setSuspendAdminNotes('')
   }, [])
 
@@ -156,13 +160,14 @@ export const ServiceManagementPage = () => {
   const openDeleteModal = useCallback((service: Service) => {
     setDeleteServiceTarget(service)
     setDeleteReasons([])
-    setDeleteReasonDetails('')
     setDeleteAdminNotes('')
+    setDeleteConfirmed(false)
   }, [])
 
   const closeDeleteModal = useCallback(() => {
     setDeleteServiceTarget(null)
     setDeleteReasons([])
+    setDeleteConfirmed(false)
   }, [])
 
   const toggleDeleteReason = useCallback((value: string) => {
@@ -179,6 +184,11 @@ export const ServiceManagementPage = () => {
       return
     }
 
+    if (!deleteConfirmed) {
+      toast.error('Please confirm the delete reasons before continuing.')
+      return
+    }
+
     if (!deleteAdminNotes.trim()) {
       toast.error('Admin notes are required.')
       return
@@ -189,7 +199,7 @@ export const ServiceManagementPage = () => {
         id: deleteServiceTarget._id,
         payload: {
           selectedReasons: deleteReasons,
-          reasonDetails: deleteReasonDetails.trim(),
+          reasonDetails: '',
           adminNotes: deleteAdminNotes.trim(),
         },
       },
@@ -207,7 +217,7 @@ export const ServiceManagementPage = () => {
   }, [
     closeDeleteModal,
     deleteAdminNotes,
-    deleteReasonDetails,
+    deleteConfirmed,
     deleteReasons,
     deleteServiceMutation,
     deleteServiceTarget,
@@ -248,7 +258,7 @@ export const ServiceManagementPage = () => {
           suspendIndefinitely,
           startDate: suspendIndefinitely ? undefined : toIso(suspendStartDate),
           endDate: suspendIndefinitely ? undefined : toIso(suspendEndDate),
-          reasonDetails: suspendReasonDetails.trim(),
+          reasonDetails: '',
           adminNotes: suspendAdminNotes.trim(),
         },
       },
@@ -270,7 +280,6 @@ export const ServiceManagementPage = () => {
     suspendAdminNotes,
     suspendEndDate,
     suspendIndefinitely,
-    suspendReasonDetails,
     suspendReasons,
     suspendServiceMutation,
     suspendServiceTarget,
@@ -656,8 +665,8 @@ export const ServiceManagementPage = () => {
         open={Boolean(suspendServiceTarget)}
         variant="suspend"
         title="Suspend Service"
-        description="Are you sure you want to suspend this service? This action will hide it from the marketplace and notify the expert."
-        submitLabel="Suspend Service"
+        description="Are you sure you want to suspend this Service? This will result in removal of the account."
+        submitLabel="Suspend User"
         reasonOptions={SUSPEND_REASON_OPTIONS}
         selectedReasons={suspendReasons}
         onReasonToggle={toggleSuspendReason}
@@ -668,8 +677,7 @@ export const ServiceManagementPage = () => {
         onEndDateChange={setSuspendEndDate}
         indefinite={suspendIndefinitely}
         onIndefiniteChange={setSuspendIndefinitely}
-        reason={suspendReasonDetails}
-        onReasonChange={setSuspendReasonDetails}
+        indefiniteLabel="Suspend indefinitely (until manually reactivated)"
         adminNotes={suspendAdminNotes}
         onAdminNotesChange={setSuspendAdminNotes}
         onClose={closeSuspendModal}
@@ -681,13 +689,16 @@ export const ServiceManagementPage = () => {
         open={Boolean(deleteServiceTarget)}
         variant="delete"
         title="Delete Service"
-        description="Are you sure you want to delete this service? It will be permanently removed after 21 days unless restored."
-        submitLabel="Delete Service"
-        reasonOptions={ADMIN_DELETE_REASON_OPTIONS}
+        description="Are you sure you want to delete this user? This will result in removal of the account."
+        submitLabel="Delete User"
+        heroLayout="inline"
+        reasonOptions={SERVICE_DELETE_REASON_OPTIONS}
         selectedReasons={deleteReasons}
         onReasonToggle={toggleDeleteReason}
-        reason={deleteReasonDetails}
-        onReasonChange={setDeleteReasonDetails}
+        showReasonsLabel
+        confirmationLabel="I confirm the documents are not approved due to above reasons."
+        confirmationChecked={deleteConfirmed}
+        onConfirmationChange={setDeleteConfirmed}
         adminNotes={deleteAdminNotes}
         onAdminNotesChange={setDeleteAdminNotes}
         onClose={closeDeleteModal}

@@ -793,12 +793,13 @@ button:disabled,
 .ui-modal-btn {
   display: inline-flex;
   box-sizing: border-box;
-  height: var(--brand-cta-height);
-  min-height: var(--brand-cta-height);
-  max-height: var(--brand-cta-height);
-  width: 239px;
+  height: 40px;
+  min-height: 40px;
+  max-height: 40px;
+  width: 100%;
+  max-width: 239px;
   min-width: 0;
-  flex: 1 1 239px;
+  flex: 1 1 238px;
   align-items: center;
   justify-content: center;
   gap: 10px;
