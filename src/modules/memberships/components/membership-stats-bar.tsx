@@ -1,5 +1,3 @@
-import { BarChart3, Crown, RefreshCw, TrendingUp, Users } from 'lucide-react'
-
 import { membershipMemberMetricsMock } from '../mock/membership-metrics.mock'
 import { useMembershipStats } from '../hooks/use-memberships'
 import { StatCard } from '@/shared/components/dashboard/stat-card'
@@ -14,13 +12,11 @@ export function MembershipStatsBar() {
       <StatCard
         title="Total Members"
         value={String(apiStats?.totalActivePlans ?? mock.totalMembers.value)}
-        icon={Users}
         trend={mock.totalMembers.trend}
       />
       <StatCard
         title="Expired Memberships"
         value={String(apiStats?.expiredMemberships ?? mock.expiredMemberships.value)}
-        icon={RefreshCw}
         hint={mock.expiredMemberships.hint}
       />
       <StatCard
@@ -30,19 +26,16 @@ export function MembershipStatsBar() {
             ? `₹${apiStats.totalRevenue.toLocaleString('en-IN')}`
             : mock.totalRevenue.value
         }
-        icon={TrendingUp}
         trend={mock.totalRevenue.trend}
       />
       <StatCard
         title="Renewal Rate"
         value={apiStats?.renewalRate ? `${apiStats.renewalRate}%` : mock.renewalRate.value}
-        icon={BarChart3}
         trend={mock.renewalRate.trend}
       />
       <StatCard
         title="Most Subscribed Plan"
         value={apiStats?.mostSubscribedPlan ?? mock.mostSubscribedPlan.value ?? '—'}
-        icon={Crown}
         hint={mock.mostSubscribedPlan.hint}
       />
     </div>

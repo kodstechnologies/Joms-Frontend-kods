@@ -24,20 +24,23 @@ export function StatCard({ title, value, icon: Icon, trend, hint }: StatCardProp
   return (
     <DashboardCard className="p-5 sm:p-6">
       <div className="flex items-start justify-between gap-3">
-        <div className="space-y-1">
+        <div className="min-w-0 space-y-1">
           <p className="text-body-sm-semibold text-muted tracking-wide">{title}</p>
           <p className="text-h3 text-brand-text tracking-tight">{value}</p>
         </div>
         {Icon ? (
-          <div className="radius-md bg-brand-accent/10 text-brand-accent grid size-10 place-items-center">
-            <Icon className="icon-md" />
+          <div
+            className="radius-md border-brand-accent/25 bg-brand-accent/15 text-brand-accent grid size-10 shrink-0 place-items-center border"
+            aria-hidden="true"
+          >
+            <Icon className="size-[18px]" strokeWidth={1.75} />
           </div>
         ) : null}
       </div>
 
-      <div className="mt-4 flex items-center justify-between gap-3">
+      <div className="mt-4 flex min-h-[28px] items-center gap-2">
         {trend ? (
-          <div className="flex items-center gap-2">
+          <>
             <span
               className={cn(
                 'text-body-sm-semibold inline-flex items-center gap-1 rounded-full border px-2 py-0.5',
@@ -46,15 +49,18 @@ export function StatCard({ title, value, icon: Icon, trend, hint }: StatCardProp
                   : 'border-brand-danger/25 bg-brand-danger/10 text-brand-danger',
               )}
             >
-              {isUp ? <TrendingUp className="icon-sm" /> : <TrendingDown className="icon-sm" />}
+              {isUp ? (
+                <TrendingUp className="size-3.5" strokeWidth={2} />
+              ) : (
+                <TrendingDown className="size-3.5" strokeWidth={2} />
+              )}
               {trend.percentage}%
             </span>
             <span className="text-body-sm text-muted">{trend.label}</span>
-          </div>
-        ) : (
-          <span />
-        )}
-        {hint ? <span className="text-body-sm text-muted">{hint}</span> : null}
+          </>
+        ) : hint ? (
+          <span className="text-body-sm text-muted">{hint}</span>
+        ) : null}
       </div>
     </DashboardCard>
   )

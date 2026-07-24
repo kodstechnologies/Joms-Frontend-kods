@@ -12,6 +12,7 @@ export type MembershipSubscription = {
         planId: string
         planName: string
         type: string
+        icon?: string | null
         pricing?: Array<{ billingCycleName: string; price: number; discount: number }>
         features?: import('./membership').MembershipFeatures
       }

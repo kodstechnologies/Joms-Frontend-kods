@@ -136,12 +136,10 @@ export const navigationConfig: NavItem[] = [
   },
   {
     key: 'referral',
-    label: 'Referral & Rewards',
+    label: 'Referral Management',
     icon: BadgePercent,
+    to: '/referrals/management',
     superAdminOnly: true,
-    children: [
-      { key: 'referral.management', label: 'Referral Management', to: '/referrals/management' },
-    ],
   },
   {
     key: 'finance',
