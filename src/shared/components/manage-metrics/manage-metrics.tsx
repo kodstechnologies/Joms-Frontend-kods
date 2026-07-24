@@ -714,7 +714,7 @@ export function ManageMetrics({
       ) : null}
 
       {dashboard && tableColumns ? (
-        <div className="h-px w-full bg-white/10" aria-hidden="true" />
+        <div className="h-px w-full bg-[#FFFFFF33]" aria-hidden="true" />
       ) : null}
 
       {tableColumns ? (
@@ -806,7 +806,7 @@ export function ManageMetrics({
         </section>
       ) : null}
 
-      <div className="fixed inset-x-0 bottom-0 z-10 flex items-center justify-end gap-3 border-t border-white/10 bg-[#050505]/95 px-4 py-3 backdrop-blur sm:px-6">
+      <div className="fixed inset-x-0 bottom-0 z-10 flex items-center justify-end gap-3 border-t border-[#FFFFFF33] bg-[#050505]/95 px-4 py-3 backdrop-blur sm:px-6">
         <Button
           variant="secondary"
           onClick={onCancel}

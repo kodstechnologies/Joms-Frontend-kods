@@ -73,6 +73,21 @@ const TABS: { key: TabKey; label: string }[] = [
   { key: 'health', label: 'Profile Health' },
 ]
 
+const PROFILE_BTN_PRIMARY =
+  'inline-flex items-center justify-center gap-1.5 rounded-lg bg-[linear-gradient(180deg,#F6CB86_0%,#E0A263_100%)] px-3 py-1.5 text-[12px] font-semibold text-[#050505] transition-[filter] hover:brightness-95'
+
+const PROFILE_HEADER_BTN =
+  'inline-flex h-[25px] items-center justify-center gap-1.5 rounded-[12px] bg-[linear-gradient(180deg,#F6CB86_0%,#E0A263_100%)] px-3 text-[11px] leading-none font-semibold whitespace-nowrap text-[#050505] transition-[filter] hover:brightness-95'
+
+const PROFILE_BTN_GHOST =
+  'inline-flex items-center justify-center gap-1.5 rounded-lg border border-[#FFFFFF33] bg-[#050505] px-3 py-1.5 text-[12px] font-semibold text-white transition-colors hover:bg-white/5'
+
+const PROFILE_CARD = 'rounded-xl border border-[#FFFFFF33] bg-[#141414]'
+
+const PROFILE_ACTIVE_PILL = 'bg-[linear-gradient(180deg,#F6CB86_0%,#E0A263_100%)] text-[#050505]'
+
+const PROFILE_IDLE_PILL = 'border border-[#FFFFFF33] bg-[#050505] text-white hover:bg-white/5'
+
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 
 const MOCK_REVIEWS = [
@@ -203,7 +218,10 @@ const formatLastActive = (value?: string) => {
 
 const getKycBadge = (finalReview?: { isVerified?: boolean; approvalStatus?: string }) => {
   if (finalReview?.approvalStatus === 'approved') {
-    return { label: 'KYC Verified', className: 'bg-brand-positive/15 text-brand-positive' }
+    return {
+      label: 'KYC Verified',
+      className: 'bg-[rgb(0_166_62_/_30%)] text-[#00A63E]',
+    }
   }
   return { label: 'Review Pending', className: 'bg-amber-500/15 text-amber-300' }
 }
@@ -259,7 +277,7 @@ function SafeImage({
 
 function SidebarRow({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div className="flex items-center justify-between border-b border-white/5 py-3 last:border-0">
+    <div className="flex items-center justify-between border-b border-[#FFFFFF33] py-3 last:border-0">
       <span className="text-body-sm text-muted">{label}</span>
       <span className="max-w-[58%] text-right text-[13px] font-semibold text-white">
         {children}
@@ -281,7 +299,7 @@ function ProfileSidebar({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="bg-brand-bg rounded-xl border border-white/5 p-5">
+      <div className={cn(PROFILE_CARD, 'p-5')}>
         <div className="mb-2 flex items-center justify-between">
           <h3 className="text-[13px] font-semibold text-white">Profile &amp; Account</h3>
           <span className={cn('rounded-md px-2.5 py-1 text-[10px] font-bold', kycBadge.className)}>
@@ -294,17 +312,13 @@ function ProfileSidebar({
           {formatServiceType(profile.servicetype || basic?.serviceType)}
         </SidebarRow>
         <SidebarRow label="Expert Custom URL">
-          <a
-            href="#"
-            onClick={(event) => event.preventDefault()}
-            className="text-brand-accent underline"
-          >
+          <a href="#" onClick={(event) => event.preventDefault()} className="text-white underline">
             https://joms/expert_profile
           </a>
         </SidebarRow>
         <SidebarRow label="Ratings">
           <span className="inline-flex items-center gap-1">
-            <Star className="fill-brand-accent text-brand-accent size-3.5" />
+            <Star className="size-3.5 fill-[#E0A263] text-[#E0A263]" />
             4.8
             <span className="text-body-sm text-muted font-normal">(1.9K)</span>
           </span>
@@ -322,7 +336,7 @@ function ProfileSidebar({
             onClick={() =>
               viewExpertKyc(partnerId, profile.servicetype || basic?.serviceType, navigate)
             }
-            className="bg-brand-accent/15 text-brand-accent hover:bg-brand-accent/25 text-body-sm rounded-md px-3 py-1 font-bold transition-colors"
+            className={PROFILE_BTN_PRIMARY}
           >
             View
           </button>
@@ -331,20 +345,20 @@ function ProfileSidebar({
           <button
             type="button"
             onClick={() => comingSoon('Timelines')}
-            className="bg-brand-accent/15 text-brand-accent hover:bg-brand-accent/25 text-body-sm rounded-md px-3 py-1 font-bold transition-colors"
+            className={PROFILE_BTN_PRIMARY}
           >
             Check Timelines
           </button>
         </SidebarRow>
       </div>
 
-      <div className="bg-brand-bg rounded-xl border border-white/5 p-5">
+      <div className={cn(PROFILE_CARD, 'p-5')}>
         <h3 className="mb-4 text-[13px] font-semibold text-white">Support &amp; Admin</h3>
-        <div className="rounded-lg border border-white/5 bg-black p-3">
+        <div className="rounded-lg border border-[#FFFFFF33] bg-[#050505] p-3">
           <p className="text-muted text-[10px]">Active Tickets</p>
           <p className="text-body-sm mt-1 font-medium text-white">None</p>
         </div>
-        <div className="mt-3 rounded-lg border border-white/5 bg-black p-3">
+        <div className="mt-3 rounded-lg border border-[#FFFFFF33] bg-[#050505] p-3">
           <p className="text-muted text-[10px]">Admin notes</p>
           <p className="text-body-sm mt-1 font-medium text-white">
             {profile.finalReview?.internalNotes || 'None'}
@@ -364,90 +378,94 @@ function OverviewTab({ profile }: { profile: ExpertProfileDetail }) {
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="bg-brand-bg rounded-xl border border-white/5 p-6">
-        <h3 className="text-body-md mb-3 font-semibold text-white">About</h3>
-        <p className="text-muted text-[13px] leading-relaxed">{basic?.bio || 'No bio provided.'}</p>
-        <div className="mt-4 flex flex-wrap gap-2">
-          {profile.phoneVerified && (
-            <span className="bg-brand-positive/15 text-brand-positive rounded-md px-2.5 py-1 text-[10px] font-bold">
-              Phone Verified
-            </span>
-          )}
-          {profile.emailVerified && (
-            <span className="bg-brand-positive/15 text-brand-positive rounded-md px-2.5 py-1 text-[10px] font-bold">
-              Email Verified
-            </span>
-          )}
-        </div>
+      <div className={cn(PROFILE_CARD, 'p-6')}>
+        <section>
+          <h3 className="text-body-md mb-3 font-semibold text-white">About</h3>
+          <p className="text-[13px] leading-relaxed text-white/70">
+            {basic?.bio || 'No bio provided.'}
+          </p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            {profile.phoneVerified && (
+              <span className="rounded-md bg-[rgb(0_166_62_/_30%)] px-2.5 py-1 text-[10px] font-bold text-[#00A63E]">
+                Phone Verified
+              </span>
+            )}
+            {profile.emailVerified && (
+              <span className="rounded-md bg-[rgb(0_166_62_/_30%)] px-2.5 py-1 text-[10px] font-bold text-[#00A63E]">
+                Email Verified
+              </span>
+            )}
+          </div>
+        </section>
+
+        {offerings.length > 0 ? (
+          <section className="mt-5 border-t border-[#FFFFFF33] pt-5">
+            <h3 className="text-body-md mb-4 font-semibold text-white">Core Offerings</h3>
+            <ul className="space-y-2.5">
+              {offerings.map((item) => (
+                <li key={item} className="flex items-center gap-2 text-[13px] text-white/70">
+                  <Check className="size-4 shrink-0 text-white" strokeWidth={2.5} />
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
+
+        {galleryImages.length > 0 ? (
+          <section className="mt-5 border-t border-[#FFFFFF33] pt-5">
+            <h3 className="text-body-md mb-4 font-semibold text-white">Gallery</h3>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5">
+              {galleryImages.map((image, index) => (
+                <div
+                  key={`${image}-${index}`}
+                  className="aspect-square overflow-hidden rounded-lg bg-[#050505]"
+                >
+                  <SafeImage
+                    src={image}
+                    alt={`Gallery ${index + 1}`}
+                    className="size-full object-cover"
+                    fallback={
+                      <div className="text-muted flex size-full items-center justify-center">
+                        <ImageOff className="size-5" />
+                      </div>
+                    }
+                  />
+                </div>
+              ))}
+            </div>
+          </section>
+        ) : null}
       </div>
 
-      {offerings.length > 0 && (
-        <div className="bg-brand-bg rounded-xl border border-white/5 p-6">
-          <h3 className="text-body-md mb-4 font-semibold text-white">Core Offerings</h3>
-          <ul className="space-y-2.5">
-            {offerings.map((item) => (
-              <li key={item} className="text-muted flex items-center gap-2 text-[13px]">
-                <Check className="text-brand-accent size-4 shrink-0" />
-                {item}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {galleryImages.length > 0 && (
-        <div className="bg-brand-bg rounded-xl border border-white/5 p-6">
-          <h3 className="text-body-md mb-4 font-semibold text-white">Gallery</h3>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5">
-            {galleryImages.map((image, index) => (
-              <div
-                key={`${image}-${index}`}
-                className="aspect-square overflow-hidden rounded-lg bg-black"
-              >
-                <SafeImage
-                  src={image}
-                  alt={`Gallery ${index + 1}`}
-                  className="size-full object-cover"
-                  fallback={
-                    <div className="text-muted flex size-full items-center justify-center">
-                      <ImageOff className="size-5" />
-                    </div>
-                  }
-                />
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {workExperience.length > 0 && (
-        <div className="bg-brand-bg rounded-xl border border-white/5 p-6">
+      {workExperience.length > 0 ? (
+        <div className={cn(PROFILE_CARD, 'p-6')}>
           <h3 className="text-body-md mb-4 font-semibold text-white">Work Experience</h3>
           <div className="space-y-3">
             {workExperience.map((entry) => (
               <div
                 key={entry._id || `${entry.jobTitle}-${entry.companyName}`}
-                className="flex gap-3 rounded-lg border border-white/5 bg-black p-4"
+                className="flex gap-3 rounded-lg border border-[#FFFFFF33] bg-[#050505] p-4"
               >
-                <div className="bg-brand-surface flex size-10 shrink-0 items-center justify-center rounded-lg">
-                  <Briefcase className="text-brand-accent size-4" />
+                <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#141414]">
+                  <Briefcase className="size-4 text-[#E0A263]" />
                 </div>
                 <div>
                   <p className="text-[13px] font-semibold text-white">{entry.jobTitle || '—'}</p>
-                  <p className="text-body-sm text-muted">
+                  <p className="text-body-sm text-white/50">
                     {entry.companyName || '—'} | {formatWorkPeriod(entry)}
                   </p>
-                  {entry.description && (
-                    <p className="text-body-sm text-muted mt-1">{entry.description}</p>
-                  )}
+                  {entry.description ? (
+                    <p className="text-body-sm mt-1 text-white/70">{entry.description}</p>
+                  ) : null}
                 </div>
               </div>
             ))}
           </div>
         </div>
-      )}
+      ) : null}
 
-      <div className="bg-brand-bg rounded-xl border border-white/5 p-6">
+      <div className={cn(PROFILE_CARD, 'p-6')}>
         <h3 className="text-body-md mb-4 font-semibold text-white">Reviews &amp; Ratings</h3>
         <div className="mb-4 flex flex-wrap gap-2">
           {[
@@ -460,10 +478,8 @@ function OverviewTab({ profile }: { profile: ExpertProfileDetail }) {
               type="button"
               onClick={() => setReviewFilter(filter.key)}
               className={cn(
-                'text-body-sm rounded-full px-3 py-1.5 font-semibold transition-colors',
-                reviewFilter === filter.key
-                  ? 'bg-brand-accent/15 text-brand-accent'
-                  : 'text-muted hover:text-brand-text bg-black',
+                'text-body-sm rounded-lg px-3 py-1.5 font-semibold transition-colors',
+                reviewFilter === filter.key ? PROFILE_ACTIVE_PILL : PROFILE_IDLE_PILL,
               )}
             >
               {filter.label}
@@ -472,28 +488,31 @@ function OverviewTab({ profile }: { profile: ExpertProfileDetail }) {
         </div>
         <div className="space-y-3">
           {MOCK_REVIEWS.map((review) => (
-            <div key={review.name} className="rounded-lg border border-white/5 bg-black p-4">
+            <div
+              key={review.name}
+              className="rounded-lg border border-[#FFFFFF33] bg-[#050505] p-4"
+            >
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-3">
-                  <div className="bg-brand-surface flex size-9 items-center justify-center rounded-full">
+                  <div className="flex size-9 items-center justify-center rounded-full bg-[#141414]">
                     <User className="text-muted size-4" />
                   </div>
                   <div>
                     <p className="text-[13px] font-semibold text-white">{review.name}</p>
-                    <p className="text-body-sm text-muted">{review.title}</p>
+                    <p className="text-body-sm text-white/50">{review.title}</p>
                   </div>
                 </div>
                 <div className="text-right">
                   <div className="flex items-center gap-0.5">
                     {Array.from({ length: review.rating }).map((_, index) => (
-                      <Star key={index} className="fill-brand-accent text-brand-accent size-3" />
+                      <Star key={index} className="size-3 fill-[#E0A263] text-[#E0A263]" />
                     ))}
                   </div>
-                  <p className="text-muted mt-1 text-[10px]">{review.date}</p>
+                  <p className="mt-1 text-[10px] text-white/50">{review.date}</p>
                 </div>
               </div>
-              <p className="text-body-sm text-muted mt-2">Service Availed: {review.service}</p>
-              <p className="text-body-sm text-muted mt-2">{review.body}</p>
+              <p className="text-body-sm mt-2 text-white/50">Service Availed: {review.service}</p>
+              <p className="text-body-sm mt-2 text-white/70">{review.body}</p>
             </div>
           ))}
         </div>
@@ -516,7 +535,7 @@ function ConsultationDetailCard({
     .filter(Boolean)
 
   return (
-    <div className="bg-brand-bg rounded-xl border border-white/5 p-6">
+    <div className="rounded-xl border border-[#FFFFFF33] bg-[#141414] p-6">
       <div className="flex items-start justify-between gap-3">
         <div>
           <h3 className="text-body-lg font-bold text-white">
@@ -564,22 +583,22 @@ function ConsultationDetailCard({
       <div className="mt-5">
         <p className="text-body-sm mb-3 font-semibold text-white">Additional Information</p>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <div className="rounded-lg border border-white/5 bg-black p-3 text-center">
-            <Phone className="text-brand-accent mx-auto size-4" />
+          <div className="rounded-lg border border-[#FFFFFF33] bg-[#050505] p-3 text-center">
+            <Phone className="mx-auto size-4 text-[#E0A263]" />
             <p className="text-body-sm text-muted mt-2">Mode</p>
             <p className="text-body-sm font-semibold text-white capitalize">
               {consultation.mode || '—'}
             </p>
           </div>
-          <div className="rounded-lg border border-white/5 bg-black p-3 text-center">
-            <Languages className="text-brand-accent mx-auto size-4" />
+          <div className="rounded-lg border border-[#FFFFFF33] bg-[#050505] p-3 text-center">
+            <Languages className="mx-auto size-4 text-[#E0A263]" />
             <p className="text-body-sm text-muted mt-2">Language</p>
             <p className="text-body-sm font-semibold text-white">
               {(consultation.languages ?? []).join(', ') || '—'}
             </p>
           </div>
-          <div className="rounded-lg border border-white/5 bg-black p-3 text-center">
-            <Clock className="text-brand-accent mx-auto size-4" />
+          <div className="rounded-lg border border-[#FFFFFF33] bg-[#050505] p-3 text-center">
+            <Clock className="mx-auto size-4 text-[#E0A263]" />
             <p className="text-body-sm text-muted mt-2">FollowUps</p>
             <p className="text-body-sm font-semibold text-white">
               {consultation.hasFollowUp && consultation.followUpDays
@@ -597,7 +616,7 @@ function ConsultationDetailCard({
             {(consultation.pricingOptions ?? []).map((option) => (
               <span
                 key={`${option.durationMinutes}-${option.price}`}
-                className="text-body-sm rounded-lg border border-white/5 bg-black px-3 py-2 font-semibold text-white"
+                className="text-body-sm rounded-lg border border-[#FFFFFF33] bg-[#050505] px-3 py-2 font-semibold text-white"
               >
                 {formatPricing(option)}
               </span>
@@ -609,7 +628,7 @@ function ConsultationDetailCard({
       <button
         type="button"
         onClick={() => viewExpertConsultation(consultation, expertId, navigate)}
-        className="text-body-sm mt-5 flex w-full items-center justify-between rounded-lg border border-white/5 bg-black px-4 py-3 font-semibold text-white transition-colors hover:bg-white/5"
+        className="text-body-sm mt-5 flex w-full items-center justify-between rounded-lg border border-[#FFFFFF33] bg-[#050505] px-4 py-3 font-semibold text-white transition-colors hover:bg-white/5"
       >
         Consultation Performance
         <ChevronRight className="size-4" />
@@ -625,7 +644,7 @@ function ServicesSubTab({ expertId }: { expertId: string }) {
   return (
     <>
       <div className="flex flex-wrap items-center gap-3">
-        <div className="bg-brand-bg flex min-w-[220px] flex-1 items-center gap-2 rounded-lg border border-white/5 px-3 py-2">
+        <div className="flex min-w-[220px] flex-1 items-center gap-2 rounded-lg border border-[#FFFFFF33] bg-[#141414] px-3 py-2">
           <Search className="text-muted size-4" />
           <input
             type="text"
@@ -636,7 +655,7 @@ function ServicesSubTab({ expertId }: { expertId: string }) {
         <button
           type="button"
           onClick={() => comingSoon('Advance Filters')}
-          className="ui-advance-filters ui-cta ui-cta-outline text-body-sm gap-1.5 px-3 font-semibold"
+          className={cn(PROFILE_BTN_GHOST, 'h-auto min-h-9 gap-1.5 px-3')}
         >
           <SlidersHorizontal className="size-3.5" />
           Advance Filters
@@ -654,7 +673,7 @@ function ServicesSubTab({ expertId }: { expertId: string }) {
         </div>
       )}
       {!isLoading && !isError && services.length === 0 && (
-        <div className="bg-brand-bg text-muted rounded-xl border border-white/5 p-8 text-center text-[13px]">
+        <div className={cn(PROFILE_CARD, 'p-8 text-center text-[13px] text-white/50')}>
           Service not found
         </div>
       )}
@@ -685,7 +704,7 @@ function ServiceListCard({ service, expertId }: { service: ExpertService; expert
     <button
       type="button"
       onClick={() => viewExpertService(service, expertId, navigate)}
-      className="bg-brand-bg hover:bg-brand-surface flex w-full items-center gap-4 rounded-xl border border-white/5 p-4 text-left transition-colors"
+      className="flex w-full items-center gap-4 rounded-xl border border-[#FFFFFF33] bg-[#141414] p-4 text-left transition-colors hover:bg-[#1a1a1a]"
     >
       <div className="bg-brand-surface relative size-16 shrink-0 overflow-hidden rounded-lg">
         {statusLabel && (
@@ -734,7 +753,7 @@ function ConsultationsSubTab({ expertId }: { expertId: string }) {
         </div>
       )}
       {!isLoading && !isError && consultations.length === 0 && (
-        <div className="bg-brand-bg text-muted rounded-xl border border-white/5 p-8 text-center text-[13px]">
+        <div className="rounded-xl border border-[#FFFFFF33] bg-[#141414] p-8 text-center text-[13px] text-white/50">
           Consultation not found
         </div>
       )}
@@ -755,12 +774,10 @@ function ServiceListingsTab({
   expertId,
   listingSubTab,
   onSubTabChange,
-  onCreateListing,
 }: {
   expertId: string
   listingSubTab: ListingSubTab
   onSubTabChange: (tab: ListingSubTab) => void
-  onCreateListing: () => void
 }) {
   return (
     <div className="flex flex-col gap-4">
@@ -773,32 +790,21 @@ function ServiceListingsTab({
               onClick={() => onSubTabChange(tab)}
               className={cn(
                 'text-body-sm rounded-lg px-4 py-2 font-semibold capitalize transition-colors',
-                listingSubTab === tab
-                  ? 'bg-brand-accent/15 text-brand-accent'
-                  : 'bg-brand-bg text-muted hover:text-brand-text',
+                listingSubTab === tab ? PROFILE_ACTIVE_PILL : PROFILE_IDLE_PILL,
               )}
             >
               {tab}
             </button>
           ))}
         </div>
-        <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            onClick={() => comingSoon('View Clientele')}
-            className="bg-brand-bg text-body-sm rounded-lg border border-white/5 px-3 py-2 font-semibold text-white"
-          >
-            View Clientele
-          </button>
-          <button
-            type="button"
-            onClick={onCreateListing}
-            className="bg-brand-accent/15 text-brand-accent text-body-sm flex items-center gap-1.5 rounded-lg px-3 py-2 font-semibold"
-          >
-            <Plus className="size-3.5" />
-            Create Listings
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={() => comingSoon('View Clientele')}
+          className={PROFILE_BTN_PRIMARY}
+        >
+          <Users className="size-3.5" />
+          View Clientele
+        </button>
       </div>
 
       {listingSubTab === 'services' && <ServicesSubTab expertId={expertId} />}
@@ -810,11 +816,11 @@ function ServiceListingsTab({
 
 function AvailabilityTab() {
   return (
-    <div className="bg-brand-bg rounded-xl border border-white/5 p-6">
+    <div className="rounded-xl border border-[#FFFFFF33] bg-[#141414] p-6">
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <div>
           <h3 className="text-body-md mb-4 font-semibold text-white">Availability</h3>
-          <div className="overflow-hidden rounded-lg border border-white/5">
+          <div className="overflow-hidden rounded-lg border border-[#FFFFFF33]">
             <div className="text-body-sm text-muted grid grid-cols-3 bg-black px-4 py-2 font-semibold">
               <span>Days</span>
               <span>From</span>
@@ -823,7 +829,7 @@ function AvailabilityTab() {
             {DAYS.map((day) => (
               <div
                 key={day}
-                className="text-body-sm grid grid-cols-3 items-center border-t border-white/5 px-4 py-3"
+                className="text-body-sm grid grid-cols-3 items-center border-t border-[#FFFFFF33] px-4 py-3"
               >
                 <span className="text-white">{day}</span>
                 <span className="text-muted inline-flex w-fit items-center gap-1 rounded-full bg-black px-3 py-1">
@@ -840,13 +846,13 @@ function AvailabilityTab() {
         </div>
         <div>
           <h3 className="text-body-md mb-4 font-semibold text-white">Unavailability</h3>
-          <div className="overflow-hidden rounded-lg border border-white/5">
+          <div className="overflow-hidden rounded-lg border border-[#FFFFFF33]">
             <div className="text-body-sm text-muted grid grid-cols-3 bg-black px-4 py-2 font-semibold">
               <span>Date</span>
               <span>From</span>
               <span>To</span>
             </div>
-            <div className="text-body-sm grid grid-cols-3 items-center border-t border-white/5 px-4 py-3">
+            <div className="text-body-sm grid grid-cols-3 items-center border-t border-[#FFFFFF33] px-4 py-3">
               <span className="text-white">01/01/2025</span>
               <span className="text-muted inline-flex w-fit items-center gap-1 rounded-full bg-black px-3 py-1">
                 <Clock className="size-3" />
@@ -878,12 +884,12 @@ function AnalyticsTab({ expertId }: { expertId?: string }) {
   ]
 
   return (
-    <div className="bg-brand-bg rounded-xl border border-white/5 p-6">
+    <div className="rounded-xl border border-[#FFFFFF33] bg-[#141414] p-6">
       <div className="mb-4 flex justify-end">
         <button
           type="button"
           onClick={() => navigate('/experts/dashboard/metrics')}
-          className="ui-manage-metrics bg-brand-accent/15 text-brand-accent text-body-sm flex items-center gap-1.5 rounded-lg px-3 py-2 font-semibold"
+          className="ui-manage-metrics text-body-sm flex items-center gap-1.5 rounded-lg bg-[linear-gradient(180deg,#F6CB86_0%,#E0A263_100%)] px-3 py-2 font-semibold text-[#050505]"
         >
           <Gauge className="size-3.5" />
           Manage Metrics
@@ -891,10 +897,10 @@ function AnalyticsTab({ expertId }: { expertId?: string }) {
       </div>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {cards.map((card) => (
-          <div key={card.label} className="rounded-lg border border-white/5 bg-black p-4">
+          <div key={card.label} className="rounded-lg border border-[#FFFFFF33] bg-[#050505] p-4">
             <div className="flex items-center justify-between">
               <p className="text-body-sm text-muted">{card.label}</p>
-              <Briefcase className="text-brand-accent size-4" />
+              <Briefcase className="size-4 text-[#E0A263]" />
             </div>
             <p className="mt-3 text-xl font-bold text-white">{card.value}</p>
           </div>
@@ -905,7 +911,7 @@ function AnalyticsTab({ expertId }: { expertId?: string }) {
             if (!expertId) return
             navigate(`/experts/management/profile/${expertId}/analytics`)
           }}
-          className="text-body-sm flex items-center justify-center gap-1.5 rounded-lg border border-white/5 bg-black p-4 font-semibold text-white transition-colors hover:bg-white/5"
+          className="text-body-sm flex items-center justify-center gap-1.5 rounded-lg border border-[#FFFFFF33] bg-[#050505] p-4 font-semibold text-white transition-colors hover:bg-white/5"
         >
           More
           <ChevronRight className="size-4" />
@@ -946,7 +952,7 @@ function HealthTab() {
   ]
 
   return (
-    <div className="bg-brand-bg rounded-xl border border-white/5 p-6">
+    <div className="rounded-xl border border-[#FFFFFF33] bg-[#141414] p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap gap-2">
           {[
@@ -961,9 +967,7 @@ function HealthTab() {
               onClick={() => setFilter(chip.key)}
               className={cn(
                 'text-body-sm rounded-md px-3 py-1.5 font-semibold transition-colors',
-                filter === chip.key
-                  ? 'bg-brand-accent/15 text-brand-accent'
-                  : 'text-muted hover:text-brand-text bg-black',
+                filter === chip.key ? PROFILE_ACTIVE_PILL : PROFILE_IDLE_PILL,
               )}
             >
               {chip.label}
@@ -975,7 +979,10 @@ function HealthTab() {
 
       <div className="mt-4 space-y-3">
         {incidents.map((incident) => (
-          <div key={incident.type} className="rounded-lg border border-white/5 bg-black p-4">
+          <div
+            key={incident.type}
+            className="rounded-lg border border-[#FFFFFF33] bg-[#050505] p-4"
+          >
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <div className="flex flex-wrap items-center gap-2">
@@ -1007,7 +1014,7 @@ function HealthTab() {
               <button
                 type="button"
                 onClick={() => comingSoon(incident.action)}
-                className="bg-brand-accent/15 text-brand-accent text-body-sm flex items-center gap-1.5 rounded-lg px-3 py-2 font-semibold"
+                className="text-body-sm flex items-center gap-1.5 rounded-lg bg-[linear-gradient(180deg,#F6CB86_0%,#E0A263_100%)] px-3 py-2 font-semibold text-[#050505]"
               >
                 <incident.icon className="size-3.5" />
                 {incident.action}
@@ -1196,7 +1203,7 @@ export function ExpertProfileViewPage() {
         <button
           type="button"
           onClick={() => navigateBackOrFallback(navigate, '/experts/management')}
-          className="group font-heading hover:text-brand-accent text-h3 flex w-fit items-center gap-2 font-bold text-white transition-colors"
+          className="group font-heading text-h3 flex w-fit items-center gap-2 font-bold text-white transition-colors hover:text-[#E0A263]"
         >
           <ArrowLeft className="size-5" />
           <span>Expert Profile View</span>
@@ -1245,7 +1252,7 @@ export function ExpertProfileViewPage() {
           <button
             type="button"
             onClick={() => navigateBackOrFallback(navigate, '/experts/management')}
-            className="group font-heading hover:text-brand-accent text-h3 flex w-fit items-center gap-2 font-bold tracking-tight text-white transition-colors"
+            className="group font-heading text-h3 flex w-fit items-center gap-2 font-bold tracking-tight text-white transition-colors hover:text-[#E0A263]"
           >
             <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
             <span>Expert Profile View</span>
@@ -1256,10 +1263,10 @@ export function ExpertProfileViewPage() {
               onClick={() => navigateBackOrFallback(navigate, '/experts/management')}
               className="hover:text-brand-text transition-colors"
             >
-              User management
+              Expert management
             </button>
             <span className="text-muted">/</span>
-            <span>Manage Users</span>
+            <span>Manage Expert</span>
             <span className="text-muted">/</span>
             <span className="font-bold text-white">{displayName}</span>
           </div>
@@ -1355,20 +1362,20 @@ export function ExpertProfileViewPage() {
         </TableActionsDropdown>
       </header>
 
-      <div className="bg-brand-bg relative overflow-hidden rounded-xl border border-white/5">
-        <div className="bg-brand-surface h-40 w-full">
+      <div className="relative overflow-hidden rounded-xl border border-[#FFFFFF33] bg-[#141414]">
+        <div className="h-40 w-full bg-[#050505]">
           <SafeImage
             src={coverImage}
             alt={`${displayName} cover`}
             className="size-full object-cover"
             fallback={
-              <div className="to-brand-surface flex size-full items-center justify-center bg-gradient-to-br from-[#2b3a8c] via-[#4b2f8c]" />
+              <div className="flex size-full items-center justify-center bg-gradient-to-br from-[#2b3a8c] via-[#4b2f8c] to-[#141414]" />
             }
           />
         </div>
-        <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-end sm:justify-between">
-          <div className="flex items-end gap-3">
-            <div className="border-brand-bg bg-brand-surface -mt-12 size-20 shrink-0 overflow-hidden rounded-full border-4">
+        <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3">
+            <div className="-mt-12 size-20 shrink-0 self-end overflow-hidden rounded-full border-2 border-[#E0A263] bg-[#141414]">
               <SafeImage
                 src={avatarImage}
                 alt={displayName}
@@ -1380,25 +1387,25 @@ export function ExpertProfileViewPage() {
                 }
               />
             </div>
-            <div>
+            <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
                 <h2 className="text-lg font-bold text-white">{displayName}</h2>
-                <span className="bg-brand-positive/15 text-brand-positive rounded-md px-2 py-0.5 text-[10px] font-bold">
+                <span className="rounded-full bg-[rgb(0_166_62_/_30%)] px-2.5 py-0.5 text-[10px] font-bold text-[#00A63E]">
                   # 1 Ranking
                 </span>
               </div>
-              <p className="text-body-sm text-muted">{subtitle || '—'}</p>
+              <p className="text-body-sm text-white/50">{subtitle || '—'}</p>
             </div>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex w-full max-w-[600px] flex-wrap items-center justify-end gap-2 sm:w-auto sm:shrink-0">
             {headerActions.map((action) => (
               <button
                 key={action.label}
                 type="button"
                 onClick={action.onClick}
-                className="bg-brand-accent/15 text-brand-accent hover:bg-brand-accent/25 text-body-sm flex items-center gap-1.5 rounded-full px-3 py-1.5 font-semibold transition-colors"
+                className={PROFILE_HEADER_BTN}
               >
-                <action.icon className="size-3.5" />
+                <action.icon className="size-3 shrink-0" strokeWidth={2.25} />
                 {action.label}
               </button>
             ))}
@@ -1410,17 +1417,17 @@ export function ExpertProfileViewPage() {
         <ProfileSidebar profile={profile} partnerId={id} />
 
         <div className="flex flex-col gap-5">
-          <div className="bg-brand-bg flex items-center gap-1 overflow-x-auto rounded-xl border border-white/5 p-1.5">
+          <div className="flex h-[50px] items-stretch gap-1 overflow-x-auto rounded-xl border border-[#FFFFFF33] bg-[#141414] px-2">
             {TABS.map((tab) => (
               <button
                 key={tab.key}
                 type="button"
                 onClick={() => setActiveTab(tab.key)}
                 className={cn(
-                  'flex-1 rounded-lg px-4 py-2.5 text-[13px] font-semibold whitespace-nowrap transition-colors',
+                  'relative flex-1 px-4 text-[13px] font-semibold whitespace-nowrap transition-colors',
                   activeTab === tab.key
-                    ? 'bg-brand-accent/10 text-brand-accent'
-                    : 'text-muted hover:text-brand-text',
+                    ? 'text-white after:absolute after:right-4 after:bottom-0 after:left-4 after:h-0.5 after:rounded-full after:bg-[#E0A263]'
+                    : 'text-white/50 hover:text-white',
                 )}
               >
                 {tab.label}
@@ -1434,7 +1441,6 @@ export function ExpertProfileViewPage() {
               expertId={id}
               listingSubTab={listingSubTab}
               onSubTabChange={setListingSubTab}
-              onCreateListing={navigateToCreateListing}
             />
           )}
           {activeTab === 'availability' && <AvailabilityTab />}

@@ -17,7 +17,7 @@
   --color-brand-muted: #b3b3b3;
   --color-brand-muted-light: #6e6e73;
   --color-brand-stroke: #e6e8ec;
-  --color-brand-separator: #ffffff80;
+  --color-brand-separator: #ffffff33;
 
   --color-brand-accent: #f6cb86;
   --color-brand-accent-muted: #f6cb8680;
@@ -57,7 +57,7 @@
   --brand-text-dark: #0e0e11;
   --brand-muted: #b3b3b3;
   --brand-muted-light: #6e6e73;
-  --brand-separator: rgb(255 255 255 / 50%);
+  --brand-separator: #ffffff33;
   --brand-stroke: #e6e8ec;
 
   --brand-accent: #f6cb86;
@@ -139,7 +139,7 @@ button:disabled,
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--brand-separator);
+  background: rgb(255 255 255 / 50%);
   border-radius: 10px;
   transition: background 0.2s ease;
 }
@@ -150,7 +150,7 @@ button:disabled,
 
 * {
   scrollbar-width: thin;
-  scrollbar-color: var(--brand-separator) transparent;
+  scrollbar-color: rgb(255 255 255 / 50%) transparent;
 }
 
 .text-h1,
@@ -770,7 +770,7 @@ button:disabled,
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  border-bottom: 1px solid var(--brand-separator);
+  border-bottom: 1px solid #ffffff33;
   padding: 16px 24px;
 }
 
@@ -787,7 +787,8 @@ button:disabled,
   align-items: center;
   justify-content: space-between;
   gap: 24px;
-  padding: 8px 24px 24px;
+  border-top: 1px solid #ffffff33;
+  padding: 16px 24px 24px;
 }
 
 .ui-modal-btn {
@@ -891,7 +892,7 @@ button:disabled,
 }
 
 .ui-modal-reason-chip-idle {
-  border: 1px solid var(--brand-separator);
+  border: 1px solid #ffffff33;
   background: var(--brand-bg);
   color: #ffffff;
 }
