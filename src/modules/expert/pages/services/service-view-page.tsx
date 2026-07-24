@@ -122,13 +122,6 @@ const decisionReasonOptions = [
   { label: 'Invalid GST', value: 'invalid-gst' },
 ]
 
-const suspendReasonOptions = [
-  { label: 'Policy Violation', value: 'policy-violation' },
-  { label: 'Quality Issues', value: 'quality-issues' },
-  { label: 'Customer Complaints', value: 'customer-complaints' },
-  { label: 'Other', value: 'other' },
-]
-
 type ServiceDecisionAction = 'approve' | 'reject' | 'requestChanges' | 'suspend' | 'escalate'
 
 const getApiErrorMessage = (error: unknown) => {
@@ -137,8 +130,6 @@ const getApiErrorMessage = (error: unknown) => {
   }
   return 'Something went wrong. Please try again.'
 }
-
-const toIso = (date: string) => new Date(date).toISOString()
 
 const formatAppliedAgo = (value?: string) => {
   if (!value) return 'Applied recently'
@@ -394,6 +385,9 @@ export const ServiceViewPage = () => {
         return
       }
 
+      const toIso = (value: string) =>
+        value ? new Date(`${value}T00:00:00.000Z`).toISOString() : undefined
+
       try {
         await suspendServiceMutation.mutateAsync({
           id: resolvedServiceId,
@@ -635,7 +629,12 @@ export const ServiceViewPage = () => {
             'Are you sure you want to suspend this service? This will restrict visibility and notify the partner.',
           submitLabel: 'Suspend Service',
           variant: 'suspend' as const,
-          reasonOptions: suspendReasonOptions,
+          reasonOptions: [
+            { label: 'Policy Violation', value: 'policy-violation' },
+            { label: 'Quality Issues', value: 'quality-issues' },
+            { label: 'Customer Complaints', value: 'customer-complaints' },
+            { label: 'Other', value: 'other' },
+          ],
         },
         escalate: {
           title: 'Escalate Application',
@@ -960,6 +959,7 @@ export const ServiceViewPage = () => {
               ? setDecisionReason
               : undefined
           }
+          reasonLabel={activeDecisionAction === 'requestChanges' ? 'Request Changes' : 'Reason'}
           reasonOptions={decisionModalConfig.reasonOptions}
           selectedReasons={selectedReasons}
           onReasonToggle={toggleDecisionReason}

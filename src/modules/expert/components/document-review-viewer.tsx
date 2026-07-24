@@ -139,14 +139,16 @@ function DocumentReviewViewerContent({
         description:
           'Are you sure you want to approve this Document? The applicant will be notified via email.',
         submitLabel: 'Confirm Approval',
+        reasonLabel: 'Reason',
       }
     }
     if (modalVariant === 'requestChanges') {
       return {
         title: 'Request Changes',
         description:
-          'Are you sure you want to request changes for this Document? The applicant will be notified via email.',
+          'Are you sure you want to Request Changes to this application? The applicant will be notified via email.',
         submitLabel: 'Request Changes',
+        reasonLabel: 'Request Change',
       }
     }
     return {
@@ -154,6 +156,7 @@ function DocumentReviewViewerContent({
       description:
         'Are you sure you want to reject this Document? The applicant will be notified via email.',
       submitLabel: 'Confirm Rejection',
+      reasonLabel: 'Reason',
     }
   }, [modalVariant])
 
@@ -299,6 +302,7 @@ function DocumentReviewViewerContent({
             ? setRejectionReason
             : undefined
         }
+        reasonLabel={modalCopy.reasonLabel}
         reasonOptions={
           modalVariant === 'reject' || modalVariant === 'requestChanges' ? reasonOptions : []
         }

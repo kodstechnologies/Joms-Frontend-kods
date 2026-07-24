@@ -14,11 +14,19 @@ const ExecutiveOverviewPage = lazy(() =>
     default: m.ExecutiveOverviewPage,
   })),
 )
+const SharedModuleMetricsPage = lazy(() =>
+  import('@/shared/pages/shared-module-metrics-page').then((m) => ({
+    default: m.SharedModuleMetricsPage,
+  })),
+)
 const ServiceMarketplacePage = lazy(() =>
   import('@/modules/expert').then((m) => ({ default: m.ServiceMarketplacePage })),
 )
 const ServiceMetricsPage = lazy(() =>
   import('@/modules/expert').then((m) => ({ default: m.ServiceMetricsPage })),
+)
+const ServiceDashboardMetricsPage = lazy(() =>
+  import('@/modules/expert').then((m) => ({ default: m.ServiceDashboardMetricsPage })),
 )
 const PendingApprovalsPage = lazy(() =>
   import('@/modules/expert').then((m) => ({ default: m.PendingApprovalsPage })),
@@ -120,6 +128,11 @@ const VenueMetricsPage = lazy(() =>
     default: m.VenueMetricsPage,
   })),
 )
+const VenueDashboardMetricsPage = lazy(() =>
+  import('@/modules/expert').then((m) => ({
+    default: m.VenueDashboardMetricsPage,
+  })),
+)
 const VenueManagementPage = lazy(() =>
   import('@/modules/expert').then((m) => ({
     default: m.VenueManagementPage,
@@ -142,6 +155,11 @@ const VenuePendingApprovalsPage = lazy(() =>
 const VenueSuspendedPage = lazy(() =>
   import('@/modules/expert').then((m) => ({
     default: m.VenueSuspendedPage,
+  })),
+)
+const VenueRejectedPage = lazy(() =>
+  import('@/modules/expert').then((m) => ({
+    default: m.VenueRejectedPage,
   })),
 )
 const VenueDeletedPage = lazy(() =>
@@ -698,6 +716,7 @@ export function AppRouter() {
             <Route element={<DashboardLayout />}>
               <Route path="/" element={<HomeRedirect />} />
               <Route path="/dashboard" element={<HomeRedirect />} />
+              <Route path="/metrics/:moduleKey" element={<SharedModuleMetricsPage />} />
               <Route path="/settings/access/my-profile" element={<MyProfilePage />} />
               <Route path="/my-tasks" element={<MyTasksPage />} />
 
@@ -808,8 +827,12 @@ export function AppRouter() {
 
               <Route element={<PermissionRoute module="services" />}>
                 <Route path="/services/dashboard" element={<ServiceMarketplacePage />} />
-                <Route path="/services/dashboard/metrics" element={<ServiceMetricsPage />} />
+                <Route
+                  path="/services/dashboard/metrics"
+                  element={<ServiceDashboardMetricsPage />}
+                />
                 <Route path="/services/management" element={<ServiceManagementPage />} />
+                <Route path="/services/management/metrics" element={<ServiceMetricsPage />} />
                 <Route path="/services/management/pending" element={<PendingApprovalsPage />} />
                 <Route path="/services/management/suspended" element={<SuspendedServicesPage />} />
                 <Route path="/services/management/deleted" element={<DeletedServicesPage />} />
@@ -848,9 +871,10 @@ export function AppRouter() {
 
               <Route element={<PermissionRoute module="venues" />}>
                 <Route path="/venues/dashboard" element={<VenueDashboardPage />} />
-                <Route path="/venues/dashboard/metrics" element={<VenueMetricsPage />} />
+                <Route path="/venues/dashboard/metrics" element={<VenueDashboardMetricsPage />} />
                 <Route path="/venues/leaderboard" element={<LeaderboardPage />} />
                 <Route path="/venues/management" element={<VenueManagementPage />} />
+                <Route path="/venues/management/metrics" element={<VenueMetricsPage />} />
                 <Route
                   path="/venues/management/application/:id"
                   element={<ApplicationDetailsPage />}
@@ -886,6 +910,7 @@ export function AppRouter() {
                 />
                 <Route path="/venues/management/pending" element={<VenuePendingApprovalsPage />} />
                 <Route path="/venues/management/suspended" element={<VenueSuspendedPage />} />
+                <Route path="/venues/management/rejected" element={<VenueRejectedPage />} />
                 <Route path="/venues/management/deleted" element={<VenueDeletedPage />} />
                 <Route
                   path="/venues/management/onboarding"

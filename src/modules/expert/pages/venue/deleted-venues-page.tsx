@@ -215,7 +215,7 @@ export function VenueDeletedPage() {
         <div className="flex w-full flex-col items-center gap-3 md:w-auto md:flex-row">
           <Button
             className="ui-manage-metrics h-9 w-full md:w-auto"
-            onClick={() => navigate('/venues/dashboard/metrics')}
+            onClick={() => navigate('/venues/management/metrics?section=table')}
           >
             <SlidersHorizontal className="size-4" />
             Manage Metrics

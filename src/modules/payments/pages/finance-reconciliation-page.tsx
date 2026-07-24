@@ -231,7 +231,7 @@ export function FinanceReconciliationPage() {
         </div>
         <Button
           className="ui-manage-metrics"
-          onClick={() => toast.message('Metrics configuration coming soon')}
+          onClick={() => navigate('/metrics/finance-reconciliation')}
         >
           <SlidersHorizontal className="size-4" />
           Manage Metrics

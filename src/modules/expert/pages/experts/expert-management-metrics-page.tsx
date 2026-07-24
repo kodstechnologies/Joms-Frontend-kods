@@ -1,91 +1,13 @@
-import { useMemo } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { toast } from 'sonner'
-
 import { EXPERT_MANAGEMENT_MODULE_KEY } from '../../api/ui-preferences-api'
-import {
-  useResetTableColumnPreferences,
-  useSaveTableColumnPreferences,
-  useTableColumnPreferences,
-} from '../../hooks/use-ui-preferences'
-import {
-  ManageMetrics,
-  type ManageMetricsAvailableItem,
-  type ManageMetricsListItem,
-} from '@/shared/components/manage-metrics'
-import { navigateBackOrFallback } from '@/shared/lib/navigation'
+import { ModuleMetricsPage } from '../shared/module-metrics-page'
 
-export const ExpertManagementMetricsPage = () => {
-  const navigate = useNavigate()
-  const goBack = () => navigateBackOrFallback(navigate, '/experts/management')
-
-  const preferencesQuery = useTableColumnPreferences(EXPERT_MANAGEMENT_MODULE_KEY)
-  const saveMutation = useSaveTableColumnPreferences(EXPERT_MANAGEMENT_MODULE_KEY)
-  const resetMutation = useResetTableColumnPreferences(EXPERT_MANAGEMENT_MODULE_KEY)
-
-  const { visibleColumns, hiddenColumns } = useMemo(() => {
-    const catalog = preferencesQuery.data?.catalog ?? []
-    const visibleIds = preferencesQuery.data?.visibleColumnIds ?? []
-    const visibleSet = new Set(visibleIds)
-
-    const visible: ManageMetricsListItem[] = visibleIds
-      .map((id) => catalog.find((column) => column.id === id))
-      .filter(Boolean)
-      .map((column) => ({
-        id: column!.id,
-        label: column!.label,
-        type: column!.type,
-        description: column!.description,
-      }))
-
-    const hidden: ManageMetricsAvailableItem[] = catalog
-      .filter((column) => !visibleSet.has(column.id))
-      .map((column) => ({
-        id: column.id,
-        title: column.label,
-        description: column.description,
-        type: column.type,
-      }))
-
-    return { visibleColumns: visible, hiddenColumns: hidden }
-  }, [preferencesQuery.data])
-
-  return (
-    <ManageMetrics
-      moduleName="Expert Management"
-      isLoading={preferencesQuery.isLoading}
-      isSaving={saveMutation.isPending || resetMutation.isPending}
-      loadingLabel="Loading column preferences…"
-      tableColumns={
-        preferencesQuery.data
-          ? {
-              visible: visibleColumns,
-              hidden: hiddenColumns,
-              onReset: () => {
-                resetMutation.mutate(undefined, {
-                  onSuccess: () => toast.success('Column preferences reset to default'),
-                  onError: () => toast.error('Failed to reset column preferences'),
-                })
-              },
-            }
-          : undefined
-      }
-      onBack={goBack}
-      onCancel={goBack}
-      onSave={({ visibleColumnIds }) => {
-        if (!visibleColumnIds?.length) {
-          toast.error('At least one visible column is required')
-          return
-        }
-
-        saveMutation.mutate(visibleColumnIds, {
-          onSuccess: () => {
-            toast.success('Column preferences saved')
-            goBack()
-          },
-          onError: () => toast.error('Failed to save column preferences'),
-        })
-      }}
-    />
-  )
-}
+export const ExpertManagementMetricsPage = () => (
+  <ModuleMetricsPage
+    moduleKey={EXPERT_MANAGEMENT_MODULE_KEY}
+    moduleName="Expert Management"
+    returnTo="/experts/management"
+    section="table"
+    includeDashboard={false}
+    maxActiveMetrics={4}
+  />
+)

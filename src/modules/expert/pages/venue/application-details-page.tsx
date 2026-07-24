@@ -566,18 +566,18 @@ export function ApplicationDetailsPage() {
         variant={modalVariant}
         title={
           modalVariant === 'approve'
-            ? 'Confirm Application'
+            ? 'Confirm Space Application'
             : modalVariant === 'requestChanges'
-              ? 'Request Changes'
+              ? 'Request Changes – Space Approval'
               : modalVariant === 'escalate'
                 ? 'Escalate Application'
-                : 'Reject Application'
+                : 'Reject Space Application'
         }
         description={
           modalVariant === 'approve'
-            ? 'Are you sure you want to approve this application? The applicant will be notified via email.'
+            ? 'Are you sure you want to approve this venue space? The applicant will be notified via email.'
             : modalVariant === 'requestChanges'
-              ? 'Are you sure you want to Request Changes to this application? The applicant will be notified via email.'
+              ? 'Are you sure you want to Request Changes to this venue space? The applicant will be notified via email.'
               : modalVariant === 'escalate'
                 ? 'Are you sure you want to escalate this Application? This Post will be reviewed by the selected parties.'
                 : 'Please choose the rejection reasons and add notes for this venue space.'

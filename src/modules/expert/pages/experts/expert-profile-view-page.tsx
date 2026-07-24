@@ -1033,10 +1033,8 @@ export function ExpertProfileViewPage() {
   const [suspendStartDate, setSuspendStartDate] = useState('')
   const [suspendEndDate, setSuspendEndDate] = useState('')
   const [suspendIndefinitely, setSuspendIndefinitely] = useState(false)
-  const [suspendReasonDetails, setSuspendReasonDetails] = useState('')
   const [suspendAdminNotes, setSuspendAdminNotes] = useState('')
   const [deleteReasons, setDeleteReasons] = useState<string[]>([])
-  const [deleteReason, setDeleteReason] = useState('')
   const [deleteAdminNotes, setDeleteAdminNotes] = useState('')
 
   const suspendExpertMutation = useSuspendExpert()
@@ -1062,14 +1060,12 @@ export function ExpertProfileViewPage() {
     setSuspendStartDate('')
     setSuspendEndDate('')
     setSuspendIndefinitely(false)
-    setSuspendReasonDetails('')
     setSuspendAdminNotes('')
   }, [])
 
   const closeDeleteModal = useCallback(() => {
     setDeleteModalOpen(false)
     setDeleteReasons([])
-    setDeleteReason('')
     setDeleteAdminNotes('')
   }, [])
 
@@ -1111,7 +1107,7 @@ export function ExpertProfileViewPage() {
           suspendIndefinitely,
           startDate: suspendIndefinitely ? undefined : toIso(suspendStartDate),
           endDate: suspendIndefinitely ? undefined : toIso(suspendEndDate),
-          reasonDetails: suspendReasonDetails.trim(),
+          reasonDetails: '',
           adminNotes: suspendAdminNotes.trim(),
         },
       },
@@ -1136,7 +1132,6 @@ export function ExpertProfileViewPage() {
     suspendEndDate,
     suspendIndefinitely,
     suspendExpertMutation,
-    suspendReasonDetails,
     suspendReasons,
     suspendStartDate,
   ])
@@ -1159,7 +1154,7 @@ export function ExpertProfileViewPage() {
         id,
         payload: {
           selectedReasons: deleteReasons,
-          reasonDetails: deleteReason.trim(),
+          reasonDetails: '',
           adminNotes: deleteAdminNotes.trim(),
         },
       },
@@ -1181,7 +1176,6 @@ export function ExpertProfileViewPage() {
     closeDeleteModal,
     deactivateExpertMutation,
     deleteAdminNotes,
-    deleteReason,
     deleteReasons,
     id,
     navigate,
@@ -1452,9 +1446,9 @@ export function ExpertProfileViewPage() {
       <DecisionActionModal
         open={suspendModalOpen}
         variant="suspend"
-        title="Suspend User"
-        description="Are you sure you want to suspend this expert? This action will restrict their account access and hide their services."
-        submitLabel="Suspend"
+        title="Suspend Expert"
+        description="Are you sure you want to suspend this Expert? This will result in removal of the account."
+        submitLabel="Suspend User"
         reasonOptions={SUSPEND_REASON_OPTIONS}
         selectedReasons={suspendReasons}
         onReasonToggle={toggleSuspendReason}
@@ -1465,8 +1459,6 @@ export function ExpertProfileViewPage() {
         onEndDateChange={setSuspendEndDate}
         indefinite={suspendIndefinitely}
         onIndefiniteChange={setSuspendIndefinitely}
-        reason={suspendReasonDetails}
-        onReasonChange={setSuspendReasonDetails}
         adminNotes={suspendAdminNotes}
         onAdminNotesChange={setSuspendAdminNotes}
         onClose={closeSuspendModal}
@@ -1476,15 +1468,13 @@ export function ExpertProfileViewPage() {
 
       <DecisionActionModal
         open={deleteModalOpen}
-        variant="reject"
-        title="Delete User"
-        description="Are you sure you want to delete this expert? The account will be soft-deleted for 21 days before permanent removal."
-        submitLabel="Delete User"
+        variant="delete"
+        title="Delete Expert"
+        description="Are you sure you want to delete this user? This will result in removal of the account."
+        submitLabel="Delete Expert"
         reasonOptions={ADMIN_DELETE_REASON_OPTIONS}
         selectedReasons={deleteReasons}
         onReasonToggle={toggleDeleteReason}
-        reason={deleteReason}
-        onReasonChange={setDeleteReason}
         adminNotes={deleteAdminNotes}
         onAdminNotesChange={setDeleteAdminNotes}
         onClose={closeDeleteModal}

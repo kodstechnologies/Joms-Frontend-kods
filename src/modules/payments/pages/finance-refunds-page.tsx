@@ -303,10 +303,7 @@ export function FinanceRefundsPage() {
             Track revenue, payouts, and financial performance
           </p>
         </div>
-        <Button
-          className="ui-manage-metrics"
-          onClick={() => toast.message('Metrics configuration coming soon')}
-        >
+        <Button className="ui-manage-metrics" onClick={() => navigate('/metrics/finance-refunds')}>
           <SlidersHorizontal className="size-4" />
           Manage Metrics
         </Button>

@@ -98,7 +98,7 @@ export function PastTicketsPage() {
           actions={[
             {
               label: 'Manage Metrics',
-              onClick: () => toast.message('Metrics configuration coming soon'),
+              onClick: () => navigate('/metrics/past-tickets'),
             },
           ]}
         />

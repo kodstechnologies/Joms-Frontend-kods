@@ -299,7 +299,7 @@ export function MembershipPlansPage({
         </div>
         <Button
           className="ui-manage-metrics ui-cta ui-cta-primary w-full shrink-0 md:w-auto"
-          onClick={() => toast.info('Metrics configuration coming soon')}
+          onClick={() => navigate('/metrics/memberships')}
         >
           <BarChart3 className="size-4" />
           Manage Metrics

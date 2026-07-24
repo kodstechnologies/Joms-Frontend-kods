@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 import { Eye, Mail, Pencil, Plus, SlidersHorizontal, Trash2 } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
 import { EditRecipientModal } from '../components/edit-recipient-modal'
@@ -29,6 +30,7 @@ import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
 
 export function ReferralManagementPage() {
+  const navigate = useNavigate()
   const { searchQuery, setSearchQuery, currentPage, setCurrentPage } = useReferralStore()
 
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
@@ -176,7 +178,7 @@ export function ReferralManagementPage() {
         <div className="flex w-full flex-col gap-2 sm:flex-row md:w-auto">
           <Button
             className="ui-manage-metrics h-9 w-full rounded-xl bg-[#FBC078] px-5 text-sm font-semibold text-black shadow-none hover:bg-[#EEB46A] md:w-auto"
-            onClick={() => toast.info('Metrics configuration coming soon')}
+            onClick={() => navigate('/metrics/referrals')}
           >
             <SlidersHorizontal className="size-4" />
             Manage Metrics

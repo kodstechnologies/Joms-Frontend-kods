@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 import { ClipboardList } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
 import { AssignUserModal } from './assign-user-modal'
@@ -55,6 +56,7 @@ function StatusBadge({ status }: { status: IncidentStatus }) {
 }
 
 export function IncidentTrackingPanel() {
+  const navigate = useNavigate()
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
   const [selected, setSelected] = useState<IncidentRow | null>(null)
@@ -131,7 +133,7 @@ export function IncidentTrackingPanel() {
         <Button
           variant="secondary"
           className="ui-manage-metrics"
-          onClick={() => toast.message('Metrics configuration coming soon')}
+          onClick={() => navigate('/metrics/incident-tracking')}
         >
           Manage Metrics
         </Button>

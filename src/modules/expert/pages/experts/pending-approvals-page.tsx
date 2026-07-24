@@ -58,7 +58,10 @@ export function ExpertPendingApprovalsPage() {
     search: searchQuery,
   })
 
-  const experts = data?.data || []
+  const experts = useMemo(
+    () => (data?.data || []).filter((expert) => expert.status === 'pending'),
+    [data?.data],
+  )
   const meta = data?.meta
   const selection = useExpertListSelection(experts)
 

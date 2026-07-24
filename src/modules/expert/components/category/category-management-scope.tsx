@@ -10,7 +10,7 @@ export type CategoryManagementScope = {
 
 export const SERVICE_CATEGORY_SCOPE: CategoryManagementScope = {
   basePath: '/categories/management',
-  metricsPath: '/categories/management/metrics',
+  metricsPath: '/categories/management/metrics?section=table',
   relatedListPath: '/services/management',
   relatedListLabel: 'View Services',
 }

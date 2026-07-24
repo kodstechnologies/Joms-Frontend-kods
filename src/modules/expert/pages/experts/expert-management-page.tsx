@@ -13,12 +13,14 @@ import {
   ShieldCheck,
   Trash2,
   User,
+  Users,
   type LucideIcon,
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
 import { useDeactivateExpert, useExperts, useSuspendExpert } from '../../hooks/use-expert'
+import { orderByActiveMetricIds, useActiveMetricIds } from '../../hooks/use-active-metric-ids'
 import { useTableColumnPreferences } from '../../hooks/use-ui-preferences'
 import { EXPERT_MANAGEMENT_MODULE_KEY } from '../../api/ui-preferences-api'
 import { ADMIN_DELETE_REASON_OPTIONS } from '../../constants/soft-delete'
@@ -70,17 +72,21 @@ export const ExpertManagementPage = () => {
   const [suspendStartDate, setSuspendStartDate] = useState('')
   const [suspendEndDate, setSuspendEndDate] = useState('')
   const [suspendIndefinitely, setSuspendIndefinitely] = useState(false)
-  const [suspendReasonDetails, setSuspendReasonDetails] = useState('')
   const [suspendAdminNotes, setSuspendAdminNotes] = useState('')
   const [deleteReasons, setDeleteReasons] = useState<string[]>([])
-  const [deleteReason, setDeleteReason] = useState('')
   const [deleteAdminNotes, setDeleteAdminNotes] = useState('')
   const navigate = useNavigate()
   const suspendExpertMutation = useSuspendExpert()
   const deactivateExpertMutation = useDeactivateExpert()
   const tableColumnPreferencesQuery = useTableColumnPreferences(EXPERT_MANAGEMENT_MODULE_KEY)
-  const { searchQuery, setSearchQuery, currentPage, setCurrentPage, activeStatus } =
-    useExpertStore()
+  const {
+    searchQuery,
+    setSearchQuery,
+    currentPage,
+    setCurrentPage,
+    activeStatus,
+    setActiveStatus,
+  } = useExpertStore()
 
   const {
     onAdvancedFilter,
@@ -134,7 +140,6 @@ export const ExpertManagementPage = () => {
     setSuspendStartDate('')
     setSuspendEndDate('')
     setSuspendIndefinitely(false)
-    setSuspendReasonDetails('')
     setSuspendAdminNotes('')
   }, [])
 
@@ -145,7 +150,6 @@ export const ExpertManagementPage = () => {
   const openDeleteModal = useCallback((expert: Expert) => {
     setDeleteExpertTarget(expert)
     setDeleteReasons([])
-    setDeleteReason('')
     setDeleteAdminNotes('')
   }, [])
 
@@ -195,7 +199,7 @@ export const ExpertManagementPage = () => {
           suspendIndefinitely,
           startDate: suspendIndefinitely ? undefined : toIso(suspendStartDate),
           endDate: suspendIndefinitely ? undefined : toIso(suspendEndDate),
-          reasonDetails: suspendReasonDetails.trim(),
+          reasonDetails: '',
           adminNotes: suspendAdminNotes.trim(),
         },
       },
@@ -217,7 +221,6 @@ export const ExpertManagementPage = () => {
     suspendIndefinitely,
     suspendExpertMutation,
     suspendExpertTarget,
-    suspendReasonDetails,
     suspendReasons,
     suspendStartDate,
   ])
@@ -240,7 +243,7 @@ export const ExpertManagementPage = () => {
         id: deleteExpertTarget.id,
         payload: {
           selectedReasons: deleteReasons,
-          reasonDetails: deleteReason.trim(),
+          reasonDetails: '',
           adminNotes: deleteAdminNotes.trim(),
         },
       },
@@ -260,7 +263,6 @@ export const ExpertManagementPage = () => {
     deactivateExpertMutation,
     deleteAdminNotes,
     deleteExpertTarget,
-    deleteReason,
     deleteReasons,
   ])
 
@@ -489,15 +491,14 @@ export const ExpertManagementPage = () => {
     toggleVisibleexperts,
   ])
 
-  const bulkActions = [
-    { label: 'Delete selected experts', icon: Trash2 },
-    { label: 'Suspend selected experts', icon: PauseCircle },
-    { label: 'Notify selected experts', icon: Bell },
-    { label: 'Message selected experts', icon: Mail },
-    { label: 'Review selected experts', icon: ShieldCheck },
-  ]
+  const defaultMetricIds = useMemo(
+    () => ['approvals-pending', 'reported-experts', 'suspended-experts', 'deleted-experts'],
+    [],
+  )
+  const activeMetricIds = useActiveMetricIds(EXPERT_MANAGEMENT_MODULE_KEY, defaultMetricIds)
 
-  const statusCards: {
+  const statusCardCatalog: {
+    id: string
     label: string
     count: number
     gradient: string
@@ -506,6 +507,7 @@ export const ExpertManagementPage = () => {
     status: string
   }[] = [
     {
+      id: 'approvals-pending',
       label: 'Approvals Pending',
       count: counts.approvalsPending,
       gradient: statusCardTones.warning.background,
@@ -514,6 +516,7 @@ export const ExpertManagementPage = () => {
       status: 'pending',
     },
     {
+      id: 'reported-experts',
       label: 'Reported Experts',
       count: counts.reportedExperts,
       gradient: statusCardTones.danger.background,
@@ -522,6 +525,7 @@ export const ExpertManagementPage = () => {
       status: 'reported',
     },
     {
+      id: 'suspended-experts',
       label: 'Suspended Experts',
       count: counts.suspendedExperts,
       gradient: statusCardTones.danger.background,
@@ -530,6 +534,7 @@ export const ExpertManagementPage = () => {
       status: 'suspended',
     },
     {
+      id: 'deleted-experts',
       label: 'Deleted Experts',
       count: counts.deletedExperts,
       gradient: statusCardTones.danger.background,
@@ -537,6 +542,34 @@ export const ExpertManagementPage = () => {
       icon: Trash2,
       status: 'deactivated',
     },
+    {
+      id: 'active-experts',
+      label: 'Active Experts',
+      count: meta?.pagination?.total ?? 0,
+      gradient: statusCardTones.warning.background,
+      border: statusCardTones.warning.border,
+      icon: Users,
+      status: 'active',
+    },
+    {
+      id: 'total-experts',
+      label: 'Total Experts',
+      count: meta?.pagination?.total ?? 0,
+      gradient: statusCardTones.warning.background,
+      border: statusCardTones.warning.border,
+      icon: User,
+      status: 'all',
+    },
+  ]
+
+  const statusCards = orderByActiveMetricIds(statusCardCatalog, activeMetricIds)
+
+  const bulkActions = [
+    { label: 'Delete selected experts', icon: Trash2 },
+    { label: 'Suspend selected experts', icon: PauseCircle },
+    { label: 'Notify selected experts', icon: Bell },
+    { label: 'Message selected experts', icon: Mail },
+    { label: 'Review selected experts', icon: ShieldCheck },
   ]
 
   return (
@@ -552,7 +585,7 @@ export const ExpertManagementPage = () => {
         <div className="flex w-full flex-col items-center gap-3 md:w-auto md:flex-row">
           <Button
             className="ui-manage-metrics h-9 w-full md:w-auto"
-            onClick={() => navigate('/experts/management/metrics')}
+            onClick={() => navigate('/experts/management/metrics?section=table')}
           >
             <BarChart3 className="size-4" />
             Manage Metrics
@@ -572,7 +605,7 @@ export const ExpertManagementPage = () => {
       <StatusQuickLinkRow>
         {statusCards.map((card) => (
           <StatusQuickLinkCard
-            key={card.label}
+            key={card.id}
             title={card.label}
             value={card.count ?? 0}
             icon={card.icon}
@@ -598,6 +631,10 @@ export const ExpertManagementPage = () => {
               if (card.status === 'deactivated') {
                 navigate('/experts/deleted')
                 return
+              }
+
+              if (card.status === 'all' || card.status === 'active') {
+                setActiveStatus('all')
               }
             }}
           />
@@ -656,8 +693,8 @@ export const ExpertManagementPage = () => {
         open={Boolean(suspendExpertTarget)}
         variant="suspend"
         title="Suspend Expert"
-        description="Are you sure you want to suspend this expert? This action will restrict their account access and hide their services."
-        submitLabel="Suspend"
+        description="Are you sure you want to suspend this Expert? This will result in removal of the account."
+        submitLabel="Suspend User"
         reasonOptions={SUSPEND_REASON_OPTIONS}
         selectedReasons={suspendReasons}
         onReasonToggle={toggleSuspendReason}
@@ -668,8 +705,6 @@ export const ExpertManagementPage = () => {
         onEndDateChange={setSuspendEndDate}
         indefinite={suspendIndefinitely}
         onIndefiniteChange={setSuspendIndefinitely}
-        reason={suspendReasonDetails}
-        onReasonChange={setSuspendReasonDetails}
         adminNotes={suspendAdminNotes}
         onAdminNotesChange={setSuspendAdminNotes}
         onClose={closeSuspendModal}
@@ -681,13 +716,11 @@ export const ExpertManagementPage = () => {
         open={Boolean(deleteExpertTarget)}
         variant="delete"
         title="Delete Expert"
-        description="Are you sure you want to delete this user? This will result in removal of the account after 21 days unless restored."
+        description="Are you sure you want to delete this user? This will result in removal of the account."
         submitLabel="Delete Expert"
         reasonOptions={ADMIN_DELETE_REASON_OPTIONS}
         selectedReasons={deleteReasons}
         onReasonToggle={toggleDeleteReason}
-        reason={deleteReason}
-        onReasonChange={setDeleteReason}
         adminNotes={deleteAdminNotes}
         onAdminNotesChange={setDeleteAdminNotes}
         onClose={closeDeleteModal}

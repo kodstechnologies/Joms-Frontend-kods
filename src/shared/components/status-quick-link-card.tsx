@@ -49,11 +49,9 @@ export function StatusQuickLinkCard({
         className,
       )}
     >
-      <Icon className="icon-md text-brand-text shrink-0" strokeWidth={1.5} aria-hidden="true" />
-      <span className="text-body-md-medium text-brand-text whitespace-nowrap">{title}</span>
-      <span className="text-body-md-semibold text-brand-text tabular-nums">
-        {String(value).padStart(2, '0')}
-      </span>
+      <Icon className="icon-sm text-brand-text shrink-0" strokeWidth={1.5} aria-hidden="true" />
+      <span className="ui-status-card-title">{title}</span>
+      <span className="ui-status-card-value">{String(value).padStart(2, '0')}</span>
     </button>
   )
 }

@@ -19,13 +19,17 @@ import {
   TrendingDown,
   TrendingUp,
 } from 'lucide-react'
+import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
+import { VENUE_DASHBOARD_MODULE_KEY } from '../../api/ui-preferences-api'
+import { orderByActiveMetricIds, useActiveMetricIds } from '../../hooks/use-active-metric-ids'
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
 
 type Metric = {
+  id: string
   label: string
   value: string
   change?: string
@@ -36,6 +40,7 @@ type Metric = {
 
 const METRICS: Metric[] = [
   {
+    id: 'total-venues',
     label: 'Total Venues',
     value: '45',
     change: '12%',
@@ -43,6 +48,7 @@ const METRICS: Metric[] = [
     changeNote: 'vs last quarter',
   },
   {
+    id: 'active-venues',
     label: 'Active Venues',
     value: '38',
     change: '8.4%',
@@ -50,6 +56,7 @@ const METRICS: Metric[] = [
     changeNote: 'vs last quarter',
   },
   {
+    id: 'avg-utilization',
     label: 'Avg Utilization Rate',
     value: '71.3%',
     change: '5.2%',
@@ -57,6 +64,7 @@ const METRICS: Metric[] = [
     changeNote: 'vs last month',
   },
   {
+    id: 'events-per-venue',
     label: 'Events Per Venue',
     value: '27.6',
     change: '18%',
@@ -64,6 +72,7 @@ const METRICS: Metric[] = [
     changeNote: 'vs last month',
   },
   {
+    id: 'total-revenue',
     label: 'Revenue Contribution',
     value: '₹342,567',
     change: '9.8%',
@@ -71,6 +80,7 @@ const METRICS: Metric[] = [
     changeNote: 'vs last month',
   },
   {
+    id: 'cancellation-rate',
     label: 'Venue Cancellation Rate',
     value: '5.4%',
     change: '2.1%',
@@ -78,6 +88,7 @@ const METRICS: Metric[] = [
     changeNote: 'vs last quarter',
   },
   {
+    id: 'avg-rating',
     label: 'Avg Venue Rating',
     value: '4.4/5',
     change: '0.3',
@@ -85,31 +96,16 @@ const METRICS: Metric[] = [
     changeNote: 'vs last quarter',
   },
   {
+    id: 'satisfaction',
     label: 'Venue Satisfaction Score',
     value: '88%',
     change: '4%',
     changeType: 'up',
     changeNote: 'vs last quarter',
   },
-  { label: 'Peak Utilization Hours', value: '6-8 PM', note: '99% utilization' },
-  { label: 'Avg Booking Lead Time', value: '12 days', note: 'fewer reservations' },
-  { label: 'Venue Turnover Rate', value: '2.3 hrs', note: 'avg. setup + cleanup' },
-  { label: 'Off-Peak Utilization', value: '34%', note: 'Unused capacity 9-5' },
-  {
-    label: 'Repeat Booking Rate',
-    value: '67%',
-    change: '5.1%',
-    changeType: 'up',
-    changeNote: 'vs last quarter',
-  },
-  {
-    label: 'Avg Revenue Per Venue',
-    value: '8.3%',
-    change: '3.2%',
-    changeType: 'up',
-    changeNote: 'vs last month',
-  },
 ]
+
+const DEFAULT_METRIC_IDS = ['total-venues', 'active-venues', 'avg-utilization', 'events-per-venue']
 
 type TrendPoint = {
   month: string
@@ -254,6 +250,11 @@ function MetricCard({ metric }: { metric: Metric }) {
 
 export const VenueDashboardPage = () => {
   const navigate = useNavigate()
+  const activeMetricIds = useActiveMetricIds(VENUE_DASHBOARD_MODULE_KEY, DEFAULT_METRIC_IDS)
+  const visibleMetrics = useMemo(
+    () => orderByActiveMetricIds(METRICS, activeMetricIds),
+    [activeMetricIds],
+  )
 
   return (
     <div className="space-y-6">
@@ -284,8 +285,8 @@ export const VenueDashboardPage = () => {
       </div>
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4">
-        {METRICS.map((metric) => (
-          <MetricCard key={metric.label} metric={metric} />
+        {visibleMetrics.map((metric) => (
+          <MetricCard key={metric.id} metric={metric} />
         ))}
       </div>
 

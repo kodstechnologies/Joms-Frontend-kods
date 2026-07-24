@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from 'react'
 import { Check, RefreshCw, Settings2, Upload } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import {
   Area,
@@ -146,6 +147,8 @@ function LoadBar({ value }: { value: number }) {
 }
 
 export function PlatformHealthPage() {
+  const navigate = useNavigate()
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
@@ -168,7 +171,7 @@ export function PlatformHealthPage() {
           </button>
           <button
             type="button"
-            onClick={() => toast.message('Metrics configuration coming soon')}
+            onClick={() => navigate('/metrics/platform-health')}
             className="ui-manage-metrics ui-cta ui-cta-primary inline-flex items-center gap-2 px-4"
           >
             <Settings2 className="size-4" />

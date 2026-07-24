@@ -1,19 +1,16 @@
-import { Check, MoveDiagonal, Trash2, X } from 'lucide-react'
+import { Check, CircleArrowOutUpRight, Pause, Trash2, UserMinus, X } from 'lucide-react'
 
 import { cn } from '@/shared/lib/cn'
 
 export type DecisionActionModalVariant =
-  | 'approve'
-  | 'reject'
-  | 'requestChanges'
-  | 'escalate'
-  | 'suspend'
-  | 'delete'
+  'approve' | 'reject' | 'requestChanges' | 'escalate' | 'suspend' | 'delete' | 'pause'
 
 export type DecisionActionModalOption = {
   label: string
   value: string
 }
+
+export type DecisionActionSubmitIcon = 'check' | 'x' | 'trash' | 'userMinus' | 'pause' | 'none'
 
 type DecisionActionModalProps = {
   open: boolean
@@ -33,6 +30,7 @@ type DecisionActionModalProps = {
   reasonOptions?: DecisionActionModalOption[]
   selectedReasons?: string[]
   onReasonToggle?: (value: string) => void
+  showReasonsLabel?: boolean
   confirmationLabel?: string
   confirmationChecked?: boolean
   onConfirmationChange?: (checked: boolean) => void
@@ -48,41 +46,60 @@ type DecisionActionModalProps = {
   indefinite?: boolean
   onIndefiniteChange?: (value: boolean) => void
   indefiniteLabel?: string
-  submitIcon?: 'check' | 'x' | 'none'
+  submitIcon?: DecisionActionSubmitIcon
+  showHeroIcon?: boolean
 }
 
 const variantStyles: Record<
   DecisionActionModalVariant,
   {
     submit: string
-    submitIcon?: 'check' | 'x'
+    submitIcon?: DecisionActionSubmitIcon
     checkIconColor?: string
+    showHero?: boolean
+    showReasonsLabel?: boolean
   }
 > = {
   approve: {
     submit: 'ui-modal-btn-positive',
     submitIcon: 'check',
     checkIconColor: 'text-brand-positive',
+    showHero: true,
   },
   reject: {
     submit: 'ui-modal-btn-negative',
     submitIcon: 'x',
+    showHero: true,
+    showReasonsLabel: true,
   },
   requestChanges: {
-    submit: 'ui-modal-btn-gold',
+    submit: 'ui-modal-btn-request-changes',
     submitIcon: 'check',
-    checkIconColor: 'text-[#B8843F]',
+    checkIconColor: 'text-[#F97316]',
+    showHero: false,
+    showReasonsLabel: true,
   },
   escalate: {
     submit: 'ui-modal-btn-gold',
+    showHero: true,
   },
   suspend: {
     submit: 'ui-modal-btn-negative',
-    submitIcon: 'x',
+    submitIcon: 'userMinus',
+    showHero: true,
+    showReasonsLabel: false,
   },
   delete: {
     submit: 'ui-modal-btn-negative',
-    submitIcon: 'x',
+    submitIcon: 'trash',
+    showHero: true,
+    showReasonsLabel: false,
+  },
+  pause: {
+    submit: 'ui-modal-btn-negative',
+    submitIcon: 'pause',
+    showHero: false,
+    showReasonsLabel: true,
   },
 }
 
@@ -118,6 +135,7 @@ export function DecisionActionModal({
   reasonOptions = [],
   selectedReasons = [],
   onReasonToggle,
+  showReasonsLabel,
   confirmationLabel,
   confirmationChecked = false,
   onConfirmationChange,
@@ -132,8 +150,9 @@ export function DecisionActionModal({
   onEndDateChange,
   indefinite = false,
   onIndefiniteChange,
-  indefiniteLabel = 'Suspend indefinitely (until manually reactivated)',
+  indefiniteLabel = 'Suspend indefinitely (Until manually Reactivated)',
   submitIcon,
+  showHeroIcon,
 }: DecisionActionModalProps) {
   if (!open) return null
 
@@ -142,9 +161,10 @@ export function DecisionActionModal({
   const showReasonInput = Boolean(onReasonChange)
   const showEscalationOptions = escalationOptions.length > 0
   const showConfirmation = Boolean(confirmationLabel && onConfirmationChange)
-  const showHeroIcon = variant === 'approve' || variant === 'escalate' || variant === 'delete'
-  const isDocumentRejectLayout = Boolean(warning) || showConfirmation
-  const resolvedSubmitIcon = submitIcon ?? styles.submitIcon
+  const resolvedShowHero = showHeroIcon ?? styles.showHero ?? false
+  const resolvedShowReasonsLabel = showReasonsLabel ?? styles.showReasonsLabel ?? false
+  const resolvedSubmitIcon = submitIcon ?? styles.submitIcon ?? 'none'
+  const isLeftAlignedCopy = Boolean(warning)
   const { primary, secondary } = splitDescription(description)
 
   return (
@@ -177,21 +197,25 @@ export function DecisionActionModal({
         <div className="ui-modal-body space-y-4">
           {warning ? <p className="text-body-sm text-muted">{warning}</p> : null}
 
-          {showHeroIcon ? (
+          {resolvedShowHero ? (
             <div className="flex justify-center">
               {variant === 'approve' ? (
-                <span className="bg-brand-positive flex h-[70px] w-[70px] items-center justify-center rounded-full">
-                  <Check className="size-9 text-white" strokeWidth={3} aria-hidden="true" />
+                <span className="flex size-[70px] items-center justify-center rounded-full bg-[rgb(0_166_62_/_30%)]">
+                  <Check className="size-7 text-[#00A63E]" strokeWidth={3} aria-hidden="true" />
+                </span>
+              ) : variant === 'reject' || variant === 'suspend' ? (
+                <span className="flex size-[70px] items-center justify-center rounded-full bg-[rgb(211_25_28_/_20%)]">
+                  <X className="size-7 text-[#D3191C]" strokeWidth={3} aria-hidden="true" />
                 </span>
               ) : variant === 'delete' ? (
-                <span className="flex h-[62px] w-[62px] items-center justify-center rounded-full bg-[rgb(211_25_28_/_20%)]">
-                  <Trash2 className="text-brand-danger size-7" strokeWidth={1.5} />
+                <span className="flex size-[70px] items-center justify-center rounded-full bg-[rgb(211_25_28_/_20%)]">
+                  <Trash2 className="size-7 text-[#D3191C]" strokeWidth={1.75} aria-hidden="true" />
                 </span>
               ) : (
-                <span className="flex size-[72px] items-center justify-center rounded-full bg-[linear-gradient(180deg,#F6CB86_0%,#E0A263_100%)]">
-                  <MoveDiagonal
-                    className="size-8 text-[#3D2A16]"
-                    strokeWidth={1.5}
+                <span className="flex size-[70px] items-center justify-center rounded-full bg-[rgb(246_203_134_/_20%)]">
+                  <CircleArrowOutUpRight
+                    className="size-7 text-[#F6CB86]"
+                    strokeWidth={2}
                     aria-hidden="true"
                   />
                 </span>
@@ -202,7 +226,7 @@ export function DecisionActionModal({
           <div
             className={cn(
               'space-y-1',
-              isDocumentRejectLayout ? 'text-left' : 'mx-auto max-w-[333px] text-center',
+              isLeftAlignedCopy ? 'text-left' : 'mx-auto max-w-[333px] text-center',
             )}
           >
             <p className="text-body-md-semibold text-brand-text">{primary}</p>
@@ -211,7 +235,9 @@ export function DecisionActionModal({
 
           {showReasons ? (
             <div>
-              <span className="text-body-sm-medium text-muted mb-[10px] block">Reasons</span>
+              {resolvedShowReasonsLabel ? (
+                <span className="text-body-sm-medium text-muted mb-[10px] block">Reasons</span>
+              ) : null}
               <div className="flex flex-wrap gap-[10px]">
                 {reasonOptions.map((option) => {
                   const isSelected = selectedReasons.includes(option.value)
@@ -248,7 +274,7 @@ export function DecisionActionModal({
 
           {showTimeline ? (
             <div>
-              <span className="text-body-sm-medium text-muted mb-[10px] block">
+              <span className="text-body-sm-medium text-brand-text mb-[10px] block">
                 Suspension Timeline
               </span>
               <div className="grid grid-cols-2 gap-3">
@@ -351,17 +377,41 @@ export function DecisionActionModal({
           >
             <span>{submitLabel}</span>
             {resolvedSubmitIcon === 'check' ? (
-              <span className="flex size-4 shrink-0 items-center justify-center rounded-full bg-white">
+              <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-white">
                 <Check
-                  className={cn('size-2.5', styles.checkIconColor ?? 'text-brand-positive')}
+                  className={cn('size-3', styles.checkIconColor ?? 'text-brand-positive')}
                   strokeWidth={3}
                   aria-hidden="true"
                 />
               </span>
             ) : null}
             {resolvedSubmitIcon === 'x' ? (
-              <span className="flex size-4 shrink-0 items-center justify-center rounded-full bg-white">
-                <X className="text-brand-danger size-2.5" strokeWidth={3} aria-hidden="true" />
+              <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-white">
+                <X className="text-brand-danger size-3" strokeWidth={3} aria-hidden="true" />
+              </span>
+            ) : null}
+            {resolvedSubmitIcon === 'trash' ? (
+              <Trash2
+                className="size-4 shrink-0 text-white"
+                strokeWidth={1.75}
+                aria-hidden="true"
+              />
+            ) : null}
+            {resolvedSubmitIcon === 'userMinus' ? (
+              <UserMinus
+                className="size-4 shrink-0 text-white"
+                strokeWidth={1.75}
+                aria-hidden="true"
+              />
+            ) : null}
+            {resolvedSubmitIcon === 'pause' ? (
+              <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-white">
+                <Pause
+                  className="text-brand-danger size-3"
+                  strokeWidth={2.5}
+                  fill="currentColor"
+                  aria-hidden="true"
+                />
               </span>
             ) : null}
           </button>

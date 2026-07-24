@@ -861,18 +861,18 @@ export function SpaceDetailsPage() {
         variant={decisionVariant}
         title={
           decisionVariant === 'approve'
-            ? 'Confirm Application'
+            ? 'Confirm Space Application'
             : decisionVariant === 'requestChanges'
-              ? 'Request Changes'
+              ? 'Request Changes – Space Approval'
               : decisionVariant === 'escalate'
                 ? 'Escalate Application'
-                : 'Reject Application'
+                : 'Reject Space Application'
         }
         description={
           decisionVariant === 'approve'
-            ? 'Are you sure you want to approve this application? The applicant will be notified via email.'
+            ? 'Are you sure you want to approve this venue space? The applicant will be notified via email.'
             : decisionVariant === 'requestChanges'
-              ? 'Are you sure you want to Request Changes to this application? The applicant will be notified via email.'
+              ? 'Are you sure you want to Request Changes to this venue space? The applicant will be notified via email.'
               : decisionVariant === 'escalate'
                 ? 'Are you sure you want to escalate this Application? This Post will be reviewed by the selected parties.'
                 : 'Please choose the rejection reasons and add notes for this venue space.'

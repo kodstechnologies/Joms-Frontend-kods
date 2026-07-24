@@ -255,10 +255,7 @@ export function FinanceTaxCompliancePage() {
             <span className="text-brand-text font-semibold">Tax & Compliance</span>
           </p>
         </div>
-        <Button
-          className="ui-manage-metrics"
-          onClick={() => toast.message('Metrics configuration coming soon')}
-        >
+        <Button className="ui-manage-metrics" onClick={() => navigate('/metrics/finance-tax')}>
           <SlidersHorizontal className="size-4" />
           Manage Metrics
         </Button>

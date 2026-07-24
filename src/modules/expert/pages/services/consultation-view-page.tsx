@@ -386,6 +386,7 @@ export const ConsultationViewPage = () => {
               ? setDecisionReason
               : undefined
           }
+          reasonLabel={activeDecisionAction === 'requestChanges' ? 'Request Changes' : 'Reason'}
           reasonOptions={decisionModalConfig.reasonOptions}
           selectedReasons={selectedReasons}
           onReasonToggle={toggleDecisionReason}

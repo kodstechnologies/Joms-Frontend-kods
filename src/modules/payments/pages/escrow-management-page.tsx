@@ -377,10 +377,7 @@ export function EscrowManagementPage() {
             </Link>
           </p>
         </div>
-        <Button
-          className="ui-manage-metrics"
-          onClick={() => toast.message('Metrics configuration coming soon')}
-        >
+        <Button className="ui-manage-metrics" onClick={() => navigate('/metrics/finance-escrow')}>
           <SlidersHorizontal className="size-4" />
           Manage Metrics
         </Button>

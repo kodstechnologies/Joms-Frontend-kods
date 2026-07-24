@@ -95,7 +95,8 @@
   --brand-icon-stroke: 1.5px;
 
   --brand-modal-width: 551px;
-  --brand-modal-max-height: 594px;
+  --brand-modal-max-height: 90vh;
+  --brand-table-width: 1268px;
 
   --brand-sidebar-width: 280px;
   --brand-sidebar-collapsed: 64px;
@@ -436,6 +437,11 @@ button:disabled,
     min-width: 149px !important;
     max-width: 149px !important;
   }
+
+  .ui-data-table {
+    width: var(--brand-table-width);
+    max-width: var(--brand-table-width);
+  }
 }
 
 .ui-input {
@@ -518,6 +524,11 @@ button:disabled,
   font-weight: 600;
 }
 
+.ui-data-table {
+  box-sizing: border-box;
+  width: 100%;
+}
+
 .ui-data-table-table {
   width: 100%;
   min-width: max-content;
@@ -560,6 +571,7 @@ button:disabled,
   display: inline-flex;
   box-sizing: border-box;
   align-items: center;
+  justify-content: center;
   gap: 10px;
   padding: 10px;
   border-radius: 10px;
@@ -582,6 +594,25 @@ button:disabled,
   background: rgb(211 25 28 / 30%);
 }
 
+.ui-status-card-title,
+.ui-status-card-value {
+  font-family: 'Figtree', ui-sans-serif, system-ui, sans-serif;
+  font-size: 12px;
+  line-height: 18px;
+  letter-spacing: 0;
+  color: #ffffff;
+  white-space: nowrap;
+}
+
+.ui-status-card-title {
+  font-weight: 500;
+}
+
+.ui-status-card-value {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
 .ui-status-card-listing {
   width: 238px;
   min-width: 238px;
@@ -589,10 +620,6 @@ button:disabled,
   min-height: 40px;
   max-height: 40px;
   overflow: hidden;
-}
-
-.ui-status-card-listing span {
-  line-height: 18px;
 }
 
 .ui-status-card-row {
@@ -768,14 +795,14 @@ button:disabled,
   flex: 1 1 239px;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 10px;
   border-radius: var(--brand-radius-lg);
-  padding: 0 12px;
+  padding: 10px;
   border: none;
   font-family: 'Figtree', ui-sans-serif, system-ui, sans-serif;
   font-weight: 600;
-  font-size: 14px;
-  line-height: 22px;
+  font-size: 12px;
+  line-height: 18px;
   letter-spacing: 0;
   white-space: nowrap;
   transition:
@@ -825,6 +852,15 @@ button:disabled,
 
 .ui-modal-btn-gold:hover {
   filter: brightness(0.96);
+}
+
+.ui-modal-btn-request-changes {
+  background: #f97316;
+  color: #ffffff;
+}
+
+.ui-modal-btn-request-changes:hover {
+  background: #ea670c;
 }
 
 .ui-modal-reason-chip {

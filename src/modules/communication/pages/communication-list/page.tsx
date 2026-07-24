@@ -53,7 +53,7 @@ export function CommunicationListPage() {
           <Button
             variant="secondary"
             className="ui-manage-metrics"
-            onClick={() => toast.info('Metrics configuration coming soon')}
+            onClick={() => navigate('/metrics/communication')}
           >
             <BarChart3 className="size-4" />
             Manage Metrics

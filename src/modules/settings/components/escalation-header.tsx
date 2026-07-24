@@ -1,8 +1,11 @@
 import { SlidersHorizontal } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 
 import { Button } from '@/shared/components/ui/button'
 
 export function EscalationHeader() {
+  const navigate = useNavigate()
+
   return (
     <div className="flex items-start justify-between">
       <div>
@@ -13,7 +16,10 @@ export function EscalationHeader() {
         </p>
       </div>
 
-      <Button className="ui-manage-metrics bg-[#F0C27B] text-black hover:bg-[#f4cc91]">
+      <Button
+        className="ui-manage-metrics bg-[#F0C27B] text-black hover:bg-[#f4cc91]"
+        onClick={() => navigate('/metrics/escalations')}
+      >
         <SlidersHorizontal className="mr-2 h-4 w-4" />
         Manage Metrics
       </Button>

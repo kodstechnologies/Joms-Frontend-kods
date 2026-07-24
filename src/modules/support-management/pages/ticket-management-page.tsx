@@ -200,7 +200,7 @@ export function TicketManagementPage() {
           },
           {
             label: 'Manage Metrics',
-            onClick: () => toast.message('Metrics configuration coming soon'),
+            onClick: () => navigate('/metrics/ticket-management'),
           },
         ]}
       />

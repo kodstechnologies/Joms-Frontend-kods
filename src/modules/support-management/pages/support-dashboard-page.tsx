@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
 import { SupportDashboardCharts } from '../components/support-dashboard-charts'
@@ -7,6 +8,7 @@ import { StatCard } from '@/shared/components/dashboard/stat-card'
 import { ResponsiveGrid } from '@/shared/components/responsive/responsive-grid'
 
 export function SupportDashboardPage() {
+  const navigate = useNavigate()
   const stats = supportDashboardStats.map((s) => ({
     title: s.title,
     value: s.value,
@@ -26,7 +28,7 @@ export function SupportDashboardPage() {
           },
           {
             label: 'Manage Metrics',
-            onClick: () => toast.message('Metrics configuration coming soon'),
+            onClick: () => navigate('/metrics/support-dashboard'),
           },
         ]}
       />

@@ -13,6 +13,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
+import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
 import { AnalyticsWidget } from '@/shared/components/dashboard/analytics-widget'
@@ -30,6 +31,7 @@ import {
 } from '@/modules/dashboard/mock/executive-overview.mock'
 
 export function ExecutiveOverviewPage() {
+  const navigate = useNavigate()
   const isLoading = false
   const pieColors = ['#EF4444', '#F59E0B', '#60A5FA', '#34D399', '#A78BFA']
   const tooltipStyle = {
@@ -49,7 +51,7 @@ export function ExecutiveOverviewPage() {
         actions={[
           {
             label: 'Manage Metrics',
-            onClick: () => toast.message('Metrics configuration coming soon'),
+            onClick: () => navigate('/metrics/executive-overview'),
             variant: 'default',
           },
           {

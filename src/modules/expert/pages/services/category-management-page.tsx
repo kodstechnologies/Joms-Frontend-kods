@@ -15,6 +15,7 @@ import {
   CategoryManagementPageHeader,
   CategoryQuickLinks,
 } from '../../components/category/category-list-shared'
+import { orderByActiveMetricIds, useActiveMetricIds } from '../../hooks/use-active-metric-ids'
 import { useServiceCategories } from '../../hooks/use-category-management'
 import { useTableColumnPreferences } from '../../hooks/use-ui-preferences'
 
@@ -68,6 +69,70 @@ export function CategoryManagementPage() {
     [categories],
   )
 
+  const defaultMetricIds = useMemo(
+    () => ['total-categories', 'active-categories', 'total-sub-categories', 'top-category'],
+    [],
+  )
+  const activeMetricIds = useActiveMetricIds(
+    SERVICE_CATEGORY_MANAGEMENT_MODULE_KEY,
+    defaultMetricIds,
+  )
+
+  const metricCardCatalog = useMemo(
+    () => [
+      {
+        id: 'total-categories',
+        title: 'Total categories',
+        value: String(allData?.pagination?.total ?? totalItems),
+      },
+      {
+        id: 'active-categories',
+        title: 'Active Categories',
+        value: String(totalItems),
+      },
+      {
+        id: 'total-sub-categories',
+        title: 'Total Sub-Category',
+        value: String(totalSubCategories),
+      },
+      {
+        id: 'top-category',
+        title: 'Top Category',
+        value: categories[0]?.name || '—',
+      },
+      {
+        id: 'paused-categories',
+        title: 'Paused Categories',
+        value: String(pausedData?.pagination?.total ?? 0),
+      },
+      {
+        id: 'deleted-categories',
+        title: 'Deleted Categories',
+        value: String(deletedData?.pagination?.total ?? 0),
+      },
+      {
+        id: 'total-services',
+        title: 'Total Services',
+        value: '0',
+      },
+      {
+        id: 'total-revenue',
+        title: 'Total Revenue',
+        value: '—',
+      },
+    ],
+    [
+      allData?.pagination?.total,
+      categories,
+      deletedData?.pagination?.total,
+      pausedData?.pagination?.total,
+      totalItems,
+      totalSubCategories,
+    ],
+  )
+
+  const metricCards = orderByActiveMetricIds(metricCardCatalog, activeMetricIds)
+
   const columns = useMemo<ColumnDef<Category>[]>(() => {
     const defaultVisibleIds = [
       'categoryId',
@@ -100,13 +165,9 @@ export function CategoryManagementPage() {
       />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard
-          title="Total categories"
-          value={String(allData?.pagination?.total ?? totalItems)}
-        />
-        <StatCard title="Active Categories" value={String(totalItems)} />
-        <StatCard title="Total Sub-Category" value={String(totalSubCategories)} />
-        <StatCard title="Top Category" value={categories[0]?.name || '—'} />
+        {metricCards.map((card) => (
+          <StatCard key={card.id} title={card.title} value={card.value} />
+        ))}
       </div>
 
       <CategoryQuickLinks

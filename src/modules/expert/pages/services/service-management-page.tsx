@@ -11,6 +11,7 @@ import {
   Hourglass,
   Image,
   Mail,
+  Package,
   PauseCircle,
   ShieldCheck,
   Trash2,
@@ -20,6 +21,7 @@ import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
 import { SERVICE_MANAGEMENT_MODULE_KEY } from '../../api/ui-preferences-api'
+import { orderByActiveMetricIds, useActiveMetricIds } from '../../hooks/use-active-metric-ids'
 import { useServices, useSuspendService, useDeleteService } from '../../hooks/use-services'
 import { useTableColumnPreferences } from '../../hooks/use-ui-preferences'
 import { getServiceManagementViewPath } from '../../lib/service-navigation'
@@ -471,7 +473,14 @@ export const ServiceManagementPage = () => {
     { label: 'Suspend selected services', icon: PauseCircle },
   ]
 
-  const statusCards: {
+  const defaultMetricIds = useMemo(
+    () => ['approvals-pending', 'reported-services', 'suspended-services', 'deleted-services'],
+    [],
+  )
+  const activeMetricIds = useActiveMetricIds(SERVICE_MANAGEMENT_MODULE_KEY, defaultMetricIds)
+
+  const statusCardCatalog: {
+    id: string
     label: string
     count: number
     gradient: string
@@ -480,6 +489,7 @@ export const ServiceManagementPage = () => {
     status: string
   }[] = [
     {
+      id: 'approvals-pending',
       label: 'Approvals Pending',
       count: counts.approvalsPending,
       gradient: statusCardTones.warning.background,
@@ -488,6 +498,7 @@ export const ServiceManagementPage = () => {
       status: 'pending',
     },
     {
+      id: 'reported-services',
       label: 'Reported Services',
       count: counts.reportedServices,
       gradient: statusCardTones.danger.background,
@@ -496,6 +507,7 @@ export const ServiceManagementPage = () => {
       status: 'reported',
     },
     {
+      id: 'suspended-services',
       label: 'Suspended Services',
       count: counts.suspendedServices,
       gradient: statusCardTones.danger.background,
@@ -504,6 +516,7 @@ export const ServiceManagementPage = () => {
       status: 'suspended',
     },
     {
+      id: 'deleted-services',
       label: 'Deleted Services',
       count: counts.deletedServices,
       gradient: statusCardTones.danger.background,
@@ -511,7 +524,27 @@ export const ServiceManagementPage = () => {
       icon: Trash2,
       status: 'deleted',
     },
+    {
+      id: 'active-services',
+      label: 'Active Services',
+      count: meta?.pagination?.total ?? 0,
+      gradient: statusCardTones.warning.background,
+      border: statusCardTones.warning.border,
+      icon: CheckSquare,
+      status: 'active',
+    },
+    {
+      id: 'total-services',
+      label: 'Total Services',
+      count: meta?.pagination?.total ?? 0,
+      gradient: statusCardTones.warning.background,
+      border: statusCardTones.warning.border,
+      icon: Package,
+      status: 'all',
+    },
   ]
+
+  const statusCards = orderByActiveMetricIds(statusCardCatalog, activeMetricIds)
 
   return (
     <div className="flex flex-col gap-4 p-0 md:gap-6">
@@ -525,7 +558,7 @@ export const ServiceManagementPage = () => {
         <div className="flex w-full flex-col items-center gap-3 md:w-auto md:flex-row">
           <Button
             className="ui-manage-metrics h-9 w-full md:w-auto"
-            onClick={() => navigate('/services/dashboard/metrics')}
+            onClick={() => navigate('/services/management/metrics?section=table')}
           >
             <BarChart3 className="size-4" />
             Manage Metrics
@@ -536,7 +569,7 @@ export const ServiceManagementPage = () => {
       <StatusQuickLinkRow>
         {statusCards.map((card) => (
           <StatusQuickLinkCard
-            key={card.label}
+            key={card.id}
             title={card.label}
             value={card.count}
             icon={card.icon}
@@ -558,6 +591,10 @@ export const ServiceManagementPage = () => {
               }
               if (card.status === 'suspended') {
                 navigate('/services/management/suspended')
+                return
+              }
+              if (card.status === 'all' || card.status === 'active') {
+                setActiveStatus('all')
                 return
               }
 
@@ -620,7 +657,7 @@ export const ServiceManagementPage = () => {
         variant="suspend"
         title="Suspend Service"
         description="Are you sure you want to suspend this service? This action will hide it from the marketplace and notify the expert."
-        submitLabel="Suspend"
+        submitLabel="Suspend Service"
         reasonOptions={SUSPEND_REASON_OPTIONS}
         selectedReasons={suspendReasons}
         onReasonToggle={toggleSuspendReason}
@@ -642,7 +679,7 @@ export const ServiceManagementPage = () => {
 
       <DecisionActionModal
         open={Boolean(deleteServiceTarget)}
-        variant="reject"
+        variant="delete"
         title="Delete Service"
         description="Are you sure you want to delete this service? It will be permanently removed after 21 days unless restored."
         submitLabel="Delete Service"

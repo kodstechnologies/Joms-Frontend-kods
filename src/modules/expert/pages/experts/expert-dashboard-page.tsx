@@ -22,10 +22,13 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 
+import { EXPERT_DASHBOARD_MODULE_KEY } from '../../api/ui-preferences-api'
+import { orderByActiveMetricIds, useActiveMetricIds } from '../../hooks/use-active-metric-ids'
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
 
 type Metric = {
+  id: string
   label: string
   value: string
   change?: string
@@ -35,6 +38,7 @@ type Metric = {
 
 const METRICS: Metric[] = [
   {
+    id: 'total-experts',
     label: 'Total Expert',
     value: '12,845',
     change: '8.8%',
@@ -42,6 +46,7 @@ const METRICS: Metric[] = [
     changeNote: 'vs last month',
   },
   {
+    id: 'active-experts',
     label: 'Active Experts',
     value: '10,320',
     change: '4.2%',
@@ -49,6 +54,7 @@ const METRICS: Metric[] = [
     changeNote: 'vs last month',
   },
   {
+    id: 'inactive-experts',
     label: 'Inactive Experts',
     value: '2,525',
     change: '2.1%',
@@ -56,6 +62,7 @@ const METRICS: Metric[] = [
     changeNote: 'vs last month',
   },
   {
+    id: 'new-experts-mtd',
     label: 'New Expert (MTD)',
     value: '145',
     change: '12.5%',
@@ -63,6 +70,7 @@ const METRICS: Metric[] = [
     changeNote: 'vs last month',
   },
   {
+    id: 'total-revenue',
     label: 'Total Revenue',
     value: '₹487,250',
     change: '10.8%',
@@ -70,6 +78,7 @@ const METRICS: Metric[] = [
     changeNote: 'vs last month',
   },
   {
+    id: 'avg-listings',
     label: 'Avg. Listings/Expert',
     value: '4.3',
     change: '0.5%',
@@ -77,6 +86,7 @@ const METRICS: Metric[] = [
     changeNote: 'vs last month',
   },
   {
+    id: 'avg-revenue',
     label: 'Avg. Revenue/Expert',
     value: '₹38,420',
     change: '3.1%',
@@ -84,6 +94,7 @@ const METRICS: Metric[] = [
     changeNote: 'vs last month',
   },
   {
+    id: 'avg-ratings',
     label: 'Avg. Ratings/Expert',
     value: '4.5/5',
     change: '0.2%',
@@ -91,6 +102,7 @@ const METRICS: Metric[] = [
     changeNote: 'vs last month',
   },
   {
+    id: 'avg-consultation',
     label: 'Avg. Consultation/Expert',
     value: '22',
     change: '5.0%',
@@ -98,6 +110,7 @@ const METRICS: Metric[] = [
     changeNote: 'vs last month',
   },
   {
+    id: 'avg-response-time',
     label: 'Avg. Response Time/Expert',
     value: '2.5 hrs',
     change: '0.5%',
@@ -105,6 +118,7 @@ const METRICS: Metric[] = [
     changeNote: 'faster',
   },
   {
+    id: 'avg-client',
     label: 'Avg. Client/Expert',
     value: '18',
     change: '6.0%',
@@ -112,6 +126,7 @@ const METRICS: Metric[] = [
     changeNote: 'vs last month',
   },
   {
+    id: 'category-coverage',
     label: 'Category coverage % Expert',
     value: '85%',
     change: '3.2%',
@@ -119,12 +134,20 @@ const METRICS: Metric[] = [
     changeNote: 'vs last month',
   },
   {
+    id: 'total-order-completed',
     label: 'Total Order Completed',
     value: '58,400',
     change: '15.2%',
     changeType: 'up',
     changeNote: 'vs last month',
   },
+]
+
+const DEFAULT_METRIC_IDS = [
+  'total-experts',
+  'active-experts',
+  'inactive-experts',
+  'new-experts-mtd',
 ]
 
 const EXPERTS_BY_CATEGORY = [
@@ -299,6 +322,11 @@ function RevenueGrowthTooltip({
 export const ExpertDashboardPage = () => {
   const navigate = useNavigate()
   const [growthRange, setGrowthRange] = useState('3')
+  const activeMetricIds = useActiveMetricIds(EXPERT_DASHBOARD_MODULE_KEY, DEFAULT_METRIC_IDS)
+  const visibleMetrics = useMemo(
+    () => orderByActiveMetricIds(METRICS, activeMetricIds),
+    [activeMetricIds],
+  )
 
   const growthData = useMemo(() => {
     if (growthRange === '6') return REVENUE_GROWTH.slice(0, 6)
@@ -339,8 +367,8 @@ export const ExpertDashboardPage = () => {
       </div>
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4">
-        {METRICS.map((metric) => (
-          <MetricCard key={metric.label} metric={metric} />
+        {visibleMetrics.map((metric) => (
+          <MetricCard key={metric.id} metric={metric} />
         ))}
       </div>
 

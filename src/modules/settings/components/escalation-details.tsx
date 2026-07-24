@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { SlidersHorizontal } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 
 import { Button } from '@/shared/components/ui/button'
 import { DataTable } from '@/shared/components/table/data-table'
@@ -12,6 +13,7 @@ import {
 import { escalationColumns } from './escalation-table-columns'
 
 export function EscalationDetails() {
+  const navigate = useNavigate()
   const [searchValue, setSearchValue] = useState('')
   const [page, setPage] = useState(1)
   const pageSize = 10
@@ -38,7 +40,10 @@ export function EscalationDetails() {
           </p>
         </div>
 
-        <Button className="ui-manage-metrics h-11 rounded-xl bg-[#F6C978] px-5 font-semibold text-black hover:bg-[#E6B85D] hover:text-black">
+        <Button
+          className="ui-manage-metrics h-11 rounded-xl bg-[#F6C978] px-5 font-semibold text-black hover:bg-[#E6B85D] hover:text-black"
+          onClick={() => navigate('/metrics/escalations')}
+        >
           <SlidersHorizontal className="mr-2 h-4 w-4" />
           Manage Metrics
         </Button>

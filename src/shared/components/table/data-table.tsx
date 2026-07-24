@@ -110,7 +110,7 @@ export function DataTable<TData>({
   return (
     <section
       className={cn(
-        'overflow-hidden rounded-2xl border',
+        'ui-data-table overflow-hidden rounded-2xl border',
         isCategoryTone ? 'bg-brand-surface border-white/10' : 'bg-brand-surface border-white/10',
         className,
       )}

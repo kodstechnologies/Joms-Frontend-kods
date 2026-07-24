@@ -15,7 +15,7 @@ import {
   YAxis,
 } from 'recharts'
 import { RefreshCw, SlidersHorizontal, TrendingUp } from 'lucide-react'
-import { toast } from 'sonner'
+import { useNavigate } from 'react-router-dom'
 
 import {
   escrowStatusMock,
@@ -247,6 +247,8 @@ function formatInr(value: number) {
 }
 
 export function FinanceDashboardPage() {
+  const navigate = useNavigate()
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -258,7 +260,7 @@ export function FinanceDashboardPage() {
         </div>
         <Button
           className="ui-manage-metrics"
-          onClick={() => toast.message('Metrics configuration coming soon')}
+          onClick={() => navigate('/metrics/finance-dashboard')}
         >
           <SlidersHorizontal className="size-4" />
           Manage Metrics

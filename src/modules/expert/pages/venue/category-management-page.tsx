@@ -14,6 +14,7 @@ import {
   CategoryManagementPageHeader,
   CategoryQuickLinks,
 } from '../../components/category/category-list-shared'
+import { orderByActiveMetricIds, useActiveMetricIds } from '../../hooks/use-active-metric-ids'
 import {
   useDeletedVenueCategoryList,
   usePausedVenueCategoryList,
@@ -68,6 +69,68 @@ export function VenueCategoryManagementPage() {
     [details],
   )
 
+  const defaultMetricIds = useMemo(
+    () => ['total-categories', 'active-categories', 'total-sub-categories', 'top-category'],
+    [],
+  )
+  const activeMetricIds = useActiveMetricIds(VENUE_CATEGORY_MANAGEMENT_MODULE_KEY, defaultMetricIds)
+
+  const metricCardCatalog = useMemo(
+    () => [
+      {
+        id: 'total-categories',
+        title: 'Total categories',
+        value: String(details.length || totalItems),
+      },
+      {
+        id: 'active-categories',
+        title: 'Active Categories',
+        value: String(activeCount || totalItems),
+      },
+      {
+        id: 'total-sub-categories',
+        title: 'Total Sub-Category',
+        value: String(totalSubCategories),
+      },
+      {
+        id: 'top-category',
+        title: 'Top Category',
+        value: categories[0]?.name || '—',
+      },
+      {
+        id: 'paused-categories',
+        title: 'Paused Categories',
+        value: String(pausedCategories.length),
+      },
+      {
+        id: 'deleted-categories',
+        title: 'Deleted Categories',
+        value: String(deletedCategories.length),
+      },
+      {
+        id: 'total-venues',
+        title: 'Total Venues',
+        value: '0',
+      },
+      {
+        id: 'total-revenue',
+        title: 'Total Revenue',
+        value: '—',
+      },
+    ],
+    [
+      activeCount,
+      categories,
+      deletedCategories.length,
+      details.length,
+      pausedCategories.length,
+      totalItems,
+      totalSubCategories,
+    ],
+  )
+
+  const metricCards = orderByActiveMetricIds(metricCardCatalog, activeMetricIds)
+
   const columns = useMemo<ColumnDef<VenueCategory>[]>(() => {
     const defaultVisibleIds = ['categoryId', 'name', 'status', 'subCategory', 'venues', 'revenue']
     const visibleIds = preferencesQuery.data?.visibleColumnIds?.length
@@ -87,15 +150,14 @@ export function VenueCategoryManagementPage() {
     <div className="flex flex-col gap-4 p-0 md:gap-6">
       <CategoryManagementPageHeader
         title="Category Management"
-        metricsPath="/venues/categories/management/metrics"
+        metricsPath="/venues/categories/management/metrics?section=table"
         createPath="/venues/categories/management/create"
       />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard title="Total categories" value={String(details.length || totalItems)} />
-        <StatCard title="Active Categories" value={String(activeCount || totalItems)} />
-        <StatCard title="Total Sub-Category" value={String(totalSubCategories)} />
-        <StatCard title="Top Category" value={categories[0]?.name || '—'} />
+        {metricCards.map((card) => (
+          <StatCard key={card.id} title={card.title} value={card.value} />
+        ))}
       </div>
 
       <CategoryQuickLinks

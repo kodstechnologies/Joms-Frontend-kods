@@ -24,7 +24,7 @@ export function ExpertListHeader({ title, breadcrumb }: { title: string; breadcr
       </header>
       <Button
         className="ui-manage-metrics h-9 w-full md:w-auto"
-        onClick={() => navigate('/experts/management/metrics')}
+        onClick={() => navigate('/experts/management/metrics?section=table')}
       >
         <BarChart3 className="size-4" />
         Manage Metrics

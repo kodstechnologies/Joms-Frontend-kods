@@ -378,8 +378,8 @@ export function ExpertApplicationViewPage() {
   const escalateDisabled = activeDecisionStatus === 'APPROVED' || escalateApplication.isPending
 
   const modalTitle = useMemo(() => {
-    if (modalVariant === 'approve') return 'Confirm Application'
-    if (modalVariant === 'requestChanges') return 'Request Changes'
+    if (modalVariant === 'approve') return 'Confirm Expert KYC'
+    if (modalVariant === 'requestChanges') return 'Request Changes – Expert KYC'
     if (modalVariant === 'escalate') return 'Escalate Application'
     return `Reject ${modalTarget === 'banking' ? 'Banking' : 'KYC'}`
   }, [modalTarget, modalVariant])
@@ -830,9 +830,9 @@ export function ExpertApplicationViewPage() {
           modalVariant === 'escalate'
             ? 'Are you sure you want to escalate this application? This post will be reviewed by the selected parties.'
             : modalVariant === 'approve'
-              ? 'Are you sure you want to approve this application? The applicant will be notified via email.'
+              ? 'Are you sure you want to approve this expert KYC? The applicant will be notified via email.'
               : modalVariant === 'requestChanges'
-                ? 'Are you sure you want to Request Changes to this application? The applicant will be notified via email.'
+                ? 'Are you sure you want to Request Changes to this expert KYC? The applicant will be notified via email.'
                 : `Are you sure you want to reject this ${modalTarget === 'banking' ? 'banking' : 'KYC'} section?`
         }
         submitLabel={
@@ -855,6 +855,7 @@ export function ExpertApplicationViewPage() {
         onReasonToggle={toggleReason}
         reason={isRejectFlow ? rejectionReason : ''}
         onReasonChange={isRejectFlow ? setRejectionReason : undefined}
+        reasonLabel={modalVariant === 'requestChanges' ? 'Request Changes' : 'Reason'}
         confirmationLabel={
           modalVariant === 'approve'
             ? 'By approving this application, you confirm that all details have been reviewed.'
