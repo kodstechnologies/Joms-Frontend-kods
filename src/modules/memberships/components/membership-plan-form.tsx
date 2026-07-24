@@ -3,7 +3,6 @@ import { useMemo, useRef, useState, type FormEvent } from 'react'
 
 import { DEFAULT_BILLING_CYCLES } from '../mock/membership-metrics.mock'
 import type { MembershipFeatures, MembershipPlan, MembershipPricing } from '../types/membership'
-import { cn } from '@/shared/lib/cn'
 
 /** Figma: #FFFFFF @ 10% */
 const SEP = 'rgba(255, 255, 255, 0.1)'
@@ -201,7 +200,7 @@ export function MembershipPlanForm({ initialPlan, onSubmit }: MembershipPlanForm
           <span className="block text-[12px] leading-[18px] text-white/50">
             Billing Cycle format *
           </span>
-          <div className="flex min-h-[42px] max-w-[461px] flex-wrap items-center gap-2">
+          <div className="flex min-h-[42px] flex-nowrap items-center gap-2 overflow-x-auto pb-1">
             {availableCycles.map((cycle) => {
               const selected = selectedCycles.includes(cycle)
               return (
@@ -209,7 +208,7 @@ export function MembershipPlanForm({ initialPlan, onSubmit }: MembershipPlanForm
                   key={cycle}
                   type="button"
                   onClick={() => toggleCycle(cycle)}
-                  className="inline-flex h-[42px] items-center gap-1.5 rounded-[8px] border px-3 text-[14px] leading-[22px] font-medium transition-colors"
+                  className="inline-flex h-[42px] shrink-0 items-center gap-1.5 rounded-[8px] border px-3 text-[14px] leading-[22px] font-medium whitespace-nowrap transition-colors"
                   style={
                     selected
                       ? {
@@ -226,12 +225,12 @@ export function MembershipPlanForm({ initialPlan, onSubmit }: MembershipPlanForm
                 >
                   {selected ? (
                     <>
+                      <X className="size-3.5 shrink-0" strokeWidth={2.25} />
                       {cycle}
-                      <X className="size-3.5" strokeWidth={2.25} />
                     </>
                   ) : (
                     <>
-                      <Plus className="size-3.5" strokeWidth={2.25} />
+                      <Plus className="size-3.5 shrink-0" strokeWidth={2.25} />
                       {cycle}
                     </>
                   )}
@@ -239,12 +238,12 @@ export function MembershipPlanForm({ initialPlan, onSubmit }: MembershipPlanForm
               )
             })}
             {addingCycle ? (
-              <div className="flex h-[42px] items-center gap-2">
+              <div className="flex h-[42px] shrink-0 items-center gap-2">
                 <input
                   value={cycleDraft}
                   onChange={(e) => setCycleDraft(e.target.value)}
                   placeholder="Name"
-                  className="box-border h-[42px] w-[100px] rounded-[8px] border border-white/10 bg-black px-3 text-[14px] text-white outline-none focus:border-[#155dfc]"
+                  className="box-border h-[42px] w-[100px] rounded-[8px] border border-white/10 bg-black px-3 text-[14px] text-white outline-none focus:border-white/30"
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') {
                       e.preventDefault()
@@ -274,9 +273,10 @@ export function MembershipPlanForm({ initialPlan, onSubmit }: MembershipPlanForm
               <button
                 type="button"
                 onClick={() => setAddingCycle(true)}
-                className="inline-flex h-[42px] items-center rounded-[8px] border border-dashed border-white/20 px-3 text-[14px] leading-[22px] font-medium text-white/70 hover:border-white/40"
+                className="inline-flex h-[42px] shrink-0 items-center gap-1.5 rounded-[8px] border border-dashed border-white/20 px-3 text-[14px] leading-[22px] font-medium whitespace-nowrap text-white/70 hover:border-white/40"
               >
-                + Add New
+                <Plus className="size-3.5 shrink-0" strokeWidth={2.25} />
+                Add New
               </button>
             )}
           </div>
@@ -309,7 +309,7 @@ export function MembershipPlanForm({ initialPlan, onSubmit }: MembershipPlanForm
                     }))
                   }
                   required
-                  className="box-border h-[42px] w-[150px] rounded-[8px] border border-white/10 bg-black px-3.5 text-[14px] leading-[22px] text-white outline-none focus:border-[#155dfc]"
+                  className="membership-number-input box-border h-[42px] w-[150px] rounded-[8px] border border-white/10 bg-black px-3.5 text-[14px] leading-[22px] text-white outline-none focus:border-white/30"
                 />
               </label>
               <label className="block space-y-2">
@@ -329,7 +329,7 @@ export function MembershipPlanForm({ initialPlan, onSubmit }: MembershipPlanForm
                       },
                     }))
                   }
-                  className="box-border h-[42px] w-[90px] rounded-[8px] border border-white/10 bg-black px-3 text-[14px] leading-[22px] text-white outline-none focus:border-[#155dfc]"
+                  className="membership-number-input box-border h-[42px] w-[90px] rounded-[8px] border border-white/10 bg-black px-3 text-[14px] leading-[22px] text-white outline-none focus:border-white/30"
                 />
               </label>
             </div>
@@ -530,13 +530,14 @@ function FeatureRow({
         <span className="min-w-0 flex-1 text-[14px] leading-[22px] text-white">{label}</span>
         <Toggle checked={checked} onChange={onChange} />
       </div>
-      {hasCount && checked ? (
+      {hasCount ? (
         <input
           type="number"
           min={0}
           value={count}
+          disabled={!checked}
           onChange={(e) => onCountChange?.(Number(e.target.value))}
-          className="mt-3 box-border h-[42px] w-[242px] max-w-full rounded-[8px] border border-white/10 bg-black px-3 text-[14px] leading-[22px] text-white outline-none focus:border-[#155dfc]"
+          className="membership-number-input mt-3 box-border h-[42px] w-[242px] max-w-full rounded-[8px] border border-white/10 bg-black px-3 text-[14px] leading-[22px] text-white outline-none focus:border-white/30 disabled:opacity-40"
         />
       ) : null}
     </div>
@@ -550,17 +551,20 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (value: boo
       role="switch"
       aria-checked={checked}
       onClick={() => onChange(!checked)}
-      className="relative h-[24px] w-[44px] shrink-0 rounded-full border transition-colors"
+      className="relative h-[22px] w-[40px] shrink-0 rounded-full transition-colors"
       style={{
+        // Figma: ON = white track + dark knob on right; OFF = empty track + white knob on left
         backgroundColor: checked ? '#ffffff' : 'transparent',
-        borderColor: checked ? '#ffffff' : 'rgba(255, 255, 255, 0.35)',
+        border: checked ? 'none' : '1.5px solid rgba(255, 255, 255, 0.35)',
+        boxSizing: 'border-box',
       }}
     >
       <span
-        className={cn(
-          'absolute top-0.5 size-[20px] rounded-full shadow transition-transform',
-          checked ? 'translate-x-[22px] bg-black' : 'translate-x-0.5 bg-white',
-        )}
+        className="absolute top-1/2 block size-[14px] -translate-y-1/2 rounded-full transition-[left,background-color]"
+        style={{
+          left: checked ? '22px' : '3px',
+          backgroundColor: checked ? '#0a0a0a' : '#ffffff',
+        }}
       />
     </button>
   )
