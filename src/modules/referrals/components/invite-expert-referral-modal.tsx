@@ -91,26 +91,31 @@ export function InviteExpertReferralModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
       <div className="ui-modal-shell relative max-w-xl">
-        <button
-          type="button"
-          onClick={handleClose}
-          className="text-muted hover:text-brand-text rounded-brand-md absolute top-4 right-4 z-10 p-1.5 hover:bg-white/5"
-        >
-          <X className="size-4" />
-        </button>
+        <div className="ui-modal-header">
+          <div className="min-w-0 pr-2">
+            <h2 className="text-h2 text-brand-text">Refer New Partner</h2>
+            <p className="text-body-sm text-muted mt-1">Platform-referred partners</p>
+          </div>
+          <button
+            type="button"
+            aria-label="Close modal"
+            onClick={handleClose}
+            className="text-brand-muted rounded-full p-1.5 transition-colors hover:bg-white/10 hover:text-white"
+          >
+            <X className="icon-lg" aria-hidden="true" />
+          </button>
+        </div>
 
-        <div className="ui-modal-header border-0 p-4 pt-5">
-          <div className="rounded-brand-md bg-brand-bg grid w-full grid-cols-2 gap-1 p-1">
+        <div className="ui-modal-body space-y-5">
+          <div className="grid grid-cols-2 gap-3">
             <TabButton active={mode === 'manual'} onClick={() => setMode('manual')}>
               Manual Referral
             </TabButton>
             <TabButton active={mode === 'bulk'} onClick={() => setMode('bulk')}>
-              Bulk Referral
+              Bulk referral
             </TabButton>
           </div>
-        </div>
 
-        <div className="ui-modal-body space-y-5">
           {mode === 'manual' ? (
             <>
               <Field label="Enter Name*">
@@ -163,7 +168,7 @@ export function InviteExpertReferralModal({
                       </button>
                     </div>
                     <p className="text-muted text-body-sm mt-1">
-                      {recipients.length} experts parsed
+                      {recipients.length} partners parsed
                     </p>
                   </>
                 ) : (
@@ -194,17 +199,18 @@ export function InviteExpertReferralModal({
           </Field>
 
           <p className="text-muted text-body-sm leading-relaxed">
-            Note: Experts will receive the referral invite on their email and through SMS/WhatsApp.
+            Note: The partners will get referral code to their email ID & notified through
+            SMS/WhatsApp.
           </p>
         </div>
 
-        <div className="ui-modal-footer justify-end">
+        <div className="ui-modal-footer justify-end gap-3">
           <button type="button" className="ui-cta ui-cta-outline" onClick={handleClose}>
             Cancel
           </button>
           <button
             type="button"
-            className="ui-cta ui-cta-primary min-w-[120px]"
+            className="ui-cta ui-cta-primary min-w-[140px]"
             onClick={handleSubmit}
             disabled={isSubmitting}
           >
@@ -230,8 +236,10 @@ function TabButton({
       type="button"
       onClick={onClick}
       className={cn(
-        'rounded-brand-md py-2.5 text-center text-sm font-semibold transition-colors',
-        active ? 'bg-brand-surface-2 text-brand-text' : 'text-brand-muted hover:text-brand-text',
+        'rounded-brand-md h-10 text-center text-sm font-semibold transition-colors',
+        active
+          ? 'bg-brand-surface border border-white/20 text-white'
+          : 'bg-brand-bg text-muted border border-white/10 hover:text-white',
       )}
     >
       {children}

@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState, type ReactNode } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { Eye } from 'lucide-react'
+import { CircleArrowDown, CircleArrowUp, ClipboardList, Waypoints, X } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
@@ -148,23 +148,37 @@ export function ExpertMembershipsPage() {
             label={`Actions for ${row.original.partnerName}`}
             isOpen={activeDropdownId === row.original._id}
             onOpenChange={(open) => setActiveDropdownId(open ? row.original._id : null)}
+            menuWidth={180}
           >
             <TableActionsItem
-              icon={<Eye className="size-4" />}
+              icon={<ClipboardList className="size-4" strokeWidth={1.85} />}
               onClick={() => navigate(`/memberships/experts/${row.original._id}`)}
             >
               View Details
             </TableActionsItem>
-            <TableActionsItem onClick={() => openAction(row.original, 'upgrade')}>
+            <TableActionsItem
+              icon={<CircleArrowUp className="size-4" strokeWidth={1.85} />}
+              onClick={() => openAction(row.original, 'upgrade')}
+            >
               Upgrade plan
             </TableActionsItem>
-            <TableActionsItem onClick={() => openAction(row.original, 'downgrade')}>
+            <TableActionsItem
+              icon={<CircleArrowDown className="size-4" strokeWidth={1.85} />}
+              onClick={() => openAction(row.original, 'downgrade')}
+            >
               Downgrade Plan
             </TableActionsItem>
-            <TableActionsItem onClick={() => openAction(row.original, 'extend')}>
+            <TableActionsItem
+              icon={<Waypoints className="size-4" strokeWidth={1.85} />}
+              onClick={() => openAction(row.original, 'extend')}
+            >
               Extend Plan
             </TableActionsItem>
-            <TableActionsItem onClick={() => openAction(row.original, 'cancel')}>
+            <TableActionsItem
+              icon={<CancelPlanIcon />}
+              className="text-brand-danger hover:bg-brand-danger/8 hover:text-brand-danger"
+              onClick={() => openAction(row.original, 'cancel')}
+            >
               Cancel Plan
             </TableActionsItem>
           </TableActionsDropdown>
@@ -276,6 +290,14 @@ export function ExpertMembershipsPage() {
         }}
       />
     </div>
+  )
+}
+
+function CancelPlanIcon() {
+  return (
+    <span className="bg-brand-danger inline-flex size-4 items-center justify-center rounded-full">
+      <X className="size-2.5 text-white" strokeWidth={3} />
+    </span>
   )
 }
 
