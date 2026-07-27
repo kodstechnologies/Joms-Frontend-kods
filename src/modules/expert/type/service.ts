@@ -95,20 +95,7 @@ export interface TieredPricing {
   tiers: TierPricing[]
 }
 
-export type ServiceRejectionReason =
-  | 'Unclear Image'
-  | 'Content issue'
-  | 'Invalid Documents'
-  | 'IndiaPAN'
-  | 'InvalidGST'
-
-export const SERVICE_REJECTION_REASON_BY_VALUE: Record<string, ServiceRejectionReason> = {
-  'unclear-image': 'Unclear Image',
-  'content-issue': 'Content issue',
-  'invalid-documents': 'Invalid Documents',
-  'invalid-pan': 'IndiaPAN',
-  'invalid-gst': 'InvalidGST',
-}
+export type ServiceRejectionReason = string
 
 export type UpdateServiceStatusApprovePayload = {
   status: 'live'
@@ -117,14 +104,13 @@ export type UpdateServiceStatusApprovePayload = {
 
 export type UpdateServiceStatusRejectPayload = {
   status: 'rejected'
-  reasonFor: ServiceRejectionReason[]
+  reasonFor: string[]
   rejectionReason: string
   adminNote?: string
 }
 
 export type UpdateServiceStatusPayload =
-  | UpdateServiceStatusApprovePayload
-  | UpdateServiceStatusRejectPayload
+  UpdateServiceStatusApprovePayload | UpdateServiceStatusRejectPayload
 
 export interface ServiceDetail {
   _id: string
@@ -238,8 +224,7 @@ export type UpdateConsultationStatusRejectPayload = {
 }
 
 export type UpdateConsultationStatusPayload =
-  | UpdateConsultationStatusApprovePayload
-  | UpdateConsultationStatusRejectPayload
+  UpdateConsultationStatusApprovePayload | UpdateConsultationStatusRejectPayload
 
 export interface ConsultationStatusUpdateResponse {
   success: boolean

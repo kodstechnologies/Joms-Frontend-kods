@@ -47,6 +47,11 @@ import {
   useEscalationAssignees,
   useStartAdminEscalationReview,
 } from '@/modules/my-tasks/hooks/use-admin-escalation'
+import { MODERATION_CATEGORY_SLUGS } from '@/modules/settings/api/templates-api'
+import {
+  useModerationReasonOptions,
+  useRecordModerationReasonUsage,
+} from '@/modules/settings/hooks/use-templates'
 
 type AmenitySubCategory = {
   _id: string
@@ -64,22 +69,6 @@ type SpaceAction = 'hide' | 'suspend'
 type DecisionVariant = 'approve' | 'reject' | 'requestChanges' | 'escalate'
 
 const ACTION_ITEM_CLASS = 'text-slate-800 hover:bg-slate-100 hover:text-slate-900'
-
-const SPACE_REASON_OPTIONS: DecisionActionModalOption[] = [
-  { label: 'Temporary operational issue', value: 'temporary_operational_issue' },
-  { label: 'Scheduled maintenance', value: 'scheduled_maintenance' },
-  { label: 'Availability issue', value: 'availability_issue' },
-  { label: 'System verification in progress', value: 'system_verification_in_progress' },
-  { label: 'Admin review required', value: 'admin_review_required' },
-]
-
-const REJECT_REASONS: DecisionActionModalOption[] = [
-  { label: 'Unclear Image', value: 'Unclear Image' },
-  { label: 'Content Issue', value: 'Content Issue' },
-  { label: 'Invalid documents', value: 'Invalid documents' },
-  { label: 'Invalid PAN', value: 'Invalid PAN' },
-  { label: 'Invalid GST', value: 'Invalid GST' },
-]
 
 const getApiErrorMessage = (error: unknown) => {
   const err = error as { response?: { data?: { message?: string } } }
@@ -278,6 +267,13 @@ export function SpaceDetailsPage() {
   const { data: escalationData } = useAdminEscalation('venue_space', spaceId)
   const escalateVenueSpace = useEscalateVenueSpaceApplication(spaceId, venueId)
   const startEscalationReview = useStartAdminEscalationReview('venue_space', spaceId)
+  const recordReasonUsage = useRecordModerationReasonUsage()
+  const { options: suspendReasonOptions, buildPayload: buildSuspendReasonPayload } =
+    useModerationReasonOptions(MODERATION_CATEGORY_SLUGS.suspendVenue)
+  const { options: rejectReasonOptions, buildPayload: buildRejectReasonPayload } =
+    useModerationReasonOptions(MODERATION_CATEGORY_SLUGS.rejectVenue)
+  const { options: requestChangesReasonOptions, buildPayload: buildRequestChangesReasonPayload } =
+    useModerationReasonOptions(MODERATION_CATEGORY_SLUGS.requestChangesVenue)
 
   useEffect(() => {
     if (!spaceId || isSuperAdmin) return
@@ -331,28 +327,39 @@ export function SpaceDetailsPage() {
     const toIso = (value: string) =>
       value ? new Date(`${value}T00:00:00.000Z`).toISOString() : undefined
 
-    const payload: UpdateVenueSpaceVisibilityPayload =
-      modalAction === 'hide'
+    const payload: UpdateVenueSpaceVisibilityPayload = (() => {
+      const reasonPayload = buildSuspendReasonPayload(selectedReasons)
+      return modalAction === 'hide'
         ? {
-            action: 'hide',
-            selectedReasons,
-            reasonDetails: reasonDetails.trim(),
+            action: 'hide' as const,
+            selectedReasons: reasonPayload.selectedReasons,
+            reasonDetails: reasonDetails.trim() || reasonPayload.reasonDetails,
             adminNotes: adminNotes.trim(),
           }
         : {
-            action: 'suspend',
-            selectedReasons,
+            action: 'suspend' as const,
+            selectedReasons: reasonPayload.selectedReasons,
             suspendIndefinitely,
             startDate: suspendIndefinitely ? undefined : toIso(startDate),
             endDate: suspendIndefinitely ? undefined : toIso(endDate),
-            reasonDetails: reasonDetails.trim(),
+            reasonDetails: reasonDetails.trim() || reasonPayload.reasonDetails,
             adminNotes: adminNotes.trim(),
           }
+    })()
+
+    const reasonPayload = buildSuspendReasonPayload(selectedReasons)
+    if (reasonPayload.selectedReasons.length === 0) {
+      toast.error('Selected reasons are no longer available. Please refresh and try again.')
+      return
+    }
 
     visibilityMutation.mutate(
       { targetSpaceId: spaceId, payload },
       {
         onSuccess: () => {
+          if (reasonPayload.reasonIds.length > 0) {
+            recordReasonUsage.mutate(reasonPayload.reasonIds)
+          }
           toast.success(
             modalAction === 'hide' ? 'Space hidden successfully' : 'Space suspended successfully',
           )
@@ -457,16 +464,26 @@ export function SpaceDetailsPage() {
       }
     }
 
+    const reasonPayload =
+      decisionVariant === 'requestChanges'
+        ? buildRequestChangesReasonPayload(decisionSelectedReasons)
+        : buildRejectReasonPayload(decisionSelectedReasons)
+
+    if (isDecisionRejectFlow && reasonPayload.selectedReasons.length === 0) {
+      toast.error('Selected reasons are no longer available. Please refresh and try again.')
+      return
+    }
+
     const payload: UpdateVenueSpaceStatusPayload =
       decisionVariant === 'approve'
         ? { status: 'approved', adminNote: decisionAdminNotes.trim() }
         : {
             status: 'rejected',
-            reasonFor: decisionSelectedReasons,
+            reasonFor: reasonPayload.selectedReasons,
             rejectionReason:
               decisionVariant === 'requestChanges'
-                ? decisionRejectionReason.trim()
-                : decisionSelectedReasons.join(', '),
+                ? decisionRejectionReason.trim() || reasonPayload.reasonDetails
+                : reasonPayload.selectedReasons.join(', '),
             adminNote: decisionAdminNotes.trim(),
           }
 
@@ -474,6 +491,9 @@ export function SpaceDetailsPage() {
       { targetSpaceId: spaceId, payload },
       {
         onSuccess: () => {
+          if (isDecisionRejectFlow && reasonPayload.reasonIds.length > 0) {
+            recordReasonUsage.mutate(reasonPayload.reasonIds)
+          }
           toast.success(
             decisionVariant === 'approve'
               ? 'Space approved successfully'
@@ -901,7 +921,13 @@ export function SpaceDetailsPage() {
                 : 'Reject Approval'
         }
         submitIcon={decisionVariant === 'reject' ? 'check' : undefined}
-        reasonOptions={isDecisionRejectFlow ? REJECT_REASONS : []}
+        reasonOptions={
+          isDecisionRejectFlow
+            ? decisionVariant === 'requestChanges'
+              ? requestChangesReasonOptions
+              : rejectReasonOptions
+            : []
+        }
         selectedReasons={decisionSelectedReasons}
         onReasonToggle={toggleDecisionReason}
         reason={decisionVariant === 'requestChanges' ? decisionRejectionReason : undefined}
@@ -940,7 +966,7 @@ export function SpaceDetailsPage() {
         submitLabel={modalAction === 'hide' ? 'Hide' : 'Suspend'}
         showHeroIcon={false}
         submitIcon="none"
-        reasonOptions={SPACE_REASON_OPTIONS}
+        reasonOptions={suspendReasonOptions}
         selectedReasons={selectedReasons}
         onReasonToggle={toggleReason}
         showReasonsLabel

@@ -23,7 +23,6 @@ import { useDeactivateExpert, useExperts, useSuspendExpert } from '../../hooks/u
 import { orderByActiveMetricIds, useActiveMetricIds } from '../../hooks/use-active-metric-ids'
 import { useTableColumnPreferences } from '../../hooks/use-ui-preferences'
 import { EXPERT_MANAGEMENT_MODULE_KEY } from '../../api/ui-preferences-api'
-import { ADMIN_DELETE_REASON_OPTIONS } from '../../constants/soft-delete'
 import { useExpertStore } from '../../store/expert-store'
 import type { Expert } from '../../type/expert'
 import { openExpertApplicationView } from '../../utils/expert-application-navigation'
@@ -34,24 +33,18 @@ import {
   TableActionsDropdown,
   TableActionsItem,
 } from '@/shared/components/table/table-actions-dropdown'
-import {
-  DecisionActionModal,
-  type DecisionActionModalOption,
-} from '@/shared/components/modal/decision-action-modal'
+import { DecisionActionModal } from '@/shared/components/modal/decision-action-modal'
 import { StatusQuickLinkCard, StatusQuickLinkRow } from '@/shared/components/status-quick-link-card'
 import { Button } from '@/shared/components/ui/button'
 import { statusCardTones } from '@/shared/lib/design-tokens'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
+import { MODERATION_CATEGORY_SLUGS } from '@/modules/settings/api/templates-api'
+import {
+  useModerationReasonOptions,
+  useRecordModerationReasonUsage,
+} from '@/modules/settings/hooks/use-templates'
 
 const ACTION_ITEM_CLASS = 'text-slate-800 hover:bg-slate-100 hover:text-slate-900'
-
-const SUSPEND_REASON_OPTIONS: DecisionActionModalOption[] = [
-  { label: 'Policy violation', value: 'policy_violation' },
-  { label: 'Temporary operational issue', value: 'temporary_operational_issue' },
-  { label: 'Quality concern', value: 'quality_concern' },
-  { label: 'System verification in progress', value: 'system_verification_in_progress' },
-  { label: 'Admin review required', value: 'admin_review_required' },
-]
 
 const displayValue = (value: unknown): string => {
   if (value === null || value === undefined) return 'N/A'
@@ -78,6 +71,11 @@ export const ExpertManagementPage = () => {
   const navigate = useNavigate()
   const suspendExpertMutation = useSuspendExpert()
   const deactivateExpertMutation = useDeactivateExpert()
+  const recordReasonUsage = useRecordModerationReasonUsage()
+  const { options: suspendReasonOptions, buildPayload: buildSuspendReasonPayload } =
+    useModerationReasonOptions(MODERATION_CATEGORY_SLUGS.suspendExpert)
+  const { options: deleteReasonOptions, buildPayload: buildDeleteReasonPayload } =
+    useModerationReasonOptions(MODERATION_CATEGORY_SLUGS.deleteExpert)
   const tableColumnPreferencesQuery = useTableColumnPreferences(EXPERT_MANAGEMENT_MODULE_KEY)
   const {
     searchQuery,
@@ -191,20 +189,29 @@ export const ExpertManagementPage = () => {
     const toIso = (value: string) =>
       value ? new Date(`${value}T00:00:00.000Z`).toISOString() : undefined
 
+    const reasonPayload = buildSuspendReasonPayload(suspendReasons)
+    if (reasonPayload.selectedReasons.length === 0) {
+      toast.error('Selected reasons are no longer available. Please refresh and try again.')
+      return
+    }
+
     suspendExpertMutation.mutate(
       {
         id: suspendExpertTarget.id,
         payload: {
-          selectedReasons: suspendReasons,
+          selectedReasons: reasonPayload.selectedReasons,
           suspendIndefinitely,
           startDate: suspendIndefinitely ? undefined : toIso(suspendStartDate),
           endDate: suspendIndefinitely ? undefined : toIso(suspendEndDate),
-          reasonDetails: '',
+          reasonDetails: reasonPayload.reasonDetails,
           adminNotes: suspendAdminNotes.trim(),
         },
       },
       {
         onSuccess: () => {
+          if (reasonPayload.reasonIds.length > 0) {
+            recordReasonUsage.mutate(reasonPayload.reasonIds)
+          }
           toast.success('Expert suspended successfully')
           closeSuspendModal()
         },
@@ -215,7 +222,9 @@ export const ExpertManagementPage = () => {
       },
     )
   }, [
+    buildSuspendReasonPayload,
     closeSuspendModal,
+    recordReasonUsage,
     suspendAdminNotes,
     suspendEndDate,
     suspendIndefinitely,
@@ -238,17 +247,26 @@ export const ExpertManagementPage = () => {
       return
     }
 
+    const reasonPayload = buildDeleteReasonPayload(deleteReasons)
+    if (reasonPayload.selectedReasons.length === 0) {
+      toast.error('Selected reasons are no longer available. Please refresh and try again.')
+      return
+    }
+
     deactivateExpertMutation.mutate(
       {
         id: deleteExpertTarget.id,
         payload: {
-          selectedReasons: deleteReasons,
-          reasonDetails: '',
+          selectedReasons: reasonPayload.selectedReasons,
+          reasonDetails: reasonPayload.reasonDetails,
           adminNotes: deleteAdminNotes.trim(),
         },
       },
       {
         onSuccess: () => {
+          if (reasonPayload.reasonIds.length > 0) {
+            recordReasonUsage.mutate(reasonPayload.reasonIds)
+          }
           toast.success('Expert deleted successfully')
           closeDeleteModal()
         },
@@ -259,11 +277,13 @@ export const ExpertManagementPage = () => {
       },
     )
   }, [
+    buildDeleteReasonPayload,
     closeDeleteModal,
     deactivateExpertMutation,
     deleteAdminNotes,
     deleteExpertTarget,
     deleteReasons,
+    recordReasonUsage,
   ])
 
   const columns = useMemo<ColumnDef<Expert>[]>(() => {
@@ -695,7 +715,7 @@ export const ExpertManagementPage = () => {
         title="Suspend Expert"
         description="Are you sure you want to suspend this Expert? This will result in removal of the account."
         submitLabel="Suspend User"
-        reasonOptions={SUSPEND_REASON_OPTIONS}
+        reasonOptions={suspendReasonOptions}
         selectedReasons={suspendReasons}
         onReasonToggle={toggleSuspendReason}
         showTimeline
@@ -718,8 +738,9 @@ export const ExpertManagementPage = () => {
         title="Delete Expert"
         description="Are you sure you want to delete this user? This will result in removal of the account."
         submitLabel="Delete Expert"
+        submitIcon="x"
         heroLayout="stack"
-        reasonOptions={ADMIN_DELETE_REASON_OPTIONS}
+        reasonOptions={deleteReasonOptions}
         selectedReasons={deleteReasons}
         onReasonToggle={toggleDeleteReason}
         showReasonsLabel={false}

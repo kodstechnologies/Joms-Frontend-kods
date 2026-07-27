@@ -1,10 +1,16 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMemo } from 'react'
+
+import type { DecisionActionModalOption } from '@/shared/components/modal/decision-action-modal'
 
 import {
+  buildModerationActionPayload,
   createModerationReason,
   deleteModerationReason,
   fetchModerationCategories,
   fetchModerationReasons,
+  fetchModerationReasonsBySlug,
+  recordModerationReasonUsage,
   toggleModerationReason,
   updateModerationCategory,
   updateModerationReason,
@@ -15,6 +21,8 @@ export const templateKeys = {
   all: ['settings', 'templates'] as const,
   categories: (search?: string) => [...templateKeys.all, 'categories', search ?? ''] as const,
   reasons: (categoryId: string) => [...templateKeys.all, 'reasons', categoryId] as const,
+  reasonsBySlug: (slug: string, activeOnly: boolean) =>
+    [...templateKeys.all, 'reasons-by-slug', slug, activeOnly] as const,
 }
 
 export const useModerationCategories = (search = '') =>
@@ -29,6 +37,32 @@ export const useModerationReasons = (categoryId: string) =>
     queryFn: () => fetchModerationReasons(categoryId),
     enabled: Boolean(categoryId),
   })
+
+export const useModerationReasonOptions = (categorySlug: string, enabled = true) => {
+  const query = useQuery({
+    queryKey: templateKeys.reasonsBySlug(categorySlug, true),
+    queryFn: () => fetchModerationReasonsBySlug(categorySlug, { activeOnly: true }),
+    enabled: Boolean(categorySlug) && enabled,
+  })
+
+  const reasons = useMemo(() => query.data?.reasons ?? [], [query.data?.reasons])
+
+  const options = useMemo<DecisionActionModalOption[]>(
+    () => reasons.map((reason) => ({ label: reason.title, value: reason.id })),
+    [reasons],
+  )
+
+  const buildPayload = (selectedReasonIds: string[]) =>
+    buildModerationActionPayload(reasons, selectedReasonIds)
+
+  return {
+    ...query,
+    category: query.data?.category ?? null,
+    reasons,
+    options,
+    buildPayload,
+  }
+}
 
 export const useUpdateModerationCategory = () => {
   const queryClient = useQueryClient()
@@ -71,6 +105,7 @@ export const useUpdateModerationReason = () => {
     }) => updateModerationReason(id, payload),
     onSuccess: (reason) => {
       void queryClient.invalidateQueries({ queryKey: templateKeys.reasons(reason.categoryId) })
+      void queryClient.invalidateQueries({ queryKey: templateKeys.all })
     },
   })
 }
@@ -81,6 +116,7 @@ export const useToggleModerationReason = () => {
     mutationFn: toggleModerationReason,
     onSuccess: (reason) => {
       void queryClient.invalidateQueries({ queryKey: templateKeys.reasons(reason.categoryId) })
+      void queryClient.invalidateQueries({ queryKey: templateKeys.all })
     },
   })
 }
@@ -97,3 +133,8 @@ export const useDeleteModerationReason = (categoryId?: string) => {
     },
   })
 }
+
+export const useRecordModerationReasonUsage = () =>
+  useMutation({
+    mutationFn: recordModerationReasonUsage,
+  })

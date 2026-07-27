@@ -25,13 +25,13 @@ import { navigateBackOrFallback } from '@/shared/lib/navigation'
 
 import { useExpertProfile } from '../../hooks/use-expert-profile'
 import { useConsultation, useUpdateConsultationStatus } from '../../hooks/use-services'
-import type {
-  ConsultationDetail,
-  ConsultationPricingOption,
-  ServiceRejectionReason,
-} from '../../type/service'
-import { SERVICE_REJECTION_REASON_BY_VALUE } from '../../type/service'
+import type { ConsultationDetail, ConsultationPricingOption } from '../../type/service'
 import { formatExpertDateTime, formatListingExpertId } from '../experts/expert-list-format'
+import { MODERATION_CATEGORY_SLUGS } from '@/modules/settings/api/templates-api'
+import {
+  useModerationReasonOptions,
+  useRecordModerationReasonUsage,
+} from '@/modules/settings/hooks/use-templates'
 
 type ConsultationDecisionAction = 'approve' | 'reject' | 'requestChanges' | 'escalate'
 
@@ -43,14 +43,6 @@ type ConsultationViewDetail = ConsultationDetail & {
 }
 
 const EMPTY_VALUE = 'Not provided'
-
-const decisionReasonOptions = [
-  { label: 'Unclear Image', value: 'unclear-image' },
-  { label: 'Content Issue', value: 'content-issue' },
-  { label: 'Invalid documents', value: 'invalid-documents' },
-  { label: 'Invalid PAN', value: 'invalid-pan' },
-  { label: 'Invalid GST', value: 'invalid-gst' },
-]
 
 const getApiErrorMessage = (error: unknown) => {
   if (axios.isAxiosError(error)) {
@@ -122,6 +114,11 @@ export const ConsultationViewPage = () => {
   } = useConsultation(resolvedConsultationId, Boolean(resolvedConsultationId))
   const { mutateAsync: updateConsultationStatus, isPending: isUpdatingStatus } =
     useUpdateConsultationStatus()
+  const recordReasonUsage = useRecordModerationReasonUsage()
+  const { options: rejectReasonOptions, buildPayload: buildRejectReasonPayload } =
+    useModerationReasonOptions(MODERATION_CATEGORY_SLUGS.rejectService)
+  const { options: requestChangesReasonOptions, buildPayload: buildRequestChangesReasonPayload } =
+    useModerationReasonOptions(MODERATION_CATEGORY_SLUGS.requestChangesService)
 
   const [activeDecisionAction, setActiveDecisionAction] =
     useState<ConsultationDecisionAction | null>(null)
@@ -238,9 +235,19 @@ export const ConsultationViewPage = () => {
       }
     }
 
-    const reasonFor = selectedReasons
-      .map((reasonValue) => SERVICE_REJECTION_REASON_BY_VALUE[reasonValue])
-      .filter((reason): reason is ServiceRejectionReason => Boolean(reason))
+    const reasonPayload =
+      activeDecisionAction === 'requestChanges'
+        ? buildRequestChangesReasonPayload(selectedReasons)
+        : buildRejectReasonPayload(selectedReasons)
+
+    if (reasonPayload.selectedReasons.length === 0) {
+      toast.error('Selected reasons are no longer available. Please refresh and try again.')
+      return
+    }
+
+    const reasonFor = reasonPayload.selectedReasons
+    const rejectionReason =
+      decisionReason.trim() || reasonPayload.reasonDetails || reasonFor.join(', ')
 
     try {
       if (activeDecisionAction === 'approve') {
@@ -255,10 +262,13 @@ export const ConsultationViewPage = () => {
           payload: {
             status: 'rejected',
             reasonFor,
-            rejectionReason: decisionReason.trim(),
+            rejectionReason,
             adminNote: decisionAdminNotes.trim(),
           },
         })
+        if (reasonPayload.reasonIds.length > 0) {
+          recordReasonUsage.mutate(reasonPayload.reasonIds)
+        }
         toast.success(
           activeDecisionAction === 'requestChanges'
             ? 'Resubmission requested successfully'
@@ -349,7 +359,7 @@ export const ConsultationViewPage = () => {
             'Are you sure you want to Reject Approval to this application? The applicant will be notified via email.',
           submitLabel: 'Reject Consultation',
           variant: 'reject' as const,
-          reasonOptions: decisionReasonOptions,
+          reasonOptions: rejectReasonOptions,
         },
         requestChanges: {
           title: 'Request Changes – Consultation Approval',
@@ -357,7 +367,7 @@ export const ConsultationViewPage = () => {
             'Are you sure you want to Request Changes to this application? The applicant will be notified via email.',
           submitLabel: 'Request Changes',
           variant: 'requestChanges' as const,
-          reasonOptions: decisionReasonOptions,
+          reasonOptions: requestChangesReasonOptions,
         },
         escalate: {
           title: 'Escalate Application',

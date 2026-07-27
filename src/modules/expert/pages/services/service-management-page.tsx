@@ -34,14 +34,16 @@ import {
   TableActionsDropdown,
   TableActionsItem,
 } from '@/shared/components/table/table-actions-dropdown'
-import {
-  DecisionActionModal,
-  type DecisionActionModalOption,
-} from '@/shared/components/modal/decision-action-modal'
+import { DecisionActionModal } from '@/shared/components/modal/decision-action-modal'
 import { StatusQuickLinkCard, StatusQuickLinkRow } from '@/shared/components/status-quick-link-card'
 import { Button } from '@/shared/components/ui/button'
 import { statusCardTones } from '@/shared/lib/design-tokens'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
+import { MODERATION_CATEGORY_SLUGS } from '@/modules/settings/api/templates-api'
+import {
+  useModerationReasonOptions,
+  useRecordModerationReasonUsage,
+} from '@/modules/settings/hooks/use-templates'
 
 const formatPrice = (price: number) =>
   new Intl.NumberFormat('en-IN', {
@@ -49,21 +51,6 @@ const formatPrice = (price: number) =>
     currency: 'INR',
     maximumFractionDigits: 0,
   }).format(price)
-
-const SUSPEND_REASON_OPTIONS: DecisionActionModalOption[] = [
-  { label: 'Policy Violation', value: 'policy_violation' },
-  { label: 'Quality Issues', value: 'quality_issues' },
-  { label: 'Customer Complaints', value: 'customer_complaints' },
-  { label: 'Other', value: 'other' },
-]
-
-const SERVICE_DELETE_REASON_OPTIONS: DecisionActionModalOption[] = [
-  { label: 'Unclear Image', value: 'unclear_image' },
-  { label: 'Content Issue', value: 'content_issue' },
-  { label: 'Invalid documents', value: 'invalid_documents' },
-  { label: 'Invalid PAN', value: 'invalid_pan' },
-  { label: 'Invalid GST', value: 'invalid_gst' },
-]
 
 export const ServiceManagementPage = () => {
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
@@ -83,6 +70,11 @@ export const ServiceManagementPage = () => {
 
   const suspendServiceMutation = useSuspendService()
   const deleteServiceMutation = useDeleteService()
+  const recordReasonUsage = useRecordModerationReasonUsage()
+  const { options: suspendReasonOptions, buildPayload: buildSuspendReasonPayload } =
+    useModerationReasonOptions(MODERATION_CATEGORY_SLUGS.suspendService)
+  const { options: deleteReasonOptions, buildPayload: buildDeleteReasonPayload } =
+    useModerationReasonOptions(MODERATION_CATEGORY_SLUGS.deleteService)
 
   const navigate = useNavigate()
   const tableColumnPreferencesQuery = useTableColumnPreferences(SERVICE_MANAGEMENT_MODULE_KEY)
@@ -194,17 +186,26 @@ export const ServiceManagementPage = () => {
       return
     }
 
+    const reasonPayload = buildDeleteReasonPayload(deleteReasons)
+    if (reasonPayload.selectedReasons.length === 0) {
+      toast.error('Selected reasons are no longer available. Please refresh and try again.')
+      return
+    }
+
     deleteServiceMutation.mutate(
       {
         id: deleteServiceTarget._id,
         payload: {
-          selectedReasons: deleteReasons,
-          reasonDetails: '',
+          selectedReasons: reasonPayload.selectedReasons,
+          reasonDetails: reasonPayload.reasonDetails,
           adminNotes: deleteAdminNotes.trim(),
         },
       },
       {
         onSuccess: () => {
+          if (reasonPayload.reasonIds.length > 0) {
+            recordReasonUsage.mutate(reasonPayload.reasonIds)
+          }
           toast.success('Service deleted successfully')
           closeDeleteModal()
         },
@@ -215,12 +216,14 @@ export const ServiceManagementPage = () => {
       },
     )
   }, [
+    buildDeleteReasonPayload,
     closeDeleteModal,
     deleteAdminNotes,
     deleteConfirmed,
     deleteReasons,
     deleteServiceMutation,
     deleteServiceTarget,
+    recordReasonUsage,
   ])
 
   const toggleSuspendReason = useCallback((value: string) => {
@@ -250,20 +253,29 @@ export const ServiceManagementPage = () => {
     const toIso = (value: string) =>
       value ? new Date(`${value}T00:00:00.000Z`).toISOString() : undefined
 
+    const reasonPayload = buildSuspendReasonPayload(suspendReasons)
+    if (reasonPayload.selectedReasons.length === 0) {
+      toast.error('Selected reasons are no longer available. Please refresh and try again.')
+      return
+    }
+
     suspendServiceMutation.mutate(
       {
         id: suspendServiceTarget._id,
         payload: {
-          selectedReasons: suspendReasons,
+          selectedReasons: reasonPayload.selectedReasons,
           suspendIndefinitely,
           startDate: suspendIndefinitely ? undefined : toIso(suspendStartDate),
           endDate: suspendIndefinitely ? undefined : toIso(suspendEndDate),
-          reasonDetails: '',
+          reasonDetails: reasonPayload.reasonDetails,
           adminNotes: suspendAdminNotes.trim(),
         },
       },
       {
         onSuccess: () => {
+          if (reasonPayload.reasonIds.length > 0) {
+            recordReasonUsage.mutate(reasonPayload.reasonIds)
+          }
           toast.success('Service suspended successfully')
           closeSuspendModal()
         },
@@ -276,7 +288,9 @@ export const ServiceManagementPage = () => {
       },
     )
   }, [
+    buildSuspendReasonPayload,
     closeSuspendModal,
+    recordReasonUsage,
     suspendAdminNotes,
     suspendEndDate,
     suspendIndefinitely,
@@ -667,7 +681,7 @@ export const ServiceManagementPage = () => {
         title="Suspend Service"
         description="Are you sure you want to suspend this Service? This will result in removal of the account."
         submitLabel="Suspend User"
-        reasonOptions={SUSPEND_REASON_OPTIONS}
+        reasonOptions={suspendReasonOptions}
         selectedReasons={suspendReasons}
         onReasonToggle={toggleSuspendReason}
         showTimeline
@@ -692,7 +706,7 @@ export const ServiceManagementPage = () => {
         description="Are you sure you want to delete this user? This will result in removal of the account."
         submitLabel="Delete User"
         heroLayout="inline"
-        reasonOptions={SERVICE_DELETE_REASON_OPTIONS}
+        reasonOptions={deleteReasonOptions}
         selectedReasons={deleteReasons}
         onReasonToggle={toggleDeleteReason}
         showReasonsLabel

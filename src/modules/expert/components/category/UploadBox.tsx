@@ -1,5 +1,12 @@
 import { useRef } from 'react'
 import { UploadCloud, X } from 'lucide-react'
+import { toast } from 'sonner'
+
+import {
+  assertFileWithinUploadLimit,
+  FILE_TOO_LARGE_MESSAGE,
+  MAX_UPLOAD_FILE_SIZE_MB,
+} from '@/shared/lib/api-error'
 
 import InfoTooltip from './InfoTooltip'
 import { categoryFormTheme } from './category-form.theme'
@@ -28,6 +35,17 @@ const UploadBox = ({
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
+
+    try {
+      assertFileWithinUploadLimit(file)
+    } catch {
+      toast.error(FILE_TOO_LARGE_MESSAGE)
+      if (inputRef.current) {
+        inputRef.current.value = ''
+      }
+      return
+    }
+
     onChange(file)
   }
 
@@ -93,7 +111,12 @@ const UploadBox = ({
             }`}
           >
             <UploadCloud size={isCompact ? 16 : 18} className="shrink-0" aria-hidden="true" />
-            {!isCompact ? <span className="text-body-sm">{placeholderText}</span> : null}
+            {!isCompact ? (
+              <>
+                <span className="text-body-sm">{placeholderText}</span>
+                <span className="text-[10px] text-white/40">Max {MAX_UPLOAD_FILE_SIZE_MB}MB</span>
+              </>
+            ) : null}
           </div>
         )}
       </div>

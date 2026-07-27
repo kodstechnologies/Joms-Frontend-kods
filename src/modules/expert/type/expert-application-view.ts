@@ -1,6 +1,6 @@
 export type ApplicationStatus = 'PENDING' | 'APPROVED' | 'REJECTED'
 
-export type ConciergeRejectionReason = 'Reason1' | 'Reason2' | 'Reason3' | 'Reason4' | 'Reason5'
+export type ConciergeRejectionReason = string
 
 export type DocumentReviewEntry = {
   status?: ApplicationStatus

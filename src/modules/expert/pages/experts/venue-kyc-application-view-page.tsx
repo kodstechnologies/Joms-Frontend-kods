@@ -46,6 +46,11 @@ import {
 import { cn } from '@/shared/lib/cn'
 import { useAuthStore } from '@/modules/auth/store/auth-store'
 import { formatApplicationExpertId } from './expert-list-format'
+import { MODERATION_CATEGORY_SLUGS } from '@/modules/settings/api/templates-api'
+import {
+  useModerationReasonOptions,
+  useRecordModerationReasonUsage,
+} from '@/modules/settings/hooks/use-templates'
 
 type TabKey = 'overview' | 'kyc' | 'banking'
 type DecisionVariant = 'approve' | 'reject' | 'requestChanges' | 'escalate'
@@ -63,22 +68,6 @@ const TABS: { key: TabKey; label: string }[] = [
   { key: 'overview', label: 'Overview' },
   { key: 'kyc', label: 'KYC Details' },
   { key: 'banking', label: 'Banking Details' },
-]
-
-const KYC_REJECT_REASONS: DecisionActionModalOption[] = [
-  { label: 'Unclear Image', value: 'Unclear Image' },
-  { label: 'Content Issue', value: 'Content Issue' },
-  { label: 'Invalid documents', value: 'Invalid documents' },
-  { label: 'Invalid PAN', value: 'Invalid PAN' },
-  { label: 'Invalid GST', value: 'Invalid GST' },
-]
-
-const BANKING_REJECT_REASONS: DecisionActionModalOption[] = [
-  { label: 'Unclear Image', value: 'Unclear Image' },
-  { label: 'Content Issue', value: 'Content Issue' },
-  { label: 'Invalid documents', value: 'Invalid documents' },
-  { label: 'Invalid PAN', value: 'Invalid PAN' },
-  { label: 'Invalid GST', value: 'Invalid GST' },
 ]
 
 const getApiErrorMessage = (error: unknown) => {
@@ -265,6 +254,11 @@ export function VenueKycApplicationViewPage() {
   const startEscalationReview = useStartEscalationReviewOnView(partnerId)
   const { mutate: startEscalationReviewMutate } = startEscalationReview
   const { data: escalationData } = useAdminEscalation('partner', partnerId)
+  const recordReasonUsage = useRecordModerationReasonUsage()
+  const { options: rejectReasonOptions, buildPayload: buildRejectReasonPayload } =
+    useModerationReasonOptions(MODERATION_CATEGORY_SLUGS.rejectVenue)
+  const { options: requestChangesReasonOptions, buildPayload: buildRequestChangesReasonPayload } =
+    useModerationReasonOptions(MODERATION_CATEGORY_SLUGS.requestChangesVenue)
 
   useEffect(() => {
     if (!partnerId || isSuperAdmin) return
@@ -359,13 +353,20 @@ export function VenueKycApplicationViewPage() {
       return
     }
 
+    const reasonPayload =
+      modalVariant === 'requestChanges'
+        ? buildRequestChangesReasonPayload(selectedReasons)
+        : buildRejectReasonPayload(selectedReasons)
+
+    if (isRejectFlow && reasonPayload.selectedReasons.length === 0) {
+      toast.error('Selected reasons are no longer available. Please refresh and try again.')
+      return
+    }
+
     const resolvedRejectionReason =
-      modalVariant === 'reject'
-        ? (modalTarget === 'banking' ? BANKING_REJECT_REASONS : KYC_REJECT_REASONS)
-            .filter((option) => selectedReasons.includes(option.value))
-            .map((option) => option.label)
-            .join(', ') || selectedReasons.join(', ')
-        : rejectionReason.trim()
+      modalVariant === 'requestChanges'
+        ? rejectionReason.trim() || reasonPayload.reasonDetails
+        : reasonPayload.selectedReasons.join(', ')
 
     if (modalTarget === 'banking') {
       const payload =
@@ -373,13 +374,16 @@ export function VenueKycApplicationViewPage() {
           ? { status: 'APPROVED' as const, adminNote: adminNotes.trim() }
           : {
               status: 'REJECTED' as const,
-              reasonFor: selectedReasons,
+              reasonFor: reasonPayload.selectedReasons,
               rejectionReason: resolvedRejectionReason,
               adminNote: adminNotes.trim(),
             }
 
       updateBanking.mutate(payload, {
         onSuccess: () => {
+          if (isRejectFlow && reasonPayload.reasonIds.length > 0) {
+            recordReasonUsage.mutate(reasonPayload.reasonIds)
+          }
           toast.success(
             modalVariant === 'approve'
               ? 'Banking details approved successfully'
@@ -411,12 +415,15 @@ export function VenueKycApplicationViewPage() {
     updateKyc.mutate(
       {
         status: 'REJECTED',
-        reasonFor: selectedReasons,
+        reasonFor: reasonPayload.selectedReasons,
         rejectionReason: resolvedRejectionReason,
         adminNote: adminNotes.trim(),
       },
       {
         onSuccess: () => {
+          if (isRejectFlow && reasonPayload.reasonIds.length > 0) {
+            recordReasonUsage.mutate(reasonPayload.reasonIds)
+          }
           toast.success(
             modalVariant === 'requestChanges'
               ? 'Resubmission requested successfully'
@@ -438,10 +445,37 @@ export function VenueKycApplicationViewPage() {
     const mutationFn =
       viewerDocument.target === 'banking' ? updateBankingDocument : updateKycDocument
 
+    const isRejectFlow = variant === 'reject' || variant === 'requestChanges'
+    const reasonPayload = isRejectFlow
+      ? variant === 'requestChanges'
+        ? buildRequestChangesReasonPayload(payload.reasonFor || [])
+        : buildRejectReasonPayload(payload.reasonFor || [])
+      : null
+
+    if (isRejectFlow && (!reasonPayload || reasonPayload.selectedReasons.length === 0)) {
+      toast.error('Selected reasons are no longer available. Please refresh and try again.')
+      return
+    }
+
+    const resolvedPayload: VenueKycStatusPayload =
+      payload.status === 'APPROVED'
+        ? payload
+        : {
+            ...payload,
+            reasonFor: reasonPayload!.selectedReasons,
+            rejectionReason:
+              payload.rejectionReason?.trim() ||
+              reasonPayload!.reasonDetails ||
+              reasonPayload!.selectedReasons.join(', '),
+          }
+
     mutationFn.mutate(
-      { documentKey: viewerDocument.key, payload },
+      { documentKey: viewerDocument.key, payload: resolvedPayload },
       {
         onSuccess: () => {
+          if (reasonPayload && reasonPayload.reasonIds.length > 0) {
+            recordReasonUsage.mutate(reasonPayload.reasonIds)
+          }
           toast.success(
             variant === 'approve'
               ? 'Document approved'
@@ -970,9 +1004,9 @@ export function VenueKycApplicationViewPage() {
         }
         reasonOptions={
           isRejectFlow
-            ? modalTarget === 'banking'
-              ? BANKING_REJECT_REASONS
-              : KYC_REJECT_REASONS
+            ? modalVariant === 'requestChanges'
+              ? requestChangesReasonOptions
+              : rejectReasonOptions
             : []
         }
         selectedReasons={selectedReasons}
@@ -1009,8 +1043,15 @@ export function VenueKycApplicationViewPage() {
         url={viewerDocument?.url || ''}
         filename={viewerDocument?.label || 'Document'}
         reviewStatus={viewerDocument?.reviewStatus}
-        reasonOptions={
-          viewerDocument?.target === 'banking' ? BANKING_REJECT_REASONS : KYC_REJECT_REASONS
+        reasonOptions={rejectReasonOptions}
+        requestChangesReasonOptions={requestChangesReasonOptions}
+        actionsDisabled={
+          !viewerDocument ||
+          (viewerDocument.target === 'banking'
+            ? !isBankingSubmitted ||
+              (application?.bankingDetails?.status || application?.header?.bankingStatus) !==
+                'PENDING'
+            : (application?.kycDetails?.status || application?.header?.kycStatus) !== 'PENDING')
         }
         isSubmitting={updateKycDocument.isPending || updateBankingDocument.isPending}
         onClose={() => setViewerDocument(null)}

@@ -31,6 +31,8 @@ type DocumentReviewViewerProps = {
   filename: string
   reviewStatus?: DocumentReviewStatus | null
   reasonOptions: DecisionActionModalOption[]
+  requestChangesReasonOptions?: DecisionActionModalOption[]
+  actionsDisabled?: boolean
   isSubmitting?: boolean
   onClose: () => void
   onSubmitDecision: (variant: DocumentDecisionVariant, payload: DocumentStatusPayload) => void
@@ -72,6 +74,8 @@ function DocumentReviewViewerContent({
   filename,
   reviewStatus,
   reasonOptions,
+  requestChangesReasonOptions,
+  actionsDisabled = false,
   isSubmitting = false,
   onClose,
   onSubmitDecision,
@@ -85,6 +89,13 @@ function DocumentReviewViewerContent({
   const [adminNotes, setAdminNotes] = useState('')
   const menuRef = useRef<HTMLDivElement>(null)
 
+  const resolvedReviewStatus = resolveDocumentReviewStatus(url, reviewStatus)
+  const decisionActionsDisabled =
+    actionsDisabled ||
+    resolvedReviewStatus === 'APPROVED' ||
+    resolvedReviewStatus === 'REJECTED' ||
+    isSubmitting
+
   useEffect(() => {
     if (!menuOpen) return
     const onPointerDown = (event: MouseEvent) => {
@@ -97,6 +108,7 @@ function DocumentReviewViewerContent({
   }, [menuOpen])
 
   const openDecisionModal = (variant: DocumentDecisionVariant) => {
+    if (decisionActionsDisabled) return
     setMenuOpen(false)
     setModalVariant(variant)
     setSelectedReasons([])
@@ -112,6 +124,8 @@ function DocumentReviewViewerContent({
   }
 
   const handleSubmit = () => {
+    if (decisionActionsDisabled) return
+
     const isRejectFlow = modalVariant === 'reject' || modalVariant === 'requestChanges'
     if (isRejectFlow) {
       if (selectedReasons.length === 0) return toast.error('Please select at least one reason.')
@@ -177,10 +191,14 @@ function DocumentReviewViewerContent({
           </button>
           <div className="min-w-0">
             <p className="text-body-md-semibold truncate text-white">{filename}</p>
-            {reviewStatus === 'APPROVED' ? (
+            {resolvedReviewStatus === 'APPROVED' ? (
               <p className="text-body-sm text-brand-positive font-medium">Approved</p>
-            ) : reviewStatus === 'REJECTED' ? (
+            ) : resolvedReviewStatus === 'REJECTED' ? (
               <p className="text-body-sm text-brand-danger font-medium">Rejected</p>
+            ) : decisionActionsDisabled ? (
+              <p className="text-body-sm text-muted font-medium">
+                Actions unavailable for this document
+              </p>
             ) : null}
           </div>
         </div>
@@ -189,13 +207,17 @@ function DocumentReviewViewerContent({
           <button
             type="button"
             aria-label="Document actions"
-            onClick={() => setMenuOpen((openMenu) => !openMenu)}
-            className="rounded-full p-1.5 text-white/80 transition-colors hover:bg-white/10 hover:text-white"
+            disabled={decisionActionsDisabled}
+            onClick={() => {
+              if (decisionActionsDisabled) return
+              setMenuOpen((openMenu) => !openMenu)
+            }}
+            className="rounded-full p-1.5 text-white/80 transition-colors hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-white/80"
           >
             <MoreVertical className="size-5" />
           </button>
 
-          {menuOpen ? (
+          {menuOpen && !decisionActionsDisabled ? (
             <div className="ui-table-actions-menu absolute top-full right-0 z-10 mt-2">
               <button
                 type="button"
@@ -304,7 +326,11 @@ function DocumentReviewViewerContent({
         }
         reasonLabel={modalCopy.reasonLabel}
         reasonOptions={
-          modalVariant === 'reject' || modalVariant === 'requestChanges' ? reasonOptions : []
+          modalVariant === 'requestChanges'
+            ? requestChangesReasonOptions || reasonOptions
+            : modalVariant === 'reject'
+              ? reasonOptions
+              : []
         }
         selectedReasons={selectedReasons}
         onReasonToggle={toggleReason}

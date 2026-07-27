@@ -50,9 +50,12 @@ import type {
   ConsultationPricingOption,
   CustomPricing,
   ServiceDetail,
-  ServiceRejectionReason,
 } from '../../type/service'
-import { SERVICE_REJECTION_REASON_BY_VALUE } from '../../type/service'
+import { MODERATION_CATEGORY_SLUGS } from '@/modules/settings/api/templates-api'
+import {
+  useModerationReasonOptions,
+  useRecordModerationReasonUsage,
+} from '@/modules/settings/hooks/use-templates'
 
 type ServiceViewDetail = Partial<ServiceDetail> &
   Partial<ConsultationDetail> & {
@@ -113,13 +116,6 @@ const formatCustomTimeline = (custom?: CustomPricing) => {
   const durationLabel = custom.durationType === 'long_term' ? 'Long term' : 'Short term'
   return `${durationLabel} (${custom.timelineFrom}-${custom.timelineTo} ${custom.timelineUnit})`
 }
-
-const decisionReasonOptions = [
-  { label: 'Unclear Image', value: 'unclear-image' },
-  { label: 'Content Issue', value: 'content-issue' },
-  { label: 'Invalid documents', value: 'invalid-documents' },
-  { label: 'Invalid PAN', value: 'invalid-pan' },
-]
 
 type ServiceDecisionAction = 'approve' | 'reject' | 'requestChanges' | 'suspend' | 'escalate'
 
@@ -228,6 +224,13 @@ export const ServiceViewPage = () => {
   const { mutateAsync: updateConsultationStatus, isPending: isUpdatingConsultationStatus } =
     useUpdateConsultationStatus()
   const suspendServiceMutation = useSuspendService()
+  const recordReasonUsage = useRecordModerationReasonUsage()
+  const { options: rejectReasonOptions, buildPayload: buildRejectReasonPayload } =
+    useModerationReasonOptions(MODERATION_CATEGORY_SLUGS.rejectService)
+  const { options: requestChangesReasonOptions, buildPayload: buildRequestChangesReasonPayload } =
+    useModerationReasonOptions(MODERATION_CATEGORY_SLUGS.requestChangesService)
+  const { options: suspendReasonOptions, buildPayload: buildSuspendReasonPayload } =
+    useModerationReasonOptions(MODERATION_CATEGORY_SLUGS.suspendService)
 
   const isUpdatingStatus = isUpdatingServiceStatus || isUpdatingConsultationStatus
 
@@ -387,18 +390,30 @@ export const ServiceViewPage = () => {
       const toIso = (value: string) =>
         value ? new Date(`${value}T00:00:00.000Z`).toISOString() : undefined
 
+      const reasonPayload = buildSuspendReasonPayload(selectedReasons)
+      if (reasonPayload.selectedReasons.length === 0) {
+        toast.error('Selected reasons are no longer available. Please refresh and try again.')
+        return
+      }
+
+      const extraDetails = decisionReason.trim()
+      const reasonDetails = [reasonPayload.reasonDetails, extraDetails].filter(Boolean).join('\n\n')
+
       try {
         await suspendServiceMutation.mutateAsync({
           id: resolvedServiceId,
           payload: {
-            selectedReasons,
+            selectedReasons: reasonPayload.selectedReasons,
             suspendIndefinitely,
             startDate: suspendIndefinitely ? undefined : toIso(suspendStartDate),
             endDate: suspendIndefinitely ? undefined : toIso(suspendEndDate),
-            reasonDetails: decisionReason.trim(),
+            reasonDetails,
             adminNotes: decisionAdminNotes.trim(),
           },
         })
+        if (reasonPayload.reasonIds.length > 0) {
+          recordReasonUsage.mutate(reasonPayload.reasonIds)
+        }
         toast.success('Service suspended successfully')
         closeDecisionModal()
       } catch (err) {
@@ -434,9 +449,19 @@ export const ServiceViewPage = () => {
         }
       }
 
-      const reasonFor = selectedReasons
-        .map((reasonValue) => SERVICE_REJECTION_REASON_BY_VALUE[reasonValue])
-        .filter((reason): reason is ServiceRejectionReason => Boolean(reason))
+      const reasonPayload =
+        activeDecisionAction === 'requestChanges'
+          ? buildRequestChangesReasonPayload(selectedReasons)
+          : buildRejectReasonPayload(selectedReasons)
+
+      if (reasonPayload.selectedReasons.length === 0) {
+        toast.error('Selected reasons are no longer available. Please refresh and try again.')
+        return
+      }
+
+      const reasonFor = reasonPayload.selectedReasons
+      const rejectionReason =
+        decisionReason.trim() || reasonPayload.reasonDetails || reasonFor.join(', ')
 
       try {
         if (shouldFetchConsultation) {
@@ -452,10 +477,13 @@ export const ServiceViewPage = () => {
               payload: {
                 status: 'rejected',
                 reasonFor,
-                rejectionReason: decisionReason.trim(),
+                rejectionReason,
                 adminNote: decisionAdminNotes.trim(),
               },
             })
+            if (reasonPayload.reasonIds.length > 0) {
+              recordReasonUsage.mutate(reasonPayload.reasonIds)
+            }
             toast.success(
               activeDecisionAction === 'requestChanges'
                 ? 'Resubmission requested successfully'
@@ -474,10 +502,13 @@ export const ServiceViewPage = () => {
             payload: {
               status: 'rejected',
               reasonFor,
-              rejectionReason: decisionReason.trim(),
+              rejectionReason,
               adminNote: decisionAdminNotes.trim(),
             },
           })
+          if (reasonPayload.reasonIds.length > 0) {
+            recordReasonUsage.mutate(reasonPayload.reasonIds)
+          }
           toast.success(
             activeDecisionAction === 'requestChanges'
               ? 'Resubmission requested successfully'
@@ -610,7 +641,7 @@ export const ServiceViewPage = () => {
             'Are you sure you want to Reject Approval to this application? The applicant will be notified via email.',
           submitLabel: isConsultation ? 'Reject Consultation' : 'Reject Service',
           variant: 'reject' as const,
-          reasonOptions: decisionReasonOptions,
+          reasonOptions: rejectReasonOptions,
         },
         requestChanges: {
           title: isConsultation
@@ -620,7 +651,7 @@ export const ServiceViewPage = () => {
             'Are you sure you want to Request Changes to this application? The applicant will be notified via email.',
           submitLabel: 'Request Changes',
           variant: 'requestChanges' as const,
-          reasonOptions: decisionReasonOptions,
+          reasonOptions: requestChangesReasonOptions,
         },
         suspend: {
           title: 'Suspend Service',
@@ -628,12 +659,7 @@ export const ServiceViewPage = () => {
             'Are you sure you want to suspend this Service? This will result in removal of the account.',
           submitLabel: 'Suspend User',
           variant: 'suspend' as const,
-          reasonOptions: [
-            { label: 'Policy Violation', value: 'policy-violation' },
-            { label: 'Quality Issues', value: 'quality-issues' },
-            { label: 'Customer Complaints', value: 'customer-complaints' },
-            { label: 'Other', value: 'other' },
-          ],
+          reasonOptions: suspendReasonOptions,
         },
         escalate: {
           title: 'Escalate Application',

@@ -7,7 +7,6 @@ import { toast } from 'sonner'
 import { fetchExpertApplicationView, updateExpertKycStatus } from '../../api/expert-application-api'
 import { useExperts } from '../../hooks/use-expert'
 import type { Expert } from '../../type/expert'
-import type { ConciergeRejectionReason } from '../../type/expert-application-view'
 import { isKycSubmittedForApplication } from '../../utils/expert-application-helpers'
 import { openExpertApplicationView } from '../../utils/expert-application-navigation'
 import { ExpertListHeader } from './expert-list-shared'
@@ -20,24 +19,18 @@ import {
   createExpertStatusColumn,
 } from './expert-list-columns'
 import { useExpertListSelection } from './use-expert-list-selection'
-import {
-  DecisionActionModal,
-  type DecisionActionModalOption,
-} from '@/shared/components/modal/decision-action-modal'
+import { DecisionActionModal } from '@/shared/components/modal/decision-action-modal'
 import { DataTable } from '@/shared/components/table/data-table'
 import {
   TableActionsDropdown,
   TableActionsItem,
 } from '@/shared/components/table/table-actions-dropdown'
 import { useQueryClient } from '@tanstack/react-query'
-
-const REVOKE_REASON_OPTIONS: DecisionActionModalOption[] = [
-  { label: 'Unclear Image', value: 'Reason1' },
-  { label: 'Content Issue', value: 'Reason2' },
-  { label: 'Invalid documents', value: 'Reason3' },
-  { label: 'Invalid PAN', value: 'Reason4' },
-  { label: 'Invalid GST', value: 'Reason5' },
-]
+import { MODERATION_CATEGORY_SLUGS } from '@/modules/settings/api/templates-api'
+import {
+  useModerationReasonOptions,
+  useRecordModerationReasonUsage,
+} from '@/modules/settings/hooks/use-templates'
 
 export function ExpertPendingApprovalsPage() {
   const navigate = useNavigate()
@@ -50,6 +43,9 @@ export function ExpertPendingApprovalsPage() {
   const [revokeReasonDetails, setRevokeReasonDetails] = useState('')
   const [revokeAdminNotes, setRevokeAdminNotes] = useState('')
   const [isRevoking, setIsRevoking] = useState(false)
+  const recordReasonUsage = useRecordModerationReasonUsage()
+  const { options: revokeReasonOptions, buildPayload: buildRevokeReasonPayload } =
+    useModerationReasonOptions(MODERATION_CATEGORY_SLUGS.rejectExpert)
 
   const { data, isLoading } = useExperts({
     page: currentPage,
@@ -119,12 +115,22 @@ export function ExpertPendingApprovalsPage() {
         return
       }
 
+      const reasonPayload = buildRevokeReasonPayload(revokeReasons)
+      if (reasonPayload.selectedReasons.length === 0) {
+        toast.error('Selected reasons are no longer available. Please refresh and try again.')
+        return
+      }
+
       await updateExpertKycStatus(kycId, {
         status: 'REJECTED',
-        reasonFor: revokeReasons as ConciergeRejectionReason[],
-        rejectionReason: revokeReasonDetails.trim(),
+        reasonFor: reasonPayload.selectedReasons,
+        rejectionReason: revokeReasonDetails.trim() || reasonPayload.reasonDetails,
         adminNote: revokeAdminNotes.trim(),
       })
+
+      if (reasonPayload.reasonIds.length > 0) {
+        recordReasonUsage.mutate(reasonPayload.reasonIds)
+      }
 
       toast.success('Application revoked successfully')
       closeRevokeModal()
@@ -136,9 +142,11 @@ export function ExpertPendingApprovalsPage() {
       setIsRevoking(false)
     }
   }, [
+    buildRevokeReasonPayload,
     closeRevokeModal,
     navigate,
     queryClient,
+    recordReasonUsage,
     revokeAdminNotes,
     revokeExpertTarget,
     revokeReasonDetails,
@@ -259,7 +267,7 @@ export function ExpertPendingApprovalsPage() {
         title="Revoke Application"
         description="Are you sure you want to revoke this expert application? The partner will need to resubmit after rejection."
         submitLabel="Revoke Application"
-        reasonOptions={REVOKE_REASON_OPTIONS}
+        reasonOptions={revokeReasonOptions}
         selectedReasons={revokeReasons}
         onReasonToggle={toggleRevokeReason}
         reason={revokeReasonDetails}

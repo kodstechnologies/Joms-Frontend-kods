@@ -3,12 +3,12 @@ import {
   BadgePercent,
   Building2,
   ChartNoAxesCombined,
+  ClipboardList,
   CreditCard,
   LifeBuoy,
-  MessageCircle,
   Settings,
   Shield,
-  ClipboardList,
+  ShieldAlert,
 } from 'lucide-react'
 
 export type NavBadge =
@@ -115,15 +115,22 @@ export const navigationConfig: NavItem[] = [
     ],
   },
   {
-    key: 'communication',
-    label: 'Communication',
-    icon: MessageCircle,
+    key: 'content-moderation',
+    label: 'Content Moderation',
+    icon: ShieldAlert,
     superAdminOnly: true,
     children: [
       {
-        key: 'communication.management',
-        label: 'Communication Management',
+        key: 'content-moderation.communication',
+        label: 'Communication',
         to: '/communication/management',
+        matchPaths: ['/communication/create', '/communication/view'],
+      },
+      {
+        key: 'content-moderation.templates',
+        label: 'Templates',
+        to: '/content-moderation/templates',
+        matchPaths: ['/settings/templates'],
       },
     ],
   },
@@ -191,11 +198,6 @@ export const navigationConfig: NavItem[] = [
         key: 'settings.main',
         label: 'Main Settings',
         to: '/settings/main',
-      },
-      {
-        key: 'settings.templates',
-        label: 'Templates',
-        to: '/settings/templates',
       },
       {
         key: 'settings.access',

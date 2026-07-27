@@ -35,15 +35,16 @@ import {
   isKycSubmittedForApplication,
   resolveExpertServiceCategoryDisplay,
 } from '../../utils/expert-application-helpers'
-import type {
-  ApplicationStatus,
-  ConciergeRejectionReason,
-  DocumentStatusPayload,
-} from '../../type/expert-application-view'
+import type { ApplicationStatus, DocumentStatusPayload } from '../../type/expert-application-view'
 import {
   DecisionActionModal,
   type DecisionActionModalOption,
 } from '@/shared/components/modal/decision-action-modal'
+import { MODERATION_CATEGORY_SLUGS } from '@/modules/settings/api/templates-api'
+import {
+  useModerationReasonOptions,
+  useRecordModerationReasonUsage,
+} from '@/modules/settings/hooks/use-templates'
 import {
   DecisionControlButtons,
   DecisionControlsHeader,
@@ -73,22 +74,6 @@ const TABS: { key: TabKey; label: string }[] = [
   { key: 'overview', label: 'Overview' },
   { key: 'kyc', label: 'KYC Details' },
   { key: 'banking', label: 'Banking Details' },
-]
-
-const KYC_REJECT_REASONS: DecisionActionModalOption[] = [
-  { label: 'Unclear Image', value: 'Reason1' },
-  { label: 'Content Issue', value: 'Reason2' },
-  { label: 'Invalid documents', value: 'Reason3' },
-  { label: 'Invalid PAN', value: 'Reason4' },
-  { label: 'Invalid GST', value: 'Reason5' },
-]
-
-const BANKING_REJECT_REASONS: DecisionActionModalOption[] = [
-  { label: 'Unclear Image', value: 'Reason1' },
-  { label: 'Content Issue', value: 'Reason2' },
-  { label: 'Invalid documents', value: 'Reason3' },
-  { label: 'Invalid PAN', value: 'Reason4' },
-  { label: 'Invalid GST', value: 'Reason5' },
 ]
 
 const getApiErrorMessage = (error: unknown) => {
@@ -226,6 +211,11 @@ export function ExpertApplicationViewPage() {
   const startEscalationReview = useStartEscalationReviewOnView(id)
   const { mutate: startEscalationReviewMutate } = startEscalationReview
   const { data: escalationData } = useAdminEscalation('partner', id)
+  const recordReasonUsage = useRecordModerationReasonUsage()
+  const { options: rejectReasonOptions, buildPayload: buildRejectReasonPayload } =
+    useModerationReasonOptions(MODERATION_CATEGORY_SLUGS.rejectExpert)
+  const { options: requestChangesReasonOptions, buildPayload: buildRequestChangesReasonPayload } =
+    useModerationReasonOptions(MODERATION_CATEGORY_SLUGS.requestChangesExpert)
 
   useEffect(() => {
     if (!id || isSuperAdmin) return
@@ -313,25 +303,30 @@ export function ExpertApplicationViewPage() {
       return toast.error('Admin notes are required.')
     }
 
+    const reasonPayload =
+      modalVariant === 'requestChanges'
+        ? buildRequestChangesReasonPayload(selectedReasons)
+        : buildRejectReasonPayload(selectedReasons)
+
+    if (isRejectFlow && reasonPayload.selectedReasons.length === 0) {
+      return toast.error('Selected reasons are no longer available. Please refresh and try again.')
+    }
+
     const payload =
       modalVariant === 'approve'
         ? { status: 'APPROVED' as const, adminNote: adminNotes.trim() }
-        : modalTarget === 'banking'
-          ? {
-              status: 'REJECTED' as const,
-              reasonFor: selectedReasons as ConciergeRejectionReason[],
-              rejectionReason: rejectionReason.trim(),
-              adminNote: adminNotes.trim() || undefined,
-            }
-          : {
-              status: 'REJECTED' as const,
-              reasonFor: selectedReasons as ConciergeRejectionReason[],
-              rejectionReason: rejectionReason.trim(),
-              adminNote: adminNotes.trim(),
-            }
+        : {
+            status: 'REJECTED' as const,
+            reasonFor: reasonPayload.selectedReasons,
+            rejectionReason: rejectionReason.trim() || reasonPayload.reasonDetails,
+            adminNote: adminNotes.trim() || undefined,
+          }
 
     mutation.mutate(payload, {
       onSuccess: () => {
+        if (isRejectFlow && reasonPayload.reasonIds.length > 0) {
+          recordReasonUsage.mutate(reasonPayload.reasonIds)
+        }
         toast.success(
           modalVariant === 'approve'
             ? 'Status updated to APPROVED'
@@ -354,16 +349,51 @@ export function ExpertApplicationViewPage() {
     const mutationFn =
       viewerDocument.target === 'banking' ? updateBankingDocument : updateKycDocument
 
+    const isRejectFlow = variant === 'reject' || variant === 'requestChanges'
+
+    if (payload.status === 'APPROVED') {
+      mutationFn.mutate(
+        { documentKey: viewerDocument.key, payload },
+        {
+          onSuccess: () => {
+            toast.success('Document approved')
+            setViewerDocument(null)
+          },
+          onError: (err) => toast.error(getApiErrorMessage(err)),
+        },
+      )
+      return
+    }
+
+    const reasonPayload =
+      variant === 'requestChanges'
+        ? buildRequestChangesReasonPayload(payload.reasonFor)
+        : buildRejectReasonPayload(payload.reasonFor)
+
+    if (isRejectFlow && reasonPayload.selectedReasons.length === 0) {
+      toast.error('Selected reasons are no longer available. Please refresh and try again.')
+      return
+    }
+
+    const resolvedPayload: DocumentStatusPayload = {
+      status: 'REJECTED',
+      reasonFor: reasonPayload.selectedReasons,
+      rejectionReason:
+        payload.rejectionReason.trim() ||
+        reasonPayload.reasonDetails ||
+        reasonPayload.selectedReasons.join(', '),
+      adminNote: payload.adminNote,
+    }
+
     mutationFn.mutate(
-      { documentKey: viewerDocument.key, payload },
+      { documentKey: viewerDocument.key, payload: resolvedPayload },
       {
         onSuccess: () => {
+          if (reasonPayload.reasonIds.length > 0) {
+            recordReasonUsage.mutate(reasonPayload.reasonIds)
+          }
           toast.success(
-            variant === 'approve'
-              ? 'Document approved'
-              : variant === 'requestChanges'
-                ? 'Document changes requested'
-                : 'Document rejected',
+            variant === 'requestChanges' ? 'Document changes requested' : 'Document rejected',
           )
           setViewerDocument(null)
         },
@@ -846,9 +876,9 @@ export function ExpertApplicationViewPage() {
         }
         reasonOptions={
           isRejectFlow
-            ? modalTarget === 'banking'
-              ? BANKING_REJECT_REASONS
-              : KYC_REJECT_REASONS
+            ? modalVariant === 'requestChanges'
+              ? requestChangesReasonOptions
+              : rejectReasonOptions
             : []
         }
         selectedReasons={selectedReasons}
@@ -878,8 +908,13 @@ export function ExpertApplicationViewPage() {
         url={viewerDocument?.url || ''}
         filename={viewerDocument?.label || 'Document'}
         reviewStatus={viewerDocument?.reviewStatus}
-        reasonOptions={
-          viewerDocument?.target === 'banking' ? BANKING_REJECT_REASONS : KYC_REJECT_REASONS
+        reasonOptions={rejectReasonOptions}
+        requestChangesReasonOptions={requestChangesReasonOptions}
+        actionsDisabled={
+          !viewerDocument ||
+          (viewerDocument.target === 'banking'
+            ? !isBankingSubmitted || application?.banking?.status !== 'PENDING'
+            : !isKycSubmitted || displayKycStatus !== 'PENDING')
         }
         isSubmitting={updateKycDocument.isPending || updateBankingDocument.isPending}
         onClose={() => setViewerDocument(null)}

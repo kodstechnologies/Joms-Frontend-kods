@@ -750,6 +750,7 @@ export function AppRouter() {
                 <Route path="/settings/policies/:id/timeline" element={<PolicyTimelinePage />} />
                 <Route path="/settings/policies/:id" element={<PolicyDetailPage />} />
                 <Route path="/settings/templates" element={<TemplatesPage />} />
+                <Route path="/content-moderation/templates" element={<TemplatesPage />} />
                 <Route path="/settings/categories" element={<CategoryHubPage />} />
                 <Route path="/settings/system" element={<SystemConfigurationPage />} />
 

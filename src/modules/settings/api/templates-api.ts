@@ -22,13 +22,34 @@ export type ModerationReason = {
   updatedAt?: string
 }
 
+export const MODERATION_CATEGORY_SLUGS = {
+  suspendExpert: 'suspend-expert',
+  deleteExpert: 'delete-expert',
+  rejectExpert: 'reject-expert',
+  requestChangesExpert: 'request-changes-expert',
+  suspendService: 'suspend-service',
+  deleteService: 'delete-service',
+  rejectService: 'reject-service',
+  requestChangesService: 'request-changes-service',
+  suspendVenue: 'suspend-venue',
+  deleteVenue: 'delete-venue',
+  rejectVenue: 'reject-venue',
+  requestChangesVenue: 'request-changes-venue',
+} as const
+
+export type ModerationCategorySlug =
+  (typeof MODERATION_CATEGORY_SLUGS)[keyof typeof MODERATION_CATEGORY_SLUGS]
+
 type ApiEnvelope<T> = {
   success: boolean
   message: string
   data: T
 }
 
-export const fetchModerationCategories = async (params?: { search?: string }) => {
+export const fetchModerationCategories = async (params?: {
+  search?: string
+  includeInactive?: boolean
+}) => {
   const response = await settingsApiClient.get<ApiEnvelope<ModerationCategory[]>>(
     '/settings/templates/categories',
     { params },
@@ -51,6 +72,16 @@ export const fetchModerationReasons = async (categoryId: string) => {
   const response = await settingsApiClient.get<ApiEnvelope<ModerationReason[]>>(
     `/settings/templates/categories/${categoryId}/reasons`,
   )
+  return response.data.data
+}
+
+export const fetchModerationReasonsBySlug = async (
+  slug: string,
+  params?: { activeOnly?: boolean },
+) => {
+  const response = await settingsApiClient.get<
+    ApiEnvelope<{ category: ModerationCategory; reasons: ModerationReason[] }>
+  >(`/settings/templates/categories/by-slug/${slug}/reasons`, { params })
   return response.data.data
 }
 
@@ -93,4 +124,28 @@ export const deleteModerationReason = async (id: string) => {
     `/settings/templates/reasons/${id}`,
   )
   return response.data.data
+}
+
+export const recordModerationReasonUsage = async (reasonIds: string[]) => {
+  const response = await settingsApiClient.post<ApiEnvelope<{ updated: number }>>(
+    '/settings/templates/reasons/record-usage',
+    { reasonIds },
+  )
+  return response.data.data
+}
+
+export function buildModerationActionPayload(
+  reasons: ModerationReason[],
+  selectedReasonIds: string[],
+) {
+  const selected = reasons.filter((reason) => selectedReasonIds.includes(reason.id))
+  const messageTemplates = selected
+    .map((reason) => reason.defaultMessageTemplate.trim())
+    .filter(Boolean)
+
+  return {
+    reasonIds: selected.map((reason) => reason.id),
+    selectedReasons: selected.map((reason) => reason.title),
+    reasonDetails: messageTemplates.join('\n\n'),
+  }
 }

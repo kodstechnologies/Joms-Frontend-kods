@@ -37,7 +37,6 @@ import {
 import { fetchConsultationById, fetchServiceById } from '../../api/service-api'
 import { getServiceManagementViewPath } from '../../lib/service-navigation'
 import { openExpertKycFromProfile } from '../../utils/expert-application-navigation'
-import { ADMIN_DELETE_REASON_OPTIONS } from '../../constants/soft-delete'
 import { useDeactivateExpert, useSuspendExpert } from '../../hooks/use-expert'
 import {
   useExpertConsultations,
@@ -50,10 +49,12 @@ import type {
   ExpertService,
   ExpertWorkExperience,
 } from '../../type/expert-profile'
+import { DecisionActionModal } from '@/shared/components/modal/decision-action-modal'
+import { MODERATION_CATEGORY_SLUGS } from '@/modules/settings/api/templates-api'
 import {
-  DecisionActionModal,
-  type DecisionActionModalOption,
-} from '@/shared/components/modal/decision-action-modal'
+  useModerationReasonOptions,
+  useRecordModerationReasonUsage,
+} from '@/modules/settings/hooks/use-templates'
 import {
   TableActionsDropdown,
   TableActionsItem,
@@ -115,14 +116,6 @@ const getApiErrorMessage = (error: unknown) => {
 }
 
 const comingSoon = (label: string) => toast.message(`${label} is coming soon`)
-
-const SUSPEND_REASON_OPTIONS: DecisionActionModalOption[] = [
-  { label: 'Policy violation', value: 'policy_violation' },
-  { label: 'Temporary operational issue', value: 'temporary_operational_issue' },
-  { label: 'Quality concern', value: 'quality_concern' },
-  { label: 'System verification in progress', value: 'system_verification_in_progress' },
-  { label: 'Admin review required', value: 'admin_review_required' },
-]
 
 const toIso = (date: string) => new Date(date).toISOString()
 
@@ -1046,6 +1039,11 @@ export function ExpertProfileViewPage() {
 
   const suspendExpertMutation = useSuspendExpert()
   const deactivateExpertMutation = useDeactivateExpert()
+  const recordReasonUsage = useRecordModerationReasonUsage()
+  const { options: suspendReasonOptions, buildPayload: buildSuspendReasonPayload } =
+    useModerationReasonOptions(MODERATION_CATEGORY_SLUGS.suspendExpert)
+  const { options: deleteReasonOptions, buildPayload: buildDeleteReasonPayload } =
+    useModerationReasonOptions(MODERATION_CATEGORY_SLUGS.deleteExpert)
 
   const {
     data: profileResponse,
@@ -1106,20 +1104,29 @@ export function ExpertProfileViewPage() {
       return
     }
 
+    const reasonPayload = buildSuspendReasonPayload(suspendReasons)
+    if (reasonPayload.selectedReasons.length === 0) {
+      toast.error('Selected reasons are no longer available. Please refresh and try again.')
+      return
+    }
+
     suspendExpertMutation.mutate(
       {
         id,
         payload: {
-          selectedReasons: suspendReasons,
+          selectedReasons: reasonPayload.selectedReasons,
           suspendIndefinitely,
           startDate: suspendIndefinitely ? undefined : toIso(suspendStartDate),
           endDate: suspendIndefinitely ? undefined : toIso(suspendEndDate),
-          reasonDetails: '',
+          reasonDetails: reasonPayload.reasonDetails,
           adminNotes: suspendAdminNotes.trim(),
         },
       },
       {
         onSuccess: () => {
+          if (reasonPayload.reasonIds.length > 0) {
+            recordReasonUsage.mutate(reasonPayload.reasonIds)
+          }
           toast.success('Expert suspended successfully')
           closeSuspendModal()
           setProfileMenuOpen(false)
@@ -1132,9 +1139,11 @@ export function ExpertProfileViewPage() {
       },
     )
   }, [
+    buildSuspendReasonPayload,
     closeSuspendModal,
     id,
     queryClient,
+    recordReasonUsage,
     suspendAdminNotes,
     suspendEndDate,
     suspendIndefinitely,
@@ -1156,17 +1165,26 @@ export function ExpertProfileViewPage() {
       return
     }
 
+    const reasonPayload = buildDeleteReasonPayload(deleteReasons)
+    if (reasonPayload.selectedReasons.length === 0) {
+      toast.error('Selected reasons are no longer available. Please refresh and try again.')
+      return
+    }
+
     deactivateExpertMutation.mutate(
       {
         id,
         payload: {
-          selectedReasons: deleteReasons,
-          reasonDetails: '',
+          selectedReasons: reasonPayload.selectedReasons,
+          reasonDetails: reasonPayload.reasonDetails,
           adminNotes: deleteAdminNotes.trim(),
         },
       },
       {
         onSuccess: () => {
+          if (reasonPayload.reasonIds.length > 0) {
+            recordReasonUsage.mutate(reasonPayload.reasonIds)
+          }
           toast.success('Expert deleted successfully')
           closeDeleteModal()
           setProfileMenuOpen(false)
@@ -1180,6 +1198,7 @@ export function ExpertProfileViewPage() {
       },
     )
   }, [
+    buildDeleteReasonPayload,
     closeDeleteModal,
     deactivateExpertMutation,
     deleteAdminNotes,
@@ -1187,6 +1206,7 @@ export function ExpertProfileViewPage() {
     id,
     navigate,
     queryClient,
+    recordReasonUsage,
   ])
 
   if (profileLoading) {
@@ -1455,7 +1475,7 @@ export function ExpertProfileViewPage() {
         title="Suspend Expert"
         description="Are you sure you want to suspend this Expert? This will result in removal of the account."
         submitLabel="Suspend User"
-        reasonOptions={SUSPEND_REASON_OPTIONS}
+        reasonOptions={suspendReasonOptions}
         selectedReasons={suspendReasons}
         onReasonToggle={toggleSuspendReason}
         showTimeline
@@ -1478,8 +1498,9 @@ export function ExpertProfileViewPage() {
         title="Delete Expert"
         description="Are you sure you want to delete this user? This will result in removal of the account."
         submitLabel="Delete Expert"
+        submitIcon="x"
         heroLayout="stack"
-        reasonOptions={ADMIN_DELETE_REASON_OPTIONS}
+        reasonOptions={deleteReasonOptions}
         selectedReasons={deleteReasons}
         onReasonToggle={toggleDeleteReason}
         showReasonsLabel={false}

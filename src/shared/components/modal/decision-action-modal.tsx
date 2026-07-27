@@ -465,49 +465,50 @@ export function DecisionActionModal({
             type="button"
             onClick={onSubmit}
             disabled={isSubmitting}
-            className={cn('ui-modal-btn h-10 max-w-[238px] flex-1', styles.submit)}
+            className={cn('ui-modal-btn h-10 max-w-[238px] flex-1 overflow-visible', styles.submit)}
           >
-            <span className="inline-flex items-center justify-center gap-2.5">
-              <span>{submitLabel}</span>
-              {resolvedSubmitIcon === 'check' ? (
-                <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-white">
-                  <Check
-                    className={cn('size-3', resolvedCheckIconColor)}
-                    strokeWidth={3}
-                    aria-hidden="true"
-                  />
-                </span>
-              ) : null}
-              {resolvedSubmitIcon === 'x' ? (
-                <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-white">
-                  <X className="size-3 text-[#D3191C]" strokeWidth={3} aria-hidden="true" />
-                </span>
-              ) : null}
-              {resolvedSubmitIcon === 'trash' ? (
-                <Trash2
-                  className="size-4 shrink-0 text-white"
-                  strokeWidth={1.75}
+            <span className="truncate">{submitLabel}</span>
+            {resolvedSubmitIcon === 'check' ? (
+              <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-white">
+                <Check
+                  className={cn('size-3', resolvedCheckIconColor)}
+                  strokeWidth={3}
                   aria-hidden="true"
                 />
-              ) : null}
-              {resolvedSubmitIcon === 'userMinus' ? (
-                <UserMinus
-                  className="size-4 shrink-0 text-white"
-                  strokeWidth={1.75}
+              </span>
+            ) : null}
+            {resolvedSubmitIcon === 'x' ? (
+              <span
+                className="flex size-5 shrink-0 items-center justify-center rounded-full bg-white"
+                aria-hidden="true"
+              >
+                <X className="size-3 text-[#D3191C]" strokeWidth={3} />
+              </span>
+            ) : null}
+            {resolvedSubmitIcon === 'trash' ? (
+              <Trash2
+                className="size-4 shrink-0 text-white"
+                strokeWidth={1.75}
+                aria-hidden="true"
+              />
+            ) : null}
+            {resolvedSubmitIcon === 'userMinus' ? (
+              <UserMinus
+                className="size-4 shrink-0 text-white"
+                strokeWidth={1.75}
+                aria-hidden="true"
+              />
+            ) : null}
+            {resolvedSubmitIcon === 'pause' ? (
+              <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-white">
+                <Pause
+                  className="size-3 text-[#D3191C]"
+                  strokeWidth={2.5}
+                  fill="currentColor"
                   aria-hidden="true"
                 />
-              ) : null}
-              {resolvedSubmitIcon === 'pause' ? (
-                <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-white">
-                  <Pause
-                    className="size-3 text-[#D3191C]"
-                    strokeWidth={2.5}
-                    fill="currentColor"
-                    aria-hidden="true"
-                  />
-                </span>
-              ) : null}
-            </span>
+              </span>
+            ) : null}
           </button>
         </div>
       </div>

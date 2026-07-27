@@ -1,6 +1,7 @@
 import type { Category } from '../components/category/category-table-columns'
 import type { VenueCategory } from '../components/category/venue-category-table-columns'
 import type { CategoryApiSubCategory, ServiceCategoryApi, VenueCategoryApi } from '../type/category'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
 
 const formatDate = (value?: string | null) => {
   if (!value) return '—'
@@ -115,20 +116,5 @@ export const mapVenueCategoryToUi = (category: VenueCategoryApi): VenueCategory 
   }
 }
 
-export const getErrorMessage = (error: unknown, fallback: string) => {
-  if (
-    typeof error === 'object' &&
-    error !== null &&
-    'response' in error &&
-    typeof (error as { response?: { data?: { message?: string } } }).response?.data?.message ===
-      'string'
-  ) {
-    return (error as { response: { data: { message: string } } }).response.data.message
-  }
-
-  if (error instanceof Error && error.message) {
-    return error.message
-  }
-
-  return fallback
-}
+export const getErrorMessage = (error: unknown, fallback: string) =>
+  getApiErrorMessage(error, fallback)

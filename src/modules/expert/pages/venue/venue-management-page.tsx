@@ -33,10 +33,7 @@ import {
   TableActionsDropdown,
   TableActionsItem,
 } from '@/shared/components/table/table-actions-dropdown'
-import {
-  DecisionActionModal,
-  type DecisionActionModalOption,
-} from '@/shared/components/modal/decision-action-modal'
+import { DecisionActionModal } from '@/shared/components/modal/decision-action-modal'
 import { StatusQuickLinkCard, StatusQuickLinkRow } from '@/shared/components/status-quick-link-card'
 import { Button } from '@/shared/components/ui/button'
 import { statusCardTones } from '@/shared/lib/design-tokens'
@@ -44,6 +41,11 @@ import { cn } from '@/shared/lib/cn'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 import { getVenueApiId, getVenueDisplayId, getVenueDisplaySpaceId } from '../../utils/venue-list'
 import { getManagementStatusDisplay } from '../../utils/management-status'
+import { MODERATION_CATEGORY_SLUGS } from '@/modules/settings/api/templates-api'
+import {
+  useModerationReasonOptions,
+  useRecordModerationReasonUsage,
+} from '@/modules/settings/hooks/use-templates'
 
 type ManagementMetric = {
   id: string
@@ -54,22 +56,6 @@ type ManagementMetric = {
   changeNote?: string
   note?: string
 }
-
-const SUSPEND_REASON_OPTIONS: DecisionActionModalOption[] = [
-  { label: 'Temporary operational issue', value: 'temporary_operational_issue' },
-  { label: 'Scheduled maintenance', value: 'scheduled_maintenance' },
-  { label: 'Availability issue', value: 'availability_issue' },
-  { label: 'System verification in progress', value: 'system_verification_in_progress' },
-  { label: 'Admin review required', value: 'admin_review_required' },
-]
-
-const VENUE_DELETE_REASON_OPTIONS: DecisionActionModalOption[] = [
-  { label: 'Unclear Image', value: 'unclear_image' },
-  { label: 'Content Issue', value: 'content_issue' },
-  { label: 'Invalid documents', value: 'invalid_documents' },
-  { label: 'Invalid PAN', value: 'invalid_pan' },
-  { label: 'Invalid GST', value: 'invalid_gst' },
-]
 
 const ACTION_ITEM_CLASS = 'text-slate-800 hover:bg-slate-100 hover:text-slate-900'
 
@@ -92,6 +78,11 @@ export const VenueManagementPage = () => {
 
   const suspendVenueMutation = useSuspendVenue()
   const deleteVenueMutation = useDeleteVenue()
+  const recordReasonUsage = useRecordModerationReasonUsage()
+  const { options: suspendReasonOptions, buildPayload: buildSuspendReasonPayload } =
+    useModerationReasonOptions(MODERATION_CATEGORY_SLUGS.suspendVenue)
+  const { options: deleteReasonOptions, buildPayload: buildDeleteReasonPayload } =
+    useModerationReasonOptions(MODERATION_CATEGORY_SLUGS.deleteVenue)
   const tableColumnPreferencesQuery = useTableColumnPreferences(VENUE_MANAGEMENT_MODULE_KEY)
 
   const navigate = useNavigate()
@@ -189,17 +180,26 @@ export const VenueManagementPage = () => {
       return
     }
 
+    const reasonPayload = buildDeleteReasonPayload(deleteReasons)
+    if (reasonPayload.selectedReasons.length === 0) {
+      toast.error('Selected reasons are no longer available. Please refresh and try again.')
+      return
+    }
+
     deleteVenueMutation.mutate(
       {
         venueId: getVenueApiId(deleteVenueTarget),
         payload: {
-          selectedReasons: deleteReasons,
-          reasonDetails: '',
+          selectedReasons: reasonPayload.selectedReasons,
+          reasonDetails: reasonPayload.reasonDetails,
           adminNotes: deleteAdminNotes.trim(),
         },
       },
       {
         onSuccess: () => {
+          if (reasonPayload.reasonIds.length > 0) {
+            recordReasonUsage.mutate(reasonPayload.reasonIds)
+          }
           toast.success('Venue deleted successfully')
           closeDeleteModal()
         },
@@ -210,12 +210,14 @@ export const VenueManagementPage = () => {
       },
     )
   }, [
+    buildDeleteReasonPayload,
     closeDeleteModal,
     deleteAdminNotes,
     deleteConfirmed,
     deleteReasons,
     deleteVenueMutation,
     deleteVenueTarget,
+    recordReasonUsage,
   ])
 
   const toggleSuspendReason = useCallback((value: string) => {
@@ -245,20 +247,33 @@ export const VenueManagementPage = () => {
     const toIso = (value: string) =>
       value ? new Date(`${value}T00:00:00.000Z`).toISOString() : undefined
 
+    const reasonPayload = buildSuspendReasonPayload(suspendReasons)
+    if (reasonPayload.selectedReasons.length === 0) {
+      toast.error('Selected reasons are no longer available. Please refresh and try again.')
+      return
+    }
+
+    const templateDetails = reasonPayload.reasonDetails
+    const extraDetails = suspendReasonDetails.trim()
+    const reasonDetails = [templateDetails, extraDetails].filter(Boolean).join('\n\n')
+
     suspendVenueMutation.mutate(
       {
         venueId: getVenueApiId(suspendVenueTarget),
         payload: {
-          selectedReasons: suspendReasons,
+          selectedReasons: reasonPayload.selectedReasons,
           suspendIndefinitely,
           startDate: suspendIndefinitely ? undefined : toIso(suspendStartDate),
           endDate: suspendIndefinitely ? undefined : toIso(suspendEndDate),
-          reasonDetails: suspendReasonDetails.trim(),
+          reasonDetails,
           adminNotes: suspendAdminNotes.trim(),
         },
       },
       {
         onSuccess: () => {
+          if (reasonPayload.reasonIds.length > 0) {
+            recordReasonUsage.mutate(reasonPayload.reasonIds)
+          }
           toast.success('Venue suspended successfully')
           closeSuspendModal()
         },
@@ -269,7 +284,9 @@ export const VenueManagementPage = () => {
       },
     )
   }, [
+    buildSuspendReasonPayload,
     closeSuspendModal,
+    recordReasonUsage,
     suspendAdminNotes,
     suspendEndDate,
     suspendIndefinitely,
@@ -770,7 +787,7 @@ export const VenueManagementPage = () => {
         submitLabel="Suspend"
         showHeroIcon={false}
         submitIcon="none"
-        reasonOptions={SUSPEND_REASON_OPTIONS}
+        reasonOptions={suspendReasonOptions}
         selectedReasons={suspendReasons}
         onReasonToggle={toggleSuspendReason}
         showReasonsLabel
@@ -801,7 +818,7 @@ export const VenueManagementPage = () => {
         description="Are you sure you want to delete this user? This will result in removal of the account."
         submitLabel="Delete User"
         heroLayout="stack"
-        reasonOptions={VENUE_DELETE_REASON_OPTIONS}
+        reasonOptions={deleteReasonOptions}
         selectedReasons={deleteReasons}
         onReasonToggle={toggleDeleteReason}
         showReasonsLabel

@@ -23,6 +23,11 @@ import {
 } from '@/shared/components/modal/decision-action-modal'
 import { cn } from '@/shared/lib/cn'
 import { useAuthStore } from '@/modules/auth/store/auth-store'
+import { MODERATION_CATEGORY_SLUGS } from '@/modules/settings/api/templates-api'
+import {
+  useModerationReasonOptions,
+  useRecordModerationReasonUsage,
+} from '@/modules/settings/hooks/use-templates'
 import {
   useAdminEscalation,
   useEscalateVenueSpaceApplication,
@@ -43,14 +48,6 @@ type AmenityCategory = {
   category: string
   subCategories?: AmenitySubCategory[]
 }
-
-const REJECT_REASONS: DecisionActionModalOption[] = [
-  { label: 'Unclear Image', value: 'Unclear Image' },
-  { label: 'Content Issue', value: 'Content Issue' },
-  { label: 'Invalid documents', value: 'Invalid documents' },
-  { label: 'Invalid PAN', value: 'Invalid PAN' },
-  { label: 'Invalid GST', value: 'Invalid GST' },
-]
 
 const getApiErrorMessage = (error: unknown) => {
   const err = error as { response?: { data?: { message?: string } } }
@@ -202,6 +199,11 @@ export function ApplicationDetailsPage() {
   const { data: escalationData } = useAdminEscalation('venue_space', spaceId)
   const escalateVenueSpace = useEscalateVenueSpaceApplication(spaceId, id)
   const startEscalationReview = useStartAdminEscalationReview('venue_space', spaceId)
+  const recordReasonUsage = useRecordModerationReasonUsage()
+  const { options: rejectReasonOptions, buildPayload: buildRejectReasonPayload } =
+    useModerationReasonOptions(MODERATION_CATEGORY_SLUGS.rejectVenue)
+  const { options: requestChangesReasonOptions, buildPayload: buildRequestChangesReasonPayload } =
+    useModerationReasonOptions(MODERATION_CATEGORY_SLUGS.requestChangesVenue)
 
   useEffect(() => {
     if (!spaceId || isSuperAdmin) return
@@ -343,16 +345,26 @@ export function ApplicationDetailsPage() {
       }
     }
 
+    const reasonPayload =
+      modalVariant === 'requestChanges'
+        ? buildRequestChangesReasonPayload(selectedReasons)
+        : buildRejectReasonPayload(selectedReasons)
+
+    if (isRejectFlow && reasonPayload.selectedReasons.length === 0) {
+      toast.error('Selected reasons are no longer available. Please refresh and try again.')
+      return
+    }
+
     const payload: UpdateVenueSpaceStatusPayload =
       modalVariant === 'approve'
         ? { status: 'approved', adminNote: adminNotes.trim() }
         : {
             status: 'rejected',
-            reasonFor: selectedReasons,
+            reasonFor: reasonPayload.selectedReasons,
             rejectionReason:
               modalVariant === 'requestChanges'
-                ? rejectionReason.trim()
-                : selectedReasons.join(', '),
+                ? rejectionReason.trim() || reasonPayload.reasonDetails
+                : reasonPayload.selectedReasons.join(', '),
             adminNote: adminNotes.trim(),
           }
 
@@ -360,6 +372,9 @@ export function ApplicationDetailsPage() {
       { spaceId, payload },
       {
         onSuccess: () => {
+          if (isRejectFlow && reasonPayload.reasonIds.length > 0) {
+            recordReasonUsage.mutate(reasonPayload.reasonIds)
+          }
           toast.success(
             modalVariant === 'approve'
               ? 'Space approved successfully'
@@ -606,7 +621,13 @@ export function ApplicationDetailsPage() {
                 : 'Reject Approval'
         }
         submitIcon={modalVariant === 'reject' ? 'check' : undefined}
-        reasonOptions={isRejectFlow ? REJECT_REASONS : []}
+        reasonOptions={
+          isRejectFlow
+            ? modalVariant === 'requestChanges'
+              ? requestChangesReasonOptions
+              : rejectReasonOptions
+            : []
+        }
         selectedReasons={selectedReasons}
         onReasonToggle={(value) =>
           setSelectedReasons((current) =>

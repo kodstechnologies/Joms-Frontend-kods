@@ -323,31 +323,28 @@ export function TemplatesPage({ embedded = false }: { embedded?: boolean }) {
 
   return (
     <div className="space-y-6">
-      {!embedded ? (
-        <button
-          type="button"
-          onClick={() =>
-            navigateBackOrFallback(navigate, '/settings/main', {
-              state: { settingsTab: 'templates' },
-            })
-          }
-          className="text-body-md text-muted inline-flex items-center gap-2 hover:text-white"
-        >
-          <ArrowLeft className="size-4" />
-          Settings / Templates
-        </button>
-      ) : null}
-
-      <div>
-        <h1
-          className={cn(
-            'font-semibold tracking-tight text-white',
-            embedded ? 'text-h4' : 'text-h1',
-          )}
-        >
-          Moderation Reason Manager
-        </h1>
-        <p className="text-body-md text-muted mt-1">Manage action categories and reasons.</p>
+      <div className="flex items-start gap-3">
+        {!embedded ? (
+          <button
+            type="button"
+            onClick={() => navigateBackOrFallback(navigate, '/communication/management')}
+            className="text-muted mt-1 rounded p-1 hover:bg-white/5 hover:text-white"
+            aria-label="Go back"
+          >
+            <ArrowLeft className="size-5" />
+          </button>
+        ) : null}
+        <div>
+          <h1
+            className={cn(
+              'font-semibold tracking-tight text-white',
+              embedded ? 'text-h4' : 'text-h1',
+            )}
+          >
+            Moderation Reason Manager
+          </h1>
+          <p className="text-body-md text-muted mt-1">Manage action categories and reasons.</p>
+        </div>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-[320px_minmax(0,1fr)]">
@@ -408,6 +405,9 @@ export function TemplatesPage({ embedded = false }: { embedded?: boolean }) {
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
                     <h2 className="text-h4 text-white">{selectedCategory.title}</h2>
+                    <span className="text-body-sm text-muted rounded-full border border-white/15 bg-white/5 px-2 py-0.5 font-medium">
+                      {selectedCategory.slug}
+                    </span>
                     <button
                       type="button"
                       onClick={() => setCategoryEditOpen(true)}
@@ -417,10 +417,14 @@ export function TemplatesPage({ embedded = false }: { embedded?: boolean }) {
                       <Pencil className="size-4" />
                     </button>
                     <span className="border-brand-positive/30 bg-brand-positive/10 text-body-sm text-brand-positive rounded-full border px-2.5 py-0.5 font-semibold">
-                      active
+                      Active
                     </span>
                   </div>
                   <p className="text-body-md text-muted mt-1">{selectedCategory.description}</p>
+                  <p className="text-body-sm text-muted mt-1">
+                    Create reasons for this CTA modal. Active reasons appear as chips for admins and
+                    their message templates are sent to the partner app.
+                  </p>
                 </div>
                 <button
                   type="button"
@@ -462,8 +466,7 @@ export function TemplatesPage({ embedded = false }: { embedded?: boolean }) {
                         </div>
 
                         <div className="flex items-center gap-3">
-                          <div className="text-body-sm text-brand-text/80 flex items-center gap-2">
-                            <span>Active</span>
+                          <div className="text-body-sm text-brand-text flex items-center gap-2">
                             <ToggleSwitch
                               checked={reason.isActive}
                               disabled={toggleReasonMutation.isPending}
@@ -477,6 +480,7 @@ export function TemplatesPage({ embedded = false }: { embedded?: boolean }) {
                                 })
                               }
                             />
+                            <span>Active</span>
                           </div>
                           <button
                             type="button"
@@ -497,7 +501,7 @@ export function TemplatesPage({ embedded = false }: { embedded?: boolean }) {
                                 onError: () => toast.error('Failed to delete reason'),
                               })
                             }
-                            className="text-muted hover:text-brand-danger rounded p-1.5 hover:bg-white/5"
+                            className="text-brand-danger rounded p-1.5 hover:bg-white/5"
                             aria-label="Delete reason"
                           >
                             <Trash2 className="size-4" />
