@@ -18,7 +18,8 @@ import { cn } from '@/shared/lib/cn'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 
 const cardClass = 'radius-lg border border-white/[0.06] bg-brand-surface p-4 sm:p-5'
-const sectionTitleClass = 'text-body-md-semibold text-brand-text'
+const sectionTitleClass = 'text-body-md-semibold text-brand-text leading-[20px]'
+const sectionSubtitleClass = 'text-body-sm text-muted mt-1 leading-[20px]'
 const labelClass = 'text-body-sm text-muted'
 const valueClass = 'text-body-sm-medium text-brand-text'
 const innerPanelClass = 'radius-lg border border-white/[0.04] bg-brand-bg p-4'
@@ -30,15 +31,6 @@ function getErrorMessage(error: unknown, fallback: string) {
   }
   if (error instanceof Error && error.message) return error.message
   return fallback
-}
-
-function DetailCard({ title, children }: { title: string; children: ReactNode }) {
-  return (
-    <section className={cn(cardClass, 'p-5')}>
-      <h2 className={cn(sectionTitleClass, 'mb-4')}>{title}</h2>
-      {children}
-    </section>
-  )
 }
 
 function DetailRow({ label, value }: { label: string; value: ReactNode }) {
@@ -102,25 +94,28 @@ export function MembershipDetailViewPage() {
             <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
             <span>Payment Detail View</span>
           </button>
-          <p className="text-body-sm text-muted mt-2 pl-7">
+          <p className="text-body-sm text-muted mt-2 pl-7 leading-[20px]">
             <Link to="/finance/dashboard" className="hover:text-brand-text transition-colors">
               Finance Management
             </Link>
             <span> / </span>
-            <Link to="/finance/memberships" className="hover:text-brand-text transition-colors">
-              Memberships
-            </Link>
-            <span> / </span>
-            <span className="text-brand-text font-semibold">Payment View Details</span>
+            <span className="text-brand-text font-semibold">PaymentView Details</span>
           </p>
         </div>
-        <Button onClick={() => toast.message('Download billing report coming soon')}>
-          <Download className="size-4" />
-          Download billing report
-        </Button>
       </header>
 
-      <DetailCard title="Subscription Details">
+      <section className={cn(cardClass, 'flex flex-col gap-6 p-5')}>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <h2 className={sectionTitleClass}>Subscription Details</h2>
+            <p className={sectionSubtitleClass}>Provide details about your Consultation</p>
+          </div>
+          <Button onClick={() => toast.message('Download filing report coming soon')}>
+            <Download className="size-4" />
+            Download Filing Report
+          </Button>
+        </div>
+
         <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
           <section className={innerPanelClass}>
             <h3 className="text-body-md-semibold text-brand-text mb-3">Subscription Information</h3>
@@ -165,10 +160,10 @@ export function MembershipDetailViewPage() {
                 {detail.planFeatures.map((feature) => (
                   <li
                     key={feature}
-                    className="text-body-sm text-brand-text/80 flex items-start gap-2"
+                    className="text-body-sm text-brand-text/80 flex items-start gap-2 leading-[17px]"
                   >
-                    <Check className="text-brand-positive mt-0.5 size-3.5 shrink-0" />
-                    {feature}
+                    <Check className="text-brand-positive size-[20px] shrink-0" />
+                    <span>{feature}</span>
                   </li>
                 ))}
               </ul>
@@ -177,7 +172,7 @@ export function MembershipDetailViewPage() {
             )}
           </section>
         </div>
-      </DetailCard>
+      </section>
 
       <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
         <button
@@ -204,7 +199,7 @@ export function MembershipDetailViewPage() {
               cancelMutation.isPending
             }
             onClick={() => setCancelOpen(true)}
-            className="ui-cta ui-cta-negative"
+            className="ui-cta ui-cta-primary"
           >
             Cancel Subscription
           </button>

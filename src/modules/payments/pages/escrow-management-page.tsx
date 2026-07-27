@@ -211,6 +211,7 @@ export function EscrowManagementPage() {
       {
         accessorKey: 'escrowId',
         header: 'Escrow ID',
+        enableSorting: false,
         cell: ({ row }) => (
           <span className="text-body-sm-semibold text-brand-text font-mono uppercase">
             {row.original.escrowId}
@@ -220,23 +221,25 @@ export function EscrowManagementPage() {
       {
         accessorKey: 'transactionId',
         header: 'Transaction ID',
+        enableSorting: false,
         cell: ({ row }) => (
           <span className="text-body-sm-semibold text-muted font-mono">
             {row.original.transactionId}
           </span>
         ),
       },
-      { accessorKey: 'type', header: 'Type' },
+      { accessorKey: 'type', header: 'Type', enableSorting: false },
       {
         accessorKey: 'amount',
         header: 'Amount',
+        enableSorting: false,
         cell: ({ row }) => (
           <span className="text-brand-text font-semibold">{row.original.amount}</span>
         ),
       },
-      { accessorKey: 'holdReason', header: 'Hold Reason' },
+      { accessorKey: 'holdReason', header: 'Hold Reason', enableSorting: false },
       { accessorKey: 'initiatedDate', header: 'Initiated Date' },
-      { accessorKey: 'expectedRelease', header: 'Expected Release' },
+      { accessorKey: 'expectedRelease', header: 'Expected Release', enableSorting: false },
       {
         accessorKey: 'status',
         header: 'Status',
@@ -364,10 +367,10 @@ export function EscrowManagementPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-h2 text-brand-text tracking-tight">Escrow Management</h1>
-          <p className="text-body-md text-muted mt-1">
+          <p className="text-body-md text-muted mt-1 leading-[20px]">
             Track revenue, payouts, and financial performance
           </p>
-          <p className="text-body-sm text-muted mt-3">
+          <p className="text-body-sm text-muted mt-3 leading-[20px]">
             <Link to="/finance/dashboard" className="hover:text-brand-text transition-colors">
               Finance Management
             </Link>

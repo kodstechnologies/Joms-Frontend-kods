@@ -210,10 +210,10 @@ export function InvoicesBillingPage() {
     <div className="flex flex-col gap-6">
       <div>
         <h1 className="text-h2 text-brand-text tracking-tight">Invoices & Billing</h1>
-        <p className="text-body-md text-muted mt-1">
+        <p className="text-body-md text-muted mt-1 leading-[20px]">
           Track revenue, payouts, and financial performance
         </p>
-        <p className="text-body-sm text-muted mt-3">
+        <p className="text-body-sm text-muted mt-3 leading-[20px]">
           <Link to="/finance/dashboard" className="hover:text-brand-text transition-colors">
             Payment & Finance
           </Link>

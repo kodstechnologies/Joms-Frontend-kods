@@ -90,10 +90,10 @@ export function FinanceServicesPage() {
           label="Open service record actions"
           isOpen={isOpen}
           onOpenChange={(open) => setActiveDropdownId(open ? record.id : null)}
-          menuWidth={220}
+          menuWidth={174}
         >
           <TableActionsItem
-            icon={<Eye className="size-3.5 text-slate-700" aria-hidden="true" />}
+            icon={<Eye className="size-[18px] text-slate-700" aria-hidden="true" />}
             className="text-slate-800 hover:bg-slate-100 hover:text-slate-900"
             onClick={() => {
               setActiveDropdownId(null)
@@ -103,7 +103,7 @@ export function FinanceServicesPage() {
             View Details
           </TableActionsItem>
           <TableActionsItem
-            icon={<SquarePen className="size-3.5 text-slate-700" aria-hidden="true" />}
+            icon={<SquarePen className="size-[18px] text-slate-700" aria-hidden="true" />}
             className="text-slate-800 hover:bg-slate-100 hover:text-slate-900"
             onClick={() => {
               setActiveDropdownId(null)
@@ -113,7 +113,7 @@ export function FinanceServicesPage() {
             Add internal note
           </TableActionsItem>
           <TableActionsItem
-            icon={<Tag className="size-3.5 text-slate-700" aria-hidden="true" />}
+            icon={<Tag className="size-[18px] text-slate-700" aria-hidden="true" />}
             className="text-slate-800 hover:bg-slate-100 hover:text-slate-900"
             onClick={() => {
               setActiveDropdownId(null)
@@ -123,7 +123,7 @@ export function FinanceServicesPage() {
             Add Tags
           </TableActionsItem>
           <TableActionsItem
-            icon={<AlertTriangle className="size-3.5 text-slate-700" aria-hidden="true" />}
+            icon={<AlertTriangle className="size-[18px] text-slate-700" aria-hidden="true" />}
             className="text-slate-800 hover:bg-slate-100 hover:text-slate-900"
             onClick={() => {
               setActiveDropdownId(null)
@@ -133,7 +133,7 @@ export function FinanceServicesPage() {
             Escalate
           </TableActionsItem>
           <TableActionsItem
-            icon={<Trash2 className="text-brand-danger size-3.5" aria-hidden="true" />}
+            icon={<Trash2 className="text-brand-danger size-[18px]" aria-hidden="true" />}
             className="text-brand-danger hover:bg-brand-danger/10 hover:text-brand-danger"
             onClick={() => {
               setActiveDropdownId(null)
@@ -247,10 +247,10 @@ export function FinanceServicesPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-h2 text-brand-text tracking-tight">Serivce</h1>
-          <p className="text-body-md text-muted mt-1">
+          <p className="text-body-sm text-muted mt-1 leading-[20px]">
             Manage service bookings, expert commissions, and payouts
           </p>
-          <p className="text-body-sm text-muted mt-3">
+          <p className="text-body-sm text-muted mt-3 leading-[20px]">
             <Link to="/finance/dashboard" className="hover:text-brand-text transition-colors">
               Finance Management
             </Link>
@@ -264,7 +264,7 @@ export function FinanceServicesPage() {
         </Button>
       </div>
 
-      <div className="flex flex-wrap gap-2">
+      <div className="radius-lg bg-brand-surface flex h-[47px] w-full max-w-[1268px] items-center justify-around border border-white/[0.06] p-1">
         {financeServiceTabs.map((tab) => (
           <button
             key={tab.id}
@@ -276,10 +276,10 @@ export function FinanceServicesPage() {
               setSelectedRowIds([])
             }}
             className={cn(
-              'radius-md text-body-sm-semibold px-4 py-2 transition-colors',
+              'text-body-sm flex h-[37px] min-w-[169px] items-center justify-center rounded-md px-10 leading-[20px] transition-colors',
               activeTab === tab.id
-                ? 'bg-brand-surface text-brand-text'
-                : 'text-muted hover:text-brand-text',
+                ? 'border border-white/5 bg-[#141414] font-medium text-white'
+                : 'text-[#FFFFFF] opacity-50 hover:opacity-100',
             )}
           >
             {tab.label}

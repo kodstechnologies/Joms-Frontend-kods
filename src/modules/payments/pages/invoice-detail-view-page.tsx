@@ -9,8 +9,8 @@ import { cn } from '@/shared/lib/cn'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 
 const cardClass = 'radius-lg border border-white/[0.06] bg-brand-surface p-4 sm:p-5'
-const sectionTitleClass = 'text-body-md-semibold text-brand-text'
-const sectionSubtitleClass = 'text-body-sm text-muted mt-1'
+const sectionTitleClass = 'text-body-md-semibold text-brand-text leading-[20px]'
+const sectionSubtitleClass = 'text-body-sm text-muted mt-1 leading-[20px]'
 const labelClass = 'text-body-sm text-muted'
 const valueClass = 'text-body-sm-medium text-brand-text'
 const innerPanelClass = 'radius-lg border border-white/[0.04] bg-brand-bg p-4'
@@ -25,10 +25,18 @@ function DetailCard({
   children: ReactNode
 }) {
   return (
-    <section className={cn(cardClass, 'p-5')}>
-      <h2 className={sectionTitleClass}>{title}</h2>
-      {subtitle ? <p className={sectionSubtitleClass}>{subtitle}</p> : null}
-      <div className="mt-4">{children}</div>
+    <section className={cn(cardClass, 'flex flex-col gap-6 p-5')}>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h2 className={sectionTitleClass}>{title}</h2>
+          {subtitle ? <p className={sectionSubtitleClass}>{subtitle}</p> : null}
+        </div>
+        <Button onClick={() => toast.message('Download filing report coming soon')}>
+          <Download className="size-4" />
+          Download Filing Report
+        </Button>
+      </div>
+      <div>{children}</div>
     </section>
   )
 }
@@ -73,22 +81,14 @@ export function InvoiceDetailViewPage() {
             <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
             <span>Payment Detail View</span>
           </button>
-          <p className="text-body-sm text-muted mt-2 pl-7">
+          <p className="text-body-sm text-muted mt-2 pl-7 leading-[20px]">
             <Link to="/finance/dashboard" className="hover:text-brand-text transition-colors">
               Finance Management
             </Link>
             <span> / </span>
-            <Link to="/finance/invoices" className="hover:text-brand-text transition-colors">
-              Invoices & Billing
-            </Link>
-            <span> / </span>
-            <span className="text-brand-text font-semibold">Payment View Details</span>
+            <span className="text-brand-text font-semibold">PaymentView Details</span>
           </p>
         </div>
-        <Button onClick={() => toast.message('Download billing report coming soon')}>
-          <Download className="size-4" />
-          Download Billing Report
-        </Button>
       </header>
 
       <DetailCard title="Invoice Details" subtitle="Provide details about your Consultation">
@@ -139,16 +139,6 @@ export function InvoiceDetailViewPage() {
           </section>
         </div>
       </DetailCard>
-
-      <div className="flex justify-end">
-        <button
-          type="button"
-          onClick={() => navigateBackOrFallback(navigate, '/finance/invoices')}
-          className="ui-cta ui-cta-secondary"
-        >
-          Close
-        </button>
-      </div>
     </div>
   )
 }

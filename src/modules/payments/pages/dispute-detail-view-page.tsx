@@ -21,7 +21,7 @@ import { cn } from '@/shared/lib/cn'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 
 const cardClass = 'radius-lg border border-white/[0.06] bg-brand-surface p-4 sm:p-5'
-const sectionTitleClass = 'text-body-md-semibold text-brand-text'
+const sectionTitleClass = 'text-body-md-semibold text-brand-text leading-[20px]'
 const sectionSubtitleClass = 'text-body-sm text-muted mt-1'
 const labelClass = 'text-body-sm text-muted'
 const valueClass = 'text-body-sm text-brand-text'

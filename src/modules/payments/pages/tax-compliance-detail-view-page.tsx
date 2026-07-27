@@ -9,7 +9,7 @@ import { cn } from '@/shared/lib/cn'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 
 const cardClass = 'radius-lg border border-white/[0.06] bg-brand-surface p-4 sm:p-5'
-const sectionTitleClass = 'text-body-md-semibold text-brand-text'
+const sectionTitleClass = 'text-body-md-semibold text-brand-text leading-[20px]'
 const sectionSubtitleClass = 'text-body-sm text-muted mt-1'
 const labelClass = 'text-body-sm text-muted'
 const valueClass = 'text-body-sm-medium text-brand-text'
@@ -79,7 +79,7 @@ export function TaxComplianceDetailViewPage() {
           <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
           <span>Tax Records Detail View</span>
         </button>
-        <p className="text-body-sm text-muted mt-2 pl-7">
+        <p className="text-body-sm text-muted mt-2 pl-7 leading-[20px]">
           <Link to="/finance/dashboard" className="hover:text-brand-text transition-colors">
             Finance Management
           </Link>
@@ -96,7 +96,7 @@ export function TaxComplianceDetailViewPage() {
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
             <h2 className={sectionTitleClass}>{detail.recordTitle}</h2>
-            <p className={sectionSubtitleClass}>{detail.recordDescription}</p>
+            <p className={cn(sectionSubtitleClass, 'leading-[20px]')}>{detail.recordDescription}</p>
           </div>
           <div className="flex flex-wrap items-center gap-3">
             <Button onClick={() => toast.message('Download report coming soon')}>
@@ -219,7 +219,7 @@ export function TaxComplianceDetailViewPage() {
         <button
           type="button"
           onClick={() => toast.success('Marked as filed')}
-          className="ui-cta ui-cta-positive"
+          className="ui-cta ui-cta-positive h-[44px]"
         >
           <Check className="icon-sm shrink-0" />
           Mark as Filed

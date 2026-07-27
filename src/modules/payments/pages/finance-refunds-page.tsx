@@ -12,7 +12,7 @@ import {
   Trash2,
   TrendingUp,
 } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
 import {
@@ -299,8 +299,15 @@ export function FinanceRefundsPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-h2 text-brand-text tracking-tight">Refunds & Chargebacks</h1>
-          <p className="text-body-md text-muted mt-1">
+          <p className="text-body-md text-muted mt-1 leading-[20px]">
             Track revenue, payouts, and financial performance
+          </p>
+          <p className="text-body-sm text-muted mt-3 leading-[20px]">
+            <Link to="/finance/dashboard" className="hover:text-brand-text transition-colors">
+              Payment & Finance
+            </Link>
+            <span> / </span>
+            <span className="text-brand-text font-semibold">Refunds & Chargebacks</span>
           </p>
         </div>
         <Button className="ui-manage-metrics" onClick={() => navigate('/metrics/finance-refunds')}>
