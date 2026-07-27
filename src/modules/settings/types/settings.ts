@@ -11,6 +11,8 @@ export type SettingsModule =
 export type PlatformSettings = {
   applicationSettings: {
     applicationName: string
+    logoUrl: string
+    faviconUrl: string
   }
   displayPreferences: {
     timezone: string
@@ -20,9 +22,13 @@ export type PlatformSettings = {
   }
   generalSettings: {
     autoRefreshInterval: string
-    defaultExportFormat: string
+    defaultExportFormat: 'CSV' | 'PDF'
     maintenanceMode: boolean
     customErrorMessage: string
+    adminNotes: string
+    maintenanceStartAt: string | null
+    maintenanceEndAt: string | null
+    errorTemplates: string[]
     supportEmail: string
     supportPhone: string
   }
@@ -344,9 +350,18 @@ export type PaginationMeta = {
 
 export type PolicyStatus = 'Active' | 'Draft' | 'Archived'
 
+export type PolicyApplication = 'expert' | 'user' | 'venue' | 'service' | 'platform'
+
+export type PolicyNotifyVia = {
+  email: boolean
+  inApp: boolean
+  push: boolean
+}
+
 export type PolicyItem = {
   id: string
   slug?: string
+  application?: PolicyApplication
   title: string
   status: PolicyStatus
   version: string
@@ -363,8 +378,12 @@ export type PolicyVersion = {
   version: string
   status: PolicyStatus
   effectiveDate: string
+  effectiveAt?: string | null
   lastUpdated: string
   author: string
   changeSummary: string
   content: string
+  requireReConsent?: boolean
+  blockAppUsageUntilAccepted?: boolean
+  notifyVia?: PolicyNotifyVia
 }

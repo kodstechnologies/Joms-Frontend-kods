@@ -5,8 +5,11 @@ import { NotificationTrigger } from '@/app/layouts/components/notification-dropd
 import { SidebarBrand } from '@/app/layouts/components/sidebar-brand'
 import { getVisibleNavigation } from '@/app/layouts/navigation/navigation.filter'
 import type { NavItem } from '@/app/layouts/navigation/navigation.config'
+import { useBranding } from '@/app/providers/use-branding'
+import { useMaintenance } from '@/app/providers/use-maintenance'
 import { useAuthStore } from '@/modules/auth/store/auth-store'
 import { useContactSetupProfile } from '@/modules/rbac/hooks/use-rbac'
+import { formatDisplayClock, useLiveClock } from '@/modules/settings/utils/display-clock'
 import { cn } from '@/shared/lib/cn'
 import { uiTokens } from '@/shared/lib/design-tokens'
 
@@ -52,66 +55,77 @@ export function Topbar({
   const profileImageUrl = isSubAdmin ? profileQuery.data?.data.profile.profileImageUrl : undefined
   const userInitial = displayName.charAt(0).toUpperCase()
   const canOpenProfile = isSubAdmin
+  const { applicationName, timezone, dateTimeFormat } = useBranding()
+  const { status: maintenanceStatus } = useMaintenance()
+  const now = useLiveClock()
+  const clockLabel = formatDisplayClock(now, dateTimeFormat, timezone)
+  const pageTitle = title || 'Dashboard'
+  const brandName = applicationName || 'JOMS Applications'
 
   return (
-    <header
-      className={cn(
-        'sticky top-0 z-30 h-[var(--brand-topbar-height)] shrink-0 backdrop-blur',
-        uiTokens.headerBg,
-      )}
-    >
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
-      <div className="flex h-full items-center justify-between px-4 md:px-6">
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={onMenuClick}
-            className="rounded-brand-md text-brand-stroke focus-visible:ring-brand-accent/30 p-2 hover:bg-white/5 focus-visible:ring-2 focus-visible:outline-none md:hidden"
-            aria-label="Open sidebar"
-          >
-            <Menu className="icon-lg" strokeWidth={1.5} />
-          </button>
-          {showCompact ? (
-            <SidebarBrand />
-          ) : (
-            <div>
-              <p className="text-body-md-semibold text-brand-text tracking-tight">{title}</p>
-              <p className="text-body-sm text-muted leading-[18px]">Command Operations Centre</p>
-            </div>
-          )}
+    <header className={cn('sticky top-0 z-30 shrink-0 backdrop-blur', uiTokens.headerBg)}>
+      {maintenanceStatus.active ? (
+        <div className="border-b border-amber-500/30 bg-amber-500/15 px-4 py-2 text-center text-xs text-amber-100 md:px-6">
+          Maintenance mode is active. Other users cannot log in until it is turned off or the
+          schedule ends.
         </div>
-
-        <div className="flex items-center gap-3">
-          <NotificationTrigger open={notificationsOpen} onOpen={onNotificationsOpen} />
-
-          <button
-            type="button"
-            onClick={() => {
-              if (canOpenProfile) {
-                navigate('/settings/access/my-profile')
-              }
-            }}
-            disabled={!canOpenProfile}
-            className={cn(
-              'rounded-brand-md flex items-center gap-3 transition-colors',
-              canOpenProfile
-                ? 'focus-visible:ring-brand-accent/30 cursor-pointer hover:bg-white/5 focus-visible:ring-2 focus-visible:outline-none'
-                : 'cursor-default',
+      ) : null}
+      <div className="relative h-[var(--brand-topbar-height)]">
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+        <div className="flex h-full items-center justify-between px-4 md:px-6">
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={onMenuClick}
+              className="rounded-brand-md text-brand-stroke focus-visible:ring-brand-accent/30 p-2 hover:bg-white/5 focus-visible:ring-2 focus-visible:outline-none md:hidden"
+              aria-label="Open sidebar"
+            >
+              <Menu className="icon-lg" strokeWidth={1.5} />
+            </button>
+            {showCompact ? (
+              <SidebarBrand />
+            ) : (
+              <div>
+                <p className="text-body-md-semibold text-brand-text tracking-tight">{pageTitle}</p>
+                <p className="text-body-sm text-muted leading-[18px]">{brandName}</p>
+              </div>
             )}
-            aria-label={canOpenProfile ? 'Open my profile' : 'Profile'}
-          >
-            <div className={cn('hidden text-right sm:block')}>
-              <p className="text-body-md-semibold text-brand-text">{displayName}</p>
-              <p className="text-body-sm text-muted">{roleLabel}</p>
-            </div>
-            <div className="from-brand-gold-from/30 to-brand-gold-to/20 text-brand-text text-body-md-semibold grid size-10 place-items-center overflow-hidden rounded-full border border-white/10 bg-gradient-to-br shadow-[0_12px_35px_rgba(0,0,0,0.45)]">
-              {profileImageUrl ? (
-                <img src={profileImageUrl} alt={displayName} className="size-full object-cover" />
-              ) : (
-                <span className="translate-y-0.5">{userInitial}</span>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <NotificationTrigger open={notificationsOpen} onOpen={onNotificationsOpen} />
+
+            <div className="hidden h-8 w-px bg-white/10 sm:block" aria-hidden />
+
+            <button
+              type="button"
+              onClick={() => {
+                if (canOpenProfile) {
+                  navigate('/settings/access/my-profile')
+                }
+              }}
+              disabled={!canOpenProfile}
+              className={cn(
+                'rounded-brand-md flex items-center gap-3 transition-colors',
+                canOpenProfile
+                  ? 'focus-visible:ring-brand-accent/30 cursor-pointer hover:bg-white/5 focus-visible:ring-2 focus-visible:outline-none'
+                  : 'cursor-default',
               )}
-            </div>
-          </button>
+              aria-label={canOpenProfile ? 'Open my profile' : 'Profile'}
+            >
+              <div className={cn('hidden text-right sm:block')}>
+                <p className="text-body-md-semibold text-brand-text">{roleLabel}</p>
+                <p className="text-body-sm text-muted tabular-nums">{clockLabel}</p>
+              </div>
+              <div className="from-brand-gold-from/30 to-brand-gold-to/20 text-brand-text text-body-md-semibold grid size-10 place-items-center overflow-hidden rounded-full border border-white/10 bg-gradient-to-br shadow-[0_12px_35px_rgba(0,0,0,0.45)]">
+                {profileImageUrl ? (
+                  <img src={profileImageUrl} alt={displayName} className="size-full object-cover" />
+                ) : (
+                  <span className="translate-y-0.5">{userInitial}</span>
+                )}
+              </div>
+            </button>
+          </div>
         </div>
       </div>
     </header>
