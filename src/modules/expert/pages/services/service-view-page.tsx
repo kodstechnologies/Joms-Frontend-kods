@@ -449,19 +449,20 @@ export const ServiceViewPage = () => {
         }
       }
 
-      const reasonPayload =
-        activeDecisionAction === 'requestChanges'
+      const reasonPayload = isRejectFlow
+        ? activeDecisionAction === 'requestChanges'
           ? buildRequestChangesReasonPayload(selectedReasons)
           : buildRejectReasonPayload(selectedReasons)
+        : null
 
-      if (reasonPayload.selectedReasons.length === 0) {
+      if (isRejectFlow && (!reasonPayload || reasonPayload.selectedReasons.length === 0)) {
         toast.error('Selected reasons are no longer available. Please refresh and try again.')
         return
       }
 
-      const reasonFor = reasonPayload.selectedReasons
+      const reasonFor = reasonPayload?.selectedReasons ?? []
       const rejectionReason =
-        decisionReason.trim() || reasonPayload.reasonDetails || reasonFor.join(', ')
+        decisionReason.trim() || reasonPayload?.reasonDetails || reasonFor.join(', ')
 
       try {
         if (shouldFetchConsultation) {
@@ -481,7 +482,7 @@ export const ServiceViewPage = () => {
                 adminNote: decisionAdminNotes.trim(),
               },
             })
-            if (reasonPayload.reasonIds.length > 0) {
+            if (reasonPayload && reasonPayload.reasonIds.length > 0) {
               recordReasonUsage.mutate(reasonPayload.reasonIds)
             }
             toast.success(
@@ -506,7 +507,7 @@ export const ServiceViewPage = () => {
               adminNote: decisionAdminNotes.trim(),
             },
           })
-          if (reasonPayload.reasonIds.length > 0) {
+          if (reasonPayload && reasonPayload.reasonIds.length > 0) {
             recordReasonUsage.mutate(reasonPayload.reasonIds)
           }
           toast.success(

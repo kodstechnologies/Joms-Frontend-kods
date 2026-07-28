@@ -1,41 +1,49 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { BarChart3, Plus } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { communicationColumns } from '../../components/communication-table-columns'
-import { communicationData } from '../../mock/communication-data'
+import { useCommunicationMetrics, useCommunications } from '../../hooks/use-communications'
 import { DataTable } from '@/shared/components/table/data-table'
 import { StatCard } from '@/shared/components/dashboard/stat-card'
 import { Button } from '@/shared/components/ui/button'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
 
 const PAGE_SIZE = 10
 
 export function CommunicationListPage() {
   const [searchValue, setSearchValue] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [page, setPage] = useState(1)
   const navigate = useNavigate()
 
-  const filteredData = useMemo(() => {
-    const query = searchValue.trim().toLowerCase()
-    if (!query) return communicationData
-
-    return communicationData.filter(
-      (item) =>
-        item.id.toLowerCase().includes(query) ||
-        item.title.toLowerCase().includes(query) ||
-        item.channel.toLowerCase().includes(query) ||
-        item.type.toLowerCase().includes(query) ||
-        item.audience.toLowerCase().includes(query) ||
-        item.createdBy.toLowerCase().includes(query),
-    )
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setDebouncedSearch(searchValue.trim())
+      setPage(1)
+    }, 300)
+    return () => window.clearTimeout(timer)
   }, [searchValue])
 
-  const totalPages = Math.max(1, Math.ceil(filteredData.length / PAGE_SIZE))
-  const paginatedData = useMemo(() => {
-    const start = (page - 1) * PAGE_SIZE
-    return filteredData.slice(start, start + PAGE_SIZE)
-  }, [filteredData, page])
+  const metricsQuery = useCommunicationMetrics()
+  const listQuery = useCommunications({
+    page,
+    limit: PAGE_SIZE,
+    search: debouncedSearch || undefined,
+  })
+
+  useEffect(() => {
+    if (listQuery.isError) {
+      toast.error(getApiErrorMessage(listQuery.error))
+    }
+  }, [listQuery.error, listQuery.isError])
+
+  const rows = listQuery.data?.data ?? []
+  const pagination = listQuery.data?.meta
+  const totalItems = pagination?.total ?? 0
+  const totalPages = pagination?.totalPages ?? 1
+  const metrics = metricsQuery.data
 
   return (
     <div className="flex flex-col gap-4 md:gap-6">
@@ -45,7 +53,7 @@ export function CommunicationListPage() {
             Communication Management
           </h1>
           <p className="text-brand-muted mt-1 text-sm md:text-base">
-            Comprehensive user data and admin controls.
+            Create and manage announcements across partner audiences.
           </p>
         </div>
 
@@ -66,50 +74,31 @@ export function CommunicationListPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-5">
-        <StatCard
-          title="Total messages sent"
-          value="20"
-          trend={{ direction: 'up', percentage: 6.7, label: 'vs last month' }}
-        />
-        <StatCard
-          title="Active campaigns"
-          value="38"
-          hint="60.0% of total"
-          trend={{ direction: 'up', percentage: 5.5, label: 'vs last quarter' }}
-        />
-        <StatCard title="Channels used" value="3" />
-        <StatCard
-          title="Scheduled messages"
-          value="10"
-          trend={{ direction: 'up', percentage: 12.5, label: 'vs last month' }}
-        />
-        <StatCard
-          title="Failed/Undelivered"
-          value="20"
-          trend={{ direction: 'up', percentage: 6.7, label: 'vs last month' }}
-        />
+        <StatCard title="Total messages sent" value={String(metrics?.totalMessagesSent ?? 0)} />
+        <StatCard title="Active campaigns" value={String(metrics?.activeCampaigns ?? 0)} />
+        <StatCard title="Channels used" value={String(metrics?.channelsUsed ?? 0)} />
+        <StatCard title="Scheduled messages" value={String(metrics?.scheduledMessages ?? 0)} />
+        <StatCard title="Failed/Undelivered" value={String(metrics?.failedUndelivered ?? 0)} />
       </div>
 
       <DataTable
         columns={communicationColumns}
-        data={paginatedData}
-        getRowId={(row) => `${row.id}-${row.title}`}
+        data={rows}
+        getRowId={(row) => row.id}
         searchValue={searchValue}
-        onSearchChange={(value) => {
-          setSearchValue(value)
-          setPage(1)
-        }}
-        searchPlaceholder="Search by name, ID or profession"
+        onSearchChange={setSearchValue}
+        searchPlaceholder="Search by title, ID or creator"
         onAdvancedFilter={() => toast.info('Advanced filters coming soon')}
         onExport={() => toast.info('Export coming soon')}
+        isLoading={listQuery.isLoading}
         pagination={{
           page,
           pageSize: PAGE_SIZE,
-          totalItems: filteredData.length,
+          totalItems,
           totalPages,
           onPageChange: setPage,
         }}
-        resourceLabel="users"
+        resourceLabel="communications"
       />
     </div>
   )

@@ -898,8 +898,7 @@ export function AppRouter() {
                 />
                 <Route path="/communication/management" element={<CommunicationListPage />} />
                 <Route path="/communication/create" element={<CreateCommunicationPage />} />
-
-                <Route path="/communication/view" element={<ViewCommunicationPage />} />
+                <Route path="/communication/view/:id" element={<ViewCommunicationPage />} />
 
                 <Route path="/settings/escalations" element={<EscalationPage />} />
 

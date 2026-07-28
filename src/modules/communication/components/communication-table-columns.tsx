@@ -1,6 +1,6 @@
 import type { ColumnDef } from '@tanstack/react-table'
 
-import type { Communication } from '../mock/communication-data'
+import type { Communication } from '../api/communication-api'
 import { CommunicationActions, CommunicationStatusBadge } from './communication-table-cells'
 
 export const communicationColumns: ColumnDef<Communication>[] = [
@@ -12,7 +12,7 @@ export const communicationColumns: ColumnDef<Communication>[] = [
     enableSorting: false,
   },
   {
-    accessorKey: 'id',
+    accessorKey: 'messageId',
     header: 'Message ID',
   },
   {
@@ -20,28 +20,28 @@ export const communicationColumns: ColumnDef<Communication>[] = [
     header: 'Title',
   },
   {
-    accessorKey: 'channel',
+    accessorKey: 'channelLabel',
     header: 'Channel',
   },
   {
-    accessorKey: 'type',
+    accessorKey: 'typeLabel',
     header: 'Type',
   },
   {
-    accessorKey: 'audience',
+    accessorKey: 'audienceLabel',
     header: 'Audience',
   },
   {
-    accessorKey: 'status',
+    accessorKey: 'statusLabel',
     header: 'Status',
-    cell: ({ row }) => <CommunicationStatusBadge status={row.original.status} />,
+    cell: ({ row }) => <CommunicationStatusBadge status={row.original.statusLabel} />,
   },
   {
     accessorKey: 'createdBy',
     header: 'Created By',
   },
   {
-    accessorKey: 'createdAt',
+    accessorKey: 'createdAtLabel',
     header: 'Created On',
   },
   {
@@ -49,6 +49,6 @@ export const communicationColumns: ColumnDef<Communication>[] = [
     header: 'Actions',
     enableSorting: false,
     meta: { headerClassName: 'pr-5 text-right', cellClassName: 'relative pr-5 text-right' },
-    cell: () => <CommunicationActions />,
+    cell: ({ row }) => <CommunicationActions communication={row.original} />,
   },
 ]

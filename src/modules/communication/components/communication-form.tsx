@@ -1,22 +1,147 @@
+import { useMemo, useState, type FormEvent } from 'react'
 import { ArrowLeft } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
-import { useState } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
+import { toast } from 'sonner'
 
+import {
+  COMMUNICATION_AUDIENCE_OPTIONS,
+  COMMUNICATION_CHANNEL_OPTIONS,
+  COMMUNICATION_TYPE_OPTIONS,
+  type CommunicationAudience,
+  type CommunicationChannel,
+  type CommunicationDeliveryType,
+  type CommunicationType,
+  type CreateCommunicationPayload,
+} from '../api/communication-api'
+import {
+  useCommunication,
+  useCommunicationOptions,
+  useCreateCommunication,
+  useUpdateCommunication,
+} from '../hooks/use-communications'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
 import { cn } from '@/shared/lib/cn'
 import { uiTokens } from '@/shared/lib/design-tokens'
 
 const fieldClassName =
   'h-11 border-white/10 bg-[#0F0F0F] text-brand-text placeholder:text-brand-muted'
 
+const toDateTimeLocalValue = (iso: string | null | undefined) => {
+  if (!iso) return ''
+  const date = new Date(iso)
+  if (Number.isNaN(date.getTime())) return ''
+  const pad = (value: number) => String(value).padStart(2, '0')
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`
+}
+
 export function CommunicationForm() {
   const navigate = useNavigate()
-  const [deliveryType, setDeliveryType] = useState<'sendNow' | 'schedule'>('sendNow')
+  const [searchParams] = useSearchParams()
+  const editId = searchParams.get('edit') ?? ''
+
+  const optionsQuery = useCommunicationOptions()
+  const existingQuery = useCommunication(editId)
+  const createMutation = useCreateCommunication()
+  const updateMutation = useUpdateCommunication()
+
+  const [title, setTitle] = useState('')
+  const [channel, setChannel] = useState<CommunicationChannel | ''>('')
+  const [type, setType] = useState<CommunicationType | ''>('')
+  const [audience, setAudience] = useState<CommunicationAudience | ''>('')
+  const [deliveryType, setDeliveryType] = useState<CommunicationDeliveryType>('send-now')
+  const [scheduledAt, setScheduledAt] = useState('')
+  const [subject, setSubject] = useState('')
+  const [messageContent, setMessageContent] = useState('')
+  const [additionalNotes, setAdditionalNotes] = useState('')
+  const [hydratedItem, setHydratedItem] = useState(existingQuery.data)
+
+  const audienceOptions = useMemo(
+    () => optionsQuery.data?.audiences ?? COMMUNICATION_AUDIENCE_OPTIONS,
+    [optionsQuery.data?.audiences],
+  )
+  const channelOptions = useMemo(
+    () => optionsQuery.data?.channels ?? COMMUNICATION_CHANNEL_OPTIONS,
+    [optionsQuery.data?.channels],
+  )
+  const typeOptions = useMemo(
+    () => optionsQuery.data?.types ?? COMMUNICATION_TYPE_OPTIONS,
+    [optionsQuery.data?.types],
+  )
+
+  const item = existingQuery.data
+  if (item && item !== hydratedItem) {
+    setHydratedItem(item)
+    setTitle(item.title)
+    setChannel(item.channel)
+    setType(item.type)
+    setAudience(item.audience)
+    setDeliveryType(item.deliveryType)
+    setScheduledAt(toDateTimeLocalValue(item.scheduledAt))
+    setSubject(item.subject)
+    setMessageContent(item.messageContent)
+    setAdditionalNotes(item.additionalNotes)
+  }
+
+  const isSubmitting = createMutation.isPending || updateMutation.isPending
+  const isEditMode = Boolean(editId)
+
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+
+    if (!title.trim() || !channel || !type || !audience || !messageContent.trim()) {
+      toast.error('Please fill in all required fields')
+      return
+    }
+
+    if (deliveryType === 'schedule' && !scheduledAt) {
+      toast.error('Please select a date and time for scheduling')
+      return
+    }
+
+    const payload: CreateCommunicationPayload = {
+      title: title.trim(),
+      channel,
+      type,
+      audience,
+      deliveryType,
+      scheduledAt: deliveryType === 'schedule' ? new Date(scheduledAt).toISOString() : null,
+      subject: subject.trim(),
+      messageContent: messageContent.trim(),
+      additionalNotes: additionalNotes.trim(),
+    }
+
+    if (isEditMode) {
+      updateMutation.mutate(
+        { id: editId, payload },
+        {
+          onSuccess: (data) => {
+            toast.success('Communication updated')
+            navigate(`/communication/view/${data.id}`)
+          },
+          onError: (error) => toast.error(getApiErrorMessage(error)),
+        },
+      )
+      return
+    }
+
+    createMutation.mutate(payload, {
+      onSuccess: (data) => {
+        toast.success(
+          deliveryType === 'schedule'
+            ? 'Communication scheduled'
+            : 'Communication saved (delivery providers will be connected later)',
+        )
+        navigate(`/communication/view/${data.id}`)
+      },
+      onError: (error) => toast.error(getApiErrorMessage(error)),
+    })
+  }
 
   return (
-    <div className="flex flex-col gap-4 md:gap-6">
+    <form className="flex flex-col gap-4 md:gap-6" onSubmit={handleSubmit}>
       <div>
         <button
           type="button"
@@ -24,12 +149,14 @@ export function CommunicationForm() {
           className="text-brand-text hover:text-brand-accent mb-3 flex items-center gap-2 text-sm font-semibold transition-colors"
         >
           <ArrowLeft className="size-4" />
-          Create Communication
+          {isEditMode ? 'Edit Communication' : 'Create Communication'}
         </button>
 
         <p className="text-brand-muted text-sm">
           Communication management /
-          <span className="text-brand-text ml-1 font-medium">Create Communication</span>
+          <span className="text-brand-text ml-1 font-medium">
+            {isEditMode ? 'Edit Communication' : 'Create Communication'}
+          </span>
         </p>
       </div>
 
@@ -42,10 +169,13 @@ export function CommunicationForm() {
       >
         <div className="border-b border-white/10 pb-5">
           <h2 className="text-brand-text text-lg font-semibold">
-            Create New Communication Template
+            {isEditMode ? 'Edit Communication' : 'Create New Communication'}
           </h2>
           <p className="text-brand-muted mt-1 text-sm">
             Send updates, announcements, or important messages to your audience.
+          </p>
+          <p className="text-brand-muted mt-2 text-xs">
+            In-app, push, and email provider delivery will be connected later.
           </p>
         </div>
 
@@ -54,7 +184,14 @@ export function CommunicationForm() {
             <label className="text-brand-text mb-2 block text-sm font-medium">
               Communication Title (internal use only)
             </label>
-            <Input type="text" placeholder="Enter communication Title" className={fieldClassName} />
+            <Input
+              type="text"
+              placeholder="Enter communication Title"
+              className={fieldClassName}
+              value={title}
+              onChange={(event) => setTitle(event.target.value)}
+              required
+            />
           </div>
 
           <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
@@ -67,11 +204,16 @@ export function CommunicationForm() {
                   uiTokens.focusRing,
                   fieldClassName,
                 )}
-                defaultValue="In App Notification"
+                value={channel}
+                onChange={(event) => setChannel(event.target.value as CommunicationChannel)}
+                required
               >
-                <option>In App Notification</option>
-                <option>Email</option>
-                <option>Push Notification</option>
+                <option value="">Select channel</option>
+                {channelOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
               </select>
             </div>
 
@@ -86,19 +228,40 @@ export function CommunicationForm() {
                   uiTokens.focusRing,
                   fieldClassName,
                 )}
-                defaultValue=""
+                value={type}
+                onChange={(event) => setType(event.target.value as CommunicationType)}
+                required
               >
                 <option value="">Select</option>
-                <option>Transactional</option>
-                <option>Marketing</option>
-                <option>Announcement</option>
+                {typeOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
               </select>
             </div>
           </div>
 
           <div>
             <label className="text-brand-text mb-2 block text-sm font-medium">Audience</label>
-            <Input type="text" placeholder="Enter Audience Type" className={fieldClassName} />
+            <select
+              className={cn(
+                'text-brand-text flex h-11 w-full border px-3 text-sm outline-none',
+                uiTokens.radiusSoft,
+                uiTokens.focusRing,
+                fieldClassName,
+              )}
+              value={audience}
+              onChange={(event) => setAudience(event.target.value as CommunicationAudience)}
+              required
+            >
+              <option value="">Select audience</option>
+              {audienceOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div
@@ -115,8 +278,8 @@ export function CommunicationForm() {
                 <label className="text-brand-text flex cursor-pointer items-center gap-2 text-sm">
                   <input
                     type="radio"
-                    checked={deliveryType === 'sendNow'}
-                    onChange={() => setDeliveryType('sendNow')}
+                    checked={deliveryType === 'send-now'}
+                    onChange={() => setDeliveryType('send-now')}
                     className="accent-brand-accent"
                   />
                   Send Now
@@ -143,7 +306,9 @@ export function CommunicationForm() {
                 <Input
                   type="datetime-local"
                   className={fieldClassName}
-                  placeholder="dd-mm-yyyy, --:--"
+                  value={scheduledAt}
+                  onChange={(event) => setScheduledAt(event.target.value)}
+                  required={deliveryType === 'schedule'}
                 />
               </div>
             )}
@@ -151,7 +316,13 @@ export function CommunicationForm() {
 
           <div>
             <label className="text-brand-text mb-2 block text-sm font-medium">Subject Line</label>
-            <Input type="text" placeholder="Enter Message" className={fieldClassName} />
+            <Input
+              type="text"
+              placeholder="Enter Message"
+              className={fieldClassName}
+              value={subject}
+              onChange={(event) => setSubject(event.target.value)}
+            />
           </div>
 
           <div>
@@ -161,6 +332,9 @@ export function CommunicationForm() {
             <textarea
               rows={4}
               placeholder="Enter Message"
+              value={messageContent}
+              onChange={(event) => setMessageContent(event.target.value)}
+              required
               className={cn(
                 'text-brand-text placeholder:text-brand-muted min-h-[96px] w-full resize-y border px-3 py-2.5 text-sm outline-none',
                 uiTokens.radiusSoft,
@@ -174,7 +348,13 @@ export function CommunicationForm() {
             <label className="text-brand-text mb-2 block text-sm font-medium">
               Additional Notes
             </label>
-            <Input type="text" placeholder="Enter Message" className={fieldClassName} />
+            <Input
+              type="text"
+              placeholder="Enter Message"
+              className={fieldClassName}
+              value={additionalNotes}
+              onChange={(event) => setAdditionalNotes(event.target.value)}
+            />
           </div>
         </div>
       </section>
@@ -194,9 +374,11 @@ export function CommunicationForm() {
           >
             Close
           </Button>
-          <Button type="submit">Submit</Button>
+          <Button type="submit" disabled={isSubmitting || (isEditMode && existingQuery.isLoading)}>
+            {isSubmitting ? 'Saving...' : 'Submit'}
+          </Button>
         </div>
       </section>
-    </div>
+    </form>
   )
 }
