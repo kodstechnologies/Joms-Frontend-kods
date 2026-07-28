@@ -14,6 +14,8 @@ import type {
 export const platformDefaults: PlatformSettings = {
   applicationSettings: {
     applicationName: 'Web admin Panel',
+    logoUrl: '',
+    faviconUrl: '',
   },
   displayPreferences: {
     timezone: 'IST, +5:30, Kolkata, India',
@@ -26,6 +28,14 @@ export const platformDefaults: PlatformSettings = {
     defaultExportFormat: 'CSV',
     maintenanceMode: false,
     customErrorMessage: "System maintenance in progress. We'll be back shortly.",
+    adminNotes: '',
+    maintenanceStartAt: null,
+    maintenanceEndAt: null,
+    errorTemplates: [
+      'We are currently experiencing technical difficulties. Please try again later.',
+      "System maintenance in progress. We'll be back shortly.",
+      'Service temporarily unavailable. Our team has been notified.',
+    ],
     supportEmail: 'support@joms.com',
     supportPhone: '+91 1234567890',
   },

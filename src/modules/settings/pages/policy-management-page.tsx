@@ -1,17 +1,25 @@
-import { useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
-import { Calendar, Clock, Eye, FileText, History, Plus, RotateCw, UserRound } from 'lucide-react'
+import { useMemo, useState } from 'react'
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { Calendar, Clock, Eye, FileText, History, Plus, RotateCw } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { SettingsFooterActions } from '../components/settings-footer-actions'
+import { PolicyEditorForm } from '../components/policy-editor-form'
 import {
   useCreatePolicy,
+  useCreatePolicyVersion,
   usePolicies,
   usePolicy,
   usePolicyVersions,
-  useUpdatePolicy,
 } from '../hooks/use-policies'
-import type { PolicyItem } from '../types/settings'
+import type { PolicyApplication, PolicyItem } from '../types/settings'
+import {
+  bumpPolicyVersion,
+  defaultNotifyVia,
+  resolveEffectivePayload,
+  toDateInputValue,
+  type PolicyEditorValues,
+} from '../utils/policy-form'
 import { SectionHeader } from '@/shared/components/dashboard/section-header'
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
@@ -35,7 +43,7 @@ function PolicySettingsTopTabs({ activeKey = 'service' }: { activeKey?: string }
 
   return (
     <div className="bg-brand-surface rounded-xl border border-white/10 p-2">
-      <div className="bg-brand-bg overflow-x-auto rounded-lg p-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <div className="bg-brand-bg [scrollbar-width:none] overflow-x-auto rounded-lg p-1 [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
         <div className="flex w-max min-w-full gap-1">
           {POLICY_SETTINGS_TABS.map((item) => (
             <button
@@ -138,23 +146,25 @@ function PolicyRow({ policy }: { policy: PolicyItem }) {
 
 export function PolicyManagementPage() {
   const navigate = useNavigate()
-  const { data: policies = [], isLoading } = usePolicies()
+  const [searchParams] = useSearchParams()
+  const application = (searchParams.get('application') as PolicyApplication | null) ?? 'expert'
+  const { data: policies = [], isLoading } = usePolicies(application)
 
   return (
     <div className="space-y-6">
-      <PolicySettingsTopTabs activeKey="service" />
+      <PolicySettingsTopTabs activeKey="expert" />
 
       <div className="bg-brand-bg space-y-4 rounded-2xl border border-white/10 p-4 sm:p-5">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <h2 className="text-h4 text-white">Policy Management</h2>
             <p className="text-body-md text-muted mt-1">
-              Manage platform policies, terms, and legal documents
+              Manage expert application policies, terms, and legal documents
             </p>
           </div>
           <button
             type="button"
-            onClick={() => navigate('/settings/policies/create')}
+            onClick={() => navigate(`/settings/policies/create?application=${application}`)}
             className="ui-cta ui-cta-primary"
           >
             <Plus className="size-4" />
@@ -189,34 +199,60 @@ export function PolicyManagementPage() {
 
 export function PolicyCreatePage() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const application = (searchParams.get('application') as PolicyApplication | null) ?? 'expert'
   const createMutation = useCreatePolicy()
-  const [title, setTitle] = useState('')
-  const [slug, setSlug] = useState('')
-  const [version, setVersion] = useState('V1.0')
-  const [effectiveDate, setEffectiveDate] = useState('')
-  const [content, setContent] = useState('')
-  const [changeSummary, setChangeSummary] = useState('')
+  const [values, setValues] = useState<PolicyEditorValues>(() => ({
+    title: '',
+    slug: '',
+    currentVersion: 'V1.0',
+    newVersion: 'V1.0',
+    effectiveSince: '',
+    content: '',
+    changeSummary: '',
+    effectiveTiming: 'today',
+    futureEffectiveDate: toDateInputValue(new Date()),
+    requireReConsent: true,
+    blockAppUsageUntilAccepted: true,
+    notifyVia: defaultNotifyVia(),
+  }))
+
+  const updateValues = (patch: Partial<PolicyEditorValues>) => {
+    setValues((current) => ({ ...current, ...patch }))
+  }
 
   const handleCreate = (status: 'Draft' | 'Active') => {
-    if (!title.trim() || !slug.trim() || !version.trim()) {
-      toast.error('Title, slug, and version are required')
+    if (!values.title.trim() || !values.slug.trim() || !values.newVersion.trim()) {
+      toast.error('Policy name, slug, and version are required')
+      return
+    }
+    if (status === 'Active' && !values.changeSummary.trim()) {
+      toast.error('Change summary is required before publishing')
       return
     }
 
+    const effective = resolveEffectivePayload(values)
+    const slug = values.slug.trim().toLowerCase().replace(/\s+/g, '-')
+
     createMutation.mutate(
       {
-        slug: slug.trim().toLowerCase().replace(/\s+/g, '-'),
-        title: title.trim(),
-        version: version.trim(),
+        slug,
+        title: values.title.trim(),
+        application,
+        version: values.newVersion.trim(),
         status,
-        effectiveDate,
-        content,
-        changeSummary,
+        effectiveDate: effective.effectiveDate,
+        effectiveAt: effective.effectiveAt,
+        content: values.content,
+        changeSummary: values.changeSummary,
         author: 'Super Admin',
+        requireReConsent: values.requireReConsent,
+        blockAppUsageUntilAccepted: values.blockAppUsageUntilAccepted,
+        notifyVia: values.notifyVia,
       },
       {
         onSuccess: (policy) => {
-          toast.success(status === 'Draft' ? 'Draft saved' : 'Policy created')
+          toast.success(status === 'Draft' ? 'Draft saved' : 'Policy published')
           navigate(`/settings/policies/${policy.id}`)
         },
         onError: () => toast.error('Failed to create policy'),
@@ -226,92 +262,35 @@ export function PolicyCreatePage() {
 
   return (
     <div className="space-y-6">
-      <SectionHeader
-        title="Settings"
-        subtitle="Track revenue, payouts, and financial performance"
-      />
-      <PolicySettingsTopTabs activeKey="service" />
+      <SectionHeader title="Settings" subtitle="Create expert application policy" />
+      <PolicySettingsTopTabs activeKey="expert" />
 
       <div className="bg-brand-bg space-y-4 rounded-2xl border border-white/10 p-4">
         <p className="text-body-sm text-muted">
           Platform Control / Policy Management / Create Policy
         </p>
-
-        <section className="bg-brand-surface space-y-4 rounded-xl border border-white/10 p-4">
-          <p className="text-body-md-semibold text-white">Policy Information</p>
-
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div>
-              <label className="text-body-sm text-muted mb-1 block">Policy Name</label>
-              <input
-                value={title}
-                onChange={(event) => {
-                  setTitle(event.target.value)
-                  if (!slug) setSlug(event.target.value.toLowerCase().replace(/\s+/g, '-'))
-                }}
-                className="ui-input"
-              />
-            </div>
-            <div>
-              <label className="text-body-sm text-muted mb-1 block">Slug</label>
-              <input
-                value={slug}
-                onChange={(event) => setSlug(event.target.value)}
-                className="ui-input"
-              />
-            </div>
-            <div>
-              <label className="text-body-sm text-muted mb-1 block">Version</label>
-              <input
-                value={version}
-                onChange={(event) => setVersion(event.target.value)}
-                className="ui-input"
-              />
-            </div>
-            <div>
-              <label className="text-body-sm text-muted mb-1 block">Effective Since</label>
-              <input
-                value={effectiveDate}
-                onChange={(event) => setEffectiveDate(event.target.value)}
-                placeholder="DD/MM/YYYY"
-                className="ui-input"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="text-body-sm text-muted mb-1 block">Policy Content</label>
-            <textarea
-              rows={8}
-              value={content}
-              onChange={(event) => setContent(event.target.value)}
-              placeholder="Draft Policy Content Here...."
-              className="ui-textarea"
-            />
-          </div>
-
-          <div>
-            <label className="text-body-sm text-muted mb-1 block">
-              Summary Of What Was Changed
-            </label>
-            <textarea
-              rows={2}
-              value={changeSummary}
-              onChange={(event) => setChangeSummary(event.target.value)}
-              className="ui-textarea"
-            />
-            <p className="text-body-sm text-muted mt-1">
-              This field is required for version publishing
-            </p>
-          </div>
-        </section>
+        <PolicyEditorForm
+          mode="create"
+          showSlug
+          values={values}
+          onChange={(patch) => {
+            if (patch.title && !values.slug) {
+              updateValues({
+                ...patch,
+                slug: patch.title.toLowerCase().replace(/\s+/g, '-'),
+              })
+              return
+            }
+            updateValues(patch)
+          }}
+        />
       </div>
 
       <div className="bg-brand-bg flex justify-between rounded-xl border border-white/10 px-3 py-2.5">
         <Button
           variant="secondary"
           className="text-body-sm h-8"
-          onClick={() => navigate('/settings/policies')}
+          onClick={() => navigate(`/settings/policies?application=${application}`)}
         >
           Cancel
         </Button>
@@ -420,14 +399,76 @@ export function PolicyTimelinePage() {
 
 export function PolicyDetailPage() {
   const navigate = useNavigate()
-  const { id = 'terms' } = useParams<{ id: string }>()
+  const { id = 'expert-application-terms' } = useParams<{ id: string }>()
   const { data: policy, isLoading: policyLoading } = usePolicy(id)
   const { data: versions = [] } = usePolicyVersions(id)
-  const updateMutation = useUpdatePolicy(id)
-  const [content, setContent] = useState<string | null>(null)
+  const createVersionMutation = useCreatePolicyVersion(id)
 
   const latestVersion = versions[0]
-  const displayContent = content ?? policy?.content ?? latestVersion?.content ?? ''
+  const initialValues = useMemo<PolicyEditorValues>(
+    () => ({
+      title: policy?.title ?? '',
+      slug: policy?.slug ?? policy?.id ?? id,
+      currentVersion: latestVersion?.version ?? policy?.version ?? 'V1.0',
+      newVersion: bumpPolicyVersion(latestVersion?.version ?? policy?.version ?? 'V1.0'),
+      effectiveSince: latestVersion?.effectiveDate ?? policy?.effectiveDate ?? '',
+      content: latestVersion?.content ?? policy?.content ?? '',
+      changeSummary: '',
+      effectiveTiming: 'today',
+      futureEffectiveDate: toDateInputValue(new Date()),
+      requireReConsent: latestVersion?.requireReConsent ?? true,
+      blockAppUsageUntilAccepted: latestVersion?.blockAppUsageUntilAccepted ?? true,
+      notifyVia: latestVersion?.notifyVia ?? defaultNotifyVia(),
+    }),
+    [id, latestVersion, policy],
+  )
+
+  const baselineKey = `${id}|${latestVersion?.id ?? 'none'}`
+  const [values, setValues] = useState<PolicyEditorValues>(initialValues)
+  const [loadedBaseline, setLoadedBaseline] = useState(baselineKey)
+
+  if (loadedBaseline !== baselineKey) {
+    setLoadedBaseline(baselineKey)
+    setValues(initialValues)
+  }
+
+  const updateValues = (patch: Partial<PolicyEditorValues>) => {
+    setValues((current) => ({ ...current, ...patch }))
+  }
+
+  const handleSave = (status: 'Draft' | 'Active') => {
+    if (!values.newVersion.trim()) {
+      toast.error('New version is required')
+      return
+    }
+    if (status === 'Active' && !values.changeSummary.trim()) {
+      toast.error('Change summary is required before publishing')
+      return
+    }
+
+    const effective = resolveEffectivePayload(values)
+    createVersionMutation.mutate(
+      {
+        version: values.newVersion.trim(),
+        status,
+        effectiveDate: effective.effectiveDate,
+        effectiveAt: effective.effectiveAt,
+        content: values.content,
+        changeSummary: values.changeSummary,
+        author: latestVersion?.author ?? policy?.author ?? 'Super Admin',
+        requireReConsent: values.requireReConsent,
+        blockAppUsageUntilAccepted: values.blockAppUsageUntilAccepted,
+        notifyVia: values.notifyVia,
+      },
+      {
+        onSuccess: () => {
+          toast.success(status === 'Draft' ? 'Draft saved' : 'Policy updated')
+          navigate(`/settings/policies/${id}`)
+        },
+        onError: () => toast.error('Failed to save policy version'),
+      },
+    )
+  }
 
   if (policyLoading) {
     return <div className="h-40 animate-pulse rounded-xl bg-white/5" />
@@ -437,7 +478,10 @@ export function PolicyDetailPage() {
     return (
       <div className="space-y-4">
         <p className="text-muted">Policy not found.</p>
-        <Button variant="secondary" onClick={() => navigate('/settings/policies')}>
+        <Button
+          variant="secondary"
+          onClick={() => navigate('/settings/policies?application=expert')}
+        >
           Back
         </Button>
       </div>
@@ -446,74 +490,38 @@ export function PolicyDetailPage() {
 
   return (
     <div className="space-y-6">
-      <SectionHeader title="Settings" subtitle="Policy detail and editor" />
+      <SectionHeader title="Settings" subtitle="Update expert application policy" />
+      <PolicySettingsTopTabs activeKey="expert" />
 
-      <div className="bg-brand-bg space-y-3 rounded-2xl border border-white/10 p-4">
-        <div className="bg-brand-surface rounded-lg border border-white/10 px-4 py-3">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
-              <FileText className="text-muted size-4" />
-              <span className="text-body-md-semibold text-white">{policy.title}</span>
-              <span className="border-brand-accent/25 bg-brand-accent/10 text-body-sm text-brand-accent rounded-full border px-2 py-0.5 font-semibold">
-                {latestVersion?.version ?? policy.version}
-              </span>
-            </div>
-            <span className="border-brand-positive/25 bg-brand-positive/10 text-body-sm text-brand-positive rounded-full border px-2 py-0.5 font-semibold">
-              {policy.status}
-            </span>
-          </div>
-          <div className="text-body-sm text-muted mt-2 flex flex-wrap items-center gap-3">
-            <span className="inline-flex items-center gap-1">
-              <UserRound className="size-3.5" />
-              {latestVersion?.author ?? policy.author ?? 'Super Admin'}
-            </span>
-            <span>Policy reviewed on {latestVersion?.lastUpdated ?? policy.lastUpdated}</span>
-          </div>
-        </div>
-
-        <div className="bg-brand-bg rounded-xl border border-white/10 p-3">
-          <p className="text-body-sm-semibold mb-2 text-white">Policy Content</p>
-          <textarea
-            rows={10}
-            value={displayContent}
-            onChange={(event) => setContent(event.target.value)}
-            className="bg-brand-surface text-body-md w-full rounded-xl border border-white/10 px-4 py-3 text-white"
-          />
-        </div>
+      <div className="bg-brand-bg space-y-4 rounded-2xl border border-white/10 p-4">
+        <p className="text-body-sm text-muted">
+          Platform Control / Policy Management / {policy.title}
+        </p>
+        <PolicyEditorForm
+          mode="update"
+          isActive={policy.status === 'Active'}
+          values={values}
+          onChange={updateValues}
+        />
       </div>
-      <div className="flex justify-between">
-        <Button variant="secondary" onClick={() => navigate('/settings/policies')}>
-          Back
+
+      <div className="bg-brand-bg flex justify-between rounded-xl border border-white/10 px-3 py-2.5">
+        <Button
+          variant="secondary"
+          onClick={() => navigate('/settings/policies?application=expert')}
+        >
+          Reset
         </Button>
         <div className="flex gap-3">
           <Button
             variant="secondary"
-            disabled={updateMutation.isPending}
-            onClick={() =>
-              updateMutation.mutate(
-                { content: displayContent },
-                {
-                  onSuccess: () => toast.success('Draft saved'),
-                  onError: () => toast.error('Failed to save draft'),
-                },
-              )
-            }
+            disabled={createVersionMutation.isPending}
+            onClick={() => handleSave('Draft')}
           >
             Save Draft
           </Button>
-          <Button
-            disabled={updateMutation.isPending}
-            onClick={() =>
-              updateMutation.mutate(
-                { content: displayContent, changeSummary: 'Content updated via admin panel' },
-                {
-                  onSuccess: () => toast.success('Policy updated'),
-                  onError: () => toast.error('Failed to update policy'),
-                },
-              )
-            }
-          >
-            Submit For Approval
+          <Button disabled={createVersionMutation.isPending} onClick={() => handleSave('Active')}>
+            Save Changes
           </Button>
         </div>
       </div>

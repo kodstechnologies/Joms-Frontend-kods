@@ -38,6 +38,14 @@ export type PaymentDetail = {
     platformRecordId: string
     settlementDate: string
   }
+  additionalVenueContext?: {
+    bookingDates: string
+    duration: string
+    eventType: string
+    cancellationPolicy: string
+    venueId: string
+    ownerId: string
+  }
 }
 
 const defaultPaymentDetail: PaymentDetail = {
@@ -79,6 +87,14 @@ const defaultPaymentDetail: PaymentDetail = {
     gatewayTransactionId: 'pay_NH82Jsk982',
     platformRecordId: 'TXN-982341',
     settlementDate: '19 Feb 2026',
+  },
+  additionalVenueContext: {
+    bookingDates: 'Feb 2026 - 21 Feb 2026',
+    duration: '02',
+    eventType: 'Corporate Conference',
+    cancellationPolicy: '48-hour Partial Refund',
+    venueId: 'VEN-5562',
+    ownerId: 'VEN-5562',
   },
 }
 

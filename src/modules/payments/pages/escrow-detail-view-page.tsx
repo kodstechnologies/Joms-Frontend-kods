@@ -8,8 +8,8 @@ import { cn } from '@/shared/lib/cn'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 
 const cardClass = 'radius-lg border border-white/[0.06] bg-brand-surface p-4 sm:p-5'
-const sectionTitleClass = 'text-body-md-semibold text-brand-text'
-const sectionSubtitleClass = 'text-body-sm text-muted mt-1'
+const sectionTitleClass = 'text-body-md-semibold text-brand-text leading-[20px]'
+const sectionSubtitleClass = 'text-body-sm text-muted mt-1 leading-[20px]'
 const labelClass = 'text-body-sm text-muted'
 const valueClass = 'text-body-sm-medium text-brand-text'
 
@@ -72,7 +72,7 @@ export function EscrowDetailViewPage() {
           <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
           <span>Escrow Detail View</span>
         </button>
-        <p className="text-body-sm text-muted mt-2 pl-7">
+        <p className="text-body-sm text-muted mt-2 pl-7 leading-[20px]">
           <Link to="/finance/dashboard" className="hover:text-brand-text transition-colors">
             Finance Management
           </Link>
@@ -89,45 +89,49 @@ export function EscrowDetailViewPage() {
         <div className="mb-5 border-b border-white/5" />
 
         <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
-          <InnerCard title="Escrow Information">
-            <DetailRow label="Escrow ID" value={detail.escrowInformation.escrowId} />
-            <DetailRow label="Transaction ID" value={detail.escrowInformation.transactionId} />
-            <DetailRow label="Type" value={detail.escrowInformation.type} />
-            <DetailRow
-              label="Status"
-              value={<StatusBadge status={detail.escrowInformation.status} />}
-            />
-            <DetailRow label="Created On" value={detail.escrowInformation.createdOn} />
-            <DetailRow label="Days in Escrow" value={detail.escrowInformation.daysInEscrow} />
-          </InnerCard>
+          <div className="flex flex-col gap-5">
+            <InnerCard title="Escrow Information">
+              <DetailRow label="Escrow ID" value={detail.escrowInformation.escrowId} />
+              <DetailRow label="Transaction ID" value={detail.escrowInformation.transactionId} />
+              <DetailRow label="Type" value={detail.escrowInformation.type} />
+              <DetailRow
+                label="Status"
+                value={<StatusBadge status={detail.escrowInformation.status} />}
+              />
+              <DetailRow label="Created On" value={detail.escrowInformation.createdOn} />
+              <DetailRow label="Days in Escrow" value={detail.escrowInformation.daysInEscrow} />
+            </InnerCard>
 
-          <InnerCard title="Parties">
-            <DetailRow label="Client" value={detail.parties.client} />
-            <DetailRow label="Expert" value={detail.parties.expert} />
-          </InnerCard>
+            <InnerCard title="Release Information">
+              <p className="text-body-sm text-brand-text">
+                Expected release date:{' '}
+                <span className="text-body-sm-medium">
+                  {detail.releaseInformation.expectedReleaseDate}
+                </span>
+              </p>
+            </InnerCard>
+          </div>
 
-          <InnerCard title="Release Information">
-            <p className="text-body-sm text-brand-text">
-              Expected release date:{' '}
-              <span className="text-body-sm-medium">
-                {detail.releaseInformation.expectedReleaseDate}
-              </span>
-            </p>
-          </InnerCard>
+          <div className="flex flex-col gap-5">
+            <InnerCard title="Parties">
+              <DetailRow label="Client" value={detail.parties.client} />
+              <DetailRow label="Expert" value={detail.parties.expert} />
+            </InnerCard>
 
-          <InnerCard title="Financial Details">
-            <DetailRow label="Escrow Amount" value={detail.financialDetails.escrowAmount} />
-            <DetailRow label="Platform Fee" value={detail.financialDetails.platformFee} />
-            <DetailRow
-              label="Release Amount"
-              value={detail.financialDetails.releaseAmount}
-              valueClassName="text-body-sm-semibold"
-            />
-          </InnerCard>
+            <InnerCard title="Financial Details">
+              <DetailRow label="Escrow Amount" value={detail.financialDetails.escrowAmount} />
+              <DetailRow label="Platform Fee" value={detail.financialDetails.platformFee} />
+              <DetailRow
+                label="Release Amount"
+                value={detail.financialDetails.releaseAmount}
+                valueClassName="text-body-sm-semibold"
+              />
+            </InnerCard>
+          </div>
         </div>
       </section>
 
-      <footer className={cn(cardClass, 'flex items-center justify-between px-5 py-4')}>
+      <footer className="flex items-center justify-between">
         <button
           type="button"
           onClick={() => navigateBackOrFallback(navigate, '/finance/escrow')}

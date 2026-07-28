@@ -141,7 +141,9 @@ export function MembershipManagementPage() {
       {
         accessorKey: 'amount',
         header: 'Amount',
-        cell: ({ row }) => <span className="font-semibold text-white">{row.original.amount}</span>,
+        cell: ({ row }) => (
+          <span className="text-brand-text font-semibold">{row.original.amount}</span>
+        ),
       },
       { accessorKey: 'billingCycle', header: 'Billing Cycle' },
       { accessorKey: 'startDate', header: 'Start Date' },
@@ -181,10 +183,10 @@ export function MembershipManagementPage() {
     <div className="flex flex-col gap-6">
       <div>
         <h1 className="text-h2 text-brand-text tracking-tight">Membership Management</h1>
-        <p className="text-body-md text-muted mt-1">
+        <p className="text-body-md text-muted mt-1 leading-[20px]">
           Track revenue, payouts, and financial performance
         </p>
-        <p className="text-body-sm text-muted mt-3">
+        <p className="text-body-sm text-muted mt-3 leading-[20px]">
           <Link to="/finance/dashboard" className="hover:text-brand-text transition-colors">
             Finance Management
           </Link>

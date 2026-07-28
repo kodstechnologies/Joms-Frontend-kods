@@ -7,7 +7,8 @@ import { cn } from '@/shared/lib/cn'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 
 const cardClass = 'radius-lg border border-white/[0.06] bg-brand-surface p-4 sm:p-5'
-const sectionTitleClass = 'text-body-md-semibold text-brand-text'
+const sectionTitleClass = 'text-body-md-semibold text-brand-text leading-[20px]'
+const sectionSubtitleClass = 'text-body-sm text-muted mt-1 leading-[20px]'
 const labelClass = 'text-body-sm text-muted'
 const valueClass = 'text-body-sm-medium text-brand-text'
 
@@ -52,56 +53,66 @@ export function PayoutDetailViewPage() {
           <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
           <span>Payment Detail View</span>
         </button>
-        <p className="text-body-sm text-muted mt-2 pl-7">
+        <p className="text-body-sm text-muted mt-2 pl-7 leading-[20px]">
           <Link to="/finance/dashboard" className="hover:text-brand-text transition-colors">
             Finance Management
-          </Link>
-          <span> / </span>
-          <Link to="/finance/payouts" className="hover:text-brand-text transition-colors">
-            Payout Management
           </Link>
           <span> / </span>
           <span className="text-brand-text font-semibold">Payment View Details</span>
         </p>
       </header>
 
-      <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
-        <DetailCard title="Payout Information">
-          <DetailRow label="Payout ID" value={detail.payoutId} />
-          <DetailRow label="Recipient" value={detail.recipient} />
-          <DetailRow label="Type" value={detail.type} />
-          <DetailRow
-            label="Status"
-            value={
-              <span
-                className={cn(
-                  'text-body-sm-semibold inline-flex rounded-full border px-2.5 py-0.5',
-                  getStatusBadgeClass(detail.status),
-                )}
-              >
-                {detail.status}
-              </span>
-            }
-          />
-          <DetailRow label="Initiated Date" value={detail.initiatedDate} />
-        </DetailCard>
+      <section className={cn(cardClass, 'flex flex-col gap-6 p-5')}>
+        <div>
+          <h2 className={sectionTitleClass}>Payout Details</h2>
+          <p className={sectionSubtitleClass}>Provide details about your Consultation</p>
+        </div>
 
-        <DetailCard title="Financial Details">
-          <DetailRow label="Payout Amount" value={detail.payoutAmount} />
-          <DetailRow label="Commission Deducted" value={detail.commissionDeducted} />
-          <DetailRow label="Net Revenue" value={detail.netRevenue} />
-        </DetailCard>
-      </div>
+        <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
+          <DetailCard title="Payout Information">
+            <DetailRow label="Payout ID" value={detail.payoutId} />
+            <DetailRow label="Recipient" value={detail.recipient} />
+            <DetailRow label="Type" value={detail.type} />
+            <DetailRow
+              label="Status"
+              value={
+                <span
+                  className={cn(
+                    'text-body-sm-semibold inline-flex rounded-full border px-2.5 py-0.5',
+                    getStatusBadgeClass(detail.status),
+                  )}
+                >
+                  {detail.status}
+                </span>
+              }
+            />
+            <DetailRow label="Scheduled Date" value={detail.initiatedDate} />
+          </DetailCard>
 
-      <div className="flex justify-end">
-        <button
-          type="button"
-          onClick={() => navigateBackOrFallback(navigate, '/finance/payouts')}
-          className="ui-cta ui-cta-secondary"
-        >
-          Close
-        </button>
-      </div>
+          <div className="flex flex-col gap-5">
+            <DetailCard title="Financial Details">
+              <DetailRow label="Payout Amount" value={detail.payoutAmount} />
+              <DetailRow label="Commission Deducted" value={detail.commissionDeducted} />
+              <DetailRow label="Minimum Threshold" value={detail.netRevenue} />
+            </DetailCard>
+
+            <DetailCard title="Bank Details">
+              <DetailRow label="Account Number" value={detail.accountNumber} />
+              <DetailRow label="IFSC Code" value={detail.ifscCode} />
+            </DetailCard>
+          </div>
+        </div>
+
+        <div className="flex justify-end">
+          <button
+            type="button"
+            onClick={() => navigateBackOrFallback(navigate, '/finance/payouts')}
+            className="ui-cta ui-cta-secondary"
+          >
+            Close
+          </button>
+        </div>
+      </section>
     </div>
   )
 }

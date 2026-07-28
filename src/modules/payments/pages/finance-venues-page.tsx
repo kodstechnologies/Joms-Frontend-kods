@@ -85,10 +85,10 @@ export function FinanceVenuesPage() {
           label="Open venue record actions"
           isOpen={isOpen}
           onOpenChange={(open) => setActiveDropdownId(open ? record.id : null)}
-          menuWidth={220}
+          menuWidth={174}
         >
           <TableActionsItem
-            icon={<Eye className="size-3.5 text-slate-700" aria-hidden="true" />}
+            icon={<Eye className="size-[18px] text-slate-700" aria-hidden="true" />}
             className="text-slate-800 hover:bg-slate-100 hover:text-slate-900"
             onClick={() => {
               setActiveDropdownId(null)
@@ -98,7 +98,7 @@ export function FinanceVenuesPage() {
             View Details
           </TableActionsItem>
           <TableActionsItem
-            icon={<SquarePen className="size-3.5 text-slate-700" aria-hidden="true" />}
+            icon={<SquarePen className="size-[18px] text-slate-700" aria-hidden="true" />}
             className="text-slate-800 hover:bg-slate-100 hover:text-slate-900"
             onClick={() => {
               setActiveDropdownId(null)
@@ -108,7 +108,7 @@ export function FinanceVenuesPage() {
             Add internal note
           </TableActionsItem>
           <TableActionsItem
-            icon={<Tag className="size-3.5 text-slate-700" aria-hidden="true" />}
+            icon={<Tag className="size-[18px] text-slate-700" aria-hidden="true" />}
             className="text-slate-800 hover:bg-slate-100 hover:text-slate-900"
             onClick={() => {
               setActiveDropdownId(null)
@@ -118,7 +118,7 @@ export function FinanceVenuesPage() {
             Add Tags
           </TableActionsItem>
           <TableActionsItem
-            icon={<AlertTriangle className="size-3.5 text-slate-700" aria-hidden="true" />}
+            icon={<AlertTriangle className="size-[18px] text-slate-700" aria-hidden="true" />}
             className="text-slate-800 hover:bg-slate-100 hover:text-slate-900"
             onClick={() => {
               setActiveDropdownId(null)
@@ -128,7 +128,7 @@ export function FinanceVenuesPage() {
             Escalate
           </TableActionsItem>
           <TableActionsItem
-            icon={<Trash2 className="text-brand-danger size-3.5" aria-hidden="true" />}
+            icon={<Trash2 className="text-brand-danger size-[18px]" aria-hidden="true" />}
             className="text-brand-danger hover:bg-brand-danger/10 hover:text-brand-danger"
             onClick={() => {
               setActiveDropdownId(null)
@@ -242,10 +242,10 @@ export function FinanceVenuesPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-h2 text-brand-text tracking-tight">Venues</h1>
-          <p className="text-body-md text-muted mt-1">
+          <p className="text-body-sm text-muted mt-1 leading-[20px]">
             Manage venue bookings, rentals, deposits, and payments
           </p>
-          <p className="text-body-sm text-muted mt-3">
+          <p className="text-body-sm text-muted mt-3 leading-[20px]">
             <Link to="/finance/dashboard" className="hover:text-brand-text transition-colors">
               Finance Management
             </Link>

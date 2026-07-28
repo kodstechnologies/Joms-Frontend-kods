@@ -128,17 +128,17 @@ export function NotificationSettingsPanel({ value, onChange }: NotificationSetti
 
   const query = search.trim().toLowerCase()
 
-  const filterItems = (items: typeof GENERAL_ITEMS) =>
-    query
-      ? items.filter(
-          (item) =>
-            item.label.toLowerCase().includes(query) ||
-            item.description.toLowerCase().includes(query),
-        )
-      : items
+  const groups = useMemo(() => {
+    const filterItems = (items: typeof GENERAL_ITEMS) =>
+      query
+        ? items.filter(
+            (item) =>
+              item.label.toLowerCase().includes(query) ||
+              item.description.toLowerCase().includes(query),
+          )
+        : items
 
-  const groups = useMemo(
-    () => [
+    return [
       {
         key: 'general' as const,
         title: 'General Notifications',
@@ -187,9 +187,8 @@ export function NotificationSettingsPanel({ value, onChange }: NotificationSetti
             adminPanel: { ...value.adminPanel, [key]: checked },
           }),
       },
-    ],
-    [value, onChange, query],
-  )
+    ]
+  }, [value, onChange, query])
 
   const visibleGroups = groups.filter((group) => group.items.length > 0)
 

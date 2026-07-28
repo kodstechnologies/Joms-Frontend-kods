@@ -67,4 +67,49 @@ export const fetchSettingsLog = async (id: string) => {
   return response.data
 }
 
+export const uploadBrandingAsset = async (kind: 'logo' | 'favicon', file: File) => {
+  const formData = new FormData()
+  formData.append('image', file)
+  formData.append('kind', kind)
+
+  const response = await settingsApiClient.post<ApiEnvelope<{ kind: string; url: string }>>(
+    '/settings/upload/branding',
+    formData,
+    {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    },
+  )
+  return response.data.data
+}
+
+export const fetchErrorTemplates = async () => {
+  const response = await settingsApiClient.get<
+    ApiEnvelope<{ templates: string[]; selectedMessage: string }>
+  >('/settings/platform/error-templates')
+  return response.data.data
+}
+
+export const createErrorTemplate = async (message: string) => {
+  const response = await settingsApiClient.post<ApiEnvelope<{ templates: string[] }>>(
+    '/settings/platform/error-templates',
+    { message },
+  )
+  return response.data.data.templates
+}
+
+export const updateErrorTemplate = async (index: number, message: string) => {
+  const response = await settingsApiClient.patch<ApiEnvelope<{ templates: string[] }>>(
+    `/settings/platform/error-templates/${index}`,
+    { message },
+  )
+  return response.data.data.templates
+}
+
+export const deleteErrorTemplate = async (index: number) => {
+  const response = await settingsApiClient.delete<ApiEnvelope<{ templates: string[] }>>(
+    `/settings/platform/error-templates/${index}`,
+  )
+  return response.data.data.templates
+}
+
 export type { ExpertSettings, VenueSettings, ServiceSettings }

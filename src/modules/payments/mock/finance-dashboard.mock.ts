@@ -157,8 +157,8 @@ export type RevenueCategoryPoint = {
 
 export const revenueByCategoryMock: RevenueCategoryPoint[] = [
   { name: 'Services', percent: 45, amount: 450000, color: '#FBC078' },
-  { name: 'Memberships', percent: 28, amount: 280000, color: '#60A5FA' },
-  { name: 'Events', percent: 18, amount: 180000, color: '#22C55E' },
+  { name: 'Memberships', percent: 28, amount: 280000, color: '#1447E6' },
+  { name: 'Events', percent: 18, amount: 180000, color: '#00A63E' },
   { name: 'Venues', percent: 9, amount: 90000, color: '#E5E7EB' },
 ]
 
@@ -186,9 +186,9 @@ export type EscrowStatusItem = {
 
 export const escrowStatusMock: EscrowStatusItem[] = [
   { label: 'Active Services', value: 450000, color: '#FBC078' },
-  { label: 'Milestone hold', value: 280000, color: '#60A5FA' },
-  { label: 'Dispute hold', value: 45500, color: '#F97316' },
-  { label: 'Ready to release', value: 67490, color: '#22C55E' },
+  { label: 'Milestone hold', value: 280000, color: '#1447E6' },
+  { label: 'Dispute hold', value: 45500, color: '#F54900' },
+  { label: 'Ready to release', value: 67490, color: '#00A63E' },
 ]
 
 export const totalEscrowAmount = 843290

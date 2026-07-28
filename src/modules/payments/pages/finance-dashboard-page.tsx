@@ -35,18 +35,18 @@ import {
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
 
-const BRAND_POSITIVE = '#00a63e'
-const BRAND_ACCENT = '#f6cb86'
-const BRAND_ACTION = '#155dfc'
-const BRAND_MUTED = 'rgba(255,255,255,0.5)'
+const BRAND_GREEN = 'var(--brand-green)'
+const BRAND_ORANGE = 'var(--brand-orange)'
+const BRAND_BLUE = 'var(--brand-blue)'
+const BRAND_MUTED = 'var(--brand-muted)'
 
 const tooltipStyle = {
-  background: 'rgba(5,5,5,0.95)',
-  border: '1px solid rgba(255,255,255,0.08)',
-  borderRadius: 10,
+  background: 'var(--brand-card)',
+  border: 'none',
+  borderRadius: 'var(--brand-radius-lg, 10px)',
   padding: '10px 12px',
-  color: 'rgba(226,232,240,0.95)',
-  boxShadow: '0 16px 40px rgba(0,0,0,0.45)',
+  color: 'var(--brand-text-dark)',
+  boxShadow: '0 16px 40px rgba(0,0,0,0.1)',
 }
 
 function ChartCard({
@@ -89,7 +89,7 @@ function TrendBadge({ change, changeNote }: Pick<TrendMetric, 'change' | 'change
 
 function SummaryCard({ metric }: { metric: TrendMetric }) {
   return (
-    <div className="radius-lg bg-brand-surface border border-white/[0.06] p-5">
+    <div className="radius-lg bg-brand-surface flex h-[130px] flex-col justify-center border border-white/[0.06] p-5">
       <p className="text-body-sm-medium text-muted">{metric.label}</p>
       <p className="text-h2 text-brand-text mt-2 tracking-tight">{metric.value}</p>
       <TrendBadge change={metric.change} changeNote={metric.changeNote} />
@@ -99,7 +99,7 @@ function SummaryCard({ metric }: { metric: TrendMetric }) {
 
 function MetricCard({ metric }: { metric: TrendMetric }) {
   return (
-    <div className="radius-lg bg-brand-surface border border-white/[0.06] p-4">
+    <div className="radius-lg bg-brand-surface flex h-[130px] flex-col justify-center border border-white/[0.06] p-4">
       <p className="text-body-sm-medium text-muted">{metric.label}</p>
       <p className="text-h3 text-brand-text mt-2 tracking-tight">{metric.value}</p>
       <TrendBadge change={metric.change} changeNote={metric.changeNote} />
@@ -111,23 +111,21 @@ function KeyMetricCard({ metric }: { metric: KeyMetric }) {
   const Icon = metric.icon
 
   return (
-    <div className="radius-lg bg-brand-surface flex items-center justify-between gap-3 border border-white/[0.06] p-4">
-      <div className="min-w-0">
+    <div className="radius-lg bg-brand-surface flex h-[130px] flex-col justify-between border border-white/[0.06] p-4">
+      <div className="mb-2 flex items-center justify-between gap-3">
         <p className="text-body-sm-medium text-muted">{metric.label}</p>
-        <p className="text-h4 text-brand-text mt-1.5 tracking-tight">{metric.value}</p>
-        {metric.subtext ? (
-          <p className="text-body-sm-medium text-muted mt-1.5">{metric.subtext}</p>
-        ) : (
-          <div className="mt-2">
-            <span className="text-body-sm-semibold text-brand-positive inline-flex items-center gap-1">
-              <TrendingUp className="size-3" />
-              {metric.change}
-            </span>
-          </div>
-        )}
+        <Icon className="text-muted size-4" />
       </div>
-      <div className="text-muted grid size-10 shrink-0 place-items-center rounded-lg border border-white/10 bg-white/5">
-        <Icon className="size-4" />
+      <div className="mt-auto flex items-end justify-between gap-3">
+        <p className="text-h4 text-brand-text tracking-tight">{metric.value}</p>
+        {metric.subtext ? (
+          <p className="text-body-sm-medium text-muted mb-0.5">{metric.subtext}</p>
+        ) : (
+          <span className="text-body-sm-semibold text-brand-positive mb-0.5 flex items-center gap-1">
+            <TrendingUp className="size-3" />
+            {metric.change}
+          </span>
+        )}
       </div>
     </div>
   )
@@ -149,16 +147,18 @@ function RevenueFeeTooltip({
 
   return (
     <div style={tooltipStyle}>
-      <p className="text-body-sm-semibold text-brand-text mb-2">{label}</p>
-      <p className="text-body-sm text-brand-action">
+      <p className="text-body-sm-semibold text-brand-text-dark mb-2">{label}</p>
+      <p className="text-body-sm" style={{ color: BRAND_BLUE }}>
         Platform fee:{' '}
-        <span className="text-brand-text font-semibold">
+        <span className="text-brand-text-dark font-semibold">
           ₹{platformFee?.toLocaleString('en-IN')}
         </span>
       </p>
-      <p className="text-body-sm text-brand-progress">
+      <p className="text-body-sm" style={{ color: BRAND_GREEN }}>
         Revenue:{' '}
-        <span className="text-brand-text font-semibold">₹{revenue?.toLocaleString('en-IN')}</span>
+        <span className="text-brand-text-dark font-semibold">
+          ₹{revenue?.toLocaleString('en-IN')}
+        </span>
       </p>
     </div>
   )
@@ -181,17 +181,20 @@ function MonthlyComparisonTooltip({
 
   return (
     <div style={tooltipStyle}>
-      <p className="text-body-sm-semibold text-brand-text mb-2">{label}</p>
-      <p className="text-body-sm text-brand-action">
-        MRR: <span className="text-brand-text font-semibold">₹{mrr?.toLocaleString('en-IN')}</span>
+      <p className="text-body-sm-semibold text-brand-text-dark mb-2">{label}</p>
+      <p className="text-body-sm" style={{ color: BRAND_BLUE }}>
+        MRR:{' '}
+        <span className="text-brand-text-dark font-semibold">₹{mrr?.toLocaleString('en-IN')}</span>
       </p>
-      <p className="text-body-sm text-brand-accent">
+      <p className="text-body-sm" style={{ color: BRAND_ORANGE }}>
         Net Profit:{' '}
-        <span className="text-brand-text font-semibold">₹{netProfit?.toLocaleString('en-IN')}</span>
+        <span className="text-brand-text-dark font-semibold">
+          ₹{netProfit?.toLocaleString('en-IN')}
+        </span>
       </p>
-      <p className="text-body-sm text-brand-progress">
+      <p className="text-body-sm" style={{ color: BRAND_GREEN }}>
         Total Revenue:{' '}
-        <span className="text-brand-text font-semibold">
+        <span className="text-brand-text-dark font-semibold">
           ₹{totalRevenue?.toLocaleString('en-IN')}
         </span>
       </p>
@@ -212,10 +215,10 @@ function WeeklyPayoutTooltip({
 
   return (
     <div style={tooltipStyle}>
-      <p className="text-body-sm-semibold text-brand-text mb-1">{label}</p>
+      <p className="text-body-sm-semibold text-brand-text-dark mb-1">{label}</p>
       <p className="text-body-sm text-muted">
         Amount:{' '}
-        <span className="text-brand-text font-semibold">
+        <span className="text-brand-text-dark font-semibold">
           ₹{payload[0]?.value?.toLocaleString('en-IN')}
         </span>
       </p>
@@ -300,9 +303,9 @@ export function FinanceDashboardPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-        <ChartCard title="Revenue & Fee Trends">
-          <div className="h-[260px] w-full">
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
+        <ChartCard title="Revenue & Fee Trends" className="xl:col-span-2">
+          <div className="h-[300px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <ComposedChart
                 data={revenueFeeTrendsMock}
@@ -310,12 +313,12 @@ export function FinanceDashboardPage() {
               >
                 <defs>
                   <linearGradient id="revenueAreaFill" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor={BRAND_POSITIVE} stopOpacity={0.35} />
-                    <stop offset="100%" stopColor={BRAND_POSITIVE} stopOpacity={0.02} />
+                    <stop offset="0%" stopColor={BRAND_GREEN} stopOpacity={0.35} />
+                    <stop offset="100%" stopColor={BRAND_GREEN} stopOpacity={0.02} />
                   </linearGradient>
                   <linearGradient id="platformFeeAreaFill" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor={BRAND_ACTION} stopOpacity={0.45} />
-                    <stop offset="100%" stopColor={BRAND_ACTION} stopOpacity={0.02} />
+                    <stop offset="0%" stopColor={BRAND_BLUE} stopOpacity={0.45} />
+                    <stop offset="100%" stopColor={BRAND_BLUE} stopOpacity={0.02} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid stroke="rgba(255,255,255,0.04)" vertical={false} />
@@ -337,14 +340,14 @@ export function FinanceDashboardPage() {
                 <Area
                   type="monotone"
                   dataKey="revenue"
-                  stroke={BRAND_POSITIVE}
+                  stroke={BRAND_GREEN}
                   strokeWidth={2}
                   fill="url(#revenueAreaFill)"
                 />
                 <Area
                   type="monotone"
                   dataKey="platformFee"
-                  stroke={BRAND_ACTION}
+                  stroke={BRAND_BLUE}
                   strokeWidth={2}
                   fill="url(#platformFeeAreaFill)"
                 />
@@ -353,17 +356,17 @@ export function FinanceDashboardPage() {
           </div>
         </ChartCard>
 
-        <ChartCard title="Revenue by category">
-          <div className="flex flex-col items-center gap-6 sm:flex-row sm:items-center">
-            <div className="h-[220px] w-full sm:w-[48%]">
+        <ChartCard title="Revenue by category" className="xl:col-span-1">
+          <div className="flex h-full min-h-[300px] flex-col items-center justify-center gap-6 xl:flex-row">
+            <div className="h-[220px] w-[220px] shrink-0">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
                     data={revenueByCategoryMock}
                     dataKey="amount"
                     nameKey="name"
-                    innerRadius={58}
-                    outerRadius={92}
+                    innerRadius={60}
+                    outerRadius={95}
                     stroke="rgba(255,255,255,0.06)"
                     strokeWidth={2}
                   >
@@ -374,7 +377,7 @@ export function FinanceDashboardPage() {
                 </PieChart>
               </ResponsiveContainer>
             </div>
-            <div className="w-full sm:w-[52%]">
+            <div className="w-full flex-1">
               <CategoryLegend items={revenueByCategoryMock} />
             </div>
           </div>
@@ -387,7 +390,7 @@ export function FinanceDashboardPage() {
             <BarChart
               data={monthlyComparisonMock}
               margin={{ left: 0, right: 8, top: 8, bottom: 0 }}
-              barGap={2}
+              barGap={6}
             >
               <CartesianGrid stroke="rgba(255,255,255,0.04)" vertical={false} />
               <XAxis
@@ -404,31 +407,31 @@ export function FinanceDashboardPage() {
                 tick={{ fill: BRAND_MUTED, fontSize: 11 }}
                 tickFormatter={(v) => v.toLocaleString('en-IN')}
               />
-              <Tooltip content={<MonthlyComparisonTooltip />} />
+              <Tooltip content={<MonthlyComparisonTooltip />} cursor={{ fill: 'transparent' }} />
               <Legend
                 wrapperStyle={{ color: BRAND_MUTED, fontSize: 12, paddingTop: 12 }}
                 formatter={(value) => <span className="text-body-sm text-muted">{value}</span>}
               />
               <Bar
+                dataKey="totalRevenue"
+                name="Total Revenue"
+                fill={BRAND_GREEN}
+                radius={[3, 3, 0, 0]}
+                maxBarSize={32}
+              />
+              <Bar
                 dataKey="mrr"
                 name="MRR"
-                fill={BRAND_ACTION}
+                fill={BRAND_BLUE}
                 radius={[3, 3, 0, 0]}
-                maxBarSize={18}
+                maxBarSize={32}
               />
               <Bar
                 dataKey="netProfit"
                 name="Net Profit"
-                fill={BRAND_ACCENT}
+                fill={BRAND_ORANGE}
                 radius={[3, 3, 0, 0]}
-                maxBarSize={18}
-              />
-              <Bar
-                dataKey="totalRevenue"
-                name="Total Revenue"
-                fill={BRAND_POSITIVE}
-                radius={[3, 3, 0, 0]}
-                maxBarSize={18}
+                maxBarSize={32}
               />
             </BarChart>
           </ResponsiveContainer>
@@ -466,7 +469,7 @@ export function FinanceDashboardPage() {
         </ChartCard>
 
         <ChartCard title="Weekly Payout Schedule">
-          <div className="h-[260px] w-full">
+          <div className="h-[280px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
                 data={weeklyPayoutScheduleMock}
@@ -487,13 +490,13 @@ export function FinanceDashboardPage() {
                   tick={{ fill: BRAND_MUTED, fontSize: 11 }}
                   tickFormatter={(v) => v.toLocaleString('en-IN')}
                 />
-                <Tooltip content={<WeeklyPayoutTooltip />} />
+                <Tooltip content={<WeeklyPayoutTooltip />} cursor={{ fill: 'transparent' }} />
                 <Bar
                   dataKey="amount"
                   name="Amount"
-                  fill={BRAND_ACCENT}
+                  fill="var(--brand-accent)"
                   radius={[4, 4, 0, 0]}
-                  maxBarSize={40}
+                  maxBarSize={48}
                 />
               </BarChart>
             </ResponsiveContainer>

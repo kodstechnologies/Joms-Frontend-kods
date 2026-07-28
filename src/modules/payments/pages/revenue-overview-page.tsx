@@ -164,7 +164,7 @@ export function RevenueOverviewPage() {
               if (input) input.indeterminate = someVisibleSelected && !allVisibleSelected
             }}
             onChange={toggleVisibleRows}
-            className="rounded border-slate-700 bg-transparent"
+            className="h-[18px] w-[18px] rounded border-slate-700 bg-transparent"
           />
         ),
         cell: ({ row }) => (
@@ -174,7 +174,7 @@ export function RevenueOverviewPage() {
             checked={selectedRowIds.includes(row.original.id)}
             onChange={() => toggleRowSelection(row.original.id)}
             onClick={(event) => event.stopPropagation()}
-            className="rounded border-slate-700 bg-transparent"
+            className="h-[18px] w-[18px] rounded border-slate-700 bg-transparent"
           />
         ),
         meta: {
@@ -246,10 +246,10 @@ export function RevenueOverviewPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-h2 text-brand-text tracking-tight">Revenue Overview</h1>
-          <p className="text-body-md text-muted mt-1">
+          <p className="text-body-sm text-muted mt-1 leading-[20px]">
             Manage and monitor all financial transactions
           </p>
-          <p className="text-body-sm text-muted mt-3">
+          <p className="text-body-sm text-muted mt-3 leading-[20px]">
             <Link to="/finance/dashboard" className="hover:text-brand-text transition-colors">
               Finance Management
             </Link>

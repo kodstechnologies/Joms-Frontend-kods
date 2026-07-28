@@ -126,7 +126,7 @@ export function DataTable<TData>({
               onChange={(event) => onSearchChange(event.target.value)}
               placeholder={searchPlaceholder}
               aria-label={`Search ${resourceLabel}`}
-              className="ui-table-search"
+              className="ui-table-search h-[50px]"
             />
           </div>
 
@@ -206,8 +206,9 @@ export function DataTable<TData>({
                         {flexRender(header.column.columnDef.header, header.getContext())}
                         {header.column.id !== 'select' &&
                           header.column.id !== 'actions' &&
+                          header.column.getCanSort() &&
                           showSortIcons && (
-                            <ArrowUpDown className="size-3.5 text-white/80" aria-hidden="true" />
+                            <ArrowUpDown className="text-muted/50 size-[18px]" aria-hidden="true" />
                           )}
                       </span>
                     )}

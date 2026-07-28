@@ -14,4 +14,6 @@ export const languageOptions = ['English', 'Hindi', 'Tamil']
 
 export const refreshIntervalOptions = ['15 Seconds', '30 Seconds', '60 Seconds', '5 Minutes']
 
-export const exportFormatOptions = ['CSV', 'XLSX', 'PDF']
+export const exportFormatOptions = ['CSV', 'PDF'] as const
+
+export type ExportFormatOption = (typeof exportFormatOptions)[number]

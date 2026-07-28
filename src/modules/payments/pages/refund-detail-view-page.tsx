@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { useState } from 'react'
-import { ArrowLeft, Check, Clock, Flag, X } from 'lucide-react'
+import { ArrowLeft, Check, Flag, X } from 'lucide-react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 
@@ -11,8 +11,8 @@ import { cn } from '@/shared/lib/cn'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 
 const cardClass = 'radius-lg border border-white/[0.06] bg-brand-surface p-4 sm:p-5'
-const sectionTitleClass = 'text-body-md-semibold text-brand-text'
-const sectionSubtitleClass = 'text-body-sm text-muted mt-1'
+const sectionTitleClass = 'text-body-md-semibold text-brand-text leading-[20px]'
+const sectionSubtitleClass = 'text-body-sm text-muted mt-1 leading-[20px]'
 const labelClass = 'text-body-sm text-muted'
 const valueClass = 'text-body-sm-medium text-brand-text'
 const textPanelClass =
@@ -29,7 +29,7 @@ function InnerCard({
 }) {
   return (
     <section className={cn(cardClass, 'p-5')}>
-      <div className="mb-3 flex items-center gap-2">
+      <div className={cn('mb-3', icon && 'flex items-center gap-2')}>
         {icon}
         <h3 className={sectionTitleClass}>{title}</h3>
       </div>
@@ -86,7 +86,7 @@ export function RefundDetailViewPage() {
           <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
           <span>Payment Detail View</span>
         </button>
-        <p className="text-body-sm text-muted mt-2 pl-7">
+        <p className="text-body-sm text-muted mt-2 pl-7 leading-[20px]">
           <Link to="/finance/refunds" className="hover:text-brand-text transition-colors">
             Refunds & Chargebacks
           </Link>
@@ -129,65 +129,59 @@ export function RefundDetailViewPage() {
             />
           </InnerCard>
 
-          <InnerCard
-            title="Reason"
-            icon={<Clock className="text-muted size-4" aria-hidden="true" />}
-          >
+          <InnerCard title="Reason">
             <TextBlock>{detail.reason}</TextBlock>
           </InnerCard>
 
-          <InnerCard
-            title="Admin Notes"
-            icon={<Clock className="text-muted size-4" aria-hidden="true" />}
-          >
+          <InnerCard title="Admin Notes">
             <TextBlock>{detail.adminNotes}</TextBlock>
           </InnerCard>
         </div>
+      </section>
 
-        <footer className="mt-5 flex flex-col gap-3 border-t border-white/5 pt-5 sm:flex-row sm:items-center sm:justify-between">
+      <footer className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <button
+          type="button"
+          onClick={() => navigateBackOrFallback(navigate, '/finance/refunds')}
+          className="ui-cta ui-cta-secondary"
+        >
+          Close
+        </button>
+        <div className="flex flex-wrap items-center gap-3">
           <button
             type="button"
-            onClick={() => navigateBackOrFallback(navigate, '/finance/refunds')}
+            onClick={() => toast.success('Refund issued')}
+            className="ui-cta ui-cta-positive"
+          >
+            <Check className="icon-sm shrink-0" />
+            Issue Refund
+          </button>
+          <button
+            type="button"
+            onClick={() => toast.error('Refund denied')}
+            className="ui-cta ui-cta-negative"
+          >
+            <X className="icon-sm shrink-0" />
+            Deny Refund
+          </button>
+          <button
+            type="button"
+            onClick={() => setIsPartialRefundOpen(true)}
             className="ui-cta ui-cta-secondary"
           >
-            Close
+            <Flag className="icon-sm shrink-0" />
+            Partial Refund
           </button>
-          <div className="flex flex-wrap items-center gap-3">
-            <button
-              type="button"
-              onClick={() => toast.success('Refund issued')}
-              className="ui-cta ui-cta-positive"
-            >
-              <Check className="icon-sm shrink-0" />
-              Issue Refund
-            </button>
-            <button
-              type="button"
-              onClick={() => toast.error('Refund denied')}
-              className="ui-cta ui-cta-negative"
-            >
-              <X className="icon-sm shrink-0" />
-              Deny Refund
-            </button>
-            <button
-              type="button"
-              onClick={() => setIsPartialRefundOpen(true)}
-              className="ui-cta ui-cta-secondary"
-            >
-              <Flag className="icon-sm shrink-0" />
-              Partial Refund
-            </button>
-            <button
-              type="button"
-              onClick={() => setIsEscalateOpen(true)}
-              className="ui-cta ui-cta-secondary"
-            >
-              <Flag className="icon-sm shrink-0" />
-              Escalate
-            </button>
-          </div>
-        </footer>
-      </section>
+          <button
+            type="button"
+            onClick={() => setIsEscalateOpen(true)}
+            className="ui-cta ui-cta-secondary"
+          >
+            <Flag className="icon-sm shrink-0" />
+            Escalate
+          </button>
+        </div>
+      </footer>
 
       <IssuePartialRefundModal
         open={isPartialRefundOpen}

@@ -691,7 +691,7 @@ const PageLoader = () => (
 
 export function AppRouter() {
   return (
-    <BrowserRouter future={{ v7_relativeSplatPath: true }}>
+    <BrowserRouter future={{ v7_relativeSplatPath: true, v7_startTransition: true }}>
       <Routes>
         <Route
           path="/auth/login"

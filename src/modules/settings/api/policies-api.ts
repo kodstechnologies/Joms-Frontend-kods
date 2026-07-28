@@ -1,6 +1,12 @@
 import { settingsApiClient } from '@/shared/lib/axios'
 
-import type { PolicyItem, PolicyStatus, PolicyVersion } from '../types/settings'
+import type {
+  PolicyApplication,
+  PolicyItem,
+  PolicyNotifyVia,
+  PolicyStatus,
+  PolicyVersion,
+} from '../types/settings'
 
 type ApiEnvelope<T> = {
   success: boolean
@@ -8,8 +14,10 @@ type ApiEnvelope<T> = {
   data: T
 }
 
-export const fetchPolicies = async () => {
-  const response = await settingsApiClient.get<ApiEnvelope<PolicyItem[]>>('/settings/policies')
+export const fetchPolicies = async (application?: PolicyApplication) => {
+  const response = await settingsApiClient.get<ApiEnvelope<PolicyItem[]>>('/settings/policies', {
+    params: application ? { application } : undefined,
+  })
   return response.data.data
 }
 
@@ -30,12 +38,17 @@ export const fetchPolicyVersions = async (slug: string) => {
 export const createPolicy = async (payload: {
   slug: string
   title: string
+  application?: PolicyApplication
   version: string
   status?: PolicyStatus
   effectiveDate?: string
+  effectiveAt?: string | null
   author?: string
   changeSummary?: string
   content?: string
+  requireReConsent?: boolean
+  blockAppUsageUntilAccepted?: boolean
+  notifyVia?: PolicyNotifyVia
 }) => {
   const response = await settingsApiClient.post<ApiEnvelope<PolicyItem>>(
     '/settings/policies',
@@ -61,9 +74,13 @@ export const createPolicyVersion = async (
     version: string
     status?: PolicyStatus
     effectiveDate?: string
+    effectiveAt?: string | null
     author?: string
     changeSummary?: string
     content?: string
+    requireReConsent?: boolean
+    blockAppUsageUntilAccepted?: boolean
+    notifyVia?: PolicyNotifyVia
   },
 ) => {
   const response = await settingsApiClient.post<ApiEnvelope<PolicyVersion>>(

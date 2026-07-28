@@ -2,23 +2,32 @@ import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
 import {
+  createErrorTemplate,
+  deleteErrorTemplate,
+  fetchErrorTemplates,
   fetchSettings,
   fetchSettingsLogs,
   resetSettings,
+  updateErrorTemplate,
   updateSettings,
 } from '../api/settings-api'
 import type { ModuleSettingsMap, SettingsModule } from '../types/settings'
+import { getModulePlaceholder, mergeWithDefaults } from '../utils/branding-defaults'
 
 export const settingsKeys = {
   all: ['settings'] as const,
   module: (module: SettingsModule) => [...settingsKeys.all, module] as const,
   logs: (params?: object) => [...settingsKeys.all, 'logs', params] as const,
+  errorTemplates: () => [...settingsKeys.all, 'platform', 'error-templates'] as const,
 }
 
 export const useSettingsModule = <M extends SettingsModule>(module: M) =>
   useQuery({
     queryKey: settingsKeys.module(module),
     queryFn: () => fetchSettings(module),
+    // Keep UI filled with general defaults while loading / if the request fails.
+    placeholderData: getModulePlaceholder(module),
+    retry: 1,
   })
 
 export const useUpdateSettings = <M extends SettingsModule>(module: M) => {
@@ -28,6 +37,9 @@ export const useUpdateSettings = <M extends SettingsModule>(module: M) => {
     mutationFn: (config: ModuleSettingsMap[M]) => updateSettings(module, config),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: settingsKeys.module(module) })
+      if (module === 'platform') {
+        void queryClient.invalidateQueries({ queryKey: ['settings', 'public', 'maintenance'] })
+      }
     },
   })
 }
@@ -39,6 +51,9 @@ export const useResetSettings = <M extends SettingsModule>(module: M) => {
     mutationFn: () => resetSettings(module),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: settingsKeys.module(module) })
+      if (module === 'platform') {
+        void queryClient.invalidateQueries({ queryKey: ['settings', 'public', 'maintenance'] })
+      }
     },
   })
 }
@@ -47,6 +62,7 @@ export const useResetSettings = <M extends SettingsModule>(module: M) => {
  * Local editable draft of a settings config, seeded from query data once it
  * loads (and re-seeded whenever the query data reference changes, e.g. after
  * a reset). Syncing happens during render rather than in an effect.
+ * Always falls back to defaults when API data is missing.
  */
 export function useSettingsDraft<T>(queryData: { config: T } | undefined, defaults: T) {
   const [draft, setDraft] = useState<T>(defaults)
@@ -54,7 +70,7 @@ export function useSettingsDraft<T>(queryData: { config: T } | undefined, defaul
 
   if (queryData && queryData !== hydratedData) {
     setHydratedData(queryData)
-    setDraft(queryData.config)
+    setDraft(mergeWithDefaults(defaults, queryData.config))
   }
 
   return [draft, setDraft] as const
@@ -70,5 +86,48 @@ export function useSettingsLogs(params?: {
   return useQuery({
     queryKey: settingsKeys.logs(params),
     queryFn: () => fetchSettingsLogs(params),
+    retry: 1,
+  })
+}
+
+export function useErrorTemplates() {
+  return useQuery({
+    queryKey: settingsKeys.errorTemplates(),
+    queryFn: fetchErrorTemplates,
+    retry: 1,
+  })
+}
+
+export function useCreateErrorTemplate() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (message: string) => createErrorTemplate(message),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: settingsKeys.errorTemplates() })
+      void queryClient.invalidateQueries({ queryKey: settingsKeys.module('platform') })
+    },
+  })
+}
+
+export function useUpdateErrorTemplate() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ index, message }: { index: number; message: string }) =>
+      updateErrorTemplate(index, message),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: settingsKeys.errorTemplates() })
+      void queryClient.invalidateQueries({ queryKey: settingsKeys.module('platform') })
+    },
+  })
+}
+
+export function useDeleteErrorTemplate() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (index: number) => deleteErrorTemplate(index),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: settingsKeys.errorTemplates() })
+      void queryClient.invalidateQueries({ queryKey: settingsKeys.module('platform') })
+    },
   })
 }

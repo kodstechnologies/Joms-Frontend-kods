@@ -9,7 +9,7 @@ import {
   publishPolicy,
   updatePolicy,
 } from '../api/policies-api'
-import type { PolicyStatus } from '../types/settings'
+import type { PolicyApplication, PolicyStatus } from '../types/settings'
 
 export const policyKeys = {
   all: ['settings', 'policies'] as const,
@@ -18,10 +18,10 @@ export const policyKeys = {
   versions: (slug: string) => [...policyKeys.all, 'versions', slug] as const,
 }
 
-export const usePolicies = () =>
+export const usePolicies = (application?: PolicyApplication) =>
   useQuery({
-    queryKey: policyKeys.list(),
-    queryFn: fetchPolicies,
+    queryKey: [...policyKeys.list(), application ?? 'all'] as const,
+    queryFn: () => fetchPolicies(application),
   })
 
 export const usePolicy = (slug: string) =>
@@ -69,9 +69,13 @@ export const useCreatePolicyVersion = (slug: string) => {
       version: string
       status?: PolicyStatus
       effectiveDate?: string
+      effectiveAt?: string | null
       author?: string
       changeSummary?: string
       content?: string
+      requireReConsent?: boolean
+      blockAppUsageUntilAccepted?: boolean
+      notifyVia?: import('../types/settings').PolicyNotifyVia
     }) => createPolicyVersion(slug, payload),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: policyKeys.all })

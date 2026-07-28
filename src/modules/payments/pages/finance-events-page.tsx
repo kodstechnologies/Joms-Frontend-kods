@@ -1,12 +1,11 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { Eye, TrendingUp } from 'lucide-react'
-import { Link } from 'react-router-dom'
+import { Eye, SlidersHorizontal } from 'lucide-react'
+import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
 import {
   financeEventRowsMock,
-  financeEventSummaryMetricsMock,
   type FinanceEventRow,
   type FinanceEventStatus,
 } from '@/modules/payments/mock/finance-events.mock'
@@ -15,35 +14,18 @@ import {
   TableActionsDropdown,
   TableActionsItem,
 } from '@/shared/components/table/table-actions-dropdown'
+import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
 
 const PAGE_SIZE = 10
 
-function SummaryCard({
-  label,
-  value,
-  change,
-  changeNote,
-}: {
-  label: string
-  value: string
-  change: string
-  changeNote: string
-}) {
-  return (
-    <div className="radius-lg bg-brand-surface border border-white/[0.06] p-5">
-      <p className="text-body-sm-medium text-muted">{label}</p>
-      <p className="text-h2 text-brand-text mt-2 tracking-tight">{value}</p>
-      <div className="mt-3 flex flex-wrap items-center gap-2">
-        <span className="text-body-sm-semibold bg-brand-positive/15 text-brand-positive inline-flex items-center gap-1 rounded-md px-2 py-0.5">
-          <TrendingUp className="size-3" />
-          {change}
-        </span>
-        <span className="text-body-sm text-muted">{changeNote}</span>
-      </div>
-    </div>
-  )
-}
+type FinanceEventTab = 'all' | 'ticketing' | 'promotions' | 'publishing'
+const financeEventTabs: Array<{ id: FinanceEventTab; label: string }> = [
+  { id: 'all', label: 'All Transaction' },
+  { id: 'ticketing', label: 'Ticketing' },
+  { id: 'promotions', label: 'Promotions' },
+  { id: 'publishing', label: 'Publishing' },
+]
 
 function getStatusClassName(status: FinanceEventStatus) {
   if (status === 'Paid') return 'border-brand-positive/25 bg-brand-positive/10 text-brand-positive'
@@ -52,6 +34,8 @@ function getStatusClassName(status: FinanceEventStatus) {
 }
 
 export function FinanceEventsPage() {
+  const navigate = useNavigate()
+  const [activeTab, setActiveTab] = useState<FinanceEventTab>('all')
   const [searchQuery, setSearchQuery] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
@@ -101,10 +85,10 @@ export function FinanceEventsPage() {
         label="Open event finance actions"
         isOpen={activeDropdownId === record.id}
         onOpenChange={(open) => setActiveDropdownId(open ? record.id : null)}
-        menuWidth={200}
+        menuWidth={174}
       >
         <TableActionsItem
-          icon={<Eye className="size-3.5 text-slate-700" aria-hidden="true" />}
+          icon={<Eye className="size-[18px] text-slate-700" aria-hidden="true" />}
           className="text-slate-800 hover:bg-slate-100 hover:text-slate-900"
           onClick={() => {
             setActiveDropdownId(null)
@@ -131,7 +115,7 @@ export function FinanceEventsPage() {
               if (input) input.indeterminate = someVisibleSelected && !allVisibleSelected
             }}
             onChange={toggleVisibleRows}
-            className="rounded border-slate-700 bg-transparent"
+            className="h-[18px] w-[18px] rounded border-slate-700 bg-transparent"
           />
         ),
         cell: ({ row }) => (
@@ -141,7 +125,7 @@ export function FinanceEventsPage() {
             checked={selectedRowIds.includes(row.original.id)}
             onChange={() => toggleRowSelection(row.original.id)}
             onClick={(event) => event.stopPropagation()}
-            className="rounded border-slate-700 bg-transparent"
+            className="h-[18px] w-[18px] rounded border-slate-700 bg-transparent"
           />
         ),
         meta: { headerClassName: 'pl-5', cellClassName: 'pl-5' },
@@ -200,23 +184,46 @@ export function FinanceEventsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-h2 text-brand-text tracking-tight">Events</h1>
-        <p className="text-body-md text-muted mt-1">
-          Track event ticket revenue, settlements, and refunds
-        </p>
-        <p className="text-body-sm text-muted mt-3">
-          <Link to="/finance/dashboard" className="hover:text-brand-text transition-colors">
-            Payment & Finance
-          </Link>
-          <span> / </span>
-          <span className="text-brand-text font-semibold">Events</span>
-        </p>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h1 className="text-h2 text-brand-text tracking-tight">Events</h1>
+          <p className="text-body-sm text-muted mt-1 leading-[20px]">
+            Manage and monitor all financial transactions
+          </p>
+          <p className="text-body-sm text-muted mt-3 leading-[20px]">
+            <Link to="/finance/dashboard" className="hover:text-brand-text transition-colors">
+              Finance Management
+            </Link>
+            <span> / </span>
+            <span className="text-brand-text font-semibold">Events</span>
+          </p>
+        </div>
+        <Button className="ui-manage-metrics" onClick={() => navigate('/metrics/finance-events')}>
+          <SlidersHorizontal className="size-4" />
+          Manage Metrics
+        </Button>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {financeEventSummaryMetricsMock.map((metric) => (
-          <SummaryCard key={metric.label} {...metric} />
+      <div className="radius-lg bg-brand-surface flex h-[47px] w-full max-w-[1268px] items-center justify-around border border-white/[0.06] p-1">
+        {financeEventTabs.map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            onClick={() => {
+              setActiveTab(tab.id)
+              setCurrentPage(1)
+              setSearchQuery('')
+              setSelectedRowIds([])
+            }}
+            className={cn(
+              'text-body-sm flex h-[37px] min-w-[169px] items-center justify-center rounded-md px-10 leading-[20px] transition-colors',
+              activeTab === tab.id
+                ? 'border border-white/5 bg-[#141414] font-medium text-white'
+                : 'text-[#FFFFFF] opacity-50 hover:opacity-100',
+            )}
+          >
+            {tab.label}
+          </button>
         ))}
       </div>
 
