@@ -228,16 +228,21 @@ function WeeklyPayoutTooltip({
 
 function CategoryLegend({ items }: { items: RevenueCategoryPoint[] }) {
   return (
-    <div className="space-y-4">
+    <div className="flex flex-col gap-5">
       {items.map((item) => (
-        <div key={item.name} className="text-body-sm flex items-center gap-3">
-          <span className="size-3 shrink-0 rounded-sm" style={{ backgroundColor: item.color }} />
-          <span className="text-muted min-w-[90px]">{item.name}</span>
-          <span className="text-brand-text w-10 font-medium">
+        <div key={item.name} className="flex items-start justify-between gap-4">
+          <div className="flex items-start gap-2">
+            <span
+              className="mt-[3px] inline-block size-3 shrink-0 rounded-full"
+              style={{ backgroundColor: item.color }}
+            />
+            <div>
+              <p className="text-body-sm-medium text-brand-text">{item.name}</p>
+              <p className="text-body-sm text-muted">₹{item.amount.toLocaleString('en-IN')}</p>
+            </div>
+          </div>
+          <span className="text-body-sm-semibold shrink-0" style={{ color: item.color }}>
             {item.percent.toString().padStart(2, '0')}%
-          </span>
-          <span className="text-brand-text ml-auto font-semibold">
-            ₹{item.amount.toLocaleString('en-IN')}
           </span>
         </div>
       ))}
@@ -303,8 +308,8 @@ export function FinanceDashboardPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
-        <ChartCard title="Revenue & Fee Trends" className="xl:col-span-2">
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[652fr_584fr]">
+        <ChartCard title="Revenue & Fee Trends" className="h-[382px]">
           <div className="h-[300px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <ComposedChart

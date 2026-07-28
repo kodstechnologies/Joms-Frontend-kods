@@ -1,7 +1,18 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 import { useNavigate } from 'react-router-dom'
-import { Eye, GitMerge, MessageSquarePlus, Pencil, Tag, Trash2, TrendingUp } from 'lucide-react'
+import {
+  AlertTriangle,
+  ArrowLeftRight,
+  Download,
+  Eye,
+  GitMerge,
+  MessageSquarePlus,
+  Pencil,
+  SlidersHorizontal,
+  Tag,
+  Trash2,
+} from 'lucide-react'
 import { toast } from 'sonner'
 
 import { AddTagModal } from '../components/add-tag-modal'
@@ -16,8 +27,7 @@ import {
   TableActionsDropdown,
   TableActionsItem,
 } from '@/shared/components/table/table-actions-dropdown'
-import { SectionHeader } from '@/shared/components/dashboard/section-header'
-import { StatGrid } from '@/shared/components/dashboard/stat-grid'
+import { StatCard } from '@/shared/components/dashboard/stat-card'
 import { cn } from '@/shared/lib/cn'
 
 const TABS: { key: TicketTab; label: string }[] = [
@@ -75,7 +85,8 @@ export function TicketManagementPage() {
           menuWidth={210}
         >
           <TableActionsItem
-            icon={<Eye className="size-3.5" />}
+            icon={<Eye className="size-3.5 text-slate-700" aria-hidden="true" />}
+            className="text-slate-800 hover:bg-slate-100 hover:text-slate-900"
             onClick={() => {
               setActiveDropdownId(null)
               navigate(`/support/tickets/${id}`)
@@ -84,31 +95,36 @@ export function TicketManagementPage() {
             View Details
           </TableActionsItem>
           <TableActionsItem
-            icon={<Pencil className="size-3.5" />}
+            icon={<Pencil className="size-3.5 text-slate-700" aria-hidden="true" />}
+            className="text-slate-800 hover:bg-slate-100 hover:text-slate-900"
             onClick={() => toast.message('Edit coming soon')}
           >
             Edit Ticket
           </TableActionsItem>
           <TableActionsItem
-            icon={<TrendingUp className="size-3.5" />}
+            icon={<ArrowLeftRight className="size-3.5 text-slate-700" aria-hidden="true" />}
+            className="text-slate-800 hover:bg-slate-100 hover:text-slate-900"
             onClick={() => toast.message('Status change coming soon')}
           >
             Change Status
           </TableActionsItem>
           <TableActionsItem
-            icon={<TrendingUp className="size-3.5" />}
+            icon={<SlidersHorizontal className="size-3.5 text-slate-700" aria-hidden="true" />}
+            className="text-slate-800 hover:bg-slate-100 hover:text-slate-900"
             onClick={() => toast.message('Priority change coming soon')}
           >
             Change Priority
           </TableActionsItem>
           <TableActionsItem
-            icon={<MessageSquarePlus className="size-3.5" />}
+            icon={<MessageSquarePlus className="size-3.5 text-slate-700" aria-hidden="true" />}
+            className="text-slate-800 hover:bg-slate-100 hover:text-slate-900"
             onClick={() => toast.message('Note added (static)')}
           >
             Add internal note
           </TableActionsItem>
           <TableActionsItem
-            icon={<Tag className="size-3.5" />}
+            icon={<Tag className="size-3.5 text-slate-700" aria-hidden="true" />}
+            className="text-slate-800 hover:bg-slate-100 hover:text-slate-900"
             onClick={() => {
               setActiveDropdownId(null)
               setTagModalOpen(true)
@@ -117,19 +133,22 @@ export function TicketManagementPage() {
             Add Tags
           </TableActionsItem>
           <TableActionsItem
-            icon={<TrendingUp className="size-3.5" />}
+            icon={<AlertTriangle className="size-3.5 text-slate-700" aria-hidden="true" />}
+            className="text-slate-800 hover:bg-slate-100 hover:text-slate-900"
             onClick={() => toast.message('Escalation coming soon')}
           >
             Escalate
           </TableActionsItem>
           <TableActionsItem
-            icon={<Trash2 className="size-3.5" />}
+            icon={<Trash2 className="text-brand-danger size-3.5" aria-hidden="true" />}
+            className="text-brand-danger hover:bg-brand-danger/10 hover:text-brand-danger"
             onClick={() => toast.message('Delete coming soon')}
           >
             Delete
           </TableActionsItem>
           <TableActionsItem
-            icon={<GitMerge className="size-3.5" />}
+            icon={<GitMerge className="size-3.5 text-slate-700" aria-hidden="true" />}
+            className="text-slate-800 hover:bg-slate-100 hover:text-slate-900"
             onClick={() => {
               setActiveDropdownId(null)
               setMergeModalOpen(true)
@@ -147,21 +166,33 @@ export function TicketManagementPage() {
     () => [
       {
         id: 'select',
-        header: () => <input type="checkbox" className="rounded border-white/20" />,
-        cell: () => <input type="checkbox" className="rounded border-white/20" />,
-        meta: { headerClassName: 'w-10', cellClassName: 'w-10' },
+        header: () => (
+          <input type="checkbox" aria-label="Select all" className="rounded border-white/20" />
+        ),
+        cell: ({ row }) => (
+          <input
+            type="checkbox"
+            aria-label={`Select ${row.original.id}`}
+            className="rounded border-white/20"
+          />
+        ),
+        meta: { headerClassName: 'pl-5 w-10', cellClassName: 'pl-5 w-10' },
       },
       {
         accessorKey: 'id',
         header: 'Ticket ID',
         cell: ({ row }) => (
-          <span className="text-body-sm text-brand-accent font-mono">#{row.original.id}</span>
+          <span className="text-body-sm-semibold text-brand-text font-mono">
+            #{row.original.id}
+          </span>
         ),
       },
       {
         accessorKey: 'subject',
         header: 'Subject',
-        cell: ({ row }) => <span className="text-sm">{row.original.subject}</span>,
+        cell: ({ row }) => (
+          <span className="text-body-sm text-brand-text">{row.original.subject}</span>
+        ),
       },
       {
         accessorKey: 'status',
@@ -179,9 +210,9 @@ export function TicketManagementPage() {
       { accessorKey: 'slaTimer', header: 'SLA Timer' },
       {
         id: 'actions',
-        header: '',
+        header: 'Actions',
+        meta: { headerClassName: 'pr-5 text-right', cellClassName: 'relative pr-5 text-right' },
         cell: ({ row }) => renderActions(row.original),
-        meta: { headerClassName: 'w-12', cellClassName: 'w-12' },
       },
     ],
     [renderActions],
@@ -189,30 +220,52 @@ export function TicketManagementPage() {
 
   return (
     <div className="space-y-6">
-      <SectionHeader
-        title="Ticket Management"
-        subtitle="Decision-centric workspace for high-impact tickets requiring approval, enforcement, or oversight."
-        actions={[
-          {
-            label: 'Export Data',
-            onClick: () => toast.message('Export coming soon'),
-            variant: 'secondary',
-          },
-          {
-            label: 'Manage Metrics',
-            onClick: () => navigate('/metrics/ticket-management'),
-          },
-        ]}
-      />
+      {/* Header */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h1 className="text-h2 text-brand-text tracking-tight">Ticket Management</h1>
+          <p className="text-body-md text-muted mt-1 leading-[20px]">
+            Decision-centric workspace for high-impact tickets requiring approval, enforcement, or
+            oversight
+          </p>
+        </div>
+        <div className="flex shrink-0 items-center gap-3">
+          <button
+            type="button"
+            onClick={() => toast.message('Export coming soon')}
+            className="ui-cta ui-cta-ghost"
+          >
+            <Download className="icon-sm shrink-0" />
+            Export Data
+          </button>
+          <button
+            type="button"
+            onClick={() => navigate('/metrics/ticket-management')}
+            className="ui-manage-metrics ui-cta ui-cta-primary"
+          >
+            <SlidersHorizontal className="icon-sm shrink-0" />
+            Manage Metrics
+          </button>
+        </div>
+      </div>
 
-      <StatGrid stats={stats} />
+      {/* Stat cards — 4 cols */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {stats.map((stat) => (
+          <StatCard key={stat.title} {...stat} />
+        ))}
+      </div>
 
+      {/* Tab switcher */}
       <div className="radius-lg bg-brand-surface flex gap-1 border border-white/10 p-1">
         {TABS.map((tab) => (
           <button
             key={tab.key}
             type="button"
-            onClick={() => setActiveTab(tab.key)}
+            onClick={() => {
+              setActiveTab(tab.key)
+              setCurrentPage(1)
+            }}
             className={cn(
               'text-body-md-medium flex-1 rounded-lg px-4 py-2.5 transition-colors',
               activeTab === tab.key
@@ -230,8 +283,12 @@ export function TicketManagementPage() {
         data={paginated}
         getRowId={(row) => row.id}
         searchValue={searchQuery}
-        onSearchChange={setSearchQuery}
+        onSearchChange={(val) => {
+          setSearchQuery(val)
+          setCurrentPage(1)
+        }}
         searchPlaceholder="Search by name, ID or profession"
+        advancedFilterLabel="Advance Filters"
         onAdvancedFilter={() => toast.message('Advanced filters coming soon')}
         onExport={() => toast.message('Export coming soon')}
         pagination={{
@@ -241,7 +298,8 @@ export function TicketManagementPage() {
           totalPages,
           onPageChange: setCurrentPage,
         }}
-        resourceLabel="users"
+        resourceLabel="tickets"
+        emptyMessage="No tickets found."
       />
 
       <AddTagModal open={tagModalOpen} onClose={() => setTagModalOpen(false)} />

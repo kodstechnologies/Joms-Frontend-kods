@@ -26,7 +26,9 @@ export type MyTask = {
   direction: string
 }
 
-export type MyTasksGrouped = Record<TaskStatus, MyTask[]>
+export type MyTasksGrouped = Record<TaskStatus, MyTask[]> & {
+  escalated_by_you?: MyTask[]
+}
 
 export type MyTasksResponse = {
   success?: boolean

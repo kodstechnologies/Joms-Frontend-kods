@@ -16,13 +16,14 @@ export type StatCardProps = {
   icon?: LucideIcon
   trend?: StatTrend
   hint?: string
+  className?: string
 }
 
-export function StatCard({ title, value, icon: Icon, trend, hint }: StatCardProps) {
+export function StatCard({ title, value, icon: Icon, trend, hint, className }: StatCardProps) {
   const isUp = trend?.direction === 'up'
 
   return (
-    <DashboardCard className="p-5 sm:p-6">
+    <DashboardCard className={cn('p-5 sm:p-6', className)}>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 space-y-1">
           <p className="text-body-sm-semibold text-muted tracking-wide">{title}</p>

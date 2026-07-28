@@ -58,21 +58,21 @@ export function SupportWorkspacePage() {
           />
         </div>
 
-        <div className="bg-brand-surface rounded-2xl border border-white/10 p-5 lg:col-span-5">
-          <div className="bg-brand-bg mb-5 flex gap-1 rounded-lg border border-white/5 p-1">
+        <div className="radius-lg bg-brand-surface flex flex-col gap-4 border border-white/10 p-5 lg:col-span-5">
+          <div className="radius-lg bg-brand-bg flex gap-1 border border-white/5 p-1">
             {(['intelligence', 'messages'] as const).map((tab) => (
               <button
                 key={tab}
                 type="button"
                 onClick={() => setWorkspaceTab(tab)}
                 className={cn(
-                  'flex-1 rounded-md px-4 py-2 text-sm font-medium capitalize transition-colors',
+                  'text-body-md-medium flex-1 rounded-lg px-4 py-2.5 capitalize transition-colors',
                   workspaceTab === tab
                     ? 'bg-brand-surface text-brand-text'
                     : 'text-muted hover:text-brand-text',
                 )}
               >
-                {tab}
+                {tab === 'intelligence' ? 'Intelligence' : 'Messages'}
               </button>
             ))}
           </div>

@@ -1,7 +1,6 @@
+import { ChevronDown } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { toast } from 'sonner'
-
-import { Button } from '@/shared/components/ui/button'
 
 type TicketCasePanelProps = {
   reporterName: string
@@ -42,7 +41,7 @@ export function TicketCasePanel({
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-body-md-semibold text-brand-text">{reporterName}</span>
-                <span className="text-body-sm-semibold border-brand-positive/30 bg-brand-positive/10 text-brand-positive rounded border px-1.5 py-0.5">
+                <span className="text-body-sm-semibold bg-brand-positive/15 text-brand-positive inline-flex h-5 items-center rounded px-2">
                   USER
                 </span>
               </div>
@@ -51,13 +50,13 @@ export function TicketCasePanel({
           </div>
           <div className="mt-3 flex gap-2">
             <Link to={`/support/past-tickets/${reporterId}`}>
-              <Button variant="secondary" className="text-body-sm">
+              <button type="button" className="ui-cta ui-cta-primary !h-auto px-3 py-1 text-xs">
                 Past Tickets ({pastTicketsCount})
-              </Button>
+              </button>
             </Link>
-            <Button variant="ghost" className="text-body-sm">
+            <button type="button" className="ui-cta ui-cta-primary !h-auto px-3 py-1 text-xs">
               View Profile
-            </Button>
+            </button>
           </div>
         </div>
 
@@ -96,19 +95,20 @@ export function TicketCasePanel({
       </div>
 
       <div className="flex gap-2 border-t border-white/5 p-4">
-        <Button
-          variant="secondary"
-          className="flex-1"
+        <button
+          type="button"
+          className="ui-cta ui-cta-ghost flex-1"
           onClick={onEscalate ?? (() => toast.message('Escalation coming soon'))}
         >
           Escalate
-        </Button>
-        <Button
-          className="flex-1"
+        </button>
+        <button
+          type="button"
+          className="ui-cta ui-cta-primary flex-1"
           onClick={onResolve ?? (() => toast.success('Ticket marked as resolved (static preview)'))}
         >
           Mark as Resolved
-        </Button>
+        </button>
       </div>
     </div>
   )
@@ -118,9 +118,9 @@ function SelectField({ label, value }: { label: string; value: string }) {
   return (
     <label className="block space-y-1.5">
       <span className="text-body-sm text-muted">{label}</span>
-      <div className="radius-md bg-brand-surface flex h-10 items-center justify-between border border-white/10 px-3">
+      <div className="radius-md bg-brand-bg flex h-[42px] items-center justify-between border border-white/10 px-3">
         <span className="text-body-md text-brand-text">{value}</span>
-        <span className="text-muted">▾</span>
+        <ChevronDown className="text-muted size-4 shrink-0" />
       </div>
     </label>
   )

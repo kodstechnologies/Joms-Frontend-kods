@@ -5,7 +5,7 @@ import { toast } from 'sonner'
 import { TicketPriorityBadge } from '../components/ticket-priority-badge'
 import { TicketStatusBadge } from '../components/ticket-status-badge'
 import { chatMessagesMock, closedTicketMock, supportTicketsMock } from '../mock/support.mock'
-import { Button } from '@/shared/components/ui/button'
+import { cn } from '@/shared/lib/cn'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 
 export function TicketDetailPage() {
@@ -17,104 +17,153 @@ export function TicketDetailPage() {
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex items-start gap-3">
         <button
           type="button"
           onClick={() => navigateBackOrFallback(navigate, '/support/tickets')}
-          className="text-muted hover:text-brand-text mt-1 rounded-lg border border-white/10 p-2"
+          className="text-muted hover:text-brand-text mt-1 grid size-6 shrink-0 place-items-center rounded transition-colors"
         >
           <ArrowLeft className="size-4" />
         </button>
         <div>
-          <h1 className="text-h2 text-brand-text font-semibold tracking-tight">
-            Ticket Management
-          </h1>
-          <p className="text-body-md text-muted mt-1">
+          <h1 className="text-h2 text-brand-text tracking-tight">Ticket Management</h1>
+          <p className="text-body-md text-muted mt-1 leading-[20px]">
             Decision-centric workspace for high-impact tickets requiring approval, enforcement, or
             oversight.
           </p>
         </div>
       </div>
 
-      <div className="radius-lg bg-brand-surface border border-white/10 p-6">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <p className="text-body-sm text-muted">Ticket ID</p>
-            <p className="text-body-lg text-brand-accent font-mono font-semibold">#{ticket.id}</p>
+      {/* Ticket info card */}
+      <div className="radius-lg bg-brand-surface border border-white/[0.06] p-5">
+        {/* Top row: ID + status */}
+        <div className="mb-5 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-2">
+            <span className="text-body-sm text-muted">Ticket ID</span>
+            <span className="text-body-md-semibold text-brand-accent font-mono">#{ticket.id}</span>
           </div>
           <TicketStatusBadge status={ticket.status} />
         </div>
 
-        <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <DetailField label="Subject" value={ticket.subject} />
-          <DetailField label="Category" value={ticket.category} />
-          <div>
-            <p className="text-body-sm text-muted">Priority</p>
-            <div className="mt-1">
-              <TicketPriorityBadge priority={ticket.priority} />
-            </div>
-          </div>
-          <DetailField label="Requester" value={ticket.reporter} />
-          <DetailField label="Assigned To" value={ticket.assignedTo} />
-          <DetailField label="Created On" value={ticket.createdAt} />
-          <DetailField label="Assigned On" value={ticket.createdAt} />
-          {ticket.status === 'closed' ? (
-            <DetailField label="Resolved On" value={ticket.createdAt} />
-          ) : null}
+        {/* Detail pills row */}
+        <div className="flex flex-wrap gap-3">
+          <InfoPill label="Subject" value={ticket.subject} width={203} />
+          <InfoPill label="Category" value={ticket.category} width={67} />
+          <InfoPill
+            label="Priority"
+            value={<TicketPriorityBadge priority={ticket.priority} />}
+            width={70}
+          />
+          <InfoPill label="Requester" value={ticket.reporter} width={108} />
+          <InfoPill label="Assigned To" value={ticket.assignedTo ?? '—'} width={196} />
+          <InfoPill label="Created On" value={ticket.createdAt} width={126} />
+          <InfoPill label="Assigned On" value={ticket.createdAt} width={126} />
+          {ticket.status === 'closed' && (
+            <InfoPill label="Resolved On" value={ticket.createdAt} width={126} />
+          )}
         </div>
+
+        {/* Description */}
+        {ticket.description ? (
+          <div className="mt-5">
+            <p className="text-body-sm text-muted mb-2">Description</p>
+            <p className="text-body-md text-brand-text/80 leading-relaxed">{ticket.description}</p>
+          </div>
+        ) : null}
       </div>
 
-      <section className="space-y-3">
-        <h2 className="text-body-md-semibold text-brand-text">Description</h2>
-        <div className="radius-lg bg-brand-surface text-body-md text-brand-text/80 border border-white/10 p-4">
-          {ticket.description ?? 'No description provided.'}
-        </div>
-      </section>
-
+      {/* Conversation History */}
       <section className="space-y-3">
         <h2 className="text-body-md-semibold text-brand-text">Conversation History</h2>
-        <div className="radius-lg bg-brand-surface space-y-4 border border-white/10 p-5">
+        <div className="radius-lg bg-brand-surface space-y-4 border border-white/[0.06] p-5">
           {chatMessagesMock.map((msg) => (
             <div
               key={msg.id}
-              className={`flex gap-3 ${msg.role === 'agent' ? 'flex-row-reverse' : 'flex-row'}`}
+              className={cn('flex gap-3', msg.role === 'agent' ? 'flex-row-reverse' : 'flex-row')}
             >
-              <div className="size-8 shrink-0 rounded-full bg-white/10" />
-              <div className={`max-w-[75%] ${msg.role === 'agent' ? 'text-right' : 'text-left'}`}>
-                <div className="radius-lg bg-brand-surface text-body-md text-brand-text/80 border border-white/5 px-4 py-3">
+              {/* Avatar */}
+              <div className="size-[50px] shrink-0 rounded-full bg-white/10" />
+              <div
+                className={cn(
+                  'flex min-w-0 flex-1 flex-col gap-1',
+                  msg.role === 'agent' ? 'items-end' : 'items-start',
+                )}
+              >
+                <div className="flex items-center gap-2">
+                  <span className="text-body-sm-semibold text-brand-text">{msg.sender}</span>
+                  <span
+                    className={cn(
+                      'text-body-sm-semibold inline-flex h-5 items-center rounded px-2 uppercase',
+                      msg.role === 'user'
+                        ? 'bg-brand-positive/15 text-brand-positive'
+                        : 'bg-brand-action/15 text-brand-action',
+                    )}
+                  >
+                    {msg.role}
+                  </span>
+                </div>
+                <div className="radius-lg bg-brand-bg text-body-md text-brand-text/80 w-full border border-white/[0.06] px-4 py-3">
                   {msg.content}
                 </div>
-                <span className="text-body-sm text-muted mt-1 block">{msg.time}</span>
+                <span className="text-body-sm text-muted">{msg.time}</span>
               </div>
             </div>
           ))}
         </div>
       </section>
 
+      {/* Resolution */}
       {ticket.resolution ? (
         <section className="space-y-3">
           <h2 className="text-body-md-semibold text-brand-text">Resolution</h2>
-          <div className="radius-lg bg-brand-surface text-body-md text-brand-text/80 border border-white/10 p-4">
+          <div className="radius-lg bg-brand-surface text-body-md text-brand-text/80 border border-white/[0.06] p-4 leading-relaxed">
             {ticket.resolution}
           </div>
         </section>
       ) : null}
 
-      <div className="flex justify-between border-t border-white/10 pt-6">
-        <Button variant="secondary" onClick={() => toast.message('Close coming soon')}>
+      {/* Footer */}
+      <div className="flex items-center justify-between border-t border-white/[0.06] pt-5">
+        <button
+          type="button"
+          onClick={() => toast.message('Close coming soon')}
+          className="ui-cta ui-cta-ghost"
+        >
           Close
-        </Button>
-        <Button onClick={() => toast.success('Ticket reopened (static preview)')}>Reopen</Button>
+        </button>
+        <button
+          type="button"
+          onClick={() => toast.success('Ticket reopened (static preview)')}
+          className="ui-cta ui-cta-primary"
+        >
+          Reopen
+        </button>
       </div>
     </div>
   )
 }
 
-function DetailField({ label, value }: { label: string; value: string }) {
+function InfoPill({
+  label,
+  value,
+  width,
+}: {
+  label: string
+  value: React.ReactNode
+  width?: number
+}) {
   return (
-    <div>
-      <p className="text-body-sm text-muted">{label}</p>
-      <p className="text-body-md text-brand-text mt-1">{value}</p>
+    <div
+      className="radius-md bg-brand-bg flex min-h-[44px] flex-col justify-center gap-0.5 border border-white/[0.06] px-3 py-2"
+      style={{ width: width ? `${width}px` : undefined }}
+    >
+      <span className="text-body-sm text-muted leading-[18px]">{label}</span>
+      {typeof value === 'string' ? (
+        <span className="text-body-sm-medium text-brand-text leading-[18px]">{value}</span>
+      ) : (
+        <div className="mt-0.5">{value}</div>
+      )}
     </div>
   )
 }

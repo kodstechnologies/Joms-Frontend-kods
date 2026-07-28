@@ -43,7 +43,46 @@ const formatTaskTime = (value?: string) => {
     : date.toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' })
 }
 
-function TaskCard({ task, onOpen }: { task: MyTask; onOpen: (task: MyTask) => void }) {
+function StatusBadge({ status }: { status: TaskStatus }) {
+  if (status === 'completed') {
+    return (
+      <span
+        className="text-body-sm-semibold inline-flex h-5 items-center rounded px-2"
+        style={{ backgroundColor: 'rgb(0 166 62 / 20%)', color: '#00A63E' }}
+      >
+        Completed
+      </span>
+    )
+  }
+  if (status === 'in_progress') {
+    return (
+      <span
+        className="text-body-sm-semibold inline-flex h-5 items-center rounded px-2"
+        style={{ backgroundColor: 'rgb(20 71 230 / 20%)', color: '#1447E6' }}
+      >
+        In-Progress
+      </span>
+    )
+  }
+  return (
+    <span
+      className="text-body-sm-semibold inline-flex h-5 items-center rounded px-2"
+      style={{ backgroundColor: 'rgb(246 203 134 / 20%)', color: '#F6CB86' }}
+    >
+      Pending
+    </span>
+  )
+}
+
+function TaskCard({
+  task,
+  onOpen,
+  showStatus,
+}: {
+  task: MyTask
+  onOpen: (task: MyTask) => void
+  showStatus?: boolean
+}) {
   return (
     <button
       type="button"
@@ -51,20 +90,28 @@ function TaskCard({ task, onOpen }: { task: MyTask; onOpen: (task: MyTask) => vo
       className="radius-lg bg-brand-surface hover:border-brand-accent/30 flex w-full items-start justify-between gap-4 border border-white/5 px-4 py-4 text-left transition-colors"
     >
       <div className="flex min-w-0 items-start gap-3">
-        <div className="bg-brand-bg text-brand-accent mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-lg">
-          <ClipboardList className="size-4" />
+        <div className="bg-brand-bg text-brand-accent mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-lg">
+          <ClipboardList className="size-3.5" />
         </div>
         <div className="min-w-0">
-          <p className="text-body-md-semibold text-brand-text">{task.title}</p>
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="text-body-md-semibold text-brand-text">{task.title}</p>
+            {showStatus && <StatusBadge status={task.status} />}
+          </div>
           <p className="text-body-sm text-muted mt-1 leading-relaxed">{task.description}</p>
         </div>
       </div>
 
       <div className="flex shrink-0 flex-col items-end gap-2">
-        <span className="text-body-sm-semibold bg-brand-positive/15 text-brand-positive rounded-full px-2.5 py-1">
+        <span
+          className="text-body-sm-semibold inline-flex h-5 items-center rounded px-2"
+          style={{ backgroundColor: 'rgb(0 166 62 / 20%)', color: '#00A63E' }}
+        >
           {task.module}
         </span>
-        <span className="text-body-sm-semibold text-muted">{formatTaskTime(task.escalatedAt)}</span>
+        <span className="text-body-sm text-muted inline-flex h-5 items-center">
+          {formatTaskTime(task.escalatedAt)}
+        </span>
       </div>
     </button>
   )
@@ -75,11 +122,13 @@ function TaskSection({
   count,
   tasks,
   onOpen,
+  showStatus,
 }: {
   title: string
   count: number
   tasks: MyTask[]
   onOpen: (task: MyTask) => void
+  showStatus?: boolean
 }) {
   if (!tasks.length) return null
 
@@ -87,13 +136,13 @@ function TaskSection({
     <section className="space-y-3">
       <div className="flex items-center gap-2">
         <h2 className="text-body-md-semibold text-brand-text">{title}</h2>
-        <span className="text-body-sm-semibold bg-brand-accent rounded-full px-2 py-0.5 font-bold text-black">
+        <span className="text-body-sm-semibold bg-brand-accent inline-flex h-[22px] items-center rounded-full px-2 font-bold text-black">
           {String(count).padStart(2, '0')}
         </span>
       </div>
       <div className="space-y-3">
         {tasks.map((task) => (
-          <TaskCard key={task.id} task={task} onOpen={onOpen} />
+          <TaskCard key={task.id} task={task} onOpen={onOpen} showStatus={showStatus} />
         ))}
       </div>
     </section>
@@ -105,6 +154,7 @@ export function MyTasksPage() {
   const user = useAuthStore((state) => state.user)
   const [activeTab, setActiveTab] = useState<TaskTab>('all')
   const { data, isLoading, isError } = useMyTasks(activeTab)
+  const { data: escalatedData } = useMyTasks('escalated_by_you')
 
   const visibleTabs = useMemo(
     () => TABS.filter((tab) => !tab.superAdminOnly || user?.isSuperAdmin),
@@ -113,6 +163,7 @@ export function MyTasksPage() {
 
   const tasks = data?.data.tasks ?? []
   const grouped = data?.data.grouped
+  const escalatedTasks = escalatedData?.data.tasks ?? []
 
   const handleOpenTask = (task: MyTask) => {
     navigate(task.applicationUrl)
@@ -162,9 +213,19 @@ export function MyTasksPage() {
               onOpen={handleOpenTask}
             />
           ))}
+          {escalatedTasks.length > 0 && (
+            <TaskSection
+              title="Escalated by you"
+              count={escalatedTasks.length}
+              tasks={escalatedTasks}
+              onOpen={handleOpenTask}
+              showStatus
+            />
+          )}
           {!grouped?.todo?.length &&
           !grouped?.in_progress?.length &&
-          !grouped?.completed?.length ? (
+          !grouped?.completed?.length &&
+          !escalatedTasks.length ? (
             <div className="radius-lg bg-brand-surface text-body-md text-muted border border-white/5 px-4 py-8 text-center">
               No tasks assigned yet.
               <p className="text-body-sm text-muted mt-2">
@@ -173,6 +234,18 @@ export function MyTasksPage() {
             </div>
           ) : null}
         </div>
+      ) : activeTab === 'escalated_by_you' ? (
+        tasks.length ? (
+          <div className="space-y-3">
+            {tasks.map((task) => (
+              <TaskCard key={task.id} task={task} onOpen={handleOpenTask} showStatus />
+            ))}
+          </div>
+        ) : (
+          <div className="radius-lg bg-brand-surface text-body-md text-muted border border-white/5 px-4 py-8 text-center">
+            No escalated tasks.
+          </div>
+        )
       ) : tasks.length ? (
         <div className="space-y-3">
           {tasks.map((task) => (

@@ -31,7 +31,7 @@ export function EscalationActions({ escalation }: EscalationActionsProps) {
   return (
     <div className="flex items-center justify-center">
       <TableActionsDropdown label="Escalation Actions" isOpen={open} onOpenChange={setOpen}>
-        <TableActionsItem icon={<User className="h-4 w-4 text-slate-700" />} onClick={handleView}>
+        <TableActionsItem icon={<User className="size-3.5 text-slate-700" />} onClick={handleView}>
           View Details
         </TableActionsItem>
       </TableActionsDropdown>

@@ -95,6 +95,14 @@
   --brand-green: #00a63e;
   --brand-green-muted: rgb(0 166 62 / 50%);
 
+  /* chart palette */
+  --chart-networking: #5b4a24;
+  --chart-events: #155dfc;
+  --chart-services: #f54900;
+  --chart-venues: #00a63e;
+  --chart-total: #155dfc;
+  --chart-resolved: #00a63e;
+
   --brand-radius-sm: 6px;
   --brand-radius-md: 8px;
   --brand-radius-lg: 10px;
@@ -346,6 +354,16 @@ button:disabled,
 
 .ui-cta-secondary:hover,
 .ui-cta-outline:hover {
+  background: rgb(255 255 255 / 5%);
+}
+
+.ui-cta-ghost {
+  border: 1px solid rgb(255 255 255 / 15%);
+  background: transparent;
+  color: #ffffff;
+}
+
+.ui-cta-ghost:hover {
   background: rgb(255 255 255 / 5%);
 }
 

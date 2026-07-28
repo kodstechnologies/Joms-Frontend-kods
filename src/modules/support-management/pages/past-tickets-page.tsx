@@ -1,6 +1,6 @@
-import { useMemo } from 'react'
+import { useCallback, useMemo } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, Eye, SlidersHorizontal } from 'lucide-react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 
@@ -10,7 +10,10 @@ import { pastTicketsMock } from '../mock/support.mock'
 import { useSupportStore } from '../store/support-store'
 import type { SupportTicket } from '../types/support'
 import { DataTable } from '@/shared/components/table/data-table'
-import { SectionHeader } from '@/shared/components/dashboard/section-header'
+import {
+  TableActionsDropdown,
+  TableActionsItem,
+} from '@/shared/components/table/table-actions-dropdown'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 
 export function PastTicketsPage() {
@@ -33,13 +36,41 @@ export function PastTicketsPage() {
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize))
   const paginated = filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize)
 
+  const renderActions = useCallback(
+    (record: SupportTicket) => (
+      <TableActionsDropdown
+        label="Open ticket actions"
+        isOpen={false}
+        onOpenChange={() => {}}
+        menuWidth={180}
+      >
+        <TableActionsItem
+          icon={<Eye className="size-3.5 text-slate-700" aria-hidden="true" />}
+          className="text-slate-800 hover:bg-slate-100 hover:text-slate-900"
+          onClick={() => navigate(`/support/tickets/${record.id}`)}
+        >
+          View Details
+        </TableActionsItem>
+      </TableActionsDropdown>
+    ),
+    [navigate],
+  )
+
   const columns = useMemo<ColumnDef<SupportTicket>[]>(
     () => [
       {
         id: 'select',
-        header: () => <input type="checkbox" className="rounded border-white/20" />,
-        cell: () => <input type="checkbox" className="rounded border-white/20" />,
-        meta: { headerClassName: 'w-10', cellClassName: 'w-10' },
+        header: () => (
+          <input type="checkbox" aria-label="Select all" className="rounded border-white/20" />
+        ),
+        cell: ({ row }) => (
+          <input
+            type="checkbox"
+            aria-label={`Select ${row.original.id}`}
+            className="rounded border-white/20"
+          />
+        ),
+        meta: { headerClassName: 'pl-5 w-10', cellClassName: 'pl-5 w-10' },
       },
       {
         accessorKey: 'id',
@@ -47,13 +78,19 @@ export function PastTicketsPage() {
         cell: ({ row }) => (
           <Link
             to={`/support/tickets/${row.original.id}`}
-            className="ui-table-id text-amber-400 hover:underline"
+            className="text-body-sm-semibold text-brand-accent font-mono hover:underline"
           >
             #{row.original.id}
           </Link>
         ),
       },
-      { accessorKey: 'subject', header: 'Subject' },
+      {
+        accessorKey: 'subject',
+        header: 'Subject',
+        cell: ({ row }) => (
+          <span className="text-body-sm text-brand-text">{row.original.subject}</span>
+        ),
+      },
       {
         accessorKey: 'status',
         header: 'Status',
@@ -70,38 +107,39 @@ export function PastTicketsPage() {
       { accessorKey: 'slaTimer', header: 'SLA Timer' },
       {
         id: 'actions',
-        header: '',
-        cell: () => (
-          <button type="button" className="text-slate-500 hover:text-white">
-            ⋮
-          </button>
-        ),
-        meta: { headerClassName: 'w-12', cellClassName: 'w-12' },
+        header: 'Actions',
+        meta: { headerClassName: 'pr-5 text-right', cellClassName: 'relative pr-5 text-right' },
+        cell: ({ row }) => renderActions(row.original),
       },
     ],
-    [],
+    [renderActions],
   )
 
   return (
     <div className="space-y-6">
-      <div className="flex items-start gap-3">
+      {/* Header */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex items-start gap-3">
+          <button
+            type="button"
+            onClick={() => navigateBackOrFallback(navigate, '/support/workspace')}
+            className="text-muted hover:text-brand-text mt-1 grid size-6 shrink-0 place-items-center rounded transition-colors"
+          >
+            <ArrowLeft className="size-4" />
+          </button>
+          <div>
+            <h1 className="text-h2 text-brand-text tracking-tight">Past Tickets</h1>
+            <p className="text-body-md text-muted mt-1 leading-[20px]">{userId ?? 'John Doe'}</p>
+          </div>
+        </div>
         <button
           type="button"
-          onClick={() => navigateBackOrFallback(navigate, '/support/workspace')}
-          className="mt-1 rounded-lg border border-white/10 p-2 text-slate-400 hover:text-white"
+          onClick={() => navigate('/metrics/past-tickets')}
+          className="ui-manage-metrics ui-cta ui-cta-primary shrink-0"
         >
-          <ArrowLeft className="size-4" />
+          <SlidersHorizontal className="icon-sm shrink-0" />
+          Manage Metrics
         </button>
-        <SectionHeader
-          title="Past Tickets"
-          subtitle={userId ? `User ID: ${userId}` : 'John Doe'}
-          actions={[
-            {
-              label: 'Manage Metrics',
-              onClick: () => navigate('/metrics/past-tickets'),
-            },
-          ]}
-        />
       </div>
 
       <DataTable
@@ -109,8 +147,12 @@ export function PastTicketsPage() {
         data={paginated}
         getRowId={(row) => row.id}
         searchValue={searchQuery}
-        onSearchChange={setSearchQuery}
+        onSearchChange={(val) => {
+          setSearchQuery(val)
+          setCurrentPage(1)
+        }}
         searchPlaceholder="Search by name, ID or profession"
+        advancedFilterLabel="Advance Filters"
         onAdvancedFilter={() => toast.message('Advanced filters coming soon')}
         onExport={() => toast.message('Export coming soon')}
         pagination={{
@@ -120,7 +162,8 @@ export function PastTicketsPage() {
           totalPages,
           onPageChange: setCurrentPage,
         }}
-        resourceLabel="users"
+        resourceLabel="tickets"
+        emptyMessage="No past tickets found."
       />
     </div>
   )

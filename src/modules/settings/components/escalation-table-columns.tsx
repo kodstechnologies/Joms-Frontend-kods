@@ -7,6 +7,11 @@ export const escalationColumns: ColumnDef<Escalation>[] = [
   {
     accessorKey: 'escalationId',
     header: 'Escalation ID',
+    cell: ({ row }) => (
+      <span className="text-body-sm-semibold text-brand-text font-mono uppercase">
+        {row.original.escalationId}
+      </span>
+    ),
   },
   {
     accessorKey: 'roleId',
@@ -26,18 +31,19 @@ export const escalationColumns: ColumnDef<Escalation>[] = [
     cell: ({ row }) => {
       const priority = row.original.priority
 
-      const priorityStyles: Record<string, string> = {
-        Critical: 'bg-red-500/15 text-red-400',
-        High: 'bg-orange-500/15 text-orange-400',
-        Medium: 'bg-amber-500/15 text-amber-400',
-        Low: 'bg-emerald-500/15 text-emerald-400',
+      const priorityStyles: Record<string, { bg: string; color: string }> = {
+        Critical: { bg: 'rgb(211 25 28 / 15%)', color: '#D3191C' },
+        High: { bg: 'rgb(245 73 0 / 15%)', color: '#F54900' },
+        Medium: { bg: 'rgb(246 203 134 / 15%)', color: '#F6CB86' },
+        Low: { bg: 'rgb(0 166 62 / 15%)', color: '#00A63E' },
       }
+
+      const style = priorityStyles[priority] ?? { bg: 'rgb(255 255 255 / 10%)', color: '#ffffff' }
 
       return (
         <span
-          className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
-            priorityStyles[priority] ?? 'bg-slate-500/15 text-slate-300'
-          }`}
+          className="text-body-sm-semibold inline-flex h-5 items-center rounded px-2"
+          style={{ backgroundColor: style.bg, color: style.color }}
         >
           {priority}
         </span>
@@ -50,17 +56,18 @@ export const escalationColumns: ColumnDef<Escalation>[] = [
     cell: ({ row }) => {
       const status = row.original.status
 
-      const statusStyles: Record<string, string> = {
-        Open: 'bg-red-500/15 text-red-400',
-        'In Review': 'bg-amber-500/15 text-amber-400',
-        Resolved: 'bg-emerald-500/15 text-emerald-400',
+      const statusStyles: Record<string, { bg: string; color: string }> = {
+        Open: { bg: 'rgb(211 25 28 / 15%)', color: '#D3191C' },
+        'In Review': { bg: 'rgb(20 71 230 / 15%)', color: '#1447E6' },
+        Resolved: { bg: 'rgb(0 166 62 / 15%)', color: '#00A63E' },
       }
+
+      const style = statusStyles[status] ?? { bg: 'rgb(255 255 255 / 10%)', color: '#ffffff' }
 
       return (
         <span
-          className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
-            statusStyles[status] ?? 'bg-slate-500/15 text-slate-300'
-          }`}
+          className="text-body-sm-semibold inline-flex h-5 items-center rounded px-2"
+          style={{ backgroundColor: style.bg, color: style.color }}
         >
           {status}
         </span>
@@ -75,6 +82,7 @@ export const escalationColumns: ColumnDef<Escalation>[] = [
     id: 'actions',
     header: 'Actions',
     enableSorting: false,
+    meta: { headerClassName: 'pr-5 text-right', cellClassName: 'relative pr-5 text-right' },
     cell: ({ row }) => <EscalationActions escalation={row.original} />,
   },
 ]

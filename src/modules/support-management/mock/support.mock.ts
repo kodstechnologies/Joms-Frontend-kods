@@ -29,11 +29,11 @@ export const ticketManagementStats = [
 ]
 
 export const ticketTrendsMock = [
-  { day: 'Jan 1', total: 32000, resolved: 28000 },
-  { day: 'Jan 3', total: 35000, resolved: 30000 },
-  { day: 'Jan 5', total: 42000, resolved: 38000 },
-  { day: 'Jan 7', total: 39000, resolved: 36000 },
-  { day: 'Jan 9', total: 45000, resolved: 42000 },
+  { day: 'Jan 1', total: 32000, resolved: 5000 },
+  { day: 'Jan 3', total: 35000, resolved: 8000 },
+  { day: 'Jan 5', total: 42000, resolved: 12000 },
+  { day: 'Jan 7', total: 39000, resolved: 16000 },
+  { day: 'Jan 9', total: 45000, resolved: 22000 },
 ]
 
 export const ticketsByUserTypeMock = [
@@ -44,29 +44,29 @@ export const ticketsByUserTypeMock = [
 ]
 
 export const ticketsByModuleMock = [
-  { month: 'Sep', networking: 40, events: 55, services: 48, venues: 35 },
-  { month: 'Oct', networking: 45, events: 60, services: 52, venues: 38 },
-  { month: 'Nov', networking: 50, events: 58, services: 55, venues: 42 },
-  { month: 'Dec', networking: 48, events: 62, services: 50, venues: 45 },
-  { month: 'Jan', networking: 52, events: 65, services: 58, venues: 48 },
-  { month: 'Feb', networking: 55, events: 68, services: 60, venues: 50 },
+  { month: 'Sep', networking: 40000, events: 55000, services: 48000, venues: 90000 },
+  { month: 'Oct', networking: 45000, events: 15000, services: 52000, venues: 55000 },
+  { month: 'Nov', networking: 20000, events: 30000, services: 60000, venues: 95000 },
+  { month: 'Dec', networking: 48000, events: 62000, services: 50000, venues: 60000 },
+  { month: 'Jan', networking: 25000, events: 65000, services: 20000, venues: 62000 },
+  { month: 'Feb', networking: 55000, events: 68000, services: 60000, venues: 20000 },
 ]
 
 export const ticketsByReasonMock = [
-  { label: 'User Accounts Glitch', count: 12, color: '#FBBF24' },
-  { label: 'Events Booking Failed', count: 14, color: '#60A5FA' },
-  { label: 'Service Disputes', count: 34, color: '#F87171' },
-  { label: 'Membership Issues', count: 35, color: '#34D399' },
+  { label: 'User Accounts Glitch', count: 12, color: '#F6CB86' },
+  { label: 'Events Booking Failed', count: 14, color: '#155DFC' },
+  { label: 'Service Disputes', count: 34, color: '#F54900' },
+  { label: 'Membership Issues', count: 35, color: '#00A63E' },
 ]
 
 export const escalationsMock = [
-  { day: 'Mon', teamA: 8, teamB: 6, teamC: 4 },
-  { day: 'Tue', teamA: 12, teamB: 9, teamC: 7 },
-  { day: 'Wed', teamA: 10, teamB: 8, teamC: 6 },
-  { day: 'Thu', teamA: 14, teamB: 11, teamC: 8 },
-  { day: 'Fri', teamA: 9, teamB: 7, teamC: 5 },
-  { day: 'Sat', teamA: 6, teamB: 4, teamC: 3 },
-  { day: 'Sun', teamA: 5, teamB: 3, teamC: 2 },
+  { day: 'Mon', teamA: 60000, teamB: 20000, teamC: 30000 },
+  { day: 'Tue', teamA: 65000, teamB: 22000, teamC: 32000 },
+  { day: 'Wed', teamA: 28000, teamB: 18000, teamC: 35000 },
+  { day: 'Thu', teamA: 10000, teamB: 8000, teamC: 12000 },
+  { day: 'Fri', teamA: 62000, teamB: 20000, teamC: 30000 },
+  { day: 'Sat', teamA: 15000, teamB: 22000, teamC: 30000 },
+  { day: 'Sun', teamA: 18000, teamB: 15000, teamC: 32000 },
 ]
 
 export const supportTicketsMock: SupportTicket[] = [

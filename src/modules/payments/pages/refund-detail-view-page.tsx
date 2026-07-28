@@ -143,7 +143,7 @@ export function RefundDetailViewPage() {
         <button
           type="button"
           onClick={() => navigateBackOrFallback(navigate, '/finance/refunds')}
-          className="ui-cta ui-cta-secondary"
+          className="ui-cta ui-cta-ghost"
         >
           Close
         </button>
@@ -153,32 +153,32 @@ export function RefundDetailViewPage() {
             onClick={() => toast.success('Refund issued')}
             className="ui-cta ui-cta-positive"
           >
-            <Check className="icon-sm shrink-0" />
             Issue Refund
+            <Check className="icon-sm shrink-0" />
           </button>
           <button
             type="button"
             onClick={() => toast.error('Refund denied')}
             className="ui-cta ui-cta-negative"
           >
-            <X className="icon-sm shrink-0" />
             Deny Refund
+            <X className="icon-sm shrink-0" />
           </button>
           <button
             type="button"
             onClick={() => setIsPartialRefundOpen(true)}
-            className="ui-cta ui-cta-secondary"
+            className="ui-cta ui-cta-ghost"
           >
-            <Flag className="icon-sm shrink-0" />
             Partial Refund
+            <Flag className="icon-sm shrink-0" />
           </button>
           <button
             type="button"
             onClick={() => setIsEscalateOpen(true)}
-            className="ui-cta ui-cta-secondary"
+            className="ui-cta ui-cta-ghost"
           >
-            <Flag className="icon-sm shrink-0" />
             Escalate
+            <Flag className="icon-sm shrink-0" />
           </button>
         </div>
       </footer>

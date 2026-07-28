@@ -13,20 +13,20 @@ export const getStatusLabel = (status: TicketStatus) => {
 
 export const getStatusClassName = (status: TicketStatus) =>
   cn(
-    'text-body-sm-semibold rounded-full border px-2.5 py-0.5',
-    status === 'open' && 'border-brand-positive/30 bg-brand-positive/10 text-brand-positive',
-    status === 'in_progress' && 'border-brand-accent/30 bg-brand-accent/10 text-brand-accent',
-    status === 'on_hold' && 'border-brand-danger/30 bg-brand-danger/10 text-brand-danger',
-    status === 'closed' && 'border-brand-muted/30 bg-brand-muted/10 text-muted',
+    'text-body-sm-semibold inline-flex h-5 items-center rounded px-2',
+    status === 'open' && 'bg-brand-positive/15 text-brand-positive',
+    status === 'in_progress' && 'bg-brand-blue/15 text-brand-blue',
+    status === 'on_hold' && 'bg-brand-danger/15 text-brand-danger',
+    status === 'closed' && 'bg-white/10 text-muted',
   )
 
 export const getPriorityClassName = (priority: TicketPriority) =>
   cn(
-    'text-body-sm-semibold rounded-full border px-2.5 py-0.5 capitalize',
-    priority === 'critical' && 'border-brand-danger/30 bg-brand-danger/10 text-brand-danger',
-    priority === 'high' && 'border-brand-accent/30 bg-brand-accent/10 text-brand-accent',
-    priority === 'medium' && 'border-brand-accent/30 bg-brand-accent/10 text-brand-accent',
-    priority === 'low' && 'border-brand-positive/30 bg-brand-positive/10 text-brand-positive',
+    'text-body-sm-semibold inline-flex h-5 items-center rounded px-2 capitalize',
+    priority === 'critical' && 'bg-brand-danger/15 text-brand-danger',
+    priority === 'high' && 'bg-brand-orange/15 text-brand-orange',
+    priority === 'medium' && 'bg-brand-accent/15 text-brand-accent',
+    priority === 'low' && 'bg-brand-positive/15 text-brand-positive',
   )
 
 export const getReporterTypeLabel = (type: string) => {
