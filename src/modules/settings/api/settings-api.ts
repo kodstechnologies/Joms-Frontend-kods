@@ -5,6 +5,7 @@ import type {
   ModuleSettingsMap,
   ServiceSettings,
   SettingsLog,
+  SettingsLogMetrics,
   SettingsModule,
   SettingsResponse,
   VenueSettings,
@@ -47,7 +48,8 @@ export const fetchSettingsLogs = async (params?: {
   limit?: number
   search?: string
   module?: SettingsModule
-  action?: 'update' | 'reset'
+  action?: 'update' | 'reset' | 'restore'
+  status?: 'success' | 'failed' | 'pending'
 }) => {
   const response = await settingsApiClient.get<{
     success: boolean
@@ -64,7 +66,38 @@ export const fetchSettingsLog = async (id: string) => {
     message: string
     data: SettingsLog
   }>(`/settings/logs/${id}`)
+  return response.data.data
+}
+
+export const fetchSettingsLogMetrics = async (params?: { module?: SettingsModule }) => {
+  const response = await settingsApiClient.get<{
+    success: boolean
+    message: string
+    data: SettingsLogMetrics
+  }>('/settings/logs/metrics', { params })
+  return response.data.data
+}
+
+export const fetchSettingsModuleVersions = async (
+  module: SettingsModule,
+  params?: { page?: number; limit?: number },
+) => {
+  const response = await settingsApiClient.get<{
+    success: boolean
+    message: string
+    data: SettingsLog[]
+    meta: { page: number; limit: number; total: number; totalPages: number }
+  }>(`/settings/versions/${module}`, { params })
   return response.data
+}
+
+export const restoreSettingsLog = async (id: string) => {
+  const response = await settingsApiClient.post<{
+    success: boolean
+    message: string
+    data: { log: SettingsLog; settings: SettingsResponse<unknown> }
+  }>(`/settings/logs/${id}/restore`)
+  return response.data.data
 }
 
 export const uploadBrandingAsset = async (kind: 'logo' | 'favicon', file: File) => {

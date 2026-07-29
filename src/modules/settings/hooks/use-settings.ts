@@ -6,8 +6,12 @@ import {
   deleteErrorTemplate,
   fetchErrorTemplates,
   fetchSettings,
+  fetchSettingsLog,
+  fetchSettingsLogMetrics,
   fetchSettingsLogs,
+  fetchSettingsModuleVersions,
   resetSettings,
+  restoreSettingsLog,
   updateErrorTemplate,
   updateSettings,
 } from '../api/settings-api'
@@ -18,6 +22,10 @@ export const settingsKeys = {
   all: ['settings'] as const,
   module: (module: SettingsModule) => [...settingsKeys.all, module] as const,
   logs: (params?: object) => [...settingsKeys.all, 'logs', params] as const,
+  log: (id: string) => [...settingsKeys.all, 'log', id] as const,
+  logMetrics: (params?: object) => [...settingsKeys.all, 'logs', 'metrics', params] as const,
+  versions: (module: SettingsModule, params?: object) =>
+    [...settingsKeys.all, 'versions', module, params] as const,
   errorTemplates: () => [...settingsKeys.all, 'platform', 'error-templates'] as const,
 }
 
@@ -37,6 +45,7 @@ export const useUpdateSettings = <M extends SettingsModule>(module: M) => {
     mutationFn: (config: ModuleSettingsMap[M]) => updateSettings(module, config),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: settingsKeys.module(module) })
+      void queryClient.invalidateQueries({ queryKey: [...settingsKeys.all, 'logs'] })
       if (module === 'platform') {
         void queryClient.invalidateQueries({ queryKey: ['settings', 'public', 'maintenance'] })
       }
@@ -51,6 +60,7 @@ export const useResetSettings = <M extends SettingsModule>(module: M) => {
     mutationFn: () => resetSettings(module),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: settingsKeys.module(module) })
+      void queryClient.invalidateQueries({ queryKey: [...settingsKeys.all, 'logs'] })
       if (module === 'platform') {
         void queryClient.invalidateQueries({ queryKey: ['settings', 'public', 'maintenance'] })
       }
@@ -81,12 +91,57 @@ export function useSettingsLogs(params?: {
   limit?: number
   search?: string
   module?: SettingsModule
-  action?: 'update' | 'reset'
+  action?: 'update' | 'reset' | 'restore'
+  status?: 'success' | 'failed' | 'pending'
 }) {
   return useQuery({
     queryKey: settingsKeys.logs(params),
     queryFn: () => fetchSettingsLogs(params),
     retry: 1,
+  })
+}
+
+export function useSettingsLog(id?: string) {
+  return useQuery({
+    queryKey: settingsKeys.log(id || ''),
+    queryFn: () => fetchSettingsLog(id || ''),
+    enabled: Boolean(id),
+    retry: 1,
+  })
+}
+
+export function useSettingsLogMetrics(params?: { module?: SettingsModule }) {
+  return useQuery({
+    queryKey: settingsKeys.logMetrics(params),
+    queryFn: () => fetchSettingsLogMetrics(params),
+    retry: 1,
+  })
+}
+
+export function useSettingsModuleVersions(
+  module?: SettingsModule,
+  params?: { page?: number; limit?: number },
+) {
+  return useQuery({
+    queryKey: settingsKeys.versions(module || 'platform', params),
+    queryFn: () => fetchSettingsModuleVersions(module || 'platform', params),
+    enabled: Boolean(module),
+    retry: 1,
+  })
+}
+
+export function useRestoreSettingsLog() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => restoreSettingsLog(id),
+    onSuccess: (result) => {
+      void queryClient.invalidateQueries({ queryKey: settingsKeys.all })
+      if (result?.settings?.module) {
+        void queryClient.invalidateQueries({
+          queryKey: settingsKeys.module(result.settings.module as SettingsModule),
+        })
+      }
+    },
   })
 }
 

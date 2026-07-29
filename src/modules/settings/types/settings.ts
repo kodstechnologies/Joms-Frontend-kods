@@ -1,5 +1,12 @@
 export type SettingsModule =
-  'platform' | 'security' | 'notifications' | 'finance' | 'backup' | 'expert' | 'venue' | 'service'
+  | 'platform'
+  | 'security'
+  | 'notifications'
+  | 'finance'
+  | 'backup'
+  | 'expert'
+  | 'venue'
+  | 'service'
 
 export type PlatformSettings = {
   applicationSettings: {
@@ -37,20 +44,46 @@ export type FinancialSettings = {
   taxType: string
 }
 
-export type SettingsLogAction = 'update' | 'reset'
-export type SettingsLogStatus = 'success' | 'failed'
+export type SettingsLogAction = 'update' | 'reset' | 'restore'
+export type SettingsLogStatus = 'success' | 'failed' | 'pending'
+
+export type SettingsLogChange = {
+  setting: string
+  settingPath?: string
+  oldValue: string | number | null
+  newValue: string | number | null
+}
 
 export type SettingsLog = {
   id: string
   action: SettingsLogAction
   module: SettingsModule
+  moduleLabel?: string
   status: SettingsLogStatus
   adminId: string | null
   performedBy: string
+  role?: string
   ipAddress: string
   adminNote: string
+  version?: string
+  isCurrentVersion?: boolean
+  changedSettings?: string[]
+  changes?: SettingsLogChange[]
+  impactScope?: string
+  affectedUser?: string
+  restoredFromLogId?: string | null
   metadata: Record<string, unknown>
   createdAt: string
+}
+
+export type SettingsLogMetrics = {
+  cards: SettingsMetric[]
+  totals: {
+    total: number
+    successful: number
+    failed: number
+    pending: number
+  }
 }
 
 export type ExpertSettings = {
