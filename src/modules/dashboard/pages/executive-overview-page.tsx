@@ -35,11 +35,11 @@ export function ExecutiveOverviewPage() {
   const isLoading = false
   const pieColors = ['#EF4444', '#F59E0B', '#60A5FA', '#34D399', '#A78BFA']
   const tooltipStyle = {
-    background: 'rgba(2,6,23,0.92)',
-    border: '1px solid rgba(255,255,255,0.10)',
+    background: 'rgba(255,255,255,0.95)',
+    border: '1px solid rgba(0,0,0,0.10)',
     borderRadius: 14,
     padding: '10px 12px',
-    color: 'rgba(226,232,240,0.95)',
+    color: 'rgba(0,0,0,0.85)',
     boxShadow: '0 20px 50px rgba(0,0,0,0.4)',
   }
 
@@ -93,9 +93,9 @@ export function ExecutiveOverviewPage() {
                 />
                 <Tooltip
                   contentStyle={tooltipStyle}
-                  labelStyle={{ color: 'rgba(226,232,240,0.95)', fontWeight: 600 }}
+                  labelStyle={{ color: 'rgba(0,0,0,0.85)', fontWeight: 600 }}
                 />
-                <Legend wrapperStyle={{ color: 'rgba(148,163,184,0.85)' }} />
+                <Legend wrapperStyle={{ color: '#ffffff' }} iconType="diamond" iconSize={10} />
                 <Line
                   type="monotone"
                   dataKey="newMembers"
@@ -140,10 +140,14 @@ export function ExecutiveOverviewPage() {
                   tick={{ fill: 'rgba(148,163,184,0.85)', fontSize: 12 }}
                 />
                 <Tooltip contentStyle={tooltipStyle} />
-                <Legend wrapperStyle={{ color: 'rgba(148,163,184,0.85)' }} />
-                <Bar dataKey="active" fill="#60A5FA" radius={[6, 6, 0, 0]} />
-                <Bar dataKey="expired" fill="#F87171" radius={[6, 6, 0, 0]} />
-                <Bar dataKey="new" fill="#34D399" radius={[6, 6, 0, 0]} />
+                <Legend
+                  wrapperStyle={{ color: 'rgba(148,163,184,0.85)' }}
+                  iconType="diamond"
+                  iconSize={10}
+                />
+                <Bar dataKey="active" fill="#155DFC" radius={[6, 6, 0, 0]} />
+                <Bar dataKey="expired" fill="#D3191C" radius={[6, 6, 0, 0]} />
+                <Bar dataKey="new" fill="#00A63E" radius={[6, 6, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -177,7 +181,7 @@ export function ExecutiveOverviewPage() {
                   tick={{ fill: 'rgba(148,163,184,0.85)', fontSize: 12 }}
                 />
                 <Tooltip contentStyle={tooltipStyle} />
-                <Bar dataKey="value" fill="#3B82F6" radius={[10, 10, 10, 10]} />
+                <Bar dataKey="value" fill="#155DFC" radius={[10, 10, 10, 10]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -193,7 +197,7 @@ export function ExecutiveOverviewPage() {
             <ResponsiveContainer width="100%" height="100%" minHeight={220}>
               <PieChart>
                 <Tooltip contentStyle={tooltipStyle} />
-                <Legend wrapperStyle={{ color: 'rgba(148,163,184,0.85)' }} />
+                <Legend wrapperStyle={{ color: 'rgba(148,163,184,0.85)' }} iconType="diamond" />
                 <Pie
                   data={serviceDistributionMock}
                   dataKey="value"

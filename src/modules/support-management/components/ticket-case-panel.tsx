@@ -97,7 +97,7 @@ export function TicketCasePanel({
       <div className="flex gap-2 border-t border-white/5 p-4">
         <button
           type="button"
-          className="ui-cta ui-cta-ghost flex-1"
+          className="ui-cta ui-cta-primary flex-1"
           onClick={onEscalate ?? (() => toast.message('Escalation coming soon'))}
         >
           Escalate

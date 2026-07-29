@@ -138,12 +138,7 @@ export function DataTable<TData>({
                 variant="secondary"
                 onClick={onAdvancedFilter}
                 disabled={!onAdvancedFilter}
-                className={cn(
-                  'ui-advance-filters text-body-sm flex-1 gap-2 rounded-xl border bg-transparent px-4 font-semibold shadow-none sm:flex-none',
-                  isCategoryTone
-                    ? 'hover:border-brand-accent border-white/25 text-white hover:bg-white/5'
-                    : 'text-brand-text hover:border-brand-accent border-white/45 hover:bg-white/5',
-                )}
+                className="table-advance-filter-btn flex-1 gap-2 sm:flex-none"
               >
                 <Filter className="size-3.5" aria-hidden="true" />
                 {advancedFilterLabel}
@@ -155,7 +150,7 @@ export function DataTable<TData>({
                 variant="primary"
                 onClick={onExport}
                 disabled={!onExport || isExporting}
-                className="ui-export-data flex-1 gap-2 sm:flex-none"
+                className="table-export-btn flex-1 gap-2 sm:flex-none"
               >
                 <Upload className="icon-md" aria-hidden="true" />
                 {isExporting ? 'Exporting...' : 'Export Data'}
@@ -279,7 +274,7 @@ export function DataTable<TData>({
           type="button"
           onClick={() => changePage(currentPage - 1)}
           disabled={isLoading || currentPage <= 1}
-          className="ui-pagination-btn ui-pagination-prev"
+          className="table-pagination-btn"
         >
           Previous
         </button>
@@ -299,10 +294,7 @@ export function DataTable<TData>({
                   disabled={isLoading}
                   aria-current={isActive ? 'page' : undefined}
                   aria-label={`Go to page ${page}`}
-                  className={cn(
-                    'ui-pagination-btn ui-pagination-page',
-                    isActive && 'ui-pagination-page-active',
-                  )}
+                  className={cn('table-pagination-btn', isActive && 'table-pagination-page-active')}
                 >
                   {page.toString().padStart(2, '0')}
                 </button>
@@ -315,7 +307,7 @@ export function DataTable<TData>({
           type="button"
           onClick={() => changePage(currentPage + 1)}
           disabled={isLoading || currentPage >= Math.max(pagination.totalPages, 1)}
-          className="ui-pagination-btn ui-pagination-next"
+          className="table-pagination-btn"
         >
           Next
         </button>

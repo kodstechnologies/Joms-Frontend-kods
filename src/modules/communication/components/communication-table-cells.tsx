@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { Eye, Pencil, Trash2 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
@@ -10,7 +9,10 @@ import {
   TableActionsItem,
 } from '@/shared/components/table/table-actions-dropdown'
 import { getApiErrorMessage } from '@/shared/lib/api-error'
-import { cn } from '@/shared/lib/cn'
+
+import eyeIcon from '@/assets/JOMS_ICONS/icons8-eye.svg'
+import editIcon from '@/assets/JOMS_ICONS/icons8-edit-file.svg'
+import deleteIcon from '@/assets/JOMS_ICONS/icons8-delete.svg'
 
 export function CommunicationActions({ communication }: { communication: Communication }) {
   const [open, setOpen] = useState(false)
@@ -18,9 +20,15 @@ export function CommunicationActions({ communication }: { communication: Communi
   const deleteMutation = useDeleteCommunication()
 
   return (
-    <TableActionsDropdown label="Communication actions" isOpen={open} onOpenChange={setOpen}>
+    <TableActionsDropdown
+      label="Communication actions"
+      isOpen={open}
+      onOpenChange={setOpen}
+      menuWidth={180}
+    >
       <TableActionsItem
-        icon={<Eye className="size-4" />}
+        icon={<img src={eyeIcon} alt="" className="size-3.5" aria-hidden="true" />}
+        className="text-slate-800 hover:bg-slate-100 hover:text-slate-900"
         onClick={() => {
           setOpen(false)
           navigate(`/communication/view/${communication.id}`)
@@ -29,7 +37,8 @@ export function CommunicationActions({ communication }: { communication: Communi
         View Details
       </TableActionsItem>
       <TableActionsItem
-        icon={<Pencil className="size-4" />}
+        icon={<img src={editIcon} alt="" className="size-3.5" aria-hidden="true" />}
+        className="text-slate-800 hover:bg-slate-100 hover:text-slate-900"
         onClick={() => {
           setOpen(false)
           navigate(`/communication/create?edit=${communication.id}`)
@@ -38,7 +47,8 @@ export function CommunicationActions({ communication }: { communication: Communi
         Edit
       </TableActionsItem>
       <TableActionsItem
-        icon={<Trash2 className="size-4" />}
+        icon={<img src={deleteIcon} alt="" className="size-3.5" aria-hidden="true" />}
+        className="text-brand-danger hover:bg-brand-danger/10 hover:text-brand-danger"
         onClick={() => {
           setOpen(false)
           deleteMutation.mutate(communication.id, {
@@ -54,24 +64,20 @@ export function CommunicationActions({ communication }: { communication: Communi
 }
 
 export function CommunicationStatusBadge({ status }: { status: string }) {
-  if (status === 'Active') {
-    return <span className="text-brand-success text-xs font-semibold">{status}</span>
+  const statusStyles: Record<string, { bg: string; color: string }> = {
+    Sent: { bg: 'rgb(0 166 62 / 15%)', color: '#00A63E' },
+    Active: { bg: 'rgb(0 166 62 / 15%)', color: '#00A63E' },
+    Scheduled: { bg: 'rgb(246 203 134 / 15%)', color: '#F6CB86' },
+    Draft: { bg: 'rgb(255 255 255 / 10%)', color: '#B3B3B3' },
+    Failed: { bg: 'rgb(211 25 28 / 15%)', color: '#D3191C' },
   }
 
-  const statusStyles: Record<string, string> = {
-    Sent: 'border-brand-success/25 bg-brand-success/10 text-brand-success',
-    Scheduled: 'border-brand-accent-muted bg-brand-accent/15 text-brand-accent',
-    Draft: 'border-white/10 bg-white/5 text-brand-muted',
-    Failed: 'border-brand-danger/25 bg-brand-danger/10 text-brand-danger',
-    Active: 'border-brand-success/25 bg-brand-success/10 text-brand-success',
-  }
+  const style = statusStyles[status] ?? { bg: 'rgb(255 255 255 / 10%)', color: '#B3B3B3' }
 
   return (
     <span
-      className={cn(
-        'inline-flex rounded-full border px-2.5 py-0.5 text-[11px] font-semibold',
-        statusStyles[status] ?? 'text-brand-muted border-white/10 bg-white/5',
-      )}
+      className="text-body-sm-semibold inline-flex h-5 items-center rounded px-2"
+      style={{ backgroundColor: style.bg, color: style.color }}
     >
       {status}
     </span>

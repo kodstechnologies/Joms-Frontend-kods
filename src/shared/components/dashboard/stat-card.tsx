@@ -31,7 +31,7 @@ export function StatCard({ title, value, icon: Icon, trend, hint, className }: S
         </div>
         {Icon ? (
           <div
-            className="radius-md border-brand-accent/25 bg-brand-accent/15 text-brand-accent grid size-10 shrink-0 place-items-center border"
+            className="grid size-10 shrink-0 place-items-center border border-white/10 bg-black text-white/50"
             aria-hidden="true"
           >
             <Icon className="size-[18px]" strokeWidth={1.75} />

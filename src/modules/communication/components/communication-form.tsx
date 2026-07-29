@@ -20,14 +20,8 @@ import {
   useUpdateCommunication,
 } from '../hooks/use-communications'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
-import { Button } from '@/shared/components/ui/button'
-import { Input } from '@/shared/components/ui/input'
 import { getApiErrorMessage } from '@/shared/lib/api-error'
 import { cn } from '@/shared/lib/cn'
-import { uiTokens } from '@/shared/lib/design-tokens'
-
-const fieldClassName =
-  'h-11 border-white/10 bg-[#0F0F0F] text-brand-text placeholder:text-brand-muted'
 
 const toDateTimeLocalValue = (iso: string | null | undefined) => {
   if (!iso) return ''
@@ -36,6 +30,11 @@ const toDateTimeLocalValue = (iso: string | null | undefined) => {
   const pad = (value: number) => String(value).padStart(2, '0')
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`
 }
+
+// Shared field styles
+const inputClass = 'ui-input'
+const selectClass = 'ui-input appearance-none cursor-pointer'
+const labelClass = 'text-body-sm text-muted mb-1.5 block'
 
 export function CommunicationForm() {
   const navigate = useNavigate()
@@ -130,9 +129,7 @@ export function CommunicationForm() {
     createMutation.mutate(payload, {
       onSuccess: (data) => {
         toast.success(
-          deliveryType === 'schedule'
-            ? 'Communication scheduled'
-            : 'Communication saved (delivery providers will be connected later)',
+          deliveryType === 'schedule' ? 'Communication scheduled' : 'Communication saved',
         )
         navigate(`/communication/view/${data.id}`)
       },
@@ -141,244 +138,230 @@ export function CommunicationForm() {
   }
 
   return (
-    <form className="flex flex-col gap-4 md:gap-6" onSubmit={handleSubmit}>
+    <form className="flex flex-col gap-6" onSubmit={handleSubmit}>
+      {/* Header */}
       <div>
         <button
           type="button"
           onClick={() => navigateBackOrFallback(navigate, '/communication/management')}
-          className="text-brand-text hover:text-brand-accent mb-3 flex items-center gap-2 text-sm font-semibold transition-colors"
+          className="group text-h3 hover:text-brand-accent text-brand-text flex w-fit items-center gap-2 tracking-tight transition-colors"
         >
-          <ArrowLeft className="size-4" />
+          <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
           {isEditMode ? 'Edit Communication' : 'Create Communication'}
         </button>
-
-        <p className="text-brand-muted text-sm">
-          Communication management /
-          <span className="text-brand-text ml-1 font-medium">
-            {isEditMode ? 'Edit Communication' : 'Create Communication'}
+        <p className="text-body-sm text-muted mt-2 pl-7 leading-[20px]">
+          <button
+            type="button"
+            onClick={() => navigate('/communication/management')}
+            className="hover:text-brand-text transition-colors"
+          >
+            Communication management
+          </button>
+          <span> / </span>
+          <span className="text-brand-text font-semibold">
+            {isEditMode ? 'Edit Communication' : 'Send email'}
           </span>
         </p>
       </div>
 
-      <section
-        className={cn(
-          uiTokens.radiusCard,
-          uiTokens.borderSubtle,
-          'bg-brand-surface p-6 shadow-[0_10px_30px_rgba(0,0,0,0.35)] sm:p-8',
-        )}
-      >
-        <div className="border-b border-white/10 pb-5">
-          <h2 className="text-brand-text text-lg font-semibold">
-            {isEditMode ? 'Edit Communication' : 'Create New Communication'}
+      {/* Form card */}
+      <div className="radius-lg bg-brand-surface border border-white/[0.06] p-5 sm:p-6">
+        {/* Card header */}
+        <div className="mb-6 border-b border-white/[0.06] pb-5">
+          <h2 className="text-h4 text-brand-text">
+            {isEditMode ? 'Edit Communication' : 'Create New Communication Template'}
           </h2>
-          <p className="text-brand-muted mt-1 text-sm">
+          <p className="text-body-sm text-muted mt-1">
             Send updates, announcements, or important messages to your audience.
           </p>
-          <p className="text-brand-muted mt-2 text-xs">
+          <p className="text-body-sm text-muted mt-1 opacity-60">
             In-app, push, and email provider delivery will be connected later.
           </p>
         </div>
 
-        <div className="mt-8 space-y-5">
+        <div className="space-y-5">
+          {/* Communication Title */}
           <div>
-            <label className="text-brand-text mb-2 block text-sm font-medium">
-              Communication Title (internal use only)
-            </label>
-            <Input
+            <label className={labelClass}>Communication Title (internal use only)</label>
+            <input
               type="text"
               placeholder="Enter communication Title"
-              className={fieldClassName}
+              className={inputClass}
               value={title}
-              onChange={(event) => setTitle(event.target.value)}
+              onChange={(e) => setTitle(e.target.value)}
               required
             />
           </div>
 
+          {/* Channel Type + Communication Type */}
           <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
             <div>
-              <label className="text-brand-text mb-2 block text-sm font-medium">Channel Type</label>
+              <label className={labelClass}>Channel Type</label>
               <select
-                className={cn(
-                  'text-brand-text flex h-11 w-full border px-3 text-sm outline-none',
-                  uiTokens.radiusSoft,
-                  uiTokens.focusRing,
-                  fieldClassName,
-                )}
+                className={selectClass}
                 value={channel}
-                onChange={(event) => setChannel(event.target.value as CommunicationChannel)}
+                onChange={(e) => setChannel(e.target.value as CommunicationChannel)}
                 required
               >
-                <option value="">Select channel</option>
-                {channelOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
+                <option value="">In App Notification</option>
+                {channelOptions.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
                   </option>
                 ))}
               </select>
             </div>
-
             <div>
-              <label className="text-brand-text mb-2 block text-sm font-medium">
-                Communication Type
-              </label>
+              <label className={labelClass}>Communication Type</label>
               <select
-                className={cn(
-                  'text-brand-text flex h-11 w-full border px-3 text-sm outline-none',
-                  uiTokens.radiusSoft,
-                  uiTokens.focusRing,
-                  fieldClassName,
-                )}
+                className={selectClass}
                 value={type}
-                onChange={(event) => setType(event.target.value as CommunicationType)}
+                onChange={(e) => setType(e.target.value as CommunicationType)}
                 required
               >
                 <option value="">Select</option>
-                {typeOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
+                {typeOptions.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
                   </option>
                 ))}
               </select>
             </div>
           </div>
 
+          {/* Audience */}
           <div>
-            <label className="text-brand-text mb-2 block text-sm font-medium">Audience</label>
-            <select
-              className={cn(
-                'text-brand-text flex h-11 w-full border px-3 text-sm outline-none',
-                uiTokens.radiusSoft,
-                uiTokens.focusRing,
-                fieldClassName,
-              )}
-              value={audience}
-              onChange={(event) => setAudience(event.target.value as CommunicationAudience)}
-              required
-            >
-              <option value="">Select audience</option>
-              {audienceOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
+            <label className={labelClass}>Audience</label>
+            <div className="relative">
+              <select
+                className={cn(inputClass, audience ? 'text-transparent' : '')}
+                value={audience}
+                onChange={(e) => setAudience(e.target.value as CommunicationAudience)}
+                required
+              >
+                <option value="">Enter Audience Type</option>
+                {audienceOptions.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+              {audience ? (
+                <span
+                  className="text-body-sm-semibold pointer-events-none absolute top-1/2 left-3 inline-flex h-[26px] -translate-y-1/2 items-center gap-2 rounded-full px-3 text-black"
+                  style={{ background: 'linear-gradient(135deg, #F6CB86 0%, #E0A263 100%)' }}
+                >
+                  {audienceOptions.find((o) => o.value === audience)?.label ?? audience}
+                  <span className="opacity-70">✕</span>
+                </span>
+              ) : null}
+            </div>
           </div>
 
-          <div
-            className={cn(
-              'grid gap-5',
-              deliveryType === 'schedule' ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1',
-            )}
-          >
-            <div>
-              <label className="text-brand-text mb-2 block text-sm font-medium">
-                Set Time & Date
-              </label>
-              <div className="mt-2 flex flex-wrap items-center gap-6">
-                <label className="text-brand-text flex cursor-pointer items-center gap-2 text-sm">
+          {/* Set Time & Date */}
+          <div>
+            <label className={labelClass}>Set Time & Date</label>
+            <div
+              className={cn(
+                'grid gap-5',
+                deliveryType === 'schedule' ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1',
+              )}
+            >
+              <div className="flex items-center gap-6">
+                <label className="text-body-sm text-brand-text flex cursor-pointer items-center gap-2">
                   <input
                     type="radio"
                     checked={deliveryType === 'send-now'}
                     onChange={() => setDeliveryType('send-now')}
-                    className="accent-brand-accent"
+                    className="accent-white"
                   />
                   Send Now
                 </label>
-                <label className="text-brand-text flex cursor-pointer items-center gap-2 text-sm">
+                <label className="text-body-sm text-brand-text flex cursor-pointer items-center gap-2">
                   <input
                     type="radio"
                     checked={deliveryType === 'schedule'}
                     onChange={() => setDeliveryType('schedule')}
-                    className="accent-brand-accent"
+                    className="accent-white"
                   />
                   Schedule
                 </label>
               </div>
-            </div>
 
-            {deliveryType === 'schedule' && (
-              <div>
-                <label className="text-brand-text mb-2 flex items-center gap-1 text-sm font-medium">
-                  Add Date & Time
-                  <span className="group text-brand-muted relative cursor-help text-xs">ⓘ</span>
-                  <span className="sr-only">Time Format: 24 Hours</span>
-                </label>
-                <Input
-                  type="datetime-local"
-                  className={fieldClassName}
-                  value={scheduledAt}
-                  onChange={(event) => setScheduledAt(event.target.value)}
-                  required={deliveryType === 'schedule'}
-                />
-              </div>
-            )}
+              {deliveryType === 'schedule' && (
+                <div>
+                  <label className={cn(labelClass, 'flex items-center gap-1')}>
+                    Add Date & Time
+                    <span className="text-muted text-xs opacity-60">(dd-mm-yyyy, --:--)</span>
+                  </label>
+                  <input
+                    type="datetime-local"
+                    className={inputClass}
+                    value={scheduledAt}
+                    onChange={(e) => setScheduledAt(e.target.value)}
+                    required={deliveryType === 'schedule'}
+                  />
+                </div>
+              )}
+            </div>
           </div>
 
+          {/* Subject Line */}
           <div>
-            <label className="text-brand-text mb-2 block text-sm font-medium">Subject Line</label>
-            <Input
+            <label className={labelClass}>Subject Line</label>
+            <input
               type="text"
               placeholder="Enter Message"
-              className={fieldClassName}
+              className={inputClass}
               value={subject}
-              onChange={(event) => setSubject(event.target.value)}
+              onChange={(e) => setSubject(e.target.value)}
             />
           </div>
 
+          {/* Message Content */}
           <div>
-            <label className="text-brand-text mb-2 block text-sm font-medium">
-              Message Content
-            </label>
+            <label className={labelClass}>Message Content</label>
             <textarea
               rows={4}
               placeholder="Enter Message"
               value={messageContent}
-              onChange={(event) => setMessageContent(event.target.value)}
+              onChange={(e) => setMessageContent(e.target.value)}
               required
-              className={cn(
-                'text-brand-text placeholder:text-brand-muted min-h-[96px] w-full resize-y border px-3 py-2.5 text-sm outline-none',
-                uiTokens.radiusSoft,
-                uiTokens.focusRing,
-                fieldClassName,
-              )}
+              className="ui-textarea"
             />
           </div>
 
+          {/* Additional Notes */}
           <div>
-            <label className="text-brand-text mb-2 block text-sm font-medium">
-              Additional Notes
-            </label>
-            <Input
+            <label className={labelClass}>Additional Notes</label>
+            <input
               type="text"
               placeholder="Enter Message"
-              className={fieldClassName}
+              className={inputClass}
               value={additionalNotes}
-              onChange={(event) => setAdditionalNotes(event.target.value)}
+              onChange={(e) => setAdditionalNotes(e.target.value)}
             />
           </div>
         </div>
-      </section>
+      </div>
 
-      <section
-        className={cn(
-          uiTokens.radiusCard,
-          uiTokens.borderSubtle,
-          'bg-brand-surface px-5 py-4 shadow-[0_10px_30px_rgba(0,0,0,0.35)]',
-        )}
-      >
-        <div className="flex items-center justify-between gap-3">
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={() => navigateBackOrFallback(navigate, '/communication/management')}
-          >
-            Close
-          </Button>
-          <Button type="submit" disabled={isSubmitting || (isEditMode && existingQuery.isLoading)}>
-            {isSubmitting ? 'Saving...' : 'Submit'}
-          </Button>
-        </div>
-      </section>
+      {/* Footer */}
+      <div className="radius-lg bg-brand-surface flex items-center justify-between border border-white/[0.06] px-5 py-4">
+        <button
+          type="button"
+          onClick={() => navigateBackOrFallback(navigate, '/communication/management')}
+          className="ui-cta ui-cta-ghost"
+        >
+          Close
+        </button>
+        <button
+          type="submit"
+          disabled={isSubmitting || (isEditMode && existingQuery.isLoading)}
+          className="ui-cta ui-cta-primary"
+        >
+          {isSubmitting ? 'Saving...' : 'Submit'}
+        </button>
+      </div>
     </form>
   )
 }

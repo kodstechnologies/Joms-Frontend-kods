@@ -69,7 +69,7 @@ export function SupportWorkspacePage() {
                   'text-body-md-medium flex-1 rounded-lg px-4 py-2.5 capitalize transition-colors',
                   workspaceTab === tab
                     ? 'bg-brand-surface text-brand-text'
-                    : 'text-muted hover:text-brand-text',
+                    : 'text-brand-text hover:bg-white/5',
                 )}
               >
                 {tab === 'intelligence' ? 'Intelligence' : 'Messages'}

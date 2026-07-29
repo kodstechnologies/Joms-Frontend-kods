@@ -170,8 +170,8 @@ export function ReferralManagementPage() {
     <div className="flex flex-col gap-4 md:gap-6">
       <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
         <div>
-          <h1 className="text-h1 text-brand-text">Referral Management</h1>
-          <p className="text-body-md text-muted md:text-body-lg mt-1">
+          <h1 className="referral-page-title">Referral Management</h1>
+          <p className="referral-page-subtitle mt-1">
             Track and manage user-driven and platform-driven referrals
           </p>
         </div>

@@ -44,13 +44,13 @@ export const getReferralStatusClassName = (status: string) => {
   switch (status) {
     case 'accepted':
     case 'active':
-      return 'bg-emerald-500/15 text-emerald-300 border-emerald-500/25'
+      return 'status-badge-accepted'
     case 'pending':
-      return 'bg-amber-500/15 text-amber-300 border-amber-500/25'
+      return 'status-badge-pending'
     case 'expired':
-      return 'bg-slate-500/15 text-slate-300 border-slate-500/25'
+      return 'status-badge-expired'
     default:
-      return 'bg-white/10 text-slate-300 border-white/10'
+      return 'status-badge-default'
   }
 }
 

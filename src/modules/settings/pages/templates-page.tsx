@@ -16,7 +16,6 @@ import {
 import type { ModerationCategory, ModerationReason } from '../api/templates-api'
 import { cn } from '@/shared/lib/cn'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
-import { uiTokens } from '@/shared/lib/design-tokens'
 
 type ReasonFormState = {
   title: string
@@ -93,75 +92,78 @@ function ReasonFormModal({
 
   return createPortal(
     <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/70 p-4">
-      <div className="ui-modal-shell max-w-[560px]">
-        <div className="ui-modal-header">
-          <h2 className="text-h4 text-brand-text">
-            {mode === 'create' ? 'New Reason' : 'Edit Reason'}
-          </h2>
-          <button type="button" onClick={onClose} className="text-muted hover:text-brand-text">
-            <X className="icon-md" />
+      <div
+        className="radius-popup bg-brand-surface flex flex-col overflow-hidden border border-white/10"
+        style={{ width: '514px', maxWidth: 'calc(100vw - 32px)' }}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
+          <h2 className="invite-modal-title">{mode === 'create' ? 'New Reason' : 'Edit Reason'}</h2>
+          <button
+            type="button"
+            onClick={onClose}
+            className="text-muted hover:text-brand-text grid size-6 place-items-center rounded transition-colors"
+          >
+            <X className="size-4" />
           </button>
         </div>
 
-        <div className="ui-modal-body space-y-4">
-          <label className="text-body-md block space-y-2">
-            <span className="text-body-md-medium text-brand-text">
+        {/* Body */}
+        <div className="space-y-4 overflow-y-auto px-5 py-5">
+          <div>
+            <label className="invite-modal-field-label mb-1.5 block">
               Reason title<span className="text-brand-accent">*</span>
-            </span>
+            </label>
             <input
               value={form.title}
-              onChange={(event) =>
-                setForm((current) => ({ ...current, title: event.target.value }))
-              }
-              placeholder="e.g. Harassment or Bullying"
+              onChange={(e) => setForm((c) => ({ ...c, title: e.target.value }))}
+              placeholder="e.g User Suspension"
               className="ui-input"
             />
-          </label>
+          </div>
 
-          <label className="text-body-md block space-y-2">
-            <span className="text-body-md-medium text-brand-text">
+          <div>
+            <label className="invite-modal-field-label mb-1.5 block">
               Description<span className="text-brand-accent">*</span>
-            </span>
+            </label>
             <textarea
               rows={3}
               value={form.description}
-              onChange={(event) =>
-                setForm((current) => ({ ...current, description: event.target.value }))
-              }
+              onChange={(e) => setForm((c) => ({ ...c, description: e.target.value }))}
               placeholder="Brief description of this moderation reason"
               className="ui-textarea"
+              style={{ minHeight: '73px', width: '463px' }}
             />
-          </label>
+          </div>
 
-          <label className="text-body-md block space-y-2">
-            <span className="text-body-md-medium text-brand-text">
+          <div>
+            <label className="invite-modal-field-label mb-1.5 block">
               Default Message Template<span className="text-brand-accent">*</span>
-              <span className="text-body-md text-muted ml-1 font-normal">(Shown to the user)</span>
-            </span>
+              <span className="text-body-sm text-muted ml-1 font-normal italic">
+                (Shown to the user)
+              </span>
+            </label>
             <textarea
-              rows={5}
+              rows={3}
               value={form.defaultMessageTemplate}
-              onChange={(event) =>
-                setForm((current) => ({
-                  ...current,
-                  defaultMessageTemplate: event.target.value,
-                }))
-              }
+              onChange={(e) => setForm((c) => ({ ...c, defaultMessageTemplate: e.target.value }))}
               placeholder="Template message will be sent to the user when this reason is applied"
               className="ui-textarea"
+              style={{ minHeight: '73px', width: '463px' }}
             />
-          </label>
+          </div>
         </div>
 
-        <div className="ui-modal-footer">
-          <button type="button" onClick={onClose} className="ui-modal-btn ui-modal-btn-cancel">
+        {/* Footer */}
+        <div className="flex items-center gap-3 border-t border-white/10 px-5 py-4">
+          <button type="button" onClick={onClose} className="ui-cta ui-cta-ghost flex-1">
             Cancel
           </button>
           <button
             type="button"
             disabled={!canSubmit || isSubmitting}
             onClick={() => onSubmit(form)}
-            className="ui-modal-btn ui-modal-btn-gold"
+            className="ui-cta ui-cta-primary flex-1"
           >
             {isSubmitting
               ? mode === 'create'
@@ -328,17 +330,17 @@ export function TemplatesPage({ embedded = false }: { embedded?: boolean }) {
           <button
             type="button"
             onClick={() => navigateBackOrFallback(navigate, '/communication/management')}
-            className="text-muted mt-1 rounded p-1 hover:bg-white/5 hover:text-white"
+            className="text-muted hover:text-brand-text mt-1 grid size-6 shrink-0 place-items-center rounded transition-colors"
             aria-label="Go back"
           >
-            <ArrowLeft className="size-5" />
+            <ArrowLeft className="size-4" />
           </button>
         ) : null}
         <div>
           <h1
             className={cn(
-              'font-semibold tracking-tight text-white',
-              embedded ? 'text-h4' : 'text-h1',
+              'text-brand-text tracking-tight',
+              embedded ? 'text-h4 font-semibold' : 'text-h2',
             )}
           >
             Moderation Reason Manager
@@ -347,23 +349,24 @@ export function TemplatesPage({ embedded = false }: { embedded?: boolean }) {
         </div>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-[320px_minmax(0,1fr)]">
-        <aside className={cn(uiTokens.radiusCard, 'bg-brand-bg border border-white/10 p-4')}>
-          <p className="text-body-md-semibold text-white">Categories</p>
-          <div className="relative mt-3">
-            <Search className="text-muted pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2" />
+      <div className="grid gap-4 lg:grid-cols-[379px_minmax(0,1fr)]">
+        {/* Left: Categories */}
+        <aside className="radius-lg bg-brand-bg border border-white/10 p-4">
+          <p className="text-body-md-semibold text-brand-text">Categories</p>
+          <div className="radius-md bg-brand-surface mt-3 flex h-10 items-center gap-3 border border-white/10 px-3">
+            <Search className="text-muted size-4 shrink-0" />
             <input
               value={search}
-              onChange={(event) => setSearch(event.target.value)}
+              onChange={(e) => setSearch(e.target.value)}
               placeholder="Search Categories"
-              className="ui-input pl-10"
+              className="text-brand-text placeholder:text-muted h-full flex-1 bg-transparent text-sm outline-none"
             />
           </div>
 
           <div className="mt-4 space-y-2">
             {categoriesLoading ? (
               Array.from({ length: 3 }).map((_, index) => (
-                <div key={index} className="h-20 animate-pulse rounded-xl bg-white/5" />
+                <div key={index} className="h-[45px] animate-pulse rounded-xl bg-white/5" />
               ))
             ) : categories.length === 0 ? (
               <p className="text-body-md text-muted px-2 py-6 text-center">No categories found</p>
@@ -383,8 +386,8 @@ export function TemplatesPage({ embedded = false }: { embedded?: boolean }) {
                     )}
                   >
                     <div className="flex items-start justify-between gap-2">
-                      <p className="text-body-md-semibold text-white">{category.title}</p>
-                      <span className="text-body-sm text-brand-text/80 rounded-full bg-white/10 px-2 py-0.5 font-semibold">
+                      <p className="text-body-md-semibold text-brand-text">{category.title}</p>
+                      <span className="text-body-sm text-muted rounded-full bg-white/10 px-2 py-0.5 font-semibold">
                         {category.reasonCount}
                       </span>
                     </div>
@@ -396,32 +399,34 @@ export function TemplatesPage({ embedded = false }: { embedded?: boolean }) {
           </div>
         </aside>
 
-        <section
-          className={cn(uiTokens.radiusCard, 'bg-brand-bg border border-white/10 p-4 sm:p-5')}
-        >
+        {/* Right: Reasons */}
+        <section className="radius-lg bg-brand-bg border border-white/10 p-4 sm:p-5">
           {selectedCategory ? (
             <>
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
-                    <h2 className="text-h4 text-white">{selectedCategory.title}</h2>
+                    <h2 className="text-h4 text-brand-text">{selectedCategory.title}</h2>
                     <span className="text-body-sm text-muted rounded-full border border-white/15 bg-white/5 px-2 py-0.5 font-medium">
                       {selectedCategory.slug}
                     </span>
                     <button
                       type="button"
                       onClick={() => setCategoryEditOpen(true)}
-                      className="text-muted rounded p-1 hover:bg-white/5 hover:text-white"
+                      className="text-muted hover:text-brand-text rounded p-1 hover:bg-white/5"
                       aria-label="Edit category"
                     >
                       <Pencil className="size-4" />
                     </button>
-                    <span className="border-brand-positive/30 bg-brand-positive/10 text-body-sm text-brand-positive rounded-full border px-2.5 py-0.5 font-semibold">
+                    <span
+                      className="text-body-sm-semibold inline-flex h-5 items-center rounded px-2"
+                      style={{ backgroundColor: 'rgb(0 166 62 / 15%)', color: '#00A63E' }}
+                    >
                       Active
                     </span>
                   </div>
-                  <p className="text-body-md text-muted mt-1">{selectedCategory.description}</p>
-                  <p className="text-body-sm text-muted mt-1">
+                  <p className="text-body-sm text-muted mt-1">{selectedCategory.description}</p>
+                  <p className="text-body-sm text-muted mt-1 opacity-70">
                     Create reasons for this CTA modal. Active reasons appear as chips for admins and
                     their message templates are sent to the partner app.
                   </p>
@@ -432,7 +437,7 @@ export function TemplatesPage({ embedded = false }: { embedded?: boolean }) {
                     setEditingReason(null)
                     setReasonModalOpen(true)
                   }}
-                  className="ui-cta ui-cta-primary"
+                  className="ui-cta ui-cta-primary shrink-0"
                 >
                   <Plus className="size-4" />
                   New Reason
@@ -442,7 +447,7 @@ export function TemplatesPage({ embedded = false }: { embedded?: boolean }) {
               <div className="mt-5 space-y-3">
                 {reasonsLoading ? (
                   Array.from({ length: 3 }).map((_, index) => (
-                    <div key={index} className="h-24 animate-pulse rounded-xl bg-white/5" />
+                    <div key={index} className="h-[82px] animate-pulse rounded-xl bg-white/5" />
                   ))
                 ) : reasons.length === 0 ? (
                   <div className="text-body-md text-muted rounded-xl border border-dashed border-white/10 px-4 py-10 text-center">
@@ -452,20 +457,28 @@ export function TemplatesPage({ embedded = false }: { embedded?: boolean }) {
                   reasons.map((reason) => (
                     <article
                       key={reason.id}
-                      className="bg-brand-bg rounded-xl border border-white/10 px-4 py-4"
+                      className="radius-lg bg-brand-surface border border-white/[0.06] px-4 py-4"
                     >
                       <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-                        <div className="min-w-0 space-y-2">
+                        <div className="min-w-0 space-y-1">
                           <div className="flex flex-wrap items-center gap-2">
-                            <h3 className="text-body-md-semibold text-white">{reason.title}</h3>
-                            <span className="border-brand-accent/25 bg-brand-accent/10 text-body-sm text-brand-accent rounded-full border px-2.5 py-0.5 font-medium">
+                            <h3 className="text-body-md-semibold text-brand-text">
+                              {reason.title}
+                            </h3>
+                            <span
+                              className="text-body-sm-semibold inline-flex h-5 items-center rounded px-2"
+                              style={{
+                                backgroundColor: 'rgb(246 203 134 / 15%)',
+                                color: '#F6CB86',
+                              }}
+                            >
                               Used in {reason.usageCount} actions
                             </span>
                           </div>
-                          <p className="text-body-md text-muted">{reason.description}</p>
+                          <p className="text-body-sm text-muted">{reason.description}</p>
                         </div>
 
-                        <div className="flex items-center gap-3">
+                        <div className="flex shrink-0 items-center gap-3">
                           <div className="text-body-sm text-brand-text flex items-center gap-2">
                             <ToggleSwitch
                               checked={reason.isActive}
@@ -488,10 +501,10 @@ export function TemplatesPage({ embedded = false }: { embedded?: boolean }) {
                               setEditingReason(reason)
                               setReasonModalOpen(true)
                             }}
-                            className="text-muted rounded p-1.5 hover:bg-white/5 hover:text-white"
+                            className="text-muted hover:text-brand-text rounded p-1.5 hover:bg-white/5"
                             aria-label="Edit reason"
                           >
-                            <Pencil className="size-4" />
+                            <Pencil className="size-3.5" />
                           </button>
                           <button
                             type="button"
@@ -501,10 +514,10 @@ export function TemplatesPage({ embedded = false }: { embedded?: boolean }) {
                                 onError: () => toast.error('Failed to delete reason'),
                               })
                             }
-                            className="text-brand-danger rounded p-1.5 hover:bg-white/5"
+                            className="text-brand-danger hover:bg-brand-danger/10 rounded p-1.5"
                             aria-label="Delete reason"
                           >
-                            <Trash2 className="size-4" />
+                            <Trash2 className="size-3.5" />
                           </button>
                         </div>
                       </div>

@@ -29,11 +29,10 @@ const STATUS_FILTERS: Array<{ label: string; value: SubscriptionStatus | 'all' }
 ]
 
 function getStatusClassName(status: FinanceMembershipStatus) {
-  if (status === 'Active')
-    return 'border-brand-positive/25 bg-brand-positive/10 text-brand-positive'
-  if (status === 'Paused') return 'border-brand-accent/25 bg-brand-accent/10 text-brand-accent'
-  if (status === 'Cancelled') return 'border-brand-danger/25 bg-brand-danger/10 text-brand-danger'
-  return 'border-brand-teal/25 bg-brand-teal/10 text-brand-teal'
+  if (status === 'Active') return 'membership-status-badge membership-status-active'
+  if (status === 'Paused') return 'membership-status-badge membership-status-paused'
+  if (status === 'Cancelled') return 'membership-status-badge membership-status-cancelled'
+  return 'membership-status-badge membership-status-expired'
 }
 
 export function MembershipManagementPage() {
@@ -152,14 +151,7 @@ export function MembershipManagementPage() {
         accessorKey: 'status',
         header: 'Status',
         cell: ({ row }) => (
-          <span
-            className={cn(
-              'text-body-sm-semibold inline-flex rounded-full border px-2.5 py-0.5',
-              getStatusClassName(row.original.status),
-            )}
-          >
-            {row.original.status}
-          </span>
+          <span className={getStatusClassName(row.original.status)}>{row.original.status}</span>
         ),
       },
       {
@@ -182,8 +174,8 @@ export function MembershipManagementPage() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-h2 text-brand-text tracking-tight">Membership Management</h1>
-        <p className="text-body-md text-muted mt-1 leading-[20px]">
+        <h1 className="membership-page-title">Membership Management</h1>
+        <p className="membership-page-subtitle mt-1 leading-[20px]">
           Track revenue, payouts, and financial performance
         </p>
         <p className="text-body-sm text-muted mt-3 leading-[20px]">
@@ -208,10 +200,10 @@ export function MembershipManagementPage() {
                 setCurrentPage(1)
               }}
               className={cn(
-                'rounded-full border px-4 py-2 text-xs font-medium',
+                'membership-filter-btn',
                 statusFilter === filter.value
-                  ? 'border-brand-accent/40 bg-brand-accent/10 text-brand-accent'
-                  : 'text-muted border-white/10',
+                  ? 'membership-filter-btn-active'
+                  : 'membership-filter-btn-inactive',
               )}
             >
               {filter.label}

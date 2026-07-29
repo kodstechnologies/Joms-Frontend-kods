@@ -1,13 +1,12 @@
 import { X } from 'lucide-react'
+import { createPortal } from 'react-dom'
 
 import type { ExpertInvite } from '../types/referral'
 import {
   formatInviteDetailDateTime,
   getInvitedByLabel,
-  getReferralStatusClassName,
   getReferralStatusLabel,
 } from '../utils/referral-format'
-import { cn } from '@/shared/lib/cn'
 
 type ReferralDetailsModalProps = {
   open: boolean
@@ -19,58 +18,75 @@ export function ReferralDetailsModal({ open, onClose, expertInvite }: ReferralDe
   if (!open || !expertInvite) return null
 
   const status = expertInvite.status
+  const statusClass =
+    status === 'active' || status === 'accepted'
+      ? 'status-badge-accepted-solid'
+      : status === 'pending'
+        ? 'status-badge-pending'
+        : 'status-badge-default'
 
-  return (
+  return createPortal(
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
       onClick={onClose}
     >
-      <div className="ui-modal-shell max-w-2xl" onClick={(e) => e.stopPropagation()}>
-        <div className="ui-modal-header">
-          <h2 className="text-h4 text-brand-text">Expert Invite Details</h2>
-          <button
-            type="button"
-            onClick={onClose}
-            className="text-muted hover:text-brand-text rounded-brand-md p-1.5 hover:bg-white/5"
-          >
-            <X className="size-5" />
+      <div className="invite-details-modal flex flex-col" onClick={(e) => e.stopPropagation()}>
+        {/* Header */}
+        <div className="invite-details-header flex items-center justify-between">
+          <h2 className="invite-details-title">Invites Details</h2>
+          <button type="button" onClick={onClose} className="invite-details-close-btn">
+            <X className="size-4" />
           </button>
         </div>
 
-        <div className="ui-modal-body grid grid-cols-1 gap-6 sm:grid-cols-2">
-          <DetailCell label="Invite Link" value={expertInvite.inviteLink} />
-          <DetailCell label="Invited Expert" value={expertInvite.invitedExpertName} />
-          <DetailCell label="Invited by" value={getInvitedByLabel(expertInvite.invitedBy)} />
-          <DetailCell
-            label="Invited at"
-            value={formatInviteDetailDateTime(expertInvite.createdAt)}
-          />
-          <DetailCell
-            label="Status"
-            value={
-              <span
-                className={cn(
-                  'text-body-sm inline-flex rounded-full px-4 py-1 font-semibold',
-                  status === 'active' || status === 'accepted'
-                    ? 'bg-brand-positive text-white'
-                    : getReferralStatusClassName(status),
-                )}
-              >
+        {/* Body — 2-col grid */}
+        <div className="invite-details-body">
+          {/* Left col */}
+          <div className="flex flex-col gap-5">
+            <DetailCell label="Invite Link" value={expertInvite.inviteLink} truncate />
+            <DetailCell label="Invited by" value={getInvitedByLabel(expertInvite.invitedBy)} />
+            <div className="flex flex-col gap-1.5">
+              <p className="invite-detail-label">Status</p>
+              <span className={`${statusClass} inline-flex items-center capitalize`}>
                 {getReferralStatusLabel(status)}
               </span>
-            }
-          />
+            </div>
+          </div>
+
+          {/* Right col */}
+          <div className="flex flex-col gap-5">
+            <DetailCell label="Invited Expert" value={expertInvite.invitedExpertName} />
+            <DetailCell
+              label="Invited at"
+              value={formatInviteDetailDateTime(expertInvite.createdAt)}
+            />
+          </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }
 
-function DetailCell({ label, value }: { label: string; value: React.ReactNode }) {
+function DetailCell({
+  label,
+  value,
+  truncate,
+}: {
+  label: string
+  value: React.ReactNode
+  truncate?: boolean
+}) {
   return (
-    <div className="space-y-2">
-      <p className="text-muted text-body-md">{label}</p>
-      <div className="text-brand-text text-body-md font-semibold">{value}</div>
+    <div className="flex flex-col gap-1.5">
+      <p className="invite-detail-label">{label}</p>
+      {typeof value === 'string' ? (
+        <p className={`invite-detail-value ${truncate ? 'invite-detail-value-truncate' : ''}`}>
+          {value}
+        </p>
+      ) : (
+        <div className="invite-detail-value">{value}</div>
+      )}
     </div>
   )
 }

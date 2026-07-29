@@ -1,6 +1,7 @@
 import { Plus, X } from 'lucide-react'
 import { useMemo, useRef, useState, type FormEvent } from 'react'
 
+import verifiedIcon from '@/assets/JOMS_ICONS/icons8-verified.svg'
 import { DEFAULT_BILLING_CYCLES } from '../mock/membership-metrics.mock'
 import type { MembershipFeatures, MembershipPlan, MembershipPricing } from '../types/membership'
 
@@ -173,13 +174,18 @@ export function MembershipPlanForm({ initialPlan, onSubmit }: MembershipPlanForm
             <button
               type="button"
               onClick={() => iconInputRef.current?.click()}
-              className="flex size-[70px] items-center justify-center overflow-hidden rounded-[8px] border border-white/10 bg-black transition-colors hover:border-white/25"
+              className="flex size-[70px] items-center justify-center overflow-hidden rounded-full border border-white/10 bg-black transition-colors hover:border-white/25"
               aria-label="Upload plan icon"
             >
               {iconPreview ? (
                 <img src={iconPreview} alt="" className="size-full object-cover" />
               ) : (
-                <Plus className="size-6 text-white/50" strokeWidth={1.5} />
+                <img
+                  src={verifiedIcon}
+                  alt=""
+                  className="size-6"
+                  style={{ filter: 'brightness(0) invert(1)' }}
+                />
               )}
             </button>
             <input

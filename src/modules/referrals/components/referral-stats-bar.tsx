@@ -101,15 +101,15 @@ function ReferralMetricCard({ metric }: { metric: MetricCardData }) {
   const isUp = metric.trend.direction === 'up'
 
   return (
-    <div className="rounded-brand-lg bg-brand-surface flex min-h-[130px] flex-col border border-white/[0.06] p-4 transition-colors hover:border-white/15">
-      <p className="text-body-sm text-muted font-medium">{metric.label}</p>
-      <p className="text-h3 mt-2 font-bold tracking-tight text-white">{metric.value}</p>
+    <div className="referral-stats-card flex flex-col p-4 transition-colors">
+      <p className="referral-stats-label">{metric.label}</p>
+      <p className="referral-stats-value mt-2">{metric.value}</p>
       <div className="mt-auto flex items-center gap-2 pt-3">
-        <span className="bg-brand-positive/15 text-brand-positive inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-bold">
+        <span className="referral-stats-trend-badge inline-flex items-center gap-1">
           {isUp ? <TrendingUp className="size-3" /> : <TrendingDown className="size-3" />}
           {metric.trend.percentage}%
         </span>
-        <span className="text-muted text-[10px]">{metric.trend.label ?? 'vs last month'}</span>
+        <span className="referral-stats-trend-label">{metric.trend.label ?? 'vs last month'}</span>
       </div>
     </div>
   )
@@ -117,7 +117,7 @@ function ReferralMetricCard({ metric }: { metric: MetricCardData }) {
 
 function MetricCardSkeleton() {
   return (
-    <div className="rounded-brand-lg bg-brand-surface min-h-[130px] border border-white/[0.06] p-4">
+    <div className="referral-stats-card p-4">
       <div className="h-3 w-28 animate-pulse rounded bg-white/10" />
       <div className="mt-3 h-7 w-20 animate-pulse rounded bg-white/10" />
       <div className="mt-4 h-5 w-32 animate-pulse rounded bg-white/5" />

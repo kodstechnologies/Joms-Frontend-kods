@@ -3,17 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 
 import { useCommunication } from '../hooks/use-communications'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
-import { Button } from '@/shared/components/ui/button'
-import { cn } from '@/shared/lib/cn'
-import { uiTokens } from '@/shared/lib/design-tokens'
-
-const statusBadgeClass: Record<string, string> = {
-  Sent: 'border-brand-success/25 bg-brand-success/10 text-brand-success',
-  Scheduled: 'border-brand-accent-muted bg-brand-accent/15 text-brand-accent',
-  Draft: 'border-white/10 bg-white/5 text-brand-muted',
-  Failed: 'border-brand-danger/25 bg-brand-danger/10 text-brand-danger',
-  Active: 'border-brand-success/25 bg-brand-success/10 text-brand-success',
-}
+import { StatCard } from '@/shared/components/dashboard/stat-card'
 
 export function CommunicationDetails() {
   const navigate = useNavigate()
@@ -21,33 +11,31 @@ export function CommunicationDetails() {
   const { data, isLoading, isError } = useCommunication(id)
 
   if (isLoading) {
-    return (
-      <div className="text-brand-muted py-16 text-center text-sm">Loading communication...</div>
-    )
+    return <div className="text-muted py-16 text-center text-sm">Loading communication...</div>
   }
 
   if (isError || !data) {
     return (
       <div className="flex flex-col items-center gap-4 py-16">
-        <p className="text-brand-muted text-sm">Communication not found.</p>
-        <Button
+        <p className="text-muted text-sm">Communication not found.</p>
+        <button
           type="button"
-          variant="secondary"
           onClick={() => navigate('/communication/management')}
+          className="ui-cta ui-cta-ghost"
         >
           Back to list
-        </Button>
+        </button>
       </div>
     )
   }
 
   const analyticsMetrics = [
-    { label: 'Sent', value: data.analytics.sent },
-    { label: 'Delivered', value: data.analytics.delivered },
-    { label: 'Opened', value: data.analytics.opened },
-    { label: 'Clicked', value: data.analytics.clicked },
-    { label: 'Failed', value: data.analytics.failed },
-    { label: 'Bounced', value: data.analytics.bounced },
+    { title: 'Sent', value: String(data.analytics.sent) },
+    { title: 'Delivered', value: String(data.analytics.delivered) },
+    { title: 'Opened', value: String(data.analytics.opened) },
+    { title: 'Clicked', value: String(data.analytics.clicked) },
+    { title: 'Failed', value: String(data.analytics.failed) },
+    { title: 'Bounced', value: String(data.analytics.bounced) },
   ]
 
   const scheduleLabel = data.scheduledAt
@@ -63,139 +51,139 @@ export function CommunicationDetails() {
       : 'Not Scheduled'
 
   return (
-    <div className="flex flex-col gap-4 pb-8 md:gap-6">
+    <div className="flex flex-col gap-6 pb-8">
+      {/* Breadcrumb */}
       <div>
         <button
           type="button"
           onClick={() => navigateBackOrFallback(navigate, '/communication/management')}
-          className="text-brand-text hover:text-brand-accent mb-3 flex items-center gap-2 text-sm font-semibold transition-colors"
+          className="group text-h3 hover:text-brand-accent text-brand-text flex w-fit items-center gap-2 tracking-tight transition-colors"
         >
-          <ArrowLeft className="size-4" />
-          Communication Management
+          <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
+          <span>Communication Management</span>
         </button>
-
-        <p className="text-brand-muted text-sm">
-          Communication management /
-          <span className="text-brand-text ml-1 font-medium">{data.messageId}</span>
+        <p className="text-body-sm text-muted mt-2 pl-7 leading-[20px]">
+          <button
+            type="button"
+            onClick={() => navigate('/communication/management')}
+            className="hover:text-brand-text transition-colors"
+          >
+            Communication management
+          </button>
+          <span> / </span>
+          <span className="text-brand-text font-semibold">Create Communication</span>
         </p>
       </div>
 
-      <section
-        className={cn(
-          uiTokens.radiusCard,
-          uiTokens.borderSubtle,
-          'bg-brand-surface p-6 shadow-[0_10px_30px_rgba(0,0,0,0.35)] sm:p-8',
-        )}
-      >
-        <div className="flex items-start justify-between gap-4 border-b border-white/10 pb-6">
+      {/* Main card */}
+      <div className="radius-lg bg-brand-surface border border-white/[0.06] p-5">
+        {/* Title row */}
+        <div className="mb-4 flex items-start justify-between gap-4">
           <div>
-            <h2 className="text-brand-text text-2xl font-semibold">{data.title}</h2>
-            <div className="text-brand-muted mt-4 flex flex-wrap items-center gap-6 text-sm">
-              <div className="flex items-center gap-2">
-                <User className="size-4" />
+            <h2 className="text-h4 text-brand-text">{data.title}</h2>
+            <div className="text-body-sm text-muted mt-2 flex flex-wrap items-center gap-4">
+              <span className="flex items-center gap-1.5">
+                <User className="size-3.5" />
                 {data.createdBy}
-              </div>
-              <div className="flex items-center gap-2">
-                <Calendar className="size-4" />
+              </span>
+              <span className="flex items-center gap-1.5">
+                <Calendar className="size-3.5" />
                 {scheduleLabel}
-              </div>
+              </span>
             </div>
           </div>
-
           <span
-            className={cn(
-              'rounded-full border px-4 py-1.5 text-sm font-semibold',
-              statusBadgeClass[data.statusLabel] ?? 'text-brand-muted border-white/10 bg-white/5',
-            )}
+            className="text-body-sm-semibold inline-flex h-[31px] shrink-0 items-center rounded px-3"
+            style={{ backgroundColor: 'rgb(0 166 62 / 20%)', color: '#00A63E' }}
           >
             {data.statusLabel}
           </span>
         </div>
 
-        <div className="rounded-brand-lg mt-6 border border-white/10 bg-[#0F0F0F] px-6 py-5 sm:px-8">
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
-            <div>
-              <p className="text-brand-muted text-xs">Type</p>
-              <p className="text-brand-text mt-2 text-sm font-medium">{data.typeLabel}</p>
-            </div>
-            <div>
-              <p className="text-brand-muted text-xs">Audience</p>
-              <p className="text-brand-text mt-2 text-sm font-medium">{data.audienceLabel}</p>
-            </div>
-            <div>
-              <p className="text-brand-muted text-xs">Channel</p>
-              <p className="text-brand-text mt-2 text-sm font-medium">{data.channelLabel}</p>
-            </div>
+        {/* Type / Audience / Channel */}
+        <div className="radius-md bg-brand-bg mb-5 grid grid-cols-3 gap-4 border border-white/[0.06] px-5 py-4">
+          <div>
+            <p className="text-body-sm text-muted">Type</p>
+            <p className="text-body-md-semibold text-brand-text mt-1">{data.typeLabel}</p>
+          </div>
+          <div>
+            <p className="text-body-sm text-muted">Audience</p>
+            <p className="text-body-md-semibold text-brand-text mt-1">{data.audienceLabel}</p>
+          </div>
+          <div>
+            <p className="text-body-sm text-muted">Channel</p>
+            <p className="text-body-md-semibold text-brand-text mt-1">{data.channelLabel}</p>
           </div>
         </div>
 
+        {/* Subject */}
         {data.subject ? (
-          <div className="mt-8">
-            <h3 className="text-brand-text mb-3 text-sm font-semibold">Subject</h3>
-            <div className="rounded-brand-lg border border-white/10 bg-[#0F0F0F] px-5 py-4">
-              <p className="text-brand-text text-sm leading-6">{data.subject}</p>
+          <div className="mb-5">
+            <p className="text-body-sm-semibold text-brand-text mb-2">Subject</p>
+            <div className="radius-md bg-brand-bg border border-white/[0.06] px-4 py-3">
+              <p className="text-body-sm text-brand-text/80">{data.subject}</p>
             </div>
           </div>
         ) : null}
 
-        <div className="mt-8">
-          <h3 className="text-brand-text mb-3 text-sm font-semibold">Message Content</h3>
-          <div className="rounded-brand-lg border border-white/10 bg-[#0F0F0F] px-5 py-4">
-            <p className="text-brand-text text-sm leading-6 whitespace-pre-wrap">
+        {/* Message Content */}
+        <div className="mb-5">
+          <p className="text-body-sm-semibold text-brand-text mb-2">Message Content</p>
+          <div className="radius-md bg-brand-bg border border-white/[0.06] px-4 py-3">
+            <p className="text-body-sm text-brand-text/80 whitespace-pre-wrap">
               {data.messageContent}
             </p>
           </div>
         </div>
 
+        {/* Additional Notes */}
         {data.additionalNotes ? (
-          <div className="mt-8">
-            <h3 className="text-brand-text mb-3 text-sm font-semibold">Additional Notes</h3>
-            <div className="rounded-brand-lg border border-white/10 bg-[#0F0F0F] px-5 py-4">
-              <p className="text-brand-text text-sm leading-6">{data.additionalNotes}</p>
+          <div className="mb-5">
+            <p className="text-body-sm-semibold text-brand-text mb-2">Additional Notes</p>
+            <div className="radius-md bg-brand-bg border border-white/[0.06] px-4 py-3">
+              <p className="text-body-sm text-brand-text/80">{data.additionalNotes}</p>
             </div>
           </div>
         ) : null}
 
-        <div className="my-8 border-t border-white/10" />
+        {/* Delivery Analytics */}
+        <div className="border-t border-white/[0.06] pt-5">
+          <p className="text-body-sm-semibold text-brand-text mb-1">Delivery Analytics</p>
+          {data.deliveryMeta?.note ? (
+            <p className="text-body-sm text-muted mb-4">{data.deliveryMeta.note}</p>
+          ) : null}
 
-        <h3 className="text-brand-text mb-2 text-sm font-semibold">Delivery Analytics</h3>
-        <p className="text-brand-muted mb-5 text-xs">{data.deliveryMeta.note}</p>
-
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {analyticsMetrics.map((item) => (
-            <div
-              key={item.label}
-              className={cn(uiTokens.radiusCard, uiTokens.borderSubtle, 'bg-[#0F0F0F] p-5')}
-            >
-              <p className="text-brand-muted text-xs font-semibold tracking-wide">{item.label}</p>
-              <p className="text-brand-text mt-2 text-3xl font-semibold tracking-tight">
-                {item.value}
-              </p>
-            </div>
-          ))}
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+            {analyticsMetrics.map((metric) => (
+              <StatCard
+                key={metric.title}
+                title={metric.title}
+                value={metric.value}
+                trend={{ direction: 'up', percentage: 6.7, label: 'vs last month' }}
+                className="h-[130px]"
+              />
+            ))}
+          </div>
         </div>
-      </section>
+      </div>
 
-      <section
-        className={cn(
-          uiTokens.radiusCard,
-          uiTokens.borderSubtle,
-          'bg-brand-surface px-5 py-4 shadow-[0_10px_30px_rgba(0,0,0,0.35)]',
-        )}
-      >
-        <div className="flex items-center justify-between gap-3">
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={() => navigateBackOrFallback(navigate, '/communication/management')}
-          >
-            Close
-          </Button>
-          <Button type="button" onClick={() => navigate(`/communication/create?edit=${data.id}`)}>
-            Edit Communication
-          </Button>
-        </div>
-      </section>
+      {/* Footer */}
+      <div className="radius-lg bg-brand-surface flex items-center justify-between border border-white/[0.06] px-5 py-4">
+        <button
+          type="button"
+          onClick={() => navigateBackOrFallback(navigate, '/communication/management')}
+          className="ui-cta ui-cta-ghost"
+        >
+          Close
+        </button>
+        <button
+          type="button"
+          onClick={() => navigate(`/communication/create?edit=${data.id}`)}
+          className="ui-cta ui-cta-primary"
+        >
+          Edit Communication
+        </button>
+      </div>
     </div>
   )
 }

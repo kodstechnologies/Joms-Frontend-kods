@@ -485,7 +485,10 @@ button:disabled,
   border-radius: var(--brand-radius-md);
   border: 1px solid rgb(255 255 255 / 10%);
   background: #050505;
-  padding: 0 14px;
+  padding-top: 0;
+  padding-bottom: 0;
+  padding-left: 14px;
+  padding-right: 14px;
   font-family: 'Figtree', ui-sans-serif, system-ui, sans-serif;
   font-weight: 400;
   font-size: 14px;
@@ -973,4 +976,435 @@ button:disabled,
 }
 .p-grid-4 {
   padding: calc(var(--brand-grid) * 4);
+}
+
+/* Referral Status Badges */
+.status-badge-accepted {
+  background: rgb(0 166 62 / 20%);
+  color: #00a63e;
+  border-radius: 10px;
+  padding: 8px 10px;
+  height: 25px;
+  border: none;
+}
+
+.status-badge-accepted-solid {
+  background: #00a63e;
+  color: #ffffff;
+  border-radius: 10px;
+  padding: 8px 10px;
+  height: 25px;
+  border: none;
+  width: fit-content;
+}
+
+.status-badge-pending {
+  background: rgb(246 203 134 / 20%);
+  color: #f6cb86;
+  border-radius: 10px;
+  padding: 8px 10px;
+  height: 25px;
+  border: none;
+}
+
+.status-badge-expired {
+  background: rgb(100 116 139 / 15%);
+  color: rgb(203 213 225);
+  border-radius: 10px;
+  padding: 8px 10px;
+  height: 25px;
+  border: none;
+}
+
+.status-badge-default {
+  background: rgb(255 255 255 / 10%);
+  color: rgb(203 213 225);
+  border-radius: 10px;
+  padding: 8px 10px;
+  height: 25px;
+  border: none;
+}
+
+/* Referral Stats Card */
+.referral-stats-card {
+  background: #141414;
+  border: 1px solid rgb(255 255 255 / 6%);
+  border-radius: 12px;
+  min-height: 130px;
+  width: 280px;
+}
+
+.referral-stats-card:hover {
+  border-color: rgb(255 255 255 / 15%);
+}
+
+.referral-stats-label {
+  color: rgb(255 255 255 / 50%);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.referral-stats-value {
+  color: #ffffff;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.referral-stats-trend-badge {
+  background: rgb(0 166 62 / 20%);
+  color: #00a63e;
+  border-radius: 6px;
+  padding: 2px 6px;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.referral-stats-trend-label {
+  color: rgb(255 255 255 / 50%);
+  font-size: 10px;
+}
+
+/* Referral Page Header */
+.referral-page-title {
+  color: #ffffff;
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 40px;
+  letter-spacing: 0;
+}
+
+.referral-page-subtitle {
+  color: rgb(255 255 255 / 50%);
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 22px;
+  letter-spacing: 0;
+}
+
+/* Referral Details Modal */
+.invite-details-modal {
+  background: #141414;
+  border: 1px solid rgb(255 255 255 / 10%);
+  border-radius: 16px;
+  width: 551px;
+  max-width: calc(100vw - 32px);
+}
+
+.invite-details-header {
+  border-bottom: 1px solid rgb(255 255 255 / 10%);
+  padding: 16px 20px;
+}
+
+.invite-details-title {
+  color: #ffffff;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 26px;
+  letter-spacing: 0;
+}
+
+.invite-details-close-btn {
+  color: rgb(255 255 255 / 50%);
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  border-radius: 4px;
+  transition: color 0.15s ease;
+}
+
+.invite-details-close-btn:hover {
+  color: #ffffff;
+}
+
+.invite-details-body {
+  padding: 20px;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px 24px;
+}
+
+.invite-detail-label {
+  color: rgb(255 255 255 / 50%);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 18px;
+  letter-spacing: 0;
+}
+
+.invite-detail-value {
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 18px;
+  letter-spacing: 0;
+}
+
+.invite-detail-value-truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Invite Expert Referral Modal */
+.invite-modal-title {
+  color: #ffffff;
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 32px;
+  letter-spacing: 0;
+}
+
+.invite-modal-subtitle {
+  color: rgb(255 255 255 / 50%);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 18px;
+  letter-spacing: 0;
+}
+
+.invite-modal-tab {
+  border-radius: 8px;
+  height: 40px;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 22px;
+  letter-spacing: 0;
+  text-align: center;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.invite-modal-tab-active {
+  background: #141414;
+  border: 1px solid rgb(255 255 255 / 20%);
+  color: #ffffff;
+}
+
+.invite-modal-tab-inactive {
+  background: #050505;
+  border: 1px solid rgb(255 255 255 / 10%);
+  color: rgb(179 179 179);
+}
+
+.invite-modal-tab-inactive:hover {
+  color: #ffffff;
+}
+
+.invite-modal-field-label {
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 22px;
+  letter-spacing: 0;
+}
+
+.invite-modal-note {
+  color: rgb(179 179 179);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 18px;
+  letter-spacing: 0;
+}
+
+/* Membership Management Page Styles */
+.membership-page-title {
+  color: #ffffff;
+  font-size: 32px;
+  font-weight: 600;
+  line-height: 40px;
+  letter-spacing: 0;
+}
+
+.membership-page-subtitle {
+  color: rgb(255 255 255 / 50%);
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 20px;
+  letter-spacing: 0;
+}
+
+.membership-filter-btn {
+  border-radius: 100px;
+  height: 40px;
+  padding: 0 16px;
+  font-size: 12px;
+  font-weight: 500;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.membership-filter-btn-active {
+  background: rgb(246 203 134 / 10%);
+  border: 1px solid rgb(246 203 134 / 40%);
+  color: #f6cb86;
+}
+
+.membership-filter-btn-inactive {
+  background: transparent;
+  border: 1px solid rgb(255 255 255 / 10%);
+  color: rgb(255 255 255 / 50%);
+}
+
+.membership-filter-btn-inactive:hover {
+  color: #ffffff;
+}
+
+.membership-status-badge {
+  height: 25px;
+  border-radius: 10px;
+  padding: 0 10px;
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  border: none;
+}
+
+.membership-status-active {
+  background: rgb(0 166 62 / 20%);
+  color: #00a63e;
+}
+
+.membership-status-paused {
+  background: rgb(246 203 134 / 20%);
+  color: #f6cb86;
+}
+
+.membership-status-cancelled {
+  background: rgb(239 68 68 / 20%);
+  color: #ef4444;
+}
+
+.membership-status-expired {
+  background: rgb(45 212 191 / 20%);
+  color: #2dd4bf;
+}
+
+/* Table Button Styles */
+.table-advance-filter-btn {
+  height: 50px;
+  border-radius: 12px;
+  padding: 0 16px;
+  font-size: 14px;
+  font-weight: 600;
+  background: transparent;
+  border: 1px solid rgb(255 255 255 / 45%);
+  color: #ffffff;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.table-advance-filter-btn:hover {
+  background: rgb(255 255 255 / 5%);
+  border-color: #f6cb86;
+}
+
+.table-export-btn {
+  height: 50px;
+  border-radius: 12px;
+  padding: 0 16px;
+  font-size: 14px;
+  font-weight: 600;
+  background: #f6cb86;
+  border: none;
+  color: #141414;
+  transition: background-color 0.15s ease;
+}
+
+.table-export-btn:hover {
+  background: #e5ba75;
+}
+
+.table-pagination-btn {
+  height: 40px;
+  border-radius: 8px;
+  padding: 0 16px;
+  font-size: 14px;
+  font-weight: 500;
+  background: transparent;
+  border: 1px solid rgb(255 255 255 / 10%);
+  color: rgb(255 255 255 / 50%);
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.table-pagination-btn:hover:not(:disabled) {
+  background: rgb(255 255 255 / 5%);
+  color: #ffffff;
+}
+
+.table-pagination-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.table-pagination-page-active {
+  background: #141414;
+  border: 1px solid rgb(255 255 255 / 20%);
+  color: #ffffff;
+}
+
+/* Create Membership Modal Styles */
+.create-membership-modal {
+  max-width: 701px;
+  border-radius: 16px;
+  background: #000000;
+  border: 1px solid rgb(255 255 255 / 10%);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.65);
+}
+
+.create-membership-title {
+  color: #ffffff;
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 28px;
+}
+
+.create-membership-subtitle {
+  color: rgb(255 255 255 / 50%);
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 22px;
+}
+
+.create-membership-close-btn {
+  color: rgb(255 255 255 / 50%);
+  border-radius: 8px;
+  padding: 8px;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.create-membership-close-btn:hover {
+  background: rgb(255 255 255 / 10%);
+  color: #ffffff;
+}
+
+.create-membership-cancel-btn {
+  height: 40px;
+  min-width: 120px;
+  border-radius: 10px;
+  padding: 0 16px;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 22px;
+  background: transparent;
+  border: 1px solid rgb(255 255 255);
+  color: #ffffff;
+  transition: background-color 0.15s ease;
+}
+
+.create-membership-cancel-btn:hover {
+  background: rgb(255 255 255 / 5%);
 }

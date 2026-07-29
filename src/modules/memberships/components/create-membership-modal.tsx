@@ -50,7 +50,7 @@ export function CreateMembershipModal({ open, onClose }: CreateMembershipModalPr
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
       {/* Figma: 701 × 1458 */}
       <div
-        className="flex w-full max-w-[701px] flex-col overflow-hidden rounded-[16px] border border-white/10 bg-black text-white shadow-[0_24px_80px_rgba(0,0,0,0.65)]"
+        className="create-membership-modal flex w-full flex-col overflow-hidden text-white"
         style={{ maxHeight: 'min(1458px, 92vh)' }}
       >
         <div
@@ -58,15 +58,15 @@ export function CreateMembershipModal({ open, onClose }: CreateMembershipModalPr
           style={{ borderBottom: '1px solid rgba(255,255,255,0.1)' }}
         >
           <div>
-            <h2 className="text-[20px] leading-7 font-semibold text-white">Create Membership</h2>
-            <p className="mt-1 text-[14px] leading-[22px] text-white/50">
+            <h2 className="create-membership-title">Create Membership</h2>
+            <p className="create-membership-subtitle mt-1">
               Configure membership plan details and features
             </p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg p-2 text-white/50 transition-colors hover:bg-white/10 hover:text-white"
+            className="create-membership-close-btn"
             aria-label="Close"
           >
             <X className="size-5" strokeWidth={1.75} />
@@ -81,11 +81,7 @@ export function CreateMembershipModal({ open, onClose }: CreateMembershipModalPr
           className="flex shrink-0 items-center justify-end gap-3 px-6 py-5"
           style={{ borderTop: '1px solid rgba(255,255,255,0.1)' }}
         >
-          <button
-            type="button"
-            onClick={onClose}
-            className="inline-flex h-10 min-w-[120px] items-center justify-center rounded-[10px] border border-white bg-transparent px-4 text-[14px] leading-[22px] font-semibold text-white transition-colors hover:bg-white/5"
-          >
+          <button type="button" onClick={onClose} className="create-membership-cancel-btn">
             Cancel
           </button>
           <button

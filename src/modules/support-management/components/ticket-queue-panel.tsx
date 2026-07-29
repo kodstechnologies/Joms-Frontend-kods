@@ -4,7 +4,6 @@ import type { QueueTicket } from '../types/support'
 import { getReporterTypeLabel } from '../utils/support-format'
 import { TicketPriorityBadge } from './ticket-priority-badge'
 import { TicketStatusBadge } from './ticket-status-badge'
-import { Input } from '@/shared/components/ui/input'
 import { cn } from '@/shared/lib/cn'
 
 type TicketQueuePanelProps = {
@@ -60,13 +59,14 @@ export function TicketQueuePanel({
       {showFilters ? filterPanel : null}
 
       <div className="border-b border-white/5 px-4 py-3">
-        <div className="relative">
-          <Search className="text-muted absolute top-1/2 left-3 size-4 -translate-y-1/2" />
-          <Input
+        <div className="radius-md bg-brand-bg flex h-10 items-center gap-2 border border-white/10 px-3">
+          <Search className="text-muted size-4 shrink-0" />
+          <input
+            type="text"
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder="Search by name, ID or profession"
-            className="ui-input bg-brand-surface text-body-md text-brand-text placeholder:text-muted h-10 border-0 pl-10"
+            className="text-brand-text placeholder:text-muted h-full flex-1 bg-transparent text-sm outline-none"
           />
         </div>
       </div>

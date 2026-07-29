@@ -45,7 +45,7 @@ export function EditRecipientModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
       <div className="ui-modal-shell max-w-xl">
         <div className="ui-modal-header">
-          <h2 className="text-h4 text-brand-text">Edit Expert Details</h2>
+          <h2 className="invite-modal-title">Edit Expert Details</h2>
           <button
             type="button"
             onClick={onClose}
@@ -107,7 +107,7 @@ export function EditRecipientModal({
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="block space-y-2.5">
-      <span className="text-brand-text text-body-md font-medium">{label}</span>
+      <span className="invite-modal-field-label">{label}</span>
       {children}
     </label>
   )

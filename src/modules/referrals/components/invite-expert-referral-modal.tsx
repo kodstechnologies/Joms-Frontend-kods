@@ -93,8 +93,8 @@ export function InviteExpertReferralModal({
       <div className="ui-modal-shell relative max-w-xl">
         <div className="ui-modal-header">
           <div className="min-w-0 pr-2">
-            <h2 className="text-h2 text-brand-text">Refer New Partner</h2>
-            <p className="text-body-sm text-muted mt-1">Platform-referred partners</p>
+            <h2 className="invite-modal-title">Refer New User</h2>
+            <p className="invite-modal-subtitle mt-1">Platform-referred users</p>
           </div>
           <button
             type="button"
@@ -198,7 +198,7 @@ export function InviteExpertReferralModal({
             />
           </Field>
 
-          <p className="text-muted text-body-sm leading-relaxed">
+          <p className="invite-modal-note leading-relaxed">
             Note: The partners will get referral code to their email ID & notified through
             SMS/WhatsApp.
           </p>
@@ -236,10 +236,8 @@ function TabButton({
       type="button"
       onClick={onClick}
       className={cn(
-        'rounded-brand-md h-10 text-center text-sm font-semibold transition-colors',
-        active
-          ? 'bg-brand-surface border border-white/20 text-white'
-          : 'bg-brand-bg text-muted border border-white/10 hover:text-white',
+        'invite-modal-tab',
+        active ? 'invite-modal-tab-active' : 'invite-modal-tab-inactive',
       )}
     >
       {children}
@@ -250,7 +248,7 @@ function TabButton({
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="block space-y-2.5">
-      <span className="text-brand-text text-sm font-medium">{label}</span>
+      <span className="invite-modal-field-label">{label}</span>
       {children}
     </label>
   )
