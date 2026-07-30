@@ -2,6 +2,7 @@ import { CheckCircle2, CloudUpload, Trash2, X } from 'lucide-react'
 import { useState } from 'react'
 
 import type { BulkExpertInvitePayload, ExpertInvitePayload } from '../types/referral'
+import { requiredLabel } from '@/shared/components/form/required-label'
 import { Input } from '@/shared/components/ui/input'
 import { cn } from '@/shared/lib/cn'
 
@@ -248,7 +249,7 @@ function TabButton({
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="block space-y-2.5">
-      <span className="invite-modal-field-label">{label}</span>
+      <span className="invite-modal-field-label">{requiredLabel(label)}</span>
       {children}
     </label>
   )

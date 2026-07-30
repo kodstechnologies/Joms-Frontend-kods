@@ -10,15 +10,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
-import {
-  BarChart3,
-  ChevronDown,
-  Download,
-  RefreshCw,
-  Star,
-  TrendingDown,
-  TrendingUp,
-} from 'lucide-react'
+import { BarChart3, Download, RefreshCw, Star, TrendingDown, TrendingUp } from 'lucide-react'
 import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
@@ -310,7 +302,6 @@ export const VenueDashboardPage = () => {
                 <option value="6">Last 6 Months</option>
                 <option value="12">Last 12 Months</option>
               </select>
-              <ChevronDown className="pointer-events-none absolute top-1/2 right-3 size-3 -translate-y-1/2 text-white" />
             </div>
             <button
               type="button"

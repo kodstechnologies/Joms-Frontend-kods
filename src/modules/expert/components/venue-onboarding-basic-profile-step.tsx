@@ -3,6 +3,7 @@ import { Search, Upload } from 'lucide-react'
 
 import { useServiceCategoriesByType } from '../hooks/use-service-categories'
 import type { VenueOnboardingFormData } from '../utils/venue-onboarding-form'
+import { RequiredMark } from '@/shared/components/form/required-mark'
 import { sanitizeMobileNumber } from '@/shared/lib/phone'
 
 const fieldClass = 'ui-input'
@@ -38,7 +39,7 @@ export const VenueOnboardingBasicProfileStep = ({ formData, setFormData }: Props
   }
 
   return (
-    <div className="mx-auto w-full max-w-[850px]">
+    <div className="mx-auto w-full max-w-[1140px]">
       <div className="animate-in fade-in slide-in-from-right-4 bg-brand-surface rounded-lg border border-white/5 p-6 duration-300">
         <div className="mb-6">
           <h2 className="text-sm font-bold text-white">Basic Profile Setup</h2>
@@ -102,7 +103,9 @@ export const VenueOnboardingBasicProfileStep = ({ formData, setFormData }: Props
 
         <div className="mt-12 grid grid-cols-1 gap-5 md:grid-cols-2">
           <div>
-            <label className="mb-2 block text-xs font-medium text-white">Venue Name *</label>
+            <label className="mb-2 block text-xs font-medium text-white">
+              Venue Name <RequiredMark />
+            </label>
             <input
               value={formData.name}
               onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
@@ -136,7 +139,9 @@ export const VenueOnboardingBasicProfileStep = ({ formData, setFormData }: Props
           </div>
 
           <div>
-            <label className="mb-2 block text-xs font-medium text-white">Category *</label>
+            <label className="mb-2 block text-xs font-medium text-white">
+              Category <RequiredMark />
+            </label>
             <div className="relative">
               <Search className="text-muted absolute top-1/2 left-3 size-4 -translate-y-1/2" />
               <select
@@ -150,7 +155,7 @@ export const VenueOnboardingBasicProfileStep = ({ formData, setFormData }: Props
                     venueCategoryName: selectedCategory?.name || '',
                   }))
                 }}
-                className={`${fieldClass} appearance-none pl-10`}
+                className={`${fieldClass} ui-input-icon-left appearance-none`}
               >
                 <option value="">{isCategoriesLoading ? 'Loading categories...' : 'Search'}</option>
                 {!isCategoriesLoading && categories.length === 0 && (
@@ -190,7 +195,9 @@ export const VenueOnboardingBasicProfileStep = ({ formData, setFormData }: Props
           </div>
 
           <div>
-            <label className="mb-2 block text-xs font-medium text-white">Phone Number *</label>
+            <label className="mb-2 block text-xs font-medium text-white">
+              Phone Number <RequiredMark />
+            </label>
             <input
               type="tel"
               inputMode="numeric"
@@ -208,7 +215,9 @@ export const VenueOnboardingBasicProfileStep = ({ formData, setFormData }: Props
           </div>
 
           <div>
-            <label className="mb-2 block text-xs font-medium text-white">Email ID *</label>
+            <label className="mb-2 block text-xs font-medium text-white">
+              Email ID <RequiredMark />
+            </label>
             <input
               value={formData.email}
               onChange={(e) => setFormData((prev) => ({ ...prev, email: e.target.value }))}

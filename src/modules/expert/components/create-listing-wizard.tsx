@@ -112,9 +112,9 @@ export function CreateListingWizard({
         </div>
       </div>
 
-      <div className="mx-auto w-full">{children}</div>
+      <div className="mx-auto w-full max-w-[1130px]">{children}</div>
 
-      <div className="bg-brand-surface mx-auto flex w-full max-w-[850px] items-center justify-between rounded-lg border border-white/5 p-4 shadow-lg">
+      <div className="bg-brand-surface mx-auto flex w-full max-w-[1140px] items-center justify-between rounded-lg border border-white/5 p-4 shadow-lg">
         <Button
           variant="secondary"
           onClick={onBack}

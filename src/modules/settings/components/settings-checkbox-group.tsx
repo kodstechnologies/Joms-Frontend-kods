@@ -32,7 +32,7 @@ export function SettingsCheckboxGroup({
               type="checkbox"
               checked={values[option.key] ?? false}
               onChange={(event) => onChange(option.key, event.target.checked)}
-              className="size-4 rounded border-white/20 bg-transparent accent-[#F0C27B]"
+              className="size-4 rounded border-white/20 bg-transparent accent-white"
             />
             {option.label}
           </label>

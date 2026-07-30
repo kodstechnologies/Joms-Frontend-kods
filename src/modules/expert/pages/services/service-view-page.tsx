@@ -28,6 +28,7 @@ import {
 import { useExpertProfile } from '../../hooks/use-expert-profile'
 import { formatExpertDateTime, formatListingExpertId } from '../experts/expert-list-format'
 import { Button } from '@/shared/components/ui/button'
+import { RequiredMark } from '@/shared/components/form/required-mark'
 import {
   DecisionControlButtons,
   DecisionControlsHeader,
@@ -1104,7 +1105,9 @@ export const ServiceViewPage = () => {
         <div className="bg-brand-bg rounded-xl border border-white/5 p-5">
           <div className="text-body-md mb-4 flex items-center gap-2 font-semibold text-white">
             <History className="text-brand-accent size-4" aria-hidden="true" />
-            <h3>Internal Notes *</h3>
+            <h3>
+              Internal Notes <RequiredMark />
+            </h3>
           </div>
           <div className="text-body-sm text-muted min-h-[120px] rounded-lg border border-white/5 bg-black p-4">
             {service.adminNote?.trim() || 'No notes yet.'}

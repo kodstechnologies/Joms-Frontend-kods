@@ -2,6 +2,7 @@ import { Save, X } from 'lucide-react'
 import { useState } from 'react'
 
 import type { UpdateRecipientPayload } from '../types/referral'
+import { requiredLabel } from '@/shared/components/form/required-label'
 
 type EditRecipientModalProps = {
   open: boolean
@@ -107,7 +108,7 @@ export function EditRecipientModal({
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="block space-y-2.5">
-      <span className="invite-modal-field-label">{label}</span>
+      <span className="invite-modal-field-label">{requiredLabel(label)}</span>
       {children}
     </label>
   )

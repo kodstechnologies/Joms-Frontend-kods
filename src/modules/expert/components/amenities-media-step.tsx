@@ -126,7 +126,7 @@ export const AmenitiesMediaStep = ({ venueData, setVenueData }: AmenitiesMediaSt
 
   return (
     <>
-      <div className="mx-auto w-full max-w-[850px] space-y-5">
+      <div className="mx-auto w-full max-w-[1140px] space-y-5">
         <div className="bg-brand-surface rounded-lg border border-white/5 p-5 shadow-xl">
           <div className="mb-5 flex items-center justify-between">
             <div>
@@ -150,7 +150,7 @@ export const AmenitiesMediaStep = ({ venueData, setVenueData }: AmenitiesMediaSt
               value={amenitySearch}
               onChange={(e) => setAmenitySearch(e.target.value)}
               placeholder="Search"
-              className="ui-input h-9 pl-9"
+              className="ui-input ui-input-icon-left h-9"
             />
           </div>
 
@@ -372,7 +372,7 @@ export const AmenitiesMediaStep = ({ venueData, setVenueData }: AmenitiesMediaSt
                     value={contact.name}
                     onChange={(e) => updateContact(index, 'name', e.target.value)}
                     placeholder="Enter name here..."
-                    className="ui-input pl-9"
+                    className="ui-input ui-input-icon-left"
                   />
                 </div>
 
@@ -385,7 +385,7 @@ export const AmenitiesMediaStep = ({ venueData, setVenueData }: AmenitiesMediaSt
                     value={contact.phone}
                     onChange={(e) => updateContact(index, 'phone', e.target.value)}
                     placeholder="Phone"
-                    className="ui-input pl-9"
+                    className="ui-input ui-input-icon-left"
                   />
                 </div>
 
@@ -395,7 +395,7 @@ export const AmenitiesMediaStep = ({ venueData, setVenueData }: AmenitiesMediaSt
                     value={contact.email}
                     onChange={(e) => updateContact(index, 'email', e.target.value)}
                     placeholder="Email ID"
-                    className="ui-input pl-9"
+                    className="ui-input ui-input-icon-left"
                   />
                 </div>
               </div>

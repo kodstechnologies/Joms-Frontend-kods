@@ -141,7 +141,7 @@ function SearchField({
         aria-label={placeholder}
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="h-[50px] w-full rounded-xl border-0 bg-[#141414] py-0 pr-4 pl-10 text-sm text-white outline-none placeholder:text-white/40 focus:ring-1 focus:ring-white/15"
+        className="h-[50px] w-full rounded-xl border-0 bg-[#141414] py-0 pr-4 pl-11 text-sm text-white outline-none placeholder:text-white/40 focus:ring-1 focus:ring-white/15"
       />
     </div>
   )

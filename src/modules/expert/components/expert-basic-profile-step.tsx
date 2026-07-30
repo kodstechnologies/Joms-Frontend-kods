@@ -1,8 +1,9 @@
 import { useMemo, useRef, useState } from 'react'
-import { ChevronDown, ImageIcon, Search, Upload, XCircle } from 'lucide-react'
+import { ImageIcon, Search, Upload, XCircle } from 'lucide-react'
 
 import { useServiceCategoriesByType } from '../hooks/use-service-categories'
 import type { ExpertOnboardingFormData } from '../utils/expert-onboarding-form'
+import { RequiredMark } from '@/shared/components/form/required-mark'
 import { cn } from '@/shared/lib/cn'
 import { sanitizeMobileNumber } from '@/shared/lib/phone'
 
@@ -95,7 +96,7 @@ export const ExpertBasicProfileStep = ({ formData, setFormData, lockedServiceTyp
   }
 
   return (
-    <div className="mx-auto w-full max-w-[850px]">
+    <div className="mx-auto w-full max-w-[1140px]">
       <div className="animate-in fade-in slide-in-from-right-4 bg-brand-surface rounded-lg border border-white/5 p-6 duration-300">
         <div className="mb-6">
           <h2 className="text-sm font-bold text-white">Basic Profile Setup</h2>
@@ -158,7 +159,9 @@ export const ExpertBasicProfileStep = ({ formData, setFormData, lockedServiceTyp
             </div>
 
             <div className="pt-10">
-              <label className="mb-2 block text-xs font-medium text-white">Full Name *</label>
+              <label className="mb-2 block text-xs font-medium text-white">
+                Full Name <RequiredMark />
+              </label>
               <input
                 value={formData.fullname}
                 onChange={(e) => setFormData((prev) => ({ ...prev, fullname: e.target.value }))}
@@ -238,7 +241,7 @@ export const ExpertBasicProfileStep = ({ formData, setFormData, lockedServiceTyp
                   value={formData.industry}
                   onChange={(e) => setFormData((prev) => ({ ...prev, industry: e.target.value }))}
                   placeholder="Search industry"
-                  className={`${fieldClass} pl-10`}
+                  className={`${fieldClass} ui-input-icon-left`}
                 />
               </div>
             </div>
@@ -272,7 +275,9 @@ export const ExpertBasicProfileStep = ({ formData, setFormData, lockedServiceTyp
             </div>
 
             <div>
-              <label className="mb-2 block text-xs font-medium text-white">Service Type *</label>
+              <label className="mb-2 block text-xs font-medium text-white">
+                Service Type <RequiredMark />
+              </label>
               <div className="relative">
                 <select
                   value={serviceType}
@@ -295,13 +300,12 @@ export const ExpertBasicProfileStep = ({ formData, setFormData, lockedServiceTyp
                     </option>
                   ))}
                 </select>
-                <ChevronDown className="text-muted pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2" />
               </div>
             </div>
 
             <div>
               <label className="mb-2 block text-xs font-medium text-white">
-                Service Category *
+                Service Category <RequiredMark />
               </label>
               {!serviceType ? (
                 <p className="text-muted rounded-md bg-black px-3 py-2.5 text-xs">
@@ -315,7 +319,7 @@ export const ExpertBasicProfileStep = ({ formData, setFormData, lockedServiceTyp
                       value={categorySearch}
                       onChange={(e) => setCategorySearch(e.target.value)}
                       placeholder="Search categories"
-                      className={`${fieldClass} pl-10`}
+                      className={`${fieldClass} ui-input-icon-left`}
                     />
                   </div>
 
@@ -392,7 +396,7 @@ export const ExpertBasicProfileStep = ({ formData, setFormData, lockedServiceTyp
                     }
                   }}
                   placeholder="Search and press Enter"
-                  className={`${fieldClass} pl-10`}
+                  className={`${fieldClass} ui-input-icon-left`}
                 />
               </div>
               {formData.offerings.length > 0 && (
@@ -418,7 +422,7 @@ export const ExpertBasicProfileStep = ({ formData, setFormData, lockedServiceTyp
               <div className="space-y-4">
                 <div>
                   <label className="mb-2 block text-xs font-medium text-white">
-                    Phone Number *
+                    Phone Number <RequiredMark />
                   </label>
 
                   <input
@@ -438,7 +442,9 @@ export const ExpertBasicProfileStep = ({ formData, setFormData, lockedServiceTyp
                 </div>
 
                 <div>
-                  <label className="mb-2 block text-xs font-medium text-white">Email ID *</label>
+                  <label className="mb-2 block text-xs font-medium text-white">
+                    Email ID <RequiredMark />
+                  </label>
 
                   <input
                     value={formData.email}

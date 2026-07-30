@@ -233,7 +233,7 @@ export function RejectRefundModal({ open, data, onClose, onConfirm }: RejectRefu
               type="checkbox"
               checked={confirmed}
               onChange={(event) => setConfirmed(event.target.checked)}
-              className="accent-brand-accent mt-1 rounded border-white/20 bg-transparent"
+              className="mt-1 rounded border-white/20 bg-transparent accent-white"
             />
             <span>I confirm I have reviewed all evidence before rejecting this dispute.</span>
           </label>

@@ -216,7 +216,7 @@ export function ApproveRefundModal({ open, data, onClose, onConfirm }: ApproveRe
               type="checkbox"
               checked={confirmed}
               onChange={(event) => setConfirmed(event.target.checked)}
-              className="accent-brand-accent mt-1 rounded border-white/20 bg-transparent"
+              className="mt-1 rounded border-white/20 bg-transparent accent-white"
             />
             <span>I confirm that this refund decision is final and based on reviewed evidence</span>
           </label>

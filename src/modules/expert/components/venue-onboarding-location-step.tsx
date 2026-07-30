@@ -2,6 +2,7 @@ import { useRef } from 'react'
 import { MapPin, Maximize2, Search, Upload, X } from 'lucide-react'
 
 import type { VenueOnboardingFormData } from '../utils/venue-onboarding-form'
+import { RequiredMark } from '@/shared/components/form/required-mark'
 
 const fieldClass = 'ui-input'
 
@@ -42,7 +43,7 @@ export const VenueOnboardingLocationStep = ({ formData, setFormData }: Props) =>
   const totalImages = formData.venueImages.length + formData.venueImageUrls.length
 
   return (
-    <div className="mx-auto w-full max-w-[850px] space-y-6">
+    <div className="mx-auto w-full max-w-[1140px] space-y-6">
       <div className="animate-in fade-in slide-in-from-right-4 bg-brand-surface rounded-lg border border-white/5 p-6 duration-300">
         <div className="mb-6">
           <h2 className="text-sm font-bold text-white">Add Venue Location</h2>
@@ -51,7 +52,9 @@ export const VenueOnboardingLocationStep = ({ formData, setFormData }: Props) =>
 
         <div className="space-y-5">
           <div>
-            <label className="mb-2 block text-xs font-medium text-white">Address *</label>
+            <label className="mb-2 block text-xs font-medium text-white">
+              Address <RequiredMark />
+            </label>
             <input
               value={formData.address}
               onChange={(e) => setFormData((prev) => ({ ...prev, address: e.target.value }))}
@@ -62,7 +65,9 @@ export const VenueOnboardingLocationStep = ({ formData, setFormData }: Props) =>
 
           <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
             <div>
-              <label className="mb-2 block text-xs font-medium text-white">City *</label>
+              <label className="mb-2 block text-xs font-medium text-white">
+                City <RequiredMark />
+              </label>
               <input
                 value={formData.city}
                 onChange={(e) => setFormData((prev) => ({ ...prev, city: e.target.value }))}
@@ -71,7 +76,9 @@ export const VenueOnboardingLocationStep = ({ formData, setFormData }: Props) =>
               />
             </div>
             <div>
-              <label className="mb-2 block text-xs font-medium text-white">Pin code *</label>
+              <label className="mb-2 block text-xs font-medium text-white">
+                Pin code <RequiredMark />
+              </label>
               <input
                 value={formData.pincode}
                 onChange={(e) => setFormData((prev) => ({ ...prev, pincode: e.target.value }))}
@@ -83,7 +90,7 @@ export const VenueOnboardingLocationStep = ({ formData, setFormData }: Props) =>
 
           <div>
             <label className="mb-2 block text-xs font-medium text-white">
-              Upload Venue Images *
+              Upload Venue Images <RequiredMark />
             </label>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
               {formData.venueImageUrls.map((url, index) => (
@@ -155,7 +162,7 @@ export const VenueOnboardingLocationStep = ({ formData, setFormData }: Props) =>
             value={formData.landmark}
             onChange={(e) => setFormData((prev) => ({ ...prev, landmark: e.target.value }))}
             placeholder="Search by Location"
-            className={`${fieldClass} pl-10`}
+            className={`${fieldClass} ui-input-icon-left`}
           />
         </div>
 

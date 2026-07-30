@@ -9,7 +9,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
-import { BarChart3, ChevronDown, Download, RefreshCw } from 'lucide-react'
+import { BarChart3, Download, RefreshCw } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
@@ -151,7 +151,6 @@ export function ServiceMarketplacePage() {
                 <option value="last-6-months">Last 6 Months</option>
                 <option value="last-12-months">Last 12 Months</option>
               </select>
-              <ChevronDown className="pointer-events-none absolute top-1/2 right-2 size-3.5 -translate-y-1/2 text-slate-400" />
             </div>
             <button
               type="button"

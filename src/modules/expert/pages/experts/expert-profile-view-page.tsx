@@ -83,7 +83,7 @@ const PROFILE_HEADER_BTN =
 const PROFILE_BTN_GHOST =
   'inline-flex items-center justify-center gap-1.5 rounded-lg border border-[#FFFFFF33] bg-[#050505] px-3 py-1.5 text-[12px] font-semibold text-white transition-colors hover:bg-white/5'
 
-const PROFILE_CARD = 'rounded-xl border border-[#FFFFFF33] bg-[#141414]'
+const PROFILE_CARD = 'rounded-xl bg-[#141414]'
 
 const PROFILE_ACTIVE_PILL = 'bg-[linear-gradient(180deg,#F6CB86_0%,#E0A263_100%)] text-[#050505]'
 
@@ -270,7 +270,7 @@ function SafeImage({
 
 function SidebarRow({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div className="flex items-center justify-between border-b border-[#FFFFFF33] py-3 last:border-0">
+    <div className="flex items-center justify-between py-3">
       <span className="text-body-sm text-muted">{label}</span>
       <span className="max-w-[58%] text-right text-[13px] font-semibold text-white">
         {children}
@@ -347,11 +347,11 @@ function ProfileSidebar({
 
       <div className={cn(PROFILE_CARD, 'p-5')}>
         <h3 className="mb-4 text-[13px] font-semibold text-white">Support &amp; Admin</h3>
-        <div className="rounded-lg border border-[#FFFFFF33] bg-[#050505] p-3">
+        <div className="rounded-lg bg-[#050505] p-3">
           <p className="text-muted text-[10px]">Active Tickets</p>
           <p className="text-body-sm mt-1 font-medium text-white">None</p>
         </div>
-        <div className="mt-3 rounded-lg border border-[#FFFFFF33] bg-[#050505] p-3">
+        <div className="mt-3 rounded-lg bg-[#050505] p-3">
           <p className="text-muted text-[10px]">Admin notes</p>
           <p className="text-body-sm mt-1 font-medium text-white">
             {profile.finalReview?.internalNotes || 'None'}
@@ -392,7 +392,7 @@ function OverviewTab({ profile }: { profile: ExpertProfileDetail }) {
         </section>
 
         {offerings.length > 0 ? (
-          <section className="mt-5 border-t border-[#FFFFFF33] pt-5">
+          <section className="mt-5 pt-5">
             <h3 className="text-body-md mb-4 font-semibold text-white">Core Offerings</h3>
             <ul className="space-y-2.5">
               {offerings.map((item) => (
@@ -406,7 +406,7 @@ function OverviewTab({ profile }: { profile: ExpertProfileDetail }) {
         ) : null}
 
         {galleryImages.length > 0 ? (
-          <section className="mt-5 border-t border-[#FFFFFF33] pt-5">
+          <section className="mt-5 pt-5">
             <h3 className="text-body-md mb-4 font-semibold text-white">Gallery</h3>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5">
               {galleryImages.map((image, index) => (
@@ -438,7 +438,7 @@ function OverviewTab({ profile }: { profile: ExpertProfileDetail }) {
             {workExperience.map((entry) => (
               <div
                 key={entry._id || `${entry.jobTitle}-${entry.companyName}`}
-                className="flex gap-3 rounded-lg border border-[#FFFFFF33] bg-[#050505] p-4"
+                className="flex gap-3 rounded-lg bg-[#050505] p-4"
               >
                 <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#141414]">
                   <Briefcase className="size-4 text-[#E0A263]" />
@@ -481,10 +481,7 @@ function OverviewTab({ profile }: { profile: ExpertProfileDetail }) {
         </div>
         <div className="space-y-3">
           {MOCK_REVIEWS.map((review) => (
-            <div
-              key={review.name}
-              className="rounded-lg border border-[#FFFFFF33] bg-[#050505] p-4"
-            >
+            <div key={review.name} className="rounded-lg bg-[#050505] p-4">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-3">
                   <div className="flex size-9 items-center justify-center rounded-full bg-[#141414]">
@@ -528,7 +525,7 @@ function ConsultationDetailCard({
     .filter(Boolean)
 
   return (
-    <div className="rounded-xl border border-[#FFFFFF33] bg-[#141414] p-6">
+    <div className="rounded-xl bg-[#141414] p-6">
       <div className="flex items-start justify-between gap-3">
         <div>
           <h3 className="text-body-lg font-bold text-white">
@@ -576,21 +573,21 @@ function ConsultationDetailCard({
       <div className="mt-5">
         <p className="text-body-sm mb-3 font-semibold text-white">Additional Information</p>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <div className="rounded-lg border border-[#FFFFFF33] bg-[#050505] p-3 text-center">
+          <div className="rounded-lg bg-[#050505] p-3 text-center">
             <Phone className="mx-auto size-4 text-[#E0A263]" />
             <p className="text-body-sm text-muted mt-2">Mode</p>
             <p className="text-body-sm font-semibold text-white capitalize">
               {consultation.mode || '—'}
             </p>
           </div>
-          <div className="rounded-lg border border-[#FFFFFF33] bg-[#050505] p-3 text-center">
+          <div className="rounded-lg bg-[#050505] p-3 text-center">
             <Languages className="mx-auto size-4 text-[#E0A263]" />
             <p className="text-body-sm text-muted mt-2">Language</p>
             <p className="text-body-sm font-semibold text-white">
               {(consultation.languages ?? []).join(', ') || '—'}
             </p>
           </div>
-          <div className="rounded-lg border border-[#FFFFFF33] bg-[#050505] p-3 text-center">
+          <div className="rounded-lg bg-[#050505] p-3 text-center">
             <Clock className="mx-auto size-4 text-[#E0A263]" />
             <p className="text-body-sm text-muted mt-2">FollowUps</p>
             <p className="text-body-sm font-semibold text-white">
@@ -609,7 +606,7 @@ function ConsultationDetailCard({
             {(consultation.pricingOptions ?? []).map((option) => (
               <span
                 key={`${option.durationMinutes}-${option.price}`}
-                className="text-body-sm rounded-lg border border-[#FFFFFF33] bg-[#050505] px-3 py-2 font-semibold text-white"
+                className="text-body-sm rounded-lg bg-[#050505] px-3 py-2 font-semibold text-white"
               >
                 {formatPricing(option)}
               </span>
@@ -621,7 +618,7 @@ function ConsultationDetailCard({
       <button
         type="button"
         onClick={() => viewExpertConsultation(consultation, expertId, navigate)}
-        className="text-body-sm mt-5 flex w-full items-center justify-between rounded-lg border border-[#FFFFFF33] bg-[#050505] px-4 py-3 font-semibold text-white transition-colors hover:bg-white/5"
+        className="text-body-sm mt-5 flex w-full items-center justify-between rounded-lg bg-[#050505] px-4 py-3 font-semibold text-white transition-colors hover:bg-white/5"
       >
         Consultation Performance
         <ChevronRight className="size-4" />
@@ -697,7 +694,7 @@ function ServiceListCard({ service, expertId }: { service: ExpertService; expert
     <button
       type="button"
       onClick={() => viewExpertService(service, expertId, navigate)}
-      className="flex w-full items-center gap-4 rounded-xl border border-[#FFFFFF33] bg-[#141414] p-4 text-left transition-colors hover:bg-[#1a1a1a]"
+      className="flex w-full items-center gap-4 rounded-xl bg-[#141414] p-4 text-left transition-colors hover:bg-[#1a1a1a]"
     >
       <div className="bg-brand-surface relative size-16 shrink-0 overflow-hidden rounded-lg">
         {statusLabel && (
@@ -746,7 +743,7 @@ function ConsultationsSubTab({ expertId }: { expertId: string }) {
         </div>
       )}
       {!isLoading && !isError && consultations.length === 0 && (
-        <div className="rounded-xl border border-[#FFFFFF33] bg-[#141414] p-8 text-center text-[13px] text-white/50">
+        <div className="rounded-xl bg-[#141414] p-8 text-center text-[13px] text-white/50">
           Consultation not found
         </div>
       )}
@@ -809,21 +806,18 @@ function ServiceListingsTab({
 
 function AvailabilityTab() {
   return (
-    <div className="rounded-xl border border-[#FFFFFF33] bg-[#141414] p-6">
+    <div className="rounded-xl bg-[#141414] p-6">
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <div>
           <h3 className="text-body-md mb-4 font-semibold text-white">Availability</h3>
-          <div className="overflow-hidden rounded-lg border border-[#FFFFFF33]">
+          <div className="overflow-hidden rounded-lg">
             <div className="text-body-sm text-muted grid grid-cols-3 bg-black px-4 py-2 font-semibold">
               <span>Days</span>
               <span>From</span>
               <span>To</span>
             </div>
             {DAYS.map((day) => (
-              <div
-                key={day}
-                className="text-body-sm grid grid-cols-3 items-center border-t border-[#FFFFFF33] px-4 py-3"
-              >
+              <div key={day} className="text-body-sm grid grid-cols-3 items-center px-4 py-3">
                 <span className="text-white">{day}</span>
                 <span className="text-muted inline-flex w-fit items-center gap-1 rounded-full bg-black px-3 py-1">
                   <Clock className="size-3" />
@@ -839,13 +833,13 @@ function AvailabilityTab() {
         </div>
         <div>
           <h3 className="text-body-md mb-4 font-semibold text-white">Unavailability</h3>
-          <div className="overflow-hidden rounded-lg border border-[#FFFFFF33]">
+          <div className="overflow-hidden rounded-lg">
             <div className="text-body-sm text-muted grid grid-cols-3 bg-black px-4 py-2 font-semibold">
               <span>Date</span>
               <span>From</span>
               <span>To</span>
             </div>
-            <div className="text-body-sm grid grid-cols-3 items-center border-t border-[#FFFFFF33] px-4 py-3">
+            <div className="text-body-sm grid grid-cols-3 items-center px-4 py-3">
               <span className="text-white">01/01/2025</span>
               <span className="text-muted inline-flex w-fit items-center gap-1 rounded-full bg-black px-3 py-1">
                 <Clock className="size-3" />
@@ -877,7 +871,7 @@ function AnalyticsTab({ expertId }: { expertId?: string }) {
   ]
 
   return (
-    <div className="rounded-xl border border-[#FFFFFF33] bg-[#141414] p-6">
+    <div className="rounded-xl bg-[#141414] p-6">
       <div className="mb-4 flex justify-end">
         <button
           type="button"
@@ -890,7 +884,7 @@ function AnalyticsTab({ expertId }: { expertId?: string }) {
       </div>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {cards.map((card) => (
-          <div key={card.label} className="rounded-lg border border-[#FFFFFF33] bg-[#050505] p-4">
+          <div key={card.label} className="rounded-lg bg-[#050505] p-4">
             <div className="flex items-center justify-between">
               <p className="text-body-sm text-muted">{card.label}</p>
               <Briefcase className="size-4 text-[#E0A263]" />
@@ -904,7 +898,7 @@ function AnalyticsTab({ expertId }: { expertId?: string }) {
             if (!expertId) return
             navigate(`/experts/management/profile/${expertId}/analytics`)
           }}
-          className="text-body-sm flex items-center justify-center gap-1.5 rounded-lg border border-[#FFFFFF33] bg-[#050505] p-4 font-semibold text-white transition-colors hover:bg-white/5"
+          className="text-body-sm flex items-center justify-center gap-1.5 rounded-lg bg-[#050505] p-4 font-semibold text-white transition-colors hover:bg-white/5"
         >
           More
           <ChevronRight className="size-4" />
@@ -945,7 +939,7 @@ function HealthTab() {
   ]
 
   return (
-    <div className="rounded-xl border border-[#FFFFFF33] bg-[#141414] p-6">
+    <div className="rounded-xl bg-[#141414] p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap gap-2">
           {[
@@ -972,10 +966,7 @@ function HealthTab() {
 
       <div className="mt-4 space-y-3">
         {incidents.map((incident) => (
-          <div
-            key={incident.type}
-            className="rounded-lg border border-[#FFFFFF33] bg-[#050505] p-4"
-          >
+          <div key={incident.type} className="rounded-lg bg-[#050505] p-4">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <div className="flex flex-wrap items-center gap-2">
@@ -1382,7 +1373,7 @@ export function ExpertProfileViewPage() {
         </TableActionsDropdown>
       </header>
 
-      <div className="relative overflow-hidden rounded-xl border border-[#FFFFFF33] bg-[#141414]">
+      <div className="relative overflow-hidden rounded-xl bg-[#141414]">
         <div className="h-40 w-full bg-[#050505]">
           <SafeImage
             src={coverImage}
@@ -1437,7 +1428,7 @@ export function ExpertProfileViewPage() {
         <ProfileSidebar profile={profile} partnerId={id} />
 
         <div className="flex flex-col gap-5">
-          <div className="flex h-[50px] items-stretch gap-1 overflow-x-auto rounded-xl border border-[#FFFFFF33] bg-[#141414] px-2">
+          <div className="flex h-[50px] items-stretch gap-1 overflow-x-auto rounded-xl bg-[#141414] px-2">
             {TABS.map((tab) => (
               <button
                 key={tab.key}

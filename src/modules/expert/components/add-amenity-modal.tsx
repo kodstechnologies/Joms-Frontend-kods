@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 
 import { addAmenity } from '../api/venue-api'
+import { RequiredMark } from '@/shared/components/form/required-mark'
 
 interface AddAmenityModalProps {
   onClose: () => void
@@ -76,7 +77,7 @@ export const AddAmenityModal = ({ onClose }: AddAmenityModalProps) => {
           <div className="grid grid-cols-2 gap-x-8 gap-y-6">
             <div>
               <label className="text-body-md mb-2 block font-medium text-white">
-                Amenities name *
+                Amenities name <RequiredMark />
               </label>
 
               <input
@@ -88,7 +89,7 @@ export const AddAmenityModal = ({ onClose }: AddAmenityModalProps) => {
 
             <div>
               <label className="text-body-md mb-2 block font-medium text-white">
-                Upload icon *
+                Upload icon <RequiredMark />
               </label>
 
               <input
@@ -123,7 +124,7 @@ export const AddAmenityModal = ({ onClose }: AddAmenityModalProps) => {
 
             <div>
               <label className="text-body-md mb-2 block font-medium text-white">
-                Venue category *
+                Venue category <RequiredMark />
               </label>
 
               <input

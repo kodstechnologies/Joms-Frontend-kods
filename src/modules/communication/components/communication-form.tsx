@@ -57,10 +57,11 @@ export function CommunicationForm() {
   const [additionalNotes, setAdditionalNotes] = useState('')
   const [hydratedItem, setHydratedItem] = useState(existingQuery.data)
 
-  const audienceOptions = useMemo(
-    () => optionsQuery.data?.audiences ?? COMMUNICATION_AUDIENCE_OPTIONS,
-    [optionsQuery.data?.audiences],
-  )
+  const audienceOptions = useMemo(() => {
+    const options = optionsQuery.data?.audiences ?? COMMUNICATION_AUDIENCE_OPTIONS
+    return options.filter((opt) => opt.value !== 'all-users')
+  }, [optionsQuery.data?.audiences])
+
   const channelOptions = useMemo(
     () => optionsQuery.data?.channels ?? COMMUNICATION_CHANNEL_OPTIONS,
     [optionsQuery.data?.channels],
@@ -92,6 +93,11 @@ export function CommunicationForm() {
 
     if (!title.trim() || !channel || !type || !audience || !messageContent.trim()) {
       toast.error('Please fill in all required fields')
+      return
+    }
+
+    if (channel === 'email' && !subject.trim()) {
+      toast.error('Subject line is required for email')
       return
     }
 
@@ -138,8 +144,7 @@ export function CommunicationForm() {
   }
 
   return (
-    <form className="flex flex-col gap-6" onSubmit={handleSubmit}>
-      {/* Header */}
+    <form className="mx-auto flex w-full max-w-[1091px] flex-col gap-6" onSubmit={handleSubmit}>
       <div>
         <button
           type="button"
@@ -159,14 +164,12 @@ export function CommunicationForm() {
           </button>
           <span> / </span>
           <span className="text-brand-text font-semibold">
-            {isEditMode ? 'Edit Communication' : 'Send email'}
+            {isEditMode ? 'Edit Communication' : 'Create Communication'}
           </span>
         </p>
       </div>
 
-      {/* Form card */}
-      <div className="radius-lg bg-brand-surface border border-white/[0.06] p-5 sm:p-6">
-        {/* Card header */}
+      <div className="bg-brand-surface w-full rounded-[10px] border border-white/[0.06] p-5 sm:p-6">
         <div className="mb-6 border-b border-white/[0.06] pb-5">
           <h2 className="text-h4 text-brand-text">
             {isEditMode ? 'Edit Communication' : 'Create New Communication Template'}
@@ -175,12 +178,11 @@ export function CommunicationForm() {
             Send updates, announcements, or important messages to your audience.
           </p>
           <p className="text-body-sm text-muted mt-1 opacity-60">
-            In-app, push, and email provider delivery will be connected later.
+            Email channel sends through Brevo to partners in the selected audience.
           </p>
         </div>
 
         <div className="space-y-5">
-          {/* Communication Title */}
           <div>
             <label className={labelClass}>Communication Title (internal use only)</label>
             <input
@@ -193,7 +195,6 @@ export function CommunicationForm() {
             />
           </div>
 
-          {/* Channel Type + Communication Type */}
           <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
             <div>
               <label className={labelClass}>Channel Type</label>
@@ -203,7 +204,7 @@ export function CommunicationForm() {
                 onChange={(e) => setChannel(e.target.value as CommunicationChannel)}
                 required
               >
-                <option value="">In App Notification</option>
+                <option value="">Select channel type</option>
                 {channelOptions.map((opt) => (
                   <option key={opt.value} value={opt.value}>
                     {opt.label}
@@ -229,17 +230,16 @@ export function CommunicationForm() {
             </div>
           </div>
 
-          {/* Audience */}
           <div>
             <label className={labelClass}>Audience</label>
             <div className="relative">
               <select
-                className={cn(inputClass, audience ? 'text-transparent' : '')}
+                className={cn(selectClass, audience ? 'text-transparent' : '')}
                 value={audience}
                 onChange={(e) => setAudience(e.target.value as CommunicationAudience)}
                 required
               >
-                <option value="">Enter Audience Type</option>
+                <option value="">Select audience</option>
                 {audienceOptions.map((opt) => (
                   <option key={opt.value} value={opt.value}>
                     {opt.label}
@@ -247,13 +247,15 @@ export function CommunicationForm() {
                 ))}
               </select>
               {audience ? (
-                <span
-                  className="text-body-sm-semibold pointer-events-none absolute top-1/2 left-3 inline-flex h-[26px] -translate-y-1/2 items-center gap-2 rounded-full px-3 text-black"
+                <button
+                  type="button"
+                  onClick={() => setAudience('')}
+                  className="text-body-sm-semibold absolute top-1/2 left-3 inline-flex h-[26px] -translate-y-1/2 items-center gap-2 rounded-full px-3 text-black"
                   style={{ background: 'linear-gradient(135deg, #F6CB86 0%, #E0A263 100%)' }}
                 >
                   {audienceOptions.find((o) => o.value === audience)?.label ?? audience}
                   <span className="opacity-70">✕</span>
-                </span>
+                </button>
               ) : null}
             </div>
           </div>
@@ -306,15 +308,18 @@ export function CommunicationForm() {
             </div>
           </div>
 
-          {/* Subject Line */}
           <div>
-            <label className={labelClass}>Subject Line</label>
+            <label className={labelClass}>
+              Subject Line
+              {channel === 'email' ? <span className="text-brand-danger"> *</span> : null}
+            </label>
             <input
               type="text"
-              placeholder="Enter Message"
+              placeholder={channel === 'email' ? 'Enter email subject' : 'Enter Message'}
               className={inputClass}
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
+              required={channel === 'email'}
             />
           </div>
 
@@ -345,8 +350,7 @@ export function CommunicationForm() {
         </div>
       </div>
 
-      {/* Footer */}
-      <div className="radius-lg bg-brand-surface flex items-center justify-between border border-white/[0.06] px-5 py-4">
+      <div className="bg-brand-surface flex w-full items-center justify-between rounded-[10px] border border-white/[0.06] px-5 py-4">
         <button
           type="button"
           onClick={() => navigateBackOrFallback(navigate, '/communication/management')}

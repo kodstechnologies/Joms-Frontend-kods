@@ -219,7 +219,7 @@ export const ExpertFinalReviewStep = ({ formData, setFormData }: Props) => {
         />
       )}
 
-      <div className="mx-auto w-full max-w-[850px] space-y-4">
+      <div className="mx-auto w-full max-w-[1140px] space-y-4">
         <div className="bg-brand-surface overflow-hidden rounded-lg border border-white/5">
           <div className="relative h-28 bg-gradient-to-r from-slate-700 to-slate-900">
             {formData.coverImageUrl && (

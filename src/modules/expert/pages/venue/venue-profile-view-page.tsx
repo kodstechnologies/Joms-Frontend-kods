@@ -78,7 +78,7 @@ function SafeImage({
 
 function SidebarRow({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div className="flex items-center justify-between border-b border-white/5 py-3 last:border-0">
+    <div className="flex items-center justify-between py-3">
       <span className="text-body-sm text-muted">{label}</span>
       <span className="text-body-sm font-semibold text-white">{children}</span>
     </div>
@@ -127,7 +127,7 @@ function ProfileSidebar({ data }: { data: VenueFullView }) {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="bg-brand-bg rounded-xl border border-white/5 p-5">
+      <div className="bg-brand-bg rounded-xl p-5">
         <div className="mb-2 flex items-center justify-between">
           <h3 className="text-[13px] font-semibold text-white">
             Organisation Profile &amp; Account
@@ -173,13 +173,13 @@ function ProfileSidebar({ data }: { data: VenueFullView }) {
         </SidebarRow>
       </div>
 
-      <div className="bg-brand-bg rounded-xl border border-white/5 p-5">
+      <div className="bg-brand-bg rounded-xl p-5">
         <h3 className="mb-4 text-[13px] font-semibold text-white">Support &amp; Admin</h3>
-        <div className="rounded-lg border border-white/5 bg-black p-3">
+        <div className="rounded-lg bg-black p-3">
           <p className="text-muted text-[10px]">Active Tickets</p>
           <p className="text-body-sm mt-1 font-medium text-white">None</p>
         </div>
-        <div className="mt-3 rounded-lg border border-white/5 bg-black p-3">
+        <div className="mt-3 rounded-lg bg-black p-3">
           <p className="text-muted text-[10px]">Admin notes</p>
           <p className="text-body-sm mt-1 font-medium text-white">
             {overview?.venue?.adminInternalNotes || 'None'}
@@ -209,14 +209,12 @@ function OverviewTab({ data }: { data: VenueFullView }) {
     .join(', ')
 
   return (
-    <div className="bg-brand-bg space-y-6 rounded-xl border border-white/5 p-6">
+    <div className="bg-brand-bg space-y-6 rounded-xl p-6">
       <div>
         <h3 className="text-[13px] font-semibold text-white">Address</h3>
         <p className="mt-2 text-[13px] font-medium text-white">{venue.name}</p>
         <p className="text-body-sm text-muted mt-1">{addressLine || '—'}</p>
       </div>
-
-      <hr className="border-white/5" />
 
       <div>
         <h3 className="text-[13px] font-semibold text-white">POC details</h3>
@@ -229,8 +227,6 @@ function OverviewTab({ data }: { data: VenueFullView }) {
         {poc?.email && <p className="text-body-sm text-muted mt-0.5">{poc.email}</p>}
       </div>
 
-      <hr className="border-white/5" />
-
       <div>
         <h3 className="mb-3 text-[13px] font-semibold text-white">Gallery</h3>
         {galleryImages.length > 0 ? (
@@ -241,7 +237,7 @@ function OverviewTab({ data }: { data: VenueFullView }) {
                 href={src}
                 target="_blank"
                 rel="noreferrer"
-                className="block aspect-[4/3] overflow-hidden rounded-lg border border-white/5"
+                className="block aspect-[4/3] overflow-hidden rounded-lg"
               >
                 <SafeImage
                   src={src}
@@ -278,7 +274,7 @@ function OverviewTab({ data }: { data: VenueFullView }) {
             </span>
           ))}
         </div>
-        <div className="text-body-sm text-muted mt-4 rounded-lg border border-white/5 bg-black p-4">
+        <div className="text-body-sm text-muted mt-4 rounded-lg bg-black p-4">
           {venue.reviewsCount
             ? `${venue.reviewsCount} reviews recorded. Detailed reviews are coming soon.`
             : 'No reviews yet.'}
@@ -303,7 +299,7 @@ function SpacesTab({ data, venueId }: { data: VenueFullView; venueId: string }) 
   }
 
   return (
-    <div className="bg-brand-bg rounded-xl border border-white/5 p-6">
+    <div className="bg-brand-bg rounded-xl p-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <div className="relative flex-1">
           <Search className="text-muted absolute top-1/2 left-3 size-4 -translate-y-1/2" />
@@ -311,7 +307,7 @@ function SpacesTab({ data, venueId }: { data: VenueFullView; venueId: string }) 
             value={search}
             onChange={(event) => setSearch(event.target.value)}
             placeholder="Search by service title"
-            className="focus:border-brand-accent/50 placeholder:text-muted h-10 w-full rounded-md border border-white/10 bg-black pr-3 pl-9 text-[13px] text-white outline-none"
+            className="focus:border-brand-accent/50 placeholder:text-muted h-10 w-full rounded-md border border-white/10 bg-black pr-3 pl-11 text-[13px] text-white outline-none"
           />
         </div>
         <button
@@ -335,9 +331,7 @@ function SpacesTab({ data, venueId }: { data: VenueFullView; venueId: string }) 
 
       <div className="mt-4 space-y-3">
         {spaces.length === 0 ? (
-          <p className="text-body-sm text-muted rounded-lg border border-white/5 bg-black p-4">
-            No spaces found.
-          </p>
+          <p className="text-body-sm text-muted rounded-lg bg-black p-4">No spaces found.</p>
         ) : (
           spaces.map((space) => (
             <button
@@ -352,7 +346,7 @@ function SpacesTab({ data, venueId }: { data: VenueFullView; venueId: string }) 
               <input
                 type="checkbox"
                 onClick={(e) => e.stopPropagation()}
-                className="accent-brand-accent h-6 w-6 rounded border-white/30"
+                className="h-6 w-6 rounded border-white/30 accent-white"
               />
 
               <div className="ml-3 h-28 w-32 shrink-0 overflow-hidden rounded-xl">
@@ -455,7 +449,7 @@ function AnalyticsTab({ data, venueId }: { data: VenueFullView; venueId: string 
   ]
 
   return (
-    <div className="bg-brand-bg rounded-xl border border-white/5 p-6">
+    <div className="bg-brand-bg rounded-xl p-6">
       <div className="mb-4 flex justify-end">
         <button
           type="button"
@@ -468,7 +462,7 @@ function AnalyticsTab({ data, venueId }: { data: VenueFullView; venueId: string 
       </div>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {cards.map((card) => (
-          <div key={card.label} className="rounded-lg border border-white/5 bg-black p-4">
+          <div key={card.label} className="rounded-lg bg-black p-4">
             <div className="flex items-center justify-between">
               <p className="text-body-sm text-muted">{card.label}</p>
               <div className="bg-brand-surface flex h-8 w-8 items-center justify-center rounded-md">
@@ -487,7 +481,7 @@ function AnalyticsTab({ data, venueId }: { data: VenueFullView; venueId: string 
             }
             navigate(`/venues/management/profile/${venueId}/analytics`)
           }}
-          className="text-body-sm flex min-h-[96px] items-center justify-center gap-1.5 rounded-lg border border-white/5 bg-black p-4 font-semibold text-white transition-colors hover:bg-white/5"
+          className="text-body-sm flex min-h-[96px] items-center justify-center gap-1.5 rounded-lg bg-black p-4 font-semibold text-white transition-colors hover:bg-white/5"
         >
           More
           <ChevronRight className="size-4" />
@@ -501,7 +495,7 @@ function HealthTab({ data }: { data: VenueFullView }) {
   const score = data.profile?.clientSatisfaction
 
   return (
-    <div className="bg-brand-bg rounded-xl border border-white/5 p-6">
+    <div className="bg-brand-bg rounded-xl p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="ml-auto flex flex-wrap items-center gap-4">
           {['All', 'Reported Against', 'Flagged by'].map((chip, index) => (
@@ -523,7 +517,7 @@ function HealthTab({ data }: { data: VenueFullView }) {
         )}
       </div>
 
-      <div className="text-body-sm text-muted mt-4 rounded-lg border border-white/5 bg-black p-6 text-center">
+      <div className="text-body-sm text-muted mt-4 rounded-lg bg-black p-6 text-center">
         No reported issues for this venue.
       </div>
     </div>
@@ -619,7 +613,7 @@ export function VenueProfileViewPage() {
         </span>
       </header>
 
-      <div className="bg-brand-bg relative overflow-hidden rounded-xl border border-white/5">
+      <div className="bg-brand-bg relative overflow-hidden rounded-xl">
         <div className="bg-brand-surface h-40 w-full">
           <SafeImage
             src={coverImage}
@@ -673,7 +667,7 @@ export function VenueProfileViewPage() {
         <ProfileSidebar data={fullView} />
 
         <div className="flex flex-col gap-5">
-          <div className="bg-brand-bg flex items-center gap-1 overflow-x-auto rounded-xl border border-white/5 px-1.5">
+          <div className="bg-brand-bg flex items-center gap-1 overflow-x-auto rounded-xl px-1.5">
             {TABS.map((tab) => (
               <button
                 key={tab.key}

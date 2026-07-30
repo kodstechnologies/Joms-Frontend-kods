@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { X } from 'lucide-react'
 import { createPortal } from 'react-dom'
 
+import { RequiredMark } from '@/shared/components/form/required-mark'
+
 import { departmentOptions, userOptionsByDepartment } from '../mock/incident-tracking.mock'
 import type { IncidentRow } from '../types/settings'
 
@@ -50,7 +52,9 @@ export function AssignUserModal({ open, incident, onClose, onSubmit }: AssignUse
 
         <div className="ui-modal-body space-y-4">
           <label className="block space-y-2">
-            <span className="text-body-md-medium text-brand-text">Select Department*</span>
+            <span className="text-body-md-medium text-brand-text">
+              Select Department <RequiredMark />
+            </span>
             <select
               className="ui-input"
               value={department}
@@ -68,7 +72,9 @@ export function AssignUserModal({ open, incident, onClose, onSubmit }: AssignUse
             </select>
           </label>
           <label className="block space-y-2">
-            <span className="text-body-md-medium text-brand-text">Select User*</span>
+            <span className="text-body-md-medium text-brand-text">
+              Select User <RequiredMark />
+            </span>
             <select
               className="ui-input"
               value={user}

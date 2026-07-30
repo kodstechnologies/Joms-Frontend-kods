@@ -324,7 +324,7 @@ export function DecisionActionModal({
                 type="checkbox"
                 checked={confirmationChecked}
                 onChange={(event) => onConfirmationChange?.(event.target.checked)}
-                className="accent-brand-accent mt-0.5 size-[15px] shrink-0"
+                className="mt-0.5 size-[15px] shrink-0 accent-white"
               />
               <span>{confirmationLabel}</span>
             </label>
@@ -378,7 +378,7 @@ export function DecisionActionModal({
                   type="checkbox"
                   checked={indefinite}
                   onChange={(event) => onIndefiniteChange?.(event.target.checked)}
-                  className="accent-brand-accent size-4"
+                  className="size-4 accent-white"
                 />
                 <span>{indefiniteLabel}</span>
               </label>
@@ -398,10 +398,10 @@ export function DecisionActionModal({
                     <span
                       className={cn(
                         'grid size-5 place-items-center rounded-full border-2',
-                        isSelected ? 'border-[#F6CB86]' : 'border-white/70',
+                        isSelected ? 'border-white' : 'border-white/70',
                       )}
                     >
-                      {isSelected ? <span className="size-2.5 rounded-full bg-[#F6CB86]" /> : null}
+                      {isSelected ? <span className="size-2.5 rounded-full bg-white" /> : null}
                     </span>
                     <input
                       type="radio"

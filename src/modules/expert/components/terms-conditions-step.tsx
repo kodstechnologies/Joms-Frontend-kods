@@ -65,7 +65,7 @@ export const TermsConditionsStep = ({ venueData, setVenueData }: TermsConditions
   }
 
   return (
-    <div className="mx-auto w-full max-w-[850px] space-y-5">
+    <div className="mx-auto w-full max-w-[1140px] space-y-5">
       <div className="bg-brand-surface rounded-lg border border-white/5 p-5 shadow-xl">
         <h2 className="text-sm font-semibold text-white">Venue Terms</h2>
 

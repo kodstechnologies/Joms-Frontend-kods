@@ -1,4 +1,5 @@
 import type { VenueFormData } from '../utils/venue-form'
+import { RequiredMark } from '@/shared/components/form/required-mark'
 
 interface LocationDetailsStepProps {
   venueData: Pick<
@@ -10,7 +11,7 @@ interface LocationDetailsStepProps {
 
 export const LocationDetailsStep = ({ venueData, setVenueData }: LocationDetailsStepProps) => {
   return (
-    <div className="animate-in fade-in slide-in-from-right-4 bg-brand-surface mx-auto w-full max-w-[850px] rounded-lg border border-white/5 p-6 shadow-xl duration-300">
+    <div className="animate-in fade-in slide-in-from-right-4 bg-brand-surface mx-auto w-full max-w-[1140px] rounded-lg border border-white/5 p-6 shadow-xl duration-300">
       <div className="mb-8">
         <h2 className="mb-1 text-[15px] font-bold text-white">Add Venue Location</h2>
         <p className="text-body-sm text-muted font-medium">Provide venue location details</p>
@@ -18,7 +19,9 @@ export const LocationDetailsStep = ({ venueData, setVenueData }: LocationDetails
 
       <div className="space-y-6">
         <div className="space-y-2.5">
-          <label className="text-body-sm font-bold tracking-tight text-white">Address *</label>
+          <label className="text-body-sm font-bold tracking-tight text-white">
+            Address <RequiredMark />
+          </label>
 
           <input
             type="text"
@@ -51,7 +54,9 @@ export const LocationDetailsStep = ({ venueData, setVenueData }: LocationDetails
           </div>
 
           <div className="space-y-2.5">
-            <label className="text-body-sm font-bold tracking-tight text-white">City *</label>
+            <label className="text-body-sm font-bold tracking-tight text-white">
+              City <RequiredMark />
+            </label>
 
             <input
               type="text"

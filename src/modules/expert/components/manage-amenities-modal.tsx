@@ -91,7 +91,7 @@ export const ManageAmenitiesModal = ({
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search amenities"
-                className="ui-input pl-10"
+                className="ui-input ui-input-icon-left"
               />
             </div>
 

@@ -40,7 +40,7 @@ export const ExpertWorkExperienceStep = ({ formData, setFormData }: Props) => {
   }
 
   return (
-    <div className="mx-auto w-full max-w-[850px]">
+    <div className="mx-auto w-full max-w-[1140px]">
       <div className="animate-in fade-in slide-in-from-right-4 bg-brand-surface rounded-lg border border-white/5 p-6 duration-300">
         <div className="mb-6">
           <h2 className="text-sm font-bold text-white">Update Experts Experience</h2>

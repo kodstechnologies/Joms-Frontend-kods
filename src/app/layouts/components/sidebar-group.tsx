@@ -114,6 +114,7 @@ export function SidebarGroup({
                 icon={child.icon}
                 badge={child.badge}
                 depth={depth + 1}
+                active={isNavItemActive(child, location.pathname)}
                 moduleActive={isActiveModule}
                 onNavigate={onNavigate}
               />

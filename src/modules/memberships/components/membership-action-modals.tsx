@@ -6,6 +6,7 @@ import type { MembershipPlan } from '../types/membership'
 import type { MembershipSubscription } from '../types/membership-subscription'
 import { PAUSE_REASON_OPTIONS } from '../mock/membership-metrics.mock'
 import { formatCurrency } from '../utils/membership-format'
+import { RequiredMark } from '@/shared/components/form/required-mark'
 import { cn } from '@/shared/lib/cn'
 
 type ActionType = 'upgrade' | 'downgrade' | 'extend' | 'cancel'
@@ -172,7 +173,9 @@ function MembershipActionModalsContent({
             </div>
 
             <label className="block space-y-2">
-              <span className="text-[12px] text-white/50">End Date *</span>
+              <span className="text-[12px] text-white/50">
+                End Date <RequiredMark />
+              </span>
               <input
                 type="date"
                 value={endDate}
@@ -185,7 +188,7 @@ function MembershipActionModalsContent({
 
             <label className="block space-y-2">
               <span className="text-[14px] text-white">
-                Admin notes <span className="text-[#d3191c]">*</span>
+                Admin notes <RequiredMark />
               </span>
               <textarea
                 value={adminNotes}
@@ -310,7 +313,7 @@ function MembershipActionModalsContent({
 
             <label className="block space-y-2">
               <span className="text-[14px] text-white">
-                Admin notes <span className="text-[#d3191c]">*</span>
+                Admin notes <RequiredMark />
               </span>
               <textarea
                 value={adminNotes}
@@ -408,7 +411,7 @@ function MembershipActionModalsContent({
 
           <label className="block space-y-2">
             <span className="text-[14px] text-white">
-              Admin notes <span className="text-[#d3191c]">*</span>
+              Admin notes <RequiredMark />
             </span>
             <textarea
               value={adminNotes}
@@ -465,7 +468,7 @@ function CancelDateField({
   return (
     <label className="block space-y-2">
       <span className="text-[14px] text-white">
-        {label} <span className="text-[#d3191c]">*</span>
+        {label} <RequiredMark />
       </span>
       <div className="relative">
         <input

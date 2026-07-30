@@ -62,7 +62,7 @@ export const FinalCheckStep = ({ venueData }: FinalCheckStepProps) => {
   ].filter(Boolean) as File[]
 
   return (
-    <div className="mx-auto w-full max-w-[850px] space-y-6">
+    <div className="mx-auto w-full max-w-[1140px] space-y-6">
       <div className="bg-brand-surface overflow-hidden rounded-xl border border-white/10">
         {coverSrc ? (
           <img src={coverSrc} alt="Venue" className="h-[420px] w-full object-cover" />

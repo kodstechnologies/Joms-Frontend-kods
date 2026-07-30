@@ -2,6 +2,7 @@ import { Plus, X } from 'lucide-react'
 import { useMemo, useRef, useState, type FormEvent } from 'react'
 
 import verifiedIcon from '@/assets/JOMS_ICONS/icons8-verified.svg'
+import { RequiredMark } from '@/shared/components/form/required-mark'
 import { DEFAULT_BILLING_CYCLES } from '../mock/membership-metrics.mock'
 import type { MembershipFeatures, MembershipPlan, MembershipPricing } from '../types/membership'
 
@@ -159,7 +160,9 @@ export function MembershipPlanForm({ initialPlan, onSubmit }: MembershipPlanForm
 
         <div className="flex items-end gap-4">
           <label className="min-w-0 flex-1 space-y-2">
-            <span className="block text-[12px] leading-[18px] text-white/50">Plan Name *</span>
+            <span className="block text-[12px] leading-[18px] text-white/50">
+              Plan Name <RequiredMark />
+            </span>
             <input
               value={planName}
               onChange={(e) => setPlanName(e.target.value)}
@@ -170,7 +173,9 @@ export function MembershipPlanForm({ initialPlan, onSubmit }: MembershipPlanForm
           </label>
 
           <div className="shrink-0 space-y-2">
-            <span className="block text-[12px] leading-[18px] text-white/50">Icon *</span>
+            <span className="block text-[12px] leading-[18px] text-white/50">
+              Icon <RequiredMark />
+            </span>
             <button
               type="button"
               onClick={() => iconInputRef.current?.click()}
@@ -204,7 +209,7 @@ export function MembershipPlanForm({ initialPlan, onSubmit }: MembershipPlanForm
 
         <div className="space-y-2">
           <span className="block text-[12px] leading-[18px] text-white/50">
-            Billing Cycle format *
+            Billing Cycle format <RequiredMark />
           </span>
           <div className="flex min-h-[42px] flex-nowrap items-center gap-2 overflow-x-auto pb-1">
             {availableCycles.map((cycle) => {
@@ -297,7 +302,7 @@ export function MembershipPlanForm({ initialPlan, onSubmit }: MembershipPlanForm
             <div key={cycle} className="space-y-3">
               <label className="block space-y-2">
                 <span className="block text-[12px] leading-[18px] text-white/50">
-                  {cycle} Price *
+                  {cycle} Price <RequiredMark />
                 </span>
                 <input
                   type="number"
@@ -591,7 +596,7 @@ function CheckboxRow({
         type="checkbox"
         checked={checked}
         onChange={(e) => onChange(e.target.checked)}
-        className="mt-0.5 size-4 shrink-0 accent-[#f6cb86]"
+        className="mt-0.5 size-4 shrink-0 accent-white"
       />
       <span>{label}</span>
     </label>

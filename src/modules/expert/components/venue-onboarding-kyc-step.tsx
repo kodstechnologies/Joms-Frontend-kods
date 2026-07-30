@@ -2,6 +2,7 @@ import { useRef } from 'react'
 import { Upload, X } from 'lucide-react'
 
 import type { VenueOnboardingFormData } from '../utils/venue-onboarding-form'
+import { RequiredMark } from '@/shared/components/form/required-mark'
 
 const fieldClass = 'ui-input'
 
@@ -46,7 +47,12 @@ function FileUploadBox({
     <div>
       <label className="mb-2 block text-xs font-medium text-white">
         {label}
-        {required && ' *'}
+        {required ? (
+          <>
+            {' '}
+            <RequiredMark />
+          </>
+        ) : null}
       </label>
       <div className="relative">
         <button
@@ -95,12 +101,14 @@ export const VenueOnboardingKycStep = ({ formData, setFormData }: Props) => {
   }
 
   return (
-    <div className="mx-auto w-full max-w-[850px] space-y-6">
+    <div className="mx-auto w-full max-w-[1140px] space-y-6">
       <div className="animate-in fade-in slide-in-from-right-4 bg-brand-surface rounded-lg border border-white/5 p-6 duration-300">
         <h3 className="mb-4 text-sm font-bold text-white">Government ID Verification</h3>
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
           <div>
-            <label className="mb-2 block text-xs font-medium text-white">Select ID type *</label>
+            <label className="mb-2 block text-xs font-medium text-white">
+              Select ID type <RequiredMark />
+            </label>
             <select
               value={formData.idType}
               onChange={(e) => setFormData((prev) => ({ ...prev, idType: e.target.value }))}
@@ -115,7 +123,9 @@ export const VenueOnboardingKycStep = ({ formData, setFormData }: Props) => {
             </select>
           </div>
           <div>
-            <label className="mb-2 block text-xs font-medium text-white">ID Number *</label>
+            <label className="mb-2 block text-xs font-medium text-white">
+              ID Number <RequiredMark />
+            </label>
             <input
               value={formData.idNumber}
               onChange={(e) => setFormData((prev) => ({ ...prev, idNumber: e.target.value }))}
@@ -131,7 +141,9 @@ export const VenueOnboardingKycStep = ({ formData, setFormData }: Props) => {
         <h3 className="mb-4 text-sm font-bold text-white">KYC Verification</h3>
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
           <div>
-            <label className="mb-2 block text-xs font-medium text-white">GST Availability *</label>
+            <label className="mb-2 block text-xs font-medium text-white">
+              GST Availability <RequiredMark />
+            </label>
             <select
               value={formData.hasGST ? 'yes' : 'no'}
               onChange={(e) =>
@@ -150,7 +162,9 @@ export const VenueOnboardingKycStep = ({ formData, setFormData }: Props) => {
           {formData.hasGST ? (
             <>
               <div>
-                <label className="mb-2 block text-xs font-medium text-white">GST Number *</label>
+                <label className="mb-2 block text-xs font-medium text-white">
+                  GST Number <RequiredMark />
+                </label>
                 <input
                   value={formData.gstNumber}
                   onChange={(e) => setFormData((prev) => ({ ...prev, gstNumber: e.target.value }))}
@@ -160,7 +174,9 @@ export const VenueOnboardingKycStep = ({ formData, setFormData }: Props) => {
                 <p className="text-muted mt-1 text-[10px]">Format: 29ABCDE1234F1Z5</p>
               </div>
               <div>
-                <label className="mb-2 block text-xs font-medium text-white">State *</label>
+                <label className="mb-2 block text-xs font-medium text-white">
+                  State <RequiredMark />
+                </label>
                 <select
                   value={formData.kycState}
                   onChange={(e) => setFormData((prev) => ({ ...prev, kycState: e.target.value }))}
@@ -178,7 +194,7 @@ export const VenueOnboardingKycStep = ({ formData, setFormData }: Props) => {
             <>
               <div>
                 <label className="mb-2 block text-xs font-medium text-white">
-                  Did they filed IT returns in the last 2 years *
+                  Did they filed IT returns in the last 2 years <RequiredMark />
                 </label>
                 <select
                   value={formData.itReturnsFiledLast2Years ? 'yes' : 'no'}
@@ -215,7 +231,9 @@ export const VenueOnboardingKycStep = ({ formData, setFormData }: Props) => {
           )}
 
           <div>
-            <label className="mb-2 block text-xs font-medium text-white">Type of Venue *</label>
+            <label className="mb-2 block text-xs font-medium text-white">
+              Type of Venue <RequiredMark />
+            </label>
             <select
               value={formData.typeOfVenue}
               onChange={(e) => setFormData((prev) => ({ ...prev, typeOfVenue: e.target.value }))}
@@ -232,7 +250,7 @@ export const VenueOnboardingKycStep = ({ formData, setFormData }: Props) => {
 
           <div>
             <label className="mb-2 block text-xs font-medium text-white">
-              Organization/Individual PAN *
+              Organization/Individual PAN <RequiredMark />
             </label>
             <input
               value={formData.panNumber}
@@ -258,7 +276,7 @@ export const VenueOnboardingKycStep = ({ formData, setFormData }: Props) => {
 
       <div className="bg-brand-surface rounded-lg border border-white/5 p-6">
         <h3 className="mb-4 text-sm font-bold text-white">
-          Business Identity verification documents *
+          Business Identity verification documents <RequiredMark />
         </h3>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <FileUploadBox
@@ -296,7 +314,9 @@ export const VenueOnboardingKycStep = ({ formData, setFormData }: Props) => {
       </div>
 
       <div className="bg-brand-surface rounded-lg border border-white/5 p-6">
-        <h3 className="mb-4 text-sm font-bold text-white">Other Documents *</h3>
+        <h3 className="mb-4 text-sm font-bold text-white">
+          Other Documents <RequiredMark />
+        </h3>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {formData.otherCertificates.map((file, index) => (
             <div

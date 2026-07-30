@@ -12,6 +12,8 @@ import {
 } from '../hooks/use-rbac'
 import { RbacLoader } from '../components/rbac-loader'
 import type { CreateSubAdminPayload, PermissionCatalog, Role } from '../types/rbac'
+import { requiredLabel } from '@/shared/components/form/required-label'
+import { RequiredMark } from '@/shared/components/form/required-mark'
 import { Button } from '@/shared/components/ui/button'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import { Input } from '@/shared/components/ui/input'
@@ -304,7 +306,9 @@ export function CreateSubAdminPage() {
                 ['location', 'Location *', 'Enter location'],
               ].map(([key, label, placeholder]) => (
                 <div key={key} className="space-y-2">
-                  <label className="text-brand-text text-sm font-medium">{label}</label>
+                  <label className="text-brand-text text-sm font-medium">
+                    {requiredLabel(label)}
+                  </label>
                   <Input
                     value={String(form[key as keyof CreateSubAdminPayload] ?? '')}
                     onChange={(e) =>
@@ -318,7 +322,9 @@ export function CreateSubAdminPage() {
               {!isEditMode ? (
                 <>
                   <div className="space-y-2">
-                    <label className="text-brand-text text-sm font-medium">Password *</label>
+                    <label className="text-brand-text text-sm font-medium">
+                      Password <RequiredMark />
+                    </label>
                     <Input
                       type="password"
                       value={form.password}
@@ -329,7 +335,7 @@ export function CreateSubAdminPage() {
                   </div>
                   <div className="space-y-2">
                     <label className="text-brand-text text-sm font-medium">
-                      Confirm Password *
+                      Confirm Password <RequiredMark />
                     </label>
                     <Input
                       type="password"
@@ -379,7 +385,9 @@ export function CreateSubAdminPage() {
 
             <div className="mt-5 space-y-4">
               <div className="space-y-2">
-                <label className="text-brand-text text-sm font-medium">Choose Role *</label>
+                <label className="text-brand-text text-sm font-medium">
+                  Choose Role <RequiredMark />
+                </label>
                 <div
                   className={cn(
                     'rounded-brand-md bg-brand-bg relative flex min-h-11 flex-wrap items-center gap-2 border border-white/10 px-3 py-2',
@@ -450,7 +458,7 @@ export function CreateSubAdminPage() {
                               type="checkbox"
                               checked={checked}
                               onChange={() => toggleRole(role)}
-                              className="accent-brand-accent mt-1"
+                              className="mt-1 accent-white"
                             />
                             <div>
                               <p className="text-brand-text font-medium">{role.name}</p>
@@ -748,7 +756,7 @@ export function CreateSubAdminPage() {
             {!isEditMode ? (
               <>
                 <label className="text-brand-text mt-4 block text-sm font-medium">
-                  Admin notes *
+                  Admin notes <RequiredMark />
                 </label>
                 <textarea
                   value={adminNote}

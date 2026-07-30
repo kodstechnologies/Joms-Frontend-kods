@@ -1,3 +1,5 @@
+import { RequiredMark } from '@/shared/components/form/required-mark'
+
 import UploadBox from './UploadBox'
 import { categoryFormTheme } from './category-form.theme'
 
@@ -34,7 +36,7 @@ const CategoryDetailsCard = ({
 
       <div className="mt-6">
         <label className="text-body-sm-medium text-brand-text mb-2 block">
-          Category Name <span className="text-brand-text">*</span>
+          Category Name <RequiredMark />
         </label>
 
         <input
@@ -48,7 +50,7 @@ const CategoryDetailsCard = ({
 
       <div className="mt-5">
         <label className="text-body-sm-medium text-brand-text mb-2 block">
-          Description <span className="text-brand-text">*</span>
+          Description <RequiredMark />
         </label>
 
         <textarea

@@ -95,7 +95,7 @@ export function CheckboxGroupField({ options, value, onChange }: CheckboxGroupFi
               type="checkbox"
               checked={isChecked}
               onChange={() => toggleOption(option.value)}
-              className="bg-brand-bg accent-brand-accent size-4 rounded border-white/20"
+              className="bg-brand-bg size-4 rounded border-white/20 accent-white"
             />
             <span className={cn(isChecked && 'text-brand-text')}>{option.label}</span>
           </label>

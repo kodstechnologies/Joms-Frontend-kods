@@ -11,15 +11,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
-import {
-  BarChart3,
-  ChevronDown,
-  Plus,
-  RefreshCw,
-  Star,
-  TrendingDown,
-  TrendingUp,
-} from 'lucide-react'
+import { BarChart3, Plus, RefreshCw, Star, TrendingDown, TrendingUp } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { EXPERT_DASHBOARD_MODULE_KEY } from '../../api/ui-preferences-api'
@@ -432,7 +424,6 @@ export const ExpertDashboardPage = () => {
                 <option value="6">Last 6 Months</option>
                 <option value="12">Last 12 Months</option>
               </select>
-              <ChevronDown className="pointer-events-none absolute top-1/2 right-3 size-3 -translate-y-1/2 text-white" />
             </div>
             <button
               type="button"

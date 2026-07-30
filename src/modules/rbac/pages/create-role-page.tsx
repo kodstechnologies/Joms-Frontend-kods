@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 import { PermissionAccordions } from '../components/permission-accordions'
 import { RbacLoader } from '../components/rbac-loader'
 import { useCreateRole, usePermissionCatalog, useRole, useUpdateRole } from '../hooks/use-rbac'
+import { RequiredMark } from '@/shared/components/form/required-mark'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
@@ -87,7 +88,9 @@ export function CreateRolePage() {
 
         <div className="mt-5 grid gap-4 md:grid-cols-2">
           <div className="space-y-2">
-            <label className="text-brand-text text-sm font-medium">Role Name *</label>
+            <label className="text-brand-text text-sm font-medium">
+              Role Name <RequiredMark />
+            </label>
             <Input
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -96,7 +99,9 @@ export function CreateRolePage() {
             />
           </div>
           <div className="space-y-2 md:col-span-2">
-            <label className="text-brand-text text-sm font-medium">Description *</label>
+            <label className="text-brand-text text-sm font-medium">
+              Description <RequiredMark />
+            </label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}

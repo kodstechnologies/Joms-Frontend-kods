@@ -124,7 +124,7 @@ export const navigationConfig: NavItem[] = [
         key: 'content-moderation.communication',
         label: 'Communication',
         to: '/communication/management',
-        matchPaths: ['/communication/create', '/communication/view'],
+        matchPaths: ['/communication/create', '/communication/view/:id', '/communication/view'],
       },
       {
         key: 'content-moderation.templates',

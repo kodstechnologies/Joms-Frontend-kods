@@ -129,7 +129,7 @@ export function DeleteCategoryModal({
               type="checkbox"
               checked={confirmed}
               onChange={(event) => setConfirmed(event.target.checked)}
-              className="accent-brand-accent mt-0.5 size-[15px] shrink-0"
+              className="mt-0.5 size-[15px] shrink-0 accent-white"
             />
             <span>I confirm the documents are not approved due to above reasons.</span>
           </label>

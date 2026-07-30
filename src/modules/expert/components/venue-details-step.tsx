@@ -1,5 +1,6 @@
 import { useServiceCategoriesByType } from '../hooks/use-service-categories'
 import type { VenueFormData } from '../utils/venue-form'
+import { RequiredMark } from '@/shared/components/form/required-mark'
 
 interface VenueDetailsStepProps {
   venueData: Pick<VenueFormData, 'venueName' | 'venueType' | 'venueCategory' | 'aboutVenue'>
@@ -13,7 +14,7 @@ export const VenueDetailsStep = ({ venueData, setVenueData }: VenueDetailsStepPr
   const categories = Object.values(categoryGroups).flat()
 
   return (
-    <div className="animate-in fade-in slide-in-from-right-4 bg-brand-surface mx-auto w-full max-w-[850px] rounded-lg border border-white/5 p-6 shadow-xl duration-300">
+    <div className="animate-in fade-in slide-in-from-right-4 bg-brand-surface mx-auto w-full max-w-[1140px] rounded-lg border border-white/5 p-6 shadow-xl duration-300">
       <div className="mb-8">
         <h2 className="mb-1 text-[15px] font-bold text-white">About Venue</h2>
         <p className="text-body-sm text-muted font-medium">Venue details fetched from backend</p>
@@ -21,7 +22,9 @@ export const VenueDetailsStep = ({ venueData, setVenueData }: VenueDetailsStepPr
 
       <div className="space-y-6">
         <div className="space-y-2.5">
-          <label className="text-body-sm font-bold tracking-tight text-white">Venue Name *</label>
+          <label className="text-body-sm font-bold tracking-tight text-white">
+            Venue Name <RequiredMark />
+          </label>
           <input
             type="text"
             value={venueData.venueName}
@@ -32,7 +35,9 @@ export const VenueDetailsStep = ({ venueData, setVenueData }: VenueDetailsStepPr
 
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           <div className="space-y-2.5">
-            <label className="text-body-sm font-bold tracking-tight text-white">Venue Type *</label>
+            <label className="text-body-sm font-bold tracking-tight text-white">
+              Venue Type <RequiredMark />
+            </label>
             <input
               type="text"
               value={venueData.venueType}
@@ -43,7 +48,7 @@ export const VenueDetailsStep = ({ venueData, setVenueData }: VenueDetailsStepPr
 
           <div className="space-y-2.5">
             <label className="text-body-sm font-bold tracking-tight text-white">
-              Venue Category *
+              Venue Category <RequiredMark />
             </label>
             <select
               value={venueData.venueCategory}
@@ -73,7 +78,9 @@ export const VenueDetailsStep = ({ venueData, setVenueData }: VenueDetailsStepPr
         </div>
 
         <div className="space-y-2.5">
-          <label className="text-body-sm font-bold tracking-tight text-white">About Venue *</label>
+          <label className="text-body-sm font-bold tracking-tight text-white">
+            About Venue <RequiredMark />
+          </label>
           <textarea
             rows={6}
             value={venueData.aboutVenue}

@@ -2,7 +2,6 @@ import { useState, useRef, useCallback, useMemo } from 'react'
 import {
   Briefcase,
   MessageCircle,
-  ChevronDown,
   Info,
   MapPin,
   Upload,
@@ -38,6 +37,7 @@ import {
 import type { ConsultationTopic } from '@/modules/expert/type/service'
 import type { UpdateServicePricingPayload } from '@/modules/expert/type/service'
 import { cn } from '@/shared/lib/cn'
+import { RequiredMark } from '@/shared/components/form/required-mark'
 import { CreateListingWizard } from '@/modules/expert/components'
 
 type UploadedImage = {
@@ -457,7 +457,7 @@ export const CreateServiceListingPage = () => {
   const renderConsultationStep = () => {
     if (currentStep === 2) {
       return (
-        <div className="animate-in fade-in slide-in-from-right-4 bg-brand-surface mx-auto w-full max-w-[850px] rounded-lg border border-white/5 p-5 duration-300">
+        <div className="animate-in fade-in slide-in-from-right-4 bg-brand-surface mx-auto w-full max-w-[1140px] rounded-lg border border-white/5 p-5 duration-300">
           <div className="mb-6">
             <h2 className="mb-1 text-[13px] font-bold text-white">About Consultation</h2>
             <p className="text-body-sm text-muted font-medium">
@@ -503,7 +503,6 @@ export const CreateServiceListingPage = () => {
                       </option>
                     ))}
                 </select>
-                <ChevronDown className="pointer-events-none absolute top-1/2 right-3 size-3 -translate-y-1/2 text-white" />
               </div>
               {topics.length > 0 && (
                 <div className="flex flex-wrap gap-2 pt-1">
@@ -557,7 +556,7 @@ export const CreateServiceListingPage = () => {
 
     if (currentStep === 3) {
       return (
-        <div className="animate-in fade-in slide-in-from-right-4 bg-brand-surface mx-auto w-full max-w-[850px] rounded-lg border border-white/5 p-5 duration-300">
+        <div className="animate-in fade-in slide-in-from-right-4 bg-brand-surface mx-auto w-full max-w-[1140px] rounded-lg border border-white/5 p-5 duration-300">
           <div className="mb-6">
             <h2 className="mb-1 text-[13px] font-bold text-white">Additional</h2>
             <p className="text-body-sm text-muted font-medium">
@@ -690,7 +689,7 @@ export const CreateServiceListingPage = () => {
 
     if (currentStep === 4) {
       return (
-        <div className="animate-in fade-in slide-in-from-right-4 bg-brand-surface mx-auto w-full max-w-[850px] rounded-lg border border-white/5 p-5 duration-300">
+        <div className="animate-in fade-in slide-in-from-right-4 bg-brand-surface mx-auto w-full max-w-[1140px] rounded-lg border border-white/5 p-5 duration-300">
           <div className="mb-6">
             <h2 className="mb-1 text-[13px] font-bold text-white">Pricing &amp; Duration</h2>
             <p className="text-body-sm text-muted font-medium">
@@ -715,7 +714,6 @@ export const CreateServiceListingPage = () => {
                     </option>
                   ))}
                 </select>
-                <ChevronDown className="pointer-events-none absolute top-1/2 right-3 size-3 -translate-y-1/2 text-white" />
               </div>
             </div>
 
@@ -733,7 +731,6 @@ export const CreateServiceListingPage = () => {
                     </option>
                   ))}
                 </select>
-                <ChevronDown className="pointer-events-none absolute top-1/2 right-3 size-3 -translate-y-1/2 text-white" />
               </div>
             </div>
 
@@ -797,7 +794,7 @@ export const CreateServiceListingPage = () => {
           : '—'
 
     return (
-      <div className="animate-in fade-in slide-in-from-right-4 bg-brand-surface mx-auto w-full max-w-[850px] rounded-lg border border-white/5 p-7 duration-300">
+      <div className="animate-in fade-in slide-in-from-right-4 bg-brand-surface mx-auto w-full max-w-[1140px] rounded-lg border border-white/5 p-7 duration-300">
         <div className="grid grid-cols-1 gap-7 md:grid-cols-[1fr_0.9fr]">
           <div className="border-brand-accent border-l-4 pl-4">
             <h2 className="text-h3 font-bold text-white">
@@ -957,7 +954,7 @@ export const CreateServiceListingPage = () => {
       }}
     >
       {currentStep === 1 ? (
-        <div className="bg-brand-surface mx-auto w-full max-w-[850px] rounded-lg border border-white/5 p-6 shadow-xl">
+        <div className="bg-brand-surface mx-auto w-full max-w-[1140px] rounded-lg border border-white/5 p-6 shadow-xl">
           <div className="mb-8">
             <h2 className="mb-2 text-[15px] font-bold text-white">Choose Service Type</h2>
             <p className="text-body-sm text-muted leading-relaxed font-medium">
@@ -1049,7 +1046,7 @@ export const CreateServiceListingPage = () => {
       ) : selectedType === 'consultation' ? (
         renderConsultationStep()
       ) : currentStep === 2 ? (
-        <div className="animate-in fade-in slide-in-from-right-4 bg-brand-surface mx-auto w-full max-w-[850px] rounded-lg border border-white/5 p-6 duration-300">
+        <div className="animate-in fade-in slide-in-from-right-4 bg-brand-surface mx-auto w-full max-w-[1140px] rounded-lg border border-white/5 p-6 duration-300">
           <div className="mb-8">
             <h2 className="mb-1 text-[15px] font-bold text-white">About Service</h2>
             <p className="text-body-sm text-muted font-medium">
@@ -1067,7 +1064,7 @@ export const CreateServiceListingPage = () => {
 
             <div className="space-y-2.5">
               <label className="text-body-sm font-bold tracking-tight text-white">
-                Service title *
+                Service title <RequiredMark />
               </label>
               <input
                 type="text"
@@ -1081,7 +1078,7 @@ export const CreateServiceListingPage = () => {
             <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
               <div className="space-y-2.5">
                 <label className="text-body-sm font-bold tracking-tight text-white">
-                  Service Category *
+                  Service Category <RequiredMark />
                 </label>
                 <div className="group relative">
                   <select
@@ -1102,7 +1099,6 @@ export const CreateServiceListingPage = () => {
                       </option>
                     ))}
                   </select>
-                  <ChevronDown className="text-muted group-hover:text-muted pointer-events-none absolute top-1/2 right-4 size-4 -translate-y-1/2 transition-colors" />
                 </div>
               </div>
 
@@ -1166,7 +1162,7 @@ export const CreateServiceListingPage = () => {
           </div>
         </div>
       ) : currentStep === 3 ? (
-        <div className="animate-in fade-in slide-in-from-right-4 mx-auto w-full max-w-[850px] space-y-5 duration-300">
+        <div className="animate-in fade-in slide-in-from-right-4 mx-auto w-full max-w-[1140px] space-y-5 duration-300">
           <div className="bg-brand-surface space-y-5 rounded-lg border border-white/5 p-5">
             <div>
               <h2 className="mb-1 text-[13px] font-bold text-white">Pricing Options</h2>
@@ -1262,7 +1258,7 @@ export const CreateServiceListingPage = () => {
                   <div className="w-full flex-1 space-y-5">
                     <div className="space-y-2.5">
                       <label className="text-body-sm font-bold tracking-tight text-white">
-                        Price *
+                        Price <RequiredMark />
                       </label>
                       <input
                         type="text"
@@ -1275,7 +1271,7 @@ export const CreateServiceListingPage = () => {
 
                     <div className="space-y-2.5">
                       <label className="text-body-sm font-bold tracking-tight text-white">
-                        Set Timelines *
+                        Set Timelines <RequiredMark />
                       </label>
                       <div className="flex gap-3">
                         <input
@@ -1294,7 +1290,6 @@ export const CreateServiceListingPage = () => {
                             <option>Weeks</option>
                             <option>Months</option>
                           </select>
-                          <ChevronDown className="text-muted pointer-events-none absolute top-1/2 right-3 size-3 -translate-y-1/2" />
                         </div>
                       </div>
                     </div>
@@ -1348,7 +1343,7 @@ export const CreateServiceListingPage = () => {
                   <div className="w-full flex-1 space-y-5">
                     <div className="space-y-2.5">
                       <label className="text-body-sm font-bold tracking-tight text-white">
-                        Set Price *
+                        Set Price <RequiredMark />
                       </label>
                       <input
                         type="text"
@@ -1361,7 +1356,7 @@ export const CreateServiceListingPage = () => {
 
                     <div className="space-y-3">
                       <label className="text-body-sm font-bold tracking-tight text-white">
-                        Times lines *
+                        Times lines <RequiredMark />
                       </label>
                       <div className="flex gap-5">
                         <button
@@ -1419,7 +1414,7 @@ export const CreateServiceListingPage = () => {
 
                     <div className="space-y-2.5">
                       <label className="text-body-sm font-bold tracking-tight text-white">
-                        Set Timelines *
+                        Set Timelines <RequiredMark />
                       </label>
                       <div className="flex items-center gap-3">
                         <input
@@ -1445,7 +1440,6 @@ export const CreateServiceListingPage = () => {
                             <option value="Weeks">Weeks</option>
                             <option value="Months">Months</option>
                           </select>
-                          <ChevronDown className="text-muted pointer-events-none absolute top-1/2 right-3 size-3 -translate-y-1/2" />
                         </div>
                       </div>
                     </div>
@@ -1489,7 +1483,7 @@ export const CreateServiceListingPage = () => {
 
                       <div className="space-y-2.5">
                         <label className="text-body-sm font-bold tracking-tight text-white">
-                          Description *
+                          Description <RequiredMark />
                         </label>
                         <textarea
                           placeholder={`Describe what the ${tier.name} tier includes...`}
@@ -1502,7 +1496,7 @@ export const CreateServiceListingPage = () => {
                       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                         <div className="space-y-2.5">
                           <label className="text-body-sm font-bold tracking-tight text-white">
-                            Price *
+                            Price <RequiredMark />
                           </label>
                           <input
                             type="text"
@@ -1515,7 +1509,7 @@ export const CreateServiceListingPage = () => {
 
                         <div className="space-y-2.5">
                           <label className="text-body-sm font-bold tracking-tight text-white">
-                            Set Timelines *
+                            Set Timelines <RequiredMark />
                           </label>
                           <div className="flex gap-3">
                             <input
@@ -1539,7 +1533,6 @@ export const CreateServiceListingPage = () => {
                                 <option>Weeks</option>
                                 <option>Months</option>
                               </select>
-                              <ChevronDown className="text-muted pointer-events-none absolute top-1/2 right-3 size-3 -translate-y-1/2" />
                             </div>
                           </div>
                         </div>
@@ -1552,7 +1545,7 @@ export const CreateServiceListingPage = () => {
           </div>
         </div>
       ) : currentStep === 4 ? (
-        <div className="animate-in fade-in slide-in-from-right-4 bg-brand-surface mx-auto w-full max-w-[850px] space-y-5 rounded-lg border border-white/5 p-5 duration-300">
+        <div className="animate-in fade-in slide-in-from-right-4 bg-brand-surface mx-auto w-full max-w-[1140px] space-y-5 rounded-lg border border-white/5 p-5 duration-300">
           <div>
             <h2 className="mb-1 text-[13px] font-bold text-white">Gallery</h2>
             <p className="text-body-sm text-muted font-medium">
@@ -1633,7 +1626,7 @@ export const CreateServiceListingPage = () => {
           </div>
         </div>
       ) : currentStep === 5 ? (
-        <div className="animate-in fade-in slide-in-from-right-4 bg-brand-surface mx-auto w-full max-w-[850px] space-y-5 rounded-lg border border-white/5 p-6 duration-300">
+        <div className="animate-in fade-in slide-in-from-right-4 bg-brand-surface mx-auto w-full max-w-[1140px] space-y-5 rounded-lg border border-white/5 p-6 duration-300">
           <div>
             <h2 className="mb-1 text-[13px] font-bold text-white">Review &amp; Publish</h2>
             <p className="text-body-sm text-muted font-medium">

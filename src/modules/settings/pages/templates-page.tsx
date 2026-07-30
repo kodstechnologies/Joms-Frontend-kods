@@ -14,6 +14,7 @@ import {
   useUpdateModerationReason,
 } from '../hooks/use-templates'
 import type { ModerationCategory, ModerationReason } from '../api/templates-api'
+import { RequiredMark } from '@/shared/components/form/required-mark'
 import { cn } from '@/shared/lib/cn'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 
@@ -112,7 +113,7 @@ function ReasonFormModal({
         <div className="space-y-4 overflow-y-auto px-5 py-5">
           <div>
             <label className="invite-modal-field-label mb-1.5 block">
-              Reason title<span className="text-brand-accent">*</span>
+              Reason title <RequiredMark />
             </label>
             <input
               value={form.title}
@@ -124,7 +125,7 @@ function ReasonFormModal({
 
           <div>
             <label className="invite-modal-field-label mb-1.5 block">
-              Description<span className="text-brand-accent">*</span>
+              Description <RequiredMark />
             </label>
             <textarea
               rows={3}
@@ -138,7 +139,7 @@ function ReasonFormModal({
 
           <div>
             <label className="invite-modal-field-label mb-1.5 block">
-              Default Message Template<span className="text-brand-accent">*</span>
+              Default Message Template <RequiredMark />
               <span className="text-body-sm text-muted ml-1 font-normal italic">
                 (Shown to the user)
               </span>

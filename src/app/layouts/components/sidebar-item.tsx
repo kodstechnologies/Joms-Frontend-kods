@@ -118,7 +118,7 @@ export function SidebarItem({
         aria-label={compact ? label : undefined}
         className="focus-visible:ring-brand-accent/30 block focus-visible:ring-2 focus-visible:outline-none"
       >
-        {({ isActive }) => renderContent(isActive)}
+        {({ isActive }) => renderContent(Boolean(isActive || active))}
       </NavLink>
     )
   }

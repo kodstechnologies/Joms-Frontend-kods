@@ -91,7 +91,7 @@ export function RestoreBackupModal({ open, backup, onClose, onSubmit }: RestoreB
                   name="restore-option"
                   checked={selected === option.key}
                   onChange={() => setSelected(option.key)}
-                  className="accent-brand-accent mt-1"
+                  className="mt-1 accent-white"
                 />
                 <div>
                   <p className="text-body-md-medium text-brand-text">{option.label}</p>

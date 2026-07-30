@@ -2,6 +2,8 @@ import { useRef } from 'react'
 import { Upload } from 'lucide-react'
 
 import type { ExpertOnboardingFormData } from '../utils/expert-onboarding-form'
+import { requiredLabel } from '@/shared/components/form/required-label'
+import { RequiredMark } from '@/shared/components/form/required-mark'
 
 const fieldClass = 'ui-input'
 
@@ -28,7 +30,7 @@ function DocumentUploadField({
 
   return (
     <div>
-      <label className="mb-2 block text-xs font-medium text-white">{label}</label>
+      <label className="mb-2 block text-xs font-medium text-white">{requiredLabel(label)}</label>
       <button
         type="button"
         onClick={() => inputRef.current?.click()}
@@ -64,7 +66,7 @@ export const ExpertIdentityVerificationStep = ({ formData, setFormData }: Props)
   }
 
   return (
-    <div className="mx-auto w-full max-w-[850px]">
+    <div className="mx-auto w-full max-w-[1140px]">
       <div className="animate-in fade-in slide-in-from-right-4 bg-brand-surface rounded-lg border border-white/5 p-6 duration-300">
         <div className="mb-4">
           <h2 className="text-sm font-bold text-white">Government ID Verification</h2>
@@ -91,7 +93,9 @@ export const ExpertIdentityVerificationStep = ({ formData, setFormData }: Props)
           </div>
 
           <div>
-            <label className="mb-2 block text-xs font-medium text-white">ID Number *</label>
+            <label className="mb-2 block text-xs font-medium text-white">
+              ID Number <RequiredMark />
+            </label>
             <input
               value={formData.idNumber}
               onChange={(e) => setFormData((prev) => ({ ...prev, idNumber: e.target.value }))}
@@ -109,7 +113,9 @@ export const ExpertIdentityVerificationStep = ({ formData, setFormData }: Props)
 
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
           <div>
-            <label className="mb-2 block text-xs font-medium text-white">GST Availability *</label>
+            <label className="mb-2 block text-xs font-medium text-white">
+              GST Availability <RequiredMark />
+            </label>
             <select
               value={formData.gstAvailable ? 'yes' : 'no'}
               onChange={(e) =>
@@ -127,7 +133,9 @@ export const ExpertIdentityVerificationStep = ({ formData, setFormData }: Props)
 
           {formData.gstAvailable && (
             <div>
-              <label className="mb-2 block text-xs font-medium text-white">GST Number *</label>
+              <label className="mb-2 block text-xs font-medium text-white">
+                GST Number <RequiredMark />
+              </label>
               <input
                 value={formData.gstNumber}
                 onChange={(e) => setFormData((prev) => ({ ...prev, gstNumber: e.target.value }))}
@@ -140,7 +148,7 @@ export const ExpertIdentityVerificationStep = ({ formData, setFormData }: Props)
 
           <div>
             <label className="mb-2 block text-xs font-medium text-white">
-              Organization/Individual PAN *
+              Organization/Individual PAN <RequiredMark />
             </label>
             <input
               value={formData.panNumber}
@@ -154,7 +162,7 @@ export const ExpertIdentityVerificationStep = ({ formData, setFormData }: Props)
 
         <div className="mt-8 mb-4">
           <h3 className="text-xs font-bold text-white">
-            Business Identity verification documents *
+            Business Identity verification documents <RequiredMark />
           </h3>
         </div>
 

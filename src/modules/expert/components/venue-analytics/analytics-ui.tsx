@@ -1,4 +1,4 @@
-import { ChevronDown, TrendingUp } from 'lucide-react'
+import { TrendingUp } from 'lucide-react'
 
 import { cn } from '@/shared/lib/cn'
 
@@ -85,20 +85,17 @@ export function PeriodSelect({
   onChange?: (value: string) => void
 }) {
   return (
-    <div className="relative">
-      <select
-        value={value}
-        onChange={(e) => onChange?.(e.target.value)}
-        className="bg-brand-accent text-brand-text-dark h-8 appearance-none rounded-lg border border-white/10 px-3 pr-8 text-[11px] font-semibold outline-none"
-      >
-        {options.map((opt) => (
-          <option key={opt} value={opt}>
-            {opt}
-          </option>
-        ))}
-      </select>
-      <ChevronDown className="pointer-events-none absolute top-1/2 right-2 size-3.5 -translate-y-1/2 text-black" />
-    </div>
+    <select
+      value={value}
+      onChange={(e) => onChange?.(e.target.value)}
+      className="select-on-accent bg-brand-accent text-brand-text-dark h-8 rounded-lg border border-white/10 px-3 pr-8 text-[11px] font-semibold outline-none"
+    >
+      {options.map((opt) => (
+        <option key={opt} value={opt}>
+          {opt}
+        </option>
+      ))}
+    </select>
   )
 }
 

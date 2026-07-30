@@ -8,6 +8,7 @@ import {
   maskSensitiveValue,
   type VenueOnboardingFormData,
 } from '../utils/venue-onboarding-form'
+import { RequiredMark } from '@/shared/components/form/required-mark'
 
 type Props = {
   formData: VenueOnboardingFormData
@@ -164,7 +165,7 @@ export const VenueOnboardingFinalReviewStep = ({
   }, [otherCertificates, formData.otherCertificates])
 
   return (
-    <div className="mx-auto w-full max-w-[850px] space-y-6">
+    <div className="mx-auto w-full max-w-[1140px] space-y-6">
       <div className="bg-brand-surface overflow-hidden rounded-lg border border-white/5">
         <div className="relative h-40 bg-gradient-to-r from-cyan-900 to-blue-800">
           {coverUrl && <img src={coverUrl} alt="Cover" className="h-full w-full object-cover" />}
@@ -304,7 +305,9 @@ export const VenueOnboardingFinalReviewStep = ({
       )}
 
       <div className="bg-brand-surface rounded-lg border border-white/5 p-6">
-        <label className="mb-2 block text-xs font-medium text-white">Internal notes *</label>
+        <label className="mb-2 block text-xs font-medium text-white">
+          Internal notes <RequiredMark />
+        </label>
         <textarea
           rows={4}
           value={formData.internalNotes}
@@ -318,7 +321,7 @@ export const VenueOnboardingFinalReviewStep = ({
             type="checkbox"
             checked={formData.isVerified}
             onChange={(e) => setFormData((prev) => ({ ...prev, isVerified: e.target.checked }))}
-            className="accent-brand-accent mt-0.5 size-4 rounded border-white/20"
+            className="mt-0.5 size-4 rounded border-white/20 accent-white"
           />
           <span className="text-muted text-xs">
             I confirm that the details in this profile are being verified thoroughly.

@@ -1,4 +1,5 @@
 import type { VenueFormData } from '../utils/venue-form'
+import { RequiredMark } from '@/shared/components/form/required-mark'
 
 interface SpacesStepProps {
   venueData: VenueFormData
@@ -36,7 +37,7 @@ export const SpacesStep = ({ venueData, setVenueData }: SpacesStepProps) => {
   const locationType = venueData.locationType || 'same'
 
   return (
-    <div className="mx-auto w-full max-w-[850px] space-y-6">
+    <div className="mx-auto w-full max-w-[1140px] space-y-6">
       <div className="animate-in fade-in slide-in-from-right-4 bg-brand-surface rounded-lg border border-white/5 p-6 shadow-xl duration-300">
         <div className="mb-8">
           <h2 className="mb-1 text-[15px] font-bold text-white">Add Space Details</h2>
@@ -248,7 +249,9 @@ export const SpacesStep = ({ venueData, setVenueData }: SpacesStepProps) => {
 
           {locationType === 'different' && (
             <div>
-              <label className="mb-2 block text-sm font-medium text-white">Enter Address *</label>
+              <label className="mb-2 block text-sm font-medium text-white">
+                Enter Address <RequiredMark />
+              </label>
 
               <textarea
                 rows={3}

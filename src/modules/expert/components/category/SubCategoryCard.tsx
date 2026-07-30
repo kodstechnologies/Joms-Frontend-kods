@@ -1,5 +1,6 @@
 import { Plus, Trash2 } from 'lucide-react'
 
+import { RequiredMark } from '@/shared/components/form/required-mark'
 import { Button } from '@/shared/components/ui/button'
 
 import UploadBox from './UploadBox'
@@ -50,7 +51,7 @@ const SubCategoryCard = ({
             <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1fr_auto] lg:items-end">
               <div>
                 <label className="text-body-sm-medium text-brand-text mb-2 block">
-                  Sub-categories <span className="text-brand-text">*</span>
+                  Sub-categories <RequiredMark />
                 </label>
 
                 <input
@@ -91,7 +92,7 @@ const SubCategoryCard = ({
 
             <div className="mt-5">
               <label className="text-body-sm-medium text-brand-text mb-2 block">
-                Description <span className="text-brand-text">*</span>
+                Description <RequiredMark />
               </label>
 
               <textarea

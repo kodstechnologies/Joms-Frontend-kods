@@ -484,7 +484,7 @@ button:disabled,
   width: 100%;
   border-radius: var(--brand-radius-md);
   border: 1px solid rgb(255 255 255 / 10%);
-  background: #050505;
+  background-color: #050505;
   padding-top: 0;
   padding-bottom: 0;
   padding-left: 14px;
@@ -499,6 +499,49 @@ button:disabled,
 
 .ui-input::placeholder {
   color: var(--brand-muted);
+}
+
+.ui-input.ui-input-icon-left {
+  padding-left: 44px;
+}
+
+.ui-input.ui-input-icon-left.h-9 {
+  padding-left: 40px;
+}
+
+input[type='checkbox'],
+input[type='radio'] {
+  accent-color: #ffffff;
+  color-scheme: dark;
+}
+
+select {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 16px 16px;
+  padding-right: 36px;
+  cursor: pointer;
+}
+
+select.ui-input {
+  background-color: #050505;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 16px 16px;
+  padding-right: 36px;
+}
+
+select.select-on-accent {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23050505' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+}
+
+select::-ms-expand {
+  display: none;
 }
 
 .membership-number-input {
@@ -525,8 +568,8 @@ button:disabled,
   width: 100%;
   border-radius: var(--brand-radius-lg);
   border: 1px solid rgb(255 255 255 / 15%);
-  background: #050505;
-  padding: 0 16px 0 44px;
+  background-color: #050505;
+  padding: 0 16px 0 48px;
   font-family: 'Figtree', ui-sans-serif, system-ui, sans-serif;
   font-weight: 400;
   font-size: 14px;
@@ -547,11 +590,12 @@ button:disabled,
   position: absolute;
   top: 50%;
   left: 16px;
-  width: 24px;
-  height: 24px;
+  width: 16px;
+  height: 16px;
   transform: translateY(-50%);
   color: rgb(255 255 255 / 50%);
   pointer-events: none;
+  flex-shrink: 0;
 }
 
 .ui-table-showing {

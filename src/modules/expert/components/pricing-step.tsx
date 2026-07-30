@@ -7,6 +7,7 @@ import {
   type VenueFormData,
   type WeeklyAvailabilityEntry,
 } from '../utils/venue-form'
+import { RequiredMark } from '@/shared/components/form/required-mark'
 
 interface PricingStepProps {
   venueData: VenueFormData
@@ -67,7 +68,7 @@ export const PricingStep = ({ venueData, setVenueData }: PricingStepProps) => {
 
   return (
     <>
-      <div className="mx-auto w-full max-w-[850px]">
+      <div className="mx-auto w-full max-w-[1140px]">
         <div className="animate-in fade-in slide-in-from-right-4 bg-brand-surface rounded-lg border border-white/5 p-6 shadow-xl duration-300">
           <h2 className="text-lg font-semibold text-white">Set Pricing</h2>
 
@@ -75,7 +76,9 @@ export const PricingStep = ({ venueData, setVenueData }: PricingStepProps) => {
 
           <div className="grid grid-cols-2 gap-6">
             <div>
-              <label className="mb-2 block text-sm font-medium text-white">Service *</label>
+              <label className="mb-2 block text-sm font-medium text-white">
+                Service <RequiredMark />
+              </label>
 
               <select
                 value={venueData.serviceType || 'entire_space'}
@@ -93,7 +96,9 @@ export const PricingStep = ({ venueData, setVenueData }: PricingStepProps) => {
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-medium text-white">Set Days *</label>
+              <label className="mb-2 block text-sm font-medium text-white">
+                Set Days <RequiredMark />
+              </label>
 
               <input
                 type="number"
@@ -110,7 +115,9 @@ export const PricingStep = ({ venueData, setVenueData }: PricingStepProps) => {
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-medium text-white">Weekday *</label>
+              <label className="mb-2 block text-sm font-medium text-white">
+                Weekday <RequiredMark />
+              </label>
 
               <input
                 type="text"
@@ -127,7 +134,9 @@ export const PricingStep = ({ venueData, setVenueData }: PricingStepProps) => {
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-medium text-white">Weekend *</label>
+              <label className="mb-2 block text-sm font-medium text-white">
+                Weekend <RequiredMark />
+              </label>
 
               <input
                 type="text"

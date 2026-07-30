@@ -119,7 +119,7 @@ function CancelSubscriptionModalForm({
             type="checkbox"
             checked={confirmed}
             onChange={(event) => setConfirmed(event.target.checked)}
-            className="accent-brand-accent mt-0.5 rounded border-white/20"
+            className="mt-0.5 rounded border-white/20 accent-white"
           />
           I confirm the documents are not valid from above reasons.
         </label>
