@@ -43,10 +43,11 @@ export const formatReferralDateRange = (start?: string | null, end?: string | nu
 export const getReferralStatusClassName = (status: string) => {
   switch (status) {
     case 'accepted':
-    case 'active':
       return 'status-badge-accepted'
     case 'pending':
       return 'status-badge-pending'
+    case 'rejected':
+      return 'status-badge-expired'
     case 'expired':
       return 'status-badge-expired'
     default:
@@ -58,10 +59,10 @@ export const getReferralStatusLabel = (status: string) => {
   switch (status) {
     case 'accepted':
       return 'Accepted'
-    case 'active':
-      return 'Active'
     case 'pending':
       return 'Pending'
+    case 'rejected':
+      return 'Rejected'
     case 'expired':
       return 'Expired'
     default:

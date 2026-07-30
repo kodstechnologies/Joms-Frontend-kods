@@ -9,6 +9,15 @@ import { SuperAdminRoute } from '@/app/router/super-admin-route'
 const LoginPage = lazy(() =>
   import('@/modules/auth/pages/login-page').then((m) => ({ default: m.LoginPage })),
 )
+const ChatTestPage = lazy(() =>
+  import('@/modules/chat-test').then((m) => ({ default: m.ChatTestPage })),
+)
+const UserChatTestPage = lazy(() =>
+  import('@/modules/chat-test').then((m) => ({ default: m.UserChatTestPage })),
+)
+const PartnerChatTestPage = lazy(() =>
+  import('@/modules/chat-test').then((m) => ({ default: m.PartnerChatTestPage })),
+)
 const ExecutiveOverviewPage = lazy(() =>
   import('@/modules/dashboard/pages/executive-overview-page').then((m) => ({
     default: m.ExecutiveOverviewPage,
@@ -698,6 +707,31 @@ export function AppRouter() {
           element={
             <Suspense fallback={<PageLoader />}>
               <LoginPage />
+            </Suspense>
+          }
+        />
+
+        <Route
+          path="/dev/chat-test"
+          element={
+            <Suspense fallback={<PageLoader />}>
+              <ChatTestPage />
+            </Suspense>
+          }
+        />
+        <Route
+          path="/dev/chat-partner"
+          element={
+            <Suspense fallback={<PageLoader />}>
+              <PartnerChatTestPage />
+            </Suspense>
+          }
+        />
+        <Route
+          path="/dev/chat-user"
+          element={
+            <Suspense fallback={<PageLoader />}>
+              <UserChatTestPage />
             </Suspense>
           }
         />

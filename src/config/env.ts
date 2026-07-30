@@ -11,6 +11,7 @@ const PROD_SERVICE_URLS = {
   membership: 'https://membership.api.kods.online',
   settings: 'https://settings.api.kods.online',
   payment: 'https://payment.api.kods.online',
+  chat: 'https://chat.api.kods.online',
 } as const
 
 const localApiBaseUrl = trimTrailingSlash(import.meta.env.VITE_API_BASE_URL || LOCAL_API_BASE_URL)
@@ -59,5 +60,10 @@ export const env = {
     import.meta.env.VITE_PAYMENT_API_BASE_URL,
     8008,
     PROD_SERVICE_URLS.payment,
+  ),
+  chatApiBaseUrl: resolveApiUrl(
+    import.meta.env.VITE_CHAT_API_BASE_URL,
+    8009,
+    PROD_SERVICE_URLS.chat,
   ),
 }

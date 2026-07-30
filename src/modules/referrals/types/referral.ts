@@ -1,17 +1,23 @@
-export type ReferralStatus = 'pending' | 'accepted' | 'active' | 'expired'
+export type ReferralStatus = 'pending' | 'accepted' | 'rejected' | 'expired'
 
 export type ExpertInvite = {
   _id: string
-  inviteId: string
-  invitedExpertName: string
-  email?: string | null
-  phone?: string | null
+  referralId: string
+  referrerId?: string | null
+  referrerName: string
+  referredExpertName: string
+  referredExpertEmail?: string | null
+  referredExpertPhone?: string | null
+  sourceType: 'Expert Referral' | 'Platform Referral'
   status: ReferralStatus
-  invitedThrough: string
-  inviteStatus: 'individual' | 'bulk'
-  inviteLink: string
-  invitedBy: string
+  goalProgress: {
+    signedUpCount: number
+    maxReferrals: number
+  }
   message: string
+  referralType: 'manual' | 'bulk'
+  inviteLink?: string | null
+  referralCode?: string | null
   createdAt: string
   delivery?: {
     emailSent: boolean
@@ -46,14 +52,15 @@ export type ExpertInvitePayload = {
   email?: string
   phone?: string
   message: string
-  invitedBy?: string
-  invitedThrough?: string
+  referrerId?: string
+  referrerName?: string
 }
 
 export type BulkExpertInvitePayload = {
   message: string
   recipients: Array<{ name: string; email?: string; phone?: string }>
-  invitedBy?: string
+  referrerId?: string
+  referrerName?: string
 }
 
 export type UpdateRecipientPayload = {

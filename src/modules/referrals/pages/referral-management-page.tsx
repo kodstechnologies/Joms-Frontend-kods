@@ -82,7 +82,7 @@ export function ReferralManagementPage() {
 
   const renderActions = useCallback(
     (record: ExpertInvite) => {
-      const id = record.inviteId
+      const id = record.referralId
       const isOpen = activeDropdownId === id
 
       return (
@@ -127,10 +127,14 @@ export function ReferralManagementPage() {
 
   const expertColumns = useMemo<ColumnDef<ExpertInvite>[]>(
     () => [
-      { accessorKey: 'inviteId', header: 'Invite ID' },
-      { accessorKey: 'invitedExpertName', header: 'Invited Expert' },
-      { accessorKey: 'email', header: 'Expert Email' },
-      { accessorKey: 'phone', header: 'Expert Phone' },
+      { accessorKey: 'referralId', header: 'Referral ID' },
+      { accessorKey: 'referrerName', header: 'Referrer' },
+      { accessorKey: 'referredExpertName', header: 'Referred Expert' },
+      {
+        accessorKey: 'sourceType',
+        header: 'Source Type',
+        cell: ({ row }) => <span className="capitalize">{row.original.sourceType}</span>,
+      },
       {
         accessorKey: 'status',
         header: 'Status',
@@ -145,11 +149,15 @@ export function ReferralManagementPage() {
           </span>
         ),
       },
-      { accessorKey: 'invitedThrough', header: 'Invited through' },
       {
-        accessorKey: 'inviteStatus',
-        header: 'Referral Type',
-        cell: ({ row }) => <span className="capitalize">{row.original.inviteStatus}</span>,
+        accessorKey: 'goalProgress',
+        header: 'Goal Progress',
+        cell: ({ row }) => (
+          <span className="text-sm">
+            {row.original.goalProgress.signedUpCount}/{row.original.goalProgress.maxReferrals}{' '}
+            signed up
+          </span>
+        ),
       },
       {
         accessorKey: 'createdAt',
@@ -196,7 +204,7 @@ export function ReferralManagementPage() {
       <DataTable
         columns={expertColumns}
         data={expertInvites}
-        getRowId={(row) => row.inviteId}
+        getRowId={(row) => row.referralId}
         isLoading={expertLoading}
         searchValue={searchQuery}
         onSearchChange={setSearchQuery}
@@ -250,9 +258,9 @@ export function ReferralManagementPage() {
         initialValues={
           editExpert
             ? {
-                name: editExpert.invitedExpertName,
-                email: editExpert.email,
-                phone: editExpert.phone,
+                name: editExpert.referredExpertName,
+                email: editExpert.referredExpertEmail,
+                phone: editExpert.referredExpertPhone,
                 message: editExpert.message,
               }
             : undefined
