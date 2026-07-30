@@ -2,11 +2,7 @@ import { X } from 'lucide-react'
 import { createPortal } from 'react-dom'
 
 import type { ExpertInvite } from '../types/referral'
-import {
-  formatInviteDetailDateTime,
-  getInvitedByLabel,
-  getReferralStatusLabel,
-} from '../utils/referral-format'
+import { formatInviteDetailDateTime, getReferralStatusLabel } from '../utils/referral-format'
 
 type ReferralDetailsModalProps = {
   open: boolean
@@ -19,7 +15,7 @@ export function ReferralDetailsModal({ open, onClose, expertInvite }: ReferralDe
 
   const status = expertInvite.status
   const statusClass =
-    status === 'active' || status === 'accepted'
+    status === 'accepted'
       ? 'status-badge-accepted-solid'
       : status === 'pending'
         ? 'status-badge-pending'
@@ -44,7 +40,8 @@ export function ReferralDetailsModal({ open, onClose, expertInvite }: ReferralDe
           {/* Left col */}
           <div className="flex flex-col gap-5">
             <DetailCell label="Invite Link" value={expertInvite.inviteLink} truncate />
-            <DetailCell label="Invited by" value={getInvitedByLabel(expertInvite.invitedBy)} />
+            <DetailCell label="Referrer" value={expertInvite.referrerName} />
+            <DetailCell label="Source Type" value={expertInvite.sourceType} />
             <div className="flex flex-col gap-1.5">
               <p className="invite-detail-label">Status</p>
               <span className={`${statusClass} inline-flex items-center capitalize`}>
@@ -55,10 +52,14 @@ export function ReferralDetailsModal({ open, onClose, expertInvite }: ReferralDe
 
           {/* Right col */}
           <div className="flex flex-col gap-5">
-            <DetailCell label="Invited Expert" value={expertInvite.invitedExpertName} />
+            <DetailCell label="Referred Expert" value={expertInvite.referredExpertName} />
             <DetailCell
-              label="Invited at"
+              label="Created At"
               value={formatInviteDetailDateTime(expertInvite.createdAt)}
+            />
+            <DetailCell
+              label="Goal Progress"
+              value={`${expertInvite.goalProgress.signedUpCount}/${expertInvite.goalProgress.maxReferrals} signed up`}
             />
           </div>
         </div>

@@ -81,9 +81,9 @@ export function InviteExpertReferralModal({
 
   const handleSubmit = () => {
     if (mode === 'manual') {
-      onSubmitManual({ name, email, phone, message, invitedBy: 'Admin' })
+      onSubmitManual({ name, email, phone, message, referrerName: 'Admin' })
     } else {
-      onSubmitBulk({ message, recipients, invitedBy: 'Admin' })
+      onSubmitBulk({ message, recipients, referrerName: 'Admin' })
     }
     reset()
   }
