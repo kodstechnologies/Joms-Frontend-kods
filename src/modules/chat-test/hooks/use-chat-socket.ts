@@ -41,12 +41,12 @@ export function useChatSocket(token: string | null, getHandlers: () => Handlers,
 
     socket.on('connect', onConnect)
     socket.on('disconnect', () => setConnected(false))
-    socket.on('new_message', (p) => getHandlersRef.current()?.onNewMessage?.(p))
-    socket.on('thread_updated', (p) => getHandlersRef.current()?.onThreadUpdated?.(p))
-    socket.on('update_threads', (p) => getHandlersRef.current()?.onThreadsList?.(p))
-    socket.on('user_typing', (p) => getHandlersRef.current()?.onTyping?.(p))
-    socket.on('user_status', (p) => getHandlersRef.current()?.onUserStatus?.(p))
-    socket.on('messages_read', (p) => getHandlersRef.current()?.onMessagesRead?.(p))
+    socket.on('new_message', (p: unknown) => getHandlersRef.current()?.onNewMessage?.(p))
+    socket.on('thread_updated', (p: unknown) => getHandlersRef.current()?.onThreadUpdated?.(p))
+    socket.on('update_threads', (p: unknown) => getHandlersRef.current()?.onThreadsList?.(p))
+    socket.on('user_typing', (p: unknown) => getHandlersRef.current()?.onTyping?.(p))
+    socket.on('user_status', (p: unknown) => getHandlersRef.current()?.onUserStatus?.(p))
+    socket.on('messages_read', (p: unknown) => getHandlersRef.current()?.onMessagesRead?.(p))
 
     const heartbeat = setInterval(() => {
       if (socket.connected) socket.emit('heartbeat')
