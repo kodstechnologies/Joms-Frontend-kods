@@ -186,6 +186,119 @@ export const buildSubmitPayload = (form: ExpertOnboardingFormData) => ({
   isVerified: form.isVerified,
 })
 
+const fileNameFromUrl = (url?: string | null) => {
+  if (!url) return ''
+  try {
+    const pathname = new URL(url).pathname
+    return decodeURIComponent(pathname.split('/').pop() || '') || 'Uploaded file'
+  } catch {
+    return url.split('/').pop() || 'Uploaded file'
+  }
+}
+
+export const mapExpertProfileToOnboardingForm = (profile: {
+  fullname?: string
+  phone?: string
+  email?: string
+  servicetype?: string
+  basicProfile?: {
+    coverImage?: string
+    profileImage?: string
+    fullname?: string
+    location?: string
+    bio?: string
+    industry?: string
+    experienceYears?: number
+    experienceMonths?: number
+    serviceType?: string
+    serviceCategory?: string[]
+    offerings?: string[]
+    sampleWorkLink?: string
+    sampleWorkFile?: string
+    phoneNumber?: string
+    email?: string
+  }
+  identityVerification?: Record<string, unknown> | null
+  workExperience?: Array<{
+    jobTitle?: string
+    companyName?: string
+    employmentType?: string
+    startDate?: string
+    endDate?: string | null
+    currentlyWorking?: boolean
+    description?: string
+  }>
+  gallery?: { images?: string[] }
+  finalReview?: {
+    internalNotes?: string
+    isVerified?: boolean
+  }
+}): ExpertOnboardingFormData => {
+  const basic = profile.basicProfile || {}
+  const identity = profile.identityVerification || {}
+  const galleryImages = profile.gallery?.images?.filter(Boolean) || []
+
+  const workExperience =
+    profile.workExperience && profile.workExperience.length > 0
+      ? profile.workExperience.map((entry) => ({
+          jobTitle: entry.jobTitle || '',
+          companyName: entry.companyName || '',
+          employmentType: entry.employmentType || '',
+          startDate: entry.startDate ? String(entry.startDate).slice(0, 10) : '',
+          endDate: entry.endDate ? String(entry.endDate).slice(0, 10) : '',
+          currentlyWorking: Boolean(entry.currentlyWorking),
+          description: entry.description || '',
+        }))
+      : [createEmptyWorkExperienceEntry()]
+
+  return {
+    ...createEmptyExpertOnboardingForm(),
+    fullname: basic.fullname || profile.fullname || '',
+    location: basic.location || '',
+    bio: basic.bio || '',
+    sampleWorkLink: basic.sampleWorkLink || '',
+    industry: basic.industry || '',
+    experienceYears:
+      basic.experienceYears != null && basic.experienceYears !== undefined
+        ? String(basic.experienceYears)
+        : '',
+    experienceMonths:
+      basic.experienceMonths != null && basic.experienceMonths !== undefined
+        ? String(basic.experienceMonths)
+        : '',
+    serviceType: basic.serviceType || profile.servicetype || 'concierge',
+    serviceCategory: basic.serviceCategory || [],
+    offerings: basic.offerings || [],
+    phoneNumber: basic.phoneNumber || profile.phone || '',
+    email: basic.email || profile.email || '',
+    coverImageUrl: basic.coverImage || '',
+    profileImageUrl: basic.profileImage || '',
+    sampleWorkFileName: fileNameFromUrl(basic.sampleWorkFile),
+
+    idType: String(identity.idType || ''),
+    idNumber: String(identity.idNumber || ''),
+    gstAvailable: identity.gstAvailable !== false,
+    gstNumber: String(identity.gstNumber || ''),
+    panNumber: String(identity.panNumber || ''),
+    panCardFileName: fileNameFromUrl(
+      typeof identity.panCardFile === 'string' ? identity.panCardFile : '',
+    ),
+    certificateFileName: fileNameFromUrl(
+      typeof identity.certificateFile === 'string' ? identity.certificateFile : '',
+    ),
+    gstCertificateFileName: fileNameFromUrl(
+      typeof identity.gstCertificateFile === 'string' ? identity.gstCertificateFile : '',
+    ),
+
+    workExperience,
+    galleryImages: [],
+    galleryPreviews: galleryImages,
+
+    internalNotes: profile.finalReview?.internalNotes || '',
+    isVerified: Boolean(profile.finalReview?.isVerified),
+  }
+}
+
 export const formatExperience = (years?: number | string, months?: number | string) => {
   const y = Number(years) || 0
   const m = Number(months) || 0

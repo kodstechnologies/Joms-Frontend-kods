@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   createExpertBasicProfile,
   submitExpertApplication,
+  updateExpertBasicProfile,
   updateExpertGallery,
   updateExpertIdentityVerification,
   updateExpertWorkExperience,
@@ -13,10 +14,17 @@ export const useExpertOnboardingMutations = () => {
 
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: ['experts'] })
+    queryClient.invalidateQueries({ queryKey: ['expert-profile'] })
   }
 
   const saveBasicProfile = useMutation({
     mutationFn: createExpertBasicProfile,
+    onSuccess: invalidate,
+  })
+
+  const updateBasicProfile = useMutation({
+    mutationFn: ({ id, payload }: { id: string; payload: FormData }) =>
+      updateExpertBasicProfile(id, payload),
     onSuccess: invalidate,
   })
 
@@ -51,6 +59,7 @@ export const useExpertOnboardingMutations = () => {
 
   return {
     saveBasicProfile,
+    updateBasicProfile,
     saveIdentityVerification,
     saveWorkExperience,
     saveGallery,

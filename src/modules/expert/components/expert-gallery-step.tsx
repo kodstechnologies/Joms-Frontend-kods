@@ -22,7 +22,7 @@ export const ExpertGalleryStep = ({ formData, setFormData }: Props) => {
     if (incoming.length === 0) return
 
     setFormData((prev) => {
-      const availableSlots = MAX_IMAGES - prev.galleryImages.length
+      const availableSlots = MAX_IMAGES - prev.galleryPreviews.length
       if (availableSlots <= 0) {
         toast.error(`A maximum of ${MAX_IMAGES} images are allowed`)
         return prev
@@ -45,11 +45,23 @@ export const ExpertGalleryStep = ({ formData, setFormData }: Props) => {
   }
 
   const removeImage = (index: number) => {
-    setFormData((prev) => ({
-      ...prev,
-      galleryImages: prev.galleryImages.filter((_, i) => i !== index),
-      galleryPreviews: prev.galleryPreviews.filter((_, i) => i !== index),
-    }))
+    setFormData((prev) => {
+      const existingCount = Math.max(0, prev.galleryPreviews.length - prev.galleryImages.length)
+
+      if (index < existingCount) {
+        return {
+          ...prev,
+          galleryPreviews: prev.galleryPreviews.filter((_, i) => i !== index),
+        }
+      }
+
+      const fileIndex = index - existingCount
+      return {
+        ...prev,
+        galleryImages: prev.galleryImages.filter((_, i) => i !== fileIndex),
+        galleryPreviews: prev.galleryPreviews.filter((_, i) => i !== index),
+      }
+    })
   }
 
   const handleDrop = (event: DragEvent<HTMLButtonElement>) => {
@@ -105,7 +117,7 @@ export const ExpertGalleryStep = ({ formData, setFormData }: Props) => {
 
         <div className="mt-6">
           <p className="mb-3 text-xs font-medium text-white">
-            Uploaded Images ({formData.galleryImages.length}/{MAX_IMAGES})
+            Uploaded Images ({formData.galleryPreviews.length}/{MAX_IMAGES})
           </p>
 
           {formData.galleryPreviews.length > 0 ? (

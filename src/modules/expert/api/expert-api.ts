@@ -95,3 +95,16 @@ export const deactivateExpert = async (id: string, payload: DeactivateExpertPayl
   )
   return response.data
 }
+
+export type SetExpertPasswordPayload = {
+  newPassword: string
+  confirmNewPassword: string
+}
+
+export const setExpertPassword = async (id: string, payload: SetExpertPasswordPayload) => {
+  const response = await adminApiClient.patch(
+    `/admin/internal/admin/partners/${id}/password`,
+    payload,
+  )
+  return response.data
+}

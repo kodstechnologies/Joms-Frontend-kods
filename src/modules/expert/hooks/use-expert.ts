@@ -5,8 +5,10 @@ import {
   fetchExperts,
   fetchExpertById,
   restoreExpert,
+  setExpertPassword,
   suspendExpert,
   type DeactivateExpertPayload,
+  type SetExpertPasswordPayload,
   type SuspendExpertPayload,
 } from '../api/expert-api'
 
@@ -76,6 +78,19 @@ export const useRestoreExpert = () => {
     mutationFn: (id: string) => restoreExpert(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['experts'] })
+    },
+  })
+}
+
+export const useSetExpertPassword = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ id, payload }: { id: string; payload: SetExpertPasswordPayload }) =>
+      setExpertPassword(id, payload),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['experts'] })
+      queryClient.invalidateQueries({ queryKey: ['expert-profile', variables.id] })
     },
   })
 }

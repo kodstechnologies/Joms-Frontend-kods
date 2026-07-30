@@ -6,6 +6,7 @@ import {
   publishConsultation,
   publishService,
   updateConsultationAdditionalInfo,
+  updateConsultationBasic,
   updateConsultationPricing,
   updateServiceGallery,
   updateServicePricing,
@@ -53,6 +54,17 @@ export const useConsultationTopics = (params?: {
 export const useCreateConsultation = () =>
   useMutation({
     mutationFn: (payload: CreateConsultationPayload) => createConsultation(payload),
+  })
+
+export const useUpdateConsultationBasic = () =>
+  useMutation({
+    mutationFn: ({
+      id,
+      payload,
+    }: {
+      id: string
+      payload: Omit<CreateConsultationPayload, 'partnerId'>
+    }) => updateConsultationBasic(id, payload),
   })
 
 export const useUpdateConsultationAdditionalInfo = () =>

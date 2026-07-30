@@ -70,6 +70,8 @@ export const useSuspendService = () => {
       suspendService(id, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['services'] })
+      queryClient.invalidateQueries({ queryKey: ['expert-consultations'] })
+      queryClient.invalidateQueries({ queryKey: ['expert-services'] })
     },
   })
 }
@@ -93,6 +95,8 @@ export const useDeleteService = () => {
       deleteService(id, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['services'] })
+      queryClient.invalidateQueries({ queryKey: ['expert-consultations'] })
+      queryClient.invalidateQueries({ queryKey: ['expert-services'] })
     },
   })
 }
@@ -117,6 +121,7 @@ export const useUpdateConsultationStatus = () => {
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['consultation', variables.id] })
       queryClient.invalidateQueries({ queryKey: ['services'] })
+      queryClient.invalidateQueries({ queryKey: ['expert-consultations'] })
       queryClient.invalidateQueries({ queryKey: ['my-tasks'] })
     },
   })

@@ -27,6 +27,14 @@ export const createExpertBasicProfile = async (payload: FormData) => {
   return response.data
 }
 
+export const updateExpertBasicProfile = async (id: string, payload: FormData) => {
+  const response = await authApiClient.patch<ExpertOnboardingApiResponse<ExpertBasicProfileData>>(
+    `/auth/partners/${id}/basic-profile`,
+    payload,
+  )
+  return response.data
+}
+
 export const updateExpertIdentityVerification = async (id: string, payload: FormData) => {
   const response = await authApiClient.patch<ExpertOnboardingApiResponse>(
     `/auth/partners/${id}/identity-verification`,

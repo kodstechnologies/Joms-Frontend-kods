@@ -37,6 +37,7 @@ export type ExpertProfileDetail = {
   servicetype?: string
   isBlocked?: boolean
   isDeactivated?: boolean
+  hasPassword?: boolean
   basicProfile?: ExpertBasicProfile
   identityVerification?: Record<string, unknown>
   workExperience?: ExpertWorkExperience[]
@@ -116,6 +117,7 @@ export type ExpertService = {
   status?: string
   submittedAt?: string
   priceStarts?: number
+  images?: string[]
 }
 
 export type ExpertServicesResponse = {

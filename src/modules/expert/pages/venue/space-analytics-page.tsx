@@ -52,7 +52,7 @@ export function SpaceAnalyticsPage() {
   const { venueId, spaceId } = useParams<{ venueId: string; spaceId: string }>()
 
   return (
-    <div className="mx-auto flex max-w-[1120px] flex-col gap-5">
+    <div className="mx-auto flex max-w-[1210px] flex-col gap-5">
       <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <button

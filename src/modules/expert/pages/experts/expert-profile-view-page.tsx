@@ -19,13 +19,13 @@ import {
   KeyRound,
   Languages,
   LogOut,
-  MoreVertical,
+  PauseCircle,
   Pencil,
   Phone,
   Plus,
+  RefreshCw,
   Search,
   Share2,
-  SlidersHorizontal,
   Star,
   Tag,
   Trash2,
@@ -37,7 +37,12 @@ import {
 import { fetchConsultationById, fetchServiceById } from '../../api/service-api'
 import { getServiceManagementViewPath } from '../../lib/service-navigation'
 import { openExpertKycFromProfile } from '../../utils/expert-application-navigation'
-import { useDeactivateExpert, useSuspendExpert } from '../../hooks/use-expert'
+import { useDeactivateExpert, useSetExpertPassword, useSuspendExpert } from '../../hooks/use-expert'
+import {
+  useDeleteService,
+  useSuspendService,
+  useUpdateConsultationStatus,
+} from '../../hooks/use-services'
 import {
   useExpertConsultations,
   useExpertProfile,
@@ -50,6 +55,7 @@ import type {
   ExpertWorkExperience,
 } from '../../type/expert-profile'
 import { DecisionActionModal } from '@/shared/components/modal/decision-action-modal'
+import { UpdatePasswordModal } from '@/modules/rbac/components/update-password-modal'
 import { MODERATION_CATEGORY_SLUGS } from '@/modules/settings/api/templates-api'
 import {
   useModerationReasonOptions,
@@ -79,9 +85,6 @@ const PROFILE_BTN_PRIMARY =
 
 const PROFILE_HEADER_BTN =
   'inline-flex h-[25px] items-center justify-center gap-1.5 rounded-[12px] bg-[linear-gradient(180deg,#F6CB86_0%,#E0A263_100%)] px-3 text-[11px] leading-none font-semibold whitespace-nowrap text-[#050505] transition-[filter] hover:brightness-95'
-
-const PROFILE_BTN_GHOST =
-  'inline-flex items-center justify-center gap-1.5 rounded-lg border border-[#FFFFFF33] bg-[#050505] px-3 py-1.5 text-[12px] font-semibold text-white transition-colors hover:bg-white/5'
 
 const PROFILE_CARD = 'rounded-xl bg-[#141414]'
 
@@ -514,9 +517,21 @@ function OverviewTab({ profile }: { profile: ExpertProfileDetail }) {
 function ConsultationDetailCard({
   consultation,
   expertId,
+  menuOpen,
+  onMenuOpenChange,
+  onRequestChanges,
+  onPause,
+  onDelete,
+  onEdit,
 }: {
   consultation: ExpertConsultation
   expertId: string
+  menuOpen: boolean
+  onMenuOpenChange: (open: boolean) => void
+  onRequestChanges: () => void
+  onPause: () => void
+  onDelete: () => void
+  onEdit: () => void
 }) {
   const navigate = useNavigate()
   const outlineItems = (consultation.sessionOutline || '')
@@ -527,29 +542,77 @@ function ConsultationDetailCard({
   return (
     <div className="rounded-xl bg-[#141414] p-6">
       <div className="flex items-start justify-between gap-3">
-        <div>
-          <h3 className="text-body-lg font-bold text-white">
-            {consultation.title || 'Untitled Consultation'}
-          </h3>
-          <p className="text-body-sm text-muted mt-1">Business</p>
-          <div className="mt-2 flex flex-wrap gap-2">
-            {(consultation.topics ?? []).map((topic) => (
-              <span
-                key={topic._id}
-                className="text-body-sm text-muted rounded-full bg-black px-3 py-1"
-              >
-                {topic.name}
-              </span>
-            ))}
+        <div className="min-w-0 flex-1">
+          <div className="flex items-stretch gap-3">
+            <span className="bg-brand-accent w-[3px] shrink-0 rounded-full" aria-hidden="true" />
+            <div className="min-w-0">
+              <h3 className="text-[18px] leading-tight font-bold text-white">
+                {consultation.title || 'Untitled Consultation'}
+              </h3>
+              <p className="text-muted mt-1 text-[13px]">Business</p>
+            </div>
           </div>
+          {(consultation.topics ?? []).length > 0 && (
+            <div className="mt-3 flex flex-wrap gap-2.5">
+              {(consultation.topics ?? []).map((topic) => (
+                <span
+                  key={topic._id}
+                  className="bg-brand-muted text-body-sm rounded-md px-3.5 py-1.5 font-medium text-black"
+                >
+                  {topic.name}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
-        <button
-          type="button"
-          onClick={() => comingSoon('Consultation actions')}
-          className="text-muted hover:text-brand-text"
+        <TableActionsDropdown
+          label={`Open actions for ${consultation.title || 'consultation'}`}
+          isOpen={menuOpen}
+          onOpenChange={onMenuOpenChange}
+          menuWidth={220}
+          tone="light"
         >
-          <MoreVertical className="size-5" />
-        </button>
+          <TableActionsItem
+            tone="light"
+            icon={<RefreshCw className="size-3.5" />}
+            onClick={() => {
+              onMenuOpenChange(false)
+              onRequestChanges()
+            }}
+          >
+            Request Changes
+          </TableActionsItem>
+          <TableActionsItem
+            tone="light"
+            icon={<PauseCircle className="size-3.5" />}
+            onClick={() => {
+              onMenuOpenChange(false)
+              onPause()
+            }}
+          >
+            Pause Consultation
+          </TableActionsItem>
+          <TableActionsItem
+            tone="light"
+            icon={<Trash2 className="size-3.5" />}
+            onClick={() => {
+              onMenuOpenChange(false)
+              onDelete()
+            }}
+          >
+            Delete Consultation
+          </TableActionsItem>
+          <TableActionsItem
+            tone="light"
+            icon={<Pencil className="size-3.5" />}
+            onClick={() => {
+              onMenuOpenChange(false)
+              onEdit()
+            }}
+          >
+            Edit Consultation
+          </TableActionsItem>
+        </TableActionsDropdown>
       </div>
 
       {outlineItems.length > 0 && (
@@ -633,24 +696,23 @@ function ServicesSubTab({ expertId }: { expertId: string }) {
 
   return (
     <>
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="flex min-w-[220px] flex-1 items-center gap-2 rounded-lg border border-[#FFFFFF33] bg-[#141414] px-3 py-2">
-          <Search className="text-muted size-4" />
-          <input
-            type="text"
-            placeholder="Search by service title"
-            className="text-body-sm placeholder:text-muted w-full bg-transparent text-white outline-none"
-          />
-        </div>
-        <button
-          type="button"
-          onClick={() => comingSoon('Advance Filters')}
-          className={cn(PROFILE_BTN_GHOST, 'h-auto min-h-9 gap-1.5 px-3')}
-        >
-          <SlidersHorizontal className="size-3.5" />
-          Advance Filters
-        </button>
+      <div className="flex w-full min-w-[220px] items-center gap-2 rounded-lg border border-[#FFFFFF33] bg-[#141414] px-3 py-2.5">
+        <Search className="text-muted size-4 shrink-0" />
+        <input
+          type="text"
+          placeholder="Search by service title"
+          className="text-body-sm placeholder:text-muted w-full bg-transparent text-white outline-none"
+        />
       </div>
+
+      <label className="text-body-sm text-muted mt-1 flex w-fit items-center gap-2">
+        <input
+          type="checkbox"
+          onChange={() => comingSoon('Bulk selection')}
+          className="size-4 rounded border-white/30 bg-transparent"
+        />
+        Select All
+      </label>
 
       {isLoading && (
         <div className="flex h-40 items-center justify-center">
@@ -681,54 +743,282 @@ function ServicesSubTab({ expertId }: { expertId: string }) {
 function ServiceListCard({ service, expertId }: { service: ExpertService; expertId: string }) {
   const navigate = useNavigate()
   const status = (service.status || '').toLowerCase()
-  const statusLabel =
-    status === 'live' ? 'Live' : status ? status.charAt(0).toUpperCase() + status.slice(1) : null
+  const coverImage = service.images?.find(Boolean)
+  const statusLabel = (() => {
+    if (!status) return null
+    if (status === 'live') return 'Instant'
+    return status.charAt(0).toUpperCase() + status.slice(1).replace(/_/g, ' ')
+  })()
   const statusClass =
     status === 'live'
-      ? 'bg-brand-positive'
+      ? 'bg-[#22C55E]'
       : status === 'rejected'
         ? 'bg-brand-danger'
-        : 'bg-amber-500'
+        : status === 'suspended' || status === 'closed'
+          ? 'bg-amber-500'
+          : 'bg-[#22C55E]'
 
   return (
     <button
       type="button"
       onClick={() => viewExpertService(service, expertId, navigate)}
-      className="flex w-full items-center gap-4 rounded-xl bg-[#141414] p-4 text-left transition-colors hover:bg-[#1a1a1a]"
+      className="flex w-full items-center gap-3 rounded-xl bg-[#141414] px-4 py-4 text-left transition-colors hover:bg-[#1a1a1a]"
     >
-      <div className="bg-brand-surface relative size-16 shrink-0 overflow-hidden rounded-lg">
+      <input
+        type="checkbox"
+        onClick={(event) => event.stopPropagation()}
+        onChange={() => comingSoon('Bulk selection')}
+        className="size-5 shrink-0 rounded border-white/30 bg-transparent"
+      />
+
+      <div className="relative ml-1 h-28 w-32 shrink-0 overflow-hidden rounded-xl bg-black">
+        <SafeImage
+          src={coverImage}
+          alt={service.title || 'Service'}
+          className="size-full object-cover"
+          fallback={
+            <div className="text-muted flex size-full items-center justify-center">
+              <ImageOff className="size-5" />
+            </div>
+          }
+        />
         {statusLabel && (
           <span
             className={cn(
-              'absolute top-1 left-1 rounded px-1.5 py-0.5 text-[9px] font-bold text-white',
+              'absolute top-2 left-2 rounded-md px-1.5 py-0.5 text-[10px] leading-none font-bold text-white',
               statusClass,
             )}
           >
             {statusLabel}
           </span>
         )}
-        <div className="text-muted flex size-full items-center justify-center">
-          <Briefcase className="size-5" />
-        </div>
       </div>
-      <div className="min-w-0 flex-1">
+
+      <div className="ml-1 min-w-0 flex-1">
         <p className="text-body-md font-bold text-white">{service.title || 'Untitled Service'}</p>
-        <p className="text-body-sm text-muted">{service.category?.name || '—'}</p>
-        <p className="text-body-sm text-muted">{formatPricingType(service.pricingType)}</p>
+        <p className="text-body-sm text-muted mt-0.5">{service.category?.name || '—'}</p>
+        <p className="text-body-sm text-muted mt-0.5">{formatPricingType(service.pricingType)}</p>
       </div>
-      <div className="text-right">
-        <p className="text-body-md font-bold text-white">
-          {service.priceStarts != null ? `₹${service.priceStarts.toLocaleString('en-IN')}` : '—'}
-        </p>
-      </div>
-      <ChevronRight className="text-muted size-4" />
     </button>
   )
 }
 
 function ConsultationsSubTab({ expertId }: { expertId: string }) {
+  const navigate = useNavigate()
   const { data, isLoading, isError } = useExpertConsultations(expertId, 1, 10, true)
   const consultations = data?.data ?? []
+
+  const [activeMenuId, setActiveMenuId] = useState<string | null>(null)
+  const [requestChangesTarget, setRequestChangesTarget] = useState<ExpertConsultation | null>(null)
+  const [pauseTarget, setPauseTarget] = useState<ExpertConsultation | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<ExpertConsultation | null>(null)
+
+  const [requestReasons, setRequestReasons] = useState<string[]>([])
+  const [requestReasonText, setRequestReasonText] = useState('')
+  const [requestAdminNotes, setRequestAdminNotes] = useState('')
+
+  const [pauseReasons, setPauseReasons] = useState<string[]>([])
+  const [pauseStartDate, setPauseStartDate] = useState('')
+  const [pauseEndDate, setPauseEndDate] = useState('')
+  const [pauseIndefinitely, setPauseIndefinitely] = useState(false)
+  const [pauseAdminNotes, setPauseAdminNotes] = useState('')
+
+  const [deleteReasons, setDeleteReasons] = useState<string[]>([])
+  const [deleteAdminNotes, setDeleteAdminNotes] = useState('')
+  const [deleteConfirmed, setDeleteConfirmed] = useState(false)
+
+  const updateConsultationStatus = useUpdateConsultationStatus()
+  const suspendServiceMutation = useSuspendService()
+  const deleteServiceMutation = useDeleteService()
+  const recordReasonUsage = useRecordModerationReasonUsage()
+
+  const { options: requestChangesReasonOptions, buildPayload: buildRequestChangesReasonPayload } =
+    useModerationReasonOptions(MODERATION_CATEGORY_SLUGS.requestChangesService)
+  const { options: pauseReasonOptions, buildPayload: buildPauseReasonPayload } =
+    useModerationReasonOptions(MODERATION_CATEGORY_SLUGS.suspendService)
+  const { options: deleteReasonOptions, buildPayload: buildDeleteReasonPayload } =
+    useModerationReasonOptions(MODERATION_CATEGORY_SLUGS.deleteService)
+
+  const closeRequestChangesModal = useCallback(() => {
+    setRequestChangesTarget(null)
+    setRequestReasons([])
+    setRequestReasonText('')
+    setRequestAdminNotes('')
+  }, [])
+
+  const closePauseModal = useCallback(() => {
+    setPauseTarget(null)
+    setPauseReasons([])
+    setPauseStartDate('')
+    setPauseEndDate('')
+    setPauseIndefinitely(false)
+    setPauseAdminNotes('')
+  }, [])
+
+  const closeDeleteModal = useCallback(() => {
+    setDeleteTarget(null)
+    setDeleteReasons([])
+    setDeleteAdminNotes('')
+    setDeleteConfirmed(false)
+  }, [])
+
+  const handleRequestChangesSubmit = useCallback(async () => {
+    if (!requestChangesTarget) return
+    if (!requestAdminNotes.trim()) {
+      toast.error('Admin notes are required.')
+      return
+    }
+    if (!requestReasonText.trim()) {
+      toast.error('Rejection reason is required.')
+      return
+    }
+    if (requestReasons.length === 0) {
+      toast.error('Please select at least one reason.')
+      return
+    }
+
+    const reasonPayload = buildRequestChangesReasonPayload(requestReasons)
+    if (!reasonPayload || reasonPayload.selectedReasons.length === 0) {
+      toast.error('Selected reasons are no longer available. Please refresh and try again.')
+      return
+    }
+
+    try {
+      await updateConsultationStatus.mutateAsync({
+        id: requestChangesTarget._id,
+        payload: {
+          status: 'rejected',
+          reasonFor: reasonPayload.selectedReasons,
+          rejectionReason: requestReasonText.trim() || reasonPayload.reasonDetails,
+          adminNote: requestAdminNotes.trim(),
+        },
+      })
+      if (reasonPayload.reasonIds.length > 0) {
+        recordReasonUsage.mutate(reasonPayload.reasonIds)
+      }
+      toast.success('Resubmission requested successfully')
+      closeRequestChangesModal()
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } }
+      toast.error(err?.response?.data?.message || 'Failed to request changes.')
+    }
+  }, [
+    buildRequestChangesReasonPayload,
+    closeRequestChangesModal,
+    recordReasonUsage,
+    requestAdminNotes,
+    requestChangesTarget,
+    requestReasonText,
+    requestReasons,
+    updateConsultationStatus,
+  ])
+
+  const handlePauseSubmit = useCallback(async () => {
+    if (!pauseTarget) return
+    if (pauseReasons.length === 0) {
+      toast.error('Please select at least one reason.')
+      return
+    }
+    if (!pauseIndefinitely && (!pauseStartDate || !pauseEndDate)) {
+      toast.error('Please provide a suspension timeline or choose to suspend indefinitely.')
+      return
+    }
+    if (!pauseAdminNotes.trim()) {
+      toast.error('Admin notes are required.')
+      return
+    }
+
+    const reasonPayload = buildPauseReasonPayload(pauseReasons)
+    if (!reasonPayload || reasonPayload.selectedReasons.length === 0) {
+      toast.error('Selected reasons are no longer available. Please refresh and try again.')
+      return
+    }
+
+    const toIso = (value: string) => new Date(`${value}T00:00:00.000Z`).toISOString()
+
+    try {
+      await suspendServiceMutation.mutateAsync({
+        id: pauseTarget._id,
+        payload: {
+          selectedReasons: reasonPayload.selectedReasons,
+          suspendIndefinitely: pauseIndefinitely,
+          startDate: pauseIndefinitely ? undefined : toIso(pauseStartDate),
+          endDate: pauseIndefinitely ? undefined : toIso(pauseEndDate),
+          reasonDetails: reasonPayload.reasonDetails,
+          adminNotes: pauseAdminNotes.trim(),
+        },
+      })
+      if (reasonPayload.reasonIds.length > 0) {
+        recordReasonUsage.mutate(reasonPayload.reasonIds)
+      }
+      toast.success('Consultation paused successfully')
+      closePauseModal()
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } }
+      toast.error(err?.response?.data?.message || 'Failed to pause consultation.')
+    }
+  }, [
+    buildPauseReasonPayload,
+    closePauseModal,
+    pauseAdminNotes,
+    pauseEndDate,
+    pauseIndefinitely,
+    pauseReasons,
+    pauseStartDate,
+    pauseTarget,
+    recordReasonUsage,
+    suspendServiceMutation,
+  ])
+
+  const handleDeleteSubmit = useCallback(async () => {
+    if (!deleteTarget) return
+    if (deleteReasons.length === 0) {
+      toast.error('Please select at least one reason.')
+      return
+    }
+    if (!deleteConfirmed) {
+      toast.error('Please confirm the delete reasons before continuing.')
+      return
+    }
+    if (!deleteAdminNotes.trim()) {
+      toast.error('Admin notes are required.')
+      return
+    }
+
+    const reasonPayload = buildDeleteReasonPayload(deleteReasons)
+    if (!reasonPayload || reasonPayload.selectedReasons.length === 0) {
+      toast.error('Selected reasons are no longer available. Please refresh and try again.')
+      return
+    }
+
+    try {
+      await deleteServiceMutation.mutateAsync({
+        id: deleteTarget._id,
+        payload: {
+          selectedReasons: reasonPayload.selectedReasons,
+          reasonDetails: reasonPayload.reasonDetails,
+          adminNotes: deleteAdminNotes.trim(),
+        },
+      })
+      if (reasonPayload.reasonIds.length > 0) {
+        recordReasonUsage.mutate(reasonPayload.reasonIds)
+      }
+      toast.success('Consultation deleted successfully')
+      closeDeleteModal()
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } }
+      toast.error(err?.response?.data?.message || 'Failed to delete consultation.')
+    }
+  }, [
+    buildDeleteReasonPayload,
+    closeDeleteModal,
+    deleteAdminNotes,
+    deleteConfirmed,
+    deleteReasons,
+    deleteServiceMutation,
+    deleteTarget,
+    recordReasonUsage,
+  ])
 
   return (
     <>
@@ -754,8 +1044,95 @@ function ConsultationsSubTab({ expertId }: { expertId: string }) {
             key={consultation._id}
             consultation={consultation}
             expertId={expertId}
+            menuOpen={activeMenuId === consultation._id}
+            onMenuOpenChange={(open) => setActiveMenuId(open ? consultation._id : null)}
+            onRequestChanges={() => setRequestChangesTarget(consultation)}
+            onPause={() => setPauseTarget(consultation)}
+            onDelete={() => setDeleteTarget(consultation)}
+            onEdit={() =>
+              navigate(
+                `/services/management/create?partnerId=${encodeURIComponent(expertId)}&consultationId=${encodeURIComponent(consultation._id)}&mode=edit`,
+              )
+            }
           />
         ))}
+
+      <DecisionActionModal
+        open={Boolean(requestChangesTarget)}
+        variant="requestChanges"
+        title="Request Changes – Consultation Approval"
+        description="Are you sure you want to Request Changes to this application? The applicant will be notified via email."
+        submitLabel="Request Changes"
+        reasonOptions={requestChangesReasonOptions}
+        selectedReasons={requestReasons}
+        onReasonToggle={(value) =>
+          setRequestReasons((current) =>
+            current.includes(value)
+              ? current.filter((item) => item !== value)
+              : [...current, value],
+          )
+        }
+        reason={requestReasonText}
+        onReasonChange={setRequestReasonText}
+        reasonLabel="Request Changes"
+        adminNotes={requestAdminNotes}
+        onAdminNotesChange={setRequestAdminNotes}
+        onClose={closeRequestChangesModal}
+        onSubmit={handleRequestChangesSubmit}
+        isSubmitting={updateConsultationStatus.isPending}
+      />
+
+      <DecisionActionModal
+        open={Boolean(pauseTarget)}
+        variant="suspend"
+        title="Pause Consultation"
+        description="Are you sure you want to pause this consultation? It will be hidden from clients until reactivated."
+        submitLabel="Pause Consultation"
+        reasonOptions={pauseReasonOptions}
+        selectedReasons={pauseReasons}
+        onReasonToggle={(value) =>
+          setPauseReasons((current) =>
+            current.includes(value)
+              ? current.filter((item) => item !== value)
+              : [...current, value],
+          )
+        }
+        startDate={pauseStartDate}
+        onStartDateChange={setPauseStartDate}
+        endDate={pauseEndDate}
+        onEndDateChange={setPauseEndDate}
+        indefinite={pauseIndefinitely}
+        onIndefiniteChange={setPauseIndefinitely}
+        adminNotes={pauseAdminNotes}
+        onAdminNotesChange={setPauseAdminNotes}
+        onClose={closePauseModal}
+        onSubmit={handlePauseSubmit}
+        isSubmitting={suspendServiceMutation.isPending}
+      />
+
+      <DecisionActionModal
+        open={Boolean(deleteTarget)}
+        variant="delete"
+        title="Delete Consultation"
+        description="Are you sure you want to delete this consultation? This will result in removal of the listing."
+        submitLabel="Delete Consultation"
+        reasonOptions={deleteReasonOptions}
+        selectedReasons={deleteReasons}
+        onReasonToggle={(value) =>
+          setDeleteReasons((current) =>
+            current.includes(value)
+              ? current.filter((item) => item !== value)
+              : [...current, value],
+          )
+        }
+        confirmationChecked={deleteConfirmed}
+        onConfirmationChange={setDeleteConfirmed}
+        adminNotes={deleteAdminNotes}
+        onAdminNotesChange={setDeleteAdminNotes}
+        onClose={closeDeleteModal}
+        onSubmit={handleDeleteSubmit}
+        isSubmitting={deleteServiceMutation.isPending}
+      />
     </>
   )
 }
@@ -1018,6 +1395,7 @@ export function ExpertProfileViewPage() {
   const [activeTab, setActiveTab] = useState<TabKey>('overview')
   const [listingSubTab, setListingSubTab] = useState<ListingSubTab>('services')
   const [profileMenuOpen, setProfileMenuOpen] = useState(false)
+  const [passwordModalOpen, setPasswordModalOpen] = useState(false)
   const [suspendModalOpen, setSuspendModalOpen] = useState(false)
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
   const [suspendReasons, setSuspendReasons] = useState<string[]>([])
@@ -1030,6 +1408,7 @@ export function ExpertProfileViewPage() {
 
   const suspendExpertMutation = useSuspendExpert()
   const deactivateExpertMutation = useDeactivateExpert()
+  const setExpertPasswordMutation = useSetExpertPassword()
   const recordReasonUsage = useRecordModerationReasonUsage()
   const { options: suspendReasonOptions, buildPayload: buildSuspendReasonPayload } =
     useModerationReasonOptions(MODERATION_CATEGORY_SLUGS.suspendExpert)
@@ -1064,6 +1443,38 @@ export function ExpertProfileViewPage() {
     setDeleteReasons([])
     setDeleteAdminNotes('')
   }, [])
+
+  const handlePasswordSubmit = useCallback(
+    async (payload: { oldPassword: string; newPassword: string; confirmNewPassword: string }) => {
+      if (!id) return
+
+      if (payload.newPassword.length < 6) {
+        toast.error('Password must be at least 6 characters')
+        return
+      }
+
+      if (payload.newPassword !== payload.confirmNewPassword) {
+        toast.error('New password and confirmation do not match')
+        return
+      }
+
+      try {
+        const response = await setExpertPasswordMutation.mutateAsync({
+          id,
+          payload: {
+            newPassword: payload.newPassword,
+            confirmNewPassword: payload.confirmNewPassword,
+          },
+        })
+        toast.success(response?.message || 'Password updated successfully')
+        setPasswordModalOpen(false)
+      } catch (error: unknown) {
+        const err = error as { response?: { data?: { message?: string } } }
+        toast.error(err?.response?.data?.message || 'Failed to update password')
+      }
+    },
+    [id, setExpertPasswordMutation],
+  )
 
   const toggleSuspendReason = useCallback((value: string) => {
     setSuspendReasons((current) =>
@@ -1294,7 +1705,7 @@ export function ExpertProfileViewPage() {
             icon={<Pencil className="size-3.5" />}
             onClick={() => {
               setProfileMenuOpen(false)
-              comingSoon('Edit Profile')
+              navigate(`/experts/management/create?expertId=${id}&mode=edit`)
             }}
           >
             Edit Profile
@@ -1324,10 +1735,10 @@ export function ExpertProfileViewPage() {
             icon={<KeyRound className="size-3.5" />}
             onClick={() => {
               setProfileMenuOpen(false)
-              comingSoon('Reset Password')
+              setPasswordModalOpen(true)
             }}
           >
-            Reset Password
+            {profile.hasPassword ? 'Reset Password' : 'Set Password'}
           </TableActionsItem>
           <TableActionsItem
             tone="light"
@@ -1459,6 +1870,16 @@ export function ExpertProfileViewPage() {
           {activeTab === 'health' && <HealthTab />}
         </div>
       </div>
+
+      <UpdatePasswordModal
+        open={passwordModalOpen}
+        userName={displayName}
+        requireOldPassword={false}
+        mode={profile.hasPassword ? 'reset' : 'set'}
+        isSubmitting={setExpertPasswordMutation.isPending}
+        onClose={() => setPasswordModalOpen(false)}
+        onSubmit={handlePasswordSubmit}
+      />
 
       <DecisionActionModal
         open={suspendModalOpen}

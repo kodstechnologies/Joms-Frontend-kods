@@ -22,10 +22,12 @@ import {
   usePublishConsultation,
   usePublishService,
   useUpdateConsultationAdditionalInfo,
+  useUpdateConsultationBasic,
   useUpdateConsultationPricing,
   useUpdateServiceGallery,
   useUpdateServicePricing,
 } from '@/modules/expert/hooks/use-create-listing'
+import { useConsultation } from '@/modules/expert/hooks/use-services'
 import { useExpertProfile } from '@/modules/expert/hooks/use-expert-profile'
 import {
   CONSULTATION_MODES,
@@ -83,15 +85,25 @@ export const CreateServiceListingPage = () => {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const partnerId = searchParams.get('partnerId') || ''
+  const consultationIdParam = searchParams.get('consultationId') || ''
+  const isEditMode = searchParams.get('mode') === 'edit' && Boolean(consultationIdParam)
+
   const { data: expertProfileResponse } = useExpertProfile(partnerId || undefined)
+  const { data: consultationEditResponse, isLoading: isConsultationEditLoading } = useConsultation(
+    consultationIdParam,
+    isEditMode,
+  )
   const expertName =
     expertProfileResponse?.data?.basicProfile?.fullname ||
     expertProfileResponse?.data?.fullname ||
     'Expert'
-  const [currentStep, setCurrentStep] = useState(1)
-  const [selectedType, setSelectedType] = useState<'service' | 'consultation' | null>('service')
-  const [listingId, setListingId] = useState<string | null>(null)
+  const [currentStep, setCurrentStep] = useState(isEditMode ? 2 : 1)
+  const [selectedType, setSelectedType] = useState<'service' | 'consultation' | null>(
+    isEditMode ? 'consultation' : 'service',
+  )
+  const [listingId, setListingId] = useState<string | null>(isEditMode ? consultationIdParam : null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [hasPrefill, setHasPrefill] = useState(false)
 
   const [serviceTitle, setServiceTitle] = useState('')
   const [selectedCategoryId, setSelectedCategoryId] = useState('')
@@ -131,6 +143,7 @@ export const CreateServiceListingPage = () => {
   const updateServiceGalleryMutation = useUpdateServiceGallery()
   const publishServiceMutation = usePublishService()
   const createConsultationMutation = useCreateConsultation()
+  const updateConsultationBasicMutation = useUpdateConsultationBasic()
   const { data: topicsResponse, isLoading: isTopicsLoading } = useConsultationTopics({ limit: 100 })
   const topicOptions = topicsResponse?.data || []
   const updateConsultationAdditionalInfoMutation = useUpdateConsultationAdditionalInfo()
@@ -170,6 +183,40 @@ export const CreateServiceListingPage = () => {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const MAX_IMAGES = 5
 
+  if (isEditMode && !hasPrefill && consultationEditResponse?.data) {
+    const consultation = consultationEditResponse.data
+    setListingId(consultation._id)
+    setSelectedType('consultation')
+    setConsultationTitle(consultation.title || '')
+    setTopics(consultation.topics || [])
+    setSessionOutline(consultation.sessionOutline || '')
+    setWhoItsFor(consultation.whoItsFor || '')
+    setLanguages((consultation.languages || []).join(', '))
+    setHasPreSessionRequirement(Boolean(consultation.hasPreSessionRequirement))
+    setPreSessionRequirement(consultation.preSessionRequirement || '')
+    setHasPostSessionMessage(Boolean(consultation.hasPostSessionMessage))
+    setPostSessionMessage(consultation.postSessionMessage || '')
+    setHasFollowUp(Boolean(consultation.hasFollowUp))
+    setFollowUpDays(consultation.followUpDays != null ? String(consultation.followUpDays) : '7')
+
+    const mode = consultation.mode
+    if (mode === 'audio' || mode === 'video' || mode === 'chat') {
+      setConsultationMode(mode)
+    }
+
+    const primaryPricing = consultation.pricingOptions?.[0]
+    if (primaryPricing) {
+      setConsultationDuration(primaryPricing.durationMinutes || 30)
+      const pricingType = primaryPricing.pricingType === 'free' ? 'free' : 'paid'
+      setConsultationPricingType(pricingType)
+      setConsultationPrice(
+        pricingType === 'paid' && primaryPricing.price != null ? String(primaryPricing.price) : '',
+      )
+    }
+
+    setHasPrefill(true)
+  }
+
   const handleFilesAdded = useCallback(
     (files: FileList | null) => {
       if (!files) return
@@ -201,6 +248,10 @@ export const CreateServiceListingPage = () => {
   }
 
   const handleBack = () => {
+    if (isEditMode && currentStep <= 2) {
+      navigate(partnerId ? `/experts/management/profile/${partnerId}` : '/services/management')
+      return
+    }
     if (currentStep > 1) setCurrentStep(currentStep - 1)
     else navigateBackOrFallback(navigate, '/services/management')
   }
@@ -372,15 +423,32 @@ export const CreateServiceListingPage = () => {
             return
           }
 
-          const response = await createConsultationMutation.mutateAsync({
-            partnerId,
-            title: consultationTitle.trim(),
-            topics,
-            sessionOutline: sessionOutline.trim(),
-            whoItsFor: whoItsFor.trim(),
-          })
-          setListingId(response.data._id)
-          toast.success('Consultation created successfully')
+          const response = listingId
+            ? await updateConsultationBasicMutation.mutateAsync({
+                id: listingId,
+                payload: {
+                  title: consultationTitle.trim(),
+                  topics,
+                  sessionOutline: sessionOutline.trim(),
+                  whoItsFor: whoItsFor.trim(),
+                },
+              })
+            : await createConsultationMutation.mutateAsync({
+                partnerId,
+                title: consultationTitle.trim(),
+                topics,
+                sessionOutline: sessionOutline.trim(),
+                whoItsFor: whoItsFor.trim(),
+              })
+
+          if (!listingId) {
+            setListingId(response.data?._id || null)
+          }
+          toast.success(
+            listingId
+              ? 'Consultation details updated successfully'
+              : 'Consultation created successfully',
+          )
           handleNext()
           return
         }
@@ -438,8 +506,16 @@ export const CreateServiceListingPage = () => {
 
         if (currentStep === 5) {
           await publishConsultationMutation.mutateAsync(listingId)
-          toast.success('Consultation published successfully')
-          navigate('/services/management')
+          toast.success(
+            isEditMode
+              ? 'Consultation updated successfully'
+              : 'Consultation published successfully',
+          )
+          navigate(
+            isEditMode && partnerId
+              ? `/experts/management/profile/${partnerId}`
+              : '/services/management',
+          )
         }
       }
     } catch (error) {
@@ -902,9 +978,9 @@ export const CreateServiceListingPage = () => {
       { label: 'Expert management' },
       { label: 'Manage Experts' },
       { label: expertName },
-      { label: 'Create Listing', isActive: true },
+      { label: isEditMode ? 'Edit Consultation' : 'Create Listing', isActive: true },
     ],
-    [expertName],
+    [expertName, isEditMode],
   )
 
   const primaryActionLabel =
@@ -912,7 +988,11 @@ export const CreateServiceListingPage = () => {
       'Next'
     ) : currentStep === 5 ? (
       selectedType === 'consultation' ? (
-        'Publish Consultation'
+        isEditMode ? (
+          'Save Changes'
+        ) : (
+          'Publish Consultation'
+        )
       ) : (
         <span className="flex items-center gap-2">
           Publish service
@@ -934,7 +1014,7 @@ export const CreateServiceListingPage = () => {
 
   return (
     <CreateListingWizard
-      title="Create Service Listing"
+      title={isEditMode ? 'Edit Consultation' : 'Create Service Listing'}
       breadcrumbs={breadcrumbs}
       steps={activeSteps}
       currentStep={currentStep}
@@ -949,7 +1029,10 @@ export const CreateServiceListingPage = () => {
           primaryActionLabel
         ),
         onClick: handlePrimaryAction,
-        disabled: (currentStep === 1 && !selectedType) || isSubmitting,
+        disabled:
+          (currentStep === 1 && !selectedType) ||
+          isSubmitting ||
+          (isEditMode && isConsultationEditLoading),
         className: primaryActionClassName,
       }}
     >

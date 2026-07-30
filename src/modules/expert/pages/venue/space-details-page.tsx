@@ -577,7 +577,7 @@ export function SpaceDetailsPage() {
     })) || []
 
   return (
-    <div className="mx-auto flex max-w-[1120px] flex-col gap-5">
+    <div className="mx-auto flex max-w-[1210px] flex-col gap-5">
       <header className="flex items-start justify-between">
         <div className="flex flex-col gap-2">
           <button

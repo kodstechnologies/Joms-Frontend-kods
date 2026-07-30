@@ -122,6 +122,17 @@ export const createConsultation = async (payload: CreateConsultationPayload) => 
   return response.data
 }
 
+export const updateConsultationBasic = async (
+  id: string,
+  payload: Omit<CreateConsultationPayload, 'partnerId'>,
+) => {
+  const response = await expertApiClient.patch<ConsultationDetailResponse>(
+    `/admin/consultations/${id}/basic`,
+    payload,
+  )
+  return response.data
+}
+
 export const updateConsultationAdditionalInfo = async (
   id: string,
   payload: UpdateConsultationAdditionalInfoPayload,
