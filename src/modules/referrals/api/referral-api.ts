@@ -34,7 +34,7 @@ export const fetchExpertInvites = async (params?: ListParams) => {
 }
 
 export const createExpertInvite = async (payload: ExpertInvitePayload) => {
-  const response = await adminApiClient.post('/admin/referrals/expert-invites', payload)
+  const response = await adminApiClient.post('/admin/referrals/manual-invites', payload)
   return response.data
 }
 

@@ -221,10 +221,10 @@ export function ReferralManagementPage() {
         onSubmitManual={async (payload) => {
           try {
             await createExpertMutation.mutateAsync(payload)
-            toast.success('Expert referral created')
+            toast.success('Invitation sent to the provided email and phone number')
             setInviteOpen(false)
           } catch {
-            toast.error('Failed to create expert referral')
+            toast.error('Failed to send invitation')
           }
         }}
         onSubmitBulk={async (payload) => {

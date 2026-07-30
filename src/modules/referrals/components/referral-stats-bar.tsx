@@ -25,7 +25,7 @@ function buildMetricCards(metrics: ReferralMetrics): MetricCardData[] {
     {
       id: 'total-referrals',
       label: 'Total Referrals Generated',
-      value: metrics.totalReferralsGenerated.toLocaleString('en-US'),
+      value: (metrics.totalReferralsGenerated ?? 0).toLocaleString('en-US'),
       trend: { direction: 'up', percentage: 6.7 },
     },
     {
