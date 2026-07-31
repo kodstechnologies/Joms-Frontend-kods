@@ -4,7 +4,6 @@ import type {
   ExpertInvite,
   ExpertInvitePayload,
   ReferralMetrics,
-  UpdateRecipientPayload,
 } from '../types/referral'
 
 type ListParams = {
@@ -34,17 +33,22 @@ export const fetchExpertInvites = async (params?: ListParams) => {
 }
 
 export const createExpertInvite = async (payload: ExpertInvitePayload) => {
-  const response = await adminApiClient.post('/admin/referrals/manual-invites', payload)
+  const response = await adminApiClient.post<{
+    success: boolean
+    data: ExpertInvite
+  }>('/admin/referrals/manual-invites', payload)
   return response.data
 }
 
 export const createBulkExpertInvites = async (payload: BulkExpertInvitePayload) => {
-  const response = await adminApiClient.post('/admin/referrals/expert-invites/bulk', payload)
-  return response.data
-}
-
-export const updateExpertInvite = async (id: string, payload: UpdateRecipientPayload) => {
-  const response = await adminApiClient.patch(`/admin/referrals/expert-invites/${id}`, payload)
+  const response = await adminApiClient.post<{
+    success: boolean
+    data: {
+      invites: ExpertInvite[]
+      count: number
+      skipped?: Array<{ name: string; reason: string }>
+    }
+  }>('/admin/referrals/expert-invites/bulk', payload)
   return response.data
 }
 

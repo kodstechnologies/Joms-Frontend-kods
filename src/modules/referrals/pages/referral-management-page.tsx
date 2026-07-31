@@ -1,10 +1,9 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { Eye, Mail, Pencil, Plus, SlidersHorizontal, Trash2 } from 'lucide-react'
+import { Eye, Mail, Plus, SlidersHorizontal, Trash2 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
-import { EditRecipientModal } from '../components/edit-recipient-modal'
 import { InviteExpertReferralModal } from '../components/invite-expert-referral-modal'
 import { ReferralDetailsModal } from '../components/referral-details-modal'
 import { ReferralStatsBar } from '../components/referral-stats-bar'
@@ -15,19 +14,27 @@ import {
   useExpertInvites,
   useReferralStats,
   useResendExpertInvite,
-  useUpdateExpertInvite,
 } from '../hooks/use-referrals'
 import { useReferralStore } from '../store/referral-store'
 import type { ExpertInvite } from '../types/referral'
-import { getReferralStatusClassName, getReferralStatusLabel } from '../utils/referral-format'
+import {
+  getReferralStatusClassName,
+  getReferralStatusLabel,
+  formatReferralDateRange,
+} from '../utils/referral-format'
 import { DataTable } from '@/shared/components/table/data-table'
-import { TableDateTimeCell } from '@/shared/components/table/table-datetime-cell'
 import {
   TableActionsDropdown,
   TableActionsItem,
 } from '@/shared/components/table/table-actions-dropdown'
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
+
+function getApiErrorMessage(err: unknown, fallback: string) {
+  return (
+    (err as { response?: { data?: { message?: string } } })?.response?.data?.message || fallback
+  )
+}
 
 export function ReferralManagementPage() {
   const navigate = useNavigate()
@@ -36,7 +43,6 @@ export function ReferralManagementPage() {
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [inviteOpen, setInviteOpen] = useState(false)
   const [detailsExpert, setDetailsExpert] = useState<ExpertInvite | null>(null)
-  const [editExpert, setEditExpert] = useState<ExpertInvite | null>(null)
 
   const { data: statsData, isLoading: statsLoading } = useReferralStats()
   const { data: expertData, isLoading: expertLoading } = useExpertInvites({
@@ -47,7 +53,6 @@ export function ReferralManagementPage() {
 
   const createExpertMutation = useCreateExpertInvite()
   const createBulkMutation = useCreateBulkExpertInvites()
-  const updateExpertMutation = useUpdateExpertInvite()
   const deleteExpertMutation = useDeleteExpertInvite()
   const resendExpertMutation = useResendExpertInvite()
 
@@ -59,9 +64,9 @@ export function ReferralManagementPage() {
       setActiveDropdownId(null)
       try {
         await resendExpertMutation.mutateAsync(id)
-        toast.success('Expert referral resend queued (delivery pending integration)')
-      } catch {
-        toast.error('Failed to resend invitation')
+        toast.success('Invitation resent')
+      } catch (err) {
+        toast.error(getApiErrorMessage(err, 'Failed to resend invitation'))
       }
     },
     [resendExpertMutation],
@@ -73,8 +78,8 @@ export function ReferralManagementPage() {
       try {
         await deleteExpertMutation.mutateAsync(id)
         toast.success('Expert referral deleted')
-      } catch {
-        toast.error('Failed to delete referral')
+      } catch (err) {
+        toast.error(getApiErrorMessage(err, 'Failed to delete referral'))
       }
     },
     [deleteExpertMutation],
@@ -103,15 +108,6 @@ export function ReferralManagementPage() {
           </TableActionsItem>
           <TableActionsItem icon={<Mail className="size-3.5" />} onClick={() => handleResend(id)}>
             Resend Invitation
-          </TableActionsItem>
-          <TableActionsItem
-            icon={<Pencil className="size-3.5" />}
-            onClick={() => {
-              setActiveDropdownId(null)
-              setEditExpert(record)
-            }}
-          >
-            Edit Expert Details
           </TableActionsItem>
           <TableActionsItem
             icon={<Trash2 className="size-3.5 text-rose-300" />}
@@ -152,17 +148,29 @@ export function ReferralManagementPage() {
       {
         accessorKey: 'goalProgress',
         header: 'Goal Progress',
+        meta: { headerClassName: 'text-center', cellClassName: 'text-center' },
         cell: ({ row }) => (
-          <span className="text-sm">
-            {row.original.goalProgress.signedUpCount}/{row.original.goalProgress.maxReferrals}{' '}
-            signed up
+          <span className="text-brand-text text-sm font-medium">
+            {row.original.goalProgress?.signedUpCount ?? 0}/
+            {row.original.goalProgress?.maxReferrals ?? 10}
           </span>
         ),
       },
       {
         accessorKey: 'createdAt',
         header: 'Created At',
-        cell: ({ row }) => <TableDateTimeCell value={row.original.createdAt} />,
+        cell: ({ row }) => {
+          const { range, days } = formatReferralDateRange(
+            row.original.createdAt,
+            row.original.expiresAt,
+          )
+          return (
+            <div className="flex flex-col gap-0.5">
+              <span className="text-brand-text text-sm font-medium">{range}</span>
+              <span className="text-muted text-xs">{days}</span>
+            </div>
+          )
+        },
       },
       {
         id: 'actions',
@@ -228,20 +236,36 @@ export function ReferralManagementPage() {
         isSubmitting={createExpertMutation.isPending || createBulkMutation.isPending}
         onSubmitManual={async (payload) => {
           try {
-            await createExpertMutation.mutateAsync(payload)
-            toast.success('Invitation sent to the provided email and phone number')
+            const result = await createExpertMutation.mutateAsync(payload)
+            const delivery = result?.data?.delivery
+            if (payload.email && !delivery?.emailSent) {
+              toast.warning(
+                delivery?.note ||
+                  'Invite created, but email was not delivered. Check Brevo config or use Resend.',
+              )
+            } else {
+              toast.success('Invitation sent with your message')
+            }
             setInviteOpen(false)
-          } catch {
-            toast.error('Failed to send invitation')
+          } catch (err) {
+            toast.error(getApiErrorMessage(err, 'Failed to send invitation'))
           }
         }}
         onSubmitBulk={async (payload) => {
           try {
-            await createBulkMutation.mutateAsync(payload)
-            toast.success('Bulk expert referrals created')
+            const result = await createBulkMutation.mutateAsync(payload)
+            const count = result?.data?.count ?? result?.data?.invites?.length ?? 0
+            const skipped = result?.data?.skipped ?? []
+            if (skipped.length) {
+              toast.success(
+                `Created ${count} invite${count === 1 ? '' : 's'}; skipped ${skipped.length}`,
+              )
+            } else {
+              toast.success(`Sent ${count} invite${count === 1 ? '' : 's'}`)
+            }
             setInviteOpen(false)
-          } catch {
-            toast.error('Failed to create bulk expert referrals')
+          } catch (err) {
+            toast.error(getApiErrorMessage(err, 'Failed to create bulk expert referrals'))
           }
         }}
       />
@@ -250,32 +274,6 @@ export function ReferralManagementPage() {
         open={Boolean(detailsExpert)}
         onClose={() => setDetailsExpert(null)}
         expertInvite={detailsExpert}
-      />
-
-      <EditRecipientModal
-        open={Boolean(editExpert)}
-        onClose={() => setEditExpert(null)}
-        initialValues={
-          editExpert
-            ? {
-                name: editExpert.referredExpertName,
-                email: editExpert.referredExpertEmail,
-                phone: editExpert.referredExpertPhone,
-                message: editExpert.message,
-              }
-            : undefined
-        }
-        isSubmitting={updateExpertMutation.isPending}
-        onSubmit={async (payload) => {
-          if (!editExpert) return
-          try {
-            await updateExpertMutation.mutateAsync({ id: editExpert._id, payload })
-            toast.success('Expert details updated')
-            setEditExpert(null)
-          } catch {
-            toast.error('Failed to update expert details')
-          }
-        }}
       />
     </div>
   )

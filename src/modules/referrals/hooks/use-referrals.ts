@@ -7,13 +7,8 @@ import {
   fetchExpertInvites,
   fetchReferralStats,
   resendExpertInvite,
-  updateExpertInvite,
 } from '../api/referral-api'
-import type {
-  BulkExpertInvitePayload,
-  ExpertInvitePayload,
-  UpdateRecipientPayload,
-} from '../types/referral'
+import type { BulkExpertInvitePayload, ExpertInvitePayload } from '../types/referral'
 
 const invalidateReferrals = (queryClient: ReturnType<typeof useQueryClient>) => {
   queryClient.invalidateQueries({ queryKey: ['referral-stats'] })
@@ -49,15 +44,6 @@ export const useCreateBulkExpertInvites = () => {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (payload: BulkExpertInvitePayload) => createBulkExpertInvites(payload),
-    onSuccess: () => invalidateReferrals(queryClient),
-  })
-}
-
-export const useUpdateExpertInvite = () => {
-  const queryClient = useQueryClient()
-  return useMutation({
-    mutationFn: ({ id, payload }: { id: string; payload: UpdateRecipientPayload }) =>
-      updateExpertInvite(id, payload),
     onSuccess: () => invalidateReferrals(queryClient),
   })
 }

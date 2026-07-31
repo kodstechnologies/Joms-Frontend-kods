@@ -1132,6 +1132,7 @@ select::-ms-expand {
   border: 1px solid rgb(255 255 255 / 10%);
   border-radius: 16px;
   width: 551px;
+  min-height: 343px;
   max-width: calc(100vw - 32px);
 }
 
@@ -1163,10 +1164,28 @@ select::-ms-expand {
 }
 
 .invite-details-body {
-  padding: 20px;
+  padding: 24px 20px 28px;
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 20px 24px;
+  grid-template-columns: 255px 255px;
+  justify-content: space-between;
+  column-gap: 21px;
+  row-gap: 0;
+}
+
+.invite-details-col {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  width: 255px;
+  min-width: 0;
+}
+
+.invite-detail-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 255px;
+  min-width: 0;
 }
 
 .invite-detail-label {
@@ -1179,16 +1198,88 @@ select::-ms-expand {
 
 .invite-detail-value {
   color: #ffffff;
-  font-size: 12px;
-  font-weight: 500;
-  line-height: 18px;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 20px;
   letter-spacing: 0;
+  width: 255px;
+  max-width: 255px;
+  min-height: 20px;
+}
+
+.invite-detail-value-date {
+  width: 163px;
+  max-width: 163px;
+  min-height: 24px;
+  line-height: 24px;
 }
 
 .invite-detail-value-truncate {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.invite-details-status-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: 56px;
+  min-width: 56px;
+  max-width: 56px;
+  height: 25px;
+  min-height: 25px;
+  max-height: 25px;
+  padding: 0;
+  margin: 0;
+  border: none;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 25px;
+  letter-spacing: 0;
+  color: #ffffff;
+  flex-shrink: 0;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.invite-details-status-badge.is-active {
+  background: #00a63e;
+  width: 56px;
+  min-width: 56px;
+  max-width: 56px;
+  height: 25px;
+}
+
+.invite-details-status-badge.is-pending {
+  background: rgb(246 203 134 / 20%);
+  color: #f6cb86;
+}
+
+.invite-details-status-badge.is-default {
+  background: rgb(255 255 255 / 10%);
+  color: rgb(203 213 225);
+}
+
+@media (max-width: 600px) {
+  .invite-details-body {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+
+  .invite-details-col,
+  .invite-detail-field,
+  .invite-detail-value {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .invite-detail-value-date {
+    width: 100%;
+    max-width: 100%;
+  }
 }
 
 /* Invite Expert Referral Modal */

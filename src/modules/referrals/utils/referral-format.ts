@@ -19,25 +19,30 @@ export const formatReferralDateTime = (value?: string | null) => {
 }
 
 export const formatReferralDateRange = (start?: string | null, end?: string | null) => {
-  if (!start) return '—'
-  const startLabel = new Intl.DateTimeFormat('en-IN', {
+  if (!start) return { range: '—', days: '—' }
+
+  const startDate = new Date(start)
+  const endDate = end ? new Date(end) : new Date(startDate.getTime() + 45 * 24 * 60 * 60 * 1000)
+
+  const startLabel = new Intl.DateTimeFormat('en-US', {
     month: 'short',
     day: 'numeric',
-  }).format(new Date(start))
+  }).format(startDate)
 
-  if (!end) return startLabel
-
-  const endLabel = new Intl.DateTimeFormat('en-IN', {
+  const endLabel = new Intl.DateTimeFormat('en-US', {
     month: 'short',
     day: 'numeric',
-  }).format(new Date(end))
+  }).format(endDate)
 
   const days = Math.max(
     1,
-    Math.ceil((new Date(end).getTime() - new Date(start).getTime()) / (1000 * 60 * 60 * 24)),
+    Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)),
   )
 
-  return { range: `${startLabel} - ${endLabel}`, days: `${days} Days` }
+  return {
+    range: `${startLabel}- ${endLabel}`,
+    days: `${days} Days`,
+  }
 }
 
 export const getReferralStatusClassName = (status: string) => {

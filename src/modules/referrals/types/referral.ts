@@ -19,6 +19,7 @@ export type ExpertInvite = {
   inviteLink?: string | null
   referralCode?: string | null
   createdAt: string
+  expiresAt?: string | null
   delivery?: {
     emailSent: boolean
     smsSent: boolean
@@ -40,7 +41,7 @@ export type ReferralMetrics = {
   membershipsUnlocked: number
   averageReferralsPerUser: number
   averageDaysToReachGoal: number
-  counts: {
+  counts?: {
     expertInvites: number
     pendingExpertInvites: number
     activeExpertInvites: number
@@ -59,13 +60,7 @@ export type ExpertInvitePayload = {
 export type BulkExpertInvitePayload = {
   message: string
   recipients: Array<{ name: string; email?: string; phone?: string }>
+  fileName?: string
   referrerId?: string
   referrerName?: string
-}
-
-export type UpdateRecipientPayload = {
-  name?: string
-  email?: string
-  phone?: string
-  message?: string
 }
