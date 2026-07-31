@@ -31,7 +31,30 @@ const toDateTimeLocalValue = (iso: string | null | undefined) => {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`
 }
 
-// Shared field styles
+type FormValues = {
+  title: string
+  channel: CommunicationChannel | ''
+  type: CommunicationType | ''
+  audience: CommunicationAudience | ''
+  deliveryType: CommunicationDeliveryType
+  scheduledAt: string
+  subject: string
+  messageContent: string
+  additionalNotes: string
+}
+
+const emptyForm: FormValues = {
+  title: '',
+  channel: '',
+  type: '',
+  audience: '',
+  deliveryType: 'send-now',
+  scheduledAt: '',
+  subject: '',
+  messageContent: '',
+  additionalNotes: '',
+}
+
 const inputClass = 'ui-input'
 const selectClass = 'ui-input appearance-none cursor-pointer'
 const labelClass = 'text-body-sm text-muted mb-1.5 block'
@@ -40,53 +63,119 @@ export function CommunicationForm() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const editId = searchParams.get('edit') ?? ''
+  const isEditMode = Boolean(editId)
 
   const optionsQuery = useCommunicationOptions()
   const existingQuery = useCommunication(editId)
   const createMutation = useCreateCommunication()
   const updateMutation = useUpdateCommunication()
 
-  const [title, setTitle] = useState('')
-  const [channel, setChannel] = useState<CommunicationChannel | ''>('')
-  const [type, setType] = useState<CommunicationType | ''>('')
-  const [audience, setAudience] = useState<CommunicationAudience | ''>('')
-  const [deliveryType, setDeliveryType] = useState<CommunicationDeliveryType>('send-now')
-  const [scheduledAt, setScheduledAt] = useState('')
-  const [subject, setSubject] = useState('')
-  const [messageContent, setMessageContent] = useState('')
-  const [additionalNotes, setAdditionalNotes] = useState('')
-  const [hydratedItem, setHydratedItem] = useState(existingQuery.data)
-
-  const audienceOptions = useMemo(() => {
-    const options = optionsQuery.data?.audiences ?? COMMUNICATION_AUDIENCE_OPTIONS
-    return options.filter((opt) => opt.value !== 'all-users')
-  }, [optionsQuery.data?.audiences])
-
-  const channelOptions = useMemo(
-    () => optionsQuery.data?.channels ?? COMMUNICATION_CHANNEL_OPTIONS,
-    [optionsQuery.data?.channels],
-  )
-  const typeOptions = useMemo(
-    () => optionsQuery.data?.types ?? COMMUNICATION_TYPE_OPTIONS,
-    [optionsQuery.data?.types],
-  )
-
-  const item = existingQuery.data
-  if (item && item !== hydratedItem) {
-    setHydratedItem(item)
-    setTitle(item.title)
-    setChannel(item.channel)
-    setType(item.type)
-    setAudience(item.audience)
-    setDeliveryType(item.deliveryType)
-    setScheduledAt(toDateTimeLocalValue(item.scheduledAt))
-    setSubject(item.subject)
-    setMessageContent(item.messageContent)
-    setAdditionalNotes(item.additionalNotes)
+  if (isEditMode && existingQuery.isLoading) {
+    return <div className="text-muted py-16 text-center text-sm">Loading communication...</div>
   }
 
-  const isSubmitting = createMutation.isPending || updateMutation.isPending
-  const isEditMode = Boolean(editId)
+  if (isEditMode && existingQuery.isError) {
+    return (
+      <div className="mx-auto flex w-full max-w-[1091px] flex-col gap-4">
+        <button
+          type="button"
+          onClick={() => navigateBackOrFallback(navigate, '/communication/management')}
+          className="group text-h3 hover:text-brand-accent text-brand-text flex w-fit items-center gap-2 tracking-tight transition-colors"
+        >
+          <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
+          Edit Communication
+        </button>
+        <div className="rounded-lg border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+          {getApiErrorMessage(existingQuery.error) || 'Failed to load communication for editing.'}
+        </div>
+      </div>
+    )
+  }
+
+  const item = existingQuery.data
+  const initialValues: FormValues =
+    isEditMode && item
+      ? {
+          title: item.title ?? '',
+          channel: item.channel ?? '',
+          type: item.type ?? '',
+          audience: item.audience ?? '',
+          deliveryType: item.deliveryType ?? 'send-now',
+          scheduledAt: toDateTimeLocalValue(item.scheduledAt),
+          subject: item.subject ?? '',
+          messageContent: item.messageContent ?? '',
+          additionalNotes: item.additionalNotes ?? '',
+        }
+      : emptyForm
+
+  // Remount when switching create/edit so form state resets without setState-in-effect
+  return (
+    <CommunicationFormFields
+      key={editId || 'create'}
+      initialValues={initialValues}
+      isEditMode={isEditMode}
+      editId={editId}
+      audiences={optionsQuery.data?.audiences}
+      channels={optionsQuery.data?.channels}
+      types={optionsQuery.data?.types}
+      isSubmitting={createMutation.isPending || updateMutation.isPending}
+      onCreate={(payload, handlers) => createMutation.mutate(payload, handlers)}
+      onUpdate={(id, payload, handlers) => updateMutation.mutate({ id, payload }, handlers)}
+    />
+  )
+}
+
+type CommunicationFormFieldsProps = {
+  initialValues: FormValues
+  isEditMode: boolean
+  editId: string
+  audiences?: typeof COMMUNICATION_AUDIENCE_OPTIONS
+  channels?: typeof COMMUNICATION_CHANNEL_OPTIONS
+  types?: typeof COMMUNICATION_TYPE_OPTIONS
+  isSubmitting: boolean
+  onCreate: (
+    payload: CreateCommunicationPayload,
+    handlers: { onSuccess: () => void; onError: (error: unknown) => void },
+  ) => void
+  onUpdate: (
+    id: string,
+    payload: CreateCommunicationPayload,
+    handlers: { onSuccess: () => void; onError: (error: unknown) => void },
+  ) => void
+}
+
+function CommunicationFormFields({
+  initialValues,
+  isEditMode,
+  editId,
+  audiences,
+  channels,
+  types,
+  isSubmitting,
+  onCreate,
+  onUpdate,
+}: CommunicationFormFieldsProps) {
+  const navigate = useNavigate()
+
+  const [title, setTitle] = useState(initialValues.title)
+  const [channel, setChannel] = useState<CommunicationChannel | ''>(initialValues.channel)
+  const [type, setType] = useState<CommunicationType | ''>(initialValues.type)
+  const [audience, setAudience] = useState<CommunicationAudience | ''>(initialValues.audience)
+  const [deliveryType, setDeliveryType] = useState<CommunicationDeliveryType>(
+    initialValues.deliveryType,
+  )
+  const [scheduledAt, setScheduledAt] = useState(initialValues.scheduledAt)
+  const [subject, setSubject] = useState(initialValues.subject)
+  const [messageContent, setMessageContent] = useState(initialValues.messageContent)
+  const [additionalNotes, setAdditionalNotes] = useState(initialValues.additionalNotes)
+
+  const audienceOptions = useMemo(() => {
+    const options = audiences ?? COMMUNICATION_AUDIENCE_OPTIONS
+    return options.filter((opt) => opt.value !== 'all-users')
+  }, [audiences])
+
+  const channelOptions = useMemo(() => channels ?? COMMUNICATION_CHANNEL_OPTIONS, [channels])
+  const typeOptions = useMemo(() => types ?? COMMUNICATION_TYPE_OPTIONS, [types])
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -119,25 +208,22 @@ export function CommunicationForm() {
     }
 
     if (isEditMode) {
-      updateMutation.mutate(
-        { id: editId, payload },
-        {
-          onSuccess: (data) => {
-            toast.success('Communication updated')
-            navigate(`/communication/view/${data.id}`)
-          },
-          onError: (error) => toast.error(getApiErrorMessage(error)),
+      onUpdate(editId, payload, {
+        onSuccess: () => {
+          toast.success('Communication updated')
+          navigate('/communication/management')
         },
-      )
+        onError: (error) => toast.error(getApiErrorMessage(error)),
+      })
       return
     }
 
-    createMutation.mutate(payload, {
-      onSuccess: (data) => {
+    onCreate(payload, {
+      onSuccess: () => {
         toast.success(
           deliveryType === 'schedule' ? 'Communication scheduled' : 'Communication saved',
         )
-        navigate(`/communication/view/${data.id}`)
+        navigate('/communication/management')
       },
       onError: (error) => toast.error(getApiErrorMessage(error)),
     })
@@ -176,9 +262,6 @@ export function CommunicationForm() {
           </h2>
           <p className="text-body-sm text-muted mt-1">
             Send updates, announcements, or important messages to your audience.
-          </p>
-          <p className="text-body-sm text-muted mt-1 opacity-60">
-            Email channel sends through Brevo to partners in the selected audience.
           </p>
         </div>
 
@@ -260,7 +343,6 @@ export function CommunicationForm() {
             </div>
           </div>
 
-          {/* Set Time & Date */}
           <div>
             <label className={labelClass}>Set Time & Date</label>
             <div
@@ -323,7 +405,6 @@ export function CommunicationForm() {
             />
           </div>
 
-          {/* Message Content */}
           <div>
             <label className={labelClass}>Message Content</label>
             <textarea
@@ -336,7 +417,6 @@ export function CommunicationForm() {
             />
           </div>
 
-          {/* Additional Notes */}
           <div>
             <label className={labelClass}>Additional Notes</label>
             <input
@@ -358,11 +438,7 @@ export function CommunicationForm() {
         >
           Close
         </button>
-        <button
-          type="submit"
-          disabled={isSubmitting || (isEditMode && existingQuery.isLoading)}
-          className="ui-cta ui-cta-primary"
-        >
+        <button type="submit" disabled={isSubmitting} className="ui-cta ui-cta-primary">
           {isSubmitting ? 'Saving...' : 'Submit'}
         </button>
       </div>

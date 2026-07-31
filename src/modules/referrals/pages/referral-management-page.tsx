@@ -22,6 +22,9 @@ import {
   getReferralStatusLabel,
   formatReferralDateRange,
 } from '../utils/referral-format'
+import { REFERRAL_METRIC_DEFINITIONS } from '../utils/referral-metrics-definitions'
+import { useActiveMetricIds } from '@/modules/expert/hooks/use-active-metric-ids'
+import { useTableColumnPreferences } from '@/modules/expert/hooks/use-ui-preferences'
 import { DataTable } from '@/shared/components/table/data-table'
 import {
   TableActionsDropdown,
@@ -29,6 +32,20 @@ import {
 } from '@/shared/components/table/table-actions-dropdown'
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
+
+const REFERRALS_MODULE_KEY = 'referrals'
+
+const DEFAULT_METRIC_IDS = REFERRAL_METRIC_DEFINITIONS.map((metric) => metric.id)
+
+const DEFAULT_VISIBLE_COLUMN_IDS = [
+  'referral-id',
+  'referrer',
+  'referred-expert',
+  'source-type',
+  'status',
+  'goal-progress',
+  'created-at',
+]
 
 function getApiErrorMessage(err: unknown, fallback: string) {
   return (
@@ -50,6 +67,8 @@ export function ReferralManagementPage() {
     limit: 10,
     search: searchQuery || undefined,
   })
+  const activeMetricIds = useActiveMetricIds(REFERRALS_MODULE_KEY, DEFAULT_METRIC_IDS)
+  const tableColumnPreferencesQuery = useTableColumnPreferences(REFERRALS_MODULE_KEY)
 
   const createExpertMutation = useCreateExpertInvite()
   const createBulkMutation = useCreateBulkExpertInvites()
@@ -121,17 +140,31 @@ export function ReferralManagementPage() {
     [activeDropdownId, handleDelete, handleResend],
   )
 
-  const expertColumns = useMemo<ColumnDef<ExpertInvite>[]>(
-    () => [
-      { accessorKey: 'referralId', header: 'Referral ID' },
-      { accessorKey: 'referrerName', header: 'Referrer' },
-      { accessorKey: 'referredExpertName', header: 'Referred Expert' },
-      {
+  const expertColumns = useMemo<ColumnDef<ExpertInvite>[]>(() => {
+    const dataColumnsById: Record<string, ColumnDef<ExpertInvite>> = {
+      'referral-id': {
+        id: 'referral-id',
+        accessorKey: 'referralId',
+        header: 'Referral ID',
+      },
+      referrer: {
+        id: 'referrer',
+        accessorKey: 'referrerName',
+        header: 'Referrer',
+      },
+      'referred-expert': {
+        id: 'referred-expert',
+        accessorKey: 'referredExpertName',
+        header: 'Referred Expert',
+      },
+      'source-type': {
+        id: 'source-type',
         accessorKey: 'sourceType',
         header: 'Source Type',
         cell: ({ row }) => <span className="capitalize">{row.original.sourceType}</span>,
       },
-      {
+      status: {
+        id: 'status',
         accessorKey: 'status',
         header: 'Status',
         cell: ({ row }) => (
@@ -145,7 +178,8 @@ export function ReferralManagementPage() {
           </span>
         ),
       },
-      {
+      'goal-progress': {
+        id: 'goal-progress',
         accessorKey: 'goalProgress',
         header: 'Goal Progress',
         meta: { headerClassName: 'text-center', cellClassName: 'text-center' },
@@ -156,7 +190,8 @@ export function ReferralManagementPage() {
           </span>
         ),
       },
-      {
+      'created-at': {
+        id: 'created-at',
         accessorKey: 'createdAt',
         header: 'Created At',
         cell: ({ row }) => {
@@ -172,15 +207,23 @@ export function ReferralManagementPage() {
           )
         },
       },
-      {
-        id: 'actions',
-        header: 'Actions',
-        meta: { headerClassName: 'pr-5 text-right', cellClassName: 'relative pr-5 text-right' },
-        cell: ({ row }) => renderActions(row.original),
-      },
-    ],
-    [renderActions],
-  )
+    }
+
+    const visibleIds = tableColumnPreferencesQuery.data?.visibleColumnIds?.length
+      ? tableColumnPreferencesQuery.data.visibleColumnIds
+      : DEFAULT_VISIBLE_COLUMN_IDS
+
+    const preferenceColumns = visibleIds.map((id) => dataColumnsById[id]).filter(Boolean)
+
+    const actionsColumn: ColumnDef<ExpertInvite> = {
+      id: 'actions',
+      header: 'Actions',
+      meta: { headerClassName: 'pr-5 text-right', cellClassName: 'relative pr-5 text-right' },
+      cell: ({ row }) => renderActions(row.original),
+    }
+
+    return [...preferenceColumns, actionsColumn]
+  }, [renderActions, tableColumnPreferencesQuery.data])
 
   return (
     <div className="flex flex-col gap-4 md:gap-6">
@@ -207,7 +250,11 @@ export function ReferralManagementPage() {
         </div>
       </div>
 
-      <ReferralStatsBar metrics={statsData?.data} isLoading={statsLoading} />
+      <ReferralStatsBar
+        metrics={statsData?.data}
+        isLoading={statsLoading}
+        activeMetricIds={activeMetricIds}
+      />
 
       <DataTable
         columns={expertColumns}

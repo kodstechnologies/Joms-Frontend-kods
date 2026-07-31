@@ -207,7 +207,9 @@ export function LoginPage() {
                 <Controller
                   control={otpForm.control}
                   name="code"
-                  render={({ field }) => <OtpInput value={field.value} onChange={field.onChange} />}
+                  render={({ field }) => (
+                    <OtpInput length={6} value={field.value} onChange={field.onChange} />
+                  )}
                 />
                 {otpForm.formState.errors.code?.message ? (
                   <p className="text-center text-xs text-rose-300">

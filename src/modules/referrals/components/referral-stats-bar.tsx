@@ -12,6 +12,7 @@ import { cn } from '@/shared/lib/cn'
 type ReferralStatsBarProps = {
   metrics?: Partial<ReferralMetrics> | null
   isLoading?: boolean
+  activeMetricIds?: string[]
 }
 
 type MetricCardData = {
@@ -22,14 +23,22 @@ type MetricCardData = {
   trendPercent: number
 }
 
-function buildMetricCards(metrics: ReturnType<typeof mergeReferralMetrics>): MetricCardData[] {
-  return REFERRAL_METRIC_DEFINITIONS.map((def) => ({
+function buildMetricCards(
+  metrics: ReturnType<typeof mergeReferralMetrics>,
+  activeMetricIds?: string[],
+): MetricCardData[] {
+  const cards = REFERRAL_METRIC_DEFINITIONS.map((def) => ({
     id: def.id,
     label: def.label,
     description: def.description,
     value: formatReferralMetricValue(def.format, metrics[def.key]),
     trendPercent: REFERRAL_METRIC_TREND_PERCENT,
   }))
+
+  if (!activeMetricIds?.length) return cards
+
+  const byId = new Map(cards.map((card) => [card.id, card]))
+  return activeMetricIds.map((id) => byId.get(id)).filter(Boolean) as MetricCardData[]
 }
 
 function ReferralMetricCard({ metric }: { metric: MetricCardData }) {
@@ -61,14 +70,15 @@ function MetricCardSkeleton() {
   )
 }
 
-export function ReferralStatsBar({ metrics, isLoading }: ReferralStatsBarProps) {
+export function ReferralStatsBar({ metrics, isLoading, activeMetricIds }: ReferralStatsBarProps) {
   const resolved = mergeReferralMetrics(metrics)
-  const cards = buildMetricCards(resolved)
+  const cards = buildMetricCards(resolved, activeMetricIds)
+  const skeletonCount = activeMetricIds?.length || 12
 
   if (isLoading) {
     return (
       <div className={cn('grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4')}>
-        {Array.from({ length: 12 }).map((_, index) => (
+        {Array.from({ length: skeletonCount }).map((_, index) => (
           <MetricCardSkeleton key={index} />
         ))}
       </div>

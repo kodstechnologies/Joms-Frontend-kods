@@ -1,15 +1,45 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Plus, SlidersHorizontal } from 'lucide-react'
 import { toast } from 'sonner'
+import type { ColumnDef } from '@tanstack/react-table'
 
-import { communicationColumns } from '../../components/communication-table-columns'
+import {
+  CommunicationActions,
+  CommunicationStatusBadge,
+} from '../../components/communication-table-cells'
 import { useCommunicationMetrics, useCommunications } from '../../hooks/use-communications'
+import type { Communication } from '../../api/communication-api'
 import { DataTable } from '@/shared/components/table/data-table'
 import { StatCard } from '@/shared/components/dashboard/stat-card'
 import { getApiErrorMessage } from '@/shared/lib/api-error'
+import {
+  orderByActiveMetricIds,
+  useActiveMetricIds,
+} from '@/modules/expert/hooks/use-active-metric-ids'
+import { useTableColumnPreferences } from '@/modules/expert/hooks/use-ui-preferences'
 
 const PAGE_SIZE = 10
+const COMMUNICATION_MODULE_KEY = 'communication'
+
+const DEFAULT_METRIC_IDS = [
+  'total-messages-sent',
+  'active-campaigns',
+  'channels-used',
+  'scheduled-messages',
+  'failed-undelivered',
+]
+
+const DEFAULT_VISIBLE_COLUMN_IDS = [
+  'message-id',
+  'title',
+  'channel',
+  'type',
+  'audience',
+  'status',
+  'created-by',
+  'created-on',
+]
 
 export function CommunicationListPage() {
   const [searchValue, setSearchValue] = useState('')
@@ -31,6 +61,8 @@ export function CommunicationListPage() {
     limit: PAGE_SIZE,
     search: debouncedSearch || undefined,
   })
+  const activeMetricIds = useActiveMetricIds(COMMUNICATION_MODULE_KEY, DEFAULT_METRIC_IDS)
+  const tableColumnPreferencesQuery = useTableColumnPreferences(COMMUNICATION_MODULE_KEY)
 
   useEffect(() => {
     if (listQuery.isError) {
@@ -38,23 +70,95 @@ export function CommunicationListPage() {
     }
   }, [listQuery.error, listQuery.isError])
 
+  useEffect(() => {
+    if (metricsQuery.isError) {
+      toast.error(getApiErrorMessage(metricsQuery.error))
+    }
+  }, [metricsQuery.error, metricsQuery.isError])
+
   const rows = listQuery.data?.data ?? []
   const pagination = listQuery.data?.meta
   const totalItems = pagination?.total ?? 0
   const totalPages = pagination?.totalPages ?? 1
-  const metrics = metricsQuery.data
 
-  const stats = [
-    { title: 'Total messages sent', value: String(metrics?.totalMessagesSent ?? 20) },
-    { title: 'Active campaigns', value: String(metrics?.activeCampaigns ?? 38) },
-    { title: 'Channels used', value: String(metrics?.channelsUsed ?? 3) },
-    { title: 'Scheduled messages', value: String(metrics?.scheduledMessages ?? 10) },
-    { title: 'Failed/Undelivered', value: String(metrics?.failedUndelivered ?? 20) },
-  ]
+  const stats = useMemo(() => {
+    const cards = metricsQuery.data?.cards ?? []
+    if (!cards.length) return []
+    return orderByActiveMetricIds(cards, activeMetricIds)
+  }, [activeMetricIds, metricsQuery.data?.cards])
+
+  const columns = useMemo(() => {
+    const dataColumnsById: Record<string, ColumnDef<Communication>> = {
+      'message-id': {
+        id: 'message-id',
+        accessorKey: 'messageId',
+        header: 'Message ID',
+      },
+      title: {
+        id: 'title',
+        accessorKey: 'title',
+        header: 'Title',
+      },
+      channel: {
+        id: 'channel',
+        accessorKey: 'channelLabel',
+        header: 'Channel',
+      },
+      type: {
+        id: 'type',
+        accessorKey: 'typeLabel',
+        header: 'Type',
+      },
+      audience: {
+        id: 'audience',
+        accessorKey: 'audienceLabel',
+        header: 'Audience',
+      },
+      status: {
+        id: 'status',
+        accessorKey: 'statusLabel',
+        header: 'Status',
+        cell: ({ row }) => <CommunicationStatusBadge status={row.original.statusLabel} />,
+      },
+      'created-by': {
+        id: 'created-by',
+        accessorKey: 'createdBy',
+        header: 'Created By',
+      },
+      'created-on': {
+        id: 'created-on',
+        accessorKey: 'createdAtLabel',
+        header: 'Created On',
+      },
+    }
+
+    const visibleIds = tableColumnPreferencesQuery.data?.visibleColumnIds?.length
+      ? tableColumnPreferencesQuery.data.visibleColumnIds
+      : DEFAULT_VISIBLE_COLUMN_IDS
+
+    const preferenceColumns = visibleIds.map((id) => dataColumnsById[id]).filter(Boolean)
+
+    const selectColumn: ColumnDef<Communication> = {
+      id: 'select',
+      header: () => <input type="checkbox" className="rounded border-white/20 bg-transparent" />,
+      cell: () => <input type="checkbox" className="rounded border-white/20 bg-transparent" />,
+      meta: { headerClassName: 'w-10', cellClassName: 'w-10' },
+      enableSorting: false,
+    }
+
+    const actionsColumn: ColumnDef<Communication> = {
+      id: 'actions',
+      header: 'Actions',
+      enableSorting: false,
+      meta: { headerClassName: 'pr-5 text-right', cellClassName: 'relative pr-5 text-right' },
+      cell: ({ row }) => <CommunicationActions communication={row.original} />,
+    }
+
+    return [selectColumn, ...preferenceColumns, actionsColumn]
+  }, [tableColumnPreferencesQuery.data])
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-h2 text-brand-text tracking-tight">Communication Management</h1>
@@ -82,21 +186,14 @@ export function CommunicationListPage() {
         </div>
       </div>
 
-      {/* Stat cards — 5 cols */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
         {stats.map((stat) => (
-          <StatCard
-            key={stat.title}
-            title={stat.title}
-            value={stat.value}
-            trend={{ direction: 'up', percentage: 6.7, label: 'vs last month' }}
-            className="h-[130px]"
-          />
+          <StatCard key={stat.id} title={stat.title} value={stat.value} className="h-[130px]" />
         ))}
       </div>
 
       <DataTable
-        columns={communicationColumns}
+        columns={columns}
         data={rows}
         getRowId={(row) => row.id}
         searchValue={searchValue}

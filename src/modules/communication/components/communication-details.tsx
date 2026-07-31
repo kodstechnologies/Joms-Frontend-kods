@@ -71,7 +71,7 @@ export function CommunicationDetails() {
             Communication management
           </button>
           <span> / </span>
-          <span className="text-brand-text font-semibold">Create Communication</span>
+          <span className="text-brand-text font-semibold">View Details</span>
         </p>
       </div>
 
