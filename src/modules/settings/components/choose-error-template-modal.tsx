@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Pencil, Trash2, X } from 'lucide-react'
+import { Pencil, Plus, Trash2, X } from 'lucide-react'
 import { createPortal } from 'react-dom'
 import { toast } from 'sonner'
 
@@ -64,29 +64,29 @@ function ChooseErrorTemplateModalContent({
 
   return createPortal(
     <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/70 p-4">
-      <div className="ui-modal-shell max-w-[520px]">
-        <div className="ui-modal-header">
+      <div className="ui-modal-shell error-template-modal-shell">
+        <div className="ui-modal-header error-template-modal-header">
           <div>
-            <h2 className="text-h4 text-brand-text">
+            <h2 className="error-template-modal-title">
               {showAdd
                 ? editingIndex != null
                   ? 'Edit Error Message Template'
                   : 'Add Error Message Template'
                 : 'Choose Error Message Template'}
             </h2>
-            <p className="text-body-sm text-muted mt-1">
+            <p className="error-template-modal-subtitle">
               Select a pre-defined error message template
             </p>
           </div>
-          <button type="button" onClick={onClose} className="text-muted hover:text-brand-text">
+          <button type="button" onClick={onClose} className="error-template-modal-close">
             <X className="icon-md" />
           </button>
         </div>
 
-        <div className="ui-modal-body space-y-2">
+        <div className="ui-modal-body error-template-modal-body">
           {showAdd ? (
-            <div className="space-y-2">
-              <p className="text-body-md-medium text-brand-text">
+            <div className="error-template-form-stack">
+              <p className="error-template-form-label">
                 {editingIndex != null ? 'Edit Template' : 'Add New Template'}
               </p>
               <textarea
@@ -98,86 +98,92 @@ function ChooseErrorTemplateModalContent({
               />
             </div>
           ) : (
-            templates.map((template, index) => (
-              <div
-                key={`${template}-${index}`}
-                className={cn(
-                  'radius-lg flex items-start gap-3 border px-4 py-3 transition-colors',
-                  selected === template
-                    ? 'border-brand-accent bg-brand-accent/10'
-                    : 'border-white/10 bg-black/20 hover:border-white/20',
-                )}
-              >
-                <label className="flex min-w-0 flex-1 cursor-pointer items-start gap-3">
-                  <input
-                    type="radio"
-                    name="error-template"
-                    checked={selected === template}
-                    onChange={() => setSelected(template)}
-                    className="mt-1"
-                  />
-                  <span className="text-body-md text-brand-text/80">{template}</span>
-                </label>
-                <div className="flex shrink-0 items-center gap-1">
-                  <button
-                    type="button"
-                    className="text-muted hover:text-brand-text rounded p-1"
-                    aria-label="Edit template"
-                    onClick={() => {
-                      setEditingIndex(index)
-                      setDraftText(template)
-                      setShowAdd(true)
-                    }}
-                  >
-                    <Pencil className="size-4" />
-                  </button>
-                  <button
-                    type="button"
-                    disabled={isSaving}
-                    className="text-muted hover:text-brand-danger rounded p-1"
-                    aria-label="Delete template"
-                    onClick={async () => {
-                      if (templates.length <= 1) {
-                        toast.error('Keep at least one template')
-                        return
-                      }
-                      setIsSaving(true)
-                      try {
-                        const updated = await onDeleteTemplate(index)
-                        onTemplatesChange(updated)
-                        if (selected === template) {
-                          setSelected(updated[0] || '')
-                        }
-                      } catch {
-                        toast.error('Failed to delete template')
-                      } finally {
-                        setIsSaving(false)
-                      }
-                    }}
-                  >
-                    <Trash2 className="size-4" />
-                  </button>
-                </div>
-              </div>
-            ))
-          )}
+            <>
+              <div className="error-template-list">
+                {templates.map((template, index) => {
+                  const isSelected = selected === template
 
-          {!showAdd ? (
-            <button
-              type="button"
-              onClick={() => {
-                setEditingIndex(null)
-                setDraftText('')
-                setShowAdd(true)
-              }}
-              className="ui-cta ui-cta-secondary mt-3 w-full"
-            >
-              Add Template +
-            </button>
-          ) : null}
+                  return (
+                    <div
+                      key={`${template}-${index}`}
+                      className={cn(
+                        'error-template-row',
+                        isSelected && 'error-template-row-selected',
+                      )}
+                    >
+                      <label className="error-template-row-main">
+                        <input
+                          type="radio"
+                          name="error-template"
+                          checked={isSelected}
+                          onChange={() => setSelected(template)}
+                          className="sr-only"
+                        />
+                        <span className="error-template-radio" aria-hidden />
+                        <span className="error-template-row-text">{template}</span>
+                      </label>
+                      <div className="error-template-row-actions">
+                        <button
+                          type="button"
+                          className="error-template-icon-btn"
+                          aria-label="Edit template"
+                          onClick={() => {
+                            setEditingIndex(index)
+                            setDraftText(template)
+                            setShowAdd(true)
+                          }}
+                        >
+                          <Pencil className="size-4" strokeWidth={1.5} />
+                        </button>
+                        <button
+                          type="button"
+                          disabled={isSaving}
+                          className="error-template-icon-btn"
+                          aria-label="Delete template"
+                          onClick={async () => {
+                            if (templates.length <= 1) {
+                              toast.error('Keep at least one template')
+                              return
+                            }
+                            setIsSaving(true)
+                            try {
+                              const updated = await onDeleteTemplate(index)
+                              onTemplatesChange(updated)
+                              if (selected === template) {
+                                setSelected(updated[0] || '')
+                              }
+                            } catch {
+                              toast.error('Failed to delete template')
+                            } finally {
+                              setIsSaving(false)
+                            }
+                          }}
+                        >
+                          <Trash2 className="size-4" strokeWidth={1.5} />
+                        </button>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setEditingIndex(null)
+                  setDraftText('')
+                  setShowAdd(true)
+                }}
+                className="error-template-add-btn"
+              >
+                <span>Add Template</span>
+                <Plus className="size-4" strokeWidth={2} />
+              </button>
+            </>
+          )}
         </div>
 
-        <div className="ui-modal-footer">
+        <div className="ui-modal-footer error-template-modal-footer">
           <button
             type="button"
             disabled={isSaving}

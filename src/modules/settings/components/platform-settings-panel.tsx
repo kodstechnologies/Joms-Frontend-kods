@@ -6,7 +6,7 @@ import { toast } from 'sonner'
 import { AdminNotesModal } from './admin-notes-modal'
 import { ChooseErrorTemplateModal } from './choose-error-template-modal'
 import { ScheduleMaintenanceModal } from './schedule-maintenance-modal'
-import { SettingsFieldRow, settingsControlClass } from './settings-field-row'
+import { SettingsInputField, SettingsSelectField, SettingsStackedField } from './settings-field-row'
 import { SettingsSectionCard } from './settings-section-card'
 import { SettingsToggleRow } from './settings-toggle-row'
 import { uploadBrandingAsset } from '../api/settings-api'
@@ -28,7 +28,6 @@ import {
 import { resolveDefaultExportFormat } from '../utils/export-format'
 import type { PlatformSettings } from '../types/settings'
 import { Button } from '@/shared/components/ui/button'
-import { cn } from '@/shared/lib/cn'
 
 type PlatformSettingsPanelProps = {
   value: PlatformSettings
@@ -73,14 +72,12 @@ function BrandingUploadTile({
 
   return (
     <div className="space-y-2">
-      <p className="text-xs font-medium text-slate-300">{label}</p>
+      <p className="settings-field-label">{label}</p>
       <button
         type="button"
         disabled={uploading}
         onClick={() => inputRef.current?.click()}
-        className={cn(
-          'flex h-[72px] w-[72px] flex-col items-center justify-center gap-1 overflow-hidden rounded-lg border border-dashed border-white/20 bg-[#0E0E0E] text-slate-300 transition-colors hover:border-white/35 hover:text-white disabled:cursor-not-allowed disabled:opacity-60',
-        )}
+        className="settings-upload-tile"
       >
         {showPreview ? (
           <img
@@ -93,7 +90,9 @@ function BrandingUploadTile({
         ) : (
           <>
             <CloudUpload className="size-4" />
-            <span className="text-[10px]">{uploading ? 'Uploading…' : 'Upload'}</span>
+            <span className="settings-upload-tile-label">
+              {uploading ? 'Uploading…' : 'Upload'}
+            </span>
           </>
         )}
       </button>
@@ -167,14 +166,19 @@ export function PlatformSettingsPanel({ value, onChange }: PlatformSettingsPanel
         title="Application Settings"
         description="Configure basic application information"
       >
-        <SettingsFieldRow label="Application Name">
+        <div className="settings-field-stack">
+          <label className="settings-field-label" htmlFor="application-name">
+            Application Name
+          </label>
           <input
-            className={settingsControlClass}
-            value={value.applicationSettings.applicationName ?? 'Web admin Panel'}
+            id="application-name"
+            className="settings-field-input"
+            value={value.applicationSettings.applicationName ?? ''}
+            placeholder="Web admin Panel"
             onChange={(event) => updateApplication({ applicationName: event.target.value })}
           />
-        </SettingsFieldRow>
-        <div className="grid gap-4 pt-2 sm:grid-cols-2">
+        </div>
+        <div className="settings-branding-row pt-2">
           <BrandingUploadTile
             label="Logo"
             kind="logo"
@@ -194,9 +198,10 @@ export function PlatformSettingsPanel({ value, onChange }: PlatformSettingsPanel
         title="Display Preferences"
         description="Customize display and localization settings"
       >
-        <SettingsFieldRow label="Timezone">
-          <select
-            className={settingsControlClass}
+        <div className="settings-fields-grid">
+          <SettingsSelectField
+            id="display-timezone"
+            label="Timezone"
             value={value.displayPreferences.timezone || 'IST, +5:30, Kolkata, India'}
             onChange={(event) => updateDisplay({ timezone: event.target.value })}
           >
@@ -205,11 +210,10 @@ export function PlatformSettingsPanel({ value, onChange }: PlatformSettingsPanel
                 {option}
               </option>
             ))}
-          </select>
-        </SettingsFieldRow>
-        <SettingsFieldRow label="Date & Time Format">
-          <select
-            className={settingsControlClass}
+          </SettingsSelectField>
+          <SettingsSelectField
+            id="display-date-format"
+            label="Date & Time Format"
             value={value.displayPreferences.dateTimeFormat || 'DD/MM/YY'}
             onChange={(event) => updateDisplay({ dateTimeFormat: event.target.value })}
           >
@@ -218,11 +222,10 @@ export function PlatformSettingsPanel({ value, onChange }: PlatformSettingsPanel
                 {option}
               </option>
             ))}
-          </select>
-        </SettingsFieldRow>
-        <SettingsFieldRow label="Default Currency">
-          <select
-            className={settingsControlClass}
+          </SettingsSelectField>
+          <SettingsSelectField
+            id="display-currency"
+            label="Default Currency"
             value={value.displayPreferences.defaultCurrency || '$ USD'}
             onChange={(event) => updateDisplay({ defaultCurrency: event.target.value })}
           >
@@ -231,11 +234,10 @@ export function PlatformSettingsPanel({ value, onChange }: PlatformSettingsPanel
                 {option}
               </option>
             ))}
-          </select>
-        </SettingsFieldRow>
-        <SettingsFieldRow label="Language Settings">
-          <select
-            className={settingsControlClass}
+          </SettingsSelectField>
+          <SettingsSelectField
+            id="display-language"
+            label="Language Settings"
             value={value.displayPreferences.language || 'English'}
             onChange={(event) => updateDisplay({ language: event.target.value })}
           >
@@ -244,17 +246,18 @@ export function PlatformSettingsPanel({ value, onChange }: PlatformSettingsPanel
                 {option}
               </option>
             ))}
-          </select>
-        </SettingsFieldRow>
+          </SettingsSelectField>
+        </div>
       </SettingsSectionCard>
 
       <SettingsSectionCard
         title="General Settings"
         description="Configure system behavior and maintenance options"
       >
-        <SettingsFieldRow label="Auto-Refresh Interval">
-          <select
-            className={settingsControlClass}
+        <div className="settings-fields-grid">
+          <SettingsSelectField
+            id="general-refresh-interval"
+            label="Auto-Refresh Interval"
             value={value.generalSettings.autoRefreshInterval}
             onChange={(event) => updateGeneral({ autoRefreshInterval: event.target.value })}
           >
@@ -263,11 +266,10 @@ export function PlatformSettingsPanel({ value, onChange }: PlatformSettingsPanel
                 {option}
               </option>
             ))}
-          </select>
-        </SettingsFieldRow>
-        <SettingsFieldRow label="Default Export Format">
-          <select
-            className={settingsControlClass}
+          </SettingsSelectField>
+          <SettingsSelectField
+            id="general-export-format"
+            label="Default Export Format"
             value={exportFormat}
             onChange={(event) =>
               updateGeneral({
@@ -280,12 +282,13 @@ export function PlatformSettingsPanel({ value, onChange }: PlatformSettingsPanel
                 {option}
               </option>
             ))}
-          </select>
-        </SettingsFieldRow>
+          </SettingsSelectField>
+        </div>
         <SettingsToggleRow
           label="Maintenance Mode"
-          description="When enabled, admin login and APIs are blocked for all users"
+          description="Enable or disable system maintenance mode"
           checked={value.generalSettings.maintenanceMode}
+          boxed
           onChange={(checked) => {
             if (checked) {
               setScheduleOpen(true)
@@ -298,10 +301,9 @@ export function PlatformSettingsPanel({ value, onChange }: PlatformSettingsPanel
             })
             toast.success('Maintenance mode disabled (save to apply)')
           }}
-          className="rounded-lg border border-white/10 bg-[#0D0D0D] px-3"
         />
         {value.generalSettings.maintenanceMode || value.generalSettings.maintenanceStartAt ? (
-          <div className="rounded-lg border border-white/10 bg-[#0D0D0D] px-3 py-3 text-xs text-slate-400">
+          <div className="settings-maintenance-info">
             <p>
               Window:{' '}
               {value.generalSettings.maintenanceStartAt
@@ -324,16 +326,16 @@ export function PlatformSettingsPanel({ value, onChange }: PlatformSettingsPanel
             </button>
           </div>
         ) : null}
-        <SettingsFieldRow label="Custom Error Messages">
-          <div className="grid gap-2 sm:grid-cols-[1fr_auto] sm:items-start">
+        <SettingsStackedField label="Custom Error Messages">
+          <div className="settings-error-message-row">
             <textarea
-              className="bg-brand-surface min-h-[88px] w-full rounded-lg border border-white/10 px-3 py-2 text-sm text-white outline-none focus:ring-1 focus:ring-white/20"
+              className="settings-error-message-field"
               value={value.generalSettings.customErrorMessage}
               onChange={(event) => updateGeneral({ customErrorMessage: event.target.value })}
             />
             <Button
-              variant="secondary"
-              className="h-10 shrink-0"
+              variant="primary"
+              className="settings-choose-template-btn"
               onClick={() => {
                 void ensureTemplatesLoaded()
                 setErrorTemplateOpen(true)
@@ -342,55 +344,32 @@ export function PlatformSettingsPanel({ value, onChange }: PlatformSettingsPanel
               {templatesQuery.isLoading ? 'Loading…' : 'Choose Template'}
             </Button>
           </div>
-        </SettingsFieldRow>
-        <SettingsFieldRow label="Support Email">
-          <input
-            className={settingsControlClass}
+        </SettingsStackedField>
+        <div className="settings-fields-grid">
+          <SettingsInputField
+            id="general-support-email"
+            label="Support Email"
             value={value.generalSettings.supportEmail}
             onChange={(event) => updateGeneral({ supportEmail: event.target.value })}
           />
-        </SettingsFieldRow>
-        <SettingsFieldRow label="Support Phone Number">
-          <input
-            className={settingsControlClass}
+          <SettingsInputField
+            id="general-support-phone"
+            label="Support Phone Number"
             value={value.generalSettings.supportPhone}
             onChange={(event) => updateGeneral({ supportPhone: event.target.value })}
           />
-        </SettingsFieldRow>
-        <div className="space-y-3 border-t border-white/5 pt-4">
-          <p className="text-sm font-medium text-white">Policy Management</p>
-          <div className="grid gap-2 sm:grid-cols-2">
-            {[
-              {
-                label: 'User Application Policy',
-                to: '/settings/policies?application=user',
-                disabled: true,
-              },
-              {
-                label: 'Expert Application Policy',
-                to: '/settings/policies?application=expert',
-              },
-            ].map((item) => (
-              <div
-                key={item.label}
-                className="flex items-center justify-between rounded-lg border border-white/5 bg-[#141414] px-4 py-3"
-              >
-                <span className="text-sm text-slate-300">{item.label}</span>
-                <Button
-                  variant="secondary"
-                  disabled={item.disabled}
-                  onClick={() => {
-                    if (item.disabled) {
-                      toast.message('User application policies are not enabled yet')
-                      return
-                    }
-                    navigate(item.to)
-                  }}
-                >
-                  View
-                </Button>
-              </div>
-            ))}
+        </div>
+        <div className="settings-policy-section">
+          <p className="settings-field-label">Policy Management</p>
+          <div className="settings-policy-block">
+            <span className="settings-policy-label">Expert Application Policy</span>
+            <Button
+              variant="primary"
+              className="settings-policy-view-btn"
+              onClick={() => navigate('/settings/policies?application=expert')}
+            >
+              View
+            </Button>
           </div>
         </div>
       </SettingsSectionCard>

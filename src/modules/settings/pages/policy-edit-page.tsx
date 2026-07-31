@@ -109,22 +109,32 @@ export function PolicyEditPage() {
 
   return (
     <div className="space-y-6">
-      <SectionHeader title="Settings" subtitle="Update expert application policy" />
-      <PolicySettingsTopTabs activeKey="expert" />
+      <SectionHeader
+        title="Settings"
+        subtitle="Track revenue, payouts, and financial performance"
+        actions={[
+          {
+            label: 'Settings Logs',
+            onClick: () => navigate('/settings/logs'),
+            variant: 'secondary',
+          },
+        ]}
+      />
+      <PolicySettingsTopTabs activeKey="platform" />
 
-      <div className="bg-brand-bg space-y-4 rounded-2xl border border-white/10 p-4 sm:p-5">
-        <PolicyBreadcrumb segments={['Platform Control', 'Policy Management', policy.title]} />
-        <PolicyEditorForm
-          mode="update"
-          isActive={policy.status === 'Active'}
-          values={values}
-          onChange={updateValues}
-        />
-      </div>
+      <PolicyBreadcrumb segments={['Platform Control', 'Policy Management', policy.title]} />
 
-      <div className="bg-brand-bg flex flex-col gap-3 rounded-xl border border-white/10 px-3 py-2.5 sm:flex-row sm:items-center sm:justify-between">
+      <PolicyEditorForm
+        mode="update"
+        isActive={policy.status === 'Active'}
+        values={values}
+        onChange={updateValues}
+      />
+
+      <div className="settings-page-footer">
         <Button
           variant="secondary"
+          className="settings-page-footer-reset"
           onClick={() => {
             setValues(initialValues)
             navigate(policyListPath(application))
@@ -132,15 +142,21 @@ export function PolicyEditPage() {
         >
           Reset
         </Button>
-        <div className="flex flex-wrap justify-end gap-2">
+        <div className="policy-page-footer-actions">
           <Button
-            variant="secondary"
+            variant="ghost"
             disabled={createVersionMutation.isPending}
             onClick={() => handleSave('Draft')}
+            className="policy-page-footer-draft"
           >
             Save Draft
           </Button>
-          <Button disabled={createVersionMutation.isPending} onClick={() => handleSave('Active')}>
+          <Button
+            variant="primary"
+            disabled={createVersionMutation.isPending}
+            onClick={() => handleSave('Active')}
+            className="settings-page-footer-save"
+          >
             Save Changes
           </Button>
         </div>

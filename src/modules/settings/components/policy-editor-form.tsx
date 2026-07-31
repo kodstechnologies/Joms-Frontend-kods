@@ -1,6 +1,8 @@
+import { Bold, Calendar, ChevronDown, Italic, Strikethrough, Underline } from 'lucide-react'
+
 import { cn } from '@/shared/lib/cn'
 
-import type { PolicyEditorValues } from '../utils/policy-form'
+import { formatPolicyDateUs, toDateInputValue, type PolicyEditorValues } from '../utils/policy-form'
 
 type PolicyEditorFormProps = {
   values: PolicyEditorValues
@@ -10,61 +12,78 @@ type PolicyEditorFormProps = {
   isActive?: boolean
 }
 
-function SectionCard({
+function PolicySectionCard({
   title,
   description,
+  headerRight,
   children,
   className,
 }: {
   title: string
   description?: string
+  headerRight?: React.ReactNode
   children: React.ReactNode
   className?: string
 }) {
   return (
-    <section
-      className={cn('bg-brand-surface space-y-4 rounded-xl border border-white/10 p-4', className)}
-    >
-      <div>
-        <p className="text-body-md-semibold text-white">{title}</p>
-        {description ? <p className="text-body-sm text-muted mt-1">{description}</p> : null}
+    <section className={cn('policy-section-card', className)}>
+      <div
+        className={cn(
+          'policy-section-card-header',
+          description && 'policy-section-card-header--with-description',
+        )}
+      >
+        <div className="policy-section-card-heading">
+          <h3 className="settings-section-card-title">{title}</h3>
+          {description ? <p className="settings-section-description">{description}</p> : null}
+        </div>
+        {headerRight}
       </div>
-      {children}
+      <div className="policy-section-card-body">{children}</div>
     </section>
   )
 }
 
-function ToggleCard({
+function PolicyConsentCard({
   checked,
   title,
   description,
+  highlightWhenChecked = false,
   onChange,
 }: {
   checked: boolean
   title: string
   description: string
+  highlightWhenChecked?: boolean
   onChange: (checked: boolean) => void
 }) {
+  const isHighlighted = checked && highlightWhenChecked
+
   return (
-    <label
-      className={cn(
-        'flex cursor-pointer items-start gap-3 rounded-xl border px-4 py-3 transition-colors',
-        checked
-          ? 'border-brand-accent/50 bg-brand-accent/10'
-          : 'bg-brand-bg border-white/10 hover:border-white/20',
-      )}
-    >
+    <label className={cn('policy-consent-card', isHighlighted && 'policy-consent-card--checked')}>
       <input
         type="checkbox"
         checked={checked}
         onChange={(event) => onChange(event.target.checked)}
-        className="border-brand-accent bg-brand-bg text-brand-accent focus:ring-brand-accent mt-1 size-4 rounded"
+        className={cn(
+          'policy-choice-checkbox',
+          isHighlighted ? 'policy-choice-checkbox--gold' : 'policy-choice-checkbox--dark',
+        )}
       />
-      <span>
-        <span className="text-body-sm-medium block text-white">{title}</span>
-        <span className="text-body-sm text-muted mt-0.5 block">{description}</span>
+      <span className="policy-consent-copy">
+        <span className="settings-toggle-title">{title}</span>
+        <span className="settings-toggle-description">{description}</span>
       </span>
     </label>
+  )
+}
+
+function PolicyField({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="settings-field-stack">
+      <label className="settings-field-label">{label}</label>
+      {children}
+    </div>
   )
 }
 
@@ -75,105 +94,123 @@ export function PolicyEditorForm({
   showSlug = false,
   isActive = false,
 }: PolicyEditorFormProps) {
-  return (
-    <div className="space-y-4">
-      <SectionCard title="Policy Information">
-        <div className="flex items-center justify-end">
-          {isActive ? (
-            <span className="border-brand-positive/30 bg-brand-positive/10 text-body-sm text-brand-positive rounded-full border px-2.5 py-0.5 font-semibold">
-              Active
-            </span>
-          ) : null}
-        </div>
+  const displayedEffectiveDate =
+    values.effectiveTiming === 'today'
+      ? formatPolicyDateUs(new Date())
+      : formatPolicyDateUs(values.futureEffectiveDate || toDateInputValue(new Date()))
 
-        <div className="grid gap-3 sm:grid-cols-2">
-          <div>
-            <label className="text-body-sm text-muted mb-1 block">Policy Name</label>
+  return (
+    <div className="policy-editor-form">
+      <PolicySectionCard
+        title="Policy Information"
+        headerRight={isActive ? <span className="policy-active-badge">Active</span> : null}
+      >
+        <div className="settings-fields-grid">
+          <PolicyField label="Policy Name">
             <input
               value={values.title}
               onChange={(event) => onChange({ title: event.target.value })}
-              className="ui-input"
+              className="settings-field-input"
             />
-          </div>
+          </PolicyField>
           {showSlug ? (
-            <div>
-              <label className="text-body-sm text-muted mb-1 block">Slug</label>
+            <PolicyField label="Slug">
               <input
                 value={values.slug}
                 onChange={(event) => onChange({ slug: event.target.value })}
-                className="ui-input"
+                className="settings-field-input"
               />
-            </div>
+            </PolicyField>
           ) : null}
-          <div>
-            <label className="text-body-sm text-muted mb-1 block">Effective Since</label>
-            <input value={values.effectiveSince} readOnly className="ui-input opacity-80" />
-          </div>
+          <PolicyField label="Effective Since">
+            <input value={values.effectiveSince} readOnly className="settings-field-input" />
+          </PolicyField>
           {mode === 'update' ? (
             <>
-              <div>
-                <label className="text-body-sm text-muted mb-1 block">Current Version</label>
-                <input value={values.currentVersion} readOnly className="ui-input opacity-80" />
-              </div>
-              <div>
-                <label className="text-body-sm text-muted mb-1 block">New Version</label>
+              <PolicyField label="Current Version">
+                <input value={values.currentVersion} readOnly className="settings-field-input" />
+              </PolicyField>
+              <PolicyField label="New Version">
                 <input
                   value={values.newVersion}
                   onChange={(event) => onChange({ newVersion: event.target.value })}
-                  className="ui-input"
+                  className="settings-field-input"
                 />
-              </div>
+              </PolicyField>
             </>
           ) : (
-            <div>
-              <label className="text-body-sm text-muted mb-1 block">Version</label>
+            <PolicyField label="Version">
               <input
                 value={values.newVersion}
                 onChange={(event) => onChange({ newVersion: event.target.value })}
-                className="ui-input"
+                className="settings-field-input"
               />
-            </div>
+            </PolicyField>
           )}
         </div>
 
-        <div>
-          <label className="text-body-sm text-muted mb-1 block">Policy Content</label>
-          <textarea
-            rows={8}
-            value={values.content}
-            onChange={(event) => onChange({ content: event.target.value })}
-            placeholder="Enter Policy Content Here..."
-            className="ui-textarea"
-          />
-        </div>
-      </SectionCard>
+        <PolicyField label="Policy Content">
+          <div className="policy-content-editor">
+            <div className="policy-content-toolbar">
+              <div className="policy-content-toolbar-select-wrap">
+                <select className="policy-content-toolbar-select" defaultValue="normal">
+                  <option value="normal">Normal</option>
+                  <option value="heading">Heading</option>
+                </select>
+                <ChevronDown className="policy-content-toolbar-select-icon" aria-hidden />
+              </div>
+              <span className="policy-content-toolbar-divider" aria-hidden />
+              <button type="button" className="policy-content-toolbar-btn" aria-label="Bold">
+                <Bold className="size-4" />
+              </button>
+              <button type="button" className="policy-content-toolbar-btn" aria-label="Italic">
+                <Italic className="size-4" />
+              </button>
+              <button type="button" className="policy-content-toolbar-btn" aria-label="Underline">
+                <Underline className="size-4" />
+              </button>
+              <button
+                type="button"
+                className="policy-content-toolbar-btn"
+                aria-label="Strikethrough"
+              >
+                <Strikethrough className="size-4" />
+              </button>
+            </div>
+            <textarea
+              rows={8}
+              value={values.content}
+              onChange={(event) => onChange({ content: event.target.value })}
+              placeholder="Enter Policy Content Here..."
+              className="policy-content-textarea"
+            />
+          </div>
+        </PolicyField>
+      </PolicySectionCard>
 
-      <SectionCard
+      <PolicySectionCard
         title="Summary Of What Was Changed"
         description="Explain what changed in this version. This is used for internal audit, legal traceability, and user communications."
-        className="border-brand-accent/30"
       >
         <textarea
           rows={3}
           value={values.changeSummary}
           onChange={(event) => onChange({ changeSummary: event.target.value })}
           placeholder="Added GDPR compliance clauses, updated data retention policy..."
-          className="ui-textarea"
+          className="settings-field-textarea policy-summary-textarea"
         />
-        <p className="text-body-sm text-muted">This field is required before publishing.</p>
-      </SectionCard>
+        <p className="policy-required-note">This field is required before publishing.</p>
+      </PolicySectionCard>
 
-      <SectionCard
+      <PolicySectionCard
         title="Version & Effective Date"
         description="Important: Effective date ≠ publish date. This controls when the new rules actually apply."
       >
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="policy-timing-grid">
           <label
             className={cn(
-              'cursor-pointer rounded-xl border px-4 py-3 transition-colors',
-              values.effectiveTiming === 'today'
-                ? 'border-brand-accent/50 bg-brand-accent/10'
-                : 'bg-brand-bg border-white/10',
+              'policy-timing-card',
+              values.effectiveTiming === 'today' && 'policy-timing-card--selected',
             )}
           >
             <input
@@ -181,19 +218,19 @@ export function PolicyEditorForm({
               name="effectiveTiming"
               checked={values.effectiveTiming === 'today'}
               onChange={() => onChange({ effectiveTiming: 'today' })}
-              className="sr-only"
+              className="policy-choice-radio"
             />
-            <span className="text-body-sm-medium block text-white">Today</span>
-            <span className="text-body-sm text-muted mt-0.5 block">
-              Takes effect immediately upon publish.
+            <span className="policy-timing-copy">
+              <span className="settings-toggle-title">Today</span>
+              <span className="settings-toggle-description">
+                Takes effect immediately upon publish.
+              </span>
             </span>
           </label>
           <label
             className={cn(
-              'cursor-pointer rounded-xl border px-4 py-3 transition-colors',
-              values.effectiveTiming === 'future'
-                ? 'border-brand-accent/50 bg-brand-accent/10'
-                : 'bg-brand-bg border-white/10',
+              'policy-timing-card',
+              values.effectiveTiming === 'future' && 'policy-timing-card--selected',
             )}
           >
             <input
@@ -201,37 +238,51 @@ export function PolicyEditorForm({
               name="effectiveTiming"
               checked={values.effectiveTiming === 'future'}
               onChange={() => onChange({ effectiveTiming: 'future' })}
-              className="sr-only"
+              className="policy-choice-radio"
             />
-            <span className="text-body-sm-medium block text-white">Future Date</span>
-            <span className="text-body-sm text-muted mt-0.5 block">Schedule for later.</span>
+            <span className="policy-timing-copy">
+              <span className="settings-toggle-title">Future Date</span>
+              <span className="settings-toggle-description">Schedule for later.</span>
+            </span>
           </label>
         </div>
-        {values.effectiveTiming === 'future' ? (
-          <div>
-            <label className="text-body-sm text-muted mb-1 block">Scheduled Effective Date</label>
-            <input
-              type="date"
-              value={values.futureEffectiveDate}
-              onChange={(event) => onChange({ futureEffectiveDate: event.target.value })}
-              className="ui-input"
-            />
-          </div>
-        ) : null}
-      </SectionCard>
 
-      <SectionCard
+        <div className="policy-date-field-wrap">
+          <span className="policy-date-display">{displayedEffectiveDate}</span>
+          <input
+            type="date"
+            value={
+              values.effectiveTiming === 'today'
+                ? toDateInputValue(new Date())
+                : values.futureEffectiveDate
+            }
+            onChange={(event) => {
+              onChange({
+                futureEffectiveDate: event.target.value,
+                effectiveTiming: 'future',
+              })
+            }}
+            disabled={values.effectiveTiming === 'today'}
+            className="policy-date-input"
+            aria-label="Effective date"
+          />
+          <Calendar className="policy-date-icon" aria-hidden />
+        </div>
+      </PolicySectionCard>
+
+      <PolicySectionCard
         title="User Re-Consent Settings"
         description="Control whether users must accept the updated policy. This makes the policy change legally enforceable."
       >
-        <div className="space-y-3">
-          <ToggleCard
+        <div className="policy-consent-stack">
+          <PolicyConsentCard
             checked={values.requireReConsent}
+            highlightWhenChecked
             title="Require users to re-accept this policy"
             description="Users must click 'I Accept' before continuing to use the platform."
             onChange={(checked) => onChange({ requireReConsent: checked })}
           />
-          <ToggleCard
+          <PolicyConsentCard
             checked={values.blockAppUsageUntilAccepted}
             title="Block app usage until accepted"
             description="Users cannot use the app until they accept. Use for critical policy changes."
@@ -239,9 +290,9 @@ export function PolicyEditorForm({
           />
         </div>
 
-        <div className="space-y-2 border-t border-white/5 pt-4">
-          <p className="text-body-sm-medium text-white">Notify User Via</p>
-          <div className="grid gap-2 sm:grid-cols-3">
+        <div className="policy-notify-section">
+          <p className="settings-toggle-title">Notify User Via:</p>
+          <div className="policy-notify-grid">
             {(
               [
                 ['email', 'Email Notification'],
@@ -249,10 +300,7 @@ export function PolicyEditorForm({
                 ['push', 'Push Notification'],
               ] as const
             ).map(([key, label]) => (
-              <label
-                key={key}
-                className="bg-brand-bg flex items-center gap-2 rounded-lg border border-white/10 px-3 py-2"
-              >
+              <label key={key} className="policy-notify-option">
                 <input
                   type="checkbox"
                   checked={values.notifyVia[key]}
@@ -261,14 +309,14 @@ export function PolicyEditorForm({
                       notifyVia: { ...values.notifyVia, [key]: event.target.checked },
                     })
                   }
-                  className="border-brand-accent bg-brand-bg text-brand-accent size-4 rounded"
+                  className="policy-choice-checkbox policy-choice-checkbox--notify"
                 />
-                <span className="text-body-sm text-white">{label}</span>
+                <span className="policy-notify-label">{label}</span>
               </label>
             ))}
           </div>
         </div>
-      </SectionCard>
+      </PolicySectionCard>
     </div>
   )
 }

@@ -34,6 +34,15 @@ export const formatPolicyDate = (value: Date) => {
   return `${day}/${month}/${year}`
 }
 
+export const formatPolicyDateUs = (value: Date | string) => {
+  const date =
+    typeof value === 'string' ? new Date(value.includes('T') ? value : `${value}T00:00:00`) : value
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  const year = date.getFullYear()
+  return `${month}/${day}/${year}`
+}
+
 export const toDateInputValue = (value: Date) => {
   const year = value.getFullYear()
   const month = String(value.getMonth() + 1).padStart(2, '0')

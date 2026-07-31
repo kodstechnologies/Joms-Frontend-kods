@@ -6,6 +6,7 @@ type SettingsToggleRowProps = {
   checked: boolean
   onChange: (checked: boolean) => void
   indented?: boolean
+  boxed?: boolean
   className?: string
 }
 
@@ -15,19 +16,23 @@ export function SettingsToggleRow({
   checked,
   onChange,
   indented = false,
+  boxed = false,
   className,
 }: SettingsToggleRowProps) {
   return (
     <div
       className={cn(
-        'flex items-start justify-between gap-4 border-b border-white/5 py-3 last:border-b-0',
+        'flex items-center justify-between gap-4',
+        boxed
+          ? 'settings-maintenance-row'
+          : 'items-start border-b border-white/5 py-3 last:border-b-0',
         indented && 'ml-4 border-l border-white/10 pl-4',
         className,
       )}
     >
       <div className="min-w-0 space-y-1">
-        <p className="text-sm font-medium text-white">{label}</p>
-        {description ? <p className="text-xs text-slate-500">{description}</p> : null}
+        <p className={boxed ? 'settings-toggle-title' : 'settings-field-label'}>{label}</p>
+        {description ? <p className="settings-toggle-description">{description}</p> : null}
       </div>
       <button
         type="button"
@@ -35,7 +40,7 @@ export function SettingsToggleRow({
         aria-checked={checked}
         onClick={() => onChange(!checked)}
         className={cn(
-          'relative mt-0.5 h-6 w-11 shrink-0 rounded-full transition-colors',
+          'relative h-6 w-11 shrink-0 rounded-full transition-colors',
           checked ? 'bg-emerald-500' : 'bg-white/15',
         )}
       >

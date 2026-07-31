@@ -15,14 +15,12 @@ export function SettingsSectionCard({
   children,
 }: SettingsSectionCardProps) {
   return (
-    <section
-      className={cn('rounded-2xl border border-white/10 bg-[#111111] p-5 sm:p-6', className)}
-    >
-      <div className="mb-5 space-y-1 border-b border-white/10 pb-4">
-        <h2 className="text-lg font-semibold text-white">{title}</h2>
-        {description ? <p className="text-sm text-slate-400">{description}</p> : null}
+    <section className={cn('settings-section-card', className)}>
+      <div className="settings-section-card-header space-y-1">
+        <h2 className="settings-section-card-title">{title}</h2>
+        {description ? <p className="settings-section-description text-sm">{description}</p> : null}
       </div>
-      <div className="space-y-4">{children}</div>
+      <div className="settings-section-card-body">{children}</div>
     </section>
   )
 }
