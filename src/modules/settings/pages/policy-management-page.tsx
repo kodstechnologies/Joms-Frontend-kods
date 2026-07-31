@@ -38,13 +38,13 @@ const POLICY_SETTINGS_TABS: Array<{
   { key: 'service', label: 'Service Marketplace', routeTab: 'service' },
 ]
 
-function PolicySettingsTopTabs({ activeKey = 'service' }: { activeKey?: string }) {
+function PolicySettingsTopTabs({ activeKey = 'platform' }: { activeKey?: string }) {
   const navigate = useNavigate()
 
   return (
-    <div className="bg-brand-surface rounded-xl border border-white/10 p-2">
-      <div className="bg-brand-bg [scrollbar-width:none] overflow-x-auto rounded-lg p-1 [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-        <div className="flex w-max min-w-full gap-1">
+    <div className="settings-top-tabs">
+      <div className="settings-top-tabs-scroll">
+        <div className="settings-top-tabs-row">
           {POLICY_SETTINGS_TABS.map((item) => (
             <button
               key={item.key}
@@ -55,10 +55,8 @@ function PolicySettingsTopTabs({ activeKey = 'service' }: { activeKey?: string }
                 }
               }}
               className={cn(
-                'text-body-sm shrink-0 rounded-md px-3 py-1.5 font-medium whitespace-nowrap transition-colors',
-                item.key === activeKey
-                  ? 'bg-brand-surface border border-white/20 text-white'
-                  : 'text-muted hover:text-white',
+                'settings-top-tab',
+                item.key === activeKey && 'settings-top-tab--active',
               )}
             >
               {item.label}
@@ -490,37 +488,53 @@ export function PolicyDetailPage() {
 
   return (
     <div className="space-y-6">
-      <SectionHeader title="Settings" subtitle="Update expert application policy" />
-      <PolicySettingsTopTabs activeKey="expert" />
+      <SectionHeader
+        title="Settings"
+        subtitle="Track revenue, payouts, and financial performance"
+        actions={[
+          {
+            label: 'Settings Logs',
+            onClick: () => navigate('/settings/logs'),
+            variant: 'secondary',
+          },
+        ]}
+      />
+      <PolicySettingsTopTabs activeKey="platform" />
 
-      <div className="bg-brand-bg space-y-4 rounded-2xl border border-white/10 p-4">
-        <p className="text-body-sm text-muted">
-          Platform Control / Policy Management / {policy.title}
-        </p>
-        <PolicyEditorForm
-          mode="update"
-          isActive={policy.status === 'Active'}
-          values={values}
-          onChange={updateValues}
-        />
-      </div>
+      <p className="policy-page-breadcrumb">
+        Platform Control / Policy Management / {policy.title}
+      </p>
 
-      <div className="bg-brand-bg flex justify-between rounded-xl border border-white/10 px-3 py-2.5">
+      <PolicyEditorForm
+        mode="update"
+        isActive={policy.status === 'Active'}
+        values={values}
+        onChange={updateValues}
+      />
+
+      <div className="settings-page-footer">
         <Button
           variant="secondary"
-          onClick={() => navigate('/settings/policies?application=expert')}
+          className="settings-page-footer-reset"
+          onClick={() => setValues(initialValues)}
         >
           Reset
         </Button>
-        <div className="flex gap-3">
+        <div className="policy-page-footer-actions">
           <Button
-            variant="secondary"
+            variant="ghost"
             disabled={createVersionMutation.isPending}
             onClick={() => handleSave('Draft')}
+            className="policy-page-footer-draft"
           >
             Save Draft
           </Button>
-          <Button disabled={createVersionMutation.isPending} onClick={() => handleSave('Active')}>
+          <Button
+            variant="primary"
+            disabled={createVersionMutation.isPending}
+            onClick={() => handleSave('Active')}
+            className="settings-page-footer-save"
+          >
             Save Changes
           </Button>
         </div>

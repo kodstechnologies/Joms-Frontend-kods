@@ -3,13 +3,13 @@ import { useNavigate } from 'react-router-dom'
 import { POLICY_SETTINGS_TABS } from '../utils/policy-navigation'
 import { cn } from '@/shared/lib/cn'
 
-export function PolicySettingsTopTabs({ activeKey = 'expert' }: { activeKey?: string }) {
+export function PolicySettingsTopTabs({ activeKey = 'platform' }: { activeKey?: string }) {
   const navigate = useNavigate()
 
   return (
-    <div className="bg-brand-surface rounded-xl border border-white/10 p-2">
-      <div className="bg-brand-bg overflow-x-auto rounded-lg p-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        <div className="flex w-max min-w-full gap-1">
+    <div className="settings-top-tabs">
+      <div className="settings-top-tabs-scroll">
+        <div className="settings-top-tabs-row">
           {POLICY_SETTINGS_TABS.map((item) => (
             <button
               key={item.key}
@@ -20,10 +20,8 @@ export function PolicySettingsTopTabs({ activeKey = 'expert' }: { activeKey?: st
                 }
               }}
               className={cn(
-                'text-body-sm shrink-0 rounded-md px-3 py-1.5 font-medium whitespace-nowrap transition-colors',
-                item.key === activeKey
-                  ? 'bg-brand-surface border border-white/20 text-white'
-                  : 'text-muted hover:text-white',
+                'settings-top-tab',
+                item.key === activeKey && 'settings-top-tab--active',
               )}
             >
               {item.label}
@@ -36,5 +34,5 @@ export function PolicySettingsTopTabs({ activeKey = 'expert' }: { activeKey?: st
 }
 
 export function PolicyBreadcrumb({ segments }: { segments: string[] }) {
-  return <p className="text-body-sm text-muted">{segments.join(' / ')}</p>
+  return <p className="policy-page-breadcrumb">{segments.join(' / ')}</p>
 }

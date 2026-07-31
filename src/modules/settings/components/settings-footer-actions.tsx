@@ -18,19 +18,20 @@ export function SettingsFooterActions({
   resetDisabled = false,
 }: SettingsFooterActionsProps) {
   return (
-    <div className="flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-[#111111] px-3 py-2.5">
+    <div className="settings-page-footer">
       <Button
         variant="secondary"
         onClick={onReset}
         disabled={resetDisabled || isResetting || isSaving}
-        className="h-8 border-white/20 bg-transparent px-4 text-xs"
+        className="settings-page-footer-reset"
       >
         {isResetting ? 'Resetting...' : 'Reset'}
       </Button>
       <Button
+        variant="primary"
         onClick={onSave}
         disabled={saveDisabled || isSaving || isResetting}
-        className="h-8 min-w-[132px] px-5 text-xs"
+        className="settings-page-footer-save"
       >
         {isSaving ? 'Saving...' : 'Save Changes'}
       </Button>

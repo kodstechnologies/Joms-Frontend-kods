@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { X } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Clock, X } from 'lucide-react'
 import { createPortal } from 'react-dom'
 
 import { cn } from '@/shared/lib/cn'
@@ -11,6 +11,22 @@ type ScheduleMaintenanceModalProps = {
   onClose: () => void
   onSubmit: (payload: { startAt: string; endAt: string }) => void
 }
+
+const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+const MONTHS = [
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
+]
 
 const HOURS = [
   '12 AM',
@@ -52,10 +68,10 @@ function toDateInputValue(iso?: string | null) {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
 }
 
-function toHourLabel(iso?: string | null) {
-  if (!iso) return '7 PM'
+function toHourLabel(iso?: string | null, fallback = '7 PM') {
+  if (!iso) return fallback
   const date = new Date(iso)
-  if (Number.isNaN(date.getTime())) return '7 PM'
+  if (Number.isNaN(date.getTime())) return fallback
   const hours = date.getHours()
   const suffix = hours >= 12 ? 'PM' : 'AM'
   const hour12 = hours % 12 || 12
@@ -91,8 +107,96 @@ function formatDisplayTime(hourLabel: string, minute: string) {
   return `${pad(Number(hour))}:${minute} ${meridian}`
 }
 
+function formatDisplayDate(dateValue: string) {
+  if (!dateValue) return ''
+  const [year, month, day] = dateValue.split('-').map(Number)
+  const date = new Date(year, month - 1, day)
+  if (Number.isNaN(date.getTime())) return dateValue
+  return date.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  })
+}
+
 function todayInputValue() {
   return toDateInputValue(new Date().toISOString())
+}
+
+function getCalendarDays(year: number, month: number) {
+  const firstDay = new Date(year, month, 1)
+  const lastDay = new Date(year, month + 1, 0)
+  const startPadding = (firstDay.getDay() + 6) % 7
+  const days: Array<number | null> = Array.from({ length: startPadding }, () => null)
+
+  for (let day = 1; day <= lastDay.getDate(); day += 1) {
+    days.push(day)
+  }
+
+  while (days.length % 7 !== 0) {
+    days.push(null)
+  }
+
+  return days
+}
+
+function dateFromParts(year: number, month: number, day: number) {
+  return `${year}-${pad(month + 1)}-${pad(day)}`
+}
+
+function TimePickerPanel({
+  activeHour,
+  activeMinute,
+  onHourChange,
+  onMinuteChange,
+}: {
+  activeHour: string
+  activeMinute: string
+  onHourChange: (hour: string) => void
+  onMinuteChange: (minute: string) => void
+}) {
+  return (
+    <div className="schedule-maintenance-time-picker">
+      <div className="schedule-maintenance-time-picker-header">
+        <span className="schedule-maintenance-time-picker-header-cell">Hours</span>
+        <span className="schedule-maintenance-time-picker-header-divider" aria-hidden />
+        <span className="schedule-maintenance-time-picker-header-cell">Mins</span>
+      </div>
+      <div className="schedule-maintenance-time-picker-body">
+        <div className="schedule-maintenance-time-list">
+          {HOURS.map((hour) => (
+            <button
+              key={hour}
+              type="button"
+              onClick={() => onHourChange(hour)}
+              className={cn(
+                'schedule-maintenance-time-option',
+                activeHour === hour && 'schedule-maintenance-time-option-active',
+              )}
+            >
+              {hour}
+            </button>
+          ))}
+        </div>
+        <span className="schedule-maintenance-time-picker-body-divider" aria-hidden />
+        <div className="schedule-maintenance-time-list">
+          {MINS.map((minute) => (
+            <button
+              key={minute}
+              type="button"
+              onClick={() => onMinuteChange(minute)}
+              className={cn(
+                'schedule-maintenance-time-option',
+                activeMinute === minute && 'schedule-maintenance-time-option-active',
+              )}
+            >
+              {minute}
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
 }
 
 function ScheduleMaintenanceModalContent({
@@ -101,19 +205,25 @@ function ScheduleMaintenanceModalContent({
   onClose,
   onSubmit,
 }: Omit<ScheduleMaintenanceModalProps, 'open'>) {
-  const [startDate, setStartDate] = useState(
-    () => toDateInputValue(initialStartAt) || todayInputValue(),
-  )
-  const [endDate, setEndDate] = useState(() => toDateInputValue(initialEndAt) || todayInputValue())
+  const initialStartDate = toDateInputValue(initialStartAt) || todayInputValue()
+  const initialEndDate = toDateInputValue(initialEndAt) || todayInputValue()
+  const parsedStart = new Date(`${initialStartDate}T00:00:00`)
+
+  const [viewYear, setViewYear] = useState(() => parsedStart.getFullYear())
+  const [viewMonth, setViewMonth] = useState(() => parsedStart.getMonth())
+  const [startDate, setStartDate] = useState(initialStartDate)
+  const [endDate, setEndDate] = useState(initialEndDate)
   const [startHour, setStartHour] = useState(() => toHourLabel(initialStartAt))
-  const [endHour, setEndHour] = useState(() => toHourLabel(initialEndAt) || '8 PM')
+  const [endHour, setEndHour] = useState(() => toHourLabel(initialEndAt, '8 PM'))
   const [startMinute, setStartMinute] = useState(() => toMinuteValue(initialStartAt))
   const [endMinute, setEndMinute] = useState(() => toMinuteValue(initialEndAt))
-  const [picking, setPicking] = useState<'start' | 'end' | null>('start')
+  const [picking, setPicking] = useState<'start' | 'end'>('start')
   const [error, setError] = useState('')
 
-  const activeHour = picking === 'end' ? endHour : startHour
-  const activeMinute = picking === 'end' ? endMinute : startMinute
+  const calendarDays = useMemo(() => getCalendarDays(viewYear, viewMonth), [viewYear, viewMonth])
+
+  const rangeStart = startDate && endDate ? (startDate <= endDate ? startDate : endDate) : startDate
+  const rangeEnd = startDate && endDate ? (startDate <= endDate ? endDate : startDate) : ''
 
   const preview = useMemo(
     () => ({
@@ -123,14 +233,54 @@ function ScheduleMaintenanceModalContent({
     [startHour, startMinute, endHour, endMinute],
   )
 
+  const shiftMonth = (delta: number) => {
+    const next = new Date(viewYear, viewMonth + delta, 1)
+    setViewYear(next.getFullYear())
+    setViewMonth(next.getMonth())
+  }
+
+  const handleDayClick = (day: number) => {
+    const nextDate = dateFromParts(viewYear, viewMonth, day)
+
+    if (!startDate || (startDate && endDate)) {
+      setStartDate(nextDate)
+      setEndDate('')
+      setError('')
+      return
+    }
+
+    if (nextDate < startDate) {
+      setEndDate(startDate)
+      setStartDate(nextDate)
+    } else {
+      setEndDate(nextDate)
+    }
+    setError('')
+  }
+
+  const getDayClassName = (day: number) => {
+    const dateStr = dateFromParts(viewYear, viewMonth, day)
+    const isStart = Boolean(rangeStart && dateStr === rangeStart)
+    const isEnd = Boolean(rangeEnd && dateStr === rangeEnd)
+    const inRange = Boolean(rangeStart && rangeEnd) && dateStr > rangeStart && dateStr < rangeEnd
+
+    if (isStart && isEnd) return 'schedule-maintenance-calendar-day-range-single'
+    if (isStart) return 'schedule-maintenance-calendar-day-range-start'
+    if (isEnd) return 'schedule-maintenance-calendar-day-range-end'
+    if (inRange) return 'schedule-maintenance-calendar-day-in-range'
+    return ''
+  }
+
   const handleSubmit = () => {
-    if (!startDate || !endDate) {
+    const resolvedEndDate = endDate || startDate
+
+    if (!startDate || !resolvedEndDate) {
       setError('Please select start and end dates')
       return
     }
 
     const startAt = buildIso(startDate, startHour, startMinute)
-    const endAt = buildIso(endDate, endHour, endMinute)
+    const endAt = buildIso(resolvedEndDate, endHour, endMinute)
 
     if (new Date(endAt).getTime() <= new Date(startAt).getTime()) {
       setError('End date & time must be after start date & time')
@@ -140,137 +290,193 @@ function ScheduleMaintenanceModalContent({
     onSubmit({ startAt, endAt })
   }
 
+  const handleReset = () => {
+    const today = todayInputValue()
+    setViewYear(new Date().getFullYear())
+    setViewMonth(new Date().getMonth())
+    setStartDate(today)
+    setEndDate(today)
+    setStartHour('7 PM')
+    setEndHour('8 PM')
+    setStartMinute('00')
+    setEndMinute('00')
+    setPicking('start')
+    setError('')
+  }
+
   return createPortal(
     <div className="fixed inset-0 z-[130] flex items-center justify-center bg-black/70 p-4">
-      <div className="ui-modal-shell w-full max-w-[720px]">
-        <div className="ui-modal-header">
+      <div className="ui-modal-shell schedule-maintenance-modal-shell">
+        <div className="ui-modal-header schedule-maintenance-modal-header">
           <div>
-            <h2 className="text-h4 text-brand-text">Schedule Maintenance</h2>
-            <p className="text-body-sm text-muted mt-1">Enter Start date & End Date and time</p>
+            <h2 className="schedule-maintenance-modal-title">Schedule Maintenance</h2>
+            <p className="schedule-maintenance-modal-subtitle">
+              Enter Start date & End Date and time
+            </p>
           </div>
-          <button type="button" onClick={onClose} className="text-muted hover:text-brand-text">
+          <button type="button" onClick={onClose} className="schedule-maintenance-modal-close">
             <X className="icon-md" />
           </button>
         </div>
 
-        <div className="ui-modal-body grid gap-5 md:grid-cols-[1.1fr_0.9fr]">
-          <div className="space-y-3">
-            <label className="block space-y-2">
-              <span className="text-body-sm text-muted">Start Date</span>
-              <input
-                type="date"
-                value={startDate}
-                onChange={(event) => setStartDate(event.target.value)}
-                className="bg-brand-surface h-11 w-full rounded-lg border border-white/10 px-3 text-sm text-white outline-none focus:ring-1 focus:ring-white/20"
-              />
-            </label>
-            <label className="block space-y-2">
-              <span className="text-body-sm text-muted">End Date</span>
-              <input
-                type="date"
-                value={endDate}
-                onChange={(event) => setEndDate(event.target.value)}
-                className="bg-brand-surface h-11 w-full rounded-lg border border-white/10 px-3 text-sm text-white outline-none focus:ring-1 focus:ring-white/20"
-              />
-            </label>
+        <div className="ui-modal-body schedule-maintenance-modal-body">
+          <div className="schedule-maintenance-layout">
+            <div className="schedule-maintenance-section">
+              <div className="schedule-maintenance-calendar">
+                <div className="schedule-maintenance-calendar-nav">
+                  <button
+                    type="button"
+                    className="schedule-maintenance-calendar-nav-btn"
+                    aria-label="Previous month"
+                    onClick={() => shiftMonth(-1)}
+                  >
+                    <ChevronLeft className="size-4" />
+                  </button>
+                  <p className="schedule-maintenance-calendar-month">
+                    {MONTHS[viewMonth]} {viewYear}
+                  </p>
+                  <button
+                    type="button"
+                    className="schedule-maintenance-calendar-nav-btn"
+                    aria-label="Next month"
+                    onClick={() => shiftMonth(1)}
+                  >
+                    <ChevronRight className="size-4" />
+                  </button>
+                </div>
 
-            <div className="grid gap-3 sm:grid-cols-2">
-              <button
-                type="button"
-                onClick={() => setPicking('start')}
-                className={cn(
-                  'rounded-lg border px-3 py-3 text-left transition-colors',
-                  picking === 'start'
-                    ? 'border-brand-accent bg-brand-accent/10'
-                    : 'border-white/10 bg-black/20',
-                )}
-              >
-                <p className="text-body-sm text-muted">Start Time</p>
-                <p className="text-body-md-semibold text-brand-text mt-1">{preview.start}</p>
-              </button>
-              <button
-                type="button"
-                onClick={() => setPicking('end')}
-                className={cn(
-                  'rounded-lg border px-3 py-3 text-left transition-colors',
-                  picking === 'end'
-                    ? 'border-brand-accent bg-brand-accent/10'
-                    : 'border-white/10 bg-black/20',
-                )}
-              >
-                <p className="text-body-sm text-muted">End Time</p>
-                <p className="text-body-md-semibold text-brand-text mt-1">{preview.end}</p>
-              </button>
+                <div className="schedule-maintenance-calendar-weekdays">
+                  {WEEKDAYS.map((weekday) => (
+                    <span key={weekday} className="schedule-maintenance-calendar-weekday">
+                      {weekday}
+                    </span>
+                  ))}
+                </div>
+
+                <div className="schedule-maintenance-calendar-days">
+                  {calendarDays.map((day, index) =>
+                    day == null ? (
+                      <span
+                        key={`empty-${index}`}
+                        className="schedule-maintenance-calendar-day schedule-maintenance-calendar-day-empty"
+                      />
+                    ) : (
+                      <button
+                        key={`${viewYear}-${viewMonth}-${day}`}
+                        type="button"
+                        onClick={() => handleDayClick(day)}
+                        className={cn('schedule-maintenance-calendar-day', getDayClassName(day))}
+                      >
+                        {day}
+                      </button>
+                    ),
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <span className="schedule-maintenance-field-label">
+                  Select Start Date & End Date
+                </span>
+                <div className="schedule-maintenance-field-grid">
+                  <div>
+                    <span className="schedule-maintenance-field-label">Start Date</span>
+                    <div className="schedule-maintenance-field-wrap">
+                      <input
+                        type="text"
+                        readOnly
+                        value={formatDisplayDate(startDate)}
+                        className="schedule-maintenance-field"
+                      />
+                      <Clock className="schedule-maintenance-field-icon" aria-hidden />
+                    </div>
+                  </div>
+                  <div>
+                    <span className="schedule-maintenance-field-label">End Date</span>
+                    <div className="schedule-maintenance-field-wrap">
+                      <input
+                        type="text"
+                        readOnly
+                        value={formatDisplayDate(endDate || startDate)}
+                        className="schedule-maintenance-field"
+                      />
+                      <Clock className="schedule-maintenance-field-icon" aria-hidden />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="schedule-maintenance-divider" aria-hidden />
+
+            <div className="schedule-maintenance-section schedule-maintenance-section-right">
+              <div className="schedule-maintenance-time-row">
+                <div className="schedule-maintenance-time-field">
+                  <span className="schedule-maintenance-field-label">Start Time</span>
+                  <button
+                    type="button"
+                    onClick={() => setPicking('start')}
+                    className={cn(
+                      'schedule-maintenance-time-trigger',
+                      picking === 'start' && 'schedule-maintenance-time-trigger-active',
+                    )}
+                  >
+                    {preview.start}
+                    <Clock className="schedule-maintenance-field-icon" />
+                  </button>
+                  {picking === 'start' ? (
+                    <TimePickerPanel
+                      activeHour={startHour}
+                      activeMinute={startMinute}
+                      onHourChange={setStartHour}
+                      onMinuteChange={setStartMinute}
+                    />
+                  ) : null}
+                </div>
+                <div className="schedule-maintenance-time-field">
+                  <span className="schedule-maintenance-field-label">End Time</span>
+                  <button
+                    type="button"
+                    onClick={() => setPicking('end')}
+                    className={cn(
+                      'schedule-maintenance-time-trigger',
+                      picking === 'end' && 'schedule-maintenance-time-trigger-active',
+                    )}
+                  >
+                    {preview.end}
+                    <Clock className="schedule-maintenance-field-icon" />
+                  </button>
+                  {picking === 'end' ? (
+                    <TimePickerPanel
+                      activeHour={endHour}
+                      activeMinute={endMinute}
+                      onHourChange={setEndHour}
+                      onMinuteChange={setEndMinute}
+                    />
+                  ) : null}
+                </div>
+              </div>
+
+              <div className="schedule-maintenance-actions">
+                <button
+                  type="button"
+                  onClick={handleReset}
+                  className="schedule-maintenance-action-btn schedule-maintenance-reset-btn"
+                >
+                  Reset
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSubmit}
+                  className="schedule-maintenance-action-btn schedule-maintenance-submit-btn"
+                >
+                  Submit
+                </button>
+              </div>
             </div>
           </div>
 
-          <div className="rounded-xl border border-white/10 bg-black/20 p-3">
-            <div className="grid grid-cols-2 gap-3">
-              <div className="max-h-56 overflow-y-auto pr-1">
-                {HOURS.map((hour) => (
-                  <button
-                    key={hour}
-                    type="button"
-                    onClick={() => {
-                      if (picking === 'end') setEndHour(hour)
-                      else setStartHour(hour)
-                    }}
-                    className={cn(
-                      'mb-1 w-full rounded-md px-2 py-1.5 text-left text-sm',
-                      activeHour === hour
-                        ? 'bg-brand-accent text-black'
-                        : 'text-brand-text/80 hover:bg-white/5',
-                    )}
-                  >
-                    {hour}
-                  </button>
-                ))}
-              </div>
-              <div className="max-h-56 overflow-y-auto pr-1">
-                {MINS.map((minute) => (
-                  <button
-                    key={minute}
-                    type="button"
-                    onClick={() => {
-                      if (picking === 'end') setEndMinute(minute)
-                      else setStartMinute(minute)
-                    }}
-                    className={cn(
-                      'mb-1 w-full rounded-md px-2 py-1.5 text-left text-sm',
-                      activeMinute === minute
-                        ? 'bg-brand-accent text-black'
-                        : 'text-brand-text/80 hover:bg-white/5',
-                    )}
-                  >
-                    {minute}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {error ? <p className="text-brand-danger text-sm md:col-span-2">{error}</p> : null}
-        </div>
-
-        <div className="ui-modal-footer">
-          <button
-            type="button"
-            onClick={() => {
-              setStartDate(todayInputValue())
-              setEndDate(todayInputValue())
-              setStartHour('7 PM')
-              setEndHour('8 PM')
-              setStartMinute('00')
-              setEndMinute('00')
-              setError('')
-            }}
-            className="ui-modal-btn ui-modal-btn-cancel"
-          >
-            Reset
-          </button>
-          <button type="button" onClick={handleSubmit} className="ui-modal-btn ui-modal-btn-gold">
-            Submit
-          </button>
+          {error ? <p className="schedule-maintenance-error">{error}</p> : null}
         </div>
       </div>
     </div>,
