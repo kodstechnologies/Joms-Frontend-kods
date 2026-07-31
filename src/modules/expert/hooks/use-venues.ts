@@ -7,8 +7,10 @@ import {
   activateVenue,
   deleteVenue,
   restoreVenue,
+  setVenueOwnerPassword,
   type SuspendVenuePayload,
   type DeleteVenuePayload,
+  type SetVenueOwnerPasswordPayload,
 } from '../api/venue-api.ts'
 import type { VenueStatus } from '../type/venue'
 
@@ -74,6 +76,25 @@ export const useDeleteVenue = () => {
       deleteVenue(venueId, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['venues'] })
+    },
+  })
+}
+
+export const useSetVenueOwnerPassword = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({
+      partnerId,
+      payload,
+    }: {
+      partnerId: string
+      payload: SetVenueOwnerPasswordPayload
+    }) => setVenueOwnerPassword(partnerId, payload),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['venues'] })
+      queryClient.invalidateQueries({ queryKey: ['venue-full-view'] })
+      queryClient.invalidateQueries({ queryKey: ['expert-profile', variables.partnerId] })
     },
   })
 }

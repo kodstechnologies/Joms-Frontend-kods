@@ -1,4 +1,4 @@
-import { venueApiClient } from '@/shared/lib/axios'
+import { venueApiClient, adminApiClient } from '@/shared/lib/axios'
 import type {
   VenueResponse,
   VenueDetailResponse,
@@ -52,6 +52,22 @@ export type DeleteVenuePayload = {
 
 export const deleteVenue = async (venueId: string, payload: DeleteVenuePayload) => {
   const response = await venueApiClient.patch(`/venues/admin/delete/${venueId}`, payload)
+  return response.data
+}
+
+export type SetVenueOwnerPasswordPayload = {
+  newPassword: string
+  confirmNewPassword: string
+}
+
+export const setVenueOwnerPassword = async (
+  partnerId: string,
+  payload: SetVenueOwnerPasswordPayload,
+) => {
+  const response = await adminApiClient.patch(
+    `/admin/internal/admin/partners/${partnerId}/password`,
+    payload,
+  )
   return response.data
 }
 
@@ -178,6 +194,11 @@ export const updateAdminVenueLocation = async (
 
 export const createAdminSpace = async (venueId: string, payload: Record<string, unknown>) => {
   const response = await venueApiClient.post(`/venues/admin/space/${venueId}`, payload)
+  return response.data
+}
+
+export const updateAdminSpace = async (spaceId: string, payload: Record<string, unknown>) => {
+  const response = await venueApiClient.patch(`/venues/admin/space/${spaceId}`, payload)
   return response.data
 }
 

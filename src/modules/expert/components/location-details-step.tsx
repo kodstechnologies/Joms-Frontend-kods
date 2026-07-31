@@ -7,13 +7,20 @@ interface LocationDetailsStepProps {
     'address' | 'landmark' | 'city' | 'parkingAvailable' | 'accessibility'
   >
   setVenueData: React.Dispatch<React.SetStateAction<VenueFormData>>
+  isEditMode?: boolean
 }
 
-export const LocationDetailsStep = ({ venueData, setVenueData }: LocationDetailsStepProps) => {
+export const LocationDetailsStep = ({
+  venueData,
+  setVenueData,
+  isEditMode = false,
+}: LocationDetailsStepProps) => {
   return (
     <div className="animate-in fade-in slide-in-from-right-4 bg-brand-surface mx-auto w-full max-w-[1140px] rounded-lg border border-white/5 p-6 shadow-xl duration-300">
       <div className="mb-8">
-        <h2 className="mb-1 text-[15px] font-bold text-white">Add Venue Location</h2>
+        <h2 className="mb-1 text-[15px] font-bold text-white">
+          {isEditMode ? 'Edit Venue Location' : 'Add Venue Location'}
+        </h2>
         <p className="text-body-sm text-muted font-medium">Provide venue location details</p>
       </div>
 

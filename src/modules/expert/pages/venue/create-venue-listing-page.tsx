@@ -20,6 +20,7 @@ import { fetchAdminDraftVenue } from '../../api/venue-api'
 import {
   createDefaultWeeklyAvailability,
   mapHoursToCancellationPolicy,
+  mapSpaceTypeFromApi,
   type VenueFormData,
 } from '../../utils/venue-form'
 
@@ -41,6 +42,17 @@ type DraftPricing = {
 }
 type DraftVenueSpace = {
   _id?: string
+  name?: string
+  spaceType?: string
+  capacityMode?: string
+  capacityRange?: string | number
+  seatingStyle?: string
+  areaSqFeet?: number
+  isSameAsVenueLocation?: boolean
+  inHouseCatering?: boolean
+  decorationAvailable?: boolean
+  parkingAvailable?: boolean
+  accessibility?: boolean
   pricing?: DraftPricing[]
   availability?: {
     weeklyAvailability?: DraftWeeklyAvailabilityEntry[]
@@ -80,6 +92,7 @@ export const CreateVenueListingPage = () => {
   const venueId = searchParams.get('venueId')
   const partnerId = searchParams.get('partnerId') || ''
   const isViewMode = searchParams.get('view') === 'true'
+  const isEditMode = searchParams.get('mode') === 'edit' && Boolean(venueId)
 
   const [currentStep, setCurrentStep] = useState(1)
   const [spaceId, setSpaceId] = useState<string | null>(null)
@@ -167,25 +180,33 @@ export const CreateVenueListingPage = () => {
         const venue = response?.data as DraftVenue | undefined
         const gallery = venue?.gallery
         const spaces = venue?.spaces || []
-        const space = spaces[0]
-        const pricing = space?.pricing?.[0] ?? venue?.pricing?.[0]
+        const space = isEditMode ? spaces[0] : undefined
+        const pricing = isEditMode ? (space?.pricing?.[0] ?? venue?.pricing?.[0]) : undefined
         const terms = venue?.terms
 
         const defaultDays = createDefaultWeeklyAvailability()
-        const savedWeekly = space?.availability?.weeklyAvailability ?? []
+        const savedWeekly = isEditMode ? (space?.availability?.weeklyAvailability ?? []) : []
         const weeklyAvailability = defaultDays.map((entry) => {
+          if (!isEditMode) return entry
           const match = savedWeekly.find((d) => d.day === entry.day)
           return match
             ? { ...entry, from: match.from || entry.from, to: match.to || entry.to, enabled: true }
             : { ...entry, enabled: savedWeekly.length === 0 ? entry.enabled : false }
         })
-        const blockedDates = (space?.availability?.blockedDates ?? []).map((d) => ({
-          date: d.date ? String(d.date).slice(0, 10) : '',
-          from: d.from || '',
-          to: d.to || '',
-        }))
+        const blockedDates = isEditMode
+          ? (space?.availability?.blockedDates ?? []).map((d) => ({
+              date: d.date ? String(d.date).slice(0, 10) : '',
+              from: d.from || '',
+              to: d.to || '',
+            }))
+          : []
 
-        if (space?._id) setSpaceId(String(space._id))
+        if (isEditMode && space?._id) {
+          setSpaceId(String(space._id))
+        } else {
+          setSpaceId(null)
+        }
+
         setVenueData((prev) => ({
           ...prev,
           venueName: venue?.name || '',
@@ -197,36 +218,47 @@ export const CreateVenueListingPage = () => {
           city: venue?.location?.city || '',
           parkingAvailable: venue?.parkingAvailable ?? false,
           accessibility: venue?.accessibility ?? false,
-          spaceName: '',
-          spaceType: '',
-          capacityType: 'seated',
-          guestCount: '',
-          seatingType: '',
-          areaSqFt: '',
-          locationType: 'same',
-          inHouseCatering: false,
-          decorationAvailable: false,
+          spaceName: isEditMode ? space?.name || '' : '',
+          spaceType: isEditMode ? mapSpaceTypeFromApi(space?.spaceType) : '',
+          capacityType: isEditMode ? space?.capacityMode || 'seated' : 'seated',
+          guestCount: isEditMode && space?.capacityRange != null ? String(space.capacityRange) : '',
+          seatingType: isEditMode ? space?.seatingStyle || '' : '',
+          areaSqFt: isEditMode && space?.areaSqFeet != null ? String(space.areaSqFeet) : '',
+          locationType: isEditMode && space?.isSameAsVenueLocation === false ? 'different' : 'same',
+          seatedCapacity:
+            isEditMode && space?.capacityMode === 'seated' && space?.capacityRange != null
+              ? String(space.capacityRange)
+              : '',
+          standingCapacity:
+            isEditMode && space?.capacityMode === 'standing' && space?.capacityRange != null
+              ? String(space.capacityRange)
+              : '',
+          inHouseCatering: isEditMode ? (space?.inHouseCatering ?? false) : false,
+          decorationAvailable: isEditMode ? (space?.decorationAvailable ?? false) : false,
 
-          amenities: Array.isArray(venue?.amenities?.amenities)
-            ? venue.amenities.amenities.flatMap((amenity) => {
-                const subs = amenity.subCategoryIds || amenity.subCategories || []
-                return subs.map((subCategory) => {
-                  const subId = typeof subCategory === 'object' ? subCategory._id : subCategory
-                  return {
-                    categoryId: toEntityId(amenity.categoryId) || '',
-                    subCategoryId: String(subId || ''),
-                    name: typeof subCategory === 'object' ? subCategory.name || '' : '',
-                    image: typeof subCategory === 'object' ? subCategory.image || '' : '',
-                  }
+          amenities:
+            isEditMode && Array.isArray(venue?.amenities?.amenities)
+              ? venue.amenities.amenities.flatMap((amenity) => {
+                  const subs = amenity.subCategoryIds || amenity.subCategories || []
+                  return subs.map((subCategory) => {
+                    const subId = typeof subCategory === 'object' ? subCategory._id : subCategory
+                    return {
+                      categoryId: toEntityId(amenity.categoryId) || '',
+                      subCategoryId: String(subId || ''),
+                      name: typeof subCategory === 'object' ? subCategory.name || '' : '',
+                      image: typeof subCategory === 'object' ? subCategory.image || '' : '',
+                    }
+                  })
                 })
-              })
-            : [],
+              : [],
 
-          venueCoverImageUrl: gallery?.venueCoverImages?.[0]?.url || '',
-          venueImageUrl: gallery?.spaceCoverImages?.[0]?.url || '',
-          galleryImageUrls: (gallery?.galleryImages || []).map((img: { url: string }) => img.url),
+          venueCoverImageUrl: isEditMode ? gallery?.venueCoverImages?.[0]?.url || '' : '',
+          venueImageUrl: isEditMode ? gallery?.spaceCoverImages?.[0]?.url || '' : '',
+          galleryImageUrls: isEditMode
+            ? (gallery?.galleryImages || []).map((img: { url: string }) => img.url)
+            : [],
           contacts:
-            gallery?.contact?.contacts && gallery.contact.contacts.length > 0
+            isEditMode && gallery?.contact?.contacts && gallery.contact.contacts.length > 0
               ? gallery.contact.contacts.map((contact) => ({
                   name: contact.name || '',
                   phone: contact.phone || '',
@@ -261,7 +293,7 @@ export const CreateVenueListingPage = () => {
     }
 
     loadVenue()
-  }, [venueId])
+  }, [venueId, isEditMode])
 
   const handleNextStep = async () => {
     try {
@@ -276,16 +308,22 @@ export const CreateVenueListingPage = () => {
       }
 
       if (currentStep === 3 && venueId) {
-        const result = await saveSpace.mutateAsync({ venueId, venueData })
+        const result = await saveSpace.mutateAsync({ venueId, spaceId, venueData })
 
-        const newSpaceId = result?.data?._id || result?._id
+        const newSpaceId = result?.data?._id || result?._id || spaceId
         if (newSpaceId) setSpaceId(String(newSpaceId))
-        toast.success('Space created successfully')
+        toast.success(
+          isEditMode && spaceId ? 'Space updated successfully' : 'Space created successfully',
+        )
       }
 
       if (currentStep === 4) {
         if (!spaceId) {
-          toast.error('Please create a space first before adding amenities.')
+          toast.error(
+            isEditMode
+              ? 'Please save space details first before updating amenities.'
+              : 'Please create a space first before adding amenities.',
+          )
           return
         }
         await saveAmenitiesAndMedia.mutateAsync({ venueId: venueId!, spaceId, venueData })
@@ -294,7 +332,11 @@ export const CreateVenueListingPage = () => {
 
       if (currentStep === 5) {
         if (!spaceId) {
-          toast.error('Please create a space first before adding pricing.')
+          toast.error(
+            isEditMode
+              ? 'Please save space details first before updating pricing.'
+              : 'Please create a space first before adding pricing.',
+          )
           return
         }
         await savePricing.mutateAsync({ spaceId, venueData })
@@ -307,6 +349,12 @@ export const CreateVenueListingPage = () => {
       }
 
       if (currentStep === 7 && venueId) {
+        if (isEditMode) {
+          toast.success('Venue updated successfully')
+          navigate(`/venues/management/profile/${venueId}`)
+          return
+        }
+
         await submitVenueListing.mutateAsync(venueId)
         toast.success('Venue submitted successfully')
 
@@ -332,13 +380,17 @@ export const CreateVenueListingPage = () => {
 
   const handleBack = () => {
     if (currentStep > 1) setCurrentStep((prev) => prev - 1)
+    else if (isEditMode && venueId) navigate(`/venues/management/profile/${venueId}`)
     else navigateBackOrFallback(navigate, '/venues/management')
   }
 
   const breadcrumbs = [
     { label: 'Expert Management' },
     { label: 'Venue Management' },
-    { label: isViewMode ? 'View Venue' : 'Create Venue', isActive: true },
+    {
+      label: isViewMode ? 'View Venue' : isEditMode ? 'Edit Venue' : 'Create Venue',
+      isActive: true,
+    },
   ]
 
   const venueSteps = [
@@ -351,23 +403,35 @@ export const CreateVenueListingPage = () => {
     { id: '07', title: 'Final Check', description: 'Preview' },
   ]
 
+  const primaryLabel = (() => {
+    if (isLoading) return 'Saving…'
+    if (currentStep === 7) return isEditMode ? 'Save Changes' : 'Submit'
+    return 'Next'
+  })()
+
   return (
     <CreateListingWizard
-      title={isViewMode ? 'View Venue' : 'Create Venue Listing'}
+      title={isViewMode ? 'View Venue' : isEditMode ? 'Edit Venue Listing' : 'Create Venue Listing'}
       breadcrumbs={breadcrumbs}
       steps={venueSteps}
       currentStep={currentStep}
       onBack={handleBack}
       primaryAction={{
-        label: isLoading ? 'Saving…' : currentStep === 7 ? 'Submit' : 'Next',
+        label: primaryLabel,
         onClick: handleNextStep,
       }}
     >
       {currentStep === 1 && <VenueDetailsStep venueData={venueData} setVenueData={setVenueData} />}
       {currentStep === 2 && (
-        <LocationDetailsStep venueData={venueData} setVenueData={setVenueData} />
+        <LocationDetailsStep
+          venueData={venueData}
+          setVenueData={setVenueData}
+          isEditMode={isEditMode}
+        />
       )}
-      {currentStep === 3 && <SpacesStep venueData={venueData} setVenueData={setVenueData} />}
+      {currentStep === 3 && (
+        <SpacesStep venueData={venueData} setVenueData={setVenueData} isEditMode={isEditMode} />
+      )}
       {currentStep === 4 && (
         <AmenitiesMediaStep venueData={venueData} setVenueData={setVenueData} />
       )}

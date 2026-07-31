@@ -5,15 +5,16 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import { toast } from 'sonner'
 import {
+  AlertOctagon,
   ArrowLeft,
-  BarChart3,
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
-  EyeOff,
+  CopyPlus,
+  Eye,
   ImageOff,
   MapPin,
-  PauseCircle,
+  Pencil,
   RotateCcw,
   Star,
 } from 'lucide-react'
@@ -67,8 +68,6 @@ type AmenityCategory = {
 
 type SpaceAction = 'hide' | 'suspend'
 type DecisionVariant = 'approve' | 'reject' | 'requestChanges' | 'escalate'
-
-const ACTION_ITEM_CLASS = 'text-slate-800 hover:bg-slate-100 hover:text-slate-900'
 
 const getApiErrorMessage = (error: unknown) => {
   const err = error as { response?: { data?: { message?: string } } }
@@ -605,41 +604,59 @@ export function SpaceDetailsPage() {
           label="Open space actions"
           isOpen={actionsOpen}
           onOpenChange={setActionsOpen}
-          menuWidth={180}
+          menuWidth={200}
+          tone="light"
         >
+          <TableActionsItem
+            tone="light"
+            icon={<Pencil className="size-3.5" />}
+            onClick={() => {
+              setActionsOpen(false)
+              if (!venueId) {
+                toast.error('Venue ID is missing.')
+                return
+              }
+              navigate(`/venues/management/create?venueId=${venueId}&mode=edit`)
+            }}
+          >
+            Edit Profile
+          </TableActionsItem>
           {isHidden || isSuspended ? (
             <TableActionsItem
-              icon={<RotateCcw className="size-3.5 text-slate-700" />}
-              className={ACTION_ITEM_CLASS}
+              tone="light"
+              icon={<RotateCcw className="size-3.5" />}
               onClick={activateSpace}
             >
               Active Space
             </TableActionsItem>
           ) : (
             <TableActionsItem
-              icon={<EyeOff className="size-3.5 text-slate-700" />}
-              className={ACTION_ITEM_CLASS}
+              tone="light"
+              icon={<CopyPlus className="size-3.5" />}
               onClick={() => openActionModal('hide')}
             >
               Hide Space
             </TableActionsItem>
           )}
           <TableActionsItem
-            icon={<BarChart3 className="size-3.5 text-slate-700" />}
-            className={ACTION_ITEM_CLASS}
-            onClick={() =>
-              navigate(`/venues/management/profile/${venueId}/space/${spaceId}/analytics`)
-            }
+            tone="light"
+            icon={<Eye className="size-3.5" />}
+            onClick={() => {
+              setActionsOpen(false)
+              toast.message('Analytics is coming soon')
+            }}
           >
             Analytics
           </TableActionsItem>
-          <TableActionsItem
-            icon={<PauseCircle className="size-3.5 text-slate-700" />}
-            className={ACTION_ITEM_CLASS}
-            onClick={() => openActionModal('suspend')}
-          >
-            Suspend Space
-          </TableActionsItem>
+          {!isSuspended && (
+            <TableActionsItem
+              tone="light"
+              icon={<AlertOctagon className="size-3.5" />}
+              onClick={() => openActionModal('suspend')}
+            >
+              Suspend Space
+            </TableActionsItem>
+          )}
         </TableActionsDropdown>
       </header>
 

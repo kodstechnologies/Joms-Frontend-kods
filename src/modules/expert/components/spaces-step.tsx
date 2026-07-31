@@ -4,6 +4,7 @@ import { RequiredMark } from '@/shared/components/form/required-mark'
 interface SpacesStepProps {
   venueData: VenueFormData
   setVenueData: React.Dispatch<React.SetStateAction<VenueFormData>>
+  isEditMode?: boolean
 }
 
 type ToggleKey = 'parkingAvailable' | 'accessibility' | 'inHouseCatering' | 'decorationAvailable'
@@ -31,7 +32,7 @@ const TOGGLE_ITEMS: Array<{ title: string; key: ToggleKey; desc: string }> = [
   },
 ]
 
-export const SpacesStep = ({ venueData, setVenueData }: SpacesStepProps) => {
+export const SpacesStep = ({ venueData, setVenueData, isEditMode = false }: SpacesStepProps) => {
   const capacityType = venueData.capacityType || 'seated'
 
   const locationType = venueData.locationType || 'same'
@@ -40,7 +41,9 @@ export const SpacesStep = ({ venueData, setVenueData }: SpacesStepProps) => {
     <div className="mx-auto w-full max-w-[1140px] space-y-6">
       <div className="animate-in fade-in slide-in-from-right-4 bg-brand-surface rounded-lg border border-white/5 p-6 shadow-xl duration-300">
         <div className="mb-8">
-          <h2 className="mb-1 text-[15px] font-bold text-white">Add Space Details</h2>
+          <h2 className="mb-1 text-[15px] font-bold text-white">
+            {isEditMode ? 'Edit Space Details' : 'Add Space Details'}
+          </h2>
           <p className="text-body-sm text-muted font-medium">
             Provide details about your space offering
           </p>

@@ -9,6 +9,7 @@ import {
   updateAdminVenueDetails,
   updateAdminVenueLocation,
   createAdminSpace,
+  updateAdminSpace,
   createAdminVenueAmenity,
   createAdminVenueGallery,
   createAdminAvailability,
@@ -68,10 +69,25 @@ export const useVenueStepMutations = () => {
     onSuccess: invalidateDraft,
   })
 
-  // Step 3 — create space
+  // Step 3 — create or update space
   const saveSpace = useMutation({
-    mutationFn: ({ venueId, venueData }: { venueId: string; venueData: VenueFormData }) =>
-      createAdminSpace(venueId, buildSpacePayload(venueData)),
+    mutationFn: ({
+      venueId,
+      spaceId,
+      venueData,
+    }: {
+      venueId: string
+      spaceId?: string | null
+      venueData: VenueFormData
+    }) => {
+      const payload = buildSpacePayload(venueData)
+      if (spaceId) {
+        const updatePayload = { ...payload }
+        delete updatePayload.location
+        return updateAdminSpace(spaceId, updatePayload)
+      }
+      return createAdminSpace(venueId, payload)
+    },
     onSuccess: invalidateDraft,
   })
 
