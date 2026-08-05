@@ -34,18 +34,26 @@ type DocumentReviewViewerProps = {
   requestChangesReasonOptions?: DecisionActionModalOption[]
   actionsDisabled?: boolean
   isSubmitting?: boolean
+  mimeType?: string
   onClose: () => void
   onSubmitDecision: (variant: DocumentDecisionVariant, payload: DocumentStatusPayload) => void
 }
 
-const isPdfUrl = (url: string) => {
-  const clean = url.split('?')[0]?.toLowerCase() || ''
-  return clean.endsWith('.pdf')
+const isPdfFile = (url: string, filename: string, mimeType?: string) => {
+  if (mimeType === 'application/pdf') return true
+  const cleanUrl = url.split('?')[0]?.toLowerCase() || ''
+  const cleanName = filename.toLowerCase()
+  return (
+    cleanUrl.endsWith('.pdf') || cleanName.endsWith('.pdf') || cleanUrl.includes('application/pdf')
+  )
 }
 
-const isImageUrl = (url: string) => {
-  const clean = url.split('?')[0]?.toLowerCase() || ''
-  return /\.(png|jpe?g|gif|webp|bmp|svg)$/.test(clean)
+const isImageFile = (url: string, filename: string, mimeType?: string) => {
+  if (mimeType?.startsWith('image/')) return true
+  const cleanUrl = url.split('?')[0]?.toLowerCase() || ''
+  const cleanName = filename.toLowerCase()
+  const pattern = /\.(png|jpe?g|gif|webp|bmp|svg|avif)$/
+  return pattern.test(cleanUrl) || pattern.test(cleanName) || cleanUrl.includes('image/')
 }
 
 const getFileTypeLabel = (url?: string | null) => {
@@ -64,12 +72,13 @@ const formatDocumentDate = (value?: string | null) => {
 
 export function DocumentReviewViewer({ open, url, ...props }: DocumentReviewViewerProps) {
   if (!open) return null
-  return <DocumentReviewViewerContent key={url} url={url} {...props} />
+  return <DocumentReviewViewerContent key={url} open={open} url={url} {...props} />
 }
 
-type DocumentReviewViewerContentProps = Omit<DocumentReviewViewerProps, 'open'>
+type DocumentReviewViewerContentProps = DocumentReviewViewerProps
 
 function DocumentReviewViewerContent({
+  open,
   url,
   filename,
   reviewStatus,
@@ -77,6 +86,7 @@ function DocumentReviewViewerContent({
   requestChangesReasonOptions,
   actionsDisabled = false,
   isSubmitting = false,
+  mimeType,
   onClose,
   onSubmitDecision,
 }: DocumentReviewViewerContentProps) {
@@ -88,6 +98,73 @@ function DocumentReviewViewerContent({
   const [rejectionReason, setRejectionReason] = useState('')
   const [adminNotes, setAdminNotes] = useState('')
   const menuRef = useRef<HTMLDivElement>(null)
+
+  const [blobData, setBlobData] = useState<{
+    url: string | null
+    type: string | null
+    isLoading: boolean
+  }>({
+    url: null,
+    type: null,
+    isLoading: false,
+  })
+
+  useEffect(() => {
+    if (!open || !url) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setBlobData({ url: null, type: null, isLoading: false })
+      return
+    }
+
+    if (url.startsWith('blob:') || url.startsWith('data:')) {
+      setBlobData({ url, type: mimeType || null, isLoading: false })
+      return
+    }
+
+    let isMounted = true
+    setBlobData((prev) => ({ ...prev, isLoading: true }))
+
+    fetch(url)
+      .then((res) => {
+        if (!res.ok) throw new Error('Failed to fetch document')
+        return res.blob()
+      })
+      .then((blob) => {
+        if (!isMounted) return
+
+        let actualBlob = blob
+        if (blob.type === 'application/pdf' || filename.toLowerCase().endsWith('.pdf')) {
+          actualBlob = new Blob([blob], { type: 'application/pdf' })
+        }
+
+        setBlobData({
+          url: URL.createObjectURL(actualBlob),
+          type: actualBlob.type,
+          isLoading: false,
+        })
+      })
+      .catch((err) => {
+        console.error('Failed to load document blob:', err)
+        if (isMounted) {
+          setBlobData({ url, type: mimeType || null, isLoading: false })
+        }
+      })
+
+    return () => {
+      isMounted = false
+    }
+  }, [open, url, filename, mimeType])
+
+  const actualUrl = blobData.url || url
+  const actualMimeType = blobData.type || mimeType
+
+  console.log({
+    originalUrl: url,
+    actualUrl,
+    actualMimeType,
+    filename,
+    showPdf: isPdfFile(actualUrl, filename, actualMimeType),
+  })
 
   const resolvedReviewStatus = resolveDocumentReviewStatus(url, reviewStatus)
   const decisionActionsDisabled =
@@ -174,8 +251,15 @@ function DocumentReviewViewerContent({
     }
   }, [modalVariant])
 
-  const showPdf = isPdfUrl(url)
-  const showImage = !showPdf && (isImageUrl(url) || Boolean(url))
+  const showPdf = useMemo(
+    () => isPdfFile(actualUrl, filename, actualMimeType || ''),
+    [actualUrl, filename, actualMimeType],
+  )
+  const showImage = useMemo(
+    () =>
+      !showPdf && (isImageFile(actualUrl, filename, actualMimeType || '') || Boolean(actualUrl)),
+    [actualUrl, filename, actualMimeType, showPdf],
+  )
 
   return (
     <div className="fixed inset-0 z-[60] flex flex-col bg-black/95 text-white">
@@ -255,16 +339,20 @@ function DocumentReviewViewerContent({
       </header>
 
       <div className="relative flex min-h-0 flex-1 items-center justify-center overflow-auto px-4 pt-2 pb-24">
-        {showPdf ? (
+        {blobData.isLoading ? (
+          <div className="flex flex-col items-center justify-center space-y-4">
+            <div className="border-brand-accent size-10 animate-spin rounded-full border-4 border-t-transparent" />
+            <p className="text-body-sm text-white/80">Loading document...</p>
+          </div>
+        ) : showPdf ? (
           <iframe
             title={filename}
-            src={url}
+            src={actualUrl}
             className="h-full min-h-[70vh] w-full max-w-5xl rounded-md bg-white"
-            style={{ transform: `scale(${zoom})`, transformOrigin: 'center top' }}
           />
         ) : showImage ? (
           <img
-            src={url}
+            src={actualUrl}
             alt={filename}
             className="max-h-[78vh] max-w-full object-contain shadow-2xl transition-transform"
             style={{ transform: `scale(${zoom})` }}
@@ -284,29 +372,31 @@ function DocumentReviewViewerContent({
         )}
       </div>
 
-      <div className="pointer-events-none absolute inset-x-0 bottom-6 flex justify-center">
-        <div className="bg-brand-surface/95 pointer-events-auto flex items-center gap-1 rounded-full border border-white/10 px-2 py-1.5 shadow-lg backdrop-blur">
-          <button
-            type="button"
-            aria-label="Zoom out"
-            onClick={() => setZoom((value) => Math.max(0.5, Number((value - 0.1).toFixed(2))))}
-            className="rounded-full p-2 text-white/80 transition-colors hover:bg-white/10 hover:text-white"
-          >
-            <ZoomOut className="size-4" />
-          </button>
-          <span className="flex size-8 items-center justify-center text-white/70">
-            <Search className="size-4" />
-          </span>
-          <button
-            type="button"
-            aria-label="Zoom in"
-            onClick={() => setZoom((value) => Math.min(3, Number((value + 0.1).toFixed(2))))}
-            className="rounded-full p-2 text-white/80 transition-colors hover:bg-white/10 hover:text-white"
-          >
-            <ZoomIn className="size-4" />
-          </button>
+      {showImage && !showPdf && (
+        <div className="pointer-events-none absolute inset-x-0 bottom-6 flex justify-center">
+          <div className="bg-brand-surface/95 pointer-events-auto flex items-center gap-1 rounded-full border border-white/10 px-2 py-1.5 shadow-lg backdrop-blur">
+            <button
+              type="button"
+              aria-label="Zoom out"
+              onClick={() => setZoom((value) => Math.max(0.5, Number((value - 0.1).toFixed(2))))}
+              className="rounded-full p-2 text-white/80 transition-colors hover:bg-white/10 hover:text-white"
+            >
+              <ZoomOut className="size-4" />
+            </button>
+            <span className="flex size-8 items-center justify-center text-white/70">
+              <Search className="size-4" />
+            </span>
+            <button
+              type="button"
+              aria-label="Zoom in"
+              onClick={() => setZoom((value) => Math.min(3, Number((value + 0.1).toFixed(2))))}
+              className="rounded-full p-2 text-white/80 transition-colors hover:bg-white/10 hover:text-white"
+            >
+              <ZoomIn className="size-4" />
+            </button>
+          </div>
         </div>
-      </div>
+      )}
 
       <DecisionActionModal
         open={modalOpen}

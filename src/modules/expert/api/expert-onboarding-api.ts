@@ -62,6 +62,34 @@ export const updateExpertGallery = async (id: string, payload: FormData) => {
   return response.data
 }
 
+export const fetchPartnerDocumentBlob = async (
+  partnerId: string,
+  documentType: 'pan-card' | 'certificate' | 'gst-certificate',
+) => {
+  const response = await authApiClient.get(
+    `/auth/partners/${partnerId}/documents/${documentType}`,
+    { responseType: 'blob' },
+  )
+
+  const blob = response.data as Blob
+
+  if (blob.type.includes('json') || blob.size < 128) {
+    const text = await blob.text()
+    try {
+      const parsed = JSON.parse(text) as { message?: string }
+      throw new Error(parsed.message || 'Failed to load document')
+    } catch (error) {
+      if (error instanceof Error && error.message !== 'Failed to load document') {
+        throw error
+      }
+      throw new Error('Failed to load document', { cause: error })
+    }
+  }
+
+  if (blob.type === 'application/pdf') return blob
+  return new Blob([await blob.arrayBuffer()], { type: 'application/pdf' })
+}
+
 export const submitExpertApplication = async (
   id: string,
   payload: { internalNotes?: string; isVerified: boolean },

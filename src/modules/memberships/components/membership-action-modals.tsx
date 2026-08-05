@@ -134,7 +134,7 @@ function MembershipActionModalsContent({
   if (action === 'extend') {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
-        <div className="flex w-full max-w-[551px] flex-col overflow-hidden rounded-[16px] border border-white/10 bg-black text-white shadow-[0_24px_80px_rgba(0,0,0,0.65)]">
+        <div className="membership-action-modal flex flex-col overflow-hidden text-white">
           <div
             className="flex items-start justify-between gap-3 px-6 py-5"
             style={{ borderBottom: '1px solid rgba(255,255,255,0.1)' }}
@@ -251,7 +251,7 @@ function MembershipActionModalsContent({
 
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
-        <div className="flex w-full max-w-[551px] flex-col overflow-hidden rounded-[16px] border border-white/10 bg-black text-white shadow-[0_24px_80px_rgba(0,0,0,0.65)]">
+        <div className="membership-action-modal flex flex-col overflow-hidden text-white">
           <div
             className="flex items-start justify-between gap-3 px-6 py-5"
             style={{ borderBottom: '1px solid rgba(255,255,255,0.1)' }}
@@ -363,7 +363,7 @@ function MembershipActionModalsContent({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
       <div
-        className="flex w-full max-w-[551px] flex-col overflow-hidden rounded-[16px] border border-white/10 bg-black text-white shadow-[0_24px_80px_rgba(0,0,0,0.65)]"
+        className="membership-action-modal flex flex-col overflow-hidden text-white"
         role="dialog"
         aria-modal="true"
       >

@@ -40,6 +40,9 @@ export type ExpertOnboardingFormData = {
   panCardFileName: string
   certificateFileName: string
   gstCertificateFileName: string
+  panCardFileUrl: string
+  certificateFileUrl: string
+  gstCertificateFileUrl: string
 
   // Step 3 - Work Experience
   workExperience: ExpertWorkExperienceEntry[]
@@ -94,6 +97,9 @@ export const createEmptyExpertOnboardingForm = (): ExpertOnboardingFormData => (
   panCardFileName: '',
   certificateFileName: '',
   gstCertificateFileName: '',
+  panCardFileUrl: '',
+  certificateFileUrl: '',
+  gstCertificateFileUrl: '',
 
   workExperience: [createEmptyWorkExperienceEntry()],
 
@@ -280,6 +286,11 @@ export const mapExpertProfileToOnboardingForm = (profile: {
     gstAvailable: identity.gstAvailable !== false,
     gstNumber: String(identity.gstNumber || ''),
     panNumber: String(identity.panNumber || ''),
+    panCardFileUrl: typeof identity.panCardFile === 'string' ? identity.panCardFile : '',
+    certificateFileUrl:
+      typeof identity.certificateFile === 'string' ? identity.certificateFile : '',
+    gstCertificateFileUrl:
+      typeof identity.gstCertificateFile === 'string' ? identity.gstCertificateFile : '',
     panCardFileName: fileNameFromUrl(
       typeof identity.panCardFile === 'string' ? identity.panCardFile : '',
     ),

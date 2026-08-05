@@ -15,6 +15,7 @@ export const useExpertOnboardingMutations = () => {
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: ['experts'] })
     queryClient.invalidateQueries({ queryKey: ['expert-profile'] })
+    queryClient.invalidateQueries({ queryKey: ['expert-application'] })
   }
 
   const saveBasicProfile = useMutation({

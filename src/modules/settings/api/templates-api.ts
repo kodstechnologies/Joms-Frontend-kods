@@ -30,11 +30,15 @@ export const MODERATION_CATEGORY_SLUGS = {
   suspendService: 'suspend-service',
   deleteService: 'delete-service',
   rejectService: 'reject-service',
+  pauseService: 'pause-service',
   requestChangesService: 'request-changes-service',
   suspendVenue: 'suspend-venue',
   deleteVenue: 'delete-venue',
+  pauseVenue: 'pause-venue',
+  hideVenue: 'hide-venue',
   rejectVenue: 'reject-venue',
   requestChangesVenue: 'request-changes-venue',
+  rejectConsultation: 'reject-Consultation',
 } as const
 
 export type ModerationCategorySlug =

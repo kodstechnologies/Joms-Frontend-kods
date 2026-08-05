@@ -184,16 +184,17 @@ export const CreateExpertPage = () => {
       }
 
       if (currentStep === 5) {
+        await submitApplication.mutateAsync({
+          id: expertId,
+          payload: buildSubmitPayload(formData),
+        })
+
         if (isEditMode) {
           toast.success('Expert profile updated successfully')
           navigate(`/experts/management/profile/${expertId}`)
           return
         }
 
-        await submitApplication.mutateAsync({
-          id: expertId,
-          payload: buildSubmitPayload(formData),
-        })
         toast.success('Expert created and KYC approved successfully')
         navigate('/experts/management')
         return
@@ -283,7 +284,9 @@ export const CreateExpertPage = () => {
         <ExpertWorkExperienceStep formData={formData} setFormData={setFormData} />
       )}
       {currentStep === 4 && <ExpertGalleryStep formData={formData} setFormData={setFormData} />}
-      {currentStep === 5 && <ExpertFinalReviewStep formData={formData} setFormData={setFormData} />}
+      {currentStep === 5 && (
+        <ExpertFinalReviewStep formData={formData} setFormData={setFormData} expertId={expertId} />
+      )}
     </CreateListingWizard>
   )
 }

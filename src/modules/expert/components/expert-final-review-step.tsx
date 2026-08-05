@@ -6,10 +6,12 @@ import {
   type ExpertOnboardingFormData,
   type ExpertWorkExperienceEntry,
 } from '../utils/expert-onboarding-form'
+import { DocumentReviewViewer } from './document-review-viewer'
 
 type Props = {
   formData: ExpertOnboardingFormData
   setFormData: React.Dispatch<React.SetStateAction<ExpertOnboardingFormData>>
+  expertId?: string | null
 }
 
 const naValue = (value?: string | null) => {
@@ -67,50 +69,89 @@ const SectionTitle = ({ children }: { children: React.ReactNode }) => (
   </h3>
 )
 
+type PartnerDocumentType = 'pan-card' | 'certificate' | 'gst-certificate'
+
+type PreviewItem = {
+  url: string
+  title: string
+  fileName?: string
+  mimeType?: string
+  kind?: 'gallery' | 'document'
+  partnerId?: string
+  documentType?: PartnerDocumentType
+  file?: File
+}
+
 const DocumentCard = ({
   label,
   file,
   fileName,
+  fileUrl,
+  partnerId,
+  documentType,
+  onView,
 }: {
   label: string
   file: File | null
   fileName: string
+  fileUrl: string
+  partnerId?: string | null
+  documentType?: PartnerDocumentType
+  onView: (item: PreviewItem) => void
 }) => {
-  const hasFile = Boolean(file || fileName.trim())
-  const previewUrl = useMemo(() => (file ? URL.createObjectURL(file) : null), [file])
-
-  useEffect(() => {
-    return () => {
-      if (previewUrl) URL.revokeObjectURL(previewUrl)
+  const blobUrl = useMemo(() => {
+    if (!file) return null
+    // Ensure Blob has proper PDF MIME type if it's a PDF to avoid Chrome viewer errors
+    const isPdf = fileName.toLowerCase().endsWith('.pdf') || file.type === 'application/pdf'
+    if (isPdf && file.type !== 'application/pdf') {
+      return URL.createObjectURL(new Blob([file], { type: 'application/pdf' }))
     }
-  }, [previewUrl])
+    return URL.createObjectURL(file)
+  }, [file, fileName])
+  const previewUrl = blobUrl || fileUrl
+  const hasFile = Boolean(previewUrl || fileName.trim())
+
+  useEffect(() => {}, [blobUrl])
 
   const handleView = () => {
-    if (!previewUrl) return
-    window.open(previewUrl, '_blank', 'noopener,noreferrer')
+    if (!previewUrl && !file) return
+
+    onView({
+      url: previewUrl || '',
+      title: label,
+      fileName: file?.name || fileName,
+      mimeType: file?.type,
+      kind: 'document',
+      ...(file ? { file } : {}),
+      ...(!file && partnerId && documentType && fileUrl ? { partnerId, documentType } : {}),
+    })
   }
 
   return (
-    <div className="flex min-w-0 flex-1 flex-col rounded-lg border border-white/10 bg-black p-4">
-      <div className="mb-4 flex items-start gap-3">
-        <div className="flex size-10 shrink-0 items-center justify-center rounded-md bg-[#E85D4C]/15">
-          <FileText className="size-5 text-[#E85D4C]" />
-        </div>
-        <div className="min-w-0 flex-1">
-          <p className="text-sm font-bold text-white">{label}</p>
-          <p className="text-body-sm text-muted mt-1 truncate">
-            {hasFile ? formatFileMeta(file, fileName) : 'N/A'}
+    <div className="rounded-lg border border-white/5 bg-black p-4">
+      <div className="flex items-start gap-2">
+        <span className="mt-0.5 size-4 shrink-0 rounded-full border border-white/10" />
+        <div className="min-w-0">
+          <p className="text-body-sm-semibold truncate text-white">{label}</p>
+          <p className="text-muted text-[10px]">
+            {hasFile ? formatFileMeta(file, fileName) : 'Not uploaded'}
           </p>
         </div>
       </div>
-      <button
-        type="button"
-        onClick={handleView}
-        disabled={!hasFile}
-        className="bg-brand-surface w-full rounded-md py-2.5 text-xs font-semibold text-white transition-colors hover:bg-white/7 disabled:cursor-not-allowed disabled:opacity-40"
-      >
-        View
-      </button>
+      {hasFile ? (
+        <button
+          type="button"
+          onClick={handleView}
+          className="text-body-sm bg-brand-surface mt-3 flex w-full items-center justify-center gap-1.5 rounded-md py-2 font-semibold text-white transition-colors hover:bg-white/7 disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          <FileText className="size-3.5" />
+          View Document
+        </button>
+      ) : (
+        <div className="text-body-sm bg-brand-surface text-muted mt-3 flex w-full items-center justify-center rounded-md py-2 font-medium">
+          Not uploaded
+        </div>
+      )}
     </div>
   )
 }
@@ -204,14 +245,26 @@ const WorkHistoryCard = ({
   </button>
 )
 
-export const ExpertFinalReviewStep = ({ formData, setFormData }: Props) => {
+export const ExpertFinalReviewStep = ({ formData, setFormData, expertId }: Props) => {
   const [selectedWorkExperience, setSelectedWorkExperience] =
     useState<ExpertWorkExperienceEntry | null>(null)
+  const [previewItem, setPreviewItem] = useState<PreviewItem | null>(null)
 
   const workHistoryEntries = formData.workExperience.filter((w) => w.jobTitle.trim())
 
   return (
     <>
+      <DocumentReviewViewer
+        open={!!previewItem}
+        url={previewItem?.url || ''}
+        filename={previewItem?.fileName || previewItem?.title || ''}
+        mimeType={previewItem?.mimeType}
+        actionsDisabled={true}
+        reasonOptions={[]}
+        onClose={() => setPreviewItem(null)}
+        onSubmitDecision={() => {}}
+      />
+
       {selectedWorkExperience && (
         <WorkExperienceDetailModal
           entry={selectedWorkExperience}
@@ -316,22 +369,34 @@ export const ExpertFinalReviewStep = ({ formData, setFormData }: Props) => {
             <VerifiedRow label="PAN Number" value={formData.panNumber} />
 
             <SectionTitle>Documents Uploaded</SectionTitle>
-            <div className="flex flex-col gap-4 sm:flex-row">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
               <DocumentCard
                 label="PAN Card"
                 file={formData.panCardFile}
                 fileName={formData.panCardFileName}
+                fileUrl={formData.panCardFileUrl}
+                partnerId={expertId}
+                documentType="pan-card"
+                onView={setPreviewItem}
               />
               <DocumentCard
                 label="Certificates or License & Permits"
                 file={formData.certificateFile}
                 fileName={formData.certificateFileName}
+                fileUrl={formData.certificateFileUrl}
+                partnerId={expertId}
+                documentType="certificate"
+                onView={setPreviewItem}
               />
               {formData.gstAvailable && (
                 <DocumentCard
                   label="GST Certificate"
                   file={formData.gstCertificateFile}
                   fileName={formData.gstCertificateFileName}
+                  fileUrl={formData.gstCertificateFileUrl}
+                  partnerId={expertId}
+                  documentType="gst-certificate"
+                  onView={setPreviewItem}
                 />
               )}
             </div>
@@ -358,17 +423,35 @@ export const ExpertFinalReviewStep = ({ formData, setFormData }: Props) => {
 
             <SectionTitle>Gallery ({formData.galleryPreviews.length})</SectionTitle>
             {formData.galleryPreviews.length > 0 ? (
-              <div className="flex flex-wrap gap-3">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
                 {formData.galleryPreviews.map((preview, index) => (
                   <div
-                    key={preview}
-                    className="size-16 overflow-hidden rounded-md border border-white/10"
+                    key={`${preview}-${index}`}
+                    className="rounded-lg border border-white/5 bg-black p-4"
                   >
-                    <img
-                      src={preview}
-                      alt={`Gallery ${index + 1}`}
-                      className="h-full w-full object-cover"
-                    />
+                    <div className="flex items-start gap-2">
+                      <span className="mt-0.5 size-4 shrink-0 rounded-full border border-white/10" />
+                      <div className="min-w-0">
+                        <p className="text-body-sm-semibold truncate text-white">
+                          Gallery image {index + 1}
+                        </p>
+                        <p className="text-muted text-[10px]">IMAGE</p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setPreviewItem({
+                          url: preview,
+                          title: `Gallery image ${index + 1}`,
+                          kind: 'gallery',
+                        })
+                      }
+                      className="text-body-sm bg-brand-surface mt-3 flex w-full items-center justify-center gap-1.5 rounded-md py-2 font-semibold text-white transition-colors hover:bg-white/7"
+                    >
+                      <FileText className="size-3.5" />
+                      View Image
+                    </button>
                   </div>
                 ))}
               </div>

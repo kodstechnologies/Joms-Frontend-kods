@@ -88,9 +88,9 @@ export function MembershipPlanFormPage() {
 
   return (
     <div className="flex justify-center py-2">
-      {/* Figma shell: 701 wide, black panel — same as Create Membership */}
+      {/* Figma shell: 701 wide — same panel as Create Membership */}
       <div
-        className="flex w-full max-w-[701px] flex-col overflow-hidden rounded-[16px] border border-white/10 bg-black text-white shadow-[0_24px_80px_rgba(0,0,0,0.45)]"
+        className="create-membership-modal flex w-full flex-col overflow-hidden text-white"
         style={{ minHeight: 'min(90vh, 1458px)' }}
       >
         <div
@@ -107,10 +107,10 @@ export function MembershipPlanFormPage() {
               <ArrowLeft className="size-5" strokeWidth={1.75} />
             </button>
             <div>
-              <h1 className="text-[20px] leading-7 font-semibold text-white">
+              <h1 className="create-membership-title">
                 {isEditMode ? 'Edit Membership' : 'Create Membership'}
               </h1>
-              <p className="mt-1 text-[14px] leading-[22px] text-white/50">
+              <p className="create-membership-subtitle mt-1">
                 {isEditMode
                   ? `Update configuration for ${plan?.planName ?? 'plan'}`
                   : 'Configure membership plan details and features'}
@@ -120,7 +120,7 @@ export function MembershipPlanFormPage() {
           <button
             type="button"
             onClick={handleClose}
-            className="rounded-lg p-2 text-white/50 transition-colors hover:bg-white/10 hover:text-white"
+            className="create-membership-close-btn"
             aria-label="Close"
           >
             <X className="size-5" strokeWidth={1.75} />
@@ -139,11 +139,7 @@ export function MembershipPlanFormPage() {
           className="flex shrink-0 items-center justify-end gap-3 px-6 py-5"
           style={{ borderTop: '1px solid rgba(255,255,255,0.1)' }}
         >
-          <button
-            type="button"
-            onClick={handleClose}
-            className="inline-flex h-10 min-w-[120px] items-center justify-center rounded-[10px] border border-white bg-transparent px-4 text-[14px] leading-[22px] font-semibold text-white transition-colors hover:bg-white/5"
-          >
+          <button type="button" onClick={handleClose} className="create-membership-cancel-btn">
             Cancel
           </button>
           <button
