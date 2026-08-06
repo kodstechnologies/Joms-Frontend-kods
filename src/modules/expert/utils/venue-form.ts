@@ -74,6 +74,7 @@ export type VenueFormData = {
   venueCoverImageUrl: string
   venueImageUrl: string
   galleryImageUrls: string[]
+  galleryPreviews: string[]
   weeklyAvailability: WeeklyAvailabilityEntry[]
   blockedDates: BlockedDateEntry[]
 }
@@ -118,6 +119,7 @@ export const createEmptyVenueFormData = (): VenueFormData => ({
   venueCoverImageUrl: '',
   venueImageUrl: '',
   galleryImageUrls: [],
+  galleryPreviews: [],
   weeklyAvailability: createDefaultWeeklyAvailability(),
   blockedDates: [],
 })
@@ -192,9 +194,7 @@ export const mapDraftToVenueFormData = (
   const terms = profile?.terms as Record<string, unknown> | undefined
   const gallery = space?.galleryContact as Record<string, unknown> | undefined
   const amenitiesDoc = profile?.amenities as
-    | Array<Record<string, unknown>>
-    | Record<string, unknown>
-    | undefined
+    Array<Record<string, unknown>> | Record<string, unknown> | undefined
 
   const amenityLabels = Array.isArray(amenitiesDoc)
     ? amenitiesDoc.flatMap((item) =>
@@ -245,8 +245,7 @@ export const mapDraftToVenueFormData = (
       : String(terms?.terms || ''),
     cancellationPolicy: mapHoursToCancellationPolicy(
       (terms?.cancellation as Record<string, unknown> | undefined)?.freeCancellationHours as
-        | number
-        | undefined,
+        number | undefined,
     ),
     refundPercentage: String(
       (terms?.cancellation as Record<string, unknown> | undefined)?.refundPercentage ?? '',
@@ -265,4 +264,37 @@ export const mapDraftToVenueFormData = (
     weeklyAvailability: createDefaultWeeklyAvailability(),
     blockedDates: [],
   }
+}
+
+export const buildVenueGalleryPreviewsFromUrls = (urls: {
+  venueCoverImageUrl?: string
+  venueImageUrl?: string
+  galleryImageUrls?: string[]
+}) =>
+  [urls.venueCoverImageUrl, urls.venueImageUrl, ...(urls.galleryImageUrls || [])].filter(
+    (url): url is string => Boolean(url?.trim()),
+  )
+
+export const rebuildVenueGalleryPreviewsFromForm = (data: VenueFormData): string[] => {
+  const previews: string[] = []
+
+  if (data.venueCoverImage) {
+    previews.push(URL.createObjectURL(data.venueCoverImage))
+  } else if (data.venueCoverImageUrl.trim()) {
+    previews.push(data.venueCoverImageUrl)
+  }
+
+  if (data.venueImage) {
+    previews.push(URL.createObjectURL(data.venueImage))
+  } else if (data.venueImageUrl.trim()) {
+    previews.push(data.venueImageUrl)
+  }
+
+  if (data.galleryImages.length > 0) {
+    previews.push(...data.galleryImages.map((file) => URL.createObjectURL(file)))
+  } else {
+    previews.push(...data.galleryImageUrls.filter((url) => url.trim()))
+  }
+
+  return previews
 }

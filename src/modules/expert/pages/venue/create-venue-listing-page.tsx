@@ -19,6 +19,7 @@ import { useVenueStepMutations } from '@/modules/expert/hooks/use-create-venue'
 import { fetchAdminDraftVenue } from '../../api/venue-api'
 import {
   createDefaultWeeklyAvailability,
+  buildVenueGalleryPreviewsFromUrls,
   mapHoursToCancellationPolicy,
   mapSpaceTypeFromApi,
   type VenueFormData,
@@ -54,6 +55,10 @@ type DraftVenueSpace = {
   parkingAvailable?: boolean
   accessibility?: boolean
   pricing?: DraftPricing[]
+  venueCoverImages?: Array<{ url: string }>
+  spaceCoverImages?: Array<{ url: string }>
+  galleryImages?: Array<{ url: string }>
+  galleryContact?: { contacts?: DraftContact[] }
   availability?: {
     weeklyAvailability?: DraftWeeklyAvailabilityEntry[]
     blockedDates?: DraftBlockedDate[]
@@ -85,6 +90,30 @@ type DraftVenue = {
 
 const toEntityId = (value?: string | { _id: string }) =>
   typeof value === 'object' ? value?._id : value
+
+const getApiErrorMessage = (error: unknown) => {
+  const err = error as { response?: { data?: { message?: string } } }
+  return err?.response?.data?.message || 'Something went wrong. Please try again.'
+}
+
+const resolveGalleryUrls = (source?: {
+  venueCoverImages?: Array<{ url: string }>
+  spaceCoverImages?: Array<{ url: string }>
+  galleryImages?: Array<{ url: string }>
+  galleryContact?: { contacts?: DraftContact[] }
+}) => ({
+  venueCoverImageUrl: source?.venueCoverImages?.[0]?.url || '',
+  venueImageUrl: source?.spaceCoverImages?.[0]?.url || '',
+  galleryImageUrls: (source?.galleryImages || []).map((img) => img.url).filter(Boolean),
+  contacts:
+    source?.galleryContact?.contacts && source.galleryContact.contacts.length > 0
+      ? source.galleryContact.contacts.map((contact) => ({
+          name: contact.name || '',
+          phone: contact.phone || '',
+          email: contact.email || '',
+        }))
+      : null,
+})
 
 export const CreateVenueListingPage = () => {
   const [searchParams] = useSearchParams()
@@ -146,6 +175,7 @@ export const CreateVenueListingPage = () => {
     venueCoverImageUrl: '',
     venueImageUrl: '',
     galleryImageUrls: [] as string[],
+    galleryPreviews: [] as string[],
     serviceType: 'entire_space',
     setDays: '',
     weekdayPrice: '',
@@ -178,9 +208,10 @@ export const CreateVenueListingPage = () => {
       try {
         const response = await fetchAdminDraftVenue(venueId)
         const venue = response?.data as DraftVenue | undefined
-        const gallery = venue?.gallery
         const spaces = venue?.spaces || []
-        const space = isEditMode ? spaces[0] : undefined
+        const space = spaces[0]
+        const gallerySource = space ?? venue?.gallery
+        const galleryUrls = resolveGalleryUrls(gallerySource)
         const pricing = isEditMode ? (space?.pricing?.[0] ?? venue?.pricing?.[0]) : undefined
         const terms = venue?.terms
 
@@ -201,7 +232,7 @@ export const CreateVenueListingPage = () => {
             }))
           : []
 
-        if (isEditMode && space?._id) {
+        if (space?._id) {
           setSpaceId(String(space._id))
         } else {
           setSpaceId(null)
@@ -252,19 +283,24 @@ export const CreateVenueListingPage = () => {
                 })
               : [],
 
-          venueCoverImageUrl: isEditMode ? gallery?.venueCoverImages?.[0]?.url || '' : '',
-          venueImageUrl: isEditMode ? gallery?.spaceCoverImages?.[0]?.url || '' : '',
-          galleryImageUrls: isEditMode
-            ? (gallery?.galleryImages || []).map((img: { url: string }) => img.url)
-            : [],
-          contacts:
-            isEditMode && gallery?.contact?.contacts && gallery.contact.contacts.length > 0
-              ? gallery.contact.contacts.map((contact) => ({
-                  name: contact.name || '',
-                  phone: contact.phone || '',
-                  email: contact.email || '',
-                }))
-              : [{ name: '', phone: '', email: '' }],
+          venueCoverImageUrl: galleryUrls.venueCoverImageUrl || prev.venueCoverImageUrl,
+          venueImageUrl: galleryUrls.venueImageUrl || prev.venueImageUrl,
+          galleryImageUrls:
+            galleryUrls.galleryImageUrls.length > 0
+              ? galleryUrls.galleryImageUrls
+              : prev.galleryImageUrls,
+          galleryPreviews: buildVenueGalleryPreviewsFromUrls({
+            venueCoverImageUrl: galleryUrls.venueCoverImageUrl || prev.venueCoverImageUrl,
+            venueImageUrl: galleryUrls.venueImageUrl || prev.venueImageUrl,
+            galleryImageUrls:
+              galleryUrls.galleryImageUrls.length > 0
+                ? galleryUrls.galleryImageUrls
+                : prev.galleryImageUrls,
+          }),
+          venueCoverImage: null,
+          venueImage: null,
+          galleryImages: [],
+          contacts: galleryUrls.contacts ?? prev.contacts,
 
           weekdayPrice: pricing?.weekdayPrice ? String(pricing.weekdayPrice) : '',
           weekendPrice: pricing?.weekendPrice ? String(pricing.weekendPrice) : '',
@@ -289,6 +325,12 @@ export const CreateVenueListingPage = () => {
         }))
       } catch (err) {
         console.error('Failed to load venue draft', err)
+        const message = getApiErrorMessage(err)
+        if (/unauthorized|token/i.test(message)) {
+          toast.error('Session expired or missing. Please log in again.')
+        } else {
+          toast.error(message)
+        }
       }
     }
 
@@ -328,6 +370,24 @@ export const CreateVenueListingPage = () => {
         }
         await saveAmenitiesAndMedia.mutateAsync({ venueId: venueId!, spaceId, venueData })
         toast.success('Amenities & media saved')
+
+        if (venueId) {
+          const refreshed = await fetchAdminDraftVenue(venueId)
+          const refreshedVenue = refreshed?.data as DraftVenue | undefined
+          const refreshedSpace = refreshedVenue?.spaces?.[0]
+          const refreshedGalleryUrls = resolveGalleryUrls(refreshedSpace ?? refreshedVenue?.gallery)
+
+          setVenueData((prev) => ({
+            ...prev,
+            venueCoverImage: null,
+            venueImage: null,
+            galleryImages: [],
+            venueCoverImageUrl: refreshedGalleryUrls.venueCoverImageUrl,
+            venueImageUrl: refreshedGalleryUrls.venueImageUrl,
+            galleryImageUrls: refreshedGalleryUrls.galleryImageUrls,
+            galleryPreviews: buildVenueGalleryPreviewsFromUrls(refreshedGalleryUrls),
+          }))
+        }
       }
 
       if (currentStep === 5) {

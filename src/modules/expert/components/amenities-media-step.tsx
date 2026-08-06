@@ -6,6 +6,7 @@ import { AddAmenityModal } from './add-amenity-modal'
 import { useQuery } from '@tanstack/react-query'
 import { fetchAmenityMasters } from '../api/venue-api'
 import type { VenueFormData } from '../utils/venue-form'
+import { rebuildVenueGalleryPreviewsFromForm } from '../utils/venue-form'
 
 type AmenitySubCategory = {
   _id: string
@@ -75,32 +76,55 @@ export const AmenitiesMediaStep = ({ venueData, setVenueData }: AmenitiesMediaSt
     }))
   }
 
+  const syncGalleryPreviews = (
+    prev: VenueFormData,
+    patch: Partial<VenueFormData>,
+  ): VenueFormData => {
+    const next = { ...prev, ...patch }
+    return {
+      ...next,
+      galleryPreviews: rebuildVenueGalleryPreviewsFromForm(next),
+    }
+  }
+
   const handleCoverImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] ?? null
-    setVenueData((prev) => ({ ...prev, venueCoverImage: file }))
+    setVenueData((prev) =>
+      syncGalleryPreviews(prev, {
+        venueCoverImage: file,
+        venueCoverImageUrl: file ? '' : prev.venueCoverImageUrl,
+      }),
+    )
     e.target.value = ''
   }
 
   const handleVenueImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] ?? null
-    setVenueData((prev) => ({ ...prev, venueImage: file }))
+    setVenueData((prev) =>
+      syncGalleryPreviews(prev, {
+        venueImage: file,
+        venueImageUrl: file ? '' : prev.venueImageUrl,
+      }),
+    )
     e.target.value = ''
   }
 
   const handleGalleryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? [])
-    setVenueData((prev) => ({
-      ...prev,
-      galleryImages: [...prev.galleryImages, ...files],
-    }))
+    setVenueData((prev) =>
+      syncGalleryPreviews(prev, {
+        galleryImages: [...prev.galleryImages, ...files],
+      }),
+    )
     e.target.value = ''
   }
 
   const removeGalleryImage = (index: number) => {
-    setVenueData((prev) => ({
-      ...prev,
-      galleryImages: prev.galleryImages.filter((_, i) => i !== index),
-    }))
+    setVenueData((prev) =>
+      syncGalleryPreviews(prev, {
+        galleryImages: prev.galleryImages.filter((_, i) => i !== index),
+      }),
+    )
   }
 
   const contacts = venueData.contacts || [{ name: '', phone: '', email: '' }]
