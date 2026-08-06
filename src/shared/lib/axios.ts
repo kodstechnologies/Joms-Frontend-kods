@@ -44,3 +44,5 @@ export const paymentApiClient = createApiClient(env.paymentApiBaseUrl)
 export const settingsApiClient = createApiClient(env.settingsApiBaseUrl)
 
 export const chatApiClient = createApiClient(env.chatApiBaseUrl)
+
+export const notificationApiClient = createApiClient(env.notificationApiBaseUrl)

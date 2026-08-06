@@ -12,6 +12,7 @@ import { PageContainer } from '@/shared/components/responsive/page-container'
 import { useMediaQuery } from '@/shared/hooks/use-media-query'
 import { uiTokens } from '@/shared/lib/design-tokens'
 import { useSyncSubAdminPermissions } from '@/modules/auth/hooks/use-sync-sub-admin-permissions'
+import { usePushNotifications } from '@/modules/notifications'
 
 function PageContentLoader() {
   return (
@@ -33,6 +34,7 @@ export function DashboardLayout() {
   const isDesktopShell = useMediaQuery('(min-width: 768px)')
 
   useSyncSubAdminPermissions()
+  usePushNotifications()
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- close overlays on route change
