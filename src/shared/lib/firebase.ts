@@ -1,5 +1,11 @@
 import { initializeApp, getApps, type FirebaseApp } from 'firebase/app'
-import { getMessaging, getToken, onMessage, type Messaging } from 'firebase/messaging'
+import {
+  getMessaging,
+  getToken,
+  onMessage,
+  type Messaging,
+  type MessagePayload,
+} from 'firebase/messaging'
 import { env } from '@/config/env'
 
 let firebaseApp: FirebaseApp | null = null
@@ -90,7 +96,7 @@ export const onForegroundMessage = (
   const messaging = getMessagingInstance()
   if (!messaging) return () => {}
 
-  return onMessage(messaging, (payload) => {
+  return onMessage(messaging, (payload: MessagePayload) => {
     callback({
       notification: payload.notification as { title?: string; body?: string } | undefined,
       data: payload.data as Record<string, string> | undefined,
