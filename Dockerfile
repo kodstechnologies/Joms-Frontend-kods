@@ -8,9 +8,6 @@ RUN npm install --ignore-scripts
 
 COPY . .
 
-# Increase Node.js heap memory for Vite + TypeScript build
-ENV NODE_OPTIONS="--max-old-space-size=4096"
-
 RUN npm run build
 
 
@@ -18,7 +15,7 @@ FROM nginx:alpine
 
 COPY --from=build /app/dist /usr/share/nginx/html
 
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY nginx.conf /etc/nginx/templates/default.conf.template
 
 EXPOSE 80
 
