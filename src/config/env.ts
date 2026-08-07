@@ -12,6 +12,7 @@ const PROD_SERVICE_URLS = {
   settings: 'https://settings.api.kods.online',
   payment: 'https://payment.api.kods.online',
   chat: 'https://chat.api.kods.online',
+  notification: 'https://notifications.api.kods.online',
 } as const
 
 const localApiBaseUrl = trimTrailingSlash(import.meta.env.VITE_API_BASE_URL || LOCAL_API_BASE_URL)
@@ -66,4 +67,14 @@ export const env = {
     8009,
     PROD_SERVICE_URLS.chat,
   ),
+  notificationApiBaseUrl: resolveApiUrl(
+    import.meta.env.VITE_NOTIFICATION_API_BASE_URL,
+    8010,
+    PROD_SERVICE_URLS.notification,
+  ),
+  firebaseApiKey: import.meta.env.VITE_FIREBASE_API_KEY || '',
+  firebaseAuthDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || '',
+  firebaseProjectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || '',
+  firebaseMessagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '',
+  firebaseAppId: import.meta.env.VITE_FIREBASE_APP_ID || '',
 }
