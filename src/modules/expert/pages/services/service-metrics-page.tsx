@@ -19,6 +19,5 @@ export const ServiceDashboardMetricsPage = () => (
     returnTo="/services/dashboard"
     section="dashboard"
     includeTableColumns={false}
-    maxActiveMetrics={8}
   />
 )
