@@ -1,7 +1,6 @@
 import {
   ArrowUpDown,
   BarChart3,
-  Crown,
   Download,
   Search,
   SlidersHorizontal,
@@ -13,6 +12,10 @@ import { toast } from 'sonner'
 
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
+
+import rank2Icon from '@/assets/JOMS_ADMIN_PANEL_3D_ICONS/change-the-engraved-gold-number--1--on-the-circula (1).png'
+import rank3Icon from '@/assets/JOMS_ADMIN_PANEL_3D_ICONS/change-the-engraved-gold-number--2--on-the-circula (1).png'
+import rank1Icon from '@/assets/JOMS_ADMIN_PANEL_3D_ICONS/create-a-high-quality-3d-icon-of-a-gold-trophy-wit 2.png'
 
 type PodiumExpert = {
   rank: 1 | 2 | 3
@@ -156,48 +159,6 @@ function RankBadge({ rank }: { rank: number }) {
   )
 }
 
-function Avatar({ size = 'md' }: { size?: 'md' | 'lg' }) {
-  return (
-    <div
-      className={cn(
-        'from-brand-accent/30 to-brand-surface grid place-items-center rounded-full bg-gradient-to-br ring-2 ring-white/10',
-        size === 'lg' ? 'size-16' : 'size-12',
-      )}
-    >
-      <UserRound className={cn('text-white/80', size === 'lg' ? 'size-7' : 'size-5')} />
-    </div>
-  )
-}
-
-function PodiumCard({ expert }: { expert: PodiumExpert }) {
-  const isFirst = expert.rank === 1
-  return (
-    <div className={cn('flex flex-col items-center', isFirst ? 'pt-0' : 'pt-10')}>
-      <div className="relative">
-        {isFirst && (
-          <Crown className="fill-brand-accent text-brand-accent absolute -top-6 left-1/2 size-6 -translate-x-1/2" />
-        )}
-        <Avatar size={isFirst ? 'lg' : 'md'} />
-      </div>
-      <p className="text-body-md mt-3 font-bold text-white">{expert.name}</p>
-      <p className="text-body-sm text-muted">{expert.profession}</p>
-
-      <div
-        className={cn(
-          'bg-brand-surface mt-3 flex w-full flex-col items-center gap-2 rounded-xl border px-4 py-5',
-          isFirst ? 'border-brand-accent/40' : 'border-white/[0.06]',
-        )}
-      >
-        <div className="grid size-12 place-items-center rounded-full bg-black/40">
-          <UserRound className="text-brand-accent size-6" />
-        </div>
-        <span className="text-muted text-[10px] font-medium tracking-wide uppercase">Score</span>
-        <span className="text-h3 font-bold text-white">{expert.score}</span>
-      </div>
-    </div>
-  )
-}
-
 export const LeaderboardPage = () => {
   const navigate = useNavigate()
   const location = useLocation()
@@ -224,9 +185,51 @@ export const LeaderboardPage = () => {
 
       <div className="bg-brand-bg rounded-2xl border border-white/[0.06] px-6 py-8">
         <div className="mx-auto grid max-w-3xl grid-cols-3 items-end gap-4">
-          {PODIUM.map((expert, index) => (
-            <PodiumCard key={index} expert={expert} />
-          ))}
+          {[
+            [...PODIUM].sort((a, b) => b.score - a.score)[1], // 2nd place
+            [...PODIUM].sort((a, b) => b.score - a.score)[0], // 1st place
+            [...PODIUM].sort((a, b) => b.score - a.score)[2], // 3rd place
+          ].map((expert, index) => {
+            if (!expert) return null
+            const isFirst = index === 1
+            const calculatedRank = isFirst ? 1 : index === 0 ? 2 : 3
+
+            let iconSrc = rank3Icon
+            if (calculatedRank === 1) iconSrc = rank1Icon
+            else if (calculatedRank === 2) iconSrc = rank2Icon
+
+            return (
+              <div
+                key={index}
+                className={cn('flex flex-col items-center', isFirst ? 'pt-0' : 'pt-10')}
+              >
+                <div className="relative grid place-items-center">
+                  <img
+                    src={iconSrc}
+                    alt={`Rank ${calculatedRank}`}
+                    className={cn('object-contain drop-shadow-xl', isFirst ? 'h-24' : 'h-16')}
+                  />
+                </div>
+                <p className="text-body-md mt-3 font-bold text-white">{expert.name}</p>
+                <p className="text-body-sm text-muted">{expert.profession}</p>
+
+                <div
+                  className={cn(
+                    'bg-brand-surface mt-3 flex w-full flex-col items-center gap-2 rounded-xl border px-4 py-5',
+                    isFirst ? 'border-brand-accent/40' : 'border-white/[0.06]',
+                  )}
+                >
+                  <div className="grid size-12 place-items-center rounded-full bg-black/40">
+                    <UserRound className="text-brand-accent size-6" />
+                  </div>
+                  <span className="text-muted text-[10px] font-medium tracking-wide uppercase">
+                    Score
+                  </span>
+                  <span className="text-h3 font-bold text-white">{expert.score}</span>
+                </div>
+              </div>
+            )
+          })}
         </div>
       </div>
 
