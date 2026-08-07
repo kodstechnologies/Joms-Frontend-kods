@@ -77,4 +77,5 @@ export const env = {
   firebaseProjectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || '',
   firebaseMessagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '',
   firebaseAppId: import.meta.env.VITE_FIREBASE_APP_ID || '',
+  firebaseVapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY || '',
 }

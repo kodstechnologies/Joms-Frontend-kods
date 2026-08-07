@@ -80,7 +80,7 @@ export const requestNotificationPermission = async (): Promise<string | null> =>
   }
 
   const token = await getToken(messaging, {
-    vapidKey: env.firebaseMessagingSenderId,
+    vapidKey: env.firebaseVapidKey,
     serviceWorkerRegistration: registration,
   })
 
