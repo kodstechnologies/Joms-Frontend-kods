@@ -49,6 +49,11 @@ export const useUpdateSettings = <M extends SettingsModule>(module: M) => {
       if (module === 'platform') {
         void queryClient.invalidateQueries({ queryKey: ['settings', 'public', 'maintenance'] })
       }
+      if (module === 'security') {
+        void queryClient.invalidateQueries({
+          queryKey: ['settings', 'public', 'security-policy'],
+        })
+      }
     },
   })
 }
@@ -63,6 +68,11 @@ export const useResetSettings = <M extends SettingsModule>(module: M) => {
       void queryClient.invalidateQueries({ queryKey: [...settingsKeys.all, 'logs'] })
       if (module === 'platform') {
         void queryClient.invalidateQueries({ queryKey: ['settings', 'public', 'maintenance'] })
+      }
+      if (module === 'security') {
+        void queryClient.invalidateQueries({
+          queryKey: ['settings', 'public', 'security-policy'],
+        })
       }
     },
   })

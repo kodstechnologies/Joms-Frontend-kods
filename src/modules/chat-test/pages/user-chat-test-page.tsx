@@ -8,6 +8,7 @@ import {
   type ChatBackendMode,
 } from '../config/chat-backend'
 import { ChatTestPanel } from '../components/chat-test-panel'
+import { UserQuotationPanel } from '../components/user-quotation-panel'
 
 function EndpointToggle({
   mode,
@@ -36,21 +37,25 @@ function EndpointToggle({
   )
 }
 
-/**
- * Static user chat harness � separate URL from partner.
- * Delete later when real user app exists.
- */
 export function UserChatTestPage() {
   const [userId, setUserId] = useState(STATIC_CHAT_USERS[0]?.id || '')
   const [chatMode, setChatMode] = useState<ChatBackendMode>(() => loadChatBackendMode())
 
   const chatBaseUrl = useMemo(() => resolveChatBaseUrl(chatMode), [chatMode])
 
+  const selectedUser = useMemo(
+    () => STATIC_CHAT_USERS.find((x) => x.id === userId) || STATIC_CHAT_USERS[0] || null,
+    [userId],
+  )
+
   const identity = useMemo(() => {
-    const u = STATIC_CHAT_USERS.find((x) => x.id === userId) || STATIC_CHAT_USERS[0]
-    if (!u) return null
-    return { id: u.id, label: u.username, accessToken: u.accessToken }
-  }, [userId])
+    if (!selectedUser) return null
+    return {
+      id: selectedUser.id,
+      label: selectedUser.username,
+      accessToken: selectedUser.accessToken,
+    }
+  }, [selectedUser])
 
   const handleModeChange = (mode: ChatBackendMode) => {
     setChatMode(mode)
@@ -64,12 +69,12 @@ export function UserChatTestPage() {
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h1 className="text-2xl font-semibold tracking-tight">User chat (static)</h1>
             <Link to="/dev/chat-partner" className="text-sm text-amber-400 hover:underline">
-              Open partner panel ?
+              Open partner panel →
             </Link>
           </div>
           <p className="text-sm text-zinc-400">
-            Temporary static users. Enter a real partner id (from partner login page) to start a
-            chat.
+            Static users pick a partner&apos;s service or consultation, request a quotation, then
+            chat / accept proposals.
           </p>
         </header>
 
@@ -86,7 +91,9 @@ export function UserChatTestPage() {
               </option>
             ))}
           </select>
-          <span className="text-xs break-all text-zinc-500">{identity?.id}</span>
+          <span className="text-xs break-all text-zinc-500">
+            {selectedUser?.id} · {selectedUser?.phone_e164}
+          </span>
         </div>
 
         <div className="flex flex-wrap items-center gap-2 rounded-lg border border-zinc-800 bg-zinc-900/60 px-3 py-2">
@@ -94,6 +101,8 @@ export function UserChatTestPage() {
           <EndpointToggle mode={chatMode} onChange={handleModeChange} />
           <span className="text-[11px] text-zinc-500">{chatBaseUrl}</span>
         </div>
+
+        {selectedUser ? <UserQuotationPanel user={selectedUser} /> : null}
 
         {identity ? (
           <ChatTestPanel

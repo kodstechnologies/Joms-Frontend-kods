@@ -1,10 +1,12 @@
 import { useState } from 'react'
 import { X } from 'lucide-react'
+import { toast } from 'sonner'
 
-const PASSWORD_RULES = [
-  'Password must be at least 6 characters long.',
-  'New password must be different from the current password.',
-]
+import { useSecurityPolicy } from '@/modules/settings/hooks/use-security-policy'
+import {
+  describePasswordPolicy,
+  validatePasswordAgainstPolicy,
+} from '@/modules/settings/utils/password-policy'
 
 type UpdatePasswordModalProps = {
   open: boolean
@@ -29,10 +31,19 @@ export function UpdatePasswordModal({
   onClose,
   onSubmit,
 }: UpdatePasswordModalProps) {
+  const { passwordPolicy } = useSecurityPolicy()
   const [oldPassword, setOldPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [confirmNewPassword, setConfirmNewPassword] = useState('')
   const [wasOpen, setWasOpen] = useState(open)
+
+  const policyRules = describePasswordPolicy(passwordPolicy)
+  const passwordRules = [
+    ...policyRules,
+    ...(requireOldPassword || mode === 'reset'
+      ? ['New password must be different from the current password.']
+      : []),
+  ]
 
   const resetForm = () => {
     setOldPassword('')
@@ -53,6 +64,23 @@ export function UpdatePasswordModal({
   }
 
   const handleSubmit = () => {
+    if (!newPassword || !confirmNewPassword) {
+      toast.error('New password and confirmation are required')
+      return
+    }
+    if (requireOldPassword && !oldPassword) {
+      toast.error("User's current password is required")
+      return
+    }
+    if (newPassword !== confirmNewPassword) {
+      toast.error('New password and confirmation do not match')
+      return
+    }
+    const policyCheck = validatePasswordAgainstPolicy(newPassword, passwordPolicy)
+    if (!policyCheck.valid) {
+      toast.error(policyCheck.message || 'Password does not meet policy')
+      return
+    }
     onSubmit({ oldPassword, newPassword, confirmNewPassword })
   }
 
@@ -180,15 +208,9 @@ export function UpdatePasswordModal({
           <div className="radius-md bg-brand-bg border border-white/10 px-4 py-3">
             <p className="text-body-md-semibold text-brand-text">Password Format &amp; Rules</p>
             <ul className="text-body-sm text-muted mt-2 list-disc space-y-1 pl-4">
-              {(requireOldPassword
-                ? PASSWORD_RULES
-                : PASSWORD_RULES.filter((rule) => !rule.includes('different from the current'))
-              ).map((rule) => (
+              {passwordRules.map((rule) => (
                 <li key={rule}>{rule}</li>
               ))}
-              {!requireOldPassword && mode === 'reset' ? (
-                <li>New password must be different from the current password.</li>
-              ) : null}
             </ul>
           </div>
         </div>

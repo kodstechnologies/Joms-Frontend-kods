@@ -1,16 +1,12 @@
 import { useCallback, useMemo, useState } from 'react'
-import type { ColumnDef } from '@tanstack/react-table'
 import { ArrowLeft } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
 import { useLockedAccounts, useUnlockAccount } from '../hooks/use-security'
 import type { LockedAccountRow } from '../types/settings'
-import { SectionHeader } from '@/shared/components/dashboard/section-header'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
-import { DataTable } from '@/shared/components/table/data-table'
 import { cn } from '@/shared/lib/cn'
-import { uiTokens } from '@/shared/lib/design-tokens'
 
 function AccountDetailsModal({
   open,
@@ -54,7 +50,7 @@ function AccountDetailsModal({
             type="button"
             disabled={isUnlocking}
             onClick={onUnlock}
-            className="ui-modal-btn ui-modal-btn-gold"
+            className="locked-accounts-unlock-btn"
           >
             {isUnlocking ? 'Unlocking…' : 'Unlock'}
           </button>
@@ -84,17 +80,15 @@ function DetailRow({
 export function LockedAccountsPage() {
   const navigate = useNavigate()
   const [selected, setSelected] = useState<LockedAccountRow | null>(null)
-  const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
 
   const pageSize = 10
-  const { data: accountsResult, isLoading } = useLockedAccounts({ page, limit: pageSize, search })
+  const { data: accountsResult, isLoading } = useLockedAccounts({ page, limit: pageSize })
   const unlockMutation = useUnlockAccount()
 
   const rows = accountsResult?.data ?? []
   const meta = accountsResult?.meta
   const totalPages = meta?.totalPages ?? 1
-  const totalItems = meta?.total ?? 0
 
   const handleUnlock = useCallback(
     (id: string) => {
@@ -109,108 +103,124 @@ export function LockedAccountsPage() {
     [unlockMutation],
   )
 
-  const columns = useMemo<ColumnDef<LockedAccountRow>[]>(
-    () => [
-      {
-        accessorKey: 'admin',
-        header: 'Admin',
-        cell: ({ row }) => <span className="font-medium text-white">{row.original.admin}</span>,
-      },
-      {
-        accessorKey: 'role',
-        header: 'Roles',
-        cell: ({ row }) => <span className="text-muted">{row.original.role}</span>,
-      },
-      {
-        accessorKey: 'reason',
-        header: 'Reason',
-        cell: ({ row }) => <span className="text-brand-text/80">{row.original.reason}</span>,
-      },
-      {
-        accessorKey: 'lockedSince',
-        header: 'Locked Since',
-        cell: ({ row }) => <span className="text-muted">{row.original.lockedSince}</span>,
-      },
-      {
-        accessorKey: 'duration',
-        header: 'Duration',
-        cell: ({ row }) => <span className="text-muted">{row.original.duration}</span>,
-      },
-      {
-        id: 'actions',
-        header: 'Actions',
-        cell: ({ row }) => (
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setSelected(row.original)}
-              className="text-body-sm-medium rounded-lg border border-white/15 bg-white/5 px-3 py-1 text-white"
-            >
-              Review
-            </button>
-            <button
-              type="button"
-              onClick={() => handleUnlock(row.original.id)}
-              className="border-brand-positive/30 bg-brand-positive/10 text-body-sm-medium text-brand-positive rounded-lg border px-3 py-1"
-            >
-              Unlock
-            </button>
-          </div>
-        ),
-      },
-    ],
-    [handleUnlock],
-  )
+  const goBack = () =>
+    navigateBackOrFallback(navigate, '/settings/main', { state: { settingsTab: 'security' } })
+
+  const pageButtons = useMemo(() => {
+    return Array.from({ length: Math.max(totalPages, 1) }, (_, i) => i + 1).slice(0, 5)
+  }, [totalPages])
 
   return (
-    <div className="space-y-6">
-      <button
-        type="button"
-        onClick={() =>
-          navigateBackOrFallback(navigate, '/settings/main', { state: { settingsTab: 'security' } })
-        }
-        className="text-body-md text-muted inline-flex items-center gap-2 hover:text-white"
-      >
-        <ArrowLeft className="size-4" />
-        Settings / Security & Access / Locked Accounts
+    <div className="locked-accounts-page">
+      <button type="button" onClick={goBack} className="locked-accounts-back" aria-label="Back">
+        <ArrowLeft className="size-5" />
       </button>
 
-      <SectionHeader
-        title="Locked Accounts"
-        subtitle="Manage accounts that have been locked due to security reasons"
-        actions={[
-          {
-            label: 'Settings Logs',
-            onClick: () => navigate('/settings/logs'),
-            variant: 'secondary',
-          },
-        ]}
-      />
-
-      <div
-        className={cn(uiTokens.radiusCard, uiTokens.borderSubtle, 'bg-brand-surface p-4 sm:p-5')}
-      >
-        <DataTable
-          columns={columns}
-          data={rows}
-          getRowId={(row) => row.id}
-          isLoading={isLoading}
-          searchValue={search}
-          onSearchChange={(value) => {
-            setSearch(value)
-            setPage(1)
-          }}
-          searchPlaceholder="Search by admin, role, or reason…"
-          pagination={{
-            page,
-            pageSize,
-            totalItems,
-            totalPages,
-            onPageChange: setPage,
-          }}
-          resourceLabel="accounts"
-        />
+      <div className="locked-accounts-heading">
+        <h1 className="locked-accounts-title">Locked Accounts</h1>
+        <p className="locked-accounts-breadcrumb">Settings / Platform Controls / Locked Account</p>
       </div>
+
+      <section className="locked-accounts-card">
+        <header className="locked-accounts-card-header">
+          <h2 className="locked-accounts-card-title">Locked Account</h2>
+          <p className="locked-accounts-card-desc">
+            Manage accounts that have been locked due to security reasons
+          </p>
+        </header>
+
+        <div className="locked-accounts-table-wrap">
+          <table className="locked-accounts-table">
+            <thead>
+              <tr>
+                <th>Admin</th>
+                <th>Roles</th>
+                <th>Reason</th>
+                <th>Locked Since</th>
+                <th>Duration</th>
+                <th className="text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {isLoading ? (
+                <tr>
+                  <td colSpan={6} className="locked-accounts-empty">
+                    Loading locked accounts…
+                  </td>
+                </tr>
+              ) : rows.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="locked-accounts-empty">
+                    No locked accounts found.
+                  </td>
+                </tr>
+              ) : (
+                rows.map((row) => (
+                  <tr key={row.id}>
+                    <td className="locked-accounts-admin">{row.admin}</td>
+                    <td>{row.role}</td>
+                    <td>{row.reason}</td>
+                    <td>{row.lockedSince}</td>
+                    <td>{row.duration}</td>
+                    <td>
+                      <div className="locked-accounts-actions">
+                        <button
+                          type="button"
+                          onClick={() => setSelected(row)}
+                          className="locked-accounts-review-btn"
+                        >
+                          Review
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleUnlock(row.id)}
+                          disabled={unlockMutation.isPending}
+                          className="locked-accounts-unlock-btn"
+                        >
+                          Unlock
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {totalPages > 1 ? (
+          <div className="locked-accounts-pagination">
+            <button
+              type="button"
+              className="locked-accounts-page-btn"
+              disabled={page <= 1}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+            >
+              Previous
+            </button>
+            <div className="locked-accounts-page-numbers">
+              {pageButtons.map((n) => (
+                <button
+                  key={n}
+                  type="button"
+                  className={cn('locked-accounts-page-num', page === n && 'is-active')}
+                  onClick={() => setPage(n)}
+                >
+                  {String(n).padStart(2, '0')}
+                </button>
+              ))}
+            </div>
+            <button
+              type="button"
+              className="locked-accounts-page-btn"
+              disabled={page >= totalPages}
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+            >
+              Next
+            </button>
+          </div>
+        ) : null}
+      </section>
 
       <AccountDetailsModal
         open={Boolean(selected)}

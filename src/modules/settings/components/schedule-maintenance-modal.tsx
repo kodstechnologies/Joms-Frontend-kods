@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { ChevronLeft, ChevronRight, Clock, X } from 'lucide-react'
 import { createPortal } from 'react-dom'
 
@@ -61,30 +61,6 @@ function pad(value: number) {
   return String(value).padStart(2, '0')
 }
 
-function toDateInputValue(iso?: string | null) {
-  if (!iso) return ''
-  const date = new Date(iso)
-  if (Number.isNaN(date.getTime())) return ''
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
-}
-
-function toHourLabel(iso?: string | null, fallback = '7 PM') {
-  if (!iso) return fallback
-  const date = new Date(iso)
-  if (Number.isNaN(date.getTime())) return fallback
-  const hours = date.getHours()
-  const suffix = hours >= 12 ? 'PM' : 'AM'
-  const hour12 = hours % 12 || 12
-  return `${hour12} ${suffix}`
-}
-
-function toMinuteValue(iso?: string | null) {
-  if (!iso) return '00'
-  const date = new Date(iso)
-  if (Number.isNaN(date.getTime())) return '00'
-  return pad(date.getMinutes())
-}
-
 function hourLabelTo24(label: string) {
   const [rawHour, meridian] = label.split(' ')
   let hour = Number(rawHour)
@@ -94,6 +70,42 @@ function hourLabelTo24(label: string) {
     hour += 12
   }
   return hour
+}
+
+function toHourLabelFromDate(date: Date) {
+  const hours = date.getHours()
+  const suffix = hours >= 12 ? 'PM' : 'AM'
+  const hour12 = hours % 12 || 12
+  return `${hour12} ${suffix}`
+}
+
+function toMinuteFromDate(date: Date) {
+  return pad(date.getMinutes())
+}
+
+function toDateInputValue(date: Date) {
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
+}
+
+function parseIsoDate(iso?: string | null) {
+  if (!iso) return null
+  const date = new Date(iso)
+  if (Number.isNaN(date.getTime())) return null
+  return date
+}
+
+/** Default schedule window: start = now, end = now + 1 hour */
+function getDefaultSchedule() {
+  const start = new Date()
+  const end = new Date(start.getTime() + 60 * 60 * 1000)
+  return {
+    startDate: toDateInputValue(start),
+    endDate: toDateInputValue(end),
+    startHour: toHourLabelFromDate(start),
+    endHour: toHourLabelFromDate(end),
+    startMinute: toMinuteFromDate(start),
+    endMinute: toMinuteFromDate(end),
+  }
 }
 
 function buildIso(dateValue: string, hourLabel: string, minute: string) {
@@ -117,10 +129,6 @@ function formatDisplayDate(dateValue: string) {
     day: 'numeric',
     year: 'numeric',
   })
-}
-
-function todayInputValue() {
-  return toDateInputValue(new Date().toISOString())
 }
 
 function getCalendarDays(year: number, month: number) {
@@ -155,40 +163,44 @@ function TimePickerPanel({
   onHourChange: (hour: string) => void
   onMinuteChange: (minute: string) => void
 }) {
+  const hourListRef = useRef<HTMLDivElement>(null)
+  const minuteListRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const hourEl = hourListRef.current?.querySelector<HTMLElement>('[data-active="true"]')
+    const minuteEl = minuteListRef.current?.querySelector<HTMLElement>('[data-active="true"]')
+    hourEl?.scrollIntoView({ block: 'center' })
+    minuteEl?.scrollIntoView({ block: 'center' })
+  }, [activeHour, activeMinute])
+
   return (
-    <div className="schedule-maintenance-time-picker">
-      <div className="schedule-maintenance-time-picker-header">
-        <span className="schedule-maintenance-time-picker-header-cell">Hours</span>
-        <span className="schedule-maintenance-time-picker-header-divider" aria-hidden />
-        <span className="schedule-maintenance-time-picker-header-cell">Mins</span>
+    <div className="sm-time-picker">
+      <div className="sm-time-picker-head">
+        <span>Hours</span>
+        <span>Mins</span>
       </div>
-      <div className="schedule-maintenance-time-picker-body">
-        <div className="schedule-maintenance-time-list">
+      <div className="sm-time-picker-body">
+        <div className="sm-time-list" ref={hourListRef}>
           {HOURS.map((hour) => (
             <button
               key={hour}
               type="button"
+              data-active={activeHour === hour ? 'true' : undefined}
               onClick={() => onHourChange(hour)}
-              className={cn(
-                'schedule-maintenance-time-option',
-                activeHour === hour && 'schedule-maintenance-time-option-active',
-              )}
+              className={cn('sm-time-option', activeHour === hour && 'sm-time-option-active')}
             >
               {hour}
             </button>
           ))}
         </div>
-        <span className="schedule-maintenance-time-picker-body-divider" aria-hidden />
-        <div className="schedule-maintenance-time-list">
+        <div className="sm-time-list" ref={minuteListRef}>
           {MINS.map((minute) => (
             <button
               key={minute}
               type="button"
+              data-active={activeMinute === minute ? 'true' : undefined}
               onClick={() => onMinuteChange(minute)}
-              className={cn(
-                'schedule-maintenance-time-option',
-                activeMinute === minute && 'schedule-maintenance-time-option-active',
-              )}
+              className={cn('sm-time-option', activeMinute === minute && 'sm-time-option-active')}
             >
               {minute}
             </button>
@@ -205,18 +217,30 @@ function ScheduleMaintenanceModalContent({
   onClose,
   onSubmit,
 }: Omit<ScheduleMaintenanceModalProps, 'open'>) {
-  const initialStartDate = toDateInputValue(initialStartAt) || todayInputValue()
-  const initialEndDate = toDateInputValue(initialEndAt) || todayInputValue()
+  const defaults = getDefaultSchedule()
+  const initialStart = parseIsoDate(initialStartAt)
+  const initialEnd = parseIsoDate(initialEndAt)
+
+  const initialStartDate = initialStart ? toDateInputValue(initialStart) : defaults.startDate
+  const initialEndDate = initialEnd ? toDateInputValue(initialEnd) : defaults.endDate
   const parsedStart = new Date(`${initialStartDate}T00:00:00`)
 
   const [viewYear, setViewYear] = useState(() => parsedStart.getFullYear())
   const [viewMonth, setViewMonth] = useState(() => parsedStart.getMonth())
   const [startDate, setStartDate] = useState(initialStartDate)
   const [endDate, setEndDate] = useState(initialEndDate)
-  const [startHour, setStartHour] = useState(() => toHourLabel(initialStartAt))
-  const [endHour, setEndHour] = useState(() => toHourLabel(initialEndAt, '8 PM'))
-  const [startMinute, setStartMinute] = useState(() => toMinuteValue(initialStartAt))
-  const [endMinute, setEndMinute] = useState(() => toMinuteValue(initialEndAt))
+  const [startHour, setStartHour] = useState(() =>
+    initialStart ? toHourLabelFromDate(initialStart) : defaults.startHour,
+  )
+  const [endHour, setEndHour] = useState(() =>
+    initialEnd ? toHourLabelFromDate(initialEnd) : defaults.endHour,
+  )
+  const [startMinute, setStartMinute] = useState(() =>
+    initialStart ? toMinuteFromDate(initialStart) : defaults.startMinute,
+  )
+  const [endMinute, setEndMinute] = useState(() =>
+    initialEnd ? toMinuteFromDate(initialEnd) : defaults.endMinute,
+  )
   const [picking, setPicking] = useState<'start' | 'end'>('start')
   const [error, setError] = useState('')
 
@@ -264,10 +288,10 @@ function ScheduleMaintenanceModalContent({
     const isEnd = Boolean(rangeEnd && dateStr === rangeEnd)
     const inRange = Boolean(rangeStart && rangeEnd) && dateStr > rangeStart && dateStr < rangeEnd
 
-    if (isStart && isEnd) return 'schedule-maintenance-calendar-day-range-single'
-    if (isStart) return 'schedule-maintenance-calendar-day-range-start'
-    if (isEnd) return 'schedule-maintenance-calendar-day-range-end'
-    if (inRange) return 'schedule-maintenance-calendar-day-in-range'
+    if (isStart && isEnd) return 'is-single'
+    if (isStart) return 'is-start'
+    if (isEnd) return 'is-end'
+    if (inRange) return 'is-in-range'
     return ''
   }
 
@@ -291,53 +315,55 @@ function ScheduleMaintenanceModalContent({
   }
 
   const handleReset = () => {
-    const today = todayInputValue()
-    setViewYear(new Date().getFullYear())
-    setViewMonth(new Date().getMonth())
-    setStartDate(today)
-    setEndDate(today)
-    setStartHour('7 PM')
-    setEndHour('8 PM')
-    setStartMinute('00')
-    setEndMinute('00')
+    const next = getDefaultSchedule()
+    const now = new Date()
+    setViewYear(now.getFullYear())
+    setViewMonth(now.getMonth())
+    setStartDate(next.startDate)
+    setEndDate(next.endDate)
+    setStartHour(next.startHour)
+    setEndHour(next.endHour)
+    setStartMinute(next.startMinute)
+    setEndMinute(next.endMinute)
     setPicking('start')
     setError('')
   }
 
   return createPortal(
-    <div className="fixed inset-0 z-[130] flex items-center justify-center bg-black/70 p-4">
-      <div className="ui-modal-shell schedule-maintenance-modal-shell">
-        <div className="ui-modal-header schedule-maintenance-modal-header">
+    <div className="sm-modal-overlay">
+      <div className="sm-modal" role="dialog" aria-modal="true" aria-labelledby="sm-modal-title">
+        <div className="sm-modal-header">
           <div>
-            <h2 className="schedule-maintenance-modal-title">Schedule Maintenance</h2>
-            <p className="schedule-maintenance-modal-subtitle">
-              Enter Start date & End Date and time
-            </p>
+            <h2 id="sm-modal-title" className="sm-modal-title">
+              Schedule Maintenance
+            </h2>
+            <p className="sm-modal-subtitle">Enter Start date & End Date and time</p>
           </div>
-          <button type="button" onClick={onClose} className="schedule-maintenance-modal-close">
-            <X className="icon-md" />
+          <button type="button" onClick={onClose} className="sm-modal-close" aria-label="Close">
+            <X className="size-5" />
           </button>
         </div>
 
-        <div className="ui-modal-body schedule-maintenance-modal-body">
-          <div className="schedule-maintenance-layout">
-            <div className="schedule-maintenance-section">
-              <div className="schedule-maintenance-calendar">
-                <div className="schedule-maintenance-calendar-nav">
+        <div className="sm-modal-body">
+          <div className="sm-modal-grid">
+            {/* Left: calendar + date fields */}
+            <div className="sm-left">
+              <div className="sm-calendar">
+                <div className="sm-calendar-nav">
                   <button
                     type="button"
-                    className="schedule-maintenance-calendar-nav-btn"
+                    className="sm-calendar-nav-btn"
                     aria-label="Previous month"
                     onClick={() => shiftMonth(-1)}
                   >
                     <ChevronLeft className="size-4" />
                   </button>
-                  <p className="schedule-maintenance-calendar-month">
+                  <p className="sm-calendar-month">
                     {MONTHS[viewMonth]} {viewYear}
                   </p>
                   <button
                     type="button"
-                    className="schedule-maintenance-calendar-nav-btn"
+                    className="sm-calendar-nav-btn"
                     aria-label="Next month"
                     onClick={() => shiftMonth(1)}
                   >
@@ -345,27 +371,22 @@ function ScheduleMaintenanceModalContent({
                   </button>
                 </div>
 
-                <div className="schedule-maintenance-calendar-weekdays">
+                <div className="sm-calendar-weekdays">
                   {WEEKDAYS.map((weekday) => (
-                    <span key={weekday} className="schedule-maintenance-calendar-weekday">
-                      {weekday}
-                    </span>
+                    <span key={weekday}>{weekday}</span>
                   ))}
                 </div>
 
-                <div className="schedule-maintenance-calendar-days">
+                <div className="sm-calendar-days">
                   {calendarDays.map((day, index) =>
                     day == null ? (
-                      <span
-                        key={`empty-${index}`}
-                        className="schedule-maintenance-calendar-day schedule-maintenance-calendar-day-empty"
-                      />
+                      <span key={`empty-${index}`} className="sm-day is-empty" />
                     ) : (
                       <button
                         key={`${viewYear}-${viewMonth}-${day}`}
                         type="button"
                         onClick={() => handleDayClick(day)}
-                        className={cn('schedule-maintenance-calendar-day', getDayClassName(day))}
+                        className={cn('sm-day', getDayClassName(day))}
                       >
                         {day}
                       </button>
@@ -374,109 +395,81 @@ function ScheduleMaintenanceModalContent({
                 </div>
               </div>
 
-              <div>
-                <span className="schedule-maintenance-field-label">
-                  Select Start Date & End Date
-                </span>
-                <div className="schedule-maintenance-field-grid">
-                  <div>
-                    <span className="schedule-maintenance-field-label">Start Date</span>
-                    <div className="schedule-maintenance-field-wrap">
-                      <input
-                        type="text"
-                        readOnly
-                        value={formatDisplayDate(startDate)}
-                        className="schedule-maintenance-field"
-                      />
-                      <Clock className="schedule-maintenance-field-icon" aria-hidden />
-                    </div>
-                  </div>
-                  <div>
-                    <span className="schedule-maintenance-field-label">End Date</span>
-                    <div className="schedule-maintenance-field-wrap">
-                      <input
-                        type="text"
-                        readOnly
-                        value={formatDisplayDate(endDate || startDate)}
-                        className="schedule-maintenance-field"
-                      />
-                      <Clock className="schedule-maintenance-field-icon" aria-hidden />
-                    </div>
-                  </div>
-                </div>
+              <div className="sm-date-fields">
+                <label className="sm-field">
+                  <span className="sm-field-label">Start Date</span>
+                  <span className="sm-field-box">
+                    <span>{formatDisplayDate(startDate)}</span>
+                    <Clock className="size-4 opacity-50" aria-hidden />
+                  </span>
+                </label>
+                <label className="sm-field">
+                  <span className="sm-field-label">End Date</span>
+                  <span className="sm-field-box">
+                    <span>{formatDisplayDate(endDate || startDate)}</span>
+                    <Clock className="size-4 opacity-50" aria-hidden />
+                  </span>
+                </label>
               </div>
             </div>
 
-            <div className="schedule-maintenance-divider" aria-hidden />
-
-            <div className="schedule-maintenance-section schedule-maintenance-section-right">
-              <div className="schedule-maintenance-time-row">
-                <div className="schedule-maintenance-time-field">
-                  <span className="schedule-maintenance-field-label">Start Time</span>
+            {/* Right: time triggers + hours/mins picker */}
+            <div className="sm-right">
+              <div className="sm-time-triggers">
+                <div className="sm-field">
+                  <span className="sm-field-label">Start Time</span>
                   <button
                     type="button"
                     onClick={() => setPicking('start')}
-                    className={cn(
-                      'schedule-maintenance-time-trigger',
-                      picking === 'start' && 'schedule-maintenance-time-trigger-active',
-                    )}
+                    className={cn('sm-time-box', picking === 'start' && 'is-active')}
                   >
-                    {preview.start}
-                    <Clock className="schedule-maintenance-field-icon" />
+                    <span>{preview.start}</span>
+                    <Clock className="size-4 opacity-50" aria-hidden />
                   </button>
-                  {picking === 'start' ? (
-                    <TimePickerPanel
-                      activeHour={startHour}
-                      activeMinute={startMinute}
-                      onHourChange={setStartHour}
-                      onMinuteChange={setStartMinute}
-                    />
-                  ) : null}
                 </div>
-                <div className="schedule-maintenance-time-field">
-                  <span className="schedule-maintenance-field-label">End Time</span>
+                <div className="sm-field">
+                  <span className="sm-field-label">End Time</span>
                   <button
                     type="button"
                     onClick={() => setPicking('end')}
-                    className={cn(
-                      'schedule-maintenance-time-trigger',
-                      picking === 'end' && 'schedule-maintenance-time-trigger-active',
-                    )}
+                    className={cn('sm-time-box', picking === 'end' && 'is-active')}
                   >
-                    {preview.end}
-                    <Clock className="schedule-maintenance-field-icon" />
+                    <span>{preview.end}</span>
+                    <Clock className="size-4 opacity-50" aria-hidden />
                   </button>
-                  {picking === 'end' ? (
-                    <TimePickerPanel
-                      activeHour={endHour}
-                      activeMinute={endMinute}
-                      onHourChange={setEndHour}
-                      onMinuteChange={setEndMinute}
-                    />
-                  ) : null}
                 </div>
               </div>
 
-              <div className="schedule-maintenance-actions">
-                <button
-                  type="button"
-                  onClick={handleReset}
-                  className="schedule-maintenance-action-btn schedule-maintenance-reset-btn"
-                >
+              <div className="sm-picker-wrap">
+                {picking === 'start' ? (
+                  <TimePickerPanel
+                    activeHour={startHour}
+                    activeMinute={startMinute}
+                    onHourChange={setStartHour}
+                    onMinuteChange={setStartMinute}
+                  />
+                ) : (
+                  <TimePickerPanel
+                    activeHour={endHour}
+                    activeMinute={endMinute}
+                    onHourChange={setEndHour}
+                    onMinuteChange={setEndMinute}
+                  />
+                )}
+              </div>
+
+              <div className="sm-actions">
+                <button type="button" onClick={handleReset} className="sm-btn sm-btn-reset">
                   Reset
                 </button>
-                <button
-                  type="button"
-                  onClick={handleSubmit}
-                  className="schedule-maintenance-action-btn schedule-maintenance-submit-btn"
-                >
+                <button type="button" onClick={handleSubmit} className="sm-btn sm-btn-submit">
                   Submit
                 </button>
               </div>
             </div>
           </div>
 
-          {error ? <p className="schedule-maintenance-error">{error}</p> : null}
+          {error ? <p className="sm-error">{error}</p> : null}
         </div>
       </div>
     </div>,
@@ -495,7 +488,7 @@ export function ScheduleMaintenanceModal({
 
   return (
     <ScheduleMaintenanceModalContent
-      key={`${initialStartAt ?? 'start'}-${initialEndAt ?? 'end'}`}
+      key={`${initialStartAt ?? 'now-start'}-${initialEndAt ?? 'now-end'}-${open}`}
       initialStartAt={initialStartAt}
       initialEndAt={initialEndAt}
       onClose={onClose}

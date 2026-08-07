@@ -15,6 +15,7 @@ import { useLoginMutation } from '@/modules/auth/hooks/use-login-mutation'
 import { useVerifyOtpMutation } from '@/modules/auth/hooks/use-verify-otp-mutation'
 import { type LoginSchema, loginSchema } from '@/modules/auth/validations/login-schema'
 import { type OtpSchema, otpSchema } from '@/modules/auth/validations/otp-schema'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
 import { FormField } from '@/shared/components/form/form-field'
 import { OtpInput } from '@/shared/components/form/otp-input'
 import { Button } from '@/shared/components/ui/button'
@@ -53,8 +54,8 @@ export function LoginPage() {
       setPendingEmail(values.email)
       setStep('otp')
       toast.success('OTP sent to your email')
-    } catch {
-      toast.error('Invalid credentials')
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Invalid credentials'))
     }
   }
 

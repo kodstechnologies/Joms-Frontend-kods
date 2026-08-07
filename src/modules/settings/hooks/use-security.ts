@@ -25,7 +25,12 @@ export const useUnlockAccount = () => {
   })
 }
 
-export const useLoginTrails = (params?: { page?: number; limit?: number; search?: string }) =>
+export const useLoginTrails = (params?: {
+  page?: number
+  limit?: number
+  search?: string
+  status?: string
+}) =>
   useQuery({
     queryKey: securityKeys.loginTrails(params),
     queryFn: () => fetchLoginTrails(params),

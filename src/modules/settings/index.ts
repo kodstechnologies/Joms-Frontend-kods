@@ -6,12 +6,10 @@ export { LockedAccountsPage } from './pages/locked-accounts-page'
 export { LoginTrailsPage } from './pages/login-trails-page'
 export { CategoryHubPage } from './pages/category-hub-page'
 export { TemplatesPage } from './pages/templates-page'
-export {
-  PolicyCreatePage,
-  PolicyDetailPage,
-  PolicyManagementPage,
-  PolicyTimelinePage,
-} from './pages/policy-management-page'
+export { PolicyCreatePage, PolicyManagementPage } from './pages/policy-management-page'
+export { PolicyViewPage } from './pages/policy-view-page'
+export { PolicyEditPage, PolicyDetailPage } from './pages/policy-edit-page'
+export { PolicyTimelinePage } from './pages/policy-timeline-page'
 export {
   SystemConfigurationPage,
   EscalationsSettingsPage,

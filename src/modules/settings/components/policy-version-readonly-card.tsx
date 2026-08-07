@@ -1,4 +1,4 @@
-import { Calendar, Clock, FileText, UserRound } from 'lucide-react'
+import { Calendar, FileText, UserRound } from 'lucide-react'
 
 import type { PolicyVersion } from '../types/settings'
 import { cn } from '@/shared/lib/cn'
@@ -9,73 +9,74 @@ type PolicyVersionReadonlyCardProps = {
   className?: string
 }
 
-function getStatusClass(status: string) {
-  if (status === 'Active') {
-    return 'border-brand-positive/25 bg-brand-positive/10 text-brand-positive'
-  }
-  return 'border-white/25 bg-white/10 text-muted'
-}
-
 export function PolicyVersionReadonlyCard({
   title,
   version,
   className,
 }: PolicyVersionReadonlyCardProps) {
+  const status = version.status || 'Active'
+
   return (
-    <div
-      className={cn('bg-brand-surface space-y-4 rounded-xl border border-white/10 p-4', className)}
-    >
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="flex min-w-0 items-start gap-3">
-          <div className="bg-brand-bg grid size-10 shrink-0 place-items-center rounded-lg border border-white/10">
-            <FileText className="text-muted size-4" />
+    <div className={cn('policy-view-card space-y-5', className)}>
+      <div className="flex flex-wrap items-start justify-between gap-3 border-b border-white/10 pb-4">
+        <div className="min-w-0 space-y-3">
+          <div className="policy-list-row-title-line">
+            <FileText className="policy-list-doc-icon" aria-hidden />
+            <h2 className="policy-list-row-title">{title}</h2>
+            <span
+              className={cn(
+                'policy-status-badge',
+                status === 'Active' ? 'policy-status-badge--active' : 'policy-status-badge--muted',
+              )}
+            >
+              {status}
+            </span>
+            <span className="policy-version-badge">{version.version}</span>
           </div>
-          <div className="min-w-0 space-y-2">
-            <div className="flex flex-wrap items-center gap-2">
-              <h2 className="text-body-md-semibold text-white">{title}</h2>
-              <span
-                className={cn(
-                  'text-body-sm rounded-full border px-2.5 py-0.5 font-semibold',
-                  getStatusClass(version.status),
-                )}
-              >
-                {version.status}
-              </span>
-              <span className="border-brand-accent/30 bg-brand-accent/10 text-body-sm text-brand-accent rounded-full border px-2.5 py-0.5 font-semibold">
-                {version.version}
-              </span>
-            </div>
-            <div className="text-body-sm text-muted flex flex-wrap items-center gap-4">
-              <span className="inline-flex items-center gap-1.5">
-                <Calendar className="size-3.5" />
-                Effective: {version.effectiveDate}
-              </span>
-              <span className="inline-flex items-center gap-1.5">
-                <Clock className="size-3.5" />
-                Last Updated: {version.lastUpdated}
-              </span>
-              <span className="inline-flex items-center gap-1.5">
-                <UserRound className="size-3.5" />
-                By: {version.author || 'Super Admin'}
-              </span>
-            </div>
+
+          <div className="policy-list-row-meta">
+            <span className="policy-meta-item">
+              <Calendar className="policy-meta-icon" aria-hidden />
+              <span className="policy-meta-label">Effective:</span>
+              <span className="policy-meta-value">{version.effectiveDate || '—'}</span>
+            </span>
+            <span className="policy-meta-item">
+              <Calendar className="policy-meta-icon" aria-hidden />
+              <span className="policy-meta-label">Last Updated:</span>
+              <span className="policy-meta-value">{version.lastUpdated || '—'}</span>
+            </span>
+          </div>
+
+          <div className="policy-timeline-author">
+            <UserRound className="policy-meta-icon" aria-hidden />
+            <span className="policy-meta-label">By:</span>
+            <span className="policy-meta-value">{version.author || 'Super Admin'}</span>
           </div>
         </div>
+
+        <span
+          className={cn(
+            'policy-status-chip',
+            status === 'Active' ? 'policy-status-chip--active' : 'policy-status-chip--muted',
+          )}
+        >
+          {status}
+        </span>
       </div>
 
       <section className="space-y-2">
-        <p className="text-body-sm-semibold text-white">Policy Information</p>
-        <div className="rounded-xl border border-white/10 bg-black/20 p-4">
-          <p className="text-body-sm-semibold mb-2 text-white">What was changed</p>
-          <p className="text-body-sm text-muted whitespace-pre-wrap">
+        <p className="policy-change-label">Policy Information</p>
+        <div className="policy-view-change-box">
+          <p className="policy-change-label">What was changed</p>
+          <p className="policy-change-text">
             {version.changeSummary || 'No change summary provided for this version.'}
           </p>
         </div>
       </section>
 
       <section className="space-y-2">
-        <p className="text-body-sm-semibold text-white">Policy Content</p>
-        <div className="bg-brand-bg max-h-[420px] overflow-y-auto rounded-xl border border-white/10 p-4">
+        <p className="policy-change-label">Policy Content</p>
+        <div className="policy-view-content-box">
           <p className="text-body-md text-brand-text/85 whitespace-pre-wrap">
             {version.content || 'No policy content available for this version.'}
           </p>

@@ -1,39 +1,85 @@
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, Filter, RefreshCw, Upload } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
 import { useLoginTrails } from '../hooks/use-security'
-import type { LoginTrailRow } from '../types/settings'
-import { SectionHeader } from '@/shared/components/dashboard/section-header'
+import { useSettingsModule, useUpdateSettings } from '../hooks/use-settings'
+import { securityDefaults } from '../mock/settings.defaults'
+import type { LoginTrailRow, SecuritySettings } from '../types/settings'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import { DataTable } from '@/shared/components/table/data-table'
-import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
-import { uiTokens } from '@/shared/lib/design-tokens'
 
 const PAGE_SIZE = 10
 
-function StatusDot({ status }: { status: LoginTrailRow['status'] }) {
-  const colors = {
-    success: 'bg-emerald-400',
-    failed: 'bg-rose-400',
-    warning: 'bg-amber-400',
+type TrailStatus = LoginTrailRow['status'] | ''
+
+function StatusBadge({ status }: { status: LoginTrailRow['status'] }) {
+  if (status === 'success') {
+    return <span className="login-trails-status is-success">Success</span>
   }
-  return (
-    <span className="inline-flex items-center gap-2 text-slate-300 capitalize">
-      <span className={cn('size-2 rounded-full', colors[status])} />
-      {status}
-    </span>
-  )
+  if (status === 'failed') {
+    return <span className="login-trails-status is-failed">Failed</span>
+  }
+  return <span className="login-trails-status is-blocked">Blocked</span>
+}
+
+function downloadTrailsCsv(rows: LoginTrailRow[]) {
+  const headers = [
+    'Date',
+    'Time',
+    'Admin',
+    'Email',
+    'Role',
+    'IP Address',
+    'Action',
+    'Status',
+    'Location',
+    'Device',
+  ]
+  const escape = (value: string) => `"${String(value ?? '').replace(/"/g, '""')}"`
+  const lines = [
+    headers.join(','),
+    ...rows.map((row) =>
+      [
+        row.date,
+        row.time,
+        row.adminName || '',
+        row.adminEmail || '',
+        row.role || '',
+        row.ipAddress,
+        row.action,
+        row.status,
+        row.location,
+        row.device,
+      ]
+        .map(escape)
+        .join(','),
+    ),
+  ]
+  const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const anchor = document.createElement('a')
+  anchor.href = url
+  anchor.download = `admin-login-trails-${new Date().toISOString().slice(0, 10)}.csv`
+  anchor.click()
+  URL.revokeObjectURL(url)
 }
 
 export function LoginTrailsPage() {
   const navigate = useNavigate()
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
-  const [loginAlerts, setLoginAlerts] = useState(true)
+  const [statusFilter, setStatusFilter] = useState<TrailStatus>('')
+  const [showFilters, setShowFilters] = useState(false)
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+
+  const securityQuery = useSettingsModule('security')
+  const updateSecurity = useUpdateSettings('security')
+  const securityConfig = (securityQuery.data?.config || securityDefaults) as SecuritySettings
+  const loginAlerts = Boolean(securityConfig.loginAlerts)
 
   const {
     data: trailsResult,
@@ -44,75 +90,136 @@ export function LoginTrailsPage() {
     page,
     limit: PAGE_SIZE,
     search,
+    status: statusFilter || undefined,
   })
 
-  const rows = trailsResult?.data ?? []
+  const rows = useMemo(() => trailsResult?.data ?? [], [trailsResult?.data])
   const meta = trailsResult?.meta
   const totalPages = meta?.totalPages ?? 1
   const totalItems = meta?.total ?? 0
 
+  const allSelected = rows.length > 0 && rows.every((row) => selectedIds.has(row.id))
+
+  const toggleAll = useCallback(() => {
+    if (allSelected) {
+      setSelectedIds(new Set())
+      return
+    }
+    setSelectedIds(new Set(rows.map((row) => row.id)))
+  }, [allSelected, rows])
+
+  const toggleOne = useCallback((id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }, [])
+
   const columns = useMemo<ColumnDef<LoginTrailRow>[]>(
     () => [
       {
+        id: 'select',
+        header: () => (
+          <input
+            type="checkbox"
+            aria-label="Select all rows"
+            checked={allSelected}
+            onChange={toggleAll}
+            className="security-checkbox-input"
+          />
+        ),
+        cell: ({ row }) => (
+          <input
+            type="checkbox"
+            aria-label={`Select row ${row.original.id}`}
+            checked={selectedIds.has(row.original.id)}
+            onChange={() => toggleOne(row.original.id)}
+            className="security-checkbox-input"
+          />
+        ),
+        meta: { headerClassName: 'w-10', cellClassName: 'w-10' },
+      },
+      {
         accessorKey: 'date',
         header: 'Date',
-        cell: ({ row }) => <span className="text-slate-300">{row.original.date}</span>,
+        cell: ({ row }) => <span className="text-white/80">{row.original.date}</span>,
       },
       {
         accessorKey: 'time',
         header: 'Time',
-        cell: ({ row }) => <span className="text-slate-400">{row.original.time}</span>,
+        cell: ({ row }) => <span className="text-white/60">{row.original.time}</span>,
       },
       {
         accessorKey: 'ipAddress',
         header: 'IP Address',
-        cell: ({ row }) => <span className="text-slate-300">{row.original.ipAddress}</span>,
+        cell: ({ row }) => <span className="text-white/80">{row.original.ipAddress || '—'}</span>,
       },
       {
         accessorKey: 'action',
         header: 'Action',
-        cell: ({ row }) => <span className="text-slate-300">{row.original.action}</span>,
+        cell: ({ row }) => <span className="text-white/80">{row.original.action}</span>,
       },
       {
         accessorKey: 'status',
         header: 'Status',
-        cell: ({ row }) => <StatusDot status={row.original.status} />,
+        cell: ({ row }) => <StatusBadge status={row.original.status} />,
       },
       {
         accessorKey: 'location',
         header: 'Location',
-        cell: ({ row }) => <span className="text-slate-400">{row.original.location}</span>,
+        cell: ({ row }) => <span className="text-white/60">{row.original.location || '—'}</span>,
       },
       {
         accessorKey: 'device',
         header: 'Device',
-        cell: ({ row }) => <span className="text-slate-400">{row.original.device}</span>,
+        cell: ({ row }) => <span className="text-white/60">{row.original.device || '—'}</span>,
       },
     ],
-    [],
+    [allSelected, selectedIds, toggleAll, toggleOne],
   )
 
+  const toggleLoginAlerts = () => {
+    const next = !loginAlerts
+    updateSecurity.mutate(
+      { ...securityConfig, loginAlerts: next },
+      {
+        onSuccess: () => {
+          toast.success(next ? 'Login alerts enabled' : 'Login alerts disabled')
+        },
+        onError: () => toast.error('Failed to update login alerts'),
+      },
+    )
+  }
+
+  const goBack = () =>
+    navigateBackOrFallback(navigate, '/settings/main', { state: { settingsTab: 'security' } })
+
   return (
-    <div className="space-y-6">
-      <button
-        type="button"
-        onClick={() =>
-          navigateBackOrFallback(navigate, '/settings/main', { state: { settingsTab: 'security' } })
-        }
-        className="inline-flex items-center gap-2 text-sm text-slate-400 hover:text-white"
-      >
-        <ArrowLeft className="size-4" />
-        Settings / Security & Access / Admin Login Trails
-      </button>
+    <div className="login-trails-page">
+      <p className="login-trails-breadcrumb">
+        <button type="button" onClick={goBack} className="login-trails-breadcrumb-link">
+          Settings
+        </button>
+        <span> / Platform Controls / Admin Login Trails</span>
+      </p>
 
-      <SectionHeader
-        title="Admin Login Trails"
-        subtitle="Monitor all admin login activities and security events"
-      />
+      <div className="login-trails-heading">
+        <div className="login-trails-title-row">
+          <button type="button" onClick={goBack} className="login-trails-back" aria-label="Back">
+            <ArrowLeft className="size-5" />
+          </button>
+          <div>
+            <h1 className="login-trails-title">Admin Login Trails</h1>
+            <p className="login-trails-subtitle">
+              Manage accounts that have been locked due to security reasons.
+            </p>
+          </div>
+        </div>
+      </div>
 
-      <div
-        className={cn(uiTokens.radiusCard, uiTokens.borderSubtle, 'bg-brand-surface p-4 sm:p-5')}
-      >
+      <section className="login-trails-card">
         <DataTable
           columns={columns}
           data={rows}
@@ -123,8 +230,10 @@ export function LoginTrailsPage() {
             setSearch(value)
             setPage(1)
           }}
-          searchPlaceholder="Search by date or IP address"
-          onExport={() => toast.success('Export started')}
+          searchPlaceholder="Search by name, ID or profession."
+          showAdvancedFilter={false}
+          showExport={false}
+          showSortIcons={false}
           pagination={{
             page,
             pageSize: PAGE_SIZE,
@@ -132,48 +241,95 @@ export function LoginTrailsPage() {
             totalPages,
             onPageChange: setPage,
           }}
-          resourceLabel="events"
+          resourceLabel="users"
           toolbarContent={
-            <div className="flex flex-wrap items-center gap-2">
-              <label className="flex items-center gap-2 text-xs text-white">
-                <button
-                  type="button"
-                  role="switch"
-                  aria-checked={loginAlerts}
-                  onClick={() => setLoginAlerts((current) => !current)}
-                  className={cn(
-                    'relative h-5 w-9 rounded-full transition-colors',
-                    loginAlerts ? 'bg-emerald-500' : 'bg-white/15',
-                  )}
-                >
-                  <span
-                    className={cn(
-                      'absolute top-0.5 left-0.5 size-4 rounded-full bg-white transition-transform',
-                      loginAlerts && 'translate-x-4',
-                    )}
-                  />
-                </button>
-                Login Alerts
-              </label>
-              <Button
-                variant="secondary"
-                className="h-8 text-xs"
+            <div className="login-trails-toolbar-actions">
+              <div className="login-trails-alerts">
+                <div className="security-switch-wrap">
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={loginAlerts}
+                    aria-label="Login Alerts"
+                    disabled={updateSecurity.isPending || securityQuery.isLoading}
+                    onClick={toggleLoginAlerts}
+                    className={cn('security-switch', loginAlerts && 'is-on')}
+                  >
+                    <span className="security-switch-knob" />
+                  </button>
+                  <span className="security-switch-caption">{loginAlerts ? 'ON' : 'OFF'}</span>
+                </div>
+                <span className="login-trails-alerts-label">Login Alerts</span>
+              </div>
+
+              <button
+                type="button"
+                className="login-trails-tool-btn"
                 disabled={isFetching}
                 onClick={() => void refetch()}
               >
-                {isFetching ? 'Refreshing…' : 'Refresh'}
-              </Button>
-              <Button
-                variant="secondary"
-                className="h-8 text-xs"
-                onClick={() => toast.message('Filters applied')}
+                <RefreshCw className={cn('size-4', isFetching && 'animate-spin')} />
+                Refresh
+              </button>
+              <button
+                type="button"
+                className="login-trails-tool-btn"
+                onClick={() => setShowFilters((open) => !open)}
               >
-                Apply Filter
-              </Button>
+                <Filter className="size-4" />
+                Advance Filters
+              </button>
+              <button
+                type="button"
+                className="login-trails-export-btn"
+                onClick={() => {
+                  if (!rows.length) {
+                    toast.message('No trails to export')
+                    return
+                  }
+                  downloadTrailsCsv(rows)
+                  toast.success('Export started')
+                }}
+              >
+                <Upload className="size-4" />
+                Export Data
+              </button>
             </div>
           }
         />
-      </div>
+
+        {showFilters ? (
+          <div className="login-trails-filters">
+            <label className="login-trails-filter-label" htmlFor="login-trails-status">
+              Status
+            </label>
+            <select
+              id="login-trails-status"
+              className="login-trails-filter-select"
+              value={statusFilter}
+              onChange={(event) => {
+                setStatusFilter(event.target.value as TrailStatus)
+                setPage(1)
+              }}
+            >
+              <option value="">All</option>
+              <option value="success">Success</option>
+              <option value="failed">Failed</option>
+              <option value="blocked">Blocked</option>
+            </select>
+            <button
+              type="button"
+              className="login-trails-tool-btn"
+              onClick={() => {
+                setStatusFilter('')
+                setPage(1)
+              }}
+            >
+              Clear
+            </button>
+          </div>
+        ) : null}
+      </section>
     </div>
   )
 }

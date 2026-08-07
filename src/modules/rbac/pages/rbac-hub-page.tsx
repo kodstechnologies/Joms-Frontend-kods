@@ -193,11 +193,6 @@ export function RbacHubPage() {
     async (payload: { oldPassword: string; newPassword: string; confirmNewPassword: string }) => {
       if (!passwordResetUser) return
 
-      if (payload.newPassword.length < 6) {
-        toast.error('Password must be at least 6 characters')
-        return
-      }
-
       if (payload.newPassword !== payload.confirmNewPassword) {
         toast.error('New password and confirmation do not match')
         return
