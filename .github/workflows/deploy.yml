@@ -19,35 +19,51 @@ jobs:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_KEY }}
+
           script: |
             set -e
 
             cd ~/Joms-Frontend
 
-            echo "Fetching latest code..."
+            echo "Pulling latest code..."
             git fetch origin
             git reset --hard origin/main
 
-            echo "Creating .env file..."
+            echo "Creating env file..."
             cat <<EOF > .env
             ${{ secrets.ENV_FILE }}
             EOF
 
             echo "Building Docker image..."
-            docker build -t joms-frontend .
+            docker build --no-cache -t joms-frontend-new .
 
             echo "Stopping old container..."
             docker stop joms-frontend || true
             docker rm joms-frontend || true
 
             echo "Starting new container..."
+
             docker run -d \
               --name joms-frontend \
-              --restart unless-stopped \
               -p 3000:80 \
-              joms-frontend
+              --restart always \
+              joms-frontend-new
 
-            echo "Removing unused Docker images..."
+            echo "Checking container..."
+
+            sleep 5
+
+            if ! docker ps | grep joms-frontend; then
+              echo "Container failed"
+              docker logs joms-frontend
+              exit 1
+            fi
+
+            echo "Testing frontend..."
+
+            curl -f http://localhost:3000
+
+            echo "Cleaning old images..."
             docker image prune -f
 
-            echo "Deployment completed successfully!"
+            echo "Deployment completed successfully"
