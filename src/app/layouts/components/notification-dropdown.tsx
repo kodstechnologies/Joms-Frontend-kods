@@ -173,7 +173,10 @@ type NotificationPanelProps = {
 export function NotificationPanel({ open, onClose }: NotificationPanelProps) {
   const notificationsQuery = useMyNotifications(open)
   const markReadMutation = useMarkNotificationRead()
-  const notifications = notificationsQuery.data?.data ?? []
+  const notifications = useMemo(
+    () => notificationsQuery.data?.data ?? [],
+    [notificationsQuery.data?.data],
+  )
   const totalCount = notificationsQuery.data?.meta?.total ?? notifications.length
 
   const { todayItems, olderItems } = useMemo(() => {

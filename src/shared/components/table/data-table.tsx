@@ -1,7 +1,12 @@
-import type { ReactNode } from 'react'
-import type { ColumnDef, RowData } from '@tanstack/react-table'
-import { flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table'
-import { ArrowUpDown, Filter, Search, Upload } from 'lucide-react'
+import { useState, type ReactNode } from 'react'
+import type { ColumnDef, RowData, SortingState } from '@tanstack/react-table'
+import {
+  flexRender,
+  getCoreRowModel,
+  getSortedRowModel,
+  useReactTable,
+} from '@tanstack/react-table'
+import { ArrowUpDown, ArrowDown, ArrowUp, Filter, Search, Upload } from 'lucide-react'
 
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
@@ -85,12 +90,19 @@ export function DataTable<TData>({
   tone = 'default',
   onRowClick,
 }: DataTableProps<TData>) {
+  const [sorting, setSorting] = useState<SortingState>([])
+
   // eslint-disable-next-line react-hooks/incompatible-library -- useReactTable is intentionally opted out
   const table = useReactTable({
     data,
     columns,
     getRowId,
+    state: {
+      sorting,
+    },
+    onSortingChange: setSorting,
     getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
   })
 
   const currentPage = Math.min(Math.max(pagination.page, 1), Math.max(pagination.totalPages, 1))
@@ -175,7 +187,6 @@ export function DataTable<TData>({
         <table className="ui-data-table-table">
           <thead
             className={cn(
-              'border-y',
               isCategoryTone
                 ? 'bg-brand-surface border-white/10'
                 : 'bg-brand-surface border-white/10',
@@ -197,15 +208,38 @@ export function DataTable<TData>({
                     )}
                   >
                     {header.isPlaceholder ? null : (
-                      <span className="inline-flex items-center gap-1.5">
+                      <div
+                        className={cn(
+                          'inline-flex items-center gap-1.5',
+                          header.column.getCanSort() &&
+                            showSortIcons &&
+                            'cursor-pointer select-none',
+                        )}
+                        onClick={
+                          header.column.getCanSort() && showSortIcons
+                            ? header.column.getToggleSortingHandler()
+                            : undefined
+                        }
+                      >
                         {flexRender(header.column.columnDef.header, header.getContext())}
                         {header.column.id !== 'select' &&
                           header.column.id !== 'actions' &&
                           header.column.getCanSort() &&
-                          showSortIcons && (
+                          showSortIcons &&
+                          (header.column.getIsSorted() === 'asc' ? (
+                            <ArrowUp
+                              className="text-brand-primary size-[18px]"
+                              aria-hidden="true"
+                            />
+                          ) : header.column.getIsSorted() === 'desc' ? (
+                            <ArrowDown
+                              className="text-brand-primary size-[18px]"
+                              aria-hidden="true"
+                            />
+                          ) : (
                             <ArrowUpDown className="text-muted/50 size-[18px]" aria-hidden="true" />
-                          )}
-                      </span>
+                          ))}
+                      </div>
                     )}
                   </th>
                 ))}
