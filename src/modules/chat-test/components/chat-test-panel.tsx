@@ -1,10 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   createClientMessageId,
+  editMessage,
   listMessages,
   listThreads,
   markRead,
   sendMessageRest,
+  setPinnedMessage,
+  setThreadMuted,
+  setThreadPinned,
   startThread,
   uploadAttachment,
   type ChatMessage,
@@ -62,6 +66,7 @@ export function ChatTestPanel({
   const [vaultOpen, setVaultOpen] = useState(false)
   const [attachMenuOpen, setAttachMenuOpen] = useState(false)
   const [uploading, setUploading] = useState(false)
+  const [editingMessageId, setEditingMessageId] = useState<string | null>(null)
   const [presence, setPresence] = useState<
     Record<string, { isOnline: boolean; lastSeen: string | null }>
   >({})
@@ -81,6 +86,8 @@ export function ChatTestPanel({
     setThreads([])
     setPresence({})
     setError(null)
+    setEditingMessageId(null)
+    setDraft('')
   }
 
   const applyPresenceToThreads = useCallback(
@@ -125,6 +132,15 @@ export function ChatTestPanel({
       try {
         const data = await listMessages(token, threadId, undefined, chatBaseUrl)
         setMessages(data.messages || [])
+        if (data.meta?.threadId) {
+          setThreads((prev) => {
+            const next = [...prev]
+            const idx = next.findIndex((x) => x.threadId === data.meta.threadId)
+            if (idx >= 0) next[idx] = { ...next[idx], ...data.meta }
+            else next.unshift(data.meta)
+            return next
+          })
+        }
         const other = data.meta?.otherParticipant
         if (other?.id) {
           setPresence((prev) => ({
@@ -159,10 +175,13 @@ export function ChatTestPanel({
           const idx = next.findIndex((x) => x.threadId === t.threadId)
           if (idx >= 0) next[idx] = { ...next[idx], ...t }
           else next.unshift(t)
-          return next.sort(
-            (a, b) =>
-              new Date(b.lastMessageAt || 0).getTime() - new Date(a.lastMessageAt || 0).getTime(),
-          )
+          return next.sort((a, b) => {
+            const pinDiff = Number(Boolean(b.isPinned)) - Number(Boolean(a.isPinned))
+            if (pinDiff !== 0) return pinDiff
+            return (
+              new Date(b.lastMessageAt || 0).getTime() - new Date(a.lastMessageAt || 0).getTime()
+            )
+          })
         })
       },
       onNewMessage: (payload: unknown) => {
@@ -177,6 +196,20 @@ export function ChatTestPanel({
           return [...prev, m]
         })
         if (token && m.threadId) void markRead(token, m.threadId, chatBaseUrl)
+      },
+      onMessageUpdated: (payload: unknown) => {
+        const m = payload as ChatMessage
+        if (!m?._id || m.threadId !== selectedRef.current) return
+        setMessages((prev) => prev.map((x) => (x._id === m._id ? { ...x, ...m } : x)))
+      },
+      onMessageDeleted: (payload: unknown) => {
+        const m = payload as ChatMessage
+        if (!m?._id || m.threadId !== selectedRef.current) return
+        setMessages((prev) =>
+          prev.map((x) =>
+            x._id === m._id ? { ...x, ...m, text: '', fileUrl: null, isDeleted: true } : x,
+          ),
+        )
       },
       onUserStatus: (payload: unknown) => {
         const p = payload as { userId?: string; isOnline?: boolean; lastSeen?: string | null }
@@ -267,6 +300,96 @@ export function ChatTestPanel({
       const thread = await startThread(token, body, chatBaseUrl)
       await refreshThreads()
       await openThread(thread.threadId)
+    } catch (err) {
+      setError(errMessage(err))
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const applyThreadUpdate = (thread: ChatThread) => {
+    setThreads((prev) => {
+      const next = [...prev]
+      const idx = next.findIndex((x) => x.threadId === thread.threadId)
+      if (idx >= 0) next[idx] = { ...next[idx], ...thread }
+      else next.unshift(thread)
+      return next.sort((a, b) => {
+        const pinDiff = Number(Boolean(b.isPinned)) - Number(Boolean(a.isPinned))
+        if (pinDiff !== 0) return pinDiff
+        return new Date(b.lastMessageAt || 0).getTime() - new Date(a.lastMessageAt || 0).getTime()
+      })
+    })
+  }
+
+  const handleTogglePinChat = async () => {
+    if (!selectedThreadId || !selectedThread) return
+    try {
+      const updated = await setThreadPinned(
+        token,
+        selectedThreadId,
+        !selectedThread.isPinned,
+        chatBaseUrl,
+      )
+      applyThreadUpdate(updated)
+    } catch (err) {
+      setError(errMessage(err))
+    }
+  }
+
+  const handleToggleMute = async () => {
+    if (!selectedThreadId || !selectedThread) return
+    try {
+      const updated = await setThreadMuted(
+        token,
+        selectedThreadId,
+        !selectedThread.isMuted,
+        chatBaseUrl,
+      )
+      applyThreadUpdate(updated)
+    } catch (err) {
+      setError(errMessage(err))
+    }
+  }
+
+  const handlePinMessage = async (messageId: string | null) => {
+    if (!selectedThreadId) return
+    try {
+      const updated = await setPinnedMessage(token, selectedThreadId, messageId, chatBaseUrl)
+      applyThreadUpdate(updated)
+    } catch (err) {
+      setError(errMessage(err))
+    }
+  }
+
+  const handleStartEdit = (m: ChatMessage) => {
+    if (m.messageType !== 'text' || m.isDeleted) return
+    if (String(m.senderId) !== String(identity.id)) return
+    setEditingMessageId(m._id)
+    setDraft(m.text || '')
+  }
+
+  const handleCancelEdit = () => {
+    setEditingMessageId(null)
+    setDraft('')
+  }
+
+  const handleSaveEdit = async () => {
+    if (!selectedThreadId || !editingMessageId || !draft.trim()) return
+    const text = draft.trim()
+    setLoading(true)
+    setError(null)
+    try {
+      const updated = await editMessage(
+        token,
+        selectedThreadId,
+        editingMessageId,
+        text,
+        chatBaseUrl,
+      )
+      setMessages((prev) => prev.map((x) => (x._id === updated._id ? { ...x, ...updated } : x)))
+      setEditingMessageId(null)
+      setDraft('')
+      await refreshThreads()
     } catch (err) {
       setError(errMessage(err))
     } finally {
@@ -392,7 +515,7 @@ export function ChatTestPanel({
           <div>
             <h2 className="font-semibold">{title}</h2>
             <p className="text-xs text-zinc-400">
-              {identity.label} � <span className="break-all">{identity.id}</span>
+              {identity.label} · <span className="break-all">{identity.id}</span>
             </p>
             <p className="mt-1 text-[10px] text-zinc-500">API: {chatBaseUrl}</p>
           </div>
@@ -434,7 +557,7 @@ export function ChatTestPanel({
                   setCounterpartName(opt.label)
                 }}
               >
-                <option value="">Select�</option>
+                <option value="">Select…</option>
                 {counterpartOptions.map((c) => (
                   <option key={c.id} value={c.id}>
                     {c.label}
@@ -491,19 +614,31 @@ export function ChatTestPanel({
                           className={`inline-block h-2 w-2 shrink-0 rounded-full ${online ? 'bg-emerald-400' : 'bg-zinc-600'}`}
                           title={online ? 'Online' : 'Offline'}
                         />
-                        {t.otherParticipant?.name ||
-                          t.otherParticipant?.username ||
-                          (role === 'partner' ? t.username : t.partnerName) ||
-                          'Chat'}
+                        <span className="truncate">
+                          {t.otherParticipant?.name ||
+                            t.otherParticipant?.username ||
+                            (role === 'partner' ? t.username : t.partnerName) ||
+                            'Chat'}
+                        </span>
+                        {t.unreadCount > 0 ? (
+                          <span className="inline-flex h-4 min-w-4 shrink-0 items-center justify-center rounded-full bg-amber-400 px-1 text-[10px] font-semibold text-zinc-950">
+                            {t.unreadCount}
+                          </span>
+                        ) : null}
+                        {t.isPinned ? (
+                          <span className="shrink-0 text-[11px] text-zinc-300" title="Pinned">
+                            📌
+                          </span>
+                        ) : null}
+                        {t.isMuted ? (
+                          <span className="shrink-0 text-[11px] text-zinc-500" title="Muted">
+                            🔇
+                          </span>
+                        ) : null}
                       </div>
                       <div className="truncate text-[11px] text-zinc-500">
-                        {t.lastMessageText || '�'}
+                        {t.lastMessageText || '—'}
                       </div>
-                      {t.unreadCount > 0 ? (
-                        <span className="mt-1 inline-block rounded-full bg-amber-400 px-1.5 text-[10px] font-semibold text-zinc-950">
-                          {t.unreadCount}
-                        </span>
-                      ) : null}
                     </button>
                   </li>
                 )
@@ -515,23 +650,68 @@ export function ChatTestPanel({
 
         <section className="flex min-h-[360px] flex-col">
           <div className="border-b border-zinc-800 px-3 py-2">
-            <div className="text-sm font-medium">{headerName}</div>
-            {selectedThread ? (
-              <div className="text-[10px] text-zinc-500">
-                <span className={otherPresence?.isOnline ? 'text-emerald-400' : ''}>
-                  {statusLabel || 'Offline'}
-                </span>
-                <span className="text-zinc-600"> � {selectedThread.threadId}</span>
+            <div className="flex items-start justify-between gap-2">
+              <div>
+                <div className="text-sm font-medium">{headerName}</div>
+                {selectedThread ? (
+                  <div className="text-[10px] text-zinc-500">
+                    <span className={otherPresence?.isOnline ? 'text-emerald-400' : ''}>
+                      {statusLabel || 'Offline'}
+                    </span>
+                    <span className="text-zinc-600"> · {selectedThread.threadId}</span>
+                  </div>
+                ) : null}
               </div>
-            ) : null}
+              {selectedThread ? (
+                <div className="flex shrink-0 items-center gap-1">
+                  <button
+                    type="button"
+                    className="rounded-lg border border-zinc-700 px-2 py-1 text-[11px] text-zinc-300 hover:bg-zinc-800"
+                    onClick={() => void handleTogglePinChat()}
+                    title={selectedThread.isPinned ? 'Unpin chat' : 'Pin chat'}
+                  >
+                    {selectedThread.isPinned ? 'Unpin' : 'Pin'}
+                  </button>
+                  <button
+                    type="button"
+                    className="rounded-lg border border-zinc-700 px-2 py-1 text-[11px] text-zinc-300 hover:bg-zinc-800"
+                    onClick={() => void handleToggleMute()}
+                    title={selectedThread.isMuted ? 'Unmute chat' : 'Mute chat'}
+                  >
+                    {selectedThread.isMuted ? 'Unmute' : 'Mute'}
+                  </button>
+                </div>
+              ) : null}
+            </div>
           </div>
+
+          {selectedThread?.pinnedMessage ? (
+            <div className="mx-3 mt-2 flex items-center justify-between gap-2 rounded-xl border border-sky-500/50 bg-zinc-900/80 px-3 py-2">
+              <div className="min-w-0">
+                <div className="text-[10px] tracking-wide text-zinc-500 uppercase">Pinned</div>
+                <div className="truncate text-sm text-zinc-100">
+                  {selectedThread.pinnedMessage.text ||
+                    selectedThread.pinnedMessage.fileName ||
+                    'Pinned message'}
+                </div>
+              </div>
+              <button
+                type="button"
+                className="shrink-0 rounded-lg border border-zinc-700 px-2 py-1 text-[11px] text-zinc-400 hover:bg-zinc-800"
+                onClick={() => void handlePinMessage(null)}
+              >
+                Unpin
+              </button>
+            </div>
+          ) : null}
 
           <div className="flex-1 space-y-2 overflow-auto px-3 py-3">
             {loading && !messages.length ? (
-              <div className="text-sm text-zinc-500">Loading�</div>
+              <div className="text-sm text-zinc-500">Loading…</div>
             ) : null}
             {messages.map((m) => {
-              const mine = m.senderId === identity.id
+              const mine = String(m.senderId) === String(identity.id)
+              const isPinnedMsg = selectedThread?.pinnedMessage?.messageId === m._id
               return (
                 <div key={m._id} className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
                   <div
@@ -553,17 +733,94 @@ export function ChatTestPanel({
                         rel="noreferrer"
                         className={`mb-1 block underline ${mine ? 'text-white' : 'text-sky-700'}`}
                       >
-                        ?? {m.fileName || 'File'}
+                        📄 {m.fileName || 'File'}
                       </a>
                     ) : null}
-                    {m.text ? <div>{m.text}</div> : null}
-                    {!m.text && m.messageType === 'text' ? <div>�</div> : null}
-                    <div className={`mt-1 text-[10px] ${mine ? 'text-white/70' : 'text-zinc-500'}`}>
-                      {m.localStatus === 'sending'
-                        ? 'Sending�'
-                        : m.localStatus === 'failed'
-                          ? 'Failed'
-                          : new Date(m.createdAt).toLocaleTimeString()}
+                    {m.messageType === 'proposal' && m.payload ? (
+                      <div className="mb-1 space-y-1 rounded-xl border border-zinc-600/50 bg-black/20 p-2">
+                        <div className="text-[10px] tracking-wide uppercase opacity-70">
+                          Proposal
+                        </div>
+                        <div className="font-medium">{String(m.payload.title || 'Proposal')}</div>
+                        <div className="text-xs opacity-80">
+                          ₹{String(m.payload.payableAmount ?? m.payload.totalPrice ?? '—')}
+                          {m.payload.validTill
+                            ? ` · till ${new Date(String(m.payload.validTill)).toLocaleDateString()}`
+                            : ''}
+                        </div>
+                        <div className="text-[10px] opacity-60">
+                          id: {String(m.payload.proposalId || m.refId || '')}
+                        </div>
+                      </div>
+                    ) : null}
+                    {m.messageType === 'proposal_status' && m.payload ? (
+                      <div className="mb-1 rounded-full bg-white/90 px-3 py-1 text-xs font-medium text-zinc-900">
+                        ✓ {String(m.payload.label || m.text || 'Proposal update')}
+                      </div>
+                    ) : null}
+                    {m.messageType === 'payment_request' && m.payload ? (
+                      <div className="mb-1 space-y-1 rounded-xl border border-emerald-500/40 bg-black/20 p-2">
+                        <div className="text-[10px] tracking-wide text-emerald-200 uppercase">
+                          Payment request
+                        </div>
+                        <div className="font-medium">{String(m.payload.title || 'Payment')}</div>
+                        <div className="text-xs">
+                          ₹{String(m.payload.amount ?? '—')} {String(m.payload.currency || 'INR')}
+                        </div>
+                        <div className="text-[10px] opacity-70">
+                          {String(m.payload.label || 'Payment request sent')}
+                        </div>
+                      </div>
+                    ) : null}
+                    {m.messageType === 'payment_status' && m.payload ? (
+                      <div className="mb-1 rounded-full bg-emerald-500/90 px-3 py-1 text-xs font-medium text-white">
+                        ✓ {String(m.payload.label || m.text || 'Payment completed')}
+                      </div>
+                    ) : null}
+                    {m.text &&
+                    !['proposal', 'proposal_status', 'payment_request', 'payment_status'].includes(
+                      m.messageType,
+                    ) ? (
+                      <div>{m.text}</div>
+                    ) : null}
+                    {!m.text && m.messageType === 'text' ? <div>—</div> : null}
+                    {m.isEdited && !m.isDeleted ? (
+                      <div
+                        className={`mt-0.5 text-[10px] italic ${mine ? 'text-white/60' : 'text-zinc-400'}`}
+                      >
+                        edited
+                      </div>
+                    ) : null}
+                    <div
+                      className={`mt-1 flex flex-wrap items-center justify-between gap-2 text-[10px] ${mine ? 'text-white/70' : 'text-zinc-500'}`}
+                    >
+                      <span>
+                        {m.localStatus === 'sending'
+                          ? 'Sending…'
+                          : m.localStatus === 'failed'
+                            ? 'Failed'
+                            : new Date(m.createdAt).toLocaleTimeString()}
+                      </span>
+                      {!String(m._id).startsWith('local_') && !m.isDeleted ? (
+                        <span className="flex items-center gap-2">
+                          {mine && m.messageType === 'text' ? (
+                            <button
+                              type="button"
+                              className={`underline ${mine ? 'text-white/80' : 'text-sky-700'}`}
+                              onClick={() => handleStartEdit(m)}
+                            >
+                              {editingMessageId === m._id ? 'Editing…' : 'Edit'}
+                            </button>
+                          ) : null}
+                          <button
+                            type="button"
+                            className={`underline ${mine ? 'text-white/80' : 'text-sky-700'}`}
+                            onClick={() => void handlePinMessage(isPinnedMsg ? null : m._id)}
+                          >
+                            {isPinnedMsg ? 'Unpin' : 'Pin'}
+                          </button>
+                        </span>
+                      ) : null}
                     </div>
                   </div>
                 </div>
@@ -603,38 +860,55 @@ export function ChatTestPanel({
               onChange={(e) => void handleFilePicked(e.target.files?.[0] || null)}
             />
             <div className="flex gap-2">
-              <button
-                type="button"
-                className="rounded-full border border-zinc-700 px-3 py-2 text-sm disabled:opacity-50"
-                disabled={!selectedThreadId || uploading}
-                onClick={() => setAttachMenuOpen((v) => !v)}
-                aria-label="Attachments"
-              >
-                {attachMenuOpen ? '�' : '+'}
-              </button>
+              {editingMessageId ? (
+                <button
+                  type="button"
+                  className="rounded-full border border-zinc-700 px-3 py-2 text-sm text-zinc-300 hover:bg-zinc-800"
+                  onClick={handleCancelEdit}
+                >
+                  Cancel
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className="rounded-full border border-zinc-700 px-3 py-2 text-sm disabled:opacity-50"
+                  disabled={!selectedThreadId || uploading}
+                  onClick={() => setAttachMenuOpen((v) => !v)}
+                  aria-label="Attachments"
+                >
+                  {attachMenuOpen ? '×' : '+'}
+                </button>
+              )}
               <input
                 className="flex-1 rounded-full border border-zinc-700 bg-zinc-950 px-4 py-2 text-sm"
-                placeholder="Start typing�"
+                placeholder={editingMessageId ? 'Edit message…' : 'Start typing…'}
                 value={draft}
                 disabled={!selectedThreadId}
                 onChange={(e) => {
                   setDraft(e.target.value)
-                  if (selectedThreadId) emitTyping(selectedThreadId, Boolean(e.target.value))
+                  if (selectedThreadId && !editingMessageId) {
+                    emitTyping(selectedThreadId, Boolean(e.target.value))
+                  }
                 }}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && !e.shiftKey) {
                     e.preventDefault()
-                    void handleSend()
+                    if (editingMessageId) void handleSaveEdit()
+                    else void handleSend()
+                  }
+                  if (e.key === 'Escape' && editingMessageId) {
+                    e.preventDefault()
+                    handleCancelEdit()
                   }
                 }}
               />
               <button
                 type="button"
                 className={`rounded-full px-4 py-2 text-sm font-medium disabled:opacity-50 ${accentBtn}`}
-                disabled={!selectedThreadId || !draft.trim() || uploading}
-                onClick={() => void handleSend()}
+                disabled={!selectedThreadId || !draft.trim() || uploading || loading}
+                onClick={() => (editingMessageId ? void handleSaveEdit() : void handleSend())}
               >
-                Send
+                {editingMessageId ? 'Save' : 'Send'}
               </button>
             </div>
           </div>

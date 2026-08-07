@@ -267,6 +267,16 @@ const PolicyTimelinePage = lazy(() =>
     default: m.PolicyTimelinePage,
   })),
 )
+const PolicyViewPage = lazy(() =>
+  import('@/modules/settings').then((m) => ({
+    default: m.PolicyViewPage,
+  })),
+)
+const PolicyEditPage = lazy(() =>
+  import('@/modules/settings').then((m) => ({
+    default: m.PolicyEditPage,
+  })),
+)
 const PolicyDetailPage = lazy(() =>
   import('@/modules/settings').then((m) => ({
     default: m.PolicyDetailPage,
@@ -782,6 +792,8 @@ export function AppRouter() {
                 <Route path="/settings/policies" element={<PolicyManagementPage />} />
                 <Route path="/settings/policies/create" element={<PolicyCreatePage />} />
                 <Route path="/settings/policies/:id/timeline" element={<PolicyTimelinePage />} />
+                <Route path="/settings/policies/:id/view" element={<PolicyViewPage />} />
+                <Route path="/settings/policies/:id/edit" element={<PolicyEditPage />} />
                 <Route path="/settings/policies/:id" element={<PolicyDetailPage />} />
                 <Route path="/settings/templates" element={<TemplatesPage />} />
                 <Route path="/content-moderation/templates" element={<TemplatesPage />} />

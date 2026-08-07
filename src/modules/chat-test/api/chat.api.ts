@@ -9,8 +9,20 @@ export type ChatThread = {
   username: string
   lastMessageText: string
   lastMessageAt: string | null
+  lastSenderId?: string | null
+  lastSenderType?: string | null
   unreadCount: number
   canSend: boolean
+  isPinned?: boolean
+  isMuted?: boolean
+  pinnedAt?: string | null
+  pinnedMessage?: {
+    messageId: string
+    text: string
+    messageType: string
+    fileName?: string | null
+    createdAt?: string | null
+  } | null
   otherParticipant?: {
     id: string
     name?: string
@@ -30,7 +42,14 @@ export type ChatMessage = {
   fileUrl?: string | null
   fileName?: string | null
   mimeType?: string | null
+  payload?: Record<string, unknown> | null
+  refType?: string | null
+  refId?: string | null
   deliveryStatus: string
+  readAt?: string | null
+  isDeleted?: boolean
+  isEdited?: boolean
+  editedAt?: string | null
   senderId: string
   senderType: string
   senderName: string
@@ -154,6 +173,51 @@ export async function markRead(token: string, threadId: string, baseURL?: string
   const client = createChatApiClient(token, baseURL)
   const res = await client.patch(`/chat/threads/${threadId}/read`)
   return res.data?.data as ChatThread
+}
+
+export async function setThreadPinned(
+  token: string,
+  threadId: string,
+  isPinned: boolean,
+  baseURL?: string,
+) {
+  const client = createChatApiClient(token, baseURL)
+  const res = await client.patch(`/chat/threads/${threadId}/pin`, { isPinned })
+  return res.data?.data as ChatThread
+}
+
+export async function setThreadMuted(
+  token: string,
+  threadId: string,
+  isMuted: boolean,
+  baseURL?: string,
+) {
+  const client = createChatApiClient(token, baseURL)
+  const res = await client.patch(`/chat/threads/${threadId}/mute`, { isMuted })
+  return res.data?.data as ChatThread
+}
+
+export async function setPinnedMessage(
+  token: string,
+  threadId: string,
+  messageId: string | null,
+  baseURL?: string,
+) {
+  const client = createChatApiClient(token, baseURL)
+  const res = await client.patch(`/chat/threads/${threadId}/pinned-message`, { messageId })
+  return res.data?.data as ChatThread
+}
+
+export async function editMessage(
+  token: string,
+  threadId: string,
+  messageId: string,
+  text: string,
+  baseURL?: string,
+) {
+  const client = createChatApiClient(token, baseURL)
+  const res = await client.patch(`/chat/threads/${threadId}/messages/${messageId}`, { text })
+  return res.data?.data as ChatMessage
 }
 
 export function createClientMessageId() {

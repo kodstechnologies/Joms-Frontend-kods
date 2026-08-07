@@ -19,6 +19,11 @@ import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import { Input } from '@/shared/components/ui/input'
 import { cn } from '@/shared/lib/cn'
 import { uiTokens } from '@/shared/lib/design-tokens'
+import { useSecurityPolicy } from '@/modules/settings/hooks/use-security-policy'
+import {
+  describePasswordPolicy,
+  validatePasswordAgainstPolicy,
+} from '@/modules/settings/utils/password-policy'
 
 type Step = 'form' | 'review'
 
@@ -89,6 +94,8 @@ export function CreateSubAdminPage() {
   })
   const createMutation = useCreateSubAdmin()
   const updateMutation = useUpdateSubAdmin()
+  const { passwordPolicy } = useSecurityPolicy()
+  const passwordRules = describePasswordPolicy(passwordPolicy)
 
   const editKey = `${editId}:${isEditMode}`
   if (editKey !== hydratedEditKey) {
@@ -182,8 +189,13 @@ export function CreateSubAdminPage() {
       return false
     }
     if (!isEditMode) {
-      if (!form.password || form.password.length < 6) {
-        toast.error('Password must be at least 6 characters')
+      if (!form.password) {
+        toast.error('Password is required')
+        return false
+      }
+      const policyCheck = validatePasswordAgainstPolicy(form.password, passwordPolicy)
+      if (!policyCheck.valid) {
+        toast.error(policyCheck.message || 'Password does not meet policy')
         return false
       }
       if (form.password !== confirmPassword) {
@@ -329,9 +341,14 @@ export function CreateSubAdminPage() {
                       type="password"
                       value={form.password}
                       onChange={(e) => updateField('password', e.target.value)}
-                      placeholder="Set login password (min 6 characters)"
+                      placeholder={`Set login password (min ${passwordPolicy.minimumLength} characters)`}
                       autoComplete="new-password"
                     />
+                    <ul className="text-body-sm text-muted mt-2 list-disc space-y-1 pl-4">
+                      {passwordRules.map((rule) => (
+                        <li key={rule}>{rule}</li>
+                      ))}
+                    </ul>
                   </div>
                   <div className="space-y-2">
                     <label className="text-brand-text text-sm font-medium">

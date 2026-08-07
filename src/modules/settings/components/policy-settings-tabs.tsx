@@ -1,6 +1,10 @@
 import { useNavigate } from 'react-router-dom'
 
-import { POLICY_SETTINGS_TABS } from '../utils/policy-navigation'
+import {
+  platformControlsPath,
+  POLICY_SETTINGS_TABS,
+  policyListPath,
+} from '../utils/policy-navigation'
 import { cn } from '@/shared/lib/cn'
 
 export function PolicySettingsTopTabs({ activeKey = 'platform' }: { activeKey?: string }) {
@@ -16,7 +20,7 @@ export function PolicySettingsTopTabs({ activeKey = 'platform' }: { activeKey?: 
               type="button"
               onClick={() => {
                 if (item.routeTab) {
-                  navigate('/settings/main', { state: { settingsTab: item.routeTab } })
+                  navigate(platformControlsPath(), { state: { settingsTab: item.routeTab } })
                 }
               }}
               className={cn(
@@ -33,6 +37,45 @@ export function PolicySettingsTopTabs({ activeKey = 'platform' }: { activeKey?: 
   )
 }
 
-export function PolicyBreadcrumb({ segments }: { segments: string[] }) {
-  return <p className="policy-page-breadcrumb">{segments.join(' / ')}</p>
+type PolicyBreadcrumbProps = {
+  /** Current leaf label (e.g. policy title, Create Policy, Timeline) */
+  current?: string
+  application?: string
+}
+
+/**
+ * Always under Platform Controls → Policy Management → optional current page.
+ * Segments are clickable for Back navigation.
+ */
+export function PolicyBreadcrumb({ current, application = 'expert' }: PolicyBreadcrumbProps) {
+  const navigate = useNavigate()
+
+  return (
+    <nav
+      className="policy-page-breadcrumb flex flex-wrap items-center gap-1.5"
+      aria-label="Breadcrumb"
+    >
+      <button
+        type="button"
+        className="policy-breadcrumb-link"
+        onClick={() => navigate(platformControlsPath(), { state: { settingsTab: 'platform' } })}
+      >
+        Platform Control
+      </button>
+      <span className="text-muted">/</span>
+      <button
+        type="button"
+        className="policy-breadcrumb-link"
+        onClick={() => navigate(policyListPath(application))}
+      >
+        Policy Management
+      </button>
+      {current ? (
+        <>
+          <span className="text-muted">/</span>
+          <span className="policy-breadcrumb-current">{current}</span>
+        </>
+      ) : null}
+    </nav>
+  )
 }

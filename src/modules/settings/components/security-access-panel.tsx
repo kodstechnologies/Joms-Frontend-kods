@@ -1,12 +1,9 @@
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { ChevronDown } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { SecurityQuestionsModal } from './security-questions-modal'
-import { SettingsCheckboxGroup } from './settings-checkbox-group'
-import { SettingsFieldRow, settingsControlClass } from './settings-field-row'
-import { SettingsSectionCard } from './settings-section-card'
-import { SettingsToggleRow } from './settings-toggle-row'
 import {
   blockReuseOptions,
   maxResetAttemptsOptions,
@@ -15,11 +12,103 @@ import {
   sessionTimeoutOptions,
 } from '../mock/security-options.mock'
 import type { SecuritySettings } from '../types/settings'
-import { Button } from '@/shared/components/ui/button'
+import { cn } from '@/shared/lib/cn'
 
 type SecurityAccessPanelProps = {
   value: SecuritySettings
   onChange: (value: SecuritySettings) => void
+}
+
+function SecuritySelect({
+  id,
+  value,
+  onChange,
+  options,
+}: {
+  id: string
+  value: number
+  onChange: (value: number) => void
+  options: Array<{ value: number; label: string }>
+}) {
+  return (
+    <div className="security-select-wrap">
+      <select
+        id={id}
+        className="security-select"
+        value={value}
+        onChange={(event) => onChange(Number(event.target.value))}
+      >
+        {options.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+      <ChevronDown className="security-select-icon" aria-hidden />
+    </div>
+  )
+}
+
+function SecurityToggle({
+  checked,
+  onChange,
+  ariaLabel,
+}: {
+  checked: boolean
+  onChange: (checked: boolean) => void
+  ariaLabel: string
+}) {
+  return (
+    <div className="security-switch-wrap">
+      <button
+        type="button"
+        role="switch"
+        aria-checked={checked}
+        aria-label={ariaLabel}
+        onClick={() => onChange(!checked)}
+        className={cn('security-switch', checked && 'is-on')}
+      >
+        <span className="security-switch-knob" />
+      </button>
+      <span className="security-switch-caption">{checked ? 'ON' : 'OFF'}</span>
+    </div>
+  )
+}
+
+function SecurityCheckboxRow({
+  label,
+  options,
+  values,
+  onChange,
+  trailing,
+}: {
+  label: string
+  options: Array<{ key: string; label: string }>
+  values: Record<string, boolean>
+  onChange: (key: string, checked: boolean) => void
+  trailing?: ReactNode
+}) {
+  return (
+    <div className="security-checkbox-block">
+      <div className="security-checkbox-block-head">
+        <p className="security-subheading">{label}</p>
+        {trailing}
+      </div>
+      <div className="security-checkbox-row">
+        {options.map((option) => (
+          <label key={option.key} className="security-checkbox-item">
+            <input
+              type="checkbox"
+              checked={values[option.key] ?? false}
+              onChange={(event) => onChange(option.key, event.target.checked)}
+              className="security-checkbox-input"
+            />
+            <span>{option.label}</span>
+          </label>
+        ))}
+      </div>
+    </div>
+  )
 }
 
 export function SecurityAccessPanel({ value, onChange }: SecurityAccessPanelProps) {
@@ -40,88 +129,108 @@ export function SecurityAccessPanel({ value, onChange }: SecurityAccessPanelProp
     patch({ passwordReset: { ...value.passwordReset, ...patchValue } })
 
   return (
-    <div className="space-y-6">
-      <SettingsSectionCard
-        title="Session Timeout"
-        description="Configure automatic logout duration for inactive sessions"
-      >
-        <SettingsFieldRow
-          label="Session Timeout Duration"
-          description="Users will be logged out after this period of inactivity"
-        >
-          <select
-            className={settingsControlClass}
+    <div className="security-access-panel">
+      {/* Session Timeout — Figma ~1182 wide */}
+      <section className="security-section">
+        <header className="security-section-header">
+          <h2 className="security-section-title">Session Timeout</h2>
+          <p className="security-section-desc">
+            Configure automatic logout duration for inactive sessions
+          </p>
+        </header>
+        <div className="security-field">
+          <label className="security-field-label" htmlFor="session-timeout-duration">
+            Session Timeout Duration
+          </label>
+          <SecuritySelect
+            id="session-timeout-duration"
             value={value.sessionTimeout.durationMinutes}
-            onChange={(event) => patchSession(Number(event.target.value))}
-          >
-            {sessionTimeoutOptions.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </SettingsFieldRow>
-      </SettingsSectionCard>
-
-      <SettingsSectionCard
-        title="Password & MFA Settings"
-        description="Configure password policies and multi-factor authentication"
-      >
-        <div className="grid gap-4 sm:grid-cols-2">
-          <SettingsFieldRow label="Minimum Length">
-            <select
-              className={settingsControlClass}
-              value={value.passwordPolicy.minimumLength}
-              onChange={(event) => patchPassword({ minimumLength: Number(event.target.value) })}
-            >
-              {minimumLengthOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </SettingsFieldRow>
-          <SettingsFieldRow label="Password Expiry">
-            <select
-              className={settingsControlClass}
-              value={value.passwordPolicy.passwordExpiryDays}
-              onChange={(event) =>
-                patchPassword({ passwordExpiryDays: Number(event.target.value) })
-              }
-            >
-              {passwordExpiryOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </SettingsFieldRow>
+            onChange={patchSession}
+            options={sessionTimeoutOptions}
+          />
+          <p className="security-field-hint">
+            Users will be logged out after this period of inactivity
+          </p>
         </div>
-        <SettingsCheckboxGroup
-          label="Must Include"
-          options={[
-            { key: 'requireUppercase', label: 'Uppercase Letter (A-Z)' },
-            { key: 'requireNumber', label: 'Number (0-9)' },
-            { key: 'requireLowercase', label: 'Lowercase Letter (a-z)' },
-            { key: 'requireSpecialChar', label: 'Special Character (!@#$%^&*)' },
-          ]}
-          values={{
-            requireUppercase: value.passwordPolicy.requireUppercase,
-            requireNumber: value.passwordPolicy.requireNumber,
-            requireLowercase: value.passwordPolicy.requireLowercase,
-            requireSpecialChar: value.passwordPolicy.requireSpecialChar,
-          }}
-          onChange={(key, checked) =>
-            patchPassword({ [key]: checked } as Partial<SecuritySettings['passwordPolicy']>)
-          }
-        />
-        <SettingsToggleRow
-          label="Multi-Factor Authentication (MFA)"
-          description="Require MFA for all admin users"
-          checked={value.mfa.requireForAllAdmins}
-          onChange={(checked) => patchMfa({ requireForAllAdmins: checked })}
-        />
-        <SettingsCheckboxGroup
+      </section>
+
+      {/* Password & MFA Settings — password requirements */}
+      <section className="security-section">
+        <header className="security-section-header">
+          <h2 className="security-section-title">Password & MFA Settings</h2>
+          <p className="security-section-desc">
+            Configure password policies and multi-factor authentication
+          </p>
+        </header>
+
+        <div className="security-password-block">
+          <h3 className="security-subheading">Password Requirement</h3>
+          <div className="security-two-col">
+            <div className="security-field">
+              <label className="security-field-label" htmlFor="password-min-length">
+                Minimum Length
+              </label>
+              <SecuritySelect
+                id="password-min-length"
+                value={value.passwordPolicy.minimumLength}
+                onChange={(minimumLength) => patchPassword({ minimumLength })}
+                options={minimumLengthOptions}
+              />
+            </div>
+            <div className="security-field">
+              <label className="security-field-label" htmlFor="password-expiry">
+                Password Expiry
+              </label>
+              <SecuritySelect
+                id="password-expiry"
+                value={value.passwordPolicy.passwordExpiryDays}
+                onChange={(passwordExpiryDays) => patchPassword({ passwordExpiryDays })}
+                options={passwordExpiryOptions}
+              />
+            </div>
+          </div>
+
+          <div className="security-must-include">
+            <p className="security-field-label">Must Include</p>
+            <div className="security-checkbox-row">
+              {(
+                [
+                  { key: 'requireUppercase', label: 'Uppercase Letter (A-Z)' },
+                  { key: 'requireNumber', label: 'Number (0-9)' },
+                  { key: 'requireLowercase', label: 'Lowercase Letter (a-z)' },
+                  { key: 'requireSpecialChar', label: 'Special Character (!@#$%^&*)' },
+                ] as const
+              ).map((option) => (
+                <label key={option.key} className="security-checkbox-item">
+                  <input
+                    type="checkbox"
+                    checked={value.passwordPolicy[option.key]}
+                    onChange={(event) => patchPassword({ [option.key]: event.target.checked })}
+                    className="security-checkbox-input"
+                  />
+                  <span>{option.label}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* MFA — Figma ~1206x204 */}
+      <section className="security-section security-section-mfa">
+        <div className="security-toggle-header">
+          <div>
+            <h2 className="security-section-title">Multi-Factor Authentication (MFA)</h2>
+            <p className="security-section-desc">Require MFA for all admin users</p>
+          </div>
+          <SecurityToggle
+            checked={value.mfa.requireForAllAdmins}
+            onChange={(checked) => patchMfa({ requireForAllAdmins: checked })}
+            ariaLabel="Require MFA for all admin users"
+          />
+        </div>
+        <div className="security-section-divider" />
+        <SecurityCheckboxRow
           label="MFA Methods"
           options={[
             { key: 'authenticatorApp', label: 'Authenticator App' },
@@ -137,13 +246,16 @@ export function SecurityAccessPanel({ value, onChange }: SecurityAccessPanelProp
             patchMfa({ [key]: checked } as Partial<SecuritySettings['mfa']>)
           }
         />
-      </SettingsSectionCard>
+      </section>
 
-      <SettingsSectionCard
-        title="Password Reset Policy"
-        description="Configure password reset methods and restrictions"
-      >
-        <SettingsCheckboxGroup
+      {/* Password Reset Policy — Figma ~1206x355 */}
+      <section className="security-section">
+        <header className="security-section-header">
+          <h2 className="security-section-title">Password Reset Policy</h2>
+          <p className="security-section-desc">Configure password reset methods and restrictions</p>
+        </header>
+
+        <SecurityCheckboxRow
           label="Reset Method"
           options={[
             { key: 'emailOtp', label: 'Email OTP' },
@@ -163,56 +275,63 @@ export function SecurityAccessPanel({ value, onChange }: SecurityAccessPanelProp
               <button
                 type="button"
                 onClick={() => setSecurityQuestionsOpen(true)}
-                className="text-xs font-medium text-[#F0C27B] hover:underline"
+                className="security-manage-link"
               >
                 Manage Security Questions
               </button>
             ) : null
           }
         />
-        <div className="grid gap-4 sm:grid-cols-2">
-          <SettingsFieldRow label="Max Reset Attempts">
-            <select
-              className={settingsControlClass}
-              value={value.passwordReset.maxResetAttempts}
-              onChange={(event) => patchReset({ maxResetAttempts: Number(event.target.value) })}
-            >
-              {maxResetAttemptsOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </SettingsFieldRow>
-          <SettingsFieldRow label="Block Reuse Of Old Passwords">
-            <select
-              className={settingsControlClass}
-              value={value.passwordReset.blockReuseCount}
-              onChange={(event) => patchReset({ blockReuseCount: Number(event.target.value) })}
-            >
-              {blockReuseOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </SettingsFieldRow>
-        </div>
-        <SettingsToggleRow
-          label="Alert Super Admins on Suspicious Resets"
-          checked={value.passwordReset.alertSuperAdminsOnSuspiciousResets}
-          onChange={(checked) => patchReset({ alertSuperAdminsOnSuspiciousResets: checked })}
-        />
-      </SettingsSectionCard>
 
-      <div className="grid gap-4 sm:grid-cols-2">
+        <div className="security-two-col">
+          <div className="security-field">
+            <label className="security-field-label" htmlFor="max-reset-attempts">
+              Max Reset Attempts
+            </label>
+            <SecuritySelect
+              id="max-reset-attempts"
+              value={value.passwordReset.maxResetAttempts}
+              onChange={(maxResetAttempts) => patchReset({ maxResetAttempts })}
+              options={maxResetAttemptsOptions}
+            />
+          </div>
+          <div className="security-field">
+            <label className="security-field-label" htmlFor="block-reuse">
+              Block Reuse Of Old Passwords
+            </label>
+            <SecuritySelect
+              id="block-reuse"
+              value={value.passwordReset.blockReuseCount}
+              onChange={(blockReuseCount) => patchReset({ blockReuseCount })}
+              options={blockReuseOptions}
+            />
+          </div>
+        </div>
+
+        <div className="security-alert-row">
+          <div>
+            <p className="security-alert-title">Alert Super Admins on Suspicious Resets</p>
+            <p className="security-section-desc">
+              Notify when multiple reset attempts are detected
+            </p>
+          </div>
+          <SecurityToggle
+            checked={value.passwordReset.alertSuperAdminsOnSuspiciousResets}
+            onChange={(checked) => patchReset({ alertSuperAdminsOnSuspiciousResets: checked })}
+            ariaLabel="Alert Super Admins on Suspicious Resets"
+          />
+        </div>
+      </section>
+
+      {/* Quick links — Figma 621x91 each */}
+      <div className="security-quick-links">
         <QuickLinkCard
           title="Locked Accounts"
           description="Manage accounts that have been locked due to security reasons"
           onView={() => navigate('/settings/security/locked-accounts')}
         />
         <QuickLinkCard
-          title="Admin Login Audit Trials"
+          title="Admin Login Audit Trails"
           description="Monitor all admin login activities and security events"
           onView={() => navigate('/settings/security/login-trails')}
         />
@@ -242,12 +361,14 @@ function QuickLinkCard({
   onView: () => void
 }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-[#111111] p-5">
-      <h3 className="text-base font-semibold text-white">{title}</h3>
-      <p className="mt-1 text-sm text-slate-400">{description}</p>
-      <Button variant="secondary" className="mt-4 h-8 text-xs" onClick={onView}>
+    <div className="security-quick-card">
+      <div className="security-quick-card-copy">
+        <h3 className="security-quick-card-title">{title}</h3>
+        <p className="security-quick-card-desc">{description}</p>
+      </div>
+      <button type="button" onClick={onView} className="security-quick-card-view">
         View
-      </Button>
+      </button>
     </div>
   )
 }

@@ -3,7 +3,6 @@ import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
 
 import { PolicyBreadcrumb, PolicySettingsTopTabs } from '../components/policy-settings-tabs'
-import { policyListPath } from '../utils/policy-navigation'
 import { PolicyEditorForm } from '../components/policy-editor-form'
 import { useCreatePolicyVersion, usePolicy, usePolicyVersions } from '../hooks/use-policies'
 import {
@@ -13,7 +12,7 @@ import {
   toDateInputValue,
   type PolicyEditorValues,
 } from '../utils/policy-form'
-import { SectionHeader } from '@/shared/components/dashboard/section-header'
+import { policyListPath, policyViewPath } from '../utils/policy-navigation'
 import { Button } from '@/shared/components/ui/button'
 
 export function PolicyEditPage() {
@@ -85,7 +84,7 @@ export function PolicyEditPage() {
       {
         onSuccess: () => {
           toast.success(status === 'Draft' ? 'Draft saved' : 'Policy updated')
-          navigate(`/settings/policies/${id}/view?application=${application}`)
+          navigate(policyViewPath(id, application))
         },
         onError: () => toast.error('Failed to save policy version'),
       },
@@ -109,20 +108,8 @@ export function PolicyEditPage() {
 
   return (
     <div className="space-y-6">
-      <SectionHeader
-        title="Settings"
-        subtitle="Track revenue, payouts, and financial performance"
-        actions={[
-          {
-            label: 'Settings Logs',
-            onClick: () => navigate('/settings/logs'),
-            variant: 'secondary',
-          },
-        ]}
-      />
+      <PolicyBreadcrumb current={policy.title} application={application} />
       <PolicySettingsTopTabs activeKey="platform" />
-
-      <PolicyBreadcrumb segments={['Platform Control', 'Policy Management', policy.title]} />
 
       <PolicyEditorForm
         mode="update"
@@ -157,7 +144,7 @@ export function PolicyEditPage() {
             onClick={() => handleSave('Active')}
             className="settings-page-footer-save"
           >
-            Save Changes
+            Submit Changes
           </Button>
         </div>
       </div>
@@ -165,5 +152,5 @@ export function PolicyEditPage() {
   )
 }
 
-// Backward-compatible export name used by router/index.
+/** @deprecated Prefer PolicyEditPage; kept for router compatibility */
 export const PolicyDetailPage = PolicyEditPage
