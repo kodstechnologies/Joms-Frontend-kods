@@ -37,9 +37,13 @@ export function useModuleExportFilters({
   }, [])
 
   const handleResetFilters = useCallback(() => {
-    setFilterValues(createEmptyFilterValuesForConfig(config))
+    const empty = createEmptyFilterValuesForConfig(config)
+    setFilterValues(empty)
+    if (onApplyFilters) {
+      onApplyFilters(empty)
+    }
     toast.message('Filters reset')
-  }, [config])
+  }, [config, onApplyFilters])
 
   const handleApplyFilters = useCallback(async () => {
     setIsApplying(true)

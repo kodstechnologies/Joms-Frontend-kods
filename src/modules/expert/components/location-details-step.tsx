@@ -1,10 +1,17 @@
 import type { VenueFormData } from '../utils/venue-form'
 import { RequiredMark } from '@/shared/components/form/required-mark'
+import { GoogleMapPicker, type LocationDetails } from '@/shared/components/map'
 
 interface LocationDetailsStepProps {
   venueData: Pick<
     VenueFormData,
-    'address' | 'landmark' | 'city' | 'parkingAvailable' | 'accessibility'
+    | 'address'
+    | 'landmark'
+    | 'city'
+    | 'parkingAvailable'
+    | 'accessibility'
+    | 'latitude'
+    | 'longitude'
   >
   setVenueData: React.Dispatch<React.SetStateAction<VenueFormData>>
   isEditMode?: boolean
@@ -15,6 +22,20 @@ export const LocationDetailsStep = ({
   setVenueData,
   isEditMode = false,
 }: LocationDetailsStepProps) => {
+  const handleMapLocationSelect = (details: LocationDetails) => {
+    setVenueData((prev) => ({
+      ...prev,
+      latitude: details.latitude,
+      longitude: details.longitude,
+      address: details.address || prev.address,
+      city: details.city || prev.city,
+      landmark: details.landmark || prev.landmark,
+      pincode: details.pincode || prev.pincode,
+      state: details.state || prev.state,
+      country: details.country || prev.country,
+    }))
+  }
+
   return (
     <div className="animate-in fade-in slide-in-from-right-4 bg-brand-surface mx-auto w-full max-w-[1140px] rounded-lg border border-white/5 p-6 shadow-xl duration-300">
       <div className="mb-8">
@@ -130,20 +151,22 @@ export const LocationDetailsStep = ({
             </label>
           </div>
         </div>
+
         <div className="rounded-lg border border-white/5 bg-black/40 p-5">
-          <div className="mb-4 flex items-center justify-between">
-            <div>
-              <h3 className="text-sm font-semibold text-white">Location on Map</h3>
-
-              <p className="text-muted text-xs">Based on the address you provided</p>
-            </div>
-
-            <input type="text" placeholder="Search by Location" className="ui-input w-64" />
+          <div className="mb-4">
+            <h3 className="text-sm font-semibold text-white">Location on Map</h3>
+            <p className="text-muted text-xs">Based on the address and landmark provided</p>
           </div>
 
-          <div className="text-muted flex h-[220px] items-center justify-center rounded-xl border border-white/10 bg-black">
-            Google Map Here
-          </div>
+          <GoogleMapPicker
+            latitude={venueData.latitude}
+            longitude={venueData.longitude}
+            address={venueData.address}
+            city={venueData.city}
+            landmark={venueData.landmark}
+            height="260px"
+            onLocationSelect={handleMapLocationSelect}
+          />
         </div>
       </div>
     </div>

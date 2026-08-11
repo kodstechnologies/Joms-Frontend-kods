@@ -35,6 +35,18 @@ export type PartnerOffering = {
   status: string
   pricingType?: string | null
   mode?: string | null
+  topics?: string[]
+  sessionOutline?: string
+  whoItsFor?: string
+  preSessionRequirement?: string | null
+  postSessionMessage?: string | null
+  languages?: string[]
+  followUpDays?: number | null
+  pricingOptions?: Array<{
+    durationMinutes: number
+    pricingType: 'free' | 'paid'
+    price: number
+  }>
 }
 
 export type PartnerOfferings = {

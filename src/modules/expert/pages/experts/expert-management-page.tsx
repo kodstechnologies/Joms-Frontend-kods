@@ -38,6 +38,7 @@ import { StatusQuickLinkCard, StatusQuickLinkRow } from '@/shared/components/sta
 import { Button } from '@/shared/components/ui/button'
 import { statusCardTones } from '@/shared/lib/design-tokens'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
+import type { FilterValues } from '@/shared/types/data-filter'
 import { MODERATION_CATEGORY_SLUGS } from '@/modules/settings/api/templates-api'
 import {
   useModerationReasonOptions,
@@ -68,6 +69,7 @@ export const ExpertManagementPage = () => {
   const [suspendAdminNotes, setSuspendAdminNotes] = useState('')
   const [deleteReasons, setDeleteReasons] = useState<string[]>([])
   const [deleteAdminNotes, setDeleteAdminNotes] = useState('')
+  const [appliedAdvancedFilters, setAppliedAdvancedFilters] = useState<FilterValues>({})
   const navigate = useNavigate()
   const suspendExpertMutation = useSuspendExpert()
   const deactivateExpertMutation = useDeactivateExpert()
@@ -86,19 +88,77 @@ export const ExpertManagementPage = () => {
     setActiveStatus,
   } = useExpertStore()
 
+  const handleApplyFilters = useCallback(
+    (values: FilterValues) => {
+      setAppliedAdvancedFilters(values)
+      setCurrentPage(1)
+      toast.success('Filters applied')
+    },
+    [setCurrentPage],
+  )
+
   const {
     onAdvancedFilter,
     onExport,
     modals: exportFilterModals,
   } = useModuleExportFilters({
     moduleKey: 'expert-management',
+    onApplyFilters: handleApplyFilters,
   })
+
+  const apiFilterParams = useMemo(() => {
+    const params: Record<string, string> = {}
+
+    Object.entries(appliedAdvancedFilters).forEach(([rawKey, val]) => {
+      if (val === undefined || val === null || val === '') return
+
+      const parts = rawKey.split('.')
+      const fieldId = parts.length > 1 ? parts.slice(1).join('.') : rawKey
+
+      if (fieldId === 'location' && typeof val === 'object' && val !== null) {
+        const loc = val as { state?: string; city?: string }
+        if (loc.state?.trim()) params.locationState = loc.state.trim()
+        if (loc.city?.trim()) params.locationCity = loc.city.trim()
+        return
+      }
+
+      if (Array.isArray(val)) {
+        if (val.length > 0) {
+          params[fieldId] = val.join(',')
+        }
+        return
+      }
+
+      if (typeof val === 'object' && val !== null) {
+        const range = val as { from?: string | number; to?: string | number }
+        if (range.from !== undefined && range.from !== '') {
+          params[`${fieldId}Min`] = String(range.from).trim()
+        }
+        if (range.to !== undefined && range.to !== '') {
+          params[`${fieldId}Max`] = String(range.to).trim()
+        }
+        return
+      }
+
+      if (typeof val === 'string' && val.trim()) {
+        params[fieldId] = val.trim()
+        return
+      }
+
+      if (typeof val === 'number' || typeof val === 'boolean') {
+        params[fieldId] = String(val)
+      }
+    })
+
+    return params
+  }, [appliedAdvancedFilters])
 
   const { data, isLoading } = useExperts({
     page: currentPage,
     limit: 10,
-    status: activeStatus !== 'all' ? activeStatus : undefined,
+    status: activeStatus !== 'all' ? activeStatus : apiFilterParams.accountStatus,
     search: searchQuery,
+    ...apiFilterParams,
   })
   const experts = useMemo(() => data?.data || [], [data?.data])
   const meta = data?.meta

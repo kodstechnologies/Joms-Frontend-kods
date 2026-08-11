@@ -78,4 +78,8 @@ export const env = {
   firebaseMessagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '',
   firebaseAppId: import.meta.env.VITE_FIREBASE_APP_ID || '',
   firebaseVapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY || '',
+  googleMapsApiKey:
+    import.meta.env.VITE_GOOGLE_MAPS_API_KEY ||
+    import.meta.env.VITE_JOMS_GOOGLE_MAPS_KEY ||
+    'AIzaSyC7gzHb0335ZzYsdSLRdkDF7uFhWjlxYus',
 }

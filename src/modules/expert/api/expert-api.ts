@@ -6,13 +6,7 @@ import type {
   ExpertServicesResponse,
 } from '../type/expert-profile'
 
-export const fetchExperts = async (params?: {
-  page?: number
-  limit?: number
-  search?: string
-  status?: string
-  serviceType?: string
-}) => {
+export const fetchExperts = async (params?: Record<string, unknown>) => {
   const response = await adminApiClient.get<ExpertResponse>('/admin/internal/admin/partners', {
     params,
   })

@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from 'react'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, X } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
@@ -23,56 +23,76 @@ function AccountDetailsModal({
 }) {
   if (!open || !account) return null
 
+  const details: Array<{ label: string; value: string; danger?: boolean }> = [
+    { label: 'Admin', value: account.username || account.admin || '—' },
+    { label: 'IP Address', value: account.ipAddress || '—' },
+    { label: 'Locked Since', value: account.lockedSince || '—' },
+    { label: 'Duration', value: account.duration || '—' },
+    { label: 'Role', value: account.role || '—' },
+    {
+      label: 'Failed Attempts',
+      value: account.failedAttempts != null ? String(account.failedAttempts) : '—',
+      danger: true,
+    },
+    { label: 'Reason', value: account.reason || '—' },
+  ]
+
   return (
-    <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/70 p-4">
-      <div className="ui-modal-shell max-w-[480px]">
-        <div className="ui-modal-header">
-          <h2 className="text-h4 text-brand-text">Account Details</h2>
+    <div className="locked-accounts-modal-overlay" role="presentation" onClick={onClose}>
+      <div
+        className="locked-accounts-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="locked-account-details-title"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <header className="locked-accounts-modal-header">
+          <div className="locked-accounts-modal-heading">
+            <h2 id="locked-account-details-title" className="locked-accounts-modal-title">
+              Account Details
+            </h2>
+            <p className="locked-accounts-modal-subtitle">Review locked account information</p>
+          </div>
+          <button
+            type="button"
+            className="locked-accounts-modal-close"
+            onClick={onClose}
+            aria-label="Close"
+          >
+            <X className="size-5" />
+          </button>
+        </header>
+
+        <div className="locked-accounts-modal-panel">
+          {details.map((item) => (
+            <div key={item.label} className="locked-accounts-modal-row">
+              <span className="locked-accounts-modal-label">{item.label}</span>
+              <span
+                className={cn(
+                  'locked-accounts-modal-value',
+                  item.danger && 'locked-accounts-modal-value-danger',
+                )}
+              >
+                {item.value}
+              </span>
+            </div>
+          ))}
         </div>
-        <div className="ui-modal-body space-y-3">
-          <DetailRow label="Admin" value={account.username ?? account.admin} />
-          <DetailRow label="IP Address" value={account.ipAddress ?? '—'} />
-          <DetailRow label="Locked Since" value={account.lockedSince} />
-          <DetailRow label="Duration" value={account.duration} />
-          <DetailRow label="Role" value={account.role} />
-          <DetailRow
-            label="Failed Attempts"
-            value={String(account.failedAttempts ?? '—')}
-            valueClassName="text-brand-danger"
-          />
-          <DetailRow label="Reason" value={account.reason} />
-        </div>
-        <div className="ui-modal-footer">
-          <button type="button" onClick={onClose} className="ui-modal-btn ui-modal-btn-cancel">
+
+        <footer className="locked-accounts-modal-footer">
+          <button type="button" onClick={onClose} className="locked-accounts-modal-cancel">
             Cancel
           </button>
           <button
             type="button"
             disabled={isUnlocking}
             onClick={onUnlock}
-            className="locked-accounts-unlock-btn"
+            className="locked-accounts-modal-unlock"
           >
             {isUnlocking ? 'Unlocking…' : 'Unlock'}
           </button>
-        </div>
+        </footer>
       </div>
-    </div>
-  )
-}
-
-function DetailRow({
-  label,
-  value,
-  valueClassName,
-}: {
-  label: string
-  value: string
-  valueClassName?: string
-}) {
-  return (
-    <div className="flex items-center justify-between gap-4 border-b border-white/5 py-2">
-      <span className="text-body-md text-muted">{label}</span>
-      <span className={cn('text-body-md-medium text-brand-text', valueClassName)}>{value}</span>
     </div>
   )
 }

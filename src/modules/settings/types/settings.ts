@@ -1,5 +1,12 @@
 export type SettingsModule =
-  'platform' | 'security' | 'notifications' | 'finance' | 'backup' | 'expert' | 'venue' | 'service'
+  | 'platform'
+  | 'security'
+  | 'notifications'
+  | 'finance'
+  | 'backup'
+  | 'expert'
+  | 'venue'
+  | 'service'
 
 export type PlatformSettings = {
   applicationSettings: {

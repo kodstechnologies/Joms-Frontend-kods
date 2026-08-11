@@ -60,7 +60,9 @@ export function useSecurityPolicy() {
   })
 
   const config = (authedQuery.data?.config || publicQuery.data) as
-    Partial<SecuritySettings> | PublicSecurityPolicy | undefined
+    | Partial<SecuritySettings>
+    | PublicSecurityPolicy
+    | undefined
 
   const passwordPolicy = {
     ...DEFAULT_PASSWORD_POLICY,

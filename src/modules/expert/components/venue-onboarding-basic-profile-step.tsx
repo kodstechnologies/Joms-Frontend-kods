@@ -2,7 +2,7 @@ import { useRef } from 'react'
 import { Search, Upload } from 'lucide-react'
 
 import { useServiceCategoriesByType } from '../hooks/use-service-categories'
-import type { VenueOnboardingFormData } from '../utils/venue-onboarding-form'
+import { type VenueOnboardingFormData } from '../utils/venue-onboarding-form'
 import { RequiredMark } from '@/shared/components/form/required-mark'
 import { sanitizeMobileNumber } from '@/shared/lib/phone'
 
@@ -117,7 +117,7 @@ export const VenueOnboardingBasicProfileStep = ({ formData, setFormData }: Props
           <div>
             <label className="mb-2 block text-xs font-medium text-white">Service Type</label>
             <input
-              value={formData.venueType}
+              value="Venue Partner"
               disabled
               placeholder="Venue Partner"
               className={`${fieldClass} text-muted cursor-not-allowed opacity-70`}
