@@ -37,6 +37,8 @@ export type VenueFormData = {
   address: string
   landmark: string
   city: string
+  latitude: number | null
+  longitude: number | null
   parkingAvailable: boolean
   accessibility: boolean
   spaceName: string
@@ -87,6 +89,8 @@ export const createEmptyVenueFormData = (): VenueFormData => ({
   address: '',
   landmark: '',
   city: '',
+  latitude: null,
+  longitude: null,
   parkingAvailable: false,
   accessibility: false,
   spaceName: '',
@@ -194,7 +198,9 @@ export const mapDraftToVenueFormData = (
   const terms = profile?.terms as Record<string, unknown> | undefined
   const gallery = space?.galleryContact as Record<string, unknown> | undefined
   const amenitiesDoc = profile?.amenities as
-    Array<Record<string, unknown>> | Record<string, unknown> | undefined
+    | Array<Record<string, unknown>>
+    | Record<string, unknown>
+    | undefined
 
   const amenityLabels = Array.isArray(amenitiesDoc)
     ? amenitiesDoc.flatMap((item) =>
@@ -218,6 +224,8 @@ export const mapDraftToVenueFormData = (
     address: String(location.address || ''),
     landmark: String(location.landmark || ''),
     city: String(location.city || ''),
+    latitude: typeof location.latitude === 'number' ? location.latitude : null,
+    longitude: typeof location.longitude === 'number' ? location.longitude : null,
     parkingAvailable: Boolean(draft.parkingAvailable ?? profile?.parkingAvailable ?? false),
     accessibility: Boolean(draft.accessibility ?? profile?.accessibility ?? false),
     spaceName: String(space?.name || ''),
@@ -245,7 +253,8 @@ export const mapDraftToVenueFormData = (
       : String(terms?.terms || ''),
     cancellationPolicy: mapHoursToCancellationPolicy(
       (terms?.cancellation as Record<string, unknown> | undefined)?.freeCancellationHours as
-        number | undefined,
+        | number
+        | undefined,
     ),
     refundPercentage: String(
       (terms?.cancellation as Record<string, unknown> | undefined)?.refundPercentage ?? '',

@@ -75,6 +75,8 @@ export type VenueOnboardingReviewVenue = {
   profileImageUrl?: string
   coverImageUrl?: string
   location?: VenueOnboardingLocation
+  parkingAvailable?: boolean
+  accessibility?: boolean
   venueImages?: string[]
   kycId?: string
   status?: string

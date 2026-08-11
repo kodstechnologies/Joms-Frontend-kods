@@ -17,10 +17,12 @@
     "env:flip": "node scripts/flip-env.js toggle"
   },
   "dependencies": {
+    "@googlemaps/js-api-loader": "^2.1.1",
     "@hookform/resolvers": "^5.2.2",
     "@tanstack/react-query": "^5.100.9",
     "@tanstack/react-query-devtools": "^5.100.9",
     "@tanstack/react-table": "^8.21.3",
+    "@types/google.maps": "^3.65.5",
     "axios": "^1.16.0",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",

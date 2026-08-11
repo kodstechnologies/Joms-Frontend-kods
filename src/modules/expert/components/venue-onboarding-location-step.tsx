@@ -1,8 +1,9 @@
 import { useRef } from 'react'
-import { MapPin, Maximize2, Search, Upload, X } from 'lucide-react'
+import { Upload, X } from 'lucide-react'
 
 import type { VenueOnboardingFormData } from '../utils/venue-onboarding-form'
 import { RequiredMark } from '@/shared/components/form/required-mark'
+import { GoogleMapPicker, type LocationDetails } from '@/shared/components/map'
 
 const fieldClass = 'ui-input'
 
@@ -40,6 +41,20 @@ export const VenueOnboardingLocationStep = ({ formData, setFormData }: Props) =>
     }))
   }
 
+  const handleMapLocationSelect = (details: LocationDetails) => {
+    setFormData((prev) => ({
+      ...prev,
+      latitude: details.latitude,
+      longitude: details.longitude,
+      address: details.address || prev.address,
+      city: details.city || prev.city,
+      state: details.state || prev.state,
+      country: details.country || prev.country,
+      pincode: details.pincode || prev.pincode,
+      landmark: details.landmark || prev.landmark,
+    }))
+  }
+
   const totalImages = formData.venueImages.length + formData.venueImageUrls.length
 
   return (
@@ -58,7 +73,7 @@ export const VenueOnboardingLocationStep = ({ formData, setFormData }: Props) =>
             <input
               value={formData.address}
               onChange={(e) => setFormData((prev) => ({ ...prev, address: e.target.value }))}
-              placeholder="e.g NDA Review & Legal Advisory"
+              placeholder="e.g. 100 Feet Rd, Indiranagar"
               className={fieldClass}
             />
           </div>
@@ -147,38 +162,22 @@ export const VenueOnboardingLocationStep = ({ formData, setFormData }: Props) =>
               onChange={(e) => handleImagesAdd(e.target.files)}
             />
           </div>
-        </div>
-      </div>
 
-      <div className="bg-brand-surface rounded-lg border border-white/5 p-6">
-        <div className="mb-4">
-          <h3 className="text-sm font-bold text-white">Location on Map</h3>
-          <p className="text-muted mt-1 text-xs">Based on the address you provided</p>
-        </div>
-
-        <div className="relative mb-4">
-          <Search className="text-muted absolute top-1/2 left-3 size-4 -translate-y-1/2" />
-          <input
-            value={formData.landmark}
-            onChange={(e) => setFormData((prev) => ({ ...prev, landmark: e.target.value }))}
-            placeholder="Search by Location"
-            className={`${fieldClass} ui-input-icon-left`}
-          />
-        </div>
-
-        <div className="bg-brand-surface relative overflow-hidden rounded-md border border-white/10">
-          <div className="flex h-48 items-center justify-center bg-gradient-to-br from-slate-800 to-slate-900">
-            <div className="text-center">
-              <MapPin className="text-brand-danger mx-auto mb-2 size-8" />
-              <p className="text-muted text-xs">{formData.city || 'Bengaluru'}</p>
+          <div className="pt-2">
+            <div className="mb-3">
+              <h3 className="text-sm font-bold text-white">Location on Map</h3>
+              <p className="text-muted mt-1 text-xs">Based on the address you provided</p>
             </div>
+            <GoogleMapPicker
+              latitude={formData.latitude}
+              longitude={formData.longitude}
+              address={formData.address}
+              city={formData.city}
+              landmark={formData.landmark}
+              height="280px"
+              onLocationSelect={handleMapLocationSelect}
+            />
           </div>
-          <button
-            type="button"
-            className="absolute top-2 right-2 rounded-md bg-black/60 p-1.5 text-white"
-          >
-            <Maximize2 className="size-4" />
-          </button>
         </div>
       </div>
     </div>
