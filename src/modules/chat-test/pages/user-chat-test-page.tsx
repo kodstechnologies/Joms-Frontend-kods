@@ -73,8 +73,8 @@ export function UserChatTestPage() {
             </Link>
           </div>
           <p className="text-sm text-zinc-400">
-            Static users pick a partner&apos;s service or consultation, request a quotation, then
-            chat / accept proposals.
+            Pick a partner&apos;s offerings: book consultations (preview + slot + pay) or request
+            service quotations, then chat / accept proposals.
           </p>
         </header>
 

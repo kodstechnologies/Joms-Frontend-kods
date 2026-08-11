@@ -22,6 +22,12 @@ import {
   payServiceOrder,
   type ServiceOrder,
 } from '../api/service-order.api'
+import {
+  listMyConsultationBookings,
+  payConsultationBooking,
+  type ConsultationBooking,
+} from '../api/consultation-booking.api'
+import { UserConsultationBookPanel } from './user-consultation-book-panel'
 import type { StaticChatUser } from '../config/static-users'
 
 type Props = {
@@ -129,6 +135,7 @@ export function UserQuotationPanel({ user }: Props) {
   const [offeringsLoaded, setOfferingsLoaded] = useState(false)
   const [mine, setMine] = useState<QuotationRow[]>([])
   const [orders, setOrders] = useState<ServiceOrder[]>([])
+  const [consultationBookings, setConsultationBookings] = useState<ConsultationBooking[]>([])
   const [tierName, setTierName] = useState<'basic' | 'standard' | 'premium'>('standard')
   const [error, setError] = useState<string | null>(null)
   const [ok, setOk] = useState<string | null>(null)
@@ -142,11 +149,13 @@ export function UserQuotationPanel({ user }: Props) {
     (selected.pricingType === 'fixed' || selected.pricingType === 'tiered')
 
   const refresh = async () => {
-    const [list, orderList] = await Promise.all([
+    const [list, orderList, bookings] = await Promise.all([
       listMyQuotations(user.accessToken),
       listMyServiceOrders(user.accessToken),
+      listMyConsultationBookings(user.accessToken),
     ])
     setOrders(orderList)
+    setConsultationBookings(bookings)
     const enriched = await Promise.all(
       list.map(async (q) => {
         try {
@@ -382,10 +391,13 @@ export function UserQuotationPanel({ user }: Props) {
   return (
     <div className="space-y-4 rounded-xl border border-zinc-800 bg-zinc-900/60 p-4">
       <div>
-        <h2 className="font-semibold">Request quotation</h2>
+        <h2 className="font-semibold">Book service or consultation</h2>
         <p className="text-xs text-zinc-500">
-          Pick a partner, load their services / consultations, select one to pre-fill, then edit
-          every field the partner will see before submitting as{' '}
+          Services → quotation or direct order. Consultations → preview &amp; book a slot.
+        </p>
+        <p className="text-xs text-zinc-500">
+          Pick a partner, load offerings, then select a consultation to preview &amp; book, or a
+          service to request a quotation as{' '}
           <span className="text-sky-300">
             {user.username} ({user.id})
           </span>
@@ -477,7 +489,22 @@ export function UserQuotationPanel({ user }: Props) {
             </div>
           </div>
 
-          {selected ? (
+          {selected?.type === 'consultation' ? (
+            <UserConsultationBookPanel
+              key={selected._id}
+              token={user.accessToken}
+              consultation={selected}
+              onBooked={() => void refresh()}
+              onSetupComplete={(updated) => {
+                setSelected(updated)
+                setConsultations((rows) =>
+                  rows.map((row) => (row._id === updated._id ? { ...row, ...updated } : row)),
+                )
+              }}
+              onError={(msg) => setError(msg)}
+              onSuccess={(msg) => setOk(msg)}
+            />
+          ) : selected ? (
             <form
               onSubmit={(e) => void handleRequest(e)}
               className="space-y-3 rounded-lg border border-zinc-700 bg-zinc-950/80 p-3"
@@ -627,11 +654,11 @@ export function UserQuotationPanel({ user }: Props) {
                 {loading ? 'Sending…' : 'Request quotation'}
               </button>
             </form>
-          ) : (
+          ) : !selected ? (
             <p className="text-xs text-zinc-500">
-              Select a service or consultation to edit the request fields.
+              Select a service to request a quotation, or a consultation to preview and book.
             </p>
-          )}
+          ) : null}
 
           {!allOfferings.length ? (
             <p className="text-xs text-zinc-500">
@@ -715,6 +742,65 @@ export function UserQuotationPanel({ user }: Props) {
           ))}
           {!orders.length ? (
             <li className="text-xs text-zinc-500">No Fixed/Tiered orders yet</li>
+          ) : null}
+        </ul>
+      </div>
+
+      <div className="border-t border-zinc-800 pt-3">
+        <div className="mb-2 flex items-center justify-between">
+          <h3 className="text-sm font-medium">My consultation bookings</h3>
+          <button
+            type="button"
+            className="text-xs text-zinc-400 hover:text-zinc-200"
+            onClick={() => void refresh().catch((err) => setError(errMessage(err)))}
+          >
+            Refresh
+          </button>
+        </div>
+        <ul className="space-y-2">
+          {consultationBookings.map((booking) => (
+            <li
+              key={booking._id}
+              className="rounded-lg border border-zinc-800 bg-zinc-950/60 px-3 py-2 text-sm"
+            >
+              <div className="font-medium">{booking.title}</div>
+              <div className="text-xs text-zinc-500">
+                {new Date(booking.startAt).toLocaleString()} · {booking.durationMinutes ?? '?'} min
+                · ₹{booking.price} · pay {booking.paymentStatus} · {booking.status}
+                {booking.navigation?.threadId ? (
+                  <>
+                    {' '}
+                    · thread <span className="text-sky-300">{booking.navigation.threadId}</span>
+                  </>
+                ) : null}
+              </div>
+              {booking.paymentStatus === 'pending' ? (
+                <button
+                  type="button"
+                  disabled={loading}
+                  className="mt-2 rounded border border-violet-500 px-2 py-1 text-[11px] text-violet-300 disabled:opacity-50"
+                  onClick={() =>
+                    void (async () => {
+                      setLoading(true)
+                      try {
+                        await payConsultationBooking(user.accessToken, booking._id)
+                        setOk('Consultation booking paid')
+                        await refresh()
+                      } catch (err) {
+                        setError(errMessage(err))
+                      } finally {
+                        setLoading(false)
+                      }
+                    })()
+                  }
+                >
+                  Dummy pay
+                </button>
+              ) : null}
+            </li>
+          ))}
+          {!consultationBookings.length ? (
+            <li className="text-xs text-zinc-500">No consultation bookings yet</li>
           ) : null}
         </ul>
       </div>

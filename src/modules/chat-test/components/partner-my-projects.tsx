@@ -13,6 +13,12 @@ import {
   type ServiceProjectStatus,
 } from '../api/quotation.api'
 import {
+  listPartnerConsultationProjects,
+  type ConsultationProjectCard,
+  type ConsultationProjectStatus,
+} from '../api/consultation-booking.api'
+import { PartnerConsultationDetailPanel } from './partner-consultation-detail-panel'
+import {
   getServiceOrder,
   linkServiceOrderThread,
   markServiceOrderCompleted,
@@ -22,6 +28,8 @@ import {
 type Props = {
   token: string
 }
+
+type ProjectTab = 'services' | 'consultation'
 
 const filters: Array<{ value: ServiceProjectStatus; label: string }> = [
   { value: 'all', label: 'All' },
@@ -70,6 +78,11 @@ function canRequestPaymentForMilestone(milestones: ProposalMilestone[], index: n
   return previousMilestonesDone(milestones, index)
 }
 
+function navHintLabel(project: { navigation: { screenHint: string; threadId: string | null } }) {
+  const hint = project.navigation.screenHint.replaceAll('_', ' ')
+  return project.navigation.threadId ? `${hint} · ${project.navigation.threadId}` : hint
+}
+
 function milestoneStatusLabel(status: string) {
   switch (status) {
     case 'approval_pending':
@@ -90,9 +103,14 @@ function milestoneStatusLabel(status: string) {
 }
 
 export function PartnerMyProjects({ token }: Props) {
+  const [tab, setTab] = useState<ProjectTab>('services')
   const [status, setStatus] = useState<ServiceProjectStatus>('all')
   const [projects, setProjects] = useState<ServiceProjectCard[]>([])
+  const [consultationProjects, setConsultationProjects] = useState<ConsultationProjectCard[]>([])
   const [selected, setSelected] = useState<ServiceProjectCard | null>(null)
+  const [selectedConsultation, setSelectedConsultation] = useState<ConsultationProjectCard | null>(
+    null,
+  )
   const [quotationDetail, setQuotationDetail] = useState<{
     quotation: QuotationRequest
     proposal: Proposal | null
@@ -107,18 +125,49 @@ export function PartnerMyProjects({ token }: Props) {
   const [ok, setOk] = useState<string | null>(null)
 
   const reloadList = async () => {
-    const rows = await listPartnerServiceProjects(token, status)
-    setProjects(rows)
+    if (tab === 'services') {
+      const rows = await listPartnerServiceProjects(token, status)
+      setProjects(rows)
+      return
+    }
+    const rows = await listPartnerConsultationProjects(token, status as ConsultationProjectStatus)
+    setConsultationProjects(rows)
+  }
+
+  const resetSelection = () => {
+    setSelected(null)
+    setSelectedConsultation(null)
+    setQuotationDetail(null)
+    setServiceOrder(null)
+    setWorkProposal(null)
+    setError(null)
+    setOk(null)
+  }
+
+  const changeTab = (next: ProjectTab) => {
+    setTab(next)
+    setStatus('all')
+    resetSelection()
+    setLoading(true)
+  }
+
+  const changeStatus = (next: ServiceProjectStatus) => {
+    setStatus(next)
+    resetSelection()
+    setLoading(true)
   }
 
   useEffect(() => {
     let active = true
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- hydrate partner projects from API
-    setLoading(true)
-    setError(null)
-    void listPartnerServiceProjects(token, status)
+    const loader =
+      tab === 'services'
+        ? listPartnerServiceProjects(token, status)
+        : listPartnerConsultationProjects(token, status as ConsultationProjectStatus)
+    void loader
       .then((rows) => {
-        if (active) setProjects(rows)
+        if (!active) return
+        if (tab === 'services') setProjects(rows as ServiceProjectCard[])
+        else setConsultationProjects(rows as ConsultationProjectCard[])
       })
       .catch((err) => {
         if (active) setError(errorMessage(err))
@@ -129,10 +178,11 @@ export function PartnerMyProjects({ token }: Props) {
     return () => {
       active = false
     }
-  }, [status, token])
+  }, [status, token, tab])
 
   const openProject = async (project: ServiceProjectCard) => {
     setSelected(project)
+    setSelectedConsultation(null)
     setQuotationDetail(null)
     setServiceOrder(null)
     setWorkProposal(null)
@@ -165,6 +215,16 @@ export function PartnerMyProjects({ token }: Props) {
     }
   }
 
+  const openConsultationProject = async (project: ConsultationProjectCard) => {
+    setSelectedConsultation(project)
+    setSelected(null)
+    setQuotationDetail(null)
+    setServiceOrder(null)
+    setWorkProposal(null)
+    setError(null)
+    setOk(null)
+  }
+
   const runAction = async (fn: () => Promise<void>, successMsg: string) => {
     setActionLoading(true)
     setError(null)
@@ -186,16 +246,27 @@ export function PartnerMyProjects({ token }: Props) {
       <div className="border-b border-zinc-800 px-4 pt-5 sm:px-6">
         <h1 className="text-2xl font-semibold tracking-tight">My projects</h1>
         <div className="mt-5 flex gap-6 text-sm">
-          <button type="button" className="border-b-2 border-amber-400 pb-3 font-medium text-white">
+          <button
+            type="button"
+            onClick={() => changeTab('services')}
+            className={`pb-3 font-medium ${
+              tab === 'services'
+                ? 'border-b-2 border-amber-400 text-white'
+                : 'text-zinc-400 hover:text-zinc-200'
+            }`}
+          >
             Services
           </button>
           <button
             type="button"
-            disabled
-            title="Coming soon"
-            className="cursor-not-allowed pb-3 text-zinc-600"
+            onClick={() => changeTab('consultation')}
+            className={`pb-3 font-medium ${
+              tab === 'consultation'
+                ? 'border-b-2 border-amber-400 text-white'
+                : 'text-zinc-400 hover:text-zinc-200'
+            }`}
           >
-            Consultation <span className="text-[10px] uppercase">Coming soon</span>
+            Consultation
           </button>
         </div>
       </div>
@@ -206,7 +277,7 @@ export function PartnerMyProjects({ token }: Props) {
             <button
               key={filter.value}
               type="button"
-              onClick={() => setStatus(filter.value)}
+              onClick={() => changeStatus(filter.value)}
               className={`rounded-full px-4 py-2 text-xs font-medium transition ${
                 status === filter.value
                   ? 'bg-amber-400 text-zinc-950'
@@ -233,72 +304,122 @@ export function PartnerMyProjects({ token }: Props) {
           <p className="py-8 text-center text-sm text-zinc-500">Loading projects…</p>
         ) : null}
 
-        {!loading && !projects.length ? (
+        {!loading && tab === 'services' && !projects.length ? (
           <p className="rounded-xl border border-dashed border-zinc-700 py-10 text-center text-sm text-zinc-500">
             No {status === 'all' ? '' : `${status} `}service projects
           </p>
         ) : null}
 
+        {!loading && tab === 'consultation' && !consultationProjects.length ? (
+          <p className="rounded-xl border border-dashed border-zinc-700 py-10 text-center text-sm text-zinc-500">
+            No {status === 'all' ? '' : `${status} `}consultation bookings
+          </p>
+        ) : null}
+
         <div className="grid gap-3 md:grid-cols-2">
-          {projects.map((project) => (
-            <button
-              key={project.id}
-              type="button"
-              onClick={() => void openProject(project)}
-              className={`group flex min-w-0 gap-3 rounded-xl border p-3 text-left transition hover:-translate-y-0.5 hover:border-zinc-600 ${
-                selected?.id === project.id
-                  ? 'border-amber-400/60 bg-amber-400/5'
-                  : 'border-zinc-800 bg-zinc-950/60'
-              }`}
-            >
-              <div className="h-20 w-24 shrink-0 overflow-hidden rounded-lg bg-zinc-800">
-                {project.serviceImage ? (
-                  <img
-                    src={project.serviceImage}
-                    alt=""
-                    className="h-full w-full object-cover transition group-hover:scale-105"
-                  />
-                ) : (
-                  <div className="flex h-full items-center justify-center text-2xl text-zinc-600">
-                    ◇
+          {tab === 'services'
+            ? projects.map((project) => (
+                <button
+                  key={project.id}
+                  type="button"
+                  onClick={() => void openProject(project)}
+                  className={`group flex min-w-0 gap-3 rounded-xl border p-3 text-left transition hover:-translate-y-0.5 hover:border-zinc-600 ${
+                    selected?.id === project.id
+                      ? 'border-amber-400/60 bg-amber-400/5'
+                      : 'border-zinc-800 bg-zinc-950/60'
+                  }`}
+                >
+                  <div className="h-20 w-24 shrink-0 overflow-hidden rounded-lg bg-zinc-800">
+                    {project.serviceImage ? (
+                      <img
+                        src={project.serviceImage}
+                        alt=""
+                        className="h-full w-full object-cover transition group-hover:scale-105"
+                      />
+                    ) : (
+                      <div className="flex h-full items-center justify-center text-2xl text-zinc-600">
+                        ◇
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-start justify-between gap-2">
-                  <h3 className="truncate text-sm font-semibold text-zinc-100">{project.title}</h3>
-                  <span className="shrink-0 text-[10px] text-zinc-500">
-                    {activityLabel(project.lastActivityAt)}
-                  </span>
-                </div>
-                <p className="mt-2 truncate text-xs text-zinc-400">
-                  Client: {project.client.username || project.client.userId}
-                  <span className="px-1 text-zinc-700">|</span>
-                  {paymentLabel(project.paymentType)}
-                  <span className="px-1 text-zinc-700">|</span>
-                  {project.engagementType === 'fixed_tiered' ? 'Fixed/Tiered' : 'Custom'}
-                </p>
-                <div className="mt-3 flex items-center justify-between gap-2">
-                  <span className="rounded-full bg-zinc-800 px-2 py-1 text-[10px] font-medium text-zinc-300 capitalize">
-                    {project.projectStatus === 'ongoing'
-                      ? 'On-going'
-                      : project.projectStatus === 'newservice'
-                        ? 'New'
-                        : project.projectStatus}
-                  </span>
-                  <span className="truncate text-[10px] text-amber-300">
-                    {project.navigation.screenHint.replaceAll('_', ' ')}
-                    {project.navigation.screenHint === 'payment' && project.navigation.threadId
-                      ? ` · ${project.navigation.threadId}`
-                      : ''}
-                  </span>
-                </div>
-              </div>
-            </button>
-          ))}
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-start justify-between gap-2">
+                      <h3 className="truncate text-sm font-semibold text-zinc-100">
+                        {project.title}
+                      </h3>
+                      <span className="shrink-0 text-[10px] text-zinc-500">
+                        {activityLabel(project.lastActivityAt)}
+                      </span>
+                    </div>
+                    <p className="mt-2 truncate text-xs text-zinc-400">
+                      Client: {project.client.username || project.client.userId}
+                      <span className="px-1 text-zinc-700">|</span>
+                      {paymentLabel(project.paymentType)}
+                      <span className="px-1 text-zinc-700">|</span>
+                      {project.engagementType === 'fixed_tiered' ? 'Fixed/Tiered' : 'Custom'}
+                    </p>
+                    <div className="mt-3 flex items-center justify-between gap-2">
+                      <span className="rounded-full bg-zinc-800 px-2 py-1 text-[10px] font-medium text-zinc-300 capitalize">
+                        {project.projectStatus === 'ongoing'
+                          ? 'On-going'
+                          : project.projectStatus === 'newservice'
+                            ? 'New'
+                            : project.projectStatus}
+                      </span>
+                      <span className="truncate text-[10px] text-amber-300">
+                        {navHintLabel(project)}
+                      </span>
+                    </div>
+                  </div>
+                </button>
+              ))
+            : consultationProjects.map((project) => (
+                <button
+                  key={project.id}
+                  type="button"
+                  onClick={() => void openConsultationProject(project)}
+                  className={`group flex min-w-0 gap-3 rounded-xl border p-3 text-left transition hover:-translate-y-0.5 hover:border-zinc-600 ${
+                    selectedConsultation?.id === project.id
+                      ? 'border-amber-400/60 bg-amber-400/5'
+                      : 'border-zinc-800 bg-zinc-950/60'
+                  }`}
+                >
+                  <div className="flex h-20 w-24 shrink-0 items-center justify-center rounded-lg bg-zinc-800 text-2xl text-zinc-600">
+                    🎧
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-start justify-between gap-2">
+                      <h3 className="truncate text-sm font-semibold text-zinc-100">
+                        {project.title}
+                      </h3>
+                      <span className="shrink-0 text-[10px] text-zinc-500">
+                        {activityLabel(project.lastActivityAt)}
+                      </span>
+                    </div>
+                    <p className="mt-2 truncate text-xs text-zinc-400">
+                      Client: {project.client.username}
+                      <span className="px-1 text-zinc-700">|</span>
+                      {project.durationMinutes ?? '?'} min
+                      <span className="px-1 text-zinc-700">|</span>₹{project.price}
+                    </p>
+                    <div className="mt-3 flex items-center justify-between gap-2">
+                      <span className="rounded-full bg-zinc-800 px-2 py-1 text-[10px] font-medium text-zinc-300 capitalize">
+                        {project.projectStatus === 'ongoing'
+                          ? 'On-going'
+                          : project.projectStatus === 'newservice'
+                            ? 'New'
+                            : project.projectStatus}
+                      </span>
+                      <span className="truncate text-[10px] text-amber-300">
+                        {navHintLabel(project)}
+                      </span>
+                    </div>
+                  </div>
+                </button>
+              ))}
         </div>
 
-        {selected ? (
+        {selected && tab === 'services' ? (
           <div className="mt-5 space-y-4 rounded-xl border border-zinc-700 bg-zinc-950/70 p-4">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h3 className="font-semibold">
@@ -315,7 +436,7 @@ export function PartnerMyProjects({ token }: Props) {
                       : 'Project context'}
               </h3>
               <span className="rounded-full bg-amber-400/10 px-2 py-1 text-xs text-amber-300">
-                {selected.navigation.screenHint.replaceAll('_', ' ')}
+                {navHintLabel(selected)}
               </span>
             </div>
 
@@ -493,6 +614,17 @@ export function PartnerMyProjects({ token }: Props) {
               </div>
             ) : null}
           </div>
+        ) : null}
+
+        {selectedConsultation && tab === 'consultation' ? (
+          <PartnerConsultationDetailPanel
+            key={selectedConsultation.consultationBookingId}
+            token={token}
+            project={selectedConsultation}
+            onChanged={() => void reloadList()}
+            onError={(msg) => setError(msg)}
+            onSuccess={(msg) => setOk(msg)}
+          />
         ) : null}
       </div>
     </section>
