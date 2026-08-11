@@ -23,6 +23,8 @@ export type VenueOnboardingFormData = {
   landmark: string
   latitude: number | null
   longitude: number | null
+  parkingAvailable: boolean
+  accessibility: boolean
   venueImages: File[]
   venueImageUrls: string[]
 
@@ -45,6 +47,27 @@ export type VenueOnboardingFormData = {
   internalNotes: string
   isVerified: boolean
 }
+
+export const VENUE_TYPE_OPTIONS = [
+  { value: 'hotel', label: 'Hotel' },
+  { value: 'restaurant', label: 'Restaurant' },
+  { value: 'banquet_hall', label: 'Banquet Hall' },
+  { value: 'resort', label: 'Resort' },
+  { value: 'club', label: 'Club' },
+  { value: 'workspace', label: 'Workspace' },
+  { value: 'convention_center', label: 'Convention Center' },
+  { value: 'party_lawn', label: 'Party Lawn' },
+  { value: 'pub', label: 'Pub' },
+  { value: 'cafe', label: 'Cafe' },
+  { value: 'auditorium', label: 'Auditorium' },
+  { value: 'studio', label: 'Studio' },
+  { value: 'sports_arena', label: 'Sports Arena' },
+  { value: 'rooftop', label: 'Rooftop' },
+  { value: 'farmhouse', label: 'Farmhouse' },
+  { value: 'villa', label: 'Villa' },
+  { value: 'heritage_property', label: 'Heritage Property' },
+  { value: 'unique_venue', label: 'Unique Venue' },
+] as const
 
 export const createEmptyVenueOnboardingForm = (): VenueOnboardingFormData => ({
   name: '',
@@ -71,6 +94,8 @@ export const createEmptyVenueOnboardingForm = (): VenueOnboardingFormData => ({
   landmark: '',
   latitude: null,
   longitude: null,
+  parkingAvailable: false,
+  accessibility: false,
   venueImages: [],
   venueImageUrls: [],
 
@@ -101,7 +126,10 @@ export const buildBasicProfileFormData = (
   const formData = new FormData()
   formData.append('partnerId', partnerId)
   formData.append('name', form.name)
-  formData.append('venueType', form.venueType)
+
+  const resolvedVenueType =
+    form.venueType && form.venueType !== 'Venue Partner' ? form.venueType : 'hotel'
+  formData.append('venueType', resolvedVenueType)
 
   if (form.venueCategoryId) {
     formData.append('venueCategoryId', JSON.stringify([form.venueCategoryId]))
@@ -158,6 +186,8 @@ export const buildLocationFormData = (form: VenueOnboardingFormData): FormData =
   if (form.longitude != null) location.longitude = form.longitude
 
   formData.append('location', JSON.stringify(location))
+  formData.append('parkingAvailable', form.parkingAvailable ? 'true' : 'false')
+  formData.append('accessibility', form.accessibility ? 'true' : 'false')
   form.venueImages.forEach((file) => formData.append('venueImages', file))
 
   return formData

@@ -107,6 +107,8 @@ export function CreateVenueOnboardingPage() {
         landmark: venue.location?.landmark || prev.landmark,
         latitude: venue.location?.latitude ?? prev.latitude,
         longitude: venue.location?.longitude ?? prev.longitude,
+        parkingAvailable: venue.parkingAvailable ?? prev.parkingAvailable,
+        accessibility: venue.accessibility ?? prev.accessibility,
         venueImageUrls: venue.venueImages || prev.venueImageUrls,
         idType: kyc?.governmentId?.idType || prev.idType,
         idNumber: kyc?.governmentId?.idNumber || prev.idNumber,

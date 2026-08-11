@@ -1,5 +1,6 @@
 import type { VenueFormData } from '../utils/venue-form'
 import { RequiredMark } from '@/shared/components/form/required-mark'
+import { GoogleMapPicker } from '@/shared/components/map'
 
 interface SpacesStepProps {
   venueData: VenueFormData
@@ -295,19 +296,19 @@ export const SpacesStep = ({ venueData, setVenueData, isEditMode = false }: Spac
 
       {locationType === 'different' && (
         <div className="bg-brand-surface rounded-lg border border-white/5 p-5 shadow-xl">
-          <div className="mb-4 flex items-center justify-between">
-            <div>
-              <h3 className="text-sm font-semibold text-white">Location on Map</h3>
-
-              <p className="text-muted text-xs">Based on the address you provided</p>
-            </div>
-
-            <input type="text" placeholder="Search by Location" className="ui-input w-64" />
+          <div className="mb-4">
+            <h3 className="text-sm font-semibold text-white">Location on Map</h3>
+            <p className="text-muted text-xs">Based on the address you provided</p>
           </div>
 
-          <div className="text-muted flex h-[220px] items-center justify-center rounded-xl border border-white/10 bg-black">
-            Google Map Here
-          </div>
+          <GoogleMapPicker
+            latitude={venueData.latitude}
+            longitude={venueData.longitude}
+            address={venueData.address}
+            city={venueData.city}
+            landmark={venueData.landmark}
+            height="240px"
+          />
         </div>
       )}
     </div>

@@ -14,6 +14,7 @@ VITE_VENUE_API_BASE_URL=http://localhost:8005
 VITE_KYC_API_BASE_URL=http://localhost:8003
 VITE_MEMBERSHIP_API_BASE_URL=http://localhost:8006
 VITE_SETTINGS_API_BASE_URL=http://localhost:8007
+VITE_GOOGLE_MAPS_API_KEY=AIzaSyC7gzHb0335ZzYsdSLRdkDF7uFhWjlxYus
 `
 
 const PROD_ENV = `VITE_AUTH_API_BASE_URL=https://auth.api.kods.online
@@ -23,6 +24,7 @@ VITE_VENUE_API_BASE_URL=https://venues.api.kods.online
 VITE_KYC_API_BASE_URL=https://kyc.api.kods.online
 VITE_MEMBERSHIP_API_BASE_URL=https://membership.api.kods.online
 VITE_SETTINGS_API_BASE_URL=https://settings.api.kods.online
+VITE_GOOGLE_MAPS_API_KEY=AIzaSyC7gzHb0335ZzYsdSLRdkDF7uFhWjlxYus
 `
 
 function detectMode(content) {

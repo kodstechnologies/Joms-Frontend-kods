@@ -19,6 +19,7 @@ import { useVenueStepMutations } from '@/modules/expert/hooks/use-create-venue'
 import { fetchAdminDraftVenue } from '../../api/venue-api'
 import {
   createDefaultWeeklyAvailability,
+  createEmptyVenueFormData,
   buildVenueGalleryPreviewsFromUrls,
   mapHoursToCancellationPolicy,
   mapSpaceTypeFromApi,
@@ -136,62 +137,7 @@ export const CreateVenueListingPage = () => {
     submitVenueListing,
   } = useVenueStepMutations()
 
-  const [venueData, setVenueData] = useState<VenueFormData>({
-    venueName: '',
-    venueType: '',
-    venueCategory: '',
-    aboutVenue: '',
-    address: '',
-    landmark: '',
-    city: '',
-    parkingAvailable: false,
-    accessibility: false,
-    spaceName: '',
-    spaceType: '',
-    capacityType: 'seated',
-    capacity: '',
-    areaSqFt: '',
-    guestCount: '',
-    seatingType: '',
-    locationType: 'same',
-    seatedCapacity: '',
-    standingCapacity: '',
-    inHouseCatering: false,
-    decorationAvailable: false,
-    amenities: [] as {
-      categoryId: string
-      subCategoryId: string
-      name: string
-      image: string
-    }[],
-    contacts: [{ name: '', phone: '', email: '' }] as {
-      name: string
-      phone: string
-      email: string
-    }[],
-    venueCoverImage: null as File | null,
-    venueImage: null as File | null,
-    galleryImages: [] as File[],
-    venueCoverImageUrl: '',
-    venueImageUrl: '',
-    galleryImageUrls: [] as string[],
-    galleryPreviews: [] as string[],
-    serviceType: 'entire_space',
-    setDays: '',
-    weekdayPrice: '',
-    weekendPrice: '',
-    discount: '',
-    reservationFee: '',
-    terms: '',
-    cancellationPolicy: '48hrs',
-    refundPercentage: '0',
-    faqs: [{ question: '', answer: '' }] as {
-      question: string
-      answer: string
-    }[],
-    weeklyAvailability: createDefaultWeeklyAvailability(),
-    blockedDates: [] as { date: string; from: string; to: string }[],
-  })
+  const [venueData, setVenueData] = useState<VenueFormData>(createEmptyVenueFormData)
 
   useEffect(() => {
     if (!venueId && partnerId) {

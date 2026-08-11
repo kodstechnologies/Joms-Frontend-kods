@@ -2,7 +2,11 @@ import axios from 'axios'
 import { env } from '@/config/env'
 
 export type ServiceOrderWorkStatus =
-  'payment_pending' | 'awaiting_first_message' | 'ongoing' | 'review_pending' | 'approved'
+  | 'payment_pending'
+  | 'awaiting_first_message'
+  | 'ongoing'
+  | 'review_pending'
+  | 'approved'
 
 export type ServiceOrder = {
   _id: string
