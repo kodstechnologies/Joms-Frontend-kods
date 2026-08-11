@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { ArrowLeft, ArrowLeftRight, Clock, Trash2, UserCheck, UserRound, X } from 'lucide-react'
+import { ArrowLeft, ArrowLeftRight, Clock, UserCheck, UserRound, X } from 'lucide-react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 
@@ -19,6 +19,7 @@ import type { AuditLog } from '../types/rbac'
 import { DataTable } from '@/shared/components/table/data-table'
 import { cn } from '@/shared/lib/cn'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
+import deleteIcon from '@/assets/JOMS_ICONS-2/icons8-delete.svg'
 import { uiTokens } from '@/shared/lib/design-tokens'
 
 const PAGE_SIZE = 10
@@ -256,7 +257,7 @@ export function AdminDetailPage() {
           )}
           <button type="button" className={dangerActionButtonClass} onClick={handleDelete}>
             <span className="grid size-5 place-items-center rounded-full bg-white/20">
-              <Trash2 className="size-3" />
+              <img src={deleteIcon} alt="delete" className="size-3" />
             </span>
             Delete User
           </button>

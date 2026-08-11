@@ -11,13 +11,14 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
-import { BarChart3, Plus, RefreshCw, Star, TrendingDown, TrendingUp } from 'lucide-react'
+import { BarChart3, RefreshCw, Star, TrendingDown, TrendingUp } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { EXPERT_DASHBOARD_MODULE_KEY } from '../../api/ui-preferences-api'
 import { orderByActiveMetricIds, useActiveMetricIds } from '../../hooks/use-active-metric-ids'
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
+import createIcon from '@/assets/JOMS_ICONS-2/icons8-create.svg'
 
 type Metric = {
   id: string
@@ -33,30 +34,30 @@ const METRICS: Metric[] = [
     id: 'total-experts',
     label: 'Total Expert',
     value: '12,845',
-    change: '8.8%',
+    change: '6.8%',
     changeType: 'up',
     changeNote: 'vs last month',
   },
   {
     id: 'active-experts',
     label: 'Active Experts',
-    value: '10,320',
-    change: '4.2%',
+    value: '10,234',
+    change: '8.3%',
     changeType: 'up',
     changeNote: 'vs last month',
   },
   {
     id: 'inactive-experts',
     label: 'Inactive Experts',
-    value: '2,525',
-    change: '2.1%',
-    changeType: 'down',
+    value: '2,611',
+    change: '3.2%',
+    changeType: 'up',
     changeNote: 'vs last month',
   },
   {
     id: 'new-experts-mtd',
     label: 'New Expert (MTD)',
-    value: '145',
+    value: '342',
     change: '12.5%',
     changeType: 'up',
     changeNote: 'vs last month',
@@ -65,71 +66,79 @@ const METRICS: Metric[] = [
     id: 'total-revenue',
     label: 'Total Revenue',
     value: '₹487,250',
-    change: '10.8%',
+    change: '5.2%',
     changeType: 'up',
     changeNote: 'vs last month',
   },
   {
     id: 'avg-listings',
     label: 'Avg. Listings/Expert',
-    value: '4.3',
-    change: '0.5%',
+    value: '06',
+    change: '2.8%',
     changeType: 'up',
-    changeNote: 'vs last month',
+    changeNote: 'vs last quarter',
   },
   {
     id: 'avg-revenue',
     label: 'Avg. Revenue/Expert',
-    value: '₹38,420',
-    change: '3.1%',
+    value: '₹4,250',
+    change: '3.5%',
     changeType: 'up',
-    changeNote: 'vs last month',
+    changeNote: 'vs last quarter',
   },
   {
     id: 'avg-ratings',
     label: 'Avg. Ratings/Expert',
     value: '4.5/5',
-    change: '0.2%',
+    change: '12.5%',
     changeType: 'up',
-    changeNote: 'vs last month',
+    changeNote: 'vs last quarter',
   },
   {
     id: 'avg-consultation',
-    label: 'Avg. Consultation/Expert',
-    value: '22',
-    change: '5.0%',
+    label: 'Avg. Consultation/Experty',
+    value: '₹487,250',
+    change: '5.2%',
     changeType: 'up',
     changeNote: 'vs last month',
   },
   {
     id: 'avg-response-time',
     label: 'Avg. Response Time/Expert',
-    value: '2.5 hrs',
-    change: '0.5%',
-    changeType: 'down',
-    changeNote: 'faster',
+    value: '₹48',
+    change: '5.2%',
+    changeType: 'up',
+    changeNote: 'vs last month',
   },
   {
     id: 'avg-client',
     label: 'Avg. Client/Expert',
-    value: '18',
-    change: '6.0%',
+    value: '₹2,847',
+    change: '5.2%',
     changeType: 'up',
     changeNote: 'vs last month',
   },
   {
     id: 'category-coverage',
-    label: 'Category coverage % Expert',
-    value: '85%',
-    change: '3.2%',
+    label: 'Category coverage % expert',
+    value: '₹2,847',
+    change: '5.2%',
+    changeType: 'up',
+    changeNote: 'vs last quarter',
+  },
+  {
+    id: 'total-orders',
+    label: 'Total Order Completed',
+    value: '₹487,250',
+    change: '5.2%',
     changeType: 'up',
     changeNote: 'vs last month',
   },
   {
-    id: 'total-order-completed',
-    label: 'Total Order Completed',
-    value: '58,400',
-    change: '15.2%',
+    id: 'avg-consultation-2',
+    label: 'Avg.Consultation/Experty',
+    value: '₹487,250',
+    change: '5.2%',
     changeType: 'up',
     changeNote: 'vs last month',
   },
@@ -140,6 +149,16 @@ const DEFAULT_METRIC_IDS = [
   'active-experts',
   'inactive-experts',
   'new-experts-mtd',
+  'total-revenue',
+  'avg-listings',
+  'avg-revenue',
+  'avg-ratings',
+  'avg-consultation',
+  'avg-response-time',
+  'avg-client',
+  'category-coverage',
+  'total-orders',
+  'avg-consultation-2',
 ]
 
 const EXPERTS_BY_CATEGORY = [
@@ -352,7 +371,7 @@ export const ExpertDashboardPage = () => {
             className="h-11 rounded-xl px-6 text-sm font-semibold sm:w-auto"
             onClick={() => navigate('/experts/management/create')}
           >
-            <Plus className="size-4" />
+            <img src={createIcon} alt="create" className="size-4" />
             Create Expert Account
           </Button>
         </div>

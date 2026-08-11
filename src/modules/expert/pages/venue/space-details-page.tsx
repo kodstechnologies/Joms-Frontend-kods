@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate, useParams } from 'react-router-dom'
 
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
+import editIcon from '@/assets/JOMS_ICONS-2/edit.svg'
 import { toast } from 'sonner'
 import {
   AlertOctagon,
@@ -14,7 +15,6 @@ import {
   Eye,
   ImageOff,
   MapPin,
-  Pencil,
   RotateCcw,
   Star,
 } from 'lucide-react'
@@ -609,7 +609,7 @@ export function SpaceDetailsPage() {
         >
           <TableActionsItem
             tone="light"
-            icon={<Pencil className="size-3.5" />}
+            icon={<img src={editIcon} alt="edit" className="size-3.5" />}
             onClick={() => {
               setActionsOpen(false)
               if (!venueId) {

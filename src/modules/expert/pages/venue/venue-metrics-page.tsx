@@ -7,7 +7,7 @@ export const VenueMetricsPage = () => (
     moduleName="Venue Management"
     returnTo="/venues/management"
     section="all"
-    maxActiveMetrics={7}
+    maxActiveMetrics={14}
   />
 )
 

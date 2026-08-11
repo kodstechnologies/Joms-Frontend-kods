@@ -13,8 +13,8 @@ import {
   Mail,
   Package,
   PauseCircle,
-  ShieldCheck,
   Trash2,
+  Gem,
   type LucideIcon,
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
@@ -490,7 +490,7 @@ export const ServiceManagementPage = () => {
     { label: 'Delete selected services', icon: Trash2 },
     { label: 'Manage selected service media', icon: Image },
     { label: 'Archive selected services', icon: Archive },
-    { label: 'Review selected services', icon: ShieldCheck },
+    { label: 'Premium features', icon: Gem },
     { label: 'Notify selected experts', icon: Bell },
     { label: 'Message selected experts', icon: Mail },
     { label: 'Suspend selected services', icon: PauseCircle },

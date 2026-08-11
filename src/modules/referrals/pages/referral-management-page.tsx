@@ -1,8 +1,9 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { Eye, Mail, Plus, SlidersHorizontal, Trash2 } from 'lucide-react'
+import { Eye, Mail, SlidersHorizontal, Trash2 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
+import createIcon from '@/assets/JOMS_ICONS-2/icons8-create.svg'
 
 import { InviteExpertReferralModal } from '../components/invite-expert-referral-modal'
 import { ReferralDetailsModal } from '../components/referral-details-modal'
@@ -244,7 +245,7 @@ export function ReferralManagementPage() {
           </Button>
 
           <Button type="button" className="w-full md:w-auto" onClick={() => setInviteOpen(true)}>
-            <Plus className="size-4" />
+            <img src={createIcon} alt="create" className="size-4" />
             Invite New Expert
           </Button>
         </div>

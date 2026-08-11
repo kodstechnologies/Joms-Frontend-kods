@@ -1,8 +1,8 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
+import createIcon from '@/assets/JOMS_ICONS-2/icons8-create.svg'
 import {
   CheckSquare,
-  ShieldCheck,
   AlertCircle,
   PauseCircle,
   Trash2,
@@ -14,9 +14,9 @@ import {
   Archive,
   Mail,
   Image,
-  Plus,
   CircleOff,
   TrendingUp,
+  Gem,
   type LucideIcon,
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
@@ -642,7 +642,7 @@ export const VenueManagementPage = () => {
     { label: 'Delete selected venues', icon: Trash2 },
     { label: 'Manage selected venue media', icon: Image },
     { label: 'Archive selected venues', icon: Archive },
-    { label: 'Review selected venues', icon: ShieldCheck },
+    { label: 'Premium features', icon: Gem },
     { label: 'Notify selected owners', icon: Bell },
     { label: 'Message selected owners', icon: Mail },
     { label: 'Suspend selected venues', icon: PauseCircle },
@@ -670,7 +670,7 @@ export const VenueManagementPage = () => {
             className="h-9 w-full md:w-auto"
             onClick={() => navigate('/venues/management/onboarding')}
           >
-            <Plus className="size-4" />
+            <img src={createIcon} alt="create" className="size-4" />
             Create Account
           </Button>
         </div>

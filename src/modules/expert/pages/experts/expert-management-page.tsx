@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
+import createIcon from '@/assets/JOMS_ICONS-2/icons8-create.svg'
 import {
   AlertCircle,
   Ban,
@@ -9,11 +10,10 @@ import {
   Hourglass,
   Mail,
   PauseCircle,
-  Plus,
-  ShieldCheck,
   Trash2,
   User,
   Users,
+  Gem,
   type LucideIcon,
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
@@ -589,7 +589,7 @@ export const ExpertManagementPage = () => {
     { label: 'Suspend selected experts', icon: PauseCircle },
     { label: 'Notify selected experts', icon: Bell },
     { label: 'Message selected experts', icon: Mail },
-    { label: 'Review selected experts', icon: ShieldCheck },
+    { label: 'Premium features', icon: Gem },
   ]
 
   return (
@@ -616,7 +616,7 @@ export const ExpertManagementPage = () => {
             className="h-9 w-full md:w-auto"
             onClick={() => navigate('/experts/management/create')}
           >
-            <Plus className="size-4" />
+            <img src={createIcon} alt="create" className="size-4" />
             Create Account
           </Button>
         </div>

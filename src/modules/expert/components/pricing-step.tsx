@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { ChevronRight, Trash2, X } from 'lucide-react'
+import clockIcon from '@/assets/JOMS_ICONS-2/icons8-clock-24.svg'
 
 import {
   createDefaultWeeklyAvailability,
@@ -212,21 +213,35 @@ export const PricingStep = ({ venueData, setVenueData }: PricingStepProps) => {
                         {entry.day}
                       </label>
 
-                      <input
-                        type="time"
-                        value={entry.from}
-                        disabled={!entry.enabled}
-                        onChange={(e) => updateDay(index, 'from', e.target.value)}
-                        className="rounded bg-black px-2 py-1 text-xs text-white disabled:opacity-40"
-                      />
+                      <div className="relative">
+                        <input
+                          type="time"
+                          value={entry.from}
+                          disabled={!entry.enabled}
+                          onChange={(e) => updateDay(index, 'from', e.target.value)}
+                          className="w-full rounded bg-black px-2 py-1.5 text-xs text-white disabled:opacity-40 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-0 [&::-webkit-calendar-picker-indicator]:z-10 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0"
+                        />
+                        <img
+                          src={clockIcon}
+                          alt=""
+                          className="pointer-events-none absolute top-1/2 right-2 size-4 -translate-y-1/2 opacity-70 invert"
+                        />
+                      </div>
 
-                      <input
-                        type="time"
-                        value={entry.to}
-                        disabled={!entry.enabled}
-                        onChange={(e) => updateDay(index, 'to', e.target.value)}
-                        className="rounded bg-black px-2 py-1 text-xs text-white disabled:opacity-40"
-                      />
+                      <div className="relative">
+                        <input
+                          type="time"
+                          value={entry.to}
+                          disabled={!entry.enabled}
+                          onChange={(e) => updateDay(index, 'to', e.target.value)}
+                          className="w-full rounded bg-black px-2 py-1.5 text-xs text-white disabled:opacity-40 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-0 [&::-webkit-calendar-picker-indicator]:z-10 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0"
+                        />
+                        <img
+                          src={clockIcon}
+                          alt=""
+                          className="pointer-events-none absolute top-1/2 right-2 size-4 -translate-y-1/2 opacity-70 invert"
+                        />
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -260,24 +275,38 @@ export const PricingStep = ({ venueData, setVenueData }: PricingStepProps) => {
                           />
                         </div>
 
-                        <div>
+                        <div className="relative w-full">
                           <label className="text-muted mb-1 block text-xs">Time</label>
-                          <input
-                            type="time"
-                            value={entry.from}
-                            onChange={(e) => updateBlockedDate(index, 'from', e.target.value)}
-                            className="ui-input bg-brand-surface rounded px-3 py-2 text-xs"
-                          />
+                          <div className="relative">
+                            <input
+                              type="time"
+                              value={entry.from}
+                              onChange={(e) => updateBlockedDate(index, 'from', e.target.value)}
+                              className="ui-input bg-brand-surface w-full rounded px-3 py-2 text-xs [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-0 [&::-webkit-calendar-picker-indicator]:z-10 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0"
+                            />
+                            <img
+                              src={clockIcon}
+                              alt=""
+                              className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 opacity-70 invert"
+                            />
+                          </div>
                         </div>
 
-                        <div>
+                        <div className="relative w-full">
                           <label className="text-muted mb-1 block text-xs">To</label>
-                          <input
-                            type="time"
-                            value={entry.to}
-                            onChange={(e) => updateBlockedDate(index, 'to', e.target.value)}
-                            className="ui-input bg-brand-surface rounded px-3 py-2 text-xs"
-                          />
+                          <div className="relative">
+                            <input
+                              type="time"
+                              value={entry.to}
+                              onChange={(e) => updateBlockedDate(index, 'to', e.target.value)}
+                              className="ui-input bg-brand-surface w-full rounded px-3 py-2 text-xs [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-0 [&::-webkit-calendar-picker-indicator]:z-10 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0"
+                            />
+                            <img
+                              src={clockIcon}
+                              alt=""
+                              className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 opacity-70 invert"
+                            />
+                          </div>
                         </div>
 
                         <button

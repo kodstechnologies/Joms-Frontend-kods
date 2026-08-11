@@ -1,4 +1,5 @@
 import { CalendarDays, CircleArrowDown, CircleArrowUp, CircleX, Monitor, X } from 'lucide-react'
+import calendarIcon from '@/assets/JOMS_ICONS-2/icons8-calendar.svg'
 import type { ComponentType } from 'react'
 import { toast } from 'sonner'
 
@@ -85,7 +86,13 @@ export function MembershipHistoryModal({
                       <p className="text-muted text-body-sm leading-4 whitespace-nowrap">
                         {formatMembershipTimelineDate(performedAt)}
                       </p>
-                      <CalendarDays className="text-muted mt-1.5 size-3.5" strokeWidth={1.75} />
+                      <img
+                        src={calendarIcon}
+                        alt="calendar"
+                        className="text-muted mt-1.5 size-3.5"
+                        style={{ filter: 'brightness(0) invert(1)' }}
+                        aria-hidden="true"
+                      />
                     </div>
 
                     <div className="relative flex w-8 shrink-0 flex-col items-center">

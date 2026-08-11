@@ -1,7 +1,6 @@
-import { Plus, X } from 'lucide-react'
+import { Plus, X, BadgeCheck } from 'lucide-react'
 import { useMemo, useRef, useState, type FormEvent } from 'react'
 
-import verifiedIcon from '@/assets/JOMS_ICONS/icons8-verified.svg'
 import { RequiredMark } from '@/shared/components/form/required-mark'
 import { DEFAULT_BILLING_CYCLES } from '../mock/membership-metrics.mock'
 import type { MembershipFeatures, MembershipPlan, MembershipPricing } from '../types/membership'
@@ -185,12 +184,7 @@ export function MembershipPlanForm({ initialPlan, onSubmit }: MembershipPlanForm
               {iconPreview ? (
                 <img src={iconPreview} alt="" className="size-full object-cover" />
               ) : (
-                <img
-                  src={verifiedIcon}
-                  alt=""
-                  className="size-6"
-                  style={{ filter: 'brightness(0) invert(1)' }}
-                />
+                <BadgeCheck className="size-6 text-white" />
               )}
             </button>
             <input

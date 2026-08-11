@@ -52,6 +52,8 @@ export type CommunicationMetricCard = {
   id: string
   title: string
   value: string
+  trend?: { direction: 'up' | 'down'; percentage: number; label: string }
+  hint?: string
 }
 
 export type CommunicationMetrics = {

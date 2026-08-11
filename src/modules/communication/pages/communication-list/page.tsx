@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, SlidersHorizontal } from 'lucide-react'
+import { SlidersHorizontal } from 'lucide-react'
 import { toast } from 'sonner'
+import createIcon from '@/assets/JOMS_ICONS-2/icons8-create.svg'
 import type { ColumnDef } from '@tanstack/react-table'
 
 import {
@@ -180,7 +181,7 @@ export function CommunicationListPage() {
             onClick={() => navigate('/communication/create')}
             className="ui-cta ui-cta-primary"
           >
-            <Plus className="icon-sm shrink-0" />
+            <img src={createIcon} alt="create" className="icon-sm shrink-0" />
             Create Communication
           </button>
         </div>
@@ -188,7 +189,14 @@ export function CommunicationListPage() {
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
         {stats.map((stat) => (
-          <StatCard key={stat.id} title={stat.title} value={stat.value} className="h-[130px]" />
+          <StatCard
+            key={stat.id}
+            title={stat.title}
+            value={stat.value}
+            trend={stat.trend}
+            hint={stat.hint}
+            className="h-[130px]"
+          />
         ))}
       </div>
 

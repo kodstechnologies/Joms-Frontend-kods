@@ -1,4 +1,5 @@
-import { ArrowLeft, ArrowRight, Calendar, ChevronDown, X } from 'lucide-react'
+import { ArrowLeft, ArrowRight, ChevronDown, X } from 'lucide-react'
+import calendarIcon from '@/assets/JOMS_ICONS-2/icons8-calendar.svg'
 import { useEffect, useMemo, useRef, useState } from 'react'
 
 import { useMembership, useMemberships } from '../hooks/use-memberships'
@@ -477,9 +478,11 @@ function CancelDateField({
           onChange={(e) => onChange(e.target.value)}
           className="box-border h-[42px] w-full rounded-[8px] border border-white/10 bg-black px-3.5 pr-10 text-[14px] text-white [color-scheme:dark] outline-none focus:border-white/30"
         />
-        <Calendar
+        <img
+          src={calendarIcon}
+          alt="calendar"
           className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-white/50"
-          strokeWidth={1.75}
+          aria-hidden="true"
         />
       </div>
     </label>

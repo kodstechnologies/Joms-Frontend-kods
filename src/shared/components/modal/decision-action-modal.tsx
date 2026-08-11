@@ -1,9 +1,16 @@
-import { Calendar, Check, CircleArrowOutUpRight, Pause, Trash2, UserMinus, X } from 'lucide-react'
-
+import { Check, CircleArrowOutUpRight, Pause, Trash2, UserMinus } from 'lucide-react'
+import calendarIcon from '@/assets/JOMS_ICONS-2/icons8-calendar.svg'
+import cancelErrorIcon from '@/assets/JOMS_ICONS-2/Cancel_error.svg'
 import { cn } from '@/shared/lib/cn'
 
 export type DecisionActionModalVariant =
-  'approve' | 'reject' | 'requestChanges' | 'escalate' | 'suspend' | 'delete' | 'pause'
+  | 'approve'
+  | 'reject'
+  | 'requestChanges'
+  | 'escalate'
+  | 'suspend'
+  | 'delete'
+  | 'pause'
 
 export type DecisionActionModalOption = {
   label: string
@@ -250,7 +257,20 @@ export function DecisionActionModal({
             onClick={onClose}
             className="text-brand-muted grid size-6 shrink-0 place-items-center rounded-full transition-colors hover:bg-white/10 hover:text-white"
           >
-            <X className="size-6" aria-hidden="true" />
+            <span
+              className="size-6 bg-current"
+              style={{
+                maskImage: `url(${cancelErrorIcon})`,
+                WebkitMaskImage: `url(${cancelErrorIcon})`,
+                maskSize: 'contain',
+                WebkitMaskSize: 'contain',
+                maskRepeat: 'no-repeat',
+                WebkitMaskRepeat: 'no-repeat',
+                maskPosition: 'center',
+                WebkitMaskPosition: 'center',
+              }}
+              aria-hidden="true"
+            />
           </button>
         </div>
 
@@ -272,7 +292,20 @@ export function DecisionActionModal({
                     </span>
                   ) : variant === 'suspend' ? (
                     <span className="flex size-[70px] items-center justify-center rounded-full bg-[rgb(211_25_28_/_20%)]">
-                      <X className="size-7 text-[#D3191C]" strokeWidth={3} aria-hidden="true" />
+                      <span
+                        className="size-7 bg-[#D3191C]"
+                        style={{
+                          maskImage: `url(${cancelErrorIcon})`,
+                          WebkitMaskImage: `url(${cancelErrorIcon})`,
+                          maskSize: 'contain',
+                          WebkitMaskSize: 'contain',
+                          maskRepeat: 'no-repeat',
+                          WebkitMaskRepeat: 'no-repeat',
+                          maskPosition: 'center',
+                          WebkitMaskPosition: 'center',
+                        }}
+                        aria-hidden="true"
+                      />
                     </span>
                   ) : variant === 'delete' ? (
                     deleteHeroIcon
@@ -349,8 +382,11 @@ export function DecisionActionModal({
                     onChange={(event) => onStartDateChange?.(event.target.value)}
                     className="ui-input h-10 w-full pr-10 [color-scheme:dark] disabled:cursor-not-allowed [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0"
                   />
-                  <Calendar
-                    className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-white"
+                  <img
+                    src={calendarIcon}
+                    alt="calendar"
+                    className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2"
+                    style={{ filter: 'brightness(0) invert(1)' }}
                     aria-hidden="true"
                   />
                 </label>
@@ -367,8 +403,11 @@ export function DecisionActionModal({
                     onChange={(event) => onEndDateChange?.(event.target.value)}
                     className="ui-input h-10 w-full pr-10 [color-scheme:dark] disabled:cursor-not-allowed [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0"
                   />
-                  <Calendar
-                    className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-white"
+                  <img
+                    src={calendarIcon}
+                    alt="calendar"
+                    className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2"
+                    style={{ filter: 'brightness(0) invert(1)' }}
                     aria-hidden="true"
                   />
                 </label>
@@ -482,7 +521,19 @@ export function DecisionActionModal({
                 className="flex size-5 shrink-0 items-center justify-center rounded-full bg-white"
                 aria-hidden="true"
               >
-                <X className="size-3 text-[#D3191C]" strokeWidth={3} />
+                <span
+                  className="size-3 bg-[#D3191C]"
+                  style={{
+                    maskImage: `url(${cancelErrorIcon})`,
+                    WebkitMaskImage: `url(${cancelErrorIcon})`,
+                    maskSize: 'contain',
+                    WebkitMaskSize: 'contain',
+                    maskRepeat: 'no-repeat',
+                    WebkitMaskRepeat: 'no-repeat',
+                    maskPosition: 'center',
+                    WebkitMaskPosition: 'center',
+                  }}
+                />
               </span>
             ) : null}
             {resolvedSubmitIcon === 'trash' ? (

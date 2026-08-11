@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
-import { ArrowLeft, CalendarDays, Check, Copy, ImageIcon } from 'lucide-react'
+import { ArrowLeft, Check, Copy, ImageIcon } from 'lucide-react'
+import calendarIcon from '@/assets/JOMS_ICONS-2/icons8-calendar.svg'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
@@ -253,7 +254,12 @@ export function UpdateContactInformationPage() {
                   onChange={(event) => setDateOfBirth(event.target.value)}
                   className="pr-10"
                 />
-                <CalendarDays className="text-brand-muted pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2" />
+                <img
+                  src={calendarIcon}
+                  alt="calendar"
+                  className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 style={{ filter: 'brightness(0) invert(1)' }}"
+                  aria-hidden="true"
+                />
               </div>
             </div>
 

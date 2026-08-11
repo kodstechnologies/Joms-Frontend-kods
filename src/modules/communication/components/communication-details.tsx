@@ -1,4 +1,5 @@
-import { ArrowLeft, Calendar, User } from 'lucide-react'
+import { ArrowLeft, User } from 'lucide-react'
+import calendarIcon from '@/assets/JOMS_ICONS-2/icons8-calendar.svg'
 import { useNavigate, useParams } from 'react-router-dom'
 
 import { useCommunication } from '../hooks/use-communications'
@@ -87,7 +88,7 @@ export function CommunicationDetails() {
                 {data.createdBy}
               </span>
               <span className="flex items-center gap-1.5">
-                <Calendar className="size-3.5" />
+                <img src={calendarIcon} alt="calendar" className="size-3.5" />
                 {scheduleLabel}
               </span>
             </div>

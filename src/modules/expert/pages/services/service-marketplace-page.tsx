@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import {
   Bar,
   CartesianGrid,
@@ -23,6 +24,8 @@ import {
 import { DashboardCard } from '@/shared/components/dashboard/dashboard-card'
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
+import { SERVICE_DASHBOARD_MODULE_KEY } from '../../api/ui-preferences-api'
+import { orderByActiveMetricIds, useActiveMetricIds } from '../../hooks/use-active-metric-ids'
 
 function CompactMetricCard({ label, value, trend }: MarketplaceMetric) {
   const isUp = trend?.direction === 'up'
@@ -99,8 +102,24 @@ function TrendsTooltip({ active, payload, label }: TrendsTooltipProps) {
   )
 }
 
+const DEFAULT_SERVICE_METRIC_IDS = [
+  'avg-delivery-time',
+  'total-service-revenue',
+  'avg-service-rating',
+  'customer-satisfaction',
+]
+
 export function ServiceMarketplacePage() {
   const navigate = useNavigate()
+  const activeMetricIds = useActiveMetricIds(
+    SERVICE_DASHBOARD_MODULE_KEY,
+    DEFAULT_SERVICE_METRIC_IDS,
+  )
+  const visibleServiceMetrics = useMemo(
+    () => orderByActiveMetricIds(serviceMetricsMock, activeMetricIds),
+    [activeMetricIds],
+  )
+  const visibleConsultationMetrics = consultationMetricsMock
 
   return (
     <div className="space-y-6">
@@ -133,9 +152,13 @@ export function ServiceMarketplacePage() {
         </div>
       </div>
 
-      <MetricsSection title="Service Metrics" metrics={serviceMetricsMock} />
+      {visibleServiceMetrics.length > 0 && (
+        <MetricsSection title="Service Metrics" metrics={visibleServiceMetrics} />
+      )}
 
-      <MetricsSection title="Consultation Metrics" metrics={consultationMetricsMock} />
+      {visibleConsultationMetrics.length > 0 && (
+        <MetricsSection title="Consultation Metrics" metrics={visibleConsultationMetrics} />
+      )}
 
       <DashboardCard
         className="p-0"
