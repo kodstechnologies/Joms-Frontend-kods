@@ -1,16 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import {
-  Check,
-  FileText,
-  Hourglass,
-  MoreVertical,
-  RefreshCw,
-  Search,
-  X,
-  ZoomIn,
-  ZoomOut,
-} from 'lucide-react'
+import { Check, Hourglass, MoreVertical, RefreshCw, Search, X, ZoomIn, ZoomOut } from 'lucide-react'
 import { toast } from 'sonner'
+import digilockerIcon from '@/assets/JOMS_ICONS-2/icons8-document_FAQ_digilocker.svg'
 
 import {
   DecisionActionModal,
@@ -476,7 +467,7 @@ export function ReviewableDocumentCard({
           onClick={onView}
           className="text-body-sm bg-brand-surface mt-3 flex w-full items-center justify-center gap-1.5 rounded-md py-2 font-semibold text-white transition-colors hover:bg-white/7"
         >
-          <FileText className="size-3.5" />
+          <img src={digilockerIcon} alt="" className="size-3.5 brightness-0 invert" />
           View Document
         </button>
       ) : (

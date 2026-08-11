@@ -176,6 +176,7 @@ function MetricRow({
   return (
     <div
       draggable
+      onClick={removable ? onRemove : undefined}
       onDragStart={(event) => {
         onDragStart({ id: item.id, zone })
         event.dataTransfer.effectAllowed = 'move'
@@ -239,6 +240,7 @@ function AvailableRow({
   return (
     <div
       draggable
+      onClick={onAdd}
       onDragStart={(event) => {
         onDragStart({ id: item.id, zone })
         event.dataTransfer.effectAllowed = 'move'

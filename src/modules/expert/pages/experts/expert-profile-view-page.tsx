@@ -3,22 +3,24 @@ import { useNavigate, useParams, type NavigateFunction } from 'react-router-dom'
 
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import { useQueryClient } from '@tanstack/react-query'
+import deleteIcon from '@/assets/JOMS_ICONS-2/icons8-delete.svg'
+import editIcon from '@/assets/JOMS_ICONS-2/edit.svg'
 import { toast } from 'sonner'
 import {
+  AlertOctagon,
   ArrowLeft,
   Ban,
   Briefcase,
   Check,
   ChevronRight,
+  CircleMinus,
   Clock,
   Eye,
   FileText,
   Gauge,
   GitMerge,
   ImageOff,
-  KeyRound,
   Languages,
-  LogOut,
   PauseCircle,
   Pencil,
   Phone,
@@ -1702,7 +1704,7 @@ export function ExpertProfileViewPage() {
         >
           <TableActionsItem
             tone="light"
-            icon={<Pencil className="size-3.5" />}
+            icon={<img src={editIcon} alt="edit" className="size-3.5" />}
             onClick={() => {
               setProfileMenuOpen(false)
               navigate(`/experts/management/create?expertId=${id}&mode=edit`)
@@ -1732,17 +1734,17 @@ export function ExpertProfileViewPage() {
           </TableActionsItem>
           <TableActionsItem
             tone="light"
-            icon={<KeyRound className="size-3.5" />}
+            icon={<Eye className="size-3.5" />}
             onClick={() => {
               setProfileMenuOpen(false)
               setPasswordModalOpen(true)
             }}
           >
-            {profile.hasPassword ? 'Reset Password' : 'Set Password'}
+            Reset Password
           </TableActionsItem>
           <TableActionsItem
             tone="light"
-            icon={<LogOut className="size-3.5" />}
+            icon={<AlertOctagon className="size-3.5" />}
             onClick={() => {
               setProfileMenuOpen(false)
               comingSoon('Logout User')
@@ -1762,7 +1764,7 @@ export function ExpertProfileViewPage() {
           </TableActionsItem>
           <TableActionsItem
             tone="light"
-            icon={<Ban className="size-3.5" />}
+            icon={<CircleMinus className="size-3.5" />}
             onClick={() => {
               setProfileMenuOpen(false)
               comingSoon('Block User')
@@ -1772,7 +1774,7 @@ export function ExpertProfileViewPage() {
           </TableActionsItem>
           <TableActionsItem
             tone="light"
-            icon={<Trash2 className="size-3.5" />}
+            icon={<img src={deleteIcon} alt="delete" className="size-3.5" />}
             className="text-red-500 hover:bg-red-50 hover:text-red-600 [&_svg]:text-red-500"
             onClick={() => {
               setProfileMenuOpen(false)

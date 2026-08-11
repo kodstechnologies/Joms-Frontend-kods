@@ -1,9 +1,15 @@
-import { Calendar, Check, CircleArrowOutUpRight, Pause, Trash2, UserMinus, X } from 'lucide-react'
-
+import { Check, CircleArrowOutUpRight, Pause, Trash2, UserMinus, X } from 'lucide-react'
+import calendarIcon from '@/assets/JOMS_ICONS-2/icons8-calendar.svg'
 import { cn } from '@/shared/lib/cn'
 
 export type DecisionActionModalVariant =
-  'approve' | 'reject' | 'requestChanges' | 'escalate' | 'suspend' | 'delete' | 'pause'
+  | 'approve'
+  | 'reject'
+  | 'requestChanges'
+  | 'escalate'
+  | 'suspend'
+  | 'delete'
+  | 'pause'
 
 export type DecisionActionModalOption = {
   label: string
@@ -250,7 +256,7 @@ export function DecisionActionModal({
             onClick={onClose}
             className="text-brand-muted grid size-6 shrink-0 place-items-center rounded-full transition-colors hover:bg-white/10 hover:text-white"
           >
-            <X className="size-6" aria-hidden="true" />
+            <X className="size-5" aria-hidden="true" />
           </button>
         </div>
 
@@ -349,8 +355,11 @@ export function DecisionActionModal({
                     onChange={(event) => onStartDateChange?.(event.target.value)}
                     className="ui-input h-10 w-full pr-10 [color-scheme:dark] disabled:cursor-not-allowed [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0"
                   />
-                  <Calendar
-                    className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-white"
+                  <img
+                    src={calendarIcon}
+                    alt="calendar"
+                    className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2"
+                    style={{ filter: 'brightness(0) invert(1)' }}
                     aria-hidden="true"
                   />
                 </label>
@@ -367,8 +376,11 @@ export function DecisionActionModal({
                     onChange={(event) => onEndDateChange?.(event.target.value)}
                     className="ui-input h-10 w-full pr-10 [color-scheme:dark] disabled:cursor-not-allowed [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0"
                   />
-                  <Calendar
-                    className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-white"
+                  <img
+                    src={calendarIcon}
+                    alt="calendar"
+                    className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2"
+                    style={{ filter: 'brightness(0) invert(1)' }}
                     aria-hidden="true"
                   />
                 </label>
@@ -478,11 +490,8 @@ export function DecisionActionModal({
               </span>
             ) : null}
             {resolvedSubmitIcon === 'x' ? (
-              <span
-                className="flex size-5 shrink-0 items-center justify-center rounded-full bg-white"
-                aria-hidden="true"
-              >
-                <X className="size-3 text-[#D3191C]" strokeWidth={3} />
+              <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-white">
+                <X className="size-3 text-[#D3191C]" strokeWidth={3} aria-hidden="true" />
               </span>
             ) : null}
             {resolvedSubmitIcon === 'trash' ? (

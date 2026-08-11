@@ -1,4 +1,5 @@
-import { Calendar, Filter, RefreshCw, Search } from 'lucide-react'
+import { Filter, RefreshCw, Search } from 'lucide-react'
+import calendarIcon from '@/assets/JOMS_ICONS-2/icons8-calendar.svg'
 
 import type { QueueTicket } from '../types/support'
 import { getReporterTypeLabel } from '../utils/support-format'
@@ -87,7 +88,7 @@ export function TicketQueuePanel({
             <div className="flex items-center justify-between gap-2">
               <span className="text-body-sm-semibold text-brand-accent">#{ticket.id}</span>
               <span className="text-body-sm text-muted flex items-center gap-1">
-                <Calendar className="size-3" />
+                <img src={calendarIcon} alt="calendar" className="size-3" />
                 {ticket.createdAt}
               </span>
             </div>

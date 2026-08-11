@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
-import { Plus, SlidersHorizontal } from 'lucide-react'
+import { SlidersHorizontal } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import createIcon from '@/assets/JOMS_ICONS-2/icons8-create.svg'
 
 import { Button } from '@/shared/components/ui/button'
 import { DataTable } from '@/shared/components/table/data-table'
@@ -64,7 +65,7 @@ export function DeletedVenueCategoriesPage() {
             className="h-9 w-full md:w-auto"
             onClick={() => navigate('/venues/categories/management/create')}
           >
-            <Plus className="size-4" />
+            <img src={createIcon} alt="create" className="size-4" />
             Add New Category
           </Button>
         </div>

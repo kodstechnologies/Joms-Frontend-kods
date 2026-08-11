@@ -1,7 +1,8 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { ArrowLeft, PlayCircle, Plus, SlidersHorizontal } from 'lucide-react'
+import { ArrowLeft, PlayCircle, SlidersHorizontal } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import createIcon from '@/assets/JOMS_ICONS-2/icons8-create.svg'
 
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import { toast } from 'sonner'
@@ -220,7 +221,7 @@ export function VenueRejectedPage() {
             className="h-9 w-full md:w-auto"
             onClick={() => navigate('/venues/management/onboarding')}
           >
-            <Plus className="size-4" />
+            <img src={createIcon} alt="create" className="size-4" />
             Create Account
           </Button>
         </div>

@@ -10,9 +10,9 @@ import {
 } from '@/shared/components/table/table-actions-dropdown'
 import { getApiErrorMessage } from '@/shared/lib/api-error'
 
-import eyeIcon from '@/assets/JOMS_ICONS/icons8-eye.svg'
-import editIcon from '@/assets/JOMS_ICONS/icons8-edit-file.svg'
-import deleteIcon from '@/assets/JOMS_ICONS/icons8-delete.svg'
+import { Eye } from 'lucide-react'
+import editIcon from '@/assets/JOMS_ICONS-2/edit.svg'
+import deleteIcon from '@/assets/JOMS_ICONS-2/icons8-delete.svg'
 
 export function CommunicationActions({ communication }: { communication: Communication }) {
   const [open, setOpen] = useState(false)
@@ -27,7 +27,7 @@ export function CommunicationActions({ communication }: { communication: Communi
       menuWidth={180}
     >
       <TableActionsItem
-        icon={<img src={eyeIcon} alt="" className="size-3.5" aria-hidden="true" />}
+        icon={<Eye className="size-3.5" />}
         className="text-slate-800 hover:bg-slate-100 hover:text-slate-900"
         onClick={() => {
           setOpen(false)

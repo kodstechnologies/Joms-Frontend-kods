@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { Calendar, ChevronDown, FileText, UserRound } from 'lucide-react'
+import { ChevronDown, FileText, UserRound } from 'lucide-react'
+import calendarIcon from '@/assets/JOMS_ICONS-2/icons8-calendar.svg'
 import { useNavigate } from 'react-router-dom'
 
 import type { PolicyVersion } from '../types/settings'
@@ -57,12 +58,22 @@ export function PolicyTimelineVersionItem({
 
             <div className="policy-list-row-meta">
               <span className="policy-meta-item">
-                <Calendar className="policy-meta-icon" aria-hidden />
+                <img
+                  src={calendarIcon}
+                  alt="calendar"
+                  className="policy-meta-icon"
+                  aria-hidden="true"
+                />
                 <span className="policy-meta-label">Effective:</span>
                 <span className="policy-meta-value">{version.effectiveDate || '—'}</span>
               </span>
               <span className="policy-meta-item">
-                <Calendar className="policy-meta-icon" aria-hidden />
+                <img
+                  src={calendarIcon}
+                  alt="calendar"
+                  className="policy-meta-icon"
+                  aria-hidden="true"
+                />
                 <span className="policy-meta-label">Last Updated:</span>
                 <span className="policy-meta-value">{version.lastUpdated || '—'}</span>
               </span>

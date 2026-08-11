@@ -1,4 +1,5 @@
 export type MarketplaceMetric = {
+  id: string
   label: string
   value: string
   trend?: {
@@ -11,64 +12,69 @@ export type MarketplaceMetric = {
 const defaultTrend = { direction: 'up' as const, percentage: 5.2, label: 'vs last month' }
 
 export const serviceMetricsMock: MarketplaceMetric[] = [
-  { label: 'Listed Services', value: '456', trend: defaultTrend },
-  { label: 'Active Services', value: '378', trend: defaultTrend },
-  { label: 'Paused Services', value: '23' },
-  { label: 'Archived Services', value: '45' },
-  { label: 'Deleted Services', value: '10' },
-  { label: 'Most Opted Service Category', value: 'Legal Services' },
-  { label: 'Most Opted Service Sub-Category', value: 'Corporate Law' },
-  { label: 'Total Service Orders', value: '3,102', trend: defaultTrend },
-  { label: 'Completed Service Orders', value: '2,900', trend: defaultTrend },
-  { label: 'In Progress Service Orders', value: '150' },
+  { id: 'listed-services', label: 'Listed Services', value: '456', trend: defaultTrend },
+  { id: 'active-services', label: 'Active Services', value: '378', trend: defaultTrend },
+  { id: 'services-delivered', label: 'Services Delivered', value: '2,341', trend: defaultTrend },
+  { id: 'service-completion', label: 'Service Completion %', value: '94.3%', trend: defaultTrend },
+  { id: 'avg-delivery-time', label: 'Avg. Delivery Time', value: '4.2 days', trend: defaultTrend },
   {
-    label: 'Disputed Service Orders',
-    value: '52',
-    trend: { direction: 'down', percentage: 2.1, label: 'vs last month' },
-  },
-  { label: 'Service Completion Rate', value: '93.5%', trend: defaultTrend },
-  { label: 'Average Delivery Time', value: '2 days 4h', trend: defaultTrend },
-  { label: 'Total Service Revenue', value: '₹12,45,000', trend: defaultTrend },
-  { label: 'Average Revenue per Service', value: '₹3,293', trend: defaultTrend },
-  { label: 'Average Order Value (AOV)', value: '₹4,290', trend: defaultTrend },
-  { label: 'Average Service Rating', value: '4.8/5', trend: defaultTrend },
-  { label: 'Customer Satisfaction', value: '95%', trend: defaultTrend },
-  { label: 'On-Time Delivery %', value: '92%', trend: defaultTrend },
-  { label: 'Average services per Expert', value: '3.4', trend: defaultTrend },
-  {
-    label: 'Total Refund Amount',
-    value: '₹45,200',
-    trend: { direction: 'down', percentage: 1.5, label: 'vs last month' },
+    id: 'total-service-revenue',
+    label: 'Total Service Revenue',
+    value: '₹892,450',
+    trend: defaultTrend,
   },
   {
-    label: 'Refund Rate',
-    value: '1.2%',
-    trend: { direction: 'down', percentage: 0.3, label: 'vs last month' },
+    id: 'avg-revenue-service',
+    label: 'Avg. Revenue/Service',
+    value: '₹75,834',
+    trend: defaultTrend,
+  },
+  { id: 'repeat-service', label: 'Repeat Service %', value: '38.7%', trend: defaultTrend },
+  { id: 'avg-service-rating', label: 'Avg. Service Rating', value: '4.7/5', trend: defaultTrend },
+  {
+    id: 'customer-satisfaction',
+    label: 'Customer Satisfaction',
+    value: '92%',
+    trend: defaultTrend,
+  },
+  { id: 'on-time-delivery', label: 'On-Time Delivery', value: '88%', trend: defaultTrend },
+  {
+    id: 'service-cancellation-rate',
+    label: 'Service Cancellation Rate',
+    value: '5.2%',
+    trend: { direction: 'down', percentage: 5.2, label: 'vs last month' },
   },
 ]
 
 export const consultationMetricsMock: MarketplaceMetric[] = [
-  { label: 'Listed Consultations', value: '210', trend: defaultTrend },
-  { label: 'Active Consultations', value: '185', trend: defaultTrend },
-  { label: 'Paused Consultations', value: '15' },
-  { label: 'Archived Consultations', value: '5' },
-  { label: 'Deleted Consultations', value: '5' },
-  { label: 'Consultation Bookings', value: '1,420', trend: defaultTrend },
-  { label: 'Completed Consultations', value: '1,350', trend: defaultTrend },
-  { label: 'Scheduled Consultations', value: '45' },
+  { id: 'listed-consultation', label: 'Listed Consultation', value: '456', trend: defaultTrend },
+  { id: 'active-consultation', label: 'Active Consultation', value: '378', trend: defaultTrend },
+  { id: 'completed', label: 'Completed', value: '2,341', trend: defaultTrend },
   {
-    label: 'Cancelled Consultations',
-    value: '25',
-    trend: { direction: 'down', percentage: 0.8, label: 'vs last month' },
+    id: 'consultation-completion',
+    label: 'Consultation Completion %',
+    value: '94.3%',
+    trend: defaultTrend,
   },
-  { label: 'Consultation Completion Rate', value: '95.1%', trend: defaultTrend },
-  { label: 'Average Consultation Duration', value: '45 min' },
-  { label: 'Total Consultation Revenue', value: '₹5,60,000', trend: defaultTrend },
-  { label: 'Average Revenue per Consultation', value: '₹414', trend: defaultTrend },
-  { label: 'Average Booking Value', value: '₹450', trend: defaultTrend },
-  { label: 'Most Opted Consultation Category', value: 'Tax Consulting' },
-  { label: 'Average Consultation Rating', value: '4.9/5', trend: defaultTrend },
-  { label: 'Consultation Satisfaction', value: '97%', trend: defaultTrend },
+  { id: 'avg-consultation-time', label: 'Avg. Consultation Time', value: '52 min' },
+  {
+    id: 'total-consultation-revenue',
+    label: 'Total Consultation Revenue',
+    value: '₹892,450',
+    trend: defaultTrend,
+  },
+  {
+    id: 'avg-revenue-consultation',
+    label: 'Avg. Revenue/Consultation',
+    value: '₹7,583',
+    trend: defaultTrend,
+  },
+  {
+    id: 'repeat-consultation',
+    label: 'Repeat Consultation %',
+    value: '42.3%',
+    trend: defaultTrend,
+  },
 ]
 
 export type ServiceConsultationTrendPoint = {

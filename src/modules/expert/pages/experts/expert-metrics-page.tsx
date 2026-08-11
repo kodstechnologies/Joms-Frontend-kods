@@ -12,6 +12,6 @@ export const ExpertMetricsPage = ({ returnTo = '/experts/dashboard' }: ExpertMet
     returnTo={returnTo}
     section="dashboard"
     includeTableColumns={false}
-    maxActiveMetrics={8}
+    maxActiveMetrics={14}
   />
 )

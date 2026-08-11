@@ -1,5 +1,6 @@
 import type { LucideIcon } from 'lucide-react'
-import { Hourglass, Plus, Trash2, SlidersHorizontal } from 'lucide-react'
+import { Hourglass, Trash2, SlidersHorizontal } from 'lucide-react'
+import createIcon from '@/assets/JOMS_ICONS-2/icons8-create.svg'
 import { useNavigate } from 'react-router-dom'
 
 import { Button } from '@/shared/components/ui/button'
@@ -60,7 +61,7 @@ export function CategoryManagementPageHeader({
         </Button>
 
         <Button type="button" className="h-9 w-full md:w-auto" onClick={() => navigate(createPath)}>
-          <Plus className="size-4" />
+          <img src={createIcon} alt="create" className="size-4" />
           Add New Category
         </Button>
       </div>

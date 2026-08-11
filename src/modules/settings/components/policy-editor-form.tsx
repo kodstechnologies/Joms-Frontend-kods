@@ -1,4 +1,5 @@
-import { Bold, Calendar, ChevronDown, Italic, Strikethrough, Underline } from 'lucide-react'
+import { Bold, ChevronDown, Italic, Strikethrough, Underline } from 'lucide-react'
+import calendarIcon from '@/assets/JOMS_ICONS-2/icons8-calendar.svg'
 
 import { cn } from '@/shared/lib/cn'
 
@@ -265,7 +266,7 @@ export function PolicyEditorForm({
             className="policy-date-input"
             aria-label="Effective date"
           />
-          <Calendar className="policy-date-icon" aria-hidden />
+          <img src={calendarIcon} alt="calendar" className="policy-date-icon" aria-hidden="true" />
         </div>
       </PolicySectionCard>
 

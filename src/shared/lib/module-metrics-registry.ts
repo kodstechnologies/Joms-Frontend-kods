@@ -447,7 +447,7 @@ export const MODULE_METRICS_REGISTRY: Record<string, ModuleMetricsDefinition> = 
     moduleName: 'Service Marketplace',
     returnTo: '/services/dashboard',
     maxActiveMetrics: 100,
-    metrics: [
+    metrics: [] /*
       metric('listed-services', 'Listed Services', 'Count', 'Total listed services', true),
       metric('active-services', 'Active Services', 'Count', 'Live and bookable services', true),
       metric('paused-services', 'Paused Services', 'Count', 'Temporarily unavailable services'),
@@ -609,14 +609,14 @@ export const MODULE_METRICS_REGISTRY: Record<string, ModuleMetricsDefinition> = 
         'Percentage',
         'Positive consultation feedback',
       ),
-    ],
+    */,
   },
   'venue-dashboard': {
     moduleKey: 'venue-dashboard',
     moduleName: 'Venue Dashboard',
     returnTo: '/venues/dashboard',
     maxActiveMetrics: 100,
-    metrics: [
+    metrics: [] /*
       metric('total-venues', 'Total Venues', 'Count', 'Total registered venues', true),
       metric('active-venues', 'Active Venues', 'Count', 'Live venues available for booking', true),
       metric('suspended-venues', 'Suspended Venues', 'Count', 'Suspended venues'),
@@ -715,7 +715,7 @@ export const MODULE_METRICS_REGISTRY: Record<string, ModuleMetricsDefinition> = 
         'Count',
         'Total bookings cancelled by hosts',
       ),
-    ],
+    */,
   },
 }
 

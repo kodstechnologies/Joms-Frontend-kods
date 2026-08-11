@@ -4,6 +4,8 @@ import { useNavigate, useParams } from 'react-router-dom'
 
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import { useQueryClient } from '@tanstack/react-query'
+import deleteIcon from '@/assets/JOMS_ICONS-2/icons8-delete.svg'
+import editIcon from '@/assets/JOMS_ICONS-2/edit.svg'
 import { toast } from 'sonner'
 import {
   AlertOctagon,
@@ -19,14 +21,12 @@ import {
   Gauge,
   ImageOff,
   MapPin,
-  Pencil,
   Plus,
   Search,
   Share2,
   SlidersHorizontal,
   Star,
   Tag,
-  Trash2,
   Upload,
   Users,
 } from 'lucide-react'
@@ -905,7 +905,7 @@ export function VenueProfileViewPage() {
         >
           <TableActionsItem
             tone="light"
-            icon={<Pencil className="size-3.5" />}
+            icon={<img src={editIcon} alt="edit" className="size-3.5" />}
             onClick={() => {
               setProfileMenuOpen(false)
               navigate(`/venues/management/create?venueId=${venueId}&mode=edit`)
@@ -969,7 +969,7 @@ export function VenueProfileViewPage() {
           </TableActionsItem>
           <TableActionsItem
             tone="light"
-            icon={<Trash2 className="size-3.5" />}
+            icon={<img src={deleteIcon} alt="delete" className="size-3.5" />}
             className="text-red-500 hover:bg-red-50 hover:text-red-600 [&_svg]:text-red-500"
             onClick={() => {
               setProfileMenuOpen(false)

@@ -1,5 +1,6 @@
 import { createPortal } from 'react-dom'
-import { ArrowLeft, Calendar, Clock3, UserRound } from 'lucide-react'
+import { ArrowLeft, Clock3, UserRound } from 'lucide-react'
+import calendarIcon from '@/assets/JOMS_ICONS-2/icons8-calendar.svg'
 
 import type { SettingsLog, SettingsModule } from '../types/settings'
 import { useSettingsModuleVersions } from '../hooks/use-settings'
@@ -59,7 +60,7 @@ function VersionCard({ version, isFirst }: { version: SettingsLog; isFirst: bool
           </p>
           <p>Role: {version.role || 'Admin'}</p>
           <p className="inline-flex items-center gap-1.5">
-            <Calendar className="size-3.5" />
+            <img src={calendarIcon} alt="calendar" className="size-3.5" />
             Date: {formatDateTime(version.createdAt)}
           </p>
           <p>Reason: {version.adminNote || '—'}</p>

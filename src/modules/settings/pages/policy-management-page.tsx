@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { Calendar, Eye, FileText, History, Plus, RotateCw } from 'lucide-react'
+import { Eye, FileText, History, Plus, RotateCw } from 'lucide-react'
+import calendarIcon from '@/assets/JOMS_ICONS-2/icons8-calendar.svg'
 import { toast } from 'sonner'
 
 import { SettingsFooterActions } from '../components/settings-footer-actions'
@@ -66,12 +67,22 @@ function PolicyRow({ policy, application }: { policy: PolicyItem; application: s
 
         <div className="policy-list-row-meta">
           <span className="policy-meta-item">
-            <Calendar className="policy-meta-icon" aria-hidden />
+            <img
+              src={calendarIcon}
+              alt="calendar"
+              className="policy-meta-icon"
+              aria-hidden="true"
+            />
             <span className="policy-meta-label">Effective:</span>
             <span className="policy-meta-value">{policy.effectiveDate || '—'}</span>
           </span>
           <span className="policy-meta-item">
-            <Calendar className="policy-meta-icon" aria-hidden />
+            <img
+              src={calendarIcon}
+              alt="calendar"
+              className="policy-meta-icon"
+              aria-hidden="true"
+            />
             <span className="policy-meta-label">Last Updated:</span>
             <span className="policy-meta-value">{policy.lastUpdated || '—'}</span>
           </span>

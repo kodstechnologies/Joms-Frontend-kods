@@ -1,4 +1,4 @@
-import { Calendar } from 'lucide-react'
+import calendarIcon from '@/assets/JOMS_ICONS-2/icons8-calendar.svg'
 
 import { Input } from '@/shared/components/ui/input'
 import { cn } from '@/shared/lib/cn'
@@ -41,7 +41,13 @@ export function RangeField({
             className={cn(showCalendar && 'pr-9')}
           />
           {showCalendar ? (
-            <Calendar className="icon-sm text-muted pointer-events-none absolute top-1/2 right-3 -translate-y-1/2" />
+            <img
+              src={calendarIcon}
+              alt="calendar"
+              className="icon-sm text-muted pointer-events-none absolute top-1/2 right-3 -translate-y-1/2"
+              style={{ filter: 'brightness(0) invert(1)' }}
+              aria-hidden="true"
+            />
           ) : null}
         </div>
       </div>
@@ -57,7 +63,13 @@ export function RangeField({
             className={cn(showCalendar && 'pr-9')}
           />
           {showCalendar ? (
-            <Calendar className="icon-sm text-muted pointer-events-none absolute top-1/2 right-3 -translate-y-1/2" />
+            <img
+              src={calendarIcon}
+              alt="calendar"
+              className="icon-sm text-muted pointer-events-none absolute top-1/2 right-3 -translate-y-1/2"
+              style={{ filter: 'brightness(0) invert(1)' }}
+              aria-hidden="true"
+            />
           ) : null}
         </div>
       </div>

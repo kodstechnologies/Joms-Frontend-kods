@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
-import { Plus, BarChart3 } from 'lucide-react'
+import { BarChart3 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import createIcon from '@/assets/JOMS_ICONS-2/icons8-create.svg'
 
 import { Button } from '@/shared/components/ui/button'
 import { DataTable } from '@/shared/components/table/data-table'
@@ -60,7 +61,7 @@ export const PausedCategoriesPage = () => {
             className="w-full md:w-auto"
             onClick={() => navigate(categoryPath(scope, 'create'))}
           >
-            <Plus className="size-4" />
+            <img src={createIcon} alt="create" className="size-4" />
             Add New Category
           </Button>
         </div>

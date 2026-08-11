@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { CheckCircle2, FileText, X } from 'lucide-react'
+import digilockerIcon from '@/assets/JOMS_ICONS-2/icons8-document_FAQ_digilocker.svg'
 
 import {
   formatExperience,
@@ -144,7 +145,7 @@ const DocumentCard = ({
           onClick={handleView}
           className="text-body-sm bg-brand-surface mt-3 flex w-full items-center justify-center gap-1.5 rounded-md py-2 font-semibold text-white transition-colors hover:bg-white/7 disabled:cursor-not-allowed disabled:opacity-40"
         >
-          <FileText className="size-3.5" />
+          <img src={digilockerIcon} alt="" className="size-3.5 brightness-0 invert" />
           View Document
         </button>
       ) : (
