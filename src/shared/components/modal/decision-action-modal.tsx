@@ -1,6 +1,5 @@
-import { Check, CircleArrowOutUpRight, Pause, Trash2, UserMinus } from 'lucide-react'
+import { Check, CircleArrowOutUpRight, Pause, Trash2, UserMinus, X } from 'lucide-react'
 import calendarIcon from '@/assets/JOMS_ICONS-2/icons8-calendar.svg'
-import cancelErrorIcon from '@/assets/JOMS_ICONS-2/Cancel_error.svg'
 import { cn } from '@/shared/lib/cn'
 
 export type DecisionActionModalVariant =
@@ -257,20 +256,7 @@ export function DecisionActionModal({
             onClick={onClose}
             className="text-brand-muted grid size-6 shrink-0 place-items-center rounded-full transition-colors hover:bg-white/10 hover:text-white"
           >
-            <span
-              className="size-6 bg-current"
-              style={{
-                maskImage: `url(${cancelErrorIcon})`,
-                WebkitMaskImage: `url(${cancelErrorIcon})`,
-                maskSize: 'contain',
-                WebkitMaskSize: 'contain',
-                maskRepeat: 'no-repeat',
-                WebkitMaskRepeat: 'no-repeat',
-                maskPosition: 'center',
-                WebkitMaskPosition: 'center',
-              }}
-              aria-hidden="true"
-            />
+            <X className="size-5" aria-hidden="true" />
           </button>
         </div>
 
@@ -292,20 +278,7 @@ export function DecisionActionModal({
                     </span>
                   ) : variant === 'suspend' ? (
                     <span className="flex size-[70px] items-center justify-center rounded-full bg-[rgb(211_25_28_/_20%)]">
-                      <span
-                        className="size-7 bg-[#D3191C]"
-                        style={{
-                          maskImage: `url(${cancelErrorIcon})`,
-                          WebkitMaskImage: `url(${cancelErrorIcon})`,
-                          maskSize: 'contain',
-                          WebkitMaskSize: 'contain',
-                          maskRepeat: 'no-repeat',
-                          WebkitMaskRepeat: 'no-repeat',
-                          maskPosition: 'center',
-                          WebkitMaskPosition: 'center',
-                        }}
-                        aria-hidden="true"
-                      />
+                      <X className="size-7 text-[#D3191C]" strokeWidth={3} aria-hidden="true" />
                     </span>
                   ) : variant === 'delete' ? (
                     deleteHeroIcon
@@ -517,23 +490,8 @@ export function DecisionActionModal({
               </span>
             ) : null}
             {resolvedSubmitIcon === 'x' ? (
-              <span
-                className="flex size-5 shrink-0 items-center justify-center rounded-full bg-white"
-                aria-hidden="true"
-              >
-                <span
-                  className="size-3 bg-[#D3191C]"
-                  style={{
-                    maskImage: `url(${cancelErrorIcon})`,
-                    WebkitMaskImage: `url(${cancelErrorIcon})`,
-                    maskSize: 'contain',
-                    WebkitMaskSize: 'contain',
-                    maskRepeat: 'no-repeat',
-                    WebkitMaskRepeat: 'no-repeat',
-                    maskPosition: 'center',
-                    WebkitMaskPosition: 'center',
-                  }}
-                />
+              <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-white">
+                <X className="size-3 text-[#D3191C]" strokeWidth={3} aria-hidden="true" />
               </span>
             ) : null}
             {resolvedSubmitIcon === 'trash' ? (

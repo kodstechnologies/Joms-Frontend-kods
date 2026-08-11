@@ -39,6 +39,7 @@ import { Button } from '@/shared/components/ui/button'
 import { statusCardTones } from '@/shared/lib/design-tokens'
 import { cn } from '@/shared/lib/cn'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
+import type { FilterValues } from '@/shared/types/data-filter'
 import { getVenueApiId, getVenueDisplayId, getVenueDisplaySpaceId } from '../../utils/venue-list'
 import { getManagementStatusDisplay } from '../../utils/management-status'
 import { MODERATION_CATEGORY_SLUGS } from '@/modules/settings/api/templates-api'
@@ -75,6 +76,7 @@ export const VenueManagementPage = () => {
   const [deleteReasons, setDeleteReasons] = useState<string[]>([])
   const [deleteAdminNotes, setDeleteAdminNotes] = useState('')
   const [deleteConfirmed, setDeleteConfirmed] = useState(false)
+  const [appliedAdvancedFilters, setAppliedAdvancedFilters] = useState<FilterValues>({})
 
   const suspendVenueMutation = useSuspendVenue()
   const deleteVenueMutation = useDeleteVenue()
@@ -89,19 +91,80 @@ export const VenueManagementPage = () => {
 
   const { searchQuery, setSearchQuery, currentPage, setCurrentPage, activeStatus } = useVenueStore()
 
+  const handleApplyFilters = useCallback(
+    (values: FilterValues) => {
+      setAppliedAdvancedFilters(values)
+      setCurrentPage(1)
+      toast.success('Filters applied')
+    },
+    [setCurrentPage],
+  )
+
   const {
     onAdvancedFilter,
     onExport,
     modals: exportFilterModals,
   } = useModuleExportFilters({
     moduleKey: 'venue-management',
+    onApplyFilters: handleApplyFilters,
   })
+
+  const apiFilterParams = useMemo(() => {
+    const params: Record<string, string> = {}
+
+    Object.entries(appliedAdvancedFilters).forEach(([rawKey, val]) => {
+      if (val === undefined || val === null || val === '') return
+
+      const parts = rawKey.split('.')
+      const fieldId = parts.length > 1 ? parts.slice(1).join('.') : rawKey
+
+      if (fieldId === 'location' && typeof val === 'object' && val !== null) {
+        const loc = val as { state?: string; city?: string }
+        if (loc.state?.trim()) params.locationState = loc.state.trim()
+        if (loc.city?.trim()) params.locationCity = loc.city.trim()
+        return
+      }
+
+      if (Array.isArray(val)) {
+        if (val.length > 0) {
+          params[fieldId] = val.join(',')
+        }
+        return
+      }
+
+      if (typeof val === 'object' && val !== null) {
+        const range = val as { from?: string | number; to?: string | number }
+        if (range.from !== undefined && range.from !== '') {
+          params[`${fieldId}Min`] = String(range.from).trim()
+        }
+        if (range.to !== undefined && range.to !== '') {
+          params[`${fieldId}Max`] = String(range.to).trim()
+        }
+        return
+      }
+
+      if (typeof val === 'string' && val.trim()) {
+        params[fieldId] = val.trim()
+        return
+      }
+
+      if (typeof val === 'number' || typeof val === 'boolean') {
+        params[fieldId] = String(val)
+      }
+    })
+
+    return params
+  }, [appliedAdvancedFilters])
 
   const { data, isLoading } = useVenues({
     page: currentPage,
     limit: 10,
-    status: activeStatus !== 'all' ? (activeStatus as VenueStatus | 'reported') : undefined,
+    status:
+      activeStatus !== 'all'
+        ? (activeStatus as VenueStatus | 'reported')
+        : (apiFilterParams.listingStatus as VenueStatus | 'reported' | undefined),
     search: searchQuery,
+    ...apiFilterParams,
   })
   const venues = useMemo(() => data?.data ?? [], [data?.data])
   const meta = data?.meta
