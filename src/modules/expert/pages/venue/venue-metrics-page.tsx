@@ -18,6 +18,5 @@ export const VenueDashboardMetricsPage = () => (
     returnTo="/venues/dashboard"
     section="dashboard"
     includeTableColumns={false}
-    maxActiveMetrics={8}
   />
 )

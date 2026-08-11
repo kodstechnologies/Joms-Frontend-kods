@@ -1,11 +1,11 @@
 import { useMemo } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { toast } from 'sonner'
 
 import { PolicyBreadcrumb, PolicySettingsTopTabs } from '../components/policy-settings-tabs'
-import { policyListPath } from '../utils/policy-navigation'
 import { PolicyVersionReadonlyCard } from '../components/policy-version-readonly-card'
 import { usePolicy, usePolicyVersions } from '../hooks/use-policies'
-import { SectionHeader } from '@/shared/components/dashboard/section-header'
+import { policyEditPath, policyListPath } from '../utils/policy-navigation'
 import { Button } from '@/shared/components/ui/button'
 
 export function PolicyViewPage() {
@@ -43,28 +43,36 @@ export function PolicyViewPage() {
 
   return (
     <div className="space-y-6">
-      <SectionHeader title="Settings" subtitle="Review policy version details" />
-      <PolicySettingsTopTabs activeKey="expert" />
+      <PolicyBreadcrumb current={policy.title} application={application} />
+      <PolicySettingsTopTabs activeKey="platform" />
 
       <div className="bg-brand-bg space-y-4 rounded-2xl border border-white/10 p-4 sm:p-5">
-        <PolicyBreadcrumb segments={['Platform Control', 'Policy Management', policy.title]} />
-
         <PolicyVersionReadonlyCard title={policy.title} version={selectedVersion} />
       </div>
 
-      <div className="bg-brand-bg flex flex-col gap-3 rounded-xl border border-white/10 px-3 py-2.5 sm:flex-row sm:items-center sm:justify-between">
-        <Button variant="secondary" onClick={() => navigate(policyListPath(application))}>
+      <div className="settings-page-footer">
+        <Button
+          variant="secondary"
+          className="settings-page-footer-reset"
+          onClick={() => navigate(policyListPath(application))}
+        >
           Reset
         </Button>
-        <div className="flex flex-wrap justify-end gap-2">
+        <div className="policy-page-footer-actions">
           <Button
-            variant="secondary"
-            onClick={() => navigate(`/settings/policies/${id}/edit?application=${application}`)}
+            variant="ghost"
+            className="policy-page-footer-draft"
+            onClick={() => {
+              toast.message('Open Update to save a draft')
+              navigate(policyEditPath(id, application))
+            }}
           >
             Save Draft
           </Button>
           <Button
-            onClick={() => navigate(`/settings/policies/${id}/edit?application=${application}`)}
+            variant="primary"
+            className="settings-page-footer-save"
+            onClick={() => navigate(policyEditPath(id, application))}
           >
             Submit Changes
           </Button>

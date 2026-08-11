@@ -6,6 +6,7 @@ import { MaintenanceProvider } from '@/app/providers/maintenance-provider'
 import { useMaintenance } from '@/app/providers/use-maintenance'
 import { MaintenanceScreen } from '@/app/providers/maintenance-screen'
 import { QueryProvider } from '@/app/providers/query-provider'
+import { SessionTimeoutProvider } from '@/app/providers/session-timeout-provider'
 import { ThemeProvider } from '@/app/providers/theme-provider'
 
 function MaintenanceGate({ children }: PropsWithChildren) {
@@ -25,10 +26,12 @@ export function AppProviders({ children }: PropsWithChildren) {
       <QueryProvider>
         <MaintenanceProvider>
           <BrandingProvider>
-            <MaintenanceGate>
-              {children}
-              <Toaster richColors position="top-right" />
-            </MaintenanceGate>
+            <SessionTimeoutProvider>
+              <MaintenanceGate>
+                {children}
+                <Toaster richColors position="top-right" />
+              </MaintenanceGate>
+            </SessionTimeoutProvider>
           </BrandingProvider>
         </MaintenanceProvider>
       </QueryProvider>

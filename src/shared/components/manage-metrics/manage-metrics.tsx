@@ -3,6 +3,7 @@ import { ArrowLeft, GripVertical, Plus, Search, X } from 'lucide-react'
 
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
+import { toast } from 'sonner'
 
 export type ManageMetricsListItem = {
   id: string
@@ -394,7 +395,10 @@ export function ManageMetrics({
   const handleAddMetric = (id: string) => {
     const item = localAvailableMetrics.find((metric) => metric.id === id)
     if (!item) return
-    if (localActiveMetrics.length >= maxActive) return
+    if (localActiveMetrics.length >= maxActive) {
+      toast.error(`You can only have up to ${maxActive} active metrics.`)
+      return
+    }
 
     setLocalAvailableMetrics((prev) => prev.filter((metric) => metric.id !== id))
     setLocalActiveMetrics((prev) => [...prev, toListItem(item)])

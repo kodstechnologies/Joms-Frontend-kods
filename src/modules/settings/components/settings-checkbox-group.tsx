@@ -22,19 +22,16 @@ export function SettingsCheckboxGroup({
   return (
     <div className={cn('space-y-3', className)}>
       {label ? <p className="text-sm font-medium text-white">{label}</p> : null}
-      <div className="flex flex-wrap gap-x-6 gap-y-3">
+      <div className="security-checkbox-row">
         {options.map((option) => (
-          <label
-            key={option.key}
-            className="flex cursor-pointer items-center gap-2 text-sm text-slate-300"
-          >
+          <label key={option.key} className="security-checkbox-item">
             <input
               type="checkbox"
               checked={values[option.key] ?? false}
               onChange={(event) => onChange(option.key, event.target.checked)}
-              className="size-4 rounded border-white/20 bg-transparent accent-white"
+              className="security-checkbox-input"
             />
-            {option.label}
+            <span>{option.label}</span>
           </label>
         ))}
       </div>

@@ -38,7 +38,7 @@ export function ExpertSettingsPanel({ value, onChange }: ExpertSettingsPanelProp
         />
         <SettingsFieldRow
           label="Max Devices Per User"
-          description="Maximum number of devices a user can register"
+          description="How many devices can stay logged in on one account. Extra logins drop the oldest session (FIFO)."
         >
           <input
             type="number"
@@ -47,7 +47,10 @@ export function ExpertSettingsPanel({ value, onChange }: ExpertSettingsPanelProp
             onChange={(e) => patchAccount({ maxDevicesPerUser: Number(e.target.value) })}
           />
         </SettingsFieldRow>
-        <SettingsFieldRow label="Phone Verification">
+        <SettingsFieldRow
+          label="Phone Verification"
+          description="Not enforced yet — phone verification is skipped for now."
+        >
           <select
             className={settingsControlClass}
             value={value.accountCreation.phoneVerification}
@@ -57,6 +60,7 @@ export function ExpertSettingsPanel({ value, onChange }: ExpertSettingsPanelProp
                   .value as ExpertSettings['accountCreation']['phoneVerification'],
               })
             }
+            disabled
           >
             <option value="mandatory">Mandatory</option>
             <option value="optional">Optional</option>
@@ -65,7 +69,7 @@ export function ExpertSettingsPanel({ value, onChange }: ExpertSettingsPanelProp
         </SettingsFieldRow>
         <SettingsFieldRow
           label="Re-verification Frequency"
-          description="Days between KYC re-verification"
+          description="Days after KYC approval before the partner app is asked to re-verify"
         >
           <input
             type="number"

@@ -110,6 +110,7 @@ export function PolicyEditorForm({
             <input
               value={values.title}
               onChange={(event) => onChange({ title: event.target.value })}
+              placeholder="Terms & Condition"
               className="settings-field-input"
             />
           </PolicyField>
@@ -118,35 +119,33 @@ export function PolicyEditorForm({
               <input
                 value={values.slug}
                 onChange={(event) => onChange({ slug: event.target.value })}
+                placeholder="terms-condition"
                 className="settings-field-input"
               />
             </PolicyField>
           ) : null}
           <PolicyField label="Effective Since">
-            <input value={values.effectiveSince} readOnly className="settings-field-input" />
+            <input
+              value={values.effectiveSince || displayedEffectiveDate}
+              readOnly
+              className="settings-field-input"
+            />
           </PolicyField>
-          {mode === 'update' ? (
-            <>
-              <PolicyField label="Current Version">
-                <input value={values.currentVersion} readOnly className="settings-field-input" />
-              </PolicyField>
-              <PolicyField label="New Version">
-                <input
-                  value={values.newVersion}
-                  onChange={(event) => onChange({ newVersion: event.target.value })}
-                  className="settings-field-input"
-                />
-              </PolicyField>
-            </>
-          ) : (
-            <PolicyField label="Version">
-              <input
-                value={values.newVersion}
-                onChange={(event) => onChange({ newVersion: event.target.value })}
-                className="settings-field-input"
-              />
-            </PolicyField>
-          )}
+          <PolicyField label="Current Version">
+            <input
+              value={mode === 'create' ? '—' : values.currentVersion}
+              readOnly
+              className="settings-field-input"
+            />
+          </PolicyField>
+          <PolicyField label="New Version">
+            <input
+              value={values.newVersion}
+              onChange={(event) => onChange({ newVersion: event.target.value })}
+              placeholder="V1.0"
+              className="settings-field-input"
+            />
+          </PolicyField>
         </div>
 
         <PolicyField label="Policy Content">

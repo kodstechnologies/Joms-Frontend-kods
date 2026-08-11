@@ -3,7 +3,6 @@ import type {
   ExpertSettings,
   FinanceTransactionalSettings,
   LockedAccountRow,
-  LoginTrailRow,
   NotificationSettings,
   PlatformSettings,
   SecuritySettings,
@@ -289,22 +288,6 @@ export const lockedAccountsMock: LockedAccountRow[] = [
     username: 'john.doe',
   },
 ]
-
-export const loginTrailsMock: LoginTrailRow[] = Array.from({ length: 20 }, (_, index) => {
-  const statuses: LoginTrailRow['status'][] = ['success', 'failed', 'warning']
-  const status = statuses[index % 3]
-  return {
-    id: `trail-${index + 1}`,
-    date: '2026-02-07',
-    time: `${String(9 + (index % 10)).padStart(2, '0')}:${String((index * 7) % 60).padStart(2, '0')}:00`,
-    ipAddress: `192.168.${index % 5}.${(index * 13) % 255}`,
-    action: status === 'failed' ? 'Failed Login' : status === 'warning' ? 'MFA Challenge' : 'Login',
-    status,
-    location: index % 2 === 0 ? 'Mumbai, India' : 'Delhi, India',
-    device:
-      index % 3 === 0 ? 'Chrome / Windows' : index % 3 === 1 ? 'Safari / macOS' : 'Firefox / Linux',
-  }
-})
 
 export type HealthMetric = {
   title: string

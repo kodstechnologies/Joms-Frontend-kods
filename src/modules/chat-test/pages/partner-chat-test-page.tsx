@@ -9,6 +9,8 @@ import {
   type ChatBackendMode,
 } from '../config/chat-backend'
 import { ChatTestPanel } from '../components/chat-test-panel'
+import { PartnerMyProjects } from '../components/partner-my-projects'
+import { PartnerQuotationPanel } from '../components/partner-quotation-panel'
 
 const SESSION_KEY = 'joms_dev_partner_chat'
 
@@ -101,7 +103,7 @@ export function PartnerChatTestPage() {
             <div className="flex items-center justify-between gap-2">
               <h1 className="text-2xl font-semibold tracking-tight">Partner chat login</h1>
               <Link to="/dev/chat-user" className="text-sm text-sky-400 hover:underline">
-                User panel ?
+                User panel →
               </Link>
             </div>
             <p className="text-sm text-zinc-400">
@@ -151,7 +153,7 @@ export function PartnerChatTestPage() {
               disabled={loading}
               className="w-full rounded-lg bg-amber-400 px-3 py-2 text-sm font-medium text-zinc-950 disabled:opacity-50"
             >
-              {loading ? 'Logging in�' : 'Login as partner'}
+              {loading ? 'Logging in…' : 'Login as partner'}
             </button>
           </form>
         </div>
@@ -178,7 +180,7 @@ export function PartnerChatTestPage() {
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h1 className="text-2xl font-semibold tracking-tight">Partner chat</h1>
             <Link to="/dev/chat-user" className="text-sm text-sky-400 hover:underline">
-              Open user panel ?
+              Open user panel →
             </Link>
           </div>
           <p className="text-sm text-zinc-400">
@@ -195,6 +197,9 @@ export function PartnerChatTestPage() {
           </p>
         </header>
 
+        <PartnerMyProjects token={identity.accessToken} />
+
+        <PartnerQuotationPanel token={identity.accessToken} />
         <ChatTestPanel
           role="partner"
           title="Partner panel"

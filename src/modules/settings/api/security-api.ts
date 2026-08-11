@@ -39,6 +39,7 @@ export const fetchLoginTrails = async (params?: {
   page?: number
   limit?: number
   search?: string
+  status?: string
 }) => {
   const response = await settingsApiClient.get<ApiEnvelope<LoginTrailRow[]>>(
     '/settings/security/login-trails',

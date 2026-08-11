@@ -351,11 +351,15 @@ export type LockedAccountRow = {
 
 export type LoginTrailRow = {
   id: string
+  adminName?: string
+  adminEmail?: string
+  adminId?: string
+  role?: string
   date: string
   time: string
   ipAddress: string
   action: string
-  status: 'success' | 'failed' | 'warning'
+  status: 'success' | 'failed' | 'blocked' | 'warning'
   location: string
   device: string
 }

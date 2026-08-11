@@ -15,3 +15,25 @@ export const POLICY_SETTINGS_TABS: Array<{
 export function policyListPath(application = 'expert') {
   return `/settings/policies?application=${application}`
 }
+
+export function policyViewPath(id: string, application = 'expert', versionId?: string) {
+  const params = new URLSearchParams({ application })
+  if (versionId) params.set('versionId', versionId)
+  return `/settings/policies/${id}/view?${params.toString()}`
+}
+
+export function policyEditPath(id: string, application = 'expert') {
+  return `/settings/policies/${id}/edit?application=${application}`
+}
+
+export function policyTimelinePath(id: string, application = 'expert') {
+  return `/settings/policies/${id}/timeline?application=${application}`
+}
+
+export function policyCreatePath(application = 'expert') {
+  return `/settings/policies/create?application=${application}`
+}
+
+export function platformControlsPath() {
+  return '/settings/main'
+}

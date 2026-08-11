@@ -81,28 +81,28 @@ export function ModuleMetricsPage({
 
   const resolvedMetricCatalog = useMemo(() => {
     if (!includeDashboard) return []
-    const serverCatalog = metricsQuery.data?.catalog ?? []
-    if (serverCatalog.length) return serverCatalog
-    return (registry?.metrics ?? []).map((item) => ({
+    const frontendCatalog = (registry?.metrics ?? []).map((item) => ({
       id: item.id,
       label: item.label,
       type: item.type,
       description: item.description,
       defaultActive: Boolean(item.defaultActive),
     }))
+    if (frontendCatalog.length) return frontendCatalog
+    return metricsQuery.data?.catalog ?? []
   }, [includeDashboard, metricsQuery.data?.catalog, registry?.metrics])
 
   const resolvedColumnCatalog = useMemo(() => {
     if (!includeTableColumns) return []
-    const serverCatalog = columnsQuery.data?.catalog ?? []
-    if (serverCatalog.length) return serverCatalog
-    return (registry?.columns ?? []).map((item) => ({
+    const frontendCatalog = (registry?.columns ?? []).map((item) => ({
       id: item.id,
       label: item.label,
       type: item.type,
       description: item.description,
       defaultVisible: item.defaultVisible !== false,
     }))
+    if (frontendCatalog.length) return frontendCatalog
+    return columnsQuery.data?.catalog ?? []
   }, [columnsQuery.data?.catalog, includeTableColumns, registry?.columns])
 
   const resolvedVisibleIds = useMemo(() => {
