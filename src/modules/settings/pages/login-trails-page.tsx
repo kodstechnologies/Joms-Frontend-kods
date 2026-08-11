@@ -217,6 +217,21 @@ export function LoginTrailsPage() {
             </p>
           </div>
         </div>
+
+        <button
+          type="button"
+          role="switch"
+          aria-checked={loginAlerts}
+          aria-label="Login Alerts"
+          disabled={updateSecurity.isPending || securityQuery.isLoading}
+          onClick={toggleLoginAlerts}
+          className="login-trails-alerts"
+        >
+          <span className={cn('login-trails-switch', loginAlerts && 'is-on')} aria-hidden>
+            <span className="login-trails-switch-knob" />
+          </span>
+          <span className="login-trails-alerts-label">Login Alerts</span>
+        </button>
       </div>
 
       <section className="login-trails-card">
@@ -244,24 +259,6 @@ export function LoginTrailsPage() {
           resourceLabel="users"
           toolbarContent={
             <div className="login-trails-toolbar-actions">
-              <div className="login-trails-alerts">
-                <div className="security-switch-wrap">
-                  <button
-                    type="button"
-                    role="switch"
-                    aria-checked={loginAlerts}
-                    aria-label="Login Alerts"
-                    disabled={updateSecurity.isPending || securityQuery.isLoading}
-                    onClick={toggleLoginAlerts}
-                    className={cn('security-switch', loginAlerts && 'is-on')}
-                  >
-                    <span className="security-switch-knob" />
-                  </button>
-                  <span className="security-switch-caption">{loginAlerts ? 'ON' : 'OFF'}</span>
-                </div>
-                <span className="login-trails-alerts-label">Login Alerts</span>
-              </div>
-
               <button
                 type="button"
                 className="login-trails-tool-btn"

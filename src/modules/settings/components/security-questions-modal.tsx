@@ -1,9 +1,10 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Pencil, Trash2, X } from 'lucide-react'
 import { createPortal } from 'react-dom'
+import { toast } from 'sonner'
 
-import { SettingsToggleRow } from './settings-toggle-row'
 import type { SecurityQuestion, SecuritySettings } from '../types/settings'
+import { cn } from '@/shared/lib/cn'
 
 type SecurityQuestionsConfig = SecuritySettings['securityQuestionsConfig']
 
@@ -13,6 +14,11 @@ type SecurityQuestionsModalProps = {
   onClose: () => void
   onSubmit: (config: SecurityQuestionsConfig) => void
 }
+
+const MAX_QUESTIONS = 20
+const MIN_QUESTION_LENGTH = 3
+
+const createQuestionId = () => `sq-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
 
 export function SecurityQuestionsModal({
   open,
@@ -24,7 +30,7 @@ export function SecurityQuestionsModal({
 
   return createPortal(
     <SecurityQuestionsModalContent
-      key={JSON.stringify(config)}
+      key={`${config.questions.map((q) => q.id).join('|')}-${config.questions.length}`}
       config={config}
       onClose={onClose}
       onSubmit={onSubmit}
@@ -42,142 +48,334 @@ function SecurityQuestionsModalContent({
   onClose: () => void
   onSubmit: (config: SecurityQuestionsConfig) => void
 }) {
-  const [draft, setDraft] = useState(config)
-  const [newQuestion, setNewQuestion] = useState('')
+  const initialQuestions = useMemo(
+    () =>
+      (config.questions || [])
+        .map((item) => ({
+          id: String(item.id || createQuestionId()),
+          question: String(item.question || '').trim(),
+        }))
+        .filter((item) => item.question.length > 0),
+    [config.questions],
+  )
+
+  const [draft, setDraft] = useState<SecurityQuestionsConfig>(() => ({
+    ...config,
+    questions: initialQuestions,
+  }))
+  const [selectedId, setSelectedId] = useState<string | null>(initialQuestions[0]?.id ?? null)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editingText, setEditingText] = useState('')
 
-  const handleAddQuestion = () => {
-    const text = newQuestion.trim()
-    if (!text) return
-    setDraft({
-      ...draft,
-      questions: [...draft.questions, { id: `sq-${Date.now()}`, question: text }],
-    })
-    setNewQuestion('')
+  const effectiveSelectedId =
+    selectedId && draft.questions.some((q) => q.id === selectedId)
+      ? selectedId
+      : (draft.questions[0]?.id ?? null)
+
+  const startEdit = (question: SecurityQuestion) => {
+    setSelectedId(question.id)
+    setEditingId(question.id)
+    setEditingText(question.question)
   }
 
-  const handleSaveEdit = (id: string) => {
+  const cancelEdit = () => {
+    // Drop brand-new empty rows if user cancels edit
+    if (editingId) {
+      const current = draft.questions.find((q) => q.id === editingId)
+      if (current && !current.question.trim() && !editingText.trim()) {
+        setDraft({
+          ...draft,
+          questions: draft.questions.filter((q) => q.id !== editingId),
+        })
+        if (selectedId === editingId) {
+          setSelectedId(draft.questions.find((q) => q.id !== editingId)?.id ?? null)
+        }
+      }
+    }
+    setEditingId(null)
+    setEditingText('')
+  }
+
+  const saveEdit = () => {
+    if (!editingId) return
     const text = editingText.trim()
-    if (!text) return
+    if (text.length < MIN_QUESTION_LENGTH) {
+      toast.error(`Question must be at least ${MIN_QUESTION_LENGTH} characters`)
+      return
+    }
+    const duplicate = draft.questions.some(
+      (q) => q.id !== editingId && q.question.toLowerCase() === text.toLowerCase(),
+    )
+    if (duplicate) {
+      toast.error('This question already exists')
+      return
+    }
+
     setDraft({
       ...draft,
-      questions: draft.questions.map((q) => (q.id === id ? { ...q, question: text } : q)),
+      questions: draft.questions.map((q) => (q.id === editingId ? { ...q, question: text } : q)),
     })
     setEditingId(null)
     setEditingText('')
   }
 
-  const handleDelete = (id: string) => {
+  const handleAddQuestion = () => {
+    if (draft.questions.length >= MAX_QUESTIONS) {
+      toast.error(`You can add up to ${MAX_QUESTIONS} questions`)
+      return
+    }
+    if (editingId) {
+      toast.message('Finish editing the current question first')
+      return
+    }
+
+    const id = createQuestionId()
     setDraft({
       ...draft,
-      questions: draft.questions.filter((q) => q.id !== id),
+      questions: [...draft.questions, { id, question: '' }],
+    })
+    setSelectedId(id)
+    setEditingId(id)
+    setEditingText('')
+  }
+
+  const handleDelete = (id: string) => {
+    if (draft.questions.length <= 1) {
+      toast.error('At least one security question is required')
+      return
+    }
+    const nextQuestions = draft.questions.filter((q) => q.id !== id)
+    setDraft({ ...draft, questions: nextQuestions })
+    if (selectedId === id) setSelectedId(nextQuestions[0]?.id ?? null)
+    if (editingId === id) {
+      setEditingId(null)
+      setEditingText('')
+    }
+  }
+
+  const handleSubmit = () => {
+    if (editingId) {
+      toast.message('Save or cancel the question you are editing')
+      return
+    }
+
+    const cleaned = draft.questions
+      .map((q) => ({ ...q, question: q.question.trim() }))
+      .filter((q) => q.question.length > 0)
+
+    if (cleaned.length === 0) {
+      toast.error('Add at least one security question')
+      return
+    }
+
+    const tooShort = cleaned.find((q) => q.question.length < MIN_QUESTION_LENGTH)
+    if (tooShort) {
+      toast.error(`Each question must be at least ${MIN_QUESTION_LENGTH} characters`)
+      return
+    }
+
+    const seen = new Set<string>()
+    for (const item of cleaned) {
+      const key = item.question.toLowerCase()
+      if (seen.has(key)) {
+        toast.error('Duplicate security questions are not allowed')
+        return
+      }
+      seen.add(key)
+    }
+
+    onSubmit({
+      ...draft,
+      questions: cleaned,
     })
   }
 
   return (
-    <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/70 p-4">
-      <div className="ui-modal-shell max-h-[90vh] max-w-[560px] overflow-y-auto">
-        <div className="ui-modal-header">
-          <div>
-            <h2 className="text-h2 text-brand-text">Security Questions</h2>
-            <p className="text-body-sm text-muted mt-1">Manage security verification questions</p>
+    <div className="sq-modal-overlay" role="presentation" onClick={onClose}>
+      <div
+        className="sq-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="security-questions-title"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <header className="sq-modal-header">
+          <div className="sq-modal-heading">
+            <h2 id="security-questions-title" className="sq-modal-title">
+              Security Questions
+            </h2>
+            <p className="sq-modal-desc">
+              Configure security questions for super admin account recovery and verification. These
+              questions add an extra layer of protection for critical system operations.
+            </p>
           </div>
-          <button type="button" onClick={onClose} className="text-muted hover:text-brand-text">
-            <X className="icon-md" />
+          <button type="button" className="sq-modal-close" onClick={onClose} aria-label="Close">
+            <X className="size-5" />
           </button>
-        </div>
+        </header>
 
-        <div className="ui-modal-body space-y-3">
-          <p className="text-body-md-medium text-brand-text">Security Questions</p>
-          {draft.questions.map((question: SecurityQuestion) => (
-            <div
-              key={question.id}
-              className="radius-lg flex items-center gap-2 border border-white/10 bg-black/20 px-3 py-2"
-            >
-              {editingId === question.id ? (
-                <input
-                  value={editingText}
-                  onChange={(event) => setEditingText(event.target.value)}
-                  className="ui-input flex-1"
-                />
-              ) : (
-                <span className="text-body-md text-brand-text/80 flex-1">{question.question}</span>
-              )}
-              <button
-                type="button"
-                onClick={() => {
-                  if (editingId === question.id) {
-                    handleSaveEdit(question.id)
-                  } else {
-                    setEditingId(question.id)
-                    setEditingText(question.question)
-                  }
-                }}
-                className="text-muted hover:text-brand-text rounded p-1"
-              >
-                <Pencil className="icon-sm" />
-              </button>
-              <button
-                type="button"
-                onClick={() => handleDelete(question.id)}
-                className="text-muted hover:text-brand-danger rounded p-1"
-              >
-                <Trash2 className="icon-sm" />
-              </button>
-            </div>
-          ))}
-          <div className="flex gap-2">
-            <input
-              value={newQuestion}
-              onChange={(event) => setNewQuestion(event.target.value)}
-              placeholder="New security question"
-              className="ui-input flex-1"
-            />
-            <button
-              type="button"
-              onClick={handleAddQuestion}
-              className="ui-cta ui-cta-secondary shrink-0"
-            >
-              + Add New Question
-            </button>
+        <div className="sq-modal-body">
+          <div className="sq-questions-list">
+            {draft.questions.length === 0 ? (
+              <p className="sq-empty">No security questions yet. Add one below.</p>
+            ) : (
+              draft.questions.map((question) => {
+                const isSelected = effectiveSelectedId === question.id
+                const isEditing = editingId === question.id
+
+                return (
+                  <div
+                    key={question.id}
+                    className={cn('sq-question-row', isSelected && 'is-selected')}
+                  >
+                    <label className="sq-radio-wrap">
+                      <input
+                        type="radio"
+                        name="security-question-selected"
+                        checked={isSelected}
+                        onChange={() => setSelectedId(question.id)}
+                        className="sq-radio"
+                      />
+                    </label>
+
+                    {isEditing ? (
+                      <input
+                        autoFocus
+                        value={editingText}
+                        onChange={(event) => setEditingText(event.target.value)}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Enter') {
+                            event.preventDefault()
+                            saveEdit()
+                          }
+                          if (event.key === 'Escape') {
+                            event.preventDefault()
+                            cancelEdit()
+                          }
+                        }}
+                        placeholder="Enter security question"
+                        className="sq-question-input"
+                      />
+                    ) : (
+                      <button
+                        type="button"
+                        className="sq-question-text"
+                        onClick={() => setSelectedId(question.id)}
+                      >
+                        {question.question || 'Untitled question'}
+                      </button>
+                    )}
+
+                    <div className="sq-question-actions">
+                      {isEditing ? (
+                        <>
+                          <button type="button" className="sq-action-link" onClick={saveEdit}>
+                            Save
+                          </button>
+                          <button type="button" className="sq-action-link" onClick={cancelEdit}>
+                            Cancel
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <button
+                            type="button"
+                            className="sq-icon-btn"
+                            aria-label="Edit question"
+                            onClick={() => startEdit(question)}
+                          >
+                            <Pencil className="size-4" />
+                          </button>
+                          <button
+                            type="button"
+                            className="sq-icon-btn sq-icon-btn-danger"
+                            aria-label="Delete question"
+                            onClick={() => handleDelete(question.id)}
+                          >
+                            <Trash2 className="size-4" />
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                )
+              })
+            )}
           </div>
 
-          <div className="radius-lg space-y-1 border border-white/10 bg-black/20 p-4">
-            <p className="text-body-md-medium text-brand-text mb-2">Additional Security Settings</p>
-            <SettingsToggleRow
+          <button type="button" className="sq-add-btn" onClick={handleAddQuestion}>
+            Add Questions +
+          </button>
+
+          <section className="sq-settings-block">
+            <h3 className="sq-settings-title">Additional Security Settings</h3>
+
+            <SecuritySettingToggle
               label="Require security questions for password reset"
+              description="Users must answer security questions before resetting password"
               checked={draft.requireForPasswordReset}
-              onChange={(checked) => setDraft({ ...draft, requireForPasswordReset: checked })}
-            />
-            <SettingsToggleRow
-              label="Require security questions for critical operations"
-              checked={draft.requireForCriticalOperations}
-              onChange={(checked) => setDraft({ ...draft, requireForCriticalOperations: checked })}
-            />
-            <SettingsToggleRow
-              label="Lock account after failed attempts"
-              checked={draft.lockAccountAfterFailedAttempts}
-              onChange={(checked) =>
-                setDraft({ ...draft, lockAccountAfterFailedAttempts: checked })
+              onChange={(requireForPasswordReset) =>
+                setDraft({ ...draft, requireForPasswordReset })
               }
             />
-          </div>
+            <SecuritySettingToggle
+              label="Require security questions for critical operations"
+              description="Ask security questions before deleting data or changing permissions"
+              checked={draft.requireForCriticalOperations}
+              onChange={(requireForCriticalOperations) =>
+                setDraft({ ...draft, requireForCriticalOperations })
+              }
+            />
+            <SecuritySettingToggle
+              label="Lock account after failed attempts"
+              description="Lock account after 3 consecutive wrong answers"
+              checked={draft.lockAccountAfterFailedAttempts}
+              onChange={(lockAccountAfterFailedAttempts) =>
+                setDraft({ ...draft, lockAccountAfterFailedAttempts })
+              }
+            />
+          </section>
         </div>
 
-        <div className="ui-modal-footer">
-          <button type="button" onClick={onClose} className="ui-modal-btn ui-modal-btn-cancel">
-            Reset
+        <footer className="sq-modal-footer">
+          <button type="button" className="sq-btn-cancel" onClick={onClose}>
+            Cancel
           </button>
-          <button
-            type="button"
-            onClick={() => onSubmit(draft)}
-            className="ui-modal-btn ui-modal-btn-gold"
-          >
+          <button type="button" className="sq-btn-submit" onClick={handleSubmit}>
             Submit
           </button>
-        </div>
+        </footer>
       </div>
+    </div>
+  )
+}
+
+function SecuritySettingToggle({
+  label,
+  description,
+  checked,
+  onChange,
+}: {
+  label: string
+  description: string
+  checked: boolean
+  onChange: (checked: boolean) => void
+}) {
+  return (
+    <div className="sq-toggle-row">
+      <div className="sq-toggle-copy">
+        <p className="sq-toggle-label">{label}</p>
+        <p className="sq-toggle-desc">{description}</p>
+      </div>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={checked}
+        onClick={() => onChange(!checked)}
+        className={cn('sq-toggle', checked && 'is-on')}
+      >
+        <span className="sq-toggle-thumb" />
+      </button>
     </div>
   )
 }

@@ -344,7 +344,7 @@ export function SecurityAccessPanel({ value, onChange }: SecurityAccessPanelProp
         onSubmit={(config) => {
           patch({ securityQuestionsConfig: config })
           setSecurityQuestionsOpen(false)
-          toast.success('Security questions updated')
+          toast.success('Security questions updated — save settings to apply')
         }}
       />
     </div>
