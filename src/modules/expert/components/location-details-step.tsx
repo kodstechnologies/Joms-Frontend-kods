@@ -30,6 +30,9 @@ export const LocationDetailsStep = ({
       address: details.address || prev.address,
       city: details.city || prev.city,
       landmark: details.landmark || prev.landmark,
+      pincode: details.pincode || prev.pincode,
+      state: details.state || prev.state,
+      country: details.country || prev.country,
     }))
   }
 

@@ -37,6 +37,9 @@ export type VenueFormData = {
   address: string
   landmark: string
   city: string
+  pincode?: string
+  state?: string
+  country?: string
   latitude: number | null
   longitude: number | null
   parkingAvailable: boolean
@@ -89,6 +92,9 @@ export const createEmptyVenueFormData = (): VenueFormData => ({
   address: '',
   landmark: '',
   city: '',
+  pincode: '',
+  state: '',
+  country: '',
   latitude: null,
   longitude: null,
   parkingAvailable: false,

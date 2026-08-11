@@ -1,3 +1,4 @@
+import { GoogleMapPicker } from '@/shared/components/map'
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate, useParams } from 'react-router-dom'
@@ -430,7 +431,7 @@ export function ApplicationDetailsPage() {
 
         <div className="grid grid-cols-1 gap-5">
           <SectionCard title="Location">
-            <div className="flex items-start gap-3 rounded-md bg-black p-3">
+            <div className="mb-3 flex items-start gap-3 rounded-md bg-black p-3">
               <MapPin className="text-brand-danger mt-0.5 size-4" />
               <div>
                 <p className="text-body-sm font-semibold text-white">
@@ -439,6 +440,18 @@ export function ApplicationDetailsPage() {
                 <p className="text-muted mt-1 text-[10px]">{address || '—'}</p>
               </div>
             </div>
+            {venue.location && (
+              <GoogleMapPicker
+                latitude={venue.location.latitude}
+                longitude={venue.location.longitude}
+                address={venue.location.address}
+                city={venue.location.city}
+                landmark={venue.location.landmark}
+                height="200px"
+                readOnly={true}
+                showSearch={false}
+              />
+            )}
           </SectionCard>
 
           <SectionCard title="Pricing">

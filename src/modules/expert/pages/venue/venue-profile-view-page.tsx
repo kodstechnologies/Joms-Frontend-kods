@@ -1,3 +1,4 @@
+import { GoogleMapPicker } from '@/shared/components/map'
 import { useCallback, useState, type ReactNode } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 
@@ -252,6 +253,18 @@ function OverviewTab({ data }: { data: VenueFullView }) {
         <h3 className="text-body-md mb-3 font-semibold text-white">Address</h3>
         <p className="text-[13px] font-medium text-white">{venue.name}</p>
         <p className="text-body-sm mt-1 text-white/50">{addressLine || '—'}</p>
+        <div className="mt-3">
+          <GoogleMapPicker
+            latitude={location?.latitude}
+            longitude={location?.longitude}
+            address={location?.address}
+            city={location?.city}
+            landmark={location?.landmark}
+            height="220px"
+            readOnly={true}
+            showSearch={false}
+          />
+        </div>
       </div>
 
       <div>

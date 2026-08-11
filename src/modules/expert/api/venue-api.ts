@@ -183,7 +183,16 @@ export const fetchAdminDraftVenue = async (venueId: string) => {
 export const updateAdminVenueLocation = async (
   venueId: string,
   payload: {
-    location: { address?: string; landmark?: string; city?: string }
+    location: {
+      address?: string
+      landmark?: string
+      city?: string
+      latitude?: number | null
+      longitude?: number | null
+      pincode?: string
+      state?: string
+      country?: string
+    }
     parkingAvailable?: boolean
     accessibility?: boolean
   },

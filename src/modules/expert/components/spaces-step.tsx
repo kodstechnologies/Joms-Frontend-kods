@@ -1,6 +1,6 @@
 import type { VenueFormData } from '../utils/venue-form'
 import { RequiredMark } from '@/shared/components/form/required-mark'
-import { GoogleMapPicker } from '@/shared/components/map'
+import { GoogleMapPicker, type LocationDetails } from '@/shared/components/map'
 
 interface SpacesStepProps {
   venueData: VenueFormData
@@ -308,6 +308,19 @@ export const SpacesStep = ({ venueData, setVenueData, isEditMode = false }: Spac
             city={venueData.city}
             landmark={venueData.landmark}
             height="240px"
+            onLocationSelect={(details: LocationDetails) => {
+              setVenueData((prev) => ({
+                ...prev,
+                latitude: details.latitude,
+                longitude: details.longitude,
+                address: details.address || prev.address,
+                city: details.city || prev.city,
+                landmark: details.landmark || prev.landmark,
+                pincode: details.pincode || prev.pincode,
+                state: details.state || prev.state,
+                country: details.country || prev.country,
+              }))
+            }}
           />
         </div>
       )}

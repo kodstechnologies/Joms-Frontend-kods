@@ -18,6 +18,7 @@ export const useExperts = (params?: {
   search?: string
   status?: string
   serviceType?: string
+  [key: string]: unknown
 }) => {
   const isDeletedList = params?.status === 'deactivated' || params?.status === 'deleted'
 

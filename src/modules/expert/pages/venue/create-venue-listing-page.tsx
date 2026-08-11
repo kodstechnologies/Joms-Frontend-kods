@@ -70,7 +70,16 @@ type DraftVenue = {
   venueType?: string
   venueCategoryId?: Array<string | { _id: string }>
   aboutVenue?: string
-  location?: { address?: string; landmark?: string; city?: string }
+  location?: {
+    address?: string
+    landmark?: string
+    city?: string
+    latitude?: number
+    longitude?: number
+    pincode?: string
+    state?: string
+    country?: string
+  }
   parkingAvailable?: boolean
   accessibility?: boolean
   amenities?: { amenities?: DraftAmenity[] }
@@ -193,6 +202,11 @@ export const CreateVenueListingPage = () => {
           address: venue?.location?.address || '',
           landmark: venue?.location?.landmark || '',
           city: venue?.location?.city || '',
+          pincode: venue?.location?.pincode || '',
+          state: venue?.location?.state || '',
+          country: venue?.location?.country || '',
+          latitude: venue?.location?.latitude ?? null,
+          longitude: venue?.location?.longitude ?? null,
           parkingAvailable: venue?.parkingAvailable ?? false,
           accessibility: venue?.accessibility ?? false,
           spaceName: isEditMode ? space?.name || '' : '',
