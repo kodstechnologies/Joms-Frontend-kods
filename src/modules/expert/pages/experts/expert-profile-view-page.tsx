@@ -46,6 +46,7 @@ import {
   useUpdateConsultationStatus,
 } from '../../hooks/use-services'
 import {
+  useExpertAnalytics,
   useExpertConsultations,
   useExpertProfile,
   useExpertServices,
@@ -1238,15 +1239,64 @@ function AvailabilityTab() {
 
 function AnalyticsTab({ expertId }: { expertId?: string }) {
   const navigate = useNavigate()
+  const { data: analyticsRes } = useExpertAnalytics(expertId)
+  const analytics = analyticsRes?.data
+  const serviceAnalytics = analytics?.serviceAnalytics
+
   const cards = [
-    { label: 'Events Hosted', value: '24' },
-    { label: 'Total Attendees', value: '1,840+' },
-    { label: 'Repeat Attendees', value: '30' },
-    { label: 'Upcoming Events', value: '3' },
-    { label: 'Event Completion Rate', value: '100%' },
-    { label: 'Avg. Response Time', value: '2 Hrs' },
-    { label: 'No. Of Events Rejected', value: '3' },
-    { label: 'No. of event Suspended', value: '100%' },
+    {
+      label: 'Events Hosted',
+      value:
+        serviceAnalytics?.eventsHosted?.value != null
+          ? String(serviceAnalytics.eventsHosted.value)
+          : '0',
+    },
+    {
+      label: 'Total Attendees',
+      value:
+        serviceAnalytics?.totalAttendees?.value != null
+          ? String(serviceAnalytics.totalAttendees.value)
+          : '0',
+    },
+    {
+      label: 'Repeat Attendees',
+      value:
+        serviceAnalytics?.repeatAttendees?.value != null
+          ? String(serviceAnalytics.repeatAttendees.value)
+          : '0',
+    },
+    {
+      label: 'Upcoming Events',
+      value:
+        serviceAnalytics?.upcomingEvents?.value != null
+          ? String(serviceAnalytics.upcomingEvents.value)
+          : '0',
+    },
+    {
+      label: 'Event Completion Rate',
+      value:
+        serviceAnalytics?.eventCompletionRate?.value != null
+          ? `${serviceAnalytics.eventCompletionRate.value}%`
+          : '0%',
+    },
+    {
+      label: 'Avg. Response Time',
+      value: serviceAnalytics?.avgResponseTime?.label || '--',
+    },
+    {
+      label: 'No. Of Events Rejected',
+      value:
+        serviceAnalytics?.eventsRejected?.value != null
+          ? String(serviceAnalytics.eventsRejected.value)
+          : '0',
+    },
+    {
+      label: 'No. of event Suspended',
+      value:
+        serviceAnalytics?.eventsSuspended?.value != null
+          ? String(serviceAnalytics.eventsSuspended.value)
+          : '0',
+    },
   ]
 
   return (

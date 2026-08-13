@@ -1,6 +1,7 @@
 import { adminApiClient } from '@/shared/lib/axios'
 import type { ExpertResponse } from '../type/expert'
 import type {
+  ExpertAnalyticsResponse,
   ExpertConsultationsResponse,
   ExpertProfileResponse,
   ExpertServicesResponse,
@@ -22,6 +23,14 @@ export const fetchExpertById = async (id: string) => {
 export const fetchExpertProfile = async (id: string) => {
   const response = await adminApiClient.get<ExpertProfileResponse>(
     `/admin/internal/admin/partners/${id}`,
+  )
+  return response.data
+}
+
+export const fetchExpertAnalytics = async (expertId: string, timeRange?: string) => {
+  const response = await adminApiClient.get<ExpertAnalyticsResponse>(
+    `/admin/internal/admin/partners/${expertId}/analytics`,
+    { params: timeRange ? { timeRange } : undefined },
   )
   return response.data
 }
@@ -101,4 +110,85 @@ export const setExpertPassword = async (id: string, payload: SetExpertPasswordPa
     payload,
   )
   return response.data
+}
+
+export const fetchExpertPayoutHistory = async (expertId: string) => {
+  const response = await adminApiClient.get(`/admin/internal/admin/partners/${expertId}/payouts`)
+  return response.data
+}
+
+export const fetchExpertPayoutDetail = async (expertId: string, payoutId: string) => {
+  const response = await adminApiClient.get(
+    `/admin/internal/admin/partners/${expertId}/payouts/${payoutId}`,
+  )
+  return response.data
+}
+
+export const fetchExpertReports = async (params?: Record<string, unknown>) => {
+  const response = await adminApiClient.get('/admin/internal/admin/reports/experts', { params })
+  return response.data
+}
+
+export const fetchExpertReportDetail = async (id: string) => {
+  const response = await adminApiClient.get(`/admin/internal/admin/reports/experts/${id}`)
+  return response.data
+}
+
+export const updateExpertReport = async (id: string, payload: Record<string, unknown>) => {
+  const response = await adminApiClient.patch(
+    `/admin/internal/admin/reports/experts/${id}`,
+    payload,
+  )
+  return response.data
+}
+
+export const exportExpertReportsCSV = async (params?: Record<string, unknown>) => {
+  const data = await fetchExpertReports({ ...params, limit: 1000 })
+  const items = data?.data?.items || data?.items || []
+
+  if (!items || items.length === 0) {
+    throw new Error('No report records found to export.')
+  }
+
+  const headers = [
+    'Report ID',
+    'Expert ID',
+    'Expert Name',
+    'Reporter Type',
+    'Reporter ID',
+    'Reporter Name',
+    'Issue Type',
+    'Reason',
+    'Business Impact',
+    'Investigation Status',
+    'Investigating Admin',
+    'Final Outcome',
+    'Submitted At',
+  ]
+
+  const rows = items.map((r: Record<string, unknown>) => [
+    r.reportId || '',
+    r.partnerId || '',
+    `"${(r.expertName || '').toString().replace(/"/g, '""')}"`,
+    r.reporterType || '',
+    r.reporterId || '',
+    `"${(r.reporterName || '').toString().replace(/"/g, '""')}"`,
+    r.issueType || '',
+    `"${(r.reason || '').toString().replace(/"/g, '""')}"`,
+    r.businessImpact || '',
+    r.investigationStatus || '',
+    `"${(r.investigatingAdmin || '').toString().replace(/"/g, '""')}"`,
+    r.finalOutcome || '',
+    r.submittedAt ? new Date(r.submittedAt as string).toLocaleString() : '',
+  ])
+
+  const csvContent = [headers.join(','), ...rows.map((row: string[]) => row.join(','))].join('\n')
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.setAttribute('href', url)
+  link.setAttribute('download', `expert-reports-${new Date().toISOString().slice(0, 10)}.csv`)
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
 }

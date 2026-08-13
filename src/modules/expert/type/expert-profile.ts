@@ -35,6 +35,8 @@ export type ExpertProfileDetail = {
   phoneVerified?: boolean
   emailVerified?: boolean
   servicetype?: string
+  expertType?: string
+  kycStatus?: string
   isBlocked?: boolean
   isDeactivated?: boolean
   hasPassword?: boolean
@@ -123,4 +125,87 @@ export type ExpertService = {
 export type ExpertServicesResponse = {
   success?: boolean
   data: ExpertService[]
+}
+
+export type ServiceAnalyticsMetric = {
+  value?: number
+  label?: string
+  avgMs?: number | null
+  sampleSize?: number
+  available?: boolean
+  note?: string
+}
+
+export type ExpertAnalyticsData = {
+  partnerUserId?: string
+  expertId?: string
+  revenueGrowthRate?: number
+  profileSummary?: {
+    name?: string
+    email?: string
+    phone?: string
+    expertType?: string
+    kycStatus?: string
+    accountStatus?: string
+    lastActiveAt?: string
+    customUrl?: string
+    profession?: string
+    experience?: string
+    avatarUrl?: string | null
+    role?: string
+    badge?: string
+  }
+  serviceAnalytics?: {
+    eventsHosted?: ServiceAnalyticsMetric
+    totalAttendees?: ServiceAnalyticsMetric
+    repeatAttendees?: ServiceAnalyticsMetric
+    upcomingEvents?: ServiceAnalyticsMetric
+    eventCompletionRate?: ServiceAnalyticsMetric
+    avgResponseTime?: ServiceAnalyticsMetric
+    avgCompletionSpeed?: ServiceAnalyticsMetric
+    eventsRejected?: ServiceAnalyticsMetric
+    eventsSuspended?: ServiceAnalyticsMetric
+  }
+  visibilityMetrics?: {
+    timeRange?: string
+    profileViews?: { count?: number; trendPercentage?: number; available?: boolean }
+    totalClicks?: { count?: number; trendPercentage?: number; available?: boolean }
+    repeatClientRate?: { percentage?: number; trendPercentage?: number; available?: boolean }
+    orderCompletionRate?: { percentage?: number; trendPercentage?: number; available?: boolean }
+  }
+  listingOverview?: {
+    servicesListed?: number
+    consultationsListed?: number
+    ordersCompleted?: number
+    ordersInProgress?: number
+    terminatedOrders?: number
+    proposalsCreated?: number
+    totalOrders?: number
+    totalEarnings?: number
+  }
+  ratingsSummary?: {
+    average?: number
+    count?: number
+    available?: boolean
+    star5?: number
+    star4?: number
+    star3?: number
+    star2?: number
+    star1?: number
+    promoters?: number
+    passives?: number
+    detractors?: number
+  }
+  nps?: {
+    score?: number
+    promoters?: number
+    passives?: number
+    detractors?: number
+  }
+}
+
+export type ExpertAnalyticsResponse = {
+  success?: boolean
+  message?: string
+  data: ExpertAnalyticsData
 }

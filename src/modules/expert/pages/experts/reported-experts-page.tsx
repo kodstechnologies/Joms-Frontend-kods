@@ -1,20 +1,15 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect, useCallback } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 import { Ban, Eye } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
-import { useExperts } from '../../hooks/use-expert'
-import type { Expert } from '../../type/expert'
+import { exportExpertReportsCSV, fetchExpertReports } from '../../api/expert-api'
 import {
-  createExpertBaseColumns,
-  createExpertReasonColumn,
-  createExpertReportedAtColumn,
-  createExpertSelectColumn,
-  createExpertServiceTypeColumn,
-} from './expert-list-columns'
+  ExpertReportDetailModal,
+  type ExpertReportItem,
+} from '../../components/expert-report-detail-modal'
 import { ExpertListHeader } from './expert-list-shared'
-import { useExpertListSelection } from './use-expert-list-selection'
 import { DataTable } from '@/shared/components/table/data-table'
 import {
   TableActionsDropdown,
@@ -27,30 +22,132 @@ export function ExpertReportedExpertsPage() {
   const [currentPage, setCurrentPage] = useState(1)
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
 
-  const { data, isLoading } = useExperts({
-    page: currentPage,
-    limit: 10,
-    status: 'reported',
-    search: searchQuery,
-  })
+  const [reports, setReports] = useState<ExpertReportItem[]>([])
+  const [loading, setLoading] = useState(true)
+  const [totalItems, setTotalItems] = useState(0)
+  const [totalPages, setTotalPages] = useState(1)
 
-  const experts = data?.data || []
-  const meta = data?.meta
-  const selection = useExpertListSelection(experts)
+  const [selectedReport, setSelectedReport] = useState<ExpertReportItem | null>(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [prevKey, setPrevKey] = useState(`${currentPage}-${searchQuery}`)
 
-  const columns = useMemo<ColumnDef<Expert>[]>(
+  const currentKey = `${currentPage}-${searchQuery}`
+
+  if (currentKey !== prevKey) {
+    setPrevKey(currentKey)
+    setLoading(true)
+  }
+
+  const loadReports = useCallback(() => {
+    fetchExpertReports({
+      page: currentPage,
+      limit: 10,
+      search: searchQuery,
+    })
+      .then((res) => {
+        const items = res?.data?.items || res?.items || []
+        const pagination = res?.data?.pagination || res?.pagination
+
+        setReports(items)
+        setTotalItems(pagination?.total || items.length)
+        setTotalPages(pagination?.totalPages || 1)
+      })
+      .catch((err: unknown) => {
+        console.error('Failed to load reported experts:', err)
+        setReports([])
+      })
+      .finally(() => {
+        setLoading(false)
+      })
+  }, [currentPage, searchQuery])
+
+  useEffect(() => {
+    loadReports()
+  }, [loadReports])
+
+  const columns = useMemo<ColumnDef<ExpertReportItem>[]>(
     () => [
-      createExpertSelectColumn({
-        allVisibleSelected: selection.allVisibleSelected,
-        someVisibleSelected: selection.someVisibleSelected,
-        selectedExpertIds: selection.selectedExpertIds,
-        toggleVisible: selection.toggleVisible,
-        toggleOne: selection.toggleOne,
-      }),
-      ...createExpertBaseColumns(),
-      createExpertServiceTypeColumn(),
-      createExpertReasonColumn(),
-      createExpertReportedAtColumn(),
+      {
+        accessorKey: 'reportId',
+        header: 'Report ID',
+        cell: ({ row }) => (
+          <span className="font-mono font-semibold text-[#E5B54E]">
+            {row.original.reportId || 'REP000'}
+          </span>
+        ),
+      },
+      {
+        accessorKey: 'expertName',
+        header: 'Reported Expert',
+        cell: ({ row }) => (
+          <div>
+            <div className="font-semibold text-white">{row.original.expertName}</div>
+            <div className="text-[11px] text-slate-400">ID: {row.original.partnerId}</div>
+          </div>
+        ),
+      },
+      {
+        accessorKey: 'reporterName',
+        header: 'Reported By',
+        cell: ({ row }) => (
+          <div>
+            <div className="font-medium text-slate-200">{row.original.reporterName}</div>
+            <div className="text-[11px] text-slate-400">{row.original.reporterType}</div>
+          </div>
+        ),
+      },
+      {
+        accessorKey: 'issueType',
+        header: 'Issue Type',
+        cell: ({ row }) => (
+          <span className="rounded-full bg-red-500/15 px-2.5 py-0.5 text-xs font-semibold text-red-400">
+            {row.original.issueType}
+          </span>
+        ),
+      },
+      {
+        accessorKey: 'reason',
+        header: 'Reason',
+        cell: ({ row }) => (
+          <div className="max-w-xs truncate text-xs text-slate-300" title={row.original.reason}>
+            {row.original.reason}
+          </div>
+        ),
+      },
+      {
+        accessorKey: 'investigationStatus',
+        header: 'Status',
+        cell: ({ row }) => {
+          const status = row.original.investigationStatus || 'New'
+          const isResolved = status === 'Resolved' || status === 'Closed'
+          const isReview = status === 'Under Review' || status === 'Escalated'
+
+          return (
+            <span
+              className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                isResolved
+                  ? 'bg-emerald-500/15 text-emerald-400'
+                  : isReview
+                    ? 'bg-amber-500/15 text-amber-400'
+                    : 'bg-blue-500/15 text-blue-400'
+              }`}
+            >
+              {status}
+            </span>
+          )
+        },
+      },
+      {
+        accessorKey: 'submittedAt',
+        header: 'Reported At',
+        cell: ({ row }) => (
+          <span className="text-xs text-slate-400">
+            {row.original.submittedAt
+              ? new Date(row.original.submittedAt).toLocaleDateString('en-GB')
+              : '—'}
+          </span>
+        ),
+      },
       {
         id: 'actions',
         header: 'Actions',
@@ -59,21 +156,21 @@ export function ExpertReportedExpertsPage() {
           cellClassName: 'relative pr-5 text-right',
         },
         cell: ({ row }) => {
-          const expert = row.original
-          const isOpen = activeDropdownId === expert.expertId
+          const reportItem = row.original
+          const isOpen = activeDropdownId === reportItem.reportId
 
           return (
             <TableActionsDropdown
-              label={`Open actions for ${expert.name}`}
+              label={`Open actions for report ${reportItem.reportId}`}
               isOpen={isOpen}
-              onOpenChange={(open) => setActiveDropdownId(open ? expert.expertId : null)}
+              onOpenChange={(open) => setActiveDropdownId(open ? reportItem.reportId : null)}
               menuWidth={176}
             >
               <TableActionsItem
                 icon={<Eye className="size-3.5" aria-hidden="true" />}
                 onClick={() => {
                   setActiveDropdownId(null)
-                  navigate(`/experts/management/profile/${expert.id}`)
+                  navigate(`/experts/management/profile/${reportItem.partnerId}`)
                 }}
               >
                 View Expert
@@ -82,7 +179,8 @@ export function ExpertReportedExpertsPage() {
                 icon={<Ban className="size-3.5 text-red-400" aria-hidden="true" />}
                 onClick={() => {
                   setActiveDropdownId(null)
-                  toast.message('View Report is coming soon')
+                  setSelectedReport(reportItem)
+                  setIsModalOpen(true)
                 }}
               >
                 View Report
@@ -92,7 +190,7 @@ export function ExpertReportedExpertsPage() {
         },
       },
     ],
-    [activeDropdownId, navigate, selection],
+    [activeDropdownId, navigate],
   )
 
   return (
@@ -101,26 +199,46 @@ export function ExpertReportedExpertsPage() {
 
       <DataTable
         columns={columns}
-        data={experts}
-        getRowId={(expert) => expert.expertId}
-        isLoading={isLoading}
+        data={reports}
+        getRowId={(r) => r.reportId || r.id}
+        isLoading={loading}
         searchValue={searchQuery}
         onSearchChange={(value) => {
           setSearchQuery(value)
           setCurrentPage(1)
         }}
-        searchPlaceholder="Search by name, ID or profession"
+        searchPlaceholder="Search by report ID, expert, or reporter"
         onAdvancedFilter={() => toast.message('Advanced filters are coming soon')}
-        onExport={() => toast.message('Expert export is coming soon')}
+        onExport={async () => {
+          try {
+            toast.loading('Exporting expert reports...')
+            await exportExpertReportsCSV({ search: searchQuery })
+            toast.dismiss()
+            toast.success('Expert reports exported successfully')
+          } catch (err: unknown) {
+            toast.dismiss()
+            toast.error(err instanceof Error ? err.message : 'Failed to export report CSV')
+          }
+        }}
         pagination={{
           page: currentPage,
-          pageSize: meta?.pagination.limit || 10,
-          totalItems: meta?.pagination.total || 0,
-          totalPages: meta?.pagination.pages || 1,
+          pageSize: 10,
+          totalItems,
+          totalPages,
           onPageChange: setCurrentPage,
         }}
-        resourceLabel="users"
+        resourceLabel="reports"
         emptyMessage="No reported experts found."
+      />
+
+      <ExpertReportDetailModal
+        report={selectedReport}
+        isOpen={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false)
+          setSelectedReport(null)
+        }}
+        onUpdated={loadReports}
       />
     </div>
   )

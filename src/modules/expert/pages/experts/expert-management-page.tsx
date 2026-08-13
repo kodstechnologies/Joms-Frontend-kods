@@ -36,6 +36,7 @@ import {
 import { DecisionActionModal } from '@/shared/components/modal/decision-action-modal'
 import { StatusQuickLinkCard, StatusQuickLinkRow } from '@/shared/components/status-quick-link-card'
 import { Button } from '@/shared/components/ui/button'
+import { PayoutHistoryDrawer } from '../../components/payout-history-drawer'
 import { statusCardTones } from '@/shared/lib/design-tokens'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 import type { FilterValues } from '@/shared/types/data-filter'
@@ -62,6 +63,7 @@ export const ExpertManagementPage = () => {
   const [selectedExpertIds, setSelectedExpertIds] = useState<string[]>([])
   const [suspendExpertTarget, setSuspendExpertTarget] = useState<Expert | null>(null)
   const [deleteExpertTarget, setDeleteExpertTarget] = useState<Expert | null>(null)
+  const [payoutDrawerTarget, setPayoutDrawerTarget] = useState<Expert | null>(null)
   const [suspendReasons, setSuspendReasons] = useState<string[]>([])
   const [suspendStartDate, setSuspendStartDate] = useState('')
   const [suspendEndDate, setSuspendEndDate] = useState('')
@@ -517,7 +519,7 @@ export const ExpertManagementPage = () => {
               className={ACTION_ITEM_CLASS}
               onClick={() => {
                 setActiveDropdownId(null)
-                toast.message('View Payout History is coming soon')
+                setPayoutDrawerTarget(expert)
               }}
             >
               View Payout History
@@ -541,16 +543,6 @@ export const ExpertManagementPage = () => {
               }}
             >
               Delete Expert
-            </TableActionsItem>
-            <TableActionsItem
-              icon={<User className="size-3.5 text-slate-700" aria-hidden="true" />}
-              className={ACTION_ITEM_CLASS}
-              onClick={() => {
-                setActiveDropdownId(null)
-                toast.message('Report Expert is coming soon')
-              }}
-            >
-              Report Expert
             </TableActionsItem>
           </TableActionsDropdown>
         )
@@ -767,7 +759,16 @@ export const ExpertManagementPage = () => {
         emptyMessage="No experts found."
       />
 
+      {/* Export & Advanced Filter Modals */}
       {exportFilterModals}
+
+      {/* Payout History Drawer */}
+      <PayoutHistoryDrawer
+        isOpen={Boolean(payoutDrawerTarget)}
+        onClose={() => setPayoutDrawerTarget(null)}
+        expertId={payoutDrawerTarget?.id || payoutDrawerTarget?.expertId || ''}
+        expertName={payoutDrawerTarget?.name || 'Alex Joh'}
+      />
 
       <DecisionActionModal
         open={Boolean(suspendExpertTarget)}
