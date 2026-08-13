@@ -3,27 +3,38 @@ import type { ColumnDef } from '@tanstack/react-table'
 import createIcon from '@/assets/JOMS_ICONS-2/icons8-create.svg'
 import {
   CheckSquare,
+  CircleMinus,
   AlertCircle,
   PauseCircle,
   Trash2,
+  Upload,
   BarChart3,
   Ban,
   Hourglass,
   LayoutDashboard,
   Bell,
-  Archive,
   Mail,
-  Image,
   CircleOff,
+  EyeOff,
   TrendingUp,
-  Gem,
   type LucideIcon,
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { VENUE_MANAGEMENT_MODULE_KEY } from '../../api/ui-preferences-api'
 import { orderByActiveMetricIds, useActiveMetricIds } from '../../hooks/use-active-metric-ids'
-import { useVenues, useSuspendVenue, useDeleteVenue } from '../../hooks/use-venues'
+import {
+  useVenues,
+  useSuspendVenue,
+  useDeleteVenue,
+  useBulkDeleteVenues,
+  useBulkPauseVenues,
+  useBulkHideVenues,
+  useBulkDisableVenues,
+  useBulkExportVenues,
+  useBulkNotifyVenues,
+  useBulkMessageVenues,
+} from '../../hooks/use-venues'
 import { useTableColumnPreferences } from '../../hooks/use-ui-preferences'
 import { useVenueStore } from '../../store'
 import type { Venue, VenueStatus } from '../../type/venue'
@@ -78,14 +89,196 @@ export const VenueManagementPage = () => {
   const [deleteConfirmed, setDeleteConfirmed] = useState(false)
   const [appliedAdvancedFilters, setAppliedAdvancedFilters] = useState<FilterValues>({})
 
+  const [isBulkDeleteModalOpen, setIsBulkDeleteModalOpen] = useState(false)
+  const [bulkDeleteReasons, setBulkDeleteReasons] = useState<string[]>([])
+  const [bulkDeleteAdminNotes, setBulkDeleteAdminNotes] = useState('')
+
+  const [isBulkPauseModalOpen, setIsBulkPauseModalOpen] = useState(false)
+  const [bulkPauseReasons, setBulkPauseReasons] = useState<string[]>([])
+  const [bulkPauseStartDate, setBulkPauseStartDate] = useState('')
+  const [bulkPauseEndDate, setBulkPauseEndDate] = useState('')
+  const [bulkPauseIndefinitely, setBulkPauseIndefinitely] = useState(false)
+  const [bulkPauseAdminNotes, setBulkPauseAdminNotes] = useState('')
+
   const suspendVenueMutation = useSuspendVenue()
   const deleteVenueMutation = useDeleteVenue()
+  const bulkDeleteMutation = useBulkDeleteVenues()
+  const bulkPauseMutation = useBulkPauseVenues()
+  const bulkHideMutation = useBulkHideVenues()
+  const bulkDisableMutation = useBulkDisableVenues()
+  const bulkExportMutation = useBulkExportVenues()
+  const bulkNotifyMutation = useBulkNotifyVenues()
+  const bulkMessageMutation = useBulkMessageVenues()
+
   const recordReasonUsage = useRecordModerationReasonUsage()
   const { options: suspendReasonOptions, buildPayload: buildSuspendReasonPayload } =
     useModerationReasonOptions(MODERATION_CATEGORY_SLUGS.suspendVenue)
   const { options: deleteReasonOptions, buildPayload: buildDeleteReasonPayload } =
     useModerationReasonOptions(MODERATION_CATEGORY_SLUGS.deleteVenue)
   const tableColumnPreferencesQuery = useTableColumnPreferences(VENUE_MANAGEMENT_MODULE_KEY)
+
+  const confirmBulkDelete = useCallback(() => {
+    if (selectedVenueIds.length === 0) return
+    if (deleteReasonOptions.length > 0 && bulkDeleteReasons.length === 0) {
+      toast.error('Please select at least one reason for deletion.')
+      return
+    }
+    if (!bulkDeleteAdminNotes.trim()) {
+      toast.error('Admin notes are required for deletion.')
+      return
+    }
+
+    bulkDeleteMutation.mutate(
+      {
+        venueIds: selectedVenueIds,
+        selectedReasons: bulkDeleteReasons,
+        adminNotes: bulkDeleteAdminNotes.trim(),
+      },
+      {
+        onSuccess: () => {
+          toast.success(`Deleted ${selectedVenueIds.length} selected venue(s)`)
+          setSelectedVenueIds([])
+          setIsBulkDeleteModalOpen(false)
+          setBulkDeleteReasons([])
+          setBulkDeleteAdminNotes('')
+        },
+        onError: (err: unknown) => {
+          const error = err as { response?: { data?: { message?: string } } }
+          toast.error(error?.response?.data?.message || 'Failed to delete venues')
+        },
+      },
+    )
+  }, [
+    selectedVenueIds,
+    bulkDeleteReasons,
+    bulkDeleteAdminNotes,
+    deleteReasonOptions.length,
+    bulkDeleteMutation,
+  ])
+
+  const confirmBulkPause = useCallback(() => {
+    if (selectedVenueIds.length === 0) return
+    if (suspendReasonOptions.length > 0 && bulkPauseReasons.length === 0) {
+      toast.error('Please select at least one reason for pausing.')
+      return
+    }
+    if (!bulkPauseAdminNotes.trim()) {
+      toast.error('Admin notes are required for pausing.')
+      return
+    }
+
+    bulkPauseMutation.mutate(
+      {
+        venueIds: selectedVenueIds,
+        selectedReasons: bulkPauseReasons,
+        adminNotes: bulkPauseAdminNotes.trim(),
+        startDate: bulkPauseStartDate,
+        endDate: bulkPauseEndDate,
+        indefinite: bulkPauseIndefinitely,
+      },
+      {
+        onSuccess: () => {
+          toast.success(`Paused ${selectedVenueIds.length} selected venue(s)`)
+          setSelectedVenueIds([])
+          setIsBulkPauseModalOpen(false)
+          setBulkPauseReasons([])
+          setBulkPauseAdminNotes('')
+        },
+        onError: (err: unknown) => {
+          const error = err as { response?: { data?: { message?: string } } }
+          toast.error(error?.response?.data?.message || 'Failed to pause venues')
+        },
+      },
+    )
+  }, [
+    selectedVenueIds,
+    bulkPauseReasons,
+    bulkPauseAdminNotes,
+    suspendReasonOptions.length,
+    bulkPauseStartDate,
+    bulkPauseEndDate,
+    bulkPauseIndefinitely,
+    bulkPauseMutation,
+  ])
+
+  const handleBulkHide = useCallback(() => {
+    if (selectedVenueIds.length === 0) return
+    bulkHideMutation.mutate(selectedVenueIds, {
+      onSuccess: () => {
+        toast.success(`Hidden ${selectedVenueIds.length} selected venue(s)`)
+        setSelectedVenueIds([])
+      },
+      onError: (err: unknown) => {
+        const error = err as { response?: { data?: { message?: string } } }
+        toast.error(error?.response?.data?.message || 'Failed to hide venues')
+      },
+    })
+  }, [selectedVenueIds, bulkHideMutation])
+
+  const handleBulkDisable = useCallback(() => {
+    if (selectedVenueIds.length === 0) return
+    bulkDisableMutation.mutate(selectedVenueIds, {
+      onSuccess: () => {
+        toast.success(`Disabled ${selectedVenueIds.length} selected venue(s)`)
+        setSelectedVenueIds([])
+      },
+      onError: (err: unknown) => {
+        const error = err as { response?: { data?: { message?: string } } }
+        toast.error(error?.response?.data?.message || 'Failed to disable venues')
+      },
+    })
+  }, [selectedVenueIds, bulkDisableMutation])
+
+  const handleBulkExport = useCallback(() => {
+    if (selectedVenueIds.length === 0) return
+    bulkExportMutation.mutate(selectedVenueIds, {
+      onSuccess: (res: { data?: { venues?: unknown[] } }) => {
+        const venuesData = res?.data?.venues ?? []
+        toast.success(`Exported ${venuesData.length || selectedVenueIds.length} venue(s)`)
+        setSelectedVenueIds([])
+      },
+      onError: (err: unknown) => {
+        const error = err as { response?: { data?: { message?: string } } }
+        toast.error(error?.response?.data?.message || 'Failed to export venues')
+      },
+    })
+  }, [selectedVenueIds, bulkExportMutation])
+
+  const handleBulkNotify = useCallback(() => {
+    if (selectedVenueIds.length === 0) return
+    bulkNotifyMutation.mutate(selectedVenueIds, {
+      onSuccess: (res: { message?: string; data?: { message?: string } }) => {
+        toast.success(
+          res?.data?.message ||
+            res?.message ||
+            `Notified partners for ${selectedVenueIds.length} venue(s)`,
+        )
+        setSelectedVenueIds([])
+      },
+      onError: (err: unknown) => {
+        const error = err as { response?: { data?: { message?: string } } }
+        toast.error(error?.response?.data?.message || 'Failed to notify venue partners')
+      },
+    })
+  }, [selectedVenueIds, bulkNotifyMutation])
+
+  const handleBulkMessage = useCallback(() => {
+    if (selectedVenueIds.length === 0) return
+    bulkMessageMutation.mutate(selectedVenueIds, {
+      onSuccess: (res: { message?: string; data?: { message?: string } }) => {
+        toast.success(
+          res?.data?.message ||
+            res?.message ||
+            `Sent message/ticket for ${selectedVenueIds.length} venue(s)`,
+        )
+        setSelectedVenueIds([])
+      },
+      onError: (err: unknown) => {
+        const error = err as { response?: { data?: { message?: string } } }
+        toast.error(error?.response?.data?.message || 'Failed to send message')
+      },
+    })
+  }, [selectedVenueIds, bulkMessageMutation])
 
   const navigate = useNavigate()
 
@@ -702,13 +895,41 @@ export const VenueManagementPage = () => {
   ])
 
   const bulkActions = [
-    { label: 'Delete selected venues', icon: Trash2 },
-    { label: 'Manage selected venue media', icon: Image },
-    { label: 'Archive selected venues', icon: Archive },
-    { label: 'Premium features', icon: Gem },
-    { label: 'Notify selected owners', icon: Bell },
-    { label: 'Message selected owners', icon: Mail },
-    { label: 'Suspend selected venues', icon: PauseCircle },
+    {
+      label: 'Delete selected venues (Delete Venues)',
+      icon: Trash2,
+      onClick: () => setIsBulkDeleteModalOpen(true),
+    },
+    {
+      label: 'Export selected venues (Export Selected)',
+      icon: Upload,
+      onClick: handleBulkExport,
+    },
+    {
+      label: 'Hide selected venues (Hide Venues)',
+      icon: EyeOff,
+      onClick: handleBulkHide,
+    },
+    {
+      label: 'Disable selected venues (Disable / Change Status)',
+      icon: CircleMinus,
+      onClick: handleBulkDisable,
+    },
+    {
+      label: 'Notify selected venue partners',
+      icon: Bell,
+      onClick: handleBulkNotify,
+    },
+    {
+      label: 'Message / Communicate with venue partners',
+      icon: Mail,
+      onClick: handleBulkMessage,
+    },
+    {
+      label: 'Suspend selected venues (Suspend Venues)',
+      icon: PauseCircle,
+      onClick: () => setIsBulkPauseModalOpen(true),
+    },
   ]
 
   return (
@@ -784,7 +1005,7 @@ export const VenueManagementPage = () => {
             size="listing"
             onClick={() => {
               if (card.id === 'reported-venues') {
-                toast.message('Reported venues list is coming soon')
+                navigate('/venues/management/reported')
                 return
               }
               navigate(card.href)
@@ -808,7 +1029,8 @@ export const VenueManagementPage = () => {
                 key={action.label}
                 type="button"
                 aria-label={action.label}
-                onClick={() => toast.message(`${action.label} action is coming soon`)}
+                title={action.label}
+                onClick={action.onClick}
                 className="flex size-8 items-center justify-center rounded-md bg-black text-white transition-colors hover:bg-white/10"
               >
                 <action.icon className="size-3.5" aria-hidden="true" />
@@ -893,6 +1115,66 @@ export const VenueManagementPage = () => {
         onClose={closeDeleteModal}
         onSubmit={handleDeleteSubmit}
         isSubmitting={deleteVenueMutation.isPending}
+      />
+
+      <DecisionActionModal
+        open={isBulkDeleteModalOpen}
+        variant="delete"
+        title={
+          selectedVenueIds.length > 1 ? `Delete ${selectedVenueIds.length} Venues` : 'Delete Venue'
+        }
+        description={`Are you sure you want to delete ${selectedVenueIds.length} selected venue(s)? This action cannot be undone.`}
+        submitLabel={
+          selectedVenueIds.length > 1 ? `Delete ${selectedVenueIds.length} Venues` : 'Delete Venue'
+        }
+        heroLayout="inline"
+        reasonOptions={deleteReasonOptions}
+        selectedReasons={bulkDeleteReasons}
+        onReasonToggle={(value) =>
+          setBulkDeleteReasons((current) =>
+            current.includes(value)
+              ? current.filter((item) => item !== value)
+              : [...current, value],
+          )
+        }
+        adminNotes={bulkDeleteAdminNotes}
+        onAdminNotesChange={setBulkDeleteAdminNotes}
+        onClose={() => setIsBulkDeleteModalOpen(false)}
+        onSubmit={confirmBulkDelete}
+        isSubmitting={bulkDeleteMutation.isPending}
+      />
+
+      <DecisionActionModal
+        open={isBulkPauseModalOpen}
+        variant="suspend"
+        title={
+          selectedVenueIds.length > 1 ? `Pause ${selectedVenueIds.length} Venues` : 'Pause Venue'
+        }
+        description={`Are you sure you want to pause ${selectedVenueIds.length} selected venue(s)? They will be hidden from clients until reactivated.`}
+        submitLabel={
+          selectedVenueIds.length > 1 ? `Pause ${selectedVenueIds.length} Venues` : 'Pause Venue'
+        }
+        reasonOptions={suspendReasonOptions}
+        selectedReasons={bulkPauseReasons}
+        onReasonToggle={(value) =>
+          setBulkPauseReasons((current) =>
+            current.includes(value)
+              ? current.filter((item) => item !== value)
+              : [...current, value],
+          )
+        }
+        showTimeline
+        startDate={bulkPauseStartDate}
+        onStartDateChange={setBulkPauseStartDate}
+        endDate={bulkPauseEndDate}
+        onEndDateChange={setBulkPauseEndDate}
+        indefinite={bulkPauseIndefinitely}
+        onIndefiniteChange={setBulkPauseIndefinitely}
+        adminNotes={bulkPauseAdminNotes}
+        onAdminNotesChange={setBulkPauseAdminNotes}
+        onClose={() => setIsBulkPauseModalOpen(false)}
+        onSubmit={confirmBulkPause}
+        isSubmitting={bulkPauseMutation.isPending}
       />
     </div>
   )

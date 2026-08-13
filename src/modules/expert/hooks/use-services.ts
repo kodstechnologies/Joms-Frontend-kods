@@ -9,6 +9,14 @@ import {
   activateService,
   deleteService,
   restoreService,
+  bulkDeleteServices,
+  bulkPauseServices,
+  bulkHideServices,
+  bulkDisableServices,
+  bulkExportServices,
+  bulkNotifyServices,
+  bulkMessageServices,
+  type BulkServiceActionPayload,
 } from '../api/service-api'
 import type {
   SuspendServicePayload,
@@ -123,6 +131,83 @@ export const useUpdateConsultationStatus = () => {
       queryClient.invalidateQueries({ queryKey: ['services'] })
       queryClient.invalidateQueries({ queryKey: ['expert-consultations'] })
       queryClient.invalidateQueries({ queryKey: ['my-tasks'] })
+    },
+  })
+}
+
+export const useBulkDeleteServices = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (payload: string[] | BulkServiceActionPayload) => bulkDeleteServices(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['services'] })
+      queryClient.invalidateQueries({ queryKey: ['expert-services'] })
+    },
+  })
+}
+
+export const useBulkPauseServices = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (payload: string[] | BulkServiceActionPayload) => bulkPauseServices(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['services'] })
+      queryClient.invalidateQueries({ queryKey: ['expert-services'] })
+    },
+  })
+}
+
+export const useBulkHideServices = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (serviceIds: string[]) => bulkHideServices(serviceIds),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['services'] })
+      queryClient.invalidateQueries({ queryKey: ['expert-services'] })
+    },
+  })
+}
+
+export const useBulkDisableServices = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (serviceIds: string[]) => bulkDisableServices(serviceIds),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['services'] })
+      queryClient.invalidateQueries({ queryKey: ['expert-services'] })
+    },
+  })
+}
+
+export const useBulkExportServices = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (serviceIds: string[]) => bulkExportServices(serviceIds),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['services'] })
+      queryClient.invalidateQueries({ queryKey: ['expert-services'] })
+    },
+  })
+}
+
+export const useBulkNotifyServices = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (serviceIds: string[]) => bulkNotifyServices(serviceIds),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['services'] })
+      queryClient.invalidateQueries({ queryKey: ['expert-services'] })
+    },
+  })
+}
+
+export const useBulkMessageServices = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (serviceIds: string[]) => bulkMessageServices(serviceIds),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['services'] })
+      queryClient.invalidateQueries({ queryKey: ['expert-services'] })
     },
   })
 }

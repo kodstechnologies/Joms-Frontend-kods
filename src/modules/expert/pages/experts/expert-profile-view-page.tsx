@@ -1,4 +1,4 @@
-import { useCallback, useState, type ReactNode } from 'react'
+import { useCallback, useMemo, useState, type ReactNode } from 'react'
 import { useNavigate, useParams, type NavigateFunction } from 'react-router-dom'
 
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
@@ -12,10 +12,12 @@ import {
   Ban,
   Briefcase,
   Check,
+  CheckSquare,
   ChevronRight,
   CircleMinus,
   Clock,
   Eye,
+  EyeOff,
   FileText,
   Gauge,
   GitMerge,
@@ -44,6 +46,11 @@ import {
   useDeleteService,
   useSuspendService,
   useUpdateConsultationStatus,
+  useBulkDeleteServices,
+  useBulkPauseServices,
+  useBulkHideServices,
+  useBulkDisableServices,
+  useBulkExportServices,
 } from '../../hooks/use-services'
 import {
   useExpertAnalytics,
@@ -52,6 +59,7 @@ import {
   useExpertServices,
 } from '../../hooks/use-expert-profile'
 import type {
+  ExpertAnalyticsData,
   ExpertConsultation,
   ExpertProfileDetail,
   ExpertService,
@@ -124,12 +132,6 @@ const getApiErrorMessage = (error: unknown) => {
 const comingSoon = (label: string) => toast.message(`${label} is coming soon`)
 
 const toIso = (date: string) => new Date(date).toISOString()
-
-const viewExpertKyc = (
-  partnerId: string,
-  serviceType: string | null | undefined,
-  navigate: NavigateFunction,
-) => openExpertKycFromProfile(partnerId, serviceType, navigate)
 
 const viewExpertService = async (
   service: ExpertService,
@@ -276,9 +278,9 @@ function SafeImage({
 
 function SidebarRow({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div className="flex items-center justify-between py-3">
-      <span className="text-body-sm text-muted">{label}</span>
-      <span className="max-w-[58%] text-right text-[13px] font-semibold text-white">
+    <div className="flex items-center justify-between gap-2 py-3">
+      <span className="text-body-sm text-muted shrink-0">{label}</span>
+      <span className="max-w-[65%] min-w-0 truncate text-right text-[13px] font-semibold text-white">
         {children}
       </span>
     </div>
@@ -288,13 +290,65 @@ function SidebarRow({ label, children }: { label: string; children: ReactNode })
 function ProfileSidebar({
   profile,
   partnerId,
+  analytics,
 }: {
   profile: ExpertProfileDetail
   partnerId: string
+  analytics?: ExpertAnalyticsData
 }) {
   const navigate = useNavigate()
   const basic = profile.basicProfile
   const kycBadge = getKycBadge(profile.finalReview)
+
+  // Exact Custom Link from Profile API (profile.customUrl / profile.customLink / profile.shareUrl)
+  const customUrl =
+    profile.customUrl ||
+    ((profile as unknown as Record<string, unknown>).customLink as string | undefined) ||
+    profile.profileUrl ||
+    ((profile as unknown as Record<string, unknown>).shareUrl as string | undefined) ||
+    (analytics as unknown as { profileHeader?: { customUrl?: string } })?.profileHeader
+      ?.customUrl ||
+    null
+
+  const deepLink =
+    ((profile as unknown as Record<string, unknown>).deepLink as string | undefined) ||
+    (customUrl && profile.customUsername ? `jomspartner://profile/${profile.customUsername}` : null)
+
+  // Ratings data from Analytics or Profile API (No static fallbacks)
+  const ratingAverage =
+    analytics?.ratingsSummary?.average ??
+    profile.ratings ??
+    profile.rating ??
+    profile.analytics?.rating
+
+  const ratingCount =
+    analytics?.ratingsSummary?.count ??
+    profile.reviewCount ??
+    profile.totalReviews ??
+    profile.analytics?.totalReviews
+
+  // NPS score from Analytics or Profile API (No static fallbacks)
+  const npsScore = analytics?.nps?.score ?? profile.nps ?? profile.analytics?.nps
+
+  // Experience from basic profile or profile
+  const experienceYears = basic?.experienceYears
+  const experienceMonths = basic?.experienceMonths
+  const formattedExperience =
+    formatExperience(experienceYears, experienceMonths) ||
+    (profile.experience ? `${profile.experience} Years` : null)
+
+  // Total Earnings from Analytics listingOverview or Profile API
+  const rawEarnings =
+    analytics?.listingOverview?.totalEarnings ??
+    profile.totalEarnings ??
+    profile.analytics?.totalEarnings
+
+  // Total Orders Completed from Analytics listingOverview or Profile API
+  const rawOrdersCompleted =
+    analytics?.listingOverview?.ordersCompleted ??
+    profile.totalOrdersCompleted ??
+    profile.completedOrders ??
+    profile.analytics?.completedOrders
 
   return (
     <div className="flex flex-col gap-4">
@@ -311,31 +365,66 @@ function ProfileSidebar({
           {formatServiceType(profile.servicetype || basic?.serviceType)}
         </SidebarRow>
         <SidebarRow label="Expert Custom URL">
-          <a href="#" onClick={(event) => event.preventDefault()} className="text-white underline">
-            https://joms/expert_profile
-          </a>
+          {customUrl ? (
+            <a
+              href={customUrl}
+              title={deepLink ? `Custom URL: ${customUrl}\nDeep Link: ${deepLink}` : customUrl}
+              onClick={(event) => {
+                event.preventDefault()
+                if (deepLink) {
+                  try {
+                    window.location.href = deepLink
+                  } catch {
+                    // Ignore deep link errors
+                  }
+                }
+                setTimeout(() => {
+                  window.open(customUrl, '_blank')
+                }, 300)
+              }}
+              className="block truncate font-medium text-white underline transition-colors hover:text-[#E0A263]"
+            >
+              {customUrl}
+            </a>
+          ) : (
+            '—'
+          )}
         </SidebarRow>
         <SidebarRow label="Ratings">
           <span className="inline-flex items-center gap-1">
             <Star className="size-3.5 fill-[#E0A263] text-[#E0A263]" />
-            4.8
-            <span className="text-body-sm text-muted font-normal">(1.9K)</span>
+            {ratingAverage !== undefined && ratingAverage !== null
+              ? Number(ratingAverage).toFixed(1)
+              : '—'}
+            <span className="text-body-sm text-muted font-normal">
+              ({ratingCount !== undefined && ratingCount !== null ? ratingCount : 0})
+            </span>
           </span>
         </SidebarRow>
-        <SidebarRow label="NPS">98</SidebarRow>
-        <SidebarRow label="Experience">
-          {formatExperience(basic?.experienceYears, basic?.experienceMonths)}
+        <SidebarRow label="NPS">
+          {npsScore !== undefined && npsScore !== null ? npsScore : '—'}
         </SidebarRow>
-        <SidebarRow label="Total Earnings">500,000</SidebarRow>
-        <SidebarRow label="Total Order Completed">50</SidebarRow>
+        <SidebarRow label="Experience">{formattedExperience || '—'}</SidebarRow>
+        <SidebarRow label="Total Earnings">
+          {rawEarnings !== undefined && rawEarnings !== null
+            ? `₹${Number(rawEarnings).toLocaleString('en-IN')}`
+            : '₹0'}
+        </SidebarRow>
+        <SidebarRow label="Total Order Completed">
+          {rawOrdersCompleted !== undefined && rawOrdersCompleted !== null ? rawOrdersCompleted : 0}
+        </SidebarRow>
         <SidebarRow label="Last Active">{formatLastActive(profile.updatedAt)}</SidebarRow>
         <SidebarRow label="KYC">
           <button
             type="button"
             onClick={() =>
-              viewExpertKyc(partnerId, profile.servicetype || basic?.serviceType, navigate)
+              openExpertKycFromProfile(
+                partnerId,
+                profile.servicetype || basic?.serviceType,
+                navigate,
+              )
             }
-            className={PROFILE_BTN_PRIMARY}
+            className="rounded border border-white/20 bg-black/40 px-2 py-0.5 text-xs text-white transition-colors hover:border-[#E0A263] hover:text-[#E0A263]"
           >
             View
           </button>
@@ -694,8 +783,204 @@ function ConsultationDetailCard({
 }
 
 function ServicesSubTab({ expertId }: { expertId: string }) {
-  const { data, isLoading, isError } = useExpertServices(expertId, 1, 10, true)
-  const services = data?.data ?? []
+  const { data, isLoading, isError } = useExpertServices(expertId, 1, 100, true)
+  const services = useMemo(() => {
+    if (!data) return []
+    if (Array.isArray((data as { data?: ExpertService[] }).data)) {
+      return (data as { data: ExpertService[] }).data
+    }
+    if (Array.isArray(data)) return data as unknown as ExpertService[]
+    return []
+  }, [data])
+
+  const [searchQuery, setSearchQuery] = useState('')
+  const [selectedServiceIds, setSelectedServiceIds] = useState<string[]>([])
+
+  const filteredServices = useMemo(() => {
+    if (!searchQuery.trim()) return services
+    return services.filter((s) =>
+      (s.title || '').toLowerCase().includes(searchQuery.trim().toLowerCase()),
+    )
+  }, [services, searchQuery])
+
+  const visibleServiceIds = useMemo(() => filteredServices.map((s) => s._id), [filteredServices])
+  const allVisibleSelected =
+    visibleServiceIds.length > 0 && visibleServiceIds.every((id) => selectedServiceIds.includes(id))
+
+  const toggleSelectAll = useCallback(() => {
+    if (allVisibleSelected) {
+      setSelectedServiceIds([])
+    } else {
+      setSelectedServiceIds(visibleServiceIds)
+    }
+  }, [allVisibleSelected, visibleServiceIds])
+
+  const toggleServiceSelection = useCallback((id: string) => {
+    setSelectedServiceIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id],
+    )
+  }, [])
+
+  const bulkDeleteMutation = useBulkDeleteServices()
+  const bulkPauseMutation = useBulkPauseServices()
+  const bulkHideMutation = useBulkHideServices()
+  const bulkDisableMutation = useBulkDisableServices()
+  const bulkExportMutation = useBulkExportServices()
+
+  const [isBulkDeleteModalOpen, setIsBulkDeleteModalOpen] = useState(false)
+  const [bulkDeleteReasons, setBulkDeleteReasons] = useState<string[]>([])
+  const [bulkDeleteAdminNotes, setBulkDeleteAdminNotes] = useState('')
+
+  const [isBulkPauseModalOpen, setIsBulkPauseModalOpen] = useState(false)
+  const [bulkPauseReasons, setBulkPauseReasons] = useState<string[]>([])
+  const [bulkPauseStartDate, setBulkPauseStartDate] = useState('')
+  const [bulkPauseEndDate, setBulkPauseEndDate] = useState('')
+  const [bulkPauseIndefinitely, setBulkPauseIndefinitely] = useState(false)
+  const [bulkPauseAdminNotes, setBulkPauseAdminNotes] = useState('')
+
+  const { options: deleteReasonOptions } = useModerationReasonOptions(
+    MODERATION_CATEGORY_SLUGS.deleteService,
+  )
+  const { options: pauseReasonOptions } = useModerationReasonOptions(
+    MODERATION_CATEGORY_SLUGS.suspendService,
+  )
+
+  const handleBulkDelete = useCallback(() => {
+    if (selectedServiceIds.length === 0) return
+    setIsBulkDeleteModalOpen(true)
+  }, [selectedServiceIds])
+
+  const confirmBulkDelete = useCallback(() => {
+    if (selectedServiceIds.length === 0) return
+    if (deleteReasonOptions.length > 0 && bulkDeleteReasons.length === 0) {
+      toast.error('Please select at least one reason for deletion.')
+      return
+    }
+    if (!bulkDeleteAdminNotes.trim()) {
+      toast.error('Admin notes are required for deletion.')
+      return
+    }
+
+    bulkDeleteMutation.mutate(
+      {
+        serviceIds: selectedServiceIds,
+        selectedReasons: bulkDeleteReasons,
+        adminNotes: bulkDeleteAdminNotes.trim(),
+      },
+      {
+        onSuccess: () => {
+          toast.success(`Deleted ${selectedServiceIds.length} selected service(s)`)
+          setSelectedServiceIds([])
+          setIsBulkDeleteModalOpen(false)
+          setBulkDeleteReasons([])
+          setBulkDeleteAdminNotes('')
+        },
+        onError: (err: unknown) => {
+          const error = err as { response?: { data?: { message?: string } } }
+          toast.error(error?.response?.data?.message || 'Failed to delete services')
+        },
+      },
+    )
+  }, [
+    selectedServiceIds,
+    bulkDeleteReasons,
+    bulkDeleteAdminNotes,
+    deleteReasonOptions.length,
+    bulkDeleteMutation,
+  ])
+
+  const handleBulkPause = useCallback(() => {
+    if (selectedServiceIds.length === 0) return
+    setIsBulkPauseModalOpen(true)
+  }, [selectedServiceIds])
+
+  const confirmBulkPause = useCallback(() => {
+    if (selectedServiceIds.length === 0) return
+    if (pauseReasonOptions.length > 0 && bulkPauseReasons.length === 0) {
+      toast.error('Please select at least one reason for pausing.')
+      return
+    }
+    if (!bulkPauseAdminNotes.trim()) {
+      toast.error('Admin notes are required for pausing.')
+      return
+    }
+
+    bulkPauseMutation.mutate(
+      {
+        serviceIds: selectedServiceIds,
+        selectedReasons: bulkPauseReasons,
+        adminNotes: bulkPauseAdminNotes.trim(),
+        startDate: bulkPauseStartDate,
+        endDate: bulkPauseEndDate,
+        indefinite: bulkPauseIndefinitely,
+      },
+      {
+        onSuccess: () => {
+          toast.success(`Paused ${selectedServiceIds.length} selected service(s)`)
+          setSelectedServiceIds([])
+          setIsBulkPauseModalOpen(false)
+          setBulkPauseReasons([])
+          setBulkPauseAdminNotes('')
+        },
+        onError: (err: unknown) => {
+          const error = err as { response?: { data?: { message?: string } } }
+          toast.error(error?.response?.data?.message || 'Failed to pause services')
+        },
+      },
+    )
+  }, [
+    selectedServiceIds,
+    bulkPauseReasons,
+    bulkPauseAdminNotes,
+    pauseReasonOptions.length,
+    bulkPauseStartDate,
+    bulkPauseEndDate,
+    bulkPauseIndefinitely,
+    bulkPauseMutation,
+  ])
+
+  const handleBulkHide = useCallback(() => {
+    if (selectedServiceIds.length === 0) return
+    bulkHideMutation.mutate(selectedServiceIds, {
+      onSuccess: () => {
+        toast.success(`Hidden / Unpublished ${selectedServiceIds.length} selected service(s)`)
+        setSelectedServiceIds([])
+      },
+      onError: (err: unknown) => {
+        const error = err as { response?: { data?: { message?: string } } }
+        toast.error(error?.response?.data?.message || 'Failed to hide services')
+      },
+    })
+  }, [selectedServiceIds, bulkHideMutation])
+
+  const handleBulkDisable = useCallback(() => {
+    if (selectedServiceIds.length === 0) return
+    bulkDisableMutation.mutate(selectedServiceIds, {
+      onSuccess: () => {
+        toast.success(`Disabled ${selectedServiceIds.length} selected service(s)`)
+        setSelectedServiceIds([])
+      },
+      onError: (err: unknown) => {
+        const error = err as { response?: { data?: { message?: string } } }
+        toast.error(error?.response?.data?.message || 'Failed to disable services')
+      },
+    })
+  }, [selectedServiceIds, bulkDisableMutation])
+
+  const handleBulkExport = useCallback(() => {
+    if (selectedServiceIds.length === 0) return
+    bulkExportMutation.mutate(selectedServiceIds, {
+      onSuccess: (res: { data?: { services?: unknown[] } }) => {
+        const servicesData = res?.data?.services ?? []
+        toast.success(`Exported ${servicesData.length || selectedServiceIds.length} service(s)`)
+        setSelectedServiceIds([])
+      },
+      onError: (err: unknown) => {
+        const error = err as { response?: { data?: { message?: string } } }
+        toast.error(error?.response?.data?.message || 'Failed to export services')
+      },
+    })
+  }, [selectedServiceIds, bulkExportMutation])
 
   return (
     <>
@@ -703,74 +988,223 @@ function ServicesSubTab({ expertId }: { expertId: string }) {
         <Search className="text-muted size-4 shrink-0" />
         <input
           type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
           placeholder="Search by service title"
           className="text-body-sm placeholder:text-muted w-full bg-transparent text-white outline-none"
         />
       </div>
 
-      <label className="text-body-sm text-muted mt-1 flex w-fit items-center gap-2">
+      <label className="text-body-sm text-muted mt-1 flex w-fit cursor-pointer items-center gap-2">
         <input
           type="checkbox"
-          onChange={() => comingSoon('Bulk selection')}
+          checked={allVisibleSelected}
+          onChange={toggleSelectAll}
           className="size-4 rounded border-white/30 bg-transparent"
         />
         Select All
       </label>
+
+      {selectedServiceIds.length > 0 && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-blue-500 bg-blue-950/80 px-4 py-2.5">
+          <div className="flex items-center gap-2 text-xs font-bold text-white">
+            <CheckSquare className="size-3.5" aria-hidden="true" />
+            <span>
+              {selectedServiceIds.length} {selectedServiceIds.length === 1 ? 'Service' : 'Services'}{' '}
+              Selected
+            </span>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={handleBulkDelete}
+              title="Delete selected services"
+              className="flex size-8 items-center justify-center rounded-md bg-black text-white transition-colors hover:bg-white/10"
+            >
+              <Trash2 className="size-3.5" aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              onClick={handleBulkPause}
+              title="Pause selected services"
+              className="flex size-8 items-center justify-center rounded-md bg-black text-white transition-colors hover:bg-white/10"
+            >
+              <PauseCircle className="size-3.5" aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              onClick={handleBulkHide}
+              title="Hide / Unpublish selected services"
+              className="flex size-8 items-center justify-center rounded-md bg-black text-white transition-colors hover:bg-white/10"
+            >
+              <EyeOff className="size-3.5" aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              onClick={handleBulkDisable}
+              title="Disable selected services"
+              className="flex size-8 items-center justify-center rounded-md bg-black text-white transition-colors hover:bg-white/10"
+            >
+              <CircleMinus className="size-3.5" aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              onClick={handleBulkExport}
+              title="Export / Share selected services"
+              className="flex size-8 items-center justify-center rounded-md bg-black text-white transition-colors hover:bg-white/10"
+            >
+              <Upload className="size-3.5" aria-hidden="true" />
+            </button>
+          </div>
+        </div>
+      )}
 
       {isLoading && (
         <div className="flex h-40 items-center justify-center">
           <div className="border-brand-accent size-8 animate-spin rounded-full border-4 border-t-transparent" />
         </div>
       )}
-      {isError && (
-        <div className="bg-brand-danger/10 rounded-lg border border-red-500/40 px-4 py-3 text-sm text-red-400">
-          Service not found
-        </div>
-      )}
-      {!isLoading && !isError && services.length === 0 && (
+      {(isError || (!isLoading && filteredServices.length === 0)) && (
         <div className={cn(PROFILE_CARD, 'p-8 text-center text-[13px] text-white/50')}>
-          Service not found
+          {searchQuery.trim()
+            ? 'No matching services found.'
+            : 'No services found for this expert.'}
         </div>
       )}
-      {!isLoading && !isError && services.length > 0 && (
+      {!isLoading && !isError && filteredServices.length > 0 && (
         <div className="space-y-3">
-          {services.map((service) => (
-            <ServiceListCard key={service._id} service={service} expertId={expertId} />
+          {filteredServices.map((service) => (
+            <ServiceListCard
+              key={service._id}
+              service={service}
+              expertId={expertId}
+              selected={selectedServiceIds.includes(service._id)}
+              onToggleSelect={() => toggleServiceSelection(service._id)}
+            />
           ))}
         </div>
       )}
+
+      <DecisionActionModal
+        open={isBulkDeleteModalOpen}
+        variant="delete"
+        title={
+          selectedServiceIds.length > 1
+            ? `Delete ${selectedServiceIds.length} Services`
+            : 'Delete Service'
+        }
+        description={`Are you sure you want to delete ${selectedServiceIds.length} selected service(s)? This action cannot be undone.`}
+        submitLabel={
+          selectedServiceIds.length > 1
+            ? `Delete ${selectedServiceIds.length} Services`
+            : 'Delete Service'
+        }
+        heroLayout="inline"
+        reasonOptions={deleteReasonOptions}
+        selectedReasons={bulkDeleteReasons}
+        onReasonToggle={(value) =>
+          setBulkDeleteReasons((current) =>
+            current.includes(value)
+              ? current.filter((item) => item !== value)
+              : [...current, value],
+          )
+        }
+        adminNotes={bulkDeleteAdminNotes}
+        onAdminNotesChange={setBulkDeleteAdminNotes}
+        onClose={() => setIsBulkDeleteModalOpen(false)}
+        onSubmit={confirmBulkDelete}
+        isSubmitting={bulkDeleteMutation.isPending}
+      />
+
+      <DecisionActionModal
+        open={isBulkPauseModalOpen}
+        variant="suspend"
+        title={
+          selectedServiceIds.length > 1
+            ? `Pause ${selectedServiceIds.length} Services`
+            : 'Pause Service'
+        }
+        description={`Are you sure you want to pause ${selectedServiceIds.length} selected service(s)? They will be hidden from clients until reactivated.`}
+        submitLabel={
+          selectedServiceIds.length > 1
+            ? `Pause ${selectedServiceIds.length} Services`
+            : 'Pause Service'
+        }
+        reasonOptions={pauseReasonOptions}
+        selectedReasons={bulkPauseReasons}
+        onReasonToggle={(value) =>
+          setBulkPauseReasons((current) =>
+            current.includes(value)
+              ? current.filter((item) => item !== value)
+              : [...current, value],
+          )
+        }
+        showTimeline
+        startDate={bulkPauseStartDate}
+        onStartDateChange={setBulkPauseStartDate}
+        endDate={bulkPauseEndDate}
+        onEndDateChange={setBulkPauseEndDate}
+        indefinite={bulkPauseIndefinitely}
+        onIndefiniteChange={setBulkPauseIndefinitely}
+        adminNotes={bulkPauseAdminNotes}
+        onAdminNotesChange={setBulkPauseAdminNotes}
+        onClose={() => setIsBulkPauseModalOpen(false)}
+        onSubmit={confirmBulkPause}
+        isSubmitting={bulkPauseMutation.isPending}
+      />
     </>
   )
 }
 
-function ServiceListCard({ service, expertId }: { service: ExpertService; expertId: string }) {
+function ServiceListCard({
+  service,
+  expertId,
+  selected = false,
+  onToggleSelect,
+}: {
+  service: ExpertService
+  expertId: string
+  selected?: boolean
+  onToggleSelect?: () => void
+}) {
   const navigate = useNavigate()
   const status = (service.status || '').toLowerCase()
+  const isDeleted = Boolean(service.isDeleted) || status === 'deleted' || status === 'deactivated'
+  const isSuspended = Boolean(service.isSuspend) || status === 'suspended'
   const coverImage = service.images?.find(Boolean)
   const statusLabel = (() => {
+    if (isDeleted) return 'Deleted'
+    if (isSuspended) return 'Suspended'
     if (!status) return null
     if (status === 'live') return 'Instant'
     return status.charAt(0).toUpperCase() + status.slice(1).replace(/_/g, ' ')
   })()
-  const statusClass =
-    status === 'live'
-      ? 'bg-[#22C55E]'
-      : status === 'rejected'
-        ? 'bg-brand-danger'
-        : status === 'suspended' || status === 'closed'
-          ? 'bg-amber-500'
-          : 'bg-[#22C55E]'
+  const statusClass = isDeleted
+    ? 'bg-brand-danger'
+    : isSuspended
+      ? 'bg-amber-500'
+      : status === 'live'
+        ? 'bg-[#22C55E]'
+        : status === 'rejected'
+          ? 'bg-brand-danger'
+          : status === 'closed'
+            ? 'bg-amber-500'
+            : 'bg-[#22C55E]'
 
   return (
-    <button
-      type="button"
+    <div
       onClick={() => viewExpertService(service, expertId, navigate)}
-      className="flex w-full items-center gap-3 rounded-xl bg-[#141414] px-4 py-4 text-left transition-colors hover:bg-[#1a1a1a]"
+      className={cn(
+        'flex w-full cursor-pointer items-center gap-3 rounded-xl bg-[#141414] px-4 py-4 text-left transition-colors hover:bg-[#1a1a1a]',
+        selected && 'border border-blue-500 bg-blue-950/20',
+      )}
     >
       <input
         type="checkbox"
+        checked={selected}
         onClick={(event) => event.stopPropagation()}
-        onChange={() => comingSoon('Bulk selection')}
+        onChange={onToggleSelect}
         className="size-5 shrink-0 rounded border-white/30 bg-transparent"
       />
 
@@ -802,7 +1236,7 @@ function ServiceListCard({ service, expertId }: { service: ExpertService; expert
         <p className="text-body-sm text-muted mt-0.5">{service.category?.name || '—'}</p>
         <p className="text-body-sm text-muted mt-0.5">{formatPricingType(service.pricingType)}</p>
       </div>
-    </button>
+    </div>
   )
 }
 
@@ -1149,6 +1583,7 @@ function ServiceListingsTab({
   listingSubTab: ListingSubTab
   onSubTabChange: (tab: ListingSubTab) => void
 }) {
+  const navigate = useNavigate()
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -1169,7 +1604,7 @@ function ServiceListingsTab({
         </div>
         <button
           type="button"
-          onClick={() => comingSoon('View Clientele')}
+          onClick={() => navigate(`/experts/management/profile/${expertId}/clientele`)}
           className={PROFILE_BTN_PRIMARY}
         >
           <Users className="size-3.5" />
@@ -1474,6 +1909,8 @@ export function ExpertProfileViewPage() {
     error: profileErrorDetail,
   } = useExpertProfile(id)
 
+  const { data: analyticsRes } = useExpertAnalytics(id)
+
   const profile = profileResponse?.data
 
   const navigateToCreateListing = useCallback(() => {
@@ -1767,7 +2204,7 @@ export function ExpertProfileViewPage() {
             icon={<Users className="size-3.5" />}
             onClick={() => {
               setProfileMenuOpen(false)
-              comingSoon('View Clientele')
+              navigate(`/experts/management/profile/${id}/clientele`)
             }}
           >
             View Clientele
@@ -1888,7 +2325,7 @@ export function ExpertProfileViewPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[320px_1fr]">
-        <ProfileSidebar profile={profile} partnerId={id} />
+        <ProfileSidebar profile={profile} partnerId={id} analytics={analyticsRes?.data} />
 
         <div className="flex flex-col gap-5">
           <div className="flex h-[50px] items-stretch gap-1 overflow-x-auto rounded-xl bg-[#141414] px-2">

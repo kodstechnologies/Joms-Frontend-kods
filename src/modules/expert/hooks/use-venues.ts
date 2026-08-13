@@ -8,9 +8,17 @@ import {
   deleteVenue,
   restoreVenue,
   setVenueOwnerPassword,
+  bulkDeleteVenues,
+  bulkPauseVenues,
+  bulkHideVenues,
+  bulkDisableVenues,
+  bulkExportVenues,
+  bulkNotifyVenues,
+  bulkMessageVenues,
   type SuspendVenuePayload,
   type DeleteVenuePayload,
   type SetVenueOwnerPasswordPayload,
+  type BulkVenueActionPayload,
 } from '../api/venue-api.ts'
 import type { VenueStatus } from '../type/venue'
 
@@ -104,6 +112,76 @@ export const useRestoreVenue = () => {
 
   return useMutation({
     mutationFn: (venueId: string) => restoreVenue(venueId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['venues'] })
+    },
+  })
+}
+
+export const useBulkDeleteVenues = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (payload: string[] | BulkVenueActionPayload) => bulkDeleteVenues(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['venues'] })
+    },
+  })
+}
+
+export const useBulkPauseVenues = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (payload: string[] | BulkVenueActionPayload) => bulkPauseVenues(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['venues'] })
+    },
+  })
+}
+
+export const useBulkHideVenues = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (venueIds: string[]) => bulkHideVenues(venueIds),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['venues'] })
+    },
+  })
+}
+
+export const useBulkDisableVenues = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (venueIds: string[]) => bulkDisableVenues(venueIds),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['venues'] })
+    },
+  })
+}
+
+export const useBulkExportVenues = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (venueIds: string[]) => bulkExportVenues(venueIds),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['venues'] })
+    },
+  })
+}
+
+export const useBulkNotifyVenues = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (venueIds: string[]) => bulkNotifyVenues(venueIds),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['venues'] })
+    },
+  })
+}
+
+export const useBulkMessageVenues = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (venueIds: string[]) => bulkMessageVenues(venueIds),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['venues'] })
     },

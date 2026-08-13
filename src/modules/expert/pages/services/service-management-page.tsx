@@ -2,19 +2,19 @@ import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 import {
   AlertCircle,
-  Archive,
   Ban,
   BarChart3,
   Bell,
   CheckSquare,
+  CircleMinus,
   Eye,
+  EyeOff,
   Hourglass,
-  Image,
   Mail,
   Package,
   PauseCircle,
   Trash2,
-  Gem,
+  Upload,
   type LucideIcon,
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
@@ -22,7 +22,18 @@ import { toast } from 'sonner'
 
 import { SERVICE_MANAGEMENT_MODULE_KEY } from '../../api/ui-preferences-api'
 import { orderByActiveMetricIds, useActiveMetricIds } from '../../hooks/use-active-metric-ids'
-import { useServices, useSuspendService, useDeleteService } from '../../hooks/use-services'
+import {
+  useServices,
+  useSuspendService,
+  useDeleteService,
+  useBulkDeleteServices,
+  useBulkPauseServices,
+  useBulkHideServices,
+  useBulkDisableServices,
+  useBulkExportServices,
+  useBulkNotifyServices,
+  useBulkMessageServices,
+} from '../../hooks/use-services'
 import { useTableColumnPreferences } from '../../hooks/use-ui-preferences'
 import { getServiceManagementViewPath } from '../../lib/service-navigation'
 import { useServiceStore } from '../../store/service-store'
@@ -70,13 +81,195 @@ export const ServiceManagementPage = () => {
   const [deleteConfirmed, setDeleteConfirmed] = useState(false)
   const [appliedAdvancedFilters, setAppliedAdvancedFilters] = useState<FilterValues>({})
 
+  const [isBulkDeleteModalOpen, setIsBulkDeleteModalOpen] = useState(false)
+  const [bulkDeleteReasons, setBulkDeleteReasons] = useState<string[]>([])
+  const [bulkDeleteAdminNotes, setBulkDeleteAdminNotes] = useState('')
+
+  const [isBulkPauseModalOpen, setIsBulkPauseModalOpen] = useState(false)
+  const [bulkPauseReasons, setBulkPauseReasons] = useState<string[]>([])
+  const [bulkPauseStartDate, setBulkPauseStartDate] = useState('')
+  const [bulkPauseEndDate, setBulkPauseEndDate] = useState('')
+  const [bulkPauseIndefinitely, setBulkPauseIndefinitely] = useState(false)
+  const [bulkPauseAdminNotes, setBulkPauseAdminNotes] = useState('')
+
   const suspendServiceMutation = useSuspendService()
   const deleteServiceMutation = useDeleteService()
+  const bulkDeleteMutation = useBulkDeleteServices()
+  const bulkPauseMutation = useBulkPauseServices()
+  const bulkHideMutation = useBulkHideServices()
+  const bulkDisableMutation = useBulkDisableServices()
+  const bulkExportMutation = useBulkExportServices()
+  const bulkNotifyMutation = useBulkNotifyServices()
+  const bulkMessageMutation = useBulkMessageServices()
+
   const recordReasonUsage = useRecordModerationReasonUsage()
   const { options: suspendReasonOptions, buildPayload: buildSuspendReasonPayload } =
     useModerationReasonOptions(MODERATION_CATEGORY_SLUGS.suspendService)
   const { options: deleteReasonOptions, buildPayload: buildDeleteReasonPayload } =
     useModerationReasonOptions(MODERATION_CATEGORY_SLUGS.deleteService)
+
+  const confirmBulkDelete = useCallback(() => {
+    if (selectedServiceIds.length === 0) return
+    if (deleteReasonOptions.length > 0 && bulkDeleteReasons.length === 0) {
+      toast.error('Please select at least one reason for deletion.')
+      return
+    }
+    if (!bulkDeleteAdminNotes.trim()) {
+      toast.error('Admin notes are required for deletion.')
+      return
+    }
+
+    bulkDeleteMutation.mutate(
+      {
+        serviceIds: selectedServiceIds,
+        selectedReasons: bulkDeleteReasons,
+        adminNotes: bulkDeleteAdminNotes.trim(),
+      },
+      {
+        onSuccess: () => {
+          toast.success(`Deleted ${selectedServiceIds.length} selected service(s)`)
+          setSelectedServiceIds([])
+          setIsBulkDeleteModalOpen(false)
+          setBulkDeleteReasons([])
+          setBulkDeleteAdminNotes('')
+        },
+        onError: (err: unknown) => {
+          const error = err as { response?: { data?: { message?: string } } }
+          toast.error(error?.response?.data?.message || 'Failed to delete services')
+        },
+      },
+    )
+  }, [
+    selectedServiceIds,
+    bulkDeleteReasons,
+    bulkDeleteAdminNotes,
+    deleteReasonOptions.length,
+    bulkDeleteMutation,
+  ])
+
+  const confirmBulkPause = useCallback(() => {
+    if (selectedServiceIds.length === 0) return
+    if (suspendReasonOptions.length > 0 && bulkPauseReasons.length === 0) {
+      toast.error('Please select at least one reason for pausing.')
+      return
+    }
+    if (!bulkPauseAdminNotes.trim()) {
+      toast.error('Admin notes are required for pausing.')
+      return
+    }
+
+    bulkPauseMutation.mutate(
+      {
+        serviceIds: selectedServiceIds,
+        selectedReasons: bulkPauseReasons,
+        adminNotes: bulkPauseAdminNotes.trim(),
+        startDate: bulkPauseStartDate,
+        endDate: bulkPauseEndDate,
+        indefinite: bulkPauseIndefinitely,
+      },
+      {
+        onSuccess: () => {
+          toast.success(`Paused ${selectedServiceIds.length} selected service(s)`)
+          setSelectedServiceIds([])
+          setIsBulkPauseModalOpen(false)
+          setBulkPauseReasons([])
+          setBulkPauseAdminNotes('')
+        },
+        onError: (err: unknown) => {
+          const error = err as { response?: { data?: { message?: string } } }
+          toast.error(error?.response?.data?.message || 'Failed to pause services')
+        },
+      },
+    )
+  }, [
+    selectedServiceIds,
+    bulkPauseReasons,
+    bulkPauseAdminNotes,
+    suspendReasonOptions.length,
+    bulkPauseStartDate,
+    bulkPauseEndDate,
+    bulkPauseIndefinitely,
+    bulkPauseMutation,
+  ])
+
+  const handleBulkHide = useCallback(() => {
+    if (selectedServiceIds.length === 0) return
+    bulkHideMutation.mutate(selectedServiceIds, {
+      onSuccess: () => {
+        toast.success(`Hidden / Unpublished ${selectedServiceIds.length} selected service(s)`)
+        setSelectedServiceIds([])
+      },
+      onError: (err: unknown) => {
+        const error = err as { response?: { data?: { message?: string } } }
+        toast.error(error?.response?.data?.message || 'Failed to hide services')
+      },
+    })
+  }, [selectedServiceIds, bulkHideMutation])
+
+  const handleBulkDisable = useCallback(() => {
+    if (selectedServiceIds.length === 0) return
+    bulkDisableMutation.mutate(selectedServiceIds, {
+      onSuccess: () => {
+        toast.success(`Disabled ${selectedServiceIds.length} selected service(s)`)
+        setSelectedServiceIds([])
+      },
+      onError: (err: unknown) => {
+        const error = err as { response?: { data?: { message?: string } } }
+        toast.error(error?.response?.data?.message || 'Failed to disable services')
+      },
+    })
+  }, [selectedServiceIds, bulkDisableMutation])
+
+  const handleBulkExport = useCallback(() => {
+    if (selectedServiceIds.length === 0) return
+    bulkExportMutation.mutate(selectedServiceIds, {
+      onSuccess: (res: { data?: { services?: unknown[] } }) => {
+        const servicesData = res?.data?.services ?? []
+        toast.success(`Exported ${servicesData.length || selectedServiceIds.length} service(s)`)
+        setSelectedServiceIds([])
+      },
+      onError: (err: unknown) => {
+        const error = err as { response?: { data?: { message?: string } } }
+        toast.error(error?.response?.data?.message || 'Failed to export services')
+      },
+    })
+  }, [selectedServiceIds, bulkExportMutation])
+
+  const handleBulkNotify = useCallback(() => {
+    if (selectedServiceIds.length === 0) return
+    bulkNotifyMutation.mutate(selectedServiceIds, {
+      onSuccess: (res: { message?: string; data?: { message?: string } }) => {
+        toast.success(
+          res?.data?.message ||
+            res?.message ||
+            `Notified experts for ${selectedServiceIds.length} service(s)`,
+        )
+        setSelectedServiceIds([])
+      },
+      onError: (err: unknown) => {
+        const error = err as { response?: { data?: { message?: string } } }
+        toast.error(error?.response?.data?.message || 'Failed to notify experts')
+      },
+    })
+  }, [selectedServiceIds, bulkNotifyMutation])
+
+  const handleBulkMessage = useCallback(() => {
+    if (selectedServiceIds.length === 0) return
+    bulkMessageMutation.mutate(selectedServiceIds, {
+      onSuccess: (res: { message?: string; data?: { message?: string } }) => {
+        toast.success(
+          res?.data?.message ||
+            res?.message ||
+            `Sent message/ticket for ${selectedServiceIds.length} service(s)`,
+        )
+        setSelectedServiceIds([])
+      },
+      onError: (err: unknown) => {
+        const error = err as { response?: { data?: { message?: string } } }
+        toast.error(error?.response?.data?.message || 'Failed to send message')
+      },
+    })
+  }, [selectedServiceIds, bulkMessageMutation])
 
   const navigate = useNavigate()
   const tableColumnPreferencesQuery = useTableColumnPreferences(SERVICE_MANAGEMENT_MODULE_KEY)
@@ -547,13 +740,41 @@ export const ServiceManagementPage = () => {
   ])
 
   const bulkActions = [
-    { label: 'Delete selected services', icon: Trash2 },
-    { label: 'Manage selected service media', icon: Image },
-    { label: 'Archive selected services', icon: Archive },
-    { label: 'Premium features', icon: Gem },
-    { label: 'Notify selected experts', icon: Bell },
-    { label: 'Message selected experts', icon: Mail },
-    { label: 'Suspend selected services', icon: PauseCircle },
+    {
+      label: 'Delete selected services (Delete Listings)',
+      icon: Trash2,
+      onClick: () => setIsBulkDeleteModalOpen(true),
+    },
+    {
+      label: 'Export selected services (Export Selected)',
+      icon: Upload,
+      onClick: handleBulkExport,
+    },
+    {
+      label: 'Hide selected services (Hide Listings)',
+      icon: EyeOff,
+      onClick: handleBulkHide,
+    },
+    {
+      label: 'Disable selected services (Disable / Change Status)',
+      icon: CircleMinus,
+      onClick: handleBulkDisable,
+    },
+    {
+      label: 'Notify selected experts / services',
+      icon: Bell,
+      onClick: handleBulkNotify,
+    },
+    {
+      label: 'Message / Raise Ticket / Escalate selected services',
+      icon: Mail,
+      onClick: handleBulkMessage,
+    },
+    {
+      label: 'Suspend selected services (Suspend Listings)',
+      icon: PauseCircle,
+      onClick: () => setIsBulkPauseModalOpen(true),
+    },
   ]
 
   const defaultMetricIds = useMemo(
@@ -662,6 +883,7 @@ export const ServiceManagementPage = () => {
             selected={activeStatus === card.status}
             onClick={() => {
               if (card.status === 'reported') {
+                navigate('/services/management/reported')
                 return
               }
               if (card.status === 'deleted') {
@@ -702,7 +924,8 @@ export const ServiceManagementPage = () => {
                 key={action.label}
                 type="button"
                 aria-label={action.label}
-                onClick={() => toast.message(`${action.label} action is coming soon`)}
+                title={action.label}
+                onClick={action.onClick}
                 className="flex size-8 items-center justify-center rounded-md bg-black text-white transition-colors hover:bg-white/10"
               >
                 <action.icon className="size-3.5" aria-hidden="true" />
@@ -778,6 +1001,74 @@ export const ServiceManagementPage = () => {
         onClose={closeDeleteModal}
         onSubmit={handleDeleteSubmit}
         isSubmitting={deleteServiceMutation.isPending}
+      />
+
+      <DecisionActionModal
+        open={isBulkDeleteModalOpen}
+        variant="delete"
+        title={
+          selectedServiceIds.length > 1
+            ? `Delete ${selectedServiceIds.length} Services`
+            : 'Delete Service'
+        }
+        description={`Are you sure you want to delete ${selectedServiceIds.length} selected service(s)? This action cannot be undone.`}
+        submitLabel={
+          selectedServiceIds.length > 1
+            ? `Delete ${selectedServiceIds.length} Services`
+            : 'Delete Service'
+        }
+        heroLayout="inline"
+        reasonOptions={deleteReasonOptions}
+        selectedReasons={bulkDeleteReasons}
+        onReasonToggle={(value) =>
+          setBulkDeleteReasons((current) =>
+            current.includes(value)
+              ? current.filter((item) => item !== value)
+              : [...current, value],
+          )
+        }
+        adminNotes={bulkDeleteAdminNotes}
+        onAdminNotesChange={setBulkDeleteAdminNotes}
+        onClose={() => setIsBulkDeleteModalOpen(false)}
+        onSubmit={confirmBulkDelete}
+        isSubmitting={bulkDeleteMutation.isPending}
+      />
+
+      <DecisionActionModal
+        open={isBulkPauseModalOpen}
+        variant="suspend"
+        title={
+          selectedServiceIds.length > 1
+            ? `Pause ${selectedServiceIds.length} Services`
+            : 'Pause Service'
+        }
+        description={`Are you sure you want to pause ${selectedServiceIds.length} selected service(s)? They will be hidden from clients until reactivated.`}
+        submitLabel={
+          selectedServiceIds.length > 1
+            ? `Pause ${selectedServiceIds.length} Services`
+            : 'Pause Service'
+        }
+        reasonOptions={suspendReasonOptions}
+        selectedReasons={bulkPauseReasons}
+        onReasonToggle={(value) =>
+          setBulkPauseReasons((current) =>
+            current.includes(value)
+              ? current.filter((item) => item !== value)
+              : [...current, value],
+          )
+        }
+        showTimeline
+        startDate={bulkPauseStartDate}
+        onStartDateChange={setBulkPauseStartDate}
+        endDate={bulkPauseEndDate}
+        onEndDateChange={setBulkPauseEndDate}
+        indefinite={bulkPauseIndefinitely}
+        onIndefiniteChange={setBulkPauseIndefinitely}
+        adminNotes={bulkPauseAdminNotes}
+        onAdminNotesChange={setBulkPauseAdminNotes}
+        onClose={() => setIsBulkPauseModalOpen(false)}
+        onSubmit={confirmBulkPause}
+        isSubmitting={bulkPauseMutation.isPending}
       />
     </div>
   )

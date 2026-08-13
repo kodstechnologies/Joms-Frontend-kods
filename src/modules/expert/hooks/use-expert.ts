@@ -7,6 +7,19 @@ import {
   restoreExpert,
   setExpertPassword,
   suspendExpert,
+  bulkSuspendExperts,
+  bulkDeactivateExperts,
+  bulkNotifyExperts,
+  bulkMessageExperts,
+  bulkUpdateMembershipExperts,
+  bulkApproveExperts,
+  bulkRejectExperts,
+  bulkRestoreExperts,
+  bulkVerifyKycExperts,
+  bulkVerifyDigilockerExperts,
+  bulkEscalateExperts,
+  bulkRaiseTicketExperts,
+  type BulkActionPayload,
   type DeactivateExpertPayload,
   type SetExpertPasswordPayload,
   type SuspendExpertPayload,
@@ -92,6 +105,138 @@ export const useSetExpertPassword = () => {
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['experts'] })
       queryClient.invalidateQueries({ queryKey: ['expert-profile', variables.id] })
+    },
+  })
+}
+
+export const useBulkSuspendExperts = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (payload: BulkActionPayload) => bulkSuspendExperts(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['experts'] })
+    },
+  })
+}
+
+export const useBulkDeactivateExperts = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (payload: BulkActionPayload) => bulkDeactivateExperts(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['experts'] })
+    },
+  })
+}
+
+export const useBulkNotifyExperts = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (payload: BulkActionPayload) => bulkNotifyExperts(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['experts'] })
+    },
+  })
+}
+
+export const useBulkMessageExperts = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (payload: BulkActionPayload) => bulkMessageExperts(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['experts'] })
+    },
+  })
+}
+
+export const useBulkUpdateMembershipExperts = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (payload: BulkActionPayload) => bulkUpdateMembershipExperts(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['experts'] })
+    },
+  })
+}
+
+export const useBulkApproveExperts = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (payload: BulkActionPayload) => bulkApproveExperts(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['experts'] })
+    },
+  })
+}
+
+export const useBulkRejectExperts = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (payload: BulkActionPayload) => bulkRejectExperts(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['experts'] })
+    },
+  })
+}
+
+export const useBulkRestoreExperts = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (payload: BulkActionPayload) => bulkRestoreExperts(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['experts'] })
+    },
+  })
+}
+
+export const useBulkVerifyKycExperts = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (payload: BulkActionPayload) => bulkVerifyKycExperts(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['experts'] })
+    },
+  })
+}
+
+export const useBulkVerifyDigilockerExperts = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (payload: BulkActionPayload) => bulkVerifyDigilockerExperts(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['experts'] })
+    },
+  })
+}
+
+export const useBulkEscalateExperts = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (payload: BulkActionPayload) => bulkEscalateExperts(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['experts'] })
+    },
+  })
+}
+
+export const useBulkRaiseTicketExperts = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (payload: BulkActionPayload) => bulkRaiseTicketExperts(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['experts'] })
     },
   })
 }

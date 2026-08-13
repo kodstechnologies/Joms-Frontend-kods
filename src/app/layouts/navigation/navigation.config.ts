@@ -89,6 +89,12 @@ export const navigationConfig: NavItem[] = [
             key: 'expert.services.management',
             label: 'Service Management',
             to: '/services/management',
+            matchPaths: [
+              '/services/management/pending',
+              '/services/management/suspended',
+              '/services/management/reported',
+              '/services/management/deleted',
+            ],
           },
           {
             key: 'expert.services.categories',
@@ -103,7 +109,17 @@ export const navigationConfig: NavItem[] = [
         permissionModule: 'venues',
         children: [
           { key: 'expert.venues.dashboard', label: 'Dashboard', to: '/venues/dashboard' },
-          { key: 'expert.venue.management', label: 'Venue Management', to: '/venues/management' },
+          {
+            key: 'expert.venue.management',
+            label: 'Venue Management',
+            to: '/venues/management',
+            matchPaths: [
+              '/venues/management/pending',
+              '/venues/management/suspended',
+              '/venues/management/reported',
+              '/venues/management/deleted',
+            ],
+          },
           { key: 'expert.venues.leaderboard', label: 'Leaderboard', to: '/venues/leaderboard' },
           {
             key: 'expert.venues.categories',

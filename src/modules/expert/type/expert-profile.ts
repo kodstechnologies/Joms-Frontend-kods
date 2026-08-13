@@ -50,6 +50,27 @@ export type ExpertProfileDetail = {
     approvalStatus?: 'pending' | 'approved'
   }
   subCategory?: unknown[]
+  customUrl?: string
+  profileUrl?: string
+  customUsername?: string
+  deepLink?: string
+  expertId?: string
+  rating?: number
+  ratings?: number
+  reviewCount?: number | string
+  totalReviews?: number | string
+  nps?: number
+  experience?: string | number
+  totalEarnings?: number
+  totalOrdersCompleted?: number
+  completedOrders?: number
+  analytics?: {
+    rating?: number
+    totalReviews?: number | string
+    nps?: number
+    totalEarnings?: number
+    completedOrders?: number
+  }
   createdAt?: string
   updatedAt?: string
 }
@@ -117,6 +138,8 @@ export type ExpertService = {
   subCategory?: ExpertServiceSubCategory[]
   pricingType?: string
   status?: string
+  isDeleted?: boolean
+  isSuspend?: boolean
   submittedAt?: string
   priceStarts?: number
   images?: string[]

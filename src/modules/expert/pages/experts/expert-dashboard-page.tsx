@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Bar,
@@ -14,6 +14,7 @@ import {
 import { BarChart3, RefreshCw, Star, TrendingDown, TrendingUp } from 'lucide-react'
 import { toast } from 'sonner'
 
+import { fetchExpertDashboardAnalytics } from '../../api/expert-api'
 import { EXPERT_DASHBOARD_MODULE_KEY } from '../../api/ui-preferences-api'
 import { orderByActiveMetricIds, useActiveMetricIds } from '../../hooks/use-active-metric-ids'
 import { Button } from '@/shared/components/ui/button'
@@ -135,11 +136,11 @@ const METRICS: Metric[] = [
     changeNote: 'vs last month',
   },
   {
-    id: 'avg-consultation-2',
-    label: 'Avg.Consultation/Experty',
+    id: 'avg-cancellation',
+    label: 'Avg Cancellation/Expert',
     value: '₹487,250',
-    change: '5.2%',
-    changeType: 'up',
+    change: '3.2%',
+    changeType: 'down',
     changeNote: 'vs last month',
   },
 ]
@@ -158,7 +159,7 @@ const DEFAULT_METRIC_IDS = [
   'avg-client',
   'category-coverage',
   'total-orders',
-  'avg-consultation-2',
+  'avg-cancellation',
 ]
 
 const EXPERTS_BY_CATEGORY = [
@@ -333,17 +334,43 @@ function RevenueGrowthTooltip({
 export const ExpertDashboardPage = () => {
   const navigate = useNavigate()
   const [growthRange, setGrowthRange] = useState('3')
+  const [metricsList, setMetricsList] = useState<Metric[]>(METRICS)
+  const [expertsCatData, setExpertsCatData] = useState(EXPERTS_BY_CATEGORY)
+  const [revCatData, setRevCatData] = useState(REVENUE_BY_CATEGORY)
+  const [growthDataList, setGrowthDataList] = useState(REVENUE_GROWTH)
+  const [topHostsList, setTopHostsList] = useState<TopHost[]>(TOP_HOSTS)
+
   const activeMetricIds = useActiveMetricIds(EXPERT_DASHBOARD_MODULE_KEY, DEFAULT_METRIC_IDS)
   const visibleMetrics = useMemo(
-    () => orderByActiveMetricIds(METRICS, activeMetricIds),
-    [activeMetricIds],
+    () => orderByActiveMetricIds(metricsList, activeMetricIds),
+    [metricsList, activeMetricIds],
   )
 
+  useEffect(() => {
+    let isMounted = true
+    fetchExpertDashboardAnalytics()
+      .then((res) => {
+        if (!isMounted || !res?.data) return
+        const d = res.data
+        if (d.metrics?.length) setMetricsList(d.metrics)
+        if (d.expertsByCategory?.length) setExpertsCatData(d.expertsByCategory)
+        if (d.revenueByCategory?.length) setRevCatData(d.revenueByCategory)
+        if (d.revenueGrowthOverTime?.length) setGrowthDataList(d.revenueGrowthOverTime)
+        if (d.topPerformingHosts?.length) setTopHostsList(d.topPerformingHosts)
+      })
+      .catch((err) => {
+        console.error('Failed to load expert dashboard analytics:', err)
+      })
+    return () => {
+      isMounted = false
+    }
+  }, [])
+
   const growthData = useMemo(() => {
-    if (growthRange === '6') return REVENUE_GROWTH.slice(0, 6)
-    if (growthRange === '12') return REVENUE_GROWTH
-    return REVENUE_GROWTH.slice(0, 5)
-  }, [growthRange])
+    if (growthRange === '6') return growthDataList.slice(0, 6)
+    if (growthRange === '12') return growthDataList
+    return growthDataList.slice(0, 5)
+  }, [growthRange, growthDataList])
 
   return (
     <div className="space-y-7">
@@ -387,10 +414,7 @@ export const ExpertDashboardPage = () => {
         <ChartCard title="Experts by Category" onRefresh={() => toast.message('Chart refreshed')}>
           <div className="h-[260px] w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                data={EXPERTS_BY_CATEGORY}
-                margin={{ left: 0, right: 8, top: 8, bottom: 0 }}
-              >
+              <BarChart data={expertsCatData} margin={{ left: 0, right: 8, top: 8, bottom: 0 }}>
                 <CartesianGrid stroke="rgba(255,255,255,0.05)" vertical={false} />
                 <XAxis
                   dataKey="category"
@@ -412,15 +436,15 @@ export const ExpertDashboardPage = () => {
 
         <ChartCard title="Revenue by Category" onRefresh={() => toast.message('Chart refreshed')}>
           <div className="space-y-5 px-2 pt-2">
-            {REVENUE_BY_CATEGORY.map((item) => (
+            {revCatData.map((item) => (
               <div key={item.category} className="flex items-center gap-3">
                 <span className="text-body-sm text-muted w-20 shrink-0">{item.category}</span>
                 <div className="relative h-7 flex-1 overflow-hidden rounded bg-white/5">
                   <div
                     className="bg-brand-action flex h-full min-w-[52px] items-center rounded px-2.5 text-[10px] font-bold text-white"
-                    style={{ width: `${Math.max(28, (item.revenue / 78000) * 100)}%` }}
+                    style={{ width: `${Math.max(28, Math.min(100, (item.revenue / 700) * 100))}%` }}
                   >
-                    {item.label}
+                    {item.label || item.revenue}
                   </div>
                 </div>
               </div>
@@ -503,7 +527,7 @@ export const ExpertDashboardPage = () => {
               </tr>
             </thead>
             <tbody>
-              {TOP_HOSTS.map((host) => (
+              {topHostsList.map((host) => (
                 <tr
                   key={host.name}
                   className="text-body-sm text-brand-text border-b border-white/5 transition-colors hover:bg-white/[0.02]"

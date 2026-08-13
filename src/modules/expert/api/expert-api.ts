@@ -35,6 +35,23 @@ export const fetchExpertAnalytics = async (expertId: string, timeRange?: string)
   return response.data
 }
 
+export const fetchExpertDashboardAnalytics = async (params?: Record<string, unknown>) => {
+  const response = await adminApiClient.get('/admin/internal/admin/experts/dashboard', {
+    params,
+  })
+  return response.data
+}
+
+export const fetchExpertClientele = async (expertId: string, params?: Record<string, unknown>) => {
+  const response = await adminApiClient.get(
+    `/admin/internal/admin/partners/${expertId}/clientele`,
+    {
+      params,
+    },
+  )
+  return response.data
+}
+
 export const fetchExpertServices = async (
   expertId: string,
   params?: { page?: number; limit?: number },
@@ -191,4 +208,105 @@ export const exportExpertReportsCSV = async (params?: Record<string, unknown>) =
   document.body.appendChild(link)
   link.click()
   document.body.removeChild(link)
+}
+
+export type BulkActionPayload = {
+  partnerIds: string[]
+  reason?: string
+  adminNote?: string
+  adminNotes?: string
+  selectedReasons?: string[]
+  reasons?: string[]
+  title?: string
+  message?: string
+  subject?: string
+  body?: string
+  channel?: string
+  planTier?: string
+  planId?: string
+  newMembershipPlanId?: string
+  billingCycleName?: string
+  isPremium?: boolean
+  verificationStatus?: string
+  ticketSubject?: string
+  priority?: string
+  targetAdminId?: string
+}
+
+export const bulkSuspendExperts = async (payload: BulkActionPayload) => {
+  const response = await adminApiClient.post('/admin/internal/admin/partners/bulk-suspend', payload)
+  return response.data
+}
+
+export const bulkDeactivateExperts = async (payload: BulkActionPayload) => {
+  const response = await adminApiClient.post(
+    '/admin/internal/admin/partners/bulk-deactivate',
+    payload,
+  )
+  return response.data
+}
+
+export const bulkNotifyExperts = async (payload: BulkActionPayload) => {
+  const response = await adminApiClient.post('/admin/internal/admin/partners/bulk-notify', payload)
+  return response.data
+}
+
+export const bulkMessageExperts = async (payload: BulkActionPayload) => {
+  const response = await adminApiClient.post('/admin/internal/admin/partners/bulk-message', payload)
+  return response.data
+}
+
+export const bulkUpdateMembershipExperts = async (payload: BulkActionPayload) => {
+  const response = await adminApiClient.post(
+    '/admin/internal/admin/partners/bulk-update-membership',
+    payload,
+  )
+  return response.data
+}
+
+export const bulkApproveExperts = async (payload: BulkActionPayload) => {
+  const response = await adminApiClient.post('/admin/internal/admin/partners/bulk-approve', payload)
+  return response.data
+}
+
+export const bulkRejectExperts = async (payload: BulkActionPayload) => {
+  const response = await adminApiClient.post('/admin/internal/admin/partners/bulk-reject', payload)
+  return response.data
+}
+
+export const bulkRestoreExperts = async (payload: BulkActionPayload) => {
+  const response = await adminApiClient.post('/admin/internal/admin/partners/bulk-restore', payload)
+  return response.data
+}
+
+export const bulkVerifyKycExperts = async (payload: BulkActionPayload) => {
+  const response = await adminApiClient.post(
+    '/admin/internal/admin/partners/bulk-verify-kyc',
+    payload,
+  )
+  return response.data
+}
+
+export const bulkVerifyDigilockerExperts = async (payload: BulkActionPayload) => {
+  const response = await adminApiClient.post(
+    '/admin/internal/admin/partners/bulk-verify-digilocker',
+    payload,
+  )
+  return response.data
+}
+
+export const bulkEscalateExperts = async (payload: BulkActionPayload) => {
+  const response = await adminApiClient.post(
+    '/admin/internal/admin/partners/bulk-escalate',
+    payload,
+  )
+  return response.data
+}
+
+export const bulkRaiseTicketExperts = async (payload: BulkActionPayload) => {
+  const response = await adminApiClient.post(
+    '/admin/internal/admin/partners/bulk-raise-ticket',
+    payload,
+  )
+  return response.data
 }

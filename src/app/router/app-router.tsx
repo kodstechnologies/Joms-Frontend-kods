@@ -107,6 +107,11 @@ const ExpertPayoutDetailPage = lazy(() =>
     default: m.ExpertPayoutDetailPage,
   })),
 )
+const ExpertClientelePage = lazy(() =>
+  import('@/modules/expert').then((m) => ({
+    default: m.ExpertClientelePage,
+  })),
+)
 
 const ExpertPendingApprovalsPage = lazy(() =>
   import('@/modules/expert').then((m) => ({
@@ -126,6 +131,16 @@ const ExpertDeletedExpertsPage = lazy(() =>
 const ExpertReportedExpertsPage = lazy(() =>
   import('@/modules/expert').then((m) => ({
     default: m.ExpertReportedExpertsPage,
+  })),
+)
+const ServiceReportedServicesPage = lazy(() =>
+  import('@/modules/expert').then((m) => ({
+    default: m.ServiceReportedServicesPage,
+  })),
+)
+const VenueReportedVenuesPage = lazy(() =>
+  import('@/modules/expert').then((m) => ({
+    default: m.VenueReportedVenuesPage,
   })),
 )
 const LeaderboardPage = lazy(() =>
@@ -864,6 +879,10 @@ export function AppRouter() {
                   element={<ExpertProfileAnalyticsPage />}
                 />
                 <Route
+                  path="/experts/management/profile/:id/clientele"
+                  element={<ExpertClientelePage />}
+                />
+                <Route
                   path="/experts/management/payouts/:expertId/:payoutId"
                   element={<ExpertPayoutDetailPage />}
                 />
@@ -898,6 +917,10 @@ export function AppRouter() {
                 <Route path="/services/management/pending" element={<PendingApprovalsPage />} />
                 <Route path="/services/management/suspended" element={<SuspendedServicesPage />} />
                 <Route path="/services/management/deleted" element={<DeletedServicesPage />} />
+                <Route
+                  path="/services/management/reported"
+                  element={<ServiceReportedServicesPage />}
+                />
                 <Route path="/services/management/create" element={<CreateServiceListingPage />} />
                 <Route
                   path="/services/management/view/:id"
@@ -937,6 +960,7 @@ export function AppRouter() {
                 <Route path="/venues/leaderboard" element={<LeaderboardPage />} />
                 <Route path="/venues/management" element={<VenueManagementPage />} />
                 <Route path="/venues/management/metrics" element={<VenueMetricsPage />} />
+                <Route path="/venues/management/reported" element={<VenueReportedVenuesPage />} />
                 <Route
                   path="/venues/management/application/:id"
                   element={<ApplicationDetailsPage />}
