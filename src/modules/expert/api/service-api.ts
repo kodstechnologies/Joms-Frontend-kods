@@ -185,3 +185,71 @@ export const updateConsultationStatus = async (
   )
   return response.data
 }
+
+export type PricingRecommendationParams = {
+  service_id?: string
+  service_name?: string
+  scope?: 'basic' | 'standard' | 'premium'
+  turnaround?: 'express_24h' | 'priority_48h' | 'standard_3_5d' | 'flexible_7d_plus'
+  seniority?: 'junior' | 'mid' | 'senior' | 'specialist'
+  region?: 'metro_tier_1' | 'tier_2' | 'tier_3'
+  proposed_price?: number
+  requested_discount_pct?: number
+}
+
+export type PricingRecommendationResult = {
+  recommendation: string
+  short_badge_text: string
+  service: {
+    service_id: string
+    name: string
+    category: string
+    sub_category?: string
+    billing_unit?: string
+    pricing_notes?: string
+  } | null
+  benchmarks: {
+    currency: string
+    base_average: number
+    suggested_price: number
+    min_range: number
+    max_range: number
+    combined_multiplier: number
+  } | null
+  breakdown: {
+    proposed_price: number
+    discount_pct: number
+    discounted_price: number
+    platform_fee: number
+    platform_fee_pct: number
+    gst: number
+    gst_pct: number
+    estimated_earnings: number
+  }
+  guardrails: {
+    status: string
+    severity: string
+    block_submission: boolean
+    notes?: string
+  }
+  ai_metadata: {
+    model: string
+    source: string
+  }
+}
+
+export type PricingRecommendationResponse = {
+  success: boolean
+  message: string
+  data: PricingRecommendationResult
+}
+
+export const fetchPricingRecommendation = async (params: PricingRecommendationParams) => {
+  const response = await expertApiClient.get<PricingRecommendationResponse>(
+    '/services/pricing-recommendation',
+    {
+      params,
+    },
+  )
+  return response.data
+}

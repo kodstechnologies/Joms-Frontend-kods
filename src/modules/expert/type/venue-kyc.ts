@@ -50,9 +50,21 @@ export interface ApplicationKycCompliance {
 export interface ApplicationKycDocuments {
   panCard: string | null
   gstCertificate: string | null
-  tradeLicense: string | null
-  fssaiLicense: string | null
-  otherCertificates: string[]
+  businessRegistration?: string | null
+  tradeLicense?: string | null
+  propertyLeaseAgreement?: string | null
+  authorizedSignatoryId?: string | null
+  occupancyCertificate?: string | null
+  fireNoc?: string | null
+  wifiCompliance?: string | null
+  structuralStabilityCert?: string | null
+  culturalPermission?: string | null
+  publicAssemblyLicense?: string | null
+  seatingCapacityCert?: string | null
+  sportsSafetyCert?: string | null
+  publicLiabilityInsurance?: string | null
+  fssaiLicense?: string | null
+  otherCertificates?: string[]
 }
 
 export type VenueDocumentReviewEntry = {
