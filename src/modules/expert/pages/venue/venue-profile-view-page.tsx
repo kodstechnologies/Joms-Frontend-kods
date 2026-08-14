@@ -451,7 +451,8 @@ function AnalyticsTab({ data, venueId }: { data: VenueFullView; venueId: string 
   const navigate = useNavigate()
   const { data: analyticsData } = useVenueProfileAnalytics(venueId)
   const profile = data?.profile as
-    (typeof data.profile & { analytics?: Record<string, unknown> }) | undefined
+    | (typeof data.profile & { analytics?: Record<string, unknown> })
+    | undefined
   const venueAnalytics = profile?.analytics
 
   const formatMetric = (value?: string | number | null, fallback = '—') => {

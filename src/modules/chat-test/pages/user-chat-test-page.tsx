@@ -9,6 +9,7 @@ import {
 } from '../config/chat-backend'
 import { ChatTestPanel } from '../components/chat-test-panel'
 import { UserQuotationPanel } from '../components/user-quotation-panel'
+import { UserPartnerInsightsPanel } from '../components/user-partner-insights-panel'
 
 function EndpointToggle({
   mode,
@@ -103,6 +104,7 @@ export function UserChatTestPage() {
         </div>
 
         {selectedUser ? <UserQuotationPanel user={selectedUser} /> : null}
+        {selectedUser ? <UserPartnerInsightsPanel user={selectedUser} /> : null}
 
         {identity ? (
           <ChatTestPanel

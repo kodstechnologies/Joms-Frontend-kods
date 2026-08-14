@@ -28,7 +28,12 @@ export type PartnerReview = {
 export type PartnerInsights = {
   partnerUserId: string
   metrics: {
-    response: { label: string | null; avgMs: number | null; sampleSize: number; available?: boolean }
+    response: {
+      label: string | null
+      avgMs: number | null
+      sampleSize: number
+      available?: boolean
+    }
     speed: { label: string | null; avgMs: number | null; sampleSize: number; available?: boolean }
     nps: { score: number | null; available: boolean }
   }
@@ -86,6 +91,9 @@ export async function getPartnerInsights(
 
 export type EligibleVenueReviewItem = {
   venueId: string
+  venueName?: string
+  spaceId?: string | null
+  spaceName?: string
   sessionId: string
   title: string
   partnerId: string

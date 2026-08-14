@@ -1,7 +1,13 @@
 // ─── Filter params ────────────────────────────────────────────────────────────
 
 export type DateRangePreset =
-  'today' | 'last7days' | 'last30days' | 'thisMonth' | 'quarter' | 'year' | 'custom'
+  | 'today'
+  | 'last7days'
+  | 'last30days'
+  | 'thisMonth'
+  | 'quarter'
+  | 'year'
+  | 'custom'
 
 export interface DashboardFilters {
   dateRange?: DateRangePreset

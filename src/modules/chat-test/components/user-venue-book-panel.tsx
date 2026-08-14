@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import {
+  completeVenueBooking,
   createVenueBooking,
   getSpaceSlots,
   listBookableSpaces,
@@ -54,6 +55,7 @@ export function UserVenueBookPanel({ user }: Props) {
 
   const [booking, setBooking] = useState(false)
   const [paying, setPaying] = useState(false)
+  const [completingId, setCompletingId] = useState<string | null>(null)
   const [pending, setPending] = useState<VenueBookingDetail | null>(null)
   const [mine, setMine] = useState<VenueBookingDetail[]>([])
   const [loadingMine, setLoadingMine] = useState(true)
@@ -194,7 +196,7 @@ export function UserVenueBookPanel({ user }: Props) {
     try {
       const paid = await payVenueBooking(token, pending.id)
       setPending(paid)
-      setSuccess('Dummy pay OK — booking confirmed')
+      setSuccess('Dummy pay OK — Mark completed below, then rate in Venue insights')
       await refreshMine()
     } catch (err) {
       setError(errMessage(err))
@@ -202,6 +204,24 @@ export function UserVenueBookPanel({ user }: Props) {
       setPaying(false)
     }
   }
+
+  const handleComplete = async (bookingId: string) => {
+    setCompletingId(bookingId)
+    setError(null)
+    try {
+      const done = await completeVenueBooking(token, bookingId)
+      if (pending?.id === bookingId) setPending(done)
+      setSuccess('Booking completed — rate it in Venue insights below')
+      await refreshMine()
+    } catch (err) {
+      setError(errMessage(err))
+    } finally {
+      setCompletingId(null)
+    }
+  }
+
+  const canComplete = (b: VenueBookingDetail) =>
+    b.paymentStatus === 'paid' && b.status !== 'cancelled' && b.projectStatus !== 'completed'
 
   return (
     <div className="space-y-4 rounded-xl border border-emerald-500/30 bg-zinc-900/70 p-4">
@@ -401,8 +421,19 @@ export function UserVenueBookPanel({ user }: Props) {
             >
               {paying ? 'Paying…' : 'Dummy pay'}
             </button>
+          ) : canComplete(pending) ? (
+            <button
+              type="button"
+              disabled={completingId === pending.id}
+              onClick={() => void handleComplete(pending.id)}
+              className="rounded-lg bg-violet-500 px-4 py-2 text-sm font-medium text-white hover:bg-violet-400 disabled:opacity-40"
+            >
+              {completingId === pending.id ? 'Completing…' : 'Mark completed'}
+            </button>
           ) : (
-            <div className="text-sm text-emerald-300">Paid — partner will see this booking.</div>
+            <div className="text-sm text-emerald-300">
+              Completed — rate it in Venue insights below.
+            </div>
           )}
         </div>
       ) : null}
@@ -427,6 +458,16 @@ export function UserVenueBookPanel({ user }: Props) {
                   {b.timeLabel || b.startAt} · {money(b.price, b.currency)} ·{' '}
                   <span className="capitalize">{b.paymentStatus}</span> · {b.statusLabel}
                 </div>
+                {canComplete(b) ? (
+                  <button
+                    type="button"
+                    disabled={completingId === b.id}
+                    onClick={() => void handleComplete(b.id)}
+                    className="mt-2 rounded-lg bg-violet-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-violet-400 disabled:opacity-40"
+                  >
+                    {completingId === b.id ? 'Completing…' : 'Mark completed'}
+                  </button>
+                ) : null}
               </li>
             ))}
           </ul>

@@ -146,6 +146,11 @@ export async function payVenueBooking(token: string, bookingId: string) {
   return res.data?.data as VenueBookingDetail
 }
 
+export async function completeVenueBooking(token: string, bookingId: string) {
+  const res = await client(token).post(`/venue-bookings/${bookingId}/complete`)
+  return res.data?.data as VenueBookingDetail
+}
+
 export async function getVenueBooking(token: string, bookingId: string) {
   const res = await client(token).get(`/venue-bookings/${bookingId}`)
   return res.data?.data as VenueBookingDetail

@@ -4,7 +4,12 @@ export type FilterOption = {
 }
 
 export type FilterFieldType =
-  'text' | 'checkbox-group' | 'number-range' | 'date-range' | 'search' | 'location'
+  | 'text'
+  | 'checkbox-group'
+  | 'number-range'
+  | 'date-range'
+  | 'search'
+  | 'location'
 
 export type FilterFieldConfig = {
   id: string
