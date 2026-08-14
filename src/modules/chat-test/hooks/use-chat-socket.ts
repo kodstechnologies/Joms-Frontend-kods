@@ -11,6 +11,7 @@ type Handlers = {
   onMessagesRead?: (payload: unknown) => void
   onMessageUpdated?: (payload: unknown) => void
   onMessageDeleted?: (payload: unknown) => void
+  onChatCall?: (payload: unknown) => void
   onReconnect?: () => void
 }
 
@@ -51,6 +52,7 @@ export function useChatSocket(token: string | null, getHandlers: () => Handlers,
     socket.on('messages_read', (p: unknown) => getHandlersRef.current()?.onMessagesRead?.(p))
     socket.on('message_updated', (p: unknown) => getHandlersRef.current()?.onMessageUpdated?.(p))
     socket.on('message_deleted', (p: unknown) => getHandlersRef.current()?.onMessageDeleted?.(p))
+    socket.on('chat_call', (p: unknown) => getHandlersRef.current()?.onChatCall?.(p))
 
     const heartbeat = setInterval(() => {
       if (socket.connected) socket.emit('heartbeat')

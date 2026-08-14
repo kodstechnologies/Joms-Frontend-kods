@@ -4,7 +4,9 @@ import { ArrowLeft, Eye } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
-import { toast } from 'sonner'
+import type { FilterValues } from '@/shared/types/data-filter'
+import { useModuleExportFilters } from '@/shared/components/advanced-filter/use-module-export-filters'
+import { exportDataToFile } from '@/shared/utils/export-utils'
 
 import { useServices } from '../../hooks/use-services'
 import { getServiceManagementViewPath } from '../../lib/service-navigation'
@@ -29,12 +31,61 @@ export function PendingApprovalsPage() {
   const [currentPage, setCurrentPage] = useState(1)
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [selectedServiceIds, setSelectedServiceIds] = useState<string[]>([])
+  const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
+
+  const apiFilterParams = useMemo(() => {
+    const params: Record<string, string> = {}
+
+    Object.entries(appliedFilters).forEach(([rawKey, val]) => {
+      if (val === undefined || val === null || val === '') return
+
+      const parts = rawKey.split('.')
+      const fieldId = parts.length > 1 ? parts.slice(1).join('.') : rawKey
+
+      if (fieldId === 'location' && typeof val === 'object' && val !== null) {
+        const loc = val as { state?: string; city?: string }
+        if (loc.state?.trim()) params.titleState = loc.state.trim()
+        if (loc.city?.trim()) params.titleCity = loc.city.trim()
+        return
+      }
+
+      if (Array.isArray(val)) {
+        if (val.length > 0) {
+          params[fieldId] = val.join(',')
+        }
+        return
+      }
+
+      if (typeof val === 'object' && val !== null) {
+        const range = val as { from?: string | number; to?: string | number }
+        if (range.from !== undefined && range.from !== '') {
+          params[`${fieldId}Min`] = String(range.from).trim()
+        }
+        if (range.to !== undefined && range.to !== '') {
+          params[`${fieldId}Max`] = String(range.to).trim()
+        }
+        return
+      }
+
+      if (typeof val === 'string' && val.trim()) {
+        params[fieldId] = val.trim()
+        return
+      }
+
+      if (typeof val === 'number' || typeof val === 'boolean') {
+        params[fieldId] = String(val)
+      }
+    })
+
+    return params
+  }, [appliedFilters])
 
   const { data, isLoading } = useServices({
     page: currentPage,
     limit: 10,
     status: 'in_review',
     search: searchQuery,
+    ...apiFilterParams,
   })
 
   const services = useMemo(() => data?.data ?? [], [data?.data])
@@ -45,6 +96,37 @@ export function PendingApprovalsPage() {
   const someVisibleServicesSelected = visibleServiceIds.some((id) =>
     selectedServiceIds.includes(id),
   )
+
+  const handleApplyFilters = useCallback((values: FilterValues) => {
+    setAppliedFilters(values)
+    setCurrentPage(1)
+  }, [])
+
+  const handleExportData = useCallback(
+    (values: FilterValues, format: string) => {
+      const headers = ['Service ID', 'Name', 'Status', 'Price', 'Location', 'Created At']
+      const rows = services.map((s) => [
+        s.serviceid || '-',
+        s.title || '-',
+        s.status || '-',
+        s.pricing ? formatPrice(s.pricing) : '-',
+        s.categoryName || '-',
+        s.createdAt ? new Date(s.createdAt).toLocaleDateString() : 'N/A',
+      ])
+      exportDataToFile(headers, rows, format, 'pending_services_export')
+    },
+    [services],
+  )
+
+  const {
+    onAdvancedFilter,
+    onExport,
+    modals: exportFilterModals,
+  } = useModuleExportFilters({
+    moduleKey: 'service-management',
+    onApplyFilters: handleApplyFilters,
+    onExportData: handleExportData,
+  })
 
   const toggleVisibleServices = useCallback(() => {
     setSelectedServiceIds((currentIds) => {
@@ -153,6 +235,7 @@ export function PendingApprovalsPage() {
       },
       {
         id: 'actions',
+        accessorFn: () => null,
         header: 'Actions',
         meta: {
           headerClassName: 'pr-5 text-right',
@@ -232,7 +315,8 @@ export function PendingApprovalsPage() {
           setCurrentPage(1)
         }}
         searchPlaceholder="Search by name, ID or profession"
-        onExport={() => toast.message('Export coming soon')}
+        onAdvancedFilter={onAdvancedFilter}
+        onExport={onExport}
         pagination={{
           page: currentPage,
           pageSize: meta?.pagination.limit || 10,
@@ -243,6 +327,7 @@ export function PendingApprovalsPage() {
         resourceLabel="services"
         emptyMessage="No pending approvals found."
       />
+      {exportFilterModals}
     </div>
   )
 }

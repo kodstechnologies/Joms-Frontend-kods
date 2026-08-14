@@ -26,6 +26,9 @@ import {
 import { REFERRAL_METRIC_DEFINITIONS } from '../utils/referral-metrics-definitions'
 import { useActiveMetricIds } from '@/modules/expert/hooks/use-active-metric-ids'
 import { useTableColumnPreferences } from '@/modules/expert/hooks/use-ui-preferences'
+import { useModuleExportFilters } from '@/shared/components/advanced-filter'
+import { exportDataToFile } from '@/shared/utils/export-utils'
+import type { FilterValues } from '@/shared/types/data-filter'
 import { DataTable } from '@/shared/components/table/data-table'
 import {
   TableActionsDropdown,
@@ -62,11 +65,19 @@ export function ReferralManagementPage() {
   const [inviteOpen, setInviteOpen] = useState(false)
   const [detailsExpert, setDetailsExpert] = useState<ExpertInvite | null>(null)
 
+  const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
+
   const { data: statsData, isLoading: statsLoading } = useReferralStats()
   const { data: expertData, isLoading: expertLoading } = useExpertInvites({
     page: currentPage,
     limit: 10,
     search: searchQuery || undefined,
+    referralId: (appliedFilters.referralId as string) || undefined,
+    referrerName: (appliedFilters.referrerName as string) || undefined,
+    expertName: (appliedFilters.referredExpertName as string) || undefined,
+    sourceType: (appliedFilters.sourceType as string[])?.join(',') || undefined,
+    status: (appliedFilters.status as string[])?.join(',') || undefined,
+    referralType: (appliedFilters.referralType as string[])?.join(',') || undefined,
   })
   const activeMetricIds = useActiveMetricIds(REFERRALS_MODULE_KEY, DEFAULT_METRIC_IDS)
   const tableColumnPreferencesQuery = useTableColumnPreferences(REFERRALS_MODULE_KEY)
@@ -76,8 +87,55 @@ export function ReferralManagementPage() {
   const deleteExpertMutation = useDeleteExpertInvite()
   const resendExpertMutation = useResendExpertInvite()
 
-  const expertInvites = expertData?.data?.invites ?? []
+  const expertInvites = useMemo(() => expertData?.data?.invites ?? [], [expertData?.data?.invites])
   const meta = expertData?.data?.meta
+
+  const handleApplyFilters = useCallback(
+    (values: FilterValues) => {
+      toast.success('Filters applied')
+      setAppliedFilters(values)
+      setCurrentPage(1)
+    },
+    [setCurrentPage],
+  )
+
+  const handleExportData = useCallback(
+    (values: FilterValues, format: string) => {
+      const headers = [
+        'Referral ID',
+        'Referrer',
+        'Referred Expert',
+        'Source Type',
+        'Status',
+        'Goal Progress',
+        'Created At',
+      ]
+      const exportRows = expertInvites.map((invite) => {
+        const { range } = formatReferralDateRange(invite.createdAt, invite.expiresAt)
+        return [
+          invite.referralId,
+          invite.referrerName || '',
+          invite.referredExpertName || '',
+          invite.sourceType || '',
+          getReferralStatusLabel(invite.status) || '',
+          `${invite.goalProgress?.signedUpCount ?? 0}/${invite.goalProgress?.maxReferrals ?? 10}`,
+          range,
+        ]
+      })
+      exportDataToFile(headers, exportRows, format, 'referrals_export')
+    },
+    [expertInvites],
+  )
+
+  const {
+    onAdvancedFilter,
+    onExport,
+    modals: exportFilterModals,
+  } = useModuleExportFilters({
+    moduleKey: 'referral-management',
+    onApplyFilters: handleApplyFilters,
+    onExportData: handleExportData,
+  })
 
   const handleResend = useCallback(
     async (id: string) => {
@@ -265,8 +323,8 @@ export function ReferralManagementPage() {
         searchValue={searchQuery}
         onSearchChange={setSearchQuery}
         searchPlaceholder="Search by name, ID or email"
-        onAdvancedFilter={() => toast.info('Advanced filters coming soon')}
-        onExport={() => toast.info('Export coming soon')}
+        onAdvancedFilter={onAdvancedFilter}
+        onExport={onExport}
         pagination={{
           page: currentPage,
           pageSize: meta?.limit ?? 10,
@@ -323,6 +381,8 @@ export function ReferralManagementPage() {
         onClose={() => setDetailsExpert(null)}
         expertInvite={detailsExpert}
       />
+
+      {exportFilterModals}
     </div>
   )
 }

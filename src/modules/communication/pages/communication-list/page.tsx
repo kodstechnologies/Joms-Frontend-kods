@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { SlidersHorizontal } from 'lucide-react'
 import { toast } from 'sonner'
@@ -19,6 +19,9 @@ import {
   useActiveMetricIds,
 } from '@/modules/expert/hooks/use-active-metric-ids'
 import { useTableColumnPreferences } from '@/modules/expert/hooks/use-ui-preferences'
+import { useModuleExportFilters } from '@/shared/components/advanced-filter'
+import { exportDataToFile } from '@/shared/utils/export-utils'
+import type { FilterValues } from '@/shared/types/data-filter'
 
 const PAGE_SIZE = 10
 const COMMUNICATION_MODULE_KEY = 'communication'
@@ -56,11 +59,20 @@ export function CommunicationListPage() {
     return () => window.clearTimeout(timer)
   }, [searchValue])
 
+  const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
+
   const metricsQuery = useCommunicationMetrics()
   const listQuery = useCommunications({
     page,
     limit: PAGE_SIZE,
     search: debouncedSearch || undefined,
+    status: (appliedFilters.status as string[])?.join(',') || undefined,
+    channel: (appliedFilters.channel as string[])?.join(',') || undefined,
+    audience: (appliedFilters.audience as string[])?.join(',') || undefined,
+    type: (appliedFilters.type as string[])?.join(',') || undefined,
+    messageId: (appliedFilters.messageId as string) || undefined,
+    title: (appliedFilters.title as string) || undefined,
+    createdBy: (appliedFilters.createdBy as string) || undefined,
   })
   const activeMetricIds = useActiveMetricIds(COMMUNICATION_MODULE_KEY, DEFAULT_METRIC_IDS)
   const tableColumnPreferencesQuery = useTableColumnPreferences(COMMUNICATION_MODULE_KEY)
@@ -77,10 +89,53 @@ export function CommunicationListPage() {
     }
   }, [metricsQuery.error, metricsQuery.isError])
 
-  const rows = listQuery.data?.data ?? []
+  const rows = useMemo(() => listQuery.data?.data ?? [], [listQuery.data?.data])
   const pagination = listQuery.data?.meta
   const totalItems = pagination?.total ?? 0
   const totalPages = pagination?.totalPages ?? 1
+
+  const handleApplyFilters = useCallback((values: FilterValues) => {
+    toast.success('Filters applied')
+    setAppliedFilters(values)
+    setPage(1)
+  }, [])
+
+  const handleExportData = useCallback(
+    (values: FilterValues, format: string) => {
+      const headers = [
+        'Message ID',
+        'Title',
+        'Channel',
+        'Type',
+        'Audience',
+        'Status',
+        'Created By',
+        'Created On',
+      ]
+      const exportRows = rows.map((r) => [
+        r.messageId,
+        r.title,
+        r.channelLabel,
+        r.typeLabel,
+        r.audienceLabel,
+        r.statusLabel,
+        r.createdBy,
+        r.createdAtLabel,
+      ])
+      exportDataToFile(headers, exportRows, format, 'communications_export')
+    },
+    [rows],
+  )
+
+  const {
+    onAdvancedFilter,
+    onExport,
+    modals: exportFilterModals,
+  } = useModuleExportFilters({
+    moduleKey: 'communication-management',
+    onApplyFilters: handleApplyFilters,
+    onExportData: handleExportData,
+  })
 
   const stats = useMemo(() => {
     const cards = metricsQuery.data?.cards ?? []
@@ -208,8 +263,8 @@ export function CommunicationListPage() {
         onSearchChange={setSearchValue}
         searchPlaceholder="Search by name, ID or profession"
         advancedFilterLabel="Advance Filters"
-        onAdvancedFilter={() => toast.info('Advanced filters coming soon')}
-        onExport={() => toast.info('Export coming soon')}
+        onAdvancedFilter={onAdvancedFilter}
+        onExport={onExport}
         isLoading={listQuery.isLoading}
         pagination={{
           page,
@@ -221,6 +276,7 @@ export function CommunicationListPage() {
         resourceLabel="communications"
         emptyMessage="No communications found."
       />
+      {exportFilterModals}
     </div>
   )
 }

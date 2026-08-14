@@ -26,6 +26,11 @@ export const useExpertInvites = (params?: {
   limit?: number
   search?: string
   status?: string
+  referralId?: string
+  referrerName?: string
+  expertName?: string
+  sourceType?: string
+  referralType?: string
 }) =>
   useQuery({
     queryKey: ['expert-invites', params],

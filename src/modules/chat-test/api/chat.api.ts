@@ -224,3 +224,87 @@ export function createClientMessageId() {
   if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID()
   return `cm_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`
 }
+
+export type ChatCallJoin = {
+  serverURL: string
+  room: string
+  token: string | null
+  subject?: string
+  audioOnly?: boolean
+  userInfo?: { displayName?: string; email?: string }
+  ui?: Record<string, unknown>
+  configOverrides?: Record<string, unknown>
+  featureFlags?: Record<string, unknown>
+}
+
+export type ChatCall = {
+  callId: string
+  threadId: string
+  roomName: string
+  status: 'ringing' | 'in_progress' | 'ended' | 'missed' | 'cancelled' | string
+  callType: 'audio' | string
+  subject: string
+  partnerId: string
+  userId: string
+  startedById: string
+  startedByType: string
+  startedByName?: string
+  messageId?: string | null
+  startedAt?: string
+  answeredAt?: string | null
+  endedAt?: string | null
+  endedBy?: string | null
+  endReason?: string | null
+  join?: ChatCallJoin | null
+  resumed?: boolean
+  message?: ChatMessage | null
+  alreadyEnded?: boolean
+}
+
+export async function startChatCall(
+  token: string,
+  threadId: string,
+  clientMessageId: string,
+  baseURL?: string,
+) {
+  const client = createChatApiClient(token, baseURL)
+  const res = await client.post(`/chat/threads/${threadId}/calls`, { clientMessageId })
+  return res.data?.data as ChatCall
+}
+
+export async function getActiveChatCall(token: string, threadId: string, baseURL?: string) {
+  const client = createChatApiClient(token, baseURL)
+  const res = await client.get(`/chat/threads/${threadId}/calls/active`)
+  return res.data?.data as { active: boolean; call: ChatCall | null }
+}
+
+export async function joinChatCall(
+  token: string,
+  threadId: string,
+  callId: string,
+  baseURL?: string,
+) {
+  const client = createChatApiClient(token, baseURL)
+  const res = await client.post(`/chat/threads/${threadId}/calls/${callId}/join`)
+  return res.data?.data as ChatCall
+}
+
+export async function endChatCall(
+  token: string,
+  threadId: string,
+  callId: string,
+  reason = 'hangup',
+  baseURL?: string,
+) {
+  const client = createChatApiClient(token, baseURL)
+  const res = await client.post(`/chat/threads/${threadId}/calls/${callId}/end`, { reason })
+  return res.data?.data as ChatCall
+}
+
+export function jitsiMeetUrlFromJoin(join: ChatCallJoin | null | undefined) {
+  if (!join?.serverURL || !join?.room) return null
+  const base = String(join.serverURL).replace(/\/$/, '')
+  const room = encodeURIComponent(join.room)
+  if (join.token) return `${base}/${room}?jwt=${encodeURIComponent(join.token)}`
+  return `${base}/${room}`
+}

@@ -60,6 +60,7 @@ import { PayoutHistoryDrawer } from '../../components/payout-history-drawer'
 import { statusCardTones } from '@/shared/lib/design-tokens'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 import type { FilterValues } from '@/shared/types/data-filter'
+import { exportDataToFile } from '@/shared/utils/export-utils'
 import { MODERATION_CATEGORY_SLUGS } from '@/modules/settings/api/templates-api'
 import {
   useModerationReasonOptions,
@@ -119,15 +120,6 @@ export const ExpertManagementPage = () => {
     [setCurrentPage],
   )
 
-  const {
-    onAdvancedFilter,
-    onExport,
-    modals: exportFilterModals,
-  } = useModuleExportFilters({
-    moduleKey: 'expert-management',
-    onApplyFilters: handleApplyFilters,
-  })
-
   const apiFilterParams = useMemo(() => {
     const params: Record<string, string> = {}
 
@@ -183,6 +175,41 @@ export const ExpertManagementPage = () => {
     ...apiFilterParams,
   })
   const experts = useMemo(() => data?.data || [], [data?.data])
+
+  const handleExportData = useCallback(
+    (values: FilterValues, format: string) => {
+      const headers = [
+        'Expert ID',
+        'Name',
+        'Email ID',
+        'Profession',
+        'Status',
+        'Service Type',
+        'Created At',
+      ]
+      const rows = experts.map((e) => [
+        displayValue(e.expertId),
+        displayValue(e.name),
+        displayValue(e.email),
+        displayValue(e.profession),
+        displayValue(e.status),
+        displayValue(e.serviceType),
+        e.createdAt ? new Date(e.createdAt).toLocaleDateString() : 'N/A',
+      ])
+      exportDataToFile(headers, rows, format, 'experts_export')
+    },
+    [experts],
+  )
+
+  const {
+    onAdvancedFilter,
+    onExport,
+    modals: exportFilterModals,
+  } = useModuleExportFilters({
+    moduleKey: 'expert-management',
+    onApplyFilters: handleApplyFilters,
+    onExportData: handleExportData,
+  })
   const meta = data?.meta
   const visibleExpertIds = useMemo(() => experts.map((expert) => expert.expertId), [experts])
   const selectedExpertCount = selectedExpertIds.length

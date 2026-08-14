@@ -67,6 +67,11 @@ export const env = {
     8009,
     PROD_SERVICE_URLS.chat,
   ),
+  profileApiBaseUrl: resolveApiUrl(
+    import.meta.env.VITE_PROFILE_API_BASE_URL,
+    8002,
+    'https://profile.api.kods.online',
+  ),
   notificationApiBaseUrl: resolveApiUrl(
     import.meta.env.VITE_NOTIFICATION_API_BASE_URL,
     8010,

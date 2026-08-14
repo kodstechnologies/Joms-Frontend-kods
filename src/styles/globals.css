@@ -1,4 +1,4 @@
-﻿@import url('https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&display=swap');
 @import 'tailwindcss';
 
 @custom-variant dark (&:is(.dark *));
@@ -2854,6 +2854,7 @@ select::-ms-expand {
 
 .membership-number-input {
   -moz-appearance: textfield;
+  appearance: textfield;
 }
 
 .membership-number-input::-webkit-outer-spin-button,

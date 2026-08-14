@@ -11,6 +11,11 @@ type ListParams = {
   limit?: number
   search?: string
   status?: string
+  referralId?: string
+  referrerName?: string
+  expertName?: string
+  sourceType?: string
+  referralType?: string
 }
 
 export const fetchReferralStats = async () => {

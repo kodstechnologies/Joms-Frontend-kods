@@ -3,6 +3,7 @@ import { env } from '@/config/env'
 
 export type ServiceOrderWorkStatus =
   | 'payment_pending'
+  | 'awaiting_acceptance'
   | 'awaiting_first_message'
   | 'ongoing'
   | 'review_pending'
@@ -37,6 +38,7 @@ export type ServiceOrder = {
   threadId?: string | null
   firstMessageAt?: string | null
   paidAt?: string | null
+  acceptedAt?: string | null
   completedAt?: string | null
   approvedAt?: string | null
   createdAt?: string
@@ -66,6 +68,11 @@ export async function createServiceOrder(
 
 export async function payServiceOrder(token: string, orderId: string) {
   const res = await client(token).post(`/service-orders/${orderId}/pay`)
+  return res.data?.data as ServiceOrder
+}
+
+export async function acceptServiceOrder(token: string, orderId: string) {
+  const res = await client(token).post(`/service-orders/${orderId}/accept`)
   return res.data?.data as ServiceOrder
 }
 
