@@ -24,10 +24,31 @@ import {
 } from '../../mock/venue-profile-analytics.mock'
 import { AnalyticsCard, PeriodSelect, SectionTitle } from './analytics-ui'
 import { CHART_TOOLTIP } from './analytics-constants'
+import type {
+  RevenueTrendPoint,
+  VenueProfileAnalyticsResponse,
+} from '../../type/venue-analytics.types'
 
-export function VisualAnalyticsTab() {
+interface VisualAnalyticsTabProps {
+  data?: VenueProfileAnalyticsResponse['visual']
+  revenueTrend?: RevenueTrendPoint[]
+  isLoading?: boolean
+  onRefresh?: () => void
+}
+
+export function VisualAnalyticsTab({
+  data,
+  revenueTrend,
+  isLoading,
+  onRefresh,
+}: VisualAnalyticsTabProps) {
   const [revenuePeriod, setRevenuePeriod] = useState('This Week')
   const [bookingsPeriod, setBookingsPeriod] = useState('This Month')
+
+  const effectiveRevenueTrend = revenueTrend ?? REVENUE_TREND
+  const bookingFunnel = data?.bookingFunnel ?? BOOKING_FUNNEL
+  const categorySplit = data?.bookingCategorySplit ?? BOOKING_CATEGORY_SPLIT
+  const bookingsTrend = data?.bookingsTrend ?? BOOKINGS_TREND
 
   return (
     <div className="flex flex-col gap-5">
@@ -43,14 +64,22 @@ export function VisualAnalyticsTab() {
               options={['This Week', 'This Month', 'This Year']}
               onChange={setRevenuePeriod}
             />
-            <button type="button" className="rounded-lg p-2 text-white hover:bg-white/5">
-              <RefreshCw className="size-4" />
+            <button
+              type="button"
+              onClick={onRefresh}
+              aria-label="Refresh trends"
+              className="rounded-lg p-2 text-white hover:bg-white/5"
+            >
+              <RefreshCw className={`size-4 ${isLoading ? 'animate-spin' : ''}`} />
             </button>
           </div>
         </div>
         <div className="h-72">
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={REVENUE_TREND} margin={{ left: 0, right: 8, top: 8, bottom: 0 }}>
+            <LineChart
+              data={effectiveRevenueTrend}
+              margin={{ left: 0, right: 8, top: 8, bottom: 0 }}
+            >
               <CartesianGrid stroke="#2a2a2a" strokeDasharray="4 4" />
               <XAxis
                 dataKey="date"
@@ -91,9 +120,12 @@ export function VisualAnalyticsTab() {
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
         <AnalyticsCard>
-          <SectionTitle title="Booking Category Split" subtitle="Distribution by category" />
-          <div className="space-y-3">
-            {BOOKING_FUNNEL.map((stage, index) => (
+          <SectionTitle
+            title="Booking Conversion Funnel"
+            subtitle="Space Views >> Booking Requests >> Confirmed >> Completed"
+          />
+          <div className="mt-3 space-y-3">
+            {bookingFunnel.map((stage, index) => (
               <div key={stage.stage}>
                 <div className="mb-1 flex items-center justify-between text-[11px]">
                   <span className="text-white">{stage.stage}</span>
@@ -123,7 +155,7 @@ export function VisualAnalyticsTab() {
               <PieChart>
                 <Tooltip contentStyle={CHART_TOOLTIP} />
                 <Pie
-                  data={BOOKING_CATEGORY_SPLIT}
+                  data={categorySplit}
                   dataKey="value"
                   nameKey="name"
                   innerRadius={55}
@@ -131,7 +163,7 @@ export function VisualAnalyticsTab() {
                   stroke="rgba(255,255,255,0.08)"
                 >
                   <Cell fill="var(--brand-accent)" />
-                  <Cell fill="#C4956A" />
+                  <Cell fill="#1A73E8" />
                 </Pie>
                 <Legend
                   verticalAlign="middle"
@@ -154,15 +186,20 @@ export function VisualAnalyticsTab() {
               options={['This Week', 'This Month', 'This Year']}
               onChange={setBookingsPeriod}
             />
-            <button type="button" className="rounded-lg p-2 text-white hover:bg-white/5">
-              <RefreshCw className="size-4" />
+            <button
+              type="button"
+              onClick={onRefresh}
+              aria-label="Refresh bookings trend"
+              className="rounded-lg p-2 text-white hover:bg-white/5"
+            >
+              <RefreshCw className={`size-4 ${isLoading ? 'animate-spin' : ''}`} />
             </button>
           </div>
         </div>
         <div className="h-72">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
-              data={BOOKINGS_TREND}
+              data={bookingsTrend}
               barGap={4}
               margin={{ left: 0, right: 8, top: 8, bottom: 0 }}
             >

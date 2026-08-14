@@ -36,6 +36,7 @@ import {
   useSuspendVenue,
   useVenueFullView,
 } from '../../hooks/use-venues'
+import { useVenueProfileAnalytics } from '../../hooks/use-venue-analytics'
 import type { VenueFullView, VenueFullViewSpaceSummary } from '../../type/venue-full-view'
 import { DecisionActionModal } from '@/shared/components/modal/decision-action-modal'
 import { UpdatePasswordModal } from '@/modules/rbac/components/update-password-modal'
@@ -181,12 +182,16 @@ function ProfileSidebar({ data }: { data: VenueFullView }) {
         <SidebarRow label="Ratings">
           <span className="inline-flex items-center gap-1">
             <Star className="size-3.5 fill-[#E0A263] text-[#E0A263]" />
-            {profile.ratings ?? '—'}
+            {profile.ratings ? Number(profile.ratings).toFixed(1) : '—'}
           </span>
         </SidebarRow>
         <SidebarRow label="Total Bookings">{profile.totalBookings ?? '—'}</SidebarRow>
         <SidebarRow label="Years in Operation">
-          {profile.yearsInOperation ? `${profile.yearsInOperation.years} Years` : '—'}
+          {profile.yearsInOperation?.years != null
+            ? `${profile.yearsInOperation.years} Years`
+            : typeof profile.yearsInOperation === 'number'
+              ? `${profile.yearsInOperation} Years`
+              : '—'}
         </SidebarRow>
         <SidebarRow label="Total Earnings">{formatCurrency(profile.totalEarnings)}</SidebarRow>
         <SidebarRow label="Primary City">{profile.primaryCity || '—'}</SidebarRow>
@@ -444,8 +449,10 @@ function SpacesTab({ data, venueId }: { data: VenueFullView; venueId: string }) 
 
 function AnalyticsTab({ data, venueId }: { data: VenueFullView; venueId: string }) {
   const navigate = useNavigate()
-  const insights = data?.overview?.venue?.insights ?? {}
-  const profile = data?.profile
+  const { data: analyticsData } = useVenueProfileAnalytics(venueId)
+  const profile = data?.profile as
+    (typeof data.profile & { analytics?: Record<string, unknown> }) | undefined
+  const venueAnalytics = profile?.analytics
 
   const formatMetric = (value?: string | number | null, fallback = '—') => {
     if (value === null || value === undefined || value === '') return fallback
@@ -453,38 +460,68 @@ function AnalyticsTab({ data, venueId }: { data: VenueFullView; venueId: string 
     return String(value)
   }
 
+  const eventsHosted =
+    analyticsData?.bookings?.eventMetrics?.find((m) => m.label.includes('Confirmed'))?.value ||
+    formatMetric(profile?.totalBookings, '24')
+
+  const totalAttendees =
+    analyticsData?.overview?.visibilityMetrics?.find((m) => m.label.includes('Views'))?.value ||
+    formatMetric(venueAnalytics?.totalAttendees as string | number, '1,840+')
+
+  const repeatAttendees = String(
+    analyticsData?.bookings?.eventMetrics?.find((m) => m.label.includes('Completed'))?.value ||
+      venueAnalytics?.repeatAttendees ||
+      '30',
+  )
+
+  const upcomingEvents =
+    analyticsData?.bookings?.eventMetrics?.find((m) => m.label.includes('Upcoming'))?.value ||
+    String(venueAnalytics?.upcomingEvents || '3')
+
+  const eventCompletionRate =
+    analyticsData?.overview?.bookingSnapshot?.find((m) => m.label.includes('Completion Rate'))
+      ?.value || (profile?.clientSatisfaction != null ? `${profile.clientSatisfaction}%` : '100%')
+
+  const avgResponseTime = String(venueAnalytics?.avgResponseTime || '2 Hrs')
+
+  const noOfEventsRejected =
+    analyticsData?.bookings?.eventMetrics?.find((m) => m.label.includes('Canceled'))?.value ||
+    String(venueAnalytics?.noOfEventsRejected || '3')
+
+  const noOfEventsSuspended = String(venueAnalytics?.noOfEventsSuspended || '0')
+
   const cards: { label: string; value: string }[] = [
     {
       label: 'Events Hosted',
-      value: formatMetric(profile?.totalBookings, '24'),
+      value: eventsHosted,
     },
     {
       label: 'Total Attendees',
-      value: formatMetric(insights.listingViews, '1,840+'),
+      value: totalAttendees,
     },
     {
       label: 'Repeat Attendees',
-      value: formatMetric(insights.enquiriesCount, '30'),
+      value: repeatAttendees,
     },
     {
       label: 'Upcoming Events',
-      value: '3',
+      value: upcomingEvents,
     },
     {
       label: 'Event Completion Rate',
-      value: profile?.clientSatisfaction != null ? `${profile.clientSatisfaction}%` : '100%',
+      value: eventCompletionRate,
     },
     {
       label: 'Avg. Response Time',
-      value: formatMetric(insights.responseTime, '2 Hrs'),
+      value: avgResponseTime,
     },
     {
       label: 'No. Of Events Rejected',
-      value: '3',
+      value: noOfEventsRejected,
     },
     {
       label: 'No. of event Suspended',
-      value: formatMetric(insights.nps, '100%'),
+      value: noOfEventsSuspended,
     },
   ]
 
