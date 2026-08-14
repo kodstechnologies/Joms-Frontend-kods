@@ -4,7 +4,10 @@ import { Ban, Eye } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
-import { exportServiceReportsCSV, fetchServiceReports } from '../../api/service-api'
+import { fetchServiceReports } from '../../api/service-api'
+import type { FilterValues } from '@/shared/types/data-filter'
+import { useModuleExportFilters } from '@/shared/components/advanced-filter/use-module-export-filters'
+import { exportDataToFile } from '@/shared/utils/export-utils'
 import {
   ServiceReportDetailModal,
   type ServiceReportItem,
@@ -29,9 +32,60 @@ export function ServiceReportedServicesPage() {
 
   const [selectedReport, setSelectedReport] = useState<ServiceReportItem | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
-  const [prevKey, setPrevKey] = useState(`${currentPage}-${searchQuery}`)
+  const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
 
-  const currentKey = `${currentPage}-${searchQuery}`
+  const apiFilterParams = useMemo(() => {
+    const params: Record<string, string> = {}
+
+    Object.entries(appliedFilters).forEach(([rawKey, val]) => {
+      if (val === undefined || val === null || val === '') return
+
+      const parts = rawKey.split('.')
+      const fieldId = parts.length > 1 ? parts.slice(1).join('.') : rawKey
+
+      if (fieldId === 'location' && typeof val === 'object' && val !== null) {
+        const loc = val as { state?: string; city?: string }
+        if (loc.state?.trim()) params.locationState = loc.state.trim()
+        if (loc.city?.trim()) params.locationCity = loc.city.trim()
+        return
+      }
+
+      if (Array.isArray(val)) {
+        if (val.length > 0) {
+          params[fieldId] = val.join(',')
+        }
+        return
+      }
+
+      if (typeof val === 'object' && val !== null) {
+        const range = val as { from?: string | number; to?: string | number }
+        if (range.from !== undefined && range.from !== '') {
+          params[`${fieldId}Min`] = String(range.from).trim()
+        }
+        if (range.to !== undefined && range.to !== '') {
+          params[`${fieldId}Max`] = String(range.to).trim()
+        }
+        return
+      }
+
+      if (typeof val === 'string' && val.trim()) {
+        params[fieldId] = val.trim()
+        return
+      }
+
+      if (typeof val === 'number' || typeof val === 'boolean') {
+        params[fieldId] = String(val)
+      }
+    })
+
+    return params
+  }, [appliedFilters])
+
+  const [prevKey, setPrevKey] = useState(
+    `${currentPage}-${searchQuery}-${JSON.stringify(apiFilterParams)}`,
+  )
+
+  const currentKey = `${currentPage}-${searchQuery}-${JSON.stringify(apiFilterParams)}`
 
   if (currentKey !== prevKey) {
     setPrevKey(currentKey)
@@ -43,6 +97,7 @@ export function ServiceReportedServicesPage() {
       page: currentPage,
       limit: 10,
       search: searchQuery,
+      ...apiFilterParams,
     })
       .then((res) => {
         const items = res?.data?.items || res?.items || []
@@ -59,7 +114,85 @@ export function ServiceReportedServicesPage() {
       .finally(() => {
         setLoading(false)
       })
-  }, [currentPage, searchQuery])
+  }, [currentPage, searchQuery, apiFilterParams])
+
+  const handleApplyFilters = useCallback((values: FilterValues) => {
+    setAppliedFilters(values)
+    setCurrentPage(1)
+  }, [])
+
+  const handleExportData = useCallback(
+    async (values: FilterValues, format: string) => {
+      try {
+        toast.loading('Exporting service reports...')
+
+        const data = await fetchServiceReports({
+          search: searchQuery,
+          ...apiFilterParams,
+          limit: 1000,
+        })
+        const items = data?.data?.items || data?.items || []
+
+        if (!items || items.length === 0) {
+          toast.dismiss()
+          toast.error('No report records found to export.')
+          return
+        }
+
+        const headers = [
+          'Report ID',
+          'Service ID',
+          'Service Title',
+          'Partner ID',
+          'Reporter Type',
+          'Reporter ID',
+          'Reporter Name',
+          'Issue Type',
+          'Business Impact',
+          'Status',
+          'Report Date',
+        ]
+
+        const rows = items.map((item: ServiceReportItem) => [
+          item.reportId || '',
+          item.serviceId || '',
+          item.serviceTitle || '',
+          item.partnerId || '',
+          item.reporterType || '',
+          item.reporterId || '',
+          item.reporterName || '',
+          item.issueType || '',
+          item.businessImpact || '',
+          item.investigationStatus || '',
+          item.submittedAt ? new Date(item.submittedAt as string).toLocaleString() : '',
+        ])
+
+        exportDataToFile(
+          headers,
+          rows,
+          format,
+          `Service_Reports_${new Date().toISOString().split('T')[0]}`,
+        )
+
+        toast.dismiss()
+        toast.success('Service reports exported successfully')
+      } catch (err: unknown) {
+        toast.dismiss()
+        toast.error(err instanceof Error ? err.message : 'Failed to export report')
+      }
+    },
+    [searchQuery, apiFilterParams],
+  )
+
+  const {
+    onAdvancedFilter,
+    onExport,
+    modals: exportFilterModals,
+  } = useModuleExportFilters({
+    moduleKey: 'service-management',
+    onApplyFilters: handleApplyFilters,
+    onExportData: handleExportData,
+  })
 
   useEffect(() => {
     loadReports()
@@ -211,18 +344,8 @@ export function ServiceReportedServicesPage() {
           setCurrentPage(1)
         }}
         searchPlaceholder="Search by report ID, service title, or reporter"
-        onAdvancedFilter={() => toast.message('Advanced filters are coming soon')}
-        onExport={async () => {
-          try {
-            toast.loading('Exporting service reports...')
-            await exportServiceReportsCSV({ search: searchQuery })
-            toast.dismiss()
-            toast.success('Service reports exported successfully')
-          } catch (err: unknown) {
-            toast.dismiss()
-            toast.error(err instanceof Error ? err.message : 'Failed to export report CSV')
-          }
-        }}
+        onAdvancedFilter={onAdvancedFilter}
+        onExport={onExport}
         pagination={{
           page: currentPage,
           pageSize: 10,
@@ -233,6 +356,7 @@ export function ServiceReportedServicesPage() {
         resourceLabel="reports"
         emptyMessage="No reported services found."
       />
+      {exportFilterModals}
 
       <ServiceReportDetailModal
         report={selectedReport}

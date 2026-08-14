@@ -16,6 +16,10 @@ export function exportDataToFile(
   format: string,
   fileNamePrefix: string,
 ) {
+  if (!rows || rows.length === 0) {
+    throw new Error('NO_RECORDS')
+  }
+
   const rowsForExport = [headers, ...rows]
 
   if (format === 'excel') {

@@ -75,8 +75,12 @@ export function useModuleExportFilters({
         }
 
         setIsExportModalOpen(false)
-      } catch {
-        toast.error('Failed to export data')
+      } catch (error) {
+        if (error instanceof Error && error.message === 'NO_RECORDS') {
+          toast.error('No records found to export')
+        } else {
+          toast.error('Failed to export data')
+        }
       } finally {
         setIsExporting(false)
       }
