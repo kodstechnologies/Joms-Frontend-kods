@@ -15,6 +15,9 @@ const ChatTestPage = lazy(() =>
 const UserChatTestPage = lazy(() =>
   import('@/modules/chat-test').then((m) => ({ default: m.UserChatTestPage })),
 )
+const UserVenueChatTestPage = lazy(() =>
+  import('@/modules/chat-test').then((m) => ({ default: m.UserVenueChatTestPage })),
+)
 const PartnerChatTestPage = lazy(() =>
   import('@/modules/chat-test').then((m) => ({ default: m.PartnerChatTestPage })),
 )
@@ -763,6 +766,14 @@ export function AppRouter() {
           element={
             <Suspense fallback={<PageLoader />}>
               <UserChatTestPage />
+            </Suspense>
+          }
+        />
+        <Route
+          path="/dev/chat-user-venue"
+          element={
+            <Suspense fallback={<PageLoader />}>
+              <UserVenueChatTestPage />
             </Suspense>
           }
         />

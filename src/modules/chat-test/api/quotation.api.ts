@@ -214,7 +214,11 @@ export async function listPartnerServiceProjects(
 
 export async function getQuotationDetail(token: string, id: string) {
   const res = await client(token).get(`/quotations/${id}`)
-  return res.data?.data as { quotation: QuotationRequest; proposal: Proposal | null }
+  return res.data?.data as {
+    quotation: QuotationRequest
+    proposal: Proposal | null
+    openPaymentRequest?: PaymentRequest | null
+  }
 }
 
 export async function declineQuotation(token: string, id: string, reason?: string) {

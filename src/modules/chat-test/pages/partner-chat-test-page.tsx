@@ -184,8 +184,8 @@ export function PartnerChatTestPage() {
             </Link>
           </div>
           <p className="text-sm text-zinc-400">
-            Logged in dynamically. Copy your partner id into the user panel, or start a chat with
-            static user id.
+            Logged in dynamically. For fixed/tiered: user dummy-pays, then Accept on My Projects
+            below (not via chat). Copy partner id into the user panel if needed.
           </p>
           <div className="flex flex-wrap items-center gap-2 rounded-lg border border-zinc-800 bg-zinc-900/60 px-3 py-2">
             <span className="text-xs tracking-wide text-zinc-500 uppercase">Chat backend</span>

@@ -27,6 +27,11 @@ import {
   payConsultationBooking,
   type ConsultationBooking,
 } from '../api/consultation-booking.api'
+import {
+  listEligibleReviews,
+  submitPartnerReview,
+  type EligibleReviewItem,
+} from '../api/profile-review.api'
 import { UserConsultationBookPanel } from './user-consultation-book-panel'
 import type { StaticChatUser } from '../config/static-users'
 
@@ -125,6 +130,16 @@ function OfferingCard({
   )
 }
 
+function proposalNeedsPayment(proposal: Proposal | null | undefined): boolean {
+  if (!proposal || proposal.status !== 'accepted') return false
+  if (proposal.paymentType === 'one_time') return !proposal.workStatus
+  return (proposal.milestones || []).some((m) => m.status === 'payment_pending')
+}
+
+function pickOpenPaymentRequest(paymentRequests: PaymentRequest[]): PaymentRequest | null {
+  return paymentRequests.find((p) => p.status === 'sent') || null
+}
+
 export function UserQuotationPanel({ user }: Props) {
   const [partnerId, setPartnerId] = useState('')
   const [partnerName, setPartnerName] = useState('')
@@ -136,6 +151,10 @@ export function UserQuotationPanel({ user }: Props) {
   const [mine, setMine] = useState<QuotationRow[]>([])
   const [orders, setOrders] = useState<ServiceOrder[]>([])
   const [consultationBookings, setConsultationBookings] = useState<ConsultationBooking[]>([])
+  const [eligibleReviews, setEligibleReviews] = useState<EligibleReviewItem[]>([])
+  const [reviewDrafts, setReviewDrafts] = useState<
+    Record<string, { rating: number; text: string }>
+  >({})
   const [tierName, setTierName] = useState<'basic' | 'standard' | 'premium'>('standard')
   const [error, setError] = useState<string | null>(null)
   const [ok, setOk] = useState<string | null>(null)
@@ -149,27 +168,32 @@ export function UserQuotationPanel({ user }: Props) {
     (selected.pricingType === 'fixed' || selected.pricingType === 'tiered')
 
   const refresh = async () => {
-    const [list, orderList, bookings] = await Promise.all([
+    const [list, orderList, bookings, eligible] = await Promise.all([
       listMyQuotations(user.accessToken),
       listMyServiceOrders(user.accessToken),
       listMyConsultationBookings(user.accessToken),
+      listEligibleReviews(user.accessToken).catch(() => [] as EligibleReviewItem[]),
     ])
     setOrders(orderList)
     setConsultationBookings(bookings)
+    setEligibleReviews(eligible)
     const enriched = await Promise.all(
       list.map(async (q) => {
         try {
           const detail = await getQuotationDetail(user.accessToken, q._id)
-          let openPaymentRequest: PaymentRequest | null = null
-          if (detail.proposal?.status === 'accepted' && detail.proposal._id) {
+          const proposal = detail.proposal
+          let openPaymentRequest: PaymentRequest | null = detail.openPaymentRequest || null
+
+          if (!openPaymentRequest && proposal?._id && proposalNeedsPayment(proposal)) {
             try {
-              const work = await getProposalWork(user.accessToken, detail.proposal._id)
-              openPaymentRequest = work.paymentRequests.find((p) => p.status === 'sent') || null
+              const work = await getProposalWork(user.accessToken, proposal._id)
+              openPaymentRequest = pickOpenPaymentRequest(work.paymentRequests)
             } catch {
               openPaymentRequest = null
             }
           }
-          return { ...q, proposal: detail.proposal, openPaymentRequest }
+
+          return { ...q, proposal, openPaymentRequest }
         } catch {
           return { ...q, proposal: null, openPaymentRequest: null }
         }
@@ -305,7 +329,9 @@ export function UserQuotationPanel({ user }: Props) {
         phone_e164: form.phone_e164.trim(),
       })
       const paid = await payServiceOrder(user.accessToken, order._id)
-      setOk(`Service order ${paid._id} created + dummy paid · work ${paid.workStatus}`)
+      setOk(
+        `Service order ${paid._id} created + dummy paid · work ${paid.workStatus} — partner must Accept`,
+      )
       await refresh()
     } catch (err) {
       setError(errMessage(err))
@@ -326,10 +352,21 @@ export function UserQuotationPanel({ user }: Props) {
       }
       if (action === 'accept') {
         const result = await acceptProposal(user.accessToken, detail.proposal._id)
+        setMine((prev) =>
+          prev.map((row) =>
+            row._id === quotationId
+              ? {
+                  ...row,
+                  proposal: result.proposal,
+                  openPaymentRequest: result.paymentRequest || null,
+                }
+              : row,
+          ),
+        )
         setOk(
           result.paymentRequest
-            ? `Accepted · payment request ${result.paymentRequest._id} (₹${result.paymentRequest.amount})`
-            : 'Proposal accepted',
+            ? `Accepted · payment request ${result.paymentRequest._id} (₹${result.paymentRequest.amount}) — use Dummy pay below`
+            : 'Proposal accepted — waiting for partner payment request',
         )
       } else {
         await rejectProposal(user.accessToken, detail.proposal._id)
@@ -617,7 +654,8 @@ export function UserQuotationPanel({ user }: Props) {
               {isDirectOrder ? (
                 <div className="space-y-2 rounded-lg border border-amber-500/30 bg-amber-500/5 p-3">
                   <p className="text-xs text-amber-200">
-                    Fixed/Tiered — create ServiceOrder + dummy pay (no quotation).
+                    Fixed/Tiered — create order + dummy pay. Partner then Accepts on My Projects
+                    (not chat). After partner marks completed, Approve here.
                   </p>
                   {selected.pricingType === 'tiered' ? (
                     <label className="block space-y-1 text-xs">
@@ -689,6 +727,11 @@ export function UserQuotationPanel({ user }: Props) {
               <div className="text-xs text-zinc-500">
                 {order.pricingType} · {order.packageName} · ₹{order.price} · pay{' '}
                 {order.paymentStatus} · work {order.workStatus}
+                {order.workStatus === 'awaiting_acceptance' ||
+                order.workStatus === 'awaiting_first_message'
+                  ? ' — waiting for partner Accept'
+                  : ''}
+                {order.workStatus === 'ongoing' ? ' — partner working' : ''}
               </div>
               <div className="mt-2 flex flex-wrap gap-2">
                 {order.paymentStatus === 'pending' ? (
@@ -820,6 +863,7 @@ export function UserQuotationPanel({ user }: Props) {
           {mine.map((q) => {
             const proposalStatus = q.proposal?.status
             const canRespond = proposalStatus === 'sent'
+            const awaitingPayment = proposalNeedsPayment(q.proposal) && !q.openPaymentRequest
             const canApproveWork =
               q.proposal?.status === 'accepted' &&
               (q.proposal.workStatus === 'review_pending' ||
@@ -869,7 +913,15 @@ export function UserQuotationPanel({ user }: Props) {
                       onClick={() => void handlePayPaymentRequest(q.openPaymentRequest!._id)}
                     >
                       Dummy pay ₹{q.openPaymentRequest.amount}
+                      {q.openPaymentRequest.milestoneIndex != null
+                        ? ` · milestone ${q.openPaymentRequest.milestoneIndex + 1}`
+                        : ''}
                     </button>
+                  ) : null}
+                  {awaitingPayment ? (
+                    <span className="text-[11px] text-amber-400/80">
+                      Payment due — refresh or ask partner to send payment request
+                    </span>
                   ) : null}
                   {canApproveWork && q.proposal ? (
                     <button
@@ -886,6 +938,111 @@ export function UserQuotationPanel({ user }: Props) {
             )
           })}
           {!mine.length ? <li className="text-xs text-zinc-500">No requests yet</li> : null}
+        </ul>
+      </div>
+
+      <div className="border-t border-zinc-800 pt-3">
+        <div className="mb-2 flex items-center justify-between">
+          <h3 className="text-sm font-medium">Rate &amp; review (completed work)</h3>
+          <button
+            type="button"
+            className="text-xs text-zinc-400 hover:text-zinc-200"
+            onClick={() => void refresh().catch((err) => setError(errMessage(err)))}
+          >
+            Refresh
+          </button>
+        </div>
+        <p className="mb-2 text-[11px] text-zinc-500">
+          After you approve completion, leave a 1–5 star rating for the partner (Insights tab).
+        </p>
+        <ul className="space-y-3">
+          {eligibleReviews.map((item) => {
+            const key = `${item.engagementType}:${item.engagementId}`
+            const draft = reviewDrafts[key] || { rating: 5, text: '' }
+            return (
+              <li
+                key={key}
+                className="rounded-lg border border-zinc-800 bg-zinc-950/60 px-3 py-2 text-sm"
+              >
+                <div className="font-medium">{item.title}</div>
+                <div className="text-xs text-zinc-500">
+                  {item.engagementType} · partner {item.partnerId}
+                  {item.partnerName ? ` · ${item.partnerName}` : ''}
+                </div>
+                <div className="mt-2 flex flex-wrap items-center gap-2">
+                  <label className="text-[11px] text-zinc-400">
+                    Stars{' '}
+                    <select
+                      className="ml-1 rounded border border-zinc-700 bg-zinc-900 px-2 py-1"
+                      value={draft.rating}
+                      onChange={(e) =>
+                        setReviewDrafts((prev) => ({
+                          ...prev,
+                          [key]: { ...draft, rating: Number(e.target.value) },
+                        }))
+                      }
+                    >
+                      {[5, 4, 3, 2, 1].map((n) => (
+                        <option key={n} value={n}>
+                          {n}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+                <textarea
+                  className="mt-2 w-full rounded border border-zinc-700 bg-zinc-900 px-2 py-1.5 text-xs"
+                  rows={2}
+                  placeholder="Write a short review…"
+                  value={draft.text}
+                  onChange={(e) =>
+                    setReviewDrafts((prev) => ({
+                      ...prev,
+                      [key]: { ...draft, text: e.target.value },
+                    }))
+                  }
+                />
+                <button
+                  type="button"
+                  disabled={loading}
+                  className="mt-2 rounded border border-amber-400 px-2 py-1 text-[11px] text-amber-200 disabled:opacity-50"
+                  onClick={() =>
+                    void (async () => {
+                      setLoading(true)
+                      setError(null)
+                      setOk(null)
+                      try {
+                        await submitPartnerReview(user.accessToken, {
+                          partnerId: item.partnerId,
+                          engagementType: item.engagementType,
+                          engagementId: item.engagementId,
+                          rating: draft.rating,
+                          text: draft.text,
+                          userName: user.username,
+                        })
+                        setOk(`Review submitted for ${item.title}`)
+                        setReviewDrafts((prev) => {
+                          const next = { ...prev }
+                          delete next[key]
+                          return next
+                        })
+                        await refresh()
+                      } catch (err) {
+                        setError(errMessage(err))
+                      } finally {
+                        setLoading(false)
+                      }
+                    })()
+                  }
+                >
+                  Submit review
+                </button>
+              </li>
+            )
+          })}
+          {!eligibleReviews.length ? (
+            <li className="text-xs text-zinc-500">No completed services waiting for a review</li>
+          ) : null}
         </ul>
       </div>
     </div>

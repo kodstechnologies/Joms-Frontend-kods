@@ -2,6 +2,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   createClientMessageId,
   editMessage,
+  endChatCall,
+  joinChatCall,
+  jitsiMeetUrlFromJoin,
   listMessages,
   listThreads,
   markRead,
@@ -9,8 +12,10 @@ import {
   setPinnedMessage,
   setThreadMuted,
   setThreadPinned,
+  startChatCall,
   startThread,
   uploadAttachment,
+  type ChatCall,
   type ChatMessage,
   type ChatThread,
 } from '../api/chat.api'
@@ -66,6 +71,8 @@ export function ChatTestPanel({
   const [vaultOpen, setVaultOpen] = useState(false)
   const [attachMenuOpen, setAttachMenuOpen] = useState(false)
   const [uploading, setUploading] = useState(false)
+  const [callBusy, setCallBusy] = useState(false)
+  const [activeCall, setActiveCall] = useState<ChatCall | null>(null)
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null)
   const [presence, setPresence] = useState<
     Record<string, { isOnline: boolean; lastSeen: string | null }>
@@ -88,6 +95,7 @@ export function ChatTestPanel({
     setError(null)
     setEditingMessageId(null)
     setDraft('')
+    setActiveCall(null)
   }
 
   const applyPresenceToThreads = useCallback(
@@ -127,6 +135,7 @@ export function ChatTestPanel({
     async (threadId: string) => {
       if (!token) return
       setSelectedThreadId(threadId)
+      setActiveCall(null)
       setLoading(true)
       setError(null)
       try {
@@ -190,12 +199,65 @@ export function ChatTestPanel({
         setMessages((prev) => {
           const match = (x: ChatMessage) =>
             x._id === m._id ||
-            (Boolean(m.clientMessageId) && x.clientMessageId === m.clientMessageId)
+            (Boolean(m.clientMessageId) && x.clientMessageId === m.clientMessageId) ||
+            (m.messageType === 'call' &&
+              m.payload?.callId &&
+              x.messageType === 'call' &&
+              x.payload?.callId === m.payload.callId)
           if (prev.some(match))
             return prev.map((x) => (match(x) ? { ...m, localStatus: undefined } : x))
           return [...prev, m]
         })
         if (token && m.threadId) void markRead(token, m.threadId, chatBaseUrl)
+      },
+      onChatCall: (payload: unknown) => {
+        const call = payload as ChatCall
+        if (!call?.callId || call.threadId !== selectedRef.current) return
+        const active = call.status === 'ringing' || call.status === 'in_progress' ? call : null
+        setActiveCall((prev) => {
+          if (active) return { ...prev, ...call, join: call.join || prev?.join || null }
+          if (prev?.callId === call.callId) return null
+          return prev
+        })
+        setMessages((prev) =>
+          prev.map((x) => {
+            if (x.messageType !== 'call') return x
+            const same = String(x.payload?.callId || x.refId || '') === String(call.callId)
+            if (!same) return x
+            return {
+              ...x,
+              text: String(
+                call.status === 'ringing'
+                  ? 'Incoming audio call'
+                  : call.status === 'in_progress'
+                    ? 'Audio call in progress'
+                    : call.status === 'missed'
+                      ? 'Missed audio call'
+                      : call.status === 'cancelled'
+                        ? 'Call cancelled'
+                        : 'Audio call ended',
+              ),
+              payload: {
+                ...(x.payload || {}),
+                callId: call.callId,
+                roomName: call.roomName,
+                status: call.status,
+                callType: call.callType,
+                subject: call.subject,
+                label:
+                  call.status === 'ringing'
+                    ? 'Incoming audio call'
+                    : call.status === 'in_progress'
+                      ? 'Audio call in progress'
+                      : call.status === 'missed'
+                        ? 'Missed audio call'
+                        : call.status === 'cancelled'
+                          ? 'Call cancelled'
+                          : 'Audio call ended',
+              },
+            }
+          }),
+        )
       },
       onMessageUpdated: (payload: unknown) => {
         const m = payload as ChatMessage
@@ -501,6 +563,94 @@ export function ChatTestPanel({
     }
   }
 
+  const handleStartCall = async () => {
+    if (!selectedThreadId || callBusy) return
+    setAttachMenuOpen(false)
+    setCallBusy(true)
+    setError(null)
+    try {
+      const call = await startChatCall(
+        token,
+        selectedThreadId,
+        createClientMessageId(),
+        chatBaseUrl,
+      )
+      setActiveCall(call)
+      if (call.message) {
+        const m = call.message
+        setMessages((prev) => {
+          if (prev.some((x) => x._id === m._id || x.payload?.callId === call.callId)) {
+            return prev.map((x) => (x._id === m._id || x.payload?.callId === call.callId ? m : x))
+          }
+          return [...prev, m]
+        })
+      }
+      const url = jitsiMeetUrlFromJoin(call.join || null)
+      if (url) window.open(url, '_blank', 'noopener,noreferrer')
+      await refreshThreads()
+    } catch (err) {
+      setError(errMessage(err))
+    } finally {
+      setCallBusy(false)
+    }
+  }
+
+  const handleJoinCall = async (callId: string) => {
+    if (!selectedThreadId || callBusy) return
+    setCallBusy(true)
+    setError(null)
+    try {
+      const call = await joinChatCall(token, selectedThreadId, callId, chatBaseUrl)
+      setActiveCall(call)
+      const url = jitsiMeetUrlFromJoin(call.join || null)
+      if (url) window.open(url, '_blank', 'noopener,noreferrer')
+    } catch (err) {
+      setError(errMessage(err))
+    } finally {
+      setCallBusy(false)
+    }
+  }
+
+  const handleEndCall = async (callId: string) => {
+    if (!selectedThreadId || callBusy) return
+    setCallBusy(true)
+    setError(null)
+    try {
+      const call = await endChatCall(token, selectedThreadId, callId, 'hangup', chatBaseUrl)
+      setActiveCall(null)
+      setMessages((prev) =>
+        prev.map((x) => {
+          if (x.messageType !== 'call') return x
+          if (String(x.payload?.callId || x.refId || '') !== String(call.callId)) return x
+          return {
+            ...x,
+            text: String(
+              call.status === 'cancelled'
+                ? 'Call cancelled'
+                : call.status === 'missed'
+                  ? 'Missed audio call'
+                  : 'Audio call ended',
+            ),
+            payload: {
+              ...(x.payload || {}),
+              status: call.status,
+              label:
+                call.status === 'cancelled'
+                  ? 'Call cancelled'
+                  : call.status === 'missed'
+                    ? 'Missed audio call'
+                    : 'Audio call ended',
+            },
+          }
+        }),
+      )
+    } catch (err) {
+      setError(errMessage(err))
+    } finally {
+      setCallBusy(false)
+    }
+  }
+
   const headerName = selectedThread
     ? selectedThread.otherParticipant?.name ||
       selectedThread.otherParticipant?.username ||
@@ -777,10 +927,52 @@ export function ChatTestPanel({
                         ✓ {String(m.payload.label || m.text || 'Payment completed')}
                       </div>
                     ) : null}
+                    {m.messageType === 'call' && m.payload ? (
+                      <div className="mb-1 space-y-2 rounded-xl border border-violet-400/40 bg-black/20 p-2">
+                        <div className="text-[10px] tracking-wide text-violet-200 uppercase">
+                          Audio call
+                        </div>
+                        <div className="font-medium">
+                          {String(m.payload.label || m.text || 'Audio call')}
+                        </div>
+                        <div className="text-[10px] opacity-70">
+                          {String(m.payload.status || '')}
+                          {m.payload.roomName ? ` · ${String(m.payload.roomName)}` : ''}
+                        </div>
+                        {['ringing', 'in_progress'].includes(String(m.payload.status || '')) ? (
+                          <div className="flex flex-wrap gap-2">
+                            <button
+                              type="button"
+                              disabled={callBusy}
+                              className="rounded-lg bg-emerald-400 px-2.5 py-1 text-[11px] font-medium text-zinc-950 disabled:opacity-50"
+                              onClick={() =>
+                                void handleJoinCall(String(m.payload?.callId || m.refId || ''))
+                              }
+                            >
+                              Join
+                            </button>
+                            <button
+                              type="button"
+                              disabled={callBusy}
+                              className="rounded-lg border border-white/30 px-2.5 py-1 text-[11px] disabled:opacity-50"
+                              onClick={() =>
+                                void handleEndCall(String(m.payload?.callId || m.refId || ''))
+                              }
+                            >
+                              End
+                            </button>
+                          </div>
+                        ) : null}
+                      </div>
+                    ) : null}
                     {m.text &&
-                    !['proposal', 'proposal_status', 'payment_request', 'payment_status'].includes(
-                      m.messageType,
-                    ) ? (
+                    ![
+                      'proposal',
+                      'proposal_status',
+                      'payment_request',
+                      'payment_status',
+                      'call',
+                    ].includes(m.messageType) ? (
                       <div>{m.text}</div>
                     ) : null}
                     {!m.text && m.messageType === 'text' ? <div>—</div> : null}
@@ -829,6 +1021,32 @@ export function ChatTestPanel({
           </div>
 
           <div className="relative border-t border-zinc-800 p-3">
+            {activeCall && ['ringing', 'in_progress'].includes(String(activeCall.status)) ? (
+              <div className="mb-2 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-violet-500/40 bg-violet-950/40 px-3 py-2 text-xs text-violet-100">
+                <span>
+                  {activeCall.status === 'ringing' ? 'Call ringing…' : 'Call in progress'}
+                  {activeCall.startedByName ? ` · ${activeCall.startedByName}` : ''}
+                </span>
+                <span className="flex gap-2">
+                  <button
+                    type="button"
+                    disabled={callBusy}
+                    className="rounded-lg bg-emerald-400 px-2 py-1 font-medium text-zinc-950 disabled:opacity-50"
+                    onClick={() => void handleJoinCall(activeCall.callId)}
+                  >
+                    Join
+                  </button>
+                  <button
+                    type="button"
+                    disabled={callBusy}
+                    className="rounded-lg border border-violet-300/40 px-2 py-1 disabled:opacity-50"
+                    onClick={() => void handleEndCall(activeCall.callId)}
+                  >
+                    End
+                  </button>
+                </span>
+              </div>
+            ) : null}
             {attachMenuOpen ? (
               <div className="absolute bottom-16 left-3 z-10 w-48 rounded-xl border border-zinc-700 bg-zinc-900 p-2 shadow-lg">
                 <button
@@ -849,6 +1067,14 @@ export function ChatTestPanel({
                   }}
                 >
                   File Vault
+                </button>
+                <button
+                  type="button"
+                  className="w-full rounded-lg px-3 py-2 text-left text-sm hover:bg-zinc-800"
+                  disabled={!selectedThreadId || callBusy}
+                  onClick={() => void handleStartCall()}
+                >
+                  Add call
                 </button>
               </div>
             ) : null}
