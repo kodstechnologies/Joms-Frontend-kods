@@ -488,3 +488,137 @@ export const createVenueOnboardingAccount = async (
   )
   return response.data
 }
+
+export type BulkVenueActionPayload = {
+  venueIds: string[]
+  selectedReasons?: string[]
+  adminNotes?: string
+  startDate?: string
+  endDate?: string
+  indefinite?: boolean
+  subject?: string
+  body?: string
+  title?: string
+  message?: string
+  email?: string
+  recipientEmails?: string[]
+}
+
+export const bulkDeleteVenues = async (venueIdsOrPayload: string[] | BulkVenueActionPayload) => {
+  const payload = Array.isArray(venueIdsOrPayload)
+    ? { venueIds: venueIdsOrPayload }
+    : venueIdsOrPayload
+  const response = await venueApiClient.post('/kyc/internal/admin/venues/bulk-delete', payload)
+  return response.data
+}
+
+export const bulkPauseVenues = async (venueIdsOrPayload: string[] | BulkVenueActionPayload) => {
+  const payload = Array.isArray(venueIdsOrPayload)
+    ? { venueIds: venueIdsOrPayload }
+    : venueIdsOrPayload
+  const response = await venueApiClient.post('/kyc/internal/admin/venues/bulk-pause', payload)
+  return response.data
+}
+
+export const bulkHideVenues = async (venueIds: string[]) => {
+  const response = await venueApiClient.post('/kyc/internal/admin/venues/bulk-hide', {
+    venueIds,
+  })
+  return response.data
+}
+
+export const bulkDisableVenues = async (venueIds: string[]) => {
+  const response = await venueApiClient.post('/kyc/internal/admin/venues/bulk-disable', {
+    venueIds,
+  })
+  return response.data
+}
+
+export const bulkExportVenues = async (venueIds: string[]) => {
+  const response = await venueApiClient.post('/kyc/internal/admin/venues/bulk-export', {
+    venueIds,
+  })
+  return response.data
+}
+
+export const bulkNotifyVenues = async (venueIds: string[]) => {
+  const response = await venueApiClient.post('/kyc/internal/admin/venues/bulk-notify', {
+    venueIds,
+  })
+  return response.data
+}
+
+export const bulkMessageVenues = async (venueIds: string[]) => {
+  const response = await venueApiClient.post('/kyc/internal/admin/venues/bulk-message', {
+    venueIds,
+  })
+  return response.data
+}
+
+export const fetchVenueReports = async (params?: Record<string, unknown>) => {
+  const response = await venueApiClient.get('/kyc/internal/admin/reports/venues', { params })
+  return response.data
+}
+
+export const fetchVenueReportDetail = async (id: string) => {
+  const response = await venueApiClient.get(`/kyc/internal/admin/reports/venues/${id}`)
+  return response.data
+}
+
+export const updateVenueReport = async (id: string, payload: Record<string, unknown>) => {
+  const response = await venueApiClient.patch(`/kyc/internal/admin/reports/venues/${id}`, payload)
+  return response.data
+}
+
+export const exportVenueReportsCSV = async (params?: Record<string, unknown>) => {
+  const data = await fetchVenueReports({ ...params, limit: 1000 })
+  const items = data?.data?.items || data?.items || []
+
+  if (!items || items.length === 0) {
+    throw new Error('No report records found to export.')
+  }
+
+  const headers = [
+    'Report ID',
+    'Venue ID',
+    'Venue Name',
+    'Partner ID',
+    'Reporter Type',
+    'Reporter ID',
+    'Reporter Name',
+    'Issue Type',
+    'Business Impact',
+    'Status',
+    'Report Date',
+  ]
+
+  const rows = items.map((item: Record<string, unknown>) => [
+    item.reportId || '',
+    item.venueId || '',
+    item.venueName || '',
+    item.partnerId || '',
+    item.reporterType || '',
+    item.reporterId || '',
+    item.reporterName || '',
+    item.issueType || '',
+    item.businessImpact || '',
+    item.investigationStatus || '',
+    item.createdAt ? new Date(item.createdAt as string).toISOString() : '',
+  ])
+
+  const csvContent = [
+    headers.join(','),
+    ...rows.map((row: (string | number)[]) =>
+      row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(','),
+    ),
+  ].join('\n')
+
+  const blob = new Blob([csvContent], { type: 'type/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.setAttribute('href', url)
+  link.setAttribute('download', `Venue_Reports_${new Date().toISOString().split('T')[0]}.csv`)
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+}

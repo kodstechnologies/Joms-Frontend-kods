@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 
 import {
+  fetchExpertAnalytics,
   fetchExpertConsultations,
   fetchExpertProfile,
   fetchExpertServices,
@@ -11,6 +12,13 @@ export const useExpertProfile = (id?: string) =>
     queryKey: ['expert-profile', id],
     queryFn: () => fetchExpertProfile(id as string),
     enabled: Boolean(id),
+  })
+
+export const useExpertAnalytics = (expertId?: string, timeRange?: string) =>
+  useQuery({
+    queryKey: ['expert-analytics', expertId, timeRange],
+    queryFn: () => fetchExpertAnalytics(expertId as string, timeRange),
+    enabled: Boolean(expertId),
   })
 
 export const useExpertServices = (expertId?: string, page = 1, limit = 10, enabled = false) =>

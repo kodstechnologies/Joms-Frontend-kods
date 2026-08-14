@@ -16,17 +16,13 @@ import {
 } from 'recharts'
 import { ArrowLeft, SlidersHorizontal, Star, Upload, User } from 'lucide-react'
 
-import { useExpertProfile } from '../../hooks/use-expert-profile'
+import { useExpertAnalytics, useExpertProfile } from '../../hooks/use-expert-profile'
 import {
   CONVERSION_FUNNEL,
-  EXPERT_ANALYTICS_PROFILE,
-  EXPERT_LISTINGS_METRICS,
   MOST_ACTIVE_TIME,
   REVENUE_GROWTH_TREND,
-  TICKETING_INSIGHTS,
   TOP_VIEWS_BY_LOCATION,
   TOP_VIEWS_BY_ROLE,
-  VISIBILITY_METRICS,
 } from '../../mock/expert-profile-analytics.mock'
 import {
   AnalyticsCard,
@@ -54,42 +50,187 @@ export function ExpertProfileAnalyticsPage() {
   const [visibilityPeriod, setVisibilityPeriod] = useState('Last 7 Days')
   const [revenuePeriod, setRevenuePeriod] = useState('Last 3 Months')
 
+  const timeRangeCode = useMemo(() => {
+    if (visibilityPeriod === 'Last 30 Days') return '30d'
+    if (visibilityPeriod === 'Last 90 Days') return '90d'
+    return '7d'
+  }, [visibilityPeriod])
+
+  const { data: analyticsRes } = useExpertAnalytics(id ?? '', timeRangeCode)
+  const analyticsData = analyticsRes?.data
+
   const profile = useMemo(() => {
-    const name = expert?.fullname || EXPERT_ANALYTICS_PROFILE.name
+    const name = expert?.fullname || analyticsData?.profileSummary?.name || 'Expert'
     const profession =
       expert?.basicProfile?.industry ||
       expert?.basicProfile?.serviceCategory?.[0] ||
-      EXPERT_ANALYTICS_PROFILE.profession
-    const avatarUrl = expert?.basicProfile?.profileImage || EXPERT_ANALYTICS_PROFILE.avatarUrl
+      analyticsData?.profileSummary?.profession ||
+      'Service Expert'
+    const avatarUrl =
+      expert?.basicProfile?.profileImage || analyticsData?.profileSummary?.avatarUrl || null
 
     const accountStatus = expert?.isDeactivated
       ? 'Inactive'
       : expert?.isBlocked
         ? 'Blocked'
-        : 'Active'
+        : analyticsData?.profileSummary?.accountStatus || 'Active'
 
-    return {
-      name,
-      profession,
-      avatarUrl,
-      role: EXPERT_ANALYTICS_PROFILE.role,
-      rating: EXPERT_ANALYTICS_PROFILE.rating,
-      badge: EXPERT_ANALYTICS_PROFILE.badge,
-      accountStatus,
-      lastActive: expert?.updatedAt
-        ? new Date(expert.updatedAt).toLocaleString('en-US', {
+    const rating = analyticsData?.ratingsSummary?.available
+      ? `${analyticsData.ratingsSummary.average}`
+      : analyticsData?.ratingsSummary?.count === 0
+        ? 'No ratings'
+        : 'N/A'
+
+    const servicesListed =
+      analyticsData?.listingOverview?.servicesListed != null
+        ? String(analyticsData.listingOverview.servicesListed)
+        : '0'
+
+    const consultationsListed =
+      analyticsData?.listingOverview?.consultationsListed != null
+        ? String(analyticsData.listingOverview.consultationsListed)
+        : '0'
+
+    const ordersCompleted =
+      analyticsData?.listingOverview?.ordersCompleted != null
+        ? String(analyticsData.listingOverview.ordersCompleted)
+        : '0'
+
+    const revenue =
+      analyticsData?.listingOverview?.totalEarnings != null
+        ? `₹${analyticsData.listingOverview.totalEarnings.toLocaleString('en-IN')}`
+        : '₹0'
+
+    const role =
+      analyticsData?.profileSummary?.role ||
+      (expert?.expertType === 'Venue' ? 'Venue Owner' : 'Service Expert')
+    const badge =
+      analyticsData?.profileSummary?.badge ||
+      (expert?.kycStatus === 'APPROVED' ? 'VERIFIED EXPERT' : 'EXPERT')
+    const lastActive = expert?.updatedAt
+      ? new Date(expert.updatedAt).toLocaleString('en-US', {
+          month: 'short',
+          day: 'numeric',
+          hour: 'numeric',
+          minute: '2-digit',
+        })
+      : analyticsData?.profileSummary?.lastActiveAt
+        ? new Date(analyticsData.profileSummary.lastActiveAt).toLocaleString('en-US', {
             month: 'short',
             day: 'numeric',
             hour: 'numeric',
             minute: '2-digit',
           })
-        : EXPERT_ANALYTICS_PROFILE.lastActive,
-      servicesListed: EXPERT_ANALYTICS_PROFILE.servicesListed,
-      consultationsListed: EXPERT_ANALYTICS_PROFILE.consultationsListed,
-      ordersCompleted: EXPERT_ANALYTICS_PROFILE.ordersCompleted,
-      revenue: EXPERT_ANALYTICS_PROFILE.revenue,
+        : 'N/A'
+
+    return {
+      name,
+      profession,
+      avatarUrl,
+      role,
+      rating,
+      badge,
+      accountStatus,
+      lastActive,
+      servicesListed,
+      consultationsListed,
+      ordersCompleted,
+      revenue,
     }
-  }, [expert])
+  }, [expert, analyticsData])
+
+  const visibilityMetrics = useMemo(() => {
+    const vm = analyticsData?.visibilityMetrics
+    return [
+      {
+        label: 'Profile Views',
+        value: vm?.profileViews?.count != null ? String(vm.profileViews.count) : '0',
+        trend: vm?.profileViews?.trendPercentage ?? 0,
+      },
+      {
+        label: 'Total Clicks',
+        value: vm?.totalClicks?.count != null ? String(vm.totalClicks.count) : '0',
+        trend: vm?.totalClicks?.trendPercentage ?? 0,
+      },
+      {
+        label: 'Repeat Client Rate',
+        value:
+          vm?.repeatClientRate?.percentage != null ? `${vm.repeatClientRate.percentage}%` : '0%',
+        trend: vm?.repeatClientRate?.trendPercentage ?? 0,
+      },
+      {
+        label: 'Order Completion Rate',
+        value:
+          vm?.orderCompletionRate?.percentage != null
+            ? `${vm.orderCompletionRate.percentage}%`
+            : '0%',
+        trend: vm?.orderCompletionRate?.trendPercentage ?? 0,
+      },
+    ]
+  }, [analyticsData])
+
+  const expertListingsMetrics = useMemo(() => {
+    const sa = analyticsData?.serviceAnalytics
+    const lo = analyticsData?.listingOverview
+    return [
+      {
+        label: 'Average first response time',
+        value: sa?.avgResponseTime?.label || '--',
+        trend: 0,
+      },
+      {
+        label: 'Active Services',
+        value: lo?.servicesListed != null ? String(lo.servicesListed) : '0',
+        trend: 0,
+      },
+      {
+        label: 'Quotations Prepared',
+        value: lo?.proposalsCreated != null ? String(lo.proposalsCreated) : '0',
+        trend: 0,
+      },
+      {
+        label: 'Proposals created',
+        value: lo?.proposalsCreated != null ? String(lo.proposalsCreated) : '0',
+        trend: 0,
+      },
+      {
+        label: 'Orders in progress',
+        value: lo?.ordersInProgress != null ? String(lo.ordersInProgress) : '0',
+        trend: 0,
+      },
+      {
+        label: 'Terminated Orders',
+        value: lo?.terminatedOrders != null ? String(lo.terminatedOrders) : '0',
+        trend: 0,
+      },
+    ]
+  }, [analyticsData])
+
+  const ticketingInsights = useMemo(() => {
+    const rs = analyticsData?.ratingsSummary
+    const vm = analyticsData?.visibilityMetrics
+    return [
+      {
+        label: 'Conversion Rate',
+        value:
+          vm?.orderCompletionRate?.percentage != null
+            ? `${vm.orderCompletionRate.percentage}%`
+            : '0%',
+        trend: 0,
+      },
+      {
+        label: 'Client Satisfaction',
+        value: rs?.available ? `${rs.average}/5` : rs?.count === 0 ? 'No reviews' : 'N/A',
+        trend: 0,
+      },
+      {
+        label: 'Revenue Growth Rate',
+        value:
+          analyticsData?.revenueGrowthRate != null ? `${analyticsData.revenueGrowthRate}%` : '0%',
+        trend: 0,
+      },
+    ]
+  }, [analyticsData])
 
   return (
     <div className="mx-auto flex max-w-[1120px] flex-col gap-5 pb-8">
@@ -207,7 +348,7 @@ export function ExpertProfileAnalyticsPage() {
           }
         />
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {VISIBILITY_METRICS.map((item) => (
+          {visibilityMetrics.map((item) => (
             <MetricCard
               key={item.label}
               label={item.label}
@@ -221,7 +362,7 @@ export function ExpertProfileAnalyticsPage() {
       <div>
         <SectionTitle title="Expert Listings" subtitle="Expert analytics and growth" />
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {EXPERT_LISTINGS_METRICS.map((item) => (
+          {expertListingsMetrics.map((item) => (
             <MetricCard
               key={item.label}
               label={item.label}
@@ -235,7 +376,7 @@ export function ExpertProfileAnalyticsPage() {
       <div>
         <SectionTitle title="Ticketing Insights" subtitle="Communication and interaction metrics" />
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {TICKETING_INSIGHTS.map((item) => (
+          {ticketingInsights.map((item) => (
             <MetricCard
               key={item.label}
               label={item.label}

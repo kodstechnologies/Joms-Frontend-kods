@@ -180,3 +180,214 @@ export const updateConsultationStatus = async (
   )
   return response.data
 }
+
+export type PricingRecommendationParams = {
+  service_id?: string
+  service_name?: string
+  scope?: 'basic' | 'standard' | 'premium'
+  turnaround?: 'express_24h' | 'priority_48h' | 'standard_3_5d' | 'flexible_7d_plus'
+  seniority?: 'junior' | 'mid' | 'senior' | 'specialist'
+  region?: 'metro_tier_1' | 'tier_2' | 'tier_3'
+  proposed_price?: number
+  requested_discount_pct?: number
+}
+
+export type PricingRecommendationResult = {
+  recommendation: string
+  short_badge_text: string
+  service: {
+    service_id: string
+    name: string
+    category: string
+    sub_category?: string
+    billing_unit?: string
+    pricing_notes?: string
+  } | null
+  benchmarks: {
+    currency: string
+    base_average: number
+    suggested_price: number
+    min_range: number
+    max_range: number
+    combined_multiplier: number
+  } | null
+  breakdown: {
+    proposed_price: number
+    discount_pct: number
+    discounted_price: number
+    platform_fee: number
+    platform_fee_pct: number
+    gst: number
+    gst_pct: number
+    estimated_earnings: number
+  }
+  guardrails: {
+    status: string
+    severity: string
+    block_submission: boolean
+    notes?: string
+  }
+  ai_metadata: {
+    model: string
+    source: string
+  }
+}
+
+export type PricingRecommendationResponse = {
+  success: boolean
+  message: string
+  data: PricingRecommendationResult
+}
+
+export const fetchPricingRecommendation = async (params: PricingRecommendationParams) => {
+  const response = await expertApiClient.get<PricingRecommendationResponse>(
+    '/services/pricing-recommendation',
+    {
+      params,
+    },
+  )
+  return response.data
+}
+
+export type BulkServiceActionPayload = {
+  serviceIds: string[]
+  selectedReasons?: string[]
+  adminNotes?: string
+  startDate?: string
+  endDate?: string
+  indefinite?: boolean
+}
+
+export const bulkDeleteServices = async (
+  serviceIdsOrPayload: string[] | BulkServiceActionPayload,
+) => {
+  const payload = Array.isArray(serviceIdsOrPayload)
+    ? { serviceIds: serviceIdsOrPayload }
+    : serviceIdsOrPayload
+  const response = await expertApiClient.post(
+    '/services/internal/admin/services/bulk-delete',
+    payload,
+  )
+  return response.data
+}
+
+export const bulkPauseServices = async (
+  serviceIdsOrPayload: string[] | BulkServiceActionPayload,
+) => {
+  const payload = Array.isArray(serviceIdsOrPayload)
+    ? { serviceIds: serviceIdsOrPayload }
+    : serviceIdsOrPayload
+  const response = await expertApiClient.post(
+    '/services/internal/admin/services/bulk-pause',
+    payload,
+  )
+  return response.data
+}
+
+export const bulkHideServices = async (serviceIds: string[]) => {
+  const response = await expertApiClient.post('/services/internal/admin/services/bulk-hide', {
+    serviceIds,
+  })
+  return response.data
+}
+
+export const bulkDisableServices = async (serviceIds: string[]) => {
+  const response = await expertApiClient.post('/services/internal/admin/services/bulk-disable', {
+    serviceIds,
+  })
+  return response.data
+}
+
+export const bulkExportServices = async (serviceIds: string[]) => {
+  const response = await expertApiClient.post('/services/internal/admin/services/bulk-export', {
+    serviceIds,
+  })
+  return response.data
+}
+
+export const bulkNotifyServices = async (serviceIds: string[]) => {
+  const response = await expertApiClient.post('/services/internal/admin/services/bulk-notify', {
+    serviceIds,
+  })
+  return response.data
+}
+
+export const bulkMessageServices = async (serviceIds: string[]) => {
+  const response = await expertApiClient.post('/services/internal/admin/services/bulk-message', {
+    serviceIds,
+  })
+  return response.data
+}
+
+export const fetchServiceReports = async (params?: Record<string, unknown>) => {
+  const response = await expertApiClient.get('/services/internal/admin/reports/services', {
+    params,
+  })
+  return response.data
+}
+
+export const fetchServiceReportDetail = async (id: string) => {
+  const response = await expertApiClient.get(`/services/internal/admin/reports/services/${id}`)
+  return response.data
+}
+
+export const updateServiceReport = async (id: string, payload: Record<string, unknown>) => {
+  const response = await expertApiClient.patch(
+    `/services/internal/admin/reports/services/${id}`,
+    payload,
+  )
+  return response.data
+}
+
+export const exportServiceReportsCSV = async (params?: Record<string, unknown>) => {
+  const data = await fetchServiceReports({ ...params, limit: 1000 })
+  const items = data?.data?.items || data?.items || []
+
+  if (!items || items.length === 0) {
+    throw new Error('No report records found to export.')
+  }
+
+  const headers = [
+    'Report ID',
+    'Service ID',
+    'Service Title',
+    'Partner ID',
+    'Reporter Type',
+    'Reporter ID',
+    'Reporter Name',
+    'Issue Type',
+    'Business Impact',
+    'Status',
+    'Report Date',
+  ]
+
+  const rows = items.map((item: Record<string, unknown>) => [
+    item.reportId || '',
+    item.serviceId || '',
+    item.serviceTitle || '',
+    item.partnerId || '',
+    item.reporterType || '',
+    item.reporterId || '',
+    item.reporterName || '',
+    item.issueType || '',
+    item.businessImpact || '',
+    item.investigationStatus || '',
+    item.createdAt ? new Date(item.createdAt as string).toISOString() : '',
+  ])
+
+  const csvContent = [
+    headers.join(','),
+    ...rows.map((row: (string | number)[]) =>
+      row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(','),
+    ),
+  ].join('\n')
+
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.setAttribute('href', url)
+  link.setAttribute('download', `Service_Reports_${new Date().toISOString().split('T')[0]}.csv`)
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+}

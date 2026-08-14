@@ -12,6 +12,7 @@ export * from './venue-profile-view-page'
 export * from './space-details-page'
 export * from './space-analytics-page'
 export * from './venue-profile-analytics-page'
+export { VenueReportedVenuesPage } from './reported-venues-page'
 
 export { VenueCategoryManagementPage } from './category-management-page'
 export { VenueCategoryManagementMetricsPage } from './venue-category-management-metrics-page'

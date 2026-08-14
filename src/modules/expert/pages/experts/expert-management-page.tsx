@@ -14,12 +14,32 @@ import {
   User,
   Users,
   Gem,
+  Upload,
+  FileText,
   type LucideIcon,
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
-import { useDeactivateExpert, useExperts, useSuspendExpert } from '../../hooks/use-expert'
+import {
+  useDeactivateExpert,
+  useExperts,
+  useSuspendExpert,
+  useBulkSuspendExperts,
+  useBulkDeactivateExperts,
+  useBulkNotifyExperts,
+  useBulkMessageExperts,
+  useBulkUpdateMembershipExperts,
+  useBulkApproveExperts,
+  useBulkRejectExperts,
+  useBulkRestoreExperts,
+  useBulkVerifyKycExperts,
+  useBulkVerifyDigilockerExperts,
+  useBulkEscalateExperts,
+  useBulkRaiseTicketExperts,
+} from '../../hooks/use-expert'
+import { MembershipActionModals } from '@/modules/memberships/components/membership-action-modals'
+import type { MembershipSubscription } from '@/modules/memberships/types/membership-subscription'
 import { orderByActiveMetricIds, useActiveMetricIds } from '../../hooks/use-active-metric-ids'
 import { useTableColumnPreferences } from '../../hooks/use-ui-preferences'
 import { EXPERT_MANAGEMENT_MODULE_KEY } from '../../api/ui-preferences-api'
@@ -36,6 +56,7 @@ import {
 import { DecisionActionModal } from '@/shared/components/modal/decision-action-modal'
 import { StatusQuickLinkCard, StatusQuickLinkRow } from '@/shared/components/status-quick-link-card'
 import { Button } from '@/shared/components/ui/button'
+import { PayoutHistoryDrawer } from '../../components/payout-history-drawer'
 import { statusCardTones } from '@/shared/lib/design-tokens'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 import type { FilterValues } from '@/shared/types/data-filter'
@@ -63,6 +84,7 @@ export const ExpertManagementPage = () => {
   const [selectedExpertIds, setSelectedExpertIds] = useState<string[]>([])
   const [suspendExpertTarget, setSuspendExpertTarget] = useState<Expert | null>(null)
   const [deleteExpertTarget, setDeleteExpertTarget] = useState<Expert | null>(null)
+  const [payoutDrawerTarget, setPayoutDrawerTarget] = useState<Expert | null>(null)
   const [suspendReasons, setSuspendReasons] = useState<string[]>([])
   const [suspendStartDate, setSuspendStartDate] = useState('')
   const [suspendEndDate, setSuspendEndDate] = useState('')
@@ -219,8 +241,17 @@ export const ExpertManagementPage = () => {
     )
   }, [])
 
-  const openSuspendModal = useCallback((expert: Expert) => {
-    setSuspendExpertTarget(expert)
+  const [isBulkSuspend, setIsBulkSuspend] = useState(false)
+  const [isBulkDelete, setIsBulkDelete] = useState(false)
+
+  const openSuspendModal = useCallback((expert?: Expert) => {
+    if (expert) {
+      setSuspendExpertTarget(expert)
+      setIsBulkSuspend(false)
+    } else {
+      setSuspendExpertTarget(null)
+      setIsBulkSuspend(true)
+    }
     setSuspendReasons([])
     setSuspendStartDate('')
     setSuspendEndDate('')
@@ -230,10 +261,17 @@ export const ExpertManagementPage = () => {
 
   const closeSuspendModal = useCallback(() => {
     setSuspendExpertTarget(null)
+    setIsBulkSuspend(false)
   }, [])
 
-  const openDeleteModal = useCallback((expert: Expert) => {
-    setDeleteExpertTarget(expert)
+  const openDeleteModal = useCallback((expert?: Expert) => {
+    if (expert) {
+      setDeleteExpertTarget(expert)
+      setIsBulkDelete(false)
+    } else {
+      setDeleteExpertTarget(null)
+      setIsBulkDelete(true)
+    }
     setDeleteReasons([])
     setDeleteAdminNotes('')
   }, [])
@@ -241,6 +279,7 @@ export const ExpertManagementPage = () => {
   const closeDeleteModal = useCallback(() => {
     setDeleteExpertTarget(null)
     setDeleteReasons([])
+    setIsBulkDelete(false)
   }, [])
 
   const toggleDeleteReason = useCallback((value: string) => {
@@ -255,8 +294,32 @@ export const ExpertManagementPage = () => {
     )
   }, [])
 
+  // Bulk Mutations & Logic
+  const bulkSuspendMutation = useBulkSuspendExperts()
+  const bulkDeactivateMutation = useBulkDeactivateExperts()
+  const bulkNotifyMutation = useBulkNotifyExperts()
+  const bulkMessageMutation = useBulkMessageExperts()
+  const bulkUpdateMembershipMutation = useBulkUpdateMembershipExperts()
+  const bulkApproveMutation = useBulkApproveExperts()
+  const bulkRejectMutation = useBulkRejectExperts()
+  const bulkRestoreMutation = useBulkRestoreExperts()
+  const bulkVerifyKycMutation = useBulkVerifyKycExperts()
+  const bulkVerifyDigilockerMutation = useBulkVerifyDigilockerExperts()
+  const bulkEscalateMutation = useBulkEscalateExperts()
+  const bulkRaiseTicketMutation = useBulkRaiseTicketExperts()
+
+  const [isMembershipModalOpen, setIsMembershipModalOpen] = useState(false)
+
+  const selectedPartnerIds = useMemo(() => {
+    return experts
+      .filter(
+        (exp) => selectedExpertIds.includes(exp.expertId) || selectedExpertIds.includes(exp.id),
+      )
+      .map((exp) => exp.id || exp.expertId)
+  }, [experts, selectedExpertIds])
+
   const handleSuspendSubmit = useCallback(() => {
-    if (!suspendExpertTarget) return
+    if (!suspendExpertTarget && !isBulkSuspend) return
 
     if (suspendReasons.length === 0) {
       toast.error('Please select at least one reason.')
@@ -282,9 +345,42 @@ export const ExpertManagementPage = () => {
       return
     }
 
+    if (isBulkSuspend) {
+      const ids = selectedPartnerIds.length > 0 ? selectedPartnerIds : selectedExpertIds
+      if (ids.length === 0) return
+
+      bulkSuspendMutation.mutate(
+        {
+          partnerIds: ids,
+          reason: reasonPayload.reasonDetails,
+          adminNote: suspendAdminNotes.trim(),
+          adminNotes: suspendAdminNotes.trim(),
+          selectedReasons: reasonPayload.selectedReasons,
+        },
+        {
+          onSuccess: (res: unknown) => {
+            if (reasonPayload.reasonIds.length > 0) {
+              recordReasonUsage.mutate(reasonPayload.reasonIds)
+            }
+            const data = res as { data?: { successCount?: number } }
+            toast.success(
+              `Successfully suspended ${data?.data?.successCount ?? ids.length} expert(s)`,
+            )
+            setSelectedExpertIds([])
+            closeSuspendModal()
+          },
+          onError: (error: unknown) => {
+            const err = error as { response?: { data?: { message?: string } } }
+            toast.error(err?.response?.data?.message || 'Failed to suspend experts.')
+          },
+        },
+      )
+      return
+    }
+
     suspendExpertMutation.mutate(
       {
-        id: suspendExpertTarget.id,
+        id: suspendExpertTarget!.id,
         payload: {
           selectedReasons: reasonPayload.selectedReasons,
           suspendIndefinitely,
@@ -310,19 +406,23 @@ export const ExpertManagementPage = () => {
     )
   }, [
     buildSuspendReasonPayload,
+    bulkSuspendMutation,
     closeSuspendModal,
+    isBulkSuspend,
     recordReasonUsage,
+    selectedExpertIds,
+    selectedPartnerIds,
     suspendAdminNotes,
     suspendEndDate,
-    suspendIndefinitely,
     suspendExpertMutation,
     suspendExpertTarget,
+    suspendIndefinitely,
     suspendReasons,
     suspendStartDate,
   ])
 
   const handleDeleteSubmit = useCallback(() => {
-    if (!deleteExpertTarget) return
+    if (!deleteExpertTarget && !isBulkDelete) return
 
     if (deleteReasons.length === 0) {
       toast.error('Please select at least one reason.')
@@ -340,9 +440,42 @@ export const ExpertManagementPage = () => {
       return
     }
 
+    if (isBulkDelete) {
+      const ids = selectedPartnerIds.length > 0 ? selectedPartnerIds : selectedExpertIds
+      if (ids.length === 0) return
+
+      bulkDeactivateMutation.mutate(
+        {
+          partnerIds: ids,
+          reason: reasonPayload.reasonDetails,
+          adminNote: deleteAdminNotes.trim(),
+          adminNotes: deleteAdminNotes.trim(),
+          selectedReasons: reasonPayload.selectedReasons,
+        },
+        {
+          onSuccess: (res: unknown) => {
+            if (reasonPayload.reasonIds.length > 0) {
+              recordReasonUsage.mutate(reasonPayload.reasonIds)
+            }
+            const data = res as { data?: { successCount?: number } }
+            toast.success(
+              `Successfully deleted ${data?.data?.successCount ?? ids.length} expert(s)`,
+            )
+            setSelectedExpertIds([])
+            closeDeleteModal()
+          },
+          onError: (error: unknown) => {
+            const err = error as { response?: { data?: { message?: string } } }
+            toast.error(err?.response?.data?.message || 'Failed to delete experts.')
+          },
+        },
+      )
+      return
+    }
+
     deactivateExpertMutation.mutate(
       {
-        id: deleteExpertTarget.id,
+        id: deleteExpertTarget!.id,
         payload: {
           selectedReasons: reasonPayload.selectedReasons,
           reasonDetails: reasonPayload.reasonDetails,
@@ -365,13 +498,188 @@ export const ExpertManagementPage = () => {
     )
   }, [
     buildDeleteReasonPayload,
+    bulkDeactivateMutation,
     closeDeleteModal,
     deactivateExpertMutation,
     deleteAdminNotes,
     deleteExpertTarget,
     deleteReasons,
+    isBulkDelete,
     recordReasonUsage,
+    selectedExpertIds,
+    selectedPartnerIds,
   ])
+
+  const handleBulkActionClick = useCallback(
+    (actionLabel: string) => {
+      const ids = selectedPartnerIds.length > 0 ? selectedPartnerIds : selectedExpertIds
+      if (ids.length === 0) {
+        toast.error('Please select at least one expert.')
+        return
+      }
+
+      if (actionLabel.includes('Delete')) {
+        openDeleteModal()
+      } else if (actionLabel.includes('Suspend')) {
+        openSuspendModal()
+      } else if (actionLabel.includes('Membership') || actionLabel.includes('Upgrade')) {
+        setIsMembershipModalOpen(true)
+      } else if (actionLabel.includes('Export') || actionLabel.includes('Share')) {
+        toast.success(`Exporting / Generating links for ${ids.length} selected expert(s)`)
+        onExport?.()
+      } else if (actionLabel.includes('Ticket') || actionLabel.includes('Internal Ticket')) {
+        bulkRaiseTicketMutation.mutate(
+          { partnerIds: ids, ticketSubject: 'Bulk Admin Ticket', priority: 'medium' },
+          {
+            onSuccess: () => {
+              toast.success(`Internal ticket created for ${ids.length} expert(s)`)
+              setSelectedExpertIds([])
+            },
+            onError: (err: unknown) => {
+              const error = err as { response?: { data?: { message?: string } } }
+              toast.error(error?.response?.data?.message || 'Failed to raise ticket.')
+            },
+          },
+        )
+      } else if (actionLabel.includes('Notify')) {
+        bulkNotifyMutation.mutate(
+          { partnerIds: ids, title: 'Admin Notification', message: 'Bulk notification sent.' },
+          {
+            onSuccess: () => {
+              toast.success(`Notification sent to ${ids.length} expert(s)`)
+              setSelectedExpertIds([])
+            },
+            onError: (err: unknown) => {
+              const error = err as { response?: { data?: { message?: string } } }
+              toast.error(error?.response?.data?.message || 'Failed to send notification.')
+            },
+          },
+        )
+      } else if (actionLabel.includes('Message') || actionLabel.includes('Communicate')) {
+        bulkMessageMutation.mutate(
+          {
+            partnerIds: ids,
+            subject: 'Admin Message',
+            body: 'Bulk message sent.',
+            channel: 'email',
+          },
+          {
+            onSuccess: () => {
+              toast.success(`Message sent to ${ids.length} expert(s)`)
+              setSelectedExpertIds([])
+            },
+            onError: (err: unknown) => {
+              const error = err as { response?: { data?: { message?: string } } }
+              toast.error(error?.response?.data?.message || 'Failed to send message.')
+            },
+          },
+        )
+      } else if (actionLabel.includes('Approve')) {
+        bulkApproveMutation.mutate(
+          { partnerIds: ids },
+          {
+            onSuccess: () => {
+              toast.success(`Successfully approved ${ids.length} expert(s)`)
+              setSelectedExpertIds([])
+            },
+            onError: (err: unknown) => {
+              const error = err as { response?: { data?: { message?: string } } }
+              toast.error(error?.response?.data?.message || 'Failed to approve experts.')
+            },
+          },
+        )
+      } else if (actionLabel.includes('Reject')) {
+        bulkRejectMutation.mutate(
+          { partnerIds: ids, reason: 'Bulk rejected by admin' },
+          {
+            onSuccess: () => {
+              toast.success(`Successfully rejected ${ids.length} expert(s)`)
+              setSelectedExpertIds([])
+            },
+            onError: (err: unknown) => {
+              const error = err as { response?: { data?: { message?: string } } }
+              toast.error(error?.response?.data?.message || 'Failed to reject experts.')
+            },
+          },
+        )
+      } else if (actionLabel.includes('Restore') || actionLabel.includes('Unsuspend')) {
+        bulkRestoreMutation.mutate(
+          { partnerIds: ids },
+          {
+            onSuccess: () => {
+              toast.success(`Successfully restored ${ids.length} expert(s)`)
+              setSelectedExpertIds([])
+            },
+            onError: (err: unknown) => {
+              const error = err as { response?: { data?: { message?: string } } }
+              toast.error(error?.response?.data?.message || 'Failed to restore experts.')
+            },
+          },
+        )
+      } else if (actionLabel.includes('Verify KYC') || actionLabel.includes('KYC')) {
+        bulkVerifyKycMutation.mutate(
+          { partnerIds: ids },
+          {
+            onSuccess: () => {
+              toast.success(`KYC marked as verified for ${ids.length} expert(s)`)
+              setSelectedExpertIds([])
+            },
+            onError: (err: unknown) => {
+              const error = err as { response?: { data?: { message?: string } } }
+              toast.error(error?.response?.data?.message || 'Failed to verify KYC.')
+            },
+          },
+        )
+      } else if (actionLabel.includes('DigiLocker')) {
+        bulkVerifyDigilockerMutation.mutate(
+          { partnerIds: ids },
+          {
+            onSuccess: () => {
+              toast.success(`DigiLocker marked as verified for ${ids.length} expert(s)`)
+              setSelectedExpertIds([])
+            },
+            onError: (err: unknown) => {
+              const error = err as { response?: { data?: { message?: string } } }
+              toast.error(error?.response?.data?.message || 'Failed to verify DigiLocker.')
+            },
+          },
+        )
+      } else if (actionLabel.includes('Escalate')) {
+        bulkEscalateMutation.mutate(
+          { partnerIds: ids },
+          {
+            onSuccess: () => {
+              toast.success(`Successfully escalated ${ids.length} expert(s)`)
+              setSelectedExpertIds([])
+            },
+            onError: (err: unknown) => {
+              const error = err as { response?: { data?: { message?: string } } }
+              toast.error(error?.response?.data?.message || 'Failed to escalate.')
+            },
+          },
+        )
+      } else {
+        toast.info(`${actionLabel} completed for ${ids.length} expert(s)`)
+        setSelectedExpertIds([])
+      }
+    },
+    [
+      bulkApproveMutation,
+      bulkEscalateMutation,
+      bulkMessageMutation,
+      bulkNotifyMutation,
+      bulkRaiseTicketMutation,
+      bulkRejectMutation,
+      bulkRestoreMutation,
+      bulkVerifyDigilockerMutation,
+      bulkVerifyKycMutation,
+      onExport,
+      openDeleteModal,
+      openSuspendModal,
+      selectedExpertIds,
+      selectedPartnerIds,
+    ],
+  )
 
   const columns = useMemo<ColumnDef<Expert>[]>(() => {
     const selectColumn: ColumnDef<Expert> = {
@@ -544,7 +852,7 @@ export const ExpertManagementPage = () => {
               className={ACTION_ITEM_CLASS}
               onClick={() => {
                 setActiveDropdownId(null)
-                toast.message('View Payout History is coming soon')
+                setPayoutDrawerTarget(expert)
               }}
             >
               View Payout History
@@ -568,16 +876,6 @@ export const ExpertManagementPage = () => {
               }}
             >
               Delete Expert
-            </TableActionsItem>
-            <TableActionsItem
-              icon={<User className="size-3.5 text-slate-700" aria-hidden="true" />}
-              className={ACTION_ITEM_CLASS}
-              onClick={() => {
-                setActiveDropdownId(null)
-                toast.message('Report Expert is coming soon')
-              }}
-            >
-              Report Expert
             </TableActionsItem>
           </TableActionsDropdown>
         )
@@ -673,10 +971,12 @@ export const ExpertManagementPage = () => {
 
   const bulkActions = [
     { label: 'Delete selected experts', icon: Trash2 },
-    { label: 'Suspend selected experts', icon: PauseCircle },
+    { label: 'Export / Share selected experts', icon: Upload },
+    { label: 'Raise ticket / Escalate selected experts', icon: FileText },
+    { label: 'Update Membership', icon: Gem },
     { label: 'Notify selected experts', icon: Bell },
     { label: 'Message selected experts', icon: Mail },
-    { label: 'Premium features', icon: Gem },
+    { label: 'Suspend selected experts', icon: PauseCircle },
   ]
 
   return (
@@ -763,7 +1063,8 @@ export const ExpertManagementPage = () => {
                 key={action.label}
                 type="button"
                 aria-label={action.label}
-                onClick={() => toast.message(`${action.label} action is coming soon`)}
+                title={action.label}
+                onClick={() => handleBulkActionClick(action.label)}
                 className="flex size-8 items-center justify-center rounded-md bg-black text-white transition-colors hover:bg-white/10"
               >
                 <action.icon className="size-3.5" aria-hidden="true" />
@@ -794,14 +1095,27 @@ export const ExpertManagementPage = () => {
         emptyMessage="No experts found."
       />
 
+      {/* Export & Advanced Filter Modals */}
       {exportFilterModals}
 
+      {/* Payout History Drawer */}
+      <PayoutHistoryDrawer
+        isOpen={Boolean(payoutDrawerTarget)}
+        onClose={() => setPayoutDrawerTarget(null)}
+        expertId={payoutDrawerTarget?.id || payoutDrawerTarget?.expertId || ''}
+        expertName={payoutDrawerTarget?.name || 'Alex Joh'}
+      />
+
       <DecisionActionModal
-        open={Boolean(suspendExpertTarget)}
+        open={Boolean(suspendExpertTarget) || isBulkSuspend}
         variant="suspend"
-        title="Suspend Expert"
-        description="Are you sure you want to suspend this Expert? This will result in removal of the account."
-        submitLabel="Suspend User"
+        title={isBulkSuspend ? `Suspend ${selectedExpertCount} Experts` : 'Suspend Expert'}
+        description={
+          isBulkSuspend
+            ? `Are you sure you want to suspend ${selectedExpertCount} selected expert(s)? This will restrict their account access.`
+            : 'Are you sure you want to suspend this Expert? This will result in removal of the account.'
+        }
+        submitLabel={isBulkSuspend ? `Suspend ${selectedExpertCount} Experts` : 'Suspend User'}
         reasonOptions={suspendReasonOptions}
         selectedReasons={suspendReasons}
         onReasonToggle={toggleSuspendReason}
@@ -816,15 +1130,19 @@ export const ExpertManagementPage = () => {
         onAdminNotesChange={setSuspendAdminNotes}
         onClose={closeSuspendModal}
         onSubmit={handleSuspendSubmit}
-        isSubmitting={suspendExpertMutation.isPending}
+        isSubmitting={suspendExpertMutation.isPending || bulkSuspendMutation.isPending}
       />
 
       <DecisionActionModal
-        open={Boolean(deleteExpertTarget)}
+        open={Boolean(deleteExpertTarget) || isBulkDelete}
         variant="delete"
-        title="Delete Expert"
-        description="Are you sure you want to delete this user? This will result in removal of the account."
-        submitLabel="Delete Expert"
+        title={isBulkDelete ? `Delete ${selectedExpertCount} Experts` : 'Delete Expert'}
+        description={
+          isBulkDelete
+            ? `Are you sure you want to delete ${selectedExpertCount} selected expert(s)? This will result in soft deletion of their accounts.`
+            : 'Are you sure you want to delete this user? This will result in removal of the account.'
+        }
+        submitLabel={isBulkDelete ? `Delete ${selectedExpertCount} Experts` : 'Delete Expert'}
         submitIcon="x"
         heroLayout="stack"
         reasonOptions={deleteReasonOptions}
@@ -835,8 +1153,50 @@ export const ExpertManagementPage = () => {
         onAdminNotesChange={setDeleteAdminNotes}
         onClose={closeDeleteModal}
         onSubmit={handleDeleteSubmit}
-        isSubmitting={deactivateExpertMutation.isPending}
+        isSubmitting={deactivateExpertMutation.isPending || bulkDeactivateMutation.isPending}
       />
+
+      {isMembershipModalOpen && (
+        <MembershipActionModals
+          subscription={
+            {
+              _id: 'bulk-membership-update',
+              membershipPlanId: '',
+              status: 'active',
+            } as unknown as MembershipSubscription
+          }
+          action="upgrade"
+          onClose={() => setIsMembershipModalOpen(false)}
+          onUpgrade={(payload) => {
+            const ids = selectedPartnerIds.length > 0 ? selectedPartnerIds : selectedExpertIds
+            bulkUpdateMembershipMutation.mutate(
+              {
+                partnerIds: ids,
+                planId: payload.newMembershipPlanId,
+                newMembershipPlanId: payload.newMembershipPlanId,
+                billingCycleName: payload.billingCycleName,
+                adminNotes: payload.adminNotes,
+                reasons: payload.reasons,
+              },
+              {
+                onSuccess: () => {
+                  toast.success(`Membership plan updated for ${ids.length} expert(s)`)
+                  setSelectedExpertIds([])
+                  setIsMembershipModalOpen(false)
+                },
+                onError: (err: unknown) => {
+                  const error = err as { response?: { data?: { message?: string } } }
+                  toast.error(error?.response?.data?.message || 'Failed to update membership.')
+                },
+              },
+            )
+          }}
+          onDowngrade={() => {}}
+          onExtend={() => {}}
+          onCancel={() => {}}
+          isSubmitting={bulkUpdateMembershipMutation.isPending}
+        />
+      )}
     </div>
   )
 }

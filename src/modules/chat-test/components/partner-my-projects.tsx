@@ -19,6 +19,7 @@ import {
 } from '../api/consultation-booking.api'
 import { PartnerConsultationDetailPanel } from './partner-consultation-detail-panel'
 import {
+  acceptServiceOrder,
   getServiceOrder,
   linkServiceOrderThread,
   markServiceOrderCompleted,
@@ -128,10 +129,11 @@ export function PartnerMyProjects({ token }: Props) {
     if (tab === 'services') {
       const rows = await listPartnerServiceProjects(token, status)
       setProjects(rows)
-      return
+      return rows
     }
     const rows = await listPartnerConsultationProjects(token, status as ConsultationProjectStatus)
     setConsultationProjects(rows)
+    return rows
   }
 
   const resetSelection = () => {
@@ -232,8 +234,11 @@ export function PartnerMyProjects({ token }: Props) {
     try {
       await fn()
       setOk(successMsg)
-      await reloadList()
-      if (selected) await openProject(selected)
+      const rows = await reloadList()
+      if (selected && tab === 'services') {
+        const next = (rows as ServiceProjectCard[]).find((p) => p.id === selected.id)
+        await openProject(next || selected)
+      }
     } catch (err) {
       setError(errorMessage(err))
     } finally {
@@ -245,6 +250,10 @@ export function PartnerMyProjects({ token }: Props) {
     <section className="overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900/60">
       <div className="border-b border-zinc-800 px-4 pt-5 sm:px-6">
         <h1 className="text-2xl font-semibold tracking-tight">My projects</h1>
+        <p className="mt-1 text-xs text-zinc-500">
+          Fixed/tiered: after user dummy pay, open the card → Accept request → Mark completed. Chat
+          does not start the job.
+        </p>
         <div className="mt-5 flex gap-6 text-sm">
           <button
             type="button"
@@ -453,6 +462,19 @@ export function PartnerMyProjects({ token }: Props) {
                   <p className="text-xs text-zinc-400">Includes: {serviceOrder.inclusions}</p>
                 ) : null}
 
+                {serviceOrder.workStatus === 'awaiting_acceptance' ||
+                serviceOrder.workStatus === 'awaiting_first_message' ? (
+                  <p className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-200">
+                    User paid. Accept this service request to start work (`POST
+                    /service-orders/:id/accept`). Then Mark completed.
+                  </p>
+                ) : null}
+                {serviceOrder.workStatus === 'ongoing' ? (
+                  <p className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-200">
+                    Accepted — work ongoing. Mark completed when done.
+                  </p>
+                ) : null}
+
                 <div className="flex flex-wrap gap-2">
                   <input
                     value={threadIdInput}
@@ -472,6 +494,22 @@ export function PartnerMyProjects({ token }: Props) {
                   >
                     Link thread
                   </button>
+                  {serviceOrder.workStatus === 'awaiting_acceptance' ||
+                  serviceOrder.workStatus === 'awaiting_first_message' ? (
+                    <button
+                      type="button"
+                      disabled={actionLoading}
+                      onClick={() =>
+                        void runAction(async () => {
+                          const updated = await acceptServiceOrder(token, serviceOrder._id)
+                          setServiceOrder(updated)
+                        }, 'Service request accepted — work ongoing')
+                      }
+                      className="rounded-lg bg-emerald-400 px-3 py-2 text-xs font-medium text-zinc-950 disabled:opacity-50"
+                    >
+                      Accept request
+                    </button>
+                  ) : null}
                   {serviceOrder.workStatus === 'ongoing' ? (
                     <button
                       type="button"

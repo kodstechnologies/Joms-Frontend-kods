@@ -28,7 +28,11 @@ import {
   useStartEscalationReviewOnView,
 } from '../../hooks/use-expert-application-view'
 import { useAdminEscalation } from '@/modules/my-tasks/hooks/use-admin-escalation'
-import type { VenueKycStatus, VenueKycStatusPayload } from '../../type/venue-kyc'
+import type {
+  ApplicationKycDocuments,
+  VenueKycStatus,
+  VenueKycStatusPayload,
+} from '../../type/venue-kyc'
 import {
   DecisionControlButtons,
   DecisionControlsHeader,
@@ -572,46 +576,91 @@ export function VenueKycApplicationViewPage() {
   const applicantName = header.applicantName || applicant?.fullName || 'Venue Partner'
   const appliedLabel = formatRelativeApplied(header.appliedAt)
 
-  const uploadedDocuments = [
-    {
-      label: 'PAN Card',
-      key: 'panCard',
-      url: documents?.panCard,
-      reviewStatus: (kycDetails.documentReviews?.panCard?.status ||
-        null) as DocumentReviewStatus | null,
-    },
-    {
-      label: 'GST Certificate',
-      key: 'gstCertificate',
-      url: documents?.gstCertificate,
-      reviewStatus: (kycDetails.documentReviews?.gstCertificate?.status ||
-        null) as DocumentReviewStatus | null,
-    },
-    {
-      label: 'Certificate / License',
-      key: 'otherCertificates',
-      url: otherCertificates[0] || null,
-      reviewStatus: (kycDetails.documentReviews?.otherCertificates?.status ||
-        null) as DocumentReviewStatus | null,
-    },
+  const primaryDocDefs = [
+    { label: 'PAN Card', key: 'panCard' },
+    { label: 'GST Certificate', key: 'gstCertificate' },
+    { label: 'Business Registration Certificate', key: 'businessRegistration' },
   ]
 
-  const otherDocuments = [
-    {
-      label: 'Trade License',
-      key: 'tradeLicense',
-      url: documents?.tradeLicense,
-      reviewStatus: (kycDetails.documentReviews?.tradeLicense?.status ||
-        null) as DocumentReviewStatus | null,
-    },
-    {
-      label: 'FSSAI License',
-      key: 'fssaiLicense',
-      url: documents?.fssaiLicense,
-      reviewStatus: (kycDetails.documentReviews?.fssaiLicense?.status ||
-        null) as DocumentReviewStatus | null,
-    },
+  const uploadedDocuments = primaryDocDefs
+    .map((def) => {
+      const docKey = def.key as keyof ApplicationKycDocuments
+      const url = documents?.[docKey] as string | undefined
+      return {
+        label: def.label,
+        key: def.key,
+        url: url || null,
+        reviewStatus: (kycDetails.documentReviews?.[def.key]?.status ||
+          null) as DocumentReviewStatus | null,
+      }
+    })
+    .filter((doc) => doc.url)
+
+  if (uploadedDocuments.length === 0) {
+    uploadedDocuments.push(
+      {
+        label: 'PAN Card',
+        key: 'panCard',
+        url: documents?.panCard || null,
+        reviewStatus: (kycDetails.documentReviews?.panCard?.status ||
+          null) as DocumentReviewStatus | null,
+      },
+      {
+        label: 'GST Certificate',
+        key: 'gstCertificate',
+        url: documents?.gstCertificate || null,
+        reviewStatus: (kycDetails.documentReviews?.gstCertificate?.status ||
+          null) as DocumentReviewStatus | null,
+      },
+    )
+  }
+
+  const categoryDocDefs = [
+    { label: 'Building Occupancy Certificate', key: 'occupancyCertificate' },
+    { label: 'Fire Safety NOC', key: 'fireNoc' },
+    { label: 'Data Security / Wi-Fi Compliance', key: 'wifiCompliance' },
+    { label: 'Structural Stability Certificate', key: 'structuralStabilityCert' },
+    { label: 'Cultural / Event Permission', key: 'culturalPermission' },
+    { label: 'Public Assembly License', key: 'publicAssemblyLicense' },
+    { label: 'Seating Capacity Certificate', key: 'seatingCapacityCert' },
+    { label: 'Sports Facility Safety Certificate', key: 'sportsSafetyCert' },
+    { label: 'Public Liability Insurance', key: 'publicLiabilityInsurance' },
+    { label: 'Trade License', key: 'tradeLicense' },
+    { label: 'FSSAI License', key: 'fssaiLicense' },
+    { label: 'Property Lease Agreement', key: 'propertyLeaseAgreement' },
+    { label: 'Authorized Signatory ID', key: 'authorizedSignatoryId' },
   ]
+
+  const otherDocuments: Array<{
+    label: string
+    key: string
+    url?: string | null
+    reviewStatus?: DocumentReviewStatus | null
+  }> = []
+
+  categoryDocDefs.forEach((def) => {
+    const docKey = def.key as keyof ApplicationKycDocuments
+    const url = documents?.[docKey] as string | undefined
+    if (url) {
+      otherDocuments.push({
+        label: def.label,
+        key: def.key,
+        url,
+        reviewStatus: (kycDetails.documentReviews?.[def.key]?.status ||
+          null) as DocumentReviewStatus | null,
+      })
+    }
+  })
+
+  otherCertificates.forEach((certUrl, index) => {
+    otherDocuments.push({
+      label: `Other Certificate ${index + 1}`,
+      key: `otherCertificates_${index}`,
+      url: certUrl,
+      reviewStatus: (kycDetails.documentReviews?.otherCertificates?.status ||
+        null) as DocumentReviewStatus | null,
+    })
+  })
 
   const openDocumentViewer = (document: {
     key: string

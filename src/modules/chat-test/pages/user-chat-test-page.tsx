@@ -73,8 +73,8 @@ export function UserChatTestPage() {
             </Link>
           </div>
           <p className="text-sm text-zinc-400">
-            Pick a partner&apos;s offerings: book consultations (preview + slot + pay) or request
-            service quotations, then chat / accept proposals.
+            Pick a partner&apos;s offerings: book consultations, request quotations, or order
+            fixed/tiered (dummy pay). Partner Accepts fixed/tiered on My Projects, then you Approve.
           </p>
         </header>
 

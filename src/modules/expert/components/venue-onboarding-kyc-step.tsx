@@ -1,6 +1,7 @@
 import { useRef } from 'react'
 import { Upload, X } from 'lucide-react'
 
+import { useServiceCategoriesByType } from '../hooks/use-service-categories'
 import type { VenueOnboardingFormData } from '../utils/venue-onboarding-form'
 import { RequiredMark } from '@/shared/components/form/required-mark'
 
@@ -9,7 +10,6 @@ const fieldClass = 'ui-input'
 const selectClass = `${fieldClass} appearance-none`
 
 const ID_TYPES = ['PAN', 'Aadhaar', 'Passport', 'Driving License']
-const VENUE_TYPES = ['Hotel', 'Banquet Hall', 'Resort', 'Farmhouse', 'Restaurant', 'Other']
 const INDIAN_STATES = [
   'Karnataka',
   'Maharashtra',
@@ -85,6 +85,35 @@ function FileUploadBox({
 
 export const VenueOnboardingKycStep = ({ formData, setFormData }: Props) => {
   const otherCertsRef = useRef<HTMLInputElement>(null)
+
+  const { data: categoriesData } = useServiceCategoriesByType('venue')
+  const categoryGroups = categoriesData?.data || {}
+
+  // Build dynamic venue type options from sub-categories matching the selected category
+  let dynamicVenueTypes: string[] = []
+
+  if (formData.venueCategoryId || formData.venueCategoryName) {
+    for (const [, subs] of Object.entries(categoryGroups)) {
+      const match = subs.some(
+        (sub) => sub.id === formData.venueCategoryId || sub.name === formData.venueCategoryName,
+      )
+      if (match) {
+        dynamicVenueTypes = subs.map((sub) => sub.name)
+        break
+      }
+    }
+  }
+
+  // Fallback: show all sub-categories if no match found
+  if (dynamicVenueTypes.length === 0) {
+    const allSubs = Object.values(categoryGroups).flat()
+    dynamicVenueTypes = Array.from(new Set(allSubs.map((sub) => sub.name)))
+  }
+
+  // Preserve any existing value that might not be in the list
+  if (formData.typeOfVenue && !dynamicVenueTypes.includes(formData.typeOfVenue)) {
+    dynamicVenueTypes = [formData.typeOfVenue, ...dynamicVenueTypes]
+  }
 
   const setFile = (field: FileField, file: File | null) => {
     setFormData((prev) => ({ ...prev, [field]: file }))
@@ -240,7 +269,7 @@ export const VenueOnboardingKycStep = ({ formData, setFormData }: Props) => {
               className={selectClass}
             >
               <option value="">Choose here</option>
-              {VENUE_TYPES.map((type) => (
+              {dynamicVenueTypes.map((type) => (
                 <option key={type} value={type}>
                   {type}
                 </option>

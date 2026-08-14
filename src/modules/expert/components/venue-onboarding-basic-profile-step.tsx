@@ -149,24 +149,30 @@ export const VenueOnboardingBasicProfileStep = ({ formData, setFormData }: Props
                 onChange={(e) => {
                   const selectedId = e.target.value
                   const selectedCategory = categories.find((cat) => cat.id === selectedId)
+                  const categoryName = selectedCategory?.name || ''
                   setFormData((prev) => ({
                     ...prev,
                     venueCategoryId: selectedId,
-                    venueCategoryName: selectedCategory?.name || '',
+                    venueCategoryName: categoryName,
+                    typeOfVenue: categoryName || prev.typeOfVenue,
                   }))
                 }}
                 className={`${fieldClass} ui-input-icon-left appearance-none`}
               >
                 <option value="">{isCategoriesLoading ? 'Loading categories...' : 'Search'}</option>
-                {!isCategoriesLoading && categories.length === 0 && (
+                {!isCategoriesLoading && Object.keys(categoryGroups).length === 0 && (
                   <option value="" disabled>
                     No venue categories found
                   </option>
                 )}
-                {categories.map((cat) => (
-                  <option key={cat.id} value={cat.id}>
-                    {cat.name}
-                  </option>
+                {Object.entries(categoryGroups).map(([groupName, groupSubs]) => (
+                  <optgroup key={groupName} label={groupName}>
+                    {groupSubs.map((cat) => (
+                      <option key={cat.id} value={cat.id}>
+                        {cat.name}
+                      </option>
+                    ))}
+                  </optgroup>
                 ))}
               </select>
             </div>

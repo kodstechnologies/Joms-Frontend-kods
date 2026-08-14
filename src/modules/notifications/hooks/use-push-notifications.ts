@@ -3,8 +3,9 @@ import { useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { requestNotificationPermission, onForegroundMessage } from '@/shared/lib/firebase'
 import { useAuthStore } from '@/modules/auth/store/auth-store'
-import { registerDeviceToken } from '../api/notifications-api'
+import { registerDeviceToken, unregisterDeviceToken } from '../api/notifications-api'
 import { notificationKeys } from './use-notifications'
+import { getRegisteredPushToken, setRegisteredPushToken } from '../lib/push-token-session'
 
 export const usePushNotifications = () => {
   const queryClient = useQueryClient()
@@ -12,16 +13,28 @@ export const usePushNotifications = () => {
   const registeredTokenRef = useRef<string | null>(null)
 
   useEffect(() => {
-    if (!isAuthenticated) return
+    if (!isAuthenticated) {
+      // Best-effort cleanup if session ended without going through logout mutation
+      const token = getRegisteredPushToken() || registeredTokenRef.current
+      if (token) {
+        void unregisterDeviceToken(token).catch(() => {})
+        registeredTokenRef.current = null
+        setRegisteredPushToken(null)
+      }
+      return
+    }
 
     let unsubscribeForeground: (() => void) | null = null
+    let cancelled = false
 
     const init = async () => {
       try {
         const token = await requestNotificationPermission()
+        if (cancelled || !token) return
 
-        if (token && token !== registeredTokenRef.current) {
+        if (token !== registeredTokenRef.current) {
           registeredTokenRef.current = token
+          setRegisteredPushToken(token)
           await registerDeviceToken(token, 'web').catch(() => {})
         }
 
@@ -44,6 +57,7 @@ export const usePushNotifications = () => {
     void init()
 
     return () => {
+      cancelled = true
       unsubscribeForeground?.()
     }
   }, [isAuthenticated, queryClient])

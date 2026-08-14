@@ -1,14 +1,14 @@
-import { useState, useRef, useCallback, useMemo } from 'react'
+import { useState, useRef, useCallback, useMemo, useEffect } from 'react'
 import {
   Briefcase,
   MessageCircle,
   Info,
-  MapPin,
   Upload,
   Phone,
   Languages,
   Loader2,
   X,
+  Sparkles,
 } from 'lucide-react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 
@@ -29,6 +29,10 @@ import {
 } from '@/modules/expert/hooks/use-create-listing'
 import { useConsultation } from '@/modules/expert/hooks/use-services'
 import { useExpertProfile } from '@/modules/expert/hooks/use-expert-profile'
+import {
+  fetchPricingRecommendation,
+  type PricingRecommendationResult,
+} from '@/modules/expert/api/service-api'
 import {
   CONSULTATION_MODES,
   DURATION_OPTIONS,
@@ -135,8 +139,11 @@ export const CreateServiceListingPage = () => {
     selectedCategoryId,
     { page: 1, limit: 100 },
   )
-  const categories = categoriesResponse?.data || []
-  const subcategories = subcategoriesResponse?.data || []
+  const categories = useMemo(() => categoriesResponse?.data || [], [categoriesResponse?.data])
+  const subcategories = useMemo(
+    () => subcategoriesResponse?.data || [],
+    [subcategoriesResponse?.data],
+  )
 
   const createServiceMutation = useCreateService()
   const updateServicePricingMutation = useUpdateServicePricing()
@@ -161,6 +168,65 @@ export const CreateServiceListingPage = () => {
   const [customTimelineMax, setCustomTimelineMax] = useState('5')
   const [customTimelineUnit, setCustomTimelineUnit] = useState('Months')
   const [tiers, setTiers] = useState<ServiceTierForm[]>(DEFAULT_SERVICE_TIERS)
+  const [pricingRecommendation, setPricingRecommendation] =
+    useState<PricingRecommendationResult | null>(null)
+  const [isRecommendationLoading, setIsRecommendationLoading] = useState(false)
+
+  const activeCategoryName = useMemo(() => {
+    return categories.find((c) => c._id === selectedCategoryId)?.name || ''
+  }, [categories, selectedCategoryId])
+
+  useEffect(() => {
+    let cancelled = false
+
+    const rawPrice =
+      pricingType === 'fixed'
+        ? fixedPrice
+        : pricingType === 'custom'
+          ? customPrice
+          : tiers.find((t) => t.name === selectedTier)?.price || '0'
+
+    const numericPrice = parsePrice(rawPrice)
+    const discountNum = Number.parseInt(selectedDiscount.replace('%', ''), 10) || 0
+
+    const loadRecommendation = async () => {
+      setIsRecommendationLoading(true)
+      try {
+        const res = await fetchPricingRecommendation({
+          service_id: selectedCategoryId || undefined,
+          service_name: serviceTitle || activeCategoryName || undefined,
+          proposed_price: numericPrice > 0 ? numericPrice : undefined,
+          requested_discount_pct: discountNum,
+          scope: selectedTier,
+        })
+        if (!cancelled && res.success && res.data) {
+          setPricingRecommendation(res.data)
+        }
+      } catch (err) {
+        console.warn('Failed to fetch AI pricing recommendation:', err)
+      } finally {
+        if (!cancelled) {
+          setIsRecommendationLoading(false)
+        }
+      }
+    }
+
+    void loadRecommendation()
+
+    return () => {
+      cancelled = true
+    }
+  }, [
+    serviceTitle,
+    selectedCategoryId,
+    activeCategoryName,
+    pricingType,
+    fixedPrice,
+    customPrice,
+    tiers,
+    selectedTier,
+    selectedDiscount,
+  ])
 
   const updateTier = (name: TierName, field: keyof ServiceTierForm, value: string) => {
     setTiers((current) =>
@@ -1403,15 +1469,56 @@ export const CreateServiceListingPage = () => {
                     </div>
                   </div>
 
-                  <div className="w-full md:w-[260px]">
-                    <div className="border-brand-positive/15 bg-brand-positive/20 flex gap-3 rounded-lg border p-4">
-                      <div className="bg-brand-positive/40 flex size-6 shrink-0 items-center justify-center rounded-full">
-                        <MapPin className="size-3.5 text-emerald-200" />
+                  <div className="w-full md:w-[280px]">
+                    <div className="border-brand-positive/15 bg-brand-positive/20 flex flex-col gap-2 rounded-lg border p-4">
+                      <div className="flex items-start gap-2.5">
+                        <div className="bg-brand-positive/40 flex size-6 shrink-0 items-center justify-center rounded-full">
+                          {isRecommendationLoading ? (
+                            <Loader2 className="size-3.5 animate-spin text-emerald-200" />
+                          ) : (
+                            <Sparkles className="size-3.5 text-emerald-200" />
+                          )}
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-[11px] leading-relaxed font-semibold text-white">
+                            {pricingRecommendation?.short_badge_text ||
+                              "The market rate for NDA review is ₹6K–₹15K. It's recommended to set your price within this range."}
+                          </p>
+                          {pricingRecommendation?.recommendation && (
+                            <p className="mt-2 border-t border-emerald-500/20 pt-2 text-[10px] leading-normal font-normal text-emerald-200/90">
+                              {pricingRecommendation.recommendation}
+                            </p>
+                          )}
+                        </div>
                       </div>
-                      <p className="text-[10px] leading-relaxed font-medium text-white">
-                        The market rate for NDA review is ₹6K–₹15K. It's recommended to set your
-                        price within this range.
-                      </p>
+                      {pricingRecommendation?.breakdown && (
+                        <div className="mt-2 space-y-1 border-t border-emerald-500/20 pt-2 text-[10px] text-emerald-100/70">
+                          <div className="flex justify-between">
+                            <span>
+                              Platform Fee ({pricingRecommendation.breakdown.platform_fee_pct}%):
+                            </span>
+                            <span>
+                              ₹
+                              {pricingRecommendation.breakdown.platform_fee.toLocaleString('en-IN')}
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>GST ({pricingRecommendation.breakdown.gst_pct}%):</span>
+                            <span>
+                              ₹{pricingRecommendation.breakdown.gst.toLocaleString('en-IN')}
+                            </span>
+                          </div>
+                          <div className="flex justify-between pt-1 font-bold text-white">
+                            <span>Estimated Earnings:</span>
+                            <span>
+                              ₹
+                              {pricingRecommendation.breakdown.estimated_earnings.toLocaleString(
+                                'en-IN',
+                              )}
+                            </span>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -1528,15 +1635,28 @@ export const CreateServiceListingPage = () => {
                     </div>
                   </div>
 
-                  <div className="w-full md:w-[260px]">
-                    <div className="border-brand-positive/15 bg-brand-positive/20 flex gap-3 rounded-lg border p-4">
-                      <div className="bg-brand-positive/40 flex size-6 shrink-0 items-center justify-center rounded-full">
-                        <MapPin className="size-3.5 text-emerald-200" />
+                  <div className="w-full md:w-[280px]">
+                    <div className="border-brand-positive/15 bg-brand-positive/20 flex flex-col gap-2 rounded-lg border p-4">
+                      <div className="flex items-start gap-2.5">
+                        <div className="bg-brand-positive/40 flex size-6 shrink-0 items-center justify-center rounded-full">
+                          {isRecommendationLoading ? (
+                            <Loader2 className="size-3.5 animate-spin text-emerald-200" />
+                          ) : (
+                            <Sparkles className="size-3.5 text-emerald-200" />
+                          )}
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-[11px] leading-relaxed font-semibold text-white">
+                            {pricingRecommendation?.short_badge_text ||
+                              "The market rate for NDA review is ₹6K–₹15K. It's recommended to set your price within this range."}
+                          </p>
+                          {pricingRecommendation?.recommendation && (
+                            <p className="mt-2 border-t border-emerald-500/20 pt-2 text-[10px] leading-normal font-normal text-emerald-200/90">
+                              {pricingRecommendation.recommendation}
+                            </p>
+                          )}
+                        </div>
                       </div>
-                      <p className="text-[10px] leading-relaxed font-medium text-white">
-                        The market rate for NDA review is ₹6K–₹15K. It's recommended to set your
-                        price within this range.
-                      </p>
                     </div>
                   </div>
                 </div>
