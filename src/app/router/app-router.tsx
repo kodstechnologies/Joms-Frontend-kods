@@ -21,6 +21,11 @@ const UserVenueChatTestPage = lazy(() =>
 const PartnerChatTestPage = lazy(() =>
   import('@/modules/chat-test').then((m) => ({ default: m.PartnerChatTestPage })),
 )
+const PaymentFinanceTestingPage = lazy(() =>
+  import('@/modules/chat-test/pages/payment-finance-testing-page').then((m) => ({
+    default: m.PaymentFinanceTestingPage,
+  })),
+)
 const ExecutiveOverviewPage = lazy(() =>
   import('@/modules/dashboard/pages/executive-overview-page').then((m) => ({
     default: m.ExecutiveOverviewPage,
@@ -774,6 +779,14 @@ export function AppRouter() {
           element={
             <Suspense fallback={<PageLoader />}>
               <UserVenueChatTestPage />
+            </Suspense>
+          }
+        />
+        <Route
+          path="/payment-finance-testing"
+          element={
+            <Suspense fallback={<PageLoader />}>
+              <PaymentFinanceTestingPage />
             </Suspense>
           }
         />

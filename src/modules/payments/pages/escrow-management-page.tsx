@@ -6,13 +6,14 @@ import { toast } from 'sonner'
 
 import {
   escrowBookingRowsMock,
-  escrowHoldRowsMock,
   escrowManagementTabs,
   type EscrowBookingRow,
   type EscrowHoldRow,
   type EscrowHoldStatus,
   type EscrowManagementTab,
 } from '@/modules/payments/mock/finance-escrow.mock'
+import { useFinanceEscrow } from '@/modules/payments/hooks/use-finance'
+import { mapEscrowToRow } from '@/modules/payments/utils/finance-mappers'
 import { DataTable } from '@/shared/components/table/data-table'
 import {
   TableActionsDropdown,
@@ -47,10 +48,26 @@ export function EscrowManagementPage() {
 
   const isEscrowTab = activeTab === 'escrow' || activeTab === 'all'
 
-  const escrowTabRows = useMemo(
-    () => escrowHoldRowsMock.filter((row) => row.tab === activeTab),
-    [activeTab],
+  const {
+    data: escrowData,
+    isLoading,
+    isFetching,
+    isError,
+  } = useFinanceEscrow({
+    page: currentPage,
+    limit: PAGE_SIZE,
+  })
+
+  const liveEscrowRows = useMemo(
+    () => (escrowData?.data?.rows ?? []).map(mapEscrowToRow),
+    [escrowData],
   )
+  const escrowMeta = escrowData?.data?.meta
+
+  const escrowTabRows = useMemo(() => {
+    if (activeTab === 'escrow' || activeTab === 'all') return liveEscrowRows
+    return []
+  }, [activeTab, liveEscrowRows])
 
   const bookingTabRows = useMemo(
     () => escrowBookingRowsMock.filter((row) => row.tab === activeTab),
@@ -91,14 +108,21 @@ export function EscrowManagementPage() {
   }, [bookingTabRows, searchQuery])
 
   const filteredRows = isEscrowTab ? filteredEscrowRows : filteredBookingRows
-  const totalItems = filteredRows.length
-  const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE))
+  const totalItems =
+    isEscrowTab && !searchQuery.trim()
+      ? (escrowMeta?.total ?? filteredEscrowRows.length)
+      : filteredRows.length
+  const totalPages =
+    isEscrowTab && !searchQuery.trim()
+      ? (escrowMeta?.totalPages ?? 1)
+      : Math.max(1, Math.ceil(totalItems / PAGE_SIZE))
   const safePage = Math.min(currentPage, totalPages)
 
   const pageEscrowRows = useMemo(() => {
+    if (isEscrowTab && !searchQuery.trim()) return filteredEscrowRows
     const start = (safePage - 1) * PAGE_SIZE
     return filteredEscrowRows.slice(start, start + PAGE_SIZE)
-  }, [filteredEscrowRows, safePage])
+  }, [filteredEscrowRows, isEscrowTab, safePage, searchQuery])
 
   const pageBookingRows = useMemo(() => {
     const start = (safePage - 1) * PAGE_SIZE
@@ -409,11 +433,16 @@ export function EscrowManagementPage() {
         ))}
       </div>
 
+      {isError && isEscrowTab ? (
+        <p className="text-body-sm text-brand-danger">Failed to load escrow holds.</p>
+      ) : null}
+
       {isEscrowTab ? (
         <DataTable
           columns={escrowColumns}
           data={pageEscrowRows}
           getRowId={(row) => row.id}
+          isLoading={isLoading || isFetching}
           searchValue={searchQuery}
           onSearchChange={(value) => {
             setSearchQuery(value)
@@ -424,13 +453,13 @@ export function EscrowManagementPage() {
           onAdvancedFilter={() => toast.message('Advance filters coming soon')}
           onExport={() => toast.message('Export coming soon')}
           pagination={{
-            page: safePage,
-            pageSize: PAGE_SIZE,
+            page: escrowMeta?.page ?? safePage,
+            pageSize: escrowMeta?.limit ?? PAGE_SIZE,
             totalItems,
             totalPages,
             onPageChange: setCurrentPage,
           }}
-          resourceLabel="users"
+          resourceLabel="escrow holds"
           emptyMessage="No escrow records found."
         />
       ) : (

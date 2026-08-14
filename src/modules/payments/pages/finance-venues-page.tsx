@@ -1,13 +1,13 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { AlertTriangle, Eye, SlidersHorizontal, SquarePen, Tag, Trash2 } from 'lucide-react'
+import { AlertTriangle, Eye, SlidersHorizontal, Tag, Trash2 } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
-import {
-  financeVenueRowsMock,
-  type FinanceVenueRow,
-} from '@/modules/payments/mock/finance-venues.mock'
+import { type FinanceVenueRow } from '@/modules/payments/mock/finance-venues.mock'
+import { useAddFinanceNote, useFinanceRevenue } from '@/modules/payments/hooks/use-finance'
+import { mapPaymentToVenueRow } from '@/modules/payments/utils/finance-mappers'
+import { AddTagsModal } from '@/shared/components/modals/add-tags-modal'
 import { DataTable } from '@/shared/components/table/data-table'
 import {
   TableActionsDropdown,
@@ -34,27 +34,31 @@ export function FinanceVenuesPage() {
   const [currentPage, setCurrentPage] = useState(1)
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [selectedRowIds, setSelectedRowIds] = useState<string[]>([])
+  const [tagTarget, setTagTarget] = useState<FinanceVenueRow | null>(null)
+  const addNote = useAddFinanceNote()
+
+  const { data, isLoading, isFetching } = useFinanceRevenue({
+    page: currentPage,
+    limit: PAGE_SIZE,
+    module: 'venue',
+  })
+
+  const rows = useMemo(() => (data?.data?.rows ?? []).map(mapPaymentToVenueRow), [data])
+  const meta = data?.data?.meta
 
   const filteredRows = useMemo(() => {
     const query = searchQuery.trim().toLowerCase()
-    if (!query) return financeVenueRowsMock
+    if (!query) return rows
 
-    return financeVenueRowsMock.filter((row) =>
+    return rows.filter((row) =>
       [row.venueId, row.name, row.owner, row.bookingId, row.bookingTitle]
         .join(' ')
         .toLowerCase()
         .includes(query),
     )
-  }, [searchQuery])
+  }, [rows, searchQuery])
 
-  const totalItems = filteredRows.length
-  const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE))
-  const safePage = Math.min(currentPage, totalPages)
-
-  const pageRows = useMemo(() => {
-    const start = (safePage - 1) * PAGE_SIZE
-    return filteredRows.slice(start, start + PAGE_SIZE)
-  }, [filteredRows, safePage])
+  const pageRows = searchQuery.trim() ? filteredRows : rows
 
   const visibleRowIds = useMemo(() => pageRows.map((row) => row.id), [pageRows])
   const allVisibleSelected =
@@ -98,21 +102,11 @@ export function FinanceVenuesPage() {
             View Details
           </TableActionsItem>
           <TableActionsItem
-            icon={<SquarePen className="size-[18px] text-slate-700" aria-hidden="true" />}
-            className="text-slate-800 hover:bg-slate-100 hover:text-slate-900"
-            onClick={() => {
-              setActiveDropdownId(null)
-              toast.message('Add internal note coming soon')
-            }}
-          >
-            Add internal note
-          </TableActionsItem>
-          <TableActionsItem
             icon={<Tag className="size-[18px] text-slate-700" aria-hidden="true" />}
             className="text-slate-800 hover:bg-slate-100 hover:text-slate-900"
             onClick={() => {
               setActiveDropdownId(null)
-              toast.message('Add tags coming soon')
+              setTagTarget(record)
             }}
           >
             Add Tags
@@ -263,6 +257,7 @@ export function FinanceVenuesPage() {
         columns={columns}
         data={pageRows}
         getRowId={(row) => row.id}
+        isLoading={isLoading || isFetching}
         searchValue={searchQuery}
         onSearchChange={(value) => {
           setSearchQuery(value)
@@ -273,14 +268,38 @@ export function FinanceVenuesPage() {
         onAdvancedFilter={() => toast.message('Advance filters coming soon')}
         onExport={() => toast.message('Export coming soon')}
         pagination={{
-          page: safePage,
-          pageSize: PAGE_SIZE,
-          totalItems,
-          totalPages,
+          page: meta?.page ?? currentPage,
+          pageSize: meta?.limit ?? PAGE_SIZE,
+          totalItems: meta?.total ?? 0,
+          totalPages: meta?.totalPages ?? 1,
           onPageChange: setCurrentPage,
         }}
-        resourceLabel="users"
+        resourceLabel="venues"
         emptyMessage="No venue records found."
+      />
+
+      <AddTagsModal
+        open={!!tagTarget}
+        entityLabel="venue payment"
+        onClose={() => setTagTarget(null)}
+        onSubmit={async ({ tags, adminNotes }) => {
+          if (!tagTarget) return
+          try {
+            await addNote.mutateAsync({
+              id: tagTarget.id,
+              resourceType: 'Payment',
+              adminNote: `[Tags: ${tags.join(', ')}] ${adminNotes}`,
+            })
+            toast.success('Tags added')
+            setTagTarget(null)
+          } catch (err) {
+            const msg =
+              (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+              'Failed to add tags'
+            toast.error(msg)
+            throw err
+          }
+        }}
       />
     </div>
   )

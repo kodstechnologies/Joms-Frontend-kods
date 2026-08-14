@@ -4,10 +4,9 @@ import { Eye, SlidersHorizontal } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
-import {
-  financeReconciliationRowsMock,
-  type FinanceReconciliationRow,
-} from '@/modules/payments/mock/finance-reconciliation.mock'
+import { type FinanceReconciliationRow } from '@/modules/payments/mock/finance-reconciliation.mock'
+import { useFinanceReconciliation } from '@/modules/payments/hooks/use-finance'
+import { mapReconToRow } from '@/modules/payments/utils/finance-mappers'
 import { DataTable } from '@/shared/components/table/data-table'
 import {
   TableActionsDropdown,
@@ -35,11 +34,19 @@ export function FinanceReconciliationPage() {
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [selectedRowIds, setSelectedRowIds] = useState<string[]>([])
 
+  const { data, isLoading, isFetching } = useFinanceReconciliation({
+    page: currentPage,
+    limit: PAGE_SIZE,
+  })
+
+  const rows = useMemo(() => (data?.data?.rows ?? []).map(mapReconToRow), [data])
+  const meta = data?.data?.meta
+
   const filteredRows = useMemo(() => {
     const query = searchQuery.trim().toLowerCase()
-    if (!query) return financeReconciliationRowsMock
+    if (!query) return rows
 
-    return financeReconciliationRowsMock.filter((row) =>
+    return rows.filter((row) =>
       [
         row.reconciliationId,
         row.gateway,
@@ -53,16 +60,9 @@ export function FinanceReconciliationPage() {
         .toLowerCase()
         .includes(query),
     )
-  }, [searchQuery])
+  }, [rows, searchQuery])
 
-  const totalItems = filteredRows.length
-  const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE))
-  const safePage = Math.min(currentPage, totalPages)
-
-  const pageRows = useMemo(() => {
-    const start = (safePage - 1) * PAGE_SIZE
-    return filteredRows.slice(start, start + PAGE_SIZE)
-  }, [filteredRows, safePage])
+  const pageRows = searchQuery.trim() ? filteredRows : rows
 
   const visibleRowIds = useMemo(() => pageRows.map((row) => row.id), [pageRows])
   const allVisibleSelected =
@@ -242,6 +242,7 @@ export function FinanceReconciliationPage() {
         columns={columns}
         data={pageRows}
         getRowId={(row) => row.id}
+        isLoading={isLoading || isFetching}
         searchValue={searchQuery}
         onSearchChange={(value) => {
           setSearchQuery(value)
@@ -252,13 +253,13 @@ export function FinanceReconciliationPage() {
         onAdvancedFilter={() => toast.message('Advance filters coming soon')}
         onExport={() => toast.message('Export coming soon')}
         pagination={{
-          page: safePage,
-          pageSize: PAGE_SIZE,
-          totalItems,
-          totalPages,
+          page: meta?.page ?? currentPage,
+          pageSize: meta?.limit ?? PAGE_SIZE,
+          totalItems: meta?.total ?? 0,
+          totalPages: meta?.totalPages ?? 1,
           onPageChange: setCurrentPage,
         }}
-        resourceLabel="users"
+        resourceLabel="records"
         emptyMessage="No reconciliation records found."
       />
     </div>

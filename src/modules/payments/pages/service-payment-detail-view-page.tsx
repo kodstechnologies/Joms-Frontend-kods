@@ -1,9 +1,17 @@
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import { ArrowLeft, Download, SquarePen } from 'lucide-react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 
-import { getServicePaymentDetailById } from '@/modules/payments/mock/service-payment-detail.mock'
+import { AddFinanceNoteModal } from '@/modules/payments/components/add-finance-note-modal'
+import { FinanceInternalNotesCard } from '@/modules/payments/components/finance-internal-notes-card'
+import { useAddFinanceNote, useFinancePayment } from '@/modules/payments/hooks/use-finance'
+import {
+  formatDate,
+  formatInr,
+  mapPaymentStatus,
+  titleCase,
+} from '@/modules/payments/utils/finance-mappers'
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
@@ -65,8 +73,81 @@ function StatusBadge({ status }: { status: string }) {
 
 export function ServicePaymentDetailViewPage() {
   const navigate = useNavigate()
-  const { id = 'all-01' } = useParams<{ id: string }>()
-  const detail = getServicePaymentDetailById(id)
+  const { id = '' } = useParams<{ id: string }>()
+  const { data, isLoading, isError } = useFinancePayment(id)
+  const noteMutation = useAddFinanceNote()
+  const [isNoteModalOpen, setIsNoteModalOpen] = useState(false)
+  const payment = data?.data
+
+  if (isLoading) {
+    return <p className="text-body-sm text-muted">Loading payment details...</p>
+  }
+
+  if (isError || !payment) {
+    return (
+      <div className="space-y-4">
+        <p className="text-body-sm text-brand-danger">Payment not found.</p>
+        <button
+          type="button"
+          onClick={() => navigateBackOrFallback(navigate, '/finance/services')}
+          className="ui-cta ui-cta-secondary"
+        >
+          Back to Services
+        </button>
+      </div>
+    )
+  }
+
+  const snapshot = payment.moduleSnapshot || {}
+  const status = mapPaymentStatus(payment.status)
+  const paymentStatus =
+    status === 'Paid' ? 'Successful' : status === 'Failed' ? 'Failed' : 'Pending'
+
+  const detail = {
+    serviceTitle: (snapshot.title as string) || payment.description || titleCase(payment.module),
+    serviceDescription: payment.description || `${titleCase(payment.module)} payment details`,
+    paymentInformation: {
+      paymentId: payment.orderId,
+      transactionId: payment._id,
+      bookingId: payment.referenceId || payment.orderId,
+      paymentMethod: payment.paymentMethod || 'Razorpay',
+      paymentGateway: 'Razorpay',
+      createdOn: formatDate(payment.createdAt),
+      settlementStatus: titleCase(payment.pricingType) || '—',
+      paymentStatus: paymentStatus as 'Successful' | 'Pending' | 'Failed',
+    },
+    serviceInformation: {
+      serviceName: (snapshot.title as string) || payment.description || payment.orderId,
+      serviceType: titleCase(payment.pricingType || payment.referenceType),
+      category: (snapshot.category as string) || titleCase(payment.module),
+      startDate: formatDate(payment.createdAt),
+      endDate: formatDate(payment.updatedAt || payment.createdAt),
+      completionStatus: (status === 'Paid' ? 'Completed' : 'Pending') as
+        | 'Completed'
+        | 'In Progress'
+        | 'Pending',
+      paymentStatus: paymentStatus as 'Successful' | 'Pending' | 'Failed',
+    },
+    timelineInformation: {
+      bookingDate: formatDate(payment.createdAt),
+      paymentDate: formatDate(payment.createdAt),
+      serviceCompletedOn: '—',
+      payoutReleasedOn: '—',
+    },
+    parties: {
+      clientId: payment.userId || '—',
+      clientName: (snapshot.userName as string) || payment.userId || '—',
+      expertId: payment.partnerId || '—',
+      expertName: (snapshot.partnerName as string) || payment.partnerId || '—',
+    },
+    financialBreakdown: {
+      payoutId: formatInr(payment.amount),
+      payoutMethod: payment.paymentMethod || 'Bank Transfer',
+      serviceCompletedOn: '—',
+      payoutDate: '—',
+      paymentStatus: paymentStatus as 'Successful' | 'Pending' | 'Failed',
+    },
+  }
 
   return (
     <div className="bg-brand-bg flex flex-col gap-5 pb-6">
@@ -105,7 +186,7 @@ export function ServicePaymentDetailViewPage() {
               <Download className="size-4" />
               Download Report
             </Button>
-            <Button onClick={() => toast.message('Add notes coming soon')}>
+            <Button onClick={() => setIsNoteModalOpen(true)}>
               <SquarePen className="size-4" />
               Add Notes
             </Button>
@@ -189,6 +270,26 @@ export function ServicePaymentDetailViewPage() {
           </DetailCard>
         </div>
       </div>
+
+      <FinanceInternalNotesCard resourceId={payment._id} />
+
+      <AddFinanceNoteModal
+        open={isNoteModalOpen}
+        isSubmitting={noteMutation.isPending}
+        onClose={() => setIsNoteModalOpen(false)}
+        onSubmit={(adminNote) => {
+          noteMutation.mutate(
+            { id: payment._id, resourceType: 'Payment', adminNote },
+            {
+              onSuccess: () => {
+                toast.success('Note saved')
+                setIsNoteModalOpen(false)
+              },
+              onError: () => toast.error('Failed to save note'),
+            },
+          )
+        }}
+      />
     </div>
   )
 }

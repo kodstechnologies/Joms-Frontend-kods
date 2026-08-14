@@ -2,7 +2,7 @@ import { Tag, X } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 
-import { tagOptions } from '../mock/support.mock'
+import { PLATFORM_TAGS } from '@/shared/constants/platform-tags'
 import { cn } from '@/shared/lib/cn'
 
 type AddTagModalProps = {
@@ -11,7 +11,7 @@ type AddTagModalProps = {
 }
 
 export function AddTagModal({ open, onClose }: AddTagModalProps) {
-  const [selectedTags, setSelectedTags] = useState<string[]>(['Tag Title'])
+  const [selectedTags, setSelectedTags] = useState<string[]>([])
   const [notes, setNotes] = useState('')
 
   if (!open) return null
@@ -39,12 +39,12 @@ export function AddTagModal({ open, onClose }: AddTagModalProps) {
             <Tag className="icon-lg" />
           </div>
           <p className="text-body-md text-muted">
-            You are adding a &apos;Tag&apos; for this user make sure you choose a right tag which
-            can be used for internal purpose.
+            You are adding a tag for this ticket. Choose tags used for internal tracking and
+            filtering.
           </p>
 
           <div className="flex flex-wrap justify-center gap-[10px]">
-            {tagOptions.map((tag) => (
+            {PLATFORM_TAGS.map((tag) => (
               <button
                 key={tag}
                 type="button"
@@ -81,7 +81,17 @@ export function AddTagModal({ open, onClose }: AddTagModalProps) {
           <button
             type="button"
             onClick={() => {
-              toast.success('Tag added (static preview)')
+              if (selectedTags.length === 0) {
+                toast.error('Select at least one tag')
+                return
+              }
+              if (!notes.trim()) {
+                toast.error('Admin notes are required')
+                return
+              }
+              toast.success('Tag added')
+              setSelectedTags([])
+              setNotes('')
               onClose()
             }}
             className="ui-modal-btn ui-modal-btn-gold"

@@ -1,4 +1,3 @@
-import type { PropsWithChildren, ReactNode } from 'react'
 import {
   Area,
   Bar,
@@ -16,6 +15,7 @@ import {
 } from 'recharts'
 import { RefreshCw, SlidersHorizontal, TrendingUp } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import type { PropsWithChildren, ReactNode } from 'react'
 
 import {
   escrowStatusMock,
@@ -25,13 +25,13 @@ import {
   revenueByCategoryMock,
   revenueFeeTrendsMock,
   revenueProfitCardsMock,
-  topSummaryCardsMock,
-  totalEscrowAmount,
   weeklyPayoutScheduleMock,
   type KeyMetric,
   type RevenueCategoryPoint,
   type TrendMetric,
 } from '@/modules/payments/mock/finance-dashboard.mock'
+import { useFinanceDashboard } from '@/modules/payments/hooks/use-finance'
+import { formatInr, mapDashboardSummaryCards } from '@/modules/payments/utils/finance-mappers'
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
 
@@ -250,12 +250,35 @@ function CategoryLegend({ items }: { items: RevenueCategoryPoint[] }) {
   )
 }
 
-function formatInr(value: number) {
+function formatCurrency(value: number) {
   return `₹${value.toLocaleString('en-IN')}`
 }
 
 export function FinanceDashboardPage() {
   const navigate = useNavigate()
+  const { data, isLoading, isError, refetch, isFetching } = useFinanceDashboard()
+  const summary = data?.data
+  const topSummaryCards = mapDashboardSummaryCards(summary)
+  const totalEscrowAmount = summary?.totalInEscrow ?? 0
+  const liveRevenueCards: TrendMetric[] = summary
+    ? [
+        {
+          label: 'Total Platform Revenue',
+          value: formatInr(summary.totalPlatformRevenue),
+          change: '—',
+          changeType: 'up',
+          changeNote: 'from payments',
+        },
+        {
+          label: 'Collections This Month',
+          value: formatInr(summary.collectionsThisMonth),
+          change: '—',
+          changeType: 'up',
+          changeNote: 'current month',
+        },
+        ...revenueProfitCardsMock.slice(2),
+      ]
+    : revenueProfitCardsMock
 
   return (
     <div className="space-y-6">
@@ -266,17 +289,38 @@ export function FinanceDashboardPage() {
             Track revenue, payouts, and financial performance
           </p>
         </div>
-        <Button
-          className="ui-manage-metrics"
-          onClick={() => navigate('/metrics/finance-dashboard')}
-        >
-          <SlidersHorizontal className="size-4" />
-          Manage Metrics
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            className="ui-cta ui-cta-secondary"
+            onClick={() => void refetch()}
+            disabled={isFetching}
+          >
+            <RefreshCw className={cn('size-4', isFetching && 'animate-spin')} />
+            Refresh
+          </Button>
+          <Button
+            className="ui-manage-metrics"
+            onClick={() => navigate('/metrics/finance-dashboard')}
+          >
+            <SlidersHorizontal className="size-4" />
+            Manage Metrics
+          </Button>
+        </div>
       </div>
 
+      {isError ? (
+        <p className="text-body-sm text-brand-danger">Failed to load finance dashboard summary.</p>
+      ) : null}
+
       <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-        {topSummaryCardsMock.map((metric) => (
+        {(isLoading && !topSummaryCards.length
+          ? [
+              { label: 'Total in Escrow', value: '…', change: '—', changeType: 'up' as const },
+              { label: 'Pending Payout', value: '…', change: '—', changeType: 'up' as const },
+              { label: 'Disputed Amount', value: '…', change: '—', changeType: 'up' as const },
+            ]
+          : topSummaryCards
+        ).map((metric) => (
           <SummaryCard key={metric.label} metric={metric} />
         ))}
       </div>
@@ -284,7 +328,7 @@ export function FinanceDashboardPage() {
       <div>
         <SectionTitle>Revenue &amp; Profit</SectionTitle>
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-          {revenueProfitCardsMock.map((metric) => (
+          {liveRevenueCards.map((metric) => (
             <MetricCard key={metric.label} metric={metric} />
           ))}
         </div>
@@ -453,7 +497,9 @@ export function FinanceDashboardPage() {
                 <div key={item.label} className="space-y-2">
                   <div className="text-body-sm flex items-center justify-between gap-3">
                     <span className="text-muted">{item.label}</span>
-                    <span className="text-brand-text font-semibold">{formatInr(item.value)}</span>
+                    <span className="text-brand-text font-semibold">
+                      {formatCurrency(item.value)}
+                    </span>
                   </div>
                   <div className="h-2 overflow-hidden rounded-full bg-white/10">
                     <div

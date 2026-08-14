@@ -1,7 +1,6 @@
 import { Shield, X } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { toast } from 'sonner'
 
 import { cn } from '@/shared/lib/cn'
 
@@ -13,7 +12,7 @@ type EscalateToSuperAdminModalProps = {
   requestedBy: string
   amount: string
   onClose: () => void
-  onSubmit?: (payload: { priority: EscalationPriority; adminNotes: string }) => void
+  onSubmit?: (payload: { priority: EscalationPriority; adminNotes: string }) => void | Promise<void>
 }
 
 const priorityOptions: Array<{
@@ -63,10 +62,13 @@ export function EscalateToSuperAdminModal({
     }
   }, [open, handleClose])
 
-  const handleSubmit = () => {
-    onSubmit?.({ priority, adminNotes })
-    toast.success('Escalated to Super Admin')
-    handleClose()
+  const handleSubmit = async () => {
+    try {
+      await onSubmit?.({ priority, adminNotes })
+      handleClose()
+    } catch {
+      // Parent surfaces API errors via toast
+    }
   }
 
   if (!open) return null

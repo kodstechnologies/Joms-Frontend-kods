@@ -6,6 +6,7 @@ export type MembershipPricing = {
   billingCycleName: string
   price: number
   discount: number
+  finalPrice?: number
 }
 
 export type MembershipFeatures = {

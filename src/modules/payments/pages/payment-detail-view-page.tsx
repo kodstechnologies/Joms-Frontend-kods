@@ -1,16 +1,25 @@
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { ArrowLeft, Download, SquarePen } from 'lucide-react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 
-import { getPaymentDetailById } from '@/modules/payments/mock/payment-detail.mock'
+import { fetchPartnerDisplayNames } from '@/modules/payments/api/partner-lookup-api'
+import { AddFinanceNoteModal } from '@/modules/payments/components/add-finance-note-modal'
+import { FinanceInternalNotesCard } from '@/modules/payments/components/finance-internal-notes-card'
+import { useAddFinanceNote, useFinancePayment } from '@/modules/payments/hooks/use-finance'
+import {
+  formatDate,
+  formatInr,
+  mapPaymentStatus,
+  titleCase,
+} from '@/modules/payments/utils/finance-mappers'
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 
 const cardClass = 'radius-lg border border-white/[0.06] bg-brand-surface p-4 sm:p-5'
 const sectionTitleClass = 'text-body-md-semibold text-brand-text leading-[20px]'
-const sectionSubtitleClass = 'text-body-sm text-muted mt-1'
 const labelClass = 'text-body-sm text-muted'
 const valueClass = 'text-body-sm-medium text-brand-text'
 
@@ -41,7 +50,7 @@ function DetailRow({
 }
 
 function getStatusBadgeClass(status: string) {
-  if (status === 'Successful') {
+  if (status === 'Paid' || status === 'Successful') {
     return 'border-brand-positive/25 bg-brand-positive/10 text-brand-positive'
   }
   if (status === 'Pending') {
@@ -52,8 +61,68 @@ function getStatusBadgeClass(status: string) {
 
 export function PaymentDetailViewPage() {
   const navigate = useNavigate()
-  const { id = 'rev-01' } = useParams<{ id: string }>()
-  const detail = getPaymentDetailById(id)
+  const { id = '' } = useParams<{ id: string }>()
+  const { data, isLoading, isError } = useFinancePayment(id)
+  const noteMutation = useAddFinanceNote()
+  const [isNoteModalOpen, setIsNoteModalOpen] = useState(false)
+  const payment = data?.data
+  const status = payment ? mapPaymentStatus(payment.status) : 'Pending'
+  const snapshot = (payment?.moduleSnapshot || {}) as Record<string, unknown>
+  const moduleData = (payment?.moduleData || {}) as Record<string, unknown>
+  // Membership: payer is the partner — older rows may only have userId populated.
+  const partnerId =
+    payment?.partnerId ||
+    (payment?.userType === 'partner' ? payment.userId : null) ||
+    (typeof snapshot.partnerId === 'string' ? snapshot.partnerId : null)
+  const snapshotPartnerName =
+    (typeof snapshot.partnerName === 'string' && snapshot.partnerName) ||
+    (typeof moduleData.partnerName === 'string' && moduleData.partnerName) ||
+    null
+  const { data: partnerNameMap } = useQuery({
+    queryKey: ['finance-partner-name', partnerId],
+    queryFn: () => fetchPartnerDisplayNames([String(partnerId)]),
+    enabled: !!partnerId && !snapshotPartnerName,
+    staleTime: 1000 * 60 * 5,
+  })
+  const partnerName =
+    snapshotPartnerName || (partnerId ? partnerNameMap?.[String(partnerId)] : null) || null
+  const title =
+    (typeof snapshot.title === 'string' && snapshot.title) ||
+    (typeof snapshot.planName === 'string' &&
+      `${snapshot.planName}${snapshot.billingCycleName ? ` - ${snapshot.billingCycleName}` : ''}`) ||
+    payment?.description ||
+    null
+  // Older membership rows may lack reference* if schema enum rejected MembershipPlan.
+  const referenceType =
+    payment?.referenceType ||
+    (payment?.module === 'membership' ? 'MembershipPlan' : null) ||
+    (typeof snapshot.referenceType === 'string' ? snapshot.referenceType : null)
+  const referenceId =
+    payment?.referenceId ||
+    (typeof snapshot.membershipPlanId === 'string' ? snapshot.membershipPlanId : null) ||
+    (typeof moduleData.membershipPlanId === 'string' ? moduleData.membershipPlanId : null) ||
+    null
+  const pricingType =
+    payment?.pricingType || (payment?.module === 'membership' ? 'membership' : null)
+
+  if (isLoading) {
+    return <p className="text-body-sm text-muted">Loading payment details...</p>
+  }
+
+  if (isError || !payment) {
+    return (
+      <div className="space-y-4">
+        <p className="text-body-sm text-brand-danger">Payment not found.</p>
+        <button
+          type="button"
+          onClick={() => navigateBackOrFallback(navigate, '/finance/revenue')}
+          className="ui-cta ui-cta-secondary"
+        >
+          Back to Revenue
+        </button>
+      </div>
+    )
+  }
 
   return (
     <div className="bg-brand-bg flex flex-col gap-5 pb-6">
@@ -79,136 +148,73 @@ export function PaymentDetailViewPage() {
         </p>
       </header>
 
-      <section className={cn(cardClass, 'p-5')}>
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-          <div>
-            <h2 className={sectionTitleClass}>{detail.serviceTitle}</h2>
-            <p className={cn(sectionSubtitleClass, 'leading-[20px]')}>
-              {detail.serviceDescription}
-            </p>
-          </div>
-          <div className="flex flex-wrap items-center gap-3">
-            <Button onClick={() => toast.message('Download report coming soon')}>
-              <Download className="size-4" />
-              Download Report
-            </Button>
-            <Button onClick={() => toast.message('Add notes coming soon')}>
-              <SquarePen className="size-4" />
-              Add Notes
-            </Button>
-            <Button onClick={() => toast.message('Escalate coming soon')}>
-              <SquarePen className="size-4" />
-              Escalate
-            </Button>
-          </div>
-        </div>
-      </section>
-
-      <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
-        <div className="flex flex-col gap-5">
-          <DetailCard title="Revenue Information">
-            <DetailRow label="Revenue ID" value={detail.revenueId} />
-            <DetailRow label="Source Module" value={detail.sourceModule} />
-            <DetailRow label="Source Type" value={detail.sourceType} />
-            <DetailRow label="Source ID" value={detail.sourceId} />
-            <DetailRow label="Source Name" value={detail.sourceName} />
-            <DetailRow label="Host / Owner" value={detail.hostOwner} />
-            <DetailRow label="Transaction Date" value={detail.transactionDate} />
-            <DetailRow label="Currency" value={detail.currency} />
-            <DetailRow
-              label="Payment Status"
-              value={
-                <span
-                  className={cn(
-                    'text-body-sm-semibold inline-flex rounded-full border px-2.5 py-0.5',
-                    getStatusBadgeClass(detail.paymentStatus),
-                  )}
-                >
-                  {detail.paymentStatus}
-                </span>
-              }
-            />
-          </DetailCard>
-
-          <DetailCard title="Revenue Breakdown">
-            <DetailRow label="Gross Amount" value={detail.revenueBreakdown.grossAmount} />
-            <DetailRow label="Discounts" value={detail.revenueBreakdown.discounts} />
-            <DetailRow label="Refunds" value={detail.revenueBreakdown.refunds} />
-            <DetailRow
-              label="Net Revenue"
-              value={detail.revenueBreakdown.netRevenue}
-              valueClassName="text-body-sm-semibold"
-            />
-          </DetailCard>
-
-          <DetailCard title="Tax & Fee Breakdown">
-            <DetailRow
-              label="Tax Collected (GST 18%)"
-              value={detail.taxFeeBreakdown.taxCollected}
-            />
-            <DetailRow
-              label="Payment Gateway Fee"
-              value={detail.taxFeeBreakdown.paymentGatewayFee}
-            />
-            <DetailRow label="Platform Fee (20%)" value={detail.taxFeeBreakdown.platformFee} />
-            <DetailRow
-              label="Net Platform Earnings"
-              value={detail.taxFeeBreakdown.netPlatformEarnings}
-              valueClassName="text-body-sm-semibold"
-            />
-          </DetailCard>
-        </div>
-
-        <div className="flex flex-col gap-5">
-          <DetailCard title="Revenue Flow Summary">
-            <DetailRow label="Customer Paid" value={detail.revenueFlow.customerPaid} />
-            <DetailRow label="After Discounts" value={detail.revenueFlow.afterDiscounts} />
-            <DetailRow label="After Refunds" value={detail.revenueFlow.afterRefunds} />
-            <DetailRow label="Platform Commission" value={detail.revenueFlow.platformCommission} />
-            <DetailRow label="Gateway Deduction" value={detail.revenueFlow.gatewayDeduction} />
-            <DetailRow
-              label="Final Platform Earnings"
-              value={detail.revenueFlow.finalPlatformEarnings}
-              valueClassName="text-body-sm-semibold"
-            />
-            <DetailRow
-              label="Host Payout"
-              value={detail.revenueFlow.hostPayout}
-              valueClassName="text-body-sm-semibold"
-            />
-          </DetailCard>
-
-          <DetailCard title="Transaction References">
-            <DetailRow label="Gateway Name" value={detail.transactionReferences.gatewayName} />
-            <DetailRow
-              label="Gateway Transaction ID"
-              value={detail.transactionReferences.gatewayTransactionId}
-            />
-            <DetailRow
-              label="Platform Record ID"
-              value={detail.transactionReferences.platformRecordId}
-            />
-            <DetailRow
-              label="Settlement Date"
-              value={detail.transactionReferences.settlementDate}
-            />
-          </DetailCard>
-
-          {detail.additionalVenueContext && (
-            <DetailCard title="Additional Venue Context">
-              <DetailRow label="Booking Dates" value={detail.additionalVenueContext.bookingDates} />
-              <DetailRow label="Duration" value={detail.additionalVenueContext.duration} />
-              <DetailRow label="Event Type" value={detail.additionalVenueContext.eventType} />
-              <DetailRow
-                label="Cancellation Policy"
-                value={detail.additionalVenueContext.cancellationPolicy}
-              />
-              <DetailRow label="Venue ID" value={detail.additionalVenueContext.venueId} />
-              <DetailRow label="Owner ID" value={detail.additionalVenueContext.ownerId} />
-            </DetailCard>
-          )}
-        </div>
+      <div className="flex flex-wrap gap-2">
+        <Button className="ui-cta ui-cta-secondary" onClick={() => setIsNoteModalOpen(true)}>
+          <SquarePen className="size-4" />
+          Add Note
+        </Button>
+        <Button
+          className="ui-cta ui-cta-secondary"
+          onClick={() => toast.message('Export coming soon')}
+        >
+          <Download className="size-4" />
+          Export
+        </Button>
       </div>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <DetailCard title="Payment Information">
+          <DetailRow label="Order ID" value={payment.orderId} />
+          <DetailRow label="Module" value={titleCase(payment.module)} />
+          <DetailRow label="Amount" value={formatInr(payment.amount)} />
+          <DetailRow
+            label="Status"
+            value={
+              <span
+                className={cn(
+                  'text-body-sm-semibold inline-flex rounded-full border px-2.5 py-0.5',
+                  getStatusBadgeClass(status),
+                )}
+              >
+                {status}
+              </span>
+            }
+          />
+          <DetailRow label="Pricing Type" value={titleCase(pricingType)} />
+          <DetailRow label="Payment Method" value={payment.paymentMethod || '—'} />
+          <DetailRow label="Created" value={formatDate(payment.createdAt)} />
+        </DetailCard>
+
+        <DetailCard title="Parties & Reference">
+          <DetailRow label="User ID" value={payment.userId || '—'} />
+          <DetailRow label="User Type" value={titleCase(payment.userType)} />
+          <DetailRow label="Partner ID" value={partnerId || '—'} />
+          <DetailRow label="Partner Name" value={partnerName || '—'} />
+          <DetailRow label="Reference Type" value={titleCase(referenceType)} />
+          <DetailRow label="Reference ID" value={referenceId || '—'} />
+          <DetailRow label="Title" value={title || '—'} />
+        </DetailCard>
+      </div>
+
+      <FinanceInternalNotesCard resourceId={payment._id} />
+
+      <AddFinanceNoteModal
+        open={isNoteModalOpen}
+        isSubmitting={noteMutation.isPending}
+        onClose={() => setIsNoteModalOpen(false)}
+        onSubmit={(adminNote) => {
+          noteMutation.mutate(
+            { id: payment._id, resourceType: 'Payment', adminNote },
+            {
+              onSuccess: () => {
+                toast.success('Note saved')
+                setIsNoteModalOpen(false)
+              },
+              onError: () => toast.error('Failed to save note'),
+            },
+          )
+        }}
+      />
     </div>
   )
 }

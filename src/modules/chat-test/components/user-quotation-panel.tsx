@@ -37,6 +37,9 @@ import type { StaticChatUser } from '../config/static-users'
 
 type Props = {
   user: StaticChatUser
+  /** Prefill partner id (e.g. from finance testing harness) */
+  defaultPartnerId?: string
+  defaultPartnerName?: string
 }
 
 type QuotationRow = QuotationRequest & {
@@ -767,7 +770,7 @@ export function UserQuotationPanel({ user }: Props) {
                         setLoading(true)
                         try {
                           await approveServiceOrder(user.accessToken, order._id)
-                          setOk('Service order approved')
+                          setOk('Service order approved — rate it in Profile insights below')
                           await refresh()
                         } catch (err) {
                           setError(errMessage(err))
@@ -967,6 +970,7 @@ export function UserQuotationPanel({ user }: Props) {
                 <div className="font-medium">{item.title}</div>
                 <div className="text-xs text-zinc-500">
                   {item.engagementType} · partner {item.partnerId}
+                  {item.serviceId ? ` · service ${item.serviceId}` : ''}
                   {item.partnerName ? ` · ${item.partnerName}` : ''}
                 </div>
                 <div className="mt-2 flex flex-wrap items-center gap-2">

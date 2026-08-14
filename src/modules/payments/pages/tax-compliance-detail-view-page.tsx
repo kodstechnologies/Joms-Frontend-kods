@@ -3,7 +3,8 @@ import { ArrowLeft, Check, Download, SquarePen } from 'lucide-react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 
-import { getTaxComplianceDetailById } from '@/modules/payments/mock/tax-compliance-detail.mock'
+import { useFinanceTaxDetail } from '@/modules/payments/hooks/use-finance'
+import { formatDate, formatInr, titleCase } from '@/modules/payments/utils/finance-mappers'
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
@@ -65,8 +66,89 @@ function StatusBadge({ status }: { status: string }) {
 
 export function TaxComplianceDetailViewPage() {
   const navigate = useNavigate()
-  const { id = 'tax-01' } = useParams<{ id: string }>()
-  const detail = getTaxComplianceDetailById(id)
+  const { id = '' } = useParams<{ id: string }>()
+  const { data, isLoading, isError } = useFinanceTaxDetail(id)
+  const tax = data?.data
+
+  if (isLoading) {
+    return <p className="text-body-sm text-muted">Loading tax record...</p>
+  }
+
+  if (isError || !tax) {
+    return (
+      <div className="space-y-4">
+        <p className="text-body-sm text-brand-danger">Tax record not found.</p>
+        <button
+          type="button"
+          onClick={() => navigateBackOrFallback(navigate, '/finance/tax')}
+          className="ui-cta ui-cta-secondary"
+        >
+          Back to Tax
+        </button>
+      </div>
+    )
+  }
+
+  const filingStatus = titleCase(tax.filingStatus)
+  const detail = {
+    recordTitle: 'Tax & Compliance Information',
+    recordDescription: `${titleCase(tax.module)} · ${tax.taxType}`,
+    taxRecordOverview: {
+      taxRecordId: tax.taxRecordId,
+      transactionId: String(tax.paymentId || '—'),
+      entityType: titleCase(tax.module),
+      region: tax.region || 'India',
+      taxType: tax.taxType,
+      taxRate: tax.taxRatePercent != null ? `${tax.taxRatePercent}%` : '—',
+      currency: tax.currency || 'INR',
+      invoiceNumber: tax.invoiceNumber || '—',
+      invoiceDate: formatDate(tax.createdAt),
+      filingPeriod: tax.filingPeriod || '—',
+      filingDate: formatDate(tax.createdAt),
+      filedBy: 'Finance Admin',
+      referenceNumber: tax.taxRecordId,
+      filingStatus,
+    },
+    financialBreakdown: {
+      clientId: tax.userId || '—',
+      clientName: tax.userId || '—',
+      taxId: tax.partnerId || '—',
+      billingAddress: '—',
+      transactionDate: formatDate(tax.createdAt),
+      paymentMethod: 'Razorpay',
+      subtotalBeforeTax: formatInr(tax.taxableAmount),
+      discountApplied: '—',
+      taxableAmount: formatInr(tax.taxableAmount),
+      taxAmount: formatInr(tax.taxAmount),
+      totalAmountAfterTax: formatInr((tax.taxableAmount || 0) + (tax.taxAmount || 0)),
+    },
+    venueInformation: {
+      venueName: titleCase(tax.module),
+      ownerName: tax.partnerId || '—',
+      ownerId: tax.partnerId || '—',
+      venueType: '—',
+      capacity: '—',
+      location: tax.region || 'India',
+      billingAddress: '—',
+      approvalStatus:
+        filingStatus === 'Filed' || filingStatus === 'Completed' ? 'Approved' : 'Pending',
+    },
+    taxCalculation: {
+      taxJurisdictionRulesApplied: 'India GST/TDS rules',
+      taxCategory: tax.taxType,
+      taxRateSource: 'Platform tax settings',
+      taxFormulaUsed: 'taxableAmount × rate',
+      reverseChargeApplied: 'No',
+    },
+    complianceInformation: {
+      regulatoryAuthority: tax.taxType === 'TDS' ? 'Income Tax' : 'GSTN',
+      filingFrequency: tax.filingPeriod || '—',
+      reportingCategoryCode: tax.taxType,
+      taxStatus: filingStatus,
+      adjustments: '—',
+      notes: '—',
+    },
+  }
 
   return (
     <div className="bg-brand-bg flex flex-col gap-5 pb-6">

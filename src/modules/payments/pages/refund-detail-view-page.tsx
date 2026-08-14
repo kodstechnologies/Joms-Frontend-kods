@@ -4,15 +4,27 @@ import { ArrowLeft, Check, Flag, X } from 'lucide-react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 
-import { IssuePartialRefundModal } from '@/modules/payments/components/issue-partial-refund-modal'
+import { DenyRefundModal } from '@/modules/payments/components/deny-refund-modal'
 import { EscalateToSuperAdminModal } from '@/modules/payments/components/escalate-to-super-admin-modal'
-import { getRefundDetailById } from '@/modules/payments/mock/refund-detail.mock'
+import { IssuePartialRefundModal } from '@/modules/payments/components/issue-partial-refund-modal'
+import { IssueRefundModal } from '@/modules/payments/components/issue-refund-modal'
+import {
+  useEscalateRefund,
+  useFinanceRefund,
+  useIssueRefund,
+  useRejectRefund,
+} from '@/modules/payments/hooks/use-finance'
+import {
+  formatDate,
+  formatInr,
+  mapRefundStatus,
+  titleCase,
+} from '@/modules/payments/utils/finance-mappers'
 import { cn } from '@/shared/lib/cn'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 
 const cardClass = 'radius-lg border border-white/[0.06] bg-brand-surface p-4 sm:p-5'
 const sectionTitleClass = 'text-body-md-semibold text-brand-text leading-[20px]'
-const sectionSubtitleClass = 'text-body-sm text-muted mt-1 leading-[20px]'
 const labelClass = 'text-body-sm text-muted'
 const valueClass = 'text-body-sm-medium text-brand-text'
 const textPanelClass =
@@ -56,10 +68,19 @@ function DetailRow({
   )
 }
 
-function PendingBadge() {
+function StatusBadge({ status }: { status: string }) {
+  const tone =
+    status === 'Processed' || status === 'Resolved'
+      ? 'border-brand-positive/40 bg-brand-positive/10 text-brand-positive'
+      : status === 'Rejected'
+        ? 'border-brand-danger/40 bg-brand-danger/10 text-brand-danger'
+        : 'border-brand-accent/40 bg-brand-accent/10 text-brand-accent'
+
   return (
-    <span className="text-body-sm-semibold border-brand-accent/40 bg-brand-accent/10 text-brand-accent inline-flex rounded-full border px-2.5 py-0.5">
-      Pending
+    <span
+      className={cn('text-body-sm-semibold inline-flex rounded-full border px-2.5 py-0.5', tone)}
+    >
+      {status}
     </span>
   )
 }
@@ -70,10 +91,42 @@ function TextBlock({ children }: { children: ReactNode }) {
 
 export function RefundDetailViewPage() {
   const navigate = useNavigate()
-  const { id = 'refund-01' } = useParams<{ id: string }>()
-  const detail = getRefundDetailById(id)
+  const { id = '' } = useParams<{ id: string }>()
+  const { data, isLoading, isError, refetch } = useFinanceRefund(id)
+  const issueMutation = useIssueRefund()
+  const rejectMutation = useRejectRefund()
+  const escalateMutation = useEscalateRefund()
+  const refund = data?.data
+  const [isIssueRefundOpen, setIsIssueRefundOpen] = useState(false)
+  const [isDenyRefundOpen, setIsDenyRefundOpen] = useState(false)
   const [isPartialRefundOpen, setIsPartialRefundOpen] = useState(false)
   const [isEscalateOpen, setIsEscalateOpen] = useState(false)
+
+  const apiErrorMessage = (err: unknown, fallback: string) =>
+    (err as { response?: { data?: { message?: string } } })?.response?.data?.message || fallback
+
+  if (isLoading) {
+    return <p className="text-body-sm text-muted">Loading refund details...</p>
+  }
+
+  if (isError || !refund) {
+    return (
+      <div className="space-y-4">
+        <p className="text-body-sm text-brand-danger">Refund not found.</p>
+        <button
+          type="button"
+          onClick={() => navigateBackOrFallback(navigate, '/finance/refunds')}
+          className="ui-cta ui-cta-secondary"
+        >
+          Back to Refunds
+        </button>
+      </div>
+    )
+  }
+
+  const amountLabel = formatInr(refund.amount)
+  const requestedBy = titleCase(refund.beneficiary) || '—'
+  const canAct = refund.status === 'initiated' || refund.status === 'failed'
 
   return (
     <div className="bg-brand-bg flex flex-col gap-5 pb-6">
@@ -84,119 +137,175 @@ export function RefundDetailViewPage() {
           className="group text-h3 hover:text-brand-accent text-brand-text flex w-fit items-center gap-2 tracking-tight transition-colors"
         >
           <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
-          <span>Payment Detail View</span>
+          <span>Refund Detail View</span>
         </button>
         <p className="text-body-sm text-muted mt-2 pl-7 leading-[20px]">
           <Link to="/finance/refunds" className="hover:text-brand-text transition-colors">
             Refunds & Chargebacks
           </Link>
           <span> / </span>
-          <span className="text-brand-text font-semibold">Payment View Details</span>
+          <span className="text-brand-text font-semibold">Refund Details</span>
         </p>
       </header>
 
-      <section className={cn(cardClass, 'p-5')}>
-        <div className="mb-4">
-          <h2 className={sectionTitleClass}>Refund Details</h2>
-          <p className={sectionSubtitleClass}>Provide details about your Consultation</p>
-        </div>
-        <div className="mb-5 border-b border-white/5" />
+      <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
+        <InnerCard title="Refund Information">
+          <DetailRow label="Refund ID" value={refund.refundId} />
+          <DetailRow label="Transaction ID" value={String(refund.paymentId || '—')} />
+          <DetailRow label="Requested Date" value={formatDate(refund.createdAt)} />
+          <DetailRow
+            label="Status"
+            value={<StatusBadge status={mapRefundStatus(refund.status)} />}
+          />
+        </InnerCard>
 
-        <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
-          <InnerCard title="Refund Information">
-            <DetailRow label="Refund ID" value={detail.refundInformationPrimary.refundId} />
-            <DetailRow
-              label="Transaction ID"
-              value={detail.refundInformationPrimary.transactionId}
-            />
-            <DetailRow
-              label="Requested Date"
-              value={detail.refundInformationPrimary.requestedDate}
-            />
-            <DetailRow label="Status" value={<PendingBadge />} />
-          </InnerCard>
+        <InnerCard title="Payment Context">
+          <DetailRow label="Requested By" value={requestedBy} />
+          <DetailRow label="Service / Module" value={titleCase(refund.module)} />
+          <DetailRow label="Refund Amount" value={amountLabel} />
+          <DetailRow label="Payment Method" value={refund.refundMode || 'Razorpay'} />
+          <DetailRow label="Refund Type" value={titleCase(refund.refundType)} />
+        </InnerCard>
+      </div>
 
-          <InnerCard title="Refund Information">
-            <DetailRow label="Requested By" value={detail.refundInformationSecondary.requestedBy} />
-            <DetailRow label="Service" value={detail.refundInformationSecondary.service} />
-            <DetailRow
-              label="Refund Amount"
-              value={detail.refundInformationSecondary.refundAmount}
-            />
-            <DetailRow
-              label="Payment Method"
-              value={detail.refundInformationSecondary.paymentMethod}
-            />
-          </InnerCard>
+      <InnerCard title="Reason">
+        <TextBlock>{refund.reason || '—'}</TextBlock>
+      </InnerCard>
 
-          <InnerCard title="Reason">
-            <TextBlock>{detail.reason}</TextBlock>
-          </InnerCard>
+      <InnerCard title="Admin Notes">
+        <TextBlock>{refund.adminNote || '—'}</TextBlock>
+      </InnerCard>
 
-          <InnerCard title="Admin Notes">
-            <TextBlock>{detail.adminNotes}</TextBlock>
-          </InnerCard>
-        </div>
-      </section>
-
-      <footer className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <footer className="flex flex-wrap items-center justify-between gap-3">
         <button
           type="button"
           onClick={() => navigateBackOrFallback(navigate, '/finance/refunds')}
-          className="ui-cta ui-cta-ghost"
+          className="ui-cta ui-cta-secondary"
         >
           Close
         </button>
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap gap-2">
           <button
             type="button"
-            onClick={() => toast.success('Refund issued')}
             className="ui-cta ui-cta-positive"
+            disabled={!canAct || issueMutation.isPending}
+            onClick={() => setIsIssueRefundOpen(true)}
           >
+            <Check className="size-4" />
             Issue Refund
-            <Check className="icon-sm shrink-0" />
           </button>
           <button
             type="button"
-            onClick={() => toast.error('Refund denied')}
             className="ui-cta ui-cta-negative"
+            disabled={!canAct || rejectMutation.isPending}
+            onClick={() => setIsDenyRefundOpen(true)}
           >
+            <X className="size-4" />
             Deny Refund
-            <X className="icon-sm shrink-0" />
           </button>
           <button
             type="button"
+            className="ui-cta ui-cta-secondary"
+            disabled={!canAct || issueMutation.isPending}
             onClick={() => setIsPartialRefundOpen(true)}
-            className="ui-cta ui-cta-ghost"
           >
+            <Flag className="size-4" />
             Partial Refund
-            <Flag className="icon-sm shrink-0" />
           </button>
           <button
             type="button"
+            className="ui-cta ui-cta-secondary"
+            disabled={!canAct || escalateMutation.isPending}
             onClick={() => setIsEscalateOpen(true)}
-            className="ui-cta ui-cta-ghost"
           >
+            <Flag className="size-4" />
             Escalate
-            <Flag className="icon-sm shrink-0" />
           </button>
         </div>
       </footer>
 
+      <IssueRefundModal
+        open={isIssueRefundOpen}
+        originalAmount={amountLabel}
+        maxRefundableAmount={refund.amount}
+        defaultAmount={String(refund.amount)}
+        onClose={() => setIsIssueRefundOpen(false)}
+        onSubmit={async ({ refundAmount, reason, adminNotes }) => {
+          try {
+            await issueMutation.mutateAsync({
+              id,
+              amount: Number(String(refundAmount).replace(/,/g, '')),
+              reason,
+              adminNotes,
+            })
+            toast.success('Refund issued')
+            setIsIssueRefundOpen(false)
+            void refetch()
+            navigate('/finance/refunds')
+          } catch (err) {
+            toast.error(apiErrorMessage(err, 'Failed to issue refund'))
+            throw err
+          }
+        }}
+      />
+      <DenyRefundModal
+        open={isDenyRefundOpen}
+        originalAmount={amountLabel}
+        denyingAmount={amountLabel}
+        onClose={() => setIsDenyRefundOpen(false)}
+        onSubmit={async ({ reason, adminNotes }) => {
+          try {
+            await rejectMutation.mutateAsync({ id, reason, adminNotes })
+            toast.success('Refund denied')
+            setIsDenyRefundOpen(false)
+            void refetch()
+            navigate('/finance/refunds')
+          } catch (err) {
+            toast.error(apiErrorMessage(err, 'Failed to deny refund'))
+            throw err
+          }
+        }}
+      />
       <IssuePartialRefundModal
         open={isPartialRefundOpen}
-        originalAmount={detail.refundInformationSecondary.refundAmount}
-        maxRefundableAmount={detail.refundInformationSecondary.maxRefundableAmount}
+        originalAmount={amountLabel}
+        maxRefundableAmount={refund.amount}
         onClose={() => setIsPartialRefundOpen(false)}
+        onSubmit={async ({ refundAmount, reason, adminNotes }) => {
+          try {
+            await issueMutation.mutateAsync({
+              id,
+              amount: Number(String(refundAmount).replace(/,/g, '')),
+              reason,
+              adminNotes,
+            })
+            toast.success('Partial refund issued')
+            setIsPartialRefundOpen(false)
+            void refetch()
+            navigate('/finance/refunds')
+          } catch (err) {
+            toast.error(apiErrorMessage(err, 'Failed to issue partial refund'))
+            throw err
+          }
+        }}
       />
-
       <EscalateToSuperAdminModal
         open={isEscalateOpen}
-        refundId={detail.refundInformationPrimary.refundId}
-        requestedBy={detail.refundInformationSecondary.requestedBy}
-        amount={detail.refundInformationSecondary.refundAmount}
+        refundId={refund.refundId}
+        requestedBy={requestedBy}
+        amount={amountLabel}
         onClose={() => setIsEscalateOpen(false)}
-        onSubmit={() => navigate(`/finance/refunds/${id}/escalate`)}
+        onSubmit={async ({ priority, adminNotes }) => {
+          try {
+            await escalateMutation.mutateAsync({ id, priority, adminNotes })
+            toast.success('Refund escalated')
+            setIsEscalateOpen(false)
+            navigate(`/finance/refunds/${id}/escalate`)
+          } catch (err) {
+            toast.error(apiErrorMessage(err, 'Failed to escalate refund'))
+            throw err
+          }
+        }}
       />
     </div>
   )

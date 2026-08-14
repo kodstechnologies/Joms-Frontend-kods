@@ -7,6 +7,7 @@ export type EligibleReviewItem = {
   engagementType: 'service_order' | 'custom_quotation'
   engagementId: string
   title: string
+  serviceId?: string | null
   completedAt?: string
 }
 
@@ -19,6 +20,7 @@ export type PartnerReview = {
   engagementType: string
   engagementId: string
   title?: string
+  serviceId?: string | null
   createdAt?: string
   relativeLabel?: string | null
 }
@@ -26,8 +28,8 @@ export type PartnerReview = {
 export type PartnerInsights = {
   partnerUserId: string
   metrics: {
-    response: { label: string | null; avgMs: number | null; sampleSize: number }
-    speed: { label: string | null; avgMs: number | null; sampleSize: number }
+    response: { label: string | null; avgMs: number | null; sampleSize: number; available?: boolean }
+    speed: { label: string | null; avgMs: number | null; sampleSize: number; available?: boolean }
     nps: { score: number | null; available: boolean }
   }
   ratingsSummary: { average: number; count: number; available: boolean }
