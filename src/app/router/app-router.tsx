@@ -51,6 +51,9 @@ const PendingApprovalsPage = lazy(() =>
 const SuspendedServicesPage = lazy(() =>
   import('@/modules/expert').then((m) => ({ default: m.SuspendedServicesPage })),
 )
+const ReportedServicesPage = lazy(() =>
+  import('@/modules/expert').then((m) => ({ default: m.ServiceReportedServicesPage })),
+)
 const DeletedServicesPage = lazy(() =>
   import('@/modules/expert').then((m) => ({ default: m.DeletedServicesPage })),
 )
@@ -193,6 +196,11 @@ const VenuePendingApprovalsPage = lazy(() =>
 const VenueSuspendedPage = lazy(() =>
   import('@/modules/expert').then((m) => ({
     default: m.VenueSuspendedPage,
+  })),
+)
+const VenueReportedPage = lazy(() =>
+  import('@/modules/expert').then((m) => ({
+    default: m.VenueReportedVenuesPage,
   })),
 )
 const VenueRejectedPage = lazy(() =>
@@ -940,6 +948,7 @@ export function AppRouter() {
                 <Route path="/services/management/metrics" element={<ServiceMetricsPage />} />
                 <Route path="/services/management/pending" element={<PendingApprovalsPage />} />
                 <Route path="/services/management/suspended" element={<SuspendedServicesPage />} />
+                <Route path="/services/management/reported" element={<ReportedServicesPage />} />
                 <Route path="/services/management/deleted" element={<DeletedServicesPage />} />
                 <Route
                   path="/services/management/reported"
@@ -1019,6 +1028,7 @@ export function AppRouter() {
                 />
                 <Route path="/venues/management/pending" element={<VenuePendingApprovalsPage />} />
                 <Route path="/venues/management/suspended" element={<VenueSuspendedPage />} />
+                <Route path="/venues/management/reported" element={<VenueReportedPage />} />
                 <Route path="/venues/management/rejected" element={<VenueRejectedPage />} />
                 <Route path="/venues/management/deleted" element={<VenueDeletedPage />} />
                 <Route

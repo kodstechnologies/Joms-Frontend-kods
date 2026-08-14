@@ -129,7 +129,7 @@ export function PastTicketsPage() {
           </button>
           <div>
             <h1 className="text-h2 text-brand-text tracking-tight">Past Tickets</h1>
-            <p className="text-body-md text-muted mt-1 leading-[20px]">{userId ?? 'John Doe'}</p>
+            <p className="text-body-md text-muted mt-1 leading-5">{userId ?? 'John Doe'}</p>
           </div>
         </div>
         <button

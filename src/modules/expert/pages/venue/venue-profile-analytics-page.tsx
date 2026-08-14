@@ -3,8 +3,10 @@ import { useNavigate, useParams } from 'react-router-dom'
 
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import { ArrowLeft, SlidersHorizontal, Upload } from 'lucide-react'
+import { toast } from 'sonner'
 
 import { useVenueFullView } from '../../hooks/use-venues'
+import { useVenueProfileAnalytics } from '../../hooks/use-venue-analytics'
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
 import {
@@ -30,6 +32,10 @@ export function VenueProfileAnalyticsPage() {
   const { venueId } = useParams<{ venueId: string }>()
   const { data } = useVenueFullView(venueId ?? '')
   const [activeTab, setActiveTab] = useState<AnalyticsTabKey>('overview')
+
+  // Fetch real-time venue profile analytics from venue-service (port 8005)
+  const analyticsQuery = useVenueProfileAnalytics(venueId)
+  const analyticsData = analyticsQuery.data
 
   const venueName = data?.data?.overview.venue.name ?? 'Venue'
 
@@ -61,7 +67,10 @@ export function VenueProfileAnalyticsPage() {
             <SlidersHorizontal className="size-4" />
             Manage Metrics
           </Button>
-          <Button className="ui-export-data h-9">
+          <Button
+            className="ui-export-data h-9"
+            onClick={() => toast.message('Export coming soon')}
+          >
             <Upload className="size-4" />
             Export Data
           </Button>
@@ -84,11 +93,29 @@ export function VenueProfileAnalyticsPage() {
         ))}
       </nav>
 
-      {activeTab === 'overview' && <OverviewTab />}
-      {activeTab === 'spaces' && <SpacesTab />}
-      {activeTab === 'bookings' && <BookingsTab />}
-      {activeTab === 'revenue' && <RevenueTab />}
-      {activeTab === 'visual' && <VisualAnalyticsTab />}
+      {activeTab === 'overview' && (
+        <OverviewTab data={analyticsData?.overview} isLoading={analyticsQuery.isLoading} />
+      )}
+      {activeTab === 'spaces' && (
+        <SpacesTab data={analyticsData?.spaces} isLoading={analyticsQuery.isLoading} />
+      )}
+      {activeTab === 'bookings' && (
+        <BookingsTab data={analyticsData?.bookings} isLoading={analyticsQuery.isLoading} />
+      )}
+      {activeTab === 'revenue' && (
+        <RevenueTab data={analyticsData?.revenue} isLoading={analyticsQuery.isLoading} />
+      )}
+      {activeTab === 'visual' && (
+        <VisualAnalyticsTab
+          data={analyticsData?.visual}
+          revenueTrend={analyticsData?.revenue?.revenueTrend}
+          isLoading={analyticsQuery.isLoading}
+          onRefresh={() => {
+            analyticsQuery.refetch()
+            toast.message('Refreshing analytics trends...')
+          }}
+        />
+      )}
     </div>
   )
 }

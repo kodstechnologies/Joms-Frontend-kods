@@ -6,9 +6,19 @@ import {
   TOP_REVENUE_SPACES,
 } from '../../mock/venue-profile-analytics.mock'
 import { AnalyticsCard, MetricCard, PeriodSelect, SectionTitle } from './analytics-ui'
+import type { VenueProfileAnalyticsResponse } from '../../type/venue-analytics.types'
 
-export function RevenueTab() {
+interface RevenueTabProps {
+  data?: VenueProfileAnalyticsResponse['revenue']
+  isLoading?: boolean
+}
+
+export function RevenueTab({ data, isLoading }: RevenueTabProps) {
   const [period, setPeriod] = useState('Today')
+
+  const revenueKpis = data?.revenueKpis ?? REVENUE_KPIS
+  const revenueBreakdown = data?.revenueBreakdown ?? REVENUE_BREAKDOWN
+  const topRevenueSpaces = data?.topRevenueSpaces ?? TOP_REVENUE_SPACES
 
   return (
     <div className="flex flex-col gap-5">
@@ -19,8 +29,13 @@ export function RevenueTab() {
       />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {REVENUE_KPIS.map((item) => (
-          <MetricCard key={item.label} label={item.label} value={item.value} trend={item.trend} />
+        {revenueKpis.map((item) => (
+          <MetricCard
+            key={item.label}
+            label={item.label}
+            value={isLoading ? '—' : item.value}
+            trend={item.trend}
+          />
         ))}
       </div>
 
@@ -28,7 +43,7 @@ export function RevenueTab() {
         <SectionTitle title="Revenue Breakdown" />
         <AnalyticsCard>
           <div className="space-y-5">
-            {REVENUE_BREAKDOWN.map((item) => (
+            {revenueBreakdown.map((item) => (
               <div key={item.label}>
                 <div className="mb-2 flex items-center justify-between text-[12px]">
                   <span className="text-white">{item.label}</span>
@@ -52,7 +67,7 @@ export function RevenueTab() {
         <SectionTitle title="Top Revenue Spaces" />
         <AnalyticsCard>
           <div className="space-y-4">
-            {TOP_REVENUE_SPACES.map((space) => (
+            {topRevenueSpaces.map((space) => (
               <div
                 key={space.rank}
                 className="flex items-center justify-between border-b border-white/5 pb-4 last:border-0 last:pb-0"

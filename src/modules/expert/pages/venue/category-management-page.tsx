@@ -1,9 +1,11 @@
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 
 import { VENUE_CATEGORY_MANAGEMENT_MODULE_KEY } from '../../api/ui-preferences-api'
 import { DataTable } from '@/shared/components/table/data-table'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
+import { exportDataToFile } from '@/shared/utils/export-utils'
+import type { FilterValues } from '@/shared/types/data-filter'
 
 import { StatCard } from '../../components/stat-card'
 import {
@@ -30,21 +32,13 @@ export function VenueCategoryManagementPage() {
   const [page, setPage] = useState(1)
   const preferencesQuery = useTableColumnPreferences(VENUE_CATEGORY_MANAGEMENT_MODULE_KEY)
 
-  const {
-    onAdvancedFilter,
-    onExport,
-    modals: exportFilterModals,
-  } = useModuleExportFilters({
-    moduleKey: 'venue-category-management',
-  })
+  const handleApplyFilters = useCallback(() => {
+    setPage(1)
+  }, [])
 
   const { data, isLoading, isError } = useVenueCategoryManagementList({
     search: searchValue.trim() || undefined,
   })
-
-  const { data: pausedCategories = [] } = usePausedVenueCategoryList()
-  const { data: deletedCategories = [] } = useDeletedVenueCategoryList()
-  const { data: details = [] } = useVenueCategoryDetails()
 
   const categories = useMemo(() => data?.categories ?? [], [data?.categories])
   const totalItems = categories.length
@@ -54,6 +48,43 @@ export function VenueCategoryManagementPage() {
     const start = (currentPage - 1) * PAGE_SIZE
     return categories.slice(start, start + PAGE_SIZE)
   }, [categories, currentPage])
+
+  const handleExportData = useCallback(
+    (values: FilterValues, format: string) => {
+      const headers = [
+        'Category ID',
+        'Category Name',
+        'Status',
+        'No. of Sub Category',
+        'No. Of Venues',
+        'Revenue Generated',
+      ]
+      const exportRows = paginatedCategories.map((cat) => [
+        cat.categoryId || cat.id,
+        cat.name || '',
+        cat.status || '',
+        String(cat.subCategory || 0),
+        String(cat.venues || 0),
+        cat.revenue || '',
+      ])
+      exportDataToFile(headers, exportRows, format, 'venue_categories_export')
+    },
+    [paginatedCategories],
+  )
+
+  const {
+    onAdvancedFilter,
+    onExport,
+    modals: exportFilterModals,
+  } = useModuleExportFilters({
+    moduleKey: 'venue-category-management',
+    onApplyFilters: handleApplyFilters,
+    onExportData: handleExportData,
+  })
+
+  const { data: pausedCategories = [] } = usePausedVenueCategoryList()
+  const { data: deletedCategories = [] } = useDeletedVenueCategoryList()
+  const { data: details = [] } = useVenueCategoryDetails()
 
   const activeCount = useMemo(
     () =>

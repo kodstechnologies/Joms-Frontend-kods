@@ -20,6 +20,16 @@ type ListParams = {
   limit?: number
   search?: string
   status?: string
+  mfaRequired?: string
+  riskLevel?: string
+  roleId?: string
+  roleName?: string
+  mfaEnabled?: string
+  role?: string
+  adminCode?: string
+  fullname?: string
+  email?: string
+  department?: string
 }
 
 export const fetchRbacMe = async () => {

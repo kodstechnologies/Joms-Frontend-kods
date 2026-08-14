@@ -7,18 +7,31 @@ import {
   VISIBILITY_METRICS,
 } from '../../mock/venue-profile-analytics.mock'
 import { AnalyticsCard, MetricCard, PeriodSelect, SectionTitle } from './analytics-ui'
+import type { VenueProfileAnalyticsResponse } from '../../type/venue-analytics.types'
 
-export function OverviewTab() {
+interface OverviewTabProps {
+  data?: VenueProfileAnalyticsResponse['overview']
+  isLoading?: boolean
+}
+
+export function OverviewTab({ data, isLoading }: OverviewTabProps) {
   const [period, setPeriod] = useState('Last 7 Days')
+
+  const basicInfo = data?.basicInfo ?? BASIC_INFO
+  const visibilityMetrics = data?.visibilityMetrics ?? VISIBILITY_METRICS
+  const bookingSnapshot = data?.bookingSnapshot ?? BOOKING_SNAPSHOT
+  const revenueSnapshot = data?.revenueSnapshot ?? REVENUE_SNAPSHOT
 
   return (
     <div className="flex flex-col gap-5">
       <AnalyticsCard className="p-0">
         <div className="grid grid-cols-2 gap-px overflow-hidden rounded-lg bg-white/5 sm:grid-cols-3 lg:grid-cols-5">
-          {BASIC_INFO.map((item) => (
+          {basicInfo.map((item) => (
             <div key={item.label} className="bg-[#111111] px-5 py-4">
               <p className="text-[10px] text-[#777]">{item.label}</p>
-              <p className="mt-2 text-[13px] font-semibold text-white">{item.value}</p>
+              <p className="mt-2 text-[13px] font-semibold text-white">
+                {isLoading ? '—' : item.value}
+              </p>
             </div>
           ))}
         </div>
@@ -31,8 +44,13 @@ export function OverviewTab() {
           action={<PeriodSelect value={period} onChange={setPeriod} />}
         />
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          {VISIBILITY_METRICS.map((item) => (
-            <MetricCard key={item.label} label={item.label} value={item.value} trend={item.trend} />
+          {visibilityMetrics.map((item) => (
+            <MetricCard
+              key={item.label}
+              label={item.label}
+              value={isLoading ? '—' : item.value}
+              trend={item.trend}
+            />
           ))}
         </div>
       </div>
@@ -40,8 +58,13 @@ export function OverviewTab() {
       <div>
         <SectionTitle title="Booking Snapshot" subtitle="Venue booking analysis" />
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {BOOKING_SNAPSHOT.map((item) => (
-            <MetricCard key={item.label} label={item.label} value={item.value} trend={item.trend} />
+          {bookingSnapshot.map((item) => (
+            <MetricCard
+              key={item.label}
+              label={item.label}
+              value={isLoading ? '—' : item.value}
+              trend={item.trend}
+            />
           ))}
         </div>
       </div>
@@ -49,8 +72,13 @@ export function OverviewTab() {
       <div>
         <SectionTitle title="Revenue Snapshot" subtitle="Communication and interaction metrics" />
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {REVENUE_SNAPSHOT.map((item) => (
-            <MetricCard key={item.label} label={item.label} value={item.value} trend={item.trend} />
+          {revenueSnapshot.map((item) => (
+            <MetricCard
+              key={item.label}
+              label={item.label}
+              value={isLoading ? '—' : item.value}
+              trend={item.trend}
+            />
           ))}
         </div>
       </div>

@@ -9,6 +9,9 @@ import { useExperts } from '../../hooks/use-expert'
 import type { Expert } from '../../type/expert'
 import { isKycSubmittedForApplication } from '../../utils/expert-application-helpers'
 import { openExpertApplicationView } from '../../utils/expert-application-navigation'
+import type { FilterValues } from '@/shared/types/data-filter'
+import { useModuleExportFilters } from '@/shared/components/advanced-filter/use-module-export-filters'
+import { exportDataToFile } from '@/shared/utils/export-utils'
 import { ExpertListHeader } from './expert-list-shared'
 import {
   createExpertBaseColumns,
@@ -43,6 +46,54 @@ export function ExpertPendingApprovalsPage() {
   const [revokeReasonDetails, setRevokeReasonDetails] = useState('')
   const [revokeAdminNotes, setRevokeAdminNotes] = useState('')
   const [isRevoking, setIsRevoking] = useState(false)
+  const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
+
+  const apiFilterParams = useMemo(() => {
+    const params: Record<string, string> = {}
+
+    Object.entries(appliedFilters).forEach(([rawKey, val]) => {
+      if (val === undefined || val === null || val === '') return
+
+      const parts = rawKey.split('.')
+      const fieldId = parts.length > 1 ? parts.slice(1).join('.') : rawKey
+
+      if (fieldId === 'location' && typeof val === 'object' && val !== null) {
+        const loc = val as { state?: string; city?: string }
+        if (loc.state?.trim()) params.locationState = loc.state.trim()
+        if (loc.city?.trim()) params.locationCity = loc.city.trim()
+        return
+      }
+
+      if (Array.isArray(val)) {
+        if (val.length > 0) {
+          params[fieldId] = val.join(',')
+        }
+        return
+      }
+
+      if (typeof val === 'object' && val !== null) {
+        const range = val as { from?: string | number; to?: string | number }
+        if (range.from !== undefined && range.from !== '') {
+          params[`${fieldId}Min`] = String(range.from).trim()
+        }
+        if (range.to !== undefined && range.to !== '') {
+          params[`${fieldId}Max`] = String(range.to).trim()
+        }
+        return
+      }
+
+      if (typeof val === 'string' && val.trim()) {
+        params[fieldId] = val.trim()
+        return
+      }
+
+      if (typeof val === 'number' || typeof val === 'boolean') {
+        params[fieldId] = String(val)
+      }
+    })
+
+    return params
+  }, [appliedFilters])
   const recordReasonUsage = useRecordModerationReasonUsage()
   const { options: revokeReasonOptions, buildPayload: buildRevokeReasonPayload } =
     useModerationReasonOptions(MODERATION_CATEGORY_SLUGS.rejectExpert)
@@ -52,6 +103,7 @@ export function ExpertPendingApprovalsPage() {
     limit: 10,
     status: 'pending',
     search: searchQuery,
+    ...apiFilterParams,
   })
 
   const experts = useMemo(
@@ -60,6 +112,46 @@ export function ExpertPendingApprovalsPage() {
   )
   const meta = data?.meta
   const selection = useExpertListSelection(experts)
+
+  const handleApplyFilters = useCallback((values: FilterValues) => {
+    setAppliedFilters(values)
+    setCurrentPage(1)
+  }, [])
+
+  const handleExportData = useCallback(
+    (values: FilterValues, format: string) => {
+      const headers = [
+        'Expert ID',
+        'Name',
+        'Email ID',
+        'Profession',
+        'Status',
+        'Service Type',
+        'Created At',
+      ]
+      const rows = experts.map((e) => [
+        e.expertId || '-',
+        e.name || '-',
+        e.email || '-',
+        e.profession || '-',
+        e.status || '-',
+        e.serviceType || '-',
+        e.createdAt ? new Date(e.createdAt).toLocaleDateString() : 'N/A',
+      ])
+      exportDataToFile(headers, rows, format, 'pending_experts_export')
+    },
+    [experts],
+  )
+
+  const {
+    onAdvancedFilter,
+    onExport,
+    modals: exportFilterModals,
+  } = useModuleExportFilters({
+    moduleKey: 'expert-management',
+    onApplyFilters: handleApplyFilters,
+    onExportData: handleExportData,
+  })
 
   const toggleRevokeReason = useCallback((value: string) => {
     setRevokeReasons((current) =>
@@ -248,8 +340,8 @@ export function ExpertPendingApprovalsPage() {
           setCurrentPage(1)
         }}
         searchPlaceholder="Search by name or ID"
-        onAdvancedFilter={() => toast.message('Advanced filters are coming soon')}
-        onExport={() => toast.message('Expert export is coming soon')}
+        onAdvancedFilter={onAdvancedFilter}
+        onExport={onExport}
         pagination={{
           page: currentPage,
           pageSize: meta?.pagination.limit || 10,
@@ -260,6 +352,7 @@ export function ExpertPendingApprovalsPage() {
         resourceLabel="users"
         emptyMessage="No pending approvals found."
       />
+      {exportFilterModals}
 
       <DecisionActionModal
         open={Boolean(revokeExpertTarget)}

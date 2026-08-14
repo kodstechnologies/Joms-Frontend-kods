@@ -40,6 +40,10 @@ export const useCommunications = (params?: {
   status?: string
   channel?: string
   audience?: string
+  type?: string
+  messageId?: string
+  title?: string
+  createdBy?: string
 }) =>
   useQuery({
     queryKey: communicationKeys.list(params),

@@ -101,12 +101,17 @@ export function useRbacStats() {
   })
 }
 
-export function useRoles(params?: {
+export const useRoles = (params?: {
   page?: number
   limit?: number
   search?: string
   status?: string
-}) {
+  mfaRequired?: string
+  riskLevel?: string
+  roleId?: string
+  roleName?: string
+  [key: string]: unknown
+}) => {
   return useQuery({
     queryKey: rbacKeys.roles(params),
     queryFn: () => fetchRoles(params),
@@ -123,7 +128,20 @@ export function useRole(id: string) {
 
 export function useRoleUsers(
   id: string,
-  params?: { page?: number; limit?: number; search?: string },
+  params?: {
+    page?: number
+    limit?: number
+    search?: string
+    roleId?: string
+    status?: string
+    mfaEnabled?: string
+    role?: string
+    adminCode?: string
+    fullname?: string
+    email?: string
+    department?: string
+    [key: string]: unknown
+  },
   options?: { enabled?: boolean },
 ) {
   return useQuery({
@@ -133,10 +151,22 @@ export function useRoleUsers(
   })
 }
 
-export function useSubAdmins(
-  params?: { page?: number; limit?: number; search?: string },
+export const useSubAdmins = (
+  params?: {
+    page?: number
+    limit?: number
+    search?: string
+    status?: string
+    mfaEnabled?: string
+    role?: string
+    adminCode?: string
+    fullname?: string
+    email?: string
+    department?: string
+    [key: string]: unknown
+  },
   options?: { enabled?: boolean },
-) {
+) => {
   return useQuery({
     queryKey: rbacKeys.subAdmins(params),
     queryFn: () => fetchSubAdmins(params),

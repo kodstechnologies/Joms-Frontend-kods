@@ -39,6 +39,9 @@ import {
 } from '@/shared/components/table/table-actions-dropdown'
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
+import { useModuleExportFilters } from '@/shared/components/advanced-filter'
+import { exportDataToFile } from '@/shared/utils/export-utils'
+import type { FilterValues } from '@/shared/types/data-filter'
 
 const formatPermissions = (permissions: string[]) => {
   if (!permissions.length) return '—'
@@ -73,17 +76,68 @@ export function RbacHubPage() {
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [passwordResetUser, setPasswordResetUser] = useState<SubAdmin | null>(null)
 
+  const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
+
+  const apiFilterParams = useMemo(() => {
+    const params: Record<string, string> = {}
+
+    Object.entries(appliedFilters).forEach(([rawKey, val]) => {
+      if (val === undefined || val === null || val === '') return
+
+      const parts = rawKey.split('.')
+      const fieldId = parts.length > 1 ? parts.slice(1).join('.') : rawKey
+
+      if (fieldId === 'location' && typeof val === 'object' && val !== null) {
+        const loc = val as { state?: string; city?: string }
+        if (loc.state?.trim()) params.locationState = loc.state.trim()
+        if (loc.city?.trim()) params.locationCity = loc.city.trim()
+        return
+      }
+
+      if (Array.isArray(val)) {
+        if (val.length > 0) {
+          params[fieldId] = val.join(',')
+        }
+        return
+      }
+
+      if (typeof val === 'object' && val !== null) {
+        const range = val as { from?: string | number; to?: string | number }
+        if (range.from !== undefined && range.from !== '') {
+          params[`${fieldId}Min`] = String(range.from).trim()
+        }
+        if (range.to !== undefined && range.to !== '') {
+          params[`${fieldId}Max`] = String(range.to).trim()
+        }
+        return
+      }
+
+      if (typeof val === 'string' && val.trim()) {
+        params[fieldId] = val.trim()
+        return
+      }
+
+      if (typeof val === 'number' || typeof val === 'boolean') {
+        params[fieldId] = String(val)
+      }
+    })
+
+    return params
+  }, [appliedFilters])
+
   const { data: statsData, isLoading: statsLoading } = useRbacStats()
   const { data: rolesData, isLoading: rolesLoading } = useRoles({
     page: currentPage,
     limit: 10,
     search: searchQuery || undefined,
+    ...apiFilterParams,
   })
   const { data: subAdminsData, isLoading: subAdminsLoading } = useSubAdmins(
     {
       page: currentPage,
       limit: 10,
       search: searchQuery || undefined,
+      ...apiFilterParams,
     },
     { enabled: activeTab === 'users' && !roleFilterId },
   )
@@ -93,6 +147,7 @@ export function RbacHubPage() {
       page: currentPage,
       limit: 10,
       search: searchQuery || undefined,
+      ...apiFilterParams,
     },
     { enabled: activeTab === 'users' && Boolean(roleFilterId) },
   )
@@ -105,11 +160,69 @@ export function RbacHubPage() {
   const deleteSubAdminMutation = useDeleteSubAdmin()
   const updatePasswordMutation = useUpdateSubAdminPassword()
 
-  const roles = rolesData?.data ?? []
+  const roles = useMemo(() => rolesData?.data ?? [], [rolesData?.data])
   const rolesMeta = rolesData?.meta
-  const subAdmins = roleFilterId ? (roleUsersData?.data.users ?? []) : (subAdminsData?.data ?? [])
+  const subAdmins = useMemo(
+    () => (roleFilterId ? (roleUsersData?.data.users ?? []) : (subAdminsData?.data ?? [])),
+    [roleFilterId, roleUsersData?.data, subAdminsData?.data],
+  )
   const subAdminsMeta = roleFilterId ? roleUsersData?.meta : subAdminsData?.meta
   const filteredRoleName = roleFilterId ? roleUsersData?.data.role.name : null
+
+  const handleApplyFilters = useCallback(
+    (values: FilterValues) => {
+      toast.success('Filters applied')
+      setAppliedFilters(values)
+      setCurrentPage(1)
+    },
+    [setCurrentPage],
+  )
+
+  const handleExportData = useCallback(
+    (values: FilterValues, format: string) => {
+      if (activeTab === 'users') {
+        const headers = ['User ID', 'Username', 'Email', 'Status', 'MFA Enabled', 'Last Action']
+        const exportRows = subAdmins.map((user) => [
+          user.adminCode || user.id,
+          user.fullname || '',
+          user.email || '',
+          user.status || '',
+          user.mfaEnabled ? 'Yes' : 'No',
+          formatDateTime(user.lastActionAt),
+        ])
+        exportDataToFile(headers, exportRows, format, 'rbac_users_export')
+      } else {
+        const headers = [
+          'Role ID',
+          'Role Name',
+          'Description',
+          'Risk Level',
+          'MFA Required',
+          'Status',
+        ]
+        const exportRows = roles.map((role) => [
+          role.roleCode || role.id,
+          role.name || '',
+          role.description || '',
+          role.riskLevel || '',
+          role.mfaRequired ? 'Yes' : 'No',
+          role.status || '',
+        ])
+        exportDataToFile(headers, exportRows, format, 'rbac_roles_export')
+      }
+    },
+    [activeTab, subAdmins, roles],
+  )
+
+  const {
+    onAdvancedFilter,
+    onExport,
+    modals: exportFilterModals,
+  } = useModuleExportFilters({
+    moduleKey: 'rbac-management',
+    onApplyFilters: handleApplyFilters,
+    onExportData: handleExportData,
+  })
 
   const handleDisableRole = useCallback(
     async (id: string) => {
@@ -539,8 +652,8 @@ export function RbacHubPage() {
           searchValue={searchQuery}
           onSearchChange={setSearchQuery}
           searchPlaceholder="Search by name, ID or profession"
-          onAdvancedFilter={() => toast.info('Advanced filters coming soon')}
-          onExport={() => toast.info('Export coming soon')}
+          onAdvancedFilter={onAdvancedFilter}
+          onExport={onExport}
           pagination={{
             page: currentPage,
             pageSize: meta?.limit ?? 10,
@@ -560,8 +673,8 @@ export function RbacHubPage() {
           searchValue={searchQuery}
           onSearchChange={setSearchQuery}
           searchPlaceholder="Search by name, ID or profession"
-          onAdvancedFilter={() => toast.info('Advanced filters coming soon')}
-          onExport={() => toast.info('Export coming soon')}
+          onAdvancedFilter={onAdvancedFilter}
+          onExport={onExport}
           pagination={{
             page: currentPage,
             pageSize: meta?.limit ?? 10,
@@ -581,6 +694,8 @@ export function RbacHubPage() {
         onClose={() => setPasswordResetUser(null)}
         onSubmit={handlePasswordReset}
       />
+
+      {exportFilterModals}
     </div>
   )
 }

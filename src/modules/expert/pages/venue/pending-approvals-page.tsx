@@ -5,7 +5,9 @@ import { useNavigate } from 'react-router-dom'
 import createIcon from '@/assets/JOMS_ICONS-2/icons8-create.svg'
 
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
-import { toast } from 'sonner'
+import type { FilterValues } from '@/shared/types/data-filter'
+import { useModuleExportFilters } from '@/shared/components/advanced-filter/use-module-export-filters'
+import { exportDataToFile } from '@/shared/utils/export-utils'
 
 import { useVenues } from '../../hooks/use-venues'
 import type { Venue } from '../../type/venue'
@@ -23,12 +25,61 @@ export function VenuePendingApprovalsPage() {
   const [currentPage, setCurrentPage] = useState(1)
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [selectedVenueIds, setSelectedVenueIds] = useState<string[]>([])
+  const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
+
+  const apiFilterParams = useMemo(() => {
+    const params: Record<string, string> = {}
+
+    Object.entries(appliedFilters).forEach(([rawKey, val]) => {
+      if (val === undefined || val === null || val === '') return
+
+      const parts = rawKey.split('.')
+      const fieldId = parts.length > 1 ? parts.slice(1).join('.') : rawKey
+
+      if (fieldId === 'location' && typeof val === 'object' && val !== null) {
+        const loc = val as { state?: string; city?: string }
+        if (loc.state?.trim()) params.cityState = loc.state.trim()
+        if (loc.city?.trim()) params.cityCity = loc.city.trim()
+        return
+      }
+
+      if (Array.isArray(val)) {
+        if (val.length > 0) {
+          params[fieldId] = val.join(',')
+        }
+        return
+      }
+
+      if (typeof val === 'object' && val !== null) {
+        const range = val as { from?: string | number; to?: string | number }
+        if (range.from !== undefined && range.from !== '') {
+          params[`${fieldId}Min`] = String(range.from).trim()
+        }
+        if (range.to !== undefined && range.to !== '') {
+          params[`${fieldId}Max`] = String(range.to).trim()
+        }
+        return
+      }
+
+      if (typeof val === 'string' && val.trim()) {
+        params[fieldId] = val.trim()
+        return
+      }
+
+      if (typeof val === 'number' || typeof val === 'boolean') {
+        params[fieldId] = String(val)
+      }
+    })
+
+    return params
+  }, [appliedFilters])
 
   const { data, isLoading } = useVenues({
     page: currentPage,
     limit: 10,
     status: 'in_review',
     search: searchQuery,
+    ...apiFilterParams,
   })
 
   const venues = useMemo(() => data?.data ?? [], [data?.data])
@@ -37,6 +88,37 @@ export function VenuePendingApprovalsPage() {
   const allVisibleVenuesSelected =
     visibleVenueIds.length > 0 && visibleVenueIds.every((id) => selectedVenueIds.includes(id))
   const someVisibleVenuesSelected = visibleVenueIds.some((id) => selectedVenueIds.includes(id))
+
+  const handleApplyFilters = useCallback((values: FilterValues) => {
+    setAppliedFilters(values)
+    setCurrentPage(1)
+  }, [])
+
+  const handleExportData = useCallback(
+    (values: FilterValues, format: string) => {
+      const headers = ['Venue ID', 'Name', 'Expert Name', 'Location', 'Status', 'Created At']
+      const rows = venues.map((v) => [
+        getVenueDisplayId(v) || '-',
+        v.venueName || '-',
+        v.partnerName || '-',
+        v.city || '-',
+        v.status || '-',
+        v.createdAt ? new Date(v.createdAt).toLocaleDateString() : 'N/A',
+      ])
+      exportDataToFile(headers, rows, format, 'pending_venues_export')
+    },
+    [venues],
+  )
+
+  const {
+    onAdvancedFilter,
+    onExport,
+    modals: exportFilterModals,
+  } = useModuleExportFilters({
+    moduleKey: 'venue-management',
+    onApplyFilters: handleApplyFilters,
+    onExportData: handleExportData,
+  })
 
   const toggleVisibleVenues = useCallback(() => {
     setSelectedVenueIds((currentIds) => {
@@ -123,6 +205,7 @@ export function VenuePendingApprovalsPage() {
       },
       {
         id: 'actions',
+        accessorFn: () => null,
         header: 'Actions',
         meta: {
           headerClassName: 'pr-5 text-right',
@@ -230,8 +313,8 @@ export function VenuePendingApprovalsPage() {
           setCurrentPage(1)
         }}
         searchPlaceholder="Search by name, ID or profession"
-        onAdvancedFilter={() => toast.message('Advanced filters are coming soon')}
-        onExport={() => toast.message('Venue export is coming soon')}
+        onAdvancedFilter={onAdvancedFilter}
+        onExport={onExport}
         pagination={{
           page: currentPage,
           pageSize: meta?.pagination.limit || 10,
@@ -242,6 +325,7 @@ export function VenuePendingApprovalsPage() {
         resourceLabel="venues"
         emptyMessage="No pending venues found."
       />
+      {exportFilterModals}
     </div>
   )
 }
