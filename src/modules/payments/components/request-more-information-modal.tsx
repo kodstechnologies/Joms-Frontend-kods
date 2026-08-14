@@ -15,7 +15,7 @@ type RequestMoreInformationModalProps = {
   open: boolean
   data: RequestMoreInformationModalData
   onClose: () => void
-  onSubmit?: (payload: { requestInformation: string; adminNotes: string }) => void
+  onSubmit?: (payload: { requestInformation: string; adminNotes: string }) => void | Promise<void>
 }
 
 export function RequestMoreInformationModal({
@@ -53,15 +53,18 @@ export function RequestMoreInformationModal({
     }
   }, [open, handleClose])
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!requestInformation.trim()) {
       toast.error('Request information is required')
       return
     }
 
-    onSubmit?.({ requestInformation, adminNotes })
-    toast.success('Information request submitted')
-    handleClose()
+    try {
+      await onSubmit?.({ requestInformation, adminNotes })
+      handleClose()
+    } catch {
+      // Parent surfaces API errors via toast
+    }
   }
 
   if (!open) return null
@@ -144,7 +147,7 @@ export function RequestMoreInformationModal({
           <button type="button" onClick={handleClose} className="ui-modal-btn ui-modal-btn-cancel">
             Cancel
           </button>
-          <button type="button" onClick={handleSubmit} className="ui-modal-btn ui-modal-btn-cancel">
+          <button type="button" onClick={handleSubmit} className="ui-modal-btn ui-modal-btn-gold">
             Submit
           </button>
         </div>

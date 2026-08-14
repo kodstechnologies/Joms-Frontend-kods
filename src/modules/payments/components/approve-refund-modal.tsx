@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { toast } from 'sonner'
 
+import { formatInr } from '@/modules/payments/utils/finance-mappers'
 import { Input } from '@/shared/components/ui/input'
 import { cn } from '@/shared/lib/cn'
 
@@ -19,7 +20,8 @@ export type ApproveRefundModalData = {
   supportRecommendation: string
   reason: string
   maxRefundableAmount: number
-  platformRetainAmount: string
+  /** Optional static override; otherwise retain is computed from max − refunded. */
+  platformRetainAmount?: string
 }
 
 type ApproveRefundModalProps = {
@@ -31,7 +33,7 @@ type ApproveRefundModalProps = {
     partialAmount: string
     decisionNotes: string
     confirmed: boolean
-  }) => void
+  }) => void | Promise<void>
 }
 
 export function ApproveRefundModal({ open, data, onClose, onConfirm }: ApproveRefundModalProps) {
@@ -68,14 +70,28 @@ export function ApproveRefundModal({ open, data, onClose, onConfirm }: ApproveRe
     }
   }, [open, handleClose])
 
-  const retainedAmount = useMemo(() => {
-    if (refundType === 'full') return data.platformRetainAmount
-    const partial = Number(partialAmount.replace(/,/g, ''))
-    if (Number.isNaN(partial)) return data.platformRetainAmount
-    return data.platformRetainAmount
-  }, [data.platformRetainAmount, partialAmount, refundType])
+  const maxRefundable = Number(data.maxRefundableAmount) || 0
 
-  const handleConfirm = () => {
+  const selectedRefundAmount = useMemo(() => {
+    if (refundType === 'full') return maxRefundable
+    const partial = Number(String(partialAmount).replace(/,/g, ''))
+    if (!partialAmount.trim() || Number.isNaN(partial) || partial < 0) return null
+    return partial
+  }, [maxRefundable, partialAmount, refundType])
+
+  const retainedAmountLabel = useMemo(() => {
+    if (refundType === 'full') return formatInr(0)
+    if (selectedRefundAmount === null) return formatInr(maxRefundable)
+    return formatInr(Math.max(0, maxRefundable - selectedRefundAmount))
+  }, [maxRefundable, refundType, selectedRefundAmount])
+
+  const displayedRefundAmount = useMemo(() => {
+    if (refundType === 'full') return formatInr(maxRefundable) || data.refundAmount
+    if (selectedRefundAmount === null) return '—'
+    return formatInr(selectedRefundAmount)
+  }, [data.refundAmount, maxRefundable, refundType, selectedRefundAmount])
+
+  const handleConfirm = async () => {
     if (!decisionNotes.trim()) {
       toast.error('Decision notes are required')
       return
@@ -87,20 +103,23 @@ export function ApproveRefundModal({ open, data, onClose, onConfirm }: ApproveRe
     }
 
     if (refundType === 'partial') {
-      const amount = Number(partialAmount.replace(/,/g, ''))
+      const amount = Number(String(partialAmount).replace(/,/g, ''))
       if (!partialAmount.trim() || Number.isNaN(amount) || amount <= 0) {
         toast.error('Enter a valid partial refund amount')
         return
       }
-      if (amount > data.maxRefundableAmount) {
-        toast.error(`Cannot exceed ₹${data.maxRefundableAmount.toLocaleString('en-IN')}`)
+      if (amount > maxRefundable) {
+        toast.error(`Cannot exceed ${formatInr(maxRefundable)}`)
         return
       }
     }
 
-    onConfirm?.({ refundType, partialAmount, decisionNotes, confirmed })
-    toast.success('Refund decision confirmed')
-    handleClose()
+    try {
+      await onConfirm?.({ refundType, partialAmount, decisionNotes, confirmed })
+      handleClose()
+    } catch {
+      // Parent surfaces API errors via toast
+    }
   }
 
   if (!open) return null
@@ -120,12 +139,12 @@ export function ApproveRefundModal({ open, data, onClose, onConfirm }: ApproveRe
       >
         <div className="ui-modal-header">
           <h2 id="approve-refund-title" className="text-h2 text-brand-text">
-            Approve Refund
+            Approve Dispute
           </h2>
           <button
             type="button"
             onClick={handleClose}
-            aria-label="Close approve refund modal"
+            aria-label="Close approve dispute modal"
             className="text-muted hover:text-brand-text grid size-9 place-items-center rounded-lg transition-colors hover:bg-white/5"
           >
             <X className="icon-md" />
@@ -154,7 +173,7 @@ export function ApproveRefundModal({ open, data, onClose, onConfirm }: ApproveRe
             <DetailRow label="User ID" value={data.userId} />
             <DetailRow label="Module Type" value={data.moduleType} />
             <DetailRow label="Payment Method" value={data.paymentMethod} />
-            <DetailRow label="Refund Amount" value={data.refundAmount} />
+            <DetailRow label="Refund Amount" value={displayedRefundAmount} />
             <DetailRow label="Support Recommendation" value={data.supportRecommendation} />
             <DetailRow label="Reason" value={data.reason} />
           </div>
@@ -167,7 +186,10 @@ export function ApproveRefundModal({ open, data, onClose, onConfirm }: ApproveRe
               <RadioOption
                 label="Full Refund"
                 checked={refundType === 'full'}
-                onChange={() => setRefundType('full')}
+                onChange={() => {
+                  setRefundType('full')
+                  setPartialAmount('')
+                }}
               />
               <RadioOption
                 label="Partial Refund"
@@ -180,11 +202,14 @@ export function ApproveRefundModal({ open, data, onClose, onConfirm }: ApproveRe
               <Input
                 value={partialAmount}
                 disabled={refundType === 'full'}
+                inputMode="decimal"
                 onChange={(event) => setPartialAmount(event.target.value.replace(/[^\d.]/g, ''))}
                 placeholder="Enter Partial Refund"
                 className={cn('max-w-[382px]', refundType === 'full' && 'opacity-50')}
               />
-              <p className="text-body-sm text-muted mt-2">Platform will retain: {retainedAmount}</p>
+              <p className="text-body-sm text-muted mt-2">
+                Platform will retain: {retainedAmountLabel}
+              </p>
             </div>
 
             <div className="radius-md border-brand-accent/20 bg-brand-bg mt-4 border p-4">
@@ -193,9 +218,11 @@ export function ApproveRefundModal({ open, data, onClose, onConfirm }: ApproveRe
                 <p className="text-body-sm-semibold text-brand-text">Validation Rules</p>
               </div>
               <ul className="text-body-sm text-brand-text/80 mt-3 space-y-2">
-                <li>Cannot exceed ₹{data.maxRefundableAmount.toLocaleString('en-IN')}</li>
+                <li>Cannot exceed {formatInr(maxRefundable)}</li>
                 <li>Cannot be 0</li>
-                <li>Show remaining retained amount automatically</li>
+                <li>
+                  Remaining retained amount updates automatically ({retainedAmountLabel})
+                </li>
               </ul>
             </div>
           </div>
@@ -205,7 +232,11 @@ export function ApproveRefundModal({ open, data, onClose, onConfirm }: ApproveRe
             <textarea
               value={decisionNotes}
               onChange={(event) => setDecisionNotes(event.target.value)}
-              placeholder="Provide reason for approving full/partial refund for audit and compliance."
+              placeholder={
+                refundType === 'full'
+                  ? 'Provide reason for approving full refund for audit and compliance.'
+                  : 'Provide reason for approving partial refund for audit and compliance.'
+              }
               rows={4}
               className="ui-textarea"
             />

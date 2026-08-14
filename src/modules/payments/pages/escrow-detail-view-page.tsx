@@ -1,9 +1,18 @@
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import { ArrowLeft } from 'lucide-react'
+import { useQuery } from '@tanstack/react-query'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 
-import { getEscrowDetailById } from '@/modules/payments/mock/escrow-detail.mock'
+import { AddFinanceNoteModal } from '@/modules/payments/components/add-finance-note-modal'
+import { fetchPartnerDisplayNames } from '@/modules/payments/api/partner-lookup-api'
+import { useFinanceEscrowDetail, useReleaseEscrow } from '@/modules/payments/hooks/use-finance'
+import {
+  formatDate,
+  formatInr,
+  mapEscrowStatus,
+  titleCase,
+} from '@/modules/payments/utils/finance-mappers'
 import { cn } from '@/shared/lib/cn'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 
@@ -41,14 +50,17 @@ function DetailRow({
 }
 
 function StatusBadge({ status }: { status: string }) {
-  const isActive = status === 'Active' || status === 'Released'
+  const isReleased = status === 'Released'
+  const isActive = status === 'Active'
   return (
     <span
       className={cn(
         'text-body-sm-semibold inline-flex rounded-full border px-2.5 py-0.5',
-        isActive
+        isReleased
           ? 'border-brand-positive/25 bg-brand-positive/10 text-brand-positive'
-          : 'border-brand-accent/40 bg-brand-accent/10 text-brand-accent',
+          : isActive
+            ? 'border-brand-accent/40 bg-brand-accent/10 text-brand-accent'
+            : 'border-brand-danger/25 bg-brand-danger/10 text-brand-danger',
       )}
     >
       {status}
@@ -58,8 +70,52 @@ function StatusBadge({ status }: { status: string }) {
 
 export function EscrowDetailViewPage() {
   const navigate = useNavigate()
-  const { id = 'escrow-escrow-01' } = useParams<{ id: string }>()
-  const detail = getEscrowDetailById(id)
+  const { id = '' } = useParams<{ id: string }>()
+  const { data, isLoading, isError, refetch } = useFinanceEscrowDetail(id)
+  const releaseMutation = useReleaseEscrow()
+  const [isReleaseModalOpen, setIsReleaseModalOpen] = useState(false)
+  const escrow = data?.data
+  const status = escrow ? mapEscrowStatus(escrow.status) : 'Active'
+  const isHeld = escrow?.status === 'held'
+
+  const partnerId = escrow?.partnerId ? String(escrow.partnerId) : ''
+  const { data: partnerNameMap } = useQuery({
+    queryKey: ['partner-display-names', partnerId],
+    queryFn: () => fetchPartnerDisplayNames([partnerId]),
+    enabled: Boolean(partnerId) && !escrow?.partnerName,
+  })
+
+  if (isLoading) {
+    return <p className="text-body-sm text-muted">Loading escrow details...</p>
+  }
+
+  if (isError || !escrow) {
+    return (
+      <div className="space-y-4">
+        <p className="text-body-sm text-brand-danger">Escrow hold not found.</p>
+        <button
+          type="button"
+          onClick={() => navigateBackOrFallback(navigate, '/finance/escrow')}
+          className="ui-cta ui-cta-secondary"
+        >
+          Back to Escrow
+        </button>
+      </div>
+    )
+  }
+
+  const heldAt = escrow.heldAt || escrow.createdAt
+  const daysInEscrow = heldAt
+    ? Math.max(0, Math.floor((Date.now() - new Date(heldAt).getTime()) / 86_400_000))
+    : 0
+
+  const clientName = escrow.userName || '—'
+  const expertName =
+    escrow.partnerName ||
+    (partnerId ? partnerNameMap?.[partnerId] : null) ||
+    '—'
+  const transactionId =
+    escrow.transactionId || escrow.paymentOrderId || String(escrow.paymentId)
 
   return (
     <div className="bg-brand-bg flex flex-col gap-5 pb-6">
@@ -84,29 +140,26 @@ export function EscrowDetailViewPage() {
       <section className={cn(cardClass, 'p-5')}>
         <div className="mb-4">
           <h2 className={sectionTitleClass}>Escrow Hold Details</h2>
-          <p className={sectionSubtitleClass}>Provide details about your Consultation</p>
+          <p className={sectionSubtitleClass}>Hold details for custom / milestone settlement</p>
         </div>
         <div className="mb-5 border-b border-white/5" />
 
         <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
           <div className="flex flex-col gap-5">
             <InnerCard title="Escrow Information">
-              <DetailRow label="Escrow ID" value={detail.escrowInformation.escrowId} />
-              <DetailRow label="Transaction ID" value={detail.escrowInformation.transactionId} />
-              <DetailRow label="Type" value={detail.escrowInformation.type} />
-              <DetailRow
-                label="Status"
-                value={<StatusBadge status={detail.escrowInformation.status} />}
-              />
-              <DetailRow label="Created On" value={detail.escrowInformation.createdOn} />
-              <DetailRow label="Days in Escrow" value={detail.escrowInformation.daysInEscrow} />
+              <DetailRow label="Escrow ID" value={escrow.escrowId} />
+              <DetailRow label="Transaction ID" value={transactionId} />
+              <DetailRow label="Type" value={titleCase(escrow.pricingType)} />
+              <DetailRow label="Status" value={<StatusBadge status={status} />} />
+              <DetailRow label="Created On" value={formatDate(heldAt)} />
+              <DetailRow label="Days in Escrow" value={`${daysInEscrow} Days`} />
             </InnerCard>
 
             <InnerCard title="Release Information">
               <p className="text-body-sm text-brand-text">
                 Expected release date:{' '}
                 <span className="text-body-sm-medium">
-                  {detail.releaseInformation.expectedReleaseDate}
+                  {formatDate(escrow.expectedReleaseAt)}
                 </span>
               </p>
             </InnerCard>
@@ -114,16 +167,16 @@ export function EscrowDetailViewPage() {
 
           <div className="flex flex-col gap-5">
             <InnerCard title="Parties">
-              <DetailRow label="Client" value={detail.parties.client} />
-              <DetailRow label="Expert" value={detail.parties.expert} />
+              <DetailRow label="Client" value={clientName} />
+              <DetailRow label="Expert" value={expertName} />
             </InnerCard>
 
             <InnerCard title="Financial Details">
-              <DetailRow label="Escrow Amount" value={detail.financialDetails.escrowAmount} />
-              <DetailRow label="Platform Fee" value={detail.financialDetails.platformFee} />
+              <DetailRow label="Escrow Amount" value={formatInr(escrow.amountHeld)} />
+              <DetailRow label="Module" value={titleCase(escrow.module)} />
               <DetailRow
-                label="Release Amount"
-                value={detail.financialDetails.releaseAmount}
+                label="Hold Reason"
+                value={escrow.holdReason || 'Awaiting approval'}
                 valueClassName="text-body-sm-semibold"
               />
             </InnerCard>
@@ -131,7 +184,7 @@ export function EscrowDetailViewPage() {
         </div>
       </section>
 
-      <footer className="flex items-center justify-between">
+      <footer className="flex items-center justify-between gap-3">
         <button
           type="button"
           onClick={() => navigateBackOrFallback(navigate, '/finance/escrow')}
@@ -139,14 +192,62 @@ export function EscrowDetailViewPage() {
         >
           Close
         </button>
-        <button
-          type="button"
-          onClick={() => toast.message('Download invoice coming soon')}
-          className="ui-cta ui-cta-primary"
-        >
-          Download Invoice
-        </button>
+        <div className="flex gap-3">
+          {isHeld ? (
+            <button
+              type="button"
+              className="ui-cta ui-cta-primary"
+              disabled={releaseMutation.isPending}
+              onClick={() => setIsReleaseModalOpen(true)}
+            >
+              Release Escrow
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => toast.message('Download invoice coming soon')}
+              className="ui-cta ui-cta-primary"
+            >
+              {status === 'Released' ? 'Released to payout' : 'Download Invoice'}
+            </button>
+          )}
+        </div>
       </footer>
+
+      <AddFinanceNoteModal
+        open={isReleaseModalOpen}
+        title="Release Escrow"
+        description="Add an admin note to confirm releasing this escrow hold to payout."
+        placeholder="Enter release note"
+        submitLabel="Release Escrow"
+        submittingLabel="Releasing..."
+        isSubmitting={releaseMutation.isPending}
+        onClose={() => setIsReleaseModalOpen(false)}
+        onSubmit={(adminNote) => {
+          releaseMutation.mutate(
+            { id: escrow._id, adminNote },
+            {
+              onSuccess: () => {
+                toast.success('Escrow released to payout')
+                setIsReleaseModalOpen(false)
+                void refetch()
+                navigate('/finance/escrow')
+              },
+              onError: (err) => {
+                const msg =
+                  (err as { response?: { data?: { message?: string } } })?.response?.data
+                    ?.message || 'Failed to release escrow'
+                toast.error(msg)
+                // Already released (stale UI) — refresh so Release button hides.
+                if (/released_to_payout|cannot release/i.test(msg)) {
+                  void refetch()
+                  setIsReleaseModalOpen(false)
+                }
+              },
+            },
+          )
+        }}
+      />
     </div>
   )
 }

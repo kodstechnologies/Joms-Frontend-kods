@@ -4,12 +4,9 @@ import { Eye, TrendingUp } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
-import {
-  payoutRowsMock,
-  payoutSummaryMetricsMock,
-  type PayoutRow,
-  type PayoutStatus,
-} from '@/modules/payments/mock/payout-management.mock'
+import { useFinanceDashboard, useFinancePayouts } from '@/modules/payments/hooks/use-finance'
+import { formatInr, mapPayoutToRow } from '@/modules/payments/utils/finance-mappers'
+import type { PayoutRow, PayoutStatus } from '@/modules/payments/mock/payout-management.mock'
 import { DataTable } from '@/shared/components/table/data-table'
 import {
   TableActionsDropdown,
@@ -59,25 +56,55 @@ export function PayoutManagementPage() {
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [selectedRowIds, setSelectedRowIds] = useState<string[]>([])
 
+  const { data, isLoading, isFetching, isError } = useFinancePayouts({
+    page: currentPage,
+    limit: PAGE_SIZE,
+  })
+  const dashboardQuery = useFinanceDashboard()
+
+  const rows = useMemo(() => (data?.data?.rows ?? []).map(mapPayoutToRow), [data])
+  const meta = data?.data?.meta
+  const summary = dashboardQuery.data?.data
+
   const filteredRows = useMemo(() => {
     const query = searchQuery.trim().toLowerCase()
-    if (!query) return payoutRowsMock
-    return payoutRowsMock.filter((row) =>
+    if (!query) return rows
+    return rows.filter((row) =>
       [row.payoutId, row.recipient, row.type, row.amount, row.method, row.description, row.status]
         .join(' ')
         .toLowerCase()
         .includes(query),
     )
-  }, [searchQuery])
+  }, [rows, searchQuery])
 
-  const totalItems = filteredRows.length
-  const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE))
-  const safePage = Math.min(currentPage, totalPages)
+  const pageRows = searchQuery.trim() ? filteredRows : rows
 
-  const pageRows = useMemo(() => {
-    const start = (safePage - 1) * PAGE_SIZE
-    return filteredRows.slice(start, start + PAGE_SIZE)
-  }, [filteredRows, safePage])
+  const summaryCards = [
+    {
+      label: 'Total Payments',
+      value: String(meta?.total ?? 0),
+      change: '—',
+      changeNote: 'all payouts',
+    },
+    {
+      label: 'Pending',
+      value: formatInr(summary?.pendingPayouts ?? 0),
+      change: String(summary?.pendingPayoutCount ?? 0),
+      changeNote: 'awaiting release',
+    },
+    {
+      label: 'Completed',
+      value: formatInr(summary?.totalPlatformRevenue ?? 0),
+      change: '—',
+      changeNote: 'platform captured',
+    },
+    {
+      label: 'Failed',
+      value: String(rows.filter((r) => r.status === 'Failed').length),
+      change: '—',
+      changeNote: 'this page',
+    },
+  ]
 
   const visibleRowIds = useMemo(() => pageRows.map((row) => row.id), [pageRows])
   const allVisibleSelected =
@@ -148,36 +175,13 @@ export function PayoutManagementPage() {
         ),
         meta: { headerClassName: 'pl-5', cellClassName: 'pl-5' },
       },
-      {
-        accessorKey: 'payoutId',
-        header: 'Payout ID',
-        cell: ({ row }) => (
-          <span className="text-body-sm-semibold text-brand-text font-mono uppercase">
-            {row.original.payoutId}
-          </span>
-        ),
-      },
+      { accessorKey: 'payoutId', header: 'Payout ID' },
       { accessorKey: 'recipient', header: 'Recipient' },
       { accessorKey: 'type', header: 'Type' },
-      {
-        accessorKey: 'amount',
-        header: 'Amount',
-        cell: ({ row }) => (
-          <span className="text-brand-text font-semibold">{row.original.amount}</span>
-        ),
-      },
-      {
-        accessorKey: 'method',
-        header: 'Method',
-      },
-      {
-        accessorKey: 'initiatedDate',
-        header: 'Initiated Date',
-      },
-      {
-        accessorKey: 'description',
-        header: 'Description',
-      },
+      { accessorKey: 'amount', header: 'Amount' },
+      { accessorKey: 'method', header: 'Method' },
+      { accessorKey: 'initiatedDate', header: 'Initiated Date' },
+      { accessorKey: 'description', header: 'Description' },
       {
         accessorKey: 'status',
         header: 'Status',
@@ -225,8 +229,12 @@ export function PayoutManagementPage() {
         </p>
       </div>
 
+      {isError ? (
+        <p className="text-body-sm text-brand-danger">Failed to load payouts.</p>
+      ) : null}
+
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {payoutSummaryMetricsMock.map((metric) => (
+        {summaryCards.map((metric) => (
           <SummaryCard key={metric.label} {...metric} />
         ))}
       </div>
@@ -235,6 +243,7 @@ export function PayoutManagementPage() {
         columns={columns}
         data={pageRows}
         getRowId={(row) => row.id}
+        isLoading={isLoading || isFetching}
         searchValue={searchQuery}
         onSearchChange={(value) => {
           setSearchQuery(value)
@@ -245,10 +254,10 @@ export function PayoutManagementPage() {
         onAdvancedFilter={() => toast.message('Advance filters coming soon')}
         onExport={() => toast.message('Export coming soon')}
         pagination={{
-          page: safePage,
-          pageSize: PAGE_SIZE,
-          totalItems,
-          totalPages,
+          page: meta?.page ?? currentPage,
+          pageSize: meta?.limit ?? PAGE_SIZE,
+          totalItems: meta?.total ?? 0,
+          totalPages: meta?.totalPages ?? 1,
           onPageChange: setCurrentPage,
         }}
         resourceLabel="payouts"

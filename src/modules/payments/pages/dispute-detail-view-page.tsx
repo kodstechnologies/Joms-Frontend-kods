@@ -12,11 +12,25 @@ import {
   X,
 } from 'lucide-react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
+import { toast } from 'sonner'
 
 import { ApproveRefundModal } from '@/modules/payments/components/approve-refund-modal'
+import { EscalateToSuperAdminModal } from '@/modules/payments/components/escalate-to-super-admin-modal'
 import { RejectRefundModal } from '@/modules/payments/components/reject-refund-modal'
 import { RequestMoreInformationModal } from '@/modules/payments/components/request-more-information-modal'
-import { getDisputeDetailById } from '@/modules/payments/mock/dispute-detail.mock'
+import {
+  useEscalateDispute,
+  useFinanceDispute,
+  useRejectDispute,
+  useRequestDisputeInfo,
+  useResolveDispute,
+} from '@/modules/payments/hooks/use-finance'
+import {
+  formatDate,
+  formatInr,
+  mapDisputeStatus,
+  titleCase,
+} from '@/modules/payments/utils/finance-mappers'
 import { cn } from '@/shared/lib/cn'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 
@@ -74,22 +88,106 @@ function AssessmentBlock({
   )
 }
 
-function UnderReviewBadge() {
+function StatusBadge({ status }: { status: string }) {
+  const tone =
+    status === 'Resolved'
+      ? 'border-brand-positive/40 bg-brand-positive/10 text-brand-positive'
+      : status === 'Rejected'
+        ? 'border-brand-danger/40 bg-brand-danger/10 text-brand-danger'
+        : 'border-brand-accent/40 bg-brand-accent/10 text-brand-accent'
+
   return (
-    <span className="text-body-sm-semibold border-brand-accent/40 bg-brand-accent/10 text-brand-accent inline-flex rounded-full border px-2.5 py-0.5">
-      Under Review
+    <span className={cn('text-body-sm-semibold inline-flex rounded-full border px-2.5 py-0.5', tone)}>
+      {status}
     </span>
   )
 }
 
 export function DisputeDetailViewPage() {
   const navigate = useNavigate()
-  const { id = 'refund-02' } = useParams<{ id: string }>()
-  const detail = getDisputeDetailById(id)
-  const [selectedEvidenceId, setSelectedEvidenceId] = useState(detail.evidenceFiles[0]?.id ?? '')
+  const { id = '' } = useParams<{ id: string }>()
+  const { data, isLoading, isError, refetch } = useFinanceDispute(id)
+  const resolveMutation = useResolveDispute()
+  const rejectMutation = useRejectDispute()
+  const requestInfoMutation = useRequestDisputeInfo()
+  const escalateMutation = useEscalateDispute()
+  const dispute = data?.data
+  const evidenceFiles = (dispute?.evidence ?? []).map((file, index) => ({
+    id: `evidence-${index + 1}`,
+    fileName: file.label || file.url || `Evidence ${index + 1}`,
+    fileSize: '—',
+    date: formatDate(file.uploadedAt),
+  }))
+  const [selectedEvidenceId, setSelectedEvidenceId] = useState('')
   const [isApproveRefundOpen, setIsApproveRefundOpen] = useState(false)
   const [isRejectRefundOpen, setIsRejectRefundOpen] = useState(false)
   const [isRequestMoreInfoOpen, setIsRequestMoreInfoOpen] = useState(false)
+  const [isEscalateOpen, setIsEscalateOpen] = useState(false)
+
+  const apiErrorMessage = (err: unknown, fallback: string) =>
+    (err as { response?: { data?: { message?: string } } })?.response?.data?.message || fallback
+
+  if (isLoading) {
+    return <p className="text-body-sm text-muted">Loading dispute details...</p>
+  }
+
+  if (isError || !dispute) {
+    return (
+      <div className="space-y-4">
+        <p className="text-body-sm text-brand-danger">Dispute not found.</p>
+        <button
+          type="button"
+          onClick={() => navigateBackOrFallback(navigate, '/finance/refunds')}
+          className="ui-cta ui-cta-secondary"
+        >
+          Back to Refunds
+        </button>
+      </div>
+    )
+  }
+
+  const amountLabel = formatInr(dispute.originalAmount)
+  const canAct = ['open', 'under_review', 'waiting_info', 'escalated'].includes(dispute.status)
+
+  const detail = {
+    id: dispute._id,
+    disputeId: dispute.disputeId,
+    transactionId: String(dispute.paymentId || '—'),
+    openedDate: formatDate(dispute.createdAt),
+    status: mapDisputeStatus(dispute.status),
+    moduleType: titleCase(dispute.module),
+    paymentMode: 'Razorpay',
+    escalatedBy: titleCase(dispute.raisedBy) || 'Support',
+    escalatedOn: formatDate(dispute.createdAt),
+    supportReviewSummary: dispute.summary || dispute.reason || '—',
+    escalationReason: titleCase(dispute.caseType),
+    supportRecommendation: 'Pending admin decision',
+    detailedNotes: dispute.adminNotes || dispute.adminNote || dispute.supportNote || dispute.summary || '—',
+    evidenceFiles,
+    userId: dispute.userId || '—',
+    userName: dispute.userId || '—',
+    userEmail: '—',
+    relatedEntityId: dispute.referenceId || '—',
+    disputeReason: dispute.reason || '—',
+    requestInfoReason: dispute.reason || '—',
+    submittedEvidenceCount: evidenceFiles.length,
+    assignedTo: 'Admin Team',
+    amount: amountLabel,
+    listedRefundAmount: amountLabel,
+    maxRefundableAmount: Number(dispute.maxRefundableAmount ?? dispute.originalAmount) || 0,
+    userMessage: dispute.summary || dispute.reason || '—',
+    timeline: [
+      {
+        step: '01',
+        title: 'Dispute Created',
+        actor: titleCase(dispute.raisedBy) || 'User',
+        timestamp: formatDate(dispute.createdAt),
+        description: dispute.reason || 'Dispute opened',
+      },
+    ],
+  }
+
+  const activeEvidenceId = selectedEvidenceId || detail.evidenceFiles[0]?.id || ''
 
   return (
     <div className="bg-brand-bg flex flex-col gap-5 pb-6">
@@ -134,7 +232,7 @@ export function DisputeDetailViewPage() {
             <InfoItem label="Dispute ID" value={detail.disputeId} />
             <InfoItem label="Transaction ID" value={detail.transactionId} />
             <InfoItem label="Opened Date" value={detail.openedDate} />
-            <InfoItem label="Status" value={<UnderReviewBadge />} />
+            <InfoItem label="Status" value={<StatusBadge status={detail.status} />} />
             <InfoItem label="Module type" value={detail.moduleType} />
             <InfoItem label="Payment mode" value={detail.paymentMode} />
           </div>
@@ -193,7 +291,7 @@ export function DisputeDetailViewPage() {
 
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
               {detail.evidenceFiles.map((file) => {
-                const selected = selectedEvidenceId === file.id
+                const selected = activeEvidenceId === file.id
 
                 return (
                   <button
@@ -225,6 +323,7 @@ export function DisputeDetailViewPage() {
             <div className="flex flex-col gap-[10px] sm:flex-row sm:flex-wrap">
               <button
                 type="button"
+                disabled={!canAct || resolveMutation.isPending}
                 onClick={() => setIsApproveRefundOpen(true)}
                 className="ui-cta ui-cta-positive w-[138px] shrink-0"
               >
@@ -237,6 +336,7 @@ export function DisputeDetailViewPage() {
               </button>
               <button
                 type="button"
+                disabled={!canAct || rejectMutation.isPending}
                 onClick={() => setIsRejectRefundOpen(true)}
                 className="ui-cta ui-cta-negative w-[131px] shrink-0"
               >
@@ -245,6 +345,7 @@ export function DisputeDetailViewPage() {
               </button>
               <button
                 type="button"
+                disabled={!canAct || requestInfoMutation.isPending}
                 onClick={() => setIsRequestMoreInfoOpen(true)}
                 className="ui-cta ui-cta-secondary shrink-0"
               >
@@ -259,7 +360,8 @@ export function DisputeDetailViewPage() {
               </button>
               <button
                 type="button"
-                onClick={() => navigate(`/finance/refunds/${id}/escalate`)}
+                disabled={!canAct || escalateMutation.isPending}
+                onClick={() => setIsEscalateOpen(true)}
                 className="ui-cta ui-cta-secondary shrink-0"
               >
                 Escalate
@@ -339,9 +441,26 @@ export function DisputeDetailViewPage() {
           supportRecommendation: detail.supportRecommendation,
           reason: detail.disputeReason,
           maxRefundableAmount: detail.maxRefundableAmount,
-          platformRetainAmount: detail.platformRetainAmount,
         }}
         onClose={() => setIsApproveRefundOpen(false)}
+        onConfirm={async ({ refundType, partialAmount, decisionNotes }) => {
+          try {
+            await resolveMutation.mutateAsync({
+              id,
+              refundType,
+              partialAmount:
+                refundType === 'partial' ? Number(String(partialAmount).replace(/,/g, '')) : null,
+              decisionNotes,
+            })
+            toast.success('Dispute resolved')
+            setIsApproveRefundOpen(false)
+            void refetch()
+            navigate('/finance/refunds')
+          } catch (err) {
+            toast.error(apiErrorMessage(err, 'Failed to resolve dispute'))
+            throw err
+          }
+        }}
       />
 
       <RejectRefundModal
@@ -361,6 +480,18 @@ export function DisputeDetailViewPage() {
           denyFromName: detail.userName,
         }}
         onClose={() => setIsRejectRefundOpen(false)}
+        onConfirm={async ({ rejectionReason, adminNotes }) => {
+          try {
+            await rejectMutation.mutateAsync({ id, rejectionReason, adminNotes })
+            toast.success('Dispute rejected')
+            setIsRejectRefundOpen(false)
+            void refetch()
+            navigate('/finance/refunds')
+          } catch (err) {
+            toast.error(apiErrorMessage(err, 'Failed to reject dispute'))
+            throw err
+          }
+        }}
       />
 
       <RequestMoreInformationModal
@@ -373,6 +504,36 @@ export function DisputeDetailViewPage() {
           evidenceCount: detail.submittedEvidenceCount,
         }}
         onClose={() => setIsRequestMoreInfoOpen(false)}
+        onSubmit={async ({ requestInformation, adminNotes }) => {
+          try {
+            await requestInfoMutation.mutateAsync({ id, requestInformation, adminNotes })
+            toast.success('Information request sent')
+            setIsRequestMoreInfoOpen(false)
+            void refetch()
+          } catch (err) {
+            toast.error(apiErrorMessage(err, 'Failed to request information'))
+            throw err
+          }
+        }}
+      />
+
+      <EscalateToSuperAdminModal
+        open={isEscalateOpen}
+        refundId={detail.disputeId}
+        requestedBy={detail.escalatedBy}
+        amount={detail.amount}
+        onClose={() => setIsEscalateOpen(false)}
+        onSubmit={async ({ priority, adminNotes }) => {
+          try {
+            await escalateMutation.mutateAsync({ id, priority, adminNotes })
+            toast.success('Dispute escalated')
+            setIsEscalateOpen(false)
+            navigate(`/finance/refunds/${id}/escalate`)
+          } catch (err) {
+            toast.error(apiErrorMessage(err, 'Failed to escalate dispute'))
+            throw err
+          }
+        }}
       />
     </div>
   )

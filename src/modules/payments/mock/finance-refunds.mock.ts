@@ -1,4 +1,9 @@
-export type RefundChargebackStatus = 'Resolved' | 'Pending' | 'Open' | 'In Review'
+export type RefundChargebackStatus =
+  | 'Resolved'
+  | 'Rejected'
+  | 'Pending'
+  | 'Open'
+  | 'In Review'
 
 export type RefundChargebackType = 'Refund' | 'Dispute'
 
@@ -13,12 +18,14 @@ export type RefundChargebackRow = {
   id: string
   recordId: string
   type: RefundChargebackType
+  kind?: 'dispute' | 'refund'
   relatedEntity: string
   amount: string
   reason: string
   initiatedDate: string
   description: string
   status: RefundChargebackStatus
+  rawStatus?: string
 }
 
 export const refundSummaryMetricsMock: RefundSummaryMetric[] = [

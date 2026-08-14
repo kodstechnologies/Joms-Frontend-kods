@@ -5,11 +5,11 @@ import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
 import {
-  invoiceRowsMock,
-  invoiceSummaryMetricsMock,
   type InvoiceRow,
   type InvoiceStatus,
 } from '@/modules/payments/mock/invoices-billing.mock'
+import { useFinanceInvoices } from '@/modules/payments/hooks/use-finance'
+import { formatInr, mapInvoiceToRow } from '@/modules/payments/utils/finance-mappers'
 import { DataTable } from '@/shared/components/table/data-table'
 import {
   TableActionsDropdown,
@@ -58,25 +58,54 @@ export function InvoicesBillingPage() {
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [selectedRowIds, setSelectedRowIds] = useState<string[]>([])
 
+  const { data, isLoading, isFetching, isError } = useFinanceInvoices({
+    page: currentPage,
+    limit: PAGE_SIZE,
+  })
+
+  const rows = useMemo(() => (data?.data?.rows ?? []).map(mapInvoiceToRow), [data])
+  const meta = data?.data?.meta
+
   const filteredRows = useMemo(() => {
     const query = searchQuery.trim().toLowerCase()
-    if (!query) return invoiceRowsMock
-    return invoiceRowsMock.filter((row) =>
+    if (!query) return rows
+    return rows.filter((row) =>
       [row.invoiceId, row.clientName, row.amount, row.description, row.status]
         .join(' ')
         .toLowerCase()
         .includes(query),
     )
-  }, [searchQuery])
+  }, [rows, searchQuery])
 
-  const totalItems = filteredRows.length
-  const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE))
-  const safePage = Math.min(currentPage, totalPages)
-
-  const pageRows = useMemo(() => {
-    const start = (safePage - 1) * PAGE_SIZE
-    return filteredRows.slice(start, start + PAGE_SIZE)
-  }, [filteredRows, safePage])
+  const pageRows = searchQuery.trim() ? filteredRows : rows
+  const invoiceSummaryMetrics = [
+    {
+      label: 'Total Invoices',
+      value: String(meta?.total ?? 0),
+      change: '—',
+      changeNote: 'all invoices',
+    },
+    {
+      label: 'Amount Paid',
+      value: formatInr(
+        rows.filter((r) => r.status === 'Paid').reduce((sum, r) => sum + (Number(String(r.amount).replace(/[^\d.]/g, '')) || 0), 0),
+      ),
+      change: '—',
+      changeNote: 'this page',
+    },
+    {
+      label: 'Pending',
+      value: String(rows.filter((r) => r.status === 'Pending').length),
+      change: '—',
+      changeNote: 'this page',
+    },
+    {
+      label: 'Overdue',
+      value: String(rows.filter((r) => r.status === 'Overdue').length),
+      change: '—',
+      changeNote: 'this page',
+    },
+  ]
 
   const visibleRowIds = useMemo(() => pageRows.map((row) => row.id), [pageRows])
   const allVisibleSelected =
@@ -223,15 +252,20 @@ export function InvoicesBillingPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {invoiceSummaryMetricsMock.map((metric) => (
+        {invoiceSummaryMetrics.map((metric) => (
           <SummaryCard key={metric.label} {...metric} />
         ))}
       </div>
+
+      {isError ? (
+        <p className="text-body-sm text-brand-danger">Failed to load invoices.</p>
+      ) : null}
 
       <DataTable
         columns={columns}
         data={pageRows}
         getRowId={(row) => row.id}
+        isLoading={isLoading || isFetching}
         searchValue={searchQuery}
         onSearchChange={(value) => {
           setSearchQuery(value)
@@ -242,10 +276,10 @@ export function InvoicesBillingPage() {
         onAdvancedFilter={() => toast.message('Advance filters coming soon')}
         onExport={() => toast.message('Export coming soon')}
         pagination={{
-          page: safePage,
-          pageSize: PAGE_SIZE,
-          totalItems,
-          totalPages,
+          page: meta?.page ?? currentPage,
+          pageSize: meta?.limit ?? PAGE_SIZE,
+          totalItems: meta?.total ?? 0,
+          totalPages: meta?.totalPages ?? 1,
           onPageChange: setCurrentPage,
         }}
         resourceLabel="invoices"

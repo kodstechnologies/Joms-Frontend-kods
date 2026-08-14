@@ -238,4 +238,15 @@ export const closedTicketMock: SupportTicket = {
 
 export const pastTicketsMock: SupportTicket[] = supportTicketsMock
 
-export const tagOptions = ['Tag Title', 'Payment Issue', 'Urgent', 'Escalated', 'Internal']
+export const tagOptions = [
+  'VIP',
+  'Fraud Risk',
+  'Compliance',
+  'High Value',
+  'Priority',
+  'Legal',
+  'Finance Hold',
+  'Escalated',
+  'Verified',
+  'KYC Pending',
+]

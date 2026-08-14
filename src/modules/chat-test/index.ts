@@ -1,4 +1,5 @@
 export { ChatTestPage } from './pages/chat-test-page'
 export { UserChatTestPage } from './pages/user-chat-test-page'
 export { PartnerChatTestPage } from './pages/partner-chat-test-page'
+export { PaymentFinanceTestingPage } from './pages/payment-finance-testing-page'
 export { STATIC_CHAT_USERS } from './config/static-users'

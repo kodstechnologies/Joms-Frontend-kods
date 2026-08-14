@@ -4,7 +4,6 @@ import {
   AlertTriangle,
   ArrowLeftRight,
   Eye,
-  FileText,
   GitMerge,
   SlidersHorizontal,
   SquarePen,
@@ -16,11 +15,28 @@ import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
 import {
-  refundChargebackRowsMock,
-  refundSummaryMetricsMock,
+  DISPUTE_STATUS_OPTIONS,
+  REFUND_STATUS_OPTIONS,
+} from '@/modules/payments/constants/refund-status-options'
+import {
   type RefundChargebackRow,
   type RefundChargebackStatus,
 } from '@/modules/payments/mock/finance-refunds.mock'
+import {
+  useAddFinanceNote,
+  useFinanceDashboard,
+  useFinanceDisputes,
+  useFinanceRefunds,
+  useUpdateDisputeStatus,
+  useUpdateRefundStatus,
+} from '@/modules/payments/hooks/use-finance'
+import {
+  formatInr,
+  mapDisputeToRefundRow,
+  mapRefundToRow,
+} from '@/modules/payments/utils/finance-mappers'
+import { AddTagsModal } from '@/shared/components/modals/add-tags-modal'
+import { ChangeStatusModal } from '@/shared/components/modals/change-status-modal'
 import { DataTable } from '@/shared/components/table/data-table'
 import {
   TableActionsDropdown,
@@ -34,6 +50,9 @@ const PAGE_SIZE = 10
 function getStatusClassName(status: RefundChargebackStatus) {
   if (status === 'Resolved') {
     return 'border-brand-positive/25 bg-brand-positive/10 text-brand-positive'
+  }
+  if (status === 'Rejected') {
+    return 'border-brand-danger/25 bg-brand-danger/10 text-brand-danger'
   }
   if (status === 'Pending') {
     return 'border-brand-teal/25 bg-brand-teal/10 text-brand-teal'
@@ -76,12 +95,42 @@ export function FinanceRefundsPage() {
   const [currentPage, setCurrentPage] = useState(1)
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [selectedRowIds, setSelectedRowIds] = useState<string[]>([])
+  const [statusTarget, setStatusTarget] = useState<RefundChargebackRow | null>(null)
+  const [tagTarget, setTagTarget] = useState<RefundChargebackRow | null>(null)
+
+  const listParams = { page: currentPage, limit: PAGE_SIZE }
+  const disputesQuery = useFinanceDisputes(listParams)
+  const refundsQuery = useFinanceRefunds(listParams)
+  const dashboardQuery = useFinanceDashboard()
+  const updateDisputeStatus = useUpdateDisputeStatus()
+  const updateRefundStatus = useUpdateRefundStatus()
+  const addNote = useAddFinanceNote()
+
+  const apiErrorMessage = (err: unknown, fallback: string) =>
+    (err as { response?: { data?: { message?: string } } })?.response?.data?.message || fallback
+
+  const rows = useMemo(() => {
+    const disputeRows = (disputesQuery.data?.data?.rows ?? []).map(mapDisputeToRefundRow)
+    const refundRows = (refundsQuery.data?.data?.rows ?? []).map(mapRefundToRow)
+    return [...disputeRows, ...refundRows]
+  }, [disputesQuery.data, refundsQuery.data])
+
+  const metaTotal =
+    (disputesQuery.data?.data?.meta?.total ?? 0) + (refundsQuery.data?.data?.meta?.total ?? 0)
+  const metaTotalPages = Math.max(
+    disputesQuery.data?.data?.meta?.totalPages ?? 1,
+    refundsQuery.data?.data?.meta?.totalPages ?? 1,
+  )
+  const summary = dashboardQuery.data?.data
+  const isLoading = disputesQuery.isLoading || refundsQuery.isLoading
+  const isFetching = disputesQuery.isFetching || refundsQuery.isFetching
+  const isError = disputesQuery.isError || refundsQuery.isError
 
   const filteredRows = useMemo(() => {
     const query = searchQuery.trim().toLowerCase()
-    if (!query) return refundChargebackRowsMock
+    if (!query) return rows
 
-    return refundChargebackRowsMock.filter((row) =>
+    return rows.filter((row) =>
       [
         row.recordId,
         row.type,
@@ -96,16 +145,36 @@ export function FinanceRefundsPage() {
         .toLowerCase()
         .includes(query),
     )
-  }, [searchQuery])
+  }, [rows, searchQuery])
 
-  const totalItems = filteredRows.length
-  const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE))
-  const safePage = Math.min(currentPage, totalPages)
+  const pageRows = searchQuery.trim() ? filteredRows : rows
 
-  const pageRows = useMemo(() => {
-    const start = (safePage - 1) * PAGE_SIZE
-    return filteredRows.slice(start, start + PAGE_SIZE)
-  }, [filteredRows, safePage])
+  const refundSummaryMetrics = [
+    {
+      label: 'Pending Refunds',
+      value: String(rows.filter((r) => r.type === 'Refund' && r.status === 'Pending').length),
+      change: '—',
+      changeNote: 'this page',
+    },
+    {
+      label: 'Active Disputes',
+      value: String(summary?.openDisputes ?? 0),
+      change: '—',
+      changeNote: 'open cases',
+    },
+    {
+      label: 'Amount in Disputed',
+      value: formatInr(summary?.disputedAmount ?? 0),
+      change: '—',
+      changeNote: 'open disputes',
+    },
+    {
+      label: 'Resolved',
+      value: String(rows.filter((r) => r.status === 'Resolved').length),
+      change: '—',
+      changeNote: 'this page',
+    },
+  ]
 
   const visibleRowIds = useMemo(() => pageRows.map((row) => row.id), [pageRows])
   const allVisibleSelected =
@@ -144,7 +213,7 @@ export function FinanceRefundsPage() {
             onClick={() => {
               setActiveDropdownId(null)
               navigate(
-                record.type === 'Dispute'
+                record.kind === 'dispute' || record.type === 'Dispute'
                   ? `/finance/refunds/${record.id}/dispute`
                   : `/finance/refunds/${record.id}`,
               )
@@ -162,7 +231,10 @@ export function FinanceRefundsPage() {
           <TableActionsItem
             icon={<ArrowLeftRight className="size-3.5 text-slate-700" aria-hidden="true" />}
             className="text-slate-800 hover:bg-slate-100 hover:text-slate-900"
-            onClick={() => toast.message('Change status coming soon')}
+            onClick={() => {
+              setActiveDropdownId(null)
+              setStatusTarget(record)
+            }}
           >
             Change Status
           </TableActionsItem>
@@ -174,23 +246,22 @@ export function FinanceRefundsPage() {
             Change Priority
           </TableActionsItem>
           <TableActionsItem
-            icon={<FileText className="size-3.5 text-slate-700" aria-hidden="true" />}
-            className="text-slate-800 hover:bg-slate-100 hover:text-slate-900"
-            onClick={() => toast.message('Add internal note coming soon')}
-          >
-            Add internal note
-          </TableActionsItem>
-          <TableActionsItem
             icon={<Tag className="size-3.5 text-slate-700" aria-hidden="true" />}
             className="text-slate-800 hover:bg-slate-100 hover:text-slate-900"
-            onClick={() => toast.message('Add tags coming soon')}
+            onClick={() => {
+              setActiveDropdownId(null)
+              setTagTarget(record)
+            }}
           >
             Add Tags
           </TableActionsItem>
           <TableActionsItem
             icon={<AlertTriangle className="size-3.5 text-slate-700" aria-hidden="true" />}
             className="text-slate-800 hover:bg-slate-100 hover:text-slate-900"
-            onClick={() => toast.message('Escalate coming soon')}
+            onClick={() => {
+              setActiveDropdownId(null)
+              navigate(`/finance/refunds/${record.id}/escalate`)
+            }}
           >
             Escalate
           </TableActionsItem>
@@ -213,6 +284,11 @@ export function FinanceRefundsPage() {
     },
     [activeDropdownId, navigate],
   )
+
+  const statusOptions =
+    statusTarget?.kind === 'dispute' || statusTarget?.type === 'Dispute'
+      ? DISPUTE_STATUS_OPTIONS
+      : REFUND_STATUS_OPTIONS
 
   const columns = useMemo<ColumnDef<RefundChargebackRow>[]>(
     () => [
@@ -317,15 +393,20 @@ export function FinanceRefundsPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {refundSummaryMetricsMock.map((metric) => (
+        {refundSummaryMetrics.map((metric) => (
           <SummaryCard key={metric.label} {...metric} />
         ))}
       </div>
+
+      {isError ? (
+        <p className="text-body-sm text-brand-danger">Failed to load refunds and disputes.</p>
+      ) : null}
 
       <DataTable
         columns={columns}
         data={pageRows}
         getRowId={(row) => row.id}
+        isLoading={isLoading || isFetching}
         searchValue={searchQuery}
         onSearchChange={(value) => {
           setSearchQuery(value)
@@ -336,14 +417,71 @@ export function FinanceRefundsPage() {
         onAdvancedFilter={() => toast.message('Advance filters coming soon')}
         onExport={() => toast.message('Export coming soon')}
         pagination={{
-          page: safePage,
+          page: currentPage,
           pageSize: PAGE_SIZE,
-          totalItems,
-          totalPages,
+          totalItems: metaTotal,
+          totalPages: metaTotalPages,
           onPageChange: setCurrentPage,
         }}
-        resourceLabel="users"
+        resourceLabel="records"
         emptyMessage="No refund records found."
+      />
+
+      <ChangeStatusModal
+        open={!!statusTarget}
+        recordLabel={statusTarget?.recordId}
+        currentStatus={statusTarget?.rawStatus || statusTarget?.status}
+        options={statusOptions}
+        onClose={() => setStatusTarget(null)}
+        onSubmit={async ({ status, adminNotes }) => {
+          if (!statusTarget) return
+          try {
+            if (statusTarget.kind === 'dispute' || statusTarget.type === 'Dispute') {
+              await updateDisputeStatus.mutateAsync({
+                id: statusTarget.id,
+                status,
+                adminNote: adminNotes,
+              })
+            } else {
+              await updateRefundStatus.mutateAsync({
+                id: statusTarget.id,
+                status,
+                adminNote: adminNotes,
+              })
+            }
+            toast.success('Status updated')
+            setStatusTarget(null)
+            void disputesQuery.refetch()
+            void refundsQuery.refetch()
+          } catch (err) {
+            toast.error(apiErrorMessage(err, 'Failed to update status'))
+            throw err
+          }
+        }}
+      />
+
+      <AddTagsModal
+        open={!!tagTarget}
+        entityLabel={
+          tagTarget?.kind === 'dispute' || tagTarget?.type === 'Dispute' ? 'dispute' : 'refund'
+        }
+        onClose={() => setTagTarget(null)}
+        onSubmit={async ({ tags, adminNotes }) => {
+          if (!tagTarget) return
+          try {
+            await addNote.mutateAsync({
+              id: tagTarget.id,
+              resourceType:
+                tagTarget.kind === 'dispute' || tagTarget.type === 'Dispute' ? 'Dispute' : 'Refund',
+              adminNote: `[Tags: ${tags.join(', ')}] ${adminNotes}`,
+            })
+            toast.success('Tags added')
+            setTagTarget(null)
+          } catch (err) {
+            toast.error(apiErrorMessage(err, 'Failed to add tags'))
+            throw err
+          }
+        }}
       />
     </div>
   )

@@ -32,6 +32,9 @@ import type { StaticChatUser } from '../config/static-users'
 
 type Props = {
   user: StaticChatUser
+  /** Prefill partner id (e.g. from finance testing harness) */
+  defaultPartnerId?: string
+  defaultPartnerName?: string
 }
 
 type QuotationRow = QuotationRequest & {
@@ -125,9 +128,17 @@ function OfferingCard({
   )
 }
 
-export function UserQuotationPanel({ user }: Props) {
-  const [partnerId, setPartnerId] = useState('')
-  const [partnerName, setPartnerName] = useState('')
+export function UserQuotationPanel({ user, defaultPartnerId = '', defaultPartnerName = '' }: Props) {
+  const [partnerId, setPartnerId] = useState(defaultPartnerId)
+  const [partnerName, setPartnerName] = useState(defaultPartnerName)
+
+  useEffect(() => {
+    if (defaultPartnerId) setPartnerId(defaultPartnerId)
+  }, [defaultPartnerId])
+
+  useEffect(() => {
+    if (defaultPartnerName) setPartnerName(defaultPartnerName)
+  }, [defaultPartnerName])
   const [services, setServices] = useState<PartnerOffering[]>([])
   const [consultations, setConsultations] = useState<PartnerOffering[]>([])
   const [selected, setSelected] = useState<PartnerOffering | null>(null)

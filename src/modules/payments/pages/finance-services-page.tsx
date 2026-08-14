@@ -1,15 +1,21 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { AlertTriangle, Eye, SlidersHorizontal, SquarePen, Tag, Trash2 } from 'lucide-react'
+import { useQueryClient } from '@tanstack/react-query'
+import { AlertTriangle, Eye, SlidersHorizontal, Tag, Trash2 } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
 import {
-  financeServiceRowsMock,
   financeServiceTabs,
   type FinanceServiceRow,
   type FinanceServiceTab,
 } from '@/modules/payments/mock/finance-services.mock'
+import { useAddFinanceNote, useFinanceEscrow, useFinanceRevenue } from '@/modules/payments/hooks/use-finance'
+import {
+  mapEscrowToServiceRow,
+  mapPaymentToServiceRow,
+} from '@/modules/payments/utils/finance-mappers'
+import { AddTagsModal } from '@/shared/components/modals/add-tags-modal'
 import { DataTable } from '@/shared/components/table/data-table'
 import {
   TableActionsDropdown,
@@ -29,37 +35,82 @@ function getStatusClassName(status: FinanceServiceRow['status']) {
 
 export function FinanceServicesPage() {
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const [activeTab, setActiveTab] = useState<FinanceServiceTab>('all')
   const [searchQuery, setSearchQuery] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [selectedRowIds, setSelectedRowIds] = useState<string[]>([])
+  const [tagTarget, setTagTarget] = useState<FinanceServiceRow | null>(null)
+  const addNote = useAddFinanceNote()
 
-  const tabRows = useMemo(
-    () => financeServiceRowsMock.filter((row) => row.tab === activeTab),
-    [activeTab],
-  )
+  const isEscrowTab = activeTab === 'escrow'
+  const module =
+    activeTab === 'by-service'
+      ? 'service'
+      : activeTab === 'by-consultation'
+        ? 'consultation'
+        : undefined
+
+  const revenueParams = {
+    page: currentPage,
+    limit: PAGE_SIZE,
+    module,
+  }
+  const escrowParams = {
+    page: currentPage,
+    limit: PAGE_SIZE,
+  }
+
+  const revenueQuery = useFinanceRevenue(revenueParams, !isEscrowTab)
+  const escrowQuery = useFinanceEscrow(escrowParams, isEscrowTab)
+
+  const handleTabChange = (tabId: FinanceServiceTab) => {
+    if (tabId !== activeTab) {
+      setActiveTab(tabId)
+      setCurrentPage(1)
+      setSearchQuery('')
+      setSelectedRowIds([])
+    }
+
+    // Always refetch for the tab (cache was keeping prior tab data until full refresh)
+    if (tabId === 'escrow') {
+      void queryClient.invalidateQueries({ queryKey: ['finance-escrow'] })
+    } else {
+      void queryClient.invalidateQueries({ queryKey: ['finance-revenue'] })
+    }
+  }
+  const isLoading = isEscrowTab ? escrowQuery.isLoading : revenueQuery.isLoading
+  const isFetching = isEscrowTab ? escrowQuery.isFetching : revenueQuery.isFetching
+  const isError = isEscrowTab ? escrowQuery.isError : revenueQuery.isError
+
+  const liveRows = useMemo(() => {
+    if (isEscrowTab) {
+      return (escrowQuery.data?.data?.rows ?? []).map(mapEscrowToServiceRow)
+    }
+    const payments = revenueQuery.data?.data?.rows ?? []
+    const filtered =
+      activeTab === 'all'
+        ? payments.filter((p) => p.module === 'service' || p.module === 'consultation')
+        : payments
+    return filtered.map((row) => mapPaymentToServiceRow(row, activeTab))
+  }, [activeTab, escrowQuery.data, isEscrowTab, revenueQuery.data])
+
+  const meta = isEscrowTab ? escrowQuery.data?.data?.meta : revenueQuery.data?.data?.meta
 
   const filteredRows = useMemo(() => {
     const query = searchQuery.trim().toLowerCase()
-    if (!query) return tabRows
+    if (!query) return liveRows
 
-    return tabRows.filter((row) =>
+    return liveRows.filter((row) =>
       [row.serviceId, row.name, row.expertName, row.bookingId, row.userName]
         .join(' ')
         .toLowerCase()
         .includes(query),
     )
-  }, [searchQuery, tabRows])
+  }, [searchQuery, liveRows])
 
-  const totalItems = filteredRows.length
-  const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE))
-  const safePage = Math.min(currentPage, totalPages)
-
-  const pageRows = useMemo(() => {
-    const start = (safePage - 1) * PAGE_SIZE
-    return filteredRows.slice(start, start + PAGE_SIZE)
-  }, [filteredRows, safePage])
+  const pageRows = searchQuery.trim() ? filteredRows : liveRows
 
   const visibleRowIds = useMemo(() => pageRows.map((row) => row.id), [pageRows])
   const allVisibleSelected =
@@ -97,27 +148,22 @@ export function FinanceServicesPage() {
             className="text-slate-800 hover:bg-slate-100 hover:text-slate-900"
             onClick={() => {
               setActiveDropdownId(null)
-              navigate(`/finance/services/${record.id}`)
+              // Escrow rows use EscrowHold._id — payment detail API expects Payment._id
+              navigate(
+                record.tab === 'escrow'
+                  ? `/finance/escrow/${record.id}`
+                  : `/finance/services/${record.id}`,
+              )
             }}
           >
             View Details
-          </TableActionsItem>
-          <TableActionsItem
-            icon={<SquarePen className="size-[18px] text-slate-700" aria-hidden="true" />}
-            className="text-slate-800 hover:bg-slate-100 hover:text-slate-900"
-            onClick={() => {
-              setActiveDropdownId(null)
-              toast.message('Add internal note coming soon')
-            }}
-          >
-            Add internal note
           </TableActionsItem>
           <TableActionsItem
             icon={<Tag className="size-[18px] text-slate-700" aria-hidden="true" />}
             className="text-slate-800 hover:bg-slate-100 hover:text-slate-900"
             onClick={() => {
               setActiveDropdownId(null)
-              toast.message('Add tags coming soon')
+              setTagTarget(record)
             }}
           >
             Add Tags
@@ -269,12 +315,7 @@ export function FinanceServicesPage() {
           <button
             key={tab.id}
             type="button"
-            onClick={() => {
-              setActiveTab(tab.id)
-              setCurrentPage(1)
-              setSearchQuery('')
-              setSelectedRowIds([])
-            }}
+            onClick={() => handleTabChange(tab.id)}
             className={cn(
               'text-body-sm flex h-[37px] min-w-[169px] items-center justify-center rounded-md px-10 leading-[20px] transition-colors',
               activeTab === tab.id
@@ -291,6 +332,7 @@ export function FinanceServicesPage() {
         columns={columns}
         data={pageRows}
         getRowId={(row) => row.id}
+        isLoading={isLoading || isFetching}
         searchValue={searchQuery}
         onSearchChange={(value) => {
           setSearchQuery(value)
@@ -301,14 +343,38 @@ export function FinanceServicesPage() {
         onAdvancedFilter={() => toast.message('Advance filters coming soon')}
         onExport={() => toast.message('Export coming soon')}
         pagination={{
-          page: safePage,
-          pageSize: PAGE_SIZE,
-          totalItems,
-          totalPages,
+          page: meta?.page ?? currentPage,
+          pageSize: meta?.limit ?? PAGE_SIZE,
+          totalItems: meta?.total ?? 0,
+          totalPages: meta?.totalPages ?? 1,
           onPageChange: setCurrentPage,
         }}
-        resourceLabel="users"
+        resourceLabel="services"
         emptyMessage="No service records found."
+      />
+
+      <AddTagsModal
+        open={!!tagTarget}
+        entityLabel={tagTarget?.tab === 'escrow' ? 'escrow hold' : 'service payment'}
+        onClose={() => setTagTarget(null)}
+        onSubmit={async ({ tags, adminNotes }) => {
+          if (!tagTarget) return
+          try {
+            await addNote.mutateAsync({
+              id: tagTarget.id,
+              resourceType: tagTarget.tab === 'escrow' ? 'EscrowHold' : 'Payment',
+              adminNote: `[Tags: ${tags.join(', ')}] ${adminNotes}`,
+            })
+            toast.success('Tags added')
+            setTagTarget(null)
+          } catch (err) {
+            const msg =
+              (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+              'Failed to add tags'
+            toast.error(msg)
+            throw err
+          }
+        }}
       />
     </div>
   )
