@@ -17,12 +17,7 @@ import type {
 } from '../type/service'
 import type { DeleteServicePayload } from '../api/service-api'
 
-export const useServices = (params?: {
-  page?: number
-  limit?: number
-  status?: string
-  search?: string
-}) => {
+export const useServices = (params?: Record<string, unknown>) => {
   const isDeletedList = params?.status === 'deleted'
 
   return useQuery({

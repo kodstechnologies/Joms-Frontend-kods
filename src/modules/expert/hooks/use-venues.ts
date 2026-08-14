@@ -12,14 +12,8 @@ import {
   type DeleteVenuePayload,
   type SetVenueOwnerPasswordPayload,
 } from '../api/venue-api.ts'
-import type { VenueStatus } from '../type/venue'
 
-export const useVenues = (params?: {
-  page?: number
-  limit?: number
-  status?: VenueStatus | 'reported'
-  search?: string
-}) => {
+export const useVenues = (params?: Record<string, unknown>) => {
   const isDeletedList = params?.status === 'deleted'
 
   return useQuery({

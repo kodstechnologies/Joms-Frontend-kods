@@ -11,7 +11,7 @@ type UseModuleExportFiltersOptions = {
   moduleKey: ModuleFilterKey
   initialValues?: FilterValues
   onApplyFilters?: (values: FilterValues) => void | Promise<void>
-  onExportData?: (values: FilterValues) => void | Promise<void>
+  onExportData?: (values: FilterValues, format: string) => void | Promise<void>
 }
 
 export function useModuleExportFilters({
@@ -63,23 +63,26 @@ export function useModuleExportFilters({
     }
   }, [filterValues, onApplyFilters])
 
-  const handleExportData = useCallback(async () => {
-    setIsExporting(true)
+  const handleExportData = useCallback(
+    async (format: string) => {
+      setIsExporting(true)
 
-    try {
-      if (onExportData) {
-        await onExportData(filterValues)
-      } else {
-        toast.success(`Export started for ${config.moduleName}`)
+      try {
+        if (onExportData) {
+          await onExportData(filterValues, format)
+        } else {
+          toast.success(`Export started for ${config.moduleName} in ${format.toUpperCase()} format`)
+        }
+
+        setIsExportModalOpen(false)
+      } catch {
+        toast.error('Failed to export data')
+      } finally {
+        setIsExporting(false)
       }
-
-      setIsExportModalOpen(false)
-    } catch {
-      toast.error('Failed to export data')
-    } finally {
-      setIsExporting(false)
-    }
-  }, [config.moduleName, filterValues, onExportData])
+    },
+    [config.moduleName, filterValues, onExportData],
+  )
 
   const modals = (
     <>

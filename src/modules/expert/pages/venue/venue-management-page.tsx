@@ -40,6 +40,7 @@ import { statusCardTones } from '@/shared/lib/design-tokens'
 import { cn } from '@/shared/lib/cn'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 import type { FilterValues } from '@/shared/types/data-filter'
+import { exportDataToFile } from '@/shared/utils/export-utils'
 import { getVenueApiId, getVenueDisplayId, getVenueDisplaySpaceId } from '../../utils/venue-list'
 import { getManagementStatusDisplay } from '../../utils/management-status'
 import { MODERATION_CATEGORY_SLUGS } from '@/modules/settings/api/templates-api'
@@ -100,15 +101,6 @@ export const VenueManagementPage = () => {
     [setCurrentPage],
   )
 
-  const {
-    onAdvancedFilter,
-    onExport,
-    modals: exportFilterModals,
-  } = useModuleExportFilters({
-    moduleKey: 'venue-management',
-    onApplyFilters: handleApplyFilters,
-  })
-
   const apiFilterParams = useMemo(() => {
     const params: Record<string, string> = {}
 
@@ -120,8 +112,8 @@ export const VenueManagementPage = () => {
 
       if (fieldId === 'location' && typeof val === 'object' && val !== null) {
         const loc = val as { state?: string; city?: string }
-        if (loc.state?.trim()) params.locationState = loc.state.trim()
-        if (loc.city?.trim()) params.locationCity = loc.city.trim()
+        if (loc.state?.trim()) params.cityState = loc.state.trim()
+        if (loc.city?.trim()) params.cityCity = loc.city.trim()
         return
       }
 
@@ -167,6 +159,43 @@ export const VenueManagementPage = () => {
     ...apiFilterParams,
   })
   const venues = useMemo(() => data?.data ?? [], [data?.data])
+
+  const handleExportData = useCallback(
+    (values: FilterValues, format: string) => {
+      const headers = [
+        'Venue ID',
+        'Venue Name',
+        'Category',
+        'Space ID',
+        'Space Name',
+        'Status',
+        'Event Type',
+        'Created At',
+      ]
+      const rows = venues.map((v) => [
+        getVenueDisplayId(v),
+        v.venueName || '',
+        v.venueCategory || '',
+        getVenueDisplaySpaceId(v),
+        v.spaceName || '',
+        v.status || '',
+        v.eventType || '',
+        v.createdAt ? new Date(v.createdAt).toLocaleDateString() : '',
+      ])
+      exportDataToFile(headers, rows, format, 'venues_export')
+    },
+    [venues],
+  )
+
+  const {
+    onAdvancedFilter,
+    onExport,
+    modals: exportFilterModals,
+  } = useModuleExportFilters({
+    moduleKey: 'venue-management',
+    onApplyFilters: handleApplyFilters,
+    onExportData: handleExportData,
+  })
   const meta = data?.meta
   const visibleVenueIds = useMemo(() => venues.map((venue) => venue._id), [venues])
   const selectedVenueCount = selectedVenueIds.length
@@ -635,6 +664,7 @@ export const VenueManagementPage = () => {
 
     const actionsColumn: ColumnDef<Venue> = {
       id: 'actions',
+      accessorFn: () => null,
       header: 'Actions',
       meta: {
         headerClassName: 'pr-5 text-right',
@@ -784,7 +814,7 @@ export const VenueManagementPage = () => {
             size="listing"
             onClick={() => {
               if (card.id === 'reported-venues') {
-                toast.message('Reported venues list is coming soon')
+                navigate('/venues/management/reported')
                 return
               }
               navigate(card.href)

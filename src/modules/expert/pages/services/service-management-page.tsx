@@ -118,8 +118,8 @@ export const ServiceManagementPage = () => {
 
       if (fieldId === 'location' && typeof val === 'object' && val !== null) {
         const loc = val as { state?: string; city?: string }
-        if (loc.state?.trim()) params.locationState = loc.state.trim()
-        if (loc.city?.trim()) params.locationCity = loc.city.trim()
+        if (loc.state?.trim()) params.titleState = loc.state.trim()
+        if (loc.city?.trim()) params.titleCity = loc.city.trim()
         return
       }
 
@@ -484,6 +484,7 @@ export const ServiceManagementPage = () => {
 
     const actionsColumn: ColumnDef<Service> = {
       id: 'actions',
+      accessorFn: () => null,
       header: 'Actions',
       meta: {
         headerClassName: 'pr-5 text-right',
@@ -662,6 +663,7 @@ export const ServiceManagementPage = () => {
             selected={activeStatus === card.status}
             onClick={() => {
               if (card.status === 'reported') {
+                navigate('/services/management/reported')
                 return
               }
               if (card.status === 'deleted') {

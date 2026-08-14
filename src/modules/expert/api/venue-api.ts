@@ -5,7 +5,6 @@ import type {
   VenueDraftResponse,
   VenueProfileResponse,
   VenueCategoryResponse,
-  VenueStatus,
 } from '../type/venue.ts'
 import type {
   VenueOnboardingBasicProfileResponse,
@@ -18,12 +17,7 @@ import type { VenueFullViewResponse } from '../type/venue-full-view.ts'
 import type { VenueFormData } from '../utils/venue-form.ts'
 import { mapCancellationPolicyToHours, mapSpaceTypeToApi } from '../utils/venue-form.ts'
 
-export const fetchVenues = async (params?: {
-  page?: number
-  limit?: number
-  status?: VenueStatus | 'reported'
-  search?: string
-}) => {
+export const fetchVenues = async (params?: Record<string, unknown>) => {
   const response = await venueApiClient.get<VenueResponse>('/venues/internal/admin/venues', {
     params,
   })

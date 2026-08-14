@@ -11,6 +11,7 @@ import type { LoginTrailRow, SecuritySettings } from '../types/settings'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import { DataTable } from '@/shared/components/table/data-table'
 import { cn } from '@/shared/lib/cn'
+import { exportDataToFile } from '@/shared/utils/export-utils'
 
 const PAGE_SIZE = 10
 
@@ -26,7 +27,7 @@ function StatusBadge({ status }: { status: LoginTrailRow['status'] }) {
   return <span className="login-trails-status is-blocked">Blocked</span>
 }
 
-function downloadTrailsCsv(rows: LoginTrailRow[]) {
+function exportTrailsData(rows: LoginTrailRow[], format: string) {
   const headers = [
     'Date',
     'Time',
@@ -39,33 +40,25 @@ function downloadTrailsCsv(rows: LoginTrailRow[]) {
     'Location',
     'Device',
   ]
-  const escape = (value: string) => `"${String(value ?? '').replace(/"/g, '""')}"`
-  const lines = [
-    headers.join(','),
-    ...rows.map((row) =>
-      [
-        row.date,
-        row.time,
-        row.adminName || '',
-        row.adminEmail || '',
-        row.role || '',
-        row.ipAddress,
-        row.action,
-        row.status,
-        row.location,
-        row.device,
-      ]
-        .map(escape)
-        .join(','),
-    ),
-  ]
-  const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' })
-  const url = URL.createObjectURL(blob)
-  const anchor = document.createElement('a')
-  anchor.href = url
-  anchor.download = `admin-login-trails-${new Date().toISOString().slice(0, 10)}.csv`
-  anchor.click()
-  URL.revokeObjectURL(url)
+  const dataRows = rows.map((row) => [
+    row.date,
+    row.time,
+    row.adminName || '',
+    row.adminEmail || '',
+    row.role || '',
+    row.ipAddress,
+    row.action,
+    row.status,
+    row.location || '',
+    row.device || '',
+  ])
+
+  exportDataToFile(
+    headers,
+    dataRows,
+    format,
+    `admin-login-trails-${new Date().toISOString().slice(0, 10)}`,
+  )
 }
 
 export function LoginTrailsPage() {
@@ -75,6 +68,7 @@ export function LoginTrailsPage() {
   const [statusFilter, setStatusFilter] = useState<TrailStatus>('')
   const [showFilters, setShowFilters] = useState(false)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [exportFormat, setExportFormat] = useState('csv')
 
   const securityQuery = useSettingsModule('security')
   const updateSecurity = useUpdateSettings('security')
@@ -276,21 +270,32 @@ export function LoginTrailsPage() {
                 <Filter className="size-4" />
                 Advance Filters
               </button>
-              <button
-                type="button"
-                className="login-trails-export-btn"
-                onClick={() => {
-                  if (!rows.length) {
-                    toast.message('No trails to export')
-                    return
-                  }
-                  downloadTrailsCsv(rows)
-                  toast.success('Export started')
-                }}
-              >
-                <Upload className="size-4" />
-                Export Data
-              </button>
+              <div className="flex items-center gap-2">
+                <select
+                  value={exportFormat}
+                  onChange={(e) => setExportFormat(e.target.value)}
+                  className="rounded-md border border-white/10 bg-slate-900/50 px-2 py-1.5 text-sm text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                >
+                  <option value="csv">CSV</option>
+                  <option value="excel">Excel</option>
+                  <option value="pdf">PDF</option>
+                </select>
+                <button
+                  type="button"
+                  className="login-trails-export-btn"
+                  onClick={() => {
+                    if (!rows.length) {
+                      toast.message('No trails to export')
+                      return
+                    }
+                    exportTrailsData(rows, exportFormat)
+                    toast.success('Export started')
+                  }}
+                >
+                  <Upload className="size-4" />
+                  Export Data
+                </button>
+              </div>
             </div>
           }
         />

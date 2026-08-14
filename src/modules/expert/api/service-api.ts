@@ -22,12 +22,7 @@ import type {
   UpdateServiceStatusPayload,
 } from '../type/service'
 
-export const fetchServices = async (params?: {
-  page?: number
-  limit?: number
-  status?: string
-  search?: string
-}) => {
+export const fetchServices = async (params?: Record<string, unknown>) => {
   const response = await expertApiClient.get<ServiceResponse>('/services/internal/admin/services', {
     params,
   })
