@@ -1,43 +1,31 @@
 import type { FilterSectionConfig, ModuleFilterConfig } from '@/shared/types/data-filter'
 
-import {
-  byLocationSection,
-  createStandardModuleSections,
-  prefixSectionFields,
-} from './base-filter-sections'
+import { byLocationSection, prefixSectionFields } from './base-filter-sections'
 
 const venueCategoryByVenuesSection: FilterSectionConfig = {
   id: 'by-venues',
   title: 'By Venues',
   defaultExpanded: true,
   fields: [
-    { id: 'category', label: 'Category', type: 'search', placeholder: 'Search by name' },
+    { id: 'categoryId', label: 'Category ID', type: 'text', placeholder: 'Enter Category ID' },
+    { id: 'category', label: 'Category Name', type: 'search', placeholder: 'Search by name' },
     { id: 'subCategory', label: 'Sub-category', type: 'search', placeholder: 'Search by name' },
     {
-      id: 'location',
-      label: 'Location',
-      type: 'location',
-      statePlaceholder: 'State/Region',
-      cityPlaceholder: 'City',
-    },
-    {
-      id: 'venueType',
-      label: 'Venue Type',
-      type: 'checkbox-group',
-      options: [
-        { label: 'Indoor', value: 'indoor' },
-        { label: 'Outdoor', value: 'outdoor' },
-      ],
-    },
-    {
-      id: 'venueStatus',
-      label: 'Venue Status',
+      id: 'categoryStatus',
+      label: 'Category Status',
       type: 'checkbox-group',
       options: [
         { label: 'Active', value: 'active' },
-        { label: 'Inactive', value: 'inactive' },
-        { label: 'Suspended', value: 'suspended' },
+        { label: 'Paused', value: 'paused' },
+        { label: 'Deleted', value: 'deleted' },
       ],
+    },
+    {
+      id: 'revenue',
+      label: 'Revenue Generated',
+      type: 'number-range',
+      fromPlaceholder: 'Min',
+      toPlaceholder: 'Max',
     },
     {
       id: 'approvalStatus',
@@ -187,5 +175,4 @@ export const venueCategoryManagementFilterConfig: ModuleFilterConfig = {
   moduleKey: 'venue-category-management',
   moduleName: 'Venue Category Management',
   sections: venueCategoryAdvancedSections,
-  exportSections: createStandardModuleSections(),
 }

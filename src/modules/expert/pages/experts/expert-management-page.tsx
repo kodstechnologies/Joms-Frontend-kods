@@ -1,4 +1,6 @@
 import { useCallback, useMemo, useState } from 'react'
+import { createFilteredExportHandler, buildFilterParams } from '@/shared/utils/export-filter-utils'
+import { fetchExperts } from '../../api/expert-api'
 import type { ColumnDef } from '@tanstack/react-table'
 import createIcon from '@/assets/JOMS_ICONS-2/icons8-create.svg'
 import {
@@ -60,7 +62,7 @@ import { PayoutHistoryDrawer } from '../../components/payout-history-drawer'
 import { statusCardTones } from '@/shared/lib/design-tokens'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 import type { FilterValues } from '@/shared/types/data-filter'
-import { exportDataToFile } from '@/shared/utils/export-utils'
+import { exportDisplayValue } from '@/shared/utils/export-utils'
 import { MODERATION_CATEGORY_SLUGS } from '@/modules/settings/api/templates-api'
 import {
   useModerationReasonOptions,
@@ -78,6 +80,79 @@ const displayValue = (value: unknown): string => {
 const formatDateTimeCell = (value?: string | null) => (
   <TableDateTimeCell value={value} emptyLabel="N/A" />
 )
+
+const EXPORT_COLUMN_MAP: Record<string, { header: string; accessor: (e: Expert) => string }> = {
+  'expert-id': { header: 'Expert ID', accessor: (e) => exportDisplayValue(e.expertId) },
+  name: { header: 'Name', accessor: (e) => exportDisplayValue(e.name) },
+  email: { header: 'Email ID', accessor: (e) => exportDisplayValue(e.email) },
+  profession: { header: 'Profession', accessor: (e) => exportDisplayValue(e.profession) },
+  status: { header: 'Status', accessor: (e) => exportDisplayValue(e.status) },
+  'service-type': { header: 'Service Type', accessor: (e) => exportDisplayValue(e.serviceType) },
+  'created-at': {
+    header: 'Created At',
+    accessor: (e) =>
+      e.createdAt
+        ? new Date(e.createdAt).toLocaleString('en-IN', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+          })
+        : '',
+  },
+  'last-active': {
+    header: 'Last Active',
+    accessor: (e) =>
+      e.lastActive
+        ? new Date(e.lastActive).toLocaleString('en-IN', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+          })
+        : '',
+  },
+  reason: { header: 'Reason', accessor: (e) => exportDisplayValue(e.reason) },
+  'reported-at': {
+    header: 'Reported At',
+    accessor: (e) =>
+      e.reportedAt
+        ? new Date(e.reportedAt).toLocaleString('en-IN', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+          })
+        : '',
+  },
+  'deleted-at': {
+    header: 'Deleted At',
+    accessor: (e) =>
+      e.deletedAt
+        ? new Date(e.deletedAt).toLocaleString('en-IN', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+          })
+        : '',
+  },
+}
+
+const DEFAULT_VISIBLE_IDS = [
+  'expert-id',
+  'name',
+  'email',
+  'profession',
+  'status',
+  'service-type',
+  'created-at',
+  'last-active',
+]
 
 export const ExpertManagementPage = () => {
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
@@ -120,52 +195,10 @@ export const ExpertManagementPage = () => {
     [setCurrentPage],
   )
 
-  const apiFilterParams = useMemo(() => {
-    const params: Record<string, string> = {}
-
-    Object.entries(appliedAdvancedFilters).forEach(([rawKey, val]) => {
-      if (val === undefined || val === null || val === '') return
-
-      const parts = rawKey.split('.')
-      const fieldId = parts.length > 1 ? parts.slice(1).join('.') : rawKey
-
-      if (fieldId === 'location' && typeof val === 'object' && val !== null) {
-        const loc = val as { state?: string; city?: string }
-        if (loc.state?.trim()) params.locationState = loc.state.trim()
-        if (loc.city?.trim()) params.locationCity = loc.city.trim()
-        return
-      }
-
-      if (Array.isArray(val)) {
-        if (val.length > 0) {
-          params[fieldId] = val.join(',')
-        }
-        return
-      }
-
-      if (typeof val === 'object' && val !== null) {
-        const range = val as { from?: string | number; to?: string | number }
-        if (range.from !== undefined && range.from !== '') {
-          params[`${fieldId}Min`] = String(range.from).trim()
-        }
-        if (range.to !== undefined && range.to !== '') {
-          params[`${fieldId}Max`] = String(range.to).trim()
-        }
-        return
-      }
-
-      if (typeof val === 'string' && val.trim()) {
-        params[fieldId] = val.trim()
-        return
-      }
-
-      if (typeof val === 'number' || typeof val === 'boolean') {
-        params[fieldId] = String(val)
-      }
-    })
-
-    return params
-  }, [appliedAdvancedFilters])
+  const apiFilterParams = useMemo(
+    () => buildFilterParams(appliedAdvancedFilters),
+    [appliedAdvancedFilters],
+  )
 
   const { data, isLoading } = useExperts({
     page: currentPage,
@@ -176,29 +209,13 @@ export const ExpertManagementPage = () => {
   })
   const experts = useMemo(() => data?.data || [], [data?.data])
 
-  const handleExportData = useCallback(
-    (values: FilterValues, format: string) => {
-      const headers = [
-        'Expert ID',
-        'Name',
-        'Email ID',
-        'Profession',
-        'Status',
-        'Service Type',
-        'Created At',
-      ]
-      const rows = experts.map((e) => [
-        displayValue(e.expertId),
-        displayValue(e.name),
-        displayValue(e.email),
-        displayValue(e.profession),
-        displayValue(e.status),
-        displayValue(e.serviceType),
-        e.createdAt ? new Date(e.createdAt).toLocaleDateString() : 'N/A',
-      ])
-      exportDataToFile(headers, rows, format, 'experts_export')
-    },
-    [experts],
+  const handleExportData = useMemo(
+    () =>
+      createFilteredExportHandler(fetchExperts, EXPORT_COLUMN_MAP, 'experts_export', {
+        status: activeStatus !== 'all' ? activeStatus : undefined,
+        search: searchQuery || undefined,
+      }),
+    [activeStatus, searchQuery],
   )
 
   const {
@@ -789,20 +806,9 @@ export const ExpertManagementPage = () => {
       },
     }
 
-    const defaultVisibleIds = [
-      'expert-id',
-      'name',
-      'email',
-      'profession',
-      'status',
-      'service-type',
-      'created-at',
-      'last-active',
-    ]
-
     const visibleIds = tableColumnPreferencesQuery.data?.visibleColumnIds?.length
       ? tableColumnPreferencesQuery.data.visibleColumnIds
-      : defaultVisibleIds
+      : DEFAULT_VISIBLE_IDS
 
     const preferenceColumns = visibleIds.map((id) => dataColumnsById[id]).filter(Boolean)
 

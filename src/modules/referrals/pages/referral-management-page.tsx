@@ -16,6 +16,7 @@ import {
   useReferralStats,
   useResendExpertInvite,
 } from '../hooks/use-referrals'
+import { fetchExpertInvites } from '../api/referral-api'
 import { useReferralStore } from '../store/referral-store'
 import type { ExpertInvite } from '../types/referral'
 import {
@@ -27,7 +28,8 @@ import { REFERRAL_METRIC_DEFINITIONS } from '../utils/referral-metrics-definitio
 import { useActiveMetricIds } from '@/modules/expert/hooks/use-active-metric-ids'
 import { useTableColumnPreferences } from '@/modules/expert/hooks/use-ui-preferences'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
-import { exportDataToFile } from '@/shared/utils/export-utils'
+import { exportDisplayValue } from '@/shared/utils/export-utils'
+import { createFilteredExportHandler } from '@/shared/utils/export-filter-utils'
 import type { FilterValues } from '@/shared/types/data-filter'
 import { DataTable } from '@/shared/components/table/data-table'
 import {
@@ -50,6 +52,41 @@ const DEFAULT_VISIBLE_COLUMN_IDS = [
   'goal-progress',
   'created-at',
 ]
+
+const EXPORT_COLUMN_MAP: Record<
+  string,
+  { header: string; accessor: (invite: ExpertInvite) => string }
+> = {
+  'referral-id': {
+    header: 'Referral ID',
+    accessor: (invite) => exportDisplayValue(invite.referralId),
+  },
+  referrer: { header: 'Referrer', accessor: (invite) => exportDisplayValue(invite.referrerName) },
+  'referred-expert': {
+    header: 'Referred Expert',
+    accessor: (invite) => exportDisplayValue(invite.referredExpertName),
+  },
+  'source-type': {
+    header: 'Source Type',
+    accessor: (invite) => exportDisplayValue(invite.sourceType),
+  },
+  status: {
+    header: 'Status',
+    accessor: (invite) => exportDisplayValue(getReferralStatusLabel(invite.status)),
+  },
+  'goal-progress': {
+    header: 'Goal Progress',
+    accessor: (invite) =>
+      exportDisplayValue(
+        `${invite.goalProgress?.signedUpCount ?? 0}/${invite.goalProgress?.maxReferrals ?? 10}`,
+      ),
+  },
+  'created-at': {
+    header: 'Created At',
+    accessor: (invite) =>
+      exportDisplayValue(formatReferralDateRange(invite.createdAt, invite.expiresAt).range),
+  },
+}
 
 function getApiErrorMessage(err: unknown, fallback: string) {
   return (
@@ -99,33 +136,14 @@ export function ReferralManagementPage() {
     [setCurrentPage],
   )
 
-  const handleExportData = useCallback(
-    (values: FilterValues, format: string) => {
-      const headers = [
-        'Referral ID',
-        'Referrer',
-        'Referred Expert',
-        'Source Type',
-        'Status',
-        'Goal Progress',
-        'Created At',
-      ]
-      const exportRows = expertInvites.map((invite) => {
-        const { range } = formatReferralDateRange(invite.createdAt, invite.expiresAt)
-        return [
-          invite.referralId,
-          invite.referrerName || '',
-          invite.referredExpertName || '',
-          invite.sourceType || '',
-          getReferralStatusLabel(invite.status) || '',
-          `${invite.goalProgress?.signedUpCount ?? 0}/${invite.goalProgress?.maxReferrals ?? 10}`,
-          range,
-        ]
-      })
-      exportDataToFile(headers, exportRows, format, 'referrals_export')
-    },
-    [expertInvites],
-  )
+  const handleExportData = useMemo(() => {
+    // fetchExpertInvites returns { data: { invites: [], meta: {} } } — wrap to match expected { data: [] } shape
+    const fetchForExport = async (params: Record<string, unknown>) => {
+      const result = await fetchExpertInvites(params as Parameters<typeof fetchExpertInvites>[0])
+      return { data: result.data?.invites ?? [] }
+    }
+    return createFilteredExportHandler(fetchForExport, EXPORT_COLUMN_MAP, 'referrals_export')
+  }, [])
 
   const {
     onAdvancedFilter,

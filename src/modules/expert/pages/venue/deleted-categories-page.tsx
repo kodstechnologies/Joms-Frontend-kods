@@ -1,10 +1,13 @@
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { SlidersHorizontal } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import createIcon from '@/assets/JOMS_ICONS-2/icons8-create.svg'
 
 import { Button } from '@/shared/components/ui/button'
 import { DataTable } from '@/shared/components/table/data-table'
+import { useModuleExportFilters } from '@/shared/components/advanced-filter'
+import { exportDataToFile, exportDisplayValue } from '@/shared/utils/export-utils'
+import type { FilterValues } from '@/shared/types/data-filter'
 
 import CategoryHeader from '../../components/category/CategoryHeader'
 import { deletedVenueCategoryColumns } from '../../components/category/DeletedVenueCategoryColumns'
@@ -12,31 +15,72 @@ import { useDeletedVenueCategoryList } from '../../hooks/use-venue-category-mana
 
 const PAGE_SIZE = 10
 
+const EXPORT_COLUMN_MAP: Record<
+  string,
+  { header: string; accessor: (cat: Record<string, unknown>) => string }
+> = {
+  categoryId: {
+    header: 'Category ID',
+    accessor: (cat) => exportDisplayValue(cat.categoryId || cat.id),
+  },
+  name: { header: 'Category Name', accessor: (cat) => exportDisplayValue(cat.name) },
+  status: { header: 'Status', accessor: (cat) => exportDisplayValue(cat.status) },
+  subCategory: {
+    header: 'No. of Sub Category',
+    accessor: (cat) => exportDisplayValue(cat.subCategory),
+  },
+  venues: {
+    header: 'No. Of Venues',
+    accessor: (cat) => exportDisplayValue(cat.venues as string | number),
+  },
+  revenue: {
+    header: 'Revenue Generated',
+    accessor: (cat) => exportDisplayValue(cat.revenue as string | number),
+  },
+}
+
 export function DeletedVenueCategoriesPage() {
   const navigate = useNavigate()
   const [searchValue, setSearchValue] = useState('')
   const [page, setPage] = useState(1)
+  const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
 
-  const { data: deletedCategories = [], isLoading, isError } = useDeletedVenueCategoryList()
+  const handleApplyFilters = useCallback((values: FilterValues) => {
+    setPage(1)
+    setAppliedFilters(values)
+  }, [])
 
-  const filteredCategories = useMemo(() => {
-    const query = searchValue.trim().toLowerCase()
-    if (!query) return deletedCategories
+  const { data, isLoading, isError } = useDeletedVenueCategoryList({
+    search: searchValue.trim() || undefined,
+    page,
+    limit: PAGE_SIZE,
+    ...appliedFilters,
+  })
 
-    return deletedCategories.filter((category) => {
-      const id = (category.categoryId || category.id || '').toLowerCase()
-      const name = (category.name || '').toLowerCase()
-      return id.includes(query) || name.includes(query)
-    })
-  }, [deletedCategories, searchValue])
+  const deletedCategories = useMemo(() => data?.categories ?? [], [data?.categories])
+  const totalItems = data?.pagination?.total ?? deletedCategories.length
+  const totalPages = Math.max(1, data?.pagination?.totalPages ?? Math.ceil(totalItems / PAGE_SIZE))
 
-  const totalItems = filteredCategories.length
-  const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE))
-  const currentPage = Math.min(page, totalPages)
-  const paginatedCategories = useMemo(() => {
-    const start = (currentPage - 1) * PAGE_SIZE
-    return filteredCategories.slice(start, start + PAGE_SIZE)
-  }, [filteredCategories, currentPage])
+  const handleExportData = useCallback(
+    (values: FilterValues, format: string) => {
+      const exportCols = Object.values(EXPORT_COLUMN_MAP)
+      const headers = exportCols.map((c) => c.header)
+      const exportRows = deletedCategories.map((cat) => exportCols.map((c) => c.accessor(cat)))
+
+      exportDataToFile(headers, exportRows, format, 'deleted_venue_categories_export')
+    },
+    [deletedCategories],
+  )
+
+  const {
+    onAdvancedFilter,
+    onExport,
+    modals: exportFilterModals,
+  } = useModuleExportFilters({
+    moduleKey: 'venue-category-management',
+    onApplyFilters: handleApplyFilters,
+    onExportData: handleExportData,
+  })
 
   const emptyMessage = useMemo(
     () => (isError ? 'Failed to load deleted categories.' : 'No deleted categories found.'),
@@ -73,7 +117,7 @@ export function DeletedVenueCategoriesPage() {
 
       <DataTable
         columns={deletedVenueCategoryColumns}
-        data={paginatedCategories}
+        data={deletedCategories}
         getRowId={(row) => row.id}
         searchValue={searchValue}
         onSearchChange={(value) => {
@@ -81,12 +125,12 @@ export function DeletedVenueCategoriesPage() {
           setPage(1)
         }}
         searchPlaceholder="Search by name or ID"
-        onAdvancedFilter={() => {}}
-        onExport={() => {}}
+        onAdvancedFilter={onAdvancedFilter}
+        onExport={onExport}
         isLoading={isLoading}
         emptyMessage={emptyMessage}
         pagination={{
-          page: currentPage,
+          page,
           pageSize: PAGE_SIZE,
           totalItems,
           totalPages,
@@ -94,6 +138,7 @@ export function DeletedVenueCategoriesPage() {
         }}
         resourceLabel="categories"
       />
+      {exportFilterModals}
     </div>
   )
 }

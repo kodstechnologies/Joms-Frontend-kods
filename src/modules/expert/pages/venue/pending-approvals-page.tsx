@@ -7,7 +7,9 @@ import createIcon from '@/assets/JOMS_ICONS-2/icons8-create.svg'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import type { FilterValues } from '@/shared/types/data-filter'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter/use-module-export-filters'
-import { exportDataToFile } from '@/shared/utils/export-utils'
+import { exportDisplayValue } from '@/shared/utils/export-utils'
+import { buildFilterParams, createFilteredExportHandler } from '@/shared/utils/export-filter-utils'
+import { fetchVenues } from '../../api/venue-api'
 
 import { useVenues } from '../../hooks/use-venues'
 import type { Venue } from '../../type/venue'
@@ -19,6 +21,31 @@ import {
 } from '@/shared/components/table/table-actions-dropdown'
 import { Button } from '@/shared/components/ui/button'
 
+const EXPORT_COLUMN_MAP: Record<string, { header: string; accessor: (v: Venue) => string }> = {
+  venueId: { header: 'Venue ID', accessor: (v) => exportDisplayValue(getVenueDisplayId(v)) },
+  venueName: { header: 'Name', accessor: (v) => exportDisplayValue(v.venueName) },
+  partnerName: { header: 'Expert Name', accessor: (v) => exportDisplayValue(v.partnerName) },
+  city: { header: 'Location', accessor: (v) => exportDisplayValue(v.city) },
+  eventType: { header: 'Venue Type', accessor: (v) => exportDisplayValue(v.eventType) },
+  spaceId: { header: 'Space ID', accessor: (v) => exportDisplayValue(getVenueDisplaySpaceId(v)) },
+  spaceName: { header: 'Space Name', accessor: (v) => exportDisplayValue(v.spaceName) },
+  venueCategory: { header: 'Event Type', accessor: (v) => exportDisplayValue(v.venueCategory) },
+  status: { header: 'Status', accessor: (v) => exportDisplayValue(v.status) },
+  createdAt: {
+    header: 'Created At',
+    accessor: (v) =>
+      v.createdAt
+        ? new Date(v.createdAt).toLocaleString('en-IN', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+          })
+        : '',
+  },
+}
+
 export function VenuePendingApprovalsPage() {
   const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState('')
@@ -27,52 +54,7 @@ export function VenuePendingApprovalsPage() {
   const [selectedVenueIds, setSelectedVenueIds] = useState<string[]>([])
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
 
-  const apiFilterParams = useMemo(() => {
-    const params: Record<string, string> = {}
-
-    Object.entries(appliedFilters).forEach(([rawKey, val]) => {
-      if (val === undefined || val === null || val === '') return
-
-      const parts = rawKey.split('.')
-      const fieldId = parts.length > 1 ? parts.slice(1).join('.') : rawKey
-
-      if (fieldId === 'location' && typeof val === 'object' && val !== null) {
-        const loc = val as { state?: string; city?: string }
-        if (loc.state?.trim()) params.cityState = loc.state.trim()
-        if (loc.city?.trim()) params.cityCity = loc.city.trim()
-        return
-      }
-
-      if (Array.isArray(val)) {
-        if (val.length > 0) {
-          params[fieldId] = val.join(',')
-        }
-        return
-      }
-
-      if (typeof val === 'object' && val !== null) {
-        const range = val as { from?: string | number; to?: string | number }
-        if (range.from !== undefined && range.from !== '') {
-          params[`${fieldId}Min`] = String(range.from).trim()
-        }
-        if (range.to !== undefined && range.to !== '') {
-          params[`${fieldId}Max`] = String(range.to).trim()
-        }
-        return
-      }
-
-      if (typeof val === 'string' && val.trim()) {
-        params[fieldId] = val.trim()
-        return
-      }
-
-      if (typeof val === 'number' || typeof val === 'boolean') {
-        params[fieldId] = String(val)
-      }
-    })
-
-    return params
-  }, [appliedFilters])
+  const apiFilterParams = useMemo(() => buildFilterParams(appliedFilters), [appliedFilters])
 
   const { data, isLoading } = useVenues({
     page: currentPage,
@@ -94,20 +76,12 @@ export function VenuePendingApprovalsPage() {
     setCurrentPage(1)
   }, [])
 
-  const handleExportData = useCallback(
-    (values: FilterValues, format: string) => {
-      const headers = ['Venue ID', 'Name', 'Expert Name', 'Location', 'Status', 'Created At']
-      const rows = venues.map((v) => [
-        getVenueDisplayId(v) || '-',
-        v.venueName || '-',
-        v.partnerName || '-',
-        v.city || '-',
-        v.status || '-',
-        v.createdAt ? new Date(v.createdAt).toLocaleDateString() : 'N/A',
-      ])
-      exportDataToFile(headers, rows, format, 'pending_venues_export')
-    },
-    [venues],
+  const handleExportData = useMemo(
+    () =>
+      createFilteredExportHandler(fetchVenues, EXPORT_COLUMN_MAP, 'pending_venues_export', {
+        status: 'in_review',
+      }),
+    [],
   )
 
   const {

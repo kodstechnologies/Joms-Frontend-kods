@@ -1,10 +1,33 @@
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { BarChart3 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import createIcon from '@/assets/JOMS_ICONS-2/icons8-create.svg'
 
 import { Button } from '@/shared/components/ui/button'
 import { DataTable } from '@/shared/components/table/data-table'
+import { useModuleExportFilters } from '@/shared/components/advanced-filter'
+import { exportDataToFile, exportDisplayValue } from '@/shared/utils/export-utils'
+import type { FilterValues } from '@/shared/types/data-filter'
+
+const EXPORT_COLUMN_MAP: Record<
+  string,
+  { header: string; accessor: (cat: Record<string, unknown>) => string }
+> = {
+  categoryId: {
+    header: 'Category ID',
+    accessor: (cat) => exportDisplayValue(cat.categoryId || cat.id),
+  },
+  name: { header: 'Category Name', accessor: (cat) => exportDisplayValue(cat.name) },
+  status: { header: 'Status', accessor: (cat) => exportDisplayValue(cat.status) },
+  subCategory: {
+    header: 'No. of Sub Category',
+    accessor: (cat) => exportDisplayValue(cat.subCategory),
+  },
+  experts: {
+    header: 'No. of Experts',
+    accessor: (cat) => exportDisplayValue(cat.experts as string | number),
+  },
+}
 
 import CategoryHeader from '../../components/category/CategoryHeader'
 import { pausedCategoryColumns } from '../../components/category/PausedCategoryColumns'
@@ -21,17 +44,45 @@ export const PausedCategoriesPage = () => {
   const scope = useCategoryManagementScope()
   const [searchValue, setSearchValue] = useState('')
   const [page, setPage] = useState(1)
+  const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
+
+  const handleApplyFilters = useCallback((values: FilterValues) => {
+    setPage(1)
+    setAppliedFilters(values)
+  }, [])
 
   const { data, isLoading, isError } = useServiceCategories({
     status: 'PAUSED',
     search: searchValue.trim() || undefined,
     page,
     limit: PAGE_SIZE,
+    ...appliedFilters,
   })
 
-  const pausedCategories = data?.categories ?? []
+  const pausedCategories = useMemo(() => data?.categories ?? [], [data?.categories])
   const totalItems = data?.pagination?.total ?? pausedCategories.length
   const totalPages = Math.max(1, data?.pagination?.pages ?? Math.ceil(totalItems / PAGE_SIZE))
+
+  const handleExportData = useCallback(
+    (values: FilterValues, format: string) => {
+      const exportCols = Object.values(EXPORT_COLUMN_MAP)
+      const headers = exportCols.map((c) => c.header)
+      const exportRows = pausedCategories.map((cat) => exportCols.map((c) => c.accessor(cat)))
+
+      exportDataToFile(headers, exportRows, format, 'paused_service_categories_export')
+    },
+    [pausedCategories],
+  )
+
+  const {
+    onAdvancedFilter,
+    onExport,
+    modals: exportFilterModals,
+  } = useModuleExportFilters({
+    moduleKey: 'service-category-management',
+    onApplyFilters: handleApplyFilters,
+    onExportData: handleExportData,
+  })
 
   const emptyMessage = useMemo(
     () => (isError ? 'Failed to load paused categories.' : 'No paused categories found.'),
@@ -77,8 +128,8 @@ export const PausedCategoriesPage = () => {
           setPage(1)
         }}
         searchPlaceholder="Search by name or ID"
-        onAdvancedFilter={() => {}}
-        onExport={() => {}}
+        onAdvancedFilter={onAdvancedFilter}
+        onExport={onExport}
         isLoading={isLoading}
         emptyMessage={emptyMessage}
         pagination={{
@@ -90,6 +141,7 @@ export const PausedCategoriesPage = () => {
         }}
         resourceLabel="categories"
       />
+      {exportFilterModals}
     </div>
   )
 }

@@ -11,7 +11,7 @@ import type { LoginTrailRow, SecuritySettings } from '../types/settings'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import { DataTable } from '@/shared/components/table/data-table'
 import { cn } from '@/shared/lib/cn'
-import { exportDataToFile } from '@/shared/utils/export-utils'
+import { exportDataToFile, exportDisplayValue } from '@/shared/utils/export-utils'
 
 const PAGE_SIZE = 10
 
@@ -41,16 +41,16 @@ function exportTrailsData(rows: LoginTrailRow[], format: string) {
     'Device',
   ]
   const dataRows = rows.map((row) => [
-    row.date,
-    row.time,
-    row.adminName || '',
-    row.adminEmail || '',
-    row.role || '',
-    row.ipAddress,
-    row.action,
-    row.status,
-    row.location || '',
-    row.device || '',
+    exportDisplayValue(row.date),
+    exportDisplayValue(row.time),
+    exportDisplayValue(row.adminName),
+    exportDisplayValue(row.adminEmail),
+    exportDisplayValue(row.role),
+    exportDisplayValue(row.ipAddress),
+    exportDisplayValue(row.action),
+    exportDisplayValue(row.status),
+    exportDisplayValue(row.location),
+    exportDisplayValue(row.device),
   ])
 
   exportDataToFile(

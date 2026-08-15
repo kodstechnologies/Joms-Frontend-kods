@@ -4,7 +4,7 @@ import type { ColumnDef } from '@tanstack/react-table'
 import { VENUE_CATEGORY_MANAGEMENT_MODULE_KEY } from '../../api/ui-preferences-api'
 import { DataTable } from '@/shared/components/table/data-table'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
-import { exportDataToFile } from '@/shared/utils/export-utils'
+import { exportDataToFile, exportDisplayValue } from '@/shared/utils/export-utils'
 import type { FilterValues } from '@/shared/types/data-filter'
 
 import { StatCard } from '../../components/stat-card'
@@ -27,17 +27,40 @@ import { useTableColumnPreferences } from '../../hooks/use-ui-preferences'
 
 const PAGE_SIZE = 10
 
+const EXPORT_COLUMN_MAP: Record<
+  string,
+  { header: string; accessor: (cat: VenueCategory) => string }
+> = {
+  categoryId: {
+    header: 'Category ID',
+    accessor: (cat) => exportDisplayValue(cat.categoryId || cat.id),
+  },
+  name: { header: 'Category Name', accessor: (cat) => exportDisplayValue(cat.name) },
+  status: { header: 'Status', accessor: (cat) => exportDisplayValue(cat.status) },
+  subCategory: {
+    header: 'No. of Sub Category',
+    accessor: (cat) => exportDisplayValue(cat.subCategory),
+  },
+  venues: { header: 'No. Of Venues', accessor: (cat) => exportDisplayValue(cat.venues) },
+  revenue: { header: 'Revenue Generated', accessor: (cat) => exportDisplayValue(cat.revenue) },
+}
+
+const DEFAULT_VISIBLE_IDS = ['categoryId', 'name', 'status', 'subCategory', 'venues', 'revenue']
+
 export function VenueCategoryManagementPage() {
   const [searchValue, setSearchValue] = useState('')
   const [page, setPage] = useState(1)
+  const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
   const preferencesQuery = useTableColumnPreferences(VENUE_CATEGORY_MANAGEMENT_MODULE_KEY)
 
-  const handleApplyFilters = useCallback(() => {
+  const handleApplyFilters = useCallback((values: FilterValues) => {
     setPage(1)
+    setAppliedFilters(values)
   }, [])
 
   const { data, isLoading, isError } = useVenueCategoryManagementList({
     search: searchValue.trim() || undefined,
+    ...appliedFilters,
   })
 
   const categories = useMemo(() => data?.categories ?? [], [data?.categories])
@@ -51,22 +74,10 @@ export function VenueCategoryManagementPage() {
 
   const handleExportData = useCallback(
     (values: FilterValues, format: string) => {
-      const headers = [
-        'Category ID',
-        'Category Name',
-        'Status',
-        'No. of Sub Category',
-        'No. Of Venues',
-        'Revenue Generated',
-      ]
-      const exportRows = paginatedCategories.map((cat) => [
-        cat.categoryId || cat.id,
-        cat.name || '',
-        cat.status || '',
-        String(cat.subCategory || 0),
-        String(cat.venues || 0),
-        cat.revenue || '',
-      ])
+      const exportCols = Object.values(EXPORT_COLUMN_MAP)
+      const headers = exportCols.map((c) => c.header)
+      const exportRows = paginatedCategories.map((cat) => exportCols.map((c) => c.accessor(cat)))
+
       exportDataToFile(headers, exportRows, format, 'venue_categories_export')
     },
     [paginatedCategories],
@@ -82,8 +93,12 @@ export function VenueCategoryManagementPage() {
     onExportData: handleExportData,
   })
 
-  const { data: pausedCategories = [] } = usePausedVenueCategoryList()
-  const { data: deletedCategories = [] } = useDeletedVenueCategoryList()
+  const { data: pausedData } = usePausedVenueCategoryList()
+  const pausedCategories = pausedData?.categories || []
+
+  const { data: deletedData } = useDeletedVenueCategoryList()
+  const deletedCategories = deletedData?.categories || []
+
   const { data: details = [] } = useVenueCategoryDetails()
 
   const activeCount = useMemo(
@@ -131,12 +146,12 @@ export function VenueCategoryManagementPage() {
       {
         id: 'paused-categories',
         title: 'Paused Categories',
-        value: String(pausedCategories.length),
+        value: String(pausedData?.pagination?.total ?? pausedCategories.length),
       },
       {
         id: 'deleted-categories',
         title: 'Deleted Categories',
-        value: String(deletedCategories.length),
+        value: String(deletedData?.pagination?.total ?? deletedCategories.length),
       },
       {
         id: 'total-venues',
@@ -153,8 +168,10 @@ export function VenueCategoryManagementPage() {
       activeCount,
       categories,
       deletedCategories.length,
+      deletedData?.pagination?.total,
       details.length,
       pausedCategories.length,
+      pausedData?.pagination?.total,
       totalItems,
       totalSubCategories,
     ],
@@ -163,10 +180,9 @@ export function VenueCategoryManagementPage() {
   const metricCards = orderByActiveMetricIds(metricCardCatalog, activeMetricIds)
 
   const columns = useMemo<ColumnDef<VenueCategory>[]>(() => {
-    const defaultVisibleIds = ['categoryId', 'name', 'status', 'subCategory', 'venues', 'revenue']
     const visibleIds = preferencesQuery.data?.visibleColumnIds?.length
       ? preferencesQuery.data.visibleColumnIds
-      : defaultVisibleIds
+      : DEFAULT_VISIBLE_IDS
 
     const dataColumnsById = Object.fromEntries(
       venueCategoryColumns.map((column) => [column.id, column] as const),

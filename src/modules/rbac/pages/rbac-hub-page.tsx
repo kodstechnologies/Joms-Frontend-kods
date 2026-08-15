@@ -40,8 +40,60 @@ import {
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
-import { exportDataToFile } from '@/shared/utils/export-utils'
+import { exportDataToFile, exportDisplayValue } from '@/shared/utils/export-utils'
+import { buildFilterParams } from '@/shared/utils/export-filter-utils'
 import type { FilterValues } from '@/shared/types/data-filter'
+
+const EXPORT_USER_COLUMN_MAP: Record<
+  string,
+  { header: string; accessor: (u: SubAdmin) => string }
+> = {
+  adminCode: { header: 'User ID', accessor: (u) => exportDisplayValue(u.adminCode || u.id) },
+  fullname: { header: 'Username', accessor: (u) => exportDisplayValue(u.fullname) },
+  roleCode: {
+    header: 'Role ID',
+    accessor: (u) => exportDisplayValue(u.roles.map((r) => r.roleCode).join(', ')),
+  },
+  roleName: {
+    header: 'RoleName',
+    accessor: (u) => exportDisplayValue(u.roles.map((r) => r.name).join(', ')),
+  },
+  scopes: { header: 'Scope', accessor: (u) => exportDisplayValue(u.scopes.join(', ')) },
+  permissions: {
+    header: 'Permissions',
+    accessor: (u) => exportDisplayValue(formatPermissions(u.permissions)),
+  },
+  mfaEnabled: { header: 'MFA Enabled', accessor: (u) => exportDisplayValue(u.mfaEnabled) },
+  status: { header: 'Status', accessor: (u) => exportDisplayValue(u.status) },
+  lastActionAt: {
+    header: 'Last action performed',
+    accessor: (u) => exportDisplayValue(formatDateTime(u.lastActionAt)),
+  },
+}
+
+const EXPORT_ROLE_COLUMN_MAP: Record<string, { header: string; accessor: (r: Role) => string }> = {
+  roleCode: { header: 'Role ID', accessor: (r) => exportDisplayValue(r.roleCode || r.id) },
+  name: { header: 'Role Name', accessor: (r) => exportDisplayValue(r.name) },
+  description: { header: 'Description', accessor: (r) => exportDisplayValue(r.description) },
+  scopes: { header: 'Scope', accessor: (r) => exportDisplayValue(r.scopes.join(', ')) },
+  permissions: {
+    header: 'Permissions',
+    accessor: (r) => exportDisplayValue(formatPermissions(r.permissions)),
+  },
+  riskLevel: {
+    header: 'Risk level',
+    accessor: (r) => exportDisplayValue(r.riskLevel.replace('_', ' ')),
+  },
+  mfaRequired: { header: 'MFA Required', accessor: (r) => exportDisplayValue(r.mfaRequired) },
+  status: {
+    header: 'Status',
+    accessor: (r) => exportDisplayValue(r.status === 'active' ? 'Active' : 'Disabled'),
+  },
+  userCount: {
+    header: 'Users (No.)',
+    accessor: (r) => exportDisplayValue(String(r.userCount).padStart(2, '0')),
+  },
+}
 
 const formatPermissions = (permissions: string[]) => {
   if (!permissions.length) return '—'
@@ -78,52 +130,7 @@ export function RbacHubPage() {
 
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
 
-  const apiFilterParams = useMemo(() => {
-    const params: Record<string, string> = {}
-
-    Object.entries(appliedFilters).forEach(([rawKey, val]) => {
-      if (val === undefined || val === null || val === '') return
-
-      const parts = rawKey.split('.')
-      const fieldId = parts.length > 1 ? parts.slice(1).join('.') : rawKey
-
-      if (fieldId === 'location' && typeof val === 'object' && val !== null) {
-        const loc = val as { state?: string; city?: string }
-        if (loc.state?.trim()) params.locationState = loc.state.trim()
-        if (loc.city?.trim()) params.locationCity = loc.city.trim()
-        return
-      }
-
-      if (Array.isArray(val)) {
-        if (val.length > 0) {
-          params[fieldId] = val.join(',')
-        }
-        return
-      }
-
-      if (typeof val === 'object' && val !== null) {
-        const range = val as { from?: string | number; to?: string | number }
-        if (range.from !== undefined && range.from !== '') {
-          params[`${fieldId}Min`] = String(range.from).trim()
-        }
-        if (range.to !== undefined && range.to !== '') {
-          params[`${fieldId}Max`] = String(range.to).trim()
-        }
-        return
-      }
-
-      if (typeof val === 'string' && val.trim()) {
-        params[fieldId] = val.trim()
-        return
-      }
-
-      if (typeof val === 'number' || typeof val === 'boolean') {
-        params[fieldId] = String(val)
-      }
-    })
-
-    return params
-  }, [appliedFilters])
+  const apiFilterParams = useMemo(() => buildFilterParams(appliedFilters), [appliedFilters])
 
   const { data: statsData, isLoading: statsLoading } = useRbacStats()
   const { data: rolesData, isLoading: rolesLoading } = useRoles({
@@ -181,33 +188,14 @@ export function RbacHubPage() {
   const handleExportData = useCallback(
     (values: FilterValues, format: string) => {
       if (activeTab === 'users') {
-        const headers = ['User ID', 'Username', 'Email', 'Status', 'MFA Enabled', 'Last Action']
-        const exportRows = subAdmins.map((user) => [
-          user.adminCode || user.id,
-          user.fullname || '',
-          user.email || '',
-          user.status || '',
-          user.mfaEnabled ? 'Yes' : 'No',
-          formatDateTime(user.lastActionAt),
-        ])
+        const exportCols = Object.values(EXPORT_USER_COLUMN_MAP)
+        const headers = exportCols.map((c) => c.header)
+        const exportRows = subAdmins.map((user) => exportCols.map((c) => c.accessor(user)))
         exportDataToFile(headers, exportRows, format, 'rbac_users_export')
       } else {
-        const headers = [
-          'Role ID',
-          'Role Name',
-          'Description',
-          'Risk Level',
-          'MFA Required',
-          'Status',
-        ]
-        const exportRows = roles.map((role) => [
-          role.roleCode || role.id,
-          role.name || '',
-          role.description || '',
-          role.riskLevel || '',
-          role.mfaRequired ? 'Yes' : 'No',
-          role.status || '',
-        ])
+        const exportCols = Object.values(EXPORT_ROLE_COLUMN_MAP)
+        const headers = exportCols.map((c) => c.header)
+        const exportRows = roles.map((role) => exportCols.map((c) => c.accessor(role)))
         exportDataToFile(headers, exportRows, format, 'rbac_roles_export')
       }
     },

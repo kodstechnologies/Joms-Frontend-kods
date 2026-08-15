@@ -1,3 +1,4 @@
+import { useCallback } from 'react'
 import {
   ArrowUpDown,
   BarChart3,
@@ -7,11 +8,23 @@ import {
   Star,
   UserRound,
 } from 'lucide-react'
-import { useLocation, useNavigate } from 'react-router-dom'
-import { toast } from 'sonner'
+import { useNavigate, useLocation } from 'react-router-dom'
 
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
+import { useModuleExportFilters } from '@/shared/components/advanced-filter'
+import { exportDataToFile, exportDisplayValue } from '@/shared/utils/export-utils'
+import type { FilterValues } from '@/shared/types/data-filter'
+
+const EXPORT_COLUMN_MAP: Record<string, { header: string; accessor: (r: LeaderRow) => string }> = {
+  rank: { header: 'Rank', accessor: (r) => exportDisplayValue(r.rank) },
+  expertId: { header: 'Expert ID', accessor: (r) => exportDisplayValue(r.expertId) },
+  name: { header: 'Expert Name', accessor: (r) => exportDisplayValue(r.name) },
+  category: { header: 'Category', accessor: (r) => exportDisplayValue(r.category) },
+  events: { header: 'No. Of Events', accessor: (r) => exportDisplayValue(r.events) },
+  rating: { header: 'Ratings', accessor: (r) => exportDisplayValue(r.rating) },
+  score: { header: 'Score', accessor: (r) => exportDisplayValue(r.score) },
+}
 
 import rank2Icon from '@/assets/JOMS_ADMIN_PANEL_3D_ICONS/change-the-engraved-gold-number--1--on-the-circula (1).png'
 import rank3Icon from '@/assets/JOMS_ADMIN_PANEL_3D_ICONS/change-the-engraved-gold-number--2--on-the-circula (1).png'
@@ -168,6 +181,28 @@ export const LeaderboardPage = () => {
       ? '/services/dashboard/metrics'
       : '/experts/dashboard/metrics'
 
+  const handleApplyFilters = useCallback(() => {
+    // Handle filter application
+  }, [])
+
+  const handleExportData = useCallback((values: FilterValues, format: string) => {
+    const exportCols = Object.values(EXPORT_COLUMN_MAP)
+    const headers = exportCols.map((c) => c.header)
+    const exportRows = ROWS.map((row) => exportCols.map((c) => c.accessor(row)))
+
+    exportDataToFile(headers, exportRows, format, 'leaderboard_export')
+  }, [])
+
+  const {
+    onAdvancedFilter,
+    onExport,
+    modals: exportFilterModals,
+  } = useModuleExportFilters({
+    moduleKey: 'leaderboard-management',
+    onApplyFilters: handleApplyFilters,
+    onExportData: handleExportData,
+  })
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -245,14 +280,15 @@ export const LeaderboardPage = () => {
           </div>
 
           <div className="flex items-center gap-3">
-            <Button variant="secondary" className="ui-advance-filters gap-2">
+            <Button
+              variant="secondary"
+              className="ui-advance-filters gap-2"
+              onClick={onAdvancedFilter}
+            >
               <SlidersHorizontal className="size-4" />
               Advance Filters
             </Button>
-            <Button
-              onClick={() => toast.message('Export coming soon')}
-              className="ui-export-data gap-2"
-            >
+            <Button onClick={onExport} className="ui-export-data gap-2">
               <Download className="size-4" />
               Export Data
             </Button>
@@ -354,6 +390,7 @@ export const LeaderboardPage = () => {
           </button>
         </div>
       </div>
+      {exportFilterModals}
     </div>
   )
 }

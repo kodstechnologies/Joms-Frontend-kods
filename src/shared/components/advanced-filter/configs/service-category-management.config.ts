@@ -17,6 +17,7 @@ const byServicesSection: FilterSectionConfig = {
   title: 'By Services',
   defaultExpanded: true,
   fields: [
+    { id: 'categoryId', label: 'Category ID', type: 'text', placeholder: 'Enter Category ID' },
     { id: 'category', label: 'Category', type: 'search', placeholder: 'Search by name' },
     { id: 'subCategory', label: 'Sub-category', type: 'search', placeholder: 'Search by name' },
     {

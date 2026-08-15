@@ -51,7 +51,8 @@ import { statusCardTones } from '@/shared/lib/design-tokens'
 import { cn } from '@/shared/lib/cn'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 import type { FilterValues } from '@/shared/types/data-filter'
-import { exportDataToFile } from '@/shared/utils/export-utils'
+import { exportDataToFile, exportDisplayValue } from '@/shared/utils/export-utils'
+import { fetchVenues } from '../../api/venue-api'
 import { getVenueApiId, getVenueDisplayId, getVenueDisplaySpaceId } from '../../utils/venue-list'
 import { getManagementStatusDisplay } from '../../utils/management-status'
 import { MODERATION_CATEGORY_SLUGS } from '@/modules/settings/api/templates-api'
@@ -70,7 +71,91 @@ type ManagementMetric = {
   note?: string
 }
 
+const EXPORT_COLUMN_MAP: Record<string, { header: string; accessor: (v: Venue) => string }> = {
+  'venue-id': { header: 'Venue ID', accessor: (v) => exportDisplayValue(getVenueDisplayId(v)) },
+  name: { header: 'Venue Name', accessor: (v) => exportDisplayValue(v.venueName) },
+  category: { header: 'Venue Category', accessor: (v) => exportDisplayValue(v.venueCategory) },
+  'space-id': {
+    header: 'Space ID',
+    accessor: (v) => exportDisplayValue(getVenueDisplaySpaceId(v)),
+  },
+  'space-name': { header: 'Space Name', accessor: (v) => exportDisplayValue(v.spaceName) },
+  status: { header: 'Status', accessor: (v) => exportDisplayValue(v.status) },
+  'event-type': { header: 'Event Type', accessor: (v) => exportDisplayValue(v.eventType) },
+  'created-at': {
+    header: 'Created At',
+    accessor: (v) =>
+      v.createdAt
+        ? new Date(v.createdAt).toLocaleString('en-IN', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+          })
+        : '',
+  },
+}
+
+const DEFAULT_VISIBLE_IDS = [
+  'venue-id',
+  'name',
+  'category',
+  'space-id',
+  'space-name',
+  'status',
+  'event-type',
+  'created-at',
+]
+
 const ACTION_ITEM_CLASS = 'text-slate-800 hover:bg-slate-100 hover:text-slate-900'
+
+function buildVenueApiParams(filterValues: FilterValues): Record<string, string> {
+  const params: Record<string, string> = {}
+
+  Object.entries(filterValues).forEach(([rawKey, val]) => {
+    if (val === undefined || val === null || val === '') return
+
+    const parts = rawKey.split('.')
+    const fieldId = parts.length > 1 ? parts.slice(1).join('.') : rawKey
+
+    if (fieldId === 'location' && typeof val === 'object' && val !== null) {
+      const loc = val as { state?: string; city?: string }
+      if (loc.state?.trim()) params.locationState = loc.state.trim()
+      if (loc.city?.trim()) params.locationCity = loc.city.trim()
+      return
+    }
+
+    if (Array.isArray(val)) {
+      if (val.length > 0) {
+        params[fieldId] = val.join(',')
+      }
+      return
+    }
+
+    if (typeof val === 'object' && val !== null) {
+      const range = val as { from?: string | number; to?: string | number }
+      if (range.from !== undefined && range.from !== '') {
+        params[`${fieldId}Min`] = String(range.from).trim()
+      }
+      if (range.to !== undefined && range.to !== '') {
+        params[`${fieldId}Max`] = String(range.to).trim()
+      }
+      return
+    }
+
+    if (typeof val === 'string' && val.trim()) {
+      params[fieldId] = val.trim()
+      return
+    }
+
+    if (typeof val === 'number' || typeof val === 'boolean') {
+      params[fieldId] = String(val)
+    }
+  })
+
+  return params
+}
 
 export const VenueManagementPage = () => {
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
@@ -294,52 +379,10 @@ export const VenueManagementPage = () => {
     [setCurrentPage],
   )
 
-  const apiFilterParams = useMemo(() => {
-    const params: Record<string, string> = {}
-
-    Object.entries(appliedAdvancedFilters).forEach(([rawKey, val]) => {
-      if (val === undefined || val === null || val === '') return
-
-      const parts = rawKey.split('.')
-      const fieldId = parts.length > 1 ? parts.slice(1).join('.') : rawKey
-
-      if (fieldId === 'location' && typeof val === 'object' && val !== null) {
-        const loc = val as { state?: string; city?: string }
-        if (loc.state?.trim()) params.cityState = loc.state.trim()
-        if (loc.city?.trim()) params.cityCity = loc.city.trim()
-        return
-      }
-
-      if (Array.isArray(val)) {
-        if (val.length > 0) {
-          params[fieldId] = val.join(',')
-        }
-        return
-      }
-
-      if (typeof val === 'object' && val !== null) {
-        const range = val as { from?: string | number; to?: string | number }
-        if (range.from !== undefined && range.from !== '') {
-          params[`${fieldId}Min`] = String(range.from).trim()
-        }
-        if (range.to !== undefined && range.to !== '') {
-          params[`${fieldId}Max`] = String(range.to).trim()
-        }
-        return
-      }
-
-      if (typeof val === 'string' && val.trim()) {
-        params[fieldId] = val.trim()
-        return
-      }
-
-      if (typeof val === 'number' || typeof val === 'boolean') {
-        params[fieldId] = String(val)
-      }
-    })
-
-    return params
-  }, [appliedAdvancedFilters])
+  const apiFilterParams = useMemo(
+    () => buildVenueApiParams(appliedAdvancedFilters),
+    [appliedAdvancedFilters],
+  )
 
   const { data, isLoading } = useVenues({
     page: currentPage,
@@ -353,32 +396,21 @@ export const VenueManagementPage = () => {
   })
   const venues = useMemo(() => data?.data ?? [], [data?.data])
 
-  const handleExportData = useCallback(
-    (values: FilterValues, format: string) => {
-      const headers = [
-        'Venue ID',
-        'Venue Name',
-        'Category',
-        'Space ID',
-        'Space Name',
-        'Status',
-        'Event Type',
-        'Created At',
-      ]
-      const rows = venues.map((v) => [
-        getVenueDisplayId(v),
-        v.venueName || '',
-        v.venueCategory || '',
-        getVenueDisplaySpaceId(v),
-        v.spaceName || '',
-        v.status || '',
-        v.eventType || '',
-        v.createdAt ? new Date(v.createdAt).toLocaleDateString() : '',
-      ])
-      exportDataToFile(headers, rows, format, 'venues_export')
-    },
-    [venues],
-  )
+  const handleExportData = useCallback(async (values: FilterValues, format: string) => {
+    const exportParams = buildVenueApiParams(values)
+    const result = await fetchVenues({ ...exportParams, limit: 1000 })
+    const filteredVenues = result?.data ?? []
+
+    if (filteredVenues.length === 0) {
+      throw new Error('NO_RECORDS')
+    }
+
+    const exportCols = Object.values(EXPORT_COLUMN_MAP)
+    const headers = exportCols.map((c) => c.header)
+    const rows = filteredVenues.map((v) => exportCols.map((c) => c.accessor(v)))
+
+    exportDataToFile(headers, rows, format, 'venues_export')
+  }, [])
 
   const {
     onAdvancedFilter,
@@ -838,20 +870,9 @@ export const VenueManagementPage = () => {
       },
     }
 
-    const defaultVisibleIds = [
-      'venue-id',
-      'name',
-      'category',
-      'space-id',
-      'space-name',
-      'status',
-      'event-type',
-      'created-at',
-    ]
-
     const visibleIds = tableColumnPreferencesQuery.data?.visibleColumnIds?.length
       ? tableColumnPreferencesQuery.data.visibleColumnIds
-      : defaultVisibleIds
+      : DEFAULT_VISIBLE_IDS
 
     const preferenceColumns = visibleIds.map((id) => dataColumnsById[id]).filter(Boolean)
 
