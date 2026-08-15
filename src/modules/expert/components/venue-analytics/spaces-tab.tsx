@@ -2,15 +2,29 @@ import { ArrowUpDown, Star } from 'lucide-react'
 
 import { ALL_SPACES, SPACE_ANALYSIS } from '../../mock/venue-profile-analytics.mock'
 import { AnalyticsCard, MetricCard, SectionTitle, StatusBadge } from './analytics-ui'
+import type { VenueProfileAnalyticsResponse } from '../../type/venue-analytics.types'
 
-export function SpacesTab() {
+interface SpacesTabProps {
+  data?: VenueProfileAnalyticsResponse['spaces']
+  isLoading?: boolean
+}
+
+export function SpacesTab({ data, isLoading }: SpacesTabProps) {
+  const spaceAnalysis = data?.spaceAnalysis ?? SPACE_ANALYSIS
+  const allSpaces = data?.allSpaces ?? ALL_SPACES
+
   return (
     <div className="flex flex-col gap-5">
       <div>
         <SectionTitle title="Space Analysis" subtitle="Learn more about Space's performance" />
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {SPACE_ANALYSIS.map((item) => (
-            <MetricCard key={item.label} label={item.label} value={item.value} trend={item.trend} />
+          {spaceAnalysis.map((item) => (
+            <MetricCard
+              key={item.label}
+              label={item.label}
+              value={isLoading ? '—' : item.value}
+              trend={item.trend}
+            />
           ))}
         </div>
       </div>
@@ -47,7 +61,7 @@ export function SpacesTab() {
                 </tr>
               </thead>
               <tbody>
-                {ALL_SPACES.map((space) => (
+                {allSpaces.map((space) => (
                   <tr
                     key={space.name}
                     className="border-b border-white/5 text-[12px] text-white last:border-0"

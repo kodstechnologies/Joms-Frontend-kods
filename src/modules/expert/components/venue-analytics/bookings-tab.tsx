@@ -7,12 +7,23 @@ import {
   MEETUP_METRICS,
 } from '../../mock/venue-profile-analytics.mock'
 import { AnalyticsCard, MetricCard, SectionTitle, StatusBadge, SubTabPills } from './analytics-ui'
+import type { VenueProfileAnalyticsResponse } from '../../type/venue-analytics.types'
 
 type BookingCategory = 'events' | 'meetup'
 
-export function BookingsTab() {
+interface BookingsTabProps {
+  data?: VenueProfileAnalyticsResponse['bookings']
+  isLoading?: boolean
+}
+
+export function BookingsTab({ data, isLoading }: BookingsTabProps) {
   const [category, setCategory] = useState<BookingCategory>('events')
-  const metrics = category === 'events' ? EVENT_METRICS : MEETUP_METRICS
+
+  const eventMetrics = data?.eventMetrics ?? EVENT_METRICS
+  const meetupMetrics = data?.meetupMetrics ?? MEETUP_METRICS
+  const eventBookings = data?.eventBookings ?? EVENT_BOOKINGS
+
+  const metrics = category === 'events' ? eventMetrics : meetupMetrics
   const sectionTitle = category === 'events' ? 'Event Metrics' : 'Meetup Metrics'
   const sectionSubtitle =
     category === 'events'
@@ -34,7 +45,12 @@ export function BookingsTab() {
         <SectionTitle title={sectionTitle} subtitle={sectionSubtitle} />
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {metrics.map((item) => (
-            <MetricCard key={item.label} label={item.label} value={item.value} trend={item.trend} />
+            <MetricCard
+              key={item.label}
+              label={item.label}
+              value={isLoading ? '—' : item.value}
+              trend={item.trend}
+            />
           ))}
         </div>
       </div>
@@ -75,7 +91,7 @@ export function BookingsTab() {
                 </tr>
               </thead>
               <tbody>
-                {EVENT_BOOKINGS.map((booking, index) => (
+                {eventBookings.map((booking, index) => (
                   <tr
                     key={`${booking.id}-${index}`}
                     className="border-b border-white/5 text-[12px] text-white last:border-0"
