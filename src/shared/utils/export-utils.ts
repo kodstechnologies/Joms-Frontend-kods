@@ -3,6 +3,16 @@ import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 
 /**
+ * Formats a value for export, returning empty string if missing or empty.
+ */
+export function exportDisplayValue(value: unknown): string {
+  if (value === null || value === undefined) return ''
+  if (typeof value === 'string' && value.trim() === '') return ''
+  if (typeof value === 'boolean') return value ? 'Yes' : 'No'
+  return String(value)
+}
+
+/**
  * Utility to export tabular data to CSV, Excel, or PDF formats.
  *
  * @param headers An array of strings representing the column headers.
@@ -23,8 +33,11 @@ export function exportDataToFile(
   const rowsForExport = [headers, ...rows]
 
   if (format === 'excel') {
+    // Force all values as plain strings by prefixing with zero-width space trick
+    // Use raw: false so xlsx treats everything as strings
+    const wsData = rowsForExport.map((row) => row.map((cell) => ({ v: cell, t: 's' })))
     try {
-      const worksheet = XLSX.utils.aoa_to_sheet(rowsForExport)
+      const worksheet = XLSX.utils.aoa_to_sheet(wsData)
       const workbook = XLSX.utils.book_new()
       XLSX.utils.book_append_sheet(workbook, worksheet, 'Data')
       XLSX.writeFile(workbook, `${fileNamePrefix}.xlsx`)

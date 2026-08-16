@@ -14,8 +14,7 @@ import {
   Users,
   X,
 } from 'lucide-react'
-import { useLocation, useNavigate } from 'react-router-dom'
-import { toast } from 'sonner'
+import { useNavigate, useLocation } from 'react-router-dom'
 
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
@@ -32,6 +31,7 @@ import type {
   LeaderboardRankingMetric,
   LeaderboardRow,
 } from '../../type/leaderboard'
+import { toast } from 'sonner'
 
 const RANK_BADGE_STYLES: Record<number, string> = {
   1: 'bg-brand-accent text-brand-text-dark',

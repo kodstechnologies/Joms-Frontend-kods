@@ -7,7 +7,8 @@ import { toast } from 'sonner'
 import { fetchVenueReports } from '../../api/venue-api'
 import type { FilterValues } from '@/shared/types/data-filter'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter/use-module-export-filters'
-import { exportDataToFile } from '@/shared/utils/export-utils'
+import { exportDataToFile, exportDisplayValue } from '@/shared/utils/export-utils'
+import { buildFilterParams } from '@/shared/utils/export-filter-utils'
 import {
   VenueReportDetailModal,
   type VenueReportItem,
@@ -18,6 +19,41 @@ import {
   TableActionsDropdown,
   TableActionsItem,
 } from '@/shared/components/table/table-actions-dropdown'
+
+const EXPORT_COLUMN_MAP: Record<
+  string,
+  { header: string; accessor: (item: VenueReportItem) => string }
+> = {
+  reportId: { header: 'Report ID', accessor: (item) => exportDisplayValue(item.reportId) },
+  venueId: { header: 'Venue ID', accessor: (item) => exportDisplayValue(item.venueId) },
+  venueName: { header: 'Venue Name', accessor: (item) => exportDisplayValue(item.venueName) },
+  partnerId: { header: 'Partner ID', accessor: (item) => exportDisplayValue(item.partnerId) },
+  reporterType: {
+    header: 'Reporter Type',
+    accessor: (item) => exportDisplayValue(item.reporterType),
+  },
+  reporterId: { header: 'Reporter ID', accessor: (item) => exportDisplayValue(item.reporterId) },
+  reporterName: {
+    header: 'Reporter Name',
+    accessor: (item) => exportDisplayValue(item.reporterName),
+  },
+  issueType: { header: 'Issue Type', accessor: (item) => exportDisplayValue(item.issueType) },
+  businessImpact: {
+    header: 'Business Impact',
+    accessor: (item) => exportDisplayValue(item.businessImpact),
+  },
+  investigationStatus: {
+    header: 'Status',
+    accessor: (item) => exportDisplayValue(item.investigationStatus),
+  },
+  createdAt: {
+    header: 'Report Date',
+    accessor: (item) =>
+      exportDisplayValue(
+        item.createdAt ? new Date(item.createdAt as string).toLocaleString() : undefined,
+      ),
+  },
+}
 
 export function VenueReportedVenuesPage() {
   const navigate = useNavigate()
@@ -34,52 +70,7 @@ export function VenueReportedVenuesPage() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
 
-  const apiFilterParams = useMemo(() => {
-    const params: Record<string, string> = {}
-
-    Object.entries(appliedFilters).forEach(([rawKey, val]) => {
-      if (val === undefined || val === null || val === '') return
-
-      const parts = rawKey.split('.')
-      const fieldId = parts.length > 1 ? parts.slice(1).join('.') : rawKey
-
-      if (fieldId === 'location' && typeof val === 'object' && val !== null) {
-        const loc = val as { state?: string; city?: string }
-        if (loc.state?.trim()) params.locationState = loc.state.trim()
-        if (loc.city?.trim()) params.locationCity = loc.city.trim()
-        return
-      }
-
-      if (Array.isArray(val)) {
-        if (val.length > 0) {
-          params[fieldId] = val.join(',')
-        }
-        return
-      }
-
-      if (typeof val === 'object' && val !== null) {
-        const range = val as { from?: string | number; to?: string | number }
-        if (range.from !== undefined && range.from !== '') {
-          params[`${fieldId}Min`] = String(range.from).trim()
-        }
-        if (range.to !== undefined && range.to !== '') {
-          params[`${fieldId}Max`] = String(range.to).trim()
-        }
-        return
-      }
-
-      if (typeof val === 'string' && val.trim()) {
-        params[fieldId] = val.trim()
-        return
-      }
-
-      if (typeof val === 'number' || typeof val === 'boolean') {
-        params[fieldId] = String(val)
-      }
-    })
-
-    return params
-  }, [appliedFilters])
+  const apiFilterParams = useMemo(() => buildFilterParams(appliedFilters), [appliedFilters])
 
   const [prevKey, setPrevKey] = useState(
     `${currentPage}-${searchQuery}-${JSON.stringify(apiFilterParams)}`,
@@ -139,33 +130,9 @@ export function VenueReportedVenuesPage() {
           return
         }
 
-        const headers = [
-          'Report ID',
-          'Venue ID',
-          'Venue Name',
-          'Partner ID',
-          'Reporter Type',
-          'Reporter ID',
-          'Reporter Name',
-          'Issue Type',
-          'Business Impact',
-          'Status',
-          'Report Date',
-        ]
-
-        const rows = items.map((item: VenueReportItem) => [
-          item.reportId || '',
-          item.venueId || '',
-          item.venueName || '',
-          item.partnerId || '',
-          item.reporterType || '',
-          item.reporterId || '',
-          item.reporterName || '',
-          item.issueType || '',
-          item.businessImpact || '',
-          item.investigationStatus || '',
-          item.createdAt ? new Date(item.createdAt as string).toLocaleString() : '',
-        ])
+        const exportCols = Object.values(EXPORT_COLUMN_MAP)
+        const headers = exportCols.map((c) => c.header)
+        const rows = items.map((item: VenueReportItem) => exportCols.map((c) => c.accessor(item)))
 
         exportDataToFile(
           headers,

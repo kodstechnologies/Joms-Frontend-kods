@@ -20,7 +20,9 @@ import {
 } from '@/modules/expert/hooks/use-active-metric-ids'
 import { useTableColumnPreferences } from '@/modules/expert/hooks/use-ui-preferences'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
-import { exportDataToFile } from '@/shared/utils/export-utils'
+import { exportDisplayValue } from '@/shared/utils/export-utils'
+import { createFilteredExportHandler } from '@/shared/utils/export-filter-utils'
+import { fetchCommunications } from '../../api/communication-api'
 import type { FilterValues } from '@/shared/types/data-filter'
 
 const PAGE_SIZE = 10
@@ -44,6 +46,20 @@ const DEFAULT_VISIBLE_COLUMN_IDS = [
   'created-by',
   'created-on',
 ]
+
+const EXPORT_COLUMN_MAP: Record<
+  string,
+  { header: string; accessor: (c: Communication) => string }
+> = {
+  'message-id': { header: 'Message ID', accessor: (c) => exportDisplayValue(c.messageId) },
+  title: { header: 'Title', accessor: (c) => exportDisplayValue(c.title) },
+  channel: { header: 'Channel', accessor: (c) => exportDisplayValue(c.channelLabel) },
+  type: { header: 'Type', accessor: (c) => exportDisplayValue(c.typeLabel) },
+  audience: { header: 'Audience', accessor: (c) => exportDisplayValue(c.audienceLabel) },
+  status: { header: 'Status', accessor: (c) => exportDisplayValue(c.statusLabel) },
+  'created-by': { header: 'Created By', accessor: (c) => exportDisplayValue(c.createdBy) },
+  'created-on': { header: 'Created On', accessor: (c) => exportDisplayValue(c.createdAtLabel) },
+}
 
 export function CommunicationListPage() {
   const [searchValue, setSearchValue] = useState('')
@@ -100,31 +116,10 @@ export function CommunicationListPage() {
     setPage(1)
   }, [])
 
-  const handleExportData = useCallback(
-    (values: FilterValues, format: string) => {
-      const headers = [
-        'Message ID',
-        'Title',
-        'Channel',
-        'Type',
-        'Audience',
-        'Status',
-        'Created By',
-        'Created On',
-      ]
-      const exportRows = rows.map((r) => [
-        r.messageId,
-        r.title,
-        r.channelLabel,
-        r.typeLabel,
-        r.audienceLabel,
-        r.statusLabel,
-        r.createdBy,
-        r.createdAtLabel,
-      ])
-      exportDataToFile(headers, exportRows, format, 'communications_export')
-    },
-    [rows],
+  const handleExportData = useMemo(
+    () =>
+      createFilteredExportHandler(fetchCommunications, EXPORT_COLUMN_MAP, 'communications_export'),
+    [],
   )
 
   const {

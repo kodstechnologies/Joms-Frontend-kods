@@ -8,6 +8,7 @@ import { fetchExpertReports } from '../../api/expert-api'
 import type { FilterValues } from '@/shared/types/data-filter'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter/use-module-export-filters'
 import { exportDataToFile } from '@/shared/utils/export-utils'
+import { buildFilterParams } from '@/shared/utils/export-filter-utils'
 import {
   ExpertReportDetailModal,
   type ExpertReportItem,
@@ -34,52 +35,7 @@ export function ExpertReportedExpertsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
 
-  const apiFilterParams = useMemo(() => {
-    const params: Record<string, string> = {}
-
-    Object.entries(appliedFilters).forEach(([rawKey, val]) => {
-      if (val === undefined || val === null || val === '') return
-
-      const parts = rawKey.split('.')
-      const fieldId = parts.length > 1 ? parts.slice(1).join('.') : rawKey
-
-      if (fieldId === 'location' && typeof val === 'object' && val !== null) {
-        const loc = val as { state?: string; city?: string }
-        if (loc.state?.trim()) params.locationState = loc.state.trim()
-        if (loc.city?.trim()) params.locationCity = loc.city.trim()
-        return
-      }
-
-      if (Array.isArray(val)) {
-        if (val.length > 0) {
-          params[fieldId] = val.join(',')
-        }
-        return
-      }
-
-      if (typeof val === 'object' && val !== null) {
-        const range = val as { from?: string | number; to?: string | number }
-        if (range.from !== undefined && range.from !== '') {
-          params[`${fieldId}Min`] = String(range.from).trim()
-        }
-        if (range.to !== undefined && range.to !== '') {
-          params[`${fieldId}Max`] = String(range.to).trim()
-        }
-        return
-      }
-
-      if (typeof val === 'string' && val.trim()) {
-        params[fieldId] = val.trim()
-        return
-      }
-
-      if (typeof val === 'number' || typeof val === 'boolean') {
-        params[fieldId] = String(val)
-      }
-    })
-
-    return params
-  }, [appliedFilters])
+  const apiFilterParams = useMemo(() => buildFilterParams(appliedFilters), [appliedFilters])
 
   const [prevKey, setPrevKey] = useState(
     `${currentPage}-${searchQuery}-${JSON.stringify(apiFilterParams)}`,

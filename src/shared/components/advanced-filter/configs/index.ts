@@ -8,6 +8,7 @@ import { serviceCategoryManagementFilterConfig } from './service-category-manage
 import { communicationManagementFilterConfig } from './communication-management.config'
 import { referralManagementFilterConfig } from './referral-management.config'
 import { rbacManagementFilterConfig } from './rbac-management.config'
+import { leaderboardManagementFilterConfig } from './leaderboard-management.config'
 
 const moduleNames: Record<ModuleFilterKey, string> = {
   'expert-management': 'Expert Management',
@@ -18,6 +19,7 @@ const moduleNames: Record<ModuleFilterKey, string> = {
   'communication-management': 'Communication Management',
   'referral-management': 'Referral Management',
   'rbac-management': 'RBAC Management',
+  'leaderboard-management': 'Leaderboard Management',
 }
 
 function createModuleConfig(moduleKey: ModuleFilterKey): ModuleFilterConfig {
@@ -37,6 +39,7 @@ export const moduleFilterConfigs: Record<ModuleFilterKey, ModuleFilterConfig> = 
   'communication-management': communicationManagementFilterConfig,
   'referral-management': referralManagementFilterConfig,
   'rbac-management': rbacManagementFilterConfig,
+  'leaderboard-management': leaderboardManagementFilterConfig,
 }
 
 export function getModuleFilterConfig(moduleKey: ModuleFilterKey): ModuleFilterConfig {

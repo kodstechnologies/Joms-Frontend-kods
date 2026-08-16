@@ -4,7 +4,7 @@ import type { ColumnDef } from '@tanstack/react-table'
 import { SERVICE_CATEGORY_MANAGEMENT_MODULE_KEY } from '../../api/ui-preferences-api'
 import { DataTable } from '@/shared/components/table/data-table'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
-import { exportDataToFile } from '@/shared/utils/export-utils'
+import { exportDataToFile, exportDisplayValue } from '@/shared/utils/export-utils'
 import type { FilterValues } from '@/shared/types/data-filter'
 
 import { StatCard } from '../../components/stat-card'
@@ -23,15 +23,43 @@ import { useTableColumnPreferences } from '../../hooks/use-ui-preferences'
 
 const PAGE_SIZE = 10
 
+const EXPORT_COLUMN_MAP: Record<string, { header: string; accessor: (cat: Category) => string }> = {
+  categoryId: {
+    header: 'Category ID',
+    accessor: (cat) => exportDisplayValue(cat.categoryId || cat.id),
+  },
+  name: { header: 'Category Name', accessor: (cat) => exportDisplayValue(cat.name) },
+  status: { header: 'Status', accessor: (cat) => exportDisplayValue(cat.status) },
+  subCategory: {
+    header: 'No. of Sub Category',
+    accessor: (cat) => exportDisplayValue(cat.subCategory),
+  },
+  services: { header: 'No.Of Services', accessor: (cat) => exportDisplayValue(cat.services) },
+  experts: { header: 'No.Of Experts', accessor: (cat) => exportDisplayValue(cat.experts) },
+  revenue: { header: 'Revenue Generated', accessor: (cat) => exportDisplayValue(cat.revenue) },
+}
+
+const DEFAULT_VISIBLE_IDS = [
+  'categoryId',
+  'name',
+  'status',
+  'subCategory',
+  'services',
+  'experts',
+  'revenue',
+]
+
 export function CategoryManagementPage() {
   const [searchValue, setSearchValue] = useState('')
   const [page, setPage] = useState(1)
+  const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
 
   const scope = useCategoryManagementScope()
   const preferencesQuery = useTableColumnPreferences(SERVICE_CATEGORY_MANAGEMENT_MODULE_KEY)
 
-  const handleApplyFilters = useCallback(() => {
+  const handleApplyFilters = useCallback((values: FilterValues) => {
     setPage(1)
+    setAppliedFilters(values)
   }, [])
 
   const { data, isLoading, isError } = useServiceCategories({
@@ -39,30 +67,17 @@ export function CategoryManagementPage() {
     search: searchValue.trim() || undefined,
     page,
     limit: PAGE_SIZE,
+    ...appliedFilters,
   })
 
   const categories = useMemo(() => data?.categories ?? [], [data?.categories])
 
   const handleExportData = useCallback(
     (values: FilterValues, format: string) => {
-      const headers = [
-        'Category ID',
-        'Category Name',
-        'Status',
-        'No. of Sub Category',
-        'No.Of Services',
-        'No.Of Experts',
-        'Revenue Generated',
-      ]
-      const exportRows = categories.map((cat) => [
-        cat.categoryId || cat.id,
-        cat.name || '',
-        cat.status || '',
-        String(cat.subCategory || 0),
-        String(cat.services || 0),
-        String(cat.experts || 0),
-        cat.revenue || '',
-      ])
+      const exportCols = Object.values(EXPORT_COLUMN_MAP)
+      const headers = exportCols.map((c) => c.header)
+      const exportRows = categories.map((cat) => exportCols.map((c) => c.accessor(cat)))
+
       exportDataToFile(headers, exportRows, format, 'service_categories_export')
     },
     [categories],
@@ -168,18 +183,9 @@ export function CategoryManagementPage() {
   const metricCards = orderByActiveMetricIds(metricCardCatalog, activeMetricIds)
 
   const columns = useMemo<ColumnDef<Category>[]>(() => {
-    const defaultVisibleIds = [
-      'categoryId',
-      'name',
-      'status',
-      'subCategory',
-      'services',
-      'experts',
-      'revenue',
-    ]
     const visibleIds = preferencesQuery.data?.visibleColumnIds?.length
       ? preferencesQuery.data.visibleColumnIds
-      : defaultVisibleIds
+      : DEFAULT_VISIBLE_IDS
 
     const dataColumnsById = Object.fromEntries(
       categoryColumns.map((column) => [column.id, column] as const),

@@ -54,6 +54,9 @@ import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 import type { FilterValues } from '@/shared/types/data-filter'
 import { exportDataToFile } from '@/shared/utils/export-utils'
 import { getApiErrorMessage } from '@/shared/lib/api-error'
+import { buildFilterParams, createFilteredExportHandler } from '@/shared/utils/export-filter-utils'
+import { fetchServices } from '../../api/service-api'
+import { exportDisplayValue } from '@/shared/utils/export-utils'
 import { MODERATION_CATEGORY_SLUGS } from '@/modules/settings/api/templates-api'
 import {
   useModerationReasonOptions,
@@ -260,6 +263,51 @@ export const ServiceManagementPage = () => {
     [setCurrentPage],
   )
 
+  const handleExportData = useMemo(
+    () =>
+      createFilteredExportHandler(
+        fetchServices,
+        {
+          'service-id': {
+            header: 'Service ID',
+            accessor: (s: Service) =>
+              exportDisplayValue(
+                ((s as unknown as Record<string, unknown>).serviceid as string) || s._id,
+              ),
+          },
+          name: { header: 'Service Name', accessor: (s: Service) => exportDisplayValue(s.title) },
+          category: {
+            header: 'Service Category',
+            accessor: (s: Service) => exportDisplayValue(s.categoryName),
+          },
+          type: {
+            header: 'Service Type',
+            accessor: (s: Service) => exportDisplayValue(s.serviceType),
+          },
+          status: { header: 'Status', accessor: (s: Service) => exportDisplayValue(s.status) },
+          expertName: {
+            header: 'Expert Name',
+            accessor: (s: Service) => exportDisplayValue(s.expertName),
+          },
+          createdAt: {
+            header: 'Created At',
+            accessor: (s: Service) =>
+              s.createdAt
+                ? new Date(s.createdAt).toLocaleString('en-IN', {
+                    day: '2-digit',
+                    month: 'short',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })
+                : '',
+          },
+        },
+        'services_export',
+      ),
+    [],
+  )
+
   const {
     onAdvancedFilter,
     onExport,
@@ -267,54 +315,13 @@ export const ServiceManagementPage = () => {
   } = useModuleExportFilters({
     moduleKey: 'service-management',
     onApplyFilters: handleApplyFilters,
+    onExportData: handleExportData,
   })
 
-  const apiFilterParams = useMemo(() => {
-    const params: Record<string, string> = {}
-
-    Object.entries(appliedAdvancedFilters).forEach(([rawKey, val]) => {
-      if (val === undefined || val === null || val === '') return
-
-      const parts = rawKey.split('.')
-      const fieldId = parts.length > 1 ? parts.slice(1).join('.') : rawKey
-
-      if (fieldId === 'location' && typeof val === 'object' && val !== null) {
-        const loc = val as { state?: string; city?: string }
-        if (loc.state?.trim()) params.titleState = loc.state.trim()
-        if (loc.city?.trim()) params.titleCity = loc.city.trim()
-        return
-      }
-
-      if (Array.isArray(val)) {
-        if (val.length > 0) {
-          params[fieldId] = val.join(',')
-        }
-        return
-      }
-
-      if (typeof val === 'object' && val !== null) {
-        const range = val as { from?: string | number; to?: string | number }
-        if (range.from !== undefined && range.from !== '') {
-          params[`${fieldId}Min`] = String(range.from).trim()
-        }
-        if (range.to !== undefined && range.to !== '') {
-          params[`${fieldId}Max`] = String(range.to).trim()
-        }
-        return
-      }
-
-      if (typeof val === 'string' && val.trim()) {
-        params[fieldId] = val.trim()
-        return
-      }
-
-      if (typeof val === 'number' || typeof val === 'boolean') {
-        params[fieldId] = String(val)
-      }
-    })
-
-    return params
-  }, [appliedAdvancedFilters])
+  const apiFilterParams = useMemo(
+    () => buildFilterParams(appliedAdvancedFilters),
+    [appliedAdvancedFilters],
+  )
 
   const { data, isLoading } = useServices({
     page: currentPage,
