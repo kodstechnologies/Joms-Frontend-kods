@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { ChevronRight, Trash2, X } from 'lucide-react'
 import clockIcon from '@/assets/JOMS_ICONS-2/icons8-clock-24.svg'
 
@@ -9,6 +9,7 @@ import {
   type WeeklyAvailabilityEntry,
 } from '../utils/venue-form'
 import { RequiredMark } from '@/shared/components/form/required-mark'
+import { useVenuePublicSettings } from '@/modules/settings/hooks/use-venue-public-settings'
 
 interface PricingStepProps {
   venueData: VenueFormData
@@ -17,6 +18,34 @@ interface PricingStepProps {
 
 export const PricingStep = ({ venueData, setVenueData }: PricingStepProps) => {
   const [showAvailabilityModal, setShowAvailabilityModal] = useState(false)
+  const { data: venueSettings } = useVenuePublicSettings()
+  const pricingControls = venueSettings?.pricingControls
+  const blackoutDatesEnabled = venueSettings?.bookingRules.blackoutDates !== false
+
+  const allowBaseRates =
+    pricingControls?.hourlyRates !== false || pricingControls?.fullDayRates !== false
+  const allowWeekend = Boolean(pricingControls?.weekendPricing)
+  const allowPeak = Boolean(pricingControls?.peakPricing)
+  const allowFullDay = pricingControls?.fullDayRates !== false
+  const allowHourlyOnly =
+    pricingControls?.hourlyRates !== false && pricingControls?.fullDayRates === false
+
+  useEffect(() => {
+    if (!venueSettings) return
+    setVenueData((prev) => {
+      let next = prev
+      if (!allowWeekend && prev.weekendPrice) {
+        next = { ...next, weekendPrice: '' }
+      }
+      if (!allowPeak && prev.reservationFee) {
+        next = { ...next, reservationFee: '' }
+      }
+      if (!blackoutDatesEnabled && (prev.blockedDates?.length || 0) > 0) {
+        next = { ...next, blockedDates: [] }
+      }
+      return next
+    })
+  }, [venueSettings, allowWeekend, allowPeak, blackoutDatesEnabled, setVenueData])
 
   const weeklyAvailability =
     venueData.weeklyAvailability?.length > 0
@@ -40,6 +69,7 @@ export const PricingStep = ({ venueData, setVenueData }: PricingStepProps) => {
   }
 
   const addBlockedDate = () => {
+    if (!blackoutDatesEnabled) return
     setVenueData((prev) => ({
       ...prev,
       blockedDates: [
@@ -75,6 +105,13 @@ export const PricingStep = ({ venueData, setVenueData }: PricingStepProps) => {
 
           <p className="text-muted mb-8 text-sm">Provide details about your service offering</p>
 
+          {!allowBaseRates && (
+            <p className="mb-4 rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-200">
+              Hourly and full-day rates are disabled in Venue Management settings. Enable at least
+              one to set pricing.
+            </p>
+          )}
+
           <div className="grid grid-cols-2 gap-6">
             <div>
               <label className="mb-2 block text-sm font-medium text-white">
@@ -96,62 +133,88 @@ export const PricingStep = ({ venueData, setVenueData }: PricingStepProps) => {
               </select>
             </div>
 
-            <div>
-              <label className="mb-2 block text-sm font-medium text-white">
-                Set Days <RequiredMark />
-              </label>
+            {allowFullDay && (
+              <div>
+                <label className="mb-2 block text-sm font-medium text-white">
+                  Set Days {allowHourlyOnly ? null : <RequiredMark />}
+                </label>
 
-              <input
-                type="number"
-                value={venueData.setDays || ''}
-                onChange={(e) =>
-                  setVenueData((prev) => ({
-                    ...prev,
-                    setDays: e.target.value,
-                  }))
-                }
-                placeholder="01"
-                className="h-12 w-full rounded-full border border-black bg-black px-5 text-center text-white outline-none"
-              />
-            </div>
+                <input
+                  type="number"
+                  min={1}
+                  value={venueData.setDays || ''}
+                  onChange={(e) =>
+                    setVenueData((prev) => ({
+                      ...prev,
+                      setDays: e.target.value,
+                    }))
+                  }
+                  placeholder="01"
+                  className="h-12 w-full rounded-full border border-black bg-black px-5 text-center text-white outline-none"
+                />
+              </div>
+            )}
 
-            <div>
-              <label className="mb-2 block text-sm font-medium text-white">
-                Weekday <RequiredMark />
-              </label>
+            {allowBaseRates && (
+              <div>
+                <label className="mb-2 block text-sm font-medium text-white">
+                  {allowHourlyOnly ? 'Hourly / Weekday' : 'Weekday'} <RequiredMark />
+                </label>
 
-              <input
-                type="text"
-                value={venueData.weekdayPrice || ''}
-                onChange={(e) =>
-                  setVenueData((prev) => ({
-                    ...prev,
-                    weekdayPrice: e.target.value,
-                  }))
-                }
-                placeholder="₹55,000.00"
-                className="h-12 w-full rounded-full border border-black bg-black px-5 text-white outline-none"
-              />
-            </div>
+                <input
+                  type="text"
+                  value={venueData.weekdayPrice || ''}
+                  onChange={(e) =>
+                    setVenueData((prev) => ({
+                      ...prev,
+                      weekdayPrice: e.target.value,
+                    }))
+                  }
+                  placeholder="₹55,000.00"
+                  className="h-12 w-full rounded-full border border-black bg-black px-5 text-white outline-none"
+                />
+              </div>
+            )}
 
-            <div>
-              <label className="mb-2 block text-sm font-medium text-white">
-                Weekend <RequiredMark />
-              </label>
+            {allowWeekend && (
+              <div>
+                <label className="mb-2 block text-sm font-medium text-white">
+                  Weekend <RequiredMark />
+                </label>
 
-              <input
-                type="text"
-                value={venueData.weekendPrice || ''}
-                onChange={(e) =>
-                  setVenueData((prev) => ({
-                    ...prev,
-                    weekendPrice: e.target.value,
-                  }))
-                }
-                placeholder="₹55,000.00"
-                className="h-12 w-full rounded-full border border-black bg-black px-5 text-white outline-none"
-              />
-            </div>
+                <input
+                  type="text"
+                  value={venueData.weekendPrice || ''}
+                  onChange={(e) =>
+                    setVenueData((prev) => ({
+                      ...prev,
+                      weekendPrice: e.target.value,
+                    }))
+                  }
+                  placeholder="₹55,000.00"
+                  className="h-12 w-full rounded-full border border-black bg-black px-5 text-white outline-none"
+                />
+              </div>
+            )}
+
+            {allowPeak && (
+              <div>
+                <label className="mb-2 block text-sm font-medium text-white">Peak pricing</label>
+
+                <input
+                  type="text"
+                  value={venueData.reservationFee || ''}
+                  onChange={(e) =>
+                    setVenueData((prev) => ({
+                      ...prev,
+                      reservationFee: e.target.value,
+                    }))
+                  }
+                  placeholder="₹5,000.00"
+                  className="h-12 w-full rounded-full border border-black bg-black px-5 text-white outline-none"
+                />
+              </div>
+            )}
 
             <div className="col-span-2">
               <button
@@ -163,7 +226,10 @@ export const PricingStep = ({ venueData, setVenueData }: PricingStepProps) => {
                   Set Availability
                   <span className="text-muted ml-2 text-xs">
                     ({enabledDaysCount} days
-                    {blockedDates.length > 0 ? `, ${blockedDates.length} blocked` : ''})
+                    {blackoutDatesEnabled && blockedDates.length > 0
+                      ? `, ${blockedDates.length} blocked`
+                      : ''}
+                    )
                   </span>
                 </span>
 
@@ -247,80 +313,88 @@ export const PricingStep = ({ venueData, setVenueData }: PricingStepProps) => {
                 </div>
               </div>
 
-              <div>
-                <div className="mb-3 flex items-center justify-between">
-                  <h3 className="text-sm font-semibold text-white">Unavailability</h3>
-                  <button
-                    type="button"
-                    onClick={addBlockedDate}
-                    className="ui-cta ui-cta-outline px-4 py-1.5 text-xs"
-                  >
-                    Add More
-                  </button>
-                </div>
-
-                {blockedDates.length === 0 ? (
-                  <p className="text-muted rounded bg-black p-3 text-xs">No blocked dates added.</p>
-                ) : (
-                  <div className="space-y-3">
-                    {blockedDates.map((entry, index) => (
-                      <div key={index} className="flex items-end gap-3 rounded-lg bg-black p-3">
-                        <div>
-                          <label className="text-muted mb-1 block text-xs">Date</label>
-                          <input
-                            type="date"
-                            value={entry.date}
-                            onChange={(e) => updateBlockedDate(index, 'date', e.target.value)}
-                            className="ui-input bg-brand-surface rounded px-3 py-2 text-xs"
-                          />
-                        </div>
-
-                        <div className="relative w-full">
-                          <label className="text-muted mb-1 block text-xs">Time</label>
-                          <div className="relative">
-                            <input
-                              type="time"
-                              value={entry.from}
-                              onChange={(e) => updateBlockedDate(index, 'from', e.target.value)}
-                              className="ui-input bg-brand-surface w-full rounded px-3 py-2 text-xs [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-0 [&::-webkit-calendar-picker-indicator]:z-10 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0"
-                            />
-                            <img
-                              src={clockIcon}
-                              alt=""
-                              className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 opacity-70 invert"
-                            />
-                          </div>
-                        </div>
-
-                        <div className="relative w-full">
-                          <label className="text-muted mb-1 block text-xs">To</label>
-                          <div className="relative">
-                            <input
-                              type="time"
-                              value={entry.to}
-                              onChange={(e) => updateBlockedDate(index, 'to', e.target.value)}
-                              className="ui-input bg-brand-surface w-full rounded px-3 py-2 text-xs [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-0 [&::-webkit-calendar-picker-indicator]:z-10 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0"
-                            />
-                            <img
-                              src={clockIcon}
-                              alt=""
-                              className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 opacity-70 invert"
-                            />
-                          </div>
-                        </div>
-
-                        <button
-                          type="button"
-                          onClick={() => removeBlockedDate(index)}
-                          className="ui-cta ui-cta-negative flex h-9 w-9 items-center justify-center p-0"
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      </div>
-                    ))}
+              {blackoutDatesEnabled ? (
+                <div>
+                  <div className="mb-3 flex items-center justify-between">
+                    <h3 className="text-sm font-semibold text-white">Unavailability</h3>
+                    <button
+                      type="button"
+                      onClick={addBlockedDate}
+                      className="ui-cta ui-cta-outline px-4 py-1.5 text-xs"
+                    >
+                      Add More
+                    </button>
                   </div>
-                )}
-              </div>
+
+                  {blockedDates.length === 0 ? (
+                    <p className="text-muted rounded bg-black p-3 text-xs">
+                      No blocked dates added.
+                    </p>
+                  ) : (
+                    <div className="space-y-3">
+                      {blockedDates.map((entry, index) => (
+                        <div key={index} className="flex items-end gap-3 rounded-lg bg-black p-3">
+                          <div>
+                            <label className="text-muted mb-1 block text-xs">Date</label>
+                            <input
+                              type="date"
+                              value={entry.date}
+                              onChange={(e) => updateBlockedDate(index, 'date', e.target.value)}
+                              className="ui-input bg-brand-surface rounded px-3 py-2 text-xs"
+                            />
+                          </div>
+
+                          <div className="relative w-full">
+                            <label className="text-muted mb-1 block text-xs">Time</label>
+                            <div className="relative">
+                              <input
+                                type="time"
+                                value={entry.from}
+                                onChange={(e) => updateBlockedDate(index, 'from', e.target.value)}
+                                className="ui-input bg-brand-surface w-full rounded px-3 py-2 text-xs [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-0 [&::-webkit-calendar-picker-indicator]:z-10 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0"
+                              />
+                              <img
+                                src={clockIcon}
+                                alt=""
+                                className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 opacity-70 invert"
+                              />
+                            </div>
+                          </div>
+
+                          <div className="relative w-full">
+                            <label className="text-muted mb-1 block text-xs">To</label>
+                            <div className="relative">
+                              <input
+                                type="time"
+                                value={entry.to}
+                                onChange={(e) => updateBlockedDate(index, 'to', e.target.value)}
+                                className="ui-input bg-brand-surface w-full rounded px-3 py-2 text-xs [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-0 [&::-webkit-calendar-picker-indicator]:z-10 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0"
+                              />
+                              <img
+                                src={clockIcon}
+                                alt=""
+                                className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 opacity-70 invert"
+                              />
+                            </div>
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() => removeBlockedDate(index)}
+                            className="ui-cta ui-cta-negative flex h-9 w-9 items-center justify-center p-0"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <p className="text-muted rounded bg-black p-3 text-xs">
+                  Blackout dates are disabled in Venue Management settings.
+                </p>
+              )}
 
               <div className="ui-modal-footer mt-8 justify-between">
                 <button

@@ -291,10 +291,21 @@ export const ServiceViewPage = () => {
     'Expert'
   const expertIdLabel = service?.expertid || formatListingExpertId(resolvedPartnerId)
 
-  const tierDetails = useMemo(() => {
-    if (service?.pricingType !== 'tiered' || !service.tieredPricing?.tiers?.length) return null
+  const resolvedPricingType = useMemo(() => {
+    if (!service) return null
+    const raw = String(service.pricingType || '').toLowerCase()
+    if (raw === 'tiered' || (service.tieredPricing?.tiers?.length ?? 0) > 0) return 'tiered'
+    if (raw === 'custom' || service.customPricing) return 'custom'
+    if (raw === 'fixed' || service.fixedPricing) return 'fixed'
+    return raw || null
+  }, [service])
 
-    const tier = service.tieredPricing.tiers[activeTierIndex] || service.tieredPricing.tiers[0]
+  const tierDetails = useMemo(() => {
+    if (resolvedPricingType !== 'tiered' || !service?.tieredPricing?.tiers?.length) return null
+
+    const tiers = service.tieredPricing.tiers
+    const safeIndex = Math.min(Math.max(activeTierIndex, 0), tiers.length - 1)
+    const tier = tiers[safeIndex] || tiers[0]
     const parsedDescription = parseDescription(tier.description)
 
     return {
@@ -302,7 +313,7 @@ export const ServiceViewPage = () => {
       description: parsedDescription.summary,
       features: parsedDescription.features,
     }
-  }, [activeTierIndex, service])
+  }, [activeTierIndex, resolvedPricingType, service])
 
   const openDecisionModal = (action: ServiceDecisionAction) => {
     setActiveDecisionAction(action)
@@ -959,9 +970,9 @@ export const ServiceViewPage = () => {
             </div>
           )}
 
-          {service.pricingType === 'fixed' && renderFixedPricing()}
-          {service.pricingType === 'custom' && renderCustomPricing()}
-          {service.pricingType === 'tiered' && renderTieredPricing()}
+          {resolvedPricingType === 'fixed' && renderFixedPricing()}
+          {resolvedPricingType === 'custom' && renderCustomPricing()}
+          {resolvedPricingType === 'tiered' && renderTieredPricing()}
         </div>
       </div>
     </>

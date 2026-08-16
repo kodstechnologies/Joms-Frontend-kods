@@ -12,7 +12,7 @@ import {
   sessionTimeoutOptions,
 } from '../mock/security-options.mock'
 import type { SecuritySettings } from '../types/settings'
-import { cn } from '@/shared/lib/cn'
+import { SettingsToggle } from './settings-toggle-row'
 
 type SecurityAccessPanelProps = {
   value: SecuritySettings
@@ -58,21 +58,7 @@ function SecurityToggle({
   onChange: (checked: boolean) => void
   ariaLabel: string
 }) {
-  return (
-    <div className="security-switch-wrap">
-      <button
-        type="button"
-        role="switch"
-        aria-checked={checked}
-        aria-label={ariaLabel}
-        onClick={() => onChange(!checked)}
-        className={cn('security-switch', checked && 'is-on')}
-      >
-        <span className="security-switch-knob" />
-      </button>
-      <span className="security-switch-caption">{checked ? 'ON' : 'OFF'}</span>
-    </div>
-  )
+  return <SettingsToggle checked={checked} onChange={onChange} ariaLabel={ariaLabel} />
 }
 
 function SecurityCheckboxRow({

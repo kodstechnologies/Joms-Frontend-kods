@@ -2,6 +2,7 @@ export interface VenueFullViewProfile {
   venueType: string | null
   clientSatisfaction: number | null
   ratings: number | null
+  reviewsCount?: number | null
   totalBookings: number | null
   yearsInOperation: { years: number; months: number } | null
   totalEarnings: number | null
@@ -32,6 +33,9 @@ export interface VenueFullViewInsights {
 export interface VenueFullViewVenue {
   _id: string
   ownerId?: string
+  partnerId?: string
+  ownerPartnerExists?: boolean
+  ownerPartnerName?: string | null
   kycId?: string
   name: string
   venueType?: string
@@ -139,6 +143,9 @@ export interface VenueFullViewTerms {
   cancellation?: {
     freeCancellationHours?: number
     refundPercentage?: number
+    feeType?: 'percentage' | 'no_fee' | 'custom'
+    feePercent?: number
+    feeCustomAmount?: number
   }
 }
 
@@ -184,6 +191,7 @@ export interface VenueFullView {
   profile: VenueFullViewProfile
   overview: VenueFullViewOverview
   spaces: VenueFullViewSpaceSummary[]
+  ownerPartnerExists?: boolean
 }
 
 export interface VenueFullViewResponse {

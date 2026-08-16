@@ -54,6 +54,15 @@ export const useUpdateSettings = <M extends SettingsModule>(module: M) => {
           queryKey: ['settings', 'public', 'security-policy'],
         })
       }
+      if (module === 'service') {
+        void queryClient.invalidateQueries({ queryKey: ['service-public-settings'] })
+      }
+      if (module === 'venue') {
+        void queryClient.invalidateQueries({ queryKey: ['venue-public-settings'] })
+      }
+      if (module === 'expert') {
+        void queryClient.invalidateQueries({ queryKey: ['expert-public-settings'] })
+      }
     },
   })
 }
@@ -73,6 +82,12 @@ export const useResetSettings = <M extends SettingsModule>(module: M) => {
         void queryClient.invalidateQueries({
           queryKey: ['settings', 'public', 'security-policy'],
         })
+      }
+      if (module === 'service') {
+        void queryClient.invalidateQueries({ queryKey: ['service-public-settings'] })
+      }
+      if (module === 'venue') {
+        void queryClient.invalidateQueries({ queryKey: ['venue-public-settings'] })
       }
     },
   })

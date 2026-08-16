@@ -26,6 +26,32 @@ import { orderByActiveMetricIds, useActiveMetricIds } from '../../hooks/use-acti
 import { useMarketplaceDashboard } from '@/modules/services/hooks/use-marketplace-dashboard'
 import type { DateRangePreset } from '@/modules/services/types/marketplace-dashboard.types'
 
+const ZERO_SERVICE_METRICS: MarketplaceMetric[] = [
+  { id: 'listed-services', label: 'Listed Services', value: '0' },
+  { id: 'active-services', label: 'Active Services', value: '0' },
+  { id: 'services-delivered', label: 'Services Delivered', value: '0' },
+  { id: 'service-completion', label: 'Service Completion %', value: '0%' },
+  { id: 'avg-delivery-time', label: 'Avg. Delivery Time', value: '0d 0h' },
+  { id: 'total-service-revenue', label: 'Total Service Revenue', value: '₹0.00' },
+  { id: 'avg-revenue-service', label: 'Avg. Revenue/Service', value: '₹0.00' },
+  { id: 'repeat-service', label: 'Repeat Service %', value: '0' },
+  { id: 'avg-service-rating', label: 'Avg. Service Rating', value: '0/5' },
+  { id: 'customer-satisfaction', label: 'Customer Satisfaction', value: '0%' },
+  { id: 'on-time-delivery', label: 'On-Time Delivery', value: '0%' },
+  { id: 'service-cancellation-rate', label: 'Service Cancellation Rate', value: '0%' },
+]
+
+const ZERO_CONSULTATION_METRICS: MarketplaceMetric[] = [
+  { id: 'listed-consultation', label: 'Listed Consultation', value: '0' },
+  { id: 'active-consultation', label: 'Active Consultation', value: '0' },
+  { id: 'completed', label: 'Completed', value: '0' },
+  { id: 'consultation-completion', label: 'Consultation Completion %', value: '0%' },
+  { id: 'avg-consultation-time', label: 'Avg. Consultation Time', value: '0 min' },
+  { id: 'total-consultation-revenue', label: 'Total Consultation Revenue', value: '₹0.00' },
+  { id: 'avg-revenue-consultation', label: 'Avg. Revenue/Consultation', value: '₹0.00' },
+  { id: 'repeat-consultation', label: 'Repeat Consultation %', value: '0' },
+]
+
 function CompactMetricCard({ label, value, trend }: MarketplaceMetric) {
   const isUp = trend?.direction === 'up'
 
@@ -48,13 +74,35 @@ function CompactMetricCard({ label, value, trend }: MarketplaceMetric) {
   )
 }
 
-function MetricsSection({ title, metrics }: { title: string; metrics: MarketplaceMetric[] }) {
+function MetricCardSkeleton() {
+  return (
+    <div className="rounded-xl border border-white/10 bg-white/5 px-3 py-3 sm:px-4 sm:py-4">
+      <div className="h-3 w-24 animate-pulse rounded bg-white/10" />
+      <div className="mt-3 h-6 w-16 animate-pulse rounded bg-white/10" />
+      <div className="mt-3 h-4 w-20 animate-pulse rounded bg-white/5" />
+    </div>
+  )
+}
+
+function MetricsSection({
+  title,
+  metrics,
+  isLoading,
+}: {
+  title: string
+  metrics: MarketplaceMetric[]
+  isLoading?: boolean
+}) {
   return (
     <DashboardCard title={title}>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-        {metrics.map((metric) => (
-          <CompactMetricCard key={metric.label} {...metric} />
-        ))}
+        {isLoading
+          ? Array.from({ length: Math.max(metrics.length, 8) }).map((_, index) => (
+              <MetricCardSkeleton key={`${title}-skeleton-${index}`} />
+            ))
+          : metrics.map((metric) => (
+              <CompactMetricCard key={metric.id || metric.label} {...metric} />
+            ))}
       </div>
     </DashboardCard>
   )
@@ -101,12 +149,7 @@ function TrendsTooltip({ active, payload, label }: TrendsTooltipProps) {
   )
 }
 
-const DEFAULT_SERVICE_METRIC_IDS = [
-  'avg-delivery-time',
-  'total-service-revenue',
-  'avg-service-rating',
-  'customer-satisfaction',
-]
+const DEFAULT_SERVICE_METRIC_IDS = ZERO_SERVICE_METRICS.map((metric) => metric.id)
 
 const RANGE_PRESETS_MAP: Record<string, DateRangePreset> = {
   'last-3-months': 'quarter',
@@ -120,59 +163,17 @@ export function ServiceMarketplacePage() {
 
   const dateRangePreset: DateRangePreset = RANGE_PRESETS_MAP[selectedRange] || 'last30days'
 
-  // Single unified API query for the entire dashboard
   const dashboardQuery = useMarketplaceDashboard({ dateRange: dateRangePreset })
   const dashboardData = dashboardQuery.data
+  const isLoading = dashboardQuery.isLoading
 
   const activeMetricIds = useActiveMetricIds(
     SERVICE_DASHBOARD_MODULE_KEY,
     DEFAULT_SERVICE_METRIC_IDS,
   )
 
-  // ── Build live Service Metrics list ─────────────────────────────────────────
   const liveServiceMetrics: MarketplaceMetric[] = useMemo(() => {
-    const defaultTrend = { direction: 'up' as const, percentage: 5.2, label: 'vs last month' }
-    if (!dashboardData) {
-      return [
-        { id: 'listed-services', label: 'Listed Services', value: '—', trend: defaultTrend },
-        { id: 'active-services', label: 'Active Services', value: '—', trend: defaultTrend },
-        { id: 'services-delivered', label: 'Services Delivered', value: '—', trend: defaultTrend },
-        {
-          id: 'service-completion',
-          label: 'Service Completion %',
-          value: '—',
-          trend: defaultTrend,
-        },
-        { id: 'avg-delivery-time', label: 'Avg. Delivery Time', value: '—', trend: defaultTrend },
-        {
-          id: 'total-service-revenue',
-          label: 'Total Service Revenue',
-          value: '—',
-          trend: defaultTrend,
-        },
-        {
-          id: 'avg-revenue-service',
-          label: 'Avg. Revenue/Service',
-          value: '—',
-          trend: defaultTrend,
-        },
-        { id: 'repeat-service', label: 'Repeat Service %', value: '—', trend: defaultTrend },
-        { id: 'avg-service-rating', label: 'Avg. Service Rating', value: '—', trend: defaultTrend },
-        {
-          id: 'customer-satisfaction',
-          label: 'Customer Satisfaction',
-          value: '—',
-          trend: defaultTrend,
-        },
-        { id: 'on-time-delivery', label: 'On-Time Delivery', value: '—', trend: defaultTrend },
-        {
-          id: 'service-cancellation-rate',
-          label: 'Service Cancellation Rate',
-          value: '—',
-          trend: { direction: 'down', percentage: 5.2, label: 'vs last month' },
-        },
-      ]
-    }
+    if (!dashboardData) return ZERO_SERVICE_METRICS
 
     const s = dashboardData.services
     const cancellationPct =
@@ -182,127 +183,68 @@ export function ServiceMarketplacePage() {
       {
         id: 'listed-services',
         label: 'Listed Services',
-        value: s.listings.listed.toLocaleString('en-IN'),
-        trend: defaultTrend,
+        value: (s.listings.listed ?? 0).toLocaleString('en-IN'),
       },
       {
         id: 'active-services',
         label: 'Active Services',
-        value: s.listings.active.toLocaleString('en-IN'),
-        trend: defaultTrend,
+        value: (s.listings.active ?? 0).toLocaleString('en-IN'),
       },
       {
         id: 'services-delivered',
         label: 'Services Delivered',
-        value: s.orders.completed.toLocaleString('en-IN'),
-        trend: defaultTrend,
+        value: (s.orders.completed ?? 0).toLocaleString('en-IN'),
       },
       {
         id: 'service-completion',
         label: 'Service Completion %',
-        value: `${s.orders.completionRate}%`,
-        trend: defaultTrend,
+        value: `${s.orders.completionRate ?? 0}%`,
       },
       {
         id: 'avg-delivery-time',
         label: 'Avg. Delivery Time',
-        value: s.delivery.averageTime.label,
-        trend: defaultTrend,
+        value: s.delivery.averageTime?.label || '0d 0h',
       },
       {
         id: 'total-service-revenue',
         label: 'Total Service Revenue',
-        value: s.revenue.total.label,
-        trend: defaultTrend,
+        value: s.revenue.total?.label || '₹0.00',
       },
       {
         id: 'avg-revenue-service',
         label: 'Avg. Revenue/Service',
-        value: s.revenue.averagePerService.label,
-        trend: defaultTrend,
+        value: s.revenue.averagePerService?.label || '₹0.00',
       },
       {
         id: 'repeat-service',
         label: 'Repeat Service %',
-        value: `${s.experts.avgServicesPerExpert} avg/exp`,
-        trend: defaultTrend,
+        value: `${s.experts.avgServicesPerExpert ?? 0}`,
       },
       {
         id: 'avg-service-rating',
         label: 'Avg. Service Rating',
-        value: '4.8/5',
-        trend: defaultTrend,
+        value: '0/5',
       },
       {
         id: 'customer-satisfaction',
         label: 'Customer Satisfaction',
-        value: '94%',
-        trend: defaultTrend,
+        value: '0%',
       },
       {
         id: 'on-time-delivery',
         label: 'On-Time Delivery',
-        value: `${s.delivery.onTimeDeliveryPct}%`,
-        trend: defaultTrend,
+        value: `${s.delivery.onTimeDeliveryPct ?? 0}%`,
       },
       {
         id: 'service-cancellation-rate',
         label: 'Service Cancellation Rate',
         value: `${cancellationPct}%`,
-        trend: {
-          direction: 'down',
-          percentage: parseFloat(cancellationPct) || 0,
-          label: 'vs last month',
-        },
       },
     ]
   }, [dashboardData])
 
-  // ── Build live Consultation Metrics list ────────────────────────────────────
   const liveConsultationMetrics: MarketplaceMetric[] = useMemo(() => {
-    const defaultTrend = { direction: 'up' as const, percentage: 5.2, label: 'vs last month' }
-    if (!dashboardData) {
-      return [
-        {
-          id: 'listed-consultation',
-          label: 'Listed Consultation',
-          value: '—',
-          trend: defaultTrend,
-        },
-        {
-          id: 'active-consultation',
-          label: 'Active Consultation',
-          value: '—',
-          trend: defaultTrend,
-        },
-        { id: 'completed', label: 'Completed', value: '—', trend: defaultTrend },
-        {
-          id: 'consultation-completion',
-          label: 'Consultation Completion %',
-          value: '—',
-          trend: defaultTrend,
-        },
-        { id: 'avg-consultation-time', label: 'Avg. Consultation Time', value: '—' },
-        {
-          id: 'total-consultation-revenue',
-          label: 'Total Consultation Revenue',
-          value: '—',
-          trend: defaultTrend,
-        },
-        {
-          id: 'avg-revenue-consultation',
-          label: 'Avg. Revenue/Consultation',
-          value: '—',
-          trend: defaultTrend,
-        },
-        {
-          id: 'repeat-consultation',
-          label: 'Repeat Consultation %',
-          value: '—',
-          trend: defaultTrend,
-        },
-      ]
-    }
+    if (!dashboardData) return ZERO_CONSULTATION_METRICS
 
     const c = dashboardData.consultations
 
@@ -310,65 +252,55 @@ export function ServiceMarketplacePage() {
       {
         id: 'listed-consultation',
         label: 'Listed Consultation',
-        value: c.listings.listed.toLocaleString('en-IN'),
-        trend: defaultTrend,
+        value: (c.listings.listed ?? 0).toLocaleString('en-IN'),
       },
       {
         id: 'active-consultation',
         label: 'Active Consultation',
-        value: c.listings.active.toLocaleString('en-IN'),
-        trend: defaultTrend,
+        value: (c.listings.active ?? 0).toLocaleString('en-IN'),
       },
       {
         id: 'completed',
         label: 'Completed',
-        value: c.bookings.completed.toLocaleString('en-IN'),
-        trend: defaultTrend,
+        value: (c.bookings.completed ?? 0).toLocaleString('en-IN'),
       },
       {
         id: 'consultation-completion',
         label: 'Consultation Completion %',
-        value: `${c.bookings.completionRate}%`,
-        trend: defaultTrend,
+        value: `${c.bookings.completionRate ?? 0}%`,
       },
       {
         id: 'avg-consultation-time',
         label: 'Avg. Consultation Time',
-        value: `${c.duration.averageMinutes} min`,
+        value: `${c.duration.averageMinutes ?? 0} min`,
       },
       {
         id: 'total-consultation-revenue',
         label: 'Total Consultation Revenue',
-        value: c.revenue.total.label,
-        trend: defaultTrend,
+        value: c.revenue.total?.label || '₹0.00',
       },
       {
         id: 'avg-revenue-consultation',
         label: 'Avg. Revenue/Consultation',
-        value: c.revenue.averagePerBooking.label,
-        trend: defaultTrend,
+        value: c.revenue.averagePerBooking?.label || '₹0.00',
       },
       {
         id: 'repeat-consultation',
         label: 'Repeat Consultation %',
-        value: `${c.bookings.scheduled} scheduled`,
-        trend: defaultTrend,
+        value: String(c.bookings.scheduled ?? 0),
       },
     ]
   }, [dashboardData])
 
-  // ── Build live Trend Points for ComposedChart ──────────────────────────────
   const trendPoints: ServiceConsultationTrendPoint[] = useMemo(() => {
-    if (!dashboardData) {
-      return []
-    }
+    if (!dashboardData) return []
 
     const map = new Map<
       string,
       { month: string; consultationsCompleted: number; servicesDelivered: number; revenue: number }
     >()
 
-    for (const d of dashboardData.trends.serviceRevenue) {
+    for (const d of dashboardData.trends.serviceRevenue || []) {
       const label = d.date.length >= 10 ? d.date.slice(5) : d.date
       const current = map.get(label) || {
         month: label,
@@ -381,7 +313,7 @@ export function ServiceMarketplacePage() {
       map.set(label, current)
     }
 
-    for (const d of dashboardData.trends.consultationRevenue) {
+    for (const d of dashboardData.trends.consultationRevenue || []) {
       const label = d.date.length >= 10 ? d.date.slice(5) : d.date
       const current = map.get(label) || {
         month: label,
@@ -434,13 +366,17 @@ export function ServiceMarketplacePage() {
         </div>
       </div>
 
-      {visibleServiceMetrics.length > 0 && (
-        <MetricsSection title="Service Metrics" metrics={visibleServiceMetrics} />
-      )}
+      <MetricsSection
+        title="Service Metrics"
+        metrics={visibleServiceMetrics}
+        isLoading={isLoading}
+      />
 
-      {visibleConsultationMetrics.length > 0 && (
-        <MetricsSection title="Consultation Metrics" metrics={visibleConsultationMetrics} />
-      )}
+      <MetricsSection
+        title="Consultation Metrics"
+        metrics={visibleConsultationMetrics}
+        isLoading={isLoading}
+      />
 
       <DashboardCard
         className="p-0"
@@ -463,7 +399,6 @@ export function ServiceMarketplacePage() {
               className="grid size-8 place-items-center rounded-full border border-white/10 bg-white/5 text-slate-300 transition-colors hover:border-white/15 hover:bg-white/10"
               onClick={() => {
                 dashboardQuery.refetch()
-                toast.message('Refreshing trends...')
               }}
             >
               <RefreshCw className={`size-4 ${dashboardQuery.isFetching ? 'animate-spin' : ''}`} />
@@ -472,69 +407,77 @@ export function ServiceMarketplacePage() {
         }
       >
         <div className="px-4 pb-5 sm:px-5 sm:pb-6">
-          <div className="h-[280px] sm:h-[340px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart
-                data={trendPoints}
-                margin={{ left: 4, right: 8, top: 8, bottom: 8 }}
-                barGap={4}
-                barCategoryGap="18%"
-              >
-                <CartesianGrid stroke="rgba(255,255,255,0.05)" vertical={false} />
-                <XAxis
-                  dataKey="month"
-                  tickLine={false}
-                  axisLine={false}
-                  tick={{ fill: 'rgba(148,163,184,0.85)', fontSize: 12 }}
-                />
-                <YAxis
-                  yAxisId="left"
-                  tickLine={false}
-                  axisLine={false}
-                  tick={{ fill: 'rgba(148,163,184,0.85)', fontSize: 12 }}
-                />
-                <YAxis
-                  yAxisId="right"
-                  orientation="right"
-                  tickLine={false}
-                  axisLine={false}
-                  tick={{ fill: 'rgba(148,163,184,0.85)', fontSize: 12 }}
-                  tickFormatter={(v: number) => `₹${v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v}`}
-                />
-                <Tooltip content={<TrendsTooltip />} />
-                <Legend
-                  wrapperStyle={{ color: 'rgba(148,163,184,0.85)', paddingTop: 12 }}
-                  formatter={(value) => <span className="text-xs text-slate-400">{value}</span>}
-                />
-                <Bar
-                  yAxisId="left"
-                  dataKey="consultationsCompleted"
-                  name="Consultations Completed"
-                  fill="#4CAF50"
-                  radius={[4, 4, 0, 0]}
-                  maxBarSize={28}
-                />
-                <Bar
-                  yAxisId="left"
-                  dataKey="servicesDelivered"
-                  name="Services Delivered"
-                  fill="#2196F3"
-                  radius={[4, 4, 0, 0]}
-                  maxBarSize={28}
-                />
-                <Line
-                  yAxisId="right"
-                  type="monotone"
-                  dataKey="revenue"
-                  name="Revenue (₹)"
-                  stroke="#FF9800"
-                  strokeWidth={2}
-                  dot={{ fill: '#FF9800', r: 4 }}
-                  activeDot={{ r: 6 }}
-                />
-              </ComposedChart>
-            </ResponsiveContainer>
-          </div>
+          {isLoading ? (
+            <div className="h-[280px] animate-pulse rounded-lg bg-white/5 sm:h-[340px]" />
+          ) : trendPoints.length === 0 ? (
+            <div className="flex h-[280px] items-center justify-center text-sm text-slate-400 sm:h-[340px]">
+              No trend data available.
+            </div>
+          ) : (
+            <div className="h-[280px] sm:h-[340px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <ComposedChart
+                  data={trendPoints}
+                  margin={{ left: 4, right: 8, top: 8, bottom: 8 }}
+                  barGap={4}
+                  barCategoryGap="18%"
+                >
+                  <CartesianGrid stroke="rgba(255,255,255,0.05)" vertical={false} />
+                  <XAxis
+                    dataKey="month"
+                    tickLine={false}
+                    axisLine={false}
+                    tick={{ fill: 'rgba(148,163,184,0.85)', fontSize: 12 }}
+                  />
+                  <YAxis
+                    yAxisId="left"
+                    tickLine={false}
+                    axisLine={false}
+                    tick={{ fill: 'rgba(148,163,184,0.85)', fontSize: 12 }}
+                  />
+                  <YAxis
+                    yAxisId="right"
+                    orientation="right"
+                    tickLine={false}
+                    axisLine={false}
+                    tick={{ fill: 'rgba(148,163,184,0.85)', fontSize: 12 }}
+                    tickFormatter={(v: number) => `₹${v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v}`}
+                  />
+                  <Tooltip content={<TrendsTooltip />} />
+                  <Legend
+                    wrapperStyle={{ color: 'rgba(148,163,184,0.85)', paddingTop: 12 }}
+                    formatter={(value) => <span className="text-xs text-slate-400">{value}</span>}
+                  />
+                  <Bar
+                    yAxisId="left"
+                    dataKey="consultationsCompleted"
+                    name="Consultations Completed"
+                    fill="#4CAF50"
+                    radius={[4, 4, 0, 0]}
+                    maxBarSize={28}
+                  />
+                  <Bar
+                    yAxisId="left"
+                    dataKey="servicesDelivered"
+                    name="Services Delivered"
+                    fill="#2196F3"
+                    radius={[4, 4, 0, 0]}
+                    maxBarSize={28}
+                  />
+                  <Line
+                    yAxisId="right"
+                    type="monotone"
+                    dataKey="revenue"
+                    name="Revenue (₹)"
+                    stroke="#FF9800"
+                    strokeWidth={2}
+                    dot={{ fill: '#FF9800', r: 4 }}
+                    activeDot={{ r: 6 }}
+                  />
+                </ComposedChart>
+              </ResponsiveContainer>
+            </div>
+          )}
         </div>
       </DashboardCard>
     </div>

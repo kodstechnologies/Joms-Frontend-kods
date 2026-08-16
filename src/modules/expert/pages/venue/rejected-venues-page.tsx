@@ -11,6 +11,7 @@ import { useModuleExportFilters } from '@/shared/components/advanced-filter/use-
 import { exportDataToFile } from '@/shared/utils/export-utils'
 
 import { useActivateVenue, useVenues } from '../../hooks/use-venues'
+import { useVenueManagementControls } from '@/modules/settings/hooks/use-venue-public-settings'
 import type { Venue } from '../../type/venue'
 import { getVenueApiId, getVenueDisplayId, getVenueDisplaySpaceId } from '../../utils/venue-list'
 import { DataTable } from '@/shared/components/table/data-table'
@@ -22,6 +23,7 @@ import { Button } from '@/shared/components/ui/button'
 
 export function VenueRejectedPage() {
   const navigate = useNavigate()
+  const { allowAddVenues } = useVenueManagementControls()
   const [searchQuery, setSearchQuery] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
@@ -303,7 +305,14 @@ export function VenueRejectedPage() {
           <Button
             type="button"
             className="h-9 w-full md:w-auto"
-            onClick={() => navigate('/venues/management/onboarding')}
+            onClick={() => {
+              if (!allowAddVenues) {
+                toast.error('Creating venues is turned off in Venue Management settings')
+                return
+              }
+              navigate('/venues/management/onboarding')
+            }}
+            disabled={!allowAddVenues}
           >
             <img src={createIcon} alt="create" className="size-4" />
             Create Account

@@ -29,6 +29,7 @@ import {
   useModerationReasonOptions,
   useRecordModerationReasonUsage,
 } from '@/modules/settings/hooks/use-templates'
+import { useVenueManagementControls } from '@/modules/settings/hooks/use-venue-public-settings'
 import {
   useAdminEscalation,
   useEscalateVenueSpaceApplication,
@@ -159,6 +160,7 @@ export function ApplicationDetailsPage() {
 
   const user = useAuthStore((state) => state.user)
   const isSuperAdmin = Boolean(user?.isSuperAdmin)
+  const { allowApproveVenues } = useVenueManagementControls()
 
   const { data, isLoading, isError, error } = useVenueFullView(id)
   const { data: amenityMasters } = useQuery({
@@ -212,6 +214,10 @@ export function ApplicationDetailsPage() {
   }, [spaceId, isSuperAdmin, startEscalationReview])
 
   const openModal = (variant: DecisionVariant) => {
+    if (variant === 'approve' && !allowApproveVenues) {
+      toast.error('Approving venues is turned off in Venue Management settings')
+      return
+    }
     resetModal()
     setModalVariant(variant)
     setModalOpen(true)
@@ -554,6 +560,15 @@ export function ApplicationDetailsPage() {
               <CheckCircle2 className="text-brand-positive size-3.5" />
               Free cancellation up to {terms.cancellation.freeCancellationHours ?? 0} days before
               event
+              {terms.cancellation.feeType === 'no_fee'
+                ? ' · no cancellation fee'
+                : terms.cancellation.feeType === 'custom'
+                  ? ` · custom fee ₹${terms.cancellation.feeCustomAmount ?? 0}`
+                  : terms.cancellation.feePercent != null
+                    ? ` · ${terms.cancellation.feePercent}% cancellation fee`
+                    : terms.cancellation.refundPercentage != null
+                      ? ` · ${terms.cancellation.refundPercentage}% refund after free window`
+                      : ''}
             </div>
           )}
           {!terms?.terms?.length && !terms?.cancellation && (
@@ -590,7 +605,7 @@ export function ApplicationDetailsPage() {
             onEscalate={() => openModal('escalate')}
             onReject={() => openModal('reject')}
             showEscalate={isSuperAdmin}
-            approveDisabled={spaceStatusMutation.isPending || !space?._id}
+            approveDisabled={spaceStatusMutation.isPending || !space?._id || !allowApproveVenues}
             requestChangesDisabled={spaceStatusMutation.isPending || !space?._id}
             escalateDisabled={escalateDisabled}
             rejectDisabled={spaceStatusMutation.isPending || !space?._id}

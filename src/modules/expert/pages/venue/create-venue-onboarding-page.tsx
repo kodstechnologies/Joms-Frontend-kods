@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
@@ -16,6 +16,7 @@ import {
   useVenueOnboardingMutations,
   useVenueOnboardingReview,
 } from '@/modules/expert/hooks/use-venue-onboarding'
+import { useVenueManagementControls } from '@/modules/settings/hooks/use-venue-public-settings'
 import type { VenueCategory } from '@/modules/expert/type/venue'
 import {
   buildBasicProfileFormData,
@@ -52,6 +53,7 @@ export function CreateVenueOnboardingPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const partnerIdParam = searchParams.get('partnerId') || ''
   const venueIdParam = searchParams.get('venueId')
+  const { allowAddVenues, isLoading: controlsLoading } = useVenueManagementControls()
 
   const [currentStep, setCurrentStep] = useState(1)
   const [createdPartnerId, setCreatedPartnerId] = useState('')
@@ -66,6 +68,15 @@ export function CreateVenueOnboardingPage() {
   const { saveBasicProfile, saveLocation, saveKyc, createAccount } = useVenueOnboardingMutations()
 
   const { data: reviewData, refetch: refetchReview } = useVenueOnboardingReview(venueId)
+
+  useEffect(() => {
+    if (controlsLoading) return
+    // Allow continuing an in-progress onboarding (existing venueId), block brand-new creates only.
+    if (!allowAddVenues && !venueIdParam) {
+      toast.error('Creating venues is turned off in Venue Management settings')
+      navigate('/venues/management', { replace: true })
+    }
+  }, [allowAddVenues, controlsLoading, navigate, venueIdParam])
 
   const [lastSyncedReview, setLastSyncedReview] = useState(reviewData)
   if (reviewData !== lastSyncedReview) {

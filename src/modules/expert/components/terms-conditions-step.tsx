@@ -1,7 +1,11 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Trash2 } from 'lucide-react'
 
 import type { VenueFormData } from '../utils/venue-form'
+import {
+  resolveRefundPercentageFromSettings,
+  useVenueBookingRules,
+} from '@/modules/settings/hooks/use-venue-public-settings'
 
 type FAQ = {
   question: string
@@ -14,6 +18,7 @@ interface TermsConditionsStepProps {
 }
 
 export const TermsConditionsStep = ({ venueData, setVenueData }: TermsConditionsStepProps) => {
+  const { bookingRules } = useVenueBookingRules()
   const [faqs, setFaqs] = useState<FAQ[]>(
     venueData.faqs || [
       {
@@ -22,6 +27,20 @@ export const TermsConditionsStep = ({ venueData, setVenueData }: TermsConditions
       },
     ],
   )
+
+  useEffect(() => {
+    const refundPercentage = resolveRefundPercentageFromSettings(bookingRules)
+    setVenueData((prev) =>
+      prev.refundPercentage === refundPercentage ? prev : { ...prev, refundPercentage },
+    )
+  }, [bookingRules, setVenueData])
+
+  const feeSummary =
+    bookingRules.cancellationFeeType === 'no_fee'
+      ? 'No cancellation fee (full refund after free window rules).'
+      : bookingRules.cancellationFeeType === 'custom'
+        ? `Custom cancellation fee: ₹${bookingRules.cancellationFeeCustomAmount || 0}`
+        : `${bookingRules.cancellationFeePercent || 0}% cancellation fee (refund ${resolveRefundPercentageFromSettings(bookingRules)}%).`
 
   const addFaq = () => {
     const updatedFaqs = [
@@ -122,30 +141,18 @@ export const TermsConditionsStep = ({ venueData, setVenueData }: TermsConditions
           </div>
 
           <div className="border-l border-slate-800 pl-6">
-            <h3 className="mb-1 text-sm font-medium text-white">Refund After Free Window</h3>
+            <h3 className="mb-1 text-sm font-medium text-white">Cancellation fee (admin)</h3>
 
             <p className="mb-3 text-[10px] text-slate-500">
-              Decide what percentage you'll refund if someone cancels after the free period.
+              Refund after the free window is controlled by Venue Management settings.
             </p>
 
-            <div className="flex flex-wrap gap-4">
-              {['0', '50', '75', '100'].map((percentage) => (
-                <label key={percentage} className="flex items-center gap-2 text-xs text-white">
-                  <input
-                    type="radio"
-                    name="refund"
-                    checked={venueData.refundPercentage === percentage}
-                    onChange={() =>
-                      setVenueData((prev) => ({
-                        ...prev,
-                        refundPercentage: percentage,
-                      }))
-                    }
-                  />
-                  {percentage}%
-                </label>
-              ))}
-            </div>
+            <p className="rounded-md border border-slate-700 bg-black px-3 py-2 text-xs text-white">
+              {feeSummary}
+            </p>
+            <p className="mt-2 text-[10px] text-slate-500">
+              Applied refund percentage: {venueData.refundPercentage || '0'}%
+            </p>
           </div>
         </div>
       </div>

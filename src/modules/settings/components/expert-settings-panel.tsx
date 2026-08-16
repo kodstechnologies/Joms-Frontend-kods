@@ -1,7 +1,8 @@
 import type { ExpertSettings } from '../types/settings'
 import { FinancialSettingsFields } from './financial-settings-fields'
 import { LockedAccountsTable } from './locked-accounts-table'
-import { SettingsFieldRow, settingsControlClass } from './settings-field-row'
+import { SettingsFieldRow } from './settings-field-row'
+import { settingsControlClass } from './settings-control-classes'
 import { SettingsSectionCard } from './settings-section-card'
 import { SettingsToggleRow } from './settings-toggle-row'
 
@@ -49,7 +50,7 @@ export function ExpertSettingsPanel({ value, onChange }: ExpertSettingsPanelProp
         </SettingsFieldRow>
         <SettingsFieldRow
           label="Phone Verification"
-          description="Not enforced yet — phone verification is skipped for now."
+          description="Require experts to verify phone via OTP during registration"
         >
           <select
             className={settingsControlClass}
@@ -60,23 +61,30 @@ export function ExpertSettingsPanel({ value, onChange }: ExpertSettingsPanelProp
                   .value as ExpertSettings['accountCreation']['phoneVerification'],
               })
             }
-            disabled
           >
             <option value="mandatory">Mandatory</option>
             <option value="optional">Optional</option>
-            <option value="disabled">Disabled</option>
           </select>
         </SettingsFieldRow>
         <SettingsFieldRow
-          label="Re-verification Frequency"
-          description="Days after KYC approval before the partner app is asked to re-verify"
+          label="Reverification"
+          description="How often approved KYC must be re-verified"
         >
-          <input
-            type="number"
+          <select
             className={settingsControlClass}
             value={value.accountCreation.reVerificationDays}
-            onChange={(e) => patchAccount({ reVerificationDays: Number(e.target.value) })}
-          />
+            onChange={(e) =>
+              patchAccount({
+                reVerificationDays: Number(
+                  e.target.value,
+                ) as ExpertSettings['accountCreation']['reVerificationDays'],
+              })
+            }
+          >
+            <option value={90}>3 Months</option>
+            <option value={180}>6 Months</option>
+            <option value={365}>12 Months</option>
+          </select>
         </SettingsFieldRow>
         <SettingsToggleRow
           label="Duplicate Account Detection"
@@ -160,15 +168,26 @@ export function ExpertSettingsPanel({ value, onChange }: ExpertSettingsPanelProp
           />
         </SettingsFieldRow>
         <SettingsFieldRow
-          label="Suspension duration"
-          description="Default length of automatic suspensions (days)"
+          label="Suspension Duration"
+          description="Default length of automatic and admin suspensions"
         >
-          <input
-            type="number"
+          <select
             className={settingsControlClass}
             value={value.autoSuspension.suspensionDurationDays}
-            onChange={(e) => patchSuspension({ suspensionDurationDays: Number(e.target.value) })}
-          />
+            onChange={(e) =>
+              patchSuspension({
+                suspensionDurationDays: Number(
+                  e.target.value,
+                ) as ExpertSettings['autoSuspension']['suspensionDurationDays'],
+              })
+            }
+          >
+            <option value={7}>7 Days</option>
+            <option value={30}>30 Days</option>
+            <option value={90}>90 Days</option>
+            <option value={180}>180 Days</option>
+            <option value={0}>Permanent</option>
+          </select>
         </SettingsFieldRow>
         <SettingsToggleRow
           label="Notify Super Admin on suspension"

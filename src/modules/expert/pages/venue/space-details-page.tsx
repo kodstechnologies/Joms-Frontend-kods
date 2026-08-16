@@ -27,6 +27,7 @@ import {
   type UpdateVenueSpaceVisibilityPayload,
 } from '../../api/venue-api'
 import { useVenueFullView } from '../../hooks/use-venues'
+import { SpaceBookingsSection } from '../../components/space-bookings-section'
 import type { VenueFullView, VenueFullViewGalleryImage } from '../../type/venue-full-view'
 import {
   DecisionActionModal,
@@ -36,6 +37,7 @@ import {
   DecisionControlButtons,
   DecisionControlsHeader,
 } from '@/shared/components/decision-controls'
+import { useVenueManagementControls } from '@/modules/settings/hooks/use-venue-public-settings'
 import {
   TableActionsDropdown,
   TableActionsItem,
@@ -177,13 +179,13 @@ export function SpaceDetailsPage() {
   const navigate = useNavigate()
   const { venueId, spaceId } = useParams<{ venueId: string; spaceId: string }>()
   const queryClient = useQueryClient()
+  const { allowApproveVenues, allowDisableVenues } = useVenueManagementControls()
   const [actionsOpen, setActionsOpen] = useState(false)
   const [activeImageIndex, setActiveImageIndex] = useState(0)
   const [modalAction, setModalAction] = useState<SpaceAction | null>(null)
   const [decisionModalOpen, setDecisionModalOpen] = useState(false)
   const [decisionVariant, setDecisionVariant] = useState<DecisionVariant>('approve')
   const [selectedReasons, setSelectedReasons] = useState<string[]>([])
-  const [reasonDetails, setReasonDetails] = useState('')
   const [adminNotes, setAdminNotes] = useState('')
   const [decisionAdminNotes, setDecisionAdminNotes] = useState('')
   const [decisionSelectedReasons, setDecisionSelectedReasons] = useState<string[]>([])
@@ -269,6 +271,8 @@ export function SpaceDetailsPage() {
   const recordReasonUsage = useRecordModerationReasonUsage()
   const { options: suspendReasonOptions, buildPayload: buildSuspendReasonPayload } =
     useModerationReasonOptions(MODERATION_CATEGORY_SLUGS.suspendVenue)
+  const { options: hideReasonOptions, buildPayload: buildHideReasonPayload } =
+    useModerationReasonOptions(MODERATION_CATEGORY_SLUGS.hideVenue)
   const { options: rejectReasonOptions, buildPayload: buildRejectReasonPayload } =
     useModerationReasonOptions(MODERATION_CATEGORY_SLUGS.rejectVenue)
   const { options: requestChangesReasonOptions, buildPayload: buildRequestChangesReasonPayload } =
@@ -284,7 +288,6 @@ export function SpaceDetailsPage() {
 
   const resetModal = () => {
     setSelectedReasons([])
-    setReasonDetails('')
     setAdminNotes('')
     setStartDate('')
     setEndDate('')
@@ -292,6 +295,10 @@ export function SpaceDetailsPage() {
   }
 
   const openActionModal = (action: SpaceAction) => {
+    if (action === 'suspend' && !allowDisableVenues) {
+      toast.error('Disabling venues is turned off in Venue Management settings')
+      return
+    }
     resetModal()
     setActionsOpen(false)
     setModalAction(action)
@@ -327,12 +334,15 @@ export function SpaceDetailsPage() {
       value ? new Date(`${value}T00:00:00.000Z`).toISOString() : undefined
 
     const payload: UpdateVenueSpaceVisibilityPayload = (() => {
-      const reasonPayload = buildSuspendReasonPayload(selectedReasons)
+      const reasonPayload =
+        modalAction === 'hide'
+          ? buildHideReasonPayload(selectedReasons)
+          : buildSuspendReasonPayload(selectedReasons)
       return modalAction === 'hide'
         ? {
             action: 'hide' as const,
             selectedReasons: reasonPayload.selectedReasons,
-            reasonDetails: reasonDetails.trim() || reasonPayload.reasonDetails,
+            reasonDetails: reasonPayload.reasonDetails,
             adminNotes: adminNotes.trim(),
           }
         : {
@@ -341,12 +351,15 @@ export function SpaceDetailsPage() {
             suspendIndefinitely,
             startDate: suspendIndefinitely ? undefined : toIso(startDate),
             endDate: suspendIndefinitely ? undefined : toIso(endDate),
-            reasonDetails: reasonDetails.trim() || reasonPayload.reasonDetails,
+            reasonDetails: reasonPayload.reasonDetails,
             adminNotes: adminNotes.trim(),
           }
     })()
 
-    const reasonPayload = buildSuspendReasonPayload(selectedReasons)
+    const reasonPayload =
+      modalAction === 'hide'
+        ? buildHideReasonPayload(selectedReasons)
+        : buildSuspendReasonPayload(selectedReasons)
     if (reasonPayload.selectedReasons.length === 0) {
       toast.error('Selected reasons are no longer available. Please refresh and try again.')
       return
@@ -390,6 +403,10 @@ export function SpaceDetailsPage() {
   }
 
   const openDecisionModal = (variant: DecisionVariant) => {
+    if (variant === 'approve' && !allowApproveVenues) {
+      toast.error('Approving venues is turned off in Venue Management settings')
+      return
+    }
     resetDecisionModal()
     setDecisionVariant(variant)
     setDecisionModalOpen(true)
@@ -643,7 +660,7 @@ export function SpaceDetailsPage() {
             icon={<Eye className="size-3.5" />}
             onClick={() => {
               setActionsOpen(false)
-              toast.message('Analytics is coming soon')
+              navigate(`/venues/management/profile/${venueId}/space/${spaceId}/analytics`)
             }}
           >
             Analytics
@@ -858,6 +875,15 @@ export function SpaceDetailsPage() {
               <CheckCircle2 className="text-brand-positive size-3.5" />
               Free cancellation up to {terms.cancellation.freeCancellationHours ?? 0} hrs before
               booking
+              {terms.cancellation.feeType === 'no_fee'
+                ? ' · no cancellation fee'
+                : terms.cancellation.feeType === 'custom'
+                  ? ` · custom fee ₹${terms.cancellation.feeCustomAmount ?? 0}`
+                  : terms.cancellation.feePercent != null
+                    ? ` · ${terms.cancellation.feePercent}% cancellation fee`
+                    : terms.cancellation.refundPercentage != null
+                      ? ` · ${terms.cancellation.refundPercentage}% refund after free window`
+                      : ''}
             </div>
           )}
           {!terms?.terms?.length && !terms?.cancellation && (
@@ -894,13 +920,15 @@ export function SpaceDetailsPage() {
             onEscalate={() => openDecisionModal('escalate')}
             onReject={() => openDecisionModal('reject')}
             showEscalate={isSuperAdmin}
-            approveDisabled={decisionDisabled}
+            approveDisabled={decisionDisabled || !allowApproveVenues}
             requestChangesDisabled={decisionDisabled}
             escalateDisabled={escalateDisabled}
             rejectDisabled={decisionDisabled}
           />
         </Card>
       </div>
+
+      <SpaceBookingsSection spaceId={spaceId} />
 
       <DecisionActionModal
         open={decisionModalOpen}
@@ -983,15 +1011,12 @@ export function SpaceDetailsPage() {
         submitLabel={modalAction === 'hide' ? 'Hide' : 'Suspend'}
         showHeroIcon={false}
         submitIcon="none"
-        reasonOptions={suspendReasonOptions}
+        reasonOptions={modalAction === 'hide' ? hideReasonOptions : suspendReasonOptions}
         selectedReasons={selectedReasons}
         onReasonToggle={toggleReason}
         showReasonsLabel
-        reason={reasonDetails}
-        onReasonChange={setReasonDetails}
         reasonLabel="Reasons"
         reasonRequired={false}
-        reasonFieldType="input"
         adminNotes={adminNotes}
         onAdminNotesChange={setAdminNotes}
         showTimeline={modalAction === 'suspend'}

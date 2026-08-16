@@ -1,5 +1,6 @@
 import { SettingsCheckboxGroup } from './settings-checkbox-group'
-import { SettingsFieldRow, settingsControlClass } from './settings-field-row'
+import { SettingsFieldRow } from './settings-field-row'
+import { settingsControlClass } from './settings-control-classes'
 import { SettingsSectionCard } from './settings-section-card'
 import { SettingsToggleRow } from './settings-toggle-row'
 import {

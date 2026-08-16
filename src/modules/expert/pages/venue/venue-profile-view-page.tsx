@@ -1,4 +1,4 @@
-import { useCallback, useState, type ReactNode } from 'react'
+import { useCallback, useMemo, useState, type ReactNode } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
@@ -10,16 +10,20 @@ import {
   AlertOctagon,
   ArrowLeft,
   Ban,
+  Bell,
   Briefcase,
   Building2,
+  CheckSquare,
   ChevronRight,
   CircleMinus,
   Eye,
-  FilePlus2,
+  EyeOff,
   FileText,
   Gauge,
   ImageOff,
+  Mail,
   MapPin,
+  PauseCircle,
   Plus,
   Search,
   Share2,
@@ -27,18 +31,27 @@ import {
   Star,
   Tag,
   Upload,
+  User,
   Users,
 } from 'lucide-react'
 
+import { useVenueManagementControls } from '@/modules/settings/hooks/use-venue-public-settings'
 import {
+  useBulkUpdateSpaceVisibility,
   useDeleteVenue,
   useSetVenueOwnerPassword,
   useSuspendVenue,
   useVenueFullView,
+  useVenueInsights,
 } from '../../hooks/use-venues'
+import { useBlockExpert, useForceLogoutExpert } from '../../hooks/use-expert'
 import { useVenueProfileAnalytics } from '../../hooks/use-venue-analytics'
 import type { VenueFullView, VenueFullViewSpaceSummary } from '../../type/venue-full-view'
-import { DecisionActionModal } from '@/shared/components/modal/decision-action-modal'
+import type { PartnerInsightReview } from '../../type/expert-profile'
+import {
+  DecisionActionModal,
+  type DecisionActionModalOption,
+} from '@/shared/components/modal/decision-action-modal'
 import { UpdatePasswordModal } from '@/modules/rbac/components/update-password-modal'
 import { MODERATION_CATEGORY_SLUGS } from '@/modules/settings/api/templates-api'
 import {
@@ -50,6 +63,12 @@ import {
   TableActionsItem,
 } from '@/shared/components/table/table-actions-dropdown'
 import { cn } from '@/shared/lib/cn'
+import { openExpertKycFromProfile } from '../../utils/expert-application-navigation'
+import { useEscalationAssignees } from '@/modules/my-tasks/hooks/use-admin-escalation'
+import { escalateVenueSpaceApplication } from '@/modules/my-tasks/api/escalation-api'
+import { exportDataToFile } from '@/shared/utils/export-utils'
+import { getApiErrorMessage as getSharedApiErrorMessage } from '@/shared/lib/api-error'
+import type { UpdateVenueSpaceVisibilityPayload } from '../../api/venue-api'
 
 type TabKey = 'overview' | 'spaces' | 'analytics' | 'health'
 
@@ -78,11 +97,28 @@ const getApiErrorMessage = (error: unknown) => {
 }
 
 const formatCurrency = (value?: number | null) => {
-  if (value === null || value === undefined) return '—'
-  return `₹${value.toLocaleString('en-IN')}`
+  if (value === null || value === undefined) return '₹0'
+  return `₹${Number(value).toLocaleString('en-IN')}`
 }
 
 const comingSoon = (label: string) => toast.message(`${label} is coming soon`)
+
+const formatReviewDate = (value?: string | null) => {
+  if (!value) return '—'
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return '—'
+  return date.toLocaleDateString('en-GB', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  })
+}
+
+const toInsightsSort = (filter: string): 'recent' | 'top' | 'all' => {
+  if (filter === 'top') return 'top'
+  if (filter === 'all') return 'all'
+  return 'recent'
+}
 
 function SafeImage({
   src,
@@ -147,10 +183,12 @@ const getVenueKycStatusTone = (status?: string | null) => {
 }
 
 function ProfileSidebar({ data }: { data: VenueFullView }) {
+  const navigate = useNavigate()
   const profile = data.profile ?? {
     venueType: null,
     clientSatisfaction: null,
     ratings: null,
+    reviewsCount: null,
     totalBookings: null,
     yearsInOperation: null,
     totalEarnings: null,
@@ -162,6 +200,26 @@ function ProfileSidebar({ data }: { data: VenueFullView }) {
   const venueStatus = overview?.venue?.status
   const kycStatusLabel = formatVenueKycStatusLabel(venueStatus)
   const kycStatusTone = getVenueKycStatusTone(venueStatus)
+  const ratingValue = profile.ratings ?? overview?.venue?.ratings ?? null
+  const reviewCount = profile.reviewsCount ?? overview?.venue?.reviewsCount ?? null
+  const ratingsAvailable =
+    ratingValue != null && typeof reviewCount === 'number'
+      ? reviewCount > 0
+      : ratingValue != null && Number(ratingValue) > 0
+  const partnerId = overview?.venue?.ownerId
+  const venueKycId = profile.kycId || overview?.venue?.kycId
+
+  const handleViewKyc = () => {
+    if (venueKycId) {
+      navigate(`/experts/management/application/${venueKycId}?source=venue_kyc`)
+      return
+    }
+    if (!partnerId) {
+      toast.error('No venue owner found for KYC.')
+      return
+    }
+    void openExpertKycFromProfile(partnerId, 'venue', navigate)
+  }
 
   return (
     <div className="flex flex-col gap-4">
@@ -177,30 +235,31 @@ function ProfileSidebar({ data }: { data: VenueFullView }) {
 
         <SidebarRow label="Venue Type">{profile.venueType || '—'}</SidebarRow>
         <SidebarRow label="Client Satisfaction">
-          {profile.clientSatisfaction !== null ? `${profile.clientSatisfaction}%` : '—'}
+          {profile.clientSatisfaction !== null && profile.clientSatisfaction !== undefined
+            ? `${profile.clientSatisfaction}%`
+            : '0%'}
         </SidebarRow>
         <SidebarRow label="Ratings">
           <span className="inline-flex items-center gap-1">
             <Star className="size-3.5 fill-[#E0A263] text-[#E0A263]" />
-            {profile.ratings ? Number(profile.ratings).toFixed(1) : '—'}
+            {ratingsAvailable ? Number(ratingValue).toFixed(1) : '0'}
+            <span className="text-body-sm text-muted font-normal">
+              ({ratingsAvailable && reviewCount != null ? reviewCount : 0})
+            </span>
           </span>
         </SidebarRow>
-        <SidebarRow label="Total Bookings">{profile.totalBookings ?? '—'}</SidebarRow>
+        <SidebarRow label="Total Bookings">{profile.totalBookings ?? 0}</SidebarRow>
         <SidebarRow label="Years in Operation">
           {profile.yearsInOperation?.years != null
             ? `${profile.yearsInOperation.years} Years`
             : typeof profile.yearsInOperation === 'number'
               ? `${profile.yearsInOperation} Years`
-              : '—'}
+              : '0'}
         </SidebarRow>
         <SidebarRow label="Total Earnings">{formatCurrency(profile.totalEarnings)}</SidebarRow>
         <SidebarRow label="Primary City">{profile.primaryCity || '—'}</SidebarRow>
         <SidebarRow label="KYC">
-          <button
-            type="button"
-            onClick={() => comingSoon('KYC Document')}
-            className={PROFILE_BTN_PRIMARY}
-          >
+          <button type="button" onClick={handleViewKyc} className={PROFILE_BTN_PRIMARY}>
             View
           </button>
         </SidebarRow>
@@ -232,11 +291,14 @@ function ProfileSidebar({ data }: { data: VenueFullView }) {
   )
 }
 
-function OverviewTab({ data }: { data: VenueFullView }) {
+function OverviewTab({ data, venueId }: { data: VenueFullView; venueId: string }) {
   const { venue, gallery } = data.overview
   const location = venue.location
   const poc = gallery?.contact?.contacts?.[0]
   const [reviewFilter, setReviewFilter] = useState('all')
+  const insightsSort = toInsightsSort(reviewFilter)
+  const { data: insightsRes, isLoading: reviewsLoading } = useVenueInsights(venueId, insightsSort)
+  const reviews: PartnerInsightReview[] = insightsRes?.data?.reviews ?? []
 
   const galleryImages = gallery?.galleryImages?.map((image) => image.url) ?? venue.venueImages ?? []
 
@@ -319,10 +381,55 @@ function OverviewTab({ data }: { data: VenueFullView }) {
             </button>
           ))}
         </div>
-        <div className="text-body-sm rounded-lg bg-[#050505] p-4 text-white/50">
-          {venue.reviewsCount
-            ? `${venue.reviewsCount} reviews recorded. Detailed reviews are coming soon.`
-            : 'No reviews yet.'}
+        <div className="space-y-3">
+          {reviewsLoading ? (
+            <p className="text-body-sm rounded-lg bg-[#050505] p-4 text-white/50">
+              Loading reviews…
+            </p>
+          ) : reviews.length === 0 ? (
+            <p className="text-body-sm rounded-lg bg-[#050505] p-4 text-white/50">
+              No reviews yet for this venue.
+            </p>
+          ) : (
+            reviews.map((review) => (
+              <div key={review.id} className="rounded-lg bg-[#050505] p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="flex size-9 items-center justify-center overflow-hidden rounded-full bg-[#141414]">
+                      {review.userAvatarUrl ? (
+                        <img src={review.userAvatarUrl} alt="" className="size-full object-cover" />
+                      ) : (
+                        <User className="text-muted size-4" />
+                      )}
+                    </div>
+                    <div>
+                      <p className="text-[13px] font-semibold text-white">
+                        {review.userName || 'User'}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="flex items-center gap-0.5">
+                      {Array.from({
+                        length: Math.max(0, Math.min(5, review.rating || 0)),
+                      }).map((_, index) => (
+                        <Star key={index} className="size-3 fill-[#E0A263] text-[#E0A263]" />
+                      ))}
+                    </div>
+                    <p className="mt-1 text-[10px] text-white/50">
+                      {review.relativeLabel || formatReviewDate(review.createdAt)}
+                    </p>
+                  </div>
+                </div>
+                {review.title ? (
+                  <p className="text-body-sm mt-2 text-white/50">Booking: {review.title}</p>
+                ) : null}
+                {review.text ? (
+                  <p className="text-body-sm mt-2 text-white/70">{review.text}</p>
+                ) : null}
+              </div>
+            ))
+          )}
         </div>
       </div>
     </div>
@@ -333,10 +440,311 @@ function SpacesTab({ data, venueId }: { data: VenueFullView; venueId: string }) 
   const navigate = useNavigate()
   const [search, setSearch] = useState('')
   const [selectedSpaceId, setSelectedSpaceId] = useState<string | null>(null)
+  const [selectedSpaceIds, setSelectedSpaceIds] = useState<string[]>([])
 
-  const spaces = data.spaces.filter((space) =>
-    space.spaceName.toLowerCase().includes(search.toLowerCase()),
+  const [isBulkHideModalOpen, setIsBulkHideModalOpen] = useState(false)
+  const [isBulkSuspendModalOpen, setIsBulkSuspendModalOpen] = useState(false)
+  const [isEscalateModalOpen, setIsEscalateModalOpen] = useState(false)
+  const [bulkReasons, setBulkReasons] = useState<string[]>([])
+  const [bulkAdminNotes, setBulkAdminNotes] = useState('')
+  const [bulkStartDate, setBulkStartDate] = useState('')
+  const [bulkEndDate, setBulkEndDate] = useState('')
+  const [bulkIndefinitely, setBulkIndefinitely] = useState(false)
+  const [escalateAdminNotes, setEscalateAdminNotes] = useState('')
+  const [selectedEscalationOption, setSelectedEscalationOption] = useState('')
+  const [isEscalating, setIsEscalating] = useState(false)
+
+  const partnerId = data.overview?.venue?.ownerId
+  const { allowDisableVenues } = useVenueManagementControls()
+  const bulkVisibilityMutation = useBulkUpdateSpaceVisibility(venueId)
+  const recordReasonUsage = useRecordModerationReasonUsage()
+  const { options: hideReasonOptions, buildPayload: buildHideReasonPayload } =
+    useModerationReasonOptions(MODERATION_CATEGORY_SLUGS.hideVenue)
+  const { options: suspendReasonOptions, buildPayload: buildSuspendReasonPayload } =
+    useModerationReasonOptions(MODERATION_CATEGORY_SLUGS.suspendVenue)
+  const { data: assigneesData } = useEscalationAssignees('venues.*')
+  const escalationOptions: DecisionActionModalOption[] = useMemo(
+    () =>
+      (assigneesData?.data ?? []).map((assignee) => ({
+        label: assignee.fullname,
+        value: assignee.id,
+      })),
+    [assigneesData?.data],
   )
+
+  const spaces = useMemo(
+    () =>
+      data.spaces.filter((space) => space.spaceName.toLowerCase().includes(search.toLowerCase())),
+    [data.spaces, search],
+  )
+
+  const visibleSpaceIds = useMemo(() => spaces.map((space) => space.spaceId), [spaces])
+  const allVisibleSelected =
+    visibleSpaceIds.length > 0 && visibleSpaceIds.every((id) => selectedSpaceIds.includes(id))
+  const selectedSpaces = useMemo(
+    () => data.spaces.filter((space) => selectedSpaceIds.includes(space.spaceId)),
+    [data.spaces, selectedSpaceIds],
+  )
+
+  const toggleSelectAll = useCallback(() => {
+    if (allVisibleSelected) {
+      setSelectedSpaceIds([])
+    } else {
+      setSelectedSpaceIds(visibleSpaceIds)
+    }
+  }, [allVisibleSelected, visibleSpaceIds])
+
+  const toggleSpaceSelection = useCallback((id: string) => {
+    setSelectedSpaceIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id],
+    )
+  }, [])
+
+  const resetBulkVisibilityModal = useCallback(() => {
+    setBulkReasons([])
+    setBulkAdminNotes('')
+    setBulkStartDate('')
+    setBulkEndDate('')
+    setBulkIndefinitely(false)
+  }, [])
+
+  const closeBulkHideModal = useCallback(() => {
+    setIsBulkHideModalOpen(false)
+    resetBulkVisibilityModal()
+  }, [resetBulkVisibilityModal])
+
+  const closeBulkSuspendModal = useCallback(() => {
+    setIsBulkSuspendModalOpen(false)
+    resetBulkVisibilityModal()
+  }, [resetBulkVisibilityModal])
+
+  const closeEscalateModal = useCallback(() => {
+    setIsEscalateModalOpen(false)
+    setEscalateAdminNotes('')
+    setSelectedEscalationOption('')
+  }, [])
+
+  const toIso = (value: string) =>
+    value ? new Date(`${value}T00:00:00.000Z`).toISOString() : undefined
+
+  const submitBulkVisibility = useCallback(
+    (action: 'hide' | 'suspend') => {
+      if (selectedSpaceIds.length === 0) return
+
+      if (bulkReasons.length === 0) {
+        toast.error('Please select at least one reason.')
+        return
+      }
+
+      if (action === 'suspend' && !bulkIndefinitely && (!bulkStartDate || !bulkEndDate)) {
+        toast.error('Please provide a suspension timeline or choose to suspend indefinitely.')
+        return
+      }
+
+      if (!bulkAdminNotes.trim()) {
+        toast.error('Admin notes are required.')
+        return
+      }
+
+      const reasonPayload =
+        action === 'hide'
+          ? buildHideReasonPayload(bulkReasons)
+          : buildSuspendReasonPayload(bulkReasons)
+
+      if (reasonPayload.selectedReasons.length === 0) {
+        toast.error('Selected reasons are no longer available. Please refresh and try again.')
+        return
+      }
+
+      const payload: UpdateVenueSpaceVisibilityPayload & { spaceIds: string[] } =
+        action === 'hide'
+          ? {
+              spaceIds: selectedSpaceIds,
+              action: 'hide',
+              selectedReasons: reasonPayload.selectedReasons,
+              reasonDetails: reasonPayload.reasonDetails,
+              adminNotes: bulkAdminNotes.trim(),
+            }
+          : {
+              spaceIds: selectedSpaceIds,
+              action: 'suspend',
+              selectedReasons: reasonPayload.selectedReasons,
+              suspendIndefinitely: bulkIndefinitely,
+              startDate: bulkIndefinitely ? undefined : toIso(bulkStartDate),
+              endDate: bulkIndefinitely ? undefined : toIso(bulkEndDate),
+              reasonDetails: reasonPayload.reasonDetails,
+              adminNotes: bulkAdminNotes.trim(),
+            }
+
+      bulkVisibilityMutation.mutate(payload, {
+        onSuccess: (response) => {
+          if (reasonPayload.reasonIds.length > 0) {
+            recordReasonUsage.mutate(reasonPayload.reasonIds)
+          }
+          const successCount =
+            (response as { data?: { successCount?: number } })?.data?.successCount ??
+            selectedSpaceIds.length
+          toast.success(
+            action === 'hide'
+              ? `Hidden ${successCount} space(s) successfully`
+              : `Suspended ${successCount} space(s) successfully`,
+          )
+          setSelectedSpaceIds([])
+          if (action === 'hide') closeBulkHideModal()
+          else closeBulkSuspendModal()
+        },
+        onError: (err) => toast.error(getSharedApiErrorMessage(err)),
+      })
+    },
+    [
+      bulkAdminNotes,
+      bulkEndDate,
+      bulkIndefinitely,
+      bulkReasons,
+      bulkStartDate,
+      bulkVisibilityMutation,
+      buildHideReasonPayload,
+      buildSuspendReasonPayload,
+      closeBulkHideModal,
+      closeBulkSuspendModal,
+      recordReasonUsage,
+      selectedSpaceIds,
+    ],
+  )
+
+  const handleBulkExport = useCallback(() => {
+    if (selectedSpaces.length === 0) {
+      toast.error('Please select at least one space to export.')
+      return
+    }
+
+    try {
+      const headers = [
+        'Space ID',
+        'Space Name',
+        'Venue ID',
+        'Partner ID',
+        'City',
+        'State',
+        'Capacity',
+        'Weekday Price',
+        'Weekend Price',
+        'Status',
+        'Hidden',
+        'Suspended',
+      ]
+      const rows = selectedSpaces.map((space) => [
+        space.spaceId,
+        space.spaceName || 'N/A',
+        venueId,
+        partnerId || 'N/A',
+        space.city || 'N/A',
+        space.state || 'N/A',
+        space.capacity == null ? 'N/A' : String(space.capacity),
+        space.weekdayPrice == null ? 'N/A' : String(space.weekdayPrice),
+        space.weekendPrice == null ? 'N/A' : String(space.weekendPrice),
+        space.status || 'N/A',
+        space.isHidden ? 'Yes' : 'No',
+        space.isSuspend ? 'Yes' : 'No',
+      ])
+      exportDataToFile(headers, rows, 'excel', 'venue_selected_spaces_export')
+      toast.success(`Exported ${selectedSpaces.length} selected space(s)`)
+    } catch {
+      toast.error('Failed to export selected spaces.')
+    }
+  }, [partnerId, selectedSpaces, venueId])
+
+  const handleBulkNotify = useCallback(() => {
+    if (!partnerId) {
+      toast.error('Venue partner ID is missing.')
+      return
+    }
+    const params = new URLSearchParams({
+      channel: 'push',
+      audience: 'venue-management',
+      partnerIds: partnerId,
+    })
+    navigate(`/communication/create?${params.toString()}`)
+  }, [navigate, partnerId])
+
+  const handleBulkMessage = useCallback(() => {
+    if (!partnerId) {
+      toast.error('Venue partner ID is missing.')
+      return
+    }
+    const params = new URLSearchParams({
+      channel: 'email',
+      audience: 'venue-management',
+      partnerIds: partnerId,
+    })
+    navigate(`/communication/create?${params.toString()}`)
+  }, [navigate, partnerId])
+
+  const handleEscalateSubmit = useCallback(async () => {
+    if (selectedSpaces.length === 0) {
+      toast.error('Please select at least one space.')
+      return
+    }
+    if (!selectedEscalationOption) {
+      toast.error('Please select a sub-admin to assign.')
+      return
+    }
+    if (!escalateAdminNotes.trim()) {
+      toast.error('Admin notes are required.')
+      return
+    }
+
+    const selectedAssignee = (assigneesData?.data ?? []).find(
+      (item) => item.id === selectedEscalationOption,
+    )
+    const note = escalateAdminNotes.trim()
+    setIsEscalating(true)
+
+    try {
+      const results = await Promise.allSettled(
+        selectedSpaces.map((space) =>
+          escalateVenueSpaceApplication(space.spaceId, {
+            assigneeSubAdminId: selectedEscalationOption,
+            assigneeName: selectedAssignee?.fullname || '',
+            adminNote: note,
+            entityTitle: space.spaceName,
+            venueId,
+            applicationUrl: `/venues/management/profile/${venueId}/space/${space.spaceId}`,
+          }),
+        ),
+      )
+
+      const successCount = results.filter((result) => result.status === 'fulfilled').length
+      const failedCount = results.length - successCount
+
+      if (successCount === 0) {
+        const firstError = results.find((result) => result.status === 'rejected') as
+          | PromiseRejectedResult
+          | undefined
+        toast.error(getSharedApiErrorMessage(firstError?.reason) || 'Failed to escalate spaces.')
+        return
+      }
+
+      toast.success(
+        failedCount > 0
+          ? `Escalated ${successCount} space(s); ${failedCount} failed.`
+          : `Successfully escalated ${successCount} space(s)`,
+      )
+      setSelectedSpaceIds([])
+      closeEscalateModal()
+    } catch (err) {
+      toast.error(getSharedApiErrorMessage(err) || 'Failed to escalate spaces.')
+    } finally {
+      setIsEscalating(false)
+    }
+  }, [
+    assigneesData?.data,
+    closeEscalateModal,
+    escalateAdminNotes,
+    selectedEscalationOption,
+    selectedSpaces,
+    venueId,
+  ])
 
   const renderCapacity = (capacity: VenueFullViewSpaceSummary['capacity']) => {
     if (capacity === null || capacity === undefined) return '—'
@@ -351,7 +759,7 @@ function SpacesTab({ data, venueId }: { data: VenueFullView; venueId: string }) 
           <input
             value={search}
             onChange={(event) => setSearch(event.target.value)}
-            placeholder="Search by service title"
+            placeholder="Search by space name"
             className="placeholder:text-muted h-10 w-full rounded-md border border-white/10 bg-[#050505] pr-3 pl-11 text-[13px] text-white outline-none focus:border-[#E0A263]/50"
           />
         </div>
@@ -365,163 +773,331 @@ function SpacesTab({ data, venueId }: { data: VenueFullView; venueId: string }) 
         </button>
       </div>
 
-      <label className="text-body-sm text-muted mt-4 flex w-fit items-center gap-2">
+      <label className="text-body-sm text-muted mt-4 flex w-fit cursor-pointer items-center gap-2">
         <input
           type="checkbox"
-          onChange={() => comingSoon('Bulk selection')}
+          checked={allVisibleSelected}
+          onChange={toggleSelectAll}
           className="rounded border-slate-700 bg-transparent"
         />
         Select All
       </label>
 
+      {selectedSpaceIds.length > 0 && (
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-md border border-blue-500 bg-blue-950/80 px-4 py-2.5">
+          <div className="flex items-center gap-2 text-xs font-bold text-white">
+            <CheckSquare className="size-3.5" aria-hidden="true" />
+            <span>
+              {selectedSpaceIds.length} {selectedSpaceIds.length === 1 ? 'Space' : 'Spaces'}{' '}
+              Selected
+            </span>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={handleBulkExport}
+              title="Export selected spaces"
+              className="flex size-8 items-center justify-center rounded-md bg-black text-white transition-colors hover:bg-white/10"
+            >
+              <Upload className="size-3.5" aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                resetBulkVisibilityModal()
+                setIsBulkHideModalOpen(true)
+              }}
+              title="Hide selected spaces"
+              className="flex size-8 items-center justify-center rounded-md bg-black text-white transition-colors hover:bg-white/10"
+            >
+              <EyeOff className="size-3.5" aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                if (!allowDisableVenues) {
+                  toast.error('Disabling venues is turned off in Venue Management settings')
+                  return
+                }
+                resetBulkVisibilityModal()
+                setIsBulkSuspendModalOpen(true)
+              }}
+              title="Suspend selected spaces"
+              className="flex size-8 items-center justify-center rounded-md bg-black text-white transition-colors hover:bg-white/10"
+            >
+              <PauseCircle className="size-3.5" aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              onClick={handleBulkNotify}
+              title="Notify venue partner"
+              className="flex size-8 items-center justify-center rounded-md bg-black text-white transition-colors hover:bg-white/10"
+            >
+              <Bell className="size-3.5" aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              onClick={handleBulkMessage}
+              title="Message venue partner"
+              className="flex size-8 items-center justify-center rounded-md bg-black text-white transition-colors hover:bg-white/10"
+            >
+              <Mail className="size-3.5" aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsEscalateModalOpen(true)}
+              title="Escalate selected spaces"
+              className="flex size-8 items-center justify-center rounded-md bg-black text-white transition-colors hover:bg-white/10"
+            >
+              <FileText className="size-3.5" aria-hidden="true" />
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="mt-4 space-y-3">
         {spaces.length === 0 ? (
           <p className="text-body-sm rounded-lg bg-[#050505] p-4 text-white/50">No spaces found.</p>
         ) : (
-          spaces.map((space) => (
-            <button
-              key={space.spaceId}
-              type="button"
-              onClick={() => {
-                setSelectedSpaceId(space.spaceId)
-                navigate(`/venues/management/profile/${venueId}/space/${space.spaceId}`)
-              }}
-              className="flex w-full items-center rounded-xl bg-[#050505] px-5 py-5 transition-colors hover:border hover:border-[#E0A263]/30"
-            >
-              <input
-                type="checkbox"
-                onClick={(e) => e.stopPropagation()}
-                className="h-6 w-6 rounded border-white/30 accent-white"
-              />
-
-              <div className="ml-3 h-28 w-32 shrink-0 overflow-hidden rounded-xl">
-                <SafeImage
-                  src={space.coverImage}
-                  alt={space.spaceName}
-                  className="size-full object-cover"
-                  fallback={
-                    <div className="text-muted flex size-full items-center justify-center">
-                      <MapPin className="size-5" />
-                    </div>
-                  }
+          spaces.map((space) => {
+            const selected = selectedSpaceIds.includes(space.spaceId)
+            return (
+              <button
+                key={space.spaceId}
+                type="button"
+                onClick={() => {
+                  setSelectedSpaceId(space.spaceId)
+                  navigate(`/venues/management/profile/${venueId}/space/${space.spaceId}`)
+                }}
+                className={cn(
+                  'flex w-full items-center rounded-xl bg-[#050505] px-5 py-5 transition-colors hover:border hover:border-[#E0A263]/30',
+                  selected && 'border border-blue-500 bg-blue-950/20',
+                )}
+              >
+                <input
+                  type="checkbox"
+                  checked={selected}
+                  onClick={(e) => e.stopPropagation()}
+                  onChange={() => toggleSpaceSelection(space.spaceId)}
+                  className="h-6 w-6 rounded border-white/30 accent-white"
                 />
-              </div>
 
-              <div className="ml-4 flex flex-1 items-center justify-between">
-                <div>
-                  <p className="text-body-md font-semibold text-white">{space.spaceName}</p>
-
-                  <p className="text-body-sm mt-1 text-white/50">
-                    {[space.city, space.state].filter(Boolean).join(', ') || '—'}
-                  </p>
-
-                  <div className="text-body-sm mt-2 flex items-center gap-3 text-white/50">
-                    <span className="inline-flex items-center gap-1">
-                      <Users className="size-3.5" />
-                      {renderCapacity(space.capacity)}
-                    </span>
-
-                    <span className="inline-flex items-center gap-1">
-                      <MapPin className="size-3.5" />
-                      21 Sep - 30 Sep
-                    </span>
-                  </div>
-
-                  <p className="mt-2 text-[15px] font-semibold text-white">
-                    {formatCurrency(space.weekdayPrice)}
-                  </p>
+                <div className="ml-3 h-28 w-32 shrink-0 overflow-hidden rounded-xl">
+                  <SafeImage
+                    src={space.coverImage}
+                    alt={space.spaceName}
+                    className="size-full object-cover"
+                    fallback={
+                      <div className="text-muted flex size-full items-center justify-center">
+                        <MapPin className="size-5" />
+                      </div>
+                    }
+                  />
                 </div>
 
-                <ChevronRight
-                  className={cn(
-                    'ml-auto size-5 shrink-0 transition-colors duration-200',
-                    selectedSpaceId === space.spaceId ? 'text-[#AEEBFF]' : 'text-white',
-                  )}
-                />
-              </div>
-            </button>
-          ))
+                <div className="ml-4 flex flex-1 items-center justify-between">
+                  <div>
+                    <p className="text-body-md font-semibold text-white">{space.spaceName}</p>
+
+                    <p className="text-body-sm mt-1 text-white/50">
+                      {[space.city, space.state].filter(Boolean).join(', ') || '—'}
+                    </p>
+
+                    <div className="text-body-sm mt-2 flex items-center gap-3 text-white/50">
+                      <span className="inline-flex items-center gap-1">
+                        <Users className="size-3.5" />
+                        {renderCapacity(space.capacity)}
+                      </span>
+
+                      <span className="inline-flex items-center gap-1">
+                        <MapPin className="size-3.5" />
+                        21 Sep - 30 Sep
+                      </span>
+                    </div>
+
+                    <p className="mt-2 text-[15px] font-semibold text-white">
+                      {formatCurrency(space.weekdayPrice)}
+                    </p>
+                  </div>
+
+                  <ChevronRight
+                    className={cn(
+                      'ml-auto size-5 shrink-0 transition-colors duration-200',
+                      selectedSpaceId === space.spaceId ? 'text-[#AEEBFF]' : 'text-white',
+                    )}
+                  />
+                </div>
+              </button>
+            )
+          })
         )}
       </div>
+
+      <DecisionActionModal
+        open={isBulkHideModalOpen}
+        variant="suspend"
+        title={
+          selectedSpaceIds.length > 1 ? `Hide ${selectedSpaceIds.length} Spaces` : 'Hide Space'
+        }
+        headerDescription="Are you sure you want to hide the selected spaces? This will prevent them from appearing in partner-facing listings."
+        description=""
+        submitLabel={
+          selectedSpaceIds.length > 1 ? `Hide ${selectedSpaceIds.length} Spaces` : 'Hide'
+        }
+        showHeroIcon={false}
+        submitIcon="none"
+        reasonOptions={hideReasonOptions}
+        selectedReasons={bulkReasons}
+        onReasonToggle={(value) =>
+          setBulkReasons((current) =>
+            current.includes(value)
+              ? current.filter((item) => item !== value)
+              : [...current, value],
+          )
+        }
+        showReasonsLabel
+        reasonLabel="Reasons"
+        reasonRequired={false}
+        adminNotes={bulkAdminNotes}
+        onAdminNotesChange={setBulkAdminNotes}
+        onClose={closeBulkHideModal}
+        onSubmit={() => submitBulkVisibility('hide')}
+        isSubmitting={bulkVisibilityMutation.isPending}
+      />
+
+      <DecisionActionModal
+        open={isBulkSuspendModalOpen}
+        variant="suspend"
+        title={
+          selectedSpaceIds.length > 1
+            ? `Suspend ${selectedSpaceIds.length} Spaces`
+            : 'Suspend Space'
+        }
+        headerDescription="Are you sure you want to suspend the selected spaces? This action will prevent new bookings and notify existing customers."
+        description=""
+        submitLabel={
+          selectedSpaceIds.length > 1 ? `Suspend ${selectedSpaceIds.length} Spaces` : 'Suspend'
+        }
+        showHeroIcon={false}
+        submitIcon="none"
+        reasonOptions={suspendReasonOptions}
+        selectedReasons={bulkReasons}
+        onReasonToggle={(value) =>
+          setBulkReasons((current) =>
+            current.includes(value)
+              ? current.filter((item) => item !== value)
+              : [...current, value],
+          )
+        }
+        showReasonsLabel
+        reasonLabel="Reasons"
+        reasonRequired={false}
+        showTimeline
+        startDate={bulkStartDate}
+        onStartDateChange={setBulkStartDate}
+        endDate={bulkEndDate}
+        onEndDateChange={setBulkEndDate}
+        indefinite={bulkIndefinitely}
+        onIndefiniteChange={setBulkIndefinitely}
+        adminNotes={bulkAdminNotes}
+        onAdminNotesChange={setBulkAdminNotes}
+        onClose={closeBulkSuspendModal}
+        onSubmit={() => submitBulkVisibility('suspend')}
+        isSubmitting={bulkVisibilityMutation.isPending}
+      />
+
+      <DecisionActionModal
+        open={isEscalateModalOpen}
+        variant="escalate"
+        title={
+          selectedSpaceIds.length > 1
+            ? `Escalate ${selectedSpaceIds.length} Spaces`
+            : 'Escalate Application'
+        }
+        description={
+          selectedSpaceIds.length > 1
+            ? `Are you sure you want to escalate ${selectedSpaceIds.length} selected spaces? These will be reviewed by the selected sub-admin.`
+            : 'Are you sure you want to escalate this Application? This Post will be reviewed by the selected parties.'
+        }
+        submitLabel="Escalate"
+        escalationOptions={escalationOptions}
+        selectedEscalationOption={selectedEscalationOption}
+        onEscalationOptionChange={setSelectedEscalationOption}
+        adminNotes={escalateAdminNotes}
+        onAdminNotesChange={setEscalateAdminNotes}
+        onClose={closeEscalateModal}
+        onSubmit={() => {
+          void handleEscalateSubmit()
+        }}
+        isSubmitting={isEscalating}
+      />
     </div>
   )
 }
 
 function AnalyticsTab({ data, venueId }: { data: VenueFullView; venueId: string }) {
   const navigate = useNavigate()
-  const { data: analyticsData } = useVenueProfileAnalytics(venueId)
-  const profile = data?.profile as
-    (typeof data.profile & { analytics?: Record<string, unknown> }) | undefined
-  const venueAnalytics = profile?.analytics
+  const { data: analyticsData, isLoading } = useVenueProfileAnalytics(venueId)
+  const profileAnalytics = data?.profile as
+    | (typeof data.profile & { analytics?: Record<string, unknown> })
+    | undefined
+  const venueAnalytics = profileAnalytics?.analytics
+  const cardsFromApi = analyticsData?.profileCards
 
-  const formatMetric = (value?: string | number | null, fallback = '—') => {
-    if (value === null || value === undefined || value === '') return fallback
+  const formatMetric = (value?: string | number | null) => {
+    if (value === null || value === undefined || value === '') return '0'
     if (typeof value === 'number') return value.toLocaleString('en-IN')
     return String(value)
   }
 
-  const eventsHosted =
-    analyticsData?.bookings?.eventMetrics?.find((m) => m.label.includes('Confirmed'))?.value ||
-    formatMetric(profile?.totalBookings, '24')
-
-  const totalAttendees =
-    analyticsData?.overview?.visibilityMetrics?.find((m) => m.label.includes('Views'))?.value ||
-    formatMetric(venueAnalytics?.totalAttendees as string | number, '1,840+')
-
-  const repeatAttendees = String(
-    analyticsData?.bookings?.eventMetrics?.find((m) => m.label.includes('Completed'))?.value ||
-      venueAnalytics?.repeatAttendees ||
-      '30',
-  )
-
-  const upcomingEvents =
-    analyticsData?.bookings?.eventMetrics?.find((m) => m.label.includes('Upcoming'))?.value ||
-    String(venueAnalytics?.upcomingEvents || '3')
-
-  const eventCompletionRate =
-    analyticsData?.overview?.bookingSnapshot?.find((m) => m.label.includes('Completion Rate'))
-      ?.value || (profile?.clientSatisfaction != null ? `${profile.clientSatisfaction}%` : '100%')
-
-  const avgResponseTime = String(venueAnalytics?.avgResponseTime || '2 Hrs')
-
-  const noOfEventsRejected =
-    analyticsData?.bookings?.eventMetrics?.find((m) => m.label.includes('Canceled'))?.value ||
-    String(venueAnalytics?.noOfEventsRejected || '3')
-
-  const noOfEventsSuspended = String(venueAnalytics?.noOfEventsSuspended || '0')
-
   const cards: { label: string; value: string }[] = [
     {
       label: 'Events Hosted',
-      value: eventsHosted,
+      value:
+        cardsFromApi?.eventsHosted || formatMetric(venueAnalytics?.eventsHosted as string | number),
     },
     {
       label: 'Total Attendees',
-      value: totalAttendees,
+      value:
+        cardsFromApi?.totalAttendees ||
+        formatMetric(venueAnalytics?.totalAttendees as string | number),
     },
     {
       label: 'Repeat Attendees',
-      value: repeatAttendees,
+      value:
+        cardsFromApi?.repeatAttendees ||
+        formatMetric(venueAnalytics?.repeatAttendees as string | number),
     },
     {
       label: 'Upcoming Events',
-      value: upcomingEvents,
+      value:
+        cardsFromApi?.upcomingEvents ||
+        formatMetric(venueAnalytics?.upcomingEvents as string | number),
     },
     {
       label: 'Event Completion Rate',
-      value: eventCompletionRate,
+      value:
+        cardsFromApi?.eventCompletionRate ||
+        formatMetric(venueAnalytics?.eventCompletionRate as string | number),
     },
     {
       label: 'Avg. Response Time',
-      value: avgResponseTime,
+      value:
+        cardsFromApi?.avgResponseTime ||
+        formatMetric(venueAnalytics?.avgResponseTime as string | number),
     },
     {
       label: 'No. Of Events Rejected',
-      value: noOfEventsRejected,
+      value:
+        cardsFromApi?.noOfEventsRejected ||
+        formatMetric(venueAnalytics?.noOfEventsRejected as string | number),
     },
     {
       label: 'No. of event Suspended',
-      value: noOfEventsSuspended,
+      value:
+        cardsFromApi?.noOfEventsSuspended ||
+        formatMetric(venueAnalytics?.noOfEventsSuspended as string | number),
     },
   ]
 
@@ -538,15 +1114,22 @@ function AnalyticsTab({ data, venueId }: { data: VenueFullView; venueId: string 
         </button>
       </div>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {cards.map((card) => (
-          <div key={card.label} className="rounded-lg bg-[#050505] p-4">
-            <div className="flex items-center justify-between">
-              <p className="text-body-sm text-muted">{card.label}</p>
-              <Briefcase className="size-4 text-[#E0A263]" />
-            </div>
-            <p className="mt-3 text-xl font-bold text-white">{card.value}</p>
-          </div>
-        ))}
+        {isLoading
+          ? Array.from({ length: 8 }).map((_, index) => (
+              <div key={`analytics-card-skeleton-${index}`} className="rounded-lg bg-[#050505] p-4">
+                <div className="h-3 w-28 animate-pulse rounded bg-white/10" />
+                <div className="mt-3 h-7 w-16 animate-pulse rounded bg-white/10" />
+              </div>
+            ))
+          : cards.map((card) => (
+              <div key={card.label} className="rounded-lg bg-[#050505] p-4">
+                <div className="flex items-center justify-between">
+                  <p className="text-body-sm text-muted">{card.label}</p>
+                  <Briefcase className="size-4 text-[#E0A263]" />
+                </div>
+                <p className="mt-3 text-xl font-bold text-white">{card.value}</p>
+              </div>
+            ))}
         <button
           type="button"
           onClick={() => {
@@ -628,7 +1211,10 @@ export function VenueProfileViewPage() {
   const suspendVenueMutation = useSuspendVenue()
   const deleteVenueMutation = useDeleteVenue()
   const setVenueOwnerPasswordMutation = useSetVenueOwnerPassword()
+  const blockExpertMutation = useBlockExpert()
+  const forceLogoutExpertMutation = useForceLogoutExpert()
   const recordReasonUsage = useRecordModerationReasonUsage()
+  const { allowDisableVenues } = useVenueManagementControls()
   const { options: suspendReasonOptions, buildPayload: buildSuspendReasonPayload } =
     useModerationReasonOptions(MODERATION_CATEGORY_SLUGS.suspendVenue)
   const { options: deleteReasonOptions, buildPayload: buildDeleteReasonPayload } =
@@ -636,6 +1222,27 @@ export function VenueProfileViewPage() {
 
   const { data, isLoading, isError, error } = useVenueFullView(venueId)
   const fullView = data?.data
+  const ownerPartnerId = String(
+    fullView?.overview?.venue?.ownerId || fullView?.overview?.venue?.partnerId || '',
+  ).trim()
+  const ownerPartnerExists =
+    fullView?.ownerPartnerExists ??
+    fullView?.overview?.venue?.ownerPartnerExists ??
+    Boolean(ownerPartnerId)
+
+  const ensureOwnerPartner = useCallback(() => {
+    if (!ownerPartnerId) {
+      toast.error('This venue has no linked owner account.')
+      return null
+    }
+    if (!ownerPartnerExists) {
+      toast.error(
+        'Owner partner account was permanently deleted from auth. Block, logout, and password reset are unavailable until the venue is re-linked to a partner.',
+      )
+      return null
+    }
+    return ownerPartnerId
+  }, [ownerPartnerExists, ownerPartnerId])
 
   const closeSuspendModal = useCallback(() => {
     setSuspendModalOpen(false)
@@ -656,11 +1263,8 @@ export function VenueProfileViewPage() {
 
   const handlePasswordSubmit = useCallback(
     async (payload: { oldPassword: string; newPassword: string; confirmNewPassword: string }) => {
-      const partnerId = fullView?.overview?.venue?.ownerId
-      if (!partnerId) {
-        toast.error('Venue owner account not found.')
-        return
-      }
+      const partnerId = ensureOwnerPartner()
+      if (!partnerId) return
 
       if (payload.newPassword.length < 6) {
         toast.error('Password must be at least 6 characters')
@@ -687,7 +1291,7 @@ export function VenueProfileViewPage() {
         toast.error(err?.response?.data?.message || 'Failed to update password')
       }
     },
-    [fullView?.overview?.venue?.ownerId, setVenueOwnerPasswordMutation],
+    [ensureOwnerPartner, setVenueOwnerPasswordMutation],
   )
 
   const toggleSuspendReason = useCallback((value: string) => {
@@ -939,23 +1543,10 @@ export function VenueProfileViewPage() {
           </TableActionsItem>
           <TableActionsItem
             tone="light"
-            icon={<FilePlus2 className="size-3.5" />}
-            onClick={() => {
-              setProfileMenuOpen(false)
-              comingSoon('Merge Records')
-            }}
-          >
-            Merge Records
-          </TableActionsItem>
-          <TableActionsItem
-            tone="light"
             icon={<Eye className="size-3.5" />}
             onClick={() => {
               setProfileMenuOpen(false)
-              if (!fullView?.overview?.venue?.ownerId) {
-                toast.error('Venue owner account not found.')
-                return
-              }
+              if (!ensureOwnerPartner()) return
               setPasswordModalOpen(true)
             }}
           >
@@ -966,7 +1557,19 @@ export function VenueProfileViewPage() {
             icon={<AlertOctagon className="size-3.5" />}
             onClick={() => {
               setProfileMenuOpen(false)
-              comingSoon('Logout User')
+              const ownerId = ensureOwnerPartner()
+              if (!ownerId) return
+              forceLogoutExpertMutation.mutate(ownerId, {
+                onSuccess: (res) => {
+                  toast.success(
+                    res?.message ||
+                      'Owner sessions revoked. They will be logged out on the next app request.',
+                  )
+                },
+                onError: (err: unknown) => {
+                  toast.error(getApiErrorMessage(err) || 'Failed to logout user')
+                },
+              })
             }}
           >
             Logout User
@@ -976,6 +1579,10 @@ export function VenueProfileViewPage() {
             icon={<Ban className="size-3.5" />}
             onClick={() => {
               setProfileMenuOpen(false)
+              if (!allowDisableVenues) {
+                toast.error('Disabling venues is turned off in Venue Management settings')
+                return
+              }
               setSuspendModalOpen(true)
             }}
           >
@@ -986,7 +1593,16 @@ export function VenueProfileViewPage() {
             icon={<CircleMinus className="size-3.5" />}
             onClick={() => {
               setProfileMenuOpen(false)
-              comingSoon('Block User')
+              const ownerId = ensureOwnerPartner()
+              if (!ownerId) return
+              blockExpertMutation.mutate(ownerId, {
+                onSuccess: (res) => {
+                  toast.success(res?.message || 'Owner blocked successfully')
+                },
+                onError: (err: unknown) => {
+                  toast.error(getApiErrorMessage(err) || 'Failed to block user')
+                },
+              })
             }}
           >
             Block User
@@ -1075,7 +1691,9 @@ export function VenueProfileViewPage() {
             ))}
           </div>
 
-          {activeTab === 'overview' && <OverviewTab data={fullView} />}
+          {activeTab === 'overview' && (
+            <OverviewTab data={fullView} venueId={venueId ?? venue._id} />
+          )}
           {activeTab === 'spaces' && <SpacesTab data={fullView} venueId={venueId} />}
           {activeTab === 'analytics' && <AnalyticsTab data={fullView} venueId={venueId ?? ''} />}
           {activeTab === 'health' && <HealthTab data={fullView} />}

@@ -9,6 +9,7 @@ import {
   CircleMinus,
   Eye,
   EyeOff,
+  FileText,
   Hourglass,
   Mail,
   Package,
@@ -30,9 +31,6 @@ import {
   useBulkPauseServices,
   useBulkHideServices,
   useBulkDisableServices,
-  useBulkExportServices,
-  useBulkNotifyServices,
-  useBulkMessageServices,
 } from '../../hooks/use-services'
 import { useTableColumnPreferences } from '../../hooks/use-ui-preferences'
 import { getServiceManagementViewPath } from '../../lib/service-navigation'
@@ -45,17 +43,27 @@ import {
   TableActionsDropdown,
   TableActionsItem,
 } from '@/shared/components/table/table-actions-dropdown'
-import { DecisionActionModal } from '@/shared/components/modal/decision-action-modal'
+import {
+  DecisionActionModal,
+  type DecisionActionModalOption,
+} from '@/shared/components/modal/decision-action-modal'
 import { StatusQuickLinkCard, StatusQuickLinkRow } from '@/shared/components/status-quick-link-card'
 import { Button } from '@/shared/components/ui/button'
 import { statusCardTones } from '@/shared/lib/design-tokens'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 import type { FilterValues } from '@/shared/types/data-filter'
+import { exportDataToFile } from '@/shared/utils/export-utils'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
 import { MODERATION_CATEGORY_SLUGS } from '@/modules/settings/api/templates-api'
 import {
   useModerationReasonOptions,
   useRecordModerationReasonUsage,
 } from '@/modules/settings/hooks/use-templates'
+import { useEscalationAssignees } from '@/modules/my-tasks/hooks/use-admin-escalation'
+import {
+  escalateConsultationApplication,
+  escalateServiceApplication,
+} from '@/modules/my-tasks/api/escalation-api'
 
 const formatPrice = (price: number) =>
   new Intl.NumberFormat('en-IN', {
@@ -92,15 +100,27 @@ export const ServiceManagementPage = () => {
   const [bulkPauseIndefinitely, setBulkPauseIndefinitely] = useState(false)
   const [bulkPauseAdminNotes, setBulkPauseAdminNotes] = useState('')
 
+  const [isEscalateModalOpen, setIsEscalateModalOpen] = useState(false)
+  const [escalateAdminNotes, setEscalateAdminNotes] = useState('')
+  const [selectedEscalationOption, setSelectedEscalationOption] = useState('')
+  const [isEscalating, setIsEscalating] = useState(false)
+
   const suspendServiceMutation = useSuspendService()
   const deleteServiceMutation = useDeleteService()
   const bulkDeleteMutation = useBulkDeleteServices()
   const bulkPauseMutation = useBulkPauseServices()
   const bulkHideMutation = useBulkHideServices()
   const bulkDisableMutation = useBulkDisableServices()
-  const bulkExportMutation = useBulkExportServices()
-  const bulkNotifyMutation = useBulkNotifyServices()
-  const bulkMessageMutation = useBulkMessageServices()
+
+  const { data: assigneesData } = useEscalationAssignees('services.*')
+  const escalationOptions: DecisionActionModalOption[] = useMemo(
+    () =>
+      (assigneesData?.data ?? []).map((assignee) => ({
+        label: assignee.fullname,
+        value: assignee.id,
+      })),
+    [assigneesData?.data],
+  )
 
   const recordReasonUsage = useRecordModerationReasonUsage()
   const { options: suspendReasonOptions, buildPayload: buildSuspendReasonPayload } =
@@ -220,57 +240,6 @@ export const ServiceManagementPage = () => {
     })
   }, [selectedServiceIds, bulkDisableMutation])
 
-  const handleBulkExport = useCallback(() => {
-    if (selectedServiceIds.length === 0) return
-    bulkExportMutation.mutate(selectedServiceIds, {
-      onSuccess: (res: { data?: { services?: unknown[] } }) => {
-        const servicesData = res?.data?.services ?? []
-        toast.success(`Exported ${servicesData.length || selectedServiceIds.length} service(s)`)
-        setSelectedServiceIds([])
-      },
-      onError: (err: unknown) => {
-        const error = err as { response?: { data?: { message?: string } } }
-        toast.error(error?.response?.data?.message || 'Failed to export services')
-      },
-    })
-  }, [selectedServiceIds, bulkExportMutation])
-
-  const handleBulkNotify = useCallback(() => {
-    if (selectedServiceIds.length === 0) return
-    bulkNotifyMutation.mutate(selectedServiceIds, {
-      onSuccess: (res: { message?: string; data?: { message?: string } }) => {
-        toast.success(
-          res?.data?.message ||
-            res?.message ||
-            `Notified experts for ${selectedServiceIds.length} service(s)`,
-        )
-        setSelectedServiceIds([])
-      },
-      onError: (err: unknown) => {
-        const error = err as { response?: { data?: { message?: string } } }
-        toast.error(error?.response?.data?.message || 'Failed to notify experts')
-      },
-    })
-  }, [selectedServiceIds, bulkNotifyMutation])
-
-  const handleBulkMessage = useCallback(() => {
-    if (selectedServiceIds.length === 0) return
-    bulkMessageMutation.mutate(selectedServiceIds, {
-      onSuccess: (res: { message?: string; data?: { message?: string } }) => {
-        toast.success(
-          res?.data?.message ||
-            res?.message ||
-            `Sent message/ticket for ${selectedServiceIds.length} service(s)`,
-        )
-        setSelectedServiceIds([])
-      },
-      onError: (err: unknown) => {
-        const error = err as { response?: { data?: { message?: string } } }
-        toast.error(error?.response?.data?.message || 'Failed to send message')
-      },
-    })
-  }, [selectedServiceIds, bulkMessageMutation])
-
   const navigate = useNavigate()
   const tableColumnPreferencesQuery = useTableColumnPreferences(SERVICE_MANAGEMENT_MODULE_KEY)
   const {
@@ -364,6 +333,163 @@ export const ServiceManagementPage = () => {
   const someVisibleServicesSelected = visibleServiceIds.some((id) =>
     selectedServiceIds.includes(id),
   )
+  const selectedServices = useMemo(
+    () => services.filter((service) => selectedServiceIds.includes(service._id)),
+    [services, selectedServiceIds],
+  )
+  const selectedPartnerIds = useMemo(
+    () => [
+      ...new Set(
+        selectedServices.map((service) => String(service.partnerId || '').trim()).filter(Boolean),
+      ),
+    ],
+    [selectedServices],
+  )
+
+  const closeEscalateModal = useCallback(() => {
+    setIsEscalateModalOpen(false)
+    setEscalateAdminNotes('')
+    setSelectedEscalationOption('')
+  }, [])
+
+  const handleBulkExport = useCallback(() => {
+    if (selectedServiceCount === 0) {
+      toast.error('Please select at least one service.')
+      return
+    }
+    if (selectedServices.length === 0) {
+      toast.error(
+        'Selected services are not loaded on this page. Go back to the page where they were selected, then export.',
+      )
+      return
+    }
+
+    try {
+      const headers = [
+        'Service ID',
+        'Title',
+        'Expert',
+        'Partner ID',
+        'Category',
+        'Service Type',
+        'Status',
+        'Pricing',
+        'Created At',
+      ]
+      const rows = selectedServices.map((service) => [
+        service.serviceid || service._id,
+        service.title || 'N/A',
+        service.expertName || service.partnerName || 'N/A',
+        service.partnerId || 'N/A',
+        service.categoryName || 'N/A',
+        service.serviceType || 'N/A',
+        service.status || 'N/A',
+        String(service.pricing ?? 'N/A'),
+        service.createdAt ? new Date(service.createdAt).toLocaleDateString() : 'N/A',
+      ])
+      exportDataToFile(headers, rows, 'excel', 'selected_services_export')
+      toast.success(`Exported ${selectedServices.length} selected service(s)`)
+    } catch {
+      toast.error('Failed to export selected services.')
+    }
+  }, [selectedServiceCount, selectedServices])
+
+  const handleBulkNotify = useCallback(() => {
+    if (selectedPartnerIds.length === 0) {
+      toast.error('Selected services do not have partner IDs to notify.')
+      return
+    }
+    const params = new URLSearchParams({
+      channel: 'push',
+      audience: 'service-management',
+      partnerIds: selectedPartnerIds.join(','),
+    })
+    navigate(`/communication/create?${params.toString()}`)
+  }, [navigate, selectedPartnerIds])
+
+  const handleBulkMessage = useCallback(() => {
+    if (selectedPartnerIds.length === 0) {
+      toast.error('Selected services do not have partner IDs to message.')
+      return
+    }
+    const params = new URLSearchParams({
+      channel: 'email',
+      audience: 'service-management',
+      partnerIds: selectedPartnerIds.join(','),
+    })
+    navigate(`/communication/create?${params.toString()}`)
+  }, [navigate, selectedPartnerIds])
+
+  const handleEscalateSubmit = useCallback(async () => {
+    if (selectedServices.length === 0) {
+      toast.error('Please select at least one service.')
+      return
+    }
+    if (!selectedEscalationOption) {
+      toast.error('Please select a sub-admin to assign.')
+      return
+    }
+    if (!escalateAdminNotes.trim()) {
+      toast.error('Admin notes are required.')
+      return
+    }
+
+    const selectedAssignee = (assigneesData?.data ?? []).find(
+      (item) => item.id === selectedEscalationOption,
+    )
+    const note = escalateAdminNotes.trim()
+    setIsEscalating(true)
+
+    try {
+      const results = await Promise.allSettled(
+        selectedServices.map((service) => {
+          const isConsultation = String(service.serviceType || '')
+            .toLowerCase()
+            .includes('consultation')
+          const payload = {
+            assigneeSubAdminId: selectedEscalationOption,
+            assigneeName: selectedAssignee?.fullname || '',
+            adminNote: note,
+            entityTitle: service.title,
+            applicationUrl: getServiceManagementViewPath(service),
+          }
+          return isConsultation
+            ? escalateConsultationApplication(service._id, payload)
+            : escalateServiceApplication(service._id, payload)
+        }),
+      )
+
+      const successCount = results.filter((result) => result.status === 'fulfilled').length
+      const failedCount = results.length - successCount
+
+      if (successCount === 0) {
+        const firstError = results.find((result) => result.status === 'rejected') as
+          | PromiseRejectedResult
+          | undefined
+        toast.error(getApiErrorMessage(firstError?.reason) || 'Failed to escalate services.')
+        return
+      }
+
+      toast.success(
+        failedCount > 0
+          ? `Escalated ${successCount} service(s); ${failedCount} failed.`
+          : `Successfully escalated ${successCount} service(s)`,
+      )
+      setSelectedServiceIds([])
+      closeEscalateModal()
+    } catch (err) {
+      toast.error(getApiErrorMessage(err) || 'Failed to escalate services.')
+    } finally {
+      setIsEscalating(false)
+    }
+  }, [
+    assigneesData?.data,
+    closeEscalateModal,
+    escalateAdminNotes,
+    selectedEscalationOption,
+    selectedServices,
+  ])
+
   const counts = meta?.counts || {
     approvalsPending: 0,
     reportedServices: 0,
@@ -747,7 +873,7 @@ export const ServiceManagementPage = () => {
       onClick: () => setIsBulkDeleteModalOpen(true),
     },
     {
-      label: 'Export selected services (Export Selected)',
+      label: 'Export selected services',
       icon: Upload,
       onClick: handleBulkExport,
     },
@@ -762,12 +888,17 @@ export const ServiceManagementPage = () => {
       onClick: handleBulkDisable,
     },
     {
-      label: 'Notify selected experts / services',
+      label: 'Notify selected experts',
       icon: Bell,
       onClick: handleBulkNotify,
     },
     {
-      label: 'Message / Raise Ticket / Escalate selected services',
+      label: 'Escalate selected services',
+      icon: FileText,
+      onClick: () => setIsEscalateModalOpen(true),
+    },
+    {
+      label: 'Message selected experts',
       icon: Mail,
       onClick: handleBulkMessage,
     },
@@ -1070,6 +1201,32 @@ export const ServiceManagementPage = () => {
         onClose={() => setIsBulkPauseModalOpen(false)}
         onSubmit={confirmBulkPause}
         isSubmitting={bulkPauseMutation.isPending}
+      />
+
+      <DecisionActionModal
+        open={isEscalateModalOpen}
+        variant="escalate"
+        title={
+          selectedServiceCount > 1
+            ? `Escalate ${selectedServiceCount} Services`
+            : 'Escalate Application'
+        }
+        description={
+          selectedServiceCount > 1
+            ? `Are you sure you want to escalate ${selectedServiceCount} selected services? These will be reviewed by the selected sub-admin.`
+            : 'Are you sure you want to escalate this Application? This Post will be reviewed by the selected parties.'
+        }
+        submitLabel="Escalate"
+        escalationOptions={escalationOptions}
+        selectedEscalationOption={selectedEscalationOption}
+        onEscalationOptionChange={setSelectedEscalationOption}
+        adminNotes={escalateAdminNotes}
+        onAdminNotesChange={setEscalateAdminNotes}
+        onClose={closeEscalateModal}
+        onSubmit={() => {
+          void handleEscalateSubmit()
+        }}
+        isSubmitting={isEscalating}
       />
     </div>
   )

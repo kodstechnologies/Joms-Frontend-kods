@@ -224,7 +224,7 @@ export function MainSettingsPage() {
     <div className="space-y-6">
       <SectionHeader
         title="Settings"
-        subtitle="Track revenue, payouts, and financial performance"
+        subtitle="Track metrics, payouts, and financial performance"
         actions={[
           {
             label: 'Settings Logs',
@@ -234,25 +234,20 @@ export function MainSettingsPage() {
         ]}
       />
 
-      <div className="overflow-x-auto rounded-xl border border-white/10 bg-[#111111] p-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        <div className="flex w-max min-w-full gap-1">
+      <nav className="settings-tabs" aria-label="Settings sections">
+        <div className="settings-tabs-inner">
           {TABS.map((tab) => (
             <button
               key={tab.key}
               type="button"
               onClick={() => setActiveTab(tab.key)}
-              className={cn(
-                'shrink-0 rounded-lg px-3 py-2 text-xs font-medium whitespace-nowrap transition-colors',
-                activeTab === tab.key
-                  ? 'bg-[#0B0B0B] text-white'
-                  : 'text-slate-400 hover:text-white',
-              )}
+              className={cn('settings-tab', activeTab === tab.key && 'is-active')}
             >
               {tab.label}
             </button>
           ))}
         </div>
-      </div>
+      </nav>
 
       {isLoading && isApiTab ? (
         <div className="rounded-2xl border border-white/10 bg-[#111111] p-8 text-sm text-slate-400">

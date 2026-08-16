@@ -1,5 +1,6 @@
 import { ArrowLeft, Download } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { useMemo } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 
@@ -8,47 +9,56 @@ import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import { fetchExpertPayoutDetail } from '../../api/expert-api'
 import type { PayoutItem } from '../../type/payout'
 
+function extractPayoutItem(data: unknown): PayoutItem | null {
+  const raw = data as Record<string, unknown> | null
+  const nested = raw?.data as Record<string, unknown> | PayoutItem | undefined
+  const item =
+    (nested && typeof nested === 'object' && 'item' in nested
+      ? (nested.item as PayoutItem)
+      : (nested as PayoutItem | undefined)) ||
+    (raw?.item as PayoutItem | undefined) ||
+    (raw as PayoutItem | null)
+  if (item && (item.id || item.payoutId || item.bookingId)) {
+    return item
+  }
+  return null
+}
+
 export function ExpertPayoutDetailPage() {
   const params = useParams<{ expertId?: string; payoutId?: string }>()
   const navigate = useNavigate()
 
-  const resolvedPayoutId = params.payoutId || params.expertId || 'payout-01'
-  const resolvedExpertId = params.payoutId ? params.expertId || 'EX001' : 'EX001'
+  const resolvedPayoutId = params.payoutId || params.expertId || ''
+  const resolvedExpertId = params.payoutId ? params.expertId || '' : ''
+  const idsReady = Boolean(resolvedExpertId && resolvedPayoutId)
 
-  const [payout, setPayout] = useState<PayoutItem | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [prevKey, setPrevKey] = useState(`${resolvedExpertId}-${resolvedPayoutId}`)
+  const { data, isLoading, isError, isFetching } = useQuery({
+    queryKey: ['expert-payout-detail', resolvedExpertId, resolvedPayoutId],
+    queryFn: () => fetchExpertPayoutDetail(resolvedExpertId, resolvedPayoutId),
+    enabled: idsReady,
+  })
 
-  const currentKey = `${resolvedExpertId}-${resolvedPayoutId}`
+  const payout = useMemo(() => (data ? extractPayoutItem(data) : null), [data])
 
-  if (currentKey !== prevKey) {
-    setPrevKey(currentKey)
-    setLoading(true)
-    setError(null)
-  }
+  const error = !idsReady
+    ? 'Payout reference is missing.'
+    : isError
+      ? 'Failed to load payout details from server.'
+      : data && !payout
+        ? 'Payout record details not found.'
+        : null
 
-  useEffect(() => {
-    fetchExpertPayoutDetail(resolvedExpertId, resolvedPayoutId)
-      .then((data) => {
-        const item = data?.data?.item || data?.data || data?.item || data
-        if (item && (item.id || item.payoutId || item.bookingId)) {
-          setPayout(item as PayoutItem)
-        } else {
-          setError('Payout record details not found.')
-        }
-      })
-      .catch((err) => {
-        console.error('Failed to load expert payout details:', err)
-        setError('Failed to load payout details from server.')
-      })
-      .finally(() => setLoading(false))
-  }, [resolvedExpertId, resolvedPayoutId])
+  const loading = idsReady && (isLoading || (isFetching && !payout && !error))
 
   if (loading) {
     return (
-      <div className="flex h-96 w-full items-center justify-center text-sm text-slate-400">
-        Loading payout details...
+      <div className="mx-auto w-full max-w-6xl space-y-6 p-4 sm:p-6 lg:p-8">
+        <div className="h-8 w-72 animate-pulse rounded bg-white/10" />
+        <div className="h-4 w-96 animate-pulse rounded bg-white/5" />
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <div className="h-80 animate-pulse rounded-xl bg-white/5" />
+          <div className="h-80 animate-pulse rounded-xl bg-white/5" />
+        </div>
       </div>
     )
   }
@@ -79,6 +89,7 @@ export function ExpertPayoutDetailPage() {
   }
 
   const isCustomMilestone = payout.serviceType === 'Custom' || Boolean(payout.milestones?.length)
+  const isConsultation = payout.serviceType === 'Consultation'
   const displayId =
     payout.consultationId ||
     payout.serviceId ||
@@ -87,6 +98,15 @@ export function ExpertPayoutDetailPage() {
     payout.payoutId ||
     '—'
   const serviceTitle = payout.serviceTitle || 'Payout Details'
+  const platformFeeLabel =
+    payout.platformFeePercent != null && Number(payout.platformFeePercent) > 0
+      ? `Platform Fee (${Number(payout.platformFeePercent)}%)`
+      : 'Platform Fee'
+  const feeLabel = isConsultation
+    ? 'Consultation Fee'
+    : isCustomMilestone
+      ? 'Total Milestone Fee'
+      : 'Service Fee'
 
   return (
     <div className="mx-auto w-full max-w-6xl space-y-6 p-4 text-white sm:p-6 lg:p-8">
@@ -141,7 +161,7 @@ export function ExpertPayoutDetailPage() {
                 <span className="font-semibold text-slate-200">{payout.bookingId || '—'}</span>
               </div>
 
-              {payout.serviceType === 'Consultation' ? (
+              {isConsultation ? (
                 <div className="flex items-center justify-between border-b border-white/5 pb-2">
                   <span className="text-slate-400">Consultation ID</span>
                   <span className="font-semibold text-slate-200">{displayId}</span>
@@ -177,7 +197,7 @@ export function ExpertPayoutDetailPage() {
                     </span>
                   </div>
                 </>
-              ) : (
+              ) : isConsultation ? (
                 <>
                   <div className="flex items-center justify-between border-b border-white/5 pb-2">
                     <span className="text-slate-400">Consultation Date</span>
@@ -189,6 +209,21 @@ export function ExpertPayoutDetailPage() {
                     <span className="text-slate-400">Consultation Fee</span>
                     <span className="font-semibold text-slate-200">
                       ₹{(Number(payout.consultationFee) || 0).toLocaleString('en-IN')}
+                    </span>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="flex items-center justify-between border-b border-white/5 pb-2">
+                    <span className="text-slate-400">Service Start Date</span>
+                    <span className="font-semibold text-slate-200">
+                      {payout.serviceStartDate || '—'}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between border-b border-white/5 pb-2">
+                    <span className="text-slate-400">Service End Date</span>
+                    <span className="font-semibold text-slate-200">
+                      {payout.serviceEndDate || '—'}
                     </span>
                   </div>
                 </>
@@ -205,7 +240,7 @@ export function ExpertPayoutDetailPage() {
               <div className="flex items-center justify-between pt-1">
                 <span className="text-slate-400">Payment Status</span>
                 <span className="rounded-full border border-emerald-500/30 bg-emerald-500/15 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-400">
-                  {payout.paymentStatus || 'Successful'}
+                  {payout.paymentStatus || '—'}
                 </span>
               </div>
             </div>
@@ -227,8 +262,8 @@ export function ExpertPayoutDetailPage() {
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-slate-400">Service Category</span>
-                  <span className="cursor-pointer font-semibold text-slate-200 underline hover:text-amber-400">
-                    {payout.serviceCategory || 'Legal'}
+                  <span className="font-semibold text-slate-200">
+                    {payout.serviceCategory || '—'}
                   </span>
                 </div>
               </div>
@@ -242,25 +277,28 @@ export function ExpertPayoutDetailPage() {
                   <div className="flex items-center justify-between border-b border-white/5 pb-2">
                     <span className="text-slate-400">Total Milestone Fee</span>
                     <span className="font-semibold text-slate-200">
-                      ₹{(Number(payout.totalMilestoneFee) || 0).toLocaleString('en-IN')}
+                      ₹
+                      {(
+                        Number(payout.totalMilestoneFee ?? payout.consultationFee) || 0
+                      ).toLocaleString('en-IN')}
                     </span>
                   </div>
                 ) : (
                   <>
                     <div className="flex items-center justify-between border-b border-white/5 pb-2">
-                      <span className="text-slate-400">Consultation Fee</span>
+                      <span className="text-slate-400">{feeLabel}</span>
                       <span className="font-semibold text-slate-200">
                         ₹{(Number(payout.consultationFee) || 0).toLocaleString('en-IN')}
                       </span>
                     </div>
                     <div className="flex items-center justify-between border-b border-white/5 pb-2">
-                      <span className="text-slate-400">Platform Fee (20%)</span>
+                      <span className="text-slate-400">{platformFeeLabel}</span>
                       <span className="font-semibold text-slate-200">
                         ₹{(Number(payout.platformFee) || 0).toLocaleString('en-IN')}
                       </span>
                     </div>
                     <div className="flex items-center justify-between border-b border-white/5 pb-2">
-                      <span className="text-slate-400">Tax (18% GST)</span>
+                      <span className="text-slate-400">Tax (GST)</span>
                       <span className="font-semibold text-slate-200">
                         ₹{(Number(payout.taxAmount) || 0).toLocaleString('en-IN')}
                       </span>
@@ -289,7 +327,7 @@ export function ExpertPayoutDetailPage() {
                 <div className="flex items-center justify-between pt-1">
                   <span className="text-slate-400">Payout Status</span>
                   <span className="rounded-full border border-emerald-500/30 bg-emerald-500/15 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-400">
-                    {payout.payoutStatus || payout.status || 'Successful'}
+                    {payout.payoutStatus || payout.status || '—'}
                   </span>
                 </div>
               </div>
@@ -320,13 +358,13 @@ export function ExpertPayoutDetailPage() {
                       </span>
                     </div>
                     <div className="flex items-center justify-between border-b border-white/5 pb-1.5">
-                      <span className="text-slate-400">Platform Commission (20%)</span>
+                      <span className="text-slate-400">Platform Commission</span>
                       <span className="font-semibold text-slate-200">
                         ₹{(Number(m.platformCommission) || 0).toLocaleString('en-IN')}
                       </span>
                     </div>
                     <div className="flex items-center justify-between border-b border-white/5 pb-1.5">
-                      <span className="text-slate-400">Tax (18% GST)</span>
+                      <span className="text-slate-400">Tax (GST)</span>
                       <span className="font-semibold text-slate-200">
                         ₹{(Number(m.taxAmount) || 0).toLocaleString('en-IN')}
                       </span>

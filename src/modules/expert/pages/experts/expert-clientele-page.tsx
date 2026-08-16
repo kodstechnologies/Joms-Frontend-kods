@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
 import type { ColumnDef } from '@tanstack/react-table'
-import { ArrowLeft, SlidersHorizontal, Star, TrendingUp, User, Users } from 'lucide-react'
+import { ArrowLeft, SlidersHorizontal } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { fetchExpertClientele } from '../../api/expert-api'
@@ -12,28 +13,55 @@ import {
   TableActionsItem,
 } from '@/shared/components/table/table-actions-dropdown'
 import { cn } from '@/shared/lib/cn'
+import { exportDataToFile } from '@/shared/utils/export-utils'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
 
 type ClienteleItem = {
   bookingId: string
   clientId: string
   clientName: string
-  whatsappNumber?: string
+  whatsappNumber?: string | null
+  bookingSource?: string
   listingType: string
   listingName?: string
+  listingId?: string
   status: string
   pricingType: string
-  tierName?: string
-  startDate: string
-  endDate: string
+  tierName?: string | null
+  bookingDate?: string | null
+  startDate?: string | null
+  endDate?: string | null
+  completionDate?: string | null
   price: number
-  paymentId?: string
-  paymentStatus?: string
-  rating?: number
+  orderValue?: number
+  customPrice?: number | null
+  discount?: number | null
+  paymentId?: string | null
+  transactionId?: string | null
+  paymentMethod?: string | null
+  paymentStatus?: string | null
+  rating?: number | null
+  reviewSubmitted?: boolean
+  disputeRaised?: boolean
+  disputeStatus?: string | null
+  refundIssued?: boolean
+  refundAmount?: number | null
+  refundStatus?: string | null
+  lastUpdated?: string | null
 }
 
 type Metrics = {
+  servicesListed: number
+  consultationsListed: number
   uniqueClients: number
   uniqueClientsTrend: number
+  clientSatisfactionScore: number
+  totalOrdersBookings: number
+  activeOrdersBookings: number
+  completedOrdersBookings: number
+  cancelledOrdersBookings: number
+  clientsByMembership: Record<string, number>
+  repeatClientPercent: number
   nps: number
   npsTrend: number
   avgRating: number
@@ -42,116 +70,293 @@ type Metrics = {
   noOfReviewsTrend: number
 }
 
+const EMPTY_METRICS: Metrics = {
+  servicesListed: 0,
+  consultationsListed: 0,
+  uniqueClients: 0,
+  uniqueClientsTrend: 0,
+  clientSatisfactionScore: 0,
+  totalOrdersBookings: 0,
+  activeOrdersBookings: 0,
+  completedOrdersBookings: 0,
+  cancelledOrdersBookings: 0,
+  clientsByMembership: {},
+  repeatClientPercent: 0,
+  nps: 0,
+  npsTrend: 0,
+  avgRating: 0,
+  avgRatingTrend: 0,
+  noOfReviews: 0,
+  noOfReviewsTrend: 0,
+}
+
+const EMPTY_CLIENTELE_ITEMS: ClienteleItem[] = []
+
+function MetricCardSkeleton() {
+  return (
+    <div className="rounded-brand-lg bg-brand-surface border border-white/[0.06] p-5">
+      <div className="h-3 w-28 animate-pulse rounded bg-white/10" />
+      <div className="mt-3 h-8 w-16 animate-pulse rounded bg-white/10" />
+      <div className="mt-2 h-3 w-24 animate-pulse rounded bg-white/5" />
+    </div>
+  )
+}
+
+function MetricCard({ label, value, hint }: { label: string; value: string; hint?: string }) {
+  return (
+    <div className="rounded-brand-lg bg-brand-surface border border-white/[0.06] p-5">
+      <p className="text-body-sm text-muted font-medium">{label}</p>
+      <p className="mt-1 text-3xl font-extrabold text-white">{value}</p>
+      {hint ? <p className="text-muted mt-2 text-xs">{hint}</p> : null}
+    </div>
+  )
+}
+
+const formatDate = (isoStr?: string | null, withTime = false) => {
+  if (!isoStr) return '—'
+  try {
+    const d = new Date(isoStr)
+    if (Number.isNaN(d.getTime())) return '—'
+    if (withTime) {
+      return d.toLocaleString('en-GB', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+      })
+    }
+    return d.toLocaleDateString('en-GB', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+    })
+  } catch {
+    return '—'
+  }
+}
+
+const formatPrice = (val?: number | null) => {
+  if (val == null || Number.isNaN(Number(val))) return '₹0.00'
+  return `₹${Number(val).toLocaleString('en-IN', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`
+}
+
+const formatPercent = (val?: number | null) => {
+  if (val == null || Number.isNaN(Number(val))) return '0%'
+  return `${Number(val).toFixed(1)}%`
+}
+
+const statusClass = (status: string) => {
+  const normalized = status.toLowerCase()
+  if (normalized === 'completed') {
+    return 'border border-emerald-500/30 bg-emerald-500/15 text-emerald-400'
+  }
+  if (normalized === 'in progress' || normalized === 'scheduled' || normalized === 'confirmed') {
+    return 'border border-amber-500/30 bg-amber-500/15 text-amber-400'
+  }
+  if (normalized === 'disputed') {
+    return 'border border-violet-500/30 bg-violet-500/15 text-violet-300'
+  }
+  if (normalized === 'pending') {
+    return 'border border-sky-500/30 bg-sky-500/15 text-sky-300'
+  }
+  return 'border border-rose-500/30 bg-rose-500/15 text-rose-400'
+}
+
 export function ExpertClientelePage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const expertId = id || ''
 
-  const [expertName, setExpertName] = useState('Sara Johnson')
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
-  const [loading, setLoading] = useState(true)
   const [activeActionMenu, setActiveActionMenu] = useState<string | null>(null)
 
-  const [metrics, setMetrics] = useState<Metrics>({
-    uniqueClients: 5,
-    uniqueClientsTrend: 12.5,
-    nps: 102,
-    npsTrend: 12.5,
-    avgRating: 3.3,
-    avgRatingTrend: 12.5,
-    noOfReviews: 150,
-    noOfReviewsTrend: 12.5,
+  const {
+    data: res,
+    isLoading: loading,
+    isError,
+    error,
+  } = useQuery({
+    queryKey: ['expert-clientele', expertId, page, search],
+    queryFn: () => fetchExpertClientele(expertId, { page, search, limit: 10 }),
+    enabled: Boolean(expertId),
   })
 
-  const [items, setItems] = useState<ClienteleItem[]>([])
-  const [total, setTotal] = useState(20)
-  const [totalPages, setTotalPages] = useState(2)
-
   useEffect(() => {
-    if (!expertId) return
-    let isCancelled = false
-    fetchExpertClientele(expertId, { page, search, limit: 10 })
-      .then((res) => {
-        if (isCancelled || !res?.data) return
-        const d = res.data
-        if (d.expertName) setExpertName(d.expertName)
-        if (d.metrics) setMetrics(d.metrics)
-        if (d.items) setItems(d.items)
-        if (d.pagination) {
-          setTotal(d.pagination.total || d.items?.length || 20)
-          setTotalPages(d.pagination.totalPages || 2)
-        }
-      })
-      .catch((err) => {
-        console.error('Failed to load expert clientele:', err)
-      })
-      .finally(() => {
-        if (!isCancelled) setLoading(false)
-      })
-    return () => {
-      isCancelled = true
-    }
-  }, [expertId, page, search])
+    if (!isError) return
+    toast.error(getApiErrorMessage(error) || 'Failed to load expert clientele')
+  }, [isError, error])
 
-  const formatDate = (isoStr: string) => {
-    if (!isoStr) return '--'
+  const d = res?.data
+  const expertName = d?.expertName || '—'
+  const metrics: Metrics = {
+    ...EMPTY_METRICS,
+    ...(d?.metrics || {}),
+    clientsByMembership: d?.metrics?.clientsByMembership || {},
+  }
+  const items: ClienteleItem[] = Array.isArray(d?.items) ? d.items : EMPTY_CLIENTELE_ITEMS
+  const total = d?.pagination?.total ?? 0
+  const totalPages = d?.pagination?.totalPages ?? 0
+
+  const membershipHint = useMemo(() => {
+    const entries = Object.entries(metrics.clientsByMembership || {})
+    if (entries.length === 0) return 'No membership breakdown yet'
+    return entries.map(([tier, count]) => `${tier}: ${count}`).join(', ')
+  }, [metrics.clientsByMembership])
+
+  const handleExport = useCallback(() => {
+    if (items.length === 0) {
+      toast.error('No booking records available to export.')
+      return
+    }
+
     try {
-      const d = new Date(isoStr)
-      return d.toLocaleDateString('en-US', {
-        month: 'short',
-        day: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: true,
-      })
+      const headers = [
+        'Order / Booking ID',
+        'Client ID',
+        'Client Name',
+        'Booking Source',
+        'Listing Type',
+        'Listing Name',
+        'Listing ID',
+        'Booking Status',
+        'Pricing Type',
+        'Tier Name',
+        'Booking Date',
+        'Start Date',
+        'Completion Date',
+        'Order Value',
+        'Payment ID',
+        'Transaction ID',
+        'Payment Method',
+        'Payment Status',
+        'Rating',
+        'Review Submitted',
+        'Dispute Raised',
+        'Dispute Status',
+        'Refund Issued',
+        'Refund Amount',
+        'Refund Status',
+        'Last Updated',
+      ]
+      const rows = items.map((item) => [
+        item.bookingId,
+        item.clientId,
+        item.clientName,
+        item.bookingSource || '—',
+        item.listingType,
+        item.listingName || '—',
+        item.listingId || '—',
+        item.status,
+        item.pricingType,
+        item.tierName || '—',
+        formatDate(item.bookingDate),
+        formatDate(item.startDate, true),
+        formatDate(item.completionDate || item.endDate, true),
+        formatPrice(item.orderValue ?? item.price),
+        item.paymentId || '—',
+        item.transactionId || '—',
+        item.paymentMethod || '—',
+        item.paymentStatus || '—',
+        item.rating == null ? '—' : String(item.rating),
+        item.reviewSubmitted ? 'Yes' : 'No',
+        item.disputeRaised ? 'Yes' : 'No',
+        item.disputeStatus || '—',
+        item.refundIssued ? 'Yes' : 'No',
+        item.refundAmount == null ? '—' : formatPrice(item.refundAmount),
+        item.refundStatus || '—',
+        formatDate(item.lastUpdated, true),
+      ])
+      exportDataToFile(headers, rows, 'excel', 'expert_clientele_export')
+      toast.success(`Exported ${items.length} booking record(s)`)
     } catch {
-      return isoStr
+      toast.error('Failed to export clientele data.')
     }
-  }
+  }, [items])
 
-  const formatPrice = (val: number) => {
-    return `₹${val.toLocaleString('en-IN')}`
-  }
+  const openCommunicate = useCallback(
+    (channel: 'email' | 'push') => {
+      if (!expertId) {
+        toast.error('Expert partner ID is missing.')
+        return
+      }
+      const params = new URLSearchParams({
+        channel,
+        audience: 'expert-management',
+        partnerIds: expertId,
+      })
+      navigate(`/communication/create?${params.toString()}`)
+    },
+    [expertId, navigate],
+  )
 
   const columns = useMemo<ColumnDef<ClienteleItem>[]>(
     () => [
+      {
+        accessorKey: 'bookingId',
+        header: 'Order / Booking ID',
+        cell: ({ row }) => (
+          <span className="ui-table-id text-muted font-mono text-xs uppercase">
+            {row.original.bookingId}
+          </span>
+        ),
+      },
       {
         accessorKey: 'clientId',
         header: 'Client ID',
         cell: ({ row }) => (
           <span className="ui-table-id text-muted font-mono text-xs uppercase">
-            {row.original.clientId}
+            {row.original.clientId || '—'}
           </span>
         ),
       },
       {
         accessorKey: 'clientName',
-        header: 'Name',
+        header: 'Client Name',
         cell: ({ row }) => (
-          <span className="font-medium text-white">{row.original.clientName}</span>
+          <span className="font-medium text-white">{row.original.clientName || '—'}</span>
+        ),
+      },
+      {
+        accessorKey: 'bookingSource',
+        header: 'Booking Source',
+        cell: ({ row }) => (
+          <span className="inline-flex rounded-md border border-white/10 bg-white/5 px-2 py-0.5 text-xs text-white/80">
+            {row.original.bookingSource || '—'}
+          </span>
         ),
       },
       {
         accessorKey: 'listingType',
         header: 'Listing Type',
-        cell: ({ row }) => <span className="text-muted text-sm">{row.original.listingType}</span>,
+        cell: ({ row }) => (
+          <span className="inline-flex rounded-md border border-white/10 bg-white/5 px-2 py-0.5 text-xs text-white/80">
+            {row.original.listingType || '—'}
+          </span>
+        ),
+      },
+      {
+        accessorKey: 'listingName',
+        header: 'Listing Name',
+        cell: ({ row }) => (
+          <span className="text-muted text-sm">{row.original.listingName || '—'}</span>
+        ),
       },
       {
         accessorKey: 'status',
-        header: 'Status',
+        header: 'Booking Status',
         cell: ({ row }) => {
-          const status = row.original.status
+          const status = row.original.status || '—'
           return (
             <span
               className={cn(
                 'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-bold capitalize',
-                status === 'Completed'
-                  ? 'border border-emerald-500/30 bg-emerald-500/15 text-emerald-400'
-                  : status === 'In-progress'
-                    ? 'border border-amber-500/30 bg-amber-500/15 text-amber-400'
-                    : 'border border-rose-500/30 bg-rose-500/15 text-rose-400',
+                statusClass(status),
               )}
             >
               {status}
@@ -162,65 +367,180 @@ export function ExpertClientelePage() {
       {
         accessorKey: 'pricingType',
         header: 'Pricing Type',
-        cell: ({ row }) => <span className="text-muted text-sm">{row.original.pricingType}</span>,
-      },
-      {
-        accessorKey: 'startDate',
-        header: 'Start Date',
         cell: ({ row }) => (
-          <span className="text-muted text-xs">{formatDate(row.original.startDate)}</span>
+          <span className="inline-flex rounded-md border border-white/10 bg-white/5 px-2 py-0.5 text-xs text-white/80">
+            {row.original.pricingType || '—'}
+          </span>
         ),
       },
       {
-        accessorKey: 'endDate',
-        header: 'End Date',
+        accessorKey: 'bookingDate',
+        header: 'Booking Date',
         cell: ({ row }) => (
-          <span className="text-muted text-xs">{formatDate(row.original.endDate)}</span>
+          <span className="text-muted text-xs">{formatDate(row.original.bookingDate)}</span>
         ),
       },
       {
-        accessorKey: 'price',
-        header: 'Price',
+        accessorKey: 'orderValue',
+        header: 'Order Value',
         cell: ({ row }) => (
-          <span className="font-semibold text-white">{formatPrice(row.original.price)}</span>
+          <span className="font-semibold text-white">
+            {formatPrice(row.original.orderValue ?? row.original.price)}
+          </span>
+        ),
+      },
+      {
+        accessorKey: 'paymentStatus',
+        header: 'Payment Status',
+        cell: ({ row }) => (
+          <span className="inline-flex rounded-md border border-white/10 bg-white/5 px-2 py-0.5 text-xs text-white/80">
+            {row.original.paymentStatus || '—'}
+          </span>
+        ),
+      },
+      {
+        accessorKey: 'rating',
+        header: 'Rating',
+        cell: ({ row }) => (
+          <span className="text-muted text-sm">
+            {row.original.rating == null ? '—' : `★ ${Number(row.original.rating).toFixed(1)}`}
+          </span>
         ),
       },
       {
         id: 'actions',
         header: () => <div className="text-right">Actions</div>,
-        cell: ({ row }) => (
-          <div className="flex justify-end">
-            <TableActionsDropdown
-              label="Client actions"
-              isOpen={activeActionMenu === row.original.bookingId}
-              onOpenChange={(open) => setActiveActionMenu(open ? row.original.bookingId : null)}
-            >
-              <TableActionsItem tone="light" onClick={() => setActiveActionMenu(null)}>
-                👁️ View Details
-              </TableActionsItem>
-              <TableActionsItem tone="light" onClick={() => setActiveActionMenu(null)}>
-                💳 Payment details
-              </TableActionsItem>
-              <TableActionsItem tone="light" onClick={() => setActiveActionMenu(null)}>
-                📝 Add internal note
-              </TableActionsItem>
-              <TableActionsItem tone="light" onClick={() => setActiveActionMenu(null)}>
-                ⬆️ Escalate
-              </TableActionsItem>
-              <TableActionsItem tone="light" onClick={() => setActiveActionMenu(null)}>
-                🔀 Merge
-              </TableActionsItem>
-            </TableActionsDropdown>
-          </div>
-        ),
+        cell: ({ row }) => {
+          const item = row.original
+          return (
+            <div className="flex justify-end">
+              <TableActionsDropdown
+                label="Booking actions"
+                isOpen={activeActionMenu === item.bookingId}
+                onOpenChange={(open) => setActiveActionMenu(open ? item.bookingId : null)}
+              >
+                <TableActionsItem
+                  tone="light"
+                  onClick={() => {
+                    setActiveActionMenu(null)
+                    toast.message(`Booking ${item.bookingId}`)
+                  }}
+                >
+                  View Details
+                </TableActionsItem>
+                <TableActionsItem
+                  tone="light"
+                  onClick={() => {
+                    setActiveActionMenu(null)
+                    if (item.clientId && item.clientId !== '—') {
+                      toast.message(`Client ID: ${item.clientId}`)
+                    } else {
+                      toast.error('Client profile is not available for this booking.')
+                    }
+                  }}
+                >
+                  View Client Profile
+                </TableActionsItem>
+                <TableActionsItem
+                  tone="light"
+                  onClick={() => {
+                    setActiveActionMenu(null)
+                    if (item.listingType === 'Consultation' && item.listingId) {
+                      navigate(
+                        `/services/management/view/${item.listingId}?type=Consultation&partnerId=${expertId}`,
+                      )
+                    } else if (item.listingId) {
+                      navigate(
+                        `/services/management/view/${item.listingId}?type=Service&partnerId=${expertId}`,
+                      )
+                    } else {
+                      toast.error('Listing is not available for this booking.')
+                    }
+                  }}
+                >
+                  View Listing
+                </TableActionsItem>
+                <TableActionsItem
+                  tone="light"
+                  onClick={() => {
+                    setActiveActionMenu(null)
+                    openCommunicate('email')
+                  }}
+                >
+                  Communicate with Expert
+                </TableActionsItem>
+                <TableActionsItem
+                  tone="light"
+                  onClick={() => {
+                    setActiveActionMenu(null)
+                    openCommunicate('email')
+                  }}
+                >
+                  Communicate with Client
+                </TableActionsItem>
+                {item.disputeRaised ? (
+                  <TableActionsItem
+                    tone="light"
+                    onClick={() => {
+                      setActiveActionMenu(null)
+                      toast.message(
+                        item.disputeStatus
+                          ? `Dispute status: ${item.disputeStatus}`
+                          : 'Dispute linked to this booking',
+                      )
+                    }}
+                  >
+                    View Dispute
+                  </TableActionsItem>
+                ) : null}
+                <TableActionsItem
+                  tone="light"
+                  onClick={() => {
+                    setActiveActionMenu(null)
+                    handleExport()
+                  }}
+                >
+                  Export Booking Record
+                </TableActionsItem>
+              </TableActionsDropdown>
+            </div>
+          )
+        },
       },
     ],
-    [activeActionMenu],
+    [activeActionMenu, expertId, handleExport, navigate, openCommunicate],
   )
+
+  const metricCards = [
+    { label: 'Number of Services Listed', value: String(metrics.servicesListed) },
+    { label: 'Number of Consultations Listed', value: String(metrics.consultationsListed) },
+    { label: 'Number of Unique Clients', value: String(metrics.uniqueClients) },
+    {
+      label: 'Client Satisfaction Score',
+      value: formatPercent(metrics.clientSatisfactionScore),
+    },
+    { label: 'Total Orders & Bookings', value: String(metrics.totalOrdersBookings) },
+    { label: 'Active Orders & Bookings', value: String(metrics.activeOrdersBookings) },
+    { label: 'Completed Orders & Bookings', value: String(metrics.completedOrdersBookings) },
+    { label: 'Cancelled / Terminated Orders', value: String(metrics.cancelledOrdersBookings) },
+    {
+      label: 'Clients by Membership',
+      value: String(
+        Object.values(metrics.clientsByMembership || {}).reduce(
+          (sum, count) => sum + Number(count || 0),
+          0,
+        ),
+      ),
+      hint: membershipHint,
+    },
+    { label: 'Repeat Client %', value: formatPercent(metrics.repeatClientPercent) },
+    { label: 'Net Promoter Score', value: String(metrics.nps) },
+    { label: 'Avg. Rating', value: Number(metrics.avgRating || 0).toFixed(1) },
+    { label: 'No. of Reviews', value: String(metrics.noOfReviews) },
+  ]
 
   return (
     <div className="space-y-7 pb-10">
-      {/* Top Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <div className="flex items-center gap-3">
@@ -234,7 +554,12 @@ export function ExpertClientelePage() {
             <h1 className="text-2xl font-bold tracking-tight text-white md:text-3xl">Clientele</h1>
           </div>
           <p className="text-body-md text-muted mt-1.5 font-medium">
-            Expert: <span className="font-semibold text-white">{expertName}</span>
+            Expert:{' '}
+            {loading ? (
+              <span className="inline-block h-4 w-28 animate-pulse rounded bg-white/10 align-middle" />
+            ) : (
+              <span className="font-semibold text-white">{expertName}</span>
+            )}
           </p>
         </div>
 
@@ -248,85 +573,36 @@ export function ExpertClientelePage() {
         </Button>
       </div>
 
-      {/* Top Metric Cards Bar */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {/* Card 1 */}
-        <div className="rounded-brand-lg bg-brand-surface border border-white/[0.06] p-5">
-          <div className="flex items-center justify-between">
-            <p className="text-body-sm text-muted font-medium">Unique clients</p>
-            <div className="grid size-9 place-items-center rounded-xl bg-white/5 text-white">
-              <User className="size-5" />
-            </div>
-          </div>
-          <p className="mt-1 text-3xl font-extrabold text-white">
-            {String(metrics.uniqueClients).padStart(2, '0')}
-          </p>
-          <div className="mt-2 flex items-center gap-1.5 text-xs font-semibold text-emerald-400">
-            <TrendingUp className="size-3.5" />
-            <span>{metrics.uniqueClientsTrend}% vs last month</span>
-          </div>
-        </div>
-
-        {/* Card 2 */}
-        <div className="rounded-brand-lg bg-brand-surface border border-white/[0.06] p-5">
-          <div className="flex items-center justify-between">
-            <p className="text-body-sm text-muted font-medium">NPS</p>
-            <div className="grid size-9 place-items-center rounded-xl bg-white/5 text-white">
-              <Users className="size-5" />
-            </div>
-          </div>
-          <p className="mt-1 text-3xl font-extrabold text-white">{metrics.nps}</p>
-          <div className="mt-2 flex items-center gap-1.5 text-xs font-semibold text-emerald-400">
-            <TrendingUp className="size-3.5" />
-            <span>{metrics.npsTrend}% vs last month</span>
-          </div>
-        </div>
-
-        {/* Card 3 */}
-        <div className="rounded-brand-lg bg-brand-surface border border-white/[0.06] p-5">
-          <div className="flex items-center justify-between">
-            <p className="text-body-sm text-muted font-medium">Avg. Rating</p>
-            <div className="grid size-9 place-items-center rounded-xl bg-white/5 text-white">
-              <Star className="size-5 fill-white" />
-            </div>
-          </div>
-          <p className="mt-1 text-3xl font-extrabold text-white">{metrics.avgRating}</p>
-          <div className="mt-2 flex items-center gap-1.5 text-xs font-semibold text-emerald-400">
-            <TrendingUp className="size-3.5" />
-            <span>{metrics.avgRatingTrend}% vs last month</span>
-          </div>
-        </div>
-
-        {/* Card 4 */}
-        <div className="rounded-brand-lg bg-brand-surface border border-white/[0.06] p-5">
-          <div className="flex items-center justify-between">
-            <p className="text-body-sm text-muted font-medium">No.Of Reviews</p>
-            <div className="grid size-9 place-items-center rounded-xl bg-white/5 text-white">
-              <Star className="size-5" />
-            </div>
-          </div>
-          <p className="mt-1 text-3xl font-extrabold text-white">{metrics.noOfReviews}</p>
-          <div className="mt-2 flex items-center gap-1.5 text-xs font-semibold text-emerald-400">
-            <TrendingUp className="size-3.5" />
-            <span>{metrics.noOfReviewsTrend}% vs last month</span>
-          </div>
-        </div>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        {loading
+          ? Array.from({ length: 12 }).map((_, index) => (
+              <MetricCardSkeleton key={`clientele-metric-skeleton-${index}`} />
+            ))
+          : metricCards.map((card) => (
+              <MetricCard key={card.label} label={card.label} value={card.value} hint={card.hint} />
+            ))}
       </div>
 
-      {/* Global Data Table */}
       <DataTable
         columns={columns}
         data={items}
         getRowId={(row) => row.bookingId}
         isLoading={loading}
         searchValue={search}
-        onSearchChange={setSearch}
-        searchPlaceholder="Search by name , ID or profession"
-        resourceLabel="users"
+        onSearchChange={(value) => {
+          setPage(1)
+          setSearch(value)
+        }}
+        searchPlaceholder="Search by name, ID or listing"
+        resourceLabel="bookings"
         showAdvancedFilter
         showExport
-        onExport={() => toast.success('Exporting clientele data...')}
-        onAdvancedFilter={() => toast.message('Advance filters opened')}
+        onExport={handleExport}
+        onAdvancedFilter={() =>
+          toast.message(
+            'Use search for now. Advanced filters will use booking status, listing type, and payment filters.',
+          )
+        }
         pagination={{
           page,
           pageSize: 10,

@@ -20,8 +20,8 @@ export function SettingsCheckboxGroup({
   trailing,
 }: SettingsCheckboxGroupProps) {
   return (
-    <div className={cn('space-y-3', className)}>
-      {label ? <p className="text-sm font-medium text-white">{label}</p> : null}
+    <div className={cn('space-y-3 py-3', className)} data-settings-group>
+      {label ? <p className="settings-toggle-title !m-0">{label}</p> : null}
       <div className="security-checkbox-row">
         {options.map((option) => (
           <label key={option.key} className="security-checkbox-item">
