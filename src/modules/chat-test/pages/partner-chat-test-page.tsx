@@ -1,6 +1,11 @@
 import { useMemo, useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
-import { partnerLoginWithPhone, type PartnerLoginResult } from '../api/partner-auth.api'
+import {
+  partnerLoginWithPhone,
+  persistPartnerSession,
+  clearPartnerSession,
+  type PartnerLoginResult,
+} from '../api/partner-auth.api'
 import { STATIC_CHAT_USERS } from '../config/static-users'
 import {
   loadChatBackendMode,
@@ -11,6 +16,7 @@ import {
 import { ChatTestPanel } from '../components/chat-test-panel'
 import { PartnerMyProjects } from '../components/partner-my-projects'
 import { PartnerQuotationPanel } from '../components/partner-quotation-panel'
+import { PartnerGoogleSignIn } from '../components/partner-google-sign-in'
 
 const SESSION_KEY = 'joms_dev_partner_chat'
 
@@ -76,8 +82,7 @@ export function PartnerChatTestPage() {
     try {
       const data = await partnerLoginWithPhone(phone.trim(), password)
       if (!data?.accessToken || !data?.id) throw new Error('Login response missing token')
-      sessionStorage.setItem(SESSION_KEY, JSON.stringify(data))
-      localStorage.setItem(SESSION_KEY, JSON.stringify(data))
+      persistPartnerSession(data)
       setSession(data)
     } catch (err) {
       const msg =
@@ -90,8 +95,7 @@ export function PartnerChatTestPage() {
   }
 
   const handleLogout = () => {
-    sessionStorage.removeItem(SESSION_KEY)
-    localStorage.removeItem(SESSION_KEY)
+    clearPartnerSession()
     setSession(null)
   }
 
@@ -107,7 +111,8 @@ export function PartnerChatTestPage() {
               </Link>
             </div>
             <p className="text-sm text-zinc-400">
-              Real partner login via auth-service (`/auth/loginwithphone`). Dynamic JWT.
+              Real partner login via auth-service (`/auth/loginwithphone` or `/auth/google/signin`).
+              Dynamic JWT.
             </p>
             <div className="flex flex-wrap items-center gap-2 rounded-lg border border-zinc-800 bg-zinc-900/60 px-3 py-2">
               <span className="text-xs tracking-wide text-zinc-500 uppercase">Chat backend</span>
@@ -116,46 +121,56 @@ export function PartnerChatTestPage() {
             </div>
           </header>
 
-          <form
-            onSubmit={(e) => void handleLogin(e)}
-            className="space-y-3 rounded-xl border border-zinc-800 bg-zinc-900/60 p-4"
-          >
+          <div className="space-y-3 rounded-xl border border-zinc-800 bg-zinc-900/60 p-4">
             {error ? (
               <div className="rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-200">
                 {error}
               </div>
             ) : null}
-            <label className="block space-y-1">
-              <span className="text-xs tracking-wide text-zinc-500 uppercase">Phone</span>
-              <input
-                className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="Partner phone"
-                autoComplete="username"
-                required
-              />
-            </label>
-            <label className="block space-y-1">
-              <span className="text-xs tracking-wide text-zinc-500 uppercase">Password</span>
-              <input
-                type="password"
-                className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Password"
-                autoComplete="current-password"
-                required
-              />
-            </label>
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full rounded-lg bg-amber-400 px-3 py-2 text-sm font-medium text-zinc-950 disabled:opacity-50"
-            >
-              {loading ? 'Logging in…' : 'Login as partner'}
-            </button>
-          </form>
+            <PartnerGoogleSignIn
+              onSuccess={(data) => {
+                setError(null)
+                setSession(data)
+              }}
+            />
+            <div className="flex items-center gap-2 text-[11px] tracking-wide text-zinc-500 uppercase">
+              <span className="h-px flex-1 bg-zinc-800" />
+              or phone + password
+              <span className="h-px flex-1 bg-zinc-800" />
+            </div>
+            <form onSubmit={(e) => void handleLogin(e)} className="space-y-3">
+              <label className="block space-y-1">
+                <span className="text-xs tracking-wide text-zinc-500 uppercase">Phone</span>
+                <input
+                  className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="Partner phone"
+                  autoComplete="username"
+                  required
+                />
+              </label>
+              <label className="block space-y-1">
+                <span className="text-xs tracking-wide text-zinc-500 uppercase">Password</span>
+                <input
+                  type="password"
+                  className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Password"
+                  autoComplete="current-password"
+                  required
+                />
+              </label>
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full rounded-lg bg-amber-400 px-3 py-2 text-sm font-medium text-zinc-950 disabled:opacity-50"
+              >
+                {loading ? 'Logging in…' : 'Login as partner'}
+              </button>
+            </form>
+          </div>
         </div>
       </div>
     )
@@ -163,7 +178,7 @@ export function PartnerChatTestPage() {
 
   const identity = {
     id: String(session.id),
-    label: session.fullname || session.phone || 'Partner',
+    label: session.fullname || session.email || session.phone || 'Partner',
     accessToken: session.accessToken,
   }
 
@@ -194,6 +209,7 @@ export function PartnerChatTestPage() {
           </div>
           <p className="rounded-lg border border-zinc-800 bg-zinc-900/60 px-3 py-2 text-xs break-all text-zinc-400">
             Partner id: <span className="text-amber-300">{identity.id}</span>
+            {session.email ? <> · {session.email}</> : null}
           </p>
         </header>
 

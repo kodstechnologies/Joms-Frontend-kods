@@ -43,7 +43,7 @@ export function TicketQueuePanel({
       )
 
   return (
-    <div className="radius-lg bg-brand-surface flex h-full flex-col border border-white/10">
+    <div className="radius-lg bg-brand-surface flex h-full min-h-0 flex-col overflow-hidden border border-white/10">
       <div className="flex items-center justify-between border-b border-white/5 px-4 py-3">
         <span className="text-body-sm-semibold text-muted tracking-widest">QUEUE</span>
         <div className="flex items-center gap-1">
@@ -82,7 +82,7 @@ export function TicketQueuePanel({
         </div>
       </div>
 
-      <div className="flex-1 space-y-2 overflow-y-auto p-3">
+      <div className="min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain p-3">
         {filtered.map((ticket) => (
           <button
             key={ticket.id}

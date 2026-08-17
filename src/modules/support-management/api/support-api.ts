@@ -166,14 +166,32 @@ export const reopenSupportTicket = async (id: string) => {
   return response.data
 }
 
-export const sendSupportMessage = async (id: string, content: string) => {
+export const sendSupportMessage = async (
+  id: string,
+  content: string,
+  attachments: ChatMessage['attachments'] = [],
+) => {
   const response = await adminApiClient.post<
     ApiSuccess<{ message: ChatMessage; duplicate?: boolean }>
   >(`/admin/support-dashboard/tickets/${encodeURIComponent(id)}/messages`, {
     content,
     role: 'agent',
+    attachments,
   })
   return response.data
+}
+
+export const uploadSupportAttachment = async (file: File) => {
+  const form = new FormData()
+  form.append('file', file)
+  form.append('image', file)
+  const response = await adminApiClient.post<
+    ApiSuccess<{ url: string; publicId?: string; name?: string; mimeType?: string }>
+  >('/admin/support-dashboard/upload', form, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+    timeout: 60000,
+  })
+  return response.data.data
 }
 
 export const fetchPastTickets = async (

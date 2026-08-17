@@ -9,6 +9,7 @@ import {
   CommunicationActions,
   CommunicationStatusBadge,
 } from '../../components/communication-table-cells'
+import { PushAllPartnersPanel } from '../../components/push-all-partners-panel'
 import {
   COMMUNICATION_METRIC_IDS,
   COMMUNICATION_METRIC_ID_SET,
@@ -258,6 +259,8 @@ export function CommunicationListPage() {
           />
         ))}
       </div>
+
+      <PushAllPartnersPanel />
 
       <DataTable
         columns={columns}

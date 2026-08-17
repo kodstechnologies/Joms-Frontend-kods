@@ -3,13 +3,16 @@ import { Link } from 'react-router-dom'
 import { toast } from 'sonner'
 
 import { getReporterTypeLabel } from '../utils/support-format'
+import { SupportAvatar } from './support-avatar'
 
 type TicketCasePanelProps = {
   reporterName: string
   reporterId: string
   reporterType?: string
+  reporterAvatarUrl?: string
   pastTicketsCount: number
   assignedTo: string
+  assignedToAvatarUrl?: string
   status: string
   priority: string
   module: string
@@ -29,8 +32,10 @@ export function TicketCasePanel({
   reporterName,
   reporterId,
   reporterType = 'user',
+  reporterAvatarUrl,
   pastTicketsCount,
   assignedTo,
+  assignedToAvatarUrl,
   status,
   priority,
   module,
@@ -46,14 +51,14 @@ export function TicketCasePanel({
   onViewProfile,
 }: TicketCasePanelProps) {
   return (
-    <div className="radius-lg bg-brand-surface flex h-full flex-col border border-white/10">
-      <div className="space-y-5 border-b border-white/5 p-4">
+    <div className="radius-lg bg-brand-surface flex h-full min-h-0 flex-col overflow-hidden border border-white/10">
+      <div className="shrink-0 space-y-5 border-b border-white/5 p-4">
         <div>
           <p className="text-body-sm-semibold text-muted tracking-widest uppercase">
             Case Reporter
           </p>
           <div className="mt-3 flex items-center gap-3">
-            <div className="size-10 rounded-full bg-white/10" />
+            <SupportAvatar name={reporterName} src={reporterAvatarUrl} sizeClassName="size-10" />
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-body-md-semibold text-brand-text">{reporterName}</span>
@@ -94,13 +99,13 @@ export function TicketCasePanel({
             </button>
           </div>
           <div className="mt-2 flex items-center gap-2">
-            <div className="size-8 rounded-full bg-white/10" />
+            <SupportAvatar name={assignedTo} src={assignedToAvatarUrl} sizeClassName="size-8" />
             <span className="text-body-md text-brand-text">{assignedTo}</span>
           </div>
         </div>
       </div>
 
-      <div className="flex-1 space-y-4 overflow-y-auto p-4">
+      <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain p-4">
         <SelectField
           label="Ticket Status"
           value={statusValue || status}
@@ -129,7 +134,7 @@ export function TicketCasePanel({
         <SelectField label="Escalation Pathway" value={escalationPathway} />
       </div>
 
-      <div className="flex gap-2 border-t border-white/5 p-4">
+      <div className="flex shrink-0 gap-2 border-t border-white/5 p-4">
         <button
           type="button"
           className="ui-cta ui-cta-primary flex-1"

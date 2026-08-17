@@ -20,6 +20,7 @@ import {
 } from '../api/support-api'
 import { useSupportSocket } from './use-support-socket'
 import { useAuthStore } from '@/modules/auth/store/auth-store'
+import type { ChatMessage } from '../types/support'
 
 const invalidateSupport = (queryClient: ReturnType<typeof useQueryClient>) => {
   queryClient.invalidateQueries({ queryKey: ['support-stats'] })
@@ -121,8 +122,15 @@ export const useReopenSupportTicket = () => {
 export const useSendSupportMessage = () => {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, content }: { id: string; content: string }) =>
-      sendSupportMessage(id, content),
+    mutationFn: ({
+      id,
+      content,
+      attachments,
+    }: {
+      id: string
+      content: string
+      attachments?: ChatMessage['attachments']
+    }) => sendSupportMessage(id, content, attachments),
     onSuccess: (_data, vars) => {
       queryClient.invalidateQueries({ queryKey: ['support-ticket', vars.id] })
       queryClient.invalidateQueries({ queryKey: ['support-tickets'] })
@@ -165,14 +173,32 @@ export const useLiveSupportUpdates = () => {
     invalidateSupport(queryClient)
   }, [queryClient])
 
+  const refreshTicket = useCallback(
+    (ticketId?: string) => {
+      if (ticketId) {
+        queryClient.invalidateQueries({ queryKey: ['support-ticket', ticketId] })
+        queryClient.invalidateQueries({ queryKey: ['support-tickets'] })
+        return
+      }
+      refresh()
+    },
+    [queryClient, refresh],
+  )
+
   const handlers = useCallback(
     () => ({
       onTicketCreated: refresh,
-      onTicketUpdated: refresh,
+      onTicketUpdated: (payload: unknown) => {
+        const data = payload as { ticket?: { id?: string } }
+        refreshTicket(data.ticket?.id)
+      },
       onTicketDeleted: refresh,
-      onNewMessage: refresh,
+      onNewMessage: (payload: unknown) => {
+        const data = payload as { ticketId?: string; ticket?: { id?: string } }
+        refreshTicket(data.ticketId || data.ticket?.id)
+      },
     }),
-    [refresh],
+    [refresh, refreshTicket],
   )
 
   const socket = useSupportSocket(token, handlers)

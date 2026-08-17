@@ -62,27 +62,45 @@ export function SupportWorkspacePage() {
   }, [queue, selectedTicketId, setSelectedTicketId])
 
   const detailQuery = useSupportTicket(selectedTicketId || undefined)
-  const ticket = detailQuery.data?.data?.ticket
-  const messages = detailQuery.data?.data?.messages ?? []
-  const activities = detailQuery.data?.data?.activities ?? []
+  const detail = detailQuery.data?.data
+  const detailMatchesSelection =
+    Boolean(selectedTicketId) && detail?.ticket?.id === selectedTicketId
+  const ticket = detailMatchesSelection ? detail?.ticket : undefined
+  const messages = detailMatchesSelection ? (detail?.messages ?? []) : []
+  const activities = detailMatchesSelection ? (detail?.activities ?? []) : []
+  const messagesLoading =
+    Boolean(selectedTicketId) && (detailQuery.isFetching || !detailMatchesSelection)
 
   const sendMutation = useSendSupportMessage()
   const escalateMutation = useEscalateSupportTicket()
   const resolveMutation = useResolveSupportTicket()
   const assignMutation = useAssignSupportTicket()
   const updateMutation = useUpdateSupportTicket()
-  const { connected, joinTicket, sendSupportMessage } = useLiveSupportUpdates()
+  const { connected, joinTicket, leaveTicket, sendSupportMessage } = useLiveSupportUpdates()
 
   useEffect(() => {
-    if (!selectedTicketId || !connected) return
+    if (!selectedTicketId || !connected) return undefined
     joinTicket(selectedTicketId)
-  }, [selectedTicketId, connected, joinTicket])
+    return () => {
+      leaveTicket(selectedTicketId)
+    }
+  }, [selectedTicketId, connected, joinTicket, leaveTicket])
+
+  useEffect(() => {
+    const main = document.querySelector('main')
+    if (!main) return undefined
+    const previousOverflow = main.style.overflow
+    main.style.overflow = 'hidden'
+    return () => {
+      main.style.overflow = previousOverflow
+    }
+  }, [])
 
   const selectedQueue = queue.find((t) => t.id === selectedTicketId) ?? queue[0] ?? null
 
   return (
-    <div className="space-y-4">
-      <div>
+    <div className="-my-4 flex h-[calc(100dvh-var(--brand-topbar-height))] min-h-0 flex-col gap-3 overflow-hidden md:-my-6">
+      <div className="shrink-0">
         <div className="flex flex-wrap items-center gap-3">
           <h1 className="text-h2 text-brand-text font-semibold tracking-tight">
             Support Management
@@ -108,14 +126,14 @@ export function SupportWorkspacePage() {
             {connected ? 'Socket live' : 'Socket offline'}
           </span>
         </div>
-        <p className="text-body-md text-muted mt-1">
+        <p className="text-body-sm text-muted mt-0.5">
           Decision-centric workspace for high-impact tickets requiring approval, enforcement, or
           oversight.
         </p>
       </div>
 
-      <div className="grid min-h-[calc(100vh-220px)] grid-cols-1 gap-4 lg:grid-cols-12">
-        <div className="lg:col-span-3">
+      <div className="grid h-full min-h-0 flex-1 grid-cols-1 gap-3 overflow-hidden lg:grid-cols-12 lg:grid-rows-1">
+        <div className="flex h-full min-h-0 flex-col lg:col-span-3">
           <TicketQueuePanel
             tickets={queue}
             selectedId={selectedQueue?.id ?? ''}
@@ -137,8 +155,8 @@ export function SupportWorkspacePage() {
           />
         </div>
 
-        <div className="radius-lg bg-brand-surface flex flex-col gap-4 border border-white/10 p-5 lg:col-span-5">
-          <div className="radius-lg bg-brand-bg flex gap-1 border border-white/5 p-1">
+        <div className="radius-lg bg-brand-surface flex h-full min-h-0 flex-col gap-3 overflow-hidden border border-white/10 p-4 lg:col-span-5">
+          <div className="radius-lg bg-brand-bg flex shrink-0 gap-1 border border-white/5 p-1">
             {(['intelligence', 'messages'] as const).map((tab) => (
               <button
                 key={tab}
@@ -156,60 +174,68 @@ export function SupportWorkspacePage() {
             ))}
           </div>
 
-          {!selectedQueue ? (
-            <p className="text-body-md text-muted py-10 text-center">No tickets in queue.</p>
-          ) : workspaceTab === 'intelligence' ? (
-            <TicketIntelligencePanel
-              title={ticket?.subject ?? selectedQueue.subject}
-              ticketId={ticket?.id ?? selectedQueue.id}
-              createdAt={ticket?.createdAt ?? selectedQueue.createdAt}
-              dueIn={ticket?.dueIn ?? '—'}
-              eventName={ticket?.eventContext?.name || '—'}
-              eventDate={ticket?.eventContext?.date || '—'}
-              issueName={ticket?.issueContext?.name || ticket?.issueType || '—'}
-              issueDetail={ticket?.issueContext?.detail || ticket?.description || '—'}
-              activities={activities}
-            />
-          ) : (
-            <TicketMessagesPanel
-              title={ticket?.subject ?? selectedQueue.subject}
-              ticketId={ticket?.id ?? selectedQueue.id}
-              createdAt={ticket?.createdAt ?? selectedQueue.createdAt}
-              dueIn={ticket?.dueIn ?? '—'}
-              assignedTo={ticket?.assignedTo ?? 'Unassigned'}
-              messages={messages}
-              isSending={sendMutation.isPending}
-              onSend={async (content) => {
-                if (!selectedTicketId) return
-                try {
-                  if (connected) {
-                    const result = await sendSupportMessage({
-                      ticketId: selectedTicketId,
-                      id: selectedTicketId,
-                      content,
-                      message: content,
-                    })
-                    if (result.success) return
-                    if (result.message && result.message !== 'Socket not connected') {
-                      throw new Error(result.message)
+          <div className="min-h-0 flex-1 overflow-hidden">
+            {!selectedQueue ? (
+              <p className="text-body-md text-muted py-10 text-center">No tickets in queue.</p>
+            ) : workspaceTab === 'intelligence' ? (
+              <TicketIntelligencePanel
+                key={selectedQueue.id}
+                title={ticket?.subject ?? selectedQueue.subject}
+                ticketId={ticket?.id ?? selectedQueue.id}
+                createdAt={ticket?.createdAt ?? selectedQueue.createdAt}
+                dueIn={ticket?.dueIn ?? '—'}
+                eventName={ticket?.eventContext?.name || '—'}
+                eventDate={ticket?.eventContext?.date || '—'}
+                issueName={ticket?.issueContext?.name || ticket?.issueType || '—'}
+                issueDetail={ticket?.issueContext?.detail || ticket?.description || '—'}
+                activities={activities}
+                isLoading={messagesLoading}
+              />
+            ) : (
+              <TicketMessagesPanel
+                key={selectedQueue.id}
+                title={ticket?.subject ?? selectedQueue.subject}
+                ticketId={ticket?.id ?? selectedQueue.id}
+                createdAt={ticket?.createdAt ?? selectedQueue.createdAt}
+                dueIn={ticket?.dueIn ?? '—'}
+                assignedTo={ticket?.assignedTo ?? 'Unassigned'}
+                messages={messages}
+                isLoading={messagesLoading}
+                isSending={sendMutation.isPending}
+                onSend={async (content) => {
+                  if (!selectedTicketId) return
+                  try {
+                    if (connected) {
+                      const result = await sendSupportMessage({
+                        ticketId: selectedTicketId,
+                        id: selectedTicketId,
+                        content,
+                        message: content,
+                      })
+                      if (result.success) return
+                      if (result.message && result.message !== 'Socket not connected') {
+                        throw new Error(result.message)
+                      }
                     }
+                    await sendMutation.mutateAsync({ id: selectedTicketId, content })
+                  } catch (err) {
+                    toast.error(getApiErrorMessage(err, 'Failed to send message'))
                   }
-                  await sendMutation.mutateAsync({ id: selectedTicketId, content })
-                } catch (err) {
-                  toast.error(getApiErrorMessage(err, 'Failed to send message'))
-                }
-              }}
-            />
-          )}
+                }}
+              />
+            )}
+          </div>
         </div>
 
-        <div className="lg:col-span-4">
+        <div className="flex h-full min-h-0 flex-col lg:col-span-4">
           <TicketCasePanel
             reporterName={ticket?.reporter ?? selectedQueue?.reporter ?? '—'}
             reporterId={ticket?.reporterId ?? '—'}
             reporterType={ticket?.reporterType ?? selectedQueue?.reporterType}
+            reporterAvatarUrl={ticket?.reporterAvatarUrl}
             pastTicketsCount={ticket?.pastTicketsCount ?? 0}
             assignedTo={ticket?.assignedTo ?? 'Unassigned'}
+            assignedToAvatarUrl={ticket?.assignedToAvatarUrl}
             status={ticket ? getStatusLabel(ticket.status) : '—'}
             priority={ticket ? getPriorityLabel(ticket.priority) : '—'}
             module={ticket?.module || '—'}
