@@ -1,3 +1,117 @@
+import {
+  EXPERT_LEADERBOARD_MODULE_KEY,
+  EXPERT_LEADERBOARD_TABLE_COLUMNS_CATALOG,
+} from '@/modules/expert/config/expert-leaderboard-table-columns.config'
+import {
+  VENUE_LEADERBOARD_MODULE_KEY,
+  VENUE_LEADERBOARD_TABLE_COLUMNS_CATALOG,
+} from '@/modules/expert/config/venue-leaderboard-table-columns.config'
+import {
+  EXPERT_CLIENTELE_MAX_ACTIVE_METRICS,
+  EXPERT_CLIENTELE_METRICS_CATALOG,
+  EXPERT_CLIENTELE_MODULE_KEY,
+} from '@/modules/expert/config/expert-clientele-metrics.config'
+import { EXPERT_CLIENTELE_TABLE_COLUMNS_CATALOG } from '@/modules/expert/config/expert-clientele-table-columns.config'
+import {
+  SERVICE_CATEGORY_MANAGEMENT_MAX_ACTIVE_METRICS,
+  SERVICE_CATEGORY_MANAGEMENT_METRICS_CATALOG,
+  SERVICE_CATEGORY_MANAGEMENT_MODULE_KEY,
+} from '@/modules/expert/config/service-category-management-metrics.config'
+import { SERVICE_CATEGORY_MANAGEMENT_TABLE_COLUMNS_CATALOG } from '@/modules/expert/config/service-category-management-table-columns.config'
+import {
+  VENUE_CATEGORY_MANAGEMENT_MAX_ACTIVE_METRICS,
+  VENUE_CATEGORY_MANAGEMENT_METRICS_CATALOG,
+  VENUE_CATEGORY_MANAGEMENT_MODULE_KEY,
+} from '@/modules/expert/config/venue-category-management-metrics.config'
+import { VENUE_CATEGORY_MANAGEMENT_TABLE_COLUMNS_CATALOG } from '@/modules/expert/config/venue-category-management-table-columns.config'
+import {
+  COMMUNICATION_MAX_ACTIVE_METRICS,
+  COMMUNICATION_METRICS_CATALOG,
+  COMMUNICATION_MODULE_KEY,
+} from '@/modules/communication/config/communication-metrics.config'
+import {
+  EXECUTIVE_OVERVIEW_METRICS_CATALOG,
+  EXECUTIVE_OVERVIEW_MODULE_KEY,
+} from '@/modules/dashboard/config/executive-overview-metrics.config'
+import {
+  FINANCE_REVENUE_MODULE_KEY,
+  FINANCE_REVENUE_TABLE_COLUMNS_CATALOG,
+} from '@/modules/payments/config/finance-revenue-table-columns.config'
+import {
+  FINANCE_SERVICES_MODULE_KEY,
+  FINANCE_SERVICES_TABLE_COLUMNS_CATALOG,
+} from '@/modules/payments/config/finance-services-table-columns.config'
+import {
+  FINANCE_VENUES_MODULE_KEY,
+  FINANCE_VENUES_TABLE_COLUMNS_CATALOG,
+} from '@/modules/payments/config/finance-venues-table-columns.config'
+import {
+  FINANCE_TAX_MODULE_KEY,
+  FINANCE_TAX_TABLE_COLUMNS_CATALOG,
+} from '@/modules/payments/config/finance-tax-table-columns.config'
+import {
+  FINANCE_RECONCILIATION_MODULE_KEY,
+  FINANCE_RECONCILIATION_TABLE_COLUMNS_CATALOG,
+} from '@/modules/payments/config/finance-reconciliation-table-columns.config'
+import {
+  FINANCE_DASHBOARD_MAX_ACTIVE_METRICS,
+  FINANCE_DASHBOARD_METRICS_CATALOG,
+  FINANCE_DASHBOARD_MODULE_KEY,
+} from '@/modules/payments/config/finance-dashboard-metrics.config'
+import {
+  FINANCE_REFUNDS_MAX_ACTIVE_METRICS,
+  FINANCE_REFUNDS_METRICS_CATALOG,
+  FINANCE_REFUNDS_MODULE_KEY,
+} from '@/modules/payments/config/finance-refunds-metrics.config'
+import { FINANCE_REFUNDS_TABLE_COLUMNS_CATALOG } from '@/modules/payments/config/finance-refunds-table-columns.config'
+import {
+  MEMBERSHIP_MAX_ACTIVE_METRICS,
+  MEMBERSHIP_METRICS_CATALOG,
+  MEMBERSHIPS_MODULE_KEY,
+} from '@/modules/memberships/config/membership-metrics.config'
+import {
+  RBAC_HUB_MAX_ACTIVE_METRICS,
+  RBAC_HUB_METRICS_CATALOG,
+  RBAC_HUB_MODULE_KEY,
+} from '@/modules/rbac/config/rbac-metrics.config'
+import { RBAC_HUB_TABLE_COLUMNS_CATALOG } from '@/modules/rbac/config/rbac-hub-table-columns.config'
+import {
+  SUPPORT_DASHBOARD_MAX_ACTIVE_METRICS,
+  SUPPORT_DASHBOARD_METRICS_CATALOG,
+  SUPPORT_DASHBOARD_MODULE_KEY,
+} from '@/modules/support-management/config/support-dashboard-metrics.config'
+import {
+  TICKET_MANAGEMENT_MAX_ACTIVE_METRICS,
+  TICKET_MANAGEMENT_METRICS_CATALOG,
+  TICKET_MANAGEMENT_MODULE_KEY,
+} from '@/modules/support-management/config/ticket-management-metrics.config'
+import {
+  ESCALATIONS_MAX_ACTIVE_METRICS,
+  ESCALATIONS_METRICS_CATALOG,
+  ESCALATIONS_MODULE_KEY,
+} from '@/modules/settings/config/escalations-metrics.config'
+import { ESCALATIONS_TABLE_COLUMNS_CATALOG } from '@/modules/settings/config/escalations-table-columns.config'
+import {
+  PLATFORM_HEALTH_MAX_ACTIVE_METRICS,
+  PLATFORM_HEALTH_METRICS_CATALOG,
+  PLATFORM_HEALTH_MODULE_KEY,
+} from '@/modules/settings/config/platform-health-metrics.config'
+import {
+  EXPERT_PROFILE_ANALYTICS_MAX_ACTIVE_METRICS,
+  EXPERT_PROFILE_ANALYTICS_METRICS_CATALOG,
+  EXPERT_PROFILE_ANALYTICS_MODULE_KEY,
+} from '@/modules/expert/config/expert-profile-analytics-metrics.config'
+import {
+  VENUE_PROFILE_ANALYTICS_MAX_ACTIVE_METRICS,
+  VENUE_PROFILE_ANALYTICS_METRICS_CATALOG,
+  VENUE_PROFILE_ANALYTICS_MODULE_KEY,
+} from '@/modules/expert/config/venue-profile-analytics-metrics.config'
+import {
+  VENUE_VIEW_ANALYTICS_MAX_ACTIVE_METRICS,
+  VENUE_VIEW_ANALYTICS_METRICS_CATALOG,
+  VENUE_VIEW_ANALYTICS_MODULE_KEY,
+} from '@/modules/expert/config/venue-view-analytics-metrics.config'
+
 export type MetricsCatalogItem = {
   id: string
   label: string
@@ -47,102 +161,85 @@ const column = (
 /** Frontend fallback catalogs for modules without (or with empty) server catalogs */
 export const MODULE_METRICS_REGISTRY: Record<string, ModuleMetricsDefinition> = {
   'finance-dashboard': {
-    moduleKey: 'finance-dashboard',
+    moduleKey: FINANCE_DASHBOARD_MODULE_KEY,
     moduleName: 'Finance Dashboard',
     returnTo: '/finance/dashboard',
-    maxActiveMetrics: 4,
-    metrics: [
-      metric('total-revenue', 'Total Revenue', 'Currency', 'Platform revenue', true),
-      metric('pending-payouts', 'Pending Payouts', 'Count', 'Awaiting payouts', true),
-      metric('active-escrows', 'Active Escrows', 'Count', 'Open escrow holds', true),
-      metric('refunds-mtd', 'Refunds (MTD)', 'Count', 'Refunds this month', true),
-      metric('failed-payments', 'Failed Payments', 'Count', 'Failed payment attempts'),
-      metric('tax-liability', 'Tax Liability', 'Currency', 'Estimated tax liability'),
-    ],
+    maxActiveMetrics: FINANCE_DASHBOARD_MAX_ACTIVE_METRICS,
+    metrics: FINANCE_DASHBOARD_METRICS_CATALOG.map((item) => ({
+      id: item.id,
+      label: item.label,
+      type: item.type,
+      description: item.description,
+      defaultActive: item.defaultActive,
+    })),
   },
   'finance-venues': {
-    moduleKey: 'finance-venues',
+    moduleKey: FINANCE_VENUES_MODULE_KEY,
     moduleName: 'Finance Venues',
     returnTo: '/finance/venues',
-    maxActiveMetrics: 4,
-    metrics: [
-      metric('venue-revenue', 'Venue Revenue', 'Currency', 'Revenue from venues', true),
-      metric('venue-bookings', 'Venue Bookings', 'Count', 'Venue booking count', true),
-      metric(
-        'pending-settlements',
-        'Pending Settlements',
-        'Count',
-        'Unsettled venue payments',
-        true,
-      ),
-      metric(
-        'avg-booking-value',
-        'Avg. Booking Value',
-        'Currency',
-        'Average venue booking value',
-        true,
-      ),
-    ],
+    columns: FINANCE_VENUES_TABLE_COLUMNS_CATALOG.map((item) => ({
+      id: item.id,
+      label: item.label,
+      type: item.type,
+      description: item.description,
+      defaultVisible: item.defaultVisible,
+    })),
   },
   'finance-services': {
-    moduleKey: 'finance-services',
+    moduleKey: FINANCE_SERVICES_MODULE_KEY,
     moduleName: 'Finance Services',
     returnTo: '/finance/services',
-    maxActiveMetrics: 4,
-    metrics: [
-      metric('service-revenue', 'Service Revenue', 'Currency', 'Revenue from services', true),
-      metric('service-bookings', 'Service Bookings', 'Count', 'Service booking count', true),
-      metric(
-        'pending-settlements',
-        'Pending Settlements',
-        'Count',
-        'Unsettled service payments',
-        true,
-      ),
-      metric(
-        'avg-order-value',
-        'Avg. Order Value',
-        'Currency',
-        'Average service order value',
-        true,
-      ),
-    ],
+    columns: FINANCE_SERVICES_TABLE_COLUMNS_CATALOG.map((item) => ({
+      id: item.id,
+      label: item.label,
+      type: item.type,
+      description: item.description,
+      defaultVisible: item.defaultVisible,
+    })),
   },
   'finance-refunds': {
-    moduleKey: 'finance-refunds',
-    moduleName: 'Finance Refunds',
+    moduleKey: FINANCE_REFUNDS_MODULE_KEY,
+    moduleName: 'Refunds & Chargebacks',
     returnTo: '/finance/refunds',
-    maxActiveMetrics: 4,
-    metrics: [
-      metric('total-refunds', 'Total Refunds', 'Count', 'All refund requests', true),
-      metric('pending-refunds', 'Pending Refunds', 'Count', 'Awaiting approval', true),
-      metric('approved-refunds', 'Approved Refunds', 'Count', 'Approved refunds', true),
-      metric('refund-amount', 'Refund Amount', 'Currency', 'Total refunded amount', true),
-    ],
+    maxActiveMetrics: FINANCE_REFUNDS_MAX_ACTIVE_METRICS,
+    metrics: FINANCE_REFUNDS_METRICS_CATALOG.map((item) => ({
+      id: item.id,
+      label: item.label,
+      type: item.type,
+      description: item.description,
+      defaultActive: item.defaultActive,
+    })),
+    columns: FINANCE_REFUNDS_TABLE_COLUMNS_CATALOG.map((item) => ({
+      id: item.id,
+      label: item.label,
+      type: item.type,
+      description: item.description,
+      defaultVisible: item.defaultVisible,
+    })),
   },
   'finance-reconciliation': {
-    moduleKey: 'finance-reconciliation',
+    moduleKey: FINANCE_RECONCILIATION_MODULE_KEY,
     moduleName: 'Reconciliation',
     returnTo: '/finance/reconciliation',
-    maxActiveMetrics: 4,
-    metrics: [
-      metric('matched', 'Matched', 'Count', 'Matched records', true),
-      metric('unmatched', 'Unmatched', 'Count', 'Unmatched records', true),
-      metric('discrepancies', 'Discrepancies', 'Count', 'Amount mismatches', true),
-      metric('reconciled-mtd', 'Reconciled (MTD)', 'Count', 'Reconciled this month', true),
-    ],
+    columns: FINANCE_RECONCILIATION_TABLE_COLUMNS_CATALOG.map((item) => ({
+      id: item.id,
+      label: item.label,
+      type: item.type,
+      description: item.description,
+      defaultVisible: item.defaultVisible,
+    })),
   },
   'finance-tax': {
-    moduleKey: 'finance-tax',
+    moduleKey: FINANCE_TAX_MODULE_KEY,
     moduleName: 'Tax Compliance',
     returnTo: '/finance/tax',
-    maxActiveMetrics: 4,
-    metrics: [
-      metric('tax-collected', 'Tax Collected', 'Currency', 'Collected tax amount', true),
-      metric('pending-filings', 'Pending Filings', 'Count', 'Pending tax filings', true),
-      metric('compliant', 'Compliant', 'Count', 'Compliant entities', true),
-      metric('overdue', 'Overdue', 'Count', 'Overdue filings', true),
-    ],
+    columns: FINANCE_TAX_TABLE_COLUMNS_CATALOG.map((item) => ({
+      id: item.id,
+      label: item.label,
+      type: item.type,
+      description: item.description,
+      defaultVisible: item.defaultVisible,
+    })),
   },
   'finance-escrow': {
     moduleKey: 'finance-escrow',
@@ -157,16 +254,16 @@ export const MODULE_METRICS_REGISTRY: Record<string, ModuleMetricsDefinition> = 
     ],
   },
   'finance-revenue': {
-    moduleKey: 'finance-revenue',
+    moduleKey: FINANCE_REVENUE_MODULE_KEY,
     moduleName: 'Revenue Overview',
     returnTo: '/finance/revenue',
-    maxActiveMetrics: 4,
-    metrics: [
-      metric('gross-revenue', 'Gross Revenue', 'Currency', 'Gross platform revenue', true),
-      metric('net-revenue', 'Net Revenue', 'Currency', 'Net after fees', true),
-      metric('growth-rate', 'Growth Rate', 'Percentage', 'Revenue growth', true),
-      metric('top-category', 'Top Category', 'Text', 'Highest revenue category', true),
-    ],
+    columns: FINANCE_REVENUE_TABLE_COLUMNS_CATALOG.map((item) => ({
+      id: item.id,
+      label: item.label,
+      type: item.type,
+      description: item.description,
+      defaultVisible: item.defaultVisible,
+    })),
   },
   referrals: {
     moduleKey: 'referrals',
@@ -264,74 +361,43 @@ export const MODULE_METRICS_REGISTRY: Record<string, ModuleMetricsDefinition> = 
     ],
   },
   memberships: {
-    moduleKey: 'memberships',
+    moduleKey: MEMBERSHIPS_MODULE_KEY,
     moduleName: 'Membership Plans',
     returnTo: '/memberships/plans',
-    maxActiveMetrics: 4,
-    metrics: [
-      metric('active-members', 'Active Members', 'Count', 'Active memberships', true),
-      metric('total-plans', 'Total Plans', 'Count', 'Available plans', true),
-      metric('mrr', 'MRR', 'Currency', 'Monthly recurring revenue', true),
-      metric('churn-rate', 'Churn Rate', 'Percentage', 'Membership churn', true),
-    ],
+    maxActiveMetrics: MEMBERSHIP_MAX_ACTIVE_METRICS,
+    metrics: MEMBERSHIP_METRICS_CATALOG.map((item) => ({
+      id: item.id,
+      label: item.label,
+      type: item.type,
+      description: item.description,
+      defaultActive: item.defaultActive,
+    })),
   },
   'support-dashboard': {
-    moduleKey: 'support-dashboard',
-    moduleName: 'Support Dashboard',
+    moduleKey: SUPPORT_DASHBOARD_MODULE_KEY,
+    moduleName: 'Support Management',
     returnTo: '/support/dashboard',
-    maxActiveMetrics: 8,
-    metrics: [
-      metric('total-tickets', 'Total Tickets', 'Count', 'Total tickets in the system', true),
-      metric(
-        'open-tickets',
-        'Open Tickets',
-        'Count',
-        'Currently open tickets (Open, Assigned, In Progress, Pending Customer)',
-        true,
-      ),
-      metric('in-progress', 'Tickets In Progress', 'Count', 'Active tickets being worked on', true),
-      metric(
-        'assigned-to-me',
-        'Assigned to Me',
-        'Count',
-        'Tickets assigned to logged-in admin',
-        true,
-      ),
-      metric(
-        'escalated-by-me',
-        'Escalated by Me',
-        'Count',
-        'Tickets escalated by logged-in admin',
-        true,
-      ),
-      metric(
-        'avg-first-response',
-        'Average First Response Time',
-        'Duration',
-        'Average time to first response',
-        true,
-      ),
-      metric(
-        'avg-resolution',
-        'Average Resolution Time',
-        'Duration',
-        'Average resolution duration',
-        true,
-      ),
-      metric('resolved-today', 'Tickets Resolved Today', 'Count', 'Tickets resolved today', true),
-    ],
+    maxActiveMetrics: SUPPORT_DASHBOARD_MAX_ACTIVE_METRICS,
+    metrics: SUPPORT_DASHBOARD_METRICS_CATALOG.map((item) => ({
+      id: item.id,
+      label: item.label,
+      type: item.type,
+      description: item.description,
+      defaultActive: item.defaultActive,
+    })),
   },
   'ticket-management': {
-    moduleKey: 'ticket-management',
+    moduleKey: TICKET_MANAGEMENT_MODULE_KEY,
     moduleName: 'Ticket Management',
     returnTo: '/support/tickets',
-    maxActiveMetrics: 4,
-    metrics: [
-      metric('open', 'Open', 'Count', 'Open tickets', true),
-      metric('in-progress', 'In Progress', 'Count', 'Tickets in progress', true),
-      metric('escalated', 'Escalated', 'Count', 'Escalated tickets', true),
-      metric('resolved', 'Resolved', 'Count', 'Resolved tickets', true),
-    ],
+    maxActiveMetrics: TICKET_MANAGEMENT_MAX_ACTIVE_METRICS,
+    metrics: TICKET_MANAGEMENT_METRICS_CATALOG.map((item) => ({
+      id: item.id,
+      label: item.label,
+      type: item.type,
+      description: item.description,
+      defaultActive: item.defaultActive,
+    })),
     columns: [
       column('ticket-id', 'Ticket ID', 'Text', 'Unique ticket id'),
       column('subject', 'Subject', 'Text', 'Ticket subject'),
@@ -354,28 +420,30 @@ export const MODULE_METRICS_REGISTRY: Record<string, ModuleMetricsDefinition> = 
     ],
   },
   'executive-overview': {
-    moduleKey: 'executive-overview',
+    moduleKey: EXECUTIVE_OVERVIEW_MODULE_KEY,
     moduleName: 'Executive Overview',
     returnTo: '/dashboard/executive',
-    maxActiveMetrics: 4,
-    metrics: [
-      metric('gmv', 'GMV', 'Currency', 'Gross merchandise value', true),
-      metric('active-users', 'Active Users', 'Count', 'Active platform users', true),
-      metric('orders-mtd', 'Orders (MTD)', 'Count', 'Orders this month', true),
-      metric('nps', 'NPS', 'Number', 'Net promoter score', true),
-    ],
+    maxActiveMetrics: EXECUTIVE_OVERVIEW_METRICS_CATALOG.length,
+    metrics: EXECUTIVE_OVERVIEW_METRICS_CATALOG.map((item) => ({
+      id: item.id,
+      label: item.label,
+      type: item.type,
+      description: item.description,
+      defaultActive: item.defaultActive,
+    })),
   },
   'platform-health': {
-    moduleKey: 'platform-health',
+    moduleKey: PLATFORM_HEALTH_MODULE_KEY,
     moduleName: 'Platform Health',
     returnTo: '/settings/health',
-    maxActiveMetrics: 4,
-    metrics: [
-      metric('uptime', 'Uptime', 'Percentage', 'Service uptime', true),
-      metric('incidents', 'Incidents', 'Count', 'Open incidents', true),
-      metric('latency', 'Latency', 'Average', 'Average API latency', true),
-      metric('error-rate', 'Error Rate', 'Percentage', 'Error rate', true),
-    ],
+    maxActiveMetrics: PLATFORM_HEALTH_MAX_ACTIVE_METRICS,
+    metrics: PLATFORM_HEALTH_METRICS_CATALOG.map((item) => ({
+      id: item.id,
+      label: item.label,
+      type: item.type,
+      description: item.description,
+      defaultActive: item.defaultActive,
+    })),
   },
   'incident-tracking': {
     moduleKey: 'incident-tracking',
@@ -390,45 +458,17 @@ export const MODULE_METRICS_REGISTRY: Record<string, ModuleMetricsDefinition> = 
     ],
   },
   communication: {
-    moduleKey: 'communication',
+    moduleKey: COMMUNICATION_MODULE_KEY,
     moduleName: 'Communication',
     returnTo: '/communication/management',
-    maxActiveMetrics: 5,
-    metrics: [
-      metric(
-        'total-messages-sent',
-        'Total messages sent',
-        'Count',
-        'Recipient emails successfully sent',
-        true,
-      ),
-      metric(
-        'active-campaigns',
-        'Active campaigns',
-        'Count',
-        'Scheduled and active campaigns',
-        true,
-      ),
-      metric('channels-used', 'Channels used', 'Count', 'Distinct delivery channels used', true),
-      metric(
-        'scheduled-messages',
-        'Scheduled messages',
-        'Count',
-        'Campaigns waiting to send',
-        true,
-      ),
-      metric(
-        'failed-undelivered',
-        'Failed/Undelivered',
-        'Count',
-        'Failed campaigns and recipients',
-        true,
-      ),
-      metric('sent', 'Sent', 'Count', 'Total recipient sends', false),
-      metric('delivered', 'Delivered', 'Count', 'Delivered recipient messages', false),
-      metric('open-rate', 'Open Rate', 'Percentage', 'Message open rate', false),
-      metric('failed', 'Failed', 'Count', 'Failed recipient deliveries', false),
-    ],
+    maxActiveMetrics: COMMUNICATION_MAX_ACTIVE_METRICS,
+    metrics: COMMUNICATION_METRICS_CATALOG.map((item) => ({
+      id: item.id,
+      label: item.label,
+      type: item.type,
+      description: item.description,
+      defaultActive: item.defaultActive,
+    })),
     columns: [
       column('message-id', 'Message ID', 'Text', 'Unique communication id'),
       column('title', 'Title', 'Text', 'Internal communication title'),
@@ -441,16 +481,24 @@ export const MODULE_METRICS_REGISTRY: Record<string, ModuleMetricsDefinition> = 
     ],
   },
   'rbac-hub': {
-    moduleKey: 'rbac-hub',
-    moduleName: 'RBAC Hub',
+    moduleKey: RBAC_HUB_MODULE_KEY,
+    moduleName: 'Role Based Access',
     returnTo: '/settings/access',
-    maxActiveMetrics: 4,
-    metrics: [
-      metric('admins', 'Admins', 'Count', 'Total admins', true),
-      metric('sub-admins', 'Sub-Admins', 'Count', 'Sub-admin accounts', true),
-      metric('roles', 'Roles', 'Count', 'Configured roles', true),
-      metric('active-sessions', 'Active Sessions', 'Count', 'Active admin sessions', true),
-    ],
+    maxActiveMetrics: RBAC_HUB_MAX_ACTIVE_METRICS,
+    metrics: RBAC_HUB_METRICS_CATALOG.map((item) => ({
+      id: item.id,
+      label: item.label,
+      type: item.type,
+      description: item.description,
+      defaultActive: item.defaultActive,
+    })),
+    columns: RBAC_HUB_TABLE_COLUMNS_CATALOG.map((item) => ({
+      id: item.id,
+      label: item.label,
+      type: item.type,
+      description: item.description,
+      defaultVisible: item.defaultVisible,
+    })),
   },
   'admin-logs': {
     moduleKey: 'admin-logs',
@@ -465,16 +513,147 @@ export const MODULE_METRICS_REGISTRY: Record<string, ModuleMetricsDefinition> = 
     ],
   },
   escalations: {
-    moduleKey: 'escalations',
-    moduleName: 'Escalations',
+    moduleKey: ESCALATIONS_MODULE_KEY,
+    moduleName: 'All Escalation',
     returnTo: '/settings/escalations',
-    maxActiveMetrics: 4,
-    metrics: [
-      metric('open', 'Open', 'Count', 'Open escalations', true),
-      metric('high-priority', 'High Priority', 'Count', 'High priority', true),
-      metric('resolved-mtd', 'Resolved (MTD)', 'Count', 'Resolved this month', true),
-      metric('avg-time', 'Avg. Time', 'Average', 'Average escalation time', true),
-    ],
+    maxActiveMetrics: ESCALATIONS_MAX_ACTIVE_METRICS,
+    metrics: ESCALATIONS_METRICS_CATALOG.map((item) => ({
+      id: item.id,
+      label: item.label,
+      type: item.type,
+      description: item.description,
+      defaultActive: item.defaultActive,
+    })),
+    columns: ESCALATIONS_TABLE_COLUMNS_CATALOG.map((item) => ({
+      id: item.id,
+      label: item.label,
+      type: item.type,
+      description: item.description,
+      defaultVisible: item.defaultVisible,
+    })),
+  },
+  'expert-profile-analytics': {
+    moduleKey: EXPERT_PROFILE_ANALYTICS_MODULE_KEY,
+    moduleName: 'Expert Profile Analytics',
+    returnTo: '/experts/management',
+    maxActiveMetrics: EXPERT_PROFILE_ANALYTICS_MAX_ACTIVE_METRICS,
+    metrics: EXPERT_PROFILE_ANALYTICS_METRICS_CATALOG.map((item) => ({
+      id: item.id,
+      label: item.label,
+      type: item.type,
+      description: item.description,
+      defaultActive: item.defaultActive,
+    })),
+  },
+  'expert-leaderboard': {
+    moduleKey: EXPERT_LEADERBOARD_MODULE_KEY,
+    moduleName: 'Expert Leaderboard',
+    returnTo: '/experts/leaderboard',
+    columns: EXPERT_LEADERBOARD_TABLE_COLUMNS_CATALOG.map((item) => ({
+      id: item.id,
+      label: item.label,
+      type: item.type,
+      description: item.description,
+      defaultVisible: item.defaultVisible,
+    })),
+  },
+  'venue-leaderboard': {
+    moduleKey: VENUE_LEADERBOARD_MODULE_KEY,
+    moduleName: 'Venue Leaderboard',
+    returnTo: '/venues/leaderboard',
+    columns: VENUE_LEADERBOARD_TABLE_COLUMNS_CATALOG.map((item) => ({
+      id: item.id,
+      label: item.label,
+      type: item.type,
+      description: item.description,
+      defaultVisible: item.defaultVisible,
+    })),
+  },
+  'expert-clientele': {
+    moduleKey: EXPERT_CLIENTELE_MODULE_KEY,
+    moduleName: 'Expert Clientele',
+    returnTo: '/experts/management',
+    maxActiveMetrics: EXPERT_CLIENTELE_MAX_ACTIVE_METRICS,
+    metrics: EXPERT_CLIENTELE_METRICS_CATALOG.map((item) => ({
+      id: item.id,
+      label: item.label,
+      type: item.type,
+      description: item.description,
+      defaultActive: item.defaultActive,
+    })),
+    columns: EXPERT_CLIENTELE_TABLE_COLUMNS_CATALOG.map((item) => ({
+      id: item.id,
+      label: item.label,
+      type: item.type,
+      description: item.description,
+      defaultVisible: item.defaultVisible,
+    })),
+  },
+  'service-category-management': {
+    moduleKey: SERVICE_CATEGORY_MANAGEMENT_MODULE_KEY,
+    moduleName: 'Service Category Management',
+    returnTo: '/categories/management',
+    maxActiveMetrics: SERVICE_CATEGORY_MANAGEMENT_MAX_ACTIVE_METRICS,
+    metrics: SERVICE_CATEGORY_MANAGEMENT_METRICS_CATALOG.map((item) => ({
+      id: item.id,
+      label: item.label,
+      type: item.type,
+      description: item.description,
+      defaultActive: item.defaultActive,
+    })),
+    columns: SERVICE_CATEGORY_MANAGEMENT_TABLE_COLUMNS_CATALOG.map((item) => ({
+      id: item.id,
+      label: item.label,
+      type: item.type,
+      description: item.description,
+      defaultVisible: item.defaultVisible,
+    })),
+  },
+  'venue-category-management': {
+    moduleKey: VENUE_CATEGORY_MANAGEMENT_MODULE_KEY,
+    moduleName: 'Venue Category Management',
+    returnTo: '/venues/categories/management',
+    maxActiveMetrics: VENUE_CATEGORY_MANAGEMENT_MAX_ACTIVE_METRICS,
+    metrics: VENUE_CATEGORY_MANAGEMENT_METRICS_CATALOG.map((item) => ({
+      id: item.id,
+      label: item.label,
+      type: item.type,
+      description: item.description,
+      defaultActive: item.defaultActive,
+    })),
+    columns: VENUE_CATEGORY_MANAGEMENT_TABLE_COLUMNS_CATALOG.map((item) => ({
+      id: item.id,
+      label: item.label,
+      type: item.type,
+      description: item.description,
+      defaultVisible: item.defaultVisible,
+    })),
+  },
+  'venue-profile-analytics': {
+    moduleKey: VENUE_PROFILE_ANALYTICS_MODULE_KEY,
+    moduleName: 'Venue Profile Analytics',
+    returnTo: '/venues/management',
+    maxActiveMetrics: VENUE_PROFILE_ANALYTICS_MAX_ACTIVE_METRICS,
+    metrics: VENUE_PROFILE_ANALYTICS_METRICS_CATALOG.map((item) => ({
+      id: item.id,
+      label: item.label,
+      type: item.type,
+      description: item.description,
+      defaultActive: item.defaultActive,
+    })),
+  },
+  'venue-view-analytics': {
+    moduleKey: VENUE_VIEW_ANALYTICS_MODULE_KEY,
+    moduleName: 'Venue View Analytics',
+    returnTo: '/venues/management',
+    maxActiveMetrics: VENUE_VIEW_ANALYTICS_MAX_ACTIVE_METRICS,
+    metrics: VENUE_VIEW_ANALYTICS_METRICS_CATALOG.map((item) => ({
+      id: item.id,
+      label: item.label,
+      type: item.type,
+      description: item.description,
+      defaultActive: item.defaultActive,
+    })),
   },
   'service-dashboard': {
     moduleKey: 'service-dashboard',

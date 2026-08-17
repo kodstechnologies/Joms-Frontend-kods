@@ -15,7 +15,10 @@ export function EscalationHeader() {
         </p>
       </div>
 
-      <Button className="ui-manage-metrics" onClick={() => navigate('/metrics/escalations')}>
+      <Button
+        className="ui-manage-metrics ui-cta ui-cta-primary"
+        onClick={() => navigate('/metrics/escalations')}
+      >
         <SlidersHorizontal className="size-4" />
         Manage Metrics
       </Button>

@@ -224,8 +224,7 @@ export const mapEscrowToServiceRow = (escrow: FinanceEscrowHold) => ({
   bookingId: escrow.referenceId || String(escrow.transactionId || escrow.paymentId),
   userName: escrow.userName || escrow.userId || '—',
   status: (mapEscrowStatus(escrow.status) === 'Released' ? 'Paid' : 'Pending') as
-    | 'Paid'
-    | 'Pending',
+    'Paid' | 'Pending',
   revenue: formatInr(escrow.amountHeld),
 })
 
@@ -259,9 +258,7 @@ export const mapPaymentToVenueRow = (payment: FinancePayment) => {
       (typeof snapshot.title === 'string' && snapshot.title) ||
       titleCase(payment.pricingType || payment.module),
     status: (status === 'Paid' ? 'Completed' : status === 'Failed' ? 'Cancelled' : 'Pending') as
-      | 'Completed'
-      | 'Pending'
-      | 'Cancelled',
+      'Completed' | 'Pending' | 'Cancelled',
     revenue: formatInr(payment.amount),
   }
 }
@@ -270,7 +267,7 @@ export const mapDashboardSummaryCards = (summary?: FinanceDashboardSummary | nul
   if (!summary) return []
   return [
     {
-      label: 'Total in Escrow',
+      label: 'Total In Escrow',
       value: formatInr(summary.totalInEscrow),
       change: String(summary.activeEscrows),
       changeType: 'up' as const,

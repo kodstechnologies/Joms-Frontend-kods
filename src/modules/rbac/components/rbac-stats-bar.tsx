@@ -1,13 +1,36 @@
+import { useMemo } from 'react'
+
+import {
+  DEFAULT_RBAC_HUB_METRIC_IDS,
+  RBAC_HUB_METRICS_CATALOG,
+  RBAC_HUB_METRIC_IDS,
+  RBAC_HUB_METRIC_ID_SET,
+  RBAC_HUB_MODULE_KEY,
+  RBAC_HUB_STAT_KEYS,
+} from '../config/rbac-metrics.config'
 import type { RbacStats } from '../types/rbac'
+import {
+  orderByActiveMetricIds,
+  useActiveMetricIds,
+} from '@/modules/expert/hooks/use-active-metric-ids'
+import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
 import { cn } from '@/shared/lib/cn'
 
-const cards = [
-  { key: 'totalUsers', label: 'Total User' },
-  { key: 'totalActiveUsers', label: 'Total active users' },
-  { key: 'currentlyOnlineUsers', label: 'Currently online users' },
-  { key: 'suspendedUsers', label: 'Suspended Users' },
-  { key: 'totalRolesAvailable', label: 'Total Roles Available' },
-] as const
+type RbacMetricCard = {
+  id: string
+  label: string
+  statsKey: keyof RbacStats
+}
+
+function buildRbacMetricCards(): RbacMetricCard[] {
+  const labelById = new Map(RBAC_HUB_METRICS_CATALOG.map((metric) => [metric.id, metric.label]))
+
+  return RBAC_HUB_METRIC_IDS.map((id) => ({
+    id,
+    label: labelById.get(id) ?? id,
+    statsKey: RBAC_HUB_STAT_KEYS[id as keyof typeof RBAC_HUB_STAT_KEYS],
+  }))
+}
 
 type RbacStatsBarProps = {
   stats?: RbacStats
@@ -15,11 +38,27 @@ type RbacStatsBarProps = {
 }
 
 export function RbacStatsBar({ stats, isLoading }: RbacStatsBarProps) {
+  const activeMetricIds = useActiveMetricIds(RBAC_HUB_MODULE_KEY, [...DEFAULT_RBAC_HUB_METRIC_IDS])
+
+  const filteredActiveMetricIds = useMemo(
+    () =>
+      sortIdsByCatalogOrder(
+        activeMetricIds.filter((id) => RBAC_HUB_METRIC_ID_SET.has(id)),
+        RBAC_HUB_METRIC_IDS,
+      ),
+    [activeMetricIds],
+  )
+
+  const visibleCards = useMemo(() => {
+    const allCards = buildRbacMetricCards()
+    return orderByActiveMetricIds(allCards, filteredActiveMetricIds)
+  }, [filteredActiveMetricIds])
+
   return (
     <div className="grid gap-3 md:grid-cols-3 xl:grid-cols-5">
-      {cards.map((card) => (
+      {visibleCards.map((card) => (
         <div
-          key={card.key}
+          key={card.id}
           className="rounded-brand-lg bg-brand-surface border border-white/10 px-4 py-4"
         >
           <p className="text-brand-muted text-xs font-medium md:text-sm">{card.label}</p>
@@ -29,7 +68,7 @@ export function RbacStatsBar({ stats, isLoading }: RbacStatsBarProps) {
               isLoading && 'animate-pulse',
             )}
           >
-            {isLoading ? '—' : String(stats?.[card.key] ?? 0).padStart(2, '0')}
+            {isLoading ? '—' : String(stats?.[card.statsKey] ?? 0).padStart(2, '0')}
           </p>
         </div>
       ))}

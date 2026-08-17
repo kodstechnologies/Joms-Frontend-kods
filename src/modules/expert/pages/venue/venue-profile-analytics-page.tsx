@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
@@ -7,12 +7,23 @@ import { toast } from 'sonner'
 
 import { useVenueFullView } from '../../hooks/use-venues'
 import { useVenueProfileAnalytics } from '../../hooks/use-venue-analytics'
+import {
+  DEFAULT_VENUE_PROFILE_ANALYTICS_METRIC_IDS,
+  VENUE_PROFILE_ANALYTICS_METRIC_ID_SET,
+  VENUE_PROFILE_ANALYTICS_METRIC_IDS,
+  VENUE_PROFILE_ANALYTICS_MODULE_KEY,
+} from '../../config/venue-profile-analytics-metrics.config'
+import { orderByActiveMetricIds, useActiveMetricIds } from '../../hooks/use-active-metric-ids'
+import { buildVenueProfileAnalyticsMetricCards } from '../../utils/venue-profile-analytics-metrics'
+import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
 import {
   BookingsTab,
+  MetricCard,
   OverviewTab,
   RevenueTab,
+  SectionTitle,
   SpacesTab,
   VisualAnalyticsTab,
 } from '../../components/venue-analytics'
@@ -36,6 +47,32 @@ export function VenueProfileAnalyticsPage() {
   // Fetch real-time venue profile analytics from venue-service (port 8005)
   const analyticsQuery = useVenueProfileAnalytics(venueId)
   const analyticsData = analyticsQuery.data
+  const activeMetricIds = useActiveMetricIds(VENUE_PROFILE_ANALYTICS_MODULE_KEY, [
+    ...DEFAULT_VENUE_PROFILE_ANALYTICS_METRIC_IDS,
+  ])
+
+  const filteredActiveMetricIds = useMemo(
+    () =>
+      sortIdsByCatalogOrder(
+        activeMetricIds.filter((metricId) => VENUE_PROFILE_ANALYTICS_METRIC_ID_SET.has(metricId)),
+        VENUE_PROFILE_ANALYTICS_METRIC_IDS,
+      ),
+    [activeMetricIds],
+  )
+
+  const venueAnalyticsCards = useMemo(() => {
+    const venueAnalytics = data?.data?.profile as
+      ({ analytics?: Record<string, unknown> } & Record<string, unknown>) | undefined
+    const allCards = buildVenueProfileAnalyticsMetricCards(
+      analyticsData,
+      venueAnalytics?.analytics ?? null,
+    )
+    return orderByActiveMetricIds(allCards, filteredActiveMetricIds)
+  }, [analyticsData, data, filteredActiveMetricIds])
+
+  const manageMetricsPath = venueId
+    ? `/metrics/venue-profile-analytics?returnTo=${encodeURIComponent(`/venues/management/profile/${venueId}/analytics`)}`
+    : '/metrics/venue-profile-analytics'
 
   const venueName = data?.data?.overview.venue.name ?? 'Venue'
 
@@ -61,8 +98,8 @@ export function VenueProfileAnalyticsPage() {
         </div>
         <div className="flex flex-wrap gap-3">
           <Button
-            className="ui-manage-metrics h-9"
-            onClick={() => navigate('/venues/dashboard/metrics')}
+            className="ui-manage-metrics ui-cta ui-cta-primary h-9"
+            onClick={() => navigate(manageMetricsPath)}
           >
             <SlidersHorizontal className="size-4" />
             Manage Metrics
@@ -76,6 +113,25 @@ export function VenueProfileAnalyticsPage() {
           </Button>
         </div>
       </header>
+
+      <div>
+        <SectionTitle title="Venue Analytics" subtitle="Event and engagement metrics" />
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {analyticsQuery.isLoading
+            ? Array.from({ length: filteredActiveMetricIds.length || 8 }).map((_, index) => (
+                <div
+                  key={`venue-analytics-skeleton-${index}`}
+                  className="rounded-lg bg-[#111111] p-4"
+                >
+                  <div className="h-3 w-28 animate-pulse rounded bg-white/10" />
+                  <div className="mt-3 h-7 w-16 animate-pulse rounded bg-white/10" />
+                </div>
+              ))
+            : venueAnalyticsCards.map((item) => (
+                <MetricCard key={item.id} label={item.label} value={item.value} />
+              ))}
+        </div>
+      </div>
 
       <nav className="flex w-full gap-1 rounded-lg border border-white/5 bg-[#111111] p-1">
         {TABS.map((tab) => (

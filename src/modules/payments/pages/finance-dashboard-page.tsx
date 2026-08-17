@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import {
   Area,
   Bar,
@@ -21,17 +22,28 @@ import {
   escrowStatusMock,
   keyFinancialMetricsMock,
   monthlyComparisonMock,
-  payoutsCashFlowCardsMock,
   revenueByCategoryMock,
   revenueFeeTrendsMock,
-  revenueProfitCardsMock,
   weeklyPayoutScheduleMock,
   type KeyMetric,
   type RevenueCategoryPoint,
   type TrendMetric,
 } from '@/modules/payments/mock/finance-dashboard.mock'
+import {
+  DEFAULT_FINANCE_DASHBOARD_METRIC_IDS,
+  FINANCE_DASHBOARD_METRIC_IDS,
+  FINANCE_DASHBOARD_METRIC_ID_SET,
+  FINANCE_DASHBOARD_MODULE_KEY,
+  FINANCE_DASHBOARD_SECTIONS,
+} from '@/modules/payments/config/finance-dashboard-metrics.config'
 import { useFinanceDashboard } from '@/modules/payments/hooks/use-finance'
-import { formatInr, mapDashboardSummaryCards } from '@/modules/payments/utils/finance-mappers'
+import { formatInr } from '@/modules/payments/utils/finance-mappers'
+import { buildFinanceDashboardMetricCards } from '@/modules/payments/utils/finance-dashboard-metrics'
+import {
+  orderByActiveMetricIds,
+  useActiveMetricIds,
+} from '@/modules/expert/hooks/use-active-metric-ids'
+import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
 
@@ -256,29 +268,31 @@ function formatCurrency(value: number) {
 
 export function FinanceDashboardPage() {
   const navigate = useNavigate()
-  const { data, isLoading, isError, refetch, isFetching } = useFinanceDashboard()
+  const { data, isError, refetch, isFetching } = useFinanceDashboard()
   const summary = data?.data
-  const topSummaryCards = mapDashboardSummaryCards(summary)
   const totalEscrowAmount = summary?.totalInEscrow ?? 0
-  const liveRevenueCards: TrendMetric[] = summary
-    ? [
-        {
-          label: 'Total Platform Revenue',
-          value: formatInr(summary.totalPlatformRevenue),
-          change: '—',
-          changeType: 'up',
-          changeNote: 'from payments',
-        },
-        {
-          label: 'Collections This Month',
-          value: formatInr(summary.collectionsThisMonth),
-          change: '—',
-          changeType: 'up',
-          changeNote: 'current month',
-        },
-        ...revenueProfitCardsMock.slice(2),
-      ]
-    : revenueProfitCardsMock
+  const activeMetricIds = useActiveMetricIds(FINANCE_DASHBOARD_MODULE_KEY, [
+    ...DEFAULT_FINANCE_DASHBOARD_METRIC_IDS,
+  ])
+
+  const filteredActiveMetricIds = useMemo(
+    () =>
+      sortIdsByCatalogOrder(
+        activeMetricIds.filter((id) => FINANCE_DASHBOARD_METRIC_ID_SET.has(id)),
+        FINANCE_DASHBOARD_METRIC_IDS,
+      ),
+    [activeMetricIds],
+  )
+
+  const visibleMetricCards = useMemo(() => {
+    const allCards = buildFinanceDashboardMetricCards(summary)
+    return orderByActiveMetricIds(allCards, filteredActiveMetricIds)
+  }, [filteredActiveMetricIds, summary])
+
+  const visibleMetricIds = useMemo(
+    () => new Set(visibleMetricCards.map((metric) => metric.id)),
+    [visibleMetricCards],
+  )
 
   return (
     <div className="space-y-6">
@@ -312,36 +326,31 @@ export function FinanceDashboardPage() {
         <p className="text-body-sm text-brand-danger">Failed to load finance dashboard summary.</p>
       ) : null}
 
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-        {(isLoading && !topSummaryCards.length
-          ? [
-              { label: 'Total in Escrow', value: '…', change: '—', changeType: 'up' as const },
-              { label: 'Pending Payout', value: '…', change: '—', changeType: 'up' as const },
-              { label: 'Disputed Amount', value: '…', change: '—', changeType: 'up' as const },
-            ]
-          : topSummaryCards
-        ).map((metric) => (
-          <SummaryCard key={metric.label} metric={metric} />
-        ))}
-      </div>
+      {FINANCE_DASHBOARD_SECTIONS.map((section) => {
+        const sectionMetrics = section.metricIds
+          .filter((id) => visibleMetricIds.has(id))
+          .map((id) => visibleMetricCards.find((metric) => metric.id === id))
+          .filter(Boolean) as typeof visibleMetricCards
 
-      <div>
-        <SectionTitle>Revenue &amp; Profit</SectionTitle>
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-          {liveRevenueCards.map((metric) => (
-            <MetricCard key={metric.label} metric={metric} />
-          ))}
-        </div>
-      </div>
+        if (!sectionMetrics.length) return null
 
-      <div>
-        <SectionTitle>Payouts &amp; Cash Flow</SectionTitle>
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-          {payoutsCashFlowCardsMock.map((metric) => (
-            <MetricCard key={metric.label} metric={metric} />
-          ))}
-        </div>
-      </div>
+        const cards = sectionMetrics
+
+        return (
+          <div key={section.key}>
+            {section.title ? <SectionTitle>{section.title}</SectionTitle> : null}
+            <div className={section.gridClassName}>
+              {cards.map((metric) =>
+                section.key === 'escrow' ? (
+                  <SummaryCard key={metric.id ?? metric.label} metric={metric} />
+                ) : (
+                  <MetricCard key={metric.id ?? metric.label} metric={metric} />
+                ),
+              )}
+            </div>
+          </div>
+        )
+      })}
 
       <div>
         <SectionTitle>Key Financial Metrics</SectionTitle>
@@ -511,7 +520,7 @@ export function FinanceDashboardPage() {
               )
             })}
             <div className="flex items-center justify-between border-t border-white/10 pt-4">
-              <span className="text-body-md-semibold text-brand-text">Total in Escrow</span>
+              <span className="text-body-md-semibold text-brand-text">Total In Escrow</span>
               <span className="text-body-md-semibold text-brand-text">
                 {formatInr(totalEscrowAmount)}
               </span>

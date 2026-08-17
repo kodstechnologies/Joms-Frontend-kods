@@ -7,6 +7,11 @@ import { toast } from 'sonner'
 import { type FinanceVenueRow } from '@/modules/payments/mock/finance-venues.mock'
 import { useAddFinanceNote, useFinanceRevenue } from '@/modules/payments/hooks/use-finance'
 import { mapPaymentToVenueRow } from '@/modules/payments/utils/finance-mappers'
+import {
+  DEFAULT_FINANCE_VENUES_VISIBLE_COLUMN_IDS,
+  FINANCE_VENUES_MODULE_KEY,
+} from '@/modules/payments/config/finance-venues-table-columns.config'
+import { useTableColumnPreferences } from '@/modules/expert/hooks/use-ui-preferences'
 import { AddTagsModal } from '@/shared/components/modals/add-tags-modal'
 import { DataTable } from '@/shared/components/table/data-table'
 import {
@@ -36,6 +41,7 @@ export function FinanceVenuesPage() {
   const [selectedRowIds, setSelectedRowIds] = useState<string[]>([])
   const [tagTarget, setTagTarget] = useState<FinanceVenueRow | null>(null)
   const addNote = useAddFinanceNote()
+  const tableColumnPreferencesQuery = useTableColumnPreferences(FINANCE_VENUES_MODULE_KEY)
 
   const { data, isLoading, isFetching } = useFinanceRevenue({
     page: currentPage,
@@ -137,38 +143,39 @@ export function FinanceVenuesPage() {
     [activeDropdownId, navigate],
   )
 
-  const columns = useMemo<ColumnDef<FinanceVenueRow>[]>(
-    () => [
-      {
-        id: 'select',
-        header: () => (
-          <input
-            type="checkbox"
-            aria-label="Select all venue records"
-            checked={allVisibleSelected}
-            ref={(input) => {
-              if (input) input.indeterminate = someVisibleSelected && !allVisibleSelected
-            }}
-            onChange={toggleVisibleRows}
-            className="rounded border-slate-700 bg-transparent"
-          />
-        ),
-        cell: ({ row }) => (
-          <input
-            type="checkbox"
-            aria-label={`Select ${row.original.name}`}
-            checked={selectedRowIds.includes(row.original.id)}
-            onChange={() => toggleRowSelection(row.original.id)}
-            onClick={(event) => event.stopPropagation()}
-            className="rounded border-slate-700 bg-transparent"
-          />
-        ),
-        meta: {
-          headerClassName: 'pl-5',
-          cellClassName: 'pl-5',
-        },
+  const columns = useMemo<ColumnDef<FinanceVenueRow>[]>(() => {
+    const selectColumn: ColumnDef<FinanceVenueRow> = {
+      id: 'select',
+      header: () => (
+        <input
+          type="checkbox"
+          aria-label="Select all venue records"
+          checked={allVisibleSelected}
+          ref={(input) => {
+            if (input) input.indeterminate = someVisibleSelected && !allVisibleSelected
+          }}
+          onChange={toggleVisibleRows}
+          className="rounded border-slate-700 bg-transparent"
+        />
+      ),
+      cell: ({ row }) => (
+        <input
+          type="checkbox"
+          aria-label={`Select ${row.original.name}`}
+          checked={selectedRowIds.includes(row.original.id)}
+          onChange={() => toggleRowSelection(row.original.id)}
+          onClick={(event) => event.stopPropagation()}
+          className="rounded border-slate-700 bg-transparent"
+        />
+      ),
+      meta: {
+        headerClassName: 'pl-5',
+        cellClassName: 'pl-5',
       },
-      {
+    }
+
+    const dataColumnsById: Record<string, ColumnDef<FinanceVenueRow>> = {
+      'venue-id': {
         accessorKey: 'venueId',
         header: 'Venue ID',
         cell: ({ row }) => (
@@ -177,13 +184,13 @@ export function FinanceVenuesPage() {
           </span>
         ),
       },
-      {
+      name: {
         accessorKey: 'name',
         header: 'Name',
         cell: ({ row }) => <span className="text-brand-text font-medium">{row.original.name}</span>,
       },
-      { accessorKey: 'owner', header: 'Owner' },
-      {
+      owner: { accessorKey: 'owner', header: 'Owner' },
+      'booking-id': {
         accessorKey: 'bookingId',
         header: 'Booking ID',
         cell: ({ row }) => (
@@ -192,8 +199,8 @@ export function FinanceVenuesPage() {
           </span>
         ),
       },
-      { accessorKey: 'bookingTitle', header: 'Booking Title' },
-      {
+      'booking-title': { accessorKey: 'bookingTitle', header: 'Booking Title' },
+      status: {
         accessorKey: 'status',
         header: 'Status',
         cell: ({ row }) => (
@@ -207,29 +214,38 @@ export function FinanceVenuesPage() {
           </span>
         ),
       },
-      {
+      revenue: {
         accessorKey: 'revenue',
         header: 'Revenue',
         cell: ({ row }) => (
           <span className="text-brand-text font-semibold">{row.original.revenue}</span>
         ),
       },
-      {
-        id: 'actions',
-        header: 'Actions',
-        meta: { headerClassName: 'pr-5 text-right', cellClassName: 'relative pr-5 text-right' },
-        cell: ({ row }) => renderActions(row.original),
-      },
-    ],
-    [
-      allVisibleSelected,
-      renderActions,
-      selectedRowIds,
-      someVisibleSelected,
-      toggleRowSelection,
-      toggleVisibleRows,
-    ],
-  )
+    }
+
+    const visibleIds = tableColumnPreferencesQuery.data?.visibleColumnIds?.length
+      ? tableColumnPreferencesQuery.data.visibleColumnIds
+      : DEFAULT_FINANCE_VENUES_VISIBLE_COLUMN_IDS
+
+    const preferenceColumns = visibleIds.map((id) => dataColumnsById[id]).filter(Boolean)
+
+    const actionsColumn: ColumnDef<FinanceVenueRow> = {
+      id: 'actions',
+      header: 'Actions',
+      meta: { headerClassName: 'pr-5 text-right', cellClassName: 'relative pr-5 text-right' },
+      cell: ({ row }) => renderActions(row.original),
+    }
+
+    return [selectColumn, ...preferenceColumns, actionsColumn]
+  }, [
+    allVisibleSelected,
+    renderActions,
+    selectedRowIds,
+    someVisibleSelected,
+    tableColumnPreferencesQuery.data,
+    toggleRowSelection,
+    toggleVisibleRows,
+  ])
 
   return (
     <div className="flex flex-col gap-6">
@@ -247,7 +263,10 @@ export function FinanceVenuesPage() {
             <span className="text-brand-text font-semibold">Venues</span>
           </p>
         </div>
-        <Button className="ui-manage-metrics" onClick={() => navigate('/metrics/finance-venues')}>
+        <Button
+          className="ui-manage-metrics"
+          onClick={() => navigate('/metrics/finance-venues?section=table')}
+        >
           <SlidersHorizontal className="size-4" />
           Manage Metrics
         </Button>

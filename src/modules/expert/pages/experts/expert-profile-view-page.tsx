@@ -20,7 +20,6 @@ import {
   Eye,
   EyeOff,
   FileText,
-  Gauge,
   ImageOff,
   Languages,
   Mail,
@@ -31,6 +30,7 @@ import {
   RefreshCw,
   Search,
   Share2,
+  SlidersHorizontal,
   Star,
   Tag,
   Trash2,
@@ -68,6 +68,15 @@ import {
   useExpertServices,
   usePartnerInsights,
 } from '../../hooks/use-expert-profile'
+import {
+  DEFAULT_EXPERT_PROFILE_ANALYTICS_METRIC_IDS,
+  EXPERT_PROFILE_ANALYTICS_METRIC_ID_SET,
+  EXPERT_PROFILE_ANALYTICS_METRIC_IDS,
+  EXPERT_PROFILE_ANALYTICS_MODULE_KEY,
+} from '../../config/expert-profile-analytics-metrics.config'
+import { orderByActiveMetricIds, useActiveMetricIds } from '../../hooks/use-active-metric-ids'
+import { buildExpertProfileAnalyticsMetricCards } from '../../utils/expert-profile-analytics-metrics'
+import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
 import type {
   ExpertAnalyticsData,
   ExpertConsultation,
@@ -1142,8 +1151,7 @@ function ServicesSubTab({ expertId }: { expertId: string }) {
 
       if (successCount === 0) {
         const firstError = results.find((result) => result.status === 'rejected') as
-          | PromiseRejectedResult
-          | undefined
+          PromiseRejectedResult | undefined
         toast.error(getApiErrorMessage(firstError?.reason) || 'Failed to escalate services.')
         return
       }
@@ -1913,79 +1921,43 @@ function AnalyticsTab({ expertId }: { expertId?: string }) {
   const navigate = useNavigate()
   const { data: analyticsRes } = useExpertAnalytics(expertId)
   const analytics = analyticsRes?.data
-  const serviceAnalytics = analytics?.serviceAnalytics
+  const activeMetricIds = useActiveMetricIds(EXPERT_PROFILE_ANALYTICS_MODULE_KEY, [
+    ...DEFAULT_EXPERT_PROFILE_ANALYTICS_METRIC_IDS,
+  ])
 
-  const cards = [
-    {
-      label: 'Events Hosted',
-      value:
-        serviceAnalytics?.eventsHosted?.value != null
-          ? String(serviceAnalytics.eventsHosted.value)
-          : '0',
-    },
-    {
-      label: 'Total Attendees',
-      value:
-        serviceAnalytics?.totalAttendees?.value != null
-          ? String(serviceAnalytics.totalAttendees.value)
-          : '0',
-    },
-    {
-      label: 'Repeat Attendees',
-      value:
-        serviceAnalytics?.repeatAttendees?.value != null
-          ? String(serviceAnalytics.repeatAttendees.value)
-          : '0',
-    },
-    {
-      label: 'Upcoming Events',
-      value:
-        serviceAnalytics?.upcomingEvents?.value != null
-          ? String(serviceAnalytics.upcomingEvents.value)
-          : '0',
-    },
-    {
-      label: 'Event Completion Rate',
-      value:
-        serviceAnalytics?.eventCompletionRate?.value != null
-          ? `${serviceAnalytics.eventCompletionRate.value}%`
-          : '0%',
-    },
-    {
-      label: 'Avg. Response Time',
-      value: serviceAnalytics?.avgResponseTime?.label || '--',
-    },
-    {
-      label: 'No. Of Events Rejected',
-      value:
-        serviceAnalytics?.eventsRejected?.value != null
-          ? String(serviceAnalytics.eventsRejected.value)
-          : '0',
-    },
-    {
-      label: 'No. of event Suspended',
-      value:
-        serviceAnalytics?.eventsSuspended?.value != null
-          ? String(serviceAnalytics.eventsSuspended.value)
-          : '0',
-    },
-  ]
+  const filteredActiveMetricIds = useMemo(
+    () =>
+      sortIdsByCatalogOrder(
+        activeMetricIds.filter((id) => EXPERT_PROFILE_ANALYTICS_METRIC_ID_SET.has(id)),
+        EXPERT_PROFILE_ANALYTICS_METRIC_IDS,
+      ),
+    [activeMetricIds],
+  )
+
+  const cards = useMemo(() => {
+    const allCards = buildExpertProfileAnalyticsMetricCards(analytics)
+    return orderByActiveMetricIds(allCards, filteredActiveMetricIds)
+  }, [analytics, filteredActiveMetricIds])
+
+  const manageMetricsPath = expertId
+    ? `/metrics/expert-profile-analytics?returnTo=${encodeURIComponent(`/experts/management/profile/${expertId}`)}`
+    : '/metrics/expert-profile-analytics'
 
   return (
     <div className="rounded-xl bg-[#141414] p-6">
       <div className="mb-4 flex justify-end">
         <button
           type="button"
-          onClick={() => navigate('/experts/dashboard/metrics')}
-          className="ui-manage-metrics text-body-sm flex items-center gap-1.5 rounded-lg bg-[linear-gradient(180deg,#F6CB86_0%,#E0A263_100%)] px-3 py-2 font-semibold text-[#050505]"
+          onClick={() => navigate(manageMetricsPath)}
+          className="ui-manage-metrics ui-cta ui-cta-primary text-body-sm flex items-center gap-1.5 rounded-lg px-3 py-2 font-semibold"
         >
-          <Gauge className="size-3.5" />
+          <SlidersHorizontal className="icon-sm shrink-0" />
           Manage Metrics
         </button>
       </div>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {cards.map((card) => (
-          <div key={card.label} className="rounded-lg bg-[#050505] p-4">
+          <div key={card.id} className="rounded-lg bg-[#050505] p-4">
             <div className="flex items-center justify-between">
               <p className="text-body-sm text-muted">{card.label}</p>
               <Briefcase className="size-4 text-[#E0A263]" />

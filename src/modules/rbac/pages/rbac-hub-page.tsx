@@ -1,21 +1,32 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 import {
-  BarChart3,
   Eye,
   Pencil,
-  Plus,
   Settings,
   Shield,
   ShieldOff,
+  SlidersHorizontal,
   Trash2,
   UserCheck,
   UserPlus,
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
+import createIcon from '@/assets/JOMS_ICONS-2/icons8-create.svg'
 
 import { RbacStatsBar } from '../components/rbac-stats-bar'
+import { RBAC_HUB_MODULE_KEY } from '../config/rbac-metrics.config'
+import {
+  DEFAULT_RBAC_HUB_ROLES_VISIBLE_COLUMN_IDS,
+  DEFAULT_RBAC_HUB_USERS_VISIBLE_COLUMN_IDS,
+  RBAC_HUB_ROLES_COLUMN_PREFIX,
+  RBAC_HUB_ROLES_TABLE_COLUMNS_CATALOG,
+  RBAC_HUB_USERS_COLUMN_PREFIX,
+  RBAC_HUB_USERS_TABLE_COLUMNS_CATALOG,
+} from '../config/rbac-hub-table-columns.config'
+import { useTableColumnPreferences } from '@/modules/expert/hooks/use-ui-preferences'
+import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
 import { UpdatePasswordModal } from '../components/update-password-modal'
 import {
   useDeleteRole,
@@ -166,6 +177,7 @@ export function RbacHubPage() {
   const reactivateMutation = useReactivateSubAdmin()
   const deleteSubAdminMutation = useDeleteSubAdmin()
   const updatePasswordMutation = useUpdateSubAdminPassword()
+  const tableColumnPreferencesQuery = useTableColumnPreferences(RBAC_HUB_MODULE_KEY)
 
   const roles = useMemo(() => rolesData?.data ?? [], [rolesData?.data])
   const rolesMeta = rolesData?.meta
@@ -326,22 +338,29 @@ export function RbacHubPage() {
     [passwordResetUser, updatePasswordMutation],
   )
 
-  const roleColumns = useMemo<ColumnDef<Role>[]>(
-    () => [
-      { accessorKey: 'roleCode', header: 'Role ID' },
-      { accessorKey: 'name', header: 'Role Name' },
-      { accessorKey: 'description', header: 'Description' },
-      {
+  const roleColumns = useMemo<ColumnDef<Role>[]>(() => {
+    const dataColumnsById: Record<string, ColumnDef<Role>> = {
+      'roles-role-id': { id: 'roles-role-id', accessorKey: 'roleCode', header: 'Role ID' },
+      'roles-name': { id: 'roles-name', accessorKey: 'name', header: 'Role Name' },
+      'roles-description': {
+        id: 'roles-description',
+        accessorKey: 'description',
+        header: 'Description',
+      },
+      'roles-scope': {
+        id: 'roles-scope',
         accessorKey: 'scopes',
         header: 'Scope',
         cell: ({ row }) => row.original.scopes.join(', ') || '—',
       },
-      {
+      'roles-permissions': {
+        id: 'roles-permissions',
         accessorKey: 'permissions',
         header: 'Permissions',
         cell: ({ row }) => formatPermissions(row.original.permissions),
       },
-      {
+      'roles-risk-level': {
+        id: 'roles-risk-level',
         accessorKey: 'riskLevel',
         header: 'Risk level',
         cell: ({ row }) => (
@@ -350,12 +369,14 @@ export function RbacHubPage() {
           </span>
         ),
       },
-      {
+      'roles-mfa-required': {
+        id: 'roles-mfa-required',
         accessorKey: 'mfaRequired',
         header: 'MFA Required',
         cell: ({ row }) => (row.original.mfaRequired ? 'Yes' : 'No'),
       },
-      {
+      'roles-status': {
+        id: 'roles-status',
         accessorKey: 'status',
         header: 'Status',
         cell: ({ row }) => (
@@ -371,97 +392,124 @@ export function RbacHubPage() {
           </span>
         ),
       },
-      {
+      'roles-user-count': {
+        id: 'roles-user-count',
         accessorKey: 'userCount',
         header: 'Users (No.)',
         cell: ({ row }) => String(row.original.userCount).padStart(2, '0'),
       },
-      {
-        id: 'actions',
-        header: 'Actions',
-        meta: { headerClassName: 'pr-5 text-right', cellClassName: 'relative pr-5 text-right' },
-        cell: ({ row }) => (
-          <TableActionsDropdown
-            label="Open role actions"
-            isOpen={activeDropdownId === row.original.id}
-            onOpenChange={(open) => setActiveDropdownId(open ? row.original.id : null)}
-          >
-            <TableActionsItem
-              icon={<Pencil className="size-3.5" />}
-              onClick={() => navigate(`/settings/access/roles/${row.original.id}/edit`)}
-            >
-              Edit permission
-            </TableActionsItem>
-            <TableActionsItem
-              icon={<Trash2 className="text-brand-danger size-3.5" />}
-              onClick={() => handleDeleteRole(row.original.id)}
-            >
-              <span className="text-brand-danger">Remove Role</span>
-            </TableActionsItem>
-            {row.original.status === 'active' ? (
-              <TableActionsItem
-                icon={<ShieldOff className="size-3.5" />}
-                onClick={() => handleDisableRole(row.original.id)}
-              >
-                Disable Role
-              </TableActionsItem>
-            ) : (
-              <TableActionsItem
-                icon={<Shield className="text-brand-success size-3.5" />}
-                onClick={() => handleEnableRole(row.original.id)}
-              >
-                <span className="text-brand-success">Enable Role</span>
-              </TableActionsItem>
-            )}
-            <TableActionsItem
-              icon={<UserPlus className="size-3.5" />}
-              onClick={() => navigate('/settings/access/users/create')}
-            >
-              Assign new user
-            </TableActionsItem>
-            <TableActionsItem
-              icon={<Eye className="size-3.5" />}
-              onClick={() => navigate(`/settings/access/roles/${row.original.id}/logs`)}
-            >
-              View Logs
-            </TableActionsItem>
-          </TableActionsDropdown>
-        ),
-      },
-    ],
-    [activeDropdownId, handleDeleteRole, handleDisableRole, handleEnableRole, navigate],
-  )
+    }
 
-  const userColumns = useMemo<ColumnDef<SubAdmin>[]>(
-    () => [
-      { accessorKey: 'adminCode', header: 'User ID' },
-      { accessorKey: 'fullname', header: 'Username' },
-      {
-        id: 'roleCode',
+    const catalogIds = RBAC_HUB_ROLES_TABLE_COLUMNS_CATALOG.map((column) => column.id)
+    const savedIds = tableColumnPreferencesQuery.data?.visibleColumnIds?.length
+      ? tableColumnPreferencesQuery.data.visibleColumnIds.filter((id) =>
+          id.startsWith(RBAC_HUB_ROLES_COLUMN_PREFIX),
+        )
+      : DEFAULT_RBAC_HUB_ROLES_VISIBLE_COLUMN_IDS
+    const preferenceColumns = sortIdsByCatalogOrder(
+      savedIds.filter((id) => catalogIds.includes(id)),
+      catalogIds,
+    )
+      .map((id) => dataColumnsById[id])
+      .filter(Boolean)
+
+    const actionsColumn: ColumnDef<Role> = {
+      id: 'actions',
+      header: 'Actions',
+      meta: { headerClassName: 'pr-5 text-right', cellClassName: 'relative pr-5 text-right' },
+      cell: ({ row }) => (
+        <TableActionsDropdown
+          label="Open role actions"
+          isOpen={activeDropdownId === row.original.id}
+          onOpenChange={(open) => setActiveDropdownId(open ? row.original.id : null)}
+        >
+          <TableActionsItem
+            icon={<Pencil className="size-3.5" />}
+            onClick={() => navigate(`/settings/access/roles/${row.original.id}/edit`)}
+          >
+            Edit permission
+          </TableActionsItem>
+          <TableActionsItem
+            icon={<Trash2 className="text-brand-danger size-3.5" />}
+            onClick={() => handleDeleteRole(row.original.id)}
+          >
+            <span className="text-brand-danger">Remove Role</span>
+          </TableActionsItem>
+          {row.original.status === 'active' ? (
+            <TableActionsItem
+              icon={<ShieldOff className="size-3.5" />}
+              onClick={() => handleDisableRole(row.original.id)}
+            >
+              Disable Role
+            </TableActionsItem>
+          ) : (
+            <TableActionsItem
+              icon={<Shield className="text-brand-success size-3.5" />}
+              onClick={() => handleEnableRole(row.original.id)}
+            >
+              <span className="text-brand-success">Enable Role</span>
+            </TableActionsItem>
+          )}
+          <TableActionsItem
+            icon={<UserPlus className="size-3.5" />}
+            onClick={() => navigate('/settings/access/users/create')}
+          >
+            Assign new user
+          </TableActionsItem>
+          <TableActionsItem
+            icon={<Eye className="size-3.5" />}
+            onClick={() => navigate(`/settings/access/roles/${row.original.id}/logs`)}
+          >
+            View Logs
+          </TableActionsItem>
+        </TableActionsDropdown>
+      ),
+    }
+
+    return [...preferenceColumns, actionsColumn]
+  }, [
+    activeDropdownId,
+    handleDeleteRole,
+    handleDisableRole,
+    handleEnableRole,
+    navigate,
+    tableColumnPreferencesQuery.data,
+  ])
+
+  const userColumns = useMemo<ColumnDef<SubAdmin>[]>(() => {
+    const dataColumnsById: Record<string, ColumnDef<SubAdmin>> = {
+      'users-admin-code': { id: 'users-admin-code', accessorKey: 'adminCode', header: 'User ID' },
+      'users-fullname': { id: 'users-fullname', accessorKey: 'fullname', header: 'Username' },
+      'users-role-id': {
+        id: 'users-role-id',
         header: 'Role ID',
         cell: ({ row }) => row.original.roles.map((r) => r.roleCode).join(', ') || '—',
       },
-      {
-        id: 'roleName',
+      'users-role-name': {
+        id: 'users-role-name',
         header: 'RoleName',
         cell: ({ row }) => row.original.roles.map((r) => r.name).join(', ') || '—',
       },
-      {
+      'users-scope': {
+        id: 'users-scope',
         accessorKey: 'scopes',
         header: 'Scope',
         cell: ({ row }) => row.original.scopes.join(', ') || '—',
       },
-      {
+      'users-permissions': {
+        id: 'users-permissions',
         accessorKey: 'permissions',
         header: 'Permissions',
         cell: ({ row }) => formatPermissions(row.original.permissions),
       },
-      {
+      'users-mfa-enabled': {
+        id: 'users-mfa-enabled',
         accessorKey: 'mfaEnabled',
         header: 'MFA Enabled',
         cell: ({ row }) => (row.original.mfaEnabled ? 'Yes' : 'No'),
       },
-      {
+      'users-status': {
+        id: 'users-status',
         accessorKey: 'status',
         header: 'Status',
         cell: ({ row }) => (
@@ -477,75 +525,98 @@ export function RbacHubPage() {
           </span>
         ),
       },
-      {
+      'users-last-action': {
+        id: 'users-last-action',
         accessorKey: 'lastActionAt',
         header: 'Last action performed',
         cell: ({ row }) => formatDateTime(row.original.lastActionAt),
       },
-      {
-        id: 'actions',
-        header: 'Actions',
-        meta: { headerClassName: 'pr-5 text-right', cellClassName: 'relative pr-5 text-right' },
-        cell: ({ row }) => (
-          <TableActionsDropdown
-            label="Open user actions"
-            isOpen={activeDropdownId === row.original.id}
-            onOpenChange={(open) => setActiveDropdownId(open ? row.original.id : null)}
+    }
+
+    const catalogIds = RBAC_HUB_USERS_TABLE_COLUMNS_CATALOG.map((column) => column.id)
+    const savedIds = tableColumnPreferencesQuery.data?.visibleColumnIds?.length
+      ? tableColumnPreferencesQuery.data.visibleColumnIds.filter((id) =>
+          id.startsWith(RBAC_HUB_USERS_COLUMN_PREFIX),
+        )
+      : DEFAULT_RBAC_HUB_USERS_VISIBLE_COLUMN_IDS
+    const preferenceColumns = sortIdsByCatalogOrder(
+      savedIds.filter((id) => catalogIds.includes(id)),
+      catalogIds,
+    )
+      .map((id) => dataColumnsById[id])
+      .filter(Boolean)
+
+    const actionsColumn: ColumnDef<SubAdmin> = {
+      id: 'actions',
+      header: 'Actions',
+      meta: { headerClassName: 'pr-5 text-right', cellClassName: 'relative pr-5 text-right' },
+      cell: ({ row }) => (
+        <TableActionsDropdown
+          label="Open user actions"
+          isOpen={activeDropdownId === row.original.id}
+          onOpenChange={(open) => setActiveDropdownId(open ? row.original.id : null)}
+        >
+          <TableActionsItem
+            icon={<Eye className="size-3.5" />}
+            onClick={() => navigate(`/settings/access/users/${row.original.id}`)}
           >
+            View user
+          </TableActionsItem>
+          <TableActionsItem
+            icon={<Pencil className="size-3.5" />}
+            onClick={() => navigate(`/settings/access/users/create?edit=${row.original.id}`)}
+          >
+            Change role
+          </TableActionsItem>
+          <TableActionsItem
+            icon={<Eye className="size-3.5" />}
+            onClick={() => navigate(`/settings/access/users/${row.original.id}/logs`)}
+          >
+            View user logs
+          </TableActionsItem>
+          <TableActionsItem
+            icon={<Settings className="size-3.5" />}
+            onClick={() => {
+              setPasswordResetUser(row.original)
+              setActiveDropdownId(null)
+            }}
+          >
+            Password reset
+          </TableActionsItem>
+          <TableActionsItem
+            icon={<Trash2 className="text-brand-danger size-3.5" />}
+            onClick={() => handleDeleteUser(row.original.id)}
+          >
+            <span className="text-brand-danger">Remove User</span>
+          </TableActionsItem>
+          {row.original.status === 'active' ? (
             <TableActionsItem
-              icon={<Eye className="size-3.5" />}
-              onClick={() => navigate(`/settings/access/users/${row.original.id}`)}
+              icon={<ShieldOff className="text-brand-danger size-3.5" />}
+              onClick={() => handleSuspendUser(row.original.id)}
             >
-              View user
+              <span className="text-brand-danger">Suspend user</span>
             </TableActionsItem>
+          ) : (
             <TableActionsItem
-              icon={<Pencil className="size-3.5" />}
-              onClick={() => navigate(`/settings/access/users/create?edit=${row.original.id}`)}
+              icon={<UserCheck className="text-brand-success size-3.5" />}
+              onClick={() => handleReactivateUser(row.original.id)}
             >
-              Change role
+              <span className="text-brand-success">Reactivate user</span>
             </TableActionsItem>
-            <TableActionsItem
-              icon={<Eye className="size-3.5" />}
-              onClick={() => navigate(`/settings/access/users/${row.original.id}/logs`)}
-            >
-              View user logs
-            </TableActionsItem>
-            <TableActionsItem
-              icon={<Settings className="size-3.5" />}
-              onClick={() => {
-                setPasswordResetUser(row.original)
-                setActiveDropdownId(null)
-              }}
-            >
-              Password reset
-            </TableActionsItem>
-            <TableActionsItem
-              icon={<Trash2 className="text-brand-danger size-3.5" />}
-              onClick={() => handleDeleteUser(row.original.id)}
-            >
-              <span className="text-brand-danger">Remove User</span>
-            </TableActionsItem>
-            {row.original.status === 'active' ? (
-              <TableActionsItem
-                icon={<ShieldOff className="text-brand-danger size-3.5" />}
-                onClick={() => handleSuspendUser(row.original.id)}
-              >
-                <span className="text-brand-danger">Suspend user</span>
-              </TableActionsItem>
-            ) : (
-              <TableActionsItem
-                icon={<UserCheck className="text-brand-success size-3.5" />}
-                onClick={() => handleReactivateUser(row.original.id)}
-              >
-                <span className="text-brand-success">Reactivate user</span>
-              </TableActionsItem>
-            )}
-          </TableActionsDropdown>
-        ),
-      },
-    ],
-    [activeDropdownId, handleDeleteUser, handleReactivateUser, handleSuspendUser, navigate],
-  )
+          )}
+        </TableActionsDropdown>
+      ),
+    }
+
+    return [...preferenceColumns, actionsColumn]
+  }, [
+    activeDropdownId,
+    handleDeleteUser,
+    handleReactivateUser,
+    handleSuspendUser,
+    navigate,
+    tableColumnPreferencesQuery.data,
+  ])
 
   const isRolesTab = activeTab === 'roles'
   const meta = isRolesTab ? rolesMeta : subAdminsMeta
@@ -562,21 +633,25 @@ export function RbacHubPage() {
         </div>
         <div className="flex w-full flex-col gap-2 sm:flex-row md:w-auto">
           <Button
-            variant="secondary"
-            className="ui-manage-metrics"
+            className="ui-manage-metrics ui-cta ui-cta-primary w-full shrink-0 sm:w-auto"
             onClick={() => navigate('/metrics/rbac-hub')}
           >
-            <BarChart3 className="size-4" />
+            <SlidersHorizontal className="size-4" />
             Manage Metrics
           </Button>
           <Button
+            className="ui-cta ui-cta-primary w-full shrink-0 sm:w-auto"
             onClick={() =>
               navigate(
                 isRolesTab ? '/settings/access/roles/create' : '/settings/access/users/create',
               )
             }
           >
-            <Plus className="size-4" />
+            {isRolesTab ? (
+              <img src={createIcon} alt="create" className="size-4 shrink-0" />
+            ) : (
+              <UserPlus className="size-4" />
+            )}
             {isRolesTab ? 'Create New Role' : 'Add New User'}
           </Button>
         </div>

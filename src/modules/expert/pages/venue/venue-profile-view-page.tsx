@@ -19,7 +19,6 @@ import {
   Eye,
   EyeOff,
   FileText,
-  Gauge,
   ImageOff,
   Mail,
   MapPin,
@@ -46,6 +45,15 @@ import {
 } from '../../hooks/use-venues'
 import { useBlockExpert, useForceLogoutExpert } from '../../hooks/use-expert'
 import { useVenueProfileAnalytics } from '../../hooks/use-venue-analytics'
+import {
+  DEFAULT_VENUE_PROFILE_ANALYTICS_METRIC_IDS,
+  VENUE_PROFILE_ANALYTICS_METRIC_ID_SET,
+  VENUE_PROFILE_ANALYTICS_METRIC_IDS,
+  VENUE_PROFILE_ANALYTICS_MODULE_KEY,
+} from '../../config/venue-profile-analytics-metrics.config'
+import { orderByActiveMetricIds, useActiveMetricIds } from '../../hooks/use-active-metric-ids'
+import { buildVenueProfileAnalyticsMetricCards } from '../../utils/venue-profile-analytics-metrics'
+import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
 import type { VenueFullView, VenueFullViewSpaceSummary } from '../../type/venue-full-view'
 import type { PartnerInsightReview } from '../../type/expert-profile'
 import {
@@ -721,8 +729,7 @@ function SpacesTab({ data, venueId }: { data: VenueFullView; venueId: string }) 
 
       if (successCount === 0) {
         const firstError = results.find((result) => result.status === 'rejected') as
-          | PromiseRejectedResult
-          | undefined
+          PromiseRejectedResult | undefined
         toast.error(getSharedApiErrorMessage(firstError?.reason) || 'Failed to escalate spaces.')
         return
       }
@@ -1042,89 +1049,52 @@ function AnalyticsTab({ data, venueId }: { data: VenueFullView; venueId: string 
   const navigate = useNavigate()
   const { data: analyticsData, isLoading } = useVenueProfileAnalytics(venueId)
   const profileAnalytics = data?.profile as
-    | (typeof data.profile & { analytics?: Record<string, unknown> })
-    | undefined
+    (typeof data.profile & { analytics?: Record<string, unknown> }) | undefined
   const venueAnalytics = profileAnalytics?.analytics
-  const cardsFromApi = analyticsData?.profileCards
+  const activeMetricIds = useActiveMetricIds(VENUE_PROFILE_ANALYTICS_MODULE_KEY, [
+    ...DEFAULT_VENUE_PROFILE_ANALYTICS_METRIC_IDS,
+  ])
 
-  const formatMetric = (value?: string | number | null) => {
-    if (value === null || value === undefined || value === '') return '0'
-    if (typeof value === 'number') return value.toLocaleString('en-IN')
-    return String(value)
-  }
+  const filteredActiveMetricIds = useMemo(
+    () =>
+      sortIdsByCatalogOrder(
+        activeMetricIds.filter((id) => VENUE_PROFILE_ANALYTICS_METRIC_ID_SET.has(id)),
+        VENUE_PROFILE_ANALYTICS_METRIC_IDS,
+      ),
+    [activeMetricIds],
+  )
 
-  const cards: { label: string; value: string }[] = [
-    {
-      label: 'Events Hosted',
-      value:
-        cardsFromApi?.eventsHosted || formatMetric(venueAnalytics?.eventsHosted as string | number),
-    },
-    {
-      label: 'Total Attendees',
-      value:
-        cardsFromApi?.totalAttendees ||
-        formatMetric(venueAnalytics?.totalAttendees as string | number),
-    },
-    {
-      label: 'Repeat Attendees',
-      value:
-        cardsFromApi?.repeatAttendees ||
-        formatMetric(venueAnalytics?.repeatAttendees as string | number),
-    },
-    {
-      label: 'Upcoming Events',
-      value:
-        cardsFromApi?.upcomingEvents ||
-        formatMetric(venueAnalytics?.upcomingEvents as string | number),
-    },
-    {
-      label: 'Event Completion Rate',
-      value:
-        cardsFromApi?.eventCompletionRate ||
-        formatMetric(venueAnalytics?.eventCompletionRate as string | number),
-    },
-    {
-      label: 'Avg. Response Time',
-      value:
-        cardsFromApi?.avgResponseTime ||
-        formatMetric(venueAnalytics?.avgResponseTime as string | number),
-    },
-    {
-      label: 'No. Of Events Rejected',
-      value:
-        cardsFromApi?.noOfEventsRejected ||
-        formatMetric(venueAnalytics?.noOfEventsRejected as string | number),
-    },
-    {
-      label: 'No. of event Suspended',
-      value:
-        cardsFromApi?.noOfEventsSuspended ||
-        formatMetric(venueAnalytics?.noOfEventsSuspended as string | number),
-    },
-  ]
+  const cards = useMemo(() => {
+    const allCards = buildVenueProfileAnalyticsMetricCards(analyticsData, venueAnalytics)
+    return orderByActiveMetricIds(allCards, filteredActiveMetricIds)
+  }, [analyticsData, venueAnalytics, filteredActiveMetricIds])
+
+  const manageMetricsPath = venueId
+    ? `/metrics/venue-profile-analytics?returnTo=${encodeURIComponent(`/venues/management/profile/${venueId}`)}`
+    : '/metrics/venue-profile-analytics'
 
   return (
     <div className={cn(PROFILE_CARD, 'p-6')}>
       <div className="mb-4 flex justify-end">
         <button
           type="button"
-          onClick={() => navigate('/venues/dashboard/metrics')}
-          className="ui-manage-metrics text-body-sm flex items-center gap-1.5 rounded-lg bg-[linear-gradient(180deg,#F6CB86_0%,#E0A263_100%)] px-3 py-2 font-semibold text-[#050505]"
+          onClick={() => navigate(manageMetricsPath)}
+          className="ui-manage-metrics ui-cta ui-cta-primary text-body-sm flex items-center gap-1.5 rounded-lg px-3 py-2 font-semibold"
         >
-          <Gauge className="size-3.5" />
+          <SlidersHorizontal className="icon-sm shrink-0" />
           Manage Metrics
         </button>
       </div>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {isLoading
-          ? Array.from({ length: 8 }).map((_, index) => (
+          ? Array.from({ length: filteredActiveMetricIds.length || 8 }).map((_, index) => (
               <div key={`analytics-card-skeleton-${index}`} className="rounded-lg bg-[#050505] p-4">
                 <div className="h-3 w-28 animate-pulse rounded bg-white/10" />
                 <div className="mt-3 h-7 w-16 animate-pulse rounded bg-white/10" />
               </div>
             ))
           : cards.map((card) => (
-              <div key={card.label} className="rounded-lg bg-[#050505] p-4">
+              <div key={card.id} className="rounded-lg bg-[#050505] p-4">
                 <div className="flex items-center justify-between">
                   <p className="text-body-sm text-muted">{card.label}</p>
                   <Briefcase className="size-4 text-[#E0A263]" />

@@ -23,6 +23,12 @@ import { SlaTimerCell } from '../components/sla-timer-cell'
 import { TicketPriorityBadge } from '../components/ticket-priority-badge'
 import { TicketStatusBadge } from '../components/ticket-status-badge'
 import {
+  DEFAULT_TICKET_MANAGEMENT_METRIC_IDS,
+  TICKET_MANAGEMENT_METRIC_IDS,
+  TICKET_MANAGEMENT_METRIC_ID_SET,
+  TICKET_MANAGEMENT_MODULE_KEY,
+} from '../config/ticket-management-metrics.config'
+import {
   useDeleteSupportTicket,
   useEscalateSupportTicket,
   useExportSupportTickets,
@@ -41,6 +47,12 @@ import {
   nextPriority,
   nextStatus,
 } from '../utils/support-format'
+import { buildTicketManagementMetricCards } from '../utils/ticket-management-metrics'
+import {
+  orderByActiveMetricIds,
+  useActiveMetricIds,
+} from '@/modules/expert/hooks/use-active-metric-ids'
+import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
 import { DataTable } from '@/shared/components/table/data-table'
 import {
   TableActionsDropdown,
@@ -53,18 +65,6 @@ const TABS: { key: TicketTab; label: string }[] = [
   { key: 'my_tickets', label: 'My Tickets' },
   { key: 'escalated', label: 'Escalated Tickets' },
   { key: 'all', label: 'All Tickets' },
-]
-
-const FALLBACK_STATS: Array<{
-  title: string
-  value: string
-  changePercent?: number
-  changeDirection?: 'up' | 'down'
-}> = [
-  { title: 'My Open Tickets', value: '0' },
-  { title: 'Tickets In-Progress', value: '0' },
-  { title: 'Avg. Response Time', value: '0' },
-  { title: 'Avg. Resolution Time', value: '0' },
 ]
 
 function TicketMetricCard({
@@ -137,6 +137,18 @@ export function TicketManagementPage() {
   const exportMutation = useExportSupportTickets()
   const mergeMutation = useMergeSupportTickets()
   useLiveSupportUpdates()
+  const activeMetricIds = useActiveMetricIds(TICKET_MANAGEMENT_MODULE_KEY, [
+    ...DEFAULT_TICKET_MANAGEMENT_METRIC_IDS,
+  ])
+
+  const filteredActiveMetricIds = useMemo(
+    () =>
+      sortIdsByCatalogOrder(
+        activeMetricIds.filter((id) => TICKET_MANAGEMENT_METRIC_ID_SET.has(id)),
+        TICKET_MANAGEMENT_METRIC_IDS,
+      ),
+    [activeMetricIds],
+  )
 
   const tickets = useMemo(() => data?.data?.tickets ?? [], [data?.data?.tickets])
   const meta = data?.data?.meta
@@ -144,12 +156,10 @@ export function TicketManagementPage() {
   const totalPages = meta?.totalPages ?? 1
   const totalItems = meta?.total ?? 0
 
-  const stats = (data?.data?.stats?.length ? data.data.stats : FALLBACK_STATS).map((s) => ({
-    title: s.title,
-    value: String(s.value),
-    percentage: s.changePercent ?? 0,
-    direction: (s.changeDirection ?? 'up') as 'up' | 'down',
-  }))
+  const stats = useMemo(() => {
+    const allCards = buildTicketManagementMetricCards(data?.data?.stats)
+    return orderByActiveMetricIds(allCards, filteredActiveMetricIds)
+  }, [data?.data?.stats, filteredActiveMetricIds])
 
   const toggleSelect = useCallback((id: string) => {
     setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]))
@@ -407,7 +417,7 @@ export function TicketManagementPage() {
             variant="primary"
             onClick={handleExport}
             disabled={exportMutation.isPending}
-            className="ui-export-data"
+            className="ui-export-data ui-cta ui-cta-primary"
           >
             <Upload className="icon-sm shrink-0" aria-hidden="true" />
             Export Data
@@ -415,7 +425,7 @@ export function TicketManagementPage() {
           <button
             type="button"
             onClick={() => navigate('/metrics/ticket-management')}
-            className="ui-manage-metrics ui-cta ui-cta-gold-outline"
+            className="ui-manage-metrics ui-cta ui-cta-primary"
           >
             <SlidersHorizontal className="icon-sm shrink-0" aria-hidden="true" />
             Manage Metrics
@@ -424,8 +434,17 @@ export function TicketManagementPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {stats.map((stat) => (
-          <TicketMetricCard key={stat.title} {...stat} />
+        {(isLoading && stats.length === 0
+          ? filteredActiveMetricIds.map((id) => ({
+              id,
+              title: 'Loading',
+              value: '—',
+              percentage: 0,
+              direction: 'up' as const,
+            }))
+          : stats
+        ).map((stat) => (
+          <TicketMetricCard key={stat.id} {...stat} />
         ))}
       </div>
 

@@ -2,6 +2,8 @@ import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 
 import { VENUE_CATEGORY_MANAGEMENT_MODULE_KEY } from '../../api/ui-preferences-api'
+import { DEFAULT_VENUE_CATEGORY_MANAGEMENT_METRIC_IDS } from '../../config/venue-category-management-metrics.config'
+import { DEFAULT_VENUE_CATEGORY_MANAGEMENT_VISIBLE_COLUMN_IDS } from '../../config/venue-category-management-table-columns.config'
 import { DataTable } from '@/shared/components/table/data-table'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 import { exportDataToFile, exportDisplayValue } from '@/shared/utils/export-utils'
@@ -24,6 +26,7 @@ import {
   useVenueCategoryManagementList,
 } from '../../hooks/use-venue-category-management'
 import { useTableColumnPreferences } from '../../hooks/use-ui-preferences'
+import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
 
 const PAGE_SIZE = 10
 
@@ -45,7 +48,7 @@ const EXPORT_COLUMN_MAP: Record<
   revenue: { header: 'Revenue Generated', accessor: (cat) => exportDisplayValue(cat.revenue) },
 }
 
-const DEFAULT_VISIBLE_IDS = ['categoryId', 'name', 'status', 'subCategory', 'venues', 'revenue']
+const DEFAULT_VISIBLE_IDS = DEFAULT_VENUE_CATEGORY_MANAGEMENT_VISIBLE_COLUMN_IDS
 
 export function VenueCategoryManagementPage() {
   const [searchValue, setSearchValue] = useState('')
@@ -115,11 +118,9 @@ export function VenueCategoryManagementPage() {
     [details],
   )
 
-  const defaultMetricIds = useMemo(
-    () => ['total-categories', 'active-categories', 'total-sub-categories', 'top-category'],
-    [],
-  )
-  const activeMetricIds = useActiveMetricIds(VENUE_CATEGORY_MANAGEMENT_MODULE_KEY, defaultMetricIds)
+  const activeMetricIds = useActiveMetricIds(VENUE_CATEGORY_MANAGEMENT_MODULE_KEY, [
+    ...DEFAULT_VENUE_CATEGORY_MANAGEMENT_METRIC_IDS,
+  ])
 
   const metricCardCatalog = useMemo(
     () => [
@@ -187,7 +188,12 @@ export function VenueCategoryManagementPage() {
     const dataColumnsById = Object.fromEntries(
       venueCategoryColumns.map((column) => [column.id, column] as const),
     ) as Record<string, ColumnDef<VenueCategory>>
-    const selectedDataColumns = visibleIds.map((id) => dataColumnsById[id]).filter(Boolean)
+    const selectedDataColumns = sortIdsByCatalogOrder(
+      visibleIds.filter((id) => id in dataColumnsById),
+      DEFAULT_VISIBLE_IDS,
+    )
+      .map((id) => dataColumnsById[id])
+      .filter(Boolean)
     const actionsColumn = dataColumnsById.actions
 
     return actionsColumn ? [...selectedDataColumns, actionsColumn] : selectedDataColumns
@@ -197,7 +203,7 @@ export function VenueCategoryManagementPage() {
     <div className="flex flex-col gap-4 p-0 md:gap-6">
       <CategoryManagementPageHeader
         title="Category Management"
-        metricsPath="/venues/categories/management/metrics?section=table"
+        metricsPath="/venues/categories/management/metrics"
         createPath="/venues/categories/management/create"
       />
 

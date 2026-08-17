@@ -6,6 +6,11 @@ import { toast } from 'sonner'
 
 import { type RevenueOverviewRow } from '@/modules/payments/mock/revenue-overview.mock'
 import { useAddFinanceNote, useFinanceRevenue } from '@/modules/payments/hooks/use-finance'
+import {
+  DEFAULT_FINANCE_REVENUE_VISIBLE_COLUMN_IDS,
+  FINANCE_REVENUE_MODULE_KEY,
+} from '@/modules/payments/config/finance-revenue-table-columns.config'
+import { useTableColumnPreferences } from '@/modules/expert/hooks/use-ui-preferences'
 import { mapPaymentToRevenueRow } from '@/modules/payments/utils/finance-mappers'
 import { AddTagsModal } from '@/shared/components/modals/add-tags-modal'
 import { DataTable } from '@/shared/components/table/data-table'
@@ -36,6 +41,7 @@ export function RevenueOverviewPage() {
   const [selectedRowIds, setSelectedRowIds] = useState<string[]>([])
   const [tagTarget, setTagTarget] = useState<RevenueOverviewRow | null>(null)
   const addNote = useAddFinanceNote()
+  const tableColumnPreferencesQuery = useTableColumnPreferences(FINANCE_REVENUE_MODULE_KEY)
 
   const { data, isLoading, isFetching, isError } = useFinanceRevenue({
     page: currentPage,
@@ -144,40 +150,41 @@ export function RevenueOverviewPage() {
     [activeDropdownId, navigate],
   )
 
-  const columns = useMemo<ColumnDef<RevenueOverviewRow>[]>(
-    () => [
-      {
-        id: 'select',
-        header: () => (
-          <input
-            type="checkbox"
-            aria-label="Select all revenue records"
-            checked={allVisibleSelected}
-            ref={(input) => {
-              if (input) input.indeterminate = someVisibleSelected && !allVisibleSelected
-            }}
-            onChange={toggleVisibleRows}
-            className="h-[18px] w-[18px] rounded border-slate-700 bg-transparent"
-          />
-        ),
-        cell: ({ row }) => (
-          <input
-            type="checkbox"
-            aria-label={`Select ${row.original.entityName}`}
-            checked={selectedRowIds.includes(row.original.id)}
-            onChange={() => toggleRowSelection(row.original.id)}
-            onClick={(event) => event.stopPropagation()}
-            className="h-[18px] w-[18px] rounded border-slate-700 bg-transparent"
-          />
-        ),
-        meta: {
-          headerClassName: 'pl-5',
-          cellClassName: 'pl-5',
-        },
+  const columns = useMemo<ColumnDef<RevenueOverviewRow>[]>(() => {
+    const selectColumn: ColumnDef<RevenueOverviewRow> = {
+      id: 'select',
+      header: () => (
+        <input
+          type="checkbox"
+          aria-label="Select all revenue records"
+          checked={allVisibleSelected}
+          ref={(input) => {
+            if (input) input.indeterminate = someVisibleSelected && !allVisibleSelected
+          }}
+          onChange={toggleVisibleRows}
+          className="h-[18px] w-[18px] rounded border-slate-700 bg-transparent"
+        />
+      ),
+      cell: ({ row }) => (
+        <input
+          type="checkbox"
+          aria-label={`Select ${row.original.entityName}`}
+          checked={selectedRowIds.includes(row.original.id)}
+          onChange={() => toggleRowSelection(row.original.id)}
+          onClick={(event) => event.stopPropagation()}
+          className="h-[18px] w-[18px] rounded border-slate-700 bg-transparent"
+        />
+      ),
+      meta: {
+        headerClassName: 'pl-5',
+        cellClassName: 'pl-5',
       },
-      { accessorKey: 'module', header: 'Module' },
-      { accessorKey: 'entityType', header: 'Entity Type' },
-      {
+    }
+
+    const dataColumnsById: Record<string, ColumnDef<RevenueOverviewRow>> = {
+      module: { accessorKey: 'module', header: 'Module' },
+      'entity-type': { accessorKey: 'entityType', header: 'Entity Type' },
+      'entity-id': {
         accessorKey: 'entityId',
         header: 'Entity ID',
         cell: ({ row }) => (
@@ -186,24 +193,24 @@ export function RevenueOverviewPage() {
           </span>
         ),
       },
-      {
+      'entity-name': {
         accessorKey: 'entityName',
         header: 'Entity Name',
         cell: ({ row }) => (
           <span className="text-brand-text font-medium">{row.original.entityName}</span>
         ),
       },
-      { accessorKey: 'category', header: 'Category' },
-      { accessorKey: 'ownerType', header: 'Owner Type' },
-      { accessorKey: 'ownerName', header: 'Owner Name' },
-      {
+      category: { accessorKey: 'category', header: 'Category' },
+      'owner-type': { accessorKey: 'ownerType', header: 'Owner Type' },
+      'owner-name': { accessorKey: 'ownerName', header: 'Owner Name' },
+      'gross-amount': {
         accessorKey: 'grossAmount',
         header: 'Gross Amount',
         cell: ({ row }) => (
           <span className="text-brand-text font-semibold">{row.original.grossAmount}</span>
         ),
       },
-      {
+      status: {
         accessorKey: 'status',
         header: 'Status',
         cell: ({ row }) => (
@@ -217,22 +224,31 @@ export function RevenueOverviewPage() {
           </span>
         ),
       },
-      {
-        id: 'actions',
-        header: 'Actions',
-        meta: { headerClassName: 'pr-5 text-right', cellClassName: 'relative pr-5 text-right' },
-        cell: ({ row }) => renderActions(row.original),
-      },
-    ],
-    [
-      allVisibleSelected,
-      renderActions,
-      selectedRowIds,
-      someVisibleSelected,
-      toggleRowSelection,
-      toggleVisibleRows,
-    ],
-  )
+    }
+
+    const visibleIds = tableColumnPreferencesQuery.data?.visibleColumnIds?.length
+      ? tableColumnPreferencesQuery.data.visibleColumnIds
+      : DEFAULT_FINANCE_REVENUE_VISIBLE_COLUMN_IDS
+
+    const preferenceColumns = visibleIds.map((id) => dataColumnsById[id]).filter(Boolean)
+
+    const actionsColumn: ColumnDef<RevenueOverviewRow> = {
+      id: 'actions',
+      header: 'Actions',
+      meta: { headerClassName: 'pr-5 text-right', cellClassName: 'relative pr-5 text-right' },
+      cell: ({ row }) => renderActions(row.original),
+    }
+
+    return [selectColumn, ...preferenceColumns, actionsColumn]
+  }, [
+    allVisibleSelected,
+    renderActions,
+    selectedRowIds,
+    someVisibleSelected,
+    tableColumnPreferencesQuery.data,
+    toggleRowSelection,
+    toggleVisibleRows,
+  ])
 
   return (
     <div className="flex flex-col gap-6">
@@ -250,7 +266,10 @@ export function RevenueOverviewPage() {
             <span className="text-brand-text font-semibold">Revenue Overview</span>
           </p>
         </div>
-        <Button className="ui-manage-metrics" onClick={() => navigate('/metrics/finance-revenue')}>
+        <Button
+          className="ui-manage-metrics"
+          onClick={() => navigate('/metrics/finance-revenue?section=table')}
+        >
           <SlidersHorizontal className="size-4" />
           Manage Metrics
         </Button>

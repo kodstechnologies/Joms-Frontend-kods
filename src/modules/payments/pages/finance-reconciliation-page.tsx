@@ -7,6 +7,11 @@ import { toast } from 'sonner'
 import { type FinanceReconciliationRow } from '@/modules/payments/mock/finance-reconciliation.mock'
 import { useFinanceReconciliation } from '@/modules/payments/hooks/use-finance'
 import { mapReconToRow } from '@/modules/payments/utils/finance-mappers'
+import {
+  DEFAULT_FINANCE_RECONCILIATION_VISIBLE_COLUMN_IDS,
+  FINANCE_RECONCILIATION_MODULE_KEY,
+} from '@/modules/payments/config/finance-reconciliation-table-columns.config'
+import { useTableColumnPreferences } from '@/modules/expert/hooks/use-ui-preferences'
 import { DataTable } from '@/shared/components/table/data-table'
 import {
   TableActionsDropdown,
@@ -33,6 +38,7 @@ export function FinanceReconciliationPage() {
   const [currentPage, setCurrentPage] = useState(1)
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [selectedRowIds, setSelectedRowIds] = useState<string[]>([])
+  const tableColumnPreferencesQuery = useTableColumnPreferences(FINANCE_RECONCILIATION_MODULE_KEY)
 
   const { data, isLoading, isFetching } = useFinanceReconciliation({
     page: currentPage,
@@ -111,38 +117,39 @@ export function FinanceReconciliationPage() {
     [activeDropdownId, navigate],
   )
 
-  const columns = useMemo<ColumnDef<FinanceReconciliationRow>[]>(
-    () => [
-      {
-        id: 'select',
-        header: () => (
-          <input
-            type="checkbox"
-            aria-label="Select all reconciliation records"
-            checked={allVisibleSelected}
-            ref={(input) => {
-              if (input) input.indeterminate = someVisibleSelected && !allVisibleSelected
-            }}
-            onChange={toggleVisibleRows}
-            className="rounded border-slate-700 bg-transparent"
-          />
-        ),
-        cell: ({ row }) => (
-          <input
-            type="checkbox"
-            aria-label={`Select ${row.original.reconciliationId}`}
-            checked={selectedRowIds.includes(row.original.id)}
-            onChange={() => toggleRowSelection(row.original.id)}
-            onClick={(event) => event.stopPropagation()}
-            className="rounded border-slate-700 bg-transparent"
-          />
-        ),
-        meta: {
-          headerClassName: 'pl-5',
-          cellClassName: 'pl-5',
-        },
+  const columns = useMemo<ColumnDef<FinanceReconciliationRow>[]>(() => {
+    const selectColumn: ColumnDef<FinanceReconciliationRow> = {
+      id: 'select',
+      header: () => (
+        <input
+          type="checkbox"
+          aria-label="Select all reconciliation records"
+          checked={allVisibleSelected}
+          ref={(input) => {
+            if (input) input.indeterminate = someVisibleSelected && !allVisibleSelected
+          }}
+          onChange={toggleVisibleRows}
+          className="rounded border-slate-700 bg-transparent"
+        />
+      ),
+      cell: ({ row }) => (
+        <input
+          type="checkbox"
+          aria-label={`Select ${row.original.reconciliationId}`}
+          checked={selectedRowIds.includes(row.original.id)}
+          onChange={() => toggleRowSelection(row.original.id)}
+          onClick={(event) => event.stopPropagation()}
+          className="rounded border-slate-700 bg-transparent"
+        />
+      ),
+      meta: {
+        headerClassName: 'pl-5',
+        cellClassName: 'pl-5',
       },
-      {
+    }
+
+    const dataColumnsById: Record<string, ColumnDef<FinanceReconciliationRow>> = {
+      'reconciliation-id': {
         accessorKey: 'reconciliationId',
         header: 'Reconciliation ID',
         cell: ({ row }) => (
@@ -151,8 +158,8 @@ export function FinanceReconciliationPage() {
           </span>
         ),
       },
-      { accessorKey: 'gateway', header: 'Gateway' },
-      {
+      gateway: { accessorKey: 'gateway', header: 'Gateway' },
+      'transaction-id': {
         accessorKey: 'transactionId',
         header: 'Transaction ID',
         cell: ({ row }) => (
@@ -161,7 +168,7 @@ export function FinanceReconciliationPage() {
           </span>
         ),
       },
-      {
+      'platform-record-id': {
         accessorKey: 'platformRecordId',
         header: 'Platform Record ID',
         cell: ({ row }) => (
@@ -170,21 +177,21 @@ export function FinanceReconciliationPage() {
           </span>
         ),
       },
-      {
+      'gateway-amount': {
         accessorKey: 'gatewayAmount',
         header: 'Gateway Amount',
         cell: ({ row }) => (
           <span className="text-brand-text font-semibold">{row.original.gatewayAmount}</span>
         ),
       },
-      {
+      'platform-amount': {
         accessorKey: 'platformAmount',
         header: 'Platform Amount',
         cell: ({ row }) => (
           <span className="text-brand-text font-semibold">{row.original.platformAmount}</span>
         ),
       },
-      {
+      difference: {
         accessorKey: 'difference',
         header: 'Difference',
         cell: ({ row }) => (
@@ -198,22 +205,31 @@ export function FinanceReconciliationPage() {
           </span>
         ),
       },
-      {
-        id: 'actions',
-        header: 'Actions',
-        meta: { headerClassName: 'pr-5 text-right', cellClassName: 'relative pr-5 text-right' },
-        cell: ({ row }) => renderActions(row.original),
-      },
-    ],
-    [
-      allVisibleSelected,
-      renderActions,
-      selectedRowIds,
-      someVisibleSelected,
-      toggleRowSelection,
-      toggleVisibleRows,
-    ],
-  )
+    }
+
+    const visibleIds = tableColumnPreferencesQuery.data?.visibleColumnIds?.length
+      ? tableColumnPreferencesQuery.data.visibleColumnIds
+      : DEFAULT_FINANCE_RECONCILIATION_VISIBLE_COLUMN_IDS
+
+    const preferenceColumns = visibleIds.map((id) => dataColumnsById[id]).filter(Boolean)
+
+    const actionsColumn: ColumnDef<FinanceReconciliationRow> = {
+      id: 'actions',
+      header: 'Actions',
+      meta: { headerClassName: 'pr-5 text-right', cellClassName: 'relative pr-5 text-right' },
+      cell: ({ row }) => renderActions(row.original),
+    }
+
+    return [selectColumn, ...preferenceColumns, actionsColumn]
+  }, [
+    allVisibleSelected,
+    renderActions,
+    selectedRowIds,
+    someVisibleSelected,
+    tableColumnPreferencesQuery.data,
+    toggleRowSelection,
+    toggleVisibleRows,
+  ])
 
   return (
     <div className="flex flex-col gap-6">
@@ -231,7 +247,7 @@ export function FinanceReconciliationPage() {
         </div>
         <Button
           className="ui-manage-metrics"
-          onClick={() => navigate('/metrics/finance-reconciliation')}
+          onClick={() => navigate('/metrics/finance-reconciliation?section=table')}
         >
           <SlidersHorizontal className="size-4" />
           Manage Metrics

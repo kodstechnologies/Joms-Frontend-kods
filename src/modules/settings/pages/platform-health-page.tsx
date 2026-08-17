@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 import { Check, RefreshCw, Settings2, Upload } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
@@ -15,7 +15,19 @@ import {
   YAxis,
 } from 'recharts'
 
-import { healthMetricsMock, type HealthMetric } from '../mock/settings.defaults'
+import { type HealthMetric } from '../mock/settings.defaults'
+import {
+  DEFAULT_PLATFORM_HEALTH_METRIC_IDS,
+  PLATFORM_HEALTH_METRIC_IDS,
+  PLATFORM_HEALTH_METRIC_ID_SET,
+  PLATFORM_HEALTH_MODULE_KEY,
+} from '../config/platform-health-metrics.config'
+import { buildPlatformHealthMetricCards } from '../utils/platform-health-metrics'
+import {
+  orderByActiveMetricIds,
+  useActiveMetricIds,
+} from '@/modules/expert/hooks/use-active-metric-ids'
+import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
 import { cn } from '@/shared/lib/cn'
 import { uiTokens } from '@/shared/lib/design-tokens'
 
@@ -148,6 +160,23 @@ function LoadBar({ value }: { value: number }) {
 
 export function PlatformHealthPage() {
   const navigate = useNavigate()
+  const activeMetricIds = useActiveMetricIds(PLATFORM_HEALTH_MODULE_KEY, [
+    ...DEFAULT_PLATFORM_HEALTH_METRIC_IDS,
+  ])
+
+  const filteredActiveMetricIds = useMemo(
+    () =>
+      sortIdsByCatalogOrder(
+        activeMetricIds.filter((id) => PLATFORM_HEALTH_METRIC_ID_SET.has(id)),
+        PLATFORM_HEALTH_METRIC_IDS,
+      ),
+    [activeMetricIds],
+  )
+
+  const visibleMetrics = useMemo(() => {
+    const allMetrics = buildPlatformHealthMetricCards()
+    return orderByActiveMetricIds(allMetrics, filteredActiveMetricIds)
+  }, [filteredActiveMetricIds])
 
   return (
     <div className="space-y-6">
@@ -181,8 +210,8 @@ export function PlatformHealthPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        {healthMetricsMock.map((metric) => (
-          <HealthMetricCard key={metric.title} metric={metric} />
+        {visibleMetrics.map((metric) => (
+          <HealthMetricCard key={metric.id} metric={metric} />
         ))}
       </div>
 

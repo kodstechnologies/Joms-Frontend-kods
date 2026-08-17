@@ -7,6 +7,11 @@ import { toast } from 'sonner'
 import { type TaxComplianceRow } from '@/modules/payments/mock/finance-tax-compliance.mock'
 import { useAddFinanceNote, useFinanceTax } from '@/modules/payments/hooks/use-finance'
 import { mapTaxToRow } from '@/modules/payments/utils/finance-mappers'
+import {
+  DEFAULT_FINANCE_TAX_VISIBLE_COLUMN_IDS,
+  FINANCE_TAX_MODULE_KEY,
+} from '@/modules/payments/config/finance-tax-table-columns.config'
+import { useTableColumnPreferences } from '@/modules/expert/hooks/use-ui-preferences'
 import { AddTagsModal } from '@/shared/components/modals/add-tags-modal'
 import { DataTable } from '@/shared/components/table/data-table'
 import {
@@ -33,6 +38,7 @@ export function FinanceTaxCompliancePage() {
   const [selectedRowIds, setSelectedRowIds] = useState<string[]>([])
   const [tagTarget, setTagTarget] = useState<TaxComplianceRow | null>(null)
   const addNote = useAddFinanceNote()
+  const tableColumnPreferencesQuery = useTableColumnPreferences(FINANCE_TAX_MODULE_KEY)
 
   const { data, isLoading, isFetching } = useFinanceTax({
     page: currentPage,
@@ -133,38 +139,39 @@ export function FinanceTaxCompliancePage() {
     [activeDropdownId, navigate],
   )
 
-  const columns = useMemo<ColumnDef<TaxComplianceRow>[]>(
-    () => [
-      {
-        id: 'select',
-        header: () => (
-          <input
-            type="checkbox"
-            aria-label="Select all tax records"
-            checked={allVisibleSelected}
-            ref={(input) => {
-              if (input) input.indeterminate = someVisibleSelected && !allVisibleSelected
-            }}
-            onChange={toggleVisibleRows}
-            className="rounded border-slate-700 bg-transparent"
-          />
-        ),
-        cell: ({ row }) => (
-          <input
-            type="checkbox"
-            aria-label={`Select ${row.original.recordId}`}
-            checked={selectedRowIds.includes(row.original.id)}
-            onChange={() => toggleRowSelection(row.original.id)}
-            onClick={(event) => event.stopPropagation()}
-            className="rounded border-slate-700 bg-transparent"
-          />
-        ),
-        meta: {
-          headerClassName: 'pl-5',
-          cellClassName: 'pl-5',
-        },
+  const columns = useMemo<ColumnDef<TaxComplianceRow>[]>(() => {
+    const selectColumn: ColumnDef<TaxComplianceRow> = {
+      id: 'select',
+      header: () => (
+        <input
+          type="checkbox"
+          aria-label="Select all tax records"
+          checked={allVisibleSelected}
+          ref={(input) => {
+            if (input) input.indeterminate = someVisibleSelected && !allVisibleSelected
+          }}
+          onChange={toggleVisibleRows}
+          className="rounded border-slate-700 bg-transparent"
+        />
+      ),
+      cell: ({ row }) => (
+        <input
+          type="checkbox"
+          aria-label={`Select ${row.original.recordId}`}
+          checked={selectedRowIds.includes(row.original.id)}
+          onChange={() => toggleRowSelection(row.original.id)}
+          onClick={(event) => event.stopPropagation()}
+          className="rounded border-slate-700 bg-transparent"
+        />
+      ),
+      meta: {
+        headerClassName: 'pl-5',
+        cellClassName: 'pl-5',
       },
-      {
+    }
+
+    const dataColumnsById: Record<string, ColumnDef<TaxComplianceRow>> = {
+      'record-id': {
         accessorKey: 'recordId',
         header: 'Record ID',
         cell: ({ row }) => (
@@ -173,8 +180,8 @@ export function FinanceTaxCompliancePage() {
           </span>
         ),
       },
-      { accessorKey: 'entityType', header: 'Entity Type' },
-      {
+      'entity-type': { accessorKey: 'entityType', header: 'Entity Type' },
+      'entity-id': {
         accessorKey: 'entityId',
         header: 'Entity ID',
         cell: ({ row }) => (
@@ -183,8 +190,8 @@ export function FinanceTaxCompliancePage() {
           </span>
         ),
       },
-      { accessorKey: 'owner', header: 'Owner' },
-      {
+      owner: { accessorKey: 'owner', header: 'Owner' },
+      'booking-id': {
         accessorKey: 'bookingId',
         header: 'Booking ID',
         cell: ({ row }) => (
@@ -193,8 +200,8 @@ export function FinanceTaxCompliancePage() {
           </span>
         ),
       },
-      { accessorKey: 'bookingTitle', header: 'Booking Title' },
-      {
+      'booking-title': { accessorKey: 'bookingTitle', header: 'Booking Title' },
+      status: {
         accessorKey: 'status',
         header: 'Status',
         cell: ({ row }) => (
@@ -208,29 +215,38 @@ export function FinanceTaxCompliancePage() {
           </span>
         ),
       },
-      {
+      revenue: {
         accessorKey: 'revenue',
         header: 'Revenue',
         cell: ({ row }) => (
           <span className="text-brand-text font-semibold">{row.original.revenue}</span>
         ),
       },
-      {
-        id: 'actions',
-        header: 'Actions',
-        meta: { headerClassName: 'pr-5 text-right', cellClassName: 'relative pr-5 text-right' },
-        cell: ({ row }) => renderActions(row.original),
-      },
-    ],
-    [
-      allVisibleSelected,
-      renderActions,
-      selectedRowIds,
-      someVisibleSelected,
-      toggleRowSelection,
-      toggleVisibleRows,
-    ],
-  )
+    }
+
+    const visibleIds = tableColumnPreferencesQuery.data?.visibleColumnIds?.length
+      ? tableColumnPreferencesQuery.data.visibleColumnIds
+      : DEFAULT_FINANCE_TAX_VISIBLE_COLUMN_IDS
+
+    const preferenceColumns = visibleIds.map((id) => dataColumnsById[id]).filter(Boolean)
+
+    const actionsColumn: ColumnDef<TaxComplianceRow> = {
+      id: 'actions',
+      header: 'Actions',
+      meta: { headerClassName: 'pr-5 text-right', cellClassName: 'relative pr-5 text-right' },
+      cell: ({ row }) => renderActions(row.original),
+    }
+
+    return [selectColumn, ...preferenceColumns, actionsColumn]
+  }, [
+    allVisibleSelected,
+    renderActions,
+    selectedRowIds,
+    someVisibleSelected,
+    tableColumnPreferencesQuery.data,
+    toggleRowSelection,
+    toggleVisibleRows,
+  ])
 
   return (
     <div className="flex flex-col gap-6">
@@ -248,7 +264,10 @@ export function FinanceTaxCompliancePage() {
             <span className="text-brand-text font-semibold">Tax & Compliance</span>
           </p>
         </div>
-        <Button className="ui-manage-metrics" onClick={() => navigate('/metrics/finance-tax')}>
+        <Button
+          className="ui-manage-metrics"
+          onClick={() => navigate('/metrics/finance-tax?section=table')}
+        >
           <SlidersHorizontal className="size-4" />
           Manage Metrics
         </Button>
