@@ -9,6 +9,7 @@ import {
   CommunicationActions,
   CommunicationStatusBadge,
 } from '../../components/communication-table-cells'
+import { PushAllPartnersPanel } from '../../components/push-all-partners-panel'
 import { useCommunicationMetrics, useCommunications } from '../../hooks/use-communications'
 import type { Communication } from '../../api/communication-api'
 import { DataTable } from '@/shared/components/table/data-table'
@@ -249,6 +250,8 @@ export function CommunicationListPage() {
           />
         ))}
       </div>
+
+      <PushAllPartnersPanel />
 
       <DataTable
         columns={columns}
