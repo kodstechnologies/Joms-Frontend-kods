@@ -72,6 +72,15 @@ export function ChatTestPage() {
 
         <div className="grid gap-3">
           <Link
+            to="/dev/chat-partner-support"
+            className="rounded-xl border border-violet-500/40 bg-violet-500/10 px-4 py-3 hover:bg-violet-500/20"
+          >
+            <div className="font-medium text-violet-300">Partner support chat</div>
+            <div className="text-sm text-zinc-400">
+              Zoho Desk / SalesIQ · admin-service socket + REST
+            </div>
+          </Link>
+          <Link
             to="/dev/chat-partner"
             className="rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 hover:bg-amber-500/20"
           >

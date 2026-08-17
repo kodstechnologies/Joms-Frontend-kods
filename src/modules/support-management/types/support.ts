@@ -13,8 +13,10 @@ export type SupportTicket = {
   reporter: string
   reporterId?: string
   reporterType: ReporterType
+  reporterAvatarUrl?: string
   assignedTo: string
   assignedToId?: string | null
+  assignedToAvatarUrl?: string
   slaTimer: string
   slaDueAt?: string | null
   module: string
@@ -42,6 +44,7 @@ export type QueueTicket = Pick<
 export type ChatMessage = {
   id: string
   sender: string
+  senderAvatarUrl?: string
   role: 'user' | 'agent'
   content: string
   time: string
