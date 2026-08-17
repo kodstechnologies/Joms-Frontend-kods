@@ -62,8 +62,8 @@ type PartnerSupportChatPanelProps = {
   accessToken: string
   adminBaseUrl: string
   reporterName: string
-  reporterEmail?: string
-  reporterPhone?: string
+  reporterEmail?: string | null
+  reporterPhone?: string | null
 }
 
 export function PartnerSupportChatPanel({
@@ -206,8 +206,8 @@ export function PartnerSupportChatPanel({
 
   const partnerFields = () => ({
     reporterName,
-    reporterEmail,
-    reporterPhone,
+    reporterEmail: reporterEmail ?? '',
+    reporterPhone: reporterPhone ?? '',
   })
 
   const dispatch = async (payload: Record<string, unknown>) => {
