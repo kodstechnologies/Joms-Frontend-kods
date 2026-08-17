@@ -52,6 +52,7 @@ import {
   DecisionActionModal,
   type DecisionActionModalOption,
 } from '@/shared/components/modal/decision-action-modal'
+import { AddTagModal } from '@/shared/components/modal/add-tag-modal'
 import { UpdatePasswordModal } from '@/modules/rbac/components/update-password-modal'
 import { MODERATION_CATEGORY_SLUGS } from '@/modules/settings/api/templates-api'
 import {
@@ -62,6 +63,7 @@ import {
   TableActionsDropdown,
   TableActionsItem,
 } from '@/shared/components/table/table-actions-dropdown'
+import { useEntityTags } from '@/shared/hooks/use-entity-tags'
 import { cn } from '@/shared/lib/cn'
 import { openExpertKycFromProfile } from '../../utils/expert-application-navigation'
 import { useEscalationAssignees } from '@/modules/my-tasks/hooks/use-admin-escalation'
@@ -719,8 +721,7 @@ function SpacesTab({ data, venueId }: { data: VenueFullView; venueId: string }) 
 
       if (successCount === 0) {
         const firstError = results.find((result) => result.status === 'rejected') as
-          | PromiseRejectedResult
-          | undefined
+          PromiseRejectedResult | undefined
         toast.error(getSharedApiErrorMessage(firstError?.reason) || 'Failed to escalate spaces.')
         return
       }
@@ -1040,8 +1041,7 @@ function AnalyticsTab({ data, venueId }: { data: VenueFullView; venueId: string 
   const navigate = useNavigate()
   const { data: analyticsData, isLoading } = useVenueProfileAnalytics(venueId)
   const profileAnalytics = data?.profile as
-    | (typeof data.profile & { analytics?: Record<string, unknown> })
-    | undefined
+    (typeof data.profile & { analytics?: Record<string, unknown> }) | undefined
   const venueAnalytics = profileAnalytics?.analytics
   const cardsFromApi = analyticsData?.profileCards
 
@@ -1207,6 +1207,7 @@ export function VenueProfileViewPage() {
   const [deleteReasons, setDeleteReasons] = useState<string[]>([])
   const [deleteAdminNotes, setDeleteAdminNotes] = useState('')
   const [deleteConfirmed, setDeleteConfirmed] = useState(false)
+  const { tagModalOpen, openTagModal, closeTagModal, saveTags, initialTags } = useEntityTags()
 
   const suspendVenueMutation = useSuspendVenue()
   const deleteVenueMutation = useDeleteVenue()
@@ -1495,7 +1496,7 @@ export function VenueProfileViewPage() {
       onClick: () => navigate(`/venues/management/create?venueId=${venueId}`),
     },
     { label: 'Add Notes', icon: FileText, onClick: () => comingSoon('Add Notes') },
-    { label: 'Add Tags', icon: Tag, onClick: () => comingSoon('Add Tags') },
+    { label: 'Add Tags', icon: Tag, onClick: () => openTagModal(venueId || venue.name) },
     { label: 'Export Data', icon: Upload, onClick: () => comingSoon('Export Data') },
     { label: 'Share Profile', icon: Share2, onClick: () => comingSoon('Share Profile') },
   ]
@@ -1762,6 +1763,13 @@ export function VenueProfileViewPage() {
         onClose={closeDeleteModal}
         onSubmit={handleDeleteSubmit}
         isSubmitting={deleteVenueMutation.isPending}
+      />
+
+      <AddTagModal
+        open={tagModalOpen}
+        onClose={closeTagModal}
+        initialTags={initialTags}
+        onSubmit={saveTags}
       />
     </div>
   )

@@ -2890,6 +2890,16 @@ select.settings-control,
   background: rgb(255 255 255 / 5%);
 }
 
+.ui-cta-gold-outline {
+  border: 1px solid var(--brand-accent);
+  background: transparent;
+  color: var(--brand-accent);
+}
+
+.ui-cta-gold-outline:hover {
+  background: rgb(246 203 134 / 10%);
+}
+
 .ui-cta-positive {
   background: var(--brand-positive);
   color: #ffffff;
@@ -2996,8 +3006,8 @@ select.settings-control,
   }
 
   .ui-data-table {
-    width: 1268px !important;
-    max-width: 1268px !important;
+    width: 100% !important;
+    max-width: 100% !important;
   }
 }
 
@@ -3080,7 +3090,8 @@ select::-ms-expand {
 
 .ui-table-search-wrap {
   position: relative;
-  width: 100%;
+  flex: 1 1 240px;
+  width: auto;
   max-width: 378px;
 }
 
@@ -3949,6 +3960,8 @@ select::-ms-expand {
 /* Table Button Styles */
 .table-advance-filter-btn {
   height: 50px;
+  min-height: 50px;
+  max-height: 50px;
   border-radius: 12px;
   padding: 0 16px;
   font-size: 14px;
@@ -3969,6 +3982,8 @@ select::-ms-expand {
 
 .table-export-btn {
   height: 50px;
+  min-height: 50px;
+  max-height: 50px;
   border-radius: 12px;
   padding: 0 16px;
   font-size: 14px;
@@ -4007,6 +4022,12 @@ select::-ms-expand {
 .table-pagination-btn:disabled {
   opacity: 0.45;
   cursor: not-allowed;
+}
+
+.table-pagination-page {
+  width: 40px;
+  min-width: 40px;
+  padding: 0;
 }
 
 .table-pagination-page-active {

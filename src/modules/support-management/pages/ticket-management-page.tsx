@@ -4,7 +4,6 @@ import { useNavigate } from 'react-router-dom'
 import {
   AlertTriangle,
   ArrowLeftRight,
-  Download,
   Eye,
   GitMerge,
   MessageSquarePlus,
@@ -12,22 +11,42 @@ import {
   SlidersHorizontal,
   Tag,
   Trash2,
+  TrendingDown,
+  TrendingUp,
+  Upload,
 } from 'lucide-react'
 import { toast } from 'sonner'
 
-import { AddTagModal } from '../components/add-tag-modal'
+import { AddTagModal } from '@/shared/components/modal/add-tag-modal'
 import { MergeTicketsModal } from '../components/merge-tickets-modal'
+import { SlaTimerCell } from '../components/sla-timer-cell'
 import { TicketPriorityBadge } from '../components/ticket-priority-badge'
 import { TicketStatusBadge } from '../components/ticket-status-badge'
-import { supportTicketsMock, ticketManagementStats } from '../mock/support.mock'
+import {
+  useDeleteSupportTicket,
+  useEscalateSupportTicket,
+  useExportSupportTickets,
+  useLiveSupportUpdates,
+  useMergeSupportTickets,
+  useSupportTickets,
+  useUpdateSupportTicket,
+} from '../hooks/use-support'
 import { useSupportStore } from '../store/support-store'
 import type { SupportTicket, TicketTab } from '../types/support'
+import {
+  downloadBlob,
+  getApiErrorMessage,
+  getPriorityLabel,
+  getStatusLabel,
+  nextPriority,
+  nextStatus,
+} from '../utils/support-format'
 import { DataTable } from '@/shared/components/table/data-table'
 import {
   TableActionsDropdown,
   TableActionsItem,
 } from '@/shared/components/table/table-actions-dropdown'
-import { StatCard } from '@/shared/components/dashboard/stat-card'
+import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
 
 const TABS: { key: TicketTab; label: string }[] = [
@@ -36,41 +55,124 @@ const TABS: { key: TicketTab; label: string }[] = [
   { key: 'all', label: 'All Tickets' },
 ]
 
+const FALLBACK_STATS: Array<{
+  title: string
+  value: string
+  changePercent?: number
+  changeDirection?: 'up' | 'down'
+}> = [
+  { title: 'My Open Tickets', value: '0' },
+  { title: 'Tickets In-Progress', value: '0' },
+  { title: 'Avg. Response Time', value: '0' },
+  { title: 'Avg. Resolution Time', value: '0' },
+]
+
+function TicketMetricCard({
+  title,
+  value,
+  percentage,
+  direction,
+}: {
+  title: string
+  value: string
+  percentage: number
+  direction: 'up' | 'down'
+}) {
+  const isUp = direction === 'up'
+
+  return (
+    <div className="radius-lg bg-brand-surface flex h-[130px] flex-col justify-center border border-white/[0.06] p-5">
+      <p className="text-body-sm-medium text-muted">{title}</p>
+      <p className="text-h2 text-brand-text mt-2 tracking-tight">{value}</p>
+      <div className="mt-3">
+        <span
+          className={cn(
+            'text-body-sm-semibold inline-flex items-center gap-1 rounded-md px-2 py-0.5',
+            isUp
+              ? 'bg-brand-positive/15 text-brand-positive'
+              : 'bg-brand-danger/15 text-brand-danger',
+          )}
+        >
+          {isUp ? (
+            <TrendingUp className="size-3" strokeWidth={2} />
+          ) : (
+            <TrendingDown className="size-3" strokeWidth={2} />
+          )}
+          {isUp ? '+' : ''}
+          {percentage}% vs last month
+        </span>
+      </div>
+    </div>
+  )
+}
+
 export function TicketManagementPage() {
   const navigate = useNavigate()
-  const { searchQuery, setSearchQuery, currentPage, setCurrentPage, activeTab, setActiveTab } =
-    useSupportStore()
+  const {
+    searchQuery,
+    setSearchQuery,
+    currentPage,
+    setCurrentPage,
+    activeTab,
+    setActiveTab,
+    setSelectedTicketId,
+  } = useSupportStore()
 
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [tagModalOpen, setTagModalOpen] = useState(false)
   const [mergeModalOpen, setMergeModalOpen] = useState(false)
+  const [selectedIds, setSelectedIds] = useState<string[]>([])
+  const [activeTicketId, setActiveTicketId] = useState<string | null>(null)
 
-  const stats = ticketManagementStats.map((s) => ({
+  const { data, isLoading } = useSupportTickets({
+    page: currentPage,
+    limit: 10,
+    search: searchQuery || undefined,
+    tab: activeTab,
+    includeClosed: true,
+  })
+  const updateMutation = useUpdateSupportTicket()
+  const escalateMutation = useEscalateSupportTicket()
+  const deleteMutation = useDeleteSupportTicket()
+  const exportMutation = useExportSupportTickets()
+  const mergeMutation = useMergeSupportTickets()
+  useLiveSupportUpdates()
+
+  const tickets = useMemo(() => data?.data?.tickets ?? [], [data?.data?.tickets])
+  const meta = data?.data?.meta
+  const pageSize = meta?.limit ?? 10
+  const totalPages = meta?.totalPages ?? 1
+  const totalItems = meta?.total ?? 0
+
+  const stats = (data?.data?.stats?.length ? data.data.stats : FALLBACK_STATS).map((s) => ({
     title: s.title,
-    value: s.value,
-    trend: { direction: 'up' as const, percentage: 6.7, label: 'vs last month' },
+    value: String(s.value),
+    percentage: s.changePercent ?? 0,
+    direction: (s.changeDirection ?? 'up') as 'up' | 'down',
   }))
 
-  const filtered = useMemo(() => {
-    let data = supportTicketsMock
-    if (activeTab === 'escalated') {
-      data = data.filter((t) => t.priority === 'critical' || t.priority === 'high')
-    }
-    if (searchQuery) {
-      const q = searchQuery.toLowerCase()
-      data = data.filter(
-        (t) =>
-          t.id.toLowerCase().includes(q) ||
-          t.subject.toLowerCase().includes(q) ||
-          t.reporter.toLowerCase().includes(q),
-      )
-    }
-    return data
-  }, [activeTab, searchQuery])
+  const toggleSelect = useCallback((id: string) => {
+    setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]))
+  }, [])
 
-  const pageSize = 10
-  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize))
-  const paginated = filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize)
+  const toggleSelectAll = useCallback(() => {
+    setSelectedIds((prev) =>
+      prev.length === tickets.length ? [] : tickets.map((ticket) => ticket.id),
+    )
+  }, [tickets])
+
+  const handleExport = useCallback(async () => {
+    try {
+      const blob = await exportMutation.mutateAsync({
+        search: searchQuery || undefined,
+        tab: activeTab,
+      })
+      downloadBlob(blob, 'support-tickets.csv')
+      toast.success('Export downloaded')
+    } catch (err) {
+      toast.error(getApiErrorMessage(err, 'Failed to export tickets'))
+    }
+  }, [activeTab, exportMutation, searchQuery])
 
   const renderActions = useCallback(
     (record: SupportTicket) => {
@@ -97,28 +199,54 @@ export function TicketManagementPage() {
           <TableActionsItem
             icon={<Pencil className="size-3.5 text-slate-700" aria-hidden="true" />}
             className="text-slate-800 hover:bg-slate-100 hover:text-slate-900"
-            onClick={() => toast.message('Edit coming soon')}
+            onClick={() => {
+              setActiveDropdownId(null)
+              setSelectedTicketId(id)
+              navigate(`/support/workspace`)
+            }}
           >
             Edit Ticket
           </TableActionsItem>
           <TableActionsItem
             icon={<ArrowLeftRight className="size-3.5 text-slate-700" aria-hidden="true" />}
             className="text-slate-800 hover:bg-slate-100 hover:text-slate-900"
-            onClick={() => toast.message('Status change coming soon')}
+            onClick={async () => {
+              setActiveDropdownId(null)
+              const status = nextStatus(record.status)
+              try {
+                await updateMutation.mutateAsync({ id, payload: { status } })
+                toast.success(`Status updated to ${getStatusLabel(status)}`)
+              } catch (err) {
+                toast.error(getApiErrorMessage(err, 'Failed to update status'))
+              }
+            }}
           >
             Change Status
           </TableActionsItem>
           <TableActionsItem
             icon={<SlidersHorizontal className="size-3.5 text-slate-700" aria-hidden="true" />}
             className="text-slate-800 hover:bg-slate-100 hover:text-slate-900"
-            onClick={() => toast.message('Priority change coming soon')}
+            onClick={async () => {
+              setActiveDropdownId(null)
+              const priority = nextPriority(record.priority)
+              try {
+                await updateMutation.mutateAsync({ id, payload: { priority } })
+                toast.success(`Priority updated to ${getPriorityLabel(priority)}`)
+              } catch (err) {
+                toast.error(getApiErrorMessage(err, 'Failed to update priority'))
+              }
+            }}
           >
             Change Priority
           </TableActionsItem>
           <TableActionsItem
             icon={<MessageSquarePlus className="size-3.5 text-slate-700" aria-hidden="true" />}
             className="text-slate-800 hover:bg-slate-100 hover:text-slate-900"
-            onClick={() => toast.message('Note added (static)')}
+            onClick={() => {
+              setActiveDropdownId(null)
+              setSelectedTicketId(id)
+              navigate(`/support/workspace`)
+            }}
           >
             Add internal note
           </TableActionsItem>
@@ -127,6 +255,7 @@ export function TicketManagementPage() {
             className="text-slate-800 hover:bg-slate-100 hover:text-slate-900"
             onClick={() => {
               setActiveDropdownId(null)
+              setActiveTicketId(id)
               setTagModalOpen(true)
             }}
           >
@@ -135,14 +264,30 @@ export function TicketManagementPage() {
           <TableActionsItem
             icon={<AlertTriangle className="size-3.5 text-slate-700" aria-hidden="true" />}
             className="text-slate-800 hover:bg-slate-100 hover:text-slate-900"
-            onClick={() => toast.message('Escalation coming soon')}
+            onClick={async () => {
+              setActiveDropdownId(null)
+              try {
+                await escalateMutation.mutateAsync({ id })
+                toast.success('Ticket escalated')
+              } catch (err) {
+                toast.error(getApiErrorMessage(err, 'Failed to escalate ticket'))
+              }
+            }}
           >
             Escalate
           </TableActionsItem>
           <TableActionsItem
             icon={<Trash2 className="text-brand-danger size-3.5" aria-hidden="true" />}
             className="text-brand-danger hover:bg-brand-danger/10 hover:text-brand-danger"
-            onClick={() => toast.message('Delete coming soon')}
+            onClick={async () => {
+              setActiveDropdownId(null)
+              try {
+                await deleteMutation.mutateAsync(id)
+                toast.success('Ticket deleted')
+              } catch (err) {
+                toast.error(getApiErrorMessage(err, 'Failed to delete ticket'))
+              }
+            }}
           >
             Delete
           </TableActionsItem>
@@ -151,6 +296,9 @@ export function TicketManagementPage() {
             className="text-slate-800 hover:bg-slate-100 hover:text-slate-900"
             onClick={() => {
               setActiveDropdownId(null)
+              if (!selectedIds.includes(id)) {
+                setSelectedIds((prev) => [...prev, id])
+              }
               setMergeModalOpen(true)
             }}
           >
@@ -159,7 +307,15 @@ export function TicketManagementPage() {
         </TableActionsDropdown>
       )
     },
-    [activeDropdownId, navigate],
+    [
+      activeDropdownId,
+      deleteMutation,
+      escalateMutation,
+      navigate,
+      selectedIds,
+      setSelectedTicketId,
+      updateMutation,
+    ],
   )
 
   const columns = useMemo<ColumnDef<SupportTicket>[]>(
@@ -167,13 +323,21 @@ export function TicketManagementPage() {
       {
         id: 'select',
         header: () => (
-          <input type="checkbox" aria-label="Select all" className="rounded border-white/20" />
+          <input
+            type="checkbox"
+            aria-label="Select all"
+            className="rounded border-white/20"
+            checked={tickets.length > 0 && selectedIds.length === tickets.length}
+            onChange={toggleSelectAll}
+          />
         ),
         cell: ({ row }) => (
           <input
             type="checkbox"
             aria-label={`Select ${row.original.id}`}
             className="rounded border-white/20"
+            checked={selectedIds.includes(row.original.id)}
+            onChange={() => toggleSelect(row.original.id)}
           />
         ),
         meta: { headerClassName: 'pl-5 w-10', cellClassName: 'pl-5 w-10' },
@@ -181,11 +345,7 @@ export function TicketManagementPage() {
       {
         accessorKey: 'id',
         header: 'Ticket ID',
-        cell: ({ row }) => (
-          <span className="text-body-sm-semibold text-brand-text font-mono">
-            #{row.original.id}
-          </span>
-        ),
+        cell: ({ row }) => <span className="ui-table-id text-brand-text">#{row.original.id}</span>,
       },
       {
         accessorKey: 'subject',
@@ -207,7 +367,17 @@ export function TicketManagementPage() {
       { accessorKey: 'category', header: 'Category' },
       { accessorKey: 'reporter', header: 'Reporter' },
       { accessorKey: 'assignedTo', header: 'Assigned To' },
-      { accessorKey: 'slaTimer', header: 'SLA Timer' },
+      {
+        accessorKey: 'slaTimer',
+        header: 'SLA Timer',
+        cell: ({ row }) => (
+          <SlaTimerCell
+            slaTimer={row.original.slaTimer}
+            slaDueAt={row.original.slaDueAt}
+            status={row.original.status}
+          />
+        ),
+      },
       {
         id: 'actions',
         header: 'Actions',
@@ -215,49 +385,51 @@ export function TicketManagementPage() {
         cell: ({ row }) => renderActions(row.original),
       },
     ],
-    [renderActions],
+    [renderActions, selectedIds, tickets.length, toggleSelect, toggleSelectAll],
   )
 
+  const activeTicket = tickets.find((t) => t.id === activeTicketId)
+  const mergeTickets = tickets.filter((t) => selectedIds.includes(t.id))
+
   return (
-    <div className="space-y-6">
-      {/* Header */}
+    <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-h2 text-brand-text tracking-tight">Ticket Management</h1>
+          <h1 className="text-h1 text-brand-text tracking-tight">Ticket Management</h1>
           <p className="text-body-md text-muted mt-1 leading-[20px]">
             Decision-centric workspace for high-impact tickets requiring approval, enforcement, or
             oversight
           </p>
         </div>
-        <div className="flex shrink-0 items-center gap-3">
-          <button
+        <div className="flex shrink-0 flex-col items-stretch gap-3 sm:flex-row sm:items-center">
+          <Button
             type="button"
-            onClick={() => toast.message('Export coming soon')}
-            className="ui-cta ui-cta-ghost"
+            variant="primary"
+            onClick={handleExport}
+            disabled={exportMutation.isPending}
+            className="ui-export-data"
           >
-            <Download className="icon-sm shrink-0" />
+            <Upload className="icon-sm shrink-0" aria-hidden="true" />
             Export Data
-          </button>
+          </Button>
           <button
             type="button"
             onClick={() => navigate('/metrics/ticket-management')}
-            className="ui-manage-metrics ui-cta ui-cta-primary"
+            className="ui-manage-metrics ui-cta ui-cta-gold-outline"
           >
-            <SlidersHorizontal className="icon-sm shrink-0" />
+            <SlidersHorizontal className="icon-sm shrink-0" aria-hidden="true" />
             Manage Metrics
           </button>
         </div>
       </div>
 
-      {/* Stat cards — 4 cols */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {stats.map((stat) => (
-          <StatCard key={stat.title} {...stat} />
+          <TicketMetricCard key={stat.title} {...stat} />
         ))}
       </div>
 
-      {/* Tab switcher */}
-      <div className="radius-lg bg-brand-surface flex gap-1 border border-white/10 p-1">
+      <div className="bg-brand-surface flex h-[47px] w-full items-center rounded-[10px] border border-white/[0.06] p-1">
         {TABS.map((tab) => (
           <button
             key={tab.key}
@@ -265,12 +437,13 @@ export function TicketManagementPage() {
             onClick={() => {
               setActiveTab(tab.key)
               setCurrentPage(1)
+              setSelectedIds([])
             }}
             className={cn(
-              'text-body-md-medium flex-1 rounded-lg px-4 py-2.5 transition-colors',
+              'text-body-sm flex h-[37px] flex-1 items-center justify-center rounded-md px-4 leading-[20px] transition-colors',
               activeTab === tab.key
-                ? 'bg-brand-bg text-brand-text'
-                : 'text-muted hover:text-brand-text',
+                ? 'bg-[#050505] font-medium text-white'
+                : 'text-white/50 hover:text-white',
             )}
           >
             {tab.label}
@@ -280,7 +453,7 @@ export function TicketManagementPage() {
 
       <DataTable
         columns={columns}
-        data={paginated}
+        data={tickets}
         getRowId={(row) => row.id}
         searchValue={searchQuery}
         onSearchChange={(val) => {
@@ -290,11 +463,13 @@ export function TicketManagementPage() {
         searchPlaceholder="Search by name, ID or profession"
         advancedFilterLabel="Advance Filters"
         onAdvancedFilter={() => toast.message('Advanced filters coming soon')}
-        onExport={() => toast.message('Export coming soon')}
+        onExport={handleExport}
+        isExporting={exportMutation.isPending}
+        isLoading={isLoading}
         pagination={{
           page: currentPage,
           pageSize,
-          totalItems: filtered.length,
+          totalItems,
           totalPages,
           onPageChange: setCurrentPage,
         }}
@@ -302,8 +477,51 @@ export function TicketManagementPage() {
         emptyMessage="No tickets found."
       />
 
-      <AddTagModal open={tagModalOpen} onClose={() => setTagModalOpen(false)} />
-      <MergeTicketsModal open={mergeModalOpen} onClose={() => setMergeModalOpen(false)} />
+      <AddTagModal
+        open={tagModalOpen}
+        onClose={() => {
+          setTagModalOpen(false)
+          setActiveTicketId(null)
+        }}
+        initialTags={activeTicket?.tags}
+        onSubmit={async (tags) => {
+          if (!activeTicketId) return
+          try {
+            await updateMutation.mutateAsync({
+              id: activeTicketId,
+              payload: { tags },
+            })
+            toast.success('Tags updated')
+          } catch (err) {
+            toast.error(getApiErrorMessage(err, 'Failed to update tags'))
+            throw err
+          }
+        }}
+      />
+      <MergeTicketsModal
+        open={mergeModalOpen}
+        onClose={() => setMergeModalOpen(false)}
+        tickets={mergeTickets.map((t) => ({
+          user: t.reporter,
+          issue: t.subject,
+          time: t.createdAt,
+          id: t.id,
+        }))}
+        onSubmit={async (notes) => {
+          if (selectedIds.length < 2) {
+            toast.error('Select at least 2 tickets to merge')
+            throw new Error('Need 2 tickets')
+          }
+          try {
+            await mergeMutation.mutateAsync({ ticketIds: selectedIds, notes })
+            toast.success('Tickets merged')
+            setSelectedIds([])
+          } catch (err) {
+            toast.error(getApiErrorMessage(err, 'Failed to merge tickets'))
+            throw err
+          }
+        }}
+      />
     </div>
   )
 }

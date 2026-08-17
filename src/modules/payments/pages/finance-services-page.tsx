@@ -15,7 +15,9 @@ import {
   TableActionsDropdown,
   TableActionsItem,
 } from '@/shared/components/table/table-actions-dropdown'
+import { AddTagModal } from '@/shared/components/modal/add-tag-modal'
 import { Button } from '@/shared/components/ui/button'
+import { useEntityTags } from '@/shared/hooks/use-entity-tags'
 import { cn } from '@/shared/lib/cn'
 
 const PAGE_SIZE = 10
@@ -34,6 +36,7 @@ export function FinanceServicesPage() {
   const [currentPage, setCurrentPage] = useState(1)
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [selectedRowIds, setSelectedRowIds] = useState<string[]>([])
+  const { tagModalOpen, openTagModal, closeTagModal, saveTags, initialTags } = useEntityTags()
 
   const tabRows = useMemo(
     () => financeServiceRowsMock.filter((row) => row.tab === activeTab),
@@ -117,7 +120,7 @@ export function FinanceServicesPage() {
             className="text-slate-800 hover:bg-slate-100 hover:text-slate-900"
             onClick={() => {
               setActiveDropdownId(null)
-              toast.message('Add tags coming soon')
+              openTagModal(record.id)
             }}
           >
             Add Tags
@@ -145,7 +148,7 @@ export function FinanceServicesPage() {
         </TableActionsDropdown>
       )
     },
-    [activeDropdownId, navigate],
+    [activeDropdownId, navigate, openTagModal],
   )
 
   const columns = useMemo<ColumnDef<FinanceServiceRow>[]>(
@@ -309,6 +312,13 @@ export function FinanceServicesPage() {
         }}
         resourceLabel="users"
         emptyMessage="No service records found."
+      />
+
+      <AddTagModal
+        open={tagModalOpen}
+        onClose={closeTagModal}
+        initialTags={initialTags}
+        onSubmit={saveTags}
       />
     </div>
   )

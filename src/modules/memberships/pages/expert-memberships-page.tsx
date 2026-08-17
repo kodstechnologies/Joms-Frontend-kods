@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState, type ReactNode } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { CircleArrowDown, CircleArrowUp, ClipboardList, Waypoints, X } from 'lucide-react'
+import { CircleArrowDown, CircleArrowUp, ClipboardList, Tag, Waypoints, X } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
@@ -22,6 +22,8 @@ import {
   TableActionsDropdown,
   TableActionsItem,
 } from '@/shared/components/table/table-actions-dropdown'
+import { AddTagModal } from '@/shared/components/modal/add-tag-modal'
+import { useEntityTags } from '@/shared/hooks/use-entity-tags'
 import { cn } from '@/shared/lib/cn'
 
 const PLAN_BADGE_COLORS = [
@@ -41,6 +43,7 @@ export function ExpertMembershipsPage() {
   const [actionType, setActionType] = useState<
     'upgrade' | 'downgrade' | 'extend' | 'cancel' | null
   >(null)
+  const { tagModalOpen, openTagModal, closeTagModal, saveTags, initialTags } = useEntityTags()
 
   const { searchQuery, setSearchQuery, currentPage, setCurrentPage } = useExpertMembershipStore()
 
@@ -157,6 +160,15 @@ export function ExpertMembershipsPage() {
               View Details
             </TableActionsItem>
             <TableActionsItem
+              icon={<Tag className="size-4" strokeWidth={1.85} />}
+              onClick={() => {
+                setActiveDropdownId(null)
+                openTagModal(row.original._id)
+              }}
+            >
+              Add Tags
+            </TableActionsItem>
+            <TableActionsItem
               icon={<CircleArrowUp className="size-4" strokeWidth={1.85} />}
               onClick={() => openAction(row.original, 'upgrade')}
             >
@@ -185,7 +197,7 @@ export function ExpertMembershipsPage() {
         ),
       },
     ],
-    [activeDropdownId, navigate, openAction],
+    [activeDropdownId, navigate, openAction, openTagModal],
   )
 
   return (
@@ -288,6 +300,13 @@ export function ExpertMembershipsPage() {
             toast.error('Failed to cancel membership')
           }
         }}
+      />
+
+      <AddTagModal
+        open={tagModalOpen}
+        onClose={closeTagModal}
+        initialTags={initialTags}
+        onSubmit={saveTags}
       />
     </div>
   )

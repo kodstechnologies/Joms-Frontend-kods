@@ -6,6 +6,7 @@ import {
   CircleMinus,
   AlertCircle,
   PauseCircle,
+  Tag,
   Trash2,
   Upload,
   BarChart3,
@@ -48,9 +49,11 @@ import {
   DecisionActionModal,
   type DecisionActionModalOption,
 } from '@/shared/components/modal/decision-action-modal'
+import { AddTagModal } from '@/shared/components/modal/add-tag-modal'
 import { StatusQuickLinkCard, StatusQuickLinkRow } from '@/shared/components/status-quick-link-card'
 import { Button } from '@/shared/components/ui/button'
 import { statusCardTones } from '@/shared/lib/design-tokens'
+import { useEntityTags } from '@/shared/hooks/use-entity-tags'
 import { cn } from '@/shared/lib/cn'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 import type { FilterValues } from '@/shared/types/data-filter'
@@ -175,6 +178,7 @@ function buildVenueApiParams(filterValues: FilterValues): Record<string, string>
 export const VenueManagementPage = () => {
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [selectedVenueIds, setSelectedVenueIds] = useState<string[]>([])
+  const { tagModalOpen, openTagModal, closeTagModal, saveTags, initialTags } = useEntityTags()
 
   const [suspendVenueTarget, setSuspendVenueTarget] = useState<Venue | null>(null)
   const [suspendReasons, setSuspendReasons] = useState<string[]>([])
@@ -545,8 +549,7 @@ export const VenueManagementPage = () => {
 
       if (successCount === 0) {
         const firstError = results.find((result) => result.status === 'rejected') as
-          | PromiseRejectedResult
-          | undefined
+          PromiseRejectedResult | undefined
         toast.error(getApiErrorMessage(firstError?.reason) || 'Failed to escalate venues.')
         return
       }
@@ -997,6 +1000,17 @@ export const VenueManagementPage = () => {
               View Profile
             </TableActionsItem>
 
+            <TableActionsItem
+              icon={<Tag className="size-3.5 text-slate-700" />}
+              className={ACTION_ITEM_CLASS}
+              onClick={() => {
+                setActiveDropdownId(null)
+                openTagModal(getVenueApiId(venue))
+              }}
+            >
+              Add Tags
+            </TableActionsItem>
+
             {allowDisableVenues ? (
               <TableActionsItem
                 icon={<PauseCircle className="size-3.5 text-slate-700" />}
@@ -1033,6 +1047,7 @@ export const VenueManagementPage = () => {
     navigate,
     openDeleteModal,
     openSuspendModal,
+    openTagModal,
     selectedVenueIds,
     someVisibleVenuesSelected,
     tableColumnPreferencesQuery.data,
@@ -1378,6 +1393,13 @@ export const VenueManagementPage = () => {
           void handleEscalateSubmit()
         }}
         isSubmitting={isEscalating}
+      />
+
+      <AddTagModal
+        open={tagModalOpen}
+        onClose={closeTagModal}
+        initialTags={initialTags}
+        onSubmit={saveTags}
       />
     </div>
   )

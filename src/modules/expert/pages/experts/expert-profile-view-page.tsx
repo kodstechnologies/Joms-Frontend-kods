@@ -80,6 +80,7 @@ import {
   DecisionActionModal,
   type DecisionActionModalOption,
 } from '@/shared/components/modal/decision-action-modal'
+import { AddTagModal } from '@/shared/components/modal/add-tag-modal'
 import { UpdatePasswordModal } from '@/modules/rbac/components/update-password-modal'
 import { MODERATION_CATEGORY_SLUGS } from '@/modules/settings/api/templates-api'
 import {
@@ -91,6 +92,7 @@ import {
   TableActionsItem,
 } from '@/shared/components/table/table-actions-dropdown'
 import { formatListingExpertId } from './expert-list-format'
+import { useEntityTags } from '@/shared/hooks/use-entity-tags'
 import { cn } from '@/shared/lib/cn'
 
 type TabKey = 'overview' | 'service-listings' | 'availability' | 'analytics' | 'health'
@@ -1140,8 +1142,7 @@ function ServicesSubTab({ expertId }: { expertId: string }) {
 
       if (successCount === 0) {
         const firstError = results.find((result) => result.status === 'rejected') as
-          | PromiseRejectedResult
-          | undefined
+          PromiseRejectedResult | undefined
         toast.error(getApiErrorMessage(firstError?.reason) || 'Failed to escalate services.')
         return
       }
@@ -2127,6 +2128,7 @@ export function ExpertProfileViewPage() {
   const [suspendAdminNotes, setSuspendAdminNotes] = useState('')
   const [deleteReasons, setDeleteReasons] = useState<string[]>([])
   const [deleteAdminNotes, setDeleteAdminNotes] = useState('')
+  const { tagModalOpen, openTagModal, closeTagModal, saveTags, initialTags } = useEntityTags()
 
   const suspendExpertMutation = useSuspendExpert()
   const blockExpertMutation = useBlockExpert()
@@ -2380,7 +2382,7 @@ export function ExpertProfileViewPage() {
       icon: FileText,
       onClick: () => comingSoon('Add Notes'),
     },
-    { label: 'Add Tags', icon: Tag, onClick: () => comingSoon('Add Tags') },
+    { label: 'Add Tags', icon: Tag, onClick: () => openTagModal(id || displayName) },
     {
       label: 'Export Data',
       icon: Upload,
@@ -2656,6 +2658,13 @@ export function ExpertProfileViewPage() {
         onClose={closeDeleteModal}
         onSubmit={handleDeleteSubmit}
         isSubmitting={deactivateExpertMutation.isPending}
+      />
+
+      <AddTagModal
+        open={tagModalOpen}
+        onClose={closeTagModal}
+        initialTags={initialTags}
+        onSubmit={saveTags}
       />
     </div>
   )

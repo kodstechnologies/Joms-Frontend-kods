@@ -12,6 +12,7 @@ import {
   Hourglass,
   Mail,
   PauseCircle,
+  Tag,
   Trash2,
   User,
   Users,
@@ -53,12 +54,16 @@ import {
   TableActionsDropdown,
   TableActionsItem,
 } from '@/shared/components/table/table-actions-dropdown'
-import { DecisionActionModal } from '@/shared/components/modal/decision-action-modal'
-import type { DecisionActionModalOption } from '@/shared/components/modal/decision-action-modal'
+import {
+  DecisionActionModal,
+  type DecisionActionModalOption,
+} from '@/shared/components/modal/decision-action-modal'
+import { AddTagModal } from '@/shared/components/modal/add-tag-modal'
 import { StatusQuickLinkCard, StatusQuickLinkRow } from '@/shared/components/status-quick-link-card'
 import { Button } from '@/shared/components/ui/button'
 import { PayoutHistoryDrawer } from '../../components/payout-history-drawer'
 import { statusCardTones } from '@/shared/lib/design-tokens'
+import { useEntityTags } from '@/shared/hooks/use-entity-tags'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 import type { FilterValues } from '@/shared/types/data-filter'
 import { exportDataToFile, exportDisplayValue } from '@/shared/utils/export-utils'
@@ -157,6 +162,7 @@ const DEFAULT_VISIBLE_IDS = [
 export const ExpertManagementPage = () => {
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [selectedExpertIds, setSelectedExpertIds] = useState<string[]>([])
+  const { tagModalOpen, openTagModal, closeTagModal, saveTags, initialTags } = useEntityTags()
   const [suspendExpertTarget, setSuspendExpertTarget] = useState<Expert | null>(null)
   const [deleteExpertTarget, setDeleteExpertTarget] = useState<Expert | null>(null)
   const [payoutDrawerTarget, setPayoutDrawerTarget] = useState<Expert | null>(null)
@@ -990,6 +996,26 @@ export const ExpertManagementPage = () => {
             >
               Delete Expert
             </TableActionsItem>
+            <TableActionsItem
+              icon={<Tag className="size-3.5 text-slate-700" aria-hidden="true" />}
+              className={ACTION_ITEM_CLASS}
+              onClick={() => {
+                setActiveDropdownId(null)
+                openTagModal(expert.id || expert.expertId)
+              }}
+            >
+              Add Tags
+            </TableActionsItem>
+            <TableActionsItem
+              icon={<User className="size-3.5 text-slate-700" aria-hidden="true" />}
+              className={ACTION_ITEM_CLASS}
+              onClick={() => {
+                setActiveDropdownId(null)
+                toast.message('Report Expert is coming soon')
+              }}
+            >
+              Report Expert
+            </TableActionsItem>
           </TableActionsDropdown>
         )
       },
@@ -1002,6 +1028,7 @@ export const ExpertManagementPage = () => {
     navigate,
     openDeleteModal,
     openSuspendModal,
+    openTagModal,
     selectedExpertIds,
     someVisibleExpertsSelected,
     tableColumnPreferencesQuery.data,
@@ -1334,6 +1361,13 @@ export const ExpertManagementPage = () => {
           isSubmitting={bulkUpdateMembershipMutation.isPending}
         />
       )}
+
+      <AddTagModal
+        open={tagModalOpen}
+        onClose={closeTagModal}
+        initialTags={initialTags}
+        onSubmit={saveTags}
+      />
     </div>
   )
 }
