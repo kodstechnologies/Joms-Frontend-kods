@@ -2,9 +2,12 @@ import { ChevronDown } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { toast } from 'sonner'
 
+import { getReporterTypeLabel } from '../utils/support-format'
+
 type TicketCasePanelProps = {
   reporterName: string
   reporterId: string
+  reporterType?: string
   pastTicketsCount: number
   assignedTo: string
   status: string
@@ -12,13 +15,20 @@ type TicketCasePanelProps = {
   module: string
   issueType: string
   comments: string
+  escalationPathway?: string
+  statusValue?: string
+  onStatusChange?: (status: string) => void
   onEscalate?: () => void
   onResolve?: () => void
+  onCloseTicket?: () => void
+  onReassign?: () => void
+  onViewProfile?: () => void
 }
 
 export function TicketCasePanel({
   reporterName,
   reporterId,
+  reporterType = 'user',
   pastTicketsCount,
   assignedTo,
   status,
@@ -26,8 +36,14 @@ export function TicketCasePanel({
   module,
   issueType,
   comments,
+  escalationPathway = 'None',
+  statusValue,
+  onStatusChange,
   onEscalate,
   onResolve,
+  onCloseTicket,
+  onReassign,
+  onViewProfile,
 }: TicketCasePanelProps) {
   return (
     <div className="radius-lg bg-brand-surface flex h-full flex-col border border-white/10">
@@ -41,8 +57,8 @@ export function TicketCasePanel({
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-body-md-semibold text-brand-text">{reporterName}</span>
-                <span className="text-body-sm-semibold bg-brand-positive/15 text-brand-positive inline-flex h-5 items-center rounded px-2">
-                  USER
+                <span className="text-body-sm-semibold bg-brand-positive/15 text-brand-positive inline-flex h-5 items-center rounded px-2 uppercase">
+                  {getReporterTypeLabel(reporterType)}
                 </span>
               </div>
               <p className="text-body-sm text-muted">User ID: {reporterId}</p>
@@ -54,7 +70,11 @@ export function TicketCasePanel({
                 Past Tickets ({pastTicketsCount})
               </button>
             </Link>
-            <button type="button" className="ui-cta ui-cta-primary !h-auto px-3 py-1 text-xs">
+            <button
+              type="button"
+              className="ui-cta ui-cta-primary !h-auto px-3 py-1 text-xs"
+              onClick={onViewProfile ?? (() => toast.message('Profile unavailable'))}
+            >
               View Profile
             </button>
           </div>
@@ -65,7 +85,11 @@ export function TicketCasePanel({
             <p className="text-body-sm-semibold text-muted tracking-widest uppercase">
               Assigned To
             </p>
-            <button type="button" className="text-body-sm text-brand-accent hover:underline">
+            <button
+              type="button"
+              className="text-body-sm text-brand-accent hover:underline"
+              onClick={onReassign ?? (() => toast.message('Reassign coming soon'))}
+            >
               Reassign
             </button>
           </div>
@@ -77,7 +101,18 @@ export function TicketCasePanel({
       </div>
 
       <div className="flex-1 space-y-4 overflow-y-auto p-4">
-        <SelectField label="Ticket Status" value={status} />
+        <SelectField
+          label="Ticket Status"
+          value={statusValue || status}
+          options={[
+            { value: 'open', label: 'Open' },
+            { value: 'in_progress', label: 'In Progress' },
+            { value: 'on_hold', label: 'On Hold' },
+            { value: 'resolved', label: 'Resolved' },
+            { value: 'closed', label: 'Closed' },
+          ]}
+          onChange={onStatusChange}
+        />
         <SelectField label="Priority" value={priority} />
         <SelectField label="Module" value={module} />
         <SelectField label="Issue Type" value={issueType} />
@@ -91,7 +126,7 @@ export function TicketCasePanel({
           />
         </label>
 
-        <SelectField label="Escalation Pathway" value="None" />
+        <SelectField label="Escalation Pathway" value={escalationPathway} />
       </div>
 
       <div className="flex gap-2 border-t border-white/5 p-4">
@@ -109,12 +144,55 @@ export function TicketCasePanel({
         >
           Mark as Resolved
         </button>
+        <button
+          type="button"
+          className="ui-cta ui-cta-ghost flex-1"
+          onClick={onCloseTicket ?? (() => toast.message('Close ticket coming soon'))}
+        >
+          Close
+        </button>
       </div>
     </div>
   )
 }
 
-function SelectField({ label, value }: { label: string; value: string }) {
+function SelectField({
+  label,
+  value,
+  options,
+  onChange,
+}: {
+  label: string
+  value: string
+  options?: Array<{ value: string; label: string }>
+  onChange?: (value: string) => void
+}) {
+  if (options?.length && onChange) {
+    return (
+      <label className="block space-y-1.5">
+        <span className="text-body-sm text-muted">{label}</span>
+        <div className="radius-md bg-brand-bg relative flex h-[42px] items-center border border-white/10 px-3">
+          <select
+            value={value}
+            onChange={(event) => onChange(event.target.value)}
+            className="text-body-md text-brand-text absolute inset-0 h-full w-full cursor-pointer appearance-none bg-transparent px-3 pr-8 outline-none"
+          >
+            {options.map((option) => (
+              <option
+                key={option.value}
+                value={option.value}
+                className="bg-brand-bg text-brand-text"
+              >
+                {option.label}
+              </option>
+            ))}
+          </select>
+          <ChevronDown className="text-muted pointer-events-none relative ml-auto size-4 shrink-0" />
+        </div>
+      </label>
+    )
+  }
+
   return (
     <label className="block space-y-1.5">
       <span className="text-body-sm text-muted">{label}</span>

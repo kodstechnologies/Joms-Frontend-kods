@@ -6,6 +6,7 @@ import {
   CircleMinus,
   AlertCircle,
   PauseCircle,
+  Tag,
   Trash2,
   Upload,
   BarChart3,
@@ -14,6 +15,7 @@ import {
   LayoutDashboard,
   Bell,
   Mail,
+  FileText,
   CircleOff,
   EyeOff,
   TrendingUp,
@@ -23,6 +25,7 @@ import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { VENUE_MANAGEMENT_MODULE_KEY } from '../../api/ui-preferences-api'
 import { orderByActiveMetricIds, useActiveMetricIds } from '../../hooks/use-active-metric-ids'
+import { useVenueManagementControls } from '@/modules/settings/hooks/use-venue-public-settings'
 import {
   useVenues,
   useSuspendVenue,
@@ -31,10 +34,8 @@ import {
   useBulkPauseVenues,
   useBulkHideVenues,
   useBulkDisableVenues,
-  useBulkExportVenues,
-  useBulkNotifyVenues,
-  useBulkMessageVenues,
 } from '../../hooks/use-venues'
+import { useVenueManagementMetrics } from '../../hooks/use-venue-dashboard'
 import { useTableColumnPreferences } from '../../hooks/use-ui-preferences'
 import { useVenueStore } from '../../store'
 import type { Venue, VenueStatus } from '../../type/venue'
@@ -44,21 +45,39 @@ import {
   TableActionsDropdown,
   TableActionsItem,
 } from '@/shared/components/table/table-actions-dropdown'
-import { DecisionActionModal } from '@/shared/components/modal/decision-action-modal'
+import {
+  DecisionActionModal,
+  type DecisionActionModalOption,
+} from '@/shared/components/modal/decision-action-modal'
+import { AddTagModal } from '@/shared/components/modal/add-tag-modal'
 import { StatusQuickLinkCard, StatusQuickLinkRow } from '@/shared/components/status-quick-link-card'
 import { Button } from '@/shared/components/ui/button'
 import { statusCardTones } from '@/shared/lib/design-tokens'
+import { useEntityTags } from '@/shared/hooks/use-entity-tags'
 import { cn } from '@/shared/lib/cn'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 import type { FilterValues } from '@/shared/types/data-filter'
-import { exportDataToFile } from '@/shared/utils/export-utils'
-import { getVenueApiId, getVenueDisplayId, getVenueDisplaySpaceId } from '../../utils/venue-list'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
+import {
+  getVenueApiId,
+  getVenueApiSpaceId,
+  getVenueDisplayId,
+  getVenueDisplaySpaceId,
+  getVenuePartnerId,
+} from '../../utils/venue-list'
+import { exportDataToFile, exportDisplayValue } from '@/shared/utils/export-utils'
+import { fetchVenues } from '../../api/venue-api'
 import { getManagementStatusDisplay } from '../../utils/management-status'
 import { MODERATION_CATEGORY_SLUGS } from '@/modules/settings/api/templates-api'
 import {
   useModerationReasonOptions,
   useRecordModerationReasonUsage,
 } from '@/modules/settings/hooks/use-templates'
+import { useEscalationAssignees } from '@/modules/my-tasks/hooks/use-admin-escalation'
+import {
+  escalatePartnerApplication,
+  escalateVenueSpaceApplication,
+} from '@/modules/my-tasks/api/escalation-api'
 
 type ManagementMetric = {
   id: string
@@ -70,11 +89,96 @@ type ManagementMetric = {
   note?: string
 }
 
+const EXPORT_COLUMN_MAP: Record<string, { header: string; accessor: (v: Venue) => string }> = {
+  'venue-id': { header: 'Venue ID', accessor: (v) => exportDisplayValue(getVenueDisplayId(v)) },
+  name: { header: 'Venue Name', accessor: (v) => exportDisplayValue(v.venueName) },
+  category: { header: 'Venue Category', accessor: (v) => exportDisplayValue(v.venueCategory) },
+  'space-id': {
+    header: 'Space ID',
+    accessor: (v) => exportDisplayValue(getVenueDisplaySpaceId(v)),
+  },
+  'space-name': { header: 'Space Name', accessor: (v) => exportDisplayValue(v.spaceName) },
+  status: { header: 'Status', accessor: (v) => exportDisplayValue(v.status) },
+  'event-type': { header: 'Event Type', accessor: (v) => exportDisplayValue(v.eventType) },
+  'created-at': {
+    header: 'Created At',
+    accessor: (v) =>
+      v.createdAt
+        ? new Date(v.createdAt).toLocaleString('en-IN', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+          })
+        : '',
+  },
+}
+
+const DEFAULT_VISIBLE_IDS = [
+  'venue-id',
+  'name',
+  'category',
+  'space-id',
+  'space-name',
+  'status',
+  'event-type',
+  'created-at',
+]
+
 const ACTION_ITEM_CLASS = 'text-slate-800 hover:bg-slate-100 hover:text-slate-900'
+
+function buildVenueApiParams(filterValues: FilterValues): Record<string, string> {
+  const params: Record<string, string> = {}
+
+  Object.entries(filterValues).forEach(([rawKey, val]) => {
+    if (val === undefined || val === null || val === '') return
+
+    const parts = rawKey.split('.')
+    const fieldId = parts.length > 1 ? parts.slice(1).join('.') : rawKey
+
+    if (fieldId === 'location' && typeof val === 'object' && val !== null) {
+      const loc = val as { state?: string; city?: string }
+      if (loc.state?.trim()) params.locationState = loc.state.trim()
+      if (loc.city?.trim()) params.locationCity = loc.city.trim()
+      return
+    }
+
+    if (Array.isArray(val)) {
+      if (val.length > 0) {
+        params[fieldId] = val.join(',')
+      }
+      return
+    }
+
+    if (typeof val === 'object' && val !== null) {
+      const range = val as { from?: string | number; to?: string | number }
+      if (range.from !== undefined && range.from !== '') {
+        params[`${fieldId}Min`] = String(range.from).trim()
+      }
+      if (range.to !== undefined && range.to !== '') {
+        params[`${fieldId}Max`] = String(range.to).trim()
+      }
+      return
+    }
+
+    if (typeof val === 'string' && val.trim()) {
+      params[fieldId] = val.trim()
+      return
+    }
+
+    if (typeof val === 'number' || typeof val === 'boolean') {
+      params[fieldId] = String(val)
+    }
+  })
+
+  return params
+}
 
 export const VenueManagementPage = () => {
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [selectedVenueIds, setSelectedVenueIds] = useState<string[]>([])
+  const { tagModalOpen, openTagModal, closeTagModal, saveTags, initialTags } = useEntityTags()
 
   const [suspendVenueTarget, setSuspendVenueTarget] = useState<Venue | null>(null)
   const [suspendReasons, setSuspendReasons] = useState<string[]>([])
@@ -101,15 +205,28 @@ export const VenueManagementPage = () => {
   const [bulkPauseIndefinitely, setBulkPauseIndefinitely] = useState(false)
   const [bulkPauseAdminNotes, setBulkPauseAdminNotes] = useState('')
 
+  const [isEscalateModalOpen, setIsEscalateModalOpen] = useState(false)
+  const [escalateAdminNotes, setEscalateAdminNotes] = useState('')
+  const [selectedEscalationOption, setSelectedEscalationOption] = useState('')
+  const [isEscalating, setIsEscalating] = useState(false)
+
   const suspendVenueMutation = useSuspendVenue()
   const deleteVenueMutation = useDeleteVenue()
   const bulkDeleteMutation = useBulkDeleteVenues()
   const bulkPauseMutation = useBulkPauseVenues()
   const bulkHideMutation = useBulkHideVenues()
+  const { allowAddVenues, allowDisableVenues } = useVenueManagementControls()
   const bulkDisableMutation = useBulkDisableVenues()
-  const bulkExportMutation = useBulkExportVenues()
-  const bulkNotifyMutation = useBulkNotifyVenues()
-  const bulkMessageMutation = useBulkMessageVenues()
+
+  const { data: assigneesData } = useEscalationAssignees('venues.*')
+  const escalationOptions: DecisionActionModalOption[] = useMemo(
+    () =>
+      (assigneesData?.data ?? []).map((assignee) => ({
+        label: assignee.fullname,
+        value: assignee.id,
+      })),
+    [assigneesData?.data],
+  )
 
   const recordReasonUsage = useRecordModerationReasonUsage()
   const { options: suspendReasonOptions, buildPayload: buildSuspendReasonPayload } =
@@ -230,57 +347,6 @@ export const VenueManagementPage = () => {
     })
   }, [selectedVenueIds, bulkDisableMutation])
 
-  const handleBulkExport = useCallback(() => {
-    if (selectedVenueIds.length === 0) return
-    bulkExportMutation.mutate(selectedVenueIds, {
-      onSuccess: (res: { data?: { venues?: unknown[] } }) => {
-        const venuesData = res?.data?.venues ?? []
-        toast.success(`Exported ${venuesData.length || selectedVenueIds.length} venue(s)`)
-        setSelectedVenueIds([])
-      },
-      onError: (err: unknown) => {
-        const error = err as { response?: { data?: { message?: string } } }
-        toast.error(error?.response?.data?.message || 'Failed to export venues')
-      },
-    })
-  }, [selectedVenueIds, bulkExportMutation])
-
-  const handleBulkNotify = useCallback(() => {
-    if (selectedVenueIds.length === 0) return
-    bulkNotifyMutation.mutate(selectedVenueIds, {
-      onSuccess: (res: { message?: string; data?: { message?: string } }) => {
-        toast.success(
-          res?.data?.message ||
-            res?.message ||
-            `Notified partners for ${selectedVenueIds.length} venue(s)`,
-        )
-        setSelectedVenueIds([])
-      },
-      onError: (err: unknown) => {
-        const error = err as { response?: { data?: { message?: string } } }
-        toast.error(error?.response?.data?.message || 'Failed to notify venue partners')
-      },
-    })
-  }, [selectedVenueIds, bulkNotifyMutation])
-
-  const handleBulkMessage = useCallback(() => {
-    if (selectedVenueIds.length === 0) return
-    bulkMessageMutation.mutate(selectedVenueIds, {
-      onSuccess: (res: { message?: string; data?: { message?: string } }) => {
-        toast.success(
-          res?.data?.message ||
-            res?.message ||
-            `Sent message/ticket for ${selectedVenueIds.length} venue(s)`,
-        )
-        setSelectedVenueIds([])
-      },
-      onError: (err: unknown) => {
-        const error = err as { response?: { data?: { message?: string } } }
-        toast.error(error?.response?.data?.message || 'Failed to send message')
-      },
-    })
-  }, [selectedVenueIds, bulkMessageMutation])
-
   const navigate = useNavigate()
 
   const { searchQuery, setSearchQuery, currentPage, setCurrentPage, activeStatus } = useVenueStore()
@@ -294,52 +360,10 @@ export const VenueManagementPage = () => {
     [setCurrentPage],
   )
 
-  const apiFilterParams = useMemo(() => {
-    const params: Record<string, string> = {}
-
-    Object.entries(appliedAdvancedFilters).forEach(([rawKey, val]) => {
-      if (val === undefined || val === null || val === '') return
-
-      const parts = rawKey.split('.')
-      const fieldId = parts.length > 1 ? parts.slice(1).join('.') : rawKey
-
-      if (fieldId === 'location' && typeof val === 'object' && val !== null) {
-        const loc = val as { state?: string; city?: string }
-        if (loc.state?.trim()) params.cityState = loc.state.trim()
-        if (loc.city?.trim()) params.cityCity = loc.city.trim()
-        return
-      }
-
-      if (Array.isArray(val)) {
-        if (val.length > 0) {
-          params[fieldId] = val.join(',')
-        }
-        return
-      }
-
-      if (typeof val === 'object' && val !== null) {
-        const range = val as { from?: string | number; to?: string | number }
-        if (range.from !== undefined && range.from !== '') {
-          params[`${fieldId}Min`] = String(range.from).trim()
-        }
-        if (range.to !== undefined && range.to !== '') {
-          params[`${fieldId}Max`] = String(range.to).trim()
-        }
-        return
-      }
-
-      if (typeof val === 'string' && val.trim()) {
-        params[fieldId] = val.trim()
-        return
-      }
-
-      if (typeof val === 'number' || typeof val === 'boolean') {
-        params[fieldId] = String(val)
-      }
-    })
-
-    return params
-  }, [appliedAdvancedFilters])
+  const apiFilterParams = useMemo(
+    () => buildVenueApiParams(appliedAdvancedFilters),
+    [appliedAdvancedFilters],
+  )
 
   const { data, isLoading } = useVenues({
     page: currentPage,
@@ -353,32 +377,21 @@ export const VenueManagementPage = () => {
   })
   const venues = useMemo(() => data?.data ?? [], [data?.data])
 
-  const handleExportData = useCallback(
-    (values: FilterValues, format: string) => {
-      const headers = [
-        'Venue ID',
-        'Venue Name',
-        'Category',
-        'Space ID',
-        'Space Name',
-        'Status',
-        'Event Type',
-        'Created At',
-      ]
-      const rows = venues.map((v) => [
-        getVenueDisplayId(v),
-        v.venueName || '',
-        v.venueCategory || '',
-        getVenueDisplaySpaceId(v),
-        v.spaceName || '',
-        v.status || '',
-        v.eventType || '',
-        v.createdAt ? new Date(v.createdAt).toLocaleDateString() : '',
-      ])
-      exportDataToFile(headers, rows, format, 'venues_export')
-    },
-    [venues],
-  )
+  const handleExportData = useCallback(async (values: FilterValues, format: string) => {
+    const exportParams = buildVenueApiParams(values)
+    const result = await fetchVenues({ ...exportParams, limit: 1000 })
+    const filteredVenues = result?.data ?? []
+
+    if (filteredVenues.length === 0) {
+      throw new Error('NO_RECORDS')
+    }
+
+    const exportCols = Object.values(EXPORT_COLUMN_MAP)
+    const headers = exportCols.map((c) => c.header)
+    const rows = filteredVenues.map((v) => exportCols.map((c) => c.accessor(v)))
+
+    exportDataToFile(headers, rows, format, 'venues_export')
+  }, [])
 
   const {
     onAdvancedFilter,
@@ -395,6 +408,172 @@ export const VenueManagementPage = () => {
   const allVisibleVenuesSelected =
     visibleVenueIds.length > 0 && visibleVenueIds.every((id) => selectedVenueIds.includes(id))
   const someVisibleVenuesSelected = visibleVenueIds.some((id) => selectedVenueIds.includes(id))
+  const selectedVenues = useMemo(
+    () => venues.filter((venue) => selectedVenueIds.includes(venue._id)),
+    [venues, selectedVenueIds],
+  )
+  const selectedPartnerIds = useMemo(
+    () => [...new Set(selectedVenues.map((venue) => getVenuePartnerId(venue)).filter(Boolean))],
+    [selectedVenues],
+  )
+
+  const closeEscalateModal = useCallback(() => {
+    setIsEscalateModalOpen(false)
+    setEscalateAdminNotes('')
+    setSelectedEscalationOption('')
+  }, [])
+
+  const handleBulkExport = useCallback(() => {
+    if (selectedVenueCount === 0) {
+      toast.error('Please select at least one venue.')
+      return
+    }
+    if (selectedVenues.length === 0) {
+      toast.error(
+        'Selected venues are not loaded on this page. Go back to the page where they were selected, then export.',
+      )
+      return
+    }
+
+    try {
+      const headers = [
+        'Venue ID',
+        'Venue Name',
+        'Space ID',
+        'Partner / Expert',
+        'Partner ID',
+        'Category',
+        'City',
+        'Status',
+        'Created At',
+      ]
+      const rows = selectedVenues.map((venue) => [
+        getVenueDisplayId(venue),
+        venue.venueName || 'N/A',
+        getVenueDisplaySpaceId(venue),
+        venue.expertName || venue.partnerName || 'N/A',
+        getVenuePartnerId(venue) || 'N/A',
+        venue.venueCategory || 'N/A',
+        venue.city || 'N/A',
+        venue.status || 'N/A',
+        venue.createdAt ? new Date(venue.createdAt).toLocaleDateString() : 'N/A',
+      ])
+      exportDataToFile(headers, rows, 'excel', 'selected_venues_export')
+      toast.success(`Exported ${selectedVenues.length} selected venue(s)`)
+    } catch {
+      toast.error('Failed to export selected venues.')
+    }
+  }, [selectedVenueCount, selectedVenues])
+
+  const handleBulkNotify = useCallback(() => {
+    if (selectedPartnerIds.length === 0) {
+      toast.error('Selected venues do not have partner IDs to notify.')
+      return
+    }
+    const params = new URLSearchParams({
+      channel: 'push',
+      audience: 'venue-management',
+      partnerIds: selectedPartnerIds.join(','),
+    })
+    navigate(`/communication/create?${params.toString()}`)
+  }, [navigate, selectedPartnerIds])
+
+  const handleBulkMessage = useCallback(() => {
+    if (selectedPartnerIds.length === 0) {
+      toast.error('Selected venues do not have partner IDs to message.')
+      return
+    }
+    const params = new URLSearchParams({
+      channel: 'email',
+      audience: 'venue-management',
+      partnerIds: selectedPartnerIds.join(','),
+    })
+    navigate(`/communication/create?${params.toString()}`)
+  }, [navigate, selectedPartnerIds])
+
+  const handleEscalateSubmit = useCallback(async () => {
+    if (selectedVenues.length === 0) {
+      toast.error('Please select at least one venue.')
+      return
+    }
+    if (!selectedEscalationOption) {
+      toast.error('Please select a sub-admin to assign.')
+      return
+    }
+    if (!escalateAdminNotes.trim()) {
+      toast.error('Admin notes are required.')
+      return
+    }
+
+    const selectedAssignee = (assigneesData?.data ?? []).find(
+      (item) => item.id === selectedEscalationOption,
+    )
+    const note = escalateAdminNotes.trim()
+    setIsEscalating(true)
+
+    try {
+      const results = await Promise.allSettled(
+        selectedVenues.map((venue) => {
+          const spaceId = getVenueApiSpaceId(venue)
+          const venueId = getVenueApiId(venue)
+          const partnerId = getVenuePartnerId(venue)
+          const payload = {
+            assigneeSubAdminId: selectedEscalationOption,
+            assigneeName: selectedAssignee?.fullname || '',
+            adminNote: note,
+            entityTitle: venue.spaceName || venue.venueName,
+            venueId,
+          }
+
+          if (spaceId) {
+            return escalateVenueSpaceApplication(spaceId, {
+              ...payload,
+              applicationUrl: `/venues/management/profile/${venueId}/space/${spaceId}`,
+            })
+          }
+
+          if (!partnerId) {
+            return Promise.reject(new Error(`No partner found for ${venue.venueName || venueId}`))
+          }
+
+          return escalatePartnerApplication(partnerId, {
+            ...payload,
+            escalationTarget: 'application',
+            applicationUrl: `/experts/management/application/${partnerId}?source=venue_kyc`,
+          })
+        }),
+      )
+
+      const successCount = results.filter((result) => result.status === 'fulfilled').length
+      const failedCount = results.length - successCount
+
+      if (successCount === 0) {
+        const firstError = results.find((result) => result.status === 'rejected') as
+          | PromiseRejectedResult
+          | undefined
+        toast.error(getApiErrorMessage(firstError?.reason) || 'Failed to escalate venues.')
+        return
+      }
+
+      toast.success(
+        failedCount > 0
+          ? `Escalated ${successCount} venue(s); ${failedCount} failed.`
+          : `Successfully escalated ${successCount} venue(s)`,
+      )
+      setSelectedVenueIds([])
+      closeEscalateModal()
+    } catch (err) {
+      toast.error(getApiErrorMessage(err) || 'Failed to escalate venues.')
+    } finally {
+      setIsEscalating(false)
+    }
+  }, [
+    assigneesData?.data,
+    closeEscalateModal,
+    escalateAdminNotes,
+    selectedEscalationOption,
+    selectedVenues,
+  ])
 
   const toggleVisibleVenues = useCallback(() => {
     setSelectedVenueIds((currentIds) => {
@@ -414,15 +593,22 @@ export const VenueManagementPage = () => {
     )
   }, [])
 
-  const openSuspendModal = useCallback((venue: Venue) => {
-    setSuspendVenueTarget(venue)
-    setSuspendReasons([])
-    setSuspendStartDate('')
-    setSuspendEndDate('')
-    setSuspendIndefinitely(false)
-    setSuspendReasonDetails('')
-    setSuspendAdminNotes('')
-  }, [])
+  const openSuspendModal = useCallback(
+    (venue: Venue) => {
+      if (!allowDisableVenues) {
+        toast.error('Disabling venues is turned off in Venue Management settings')
+        return
+      }
+      setSuspendVenueTarget(venue)
+      setSuspendReasons([])
+      setSuspendStartDate('')
+      setSuspendEndDate('')
+      setSuspendIndefinitely(false)
+      setSuspendReasonDetails('')
+      setSuspendAdminNotes('')
+    },
+    [allowDisableVenues],
+  )
 
   const closeSuspendModal = useCallback(() => {
     setSuspendVenueTarget(null)
@@ -589,8 +775,6 @@ export const VenueManagementPage = () => {
     deletedVenues: meta?.counts?.deletedVenues ?? 0,
   }
 
-  const totalVenues = meta?.pagination?.total ?? 0
-
   const defaultMetricIds = useMemo(
     () => [
       'total-venues-listed',
@@ -605,92 +789,36 @@ export const VenueManagementPage = () => {
   )
   const activeMetricIds = useActiveMetricIds(VENUE_MANAGEMENT_MODULE_KEY, defaultMetricIds)
 
-  const metricCatalog: ManagementMetric[] = useMemo(
+  const managementMetricsQuery = useVenueManagementMetrics()
+  const apiMetrics = managementMetricsQuery.data?.metrics
+
+  const fallbackMetrics: ManagementMetric[] = useMemo(
     () => [
-      {
-        id: 'total-venues-listed',
-        label: 'Total Venues Listed',
-        value: String(totalVenues),
-        change: '6.7%',
-        changeType: 'up',
-        changeNote: 'vs last month',
-      },
-      {
-        id: 'active-venues',
-        label: 'Active Venues',
-        value: String(Math.max(0, totalVenues - counts.suspendedVenues - counts.deletedVenues)),
-        note:
-          totalVenues > 0
-            ? `${((Math.max(0, totalVenues - counts.suspendedVenues - counts.deletedVenues) / totalVenues) * 100).toFixed(1)}% of total`
-            : undefined,
-        change: '6.7%',
-        changeType: 'up',
-        changeNote: 'vs last month',
-      },
-      {
-        id: 'total-bookings',
-        label: 'Total Bookings',
-        value: '3',
-        change: '6.7%',
-        changeType: 'up',
-        changeNote: 'vs last month',
-      },
-      {
-        id: 'completed-bookings',
-        label: 'Completed Bookings',
-        value: '10',
-        change: '6.7%',
-        changeType: 'up',
-        changeNote: 'vs last month',
-      },
-      {
-        id: 'cancellation-pct',
-        label: 'Cancellation %',
-        value: '20',
-        change: '6.7%',
-        changeType: 'up',
-        changeNote: 'vs last month',
-      },
-      {
-        id: 'total-revenue',
-        label: 'Total Revenue',
-        value: '20',
-        change: '6.7%',
-        changeType: 'up',
-        changeNote: 'vs last month',
-      },
-      {
-        id: 'avg-venue-ratings',
-        label: 'Avg. Venue Ratings',
-        value: '20',
-        change: '6.7%',
-        changeType: 'up',
-        changeNote: 'vs last month',
-      },
-      {
-        id: 'pending-venues',
-        label: 'Pending Venues',
-        value: String(counts.approvalsPending),
-        change: '6.7%',
-        changeType: 'up',
-        changeNote: 'vs last month',
-      },
-      {
-        id: 'avg-booking-value',
-        label: 'Avg. Booking Value',
-        value: '₹0',
-        change: '6.7%',
-        changeType: 'up',
-        changeNote: 'vs last month',
-      },
+      { id: 'total-venues-listed', label: 'Total Venues Listed', value: '0' },
+      { id: 'active-venues', label: 'Active Venues', value: '0' },
+      { id: 'total-bookings', label: 'Total Bookings', value: '0' },
+      { id: 'completed-bookings', label: 'Completed Bookings', value: '0' },
+      { id: 'cancellation-pct', label: 'Cancellation %', value: '0%' },
+      { id: 'total-revenue', label: 'Total Revenue', value: '₹0' },
+      { id: 'avg-venue-ratings', label: 'Avg. Venue Ratings', value: '0/5' },
+      { id: 'pending-venues', label: 'Pending Venues', value: '0' },
+      { id: 'avg-booking-value', label: 'Avg. Booking Value', value: '₹0' },
     ],
-    [counts.approvalsPending, counts.deletedVenues, counts.suspendedVenues, totalVenues],
+    [],
   )
+
+  const metricCatalog: ManagementMetric[] = useMemo(() => {
+    if (apiMetrics?.length) return apiMetrics
+    return fallbackMetrics
+  }, [apiMetrics, fallbackMetrics])
 
   const visibleMetrics = useMemo(
     () => orderByActiveMetricIds(metricCatalog, activeMetricIds),
     [activeMetricIds, metricCatalog],
   )
+
+  const metricsLoading = managementMetricsQuery.isLoading
+  const skeletonCount = activeMetricIds?.length || defaultMetricIds.length
 
   // Status quick-links are always shown (not controlled by Manage Metrics)
   const statusCards: {
@@ -838,20 +966,9 @@ export const VenueManagementPage = () => {
       },
     }
 
-    const defaultVisibleIds = [
-      'venue-id',
-      'name',
-      'category',
-      'space-id',
-      'space-name',
-      'status',
-      'event-type',
-      'created-at',
-    ]
-
     const visibleIds = tableColumnPreferencesQuery.data?.visibleColumnIds?.length
       ? tableColumnPreferencesQuery.data.visibleColumnIds
-      : defaultVisibleIds
+      : DEFAULT_VISIBLE_IDS
 
     const preferenceColumns = visibleIds.map((id) => dataColumnsById[id]).filter(Boolean)
 
@@ -885,15 +1002,28 @@ export const VenueManagementPage = () => {
             </TableActionsItem>
 
             <TableActionsItem
-              icon={<PauseCircle className="size-3.5 text-slate-700" />}
+              icon={<Tag className="size-3.5 text-slate-700" />}
               className={ACTION_ITEM_CLASS}
               onClick={() => {
                 setActiveDropdownId(null)
-                openSuspendModal(venue)
+                openTagModal(getVenueApiId(venue))
               }}
             >
-              Suspend Venue
+              Add Tags
             </TableActionsItem>
+
+            {allowDisableVenues ? (
+              <TableActionsItem
+                icon={<PauseCircle className="size-3.5 text-slate-700" />}
+                className={ACTION_ITEM_CLASS}
+                onClick={() => {
+                  setActiveDropdownId(null)
+                  openSuspendModal(venue)
+                }}
+              >
+                Suspend Venue
+              </TableActionsItem>
+            ) : null}
 
             <TableActionsItem
               icon={<Trash2 className="size-3.5 text-slate-700" />}
@@ -914,9 +1044,11 @@ export const VenueManagementPage = () => {
   }, [
     activeDropdownId,
     allVisibleVenuesSelected,
+    allowDisableVenues,
     navigate,
     openDeleteModal,
     openSuspendModal,
+    openTagModal,
     selectedVenueIds,
     someVisibleVenuesSelected,
     tableColumnPreferencesQuery.data,
@@ -931,7 +1063,7 @@ export const VenueManagementPage = () => {
       onClick: () => setIsBulkDeleteModalOpen(true),
     },
     {
-      label: 'Export selected venues (Export Selected)',
+      label: 'Export selected venues',
       icon: Upload,
       onClick: handleBulkExport,
     },
@@ -951,14 +1083,25 @@ export const VenueManagementPage = () => {
       onClick: handleBulkNotify,
     },
     {
-      label: 'Message / Communicate with venue partners',
+      label: 'Escalate selected venues',
+      icon: FileText,
+      onClick: () => setIsEscalateModalOpen(true),
+    },
+    {
+      label: 'Message selected venue partners',
       icon: Mail,
       onClick: handleBulkMessage,
     },
     {
       label: 'Suspend selected venues (Suspend Venues)',
       icon: PauseCircle,
-      onClick: () => setIsBulkPauseModalOpen(true),
+      onClick: () => {
+        if (!allowDisableVenues) {
+          toast.error('Disabling venues is turned off in Venue Management settings')
+          return
+        }
+        setIsBulkPauseModalOpen(true)
+      },
     },
   ]
 
@@ -982,7 +1125,14 @@ export const VenueManagementPage = () => {
           <Button
             type="button"
             className="h-9 w-full md:w-auto"
-            onClick={() => navigate('/venues/management/onboarding')}
+            disabled={!allowAddVenues}
+            onClick={() => {
+              if (!allowAddVenues) {
+                toast.error('Creating venues is turned off in Venue Management settings')
+                return
+              }
+              navigate('/venues/management/onboarding')
+            }}
           >
             <img src={createIcon} alt="create" className="size-4" />
             Create Account
@@ -991,36 +1141,51 @@ export const VenueManagementPage = () => {
       </div>
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4">
-        {visibleMetrics.map((metric) => (
-          <div
-            key={metric.id}
-            className="rounded-brand-lg bg-brand-surface border border-white/[0.06] p-4 transition-colors hover:border-white/10"
-          >
-            <p className="text-body-sm text-muted font-medium">{metric.label}</p>
-            <p className="text-h3 mt-2 font-bold tracking-tight text-white">{metric.value}</p>
-            <div className="mt-2 flex flex-wrap items-center gap-2">
-              {metric.change ? (
-                <>
-                  <span
-                    className={cn(
-                      'inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-bold',
-                      metric.changeType === 'down'
-                        ? 'bg-brand-danger/10 text-brand-danger'
-                        : 'bg-brand-positive/15 text-brand-positive',
-                    )}
-                  >
-                    <TrendingUp className="size-3" />
-                    {metric.change}
-                  </span>
-                  {metric.changeNote ? (
-                    <span className="text-muted text-[10px]">{metric.changeNote}</span>
+        {metricsLoading
+          ? Array.from({ length: skeletonCount }).map((_, index) => (
+              <div
+                key={`venue-mgmt-metric-skeleton-${index}`}
+                className="rounded-brand-lg bg-brand-surface border border-white/[0.06] p-4"
+              >
+                <div className="h-3 w-28 animate-pulse rounded bg-white/10" />
+                <div className="mt-3 h-7 w-20 animate-pulse rounded bg-white/10" />
+                <div className="mt-4 h-5 w-32 animate-pulse rounded bg-white/5" />
+              </div>
+            ))
+          : visibleMetrics.map((metric) => (
+              <div
+                key={metric.id}
+                className="rounded-brand-lg bg-brand-surface border border-white/[0.06] p-4 transition-colors hover:border-white/10"
+              >
+                <p className="text-body-sm text-muted font-medium">{metric.label}</p>
+                <p className="text-h3 mt-2 font-bold tracking-tight text-white">{metric.value}</p>
+                <div className="mt-2 flex flex-wrap items-center gap-2">
+                  {metric.change ? (
+                    <>
+                      <span
+                        className={cn(
+                          'inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-bold',
+                          metric.changeType === 'down'
+                            ? 'bg-brand-danger/10 text-brand-danger'
+                            : 'bg-brand-positive/15 text-brand-positive',
+                        )}
+                      >
+                        <TrendingUp
+                          className={cn('size-3', metric.changeType === 'down' && 'rotate-180')}
+                        />
+                        {metric.change}
+                      </span>
+                      {metric.changeNote ? (
+                        <span className="text-muted text-[10px]">{metric.changeNote}</span>
+                      ) : null}
+                    </>
                   ) : null}
-                </>
-              ) : null}
-              {metric.note ? <span className="text-muted text-[10px]">{metric.note}</span> : null}
-            </div>
-          </div>
-        ))}
+                  {metric.note ? (
+                    <span className="text-muted text-[10px]">{metric.note}</span>
+                  ) : null}
+                </div>
+              </div>
+            ))}
       </div>
 
       <StatusQuickLinkRow>
@@ -1205,6 +1370,37 @@ export const VenueManagementPage = () => {
         onClose={() => setIsBulkPauseModalOpen(false)}
         onSubmit={confirmBulkPause}
         isSubmitting={bulkPauseMutation.isPending}
+      />
+
+      <DecisionActionModal
+        open={isEscalateModalOpen}
+        variant="escalate"
+        title={
+          selectedVenueCount > 1 ? `Escalate ${selectedVenueCount} Venues` : 'Escalate Application'
+        }
+        description={
+          selectedVenueCount > 1
+            ? `Are you sure you want to escalate ${selectedVenueCount} selected venues? These will be reviewed by the selected sub-admin.`
+            : 'Are you sure you want to escalate this Application? This Post will be reviewed by the selected parties.'
+        }
+        submitLabel="Escalate"
+        escalationOptions={escalationOptions}
+        selectedEscalationOption={selectedEscalationOption}
+        onEscalationOptionChange={setSelectedEscalationOption}
+        adminNotes={escalateAdminNotes}
+        onAdminNotesChange={setEscalateAdminNotes}
+        onClose={closeEscalateModal}
+        onSubmit={() => {
+          void handleEscalateSubmit()
+        }}
+        isSubmitting={isEscalating}
+      />
+
+      <AddTagModal
+        open={tagModalOpen}
+        onClose={closeTagModal}
+        initialTags={initialTags}
+        onSubmit={saveTags}
       />
     </div>
   )

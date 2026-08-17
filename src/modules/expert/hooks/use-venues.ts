@@ -3,6 +3,9 @@ import {
   fetchVenues,
   fetchVenueById,
   fetchVenueFullView,
+  fetchVenueInsights,
+  fetchSpaceBookings,
+  type SpaceBookingStatus,
   suspendVenue,
   activateVenue,
   deleteVenue,
@@ -15,10 +18,12 @@ import {
   bulkExportVenues,
   bulkNotifyVenues,
   bulkMessageVenues,
+  bulkUpdateSpaceVisibility,
   type SuspendVenuePayload,
   type DeleteVenuePayload,
   type SetVenueOwnerPasswordPayload,
   type BulkVenueActionPayload,
+  type BulkSpaceVisibilityPayload,
 } from '../api/venue-api.ts'
 
 export const useVenues = (params?: Record<string, unknown>) => {
@@ -46,6 +51,25 @@ export const useVenueFullView = (venueId?: string, spaceId?: string) => {
     enabled: !!venueId,
   })
 }
+
+export const useSpaceBookings = (
+  spaceId?: string,
+  status: SpaceBookingStatus = 'all',
+  page = 1,
+  limit = 20,
+) =>
+  useQuery({
+    queryKey: ['space-bookings', spaceId, status, page, limit],
+    queryFn: () => fetchSpaceBookings(spaceId as string, { status, page, limit }),
+    enabled: Boolean(spaceId),
+  })
+
+export const useVenueInsights = (venueId?: string, sort: 'recent' | 'top' | 'all' = 'recent') =>
+  useQuery({
+    queryKey: ['venue-insights', venueId, sort],
+    queryFn: () => fetchVenueInsights(venueId as string, { sort, limit: 20 }),
+    enabled: Boolean(venueId),
+  })
 
 export const useSuspendVenue = () => {
   const queryClient = useQueryClient()
@@ -178,6 +202,21 @@ export const useBulkMessageVenues = () => {
     mutationFn: (venueIds: string[]) => bulkMessageVenues(venueIds),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['venues'] })
+    },
+  })
+}
+
+export const useBulkUpdateSpaceVisibility = (venueId?: string) => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (payload: BulkSpaceVisibilityPayload) => bulkUpdateSpaceVisibility(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['venues'] })
+      if (venueId) {
+        queryClient.invalidateQueries({ queryKey: ['venue-full-view', venueId] })
+      } else {
+        queryClient.invalidateQueries({ queryKey: ['venue-full-view'] })
+      }
     },
   })
 }

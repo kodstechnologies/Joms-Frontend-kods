@@ -45,6 +45,8 @@ import type { UpdateServicePricingPayload } from '@/modules/expert/type/service'
 import { cn } from '@/shared/lib/cn'
 import { RequiredMark } from '@/shared/components/form/required-mark'
 import { CreateListingWizard } from '@/modules/expert/components'
+import { useServiceListingControls } from '@/modules/settings/hooks/use-service-public-settings'
+import { useSettingsModule } from '@/modules/settings/hooks/use-settings'
 
 type UploadedImage = {
   id: string
@@ -140,10 +142,20 @@ export const CreateServiceListingPage = () => {
     { page: 1, limit: 100 },
   )
   const categories = useMemo(() => categoriesResponse?.data || [], [categoriesResponse?.data])
-  const subcategories = useMemo(
-    () => subcategoriesResponse?.data || [],
-    [subcategoriesResponse?.data],
+  const selectedCategory = useMemo(
+    () => categories.find((c) => c._id === selectedCategoryId),
+    [categories, selectedCategoryId],
   )
+  const subcategories = useMemo(() => {
+    const apiData = subcategoriesResponse?.data
+    if (Array.isArray(apiData) && apiData.length > 0) {
+      return apiData
+    }
+    if (selectedCategory?.subCategories && selectedCategory.subCategories.length > 0) {
+      return selectedCategory.subCategories
+    }
+    return []
+  }, [subcategoriesResponse?.data, selectedCategory])
 
   const createServiceMutation = useCreateService()
   const updateServicePricingMutation = useUpdateServicePricing()
@@ -156,8 +168,31 @@ export const CreateServiceListingPage = () => {
   const updateConsultationAdditionalInfoMutation = useUpdateConsultationAdditionalInfo()
   const updateConsultationPricingMutation = useUpdateConsultationPricing()
   const publishConsultationMutation = usePublishConsultation()
-  const [pricingType, setPricingType] = useState<'fixed' | 'custom' | 'tiered'>('fixed')
-  const [selectedDiscount, setSelectedDiscount] = useState<string>('10%')
+  const {
+    allowNewServiceListings,
+    allowNewConsultationListings,
+    allowSinglePriceListing,
+    allowTierPriceListing,
+    allowCustomPriceListing,
+    displayAiPriceRecommendation: publicDisplayAi,
+    maxListingDiscountPercent,
+    maxConsultationFollowUpDays,
+  } = useServiceListingControls()
+
+  // Admin create flow: prefer live admin module settings (same source as Settings tab).
+  // Ignore placeholderData defaults so AI isn't forced ON before real settings load.
+  const adminServiceSettings = useSettingsModule('service')
+  const adminAiFlag =
+    adminServiceSettings.data?.config?.pricingDetails?.displayAiPriceRecommendation
+  const displayAiPriceRecommendation =
+    adminServiceSettings.isSuccess &&
+    !adminServiceSettings.isPlaceholderData &&
+    typeof adminAiFlag === 'boolean'
+      ? adminAiFlag === true
+      : publicDisplayAi === true
+
+  const [pricingTypePreference, setPricingType] = useState<'fixed' | 'custom' | 'tiered'>('fixed')
+  const [selectedDiscountPreference, setSelectedDiscount] = useState<string>('10%')
   const [timelineType, setTimelineType] = useState<'long' | 'short'>('long')
   const [selectedTier, setSelectedTier] = useState<TierName>('standard')
   const [fixedPrice, setFixedPrice] = useState('₹60,000.00')
@@ -171,6 +206,25 @@ export const CreateServiceListingPage = () => {
   const [pricingRecommendation, setPricingRecommendation] =
     useState<PricingRecommendationResult | null>(null)
   const [isRecommendationLoading, setIsRecommendationLoading] = useState(false)
+
+  const allowedPricingTypes = useMemo(() => {
+    const allowed: Array<'fixed' | 'custom' | 'tiered'> = []
+    if (allowSinglePriceListing) allowed.push('fixed')
+    if (allowCustomPriceListing) allowed.push('custom')
+    if (allowTierPriceListing) allowed.push('tiered')
+    return allowed
+  }, [allowSinglePriceListing, allowCustomPriceListing, allowTierPriceListing])
+
+  const pricingType = allowedPricingTypes.includes(pricingTypePreference)
+    ? pricingTypePreference
+    : (allowedPricingTypes[0] ?? 'fixed')
+
+  const maxDiscountPct = maxListingDiscountPercent || 50
+  const selectedDiscountPct = Number.parseInt(selectedDiscountPreference.replace('%', ''), 10) || 0
+  const selectedDiscount =
+    selectedDiscountPct > maxDiscountPct
+      ? `${Math.min(10, maxDiscountPct)}%`
+      : selectedDiscountPreference
 
   const activeCategoryName = useMemo(() => {
     return categories.find((c) => c._id === selectedCategoryId)?.name || ''
@@ -190,6 +244,11 @@ export const CreateServiceListingPage = () => {
     const discountNum = Number.parseInt(selectedDiscount.replace('%', ''), 10) || 0
 
     const loadRecommendation = async () => {
+      if (!displayAiPriceRecommendation) {
+        setPricingRecommendation(null)
+        setIsRecommendationLoading(false)
+        return
+      }
       setIsRecommendationLoading(true)
       try {
         const res = await fetchPricingRecommendation({
@@ -226,6 +285,7 @@ export const CreateServiceListingPage = () => {
     tiers,
     selectedTier,
     selectedDiscount,
+    displayAiPriceRecommendation,
   ])
 
   const updateTier = (name: TierName, field: keyof ServiceTierForm, value: string) => {
@@ -398,6 +458,10 @@ export const CreateServiceListingPage = () => {
     try {
       if (selectedType === 'service') {
         if (currentStep === 2) {
+          if (!allowNewServiceListings) {
+            toast.error('Creating new service listings is disabled by admin settings.')
+            return
+          }
           if (!serviceTitle.trim()) {
             toast.error('Service title is required.')
             return
@@ -407,6 +471,8 @@ export const CreateServiceListingPage = () => {
             return
           }
 
+          // Do not stamp pricingType here — step 3 sets it via /pricing so a
+          // default "fixed" cannot stick on a listing the user configures as tiered.
           const response = await createServiceMutation.mutateAsync({
             partnerId,
             title: serviceTitle.trim(),
@@ -414,7 +480,6 @@ export const CreateServiceListingPage = () => {
             subCategory: selectedSubCategoryIds,
             description: description.trim() || undefined,
             deliverables: deliverables.trim() || undefined,
-            pricingType,
           })
           setListingId(response.data._id)
           toast.success('Service created successfully')
@@ -487,6 +552,19 @@ export const CreateServiceListingPage = () => {
           if (!sessionOutline.trim() || !whoItsFor.trim()) {
             toast.error('Session outline and audience are required.')
             return
+          }
+
+          if (!listingId && !allowNewConsultationListings) {
+            toast.error('Creating new consultation listings is disabled by admin settings.')
+            return
+          }
+
+          if (hasFollowUp) {
+            const days = Number.parseInt(followUpDays, 10) || 0
+            if (days > maxConsultationFollowUpDays) {
+              toast.error(`Follow-up period cannot exceed ${maxConsultationFollowUpDays} day(s).`)
+              return
+            }
           }
 
           const response = listingId
@@ -1321,80 +1399,86 @@ export const CreateServiceListingPage = () => {
             </div>
 
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <button
-                onClick={() => setPricingType('fixed')}
-                className={cn(
-                  'flex items-start gap-3 rounded-md border p-4 text-left transition-all duration-300',
-                  pricingType === 'fixed'
-                    ? 'border-white/70 bg-black shadow-[0_0_15px_rgba(251,192,120,0.05)]'
-                    : 'border-white/40 bg-black hover:border-white/70',
-                )}
-              >
-                <div
+              {allowSinglePriceListing && (
+                <button
+                  onClick={() => setPricingType('fixed')}
                   className={cn(
-                    'mt-0.5 flex size-3.5 shrink-0 items-center justify-center rounded-full border',
-                    pricingType === 'fixed' ? 'border-white' : 'border-white/70',
+                    'flex items-start gap-3 rounded-md border p-4 text-left transition-all duration-300',
+                    pricingType === 'fixed'
+                      ? 'border-white/70 bg-black shadow-[0_0_15px_rgba(251,192,120,0.05)]'
+                      : 'border-white/40 bg-black hover:border-white/70',
                   )}
                 >
-                  {pricingType === 'fixed' && <div className="size-1.5 rounded-full bg-white" />}
-                </div>
-                <div>
-                  <h3 className="text-body-sm mb-1 font-bold text-white">Fixed Pricing</h3>
-                  <p className="text-muted text-[10px] leading-snug">
-                    Best for clearly defined scope, deliverables, and deadlines
-                  </p>
-                </div>
-              </button>
+                  <div
+                    className={cn(
+                      'mt-0.5 flex size-3.5 shrink-0 items-center justify-center rounded-full border',
+                      pricingType === 'fixed' ? 'border-white' : 'border-white/70',
+                    )}
+                  >
+                    {pricingType === 'fixed' && <div className="size-1.5 rounded-full bg-white" />}
+                  </div>
+                  <div>
+                    <h3 className="text-body-sm mb-1 font-bold text-white">Fixed Pricing</h3>
+                    <p className="text-muted text-[10px] leading-snug">
+                      Best for clearly defined scope, deliverables, and deadlines
+                    </p>
+                  </div>
+                </button>
+              )}
 
-              <button
-                onClick={() => setPricingType('custom')}
-                className={cn(
-                  'flex items-start gap-3 rounded-md border p-4 text-left transition-all duration-300',
-                  pricingType === 'custom'
-                    ? 'border-white/70 bg-black shadow-[0_0_15px_rgba(251,192,120,0.05)]'
-                    : 'border-white/40 bg-black hover:border-white/70',
-                )}
-              >
-                <div
+              {allowCustomPriceListing && (
+                <button
+                  onClick={() => setPricingType('custom')}
                   className={cn(
-                    'mt-0.5 flex size-3.5 shrink-0 items-center justify-center rounded-full border',
-                    pricingType === 'custom' ? 'border-white' : 'border-white/70',
+                    'flex items-start gap-3 rounded-md border p-4 text-left transition-all duration-300',
+                    pricingType === 'custom'
+                      ? 'border-white/70 bg-black shadow-[0_0_15px_rgba(251,192,120,0.05)]'
+                      : 'border-white/40 bg-black hover:border-white/70',
                   )}
                 >
-                  {pricingType === 'custom' && <div className="size-1.5 rounded-full bg-white" />}
-                </div>
-                <div>
-                  <h3 className="text-body-sm mb-1 font-bold text-white">Custom Pricing</h3>
-                  <p className="text-muted text-[10px] leading-snug">
-                    Best for flexible scope, evolving requirements, variable timelines
-                  </p>
-                </div>
-              </button>
+                  <div
+                    className={cn(
+                      'mt-0.5 flex size-3.5 shrink-0 items-center justify-center rounded-full border',
+                      pricingType === 'custom' ? 'border-white' : 'border-white/70',
+                    )}
+                  >
+                    {pricingType === 'custom' && <div className="size-1.5 rounded-full bg-white" />}
+                  </div>
+                  <div>
+                    <h3 className="text-body-sm mb-1 font-bold text-white">Custom Pricing</h3>
+                    <p className="text-muted text-[10px] leading-snug">
+                      Best for flexible scope, evolving requirements, variable timelines
+                    </p>
+                  </div>
+                </button>
+              )}
 
-              <button
-                onClick={() => setPricingType('tiered')}
-                className={cn(
-                  'flex items-start gap-3 rounded-md border p-4 text-left transition-all duration-300 md:col-span-1',
-                  pricingType === 'tiered'
-                    ? 'border-white/70 bg-black shadow-[0_0_15px_rgba(251,192,120,0.05)]'
-                    : 'border-white/40 bg-black hover:border-white/70',
-                )}
-              >
-                <div
+              {allowTierPriceListing && (
+                <button
+                  onClick={() => setPricingType('tiered')}
                   className={cn(
-                    'mt-0.5 flex size-3.5 shrink-0 items-center justify-center rounded-full border',
-                    pricingType === 'tiered' ? 'border-white' : 'border-white/70',
+                    'flex items-start gap-3 rounded-md border p-4 text-left transition-all duration-300 md:col-span-1',
+                    pricingType === 'tiered'
+                      ? 'border-white/70 bg-black shadow-[0_0_15px_rgba(251,192,120,0.05)]'
+                      : 'border-white/40 bg-black hover:border-white/70',
                   )}
                 >
-                  {pricingType === 'tiered' && <div className="size-1.5 rounded-full bg-white" />}
-                </div>
-                <div>
-                  <h3 className="text-body-sm mb-1 font-bold text-white">Tiered Pricing</h3>
-                  <p className="text-muted text-[10px] leading-snug">
-                    Best for multiple service levels with increasing value
-                  </p>
-                </div>
-              </button>
+                  <div
+                    className={cn(
+                      'mt-0.5 flex size-3.5 shrink-0 items-center justify-center rounded-full border',
+                      pricingType === 'tiered' ? 'border-white' : 'border-white/70',
+                    )}
+                  >
+                    {pricingType === 'tiered' && <div className="size-1.5 rounded-full bg-white" />}
+                  </div>
+                  <div>
+                    <h3 className="text-body-sm mb-1 font-bold text-white">Tiered Pricing</h3>
+                    <p className="text-muted text-[10px] leading-snug">
+                      Best for multiple service levels with increasing value
+                    </p>
+                  </div>
+                </button>
+              )}
             </div>
           </div>
 
@@ -1451,76 +1535,87 @@ export const CreateServiceListingPage = () => {
                         <Info className="text-muted size-3 cursor-help" />
                       </div>
                       <div className="flex flex-wrap gap-3">
-                        {['00%', '10%', '15%', '20%'].map((discount) => (
-                          <button
-                            key={discount}
-                            onClick={() => setSelectedDiscount(discount)}
-                            className={cn(
-                              'text-body-sm rounded-md px-4 py-2 font-bold transition-all duration-200',
-                              selectedDiscount === discount
-                                ? 'bg-white text-black shadow-lg'
-                                : 'bg-brand-surface text-muted border border-white/5 hover:border-white/10',
-                            )}
-                          >
-                            {discount}
-                          </button>
-                        ))}
+                        {['00%', '10%', '15%', '20%', '30%', '40%', '50%']
+                          .filter((discount) => {
+                            const pct = Number.parseInt(discount, 10) || 0
+                            return pct <= (maxListingDiscountPercent || 50)
+                          })
+                          .map((discount) => (
+                            <button
+                              key={discount}
+                              onClick={() => setSelectedDiscount(discount)}
+                              className={cn(
+                                'text-body-sm rounded-md px-4 py-2 font-bold transition-all duration-200',
+                                selectedDiscount === discount
+                                  ? 'bg-white text-black shadow-lg'
+                                  : 'bg-brand-surface text-muted border border-white/5 hover:border-white/10',
+                              )}
+                            >
+                              {discount}
+                            </button>
+                          ))}
                       </div>
                     </div>
                   </div>
 
-                  <div className="w-full md:w-[280px]">
-                    <div className="border-brand-positive/15 bg-brand-positive/20 flex flex-col gap-2 rounded-lg border p-4">
-                      <div className="flex items-start gap-2.5">
-                        <div className="bg-brand-positive/40 flex size-6 shrink-0 items-center justify-center rounded-full">
-                          {isRecommendationLoading ? (
-                            <Loader2 className="size-3.5 animate-spin text-emerald-200" />
-                          ) : (
-                            <Sparkles className="size-3.5 text-emerald-200" />
-                          )}
-                        </div>
-                        <div className="flex-1">
-                          <p className="text-[11px] leading-relaxed font-semibold text-white">
-                            {pricingRecommendation?.short_badge_text ||
-                              "The market rate for NDA review is ₹6K–₹15K. It's recommended to set your price within this range."}
-                          </p>
-                          {pricingRecommendation?.recommendation && (
-                            <p className="mt-2 border-t border-emerald-500/20 pt-2 text-[10px] leading-normal font-normal text-emerald-200/90">
-                              {pricingRecommendation.recommendation}
+                  {displayAiPriceRecommendation && (
+                    <div className="w-full md:w-[280px]">
+                      <div className="border-brand-positive/15 bg-brand-positive/20 flex flex-col gap-2 rounded-lg border p-4">
+                        <div className="flex items-start gap-2.5">
+                          <div className="bg-brand-positive/40 flex size-6 shrink-0 items-center justify-center rounded-full">
+                            {isRecommendationLoading ? (
+                              <Loader2 className="size-3.5 animate-spin text-emerald-200" />
+                            ) : (
+                              <Sparkles className="size-3.5 text-emerald-200" />
+                            )}
+                          </div>
+                          <div className="flex-1">
+                            <p className="text-[11px] leading-relaxed font-semibold text-white">
+                              {pricingRecommendation?.short_badge_text ||
+                                (isRecommendationLoading
+                                  ? 'Fetching market rate recommendation…'
+                                  : 'AI price recommendation will appear here.')}
                             </p>
-                          )}
+                            {pricingRecommendation?.recommendation && (
+                              <p className="mt-2 border-t border-emerald-500/20 pt-2 text-[10px] leading-normal font-normal text-emerald-200/90">
+                                {pricingRecommendation.recommendation}
+                              </p>
+                            )}
+                          </div>
                         </div>
+                        {pricingRecommendation?.breakdown && (
+                          <div className="mt-2 space-y-1 border-t border-emerald-500/20 pt-2 text-[10px] text-emerald-100/70">
+                            <div className="flex justify-between">
+                              <span>
+                                Platform Fee ({pricingRecommendation.breakdown.platform_fee_pct}%):
+                              </span>
+                              <span>
+                                ₹
+                                {pricingRecommendation.breakdown.platform_fee.toLocaleString(
+                                  'en-IN',
+                                )}
+                              </span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>GST ({pricingRecommendation.breakdown.gst_pct}%):</span>
+                              <span>
+                                ₹{pricingRecommendation.breakdown.gst.toLocaleString('en-IN')}
+                              </span>
+                            </div>
+                            <div className="flex justify-between pt-1 font-bold text-white">
+                              <span>Estimated Earnings:</span>
+                              <span>
+                                ₹
+                                {pricingRecommendation.breakdown.estimated_earnings.toLocaleString(
+                                  'en-IN',
+                                )}
+                              </span>
+                            </div>
+                          </div>
+                        )}
                       </div>
-                      {pricingRecommendation?.breakdown && (
-                        <div className="mt-2 space-y-1 border-t border-emerald-500/20 pt-2 text-[10px] text-emerald-100/70">
-                          <div className="flex justify-between">
-                            <span>
-                              Platform Fee ({pricingRecommendation.breakdown.platform_fee_pct}%):
-                            </span>
-                            <span>
-                              ₹
-                              {pricingRecommendation.breakdown.platform_fee.toLocaleString('en-IN')}
-                            </span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span>GST ({pricingRecommendation.breakdown.gst_pct}%):</span>
-                            <span>
-                              ₹{pricingRecommendation.breakdown.gst.toLocaleString('en-IN')}
-                            </span>
-                          </div>
-                          <div className="flex justify-between pt-1 font-bold text-white">
-                            <span>Estimated Earnings:</span>
-                            <span>
-                              ₹
-                              {pricingRecommendation.breakdown.estimated_earnings.toLocaleString(
-                                'en-IN',
-                              )}
-                            </span>
-                          </div>
-                        </div>
-                      )}
                     </div>
-                  </div>
+                  )}
                 </div>
               </div>
             )}
@@ -1635,30 +1730,34 @@ export const CreateServiceListingPage = () => {
                     </div>
                   </div>
 
-                  <div className="w-full md:w-[280px]">
-                    <div className="border-brand-positive/15 bg-brand-positive/20 flex flex-col gap-2 rounded-lg border p-4">
-                      <div className="flex items-start gap-2.5">
-                        <div className="bg-brand-positive/40 flex size-6 shrink-0 items-center justify-center rounded-full">
-                          {isRecommendationLoading ? (
-                            <Loader2 className="size-3.5 animate-spin text-emerald-200" />
-                          ) : (
-                            <Sparkles className="size-3.5 text-emerald-200" />
-                          )}
-                        </div>
-                        <div className="flex-1">
-                          <p className="text-[11px] leading-relaxed font-semibold text-white">
-                            {pricingRecommendation?.short_badge_text ||
-                              "The market rate for NDA review is ₹6K–₹15K. It's recommended to set your price within this range."}
-                          </p>
-                          {pricingRecommendation?.recommendation && (
-                            <p className="mt-2 border-t border-emerald-500/20 pt-2 text-[10px] leading-normal font-normal text-emerald-200/90">
-                              {pricingRecommendation.recommendation}
+                  {displayAiPriceRecommendation && (
+                    <div className="w-full md:w-[280px]">
+                      <div className="border-brand-positive/15 bg-brand-positive/20 flex flex-col gap-2 rounded-lg border p-4">
+                        <div className="flex items-start gap-2.5">
+                          <div className="bg-brand-positive/40 flex size-6 shrink-0 items-center justify-center rounded-full">
+                            {isRecommendationLoading ? (
+                              <Loader2 className="size-3.5 animate-spin text-emerald-200" />
+                            ) : (
+                              <Sparkles className="size-3.5 text-emerald-200" />
+                            )}
+                          </div>
+                          <div className="flex-1">
+                            <p className="text-[11px] leading-relaxed font-semibold text-white">
+                              {pricingRecommendation?.short_badge_text ||
+                                (isRecommendationLoading
+                                  ? 'Fetching market rate recommendation…'
+                                  : 'AI price recommendation will appear here.')}
                             </p>
-                          )}
+                            {pricingRecommendation?.recommendation && (
+                              <p className="mt-2 border-t border-emerald-500/20 pt-2 text-[10px] leading-normal font-normal text-emerald-200/90">
+                                {pricingRecommendation.recommendation}
+                              </p>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
+                  )}
                 </div>
               </div>
             )}

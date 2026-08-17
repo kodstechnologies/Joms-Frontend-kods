@@ -22,18 +22,18 @@ export interface PayoutItem {
   payoutId: string
   bookingId: string
   serviceTitle: string
-  serviceType: 'Consultation' | 'Fixed' | 'Custom'
+  serviceType: 'Consultation' | 'Fixed' | 'Custom' | 'Tiered' | string
   status: string
   itemId?: string
-  consultationId?: string
-  serviceId?: string
-  milestoneId?: string
-  consultationDate?: string
-  serviceStartDate?: string
-  serviceEndDate?: string
-  milestoneStartDate?: string
-  milestoneEndDate?: string
-  milestoneCompleted?: string
+  consultationId?: string | null
+  serviceId?: string | null
+  milestoneId?: string | null
+  consultationDate?: string | null
+  serviceStartDate?: string | null
+  serviceEndDate?: string | null
+  milestoneStartDate?: string | null
+  milestoneEndDate?: string | null
+  milestoneCompleted?: string | null
   payoutToExpert: number
   payoutDate: string
   creditedOn?: string
@@ -43,8 +43,9 @@ export interface PayoutItem {
   expertId: string
   serviceCategory: string
   consultationFee?: number
-  totalMilestoneFee?: number
+  totalMilestoneFee?: number | null
   platformFee?: number
+  platformFeePercent?: number | null
   taxAmount?: number
   finalPayoutAmount: number
   paymentMethod: string
@@ -53,6 +54,8 @@ export interface PayoutItem {
   payoutStatus: string
   payoutIdFull?: string
   creditedOnFull?: string
+  settlementPath?: string | null
+  financeStatus?: string | null
   milestones?: PayoutMilestone[]
 }
 

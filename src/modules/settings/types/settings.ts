@@ -34,14 +34,17 @@ export type PlatformSettings = {
   }
 }
 
+export type TaxHandling = 'inclusive' | 'exclusive' | 'region_based' | 'tax_exempt'
+
 export type FinancialSettings = {
-  platformCommissionPercent: number
-  expertRevenueSharePercent: number
-  convenienceFeePercent: number
+  platformCommissionPercent: number | null
+  expertRevenueSharePercent: number | null
+  convenienceFeePercent: number | null
   region: string
   taxRate: number | null
   currency: string
   taxType: string
+  taxHandling: TaxHandling
 }
 
 export type SettingsLogAction = 'update' | 'reset' | 'restore'
@@ -90,8 +93,9 @@ export type ExpertSettings = {
   accountCreation: {
     allowNewAccounts: boolean
     maxDevicesPerUser: number
-    phoneVerification: 'mandatory' | 'optional' | 'disabled'
-    reVerificationDays: number
+    phoneVerification: 'mandatory' | 'optional'
+    /** 90 | 180 | 365 — Excel: 3 / 6 / 12 months */
+    reVerificationDays: 90 | 180 | 365
     duplicateAccountDetection: boolean
     samePhoneNumber: boolean
     sameEmailId: boolean
@@ -104,7 +108,8 @@ export type ExpertSettings = {
     failedLogins24h: number
     suspendOnNewDeviceLogin: boolean
     suspendOnUserReports: number
-    suspensionDurationDays: number
+    /** 7 | 30 | 90 | 180 | 0 (0 = permanent) */
+    suspensionDurationDays: 7 | 30 | 90 | 180 | 0
     notifySuperAdmin: boolean
     notifyAffectedAdmin: boolean
   }
@@ -114,23 +119,27 @@ export type ExpertSettings = {
   financial: FinancialSettings
 }
 
+export type VenueCancellationFeeType = 'percentage' | 'no_fee' | 'custom'
+
 export type VenueSettings = {
   venueControls: {
-    venueDisableSuspend: boolean
+    allowAddVenues: boolean
+    allowApproveVenues: boolean
+    allowDisableVenues: boolean
   }
   bookingRules: {
     bookingWindowDays: number
     minBookingNoticeHours: number
+    cancellationFeeType: VenueCancellationFeeType
     cancellationFeePercent: number
+    cancellationFeeCustomAmount: number
     conflictDetection: boolean
     blackoutDates: boolean
-    maintenanceBlocks: boolean
   }
   pricingControls: {
     hourlyRates: boolean
-    halfDayRates: boolean
     fullDayRates: boolean
-    failedAttemptsAlert: boolean
+    weekendPricing: boolean
     peakPricing: boolean
   }
   financial: FinancialSettings

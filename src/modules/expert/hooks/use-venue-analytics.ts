@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { fetchVenueProfileAnalytics } from '../api/venue-analytics.api'
+import { fetchSpaceAnalytics, fetchVenueProfileAnalytics } from '../api/venue-analytics.api'
 
 export const useVenueProfileAnalytics = (
   venueId: string | undefined,
@@ -13,3 +13,12 @@ export const useVenueProfileAnalytics = (
     retry: 1,
   })
 }
+
+export const useSpaceAnalytics = (spaceId: string | undefined) =>
+  useQuery({
+    queryKey: ['space-analytics', spaceId],
+    queryFn: () => fetchSpaceAnalytics(spaceId!),
+    enabled: Boolean(spaceId),
+    staleTime: 60_000,
+    retry: 1,
+  })

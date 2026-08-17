@@ -1,5 +1,6 @@
 import type { FinancialSettings } from '../types/settings'
-import { SettingsFieldRow, settingsControlClass } from './settings-field-row'
+import { SettingsFieldRow, SettingsInputField, SettingsSelectField } from './settings-field-row'
+import { settingsControlClass } from './settings-control-classes'
 import { SettingsSectionCard } from './settings-section-card'
 
 type FinancialSettingsFieldsProps = {
@@ -7,6 +8,16 @@ type FinancialSettingsFieldsProps = {
   onChange: (next: FinancialSettings) => void
   title?: string
 }
+
+const parseOptionalNumber = (raw: string): number | null => {
+  const trimmed = raw.trim()
+  if (trimmed === '') return null
+  const parsed = Number(trimmed)
+  return Number.isFinite(parsed) ? parsed : null
+}
+
+const displayNumber = (value: number | null | undefined) =>
+  value === null || value === undefined ? '' : String(value)
 
 export function FinancialSettingsFields({
   value,
@@ -17,16 +28,20 @@ export function FinancialSettingsFields({
 
   return (
     <SettingsSectionCard title={title} description="Controls money flow, accounting, and payouts.">
-      <p className="text-sm font-medium text-slate-300">Pricing & Fees</p>
+      <p>Pricing & Fees</p>
       <SettingsFieldRow
         label="Platform Commission (%)"
         description="Percentage taken by platform per transaction."
       >
         <input
           type="number"
+          inputMode="decimal"
           className={settingsControlClass}
-          value={value.platformCommissionPercent}
-          onChange={(e) => patch({ platformCommissionPercent: Number(e.target.value) })}
+          placeholder="Enter %"
+          value={displayNumber(value.platformCommissionPercent)}
+          onChange={(e) =>
+            patch({ platformCommissionPercent: parseOptionalNumber(e.target.value) })
+          }
         />
       </SettingsFieldRow>
       <SettingsFieldRow
@@ -35,9 +50,13 @@ export function FinancialSettingsFields({
       >
         <input
           type="number"
+          inputMode="decimal"
           className={settingsControlClass}
-          value={value.expertRevenueSharePercent}
-          onChange={(e) => patch({ expertRevenueSharePercent: Number(e.target.value) })}
+          placeholder="Enter %"
+          value={displayNumber(value.expertRevenueSharePercent)}
+          onChange={(e) =>
+            patch({ expertRevenueSharePercent: parseOptionalNumber(e.target.value) })
+          }
         />
       </SettingsFieldRow>
       <SettingsFieldRow
@@ -46,56 +65,69 @@ export function FinancialSettingsFields({
       >
         <input
           type="number"
+          inputMode="decimal"
           className={settingsControlClass}
-          value={value.convenienceFeePercent}
-          onChange={(e) => patch({ convenienceFeePercent: Number(e.target.value) })}
+          placeholder="Enter %"
+          value={displayNumber(value.convenienceFeePercent)}
+          onChange={(e) => patch({ convenienceFeePercent: parseOptionalNumber(e.target.value) })}
         />
       </SettingsFieldRow>
-      <div className="grid gap-4 sm:grid-cols-2">
-        <SettingsFieldRow label="Region">
-          <select
-            className={settingsControlClass}
-            value={value.region}
-            onChange={(e) => patch({ region: e.target.value })}
-          >
-            <option value="India">India</option>
-            <option value="UAE">UAE</option>
-            <option value="USA">USA</option>
-          </select>
-        </SettingsFieldRow>
-        <SettingsFieldRow label="Tax rate">
-          <input
-            type="number"
-            placeholder="%"
-            className={settingsControlClass}
-            value={value.taxRate ?? ''}
-            onChange={(e) =>
-              patch({ taxRate: e.target.value === '' ? null : Number(e.target.value) })
-            }
-          />
-        </SettingsFieldRow>
-        <SettingsFieldRow label="Currency">
-          <select
-            className={settingsControlClass}
-            value={value.currency}
-            onChange={(e) => patch({ currency: e.target.value })}
-          >
-            <option value="INR">INR</option>
-            <option value="USD">USD</option>
-            <option value="AED">AED</option>
-          </select>
-        </SettingsFieldRow>
-        <SettingsFieldRow label="Tax type" description="Choose tax type.">
-          <select
-            className={settingsControlClass}
-            value={value.taxType}
-            onChange={(e) => patch({ taxType: e.target.value })}
-          >
-            <option value="GST">GST</option>
-            <option value="VAT">VAT</option>
-            <option value="None">None</option>
-          </select>
-        </SettingsFieldRow>
+
+      <div className="settings-financial-grid" data-settings-group>
+        <SettingsSelectField
+          label="Region"
+          id="financial-region"
+          value={value.region}
+          onChange={(e) => patch({ region: e.target.value })}
+        >
+          <option value="India">India</option>
+          <option value="UAE">UAE</option>
+          <option value="USA">USA</option>
+        </SettingsSelectField>
+        <SettingsInputField
+          label="Tax rate"
+          id="financial-tax-rate"
+          type="number"
+          inputMode="decimal"
+          placeholder="%"
+          value={displayNumber(value.taxRate)}
+          onChange={(e) => patch({ taxRate: parseOptionalNumber(e.target.value) })}
+        />
+        <SettingsSelectField
+          label="Currency"
+          id="financial-currency"
+          value={value.currency}
+          onChange={(e) => patch({ currency: e.target.value })}
+        >
+          <option value="INR">INR</option>
+          <option value="USD">USD</option>
+          <option value="AED">AED</option>
+        </SettingsSelectField>
+        <SettingsSelectField
+          label="Tax type"
+          id="financial-tax-type"
+          value={value.taxType}
+          onChange={(e) => patch({ taxType: e.target.value })}
+        >
+          <option value="GST">GST</option>
+          <option value="VAT">VAT</option>
+          <option value="None">None</option>
+        </SettingsSelectField>
+        <SettingsSelectField
+          label="Tax handling"
+          id="financial-tax-handling"
+          value={value.taxHandling || 'exclusive'}
+          onChange={(e) =>
+            patch({
+              taxHandling: e.target.value as FinancialSettings['taxHandling'],
+            })
+          }
+        >
+          <option value="inclusive">Inclusive</option>
+          <option value="exclusive">Exclusive</option>
+          <option value="region_based">Region Based</option>
+          <option value="tax_exempt">Tax Exempt</option>
+        </SettingsSelectField>
       </div>
     </SettingsSectionCard>
   )

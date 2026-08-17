@@ -58,7 +58,7 @@ export function TicketIntelligencePanel({
       <div>
         <h3 className="text-body-sm-semibold text-muted mb-3 tracking-widest">ACTIVITY</h3>
         <div className="space-y-3">
-          {activities.map((item) => (
+          {activities.slice(0, 5).map((item) => (
             <div
               key={item.id}
               className="radius-lg bg-brand-surface flex items-center justify-between border border-white/5 px-4 py-3"

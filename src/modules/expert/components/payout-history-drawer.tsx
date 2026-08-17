@@ -1,7 +1,11 @@
-import { X, ArrowLeft, User } from 'lucide-react'
-import { useState, useEffect } from 'react'
+import { X, ArrowLeft, CalendarDays, User } from 'lucide-react'
+import { useQuery } from '@tanstack/react-query'
+import { useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { toast } from 'sonner'
+
 import { Button } from '@/shared/components/ui/button'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
 import { fetchExpertPayoutHistory } from '../api/expert-api'
 import type { PayoutItem } from '../type/payout'
 
@@ -14,58 +18,74 @@ interface PayoutHistoryDrawerProps {
   expertName?: string
 }
 
+const statusBadgeClass = (status?: string) => {
+  const value = String(status || '').toLowerCase()
+  if (value === 'credited' || value === 'successful' || value === 'paid') {
+    return 'bg-emerald-500/15 text-emerald-400'
+  }
+  if (value === 'processing' || value === 'scheduled' || value === 'pending approval') {
+    return 'bg-amber-500/15 text-amber-400'
+  }
+  if (value === 'disputed') {
+    return 'bg-violet-500/15 text-violet-300'
+  }
+  if (value === 'failed' || value === 'cancelled') {
+    return 'bg-rose-500/15 text-rose-400'
+  }
+  return 'bg-white/10 text-slate-300'
+}
+
 export function PayoutHistoryDrawer({ isOpen, onClose, expertId }: PayoutHistoryDrawerProps) {
   const navigate = useNavigate()
-  const [items, setItems] = useState<PayoutItem[]>([])
-  const [loading, setLoading] = useState(false)
-  const [prevKey, setPrevKey] = useState('')
+  const toastedErrorRef = useRef<string | null>(null)
 
-  const currentKey = isOpen && expertId ? `${isOpen}-${expertId}` : ''
-
-  if (currentKey !== prevKey) {
-    setPrevKey(currentKey)
-    if (currentKey) {
-      setLoading(true)
-    }
-  }
+  const {
+    data,
+    isLoading: loading,
+    isError,
+    error,
+  } = useQuery({
+    queryKey: ['expert-payout-history', expertId],
+    queryFn: () => fetchExpertPayoutHistory(expertId),
+    enabled: Boolean(isOpen && expertId),
+  })
 
   useEffect(() => {
-    if (!isOpen || !expertId) return
+    if (!isOpen || !isError) return
+    const message = getApiErrorMessage(error) || 'Failed to load payout history'
+    if (toastedErrorRef.current === message) return
+    toastedErrorRef.current = message
+    toast.error(message)
+  }, [isOpen, isError, error])
 
-    fetchExpertPayoutHistory(expertId)
-      .then((data) => {
-        const payoutItems = data?.data?.items || data?.items || []
-        setItems(Array.isArray(payoutItems) ? payoutItems : [])
-      })
-      .catch((err) => {
-        console.error('Failed to fetch expert payout history:', err)
-        setItems([])
-      })
-      .finally(() => setLoading(false))
-  }, [isOpen, expertId])
+  useEffect(() => {
+    if (!isError) toastedErrorRef.current = null
+  }, [isError])
+
+  const payoutItems = data?.data?.items || data?.items || []
+  const items: PayoutItem[] = Array.isArray(payoutItems) ? payoutItems : []
 
   if (!isOpen) return null
 
   const handleViewDetails = (item: PayoutItem) => {
     onClose()
-    const targetId = encodeURIComponent(
-      item.id || item.payoutId?.replace('#', '') || item.bookingId || 'payout-01',
-    )
-    const targetExpertId = encodeURIComponent(expertId || item.expertId || 'EX001')
+    const targetId = encodeURIComponent(item.id || item.payoutId || '')
+    const targetExpertId = encodeURIComponent(expertId || item.expertId || '')
+    if (!targetId || !targetExpertId) {
+      toast.error('Payout reference is missing.')
+      return
+    }
     navigate(`/experts/management/payouts/${targetExpertId}/${targetId}`)
   }
 
   return (
     <>
-      {/* Backdrop */}
       <div
         className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs transition-opacity"
         onClick={onClose}
       />
 
-      {/* Drawer Panel */}
       <div className="fixed inset-y-0 right-0 z-50 flex w-full max-w-lg flex-col border-l border-white/10 bg-[#121417] text-white shadow-2xl transition-transform duration-300">
-        {/* Drawer Header */}
         <div className="flex items-start justify-between border-b border-white/10 p-5">
           <div>
             <button
@@ -77,7 +97,7 @@ export function PayoutHistoryDrawer({ isOpen, onClose, expertId }: PayoutHistory
               <span>Payout History</span>
             </button>
             <p className="mt-1 text-xs text-slate-400">
-              Track all changes and revisions made to this service before approval
+              Payments released to this expert from finance escrow / direct payouts
             </p>
           </div>
           <button
@@ -89,15 +109,22 @@ export function PayoutHistoryDrawer({ isOpen, onClose, expertId }: PayoutHistory
           </button>
         </div>
 
-        {/* Drawer Content */}
         <div className="flex-1 space-y-4 overflow-y-auto p-5">
           {loading ? (
-            <div className="flex items-center justify-center py-12 text-sm text-slate-400">
-              Loading payout history...
-            </div>
+            Array.from({ length: 3 }).map((_, index) => (
+              <div
+                key={`payout-skeleton-${index}`}
+                className="rounded-xl border border-white/10 bg-[#1A1D21] p-5"
+              >
+                <div className="h-4 w-2/3 animate-pulse rounded bg-white/10" />
+                <div className="mt-3 h-3 w-1/2 animate-pulse rounded bg-white/5" />
+                <div className="mt-2 h-3 w-2/5 animate-pulse rounded bg-white/5" />
+                <div className="mt-5 h-16 animate-pulse rounded-lg bg-white/5" />
+              </div>
+            ))
           ) : items.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center text-slate-400">
-              <p>No payout history records found.</p>
+              <p>No payout records found for this expert.</p>
             </div>
           ) : (
             items.map((item, index) => (
@@ -105,23 +132,21 @@ export function PayoutHistoryDrawer({ isOpen, onClose, expertId }: PayoutHistory
                 key={item.id || item.payoutId || `payout-${index}`}
                 className="rounded-xl border border-white/10 bg-[#1A1D21] p-5 shadow-sm transition-all hover:border-white/20"
               >
-                {/* Header Row */}
                 <div className="flex items-start justify-between gap-3">
                   <h3 className="text-base font-bold text-white">
-                    {item.serviceTitle || 'Service'}
+                    {item.serviceTitle || 'Payout'}
                   </h3>
-                  <span className="rounded-full bg-emerald-500/15 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-400">
-                    {item.status || 'Credited'}
+                  <span
+                    className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${statusBadgeClass(item.status)}`}
+                  >
+                    {item.status || 'Scheduled'}
                   </span>
                 </div>
 
-                {/* Subtitle / Details */}
                 <div className="mt-2 space-y-1 text-xs text-slate-400">
                   <p>
                     <span className="text-slate-500">Service Type:</span>{' '}
-                    <span className="font-medium text-slate-200">
-                      {item.serviceType || 'Standard'}
-                    </span>
+                    <span className="font-medium text-slate-200">{item.serviceType || '—'}</span>
                   </p>
                   {item.serviceType === 'Consultation' && (
                     <>
@@ -139,7 +164,7 @@ export function PayoutHistoryDrawer({ isOpen, onClose, expertId }: PayoutHistory
                       </p>
                     </>
                   )}
-                  {item.serviceType === 'Fixed' && (
+                  {(item.serviceType === 'Fixed' || item.serviceType === 'Tiered') && (
                     <>
                       <p>
                         <span className="text-slate-500">Service ID:</span>{' '}
@@ -191,7 +216,6 @@ export function PayoutHistoryDrawer({ isOpen, onClose, expertId }: PayoutHistory
                   )}
                 </div>
 
-                {/* Payout Details Section */}
                 <div className="mt-4 border-t border-dashed border-white/10 pt-3">
                   <h4 className="mb-2 text-xs font-semibold tracking-wider text-slate-400 uppercase">
                     Payout Details
@@ -211,7 +235,7 @@ export function PayoutHistoryDrawer({ isOpen, onClose, expertId }: PayoutHistory
                         <span className="font-semibold text-white">{item.payoutId || '—'}</span>
                       </div>
                       <div className="flex items-center gap-1.5">
-                        <User className="size-3.5 text-slate-400" />
+                        <CalendarDays className="size-3.5 text-slate-400" />
                         <span>Payout Date:</span>
                         <span className="font-semibold text-white">{item.payoutDate || '—'}</span>
                       </div>

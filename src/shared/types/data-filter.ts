@@ -64,3 +64,4 @@ export type ModuleFilterKey =
   | 'communication-management'
   | 'referral-management'
   | 'rbac-management'
+  | 'leaderboard-management'

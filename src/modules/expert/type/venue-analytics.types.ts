@@ -95,4 +95,14 @@ export interface VenueProfileAnalyticsResponse {
     bookingCategorySplit: CategorySplitItem[]
     bookingsTrend: BookingsTrendPoint[]
   }
+  profileCards?: {
+    eventsHosted: string
+    totalAttendees: string
+    repeatAttendees: string
+    upcomingEvents: string
+    eventCompletionRate: string
+    avgResponseTime: string
+    noOfEventsRejected: string
+    noOfEventsSuspended: string
+  }
 }

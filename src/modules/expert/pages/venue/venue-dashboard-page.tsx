@@ -31,23 +31,6 @@ type Metric = {
   note?: string
 }
 
-const DEFAULT_METRIC_IDS = [
-  'total-venues',
-  'active-venues',
-  'avg-utilization',
-  'events-per-venue',
-  'revenue-contribution',
-  'venue-cancellation-rate',
-  'avg-venue-rating',
-  'venue-satisfaction',
-  'peak-utilization',
-  'avg-booking-lead-time',
-  'venue-turnover-rate',
-  'off-peak-potential',
-  'repeat-booking-rate',
-  'avg-revenue-per-venue',
-]
-
 type TrendPoint = {
   month: string
   revenue: number
@@ -67,6 +50,25 @@ type VenueRow = {
   rating: number
   status: 'High Performing' | 'Stable' | 'Needs Attention'
 }
+
+const ZERO_METRICS: Metric[] = [
+  { id: 'total-venues', label: 'Total Venues', value: '0' },
+  { id: 'active-venues', label: 'Active Venues', value: '0' },
+  { id: 'avg-utilization', label: 'Avg. Utilization Rate', value: '0%' },
+  { id: 'events-per-venue', label: 'Events Per Venue', value: '0' },
+  { id: 'revenue-contribution', label: 'Revenue Contribution', value: '₹0' },
+  { id: 'venue-cancellation-rate', label: 'Venue Cancellation Rate', value: '0%' },
+  { id: 'avg-venue-rating', label: 'Avg. Venue Rating', value: '0/5' },
+  { id: 'venue-satisfaction', label: 'Venue Satisfaction Score', value: '0%' },
+  { id: 'peak-utilization', label: 'Peak Utilization Hours', value: '0' },
+  { id: 'avg-booking-lead-time', label: 'Avg. Booking Lead Time', value: '0 days' },
+  { id: 'venue-turnover-rate', label: 'Venue Turnover Rate', value: '0 hrs' },
+  { id: 'off-peak-potential', label: 'Off-Peak Potential', value: '0%' },
+  { id: 'repeat-booking-rate', label: 'Repeat Booking Rate', value: '0%' },
+  { id: 'avg-revenue-per-venue', label: 'Avg. Revenue Per Venue', value: '₹0' },
+]
+
+const DEFAULT_METRIC_IDS = ZERO_METRICS.map((metric) => metric.id)
 
 const STATUS_STYLES: Record<VenueRow['status'], string> = {
   'High Performing': 'bg-brand-positive/15 text-brand-positive border-brand-positive/20',
@@ -118,234 +120,95 @@ function MetricCard({ metric }: { metric: Metric }) {
   )
 }
 
+function MetricCardSkeleton() {
+  return (
+    <div className="rounded-brand-lg bg-brand-surface border border-white/[0.06] p-4">
+      <div className="h-3 w-28 animate-pulse rounded bg-white/10" />
+      <div className="mt-3 h-7 w-20 animate-pulse rounded bg-white/10" />
+      <div className="mt-4 h-5 w-32 animate-pulse rounded bg-white/5" />
+    </div>
+  )
+}
+
 export const VenueDashboardPage = () => {
   const navigate = useNavigate()
   const [selectedRange, setSelectedRange] = useState<string>('3')
 
-  // Fetch live venue dashboard from venue-service (port 8005)
   const dashboardQuery = useVenueDashboard({
     dateRange: selectedRange === '3' ? 'quarter' : selectedRange === '6' ? 'quarter' : 'year',
   })
   const dashboardData = dashboardQuery.data
+  const isLoading = dashboardQuery.isLoading
 
   const activeMetricIds = useActiveMetricIds(VENUE_DASHBOARD_MODULE_KEY, DEFAULT_METRIC_IDS)
+  const skeletonCount = activeMetricIds?.length || DEFAULT_METRIC_IDS.length
 
-  // ── Build live Metric cards list ──────────────────────────────────────────
   const liveMetrics: Metric[] = useMemo(() => {
-    if (!dashboardData) {
-      return [
-        {
-          id: 'total-venues',
-          label: 'Total Venues',
-          value: '—',
-          change: '6.7%',
-          changeType: 'up',
-          changeNote: 'vs last quarter',
-        },
-        {
-          id: 'active-venues',
-          label: 'Active Venues',
-          value: '—',
-          change: '5.5%',
-          changeType: 'up',
-          changeNote: 'vs last quarter',
-        },
-        {
-          id: 'avg-utilization',
-          label: 'Avg. Utilization Rate',
-          value: '—',
-          change: '8.2%',
-          changeType: 'up',
-          changeNote: 'vs last month',
-        },
-        {
-          id: 'events-per-venue',
-          label: 'Events Per Venue',
-          value: '—',
-          change: '12.5%',
-          changeType: 'up',
-          changeNote: 'vs last month',
-        },
-        {
-          id: 'revenue-contribution',
-          label: 'Revenue Contribution',
-          value: '—',
-          change: '6.8%',
-          changeType: 'up',
-          changeNote: 'vs last month',
-        },
-        {
-          id: 'venue-cancellation-rate',
-          label: 'Venue Cancellation Rate',
-          value: '—',
-          change: '8.3%',
-          changeType: 'up',
-          changeNote: 'vs last month',
-        },
-        {
-          id: 'avg-venue-rating',
-          label: 'Avg. Venue Rating',
-          value: '—',
-          change: '3.2%',
-          changeType: 'up',
-          changeNote: 'vs last month',
-        },
-        {
-          id: 'venue-satisfaction',
-          label: 'Venue Satisfaction Score',
-          value: '—',
-          change: '3.2%',
-          changeType: 'up',
-          changeNote: 'vs last quarter',
-        },
-        {
-          id: 'peak-utilization',
-          label: 'Peak Utilization Hours',
-          value: '6-8 PM',
-          note: '93% avg utilization',
-        },
-        {
-          id: 'avg-booking-lead-time',
-          label: 'Avg. Booking Lead Time',
-          value: '12 days',
-          note: 'For venue reservations',
-        },
-        {
-          id: 'venue-turnover-rate',
-          label: 'Venue Turnover Rate',
-          value: '2.3 hrs',
-          note: 'Avg. setup + cleanup',
-        },
-        {
-          id: 'off-peak-potential',
-          label: 'Off-Peak Potential',
-          value: '34%',
-          note: 'Unused capacity 9-5',
-        },
-        {
-          id: 'repeat-booking-rate',
-          label: 'Repeat Booking Rate',
-          value: '—',
-          change: '8.3%',
-          changeType: 'up',
-          changeNote: 'vs last quarter',
-        },
-        {
-          id: 'avg-revenue-per-venue',
-          label: 'Avg. Revenue Per Venue',
-          value: '—',
-          change: '3.2%',
-          changeType: 'up',
-          changeNote: 'vs last month',
-        },
-      ]
-    }
+    if (!dashboardData) return ZERO_METRICS
 
     const m = dashboardData.metrics
     return [
-      {
-        id: 'total-venues',
-        label: 'Total Venues',
-        value: String(m.totalVenues),
-        change: '6.7%',
-        changeType: 'up',
-        changeNote: 'vs last quarter',
-      },
-      {
-        id: 'active-venues',
-        label: 'Active Venues',
-        value: String(m.activeVenues),
-        change: '5.5%',
-        changeType: 'up',
-        changeNote: 'vs last quarter',
-      },
+      { id: 'total-venues', label: 'Total Venues', value: String(m.totalVenues ?? 0) },
+      { id: 'active-venues', label: 'Active Venues', value: String(m.activeVenues ?? 0) },
       {
         id: 'avg-utilization',
         label: 'Avg. Utilization Rate',
-        value: `${m.spaceUtilizationRate}%`,
-        change: '8.2%',
-        changeType: 'up',
-        changeNote: 'vs last month',
+        value: `${m.spaceUtilizationRate ?? 0}%`,
       },
       {
         id: 'events-per-venue',
         label: 'Events Per Venue',
-        value: String(m.avgEventsPerVenue),
-        change: '12.5%',
-        changeType: 'up',
-        changeNote: 'vs last month',
+        value: String(m.avgEventsPerVenue ?? 0),
       },
       {
         id: 'revenue-contribution',
         label: 'Revenue Contribution',
-        value: m.totalVenueRevenue.label,
-        change: '6.8%',
-        changeType: 'up',
-        changeNote: 'vs last month',
+        value: m.totalVenueRevenue?.label || '₹0',
       },
       {
         id: 'venue-cancellation-rate',
         label: 'Venue Cancellation Rate',
-        value: `${m.spaceCancellationRate}%`,
-        change: '8.3%',
-        changeType: 'up',
-        changeNote: 'vs last month',
+        value: `${m.spaceCancellationRate ?? 0}%`,
       },
       {
         id: 'avg-venue-rating',
         label: 'Avg. Venue Rating',
-        value: `${m.avgVenueRating}/5`,
-        change: '3.2%',
-        changeType: 'up',
-        changeNote: 'vs last month',
+        value: `${m.avgVenueRating ?? 0}/5`,
       },
       {
         id: 'venue-satisfaction',
         label: 'Venue Satisfaction Score',
-        value: `${m.venueSatisfactionScore}%`,
-        change: '3.2%',
-        changeType: 'up',
-        changeNote: 'vs last quarter',
+        value: `${m.venueSatisfactionScore ?? 0}%`,
       },
       {
         id: 'peak-utilization',
         label: 'Peak Utilization Hours',
-        value: m.peakUtilizationHours,
-        note: '93% avg utilization',
+        value: m.peakUtilizationHours || '0',
       },
       {
         id: 'avg-booking-lead-time',
         label: 'Avg. Booking Lead Time',
-        value: m.avgBookingLeadTime,
-        note: 'For venue reservations',
+        value: m.avgBookingLeadTime || '0 days',
       },
       {
         id: 'venue-turnover-rate',
         label: 'Venue Turnover Rate',
-        value: m.venueTurnoverRate,
-        note: 'Avg. setup + cleanup',
+        value: m.venueTurnoverRate || '0 hrs',
       },
       {
         id: 'off-peak-potential',
         label: 'Off-Peak Potential',
-        value: m.offPeakPotential,
-        note: 'Unused capacity 9-5',
+        value: m.offPeakPotential || '0%',
       },
       {
         id: 'repeat-booking-rate',
         label: 'Repeat Booking Rate',
-        value: `${m.repeatBookingRate}%`,
-        change: '8.3%',
-        changeType: 'up',
-        changeNote: 'vs last quarter',
+        value: `${m.repeatBookingRate ?? 0}%`,
       },
       {
         id: 'avg-revenue-per-venue',
         label: 'Avg. Revenue Per Venue',
-        value: m.avgRevenuePerVenue.label,
-        change: '3.2%',
-        changeType: 'up',
-        changeNote: 'vs last month',
+        value: m.avgRevenuePerVenue?.label || '₹0',
       },
     ]
   }, [dashboardData])
@@ -355,25 +218,15 @@ export const VenueDashboardPage = () => {
     [liveMetrics, activeMetricIds],
   )
 
-  const trendData: TrendPoint[] = useMemo(() => {
-    if (dashboardData?.trends?.length) {
-      return dashboardData.trends
-    }
-    return [
-      { month: 'Jan', revenue: 28000, avgRevenue: 24000, utilization: 68 },
-      { month: 'Feb', revenue: 34000, avgRevenue: 30000, utilization: 72 },
-      { month: 'Mar', revenue: 41000, avgRevenue: 36000, utilization: 76 },
-      { month: 'Apr', revenue: 47000, avgRevenue: 42000, utilization: 80 },
-      { month: 'May', revenue: 52000, avgRevenue: 48000, utilization: 85 },
-    ]
-  }, [dashboardData])
+  const trendData: TrendPoint[] = useMemo(
+    () => (dashboardData?.trends?.length ? dashboardData.trends : []),
+    [dashboardData],
+  )
 
-  const topVenues: VenueRow[] = useMemo(() => {
-    if (dashboardData?.topVenues?.length) {
-      return dashboardData.topVenues
-    }
-    return []
-  }, [dashboardData])
+  const topVenues: VenueRow[] = useMemo(
+    () => (dashboardData?.topVenues?.length ? dashboardData.topVenues : []),
+    [dashboardData],
+  )
 
   return (
     <div className="space-y-6">
@@ -404,9 +257,11 @@ export const VenueDashboardPage = () => {
       </div>
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4">
-        {visibleMetrics.map((metric) => (
-          <MetricCard key={metric.id} metric={metric} />
-        ))}
+        {isLoading
+          ? Array.from({ length: skeletonCount }).map((_, index) => (
+              <MetricCardSkeleton key={`venue-metric-skeleton-${index}`} />
+            ))
+          : visibleMetrics.map((metric) => <MetricCard key={metric.id} metric={metric} />)}
       </div>
 
       <div className="rounded-brand-lg bg-brand-surface border border-white/[0.06] p-5">
@@ -437,7 +292,6 @@ export const VenueDashboardPage = () => {
               className="text-muted grid size-9 place-items-center rounded-lg border border-white/10 bg-black transition-colors hover:bg-white/5"
               onClick={() => {
                 dashboardQuery.refetch()
-                toast.message('Refreshing venue trends...')
               }}
             >
               <RefreshCw
@@ -447,66 +301,74 @@ export const VenueDashboardPage = () => {
           </div>
         </div>
 
-        <div className="h-[300px] w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <ComposedChart data={trendData} margin={{ left: 8, right: 8, top: 8, bottom: 8 }}>
-              <defs>
-                <linearGradient id="revenueFill" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="var(--brand-action)" stopOpacity={0.45} />
-                  <stop offset="100%" stopColor="var(--brand-action)" stopOpacity={0.02} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid stroke="rgba(255,255,255,0.05)" vertical={false} />
-              <XAxis
-                dataKey="month"
-                tickLine={false}
-                axisLine={false}
-                tick={{ fill: 'rgba(148,163,184,0.85)', fontSize: 12 }}
-              />
-              <YAxis
-                yAxisId="left"
-                tickLine={false}
-                axisLine={false}
-                tick={{ fill: 'rgba(148,163,184,0.85)', fontSize: 12 }}
-              />
-              <YAxis
-                yAxisId="right"
-                orientation="right"
-                tickLine={false}
-                axisLine={false}
-                tick={{ fill: 'rgba(148,163,184,0.85)', fontSize: 12 }}
-              />
-              <Tooltip contentStyle={tooltipStyle} cursor={{ fill: 'rgba(255,255,255,0.03)' }} />
-              <Legend wrapperStyle={{ color: 'rgba(148,163,184,0.85)', fontSize: 12 }} />
-              <Bar
-                yAxisId="right"
-                name="Utilization %"
-                dataKey="utilization"
-                fill="var(--brand-positive)"
-                radius={[4, 4, 0, 0]}
-                barSize={28}
-              />
-              <Area
-                yAxisId="left"
-                type="monotone"
-                name="Revenue"
-                dataKey="revenue"
-                stroke="var(--brand-action)"
-                strokeWidth={2}
-                fill="url(#revenueFill)"
-              />
-              <Line
-                yAxisId="left"
-                type="monotone"
-                name="Avg Revenue/Venue"
-                dataKey="avgRevenue"
-                stroke="var(--brand-accent)"
-                strokeWidth={2}
-                dot={{ r: 3, fill: 'var(--brand-accent)' }}
-              />
-            </ComposedChart>
-          </ResponsiveContainer>
-        </div>
+        {isLoading ? (
+          <div className="h-[300px] w-full animate-pulse rounded-lg bg-white/5" />
+        ) : trendData.length === 0 ? (
+          <div className="text-muted flex h-[300px] items-center justify-center text-sm">
+            No trend data available.
+          </div>
+        ) : (
+          <div className="h-[300px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <ComposedChart data={trendData} margin={{ left: 8, right: 8, top: 8, bottom: 8 }}>
+                <defs>
+                  <linearGradient id="revenueFill" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="var(--brand-action)" stopOpacity={0.45} />
+                    <stop offset="100%" stopColor="var(--brand-action)" stopOpacity={0.02} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid stroke="rgba(255,255,255,0.05)" vertical={false} />
+                <XAxis
+                  dataKey="month"
+                  tickLine={false}
+                  axisLine={false}
+                  tick={{ fill: 'rgba(148,163,184,0.85)', fontSize: 12 }}
+                />
+                <YAxis
+                  yAxisId="left"
+                  tickLine={false}
+                  axisLine={false}
+                  tick={{ fill: 'rgba(148,163,184,0.85)', fontSize: 12 }}
+                />
+                <YAxis
+                  yAxisId="right"
+                  orientation="right"
+                  tickLine={false}
+                  axisLine={false}
+                  tick={{ fill: 'rgba(148,163,184,0.85)', fontSize: 12 }}
+                />
+                <Tooltip contentStyle={tooltipStyle} cursor={{ fill: 'rgba(255,255,255,0.03)' }} />
+                <Legend wrapperStyle={{ color: 'rgba(148,163,184,0.85)', fontSize: 12 }} />
+                <Bar
+                  yAxisId="right"
+                  name="Utilization %"
+                  dataKey="utilization"
+                  fill="var(--brand-positive)"
+                  radius={[4, 4, 0, 0]}
+                  barSize={28}
+                />
+                <Area
+                  yAxisId="left"
+                  type="monotone"
+                  name="Revenue"
+                  dataKey="revenue"
+                  stroke="var(--brand-action)"
+                  strokeWidth={2}
+                  fill="url(#revenueFill)"
+                />
+                <Line
+                  yAxisId="left"
+                  type="monotone"
+                  name="Avg Revenue/Venue"
+                  dataKey="avgRevenue"
+                  stroke="var(--brand-accent)"
+                  strokeWidth={2}
+                  dot={{ r: 3, fill: 'var(--brand-accent)' }}
+                />
+              </ComposedChart>
+            </ResponsiveContainer>
+          </div>
+        )}
       </div>
 
       <div className="rounded-brand-lg bg-brand-surface border border-white/[0.06] p-5">
@@ -523,84 +385,94 @@ export const VenueDashboardPage = () => {
             className="text-muted grid size-9 place-items-center rounded-lg border border-white/10 bg-black transition-colors hover:bg-white/5"
             onClick={() => {
               dashboardQuery.refetch()
-              toast.message('Refreshing top venues...')
             }}
           >
             <RefreshCw className={`size-3.5 ${dashboardQuery.isFetching ? 'animate-spin' : ''}`} />
           </button>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[900px] border-collapse text-left">
-            <thead>
-              <tr className="text-muted text-[10px] font-semibold tracking-wide uppercase">
-                <th className="px-3 py-3">Venue Name</th>
-                <th className="px-3 py-3">City</th>
-                <th className="px-3 py-3">Total Visits</th>
-                <th className="px-3 py-3">Event Attendance</th>
-                <th className="px-3 py-3">Bookings</th>
-                <th className="px-3 py-3">Repeat Visitors %</th>
-                <th className="px-3 py-3">Utilization %</th>
-                <th className="px-3 py-3">Revenue</th>
-                <th className="px-3 py-3">Rating</th>
-                <th className="px-3 py-3">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {topVenues.length > 0 ? (
-                topVenues.map((venue) => (
-                  <tr
-                    key={venue.name}
-                    className="text-body-sm text-brand-text border-b border-white/5 transition-colors hover:bg-white/[0.02]"
-                  >
-                    <td className="px-3 py-3 font-semibold text-white">{venue.name}</td>
-                    <td className="text-muted px-3 py-3">{venue.city}</td>
-                    <td className="px-3 py-3">{venue.totalVisits}</td>
-                    <td className="px-3 py-3">{venue.eventAttendance}</td>
-                    <td className="px-3 py-3">{venue.bookings}</td>
-                    <td className="px-3 py-3">{venue.repeatVisitors}%</td>
-                    <td className="px-3 py-3">
-                      <div className="flex items-center gap-2">
-                        <div className="h-1.5 w-20 overflow-hidden rounded-full bg-white/10">
-                          <div
-                            className="bg-brand-accent h-full rounded-full"
-                            style={{ width: `${venue.utilization}%` }}
-                          />
+        {isLoading ? (
+          <div className="space-y-3">
+            {Array.from({ length: 5 }).map((_, index) => (
+              <div
+                key={`venue-host-skeleton-${index}`}
+                className="h-10 animate-pulse rounded bg-white/5"
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[900px] border-collapse text-left">
+              <thead>
+                <tr className="text-muted text-[10px] font-semibold tracking-wide uppercase">
+                  <th className="px-3 py-3">Venue Name</th>
+                  <th className="px-3 py-3">City</th>
+                  <th className="px-3 py-3">Total Visits</th>
+                  <th className="px-3 py-3">Event Attendance</th>
+                  <th className="px-3 py-3">Bookings</th>
+                  <th className="px-3 py-3">Repeat Visitors %</th>
+                  <th className="px-3 py-3">Utilization %</th>
+                  <th className="px-3 py-3">Revenue</th>
+                  <th className="px-3 py-3">Rating</th>
+                  <th className="px-3 py-3">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {topVenues.length > 0 ? (
+                  topVenues.map((venue) => (
+                    <tr
+                      key={venue.name}
+                      className="text-body-sm text-brand-text border-b border-white/5 transition-colors hover:bg-white/[0.02]"
+                    >
+                      <td className="px-3 py-3 font-semibold text-white">{venue.name}</td>
+                      <td className="text-muted px-3 py-3">{venue.city}</td>
+                      <td className="px-3 py-3">{venue.totalVisits || 0}</td>
+                      <td className="px-3 py-3">{venue.eventAttendance || 0}</td>
+                      <td className="px-3 py-3">{venue.bookings || 0}</td>
+                      <td className="px-3 py-3">{venue.repeatVisitors || 0}%</td>
+                      <td className="px-3 py-3">
+                        <div className="flex items-center gap-2">
+                          <div className="h-1.5 w-20 overflow-hidden rounded-full bg-white/10">
+                            <div
+                              className="bg-brand-accent h-full rounded-full"
+                              style={{ width: `${venue.utilization || 0}%` }}
+                            />
+                          </div>
+                          <span className="text-body-sm text-muted">{venue.utilization || 0}%</span>
                         </div>
-                        <span className="text-body-sm text-muted">{venue.utilization}%</span>
-                      </div>
-                    </td>
-                    <td className="px-3 py-3 font-semibold text-white">{venue.revenue}</td>
-                    <td className="px-3 py-3">
-                      <span className="inline-flex items-center gap-1">
-                        <Star className="fill-brand-accent text-brand-accent size-3.5" />
-                        <span className="font-semibold text-white">{venue.rating}</span>
-                      </span>
-                    </td>
-                    <td className="px-3 py-3">
-                      <span
-                        className={cn(
-                          'inline-flex rounded-md border px-2 py-1 text-[10px] font-semibold',
-                          STATUS_STYLES[venue.status],
-                        )}
-                      >
-                        {venue.status}
-                      </span>
+                      </td>
+                      <td className="px-3 py-3 font-semibold text-white">
+                        {venue.revenue || '₹0'}
+                      </td>
+                      <td className="px-3 py-3">
+                        <span className="inline-flex items-center gap-1">
+                          <Star className="fill-brand-accent text-brand-accent size-3.5" />
+                          <span className="font-semibold text-white">{venue.rating || 0}</span>
+                        </span>
+                      </td>
+                      <td className="px-3 py-3">
+                        <span
+                          className={cn(
+                            'inline-flex rounded-md border px-2 py-1 text-[10px] font-semibold',
+                            STATUS_STYLES[venue.status] || STATUS_STYLES['Needs Attention'],
+                          )}
+                        >
+                          {venue.status}
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={10} className="text-muted py-6 text-center text-sm">
+                      No venues found
                     </td>
                   </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={10} className="py-6 text-center text-sm text-slate-400">
-                    {dashboardQuery.isLoading
-                      ? 'Loading top performing venues...'
-                      : 'No venues found'}
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   )

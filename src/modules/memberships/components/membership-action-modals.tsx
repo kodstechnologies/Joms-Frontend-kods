@@ -1,6 +1,6 @@
 import { ArrowLeft, ArrowRight, ChevronDown, X } from 'lucide-react'
 import calendarIcon from '@/assets/JOMS_ICONS-2/icons8-calendar.svg'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 
 import { useMembership, useMemberships } from '../hooks/use-memberships'
 import type { MembershipPlan } from '../types/membership'
@@ -40,6 +40,49 @@ type MembershipActionModalsProps = {
 
 const GOLD = '#f6cb86'
 const GOLD_TO = '#e0a263'
+
+function MembershipModalShell({
+  title,
+  description,
+  onClose,
+  children,
+  footer,
+}: {
+  title: string
+  description: string
+  onClose: () => void
+  children: ReactNode
+  footer: ReactNode
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
+      <div
+        className="ui-modal-shell w-full max-w-[551px] !bg-[#141414]"
+        role="dialog"
+        aria-modal="true"
+      >
+        <div className="ui-modal-header !items-start">
+          <div className="min-w-0 flex-1">
+            <h3 className="text-[20px] leading-7 font-semibold text-white">{title}</h3>
+            <p className="mt-1 text-[14px] leading-[22px] text-white/50">{description}</p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-lg p-2 text-white/50 hover:bg-white/10 hover:text-white"
+            aria-label="Close"
+          >
+            <X className="size-5" />
+          </button>
+        </div>
+
+        <div className="ui-modal-body min-h-0 space-y-5">{children}</div>
+
+        <div className="ui-modal-footer !justify-end gap-3">{footer}</div>
+      </div>
+    </div>
+  )
+}
 
 export function MembershipActionModals({
   subscription,
@@ -134,76 +177,12 @@ function MembershipActionModalsContent({
 
   if (action === 'extend') {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
-        <div className="membership-action-modal flex flex-col overflow-hidden text-white">
-          <div
-            className="flex items-start justify-between gap-3 px-6 py-5"
-            style={{ borderBottom: '1px solid rgba(255,255,255,0.1)' }}
-          >
-            <div>
-              <h3 className="text-[20px] leading-7 font-semibold">Extend</h3>
-              <p className="mt-1 text-[14px] leading-[22px] text-white/50">
-                Extend membership plan for {subscription.partnerName}
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={resetAndClose}
-              className="rounded-lg p-2 text-white/50 hover:bg-white/10 hover:text-white"
-            >
-              <X className="size-5" />
-            </button>
-          </div>
-
-          <div className="space-y-4 px-6 py-5">
-            <div className="rounded-[10px] border border-white/10 bg-white/5 p-4 text-[14px] text-white/50">
-              <p>
-                Current Plan:{' '}
-                <span className="font-semibold text-white">{subscription.planName}</span>
-              </p>
-              <p>
-                Current Cycle:{' '}
-                <span className="font-semibold text-white">{subscription.billingCycleName}</span>
-              </p>
-              <p>
-                Price:{' '}
-                <span className="font-semibold text-white">
-                  {formatCurrency(subscription.purchasedPrice)}
-                </span>
-              </p>
-            </div>
-
-            <label className="block space-y-2">
-              <span className="text-[12px] text-white/50">
-                End Date <RequiredMark />
-              </span>
-              <input
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                className="box-border h-[42px] w-full rounded-[8px] border border-white/10 bg-black px-3.5 text-[14px] text-white outline-none"
-              />
-            </label>
-
-            <ReasonTags selected={selectedReasons} onToggle={toggleReason} />
-
-            <label className="block space-y-2">
-              <span className="text-[14px] text-white">
-                Admin notes <RequiredMark />
-              </span>
-              <textarea
-                value={adminNotes}
-                onChange={(e) => setAdminNotes(e.target.value)}
-                className="box-border min-h-[119px] w-full resize-none rounded-[8px] border border-white/10 bg-black px-3.5 py-3 text-[14px] text-white outline-none"
-              />
-            </label>
-
-            <p className="text-[14px] text-white/70 italic">
-              Note: This action will be live once the super admin approves this action.
-            </p>
-          </div>
-
-          <div className="flex gap-3 px-6 pt-2 pb-6">
+      <MembershipModalShell
+        title="Extend"
+        description={`Extend membership plan for ${subscription.partnerName}`}
+        onClose={resetAndClose}
+        footer={
+          <>
             <button
               type="button"
               className="inline-flex h-10 flex-1 items-center justify-center rounded-[10px] border border-white text-[14px] font-semibold text-white hover:bg-white/5"
@@ -225,9 +204,54 @@ function MembershipActionModalsContent({
             >
               Send for approval
             </button>
-          </div>
+          </>
+        }
+      >
+        <div className="rounded-[10px] border border-white/10 bg-white/5 p-4 text-[14px] text-white/50">
+          <p>
+            Current Plan: <span className="font-semibold text-white">{subscription.planName}</span>
+          </p>
+          <p>
+            Current Cycle:{' '}
+            <span className="font-semibold text-white">{subscription.billingCycleName}</span>
+          </p>
+          <p>
+            Price:{' '}
+            <span className="font-semibold text-white">
+              {formatCurrency(subscription.purchasedPrice)}
+            </span>
+          </p>
         </div>
-      </div>
+
+        <label className="block space-y-2">
+          <span className="text-[12px] text-white/50">
+            End Date <RequiredMark />
+          </span>
+          <input
+            type="date"
+            value={endDate}
+            onChange={(e) => setEndDate(e.target.value)}
+            className="box-border h-[42px] w-full rounded-[8px] border border-white/10 bg-black px-3.5 text-[14px] text-white outline-none"
+          />
+        </label>
+
+        <ReasonTags selected={selectedReasons} onToggle={toggleReason} />
+
+        <label className="block space-y-2">
+          <span className="text-[14px] text-white">
+            Admin notes <RequiredMark />
+          </span>
+          <textarea
+            value={adminNotes}
+            onChange={(e) => setAdminNotes(e.target.value)}
+            className="box-border min-h-[119px] w-full resize-none rounded-[8px] border border-white/10 bg-black px-3.5 py-3 text-[14px] text-white outline-none"
+          />
+        </label>
+
+        <p className="text-[14px] text-white/70 italic">
+          Note: This action will be live once the super admin approves this action.
+        </p>
+      </MembershipModalShell>
     )
   }
 
@@ -251,84 +275,16 @@ function MembershipActionModalsContent({
     )
 
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
-        <div className="membership-action-modal flex flex-col overflow-hidden text-white">
-          <div
-            className="flex items-start justify-between gap-3 px-6 py-5"
-            style={{ borderBottom: '1px solid rgba(255,255,255,0.1)' }}
-          >
-            <div>
-              <h3 className="text-[20px] leading-7 font-semibold">
-                {isUpgrade ? 'Upgrade Plan' : 'Downgrade Plan'}
-              </h3>
-              <p className="mt-1 text-[14px] leading-[22px] text-white/50">
-                {isUpgrade
-                  ? 'Upgrade membership plans for the users'
-                  : 'Downgrade membership plans for the users'}
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={resetAndClose}
-              className="rounded-lg p-2 text-white/50 hover:bg-white/10 hover:text-white"
-              aria-label="Close"
-            >
-              <X className="size-5" />
-            </button>
-          </div>
-
-          <div className="space-y-5 px-6 py-5">
-            {/* Figma: Upgrade = current → target | Downgrade = target ← current */}
-            <div className="flex items-start justify-center gap-6 pt-2">
-              {isUpgrade ? currentCard : targetCard}
-
-              <div className="flex h-[106px] items-center">
-                {isUpgrade ? (
-                  <ArrowRight className="size-5 text-white/80" strokeWidth={1.75} />
-                ) : (
-                  <ArrowLeft className="size-5 text-white/80" strokeWidth={1.75} />
-                )}
-              </div>
-
-              {isUpgrade ? targetCard : currentCard}
-            </div>
-
-            {selectedPlan && selectedPlan.pricing.length > 1 ? (
-              <label className="block space-y-2">
-                <span className="text-[12px] text-white/50">Billing Cycle</span>
-                <select
-                  value={billingCycleName}
-                  onChange={(e) => setBillingCycleName(e.target.value)}
-                  className="box-border h-[42px] w-full rounded-[8px] border border-white/10 bg-black px-3.5 text-[14px] text-white outline-none"
-                >
-                  {selectedPlan.pricing.map((item) => (
-                    <option key={item.billingCycleName} value={item.billingCycleName}>
-                      {item.billingCycleName}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            ) : null}
-
-            <ReasonTags selected={selectedReasons} onToggle={toggleReason} />
-
-            <label className="block space-y-2">
-              <span className="text-[14px] text-white">
-                Admin notes <RequiredMark />
-              </span>
-              <textarea
-                value={adminNotes}
-                onChange={(e) => setAdminNotes(e.target.value)}
-                className="box-border min-h-[119px] w-full resize-none rounded-[8px] border border-white/10 bg-black px-3.5 py-3 text-[14px] text-white outline-none"
-              />
-            </label>
-
-            <p className="text-[14px] text-white/70 italic">
-              Note: This action will be live once the super admin approves this action.
-            </p>
-          </div>
-
-          <div className="flex gap-3 px-6 pt-1 pb-6">
+      <MembershipModalShell
+        title={isUpgrade ? 'Upgrade Plan' : 'Downgrade Plan'}
+        description={
+          isUpgrade
+            ? 'Upgrade membership plans for the users'
+            : 'Downgrade membership plans for the users'
+        }
+        onClose={resetAndClose}
+        footer={
+          <>
             <button
               type="button"
               className="inline-flex h-10 flex-1 items-center justify-center rounded-[10px] border border-white text-[14px] font-semibold text-white hover:bg-white/5"
@@ -355,78 +311,68 @@ function MembershipActionModalsContent({
             >
               Send for approval
             </button>
+          </>
+        }
+      >
+        {/* Figma: Upgrade = current → target | Downgrade = target ← current */}
+        <div className="flex items-start justify-center gap-6 pt-2">
+          {isUpgrade ? currentCard : targetCard}
+
+          <div className="flex h-[106px] items-center">
+            {isUpgrade ? (
+              <ArrowRight className="size-5 text-white/80" strokeWidth={1.75} />
+            ) : (
+              <ArrowLeft className="size-5 text-white/80" strokeWidth={1.75} />
+            )}
           </div>
+
+          {isUpgrade ? targetCard : currentCard}
         </div>
-      </div>
+
+        {selectedPlan && selectedPlan.pricing.length > 1 ? (
+          <label className="block space-y-2">
+            <span className="text-[12px] text-white/50">Billing Cycle</span>
+            <select
+              value={billingCycleName}
+              onChange={(e) => setBillingCycleName(e.target.value)}
+              className="box-border h-[42px] w-full rounded-[8px] border border-white/10 bg-black px-3.5 text-[14px] text-white outline-none"
+            >
+              {selectedPlan.pricing.map((item) => (
+                <option key={item.billingCycleName} value={item.billingCycleName}>
+                  {item.billingCycleName}
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : null}
+
+        <ReasonTags selected={selectedReasons} onToggle={toggleReason} />
+
+        <label className="block space-y-2">
+          <span className="text-[14px] text-white">
+            Admin notes <RequiredMark />
+          </span>
+          <textarea
+            value={adminNotes}
+            onChange={(e) => setAdminNotes(e.target.value)}
+            className="box-border min-h-[119px] w-full resize-none rounded-[8px] border border-white/10 bg-black px-3.5 py-3 text-[14px] text-white outline-none"
+          />
+        </label>
+
+        <p className="text-[14px] text-white/70 italic">
+          Note: This action will be live once the super admin approves this action.
+        </p>
+      </MembershipModalShell>
     )
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
-      <div
-        className="membership-action-modal flex flex-col overflow-hidden text-white"
-        role="dialog"
-        aria-modal="true"
-      >
-        <div
-          className="flex items-start justify-between gap-3 px-6 py-5"
-          style={{ borderBottom: '1px solid rgba(255,255,255,0.1)' }}
-        >
-          <div>
-            <h3 className="text-[20px] leading-7 font-semibold">Cancel Plan</h3>
-            <p className="mt-1 text-[14px] leading-[22px] text-white/50">
-              Cancel membership plans for the users
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={resetAndClose}
-            className="rounded-lg p-2 text-white/50 hover:bg-white/10 hover:text-white"
-            aria-label="Close"
-          >
-            <X className="size-5" />
-          </button>
-        </div>
-
-        <div className="space-y-5 px-6 py-5">
-          <div className="flex flex-col items-center gap-3 pt-1 text-center">
-            <span className="inline-flex size-14 items-center justify-center rounded-full bg-[#d3191c]">
-              <X className="size-7 text-white" strokeWidth={2.5} />
-            </span>
-            <div className="max-w-[420px] space-y-1">
-              <p className="text-[16px] leading-6 font-semibold text-white">
-                Are you sure you want to cancel this user&apos;s plan?
-              </p>
-              <p className="text-[14px] leading-[22px] text-white/50">
-                This will result in cancel the membership of this account.
-              </p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <CancelDateField label="From" value={fromDate} onChange={setFromDate} />
-            <CancelDateField label="To" value={toDate} onChange={setToDate} />
-          </div>
-
-          <ReasonTags selected={selectedReasons} onToggle={toggleReason} />
-
-          <label className="block space-y-2">
-            <span className="text-[14px] text-white">
-              Admin notes <RequiredMark />
-            </span>
-            <textarea
-              value={adminNotes}
-              onChange={(e) => setAdminNotes(e.target.value)}
-              className="box-border min-h-[119px] w-full resize-none rounded-[8px] border border-white/10 bg-black px-3.5 py-3 text-[14px] text-white outline-none focus:border-white/30"
-            />
-          </label>
-
-          <p className="text-[14px] text-white/70 italic">
-            Note: This action will be live once the super admin approves this action.
-          </p>
-        </div>
-
-        <div className="flex gap-3 px-6 pt-1 pb-6">
+    <MembershipModalShell
+      title="Cancel Plan"
+      description="Cancel membership plans for the users"
+      onClose={resetAndClose}
+      footer={
+        <>
           <button
             type="button"
             className="inline-flex h-10 flex-1 items-center justify-center rounded-[10px] border border-white text-[14px] font-semibold text-white hover:bg-white/5"
@@ -451,9 +397,45 @@ function MembershipActionModalsContent({
           >
             Send for Approval
           </button>
+        </>
+      }
+    >
+      <div className="flex flex-col items-center gap-3 pt-1 text-center">
+        <span className="inline-flex size-14 items-center justify-center rounded-full bg-[#d3191c]">
+          <X className="size-7 text-white" strokeWidth={2.5} />
+        </span>
+        <div className="max-w-[420px] space-y-1">
+          <p className="text-[16px] leading-6 font-semibold text-white">
+            Are you sure you want to cancel this user&apos;s plan?
+          </p>
+          <p className="text-[14px] leading-[22px] text-white/50">
+            This will result in cancel the membership of this account.
+          </p>
         </div>
       </div>
-    </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <CancelDateField label="From" value={fromDate} onChange={setFromDate} />
+        <CancelDateField label="To" value={toDate} onChange={setToDate} />
+      </div>
+
+      <ReasonTags selected={selectedReasons} onToggle={toggleReason} />
+
+      <label className="block space-y-2">
+        <span className="text-[14px] text-white">
+          Admin notes <RequiredMark />
+        </span>
+        <textarea
+          value={adminNotes}
+          onChange={(e) => setAdminNotes(e.target.value)}
+          className="box-border min-h-[119px] w-full resize-none rounded-[8px] border border-white/10 bg-black px-3.5 py-3 text-[14px] text-white outline-none focus:border-white/30"
+        />
+      </label>
+
+      <p className="text-[14px] text-white/70 italic">
+        Note: This action will be live once the super admin approves this action.
+      </p>
+    </MembershipModalShell>
   )
 }
 

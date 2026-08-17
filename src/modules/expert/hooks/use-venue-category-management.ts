@@ -34,12 +34,12 @@ const invalidateVenueCategories = (queryClient: ReturnType<typeof useQueryClient
   queryClient.invalidateQueries({ queryKey: ['venue-categories'] })
 }
 
-export const useVenueCategoryManagementList = (params?: { search?: string }) =>
+export const useVenueCategoryManagementList = (params?: Record<string, unknown>) =>
   useQuery({
     queryKey: [VENUE_CATEGORY_QUERY_KEY, 'list', params],
     queryFn: () =>
       fetchVenueCategoryList({
-        search: params?.search,
+        ...params,
         page: 1,
         limit: 200,
       }),
@@ -51,18 +51,26 @@ export const useVenueCategoryManagementList = (params?: { search?: string }) =>
     }),
   })
 
-export const usePausedVenueCategoryList = () =>
+export const usePausedVenueCategoryList = (params?: Record<string, unknown>) =>
   useQuery({
-    queryKey: [VENUE_CATEGORY_QUERY_KEY, 'paused'],
-    queryFn: fetchPausedVenueCategories,
-    select: (response) => (response.data || []).map(mapVenueCategoryToUi),
+    queryKey: [VENUE_CATEGORY_QUERY_KEY, 'paused', params],
+    queryFn: () => fetchPausedVenueCategories(params),
+    select: (response) => ({
+      categories: (response.data || []).map(mapVenueCategoryToUi),
+      pagination: response.meta,
+      message: response.message,
+    }),
   })
 
-export const useDeletedVenueCategoryList = () =>
+export const useDeletedVenueCategoryList = (params?: Record<string, unknown>) =>
   useQuery({
-    queryKey: [VENUE_CATEGORY_QUERY_KEY, 'deleted'],
-    queryFn: fetchDeletedVenueCategories,
-    select: (response) => (response.data || []).map(mapVenueCategoryToUi),
+    queryKey: [VENUE_CATEGORY_QUERY_KEY, 'deleted', params],
+    queryFn: () => fetchDeletedVenueCategories(params),
+    select: (response) => ({
+      categories: (response.data || []).map(mapVenueCategoryToUi),
+      pagination: response.meta,
+      message: response.message,
+    }),
   })
 
 export const useVenueCategoryDetails = () =>

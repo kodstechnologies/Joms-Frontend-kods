@@ -2,18 +2,43 @@ import { ArrowLeft } from 'lucide-react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 
-import { TicketPriorityBadge } from '../components/ticket-priority-badge'
 import { TicketStatusBadge } from '../components/ticket-status-badge'
-import { chatMessagesMock, closedTicketMock, supportTicketsMock } from '../mock/support.mock'
+import {
+  useReopenSupportTicket,
+  useResolveSupportTicket,
+  useSupportTicket,
+  useLiveSupportUpdates,
+} from '../hooks/use-support'
+import { getApiErrorMessage, getPriorityLabel } from '../utils/support-format'
 import { cn } from '@/shared/lib/cn'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 
 export function TicketDetailPage() {
   const navigate = useNavigate()
   const { id } = useParams<{ id: string }>()
-  const ticket =
-    supportTicketsMock.find((t) => t.id === id) ??
-    (id === closedTicketMock.id ? closedTicketMock : closedTicketMock)
+  const { data, isLoading } = useSupportTicket(id)
+  useLiveSupportUpdates()
+  const reopenMutation = useReopenSupportTicket()
+  const resolveMutation = useResolveSupportTicket()
+
+  const ticket = data?.data?.ticket
+  const messages = data?.data?.messages ?? []
+
+  if (isLoading && !ticket) {
+    return (
+      <div className="space-y-6">
+        <p className="text-body-md text-muted">Loading ticket…</p>
+      </div>
+    )
+  }
+
+  if (!ticket) {
+    return (
+      <div className="space-y-6">
+        <p className="text-body-md text-muted">Ticket not found.</p>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">
@@ -49,17 +74,17 @@ export function TicketDetailPage() {
         {/* Detail pills row */}
         <div className="flex flex-wrap gap-3">
           <InfoPill label="Subject" value={ticket.subject} width={203} />
-          <InfoPill label="Category" value={ticket.category} width={67} />
-          <InfoPill
-            label="Priority"
-            value={<TicketPriorityBadge priority={ticket.priority} />}
-            width={70}
-          />
+          <InfoPill label="Category" value={ticket.category} width={110} />
+          <InfoPill label="Priority" value={getPriorityLabel(ticket.priority)} width={70} />
           <InfoPill label="Requester" value={ticket.reporter} width={108} />
           <InfoPill label="Assigned To" value={ticket.assignedTo ?? '—'} width={196} />
           <InfoPill label="Created On" value={ticket.createdAt} width={126} />
-          <InfoPill label="Assigned On" value={ticket.createdAt} width={126} />
-          {ticket.status === 'closed' && (
+          <InfoPill
+            label="Assigned On"
+            value={ticket.assignedAt ? ticket.createdAt : ticket.createdAt}
+            width={126}
+          />
+          {(ticket.status === 'closed' || ticket.status === 'resolved') && (
             <InfoPill label="Resolved On" value={ticket.createdAt} width={126} />
           )}
         </div>
@@ -77,39 +102,70 @@ export function TicketDetailPage() {
       <section className="space-y-3">
         <h2 className="text-body-md-semibold text-brand-text">Conversation History</h2>
         <div className="radius-lg bg-brand-surface space-y-4 border border-white/[0.06] p-5">
-          {chatMessagesMock.map((msg) => (
-            <div
-              key={msg.id}
-              className={cn('flex gap-3', msg.role === 'agent' ? 'flex-row-reverse' : 'flex-row')}
-            >
-              {/* Avatar */}
-              <div className="size-[50px] shrink-0 rounded-full bg-white/10" />
+          {messages.length === 0 ? (
+            <p className="text-body-md text-muted">No messages yet.</p>
+          ) : (
+            messages.map((msg) => (
               <div
-                className={cn(
-                  'flex min-w-0 flex-1 flex-col gap-1',
-                  msg.role === 'agent' ? 'items-end' : 'items-start',
-                )}
+                key={msg.id}
+                className={cn('flex gap-3', msg.role === 'agent' ? 'flex-row-reverse' : 'flex-row')}
               >
-                <div className="flex items-center gap-2">
-                  <span className="text-body-sm-semibold text-brand-text">{msg.sender}</span>
-                  <span
-                    className={cn(
-                      'text-body-sm-semibold inline-flex h-5 items-center rounded px-2 uppercase',
-                      msg.role === 'user'
-                        ? 'bg-brand-positive/15 text-brand-positive'
-                        : 'bg-brand-action/15 text-brand-action',
-                    )}
-                  >
-                    {msg.role}
-                  </span>
+                {/* Avatar */}
+                <div className="size-[50px] shrink-0 rounded-full bg-white/10" />
+                <div
+                  className={cn(
+                    'flex min-w-0 flex-1 flex-col gap-1',
+                    msg.role === 'agent' ? 'items-end' : 'items-start',
+                  )}
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-body-sm-semibold text-brand-text">{msg.sender}</span>
+                    <span
+                      className={cn(
+                        'text-body-sm-semibold inline-flex h-5 items-center rounded px-2 uppercase',
+                        msg.role === 'user'
+                          ? 'bg-brand-positive/15 text-brand-positive'
+                          : 'bg-brand-action/15 text-brand-action',
+                      )}
+                    >
+                      {msg.role}
+                    </span>
+                  </div>
+                  <div className="radius-lg bg-brand-bg text-body-md text-brand-text/80 w-full border border-white/[0.06] px-4 py-3">
+                    {msg.content &&
+                    msg.content !== '[Image]' &&
+                    msg.content !== '[Attachment]' &&
+                    !msg.attachments?.some((file) => file.name && file.name === msg.content)
+                      ? msg.content
+                      : null}
+                    {msg.attachments?.map((file) => {
+                      const isImage =
+                        String(file.mimeType || '').startsWith('image/') ||
+                        /\.(png|jpe?g|gif|webp|bmp|svg|heic|heif|avif)$/i.test(
+                          String(file.name || file.url || ''),
+                        )
+                      return (
+                        <a key={file.url} href={file.url} target="_blank" rel="noreferrer">
+                          {isImage ? (
+                            <img
+                              src={file.url}
+                              alt={file.name || 'Attachment'}
+                              className="mt-2 max-h-48 rounded-md"
+                            />
+                          ) : (
+                            <span className="text-brand-accent mt-2 inline-block underline">
+                              {file.name || 'Download file'}
+                            </span>
+                          )}
+                        </a>
+                      )
+                    })}
+                  </div>
+                  <span className="text-body-sm text-muted">{msg.time}</span>
                 </div>
-                <div className="radius-lg bg-brand-bg text-body-md text-brand-text/80 w-full border border-white/[0.06] px-4 py-3">
-                  {msg.content}
-                </div>
-                <span className="text-body-sm text-muted">{msg.time}</span>
               </div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
       </section>
 
@@ -127,14 +183,35 @@ export function TicketDetailPage() {
       <div className="flex items-center justify-between border-t border-white/[0.06] pt-5">
         <button
           type="button"
-          onClick={() => toast.message('Close coming soon')}
+          disabled={
+            resolveMutation.isPending || ticket.status === 'resolved' || ticket.status === 'closed'
+          }
+          onClick={async () => {
+            try {
+              await resolveMutation.mutateAsync({
+                id: ticket.id,
+                payload: { resolution: ticket.resolution || ticket.comments },
+              })
+              toast.success('Ticket closed')
+            } catch (err) {
+              toast.error(getApiErrorMessage(err, 'Failed to close ticket'))
+            }
+          }}
           className="ui-cta ui-cta-ghost"
         >
           Close
         </button>
         <button
           type="button"
-          onClick={() => toast.success('Ticket reopened (static preview)')}
+          disabled={reopenMutation.isPending}
+          onClick={async () => {
+            try {
+              await reopenMutation.mutateAsync(ticket.id)
+              toast.success('Ticket reopened')
+            } catch (err) {
+              toast.error(getApiErrorMessage(err, 'Failed to reopen ticket'))
+            }
+          }}
           className="ui-cta ui-cta-primary"
         >
           Reopen

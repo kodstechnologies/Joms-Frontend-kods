@@ -5,6 +5,7 @@ import {
   fetchExpertConsultations,
   fetchExpertProfile,
   fetchExpertServices,
+  fetchPartnerInsights,
 } from '../api/expert-api'
 
 export const useExpertProfile = (id?: string) =>
@@ -19,6 +20,16 @@ export const useExpertAnalytics = (expertId?: string, timeRange?: string) =>
     queryKey: ['expert-analytics', expertId, timeRange],
     queryFn: () => fetchExpertAnalytics(expertId as string, timeRange),
     enabled: Boolean(expertId),
+  })
+
+export const usePartnerInsights = (
+  partnerUserId?: string,
+  sort: 'recent' | 'top' | 'all' = 'recent',
+) =>
+  useQuery({
+    queryKey: ['partner-insights', partnerUserId, sort],
+    queryFn: () => fetchPartnerInsights(partnerUserId as string, { sort, limit: 20 }),
+    enabled: Boolean(partnerUserId),
   })
 
 export const useExpertServices = (expertId?: string, page = 1, limit = 10, enabled = false) =>

@@ -35,6 +35,8 @@ export const expertApiClient = createApiClient(env.serviceApiBaseUrl)
 export const adminApiClient = createApiClient(env.adminApiBaseUrl)
 export const venueApiClient = createApiClient(env.venueApiBaseUrl)
 
+export const profileApiClient = createApiClient(env.profileApiBaseUrl)
+
 export const kycApiClient = createApiClient(env.kycApiBaseUrl)
 
 export const membershipApiClient = createApiClient(env.membershipApiBaseUrl)

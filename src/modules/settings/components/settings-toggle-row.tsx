@@ -7,7 +7,38 @@ type SettingsToggleRowProps = {
   onChange: (checked: boolean) => void
   indented?: boolean
   boxed?: boolean
+  showCaption?: boolean
   className?: string
+}
+
+export function SettingsToggle({
+  checked,
+  onChange,
+  ariaLabel,
+  showCaption = true,
+}: {
+  checked: boolean
+  onChange: (checked: boolean) => void
+  ariaLabel: string
+  showCaption?: boolean
+}) {
+  return (
+    <div className="settings-switch-wrap">
+      <button
+        type="button"
+        role="switch"
+        aria-checked={checked}
+        aria-label={ariaLabel}
+        onClick={() => onChange(!checked)}
+        className={cn('settings-switch', checked && 'is-on')}
+      >
+        <span className="settings-switch-knob" />
+      </button>
+      {showCaption ? (
+        <span className="settings-switch-caption">{checked ? 'ON' : 'OFF'}</span>
+      ) : null}
+    </div>
+  )
 }
 
 export function SettingsToggleRow({
@@ -17,40 +48,28 @@ export function SettingsToggleRow({
   onChange,
   indented = false,
   boxed = false,
+  showCaption = true,
   className,
 }: SettingsToggleRowProps) {
   return (
     <div
       className={cn(
-        'flex items-center justify-between gap-4',
-        boxed
-          ? 'settings-maintenance-row'
-          : 'items-start border-b border-white/5 py-3 last:border-b-0',
-        indented && 'ml-4 border-l border-white/10 pl-4',
+        'flex items-center justify-between gap-3 sm:gap-4',
+        boxed ? 'settings-maintenance-row' : 'border-b border-white/5 py-3.5 last:border-b-0',
+        indented && 'ml-3 border-l border-white/10 pl-3 sm:ml-4 sm:pl-4',
         className,
       )}
     >
-      <div className="min-w-0 space-y-1">
-        <p className={boxed ? 'settings-toggle-title' : 'settings-field-label'}>{label}</p>
+      <div className="min-w-0 flex-1 space-y-1">
+        <p className="settings-toggle-title">{label}</p>
         {description ? <p className="settings-toggle-description">{description}</p> : null}
       </div>
-      <button
-        type="button"
-        role="switch"
-        aria-checked={checked}
-        onClick={() => onChange(!checked)}
-        className={cn(
-          'relative h-6 w-11 shrink-0 rounded-full transition-colors',
-          checked ? 'bg-emerald-500' : 'bg-white/15',
-        )}
-      >
-        <span
-          className={cn(
-            'absolute top-0.5 left-0.5 size-5 rounded-full bg-white transition-transform',
-            checked && 'translate-x-5',
-          )}
-        />
-      </button>
+      <SettingsToggle
+        checked={checked}
+        onChange={onChange}
+        ariaLabel={label}
+        showCaption={showCaption}
+      />
     </div>
   )
 }

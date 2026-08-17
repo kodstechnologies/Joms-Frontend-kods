@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 
 import { NotificationGroupCard } from './notification-group-card'
 import type { NotificationSettings } from '../types/settings'
-import { settingsControlClass } from './settings-field-row'
+import { settingsControlClass } from './settings-control-classes'
 
 type NotificationSettingsPanelProps = {
   value: NotificationSettings

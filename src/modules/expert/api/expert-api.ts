@@ -1,10 +1,11 @@
-import { adminApiClient } from '@/shared/lib/axios'
+import { adminApiClient, profileApiClient } from '@/shared/lib/axios'
 import type { ExpertResponse } from '../type/expert'
 import type {
   ExpertAnalyticsResponse,
   ExpertConsultationsResponse,
   ExpertProfileResponse,
   ExpertServicesResponse,
+  PartnerInsightsResponse,
 } from '../type/expert-profile'
 
 export const fetchExperts = async (params?: Record<string, unknown>) => {
@@ -31,6 +32,23 @@ export const fetchExpertAnalytics = async (expertId: string, timeRange?: string)
   const response = await adminApiClient.get<ExpertAnalyticsResponse>(
     `/admin/internal/admin/partners/${expertId}/analytics`,
     { params: timeRange ? { timeRange } : undefined },
+  )
+  return response.data
+}
+
+export const fetchPartnerInsights = async (
+  partnerUserId: string,
+  params?: { sort?: 'recent' | 'top' | 'all'; page?: number; limit?: number },
+) => {
+  const response = await profileApiClient.get<PartnerInsightsResponse>(
+    `/profile/${partnerUserId}/insights`,
+    {
+      params: {
+        sort: params?.sort || 'recent',
+        page: params?.page || 1,
+        limit: params?.limit || 20,
+      },
+    },
   )
   return response.data
 }
@@ -100,6 +118,16 @@ export const suspendExpert = async (id: string, payload: SuspendExpertPayload) =
     `/admin/internal/admin/partners/${id}/suspend`,
     payload,
   )
+  return response.data
+}
+
+export const blockExpert = async (id: string) => {
+  const response = await adminApiClient.patch(`/admin/internal/admin/partners/${id}/block`)
+  return response.data
+}
+
+export const forceLogoutExpert = async (id: string) => {
+  const response = await adminApiClient.post(`/admin/internal/admin/partners/${id}/force-logout`)
   return response.data
 }
 
@@ -231,6 +259,11 @@ export type BulkActionPayload = {
   ticketSubject?: string
   priority?: string
   targetAdminId?: string
+  assigneeSubAdminId?: string
+  assigneeName?: string
+  applicationUrl?: string
+  entityTitle?: string
+  escalationTarget?: 'kyc' | 'banking' | 'application'
 }
 
 export const bulkSuspendExperts = async (payload: BulkActionPayload) => {

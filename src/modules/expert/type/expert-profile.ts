@@ -196,6 +196,15 @@ export type ExpertAnalyticsData = {
     repeatClientRate?: { percentage?: number; trendPercentage?: number; available?: boolean }
     orderCompletionRate?: { percentage?: number; trendPercentage?: number; available?: boolean }
   }
+  marketplacePerformance?: {
+    servicesListed?: number
+    activeServices?: number
+    proposalsCreated?: number
+    ordersCompleted?: number
+    ordersInProgress?: number
+    terminatedOrders?: number
+    conversionRate?: number
+  }
   listingOverview?: {
     servicesListed?: number
     consultationsListed?: number
@@ -220,10 +229,27 @@ export type ExpertAnalyticsData = {
     detractors?: number
   }
   nps?: {
-    score?: number
+    score?: number | null
+    available?: boolean
     promoters?: number
     passives?: number
     detractors?: number
+  }
+  charts?: {
+    revenueTrend?: Array<{ date?: string; month?: string; revenue?: number }>
+    conversionFunnel?: {
+      profileViews?: number
+      listingViews?: number
+      ordersCount?: number
+      dropOffProfileToListing?: number
+      dropOffListingToOrder?: number
+    }
+    mostActiveTime?: Array<{ day?: string; hours?: number; count?: number }>
+    topClientViewsByLocation?: Array<{ location?: string; views?: number }>
+    topClientViewsByProfession?: Array<{ profession?: string; views?: number }>
+    ordersByMembershipType?: Array<{ tier?: string; count?: number }>
+    revenueByListings?: Array<{ listingName?: string; revenue?: number }>
+    servicePerformance?: Array<{ serviceName?: string; ordersCount?: number }>
   }
 }
 
@@ -231,4 +257,44 @@ export type ExpertAnalyticsResponse = {
   success?: boolean
   message?: string
   data: ExpertAnalyticsData
+}
+
+export type PartnerInsightReview = {
+  id: string
+  rating: number
+  text: string
+  userName: string
+  userAvatarUrl?: string | null
+  engagementType?: string
+  engagementId?: string
+  sessionId?: string
+  title?: string
+  createdAt?: string
+  relativeLabel?: string | null
+}
+
+export type PartnerInsightsData = {
+  partnerUserId?: string
+  venueId?: string
+  ratingsSummary: {
+    average: number
+    count: number
+    available: boolean
+  }
+  reviews: PartnerInsightReview[]
+  pagination?: {
+    page: number
+    limit: number
+    total: number
+    totalPages: number
+  }
+  metrics?: {
+    nps?: { score: number | null; available: boolean }
+  }
+}
+
+export type PartnerInsightsResponse = {
+  success?: boolean
+  message?: string
+  data: PartnerInsightsData
 }

@@ -1,142 +1,134 @@
+import { useEffect, useMemo, useState } from 'react'
 import {
   ArrowUpDown,
   BarChart3,
+  CalendarDays,
   Download,
+  ExternalLink,
   Search,
   SlidersHorizontal,
   Star,
+  TrendingUp,
+  Trophy,
   UserRound,
+  Users,
+  X,
 } from 'lucide-react'
-import { useLocation, useNavigate } from 'react-router-dom'
-import { toast } from 'sonner'
+import { useNavigate, useLocation } from 'react-router-dom'
 
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
+import { exportDataToFile } from '@/shared/utils/export-utils'
 
 import rank2Icon from '@/assets/JOMS_ADMIN_PANEL_3D_ICONS/change-the-engraved-gold-number--1--on-the-circula (1).png'
 import rank3Icon from '@/assets/JOMS_ADMIN_PANEL_3D_ICONS/change-the-engraved-gold-number--2--on-the-circula (1).png'
 import rank1Icon from '@/assets/JOMS_ADMIN_PANEL_3D_ICONS/create-a-high-quality-3d-icon-of-a-gold-trophy-wit 2.png'
 
-type PodiumExpert = {
-  rank: 1 | 2 | 3
-  name: string
-  profession: string
-  score: number
-}
-
-const PODIUM: PodiumExpert[] = [
-  { rank: 2, name: 'Sara Johnson', profession: 'Travel - Bangalore', score: 992 },
-  { rank: 1, name: 'Sara Johnson', profession: 'Travel - Bangalore', score: 999 },
-  { rank: 3, name: 'Sara Johnson', profession: 'Travel - Bangalore', score: 992 },
-]
-
-type LeaderRow = {
-  rank: number
-  expertId: string
-  name: string
-  category: string
-  events: number
-  rating: number
-  score: number
-}
-
-const ROWS: LeaderRow[] = [
-  {
-    rank: 1,
-    expertId: 'EXP-0003',
-    name: 'Sara Johnson',
-    category: 'Legal',
-    events: 116,
-    rating: 4.8,
-    score: 999,
-  },
-  {
-    rank: 2,
-    expertId: 'EXP-0003',
-    name: 'Sara Johnson',
-    category: 'Legal',
-    events: 67,
-    rating: 4.8,
-    score: 995,
-  },
-  {
-    rank: 3,
-    expertId: 'EXP-0003',
-    name: 'Sara Johnson',
-    category: 'Legal',
-    events: 90,
-    rating: 4.8,
-    score: 991,
-  },
-  {
-    rank: 4,
-    expertId: 'EXP-0003',
-    name: 'Sara Johnson',
-    category: 'Legal',
-    events: 101,
-    rating: 4.8,
-    score: 986,
-  },
-  {
-    rank: 5,
-    expertId: 'EXP-0003',
-    name: 'Sara Johnson',
-    category: 'Legal',
-    events: 18,
-    rating: 4.8,
-    score: 981,
-  },
-  {
-    rank: 6,
-    expertId: 'EXP-0003',
-    name: 'Sara Johnson',
-    category: 'Legal',
-    events: 38,
-    rating: 4.8,
-    score: 975,
-  },
-  {
-    rank: 7,
-    expertId: 'EXP-0003',
-    name: 'Sara Johnson',
-    category: 'Legal',
-    events: 38,
-    rating: 4.8,
-    score: 970,
-  },
-  {
-    rank: 8,
-    expertId: 'EXP-0003',
-    name: 'Sara Johnson',
-    category: 'Legal',
-    events: 38,
-    rating: 4.8,
-    score: 964,
-  },
-  {
-    rank: 9,
-    expertId: 'EXP-0003',
-    name: 'Sara Johnson',
-    category: 'Legal',
-    events: 38,
-    rating: 4.8,
-    score: 959,
-  },
-  {
-    rank: 10,
-    expertId: 'EXP-0003',
-    name: 'Sara Johnson',
-    category: 'Legal',
-    events: 38,
-    rating: 4.8,
-    score: 953,
-  },
-]
+import { useExpertLeaderboard, useExpertLeaderboardProfile } from '../../hooks/use-leaderboard'
+import type {
+  ExpertLeaderboardQuery,
+  LeaderboardDateRange,
+  LeaderboardRankingMetric,
+  LeaderboardRow,
+} from '../../type/leaderboard'
+import { toast } from 'sonner'
 
 const RANK_BADGE_STYLES: Record<number, string> = {
   1: 'bg-brand-accent text-brand-text-dark',
   2: 'bg-brand-gold-from text-brand-text-dark',
   3: 'bg-brand-gold-to text-brand-text-dark',
+}
+
+const RANKING_OPTIONS: Array<{ value: LeaderboardRankingMetric; label: string }> = [
+  { value: 'score', label: 'Performance Score' },
+  { value: 'ordersCompleted', label: 'Orders Completed' },
+  { value: 'revenue', label: 'Revenue' },
+  { value: 'rating', label: 'Rating' },
+  { value: 'clientSatisfaction', label: 'Client Satisfaction' },
+  { value: 'profileHealth', label: 'Profile Health' },
+  { value: 'repeatClientRate', label: 'Repeat Client Rate' },
+]
+
+const DATE_OPTIONS: Array<{ value: LeaderboardDateRange; label: string }> = [
+  { value: 'today', label: 'Today' },
+  { value: 'last7', label: 'Last 7 Days' },
+  { value: 'last30', label: 'Last 30 Days' },
+  { value: 'thisMonth', label: 'This Month' },
+  { value: 'quarter', label: 'Quarter' },
+  { value: 'year', label: 'Year' },
+  { value: 'all', label: 'All Time' },
+]
+
+const MEMBERSHIP_OPTIONS = ['Free', 'Pro', 'Premium', 'Enterprise']
+
+function ShimmerBlock({ className }: { className?: string }) {
+  return <div className={cn('animate-pulse rounded bg-white/10', className)} />
+}
+
+function PodiumShimmer() {
+  return (
+    <div className="mx-auto grid max-w-3xl grid-cols-3 items-end gap-4">
+      {[0, 1, 2].map((index) => {
+        const isFirst = index === 1
+        return (
+          <div
+            key={`podium-shimmer-${index}`}
+            className={cn('flex flex-col items-center', isFirst ? 'pt-0' : 'pt-10')}
+          >
+            <ShimmerBlock
+              className={cn(isFirst ? 'h-24 w-24 rounded-full' : 'h-16 w-16 rounded-full')}
+            />
+            <ShimmerBlock className="mt-3 h-4 w-28" />
+            <ShimmerBlock className="mt-2 h-3 w-24 bg-white/5" />
+            <div
+              className={cn(
+                'bg-brand-surface mt-3 flex w-full flex-col items-center gap-2 rounded-xl border border-white/[0.06] px-4 py-5',
+              )}
+            >
+              <ShimmerBlock className="size-12 rounded-full" />
+              <ShimmerBlock className="h-2 w-12 bg-white/5" />
+              <ShimmerBlock className="h-7 w-16" />
+            </div>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+function TableRowsShimmer({ rows = 8 }: { rows?: number }) {
+  return (
+    <>
+      {Array.from({ length: rows }).map((_, index) => (
+        <tr key={`leaderboard-row-shimmer-${index}`} className="border-b border-white/5">
+          <td className="px-3 py-3">
+            <ShimmerBlock className="size-4" />
+          </td>
+          <td className="px-3 py-3">
+            <ShimmerBlock className="h-6 w-7" />
+          </td>
+          <td className="px-3 py-3">
+            <ShimmerBlock className="h-4 w-20 bg-white/5" />
+          </td>
+          <td className="px-3 py-3">
+            <ShimmerBlock className="h-4 w-32" />
+          </td>
+          <td className="px-3 py-3">
+            <ShimmerBlock className="h-6 w-16" />
+          </td>
+          <td className="px-3 py-3">
+            <ShimmerBlock className="h-4 w-10 bg-white/5" />
+          </td>
+          <td className="px-3 py-3">
+            <ShimmerBlock className="h-4 w-12" />
+          </td>
+          <td className="px-3 py-3">
+            <ShimmerBlock className="h-4 w-12" />
+          </td>
+        </tr>
+      ))}
+    </>
+  )
 }
 
 function RankBadge({ rank }: { rank: number }) {
@@ -148,7 +140,7 @@ function RankBadge({ rank }: { rank: number }) {
           RANK_BADGE_STYLES[rank],
         )}
       >
-        {rank}
+        #{rank}
       </span>
     )
   }
@@ -159,14 +151,464 @@ function RankBadge({ rank }: { rank: number }) {
   )
 }
 
+function SafeAvatar({ src, name }: { src?: string | null; name: string }) {
+  if (src) {
+    return (
+      <img
+        src={src}
+        alt={name}
+        className="size-12 rounded-full object-cover ring-2 ring-white/10"
+        onError={(e) => {
+          e.currentTarget.style.display = 'none'
+        }}
+      />
+    )
+  }
+  return (
+    <div className="grid size-12 place-items-center rounded-full bg-black/40 ring-2 ring-white/10">
+      <UserRound className="text-brand-accent size-6" />
+    </div>
+  )
+}
+
+function Stars({ rating }: { rating: number | null | undefined }) {
+  const value = Number(rating) || 0
+  return (
+    <span className="inline-flex items-center gap-1">
+      {Array.from({ length: 5 }).map((_, index) => {
+        const filled = value >= index + 1
+        const half = !filled && value >= index + 0.5
+        return (
+          <Star
+            key={index}
+            className={cn(
+              'size-3.5',
+              filled || half ? 'fill-brand-accent text-brand-accent' : 'text-white/20',
+            )}
+          />
+        )
+      })}
+      <span className="ml-1 font-semibold text-white">{value ? value.toFixed(1) : '—'}</span>
+    </span>
+  )
+}
+
+type FiltersState = {
+  rankingMetric: LeaderboardRankingMetric
+  dateRange: LeaderboardDateRange
+  category: string
+  membershipType: string
+  state: string
+  city: string
+  minRating: string
+  revenueMin: string
+  revenueMax: string
+}
+
+const DEFAULT_FILTERS: FiltersState = {
+  rankingMetric: 'score',
+  dateRange: 'last30',
+  category: '',
+  membershipType: '',
+  state: '',
+  city: '',
+  minRating: '',
+  revenueMin: '',
+  revenueMax: '',
+}
+
+function ExpertProfileModal({
+  partnerId,
+  query,
+  onClose,
+}: {
+  partnerId: string
+  query: ExpertLeaderboardQuery
+  onClose: () => void
+}) {
+  const navigate = useNavigate()
+  const { data, isLoading, isError } = useExpertLeaderboardProfile(partnerId, query)
+  const profile = data?.data
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+      <div className="bg-brand-surface w-full max-w-4xl rounded-2xl border border-white/10 shadow-2xl">
+        <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
+          <h2 className="text-lg font-bold text-white">Expert Profile</h2>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-md p-1 text-white/70 hover:bg-white/10 hover:text-white"
+            aria-label="Close"
+          >
+            <X className="size-5" />
+          </button>
+        </div>
+
+        <div className="space-y-5 p-5">
+          {isLoading && <p className="text-muted text-sm">Loading profile…</p>}
+          {isError && <p className="text-sm text-red-400">Failed to load expert profile.</p>}
+          {profile && (
+            <>
+              <div className="relative flex items-start gap-4 rounded-xl border border-white/10 bg-black/20 p-4">
+                <SafeAvatar src={profile.profileImage} name={profile.name} />
+                <div className="min-w-0 flex-1">
+                  <button
+                    type="button"
+                    className="hover:text-brand-accent inline-flex items-center gap-2 text-left text-base font-bold text-white"
+                    onClick={() => navigate(`/experts/management/profile/${profile.partnerId}`)}
+                  >
+                    {profile.name.replace(/\s+/g, '')}
+                    <ExternalLink className="size-3.5" />
+                  </button>
+                  <p className="text-muted mt-0.5 text-xs">{profile.expertId}</p>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    <span className="rounded-md border border-white/10 bg-white/5 px-2 py-1 text-xs font-semibold text-white">
+                      {profile.category}
+                    </span>
+                    {profile.city && (
+                      <span className="rounded-md border border-white/10 bg-white/5 px-2 py-1 text-xs font-semibold text-white">
+                        {profile.city}
+                      </span>
+                    )}
+                  </div>
+                  <div className="mt-2">
+                    <Stars rating={profile.averageRating} />
+                  </div>
+                </div>
+                <span className="bg-brand-accent absolute top-4 right-4 rounded-md px-2.5 py-1 text-xs font-bold text-black">
+                  Rank #{profile.rank}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
+                {[
+                  {
+                    label: 'Total Events',
+                    value: String(profile.eventsCompleted || 0),
+                    icon: CalendarDays,
+                  },
+                  {
+                    label: 'Completion Rate',
+                    value: `${Number(profile.orderCompletionRate || 0).toFixed(1)}%`,
+                    icon: TrendingUp,
+                  },
+                  {
+                    label: 'Repeat Customers',
+                    value: String(profile.repeatClients || 0),
+                    icon: Users,
+                  },
+                  {
+                    label: 'Total Revenue',
+                    value: profile.totalRevenueLabel || '₹0',
+                    icon: Trophy,
+                  },
+                  {
+                    label: 'Performance Score',
+                    value: String(profile.score || 0),
+                    icon: Trophy,
+                  },
+                ].map((card) => (
+                  <div
+                    key={card.label}
+                    className="rounded-xl border border-white/10 bg-black/30 px-3 py-4"
+                  >
+                    <card.icon className="text-brand-accent mb-2 size-4" />
+                    <p className="text-muted text-[10px] tracking-wide uppercase">{card.label}</p>
+                    <p className="mt-1 text-xl font-bold text-white">{card.value}</p>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex items-start gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
+                <span className="mt-0.5 text-amber-400">⚠</span>
+                <p>
+                  {profile.notice ||
+                    "This is a read-only profile view. Rankings are calculated automatically based on expert's performance."}
+                </p>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function FiltersPanel({
+  open,
+  value,
+  onChange,
+  onApply,
+  onClose,
+}: {
+  open: boolean
+  value: FiltersState
+  onChange: (next: FiltersState) => void
+  onApply: () => void
+  onClose: () => void
+}) {
+  if (!open) return null
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+      <div className="bg-brand-surface w-full max-w-xl rounded-2xl border border-white/10 p-5 shadow-2xl">
+        <div className="mb-4 flex items-center justify-between">
+          <h3 className="text-lg font-bold text-white">Advance Filters</h3>
+          <button type="button" onClick={onClose} className="text-white/70 hover:text-white">
+            <X className="size-5" />
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <label className="space-y-1 text-xs text-white/70">
+            Ranking Metric
+            <select
+              className="w-full rounded-md border border-white/10 bg-black/30 px-3 py-2 text-sm text-white"
+              value={value.rankingMetric}
+              onChange={(e) =>
+                onChange({ ...value, rankingMetric: e.target.value as LeaderboardRankingMetric })
+              }
+            >
+              {RANKING_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="space-y-1 text-xs text-white/70">
+            Date Range
+            <select
+              className="w-full rounded-md border border-white/10 bg-black/30 px-3 py-2 text-sm text-white"
+              value={value.dateRange}
+              onChange={(e) =>
+                onChange({ ...value, dateRange: e.target.value as LeaderboardDateRange })
+              }
+            >
+              {DATE_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="space-y-1 text-xs text-white/70">
+            Category
+            <input
+              className="w-full rounded-md border border-white/10 bg-black/30 px-3 py-2 text-sm text-white"
+              value={value.category}
+              onChange={(e) => onChange({ ...value, category: e.target.value })}
+              placeholder="Legal, Technology…"
+            />
+          </label>
+
+          <label className="space-y-1 text-xs text-white/70">
+            Membership Type
+            <select
+              className="w-full rounded-md border border-white/10 bg-black/30 px-3 py-2 text-sm text-white"
+              value={value.membershipType}
+              onChange={(e) => onChange({ ...value, membershipType: e.target.value })}
+            >
+              <option value="">All</option>
+              {MEMBERSHIP_OPTIONS.map((opt) => (
+                <option key={opt} value={opt}>
+                  {opt}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="space-y-1 text-xs text-white/70">
+            State
+            <input
+              className="w-full rounded-md border border-white/10 bg-black/30 px-3 py-2 text-sm text-white"
+              value={value.state}
+              onChange={(e) => onChange({ ...value, state: e.target.value })}
+            />
+          </label>
+
+          <label className="space-y-1 text-xs text-white/70">
+            City
+            <input
+              className="w-full rounded-md border border-white/10 bg-black/30 px-3 py-2 text-sm text-white"
+              value={value.city}
+              onChange={(e) => onChange({ ...value, city: e.target.value })}
+            />
+          </label>
+
+          <label className="space-y-1 text-xs text-white/70">
+            Minimum Rating
+            <input
+              type="number"
+              min={1}
+              max={5}
+              step={0.1}
+              className="w-full rounded-md border border-white/10 bg-black/30 px-3 py-2 text-sm text-white"
+              value={value.minRating}
+              onChange={(e) => onChange({ ...value, minRating: e.target.value })}
+            />
+          </label>
+
+          <label className="space-y-1 text-xs text-white/70">
+            Revenue Min (₹)
+            <input
+              type="number"
+              className="w-full rounded-md border border-white/10 bg-black/30 px-3 py-2 text-sm text-white"
+              value={value.revenueMin}
+              onChange={(e) => onChange({ ...value, revenueMin: e.target.value })}
+            />
+          </label>
+
+          <label className="space-y-1 text-xs text-white/70 sm:col-span-2">
+            Revenue Max (₹)
+            <input
+              type="number"
+              className="w-full rounded-md border border-white/10 bg-black/30 px-3 py-2 text-sm text-white"
+              value={value.revenueMax}
+              onChange={(e) => onChange({ ...value, revenueMax: e.target.value })}
+            />
+          </label>
+        </div>
+
+        <div className="mt-5 flex justify-end gap-2">
+          <Button
+            variant="secondary"
+            onClick={() => {
+              onChange(DEFAULT_FILTERS)
+            }}
+          >
+            Reset
+          </Button>
+          <Button
+            className="ui-export-data"
+            onClick={() => {
+              onApply()
+              onClose()
+            }}
+          >
+            Apply Filters
+          </Button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export const LeaderboardPage = () => {
   const navigate = useNavigate()
   const location = useLocation()
-  const metricsPath = location.pathname.startsWith('/venues')
+  const isVenueLeaderboard = location.pathname.startsWith('/venues')
+  const metricsPath = isVenueLeaderboard
     ? '/venues/dashboard/metrics'
     : location.pathname.startsWith('/services')
       ? '/services/dashboard/metrics'
       : '/experts/dashboard/metrics'
+
+  const [searchInput, setSearchInput] = useState('')
+  const [search, setSearch] = useState('')
+  const [page, setPage] = useState(1)
+  const [filtersDraft, setFiltersDraft] = useState<FiltersState>(DEFAULT_FILTERS)
+  const [filtersApplied, setFiltersApplied] = useState<FiltersState>(DEFAULT_FILTERS)
+  const [filtersOpen, setFiltersOpen] = useState(false)
+  const [selectedIds, setSelectedIds] = useState<string[]>([])
+  const [profilePartnerId, setProfilePartnerId] = useState<string | null>(null)
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setSearch(searchInput.trim())
+      setPage(1)
+    }, 350)
+    return () => window.clearTimeout(timer)
+  }, [searchInput])
+
+  const query: ExpertLeaderboardQuery = useMemo(
+    () => ({
+      page,
+      limit: 10,
+      search,
+      rankingMetric: filtersApplied.rankingMetric,
+      dateRange: filtersApplied.dateRange,
+      category: filtersApplied.category || undefined,
+      membershipType: filtersApplied.membershipType || undefined,
+      state: filtersApplied.state || undefined,
+      city: filtersApplied.city || undefined,
+      minRating: filtersApplied.minRating || undefined,
+      revenueMin: filtersApplied.revenueMin || undefined,
+      revenueMax: filtersApplied.revenueMax || undefined,
+      serviceType: isVenueLeaderboard ? 'venue' : 'concierge',
+    }),
+    [filtersApplied, isVenueLeaderboard, page, search],
+  )
+
+  const { data, isLoading, isError, isFetching } = useExpertLeaderboard(query)
+  const leaderboard = data?.data
+  const showShimmer = isLoading || isFetching
+  const rows = showShimmer ? [] : leaderboard?.list || []
+
+  const podiumOrdered = useMemo(() => {
+    const podium = leaderboard?.podium || []
+    const first = podium.find((p) => p.rank === 1)
+    const second = podium.find((p) => p.rank === 2)
+    const third = podium.find((p) => p.rank === 3)
+    return [second, first, third].filter(Boolean) as typeof podium
+  }, [leaderboard?.podium])
+
+  const pagination = leaderboard?.pagination
+  const allSelected = rows.length > 0 && rows.every((row) => selectedIds.includes(row.partnerId))
+
+  const handleExport = () => {
+    const exportSource = selectedIds.length
+      ? rows.filter((row) => selectedIds.includes(row.partnerId))
+      : rows
+
+    if (!exportSource.length) {
+      toast.error('No rows to export')
+      return
+    }
+
+    const headers = [
+      'Rank',
+      'Expert ID',
+      'Expert Name',
+      'Category',
+      'Membership',
+      'No. Of Events',
+      'Ratings',
+      'Score',
+      'Revenue',
+      'Completion Rate',
+      'Repeat Client Rate',
+      'Profile Health',
+    ]
+    const exportRows = exportSource.map((row) => [
+      String(row.rank),
+      row.expertId,
+      row.name,
+      row.category,
+      row.membershipType,
+      String(row.eventsCompleted),
+      row.averageRating != null ? String(row.averageRating) : '',
+      String(row.score),
+      String(row.totalRevenue),
+      String(row.orderCompletionRate),
+      String(row.repeatClientRate),
+      String(row.profileHealth),
+    ])
+
+    try {
+      exportDataToFile(headers, exportRows, 'csv', 'expert-leaderboard')
+      toast.success('Leaderboard exported')
+    } catch {
+      toast.error('Failed to export leaderboard')
+    }
+  }
+
+  const openProfile = (row: LeaderboardRow | { partnerId: string }) => {
+    setProfilePartnerId(row.partnerId)
+  }
 
   return (
     <div className="space-y-6">
@@ -176,6 +618,12 @@ export const LeaderboardPage = () => {
           <p className="text-body-md text-muted mt-1">
             Top ranked experts based on platform performance
           </p>
+          {leaderboard?.meta?.lastRefreshedAt && (
+            <p className="text-muted mt-1 text-[11px]">
+              Last refreshed: {new Date(leaderboard.meta.lastRefreshedAt).toLocaleString('en-IN')}
+              {isFetching ? ' · Updating…' : ''}
+            </p>
+          )}
         </div>
         <Button className="ui-manage-metrics" onClick={() => navigate(metricsPath)}>
           <BarChart3 className="size-4" />
@@ -184,53 +632,56 @@ export const LeaderboardPage = () => {
       </div>
 
       <div className="bg-brand-bg rounded-2xl border border-white/[0.06] px-6 py-8">
-        <div className="mx-auto grid max-w-3xl grid-cols-3 items-end gap-4">
-          {[
-            [...PODIUM].sort((a, b) => b.score - a.score)[1], // 2nd place
-            [...PODIUM].sort((a, b) => b.score - a.score)[0], // 1st place
-            [...PODIUM].sort((a, b) => b.score - a.score)[2], // 3rd place
-          ].map((expert, index) => {
-            if (!expert) return null
-            const isFirst = index === 1
-            const calculatedRank = isFirst ? 1 : index === 0 ? 2 : 3
+        {showShimmer ? (
+          <PodiumShimmer />
+        ) : podiumOrdered.length === 0 ? (
+          <p className="text-muted text-center text-sm">No ranked experts yet.</p>
+        ) : (
+          <div className="mx-auto grid max-w-3xl grid-cols-3 items-end gap-4">
+            {podiumOrdered.map((expert, index) => {
+              const isFirst = index === 1
+              const calculatedRank = expert.rank
+              let iconSrc = rank3Icon
+              if (calculatedRank === 1) iconSrc = rank1Icon
+              else if (calculatedRank === 2) iconSrc = rank2Icon
 
-            let iconSrc = rank3Icon
-            if (calculatedRank === 1) iconSrc = rank1Icon
-            else if (calculatedRank === 2) iconSrc = rank2Icon
-
-            return (
-              <div
-                key={index}
-                className={cn('flex flex-col items-center', isFirst ? 'pt-0' : 'pt-10')}
-              >
-                <div className="relative grid place-items-center">
-                  <img
-                    src={iconSrc}
-                    alt={`Rank ${calculatedRank}`}
-                    className={cn('object-contain drop-shadow-xl', isFirst ? 'h-24' : 'h-16')}
-                  />
-                </div>
-                <p className="text-body-md mt-3 font-bold text-white">{expert.name}</p>
-                <p className="text-body-sm text-muted">{expert.profession}</p>
-
-                <div
+              return (
+                <button
+                  key={expert.partnerId}
+                  type="button"
+                  onClick={() => openProfile(expert)}
                   className={cn(
-                    'bg-brand-surface mt-3 flex w-full flex-col items-center gap-2 rounded-xl border px-4 py-5',
-                    isFirst ? 'border-brand-accent/40' : 'border-white/[0.06]',
+                    'flex flex-col items-center text-center transition hover:opacity-95',
+                    isFirst ? 'pt-0' : 'pt-10',
                   )}
                 >
-                  <div className="grid size-12 place-items-center rounded-full bg-black/40">
-                    <UserRound className="text-brand-accent size-6" />
+                  <div className="relative grid place-items-center">
+                    <img
+                      src={iconSrc}
+                      alt={`Rank ${calculatedRank}`}
+                      className={cn('object-contain drop-shadow-xl', isFirst ? 'h-24' : 'h-16')}
+                    />
                   </div>
-                  <span className="text-muted text-[10px] font-medium tracking-wide uppercase">
-                    Score
-                  </span>
-                  <span className="text-h3 font-bold text-white">{expert.score}</span>
-                </div>
-              </div>
-            )
-          })}
-        </div>
+                  <p className="text-body-md mt-3 font-bold text-white">{expert.name}</p>
+                  <p className="text-body-sm text-muted">{expert.profession}</p>
+
+                  <div
+                    className={cn(
+                      'bg-brand-surface mt-3 flex w-full flex-col items-center gap-2 rounded-xl border px-4 py-5',
+                      isFirst ? 'border-brand-accent/40' : 'border-white/[0.06]',
+                    )}
+                  >
+                    <SafeAvatar src={expert.profileImage} name={expert.name} />
+                    <span className="text-muted text-[10px] font-medium tracking-wide uppercase">
+                      Score
+                    </span>
+                    <span className="text-h3 font-bold text-white">{expert.score}</span>
+                  </div>
+                </button>
+              )
+            })}
+          </div>
+        )}
       </div>
 
       <div className="rounded-brand-lg bg-brand-surface border border-white/[0.06] p-5">
@@ -239,27 +690,42 @@ export const LeaderboardPage = () => {
             <Search className="ui-table-search-icon" aria-hidden="true" />
             <input
               type="text"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
               placeholder="Search by name, ID or profession"
               className="ui-table-search"
             />
           </div>
 
-          <div className="flex items-center gap-3">
-            <Button variant="secondary" className="ui-advance-filters gap-2">
+          <div className="flex flex-wrap items-center gap-3">
+            <Button
+              variant="secondary"
+              className="ui-advance-filters gap-2"
+              onClick={() => setFiltersOpen(true)}
+            >
               <SlidersHorizontal className="size-4" />
               Advance Filters
             </Button>
-            <Button
-              onClick={() => toast.message('Export coming soon')}
-              className="ui-export-data gap-2"
-            >
+            <Button onClick={handleExport} className="ui-export-data gap-2" disabled={showShimmer}>
               <Download className="size-4" />
               Export Data
             </Button>
           </div>
         </div>
 
-        <p className="text-body-sm text-muted mt-4">Showing 1-10 of 20 users</p>
+        <p className="text-body-sm text-muted mt-4">
+          {showShimmer ? (
+            <ShimmerBlock className="inline-block h-4 w-48 bg-white/5 align-middle" />
+          ) : pagination ? (
+            `Showing ${pagination.showingFrom}-${pagination.showingTo} of ${pagination.total} users`
+          ) : (
+            'Showing 0-0 of 0 users'
+          )}
+        </p>
+
+        {isError && !showShimmer && (
+          <p className="mt-3 text-sm text-red-400">Failed to load leaderboard. Please retry.</p>
+        )}
 
         <div className="mt-3 overflow-x-auto">
           <table className="w-full min-w-[820px] border-collapse text-left">
@@ -269,6 +735,15 @@ export const LeaderboardPage = () => {
                   <input
                     type="checkbox"
                     aria-label="Select all"
+                    checked={allSelected}
+                    disabled={showShimmer}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setSelectedIds(rows.map((row) => row.partnerId))
+                      } else {
+                        setSelectedIds([])
+                      }
+                    }}
                     className="rounded border-slate-700 bg-transparent"
                   />
                 </th>
@@ -278,82 +753,145 @@ export const LeaderboardPage = () => {
                 <th className="px-3 py-3">Category</th>
                 <th className="px-3 py-3">
                   <span className="inline-flex items-center gap-1">
-                    No.Of Events <ArrowUpDown className="size-3" />
+                    No.Of Events <ArrowUpDown className="size-3 opacity-40" />
                   </span>
                 </th>
                 <th className="px-3 py-3">
                   <span className="inline-flex items-center gap-1">
-                    Ratings <ArrowUpDown className="size-3" />
+                    Ratings <ArrowUpDown className="size-3 opacity-40" />
                   </span>
                 </th>
                 <th className="px-3 py-3">
                   <span className="inline-flex items-center gap-1">
-                    Score <ArrowUpDown className="size-3" />
+                    Score <ArrowUpDown className="size-3 opacity-40" />
                   </span>
                 </th>
               </tr>
             </thead>
             <tbody>
-              {ROWS.map((row, index) => (
-                <tr
-                  key={index}
-                  className="text-body-sm text-brand-text border-b border-white/5 transition-colors hover:bg-white/[0.02]"
-                >
-                  <td className="px-3 py-3">
-                    <input
-                      type="checkbox"
-                      aria-label={`Select ${row.expertId}`}
-                      defaultChecked={row.rank <= 4}
-                      className="rounded border-slate-700 bg-transparent"
-                    />
-                  </td>
-                  <td className="px-3 py-3">
-                    <RankBadge rank={row.rank} />
-                  </td>
-                  <td className="text-muted px-3 py-3">{row.expertId}</td>
-                  <td className="px-3 py-3 font-semibold text-white">{row.name}</td>
-                  <td className="px-3 py-3">
-                    <span className="text-body-sm text-brand-text inline-flex rounded-md border border-white/10 bg-white/5 px-2 py-1 font-semibold">
-                      {row.category}
-                    </span>
-                  </td>
-                  <td className="px-3 py-3">{row.events}</td>
-                  <td className="px-3 py-3">
-                    <span className="inline-flex items-center gap-1">
-                      <Star className="fill-brand-accent text-brand-accent size-3.5" />
-                      <span className="font-semibold text-white">{row.rating}</span>
-                    </span>
-                  </td>
-                  <td className="px-3 py-3 font-semibold text-white">{row.score}</td>
-                </tr>
-              ))}
+              {showShimmer ? (
+                <TableRowsShimmer />
+              ) : (
+                <>
+                  {rows.map((row) => (
+                    <tr
+                      key={row.partnerId}
+                      className="text-body-sm text-brand-text border-b border-white/5 transition-colors hover:bg-white/[0.02]"
+                    >
+                      <td className="px-3 py-3">
+                        <input
+                          type="checkbox"
+                          aria-label={`Select ${row.expertId}`}
+                          checked={selectedIds.includes(row.partnerId)}
+                          onChange={(e) => {
+                            setSelectedIds((current) =>
+                              e.target.checked
+                                ? [...current, row.partnerId]
+                                : current.filter((id) => id !== row.partnerId),
+                            )
+                          }}
+                          className="rounded border-slate-700 bg-transparent"
+                        />
+                      </td>
+                      <td className="px-3 py-3">
+                        <RankBadge rank={row.rank} />
+                      </td>
+                      <td className="text-muted px-3 py-3">{row.expertId}</td>
+                      <td className="px-3 py-3">
+                        <button
+                          type="button"
+                          className="hover:text-brand-accent font-semibold text-white"
+                          onClick={() => openProfile(row)}
+                        >
+                          {row.name}
+                        </button>
+                      </td>
+                      <td className="px-3 py-3">
+                        <span className="text-body-sm text-brand-text inline-flex rounded-md border border-white/10 bg-white/5 px-2 py-1 font-semibold">
+                          {row.category}
+                        </span>
+                      </td>
+                      <td className="px-3 py-3">{row.eventsCompleted}</td>
+                      <td className="px-3 py-3">
+                        <span className="inline-flex items-center gap-1">
+                          <Star className="fill-brand-accent text-brand-accent size-3.5" />
+                          <span className="font-semibold text-white">
+                            {row.averageRating != null ? row.averageRating.toFixed(1) : '—'}
+                          </span>
+                        </span>
+                      </td>
+                      <td className="px-3 py-3 font-semibold text-white">{row.score}</td>
+                    </tr>
+                  ))}
+                  {rows.length === 0 && (
+                    <tr>
+                      <td colSpan={8} className="text-muted px-3 py-8 text-center text-sm">
+                        No experts match the selected filters.
+                      </td>
+                    </tr>
+                  )}
+                </>
+              )}
             </tbody>
           </table>
         </div>
 
         <div className="mt-5 flex items-center justify-between">
-          <button type="button" className="ui-pagination-btn ui-pagination-prev">
+          <button
+            type="button"
+            className="ui-pagination-btn ui-pagination-prev"
+            disabled={!pagination || pagination.page <= 1}
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+          >
             Previous
           </button>
           <div className="flex items-center gap-2">
-            {['01', '02'].map((page, index) => (
-              <button
-                key={page}
-                type="button"
-                className={cn(
-                  'ui-pagination-btn ui-pagination-page',
-                  index === 0 && 'ui-pagination-page-active',
-                )}
-              >
-                {page}
-              </button>
-            ))}
+            {Array.from({ length: Math.min(pagination?.pages || 1, 5) }).map((_, index) => {
+              const pageNumber = index + 1
+              return (
+                <button
+                  key={pageNumber}
+                  type="button"
+                  onClick={() => setPage(pageNumber)}
+                  className={cn(
+                    'ui-pagination-btn ui-pagination-page',
+                    pagination?.page === pageNumber && 'ui-pagination-page-active',
+                  )}
+                >
+                  {String(pageNumber).padStart(2, '0')}
+                </button>
+              )
+            })}
           </div>
-          <button type="button" className="ui-pagination-btn ui-pagination-next">
+          <button
+            type="button"
+            className="ui-pagination-btn ui-pagination-next"
+            disabled={!pagination || pagination.page >= pagination.pages}
+            onClick={() => setPage((p) => p + 1)}
+          >
             Next
           </button>
         </div>
       </div>
+
+      <FiltersPanel
+        open={filtersOpen}
+        value={filtersDraft}
+        onChange={setFiltersDraft}
+        onClose={() => setFiltersOpen(false)}
+        onApply={() => {
+          setFiltersApplied(filtersDraft)
+          setPage(1)
+        }}
+      />
+
+      {profilePartnerId && (
+        <ExpertProfileModal
+          partnerId={profilePartnerId}
+          query={query}
+          onClose={() => setProfilePartnerId(null)}
+        />
+      )}
     </div>
   )
 }

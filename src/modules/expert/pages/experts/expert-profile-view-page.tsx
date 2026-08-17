@@ -10,6 +10,7 @@ import {
   AlertOctagon,
   ArrowLeft,
   Ban,
+  Bell,
   Briefcase,
   Check,
   CheckSquare,
@@ -20,9 +21,9 @@ import {
   EyeOff,
   FileText,
   Gauge,
-  GitMerge,
   ImageOff,
   Languages,
+  Mail,
   PauseCircle,
   Pencil,
   Phone,
@@ -41,7 +42,13 @@ import {
 import { fetchConsultationById, fetchServiceById } from '../../api/service-api'
 import { getServiceManagementViewPath } from '../../lib/service-navigation'
 import { openExpertKycFromProfile } from '../../utils/expert-application-navigation'
-import { useDeactivateExpert, useSetExpertPassword, useSuspendExpert } from '../../hooks/use-expert'
+import {
+  useDeactivateExpert,
+  useSetExpertPassword,
+  useSuspendExpert,
+  useBlockExpert,
+  useForceLogoutExpert,
+} from '../../hooks/use-expert'
 import {
   useDeleteService,
   useSuspendService,
@@ -50,13 +57,16 @@ import {
   useBulkPauseServices,
   useBulkHideServices,
   useBulkDisableServices,
-  useBulkExportServices,
 } from '../../hooks/use-services'
+import { useEscalationAssignees } from '@/modules/my-tasks/hooks/use-admin-escalation'
+import { escalateServiceApplication } from '@/modules/my-tasks/api/escalation-api'
+import { exportDataToFile } from '@/shared/utils/export-utils'
 import {
   useExpertAnalytics,
   useExpertConsultations,
   useExpertProfile,
   useExpertServices,
+  usePartnerInsights,
 } from '../../hooks/use-expert-profile'
 import type {
   ExpertAnalyticsData,
@@ -64,8 +74,13 @@ import type {
   ExpertProfileDetail,
   ExpertService,
   ExpertWorkExperience,
+  PartnerInsightReview,
 } from '../../type/expert-profile'
-import { DecisionActionModal } from '@/shared/components/modal/decision-action-modal'
+import {
+  DecisionActionModal,
+  type DecisionActionModalOption,
+} from '@/shared/components/modal/decision-action-modal'
+import { AddTagModal } from '@/shared/components/modal/add-tag-modal'
 import { UpdatePasswordModal } from '@/modules/rbac/components/update-password-modal'
 import { MODERATION_CATEGORY_SLUGS } from '@/modules/settings/api/templates-api'
 import {
@@ -77,6 +92,7 @@ import {
   TableActionsItem,
 } from '@/shared/components/table/table-actions-dropdown'
 import { formatListingExpertId } from './expert-list-format'
+import { useEntityTags } from '@/shared/hooks/use-entity-tags'
 import { cn } from '@/shared/lib/cn'
 
 type TabKey = 'overview' | 'service-listings' | 'availability' | 'analytics' | 'health'
@@ -104,25 +120,6 @@ const PROFILE_ACTIVE_PILL = 'bg-[linear-gradient(180deg,#F6CB86_0%,#E0A263_100%)
 const PROFILE_IDLE_PILL = 'border border-[#FFFFFF33] bg-[#050505] text-white hover:bg-white/5'
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-
-const MOCK_REVIEWS = [
-  {
-    name: 'Sarah Chen',
-    title: 'Product Head at TechFlow',
-    rating: 5,
-    date: '12 Feb, 2026',
-    service: 'Strategy Session',
-    body: 'Excellent consultation — clear, actionable advice on our legal roadmap.',
-  },
-  {
-    name: 'James Miller',
-    title: 'Founder at StartUp Co',
-    rating: 5,
-    date: '08 Feb, 2026',
-    service: 'NDA Review',
-    body: 'Very thorough review with quick turnaround. Highly recommend.',
-  },
-]
 
 const getApiErrorMessage = (error: unknown) => {
   const err = error as { response?: { data?: { message?: string } } }
@@ -196,6 +193,23 @@ const formatWorkDate = (value?: string | null) => {
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return ''
   return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+}
+
+const formatReviewDate = (value?: string | null) => {
+  if (!value) return '—'
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return '—'
+  return date.toLocaleDateString('en-GB', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  })
+}
+
+const toInsightsSort = (filter: string): 'recent' | 'top' | 'all' => {
+  if (filter === 'top') return 'top'
+  if (filter === 'all') return 'all'
+  return 'recent'
 }
 
 const formatWorkPeriod = (entry: ExpertWorkExperience) => {
@@ -327,8 +341,15 @@ function ProfileSidebar({
     profile.totalReviews ??
     profile.analytics?.totalReviews
 
+  const ratingsAvailable =
+    analytics?.ratingsSummary?.available === true ||
+    (typeof ratingCount === 'number' && ratingCount > 0 && ratingAverage != null)
+
   // NPS score from Analytics or Profile API (No static fallbacks)
-  const npsScore = analytics?.nps?.score ?? profile.nps ?? profile.analytics?.nps
+  const npsScore =
+    analytics?.nps?.available === false
+      ? null
+      : (analytics?.nps?.score ?? profile.nps ?? profile.analytics?.nps)
 
   // Experience from basic profile or profile
   const experienceYears = basic?.experienceYears
@@ -393,11 +414,11 @@ function ProfileSidebar({
         <SidebarRow label="Ratings">
           <span className="inline-flex items-center gap-1">
             <Star className="size-3.5 fill-[#E0A263] text-[#E0A263]" />
-            {ratingAverage !== undefined && ratingAverage !== null
+            {ratingsAvailable && ratingAverage !== undefined && ratingAverage !== null
               ? Number(ratingAverage).toFixed(1)
               : '—'}
             <span className="text-body-sm text-muted font-normal">
-              ({ratingCount !== undefined && ratingCount !== null ? ratingCount : 0})
+              ({ratingsAvailable && ratingCount != null ? ratingCount : 0})
             </span>
           </span>
         </SidebarRow>
@@ -424,7 +445,7 @@ function ProfileSidebar({
                 navigate,
               )
             }
-            className="rounded border border-white/20 bg-black/40 px-2 py-0.5 text-xs text-white transition-colors hover:border-[#E0A263] hover:text-[#E0A263]"
+            className={PROFILE_BTN_PRIMARY}
           >
             View
           </button>
@@ -457,12 +478,18 @@ function ProfileSidebar({
   )
 }
 
-function OverviewTab({ profile }: { profile: ExpertProfileDetail }) {
+function OverviewTab({ profile, partnerId }: { profile: ExpertProfileDetail; partnerId: string }) {
   const basic = profile.basicProfile
   const offerings = basic?.offerings ?? []
   const galleryImages = profile.gallery?.images ?? []
   const workExperience = profile.workExperience ?? []
   const [reviewFilter, setReviewFilter] = useState('all')
+  const insightsSort = toInsightsSort(reviewFilter)
+  const { data: insightsRes, isLoading: reviewsLoading } = usePartnerInsights(
+    partnerId,
+    insightsSort,
+  )
+  const reviews: PartnerInsightReview[] = insightsRes?.data?.reviews ?? []
 
   return (
     <div className="flex flex-col gap-5">
@@ -575,31 +602,54 @@ function OverviewTab({ profile }: { profile: ExpertProfileDetail }) {
           ))}
         </div>
         <div className="space-y-3">
-          {MOCK_REVIEWS.map((review) => (
-            <div key={review.name} className="rounded-lg bg-[#050505] p-4">
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <div className="flex size-9 items-center justify-center rounded-full bg-[#141414]">
-                    <User className="text-muted size-4" />
+          {reviewsLoading ? (
+            <p className="text-body-sm rounded-lg bg-[#050505] p-4 text-white/50">
+              Loading reviews…
+            </p>
+          ) : reviews.length === 0 ? (
+            <p className="text-body-sm rounded-lg bg-[#050505] p-4 text-white/50">
+              No reviews yet for this expert.
+            </p>
+          ) : (
+            reviews.map((review) => (
+              <div key={review.id} className="rounded-lg bg-[#050505] p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="flex size-9 items-center justify-center overflow-hidden rounded-full bg-[#141414]">
+                      {review.userAvatarUrl ? (
+                        <img src={review.userAvatarUrl} alt="" className="size-full object-cover" />
+                      ) : (
+                        <User className="text-muted size-4" />
+                      )}
+                    </div>
+                    <div>
+                      <p className="text-[13px] font-semibold text-white">
+                        {review.userName || 'User'}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-[13px] font-semibold text-white">{review.name}</p>
-                    <p className="text-body-sm text-white/50">{review.title}</p>
+                  <div className="text-right">
+                    <div className="flex items-center gap-0.5">
+                      {Array.from({
+                        length: Math.max(0, Math.min(5, review.rating || 0)),
+                      }).map((_, index) => (
+                        <Star key={index} className="size-3 fill-[#E0A263] text-[#E0A263]" />
+                      ))}
+                    </div>
+                    <p className="mt-1 text-[10px] text-white/50">
+                      {review.relativeLabel || formatReviewDate(review.createdAt)}
+                    </p>
                   </div>
                 </div>
-                <div className="text-right">
-                  <div className="flex items-center gap-0.5">
-                    {Array.from({ length: review.rating }).map((_, index) => (
-                      <Star key={index} className="size-3 fill-[#E0A263] text-[#E0A263]" />
-                    ))}
-                  </div>
-                  <p className="mt-1 text-[10px] text-white/50">{review.date}</p>
-                </div>
+                {review.title ? (
+                  <p className="text-body-sm mt-2 text-white/50">Service Availed: {review.title}</p>
+                ) : null}
+                {review.text ? (
+                  <p className="text-body-sm mt-2 text-white/70">{review.text}</p>
+                ) : null}
               </div>
-              <p className="text-body-sm mt-2 text-white/50">Service Availed: {review.service}</p>
-              <p className="text-body-sm mt-2 text-white/70">{review.body}</p>
-            </div>
-          ))}
+            ))
+          )}
         </div>
       </div>
     </div>
@@ -783,6 +833,7 @@ function ConsultationDetailCard({
 }
 
 function ServicesSubTab({ expertId }: { expertId: string }) {
+  const navigate = useNavigate()
   const { data, isLoading, isError } = useExpertServices(expertId, 1, 100, true)
   const services = useMemo(() => {
     if (!data) return []
@@ -807,6 +858,11 @@ function ServicesSubTab({ expertId }: { expertId: string }) {
   const allVisibleSelected =
     visibleServiceIds.length > 0 && visibleServiceIds.every((id) => selectedServiceIds.includes(id))
 
+  const selectedServices = useMemo(
+    () => services.filter((service) => selectedServiceIds.includes(service._id)),
+    [services, selectedServiceIds],
+  )
+
   const toggleSelectAll = useCallback(() => {
     if (allVisibleSelected) {
       setSelectedServiceIds([])
@@ -825,7 +881,6 @@ function ServicesSubTab({ expertId }: { expertId: string }) {
   const bulkPauseMutation = useBulkPauseServices()
   const bulkHideMutation = useBulkHideServices()
   const bulkDisableMutation = useBulkDisableServices()
-  const bulkExportMutation = useBulkExportServices()
 
   const [isBulkDeleteModalOpen, setIsBulkDeleteModalOpen] = useState(false)
   const [bulkDeleteReasons, setBulkDeleteReasons] = useState<string[]>([])
@@ -838,12 +893,33 @@ function ServicesSubTab({ expertId }: { expertId: string }) {
   const [bulkPauseIndefinitely, setBulkPauseIndefinitely] = useState(false)
   const [bulkPauseAdminNotes, setBulkPauseAdminNotes] = useState('')
 
+  const [isEscalateModalOpen, setIsEscalateModalOpen] = useState(false)
+  const [escalateAdminNotes, setEscalateAdminNotes] = useState('')
+  const [selectedEscalationOption, setSelectedEscalationOption] = useState('')
+  const [isEscalating, setIsEscalating] = useState(false)
+
+  const { data: assigneesData } = useEscalationAssignees('services.*')
+  const escalationOptions: DecisionActionModalOption[] = useMemo(
+    () =>
+      (assigneesData?.data ?? []).map((assignee) => ({
+        label: assignee.fullname,
+        value: assignee.id,
+      })),
+    [assigneesData?.data],
+  )
+
   const { options: deleteReasonOptions } = useModerationReasonOptions(
     MODERATION_CATEGORY_SLUGS.deleteService,
   )
   const { options: pauseReasonOptions } = useModerationReasonOptions(
     MODERATION_CATEGORY_SLUGS.suspendService,
   )
+
+  const closeEscalateModal = useCallback(() => {
+    setIsEscalateModalOpen(false)
+    setEscalateAdminNotes('')
+    setSelectedEscalationOption('')
+  }, [])
 
   const handleBulkDelete = useCallback(() => {
     if (selectedServiceIds.length === 0) return
@@ -968,19 +1044,130 @@ function ServicesSubTab({ expertId }: { expertId: string }) {
   }, [selectedServiceIds, bulkDisableMutation])
 
   const handleBulkExport = useCallback(() => {
-    if (selectedServiceIds.length === 0) return
-    bulkExportMutation.mutate(selectedServiceIds, {
-      onSuccess: (res: { data?: { services?: unknown[] } }) => {
-        const servicesData = res?.data?.services ?? []
-        toast.success(`Exported ${servicesData.length || selectedServiceIds.length} service(s)`)
-        setSelectedServiceIds([])
-      },
-      onError: (err: unknown) => {
-        const error = err as { response?: { data?: { message?: string } } }
-        toast.error(error?.response?.data?.message || 'Failed to export services')
-      },
+    if (selectedServices.length === 0) {
+      toast.error('Please select at least one service to export.')
+      return
+    }
+
+    try {
+      const headers = [
+        'Service ID',
+        'Title',
+        'Partner ID',
+        'Category',
+        'Status',
+        'Pricing',
+        'Submitted At',
+      ]
+      const rows = selectedServices.map((service) => [
+        service._id,
+        service.title || 'N/A',
+        expertId,
+        service.category?.name || 'N/A',
+        service.status || 'N/A',
+        String(service.priceStarts ?? 'N/A'),
+        service.submittedAt ? new Date(service.submittedAt).toLocaleDateString() : 'N/A',
+      ])
+      exportDataToFile(headers, rows, 'excel', 'expert_selected_services_export')
+      toast.success(`Exported ${selectedServices.length} selected service(s)`)
+    } catch {
+      toast.error('Failed to export selected services.')
+    }
+  }, [expertId, selectedServices])
+
+  const handleBulkNotify = useCallback(() => {
+    if (!expertId) {
+      toast.error('Expert partner ID is missing.')
+      return
+    }
+    const params = new URLSearchParams({
+      channel: 'push',
+      audience: 'service-management',
+      partnerIds: expertId,
     })
-  }, [selectedServiceIds, bulkExportMutation])
+    navigate(`/communication/create?${params.toString()}`)
+  }, [expertId, navigate])
+
+  const handleBulkMessage = useCallback(() => {
+    if (!expertId) {
+      toast.error('Expert partner ID is missing.')
+      return
+    }
+    const params = new URLSearchParams({
+      channel: 'email',
+      audience: 'service-management',
+      partnerIds: expertId,
+    })
+    navigate(`/communication/create?${params.toString()}`)
+  }, [expertId, navigate])
+
+  const handleEscalateSubmit = useCallback(async () => {
+    if (selectedServices.length === 0) {
+      toast.error('Please select at least one service.')
+      return
+    }
+    if (!selectedEscalationOption) {
+      toast.error('Please select a sub-admin to assign.')
+      return
+    }
+    if (!escalateAdminNotes.trim()) {
+      toast.error('Admin notes are required.')
+      return
+    }
+
+    const selectedAssignee = (assigneesData?.data ?? []).find(
+      (item) => item.id === selectedEscalationOption,
+    )
+    const note = escalateAdminNotes.trim()
+    setIsEscalating(true)
+
+    try {
+      const results = await Promise.allSettled(
+        selectedServices.map((service) =>
+          escalateServiceApplication(service._id, {
+            assigneeSubAdminId: selectedEscalationOption,
+            assigneeName: selectedAssignee?.fullname || '',
+            adminNote: note,
+            entityTitle: service.title,
+            applicationUrl: getServiceManagementViewPath({
+              _id: service._id,
+              partnerId: expertId,
+            }),
+          }),
+        ),
+      )
+
+      const successCount = results.filter((result) => result.status === 'fulfilled').length
+      const failedCount = results.length - successCount
+
+      if (successCount === 0) {
+        const firstError = results.find((result) => result.status === 'rejected') as
+          | PromiseRejectedResult
+          | undefined
+        toast.error(getApiErrorMessage(firstError?.reason) || 'Failed to escalate services.')
+        return
+      }
+
+      toast.success(
+        failedCount > 0
+          ? `Escalated ${successCount} service(s); ${failedCount} failed.`
+          : `Successfully escalated ${successCount} service(s)`,
+      )
+      setSelectedServiceIds([])
+      closeEscalateModal()
+    } catch (err) {
+      toast.error(getApiErrorMessage(err) || 'Failed to escalate services.')
+    } finally {
+      setIsEscalating(false)
+    }
+  }, [
+    assigneesData?.data,
+    closeEscalateModal,
+    escalateAdminNotes,
+    expertId,
+    selectedEscalationOption,
+    selectedServices,
+  ])
 
   return (
     <>
@@ -1051,10 +1238,34 @@ function ServicesSubTab({ expertId }: { expertId: string }) {
             <button
               type="button"
               onClick={handleBulkExport}
-              title="Export / Share selected services"
+              title="Export selected services"
               className="flex size-8 items-center justify-center rounded-md bg-black text-white transition-colors hover:bg-white/10"
             >
               <Upload className="size-3.5" aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              onClick={handleBulkNotify}
+              title="Notify expert"
+              className="flex size-8 items-center justify-center rounded-md bg-black text-white transition-colors hover:bg-white/10"
+            >
+              <Bell className="size-3.5" aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              onClick={handleBulkMessage}
+              title="Message expert"
+              className="flex size-8 items-center justify-center rounded-md bg-black text-white transition-colors hover:bg-white/10"
+            >
+              <Mail className="size-3.5" aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsEscalateModalOpen(true)}
+              title="Escalate selected services"
+              className="flex size-8 items-center justify-center rounded-md bg-black text-white transition-colors hover:bg-white/10"
+            >
+              <FileText className="size-3.5" aria-hidden="true" />
             </button>
           </div>
         </div>
@@ -1152,6 +1363,32 @@ function ServicesSubTab({ expertId }: { expertId: string }) {
         onClose={() => setIsBulkPauseModalOpen(false)}
         onSubmit={confirmBulkPause}
         isSubmitting={bulkPauseMutation.isPending}
+      />
+
+      <DecisionActionModal
+        open={isEscalateModalOpen}
+        variant="escalate"
+        title={
+          selectedServiceIds.length > 1
+            ? `Escalate ${selectedServiceIds.length} Services`
+            : 'Escalate Application'
+        }
+        description={
+          selectedServiceIds.length > 1
+            ? `Are you sure you want to escalate ${selectedServiceIds.length} selected services? These will be reviewed by the selected sub-admin.`
+            : 'Are you sure you want to escalate this Application? This Post will be reviewed by the selected parties.'
+        }
+        submitLabel="Escalate"
+        escalationOptions={escalationOptions}
+        selectedEscalationOption={selectedEscalationOption}
+        onEscalationOptionChange={setSelectedEscalationOption}
+        adminNotes={escalateAdminNotes}
+        onAdminNotesChange={setEscalateAdminNotes}
+        onClose={closeEscalateModal}
+        onSubmit={() => {
+          void handleEscalateSubmit()
+        }}
+        isSubmitting={isEscalating}
       />
     </>
   )
@@ -1892,8 +2129,11 @@ export function ExpertProfileViewPage() {
   const [suspendAdminNotes, setSuspendAdminNotes] = useState('')
   const [deleteReasons, setDeleteReasons] = useState<string[]>([])
   const [deleteAdminNotes, setDeleteAdminNotes] = useState('')
+  const { tagModalOpen, openTagModal, closeTagModal, saveTags, initialTags } = useEntityTags()
 
   const suspendExpertMutation = useSuspendExpert()
+  const blockExpertMutation = useBlockExpert()
+  const forceLogoutExpertMutation = useForceLogoutExpert()
   const deactivateExpertMutation = useDeactivateExpert()
   const setExpertPasswordMutation = useSetExpertPassword()
   const recordReasonUsage = useRecordModerationReasonUsage()
@@ -2143,7 +2383,7 @@ export function ExpertProfileViewPage() {
       icon: FileText,
       onClick: () => comingSoon('Add Notes'),
     },
-    { label: 'Add Tags', icon: Tag, onClick: () => comingSoon('Add Tags') },
+    { label: 'Add Tags', icon: Tag, onClick: () => openTagModal(id || displayName) },
     {
       label: 'Export Data',
       icon: Upload,
@@ -2211,16 +2451,6 @@ export function ExpertProfileViewPage() {
           </TableActionsItem>
           <TableActionsItem
             tone="light"
-            icon={<GitMerge className="size-3.5" />}
-            onClick={() => {
-              setProfileMenuOpen(false)
-              comingSoon('Merge Records')
-            }}
-          >
-            Merge Records
-          </TableActionsItem>
-          <TableActionsItem
-            tone="light"
             icon={<Eye className="size-3.5" />}
             onClick={() => {
               setProfileMenuOpen(false)
@@ -2234,7 +2464,18 @@ export function ExpertProfileViewPage() {
             icon={<AlertOctagon className="size-3.5" />}
             onClick={() => {
               setProfileMenuOpen(false)
-              comingSoon('Logout User')
+              if (!id) return
+              forceLogoutExpertMutation.mutate(id, {
+                onSuccess: (res) => {
+                  toast.success(
+                    res?.message ||
+                      'Expert sessions revoked. They will be logged out on the next app request.',
+                  )
+                },
+                onError: (err: unknown) => {
+                  toast.error(getApiErrorMessage(err) || 'Failed to logout expert')
+                },
+              })
             }}
           >
             Logout User
@@ -2254,7 +2495,15 @@ export function ExpertProfileViewPage() {
             icon={<CircleMinus className="size-3.5" />}
             onClick={() => {
               setProfileMenuOpen(false)
-              comingSoon('Block User')
+              if (!id) return
+              blockExpertMutation.mutate(id, {
+                onSuccess: (res) => {
+                  toast.success(res?.message || 'Expert blocked successfully')
+                },
+                onError: (err: unknown) => {
+                  toast.error(getApiErrorMessage(err) || 'Failed to block expert')
+                },
+              })
             }}
           >
             Block User
@@ -2346,7 +2595,7 @@ export function ExpertProfileViewPage() {
             ))}
           </div>
 
-          {activeTab === 'overview' && <OverviewTab profile={profile} />}
+          {activeTab === 'overview' && <OverviewTab profile={profile} partnerId={id} />}
           {activeTab === 'service-listings' && (
             <ServiceListingsTab
               expertId={id}
@@ -2410,6 +2659,13 @@ export function ExpertProfileViewPage() {
         onClose={closeDeleteModal}
         onSubmit={handleDeleteSubmit}
         isSubmitting={deactivateExpertMutation.isPending}
+      />
+
+      <AddTagModal
+        open={tagModalOpen}
+        onClose={closeTagModal}
+        initialTags={initialTags}
+        onSubmit={saveTags}
       />
     </div>
   )

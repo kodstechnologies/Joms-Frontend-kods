@@ -59,11 +59,37 @@ const inputClass = 'ui-input'
 const selectClass = 'ui-input appearance-none cursor-pointer'
 const labelClass = 'text-body-sm text-muted mb-1.5 block'
 
+const CHANNEL_VALUES = new Set(['in-app', 'email', 'push'])
+const AUDIENCE_VALUES = new Set([
+  'expert-management',
+  'service-management',
+  'venue-management',
+  'all-partners',
+])
+
+const parsePartnerIds = (raw: string | null) =>
+  (raw ?? '')
+    .split(',')
+    .map((id) => id.trim())
+    .filter(Boolean)
+
 export function CommunicationForm() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const editId = searchParams.get('edit') ?? ''
   const isEditMode = Boolean(editId)
+
+  const prefillChannelRaw = searchParams.get('channel') ?? ''
+  const prefillAudienceRaw = searchParams.get('audience') ?? ''
+  const prefillPartnerIds = parsePartnerIds(searchParams.get('partnerIds'))
+  const prefillChannel = CHANNEL_VALUES.has(prefillChannelRaw)
+    ? (prefillChannelRaw as CommunicationChannel)
+    : ''
+  const prefillAudience = AUDIENCE_VALUES.has(prefillAudienceRaw)
+    ? (prefillAudienceRaw as CommunicationAudience)
+    : prefillPartnerIds.length
+      ? 'expert-management'
+      : ''
 
   const optionsQuery = useCommunicationOptions()
   const existingQuery = useCommunication(editId)
@@ -106,15 +132,23 @@ export function CommunicationForm() {
           messageContent: item.messageContent ?? '',
           additionalNotes: item.additionalNotes ?? '',
         }
-      : emptyForm
+      : {
+          ...emptyForm,
+          channel: prefillChannel,
+          audience: prefillAudience,
+        }
 
-  // Remount when switching create/edit so form state resets without setState-in-effect
+  // Remount when switching create/edit / prefill so form state resets without setState-in-effect
+  const formKey =
+    editId || `create-${prefillChannel}-${prefillAudience}-${prefillPartnerIds.join(',') || 'all'}`
+
   return (
     <CommunicationFormFields
-      key={editId || 'create'}
+      key={formKey}
       initialValues={initialValues}
       isEditMode={isEditMode}
       editId={editId}
+      partnerIds={isEditMode ? (item?.partnerIds ?? []) : prefillPartnerIds}
       audiences={optionsQuery.data?.audiences}
       channels={optionsQuery.data?.channels}
       types={optionsQuery.data?.types}
@@ -129,6 +163,7 @@ type CommunicationFormFieldsProps = {
   initialValues: FormValues
   isEditMode: boolean
   editId: string
+  partnerIds?: string[]
   audiences?: typeof COMMUNICATION_AUDIENCE_OPTIONS
   channels?: typeof COMMUNICATION_CHANNEL_OPTIONS
   types?: typeof COMMUNICATION_TYPE_OPTIONS
@@ -148,6 +183,7 @@ function CommunicationFormFields({
   initialValues,
   isEditMode,
   editId,
+  partnerIds = [],
   audiences,
   channels,
   types,
@@ -156,6 +192,7 @@ function CommunicationFormFields({
   onUpdate,
 }: CommunicationFormFieldsProps) {
   const navigate = useNavigate()
+  const hasTargetedRecipients = partnerIds.length > 0
 
   const [title, setTitle] = useState(initialValues.title)
   const [channel, setChannel] = useState<CommunicationChannel | ''>(initialValues.channel)
@@ -205,6 +242,7 @@ function CommunicationFormFields({
       subject: subject.trim(),
       messageContent: messageContent.trim(),
       additionalNotes: additionalNotes.trim(),
+      ...(hasTargetedRecipients ? { partnerIds } : {}),
     }
 
     if (isEditMode) {
@@ -263,6 +301,12 @@ function CommunicationFormFields({
           <p className="text-body-sm text-muted mt-1">
             Send updates, announcements, or important messages to your audience.
           </p>
+          {hasTargetedRecipients ? (
+            <p className="text-body-sm mt-3 rounded-lg border border-[#e0a263]/40 bg-[#e0a263]/10 px-3 py-2 text-[#f6cb86]">
+              Targeting {partnerIds.length} selected expert
+              {partnerIds.length === 1 ? '' : 's'} only. This will not send to the full audience.
+            </p>
+          ) : null}
         </div>
 
         <div className="space-y-5">
@@ -321,6 +365,7 @@ function CommunicationFormFields({
                 value={audience}
                 onChange={(e) => setAudience(e.target.value as CommunicationAudience)}
                 required
+                disabled={hasTargetedRecipients}
               >
                 <option value="">Select audience</option>
                 {audienceOptions.map((opt) => (
@@ -332,12 +377,17 @@ function CommunicationFormFields({
               {audience ? (
                 <button
                   type="button"
-                  onClick={() => setAudience('')}
+                  onClick={() => {
+                    if (hasTargetedRecipients) return
+                    setAudience('')
+                  }}
                   className="text-body-sm-semibold absolute top-1/2 left-3 inline-flex h-[26px] -translate-y-1/2 items-center gap-2 rounded-full px-3 text-black"
                   style={{ background: 'linear-gradient(135deg, #F6CB86 0%, #E0A263 100%)' }}
                 >
-                  {audienceOptions.find((o) => o.value === audience)?.label ?? audience}
-                  <span className="opacity-70">✕</span>
+                  {hasTargetedRecipients
+                    ? `${partnerIds.length} selected expert${partnerIds.length === 1 ? '' : 's'}`
+                    : (audienceOptions.find((o) => o.value === audience)?.label ?? audience)}
+                  {!hasTargetedRecipients ? <span className="opacity-70">✕</span> : null}
                 </button>
               ) : null}
             </div>

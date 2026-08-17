@@ -7,7 +7,9 @@ import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import { toast } from 'sonner'
 import type { FilterValues } from '@/shared/types/data-filter'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter/use-module-export-filters'
-import { exportDataToFile } from '@/shared/utils/export-utils'
+import { exportDisplayValue } from '@/shared/utils/export-utils'
+import { buildFilterParams, createFilteredExportHandler } from '@/shared/utils/export-filter-utils'
+import { fetchServices } from '../../api/service-api'
 
 import { useActivateService, useServices } from '../../hooks/use-services'
 import { getServiceManagementViewPath } from '../../lib/service-navigation'
@@ -26,6 +28,25 @@ const formatPrice = (price: number) =>
     maximumFractionDigits: 0,
   }).format(price)
 
+const EXPORT_COLUMN_MAP: Record<string, { header: string; accessor: (s: Service) => string }> = {
+  serviceId: { header: 'Service ID', accessor: (s) => exportDisplayValue(s.serviceid || s._id) },
+  title: { header: 'Service Name', accessor: (s) => exportDisplayValue(s.title) },
+  categoryName: { header: 'Service Category', accessor: (s) => exportDisplayValue(s.categoryName) },
+  serviceType: { header: 'Service Type', accessor: (s) => exportDisplayValue(s.serviceType) },
+  pricing: {
+    header: 'Service Pricing',
+    accessor: (s) => exportDisplayValue(s.pricing ? formatPrice(s.pricing) : undefined),
+  },
+  expertId: { header: 'Expert ID', accessor: (s) => exportDisplayValue(s.expertid) },
+  expertName: { header: 'Expert Name', accessor: (s) => exportDisplayValue(s.expertName) },
+  status: { header: 'Status', accessor: (s) => exportDisplayValue(s.status) },
+  createdAt: {
+    header: 'Created At',
+    accessor: (s) =>
+      exportDisplayValue(s.createdAt ? new Date(s.createdAt).toLocaleDateString() : undefined),
+  },
+}
+
 export function SuspendedServicesPage() {
   const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState('')
@@ -34,52 +55,7 @@ export function SuspendedServicesPage() {
   const [selectedServiceIds, setSelectedServiceIds] = useState<string[]>([])
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
 
-  const apiFilterParams = useMemo(() => {
-    const params: Record<string, string> = {}
-
-    Object.entries(appliedFilters).forEach(([rawKey, val]) => {
-      if (val === undefined || val === null || val === '') return
-
-      const parts = rawKey.split('.')
-      const fieldId = parts.length > 1 ? parts.slice(1).join('.') : rawKey
-
-      if (fieldId === 'location' && typeof val === 'object' && val !== null) {
-        const loc = val as { state?: string; city?: string }
-        if (loc.state?.trim()) params.titleState = loc.state.trim()
-        if (loc.city?.trim()) params.titleCity = loc.city.trim()
-        return
-      }
-
-      if (Array.isArray(val)) {
-        if (val.length > 0) {
-          params[fieldId] = val.join(',')
-        }
-        return
-      }
-
-      if (typeof val === 'object' && val !== null) {
-        const range = val as { from?: string | number; to?: string | number }
-        if (range.from !== undefined && range.from !== '') {
-          params[`${fieldId}Min`] = String(range.from).trim()
-        }
-        if (range.to !== undefined && range.to !== '') {
-          params[`${fieldId}Max`] = String(range.to).trim()
-        }
-        return
-      }
-
-      if (typeof val === 'string' && val.trim()) {
-        params[fieldId] = val.trim()
-        return
-      }
-
-      if (typeof val === 'number' || typeof val === 'boolean') {
-        params[fieldId] = String(val)
-      }
-    })
-
-    return params
-  }, [appliedFilters])
+  const apiFilterParams = useMemo(() => buildFilterParams(appliedFilters), [appliedFilters])
 
   const { data, isLoading } = useServices({
     page: currentPage,
@@ -105,20 +81,12 @@ export function SuspendedServicesPage() {
     setCurrentPage(1)
   }, [])
 
-  const handleExportData = useCallback(
-    (values: FilterValues, format: string) => {
-      const headers = ['Service ID', 'Name', 'Status', 'Price', 'Location', 'Created At']
-      const rows = services.map((s) => [
-        s.serviceid || '-',
-        s.title || '-',
-        s.status || '-',
-        s.pricing ? formatPrice(s.pricing) : '-',
-        s.categoryName || '-',
-        s.createdAt ? new Date(s.createdAt).toLocaleDateString() : 'N/A',
-      ])
-      exportDataToFile(headers, rows, format, 'suspended_services_export')
-    },
-    [services],
+  const handleExportData = useMemo(
+    () =>
+      createFilteredExportHandler(fetchServices, EXPORT_COLUMN_MAP, 'suspended_services_export', {
+        status: 'suspended',
+      }),
+    [],
   )
 
   const {

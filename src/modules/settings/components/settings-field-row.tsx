@@ -13,12 +13,12 @@ type SettingsFieldRowProps = {
 
 export function SettingsFieldRow({ label, description, children }: SettingsFieldRowProps) {
   return (
-    <div className="grid gap-2 border-b border-white/5 py-3 last:border-b-0 sm:grid-cols-[minmax(220px,1fr)_minmax(320px,1fr)] sm:items-center sm:gap-4">
-      <div className="space-y-1">
-        <p className="text-sm font-medium text-white">{requiredLabel(label)}</p>
-        {description ? <p className="text-xs text-slate-500">{description}</p> : null}
+    <div className="settings-field-row">
+      <div className="settings-field-row-copy">
+        <p className="settings-toggle-title">{requiredLabel(label)}</p>
+        {description ? <p className="settings-toggle-description">{description}</p> : null}
       </div>
-      <div className="w-full">{children}</div>
+      <div className="settings-field-row-control">{children}</div>
     </div>
   )
 }
@@ -57,7 +57,7 @@ export function SettingsSelectField({
       <div className="settings-field-select-wrap">
         <select
           id={id}
-          className={cn('settings-field-input settings-field-select', className)}
+          className={cn('settings-control settings-field-input settings-field-select', className)}
           {...props}
         >
           {children}
@@ -76,10 +76,11 @@ export function SettingsInputField({
 }: InputHTMLAttributes<HTMLInputElement> & { label: string }) {
   return (
     <SettingsStackedField label={label} htmlFor={id}>
-      <input id={id} className={cn('settings-field-input', className)} {...props} />
+      <input
+        id={id}
+        className={cn('settings-control settings-field-input', className)}
+        {...props}
+      />
     </SettingsStackedField>
   )
 }
-
-export const settingsControlClass =
-  'h-10 w-full rounded-lg border border-white/10 bg-brand-surface px-3 pr-9 text-sm text-white outline-none focus:ring-1 focus:ring-white/20'

@@ -1,19 +1,24 @@
 import type { ActivityItem, ChatMessage, QueueTicket, SupportTicket } from '../types/support'
 
 export const supportDashboardStats = [
-  { title: 'Total Open Tickets', value: '487,650', change: '+6.7%', changeType: 'up' as const },
-  { title: 'New Tickets Today', value: '487,650', change: '+6.7%', changeType: 'up' as const },
-  { title: 'Tickets In-Progress', value: '487,650', change: '+6.7%', changeType: 'up' as const },
-  { title: 'Escalated Tickets', value: '487,650', change: '+6.7%', changeType: 'up' as const },
-  { title: 'Resolved Today', value: '487,650', change: '+6.7%', changeType: 'up' as const },
-  { title: 'Priority Tickets', value: '487,650', change: '+6.7%', changeType: 'up' as const },
-  { title: 'Avg. Response Time', value: '2.03 mins', change: '+6.7%', changeType: 'up' as const },
+  { title: 'Total Tickets', value: '487,650', change: '+6.7%', changeType: 'up' as const },
+  { title: 'Open Tickets', value: '487,650', change: '+6.7%', changeType: 'up' as const },
+  { title: 'Tickets In Progress', value: '487,650', change: '+6.7%', changeType: 'up' as const },
+  { title: 'Assigned to Me', value: '43', change: '+6.7%', changeType: 'up' as const },
+  { title: 'Escalated by Me', value: '12', change: '+6.7%', changeType: 'up' as const },
   {
-    title: 'Avg. Resolution Time',
-    value: '2 hr 30 mins',
+    title: 'Average First Response Time',
+    value: '00:02:03',
     change: '+6.7%',
     changeType: 'up' as const,
   },
+  {
+    title: 'Average Resolution Time',
+    value: '02:30:00',
+    change: '+6.7%',
+    changeType: 'up' as const,
+  },
+  { title: 'Tickets Resolved Today', value: '34', change: '+6.7%', changeType: 'up' as const },
 ]
 
 export const ticketManagementStats = [
@@ -87,7 +92,7 @@ export const supportTicketsMock: SupportTicket[] = [
     description:
       'User reported unable to login to their account. Error message "Invalid credentials" appearing even with correct password.',
     comments: 'Verified system configuration no anomalies detected.',
-    tags: ['Payment', 'Urgent'],
+    tags: ['Priority', 'Escalated'],
   },
   {
     id: 'TKT-2848',
@@ -238,15 +243,4 @@ export const closedTicketMock: SupportTicket = {
 
 export const pastTicketsMock: SupportTicket[] = supportTicketsMock
 
-export const tagOptions = [
-  'VIP',
-  'Fraud Risk',
-  'Compliance',
-  'High Value',
-  'Priority',
-  'Legal',
-  'Finance Hold',
-  'Escalated',
-  'Verified',
-  'KYC Pending',
-]
+export { MODULE_TAG_OPTIONS as tagOptions } from '@/shared/constants/module-tags'

@@ -90,6 +90,86 @@ export const fetchVenueFullView = async (venueId: string, spaceId?: string) => {
   return response.data
 }
 
+export type SpaceBookingStatus = 'all' | 'booked' | 'ongoing' | 'completed'
+
+export type SpaceBookingRow = {
+  id: string
+  eventId: string
+  name: string
+  eventDate: string | null
+  startTime: string | null
+  endTime: string | null
+  startAt: string | null
+  endAt: string | null
+  totalAttendees: number
+  checkedInAttendees: number
+  status: 'booked' | 'ongoing' | 'completed'
+  statusLabel: string
+  eventType: string
+  price?: number
+  currency?: string
+  clientName?: string | null
+}
+
+export type SpaceBookingsResponse = {
+  success: boolean
+  message: string
+  data: SpaceBookingRow[]
+  meta: {
+    pagination: {
+      page: number
+      limit: number
+      totalRecords: number
+      totalPages: number
+    }
+    statusFilter: string
+    counts: {
+      all: number
+      booked: number
+      ongoing: number
+      completed: number
+    }
+    spaceId: string
+    spaceName: string | null
+    type: string
+  }
+}
+
+export const fetchSpaceBookings = async (
+  spaceId: string,
+  params?: { status?: SpaceBookingStatus; page?: number; limit?: number },
+) => {
+  const response = await venueApiClient.get<SpaceBookingsResponse>(
+    `/venues/admin/space/${spaceId}/bookings`,
+    {
+      params: {
+        status: params?.status || 'all',
+        page: params?.page || 1,
+        limit: params?.limit || 20,
+      },
+    },
+  )
+  return response.data
+}
+
+export const fetchVenueInsights = async (
+  venueId: string,
+  params?: { sort?: 'recent' | 'top' | 'all'; page?: number; limit?: number },
+) => {
+  const response = await venueApiClient.get<{
+    success?: boolean
+    message?: string
+    data: import('../type/expert-profile').PartnerInsightsData
+  }>(`/venues/${venueId}/insights`, {
+    params: {
+      sort: params?.sort || 'recent',
+      page: params?.page || 1,
+      limit: params?.limit || 20,
+    },
+  })
+  return response.data
+}
+
 export type UpdateVenueSpaceStatusPayload =
   | {
       status: 'approved'
@@ -125,6 +205,15 @@ export const updateVenueSpaceVisibility = async (
   payload: UpdateVenueSpaceVisibilityPayload,
 ) => {
   const response = await venueApiClient.patch(`/venues/space/admin/visibility/${spaceId}`, payload)
+  return response.data
+}
+
+export type BulkSpaceVisibilityPayload = UpdateVenueSpaceVisibilityPayload & {
+  spaceIds: string[]
+}
+
+export const bulkUpdateSpaceVisibility = async (payload: BulkSpaceVisibilityPayload) => {
+  const response = await venueApiClient.post('/venues/admin/spaces/bulk-visibility', payload)
   return response.data
 }
 

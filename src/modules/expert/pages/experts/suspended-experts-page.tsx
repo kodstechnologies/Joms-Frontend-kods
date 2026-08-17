@@ -5,8 +5,9 @@ import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import type { FilterValues } from '@/shared/types/data-filter'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter/use-module-export-filters'
-import { exportDataToFile } from '@/shared/utils/export-utils'
-
+import { exportDisplayValue } from '@/shared/utils/export-utils'
+import { buildFilterParams, createFilteredExportHandler } from '@/shared/utils/export-filter-utils'
+import { fetchExperts } from '../../api/expert-api'
 import { useActivateExpert, useExperts } from '../../hooks/use-expert'
 import type { Expert } from '../../type/expert'
 import {
@@ -25,6 +26,33 @@ import {
   TableActionsItem,
 } from '@/shared/components/table/table-actions-dropdown'
 
+const EXPORT_COLUMN_MAP: Record<string, { header: string; accessor: (e: Expert) => string }> = {
+  expertId: { header: 'ID', accessor: (e) => exportDisplayValue(e.id || e.expertId) },
+  name: { header: 'Name', accessor: (e) => exportDisplayValue(e.name) },
+  email: { header: 'Email', accessor: (e) => exportDisplayValue(e.email) },
+  phone: {
+    header: 'Phone Number',
+    accessor: (e) => exportDisplayValue((e as Expert & { phone?: string }).phone),
+  },
+  profession: { header: 'Profession', accessor: (e) => exportDisplayValue(e.profession) },
+  tier: {
+    header: 'Tier',
+    accessor: (e) => exportDisplayValue((e as Expert & { tier?: string }).tier),
+  },
+  serviceType: { header: 'Service Type', accessor: (e) => exportDisplayValue(e.serviceType) },
+  status: { header: 'Status', accessor: (e) => exportDisplayValue(e.status) },
+  createdAt: {
+    header: 'Created At',
+    accessor: (e) =>
+      exportDisplayValue(e.createdAt ? new Date(e.createdAt).toLocaleDateString() : undefined),
+  },
+  lastActive: {
+    header: 'Last Active',
+    accessor: (e) =>
+      exportDisplayValue(e.lastActive ? new Date(e.lastActive).toLocaleDateString() : undefined),
+  },
+}
+
 export function ExpertSuspendedExpertsPage() {
   const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState('')
@@ -32,52 +60,7 @@ export function ExpertSuspendedExpertsPage() {
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
 
-  const apiFilterParams = useMemo(() => {
-    const params: Record<string, string> = {}
-
-    Object.entries(appliedFilters).forEach(([rawKey, val]) => {
-      if (val === undefined || val === null || val === '') return
-
-      const parts = rawKey.split('.')
-      const fieldId = parts.length > 1 ? parts.slice(1).join('.') : rawKey
-
-      if (fieldId === 'location' && typeof val === 'object' && val !== null) {
-        const loc = val as { state?: string; city?: string }
-        if (loc.state?.trim()) params.locationState = loc.state.trim()
-        if (loc.city?.trim()) params.locationCity = loc.city.trim()
-        return
-      }
-
-      if (Array.isArray(val)) {
-        if (val.length > 0) {
-          params[fieldId] = val.join(',')
-        }
-        return
-      }
-
-      if (typeof val === 'object' && val !== null) {
-        const range = val as { from?: string | number; to?: string | number }
-        if (range.from !== undefined && range.from !== '') {
-          params[`${fieldId}Min`] = String(range.from).trim()
-        }
-        if (range.to !== undefined && range.to !== '') {
-          params[`${fieldId}Max`] = String(range.to).trim()
-        }
-        return
-      }
-
-      if (typeof val === 'string' && val.trim()) {
-        params[fieldId] = val.trim()
-        return
-      }
-
-      if (typeof val === 'number' || typeof val === 'boolean') {
-        params[fieldId] = String(val)
-      }
-    })
-
-    return params
-  }, [appliedFilters])
+  const apiFilterParams = useMemo(() => buildFilterParams(appliedFilters), [appliedFilters])
 
   const { data, isLoading } = useExperts({
     page: currentPage,
@@ -97,29 +80,12 @@ export function ExpertSuspendedExpertsPage() {
     setCurrentPage(1)
   }, [])
 
-  const handleExportData = useCallback(
-    (values: FilterValues, format: string) => {
-      const headers = [
-        'Expert ID',
-        'Name',
-        'Email ID',
-        'Profession',
-        'Status',
-        'Service Type',
-        'Created At',
-      ]
-      const rows = experts.map((e) => [
-        e.expertId || '-',
-        e.name || '-',
-        e.email || '-',
-        e.profession || '-',
-        e.status || '-',
-        e.serviceType || '-',
-        e.createdAt ? new Date(e.createdAt).toLocaleDateString() : 'N/A',
-      ])
-      exportDataToFile(headers, rows, format, 'suspended_experts_export')
-    },
-    [experts],
+  const handleExportData = useMemo(
+    () =>
+      createFilteredExportHandler(fetchExperts, EXPORT_COLUMN_MAP, 'suspended_experts_export', {
+        status: 'suspended',
+      }),
+    [],
   )
 
   const {

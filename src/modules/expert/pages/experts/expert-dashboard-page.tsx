@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import {
   Bar,
@@ -30,164 +31,9 @@ type Metric = {
   changeNote?: string
 }
 
-const METRICS: Metric[] = [
-  {
-    id: 'total-experts',
-    label: 'Total Expert',
-    value: '12,845',
-    change: '6.8%',
-    changeType: 'up',
-    changeNote: 'vs last month',
-  },
-  {
-    id: 'active-experts',
-    label: 'Active Experts',
-    value: '10,234',
-    change: '8.3%',
-    changeType: 'up',
-    changeNote: 'vs last month',
-  },
-  {
-    id: 'inactive-experts',
-    label: 'Inactive Experts',
-    value: '2,611',
-    change: '3.2%',
-    changeType: 'up',
-    changeNote: 'vs last month',
-  },
-  {
-    id: 'new-experts-mtd',
-    label: 'New Expert (MTD)',
-    value: '342',
-    change: '12.5%',
-    changeType: 'up',
-    changeNote: 'vs last month',
-  },
-  {
-    id: 'total-revenue',
-    label: 'Total Revenue',
-    value: '₹487,250',
-    change: '5.2%',
-    changeType: 'up',
-    changeNote: 'vs last month',
-  },
-  {
-    id: 'avg-listings',
-    label: 'Avg. Listings/Expert',
-    value: '06',
-    change: '2.8%',
-    changeType: 'up',
-    changeNote: 'vs last quarter',
-  },
-  {
-    id: 'avg-revenue',
-    label: 'Avg. Revenue/Expert',
-    value: '₹4,250',
-    change: '3.5%',
-    changeType: 'up',
-    changeNote: 'vs last quarter',
-  },
-  {
-    id: 'avg-ratings',
-    label: 'Avg. Ratings/Expert',
-    value: '4.5/5',
-    change: '12.5%',
-    changeType: 'up',
-    changeNote: 'vs last quarter',
-  },
-  {
-    id: 'avg-consultation',
-    label: 'Avg. Consultation/Experty',
-    value: '₹487,250',
-    change: '5.2%',
-    changeType: 'up',
-    changeNote: 'vs last month',
-  },
-  {
-    id: 'avg-response-time',
-    label: 'Avg. Response Time/Expert',
-    value: '₹48',
-    change: '5.2%',
-    changeType: 'up',
-    changeNote: 'vs last month',
-  },
-  {
-    id: 'avg-client',
-    label: 'Avg. Client/Expert',
-    value: '₹2,847',
-    change: '5.2%',
-    changeType: 'up',
-    changeNote: 'vs last month',
-  },
-  {
-    id: 'category-coverage',
-    label: 'Category coverage % expert',
-    value: '₹2,847',
-    change: '5.2%',
-    changeType: 'up',
-    changeNote: 'vs last quarter',
-  },
-  {
-    id: 'total-orders',
-    label: 'Total Order Completed',
-    value: '₹487,250',
-    change: '5.2%',
-    changeType: 'up',
-    changeNote: 'vs last month',
-  },
-  {
-    id: 'avg-cancellation',
-    label: 'Avg Cancellation/Expert',
-    value: '₹487,250',
-    change: '3.2%',
-    changeType: 'down',
-    changeNote: 'vs last month',
-  },
-]
-
-const DEFAULT_METRIC_IDS = [
-  'total-experts',
-  'active-experts',
-  'inactive-experts',
-  'new-experts-mtd',
-  'total-revenue',
-  'avg-listings',
-  'avg-revenue',
-  'avg-ratings',
-  'avg-consultation',
-  'avg-response-time',
-  'avg-client',
-  'category-coverage',
-  'total-orders',
-  'avg-cancellation',
-]
-
-const EXPERTS_BY_CATEGORY = [
-  { category: 'Finance', count: 280 },
-  { category: 'Technology', count: 240 },
-  { category: 'Fitness', count: 190 },
-  { category: 'Legal', count: 160 },
-  { category: 'Marketing', count: 130 },
-]
-
-const REVENUE_BY_CATEGORY = [
-  { category: 'Finance', revenue: 78000, label: '78K' },
-  { category: 'Technology', revenue: 65000, label: '65K' },
-  { category: 'Fitness', revenue: 52000, label: '52K' },
-  { category: 'Legal', revenue: 48000, label: '48K' },
-  { category: 'Marketing', revenue: 42000, label: '42K' },
-]
-
-const REVENUE_GROWTH = [
-  { month: 'Jan', revenue: 20000 },
-  { month: 'Feb', revenue: 28000 },
-  { month: 'Mar', revenue: 40000 },
-  { month: 'Apr', revenue: 35000 },
-  { month: 'May', revenue: 52000 },
-  { month: 'Jun', revenue: 48000 },
-  { month: 'July', revenue: 60000 },
-]
-
+type ExpertsByCategory = { category: string; count: number }
+type RevenueByCategory = { category: string; revenue: number; label?: string }
+type RevenueGrowthPoint = { month: string; revenue: number }
 type TopHost = {
   name: string
   category: string
@@ -197,48 +43,27 @@ type TopHost = {
   revenue: string
 }
 
-const TOP_HOSTS: TopHost[] = [
-  {
-    name: 'Sarah Johnson',
-    category: 'Marketing',
-    orders: 21,
-    rating: 4.9,
-    attendees: 1240,
-    revenue: '₹223,450',
-  },
-  {
-    name: 'Michael Chen',
-    category: 'Finance',
-    orders: 21,
-    rating: 4.8,
-    attendees: 980,
-    revenue: '₹198,320',
-  },
-  {
-    name: 'Emily Davis',
-    category: 'Legal',
-    orders: 21,
-    rating: 4.7,
-    attendees: 860,
-    revenue: '₹176,540',
-  },
-  {
-    name: 'David Wilson',
-    category: 'Technology',
-    orders: 21,
-    rating: 4.6,
-    attendees: 720,
-    revenue: '₹154,890',
-  },
-  {
-    name: 'Jessica Brown',
-    category: 'Fitness',
-    orders: 21,
-    rating: 4.5,
-    attendees: 640,
-    revenue: '₹142,760',
-  },
+const ZERO_METRICS: Metric[] = [
+  { id: 'total-experts', label: 'Total Expert', value: '0' },
+  { id: 'active-experts', label: 'Active Experts', value: '0' },
+  { id: 'inactive-experts', label: 'Inactive Experts', value: '0' },
+  { id: 'new-experts-mtd', label: 'New Expert (MTD)', value: '0' },
+  { id: 'total-revenue', label: 'Total Revenue', value: '₹0' },
+  { id: 'avg-listings', label: 'Avg. Listings/Expert', value: '0' },
+  { id: 'avg-revenue', label: 'Avg. Revenue/Expert', value: '₹0' },
+  { id: 'avg-ratings', label: 'Avg. Ratings/Expert', value: '0/5' },
+  { id: 'avg-consultation', label: 'Avg. Consultation/Expert', value: '0' },
+  { id: 'avg-response-time', label: 'Avg. Response Time/Expert', value: '0 mins' },
+  { id: 'avg-client', label: 'Avg. Client/Expert', value: '0' },
+  { id: 'category-coverage', label: 'Category coverage % expert', value: '0%' },
+  { id: 'total-orders', label: 'Total Order Completed', value: '0' },
+  { id: 'avg-cancellation', label: 'Avg Cancellation/Expert', value: '0' },
 ]
+
+const DEFAULT_METRIC_IDS = ZERO_METRICS.map((metric) => metric.id)
+
+const EMPTY_REV_BY_CATEGORY: RevenueByCategory[] = []
+const EMPTY_REVENUE_GROWTH: RevenueGrowthPoint[] = []
 
 const CHART_BLUE = 'var(--brand-action)'
 
@@ -261,9 +86,7 @@ function MetricCard({ metric }: { metric: Metric }) {
           <span
             className={cn(
               'inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-bold',
-              metric.changeType === 'down'
-                ? 'bg-brand-positive/15 text-brand-positive'
-                : 'bg-brand-positive/15 text-brand-positive',
+              'bg-brand-positive/15 text-brand-positive',
             )}
           >
             {metric.changeType === 'down' ? (
@@ -276,6 +99,27 @@ function MetricCard({ metric }: { metric: Metric }) {
           {metric.changeNote && <span className="text-muted text-[10px]">{metric.changeNote}</span>}
         </div>
       ) : null}
+    </div>
+  )
+}
+
+function MetricCardSkeleton() {
+  return (
+    <div className="rounded-brand-lg bg-brand-surface border border-white/[0.06] p-4">
+      <div className="h-3 w-28 animate-pulse rounded bg-white/10" />
+      <div className="mt-3 h-7 w-20 animate-pulse rounded bg-white/10" />
+      <div className="mt-4 h-5 w-32 animate-pulse rounded bg-white/5" />
+    </div>
+  )
+}
+
+function ChartCardSkeleton({ title }: { title: string }) {
+  return (
+    <div className="rounded-brand-lg bg-brand-surface border border-white/[0.06] px-5 py-6">
+      <div className="mb-4 flex items-center justify-between">
+        <h2 className="text-body-md font-bold text-white">{title}</h2>
+      </div>
+      <div className="h-[260px] w-full animate-pulse rounded-lg bg-white/5" />
     </div>
   )
 }
@@ -309,6 +153,12 @@ function ChartCard({
   )
 }
 
+function EmptyChartState({ message }: { message: string }) {
+  return (
+    <div className="text-muted flex h-[260px] items-center justify-center text-sm">{message}</div>
+  )
+}
+
 function RevenueGrowthTooltip({
   active,
   payload,
@@ -334,43 +184,59 @@ function RevenueGrowthTooltip({
 export const ExpertDashboardPage = () => {
   const navigate = useNavigate()
   const [growthRange, setGrowthRange] = useState('3')
-  const [metricsList, setMetricsList] = useState<Metric[]>(METRICS)
-  const [expertsCatData, setExpertsCatData] = useState(EXPERTS_BY_CATEGORY)
-  const [revCatData, setRevCatData] = useState(REVENUE_BY_CATEGORY)
-  const [growthDataList, setGrowthDataList] = useState(REVENUE_GROWTH)
-  const [topHostsList, setTopHostsList] = useState<TopHost[]>(TOP_HOSTS)
+
+  const {
+    data: res,
+    isLoading,
+    refetch,
+    isError,
+    error,
+  } = useQuery({
+    queryKey: ['expert-dashboard-analytics'],
+    queryFn: () => fetchExpertDashboardAnalytics(),
+  })
+
+  useEffect(() => {
+    if (!isError) return
+    console.error('Failed to load expert dashboard analytics:', error)
+    toast.error('Unable to load expert dashboard analytics.')
+  }, [isError, error])
+
+  const d = res?.data
+  const metricsList: Metric[] = d?.metrics?.length ? d.metrics : ZERO_METRICS
+  const expertsCatData: ExpertsByCategory[] = Array.isArray(d?.expertsByCategory)
+    ? d.expertsByCategory
+    : []
+  const revCatData: RevenueByCategory[] = Array.isArray(d?.revenueByCategory)
+    ? d.revenueByCategory
+    : EMPTY_REV_BY_CATEGORY
+  const growthDataList: RevenueGrowthPoint[] = Array.isArray(d?.revenueGrowthOverTime)
+    ? d.revenueGrowthOverTime
+    : EMPTY_REVENUE_GROWTH
+  const topHostsList: TopHost[] = Array.isArray(d?.topPerformingHosts) ? d.topPerformingHosts : []
+
+  const loadDashboard = () => {
+    void refetch()
+  }
 
   const activeMetricIds = useActiveMetricIds(EXPERT_DASHBOARD_MODULE_KEY, DEFAULT_METRIC_IDS)
   const visibleMetrics = useMemo(
     () => orderByActiveMetricIds(metricsList, activeMetricIds),
     [metricsList, activeMetricIds],
   )
-
-  useEffect(() => {
-    let isMounted = true
-    fetchExpertDashboardAnalytics()
-      .then((res) => {
-        if (!isMounted || !res?.data) return
-        const d = res.data
-        if (d.metrics?.length) setMetricsList(d.metrics)
-        if (d.expertsByCategory?.length) setExpertsCatData(d.expertsByCategory)
-        if (d.revenueByCategory?.length) setRevCatData(d.revenueByCategory)
-        if (d.revenueGrowthOverTime?.length) setGrowthDataList(d.revenueGrowthOverTime)
-        if (d.topPerformingHosts?.length) setTopHostsList(d.topPerformingHosts)
-      })
-      .catch((err) => {
-        console.error('Failed to load expert dashboard analytics:', err)
-      })
-    return () => {
-      isMounted = false
-    }
-  }, [])
+  const skeletonCount = activeMetricIds?.length || DEFAULT_METRIC_IDS.length
 
   const growthData = useMemo(() => {
+    if (!growthDataList.length) return []
     if (growthRange === '6') return growthDataList.slice(0, 6)
     if (growthRange === '12') return growthDataList
     return growthDataList.slice(0, 5)
   }, [growthRange, growthDataList])
+
+  const maxRevenue = useMemo(
+    () => Math.max(1, ...revCatData.map((item) => Number(item.revenue) || 0)),
+    [revCatData],
+  )
 
   return (
     <div className="space-y-7">
@@ -405,52 +271,83 @@ export const ExpertDashboardPage = () => {
       </div>
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4">
-        {visibleMetrics.map((metric) => (
-          <MetricCard key={metric.id} metric={metric} />
-        ))}
+        {isLoading
+          ? Array.from({ length: skeletonCount }).map((_, index) => (
+              <MetricCardSkeleton key={`metric-skeleton-${index}`} />
+            ))
+          : visibleMetrics.map((metric) => <MetricCard key={metric.id} metric={metric} />)}
       </div>
 
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
-        <ChartCard title="Experts by Category" onRefresh={() => toast.message('Chart refreshed')}>
-          <div className="h-[260px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={expertsCatData} margin={{ left: 0, right: 8, top: 8, bottom: 0 }}>
-                <CartesianGrid stroke="rgba(255,255,255,0.05)" vertical={false} />
-                <XAxis
-                  dataKey="category"
-                  tickLine={false}
-                  axisLine={false}
-                  tick={{ fill: 'rgba(148,163,184,0.85)', fontSize: 11 }}
-                />
-                <YAxis
-                  tickLine={false}
-                  axisLine={false}
-                  tick={{ fill: 'rgba(148,163,184,0.85)', fontSize: 11 }}
-                />
-                <Tooltip contentStyle={tooltipStyle} cursor={{ fill: 'rgba(21,93,252,0.08)' }} />
-                <Bar dataKey="count" fill={CHART_BLUE} radius={[4, 4, 0, 0]} barSize={42} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </ChartCard>
-
-        <ChartCard title="Revenue by Category" onRefresh={() => toast.message('Chart refreshed')}>
-          <div className="space-y-5 px-2 pt-2">
-            {revCatData.map((item) => (
-              <div key={item.category} className="flex items-center gap-3">
-                <span className="text-body-sm text-muted w-20 shrink-0">{item.category}</span>
-                <div className="relative h-7 flex-1 overflow-hidden rounded bg-white/5">
-                  <div
-                    className="bg-brand-action flex h-full min-w-[52px] items-center rounded px-2.5 text-[10px] font-bold text-white"
-                    style={{ width: `${Math.max(28, Math.min(100, (item.revenue / 700) * 100))}%` }}
-                  >
-                    {item.label || item.revenue}
-                  </div>
+        {isLoading ? (
+          <>
+            <ChartCardSkeleton title="Experts by Category" />
+            <ChartCardSkeleton title="Revenue by Category" />
+          </>
+        ) : (
+          <>
+            <ChartCard title="Experts by Category" onRefresh={loadDashboard}>
+              {expertsCatData.length === 0 ? (
+                <EmptyChartState message="No category data available." />
+              ) : (
+                <div className="h-[260px] w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={expertsCatData}
+                      margin={{ left: 0, right: 8, top: 8, bottom: 0 }}
+                    >
+                      <CartesianGrid stroke="rgba(255,255,255,0.05)" vertical={false} />
+                      <XAxis
+                        dataKey="category"
+                        tickLine={false}
+                        axisLine={false}
+                        tick={{ fill: 'rgba(148,163,184,0.85)', fontSize: 11 }}
+                      />
+                      <YAxis
+                        tickLine={false}
+                        axisLine={false}
+                        tick={{ fill: 'rgba(148,163,184,0.85)', fontSize: 11 }}
+                        allowDecimals={false}
+                      />
+                      <Tooltip
+                        contentStyle={tooltipStyle}
+                        cursor={{ fill: 'rgba(21,93,252,0.08)' }}
+                      />
+                      <Bar dataKey="count" fill={CHART_BLUE} radius={[4, 4, 0, 0]} barSize={42} />
+                    </BarChart>
+                  </ResponsiveContainer>
                 </div>
-              </div>
-            ))}
-          </div>
-        </ChartCard>
+              )}
+            </ChartCard>
+
+            <ChartCard title="Revenue by Category" onRefresh={loadDashboard}>
+              {revCatData.length === 0 ? (
+                <EmptyChartState message="No revenue data available." />
+              ) : (
+                <div className="space-y-5 px-2 pt-2">
+                  {revCatData.map((item) => (
+                    <div key={item.category} className="flex items-center gap-3">
+                      <span className="text-body-sm text-muted w-20 shrink-0">{item.category}</span>
+                      <div className="relative h-7 flex-1 overflow-hidden rounded bg-white/5">
+                        <div
+                          className="bg-brand-action flex h-full min-w-[52px] items-center rounded px-2.5 text-[10px] font-bold text-white"
+                          style={{
+                            width: `${Math.max(
+                              28,
+                              Math.min(100, ((Number(item.revenue) || 0) / maxRevenue) * 100),
+                            )}%`,
+                          }}
+                        >
+                          {item.label || item.revenue}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </ChartCard>
+          </>
+        )}
       </div>
 
       <div className="rounded-brand-lg bg-brand-surface border border-white/[0.06] px-5 py-6">
@@ -471,7 +368,7 @@ export const ExpertDashboardPage = () => {
             <button
               type="button"
               aria-label="Refresh revenue chart"
-              onClick={() => toast.message('Chart refreshed')}
+              onClick={loadDashboard}
               className="text-muted grid h-8 w-8 place-items-center rounded-lg border border-white/10 bg-black transition-colors hover:bg-white/5"
             >
               <RefreshCw className="size-3.5" />
@@ -479,34 +376,40 @@ export const ExpertDashboardPage = () => {
           </div>
         </div>
 
-        <div className="h-[330px] w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={growthData} margin={{ left: 20, right: 20, top: 20, bottom: 20 }}>
-              <CartesianGrid stroke="rgba(255,255,255,0.05)" vertical={false} />
-              <XAxis
-                dataKey="month"
-                tickLine={false}
-                axisLine={false}
-                tick={{ fill: 'rgba(148,163,184,0.85)', fontSize: 12 }}
-              />
-              <YAxis
-                tickLine={false}
-                axisLine={false}
-                tickFormatter={(value) => `${value / 1000}K`}
-                tick={{ fill: 'rgba(148,163,184,0.85)', fontSize: 12 }}
-              />
-              <Tooltip content={<RevenueGrowthTooltip />} />
-              <Line
-                type="monotone"
-                dataKey="revenue"
-                stroke="var(--brand-accent)"
-                strokeWidth={2}
-                dot={{ r: 4, fill: 'var(--brand-accent)', strokeWidth: 0 }}
-                activeDot={{ r: 6, fill: 'var(--brand-accent)' }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
+        {isLoading ? (
+          <div className="h-[330px] w-full animate-pulse rounded-lg bg-white/5" />
+        ) : growthData.length === 0 ? (
+          <EmptyChartState message="No revenue growth data available." />
+        ) : (
+          <div className="h-[330px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={growthData} margin={{ left: 20, right: 20, top: 20, bottom: 20 }}>
+                <CartesianGrid stroke="rgba(255,255,255,0.05)" vertical={false} />
+                <XAxis
+                  dataKey="month"
+                  tickLine={false}
+                  axisLine={false}
+                  tick={{ fill: 'rgba(148,163,184,0.85)', fontSize: 12 }}
+                />
+                <YAxis
+                  tickLine={false}
+                  axisLine={false}
+                  tickFormatter={(value) => `${value / 1000}K`}
+                  tick={{ fill: 'rgba(148,163,184,0.85)', fontSize: 12 }}
+                />
+                <Tooltip content={<RevenueGrowthTooltip />} />
+                <Line
+                  type="monotone"
+                  dataKey="revenue"
+                  stroke="var(--brand-accent)"
+                  strokeWidth={2}
+                  dot={{ r: 4, fill: 'var(--brand-accent)', strokeWidth: 0 }}
+                  activeDot={{ r: 6, fill: 'var(--brand-accent)' }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        )}
       </div>
 
       <div className="rounded-brand-lg bg-brand-surface border border-white/[0.06] px-5 py-6">
@@ -514,40 +417,59 @@ export const ExpertDashboardPage = () => {
           <h2 className="text-body-md font-bold text-white">Top Performing Hosts</h2>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[760px] border-collapse text-left">
-            <thead>
-              <tr className="text-muted text-[10px] font-semibold tracking-wide uppercase">
-                <th className="px-3 py-2.5">Expert Name</th>
-                <th className="px-3 py-2.5">Category</th>
-                <th className="px-3 py-2.5">No. Of Order</th>
-                <th className="px-3 py-2.5">Ratings</th>
-                <th className="px-3 py-2.5">Total Attendees</th>
-                <th className="px-3 py-2.5">Revenue</th>
-              </tr>
-            </thead>
-            <tbody>
-              {topHostsList.map((host) => (
-                <tr
-                  key={host.name}
-                  className="text-body-sm text-brand-text border-b border-white/5 transition-colors hover:bg-white/[0.02]"
-                >
-                  <td className="px-3 py-3 font-semibold text-white">{host.name}</td>
-                  <td className="text-muted px-3 py-3">{host.category}</td>
-                  <td className="px-3 py-3">{host.orders}</td>
-                  <td className="px-3 py-3">
-                    <span className="inline-flex items-center gap-1">
-                      <Star className="fill-brand-accent text-brand-accent size-3.5" />
-                      <span className="font-semibold text-white">{host.rating}</span>
-                    </span>
-                  </td>
-                  <td className="px-3 py-3">{host.attendees.toLocaleString('en-IN')}</td>
-                  <td className="px-3 py-3 font-semibold text-white">{host.revenue}</td>
+        {isLoading ? (
+          <div className="space-y-3">
+            {Array.from({ length: 5 }).map((_, index) => (
+              <div
+                key={`host-skeleton-${index}`}
+                className="h-10 animate-pulse rounded bg-white/5"
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[760px] border-collapse text-left">
+              <thead>
+                <tr className="text-muted text-[10px] font-semibold tracking-wide uppercase">
+                  <th className="px-3 py-2.5">Expert Name</th>
+                  <th className="px-3 py-2.5">Category</th>
+                  <th className="px-3 py-2.5">No. Of Order</th>
+                  <th className="px-3 py-2.5">Ratings</th>
+                  <th className="px-3 py-2.5">Total Attendees</th>
+                  <th className="px-3 py-2.5">Revenue</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {topHostsList.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="text-muted px-3 py-8 text-center text-sm">
+                      No top performing hosts yet.
+                    </td>
+                  </tr>
+                ) : (
+                  topHostsList.map((host) => (
+                    <tr
+                      key={host.name}
+                      className="text-body-sm text-brand-text border-b border-white/5 transition-colors hover:bg-white/[0.02]"
+                    >
+                      <td className="px-3 py-3 font-semibold text-white">{host.name}</td>
+                      <td className="text-muted px-3 py-3">{host.category}</td>
+                      <td className="px-3 py-3">{host.orders}</td>
+                      <td className="px-3 py-3">
+                        <span className="inline-flex items-center gap-1">
+                          <Star className="fill-brand-accent text-brand-accent size-3.5" />
+                          <span className="font-semibold text-white">{host.rating || 0}</span>
+                        </span>
+                      </td>
+                      <td className="px-3 py-3">{(host.attendees || 0).toLocaleString('en-IN')}</td>
+                      <td className="px-3 py-3 font-semibold text-white">{host.revenue || '₹0'}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   )

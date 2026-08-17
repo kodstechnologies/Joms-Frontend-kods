@@ -6,7 +6,6 @@ import type {
 } from '../type/category'
 import type {
   AddSubCategoryPayload,
-  CategoryListParams,
   CreateCategoryPayload,
   UpdateCategoryPayload,
 } from './category-api'
@@ -42,25 +41,24 @@ const buildVenueCategoryFormData = (payload: CreateCategoryPayload) => {
   return formData
 }
 
-export const fetchVenueCategoryList = async (
-  params?: Pick<CategoryListParams, 'search' | 'page' | 'limit'>,
-) => {
+export const fetchVenueCategoryList = async (params?: Record<string, unknown>) => {
   const response = await venueApiClient.get<VenueCategoryListResponse>('/venue-categories', {
     params,
   })
   return response.data
 }
 
-export const fetchPausedVenueCategories = async () => {
-  const response = await venueApiClient.get<ApiSuccessResponse<VenueCategoryApi[]>>(
-    '/venue-categories/paused',
-  )
+export const fetchPausedVenueCategories = async (params?: Record<string, unknown>) => {
+  const response = await venueApiClient.get<VenueCategoryListResponse>('/venue-categories/paused', {
+    params,
+  })
   return response.data
 }
 
-export const fetchDeletedVenueCategories = async () => {
-  const response = await venueApiClient.get<ApiSuccessResponse<VenueCategoryApi[]>>(
+export const fetchDeletedVenueCategories = async (params?: Record<string, unknown>) => {
+  const response = await venueApiClient.get<VenueCategoryListResponse>(
     '/venue-categories/deleted',
+    { params },
   )
   return response.data
 }

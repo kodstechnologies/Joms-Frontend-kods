@@ -1,4 +1,6 @@
 import { useCallback, useMemo, useState } from 'react'
+import { createFilteredExportHandler, buildFilterParams } from '@/shared/utils/export-filter-utils'
+import { fetchExperts } from '../../api/expert-api'
 import type { ColumnDef } from '@tanstack/react-table'
 import createIcon from '@/assets/JOMS_ICONS-2/icons8-create.svg'
 import {
@@ -10,6 +12,7 @@ import {
   Hourglass,
   Mail,
   PauseCircle,
+  Tag,
   Trash2,
   User,
   Users,
@@ -27,8 +30,6 @@ import {
   useSuspendExpert,
   useBulkSuspendExperts,
   useBulkDeactivateExperts,
-  useBulkNotifyExperts,
-  useBulkMessageExperts,
   useBulkUpdateMembershipExperts,
   useBulkApproveExperts,
   useBulkRejectExperts,
@@ -36,9 +37,9 @@ import {
   useBulkVerifyKycExperts,
   useBulkVerifyDigilockerExperts,
   useBulkEscalateExperts,
-  useBulkRaiseTicketExperts,
 } from '../../hooks/use-expert'
 import { MembershipActionModals } from '@/modules/memberships/components/membership-action-modals'
+import { fetchExpertSubscriptions } from '@/modules/memberships/api/membership-subscription-api'
 import type { MembershipSubscription } from '@/modules/memberships/types/membership-subscription'
 import { orderByActiveMetricIds, useActiveMetricIds } from '../../hooks/use-active-metric-ids'
 import { useTableColumnPreferences } from '../../hooks/use-ui-preferences'
@@ -53,19 +54,25 @@ import {
   TableActionsDropdown,
   TableActionsItem,
 } from '@/shared/components/table/table-actions-dropdown'
-import { DecisionActionModal } from '@/shared/components/modal/decision-action-modal'
+import {
+  DecisionActionModal,
+  type DecisionActionModalOption,
+} from '@/shared/components/modal/decision-action-modal'
+import { AddTagModal } from '@/shared/components/modal/add-tag-modal'
 import { StatusQuickLinkCard, StatusQuickLinkRow } from '@/shared/components/status-quick-link-card'
 import { Button } from '@/shared/components/ui/button'
 import { PayoutHistoryDrawer } from '../../components/payout-history-drawer'
 import { statusCardTones } from '@/shared/lib/design-tokens'
+import { useEntityTags } from '@/shared/hooks/use-entity-tags'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 import type { FilterValues } from '@/shared/types/data-filter'
-import { exportDataToFile } from '@/shared/utils/export-utils'
+import { exportDataToFile, exportDisplayValue } from '@/shared/utils/export-utils'
 import { MODERATION_CATEGORY_SLUGS } from '@/modules/settings/api/templates-api'
 import {
   useModerationReasonOptions,
   useRecordModerationReasonUsage,
 } from '@/modules/settings/hooks/use-templates'
+import { useEscalationAssignees } from '@/modules/my-tasks/hooks/use-admin-escalation'
 
 const ACTION_ITEM_CLASS = 'text-slate-800 hover:bg-slate-100 hover:text-slate-900'
 
@@ -79,9 +86,83 @@ const formatDateTimeCell = (value?: string | null) => (
   <TableDateTimeCell value={value} emptyLabel="N/A" />
 )
 
+const EXPORT_COLUMN_MAP: Record<string, { header: string; accessor: (e: Expert) => string }> = {
+  'expert-id': { header: 'Expert ID', accessor: (e) => exportDisplayValue(e.expertId) },
+  name: { header: 'Name', accessor: (e) => exportDisplayValue(e.name) },
+  email: { header: 'Email ID', accessor: (e) => exportDisplayValue(e.email) },
+  profession: { header: 'Profession', accessor: (e) => exportDisplayValue(e.profession) },
+  status: { header: 'Status', accessor: (e) => exportDisplayValue(e.status) },
+  'service-type': { header: 'Service Type', accessor: (e) => exportDisplayValue(e.serviceType) },
+  'created-at': {
+    header: 'Created At',
+    accessor: (e) =>
+      e.createdAt
+        ? new Date(e.createdAt).toLocaleString('en-IN', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+          })
+        : '',
+  },
+  'last-active': {
+    header: 'Last Active',
+    accessor: (e) =>
+      e.lastActive
+        ? new Date(e.lastActive).toLocaleString('en-IN', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+          })
+        : '',
+  },
+  reason: { header: 'Reason', accessor: (e) => exportDisplayValue(e.reason) },
+  'reported-at': {
+    header: 'Reported At',
+    accessor: (e) =>
+      e.reportedAt
+        ? new Date(e.reportedAt).toLocaleString('en-IN', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+          })
+        : '',
+  },
+  'deleted-at': {
+    header: 'Deleted At',
+    accessor: (e) =>
+      e.deletedAt
+        ? new Date(e.deletedAt).toLocaleString('en-IN', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+          })
+        : '',
+  },
+}
+
+const DEFAULT_VISIBLE_IDS = [
+  'expert-id',
+  'name',
+  'email',
+  'profession',
+  'status',
+  'service-type',
+  'created-at',
+  'last-active',
+]
+
 export const ExpertManagementPage = () => {
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [selectedExpertIds, setSelectedExpertIds] = useState<string[]>([])
+  const { tagModalOpen, openTagModal, closeTagModal, saveTags, initialTags } = useEntityTags()
   const [suspendExpertTarget, setSuspendExpertTarget] = useState<Expert | null>(null)
   const [deleteExpertTarget, setDeleteExpertTarget] = useState<Expert | null>(null)
   const [payoutDrawerTarget, setPayoutDrawerTarget] = useState<Expert | null>(null)
@@ -120,52 +201,10 @@ export const ExpertManagementPage = () => {
     [setCurrentPage],
   )
 
-  const apiFilterParams = useMemo(() => {
-    const params: Record<string, string> = {}
-
-    Object.entries(appliedAdvancedFilters).forEach(([rawKey, val]) => {
-      if (val === undefined || val === null || val === '') return
-
-      const parts = rawKey.split('.')
-      const fieldId = parts.length > 1 ? parts.slice(1).join('.') : rawKey
-
-      if (fieldId === 'location' && typeof val === 'object' && val !== null) {
-        const loc = val as { state?: string; city?: string }
-        if (loc.state?.trim()) params.locationState = loc.state.trim()
-        if (loc.city?.trim()) params.locationCity = loc.city.trim()
-        return
-      }
-
-      if (Array.isArray(val)) {
-        if (val.length > 0) {
-          params[fieldId] = val.join(',')
-        }
-        return
-      }
-
-      if (typeof val === 'object' && val !== null) {
-        const range = val as { from?: string | number; to?: string | number }
-        if (range.from !== undefined && range.from !== '') {
-          params[`${fieldId}Min`] = String(range.from).trim()
-        }
-        if (range.to !== undefined && range.to !== '') {
-          params[`${fieldId}Max`] = String(range.to).trim()
-        }
-        return
-      }
-
-      if (typeof val === 'string' && val.trim()) {
-        params[fieldId] = val.trim()
-        return
-      }
-
-      if (typeof val === 'number' || typeof val === 'boolean') {
-        params[fieldId] = String(val)
-      }
-    })
-
-    return params
-  }, [appliedAdvancedFilters])
+  const apiFilterParams = useMemo(
+    () => buildFilterParams(appliedAdvancedFilters),
+    [appliedAdvancedFilters],
+  )
 
   const { data, isLoading } = useExperts({
     page: currentPage,
@@ -176,29 +215,13 @@ export const ExpertManagementPage = () => {
   })
   const experts = useMemo(() => data?.data || [], [data?.data])
 
-  const handleExportData = useCallback(
-    (values: FilterValues, format: string) => {
-      const headers = [
-        'Expert ID',
-        'Name',
-        'Email ID',
-        'Profession',
-        'Status',
-        'Service Type',
-        'Created At',
-      ]
-      const rows = experts.map((e) => [
-        displayValue(e.expertId),
-        displayValue(e.name),
-        displayValue(e.email),
-        displayValue(e.profession),
-        displayValue(e.status),
-        displayValue(e.serviceType),
-        e.createdAt ? new Date(e.createdAt).toLocaleDateString() : 'N/A',
-      ])
-      exportDataToFile(headers, rows, format, 'experts_export')
-    },
-    [experts],
+  const handleExportData = useMemo(
+    () =>
+      createFilteredExportHandler(fetchExperts, EXPORT_COLUMN_MAP, 'experts_export', {
+        status: activeStatus !== 'all' ? activeStatus : undefined,
+        search: searchQuery || undefined,
+      }),
+    [activeStatus, searchQuery],
   )
 
   const {
@@ -297,8 +320,6 @@ export const ExpertManagementPage = () => {
   // Bulk Mutations & Logic
   const bulkSuspendMutation = useBulkSuspendExperts()
   const bulkDeactivateMutation = useBulkDeactivateExperts()
-  const bulkNotifyMutation = useBulkNotifyExperts()
-  const bulkMessageMutation = useBulkMessageExperts()
   const bulkUpdateMembershipMutation = useBulkUpdateMembershipExperts()
   const bulkApproveMutation = useBulkApproveExperts()
   const bulkRejectMutation = useBulkRejectExperts()
@@ -306,9 +327,21 @@ export const ExpertManagementPage = () => {
   const bulkVerifyKycMutation = useBulkVerifyKycExperts()
   const bulkVerifyDigilockerMutation = useBulkVerifyDigilockerExperts()
   const bulkEscalateMutation = useBulkEscalateExperts()
-  const bulkRaiseTicketMutation = useBulkRaiseTicketExperts()
 
   const [isMembershipModalOpen, setIsMembershipModalOpen] = useState(false)
+  const [isEscalateModalOpen, setIsEscalateModalOpen] = useState(false)
+  const [escalateAdminNotes, setEscalateAdminNotes] = useState('')
+  const [selectedEscalationOption, setSelectedEscalationOption] = useState('')
+
+  const { data: assigneesData } = useEscalationAssignees('experts.*')
+  const escalationOptions: DecisionActionModalOption[] = useMemo(
+    () =>
+      (assigneesData?.data ?? []).map((assignee) => ({
+        label: assignee.fullname,
+        value: assignee.id,
+      })),
+    [assigneesData?.data],
+  )
 
   const selectedPartnerIds = useMemo(() => {
     return experts
@@ -317,6 +350,111 @@ export const ExpertManagementPage = () => {
       )
       .map((exp) => exp.id || exp.expertId)
   }, [experts, selectedExpertIds])
+
+  const selectedExperts = useMemo(() => {
+    return experts.filter(
+      (exp) => selectedExpertIds.includes(exp.expertId) || selectedExpertIds.includes(exp.id),
+    )
+  }, [experts, selectedExpertIds])
+
+  const closeEscalateModal = useCallback(() => {
+    setIsEscalateModalOpen(false)
+    setEscalateAdminNotes('')
+    setSelectedEscalationOption('')
+  }, [])
+
+  const handleBulkExportSelected = useCallback(() => {
+    if (selectedExpertCount === 0) {
+      toast.error('Please select at least one expert.')
+      return
+    }
+
+    if (selectedExperts.length === 0) {
+      toast.error(
+        'Selected experts are not loaded on this page. Go back to the page where they were selected, then export.',
+      )
+      return
+    }
+
+    try {
+      const headers = [
+        'Expert ID',
+        'Name',
+        'Email ID',
+        'Profession',
+        'Status',
+        'Service Type',
+        'Created At',
+        'Last Login',
+      ]
+      const rows = selectedExperts.map((e) => [
+        displayValue(e.expertId),
+        displayValue(e.name),
+        displayValue(e.email),
+        displayValue(e.profession),
+        displayValue(e.status),
+        displayValue(e.serviceType),
+        e.createdAt ? new Date(e.createdAt).toLocaleDateString() : 'N/A',
+        e.lastActive ? new Date(e.lastActive).toLocaleDateString() : 'N/A',
+      ])
+      exportDataToFile(headers, rows, 'excel', 'selected_experts_export')
+      toast.success(`Exported ${selectedExperts.length} selected expert(s)`)
+    } catch {
+      toast.error('Failed to export selected experts.')
+    }
+  }, [selectedExpertCount, selectedExperts])
+
+  const handleEscalateSubmit = useCallback(() => {
+    const ids = selectedPartnerIds.length > 0 ? selectedPartnerIds : selectedExpertIds
+    if (ids.length === 0) {
+      toast.error('Please select at least one expert.')
+      return
+    }
+    if (!selectedEscalationOption) {
+      toast.error('Please select a sub-admin to assign.')
+      return
+    }
+    if (!escalateAdminNotes.trim()) {
+      toast.error('Admin notes are required.')
+      return
+    }
+
+    const selectedAssignee = (assigneesData?.data ?? []).find(
+      (item) => item.id === selectedEscalationOption,
+    )
+
+    bulkEscalateMutation.mutate(
+      {
+        partnerIds: ids,
+        assigneeSubAdminId: selectedEscalationOption,
+        assigneeName: selectedAssignee?.fullname || '',
+        adminNote: escalateAdminNotes.trim(),
+        targetAdminId: selectedEscalationOption,
+      },
+      {
+        onSuccess: (res: unknown) => {
+          const data = res as { data?: { successCount?: number } }
+          toast.success(
+            `Successfully escalated ${data?.data?.successCount ?? ids.length} expert(s)`,
+          )
+          setSelectedExpertIds([])
+          closeEscalateModal()
+        },
+        onError: (err: unknown) => {
+          const error = err as { response?: { data?: { message?: string } } }
+          toast.error(error?.response?.data?.message || 'Failed to escalate experts.')
+        },
+      },
+    )
+  }, [
+    assigneesData?.data,
+    bulkEscalateMutation,
+    closeEscalateModal,
+    escalateAdminNotes,
+    selectedEscalationOption,
+    selectedExpertIds,
+    selectedPartnerIds,
+  ])
 
   const handleSuspendSubmit = useCallback(() => {
     if (!suspendExpertTarget && !isBulkSuspend) return
@@ -523,57 +661,65 @@ export const ExpertManagementPage = () => {
       } else if (actionLabel.includes('Suspend')) {
         openSuspendModal()
       } else if (actionLabel.includes('Membership') || actionLabel.includes('Upgrade')) {
-        setIsMembershipModalOpen(true)
+        void (async () => {
+          try {
+            const response = await fetchExpertSubscriptions({
+              partnerIds: ids.join(','),
+              status: 'active',
+              page: 1,
+              limit: Math.min(Math.max(ids.length, 1), 1000),
+            })
+            const withMembership = new Set(
+              (response.data?.subscriptions ?? [])
+                .map((item) => String(item.partnerId || '').trim())
+                .filter(Boolean),
+            )
+
+            const missingExperts = experts.filter((exp) => {
+              const partnerId = String(exp.id || '').trim()
+              const isSelected =
+                selectedExpertIds.includes(exp.expertId) ||
+                selectedExpertIds.includes(exp.id) ||
+                ids.includes(partnerId)
+              if (!isSelected || !partnerId) return false
+              return !withMembership.has(partnerId)
+            })
+
+            if (missingExperts.length > 0) {
+              if (missingExperts.length === 1) {
+                toast.error(
+                  `${missingExperts[0]?.name || 'This expert'} does not have any membership.`,
+                )
+              } else {
+                toast.error(`${missingExperts.length} selected experts do not have any membership.`)
+              }
+              return
+            }
+
+            setIsMembershipModalOpen(true)
+          } catch (err: unknown) {
+            const error = err as { response?: { data?: { message?: string } } }
+            toast.error(error?.response?.data?.message || 'Failed to verify expert memberships.')
+          }
+        })()
       } else if (actionLabel.includes('Export') || actionLabel.includes('Share')) {
-        toast.success(`Exporting / Generating links for ${ids.length} selected expert(s)`)
-        onExport?.()
-      } else if (actionLabel.includes('Ticket') || actionLabel.includes('Internal Ticket')) {
-        bulkRaiseTicketMutation.mutate(
-          { partnerIds: ids, ticketSubject: 'Bulk Admin Ticket', priority: 'medium' },
-          {
-            onSuccess: () => {
-              toast.success(`Internal ticket created for ${ids.length} expert(s)`)
-              setSelectedExpertIds([])
-            },
-            onError: (err: unknown) => {
-              const error = err as { response?: { data?: { message?: string } } }
-              toast.error(error?.response?.data?.message || 'Failed to raise ticket.')
-            },
-          },
-        )
+        handleBulkExportSelected()
+      } else if (actionLabel.includes('Escalate') || actionLabel.includes('Ticket')) {
+        setIsEscalateModalOpen(true)
       } else if (actionLabel.includes('Notify')) {
-        bulkNotifyMutation.mutate(
-          { partnerIds: ids, title: 'Admin Notification', message: 'Bulk notification sent.' },
-          {
-            onSuccess: () => {
-              toast.success(`Notification sent to ${ids.length} expert(s)`)
-              setSelectedExpertIds([])
-            },
-            onError: (err: unknown) => {
-              const error = err as { response?: { data?: { message?: string } } }
-              toast.error(error?.response?.data?.message || 'Failed to send notification.')
-            },
-          },
-        )
+        const params = new URLSearchParams({
+          channel: 'push',
+          audience: 'expert-management',
+          partnerIds: ids.join(','),
+        })
+        navigate(`/communication/create?${params.toString()}`)
       } else if (actionLabel.includes('Message') || actionLabel.includes('Communicate')) {
-        bulkMessageMutation.mutate(
-          {
-            partnerIds: ids,
-            subject: 'Admin Message',
-            body: 'Bulk message sent.',
-            channel: 'email',
-          },
-          {
-            onSuccess: () => {
-              toast.success(`Message sent to ${ids.length} expert(s)`)
-              setSelectedExpertIds([])
-            },
-            onError: (err: unknown) => {
-              const error = err as { response?: { data?: { message?: string } } }
-              toast.error(error?.response?.data?.message || 'Failed to send message.')
-            },
-          },
-        )
+        const params = new URLSearchParams({
+          channel: 'email',
+          audience: 'expert-management',
+          partnerIds: ids.join(','),
+        })
+        navigate(`/communication/create?${params.toString()}`)
       } else if (actionLabel.includes('Approve')) {
         bulkApproveMutation.mutate(
           { partnerIds: ids },
@@ -644,20 +790,6 @@ export const ExpertManagementPage = () => {
             },
           },
         )
-      } else if (actionLabel.includes('Escalate')) {
-        bulkEscalateMutation.mutate(
-          { partnerIds: ids },
-          {
-            onSuccess: () => {
-              toast.success(`Successfully escalated ${ids.length} expert(s)`)
-              setSelectedExpertIds([])
-            },
-            onError: (err: unknown) => {
-              const error = err as { response?: { data?: { message?: string } } }
-              toast.error(error?.response?.data?.message || 'Failed to escalate.')
-            },
-          },
-        )
       } else {
         toast.info(`${actionLabel} completed for ${ids.length} expert(s)`)
         setSelectedExpertIds([])
@@ -665,15 +797,13 @@ export const ExpertManagementPage = () => {
     },
     [
       bulkApproveMutation,
-      bulkEscalateMutation,
-      bulkMessageMutation,
-      bulkNotifyMutation,
-      bulkRaiseTicketMutation,
       bulkRejectMutation,
       bulkRestoreMutation,
       bulkVerifyDigilockerMutation,
       bulkVerifyKycMutation,
-      onExport,
+      experts,
+      handleBulkExportSelected,
+      navigate,
       openDeleteModal,
       openSuspendModal,
       selectedExpertIds,
@@ -789,20 +919,9 @@ export const ExpertManagementPage = () => {
       },
     }
 
-    const defaultVisibleIds = [
-      'expert-id',
-      'name',
-      'email',
-      'profession',
-      'status',
-      'service-type',
-      'created-at',
-      'last-active',
-    ]
-
     const visibleIds = tableColumnPreferencesQuery.data?.visibleColumnIds?.length
       ? tableColumnPreferencesQuery.data.visibleColumnIds
-      : defaultVisibleIds
+      : DEFAULT_VISIBLE_IDS
 
     const preferenceColumns = visibleIds.map((id) => dataColumnsById[id]).filter(Boolean)
 
@@ -877,6 +996,26 @@ export const ExpertManagementPage = () => {
             >
               Delete Expert
             </TableActionsItem>
+            <TableActionsItem
+              icon={<Tag className="size-3.5 text-slate-700" aria-hidden="true" />}
+              className={ACTION_ITEM_CLASS}
+              onClick={() => {
+                setActiveDropdownId(null)
+                openTagModal(expert.id || expert.expertId)
+              }}
+            >
+              Add Tags
+            </TableActionsItem>
+            <TableActionsItem
+              icon={<User className="size-3.5 text-slate-700" aria-hidden="true" />}
+              className={ACTION_ITEM_CLASS}
+              onClick={() => {
+                setActiveDropdownId(null)
+                toast.message('Report Expert is coming soon')
+              }}
+            >
+              Report Expert
+            </TableActionsItem>
           </TableActionsDropdown>
         )
       },
@@ -889,6 +1028,7 @@ export const ExpertManagementPage = () => {
     navigate,
     openDeleteModal,
     openSuspendModal,
+    openTagModal,
     selectedExpertIds,
     someVisibleExpertsSelected,
     tableColumnPreferencesQuery.data,
@@ -971,8 +1111,8 @@ export const ExpertManagementPage = () => {
 
   const bulkActions = [
     { label: 'Delete selected experts', icon: Trash2 },
-    { label: 'Export / Share selected experts', icon: Upload },
-    { label: 'Raise ticket / Escalate selected experts', icon: FileText },
+    { label: 'Export selected experts', icon: Upload },
+    { label: 'Escalate selected experts', icon: FileText },
     { label: 'Update Membership', icon: Gem },
     { label: 'Notify selected experts', icon: Bell },
     { label: 'Message selected experts', icon: Mail },
@@ -1156,6 +1296,30 @@ export const ExpertManagementPage = () => {
         isSubmitting={deactivateExpertMutation.isPending || bulkDeactivateMutation.isPending}
       />
 
+      <DecisionActionModal
+        open={isEscalateModalOpen}
+        variant="escalate"
+        title={
+          selectedExpertCount > 1
+            ? `Escalate ${selectedExpertCount} Experts`
+            : 'Escalate Application'
+        }
+        description={
+          selectedExpertCount > 1
+            ? `Are you sure you want to escalate ${selectedExpertCount} selected experts? These will be reviewed by the selected sub-admin.`
+            : 'Are you sure you want to escalate this Application? This Post will be reviewed by the selected parties.'
+        }
+        submitLabel="Escalate"
+        escalationOptions={escalationOptions}
+        selectedEscalationOption={selectedEscalationOption}
+        onEscalationOptionChange={setSelectedEscalationOption}
+        adminNotes={escalateAdminNotes}
+        onAdminNotesChange={setEscalateAdminNotes}
+        onClose={closeEscalateModal}
+        onSubmit={handleEscalateSubmit}
+        isSubmitting={bulkEscalateMutation.isPending}
+      />
+
       {isMembershipModalOpen && (
         <MembershipActionModals
           subscription={
@@ -1197,6 +1361,13 @@ export const ExpertManagementPage = () => {
           isSubmitting={bulkUpdateMembershipMutation.isPending}
         />
       )}
+
+      <AddTagModal
+        open={tagModalOpen}
+        onClose={closeTagModal}
+        initialTags={initialTags}
+        onSubmit={saveTags}
+      />
     </div>
   )
 }

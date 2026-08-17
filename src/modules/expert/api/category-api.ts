@@ -11,6 +11,7 @@ export type CategoryListParams = {
   status?: 'ACTIVE' | 'PAUSED' | 'DELETED'
   page?: number
   limit?: number
+  [key: string]: unknown
 }
 
 export type CategorySubCategoryInput = {

@@ -41,6 +41,7 @@ export type Communication = {
   createdAt: string | null
   createdAtLabel: string
   updatedAt: string | null
+  partnerIds?: string[]
   analytics: CommunicationAnalytics
   deliveryMeta: {
     providerConnected: boolean
@@ -90,6 +91,8 @@ export type CreateCommunicationPayload = {
   subject?: string
   messageContent: string
   additionalNotes?: string
+  /** When set, delivery is limited to these partner IDs instead of the full audience. */
+  partnerIds?: string[]
 }
 
 export type UpdateCommunicationPayload = Partial<CreateCommunicationPayload> & {

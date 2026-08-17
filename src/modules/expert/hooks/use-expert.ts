@@ -7,6 +7,8 @@ import {
   restoreExpert,
   setExpertPassword,
   suspendExpert,
+  blockExpert,
+  forceLogoutExpert,
   bulkSuspendExperts,
   bulkDeactivateExperts,
   bulkNotifyExperts,
@@ -59,6 +61,24 @@ export const useSuspendExpert = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['experts'] })
     },
+  })
+}
+
+export const useBlockExpert = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (id: string) => blockExpert(id),
+    onSuccess: (_data, id) => {
+      queryClient.invalidateQueries({ queryKey: ['experts'] })
+      queryClient.invalidateQueries({ queryKey: ['expert-profile', id] })
+    },
+  })
+}
+
+export const useForceLogoutExpert = () => {
+  return useMutation({
+    mutationFn: (id: string) => forceLogoutExpert(id),
   })
 }
 
@@ -226,6 +246,9 @@ export const useBulkEscalateExperts = () => {
     mutationFn: (payload: BulkActionPayload) => bulkEscalateExperts(payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['experts'] })
+      queryClient.invalidateQueries({ queryKey: ['my-tasks'] })
+      queryClient.invalidateQueries({ queryKey: ['all-escalations'] })
+      queryClient.invalidateQueries({ queryKey: ['escalation-metrics'] })
     },
   })
 }

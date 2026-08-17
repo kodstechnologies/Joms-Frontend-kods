@@ -184,18 +184,31 @@ export const CreateExpertPage = () => {
       }
 
       if (currentStep === 5) {
-        await submitApplication.mutateAsync({
+        const result = await submitApplication.mutateAsync({
           id: expertId,
           payload: buildSubmitPayload(formData),
         })
 
+        // Partner was submitted. Check if KYC auto-approval had a warning.
+        const kycWarning = (result as { kycWarning?: string } | undefined)?.kycWarning
+
         if (isEditMode) {
-          toast.success('Expert profile updated successfully')
+          if (kycWarning) {
+            toast.warning(`Profile updated, but KYC could not be auto-approved: ${kycWarning}`)
+          } else {
+            toast.success('Expert profile updated successfully')
+          }
           navigate(`/experts/management/profile/${expertId}`)
           return
         }
 
-        toast.success('Expert created and KYC approved successfully')
+        if (kycWarning) {
+          toast.warning(
+            `Expert created, but KYC auto-approval failed: ${kycWarning}. Please complete KYC manually.`,
+          )
+        } else {
+          toast.success('Expert created and KYC approved successfully')
+        }
         navigate('/experts/management')
         return
       }

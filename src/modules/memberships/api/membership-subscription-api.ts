@@ -13,6 +13,7 @@ import type {
 export const fetchExpertSubscriptions = async (params?: {
   status?: SubscriptionStatus
   search?: string
+  partnerIds?: string
   page?: number
   limit?: number
 }) => {

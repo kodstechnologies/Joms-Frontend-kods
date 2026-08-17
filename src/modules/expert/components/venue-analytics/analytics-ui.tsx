@@ -30,17 +30,33 @@ export function TrendBadge({ percent }: { percent: number }) {
   )
 }
 
+export function MetricCardSkeleton({ className }: { className?: string }) {
+  return (
+    <AnalyticsCard className={cn('flex flex-col justify-between', className)}>
+      <div className="h-3 w-24 animate-pulse rounded bg-white/10" />
+      <div className="mt-3 h-7 w-20 animate-pulse rounded bg-white/10" />
+      <div className="mt-2 h-3 w-28 animate-pulse rounded bg-white/5" />
+    </AnalyticsCard>
+  )
+}
+
 export function MetricCard({
   label,
   value,
   trend,
+  isLoading,
   className,
 }: {
   label: string
   value: string
   trend?: MetricTrend
+  isLoading?: boolean
   className?: string
 }) {
+  if (isLoading) {
+    return <MetricCardSkeleton className={className} />
+  }
+
   return (
     <AnalyticsCard className={cn('flex flex-col justify-between', className)}>
       <div className="flex items-start justify-between gap-2">
@@ -79,16 +95,21 @@ export function PeriodSelect({
   value,
   options = ['Last 7 Days', 'Last 30 Days', 'Last 90 Days'],
   onChange,
+  className,
 }: {
   value: string
   options?: string[]
   onChange?: (value: string) => void
+  className?: string
 }) {
   return (
     <select
       value={value}
       onChange={(e) => onChange?.(e.target.value)}
-      className="select-on-accent bg-brand-accent text-brand-text-dark h-8 rounded-lg border border-white/10 px-3 pr-8 text-[11px] font-semibold outline-none"
+      className={cn(
+        'select-on-accent bg-brand-accent text-brand-text-dark h-8 w-auto max-w-[140px] shrink-0 rounded-lg border border-white/10 px-2.5 pr-7 text-[11px] font-semibold outline-none',
+        className,
+      )}
     >
       {options.map((opt) => (
         <option key={opt} value={opt}>

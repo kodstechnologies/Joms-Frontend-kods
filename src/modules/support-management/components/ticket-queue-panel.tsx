@@ -14,6 +14,8 @@ type TicketQueuePanelProps = {
   onSearchChange: (q: string) => void
   onSelect: (id: string) => void
   onToggleFilters: () => void
+  onRefresh?: () => void
+  disableClientFilter?: boolean
   showFilters: boolean
   filterPanel?: React.ReactNode
 }
@@ -25,16 +27,20 @@ export function TicketQueuePanel({
   onSearchChange,
   onSelect,
   onToggleFilters,
+  onRefresh,
+  disableClientFilter = false,
   showFilters,
   filterPanel,
 }: TicketQueuePanelProps) {
-  const filtered = tickets.filter(
-    (t) =>
-      !searchQuery ||
-      t.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      t.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      t.reporter.toLowerCase().includes(searchQuery.toLowerCase()),
-  )
+  const filtered = disableClientFilter
+    ? tickets
+    : tickets.filter(
+        (t) =>
+          !searchQuery ||
+          t.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          t.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          t.reporter.toLowerCase().includes(searchQuery.toLowerCase()),
+      )
 
   return (
     <div className="radius-lg bg-brand-surface flex h-full flex-col border border-white/10">
@@ -51,7 +57,11 @@ export function TicketQueuePanel({
           >
             <Filter className="size-4" />
           </button>
-          <button type="button" className="text-muted hover:text-brand-text rounded-lg p-1.5">
+          <button
+            type="button"
+            onClick={onRefresh}
+            className="text-muted hover:text-brand-text rounded-lg p-1.5"
+          >
             <RefreshCw className="size-4" />
           </button>
         </div>

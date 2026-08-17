@@ -5,13 +5,15 @@ import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
 import { fetchExpertApplicationView, updateExpertKycStatus } from '../../api/expert-application-api'
+import { fetchExperts } from '../../api/expert-api'
 import { useExperts } from '../../hooks/use-expert'
 import type { Expert } from '../../type/expert'
 import { isKycSubmittedForApplication } from '../../utils/expert-application-helpers'
 import { openExpertApplicationView } from '../../utils/expert-application-navigation'
 import type { FilterValues } from '@/shared/types/data-filter'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter/use-module-export-filters'
-import { exportDataToFile } from '@/shared/utils/export-utils'
+import { exportDisplayValue } from '@/shared/utils/export-utils'
+import { buildFilterParams, createFilteredExportHandler } from '@/shared/utils/export-filter-utils'
 import { ExpertListHeader } from './expert-list-shared'
 import {
   createExpertBaseColumns,
@@ -35,6 +37,28 @@ import {
   useRecordModerationReasonUsage,
 } from '@/modules/settings/hooks/use-templates'
 
+const EXPORT_COLUMN_MAP: Record<string, { header: string; accessor: (e: Expert) => string }> = {
+  expertId: { header: 'Expert ID', accessor: (e) => exportDisplayValue(e.expertId) },
+  name: { header: 'Name', accessor: (e) => exportDisplayValue(e.name) },
+  email: { header: 'Email ID', accessor: (e) => exportDisplayValue(e.email) },
+  profession: { header: 'Profession', accessor: (e) => exportDisplayValue(e.profession) },
+  status: { header: 'Status', accessor: (e) => exportDisplayValue(e.status) },
+  serviceType: { header: 'Service Type', accessor: (e) => exportDisplayValue(e.serviceType) },
+  createdAt: {
+    header: 'Created At',
+    accessor: (e) =>
+      e.createdAt
+        ? new Date(e.createdAt).toLocaleString('en-IN', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+          })
+        : '',
+  },
+}
+
 export function ExpertPendingApprovalsPage() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
@@ -48,52 +72,7 @@ export function ExpertPendingApprovalsPage() {
   const [isRevoking, setIsRevoking] = useState(false)
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
 
-  const apiFilterParams = useMemo(() => {
-    const params: Record<string, string> = {}
-
-    Object.entries(appliedFilters).forEach(([rawKey, val]) => {
-      if (val === undefined || val === null || val === '') return
-
-      const parts = rawKey.split('.')
-      const fieldId = parts.length > 1 ? parts.slice(1).join('.') : rawKey
-
-      if (fieldId === 'location' && typeof val === 'object' && val !== null) {
-        const loc = val as { state?: string; city?: string }
-        if (loc.state?.trim()) params.locationState = loc.state.trim()
-        if (loc.city?.trim()) params.locationCity = loc.city.trim()
-        return
-      }
-
-      if (Array.isArray(val)) {
-        if (val.length > 0) {
-          params[fieldId] = val.join(',')
-        }
-        return
-      }
-
-      if (typeof val === 'object' && val !== null) {
-        const range = val as { from?: string | number; to?: string | number }
-        if (range.from !== undefined && range.from !== '') {
-          params[`${fieldId}Min`] = String(range.from).trim()
-        }
-        if (range.to !== undefined && range.to !== '') {
-          params[`${fieldId}Max`] = String(range.to).trim()
-        }
-        return
-      }
-
-      if (typeof val === 'string' && val.trim()) {
-        params[fieldId] = val.trim()
-        return
-      }
-
-      if (typeof val === 'number' || typeof val === 'boolean') {
-        params[fieldId] = String(val)
-      }
-    })
-
-    return params
-  }, [appliedFilters])
+  const apiFilterParams = useMemo(() => buildFilterParams(appliedFilters), [appliedFilters])
   const recordReasonUsage = useRecordModerationReasonUsage()
   const { options: revokeReasonOptions, buildPayload: buildRevokeReasonPayload } =
     useModerationReasonOptions(MODERATION_CATEGORY_SLUGS.rejectExpert)
@@ -118,29 +97,12 @@ export function ExpertPendingApprovalsPage() {
     setCurrentPage(1)
   }, [])
 
-  const handleExportData = useCallback(
-    (values: FilterValues, format: string) => {
-      const headers = [
-        'Expert ID',
-        'Name',
-        'Email ID',
-        'Profession',
-        'Status',
-        'Service Type',
-        'Created At',
-      ]
-      const rows = experts.map((e) => [
-        e.expertId || '-',
-        e.name || '-',
-        e.email || '-',
-        e.profession || '-',
-        e.status || '-',
-        e.serviceType || '-',
-        e.createdAt ? new Date(e.createdAt).toLocaleDateString() : 'N/A',
-      ])
-      exportDataToFile(headers, rows, format, 'pending_experts_export')
-    },
-    [experts],
+  const handleExportData = useMemo(
+    () =>
+      createFilteredExportHandler(fetchExperts, EXPORT_COLUMN_MAP, 'pending_experts_export', {
+        status: 'pending',
+      }),
+    [],
   )
 
   const {
