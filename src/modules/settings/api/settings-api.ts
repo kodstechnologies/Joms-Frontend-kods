@@ -3,6 +3,7 @@ import { settingsApiClient } from '@/shared/lib/axios'
 import type {
   ExpertSettings,
   ModuleSettingsMap,
+  NotificationCatalogGroup,
   ServiceSettings,
   SettingsLog,
   SettingsLogMetrics,
@@ -143,6 +144,13 @@ export const deleteErrorTemplate = async (index: number) => {
     `/settings/platform/error-templates/${index}`,
   )
   return response.data.data.templates
+}
+
+export const fetchNotificationCatalog = async () => {
+  const response = await settingsApiClient.get<ApiEnvelope<NotificationCatalogGroup[]>>(
+    '/settings/notifications/catalog',
+  )
+  return response.data.data
 }
 
 export type { ExpertSettings, VenueSettings, ServiceSettings }

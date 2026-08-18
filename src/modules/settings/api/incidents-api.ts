@@ -38,7 +38,7 @@ export const fetchIncident = async (id: string) => {
 
 export const assignIncident = async (
   id: string,
-  payload: { department: string; assignee: string },
+  payload: { department: string; assignee: string; assigneeId: string },
 ) => {
   const response = await settingsApiClient.patch<ApiEnvelope<IncidentRow>>(
     `/settings/incidents/${id}/assign`,

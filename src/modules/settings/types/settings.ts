@@ -254,6 +254,20 @@ export type NotificationSettings = {
   }
 }
 
+export type NotificationCatalogItem = {
+  key: string
+  label: string
+  description: string
+}
+
+export type NotificationCatalogGroup = {
+  key: keyof NotificationSettings
+  title: string
+  tone: 'general' | 'timeSensitive' | 'critical' | 'adminPanel'
+  audience: 'partnerApp' | 'adminPanel' | string
+  items: NotificationCatalogItem[]
+}
+
 export type FinanceTransactionalSettings = {
   escrow: {
     enableEscrowSystem: boolean
@@ -314,6 +328,10 @@ export type IncidentRow = {
   module: string
   status: IncidentStatus
   assignee: string
+  assigneeId?: string
+  department?: string
+  sourceTicketId?: string | null
+  sourceTicketNumber?: string
   createdOn: string
 }
 
@@ -374,6 +392,7 @@ export type LoginTrailRow = {
 }
 
 export type SettingsMetric = {
+  id?: string
   title: string
   value: string
   trend?: { direction: 'up' | 'down'; percentage: number; label: string }

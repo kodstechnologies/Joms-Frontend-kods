@@ -34,11 +34,13 @@ export const useAssignIncident = () => {
       id,
       department,
       assignee,
+      assigneeId,
     }: {
       id: string
       department: string
       assignee: string
-    }) => assignIncident(id, { department, assignee }),
+      assigneeId: string
+    }) => assignIncident(id, { department, assignee, assigneeId }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: incidentKeys.all })
     },

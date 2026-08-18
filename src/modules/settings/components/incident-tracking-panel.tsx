@@ -5,19 +5,25 @@ import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
 import { AssignUserModal } from './assign-user-modal'
+import {
+  DEFAULT_INCIDENT_METRIC_IDS,
+  INCIDENT_METRIC_IDS,
+  INCIDENT_METRIC_ID_SET,
+  INCIDENT_MODULE_KEY,
+} from '../config/incident-metrics.config'
 import { useAssignIncident, useIncidentMetrics, useIncidents } from '../hooks/use-incidents'
-import type {
-  IncidentRow,
-  IncidentSeverity,
-  IncidentStatus,
-  SettingsMetric,
-} from '../types/settings'
+import type { IncidentRow, IncidentSeverity, IncidentStatus } from '../types/settings'
 import { StatCard } from '@/shared/components/dashboard/stat-card'
 import { DataTable } from '@/shared/components/table/data-table'
 import { ResponsiveGrid } from '@/shared/components/responsive/responsive-grid'
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
 import { uiTokens } from '@/shared/lib/design-tokens'
+import {
+  orderByActiveMetricIds,
+  useActiveMetricIds,
+} from '@/modules/expert/hooks/use-active-metric-ids'
+import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
 
 const PAGE_SIZE = 8
 
@@ -61,8 +67,25 @@ export function IncidentTrackingPanel() {
   const [page, setPage] = useState(1)
   const [selected, setSelected] = useState<IncidentRow | null>(null)
 
+  const activeMetricIds = useActiveMetricIds(INCIDENT_MODULE_KEY, DEFAULT_INCIDENT_METRIC_IDS)
+  const filteredActiveMetricIds = useMemo(
+    () =>
+      sortIdsByCatalogOrder(
+        activeMetricIds.filter((id) => INCIDENT_METRIC_ID_SET.has(id)),
+        INCIDENT_METRIC_IDS,
+      ),
+    [activeMetricIds],
+  )
+
   const { data: metrics = [], isLoading: metricsLoading } = useIncidentMetrics()
-  const metricCards: SettingsMetric[] = metricsLoading ? [] : metrics
+  const metricCards = useMemo(() => {
+    const cards = metrics.filter((metric) => metric.id && INCIDENT_METRIC_ID_SET.has(metric.id))
+    return orderByActiveMetricIds(
+      cards.map((metric) => ({ ...metric, id: metric.id! })),
+      filteredActiveMetricIds,
+    )
+  }, [filteredActiveMetricIds, metrics])
+
   const { data: incidentsResult, isLoading } = useIncidents({ page, limit: PAGE_SIZE, search })
   const assignMutation = useAssignIncident()
 
@@ -98,7 +121,9 @@ export function IncidentTrackingPanel() {
       {
         accessorKey: 'assignee',
         header: 'Assignee',
-        cell: ({ row }) => <span className="text-slate-400">{row.original.assignee}</span>,
+        cell: ({ row }) => (
+          <span className="text-slate-400">{row.original.assignee || 'Unassigned'}</span>
+        ),
       },
       {
         accessorKey: 'createdOn',
@@ -146,7 +171,7 @@ export function IncidentTrackingPanel() {
             ))
           : metricCards.map((metric) => (
               <StatCard
-                key={metric.title}
+                key={metric.id}
                 title={metric.title}
                 value={metric.value}
                 trend={metric.trend}
@@ -186,14 +211,22 @@ export function IncidentTrackingPanel() {
         open={Boolean(selected)}
         incident={selected}
         onClose={() => setSelected(null)}
-        onSubmit={(department, user) => {
+        onSubmit={(department, user, assigneeId) => {
           if (!selected) return
           assignMutation.mutate(
-            { id: selected.id, department, assignee: user },
+            { id: selected.id, department, assignee: user, assigneeId },
             {
               onSuccess: () => {
+                const ticketId = selected.sourceTicketId
                 setSelected(null)
-                toast.success(`Assigned ${user} from ${department}`)
+                toast.success(`Assigned ${user} from ${department}`, {
+                  action: ticketId
+                    ? {
+                        label: 'Open ticket',
+                        onClick: () => navigate(`/support/tickets/${ticketId}`),
+                      }
+                    : undefined,
+                })
               },
               onError: () => toast.error('Failed to assign incident'),
             },
