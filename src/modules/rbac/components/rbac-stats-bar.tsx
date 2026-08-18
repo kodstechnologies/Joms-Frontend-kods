@@ -14,25 +14,50 @@ type RbacStatsBarProps = {
   isLoading?: boolean
 }
 
-export function RbacStatsBar({ stats, isLoading }: RbacStatsBarProps) {
+function RbacStatCard({
+  label,
+  value,
+  isLoading,
+}: {
+  label: string
+  value: string
+  isLoading?: boolean
+}) {
   return (
-    <div className="grid gap-3 md:grid-cols-3 xl:grid-cols-5">
-      {cards.map((card) => (
-        <div
-          key={card.key}
-          className="rounded-brand-lg bg-brand-surface border border-white/10 px-4 py-4"
-        >
-          <p className="text-brand-muted text-xs font-medium md:text-sm">{card.label}</p>
-          <p
-            className={cn(
-              'text-brand-text mt-2 text-2xl font-semibold tracking-tight',
-              isLoading && 'animate-pulse',
-            )}
-          >
-            {isLoading ? '—' : String(stats?.[card.key] ?? 0).padStart(2, '0')}
-          </p>
-        </div>
-      ))}
+    <div className="referral-stats-card flex min-h-[96px] w-full flex-col p-4">
+      <p className="referral-stats-label">{label}</p>
+      <p className={cn('referral-stats-value mt-2', isLoading && 'animate-pulse')}>{value}</p>
+    </div>
+  )
+}
+
+export function RbacStatsBar({ stats, isLoading }: RbacStatsBarProps) {
+  const primaryCards = cards.slice(0, 4)
+  const secondaryCard = cards[4]
+
+  const formatValue = (key: (typeof cards)[number]['key']) =>
+    isLoading ? '—' : String(stats?.[key] ?? 0).padStart(2, '0')
+
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        {primaryCards.map((card) => (
+          <RbacStatCard
+            key={card.key}
+            label={card.label}
+            value={formatValue(card.key)}
+            isLoading={isLoading}
+          />
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <RbacStatCard
+          label={secondaryCard.label}
+          value={formatValue(secondaryCard.key)}
+          isLoading={isLoading}
+        />
+      </div>
     </div>
   )
 }

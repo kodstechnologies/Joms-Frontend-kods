@@ -1,34 +1,23 @@
 import type { AdminUser } from '@/modules/auth/store/auth-store'
 
-import { navigationConfig, type NavItem, type PermissionModule } from './navigation.config'
+import { navigationConfig, type NavItem } from './navigation.config'
+import {
+  hasModulePermissionAccess,
+  normalizePermissionGrant,
+  normalizeUserPermissions,
+  type PermissionModuleKey,
+} from '@/shared/lib/permissions'
 
-export type { PermissionModule } from './navigation.config'
-
-const LEGACY_PERMISSION_MAP: Record<string, string> = {
-  'events.view': 'venues.view',
-  'events.create': 'venues.create',
-  'events.update': 'venues.update',
-  'events.delete': 'venues.delete',
-  'events.approve': 'venues.approve',
-}
-
-export function normalizePermissionKey(key: string): string {
-  return LEGACY_PERMISSION_MAP[key] || key
-}
-
-export function normalizeUserPermissions(permissions: string[] = []): string[] {
-  return [...new Set(permissions.map((key) => normalizePermissionKey(key)))]
-}
+export type PermissionModule = PermissionModuleKey
+export { normalizeUserPermissions }
 
 export function hasModuleAccess(
   user: AdminUser | null | undefined,
   module: PermissionModule,
 ): boolean {
   if (!user) return false
-  if (user.isSuperAdmin) return true
-
-  const permissions = normalizeUserPermissions(user.permissions)
-  return permissions.some((permission) => permission.startsWith(`${module}.`))
+  const grants = (user.permissions || []).map((grant) => normalizePermissionGrant(grant))
+  return hasModulePermissionAccess(grants, module, user.isSuperAdmin)
 }
 
 type NavFilterContext = {
@@ -118,6 +107,22 @@ export function getDefaultHomeRoute(user: AdminUser | null | undefined): string 
 
   if (hasModuleAccess(user, 'experts')) {
     return '/experts/management'
+  }
+
+  if (hasModuleAccess(user, 'finance')) {
+    return '/finance/dashboard'
+  }
+
+  if (hasModuleAccess(user, 'memberships')) {
+    return '/memberships/plans'
+  }
+
+  if (hasModuleAccess(user, 'referrals')) {
+    return '/referrals/management'
+  }
+
+  if (hasModuleAccess(user, 'settings')) {
+    return '/settings/main'
   }
 
   return '/my-tasks'

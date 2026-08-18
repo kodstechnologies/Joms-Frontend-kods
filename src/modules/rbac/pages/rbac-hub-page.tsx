@@ -1,19 +1,21 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 import {
-  BarChart3,
+  Clock,
   Eye,
   Pencil,
-  Plus,
   Settings,
   Shield,
   ShieldOff,
+  SlidersHorizontal,
   Trash2,
   UserCheck,
   UserPlus,
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
+
+import createIcon from '@/assets/JOMS_ICONS-2/icons8-create.svg'
 
 import { RbacStatsBar } from '../components/rbac-stats-bar'
 import { UpdatePasswordModal } from '../components/update-password-modal'
@@ -110,6 +112,14 @@ const formatDateTime = (value?: string) => {
     month: 'numeric',
     year: 'numeric',
   })
+}
+
+const formatRiskLevel = (value?: string) => {
+  if (!value) return '—'
+  return value
+    .split('_')
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ')
 }
 
 export function RbacHubPage() {
@@ -329,7 +339,15 @@ export function RbacHubPage() {
   const roleColumns = useMemo<ColumnDef<Role>[]>(
     () => [
       { accessorKey: 'roleCode', header: 'Role ID' },
-      { accessorKey: 'name', header: 'Role Name' },
+      {
+        accessorKey: 'name',
+        header: 'Role Name',
+        cell: ({ row }) => (
+          <span className="inline-flex rounded-md border border-white/10 bg-[#141414] px-2.5 py-1 text-xs font-medium text-white">
+            {row.original.name}
+          </span>
+        ),
+      },
       { accessorKey: 'description', header: 'Description' },
       {
         accessorKey: 'scopes',
@@ -345,8 +363,8 @@ export function RbacHubPage() {
         accessorKey: 'riskLevel',
         header: 'Risk level',
         cell: ({ row }) => (
-          <span className="text-brand-accent capitalize">
-            {row.original.riskLevel.replace('_', ' ')}
+          <span className="text-brand-text font-medium">
+            {formatRiskLevel(row.original.riskLevel)}
           </span>
         ),
       },
@@ -374,7 +392,15 @@ export function RbacHubPage() {
       {
         accessorKey: 'userCount',
         header: 'Users (No.)',
-        cell: ({ row }) => String(row.original.userCount).padStart(2, '0'),
+        cell: ({ row }) => (
+          <button
+            type="button"
+            onClick={() => navigate(`/settings/access/roles/${row.original.id}/users`)}
+            className="text-brand-text hover:text-brand-accent font-medium underline underline-offset-2"
+          >
+            {String(row.original.userCount).padStart(2, '0')}
+          </button>
+        ),
       },
       {
         id: 'actions',
@@ -413,6 +439,12 @@ export function RbacHubPage() {
                 <span className="text-brand-success">Enable Role</span>
               </TableActionsItem>
             )}
+            <TableActionsItem
+              icon={<Settings className="size-3.5" />}
+              onClick={() => navigate(`/settings/access/roles/${row.original.id}/edit`)}
+            >
+              Edit scope
+            </TableActionsItem>
             <TableActionsItem
               icon={<UserPlus className="size-3.5" />}
               onClick={() => navigate('/settings/access/users/create')}
@@ -555,28 +587,27 @@ export function RbacHubPage() {
     <div className="flex flex-col gap-4 md:gap-6">
       <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
         <div>
-          <h1 className="text-brand-text text-2xl font-bold md:text-3xl">Role Based Access</h1>
-          <p className="text-brand-muted mt-1 text-sm md:text-base">
-            Comprehensive user data and admin controls.
-          </p>
+          <h1 className="referral-page-title">Role Based Access</h1>
+          <p className="referral-page-subtitle mt-1">Comprehensive user data and admin controls.</p>
         </div>
         <div className="flex w-full flex-col gap-2 sm:flex-row md:w-auto">
           <Button
-            variant="secondary"
-            className="ui-manage-metrics"
+            className="ui-manage-metrics h-9 w-full rounded-xl bg-[#FBC078] px-5 text-sm font-semibold text-black shadow-none hover:bg-[#EEB46A] md:w-auto"
             onClick={() => navigate('/metrics/rbac-hub')}
           >
-            <BarChart3 className="size-4" />
+            <SlidersHorizontal className="size-4" />
             Manage Metrics
           </Button>
           <Button
+            type="button"
+            className="h-9 w-full md:w-auto"
             onClick={() =>
               navigate(
                 isRolesTab ? '/settings/access/roles/create' : '/settings/access/users/create',
               )
             }
           >
-            <Plus className="size-4" />
+            <img src={createIcon} alt="" className="size-4" aria-hidden="true" />
             {isRolesTab ? 'Create New Role' : 'Add New User'}
           </Button>
         </div>
@@ -584,7 +615,7 @@ export function RbacHubPage() {
 
       <RbacStatsBar stats={statsData?.data} isLoading={statsLoading} />
 
-      <div className="bg-brand-surface flex w-full gap-1 rounded-xl border border-white/10 p-1">
+      <div className="flex w-full gap-1 rounded-xl border border-white/10 bg-[#141414] p-1">
         {(['roles', 'users'] as const).map((tab) => (
           <button
             key={tab}
@@ -596,10 +627,10 @@ export function RbacHubPage() {
               setActiveTab(tab)
             }}
             className={cn(
-              'flex-1 rounded-lg px-4 py-2.5 text-sm font-medium transition-colors',
+              'flex-1 rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors',
               activeTab === tab
-                ? 'bg-brand-surface text-brand-text shadow-sm'
-                : 'text-muted hover:text-brand-text',
+                ? 'bg-[#1f1f1f] text-white shadow-sm'
+                : 'text-white/55 hover:text-white',
             )}
           >
             {tab === 'roles' ? 'Admin Roles' : 'Users'}
@@ -622,10 +653,17 @@ export function RbacHubPage() {
         </div>
       ) : null}
 
-      {!isRolesTab && (statsData?.data?.invitesSent ?? 0) >= 0 ? (
-        <div className="rounded-brand-lg border-brand-accent-muted bg-brand-accent/10 text-brand-text flex items-center justify-between border px-4 py-3 text-sm">
-          <span>Invites Sent — {String(statsData?.data?.invitesSent ?? 0).padStart(2, '0')}</span>
-          <Button variant="secondary" onClick={() => navigate('/settings/access')}>
+      {!isRolesTab ? (
+        <div className="flex items-center justify-between rounded-xl border border-[#E0A263]/35 bg-[#E0A263]/12 px-4 py-3">
+          <span className="text-brand-text flex items-center gap-2 text-sm font-medium">
+            <Clock className="size-4 text-[#E0A263]" aria-hidden="true" />
+            Invites Sent: {String(statsData?.data?.invitesSent ?? 0).padStart(2, '0')}
+          </span>
+          <Button
+            variant="secondary"
+            className="h-9 rounded-lg border-white/25 px-4 text-sm font-semibold"
+            onClick={() => navigate('/settings/access/invites')}
+          >
             Review
           </Button>
         </div>

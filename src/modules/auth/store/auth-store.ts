@@ -1,6 +1,14 @@
 import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
 
+import {
+  hasModulePermissionAccess,
+  hasPermissionGrant,
+  normalizePermissionGrant,
+  PERMISSION_LEVELS,
+  type PermissionLevel,
+} from '@/shared/lib/permissions'
+
 export type AdminUser = {
   id: string
   email: string
@@ -22,8 +30,8 @@ type AuthState = {
   setSession: (user: AdminUser, token: string) => void
   updateUser: (partial: Partial<AdminUser>) => void
   clearSession: () => void
-  hasPermission: (key: string) => boolean
-  hasModuleAccess: (module: 'venues' | 'services' | 'experts') => boolean
+  hasPermission: (key: string, minLevel?: PermissionLevel) => boolean
+  hasModuleAccess: (module: string) => boolean
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -53,27 +61,17 @@ export const useAuthStore = create<AuthState>()(
           }
         }),
       clearSession: () => set({ isAuthenticated: false, user: null, token: null }),
-      hasPermission: (key) => {
+      hasPermission: (key, minLevel = PERMISSION_LEVELS.FULL) => {
         const user = get().user
         if (!user) return false
-        if (user.isSuperAdmin) return true
-        return user.permissions.includes(key)
+        const grants = user.permissions.map((grant) => normalizePermissionGrant(grant))
+        return hasPermissionGrant(grants, key, minLevel, user.isSuperAdmin)
       },
-      hasModuleAccess: (module: 'venues' | 'services' | 'experts') => {
+      hasModuleAccess: (module) => {
         const user = get().user
         if (!user) return false
-        if (user.isSuperAdmin) return true
-        const permissions = user.permissions.map((key) => {
-          const legacyMap: Record<string, string> = {
-            'events.view': 'venues.view',
-            'events.create': 'venues.create',
-            'events.update': 'venues.update',
-            'events.delete': 'venues.delete',
-            'events.approve': 'venues.approve',
-          }
-          return legacyMap[key] || key
-        })
-        return permissions.some((p) => p.startsWith(`${module}.`))
+        const grants = user.permissions.map((grant) => normalizePermissionGrant(grant))
+        return hasModulePermissionAccess(grants, module, user.isSuperAdmin)
       },
     }),
     {
