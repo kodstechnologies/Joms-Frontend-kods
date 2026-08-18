@@ -36,6 +36,60 @@ export const STATUS_CYCLE: TicketStatus[] = ['open', 'in_progress', 'on_hold', '
 
 export const PRIORITY_CYCLE: TicketPriority[] = ['critical', 'high', 'medium', 'low']
 
+export const SUPPORT_MODULE_OPTIONS = [
+  'Service Marketplace',
+  'Milestones',
+  "FAQ's",
+  'Events',
+  'Services',
+  'Venues',
+  'Membership',
+  'Experts',
+  'User Accounts',
+  'Others',
+] as const
+
+export const SUPPORT_ISSUE_TYPE_OPTIONS = [
+  'Payment Failed',
+  'Approval Pending',
+  'Refund Issue',
+  'Verification',
+  'Authentication',
+  'Account Access',
+  'Booking Failed',
+  'Service Dispute',
+  'Membership Issue',
+  'Other',
+] as const
+
+export const SUPPORT_ESCALATION_PATHWAY_OPTIONS = [
+  'None',
+  'Team Lead',
+  'Super Admin',
+  'Legal',
+  'Finance',
+  'Technical Support',
+] as const
+
+export type SelectOption = { value: string; label: string }
+
+export function toSelectOptions(
+  values: readonly string[],
+  current?: string | null,
+): SelectOption[] {
+  const options = values.map((value) => ({ value, label: value }))
+  const extra = String(current || '').trim()
+  if (extra && extra !== '—' && !values.some((value) => value === extra)) {
+    return [{ value: extra, label: extra }, ...options]
+  }
+  return options
+}
+
+export const PRIORITY_SELECT_OPTIONS: SelectOption[] = PRIORITY_CYCLE.map((value) => ({
+  value,
+  label: getPriorityLabel(value),
+}))
+
 export const nextStatus = (status: TicketStatus): TicketStatus => {
   const idx = STATUS_CYCLE.indexOf(status)
   return STATUS_CYCLE[(idx + 1) % STATUS_CYCLE.length]

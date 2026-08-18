@@ -1,15 +1,17 @@
-import { Check, CircleArrowOutUpRight, Pause, Trash2, UserMinus, X } from 'lucide-react'
+import {
+  AlertTriangle,
+  Check,
+  CircleArrowOutUpRight,
+  Pause,
+  Trash2,
+  UserMinus,
+  X,
+} from 'lucide-react'
 import calendarIcon from '@/assets/JOMS_ICONS-2/icons8-calendar.svg'
 import { cn } from '@/shared/lib/cn'
 
 export type DecisionActionModalVariant =
-  | 'approve'
-  | 'reject'
-  | 'requestChanges'
-  | 'escalate'
-  | 'suspend'
-  | 'delete'
-  | 'pause'
+  'approve' | 'reject' | 'requestChanges' | 'escalate' | 'suspend' | 'delete' | 'pause' | 'warn'
 
 export type DecisionActionModalOption = {
   label: string
@@ -24,8 +26,9 @@ type DecisionActionModalProps = {
   title: string
   description?: string
   submitLabel: string
-  adminNotes: string
-  onAdminNotesChange: (value: string) => void
+  adminNotes?: string
+  onAdminNotesChange?: (value: string) => void
+  showAdminNotes?: boolean
   onClose: () => void
   onSubmit: () => void
   cancelLabel?: string
@@ -47,6 +50,7 @@ type DecisionActionModalProps = {
   selectedEscalationOption?: string
   onEscalationOptionChange?: (value: string) => void
   isSubmitting?: boolean
+  submitDisabled?: boolean
   showTimeline?: boolean
   startDate?: string
   onStartDateChange?: (value: string) => void
@@ -130,6 +134,15 @@ const variantStyles: Record<
     showHero: false,
     showReasonsLabel: true,
   },
+  warn: {
+    submit: 'ui-modal-btn-gold',
+    submitIcon: 'none',
+    showHero: true,
+    heroShape: 'circle',
+    showReasonsLabel: true,
+    adminNotesMinHeight: 'min-h-[119px]',
+    descriptionMaxWidth: 'max-w-[333px]',
+  },
 }
 
 function splitDescription(description: string): { primary: string; secondary?: string } {
@@ -152,8 +165,9 @@ export function DecisionActionModal({
   title,
   description = '',
   submitLabel,
-  adminNotes,
+  adminNotes = '',
   onAdminNotesChange,
+  showAdminNotes = true,
   onClose,
   onSubmit,
   cancelLabel = 'Cancel',
@@ -175,6 +189,7 @@ export function DecisionActionModal({
   selectedEscalationOption,
   onEscalationOptionChange,
   isSubmitting = false,
+  submitDisabled = false,
   showTimeline = false,
   startDate = '',
   onStartDateChange,
@@ -191,12 +206,12 @@ export function DecisionActionModal({
   if (!open) return null
 
   const styles = variantStyles[variant]
-  const showReasons = reasonOptions.length > 0
   const showReasonInput = Boolean(onReasonChange)
   const showEscalationOptions = escalationOptions.length > 0
   const showConfirmation = Boolean(confirmationLabel && onConfirmationChange)
   const resolvedShowHero = showHeroIcon ?? styles.showHero ?? false
   const resolvedShowReasonsLabel = showReasonsLabel ?? styles.showReasonsLabel ?? false
+  const showReasons = reasonOptions.length > 0 || resolvedShowReasonsLabel
   const resolvedSubmitIcon = submitIcon ?? styles.submitIcon ?? 'none'
   const resolvedCheckIconColor =
     checkIconColor ??
@@ -282,6 +297,14 @@ export function DecisionActionModal({
                     </span>
                   ) : variant === 'delete' ? (
                     deleteHeroIcon
+                  ) : variant === 'warn' ? (
+                    <span className="flex size-[70px] items-center justify-center rounded-full bg-[rgb(224_162_99_/_20%)]">
+                      <AlertTriangle
+                        className="size-7 text-[#E0A263]"
+                        strokeWidth={2}
+                        aria-hidden="true"
+                      />
+                    </span>
                   ) : (
                     <span className="flex size-[70px] items-center justify-center rounded-full bg-[rgb(246_203_134_/_20%)]">
                       <CircleArrowOutUpRight
@@ -303,23 +326,31 @@ export function DecisionActionModal({
                 <span className="text-body-sm-medium text-muted mb-[10px] block">Reasons</span>
               ) : null}
               <div className="flex flex-wrap gap-[10px]">
-                {reasonOptions.map((option) => {
-                  const isSelected = selectedReasons.includes(option.value)
+                {reasonOptions.length > 0 ? (
+                  reasonOptions.map((option) => {
+                    const isSelected = selectedReasons.includes(option.value)
 
-                  return (
-                    <button
-                      key={option.value}
-                      type="button"
-                      onClick={() => onReasonToggle?.(option.value)}
-                      className={cn(
-                        'ui-modal-reason-chip',
-                        isSelected ? 'ui-modal-reason-chip-selected' : 'ui-modal-reason-chip-idle',
-                      )}
-                    >
-                      {option.label}
-                    </button>
-                  )
-                })}
+                    return (
+                      <button
+                        key={option.value}
+                        type="button"
+                        onClick={() => onReasonToggle?.(option.value)}
+                        className={cn(
+                          'ui-modal-reason-chip',
+                          isSelected
+                            ? 'ui-modal-reason-chip-selected'
+                            : 'ui-modal-reason-chip-idle',
+                        )}
+                      >
+                        {option.label}
+                      </button>
+                    )
+                  })
+                ) : (
+                  <p className="text-body-sm text-muted">
+                    No reasons added yet. Add them in Settings → Templates.
+                  </p>
+                )}
               </div>
             </div>
           ) : null}
@@ -398,7 +429,7 @@ export function DecisionActionModal({
           ) : null}
 
           {showEscalationOptions ? (
-            <div className="space-y-3.5">
+            <div className="max-h-[240px] space-y-3.5 overflow-y-auto pr-1">
               {escalationOptions.map((option) => {
                 const isSelected = selectedEscalationOption === option.value
 
@@ -453,16 +484,18 @@ export function DecisionActionModal({
             </label>
           ) : null}
 
-          <label className="block">
-            <span className="text-body-sm-medium text-brand-text mb-2 block">
-              Admin notes <span className="text-[#D3191C]">*</span>
-            </span>
-            <textarea
-              value={adminNotes}
-              onChange={(event) => onAdminNotesChange(event.target.value)}
-              className={cn('ui-textarea', styles.adminNotesMinHeight ?? 'min-h-[119px]')}
-            />
-          </label>
+          {showAdminNotes ? (
+            <label className="block">
+              <span className="text-body-sm-medium text-brand-text mb-2 block">
+                Admin notes <span className="text-[#D3191C]">*</span>
+              </span>
+              <textarea
+                value={adminNotes}
+                onChange={(event) => onAdminNotesChange?.(event.target.value)}
+                className={cn('ui-textarea', styles.adminNotesMinHeight ?? 'min-h-[119px]')}
+              />
+            </label>
+          ) : null}
         </div>
 
         <div className="ui-modal-footer px-6 pb-6">
@@ -476,7 +509,7 @@ export function DecisionActionModal({
           <button
             type="button"
             onClick={onSubmit}
-            disabled={isSubmitting}
+            disabled={isSubmitting || submitDisabled}
             className={cn('ui-modal-btn h-10 max-w-[238px] flex-1 overflow-visible', styles.submit)}
           >
             <span className="truncate">{submitLabel}</span>

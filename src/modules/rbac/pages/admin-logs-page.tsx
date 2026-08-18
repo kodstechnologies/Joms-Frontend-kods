@@ -9,6 +9,7 @@ import type { AdminLogSubject, AuditLog } from '../types/rbac'
 import { AdminNoteModal } from '../components/admin-note-modal'
 import { RbacLoader } from '../components/rbac-loader'
 import { RoleUsersModal } from '../components/role-users-modal'
+import { VersionHistoryPanel } from '../components/version-history-panel'
 import { DataTable } from '@/shared/components/table/data-table'
 import {
   TableActionsDropdown,
@@ -61,38 +62,6 @@ function StatusBadge({ status }: { status: string }) {
     >
       {isSuccess ? 'Success' : 'Failed'}
     </span>
-  )
-}
-
-function PreVersionModal({ log, onClose }: { log: AuditLog | null; onClose: () => void }) {
-  if (!log) return null
-
-  const previousVersion = log.metadata?.previousVersion as Record<string, unknown> | undefined
-  const snapshot = previousVersion ?? log.metadata ?? {}
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-      <div
-        className={cn(
-          uiTokens.radiusCard,
-          uiTokens.borderSubtle,
-          'bg-brand-surface w-full max-w-lg p-6 shadow-[0_18px_60px_rgba(0,0,0,0.55)]',
-        )}
-      >
-        <h3 className="text-brand-text text-lg font-semibold">Pre-Version Snapshot</h3>
-        <p className="text-brand-muted mt-1 text-sm">
-          Previous state captured for action: <span className="text-brand-text">{log.action}</span>
-        </p>
-        <pre className="rounded-brand-md text-brand-text bg-brand-bg mt-4 max-h-72 overflow-auto border border-white/10 p-4 text-xs">
-          {JSON.stringify(snapshot, null, 2)}
-        </pre>
-        <div className="mt-6 flex justify-end">
-          <Button variant="secondary" onClick={onClose}>
-            Close
-          </Button>
-        </div>
-      </div>
-    </div>
   )
 }
 
@@ -274,7 +243,7 @@ export function AdminLogsPage() {
   const [page, setPage] = useState(1)
   const [searchQuery, setSearchQuery] = useState('')
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
-  const [previewLog, setPreviewLog] = useState<AuditLog | null>(null)
+  const [historyOpen, setHistoryOpen] = useState(false)
   const [selectedAdminNote, setSelectedAdminNote] = useState<string | null>(null)
   const [roleUsersModalId, setRoleUsersModalId] = useState<string | null>(null)
 
@@ -283,6 +252,7 @@ export function AdminLogsPage() {
     limit: PAGE_SIZE,
     search: searchQuery || undefined,
   }
+  const historyParams = { page: 1, limit: 50 }
 
   const subAdminLogsQuery = useSubAdminLogs(id, logParams, {
     enabled: Boolean(id) && !isRole,
@@ -291,6 +261,14 @@ export function AdminLogsPage() {
     enabled: Boolean(id) && isRole,
   })
   const logsQuery = isRole ? roleLogsQuery : subAdminLogsQuery
+
+  const historySubAdminQuery = useSubAdminLogs(id, historyParams, {
+    enabled: Boolean(id) && historyOpen && !isRole,
+  })
+  const historyRoleQuery = useRoleLogs(id, historyParams, {
+    enabled: Boolean(id) && historyOpen && isRole,
+  })
+  const historyQuery = isRole ? historyRoleQuery : historySubAdminQuery
 
   const flagMutation = useFlagAuditLog()
 
@@ -318,6 +296,11 @@ export function AdminLogsPage() {
     },
     [navigate],
   )
+
+  const openHistory = useCallback(() => {
+    setHistoryOpen(true)
+    setActiveDropdownId(null)
+  }, [])
 
   const handleFlag = useCallback(
     async (logId: string) => {
@@ -358,7 +341,7 @@ export function AdminLogsPage() {
         cell: ({ row }) => (
           <button
             type="button"
-            onClick={() => setPreviewLog(row.original)}
+            onClick={openHistory}
             className="text-brand-accent decoration-brand-accent/40 hover:text-brand-gold-from text-left text-xs font-semibold underline underline-offset-2"
           >
             {row.original.action}
@@ -390,8 +373,36 @@ export function AdminLogsPage() {
         header: 'Admin Note',
         cell: ({ row }) => renderAdminNoteCell(row.original.adminNote),
       },
+      {
+        id: 'actions',
+        header: 'Actions',
+        enableSorting: false,
+        meta: { headerClassName: 'pr-5 text-right', cellClassName: 'relative pr-5 text-right' },
+        cell: ({ row }) => {
+          const logId = row.original.id || row.original._id || ''
+          return (
+            <TableActionsDropdown
+              label="Open log actions"
+              isOpen={activeDropdownId === logId}
+              onOpenChange={(open) => setActiveDropdownId(open ? logId : null)}
+            >
+              <TableActionsItem icon={<ClipboardList className="size-3.5" />} onClick={openHistory}>
+                View Pre-Version
+              </TableActionsItem>
+              <TableActionsItem
+                icon={<Flag className="text-brand-danger size-3.5" />}
+                onClick={() => handleFlag(logId)}
+              >
+                <span className={row.original.flagged ? 'text-brand-muted' : 'text-brand-danger'}>
+                  {row.original.flagged ? 'Already Flagged' : 'Flag Action'}
+                </span>
+              </TableActionsItem>
+            </TableActionsDropdown>
+          )
+        },
+      },
     ],
-    [renderAdminNoteCell],
+    [activeDropdownId, handleFlag, openHistory, renderAdminNoteCell],
   )
 
   const roleColumns = useMemo<ColumnDef<AuditLog>[]>(
@@ -402,7 +413,7 @@ export function AdminLogsPage() {
         cell: ({ row }) => (
           <button
             type="button"
-            onClick={() => setPreviewLog(row.original)}
+            onClick={openHistory}
             className="text-brand-accent text-left text-xs font-semibold hover:underline"
           >
             {row.original.action}
@@ -448,13 +459,7 @@ export function AdminLogsPage() {
               isOpen={activeDropdownId === logId}
               onOpenChange={(open) => setActiveDropdownId(open ? logId : null)}
             >
-              <TableActionsItem
-                icon={<ClipboardList className="size-3.5" />}
-                onClick={() => {
-                  setPreviewLog(row.original)
-                  setActiveDropdownId(null)
-                }}
-              >
+              <TableActionsItem icon={<ClipboardList className="size-3.5" />} onClick={openHistory}>
                 View Pre-Version
               </TableActionsItem>
               <TableActionsItem
@@ -470,7 +475,7 @@ export function AdminLogsPage() {
         },
       },
     ],
-    [activeDropdownId, handleFlag, renderAdminNoteCell],
+    [activeDropdownId, handleFlag, openHistory, renderAdminNoteCell],
   )
 
   const columns = isRole ? roleColumns : userColumns
@@ -547,7 +552,16 @@ export function AdminLogsPage() {
         emptyMessage="No action logs found."
       />
 
-      <PreVersionModal log={previewLog} onClose={() => setPreviewLog(null)} />
+      <VersionHistoryPanel
+        open={historyOpen}
+        logs={historyQuery.data?.data.logs ?? logs}
+        isLoading={historyQuery.isLoading}
+        onClose={() => setHistoryOpen(false)}
+        onRolledBack={() => {
+          void logsQuery.refetch()
+          void historyQuery.refetch()
+        }}
+      />
       <AdminNoteModal
         open={Boolean(selectedAdminNote)}
         note={selectedAdminNote ?? undefined}

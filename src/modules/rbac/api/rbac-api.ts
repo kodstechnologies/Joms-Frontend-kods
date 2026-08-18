@@ -7,6 +7,7 @@ import type {
   ContactSetupProfileResponse,
   CreateRolePayload,
   CreateSubAdminPayload,
+  InviteActionPayload,
   PermissionCatalog,
   RbacStats,
   Role,
@@ -206,6 +207,22 @@ export const flagAuditLog = async (logId: string) => {
   return response.data
 }
 
+export const rollbackAuditLog = async (logId: string) => {
+  const response = await adminApiClient.post<{ success: boolean; data: AuditLog }>(
+    `/admin/rbac/logs/${logId}/rollback`,
+  )
+  return response.data
+}
+
+export const fetchAllInvites = async (params?: ListParams) => {
+  const response = await adminApiClient.get<{
+    success: boolean
+    data: { invites: SubAdminInvite[] }
+    meta: { page: number; limit: number; total: number; totalPages: number }
+  }>('/admin/rbac/invites', { params })
+  return response.data
+}
+
 export const fetchSubAdminInvites = async (id: string, params?: ListParams) => {
   const response = await adminApiClient.get<{
     success: boolean
@@ -224,16 +241,18 @@ export const fetchRoleUsers = async (id: string, params?: ListParams) => {
   return response.data
 }
 
-export const reinviteSubAdmin = async (inviteId: string) => {
+export const reinviteSubAdmin = async (inviteId: string, payload: InviteActionPayload) => {
   const response = await adminApiClient.post<{ success: boolean; data: SubAdminInvite }>(
     `/admin/rbac/invites/${inviteId}/reinvite`,
+    payload,
   )
   return response.data
 }
 
-export const revokeSubAdminInvite = async (inviteId: string) => {
+export const revokeSubAdminInvite = async (inviteId: string, payload: InviteActionPayload) => {
   const response = await adminApiClient.patch<{ success: boolean; data: SubAdminInvite }>(
     `/admin/rbac/invites/${inviteId}/revoke`,
+    payload,
   )
   return response.data
 }

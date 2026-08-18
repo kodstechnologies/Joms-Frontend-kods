@@ -39,6 +39,8 @@ export const MODERATION_CATEGORY_SLUGS = {
   rejectVenue: 'reject-venue',
   requestChangesVenue: 'request-changes-venue',
   rejectConsultation: 'reject-Consultation',
+  revokeInvite: 'revoke-invite',
+  reinviteUser: 'reinvite-user',
 } as const
 
 export type ModerationCategorySlug =

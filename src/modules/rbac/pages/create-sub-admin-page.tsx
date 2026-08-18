@@ -217,9 +217,13 @@ export function CreateSubAdminPage() {
 
   const handleCreate = async () => {
     try {
-      await createMutation.mutateAsync({ ...form, adminNote })
+      const result = await createMutation.mutateAsync({ ...form, adminNote })
       setConfirmOpen(false)
-      toast.success('Sub-admin created. They can log in with the email and password you set.')
+      toast.success(
+        result?.data?.notificationSent
+          ? 'User created. Login credentials have been emailed.'
+          : 'User created. They can log in with the email and password you set.',
+      )
       navigate('/settings/access')
     } catch {
       toast.error('Failed to create sub-admin')

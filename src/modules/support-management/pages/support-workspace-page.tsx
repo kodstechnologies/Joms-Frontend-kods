@@ -1,7 +1,8 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
+import { ReassignTicketModal, EscalateTicketModal } from '../components/reassign-ticket-modal'
 import { TicketCasePanel } from '../components/ticket-case-panel'
 import { TicketFilterPanel } from '../components/ticket-filter-panel'
 import { TicketIntelligencePanel } from '../components/ticket-intelligence-panel'
@@ -12,25 +13,25 @@ import {
   useEscalateSupportTicket,
   useResolveSupportTicket,
   useSendSupportMessage,
+  useSupportAgents,
   useSupportTicket,
   useSupportTickets,
   useLiveSupportUpdates,
   useUpdateSupportTicket,
 } from '../hooks/use-support'
 import { useSupportStore } from '../store/support-store'
-import type { TicketStatus } from '../types/support'
+import type { TicketPriority, TicketStatus } from '../types/support'
 import {
   getApiErrorMessage,
   getPriorityLabel,
   getStatusLabel,
   isTerminalTicketStatus,
 } from '../utils/support-format'
-import { useAuthStore } from '@/modules/auth/store/auth-store'
+import { openVenuePartnerProfile } from '@/modules/expert/utils/expert-application-navigation'
 import { cn } from '@/shared/lib/cn'
 
 export function SupportWorkspacePage() {
   const navigate = useNavigate()
-  const user = useAuthStore((state) => state.user)
   const {
     searchQuery,
     setSearchQuery,
@@ -76,6 +77,9 @@ export function SupportWorkspacePage() {
   const resolveMutation = useResolveSupportTicket()
   const assignMutation = useAssignSupportTicket()
   const updateMutation = useUpdateSupportTicket()
+  const [reassignOpen, setReassignOpen] = useState(false)
+  const [escalateOpen, setEscalateOpen] = useState(false)
+  const agentsQuery = useSupportAgents()
   const { connected, joinTicket, leaveTicket, sendSupportMessage } = useLiveSupportUpdates()
 
   useEffect(() => {
@@ -229,6 +233,7 @@ export function SupportWorkspacePage() {
 
         <div className="flex h-full min-h-0 flex-col lg:col-span-4">
           <TicketCasePanel
+            key={selectedTicketId || 'no-ticket'}
             reporterName={ticket?.reporter ?? selectedQueue?.reporter ?? '—'}
             reporterId={ticket?.reporterId ?? '—'}
             reporterType={ticket?.reporterType ?? selectedQueue?.reporterType}
@@ -237,19 +242,77 @@ export function SupportWorkspacePage() {
             assignedTo={ticket?.assignedTo ?? 'Unassigned'}
             assignedToAvatarUrl={ticket?.assignedToAvatarUrl}
             status={ticket ? getStatusLabel(ticket.status) : '—'}
-            priority={ticket ? getPriorityLabel(ticket.priority) : '—'}
-            module={ticket?.module || '—'}
-            issueType={ticket?.issueType || '—'}
+            priority={ticket?.priority || ''}
+            module={ticket?.module || ''}
+            issueType={ticket?.issueType || ''}
             comments={ticket?.comments || ''}
             escalationPathway={ticket?.escalationPathway || 'None'}
             statusValue={ticket?.status}
+            fieldsDisabled={!ticket || updateMutation.isPending}
             onStatusChange={async (status) => {
-              if (!selectedTicketId) return
+              if (!selectedTicketId || status === ticket?.status) return
               try {
                 await updateMutation.mutateAsync({ id: selectedTicketId, payload: { status } })
                 toast.success(`Status updated to ${getStatusLabel(status as TicketStatus)}`)
               } catch (err) {
                 toast.error(getApiErrorMessage(err, 'Failed to update status'))
+              }
+            }}
+            onPriorityChange={async (priority) => {
+              if (!selectedTicketId || !priority || priority === ticket?.priority) return
+              try {
+                await updateMutation.mutateAsync({ id: selectedTicketId, payload: { priority } })
+                toast.success(`Priority updated to ${getPriorityLabel(priority as TicketPriority)}`)
+              } catch (err) {
+                toast.error(getApiErrorMessage(err, 'Failed to update priority'))
+              }
+            }}
+            onModuleChange={async (module) => {
+              if (!selectedTicketId || module === (ticket?.module || '')) return
+              try {
+                await updateMutation.mutateAsync({ id: selectedTicketId, payload: { module } })
+                toast.success(module ? `Module updated to ${module}` : 'Module cleared')
+              } catch (err) {
+                toast.error(getApiErrorMessage(err, 'Failed to update module'))
+              }
+            }}
+            onIssueTypeChange={async (issueType) => {
+              if (!selectedTicketId || issueType === (ticket?.issueType || '')) return
+              try {
+                await updateMutation.mutateAsync({ id: selectedTicketId, payload: { issueType } })
+                toast.success(
+                  issueType ? `Issue type updated to ${issueType}` : 'Issue type cleared',
+                )
+              } catch (err) {
+                toast.error(getApiErrorMessage(err, 'Failed to update issue type'))
+              }
+            }}
+            onCommentsChange={async (comments) => {
+              if (!selectedTicketId || comments === (ticket?.comments || '')) return
+              try {
+                await updateMutation.mutateAsync({
+                  id: selectedTicketId,
+                  payload: { comments },
+                })
+              } catch (err) {
+                toast.error(getApiErrorMessage(err, 'Failed to save comments'))
+              }
+            }}
+            onEscalationPathwayChange={async (escalationPathway) => {
+              if (
+                !selectedTicketId ||
+                escalationPathway === (ticket?.escalationPathway || 'None')
+              ) {
+                return
+              }
+              try {
+                await updateMutation.mutateAsync({
+                  id: selectedTicketId,
+                  payload: { escalationPathway },
+                })
+                toast.success(`Escalation pathway updated to ${escalationPathway}`)
+              } catch (err) {
+                toast.error(getApiErrorMessage(err, 'Failed to update escalation pathway'))
               }
             }}
             onViewProfile={() => {
@@ -260,7 +323,7 @@ export function SupportWorkspacePage() {
                 return
               }
               if (reporterType === 'venue_partner') {
-                navigate(`/venues/management/profile/${reporterId}`)
+                void openVenuePartnerProfile(reporterId, navigate)
                 return
               }
               if (reporterType === 'expert') {
@@ -269,36 +332,19 @@ export function SupportWorkspacePage() {
               }
               toast.message('Profile view not available for this reporter type')
             }}
-            onReassign={async () => {
-              if (!selectedTicketId || !user) return
-              try {
-                await assignMutation.mutateAsync({
-                  id: selectedTicketId,
-                  payload: {
-                    assignedToId: user.id,
-                    assignedToName: user.fullname,
-                  },
-                })
-                toast.success(`Ticket assigned to ${user.fullname}`)
-              } catch (err) {
-                toast.error(getApiErrorMessage(err, 'Failed to reassign ticket'))
-              }
-            }}
-            onEscalate={async () => {
+            onReassign={() => {
               if (!selectedTicketId) return
-              try {
-                await escalateMutation.mutateAsync({ id: selectedTicketId })
-                toast.success('Ticket escalated')
-              } catch (err) {
-                toast.error(getApiErrorMessage(err, 'Failed to escalate ticket'))
-              }
+              setReassignOpen(true)
+            }}
+            onEscalate={() => {
+              if (!selectedTicketId) return
+              setEscalateOpen(true)
             }}
             onResolve={async () => {
               if (!selectedTicketId) return
               try {
                 await resolveMutation.mutateAsync({
                   id: selectedTicketId,
-                  payload: { comments: ticket?.comments },
                 })
                 toast.success('Ticket marked as resolved')
               } catch (err) {
@@ -320,6 +366,58 @@ export function SupportWorkspacePage() {
           />
         </div>
       </div>
+
+      <ReassignTicketModal
+        open={reassignOpen}
+        agents={agentsQuery.data?.data?.agents ?? []}
+        isLoading={agentsQuery.isFetching}
+        currentAssigneeId={ticket?.assignedToId}
+        isSubmitting={assignMutation.isPending}
+        onClose={() => setReassignOpen(false)}
+        onSelect={async (agent) => {
+          if (!selectedTicketId) return
+          try {
+            await assignMutation.mutateAsync({
+              id: selectedTicketId,
+              payload: {
+                assignedToId: agent.id,
+                assignedToName: agent.name,
+                assignedToAvatarUrl: agent.avatarUrl,
+              },
+            })
+            setReassignOpen(false)
+            toast.success(`Ticket assigned to ${agent.name}`)
+          } catch (err) {
+            toast.error(getApiErrorMessage(err, 'Failed to reassign ticket'))
+          }
+        }}
+      />
+
+      <EscalateTicketModal
+        open={escalateOpen}
+        agents={agentsQuery.data?.data?.agents ?? []}
+        isLoading={agentsQuery.isFetching}
+        currentAssigneeId={ticket?.assignedToId}
+        isSubmitting={escalateMutation.isPending}
+        onClose={() => setEscalateOpen(false)}
+        onSelect={async (agent) => {
+          if (!selectedTicketId) return
+          try {
+            await escalateMutation.mutateAsync({
+              id: selectedTicketId,
+              payload: {
+                assignedToId: agent.id,
+                assignedToName: agent.name,
+                assignedToAvatarUrl: agent.avatarUrl,
+              },
+            })
+            setEscalateOpen(false)
+            toast.success(`Ticket escalated to ${agent.name}`)
+          } catch (err) {
+            toast.error(getApiErrorMessage(err, 'Failed to escalate ticket'))
+          }
+        }}
+      />
     </div>
   )
 }

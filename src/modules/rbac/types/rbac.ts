@@ -1,4 +1,9 @@
-export type PermissionRisk = 'low' | 'medium' | 'high'
+export type PermissionRisk = 'low' | 'medium' | 'high' | 'very_high'
+
+export type PermissionLevelOption = {
+  value: string
+  label: string
+}
 
 export type PermissionItem = {
   key: string
@@ -9,6 +14,7 @@ export type PermissionItem = {
 export type PermissionModule = {
   label: string
   permissions: PermissionItem[]
+  levels?: PermissionLevelOption[]
 }
 
 export type PermissionCatalog = Record<string, PermissionModule>
@@ -65,6 +71,7 @@ export type SubAdmin = {
   createdAt?: string
   updatedAt?: string
   tempPassword?: string
+  notificationSent?: boolean
 }
 
 export type AdminLogSubject = ({ type: 'subAdmin' } & SubAdmin) | ({ type: 'role' } & Role)
@@ -80,6 +87,11 @@ export type AuditLog = {
   adminNote: string
   performedBy: string
   flagged?: boolean
+  rolledBack?: boolean
+  canRollback?: boolean
+  previousRole?: string
+  changedTo?: string
+  subAdminId?: string | null
   metadata?: Record<string, unknown>
   createdAt: string
 }
@@ -163,6 +175,23 @@ export type SubAdminInvite = {
   sentBy?: string
   acceptedAt?: string | null
   revokedAt?: string | null
+  lastAction?: {
+    type?: 'reinvite' | 'revoke'
+    reasonIds?: string[]
+    selectedReasons?: string[]
+    reasonDetails?: string
+    adminNotes?: string
+    performedBy?: string
+    performedAt?: string | null
+  } | null
   createdAt?: string
   updatedAt?: string
+}
+
+export type InviteActionPayload = {
+  reasonIds: string[]
+  selectedReasons: string[]
+  reasonDetails: string
+  adminNotes: string
+  confirmed: boolean
 }

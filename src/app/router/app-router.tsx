@@ -402,6 +402,11 @@ const SubAdminDetailPage = lazy(() =>
     default: m.SubAdminDetailPage,
   })),
 )
+const InvitesOverviewPage = lazy(() =>
+  import('@/modules/rbac').then((m) => ({
+    default: m.InvitesOverviewPage,
+  })),
+)
 const AdminDetailPage = lazy(() =>
   import('@/modules/rbac').then((m) => ({
     default: m.AdminDetailPage,
@@ -830,12 +835,21 @@ export function AppRouter() {
 
               <Route element={<SuperAdminRoute />}>
                 <Route path="/dashboard/executive" element={<ExecutiveOverviewPage />} />
+              </Route>
+
+              <Route element={<PermissionRoute module="referrals" />}>
                 <Route path="/referrals/management" element={<ReferralManagementPage />} />
+              </Route>
+
+              <Route element={<SuperAdminRoute />}>
                 <Route path="/support/dashboard" element={<SupportDashboardPage />} />
                 <Route path="/support/tickets" element={<TicketManagementPage />} />
                 <Route path="/support/tickets/:id" element={<TicketDetailPage />} />
                 <Route path="/support/workspace" element={<SupportWorkspacePage />} />
                 <Route path="/support/past-tickets/:userId" element={<PastTicketsPage />} />
+              </Route>
+
+              <Route element={<PermissionRoute module="memberships" />}>
                 <Route path="/memberships/plans" element={<MembershipPlansPage />} />
                 <Route path="/memberships/plans/create" element={<MembershipPlanFormPage />} />
                 <Route path="/memberships/plans/:id/edit" element={<MembershipPlanFormPage />} />
@@ -847,6 +861,9 @@ export function AppRouter() {
                 <Route path="/memberships/plans/deleted" element={<MembershipDeletedPlansPage />} />
                 <Route path="/memberships/experts" element={<ExpertMembershipsPage />} />
                 <Route path="/memberships/experts/:id" element={<MembershipDetailsPage />} />
+              </Route>
+
+              <Route element={<PermissionRoute module="settings" />}>
                 <Route path="/settings/health" element={<PlatformHealthPage />} />
                 <Route path="/settings/logs" element={<SettingsLogsPage />} />
                 <Route path="/settings/backup/configure" element={<BackupConfigurationPage />} />
@@ -860,20 +877,32 @@ export function AppRouter() {
                 <Route path="/settings/policies/:id/edit" element={<PolicyEditPage />} />
                 <Route path="/settings/policies/:id" element={<PolicyDetailPage />} />
                 <Route path="/settings/templates" element={<TemplatesPage />} />
-                <Route path="/content-moderation/templates" element={<TemplatesPage />} />
                 <Route path="/settings/categories" element={<CategoryHubPage />} />
                 <Route path="/settings/system" element={<SystemConfigurationPage />} />
-
                 <Route path="/settings/api-keys" element={<ApiKeyManagementPage />} />
+              </Route>
+
+              <Route element={<PermissionRoute permission="settings.rbac_management" />}>
                 <Route path="/settings/access" element={<RbacHubPage />} />
                 <Route path="/settings/access/roles/create" element={<CreateRolePage />} />
                 <Route path="/settings/access/roles/:id/edit" element={<CreateRolePage />} />
                 <Route path="/settings/access/users/create" element={<CreateSubAdminPage />} />
                 <Route path="/settings/access/users/:id/logs" element={<AdminLogsPage />} />
+                <Route path="/settings/access/invites" element={<InvitesOverviewPage />} />
                 <Route path="/settings/access/users/:id/invites" element={<SubAdminDetailPage />} />
                 <Route path="/settings/access/users/:id" element={<AdminDetailPage />} />
                 <Route path="/settings/access/roles/:id/users" element={<RoleUsersPage />} />
                 <Route path="/settings/access/roles/:id/logs" element={<AdminLogsPage />} />
+              </Route>
+
+              <Route element={<SuperAdminRoute />}>
+                <Route path="/content-moderation/templates" element={<TemplatesPage />} />
+                <Route path="/communication/management" element={<CommunicationListPage />} />
+                <Route path="/communication/create" element={<CreateCommunicationPage />} />
+                <Route path="/communication/view/:id" element={<ViewCommunicationPage />} />
+              </Route>
+
+              <Route element={<PermissionRoute module="finance" />}>
                 <Route path="/finance/dashboard" element={<FinanceDashboardPage />} />
                 <Route path="/finance/revenue" element={<RevenueOverviewPage />} />
                 <Route path="/finance/revenue/:id" element={<PaymentDetailViewPage />} />
@@ -1025,9 +1054,6 @@ export function AppRouter() {
                   path="/venues/management/profile/:venueId/space/:spaceId/analytics"
                   element={<SpaceAnalyticsPage />}
                 />
-                <Route path="/communication/management" element={<CommunicationListPage />} />
-                <Route path="/communication/create" element={<CreateCommunicationPage />} />
-                <Route path="/communication/view/:id" element={<ViewCommunicationPage />} />
 
                 <Route path="/settings/escalations" element={<EscalationPage />} />
 
