@@ -8,7 +8,10 @@ import { toast } from 'sonner'
 import type { FilterValues } from '@/shared/types/data-filter'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter/use-module-export-filters'
 import { exportDisplayValue } from '@/shared/utils/export-utils'
-import { buildFilterParams, createFilteredExportHandler } from '@/shared/utils/export-filter-utils'
+import {
+  buildVenueListQueryParams,
+  createVenueFilteredExportHandler,
+} from '@/shared/utils/export-filter-utils'
 import { fetchVenues } from '../../api/venue-api'
 
 import { useActivateVenue, useVenues } from '../../hooks/use-venues'
@@ -56,15 +59,18 @@ export function VenueSuspendedPage() {
   const [selectedVenueIds, setSelectedVenueIds] = useState<string[]>([])
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
 
-  const apiFilterParams = useMemo(() => buildFilterParams(appliedFilters), [appliedFilters])
+  const venueQueryParams = useMemo(
+    () =>
+      buildVenueListQueryParams(appliedFilters, {
+        page: currentPage,
+        limit: 10,
+        search: searchQuery,
+        status: 'suspended',
+      }),
+    [appliedFilters, currentPage, searchQuery],
+  )
 
-  const { data, isLoading } = useVenues({
-    page: currentPage,
-    limit: 10,
-    status: 'suspended',
-    search: searchQuery,
-    ...apiFilterParams,
-  })
+  const { data, isLoading } = useVenues(venueQueryParams)
 
   const activateVenueMutation = useActivateVenue()
 
@@ -82,7 +88,7 @@ export function VenueSuspendedPage() {
 
   const handleExportData = useMemo(
     () =>
-      createFilteredExportHandler(fetchVenues, EXPORT_COLUMN_MAP, 'suspended_venues_export', {
+      createVenueFilteredExportHandler(fetchVenues, EXPORT_COLUMN_MAP, 'suspended_venues_export', {
         status: 'suspended',
       }),
     [],

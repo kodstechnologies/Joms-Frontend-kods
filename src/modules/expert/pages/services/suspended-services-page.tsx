@@ -8,7 +8,10 @@ import { toast } from 'sonner'
 import type { FilterValues } from '@/shared/types/data-filter'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter/use-module-export-filters'
 import { exportDisplayValue } from '@/shared/utils/export-utils'
-import { buildFilterParams, createFilteredExportHandler } from '@/shared/utils/export-filter-utils'
+import {
+  buildServiceListQueryParams,
+  createServiceFilteredExportHandler,
+} from '@/shared/utils/export-filter-utils'
 import { fetchServices } from '../../api/service-api'
 
 import { useActivateService, useServices } from '../../hooks/use-services'
@@ -55,15 +58,18 @@ export function SuspendedServicesPage() {
   const [selectedServiceIds, setSelectedServiceIds] = useState<string[]>([])
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
 
-  const apiFilterParams = useMemo(() => buildFilterParams(appliedFilters), [appliedFilters])
+  const serviceQueryParams = useMemo(
+    () =>
+      buildServiceListQueryParams(appliedFilters, {
+        page: currentPage,
+        limit: 10,
+        search: searchQuery,
+        status: 'suspended',
+      }),
+    [appliedFilters, currentPage, searchQuery],
+  )
 
-  const { data, isLoading } = useServices({
-    page: currentPage,
-    limit: 10,
-    status: 'suspended',
-    search: searchQuery,
-    ...apiFilterParams,
-  })
+  const { data, isLoading } = useServices(serviceQueryParams)
 
   const activateServiceMutation = useActivateService()
 
@@ -83,9 +89,14 @@ export function SuspendedServicesPage() {
 
   const handleExportData = useMemo(
     () =>
-      createFilteredExportHandler(fetchServices, EXPORT_COLUMN_MAP, 'suspended_services_export', {
-        status: 'suspended',
-      }),
+      createServiceFilteredExportHandler(
+        fetchServices,
+        EXPORT_COLUMN_MAP,
+        'suspended_services_export',
+        {
+          status: 'suspended',
+        },
+      ),
     [],
   )
 

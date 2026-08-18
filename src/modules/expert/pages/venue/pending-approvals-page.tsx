@@ -10,7 +10,10 @@ import type { FilterValues } from '@/shared/types/data-filter'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter/use-module-export-filters'
 import { useVenueManagementControls } from '@/modules/settings/hooks/use-venue-public-settings'
 import { exportDisplayValue } from '@/shared/utils/export-utils'
-import { buildFilterParams, createFilteredExportHandler } from '@/shared/utils/export-filter-utils'
+import {
+  buildVenueListQueryParams,
+  createVenueFilteredExportHandler,
+} from '@/shared/utils/export-filter-utils'
 import { fetchVenues } from '../../api/venue-api'
 
 import { useVenues } from '../../hooks/use-venues'
@@ -57,15 +60,18 @@ export function VenuePendingApprovalsPage() {
   const [selectedVenueIds, setSelectedVenueIds] = useState<string[]>([])
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
 
-  const apiFilterParams = useMemo(() => buildFilterParams(appliedFilters), [appliedFilters])
+  const venueQueryParams = useMemo(
+    () =>
+      buildVenueListQueryParams(appliedFilters, {
+        page: currentPage,
+        limit: 10,
+        search: searchQuery,
+        status: 'in_review',
+      }),
+    [appliedFilters, currentPage, searchQuery],
+  )
 
-  const { data, isLoading } = useVenues({
-    page: currentPage,
-    limit: 10,
-    status: 'in_review',
-    search: searchQuery,
-    ...apiFilterParams,
-  })
+  const { data, isLoading } = useVenues(venueQueryParams)
 
   const venues = useMemo(() => data?.data ?? [], [data?.data])
   const meta = data?.meta
@@ -81,7 +87,7 @@ export function VenuePendingApprovalsPage() {
 
   const handleExportData = useMemo(
     () =>
-      createFilteredExportHandler(fetchVenues, EXPORT_COLUMN_MAP, 'pending_venues_export', {
+      createVenueFilteredExportHandler(fetchVenues, EXPORT_COLUMN_MAP, 'pending_venues_export', {
         status: 'in_review',
       }),
     [],

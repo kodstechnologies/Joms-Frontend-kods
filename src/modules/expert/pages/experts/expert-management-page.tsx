@@ -1,5 +1,8 @@
 import { useCallback, useMemo, useState } from 'react'
-import { createFilteredExportHandler, buildFilterParams } from '@/shared/utils/export-filter-utils'
+import {
+  createFilteredExportHandler,
+  buildExpertListQueryParams,
+} from '@/shared/utils/export-filter-utils'
 import { fetchExperts } from '../../api/expert-api'
 import type { ColumnDef } from '@tanstack/react-table'
 import createIcon from '@/assets/JOMS_ICONS-2/icons8-create.svg'
@@ -201,18 +204,18 @@ export const ExpertManagementPage = () => {
     [setCurrentPage],
   )
 
-  const apiFilterParams = useMemo(
-    () => buildFilterParams(appliedAdvancedFilters),
-    [appliedAdvancedFilters],
+  const expertQueryParams = useMemo(
+    () =>
+      buildExpertListQueryParams(appliedAdvancedFilters, {
+        page: currentPage,
+        limit: 10,
+        search: searchQuery,
+        status: activeStatus !== 'all' ? activeStatus : undefined,
+      }),
+    [appliedAdvancedFilters, activeStatus, currentPage, searchQuery],
   )
 
-  const { data, isLoading } = useExperts({
-    page: currentPage,
-    limit: 10,
-    status: activeStatus !== 'all' ? activeStatus : apiFilterParams.accountStatus,
-    search: searchQuery,
-    ...apiFilterParams,
-  })
+  const { data, isLoading } = useExperts(expertQueryParams)
   const experts = useMemo(() => data?.data || [], [data?.data])
 
   const handleExportData = useMemo(

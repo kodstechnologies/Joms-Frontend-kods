@@ -98,9 +98,9 @@ export const byExpertsSection: FilterSectionConfig = {
     {
       id: 'numberOfListings',
       label: 'Number of Listing',
-      type: 'date-range',
-      fromPlaceholder: 'From',
-      toPlaceholder: 'To',
+      type: 'number-range',
+      fromPlaceholder: '0',
+      toPlaceholder: '1000',
     },
     {
       id: 'accountStatus',

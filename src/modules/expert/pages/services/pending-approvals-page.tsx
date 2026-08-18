@@ -7,7 +7,10 @@ import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import type { FilterValues } from '@/shared/types/data-filter'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter/use-module-export-filters'
 import { exportDisplayValue } from '@/shared/utils/export-utils'
-import { buildFilterParams, createFilteredExportHandler } from '@/shared/utils/export-filter-utils'
+import {
+  buildServiceListQueryParams,
+  createServiceFilteredExportHandler,
+} from '@/shared/utils/export-filter-utils'
 import { fetchServices } from '../../api/service-api'
 
 import { useServices } from '../../hooks/use-services'
@@ -54,15 +57,18 @@ export function PendingApprovalsPage() {
   const [selectedServiceIds, setSelectedServiceIds] = useState<string[]>([])
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
 
-  const apiFilterParams = useMemo(() => buildFilterParams(appliedFilters), [appliedFilters])
+  const serviceQueryParams = useMemo(
+    () =>
+      buildServiceListQueryParams(appliedFilters, {
+        page: currentPage,
+        limit: 10,
+        search: searchQuery,
+        status: 'in_review',
+      }),
+    [appliedFilters, currentPage, searchQuery],
+  )
 
-  const { data, isLoading } = useServices({
-    page: currentPage,
-    limit: 10,
-    status: 'in_review',
-    search: searchQuery,
-    ...apiFilterParams,
-  })
+  const { data, isLoading } = useServices(serviceQueryParams)
 
   const services = useMemo(() => data?.data ?? [], [data?.data])
   const meta = data?.meta
@@ -80,9 +86,14 @@ export function PendingApprovalsPage() {
 
   const handleExportData = useMemo(
     () =>
-      createFilteredExportHandler(fetchServices, EXPORT_COLUMN_MAP, 'pending_services_export', {
-        status: 'in_review',
-      }),
+      createServiceFilteredExportHandler(
+        fetchServices,
+        EXPORT_COLUMN_MAP,
+        'pending_services_export',
+        {
+          status: 'in_review',
+        },
+      ),
     [],
   )
 

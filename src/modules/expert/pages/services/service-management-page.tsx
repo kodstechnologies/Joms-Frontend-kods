@@ -57,7 +57,10 @@ import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 import type { FilterValues } from '@/shared/types/data-filter'
 import { exportDataToFile } from '@/shared/utils/export-utils'
 import { getApiErrorMessage } from '@/shared/lib/api-error'
-import { buildFilterParams, createFilteredExportHandler } from '@/shared/utils/export-filter-utils'
+import {
+  buildServiceListQueryParams,
+  createServiceFilteredExportHandler,
+} from '@/shared/utils/export-filter-utils'
 import { fetchServices } from '../../api/service-api'
 import { exportDisplayValue } from '@/shared/utils/export-utils'
 import { MODERATION_CATEGORY_SLUGS } from '@/modules/settings/api/templates-api'
@@ -269,7 +272,7 @@ export const ServiceManagementPage = () => {
 
   const handleExportData = useMemo(
     () =>
-      createFilteredExportHandler(
+      createServiceFilteredExportHandler(
         fetchServices,
         {
           'service-id': {
@@ -322,18 +325,18 @@ export const ServiceManagementPage = () => {
     onExportData: handleExportData,
   })
 
-  const apiFilterParams = useMemo(
-    () => buildFilterParams(appliedAdvancedFilters),
-    [appliedAdvancedFilters],
+  const serviceQueryParams = useMemo(
+    () =>
+      buildServiceListQueryParams(appliedAdvancedFilters, {
+        page: currentPage,
+        limit: 10,
+        search: searchQuery,
+        status: activeStatus !== 'all' ? activeStatus : undefined,
+      }),
+    [appliedAdvancedFilters, activeStatus, currentPage, searchQuery],
   )
 
-  const { data, isLoading } = useServices({
-    page: currentPage,
-    limit: 10,
-    status: activeStatus !== 'all' ? activeStatus : apiFilterParams.listingStatus,
-    search: searchQuery,
-    ...apiFilterParams,
-  })
+  const { data, isLoading } = useServices(serviceQueryParams)
 
   const services = useMemo(() => data?.data ?? [], [data?.data])
   const meta = data?.meta
@@ -475,8 +478,7 @@ export const ServiceManagementPage = () => {
 
       if (successCount === 0) {
         const firstError = results.find((result) => result.status === 'rejected') as
-          | PromiseRejectedResult
-          | undefined
+          PromiseRejectedResult | undefined
         toast.error(getApiErrorMessage(firstError?.reason) || 'Failed to escalate services.')
         return
       }

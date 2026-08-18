@@ -13,7 +13,10 @@ import { openExpertApplicationView } from '../../utils/expert-application-naviga
 import type { FilterValues } from '@/shared/types/data-filter'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter/use-module-export-filters'
 import { exportDisplayValue } from '@/shared/utils/export-utils'
-import { buildFilterParams, createFilteredExportHandler } from '@/shared/utils/export-filter-utils'
+import {
+  buildExpertListQueryParams,
+  createFilteredExportHandler,
+} from '@/shared/utils/export-filter-utils'
 import { ExpertListHeader } from './expert-list-shared'
 import {
   createExpertBaseColumns,
@@ -72,18 +75,22 @@ export function ExpertPendingApprovalsPage() {
   const [isRevoking, setIsRevoking] = useState(false)
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
 
-  const apiFilterParams = useMemo(() => buildFilterParams(appliedFilters), [appliedFilters])
   const recordReasonUsage = useRecordModerationReasonUsage()
   const { options: revokeReasonOptions, buildPayload: buildRevokeReasonPayload } =
     useModerationReasonOptions(MODERATION_CATEGORY_SLUGS.rejectExpert)
 
-  const { data, isLoading } = useExperts({
-    page: currentPage,
-    limit: 10,
-    status: 'pending',
-    search: searchQuery,
-    ...apiFilterParams,
-  })
+  const expertQueryParams = useMemo(
+    () =>
+      buildExpertListQueryParams(appliedFilters, {
+        page: currentPage,
+        limit: 10,
+        search: searchQuery,
+        status: 'pending',
+      }),
+    [appliedFilters, currentPage, searchQuery],
+  )
+
+  const { data, isLoading } = useExperts(expertQueryParams)
 
   const experts = useMemo(
     () => (data?.data || []).filter((expert) => expert.status === 'pending'),

@@ -6,8 +6,14 @@ import { DEFAULT_SERVICE_CATEGORY_MANAGEMENT_METRIC_IDS } from '../../config/ser
 import { DEFAULT_SERVICE_CATEGORY_MANAGEMENT_VISIBLE_COLUMN_IDS } from '../../config/service-category-management-table-columns.config'
 import { DataTable } from '@/shared/components/table/data-table'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
-import { exportDataToFile, exportDisplayValue } from '@/shared/utils/export-utils'
+import { exportDisplayValue } from '@/shared/utils/export-utils'
 import type { FilterValues } from '@/shared/types/data-filter'
+import {
+  buildCategoryListQueryParams,
+  createCategoryFilteredExportHandler,
+} from '@/shared/utils/export-filter-utils'
+import { fetchCategories } from '../../api/category-api'
+import { mapServiceCategoryToUi } from '../../utils/category-mapper'
 
 import { StatCard } from '../../components/stat-card'
 import { type Category, categoryColumns } from '../../components/category/category-table-columns'
@@ -57,25 +63,33 @@ export function CategoryManagementPage() {
     setAppliedFilters(values)
   }, [])
 
-  const { data, isLoading, isError } = useServiceCategories({
-    status: 'ACTIVE',
-    search: searchValue.trim() || undefined,
-    page,
-    limit: PAGE_SIZE,
-    ...appliedFilters,
-  })
+  const categoryQueryParams = useMemo(
+    () =>
+      buildCategoryListQueryParams(appliedFilters, {
+        page,
+        limit: PAGE_SIZE,
+        search: searchValue.trim() || undefined,
+        status: 'ACTIVE',
+      }),
+    [appliedFilters, page, searchValue],
+  )
+
+  const { data, isLoading, isError } = useServiceCategories(categoryQueryParams)
 
   const categories = useMemo(() => data?.categories ?? [], [data?.categories])
 
-  const handleExportData = useCallback(
-    (values: FilterValues, format: string) => {
-      const exportCols = Object.values(EXPORT_COLUMN_MAP)
-      const headers = exportCols.map((c) => c.header)
-      const exportRows = categories.map((cat) => exportCols.map((c) => c.accessor(cat)))
-
-      exportDataToFile(headers, exportRows, format, 'service_categories_export')
-    },
-    [categories],
+  const handleExportData = useMemo(
+    () =>
+      createCategoryFilteredExportHandler(
+        async (params) => {
+          const response = await fetchCategories(params)
+          return { data: (response.data ?? []).map(mapServiceCategoryToUi) }
+        },
+        EXPORT_COLUMN_MAP,
+        'service_categories_export',
+        { status: 'ACTIVE' },
+      ),
+    [],
   )
 
   const {

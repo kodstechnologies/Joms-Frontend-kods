@@ -6,7 +6,10 @@ import { toast } from 'sonner'
 import type { FilterValues } from '@/shared/types/data-filter'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter/use-module-export-filters'
 import { exportDisplayValue } from '@/shared/utils/export-utils'
-import { buildFilterParams, createFilteredExportHandler } from '@/shared/utils/export-filter-utils'
+import {
+  buildExpertListQueryParams,
+  createFilteredExportHandler,
+} from '@/shared/utils/export-filter-utils'
 import { fetchExperts } from '../../api/expert-api'
 import { useExperts, useRestoreExpert } from '../../hooks/use-expert'
 import type { Expert } from '../../type/expert'
@@ -58,17 +61,20 @@ export function ExpertDeletedExpertsPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
-
-  const apiFilterParams = useMemo(() => buildFilterParams(appliedFilters), [appliedFilters])
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
 
-  const { data, isLoading } = useExperts({
-    page: currentPage,
-    limit: 10,
-    status: 'deactivated',
-    search: searchQuery,
-    ...apiFilterParams,
-  })
+  const expertQueryParams = useMemo(
+    () =>
+      buildExpertListQueryParams(appliedFilters, {
+        page: currentPage,
+        limit: 10,
+        search: searchQuery,
+        status: 'deactivated',
+      }),
+    [appliedFilters, currentPage, searchQuery],
+  )
+
+  const { data, isLoading } = useExperts(expertQueryParams)
   const restoreExpertMutation = useRestoreExpert()
 
   const experts = useMemo(() => data?.data || [], [data?.data])

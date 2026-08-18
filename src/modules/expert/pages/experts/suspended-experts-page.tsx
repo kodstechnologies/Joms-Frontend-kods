@@ -6,7 +6,10 @@ import { toast } from 'sonner'
 import type { FilterValues } from '@/shared/types/data-filter'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter/use-module-export-filters'
 import { exportDisplayValue } from '@/shared/utils/export-utils'
-import { buildFilterParams, createFilteredExportHandler } from '@/shared/utils/export-filter-utils'
+import {
+  buildExpertListQueryParams,
+  createFilteredExportHandler,
+} from '@/shared/utils/export-filter-utils'
 import { fetchExperts } from '../../api/expert-api'
 import { useActivateExpert, useExperts } from '../../hooks/use-expert'
 import type { Expert } from '../../type/expert'
@@ -60,15 +63,18 @@ export function ExpertSuspendedExpertsPage() {
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
 
-  const apiFilterParams = useMemo(() => buildFilterParams(appliedFilters), [appliedFilters])
+  const expertQueryParams = useMemo(
+    () =>
+      buildExpertListQueryParams(appliedFilters, {
+        page: currentPage,
+        limit: 10,
+        search: searchQuery,
+        status: 'suspended',
+      }),
+    [appliedFilters, currentPage, searchQuery],
+  )
 
-  const { data, isLoading } = useExperts({
-    page: currentPage,
-    limit: 10,
-    status: 'suspended',
-    search: searchQuery,
-    ...apiFilterParams,
-  })
+  const { data, isLoading } = useExperts(expertQueryParams)
 
   const experts = useMemo(() => data?.data || [], [data?.data])
   const meta = data?.meta

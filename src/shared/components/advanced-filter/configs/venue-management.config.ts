@@ -2,13 +2,12 @@ import type { FilterSectionConfig, ModuleFilterConfig } from '@/shared/types/dat
 
 import { byLocationSection, prefixSectionFields } from './base-filter-sections'
 
+/** By Venues — matches Figma Advanced Filters - Venue Management */
 const venueByVenuesSection: FilterSectionConfig = {
   id: 'by-venues',
   title: 'By Venues',
   defaultExpanded: true,
   fields: [
-    { id: 'venueId', label: 'Venue ID', type: 'text', placeholder: 'Enter Venue ID' },
-    { id: 'venueName', label: 'Venue Name', type: 'text', placeholder: 'Enter Venue Name' },
     {
       id: 'location',
       label: 'Location',
@@ -48,50 +47,6 @@ const venueByVenuesSection: FilterSectionConfig = {
       ],
     },
     {
-      id: 'dateOfApproval',
-      label: 'Date of Approval',
-      type: 'date-range',
-      fromPlaceholder: 'From',
-      toPlaceholder: 'To',
-    },
-    {
-      id: 'createdDate',
-      label: 'Created Date',
-      type: 'date-range',
-      fromPlaceholder: 'From',
-      toPlaceholder: 'To',
-    },
-    {
-      id: 'totalCapacity',
-      label: 'Total Capacity',
-      type: 'number-range',
-      fromLabel: 'Max',
-      toLabel: 'Min',
-      fromPlaceholder: 'Max',
-      toPlaceholder: 'Min',
-    },
-    {
-      id: 'numberOfSpaces',
-      label: 'Number of Spaces',
-      type: 'number-range',
-      fromLabel: 'Max',
-      toLabel: 'Min',
-      fromPlaceholder: 'Max',
-      toPlaceholder: 'Min',
-    },
-    {
-      id: 'facilityType',
-      label: 'Type',
-      type: 'checkbox-group',
-      options: [
-        { label: 'Conference Rooms', value: 'conference-rooms' },
-        { label: 'Auditorium', value: 'auditorium' },
-        { label: 'Co-Working Space', value: 'co-working-space' },
-        { label: 'Studio', value: 'studio' },
-        { label: 'Hall', value: 'hall' },
-      ],
-    },
-    {
       id: 'availability',
       label: 'Availability',
       type: 'checkbox-group',
@@ -115,69 +70,10 @@ const venueByVenuesSection: FilterSectionConfig = {
         { label: 'AV Equipment', value: 'av-equipment' },
       ],
     },
-    {
-      id: 'venueRatings',
-      label: 'Venue Ratings',
-      type: 'number-range',
-      fromLabel: 'Min',
-      toLabel: 'Max',
-      fromPlaceholder: '0',
-      toPlaceholder: '5.00',
-    },
-    {
-      id: 'venueReviews',
-      label: 'Venue Reviews',
-      type: 'number-range',
-      fromLabel: 'Min',
-      toLabel: 'Max',
-      fromPlaceholder: '0',
-      toPlaceholder: '500',
-    },
-    {
-      id: 'revenue',
-      label: 'Revenue',
-      type: 'number-range',
-      fromPlaceholder: '0',
-      toPlaceholder: '500',
-    },
-    {
-      id: 'totalBookings',
-      label: 'Total Number of Bookings',
-      type: 'number-range',
-      fromPlaceholder: '0',
-      toPlaceholder: '500',
-    },
-    {
-      id: 'numberOfCancellations',
-      label: 'Number of Cancellation',
-      type: 'number-range',
-      fromPlaceholder: '0',
-      toPlaceholder: '1000',
-    },
-    {
-      id: 'venueBookedWithinTimerange',
-      label: 'Venue Booked Within Timerange',
-      type: 'number-range',
-      fromPlaceholder: '0',
-      toPlaceholder: '1000',
-    },
-    {
-      id: 'numberOfEventsHeld',
-      label: 'Number of Events Held',
-      type: 'number-range',
-      fromPlaceholder: 'Enter Number',
-      toPlaceholder: 'Enter Number',
-    },
-    {
-      id: 'numberOfMeetupsHeld',
-      label: 'Number of Meetups Held',
-      type: 'number-range',
-      fromPlaceholder: '0',
-      toPlaceholder: '50',
-    },
   ],
 }
 
+/** By Bookings — matches Figma */
 const venueByBookingsSection: FilterSectionConfig = {
   id: 'by-bookings',
   title: 'By Bookings',
@@ -188,62 +84,6 @@ const venueByBookingsSection: FilterSectionConfig = {
       type: 'number-range',
       fromPlaceholder: '0',
       toPlaceholder: '500',
-    },
-    {
-      id: 'totalCompletedBookings',
-      label: 'Total Completed Bookings',
-      type: 'number-range',
-      fromPlaceholder: '0',
-      toPlaceholder: '500',
-    },
-    {
-      id: 'totalCancelledBookings',
-      label: 'Total Cancelled Bookings',
-      type: 'number-range',
-      fromPlaceholder: '0',
-      toPlaceholder: '500',
-    },
-    {
-      id: 'cancellationRate',
-      label: 'Cancellation Rate %',
-      type: 'number-range',
-      fromPlaceholder: 'Enter Number',
-      toPlaceholder: 'Enter Number',
-    },
-    {
-      id: 'repeatBookingCount',
-      label: 'Repeat Booking Count',
-      type: 'number-range',
-      fromPlaceholder: 'Enter Number',
-      toPlaceholder: 'Enter Number',
-    },
-    {
-      id: 'averageBookingValue',
-      label: 'Average Booking Value',
-      type: 'number-range',
-      fromPlaceholder: 'Enter Number',
-      toPlaceholder: 'Enter Number',
-    },
-    {
-      id: 'bookingCreatedDate',
-      label: 'Booking Created Date',
-      type: 'date-range',
-      fromPlaceholder: 'From',
-      toPlaceholder: 'To',
-    },
-    {
-      id: 'eventDate',
-      label: 'Event Date',
-      type: 'date-range',
-      fromPlaceholder: 'From',
-      toPlaceholder: 'To',
-    },
-    {
-      id: 'cancellationDate',
-      label: 'Cancellation Date',
-      type: 'date-range',
-      fromPlaceholder: 'From',
-      toPlaceholder: 'To',
     },
     {
       id: 'bookingStatus',
@@ -280,36 +120,6 @@ const venueByBookingsSection: FilterSectionConfig = {
       ],
     },
     {
-      id: 'refundedBookingsCount',
-      label: 'Refunded Bookings Count',
-      type: 'number-range',
-      fromLabel: 'Min',
-      toLabel: 'Max',
-      fromPlaceholder: '0',
-      toPlaceholder: '500',
-    },
-    {
-      id: 'refundFrequency',
-      label: 'Refund Frequency',
-      type: 'number-range',
-      fromPlaceholder: 'Enter Number',
-      toPlaceholder: 'Enter Number',
-    },
-    {
-      id: 'paymentFailureCount',
-      label: 'Payment Failure Count',
-      type: 'number-range',
-      fromPlaceholder: 'Enter Number',
-      toPlaceholder: 'Enter Number',
-    },
-    {
-      id: 'disputeCount',
-      label: 'Dispute Count',
-      type: 'number-range',
-      fromPlaceholder: 'Enter Number',
-      toPlaceholder: 'Enter Number',
-    },
-    {
       id: 'refundedStatus',
       label: 'Refunded Status',
       type: 'checkbox-group',
@@ -322,11 +132,11 @@ const venueByBookingsSection: FilterSectionConfig = {
   ],
 }
 
+/** By Customers — Figma shows Registration Date only */
 const venueByCustomersSection: FilterSectionConfig = {
   id: 'by-customers',
   title: 'By Customers',
   fields: [
-    { id: 'customerId', label: 'Customer ID', type: 'text', placeholder: 'Enter Customer ID' },
     {
       id: 'registrationDate',
       label: 'Registration Date',
@@ -334,52 +144,10 @@ const venueByCustomersSection: FilterSectionConfig = {
       fromPlaceholder: 'From',
       toPlaceholder: 'To',
     },
-    {
-      id: 'totalBookings',
-      label: 'Customer Total Bookings',
-      type: 'number-range',
-      fromPlaceholder: 'Enter Number',
-      toPlaceholder: 'Enter Number',
-    },
-    {
-      id: 'lifetimeSpend',
-      label: 'Customer Lifetime Spend',
-      type: 'number-range',
-      fromPlaceholder: 'Enter Number',
-      toPlaceholder: 'Enter Number',
-    },
-    {
-      id: 'averageSpendPerBooking',
-      label: 'Average Spend Per Booking',
-      type: 'number-range',
-      fromPlaceholder: 'Enter Number',
-      toPlaceholder: 'Enter Number',
-    },
-    {
-      id: 'cancellationRate',
-      label: 'Customer Cancellation Rate %',
-      type: 'number-range',
-      fromPlaceholder: 'Enter Number',
-      toPlaceholder: 'Enter Number',
-    },
-    {
-      id: 'refundFrequency',
-      label: 'Refund Frequency',
-      type: 'number-range',
-      fromPlaceholder: 'Enter Number',
-      toPlaceholder: 'Enter Number',
-    },
-    {
-      id: 'paymentFailureCount',
-      label: 'Payment Failure Count',
-      type: 'number-range',
-      fromPlaceholder: 'Enter Number',
-      toPlaceholder: 'Enter Number',
-    },
   ],
 }
 
-const venueSections: FilterSectionConfig[] = [
+const venueFilterSections: FilterSectionConfig[] = [
   prefixSectionFields(venueByVenuesSection, 'venues'),
   prefixSectionFields(venueByBookingsSection, 'bookings'),
   prefixSectionFields(venueByCustomersSection, 'customers'),
@@ -389,5 +157,6 @@ const venueSections: FilterSectionConfig[] = [
 export const venueManagementFilterConfig: ModuleFilterConfig = {
   moduleKey: 'venue-management',
   moduleName: 'Venue Management',
-  sections: venueSections,
+  sections: venueFilterSections,
+  exportSections: venueFilterSections,
 }
