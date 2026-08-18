@@ -20,7 +20,7 @@ export type KeyMetric = {
 
 export const topSummaryCardsMock: TrendMetric[] = [
   {
-    label: 'Total in Escrow',
+    label: 'Total In Escrow',
     value: '₹8,43,290',
     change: '6.7%',
     changeType: 'up',

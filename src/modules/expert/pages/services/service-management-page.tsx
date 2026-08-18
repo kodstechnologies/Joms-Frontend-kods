@@ -14,6 +14,7 @@ import {
   Mail,
   Package,
   PauseCircle,
+  Tag,
   Trash2,
   Upload,
   type LucideIcon,
@@ -47,9 +48,11 @@ import {
   DecisionActionModal,
   type DecisionActionModalOption,
 } from '@/shared/components/modal/decision-action-modal'
+import { AddTagModal } from '@/shared/components/modal/add-tag-modal'
 import { StatusQuickLinkCard, StatusQuickLinkRow } from '@/shared/components/status-quick-link-card'
 import { Button } from '@/shared/components/ui/button'
 import { statusCardTones } from '@/shared/lib/design-tokens'
+import { useEntityTags } from '@/shared/hooks/use-entity-tags'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 import type { FilterValues } from '@/shared/types/data-filter'
 import { exportDataToFile } from '@/shared/utils/export-utils'
@@ -78,6 +81,7 @@ const formatPrice = (price: number) =>
 export const ServiceManagementPage = () => {
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [selectedServiceIds, setSelectedServiceIds] = useState<string[]>([])
+  const { tagModalOpen, openTagModal, closeTagModal, saveTags, initialTags } = useEntityTags()
 
   const [suspendServiceTarget, setSuspendServiceTarget] = useState<Service | null>(null)
   const [suspendReasons, setSuspendReasons] = useState<string[]>([])
@@ -837,6 +841,15 @@ export const ServiceManagementPage = () => {
               View Details
             </TableActionsItem>
             <TableActionsItem
+              icon={<Tag className="size-3.5" aria-hidden="true" />}
+              onClick={() => {
+                setActiveDropdownId(null)
+                openTagModal(service._id)
+              }}
+            >
+              Add Tags
+            </TableActionsItem>
+            <TableActionsItem
               icon={<PauseCircle className="size-3.5" aria-hidden="true" />}
               onClick={() => {
                 setActiveDropdownId(null)
@@ -866,6 +879,7 @@ export const ServiceManagementPage = () => {
     navigate,
     openDeleteModal,
     openSuspendModal,
+    openTagModal,
     selectedServiceIds,
     someVisibleServicesSelected,
     tableColumnPreferencesQuery.data,
@@ -1234,6 +1248,13 @@ export const ServiceManagementPage = () => {
           void handleEscalateSubmit()
         }}
         isSubmitting={isEscalating}
+      />
+
+      <AddTagModal
+        open={tagModalOpen}
+        onClose={closeTagModal}
+        initialTags={initialTags}
+        onSubmit={saveTags}
       />
     </div>
   )

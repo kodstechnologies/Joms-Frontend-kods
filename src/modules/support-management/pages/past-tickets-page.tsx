@@ -4,11 +4,13 @@ import { ArrowLeft, Eye, SlidersHorizontal } from 'lucide-react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 
+import { SlaTimerCell } from '../components/sla-timer-cell'
 import { TicketPriorityBadge } from '../components/ticket-priority-badge'
 import { TicketStatusBadge } from '../components/ticket-status-badge'
-import { pastTicketsMock } from '../mock/support.mock'
+import { useExportSupportTickets, usePastTickets } from '../hooks/use-support'
 import { useSupportStore } from '../store/support-store'
 import type { SupportTicket } from '../types/support'
+import { downloadBlob, getApiErrorMessage } from '../utils/support-format'
 import { DataTable } from '@/shared/components/table/data-table'
 import {
   TableActionsDropdown,
@@ -20,21 +22,29 @@ export function PastTicketsPage() {
   const navigate = useNavigate()
   const { userId } = useParams<{ userId: string }>()
   const { searchQuery, setSearchQuery, currentPage, setCurrentPage } = useSupportStore()
+  const exportMutation = useExportSupportTickets()
+
+  const { data, isLoading } = usePastTickets(userId, {
+    page: currentPage,
+    limit: 10,
+  })
+
+  const tickets = useMemo(() => data?.data?.tickets ?? [], [data?.data?.tickets])
+  const meta = data?.data?.meta
+  const pageSize = meta?.limit ?? 10
+  const totalPages = meta?.totalPages ?? 1
+  const totalItems = meta?.total ?? 0
 
   const filtered = useMemo(() => {
-    if (!searchQuery) return pastTicketsMock
+    if (!searchQuery) return tickets
     const q = searchQuery.toLowerCase()
-    return pastTicketsMock.filter(
+    return tickets.filter(
       (t) =>
         t.id.toLowerCase().includes(q) ||
         t.subject.toLowerCase().includes(q) ||
         t.reporter.toLowerCase().includes(q),
     )
-  }, [searchQuery])
-
-  const pageSize = 10
-  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize))
-  const paginated = filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize)
+  }, [searchQuery, tickets])
 
   const renderActions = useCallback(
     (record: SupportTicket) => (
@@ -104,7 +114,17 @@ export function PastTicketsPage() {
       { accessorKey: 'category', header: 'Category' },
       { accessorKey: 'reporter', header: 'Reporter' },
       { accessorKey: 'assignedTo', header: 'Assigned To' },
-      { accessorKey: 'slaTimer', header: 'SLA Timer' },
+      {
+        accessorKey: 'slaTimer',
+        header: 'SLA Timer',
+        cell: ({ row }) => (
+          <SlaTimerCell
+            slaTimer={row.original.slaTimer}
+            slaDueAt={row.original.slaDueAt}
+            status={row.original.status}
+          />
+        ),
+      },
       {
         id: 'actions',
         header: 'Actions',
@@ -114,6 +134,19 @@ export function PastTicketsPage() {
     ],
     [renderActions],
   )
+
+  const handleExport = async () => {
+    try {
+      const blob = await exportMutation.mutateAsync({
+        reporterId: userId,
+        search: searchQuery || undefined,
+      })
+      downloadBlob(blob, 'past-tickets.csv')
+      toast.success('Export downloaded')
+    } catch (err) {
+      toast.error(getApiErrorMessage(err, 'Failed to export tickets'))
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -129,7 +162,9 @@ export function PastTicketsPage() {
           </button>
           <div>
             <h1 className="text-h2 text-brand-text tracking-tight">Past Tickets</h1>
-            <p className="text-body-md text-muted mt-1 leading-5">{userId ?? 'John Doe'}</p>
+            <p className="text-body-md text-muted mt-1 leading-5">
+              {tickets[0]?.reporter ?? userId ?? 'Reporter'}
+            </p>
           </div>
         </div>
         <button
@@ -144,7 +179,7 @@ export function PastTicketsPage() {
 
       <DataTable
         columns={columns}
-        data={paginated}
+        data={filtered}
         getRowId={(row) => row.id}
         searchValue={searchQuery}
         onSearchChange={(val) => {
@@ -154,12 +189,13 @@ export function PastTicketsPage() {
         searchPlaceholder="Search by name, ID or profession"
         advancedFilterLabel="Advance Filters"
         onAdvancedFilter={() => toast.message('Advanced filters coming soon')}
-        onExport={() => toast.message('Export coming soon')}
+        onExport={handleExport}
+        isLoading={isLoading}
         pagination={{
           page: currentPage,
           pageSize,
-          totalItems: filtered.length,
-          totalPages,
+          totalItems: searchQuery ? filtered.length : totalItems,
+          totalPages: searchQuery ? Math.max(1, Math.ceil(filtered.length / pageSize)) : totalPages,
           onPageChange: setCurrentPage,
         }}
         resourceLabel="tickets"

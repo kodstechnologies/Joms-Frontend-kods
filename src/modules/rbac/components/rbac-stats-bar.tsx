@@ -1,63 +1,77 @@
+import { useMemo } from 'react'
+
+import {
+  DEFAULT_RBAC_HUB_METRIC_IDS,
+  RBAC_HUB_METRICS_CATALOG,
+  RBAC_HUB_METRIC_IDS,
+  RBAC_HUB_METRIC_ID_SET,
+  RBAC_HUB_MODULE_KEY,
+  RBAC_HUB_STAT_KEYS,
+} from '../config/rbac-metrics.config'
 import type { RbacStats } from '../types/rbac'
+import {
+  orderByActiveMetricIds,
+  useActiveMetricIds,
+} from '@/modules/expert/hooks/use-active-metric-ids'
+import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
 import { cn } from '@/shared/lib/cn'
 
-const cards = [
-  { key: 'totalUsers', label: 'Total User' },
-  { key: 'totalActiveUsers', label: 'Total active users' },
-  { key: 'currentlyOnlineUsers', label: 'Currently online users' },
-  { key: 'suspendedUsers', label: 'Suspended Users' },
-  { key: 'totalRolesAvailable', label: 'Total Roles Available' },
-] as const
+type RbacMetricCard = {
+  id: string
+  label: string
+  statsKey: keyof RbacStats
+}
+
+function buildRbacMetricCards(): RbacMetricCard[] {
+  const labelById = new Map(RBAC_HUB_METRICS_CATALOG.map((metric) => [metric.id, metric.label]))
+
+  return RBAC_HUB_METRIC_IDS.map((id) => ({
+    id,
+    label: labelById.get(id) ?? id,
+    statsKey: RBAC_HUB_STAT_KEYS[id as keyof typeof RBAC_HUB_STAT_KEYS],
+  }))
+}
 
 type RbacStatsBarProps = {
   stats?: RbacStats
   isLoading?: boolean
 }
 
-function RbacStatCard({
-  label,
-  value,
-  isLoading,
-}: {
-  label: string
-  value: string
-  isLoading?: boolean
-}) {
-  return (
-    <div className="referral-stats-card flex min-h-[96px] w-full flex-col p-4">
-      <p className="referral-stats-label">{label}</p>
-      <p className={cn('referral-stats-value mt-2', isLoading && 'animate-pulse')}>{value}</p>
-    </div>
-  )
-}
-
 export function RbacStatsBar({ stats, isLoading }: RbacStatsBarProps) {
-  const primaryCards = cards.slice(0, 4)
-  const secondaryCard = cards[4]
+  const activeMetricIds = useActiveMetricIds(RBAC_HUB_MODULE_KEY, [...DEFAULT_RBAC_HUB_METRIC_IDS])
 
-  const formatValue = (key: (typeof cards)[number]['key']) =>
-    isLoading ? '—' : String(stats?.[key] ?? 0).padStart(2, '0')
+  const filteredActiveMetricIds = useMemo(
+    () =>
+      sortIdsByCatalogOrder(
+        activeMetricIds.filter((id) => RBAC_HUB_METRIC_ID_SET.has(id)),
+        RBAC_HUB_METRIC_IDS,
+      ),
+    [activeMetricIds],
+  )
+
+  const visibleCards = useMemo(() => {
+    const allCards = buildRbacMetricCards()
+    return orderByActiveMetricIds(allCards, filteredActiveMetricIds)
+  }, [filteredActiveMetricIds])
 
   return (
-    <div className="flex flex-col gap-3">
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        {primaryCards.map((card) => (
-          <RbacStatCard
-            key={card.key}
-            label={card.label}
-            value={formatValue(card.key)}
-            isLoading={isLoading}
-          />
-        ))}
-      </div>
-
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <RbacStatCard
-          label={secondaryCard.label}
-          value={formatValue(secondaryCard.key)}
-          isLoading={isLoading}
-        />
-      </div>
+    <div className="grid gap-3 md:grid-cols-3 xl:grid-cols-5">
+      {visibleCards.map((card) => (
+        <div
+          key={card.id}
+          className="rounded-brand-lg bg-brand-surface border border-white/10 px-4 py-4"
+        >
+          <p className="text-brand-muted text-xs font-medium md:text-sm">{card.label}</p>
+          <p
+            className={cn(
+              'text-brand-text mt-2 text-2xl font-semibold tracking-tight',
+              isLoading && 'animate-pulse',
+            )}
+          >
+            {isLoading ? '—' : String(stats?.[card.statsKey] ?? 0).padStart(2, '0')}
+          </p>
+        </div>
+      ))}
     </div>
   )
 }

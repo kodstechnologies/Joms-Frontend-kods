@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
   ArrowUpDown,
-  BarChart3,
   CalendarDays,
   Download,
   ExternalLink,
@@ -25,6 +24,18 @@ import rank3Icon from '@/assets/JOMS_ADMIN_PANEL_3D_ICONS/change-the-engraved-go
 import rank1Icon from '@/assets/JOMS_ADMIN_PANEL_3D_ICONS/create-a-high-quality-3d-icon-of-a-gold-trophy-wit 2.png'
 
 import { useExpertLeaderboard, useExpertLeaderboardProfile } from '../../hooks/use-leaderboard'
+import {
+  DEFAULT_EXPERT_LEADERBOARD_VISIBLE_COLUMN_IDS,
+  EXPERT_LEADERBOARD_MODULE_KEY,
+  EXPERT_LEADERBOARD_TABLE_COLUMNS_CATALOG,
+} from '../../config/expert-leaderboard-table-columns.config'
+import {
+  DEFAULT_VENUE_LEADERBOARD_VISIBLE_COLUMN_IDS,
+  VENUE_LEADERBOARD_MODULE_KEY,
+  VENUE_LEADERBOARD_TABLE_COLUMNS_CATALOG,
+} from '../../config/venue-leaderboard-table-columns.config'
+import { useTableColumnPreferences } from '../../hooks/use-ui-preferences'
+import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
 import type {
   ExpertLeaderboardQuery,
   LeaderboardDateRange,
@@ -96,7 +107,7 @@ function PodiumShimmer() {
   )
 }
 
-function TableRowsShimmer({ rows = 8 }: { rows?: number }) {
+function TableRowsShimmer({ rows = 8, columnCount = 7 }: { rows?: number; columnCount?: number }) {
   return (
     <>
       {Array.from({ length: rows }).map((_, index) => (
@@ -104,31 +115,61 @@ function TableRowsShimmer({ rows = 8 }: { rows?: number }) {
           <td className="px-3 py-3">
             <ShimmerBlock className="size-4" />
           </td>
-          <td className="px-3 py-3">
-            <ShimmerBlock className="h-6 w-7" />
-          </td>
-          <td className="px-3 py-3">
-            <ShimmerBlock className="h-4 w-20 bg-white/5" />
-          </td>
-          <td className="px-3 py-3">
-            <ShimmerBlock className="h-4 w-32" />
-          </td>
-          <td className="px-3 py-3">
-            <ShimmerBlock className="h-6 w-16" />
-          </td>
-          <td className="px-3 py-3">
-            <ShimmerBlock className="h-4 w-10 bg-white/5" />
-          </td>
-          <td className="px-3 py-3">
-            <ShimmerBlock className="h-4 w-12" />
-          </td>
-          <td className="px-3 py-3">
-            <ShimmerBlock className="h-4 w-12" />
-          </td>
+          {Array.from({ length: columnCount }).map((__, cellIndex) => (
+            <td key={`leaderboard-row-shimmer-${index}-${cellIndex}`} className="px-3 py-3">
+              <ShimmerBlock className="h-4 w-20 bg-white/5" />
+            </td>
+          ))}
         </tr>
       ))}
     </>
   )
+}
+
+function renderLeaderboardCell(
+  columnId: string,
+  row: LeaderboardRow,
+  onOpenProfile: (row: LeaderboardRow) => void,
+) {
+  switch (columnId) {
+    case 'rank':
+      return <RankBadge rank={row.rank} />
+    case 'expert-id':
+    case 'venue-id':
+      return <span className="text-muted">{row.expertId}</span>
+    case 'expert-name':
+    case 'venue-name':
+      return (
+        <button
+          type="button"
+          className="hover:text-brand-accent font-semibold text-white"
+          onClick={() => onOpenProfile(row)}
+        >
+          {row.name}
+        </button>
+      )
+    case 'category':
+      return (
+        <span className="text-body-sm text-brand-text inline-flex rounded-md border border-white/10 bg-white/5 px-2 py-1 font-semibold">
+          {row.category}
+        </span>
+      )
+    case 'events-count':
+      return row.eventsCompleted
+    case 'ratings':
+      return (
+        <span className="inline-flex items-center gap-1">
+          <Star className="fill-brand-accent text-brand-accent size-3.5" />
+          <span className="font-semibold text-white">
+            {row.averageRating != null ? row.averageRating.toFixed(1) : '—'}
+          </span>
+        </span>
+      )
+    case 'score':
+      return <span className="font-semibold text-white">{row.score}</span>
+    default:
+      return null
+  }
 }
 
 function RankBadge({ rank }: { rank: number }) {
@@ -501,11 +542,26 @@ export const LeaderboardPage = () => {
   const navigate = useNavigate()
   const location = useLocation()
   const isVenueLeaderboard = location.pathname.startsWith('/venues')
+  const isServiceLeaderboard = location.pathname.startsWith('/services')
+  const leaderboardModuleKey = isVenueLeaderboard
+    ? VENUE_LEADERBOARD_MODULE_KEY
+    : EXPERT_LEADERBOARD_MODULE_KEY
+  const tableColumnsCatalog = isVenueLeaderboard
+    ? VENUE_LEADERBOARD_TABLE_COLUMNS_CATALOG
+    : EXPERT_LEADERBOARD_TABLE_COLUMNS_CATALOG
+  const defaultVisibleColumnIds = isVenueLeaderboard
+    ? DEFAULT_VENUE_LEADERBOARD_VISIBLE_COLUMN_IDS
+    : DEFAULT_EXPERT_LEADERBOARD_VISIBLE_COLUMN_IDS
   const metricsPath = isVenueLeaderboard
-    ? '/venues/dashboard/metrics'
-    : location.pathname.startsWith('/services')
+    ? '/metrics/venue-leaderboard?section=table'
+    : isServiceLeaderboard
       ? '/services/dashboard/metrics'
-      : '/experts/dashboard/metrics'
+      : '/metrics/expert-leaderboard?section=table'
+
+  const tableColumnPreferencesQuery = useTableColumnPreferences(
+    leaderboardModuleKey,
+    !isServiceLeaderboard,
+  )
 
   const [searchInput, setSearchInput] = useState('')
   const [search, setSearch] = useState('')
@@ -548,6 +604,25 @@ export const LeaderboardPage = () => {
   const showShimmer = isLoading || isFetching
   const rows = showShimmer ? [] : leaderboard?.list || []
 
+  const visibleColumnIds = useMemo(() => {
+    const catalogIds = tableColumnsCatalog.map((column) => column.id)
+    const ids = tableColumnPreferencesQuery.data?.visibleColumnIds?.length
+      ? tableColumnPreferencesQuery.data.visibleColumnIds
+      : defaultVisibleColumnIds
+    return sortIdsByCatalogOrder(
+      ids.filter((id) => catalogIds.includes(id)),
+      catalogIds,
+    )
+  }, [defaultVisibleColumnIds, tableColumnPreferencesQuery.data, tableColumnsCatalog])
+
+  const visibleColumns = useMemo(
+    () =>
+      visibleColumnIds
+        .map((id) => tableColumnsCatalog.find((column) => column.id === id))
+        .filter(Boolean) as typeof tableColumnsCatalog,
+    [tableColumnsCatalog, visibleColumnIds],
+  )
+
   const podiumOrdered = useMemo(() => {
     const podium = leaderboard?.podium || []
     const first = podium.find((p) => p.rank === 1)
@@ -569,20 +644,35 @@ export const LeaderboardPage = () => {
       return
     }
 
-    const headers = [
-      'Rank',
-      'Expert ID',
-      'Expert Name',
-      'Category',
-      'Membership',
-      'No. Of Events',
-      'Ratings',
-      'Score',
-      'Revenue',
-      'Completion Rate',
-      'Repeat Client Rate',
-      'Profile Health',
-    ]
+    const headers = isVenueLeaderboard
+      ? [
+          'Rank',
+          'Venue ID',
+          'Venue Name',
+          'Category',
+          'Membership',
+          'No. Of Events',
+          'Ratings',
+          'Score',
+          'Revenue',
+          'Completion Rate',
+          'Repeat Client Rate',
+          'Profile Health',
+        ]
+      : [
+          'Rank',
+          'Expert ID',
+          'Expert Name',
+          'Category',
+          'Membership',
+          'No. Of Events',
+          'Ratings',
+          'Score',
+          'Revenue',
+          'Completion Rate',
+          'Repeat Client Rate',
+          'Profile Health',
+        ]
     const exportRows = exportSource.map((row) => [
       String(row.rank),
       row.expertId,
@@ -599,7 +689,12 @@ export const LeaderboardPage = () => {
     ])
 
     try {
-      exportDataToFile(headers, exportRows, 'csv', 'expert-leaderboard')
+      exportDataToFile(
+        headers,
+        exportRows,
+        'csv',
+        isVenueLeaderboard ? 'venue-leaderboard' : 'expert-leaderboard',
+      )
       toast.success('Leaderboard exported')
     } catch {
       toast.error('Failed to export leaderboard')
@@ -614,9 +709,13 @@ export const LeaderboardPage = () => {
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-white">Expert Leader board</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-white">
+            {isVenueLeaderboard ? 'Venue Leaderboard' : 'Expert Leader board'}
+          </h1>
           <p className="text-body-md text-muted mt-1">
-            Top ranked experts based on platform performance
+            {isVenueLeaderboard
+              ? 'Top ranked venues based on platform performance'
+              : 'Top ranked experts based on platform performance'}
           </p>
           {leaderboard?.meta?.lastRefreshedAt && (
             <p className="text-muted mt-1 text-[11px]">
@@ -625,8 +724,11 @@ export const LeaderboardPage = () => {
             </p>
           )}
         </div>
-        <Button className="ui-manage-metrics" onClick={() => navigate(metricsPath)}>
-          <BarChart3 className="size-4" />
+        <Button
+          className="ui-manage-metrics ui-cta ui-cta-primary"
+          onClick={() => navigate(metricsPath)}
+        >
+          <SlidersHorizontal className="size-4" />
           Manage Metrics
         </Button>
       </div>
@@ -635,7 +737,9 @@ export const LeaderboardPage = () => {
         {showShimmer ? (
           <PodiumShimmer />
         ) : podiumOrdered.length === 0 ? (
-          <p className="text-muted text-center text-sm">No ranked experts yet.</p>
+          <p className="text-muted text-center text-sm">
+            {isVenueLeaderboard ? 'No ranked venues yet.' : 'No ranked experts yet.'}
+          </p>
         ) : (
           <div className="mx-auto grid max-w-3xl grid-cols-3 items-end gap-4">
             {podiumOrdered.map((expert, index) => {
@@ -747,30 +851,24 @@ export const LeaderboardPage = () => {
                     className="rounded border-slate-700 bg-transparent"
                   />
                 </th>
-                <th className="px-3 py-3">Rank</th>
-                <th className="px-3 py-3">Expert ID</th>
-                <th className="px-3 py-3">Expert Name</th>
-                <th className="px-3 py-3">Category</th>
-                <th className="px-3 py-3">
-                  <span className="inline-flex items-center gap-1">
-                    No.Of Events <ArrowUpDown className="size-3 opacity-40" />
-                  </span>
-                </th>
-                <th className="px-3 py-3">
-                  <span className="inline-flex items-center gap-1">
-                    Ratings <ArrowUpDown className="size-3 opacity-40" />
-                  </span>
-                </th>
-                <th className="px-3 py-3">
-                  <span className="inline-flex items-center gap-1">
-                    Score <ArrowUpDown className="size-3 opacity-40" />
-                  </span>
-                </th>
+                {visibleColumns.map((column) => (
+                  <th key={column.id} className="px-3 py-3">
+                    {column.id === 'events-count' ||
+                    column.id === 'ratings' ||
+                    column.id === 'score' ? (
+                      <span className="inline-flex items-center gap-1">
+                        {column.label} <ArrowUpDown className="size-3 opacity-40" />
+                      </span>
+                    ) : (
+                      column.label
+                    )}
+                  </th>
+                ))}
               </tr>
             </thead>
             <tbody>
               {showShimmer ? (
-                <TableRowsShimmer />
+                <TableRowsShimmer columnCount={visibleColumns.length} />
               ) : (
                 <>
                   {rows.map((row) => (
@@ -793,40 +891,22 @@ export const LeaderboardPage = () => {
                           className="rounded border-slate-700 bg-transparent"
                         />
                       </td>
-                      <td className="px-3 py-3">
-                        <RankBadge rank={row.rank} />
-                      </td>
-                      <td className="text-muted px-3 py-3">{row.expertId}</td>
-                      <td className="px-3 py-3">
-                        <button
-                          type="button"
-                          className="hover:text-brand-accent font-semibold text-white"
-                          onClick={() => openProfile(row)}
-                        >
-                          {row.name}
-                        </button>
-                      </td>
-                      <td className="px-3 py-3">
-                        <span className="text-body-sm text-brand-text inline-flex rounded-md border border-white/10 bg-white/5 px-2 py-1 font-semibold">
-                          {row.category}
-                        </span>
-                      </td>
-                      <td className="px-3 py-3">{row.eventsCompleted}</td>
-                      <td className="px-3 py-3">
-                        <span className="inline-flex items-center gap-1">
-                          <Star className="fill-brand-accent text-brand-accent size-3.5" />
-                          <span className="font-semibold text-white">
-                            {row.averageRating != null ? row.averageRating.toFixed(1) : '—'}
-                          </span>
-                        </span>
-                      </td>
-                      <td className="px-3 py-3 font-semibold text-white">{row.score}</td>
+                      {visibleColumns.map((column) => (
+                        <td key={`${row.partnerId}-${column.id}`} className="px-3 py-3">
+                          {renderLeaderboardCell(column.id, row, openProfile)}
+                        </td>
+                      ))}
                     </tr>
                   ))}
                   {rows.length === 0 && (
                     <tr>
-                      <td colSpan={8} className="text-muted px-3 py-8 text-center text-sm">
-                        No experts match the selected filters.
+                      <td
+                        colSpan={visibleColumns.length + 1}
+                        className="text-muted px-3 py-8 text-center text-sm"
+                      >
+                        {isVenueLeaderboard
+                          ? 'No venues match the selected filters.'
+                          : 'No experts match the selected filters.'}
                       </td>
                     </tr>
                   )}

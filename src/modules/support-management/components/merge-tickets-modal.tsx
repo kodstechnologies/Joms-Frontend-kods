@@ -2,18 +2,29 @@ import { GitMerge, X } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 
+type MergeTicketItem = {
+  id?: string
+  user: string
+  issue: string
+  time: string
+}
+
 type MergeTicketsModalProps = {
   open: boolean
   onClose: () => void
+  tickets?: MergeTicketItem[]
+  onSubmit?: (notes: string) => void | Promise<void>
 }
 
-const mergeTickets = [
+const fallbackTickets: MergeTicketItem[] = [
   { user: 'Sara Johnson', issue: 'Payment Issue', time: '21 Jan 2024, 11:53 AM' },
   { user: 'Sara Johnson', issue: 'Payment Issue', time: '21 Jan 2024, 10:12 AM' },
 ]
 
-export function MergeTicketsModal({ open, onClose }: MergeTicketsModalProps) {
+export function MergeTicketsModal({ open, onClose, tickets, onSubmit }: MergeTicketsModalProps) {
   const [notes, setNotes] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+  const mergeTickets = tickets?.length ? tickets : fallbackTickets
 
   if (!open) return null
 
@@ -36,13 +47,14 @@ export function MergeTicketsModal({ open, onClose }: MergeTicketsModalProps) {
             <GitMerge className="icon-lg" />
           </div>
           <p className="text-body-md text-muted">
-            You are merging 2 tickets of &apos;Sara Johnson&apos; regarding &apos;Payment
-            Issue&apos;
+            You are merging {mergeTickets.length} tickets of &apos;
+            {mergeTickets[0]?.user ?? 'user'}&apos; regarding &apos;
+            {mergeTickets[0]?.issue ?? 'issue'}&apos;
           </p>
 
           <div className="space-y-0 text-left">
             {mergeTickets.map((ticket, index) => (
-              <div key={index} className="relative flex gap-4">
+              <div key={ticket.id ?? index} className="relative flex gap-4">
                 {index < mergeTickets.length - 1 ? (
                   <div className="absolute top-8 left-[11px] h-full w-px bg-white/10" />
                 ) : null}
@@ -75,9 +87,21 @@ export function MergeTicketsModal({ open, onClose }: MergeTicketsModalProps) {
           </button>
           <button
             type="button"
-            onClick={() => {
-              toast.success('Tickets merged (static preview)')
-              onClose()
+            disabled={submitting}
+            onClick={async () => {
+              try {
+                setSubmitting(true)
+                if (onSubmit) {
+                  await onSubmit(notes)
+                } else {
+                  toast.success('Tickets merged (static preview)')
+                }
+                onClose()
+              } catch {
+                // Parent handles toast
+              } finally {
+                setSubmitting(false)
+              }
             }}
             className="ui-modal-btn ui-modal-btn-gold"
           >

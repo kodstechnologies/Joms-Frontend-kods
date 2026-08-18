@@ -16,31 +16,39 @@ import {
 } from 'recharts'
 import { RefreshCw } from 'lucide-react'
 
-import {
-  escalationsMock,
-  ticketsByModuleMock,
-  ticketsByReasonMock,
-  ticketsByUserTypeMock,
-  ticketTrendsMock,
-} from '../mock/support.mock'
+import { useSupportStats } from '../hooks/use-support'
 import { cn } from '@/shared/lib/cn'
 
-// ─── Design-system color vars (same as finance dashboard) ────────────────────
-const BRAND_GREEN = 'var(--brand-green)' // #00A63E
-const BRAND_BLUE = 'var(--brand-blue)' // #1447E6
-const BRAND_ORANGE = 'var(--brand-orange)' // #F54900
-const BRAND_MUTED = 'var(--brand-muted)' // #B3B3B3
+const BRAND_GREEN = 'var(--brand-green)'
+const BRAND_BLUE = 'var(--brand-blue)'
+const BRAND_ORANGE = 'var(--brand-orange)'
+const BRAND_MUTED = 'var(--brand-muted)'
 
-// Chart series colors — Networking uses gold tint, same pattern as finance
 const CHART_NETWORKING = '#5B4A24'
-const CHART_EVENTS = BRAND_BLUE
-const CHART_SERVICES = BRAND_ORANGE
-const CHART_VENUES = BRAND_GREEN
-
-// Pie colors — match finance "Revenue by category" pattern
 const PIE_COLORS = ['#FBC078', BRAND_BLUE, BRAND_GREEN, '#E5E7EB']
+const SERIES_PALETTE = [
+  CHART_NETWORKING,
+  BRAND_BLUE,
+  BRAND_ORANGE,
+  BRAND_GREEN,
+  '#FBC078',
+  '#A855F7',
+  '#94A3B8',
+]
 
-// Tooltip — white card, same as finance dashboard
+const MODULE_COLOR_BY_KEY: Record<string, string> = {
+  networking: CHART_NETWORKING,
+  events: BRAND_BLUE,
+  services: BRAND_ORANGE,
+  venues: BRAND_GREEN,
+}
+
+const TEAM_COLOR_BY_KEY: Record<string, string> = {
+  team_a: BRAND_GREEN,
+  team_b: BRAND_ORANGE,
+  team_c: BRAND_BLUE,
+}
+
 const tooltipStyle: React.CSSProperties = {
   background: 'var(--brand-card)',
   border: 'none',
@@ -53,12 +61,21 @@ const tooltipStyle: React.CSSProperties = {
 const axisTickStyle = { fill: BRAND_MUTED, fontSize: 11 }
 const legendStyle: React.CSSProperties = { color: BRAND_MUTED, fontSize: 12, paddingTop: 12 }
 
-// ─── Shared ChartCard (same as finance dashboard) ────────────────────────────
+const colorForKey = (key: string, index: number, known?: Record<string, string>) =>
+  known?.[key] || SERIES_PALETTE[index % SERIES_PALETTE.length]
+
 function ChartCard({
   title,
   children,
   className,
-}: PropsWithChildren<{ title: string; className?: string }>) {
+  onRefresh,
+  refreshing,
+}: PropsWithChildren<{
+  title: string
+  className?: string
+  onRefresh?: () => void
+  refreshing?: boolean
+}>) {
   return (
     <div className={cn('radius-lg bg-brand-surface border border-white/[0.06] p-5', className)}>
       <div className="mb-4 flex items-center justify-between gap-3">
@@ -66,9 +83,10 @@ function ChartCard({
         <button
           type="button"
           aria-label="Refresh"
+          onClick={onRefresh}
           className="text-muted hover:text-brand-text grid size-8 place-items-center rounded-lg border border-white/10 bg-black/40 transition-colors hover:bg-white/5"
         >
-          <RefreshCw className="size-3.5" />
+          <RefreshCw className={cn('size-3.5', refreshing && 'animate-spin')} />
         </button>
       </div>
       {children}
@@ -76,7 +94,14 @@ function ChartCard({
   )
 }
 
-// ─── Custom tooltips ──────────────────────────────────────────────────────────
+function ChartEmpty({ label = 'No tickets in this period' }: { label?: string }) {
+  return (
+    <div className="text-muted flex h-full min-h-[180px] items-center justify-center text-sm">
+      {label}
+    </div>
+  )
+}
+
 function TicketTrendTooltip({
   active,
   payload,
@@ -93,230 +118,258 @@ function TicketTrendTooltip({
     <div style={tooltipStyle}>
       <p className="text-body-sm-semibold text-brand-text-dark mb-2">{label}</p>
       <p className="text-body-sm" style={{ color: BRAND_BLUE }}>
-        Total Tickets: <span className="text-brand-text-dark font-semibold">{total}</span>
+        Total Tickets: <span className="text-brand-text-dark font-semibold">{total ?? 0}</span>
       </p>
       <p className="text-body-sm" style={{ color: BRAND_GREEN }}>
-        Resolved: <span className="text-brand-text-dark font-semibold">{resolved}</span>
+        Resolved: <span className="text-brand-text-dark font-semibold">{resolved ?? 0}</span>
       </p>
     </div>
   )
 }
 
 export function SupportDashboardCharts() {
-  const totalReasonTickets = ticketsByReasonMock.reduce((sum, r) => sum + r.count, 0)
+  const { data, isFetching, isLoading, refetch } = useSupportStats()
+  const charts = data?.data?.charts
+  const emptyLabel = isLoading ? 'Loading…' : 'No tickets in this period'
+  const ticketTrends = charts?.ticketTrends ?? []
+  const ticketsByUserType = charts?.ticketsByUserType ?? []
+  const ticketsByModule = charts?.ticketsByModule
+  const ticketsByReason = charts?.ticketsByReason ?? []
+  const escalations = charts?.escalations
+  const totalReasonTickets = ticketsByReason.reduce((sum, reason) => sum + reason.count, 0)
+  const hasTrendData = ticketTrends.some((point) => point.total > 0 || point.resolved > 0)
+  const hasUserTypeData = ticketsByUserType.some((entry) => entry.value > 0)
+  const hasModuleData = Boolean(
+    ticketsByModule?.data.some((point) =>
+      ticketsByModule.series.some((series) => Number(point[series.key] ?? 0) > 0),
+    ),
+  )
+  const hasEscalationData = Boolean(
+    escalations?.series.length &&
+    escalations.data.some((point) =>
+      escalations.series.some((series) => Number(point[series.key] ?? 0) > 0),
+    ),
+  )
 
   return (
     <>
-      {/* Row 1: Ticket Trends + Tickets by User Type */}
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[652fr_584fr]">
-        {/* Ticket Trends — 652×382 */}
-        <ChartCard title="Ticket Trends" className="h-[382px]">
+        <ChartCard
+          title="Ticket Trends"
+          className="h-[382px]"
+          onRefresh={refetch}
+          refreshing={isFetching}
+        >
           <div className="h-[300px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart
-                data={ticketTrendsMock}
-                margin={{ left: 0, right: 8, top: 8, bottom: 0 }}
-              >
-                <defs>
-                  <linearGradient id="gradTotal" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor={BRAND_BLUE} stopOpacity={0.45} />
-                    <stop offset="100%" stopColor={BRAND_BLUE} stopOpacity={0.02} />
-                  </linearGradient>
-                  <linearGradient id="gradResolved" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor={BRAND_GREEN} stopOpacity={0.35} />
-                    <stop offset="100%" stopColor={BRAND_GREEN} stopOpacity={0.02} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid stroke="rgba(255,255,255,0.04)" vertical={false} />
-                <XAxis dataKey="day" tickLine={false} axisLine={false} tick={axisTickStyle} />
-                <YAxis tickLine={false} axisLine={false} tick={axisTickStyle} />
-                <Tooltip content={<TicketTrendTooltip />} />
-                <Area
-                  type="monotone"
-                  dataKey="total"
-                  name="Total Tickets"
-                  stroke={BRAND_BLUE}
-                  strokeWidth={2}
-                  fill="url(#gradTotal)"
-                />
-                <Area
-                  type="monotone"
-                  dataKey="resolved"
-                  name="Resolved"
-                  stroke={BRAND_GREEN}
-                  strokeWidth={2}
-                  fill="url(#gradResolved)"
-                />
-              </ComposedChart>
-            </ResponsiveContainer>
+            {hasTrendData ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <ComposedChart
+                  data={ticketTrends}
+                  margin={{ left: 0, right: 8, top: 8, bottom: 0 }}
+                >
+                  <defs>
+                    <linearGradient id="gradTotal" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor={BRAND_BLUE} stopOpacity={0.45} />
+                      <stop offset="100%" stopColor={BRAND_BLUE} stopOpacity={0.02} />
+                    </linearGradient>
+                    <linearGradient id="gradResolved" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor={BRAND_GREEN} stopOpacity={0.35} />
+                      <stop offset="100%" stopColor={BRAND_GREEN} stopOpacity={0.02} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid stroke="rgba(255,255,255,0.04)" vertical={false} />
+                  <XAxis dataKey="day" tickLine={false} axisLine={false} tick={axisTickStyle} />
+                  <YAxis
+                    tickLine={false}
+                    axisLine={false}
+                    tick={axisTickStyle}
+                    allowDecimals={false}
+                  />
+                  <Tooltip content={<TicketTrendTooltip />} />
+                  <Area
+                    type="monotone"
+                    dataKey="total"
+                    name="Total Tickets"
+                    stroke={BRAND_BLUE}
+                    strokeWidth={2}
+                    fill="url(#gradTotal)"
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="resolved"
+                    name="Resolved"
+                    stroke={BRAND_GREEN}
+                    strokeWidth={2}
+                    fill="url(#gradResolved)"
+                  />
+                </ComposedChart>
+              </ResponsiveContainer>
+            ) : (
+              <ChartEmpty label={emptyLabel} />
+            )}
           </div>
         </ChartCard>
 
-        {/* Tickets by User Type — 584×382 */}
-        <ChartCard title="Tickets by User Type" className="h-[382px]">
-          <div className="flex h-full items-center gap-8">
-            {/* Donut — 220×220 */}
-            <div className="h-[220px] w-[220px] shrink-0">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={ticketsByUserTypeMock}
-                    dataKey="value"
-                    nameKey="name"
-                    innerRadius={60}
-                    outerRadius={95}
-                    stroke="rgba(255,255,255,0.06)"
-                    strokeWidth={2}
-                  >
-                    {ticketsByUserTypeMock.map((_, index) => (
-                      <Cell key={index} fill={PIE_COLORS[index % PIE_COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip contentStyle={tooltipStyle} />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
+        <ChartCard
+          title="Tickets by User Type"
+          className="h-[382px]"
+          onRefresh={refetch}
+          refreshing={isFetching}
+        >
+          {hasUserTypeData ? (
+            <div className="flex h-full items-center gap-8">
+              <div className="h-[220px] w-[220px] shrink-0">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={ticketsByUserType}
+                      dataKey="value"
+                      nameKey="name"
+                      innerRadius={60}
+                      outerRadius={95}
+                      stroke="rgba(255,255,255,0.06)"
+                      strokeWidth={2}
+                    >
+                      {ticketsByUserType.map((entry, index) => (
+                        <Cell key={entry.key} fill={PIE_COLORS[index % PIE_COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip contentStyle={tooltipStyle} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
 
-            {/* Legend — name + count stacked, percent right */}
-            <div className="flex flex-1 flex-col gap-5">
-              {ticketsByUserTypeMock.map((entry, index) => (
-                <div key={entry.name} className="flex items-start justify-between gap-4">
-                  <div className="flex items-start gap-2">
-                    <span
-                      className="mt-[3px] inline-block size-3 shrink-0 rounded-full"
-                      style={{ backgroundColor: PIE_COLORS[index % PIE_COLORS.length] }}
-                    />
-                    <div>
-                      <p className="text-body-sm-medium text-brand-text">{entry.name}</p>
-                      <p className="text-body-sm text-muted">{entry.value}</p>
+              <div className="flex flex-1 flex-col gap-5">
+                {ticketsByUserType.map((entry, index) => (
+                  <div key={entry.key} className="flex items-start justify-between gap-4">
+                    <div className="flex items-start gap-2">
+                      <span
+                        className="mt-[3px] inline-block size-3 shrink-0 rounded-full"
+                        style={{ backgroundColor: PIE_COLORS[index % PIE_COLORS.length] }}
+                      />
+                      <div>
+                        <p className="text-body-sm-medium text-brand-text">{entry.name}</p>
+                        <p className="text-body-sm text-muted">{entry.value}</p>
+                      </div>
                     </div>
+                    <span
+                      className="text-body-sm-semibold shrink-0"
+                      style={{ color: PIE_COLORS[index % PIE_COLORS.length] }}
+                    >
+                      {entry.percent}%
+                    </span>
                   </div>
-                  <span
-                    className="text-body-sm-semibold shrink-0"
-                    style={{ color: PIE_COLORS[index % PIE_COLORS.length] }}
-                  >
-                    {entry.percent}%
-                  </span>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
+          ) : (
+            <ChartEmpty label={emptyLabel} />
+          )}
         </ChartCard>
       </div>
 
-      {/* Row 2: Tickets by Module — bar chart, same pattern as "Monthly Comparison" */}
-      <ChartCard title="Tickets by Module">
+      <ChartCard title="Tickets by Module" onRefresh={refetch} refreshing={isFetching}>
         <div className="h-[300px] w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart
-              data={ticketsByModuleMock}
-              margin={{ left: 0, right: 8, top: 8, bottom: 0 }}
-              barGap={4}
-            >
-              <CartesianGrid stroke="rgba(255,255,255,0.04)" vertical={false} />
-              <XAxis dataKey="month" tickLine={false} axisLine={false} tick={axisTickStyle} />
-              <YAxis tickLine={false} axisLine={false} tick={axisTickStyle} />
-              <Tooltip contentStyle={tooltipStyle} cursor={{ fill: 'transparent' }} />
-              <Legend wrapperStyle={legendStyle} />
-              <Bar
-                dataKey="networking"
-                name="Networking"
-                fill={CHART_NETWORKING}
-                radius={[3, 3, 0, 0]}
-                maxBarSize={20}
-              />
-              <Bar
-                dataKey="events"
-                name="Events"
-                fill={CHART_EVENTS}
-                radius={[3, 3, 0, 0]}
-                maxBarSize={20}
-              />
-              <Bar
-                dataKey="services"
-                name="Services"
-                fill={CHART_SERVICES}
-                radius={[3, 3, 0, 0]}
-                maxBarSize={20}
-              />
-              <Bar
-                dataKey="venues"
-                name="Venues"
-                fill={CHART_VENUES}
-                radius={[3, 3, 0, 0]}
-                maxBarSize={20}
-              />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </ChartCard>
-
-      {/* Row 3: Tickets by Reason + Escalations to Other Teams */}
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-        {/* Tickets by Reason — progress bars */}
-        <ChartCard title="Tickets by Reason">
-          <div className="space-y-5 py-1">
-            {ticketsByReasonMock.map((reason) => (
-              <div key={reason.label}>
-                <div className="text-body-sm mb-1.5 flex items-center justify-between gap-3">
-                  <span className="text-muted">{reason.label}</span>
-                  <span className="text-brand-text font-semibold">{reason.count}</span>
-                </div>
-                <div className="h-[3px] overflow-hidden rounded-full bg-white/[0.06]">
-                  <div
-                    className="h-full rounded-full"
-                    style={{
-                      width: `${(reason.count / totalReasonTickets) * 100}%`,
-                      backgroundColor: reason.color,
-                    }}
-                  />
-                </div>
-              </div>
-            ))}
-            <div className="flex items-center justify-between border-t border-white/[0.06] pt-3">
-              <span className="text-body-sm text-muted">Total Tickets</span>
-              <span className="text-body-sm-semibold text-brand-text">{totalReasonTickets}</span>
-            </div>
-          </div>
-        </ChartCard>
-
-        {/* Escalations to Other Teams — bar chart */}
-        <ChartCard title="Escalations to Other Teams">
-          <div className="h-[280px] w-full">
+          {hasModuleData && ticketsByModule ? (
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
-                data={escalationsMock}
+                data={ticketsByModule.data}
                 margin={{ left: 0, right: 8, top: 8, bottom: 0 }}
                 barGap={4}
               >
                 <CartesianGrid stroke="rgba(255,255,255,0.04)" vertical={false} />
-                <XAxis dataKey="day" tickLine={false} axisLine={false} tick={axisTickStyle} />
-                <YAxis tickLine={false} axisLine={false} tick={axisTickStyle} />
+                <XAxis dataKey="month" tickLine={false} axisLine={false} tick={axisTickStyle} />
+                <YAxis
+                  tickLine={false}
+                  axisLine={false}
+                  tick={axisTickStyle}
+                  allowDecimals={false}
+                />
                 <Tooltip contentStyle={tooltipStyle} cursor={{ fill: 'transparent' }} />
                 <Legend wrapperStyle={legendStyle} />
-                <Bar
-                  dataKey="teamA"
-                  name="Team A"
-                  fill={BRAND_GREEN}
-                  radius={[3, 3, 0, 0]}
-                  maxBarSize={24}
-                />
-                <Bar
-                  dataKey="teamB"
-                  name="Team B"
-                  fill={BRAND_ORANGE}
-                  radius={[3, 3, 0, 0]}
-                  maxBarSize={24}
-                />
-                <Bar
-                  dataKey="teamC"
-                  name="Team C"
-                  fill={BRAND_BLUE}
-                  radius={[3, 3, 0, 0]}
-                  maxBarSize={24}
-                />
+                {ticketsByModule.series.map((series, index) => (
+                  <Bar
+                    key={series.key}
+                    dataKey={series.key}
+                    name={series.name}
+                    fill={colorForKey(series.key, index, MODULE_COLOR_BY_KEY)}
+                    radius={[3, 3, 0, 0]}
+                    maxBarSize={20}
+                  />
+                ))}
               </BarChart>
             </ResponsiveContainer>
+          ) : (
+            <ChartEmpty label={emptyLabel} />
+          )}
+        </div>
+      </ChartCard>
+
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+        <ChartCard title="Tickets by Reason" onRefresh={refetch} refreshing={isFetching}>
+          {ticketsByReason.length ? (
+            <div className="space-y-5 py-1">
+              {ticketsByReason.map((reason, index) => (
+                <div key={reason.label}>
+                  <div className="text-body-sm mb-1.5 flex items-center justify-between gap-3">
+                    <span className="text-muted">{reason.label}</span>
+                    <span className="text-brand-text font-semibold">{reason.count}</span>
+                  </div>
+                  <div className="h-[3px] overflow-hidden rounded-full bg-white/[0.06]">
+                    <div
+                      className="h-full rounded-full"
+                      style={{
+                        width: `${totalReasonTickets ? (reason.count / totalReasonTickets) * 100 : 0}%`,
+                        backgroundColor: SERIES_PALETTE[index % SERIES_PALETTE.length],
+                      }}
+                    />
+                  </div>
+                </div>
+              ))}
+              <div className="flex items-center justify-between border-t border-white/[0.06] pt-3">
+                <span className="text-body-sm text-muted">Total Tickets</span>
+                <span className="text-body-sm-semibold text-brand-text">{totalReasonTickets}</span>
+              </div>
+            </div>
+          ) : (
+            <ChartEmpty label={emptyLabel} />
+          )}
+        </ChartCard>
+
+        <ChartCard title="Escalations to Other Teams" onRefresh={refetch} refreshing={isFetching}>
+          <div className="h-[280px] w-full">
+            {hasEscalationData && escalations ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={escalations.data}
+                  margin={{ left: 0, right: 8, top: 8, bottom: 0 }}
+                  barGap={4}
+                >
+                  <CartesianGrid stroke="rgba(255,255,255,0.04)" vertical={false} />
+                  <XAxis dataKey="day" tickLine={false} axisLine={false} tick={axisTickStyle} />
+                  <YAxis
+                    tickLine={false}
+                    axisLine={false}
+                    tick={axisTickStyle}
+                    allowDecimals={false}
+                  />
+                  <Tooltip contentStyle={tooltipStyle} cursor={{ fill: 'transparent' }} />
+                  <Legend wrapperStyle={legendStyle} />
+                  {escalations.series.map((series, index) => (
+                    <Bar
+                      key={series.key}
+                      dataKey={series.key}
+                      name={series.name}
+                      fill={colorForKey(series.key, index, TEAM_COLOR_BY_KEY)}
+                      radius={[3, 3, 0, 0]}
+                      maxBarSize={24}
+                    />
+                  ))}
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <ChartEmpty label={emptyLabel} />
+            )}
           </div>
         </ChartCard>
       </div>

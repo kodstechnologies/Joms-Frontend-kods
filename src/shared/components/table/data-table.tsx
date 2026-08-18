@@ -142,7 +142,7 @@ export function DataTable<TData>({
             />
           </div>
 
-          <div className="flex w-full shrink-0 items-center justify-end gap-3 lg:w-auto">
+          <div className="flex shrink-0 items-center justify-end gap-3">
             {toolbarContent}
             {showAdvancedFilter ? (
               <Button
@@ -150,7 +150,7 @@ export function DataTable<TData>({
                 variant="secondary"
                 onClick={onAdvancedFilter}
                 disabled={!onAdvancedFilter}
-                className="table-advance-filter-btn flex-1 gap-2 sm:flex-none"
+                className="table-advance-filter-btn gap-2"
               >
                 <Filter className="size-3.5" aria-hidden="true" />
                 {advancedFilterLabel}
@@ -162,7 +162,7 @@ export function DataTable<TData>({
                 variant="primary"
                 onClick={onExport}
                 disabled={!onExport || isExporting}
-                className="table-export-btn flex-1 gap-2 sm:flex-none"
+                className="table-export-btn gap-2"
               >
                 <Upload className="icon-md" aria-hidden="true" />
                 {isExporting ? 'Exporting...' : 'Export Data'}
@@ -328,7 +328,10 @@ export function DataTable<TData>({
                   disabled={isLoading}
                   aria-current={isActive ? 'page' : undefined}
                   aria-label={`Go to page ${page}`}
-                  className={cn('table-pagination-btn', isActive && 'table-pagination-page-active')}
+                  className={cn(
+                    'table-pagination-btn table-pagination-page',
+                    isActive && 'table-pagination-page-active',
+                  )}
                 >
                   {page.toString().padStart(2, '0')}
                 </button>

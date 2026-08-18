@@ -27,7 +27,7 @@ export function StatCard({ title, value, icon: Icon, trend, hint, className }: S
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 space-y-1">
           <p className="text-body-sm-semibold text-muted tracking-wide">{title}</p>
-          <p className="text-h3 text-brand-text tracking-tight">{value}</p>
+          <p className="text-h2 text-brand-text mt-1 tracking-tight">{value}</p>
         </div>
         {Icon ? (
           <div
@@ -39,26 +39,24 @@ export function StatCard({ title, value, icon: Icon, trend, hint, className }: S
         ) : null}
       </div>
 
-      <div className="mt-4 flex min-h-[28px] items-center gap-2">
+      <div className="mt-4 flex min-h-[28px] items-center">
         {trend ? (
-          <>
-            <span
-              className={cn(
-                'text-body-sm-semibold inline-flex items-center gap-1 rounded-full border px-2 py-0.5',
-                isUp
-                  ? 'border-brand-positive/25 bg-brand-positive/10 text-brand-positive'
-                  : 'border-brand-danger/25 bg-brand-danger/10 text-brand-danger',
-              )}
-            >
-              {isUp ? (
-                <TrendingUp className="size-3.5" strokeWidth={2} />
-              ) : (
-                <TrendingDown className="size-3.5" strokeWidth={2} />
-              )}
-              {trend.percentage}%
-            </span>
-            <span className="text-body-sm text-muted">{trend.label}</span>
-          </>
+          <span
+            className={cn(
+              'text-body-sm-semibold inline-flex items-center gap-1 rounded-md px-2 py-1',
+              isUp
+                ? 'bg-brand-positive/15 text-brand-positive'
+                : 'bg-brand-danger/15 text-brand-danger',
+            )}
+          >
+            {isUp ? (
+              <TrendingUp className="size-3.5" strokeWidth={2} />
+            ) : (
+              <TrendingDown className="size-3.5" strokeWidth={2} />
+            )}
+            {isUp ? '+' : ''}
+            {trend.percentage}% {trend.label}
+          </span>
         ) : hint ? (
           <span className="text-body-sm text-muted">{hint}</span>
         ) : null}

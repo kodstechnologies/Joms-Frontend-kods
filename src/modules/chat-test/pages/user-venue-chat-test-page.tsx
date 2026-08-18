@@ -2,11 +2,12 @@ import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { STATIC_CHAT_USERS } from '../config/static-users'
 import { UserVenueBookPanel } from '../components/user-venue-book-panel'
+import { UserVenueInsightsPanel } from '../components/user-venue-insights-panel'
 import { env } from '@/config/env'
 
 /**
  * Completely separate from /dev/chat-user (quotations / consultations / chat).
- * Venue book + dummy pay only.
+ * Venue book + dummy pay + complete + rate.
  */
 export function UserVenueChatTestPage() {
   const [userId, setUserId] = useState(STATIC_CHAT_USERS[0]?.id || '')
@@ -33,7 +34,7 @@ export function UserVenueChatTestPage() {
           </div>
           <p className="text-sm text-zinc-400">
             Standalone Venue tab for chat-test. Browse approved venues → spaces → slots → create
-            booking → dummy pay. Does not share UI with quotations or chat.
+            booking → dummy pay → mark completed → rate. Does not share UI with quotations or chat.
           </p>
           <p className="text-[11px] text-zinc-500">API: {env.venueApiBaseUrl}/venue-bookings</p>
         </header>
@@ -57,6 +58,7 @@ export function UserVenueChatTestPage() {
         </div>
 
         {selectedUser ? <UserVenueBookPanel user={selectedUser} /> : null}
+        {selectedUser ? <UserVenueInsightsPanel user={selectedUser} /> : null}
       </div>
     </div>
   )

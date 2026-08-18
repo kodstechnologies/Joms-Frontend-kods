@@ -18,8 +18,16 @@ const UserChatTestPage = lazy(() =>
 const UserVenueChatTestPage = lazy(() =>
   import('@/modules/chat-test').then((m) => ({ default: m.UserVenueChatTestPage })),
 )
+const PartnerSupportTestPage = lazy(() =>
+  import('@/modules/chat-test').then((m) => ({ default: m.PartnerSupportTestPage })),
+)
 const PartnerChatTestPage = lazy(() =>
   import('@/modules/chat-test').then((m) => ({ default: m.PartnerChatTestPage })),
+)
+const PaymentFinanceTestingPage = lazy(() =>
+  import('@/modules/chat-test/pages/payment-finance-testing-page').then((m) => ({
+    default: m.PaymentFinanceTestingPage,
+  })),
 )
 const ExecutiveOverviewPage = lazy(() =>
   import('@/modules/dashboard/pages/executive-overview-page').then((m) => ({
@@ -767,6 +775,14 @@ export function AppRouter() {
           }
         />
         <Route
+          path="/dev/chat-partner-support"
+          element={
+            <Suspense fallback={<PageLoader />}>
+              <PartnerSupportTestPage />
+            </Suspense>
+          }
+        />
+        <Route
           path="/dev/chat-partner"
           element={
             <Suspense fallback={<PageLoader />}>
@@ -787,6 +803,14 @@ export function AppRouter() {
           element={
             <Suspense fallback={<PageLoader />}>
               <UserVenueChatTestPage />
+            </Suspense>
+          }
+        />
+        <Route
+          path="/payment-finance-testing"
+          element={
+            <Suspense fallback={<PageLoader />}>
+              <PaymentFinanceTestingPage />
             </Suspense>
           }
         />

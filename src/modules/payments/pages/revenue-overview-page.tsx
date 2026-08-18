@@ -1,13 +1,18 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { AlertTriangle, Eye, SlidersHorizontal, SquarePen, Tag, Trash2 } from 'lucide-react'
+import { AlertTriangle, Eye, SlidersHorizontal, Tag, Trash2 } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
+import { type RevenueOverviewRow } from '@/modules/payments/mock/revenue-overview.mock'
+import { useAddFinanceNote, useFinanceRevenue } from '@/modules/payments/hooks/use-finance'
 import {
-  revenueOverviewRowsMock,
-  type RevenueOverviewRow,
-} from '@/modules/payments/mock/revenue-overview.mock'
+  DEFAULT_FINANCE_REVENUE_VISIBLE_COLUMN_IDS,
+  FINANCE_REVENUE_MODULE_KEY,
+} from '@/modules/payments/config/finance-revenue-table-columns.config'
+import { useTableColumnPreferences } from '@/modules/expert/hooks/use-ui-preferences'
+import { mapPaymentToRevenueRow } from '@/modules/payments/utils/finance-mappers'
+import { AddTagsModal } from '@/shared/components/modals/add-tags-modal'
 import { DataTable } from '@/shared/components/table/data-table'
 import {
   TableActionsDropdown,
@@ -34,12 +39,23 @@ export function RevenueOverviewPage() {
   const [currentPage, setCurrentPage] = useState(1)
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [selectedRowIds, setSelectedRowIds] = useState<string[]>([])
+  const [tagTarget, setTagTarget] = useState<RevenueOverviewRow | null>(null)
+  const addNote = useAddFinanceNote()
+  const tableColumnPreferencesQuery = useTableColumnPreferences(FINANCE_REVENUE_MODULE_KEY)
+
+  const { data, isLoading, isFetching, isError } = useFinanceRevenue({
+    page: currentPage,
+    limit: PAGE_SIZE,
+  })
+
+  const rows = useMemo(() => (data?.data?.rows ?? []).map(mapPaymentToRevenueRow), [data])
+  const meta = data?.data?.meta
 
   const filteredRows = useMemo(() => {
     const query = searchQuery.trim().toLowerCase()
-    if (!query) return revenueOverviewRowsMock
+    if (!query) return rows
 
-    return revenueOverviewRowsMock.filter((row) =>
+    return rows.filter((row) =>
       [
         row.module,
         row.entityType,
@@ -53,16 +69,9 @@ export function RevenueOverviewPage() {
         .toLowerCase()
         .includes(query),
     )
-  }, [searchQuery])
+  }, [rows, searchQuery])
 
-  const totalItems = filteredRows.length
-  const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE))
-  const safePage = Math.min(currentPage, totalPages)
-
-  const pageRows = useMemo(() => {
-    const start = (safePage - 1) * PAGE_SIZE
-    return filteredRows.slice(start, start + PAGE_SIZE)
-  }, [filteredRows, safePage])
+  const pageRows = searchQuery.trim() ? filteredRows : rows
 
   const visibleRowIds = useMemo(() => pageRows.map((row) => row.id), [pageRows])
   const allVisibleSelected =
@@ -106,21 +115,11 @@ export function RevenueOverviewPage() {
             View Details
           </TableActionsItem>
           <TableActionsItem
-            icon={<SquarePen className="size-3.5 text-slate-700" aria-hidden="true" />}
-            className="text-slate-800 hover:bg-slate-100 hover:text-slate-900"
-            onClick={() => {
-              setActiveDropdownId(null)
-              toast.message('Add internal note coming soon')
-            }}
-          >
-            Add internal note
-          </TableActionsItem>
-          <TableActionsItem
             icon={<Tag className="size-3.5 text-slate-700" aria-hidden="true" />}
             className="text-slate-800 hover:bg-slate-100 hover:text-slate-900"
             onClick={() => {
               setActiveDropdownId(null)
-              toast.message('Add tags coming soon')
+              setTagTarget(record)
             }}
           >
             Add Tags
@@ -151,40 +150,41 @@ export function RevenueOverviewPage() {
     [activeDropdownId, navigate],
   )
 
-  const columns = useMemo<ColumnDef<RevenueOverviewRow>[]>(
-    () => [
-      {
-        id: 'select',
-        header: () => (
-          <input
-            type="checkbox"
-            aria-label="Select all revenue records"
-            checked={allVisibleSelected}
-            ref={(input) => {
-              if (input) input.indeterminate = someVisibleSelected && !allVisibleSelected
-            }}
-            onChange={toggleVisibleRows}
-            className="h-[18px] w-[18px] rounded border-slate-700 bg-transparent"
-          />
-        ),
-        cell: ({ row }) => (
-          <input
-            type="checkbox"
-            aria-label={`Select ${row.original.entityName}`}
-            checked={selectedRowIds.includes(row.original.id)}
-            onChange={() => toggleRowSelection(row.original.id)}
-            onClick={(event) => event.stopPropagation()}
-            className="h-[18px] w-[18px] rounded border-slate-700 bg-transparent"
-          />
-        ),
-        meta: {
-          headerClassName: 'pl-5',
-          cellClassName: 'pl-5',
-        },
+  const columns = useMemo<ColumnDef<RevenueOverviewRow>[]>(() => {
+    const selectColumn: ColumnDef<RevenueOverviewRow> = {
+      id: 'select',
+      header: () => (
+        <input
+          type="checkbox"
+          aria-label="Select all revenue records"
+          checked={allVisibleSelected}
+          ref={(input) => {
+            if (input) input.indeterminate = someVisibleSelected && !allVisibleSelected
+          }}
+          onChange={toggleVisibleRows}
+          className="h-[18px] w-[18px] rounded border-slate-700 bg-transparent"
+        />
+      ),
+      cell: ({ row }) => (
+        <input
+          type="checkbox"
+          aria-label={`Select ${row.original.entityName}`}
+          checked={selectedRowIds.includes(row.original.id)}
+          onChange={() => toggleRowSelection(row.original.id)}
+          onClick={(event) => event.stopPropagation()}
+          className="h-[18px] w-[18px] rounded border-slate-700 bg-transparent"
+        />
+      ),
+      meta: {
+        headerClassName: 'pl-5',
+        cellClassName: 'pl-5',
       },
-      { accessorKey: 'module', header: 'Module' },
-      { accessorKey: 'entityType', header: 'Entity Type' },
-      {
+    }
+
+    const dataColumnsById: Record<string, ColumnDef<RevenueOverviewRow>> = {
+      module: { accessorKey: 'module', header: 'Module' },
+      'entity-type': { accessorKey: 'entityType', header: 'Entity Type' },
+      'entity-id': {
         accessorKey: 'entityId',
         header: 'Entity ID',
         cell: ({ row }) => (
@@ -193,24 +193,24 @@ export function RevenueOverviewPage() {
           </span>
         ),
       },
-      {
+      'entity-name': {
         accessorKey: 'entityName',
         header: 'Entity Name',
         cell: ({ row }) => (
           <span className="text-brand-text font-medium">{row.original.entityName}</span>
         ),
       },
-      { accessorKey: 'category', header: 'Category' },
-      { accessorKey: 'ownerType', header: 'Owner Type' },
-      { accessorKey: 'ownerName', header: 'Owner Name' },
-      {
+      category: { accessorKey: 'category', header: 'Category' },
+      'owner-type': { accessorKey: 'ownerType', header: 'Owner Type' },
+      'owner-name': { accessorKey: 'ownerName', header: 'Owner Name' },
+      'gross-amount': {
         accessorKey: 'grossAmount',
         header: 'Gross Amount',
         cell: ({ row }) => (
           <span className="text-brand-text font-semibold">{row.original.grossAmount}</span>
         ),
       },
-      {
+      status: {
         accessorKey: 'status',
         header: 'Status',
         cell: ({ row }) => (
@@ -224,22 +224,31 @@ export function RevenueOverviewPage() {
           </span>
         ),
       },
-      {
-        id: 'actions',
-        header: 'Actions',
-        meta: { headerClassName: 'pr-5 text-right', cellClassName: 'relative pr-5 text-right' },
-        cell: ({ row }) => renderActions(row.original),
-      },
-    ],
-    [
-      allVisibleSelected,
-      renderActions,
-      selectedRowIds,
-      someVisibleSelected,
-      toggleRowSelection,
-      toggleVisibleRows,
-    ],
-  )
+    }
+
+    const visibleIds = tableColumnPreferencesQuery.data?.visibleColumnIds?.length
+      ? tableColumnPreferencesQuery.data.visibleColumnIds
+      : DEFAULT_FINANCE_REVENUE_VISIBLE_COLUMN_IDS
+
+    const preferenceColumns = visibleIds.map((id) => dataColumnsById[id]).filter(Boolean)
+
+    const actionsColumn: ColumnDef<RevenueOverviewRow> = {
+      id: 'actions',
+      header: 'Actions',
+      meta: { headerClassName: 'pr-5 text-right', cellClassName: 'relative pr-5 text-right' },
+      cell: ({ row }) => renderActions(row.original),
+    }
+
+    return [selectColumn, ...preferenceColumns, actionsColumn]
+  }, [
+    allVisibleSelected,
+    renderActions,
+    selectedRowIds,
+    someVisibleSelected,
+    tableColumnPreferencesQuery.data,
+    toggleRowSelection,
+    toggleVisibleRows,
+  ])
 
   return (
     <div className="flex flex-col gap-6">
@@ -257,16 +266,24 @@ export function RevenueOverviewPage() {
             <span className="text-brand-text font-semibold">Revenue Overview</span>
           </p>
         </div>
-        <Button className="ui-manage-metrics" onClick={() => navigate('/metrics/finance-revenue')}>
+        <Button
+          className="ui-manage-metrics"
+          onClick={() => navigate('/metrics/finance-revenue?section=table')}
+        >
           <SlidersHorizontal className="size-4" />
           Manage Metrics
         </Button>
       </div>
 
+      {isError ? (
+        <p className="text-body-sm text-brand-danger">Failed to load revenue records.</p>
+      ) : null}
+
       <DataTable
         columns={columns}
         data={pageRows}
         getRowId={(row) => row.id}
+        isLoading={isLoading || isFetching}
         searchValue={searchQuery}
         onSearchChange={(value) => {
           setSearchQuery(value)
@@ -277,14 +294,38 @@ export function RevenueOverviewPage() {
         onAdvancedFilter={() => toast.message('Advance filters coming soon')}
         onExport={() => toast.message('Export coming soon')}
         pagination={{
-          page: safePage,
-          pageSize: PAGE_SIZE,
-          totalItems,
-          totalPages,
+          page: meta?.page ?? currentPage,
+          pageSize: meta?.limit ?? PAGE_SIZE,
+          totalItems: meta?.total ?? 0,
+          totalPages: meta?.totalPages ?? 1,
           onPageChange: setCurrentPage,
         }}
-        resourceLabel="users"
+        resourceLabel="payments"
         emptyMessage="No revenue records found."
+      />
+
+      <AddTagsModal
+        open={!!tagTarget}
+        entityLabel="payment"
+        onClose={() => setTagTarget(null)}
+        onSubmit={async ({ tags, adminNotes }) => {
+          if (!tagTarget) return
+          try {
+            await addNote.mutateAsync({
+              id: tagTarget.id,
+              resourceType: 'Payment',
+              adminNote: `[Tags: ${tags.join(', ')}] ${adminNotes}`,
+            })
+            toast.success('Tags added')
+            setTagTarget(null)
+          } catch (err) {
+            const msg =
+              (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+              'Failed to add tags'
+            toast.error(msg)
+            throw err
+          }
+        }}
       />
     </div>
   )

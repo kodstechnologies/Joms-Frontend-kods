@@ -1,4 +1,4 @@
-export type TicketStatus = 'open' | 'in_progress' | 'on_hold' | 'closed'
+export type TicketStatus = 'open' | 'in_progress' | 'on_hold' | 'resolved' | 'closed'
 export type TicketPriority = 'critical' | 'high' | 'medium' | 'low'
 export type TicketTab = 'my_tickets' | 'escalated' | 'all'
 export type WorkspaceTab = 'intelligence' | 'messages'
@@ -11,9 +11,14 @@ export type SupportTicket = {
   priority: TicketPriority
   category: string
   reporter: string
+  reporterId?: string
   reporterType: ReporterType
+  reporterAvatarUrl?: string
   assignedTo: string
+  assignedToId?: string | null
+  assignedToAvatarUrl?: string
   slaTimer: string
+  slaDueAt?: string | null
   module: string
   issueType: string
   createdAt: string
@@ -22,6 +27,13 @@ export type SupportTicket = {
   resolution?: string
   comments?: string
   tags?: string[]
+  escalationPathway?: string
+  isEscalated?: boolean
+  pastTicketsCount?: number
+  eventContext?: { name?: string; date?: string } | null
+  issueContext?: { name?: string; detail?: string } | null
+  assignedAt?: string | null
+  resolvedAt?: string | null
 }
 
 export type QueueTicket = Pick<
@@ -32,10 +44,17 @@ export type QueueTicket = Pick<
 export type ChatMessage = {
   id: string
   sender: string
+  senderAvatarUrl?: string
   role: 'user' | 'agent'
   content: string
   time: string
   online?: boolean
+  attachments?: Array<{
+    url: string
+    publicId?: string
+    name?: string
+    mimeType?: string
+  }>
 }
 
 export type ActivityItem = {

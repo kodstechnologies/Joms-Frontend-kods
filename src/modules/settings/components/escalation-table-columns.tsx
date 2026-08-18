@@ -5,6 +5,7 @@ import type { Escalation } from '../mock/escalation-data'
 
 export const escalationColumns: ColumnDef<Escalation>[] = [
   {
+    id: 'escalation-id',
     accessorKey: 'escalationId',
     header: 'Escalation ID',
     cell: ({ row }) => (
@@ -14,18 +15,22 @@ export const escalationColumns: ColumnDef<Escalation>[] = [
     ),
   },
   {
+    id: 'roles-id',
     accessorKey: 'roleId',
     header: 'Roles ID',
   },
   {
+    id: 'role-name',
     accessorKey: 'roleName',
     header: 'Role Name',
   },
   {
+    id: 'escalation-type',
     accessorKey: 'escalationType',
     header: 'Escalation Type',
   },
   {
+    id: 'priority',
     accessorKey: 'priority',
     header: 'Priority',
     cell: ({ row }) => {
@@ -51,6 +56,7 @@ export const escalationColumns: ColumnDef<Escalation>[] = [
     },
   },
   {
+    id: 'status',
     accessorKey: 'status',
     header: 'Status',
     cell: ({ row }) => {
@@ -75,6 +81,7 @@ export const escalationColumns: ColumnDef<Escalation>[] = [
     },
   },
   {
+    id: 'created-on',
     accessorKey: 'createdOn',
     header: 'Created On',
   },

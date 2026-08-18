@@ -34,6 +34,12 @@ export type PartnerOffering = {
   duration: string
   status: string
   pricingType?: string | null
+  fixedPrice?: number | null
+  tiers?: Array<{
+    name: 'basic' | 'standard' | 'premium' | string
+    price: number
+    description?: string
+  }>
   mode?: string | null
   topics?: string[]
   sessionOutline?: string

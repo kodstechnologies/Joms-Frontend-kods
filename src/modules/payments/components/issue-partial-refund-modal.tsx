@@ -11,7 +11,11 @@ type IssuePartialRefundModalProps = {
   originalAmount: string
   maxRefundableAmount: number
   onClose: () => void
-  onSubmit?: (payload: { refundAmount: string; reason: string; adminNotes: string }) => void
+  onSubmit?: (payload: {
+    refundAmount: string
+    reason: string
+    adminNotes: string
+  }) => void | Promise<void>
 }
 
 const MAX_REASON_LENGTH = 150
@@ -55,7 +59,7 @@ export function IssuePartialRefundModal({
     }
   }, [open, handleClose])
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     const amount = Number(refundAmount.replace(/,/g, ''))
 
     if (!refundAmount.trim()) {
@@ -73,9 +77,12 @@ export function IssuePartialRefundModal({
       return
     }
 
-    onSubmit?.({ refundAmount, reason, adminNotes })
-    toast.success('Partial refund issued')
-    handleClose()
+    try {
+      await onSubmit?.({ refundAmount, reason, adminNotes })
+      handleClose()
+    } catch {
+      // Parent surfaces API errors via toast
+    }
   }
 
   if (!open) return null
@@ -176,7 +183,7 @@ export function IssuePartialRefundModal({
           <button type="button" onClick={handleClose} className="ui-modal-btn ui-modal-btn-cancel">
             Cancel
           </button>
-          <button type="button" onClick={handleSubmit} className="ui-modal-btn ui-modal-btn-cancel">
+          <button type="button" onClick={handleSubmit} className="ui-modal-btn ui-modal-btn-gold">
             Issue Refund
           </button>
         </div>

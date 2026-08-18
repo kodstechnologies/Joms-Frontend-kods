@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import {
   Bar,
@@ -14,6 +15,15 @@ import { ArrowLeft, Download, RefreshCw, SlidersHorizontal, Star } from 'lucide-
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import { Button } from '@/shared/components/ui/button'
 import { useSpaceAnalytics } from '../../hooks/use-venue-analytics'
+import {
+  DEFAULT_VENUE_VIEW_ANALYTICS_METRIC_IDS,
+  VENUE_VIEW_ANALYTICS_METRIC_ID_SET,
+  VENUE_VIEW_ANALYTICS_METRIC_IDS,
+  VENUE_VIEW_ANALYTICS_MODULE_KEY,
+} from '../../config/venue-view-analytics-metrics.config'
+import { orderByActiveMetricIds, useActiveMetricIds } from '../../hooks/use-active-metric-ids'
+import { buildVenueViewAnalyticsMetricCards } from '../../utils/venue-view-analytics-metrics'
+import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
 import { cn } from '@/shared/lib/cn'
 
 function Card({ children, className = '' }: { children: React.ReactNode; className?: string }) {
@@ -36,7 +46,29 @@ export function SpaceAnalyticsPage() {
   const { venueId, spaceId } = useParams<{ venueId: string; spaceId: string }>()
   const { data, isLoading, isError, isFetching, refetch } = useSpaceAnalytics(spaceId)
 
-  const overview = data?.overview ?? []
+  const activeMetricIds = useActiveMetricIds(VENUE_VIEW_ANALYTICS_MODULE_KEY, [
+    ...DEFAULT_VENUE_VIEW_ANALYTICS_METRIC_IDS,
+  ])
+
+  const filteredActiveMetricIds = useMemo(
+    () =>
+      sortIdsByCatalogOrder(
+        activeMetricIds.filter((metricId) => VENUE_VIEW_ANALYTICS_METRIC_ID_SET.has(metricId)),
+        VENUE_VIEW_ANALYTICS_METRIC_IDS,
+      ),
+    [activeMetricIds],
+  )
+
+  const overviewCards = useMemo(() => {
+    const allCards = buildVenueViewAnalyticsMetricCards(data?.overview ?? [])
+    return orderByActiveMetricIds(allCards, filteredActiveMetricIds)
+  }, [data?.overview, filteredActiveMetricIds])
+
+  const manageMetricsPath =
+    venueId && spaceId
+      ? `/metrics/venue-view-analytics?returnTo=${encodeURIComponent(`/venues/management/profile/${venueId}/space/${spaceId}/analytics`)}`
+      : '/metrics/venue-view-analytics'
+
   const cashFlow = data?.cashFlow ?? []
   const timeSlots = data?.timeSlots ?? []
   const ratings = data?.ratingDistribution ?? []
@@ -65,10 +97,7 @@ export function SpaceAnalyticsPage() {
           </div>
         </div>
         <div className="flex flex-wrap gap-3">
-          <Button
-            className="ui-manage-metrics h-9"
-            onClick={() => navigate('/venues/dashboard/metrics')}
-          >
+          <Button className="ui-manage-metrics h-9" onClick={() => navigate(manageMetricsPath)}>
             <SlidersHorizontal className="size-4" />
             Manage Metrics
           </Button>
@@ -97,7 +126,7 @@ export function SpaceAnalyticsPage() {
         <h2 className="text-body-md mb-3 font-bold text-white">Overview</h2>
         {isLoading ? (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {Array.from({ length: 6 }).map((_, i) => (
+            {Array.from({ length: filteredActiveMetricIds.length || 6 }).map((_, i) => (
               <Card key={`ov-sk-${i}`}>
                 <div className="h-3 w-24 animate-pulse rounded bg-white/10" />
                 <div className="mt-3 h-7 w-20 animate-pulse rounded bg-white/10" />
@@ -111,11 +140,11 @@ export function SpaceAnalyticsPage() {
           </Card>
         ) : (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {overview.map((item) => (
-              <Card key={item.label}>
+            {overviewCards.map((item) => (
+              <Card key={item.id}>
                 <p className="text-[12px] text-[#999]">{item.label}</p>
                 <p className="mt-2 text-xl font-bold text-white">{item.value}</p>
-                <p className="mt-3 text-[11px] text-[#777]">{item.note}</p>
+                <p className="mt-3 text-[11px] text-[#777]">{item.note || '—'}</p>
               </Card>
             ))}
           </div>

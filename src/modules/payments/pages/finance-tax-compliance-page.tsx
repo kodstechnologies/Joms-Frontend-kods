@@ -1,13 +1,18 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { AlertTriangle, Eye, SlidersHorizontal, SquarePen, Tag, Trash2 } from 'lucide-react'
+import { AlertTriangle, Eye, SlidersHorizontal, Tag, Trash2 } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
+import { type TaxComplianceRow } from '@/modules/payments/mock/finance-tax-compliance.mock'
+import { useAddFinanceNote, useFinanceTax } from '@/modules/payments/hooks/use-finance'
+import { mapTaxToRow } from '@/modules/payments/utils/finance-mappers'
 import {
-  financeTaxComplianceRowsMock,
-  type TaxComplianceRow,
-} from '@/modules/payments/mock/finance-tax-compliance.mock'
+  DEFAULT_FINANCE_TAX_VISIBLE_COLUMN_IDS,
+  FINANCE_TAX_MODULE_KEY,
+} from '@/modules/payments/config/finance-tax-table-columns.config'
+import { useTableColumnPreferences } from '@/modules/expert/hooks/use-ui-preferences'
+import { AddTagsModal } from '@/shared/components/modals/add-tags-modal'
 import { DataTable } from '@/shared/components/table/data-table'
 import {
   TableActionsDropdown,
@@ -31,27 +36,31 @@ export function FinanceTaxCompliancePage() {
   const [currentPage, setCurrentPage] = useState(1)
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [selectedRowIds, setSelectedRowIds] = useState<string[]>([])
+  const [tagTarget, setTagTarget] = useState<TaxComplianceRow | null>(null)
+  const addNote = useAddFinanceNote()
+  const tableColumnPreferencesQuery = useTableColumnPreferences(FINANCE_TAX_MODULE_KEY)
+
+  const { data, isLoading, isFetching } = useFinanceTax({
+    page: currentPage,
+    limit: PAGE_SIZE,
+  })
+
+  const rows = useMemo(() => (data?.data?.rows ?? []).map(mapTaxToRow), [data])
+  const meta = data?.data?.meta
 
   const filteredRows = useMemo(() => {
     const query = searchQuery.trim().toLowerCase()
-    if (!query) return financeTaxComplianceRowsMock
+    if (!query) return rows
 
-    return financeTaxComplianceRowsMock.filter((row) =>
+    return rows.filter((row) =>
       [row.recordId, row.entityType, row.entityId, row.owner, row.bookingId, row.bookingTitle]
         .join(' ')
         .toLowerCase()
         .includes(query),
     )
-  }, [searchQuery])
+  }, [rows, searchQuery])
 
-  const totalItems = filteredRows.length
-  const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE))
-  const safePage = Math.min(currentPage, totalPages)
-
-  const pageRows = useMemo(() => {
-    const start = (safePage - 1) * PAGE_SIZE
-    return filteredRows.slice(start, start + PAGE_SIZE)
-  }, [filteredRows, safePage])
+  const pageRows = searchQuery.trim() ? filteredRows : rows
 
   const visibleRowIds = useMemo(() => pageRows.map((row) => row.id), [pageRows])
   const allVisibleSelected =
@@ -95,21 +104,11 @@ export function FinanceTaxCompliancePage() {
             View Details
           </TableActionsItem>
           <TableActionsItem
-            icon={<SquarePen className="size-[18px] text-slate-700" aria-hidden="true" />}
-            className="text-slate-800 hover:bg-slate-100 hover:text-slate-900"
-            onClick={() => {
-              setActiveDropdownId(null)
-              toast.message('Add internal note coming soon')
-            }}
-          >
-            Add internal note
-          </TableActionsItem>
-          <TableActionsItem
             icon={<Tag className="size-[18px] text-slate-700" aria-hidden="true" />}
             className="text-slate-800 hover:bg-slate-100 hover:text-slate-900"
             onClick={() => {
               setActiveDropdownId(null)
-              toast.message('Add tags coming soon')
+              setTagTarget(record)
             }}
           >
             Add Tags
@@ -140,38 +139,39 @@ export function FinanceTaxCompliancePage() {
     [activeDropdownId, navigate],
   )
 
-  const columns = useMemo<ColumnDef<TaxComplianceRow>[]>(
-    () => [
-      {
-        id: 'select',
-        header: () => (
-          <input
-            type="checkbox"
-            aria-label="Select all tax records"
-            checked={allVisibleSelected}
-            ref={(input) => {
-              if (input) input.indeterminate = someVisibleSelected && !allVisibleSelected
-            }}
-            onChange={toggleVisibleRows}
-            className="rounded border-slate-700 bg-transparent"
-          />
-        ),
-        cell: ({ row }) => (
-          <input
-            type="checkbox"
-            aria-label={`Select ${row.original.recordId}`}
-            checked={selectedRowIds.includes(row.original.id)}
-            onChange={() => toggleRowSelection(row.original.id)}
-            onClick={(event) => event.stopPropagation()}
-            className="rounded border-slate-700 bg-transparent"
-          />
-        ),
-        meta: {
-          headerClassName: 'pl-5',
-          cellClassName: 'pl-5',
-        },
+  const columns = useMemo<ColumnDef<TaxComplianceRow>[]>(() => {
+    const selectColumn: ColumnDef<TaxComplianceRow> = {
+      id: 'select',
+      header: () => (
+        <input
+          type="checkbox"
+          aria-label="Select all tax records"
+          checked={allVisibleSelected}
+          ref={(input) => {
+            if (input) input.indeterminate = someVisibleSelected && !allVisibleSelected
+          }}
+          onChange={toggleVisibleRows}
+          className="rounded border-slate-700 bg-transparent"
+        />
+      ),
+      cell: ({ row }) => (
+        <input
+          type="checkbox"
+          aria-label={`Select ${row.original.recordId}`}
+          checked={selectedRowIds.includes(row.original.id)}
+          onChange={() => toggleRowSelection(row.original.id)}
+          onClick={(event) => event.stopPropagation()}
+          className="rounded border-slate-700 bg-transparent"
+        />
+      ),
+      meta: {
+        headerClassName: 'pl-5',
+        cellClassName: 'pl-5',
       },
-      {
+    }
+
+    const dataColumnsById: Record<string, ColumnDef<TaxComplianceRow>> = {
+      'record-id': {
         accessorKey: 'recordId',
         header: 'Record ID',
         cell: ({ row }) => (
@@ -180,8 +180,8 @@ export function FinanceTaxCompliancePage() {
           </span>
         ),
       },
-      { accessorKey: 'entityType', header: 'Entity Type' },
-      {
+      'entity-type': { accessorKey: 'entityType', header: 'Entity Type' },
+      'entity-id': {
         accessorKey: 'entityId',
         header: 'Entity ID',
         cell: ({ row }) => (
@@ -190,8 +190,8 @@ export function FinanceTaxCompliancePage() {
           </span>
         ),
       },
-      { accessorKey: 'owner', header: 'Owner' },
-      {
+      owner: { accessorKey: 'owner', header: 'Owner' },
+      'booking-id': {
         accessorKey: 'bookingId',
         header: 'Booking ID',
         cell: ({ row }) => (
@@ -200,8 +200,8 @@ export function FinanceTaxCompliancePage() {
           </span>
         ),
       },
-      { accessorKey: 'bookingTitle', header: 'Booking Title' },
-      {
+      'booking-title': { accessorKey: 'bookingTitle', header: 'Booking Title' },
+      status: {
         accessorKey: 'status',
         header: 'Status',
         cell: ({ row }) => (
@@ -215,29 +215,38 @@ export function FinanceTaxCompliancePage() {
           </span>
         ),
       },
-      {
+      revenue: {
         accessorKey: 'revenue',
         header: 'Revenue',
         cell: ({ row }) => (
           <span className="text-brand-text font-semibold">{row.original.revenue}</span>
         ),
       },
-      {
-        id: 'actions',
-        header: 'Actions',
-        meta: { headerClassName: 'pr-5 text-right', cellClassName: 'relative pr-5 text-right' },
-        cell: ({ row }) => renderActions(row.original),
-      },
-    ],
-    [
-      allVisibleSelected,
-      renderActions,
-      selectedRowIds,
-      someVisibleSelected,
-      toggleRowSelection,
-      toggleVisibleRows,
-    ],
-  )
+    }
+
+    const visibleIds = tableColumnPreferencesQuery.data?.visibleColumnIds?.length
+      ? tableColumnPreferencesQuery.data.visibleColumnIds
+      : DEFAULT_FINANCE_TAX_VISIBLE_COLUMN_IDS
+
+    const preferenceColumns = visibleIds.map((id) => dataColumnsById[id]).filter(Boolean)
+
+    const actionsColumn: ColumnDef<TaxComplianceRow> = {
+      id: 'actions',
+      header: 'Actions',
+      meta: { headerClassName: 'pr-5 text-right', cellClassName: 'relative pr-5 text-right' },
+      cell: ({ row }) => renderActions(row.original),
+    }
+
+    return [selectColumn, ...preferenceColumns, actionsColumn]
+  }, [
+    allVisibleSelected,
+    renderActions,
+    selectedRowIds,
+    someVisibleSelected,
+    tableColumnPreferencesQuery.data,
+    toggleRowSelection,
+    toggleVisibleRows,
+  ])
 
   return (
     <div className="flex flex-col gap-6">
@@ -255,7 +264,10 @@ export function FinanceTaxCompliancePage() {
             <span className="text-brand-text font-semibold">Tax & Compliance</span>
           </p>
         </div>
-        <Button className="ui-manage-metrics" onClick={() => navigate('/metrics/finance-tax')}>
+        <Button
+          className="ui-manage-metrics"
+          onClick={() => navigate('/metrics/finance-tax?section=table')}
+        >
           <SlidersHorizontal className="size-4" />
           Manage Metrics
         </Button>
@@ -265,6 +277,7 @@ export function FinanceTaxCompliancePage() {
         columns={columns}
         data={pageRows}
         getRowId={(row) => row.id}
+        isLoading={isLoading || isFetching}
         searchValue={searchQuery}
         onSearchChange={(value) => {
           setSearchQuery(value)
@@ -275,14 +288,38 @@ export function FinanceTaxCompliancePage() {
         onAdvancedFilter={() => toast.message('Advance filters coming soon')}
         onExport={() => toast.message('Export coming soon')}
         pagination={{
-          page: safePage,
-          pageSize: PAGE_SIZE,
-          totalItems,
-          totalPages,
+          page: meta?.page ?? currentPage,
+          pageSize: meta?.limit ?? PAGE_SIZE,
+          totalItems: meta?.total ?? 0,
+          totalPages: meta?.totalPages ?? 1,
           onPageChange: setCurrentPage,
         }}
-        resourceLabel="users"
+        resourceLabel="tax records"
         emptyMessage="No tax records found."
+      />
+
+      <AddTagsModal
+        open={!!tagTarget}
+        entityLabel="tax record"
+        onClose={() => setTagTarget(null)}
+        onSubmit={async ({ tags, adminNotes }) => {
+          if (!tagTarget) return
+          try {
+            await addNote.mutateAsync({
+              id: tagTarget.id,
+              resourceType: 'TaxRecord',
+              adminNote: `[Tags: ${tags.join(', ')}] ${adminNotes}`,
+            })
+            toast.success('Tags added')
+            setTagTarget(null)
+          } catch (err) {
+            const msg =
+              (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+              'Failed to add tags'
+            toast.error(msg)
+            throw err
+          }
+        }}
       />
     </div>
   )

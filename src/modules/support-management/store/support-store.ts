@@ -22,7 +22,7 @@ export const useSupportStore = create<SupportState>((set) => ({
   currentPage: 1,
   activeTab: 'my_tickets',
   workspaceTab: 'intelligence',
-  selectedTicketId: 'TKT001',
+  selectedTicketId: '',
   showFilters: false,
   setSearchQuery: (searchQuery) => set({ searchQuery, currentPage: 1 }),
   setCurrentPage: (currentPage) => set({ currentPage }),

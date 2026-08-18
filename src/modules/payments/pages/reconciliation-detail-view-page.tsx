@@ -3,7 +3,8 @@ import { ArrowLeft, Download, SquarePen } from 'lucide-react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 
-import { getReconciliationDetailById } from '@/modules/payments/mock/reconciliation-detail.mock'
+import { useFinanceReconciliationDetail } from '@/modules/payments/hooks/use-finance'
+import { formatDate, formatInr, titleCase } from '@/modules/payments/utils/finance-mappers'
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
@@ -65,8 +66,66 @@ function StatusBadge({ status }: { status: string }) {
 
 export function ReconciliationDetailViewPage() {
   const navigate = useNavigate()
-  const { id = 'recon-01' } = useParams<{ id: string }>()
-  const detail = getReconciliationDetailById(id)
+  const { id = '' } = useParams<{ id: string }>()
+  const { data, isLoading, isError } = useFinanceReconciliationDetail(id)
+  const row = data?.data
+
+  if (isLoading) {
+    return <p className="text-body-sm text-muted">Loading reconciliation record...</p>
+  }
+
+  if (isError || !row) {
+    return (
+      <div className="space-y-4">
+        <p className="text-body-sm text-brand-danger">Reconciliation record not found.</p>
+        <button
+          type="button"
+          onClick={() => navigateBackOrFallback(navigate, '/finance/reconciliation')}
+          className="ui-cta ui-cta-secondary"
+        >
+          Back to Reconciliation
+        </button>
+      </div>
+    )
+  }
+
+  const statusLabel =
+    row.status === 'matched' || row.status === 'resolved'
+      ? 'Matched'
+      : row.status === 'investigating'
+        ? 'Pending'
+        : 'Mismatch'
+
+  const detail = {
+    recordTitle: 'Reconciliation Information',
+    recordDescription: `${titleCase(row.module)} · ${titleCase(row.pricingType)}`,
+    reconciliationInformation: {
+      reconciliationId: row.recordId,
+      gateway: titleCase(row.gateway) || 'Razorpay',
+      transactionId: String(row.paymentId),
+      platformRecordId: row.recordId,
+      settlementBatchId: row.razorpaySettlementId || '—',
+      settlementDate: formatDate(row.settlementDate),
+      bankCreditDate: formatDate(row.settlementDate),
+      reconciledBy: 'Finance Admin',
+      reconciliationDate: formatDate(row.createdAt),
+      status: statusLabel as 'Matched' | 'Mismatch' | 'Pending',
+    },
+    gatewayDetails: {
+      gatewayReportedAmount: formatInr(row.gatewayAmount),
+      gatewayFee: '—',
+      netSettledAmount: formatInr(row.platformReceivedAmount),
+      currency: row.currency || 'INR',
+      gatewayReferenceId: row.gatewayReference || '—',
+    },
+    platformRecordSummary: {
+      platformGrossAmount: formatInr(row.platformReceivedAmount),
+      refundRecorded: '—',
+      platformCommission: '—',
+      taxCollected: '—',
+      expectedSettlementAmount: formatInr(row.gatewayAmount - row.differenceAmount),
+    },
+  }
 
   return (
     <div className="bg-brand-bg flex flex-col gap-5 pb-6">

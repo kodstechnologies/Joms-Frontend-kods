@@ -10,57 +10,67 @@ import {
 
 import type { StatCardProps } from '@/shared/components/dashboard/stat-card'
 import type { AnalyticsMetric } from '@/shared/components/dashboard/analytics-widget'
+import {
+  DEFAULT_EXECUTIVE_METRIC_IDS,
+  EXECUTIVE_OVERVIEW_METRICS_CATALOG,
+  EXECUTIVE_OVERVIEW_MODULE_KEY,
+} from '@/modules/dashboard/config/executive-overview-metrics.config'
 
-export const kpiStatsMock: StatCardProps[] = [
-  {
-    title: 'Total Platform Revenue',
+export type ExecutiveKpiStat = StatCardProps & { id: string }
+
+export { DEFAULT_EXECUTIVE_METRIC_IDS, EXECUTIVE_OVERVIEW_MODULE_KEY }
+
+const KPI_VALUES_BY_ID: Record<string, Omit<ExecutiveKpiStat, 'id' | 'title'>> = {
+  'total-platform-revenue': {
     value: '₹184.3K',
     icon: BadgeIndianRupee,
     trend: { direction: 'up', percentage: 12.5, label: 'vs last month' },
   },
-  {
-    title: 'Monthly Recurring Revenue',
+  'monthly-recurring-revenue': {
     value: '₹15.7K',
     icon: Wallet,
     trend: { direction: 'up', percentage: 6.7, label: 'vs last month' },
   },
-  {
-    title: 'Customer Lifetime Value',
+  'customer-lifetime-value': {
     value: '₹180.0K',
     icon: BarChart3,
     trend: { direction: 'up', percentage: 12.5, label: 'vs last quarter' },
   },
-  {
-    title: 'Gross Margin',
+  'gross-margin': {
     value: '68.3%',
     icon: Percent,
     trend: { direction: 'up', percentage: 12.5, label: 'vs last quarter' },
   },
-  {
-    title: 'Active Members',
+  'active-members': {
     value: '10,234',
     icon: Users,
     trend: { direction: 'up', percentage: 3.3, label: 'vs last month' },
   },
-  {
-    title: 'Total Events (MTD)',
+  'total-events-mtd': {
     value: '1,245',
     icon: Activity,
     trend: { direction: 'up', percentage: 15.2, label: 'vs last month' },
   },
-  {
-    title: 'LTV:CAC Ratio',
+  'ltv-cac-ratio': {
     value: '7.4',
     icon: CreditCard,
-    trend: { direction: 'up', percentage: 6.2, label: 'Healthy acquisition efficiency' },
+    hint: 'Healthy acquisition efficiency',
   },
-  {
-    title: 'Net Promoter Score',
+  'net-promoter-score': {
     value: '98',
     icon: Activity,
-    trend: { direction: 'up', percentage: 2.1, label: 'Strong customer loyalty' },
+    hint: 'Strong customer loyalty',
   },
-]
+}
+
+/** Exactly 8 KPI cards — ids and titles match Manage Metrics catalog. */
+export const kpiStatsMock: ExecutiveKpiStat[] = EXECUTIVE_OVERVIEW_METRICS_CATALOG.map(
+  (metric) => ({
+    id: metric.id,
+    title: metric.label,
+    ...KPI_VALUES_BY_ID[metric.id],
+  }),
+)
 
 export const engagementMetricsMock: AnalyticsMetric[] = [
   { label: 'Avg Session/member', value: '48m 20sec' },

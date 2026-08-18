@@ -24,7 +24,11 @@ type RejectRefundModalProps = {
   open: boolean
   data: RejectRefundModalData
   onClose: () => void
-  onConfirm?: (payload: { rejectionReason: string; adminNotes: string; confirmed: boolean }) => void
+  onConfirm?: (payload: {
+    rejectionReason: string
+    adminNotes: string
+    confirmed: boolean
+  }) => void | Promise<void>
 }
 
 const IMPORTANT_NOTICE_ITEMS = [
@@ -116,7 +120,7 @@ export function RejectRefundModal({ open, data, onClose, onConfirm }: RejectRefu
     }
   }, [open, handleClose])
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     if (!rejectionReason.trim()) {
       toast.error('Rejection reason is required')
       return
@@ -127,9 +131,12 @@ export function RejectRefundModal({ open, data, onClose, onConfirm }: RejectRefu
       return
     }
 
-    onConfirm?.({ rejectionReason, adminNotes, confirmed })
-    toast.success('Refund rejection confirmed')
-    handleClose()
+    try {
+      await onConfirm?.({ rejectionReason, adminNotes, confirmed })
+      handleClose()
+    } catch {
+      // Parent surfaces API errors via toast
+    }
   }
 
   if (!open) return null
@@ -149,12 +156,12 @@ export function RejectRefundModal({ open, data, onClose, onConfirm }: RejectRefu
       >
         <div className="ui-modal-header">
           <h2 id="reject-refund-title" className="text-h2 text-brand-text">
-            Reject Refund
+            Reject Dispute
           </h2>
           <button
             type="button"
             onClick={handleClose}
-            aria-label="Close reject refund modal"
+            aria-label="Close reject dispute modal"
             className="text-muted hover:text-brand-text grid size-9 place-items-center rounded-lg transition-colors hover:bg-white/5"
           >
             <X className="icon-md" />

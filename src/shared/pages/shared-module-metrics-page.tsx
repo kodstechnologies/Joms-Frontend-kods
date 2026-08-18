@@ -1,11 +1,13 @@
-import { useParams } from 'react-router-dom'
+import { useParams, useSearchParams } from 'react-router-dom'
 
 import { ModuleMetricsPage } from '@/modules/expert/pages/shared/module-metrics-page'
 import { getModuleMetricsDefinition } from '@/shared/lib/module-metrics-registry'
 
 export function SharedModuleMetricsPage() {
   const { moduleKey = '' } = useParams<{ moduleKey: string }>()
+  const [searchParams] = useSearchParams()
   const definition = getModuleMetricsDefinition(moduleKey)
+  const returnTo = searchParams.get('returnTo') ?? definition?.returnTo ?? '/'
 
   if (!moduleKey || !definition) {
     return (
@@ -19,7 +21,7 @@ export function SharedModuleMetricsPage() {
     <ModuleMetricsPage
       moduleKey={definition.moduleKey}
       moduleName={definition.moduleName}
-      returnTo={definition.returnTo}
+      returnTo={returnTo}
       section={
         definition.metrics?.length && definition.columns?.length
           ? 'all'

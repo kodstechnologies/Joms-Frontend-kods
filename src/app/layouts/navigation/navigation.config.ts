@@ -175,7 +175,7 @@ export const navigationConfig: NavItem[] = [
     children: [
       { key: 'finance.dashboard', label: 'Dashboard', to: '/finance/dashboard' },
       { key: 'finance.revenue', label: 'Revenue Overview', to: '/finance/revenue' },
-      { key: 'finance.events', label: 'Events', to: '/finance/events' },
+      // Events muted — no finance event payment pipeline yet (route kept, hidden from nav)
       { key: 'finance.services', label: 'Services', to: '/finance/services' },
       { key: 'finance.venues', label: 'Venues', to: '/finance/venues' },
       { key: 'finance.memberships', label: 'Memberships', to: '/finance/memberships' },
@@ -188,7 +188,7 @@ export const navigationConfig: NavItem[] = [
         label: 'Financial Reconciliation',
         to: '/finance/reconciliation',
       },
-      { key: 'finance.category', label: 'Category Management', to: '/finance/categories' },
+      // Category Management muted — mock-only, no finance category API (route kept, hidden from nav)
     ],
   },
   {
@@ -196,6 +196,7 @@ export const navigationConfig: NavItem[] = [
     label: 'Support',
     icon: LifeBuoy,
     superAdminOnly: true,
+    matchPaths: ['/support'],
     children: [
       { key: 'support.dashboard', label: 'Dashboard', to: '/support/dashboard' },
       { key: 'support.tickets', label: 'Ticket Management', to: '/support/tickets' },
@@ -207,6 +208,8 @@ export const navigationConfig: NavItem[] = [
     label: 'Settings',
     icon: Settings,
     permissionModule: 'settings',
+    superAdminOnly: true,
+    matchPaths: ['/settings'],
     children: [
       {
         key: 'settings.health',

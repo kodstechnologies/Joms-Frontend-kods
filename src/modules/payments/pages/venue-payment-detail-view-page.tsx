@@ -1,9 +1,19 @@
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { ArrowLeft, Download, SquarePen } from 'lucide-react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 
-import { getVenuePaymentDetailById } from '@/modules/payments/mock/venue-payment-detail.mock'
+import { fetchPartnerDisplayNames } from '@/modules/payments/api/partner-lookup-api'
+import { AddFinanceNoteModal } from '@/modules/payments/components/add-finance-note-modal'
+import { FinanceInternalNotesCard } from '@/modules/payments/components/finance-internal-notes-card'
+import { useAddFinanceNote, useFinancePayment } from '@/modules/payments/hooks/use-finance'
+import {
+  formatDate,
+  formatInr,
+  mapPaymentStatus,
+  titleCase,
+} from '@/modules/payments/utils/finance-mappers'
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
@@ -70,8 +80,196 @@ function StatusBadge({ status }: { status: string }) {
 
 export function VenuePaymentDetailViewPage() {
   const navigate = useNavigate()
-  const { id = 'venue-01' } = useParams<{ id: string }>()
-  const detail = getVenuePaymentDetailById(id)
+  const { id = '' } = useParams<{ id: string }>()
+  const { data, isLoading, isError } = useFinancePayment(id)
+  const noteMutation = useAddFinanceNote()
+  const [isNoteModalOpen, setIsNoteModalOpen] = useState(false)
+  const payment = data?.data
+  const snapshot = (payment?.moduleSnapshot || {}) as Record<string, unknown>
+  const moduleData = (payment?.moduleData || {}) as Record<string, unknown>
+  const ownerIdForLookup =
+    (typeof payment?.partnerId === 'string' && payment.partnerId) ||
+    (typeof snapshot.partnerId === 'string' && snapshot.partnerId) ||
+    null
+  const snapshotOwnerName = typeof snapshot.partnerName === 'string' ? snapshot.partnerName : null
+  const clientIdForCompare =
+    (typeof payment?.userId === 'string' && payment.userId) ||
+    (typeof snapshot.userId === 'string' && snapshot.userId) ||
+    (typeof moduleData.userName === 'string' && moduleData.userName) ||
+    null
+  const needsOwnerLookup =
+    !!ownerIdForLookup &&
+    (!snapshotOwnerName ||
+      snapshotOwnerName === clientIdForCompare ||
+      snapshotOwnerName === moduleData.userName ||
+      snapshotOwnerName === moduleData.clientName)
+  const { data: partnerNameMap } = useQuery({
+    queryKey: ['finance-partner-name', ownerIdForLookup],
+    queryFn: () => fetchPartnerDisplayNames([String(ownerIdForLookup)]),
+    enabled: needsOwnerLookup,
+    staleTime: 1000 * 60 * 5,
+  })
+
+  if (isLoading) {
+    return <p className="text-body-sm text-muted">Loading payment details...</p>
+  }
+
+  if (isError || !payment) {
+    return (
+      <div className="space-y-4">
+        <p className="text-body-sm text-brand-danger">Payment not found.</p>
+        <button
+          type="button"
+          onClick={() => navigateBackOrFallback(navigate, '/finance/venues')}
+          className="ui-cta ui-cta-secondary"
+        >
+          Back to Venues
+        </button>
+      </div>
+    )
+  }
+
+  const fulfilled = (payment.fulfillmentResult || {}) as Record<string, unknown>
+  const str = (...vals: unknown[]) => {
+    for (const v of vals) {
+      if (typeof v === 'string' && v.trim()) return v.trim()
+      if (typeof v === 'number' && Number.isFinite(v)) return String(v)
+    }
+    return null
+  }
+  const status = mapPaymentStatus(payment.status)
+  const bookingStatus =
+    status === 'Paid' ? 'Confirmed' : status === 'Failed' ? 'Cancelled' : 'Pending'
+
+  const venueId = str(snapshot.venueId, fulfilled.venueId, moduleData.venueId) || '—'
+  const bookingId =
+    str(
+      fulfilled.bookingId,
+      snapshot.bookingId,
+      payment.referenceType === 'VenueBooking' ? payment.referenceId : null,
+    ) || payment.orderId
+  const venueName =
+    str(snapshot.venueName, fulfilled.venueName) ||
+    str(snapshot.title, payment.description)?.split('·')[0]?.trim() ||
+    'Venue booking'
+  const bookingTitle = str(snapshot.title, fulfilled.title, payment.description) || venueName
+  const ownerId = str(payment.partnerId, snapshot.partnerId) || '—'
+  const clientId = str(payment.userId, snapshot.userId) || '—'
+  const clientName = str(snapshot.userName, moduleData.userName, moduleData.clientName) || clientId
+  // Older rows wrongly stored payer name as partnerName — never show client as owner.
+  const rawOwnerName = str(snapshot.partnerName)
+  const lookedUpOwner = ownerId !== '—' ? partnerNameMap?.[ownerId] : null
+  const ownerName =
+    rawOwnerName && rawOwnerName !== clientName && rawOwnerName !== clientId
+      ? rawOwnerName
+      : lookedUpOwner || ownerId
+
+  const amount = Number(payment.amount) || 0
+  const platformRate =
+    typeof snapshot.platformFeeRate === 'number' ? snapshot.platformFeeRate : 0.05
+  const gstRate = typeof snapshot.gstRate === 'number' ? snapshot.gstRate : 0.18
+  const platformFee = Math.round(amount * platformRate)
+  const gst = Math.round(amount * gstRate)
+  const netPayable = Math.max(0, amount - platformFee)
+
+  const startAt = str(snapshot.startAt, fulfilled.startAt)
+  const endAt = str(snapshot.endAt, fulfilled.endAt)
+  const durationHours =
+    typeof snapshot.bookingDurationHours === 'number'
+      ? snapshot.bookingDurationHours
+      : startAt && endAt
+        ? Math.max(
+            0,
+            Math.round(
+              (new Date(endAt).getTime() - new Date(startAt).getTime()) / (60 * 60 * 1000),
+            ),
+          )
+        : null
+  const numberOfDays =
+    typeof snapshot.numberOfDays === 'number'
+      ? snapshot.numberOfDays
+      : startAt && endAt
+        ? Math.max(
+            1,
+            Math.ceil(
+              (new Date(endAt).getTime() - new Date(startAt).getTime()) / (24 * 60 * 60 * 1000),
+            ),
+          )
+        : null
+
+  const location =
+    str(snapshot.location) ||
+    (snapshot.location && typeof snapshot.location === 'object'
+      ? [
+          (snapshot.location as { address?: string }).address,
+          (snapshot.location as { city?: string }).city,
+          (snapshot.location as { state?: string }).state,
+        ]
+          .filter(Boolean)
+          .join(', ')
+      : null) ||
+    '—'
+
+  const detail = {
+    venueTitle: venueName,
+    venueDescription: bookingTitle !== venueName ? bookingTitle : 'Venue payment details',
+    paymentInformation: {
+      bookingId,
+      venueId,
+      transactionId: str(payment.razorpayPaymentId, payment._id) || payment._id,
+      orderId: payment.orderId,
+      entityType: titleCase(payment.pricingType || payment.module),
+      bookingTitle,
+      createdOn: formatDate(payment.createdAt),
+      bookingDuration: durationHours != null ? `${durationHours} hour(s)` : '—',
+      bookingStatus: bookingStatus as 'Confirmed' | 'Pending' | 'Cancelled',
+    },
+    timelineInformation: {
+      bookingRequestedOn: formatDate(payment.createdAt),
+      paymentCompletedOn:
+        status === 'Paid' ? formatDate(payment.updatedAt || payment.createdAt) : '—',
+      eventCompletedOn: endAt ? formatDate(endAt) : '—',
+      // Not modeled on Payment / venue booking today — only escrow holds have expectedReleaseAt.
+      depositReleaseDate: str(snapshot.depositReleaseDate) || 'Not applicable',
+      // Payment has settlementStatus only (pending|settled), no calendar settlement date field.
+      finalSettlementDate:
+        str(snapshot.finalSettlementDate) ||
+        (payment.settlementStatus ? titleCase(payment.settlementStatus) : 'Not set'),
+    },
+    financialBreakdown: {
+      rentalFee: formatInr(amount),
+      numberOfDays: numberOfDays != null ? String(numberOfDays) : '—',
+      depositStatus: status === 'Paid' ? 'Collected with rental' : 'Pending',
+      platformFee: formatInr(platformFee),
+      gst: formatInr(gst),
+    },
+    venueInformation: {
+      venueName,
+      ownerName,
+      ownerId,
+      venueType: titleCase(str(snapshot.venueType, snapshot.category) || '—'),
+      capacity:
+        str(snapshot.capacity) ||
+        (snapshot.spaceId || moduleData.spaceId ? '—' : 'No space on booking'),
+      location,
+      approvedStatus: (status === 'Paid' ? 'Approved' : 'Pending') as
+        | 'Approved'
+        | 'Pending'
+        | 'Rejected',
+    },
+    parties: {
+      clientId,
+      clientName,
+      ownerId,
+      ownerName,
+    },
+    finalCalculation: {
+      totalCollected: formatInr(amount),
+      platformEarnings: formatInr(platformFee),
+      netPayableToVenueOwner: formatInr(netPayable),
+      ownerName,
+    },
+  }
 
   return (
     <div className="bg-brand-bg flex flex-col gap-5 pb-6">
@@ -108,7 +306,7 @@ export function VenuePaymentDetailViewPage() {
               <Download className="size-4" />
               Download Report
             </Button>
-            <Button onClick={() => toast.message('Add notes coming soon')}>
+            <Button onClick={() => setIsNoteModalOpen(true)}>
               <SquarePen className="size-4" />
               Add Notes
             </Button>
@@ -121,6 +319,7 @@ export function VenuePaymentDetailViewPage() {
           <DetailCard title="Payment Information">
             <DetailRow label="Booking ID" value={detail.paymentInformation.bookingId} />
             <DetailRow label="Venue ID" value={detail.paymentInformation.venueId} />
+            <DetailRow label="Order ID" value={detail.paymentInformation.orderId} />
             <DetailRow label="Transaction ID" value={detail.paymentInformation.transactionId} />
             <DetailRow label="Entity Type" value={detail.paymentInformation.entityType} />
             <DetailRow label="Booking Title" value={detail.paymentInformation.bookingTitle} />
@@ -197,6 +396,26 @@ export function VenuePaymentDetailViewPage() {
           </DetailCard>
         </div>
       </div>
+
+      <FinanceInternalNotesCard resourceId={payment._id} />
+
+      <AddFinanceNoteModal
+        open={isNoteModalOpen}
+        isSubmitting={noteMutation.isPending}
+        onClose={() => setIsNoteModalOpen(false)}
+        onSubmit={(adminNote) => {
+          noteMutation.mutate(
+            { id: payment._id, resourceType: 'Payment', adminNote },
+            {
+              onSuccess: () => {
+                toast.success('Note saved')
+                setIsNoteModalOpen(false)
+              },
+              onError: () => toast.error('Failed to save note'),
+            },
+          )
+        }}
+      />
     </div>
   )
 }
