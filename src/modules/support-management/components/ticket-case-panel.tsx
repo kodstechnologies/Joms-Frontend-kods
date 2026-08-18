@@ -2,7 +2,15 @@ import { ChevronDown } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { toast } from 'sonner'
 
-import { getReporterTypeLabel } from '../utils/support-format'
+import {
+  PRIORITY_SELECT_OPTIONS,
+  SUPPORT_ESCALATION_PATHWAY_OPTIONS,
+  SUPPORT_ISSUE_TYPE_OPTIONS,
+  SUPPORT_MODULE_OPTIONS,
+  getReporterTypeLabel,
+  toSelectOptions,
+  type SelectOption,
+} from '../utils/support-format'
 import { SupportAvatar } from './support-avatar'
 
 type TicketCasePanelProps = {
@@ -20,7 +28,12 @@ type TicketCasePanelProps = {
   comments: string
   escalationPathway?: string
   statusValue?: string
+  fieldsDisabled?: boolean
   onStatusChange?: (status: string) => void
+  onPriorityChange?: (priority: string) => void
+  onModuleChange?: (module: string) => void
+  onIssueTypeChange?: (issueType: string) => void
+  onEscalationPathwayChange?: (pathway: string) => void
   onEscalate?: () => void
   onResolve?: () => void
   onCloseTicket?: () => void
@@ -43,7 +56,12 @@ export function TicketCasePanel({
   comments,
   escalationPathway = 'None',
   statusValue,
+  fieldsDisabled = false,
   onStatusChange,
+  onPriorityChange,
+  onModuleChange,
+  onIssueTypeChange,
+  onEscalationPathwayChange,
   onEscalate,
   onResolve,
   onCloseTicket,
@@ -116,11 +134,32 @@ export function TicketCasePanel({
             { value: 'resolved', label: 'Resolved' },
             { value: 'closed', label: 'Closed' },
           ]}
+          disabled={fieldsDisabled}
           onChange={onStatusChange}
         />
-        <SelectField label="Priority" value={priority} />
-        <SelectField label="Module" value={module} />
-        <SelectField label="Issue Type" value={issueType} />
+        <SelectField
+          label="Priority"
+          value={priority}
+          options={PRIORITY_SELECT_OPTIONS}
+          disabled={fieldsDisabled}
+          onChange={onPriorityChange}
+        />
+        <SelectField
+          label="Module"
+          value={module}
+          options={toSelectOptions(SUPPORT_MODULE_OPTIONS, module)}
+          placeholder="Select module"
+          disabled={fieldsDisabled}
+          onChange={onModuleChange}
+        />
+        <SelectField
+          label="Issue Type"
+          value={issueType}
+          options={toSelectOptions(SUPPORT_ISSUE_TYPE_OPTIONS, issueType)}
+          placeholder="Select issue type"
+          disabled={fieldsDisabled}
+          onChange={onIssueTypeChange}
+        />
 
         <label className="block space-y-2">
           <span className="text-body-sm text-muted">Comments</span>
@@ -131,7 +170,13 @@ export function TicketCasePanel({
           />
         </label>
 
-        <SelectField label="Escalation Pathway" value={escalationPathway} />
+        <SelectField
+          label="Escalation Pathway"
+          value={escalationPathway}
+          options={toSelectOptions(SUPPORT_ESCALATION_PATHWAY_OPTIONS, escalationPathway)}
+          disabled={fieldsDisabled}
+          onChange={onEscalationPathwayChange}
+        />
       </div>
 
       <div className="flex shrink-0 gap-2 border-t border-white/5 p-4">
@@ -166,22 +211,33 @@ function SelectField({
   value,
   options,
   onChange,
+  placeholder,
+  disabled = false,
 }: {
   label: string
   value: string
-  options?: Array<{ value: string; label: string }>
+  options?: SelectOption[]
   onChange?: (value: string) => void
+  placeholder?: string
+  disabled?: boolean
 }) {
+  const resolvedValue = value && value !== '—' ? value : ''
   if (options?.length && onChange) {
     return (
       <label className="block space-y-1.5">
         <span className="text-body-sm text-muted">{label}</span>
         <div className="radius-md bg-brand-bg relative flex h-[42px] items-center border border-white/10 px-3">
           <select
-            value={value}
+            value={resolvedValue}
+            disabled={disabled}
             onChange={(event) => onChange(event.target.value)}
-            className="text-body-md text-brand-text absolute inset-0 h-full w-full cursor-pointer appearance-none bg-transparent px-3 pr-8 outline-none"
+            className="text-body-md text-brand-text absolute inset-0 h-full w-full cursor-pointer appearance-none bg-transparent px-3 pr-8 outline-none disabled:cursor-not-allowed disabled:opacity-60"
           >
+            {placeholder ? (
+              <option value="" className="bg-brand-bg text-brand-text">
+                {placeholder}
+              </option>
+            ) : null}
             {options.map((option) => (
               <option
                 key={option.value}
@@ -202,7 +258,7 @@ function SelectField({
     <label className="block space-y-1.5">
       <span className="text-body-sm text-muted">{label}</span>
       <div className="radius-md bg-brand-bg flex h-[42px] items-center justify-between border border-white/10 px-3">
-        <span className="text-body-md text-brand-text">{value}</span>
+        <span className="text-body-md text-brand-text">{value || placeholder || '—'}</span>
         <ChevronDown className="text-muted size-4 shrink-0" />
       </div>
     </label>

@@ -1,8 +1,8 @@
-import { useCallback, useMemo, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
-import { useQueryClient } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import deleteIcon from '@/assets/JOMS_ICONS-2/icons8-delete.svg'
 import editIcon from '@/assets/JOMS_ICONS-2/edit.svg'
 import { toast } from 'sonner'
@@ -74,6 +74,7 @@ import {
 import { useEntityTags } from '@/shared/hooks/use-entity-tags'
 import { cn } from '@/shared/lib/cn'
 import { openExpertKycFromProfile } from '../../utils/expert-application-navigation'
+import { fetchVenueKycByPartnerId } from '../../api/venue-kyc-api'
 import { useEscalationAssignees } from '@/modules/my-tasks/hooks/use-admin-escalation'
 import { escalateVenueSpaceApplication } from '@/modules/my-tasks/api/escalation-api'
 import { exportDataToFile } from '@/shared/utils/export-utils'
@@ -1195,6 +1196,28 @@ export function VenueProfileViewPage() {
 
   const { data, isLoading, isError, error } = useVenueFullView(venueId)
   const fullView = data?.data
+  const resolvedVenueId = String(fullView?.overview?.venue?._id || venueId || '').trim()
+  const kycFallbackQuery = useQuery({
+    queryKey: ['venue-kyc-by-partner', venueId],
+    queryFn: () => fetchVenueKycByPartnerId(venueId!),
+    enabled: Boolean(isError && venueId),
+    retry: false,
+  })
+  const fallbackKycId = String(kycFallbackQuery.data?.data?._id || '').trim()
+  const kycLookupPending = Boolean(
+    isError && venueId && (kycFallbackQuery.isPending || fallbackKycId),
+  )
+
+  useEffect(() => {
+    if (!venueId || !resolvedVenueId || resolvedVenueId === venueId) return
+    navigate(`/venues/management/profile/${resolvedVenueId}`, { replace: true })
+  }, [navigate, resolvedVenueId, venueId])
+
+  useEffect(() => {
+    if (!fallbackKycId) return
+    navigate(`/experts/management/application/${fallbackKycId}?source=venue_kyc`, { replace: true })
+  }, [fallbackKycId, navigate])
+
   const ownerPartnerId = String(
     fullView?.overview?.venue?.ownerId || fullView?.overview?.venue?.partnerId || '',
   ).trim()
@@ -1280,7 +1303,7 @@ export function VenueProfileViewPage() {
   }, [])
 
   const handleSuspendSubmit = useCallback(() => {
-    if (!venueId) return
+    if (!resolvedVenueId) return
 
     if (suspendReasons.length === 0) {
       toast.error('Please select at least one reason.')
@@ -1312,7 +1335,7 @@ export function VenueProfileViewPage() {
 
     suspendVenueMutation.mutate(
       {
-        venueId,
+        venueId: resolvedVenueId,
         payload: {
           selectedReasons: reasonPayload.selectedReasons,
           suspendIndefinitely,
@@ -1330,7 +1353,7 @@ export function VenueProfileViewPage() {
           toast.success('Venue suspended successfully')
           closeSuspendModal()
           setProfileMenuOpen(false)
-          queryClient.invalidateQueries({ queryKey: ['venue-full-view', venueId] })
+          queryClient.invalidateQueries({ queryKey: ['venue-full-view', resolvedVenueId] })
           queryClient.invalidateQueries({ queryKey: ['venues'] })
           navigate('/venues/management')
         },
@@ -1355,11 +1378,11 @@ export function VenueProfileViewPage() {
     suspendReasons,
     suspendStartDate,
     suspendVenueMutation,
-    venueId,
+    resolvedVenueId,
   ])
 
   const handleDeleteSubmit = useCallback(() => {
-    if (!venueId) return
+    if (!resolvedVenueId) return
 
     if (deleteReasons.length === 0) {
       toast.error('Please select at least one reason.')
@@ -1384,7 +1407,7 @@ export function VenueProfileViewPage() {
 
     deleteVenueMutation.mutate(
       {
-        venueId,
+        venueId: resolvedVenueId,
         payload: {
           selectedReasons: reasonPayload.selectedReasons,
           reasonDetails: reasonPayload.reasonDetails,
@@ -1418,10 +1441,10 @@ export function VenueProfileViewPage() {
     navigate,
     queryClient,
     recordReasonUsage,
-    venueId,
+    resolvedVenueId,
   ])
 
-  if (isLoading) {
+  if (isLoading || kycLookupPending) {
     return (
       <div className="flex h-[60vh] items-center justify-center">
         <div className="border-brand-accent size-9 animate-spin rounded-full border-4 border-t-transparent" />
@@ -1465,10 +1488,10 @@ export function VenueProfileViewPage() {
     {
       label: 'Create Space',
       icon: Plus,
-      onClick: () => navigate(`/venues/management/create?venueId=${venueId}`),
+      onClick: () => navigate(`/venues/management/create?venueId=${resolvedVenueId}`),
     },
     { label: 'Add Notes', icon: FileText, onClick: () => comingSoon('Add Notes') },
-    { label: 'Add Tags', icon: Tag, onClick: () => openTagModal(venueId || venue.name) },
+    { label: 'Add Tags', icon: Tag, onClick: () => openTagModal(resolvedVenueId || venue.name) },
     { label: 'Export Data', icon: Upload, onClick: () => comingSoon('Export Data') },
     { label: 'Share Profile', icon: Share2, onClick: () => comingSoon('Share Profile') },
   ]
@@ -1509,7 +1532,7 @@ export function VenueProfileViewPage() {
             icon={<img src={editIcon} alt="edit" className="size-3.5" />}
             onClick={() => {
               setProfileMenuOpen(false)
-              navigate(`/venues/management/create?venueId=${venueId}&mode=edit`)
+              navigate(`/venues/management/create?venueId=${resolvedVenueId}&mode=edit`)
             }}
           >
             Edit Profile
@@ -1664,11 +1687,9 @@ export function VenueProfileViewPage() {
             ))}
           </div>
 
-          {activeTab === 'overview' && (
-            <OverviewTab data={fullView} venueId={venueId ?? venue._id} />
-          )}
-          {activeTab === 'spaces' && <SpacesTab data={fullView} venueId={venueId} />}
-          {activeTab === 'analytics' && <AnalyticsTab data={fullView} venueId={venueId ?? ''} />}
+          {activeTab === 'overview' && <OverviewTab data={fullView} venueId={resolvedVenueId} />}
+          {activeTab === 'spaces' && <SpacesTab data={fullView} venueId={resolvedVenueId} />}
+          {activeTab === 'analytics' && <AnalyticsTab data={fullView} venueId={resolvedVenueId} />}
           {activeTab === 'health' && <HealthTab data={fullView} />}
         </div>
       </div>

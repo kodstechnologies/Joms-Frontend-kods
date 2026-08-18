@@ -18,13 +18,14 @@ import {
   useUpdateSupportTicket,
 } from '../hooks/use-support'
 import { useSupportStore } from '../store/support-store'
-import type { TicketStatus } from '../types/support'
+import type { TicketPriority, TicketStatus } from '../types/support'
 import {
   getApiErrorMessage,
   getPriorityLabel,
   getStatusLabel,
   isTerminalTicketStatus,
 } from '../utils/support-format'
+import { openVenuePartnerProfile } from '@/modules/expert/utils/expert-application-navigation'
 import { useAuthStore } from '@/modules/auth/store/auth-store'
 import { cn } from '@/shared/lib/cn'
 
@@ -237,19 +238,66 @@ export function SupportWorkspacePage() {
             assignedTo={ticket?.assignedTo ?? 'Unassigned'}
             assignedToAvatarUrl={ticket?.assignedToAvatarUrl}
             status={ticket ? getStatusLabel(ticket.status) : '—'}
-            priority={ticket ? getPriorityLabel(ticket.priority) : '—'}
-            module={ticket?.module || '—'}
-            issueType={ticket?.issueType || '—'}
+            priority={ticket?.priority || ''}
+            module={ticket?.module || ''}
+            issueType={ticket?.issueType || ''}
             comments={ticket?.comments || ''}
             escalationPathway={ticket?.escalationPathway || 'None'}
             statusValue={ticket?.status}
+            fieldsDisabled={!ticket || updateMutation.isPending}
             onStatusChange={async (status) => {
-              if (!selectedTicketId) return
+              if (!selectedTicketId || status === ticket?.status) return
               try {
                 await updateMutation.mutateAsync({ id: selectedTicketId, payload: { status } })
                 toast.success(`Status updated to ${getStatusLabel(status as TicketStatus)}`)
               } catch (err) {
                 toast.error(getApiErrorMessage(err, 'Failed to update status'))
+              }
+            }}
+            onPriorityChange={async (priority) => {
+              if (!selectedTicketId || !priority || priority === ticket?.priority) return
+              try {
+                await updateMutation.mutateAsync({ id: selectedTicketId, payload: { priority } })
+                toast.success(`Priority updated to ${getPriorityLabel(priority as TicketPriority)}`)
+              } catch (err) {
+                toast.error(getApiErrorMessage(err, 'Failed to update priority'))
+              }
+            }}
+            onModuleChange={async (module) => {
+              if (!selectedTicketId || module === (ticket?.module || '')) return
+              try {
+                await updateMutation.mutateAsync({ id: selectedTicketId, payload: { module } })
+                toast.success(module ? `Module updated to ${module}` : 'Module cleared')
+              } catch (err) {
+                toast.error(getApiErrorMessage(err, 'Failed to update module'))
+              }
+            }}
+            onIssueTypeChange={async (issueType) => {
+              if (!selectedTicketId || issueType === (ticket?.issueType || '')) return
+              try {
+                await updateMutation.mutateAsync({ id: selectedTicketId, payload: { issueType } })
+                toast.success(
+                  issueType ? `Issue type updated to ${issueType}` : 'Issue type cleared',
+                )
+              } catch (err) {
+                toast.error(getApiErrorMessage(err, 'Failed to update issue type'))
+              }
+            }}
+            onEscalationPathwayChange={async (escalationPathway) => {
+              if (
+                !selectedTicketId ||
+                escalationPathway === (ticket?.escalationPathway || 'None')
+              ) {
+                return
+              }
+              try {
+                await updateMutation.mutateAsync({
+                  id: selectedTicketId,
+                  payload: { escalationPathway },
+                })
+                toast.success(`Escalation pathway updated to ${escalationPathway}`)
+              } catch (err) {
+                toast.error(getApiErrorMessage(err, 'Failed to update escalation pathway'))
               }
             }}
             onViewProfile={() => {
@@ -260,7 +308,7 @@ export function SupportWorkspacePage() {
                 return
               }
               if (reporterType === 'venue_partner') {
-                navigate(`/venues/management/profile/${reporterId}`)
+                void openVenuePartnerProfile(reporterId, navigate)
                 return
               }
               if (reporterType === 'expert') {

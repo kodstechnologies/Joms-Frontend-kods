@@ -193,6 +193,7 @@ export const navigationConfig: NavItem[] = [
     label: 'Support',
     icon: LifeBuoy,
     superAdminOnly: true,
+    matchPaths: ['/support'],
     children: [
       { key: 'support.dashboard', label: 'Dashboard', to: '/support/dashboard' },
       { key: 'support.tickets', label: 'Ticket Management', to: '/support/tickets' },
@@ -204,6 +205,7 @@ export const navigationConfig: NavItem[] = [
     label: 'Settings',
     icon: Settings,
     superAdminOnly: true,
+    matchPaths: ['/settings'],
     children: [
       {
         key: 'settings.health',

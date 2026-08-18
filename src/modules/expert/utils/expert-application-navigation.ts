@@ -2,6 +2,7 @@ import type { NavigateFunction } from 'react-router-dom'
 import { toast } from 'sonner'
 
 import { fetchExpertApplicationView } from '../api/expert-application-api'
+import { fetchVenueFullView } from '../api/venue-api'
 import { fetchVenueKycByPartnerId } from '../api/venue-kyc-api'
 import { isKycSubmittedForApplication } from '../utils/expert-application-helpers'
 
@@ -42,6 +43,32 @@ export const openExpertApplicationView = async (
   }
 
   navigate(`/experts/management/application/${expert.id}`)
+}
+
+export const openVenuePartnerProfile = async (partnerId: string, navigate: NavigateFunction) => {
+  try {
+    const response = await fetchVenueFullView(partnerId)
+    const venueId = String(response?.data?.overview?.venue?._id || '').trim()
+    if (venueId) {
+      navigate(`/venues/management/profile/${venueId}`)
+      return
+    }
+  } catch {
+    // Partner may only have KYC, not a listing yet.
+  }
+
+  try {
+    const response = await fetchVenueKycByPartnerId(partnerId)
+    const kycId = String(response?.data?._id || '').trim()
+    if (kycId) {
+      navigate(`/experts/management/application/${kycId}?source=venue_kyc`)
+      return
+    }
+  } catch {
+    // No KYC either.
+  }
+
+  toast.error('No venue profile found for this partner.')
 }
 
 export const openExpertKycFromProfile = async (

@@ -31,6 +31,9 @@ export function SidebarGroup({
   const isTopLevel = depth === 0
   const isActiveModule = isTopLevel && activeTopLevelKey === item.key
   const isInactiveModule = isTopLevel && Boolean(activeTopLevelKey) && !isActiveModule
+  // When no module matches the current URL (e.g. /support/past-tickets/...), every
+  // top-level group must still navigate — otherwise Support/Settings become dead clicks.
+  const shouldSwitchModule = isTopLevel && !isActiveModule
 
   const syncKey = `${isActiveModule}:${isInactiveModule}:${isChildActive}`
   const [openOverride, setOpenOverride] = useState<boolean | null>(null)
@@ -48,16 +51,16 @@ export function SidebarGroup({
   const hasChildren = children.length > 0
   const firstTo = getFirstNavigableTo(item)
 
-  // Expanded: inactive modules cannot open their submenu (only switch by navigating).
+  // Expanded: only the active module can open its submenu. Other modules switch by navigating.
   // Collapsed: all icons stay clickable and jump to that module (Figma).
   const canExpandOwnSubmenu =
-    hasChildren && !compact && !isInactiveModule && (isActiveModule || !isTopLevel)
+    hasChildren && !compact && !shouldSwitchModule && (isActiveModule || !isTopLevel)
 
   const shouldShowChildren = canExpandOwnSubmenu && isOpen
 
   let itemTo: string | undefined
-  if (isInactiveModule && !compact) {
-    // Clicking a dimmed module switches into it — never opens its submenu here
+  if (shouldSwitchModule && !compact) {
+    // Clicking another module (or any module when none is active) jumps to its first page
     itemTo = firstTo
   } else if (hasChildren) {
     itemTo = compact ? firstTo : undefined
