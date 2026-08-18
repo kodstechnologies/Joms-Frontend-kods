@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { ChevronDown } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { toast } from 'sonner'
@@ -34,6 +35,7 @@ type TicketCasePanelProps = {
   onModuleChange?: (module: string) => void
   onIssueTypeChange?: (issueType: string) => void
   onEscalationPathwayChange?: (pathway: string) => void
+  onCommentsChange?: (comments: string) => void
   onEscalate?: () => void
   onResolve?: () => void
   onCloseTicket?: () => void
@@ -62,12 +64,15 @@ export function TicketCasePanel({
   onModuleChange,
   onIssueTypeChange,
   onEscalationPathwayChange,
+  onCommentsChange,
   onEscalate,
   onResolve,
   onCloseTicket,
   onReassign,
   onViewProfile,
 }: TicketCasePanelProps) {
+  const [commentDraft, setCommentDraft] = useState(comments)
+
   return (
     <div className="radius-lg bg-brand-surface flex h-full min-h-0 flex-col overflow-hidden border border-white/10">
       <div className="shrink-0 space-y-5 border-b border-white/5 p-4">
@@ -164,10 +169,19 @@ export function TicketCasePanel({
         <label className="block space-y-2">
           <span className="text-body-sm text-muted">Comments</span>
           <textarea
-            readOnly
-            value={comments}
-            className="ui-textarea text-brand-text/80 h-24 resize-none"
+            value={commentDraft}
+            disabled={fieldsDisabled || !onCommentsChange}
+            placeholder="Internal notes for this ticket only"
+            onChange={(event) => setCommentDraft(event.target.value)}
+            onBlur={() => {
+              if (!onCommentsChange || commentDraft === comments) return
+              onCommentsChange(commentDraft)
+            }}
+            className="ui-textarea text-brand-text h-24 resize-none disabled:opacity-60"
           />
+          <span className="text-body-sm text-muted block">
+            Saved on this ticket only. Not sent to chat or Zoho.
+          </span>
         </label>
 
         <SelectField

@@ -159,10 +159,11 @@ export const useDeleteSupportTicket = () => {
   })
 }
 
-export const useSupportAgents = () =>
+export const useSupportAgents = (enabled = true) =>
   useQuery({
     queryKey: ['support-agents'],
     queryFn: fetchSupportAgents,
+    enabled,
   })
 
 export const useLiveSupportUpdates = () => {

@@ -11,14 +11,7 @@ import calendarIcon from '@/assets/JOMS_ICONS-2/icons8-calendar.svg'
 import { cn } from '@/shared/lib/cn'
 
 export type DecisionActionModalVariant =
-  | 'approve'
-  | 'reject'
-  | 'requestChanges'
-  | 'escalate'
-  | 'suspend'
-  | 'delete'
-  | 'pause'
-  | 'warn'
+  'approve' | 'reject' | 'requestChanges' | 'escalate' | 'suspend' | 'delete' | 'pause' | 'warn'
 
 export type DecisionActionModalOption = {
   label: string
@@ -33,8 +26,9 @@ type DecisionActionModalProps = {
   title: string
   description?: string
   submitLabel: string
-  adminNotes: string
-  onAdminNotesChange: (value: string) => void
+  adminNotes?: string
+  onAdminNotesChange?: (value: string) => void
+  showAdminNotes?: boolean
   onClose: () => void
   onSubmit: () => void
   cancelLabel?: string
@@ -56,6 +50,7 @@ type DecisionActionModalProps = {
   selectedEscalationOption?: string
   onEscalationOptionChange?: (value: string) => void
   isSubmitting?: boolean
+  submitDisabled?: boolean
   showTimeline?: boolean
   startDate?: string
   onStartDateChange?: (value: string) => void
@@ -170,8 +165,9 @@ export function DecisionActionModal({
   title,
   description = '',
   submitLabel,
-  adminNotes,
+  adminNotes = '',
   onAdminNotesChange,
+  showAdminNotes = true,
   onClose,
   onSubmit,
   cancelLabel = 'Cancel',
@@ -193,6 +189,7 @@ export function DecisionActionModal({
   selectedEscalationOption,
   onEscalationOptionChange,
   isSubmitting = false,
+  submitDisabled = false,
   showTimeline = false,
   startDate = '',
   onStartDateChange,
@@ -432,7 +429,7 @@ export function DecisionActionModal({
           ) : null}
 
           {showEscalationOptions ? (
-            <div className="space-y-3.5">
+            <div className="max-h-[240px] space-y-3.5 overflow-y-auto pr-1">
               {escalationOptions.map((option) => {
                 const isSelected = selectedEscalationOption === option.value
 
@@ -487,16 +484,18 @@ export function DecisionActionModal({
             </label>
           ) : null}
 
-          <label className="block">
-            <span className="text-body-sm-medium text-brand-text mb-2 block">
-              Admin notes <span className="text-[#D3191C]">*</span>
-            </span>
-            <textarea
-              value={adminNotes}
-              onChange={(event) => onAdminNotesChange(event.target.value)}
-              className={cn('ui-textarea', styles.adminNotesMinHeight ?? 'min-h-[119px]')}
-            />
-          </label>
+          {showAdminNotes ? (
+            <label className="block">
+              <span className="text-body-sm-medium text-brand-text mb-2 block">
+                Admin notes <span className="text-[#D3191C]">*</span>
+              </span>
+              <textarea
+                value={adminNotes}
+                onChange={(event) => onAdminNotesChange?.(event.target.value)}
+                className={cn('ui-textarea', styles.adminNotesMinHeight ?? 'min-h-[119px]')}
+              />
+            </label>
+          ) : null}
         </div>
 
         <div className="ui-modal-footer px-6 pb-6">
@@ -510,7 +509,7 @@ export function DecisionActionModal({
           <button
             type="button"
             onClick={onSubmit}
-            disabled={isSubmitting}
+            disabled={isSubmitting || submitDisabled}
             className={cn('ui-modal-btn h-10 max-w-[238px] flex-1 overflow-visible', styles.submit)}
           >
             <span className="truncate">{submitLabel}</span>

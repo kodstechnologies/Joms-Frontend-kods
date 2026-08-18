@@ -17,6 +17,7 @@ import {
 import { toast } from 'sonner'
 
 import { AddTagModal } from '@/shared/components/modal/add-tag-modal'
+import { EscalateTicketModal } from '../components/reassign-ticket-modal'
 import { TicketPriorityBadge } from '../components/ticket-priority-badge'
 import { TicketStatusBadge } from '../components/ticket-status-badge'
 import {
@@ -30,6 +31,7 @@ import {
   useEscalateSupportTicket,
   useExportSupportTickets,
   useLiveSupportUpdates,
+  useSupportAgents,
   useSupportTickets,
   useUpdateSupportTicket,
 } from '../hooks/use-support'
@@ -116,6 +118,8 @@ export function TicketManagementPage() {
 
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [tagModalOpen, setTagModalOpen] = useState(false)
+  const [escalateOpen, setEscalateOpen] = useState(false)
+  const [escalateTicketId, setEscalateTicketId] = useState<string | null>(null)
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [activeTicketId, setActiveTicketId] = useState<string | null>(null)
 
@@ -130,6 +134,7 @@ export function TicketManagementPage() {
   const escalateMutation = useEscalateSupportTicket()
   const deleteMutation = useDeleteSupportTicket()
   const exportMutation = useExportSupportTickets()
+  const agentsQuery = useSupportAgents()
   useLiveSupportUpdates()
   const activeMetricIds = useActiveMetricIds(TICKET_MANAGEMENT_MODULE_KEY, [
     ...DEFAULT_TICKET_MANAGEMENT_METRIC_IDS,
@@ -268,14 +273,10 @@ export function TicketManagementPage() {
           <TableActionsItem
             icon={<AlertTriangle className="size-3.5 text-slate-700" aria-hidden="true" />}
             className="text-slate-800 hover:bg-slate-100 hover:text-slate-900"
-            onClick={async () => {
+            onClick={() => {
               setActiveDropdownId(null)
-              try {
-                await escalateMutation.mutateAsync({ id })
-                toast.success('Ticket escalated')
-              } catch (err) {
-                toast.error(getApiErrorMessage(err, 'Failed to escalate ticket'))
-              }
+              setEscalateTicketId(id)
+              setEscalateOpen(true)
             }}
           >
             Escalate
@@ -298,14 +299,7 @@ export function TicketManagementPage() {
         </TableActionsDropdown>
       )
     },
-    [
-      activeDropdownId,
-      deleteMutation,
-      escalateMutation,
-      navigate,
-      setSelectedTicketId,
-      updateMutation,
-    ],
+    [activeDropdownId, deleteMutation, navigate, setSelectedTicketId, updateMutation],
   )
 
   const columns = useMemo<ColumnDef<SupportTicket>[]>(
@@ -368,6 +362,7 @@ export function TicketManagementPage() {
   )
 
   const activeTicket = tickets.find((t) => t.id === activeTicketId)
+  const escalateTicket = tickets.find((t) => t.id === escalateTicketId)
 
   return (
     <div className="flex flex-col gap-6">
@@ -482,6 +477,36 @@ export function TicketManagementPage() {
           } catch (err) {
             toast.error(getApiErrorMessage(err, 'Failed to update tags'))
             throw err
+          }
+        }}
+      />
+
+      <EscalateTicketModal
+        open={escalateOpen}
+        agents={agentsQuery.data?.data?.agents ?? []}
+        isLoading={agentsQuery.isFetching}
+        currentAssigneeId={escalateTicket?.assignedToId}
+        isSubmitting={escalateMutation.isPending}
+        onClose={() => {
+          setEscalateOpen(false)
+          setEscalateTicketId(null)
+        }}
+        onSelect={async (agent) => {
+          if (!escalateTicketId) return
+          try {
+            await escalateMutation.mutateAsync({
+              id: escalateTicketId,
+              payload: {
+                assignedToId: agent.id,
+                assignedToName: agent.name,
+                assignedToAvatarUrl: agent.avatarUrl,
+              },
+            })
+            setEscalateOpen(false)
+            setEscalateTicketId(null)
+            toast.success(`Ticket escalated to ${agent.name}`)
+          } catch (err) {
+            toast.error(getApiErrorMessage(err, 'Failed to escalate ticket'))
           }
         }}
       />
