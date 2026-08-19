@@ -37,6 +37,7 @@ import {
   Upload,
   User,
   Users,
+  Filter,
 } from 'lucide-react'
 
 import { fetchConsultationById, fetchServiceById } from '../../api/service-api'
@@ -103,6 +104,9 @@ import {
 import { formatListingExpertId } from './expert-list-format'
 import { useEntityTags } from '@/shared/hooks/use-entity-tags'
 import { cn } from '@/shared/lib/cn'
+import { useModuleExportFilters } from '@/shared/components/advanced-filter'
+import type { FilterValues } from '@/shared/types/data-filter'
+import { buildExpertProfileServicesQueryParams } from '@/shared/utils/export-filter-utils'
 
 type TabKey = 'overview' | 'service-listings' | 'availability' | 'analytics' | 'health'
 
@@ -843,9 +847,23 @@ function ConsultationDetailCard({
 
 function ServicesSubTab({ expertId }: { expertId: string }) {
   const navigate = useNavigate()
-  const { data, isLoading, isError } = useExpertServices(expertId, 1, 100, true)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
+
+  const serviceQueryParams = useMemo(
+    () =>
+      buildExpertProfileServicesQueryParams(appliedFilters, {
+        page: 1,
+        limit: 100,
+        search: searchQuery,
+      }),
+    [appliedFilters, searchQuery],
+  )
+
+  const { data, isLoading, isError } = useExpertServices(expertId, serviceQueryParams, true)
   const services = useMemo(() => {
     if (!data) return []
+    if (Array.isArray(data.data)) return data.data
     if (Array.isArray((data as { data?: ExpertService[] }).data)) {
       return (data as { data: ExpertService[] }).data
     }
@@ -853,17 +871,21 @@ function ServicesSubTab({ expertId }: { expertId: string }) {
     return []
   }, [data])
 
-  const [searchQuery, setSearchQuery] = useState('')
+  const hasSearchOrFilters = Boolean(searchQuery.trim()) || Object.keys(appliedFilters).length > 0
+
+  const handleApplyFilters = useCallback((values: FilterValues) => {
+    toast.success('Filters applied')
+    setAppliedFilters(values)
+  }, [])
+
+  const { onAdvancedFilter, modals: exportFilterModals } = useModuleExportFilters({
+    moduleKey: 'expert-profile-services',
+    onApplyFilters: handleApplyFilters,
+  })
+
   const [selectedServiceIds, setSelectedServiceIds] = useState<string[]>([])
 
-  const filteredServices = useMemo(() => {
-    if (!searchQuery.trim()) return services
-    return services.filter((s) =>
-      (s.title || '').toLowerCase().includes(searchQuery.trim().toLowerCase()),
-    )
-  }, [services, searchQuery])
-
-  const visibleServiceIds = useMemo(() => filteredServices.map((s) => s._id), [filteredServices])
+  const visibleServiceIds = useMemo(() => services.map((s) => s._id), [services])
   const allVisibleSelected =
     visibleServiceIds.length > 0 && visibleServiceIds.every((id) => selectedServiceIds.includes(id))
 
@@ -1179,15 +1201,26 @@ function ServicesSubTab({ expertId }: { expertId: string }) {
 
   return (
     <>
-      <div className="flex w-full min-w-[220px] items-center gap-2 rounded-lg border border-[#FFFFFF33] bg-[#141414] px-3 py-2.5">
-        <Search className="text-muted size-4 shrink-0" />
-        <input
-          type="text"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Search by service title"
-          className="text-body-sm placeholder:text-muted w-full bg-transparent text-white outline-none"
-        />
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="flex h-[50px] min-w-[220px] flex-1 items-center gap-2 rounded-xl border border-[#FFFFFF33] bg-[#141414] px-3">
+          <Search className="text-muted size-4 shrink-0" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search by service title"
+            className="text-body-sm placeholder:text-muted w-full bg-transparent text-white outline-none"
+          />
+        </div>
+
+        <button
+          type="button"
+          onClick={onAdvancedFilter}
+          className="table-advance-filter-btn inline-flex shrink-0 items-center gap-2"
+        >
+          <Filter className="size-3.5" aria-hidden="true" />
+          Advance Filters
+        </button>
       </div>
 
       <label className="text-body-sm text-muted mt-1 flex w-fit cursor-pointer items-center gap-2">
@@ -1284,16 +1317,16 @@ function ServicesSubTab({ expertId }: { expertId: string }) {
           <div className="border-brand-accent size-8 animate-spin rounded-full border-4 border-t-transparent" />
         </div>
       )}
-      {(isError || (!isLoading && filteredServices.length === 0)) && (
+      {(isError || (!isLoading && services.length === 0)) && (
         <div className={cn(PROFILE_CARD, 'p-8 text-center text-[13px] text-white/50')}>
-          {searchQuery.trim()
+          {hasSearchOrFilters
             ? 'No matching services found.'
             : 'No services found for this expert.'}
         </div>
       )}
-      {!isLoading && !isError && filteredServices.length > 0 && (
+      {!isLoading && !isError && services.length > 0 && (
         <div className="space-y-3">
-          {filteredServices.map((service) => (
+          {services.map((service) => (
             <ServiceListCard
               key={service._id}
               service={service}
@@ -1304,6 +1337,8 @@ function ServicesSubTab({ expertId }: { expertId: string }) {
           ))}
         </div>
       )}
+
+      {exportFilterModals}
 
       <DecisionActionModal
         open={isBulkDeleteModalOpen}

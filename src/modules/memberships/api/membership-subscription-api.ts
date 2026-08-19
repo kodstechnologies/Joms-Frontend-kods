@@ -7,16 +7,9 @@ import type {
   ExtendSubscriptionPayload,
   SubscriptionDetailResponse,
   SubscriptionListResponse,
-  SubscriptionStatus,
 } from '../types/membership-subscription'
 
-export const fetchExpertSubscriptions = async (params?: {
-  status?: SubscriptionStatus
-  search?: string
-  partnerIds?: string
-  page?: number
-  limit?: number
-}) => {
+export const fetchExpertSubscriptions = async (params?: Record<string, unknown>) => {
   const response = await membershipApiClient.get<SubscriptionListResponse>('/subscriptions', {
     params,
   })

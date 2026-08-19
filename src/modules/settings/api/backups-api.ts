@@ -16,7 +16,7 @@ export const fetchBackupMetrics = async () => {
   return response.data.data
 }
 
-export const fetchBackups = async (params?: { page?: number; limit?: number; search?: string }) => {
+export const fetchBackups = async (params?: Record<string, unknown>) => {
   const response = await settingsApiClient.get<ApiEnvelope<BackupHistoryRow[]>>(
     '/settings/backups',
     { params },

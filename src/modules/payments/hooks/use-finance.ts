@@ -106,10 +106,11 @@ export const useFinancePayout = (id: string) =>
     refetchOnMount: 'always',
   })
 
-export const useFinanceDisputes = (params?: FinanceListParams) =>
+export const useFinanceDisputes = (params?: FinanceListParams, enabled = true) =>
   useQuery({
     queryKey: financeKeys.disputes(params),
     queryFn: () => fetchFinanceDisputes(params),
+    enabled,
   })
 
 export const useFinanceDispute = (id: string) =>
@@ -119,10 +120,11 @@ export const useFinanceDispute = (id: string) =>
     enabled: !!id,
   })
 
-export const useFinanceRefunds = (params?: FinanceListParams) =>
+export const useFinanceRefunds = (params?: FinanceListParams, enabled = true) =>
   useQuery({
     queryKey: financeKeys.refunds(params),
     queryFn: () => fetchFinanceRefunds(params),
+    enabled,
   })
 
 export const useFinanceRefund = (id: string) =>

@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 import { AlertTriangle, Eye, SlidersHorizontal, Tag, Trash2 } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 
 import { type RevenueOverviewRow } from '@/modules/payments/mock/revenue-overview.mock'
 import { useAddFinanceNote, useFinanceRevenue } from '@/modules/payments/hooks/use-finance'
+import { fetchFinanceRevenue } from '@/modules/payments/api/finance-api'
 import {
   DEFAULT_FINANCE_REVENUE_VISIBLE_COLUMN_IDS,
   FINANCE_REVENUE_MODULE_KEY,
@@ -20,8 +21,34 @@ import {
 } from '@/shared/components/table/table-actions-dropdown'
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
+import { useModuleExportFilters } from '@/shared/components/advanced-filter'
+import { exportDisplayValue } from '@/shared/utils/export-utils'
+import {
+  buildRevenueListQueryParams,
+  createRevenueFilteredExportHandler,
+} from '@/shared/utils/export-filter-utils'
+import type { FilterValues } from '@/shared/types/data-filter'
+import type { FinancePayment } from '@/modules/payments/types/finance-api'
 
 const PAGE_SIZE = 10
+
+const EXPORT_COLUMN_MAP: Record<
+  string,
+  { header: string; accessor: (row: RevenueOverviewRow) => string }
+> = {
+  module: { header: 'Module', accessor: (row) => exportDisplayValue(row.module) },
+  'entity-type': { header: 'Entity Type', accessor: (row) => exportDisplayValue(row.entityType) },
+  'entity-id': { header: 'Entity ID', accessor: (row) => exportDisplayValue(row.entityId) },
+  'entity-name': { header: 'Entity Name', accessor: (row) => exportDisplayValue(row.entityName) },
+  category: { header: 'Category', accessor: (row) => exportDisplayValue(row.category) },
+  'owner-type': { header: 'Owner Type', accessor: (row) => exportDisplayValue(row.ownerType) },
+  'owner-name': { header: 'Owner Name', accessor: (row) => exportDisplayValue(row.ownerName) },
+  'gross-amount': {
+    header: 'Gross Amount',
+    accessor: (row) => exportDisplayValue(row.grossAmount),
+  },
+  status: { header: 'Status', accessor: (row) => exportDisplayValue(row.status) },
+}
 
 function getStatusClassName(status: RevenueOverviewRow['status']) {
   if (status === 'Paid') {
@@ -36,44 +63,69 @@ function getStatusClassName(status: RevenueOverviewRow['status']) {
 export function RevenueOverviewPage() {
   const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
+  const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [selectedRowIds, setSelectedRowIds] = useState<string[]>([])
   const [tagTarget, setTagTarget] = useState<RevenueOverviewRow | null>(null)
   const addNote = useAddFinanceNote()
   const tableColumnPreferencesQuery = useTableColumnPreferences(FINANCE_REVENUE_MODULE_KEY)
 
-  const { data, isLoading, isFetching, isError } = useFinanceRevenue({
-    page: currentPage,
-    limit: PAGE_SIZE,
-  })
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setDebouncedSearch(searchQuery.trim())
+      setCurrentPage(1)
+    }, 300)
+    return () => window.clearTimeout(timer)
+  }, [searchQuery])
+
+  const listQueryParams = useMemo(
+    () =>
+      buildRevenueListQueryParams(appliedFilters, {
+        page: currentPage,
+        limit: PAGE_SIZE,
+        search: debouncedSearch || undefined,
+      }),
+    [appliedFilters, currentPage, debouncedSearch],
+  )
+
+  const { data, isLoading, isFetching, isError } = useFinanceRevenue(listQueryParams)
 
   const rows = useMemo(() => (data?.data?.rows ?? []).map(mapPaymentToRevenueRow), [data])
   const meta = data?.data?.meta
 
-  const filteredRows = useMemo(() => {
-    const query = searchQuery.trim().toLowerCase()
-    if (!query) return rows
+  const handleApplyFilters = useCallback((values: FilterValues) => {
+    toast.success('Filters applied')
+    setAppliedFilters(values)
+    setCurrentPage(1)
+  }, [])
 
-    return rows.filter((row) =>
-      [
-        row.module,
-        row.entityType,
-        row.entityId,
-        row.entityName,
-        row.category,
-        row.ownerType,
-        row.ownerName,
-      ]
-        .join(' ')
-        .toLowerCase()
-        .includes(query),
+  const handleExportData = useMemo(() => {
+    const fetchForExport = async (params: Record<string, unknown>) => {
+      const result = await fetchFinanceRevenue(params)
+      const payments = (result.data?.rows ?? []) as FinancePayment[]
+      return { data: payments.map(mapPaymentToRevenueRow) }
+    }
+    return createRevenueFilteredExportHandler(
+      fetchForExport,
+      EXPORT_COLUMN_MAP,
+      'revenue_overview_export',
+      { search: debouncedSearch || undefined },
     )
-  }, [rows, searchQuery])
+  }, [debouncedSearch])
 
-  const pageRows = searchQuery.trim() ? filteredRows : rows
+  const {
+    onAdvancedFilter,
+    onExport,
+    modals: exportFilterModals,
+  } = useModuleExportFilters({
+    moduleKey: 'finance-revenue',
+    onApplyFilters: handleApplyFilters,
+    onExportData: handleExportData,
+  })
 
-  const visibleRowIds = useMemo(() => pageRows.map((row) => row.id), [pageRows])
+  const visibleRowIds = useMemo(() => rows.map((row) => row.id), [rows])
   const allVisibleSelected =
     visibleRowIds.length > 0 && visibleRowIds.every((id) => selectedRowIds.includes(id))
   const someVisibleSelected = visibleRowIds.some((id) => selectedRowIds.includes(id))
@@ -281,18 +333,16 @@ export function RevenueOverviewPage() {
 
       <DataTable
         columns={columns}
-        data={pageRows}
+        data={rows}
         getRowId={(row) => row.id}
         isLoading={isLoading || isFetching}
         searchValue={searchQuery}
-        onSearchChange={(value) => {
-          setSearchQuery(value)
-          setCurrentPage(1)
-        }}
+        onSearchChange={setSearchQuery}
         searchPlaceholder="Search by name, ID or profession"
         advancedFilterLabel="Advance Filters"
-        onAdvancedFilter={() => toast.message('Advance filters coming soon')}
-        onExport={() => toast.message('Export coming soon')}
+        onAdvancedFilter={onAdvancedFilter}
+        advancedFilterVariant="primary"
+        onExport={onExport}
         pagination={{
           page: meta?.page ?? currentPage,
           pageSize: meta?.limit ?? PAGE_SIZE,
@@ -327,6 +377,8 @@ export function RevenueOverviewPage() {
           }
         }}
       />
+
+      {exportFilterModals}
     </div>
   )
 }

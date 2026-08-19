@@ -1,5 +1,7 @@
 import type { FilterSectionConfig, ModuleFilterConfig } from '@/shared/types/data-filter'
 
+import { prefixSectionFields } from './base-filter-sections'
+
 const byCommunicationSection: FilterSectionConfig = {
   id: 'by-communication',
   title: 'By Communication',
@@ -39,6 +41,15 @@ const byCommunicationSection: FilterSectionConfig = {
       ],
     },
     {
+      id: 'deliveryType',
+      label: 'Delivery Type',
+      type: 'checkbox-group',
+      options: [
+        { label: 'Send Now', value: 'send-now' },
+        { label: 'Schedule', value: 'schedule' },
+      ],
+    },
+    {
       id: 'status',
       label: 'Status',
       type: 'checkbox-group',
@@ -58,11 +69,23 @@ const byCommunicationSection: FilterSectionConfig = {
       fromPlaceholder: 'From',
       toPlaceholder: 'To',
     },
+    {
+      id: 'scheduledAt',
+      label: 'Scheduled At',
+      type: 'date-range',
+      fromPlaceholder: 'From',
+      toPlaceholder: 'To',
+    },
   ],
 }
+
+const communicationFilterSections: FilterSectionConfig[] = [
+  prefixSectionFields(byCommunicationSection, 'communication'),
+]
 
 export const communicationManagementFilterConfig: ModuleFilterConfig = {
   moduleKey: 'communication-management',
   moduleName: 'Communication Management',
-  sections: [byCommunicationSection],
+  sections: communicationFilterSections,
+  exportSections: communicationFilterSections,
 }

@@ -9,6 +9,7 @@ import {
   type FinanceEventRow,
   type FinanceEventStatus,
 } from '@/modules/payments/mock/finance-events.mock'
+import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 import { DataTable } from '@/shared/components/table/data-table'
 import {
   TableActionsDropdown,
@@ -16,8 +17,36 @@ import {
 } from '@/shared/components/table/table-actions-dropdown'
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
+import type { FilterValues } from '@/shared/types/data-filter'
+import { exportDisplayValue } from '@/shared/utils/export-utils'
+import {
+  createClientFilteredExportHandler,
+  rowMatchesClientFilters,
+} from '@/shared/utils/export-filter-utils'
 
 const PAGE_SIZE = 10
+
+const EVENT_FILTER_ACCESSORS: Record<string, (row: FinanceEventRow) => string> = {
+  eventId: (row) => row.eventId,
+  eventName: (row) => row.eventName,
+  organizer: (row) => row.organizer,
+  status: (row) => row.status,
+  eventDate: (row) => row.eventDate,
+}
+
+const EXPORT_COLUMN_MAP: Record<
+  string,
+  { header: string; accessor: (row: FinanceEventRow) => string }
+> = {
+  eventId: { header: 'Event ID', accessor: (row) => exportDisplayValue(row.eventId) },
+  eventName: { header: 'Event Name', accessor: (row) => exportDisplayValue(row.eventName) },
+  organizer: { header: 'Organizer', accessor: (row) => exportDisplayValue(row.organizer) },
+  ticketSales: { header: 'Ticket Sales', accessor: (row) => exportDisplayValue(row.ticketSales) },
+  platformFee: { header: 'Platform Fee', accessor: (row) => exportDisplayValue(row.platformFee) },
+  netRevenue: { header: 'Net Revenue', accessor: (row) => exportDisplayValue(row.netRevenue) },
+  eventDate: { header: 'Event Date', accessor: (row) => exportDisplayValue(row.eventDate) },
+  status: { header: 'Status', accessor: (row) => exportDisplayValue(row.status) },
+}
 
 type FinanceEventTab = 'all' | 'ticketing' | 'promotions' | 'publishing'
 const financeEventTabs: Array<{ id: FinanceEventTab; label: string }> = [
@@ -38,19 +67,17 @@ export function FinanceEventsPage() {
   const [activeTab, setActiveTab] = useState<FinanceEventTab>('all')
   const [searchQuery, setSearchQuery] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
+  const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [selectedRowIds, setSelectedRowIds] = useState<string[]>([])
 
-  const filteredRows = useMemo(() => {
-    const query = searchQuery.trim().toLowerCase()
-    if (!query) return financeEventRowsMock
-    return financeEventRowsMock.filter((row) =>
-      [row.eventId, row.eventName, row.organizer, row.ticketSales, row.status]
-        .join(' ')
-        .toLowerCase()
-        .includes(query),
-    )
-  }, [searchQuery])
+  const filteredRows = useMemo(
+    () =>
+      financeEventRowsMock.filter((row) =>
+        rowMatchesClientFilters(row, appliedFilters, searchQuery, EVENT_FILTER_ACCESSORS),
+      ),
+    [appliedFilters, searchQuery],
+  )
 
   const totalItems = filteredRows.length
   const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE))
@@ -78,6 +105,35 @@ export function FinanceEventsPage() {
       currentIds.includes(rowId) ? currentIds.filter((id) => id !== rowId) : [...currentIds, rowId],
     )
   }, [])
+
+  const handleApplyFilters = useCallback((values: FilterValues) => {
+    toast.success('Filters applied')
+    setAppliedFilters(values)
+    setCurrentPage(1)
+  }, [])
+
+  const handleExportData = useMemo(
+    () =>
+      createClientFilteredExportHandler(
+        (values) =>
+          financeEventRowsMock.filter((row) =>
+            rowMatchesClientFilters(row, values, searchQuery, EVENT_FILTER_ACCESSORS),
+          ),
+        EXPORT_COLUMN_MAP,
+        'finance_events_export',
+      ),
+    [searchQuery],
+  )
+
+  const {
+    onAdvancedFilter,
+    onExport,
+    modals: exportFilterModals,
+  } = useModuleExportFilters({
+    moduleKey: 'finance-events',
+    onApplyFilters: handleApplyFilters,
+    onExportData: handleExportData,
+  })
 
   const renderActions = useCallback(
     (record: FinanceEventRow) => (
@@ -238,8 +294,9 @@ export function FinanceEventsPage() {
         }}
         searchPlaceholder="Search by name, ID or profession"
         advancedFilterLabel="Advance Filters"
-        onAdvancedFilter={() => toast.message('Advance filters coming soon')}
-        onExport={() => toast.message('Export coming soon')}
+        onAdvancedFilter={onAdvancedFilter}
+        advancedFilterVariant="primary"
+        onExport={onExport}
         pagination={{
           page: safePage,
           pageSize: PAGE_SIZE,
@@ -250,6 +307,8 @@ export function FinanceEventsPage() {
         resourceLabel="events"
         emptyMessage="No event finance records found."
       />
+
+      {exportFilterModals}
     </div>
   )
 }

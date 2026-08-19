@@ -45,7 +45,11 @@ export type SupportTicketsParams = {
   module?: string
   issueType?: string
   assignedToId?: string
+  assignedTo?: string
   reporterId?: string
+  reporter?: string
+  ticketId?: string
+  subject?: string
   from?: string
   to?: string
   includeClosed?: boolean
@@ -206,10 +210,7 @@ export const uploadSupportAttachment = async (file: File) => {
   return response.data.data
 }
 
-export const fetchPastTickets = async (
-  userId: string,
-  params?: { page?: number; limit?: number },
-) => {
+export const fetchPastTickets = async (userId: string, params?: SupportTicketsParams) => {
   const response = await adminApiClient.get<
     ApiSuccess<{
       tickets: SupportTicket[]

@@ -14,13 +14,7 @@ export const useIncidentMetrics = () =>
     queryFn: fetchIncidentMetrics,
   })
 
-export const useIncidents = (params?: {
-  page?: number
-  limit?: number
-  search?: string
-  severity?: string
-  status?: string
-}) =>
+export const useIncidents = (params?: Record<string, unknown>) =>
   useQuery({
     queryKey: incidentKeys.list(params),
     queryFn: () => fetchIncidents(params),

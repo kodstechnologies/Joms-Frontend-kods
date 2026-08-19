@@ -4,12 +4,7 @@ export type FilterOption = {
 }
 
 export type FilterFieldType =
-  | 'text'
-  | 'checkbox-group'
-  | 'number-range'
-  | 'date-range'
-  | 'search'
-  | 'location'
+  'text' | 'checkbox-group' | 'number-range' | 'date-range' | 'search' | 'location'
 
 export type FilterFieldConfig = {
   id: string
@@ -63,5 +58,28 @@ export type ModuleFilterKey =
   | 'venue-category-management'
   | 'communication-management'
   | 'referral-management'
+  | 'finance-revenue'
+  | 'finance-services'
+  | 'finance-venues'
+  | 'finance-memberships'
+  | 'finance-payouts'
+  | 'finance-refunds'
+  | 'finance-tax'
+  | 'finance-invoices'
+  | 'finance-reconciliation'
+  | 'finance-escrow'
+  | 'finance-events'
+  | 'finance-categories'
+  | 'expert-memberships'
+  | 'expert-clientele'
+  | 'expert-profile-services'
+  | 'support-tickets'
   | 'rbac-management'
+  | 'rbac-invites'
+  | 'rbac-admin-logs'
+  | 'settings-logs'
+  | 'login-trails'
+  | 'incidents'
+  | 'backups'
+  | 'escalations'
   | 'leaderboard-management'

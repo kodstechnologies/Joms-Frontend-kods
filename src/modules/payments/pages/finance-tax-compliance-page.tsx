@@ -1,10 +1,11 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 import { AlertTriangle, Eye, SlidersHorizontal, Tag, Trash2 } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
 import { type TaxComplianceRow } from '@/modules/payments/mock/finance-tax-compliance.mock'
+import { fetchFinanceTax } from '@/modules/payments/api/finance-api'
 import { useAddFinanceNote, useFinanceTax } from '@/modules/payments/hooks/use-finance'
 import { mapTaxToRow } from '@/modules/payments/utils/finance-mappers'
 import {
@@ -13,6 +14,7 @@ import {
 } from '@/modules/payments/config/finance-tax-table-columns.config'
 import { useTableColumnPreferences } from '@/modules/expert/hooks/use-ui-preferences'
 import { AddTagsModal } from '@/shared/components/modals/add-tags-modal'
+import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 import { DataTable } from '@/shared/components/table/data-table'
 import {
   TableActionsDropdown,
@@ -20,8 +22,31 @@ import {
 } from '@/shared/components/table/table-actions-dropdown'
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
+import type { FilterValues } from '@/shared/types/data-filter'
+import { exportDisplayValue } from '@/shared/utils/export-utils'
+import {
+  buildFinanceTaxListQueryParams,
+  createFinanceTaxFilteredExportHandler,
+} from '@/shared/utils/export-filter-utils'
 
 const PAGE_SIZE = 10
+
+const EXPORT_COLUMN_MAP: Record<
+  string,
+  { header: string; accessor: (row: TaxComplianceRow) => string }
+> = {
+  'record-id': { header: 'Record ID', accessor: (row) => exportDisplayValue(row.recordId) },
+  'entity-type': { header: 'Entity Type', accessor: (row) => exportDisplayValue(row.entityType) },
+  'entity-id': { header: 'Entity ID', accessor: (row) => exportDisplayValue(row.entityId) },
+  owner: { header: 'Owner', accessor: (row) => exportDisplayValue(row.owner) },
+  'booking-id': { header: 'Booking ID', accessor: (row) => exportDisplayValue(row.bookingId) },
+  'booking-title': {
+    header: 'Booking Title',
+    accessor: (row) => exportDisplayValue(row.bookingTitle),
+  },
+  status: { header: 'Status', accessor: (row) => exportDisplayValue(row.status) },
+  revenue: { header: 'Revenue', accessor: (row) => exportDisplayValue(row.revenue) },
+}
 
 function getStatusClassName(status: TaxComplianceRow['status']) {
   if (status === 'Completed' || status === 'Filed') {
@@ -33,36 +58,68 @@ function getStatusClassName(status: TaxComplianceRow['status']) {
 export function FinanceTaxCompliancePage() {
   const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
+  const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [selectedRowIds, setSelectedRowIds] = useState<string[]>([])
   const [tagTarget, setTagTarget] = useState<TaxComplianceRow | null>(null)
   const addNote = useAddFinanceNote()
   const tableColumnPreferencesQuery = useTableColumnPreferences(FINANCE_TAX_MODULE_KEY)
 
-  const { data, isLoading, isFetching } = useFinanceTax({
-    page: currentPage,
-    limit: PAGE_SIZE,
-  })
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setDebouncedSearch(searchQuery.trim())
+      setCurrentPage(1)
+    }, 300)
+    return () => window.clearTimeout(timer)
+  }, [searchQuery])
+
+  const listQueryParams = useMemo(
+    () =>
+      buildFinanceTaxListQueryParams(appliedFilters, {
+        page: currentPage,
+        limit: PAGE_SIZE,
+        search: debouncedSearch || undefined,
+      }),
+    [appliedFilters, currentPage, debouncedSearch],
+  )
+
+  const { data, isLoading, isFetching } = useFinanceTax(listQueryParams)
 
   const rows = useMemo(() => (data?.data?.rows ?? []).map(mapTaxToRow), [data])
   const meta = data?.data?.meta
 
-  const filteredRows = useMemo(() => {
-    const query = searchQuery.trim().toLowerCase()
-    if (!query) return rows
+  const handleApplyFilters = useCallback((values: FilterValues) => {
+    toast.success('Filters applied')
+    setAppliedFilters(values)
+    setCurrentPage(1)
+  }, [])
 
-    return rows.filter((row) =>
-      [row.recordId, row.entityType, row.entityId, row.owner, row.bookingId, row.bookingTitle]
-        .join(' ')
-        .toLowerCase()
-        .includes(query),
+  const handleExportData = useMemo(() => {
+    const fetchForExport = async (params: Record<string, unknown>) => {
+      const result = await fetchFinanceTax(params)
+      return { data: (result.data?.rows ?? []).map(mapTaxToRow) }
+    }
+    return createFinanceTaxFilteredExportHandler(
+      fetchForExport,
+      EXPORT_COLUMN_MAP,
+      'finance_tax_export',
+      { search: debouncedSearch || undefined },
     )
-  }, [rows, searchQuery])
+  }, [debouncedSearch])
 
-  const pageRows = searchQuery.trim() ? filteredRows : rows
+  const {
+    onAdvancedFilter,
+    onExport,
+    modals: exportFilterModals,
+  } = useModuleExportFilters({
+    moduleKey: 'finance-tax',
+    onApplyFilters: handleApplyFilters,
+    onExportData: handleExportData,
+  })
 
-  const visibleRowIds = useMemo(() => pageRows.map((row) => row.id), [pageRows])
+  const visibleRowIds = useMemo(() => rows.map((row) => row.id), [rows])
   const allVisibleSelected =
     visibleRowIds.length > 0 && visibleRowIds.every((id) => selectedRowIds.includes(id))
   const someVisibleSelected = visibleRowIds.some((id) => selectedRowIds.includes(id))
@@ -275,18 +332,16 @@ export function FinanceTaxCompliancePage() {
 
       <DataTable
         columns={columns}
-        data={pageRows}
+        data={rows}
         getRowId={(row) => row.id}
         isLoading={isLoading || isFetching}
         searchValue={searchQuery}
-        onSearchChange={(value) => {
-          setSearchQuery(value)
-          setCurrentPage(1)
-        }}
+        onSearchChange={setSearchQuery}
         searchPlaceholder="Search by name, ID or profession"
         advancedFilterLabel="Advance Filters"
-        onAdvancedFilter={() => toast.message('Advance filters coming soon')}
-        onExport={() => toast.message('Export coming soon')}
+        onAdvancedFilter={onAdvancedFilter}
+        advancedFilterVariant="primary"
+        onExport={onExport}
         pagination={{
           page: meta?.page ?? currentPage,
           pageSize: meta?.limit ?? PAGE_SIZE,
@@ -321,6 +376,8 @@ export function FinanceTaxCompliancePage() {
           }
         }}
       />
+
+      {exportFilterModals}
     </div>
   )
 }

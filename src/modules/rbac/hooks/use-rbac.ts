@@ -188,7 +188,7 @@ export function useSubAdmin(id: string) {
 
 export function useSubAdminLogs(
   id: string,
-  params?: { page?: number; limit?: number; search?: string },
+  params?: Record<string, unknown>,
   options?: { enabled?: boolean },
 ) {
   return useQuery({
@@ -207,7 +207,7 @@ export function useMySubAdminLogs(params?: { page?: number; limit?: number; sear
 
 export function useRoleLogs(
   id: string,
-  params?: { page?: number; limit?: number; search?: string },
+  params?: Record<string, unknown>,
   options?: { enabled?: boolean },
 ) {
   return useQuery({
@@ -245,22 +245,14 @@ export function useRollbackAuditLog() {
   })
 }
 
-export function useAllInvites(params?: {
-  page?: number
-  limit?: number
-  search?: string
-  status?: string
-}) {
+export function useAllInvites(params?: Record<string, unknown>) {
   return useQuery({
     queryKey: rbacKeys.allInvites(params),
     queryFn: () => fetchAllInvites(params),
   })
 }
 
-export function useSubAdminInvites(
-  id: string,
-  params?: { page?: number; limit?: number; search?: string; status?: string },
-) {
+export function useSubAdminInvites(id: string, params?: Record<string, unknown>) {
   return useQuery({
     queryKey: rbacKeys.invites(id, params),
     queryFn: () => fetchSubAdminInvites(id, params),

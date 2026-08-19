@@ -113,14 +113,7 @@ export function useSettingsDraft<T>(queryData: { config: T } | undefined, defaul
   return [draft, setDraft] as const
 }
 
-export function useSettingsLogs(params?: {
-  page?: number
-  limit?: number
-  search?: string
-  module?: SettingsModule
-  action?: 'update' | 'reset' | 'restore'
-  status?: 'success' | 'failed' | 'pending'
-}) {
+export function useSettingsLogs(params?: Record<string, unknown>) {
   return useQuery({
     queryKey: settingsKeys.logs(params),
     queryFn: () => fetchSettingsLogs(params),

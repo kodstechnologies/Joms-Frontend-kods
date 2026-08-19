@@ -1,9 +1,10 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { ArrowLeft, Filter, RefreshCw, Upload } from 'lucide-react'
+import { ArrowLeft, RefreshCw } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
+import { fetchLoginTrails } from '../api/security-api'
 import { useLoginTrails } from '../hooks/use-security'
 import { useSettingsModule, useUpdateSettings } from '../hooks/use-settings'
 import { securityDefaults } from '../mock/settings.defaults'
@@ -11,11 +12,31 @@ import type { LoginTrailRow, SecuritySettings } from '../types/settings'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import { DataTable } from '@/shared/components/table/data-table'
 import { cn } from '@/shared/lib/cn'
-import { exportDataToFile, exportDisplayValue } from '@/shared/utils/export-utils'
+import { exportDisplayValue } from '@/shared/utils/export-utils'
+import { useModuleExportFilters } from '@/shared/components/advanced-filter'
+import type { FilterValues } from '@/shared/types/data-filter'
+import {
+  buildPrefixedListQueryParams,
+  createPrefixedListExportHandler,
+} from '@/shared/utils/export-filter-utils'
 
 const PAGE_SIZE = 10
 
-type TrailStatus = LoginTrailRow['status'] | ''
+const TRAIL_EXPORT_COLUMN_MAP: Record<
+  string,
+  { header: string; accessor: (row: LoginTrailRow) => string }
+> = {
+  date: { header: 'Date', accessor: (row) => exportDisplayValue(row.date) },
+  time: { header: 'Time', accessor: (row) => exportDisplayValue(row.time) },
+  adminName: { header: 'Admin', accessor: (row) => exportDisplayValue(row.adminName) },
+  adminEmail: { header: 'Email', accessor: (row) => exportDisplayValue(row.adminEmail) },
+  role: { header: 'Role', accessor: (row) => exportDisplayValue(row.role) },
+  ipAddress: { header: 'IP Address', accessor: (row) => exportDisplayValue(row.ipAddress) },
+  action: { header: 'Action', accessor: (row) => exportDisplayValue(row.action) },
+  status: { header: 'Status', accessor: (row) => exportDisplayValue(row.status) },
+  location: { header: 'Location', accessor: (row) => exportDisplayValue(row.location) },
+  device: { header: 'Device', accessor: (row) => exportDisplayValue(row.device) },
+}
 
 function StatusBadge({ status }: { status: LoginTrailRow['status'] }) {
   if (status === 'success') {
@@ -27,70 +48,63 @@ function StatusBadge({ status }: { status: LoginTrailRow['status'] }) {
   return <span className="login-trails-status is-blocked">Blocked</span>
 }
 
-function exportTrailsData(rows: LoginTrailRow[], format: string) {
-  const headers = [
-    'Date',
-    'Time',
-    'Admin',
-    'Email',
-    'Role',
-    'IP Address',
-    'Action',
-    'Status',
-    'Location',
-    'Device',
-  ]
-  const dataRows = rows.map((row) => [
-    exportDisplayValue(row.date),
-    exportDisplayValue(row.time),
-    exportDisplayValue(row.adminName),
-    exportDisplayValue(row.adminEmail),
-    exportDisplayValue(row.role),
-    exportDisplayValue(row.ipAddress),
-    exportDisplayValue(row.action),
-    exportDisplayValue(row.status),
-    exportDisplayValue(row.location),
-    exportDisplayValue(row.device),
-  ])
-
-  exportDataToFile(
-    headers,
-    dataRows,
-    format,
-    `admin-login-trails-${new Date().toISOString().slice(0, 10)}`,
-  )
-}
-
 export function LoginTrailsPage() {
   const navigate = useNavigate()
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
-  const [statusFilter, setStatusFilter] = useState<TrailStatus>('')
-  const [showFilters, setShowFilters] = useState(false)
+  const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
-  const [exportFormat, setExportFormat] = useState('csv')
 
   const securityQuery = useSettingsModule('security')
   const updateSecurity = useUpdateSettings('security')
   const securityConfig = (securityQuery.data?.config || securityDefaults) as SecuritySettings
   const loginAlerts = Boolean(securityConfig.loginAlerts)
 
-  const {
-    data: trailsResult,
-    isLoading,
-    refetch,
-    isFetching,
-  } = useLoginTrails({
-    page,
-    limit: PAGE_SIZE,
-    search,
-    status: statusFilter || undefined,
-  })
+  const listQueryParams = useMemo(
+    () =>
+      buildPrefixedListQueryParams(appliedFilters, {
+        page,
+        limit: PAGE_SIZE,
+        search: search || undefined,
+      }),
+    [appliedFilters, page, search],
+  )
+
+  const { data: trailsResult, isLoading, refetch, isFetching } = useLoginTrails(listQueryParams)
 
   const rows = useMemo(() => trailsResult?.data ?? [], [trailsResult?.data])
   const meta = trailsResult?.meta
   const totalPages = meta?.totalPages ?? 1
   const totalItems = meta?.total ?? 0
+
+  const handleApplyFilters = useCallback((values: FilterValues) => {
+    toast.success('Filters applied')
+    setAppliedFilters(values)
+    setPage(1)
+  }, [])
+
+  const handleExportData = useMemo(() => {
+    const fetchForExport = async (params: Record<string, unknown>) => {
+      const result = await fetchLoginTrails(params)
+      return { data: result.data ?? [] }
+    }
+    return createPrefixedListExportHandler(
+      fetchForExport,
+      TRAIL_EXPORT_COLUMN_MAP,
+      'login_trails_export',
+      { search: search || undefined },
+    )
+  }, [search])
+
+  const {
+    onAdvancedFilter,
+    onExport,
+    modals: exportFilterModals,
+  } = useModuleExportFilters({
+    moduleKey: 'login-trails',
+    onApplyFilters: handleApplyFilters,
+    onExportData: handleExportData,
+  })
 
   const allSelected = rows.length > 0 && rows.every((row) => selectedIds.has(row.id))
 
@@ -240,8 +254,9 @@ export function LoginTrailsPage() {
             setPage(1)
           }}
           searchPlaceholder="Search by name, ID or profession."
-          showAdvancedFilter={false}
-          showExport={false}
+          onAdvancedFilter={onAdvancedFilter}
+          advancedFilterVariant="primary"
+          onExport={onExport}
           showSortIcons={false}
           pagination={{
             page,
@@ -252,85 +267,18 @@ export function LoginTrailsPage() {
           }}
           resourceLabel="users"
           toolbarContent={
-            <div className="login-trails-toolbar-actions">
-              <button
-                type="button"
-                className="login-trails-tool-btn"
-                disabled={isFetching}
-                onClick={() => void refetch()}
-              >
-                <RefreshCw className={cn('size-4', isFetching && 'animate-spin')} />
-                Refresh
-              </button>
-              <button
-                type="button"
-                className="login-trails-tool-btn"
-                onClick={() => setShowFilters((open) => !open)}
-              >
-                <Filter className="size-4" />
-                Advance Filters
-              </button>
-              <div className="flex items-center gap-2">
-                <select
-                  value={exportFormat}
-                  onChange={(e) => setExportFormat(e.target.value)}
-                  className="rounded-md border border-white/10 bg-slate-900/50 px-2 py-1.5 text-sm text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
-                >
-                  <option value="csv">CSV</option>
-                  <option value="excel">Excel</option>
-                  <option value="pdf">PDF</option>
-                </select>
-                <button
-                  type="button"
-                  className="login-trails-export-btn"
-                  onClick={() => {
-                    if (!rows.length) {
-                      toast.message('No trails to export')
-                      return
-                    }
-                    exportTrailsData(rows, exportFormat)
-                    toast.success('Export started')
-                  }}
-                >
-                  <Upload className="size-4" />
-                  Export Data
-                </button>
-              </div>
-            </div>
-          }
-        />
-
-        {showFilters ? (
-          <div className="login-trails-filters">
-            <label className="login-trails-filter-label" htmlFor="login-trails-status">
-              Status
-            </label>
-            <select
-              id="login-trails-status"
-              className="login-trails-filter-select"
-              value={statusFilter}
-              onChange={(event) => {
-                setStatusFilter(event.target.value as TrailStatus)
-                setPage(1)
-              }}
-            >
-              <option value="">All</option>
-              <option value="success">Success</option>
-              <option value="failed">Failed</option>
-              <option value="blocked">Blocked</option>
-            </select>
             <button
               type="button"
               className="login-trails-tool-btn"
-              onClick={() => {
-                setStatusFilter('')
-                setPage(1)
-              }}
+              disabled={isFetching}
+              onClick={() => void refetch()}
             >
-              Clear
+              <RefreshCw className={cn('size-4', isFetching && 'animate-spin')} />
+              Refresh
             </button>
-          </div>
-        ) : null}
+          }
+        />
+        {exportFilterModals}
       </section>
     </div>
   )

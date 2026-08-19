@@ -1,14 +1,11 @@
 import type { ModuleFilterConfig } from '@/shared/types/data-filter'
 
-import { createStandardModuleSections } from './base-filter-sections'
+import { figmaExpertManagementFilterSections } from './figma-expert-management-filters.config'
 
-/**
- * Full advanced-filter field set for Expert Management.
- * Partner-document filters are handled in auth-service; computed metrics
- * (clients, orders, revenue, reviews, etc.) are evaluated in admin-service.
- */
+/** Figma-exact Advanced Filters — Expert Management list pages. */
 export const expertManagementFilterConfig: ModuleFilterConfig = {
   moduleKey: 'expert-management',
   moduleName: 'Expert Management',
-  sections: createStandardModuleSections(),
+  sections: figmaExpertManagementFilterSections,
+  exportSections: figmaExpertManagementFilterSections,
 }

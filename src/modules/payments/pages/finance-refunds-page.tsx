@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 import {
   AlertTriangle,
@@ -14,6 +14,7 @@ import {
 import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
+import { fetchFinanceDisputes, fetchFinanceRefunds } from '@/modules/payments/api/finance-api'
 import {
   DISPUTE_STATUS_OPTIONS,
   REFUND_STATUS_OPTIONS,
@@ -50,6 +51,7 @@ import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
 import { mapDisputeToRefundRow, mapRefundToRow } from '@/modules/payments/utils/finance-mappers'
 import { AddTagsModal } from '@/shared/components/modals/add-tags-modal'
 import { ChangeStatusModal } from '@/shared/components/modals/change-status-modal'
+import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 import { DataTable } from '@/shared/components/table/data-table'
 import {
   TableActionsDropdown,
@@ -57,8 +59,34 @@ import {
 } from '@/shared/components/table/table-actions-dropdown'
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
+import type { FilterValues } from '@/shared/types/data-filter'
+import { exportDisplayValue } from '@/shared/utils/export-utils'
+import {
+  buildFinanceRefundsListQueryParams,
+  createFinanceRefundsFilteredExportHandler,
+} from '@/shared/utils/export-filter-utils'
 
 const PAGE_SIZE = 10
+
+const EXPORT_COLUMN_MAP: Record<
+  string,
+  { header: string; accessor: (row: RefundChargebackRow) => string }
+> = {
+  'record-id': { header: 'ID', accessor: (row) => exportDisplayValue(row.recordId) },
+  type: { header: 'Type', accessor: (row) => exportDisplayValue(row.type) },
+  'related-entity': {
+    header: 'Related Entity',
+    accessor: (row) => exportDisplayValue(row.relatedEntity),
+  },
+  amount: { header: 'Amount', accessor: (row) => exportDisplayValue(row.amount) },
+  reason: { header: 'Reason', accessor: (row) => exportDisplayValue(row.reason) },
+  'initiated-date': {
+    header: 'Initiated Date',
+    accessor: (row) => exportDisplayValue(row.initiatedDate),
+  },
+  description: { header: 'Description', accessor: (row) => exportDisplayValue(row.description) },
+  status: { header: 'Status', accessor: (row) => exportDisplayValue(row.status) },
+}
 
 function getStatusClassName(status: RefundChargebackStatus) {
   if (status === 'Resolved') {
@@ -105,15 +133,60 @@ function SummaryCard({
 export function FinanceRefundsPage() {
   const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
+  const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [selectedRowIds, setSelectedRowIds] = useState<string[]>([])
   const [statusTarget, setStatusTarget] = useState<RefundChargebackRow | null>(null)
   const [tagTarget, setTagTarget] = useState<RefundChargebackRow | null>(null)
 
-  const listParams = { page: currentPage, limit: PAGE_SIZE }
-  const disputesQuery = useFinanceDisputes(listParams)
-  const refundsQuery = useFinanceRefunds(listParams)
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setDebouncedSearch(searchQuery.trim())
+      setCurrentPage(1)
+    }, 300)
+    return () => window.clearTimeout(timer)
+  }, [searchQuery])
+
+  const listQueryParams = useMemo(
+    () =>
+      buildFinanceRefundsListQueryParams(appliedFilters, {
+        page: currentPage,
+        limit: PAGE_SIZE,
+        search: debouncedSearch || undefined,
+      }),
+    [appliedFilters, currentPage, debouncedSearch],
+  )
+
+  const selectedTypes = String(listQueryParams.type || '')
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean)
+  const wantsDisputes =
+    selectedTypes.length === 0 ||
+    selectedTypes.includes('Dispute') ||
+    selectedTypes.includes('Chargeback') ||
+    selectedTypes.includes('Refund')
+  const wantsRefunds =
+    selectedTypes.length === 0 ||
+    selectedTypes.includes('Refund') ||
+    selectedTypes.includes('Chargeback')
+
+  const disputeParams = useMemo(() => {
+    const next = { ...listQueryParams }
+    if (selectedTypes.includes('Chargeback') && !selectedTypes.includes('Dispute')) {
+      next.caseType = 'chargeback'
+    } else if (selectedTypes.includes('Dispute') && !selectedTypes.includes('Refund')) {
+      next.caseType = 'dispute'
+    } else if (selectedTypes.includes('Refund') && !selectedTypes.includes('Dispute')) {
+      next.caseType = 'refund_request'
+    }
+    return next
+  }, [listQueryParams, selectedTypes])
+
+  const disputesQuery = useFinanceDisputes(disputeParams, wantsDisputes)
+  const refundsQuery = useFinanceRefunds(listQueryParams, wantsRefunds)
   const dashboardQuery = useFinanceDashboard()
   const updateDisputeStatus = useUpdateDisputeStatus()
   const updateRefundStatus = useUpdateRefundStatus()
@@ -140,28 +213,53 @@ export function FinanceRefundsPage() {
   const isFetching = disputesQuery.isFetching || refundsQuery.isFetching
   const isError = disputesQuery.isError || refundsQuery.isError
 
-  const filteredRows = useMemo(() => {
-    const query = searchQuery.trim().toLowerCase()
-    if (!query) return rows
+  const handleApplyFilters = useCallback((values: FilterValues) => {
+    toast.success('Filters applied')
+    setAppliedFilters(values)
+    setCurrentPage(1)
+  }, [])
 
-    return rows.filter((row) =>
-      [
-        row.recordId,
-        row.type,
-        row.relatedEntity,
-        row.amount,
-        row.reason,
-        row.initiatedDate,
-        row.description,
-        row.status,
-      ]
-        .join(' ')
-        .toLowerCase()
-        .includes(query),
+  const handleExportData = useMemo(() => {
+    const fetchForExport = async (params: Record<string, unknown>) => {
+      const types = String(params.type || '')
+        .split(',')
+        .map((item) => item.trim())
+        .filter(Boolean)
+      const includeDisputes =
+        types.length === 0 ||
+        types.includes('Dispute') ||
+        types.includes('Chargeback') ||
+        types.includes('Refund')
+      const includeRefunds =
+        types.length === 0 || types.includes('Refund') || types.includes('Chargeback')
+      const [disputes, refunds] = await Promise.all([
+        includeDisputes ? fetchFinanceDisputes(params) : Promise.resolve({ data: { rows: [] } }),
+        includeRefunds ? fetchFinanceRefunds(params) : Promise.resolve({ data: { rows: [] } }),
+      ])
+      return {
+        data: [
+          ...(disputes.data?.rows ?? []).map(mapDisputeToRefundRow),
+          ...(refunds.data?.rows ?? []).map(mapRefundToRow),
+        ],
+      }
+    }
+    return createFinanceRefundsFilteredExportHandler(
+      fetchForExport,
+      EXPORT_COLUMN_MAP,
+      'finance_refunds_export',
+      { search: debouncedSearch || undefined },
     )
-  }, [rows, searchQuery])
+  }, [debouncedSearch])
 
-  const pageRows = searchQuery.trim() ? filteredRows : rows
+  const {
+    onAdvancedFilter,
+    onExport,
+    modals: exportFilterModals,
+  } = useModuleExportFilters({
+    moduleKey: 'finance-refunds',
+    onApplyFilters: handleApplyFilters,
+    onExportData: handleExportData,
+  })
 
   const activeMetricIds = useActiveMetricIds(FINANCE_REFUNDS_MODULE_KEY, [
     ...DEFAULT_FINANCE_REFUNDS_METRIC_IDS,
@@ -181,7 +279,7 @@ export function FinanceRefundsPage() {
     return orderByActiveMetricIds(allMetrics, filteredActiveMetricIds)
   }, [filteredActiveMetricIds, rows, summary])
 
-  const visibleRowIds = useMemo(() => pageRows.map((row) => row.id), [pageRows])
+  const visibleRowIds = useMemo(() => rows.map((row) => row.id), [rows])
   const allVisibleSelected =
     visibleRowIds.length > 0 && visibleRowIds.every((id) => selectedRowIds.includes(id))
   const someVisibleSelected = visibleRowIds.some((id) => selectedRowIds.includes(id))
@@ -435,18 +533,16 @@ export function FinanceRefundsPage() {
 
       <DataTable
         columns={columns}
-        data={pageRows}
+        data={rows}
         getRowId={(row) => row.id}
         isLoading={isLoading || isFetching}
         searchValue={searchQuery}
-        onSearchChange={(value) => {
-          setSearchQuery(value)
-          setCurrentPage(1)
-        }}
+        onSearchChange={setSearchQuery}
         searchPlaceholder="Search by name, ID or profession"
         advancedFilterLabel="Advance Filters"
-        onAdvancedFilter={() => toast.message('Advance filters coming soon')}
-        onExport={() => toast.message('Export coming soon')}
+        onAdvancedFilter={onAdvancedFilter}
+        advancedFilterVariant="primary"
+        onExport={onExport}
         pagination={{
           page: currentPage,
           pageSize: PAGE_SIZE,
@@ -514,6 +610,8 @@ export function FinanceRefundsPage() {
           }
         }}
       />
+
+      {exportFilterModals}
     </div>
   )
 }

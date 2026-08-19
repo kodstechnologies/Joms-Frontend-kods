@@ -7,6 +7,7 @@ import {
   fetchExpertInvites,
   fetchReferralStats,
   resendExpertInvite,
+  type ExpertInviteListParams,
 } from '../api/referral-api'
 import type { BulkExpertInvitePayload, ExpertInvitePayload } from '../types/referral'
 
@@ -21,17 +22,7 @@ export const useReferralStats = () =>
     queryFn: fetchReferralStats,
   })
 
-export const useExpertInvites = (params?: {
-  page?: number
-  limit?: number
-  search?: string
-  status?: string
-  referralId?: string
-  referrerName?: string
-  expertName?: string
-  sourceType?: string
-  referralType?: string
-}) =>
+export const useExpertInvites = (params?: ExpertInviteListParams) =>
   useQuery({
     queryKey: ['expert-invites', params],
     queryFn: () => fetchExpertInvites(params),
