@@ -13,12 +13,11 @@ import {
   createVenueCategoryFilteredExportHandler,
 } from '@/shared/utils/export-filter-utils'
 import { fetchDeletedVenueCategories } from '../../api/venue-category-api'
-import { type VenueCategory } from '../../components/category/venue-category-table-columns'
-import { mapVenueCategoryToUi } from '../../utils/category-mapper'
-
 import CategoryHeader from '../../components/category/CategoryHeader'
 import { deletedVenueCategoryColumns } from '../../components/category/DeletedVenueCategoryColumns'
+import { type VenueCategory } from '../../components/category/venue-category-table-columns'
 import { useDeletedVenueCategoryList } from '../../hooks/use-venue-category-management'
+import { mapVenueCategoryToUi } from '../../utils/category-mapper'
 
 const PAGE_SIZE = 10
 

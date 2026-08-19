@@ -28,32 +28,33 @@ import {
   TableActionsItem,
 } from '@/shared/components/table/table-actions-dropdown'
 
+const formatExportDateTime = (value?: string | null) =>
+  value
+    ? new Date(value).toLocaleString('en-IN', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      })
+    : ''
+
 const EXPORT_COLUMN_MAP: Record<string, { header: string; accessor: (e: Expert) => string }> = {
-  expertId: { header: 'ID', accessor: (e) => exportDisplayValue(e.id || e.expertId) },
+  expertId: { header: 'Expert ID', accessor: (e) => exportDisplayValue(e.expertId) },
   name: { header: 'Name', accessor: (e) => exportDisplayValue(e.name) },
-  email: { header: 'Email', accessor: (e) => exportDisplayValue(e.email) },
-  phone: {
-    header: 'Phone Number',
-    accessor: (e) => exportDisplayValue((e as Expert & { phone?: string }).phone),
-  },
+  email: { header: 'Email ID', accessor: (e) => exportDisplayValue(e.email) },
   profession: { header: 'Profession', accessor: (e) => exportDisplayValue(e.profession) },
-  tier: {
-    header: 'Tier',
-    accessor: (e) => exportDisplayValue((e as Expert & { tier?: string }).tier),
-  },
   serviceType: { header: 'Service Type', accessor: (e) => exportDisplayValue(e.serviceType) },
   reason: { header: 'Reason', accessor: (e) => exportDisplayValue(e.reason) },
-  status: { header: 'Status', accessor: (e) => exportDisplayValue(e.status) },
-  createdAt: {
-    header: 'Created At',
-    accessor: (e) =>
-      exportDisplayValue(e.createdAt ? new Date(e.createdAt).toLocaleDateString() : undefined),
-  },
-  deletedAt: {
-    header: 'Deleted At',
-    accessor: (e) =>
-      exportDisplayValue(e.deletedAt ? new Date(e.deletedAt).toLocaleDateString() : undefined),
-  },
+  deletedAt: { header: 'Deleted At', accessor: (e) => formatExportDateTime(e.deletedAt) },
+}
+
+const fetchDeletedExpertsForExport = async (params: Record<string, unknown>) => {
+  const response = await fetchExperts({ ...params, status: 'deactivated' })
+  return {
+    data: response.data || [],
+    meta: response.meta,
+  }
 }
 
 export function ExpertDeletedExpertsPage() {
@@ -88,10 +89,15 @@ export function ExpertDeletedExpertsPage() {
 
   const handleExportData = useMemo(
     () =>
-      createFilteredExportHandler(fetchExperts, EXPORT_COLUMN_MAP, 'deleted_experts_export', {
-        status: 'deactivated',
-      }),
-    [],
+      createFilteredExportHandler(
+        fetchDeletedExpertsForExport,
+        EXPORT_COLUMN_MAP,
+        'deleted_experts_export',
+        {
+          search: searchQuery.trim() || undefined,
+        },
+      ),
+    [searchQuery],
   )
 
   const {

@@ -314,10 +314,47 @@ export function buildExpertProfileServicesQueryParams(
 
 type ExportColumnMap<T> = Record<string, { header: string; accessor: (item: T) => string }>
 
+type PaginatedExportResult<T> = {
+  data?: T[]
+  meta?: {
+    pagination?: { pages?: number; totalPages?: number }
+    pages?: number
+    totalPages?: number
+  }
+  pagination?: { pages?: number; totalPages?: number }
+}
+
+const EXPORT_PAGE_SIZE = 100
+const EXPORT_MAX_PAGES = 100
+
+function extractExportPage<T>(result: PaginatedExportResult<T> | T[]): {
+  items: T[]
+  pages: number
+} {
+  if (Array.isArray(result)) {
+    return { items: result, pages: 1 }
+  }
+
+  const items = result.data ?? []
+  const pages = Number(
+    result.meta?.pagination?.pages ??
+      result.meta?.pagination?.totalPages ??
+      result.pagination?.pages ??
+      result.pagination?.totalPages ??
+      result.meta?.pages ??
+      result.meta?.totalPages,
+  )
+
+  return {
+    items,
+    pages: Number.isFinite(pages) && pages > 0 ? pages : 1,
+  }
+}
+
 /**
  * Creates an async export handler that:
  * 1. Converts filter values to API params
- * 2. Fetches filtered data from the API (up to 1000 records)
+ * 2. Fetches all matching pages from the API
  * 3. Maps data through the column map
  * 4. Calls exportDataToFile
  *
@@ -327,17 +364,29 @@ type ExportColumnMap<T> = Record<string, { header: string; accessor: (item: T) =
  * @param baseParams - fixed params always added (e.g. { status: 'suspended' })
  */
 export function createFilteredExportHandler<T>(
-  fetchFn: (params: Record<string, unknown>) => Promise<{ data?: T[]; data_?: T[] } | T[]>,
+  fetchFn: (params: Record<string, unknown>) => Promise<PaginatedExportResult<T> | T[]>,
   columnMap: ExportColumnMap<T>,
   fileName: string,
   baseParams: Record<string, unknown> = {},
 ) {
   return async (values: FilterValues, format: string): Promise<void> => {
     const filterParams = buildFilterParams(values)
-    const result = await fetchFn({ ...baseParams, ...filterParams, limit: 1000 })
+    const items: T[] = []
+    let page = 1
+    let totalPages = 1
 
-    // Handle both response shapes: { data: T[] } or T[]
-    const items: T[] = Array.isArray(result) ? result : ((result as { data?: T[] }).data ?? [])
+    while (page <= totalPages) {
+      const result = await fetchFn({
+        ...baseParams,
+        ...filterParams,
+        page,
+        limit: EXPORT_PAGE_SIZE,
+      })
+      const extracted = extractExportPage<T>(result)
+      items.push(...extracted.items)
+      totalPages = Math.min(extracted.pages, EXPORT_MAX_PAGES)
+      page += 1
+    }
 
     if (items.length === 0) {
       throw new Error('NO_RECORDS')

@@ -29,31 +29,34 @@ import {
   TableActionsItem,
 } from '@/shared/components/table/table-actions-dropdown'
 
+const formatExportDateTime = (value?: string | null) =>
+  value
+    ? new Date(value).toLocaleString('en-IN', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      })
+    : ''
+
 const EXPORT_COLUMN_MAP: Record<string, { header: string; accessor: (e: Expert) => string }> = {
-  expertId: { header: 'ID', accessor: (e) => exportDisplayValue(e.id || e.expertId) },
+  expertId: { header: 'Expert ID', accessor: (e) => exportDisplayValue(e.expertId) },
   name: { header: 'Name', accessor: (e) => exportDisplayValue(e.name) },
-  email: { header: 'Email', accessor: (e) => exportDisplayValue(e.email) },
-  phone: {
-    header: 'Phone Number',
-    accessor: (e) => exportDisplayValue((e as Expert & { phone?: string }).phone),
-  },
+  email: { header: 'Email ID', accessor: (e) => exportDisplayValue(e.email) },
   profession: { header: 'Profession', accessor: (e) => exportDisplayValue(e.profession) },
-  tier: {
-    header: 'Tier',
-    accessor: (e) => exportDisplayValue((e as Expert & { tier?: string }).tier),
-  },
-  serviceType: { header: 'Service Type', accessor: (e) => exportDisplayValue(e.serviceType) },
   status: { header: 'Status', accessor: (e) => exportDisplayValue(e.status) },
-  createdAt: {
-    header: 'Created At',
-    accessor: (e) =>
-      exportDisplayValue(e.createdAt ? new Date(e.createdAt).toLocaleDateString() : undefined),
-  },
-  lastActive: {
-    header: 'Last Active',
-    accessor: (e) =>
-      exportDisplayValue(e.lastActive ? new Date(e.lastActive).toLocaleDateString() : undefined),
-  },
+  serviceType: { header: 'Service Type', accessor: (e) => exportDisplayValue(e.serviceType) },
+  createdAt: { header: 'Created At', accessor: (e) => formatExportDateTime(e.createdAt) },
+  lastActive: { header: 'Last Active', accessor: (e) => formatExportDateTime(e.lastActive) },
+}
+
+const fetchSuspendedExpertsForExport = async (params: Record<string, unknown>) => {
+  const response = await fetchExperts({ ...params, status: 'suspended' })
+  return {
+    data: (response.data || []).filter((expert) => expert.status === 'suspended'),
+    meta: response.meta,
+  }
 }
 
 export function ExpertSuspendedExpertsPage() {
@@ -88,10 +91,15 @@ export function ExpertSuspendedExpertsPage() {
 
   const handleExportData = useMemo(
     () =>
-      createFilteredExportHandler(fetchExperts, EXPORT_COLUMN_MAP, 'suspended_experts_export', {
-        status: 'suspended',
-      }),
-    [],
+      createFilteredExportHandler(
+        fetchSuspendedExpertsForExport,
+        EXPORT_COLUMN_MAP,
+        'suspended_experts_export',
+        {
+          search: searchQuery.trim() || undefined,
+        },
+      ),
+    [searchQuery],
   )
 
   const {

@@ -40,6 +40,17 @@ import {
   useRecordModerationReasonUsage,
 } from '@/modules/settings/hooks/use-templates'
 
+const formatExportDateTime = (value?: string | null) =>
+  value
+    ? new Date(value).toLocaleString('en-IN', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      })
+    : ''
+
 const EXPORT_COLUMN_MAP: Record<string, { header: string; accessor: (e: Expert) => string }> = {
   expertId: { header: 'Expert ID', accessor: (e) => exportDisplayValue(e.expertId) },
   name: { header: 'Name', accessor: (e) => exportDisplayValue(e.name) },
@@ -47,19 +58,16 @@ const EXPORT_COLUMN_MAP: Record<string, { header: string; accessor: (e: Expert) 
   profession: { header: 'Profession', accessor: (e) => exportDisplayValue(e.profession) },
   status: { header: 'Status', accessor: (e) => exportDisplayValue(e.status) },
   serviceType: { header: 'Service Type', accessor: (e) => exportDisplayValue(e.serviceType) },
-  createdAt: {
-    header: 'Created At',
-    accessor: (e) =>
-      e.createdAt
-        ? new Date(e.createdAt).toLocaleString('en-IN', {
-            day: '2-digit',
-            month: 'short',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-          })
-        : '',
-  },
+  createdAt: { header: 'Created At', accessor: (e) => formatExportDateTime(e.createdAt) },
+  lastActive: { header: 'Last Active', accessor: (e) => formatExportDateTime(e.lastActive) },
+}
+
+const fetchPendingExpertsForExport = async (params: Record<string, unknown>) => {
+  const response = await fetchExperts({ ...params, status: 'pending' })
+  return {
+    data: (response.data || []).filter((expert) => expert.status === 'pending'),
+    meta: response.meta,
+  }
 }
 
 export function ExpertPendingApprovalsPage() {
@@ -106,10 +114,15 @@ export function ExpertPendingApprovalsPage() {
 
   const handleExportData = useMemo(
     () =>
-      createFilteredExportHandler(fetchExperts, EXPORT_COLUMN_MAP, 'pending_experts_export', {
-        status: 'pending',
-      }),
-    [],
+      createFilteredExportHandler(
+        fetchPendingExpertsForExport,
+        EXPORT_COLUMN_MAP,
+        'pending_experts_export',
+        {
+          search: searchQuery.trim() || undefined,
+        },
+      ),
+    [searchQuery],
   )
 
   const {

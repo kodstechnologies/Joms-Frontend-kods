@@ -70,6 +70,7 @@ export function useModuleExportFilters({
       try {
         if (onExportData) {
           await onExportData(filterValues, format)
+          toast.success(`Exported ${config.moduleName} as ${format.toUpperCase()}`)
         } else {
           toast.success(`Export started for ${config.moduleName} in ${format.toUpperCase()} format`)
         }
