@@ -228,9 +228,9 @@ export const ExpertDashboardPage = () => {
 
   const growthData = useMemo(() => {
     if (!growthDataList.length) return []
-    if (growthRange === '6') return growthDataList.slice(0, 6)
-    if (growthRange === '12') return growthDataList
-    return growthDataList.slice(0, 5)
+    const months = Number(growthRange)
+    if (!Number.isFinite(months) || months <= 0) return growthDataList
+    return growthDataList.slice(-months)
   }, [growthRange, growthDataList])
 
   const maxRevenue = useMemo(

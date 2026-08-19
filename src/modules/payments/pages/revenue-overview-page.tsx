@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 import { AlertTriangle, Eye, SlidersHorizontal, Tag, Trash2 } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
@@ -11,8 +11,14 @@ import {
   useFinanceRevenue,
   useSoftDeleteFinance,
 } from '@/modules/payments/hooks/use-finance'
+import { fetchFinanceRevenue } from '@/modules/payments/api/finance-api'
+import {
+  DEFAULT_FINANCE_REVENUE_VISIBLE_COLUMN_IDS,
+  FINANCE_REVENUE_MODULE_KEY,
+} from '@/modules/payments/config/finance-revenue-table-columns.config'
+import { useTableColumnPreferences } from '@/modules/expert/hooks/use-ui-preferences'
 import { mapPaymentToRevenueRow } from '@/modules/payments/utils/finance-mappers'
-import { AddTagsModal } from '@/modules/payments/components/add-tags-modal'
+import { AddTagsModal } from '@/shared/components/modals/add-tags-modal'
 import {
   FinanceEscalateDeleteModal,
   type FinanceEscalateDeleteAction,
@@ -24,14 +30,34 @@ import {
 } from '@/shared/components/table/table-actions-dropdown'
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
-import { useModuleExportFilters } from '@/shared/components/advanced-filter/use-module-export-filters'
-import { buildFilterParams } from '@/shared/utils/export-filter-utils'
-import { exportDataToFile, exportDisplayValue } from '@/shared/utils/export-utils'
+import { useModuleExportFilters } from '@/shared/components/advanced-filter'
+import { exportDisplayValue } from '@/shared/utils/export-utils'
+import {
+  buildRevenueListQueryParams,
+  createRevenueFilteredExportHandler,
+} from '@/shared/utils/export-filter-utils'
 import type { FilterValues } from '@/shared/types/data-filter'
-import { fetchFinanceRevenue } from '@/modules/payments/api/finance-api'
-import type { FinanceListParams, FinancePayment } from '@/modules/payments/types/finance-api'
+import type { FinancePayment } from '@/modules/payments/types/finance-api'
 
 const PAGE_SIZE = 10
+
+const EXPORT_COLUMN_MAP: Record<
+  string,
+  { header: string; accessor: (row: RevenueOverviewRow) => string }
+> = {
+  module: { header: 'Module', accessor: (row) => exportDisplayValue(row.module) },
+  'entity-type': { header: 'Entity Type', accessor: (row) => exportDisplayValue(row.entityType) },
+  'entity-id': { header: 'Entity ID', accessor: (row) => exportDisplayValue(row.entityId) },
+  'entity-name': { header: 'Entity Name', accessor: (row) => exportDisplayValue(row.entityName) },
+  category: { header: 'Category', accessor: (row) => exportDisplayValue(row.category) },
+  'owner-type': { header: 'Owner Type', accessor: (row) => exportDisplayValue(row.ownerType) },
+  'owner-name': { header: 'Owner Name', accessor: (row) => exportDisplayValue(row.ownerName) },
+  'gross-amount': {
+    header: 'Gross Amount',
+    accessor: (row) => exportDisplayValue(row.grossAmount),
+  },
+  status: { header: 'Status', accessor: (row) => exportDisplayValue(row.status) },
+}
 
 function getStatusClassName(status: RevenueOverviewRow['status']) {
   if (status === 'Paid') {
@@ -46,58 +72,72 @@ function getStatusClassName(status: RevenueOverviewRow['status']) {
 export function RevenueOverviewPage() {
   const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
+  const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [selectedRowIds, setSelectedRowIds] = useState<string[]>([])
   const [tagTarget, setTagTarget] = useState<RevenueOverviewRow | null>(null)
   const [rowAction, setRowAction] = useState<FinanceEscalateDeleteAction | null>(null)
-  const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
   const addNote = useAddFinanceNote()
   const escalate = useEscalateFinance()
   const softDelete = useSoftDeleteFinance()
+  const tableColumnPreferencesQuery = useTableColumnPreferences(FINANCE_REVENUE_MODULE_KEY)
 
-  const apiFilterParams = useMemo(() => {
-    const params = buildFilterParams(appliedFilters)
-    const next: FinanceListParams = {}
-    if (params.status) next.status = params.status
-    if (params.module) next.module = params.module
-    if (params.partnerId) next.partnerId = params.partnerId
-    if (params.pricingType) next.pricingType = params.pricingType
-    return next
-  }, [appliedFilters])
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setDebouncedSearch(searchQuery.trim())
+      setCurrentPage(1)
+    }, 300)
+    return () => window.clearTimeout(timer)
+  }, [searchQuery])
 
-  const { data, isLoading, isFetching, isError } = useFinanceRevenue({
-    page: currentPage,
-    limit: PAGE_SIZE,
-    ...apiFilterParams,
-  })
+  const listQueryParams = useMemo(
+    () =>
+      buildRevenueListQueryParams(appliedFilters, {
+        page: currentPage,
+        limit: PAGE_SIZE,
+        search: debouncedSearch || undefined,
+      }),
+    [appliedFilters, currentPage, debouncedSearch],
+  )
+
+  const { data, isLoading, isFetching, isError } = useFinanceRevenue(listQueryParams)
 
   const rows = useMemo(() => (data?.data?.rows ?? []).map(mapPaymentToRevenueRow), [data])
   const meta = data?.data?.meta
 
-  const filteredRows = useMemo(() => {
-    const query = searchQuery.trim().toLowerCase()
-    if (!query) return rows
+  const handleApplyFilters = useCallback((values: FilterValues) => {
+    toast.success('Filters applied')
+    setAppliedFilters(values)
+    setCurrentPage(1)
+  }, [])
 
-    return rows.filter((row) =>
-      [
-        row.module,
-        row.entityType,
-        row.entityId,
-        row.entityName,
-        row.category,
-        row.ownerType,
-        row.ownerName,
-      ]
-        .join(' ')
-        .toLowerCase()
-        .includes(query),
+  const handleExportData = useMemo(() => {
+    const fetchForExport = async (params: Record<string, unknown>) => {
+      const result = await fetchFinanceRevenue(params)
+      const payments = (result.data?.rows ?? []) as FinancePayment[]
+      return { data: payments.map(mapPaymentToRevenueRow) }
+    }
+    return createRevenueFilteredExportHandler(
+      fetchForExport,
+      EXPORT_COLUMN_MAP,
+      'revenue_overview_export',
+      { search: debouncedSearch || undefined },
     )
-  }, [rows, searchQuery])
+  }, [debouncedSearch])
 
-  const pageRows = searchQuery.trim() ? filteredRows : rows
+  const {
+    onAdvancedFilter,
+    onExport,
+    modals: exportFilterModals,
+  } = useModuleExportFilters({
+    moduleKey: 'finance-revenue',
+    onApplyFilters: handleApplyFilters,
+    onExportData: handleExportData,
+  })
 
-  const visibleRowIds = useMemo(() => pageRows.map((row) => row.id), [pageRows])
+  const visibleRowIds = useMemo(() => rows.map((row) => row.id), [rows])
   const allVisibleSelected =
     visibleRowIds.length > 0 && visibleRowIds.every((id) => selectedRowIds.includes(id))
   const someVisibleSelected = visibleRowIds.some((id) => selectedRowIds.includes(id))
@@ -116,47 +156,6 @@ export function RevenueOverviewPage() {
       currentIds.includes(rowId) ? currentIds.filter((id) => id !== rowId) : [...currentIds, rowId],
     )
   }, [])
-
-  const handleApplyFilters = useCallback((values: FilterValues) => {
-    setAppliedFilters(values)
-    setCurrentPage(1)
-  }, [])
-
-  const handleExportData = useCallback(async (values: FilterValues, format: string) => {
-    const filterParams = buildFilterParams(values)
-    const result = await fetchFinanceRevenue({
-      status: filterParams.status,
-      module: filterParams.module,
-      partnerId: filterParams.partnerId,
-      pricingType: filterParams.pricingType,
-      page: 1,
-      limit: 1000,
-    })
-    const payments: FinancePayment[] = result?.data?.rows ?? []
-    if (payments.length === 0) {
-      throw new Error('NO_RECORDS')
-    }
-    const headers = ['ID', 'Module', 'Order ID', 'Amount', 'Status', 'Created']
-    const exportRows = payments.map((payment) => [
-      exportDisplayValue(payment._id),
-      exportDisplayValue(payment.module),
-      exportDisplayValue(payment.orderId),
-      exportDisplayValue(payment.amount),
-      exportDisplayValue(payment.status),
-      exportDisplayValue(payment.createdAt),
-    ])
-    exportDataToFile(headers, exportRows, format, 'revenue_overview_export')
-  }, [])
-
-  const {
-    onAdvancedFilter,
-    onExport,
-    modals: exportFilterModals,
-  } = useModuleExportFilters({
-    moduleKey: 'finance-revenue',
-    onApplyFilters: handleApplyFilters,
-    onExportData: handleExportData,
-  })
 
   const renderActions = useCallback(
     (record: RevenueOverviewRow) => {
@@ -215,40 +214,41 @@ export function RevenueOverviewPage() {
     [activeDropdownId, navigate],
   )
 
-  const columns = useMemo<ColumnDef<RevenueOverviewRow>[]>(
-    () => [
-      {
-        id: 'select',
-        header: () => (
-          <input
-            type="checkbox"
-            aria-label="Select all revenue records"
-            checked={allVisibleSelected}
-            ref={(input) => {
-              if (input) input.indeterminate = someVisibleSelected && !allVisibleSelected
-            }}
-            onChange={toggleVisibleRows}
-            className="h-[18px] w-[18px] rounded border-slate-700 bg-transparent"
-          />
-        ),
-        cell: ({ row }) => (
-          <input
-            type="checkbox"
-            aria-label={`Select ${row.original.entityName}`}
-            checked={selectedRowIds.includes(row.original.id)}
-            onChange={() => toggleRowSelection(row.original.id)}
-            onClick={(event) => event.stopPropagation()}
-            className="h-[18px] w-[18px] rounded border-slate-700 bg-transparent"
-          />
-        ),
-        meta: {
-          headerClassName: 'pl-5',
-          cellClassName: 'pl-5',
-        },
+  const columns = useMemo<ColumnDef<RevenueOverviewRow>[]>(() => {
+    const selectColumn: ColumnDef<RevenueOverviewRow> = {
+      id: 'select',
+      header: () => (
+        <input
+          type="checkbox"
+          aria-label="Select all revenue records"
+          checked={allVisibleSelected}
+          ref={(input) => {
+            if (input) input.indeterminate = someVisibleSelected && !allVisibleSelected
+          }}
+          onChange={toggleVisibleRows}
+          className="h-[18px] w-[18px] rounded border-slate-700 bg-transparent"
+        />
+      ),
+      cell: ({ row }) => (
+        <input
+          type="checkbox"
+          aria-label={`Select ${row.original.entityName}`}
+          checked={selectedRowIds.includes(row.original.id)}
+          onChange={() => toggleRowSelection(row.original.id)}
+          onClick={(event) => event.stopPropagation()}
+          className="h-[18px] w-[18px] rounded border-slate-700 bg-transparent"
+        />
+      ),
+      meta: {
+        headerClassName: 'pl-5',
+        cellClassName: 'pl-5',
       },
-      { accessorKey: 'module', header: 'Module' },
-      { accessorKey: 'entityType', header: 'Entity Type' },
-      {
+    }
+
+    const dataColumnsById: Record<string, ColumnDef<RevenueOverviewRow>> = {
+      module: { accessorKey: 'module', header: 'Module' },
+      'entity-type': { accessorKey: 'entityType', header: 'Entity Type' },
+      'entity-id': {
         accessorKey: 'entityId',
         header: 'Entity ID',
         cell: ({ row }) => (
@@ -257,24 +257,24 @@ export function RevenueOverviewPage() {
           </span>
         ),
       },
-      {
+      'entity-name': {
         accessorKey: 'entityName',
         header: 'Entity Name',
         cell: ({ row }) => (
           <span className="text-brand-text font-medium">{row.original.entityName}</span>
         ),
       },
-      { accessorKey: 'category', header: 'Category' },
-      { accessorKey: 'ownerType', header: 'Owner Type' },
-      { accessorKey: 'ownerName', header: 'Owner Name' },
-      {
+      category: { accessorKey: 'category', header: 'Category' },
+      'owner-type': { accessorKey: 'ownerType', header: 'Owner Type' },
+      'owner-name': { accessorKey: 'ownerName', header: 'Owner Name' },
+      'gross-amount': {
         accessorKey: 'grossAmount',
         header: 'Gross Amount',
         cell: ({ row }) => (
           <span className="text-brand-text font-semibold">{row.original.grossAmount}</span>
         ),
       },
-      {
+      status: {
         accessorKey: 'status',
         header: 'Status',
         cell: ({ row }) => (
@@ -288,22 +288,31 @@ export function RevenueOverviewPage() {
           </span>
         ),
       },
-      {
-        id: 'actions',
-        header: 'Actions',
-        meta: { headerClassName: 'pr-5 text-right', cellClassName: 'relative pr-5 text-right' },
-        cell: ({ row }) => renderActions(row.original),
-      },
-    ],
-    [
-      allVisibleSelected,
-      renderActions,
-      selectedRowIds,
-      someVisibleSelected,
-      toggleRowSelection,
-      toggleVisibleRows,
-    ],
-  )
+    }
+
+    const visibleIds = tableColumnPreferencesQuery.data?.visibleColumnIds?.length
+      ? tableColumnPreferencesQuery.data.visibleColumnIds
+      : DEFAULT_FINANCE_REVENUE_VISIBLE_COLUMN_IDS
+
+    const preferenceColumns = visibleIds.map((id) => dataColumnsById[id]).filter(Boolean)
+
+    const actionsColumn: ColumnDef<RevenueOverviewRow> = {
+      id: 'actions',
+      header: 'Actions',
+      meta: { headerClassName: 'pr-5 text-right', cellClassName: 'relative pr-5 text-right' },
+      cell: ({ row }) => renderActions(row.original),
+    }
+
+    return [selectColumn, ...preferenceColumns, actionsColumn]
+  }, [
+    allVisibleSelected,
+    renderActions,
+    selectedRowIds,
+    someVisibleSelected,
+    tableColumnPreferencesQuery.data,
+    toggleRowSelection,
+    toggleVisibleRows,
+  ])
 
   return (
     <div className="flex flex-col gap-6">
@@ -321,7 +330,10 @@ export function RevenueOverviewPage() {
             <span className="text-brand-text font-semibold">Revenue Overview</span>
           </p>
         </div>
-        <Button className="ui-manage-metrics" onClick={() => navigate('/metrics/finance-revenue')}>
+        <Button
+          className="ui-manage-metrics"
+          onClick={() => navigate('/metrics/finance-revenue?section=table')}
+        >
           <SlidersHorizontal className="size-4" />
           Manage Metrics
         </Button>
@@ -333,17 +345,15 @@ export function RevenueOverviewPage() {
 
       <DataTable
         columns={columns}
-        data={pageRows}
+        data={rows}
         getRowId={(row) => row.id}
         isLoading={isLoading || isFetching}
         searchValue={searchQuery}
-        onSearchChange={(value) => {
-          setSearchQuery(value)
-          setCurrentPage(1)
-        }}
+        onSearchChange={setSearchQuery}
         searchPlaceholder="Search by name, ID or profession"
         advancedFilterLabel="Advance Filters"
         onAdvancedFilter={onAdvancedFilter}
+        advancedFilterVariant="primary"
         onExport={onExport}
         pagination={{
           page: meta?.page ?? currentPage,
@@ -355,7 +365,6 @@ export function RevenueOverviewPage() {
         resourceLabel="payments"
         emptyMessage="No revenue records found."
       />
-      {exportFilterModals}
 
       <AddTagsModal
         open={!!tagTarget}
@@ -387,6 +396,8 @@ export function RevenueOverviewPage() {
         escalate={escalate}
         softDelete={softDelete}
       />
+
+      {exportFilterModals}
     </div>
   )
 }

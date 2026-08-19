@@ -43,6 +43,8 @@ export const useModerationReasonOptions = (categorySlug: string, enabled = true)
     queryKey: templateKeys.reasonsBySlug(categorySlug, true),
     queryFn: () => fetchModerationReasonsBySlug(categorySlug, { activeOnly: true }),
     enabled: Boolean(categorySlug) && enabled,
+    staleTime: 0,
+    refetchOnMount: 'always',
   })
 
   const reasons = useMemo(() => query.data?.reasons ?? [], [query.data?.reasons])

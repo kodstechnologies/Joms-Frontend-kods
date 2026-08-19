@@ -9,7 +9,10 @@ import { toast } from 'sonner'
 import type { FilterValues } from '@/shared/types/data-filter'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter/use-module-export-filters'
 import { exportDisplayValue } from '@/shared/utils/export-utils'
-import { buildFilterParams, createFilteredExportHandler } from '@/shared/utils/export-filter-utils'
+import {
+  buildVenueListQueryParams,
+  createVenueFilteredExportHandler,
+} from '@/shared/utils/export-filter-utils'
 import { fetchVenues } from '../../api/venue-api'
 
 import { formatDeletedAt } from '../../constants/soft-delete'
@@ -56,15 +59,18 @@ export function VenueDeletedPage() {
   const [selectedVenueIds, setSelectedVenueIds] = useState<string[]>([])
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
 
-  const apiFilterParams = useMemo(() => buildFilterParams(appliedFilters), [appliedFilters])
+  const venueQueryParams = useMemo(
+    () =>
+      buildVenueListQueryParams(appliedFilters, {
+        page: currentPage,
+        limit: 10,
+        search: searchQuery,
+        status: 'deleted',
+      }),
+    [appliedFilters, currentPage, searchQuery],
+  )
 
-  const { data, isLoading } = useVenues({
-    page: currentPage,
-    limit: 10,
-    status: 'deleted',
-    search: searchQuery,
-    ...apiFilterParams,
-  })
+  const { data, isLoading } = useVenues(venueQueryParams)
   const restoreVenueMutation = useRestoreVenue()
 
   const venues = useMemo(() => data?.data ?? [], [data?.data])
@@ -81,7 +87,7 @@ export function VenueDeletedPage() {
 
   const handleExportData = useMemo(
     () =>
-      createFilteredExportHandler(fetchVenues, EXPORT_COLUMN_MAP, 'deleted_venues_export', {
+      createVenueFilteredExportHandler(fetchVenues, EXPORT_COLUMN_MAP, 'deleted_venues_export', {
         status: 'deleted',
       }),
     [],

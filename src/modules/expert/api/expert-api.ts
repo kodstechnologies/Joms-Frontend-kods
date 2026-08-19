@@ -70,10 +70,7 @@ export const fetchExpertClientele = async (expertId: string, params?: Record<str
   return response.data
 }
 
-export const fetchExpertServices = async (
-  expertId: string,
-  params?: { page?: number; limit?: number },
-) => {
+export const fetchExpertServices = async (expertId: string, params?: Record<string, unknown>) => {
   const response = await adminApiClient.get<ExpertServicesResponse>(
     `/admin/internal/admin/services/expert/${expertId}/services`,
     { params },

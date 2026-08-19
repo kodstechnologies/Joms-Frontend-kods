@@ -9,6 +9,13 @@ import {
   CommunicationActions,
   CommunicationStatusBadge,
 } from '../../components/communication-table-cells'
+import { PushAllPartnersPanel } from '../../components/push-all-partners-panel'
+import {
+  COMMUNICATION_METRIC_IDS,
+  COMMUNICATION_METRIC_ID_SET,
+  COMMUNICATION_MODULE_KEY,
+  DEFAULT_COMMUNICATION_METRIC_IDS,
+} from '../../config/communication-metrics.config'
 import { useCommunicationMetrics, useCommunications } from '../../hooks/use-communications'
 import type { Communication } from '../../api/communication-api'
 import { DataTable } from '@/shared/components/table/data-table'
@@ -21,20 +28,15 @@ import {
 import { useTableColumnPreferences } from '@/modules/expert/hooks/use-ui-preferences'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 import { exportDisplayValue } from '@/shared/utils/export-utils'
-import { createFilteredExportHandler } from '@/shared/utils/export-filter-utils'
+import {
+  buildCommunicationListQueryParams,
+  createCommunicationFilteredExportHandler,
+} from '@/shared/utils/export-filter-utils'
+import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
 import { fetchCommunications } from '../../api/communication-api'
 import type { FilterValues } from '@/shared/types/data-filter'
 
 const PAGE_SIZE = 10
-const COMMUNICATION_MODULE_KEY = 'communication'
-
-const DEFAULT_METRIC_IDS = [
-  'total-messages-sent',
-  'active-campaigns',
-  'channels-used',
-  'scheduled-messages',
-  'failed-undelivered',
-]
 
 const DEFAULT_VISIBLE_COLUMN_IDS = [
   'message-id',
@@ -78,19 +80,27 @@ export function CommunicationListPage() {
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
 
   const metricsQuery = useCommunicationMetrics()
-  const listQuery = useCommunications({
-    page,
-    limit: PAGE_SIZE,
-    search: debouncedSearch || undefined,
-    status: (appliedFilters.status as string[])?.join(',') || undefined,
-    channel: (appliedFilters.channel as string[])?.join(',') || undefined,
-    audience: (appliedFilters.audience as string[])?.join(',') || undefined,
-    type: (appliedFilters.type as string[])?.join(',') || undefined,
-    messageId: (appliedFilters.messageId as string) || undefined,
-    title: (appliedFilters.title as string) || undefined,
-    createdBy: (appliedFilters.createdBy as string) || undefined,
-  })
-  const activeMetricIds = useActiveMetricIds(COMMUNICATION_MODULE_KEY, DEFAULT_METRIC_IDS)
+  const listQueryParams = useMemo(
+    () =>
+      buildCommunicationListQueryParams(appliedFilters, {
+        page,
+        limit: PAGE_SIZE,
+        search: debouncedSearch || undefined,
+      }),
+    [appliedFilters, debouncedSearch, page],
+  )
+  const listQuery = useCommunications(listQueryParams)
+  const activeMetricIds = useActiveMetricIds(COMMUNICATION_MODULE_KEY, [
+    ...DEFAULT_COMMUNICATION_METRIC_IDS,
+  ])
+  const filteredActiveMetricIds = useMemo(
+    () =>
+      sortIdsByCatalogOrder(
+        activeMetricIds.filter((id) => COMMUNICATION_METRIC_ID_SET.has(id)),
+        COMMUNICATION_METRIC_IDS,
+      ),
+    [activeMetricIds],
+  )
   const tableColumnPreferencesQuery = useTableColumnPreferences(COMMUNICATION_MODULE_KEY)
 
   useEffect(() => {
@@ -118,8 +128,13 @@ export function CommunicationListPage() {
 
   const handleExportData = useMemo(
     () =>
-      createFilteredExportHandler(fetchCommunications, EXPORT_COLUMN_MAP, 'communications_export'),
-    [],
+      createCommunicationFilteredExportHandler(
+        fetchCommunications,
+        EXPORT_COLUMN_MAP,
+        'communications_export',
+        { search: debouncedSearch || undefined },
+      ),
+    [debouncedSearch],
   )
 
   const {
@@ -135,8 +150,9 @@ export function CommunicationListPage() {
   const stats = useMemo(() => {
     const cards = metricsQuery.data?.cards ?? []
     if (!cards.length) return []
-    return orderByActiveMetricIds(cards, activeMetricIds)
-  }, [activeMetricIds, metricsQuery.data?.cards])
+    const catalogCards = cards.filter((card) => COMMUNICATION_METRIC_ID_SET.has(card.id))
+    return orderByActiveMetricIds(catalogCards, filteredActiveMetricIds)
+  }, [filteredActiveMetricIds, metricsQuery.data?.cards])
 
   const columns = useMemo(() => {
     const dataColumnsById: Record<string, ColumnDef<Communication>> = {
@@ -249,6 +265,8 @@ export function CommunicationListPage() {
           />
         ))}
       </div>
+
+      <PushAllPartnersPanel />
 
       <DataTable
         columns={columns}

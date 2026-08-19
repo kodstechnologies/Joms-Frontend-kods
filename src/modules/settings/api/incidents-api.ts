@@ -16,13 +16,7 @@ export const fetchIncidentMetrics = async () => {
   return response.data.data
 }
 
-export const fetchIncidents = async (params?: {
-  page?: number
-  limit?: number
-  search?: string
-  severity?: string
-  status?: string
-}) => {
+export const fetchIncidents = async (params?: Record<string, unknown>) => {
   const response = await settingsApiClient.get<ApiEnvelope<IncidentRow[]>>('/settings/incidents', {
     params,
   })
@@ -38,7 +32,7 @@ export const fetchIncident = async (id: string) => {
 
 export const assignIncident = async (
   id: string,
-  payload: { department: string; assignee: string },
+  payload: { department: string; assignee: string; assigneeId: string },
 ) => {
   const response = await settingsApiClient.patch<ApiEnvelope<IncidentRow>>(
     `/settings/incidents/${id}/assign`,

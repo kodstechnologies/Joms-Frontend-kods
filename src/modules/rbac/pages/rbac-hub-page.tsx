@@ -1,21 +1,32 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 import {
-  BarChart3,
+  Clock,
   Eye,
   Pencil,
-  Plus,
   Settings,
   Shield,
   ShieldOff,
+  SlidersHorizontal,
   Trash2,
   UserCheck,
   UserPlus,
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
-
+import createIcon from '@/assets/JOMS_ICONS-2/icons8-create.svg'
 import { RbacStatsBar } from '../components/rbac-stats-bar'
+import { RBAC_HUB_MODULE_KEY } from '../config/rbac-metrics.config'
+import {
+  DEFAULT_RBAC_HUB_ROLES_VISIBLE_COLUMN_IDS,
+  DEFAULT_RBAC_HUB_USERS_VISIBLE_COLUMN_IDS,
+  RBAC_HUB_ROLES_COLUMN_PREFIX,
+  RBAC_HUB_ROLES_TABLE_COLUMNS_CATALOG,
+  RBAC_HUB_USERS_COLUMN_PREFIX,
+  RBAC_HUB_USERS_TABLE_COLUMNS_CATALOG,
+} from '../config/rbac-hub-table-columns.config'
+import { useTableColumnPreferences } from '@/modules/expert/hooks/use-ui-preferences'
+import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
 import { UpdatePasswordModal } from '../components/update-password-modal'
 import {
   useDeleteRole,
@@ -30,6 +41,7 @@ import {
   useReactivateSubAdmin,
   useUpdateSubAdminPassword,
 } from '../hooks/use-rbac'
+import { fetchRoleUsers, fetchRoles, fetchSubAdmins } from '../api/rbac-api'
 import { useRbacStore } from '../store/rbac-store'
 import type { Role, SubAdmin } from '../types/rbac'
 import { DataTable } from '@/shared/components/table/data-table'
@@ -40,8 +52,11 @@ import {
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
-import { exportDataToFile, exportDisplayValue } from '@/shared/utils/export-utils'
-import { buildFilterParams } from '@/shared/utils/export-filter-utils'
+import { exportDisplayValue } from '@/shared/utils/export-utils'
+import {
+  buildRbacListQueryParams,
+  createRbacFilteredExportHandler,
+} from '@/shared/utils/export-filter-utils'
 import type { FilterValues } from '@/shared/types/data-filter'
 
 const EXPORT_USER_COLUMN_MAP: Record<
@@ -112,6 +127,14 @@ const formatDateTime = (value?: string) => {
   })
 }
 
+const formatRiskLevel = (value?: string) => {
+  if (!value) return '—'
+  return value
+    .split('_')
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ')
+}
+
 export function RbacHubPage() {
   const navigate = useNavigate()
   const {
@@ -130,31 +153,31 @@ export function RbacHubPage() {
 
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
 
-  const apiFilterParams = useMemo(() => buildFilterParams(appliedFilters), [appliedFilters])
+  const apiFilterParams = useMemo(() => buildRbacListQueryParams(appliedFilters), [appliedFilters])
 
   const { data: statsData, isLoading: statsLoading } = useRbacStats()
   const { data: rolesData, isLoading: rolesLoading } = useRoles({
+    ...apiFilterParams,
     page: currentPage,
     limit: 10,
     search: searchQuery || undefined,
-    ...apiFilterParams,
   })
   const { data: subAdminsData, isLoading: subAdminsLoading } = useSubAdmins(
     {
+      ...apiFilterParams,
       page: currentPage,
       limit: 10,
       search: searchQuery || undefined,
-      ...apiFilterParams,
     },
     { enabled: activeTab === 'users' && !roleFilterId },
   )
   const { data: roleUsersData, isLoading: roleUsersLoading } = useRoleUsers(
     roleFilterId || '',
     {
+      ...apiFilterParams,
       page: currentPage,
       limit: 10,
       search: searchQuery || undefined,
-      ...apiFilterParams,
     },
     { enabled: activeTab === 'users' && Boolean(roleFilterId) },
   )
@@ -166,6 +189,7 @@ export function RbacHubPage() {
   const reactivateMutation = useReactivateSubAdmin()
   const deleteSubAdminMutation = useDeleteSubAdmin()
   const updatePasswordMutation = useUpdateSubAdminPassword()
+  const tableColumnPreferencesQuery = useTableColumnPreferences(RBAC_HUB_MODULE_KEY)
 
   const roles = useMemo(() => rolesData?.data ?? [], [rolesData?.data])
   const rolesMeta = rolesData?.meta
@@ -185,22 +209,29 @@ export function RbacHubPage() {
     [setCurrentPage],
   )
 
-  const handleExportData = useCallback(
-    (values: FilterValues, format: string) => {
-      if (activeTab === 'users') {
-        const exportCols = Object.values(EXPORT_USER_COLUMN_MAP)
-        const headers = exportCols.map((c) => c.header)
-        const exportRows = subAdmins.map((user) => exportCols.map((c) => c.accessor(user)))
-        exportDataToFile(headers, exportRows, format, 'rbac_users_export')
-      } else {
-        const exportCols = Object.values(EXPORT_ROLE_COLUMN_MAP)
-        const headers = exportCols.map((c) => c.header)
-        const exportRows = roles.map((role) => exportCols.map((c) => c.accessor(role)))
-        exportDataToFile(headers, exportRows, format, 'rbac_roles_export')
+  const handleExportData = useMemo(() => {
+    if (activeTab === 'users') {
+      const fetchUsers = async (params: Record<string, unknown>) => {
+        if (roleFilterId) {
+          const result = await fetchRoleUsers(roleFilterId, params)
+          return { data: result.data?.users ?? [] }
+        }
+        return fetchSubAdmins(params)
       }
-    },
-    [activeTab, subAdmins, roles],
-  )
+      return createRbacFilteredExportHandler(
+        fetchUsers,
+        EXPORT_USER_COLUMN_MAP,
+        'rbac_users_export',
+        { search: searchQuery || undefined },
+      )
+    }
+    return createRbacFilteredExportHandler(
+      fetchRoles,
+      EXPORT_ROLE_COLUMN_MAP,
+      'rbac_roles_export',
+      { search: searchQuery || undefined },
+    )
+  }, [activeTab, roleFilterId, searchQuery])
 
   const {
     onAdvancedFilter,
@@ -326,36 +357,54 @@ export function RbacHubPage() {
     [passwordResetUser, updatePasswordMutation],
   )
 
-  const roleColumns = useMemo<ColumnDef<Role>[]>(
-    () => [
-      { accessorKey: 'roleCode', header: 'Role ID' },
-      { accessorKey: 'name', header: 'Role Name' },
-      { accessorKey: 'description', header: 'Description' },
-      {
+  const roleColumns = useMemo<ColumnDef<Role>[]>(() => {
+    const dataColumnsById: Record<string, ColumnDef<Role>> = {
+      'roles-role-id': { id: 'roles-role-id', accessorKey: 'roleCode', header: 'Role ID' },
+      'roles-name': {
+        id: 'roles-name',
+        accessorKey: 'name',
+        header: 'Role Name',
+        cell: ({ row }) => (
+          <span className="inline-flex rounded-md border border-white/10 bg-[#141414] px-2.5 py-1 text-xs font-medium text-white">
+            {row.original.name}
+          </span>
+        ),
+      },
+      'roles-description': {
+        id: 'roles-description',
+        accessorKey: 'description',
+        header: 'Description',
+      },
+      'roles-scope': {
+        id: 'roles-scope',
         accessorKey: 'scopes',
         header: 'Scope',
         cell: ({ row }) => row.original.scopes.join(', ') || '—',
       },
-      {
+      'roles-permissions': {
+        id: 'roles-permissions',
         accessorKey: 'permissions',
         header: 'Permissions',
         cell: ({ row }) => formatPermissions(row.original.permissions),
       },
-      {
+      'roles-risk-level': {
+        id: 'roles-risk-level',
         accessorKey: 'riskLevel',
         header: 'Risk level',
         cell: ({ row }) => (
-          <span className="text-brand-accent capitalize">
-            {row.original.riskLevel.replace('_', ' ')}
+          <span className="text-brand-text font-medium">
+            {formatRiskLevel(row.original.riskLevel)}
           </span>
         ),
       },
-      {
+      'roles-mfa-required': {
+        id: 'roles-mfa-required',
         accessorKey: 'mfaRequired',
         header: 'MFA Required',
         cell: ({ row }) => (row.original.mfaRequired ? 'Yes' : 'No'),
       },
-      {
+      'roles-status': {
+        id: 'roles-status',
         accessorKey: 'status',
         header: 'Status',
         cell: ({ row }) => (
@@ -371,97 +420,138 @@ export function RbacHubPage() {
           </span>
         ),
       },
-      {
+      'roles-user-count': {
+        id: 'roles-user-count',
         accessorKey: 'userCount',
         header: 'Users (No.)',
-        cell: ({ row }) => String(row.original.userCount).padStart(2, '0'),
-      },
-      {
-        id: 'actions',
-        header: 'Actions',
-        meta: { headerClassName: 'pr-5 text-right', cellClassName: 'relative pr-5 text-right' },
         cell: ({ row }) => (
-          <TableActionsDropdown
-            label="Open role actions"
-            isOpen={activeDropdownId === row.original.id}
-            onOpenChange={(open) => setActiveDropdownId(open ? row.original.id : null)}
+          <button
+            type="button"
+            onClick={() => navigate(`/settings/access/roles/${row.original.id}/users`)}
+            className="text-brand-text hover:text-brand-accent font-medium underline underline-offset-2"
           >
-            <TableActionsItem
-              icon={<Pencil className="size-3.5" />}
-              onClick={() => navigate(`/settings/access/roles/${row.original.id}/edit`)}
-            >
-              Edit permission
-            </TableActionsItem>
-            <TableActionsItem
-              icon={<Trash2 className="text-brand-danger size-3.5" />}
-              onClick={() => handleDeleteRole(row.original.id)}
-            >
-              <span className="text-brand-danger">Remove Role</span>
-            </TableActionsItem>
-            {row.original.status === 'active' ? (
-              <TableActionsItem
-                icon={<ShieldOff className="size-3.5" />}
-                onClick={() => handleDisableRole(row.original.id)}
-              >
-                Disable Role
-              </TableActionsItem>
-            ) : (
-              <TableActionsItem
-                icon={<Shield className="text-brand-success size-3.5" />}
-                onClick={() => handleEnableRole(row.original.id)}
-              >
-                <span className="text-brand-success">Enable Role</span>
-              </TableActionsItem>
-            )}
-            <TableActionsItem
-              icon={<UserPlus className="size-3.5" />}
-              onClick={() => navigate('/settings/access/users/create')}
-            >
-              Assign new user
-            </TableActionsItem>
-            <TableActionsItem
-              icon={<Eye className="size-3.5" />}
-              onClick={() => navigate(`/settings/access/roles/${row.original.id}/logs`)}
-            >
-              View Logs
-            </TableActionsItem>
-          </TableActionsDropdown>
+            {String(row.original.userCount).padStart(2, '0')}
+          </button>
         ),
       },
-    ],
-    [activeDropdownId, handleDeleteRole, handleDisableRole, handleEnableRole, navigate],
-  )
+    }
 
-  const userColumns = useMemo<ColumnDef<SubAdmin>[]>(
-    () => [
-      { accessorKey: 'adminCode', header: 'User ID' },
-      { accessorKey: 'fullname', header: 'Username' },
-      {
-        id: 'roleCode',
+    const catalogIds = RBAC_HUB_ROLES_TABLE_COLUMNS_CATALOG.map((column) => column.id)
+    const savedIds = tableColumnPreferencesQuery.data?.visibleColumnIds?.length
+      ? tableColumnPreferencesQuery.data.visibleColumnIds.filter((id) =>
+          id.startsWith(RBAC_HUB_ROLES_COLUMN_PREFIX),
+        )
+      : DEFAULT_RBAC_HUB_ROLES_VISIBLE_COLUMN_IDS
+    const preferenceColumns = sortIdsByCatalogOrder(
+      savedIds.filter((id) => catalogIds.includes(id)),
+      catalogIds,
+    )
+      .map((id) => dataColumnsById[id])
+      .filter(Boolean)
+
+    const actionsColumn: ColumnDef<Role> = {
+      id: 'actions',
+      header: 'Actions',
+      meta: { headerClassName: 'pr-5 text-right', cellClassName: 'relative pr-5 text-right' },
+      cell: ({ row }) => (
+        <TableActionsDropdown
+          label="Open role actions"
+          isOpen={activeDropdownId === row.original.id}
+          onOpenChange={(open) => setActiveDropdownId(open ? row.original.id : null)}
+        >
+          <TableActionsItem
+            icon={<Pencil className="size-3.5" />}
+            onClick={() => navigate(`/settings/access/roles/${row.original.id}/edit`)}
+          >
+            Edit permission
+          </TableActionsItem>
+          <TableActionsItem
+            icon={<Trash2 className="text-brand-danger size-3.5" />}
+            onClick={() => handleDeleteRole(row.original.id)}
+          >
+            <span className="text-brand-danger">Remove Role</span>
+          </TableActionsItem>
+          {row.original.status === 'active' ? (
+            <TableActionsItem
+              icon={<ShieldOff className="size-3.5" />}
+              onClick={() => handleDisableRole(row.original.id)}
+            >
+              Disable Role
+            </TableActionsItem>
+          ) : (
+            <TableActionsItem
+              icon={<Shield className="text-brand-success size-3.5" />}
+              onClick={() => handleEnableRole(row.original.id)}
+            >
+              <span className="text-brand-success">Enable Role</span>
+            </TableActionsItem>
+          )}
+          <TableActionsItem
+            icon={<Settings className="size-3.5" />}
+            onClick={() => navigate(`/settings/access/roles/${row.original.id}/edit`)}
+          >
+            Edit scope
+          </TableActionsItem>
+          <TableActionsItem
+            icon={<UserPlus className="size-3.5" />}
+            onClick={() => navigate('/settings/access/users/create')}
+          >
+            Assign new user
+          </TableActionsItem>
+          <TableActionsItem
+            icon={<Eye className="size-3.5" />}
+            onClick={() => navigate(`/settings/access/roles/${row.original.id}/logs`)}
+          >
+            View Logs
+          </TableActionsItem>
+        </TableActionsDropdown>
+      ),
+    }
+
+    return [...preferenceColumns, actionsColumn]
+  }, [
+    activeDropdownId,
+    handleDeleteRole,
+    handleDisableRole,
+    handleEnableRole,
+    navigate,
+    tableColumnPreferencesQuery.data,
+  ])
+
+  const userColumns = useMemo<ColumnDef<SubAdmin>[]>(() => {
+    const dataColumnsById: Record<string, ColumnDef<SubAdmin>> = {
+      'users-admin-code': { id: 'users-admin-code', accessorKey: 'adminCode', header: 'User ID' },
+      'users-fullname': { id: 'users-fullname', accessorKey: 'fullname', header: 'Username' },
+      'users-role-id': {
+        id: 'users-role-id',
         header: 'Role ID',
         cell: ({ row }) => row.original.roles.map((r) => r.roleCode).join(', ') || '—',
       },
-      {
-        id: 'roleName',
+      'users-role-name': {
+        id: 'users-role-name',
         header: 'RoleName',
         cell: ({ row }) => row.original.roles.map((r) => r.name).join(', ') || '—',
       },
-      {
+      'users-scope': {
+        id: 'users-scope',
         accessorKey: 'scopes',
         header: 'Scope',
         cell: ({ row }) => row.original.scopes.join(', ') || '—',
       },
-      {
+      'users-permissions': {
+        id: 'users-permissions',
         accessorKey: 'permissions',
         header: 'Permissions',
         cell: ({ row }) => formatPermissions(row.original.permissions),
       },
-      {
+      'users-mfa-enabled': {
+        id: 'users-mfa-enabled',
         accessorKey: 'mfaEnabled',
         header: 'MFA Enabled',
         cell: ({ row }) => (row.original.mfaEnabled ? 'Yes' : 'No'),
       },
-      {
+      'users-status': {
+        id: 'users-status',
         accessorKey: 'status',
         header: 'Status',
         cell: ({ row }) => (
@@ -477,75 +567,98 @@ export function RbacHubPage() {
           </span>
         ),
       },
-      {
+      'users-last-action': {
+        id: 'users-last-action',
         accessorKey: 'lastActionAt',
         header: 'Last action performed',
         cell: ({ row }) => formatDateTime(row.original.lastActionAt),
       },
-      {
-        id: 'actions',
-        header: 'Actions',
-        meta: { headerClassName: 'pr-5 text-right', cellClassName: 'relative pr-5 text-right' },
-        cell: ({ row }) => (
-          <TableActionsDropdown
-            label="Open user actions"
-            isOpen={activeDropdownId === row.original.id}
-            onOpenChange={(open) => setActiveDropdownId(open ? row.original.id : null)}
+    }
+
+    const catalogIds = RBAC_HUB_USERS_TABLE_COLUMNS_CATALOG.map((column) => column.id)
+    const savedIds = tableColumnPreferencesQuery.data?.visibleColumnIds?.length
+      ? tableColumnPreferencesQuery.data.visibleColumnIds.filter((id) =>
+          id.startsWith(RBAC_HUB_USERS_COLUMN_PREFIX),
+        )
+      : DEFAULT_RBAC_HUB_USERS_VISIBLE_COLUMN_IDS
+    const preferenceColumns = sortIdsByCatalogOrder(
+      savedIds.filter((id) => catalogIds.includes(id)),
+      catalogIds,
+    )
+      .map((id) => dataColumnsById[id])
+      .filter(Boolean)
+
+    const actionsColumn: ColumnDef<SubAdmin> = {
+      id: 'actions',
+      header: 'Actions',
+      meta: { headerClassName: 'pr-5 text-right', cellClassName: 'relative pr-5 text-right' },
+      cell: ({ row }) => (
+        <TableActionsDropdown
+          label="Open user actions"
+          isOpen={activeDropdownId === row.original.id}
+          onOpenChange={(open) => setActiveDropdownId(open ? row.original.id : null)}
+        >
+          <TableActionsItem
+            icon={<Eye className="size-3.5" />}
+            onClick={() => navigate(`/settings/access/users/${row.original.id}`)}
           >
+            View user
+          </TableActionsItem>
+          <TableActionsItem
+            icon={<Pencil className="size-3.5" />}
+            onClick={() => navigate(`/settings/access/users/create?edit=${row.original.id}`)}
+          >
+            Change role
+          </TableActionsItem>
+          <TableActionsItem
+            icon={<Eye className="size-3.5" />}
+            onClick={() => navigate(`/settings/access/users/${row.original.id}/logs`)}
+          >
+            View user logs
+          </TableActionsItem>
+          <TableActionsItem
+            icon={<Settings className="size-3.5" />}
+            onClick={() => {
+              setPasswordResetUser(row.original)
+              setActiveDropdownId(null)
+            }}
+          >
+            Password reset
+          </TableActionsItem>
+          <TableActionsItem
+            icon={<Trash2 className="text-brand-danger size-3.5" />}
+            onClick={() => handleDeleteUser(row.original.id)}
+          >
+            <span className="text-brand-danger">Remove User</span>
+          </TableActionsItem>
+          {row.original.status === 'active' ? (
             <TableActionsItem
-              icon={<Eye className="size-3.5" />}
-              onClick={() => navigate(`/settings/access/users/${row.original.id}`)}
+              icon={<ShieldOff className="text-brand-danger size-3.5" />}
+              onClick={() => handleSuspendUser(row.original.id)}
             >
-              View user
+              <span className="text-brand-danger">Suspend user</span>
             </TableActionsItem>
+          ) : (
             <TableActionsItem
-              icon={<Pencil className="size-3.5" />}
-              onClick={() => navigate(`/settings/access/users/create?edit=${row.original.id}`)}
+              icon={<UserCheck className="text-brand-success size-3.5" />}
+              onClick={() => handleReactivateUser(row.original.id)}
             >
-              Change role
+              <span className="text-brand-success">Reactivate user</span>
             </TableActionsItem>
-            <TableActionsItem
-              icon={<Eye className="size-3.5" />}
-              onClick={() => navigate(`/settings/access/users/${row.original.id}/logs`)}
-            >
-              View user logs
-            </TableActionsItem>
-            <TableActionsItem
-              icon={<Settings className="size-3.5" />}
-              onClick={() => {
-                setPasswordResetUser(row.original)
-                setActiveDropdownId(null)
-              }}
-            >
-              Password reset
-            </TableActionsItem>
-            <TableActionsItem
-              icon={<Trash2 className="text-brand-danger size-3.5" />}
-              onClick={() => handleDeleteUser(row.original.id)}
-            >
-              <span className="text-brand-danger">Remove User</span>
-            </TableActionsItem>
-            {row.original.status === 'active' ? (
-              <TableActionsItem
-                icon={<ShieldOff className="text-brand-danger size-3.5" />}
-                onClick={() => handleSuspendUser(row.original.id)}
-              >
-                <span className="text-brand-danger">Suspend user</span>
-              </TableActionsItem>
-            ) : (
-              <TableActionsItem
-                icon={<UserCheck className="text-brand-success size-3.5" />}
-                onClick={() => handleReactivateUser(row.original.id)}
-              >
-                <span className="text-brand-success">Reactivate user</span>
-              </TableActionsItem>
-            )}
-          </TableActionsDropdown>
-        ),
-      },
-    ],
-    [activeDropdownId, handleDeleteUser, handleReactivateUser, handleSuspendUser, navigate],
-  )
+          )}
+        </TableActionsDropdown>
+      ),
+    }
+
+    return [...preferenceColumns, actionsColumn]
+  }, [
+    activeDropdownId,
+    handleDeleteUser,
+    handleReactivateUser,
+    handleSuspendUser,
+    navigate,
+    tableColumnPreferencesQuery.data,
+  ])
 
   const isRolesTab = activeTab === 'roles'
   const meta = isRolesTab ? rolesMeta : subAdminsMeta
@@ -555,28 +668,27 @@ export function RbacHubPage() {
     <div className="flex flex-col gap-4 md:gap-6">
       <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
         <div>
-          <h1 className="text-brand-text text-2xl font-bold md:text-3xl">Role Based Access</h1>
-          <p className="text-brand-muted mt-1 text-sm md:text-base">
-            Comprehensive user data and admin controls.
-          </p>
+          <h1 className="referral-page-title">Role Based Access</h1>
+          <p className="referral-page-subtitle mt-1">Comprehensive user data and admin controls.</p>
         </div>
         <div className="flex w-full flex-col gap-2 sm:flex-row md:w-auto">
           <Button
-            variant="secondary"
-            className="ui-manage-metrics"
+            className="ui-manage-metrics h-9 w-full rounded-xl bg-[#FBC078] px-5 text-sm font-semibold text-black shadow-none hover:bg-[#EEB46A] md:w-auto"
             onClick={() => navigate('/metrics/rbac-hub')}
           >
-            <BarChart3 className="size-4" />
+            <SlidersHorizontal className="size-4" />
             Manage Metrics
           </Button>
           <Button
+            type="button"
+            className="h-9 w-full md:w-auto"
             onClick={() =>
               navigate(
                 isRolesTab ? '/settings/access/roles/create' : '/settings/access/users/create',
               )
             }
           >
-            <Plus className="size-4" />
+            <img src={createIcon} alt="" className="size-4" aria-hidden="true" />
             {isRolesTab ? 'Create New Role' : 'Add New User'}
           </Button>
         </div>
@@ -584,7 +696,7 @@ export function RbacHubPage() {
 
       <RbacStatsBar stats={statsData?.data} isLoading={statsLoading} />
 
-      <div className="bg-brand-surface flex w-full gap-1 rounded-xl border border-white/10 p-1">
+      <div className="flex w-full gap-1 rounded-xl border border-white/10 bg-[#141414] p-1">
         {(['roles', 'users'] as const).map((tab) => (
           <button
             key={tab}
@@ -596,10 +708,10 @@ export function RbacHubPage() {
               setActiveTab(tab)
             }}
             className={cn(
-              'flex-1 rounded-lg px-4 py-2.5 text-sm font-medium transition-colors',
+              'flex-1 rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors',
               activeTab === tab
-                ? 'bg-brand-surface text-brand-text shadow-sm'
-                : 'text-muted hover:text-brand-text',
+                ? 'bg-[#1f1f1f] text-white shadow-sm'
+                : 'text-white/55 hover:text-white',
             )}
           >
             {tab === 'roles' ? 'Admin Roles' : 'Users'}
@@ -622,10 +734,17 @@ export function RbacHubPage() {
         </div>
       ) : null}
 
-      {!isRolesTab && (statsData?.data?.invitesSent ?? 0) >= 0 ? (
-        <div className="rounded-brand-lg border-brand-accent-muted bg-brand-accent/10 text-brand-text flex items-center justify-between border px-4 py-3 text-sm">
-          <span>Invites Sent — {String(statsData?.data?.invitesSent ?? 0).padStart(2, '0')}</span>
-          <Button variant="secondary" onClick={() => navigate('/settings/access')}>
+      {!isRolesTab ? (
+        <div className="flex items-center justify-between rounded-xl border border-[#E0A263]/35 bg-[#E0A263]/12 px-4 py-3">
+          <span className="text-brand-text flex items-center gap-2 text-sm font-medium">
+            <Clock className="size-4 text-[#E0A263]" aria-hidden="true" />
+            Invites Sent: {String(statsData?.data?.invitesSent ?? 0).padStart(2, '0')}
+          </span>
+          <Button
+            variant="secondary"
+            className="h-9 rounded-lg border-white/25 px-4 text-sm font-semibold"
+            onClick={() => navigate('/settings/access/invites')}
+          >
             Review
           </Button>
         </div>
@@ -641,6 +760,7 @@ export function RbacHubPage() {
           onSearchChange={setSearchQuery}
           searchPlaceholder="Search by name, ID or profession"
           onAdvancedFilter={onAdvancedFilter}
+          advancedFilterVariant="primary"
           onExport={onExport}
           pagination={{
             page: currentPage,
@@ -662,6 +782,7 @@ export function RbacHubPage() {
           onSearchChange={setSearchQuery}
           searchPlaceholder="Search by name, ID or profession"
           onAdvancedFilter={onAdvancedFilter}
+          advancedFilterVariant="primary"
           onExport={onExport}
           pagination={{
             page: currentPage,

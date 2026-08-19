@@ -2,30 +2,39 @@ import type { FilterSectionConfig, ModuleFilterConfig } from '@/shared/types/dat
 
 import { byLocationSection, prefixSectionFields } from './base-filter-sections'
 
+/** By Venues — matches Figma Advanced Filters - Venue Category Management */
 const venueCategoryByVenuesSection: FilterSectionConfig = {
   id: 'by-venues',
   title: 'By Venues',
   defaultExpanded: true,
   fields: [
-    { id: 'categoryId', label: 'Category ID', type: 'text', placeholder: 'Enter Category ID' },
-    { id: 'category', label: 'Category Name', type: 'search', placeholder: 'Search by name' },
+    { id: 'category', label: 'Category', type: 'search', placeholder: 'Search by name' },
     { id: 'subCategory', label: 'Sub-category', type: 'search', placeholder: 'Search by name' },
     {
-      id: 'categoryStatus',
-      label: 'Category Status',
+      id: 'location',
+      label: 'Location',
+      type: 'location',
+      statePlaceholder: 'State/Region',
+      cityPlaceholder: 'City',
+    },
+    {
+      id: 'venueType',
+      label: 'Venue Type',
       type: 'checkbox-group',
       options: [
-        { label: 'Active', value: 'active' },
-        { label: 'Paused', value: 'paused' },
-        { label: 'Deleted', value: 'deleted' },
+        { label: 'Indoor', value: 'indoor' },
+        { label: 'Outdoor', value: 'outdoor' },
       ],
     },
     {
-      id: 'revenue',
-      label: 'Revenue Generated',
-      type: 'number-range',
-      fromPlaceholder: 'Min',
-      toPlaceholder: 'Max',
+      id: 'venueStatus',
+      label: 'Venue Status',
+      type: 'checkbox-group',
+      options: [
+        { label: 'Active', value: 'active' },
+        { label: 'Inactive', value: 'inactive' },
+        { label: 'Suspended', value: 'suspended' },
+      ],
     },
     {
       id: 'approvalStatus',
@@ -85,6 +94,7 @@ const venueCategoryByVenuesSection: FilterSectionConfig = {
   ],
 }
 
+/** By Bookings — matches Figma */
 const venueCategoryByBookingsSection: FilterSectionConfig = {
   id: 'by-bookings',
   title: 'By Bookings',
@@ -143,6 +153,7 @@ const venueCategoryByBookingsSection: FilterSectionConfig = {
   ],
 }
 
+/** By Customers — matches Figma */
 const venueCategoryByCustomersSection: FilterSectionConfig = {
   id: 'by-customers',
   title: 'By Customers',
@@ -164,7 +175,7 @@ const venueCategoryByCustomersSection: FilterSectionConfig = {
   ],
 }
 
-const venueCategoryAdvancedSections: FilterSectionConfig[] = [
+const venueCategoryFilterSections: FilterSectionConfig[] = [
   prefixSectionFields(venueCategoryByVenuesSection, 'venues'),
   prefixSectionFields(venueCategoryByBookingsSection, 'bookings'),
   prefixSectionFields(venueCategoryByCustomersSection, 'customers'),
@@ -174,5 +185,6 @@ const venueCategoryAdvancedSections: FilterSectionConfig[] = [
 export const venueCategoryManagementFilterConfig: ModuleFilterConfig = {
   moduleKey: 'venue-category-management',
   moduleName: 'Venue Category Management',
-  sections: venueCategoryAdvancedSections,
+  sections: venueCategoryFilterSections,
+  exportSections: venueCategoryFilterSections,
 }

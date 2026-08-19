@@ -6,6 +6,20 @@ import { ArrowLeft, SlidersHorizontal } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { fetchExpertClientele } from '../../api/expert-api'
+import {
+  DEFAULT_EXPERT_CLIENTELE_METRIC_IDS,
+  EXPERT_CLIENTELE_METRIC_ID_SET,
+  EXPERT_CLIENTELE_METRIC_IDS,
+  EXPERT_CLIENTELE_MODULE_KEY,
+} from '../../config/expert-clientele-metrics.config'
+import {
+  DEFAULT_EXPERT_CLIENTELE_VISIBLE_COLUMN_IDS,
+  EXPERT_CLIENTELE_TABLE_COLUMNS_CATALOG,
+} from '../../config/expert-clientele-table-columns.config'
+import { orderByActiveMetricIds, useActiveMetricIds } from '../../hooks/use-active-metric-ids'
+import { useTableColumnPreferences } from '../../hooks/use-ui-preferences'
+import { buildExpertClienteleMetricCards } from '../../utils/expert-clientele-metrics'
+import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
 import { Button } from '@/shared/components/ui/button'
 import { DataTable } from '@/shared/components/table/data-table'
 import {
@@ -13,8 +27,14 @@ import {
   TableActionsItem,
 } from '@/shared/components/table/table-actions-dropdown'
 import { cn } from '@/shared/lib/cn'
-import { exportDataToFile } from '@/shared/utils/export-utils'
+import { exportDisplayValue } from '@/shared/utils/export-utils'
 import { getApiErrorMessage } from '@/shared/lib/api-error'
+import { useModuleExportFilters } from '@/shared/components/advanced-filter'
+import type { FilterValues } from '@/shared/types/data-filter'
+import {
+  buildPrefixedListQueryParams,
+  createPrefixedListExportHandler,
+} from '@/shared/utils/export-filter-utils'
 
 type ClienteleItem = {
   bookingId: string
@@ -92,6 +112,40 @@ const EMPTY_METRICS: Metrics = {
 
 const EMPTY_CLIENTELE_ITEMS: ClienteleItem[] = []
 
+const CLIENTELE_EXPORT_COLUMN_MAP: Record<
+  string,
+  { header: string; accessor: (row: ClienteleItem) => string }
+> = {
+  bookingId: { header: 'Order / Booking ID', accessor: (row) => exportDisplayValue(row.bookingId) },
+  clientId: { header: 'Client ID', accessor: (row) => exportDisplayValue(row.clientId) },
+  clientName: { header: 'Client Name', accessor: (row) => exportDisplayValue(row.clientName) },
+  bookingSource: {
+    header: 'Booking Source',
+    accessor: (row) => exportDisplayValue(row.bookingSource),
+  },
+  listingType: { header: 'Listing Type', accessor: (row) => exportDisplayValue(row.listingType) },
+  listingName: { header: 'Listing Name', accessor: (row) => exportDisplayValue(row.listingName) },
+  status: { header: 'Booking Status', accessor: (row) => exportDisplayValue(row.status) },
+  pricingType: { header: 'Pricing Type', accessor: (row) => exportDisplayValue(row.pricingType) },
+  bookingDate: {
+    header: 'Booking Date',
+    accessor: (row) => exportDisplayValue(formatDate(row.bookingDate)),
+  },
+  orderValue: {
+    header: 'Order Value',
+    accessor: (row) => exportDisplayValue(formatPrice(row.orderValue ?? row.price)),
+  },
+  paymentStatus: {
+    header: 'Payment Status',
+    accessor: (row) => exportDisplayValue(row.paymentStatus),
+  },
+  rating: {
+    header: 'Rating',
+    accessor: (row) =>
+      row.rating == null ? '—' : exportDisplayValue(Number(row.rating).toFixed(1)),
+  },
+}
+
 function MetricCardSkeleton() {
   return (
     <div className="rounded-brand-lg bg-brand-surface border border-white/[0.06] p-5">
@@ -145,11 +199,6 @@ const formatPrice = (val?: number | null) => {
   })}`
 }
 
-const formatPercent = (val?: number | null) => {
-  if (val == null || Number.isNaN(Number(val))) return '0%'
-  return `${Number(val).toFixed(1)}%`
-}
-
 const statusClass = (status: string) => {
   const normalized = status.toLowerCase()
   if (normalized === 'completed') {
@@ -174,7 +223,65 @@ export function ExpertClientelePage() {
 
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
+  const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
   const [activeActionMenu, setActiveActionMenu] = useState<string | null>(null)
+
+  const listQueryParams = useMemo(
+    () =>
+      buildPrefixedListQueryParams(appliedFilters, {
+        page,
+        limit: 10,
+        search: search || undefined,
+      }),
+    [appliedFilters, page, search],
+  )
+
+  const handleApplyFilters = useCallback((values: FilterValues) => {
+    toast.success('Filters applied')
+    setAppliedFilters(values)
+    setPage(1)
+  }, [])
+
+  const handleExportData = useMemo(() => {
+    const fetchForExport = async (params: Record<string, unknown>) => {
+      const result = await fetchExpertClientele(expertId, params)
+      return { data: result.data?.items ?? [] }
+    }
+    return createPrefixedListExportHandler(
+      fetchForExport,
+      CLIENTELE_EXPORT_COLUMN_MAP,
+      'expert_clientele_export',
+      { search: search || undefined },
+    )
+  }, [expertId, search])
+
+  const {
+    onAdvancedFilter,
+    onExport,
+    modals: exportFilterModals,
+  } = useModuleExportFilters({
+    moduleKey: 'expert-clientele',
+    onApplyFilters: handleApplyFilters,
+    onExportData: handleExportData,
+  })
+
+  const tableColumnPreferencesQuery = useTableColumnPreferences(EXPERT_CLIENTELE_MODULE_KEY)
+  const activeMetricIds = useActiveMetricIds(EXPERT_CLIENTELE_MODULE_KEY, [
+    ...DEFAULT_EXPERT_CLIENTELE_METRIC_IDS,
+  ])
+
+  const filteredActiveMetricIds = useMemo(
+    () =>
+      sortIdsByCatalogOrder(
+        activeMetricIds.filter((metricId) => EXPERT_CLIENTELE_METRIC_ID_SET.has(metricId)),
+        EXPERT_CLIENTELE_METRIC_IDS,
+      ),
+    [activeMetricIds],
+  )
+
+  const manageMetricsPath = expertId
+    ? `/metrics/expert-clientele?returnTo=${encodeURIComponent(`/experts/management/profile/${expertId}/clientele`)}`
+    : '/metrics/expert-clientele'
 
   const {
     data: res,
@@ -182,8 +289,8 @@ export function ExpertClientelePage() {
     isError,
     error,
   } = useQuery({
-    queryKey: ['expert-clientele', expertId, page, search],
-    queryFn: () => fetchExpertClientele(expertId, { page, search, limit: 10 }),
+    queryKey: ['expert-clientele', expertId, listQueryParams],
+    queryFn: () => fetchExpertClientele(expertId, listQueryParams),
     enabled: Boolean(expertId),
   })
 
@@ -194,11 +301,14 @@ export function ExpertClientelePage() {
 
   const d = res?.data
   const expertName = d?.expertName || '—'
-  const metrics: Metrics = {
-    ...EMPTY_METRICS,
-    ...(d?.metrics || {}),
-    clientsByMembership: d?.metrics?.clientsByMembership || {},
-  }
+  const metrics = useMemo<Metrics>(
+    () => ({
+      ...EMPTY_METRICS,
+      ...(d?.metrics || {}),
+      clientsByMembership: d?.metrics?.clientsByMembership || {},
+    }),
+    [d?.metrics],
+  )
   const items: ClienteleItem[] = Array.isArray(d?.items) ? d.items : EMPTY_CLIENTELE_ITEMS
   const total = d?.pagination?.total ?? 0
   const totalPages = d?.pagination?.totalPages ?? 0
@@ -208,76 +318,6 @@ export function ExpertClientelePage() {
     if (entries.length === 0) return 'No membership breakdown yet'
     return entries.map(([tier, count]) => `${tier}: ${count}`).join(', ')
   }, [metrics.clientsByMembership])
-
-  const handleExport = useCallback(() => {
-    if (items.length === 0) {
-      toast.error('No booking records available to export.')
-      return
-    }
-
-    try {
-      const headers = [
-        'Order / Booking ID',
-        'Client ID',
-        'Client Name',
-        'Booking Source',
-        'Listing Type',
-        'Listing Name',
-        'Listing ID',
-        'Booking Status',
-        'Pricing Type',
-        'Tier Name',
-        'Booking Date',
-        'Start Date',
-        'Completion Date',
-        'Order Value',
-        'Payment ID',
-        'Transaction ID',
-        'Payment Method',
-        'Payment Status',
-        'Rating',
-        'Review Submitted',
-        'Dispute Raised',
-        'Dispute Status',
-        'Refund Issued',
-        'Refund Amount',
-        'Refund Status',
-        'Last Updated',
-      ]
-      const rows = items.map((item) => [
-        item.bookingId,
-        item.clientId,
-        item.clientName,
-        item.bookingSource || '—',
-        item.listingType,
-        item.listingName || '—',
-        item.listingId || '—',
-        item.status,
-        item.pricingType,
-        item.tierName || '—',
-        formatDate(item.bookingDate),
-        formatDate(item.startDate, true),
-        formatDate(item.completionDate || item.endDate, true),
-        formatPrice(item.orderValue ?? item.price),
-        item.paymentId || '—',
-        item.transactionId || '—',
-        item.paymentMethod || '—',
-        item.paymentStatus || '—',
-        item.rating == null ? '—' : String(item.rating),
-        item.reviewSubmitted ? 'Yes' : 'No',
-        item.disputeRaised ? 'Yes' : 'No',
-        item.disputeStatus || '—',
-        item.refundIssued ? 'Yes' : 'No',
-        item.refundAmount == null ? '—' : formatPrice(item.refundAmount),
-        item.refundStatus || '—',
-        formatDate(item.lastUpdated, true),
-      ])
-      exportDataToFile(headers, rows, 'excel', 'expert_clientele_export')
-      toast.success(`Exported ${items.length} booking record(s)`)
-    } catch {
-      toast.error('Failed to export clientele data.')
-    }
-  }, [items])
 
   const openCommunicate = useCallback(
     (channel: 'email' | 'push') => {
@@ -295,9 +335,10 @@ export function ExpertClientelePage() {
     [expertId, navigate],
   )
 
-  const columns = useMemo<ColumnDef<ClienteleItem>[]>(
-    () => [
-      {
+  const dataColumnsById = useMemo<Record<string, ColumnDef<ClienteleItem>>>(
+    () => ({
+      'booking-id': {
+        id: 'booking-id',
         accessorKey: 'bookingId',
         header: 'Order / Booking ID',
         cell: ({ row }) => (
@@ -306,7 +347,8 @@ export function ExpertClientelePage() {
           </span>
         ),
       },
-      {
+      'client-id': {
+        id: 'client-id',
         accessorKey: 'clientId',
         header: 'Client ID',
         cell: ({ row }) => (
@@ -315,14 +357,16 @@ export function ExpertClientelePage() {
           </span>
         ),
       },
-      {
+      'client-name': {
+        id: 'client-name',
         accessorKey: 'clientName',
         header: 'Client Name',
         cell: ({ row }) => (
           <span className="font-medium text-white">{row.original.clientName || '—'}</span>
         ),
       },
-      {
+      'booking-source': {
+        id: 'booking-source',
         accessorKey: 'bookingSource',
         header: 'Booking Source',
         cell: ({ row }) => (
@@ -331,7 +375,8 @@ export function ExpertClientelePage() {
           </span>
         ),
       },
-      {
+      'listing-type': {
+        id: 'listing-type',
         accessorKey: 'listingType',
         header: 'Listing Type',
         cell: ({ row }) => (
@@ -340,14 +385,16 @@ export function ExpertClientelePage() {
           </span>
         ),
       },
-      {
+      'listing-name': {
+        id: 'listing-name',
         accessorKey: 'listingName',
         header: 'Listing Name',
         cell: ({ row }) => (
           <span className="text-muted text-sm">{row.original.listingName || '—'}</span>
         ),
       },
-      {
+      'booking-status': {
+        id: 'booking-status',
         accessorKey: 'status',
         header: 'Booking Status',
         cell: ({ row }) => {
@@ -364,7 +411,8 @@ export function ExpertClientelePage() {
           )
         },
       },
-      {
+      'pricing-type': {
+        id: 'pricing-type',
         accessorKey: 'pricingType',
         header: 'Pricing Type',
         cell: ({ row }) => (
@@ -373,14 +421,16 @@ export function ExpertClientelePage() {
           </span>
         ),
       },
-      {
+      'booking-date': {
+        id: 'booking-date',
         accessorKey: 'bookingDate',
         header: 'Booking Date',
         cell: ({ row }) => (
           <span className="text-muted text-xs">{formatDate(row.original.bookingDate)}</span>
         ),
       },
-      {
+      'order-value': {
+        id: 'order-value',
         accessorKey: 'orderValue',
         header: 'Order Value',
         cell: ({ row }) => (
@@ -389,7 +439,8 @@ export function ExpertClientelePage() {
           </span>
         ),
       },
-      {
+      'payment-status': {
+        id: 'payment-status',
         accessorKey: 'paymentStatus',
         header: 'Payment Status',
         cell: ({ row }) => (
@@ -398,7 +449,8 @@ export function ExpertClientelePage() {
           </span>
         ),
       },
-      {
+      rating: {
+        id: 'rating',
         accessorKey: 'rating',
         header: 'Rating',
         cell: ({ row }) => (
@@ -407,137 +459,138 @@ export function ExpertClientelePage() {
           </span>
         ),
       },
-      {
-        id: 'actions',
-        header: () => <div className="text-right">Actions</div>,
-        cell: ({ row }) => {
-          const item = row.original
-          return (
-            <div className="flex justify-end">
-              <TableActionsDropdown
-                label="Booking actions"
-                isOpen={activeActionMenu === item.bookingId}
-                onOpenChange={(open) => setActiveActionMenu(open ? item.bookingId : null)}
-              >
-                <TableActionsItem
-                  tone="light"
-                  onClick={() => {
-                    setActiveActionMenu(null)
-                    toast.message(`Booking ${item.bookingId}`)
-                  }}
-                >
-                  View Details
-                </TableActionsItem>
-                <TableActionsItem
-                  tone="light"
-                  onClick={() => {
-                    setActiveActionMenu(null)
-                    if (item.clientId && item.clientId !== '—') {
-                      toast.message(`Client ID: ${item.clientId}`)
-                    } else {
-                      toast.error('Client profile is not available for this booking.')
-                    }
-                  }}
-                >
-                  View Client Profile
-                </TableActionsItem>
-                <TableActionsItem
-                  tone="light"
-                  onClick={() => {
-                    setActiveActionMenu(null)
-                    if (item.listingType === 'Consultation' && item.listingId) {
-                      navigate(
-                        `/services/management/view/${item.listingId}?type=Consultation&partnerId=${expertId}`,
-                      )
-                    } else if (item.listingId) {
-                      navigate(
-                        `/services/management/view/${item.listingId}?type=Service&partnerId=${expertId}`,
-                      )
-                    } else {
-                      toast.error('Listing is not available for this booking.')
-                    }
-                  }}
-                >
-                  View Listing
-                </TableActionsItem>
-                <TableActionsItem
-                  tone="light"
-                  onClick={() => {
-                    setActiveActionMenu(null)
-                    openCommunicate('email')
-                  }}
-                >
-                  Communicate with Expert
-                </TableActionsItem>
-                <TableActionsItem
-                  tone="light"
-                  onClick={() => {
-                    setActiveActionMenu(null)
-                    openCommunicate('email')
-                  }}
-                >
-                  Communicate with Client
-                </TableActionsItem>
-                {item.disputeRaised ? (
-                  <TableActionsItem
-                    tone="light"
-                    onClick={() => {
-                      setActiveActionMenu(null)
-                      toast.message(
-                        item.disputeStatus
-                          ? `Dispute status: ${item.disputeStatus}`
-                          : 'Dispute linked to this booking',
-                      )
-                    }}
-                  >
-                    View Dispute
-                  </TableActionsItem>
-                ) : null}
-                <TableActionsItem
-                  tone="light"
-                  onClick={() => {
-                    setActiveActionMenu(null)
-                    handleExport()
-                  }}
-                >
-                  Export Booking Record
-                </TableActionsItem>
-              </TableActionsDropdown>
-            </div>
-          )
-        },
-      },
-    ],
-    [activeActionMenu, expertId, handleExport, navigate, openCommunicate],
+    }),
+    [],
   )
 
-  const metricCards = [
-    { label: 'Number of Services Listed', value: String(metrics.servicesListed) },
-    { label: 'Number of Consultations Listed', value: String(metrics.consultationsListed) },
-    { label: 'Number of Unique Clients', value: String(metrics.uniqueClients) },
-    {
-      label: 'Client Satisfaction Score',
-      value: formatPercent(metrics.clientSatisfactionScore),
-    },
-    { label: 'Total Orders & Bookings', value: String(metrics.totalOrdersBookings) },
-    { label: 'Active Orders & Bookings', value: String(metrics.activeOrdersBookings) },
-    { label: 'Completed Orders & Bookings', value: String(metrics.completedOrdersBookings) },
-    { label: 'Cancelled / Terminated Orders', value: String(metrics.cancelledOrdersBookings) },
-    {
-      label: 'Clients by Membership',
-      value: String(
-        Object.values(metrics.clientsByMembership || {}).reduce(
-          (sum, count) => sum + Number(count || 0),
-          0,
-        ),
-      ),
-      hint: membershipHint,
-    },
-    { label: 'Repeat Client %', value: formatPercent(metrics.repeatClientPercent) },
-    { label: 'Net Promoter Score', value: String(metrics.nps) },
-    { label: 'Avg. Rating', value: Number(metrics.avgRating || 0).toFixed(1) },
-    { label: 'No. of Reviews', value: String(metrics.noOfReviews) },
-  ]
+  const columns = useMemo<ColumnDef<ClienteleItem>[]>(() => {
+    const catalogIds = EXPERT_CLIENTELE_TABLE_COLUMNS_CATALOG.map((column) => column.id)
+    const visibleIds = tableColumnPreferencesQuery.data?.visibleColumnIds?.length
+      ? tableColumnPreferencesQuery.data.visibleColumnIds
+      : DEFAULT_EXPERT_CLIENTELE_VISIBLE_COLUMN_IDS
+    const preferenceColumns = sortIdsByCatalogOrder(
+      visibleIds.filter((id) => catalogIds.includes(id)),
+      catalogIds,
+    )
+      .map((id) => dataColumnsById[id])
+      .filter(Boolean)
+
+    const actionsColumn: ColumnDef<ClienteleItem> = {
+      id: 'actions',
+      header: () => <div className="text-right">Actions</div>,
+      cell: ({ row }) => {
+        const item = row.original
+        return (
+          <div className="flex justify-end">
+            <TableActionsDropdown
+              label="Booking actions"
+              isOpen={activeActionMenu === item.bookingId}
+              onOpenChange={(open) => setActiveActionMenu(open ? item.bookingId : null)}
+            >
+              <TableActionsItem
+                tone="light"
+                onClick={() => {
+                  setActiveActionMenu(null)
+                  toast.message(`Booking ${item.bookingId}`)
+                }}
+              >
+                View Details
+              </TableActionsItem>
+              <TableActionsItem
+                tone="light"
+                onClick={() => {
+                  setActiveActionMenu(null)
+                  if (item.clientId && item.clientId !== '—') {
+                    toast.message(`Client ID: ${item.clientId}`)
+                  } else {
+                    toast.error('Client profile is not available for this booking.')
+                  }
+                }}
+              >
+                View Client Profile
+              </TableActionsItem>
+              <TableActionsItem
+                tone="light"
+                onClick={() => {
+                  setActiveActionMenu(null)
+                  if (item.listingType === 'Consultation' && item.listingId) {
+                    navigate(
+                      `/services/management/view/${item.listingId}?type=Consultation&partnerId=${expertId}`,
+                    )
+                  } else if (item.listingId) {
+                    navigate(
+                      `/services/management/view/${item.listingId}?type=Service&partnerId=${expertId}`,
+                    )
+                  } else {
+                    toast.error('Listing is not available for this booking.')
+                  }
+                }}
+              >
+                View Listing
+              </TableActionsItem>
+              <TableActionsItem
+                tone="light"
+                onClick={() => {
+                  setActiveActionMenu(null)
+                  openCommunicate('email')
+                }}
+              >
+                Communicate with Expert
+              </TableActionsItem>
+              <TableActionsItem
+                tone="light"
+                onClick={() => {
+                  setActiveActionMenu(null)
+                  openCommunicate('email')
+                }}
+              >
+                Communicate with Client
+              </TableActionsItem>
+              {item.disputeRaised ? (
+                <TableActionsItem
+                  tone="light"
+                  onClick={() => {
+                    setActiveActionMenu(null)
+                    toast.message(
+                      item.disputeStatus
+                        ? `Dispute status: ${item.disputeStatus}`
+                        : 'Dispute linked to this booking',
+                    )
+                  }}
+                >
+                  View Dispute
+                </TableActionsItem>
+              ) : null}
+              <TableActionsItem
+                tone="light"
+                onClick={() => {
+                  setActiveActionMenu(null)
+                  onExport()
+                }}
+              >
+                Export Booking Record
+              </TableActionsItem>
+            </TableActionsDropdown>
+          </div>
+        )
+      },
+    }
+
+    return [...preferenceColumns, actionsColumn]
+  }, [
+    activeActionMenu,
+    dataColumnsById,
+    expertId,
+    navigate,
+    onExport,
+    openCommunicate,
+    tableColumnPreferencesQuery.data,
+  ])
+
+  const metricCards = useMemo(() => {
+    const allCards = buildExpertClienteleMetricCards(metrics, membershipHint)
+    return orderByActiveMetricIds(allCards, filteredActiveMetricIds)
+  }, [filteredActiveMetricIds, membershipHint, metrics])
 
   return (
     <div className="space-y-7 pb-10">
@@ -565,7 +618,7 @@ export function ExpertClientelePage() {
 
         <Button
           type="button"
-          onClick={() => navigate('/experts/dashboard/metrics')}
+          onClick={() => navigate(manageMetricsPath)}
           className="ui-manage-metrics h-10 rounded-xl px-5 text-sm font-semibold sm:w-auto"
         >
           <SlidersHorizontal className="size-4" />
@@ -575,11 +628,11 @@ export function ExpertClientelePage() {
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {loading
-          ? Array.from({ length: 12 }).map((_, index) => (
+          ? Array.from({ length: filteredActiveMetricIds.length || 12 }).map((_, index) => (
               <MetricCardSkeleton key={`clientele-metric-skeleton-${index}`} />
             ))
           : metricCards.map((card) => (
-              <MetricCard key={card.label} label={card.label} value={card.value} hint={card.hint} />
+              <MetricCard key={card.id} label={card.label} value={card.value} hint={card.hint} />
             ))}
       </div>
 
@@ -595,14 +648,9 @@ export function ExpertClientelePage() {
         }}
         searchPlaceholder="Search by name, ID or listing"
         resourceLabel="bookings"
-        showAdvancedFilter
-        showExport
-        onExport={handleExport}
-        onAdvancedFilter={() =>
-          toast.message(
-            'Use search for now. Advanced filters will use booking status, listing type, and payment filters.',
-          )
-        }
+        onAdvancedFilter={onAdvancedFilter}
+        advancedFilterVariant="primary"
+        onExport={onExport}
         pagination={{
           page,
           pageSize: 10,
@@ -611,6 +659,7 @@ export function ExpertClientelePage() {
           onPageChange: setPage,
         }}
       />
+      {exportFilterModals}
     </div>
   )
 }

@@ -254,6 +254,20 @@ export type NotificationSettings = {
   }
 }
 
+export type NotificationCatalogItem = {
+  key: string
+  label: string
+  description: string
+}
+
+export type NotificationCatalogGroup = {
+  key: keyof NotificationSettings
+  title: string
+  tone: 'general' | 'timeSensitive' | 'critical' | 'adminPanel'
+  audience: 'partnerApp' | 'adminPanel' | string
+  items: NotificationCatalogItem[]
+}
+
 export type FinanceTransactionalSettings = {
   escrow: {
     enableEscrowSystem: boolean
@@ -314,6 +328,10 @@ export type IncidentRow = {
   module: string
   status: IncidentStatus
   assignee: string
+  assigneeId?: string
+  department?: string
+  sourceTicketId?: string | null
+  sourceTicketNumber?: string
   createdOn: string
 }
 
@@ -374,6 +392,7 @@ export type LoginTrailRow = {
 }
 
 export type SettingsMetric = {
+  id?: string
   title: string
   value: string
   trend?: { direction: 'up' | 'down'; percentage: number; label: string }
@@ -397,6 +416,22 @@ export type PolicyNotifyVia = {
   push: boolean
 }
 
+export type PolicyNotificationChannelResult = {
+  sent?: number
+  failed?: number
+  skipped?: boolean
+  note?: string
+}
+
+export type PolicyNotificationsResult = {
+  skipped?: boolean
+  audience?: string | null
+  note?: string
+  email?: PolicyNotificationChannelResult | null
+  inApp?: PolicyNotificationChannelResult | null
+  push?: PolicyNotificationChannelResult | null
+}
+
 export type PolicyItem = {
   id: string
   slug?: string
@@ -409,6 +444,7 @@ export type PolicyItem = {
   content?: string
   author?: string
   changeSummary?: string
+  notifications?: PolicyNotificationsResult
 }
 
 export type PolicyVersion = {
@@ -425,4 +461,5 @@ export type PolicyVersion = {
   requireReConsent?: boolean
   blockAppUsageUntilAccepted?: boolean
   notifyVia?: PolicyNotifyVia
+  notifications?: PolicyNotificationsResult
 }

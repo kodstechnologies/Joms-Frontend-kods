@@ -8,7 +8,10 @@ import { toast } from 'sonner'
 import type { FilterValues } from '@/shared/types/data-filter'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter/use-module-export-filters'
 import { exportDisplayValue } from '@/shared/utils/export-utils'
-import { buildFilterParams, createFilteredExportHandler } from '@/shared/utils/export-filter-utils'
+import {
+  buildVenueListQueryParams,
+  createVenueFilteredExportHandler,
+} from '@/shared/utils/export-filter-utils'
 import { fetchVenues } from '../../api/venue-api'
 
 import { useActivateVenue, useVenues } from '../../hooks/use-venues'
@@ -25,26 +28,10 @@ import { Button } from '@/shared/components/ui/button'
 const EXPORT_COLUMN_MAP: Record<string, { header: string; accessor: (v: Venue) => string }> = {
   venueId: { header: 'Venue ID', accessor: (v) => exportDisplayValue(getVenueDisplayId(v)) },
   venueName: { header: 'Name', accessor: (v) => exportDisplayValue(v.venueName) },
-  partnerName: { header: 'Expert Name', accessor: (v) => exportDisplayValue(v.partnerName) },
-  city: { header: 'Location', accessor: (v) => exportDisplayValue(v.city) },
   eventType: { header: 'Venue Type', accessor: (v) => exportDisplayValue(v.eventType) },
   spaceId: { header: 'Space ID', accessor: (v) => exportDisplayValue(getVenueDisplaySpaceId(v)) },
   spaceName: { header: 'Space Name', accessor: (v) => exportDisplayValue(v.spaceName) },
   venueCategory: { header: 'Event Type', accessor: (v) => exportDisplayValue(v.venueCategory) },
-  status: { header: 'Status', accessor: (v) => exportDisplayValue(v.status) },
-  createdAt: {
-    header: 'Created At',
-    accessor: (v) =>
-      v.createdAt
-        ? new Date(v.createdAt).toLocaleString('en-IN', {
-            day: '2-digit',
-            month: 'short',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-          })
-        : '',
-  },
 }
 
 export function VenueSuspendedPage() {
@@ -56,15 +43,18 @@ export function VenueSuspendedPage() {
   const [selectedVenueIds, setSelectedVenueIds] = useState<string[]>([])
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
 
-  const apiFilterParams = useMemo(() => buildFilterParams(appliedFilters), [appliedFilters])
+  const venueQueryParams = useMemo(
+    () =>
+      buildVenueListQueryParams(appliedFilters, {
+        page: currentPage,
+        limit: 10,
+        search: searchQuery,
+        status: 'suspended',
+      }),
+    [appliedFilters, currentPage, searchQuery],
+  )
 
-  const { data, isLoading } = useVenues({
-    page: currentPage,
-    limit: 10,
-    status: 'suspended',
-    search: searchQuery,
-    ...apiFilterParams,
-  })
+  const { data, isLoading } = useVenues(venueQueryParams)
 
   const activateVenueMutation = useActivateVenue()
 
@@ -82,7 +72,7 @@ export function VenueSuspendedPage() {
 
   const handleExportData = useMemo(
     () =>
-      createFilteredExportHandler(fetchVenues, EXPORT_COLUMN_MAP, 'suspended_venues_export', {
+      createVenueFilteredExportHandler(fetchVenues, EXPORT_COLUMN_MAP, 'suspended_venues_export', {
         status: 'suspended',
       }),
     [],

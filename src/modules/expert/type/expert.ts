@@ -23,6 +23,8 @@ export interface ExpertResponse {
       reportedExperts: number
       suspendedExperts: number
       deletedExperts: number
+      activeExperts: number
+      totalExperts: number
     }
     pagination: {
       page: number

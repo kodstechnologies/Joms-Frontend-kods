@@ -1,19 +1,24 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 import { AlertTriangle, Eye, SlidersHorizontal, Tag, Trash2 } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
 import { type FinanceVenueRow } from '@/modules/payments/mock/finance-venues.mock'
-import { useAddFinanceNote, useEscalateFinance, useFinanceRevenue, useSoftDeleteFinance } from '@/modules/payments/hooks/use-finance'
-import { mapPaymentToVenueRow } from '@/modules/payments/utils/finance-mappers'
-import { fetchFinanceRevenue } from '@/modules/payments/api/finance-api'
 import {
-  createFinanceRowsExportHandler,
-  useFinanceListFilters,
-} from '@/modules/payments/hooks/use-finance-list-filters'
-import { exportDisplayValue } from '@/shared/utils/export-utils'
-import { AddTagsModal } from '@/modules/payments/components/add-tags-modal'
+  useAddFinanceNote,
+  useEscalateFinance,
+  useFinanceRevenue,
+  useSoftDeleteFinance,
+} from '@/modules/payments/hooks/use-finance'
+import { fetchFinanceRevenue } from '@/modules/payments/api/finance-api'
+import { mapPaymentToVenueRow } from '@/modules/payments/utils/finance-mappers'
+import {
+  DEFAULT_FINANCE_VENUES_VISIBLE_COLUMN_IDS,
+  FINANCE_VENUES_MODULE_KEY,
+} from '@/modules/payments/config/finance-venues-table-columns.config'
+import { useTableColumnPreferences } from '@/modules/expert/hooks/use-ui-preferences'
+import { AddTagsModal } from '@/shared/components/modals/add-tags-modal'
 import {
   FinanceEscalateDeleteModal,
   type FinanceEscalateDeleteAction,
@@ -25,8 +30,32 @@ import {
 } from '@/shared/components/table/table-actions-dropdown'
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
+import { useModuleExportFilters } from '@/shared/components/advanced-filter'
+import { exportDisplayValue } from '@/shared/utils/export-utils'
+import {
+  buildFinanceVenuesListQueryParams,
+  createFinanceVenuesFilteredExportHandler,
+} from '@/shared/utils/export-filter-utils'
+import type { FilterValues } from '@/shared/types/data-filter'
+import type { FinancePayment } from '@/modules/payments/types/finance-api'
 
 const PAGE_SIZE = 10
+
+const EXPORT_COLUMN_MAP: Record<
+  string,
+  { header: string; accessor: (row: FinanceVenueRow) => string }
+> = {
+  'venue-id': { header: 'Venue ID', accessor: (row) => exportDisplayValue(row.venueId) },
+  name: { header: 'Name', accessor: (row) => exportDisplayValue(row.name) },
+  owner: { header: 'Owner', accessor: (row) => exportDisplayValue(row.owner) },
+  'booking-id': { header: 'Booking ID', accessor: (row) => exportDisplayValue(row.bookingId) },
+  'booking-title': {
+    header: 'Booking Title',
+    accessor: (row) => exportDisplayValue(row.bookingTitle),
+  },
+  status: { header: 'Status', accessor: (row) => exportDisplayValue(row.status) },
+  revenue: { header: 'Revenue', accessor: (row) => exportDisplayValue(row.revenue) },
+}
 
 function getStatusClassName(status: FinanceVenueRow['status']) {
   if (status === 'Completed') {
@@ -41,7 +70,9 @@ function getStatusClassName(status: FinanceVenueRow['status']) {
 export function FinanceVenuesPage() {
   const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
+  const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [selectedRowIds, setSelectedRowIds] = useState<string[]>([])
   const [tagTarget, setTagTarget] = useState<FinanceVenueRow | null>(null)
@@ -49,52 +80,62 @@ export function FinanceVenuesPage() {
   const addNote = useAddFinanceNote()
   const escalate = useEscalateFinance()
   const softDelete = useSoftDeleteFinance()
+  const tableColumnPreferencesQuery = useTableColumnPreferences(FINANCE_VENUES_MODULE_KEY)
 
-  const handleExportData = useMemo(
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setDebouncedSearch(searchQuery.trim())
+      setCurrentPage(1)
+    }, 300)
+    return () => window.clearTimeout(timer)
+  }, [searchQuery])
+
+  const listQueryParams = useMemo(
     () =>
-      createFinanceRowsExportHandler({
-        fetchRows: async (params) =>
-          (await fetchFinanceRevenue({ ...params, module: 'venue' }))?.data?.rows ?? [],
-        headers: ['ID', 'Module', 'Amount', 'Status', 'Created'],
-        mapRow: (row) => [
-          exportDisplayValue(row._id),
-          exportDisplayValue(row.module),
-          exportDisplayValue(row.amount),
-          exportDisplayValue(row.status),
-          exportDisplayValue(row.createdAt),
-        ],
-        fileName: 'venues_payments_export',
+      buildFinanceVenuesListQueryParams(appliedFilters, {
+        page: currentPage,
+        limit: PAGE_SIZE,
+        search: debouncedSearch || undefined,
       }),
-    [],
+    [appliedFilters, currentPage, debouncedSearch],
   )
-  const { apiFilterParams, onAdvancedFilter, onExport, modals: exportFilterModals } =
-    useFinanceListFilters(handleExportData)
 
-  const { data, isLoading, isFetching } = useFinanceRevenue({
-    page: currentPage,
-    limit: PAGE_SIZE,
-    module: 'venue',
-    ...apiFilterParams,
-  })
+  const { data, isLoading, isFetching, isError } = useFinanceRevenue(listQueryParams)
 
   const rows = useMemo(() => (data?.data?.rows ?? []).map(mapPaymentToVenueRow), [data])
   const meta = data?.data?.meta
 
-  const filteredRows = useMemo(() => {
-    const query = searchQuery.trim().toLowerCase()
-    if (!query) return rows
+  const handleApplyFilters = useCallback((values: FilterValues) => {
+    toast.success('Filters applied')
+    setAppliedFilters(values)
+    setCurrentPage(1)
+  }, [])
 
-    return rows.filter((row) =>
-      [row.venueId, row.name, row.owner, row.bookingId, row.bookingTitle]
-        .join(' ')
-        .toLowerCase()
-        .includes(query),
+  const handleExportData = useMemo(() => {
+    const fetchForExport = async (params: Record<string, unknown>) => {
+      const result = await fetchFinanceRevenue(params)
+      const payments = (result.data?.rows ?? []) as FinancePayment[]
+      return { data: payments.map(mapPaymentToVenueRow) }
+    }
+    return createFinanceVenuesFilteredExportHandler(
+      fetchForExport,
+      EXPORT_COLUMN_MAP,
+      'finance_venues_export',
+      { search: debouncedSearch || undefined },
     )
-  }, [rows, searchQuery])
+  }, [debouncedSearch])
 
-  const pageRows = searchQuery.trim() ? filteredRows : rows
+  const {
+    onAdvancedFilter,
+    onExport,
+    modals: exportFilterModals,
+  } = useModuleExportFilters({
+    moduleKey: 'finance-venues',
+    onApplyFilters: handleApplyFilters,
+    onExportData: handleExportData,
+  })
 
-  const visibleRowIds = useMemo(() => pageRows.map((row) => row.id), [pageRows])
+  const visibleRowIds = useMemo(() => rows.map((row) => row.id), [rows])
   const allVisibleSelected =
     visibleRowIds.length > 0 && visibleRowIds.every((id) => selectedRowIds.includes(id))
   const someVisibleSelected = visibleRowIds.some((id) => selectedRowIds.includes(id))
@@ -171,38 +212,39 @@ export function FinanceVenuesPage() {
     [activeDropdownId, navigate],
   )
 
-  const columns = useMemo<ColumnDef<FinanceVenueRow>[]>(
-    () => [
-      {
-        id: 'select',
-        header: () => (
-          <input
-            type="checkbox"
-            aria-label="Select all venue records"
-            checked={allVisibleSelected}
-            ref={(input) => {
-              if (input) input.indeterminate = someVisibleSelected && !allVisibleSelected
-            }}
-            onChange={toggleVisibleRows}
-            className="rounded border-slate-700 bg-transparent"
-          />
-        ),
-        cell: ({ row }) => (
-          <input
-            type="checkbox"
-            aria-label={`Select ${row.original.name}`}
-            checked={selectedRowIds.includes(row.original.id)}
-            onChange={() => toggleRowSelection(row.original.id)}
-            onClick={(event) => event.stopPropagation()}
-            className="rounded border-slate-700 bg-transparent"
-          />
-        ),
-        meta: {
-          headerClassName: 'pl-5',
-          cellClassName: 'pl-5',
-        },
+  const columns = useMemo<ColumnDef<FinanceVenueRow>[]>(() => {
+    const selectColumn: ColumnDef<FinanceVenueRow> = {
+      id: 'select',
+      header: () => (
+        <input
+          type="checkbox"
+          aria-label="Select all venue records"
+          checked={allVisibleSelected}
+          ref={(input) => {
+            if (input) input.indeterminate = someVisibleSelected && !allVisibleSelected
+          }}
+          onChange={toggleVisibleRows}
+          className="rounded border-slate-700 bg-transparent"
+        />
+      ),
+      cell: ({ row }) => (
+        <input
+          type="checkbox"
+          aria-label={`Select ${row.original.name}`}
+          checked={selectedRowIds.includes(row.original.id)}
+          onChange={() => toggleRowSelection(row.original.id)}
+          onClick={(event) => event.stopPropagation()}
+          className="rounded border-slate-700 bg-transparent"
+        />
+      ),
+      meta: {
+        headerClassName: 'pl-5',
+        cellClassName: 'pl-5',
       },
-      {
+    }
+
+    const dataColumnsById: Record<string, ColumnDef<FinanceVenueRow>> = {
+      'venue-id': {
         accessorKey: 'venueId',
         header: 'Venue ID',
         cell: ({ row }) => (
@@ -211,13 +253,13 @@ export function FinanceVenuesPage() {
           </span>
         ),
       },
-      {
+      name: {
         accessorKey: 'name',
         header: 'Name',
         cell: ({ row }) => <span className="text-brand-text font-medium">{row.original.name}</span>,
       },
-      { accessorKey: 'owner', header: 'Owner' },
-      {
+      owner: { accessorKey: 'owner', header: 'Owner' },
+      'booking-id': {
         accessorKey: 'bookingId',
         header: 'Booking ID',
         cell: ({ row }) => (
@@ -226,8 +268,8 @@ export function FinanceVenuesPage() {
           </span>
         ),
       },
-      { accessorKey: 'bookingTitle', header: 'Booking Title' },
-      {
+      'booking-title': { accessorKey: 'bookingTitle', header: 'Booking Title' },
+      status: {
         accessorKey: 'status',
         header: 'Status',
         cell: ({ row }) => (
@@ -241,29 +283,38 @@ export function FinanceVenuesPage() {
           </span>
         ),
       },
-      {
+      revenue: {
         accessorKey: 'revenue',
         header: 'Revenue',
         cell: ({ row }) => (
           <span className="text-brand-text font-semibold">{row.original.revenue}</span>
         ),
       },
-      {
-        id: 'actions',
-        header: 'Actions',
-        meta: { headerClassName: 'pr-5 text-right', cellClassName: 'relative pr-5 text-right' },
-        cell: ({ row }) => renderActions(row.original),
-      },
-    ],
-    [
-      allVisibleSelected,
-      renderActions,
-      selectedRowIds,
-      someVisibleSelected,
-      toggleRowSelection,
-      toggleVisibleRows,
-    ],
-  )
+    }
+
+    const visibleIds = tableColumnPreferencesQuery.data?.visibleColumnIds?.length
+      ? tableColumnPreferencesQuery.data.visibleColumnIds
+      : DEFAULT_FINANCE_VENUES_VISIBLE_COLUMN_IDS
+
+    const preferenceColumns = visibleIds.map((id) => dataColumnsById[id]).filter(Boolean)
+
+    const actionsColumn: ColumnDef<FinanceVenueRow> = {
+      id: 'actions',
+      header: 'Actions',
+      meta: { headerClassName: 'pr-5 text-right', cellClassName: 'relative pr-5 text-right' },
+      cell: ({ row }) => renderActions(row.original),
+    }
+
+    return [selectColumn, ...preferenceColumns, actionsColumn]
+  }, [
+    allVisibleSelected,
+    renderActions,
+    selectedRowIds,
+    someVisibleSelected,
+    tableColumnPreferencesQuery.data,
+    toggleRowSelection,
+    toggleVisibleRows,
+  ])
 
   return (
     <div className="flex flex-col gap-6">
@@ -281,25 +332,30 @@ export function FinanceVenuesPage() {
             <span className="text-brand-text font-semibold">Venues</span>
           </p>
         </div>
-        <Button className="ui-manage-metrics" onClick={() => navigate('/metrics/finance-venues')}>
+        <Button
+          className="ui-manage-metrics"
+          onClick={() => navigate('/metrics/finance-venues?section=table')}
+        >
           <SlidersHorizontal className="size-4" />
           Manage Metrics
         </Button>
       </div>
 
+      {isError ? (
+        <p className="text-body-sm text-brand-danger">Failed to load venue records.</p>
+      ) : null}
+
       <DataTable
         columns={columns}
-        data={pageRows}
+        data={rows}
         getRowId={(row) => row.id}
         isLoading={isLoading || isFetching}
         searchValue={searchQuery}
-        onSearchChange={(value) => {
-          setSearchQuery(value)
-          setCurrentPage(1)
-        }}
+        onSearchChange={setSearchQuery}
         searchPlaceholder="Search by name, ID or profession"
         advancedFilterLabel="Advance Filters"
         onAdvancedFilter={onAdvancedFilter}
+        advancedFilterVariant="primary"
         onExport={onExport}
         pagination={{
           page: meta?.page ?? currentPage,
@@ -311,7 +367,6 @@ export function FinanceVenuesPage() {
         resourceLabel="venues"
         emptyMessage="No venue records found."
       />
-      {exportFilterModals}
 
       <AddTagsModal
         open={!!tagTarget}
@@ -343,6 +398,8 @@ export function FinanceVenuesPage() {
         escalate={escalate}
         softDelete={softDelete}
       />
+
+      {exportFilterModals}
     </div>
   )
 }

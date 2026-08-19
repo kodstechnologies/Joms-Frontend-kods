@@ -1,7 +1,8 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 import { Eye, SlidersHorizontal } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
+import { toast } from 'sonner'
 
 import {
   escrowBookingRowsMock,
@@ -11,14 +12,10 @@ import {
   type EscrowHoldStatus,
   type EscrowManagementTab,
 } from '@/modules/payments/mock/finance-escrow.mock'
+import { fetchFinanceEscrow } from '@/modules/payments/api/finance-api'
 import { useFinanceEscrow } from '@/modules/payments/hooks/use-finance'
 import { mapEscrowToRow } from '@/modules/payments/utils/finance-mappers'
-import { fetchFinanceEscrow } from '@/modules/payments/api/finance-api'
-import {
-  createFinanceRowsExportHandler,
-  useFinanceListFilters,
-} from '@/modules/payments/hooks/use-finance-list-filters'
-import { exportDisplayValue } from '@/shared/utils/export-utils'
+import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 import { DataTable } from '@/shared/components/table/data-table'
 import {
   TableActionsDropdown,
@@ -26,8 +23,37 @@ import {
 } from '@/shared/components/table/table-actions-dropdown'
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
+import type { FilterValues } from '@/shared/types/data-filter'
+import { exportDisplayValue } from '@/shared/utils/export-utils'
+import {
+  buildFinanceEscrowListQueryParams,
+  createFinanceEscrowFilteredExportHandler,
+} from '@/shared/utils/export-filter-utils'
 
 const PAGE_SIZE = 10
+
+const EXPORT_COLUMN_MAP: Record<
+  string,
+  { header: string; accessor: (row: EscrowHoldRow) => string }
+> = {
+  escrowId: { header: 'Escrow ID', accessor: (row) => exportDisplayValue(row.escrowId) },
+  transactionId: {
+    header: 'Transaction ID',
+    accessor: (row) => exportDisplayValue(row.transactionId),
+  },
+  type: { header: 'Type', accessor: (row) => exportDisplayValue(row.type) },
+  amount: { header: 'Amount', accessor: (row) => exportDisplayValue(row.amount) },
+  holdReason: { header: 'Hold Reason', accessor: (row) => exportDisplayValue(row.holdReason) },
+  initiatedDate: {
+    header: 'Initiated Date',
+    accessor: (row) => exportDisplayValue(row.initiatedDate),
+  },
+  expectedRelease: {
+    header: 'Expected Release',
+    accessor: (row) => exportDisplayValue(row.expectedRelease),
+  },
+  status: { header: 'Status', accessor: (row) => exportDisplayValue(row.status) },
+}
 
 function getEscrowStatusClassName(status: EscrowHoldStatus) {
   if (status === 'Active' || status === 'Released') {
@@ -47,46 +73,73 @@ export function EscrowManagementPage() {
   const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState<EscrowManagementTab>('escrow')
   const [searchQuery, setSearchQuery] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
+  const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [selectedRowIds, setSelectedRowIds] = useState<string[]>([])
 
-  const handleExportData = useMemo(
-    () =>
-      createFinanceRowsExportHandler({
-        fetchRows: async (params) => (await fetchFinanceEscrow(params))?.data?.rows ?? [],
-        headers: ['ID', 'Status', 'Amount', 'Created'],
-        mapRow: (row) => [
-          exportDisplayValue(row._id),
-          exportDisplayValue(row.status),
-          exportDisplayValue(row.amount),
-          exportDisplayValue(row.createdAt),
-        ],
-        fileName: 'escrow_export',
-      }),
-    [],
-  )
-  const { apiFilterParams, onAdvancedFilter, onExport, modals: exportFilterModals } =
-    useFinanceListFilters(handleExportData)
-
   const isEscrowTab = activeTab === 'escrow' || activeTab === 'all'
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setDebouncedSearch(searchQuery.trim())
+      setCurrentPage(1)
+    }, 300)
+    return () => window.clearTimeout(timer)
+  }, [searchQuery])
+
+  const listQueryParams = useMemo(
+    () =>
+      buildFinanceEscrowListQueryParams(appliedFilters, {
+        page: currentPage,
+        limit: PAGE_SIZE,
+        search: debouncedSearch || undefined,
+      }),
+    [appliedFilters, currentPage, debouncedSearch],
+  )
 
   const {
     data: escrowData,
     isLoading,
     isFetching,
     isError,
-  } = useFinanceEscrow({
-    page: currentPage,
-    limit: PAGE_SIZE,
-    ...apiFilterParams,
-  })
+  } = useFinanceEscrow(listQueryParams, isEscrowTab)
 
   const liveEscrowRows = useMemo(
     () => (escrowData?.data?.rows ?? []).map(mapEscrowToRow),
     [escrowData],
   )
   const escrowMeta = escrowData?.data?.meta
+
+  const handleApplyFilters = useCallback((values: FilterValues) => {
+    toast.success('Filters applied')
+    setAppliedFilters(values)
+    setCurrentPage(1)
+  }, [])
+
+  const handleExportData = useMemo(() => {
+    const fetchForExport = async (params: Record<string, unknown>) => {
+      const result = await fetchFinanceEscrow(params)
+      return { data: (result.data?.rows ?? []).map(mapEscrowToRow) }
+    }
+    return createFinanceEscrowFilteredExportHandler(
+      fetchForExport,
+      EXPORT_COLUMN_MAP,
+      'finance_escrow_export',
+      { search: debouncedSearch || undefined },
+    )
+  }, [debouncedSearch])
+
+  const {
+    onAdvancedFilter,
+    onExport,
+    modals: exportFilterModals,
+  } = useModuleExportFilters({
+    moduleKey: 'finance-escrow',
+    onApplyFilters: handleApplyFilters,
+    onExportData: handleExportData,
+  })
 
   const escrowTabRows = useMemo(() => {
     if (activeTab === 'escrow' || activeTab === 'all') return liveEscrowRows
@@ -98,26 +151,7 @@ export function EscrowManagementPage() {
     [activeTab],
   )
 
-  const filteredEscrowRows = useMemo(() => {
-    const query = searchQuery.trim().toLowerCase()
-    if (!query) return escrowTabRows
-
-    return escrowTabRows.filter((row) =>
-      [
-        row.escrowId,
-        row.transactionId,
-        row.type,
-        row.amount,
-        row.holdReason,
-        row.initiatedDate,
-        row.expectedRelease,
-        row.status,
-      ]
-        .join(' ')
-        .toLowerCase()
-        .includes(query),
-    )
-  }, [escrowTabRows, searchQuery])
+  const filteredEscrowRows = escrowTabRows
 
   const filteredBookingRows = useMemo(() => {
     const query = searchQuery.trim().toLowerCase()
@@ -131,22 +165,15 @@ export function EscrowManagementPage() {
     )
   }, [bookingTabRows, searchQuery])
 
-  const filteredRows = isEscrowTab ? filteredEscrowRows : filteredBookingRows
-  const totalItems =
-    isEscrowTab && !searchQuery.trim()
-      ? (escrowMeta?.total ?? filteredEscrowRows.length)
-      : filteredRows.length
-  const totalPages =
-    isEscrowTab && !searchQuery.trim()
-      ? (escrowMeta?.totalPages ?? 1)
-      : Math.max(1, Math.ceil(totalItems / PAGE_SIZE))
+  const totalItems = isEscrowTab
+    ? (escrowMeta?.total ?? filteredEscrowRows.length)
+    : filteredBookingRows.length
+  const totalPages = isEscrowTab
+    ? (escrowMeta?.totalPages ?? 1)
+    : Math.max(1, Math.ceil(totalItems / PAGE_SIZE))
   const safePage = Math.min(currentPage, totalPages)
 
-  const pageEscrowRows = useMemo(() => {
-    if (isEscrowTab && !searchQuery.trim()) return filteredEscrowRows
-    const start = (safePage - 1) * PAGE_SIZE
-    return filteredEscrowRows.slice(start, start + PAGE_SIZE)
-  }, [filteredEscrowRows, isEscrowTab, safePage, searchQuery])
+  const pageEscrowRows = filteredEscrowRows
 
   const pageBookingRows = useMemo(() => {
     const start = (safePage - 1) * PAGE_SIZE
@@ -444,6 +471,7 @@ export function EscrowManagementPage() {
               setCurrentPage(1)
               setSearchQuery('')
               setSelectedRowIds([])
+              setAppliedFilters({})
             }}
             className={cn(
               'radius-md text-body-sm-semibold px-4 py-2 transition-colors',
@@ -475,6 +503,7 @@ export function EscrowManagementPage() {
           searchPlaceholder="Search by name, ID or profession"
           advancedFilterLabel="Advance Filters"
           onAdvancedFilter={onAdvancedFilter}
+          advancedFilterVariant="primary"
           onExport={onExport}
           pagination={{
             page: escrowMeta?.page ?? safePage,
@@ -499,6 +528,7 @@ export function EscrowManagementPage() {
           searchPlaceholder="Search by name, ID or profession"
           advancedFilterLabel="Advance Filters"
           onAdvancedFilter={onAdvancedFilter}
+          advancedFilterVariant="primary"
           onExport={onExport}
           pagination={{
             page: safePage,
@@ -511,6 +541,7 @@ export function EscrowManagementPage() {
           emptyMessage="No booking records found."
         />
       )}
+
       {exportFilterModals}
     </div>
   )

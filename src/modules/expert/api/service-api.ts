@@ -239,6 +239,59 @@ export type PricingRecommendationResponse = {
   data: PricingRecommendationResult
 }
 
+export type ListingPricingConfig = {
+  currency: string
+  region?: string
+  platformFeePercent: number
+  gstPercent: number
+  taxType?: string
+  taxHandling?: string
+  minPrice: number
+  maxPrice: number
+  maxDiscountPercent: number
+  discountPresets: number[]
+  allowManualDiscount: boolean
+  platformFee?: number
+  gstAmount?: number
+  estimatedEarnings?: number
+  discountedPrice?: number
+  breakdown: {
+    proposed_price: number
+    proposedPrice?: number
+    discount_pct: number
+    discountPct?: number
+    discounted_price: number
+    discountedPrice?: number
+    platform_fee: number
+    platformFee?: number
+    platform_fee_pct: number
+    platformFeePct?: number
+    gst: number
+    gstAmount?: number
+    gst_pct: number
+    gstPct?: number
+    estimated_earnings: number
+    estimatedEarnings?: number
+  } | null
+}
+
+export type ListingPricingConfigResponse = {
+  success: boolean
+  message: string
+  data: ListingPricingConfig
+}
+
+export const fetchListingPricingConfig = async (params?: {
+  price?: number
+  discountPercent?: number
+}) => {
+  const response = await expertApiClient.get<ListingPricingConfigResponse>(
+    '/services/pricing-config',
+    { params },
+  )
+  return response.data
+}
+
 export const fetchPricingRecommendation = async (params: PricingRecommendationParams) => {
   const response = await expertApiClient.get<PricingRecommendationResponse>(
     '/services/pricing-recommendation',

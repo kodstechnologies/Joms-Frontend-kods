@@ -69,6 +69,7 @@ export interface ServiceOrderCounts {
   disputed: number
   terminated: number
   completionRate: number
+  cancellationRate: number
 }
 
 export interface ServiceRevenue {
@@ -87,11 +88,19 @@ export interface ServiceExpertStats {
   avgServicesPerExpert: number
 }
 
+export interface ServiceQualityStats {
+  avgRating: number
+  customerSatisfactionPct: number
+  reviewCount: number
+}
+
 export interface ServiceKpis {
   listings: ServiceListingCounts
   orders: ServiceOrderCounts
   revenue: ServiceRevenue
   delivery: ServiceDelivery
+  quality: ServiceQualityStats
+  repeatServicePct: number
   experts: ServiceExpertStats
   mostOptedCategory: OptedCategory | null
 }
@@ -112,6 +121,7 @@ export interface ConsultationBookingCounts {
   scheduled: number
   cancelled: number
   completionRate: number
+  repeatConsultationPct: number
 }
 
 export interface ConsultationRevenue {

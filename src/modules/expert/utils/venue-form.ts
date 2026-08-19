@@ -29,6 +29,62 @@ export const createDefaultWeeklyAvailability = (): WeeklyAvailabilityEntry[] =>
     enabled: day !== 'Saturday' && day !== 'Sunday',
   }))
 
+export type VenueAmenitySelection = {
+  categoryId: string
+  subCategoryId: string
+  name: string
+  image: string
+}
+
+const toAmenityId = (value: unknown) => {
+  if (value == null) return ''
+  if (typeof value === 'object' && value && '_id' in value) {
+    return String((value as { _id?: unknown })._id || '')
+  }
+  return String(value)
+}
+
+export const mapVenueAmenitySelections = (
+  source?: Array<Record<string, unknown>> | Record<string, unknown> | null,
+): VenueAmenitySelection[] => {
+  const docs = !source ? [] : Array.isArray(source) ? source : [source]
+
+  return docs.flatMap((doc) => {
+    const groups = (doc?.amenities as Array<Record<string, unknown>> | undefined) || []
+    return groups.flatMap((group) => {
+      const categoryId = toAmenityId(group.categoryId)
+      const items = (group.items as Array<Record<string, unknown>> | undefined) || []
+      if (items.length > 0) {
+        return items.map((item) => ({
+          categoryId,
+          subCategoryId: toAmenityId(item._id),
+          name: String(item.name || ''),
+          image: String(item.image || item.icon || ''),
+        }))
+      }
+
+      const subs = (group.subCategoryIds || group.subCategories || []) as unknown[]
+      return subs.map((sub) => {
+        if (sub && typeof sub === 'object') {
+          const rec = sub as Record<string, unknown>
+          return {
+            categoryId,
+            subCategoryId: toAmenityId(rec._id),
+            name: String(rec.name || ''),
+            image: String(rec.image || rec.icon || ''),
+          }
+        }
+        return {
+          categoryId,
+          subCategoryId: String(sub || ''),
+          name: '',
+          image: '',
+        }
+      })
+    })
+  })
+}
+
 export type VenueFormData = {
   venueName: string
   venueType: string
@@ -203,23 +259,11 @@ export const mapDraftToVenueFormData = (
   const pricing = (space?.pricing as Array<Record<string, unknown>> | undefined)?.[0]
   const terms = profile?.terms as Record<string, unknown> | undefined
   const gallery = space?.galleryContact as Record<string, unknown> | undefined
-  const amenitiesDoc = profile?.amenities as
-    | Array<Record<string, unknown>>
-    | Record<string, unknown>
-    | undefined
+  const amenitiesDoc =
+    (space?.amenities as Record<string, unknown> | undefined) ||
+    (profile?.amenities as Array<Record<string, unknown>> | Record<string, unknown> | undefined)
 
-  const amenityLabels = Array.isArray(amenitiesDoc)
-    ? amenitiesDoc.flatMap((item) =>
-        ((item.amenities as Array<Record<string, unknown>>) || []).flatMap((a) =>
-          ((a.subCategoryIds as Array<Record<string, unknown>>) || []).map((subCategory) => ({
-            categoryId: String(a.categoryId || ''),
-            subCategoryId: String(subCategory._id || ''),
-            name: String(subCategory.name || ''),
-            image: String(subCategory.image || ''),
-          })),
-        ),
-      )
-    : []
+  const amenityLabels = mapVenueAmenitySelections(amenitiesDoc)
 
   return {
     ...base,

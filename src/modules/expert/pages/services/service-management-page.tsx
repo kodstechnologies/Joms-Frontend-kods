@@ -57,7 +57,10 @@ import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 import type { FilterValues } from '@/shared/types/data-filter'
 import { exportDataToFile } from '@/shared/utils/export-utils'
 import { getApiErrorMessage } from '@/shared/lib/api-error'
-import { buildFilterParams, createFilteredExportHandler } from '@/shared/utils/export-filter-utils'
+import {
+  buildServiceListQueryParams,
+  createServiceFilteredExportHandler,
+} from '@/shared/utils/export-filter-utils'
 import { fetchServices } from '../../api/service-api'
 import { exportDisplayValue } from '@/shared/utils/export-utils'
 import { MODERATION_CATEGORY_SLUGS } from '@/modules/settings/api/templates-api'
@@ -269,15 +272,12 @@ export const ServiceManagementPage = () => {
 
   const handleExportData = useMemo(
     () =>
-      createFilteredExportHandler(
+      createServiceFilteredExportHandler(
         fetchServices,
         {
           'service-id': {
             header: 'Service ID',
-            accessor: (s: Service) =>
-              exportDisplayValue(
-                ((s as unknown as Record<string, unknown>).serviceid as string) || s._id,
-              ),
+            accessor: (s: Service) => exportDisplayValue(s.serviceid || s._id),
           },
           name: { header: 'Service Name', accessor: (s: Service) => exportDisplayValue(s.title) },
           category: {
@@ -288,11 +288,19 @@ export const ServiceManagementPage = () => {
             header: 'Service Type',
             accessor: (s: Service) => exportDisplayValue(s.serviceType),
           },
-          status: { header: 'Status', accessor: (s: Service) => exportDisplayValue(s.status) },
+          pricing: {
+            header: 'Pricing',
+            accessor: (s: Service) => exportDisplayValue(s.pricing),
+          },
+          expertId: {
+            header: 'Expert ID',
+            accessor: (s: Service) => exportDisplayValue(s.expertid || s.partnerId),
+          },
           expertName: {
             header: 'Expert Name',
-            accessor: (s: Service) => exportDisplayValue(s.expertName),
+            accessor: (s: Service) => exportDisplayValue(s.expertName || s.partnerName),
           },
+          status: { header: 'Status', accessor: (s: Service) => exportDisplayValue(s.status) },
           createdAt: {
             header: 'Created At',
             accessor: (s: Service) =>
@@ -308,8 +316,12 @@ export const ServiceManagementPage = () => {
           },
         },
         'services_export',
+        {
+          status: activeStatus !== 'all' ? activeStatus : undefined,
+          search: searchQuery || undefined,
+        },
       ),
-    [],
+    [activeStatus, searchQuery],
   )
 
   const {
@@ -322,18 +334,18 @@ export const ServiceManagementPage = () => {
     onExportData: handleExportData,
   })
 
-  const apiFilterParams = useMemo(
-    () => buildFilterParams(appliedAdvancedFilters),
-    [appliedAdvancedFilters],
+  const serviceQueryParams = useMemo(
+    () =>
+      buildServiceListQueryParams(appliedAdvancedFilters, {
+        page: currentPage,
+        limit: 10,
+        search: searchQuery,
+        status: activeStatus !== 'all' ? activeStatus : undefined,
+      }),
+    [appliedAdvancedFilters, activeStatus, currentPage, searchQuery],
   )
 
-  const { data, isLoading } = useServices({
-    page: currentPage,
-    limit: 10,
-    status: activeStatus !== 'all' ? activeStatus : apiFilterParams.listingStatus,
-    search: searchQuery,
-    ...apiFilterParams,
-  })
+  const { data, isLoading } = useServices(serviceQueryParams)
 
   const services = useMemo(() => data?.data ?? [], [data?.data])
   const meta = data?.meta

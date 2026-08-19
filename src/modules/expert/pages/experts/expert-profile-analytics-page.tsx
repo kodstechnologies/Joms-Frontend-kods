@@ -18,6 +18,15 @@ import { ArrowLeft, SlidersHorizontal, Star, Upload, User } from 'lucide-react'
 
 import { useExpertAnalytics, useExpertProfile } from '../../hooks/use-expert-profile'
 import {
+  DEFAULT_EXPERT_PROFILE_ANALYTICS_METRIC_IDS,
+  EXPERT_PROFILE_ANALYTICS_METRIC_ID_SET,
+  EXPERT_PROFILE_ANALYTICS_METRIC_IDS,
+  EXPERT_PROFILE_ANALYTICS_MODULE_KEY,
+} from '../../config/expert-profile-analytics-metrics.config'
+import { orderByActiveMetricIds, useActiveMetricIds } from '../../hooks/use-active-metric-ids'
+import { buildExpertProfileAnalyticsMetricCards } from '../../utils/expert-profile-analytics-metrics'
+import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
+import {
   AnalyticsCard,
   MetricCard,
   PeriodSelect,
@@ -60,6 +69,27 @@ export function ExpertProfileAnalyticsPage() {
 
   const { data: analyticsRes } = useExpertAnalytics(id ?? '', timeRangeCode)
   const analyticsData = analyticsRes?.data
+  const activeMetricIds = useActiveMetricIds(EXPERT_PROFILE_ANALYTICS_MODULE_KEY, [
+    ...DEFAULT_EXPERT_PROFILE_ANALYTICS_METRIC_IDS,
+  ])
+
+  const filteredActiveMetricIds = useMemo(
+    () =>
+      sortIdsByCatalogOrder(
+        activeMetricIds.filter((metricId) => EXPERT_PROFILE_ANALYTICS_METRIC_ID_SET.has(metricId)),
+        EXPERT_PROFILE_ANALYTICS_METRIC_IDS,
+      ),
+    [activeMetricIds],
+  )
+
+  const serviceAnalyticsCards = useMemo(() => {
+    const allCards = buildExpertProfileAnalyticsMetricCards(analyticsData)
+    return orderByActiveMetricIds(allCards, filteredActiveMetricIds)
+  }, [analyticsData, filteredActiveMetricIds])
+
+  const manageMetricsPath = id
+    ? `/metrics/expert-profile-analytics?returnTo=${encodeURIComponent(`/experts/management/profile/${id}/analytics`)}`
+    : '/metrics/expert-profile-analytics'
 
   const profile = useMemo(() => {
     const name = expert?.fullname || analyticsData?.profileSummary?.name || 'Expert'
@@ -129,12 +159,12 @@ export function ExpertProfileAnalyticsPage() {
     return [
       {
         label: 'Profile Views',
-        value: String(vm?.profileViews?.count ?? 0),
+        value: vm?.profileViews?.available ? String(vm.profileViews.count ?? 0) : '--',
         trend: vm?.profileViews?.available ? (vm.profileViews.trendPercentage ?? 0) : undefined,
       },
       {
         label: 'Total Clicks',
-        value: String(vm?.totalClicks?.count ?? 0),
+        value: vm?.totalClicks?.available ? String(vm.totalClicks.count ?? 0) : '--',
         trend: vm?.totalClicks?.available ? (vm.totalClicks.trendPercentage ?? 0) : undefined,
       },
       {
@@ -157,7 +187,7 @@ export function ExpertProfileAnalyticsPage() {
     return [
       {
         label: 'Average first response time',
-        value: sa?.avgResponseTime?.available ? sa.avgResponseTime.label || '0' : '0',
+        value: sa?.avgResponseTime?.label || '--',
       },
       {
         label: 'Active Services',
@@ -318,8 +348,8 @@ export function ExpertProfileAnalyticsPage() {
         </div>
         <div className="flex flex-wrap gap-3">
           <Button
-            className="ui-manage-metrics h-9"
-            onClick={() => navigate('/experts/dashboard/metrics')}
+            className="ui-manage-metrics ui-cta ui-cta-primary h-9"
+            onClick={() => navigate(manageMetricsPath)}
           >
             <SlidersHorizontal className="size-4" />
             Manage Metrics
@@ -387,6 +417,15 @@ export function ExpertProfileAnalyticsPage() {
           </div>
         </div>
       </AnalyticsCard>
+
+      <div>
+        <SectionTitle title="Service Analytics" subtitle="Event and engagement metrics" />
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {serviceAnalyticsCards.map((item) => (
+            <MetricCard key={item.id} label={item.label} value={item.value} />
+          ))}
+        </div>
+      </div>
 
       <div>
         <SectionTitle

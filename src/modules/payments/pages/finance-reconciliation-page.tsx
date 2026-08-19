@@ -1,17 +1,19 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 import { Eye, SlidersHorizontal } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import { toast } from 'sonner'
 
 import { type FinanceReconciliationRow } from '@/modules/payments/mock/finance-reconciliation.mock'
+import { fetchFinanceReconciliation } from '@/modules/payments/api/finance-api'
 import { useFinanceReconciliation } from '@/modules/payments/hooks/use-finance'
 import { mapReconToRow } from '@/modules/payments/utils/finance-mappers'
-import { fetchFinanceReconciliation } from '@/modules/payments/api/finance-api'
 import {
-  createFinanceRowsExportHandler,
-  useFinanceListFilters,
-} from '@/modules/payments/hooks/use-finance-list-filters'
-import { exportDisplayValue } from '@/shared/utils/export-utils'
+  DEFAULT_FINANCE_RECONCILIATION_VISIBLE_COLUMN_IDS,
+  FINANCE_RECONCILIATION_MODULE_KEY,
+} from '@/modules/payments/config/finance-reconciliation-table-columns.config'
+import { useTableColumnPreferences } from '@/modules/expert/hooks/use-ui-preferences'
+import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 import { DataTable } from '@/shared/components/table/data-table'
 import {
   TableActionsDropdown,
@@ -19,8 +21,42 @@ import {
 } from '@/shared/components/table/table-actions-dropdown'
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
+import type { FilterValues } from '@/shared/types/data-filter'
+import { exportDisplayValue } from '@/shared/utils/export-utils'
+import {
+  buildFinanceReconciliationListQueryParams,
+  createFinanceReconciliationFilteredExportHandler,
+} from '@/shared/utils/export-filter-utils'
 
 const PAGE_SIZE = 10
+
+const EXPORT_COLUMN_MAP: Record<
+  string,
+  { header: string; accessor: (row: FinanceReconciliationRow) => string }
+> = {
+  'reconciliation-id': {
+    header: 'Reconciliation ID',
+    accessor: (row) => exportDisplayValue(row.reconciliationId),
+  },
+  gateway: { header: 'Gateway', accessor: (row) => exportDisplayValue(row.gateway) },
+  'transaction-id': {
+    header: 'Transaction ID',
+    accessor: (row) => exportDisplayValue(row.transactionId),
+  },
+  'platform-record-id': {
+    header: 'Platform Record ID',
+    accessor: (row) => exportDisplayValue(row.platformRecordId),
+  },
+  'gateway-amount': {
+    header: 'Gateway Amount',
+    accessor: (row) => exportDisplayValue(row.gatewayAmount),
+  },
+  'platform-amount': {
+    header: 'Platform Amount',
+    accessor: (row) => exportDisplayValue(row.platformAmount),
+  },
+  difference: { header: 'Difference', accessor: (row) => exportDisplayValue(row.difference) },
+}
 
 function getDifferenceClassName(difference: FinanceReconciliationRow['difference']) {
   if (difference === 'Matched') {
@@ -35,59 +71,66 @@ function getDifferenceClassName(difference: FinanceReconciliationRow['difference
 export function FinanceReconciliationPage() {
   const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
+  const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [selectedRowIds, setSelectedRowIds] = useState<string[]>([])
+  const tableColumnPreferencesQuery = useTableColumnPreferences(FINANCE_RECONCILIATION_MODULE_KEY)
 
-  const handleExportData = useMemo(
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setDebouncedSearch(searchQuery.trim())
+      setCurrentPage(1)
+    }, 300)
+    return () => window.clearTimeout(timer)
+  }, [searchQuery])
+
+  const listQueryParams = useMemo(
     () =>
-      createFinanceRowsExportHandler({
-        fetchRows: async (params) => (await fetchFinanceReconciliation(params))?.data?.rows ?? [],
-        headers: ['ID', 'Status', 'Created'],
-        mapRow: (row) => [
-          exportDisplayValue(row._id),
-          exportDisplayValue(row.status),
-          exportDisplayValue(row.createdAt),
-        ],
-        fileName: 'reconciliation_export',
+      buildFinanceReconciliationListQueryParams(appliedFilters, {
+        page: currentPage,
+        limit: PAGE_SIZE,
+        search: debouncedSearch || undefined,
       }),
-    [],
+    [appliedFilters, currentPage, debouncedSearch],
   )
-  const { apiFilterParams, onAdvancedFilter, onExport, modals: exportFilterModals } =
-    useFinanceListFilters(handleExportData)
 
-  const { data, isLoading, isFetching } = useFinanceReconciliation({
-    page: currentPage,
-    limit: PAGE_SIZE,
-    ...apiFilterParams,
-  })
+  const { data, isLoading, isFetching } = useFinanceReconciliation(listQueryParams)
 
   const rows = useMemo(() => (data?.data?.rows ?? []).map(mapReconToRow), [data])
   const meta = data?.data?.meta
 
-  const filteredRows = useMemo(() => {
-    const query = searchQuery.trim().toLowerCase()
-    if (!query) return rows
+  const handleApplyFilters = useCallback((values: FilterValues) => {
+    toast.success('Filters applied')
+    setAppliedFilters(values)
+    setCurrentPage(1)
+  }, [])
 
-    return rows.filter((row) =>
-      [
-        row.reconciliationId,
-        row.gateway,
-        row.transactionId,
-        row.platformRecordId,
-        row.gatewayAmount,
-        row.platformAmount,
-        row.difference,
-      ]
-        .join(' ')
-        .toLowerCase()
-        .includes(query),
+  const handleExportData = useMemo(() => {
+    const fetchForExport = async (params: Record<string, unknown>) => {
+      const result = await fetchFinanceReconciliation(params)
+      return { data: (result.data?.rows ?? []).map(mapReconToRow) }
+    }
+    return createFinanceReconciliationFilteredExportHandler(
+      fetchForExport,
+      EXPORT_COLUMN_MAP,
+      'finance_reconciliation_export',
+      { search: debouncedSearch || undefined },
     )
-  }, [rows, searchQuery])
+  }, [debouncedSearch])
 
-  const pageRows = searchQuery.trim() ? filteredRows : rows
+  const {
+    onAdvancedFilter,
+    onExport,
+    modals: exportFilterModals,
+  } = useModuleExportFilters({
+    moduleKey: 'finance-reconciliation',
+    onApplyFilters: handleApplyFilters,
+    onExportData: handleExportData,
+  })
 
-  const visibleRowIds = useMemo(() => pageRows.map((row) => row.id), [pageRows])
+  const visibleRowIds = useMemo(() => rows.map((row) => row.id), [rows])
   const allVisibleSelected =
     visibleRowIds.length > 0 && visibleRowIds.every((id) => selectedRowIds.includes(id))
   const someVisibleSelected = visibleRowIds.some((id) => selectedRowIds.includes(id))
@@ -134,38 +177,39 @@ export function FinanceReconciliationPage() {
     [activeDropdownId, navigate],
   )
 
-  const columns = useMemo<ColumnDef<FinanceReconciliationRow>[]>(
-    () => [
-      {
-        id: 'select',
-        header: () => (
-          <input
-            type="checkbox"
-            aria-label="Select all reconciliation records"
-            checked={allVisibleSelected}
-            ref={(input) => {
-              if (input) input.indeterminate = someVisibleSelected && !allVisibleSelected
-            }}
-            onChange={toggleVisibleRows}
-            className="rounded border-slate-700 bg-transparent"
-          />
-        ),
-        cell: ({ row }) => (
-          <input
-            type="checkbox"
-            aria-label={`Select ${row.original.reconciliationId}`}
-            checked={selectedRowIds.includes(row.original.id)}
-            onChange={() => toggleRowSelection(row.original.id)}
-            onClick={(event) => event.stopPropagation()}
-            className="rounded border-slate-700 bg-transparent"
-          />
-        ),
-        meta: {
-          headerClassName: 'pl-5',
-          cellClassName: 'pl-5',
-        },
+  const columns = useMemo<ColumnDef<FinanceReconciliationRow>[]>(() => {
+    const selectColumn: ColumnDef<FinanceReconciliationRow> = {
+      id: 'select',
+      header: () => (
+        <input
+          type="checkbox"
+          aria-label="Select all reconciliation records"
+          checked={allVisibleSelected}
+          ref={(input) => {
+            if (input) input.indeterminate = someVisibleSelected && !allVisibleSelected
+          }}
+          onChange={toggleVisibleRows}
+          className="rounded border-slate-700 bg-transparent"
+        />
+      ),
+      cell: ({ row }) => (
+        <input
+          type="checkbox"
+          aria-label={`Select ${row.original.reconciliationId}`}
+          checked={selectedRowIds.includes(row.original.id)}
+          onChange={() => toggleRowSelection(row.original.id)}
+          onClick={(event) => event.stopPropagation()}
+          className="rounded border-slate-700 bg-transparent"
+        />
+      ),
+      meta: {
+        headerClassName: 'pl-5',
+        cellClassName: 'pl-5',
       },
-      {
+    }
+
+    const dataColumnsById: Record<string, ColumnDef<FinanceReconciliationRow>> = {
+      'reconciliation-id': {
         accessorKey: 'reconciliationId',
         header: 'Reconciliation ID',
         cell: ({ row }) => (
@@ -174,8 +218,8 @@ export function FinanceReconciliationPage() {
           </span>
         ),
       },
-      { accessorKey: 'gateway', header: 'Gateway' },
-      {
+      gateway: { accessorKey: 'gateway', header: 'Gateway' },
+      'transaction-id': {
         accessorKey: 'transactionId',
         header: 'Transaction ID',
         cell: ({ row }) => (
@@ -184,7 +228,7 @@ export function FinanceReconciliationPage() {
           </span>
         ),
       },
-      {
+      'platform-record-id': {
         accessorKey: 'platformRecordId',
         header: 'Platform Record ID',
         cell: ({ row }) => (
@@ -193,21 +237,21 @@ export function FinanceReconciliationPage() {
           </span>
         ),
       },
-      {
+      'gateway-amount': {
         accessorKey: 'gatewayAmount',
         header: 'Gateway Amount',
         cell: ({ row }) => (
           <span className="text-brand-text font-semibold">{row.original.gatewayAmount}</span>
         ),
       },
-      {
+      'platform-amount': {
         accessorKey: 'platformAmount',
         header: 'Platform Amount',
         cell: ({ row }) => (
           <span className="text-brand-text font-semibold">{row.original.platformAmount}</span>
         ),
       },
-      {
+      difference: {
         accessorKey: 'difference',
         header: 'Difference',
         cell: ({ row }) => (
@@ -221,22 +265,31 @@ export function FinanceReconciliationPage() {
           </span>
         ),
       },
-      {
-        id: 'actions',
-        header: 'Actions',
-        meta: { headerClassName: 'pr-5 text-right', cellClassName: 'relative pr-5 text-right' },
-        cell: ({ row }) => renderActions(row.original),
-      },
-    ],
-    [
-      allVisibleSelected,
-      renderActions,
-      selectedRowIds,
-      someVisibleSelected,
-      toggleRowSelection,
-      toggleVisibleRows,
-    ],
-  )
+    }
+
+    const visibleIds = tableColumnPreferencesQuery.data?.visibleColumnIds?.length
+      ? tableColumnPreferencesQuery.data.visibleColumnIds
+      : DEFAULT_FINANCE_RECONCILIATION_VISIBLE_COLUMN_IDS
+
+    const preferenceColumns = visibleIds.map((id) => dataColumnsById[id]).filter(Boolean)
+
+    const actionsColumn: ColumnDef<FinanceReconciliationRow> = {
+      id: 'actions',
+      header: 'Actions',
+      meta: { headerClassName: 'pr-5 text-right', cellClassName: 'relative pr-5 text-right' },
+      cell: ({ row }) => renderActions(row.original),
+    }
+
+    return [selectColumn, ...preferenceColumns, actionsColumn]
+  }, [
+    allVisibleSelected,
+    renderActions,
+    selectedRowIds,
+    someVisibleSelected,
+    tableColumnPreferencesQuery.data,
+    toggleRowSelection,
+    toggleVisibleRows,
+  ])
 
   return (
     <div className="flex flex-col gap-6">
@@ -254,7 +307,7 @@ export function FinanceReconciliationPage() {
         </div>
         <Button
           className="ui-manage-metrics"
-          onClick={() => navigate('/metrics/finance-reconciliation')}
+          onClick={() => navigate('/metrics/finance-reconciliation?section=table')}
         >
           <SlidersHorizontal className="size-4" />
           Manage Metrics
@@ -263,17 +316,15 @@ export function FinanceReconciliationPage() {
 
       <DataTable
         columns={columns}
-        data={pageRows}
+        data={rows}
         getRowId={(row) => row.id}
         isLoading={isLoading || isFetching}
         searchValue={searchQuery}
-        onSearchChange={(value) => {
-          setSearchQuery(value)
-          setCurrentPage(1)
-        }}
+        onSearchChange={setSearchQuery}
         searchPlaceholder="Search by name, ID or profession"
         advancedFilterLabel="Advance Filters"
         onAdvancedFilter={onAdvancedFilter}
+        advancedFilterVariant="primary"
         onExport={onExport}
         pagination={{
           page: meta?.page ?? currentPage,
@@ -285,6 +336,7 @@ export function FinanceReconciliationPage() {
         resourceLabel="records"
         emptyMessage="No reconciliation records found."
       />
+
       {exportFilterModals}
     </div>
   )

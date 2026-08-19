@@ -1,8 +1,9 @@
-import { useMemo, useRef, useState, type DragEvent, type ReactNode } from 'react'
+import { useEffect, useMemo, useRef, useState, type DragEvent, type ReactNode } from 'react'
 import { ArrowLeft, GripVertical, Plus, Search, X } from 'lucide-react'
 
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
+import { dedupeOrderedIds } from '@/shared/lib/dedupe-ids'
 import { toast } from 'sonner'
 
 export type ManageMetricsListItem = {
@@ -82,6 +83,52 @@ function TypeBadge({ type }: { type: string }) {
       {type}
     </span>
   )
+}
+
+function dedupeActiveMetrics(items: ManageMetricsListItem[]): ManageMetricsListItem[] {
+  const seen = new Set<string>()
+  return items.filter((item) => {
+    if (seen.has(item.id)) return false
+    seen.add(item.id)
+    return true
+  })
+}
+
+function dedupeAvailableMetrics(
+  items: ManageMetricsAvailableItem[],
+  activeIds: Set<string>,
+): ManageMetricsAvailableItem[] {
+  const seen = new Set(activeIds)
+  return items.filter((item) => {
+    if (seen.has(item.id)) return false
+    seen.add(item.id)
+    return true
+  })
+}
+
+function dedupeVisibleColumns(items: ManageMetricsListItem[]): ManageMetricsListItem[] {
+  return dedupeActiveMetrics(items)
+}
+
+function dedupeHiddenColumns(
+  items: ManageMetricsAvailableItem[],
+  visibleIds: Set<string>,
+): ManageMetricsAvailableItem[] {
+  return dedupeAvailableMetrics(items, visibleIds)
+}
+
+function buildColumnListsKey(
+  visible: ManageMetricsListItem[],
+  hidden: ManageMetricsAvailableItem[],
+) {
+  return `${visible.map((item) => item.id).join(',')}|${hidden.map((item) => item.id).join(',')}`
+}
+
+function buildMetricListsKey(
+  active: ManageMetricsListItem[],
+  available: ManageMetricsAvailableItem[],
+) {
+  return `${active.map((item) => item.id).join(',')}|${available.map((item) => item.id).join(',')}`
 }
 
 function toAvailableItem(item: ManageMetricsListItem): ManageMetricsAvailableItem {
@@ -343,83 +390,132 @@ export function ManageMetrics({
   const [draggingId, setDraggingId] = useState<string | null>(null)
   const [activeDropZone, setActiveDropZone] = useState<ZoneId | null>(null)
   const dragRef = useRef<DragPayload | null>(null)
-  const [sourceSnapshot, setSourceSnapshot] = useState({
-    dashboardActive,
-    dashboardAvailable,
-    tableVisible,
-    tableHidden,
-  })
+  const propsKey = buildMetricListsKey(dashboardActive, dashboardAvailable)
+  const columnPropsKey = buildColumnListsKey(tableVisible, tableHidden)
+  const lastSyncedPropsKey = useRef(propsKey)
+  const lastSyncedColumnPropsKey = useRef(columnPropsKey)
 
-  if (
-    dashboardActive !== sourceSnapshot.dashboardActive ||
-    dashboardAvailable !== sourceSnapshot.dashboardAvailable ||
-    tableVisible !== sourceSnapshot.tableVisible ||
-    tableHidden !== sourceSnapshot.tableHidden
-  ) {
-    setSourceSnapshot({
-      dashboardActive,
-      dashboardAvailable,
-      tableVisible,
-      tableHidden,
-    })
-    setLocalActiveMetrics(dashboardActive)
-    setLocalAvailableMetrics(dashboardAvailable)
-    setLocalVisibleColumns(tableVisible)
-    setLocalHiddenColumns(tableHidden)
-  }
+  useEffect(() => {
+    if (propsKey === lastSyncedPropsKey.current) return
+
+    lastSyncedPropsKey.current = propsKey
+    const active = dedupeActiveMetrics(dashboardActive)
+    const activeIds = new Set(active.map((item) => item.id))
+    setLocalActiveMetrics(active)
+    setLocalAvailableMetrics(dedupeAvailableMetrics(dashboardAvailable, activeIds))
+  }, [propsKey, dashboardActive, dashboardAvailable])
+
+  useEffect(() => {
+    if (columnPropsKey === lastSyncedColumnPropsKey.current) return
+
+    lastSyncedColumnPropsKey.current = columnPropsKey
+    const visible = dedupeVisibleColumns(tableVisible)
+    const visibleIds = new Set(visible.map((item) => item.id))
+    setLocalVisibleColumns(visible)
+    setLocalHiddenColumns(dedupeHiddenColumns(tableHidden, visibleIds))
+  }, [columnPropsKey, tableHidden, tableVisible])
+
+  const displayedActiveMetrics = useMemo(
+    () => dedupeActiveMetrics(localActiveMetrics),
+    [localActiveMetrics],
+  )
+
+  const displayedVisibleColumns = useMemo(
+    () => dedupeVisibleColumns(localVisibleColumns),
+    [localVisibleColumns],
+  )
+
+  const displayedHiddenColumns = useMemo(() => {
+    const visibleIds = new Set(displayedVisibleColumns.map((item) => item.id))
+    return dedupeHiddenColumns(localHiddenColumns, visibleIds)
+  }, [displayedVisibleColumns, localHiddenColumns])
 
   const filteredAvailableMetrics = useMemo(() => {
+    const uniqueAvailable = dedupeAvailableMetrics(
+      localAvailableMetrics,
+      new Set(displayedActiveMetrics.map((item) => item.id)),
+    )
     const query = metricSearch.trim().toLowerCase()
-    if (!query) return localAvailableMetrics
-    return localAvailableMetrics.filter(
+    if (!query) return uniqueAvailable
+    return uniqueAvailable.filter(
       (item) =>
         item.title.toLowerCase().includes(query) || item.description.toLowerCase().includes(query),
     )
-  }, [localAvailableMetrics, metricSearch])
+  }, [localAvailableMetrics, displayedActiveMetrics, metricSearch])
 
   const filteredHiddenColumns = useMemo(() => {
     const query = columnSearch.trim().toLowerCase()
-    if (!query) return localHiddenColumns
-    return localHiddenColumns.filter(
+    if (!query) return displayedHiddenColumns
+    return displayedHiddenColumns.filter(
       (item) =>
         item.title.toLowerCase().includes(query) || item.description.toLowerCase().includes(query),
     )
-  }, [columnSearch, localHiddenColumns])
+  }, [columnSearch, displayedHiddenColumns])
 
   const handleRemoveMetric = (id: string) => {
-    const item = localActiveMetrics.find((metric) => metric.id === id)
-    if (!item || localActiveMetrics.length <= 1) return
+    setLocalActiveMetrics((prev) => {
+      const index = prev.findIndex((metric) => metric.id === id)
+      const item = index >= 0 ? prev[index] : undefined
+      if (!item) return prev
 
-    setLocalActiveMetrics((prev) => prev.filter((metric) => metric.id !== id))
-    setLocalAvailableMetrics((prev) => [...prev, toAvailableItem(item)])
+      const nextActive = dedupeActiveMetrics(prev.filter((_, itemIndex) => itemIndex !== index))
+      setLocalAvailableMetrics((availablePrev) =>
+        dedupeAvailableMetrics(
+          [...availablePrev, toAvailableItem(item)],
+          new Set(nextActive.map((metric) => metric.id)),
+        ),
+      )
+      return nextActive
+    })
   }
 
   const handleAddMetric = (id: string) => {
-    const item = localAvailableMetrics.find((metric) => metric.id === id)
-    if (!item) return
-    if (localActiveMetrics.length >= maxActive) {
-      toast.error(`You can only have up to ${maxActive} active metrics.`)
-      return
-    }
+    setLocalAvailableMetrics((availablePrev) => {
+      const item = availablePrev.find((metric) => metric.id === id)
+      if (!item) return availablePrev
 
-    setLocalAvailableMetrics((prev) => prev.filter((metric) => metric.id !== id))
-    setLocalActiveMetrics((prev) => [...prev, toListItem(item)])
+      setLocalActiveMetrics((activePrev) => {
+        if (activePrev.some((metric) => metric.id === id)) return activePrev
+        if (activePrev.length >= maxActive) {
+          toast.error(`You can only have up to ${maxActive} active metrics.`)
+          return activePrev
+        }
+        return dedupeActiveMetrics([...activePrev, toListItem(item)])
+      })
+
+      return availablePrev.filter((metric) => metric.id !== id)
+    })
   }
 
   const handleRemoveColumn = (id: string) => {
-    const item = localVisibleColumns.find((column) => column.id === id)
-    if (!item || localVisibleColumns.length <= 1) return
+    setLocalVisibleColumns((prev) => {
+      const item = prev.find((column) => column.id === id)
+      if (!item || prev.length <= 1) return prev
 
-    setLocalVisibleColumns((prev) => prev.filter((column) => column.id !== id))
-    setLocalHiddenColumns((prev) => [...prev, toAvailableItem(item)])
+      const nextVisible = dedupeVisibleColumns(prev.filter((column) => column.id !== id))
+      const visibleIds = new Set(nextVisible.map((column) => column.id))
+      setLocalHiddenColumns((hiddenPrev) =>
+        dedupeHiddenColumns(
+          [...hiddenPrev.filter((column) => column.id !== id), toAvailableItem(item)],
+          visibleIds,
+        ),
+      )
+      return nextVisible
+    })
   }
 
   const handleAddColumn = (id: string) => {
-    const item = localHiddenColumns.find((column) => column.id === id)
-    if (!item) return
+    setLocalHiddenColumns((hiddenPrev) => {
+      const item = hiddenPrev.find((column) => column.id === id)
+      if (!item) return hiddenPrev
 
-    setLocalHiddenColumns((prev) => prev.filter((column) => column.id !== id))
-    setLocalVisibleColumns((prev) => [...prev, toListItem(item)])
+      setLocalVisibleColumns((visiblePrev) => {
+        if (visiblePrev.some((column) => column.id === id)) return visiblePrev
+        return dedupeVisibleColumns([...visiblePrev, toListItem(item)])
+      })
+
+      return hiddenPrev.filter((column) => column.id !== id)
+    })
   }
 
   const isMetricPair = (from: ZoneId, to: ZoneId) =>
@@ -452,29 +548,48 @@ export function ManageMetrics({
       }
 
       if (from === 'active-metrics' && to === 'available-metrics') {
-        const item = localActiveMetrics.find((metric) => metric.id === itemId)
-        if (!item || localActiveMetrics.length <= 1) return
-        setLocalActiveMetrics((prev) => prev.filter((metric) => metric.id !== itemId))
-        setLocalAvailableMetrics((prev) => {
-          const next = [...prev, toAvailableItem(item)]
-          if (!overId) return next
-          const oldIndex = next.length - 1
-          const newIndex = next.findIndex((entry) => entry.id === overId)
-          return newIndex < 0 ? next : arrayMove(next, oldIndex, newIndex)
+        setLocalActiveMetrics((activePrev) => {
+          const index = activePrev.findIndex((metric) => metric.id === itemId)
+          const item = index >= 0 ? activePrev[index] : undefined
+          if (!item) return activePrev
+
+          const nextActive = dedupeActiveMetrics(
+            activePrev.filter((_, itemIndex) => itemIndex !== index),
+          )
+          setLocalAvailableMetrics((availablePrev) => {
+            const next = dedupeAvailableMetrics(
+              [...availablePrev, toAvailableItem(item)],
+              new Set(nextActive.map((metric) => metric.id)),
+            )
+            if (!overId) return next
+            const oldIndex = next.length - 1
+            const newIndex = next.findIndex((entry) => entry.id === overId)
+            return newIndex < 0 ? next : arrayMove(next, oldIndex, newIndex)
+          })
+          return nextActive
         })
         return
       }
 
       if (from === 'available-metrics' && to === 'active-metrics') {
-        const item = localAvailableMetrics.find((metric) => metric.id === itemId)
-        if (!item || localActiveMetrics.length >= maxActive) return
-        setLocalAvailableMetrics((prev) => prev.filter((metric) => metric.id !== itemId))
-        setLocalActiveMetrics((prev) => {
-          const next = [...prev, toListItem(item)]
-          if (!overId) return next
-          const oldIndex = next.length - 1
-          const newIndex = next.findIndex((entry) => entry.id === overId)
-          return newIndex < 0 ? next : arrayMove(next, oldIndex, newIndex)
+        setLocalAvailableMetrics((availablePrev) => {
+          const item = availablePrev.find((metric) => metric.id === itemId)
+          if (!item) return availablePrev
+
+          let moved = false
+          setLocalActiveMetrics((activePrev) => {
+            if (activePrev.some((metric) => metric.id === itemId)) return activePrev
+            if (activePrev.length >= maxActive) return activePrev
+            moved = true
+
+            const next = dedupeActiveMetrics([...activePrev, toListItem(item)])
+            if (!overId) return next
+            const oldIndex = next.length - 1
+            const newIndex = next.findIndex((entry) => entry.id === overId)
+            return newIndex < 0 ? next : arrayMove(next, oldIndex, newIndex)
+          })
+
+          return moved ? availablePrev.filter((metric) => metric.id !== itemId) : availablePrev
         })
       }
       return
@@ -485,42 +600,58 @@ export function ManageMetrics({
         setLocalVisibleColumns((prev) => {
           const oldIndex = prev.findIndex((item) => item.id === itemId)
           const newIndex = overId ? prev.findIndex((item) => item.id === overId) : prev.length - 1
-          return arrayMove(prev, oldIndex, newIndex)
+          return dedupeVisibleColumns(arrayMove(prev, oldIndex, newIndex))
         })
       } else {
         setLocalHiddenColumns((prev) => {
           const oldIndex = prev.findIndex((item) => item.id === itemId)
           const newIndex = overId ? prev.findIndex((item) => item.id === overId) : prev.length - 1
-          return arrayMove(prev, oldIndex, newIndex)
+          const visibleIds = new Set(displayedVisibleColumns.map((item) => item.id))
+          return dedupeHiddenColumns(arrayMove(prev, oldIndex, newIndex), visibleIds)
         })
       }
       return
     }
 
     if (from === 'visible-columns' && to === 'hidden-columns') {
-      const item = localVisibleColumns.find((column) => column.id === itemId)
-      if (!item || localVisibleColumns.length <= 1) return
-      setLocalVisibleColumns((prev) => prev.filter((column) => column.id !== itemId))
-      setLocalHiddenColumns((prev) => {
-        const next = [...prev, toAvailableItem(item)]
-        if (!overId) return next
-        const oldIndex = next.length - 1
-        const newIndex = next.findIndex((entry) => entry.id === overId)
-        return newIndex < 0 ? next : arrayMove(next, oldIndex, newIndex)
+      setLocalVisibleColumns((visiblePrev) => {
+        const item = visiblePrev.find((column) => column.id === itemId)
+        if (!item || visiblePrev.length <= 1) return visiblePrev
+
+        const nextVisible = dedupeVisibleColumns(
+          visiblePrev.filter((column) => column.id !== itemId),
+        )
+        const visibleIds = new Set(nextVisible.map((column) => column.id))
+        setLocalHiddenColumns((hiddenPrev) => {
+          const next = dedupeHiddenColumns(
+            [...hiddenPrev.filter((column) => column.id !== itemId), toAvailableItem(item)],
+            visibleIds,
+          )
+          if (!overId) return next
+          const oldIndex = next.length - 1
+          const newIndex = next.findIndex((entry) => entry.id === overId)
+          return newIndex < 0 ? next : arrayMove(next, oldIndex, newIndex)
+        })
+        return nextVisible
       })
       return
     }
 
     if (from === 'hidden-columns' && to === 'visible-columns') {
-      const item = localHiddenColumns.find((column) => column.id === itemId)
-      if (!item) return
-      setLocalHiddenColumns((prev) => prev.filter((column) => column.id !== itemId))
-      setLocalVisibleColumns((prev) => {
-        const next = [...prev, toListItem(item)]
-        if (!overId) return next
-        const oldIndex = next.length - 1
-        const newIndex = next.findIndex((entry) => entry.id === overId)
-        return newIndex < 0 ? next : arrayMove(next, oldIndex, newIndex)
+      setLocalHiddenColumns((hiddenPrev) => {
+        const item = hiddenPrev.find((column) => column.id === itemId)
+        if (!item) return hiddenPrev
+
+        setLocalVisibleColumns((visiblePrev) => {
+          if (visiblePrev.some((column) => column.id === itemId)) return visiblePrev
+          const next = dedupeVisibleColumns([...visiblePrev, toListItem(item)])
+          if (!overId) return next
+          const oldIndex = next.length - 1
+          const newIndex = next.findIndex((entry) => entry.id === overId)
+          return newIndex < 0 ? next : arrayMove(next, oldIndex, newIndex)
+        })
+
+        return hiddenPrev.filter((column) => column.id !== itemId)
       })
     }
   }
@@ -568,11 +699,11 @@ export function ManageMetrics({
     const payload: ManageMetricsSavePayload = {}
 
     if (dashboard) {
-      payload.activeMetricIds = localActiveMetrics.map((item) => item.id)
+      payload.activeMetricIds = dedupeOrderedIds(displayedActiveMetrics.map((item) => item.id))
     }
 
     if (tableColumns) {
-      payload.visibleColumnIds = localVisibleColumns.map((item) => item.id)
+      payload.visibleColumnIds = dedupeOrderedIds(displayedVisibleColumns.map((item) => item.id))
     }
 
     onSave?.(payload)
@@ -635,7 +766,7 @@ export function ManageMetrics({
             <div>
               <p className="text-base font-semibold text-white">Active Metrics</p>
               <p className="mb-3 text-sm text-white/50">
-                Showing {localActiveMetrics.length} metrics
+                Showing {displayedActiveMetrics.length} metrics
               </p>
               <DropZone
                 zone="active-metrics"
@@ -643,12 +774,12 @@ export function ManageMetrics({
                 onDragOverZone={handleDragOverZone}
                 onDropOnZone={handleDropOnZone}
               >
-                {localActiveMetrics.length === 0 ? (
+                {displayedActiveMetrics.length === 0 ? (
                   <p className="rounded-xl border border-dashed border-white/10 px-3 py-6 text-center text-sm text-white/40">
                     No active metrics — drag from Available
                   </p>
                 ) : (
-                  localActiveMetrics.map((item) => (
+                  displayedActiveMetrics.map((item) => (
                     <MetricRow
                       key={item.id}
                       item={item}
@@ -736,12 +867,12 @@ export function ManageMetrics({
                 onDragOverZone={handleDragOverZone}
                 onDropOnZone={handleDropOnZone}
               >
-                {localVisibleColumns.length === 0 ? (
+                {displayedVisibleColumns.length === 0 ? (
                   <p className="rounded-xl border border-dashed border-white/10 px-3 py-6 text-center text-sm text-white/40">
                     No visible columns
                   </p>
                 ) : (
-                  localVisibleColumns.map((item) => (
+                  displayedVisibleColumns.map((item) => (
                     <MetricRow
                       key={item.id}
                       item={item}

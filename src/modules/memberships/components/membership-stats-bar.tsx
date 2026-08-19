@@ -1,43 +1,96 @@
+import { useMemo } from 'react'
+
 import { membershipMemberMetricsMock } from '../mock/membership-metrics.mock'
 import { useMembershipStats } from '../hooks/use-memberships'
-import { StatCard } from '@/shared/components/dashboard/stat-card'
+import {
+  DEFAULT_MEMBERSHIP_METRIC_IDS,
+  MEMBERSHIP_METRIC_IDS,
+  MEMBERSHIP_METRIC_ID_SET,
+  MEMBERSHIPS_MODULE_KEY,
+} from '../config/membership-metrics.config'
+import type { MembershipStatsResponse } from '../types/membership'
+import {
+  orderByActiveMetricIds,
+  useActiveMetricIds,
+} from '@/modules/expert/hooks/use-active-metric-ids'
+import { StatCard, type StatCardProps } from '@/shared/components/dashboard/stat-card'
+import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
+
+type MembershipKpiStat = StatCardProps & { id: string }
+
+function buildMembershipKpiStats(
+  apiStats: MembershipStatsResponse['data'] | undefined,
+): MembershipKpiStat[] {
+  const mock = membershipMemberMetricsMock
+
+  return [
+    {
+      id: 'total-members',
+      title: 'Total Members',
+      value: String(apiStats?.totalActivePlans ?? mock.totalMembers.value),
+      trend: mock.totalMembers.trend,
+    },
+    {
+      id: 'expired-memberships',
+      title: 'Expired Memberships',
+      value: String(apiStats?.expiredMemberships ?? mock.expiredMemberships.value),
+      hint: mock.expiredMemberships.hint,
+    },
+    {
+      id: 'total-revenue',
+      title: 'Total Revenue',
+      value: apiStats?.totalRevenue
+        ? `₹${apiStats.totalRevenue.toLocaleString('en-IN')}`
+        : mock.totalRevenue.value,
+      trend: mock.totalRevenue.trend,
+    },
+    {
+      id: 'renewal-rate',
+      title: 'Renewal Rate',
+      value: apiStats?.renewalRate ? `${apiStats.renewalRate}%` : mock.renewalRate.value,
+      trend: mock.renewalRate.trend,
+    },
+    {
+      id: 'most-subscribed-plan',
+      title: 'Most Subscribed Plan',
+      value: apiStats?.mostSubscribedPlan ?? mock.mostSubscribedPlan.value ?? '—',
+      hint: mock.mostSubscribedPlan.hint,
+    },
+  ]
+}
 
 export function MembershipStatsBar() {
   const { data } = useMembershipStats()
   const apiStats = data?.data
-  const mock = membershipMemberMetricsMock
+  const activeMetricIds = useActiveMetricIds(MEMBERSHIPS_MODULE_KEY, [
+    ...DEFAULT_MEMBERSHIP_METRIC_IDS,
+  ])
+
+  const filteredActiveMetricIds = useMemo(
+    () =>
+      sortIdsByCatalogOrder(
+        activeMetricIds.filter((id) => MEMBERSHIP_METRIC_ID_SET.has(id)),
+        MEMBERSHIP_METRIC_IDS,
+      ),
+    [activeMetricIds],
+  )
+
+  const visibleStats = useMemo(() => {
+    const allStats = buildMembershipKpiStats(apiStats)
+    return orderByActiveMetricIds(allStats, filteredActiveMetricIds)
+  }, [apiStats, filteredActiveMetricIds])
 
   return (
     <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
-      <StatCard
-        title="Total Members"
-        value={String(apiStats?.totalActivePlans ?? mock.totalMembers.value)}
-        trend={mock.totalMembers.trend}
-      />
-      <StatCard
-        title="Expired Memberships"
-        value={String(apiStats?.expiredMemberships ?? mock.expiredMemberships.value)}
-        hint={mock.expiredMemberships.hint}
-      />
-      <StatCard
-        title="Total Revenue"
-        value={
-          apiStats?.totalRevenue
-            ? `₹${apiStats.totalRevenue.toLocaleString('en-IN')}`
-            : mock.totalRevenue.value
-        }
-        trend={mock.totalRevenue.trend}
-      />
-      <StatCard
-        title="Renewal Rate"
-        value={apiStats?.renewalRate ? `${apiStats.renewalRate}%` : mock.renewalRate.value}
-        trend={mock.renewalRate.trend}
-      />
-      <StatCard
-        title="Most Subscribed Plan"
-        value={apiStats?.mostSubscribedPlan ?? mock.mostSubscribedPlan.value ?? '—'}
-        hint={mock.mostSubscribedPlan.hint}
-      />
+      {visibleStats.map((stat) => (
+        <StatCard
+          key={stat.id}
+          title={stat.title}
+          value={stat.value}
+          trend={stat.trend}
+          hint={stat.hint}
+        />
+      ))}
     </div>
   )
 }

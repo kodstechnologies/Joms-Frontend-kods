@@ -1,10 +1,11 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 import { AlertTriangle, Eye, SlidersHorizontal, Tag, Trash2 } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
 import { type TaxComplianceRow } from '@/modules/payments/mock/finance-tax-compliance.mock'
+import { fetchFinanceTax } from '@/modules/payments/api/finance-api'
 import {
   useAddFinanceNote,
   useEscalateFinance,
@@ -12,17 +13,17 @@ import {
   useSoftDeleteFinance,
 } from '@/modules/payments/hooks/use-finance'
 import { mapTaxToRow } from '@/modules/payments/utils/finance-mappers'
-import { fetchFinanceTax } from '@/modules/payments/api/finance-api'
 import {
-  createFinanceRowsExportHandler,
-  useFinanceListFilters,
-} from '@/modules/payments/hooks/use-finance-list-filters'
-import { exportDisplayValue } from '@/shared/utils/export-utils'
-import { AddTagsModal } from '@/modules/payments/components/add-tags-modal'
+  DEFAULT_FINANCE_TAX_VISIBLE_COLUMN_IDS,
+  FINANCE_TAX_MODULE_KEY,
+} from '@/modules/payments/config/finance-tax-table-columns.config'
+import { useTableColumnPreferences } from '@/modules/expert/hooks/use-ui-preferences'
+import { AddTagsModal } from '@/shared/components/modals/add-tags-modal'
 import {
   FinanceEscalateDeleteModal,
   type FinanceEscalateDeleteAction,
 } from '@/modules/payments/components/finance-escalate-delete-modal'
+import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 import { DataTable } from '@/shared/components/table/data-table'
 import {
   TableActionsDropdown,
@@ -30,8 +31,31 @@ import {
 } from '@/shared/components/table/table-actions-dropdown'
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
+import type { FilterValues } from '@/shared/types/data-filter'
+import { exportDisplayValue } from '@/shared/utils/export-utils'
+import {
+  buildFinanceTaxListQueryParams,
+  createFinanceTaxFilteredExportHandler,
+} from '@/shared/utils/export-filter-utils'
 
 const PAGE_SIZE = 10
+
+const EXPORT_COLUMN_MAP: Record<
+  string,
+  { header: string; accessor: (row: TaxComplianceRow) => string }
+> = {
+  'record-id': { header: 'Record ID', accessor: (row) => exportDisplayValue(row.recordId) },
+  'entity-type': { header: 'Entity Type', accessor: (row) => exportDisplayValue(row.entityType) },
+  'entity-id': { header: 'Entity ID', accessor: (row) => exportDisplayValue(row.entityId) },
+  owner: { header: 'Owner', accessor: (row) => exportDisplayValue(row.owner) },
+  'booking-id': { header: 'Booking ID', accessor: (row) => exportDisplayValue(row.bookingId) },
+  'booking-title': {
+    header: 'Booking Title',
+    accessor: (row) => exportDisplayValue(row.bookingTitle),
+  },
+  status: { header: 'Status', accessor: (row) => exportDisplayValue(row.status) },
+  revenue: { header: 'Revenue', accessor: (row) => exportDisplayValue(row.revenue) },
+}
 
 function getStatusClassName(status: TaxComplianceRow['status']) {
   if (status === 'Completed' || status === 'Filed') {
@@ -43,7 +67,9 @@ function getStatusClassName(status: TaxComplianceRow['status']) {
 export function FinanceTaxCompliancePage() {
   const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
+  const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [selectedRowIds, setSelectedRowIds] = useState<string[]>([])
   const [tagTarget, setTagTarget] = useState<TaxComplianceRow | null>(null)
@@ -51,49 +77,61 @@ export function FinanceTaxCompliancePage() {
   const addNote = useAddFinanceNote()
   const escalate = useEscalateFinance()
   const softDelete = useSoftDeleteFinance()
+  const tableColumnPreferencesQuery = useTableColumnPreferences(FINANCE_TAX_MODULE_KEY)
 
-  const handleExportData = useMemo(
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setDebouncedSearch(searchQuery.trim())
+      setCurrentPage(1)
+    }, 300)
+    return () => window.clearTimeout(timer)
+  }, [searchQuery])
+
+  const listQueryParams = useMemo(
     () =>
-      createFinanceRowsExportHandler({
-        fetchRows: async (params) => (await fetchFinanceTax(params))?.data?.rows ?? [],
-        headers: ['ID', 'Status', 'Amount', 'Created'],
-        mapRow: (row) => [
-          exportDisplayValue(row._id),
-          exportDisplayValue(row.status),
-          exportDisplayValue(row.amount),
-          exportDisplayValue(row.createdAt),
-        ],
-        fileName: 'tax_export',
+      buildFinanceTaxListQueryParams(appliedFilters, {
+        page: currentPage,
+        limit: PAGE_SIZE,
+        search: debouncedSearch || undefined,
       }),
-    [],
+    [appliedFilters, currentPage, debouncedSearch],
   )
-  const { apiFilterParams, onAdvancedFilter, onExport, modals: exportFilterModals } =
-    useFinanceListFilters(handleExportData)
 
-  const { data, isLoading, isFetching } = useFinanceTax({
-    page: currentPage,
-    limit: PAGE_SIZE,
-    ...apiFilterParams,
-  })
+  const { data, isLoading, isFetching } = useFinanceTax(listQueryParams)
 
   const rows = useMemo(() => (data?.data?.rows ?? []).map(mapTaxToRow), [data])
   const meta = data?.data?.meta
 
-  const filteredRows = useMemo(() => {
-    const query = searchQuery.trim().toLowerCase()
-    if (!query) return rows
+  const handleApplyFilters = useCallback((values: FilterValues) => {
+    toast.success('Filters applied')
+    setAppliedFilters(values)
+    setCurrentPage(1)
+  }, [])
 
-    return rows.filter((row) =>
-      [row.recordId, row.entityType, row.entityId, row.owner, row.bookingId, row.bookingTitle]
-        .join(' ')
-        .toLowerCase()
-        .includes(query),
+  const handleExportData = useMemo(() => {
+    const fetchForExport = async (params: Record<string, unknown>) => {
+      const result = await fetchFinanceTax(params)
+      return { data: (result.data?.rows ?? []).map(mapTaxToRow) }
+    }
+    return createFinanceTaxFilteredExportHandler(
+      fetchForExport,
+      EXPORT_COLUMN_MAP,
+      'finance_tax_export',
+      { search: debouncedSearch || undefined },
     )
-  }, [rows, searchQuery])
+  }, [debouncedSearch])
 
-  const pageRows = searchQuery.trim() ? filteredRows : rows
+  const {
+    onAdvancedFilter,
+    onExport,
+    modals: exportFilterModals,
+  } = useModuleExportFilters({
+    moduleKey: 'finance-tax',
+    onApplyFilters: handleApplyFilters,
+    onExportData: handleExportData,
+  })
 
-  const visibleRowIds = useMemo(() => pageRows.map((row) => row.id), [pageRows])
+  const visibleRowIds = useMemo(() => rows.map((row) => row.id), [rows])
   const allVisibleSelected =
     visibleRowIds.length > 0 && visibleRowIds.every((id) => selectedRowIds.includes(id))
   const someVisibleSelected = visibleRowIds.some((id) => selectedRowIds.includes(id))
@@ -170,38 +208,39 @@ export function FinanceTaxCompliancePage() {
     [activeDropdownId, navigate],
   )
 
-  const columns = useMemo<ColumnDef<TaxComplianceRow>[]>(
-    () => [
-      {
-        id: 'select',
-        header: () => (
-          <input
-            type="checkbox"
-            aria-label="Select all tax records"
-            checked={allVisibleSelected}
-            ref={(input) => {
-              if (input) input.indeterminate = someVisibleSelected && !allVisibleSelected
-            }}
-            onChange={toggleVisibleRows}
-            className="rounded border-slate-700 bg-transparent"
-          />
-        ),
-        cell: ({ row }) => (
-          <input
-            type="checkbox"
-            aria-label={`Select ${row.original.recordId}`}
-            checked={selectedRowIds.includes(row.original.id)}
-            onChange={() => toggleRowSelection(row.original.id)}
-            onClick={(event) => event.stopPropagation()}
-            className="rounded border-slate-700 bg-transparent"
-          />
-        ),
-        meta: {
-          headerClassName: 'pl-5',
-          cellClassName: 'pl-5',
-        },
+  const columns = useMemo<ColumnDef<TaxComplianceRow>[]>(() => {
+    const selectColumn: ColumnDef<TaxComplianceRow> = {
+      id: 'select',
+      header: () => (
+        <input
+          type="checkbox"
+          aria-label="Select all tax records"
+          checked={allVisibleSelected}
+          ref={(input) => {
+            if (input) input.indeterminate = someVisibleSelected && !allVisibleSelected
+          }}
+          onChange={toggleVisibleRows}
+          className="rounded border-slate-700 bg-transparent"
+        />
+      ),
+      cell: ({ row }) => (
+        <input
+          type="checkbox"
+          aria-label={`Select ${row.original.recordId}`}
+          checked={selectedRowIds.includes(row.original.id)}
+          onChange={() => toggleRowSelection(row.original.id)}
+          onClick={(event) => event.stopPropagation()}
+          className="rounded border-slate-700 bg-transparent"
+        />
+      ),
+      meta: {
+        headerClassName: 'pl-5',
+        cellClassName: 'pl-5',
       },
-      {
+    }
+
+    const dataColumnsById: Record<string, ColumnDef<TaxComplianceRow>> = {
+      'record-id': {
         accessorKey: 'recordId',
         header: 'Record ID',
         cell: ({ row }) => (
@@ -210,8 +249,8 @@ export function FinanceTaxCompliancePage() {
           </span>
         ),
       },
-      { accessorKey: 'entityType', header: 'Entity Type' },
-      {
+      'entity-type': { accessorKey: 'entityType', header: 'Entity Type' },
+      'entity-id': {
         accessorKey: 'entityId',
         header: 'Entity ID',
         cell: ({ row }) => (
@@ -220,8 +259,8 @@ export function FinanceTaxCompliancePage() {
           </span>
         ),
       },
-      { accessorKey: 'owner', header: 'Owner' },
-      {
+      owner: { accessorKey: 'owner', header: 'Owner' },
+      'booking-id': {
         accessorKey: 'bookingId',
         header: 'Booking ID',
         cell: ({ row }) => (
@@ -230,8 +269,8 @@ export function FinanceTaxCompliancePage() {
           </span>
         ),
       },
-      { accessorKey: 'bookingTitle', header: 'Booking Title' },
-      {
+      'booking-title': { accessorKey: 'bookingTitle', header: 'Booking Title' },
+      status: {
         accessorKey: 'status',
         header: 'Status',
         cell: ({ row }) => (
@@ -245,29 +284,38 @@ export function FinanceTaxCompliancePage() {
           </span>
         ),
       },
-      {
+      revenue: {
         accessorKey: 'revenue',
         header: 'Revenue',
         cell: ({ row }) => (
           <span className="text-brand-text font-semibold">{row.original.revenue}</span>
         ),
       },
-      {
-        id: 'actions',
-        header: 'Actions',
-        meta: { headerClassName: 'pr-5 text-right', cellClassName: 'relative pr-5 text-right' },
-        cell: ({ row }) => renderActions(row.original),
-      },
-    ],
-    [
-      allVisibleSelected,
-      renderActions,
-      selectedRowIds,
-      someVisibleSelected,
-      toggleRowSelection,
-      toggleVisibleRows,
-    ],
-  )
+    }
+
+    const visibleIds = tableColumnPreferencesQuery.data?.visibleColumnIds?.length
+      ? tableColumnPreferencesQuery.data.visibleColumnIds
+      : DEFAULT_FINANCE_TAX_VISIBLE_COLUMN_IDS
+
+    const preferenceColumns = visibleIds.map((id) => dataColumnsById[id]).filter(Boolean)
+
+    const actionsColumn: ColumnDef<TaxComplianceRow> = {
+      id: 'actions',
+      header: 'Actions',
+      meta: { headerClassName: 'pr-5 text-right', cellClassName: 'relative pr-5 text-right' },
+      cell: ({ row }) => renderActions(row.original),
+    }
+
+    return [selectColumn, ...preferenceColumns, actionsColumn]
+  }, [
+    allVisibleSelected,
+    renderActions,
+    selectedRowIds,
+    someVisibleSelected,
+    tableColumnPreferencesQuery.data,
+    toggleRowSelection,
+    toggleVisibleRows,
+  ])
 
   return (
     <div className="flex flex-col gap-6">
@@ -285,7 +333,10 @@ export function FinanceTaxCompliancePage() {
             <span className="text-brand-text font-semibold">Tax & Compliance</span>
           </p>
         </div>
-        <Button className="ui-manage-metrics" onClick={() => navigate('/metrics/finance-tax')}>
+        <Button
+          className="ui-manage-metrics"
+          onClick={() => navigate('/metrics/finance-tax?section=table')}
+        >
           <SlidersHorizontal className="size-4" />
           Manage Metrics
         </Button>
@@ -293,17 +344,15 @@ export function FinanceTaxCompliancePage() {
 
       <DataTable
         columns={columns}
-        data={pageRows}
+        data={rows}
         getRowId={(row) => row.id}
         isLoading={isLoading || isFetching}
         searchValue={searchQuery}
-        onSearchChange={(value) => {
-          setSearchQuery(value)
-          setCurrentPage(1)
-        }}
+        onSearchChange={setSearchQuery}
         searchPlaceholder="Search by name, ID or profession"
         advancedFilterLabel="Advance Filters"
         onAdvancedFilter={onAdvancedFilter}
+        advancedFilterVariant="primary"
         onExport={onExport}
         pagination={{
           page: meta?.page ?? currentPage,
@@ -315,7 +364,6 @@ export function FinanceTaxCompliancePage() {
         resourceLabel="tax records"
         emptyMessage="No tax records found."
       />
-      {exportFilterModals}
 
       <AddTagsModal
         open={!!tagTarget}
@@ -347,6 +395,8 @@ export function FinanceTaxCompliancePage() {
         escalate={escalate}
         softDelete={softDelete}
       />
+
+      {exportFilterModals}
     </div>
   )
 }

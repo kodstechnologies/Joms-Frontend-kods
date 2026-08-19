@@ -1,26 +1,39 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 import { Bell, Eye, TrendingUp } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
 import { type InvoiceRow, type InvoiceStatus } from '@/modules/payments/mock/invoices-billing.mock'
+import { fetchFinanceInvoices } from '@/modules/payments/api/finance-api'
 import { useFinanceInvoices } from '@/modules/payments/hooks/use-finance'
 import { formatInr, mapInvoiceToRow } from '@/modules/payments/utils/finance-mappers'
-import { fetchFinanceInvoices } from '@/modules/payments/api/finance-api'
-import {
-  createFinanceRowsExportHandler,
-  useFinanceListFilters,
-} from '@/modules/payments/hooks/use-finance-list-filters'
-import { exportDisplayValue } from '@/shared/utils/export-utils'
+import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 import { DataTable } from '@/shared/components/table/data-table'
 import {
   TableActionsDropdown,
   TableActionsItem,
 } from '@/shared/components/table/table-actions-dropdown'
 import { cn } from '@/shared/lib/cn'
+import type { FilterValues } from '@/shared/types/data-filter'
+import { exportDisplayValue } from '@/shared/utils/export-utils'
+import {
+  buildFinanceInvoicesListQueryParams,
+  createFinanceInvoicesFilteredExportHandler,
+} from '@/shared/utils/export-filter-utils'
 
 const PAGE_SIZE = 10
+
+const EXPORT_COLUMN_MAP: Record<string, { header: string; accessor: (row: InvoiceRow) => string }> =
+  {
+    invoiceId: { header: 'Invoice ID', accessor: (row) => exportDisplayValue(row.invoiceId) },
+    clientName: { header: 'Client Name', accessor: (row) => exportDisplayValue(row.clientName) },
+    amount: { header: 'Amount', accessor: (row) => exportDisplayValue(row.amount) },
+    issueDate: { header: 'Issue Date', accessor: (row) => exportDisplayValue(row.issueDate) },
+    dueDate: { header: 'Due Date', accessor: (row) => exportDisplayValue(row.dueDate) },
+    description: { header: 'Description', accessor: (row) => exportDisplayValue(row.description) },
+    status: { header: 'Status', accessor: (row) => exportDisplayValue(row.status) },
+  }
 
 function SummaryCard({
   label,
@@ -57,49 +70,63 @@ function getStatusClassName(status: InvoiceStatus) {
 export function InvoicesBillingPage() {
   const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
+  const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [selectedRowIds, setSelectedRowIds] = useState<string[]>([])
 
-  const handleExportData = useMemo(
-    () =>
-      createFinanceRowsExportHandler({
-        fetchRows: async (params) => (await fetchFinanceInvoices(params))?.data?.rows ?? [],
-        headers: ['ID', 'Status', 'Amount', 'Created'],
-        mapRow: (row) => [
-          exportDisplayValue(row._id),
-          exportDisplayValue(row.status),
-          exportDisplayValue(row.amount),
-          exportDisplayValue(row.createdAt),
-        ],
-        fileName: 'invoices_export',
-      }),
-    [],
-  )
-  const { apiFilterParams, onAdvancedFilter, onExport, modals: exportFilterModals } =
-    useFinanceListFilters(handleExportData)
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setDebouncedSearch(searchQuery.trim())
+      setCurrentPage(1)
+    }, 300)
+    return () => window.clearTimeout(timer)
+  }, [searchQuery])
 
-  const { data, isLoading, isFetching, isError } = useFinanceInvoices({
-    page: currentPage,
-    limit: PAGE_SIZE,
-    ...apiFilterParams,
-  })
+  const listQueryParams = useMemo(
+    () =>
+      buildFinanceInvoicesListQueryParams(appliedFilters, {
+        page: currentPage,
+        limit: PAGE_SIZE,
+        search: debouncedSearch || undefined,
+      }),
+    [appliedFilters, currentPage, debouncedSearch],
+  )
+
+  const { data, isLoading, isFetching, isError } = useFinanceInvoices(listQueryParams)
 
   const rows = useMemo(() => (data?.data?.rows ?? []).map(mapInvoiceToRow), [data])
   const meta = data?.data?.meta
 
-  const filteredRows = useMemo(() => {
-    const query = searchQuery.trim().toLowerCase()
-    if (!query) return rows
-    return rows.filter((row) =>
-      [row.invoiceId, row.clientName, row.amount, row.description, row.status]
-        .join(' ')
-        .toLowerCase()
-        .includes(query),
-    )
-  }, [rows, searchQuery])
+  const handleApplyFilters = useCallback((values: FilterValues) => {
+    toast.success('Filters applied')
+    setAppliedFilters(values)
+    setCurrentPage(1)
+  }, [])
 
-  const pageRows = searchQuery.trim() ? filteredRows : rows
+  const handleExportData = useMemo(() => {
+    const fetchForExport = async (params: Record<string, unknown>) => {
+      const result = await fetchFinanceInvoices(params)
+      return { data: (result.data?.rows ?? []).map(mapInvoiceToRow) }
+    }
+    return createFinanceInvoicesFilteredExportHandler(
+      fetchForExport,
+      EXPORT_COLUMN_MAP,
+      'finance_invoices_export',
+      { search: debouncedSearch || undefined },
+    )
+  }, [debouncedSearch])
+
+  const {
+    onAdvancedFilter,
+    onExport,
+    modals: exportFilterModals,
+  } = useModuleExportFilters({
+    moduleKey: 'finance-invoices',
+    onApplyFilters: handleApplyFilters,
+    onExportData: handleExportData,
+  })
   const invoiceSummaryMetrics = [
     {
       label: 'Total Invoices',
@@ -131,7 +158,7 @@ export function InvoicesBillingPage() {
     },
   ]
 
-  const visibleRowIds = useMemo(() => pageRows.map((row) => row.id), [pageRows])
+  const visibleRowIds = useMemo(() => rows.map((row) => row.id), [rows])
   const allVisibleSelected =
     visibleRowIds.length > 0 && visibleRowIds.every((id) => selectedRowIds.includes(id))
   const someVisibleSelected = visibleRowIds.some((id) => selectedRowIds.includes(id))
@@ -285,17 +312,15 @@ export function InvoicesBillingPage() {
 
       <DataTable
         columns={columns}
-        data={pageRows}
+        data={rows}
         getRowId={(row) => row.id}
         isLoading={isLoading || isFetching}
         searchValue={searchQuery}
-        onSearchChange={(value) => {
-          setSearchQuery(value)
-          setCurrentPage(1)
-        }}
+        onSearchChange={setSearchQuery}
         searchPlaceholder="Search by name, ID or profession"
         advancedFilterLabel="Advance Filters"
         onAdvancedFilter={onAdvancedFilter}
+        advancedFilterVariant="primary"
         onExport={onExport}
         pagination={{
           page: meta?.page ?? currentPage,
@@ -307,6 +332,7 @@ export function InvoicesBillingPage() {
         resourceLabel="invoices"
         emptyMessage="No invoices found."
       />
+
       {exportFilterModals}
     </div>
   )

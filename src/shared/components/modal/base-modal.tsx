@@ -32,7 +32,7 @@ export function BaseModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 px-4 py-6"
+      className="fixed inset-0 z-[200] flex items-center justify-center bg-black/75 px-4 py-6"
       onClick={onClose}
       role="presentation"
     >

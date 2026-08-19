@@ -38,7 +38,7 @@ import {
 import { useVenueManagementMetrics } from '../../hooks/use-venue-dashboard'
 import { useTableColumnPreferences } from '../../hooks/use-ui-preferences'
 import { useVenueStore } from '../../store'
-import type { Venue, VenueStatus } from '../../type/venue'
+import type { Venue } from '../../type/venue'
 import { DataTable } from '@/shared/components/table/data-table'
 import { TableDateTimeCell } from '@/shared/components/table/table-datetime-cell'
 import {
@@ -66,6 +66,10 @@ import {
   getVenuePartnerId,
 } from '../../utils/venue-list'
 import { exportDataToFile, exportDisplayValue } from '@/shared/utils/export-utils'
+import {
+  buildVenueListQueryParams,
+  createVenueFilteredExportHandler,
+} from '@/shared/utils/export-filter-utils'
 import { fetchVenues } from '../../api/venue-api'
 import { getManagementStatusDisplay } from '../../utils/management-status'
 import { MODERATION_CATEGORY_SLUGS } from '@/modules/settings/api/templates-api'
@@ -127,53 +131,6 @@ const DEFAULT_VISIBLE_IDS = [
 ]
 
 const ACTION_ITEM_CLASS = 'text-slate-800 hover:bg-slate-100 hover:text-slate-900'
-
-function buildVenueApiParams(filterValues: FilterValues): Record<string, string> {
-  const params: Record<string, string> = {}
-
-  Object.entries(filterValues).forEach(([rawKey, val]) => {
-    if (val === undefined || val === null || val === '') return
-
-    const parts = rawKey.split('.')
-    const fieldId = parts.length > 1 ? parts.slice(1).join('.') : rawKey
-
-    if (fieldId === 'location' && typeof val === 'object' && val !== null) {
-      const loc = val as { state?: string; city?: string }
-      if (loc.state?.trim()) params.locationState = loc.state.trim()
-      if (loc.city?.trim()) params.locationCity = loc.city.trim()
-      return
-    }
-
-    if (Array.isArray(val)) {
-      if (val.length > 0) {
-        params[fieldId] = val.join(',')
-      }
-      return
-    }
-
-    if (typeof val === 'object' && val !== null) {
-      const range = val as { from?: string | number; to?: string | number }
-      if (range.from !== undefined && range.from !== '') {
-        params[`${fieldId}Min`] = String(range.from).trim()
-      }
-      if (range.to !== undefined && range.to !== '') {
-        params[`${fieldId}Max`] = String(range.to).trim()
-      }
-      return
-    }
-
-    if (typeof val === 'string' && val.trim()) {
-      params[fieldId] = val.trim()
-      return
-    }
-
-    if (typeof val === 'number' || typeof val === 'boolean') {
-      params[fieldId] = String(val)
-    }
-  })
-
-  return params
-}
 
 export const VenueManagementPage = () => {
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
@@ -360,38 +317,27 @@ export const VenueManagementPage = () => {
     [setCurrentPage],
   )
 
-  const apiFilterParams = useMemo(
-    () => buildVenueApiParams(appliedAdvancedFilters),
-    [appliedAdvancedFilters],
+  const venueQueryParams = useMemo(
+    () =>
+      buildVenueListQueryParams(appliedAdvancedFilters, {
+        page: currentPage,
+        limit: 10,
+        search: searchQuery,
+        status: activeStatus !== 'all' ? activeStatus : undefined,
+      }),
+    [appliedAdvancedFilters, currentPage, searchQuery, activeStatus],
   )
 
-  const { data, isLoading } = useVenues({
-    page: currentPage,
-    limit: 10,
-    status:
-      activeStatus !== 'all'
-        ? (activeStatus as VenueStatus | 'reported')
-        : (apiFilterParams.listingStatus as VenueStatus | 'reported' | undefined),
-    search: searchQuery,
-    ...apiFilterParams,
-  })
+  const { data, isLoading } = useVenues(venueQueryParams)
   const venues = useMemo(() => data?.data ?? [], [data?.data])
 
-  const handleExportData = useCallback(async (values: FilterValues, format: string) => {
-    const exportParams = buildVenueApiParams(values)
-    const result = await fetchVenues({ ...exportParams, limit: 1000 })
-    const filteredVenues = result?.data ?? []
-
-    if (filteredVenues.length === 0) {
-      throw new Error('NO_RECORDS')
-    }
-
-    const exportCols = Object.values(EXPORT_COLUMN_MAP)
-    const headers = exportCols.map((c) => c.header)
-    const rows = filteredVenues.map((v) => exportCols.map((c) => c.accessor(v)))
-
-    exportDataToFile(headers, rows, format, 'venues_export')
-  }, [])
+  const handleExportData = useMemo(
+    () =>
+      createVenueFilteredExportHandler(fetchVenues, EXPORT_COLUMN_MAP, 'venues_export', {
+        status: activeStatus !== 'all' ? activeStatus : undefined,
+      }),
+    [activeStatus],
+  )
 
   const {
     onAdvancedFilter,

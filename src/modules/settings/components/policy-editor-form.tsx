@@ -291,7 +291,11 @@ export function PolicyEditorForm({
         </div>
 
         <div className="policy-notify-section">
-          <p className="settings-toggle-title">Notify User Via:</p>
+          <p className="settings-toggle-title">Notify Partners Via:</p>
+          <p className="settings-toggle-description policy-notify-helper">
+            Email uses Brevo; push uses the partner notification service. Both resolve all active
+            partners dynamically when you publish.
+          </p>
           <div className="policy-notify-grid">
             {(
               [

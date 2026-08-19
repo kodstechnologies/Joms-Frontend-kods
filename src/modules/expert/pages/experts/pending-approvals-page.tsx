@@ -13,7 +13,10 @@ import { openExpertApplicationView } from '../../utils/expert-application-naviga
 import type { FilterValues } from '@/shared/types/data-filter'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter/use-module-export-filters'
 import { exportDisplayValue } from '@/shared/utils/export-utils'
-import { buildFilterParams, createFilteredExportHandler } from '@/shared/utils/export-filter-utils'
+import {
+  buildExpertListQueryParams,
+  createFilteredExportHandler,
+} from '@/shared/utils/export-filter-utils'
 import { ExpertListHeader } from './expert-list-shared'
 import {
   createExpertBaseColumns,
@@ -37,6 +40,17 @@ import {
   useRecordModerationReasonUsage,
 } from '@/modules/settings/hooks/use-templates'
 
+const formatExportDateTime = (value?: string | null) =>
+  value
+    ? new Date(value).toLocaleString('en-IN', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      })
+    : ''
+
 const EXPORT_COLUMN_MAP: Record<string, { header: string; accessor: (e: Expert) => string }> = {
   expertId: { header: 'Expert ID', accessor: (e) => exportDisplayValue(e.expertId) },
   name: { header: 'Name', accessor: (e) => exportDisplayValue(e.name) },
@@ -44,19 +58,16 @@ const EXPORT_COLUMN_MAP: Record<string, { header: string; accessor: (e: Expert) 
   profession: { header: 'Profession', accessor: (e) => exportDisplayValue(e.profession) },
   status: { header: 'Status', accessor: (e) => exportDisplayValue(e.status) },
   serviceType: { header: 'Service Type', accessor: (e) => exportDisplayValue(e.serviceType) },
-  createdAt: {
-    header: 'Created At',
-    accessor: (e) =>
-      e.createdAt
-        ? new Date(e.createdAt).toLocaleString('en-IN', {
-            day: '2-digit',
-            month: 'short',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-          })
-        : '',
-  },
+  createdAt: { header: 'Created At', accessor: (e) => formatExportDateTime(e.createdAt) },
+  lastActive: { header: 'Last Active', accessor: (e) => formatExportDateTime(e.lastActive) },
+}
+
+const fetchPendingExpertsForExport = async (params: Record<string, unknown>) => {
+  const response = await fetchExperts({ ...params, status: 'pending' })
+  return {
+    data: (response.data || []).filter((expert) => expert.status === 'pending'),
+    meta: response.meta,
+  }
 }
 
 export function ExpertPendingApprovalsPage() {
@@ -76,18 +87,22 @@ export function ExpertPendingApprovalsPage() {
   const [isRevoking, setIsRevoking] = useState(false)
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
 
-  const apiFilterParams = useMemo(() => buildFilterParams(appliedFilters), [appliedFilters])
   const recordReasonUsage = useRecordModerationReasonUsage()
   const { options: revokeReasonOptions, buildPayload: buildRevokeReasonPayload } =
     useModerationReasonOptions(MODERATION_CATEGORY_SLUGS.rejectExpert)
 
-  const { data, isLoading } = useExperts({
-    page: currentPage,
-    limit: 10,
-    status: 'pending',
-    search: searchQuery,
-    ...apiFilterParams,
-  })
+  const expertQueryParams = useMemo(
+    () =>
+      buildExpertListQueryParams(appliedFilters, {
+        page: currentPage,
+        limit: 10,
+        search: searchQuery,
+        status: 'pending',
+      }),
+    [appliedFilters, currentPage, searchQuery],
+  )
+
+  const { data, isLoading } = useExperts(expertQueryParams)
 
   const experts = useMemo(
     () => (data?.data || []).filter((expert) => expert.status === 'pending'),
@@ -103,10 +118,15 @@ export function ExpertPendingApprovalsPage() {
 
   const handleExportData = useMemo(
     () =>
-      createFilteredExportHandler(fetchExperts, EXPORT_COLUMN_MAP, 'pending_experts_export', {
-        status: 'pending',
-      }),
-    [],
+      createFilteredExportHandler(
+        fetchPendingExpertsForExport,
+        EXPORT_COLUMN_MAP,
+        'pending_experts_export',
+        {
+          search: searchQuery.trim() || undefined,
+        },
+      ),
+    [searchQuery],
   )
 
   const {

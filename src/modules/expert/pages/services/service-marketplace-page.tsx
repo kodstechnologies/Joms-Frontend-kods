@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import {
   Bar,
   CartesianGrid,
@@ -25,6 +25,7 @@ import { SERVICE_DASHBOARD_MODULE_KEY } from '../../api/ui-preferences-api'
 import { orderByActiveMetricIds, useActiveMetricIds } from '../../hooks/use-active-metric-ids'
 import { useMarketplaceDashboard } from '@/modules/services/hooks/use-marketplace-dashboard'
 import type { DateRangePreset } from '@/modules/services/types/marketplace-dashboard.types'
+import { exportServiceMarketplaceExcel } from './service-marketplace-export'
 
 const ZERO_SERVICE_METRICS: MarketplaceMetric[] = [
   { id: 'listed-services', label: 'Listed Services', value: '0' },
@@ -34,7 +35,7 @@ const ZERO_SERVICE_METRICS: MarketplaceMetric[] = [
   { id: 'avg-delivery-time', label: 'Avg. Delivery Time', value: '0d 0h' },
   { id: 'total-service-revenue', label: 'Total Service Revenue', value: '₹0.00' },
   { id: 'avg-revenue-service', label: 'Avg. Revenue/Service', value: '₹0.00' },
-  { id: 'repeat-service', label: 'Repeat Service %', value: '0' },
+  { id: 'repeat-service', label: 'Repeat Service %', value: '0%' },
   { id: 'avg-service-rating', label: 'Avg. Service Rating', value: '0/5' },
   { id: 'customer-satisfaction', label: 'Customer Satisfaction', value: '0%' },
   { id: 'on-time-delivery', label: 'On-Time Delivery', value: '0%' },
@@ -49,7 +50,7 @@ const ZERO_CONSULTATION_METRICS: MarketplaceMetric[] = [
   { id: 'avg-consultation-time', label: 'Avg. Consultation Time', value: '0 min' },
   { id: 'total-consultation-revenue', label: 'Total Consultation Revenue', value: '₹0.00' },
   { id: 'avg-revenue-consultation', label: 'Avg. Revenue/Consultation', value: '₹0.00' },
-  { id: 'repeat-consultation', label: 'Repeat Consultation %', value: '0' },
+  { id: 'repeat-consultation', label: 'Repeat Consultation %', value: '0%' },
 ]
 
 function CompactMetricCard({ label, value, trend }: MarketplaceMetric) {
@@ -157,6 +158,12 @@ const RANGE_PRESETS_MAP: Record<string, DateRangePreset> = {
   'last-12-months': 'year',
 }
 
+const RANGE_LABELS: Record<string, string> = {
+  'last-3-months': 'Last 3 Months',
+  'last-6-months': 'Last 6 Months',
+  'last-12-months': 'Last 12 Months',
+}
+
 export function ServiceMarketplacePage() {
   const navigate = useNavigate()
   const [selectedRange, setSelectedRange] = useState<string>('last-3-months')
@@ -176,8 +183,7 @@ export function ServiceMarketplacePage() {
     if (!dashboardData) return ZERO_SERVICE_METRICS
 
     const s = dashboardData.services
-    const cancellationPct =
-      s.orders.total > 0 ? ((s.orders.terminated / s.orders.total) * 100).toFixed(1) : '0.0'
+    const cancellationPct = s.orders.cancellationRate ?? 0
 
     return [
       {
@@ -218,17 +224,17 @@ export function ServiceMarketplacePage() {
       {
         id: 'repeat-service',
         label: 'Repeat Service %',
-        value: `${s.experts.avgServicesPerExpert ?? 0}`,
+        value: `${s.repeatServicePct ?? 0}%`,
       },
       {
         id: 'avg-service-rating',
         label: 'Avg. Service Rating',
-        value: '0/5',
+        value: `${Number(s.quality?.avgRating ?? 0).toFixed(1)}/5`,
       },
       {
         id: 'customer-satisfaction',
         label: 'Customer Satisfaction',
-        value: '0%',
+        value: `${s.quality?.customerSatisfactionPct ?? 0}%`,
       },
       {
         id: 'on-time-delivery',
@@ -287,7 +293,7 @@ export function ServiceMarketplacePage() {
       {
         id: 'repeat-consultation',
         label: 'Repeat Consultation %',
-        value: String(c.bookings.scheduled ?? 0),
+        value: `${c.bookings.repeatConsultationPct ?? 0}%`,
       },
     ]
   }, [dashboardData])
@@ -335,6 +341,30 @@ export function ServiceMarketplacePage() {
   )
   const visibleConsultationMetrics = liveConsultationMetrics
 
+  const handleExportData = useCallback(() => {
+    if (isLoading) {
+      toast.message('Please wait for data to load')
+      return
+    }
+
+    if (visibleServiceMetrics.length === 0 && visibleConsultationMetrics.length === 0) {
+      toast.error('No data available to export')
+      return
+    }
+
+    try {
+      exportServiceMarketplaceExcel({
+        serviceMetrics: visibleServiceMetrics,
+        consultationMetrics: visibleConsultationMetrics,
+        trendPoints,
+        rangeLabel: RANGE_LABELS[selectedRange] ?? selectedRange,
+      })
+      toast.success('Exported as Excel')
+    } catch {
+      toast.error('Failed to export data')
+    }
+  }, [isLoading, visibleServiceMetrics, visibleConsultationMetrics, trendPoints, selectedRange])
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -356,10 +386,7 @@ export function ServiceMarketplacePage() {
             Manage Metrics
           </Button>
 
-          <Button
-            className="ui-export-data h-9"
-            onClick={() => toast.message('Export coming soon')}
-          >
+          <Button className="ui-export-data h-9" onClick={handleExportData}>
             <Download className="size-4" />
             Export Data
           </Button>

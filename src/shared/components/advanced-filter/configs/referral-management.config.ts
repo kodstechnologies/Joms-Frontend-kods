@@ -1,11 +1,24 @@
 import type { FilterSectionConfig, ModuleFilterConfig } from '@/shared/types/data-filter'
 
+import { prefixSectionFields } from './base-filter-sections'
+
+const yesNoOptions = [
+  { label: 'Yes', value: 'true' },
+  { label: 'No', value: 'false' },
+]
+
 const byReferralSection: FilterSectionConfig = {
-  id: 'by-expert',
-  title: 'By Expert',
+  id: 'by-referral',
+  title: 'By Referral',
   defaultExpanded: true,
   fields: [
     { id: 'referralId', label: 'Referral ID', type: 'text', placeholder: 'Enter Referral ID' },
+    {
+      id: 'referralCode',
+      label: 'Referral Code',
+      type: 'text',
+      placeholder: 'Enter Referral Code',
+    },
     {
       id: 'referrerName',
       label: 'Referrer Name',
@@ -14,9 +27,21 @@ const byReferralSection: FilterSectionConfig = {
     },
     {
       id: 'referredExpertName',
-      label: 'Expert Name',
+      label: 'Referred Expert',
       type: 'text',
       placeholder: 'Enter Expert Name',
+    },
+    {
+      id: 'referredExpertEmail',
+      label: 'Expert Email',
+      type: 'text',
+      placeholder: 'Enter Email',
+    },
+    {
+      id: 'referredExpertPhone',
+      label: 'Expert Phone',
+      type: 'text',
+      placeholder: 'Enter Phone',
     },
     {
       id: 'sourceType',
@@ -48,8 +73,54 @@ const byReferralSection: FilterSectionConfig = {
       ],
     },
     {
+      id: 'signedUpCount',
+      label: 'Goal Progress',
+      type: 'number-range',
+      fromPlaceholder: 'Min',
+      toPlaceholder: 'Max',
+    },
+    {
+      id: 'emailSent',
+      label: 'Email Sent',
+      type: 'checkbox-group',
+      options: yesNoOptions,
+    },
+    {
+      id: 'smsSent',
+      label: 'SMS Sent',
+      type: 'checkbox-group',
+      options: yesNoOptions,
+    },
+    {
+      id: 'whatsappSent',
+      label: 'WhatsApp Sent',
+      type: 'checkbox-group',
+      options: yesNoOptions,
+    },
+    {
       id: 'createdAt',
       label: 'Created On',
+      type: 'date-range',
+      fromPlaceholder: 'From',
+      toPlaceholder: 'To',
+    },
+    {
+      id: 'sentAt',
+      label: 'Sent At',
+      type: 'date-range',
+      fromPlaceholder: 'From',
+      toPlaceholder: 'To',
+    },
+    {
+      id: 'acceptedAt',
+      label: 'Accepted At',
+      type: 'date-range',
+      fromPlaceholder: 'From',
+      toPlaceholder: 'To',
+    },
+    {
+      id: 'expiresAt',
+      label: 'Expires At',
       type: 'date-range',
       fromPlaceholder: 'From',
       toPlaceholder: 'To',
@@ -57,8 +128,13 @@ const byReferralSection: FilterSectionConfig = {
   ],
 }
 
+const referralFilterSections: FilterSectionConfig[] = [
+  prefixSectionFields(byReferralSection, 'referral'),
+]
+
 export const referralManagementFilterConfig: ModuleFilterConfig = {
   moduleKey: 'referral-management',
   moduleName: 'Referral Management',
-  sections: [byReferralSection],
+  sections: referralFilterSections,
+  exportSections: referralFilterSections,
 }

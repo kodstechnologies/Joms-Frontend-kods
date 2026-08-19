@@ -131,7 +131,11 @@ export interface VenueProfile {
     }
   }
   amenities?: Array<{
-    amenities?: Array<{ categoryId: string; subCategoryIds: string[] }>
+    amenities?: Array<{
+      categoryId: string
+      subCategoryIds: string[]
+      items?: Array<{ _id: string; name?: string; image?: string; icon?: string }>
+    }>
   }>
   gallery?: Array<{
     venueCoverImages?: Array<{ url: string }>

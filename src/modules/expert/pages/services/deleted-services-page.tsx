@@ -8,7 +8,10 @@ import { toast } from 'sonner'
 import type { FilterValues } from '@/shared/types/data-filter'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter/use-module-export-filters'
 import { exportDisplayValue } from '@/shared/utils/export-utils'
-import { buildFilterParams, createFilteredExportHandler } from '@/shared/utils/export-filter-utils'
+import {
+  buildServiceListQueryParams,
+  createServiceFilteredExportHandler,
+} from '@/shared/utils/export-filter-utils'
 import { fetchServices } from '../../api/service-api'
 
 import { formatDeletedAt } from '../../constants/soft-delete'
@@ -21,17 +24,24 @@ import {
   TableActionsItem,
 } from '@/shared/components/table/table-actions-dropdown'
 
+const formatExportDateTime = (value?: string | null) =>
+  value
+    ? new Date(value).toLocaleString('en-IN', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      })
+    : ''
+
 const EXPORT_COLUMN_MAP: Record<string, { header: string; accessor: (s: Service) => string }> = {
   serviceId: { header: 'Service ID', accessor: (s) => exportDisplayValue(s.serviceid || s._id) },
   title: { header: 'Service Name', accessor: (s) => exportDisplayValue(s.title) },
   serviceType: { header: 'Type', accessor: (s) => exportDisplayValue(s.serviceType) },
   expertName: { header: 'Expert Name', accessor: (s) => exportDisplayValue(s.expertName) },
   reason: { header: 'Reason', accessor: (s) => exportDisplayValue(s.reason) },
-  deletedAt: {
-    header: 'Deleted At',
-    accessor: (s) =>
-      exportDisplayValue(s.deletedAt ? new Date(s.deletedAt).toLocaleDateString() : undefined),
-  },
+  deletedAt: { header: 'Deleted At', accessor: (s) => formatExportDateTime(s.deletedAt) },
 }
 
 export function DeletedServicesPage() {
@@ -41,15 +51,18 @@ export function DeletedServicesPage() {
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
 
-  const apiFilterParams = useMemo(() => buildFilterParams(appliedFilters), [appliedFilters])
+  const serviceQueryParams = useMemo(
+    () =>
+      buildServiceListQueryParams(appliedFilters, {
+        page: currentPage,
+        limit: 10,
+        search: searchQuery,
+        status: 'deleted',
+      }),
+    [appliedFilters, currentPage, searchQuery],
+  )
 
-  const { data, isLoading } = useServices({
-    page: currentPage,
-    limit: 10,
-    status: 'deleted',
-    search: searchQuery,
-    ...apiFilterParams,
-  })
+  const { data, isLoading } = useServices(serviceQueryParams)
   const restoreServiceMutation = useRestoreService()
 
   const services = useMemo(() => data?.data || [], [data?.data])
@@ -62,9 +75,14 @@ export function DeletedServicesPage() {
 
   const handleExportData = useMemo(
     () =>
-      createFilteredExportHandler(fetchServices, EXPORT_COLUMN_MAP, 'deleted_services_export', {
-        status: 'deleted',
-      }),
+      createServiceFilteredExportHandler(
+        fetchServices,
+        EXPORT_COLUMN_MAP,
+        'deleted_services_export',
+        {
+          status: 'deleted',
+        },
+      ),
     [],
   )
 

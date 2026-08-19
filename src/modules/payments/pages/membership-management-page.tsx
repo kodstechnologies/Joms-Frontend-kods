@@ -1,8 +1,10 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 import { Eye } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
+import { toast } from 'sonner'
 
+import { fetchExpertSubscriptions } from '@/modules/memberships/api/membership-subscription-api'
 import { useExpertSubscriptions } from '@/modules/memberships/hooks/use-membership-subscriptions'
 import type { SubscriptionStatus } from '@/modules/memberships/types/membership-subscription'
 import {
@@ -10,17 +12,41 @@ import {
   type FinanceMembershipRow,
   type FinanceMembershipStatus,
 } from '@/modules/payments/utils/finance-membership-mapper'
+import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 import { DataTable } from '@/shared/components/table/data-table'
 import {
   TableActionsDropdown,
   TableActionsItem,
 } from '@/shared/components/table/table-actions-dropdown'
 import { cn } from '@/shared/lib/cn'
-import { useFinanceListFilters } from '@/modules/payments/hooks/use-finance-list-filters'
-import { exportDataToFile, exportDisplayValue } from '@/shared/utils/export-utils'
 import type { FilterValues } from '@/shared/types/data-filter'
+import { exportDisplayValue } from '@/shared/utils/export-utils'
+import {
+  buildFinanceMembershipsListQueryParams,
+  createFinanceMembershipsFilteredExportHandler,
+} from '@/shared/utils/export-filter-utils'
 
 const PAGE_SIZE = 10
+
+const EXPORT_COLUMN_MAP: Record<
+  string,
+  { header: string; accessor: (row: FinanceMembershipRow) => string }
+> = {
+  subscriptionId: {
+    header: 'Subscription ID',
+    accessor: (row) => exportDisplayValue(row.subscriptionId),
+  },
+  name: { header: 'Name', accessor: (row) => exportDisplayValue(row.name) },
+  planName: { header: 'Plan Name', accessor: (row) => exportDisplayValue(row.planName) },
+  amount: { header: 'Amount', accessor: (row) => exportDisplayValue(row.amount) },
+  billingCycle: {
+    header: 'Billing Cycle',
+    accessor: (row) => exportDisplayValue(row.billingCycle),
+  },
+  startDate: { header: 'Start Date', accessor: (row) => exportDisplayValue(row.startDate) },
+  nextBilling: { header: 'Next Billing', accessor: (row) => exportDisplayValue(row.nextBilling) },
+  status: { header: 'Status', accessor: (row) => exportDisplayValue(row.status) },
+}
 
 const STATUS_FILTERS: Array<{ label: string; value: SubscriptionStatus | 'all' }> = [
   { label: 'All', value: 'all' },
@@ -40,17 +66,32 @@ function getStatusClassName(status: FinanceMembershipStatus) {
 export function MembershipManagementPage() {
   const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
   const [statusFilter, setStatusFilter] = useState<SubscriptionStatus | 'all'>('all')
+  const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [selectedRowIds, setSelectedRowIds] = useState<string[]>([])
 
-  const { data, isLoading, isFetching } = useExpertSubscriptions({
-    search: searchQuery.trim() || undefined,
-    status: statusFilter === 'all' ? undefined : statusFilter,
-    page: currentPage,
-    limit: PAGE_SIZE,
-  })
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setDebouncedSearch(searchQuery.trim())
+      setCurrentPage(1)
+    }, 300)
+    return () => window.clearTimeout(timer)
+  }, [searchQuery])
+
+  const listQueryParams = useMemo(() => {
+    const params = buildFinanceMembershipsListQueryParams(appliedFilters, {
+      page: currentPage,
+      limit: PAGE_SIZE,
+      search: debouncedSearch || undefined,
+    })
+    if (!params.status && statusFilter !== 'all') params.status = statusFilter
+    return params
+  }, [appliedFilters, currentPage, debouncedSearch, statusFilter])
+
+  const { data, isLoading, isFetching } = useExpertSubscriptions(listQueryParams)
 
   const rows = useMemo(
     () => (data?.data?.subscriptions ?? []).map(mapSubscriptionToFinanceRow),
@@ -59,21 +100,37 @@ export function MembershipManagementPage() {
   const meta = data?.data?.meta
   const counts = meta?.counts
 
-  const handleExportData = useCallback(async (_values: FilterValues, format: string) => {
-    if (!rows.length) throw new Error('NO_RECORDS')
-    exportDataToFile(
-      ['ID', 'Recipient', 'Status'],
-      rows.map((row) => [
-        exportDisplayValue(row.id),
-        exportDisplayValue(row.name),
-        exportDisplayValue(row.status),
-      ]),
-      format,
-      'memberships_export',
+  const handleApplyFilters = useCallback((values: FilterValues) => {
+    toast.success('Filters applied')
+    setAppliedFilters(values)
+    setCurrentPage(1)
+  }, [])
+
+  const handleExportData = useMemo(() => {
+    const fetchForExport = async (params: Record<string, unknown>) => {
+      const result = await fetchExpertSubscriptions(params)
+      return { data: (result.data?.subscriptions ?? []).map(mapSubscriptionToFinanceRow) }
+    }
+    return createFinanceMembershipsFilteredExportHandler(
+      fetchForExport,
+      EXPORT_COLUMN_MAP,
+      'finance_memberships_export',
+      {
+        search: debouncedSearch || undefined,
+        status: statusFilter === 'all' ? undefined : statusFilter,
+      },
     )
-  }, [rows])
-  const { onAdvancedFilter, onExport, modals: exportFilterModals } =
-    useFinanceListFilters(handleExportData)
+  }, [debouncedSearch, statusFilter])
+
+  const {
+    onAdvancedFilter,
+    onExport,
+    modals: exportFilterModals,
+  } = useModuleExportFilters({
+    moduleKey: 'finance-memberships',
+    onApplyFilters: handleApplyFilters,
+    onExportData: handleExportData,
+  })
 
   const visibleRowIds = useMemo(() => rows.map((row) => row.id), [rows])
   const allVisibleSelected =
@@ -237,13 +294,11 @@ export function MembershipManagementPage() {
         getRowId={(row) => row.id}
         isLoading={isLoading || isFetching}
         searchValue={searchQuery}
-        onSearchChange={(value) => {
-          setSearchQuery(value)
-          setCurrentPage(1)
-        }}
+        onSearchChange={setSearchQuery}
         searchPlaceholder="Search by name, ID or profession"
         advancedFilterLabel="Advance Filters"
         onAdvancedFilter={onAdvancedFilter}
+        advancedFilterVariant="primary"
         onExport={onExport}
         pagination={{
           page: meta?.page ?? currentPage,
@@ -255,6 +310,7 @@ export function MembershipManagementPage() {
         resourceLabel="subscriptions"
         emptyMessage="No membership records found."
       />
+
       {exportFilterModals}
     </div>
   )

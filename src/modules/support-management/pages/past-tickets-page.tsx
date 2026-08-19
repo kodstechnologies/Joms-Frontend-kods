@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 import { ArrowLeft, Eye, SlidersHorizontal } from 'lucide-react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
@@ -7,44 +7,48 @@ import { toast } from 'sonner'
 import { SlaTimerCell } from '../components/sla-timer-cell'
 import { TicketPriorityBadge } from '../components/ticket-priority-badge'
 import { TicketStatusBadge } from '../components/ticket-status-badge'
-import { useExportSupportTickets, usePastTickets } from '../hooks/use-support'
+import { usePastTickets } from '../hooks/use-support'
 import { useSupportStore } from '../store/support-store'
 import type { SupportTicket } from '../types/support'
-import { downloadBlob, getApiErrorMessage } from '../utils/support-format'
+import { getPriorityLabel, getStatusLabel } from '../utils/support-format'
+import { fetchPastTickets } from '../api/support-api'
 import { DataTable } from '@/shared/components/table/data-table'
 import {
   TableActionsDropdown,
   TableActionsItem,
 } from '@/shared/components/table/table-actions-dropdown'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
+import { useModuleExportFilters } from '@/shared/components/advanced-filter'
+import type { FilterValues } from '@/shared/types/data-filter'
+import { exportDisplayValue } from '@/shared/utils/export-utils'
+import {
+  buildSupportTicketsListQueryParams,
+  createSupportTicketsFilteredExportHandler,
+} from '@/shared/utils/export-filter-utils'
 
 export function PastTicketsPage() {
   const navigate = useNavigate()
   const { userId } = useParams<{ userId: string }>()
   const { searchQuery, setSearchQuery, currentPage, setCurrentPage } = useSupportStore()
-  const exportMutation = useExportSupportTickets()
+  const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
 
-  const { data, isLoading } = usePastTickets(userId, {
-    page: currentPage,
-    limit: 10,
-  })
+  const listQueryParams = useMemo(
+    () =>
+      buildSupportTicketsListQueryParams(appliedFilters, {
+        page: currentPage,
+        limit: 10,
+        search: searchQuery || undefined,
+      }),
+    [appliedFilters, currentPage, searchQuery],
+  )
+
+  const { data, isLoading } = usePastTickets(userId, listQueryParams)
 
   const tickets = useMemo(() => data?.data?.tickets ?? [], [data?.data?.tickets])
   const meta = data?.data?.meta
   const pageSize = meta?.limit ?? 10
   const totalPages = meta?.totalPages ?? 1
   const totalItems = meta?.total ?? 0
-
-  const filtered = useMemo(() => {
-    if (!searchQuery) return tickets
-    const q = searchQuery.toLowerCase()
-    return tickets.filter(
-      (t) =>
-        t.id.toLowerCase().includes(q) ||
-        t.subject.toLowerCase().includes(q) ||
-        t.reporter.toLowerCase().includes(q),
-    )
-  }, [searchQuery, tickets])
 
   const renderActions = useCallback(
     (record: SupportTicket) => (
@@ -135,18 +139,57 @@ export function PastTicketsPage() {
     [renderActions],
   )
 
-  const handleExport = async () => {
-    try {
-      const blob = await exportMutation.mutateAsync({
-        reporterId: userId,
-        search: searchQuery || undefined,
-      })
-      downloadBlob(blob, 'past-tickets.csv')
-      toast.success('Export downloaded')
-    } catch (err) {
-      toast.error(getApiErrorMessage(err, 'Failed to export tickets'))
+  const handleApplyFilters = useCallback(
+    (values: FilterValues) => {
+      toast.success('Filters applied')
+      setAppliedFilters(values)
+      setCurrentPage(1)
+    },
+    [setCurrentPage],
+  )
+
+  const handleExportData = useMemo(() => {
+    const fetchForExport = async (
+      params: Record<string, unknown>,
+    ): Promise<{ data: SupportTicket[] }> => {
+      if (!userId) return { data: [] }
+      const result = await fetchPastTickets(userId, params)
+      return { data: result.data?.tickets ?? [] }
     }
-  }
+    return createSupportTicketsFilteredExportHandler(
+      fetchForExport,
+      {
+        id: { header: 'Ticket ID', accessor: (ticket) => exportDisplayValue(ticket.id) },
+        subject: { header: 'Subject', accessor: (ticket) => exportDisplayValue(ticket.subject) },
+        status: {
+          header: 'Status',
+          accessor: (ticket) => exportDisplayValue(getStatusLabel(ticket.status)),
+        },
+        priority: {
+          header: 'Priority',
+          accessor: (ticket) => exportDisplayValue(getPriorityLabel(ticket.priority)),
+        },
+        category: { header: 'Category', accessor: (ticket) => exportDisplayValue(ticket.category) },
+        reporter: { header: 'Reporter', accessor: (ticket) => exportDisplayValue(ticket.reporter) },
+        assignedTo: {
+          header: 'Assigned To',
+          accessor: (ticket) => exportDisplayValue(ticket.assignedTo),
+        },
+      },
+      'past_tickets_export',
+      { search: searchQuery || undefined },
+    )
+  }, [searchQuery, userId])
+
+  const {
+    onAdvancedFilter,
+    onExport,
+    modals: exportFilterModals,
+  } = useModuleExportFilters({
+    moduleKey: 'support-tickets',
+    onApplyFilters: handleApplyFilters,
+    onExportData: handleExportData,
+  })
 
   return (
     <div className="space-y-6">
@@ -179,7 +222,7 @@ export function PastTicketsPage() {
 
       <DataTable
         columns={columns}
-        data={filtered}
+        data={tickets}
         getRowId={(row) => row.id}
         searchValue={searchQuery}
         onSearchChange={(val) => {
@@ -188,19 +231,21 @@ export function PastTicketsPage() {
         }}
         searchPlaceholder="Search by name, ID or profession"
         advancedFilterLabel="Advance Filters"
-        onAdvancedFilter={() => toast.message('Advanced filters coming soon')}
-        onExport={handleExport}
+        onAdvancedFilter={onAdvancedFilter}
+        advancedFilterVariant="primary"
+        onExport={onExport}
         isLoading={isLoading}
         pagination={{
           page: currentPage,
           pageSize,
-          totalItems: searchQuery ? filtered.length : totalItems,
-          totalPages: searchQuery ? Math.max(1, Math.ceil(filtered.length / pageSize)) : totalPages,
+          totalItems,
+          totalPages,
           onPageChange: setCurrentPage,
         }}
         resourceLabel="tickets"
         emptyMessage="No past tickets found."
       />
+      {exportFilterModals}
     </div>
   )
 }

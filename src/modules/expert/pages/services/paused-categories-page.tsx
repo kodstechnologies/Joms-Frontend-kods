@@ -6,13 +6,24 @@ import createIcon from '@/assets/JOMS_ICONS-2/icons8-create.svg'
 import { Button } from '@/shared/components/ui/button'
 import { DataTable } from '@/shared/components/table/data-table'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
-import { exportDataToFile, exportDisplayValue } from '@/shared/utils/export-utils'
+import { exportDisplayValue } from '@/shared/utils/export-utils'
 import type { FilterValues } from '@/shared/types/data-filter'
+import {
+  buildCategoryListQueryParams,
+  createCategoryFilteredExportHandler,
+} from '@/shared/utils/export-filter-utils'
+import { fetchCategories } from '../../api/category-api'
+import CategoryHeader from '../../components/category/CategoryHeader'
+import { type Category } from '../../components/category/category-table-columns'
+import { pausedCategoryColumns } from '../../components/category/PausedCategoryColumns'
+import {
+  categoryPath,
+  useCategoryManagementScope,
+} from '../../components/category/category-management-scope'
+import { useServiceCategories } from '../../hooks/use-category-management'
+import { mapServiceCategoryToUi } from '../../utils/category-mapper'
 
-const EXPORT_COLUMN_MAP: Record<
-  string,
-  { header: string; accessor: (cat: Record<string, unknown>) => string }
-> = {
+const EXPORT_COLUMN_MAP: Record<string, { header: string; accessor: (cat: Category) => string }> = {
   categoryId: {
     header: 'Category ID',
     accessor: (cat) => exportDisplayValue(cat.categoryId || cat.id),
@@ -25,17 +36,9 @@ const EXPORT_COLUMN_MAP: Record<
   },
   experts: {
     header: 'No. of Experts',
-    accessor: (cat) => exportDisplayValue(cat.experts as string | number),
+    accessor: (cat) => exportDisplayValue(cat.experts),
   },
 }
-
-import CategoryHeader from '../../components/category/CategoryHeader'
-import { pausedCategoryColumns } from '../../components/category/PausedCategoryColumns'
-import {
-  categoryPath,
-  useCategoryManagementScope,
-} from '../../components/category/category-management-scope'
-import { useServiceCategories } from '../../hooks/use-category-management'
 
 const PAGE_SIZE = 10
 
@@ -51,27 +54,35 @@ export const PausedCategoriesPage = () => {
     setAppliedFilters(values)
   }, [])
 
-  const { data, isLoading, isError } = useServiceCategories({
-    status: 'PAUSED',
-    search: searchValue.trim() || undefined,
-    page,
-    limit: PAGE_SIZE,
-    ...appliedFilters,
-  })
+  const categoryQueryParams = useMemo(
+    () =>
+      buildCategoryListQueryParams(appliedFilters, {
+        page,
+        limit: PAGE_SIZE,
+        search: searchValue.trim() || undefined,
+        status: 'PAUSED',
+      }),
+    [appliedFilters, page, searchValue],
+  )
+
+  const { data, isLoading, isError } = useServiceCategories(categoryQueryParams)
 
   const pausedCategories = useMemo(() => data?.categories ?? [], [data?.categories])
   const totalItems = data?.pagination?.total ?? pausedCategories.length
   const totalPages = Math.max(1, data?.pagination?.pages ?? Math.ceil(totalItems / PAGE_SIZE))
 
-  const handleExportData = useCallback(
-    (values: FilterValues, format: string) => {
-      const exportCols = Object.values(EXPORT_COLUMN_MAP)
-      const headers = exportCols.map((c) => c.header)
-      const exportRows = pausedCategories.map((cat) => exportCols.map((c) => c.accessor(cat)))
-
-      exportDataToFile(headers, exportRows, format, 'paused_service_categories_export')
-    },
-    [pausedCategories],
+  const handleExportData = useMemo(
+    () =>
+      createCategoryFilteredExportHandler(
+        async (params) => {
+          const response = await fetchCategories(params)
+          return { data: (response.data ?? []).map(mapServiceCategoryToUi) }
+        },
+        EXPORT_COLUMN_MAP,
+        'paused_service_categories_export',
+        { status: 'PAUSED' },
+      ),
+    [],
   )
 
   const {

@@ -4,51 +4,44 @@ import { ArrowLeft, BarChart3, RotateCcw, XCircle } from 'lucide-react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 
-import { useReinviteSubAdmin, useRevokeSubAdminInvite, useSubAdminInvites } from '../hooks/use-rbac'
+import { useSubAdminInvites } from '../hooks/use-rbac'
+import { fetchSubAdminInvites } from '../api/rbac-api'
 import type { SubAdminInvite } from '../types/rbac'
+import { InviteStatusBadge } from '../components/invite-status-badge'
+import { formatInviteTimestamp } from '../utils/invite-format'
+import { InviteActionModals } from '../components/invite-action-modals'
 import { DataTable } from '@/shared/components/table/data-table'
 import {
   TableActionsDropdown,
   TableActionsItem,
 } from '@/shared/components/table/table-actions-dropdown'
 import { Button } from '@/shared/components/ui/button'
-import { cn } from '@/shared/lib/cn'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
+import { useModuleExportFilters } from '@/shared/components/advanced-filter'
+import type { FilterValues } from '@/shared/types/data-filter'
+import { exportDisplayValue } from '@/shared/utils/export-utils'
+import {
+  buildPrefixedListQueryParams,
+  createPrefixedListExportHandler,
+} from '@/shared/utils/export-filter-utils'
 
 const PAGE_SIZE = 10
 
-const formatTimestamp = (value?: string) => {
-  if (!value) return '—'
-  const date = new Date(value)
-  const time = date.toLocaleString('en-IN', {
-    hour: 'numeric',
-    minute: '2-digit',
-    hour12: true,
-  })
-  const day = date.toLocaleString('en-IN', {
-    day: 'numeric',
-    month: 'numeric',
-    year: 'numeric',
-  })
-  return `${time} ${day}`
-}
-
-function InviteStatusBadge({ status }: { status: SubAdminInvite['status'] }) {
-  const isAccepted = status === 'accepted'
-  const isPending = status === 'pending'
-
-  return (
-    <span
-      className={cn(
-        'text-body-sm-semibold inline-flex rounded-full border px-2.5 py-0.5 capitalize',
-        isAccepted && 'border-brand-success/25 bg-brand-success/10 text-brand-success',
-        isPending && 'border-brand-accent-muted bg-brand-accent/15 text-brand-accent',
-        !isAccepted && !isPending && 'border-brand-danger/25 bg-brand-danger/10 text-brand-danger',
-      )}
-    >
-      {isAccepted ? 'Accepted' : isPending ? 'Pending' : 'Revoked'}
-    </span>
-  )
+const INVITE_EXPORT_COLUMN_MAP: Record<
+  string,
+  { header: string; accessor: (invite: SubAdminInvite) => string }
+> = {
+  inviteId: { header: 'Invite ID', accessor: (invite) => exportDisplayValue(invite.inviteId) },
+  username: { header: 'Username', accessor: (invite) => exportDisplayValue(invite.username) },
+  roleId: { header: 'Role ID', accessor: (invite) => exportDisplayValue(invite.roleId) },
+  roleName: { header: 'Role Name', accessor: (invite) => exportDisplayValue(invite.roleName) },
+  email: { header: 'Email ID', accessor: (invite) => exportDisplayValue(invite.email) },
+  sentAt: {
+    header: 'Time stamp',
+    accessor: (invite) =>
+      exportDisplayValue(formatInviteTimestamp(invite.sentAt || invite.timestamp)),
+  },
+  status: { header: 'Status', accessor: (invite) => exportDisplayValue(invite.status) },
 }
 
 export function SubAdminDetailPage() {
@@ -57,58 +50,67 @@ export function SubAdminDetailPage() {
 
   const [page, setPage] = useState(1)
   const [searchQuery, setSearchQuery] = useState('')
+  const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
+  const [selectedInvite, setSelectedInvite] = useState<SubAdminInvite | null>(null)
+  const [actionMode, setActionMode] = useState<'revoke' | 'reinvite' | null>(null)
 
-  const { data, isLoading } = useSubAdminInvites(id, {
-    page,
-    limit: PAGE_SIZE,
-    search: searchQuery || undefined,
-  })
+  const listQueryParams = useMemo(
+    () =>
+      buildPrefixedListQueryParams(appliedFilters, {
+        page,
+        limit: PAGE_SIZE,
+        search: searchQuery || undefined,
+      }),
+    [appliedFilters, page, searchQuery],
+  )
 
-  const reinviteMutation = useReinviteSubAdmin()
-  const revokeMutation = useRevokeSubAdminInvite()
+  const { data, isLoading } = useSubAdminInvites(id, listQueryParams)
 
   const subAdmin = data?.data.subAdmin
   const invites = data?.data.invites ?? []
   const meta = data?.meta
 
-  const handleReinvite = useCallback(
-    async (inviteId: string) => {
-      try {
-        await reinviteMutation.mutateAsync(inviteId)
-        toast.success('Invite resent successfully')
-      } catch {
-        toast.error('Failed to resend invite')
-      }
-      setActiveDropdownId(null)
-    },
-    [reinviteMutation],
-  )
+  const handleApplyFilters = useCallback((values: FilterValues) => {
+    toast.success('Filters applied')
+    setAppliedFilters(values)
+    setPage(1)
+  }, [])
 
-  const handleRevoke = useCallback(
-    async (inviteId: string) => {
-      try {
-        await revokeMutation.mutateAsync(inviteId)
-        toast.success('Invite revoked successfully')
-      } catch {
-        toast.error('Failed to revoke invite')
-      }
-      setActiveDropdownId(null)
-    },
-    [revokeMutation],
-  )
+  const handleExportData = useMemo(() => {
+    const fetchForExport = async (params: Record<string, unknown>) => {
+      const result = await fetchSubAdminInvites(id, params)
+      return { data: result.data?.invites ?? [] }
+    }
+    return createPrefixedListExportHandler(
+      fetchForExport,
+      INVITE_EXPORT_COLUMN_MAP,
+      'rbac_user_invites_export',
+      { search: searchQuery || undefined },
+    )
+  }, [id, searchQuery])
+
+  const {
+    onAdvancedFilter,
+    onExport,
+    modals: exportFilterModals,
+  } = useModuleExportFilters({
+    moduleKey: 'rbac-invites',
+    onApplyFilters: handleApplyFilters,
+    onExportData: handleExportData,
+  })
 
   const columns = useMemo<ColumnDef<SubAdminInvite>[]>(
     () => [
       { accessorKey: 'inviteId', header: 'Invite ID' },
       { accessorKey: 'username', header: 'Username' },
       { accessorKey: 'roleId', header: 'Role ID' },
-      { accessorKey: 'roleName', header: 'RoleName' },
+      { accessorKey: 'roleName', header: 'Role Name' },
       { accessorKey: 'email', header: 'Email ID' },
       {
         accessorKey: 'sentAt',
         header: 'Time stamp',
-        cell: ({ row }) => formatTimestamp(row.original.sentAt || row.original.timestamp),
+        cell: ({ row }) => formatInviteTimestamp(row.original.sentAt || row.original.timestamp),
       },
       {
         accessorKey: 'status',
@@ -120,29 +122,43 @@ export function SubAdminDetailPage() {
         header: 'Actions',
         enableSorting: false,
         meta: { headerClassName: 'pr-5 text-right', cellClassName: 'relative pr-5 text-right' },
-        cell: ({ row }) => (
-          <TableActionsDropdown
-            label="Open invite actions"
-            isOpen={activeDropdownId === row.original.id}
-            onOpenChange={(open) => setActiveDropdownId(open ? row.original.id : null)}
-          >
-            <TableActionsItem
-              icon={<RotateCcw className="size-3.5" />}
-              onClick={() => handleReinvite(row.original.id)}
+        cell: ({ row }) => {
+          if (row.original.status !== 'pending') {
+            return <span className="text-brand-muted text-sm">—</span>
+          }
+
+          return (
+            <TableActionsDropdown
+              label="Open invite actions"
+              isOpen={activeDropdownId === row.original.id}
+              onOpenChange={(open) => setActiveDropdownId(open ? row.original.id : null)}
             >
-              Re-Invite
-            </TableActionsItem>
-            <TableActionsItem
-              icon={<XCircle className="text-brand-danger size-3.5" />}
-              onClick={() => handleRevoke(row.original.id)}
-            >
-              <span className="text-brand-danger">Revoke Invite</span>
-            </TableActionsItem>
-          </TableActionsDropdown>
-        ),
+              <TableActionsItem
+                icon={<RotateCcw className="size-3.5" />}
+                onClick={() => {
+                  setSelectedInvite(row.original)
+                  setActionMode('reinvite')
+                  setActiveDropdownId(null)
+                }}
+              >
+                Re-Invite
+              </TableActionsItem>
+              <TableActionsItem
+                icon={<XCircle className="text-brand-danger size-3.5" />}
+                onClick={() => {
+                  setSelectedInvite(row.original)
+                  setActionMode('revoke')
+                  setActiveDropdownId(null)
+                }}
+              >
+                <span className="text-brand-danger">Revoke Invite</span>
+              </TableActionsItem>
+            </TableActionsDropdown>
+          )
+        },
       },
     ],
-    [activeDropdownId, handleReinvite, handleRevoke],
+    [activeDropdownId],
   )
 
   return (
@@ -163,7 +179,7 @@ export function SubAdminDetailPage() {
               onClick={() => navigateBackOrFallback(navigate, '/settings/access')}
               className="hover:text-brand-text transition-colors"
             >
-              Role Based Access
+              Role Based Access Control
             </button>
             <span className="text-brand-text/30">/</span>
             <span>User</span>
@@ -203,8 +219,9 @@ export function SubAdminDetailPage() {
           setPage(1)
         }}
         searchPlaceholder="Search by name, ID or profession"
-        onAdvancedFilter={() => toast.info('Advanced filters coming soon')}
-        onExport={() => toast.info('Export coming soon')}
+        onAdvancedFilter={onAdvancedFilter}
+        advancedFilterVariant="primary"
+        onExport={onExport}
         pagination={{
           page,
           pageSize: PAGE_SIZE,
@@ -214,6 +231,17 @@ export function SubAdminDetailPage() {
         }}
         resourceLabel="requests"
         emptyMessage="No invites found for this user."
+      />
+
+      {exportFilterModals}
+
+      <InviteActionModals
+        invite={selectedInvite}
+        mode={actionMode}
+        onClose={() => {
+          setSelectedInvite(null)
+          setActionMode(null)
+        }}
       />
     </div>
   )

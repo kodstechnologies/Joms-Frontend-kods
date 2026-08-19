@@ -29,7 +29,10 @@ import { useActiveMetricIds } from '@/modules/expert/hooks/use-active-metric-ids
 import { useTableColumnPreferences } from '@/modules/expert/hooks/use-ui-preferences'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 import { exportDisplayValue } from '@/shared/utils/export-utils'
-import { createFilteredExportHandler } from '@/shared/utils/export-filter-utils'
+import {
+  buildReferralListQueryParams,
+  createReferralFilteredExportHandler,
+} from '@/shared/utils/export-filter-utils'
 import type { FilterValues } from '@/shared/types/data-filter'
 import { DataTable } from '@/shared/components/table/data-table'
 import {
@@ -105,17 +108,16 @@ export function ReferralManagementPage() {
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
 
   const { data: statsData, isLoading: statsLoading } = useReferralStats()
-  const { data: expertData, isLoading: expertLoading } = useExpertInvites({
-    page: currentPage,
-    limit: 10,
-    search: searchQuery || undefined,
-    referralId: (appliedFilters.referralId as string) || undefined,
-    referrerName: (appliedFilters.referrerName as string) || undefined,
-    expertName: (appliedFilters.referredExpertName as string) || undefined,
-    sourceType: (appliedFilters.sourceType as string[])?.join(',') || undefined,
-    status: (appliedFilters.status as string[])?.join(',') || undefined,
-    referralType: (appliedFilters.referralType as string[])?.join(',') || undefined,
-  })
+  const listQueryParams = useMemo(
+    () =>
+      buildReferralListQueryParams(appliedFilters, {
+        page: currentPage,
+        limit: 10,
+        search: searchQuery || undefined,
+      }),
+    [appliedFilters, currentPage, searchQuery],
+  )
+  const { data: expertData, isLoading: expertLoading } = useExpertInvites(listQueryParams)
   const activeMetricIds = useActiveMetricIds(REFERRALS_MODULE_KEY, DEFAULT_METRIC_IDS)
   const tableColumnPreferencesQuery = useTableColumnPreferences(REFERRALS_MODULE_KEY)
 
@@ -137,13 +139,19 @@ export function ReferralManagementPage() {
   )
 
   const handleExportData = useMemo(() => {
-    // fetchExpertInvites returns { data: { invites: [], meta: {} } } — wrap to match expected { data: [] } shape
     const fetchForExport = async (params: Record<string, unknown>) => {
-      const result = await fetchExpertInvites(params as Parameters<typeof fetchExpertInvites>[0])
+      const result = await fetchExpertInvites(params)
       return { data: result.data?.invites ?? [] }
     }
-    return createFilteredExportHandler(fetchForExport, EXPORT_COLUMN_MAP, 'referrals_export')
-  }, [])
+    return createReferralFilteredExportHandler(
+      fetchForExport,
+      EXPORT_COLUMN_MAP,
+      'referrals_export',
+      {
+        search: searchQuery || undefined,
+      },
+    )
+  }, [searchQuery])
 
   const {
     onAdvancedFilter,
@@ -313,7 +321,7 @@ export function ReferralManagementPage() {
         </div>
         <div className="flex w-full flex-col gap-2 sm:flex-row md:w-auto">
           <Button
-            className="ui-manage-metrics h-9 w-full rounded-xl bg-[#FBC078] px-5 text-sm font-semibold text-black shadow-none hover:bg-[#EEB46A] md:w-auto"
+            className="ui-manage-metrics ui-cta ui-cta-primary h-9 w-full px-5 md:w-auto"
             onClick={() => navigate('/metrics/referrals')}
           >
             <SlidersHorizontal className="size-4" />
@@ -342,6 +350,7 @@ export function ReferralManagementPage() {
         onSearchChange={setSearchQuery}
         searchPlaceholder="Search by name, ID or email"
         onAdvancedFilter={onAdvancedFilter}
+        advancedFilterVariant="primary"
         onExport={onExport}
         pagination={{
           page: currentPage,

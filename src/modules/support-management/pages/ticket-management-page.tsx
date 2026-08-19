@@ -5,7 +5,6 @@ import {
   AlertTriangle,
   ArrowLeftRight,
   Eye,
-  GitMerge,
   MessageSquarePlus,
   Pencil,
   SlidersHorizontal,
@@ -18,29 +17,39 @@ import {
 import { toast } from 'sonner'
 
 import { AddTagModal } from '@/shared/components/modal/add-tag-modal'
-import { MergeTicketsModal } from '../components/merge-tickets-modal'
-import { SlaTimerCell } from '../components/sla-timer-cell'
+import { EscalateTicketModal } from '../components/reassign-ticket-modal'
 import { TicketPriorityBadge } from '../components/ticket-priority-badge'
 import { TicketStatusBadge } from '../components/ticket-status-badge'
 import {
+  DEFAULT_TICKET_MANAGEMENT_METRIC_IDS,
+  TICKET_MANAGEMENT_METRIC_IDS,
+  TICKET_MANAGEMENT_METRIC_ID_SET,
+  TICKET_MANAGEMENT_MODULE_KEY,
+} from '../config/ticket-management-metrics.config'
+import {
   useDeleteSupportTicket,
   useEscalateSupportTicket,
-  useExportSupportTickets,
   useLiveSupportUpdates,
-  useMergeSupportTickets,
+  useSupportAgents,
   useSupportTickets,
   useUpdateSupportTicket,
 } from '../hooks/use-support'
 import { useSupportStore } from '../store/support-store'
 import type { SupportTicket, TicketTab } from '../types/support'
 import {
-  downloadBlob,
   getApiErrorMessage,
   getPriorityLabel,
   getStatusLabel,
   nextPriority,
   nextStatus,
 } from '../utils/support-format'
+import { buildTicketManagementMetricCards } from '../utils/ticket-management-metrics'
+import {
+  orderByActiveMetricIds,
+  useActiveMetricIds,
+} from '@/modules/expert/hooks/use-active-metric-ids'
+import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
+import { fetchSupportTickets } from '../api/support-api'
 import { DataTable } from '@/shared/components/table/data-table'
 import {
   TableActionsDropdown,
@@ -48,6 +57,13 @@ import {
 } from '@/shared/components/table/table-actions-dropdown'
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
+import { useModuleExportFilters } from '@/shared/components/advanced-filter'
+import type { FilterValues } from '@/shared/types/data-filter'
+import { exportDisplayValue } from '@/shared/utils/export-utils'
+import {
+  buildSupportTicketsListQueryParams,
+  createSupportTicketsFilteredExportHandler,
+} from '@/shared/utils/export-filter-utils'
 
 const TABS: { key: TicketTab; label: string }[] = [
   { key: 'my_tickets', label: 'My Tickets' },
@@ -55,17 +71,27 @@ const TABS: { key: TicketTab; label: string }[] = [
   { key: 'all', label: 'All Tickets' },
 ]
 
-const FALLBACK_STATS: Array<{
-  title: string
-  value: string
-  changePercent?: number
-  changeDirection?: 'up' | 'down'
-}> = [
-  { title: 'My Open Tickets', value: '0' },
-  { title: 'Tickets In-Progress', value: '0' },
-  { title: 'Avg. Response Time', value: '0' },
-  { title: 'Avg. Resolution Time', value: '0' },
-]
+const EXPORT_COLUMN_MAP: Record<
+  string,
+  { header: string; accessor: (ticket: SupportTicket) => string }
+> = {
+  id: { header: 'Ticket ID', accessor: (ticket) => exportDisplayValue(ticket.id) },
+  subject: { header: 'Subject', accessor: (ticket) => exportDisplayValue(ticket.subject) },
+  status: {
+    header: 'Status',
+    accessor: (ticket) => exportDisplayValue(getStatusLabel(ticket.status)),
+  },
+  priority: {
+    header: 'Priority',
+    accessor: (ticket) => exportDisplayValue(getPriorityLabel(ticket.priority)),
+  },
+  category: { header: 'Category', accessor: (ticket) => exportDisplayValue(ticket.category) },
+  reporter: { header: 'Reporter', accessor: (ticket) => exportDisplayValue(ticket.reporter) },
+  assignedTo: {
+    header: 'Assigned To',
+    accessor: (ticket) => exportDisplayValue(ticket.assignedTo),
+  },
+}
 
 function TicketMetricCard({
   title,
@@ -120,23 +146,42 @@ export function TicketManagementPage() {
 
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [tagModalOpen, setTagModalOpen] = useState(false)
-  const [mergeModalOpen, setMergeModalOpen] = useState(false)
+  const [escalateOpen, setEscalateOpen] = useState(false)
+  const [escalateTicketId, setEscalateTicketId] = useState<string | null>(null)
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [activeTicketId, setActiveTicketId] = useState<string | null>(null)
+  const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
 
-  const { data, isLoading } = useSupportTickets({
-    page: currentPage,
-    limit: 10,
-    search: searchQuery || undefined,
-    tab: activeTab,
-    includeClosed: true,
-  })
+  const listQueryParams = useMemo(
+    () =>
+      buildSupportTicketsListQueryParams(appliedFilters, {
+        page: currentPage,
+        limit: 10,
+        search: searchQuery || undefined,
+        tab: activeTab,
+        includeClosed: true,
+      }),
+    [activeTab, appliedFilters, currentPage, searchQuery],
+  )
+
+  const { data, isLoading } = useSupportTickets(listQueryParams)
   const updateMutation = useUpdateSupportTicket()
   const escalateMutation = useEscalateSupportTicket()
   const deleteMutation = useDeleteSupportTicket()
-  const exportMutation = useExportSupportTickets()
-  const mergeMutation = useMergeSupportTickets()
+  const agentsQuery = useSupportAgents()
   useLiveSupportUpdates()
+  const activeMetricIds = useActiveMetricIds(TICKET_MANAGEMENT_MODULE_KEY, [
+    ...DEFAULT_TICKET_MANAGEMENT_METRIC_IDS,
+  ])
+
+  const filteredActiveMetricIds = useMemo(
+    () =>
+      sortIdsByCatalogOrder(
+        activeMetricIds.filter((id) => TICKET_MANAGEMENT_METRIC_ID_SET.has(id)),
+        TICKET_MANAGEMENT_METRIC_IDS,
+      ),
+    [activeMetricIds],
+  )
 
   const tickets = useMemo(() => data?.data?.tickets ?? [], [data?.data?.tickets])
   const meta = data?.data?.meta
@@ -144,12 +189,10 @@ export function TicketManagementPage() {
   const totalPages = meta?.totalPages ?? 1
   const totalItems = meta?.total ?? 0
 
-  const stats = (data?.data?.stats?.length ? data.data.stats : FALLBACK_STATS).map((s) => ({
-    title: s.title,
-    value: String(s.value),
-    percentage: s.changePercent ?? 0,
-    direction: (s.changeDirection ?? 'up') as 'up' | 'down',
-  }))
+  const stats = useMemo(() => {
+    const allCards = buildTicketManagementMetricCards(data?.data?.stats)
+    return orderByActiveMetricIds(allCards, filteredActiveMetricIds)
+  }, [data?.data?.stats, filteredActiveMetricIds])
 
   const toggleSelect = useCallback((id: string) => {
     setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]))
@@ -161,18 +204,41 @@ export function TicketManagementPage() {
     )
   }, [tickets])
 
-  const handleExport = useCallback(async () => {
-    try {
-      const blob = await exportMutation.mutateAsync({
-        search: searchQuery || undefined,
+  const handleApplyFilters = useCallback(
+    (values: FilterValues) => {
+      toast.success('Filters applied')
+      setAppliedFilters(values)
+      setCurrentPage(1)
+    },
+    [setCurrentPage],
+  )
+
+  const handleExportData = useMemo(() => {
+    const fetchForExport = async (params: Record<string, unknown>) => {
+      const result = await fetchSupportTickets({
+        ...params,
         tab: activeTab,
+        includeClosed: true,
       })
-      downloadBlob(blob, 'support-tickets.csv')
-      toast.success('Export downloaded')
-    } catch (err) {
-      toast.error(getApiErrorMessage(err, 'Failed to export tickets'))
+      return { data: result.data?.tickets ?? [] }
     }
-  }, [activeTab, exportMutation, searchQuery])
+    return createSupportTicketsFilteredExportHandler(
+      fetchForExport,
+      EXPORT_COLUMN_MAP,
+      'support_tickets_export',
+      { search: searchQuery || undefined, tab: activeTab, includeClosed: true },
+    )
+  }, [activeTab, searchQuery])
+
+  const {
+    onAdvancedFilter,
+    onExport,
+    modals: exportFilterModals,
+  } = useModuleExportFilters({
+    moduleKey: 'support-tickets',
+    onApplyFilters: handleApplyFilters,
+    onExportData: handleExportData,
+  })
 
   const renderActions = useCallback(
     (record: SupportTicket) => {
@@ -264,14 +330,10 @@ export function TicketManagementPage() {
           <TableActionsItem
             icon={<AlertTriangle className="size-3.5 text-slate-700" aria-hidden="true" />}
             className="text-slate-800 hover:bg-slate-100 hover:text-slate-900"
-            onClick={async () => {
+            onClick={() => {
               setActiveDropdownId(null)
-              try {
-                await escalateMutation.mutateAsync({ id })
-                toast.success('Ticket escalated')
-              } catch (err) {
-                toast.error(getApiErrorMessage(err, 'Failed to escalate ticket'))
-              }
+              setEscalateTicketId(id)
+              setEscalateOpen(true)
             }}
           >
             Escalate
@@ -291,31 +353,10 @@ export function TicketManagementPage() {
           >
             Delete
           </TableActionsItem>
-          <TableActionsItem
-            icon={<GitMerge className="size-3.5 text-slate-700" aria-hidden="true" />}
-            className="text-slate-800 hover:bg-slate-100 hover:text-slate-900"
-            onClick={() => {
-              setActiveDropdownId(null)
-              if (!selectedIds.includes(id)) {
-                setSelectedIds((prev) => [...prev, id])
-              }
-              setMergeModalOpen(true)
-            }}
-          >
-            Merge
-          </TableActionsItem>
         </TableActionsDropdown>
       )
     },
-    [
-      activeDropdownId,
-      deleteMutation,
-      escalateMutation,
-      navigate,
-      selectedIds,
-      setSelectedTicketId,
-      updateMutation,
-    ],
+    [activeDropdownId, deleteMutation, navigate, setSelectedTicketId, updateMutation],
   )
 
   const columns = useMemo<ColumnDef<SupportTicket>[]>(
@@ -368,17 +409,6 @@ export function TicketManagementPage() {
       { accessorKey: 'reporter', header: 'Reporter' },
       { accessorKey: 'assignedTo', header: 'Assigned To' },
       {
-        accessorKey: 'slaTimer',
-        header: 'SLA Timer',
-        cell: ({ row }) => (
-          <SlaTimerCell
-            slaTimer={row.original.slaTimer}
-            slaDueAt={row.original.slaDueAt}
-            status={row.original.status}
-          />
-        ),
-      },
-      {
         id: 'actions',
         header: 'Actions',
         meta: { headerClassName: 'pr-5 text-right', cellClassName: 'relative pr-5 text-right' },
@@ -389,7 +419,7 @@ export function TicketManagementPage() {
   )
 
   const activeTicket = tickets.find((t) => t.id === activeTicketId)
-  const mergeTickets = tickets.filter((t) => selectedIds.includes(t.id))
+  const escalateTicket = tickets.find((t) => t.id === escalateTicketId)
 
   return (
     <div className="flex flex-col gap-6">
@@ -405,9 +435,8 @@ export function TicketManagementPage() {
           <Button
             type="button"
             variant="primary"
-            onClick={handleExport}
-            disabled={exportMutation.isPending}
-            className="ui-export-data"
+            onClick={onExport}
+            className="ui-export-data ui-cta ui-cta-primary"
           >
             <Upload className="icon-sm shrink-0" aria-hidden="true" />
             Export Data
@@ -415,7 +444,7 @@ export function TicketManagementPage() {
           <button
             type="button"
             onClick={() => navigate('/metrics/ticket-management')}
-            className="ui-manage-metrics ui-cta ui-cta-gold-outline"
+            className="ui-manage-metrics ui-cta ui-cta-primary"
           >
             <SlidersHorizontal className="icon-sm shrink-0" aria-hidden="true" />
             Manage Metrics
@@ -424,8 +453,17 @@ export function TicketManagementPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {stats.map((stat) => (
-          <TicketMetricCard key={stat.title} {...stat} />
+        {(isLoading && stats.length === 0
+          ? filteredActiveMetricIds.map((id) => ({
+              id,
+              title: 'Loading',
+              value: '—',
+              percentage: 0,
+              direction: 'up' as const,
+            }))
+          : stats
+        ).map((stat) => (
+          <TicketMetricCard key={stat.id} {...stat} />
         ))}
       </div>
 
@@ -462,9 +500,9 @@ export function TicketManagementPage() {
         }}
         searchPlaceholder="Search by name, ID or profession"
         advancedFilterLabel="Advance Filters"
-        onAdvancedFilter={() => toast.message('Advanced filters coming soon')}
-        onExport={handleExport}
-        isExporting={exportMutation.isPending}
+        onAdvancedFilter={onAdvancedFilter}
+        advancedFilterVariant="primary"
+        onExport={onExport}
         isLoading={isLoading}
         pagination={{
           page: currentPage,
@@ -498,30 +536,37 @@ export function TicketManagementPage() {
           }
         }}
       />
-      <MergeTicketsModal
-        open={mergeModalOpen}
-        onClose={() => setMergeModalOpen(false)}
-        tickets={mergeTickets.map((t) => ({
-          user: t.reporter,
-          issue: t.subject,
-          time: t.createdAt,
-          id: t.id,
-        }))}
-        onSubmit={async (notes) => {
-          if (selectedIds.length < 2) {
-            toast.error('Select at least 2 tickets to merge')
-            throw new Error('Need 2 tickets')
-          }
+
+      <EscalateTicketModal
+        open={escalateOpen}
+        agents={agentsQuery.data?.data?.agents ?? []}
+        isLoading={agentsQuery.isFetching}
+        currentAssigneeId={escalateTicket?.assignedToId}
+        isSubmitting={escalateMutation.isPending}
+        onClose={() => {
+          setEscalateOpen(false)
+          setEscalateTicketId(null)
+        }}
+        onSelect={async (agent) => {
+          if (!escalateTicketId) return
           try {
-            await mergeMutation.mutateAsync({ ticketIds: selectedIds, notes })
-            toast.success('Tickets merged')
-            setSelectedIds([])
+            await escalateMutation.mutateAsync({
+              id: escalateTicketId,
+              payload: {
+                assignedToId: agent.id,
+                assignedToName: agent.name,
+                assignedToAvatarUrl: agent.avatarUrl,
+              },
+            })
+            setEscalateOpen(false)
+            setEscalateTicketId(null)
+            toast.success(`Ticket escalated to ${agent.name}`)
           } catch (err) {
-            toast.error(getApiErrorMessage(err, 'Failed to merge tickets'))
-            throw err
+            toast.error(getApiErrorMessage(err, 'Failed to escalate ticket'))
           }
         }}
       />
+      {exportFilterModals}
     </div>
   )
 }

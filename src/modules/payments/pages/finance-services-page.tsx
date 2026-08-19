@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 import { useQueryClient } from '@tanstack/react-query'
 import { AlertTriangle, Eye, SlidersHorizontal, Tag, Trash2 } from 'lucide-react'
@@ -17,17 +17,17 @@ import {
   useFinanceRevenue,
   useSoftDeleteFinance,
 } from '@/modules/payments/hooks/use-finance'
+import { fetchFinanceEscrow, fetchFinanceRevenue } from '@/modules/payments/api/finance-api'
 import {
   mapEscrowToServiceRow,
   mapPaymentToServiceRow,
 } from '@/modules/payments/utils/finance-mappers'
-import { fetchFinanceEscrow, fetchFinanceRevenue } from '@/modules/payments/api/finance-api'
 import {
-  createFinanceRowsExportHandler,
-  useFinanceListFilters,
-} from '@/modules/payments/hooks/use-finance-list-filters'
-import { exportDisplayValue } from '@/shared/utils/export-utils'
-import { AddTagsModal } from '@/modules/payments/components/add-tags-modal'
+  DEFAULT_FINANCE_SERVICES_VISIBLE_COLUMN_IDS,
+  FINANCE_SERVICES_MODULE_KEY,
+} from '@/modules/payments/config/finance-services-table-columns.config'
+import { useTableColumnPreferences } from '@/modules/expert/hooks/use-ui-preferences'
+import { AddTagsModal } from '@/shared/components/modals/add-tags-modal'
 import {
   FinanceEscalateDeleteModal,
   type FinanceEscalateDeleteAction,
@@ -39,8 +39,28 @@ import {
 } from '@/shared/components/table/table-actions-dropdown'
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
+import { useModuleExportFilters } from '@/shared/components/advanced-filter'
+import { exportDisplayValue } from '@/shared/utils/export-utils'
+import {
+  buildFinanceServicesListQueryParams,
+  createFinanceServicesFilteredExportHandler,
+} from '@/shared/utils/export-filter-utils'
+import type { FilterValues } from '@/shared/types/data-filter'
 
 const PAGE_SIZE = 10
+
+const EXPORT_COLUMN_MAP: Record<
+  string,
+  { header: string; accessor: (row: FinanceServiceRow) => string }
+> = {
+  'service-id': { header: 'Service ID', accessor: (row) => exportDisplayValue(row.serviceId) },
+  name: { header: 'Name', accessor: (row) => exportDisplayValue(row.name) },
+  'expert-name': { header: 'Expert Name', accessor: (row) => exportDisplayValue(row.expertName) },
+  'booking-id': { header: 'Booking ID', accessor: (row) => exportDisplayValue(row.bookingId) },
+  'user-name': { header: 'User Name', accessor: (row) => exportDisplayValue(row.userName) },
+  status: { header: 'Status', accessor: (row) => exportDisplayValue(row.status) },
+  revenue: { header: 'Revenue', accessor: (row) => exportDisplayValue(row.revenue) },
+}
 
 function getStatusClassName(status: FinanceServiceRow['status']) {
   if (status === 'Paid') {
@@ -54,7 +74,9 @@ export function FinanceServicesPage() {
   const queryClient = useQueryClient()
   const [activeTab, setActiveTab] = useState<FinanceServiceTab>('all')
   const [searchQuery, setSearchQuery] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
+  const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [selectedRowIds, setSelectedRowIds] = useState<string[]>([])
   const [tagTarget, setTagTarget] = useState<FinanceServiceRow | null>(null)
@@ -62,49 +84,30 @@ export function FinanceServicesPage() {
   const addNote = useAddFinanceNote()
   const escalate = useEscalateFinance()
   const softDelete = useSoftDeleteFinance()
+  const tableColumnPreferencesQuery = useTableColumnPreferences(FINANCE_SERVICES_MODULE_KEY)
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setDebouncedSearch(searchQuery.trim())
+      setCurrentPage(1)
+    }, 300)
+    return () => window.clearTimeout(timer)
+  }, [searchQuery])
 
   const isEscrowTab = activeTab === 'escrow'
-  const module =
-    activeTab === 'by-service'
-      ? 'service'
-      : activeTab === 'by-consultation'
-        ? 'consultation'
-        : undefined
-
-  const revenueParams = {
-    page: currentPage,
-    limit: PAGE_SIZE,
-    module,
-  }
-  const escrowParams = {
-    page: currentPage,
-    limit: PAGE_SIZE,
-  }
-
-  const handleExportData = useMemo(
+  const listQueryParams = useMemo(
     () =>
-      createFinanceRowsExportHandler({
-        fetchRows: async (params) => {
-          if (isEscrowTab) {
-            return (await fetchFinanceEscrow(params))?.data?.rows ?? []
-          }
-          return (await fetchFinanceRevenue({ ...params, module }))?.data?.rows ?? []
-        },
-        headers: ['ID', 'Status', 'Created'],
-        mapRow: (row) => [
-          exportDisplayValue(row._id),
-          exportDisplayValue(row.status),
-          exportDisplayValue(row.createdAt),
-        ],
-        fileName: 'services_finance_export',
+      buildFinanceServicesListQueryParams(appliedFilters, {
+        page: currentPage,
+        limit: PAGE_SIZE,
+        search: debouncedSearch || undefined,
+        tab: activeTab,
       }),
-    [isEscrowTab, module],
+    [activeTab, appliedFilters, currentPage, debouncedSearch],
   )
-  const { apiFilterParams, onAdvancedFilter, onExport, modals: exportFilterModals } =
-    useFinanceListFilters(handleExportData)
 
-  const revenueQuery = useFinanceRevenue({ ...revenueParams, ...apiFilterParams }, !isEscrowTab)
-  const escrowQuery = useFinanceEscrow({ ...escrowParams, ...apiFilterParams }, isEscrowTab)
+  const revenueQuery = useFinanceRevenue(listQueryParams, !isEscrowTab)
+  const escrowQuery = useFinanceEscrow(listQueryParams, isEscrowTab)
 
   const handleTabChange = (tabId: FinanceServiceTab) => {
     if (tabId !== activeTab) {
@@ -112,6 +115,7 @@ export function FinanceServicesPage() {
       setCurrentPage(1)
       setSearchQuery('')
       setSelectedRowIds([])
+      setAppliedFilters({})
     }
 
     // Always refetch for the tab (cache was keeping prior tab data until full refresh)
@@ -128,31 +132,49 @@ export function FinanceServicesPage() {
     if (isEscrowTab) {
       return (escrowQuery.data?.data?.rows ?? []).map(mapEscrowToServiceRow)
     }
-    const payments = revenueQuery.data?.data?.rows ?? []
-    const filtered =
-      activeTab === 'all'
-        ? payments.filter((p) => p.module === 'service' || p.module === 'consultation')
-        : payments
-    return filtered.map((row) => mapPaymentToServiceRow(row, activeTab))
+    return (revenueQuery.data?.data?.rows ?? []).map((row) =>
+      mapPaymentToServiceRow(row, activeTab),
+    )
   }, [activeTab, escrowQuery.data, isEscrowTab, revenueQuery.data])
 
   const meta = isEscrowTab ? escrowQuery.data?.data?.meta : revenueQuery.data?.data?.meta
 
-  const filteredRows = useMemo(() => {
-    const query = searchQuery.trim().toLowerCase()
-    if (!query) return liveRows
+  const handleApplyFilters = useCallback((values: FilterValues) => {
+    toast.success('Filters applied')
+    setAppliedFilters(values)
+    setCurrentPage(1)
+  }, [])
 
-    return liveRows.filter((row) =>
-      [row.serviceId, row.name, row.expertName, row.bookingId, row.userName]
-        .join(' ')
-        .toLowerCase()
-        .includes(query),
+  const handleExportData = useMemo(() => {
+    const fetchForExport = async (params: Record<string, unknown>) => {
+      if (isEscrowTab) {
+        const result = await fetchFinanceEscrow(params)
+        return { data: (result.data?.rows ?? []).map(mapEscrowToServiceRow) }
+      }
+      const result = await fetchFinanceRevenue(params)
+      return {
+        data: (result.data?.rows ?? []).map((row) => mapPaymentToServiceRow(row, activeTab)),
+      }
+    }
+    return createFinanceServicesFilteredExportHandler(
+      fetchForExport,
+      EXPORT_COLUMN_MAP,
+      'finance_services_export',
+      { search: debouncedSearch || undefined, tab: activeTab },
     )
-  }, [searchQuery, liveRows])
+  }, [activeTab, debouncedSearch, isEscrowTab])
 
-  const pageRows = searchQuery.trim() ? filteredRows : liveRows
+  const {
+    onAdvancedFilter,
+    onExport,
+    modals: exportFilterModals,
+  } = useModuleExportFilters({
+    moduleKey: 'finance-services',
+    onApplyFilters: handleApplyFilters,
+    onExportData: handleExportData,
+  })
 
-  const visibleRowIds = useMemo(() => pageRows.map((row) => row.id), [pageRows])
+  const visibleRowIds = useMemo(() => liveRows.map((row) => row.id), [liveRows])
   const allVisibleSelected =
     visibleRowIds.length > 0 && visibleRowIds.every((id) => selectedRowIds.includes(id))
   const someVisibleSelected = visibleRowIds.some((id) => selectedRowIds.includes(id))
@@ -242,38 +264,39 @@ export function FinanceServicesPage() {
     [activeDropdownId, navigate],
   )
 
-  const columns = useMemo<ColumnDef<FinanceServiceRow>[]>(
-    () => [
-      {
-        id: 'select',
-        header: () => (
-          <input
-            type="checkbox"
-            aria-label="Select all service records"
-            checked={allVisibleSelected}
-            ref={(input) => {
-              if (input) input.indeterminate = someVisibleSelected && !allVisibleSelected
-            }}
-            onChange={toggleVisibleRows}
-            className="rounded border-slate-700 bg-transparent"
-          />
-        ),
-        cell: ({ row }) => (
-          <input
-            type="checkbox"
-            aria-label={`Select ${row.original.name}`}
-            checked={selectedRowIds.includes(row.original.id)}
-            onChange={() => toggleRowSelection(row.original.id)}
-            onClick={(event) => event.stopPropagation()}
-            className="rounded border-slate-700 bg-transparent"
-          />
-        ),
-        meta: {
-          headerClassName: 'pl-5',
-          cellClassName: 'pl-5',
-        },
+  const columns = useMemo<ColumnDef<FinanceServiceRow>[]>(() => {
+    const selectColumn: ColumnDef<FinanceServiceRow> = {
+      id: 'select',
+      header: () => (
+        <input
+          type="checkbox"
+          aria-label="Select all service records"
+          checked={allVisibleSelected}
+          ref={(input) => {
+            if (input) input.indeterminate = someVisibleSelected && !allVisibleSelected
+          }}
+          onChange={toggleVisibleRows}
+          className="rounded border-slate-700 bg-transparent"
+        />
+      ),
+      cell: ({ row }) => (
+        <input
+          type="checkbox"
+          aria-label={`Select ${row.original.name}`}
+          checked={selectedRowIds.includes(row.original.id)}
+          onChange={() => toggleRowSelection(row.original.id)}
+          onClick={(event) => event.stopPropagation()}
+          className="rounded border-slate-700 bg-transparent"
+        />
+      ),
+      meta: {
+        headerClassName: 'pl-5',
+        cellClassName: 'pl-5',
       },
-      {
+    }
+
+    const dataColumnsById: Record<string, ColumnDef<FinanceServiceRow>> = {
+      'service-id': {
         accessorKey: 'serviceId',
         header: 'Service ID',
         cell: ({ row }) => (
@@ -282,13 +305,13 @@ export function FinanceServicesPage() {
           </span>
         ),
       },
-      {
+      name: {
         accessorKey: 'name',
         header: 'Name',
         cell: ({ row }) => <span className="text-brand-text font-medium">{row.original.name}</span>,
       },
-      { accessorKey: 'expertName', header: 'Expert Name' },
-      {
+      'expert-name': { accessorKey: 'expertName', header: 'Expert Name' },
+      'booking-id': {
         accessorKey: 'bookingId',
         header: 'Booking ID',
         cell: ({ row }) => (
@@ -297,8 +320,8 @@ export function FinanceServicesPage() {
           </span>
         ),
       },
-      { accessorKey: 'userName', header: 'User Name' },
-      {
+      'user-name': { accessorKey: 'userName', header: 'User Name' },
+      status: {
         accessorKey: 'status',
         header: 'Status',
         cell: ({ row }) => (
@@ -312,35 +335,44 @@ export function FinanceServicesPage() {
           </span>
         ),
       },
-      {
+      revenue: {
         accessorKey: 'revenue',
         header: 'Revenue',
         cell: ({ row }) => (
           <span className="text-brand-text font-semibold">{row.original.revenue}</span>
         ),
       },
-      {
-        id: 'actions',
-        header: 'Actions',
-        meta: { headerClassName: 'pr-5 text-right', cellClassName: 'relative pr-5 text-right' },
-        cell: ({ row }) => renderActions(row.original),
-      },
-    ],
-    [
-      allVisibleSelected,
-      renderActions,
-      selectedRowIds,
-      someVisibleSelected,
-      toggleRowSelection,
-      toggleVisibleRows,
-    ],
-  )
+    }
+
+    const visibleIds = tableColumnPreferencesQuery.data?.visibleColumnIds?.length
+      ? tableColumnPreferencesQuery.data.visibleColumnIds
+      : DEFAULT_FINANCE_SERVICES_VISIBLE_COLUMN_IDS
+
+    const preferenceColumns = visibleIds.map((id) => dataColumnsById[id]).filter(Boolean)
+
+    const actionsColumn: ColumnDef<FinanceServiceRow> = {
+      id: 'actions',
+      header: 'Actions',
+      meta: { headerClassName: 'pr-5 text-right', cellClassName: 'relative pr-5 text-right' },
+      cell: ({ row }) => renderActions(row.original),
+    }
+
+    return [selectColumn, ...preferenceColumns, actionsColumn]
+  }, [
+    allVisibleSelected,
+    renderActions,
+    selectedRowIds,
+    someVisibleSelected,
+    tableColumnPreferencesQuery.data,
+    toggleRowSelection,
+    toggleVisibleRows,
+  ])
 
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-h2 text-brand-text tracking-tight">Serivce</h1>
+          <h1 className="text-h2 text-brand-text tracking-tight">Services</h1>
           <p className="text-body-sm text-muted mt-1 leading-[20px]">
             Manage service bookings, expert commissions, and payouts
           </p>
@@ -352,7 +384,10 @@ export function FinanceServicesPage() {
             <span className="text-brand-text font-semibold">Services</span>
           </p>
         </div>
-        <Button className="ui-manage-metrics" onClick={() => navigate('/metrics/finance-services')}>
+        <Button
+          className="ui-manage-metrics"
+          onClick={() => navigate('/metrics/finance-services?section=table')}
+        >
           <SlidersHorizontal className="size-4" />
           Manage Metrics
         </Button>
@@ -378,17 +413,15 @@ export function FinanceServicesPage() {
 
       <DataTable
         columns={columns}
-        data={pageRows}
+        data={liveRows}
         getRowId={(row) => row.id}
         isLoading={isLoading || isFetching}
         searchValue={searchQuery}
-        onSearchChange={(value) => {
-          setSearchQuery(value)
-          setCurrentPage(1)
-        }}
+        onSearchChange={setSearchQuery}
         searchPlaceholder="Search by name, ID or profession"
         advancedFilterLabel="Advance Filters"
         onAdvancedFilter={onAdvancedFilter}
+        advancedFilterVariant="primary"
         onExport={onExport}
         pagination={{
           page: meta?.page ?? currentPage,
@@ -400,7 +433,6 @@ export function FinanceServicesPage() {
         resourceLabel="services"
         emptyMessage="No service records found."
       />
-      {exportFilterModals}
 
       <AddTagsModal
         open={!!tagTarget}
@@ -432,6 +464,8 @@ export function FinanceServicesPage() {
         escalate={escalate}
         softDelete={softDelete}
       />
+
+      {exportFilterModals}
     </div>
   )
 }

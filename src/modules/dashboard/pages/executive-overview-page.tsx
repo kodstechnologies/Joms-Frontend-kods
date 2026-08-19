@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import {
   Bar,
   BarChart,
@@ -22,8 +23,19 @@ import { SectionHeader } from '@/shared/components/dashboard/section-header'
 import { StatGrid } from '@/shared/components/dashboard/stat-grid'
 import { ResponsiveGrid } from '@/shared/components/responsive/responsive-grid'
 import {
+  orderByActiveMetricIds,
+  useActiveMetricIds,
+} from '@/modules/expert/hooks/use-active-metric-ids'
+import {
+  EXECUTIVE_OVERVIEW_METRIC_IDS,
+  EXECUTIVE_OVERVIEW_METRIC_ID_SET,
+} from '@/modules/dashboard/config/executive-overview-metrics.config'
+import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
+import {
   conversionFunnelMock,
+  DEFAULT_EXECUTIVE_METRIC_IDS,
   engagementMetricsMock,
+  EXECUTIVE_OVERVIEW_MODULE_KEY,
   kpiStatsMock,
   membershipTrendsMock,
   revenueMemberGrowthMock,
@@ -33,6 +45,21 @@ import {
 export function ExecutiveOverviewPage() {
   const navigate = useNavigate()
   const isLoading = false
+  const activeMetricIds = useActiveMetricIds(EXECUTIVE_OVERVIEW_MODULE_KEY, [
+    ...DEFAULT_EXECUTIVE_METRIC_IDS,
+  ])
+  const filteredActiveMetricIds = useMemo(
+    () =>
+      sortIdsByCatalogOrder(
+        activeMetricIds.filter((id) => EXECUTIVE_OVERVIEW_METRIC_ID_SET.has(id)),
+        EXECUTIVE_OVERVIEW_METRIC_IDS,
+      ),
+    [activeMetricIds],
+  )
+  const visibleKpiStats = useMemo(
+    () => orderByActiveMetricIds(kpiStatsMock, filteredActiveMetricIds),
+    [filteredActiveMetricIds],
+  )
   const pieColors = ['#EF4444', '#F59E0B', '#60A5FA', '#34D399', '#A78BFA']
   const tooltipStyle = {
     background: 'rgba(255,255,255,0.95)',
@@ -51,7 +78,7 @@ export function ExecutiveOverviewPage() {
         actions={[
           {
             label: 'Manage Metrics',
-            onClick: () => navigate('/metrics/executive-overview'),
+            onClick: () => navigate('/metrics/executive-overview?section=dashboard'),
             variant: 'default',
           },
           {
@@ -62,7 +89,7 @@ export function ExecutiveOverviewPage() {
         ]}
       />
 
-      <StatGrid stats={kpiStatsMock} />
+      <StatGrid stats={visibleKpiStats} />
 
       <AnalyticsWidget title="Engagement Overview" metrics={engagementMetricsMock} />
 

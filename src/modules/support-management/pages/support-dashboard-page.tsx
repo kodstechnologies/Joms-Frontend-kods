@@ -6,49 +6,46 @@ import { Download, SlidersHorizontal } from 'lucide-react'
 import { SupportDashboardCharts } from '../components/support-dashboard-charts'
 import { SupportStatCard } from '../components/support-stat-card'
 import {
+  DEFAULT_SUPPORT_DASHBOARD_METRIC_IDS,
+  SUPPORT_DASHBOARD_METRIC_IDS,
+  SUPPORT_DASHBOARD_METRIC_ID_SET,
+  SUPPORT_DASHBOARD_MODULE_KEY,
+} from '../config/support-dashboard-metrics.config'
+import {
   useExportSupportTickets,
   useLiveSupportUpdates,
   useSupportStats,
 } from '../hooks/use-support'
+import { buildSupportDashboardMetricCards } from '../utils/support-dashboard-metrics'
 import { downloadBlob, getApiErrorMessage } from '../utils/support-format'
 import {
   orderByActiveMetricIds,
   useActiveMetricIds,
 } from '@/modules/expert/hooks/use-active-metric-ids'
-
-const SUPPORT_DASHBOARD_MODULE_KEY = 'support-dashboard'
-
-const DEFAULT_METRIC_IDS = [
-  'total-tickets',
-  'open-tickets',
-  'in-progress',
-  'assigned-to-me',
-  'escalated-by-me',
-  'avg-first-response',
-  'avg-resolution',
-  'resolved-today',
-]
+import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
 
 export function SupportDashboardPage() {
   const navigate = useNavigate()
   const { data, isLoading } = useSupportStats()
   const exportMutation = useExportSupportTickets()
-  const activeMetricIds = useActiveMetricIds(SUPPORT_DASHBOARD_MODULE_KEY, DEFAULT_METRIC_IDS)
+  const activeMetricIds = useActiveMetricIds(SUPPORT_DASHBOARD_MODULE_KEY, [
+    ...DEFAULT_SUPPORT_DASHBOARD_METRIC_IDS,
+  ])
   useLiveSupportUpdates()
 
+  const filteredActiveMetricIds = useMemo(
+    () =>
+      sortIdsByCatalogOrder(
+        activeMetricIds.filter((id) => SUPPORT_DASHBOARD_METRIC_ID_SET.has(id)),
+        SUPPORT_DASHBOARD_METRIC_IDS,
+      ),
+    [activeMetricIds],
+  )
+
   const stats = useMemo(() => {
-    const cards = (data?.data?.cards ?? []).map((s) => ({
-      id: s.key,
-      title: s.title,
-      value: String(s.value),
-      trend: {
-        direction: (s.changeDirection ?? 'up') as 'up' | 'down',
-        percentage: s.changePercent ?? 0,
-        label: 'vs last month',
-      },
-    }))
-    return orderByActiveMetricIds(cards, activeMetricIds)
-  }, [activeMetricIds, data?.data?.cards])
+    const allCards = buildSupportDashboardMetricCards(data?.data?.cards)
+    return orderByActiveMetricIds(allCards, filteredActiveMetricIds)
+  }, [data?.data?.cards, filteredActiveMetricIds])
 
   const handleExport = async () => {
     try {
@@ -76,7 +73,7 @@ export function SupportDashboardPage() {
             type="button"
             onClick={handleExport}
             disabled={exportMutation.isPending}
-            className="ui-cta ui-cta-ghost"
+            className="ui-export-data ui-cta ui-cta-primary inline-flex items-center gap-2 px-4"
           >
             <Download className="icon-sm shrink-0" />
             Export Data
@@ -95,9 +92,9 @@ export function SupportDashboardPage() {
       {/* Stats — 2 rows of 4 */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {(isLoading && stats.length === 0
-          ? Array.from({ length: activeMetricIds.length || 8 }, (_, i) => ({
-              id: `loading-${i}`,
-              title: `Loading ${i}`,
+          ? filteredActiveMetricIds.map((id) => ({
+              id,
+              title: 'Loading',
               value: '—',
               trend: { direction: 'up' as const, percentage: 0, label: 'vs last month' },
             }))

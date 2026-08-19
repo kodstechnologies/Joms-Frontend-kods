@@ -1,7 +1,6 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   ArrowUpDown,
-  BarChart3,
   CalendarDays,
   Download,
   ExternalLink,
@@ -10,6 +9,7 @@ import {
   Star,
   TrendingUp,
   Trophy,
+  Upload,
   UserRound,
   Users,
   X,
@@ -24,7 +24,20 @@ import rank2Icon from '@/assets/JOMS_ADMIN_PANEL_3D_ICONS/change-the-engraved-go
 import rank3Icon from '@/assets/JOMS_ADMIN_PANEL_3D_ICONS/change-the-engraved-gold-number--2--on-the-circula (1).png'
 import rank1Icon from '@/assets/JOMS_ADMIN_PANEL_3D_ICONS/create-a-high-quality-3d-icon-of-a-gold-trophy-wit 2.png'
 
+import { fetchExpertLeaderboard } from '../../api/leaderboard-api'
 import { useExpertLeaderboard, useExpertLeaderboardProfile } from '../../hooks/use-leaderboard'
+import {
+  DEFAULT_EXPERT_LEADERBOARD_VISIBLE_COLUMN_IDS,
+  EXPERT_LEADERBOARD_MODULE_KEY,
+  EXPERT_LEADERBOARD_TABLE_COLUMNS_CATALOG,
+} from '../../config/expert-leaderboard-table-columns.config'
+import {
+  DEFAULT_VENUE_LEADERBOARD_VISIBLE_COLUMN_IDS,
+  VENUE_LEADERBOARD_MODULE_KEY,
+  VENUE_LEADERBOARD_TABLE_COLUMNS_CATALOG,
+} from '../../config/venue-leaderboard-table-columns.config'
+import { useTableColumnPreferences } from '../../hooks/use-ui-preferences'
+import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
 import type {
   ExpertLeaderboardQuery,
   LeaderboardDateRange,
@@ -96,7 +109,7 @@ function PodiumShimmer() {
   )
 }
 
-function TableRowsShimmer({ rows = 8 }: { rows?: number }) {
+function TableRowsShimmer({ rows = 8, columnCount = 7 }: { rows?: number; columnCount?: number }) {
   return (
     <>
       {Array.from({ length: rows }).map((_, index) => (
@@ -104,31 +117,84 @@ function TableRowsShimmer({ rows = 8 }: { rows?: number }) {
           <td className="px-3 py-3">
             <ShimmerBlock className="size-4" />
           </td>
-          <td className="px-3 py-3">
-            <ShimmerBlock className="h-6 w-7" />
-          </td>
-          <td className="px-3 py-3">
-            <ShimmerBlock className="h-4 w-20 bg-white/5" />
-          </td>
-          <td className="px-3 py-3">
-            <ShimmerBlock className="h-4 w-32" />
-          </td>
-          <td className="px-3 py-3">
-            <ShimmerBlock className="h-6 w-16" />
-          </td>
-          <td className="px-3 py-3">
-            <ShimmerBlock className="h-4 w-10 bg-white/5" />
-          </td>
-          <td className="px-3 py-3">
-            <ShimmerBlock className="h-4 w-12" />
-          </td>
-          <td className="px-3 py-3">
-            <ShimmerBlock className="h-4 w-12" />
-          </td>
+          {Array.from({ length: columnCount }).map((__, cellIndex) => (
+            <td key={`leaderboard-row-shimmer-${index}-${cellIndex}`} className="px-3 py-3">
+              <ShimmerBlock className="h-4 w-20 bg-white/5" />
+            </td>
+          ))}
         </tr>
       ))}
     </>
   )
+}
+
+function getLeaderboardExportValue(columnId: string, row: LeaderboardRow): string {
+  switch (columnId) {
+    case 'rank':
+      return String(row.rank)
+    case 'expert-id':
+    case 'venue-id':
+      return row.expertId || ''
+    case 'expert-name':
+    case 'venue-name':
+      return row.name || ''
+    case 'category':
+      return row.category || ''
+    case 'events-count':
+      return String(row.eventsCompleted ?? '')
+    case 'ratings':
+      return row.averageRating != null ? String(row.averageRating) : ''
+    case 'score':
+      return String(row.score ?? '')
+    default:
+      return ''
+  }
+}
+
+function renderLeaderboardCell(
+  columnId: string,
+  row: LeaderboardRow,
+  onOpenProfile: (row: LeaderboardRow) => void,
+) {
+  switch (columnId) {
+    case 'rank':
+      return <RankBadge rank={row.rank} />
+    case 'expert-id':
+    case 'venue-id':
+      return <span className="text-muted">{row.expertId}</span>
+    case 'expert-name':
+    case 'venue-name':
+      return (
+        <button
+          type="button"
+          className="hover:text-brand-accent font-semibold text-white"
+          onClick={() => onOpenProfile(row)}
+        >
+          {row.name}
+        </button>
+      )
+    case 'category':
+      return (
+        <span className="text-body-sm text-brand-text inline-flex rounded-md border border-white/10 bg-white/5 px-2 py-1 font-semibold">
+          {row.category}
+        </span>
+      )
+    case 'events-count':
+      return row.eventsCompleted
+    case 'ratings':
+      return (
+        <span className="inline-flex items-center gap-1">
+          <Star className="fill-brand-accent text-brand-accent size-3.5" />
+          <span className="font-semibold text-white">
+            {row.averageRating != null ? row.averageRating.toFixed(1) : '—'}
+          </span>
+        </span>
+      )
+    case 'score':
+      return <span className="font-semibold text-white">{row.score}</span>
+    default:
+      return null
+  }
 }
 
 function RankBadge({ rank }: { rank: number }) {
@@ -215,6 +281,32 @@ const DEFAULT_FILTERS: FiltersState = {
   minRating: '',
   revenueMin: '',
   revenueMax: '',
+}
+
+function buildLeaderboardQuery(
+  filters: FiltersState,
+  extras: {
+    page?: number
+    limit?: number
+    search?: string
+    serviceType: 'venue' | 'concierge'
+  },
+): ExpertLeaderboardQuery {
+  return {
+    page: extras.page,
+    limit: extras.limit,
+    search: extras.search || undefined,
+    rankingMetric: filters.rankingMetric,
+    dateRange: filters.dateRange,
+    category: filters.category || undefined,
+    membershipType: filters.membershipType || undefined,
+    state: filters.state || undefined,
+    city: filters.city || undefined,
+    minRating: filters.minRating || undefined,
+    revenueMin: filters.revenueMin || undefined,
+    revenueMax: filters.revenueMax || undefined,
+    serviceType: extras.serviceType,
+  }
 }
 
 function ExpertProfileModal({
@@ -337,28 +429,55 @@ function ExpertProfileModal({
 
 function FiltersPanel({
   open,
+  mode = 'filter',
+  title,
   value,
   onChange,
   onApply,
   onClose,
+  onExport,
+  isExporting = false,
 }: {
   open: boolean
+  mode?: 'filter' | 'export'
+  title: string
   value: FiltersState
   onChange: (next: FiltersState) => void
-  onApply: () => void
+  onApply?: () => void
   onClose: () => void
+  onExport?: (format: string) => void
+  isExporting?: boolean
 }) {
+  const [selectedFormat, setSelectedFormat] = useState('csv')
+
   if (!open) return null
+
+  const isExport = mode === 'export'
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
       <div className="bg-brand-surface w-full max-w-xl rounded-2xl border border-white/10 p-5 shadow-2xl">
         <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-lg font-bold text-white">Advance Filters</h3>
+          <h3 className="text-lg font-bold text-white">{title}</h3>
           <button type="button" onClick={onClose} className="text-white/70 hover:text-white">
             <X className="size-5" />
           </button>
         </div>
+
+        {isExport && (
+          <div className="mb-4">
+            <label className="mb-1.5 block text-sm font-medium text-white">Export Format</label>
+            <select
+              value={selectedFormat}
+              onChange={(e) => setSelectedFormat(e.target.value)}
+              className="w-full rounded-md border border-white/10 bg-slate-900/50 px-3 py-2 text-sm text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+            >
+              <option value="csv">CSV Document (.csv)</option>
+              <option value="excel">Excel Document (.xlsx)</option>
+              <option value="pdf">PDF Document (.pdf)</option>
+            </select>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <label className="space-y-1 text-xs text-white/70">
@@ -474,23 +593,41 @@ function FiltersPanel({
         </div>
 
         <div className="mt-5 flex justify-end gap-2">
-          <Button
-            variant="secondary"
-            onClick={() => {
-              onChange(DEFAULT_FILTERS)
-            }}
-          >
-            Reset
-          </Button>
-          <Button
-            className="ui-export-data"
-            onClick={() => {
-              onApply()
-              onClose()
-            }}
-          >
-            Apply Filters
-          </Button>
+          {isExport ? (
+            <>
+              <Button variant="secondary" onClick={onClose} disabled={isExporting}>
+                Cancel
+              </Button>
+              <Button
+                className="ui-export-data"
+                disabled={isExporting}
+                onClick={() => onExport?.(selectedFormat)}
+              >
+                <Upload className="size-4" />
+                {isExporting ? 'Exporting...' : 'Export Data'}
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  onChange(DEFAULT_FILTERS)
+                }}
+              >
+                Reset
+              </Button>
+              <Button
+                className="ui-export-data"
+                onClick={() => {
+                  onApply?.()
+                  onClose()
+                }}
+              >
+                Apply Filters
+              </Button>
+            </>
+          )}
         </div>
       </div>
     </div>
@@ -501,11 +638,26 @@ export const LeaderboardPage = () => {
   const navigate = useNavigate()
   const location = useLocation()
   const isVenueLeaderboard = location.pathname.startsWith('/venues')
+  const isServiceLeaderboard = location.pathname.startsWith('/services')
+  const leaderboardModuleKey = isVenueLeaderboard
+    ? VENUE_LEADERBOARD_MODULE_KEY
+    : EXPERT_LEADERBOARD_MODULE_KEY
+  const tableColumnsCatalog = isVenueLeaderboard
+    ? VENUE_LEADERBOARD_TABLE_COLUMNS_CATALOG
+    : EXPERT_LEADERBOARD_TABLE_COLUMNS_CATALOG
+  const defaultVisibleColumnIds = isVenueLeaderboard
+    ? DEFAULT_VENUE_LEADERBOARD_VISIBLE_COLUMN_IDS
+    : DEFAULT_EXPERT_LEADERBOARD_VISIBLE_COLUMN_IDS
   const metricsPath = isVenueLeaderboard
-    ? '/venues/dashboard/metrics'
-    : location.pathname.startsWith('/services')
+    ? '/metrics/venue-leaderboard?section=table'
+    : isServiceLeaderboard
       ? '/services/dashboard/metrics'
-      : '/experts/dashboard/metrics'
+      : '/metrics/expert-leaderboard?section=table'
+
+  const tableColumnPreferencesQuery = useTableColumnPreferences(
+    leaderboardModuleKey,
+    !isServiceLeaderboard,
+  )
 
   const [searchInput, setSearchInput] = useState('')
   const [search, setSearch] = useState('')
@@ -513,6 +665,8 @@ export const LeaderboardPage = () => {
   const [filtersDraft, setFiltersDraft] = useState<FiltersState>(DEFAULT_FILTERS)
   const [filtersApplied, setFiltersApplied] = useState<FiltersState>(DEFAULT_FILTERS)
   const [filtersOpen, setFiltersOpen] = useState(false)
+  const [exportOpen, setExportOpen] = useState(false)
+  const [isExporting, setIsExporting] = useState(false)
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [profilePartnerId, setProfilePartnerId] = useState<string | null>(null)
 
@@ -524,29 +678,42 @@ export const LeaderboardPage = () => {
     return () => window.clearTimeout(timer)
   }, [searchInput])
 
+  const serviceType = isVenueLeaderboard ? 'venue' : 'concierge'
+
   const query: ExpertLeaderboardQuery = useMemo(
-    () => ({
-      page,
-      limit: 10,
-      search,
-      rankingMetric: filtersApplied.rankingMetric,
-      dateRange: filtersApplied.dateRange,
-      category: filtersApplied.category || undefined,
-      membershipType: filtersApplied.membershipType || undefined,
-      state: filtersApplied.state || undefined,
-      city: filtersApplied.city || undefined,
-      minRating: filtersApplied.minRating || undefined,
-      revenueMin: filtersApplied.revenueMin || undefined,
-      revenueMax: filtersApplied.revenueMax || undefined,
-      serviceType: isVenueLeaderboard ? 'venue' : 'concierge',
-    }),
-    [filtersApplied, isVenueLeaderboard, page, search],
+    () =>
+      buildLeaderboardQuery(filtersApplied, {
+        page,
+        limit: 10,
+        search,
+        serviceType,
+      }),
+    [filtersApplied, page, search, serviceType],
   )
 
   const { data, isLoading, isError, isFetching } = useExpertLeaderboard(query)
   const leaderboard = data?.data
   const showShimmer = isLoading || isFetching
   const rows = showShimmer ? [] : leaderboard?.list || []
+
+  const visibleColumnIds = useMemo(() => {
+    const catalogIds = tableColumnsCatalog.map((column) => column.id)
+    const ids = tableColumnPreferencesQuery.data?.visibleColumnIds?.length
+      ? tableColumnPreferencesQuery.data.visibleColumnIds
+      : defaultVisibleColumnIds
+    return sortIdsByCatalogOrder(
+      ids.filter((id) => catalogIds.includes(id)),
+      catalogIds,
+    )
+  }, [defaultVisibleColumnIds, tableColumnPreferencesQuery.data, tableColumnsCatalog])
+
+  const visibleColumns = useMemo(
+    () =>
+      visibleColumnIds
+        .map((id) => tableColumnsCatalog.find((column) => column.id === id))
+        .filter(Boolean) as typeof tableColumnsCatalog,
+    [tableColumnsCatalog, visibleColumnIds],
+  )
 
   const podiumOrdered = useMemo(() => {
     const podium = leaderboard?.podium || []
@@ -559,52 +726,59 @@ export const LeaderboardPage = () => {
   const pagination = leaderboard?.pagination
   const allSelected = rows.length > 0 && rows.every((row) => selectedIds.includes(row.partnerId))
 
-  const handleExport = () => {
-    const exportSource = selectedIds.length
-      ? rows.filter((row) => selectedIds.includes(row.partnerId))
-      : rows
+  const handleExportData = useCallback(
+    async (format: string) => {
+      setIsExporting(true)
+      try {
+        const pageSize = 100
+        const exportQuery = buildLeaderboardQuery(filtersDraft, {
+          page: 1,
+          limit: pageSize,
+          search,
+          serviceType,
+        })
+        const firstPage = await fetchExpertLeaderboard(exportQuery)
+        const firstList = firstPage.data?.list ?? []
+        const totalPages = Math.min(Math.max(firstPage.data?.pagination?.pages || 1, 1), 100)
+        const allRows = [...firstList]
 
-    if (!exportSource.length) {
-      toast.error('No rows to export')
-      return
-    }
+        for (let nextPage = 2; nextPage <= totalPages; nextPage += 1) {
+          const pageResult = await fetchExpertLeaderboard({
+            ...exportQuery,
+            page: nextPage,
+          })
+          allRows.push(...(pageResult.data?.list ?? []))
+        }
 
-    const headers = [
-      'Rank',
-      'Expert ID',
-      'Expert Name',
-      'Category',
-      'Membership',
-      'No. Of Events',
-      'Ratings',
-      'Score',
-      'Revenue',
-      'Completion Rate',
-      'Repeat Client Rate',
-      'Profile Health',
-    ]
-    const exportRows = exportSource.map((row) => [
-      String(row.rank),
-      row.expertId,
-      row.name,
-      row.category,
-      row.membershipType,
-      String(row.eventsCompleted),
-      row.averageRating != null ? String(row.averageRating) : '',
-      String(row.score),
-      String(row.totalRevenue),
-      String(row.orderCompletionRate),
-      String(row.repeatClientRate),
-      String(row.profileHealth),
-    ])
+        if (allRows.length === 0) {
+          toast.error('No records found to export')
+          return
+        }
 
-    try {
-      exportDataToFile(headers, exportRows, 'csv', 'expert-leaderboard')
-      toast.success('Leaderboard exported')
-    } catch {
-      toast.error('Failed to export leaderboard')
-    }
-  }
+        const exportCols = visibleColumns.length
+          ? visibleColumns
+          : tableColumnsCatalog.filter((column) => column.defaultVisible)
+        const headers = exportCols.map((column) => column.label)
+        const exportRows = allRows.map((row) =>
+          exportCols.map((column) => getLeaderboardExportValue(column.id, row)),
+        )
+
+        exportDataToFile(
+          headers,
+          exportRows,
+          format,
+          isVenueLeaderboard ? 'venue-leaderboard' : 'expert-leaderboard',
+        )
+        toast.success(`Exported as ${format.toUpperCase()}`)
+        setExportOpen(false)
+      } catch {
+        toast.error('Failed to export leaderboard')
+      } finally {
+        setIsExporting(false)
+      }
+    },
+    [filtersDraft, isVenueLeaderboard, search, serviceType, tableColumnsCatalog, visibleColumns],
+  )
 
   const openProfile = (row: LeaderboardRow | { partnerId: string }) => {
     setProfilePartnerId(row.partnerId)
@@ -614,9 +788,13 @@ export const LeaderboardPage = () => {
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-white">Expert Leader board</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-white">
+            {isVenueLeaderboard ? 'Venue Leaderboard' : 'Expert Leader board'}
+          </h1>
           <p className="text-body-md text-muted mt-1">
-            Top ranked experts based on platform performance
+            {isVenueLeaderboard
+              ? 'Top ranked venues based on platform performance'
+              : 'Top ranked experts based on platform performance'}
           </p>
           {leaderboard?.meta?.lastRefreshedAt && (
             <p className="text-muted mt-1 text-[11px]">
@@ -625,8 +803,11 @@ export const LeaderboardPage = () => {
             </p>
           )}
         </div>
-        <Button className="ui-manage-metrics" onClick={() => navigate(metricsPath)}>
-          <BarChart3 className="size-4" />
+        <Button
+          className="ui-manage-metrics ui-cta ui-cta-primary"
+          onClick={() => navigate(metricsPath)}
+        >
+          <SlidersHorizontal className="size-4" />
           Manage Metrics
         </Button>
       </div>
@@ -635,7 +816,9 @@ export const LeaderboardPage = () => {
         {showShimmer ? (
           <PodiumShimmer />
         ) : podiumOrdered.length === 0 ? (
-          <p className="text-muted text-center text-sm">No ranked experts yet.</p>
+          <p className="text-muted text-center text-sm">
+            {isVenueLeaderboard ? 'No ranked venues yet.' : 'No ranked experts yet.'}
+          </p>
         ) : (
           <div className="mx-auto grid max-w-3xl grid-cols-3 items-end gap-4">
             {podiumOrdered.map((expert, index) => {
@@ -706,7 +889,14 @@ export const LeaderboardPage = () => {
               <SlidersHorizontal className="size-4" />
               Advance Filters
             </Button>
-            <Button onClick={handleExport} className="ui-export-data gap-2" disabled={showShimmer}>
+            <Button
+              onClick={() => {
+                setFiltersDraft(filtersApplied)
+                setExportOpen(true)
+              }}
+              className="ui-export-data gap-2"
+              disabled={isExporting}
+            >
               <Download className="size-4" />
               Export Data
             </Button>
@@ -747,30 +937,24 @@ export const LeaderboardPage = () => {
                     className="rounded border-slate-700 bg-transparent"
                   />
                 </th>
-                <th className="px-3 py-3">Rank</th>
-                <th className="px-3 py-3">Expert ID</th>
-                <th className="px-3 py-3">Expert Name</th>
-                <th className="px-3 py-3">Category</th>
-                <th className="px-3 py-3">
-                  <span className="inline-flex items-center gap-1">
-                    No.Of Events <ArrowUpDown className="size-3 opacity-40" />
-                  </span>
-                </th>
-                <th className="px-3 py-3">
-                  <span className="inline-flex items-center gap-1">
-                    Ratings <ArrowUpDown className="size-3 opacity-40" />
-                  </span>
-                </th>
-                <th className="px-3 py-3">
-                  <span className="inline-flex items-center gap-1">
-                    Score <ArrowUpDown className="size-3 opacity-40" />
-                  </span>
-                </th>
+                {visibleColumns.map((column) => (
+                  <th key={column.id} className="px-3 py-3">
+                    {column.id === 'events-count' ||
+                    column.id === 'ratings' ||
+                    column.id === 'score' ? (
+                      <span className="inline-flex items-center gap-1">
+                        {column.label} <ArrowUpDown className="size-3 opacity-40" />
+                      </span>
+                    ) : (
+                      column.label
+                    )}
+                  </th>
+                ))}
               </tr>
             </thead>
             <tbody>
               {showShimmer ? (
-                <TableRowsShimmer />
+                <TableRowsShimmer columnCount={visibleColumns.length} />
               ) : (
                 <>
                   {rows.map((row) => (
@@ -793,40 +977,22 @@ export const LeaderboardPage = () => {
                           className="rounded border-slate-700 bg-transparent"
                         />
                       </td>
-                      <td className="px-3 py-3">
-                        <RankBadge rank={row.rank} />
-                      </td>
-                      <td className="text-muted px-3 py-3">{row.expertId}</td>
-                      <td className="px-3 py-3">
-                        <button
-                          type="button"
-                          className="hover:text-brand-accent font-semibold text-white"
-                          onClick={() => openProfile(row)}
-                        >
-                          {row.name}
-                        </button>
-                      </td>
-                      <td className="px-3 py-3">
-                        <span className="text-body-sm text-brand-text inline-flex rounded-md border border-white/10 bg-white/5 px-2 py-1 font-semibold">
-                          {row.category}
-                        </span>
-                      </td>
-                      <td className="px-3 py-3">{row.eventsCompleted}</td>
-                      <td className="px-3 py-3">
-                        <span className="inline-flex items-center gap-1">
-                          <Star className="fill-brand-accent text-brand-accent size-3.5" />
-                          <span className="font-semibold text-white">
-                            {row.averageRating != null ? row.averageRating.toFixed(1) : '—'}
-                          </span>
-                        </span>
-                      </td>
-                      <td className="px-3 py-3 font-semibold text-white">{row.score}</td>
+                      {visibleColumns.map((column) => (
+                        <td key={`${row.partnerId}-${column.id}`} className="px-3 py-3">
+                          {renderLeaderboardCell(column.id, row, openProfile)}
+                        </td>
+                      ))}
                     </tr>
                   ))}
                   {rows.length === 0 && (
                     <tr>
-                      <td colSpan={8} className="text-muted px-3 py-8 text-center text-sm">
-                        No experts match the selected filters.
+                      <td
+                        colSpan={visibleColumns.length + 1}
+                        className="text-muted px-3 py-8 text-center text-sm"
+                      >
+                        {isVenueLeaderboard
+                          ? 'No venues match the selected filters.'
+                          : 'No experts match the selected filters.'}
                       </td>
                     </tr>
                   )}
@@ -876,6 +1042,8 @@ export const LeaderboardPage = () => {
 
       <FiltersPanel
         open={filtersOpen}
+        mode="filter"
+        title="Advance Filters"
         value={filtersDraft}
         onChange={setFiltersDraft}
         onClose={() => setFiltersOpen(false)}
@@ -883,6 +1051,21 @@ export const LeaderboardPage = () => {
           setFiltersApplied(filtersDraft)
           setPage(1)
         }}
+      />
+
+      <FiltersPanel
+        open={exportOpen}
+        mode="export"
+        title={
+          isVenueLeaderboard
+            ? 'Export Data - Venue Leaderboard'
+            : 'Export Data - Expert Leaderboard'
+        }
+        value={filtersDraft}
+        onChange={setFiltersDraft}
+        onClose={() => setExportOpen(false)}
+        onExport={handleExportData}
+        isExporting={isExporting}
       />
 
       {profilePartnerId && (

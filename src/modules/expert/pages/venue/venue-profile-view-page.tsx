@@ -1,8 +1,8 @@
-import { useCallback, useMemo, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
-import { useQueryClient } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import deleteIcon from '@/assets/JOMS_ICONS-2/icons8-delete.svg'
 import editIcon from '@/assets/JOMS_ICONS-2/edit.svg'
 import { toast } from 'sonner'
@@ -19,7 +19,6 @@ import {
   Eye,
   EyeOff,
   FileText,
-  Gauge,
   ImageOff,
   Mail,
   MapPin,
@@ -46,6 +45,15 @@ import {
 } from '../../hooks/use-venues'
 import { useBlockExpert, useForceLogoutExpert } from '../../hooks/use-expert'
 import { useVenueProfileAnalytics } from '../../hooks/use-venue-analytics'
+import {
+  DEFAULT_VENUE_PROFILE_ANALYTICS_METRIC_IDS,
+  VENUE_PROFILE_ANALYTICS_METRIC_ID_SET,
+  VENUE_PROFILE_ANALYTICS_METRIC_IDS,
+  VENUE_PROFILE_ANALYTICS_MODULE_KEY,
+} from '../../config/venue-profile-analytics-metrics.config'
+import { orderByActiveMetricIds, useActiveMetricIds } from '../../hooks/use-active-metric-ids'
+import { buildVenueProfileAnalyticsMetricCards } from '../../utils/venue-profile-analytics-metrics'
+import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
 import type { VenueFullView, VenueFullViewSpaceSummary } from '../../type/venue-full-view'
 import type { PartnerInsightReview } from '../../type/expert-profile'
 import {
@@ -66,6 +74,7 @@ import {
 import { useEntityTags } from '@/shared/hooks/use-entity-tags'
 import { cn } from '@/shared/lib/cn'
 import { openExpertKycFromProfile } from '../../utils/expert-application-navigation'
+import { fetchVenueKycByPartnerId } from '../../api/venue-kyc-api'
 import { useEscalationAssignees } from '@/modules/my-tasks/hooks/use-admin-escalation'
 import { escalateVenueSpaceApplication } from '@/modules/my-tasks/api/escalation-api'
 import { exportDataToFile } from '@/shared/utils/export-utils'
@@ -1045,86 +1054,50 @@ function AnalyticsTab({ data, venueId }: { data: VenueFullView; venueId: string 
     | (typeof data.profile & { analytics?: Record<string, unknown> })
     | undefined
   const venueAnalytics = profileAnalytics?.analytics
-  const cardsFromApi = analyticsData?.profileCards
+  const activeMetricIds = useActiveMetricIds(VENUE_PROFILE_ANALYTICS_MODULE_KEY, [
+    ...DEFAULT_VENUE_PROFILE_ANALYTICS_METRIC_IDS,
+  ])
 
-  const formatMetric = (value?: string | number | null) => {
-    if (value === null || value === undefined || value === '') return '0'
-    if (typeof value === 'number') return value.toLocaleString('en-IN')
-    return String(value)
-  }
+  const filteredActiveMetricIds = useMemo(
+    () =>
+      sortIdsByCatalogOrder(
+        activeMetricIds.filter((id) => VENUE_PROFILE_ANALYTICS_METRIC_ID_SET.has(id)),
+        VENUE_PROFILE_ANALYTICS_METRIC_IDS,
+      ),
+    [activeMetricIds],
+  )
 
-  const cards: { label: string; value: string }[] = [
-    {
-      label: 'Events Hosted',
-      value:
-        cardsFromApi?.eventsHosted || formatMetric(venueAnalytics?.eventsHosted as string | number),
-    },
-    {
-      label: 'Total Attendees',
-      value:
-        cardsFromApi?.totalAttendees ||
-        formatMetric(venueAnalytics?.totalAttendees as string | number),
-    },
-    {
-      label: 'Repeat Attendees',
-      value:
-        cardsFromApi?.repeatAttendees ||
-        formatMetric(venueAnalytics?.repeatAttendees as string | number),
-    },
-    {
-      label: 'Upcoming Events',
-      value:
-        cardsFromApi?.upcomingEvents ||
-        formatMetric(venueAnalytics?.upcomingEvents as string | number),
-    },
-    {
-      label: 'Event Completion Rate',
-      value:
-        cardsFromApi?.eventCompletionRate ||
-        formatMetric(venueAnalytics?.eventCompletionRate as string | number),
-    },
-    {
-      label: 'Avg. Response Time',
-      value:
-        cardsFromApi?.avgResponseTime ||
-        formatMetric(venueAnalytics?.avgResponseTime as string | number),
-    },
-    {
-      label: 'No. Of Events Rejected',
-      value:
-        cardsFromApi?.noOfEventsRejected ||
-        formatMetric(venueAnalytics?.noOfEventsRejected as string | number),
-    },
-    {
-      label: 'No. of event Suspended',
-      value:
-        cardsFromApi?.noOfEventsSuspended ||
-        formatMetric(venueAnalytics?.noOfEventsSuspended as string | number),
-    },
-  ]
+  const cards = useMemo(() => {
+    const allCards = buildVenueProfileAnalyticsMetricCards(analyticsData, venueAnalytics)
+    return orderByActiveMetricIds(allCards, filteredActiveMetricIds)
+  }, [analyticsData, venueAnalytics, filteredActiveMetricIds])
+
+  const manageMetricsPath = venueId
+    ? `/metrics/venue-profile-analytics?returnTo=${encodeURIComponent(`/venues/management/profile/${venueId}`)}`
+    : '/metrics/venue-profile-analytics'
 
   return (
     <div className={cn(PROFILE_CARD, 'p-6')}>
       <div className="mb-4 flex justify-end">
         <button
           type="button"
-          onClick={() => navigate('/venues/dashboard/metrics')}
-          className="ui-manage-metrics text-body-sm flex items-center gap-1.5 rounded-lg bg-[linear-gradient(180deg,#F6CB86_0%,#E0A263_100%)] px-3 py-2 font-semibold text-[#050505]"
+          onClick={() => navigate(manageMetricsPath)}
+          className="ui-manage-metrics ui-cta ui-cta-primary text-body-sm flex items-center gap-1.5 rounded-lg px-3 py-2 font-semibold"
         >
-          <Gauge className="size-3.5" />
+          <SlidersHorizontal className="icon-sm shrink-0" />
           Manage Metrics
         </button>
       </div>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {isLoading
-          ? Array.from({ length: 8 }).map((_, index) => (
+          ? Array.from({ length: filteredActiveMetricIds.length || 8 }).map((_, index) => (
               <div key={`analytics-card-skeleton-${index}`} className="rounded-lg bg-[#050505] p-4">
                 <div className="h-3 w-28 animate-pulse rounded bg-white/10" />
                 <div className="mt-3 h-7 w-16 animate-pulse rounded bg-white/10" />
               </div>
             ))
           : cards.map((card) => (
-              <div key={card.label} className="rounded-lg bg-[#050505] p-4">
+              <div key={card.id} className="rounded-lg bg-[#050505] p-4">
                 <div className="flex items-center justify-between">
                   <p className="text-body-sm text-muted">{card.label}</p>
                   <Briefcase className="size-4 text-[#E0A263]" />
@@ -1225,6 +1198,28 @@ export function VenueProfileViewPage() {
 
   const { data, isLoading, isError, error } = useVenueFullView(venueId)
   const fullView = data?.data
+  const resolvedVenueId = String(fullView?.overview?.venue?._id || venueId || '').trim()
+  const kycFallbackQuery = useQuery({
+    queryKey: ['venue-kyc-by-partner', venueId],
+    queryFn: () => fetchVenueKycByPartnerId(venueId!),
+    enabled: Boolean(isError && venueId),
+    retry: false,
+  })
+  const fallbackKycId = String(kycFallbackQuery.data?.data?._id || '').trim()
+  const kycLookupPending = Boolean(
+    isError && venueId && (kycFallbackQuery.isPending || fallbackKycId),
+  )
+
+  useEffect(() => {
+    if (!venueId || !resolvedVenueId || resolvedVenueId === venueId) return
+    navigate(`/venues/management/profile/${resolvedVenueId}`, { replace: true })
+  }, [navigate, resolvedVenueId, venueId])
+
+  useEffect(() => {
+    if (!fallbackKycId) return
+    navigate(`/experts/management/application/${fallbackKycId}?source=venue_kyc`, { replace: true })
+  }, [fallbackKycId, navigate])
+
   const ownerPartnerId = String(
     fullView?.overview?.venue?.ownerId || fullView?.overview?.venue?.partnerId || '',
   ).trim()
@@ -1310,7 +1305,7 @@ export function VenueProfileViewPage() {
   }, [])
 
   const handleSuspendSubmit = useCallback(() => {
-    if (!venueId) return
+    if (!resolvedVenueId) return
 
     if (suspendReasons.length === 0) {
       toast.error('Please select at least one reason.')
@@ -1342,7 +1337,7 @@ export function VenueProfileViewPage() {
 
     suspendVenueMutation.mutate(
       {
-        venueId,
+        venueId: resolvedVenueId,
         payload: {
           selectedReasons: reasonPayload.selectedReasons,
           suspendIndefinitely,
@@ -1360,7 +1355,7 @@ export function VenueProfileViewPage() {
           toast.success('Venue suspended successfully')
           closeSuspendModal()
           setProfileMenuOpen(false)
-          queryClient.invalidateQueries({ queryKey: ['venue-full-view', venueId] })
+          queryClient.invalidateQueries({ queryKey: ['venue-full-view', resolvedVenueId] })
           queryClient.invalidateQueries({ queryKey: ['venues'] })
           navigate('/venues/management')
         },
@@ -1385,11 +1380,11 @@ export function VenueProfileViewPage() {
     suspendReasons,
     suspendStartDate,
     suspendVenueMutation,
-    venueId,
+    resolvedVenueId,
   ])
 
   const handleDeleteSubmit = useCallback(() => {
-    if (!venueId) return
+    if (!resolvedVenueId) return
 
     if (deleteReasons.length === 0) {
       toast.error('Please select at least one reason.')
@@ -1414,7 +1409,7 @@ export function VenueProfileViewPage() {
 
     deleteVenueMutation.mutate(
       {
-        venueId,
+        venueId: resolvedVenueId,
         payload: {
           selectedReasons: reasonPayload.selectedReasons,
           reasonDetails: reasonPayload.reasonDetails,
@@ -1448,10 +1443,10 @@ export function VenueProfileViewPage() {
     navigate,
     queryClient,
     recordReasonUsage,
-    venueId,
+    resolvedVenueId,
   ])
 
-  if (isLoading) {
+  if (isLoading || kycLookupPending) {
     return (
       <div className="flex h-[60vh] items-center justify-center">
         <div className="border-brand-accent size-9 animate-spin rounded-full border-4 border-t-transparent" />
@@ -1495,10 +1490,10 @@ export function VenueProfileViewPage() {
     {
       label: 'Create Space',
       icon: Plus,
-      onClick: () => navigate(`/venues/management/create?venueId=${venueId}`),
+      onClick: () => navigate(`/venues/management/create?venueId=${resolvedVenueId}`),
     },
     { label: 'Add Notes', icon: FileText, onClick: () => comingSoon('Add Notes') },
-    { label: 'Add Tags', icon: Tag, onClick: () => openTagModal(venueId || venue.name) },
+    { label: 'Add Tags', icon: Tag, onClick: () => openTagModal(resolvedVenueId || venue.name) },
     { label: 'Export Data', icon: Upload, onClick: () => comingSoon('Export Data') },
     { label: 'Share Profile', icon: Share2, onClick: () => comingSoon('Share Profile') },
   ]
@@ -1539,7 +1534,7 @@ export function VenueProfileViewPage() {
             icon={<img src={editIcon} alt="edit" className="size-3.5" />}
             onClick={() => {
               setProfileMenuOpen(false)
-              navigate(`/venues/management/create?venueId=${venueId}&mode=edit`)
+              navigate(`/venues/management/create?venueId=${resolvedVenueId}&mode=edit`)
             }}
           >
             Edit Profile
@@ -1694,11 +1689,9 @@ export function VenueProfileViewPage() {
             ))}
           </div>
 
-          {activeTab === 'overview' && (
-            <OverviewTab data={fullView} venueId={venueId ?? venue._id} />
-          )}
-          {activeTab === 'spaces' && <SpacesTab data={fullView} venueId={venueId} />}
-          {activeTab === 'analytics' && <AnalyticsTab data={fullView} venueId={venueId ?? ''} />}
+          {activeTab === 'overview' && <OverviewTab data={fullView} venueId={resolvedVenueId} />}
+          {activeTab === 'spaces' && <SpacesTab data={fullView} venueId={resolvedVenueId} />}
+          {activeTab === 'analytics' && <AnalyticsTab data={fullView} venueId={resolvedVenueId} />}
           {activeTab === 'health' && <HealthTab data={fullView} />}
         </div>
       </div>

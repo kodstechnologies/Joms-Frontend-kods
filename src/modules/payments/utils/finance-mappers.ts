@@ -270,7 +270,7 @@ export const mapDashboardSummaryCards = (summary?: FinanceDashboardSummary | nul
   if (!summary) return []
   return [
     {
-      label: 'Total in Escrow',
+      label: 'Total In Escrow',
       value: formatInr(summary.totalInEscrow),
       change: String(summary.activeEscrows),
       changeType: 'up' as const,

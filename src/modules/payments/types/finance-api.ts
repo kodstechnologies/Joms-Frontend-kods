@@ -241,4 +241,21 @@ export type FinanceListParams = {
   partnerId?: string
   page?: number
   limit?: number
+  search?: string
+  entityType?: string
+  entityId?: string
+  entityName?: string
+  category?: string
+  ownerType?: string
+  ownerName?: string
+  userType?: string
+  paymentMethod?: string
+  settlementStatus?: string
+  fulfillmentStatus?: string
+  payerType?: string
+  amountMin?: string
+  amountMax?: string
+  createdAtFrom?: string
+  createdAtTo?: string
+  [key: string]: unknown
 }

@@ -18,7 +18,9 @@ export type NavBadge =
     }
   | undefined
 
-export type PermissionModule = 'venues' | 'services' | 'experts'
+import type { PermissionModuleKey } from '@/shared/lib/permissions'
+
+export type PermissionModule = PermissionModuleKey
 
 export type NavItem = {
   key: string
@@ -38,6 +40,7 @@ export const navigationConfig: NavItem[] = [
     key: 'executive',
     label: 'Executive Dashboard',
     icon: ChartNoAxesCombined,
+    superAdminOnly: true,
     to: '/dashboard/executive',
   },
   {
@@ -154,21 +157,21 @@ export const navigationConfig: NavItem[] = [
     key: 'membership',
     label: 'Membership',
     icon: Building2,
+    permissionModule: 'memberships',
     to: '/memberships/plans',
-    superAdminOnly: true,
   },
   {
     key: 'referral',
     label: 'Referral Management',
     icon: BadgePercent,
+    permissionModule: 'referrals',
     to: '/referrals/management',
-    superAdminOnly: true,
   },
   {
     key: 'finance',
     label: 'Payment & Finance',
     icon: CreditCard,
-    superAdminOnly: true,
+    permissionModule: 'finance',
     children: [
       { key: 'finance.dashboard', label: 'Dashboard', to: '/finance/dashboard' },
       { key: 'finance.revenue', label: 'Revenue Overview', to: '/finance/revenue' },
@@ -193,6 +196,7 @@ export const navigationConfig: NavItem[] = [
     label: 'Support',
     icon: LifeBuoy,
     superAdminOnly: true,
+    matchPaths: ['/support'],
     children: [
       { key: 'support.dashboard', label: 'Dashboard', to: '/support/dashboard' },
       { key: 'support.tickets', label: 'Ticket Management', to: '/support/tickets' },
@@ -203,7 +207,9 @@ export const navigationConfig: NavItem[] = [
     key: 'settings',
     label: 'Settings',
     icon: Settings,
+    permissionModule: 'settings',
     superAdminOnly: true,
+    matchPaths: ['/settings'],
     children: [
       {
         key: 'settings.health',

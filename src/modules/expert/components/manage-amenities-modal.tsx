@@ -8,7 +8,8 @@ import type { VenueFormData } from '../utils/venue-form'
 type AmenitySubCategory = {
   _id: string
   name: string
-  image: string
+  image?: string
+  icon?: string
 }
 
 type AmenityCategory = {
@@ -131,7 +132,12 @@ export const ManageAmenitiesModal = ({
                           key={item._id}
                           type="button"
                           onClick={() =>
-                            toggleAmenity(category._id, item._id, item.name, item.image)
+                            toggleAmenity(
+                              category._id,
+                              item._id,
+                              item.name,
+                              item.image || item.icon || '',
+                            )
                           }
                           className={`text-body-sm flex items-center gap-2 rounded-md border px-4 py-2 transition ${
                             isSelected
@@ -139,9 +145,9 @@ export const ManageAmenitiesModal = ({
                               : 'border-white/10 bg-black text-white'
                           }`}
                         >
-                          {item.image && (
+                          {(item.image || item.icon) && (
                             <img
-                              src={item.image}
+                              src={item.image || item.icon}
                               alt={item.name}
                               className="h-4 w-4 object-contain"
                             />

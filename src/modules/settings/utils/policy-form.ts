@@ -1,10 +1,8 @@
+import type { PolicyNotificationsResult, PolicyNotifyVia } from '../types/settings'
+
 export type EffectiveTiming = 'today' | 'future'
 
-export type PolicyNotifyVia = {
-  email: boolean
-  inApp: boolean
-  push: boolean
-}
+export type { PolicyNotifyVia }
 
 export type PolicyEditorValues = {
   title: string
@@ -56,6 +54,13 @@ export const bumpPolicyVersion = (version: string) => {
   const major = Number(match[1])
   const minor = Number(match[2]) + 1
   return `V${major}.${minor}`
+}
+
+export const formatPolicyNotificationToast = (notifications?: PolicyNotificationsResult | null) => {
+  if (!notifications || notifications.skipped) {
+    return notifications?.note || null
+  }
+  return notifications.note || 'Partner notifications dispatched.'
 }
 
 export const resolveEffectivePayload = (values: PolicyEditorValues) => {

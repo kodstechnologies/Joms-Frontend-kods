@@ -1,35 +1,49 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { X } from 'lucide-react'
 import { createPortal } from 'react-dom'
 
+import { useSubAdmins } from '@/modules/rbac/hooks/use-rbac'
 import { RequiredMark } from '@/shared/components/form/required-mark'
 
-import { departmentOptions, userOptionsByDepartment } from '../mock/incident-tracking.mock'
 import type { IncidentRow } from '../types/settings'
 
 type AssignUserModalProps = {
   open: boolean
   incident: IncidentRow | null
   onClose: () => void
-  onSubmit: (department: string, user: string) => void
+  onSubmit: (department: string, user: string, assigneeId: string) => void
 }
 
 export function AssignUserModal({ open, incident, onClose, onSubmit }: AssignUserModalProps) {
   const [department, setDepartment] = useState('')
-  const [user, setUser] = useState('')
+  const [userId, setUserId] = useState('')
   const [wasOpen, setWasOpen] = useState(open)
+
+  const subAdminsQuery = useSubAdmins({ page: 1, limit: 500, status: 'active' }, { enabled: open })
+
+  const subAdmins = subAdminsQuery.data?.data ?? []
+
+  const departmentOptions = useMemo(() => {
+    const values = subAdmins.map((item) => item.department?.trim()).filter(Boolean) as string[]
+    return [...new Set(values)].sort((a, b) => a.localeCompare(b))
+  }, [subAdmins])
+
+  const users = useMemo(() => {
+    if (!department) return []
+    return subAdmins.filter((item) => item.department === department)
+  }, [department, subAdmins])
 
   if (open !== wasOpen) {
     setWasOpen(open)
     if (open) {
       setDepartment('')
-      setUser('')
+      setUserId('')
     }
   }
 
   if (!open) return null
 
-  const users = department ? (userOptionsByDepartment[department] ?? []) : []
+  const selectedUser = users.find((item) => item.id === userId)
 
   return createPortal(
     <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/70 p-4">
@@ -60,8 +74,9 @@ export function AssignUserModal({ open, incident, onClose, onSubmit }: AssignUse
               value={department}
               onChange={(event) => {
                 setDepartment(event.target.value)
-                setUser('')
+                setUserId('')
               }}
+              disabled={subAdminsQuery.isLoading}
             >
               <option value="">Select here</option>
               {departmentOptions.map((option) => (
@@ -77,14 +92,14 @@ export function AssignUserModal({ open, incident, onClose, onSubmit }: AssignUse
             </span>
             <select
               className="ui-input"
-              value={user}
-              onChange={(event) => setUser(event.target.value)}
-              disabled={!department}
+              value={userId}
+              onChange={(event) => setUserId(event.target.value)}
+              disabled={!department || subAdminsQuery.isLoading}
             >
               <option value="">Select user here</option>
               {users.map((option) => (
-                <option key={option} value={option}>
-                  {option}
+                <option key={option.id} value={option.id}>
+                  {option.fullname || `${option.firstName} ${option.lastName}`.trim()}
                 </option>
               ))}
             </select>
@@ -97,8 +112,15 @@ export function AssignUserModal({ open, incident, onClose, onSubmit }: AssignUse
           </button>
           <button
             type="button"
-            disabled={!department || !user}
-            onClick={() => onSubmit(department, user)}
+            disabled={!department || !userId || !selectedUser}
+            onClick={() =>
+              onSubmit(
+                department,
+                selectedUser?.fullname ||
+                  `${selectedUser?.firstName || ''} ${selectedUser?.lastName || ''}`.trim(),
+                userId,
+              )
+            }
             className="ui-modal-btn ui-modal-btn-gold"
           >
             Assign User

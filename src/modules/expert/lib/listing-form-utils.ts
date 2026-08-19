@@ -6,6 +6,32 @@ export const parsePrice = (value: string) => {
   return Number.isNaN(parsed) ? 0 : parsed
 }
 
+export const DISCOUNT_PRESET_PCTS = [10, 15, 20] as const
+
+export const formatDiscountChip = (pct: number) => `${pct}%`
+
+export const parseDiscountPct = (value: string) =>
+  Number.parseInt(String(value).replace('%', ''), 10) || 0
+
+export const computeListingFeeBreakdown = (
+  price: number,
+  discountPct: number,
+  platformFeePct: number,
+  gstPct: number,
+) => {
+  const discounted = Math.round(Math.max(0, price) * (1 - Math.max(0, discountPct) / 100))
+  const platformFee = Math.round(discounted * (platformFeePct / 100))
+  const gst = Math.round(discounted * (gstPct / 100))
+  return {
+    discounted_price: discounted,
+    platform_fee: platformFee,
+    platform_fee_pct: platformFeePct,
+    gst,
+    gst_pct: gstPct,
+    estimated_earnings: Math.max(discounted - platformFee, 0),
+  }
+}
+
 export const normalizeTimelineUnit = (unit: string): 'days' | 'weeks' | 'months' => {
   const normalized = unit.trim().toLowerCase().replace(/s$/, '')
   switch (normalized) {

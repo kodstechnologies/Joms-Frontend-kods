@@ -21,7 +21,9 @@ import {
   fetchRoleLogs,
   fetchAuditLog,
   flagAuditLog,
+  rollbackAuditLog,
   fetchSubAdminInvites,
+  fetchAllInvites,
   reinviteSubAdmin,
   revokeSubAdminInvite,
   fetchSubAdmins,
@@ -35,6 +37,7 @@ import type {
   CompleteContactSetupPayload,
   CreateRolePayload,
   CreateSubAdminPayload,
+  InviteActionPayload,
   UpdateSubAdminPasswordPayload,
 } from '../types/rbac'
 
@@ -54,6 +57,7 @@ export const rbacKeys = {
   roleLogs: (id: string, params?: object) => ['rbac', 'role-logs', id, params] as const,
   auditLog: (id: string) => ['rbac', 'audit-log', id] as const,
   invites: (id: string, params?: object) => ['rbac', 'invites', id, params] as const,
+  allInvites: (params?: object) => ['rbac', 'all-invites', params] as const,
 }
 
 export function useRbacMe() {
@@ -184,7 +188,7 @@ export function useSubAdmin(id: string) {
 
 export function useSubAdminLogs(
   id: string,
-  params?: { page?: number; limit?: number; search?: string },
+  params?: Record<string, unknown>,
   options?: { enabled?: boolean },
 ) {
   return useQuery({
@@ -203,7 +207,7 @@ export function useMySubAdminLogs(params?: { page?: number; limit?: number; sear
 
 export function useRoleLogs(
   id: string,
-  params?: { page?: number; limit?: number; search?: string },
+  params?: Record<string, unknown>,
   options?: { enabled?: boolean },
 ) {
   return useQuery({
@@ -231,10 +235,24 @@ export function useFlagAuditLog() {
   })
 }
 
-export function useSubAdminInvites(
-  id: string,
-  params?: { page?: number; limit?: number; search?: string; status?: string },
-) {
+export function useRollbackAuditLog() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (logId: string) => rollbackAuditLog(logId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: rbacKeys.all })
+    },
+  })
+}
+
+export function useAllInvites(params?: Record<string, unknown>) {
+  return useQuery({
+    queryKey: rbacKeys.allInvites(params),
+    queryFn: () => fetchAllInvites(params),
+  })
+}
+
+export function useSubAdminInvites(id: string, params?: Record<string, unknown>) {
   return useQuery({
     queryKey: rbacKeys.invites(id, params),
     queryFn: () => fetchSubAdminInvites(id, params),
@@ -245,7 +263,8 @@ export function useSubAdminInvites(
 export function useReinviteSubAdmin() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (inviteId: string) => reinviteSubAdmin(inviteId),
+    mutationFn: ({ inviteId, payload }: { inviteId: string; payload: InviteActionPayload }) =>
+      reinviteSubAdmin(inviteId, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: rbacKeys.all })
     },
@@ -255,7 +274,8 @@ export function useReinviteSubAdmin() {
 export function useRevokeSubAdminInvite() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (inviteId: string) => revokeSubAdminInvite(inviteId),
+    mutationFn: ({ inviteId, payload }: { inviteId: string; payload: InviteActionPayload }) =>
+      revokeSubAdminInvite(inviteId, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: rbacKeys.all })
     },
