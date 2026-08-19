@@ -16,6 +16,7 @@ import { toFinanceListFilterParams } from '@/modules/payments/hooks/use-finance-
 import { getModuleFilterConfig } from '@/shared/components/advanced-filter/configs'
 import { financeRevenueFilterConfig } from '@/shared/components/advanced-filter/configs/finance-revenue.config'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
+import type { NavigateFunction } from 'react-router-dom'
 import { MODULE_TAG_OPTIONS } from '@/shared/constants/module-tags'
 import { uiTokens } from '@/shared/lib/design-tokens'
 
@@ -56,9 +57,9 @@ describe('assertFileWithinUploadLimit', () => {
   })
 
   it('rejects an oversized file', () => {
-    expect(() =>
-      assertFileWithinUploadLimit({ size: 51 * 1024 * 1024 } as File),
-    ).toThrow(/Maximum upload/)
+    expect(() => assertFileWithinUploadLimit({ size: 51 * 1024 * 1024 } as File)).toThrow(
+      /Maximum upload/,
+    )
   })
 })
 
@@ -105,8 +106,11 @@ describe('catalogs', () => {
 
 describe('navigateBackOrFallback', () => {
   it('uses fallback when history is empty', () => {
-    const calls: unknown[] = []
-    navigateBackOrFallback((to, opts) => calls.push([to, opts]), '/home')
+    const calls: Array<[unknown, unknown?]> = []
+    const navigate = ((to: unknown, opts?: unknown) => {
+      calls.push([to, opts])
+    }) as NavigateFunction
+    navigateBackOrFallback(navigate, '/home')
     expect(calls[0]?.[0]).toBe('/home')
   })
 })

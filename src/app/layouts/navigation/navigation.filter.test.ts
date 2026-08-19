@@ -5,8 +5,8 @@ import {
   getDefaultHomeRoute,
   getVisibleNavigation,
   hasModuleAccess,
-  normalizePermissionKey,
 } from '@/app/layouts/navigation/navigation.filter'
+import { normalizePermissionKey } from '@/shared/lib/permissions'
 
 const subAdmin = (permissions: string[]): AdminUser => ({
   id: '1',

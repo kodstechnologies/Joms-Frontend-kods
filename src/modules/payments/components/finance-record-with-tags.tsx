@@ -1,13 +1,13 @@
-import { useEffect, useState } from 'react';
-import { Tag, Loader2, X } from 'lucide-react';
-import { Button } from '@/shared/components/ui/button';
-import { AddTagsModal } from './add-tags-modal';
-import { useTagsApi } from '../hooks/use-tags-api';
+import { useEffect, useState } from 'react'
+import { Tag, Loader2, X } from 'lucide-react'
+import { Button } from '@/shared/components/ui/button'
+import { AddTagsModal } from './add-tags-modal'
+import { useTagsApi } from '../hooks/use-tags-api'
 
 interface FinanceRecordWithTagsProps {
-  recordId: string;
-  recordType: 'payment' | 'refund' | 'dispute' | 'invoice' | 'payout';
-  onTagsUpdate?: (tags: string[]) => void;
+  recordId: string
+  recordType: 'payment' | 'refund' | 'dispute' | 'invoice' | 'payout'
+  onTagsUpdate?: (tags: string[]) => void
 }
 
 /**
@@ -19,29 +19,29 @@ export const FinanceRecordWithTags: React.FC<FinanceRecordWithTagsProps> = ({
   recordType,
   onTagsUpdate,
 }) => {
-  const { tags, loading, addTags, removeTags, fetchTags } = useTagsApi();
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const { tags, loading, addTags, removeTags, fetchTags } = useTagsApi()
+  const [isModalOpen, setIsModalOpen] = useState(false)
 
   useEffect(() => {
     // Load tags when component mounts
-    fetchTags(recordId);
-  }, [recordId, fetchTags]);
+    fetchTags(recordId)
+  }, [recordId, fetchTags])
 
   const handleAddTags = async (selectedTags: string[]) => {
-    await addTags(recordId, selectedTags);
-    setIsModalOpen(false);
+    await addTags(recordId, selectedTags)
+    setIsModalOpen(false)
 
     // Notify parent component
-    onTagsUpdate?.([...tags, ...selectedTags]);
+    onTagsUpdate?.([...tags, ...selectedTags])
 
     // Refresh tags
-    await fetchTags(recordId);
-  };
+    await fetchTags(recordId)
+  }
 
   const handleRemoveTag = async (tagToRemove: string) => {
-    await removeTags(recordId, [tagToRemove]);
-    onTagsUpdate?.(tags.filter((t) => t !== tagToRemove));
-  };
+    await removeTags(recordId, [tagToRemove])
+    onTagsUpdate?.(tags.filter((t) => t !== tagToRemove))
+  }
 
   return (
     <div className="space-y-4">
@@ -52,14 +52,9 @@ export const FinanceRecordWithTags: React.FC<FinanceRecordWithTagsProps> = ({
           <Button
             onClick={() => setIsModalOpen(true)}
             disabled={loading}
-            size="sm"
             className="flex items-center gap-2 bg-orange-500 text-white hover:bg-orange-600"
           >
-            {loading ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Tag className="h-4 w-4" />
-            )}
+            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Tag className="h-4 w-4" />}
             {loading ? 'Loading...' : 'Add Tag'}
           </Button>
         </div>
@@ -92,15 +87,17 @@ export const FinanceRecordWithTags: React.FC<FinanceRecordWithTagsProps> = ({
       <AddTagsModal
         isOpen={isModalOpen}
         onClose={() => {
-          setIsModalOpen(false);
+          setIsModalOpen(false)
         }}
-        onAddTags={handleAddTags}
-        selectedTags={tags}
+        onSubmit={async ({ tags: selectedTags }) => {
+          await handleAddTags(selectedTags)
+        }}
+        initialTags={tags}
         title={`Add tags to ${recordType}`}
-        description={`Organize this ${recordType} with tags for internal tracking and management.`}
+        entityLabel={recordType}
       />
     </div>
-  );
-};
+  )
+}
 
-export default FinanceRecordWithTags;
+export default FinanceRecordWithTags

@@ -1,9 +1,9 @@
-import { useState } from 'react';
-import { Tag, GitMerge } from 'lucide-react';
-import { Button } from '@/shared/components/ui/button';
-import { AddTagsModal } from './add-tags-modal';
-import { MergeTicketsModal } from './merge-tickets-modal';
-import { useTagsModal } from '../hooks/use-tags-modal';
+import { useState } from 'react'
+import { Tag, GitMerge } from 'lucide-react'
+import { Button } from '@/shared/components/ui/button'
+import { AddTagsModal } from './add-tags-modal'
+import { MergeTicketsModal } from './merge-tickets-modal'
+import { useTagsModal } from '../hooks/use-tags-modal'
 
 /**
  * Demo component showing how to use AddTagsModal and MergeTicketsModal
@@ -14,39 +14,35 @@ export const TagsModalDemo: React.FC = () => {
     isOpen: tagsModalOpen,
     openModal: openTagsModal,
     closeModal: closeTagsModal,
-    selectedTags,
-    setSelectedTags,
-  } = useTagsModal();
+  } = useTagsModal()
 
-  const [mergeModalOpen, setMergeModalOpen] = useState(false);
-  const [appliedTags, setAppliedTags] = useState<string[]>([]);
+  const [mergeModalOpen, setMergeModalOpen] = useState(false)
+  const [appliedTags, setAppliedTags] = useState<string[]>([])
 
   const handleAddTags = (tags: string[]) => {
-    setAppliedTags(tags);
-    console.log('Tags added:', tags);
+    setAppliedTags(tags)
+    console.log('Tags added:', tags)
     // Call your API here to save tags
-  };
+  }
 
   const handleMergeTickets = ({
     ticketIds,
     adminNotes,
   }: {
-    ticketIds: string[];
-    adminNotes: string;
+    ticketIds: string[]
+    adminNotes: string
   }) => {
-    console.log('Merging tickets:', ticketIds, adminNotes);
+    console.log('Merging tickets:', ticketIds, adminNotes)
     // Call your API here to merge tickets
-    setMergeModalOpen(false);
-  };
+    setMergeModalOpen(false)
+  }
 
   return (
     <div className="space-y-8 p-6">
       {/* Tags Modal Demo */}
       <section className="space-y-4">
         <h2 className="text-lg font-semibold text-white">Tags Modal</h2>
-        <p className="text-sm text-gray-400">
-          Add tags for internal organization and tracking
-        </p>
+        <p className="text-sm text-gray-400">Add tags for internal organization and tracking</p>
 
         <Button
           onClick={openTagsModal}
@@ -59,10 +55,7 @@ export const TagsModalDemo: React.FC = () => {
         {appliedTags.length > 0 && (
           <div className="flex flex-wrap gap-2">
             {appliedTags.map((tag) => (
-              <span
-                key={tag}
-                className="rounded-full bg-orange-500 px-3 py-1 text-xs text-white"
-              >
+              <span key={tag} className="rounded-full bg-orange-500 px-3 py-1 text-xs text-white">
                 {tag}
               </span>
             ))}
@@ -73,9 +66,7 @@ export const TagsModalDemo: React.FC = () => {
       {/* Merge Tickets Modal Demo */}
       <section className="space-y-4">
         <h2 className="text-lg font-semibold text-white">Merge Tickets Modal</h2>
-        <p className="text-sm text-gray-400">
-          Merge multiple tickets into one for better tracking
-        </p>
+        <p className="text-sm text-gray-400">Merge multiple tickets into one for better tracking</p>
 
         <Button
           onClick={() => setMergeModalOpen(true)}
@@ -90,8 +81,10 @@ export const TagsModalDemo: React.FC = () => {
       <AddTagsModal
         isOpen={tagsModalOpen}
         onClose={closeTagsModal}
-        onAddTags={handleAddTags}
-        selectedTags={appliedTags}
+        onSubmit={({ tags }) => {
+          handleAddTags(tags)
+        }}
+        initialTags={appliedTags}
       />
 
       <MergeTicketsModal
@@ -100,7 +93,7 @@ export const TagsModalDemo: React.FC = () => {
         onMerge={handleMergeTickets}
       />
     </div>
-  );
-};
+  )
+}
 
-export default TagsModalDemo;
+export default TagsModalDemo
