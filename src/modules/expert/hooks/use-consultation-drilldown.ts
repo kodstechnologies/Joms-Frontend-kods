@@ -35,7 +35,7 @@ export const useConsultationPerformance = (consultationId?: string) =>
 
 export const useConsultationBookings = (
   consultationId: string | undefined,
-  params: { page?: number; limit?: number; search?: string; status?: string },
+  params: Record<string, unknown>,
 ) =>
   useQuery({
     queryKey: ['admin-consultation-bookings', consultationId, params],

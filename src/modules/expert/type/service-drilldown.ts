@@ -297,7 +297,9 @@ export type ServiceOrdersQuery = {
   orderStatus?: string
   paymentMethod?: string
   refundStatus?: string
+  pricingType?: string
   disputeStatus?: string
+  payoutStatus?: string
   clientSource?: string
   minRating?: string
   maxRating?: string
