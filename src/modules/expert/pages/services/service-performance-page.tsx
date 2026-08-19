@@ -11,12 +11,8 @@ import {
   TableActionsDropdown,
   TableActionsItem,
 } from '@/shared/components/table/table-actions-dropdown'
-import {
-  AdvancedFilterSheet,
-  ExportDataModal,
-} from '@/shared/components/advanced-filter/module-filter-modals'
-import { createEmptyFilterValuesForConfig } from '@/shared/components/advanced-filter/filter-utils'
-import type { FilterValues, ModuleFilterConfig, RangeFilterValue } from '@/shared/types/data-filter'
+import { useModuleExportFilters } from '@/shared/components/advanced-filter/use-module-export-filters'
+import { buildServicePerformanceQueryParams } from '@/shared/utils/export-filter-utils'
 import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
 import { exportDataToFile } from '@/shared/utils/export-utils'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
@@ -73,92 +69,6 @@ const formatClientCode = (clientId?: string | null) => {
   return `CLT-${compact}`
 }
 
-const buildFilterConfig = (options: {
-  orderStatus: string[]
-  paymentMethod: string[]
-}): ModuleFilterConfig => ({
-  moduleKey: SERVICE_PERFORMANCE_MODULE_KEY,
-  moduleName: 'Service Performance',
-  sections: [
-    {
-      id: 'by-order',
-      title: 'By Order',
-      defaultExpanded: true,
-      fields: [
-        { id: 'dateRange', label: 'Date Range', type: 'date-range' },
-        {
-          id: 'orderStatus',
-          label: 'Order Status',
-          type: 'checkbox-group',
-          options: options.orderStatus.map((value) => ({ value, label: titleCase(value) })),
-        },
-        { id: 'priceRange', label: 'Price Range', type: 'number-range' },
-        { id: 'ratingRange', label: 'Rating Range', type: 'number-range' },
-      ],
-    },
-    {
-      id: 'by-payment',
-      title: 'By Payment',
-      fields: [
-        {
-          id: 'paymentMethod',
-          label: 'Payment Method',
-          type: 'checkbox-group',
-          options: options.paymentMethod.map((value) => ({ value, label: titleCase(value) })),
-        },
-        {
-          id: 'refundStatus',
-          label: 'Refund Status',
-          type: 'checkbox-group',
-          options: [
-            { value: 'none', label: 'No Refund' },
-            { value: 'processed', label: 'Refunded' },
-            { value: 'pending', label: 'Refund Pending' },
-            { value: 'failed', label: 'Refund Failed' },
-          ],
-        },
-        {
-          id: 'disputeStatus',
-          label: 'Dispute Status',
-          type: 'checkbox-group',
-          options: [
-            { value: 'disputed', label: 'Disputed' },
-            { value: 'not_disputed', label: 'Not Disputed' },
-          ],
-        },
-      ],
-    },
-  ],
-})
-
-const asRange = (value: FilterValues[string] | undefined): RangeFilterValue =>
-  value && typeof value === 'object' && 'from' in value
-    ? (value as RangeFilterValue)
-    : { from: '', to: '' }
-
-const asList = (value: FilterValues[string] | undefined): string[] =>
-  Array.isArray(value) ? value : []
-
-const buildQueryFromFilters = (values: FilterValues): ServiceOrdersQuery => {
-  const dateRange = asRange(values.dateRange)
-  const priceRange = asRange(values.priceRange)
-  const ratingRange = asRange(values.ratingRange)
-  const disputeStatus = asList(values.disputeStatus)
-
-  return {
-    dateFrom: dateRange.from || undefined,
-    dateTo: dateRange.to || undefined,
-    minPrice: priceRange.from || undefined,
-    maxPrice: priceRange.to || undefined,
-    minRating: ratingRange.from || undefined,
-    maxRating: ratingRange.to || undefined,
-    orderStatus: asList(values.orderStatus).join(',') || undefined,
-    paymentMethod: asList(values.paymentMethod).join(',') || undefined,
-    refundStatus: asList(values.refundStatus).join(',') || undefined,
-    disputeStatus: disputeStatus.length === 1 ? disputeStatus[0] : undefined,
-  }
-}
-
 export function ServicePerformancePage() {
   const { expertId = '', serviceId = '' } = useParams<{ expertId: string; serviceId: string }>()
   const navigate = useNavigate()
@@ -168,8 +78,6 @@ export function ServicePerformancePage() {
   const [appliedFilters, setAppliedFilters] = useState<ServiceOrdersQuery>({})
   const [activeActionMenu, setActiveActionMenu] = useState<string | null>(null)
   const [paymentModalOrder, setPaymentModalOrder] = useState<ServiceOrderRow | null>(null)
-  const [isFilterOpen, setIsFilterOpen] = useState(false)
-  const [isExportOpen, setIsExportOpen] = useState(false)
 
   const performanceQuery = useServicePerformance(serviceId)
   const performance = performanceQuery.data?.data
@@ -183,18 +91,24 @@ export function ServicePerformancePage() {
   const ordersData = ordersQuery.data?.data
   const orders = useMemo(() => ordersData?.orders ?? [], [ordersData?.orders])
 
-  const filterConfig = useMemo(
-    () =>
-      buildFilterConfig({
-        orderStatus: ordersData?.filterOptions.orderStatus ?? [],
-        paymentMethod: ordersData?.filterOptions.paymentMethod ?? [],
-      }),
-    [ordersData?.filterOptions.orderStatus, ordersData?.filterOptions.paymentMethod],
-  )
-
-  const [filterValues, setFilterValues] = useState<FilterValues>(() =>
-    createEmptyFilterValuesForConfig(buildFilterConfig({ orderStatus: [], paymentMethod: [] })),
-  )
+  const {
+    modals: filterModals,
+    onAdvancedFilter,
+    onExport,
+  } = useModuleExportFilters({
+    moduleKey: 'service-performance',
+    onApplyFilters: (values) => {
+      const q = buildServicePerformanceQueryParams(values) as Record<string, unknown>
+      delete q.page
+      delete q.limit
+      setAppliedFilters(q as ServiceOrdersQuery)
+      setPage(1)
+    },
+    onExportData: (values, format) => {
+      if (orders.length === 0) throw new Error('NO_RECORDS')
+      handleExport(format)
+    },
+  })
 
   const tableColumnPreferencesQuery = useTableColumnPreferences(SERVICE_PERFORMANCE_MODULE_KEY)
   const activeMetricIds = useActiveMetricIds(SERVICE_PERFORMANCE_MODULE_KEY, [
@@ -285,7 +199,6 @@ export function ServicePerformancePage() {
 
       exportDataToFile(headers, rows, format, 'service_orders_export')
       toast.success(`Exported ${orders.length} order(s)`)
-      setIsExportOpen(false)
     },
     [orders],
   )
@@ -588,38 +501,7 @@ export function ServicePerformancePage() {
         onClose={() => setPaymentModalOrder(null)}
       />
 
-      <AdvancedFilterSheet
-        open={isFilterOpen}
-        config={filterConfig}
-        values={filterValues}
-        onChange={(fieldId, value) =>
-          setFilterValues((current) => ({ ...current, [fieldId]: value }))
-        }
-        onClose={() => setIsFilterOpen(false)}
-        onReset={() => {
-          const empty = createEmptyFilterValuesForConfig(filterConfig)
-          setFilterValues(empty)
-          setAppliedFilters({})
-          setPage(1)
-          toast.message('Filters reset')
-        }}
-        onApply={() => {
-          setAppliedFilters(buildQueryFromFilters(filterValues))
-          setPage(1)
-          setIsFilterOpen(false)
-        }}
-      />
-
-      <ExportDataModal
-        open={isExportOpen}
-        config={filterConfig}
-        values={filterValues}
-        onChange={(fieldId, value) =>
-          setFilterValues((current) => ({ ...current, [fieldId]: value }))
-        }
-        onClose={() => setIsExportOpen(false)}
-        onExport={handleExport}
-      />
+      {filterModals}
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
@@ -696,8 +578,8 @@ export function ServicePerformancePage() {
         emptyMessage="No orders placed for this service yet."
         showAdvancedFilter
         showExport
-        onAdvancedFilter={() => setIsFilterOpen(true)}
-        onExport={() => setIsExportOpen(true)}
+        onAdvancedFilter={onAdvancedFilter}
+        onExport={onExport}
         onRowClick={openOrderDetail}
         pagination={{
           page,

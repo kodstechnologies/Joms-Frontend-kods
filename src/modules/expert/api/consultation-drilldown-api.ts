@@ -33,7 +33,7 @@ export const fetchConsultationPerformance = async (consultationId: string) => {
 
 export const fetchConsultationBookings = async (
   consultationId: string,
-  params: { page?: number; limit?: number; search?: string; status?: string },
+  params: Record<string, unknown>,
 ) => {
   const response = await expertApiClient.get<ApiEnvelope<ConsultationBookingsResponse>>(
     `${consultBase}/${consultationId}/bookings`,
