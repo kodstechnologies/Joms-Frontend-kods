@@ -24,18 +24,32 @@ import {
 } from '@/modules/payments/mock/finance-refunds.mock'
 import {
   useAddFinanceNote,
+  useEscalateFinance,
   useFinanceDashboard,
   useFinanceDisputes,
   useFinanceRefunds,
+  useSoftDeleteFinance,
   useUpdateDisputeStatus,
   useUpdateRefundStatus,
 } from '@/modules/payments/hooks/use-finance'
+import { fetchFinanceDisputes, fetchFinanceRefunds } from '@/modules/payments/api/finance-api'
+import {
+  createFinanceRowsExportHandler,
+  useFinanceListFilters,
+} from '@/modules/payments/hooks/use-finance-list-filters'
+import { exportDisplayValue } from '@/shared/utils/export-utils'
+import { useTagsApi } from '@/modules/payments/hooks/use-tags-api'
 import {
   formatInr,
   mapDisputeToRefundRow,
   mapRefundToRow,
 } from '@/modules/payments/utils/finance-mappers'
-import { AddTagsModal } from '@/shared/components/modals/add-tags-modal'
+import { AddTagsModal } from '@/modules/payments/components/add-tags-modal'
+import {
+  FinanceEscalateDeleteModal,
+  type FinanceEscalateDeleteAction,
+} from '@/modules/payments/components/finance-escalate-delete-modal'
+import { MergeTicketsModal } from '@/modules/payments/components/merge-tickets-modal'
 import { ChangeStatusModal } from '@/shared/components/modals/change-status-modal'
 import { DataTable } from '@/shared/components/table/data-table'
 import {
@@ -97,14 +111,42 @@ export function FinanceRefundsPage() {
   const [selectedRowIds, setSelectedRowIds] = useState<string[]>([])
   const [statusTarget, setStatusTarget] = useState<RefundChargebackRow | null>(null)
   const [tagTarget, setTagTarget] = useState<RefundChargebackRow | null>(null)
+  const [mergeTarget, setMergeTarget] = useState<RefundChargebackRow | null>(null)
 
-  const listParams = { page: currentPage, limit: PAGE_SIZE }
+  const handleExportData = useMemo(
+    () =>
+      createFinanceRowsExportHandler({
+        fetchRows: async (params) => [
+          ...((await fetchFinanceRefunds(params))?.data?.rows ?? []),
+          ...((await fetchFinanceDisputes(params))?.data?.rows ?? []),
+        ],
+        headers: ['ID', 'Status', 'Amount', 'Created'],
+        mapRow: (row) => [
+          exportDisplayValue(row._id),
+          exportDisplayValue(row.status),
+          exportDisplayValue(
+            'amount' in row ? row.amount : row.originalAmount,
+          ),
+          exportDisplayValue(row.createdAt),
+        ],
+        fileName: 'refunds_export',
+      }),
+    [],
+  )
+  const { apiFilterParams, onAdvancedFilter, onExport, modals: exportFilterModals } =
+    useFinanceListFilters(handleExportData)
+
+  const listParams = { page: currentPage, limit: PAGE_SIZE, ...apiFilterParams }
   const disputesQuery = useFinanceDisputes(listParams)
   const refundsQuery = useFinanceRefunds(listParams)
   const dashboardQuery = useFinanceDashboard()
   const updateDisputeStatus = useUpdateDisputeStatus()
   const updateRefundStatus = useUpdateRefundStatus()
   const addNote = useAddFinanceNote()
+  const escalate = useEscalateFinance()
+  const softDelete = useSoftDeleteFinance()
+  const [rowAction, setRowAction] = useState<FinanceEscalateDeleteAction | null>(null)
+  const { mergeTickets } = useTagsApi()
 
   const apiErrorMessage = (err: unknown, fallback: string) =>
     (err as { response?: { data?: { message?: string } } })?.response?.data?.message || fallback
@@ -224,7 +266,14 @@ export function FinanceRefundsPage() {
           <TableActionsItem
             icon={<SquarePen className="size-3.5 text-slate-700" aria-hidden="true" />}
             className="text-slate-800 hover:bg-slate-100 hover:text-slate-900"
-            onClick={() => toast.message('Edit ticket coming soon')}
+            onClick={() => {
+              setActiveDropdownId(null)
+              navigate(
+                record.kind === 'dispute' || record.type === 'Dispute'
+                  ? `/finance/refunds/${record.id}/dispute`
+                  : `/finance/refunds/${record.id}`,
+              )
+            }}
           >
             Edit Ticket
           </TableActionsItem>
@@ -241,7 +290,10 @@ export function FinanceRefundsPage() {
           <TableActionsItem
             icon={<SlidersHorizontal className="size-3.5 text-slate-700" aria-hidden="true" />}
             className="text-slate-800 hover:bg-slate-100 hover:text-slate-900"
-            onClick={() => toast.message('Change priority coming soon')}
+            onClick={() => {
+              setActiveDropdownId(null)
+              setStatusTarget(record)
+            }}
           >
             Change Priority
           </TableActionsItem>
@@ -268,14 +320,25 @@ export function FinanceRefundsPage() {
           <TableActionsItem
             icon={<Trash2 className="text-brand-danger size-3.5" aria-hidden="true" />}
             className="text-brand-danger hover:bg-brand-danger/10 hover:text-brand-danger"
-            onClick={() => toast.message('Delete coming soon')}
+            onClick={() => {
+              setActiveDropdownId(null)
+              const isDispute = record.kind === 'dispute' || record.type === 'Dispute'
+              setRowAction({
+                kind: 'delete',
+                id: record.id,
+                resourceType: isDispute ? 'Dispute' : 'Refund',
+              })
+            }}
           >
             Delete
           </TableActionsItem>
           <TableActionsItem
             icon={<GitMerge className="size-3.5 text-slate-700" aria-hidden="true" />}
             className="text-slate-800 hover:bg-slate-100 hover:text-slate-900"
-            onClick={() => toast.message('Merge coming soon')}
+            onClick={() => {
+              setActiveDropdownId(null)
+              setMergeTarget(record)
+            }}
           >
             Merge
           </TableActionsItem>
@@ -289,6 +352,21 @@ export function FinanceRefundsPage() {
     statusTarget?.kind === 'dispute' || statusTarget?.type === 'Dispute'
       ? DISPUTE_STATUS_OPTIONS
       : REFUND_STATUS_OPTIONS
+
+  const mergeCandidates = useMemo(() => {
+    const baseRows =
+      selectedRowIds.length > 1
+        ? rows.filter((row) => selectedRowIds.includes(row.id))
+        : mergeTarget
+          ? [mergeTarget]
+          : []
+    return baseRows.map((row) => ({
+      id: row.id,
+      title: row.recordId,
+      description: `${row.type} - ${row.relatedEntity}`,
+      date: row.initiatedDate,
+    }))
+  }, [mergeTarget, rows, selectedRowIds])
 
   const columns = useMemo<ColumnDef<RefundChargebackRow>[]>(
     () => [
@@ -414,8 +492,8 @@ export function FinanceRefundsPage() {
         }}
         searchPlaceholder="Search by name, ID or profession"
         advancedFilterLabel="Advance Filters"
-        onAdvancedFilter={() => toast.message('Advance filters coming soon')}
-        onExport={() => toast.message('Export coming soon')}
+        onAdvancedFilter={onAdvancedFilter}
+        onExport={onExport}
         pagination={{
           page: currentPage,
           pageSize: PAGE_SIZE,
@@ -426,6 +504,7 @@ export function FinanceRefundsPage() {
         resourceLabel="records"
         emptyMessage="No refund records found."
       />
+      {exportFilterModals}
 
       <ChangeStatusModal
         open={!!statusTarget}
@@ -482,6 +561,29 @@ export function FinanceRefundsPage() {
             throw err
           }
         }}
+      />
+
+      <MergeTicketsModal
+        isOpen={!!mergeTarget}
+        onClose={() => setMergeTarget(null)}
+        availableTickets={mergeCandidates}
+        onMerge={async ({ ticketIds, adminNotes }) => {
+          try {
+            await mergeTickets(ticketIds, adminNotes)
+            toast.success('Tickets merged')
+            setMergeTarget(null)
+          } catch (err) {
+            toast.error(apiErrorMessage(err, 'Failed to merge tickets'))
+            throw err
+          }
+        }}
+      />
+
+      <FinanceEscalateDeleteModal
+        action={rowAction}
+        onClose={() => setRowAction(null)}
+        escalate={escalate}
+        softDelete={softDelete}
       />
     </div>
   )

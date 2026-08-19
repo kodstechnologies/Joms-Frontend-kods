@@ -16,6 +16,9 @@ import {
 } from '@/shared/components/table/table-actions-dropdown'
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
+import { useFinanceListFilters } from '@/modules/payments/hooks/use-finance-list-filters'
+import { exportDataToFile, exportDisplayValue } from '@/shared/utils/export-utils'
+import type { FilterValues } from '@/shared/types/data-filter'
 
 const PAGE_SIZE = 10
 
@@ -60,6 +63,18 @@ export function FinanceEventsPage() {
     const start = (safePage - 1) * PAGE_SIZE
     return filteredRows.slice(start, start + PAGE_SIZE)
   }, [filteredRows, safePage])
+
+  const handleExportData = useCallback(async (_values: FilterValues, format: string) => {
+    if (!filteredRows.length) throw new Error('NO_RECORDS')
+    exportDataToFile(
+      ['ID', 'Status'],
+      filteredRows.map((row) => [exportDisplayValue(row.id), exportDisplayValue(row.status)]),
+      format,
+      'events_finance_export',
+    )
+  }, [filteredRows])
+  const { onAdvancedFilter, onExport, modals: exportFilterModals } =
+    useFinanceListFilters(handleExportData)
 
   const visibleRowIds = useMemo(() => pageRows.map((row) => row.id), [pageRows])
   const allVisibleSelected =
@@ -238,8 +253,8 @@ export function FinanceEventsPage() {
         }}
         searchPlaceholder="Search by name, ID or profession"
         advancedFilterLabel="Advance Filters"
-        onAdvancedFilter={() => toast.message('Advance filters coming soon')}
-        onExport={() => toast.message('Export coming soon')}
+        onAdvancedFilter={onAdvancedFilter}
+        onExport={onExport}
         pagination={{
           page: safePage,
           pageSize: PAGE_SIZE,
@@ -250,6 +265,7 @@ export function FinanceEventsPage() {
         resourceLabel="events"
         emptyMessage="No event finance records found."
       />
+      {exportFilterModals}
     </div>
   )
 }

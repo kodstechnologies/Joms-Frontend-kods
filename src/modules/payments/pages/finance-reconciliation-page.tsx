@@ -2,11 +2,16 @@ import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 import { Eye, SlidersHorizontal } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
-import { toast } from 'sonner'
 
 import { type FinanceReconciliationRow } from '@/modules/payments/mock/finance-reconciliation.mock'
 import { useFinanceReconciliation } from '@/modules/payments/hooks/use-finance'
 import { mapReconToRow } from '@/modules/payments/utils/finance-mappers'
+import { fetchFinanceReconciliation } from '@/modules/payments/api/finance-api'
+import {
+  createFinanceRowsExportHandler,
+  useFinanceListFilters,
+} from '@/modules/payments/hooks/use-finance-list-filters'
+import { exportDisplayValue } from '@/shared/utils/export-utils'
 import { DataTable } from '@/shared/components/table/data-table'
 import {
   TableActionsDropdown,
@@ -34,9 +39,27 @@ export function FinanceReconciliationPage() {
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [selectedRowIds, setSelectedRowIds] = useState<string[]>([])
 
+  const handleExportData = useMemo(
+    () =>
+      createFinanceRowsExportHandler({
+        fetchRows: async (params) => (await fetchFinanceReconciliation(params))?.data?.rows ?? [],
+        headers: ['ID', 'Status', 'Created'],
+        mapRow: (row) => [
+          exportDisplayValue(row._id),
+          exportDisplayValue(row.status),
+          exportDisplayValue(row.createdAt),
+        ],
+        fileName: 'reconciliation_export',
+      }),
+    [],
+  )
+  const { apiFilterParams, onAdvancedFilter, onExport, modals: exportFilterModals } =
+    useFinanceListFilters(handleExportData)
+
   const { data, isLoading, isFetching } = useFinanceReconciliation({
     page: currentPage,
     limit: PAGE_SIZE,
+    ...apiFilterParams,
   })
 
   const rows = useMemo(() => (data?.data?.rows ?? []).map(mapReconToRow), [data])
@@ -250,8 +273,8 @@ export function FinanceReconciliationPage() {
         }}
         searchPlaceholder="Search by name, ID or profession"
         advancedFilterLabel="Advance Filters"
-        onAdvancedFilter={() => toast.message('Advance filters coming soon')}
-        onExport={() => toast.message('Export coming soon')}
+        onAdvancedFilter={onAdvancedFilter}
+        onExport={onExport}
         pagination={{
           page: meta?.page ?? currentPage,
           pageSize: meta?.limit ?? PAGE_SIZE,
@@ -262,6 +285,7 @@ export function FinanceReconciliationPage() {
         resourceLabel="records"
         emptyMessage="No reconciliation records found."
       />
+      {exportFilterModals}
     </div>
   )
 }

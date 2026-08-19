@@ -1,5 +1,6 @@
 import axios from 'axios'
 import type { AxiosInstance } from 'axios'
+import { toast } from 'sonner'
 
 import { env } from '@/config/env'
 import { useAuthStore } from '@/modules/auth/store/auth-store'
@@ -9,14 +10,47 @@ const defaultConfigs = {
   withCredentials: true,
 }
 
+let lastOfflineToastAt = 0
+
+function notifyOffline() {
+  const now = Date.now()
+  if (now - lastOfflineToastAt < 4000) return
+  lastOfflineToastAt = now
+  toast.error('You are offline. Check your connection and try again.')
+}
+
+function isBrowserOffline() {
+  return typeof navigator !== 'undefined' && navigator.onLine === false
+}
+
 function attachAuthInterceptor(client: AxiosInstance) {
   client.interceptors.request.use((config) => {
+    if (isBrowserOffline()) {
+      notifyOffline()
+      return Promise.reject(
+        Object.assign(new Error('You are offline. Check your connection and try again.'), {
+          code: 'ERR_NETWORK',
+          isOffline: true,
+          config,
+        }),
+      )
+    }
     const token = useAuthStore.getState().token
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
     }
     return config
   })
+
+  client.interceptors.response.use(
+    (response) => response,
+    (error) => {
+      if (error?.isOffline || (error?.code === 'ERR_NETWORK' && isBrowserOffline())) {
+        notifyOffline()
+      }
+      return Promise.reject(error)
+    },
+  )
 }
 
 function createApiClient(baseURL: string) {

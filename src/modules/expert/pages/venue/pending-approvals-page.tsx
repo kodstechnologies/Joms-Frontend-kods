@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { ArrowLeft, ClipboardCheck, Eye, SlidersHorizontal } from 'lucide-react'
+import { ArrowLeft, CheckCircle2, ClipboardCheck, Eye, SlidersHorizontal } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import createIcon from '@/assets/JOMS_ICONS-2/icons8-create.svg'
@@ -217,6 +217,15 @@ export function VenuePendingApprovalsPage() {
                 }}
               >
                 View Application
+              </TableActionsItem>
+              <TableActionsItem
+                icon={<CheckCircle2 className="size-3.5 text-emerald-400" aria-hidden="true" />}
+                onClick={() => {
+                  setActiveDropdownId(null)
+                  navigate(`/venues/management/application/${getVenueApiId(venue)}`)
+                }}
+              >
+                Approve Application
               </TableActionsItem>
             </TableActionsDropdown>
           )

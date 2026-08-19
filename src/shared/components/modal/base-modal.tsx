@@ -1,7 +1,9 @@
 import type { PropsWithChildren } from 'react'
+import { useRef } from 'react'
 import { X } from 'lucide-react'
 
 import { cn } from '@/shared/lib/cn'
+import { useDialogFocusTrap } from '@/shared/hooks/use-dialog-focus-trap'
 
 type BaseModalProps = PropsWithChildren<{
   open: boolean
@@ -21,6 +23,9 @@ export function BaseModal({
   bodyClassName,
   showClose = true,
 }: BaseModalProps) {
+  const dialogRef = useRef<HTMLDivElement>(null)
+  useDialogFocusTrap(open, onClose, dialogRef)
+
   if (!open) {
     return null
   }
@@ -32,6 +37,7 @@ export function BaseModal({
       role="presentation"
     >
       <div
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby="base-modal-title"

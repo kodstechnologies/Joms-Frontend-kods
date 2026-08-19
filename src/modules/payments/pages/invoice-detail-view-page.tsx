@@ -109,14 +109,14 @@ export function InvoiceDetailViewPage() {
             className="group text-h3 hover:text-brand-accent text-brand-text flex w-fit items-center gap-2 tracking-tight transition-colors"
           >
             <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
-            <span>Invoice Detail View</span>
+            <span>Payment Detail View</span>
           </button>
           <p className="text-body-sm text-muted mt-2 pl-7 leading-[20px]">
             <Link to="/finance/dashboard" className="hover:text-brand-text transition-colors">
               Finance Management
             </Link>
             <span> / </span>
-            <span className="text-brand-text font-semibold">Invoice Details</span>
+            <span className="text-brand-text font-semibold">PaymentView Details</span>
           </p>
         </div>
       </header>
@@ -150,7 +150,7 @@ export function InvoiceDetailViewPage() {
           <section className={innerPanelClass}>
             <h3 className="text-body-md-semibold text-brand-text mb-3">Recipient Details</h3>
             <DetailRow label="Name" value={invoice.clientName || '—'} />
-            <DetailRow label="Partner / User" value={invoice.partnerId || invoice.userId || '—'} />
+            <DetailRow label="Email" value={invoice.partnerId || invoice.userId || '—'} />
           </section>
 
           <section className={innerPanelClass}>
@@ -159,7 +159,7 @@ export function InvoiceDetailViewPage() {
               label="Description"
               value={primaryItem?.label || titleCase(invoice.module)}
             />
-            <DetailRow label="Direction" value={titleCase(invoice.direction)} />
+            <DetailRow label="Platform Fee" value={formatInr(0)} />
             <DetailRow
               label="Unit Price"
               value={formatInr(primaryItem?.amount ?? invoice.subtotal ?? invoice.total)}
@@ -169,7 +169,7 @@ export function InvoiceDetailViewPage() {
           <section className={innerPanelClass}>
             <h3 className="text-body-md-semibold text-brand-text mb-3">Financial Summary</h3>
             <DetailRow label="Subtotal" value={formatInr(invoice.subtotal ?? invoice.total)} />
-            <DetailRow label="Tax" value={formatInr(invoice.taxAmount ?? 0)} />
+            <DetailRow label="Tax (18% GST)" value={formatInr(invoice.taxAmount ?? 0)} />
             <DetailRow
               label="Total Amount"
               value={formatInr(invoice.total)}

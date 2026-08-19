@@ -1,9 +1,10 @@
 import { Tag, X } from 'lucide-react'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { toast } from 'sonner'
 
 import { PLATFORM_TAGS } from '@/shared/constants/platform-tags'
+import { useMountedDialog } from '@/shared/hooks/use-mounted-dialog'
 import { cn } from '@/shared/lib/cn'
 
 type AddTagsModalProps = {
@@ -36,19 +37,7 @@ function AddTagsModalInner({
   const handleClose = useCallback(() => {
     onClose()
   }, [onClose])
-
-  useEffect(() => {
-    const previousOverflow = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') handleClose()
-    }
-    window.addEventListener('keydown', onKeyDown)
-    return () => {
-      document.body.style.overflow = previousOverflow
-      window.removeEventListener('keydown', onKeyDown)
-    }
-  }, [handleClose])
+  const dialogRef = useMountedDialog(handleClose)
 
   const toggleTag = (tag: string) => {
     setSelectedTags((prev) =>
@@ -85,6 +74,7 @@ function AddTagsModalInner({
       role="presentation"
     >
       <div
+        ref={dialogRef}
         className="ui-modal-shell max-h-[92dvh] max-w-xl"
         onClick={(event) => event.stopPropagation()}
         role="dialog"

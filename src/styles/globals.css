@@ -3030,8 +3030,9 @@ select.settings-control,
   outline: none;
 }
 
-.ui-input::placeholder {
-  color: var(--brand-muted);
+.ui-input:focus-visible {
+  outline: 2px solid rgb(255 255 255 / 55%);
+  outline-offset: 2px;
 }
 
 .ui-input.ui-input-icon-left {

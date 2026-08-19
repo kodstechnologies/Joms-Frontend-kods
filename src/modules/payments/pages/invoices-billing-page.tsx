@@ -7,6 +7,12 @@ import { toast } from 'sonner'
 import { type InvoiceRow, type InvoiceStatus } from '@/modules/payments/mock/invoices-billing.mock'
 import { useFinanceInvoices } from '@/modules/payments/hooks/use-finance'
 import { formatInr, mapInvoiceToRow } from '@/modules/payments/utils/finance-mappers'
+import { fetchFinanceInvoices } from '@/modules/payments/api/finance-api'
+import {
+  createFinanceRowsExportHandler,
+  useFinanceListFilters,
+} from '@/modules/payments/hooks/use-finance-list-filters'
+import { exportDisplayValue } from '@/shared/utils/export-utils'
 import { DataTable } from '@/shared/components/table/data-table'
 import {
   TableActionsDropdown,
@@ -55,9 +61,28 @@ export function InvoicesBillingPage() {
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [selectedRowIds, setSelectedRowIds] = useState<string[]>([])
 
+  const handleExportData = useMemo(
+    () =>
+      createFinanceRowsExportHandler({
+        fetchRows: async (params) => (await fetchFinanceInvoices(params))?.data?.rows ?? [],
+        headers: ['ID', 'Status', 'Amount', 'Created'],
+        mapRow: (row) => [
+          exportDisplayValue(row._id),
+          exportDisplayValue(row.status),
+          exportDisplayValue(row.amount),
+          exportDisplayValue(row.createdAt),
+        ],
+        fileName: 'invoices_export',
+      }),
+    [],
+  )
+  const { apiFilterParams, onAdvancedFilter, onExport, modals: exportFilterModals } =
+    useFinanceListFilters(handleExportData)
+
   const { data, isLoading, isFetching, isError } = useFinanceInvoices({
     page: currentPage,
     limit: PAGE_SIZE,
+    ...apiFilterParams,
   })
 
   const rows = useMemo(() => (data?.data?.rows ?? []).map(mapInvoiceToRow), [data])
@@ -270,8 +295,8 @@ export function InvoicesBillingPage() {
         }}
         searchPlaceholder="Search by name, ID or profession"
         advancedFilterLabel="Advance Filters"
-        onAdvancedFilter={() => toast.message('Advance filters coming soon')}
-        onExport={() => toast.message('Export coming soon')}
+        onAdvancedFilter={onAdvancedFilter}
+        onExport={onExport}
         pagination={{
           page: meta?.page ?? currentPage,
           pageSize: meta?.limit ?? PAGE_SIZE,
@@ -282,6 +307,7 @@ export function InvoicesBillingPage() {
         resourceLabel="invoices"
         emptyMessage="No invoices found."
       />
+      {exportFilterModals}
     </div>
   )
 }

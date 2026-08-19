@@ -12,14 +12,26 @@ import {
 } from '@/modules/payments/mock/finance-services.mock'
 import {
   useAddFinanceNote,
+  useEscalateFinance,
   useFinanceEscrow,
   useFinanceRevenue,
+  useSoftDeleteFinance,
 } from '@/modules/payments/hooks/use-finance'
 import {
   mapEscrowToServiceRow,
   mapPaymentToServiceRow,
 } from '@/modules/payments/utils/finance-mappers'
-import { AddTagsModal } from '@/shared/components/modals/add-tags-modal'
+import { fetchFinanceEscrow, fetchFinanceRevenue } from '@/modules/payments/api/finance-api'
+import {
+  createFinanceRowsExportHandler,
+  useFinanceListFilters,
+} from '@/modules/payments/hooks/use-finance-list-filters'
+import { exportDisplayValue } from '@/shared/utils/export-utils'
+import { AddTagsModal } from '@/modules/payments/components/add-tags-modal'
+import {
+  FinanceEscalateDeleteModal,
+  type FinanceEscalateDeleteAction,
+} from '@/modules/payments/components/finance-escalate-delete-modal'
 import { DataTable } from '@/shared/components/table/data-table'
 import {
   TableActionsDropdown,
@@ -46,7 +58,10 @@ export function FinanceServicesPage() {
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [selectedRowIds, setSelectedRowIds] = useState<string[]>([])
   const [tagTarget, setTagTarget] = useState<FinanceServiceRow | null>(null)
+  const [rowAction, setRowAction] = useState<FinanceEscalateDeleteAction | null>(null)
   const addNote = useAddFinanceNote()
+  const escalate = useEscalateFinance()
+  const softDelete = useSoftDeleteFinance()
 
   const isEscrowTab = activeTab === 'escrow'
   const module =
@@ -66,8 +81,30 @@ export function FinanceServicesPage() {
     limit: PAGE_SIZE,
   }
 
-  const revenueQuery = useFinanceRevenue(revenueParams, !isEscrowTab)
-  const escrowQuery = useFinanceEscrow(escrowParams, isEscrowTab)
+  const handleExportData = useMemo(
+    () =>
+      createFinanceRowsExportHandler({
+        fetchRows: async (params) => {
+          if (isEscrowTab) {
+            return (await fetchFinanceEscrow(params))?.data?.rows ?? []
+          }
+          return (await fetchFinanceRevenue({ ...params, module }))?.data?.rows ?? []
+        },
+        headers: ['ID', 'Status', 'Created'],
+        mapRow: (row) => [
+          exportDisplayValue(row._id),
+          exportDisplayValue(row.status),
+          exportDisplayValue(row.createdAt),
+        ],
+        fileName: 'services_finance_export',
+      }),
+    [isEscrowTab, module],
+  )
+  const { apiFilterParams, onAdvancedFilter, onExport, modals: exportFilterModals } =
+    useFinanceListFilters(handleExportData)
+
+  const revenueQuery = useFinanceRevenue({ ...revenueParams, ...apiFilterParams }, !isEscrowTab)
+  const escrowQuery = useFinanceEscrow({ ...escrowParams, ...apiFilterParams }, isEscrowTab)
 
   const handleTabChange = (tabId: FinanceServiceTab) => {
     if (tabId !== activeTab) {
@@ -176,7 +213,11 @@ export function FinanceServicesPage() {
             className="text-slate-800 hover:bg-slate-100 hover:text-slate-900"
             onClick={() => {
               setActiveDropdownId(null)
-              toast.message('Escalate coming soon')
+              setRowAction({
+                kind: 'escalate',
+                id: record.id,
+                resourceType: record.tab === 'escrow' ? 'EscrowHold' : 'Payment',
+              })
             }}
           >
             Escalate
@@ -186,7 +227,11 @@ export function FinanceServicesPage() {
             className="text-brand-danger hover:bg-brand-danger/10 hover:text-brand-danger"
             onClick={() => {
               setActiveDropdownId(null)
-              toast.message('Delete coming soon')
+              setRowAction({
+                kind: 'delete',
+                id: record.id,
+                resourceType: record.tab === 'escrow' ? 'EscrowHold' : 'Payment',
+              })
             }}
           >
             Delete
@@ -343,8 +388,8 @@ export function FinanceServicesPage() {
         }}
         searchPlaceholder="Search by name, ID or profession"
         advancedFilterLabel="Advance Filters"
-        onAdvancedFilter={() => toast.message('Advance filters coming soon')}
-        onExport={() => toast.message('Export coming soon')}
+        onAdvancedFilter={onAdvancedFilter}
+        onExport={onExport}
         pagination={{
           page: meta?.page ?? currentPage,
           pageSize: meta?.limit ?? PAGE_SIZE,
@@ -355,6 +400,7 @@ export function FinanceServicesPage() {
         resourceLabel="services"
         emptyMessage="No service records found."
       />
+      {exportFilterModals}
 
       <AddTagsModal
         open={!!tagTarget}
@@ -378,6 +424,13 @@ export function FinanceServicesPage() {
             throw err
           }
         }}
+      />
+
+      <FinanceEscalateDeleteModal
+        action={rowAction}
+        onClose={() => setRowAction(null)}
+        escalate={escalate}
+        softDelete={softDelete}
       />
     </div>
   )

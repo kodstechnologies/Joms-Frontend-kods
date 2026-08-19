@@ -47,6 +47,12 @@ export function getApiErrorMessage(
     ) {
       return FILE_TOO_LARGE_MESSAGE
     }
+
+    if (error.code === 'ERR_NETWORK' || (error as { isOffline?: boolean }).isOffline) {
+      if ((error as { isOffline?: boolean }).isOffline || navigator.onLine === false) {
+        return 'You are offline. Check your connection and try again.'
+      }
+    }
   }
 
   if (error instanceof Error && error.message.trim()) {

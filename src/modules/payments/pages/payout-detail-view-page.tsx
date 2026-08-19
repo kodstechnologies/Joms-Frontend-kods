@@ -23,6 +23,7 @@ import { navigateBackOrFallback } from '@/shared/lib/navigation'
 
 const cardClass = 'radius-lg border border-white/[0.06] bg-brand-surface p-4 sm:p-5'
 const sectionTitleClass = 'text-body-md-semibold text-brand-text leading-[20px]'
+const sectionSubtitleClass = 'text-body-sm text-muted mt-1 leading-[20px]'
 const labelClass = 'text-body-sm text-muted'
 const valueClass = 'text-body-sm-medium text-brand-text'
 
@@ -49,6 +50,13 @@ function getStatusBadgeClass(status: string) {
     return 'border-brand-positive/25 bg-brand-positive/10 text-brand-positive'
   if (status === 'Pending') return 'border-brand-accent/40 bg-brand-accent/10 text-brand-accent'
   return 'border-brand-danger/25 bg-brand-danger/10 text-brand-danger'
+}
+
+const maskAccount = (value?: string | null) => {
+  if (!value) return '—'
+  const digits = value.replace(/\s/g, '')
+  if (digits.length < 4) return value
+  return `**** ${digits.slice(-4)}`
 }
 
 export function PayoutDetailViewPage() {
@@ -95,6 +103,9 @@ export function PayoutDetailViewPage() {
 
   const canRetry = payout.status === 'failed'
   const canRelease = ['scheduled', 'pending_approval', 'failed'].includes(payout.status)
+  const gross = payout.fees?.grossAmount
+  const commission = payout.fees?.platformCommission ?? 0
+  const netPayable = payout.fees?.netPayable
 
   return (
     <div className="bg-brand-bg flex flex-col gap-5 pb-6">
@@ -105,9 +116,9 @@ export function PayoutDetailViewPage() {
           className="group text-h3 hover:text-brand-accent text-brand-text flex w-fit items-center gap-2 tracking-tight transition-colors"
         >
           <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
-          <span>Payout Detail View</span>
+          <span>Payment Detail View</span>
         </button>
-        <p className="text-body-sm text-muted mt-2 pl-7 leading-5">
+        <p className="text-body-sm text-muted mt-2 pl-7 leading-[20px]">
           <Link to="/finance/dashboard" className="hover:text-brand-text transition-colors">
             Finance Management
           </Link>
@@ -116,54 +127,97 @@ export function PayoutDetailViewPage() {
             Payout Management
           </Link>
           <span> / </span>
-          <span className="text-brand-text font-semibold">Payout Details</span>
+          <span className="text-brand-text font-semibold">Payment View Details</span>
           {isFetching ? <span className="text-muted ml-2 text-xs">(updating…)</span> : null}
         </p>
       </header>
 
-      <div className="flex flex-wrap gap-2">
-        {canRetry ? (
-          <Button className="ui-cta" onClick={() => setNoteModal('retry')}>
-            Retry Payout
-          </Button>
-        ) : null}
-        {canRelease ? (
-          <Button className="ui-cta ui-cta-secondary" onClick={() => setNoteModal('release')}>
-            Release Payout
-          </Button>
-        ) : (
-          <Button className="ui-cta" disabled>
-            {status === 'Completed' ? 'Paid' : status}
-          </Button>
-        )}
-      </div>
+      <section className={cn(cardClass, 'flex flex-col gap-6 p-5')}>
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <h2 className={sectionTitleClass}>Payout Details</h2>
+            <p className={sectionSubtitleClass}>
+              {titleCase(payout.module)} · {titleCase(payout.pricingType)}
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {canRetry ? (
+              <Button className="ui-cta" onClick={() => setNoteModal('retry')}>
+                Retry Payout
+              </Button>
+            ) : null}
+            {canRelease ? (
+              <Button className="ui-cta ui-cta-secondary" onClick={() => setNoteModal('release')}>
+                Release Payout
+              </Button>
+            ) : (
+              <Button className="ui-cta" disabled>
+                {status === 'Completed' ? 'Paid' : status}
+              </Button>
+            )}
+          </div>
+        </div>
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        <DetailCard title="Payout Information">
-          <DetailRow label="Payout ID" value={payout.payoutId} />
-          <DetailRow label="Partner" value={partnerLabel} />
-          <DetailRow label="Module" value={titleCase(payout.module)} />
-          <DetailRow label="Pricing Type" value={titleCase(payout.pricingType)} />
-          <DetailRow label="Net Payable" value={formatInr(payout.fees?.netPayable)} />
-          <DetailRow label="Gross" value={formatInr(payout.fees?.grossAmount)} />
-          <DetailRow
-            label="Status"
-            value={
-              <span
-                className={cn(
-                  'text-body-sm-semibold inline-flex rounded-full border px-2.5 py-0.5',
-                  getStatusBadgeClass(status),
+        <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
+          <DetailCard title="Payout Information">
+            <DetailRow label="Payout ID" value={payout.payoutId} />
+            <DetailRow label="Recipient" value={partnerLabel} />
+            <DetailRow label="Type" value={titleCase(payout.module)} />
+            <DetailRow
+              label="Status"
+              value={
+                <span
+                  className={cn(
+                    'text-body-sm-semibold inline-flex rounded-full border px-2.5 py-0.5',
+                    getStatusBadgeClass(status),
+                  )}
+                >
+                  {status}
+                </span>
+              }
+            />
+            <DetailRow label="Scheduled Date" value={formatDate(payout.scheduledAt)} />
+          </DetailCard>
+
+          <div className="flex flex-col gap-5">
+            <DetailCard title="Financial Details">
+              <DetailRow label="Payout Amount" value={formatInr(gross)} />
+              <DetailRow label="Commission Deducted" value={formatInr(commission)} />
+              <DetailRow label="Minimum Threshold" value={formatInr(netPayable)} />
+            </DetailCard>
+
+            <DetailCard title="Bank Details">
+              <DetailRow
+                label="Beneficiary"
+                value={payout.bankingSnapshot?.beneficiaryName || '—'}
+              />
+              <DetailRow label="Bank Name" value={payout.bankingSnapshot?.bankName || '—'} />
+              <DetailRow
+                label="Account Number"
+                value={maskAccount(
+                  payout.bankingSnapshot?.accountNumber ||
+                    payout.bankingSnapshot?.accountNumberMasked,
                 )}
-              >
-                {status}
-              </span>
-            }
-          />
-          <DetailRow label="Scheduled" value={formatDate(payout.scheduledAt)} />
-          <DetailRow label="Paid At" value={formatDate(payout.paidAt)} />
-          <DetailRow label="Failure Reason" value={payout.failureReason || '—'} />
-        </DetailCard>
-      </div>
+              />
+              <DetailRow label="IFSC Code" value={payout.bankingSnapshot?.ifscCode || '—'} />
+              <DetailRow
+                label="Transfer Reference (UTR)"
+                value={payout.bankingSnapshot?.bankReference || '—'}
+              />
+            </DetailCard>
+          </div>
+        </div>
+
+        <div className="flex justify-end">
+          <button
+            type="button"
+            onClick={() => navigateBackOrFallback(navigate, '/finance/payouts')}
+            className="ui-cta ui-cta-secondary"
+          >
+            Close
+          </button>
+        </div>
+      </section>
 
       <AddFinanceNoteModal
         open={noteModal === 'retry'}
@@ -192,18 +246,28 @@ export function PayoutDetailViewPage() {
       <AddFinanceNoteModal
         open={noteModal === 'release'}
         title="Release Payout"
-        description="Add an admin note to confirm releasing this payout."
+        description="Record the manual bank transfer, then mark this payout as paid."
         placeholder="Enter release note"
         submitLabel="Release Payout"
         submittingLabel="Releasing..."
+        extraField={{
+          label: 'Transfer Reference (UTR)',
+          placeholder: 'Enter bank UTR / reference',
+          required: true,
+          minLength: 6,
+        }}
         isSubmitting={releaseMutation.isPending}
         onClose={() => setNoteModal(null)}
-        onSubmit={(adminNote) => {
+        onSubmit={(adminNote, bankReference) => {
+          if (!bankReference) {
+            toast.error('Bank transfer reference (UTR) is required')
+            return
+          }
           releaseMutation.mutate(
-            { id: payout._id, adminNote },
+            { id: payout._id, adminNote, bankReference },
             {
               onSuccess: () => {
-                toast.success('Payout released')
+                toast.success('Payout marked as paid')
                 setNoteModal(null)
                 void refetch()
               },

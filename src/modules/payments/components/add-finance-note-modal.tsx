@@ -3,6 +3,13 @@ import { useCallback, useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { toast } from 'sonner'
 
+type ExtraField = {
+  label: string
+  placeholder?: string
+  required?: boolean
+  minLength?: number
+}
+
 type AddFinanceNoteModalProps = {
   open: boolean
   title?: string
@@ -12,8 +19,9 @@ type AddFinanceNoteModalProps = {
   submitLabel?: string
   submittingLabel?: string
   isSubmitting?: boolean
+  extraField?: ExtraField
   onClose: () => void
-  onSubmit: (adminNote: string) => void
+  onSubmit: (adminNote: string, extraValue?: string) => void
 }
 
 export function AddFinanceNoteModal(props: AddFinanceNoteModalProps) {
@@ -29,10 +37,12 @@ function AddFinanceNoteModalInner({
   submitLabel = 'Save Note',
   submittingLabel = 'Saving...',
   isSubmitting = false,
+  extraField,
   onClose,
   onSubmit,
 }: AddFinanceNoteModalProps) {
   const [adminNote, setAdminNote] = useState('')
+  const [extraValue, setExtraValue] = useState('')
 
   const handleClose = useCallback(() => {
     if (isSubmitting) return
@@ -60,7 +70,16 @@ function AddFinanceNoteModalInner({
       toast.error('Admin note is required')
       return
     }
-    onSubmit(note)
+    const extra = extraValue.trim()
+    if (extraField?.required && !extra) {
+      toast.error(`${extraField.label} is required`)
+      return
+    }
+    if (extraField?.minLength && extra.length < extraField.minLength) {
+      toast.error(`${extraField.label} must be at least ${extraField.minLength} characters`)
+      return
+    }
+    onSubmit(note, extra || undefined)
   }
 
   return createPortal(
@@ -99,6 +118,22 @@ function AddFinanceNoteModalInner({
         </div>
 
         <div className="ui-modal-body space-y-4">
+          {extraField ? (
+            <label className="block space-y-2.5">
+              <span className="text-body-md-semibold text-brand-text">
+                {extraField.label}
+                {extraField.required ? <span className="text-brand-danger"> *</span> : null}
+              </span>
+              <input
+                type="text"
+                value={extraValue}
+                onChange={(event) => setExtraValue(event.target.value)}
+                placeholder={extraField.placeholder}
+                className="ui-input"
+                autoFocus
+              />
+            </label>
+          ) : null}
           <label className="block space-y-2.5">
             <span className="text-body-md-semibold text-brand-text">
               {noteLabel} <span className="text-brand-danger">*</span>
@@ -109,7 +144,7 @@ function AddFinanceNoteModalInner({
               placeholder={placeholder}
               rows={4}
               className="ui-textarea min-h-[120px]"
-              autoFocus
+              autoFocus={!extraField}
             />
           </label>
         </div>

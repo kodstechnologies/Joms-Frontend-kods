@@ -2,9 +2,14 @@ import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 import { Eye, TrendingUp } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
-import { toast } from 'sonner'
 
 import { useFinanceDashboard, useFinancePayouts } from '@/modules/payments/hooks/use-finance'
+import { fetchFinancePayouts } from '@/modules/payments/api/finance-api'
+import {
+  createFinanceRowsExportHandler,
+  useFinanceListFilters,
+} from '@/modules/payments/hooks/use-finance-list-filters'
+import { exportDisplayValue } from '@/shared/utils/export-utils'
 import { formatInr, mapPayoutToRow } from '@/modules/payments/utils/finance-mappers'
 import type { PayoutRow, PayoutStatus } from '@/modules/payments/mock/payout-management.mock'
 import { DataTable } from '@/shared/components/table/data-table'
@@ -56,9 +61,31 @@ export function PayoutManagementPage() {
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [selectedRowIds, setSelectedRowIds] = useState<string[]>([])
 
+  const handleExportData = useMemo(
+    () =>
+      createFinanceRowsExportHandler({
+        fetchRows: async (params) => (await fetchFinancePayouts(params))?.data?.rows ?? [],
+        headers: ['ID', 'Payout ID', 'Partner', 'Module', 'Net payable', 'Status', 'Created'],
+        mapRow: (row) => [
+          exportDisplayValue(row._id),
+          exportDisplayValue(row.payoutId),
+          exportDisplayValue(row.partnerName || row.partnerId),
+          exportDisplayValue(row.module),
+          exportDisplayValue(row.fees?.netPayable),
+          exportDisplayValue(row.status),
+          exportDisplayValue(row.createdAt),
+        ],
+        fileName: 'payouts_export',
+      }),
+    [],
+  )
+  const { apiFilterParams, onAdvancedFilter, onExport, modals: exportFilterModals } =
+    useFinanceListFilters(handleExportData)
+
   const { data, isLoading, isFetching, isError } = useFinancePayouts({
     page: currentPage,
     limit: PAGE_SIZE,
+    ...apiFilterParams,
   })
   const dashboardQuery = useFinanceDashboard()
 
@@ -249,8 +276,8 @@ export function PayoutManagementPage() {
         }}
         searchPlaceholder="Search by name, ID or profession"
         advancedFilterLabel="Advance Filters"
-        onAdvancedFilter={() => toast.message('Advance filters coming soon')}
-        onExport={() => toast.message('Export coming soon')}
+        onAdvancedFilter={onAdvancedFilter}
+        onExport={onExport}
         pagination={{
           page: meta?.page ?? currentPage,
           pageSize: meta?.limit ?? PAGE_SIZE,
@@ -261,6 +288,7 @@ export function PayoutManagementPage() {
         resourceLabel="payouts"
         emptyMessage="No payout records found."
       />
+      {exportFilterModals}
     </div>
   )
 }

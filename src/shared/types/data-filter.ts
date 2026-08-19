@@ -65,3 +65,4 @@ export type ModuleFilterKey =
   | 'referral-management'
   | 'rbac-management'
   | 'leaderboard-management'
+  | 'finance-revenue'

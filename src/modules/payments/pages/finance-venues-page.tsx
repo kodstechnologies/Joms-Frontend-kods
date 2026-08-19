@@ -5,9 +5,19 @@ import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
 import { type FinanceVenueRow } from '@/modules/payments/mock/finance-venues.mock'
-import { useAddFinanceNote, useFinanceRevenue } from '@/modules/payments/hooks/use-finance'
+import { useAddFinanceNote, useEscalateFinance, useFinanceRevenue, useSoftDeleteFinance } from '@/modules/payments/hooks/use-finance'
 import { mapPaymentToVenueRow } from '@/modules/payments/utils/finance-mappers'
-import { AddTagsModal } from '@/shared/components/modals/add-tags-modal'
+import { fetchFinanceRevenue } from '@/modules/payments/api/finance-api'
+import {
+  createFinanceRowsExportHandler,
+  useFinanceListFilters,
+} from '@/modules/payments/hooks/use-finance-list-filters'
+import { exportDisplayValue } from '@/shared/utils/export-utils'
+import { AddTagsModal } from '@/modules/payments/components/add-tags-modal'
+import {
+  FinanceEscalateDeleteModal,
+  type FinanceEscalateDeleteAction,
+} from '@/modules/payments/components/finance-escalate-delete-modal'
 import { DataTable } from '@/shared/components/table/data-table'
 import {
   TableActionsDropdown,
@@ -35,12 +45,36 @@ export function FinanceVenuesPage() {
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [selectedRowIds, setSelectedRowIds] = useState<string[]>([])
   const [tagTarget, setTagTarget] = useState<FinanceVenueRow | null>(null)
+  const [rowAction, setRowAction] = useState<FinanceEscalateDeleteAction | null>(null)
   const addNote = useAddFinanceNote()
+  const escalate = useEscalateFinance()
+  const softDelete = useSoftDeleteFinance()
+
+  const handleExportData = useMemo(
+    () =>
+      createFinanceRowsExportHandler({
+        fetchRows: async (params) =>
+          (await fetchFinanceRevenue({ ...params, module: 'venue' }))?.data?.rows ?? [],
+        headers: ['ID', 'Module', 'Amount', 'Status', 'Created'],
+        mapRow: (row) => [
+          exportDisplayValue(row._id),
+          exportDisplayValue(row.module),
+          exportDisplayValue(row.amount),
+          exportDisplayValue(row.status),
+          exportDisplayValue(row.createdAt),
+        ],
+        fileName: 'venues_payments_export',
+      }),
+    [],
+  )
+  const { apiFilterParams, onAdvancedFilter, onExport, modals: exportFilterModals } =
+    useFinanceListFilters(handleExportData)
 
   const { data, isLoading, isFetching } = useFinanceRevenue({
     page: currentPage,
     limit: PAGE_SIZE,
     module: 'venue',
+    ...apiFilterParams,
   })
 
   const rows = useMemo(() => (data?.data?.rows ?? []).map(mapPaymentToVenueRow), [data])
@@ -116,7 +150,7 @@ export function FinanceVenuesPage() {
             className="text-slate-800 hover:bg-slate-100 hover:text-slate-900"
             onClick={() => {
               setActiveDropdownId(null)
-              toast.message('Escalate coming soon')
+              setRowAction({ kind: 'escalate', id: record.id, resourceType: 'Payment' })
             }}
           >
             Escalate
@@ -126,7 +160,7 @@ export function FinanceVenuesPage() {
             className="text-brand-danger hover:bg-brand-danger/10 hover:text-brand-danger"
             onClick={() => {
               setActiveDropdownId(null)
-              toast.message('Delete coming soon')
+              setRowAction({ kind: 'delete', id: record.id, resourceType: 'Payment' })
             }}
           >
             Delete
@@ -265,8 +299,8 @@ export function FinanceVenuesPage() {
         }}
         searchPlaceholder="Search by name, ID or profession"
         advancedFilterLabel="Advance Filters"
-        onAdvancedFilter={() => toast.message('Advance filters coming soon')}
-        onExport={() => toast.message('Export coming soon')}
+        onAdvancedFilter={onAdvancedFilter}
+        onExport={onExport}
         pagination={{
           page: meta?.page ?? currentPage,
           pageSize: meta?.limit ?? PAGE_SIZE,
@@ -277,6 +311,7 @@ export function FinanceVenuesPage() {
         resourceLabel="venues"
         emptyMessage="No venue records found."
       />
+      {exportFilterModals}
 
       <AddTagsModal
         open={!!tagTarget}
@@ -300,6 +335,13 @@ export function FinanceVenuesPage() {
             throw err
           }
         }}
+      />
+
+      <FinanceEscalateDeleteModal
+        action={rowAction}
+        onClose={() => setRowAction(null)}
+        escalate={escalate}
+        softDelete={softDelete}
       />
     </div>
   )

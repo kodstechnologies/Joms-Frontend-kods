@@ -1,4 +1,4 @@
-import * as XLSX from 'xlsx'
+import ExcelJS from 'exceljs'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 
@@ -33,19 +33,10 @@ export function exportDataToFile(
   const rowsForExport = [headers, ...rows]
 
   if (format === 'excel') {
-    // Force all values as plain strings by prefixing with zero-width space trick
-    // Use raw: false so xlsx treats everything as strings
-    const wsData = rowsForExport.map((row) => row.map((cell) => ({ v: cell, t: 's' })))
-    try {
-      const worksheet = XLSX.utils.aoa_to_sheet(wsData)
-      const workbook = XLSX.utils.book_new()
-      XLSX.utils.book_append_sheet(workbook, worksheet, 'Data')
-      XLSX.writeFile(workbook, `${fileNamePrefix}.xlsx`)
-      return
-    } catch {
+    void writeExcelFile(rowsForExport, fileNamePrefix).catch(() => {
       exportCsv(rowsForExport, `${fileNamePrefix}.csv`)
-      return
-    }
+    })
+    return
   }
 
   if (format === 'pdf') {
@@ -63,8 +54,31 @@ export function exportDataToFile(
     }
   }
 
-  // Default to CSV
   exportCsv(rowsForExport, `${fileNamePrefix}.csv`)
+}
+
+async function writeExcelFile(rowsForExport: string[][], fileNamePrefix: string) {
+  const workbook = new ExcelJS.Workbook()
+  const sheet = workbook.addWorksheet('Data')
+  rowsForExport.forEach((row) => {
+    sheet.addRow(row)
+  })
+  const buffer = await workbook.xlsx.writeBuffer()
+  const blob = new Blob([buffer as ArrayBuffer], {
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  })
+  downloadBlob(blob, `${fileNamePrefix}.xlsx`)
+}
+
+function downloadBlob(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.setAttribute('download', filename)
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+  URL.revokeObjectURL(url)
 }
 
 function exportCsv(rows: (string | number | boolean | null | undefined)[][], filename: string) {
@@ -82,12 +96,5 @@ function exportCsv(rows: (string | number | boolean | null | undefined)[][], fil
       .join('\r\n')
 
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
-  const url = URL.createObjectURL(blob)
-  const link = document.createElement('a')
-  link.href = url
-  link.setAttribute('download', filename)
-  document.body.appendChild(link)
-  link.click()
-  document.body.removeChild(link)
-  URL.revokeObjectURL(url)
+  downloadBlob(blob, filename)
 }

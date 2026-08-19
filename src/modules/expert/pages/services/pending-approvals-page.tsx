@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { ArrowLeft, Eye } from 'lucide-react'
+import { ArrowLeft, CheckCircle2, Eye } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
@@ -218,7 +218,7 @@ export function PendingApprovalsPage() {
               label={`Open actions for ${service.title}`}
               isOpen={isOpen}
               onOpenChange={(open) => setActiveDropdownId(open ? service._id : null)}
-              menuWidth={160}
+              menuWidth={190}
             >
               <TableActionsItem
                 icon={<Eye className="size-3.5" aria-hidden="true" />}
@@ -228,6 +228,15 @@ export function PendingApprovalsPage() {
                 }}
               >
                 View Details
+              </TableActionsItem>
+              <TableActionsItem
+                icon={<CheckCircle2 className="size-3.5 text-emerald-400" aria-hidden="true" />}
+                onClick={() => {
+                  setActiveDropdownId(null)
+                  navigate(getServiceManagementViewPath(service))
+                }}
+              >
+                Approve Application
               </TableActionsItem>
             </TableActionsDropdown>
           )

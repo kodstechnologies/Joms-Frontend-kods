@@ -46,7 +46,10 @@ export type FinancePayment = {
   moduleData?: Record<string, unknown> | null
   moduleSnapshot?: Record<string, unknown> | null
   fulfillmentResult?: Record<string, unknown> | null
+  razorpayOrderId?: string | null
   razorpayPaymentId?: string | null
+  gatewayAmount?: number | null
+  platformReceivedAmount?: number | null
   settlementStatus?: string | null
   createdAt?: string
   updatedAt?: string
@@ -69,6 +72,8 @@ export type FinanceEscrowHold = {
   amountHeld: number
   currency?: string
   holdReason?: string
+  platformFee?: number
+  releaseAmount?: number
   status: string
   heldAt?: string
   expectedReleaseAt?: string | null
@@ -90,17 +95,25 @@ export type FinancePayout = {
   fees: {
     grossAmount: number
     platformCommission?: number
+    gatewayCharges?: number
+    taxGst?: number
+    taxTds?: number
     netPayable: number
     currency?: string
+  }
+  bankingSnapshot?: {
+    beneficiaryName?: string | null
+    bankName?: string | null
+    bankReference?: string | null
+    accountNumber?: string | null
+    accountNumberMasked?: string | null
+    ifscCode?: string | null
   }
   status: string
   scheduledAt?: string
   paidAt?: string | null
   failedAt?: string | null
   failureReason?: string | null
-  bankingSnapshot?: {
-    bankReference?: string
-  }
   createdAt?: string
 }
 

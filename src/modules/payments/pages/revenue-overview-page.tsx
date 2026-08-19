@@ -5,9 +5,18 @@ import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
 import { type RevenueOverviewRow } from '@/modules/payments/mock/revenue-overview.mock'
-import { useAddFinanceNote, useFinanceRevenue } from '@/modules/payments/hooks/use-finance'
+import {
+  useAddFinanceNote,
+  useEscalateFinance,
+  useFinanceRevenue,
+  useSoftDeleteFinance,
+} from '@/modules/payments/hooks/use-finance'
 import { mapPaymentToRevenueRow } from '@/modules/payments/utils/finance-mappers'
-import { AddTagsModal } from '@/shared/components/modals/add-tags-modal'
+import { AddTagsModal } from '@/modules/payments/components/add-tags-modal'
+import {
+  FinanceEscalateDeleteModal,
+  type FinanceEscalateDeleteAction,
+} from '@/modules/payments/components/finance-escalate-delete-modal'
 import { DataTable } from '@/shared/components/table/data-table'
 import {
   TableActionsDropdown,
@@ -15,6 +24,12 @@ import {
 } from '@/shared/components/table/table-actions-dropdown'
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
+import { useModuleExportFilters } from '@/shared/components/advanced-filter/use-module-export-filters'
+import { buildFilterParams } from '@/shared/utils/export-filter-utils'
+import { exportDataToFile, exportDisplayValue } from '@/shared/utils/export-utils'
+import type { FilterValues } from '@/shared/types/data-filter'
+import { fetchFinanceRevenue } from '@/modules/payments/api/finance-api'
+import type { FinanceListParams, FinancePayment } from '@/modules/payments/types/finance-api'
 
 const PAGE_SIZE = 10
 
@@ -35,11 +50,26 @@ export function RevenueOverviewPage() {
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [selectedRowIds, setSelectedRowIds] = useState<string[]>([])
   const [tagTarget, setTagTarget] = useState<RevenueOverviewRow | null>(null)
+  const [rowAction, setRowAction] = useState<FinanceEscalateDeleteAction | null>(null)
+  const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
   const addNote = useAddFinanceNote()
+  const escalate = useEscalateFinance()
+  const softDelete = useSoftDeleteFinance()
+
+  const apiFilterParams = useMemo(() => {
+    const params = buildFilterParams(appliedFilters)
+    const next: FinanceListParams = {}
+    if (params.status) next.status = params.status
+    if (params.module) next.module = params.module
+    if (params.partnerId) next.partnerId = params.partnerId
+    if (params.pricingType) next.pricingType = params.pricingType
+    return next
+  }, [appliedFilters])
 
   const { data, isLoading, isFetching, isError } = useFinanceRevenue({
     page: currentPage,
     limit: PAGE_SIZE,
+    ...apiFilterParams,
   })
 
   const rows = useMemo(() => (data?.data?.rows ?? []).map(mapPaymentToRevenueRow), [data])
@@ -87,6 +117,47 @@ export function RevenueOverviewPage() {
     )
   }, [])
 
+  const handleApplyFilters = useCallback((values: FilterValues) => {
+    setAppliedFilters(values)
+    setCurrentPage(1)
+  }, [])
+
+  const handleExportData = useCallback(async (values: FilterValues, format: string) => {
+    const filterParams = buildFilterParams(values)
+    const result = await fetchFinanceRevenue({
+      status: filterParams.status,
+      module: filterParams.module,
+      partnerId: filterParams.partnerId,
+      pricingType: filterParams.pricingType,
+      page: 1,
+      limit: 1000,
+    })
+    const payments: FinancePayment[] = result?.data?.rows ?? []
+    if (payments.length === 0) {
+      throw new Error('NO_RECORDS')
+    }
+    const headers = ['ID', 'Module', 'Order ID', 'Amount', 'Status', 'Created']
+    const exportRows = payments.map((payment) => [
+      exportDisplayValue(payment._id),
+      exportDisplayValue(payment.module),
+      exportDisplayValue(payment.orderId),
+      exportDisplayValue(payment.amount),
+      exportDisplayValue(payment.status),
+      exportDisplayValue(payment.createdAt),
+    ])
+    exportDataToFile(headers, exportRows, format, 'revenue_overview_export')
+  }, [])
+
+  const {
+    onAdvancedFilter,
+    onExport,
+    modals: exportFilterModals,
+  } = useModuleExportFilters({
+    moduleKey: 'finance-revenue',
+    onApplyFilters: handleApplyFilters,
+    onExportData: handleExportData,
+  })
+
   const renderActions = useCallback(
     (record: RevenueOverviewRow) => {
       const isOpen = activeDropdownId === record.id
@@ -123,7 +194,7 @@ export function RevenueOverviewPage() {
             className="text-slate-800 hover:bg-slate-100 hover:text-slate-900"
             onClick={() => {
               setActiveDropdownId(null)
-              toast.message('Escalate coming soon')
+              setRowAction({ kind: 'escalate', id: record.id, resourceType: 'Payment' })
             }}
           >
             Escalate
@@ -133,7 +204,7 @@ export function RevenueOverviewPage() {
             className="text-brand-danger hover:bg-brand-danger/10 hover:text-brand-danger"
             onClick={() => {
               setActiveDropdownId(null)
-              toast.message('Delete coming soon')
+              setRowAction({ kind: 'delete', id: record.id, resourceType: 'Payment' })
             }}
           >
             Delete
@@ -272,8 +343,8 @@ export function RevenueOverviewPage() {
         }}
         searchPlaceholder="Search by name, ID or profession"
         advancedFilterLabel="Advance Filters"
-        onAdvancedFilter={() => toast.message('Advance filters coming soon')}
-        onExport={() => toast.message('Export coming soon')}
+        onAdvancedFilter={onAdvancedFilter}
+        onExport={onExport}
         pagination={{
           page: meta?.page ?? currentPage,
           pageSize: meta?.limit ?? PAGE_SIZE,
@@ -284,6 +355,7 @@ export function RevenueOverviewPage() {
         resourceLabel="payments"
         emptyMessage="No revenue records found."
       />
+      {exportFilterModals}
 
       <AddTagsModal
         open={!!tagTarget}
@@ -307,6 +379,13 @@ export function RevenueOverviewPage() {
             throw err
           }
         }}
+      />
+
+      <FinanceEscalateDeleteModal
+        action={rowAction}
+        onClose={() => setRowAction(null)}
+        escalate={escalate}
+        softDelete={softDelete}
       />
     </div>
   )

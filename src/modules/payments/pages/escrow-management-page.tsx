@@ -2,7 +2,6 @@ import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 import { Eye, SlidersHorizontal } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
-import { toast } from 'sonner'
 
 import {
   escrowBookingRowsMock,
@@ -14,6 +13,12 @@ import {
 } from '@/modules/payments/mock/finance-escrow.mock'
 import { useFinanceEscrow } from '@/modules/payments/hooks/use-finance'
 import { mapEscrowToRow } from '@/modules/payments/utils/finance-mappers'
+import { fetchFinanceEscrow } from '@/modules/payments/api/finance-api'
+import {
+  createFinanceRowsExportHandler,
+  useFinanceListFilters,
+} from '@/modules/payments/hooks/use-finance-list-filters'
+import { exportDisplayValue } from '@/shared/utils/export-utils'
 import { DataTable } from '@/shared/components/table/data-table'
 import {
   TableActionsDropdown,
@@ -46,6 +51,24 @@ export function EscrowManagementPage() {
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [selectedRowIds, setSelectedRowIds] = useState<string[]>([])
 
+  const handleExportData = useMemo(
+    () =>
+      createFinanceRowsExportHandler({
+        fetchRows: async (params) => (await fetchFinanceEscrow(params))?.data?.rows ?? [],
+        headers: ['ID', 'Status', 'Amount', 'Created'],
+        mapRow: (row) => [
+          exportDisplayValue(row._id),
+          exportDisplayValue(row.status),
+          exportDisplayValue(row.amount),
+          exportDisplayValue(row.createdAt),
+        ],
+        fileName: 'escrow_export',
+      }),
+    [],
+  )
+  const { apiFilterParams, onAdvancedFilter, onExport, modals: exportFilterModals } =
+    useFinanceListFilters(handleExportData)
+
   const isEscrowTab = activeTab === 'escrow' || activeTab === 'all'
 
   const {
@@ -56,6 +79,7 @@ export function EscrowManagementPage() {
   } = useFinanceEscrow({
     page: currentPage,
     limit: PAGE_SIZE,
+    ...apiFilterParams,
   })
 
   const liveEscrowRows = useMemo(
@@ -450,8 +474,8 @@ export function EscrowManagementPage() {
           }}
           searchPlaceholder="Search by name, ID or profession"
           advancedFilterLabel="Advance Filters"
-          onAdvancedFilter={() => toast.message('Advance filters coming soon')}
-          onExport={() => toast.message('Export coming soon')}
+          onAdvancedFilter={onAdvancedFilter}
+          onExport={onExport}
           pagination={{
             page: escrowMeta?.page ?? safePage,
             pageSize: escrowMeta?.limit ?? PAGE_SIZE,
@@ -474,8 +498,8 @@ export function EscrowManagementPage() {
           }}
           searchPlaceholder="Search by name, ID or profession"
           advancedFilterLabel="Advance Filters"
-          onAdvancedFilter={() => toast.message('Advance filters coming soon')}
-          onExport={() => toast.message('Export coming soon')}
+          onAdvancedFilter={onAdvancedFilter}
+          onExport={onExport}
           pagination={{
             page: safePage,
             pageSize: PAGE_SIZE,
@@ -487,6 +511,7 @@ export function EscrowManagementPage() {
           emptyMessage="No booking records found."
         />
       )}
+      {exportFilterModals}
     </div>
   )
 }

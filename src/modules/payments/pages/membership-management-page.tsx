@@ -2,7 +2,6 @@ import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 import { Eye } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
-import { toast } from 'sonner'
 
 import { useExpertSubscriptions } from '@/modules/memberships/hooks/use-membership-subscriptions'
 import type { SubscriptionStatus } from '@/modules/memberships/types/membership-subscription'
@@ -17,6 +16,9 @@ import {
   TableActionsItem,
 } from '@/shared/components/table/table-actions-dropdown'
 import { cn } from '@/shared/lib/cn'
+import { useFinanceListFilters } from '@/modules/payments/hooks/use-finance-list-filters'
+import { exportDataToFile, exportDisplayValue } from '@/shared/utils/export-utils'
+import type { FilterValues } from '@/shared/types/data-filter'
 
 const PAGE_SIZE = 10
 
@@ -56,6 +58,22 @@ export function MembershipManagementPage() {
   )
   const meta = data?.data?.meta
   const counts = meta?.counts
+
+  const handleExportData = useCallback(async (_values: FilterValues, format: string) => {
+    if (!rows.length) throw new Error('NO_RECORDS')
+    exportDataToFile(
+      ['ID', 'Recipient', 'Status'],
+      rows.map((row) => [
+        exportDisplayValue(row.id),
+        exportDisplayValue(row.name),
+        exportDisplayValue(row.status),
+      ]),
+      format,
+      'memberships_export',
+    )
+  }, [rows])
+  const { onAdvancedFilter, onExport, modals: exportFilterModals } =
+    useFinanceListFilters(handleExportData)
 
   const visibleRowIds = useMemo(() => rows.map((row) => row.id), [rows])
   const allVisibleSelected =
@@ -225,8 +243,8 @@ export function MembershipManagementPage() {
         }}
         searchPlaceholder="Search by name, ID or profession"
         advancedFilterLabel="Advance Filters"
-        onAdvancedFilter={() => toast.message('Advance filters coming soon')}
-        onExport={() => toast.message('Export coming soon')}
+        onAdvancedFilter={onAdvancedFilter}
+        onExport={onExport}
         pagination={{
           page: meta?.page ?? currentPage,
           pageSize: meta?.limit ?? PAGE_SIZE,
@@ -237,6 +255,7 @@ export function MembershipManagementPage() {
         resourceLabel="subscriptions"
         emptyMessage="No membership records found."
       />
+      {exportFilterModals}
     </div>
   )
 }

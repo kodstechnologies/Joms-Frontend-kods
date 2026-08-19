@@ -72,10 +72,14 @@ export const retryFinancePayout = async (id: string, adminNote: string) => {
   return response.data
 }
 
-export const releaseFinancePayout = async (id: string, adminNote: string) => {
+export const releaseFinancePayout = async (
+  id: string,
+  adminNote: string,
+  bankReference: string,
+) => {
   const response = await paymentApiClient.post<ApiSuccess<FinancePayout>>(
     `/admin/finance/payouts/${id}/release`,
-    { adminNote },
+    { adminNote, bankReference },
   )
   return response.data
 }
@@ -289,7 +293,41 @@ export const addFinanceNote = async (id: string, resourceType: string, adminNote
   return response.data
 }
 
+export const escalateFinanceResource = async (
+  id: string,
+  resourceType: string,
+  adminNote: string,
+) => {
+  const response = await paymentApiClient.post<ApiSuccess<unknown>>(
+    `/admin/finance/${id}/escalate`,
+    { resourceType, adminNote },
+  )
+  return response.data
+}
+
 export const fetchFinanceNotes = async (id: string) => {
   const res = await getData<FinanceAdminNote[]>(`/admin/finance/${id}/notes`)
   return res
+}
+
+/** Backfill tax + reconciliation for fulfilled payments missing artifacts. */
+export const backfillFinanceArtifacts = async (body?: {
+  paymentId?: string
+  limit?: number
+}) => {
+  const response = await paymentApiClient.post<
+    ApiSuccess<{
+      processed: number
+      results: Array<{
+        orderId: string
+        module?: string
+        skipped?: boolean
+        reason?: string
+        taxRecordsCreated?: number
+        reconciliationId?: string | null
+        reconciliationStatus?: string | null
+      }>
+    }>
+  >('/admin/finance/backfill-artifacts', body ?? {})
+  return response.data
 }

@@ -1,8 +1,9 @@
 import { ArrowLeftRight, X } from 'lucide-react'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { toast } from 'sonner'
 
+import { useMountedDialog } from '@/shared/hooks/use-mounted-dialog'
 import { cn } from '@/shared/lib/cn'
 
 export type StatusOption = {
@@ -46,19 +47,7 @@ function ChangeStatusModalInner({
   const handleClose = useCallback(() => {
     onClose()
   }, [onClose])
-
-  useEffect(() => {
-    const previousOverflow = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') handleClose()
-    }
-    window.addEventListener('keydown', onKeyDown)
-    return () => {
-      document.body.style.overflow = previousOverflow
-      window.removeEventListener('keydown', onKeyDown)
-    }
-  }, [handleClose])
+  const dialogRef = useMountedDialog(handleClose)
 
   const handleSubmit = async () => {
     if (!status) {
@@ -89,6 +78,7 @@ function ChangeStatusModalInner({
       role="presentation"
     >
       <div
+        ref={dialogRef}
         className="ui-modal-shell max-h-[92dvh] max-w-lg"
         onClick={(event) => event.stopPropagation()}
         role="dialog"

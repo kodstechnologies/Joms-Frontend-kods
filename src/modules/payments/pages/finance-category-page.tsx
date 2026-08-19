@@ -15,6 +15,9 @@ import {
   TableActionsItem,
 } from '@/shared/components/table/table-actions-dropdown'
 import { cn } from '@/shared/lib/cn'
+import { useFinanceListFilters } from '@/modules/payments/hooks/use-finance-list-filters'
+import { exportDataToFile, exportDisplayValue } from '@/shared/utils/export-utils'
+import type { FilterValues } from '@/shared/types/data-filter'
 
 const PAGE_SIZE = 10
 
@@ -55,6 +58,22 @@ export function FinanceCategoryPage() {
     const start = (safePage - 1) * PAGE_SIZE
     return filteredRows.slice(start, start + PAGE_SIZE)
   }, [filteredRows, safePage])
+
+  const handleExportData = useCallback(async (_values: FilterValues, format: string) => {
+    if (!filteredRows.length) throw new Error('NO_RECORDS')
+    exportDataToFile(
+      ['Category', 'Module', 'Status'],
+      filteredRows.map((row) => [
+        exportDisplayValue(row.categoryName),
+        exportDisplayValue(row.module),
+        exportDisplayValue(row.status),
+      ]),
+      format,
+      'finance_categories_export',
+    )
+  }, [filteredRows])
+  const { onAdvancedFilter, onExport, modals: exportFilterModals } =
+    useFinanceListFilters(handleExportData)
 
   const renderActions = useCallback(
     (record: FinanceCategoryRow) => (
@@ -138,8 +157,8 @@ export function FinanceCategoryPage() {
         }}
         searchPlaceholder="Search by category or module"
         advancedFilterLabel="Advance Filters"
-        onAdvancedFilter={() => toast.message('Advance filters coming soon')}
-        onExport={() => toast.message('Export coming soon')}
+        onAdvancedFilter={onAdvancedFilter}
+        onExport={onExport}
         pagination={{
           page: safePage,
           pageSize: PAGE_SIZE,
@@ -150,6 +169,7 @@ export function FinanceCategoryPage() {
         resourceLabel="categories"
         emptyMessage="No finance categories found."
       />
+      {exportFilterModals}
     </div>
   )
 }
