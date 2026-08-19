@@ -1,5 +1,12 @@
 export type SettingsModule =
-  'platform' | 'security' | 'notifications' | 'finance' | 'backup' | 'expert' | 'venue' | 'service'
+  | 'platform'
+  | 'security'
+  | 'notifications'
+  | 'finance'
+  | 'backup'
+  | 'expert'
+  | 'venue'
+  | 'service'
 
 export type PlatformSettings = {
   applicationSettings: {
@@ -409,6 +416,22 @@ export type PolicyNotifyVia = {
   push: boolean
 }
 
+export type PolicyNotificationChannelResult = {
+  sent?: number
+  failed?: number
+  skipped?: boolean
+  note?: string
+}
+
+export type PolicyNotificationsResult = {
+  skipped?: boolean
+  audience?: string | null
+  note?: string
+  email?: PolicyNotificationChannelResult | null
+  inApp?: PolicyNotificationChannelResult | null
+  push?: PolicyNotificationChannelResult | null
+}
+
 export type PolicyItem = {
   id: string
   slug?: string
@@ -421,6 +444,7 @@ export type PolicyItem = {
   content?: string
   author?: string
   changeSummary?: string
+  notifications?: PolicyNotificationsResult
 }
 
 export type PolicyVersion = {
@@ -437,4 +461,5 @@ export type PolicyVersion = {
   requireReConsent?: boolean
   blockAppUsageUntilAccepted?: boolean
   notifyVia?: PolicyNotifyVia
+  notifications?: PolicyNotificationsResult
 }

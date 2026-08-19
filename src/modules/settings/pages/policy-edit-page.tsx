@@ -8,6 +8,7 @@ import { useCreatePolicyVersion, usePolicy, usePolicyVersions } from '../hooks/u
 import {
   bumpPolicyVersion,
   defaultNotifyVia,
+  formatPolicyNotificationToast,
   resolveEffectivePayload,
   toDateInputValue,
   type PolicyEditorValues,
@@ -82,8 +83,12 @@ export function PolicyEditPage() {
         notifyVia: values.notifyVia,
       },
       {
-        onSuccess: () => {
+        onSuccess: (result) => {
           toast.success(status === 'Draft' ? 'Draft saved' : 'Policy updated')
+          const notifyNote = formatPolicyNotificationToast(result.notifications)
+          if (notifyNote && status === 'Active') {
+            toast.info(notifyNote)
+          }
           navigate(policyViewPath(id, application))
         },
         onError: () => toast.error('Failed to save policy version'),
