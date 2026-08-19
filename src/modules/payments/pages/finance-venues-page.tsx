@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 import { AlertTriangle, Eye, SlidersHorizontal, Tag, Trash2 } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 
 import { type FinanceVenueRow } from '@/modules/payments/mock/finance-venues.mock'
 import { useAddFinanceNote, useFinanceRevenue } from '@/modules/payments/hooks/use-finance'
+import { fetchFinanceRevenue } from '@/modules/payments/api/finance-api'
 import { mapPaymentToVenueRow } from '@/modules/payments/utils/finance-mappers'
 import {
   DEFAULT_FINANCE_VENUES_VISIBLE_COLUMN_IDS,
@@ -20,8 +21,32 @@ import {
 } from '@/shared/components/table/table-actions-dropdown'
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
+import { useModuleExportFilters } from '@/shared/components/advanced-filter'
+import { exportDisplayValue } from '@/shared/utils/export-utils'
+import {
+  buildFinanceVenuesListQueryParams,
+  createFinanceVenuesFilteredExportHandler,
+} from '@/shared/utils/export-filter-utils'
+import type { FilterValues } from '@/shared/types/data-filter'
+import type { FinancePayment } from '@/modules/payments/types/finance-api'
 
 const PAGE_SIZE = 10
+
+const EXPORT_COLUMN_MAP: Record<
+  string,
+  { header: string; accessor: (row: FinanceVenueRow) => string }
+> = {
+  'venue-id': { header: 'Venue ID', accessor: (row) => exportDisplayValue(row.venueId) },
+  name: { header: 'Name', accessor: (row) => exportDisplayValue(row.name) },
+  owner: { header: 'Owner', accessor: (row) => exportDisplayValue(row.owner) },
+  'booking-id': { header: 'Booking ID', accessor: (row) => exportDisplayValue(row.bookingId) },
+  'booking-title': {
+    header: 'Booking Title',
+    accessor: (row) => exportDisplayValue(row.bookingTitle),
+  },
+  status: { header: 'Status', accessor: (row) => exportDisplayValue(row.status) },
+  revenue: { header: 'Revenue', accessor: (row) => exportDisplayValue(row.revenue) },
+}
 
 function getStatusClassName(status: FinanceVenueRow['status']) {
   if (status === 'Completed') {
@@ -36,37 +61,69 @@ function getStatusClassName(status: FinanceVenueRow['status']) {
 export function FinanceVenuesPage() {
   const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
+  const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [selectedRowIds, setSelectedRowIds] = useState<string[]>([])
   const [tagTarget, setTagTarget] = useState<FinanceVenueRow | null>(null)
   const addNote = useAddFinanceNote()
   const tableColumnPreferencesQuery = useTableColumnPreferences(FINANCE_VENUES_MODULE_KEY)
 
-  const { data, isLoading, isFetching } = useFinanceRevenue({
-    page: currentPage,
-    limit: PAGE_SIZE,
-    module: 'venue',
-  })
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setDebouncedSearch(searchQuery.trim())
+      setCurrentPage(1)
+    }, 300)
+    return () => window.clearTimeout(timer)
+  }, [searchQuery])
+
+  const listQueryParams = useMemo(
+    () =>
+      buildFinanceVenuesListQueryParams(appliedFilters, {
+        page: currentPage,
+        limit: PAGE_SIZE,
+        search: debouncedSearch || undefined,
+      }),
+    [appliedFilters, currentPage, debouncedSearch],
+  )
+
+  const { data, isLoading, isFetching, isError } = useFinanceRevenue(listQueryParams)
 
   const rows = useMemo(() => (data?.data?.rows ?? []).map(mapPaymentToVenueRow), [data])
   const meta = data?.data?.meta
 
-  const filteredRows = useMemo(() => {
-    const query = searchQuery.trim().toLowerCase()
-    if (!query) return rows
+  const handleApplyFilters = useCallback((values: FilterValues) => {
+    toast.success('Filters applied')
+    setAppliedFilters(values)
+    setCurrentPage(1)
+  }, [])
 
-    return rows.filter((row) =>
-      [row.venueId, row.name, row.owner, row.bookingId, row.bookingTitle]
-        .join(' ')
-        .toLowerCase()
-        .includes(query),
+  const handleExportData = useMemo(() => {
+    const fetchForExport = async (params: Record<string, unknown>) => {
+      const result = await fetchFinanceRevenue(params)
+      const payments = (result.data?.rows ?? []) as FinancePayment[]
+      return { data: payments.map(mapPaymentToVenueRow) }
+    }
+    return createFinanceVenuesFilteredExportHandler(
+      fetchForExport,
+      EXPORT_COLUMN_MAP,
+      'finance_venues_export',
+      { search: debouncedSearch || undefined },
     )
-  }, [rows, searchQuery])
+  }, [debouncedSearch])
 
-  const pageRows = searchQuery.trim() ? filteredRows : rows
+  const {
+    onAdvancedFilter,
+    onExport,
+    modals: exportFilterModals,
+  } = useModuleExportFilters({
+    moduleKey: 'finance-venues',
+    onApplyFilters: handleApplyFilters,
+    onExportData: handleExportData,
+  })
 
-  const visibleRowIds = useMemo(() => pageRows.map((row) => row.id), [pageRows])
+  const visibleRowIds = useMemo(() => rows.map((row) => row.id), [rows])
   const allVisibleSelected =
     visibleRowIds.length > 0 && visibleRowIds.every((id) => selectedRowIds.includes(id))
   const someVisibleSelected = visibleRowIds.some((id) => selectedRowIds.includes(id))
@@ -272,20 +329,22 @@ export function FinanceVenuesPage() {
         </Button>
       </div>
 
+      {isError ? (
+        <p className="text-body-sm text-brand-danger">Failed to load venue records.</p>
+      ) : null}
+
       <DataTable
         columns={columns}
-        data={pageRows}
+        data={rows}
         getRowId={(row) => row.id}
         isLoading={isLoading || isFetching}
         searchValue={searchQuery}
-        onSearchChange={(value) => {
-          setSearchQuery(value)
-          setCurrentPage(1)
-        }}
+        onSearchChange={setSearchQuery}
         searchPlaceholder="Search by name, ID or profession"
         advancedFilterLabel="Advance Filters"
-        onAdvancedFilter={() => toast.message('Advance filters coming soon')}
-        onExport={() => toast.message('Export coming soon')}
+        onAdvancedFilter={onAdvancedFilter}
+        advancedFilterVariant="primary"
+        onExport={onExport}
         pagination={{
           page: meta?.page ?? currentPage,
           pageSize: meta?.limit ?? PAGE_SIZE,
@@ -320,6 +379,8 @@ export function FinanceVenuesPage() {
           }
         }}
       />
+
+      {exportFilterModals}
     </div>
   )
 }

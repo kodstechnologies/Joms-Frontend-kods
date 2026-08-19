@@ -148,6 +148,12 @@ export type ExpertService = {
 export type ExpertServicesResponse = {
   success?: boolean
   data: ExpertService[]
+  pagination?: {
+    total: number
+    page: number
+    limit: number
+    pages: number
+  }
 }
 
 export type ServiceAnalyticsMetric = {

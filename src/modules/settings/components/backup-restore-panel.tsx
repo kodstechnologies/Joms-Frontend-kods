@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 import { MoreVertical } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
@@ -12,6 +12,7 @@ import {
   useRestoreBackup,
   useRunBackup,
 } from '../hooks/use-backups'
+import { fetchBackups } from '../api/backups-api'
 import type { BackupHistoryRow, SettingsMetric } from '../types/settings'
 import { StatCard } from '@/shared/components/dashboard/stat-card'
 import { DataTable } from '@/shared/components/table/data-table'
@@ -19,8 +20,28 @@ import { ResponsiveGrid } from '@/shared/components/responsive/responsive-grid'
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
 import { uiTokens } from '@/shared/lib/design-tokens'
+import { useModuleExportFilters } from '@/shared/components/advanced-filter'
+import type { FilterValues } from '@/shared/types/data-filter'
+import { exportDisplayValue } from '@/shared/utils/export-utils'
+import {
+  buildPrefixedListQueryParams,
+  createPrefixedListExportHandler,
+} from '@/shared/utils/export-filter-utils'
 
 const PAGE_SIZE = 8
+
+const BACKUP_EXPORT_COLUMN_MAP: Record<
+  string,
+  { header: string; accessor: (row: BackupHistoryRow) => string }
+> = {
+  name: { header: 'Backup ID / Name', accessor: (row) => exportDisplayValue(row.name) },
+  type: { header: 'Type', accessor: (row) => exportDisplayValue(row.type) },
+  scope: { header: 'Scope', accessor: (row) => exportDisplayValue(row.scope) },
+  createdBy: { header: 'Created By', accessor: (row) => exportDisplayValue(row.createdBy) },
+  timestamp: { header: 'Timestamp', accessor: (row) => exportDisplayValue(row.timestamp) },
+  size: { header: 'Size', accessor: (row) => exportDisplayValue(row.size) },
+  status: { header: 'Status', accessor: (row) => exportDisplayValue(row.status) },
+}
 
 function StatusBadge({ status }: { status: BackupHistoryRow['status'] }) {
   const styles = {
@@ -41,12 +62,22 @@ export function BackupRestorePanel() {
   const navigate = useNavigate()
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
+  const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null)
   const [restoreTarget, setRestoreTarget] = useState<BackupHistoryRow | null>(null)
 
   const { data: metrics = [], isLoading: metricsLoading } = useBackupMetrics()
   const metricCards: SettingsMetric[] = metricsLoading ? [] : metrics
-  const { data: backupsResult, isLoading } = useBackups({ page, limit: PAGE_SIZE, search })
+  const listQueryParams = useMemo(
+    () =>
+      buildPrefixedListQueryParams(appliedFilters, {
+        page,
+        limit: PAGE_SIZE,
+        search: search || undefined,
+      }),
+    [appliedFilters, page, search],
+  )
+  const { data: backupsResult, isLoading } = useBackups(listQueryParams)
   const runBackupMutation = useRunBackup()
   const restoreMutation = useRestoreBackup()
   const deleteMutation = useDeleteBackup()
@@ -55,6 +86,35 @@ export function BackupRestorePanel() {
   const meta = backupsResult?.meta
   const totalPages = meta?.totalPages ?? 1
   const totalItems = meta?.total ?? 0
+
+  const handleApplyFilters = useCallback((values: FilterValues) => {
+    toast.success('Filters applied')
+    setAppliedFilters(values)
+    setPage(1)
+  }, [])
+
+  const handleExportData = useMemo(() => {
+    const fetchForExport = async (params: Record<string, unknown>) => {
+      const result = await fetchBackups(params)
+      return { data: result.data ?? [] }
+    }
+    return createPrefixedListExportHandler(
+      fetchForExport,
+      BACKUP_EXPORT_COLUMN_MAP,
+      'backups_export',
+      { search: search || undefined },
+    )
+  }, [search])
+
+  const {
+    onAdvancedFilter,
+    onExport,
+    modals: exportFilterModals,
+  } = useModuleExportFilters({
+    moduleKey: 'backups',
+    onApplyFilters: handleApplyFilters,
+    onExportData: handleExportData,
+  })
 
   const columns = useMemo<ColumnDef<BackupHistoryRow>[]>(
     () => [
@@ -199,7 +259,9 @@ export function BackupRestorePanel() {
             setPage(1)
           }}
           searchPlaceholder="Search by name, ID or profession"
-          onExport={() => toast.success('Export started')}
+          onAdvancedFilter={onAdvancedFilter}
+          advancedFilterVariant="primary"
+          onExport={onExport}
           pagination={{
             page,
             pageSize: PAGE_SIZE,
@@ -210,6 +272,8 @@ export function BackupRestorePanel() {
           resourceLabel="backups"
         />
       </div>
+
+      {exportFilterModals}
 
       <RestoreBackupModal
         open={Boolean(restoreTarget)}

@@ -6,8 +6,14 @@ import { DEFAULT_VENUE_CATEGORY_MANAGEMENT_METRIC_IDS } from '../../config/venue
 import { DEFAULT_VENUE_CATEGORY_MANAGEMENT_VISIBLE_COLUMN_IDS } from '../../config/venue-category-management-table-columns.config'
 import { DataTable } from '@/shared/components/table/data-table'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
-import { exportDataToFile, exportDisplayValue } from '@/shared/utils/export-utils'
+import { exportDisplayValue } from '@/shared/utils/export-utils'
 import type { FilterValues } from '@/shared/types/data-filter'
+import {
+  buildVenueCategoryListQueryParams,
+  createVenueCategoryFilteredExportHandler,
+} from '@/shared/utils/export-filter-utils'
+import { fetchVenueCategoryList } from '../../api/venue-category-api'
+import { mapVenueCategoryToUi } from '../../utils/category-mapper'
 
 import { StatCard } from '../../components/stat-card'
 import {
@@ -61,29 +67,35 @@ export function VenueCategoryManagementPage() {
     setAppliedFilters(values)
   }, [])
 
-  const { data, isLoading, isError } = useVenueCategoryManagementList({
-    search: searchValue.trim() || undefined,
-    ...appliedFilters,
-  })
+  const categoryQueryParams = useMemo(
+    () =>
+      buildVenueCategoryListQueryParams(appliedFilters, {
+        page,
+        limit: PAGE_SIZE,
+        search: searchValue.trim() || undefined,
+        excludePaused: true,
+      }),
+    [appliedFilters, page, searchValue],
+  )
+
+  const { data, isLoading, isError } = useVenueCategoryManagementList(categoryQueryParams)
 
   const categories = useMemo(() => data?.categories ?? [], [data?.categories])
-  const totalItems = categories.length
-  const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE))
-  const currentPage = Math.min(page, totalPages)
-  const paginatedCategories = useMemo(() => {
-    const start = (currentPage - 1) * PAGE_SIZE
-    return categories.slice(start, start + PAGE_SIZE)
-  }, [categories, currentPage])
+  const totalItems = data?.pagination?.total ?? categories.length
+  const totalPages = Math.max(1, data?.pagination?.totalPages ?? Math.ceil(totalItems / PAGE_SIZE))
 
-  const handleExportData = useCallback(
-    (values: FilterValues, format: string) => {
-      const exportCols = Object.values(EXPORT_COLUMN_MAP)
-      const headers = exportCols.map((c) => c.header)
-      const exportRows = paginatedCategories.map((cat) => exportCols.map((c) => c.accessor(cat)))
-
-      exportDataToFile(headers, exportRows, format, 'venue_categories_export')
-    },
-    [paginatedCategories],
+  const handleExportData = useMemo(
+    () =>
+      createVenueCategoryFilteredExportHandler(
+        async (params) => {
+          const response = await fetchVenueCategoryList(params)
+          return { data: (response.data ?? []).map(mapVenueCategoryToUi) }
+        },
+        EXPORT_COLUMN_MAP,
+        'venue_categories_export',
+        { excludePaused: true },
+      ),
+    [],
   )
 
   const {
@@ -224,7 +236,7 @@ export function VenueCategoryManagementPage() {
 
       <DataTable
         columns={columns}
-        data={paginatedCategories}
+        data={categories}
         getRowId={(row) => row.id}
         searchValue={searchValue}
         onSearchChange={(value) => {
@@ -236,7 +248,7 @@ export function VenueCategoryManagementPage() {
         onExport={onExport}
         isLoading={isLoading}
         pagination={{
-          page: currentPage,
+          page,
           pageSize: PAGE_SIZE,
           totalItems,
           totalPages,

@@ -20,13 +20,7 @@ export const useEscalationAssignees = (permission = 'experts.*') =>
     queryFn: () => fetchEscalationAssignees(permission),
   })
 
-export const useAllEscalations = (params?: {
-  page?: number
-  limit?: number
-  search?: string
-  status?: string
-  moduleKey?: string
-}) =>
+export const useAllEscalations = (params?: Record<string, unknown>) =>
   useQuery({
     queryKey: ['all-escalations', params],
     queryFn: () => fetchAllEscalations(params),

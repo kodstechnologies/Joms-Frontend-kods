@@ -14,13 +14,7 @@ export const useIncidentMetrics = () =>
     queryFn: fetchIncidentMetrics,
   })
 
-export const useIncidents = (params?: {
-  page?: number
-  limit?: number
-  search?: string
-  severity?: string
-  status?: string
-}) =>
+export const useIncidents = (params?: Record<string, unknown>) =>
   useQuery({
     queryKey: incidentKeys.list(params),
     queryFn: () => fetchIncidents(params),
@@ -34,11 +28,13 @@ export const useAssignIncident = () => {
       id,
       department,
       assignee,
+      assigneeId,
     }: {
       id: string
       department: string
       assignee: string
-    }) => assignIncident(id, { department, assignee }),
+      assigneeId: string
+    }) => assignIncident(id, { department, assignee, assigneeId }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: incidentKeys.all })
     },

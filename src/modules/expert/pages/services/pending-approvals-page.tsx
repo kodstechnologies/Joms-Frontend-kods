@@ -7,7 +7,10 @@ import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import type { FilterValues } from '@/shared/types/data-filter'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter/use-module-export-filters'
 import { exportDisplayValue } from '@/shared/utils/export-utils'
-import { buildFilterParams, createFilteredExportHandler } from '@/shared/utils/export-filter-utils'
+import {
+  buildServiceListQueryParams,
+  createServiceFilteredExportHandler,
+} from '@/shared/utils/export-filter-utils'
 import { fetchServices } from '../../api/service-api'
 
 import { useServices } from '../../hooks/use-services'
@@ -27,23 +30,33 @@ const formatPrice = (price: number) =>
     maximumFractionDigits: 0,
   }).format(price)
 
+const formatExportDateTime = (value?: string | null) =>
+  value
+    ? new Date(value).toLocaleString('en-IN', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      })
+    : ''
+
 const EXPORT_COLUMN_MAP: Record<string, { header: string; accessor: (s: Service) => string }> = {
   serviceId: { header: 'Service ID', accessor: (s) => exportDisplayValue(s.serviceid || s._id) },
   title: { header: 'Service Name', accessor: (s) => exportDisplayValue(s.title) },
   categoryName: { header: 'Service Category', accessor: (s) => exportDisplayValue(s.categoryName) },
   serviceType: { header: 'Service Type', accessor: (s) => exportDisplayValue(s.serviceType) },
   pricing: {
-    header: 'Service Pricing',
+    header: 'Service',
     accessor: (s) => exportDisplayValue(s.pricing ? formatPrice(s.pricing) : undefined),
   },
-  expertId: { header: 'Expert ID', accessor: (s) => exportDisplayValue(s.expertid) },
+  expertId: {
+    header: 'Expert ID',
+    accessor: (s) => exportDisplayValue(s.expertid || s.partnerId),
+  },
   expertName: { header: 'Expert Name', accessor: (s) => exportDisplayValue(s.expertName) },
   status: { header: 'Status', accessor: (s) => exportDisplayValue(s.status) },
-  createdAt: {
-    header: 'Created At',
-    accessor: (s) =>
-      exportDisplayValue(s.createdAt ? new Date(s.createdAt).toLocaleDateString() : undefined),
-  },
+  createdAt: { header: 'Created At', accessor: (s) => formatExportDateTime(s.createdAt) },
 }
 
 export function PendingApprovalsPage() {
@@ -54,15 +67,18 @@ export function PendingApprovalsPage() {
   const [selectedServiceIds, setSelectedServiceIds] = useState<string[]>([])
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
 
-  const apiFilterParams = useMemo(() => buildFilterParams(appliedFilters), [appliedFilters])
+  const serviceQueryParams = useMemo(
+    () =>
+      buildServiceListQueryParams(appliedFilters, {
+        page: currentPage,
+        limit: 10,
+        search: searchQuery,
+        status: 'in_review',
+      }),
+    [appliedFilters, currentPage, searchQuery],
+  )
 
-  const { data, isLoading } = useServices({
-    page: currentPage,
-    limit: 10,
-    status: 'in_review',
-    search: searchQuery,
-    ...apiFilterParams,
-  })
+  const { data, isLoading } = useServices(serviceQueryParams)
 
   const services = useMemo(() => data?.data ?? [], [data?.data])
   const meta = data?.meta
@@ -80,9 +96,14 @@ export function PendingApprovalsPage() {
 
   const handleExportData = useMemo(
     () =>
-      createFilteredExportHandler(fetchServices, EXPORT_COLUMN_MAP, 'pending_services_export', {
-        status: 'in_review',
-      }),
+      createServiceFilteredExportHandler(
+        fetchServices,
+        EXPORT_COLUMN_MAP,
+        'pending_services_export',
+        {
+          status: 'in_review',
+        },
+      ),
     [],
   )
 

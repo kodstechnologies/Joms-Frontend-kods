@@ -48,7 +48,7 @@ export const useSupportTicket = (id?: string) =>
     enabled: Boolean(id),
   })
 
-export const usePastTickets = (userId?: string, params?: { page?: number; limit?: number }) =>
+export const usePastTickets = (userId?: string, params?: SupportTicketsParams) =>
   useQuery({
     queryKey: ['support-past-tickets', userId, params],
     queryFn: () => fetchPastTickets(userId!, params),
@@ -159,10 +159,11 @@ export const useDeleteSupportTicket = () => {
   })
 }
 
-export const useSupportAgents = () =>
+export const useSupportAgents = (enabled = true) =>
   useQuery({
     queryKey: ['support-agents'],
     queryFn: fetchSupportAgents,
+    enabled,
   })
 
 export const useLiveSupportUpdates = () => {

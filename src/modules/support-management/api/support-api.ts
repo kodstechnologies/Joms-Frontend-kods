@@ -45,7 +45,11 @@ export type SupportTicketsParams = {
   module?: string
   issueType?: string
   assignedToId?: string
+  assignedTo?: string
   reporterId?: string
+  reporter?: string
+  ticketId?: string
+  subject?: string
   from?: string
   to?: string
   includeClosed?: boolean
@@ -128,7 +132,12 @@ export const updateSupportTicket = async (
 
 export const assignSupportTicket = async (
   id: string,
-  payload: { assignedToId?: string; assignedToName?: string; assignedTo?: string },
+  payload: {
+    assignedToId?: string
+    assignedToName?: string
+    assignedTo?: string
+    assignedToAvatarUrl?: string
+  },
 ) => {
   const response = await adminApiClient.patch<ApiSuccess<SupportTicket>>(
     `/admin/support-dashboard/tickets/${encodeURIComponent(id)}/assign`,
@@ -139,7 +148,14 @@ export const assignSupportTicket = async (
 
 export const escalateSupportTicket = async (
   id: string,
-  payload?: { note?: string; escalationPathway?: string; priority?: string },
+  payload?: {
+    note?: string
+    escalationPathway?: string
+    priority?: string
+    assignedToId?: string
+    assignedToName?: string
+    assignedToAvatarUrl?: string
+  },
 ) => {
   const response = await adminApiClient.post<ApiSuccess<SupportTicket>>(
     `/admin/support-dashboard/tickets/${encodeURIComponent(id)}/escalate`,
@@ -194,10 +210,7 @@ export const uploadSupportAttachment = async (file: File) => {
   return response.data.data
 }
 
-export const fetchPastTickets = async (
-  userId: string,
-  params?: { page?: number; limit?: number },
-) => {
+export const fetchPastTickets = async (userId: string, params?: SupportTicketsParams) => {
   const response = await adminApiClient.get<
     ApiSuccess<{
       tickets: SupportTicket[]
@@ -233,9 +246,18 @@ export const deleteSupportTicket = async (id: string) => {
   return response.data
 }
 
+export type SupportAgent = {
+  id: string
+  name: string
+  email?: string
+  role?: string
+  avatarUrl?: string
+  ticketCount?: number
+}
+
 export const fetchSupportAgents = async () => {
-  const response = await adminApiClient.get<
-    ApiSuccess<{ agents: Array<{ id: string; name: string; ticketCount: number }> }>
-  >('/admin/support-dashboard/agents')
+  const response = await adminApiClient.get<ApiSuccess<{ agents: SupportAgent[] }>>(
+    '/admin/support-dashboard/agents',
+  )
   return response.data
 }

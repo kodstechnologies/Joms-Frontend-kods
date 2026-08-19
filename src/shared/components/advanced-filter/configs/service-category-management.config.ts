@@ -1,5 +1,6 @@
 import type { FilterSectionConfig, ModuleFilterConfig } from '@/shared/types/data-filter'
-import { prefixSectionFields, byCustomersSection, byLocationSection } from './base-filter-sections'
+
+import { byLocationSection, prefixSectionFields } from './base-filter-sections'
 
 const yesNoOptions = [
   { label: 'Yes', value: 'yes' },
@@ -12,12 +13,12 @@ const yesNoDisputedOptions = [
   { label: 'Disputed', value: 'disputed' },
 ]
 
-const byServicesSection: FilterSectionConfig = {
+/** By Services — matches Figma Advanced Filters - Service Category Management */
+const categoryByServicesSection: FilterSectionConfig = {
   id: 'by-services',
   title: 'By Services',
   defaultExpanded: true,
   fields: [
-    { id: 'categoryId', label: 'Category ID', type: 'text', placeholder: 'Enter Category ID' },
     { id: 'category', label: 'Category', type: 'search', placeholder: 'Search by name' },
     { id: 'subCategory', label: 'Sub-category', type: 'search', placeholder: 'Search by name' },
     {
@@ -86,7 +87,8 @@ const byServicesSection: FilterSectionConfig = {
   ],
 }
 
-const byExpertsSection: FilterSectionConfig = {
+/** By Experts — matches Figma */
+const categoryByExpertsSection: FilterSectionConfig = {
   id: 'by-experts',
   title: 'By Experts',
   fields: [
@@ -169,13 +171,14 @@ const byExpertsSection: FilterSectionConfig = {
         { label: 'Premium', value: 'premium' },
         { label: 'Standard', value: 'standard' },
         { label: 'Curators', value: 'curators' },
-        { label: "Founder's Circle", value: 'founders-circle' },
+        { label: "Founder's circle", value: 'founders-circle' },
       ],
     },
   ],
 }
 
-const byOrdersSection: FilterSectionConfig = {
+/** By Orders — matches Figma (checkbox groups only) */
+const categoryByOrdersSection: FilterSectionConfig = {
   id: 'by-orders',
   title: 'By Orders',
   fields: [
@@ -264,14 +267,39 @@ const byOrdersSection: FilterSectionConfig = {
   ],
 }
 
+/** By Customers — Figma shows only these two fields */
+const categoryByCustomersSection: FilterSectionConfig = {
+  id: 'by-customers',
+  title: 'By Customers',
+  fields: [
+    {
+      id: 'lifetimeSpend',
+      label: 'Customer Lifetime Spend',
+      type: 'number-range',
+      fromPlaceholder: 'From',
+      toPlaceholder: 'To',
+    },
+    {
+      id: 'cancellationRate',
+      label: 'Customer Cancellation Rate %',
+      type: 'number-range',
+      fromPlaceholder: 'From',
+      toPlaceholder: 'To',
+    },
+  ],
+}
+
+const categoryFilterSections: FilterSectionConfig[] = [
+  prefixSectionFields(categoryByServicesSection, 'services'),
+  prefixSectionFields(categoryByExpertsSection, 'experts'),
+  prefixSectionFields(categoryByOrdersSection, 'orders'),
+  prefixSectionFields(categoryByCustomersSection, 'customers'),
+  prefixSectionFields(byLocationSection, 'location'),
+]
+
 export const serviceCategoryManagementFilterConfig: ModuleFilterConfig = {
   moduleKey: 'service-category-management',
   moduleName: 'Service Category Management',
-  sections: [
-    prefixSectionFields(byServicesSection, 'services'),
-    prefixSectionFields(byExpertsSection, 'experts'),
-    prefixSectionFields(byOrdersSection, 'orders'),
-    prefixSectionFields(byCustomersSection, 'customers'),
-    prefixSectionFields(byLocationSection, 'location'),
-  ],
+  sections: categoryFilterSections,
+  exportSections: categoryFilterSections,
 }

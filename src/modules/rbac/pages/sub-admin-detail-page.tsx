@@ -1,10 +1,11 @@
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 import { ArrowLeft, BarChart3, RotateCcw, XCircle } from 'lucide-react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 
 import { useSubAdminInvites } from '../hooks/use-rbac'
+import { fetchSubAdminInvites } from '../api/rbac-api'
 import type { SubAdminInvite } from '../types/rbac'
 import { InviteStatusBadge } from '../components/invite-status-badge'
 import { formatInviteTimestamp } from '../utils/invite-format'
@@ -16,8 +17,32 @@ import {
 } from '@/shared/components/table/table-actions-dropdown'
 import { Button } from '@/shared/components/ui/button'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
+import { useModuleExportFilters } from '@/shared/components/advanced-filter'
+import type { FilterValues } from '@/shared/types/data-filter'
+import { exportDisplayValue } from '@/shared/utils/export-utils'
+import {
+  buildPrefixedListQueryParams,
+  createPrefixedListExportHandler,
+} from '@/shared/utils/export-filter-utils'
 
 const PAGE_SIZE = 10
+
+const INVITE_EXPORT_COLUMN_MAP: Record<
+  string,
+  { header: string; accessor: (invite: SubAdminInvite) => string }
+> = {
+  inviteId: { header: 'Invite ID', accessor: (invite) => exportDisplayValue(invite.inviteId) },
+  username: { header: 'Username', accessor: (invite) => exportDisplayValue(invite.username) },
+  roleId: { header: 'Role ID', accessor: (invite) => exportDisplayValue(invite.roleId) },
+  roleName: { header: 'Role Name', accessor: (invite) => exportDisplayValue(invite.roleName) },
+  email: { header: 'Email ID', accessor: (invite) => exportDisplayValue(invite.email) },
+  sentAt: {
+    header: 'Time stamp',
+    accessor: (invite) =>
+      exportDisplayValue(formatInviteTimestamp(invite.sentAt || invite.timestamp)),
+  },
+  status: { header: 'Status', accessor: (invite) => exportDisplayValue(invite.status) },
+}
 
 export function SubAdminDetailPage() {
   const { id = '' } = useParams()
@@ -25,19 +50,55 @@ export function SubAdminDetailPage() {
 
   const [page, setPage] = useState(1)
   const [searchQuery, setSearchQuery] = useState('')
+  const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [selectedInvite, setSelectedInvite] = useState<SubAdminInvite | null>(null)
   const [actionMode, setActionMode] = useState<'revoke' | 'reinvite' | null>(null)
 
-  const { data, isLoading } = useSubAdminInvites(id, {
-    page,
-    limit: PAGE_SIZE,
-    search: searchQuery || undefined,
-  })
+  const listQueryParams = useMemo(
+    () =>
+      buildPrefixedListQueryParams(appliedFilters, {
+        page,
+        limit: PAGE_SIZE,
+        search: searchQuery || undefined,
+      }),
+    [appliedFilters, page, searchQuery],
+  )
+
+  const { data, isLoading } = useSubAdminInvites(id, listQueryParams)
 
   const subAdmin = data?.data.subAdmin
   const invites = data?.data.invites ?? []
   const meta = data?.meta
+
+  const handleApplyFilters = useCallback((values: FilterValues) => {
+    toast.success('Filters applied')
+    setAppliedFilters(values)
+    setPage(1)
+  }, [])
+
+  const handleExportData = useMemo(() => {
+    const fetchForExport = async (params: Record<string, unknown>) => {
+      const result = await fetchSubAdminInvites(id, params)
+      return { data: result.data?.invites ?? [] }
+    }
+    return createPrefixedListExportHandler(
+      fetchForExport,
+      INVITE_EXPORT_COLUMN_MAP,
+      'rbac_user_invites_export',
+      { search: searchQuery || undefined },
+    )
+  }, [id, searchQuery])
+
+  const {
+    onAdvancedFilter,
+    onExport,
+    modals: exportFilterModals,
+  } = useModuleExportFilters({
+    moduleKey: 'rbac-invites',
+    onApplyFilters: handleApplyFilters,
+    onExportData: handleExportData,
+  })
 
   const columns = useMemo<ColumnDef<SubAdminInvite>[]>(
     () => [
@@ -158,8 +219,9 @@ export function SubAdminDetailPage() {
           setPage(1)
         }}
         searchPlaceholder="Search by name, ID or profession"
-        onAdvancedFilter={() => toast.info('Advanced filters coming soon')}
-        onExport={() => toast.info('Export coming soon')}
+        onAdvancedFilter={onAdvancedFilter}
+        advancedFilterVariant="primary"
+        onExport={onExport}
         pagination={{
           page,
           pageSize: PAGE_SIZE,
@@ -170,6 +232,8 @@ export function SubAdminDetailPage() {
         resourceLabel="requests"
         emptyMessage="No invites found for this user."
       />
+
+      {exportFilterModals}
 
       <InviteActionModals
         invite={selectedInvite}

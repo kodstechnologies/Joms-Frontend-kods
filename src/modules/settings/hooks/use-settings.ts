@@ -5,6 +5,7 @@ import {
   createErrorTemplate,
   deleteErrorTemplate,
   fetchErrorTemplates,
+  fetchNotificationCatalog,
   fetchSettings,
   fetchSettingsLog,
   fetchSettingsLogMetrics,
@@ -27,6 +28,7 @@ export const settingsKeys = {
   versions: (module: SettingsModule, params?: object) =>
     [...settingsKeys.all, 'versions', module, params] as const,
   errorTemplates: () => [...settingsKeys.all, 'platform', 'error-templates'] as const,
+  notificationCatalog: () => [...settingsKeys.all, 'notifications', 'catalog'] as const,
 }
 
 export const useSettingsModule = <M extends SettingsModule>(module: M) =>
@@ -111,14 +113,7 @@ export function useSettingsDraft<T>(queryData: { config: T } | undefined, defaul
   return [draft, setDraft] as const
 }
 
-export function useSettingsLogs(params?: {
-  page?: number
-  limit?: number
-  search?: string
-  module?: SettingsModule
-  action?: 'update' | 'reset' | 'restore'
-  status?: 'success' | 'failed' | 'pending'
-}) {
+export function useSettingsLogs(params?: Record<string, unknown>) {
   return useQuery({
     queryKey: settingsKeys.logs(params),
     queryFn: () => fetchSettingsLogs(params),
@@ -211,3 +206,11 @@ export function useDeleteErrorTemplate() {
     },
   })
 }
+
+export const useNotificationCatalog = () =>
+  useQuery({
+    queryKey: settingsKeys.notificationCatalog(),
+    queryFn: fetchNotificationCatalog,
+    staleTime: 5 * 60 * 1000,
+    retry: 1,
+  })

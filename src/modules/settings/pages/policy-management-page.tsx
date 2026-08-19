@@ -12,6 +12,7 @@ import type { PolicyApplication, PolicyItem } from '../types/settings'
 import {
   defaultNotifyVia,
   formatPolicyDateUs,
+  formatPolicyNotificationToast,
   resolveEffectivePayload,
   toDateInputValue,
   type PolicyEditorValues,
@@ -231,8 +232,12 @@ export function PolicyCreatePage() {
         notifyVia: values.notifyVia,
       },
       {
-        onSuccess: () => {
+        onSuccess: (result) => {
           toast.success(status === 'Draft' ? 'Draft saved' : 'Policy published')
+          const notifyNote = formatPolicyNotificationToast(result.notifications)
+          if (notifyNote && status === 'Active') {
+            toast.info(notifyNote)
+          }
           navigate(policyListPath(application))
         },
         onError: () => toast.error('Failed to create policy'),

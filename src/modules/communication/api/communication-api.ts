@@ -144,7 +144,7 @@ export const fetchCommunicationOptions = async () => {
   return response.data.data
 }
 
-export const fetchCommunications = async (params?: {
+export type CommunicationListParams = {
   page?: number
   limit?: number
   search?: string
@@ -155,7 +155,19 @@ export const fetchCommunications = async (params?: {
   messageId?: string
   title?: string
   createdBy?: string
-}) => {
+  createdAtFrom?: string
+  createdAtTo?: string
+  createdAtMin?: string
+  createdAtMax?: string
+  deliveryType?: string
+  scheduledAtFrom?: string
+  scheduledAtTo?: string
+  scheduledAtMin?: string
+  scheduledAtMax?: string
+  [key: string]: unknown
+}
+
+export const fetchCommunications = async (params?: CommunicationListParams) => {
   const response = await settingsApiClient.get<ApiEnvelope<Communication[]>>(
     '/settings/communications',
     { params },

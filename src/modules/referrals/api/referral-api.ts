@@ -6,16 +6,34 @@ import type {
   ReferralMetrics,
 } from '../types/referral'
 
-type ListParams = {
+export type ExpertInviteListParams = {
   page?: number
   limit?: number
   search?: string
   status?: string
   referralId?: string
+  referralCode?: string
   referrerName?: string
   expertName?: string
+  referredExpertName?: string
+  referredExpertEmail?: string
+  referredExpertPhone?: string
   sourceType?: string
   referralType?: string
+  createdAtFrom?: string
+  createdAtTo?: string
+  sentAtFrom?: string
+  sentAtTo?: string
+  acceptedAtFrom?: string
+  acceptedAtTo?: string
+  expiresAtFrom?: string
+  expiresAtTo?: string
+  emailSent?: string
+  smsSent?: string
+  whatsappSent?: string
+  signedUpCountMin?: string
+  signedUpCountMax?: string
+  [key: string]: unknown
 }
 
 export const fetchReferralStats = async () => {
@@ -26,7 +44,7 @@ export const fetchReferralStats = async () => {
   return response.data
 }
 
-export const fetchExpertInvites = async (params?: ListParams) => {
+export const fetchExpertInvites = async (params?: ExpertInviteListParams) => {
   const response = await adminApiClient.get<{
     success: boolean
     data: {

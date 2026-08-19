@@ -8,6 +8,7 @@ import {
   fetchCommunicationOptions,
   fetchCommunications,
   updateCommunication,
+  type CommunicationListParams,
   type CreateCommunicationPayload,
   type UpdateCommunicationPayload,
 } from '../api/communication-api'
@@ -33,18 +34,7 @@ export const useCommunicationOptions = () =>
     staleTime: 5 * 60 * 1000,
   })
 
-export const useCommunications = (params?: {
-  page?: number
-  limit?: number
-  search?: string
-  status?: string
-  channel?: string
-  audience?: string
-  type?: string
-  messageId?: string
-  title?: string
-  createdBy?: string
-}) =>
+export const useCommunications = (params?: CommunicationListParams) =>
   useQuery({
     queryKey: communicationKeys.list(params),
     queryFn: () => fetchCommunications(params),

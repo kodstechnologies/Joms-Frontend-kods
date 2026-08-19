@@ -1,6 +1,6 @@
 import type { FilterSectionConfig, ModuleFilterConfig } from '@/shared/types/data-filter'
 
-import { byCustomersSection, byLocationSection, prefixSectionFields } from './base-filter-sections'
+import { byLocationSection, prefixSectionFields } from './base-filter-sections'
 
 const yesNoOptions = [
   { label: 'Yes', value: 'yes' },
@@ -13,21 +13,14 @@ const yesNoDisputedOptions = [
   { label: 'Disputed', value: 'disputed' },
 ]
 
-const serviceByServicesSection: FilterSectionConfig = {
+/** By Services — matches Figma Advanced Filters - Service Management */
+export const serviceByServicesSection: FilterSectionConfig = {
   id: 'by-services',
   title: 'By Services',
   defaultExpanded: true,
   fields: [
-    { id: 'serviceId', label: 'Service ID', type: 'text', placeholder: 'Enter Service ID' },
     { id: 'category', label: 'Category', type: 'search', placeholder: 'Search by name' },
     { id: 'subCategory', label: 'Sub-category', type: 'search', placeholder: 'Search by name' },
-    {
-      id: 'serviceCreatedDate',
-      label: 'Service Created Date',
-      type: 'date-range',
-      fromPlaceholder: 'From',
-      toPlaceholder: 'To',
-    },
     {
       id: 'listingStatus',
       label: 'Service Listing Status',
@@ -57,69 +50,6 @@ const serviceByServicesSection: FilterSectionConfig = {
       ],
     },
     {
-      id: 'averageRatings',
-      label: 'Average Ratings (Range: 1 - 5)',
-      type: 'number-range',
-      fromPlaceholder: '1',
-      toPlaceholder: '5',
-    },
-    {
-      id: 'totalReviews',
-      label: 'Total Reviews',
-      type: 'number-range',
-      fromPlaceholder: 'Enter Number',
-      toPlaceholder: 'Enter Number',
-    },
-    {
-      id: 'repeatCustomerRate',
-      label: 'Repeat Customer Rate (%)',
-      type: 'number-range',
-      fromPlaceholder: 'Enter Number',
-      toPlaceholder: 'Enter Number',
-    },
-    {
-      id: 'disputeCount',
-      label: 'Dispute Count',
-      type: 'number-range',
-      fromPlaceholder: 'Enter Number',
-      toPlaceholder: 'Enter Number',
-    },
-    {
-      id: 'refundCount',
-      label: 'Refund Count',
-      type: 'number-range',
-      fromPlaceholder: 'Enter Number',
-      toPlaceholder: 'Enter Number',
-    },
-    {
-      id: 'totalRevenueGenerated',
-      label: 'Total Revenue Generated',
-      type: 'number-range',
-      fromPlaceholder: 'Enter Number',
-      toPlaceholder: 'Enter Number',
-    },
-    {
-      id: 'platformCommissionPaid',
-      label: 'Platform Commission Paid',
-      type: 'number-range',
-      fromPlaceholder: 'Enter Number',
-      toPlaceholder: 'Enter Number',
-    },
-    {
-      id: 'basePriceRange',
-      label: 'Base Price Range',
-      type: 'number-range',
-      fromPlaceholder: 'Enter Number',
-      toPlaceholder: 'Enter Number',
-    },
-    {
-      id: 'discountPercentRange',
-      label: 'Discount % Range',
-      type: 'number-range',
-      fromPlaceholder: 'Enter Number',
-      toPlaceholder: 'Enter Number',
-    },
-    {
       id: 'discountApplied',
       label: 'Discount Applied',
       type: 'checkbox-group',
@@ -128,17 +58,11 @@ const serviceByServicesSection: FilterSectionConfig = {
   ],
 }
 
+/** By Experts — matches Figma */
 const serviceByExpertsSection: FilterSectionConfig = {
   id: 'by-experts',
   title: 'By Experts',
   fields: [
-    { id: 'expertId', label: 'Expert ID', type: 'text', placeholder: 'Enter Expert ID' },
-    {
-      id: 'organizationId',
-      label: 'Organization ID',
-      type: 'text',
-      placeholder: 'Enter Organization ID',
-    },
     { id: 'category', label: 'Category', type: 'search', placeholder: 'Search by name' },
     {
       id: 'categoryStatus',
@@ -163,43 +87,8 @@ const serviceByExpertsSection: FilterSectionConfig = {
       ],
     },
     {
-      id: 'expertsCount',
-      label: 'Experts Count',
-      type: 'number-range',
-      fromPlaceholder: 'Enter Number',
-      toPlaceholder: 'Enter Number',
-    },
-    {
-      id: 'servicesTagged',
-      label: 'Services Tagged',
-      type: 'number-range',
-      fromPlaceholder: 'Enter Number',
-      toPlaceholder: 'Enter Number',
-    },
-    {
-      id: 'consultationsTagged',
-      label: 'Consultations Tagged',
-      type: 'number-range',
-      fromPlaceholder: 'Enter Number',
-      toPlaceholder: 'Enter Number',
-    },
-    {
       id: 'revenueGenerated',
       label: 'Revenue Generated',
-      type: 'number-range',
-      fromPlaceholder: 'Enter Number',
-      toPlaceholder: 'Enter Number',
-    },
-    {
-      id: 'yearsOfExperience',
-      label: 'Years Of Experience',
-      type: 'number-range',
-      fromPlaceholder: '0',
-      toPlaceholder: '50',
-    },
-    {
-      id: 'categoryCreationDate',
-      label: 'Category Creation Date',
       type: 'date-range',
       fromPlaceholder: 'From',
       toPlaceholder: 'To',
@@ -237,49 +126,13 @@ const serviceByExpertsSection: FilterSectionConfig = {
         { label: 'Premium', value: 'premium' },
         { label: 'Standard', value: 'standard' },
         { label: 'Curators', value: 'curators' },
-        { label: "Founder's Circle", value: 'founders-circle' },
+        { label: "Founder's circle", value: 'founders-circle' },
       ],
     },
   ],
 }
 
-const serviceByOwnerSection: FilterSectionConfig = {
-  id: 'by-owner',
-  title: 'By Owner',
-  fields: [
-    { id: 'ownerId', label: 'Owner ID', type: 'text', placeholder: 'Enter Owner ID' },
-    { id: 'ownerName', label: 'Owner Name', type: 'search', placeholder: 'Search by name' },
-    {
-      id: 'organizationId',
-      label: 'Organization ID',
-      type: 'text',
-      placeholder: 'Enter Organization ID',
-    },
-    {
-      id: 'accountStatus',
-      label: 'Account Status',
-      type: 'checkbox-group',
-      options: [
-        { label: 'Active', value: 'active' },
-        { label: 'Suspended', value: 'suspended' },
-        { label: 'Under Review', value: 'under-review' },
-        { label: 'Deactivated', value: 'deactivated' },
-      ],
-    },
-    {
-      id: 'organisationType',
-      label: 'Organisation Type',
-      type: 'checkbox-group',
-      options: [
-        { label: 'Individual', value: 'individual' },
-        { label: 'Company', value: 'company' },
-        { label: 'Agency', value: 'agency' },
-        { label: 'Others', value: 'others' },
-      ],
-    },
-  ],
-}
-
+/** By Orders — matches Figma (checkbox groups only) */
 const serviceByOrdersSection: FilterSectionConfig = {
   id: 'by-orders',
   title: 'By Orders',
@@ -366,98 +219,42 @@ const serviceByOrdersSection: FilterSectionConfig = {
         { label: 'SEV2', value: 'sev2' },
       ],
     },
+  ],
+}
+
+/** By Customers — Figma shows only these two fields (not full shared section) */
+const serviceByCustomersSection: FilterSectionConfig = {
+  id: 'by-customers',
+  title: 'By Customers',
+  fields: [
     {
-      id: 'bookingDateRange',
-      label: 'Booking Date Range',
-      type: 'date-range',
+      id: 'lifetimeSpend',
+      label: 'Customer Lifetime Spend',
+      type: 'number-range',
       fromPlaceholder: 'From',
       toPlaceholder: 'To',
     },
     {
-      id: 'serviceCompletionDateRange',
-      label: 'Service Completion Date Range (Services)',
-      type: 'date-range',
+      id: 'cancellationRate',
+      label: 'Customer Cancellation Rate %',
+      type: 'number-range',
       fromPlaceholder: 'From',
       toPlaceholder: 'To',
-    },
-    {
-      id: 'consultationCompletionDateRange',
-      label: 'Service Completion Date Range (Consultations)',
-      type: 'date-range',
-      fromPlaceholder: 'From',
-      toPlaceholder: 'To',
-    },
-    {
-      id: 'cancellationDateRangeServices',
-      label: 'Cancellation Date Range (Services)',
-      type: 'date-range',
-      fromPlaceholder: 'From',
-      toPlaceholder: 'To',
-    },
-    {
-      id: 'cancellationDateRangeConsultations',
-      label: 'Cancellation Date Range (Consultations)',
-      type: 'date-range',
-      fromPlaceholder: 'From',
-      toPlaceholder: 'To',
-    },
-    {
-      id: 'incompleteOrders',
-      label: 'Number Of Incomplete Orders',
-      type: 'number-range',
-      fromPlaceholder: '0',
-      toPlaceholder: '500',
-    },
-    {
-      id: 'terminatedOrders',
-      label: 'Number Of Terminated Orders',
-      type: 'number-range',
-      fromPlaceholder: '0',
-      toPlaceholder: '500',
-    },
-    {
-      id: 'ticketDisputeCount',
-      label: 'Number Of Ticket/Dispute',
-      type: 'number-range',
-      fromPlaceholder: '0',
-      toPlaceholder: '500',
-    },
-    {
-      id: 'bookingThroughMicrosite',
-      label: 'Booking Through Microsite',
-      type: 'number-range',
-      fromPlaceholder: '0',
-      toPlaceholder: '500',
-    },
-    {
-      id: 'customOrdersCreated',
-      label: 'Number Of custom Order Created',
-      type: 'number-range',
-      fromPlaceholder: '0',
-      toPlaceholder: '500',
     },
   ],
 }
 
-const serviceAdvancedSections: FilterSectionConfig[] = [
+const serviceFilterSections: FilterSectionConfig[] = [
   prefixSectionFields(serviceByServicesSection, 'services'),
   prefixSectionFields(serviceByExpertsSection, 'experts'),
   prefixSectionFields(serviceByOrdersSection, 'orders'),
-  prefixSectionFields(byCustomersSection, 'customers'),
-  prefixSectionFields(byLocationSection, 'location'),
-]
-
-const serviceExportSections: FilterSectionConfig[] = [
-  prefixSectionFields(serviceByServicesSection, 'services'),
-  prefixSectionFields(serviceByExpertsSection, 'experts'),
-  prefixSectionFields(serviceByOwnerSection, 'owner'),
-  prefixSectionFields(byCustomersSection, 'customers'),
+  prefixSectionFields(serviceByCustomersSection, 'customers'),
   prefixSectionFields(byLocationSection, 'location'),
 ]
 
 export const serviceManagementFilterConfig: ModuleFilterConfig = {
   moduleKey: 'service-management',
   moduleName: 'Service Management',
-  sections: serviceAdvancedSections,
-  exportSections: serviceExportSections,
+  sections: serviceFilterSections,
+  exportSections: serviceFilterSections,
 }

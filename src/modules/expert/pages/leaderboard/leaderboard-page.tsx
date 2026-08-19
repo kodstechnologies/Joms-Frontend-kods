@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   ArrowUpDown,
   CalendarDays,
@@ -9,6 +9,7 @@ import {
   Star,
   TrendingUp,
   Trophy,
+  Upload,
   UserRound,
   Users,
   X,
@@ -23,6 +24,7 @@ import rank2Icon from '@/assets/JOMS_ADMIN_PANEL_3D_ICONS/change-the-engraved-go
 import rank3Icon from '@/assets/JOMS_ADMIN_PANEL_3D_ICONS/change-the-engraved-gold-number--2--on-the-circula (1).png'
 import rank1Icon from '@/assets/JOMS_ADMIN_PANEL_3D_ICONS/create-a-high-quality-3d-icon-of-a-gold-trophy-wit 2.png'
 
+import { fetchExpertLeaderboard } from '../../api/leaderboard-api'
 import { useExpertLeaderboard, useExpertLeaderboardProfile } from '../../hooks/use-leaderboard'
 import {
   DEFAULT_EXPERT_LEADERBOARD_VISIBLE_COLUMN_IDS,
@@ -124,6 +126,29 @@ function TableRowsShimmer({ rows = 8, columnCount = 7 }: { rows?: number; column
       ))}
     </>
   )
+}
+
+function getLeaderboardExportValue(columnId: string, row: LeaderboardRow): string {
+  switch (columnId) {
+    case 'rank':
+      return String(row.rank)
+    case 'expert-id':
+    case 'venue-id':
+      return row.expertId || ''
+    case 'expert-name':
+    case 'venue-name':
+      return row.name || ''
+    case 'category':
+      return row.category || ''
+    case 'events-count':
+      return String(row.eventsCompleted ?? '')
+    case 'ratings':
+      return row.averageRating != null ? String(row.averageRating) : ''
+    case 'score':
+      return String(row.score ?? '')
+    default:
+      return ''
+  }
 }
 
 function renderLeaderboardCell(
@@ -258,6 +283,32 @@ const DEFAULT_FILTERS: FiltersState = {
   revenueMax: '',
 }
 
+function buildLeaderboardQuery(
+  filters: FiltersState,
+  extras: {
+    page?: number
+    limit?: number
+    search?: string
+    serviceType: 'venue' | 'concierge'
+  },
+): ExpertLeaderboardQuery {
+  return {
+    page: extras.page,
+    limit: extras.limit,
+    search: extras.search || undefined,
+    rankingMetric: filters.rankingMetric,
+    dateRange: filters.dateRange,
+    category: filters.category || undefined,
+    membershipType: filters.membershipType || undefined,
+    state: filters.state || undefined,
+    city: filters.city || undefined,
+    minRating: filters.minRating || undefined,
+    revenueMin: filters.revenueMin || undefined,
+    revenueMax: filters.revenueMax || undefined,
+    serviceType: extras.serviceType,
+  }
+}
+
 function ExpertProfileModal({
   partnerId,
   query,
@@ -378,28 +429,55 @@ function ExpertProfileModal({
 
 function FiltersPanel({
   open,
+  mode = 'filter',
+  title,
   value,
   onChange,
   onApply,
   onClose,
+  onExport,
+  isExporting = false,
 }: {
   open: boolean
+  mode?: 'filter' | 'export'
+  title: string
   value: FiltersState
   onChange: (next: FiltersState) => void
-  onApply: () => void
+  onApply?: () => void
   onClose: () => void
+  onExport?: (format: string) => void
+  isExporting?: boolean
 }) {
+  const [selectedFormat, setSelectedFormat] = useState('csv')
+
   if (!open) return null
+
+  const isExport = mode === 'export'
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
       <div className="bg-brand-surface w-full max-w-xl rounded-2xl border border-white/10 p-5 shadow-2xl">
         <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-lg font-bold text-white">Advance Filters</h3>
+          <h3 className="text-lg font-bold text-white">{title}</h3>
           <button type="button" onClick={onClose} className="text-white/70 hover:text-white">
             <X className="size-5" />
           </button>
         </div>
+
+        {isExport && (
+          <div className="mb-4">
+            <label className="mb-1.5 block text-sm font-medium text-white">Export Format</label>
+            <select
+              value={selectedFormat}
+              onChange={(e) => setSelectedFormat(e.target.value)}
+              className="w-full rounded-md border border-white/10 bg-slate-900/50 px-3 py-2 text-sm text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+            >
+              <option value="csv">CSV Document (.csv)</option>
+              <option value="excel">Excel Document (.xlsx)</option>
+              <option value="pdf">PDF Document (.pdf)</option>
+            </select>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <label className="space-y-1 text-xs text-white/70">
@@ -515,23 +593,41 @@ function FiltersPanel({
         </div>
 
         <div className="mt-5 flex justify-end gap-2">
-          <Button
-            variant="secondary"
-            onClick={() => {
-              onChange(DEFAULT_FILTERS)
-            }}
-          >
-            Reset
-          </Button>
-          <Button
-            className="ui-export-data"
-            onClick={() => {
-              onApply()
-              onClose()
-            }}
-          >
-            Apply Filters
-          </Button>
+          {isExport ? (
+            <>
+              <Button variant="secondary" onClick={onClose} disabled={isExporting}>
+                Cancel
+              </Button>
+              <Button
+                className="ui-export-data"
+                disabled={isExporting}
+                onClick={() => onExport?.(selectedFormat)}
+              >
+                <Upload className="size-4" />
+                {isExporting ? 'Exporting...' : 'Export Data'}
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  onChange(DEFAULT_FILTERS)
+                }}
+              >
+                Reset
+              </Button>
+              <Button
+                className="ui-export-data"
+                onClick={() => {
+                  onApply?.()
+                  onClose()
+                }}
+              >
+                Apply Filters
+              </Button>
+            </>
+          )}
         </div>
       </div>
     </div>
@@ -569,6 +665,8 @@ export const LeaderboardPage = () => {
   const [filtersDraft, setFiltersDraft] = useState<FiltersState>(DEFAULT_FILTERS)
   const [filtersApplied, setFiltersApplied] = useState<FiltersState>(DEFAULT_FILTERS)
   const [filtersOpen, setFiltersOpen] = useState(false)
+  const [exportOpen, setExportOpen] = useState(false)
+  const [isExporting, setIsExporting] = useState(false)
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [profilePartnerId, setProfilePartnerId] = useState<string | null>(null)
 
@@ -580,23 +678,17 @@ export const LeaderboardPage = () => {
     return () => window.clearTimeout(timer)
   }, [searchInput])
 
+  const serviceType = isVenueLeaderboard ? 'venue' : 'concierge'
+
   const query: ExpertLeaderboardQuery = useMemo(
-    () => ({
-      page,
-      limit: 10,
-      search,
-      rankingMetric: filtersApplied.rankingMetric,
-      dateRange: filtersApplied.dateRange,
-      category: filtersApplied.category || undefined,
-      membershipType: filtersApplied.membershipType || undefined,
-      state: filtersApplied.state || undefined,
-      city: filtersApplied.city || undefined,
-      minRating: filtersApplied.minRating || undefined,
-      revenueMin: filtersApplied.revenueMin || undefined,
-      revenueMax: filtersApplied.revenueMax || undefined,
-      serviceType: isVenueLeaderboard ? 'venue' : 'concierge',
-    }),
-    [filtersApplied, isVenueLeaderboard, page, search],
+    () =>
+      buildLeaderboardQuery(filtersApplied, {
+        page,
+        limit: 10,
+        search,
+        serviceType,
+      }),
+    [filtersApplied, page, search, serviceType],
   )
 
   const { data, isLoading, isError, isFetching } = useExpertLeaderboard(query)
@@ -634,72 +726,59 @@ export const LeaderboardPage = () => {
   const pagination = leaderboard?.pagination
   const allSelected = rows.length > 0 && rows.every((row) => selectedIds.includes(row.partnerId))
 
-  const handleExport = () => {
-    const exportSource = selectedIds.length
-      ? rows.filter((row) => selectedIds.includes(row.partnerId))
-      : rows
+  const handleExportData = useCallback(
+    async (format: string) => {
+      setIsExporting(true)
+      try {
+        const pageSize = 100
+        const exportQuery = buildLeaderboardQuery(filtersDraft, {
+          page: 1,
+          limit: pageSize,
+          search,
+          serviceType,
+        })
+        const firstPage = await fetchExpertLeaderboard(exportQuery)
+        const firstList = firstPage.data?.list ?? []
+        const totalPages = Math.min(Math.max(firstPage.data?.pagination?.pages || 1, 1), 100)
+        const allRows = [...firstList]
 
-    if (!exportSource.length) {
-      toast.error('No rows to export')
-      return
-    }
+        for (let nextPage = 2; nextPage <= totalPages; nextPage += 1) {
+          const pageResult = await fetchExpertLeaderboard({
+            ...exportQuery,
+            page: nextPage,
+          })
+          allRows.push(...(pageResult.data?.list ?? []))
+        }
 
-    const headers = isVenueLeaderboard
-      ? [
-          'Rank',
-          'Venue ID',
-          'Venue Name',
-          'Category',
-          'Membership',
-          'No. Of Events',
-          'Ratings',
-          'Score',
-          'Revenue',
-          'Completion Rate',
-          'Repeat Client Rate',
-          'Profile Health',
-        ]
-      : [
-          'Rank',
-          'Expert ID',
-          'Expert Name',
-          'Category',
-          'Membership',
-          'No. Of Events',
-          'Ratings',
-          'Score',
-          'Revenue',
-          'Completion Rate',
-          'Repeat Client Rate',
-          'Profile Health',
-        ]
-    const exportRows = exportSource.map((row) => [
-      String(row.rank),
-      row.expertId,
-      row.name,
-      row.category,
-      row.membershipType,
-      String(row.eventsCompleted),
-      row.averageRating != null ? String(row.averageRating) : '',
-      String(row.score),
-      String(row.totalRevenue),
-      String(row.orderCompletionRate),
-      String(row.repeatClientRate),
-      String(row.profileHealth),
-    ])
+        if (allRows.length === 0) {
+          toast.error('No records found to export')
+          return
+        }
 
-    try {
-      exportDataToFile(
-        headers,
-        exportRows,
-        'csv',
-        isVenueLeaderboard ? 'venue-leaderboard' : 'expert-leaderboard',
-      )
-      toast.success('Leaderboard exported')
-    } catch {
-      toast.error('Failed to export leaderboard')
-    }
-  }
+        const exportCols = visibleColumns.length
+          ? visibleColumns
+          : tableColumnsCatalog.filter((column) => column.defaultVisible)
+        const headers = exportCols.map((column) => column.label)
+        const exportRows = allRows.map((row) =>
+          exportCols.map((column) => getLeaderboardExportValue(column.id, row)),
+        )
+
+        exportDataToFile(
+          headers,
+          exportRows,
+          format,
+          isVenueLeaderboard ? 'venue-leaderboard' : 'expert-leaderboard',
+        )
+        toast.success(`Exported as ${format.toUpperCase()}`)
+        setExportOpen(false)
+      } catch {
+        toast.error('Failed to export leaderboard')
+      } finally {
+        setIsExporting(false)
+      }
+    },
+    [filtersDraft, isVenueLeaderboard, search, serviceType, tableColumnsCatalog, visibleColumns],
+  )
 
   const openProfile = (row: LeaderboardRow | { partnerId: string }) => {
     setProfilePartnerId(row.partnerId)
@@ -810,7 +889,14 @@ export const LeaderboardPage = () => {
               <SlidersHorizontal className="size-4" />
               Advance Filters
             </Button>
-            <Button onClick={handleExport} className="ui-export-data gap-2" disabled={showShimmer}>
+            <Button
+              onClick={() => {
+                setFiltersDraft(filtersApplied)
+                setExportOpen(true)
+              }}
+              className="ui-export-data gap-2"
+              disabled={isExporting}
+            >
               <Download className="size-4" />
               Export Data
             </Button>
@@ -956,6 +1042,8 @@ export const LeaderboardPage = () => {
 
       <FiltersPanel
         open={filtersOpen}
+        mode="filter"
+        title="Advance Filters"
         value={filtersDraft}
         onChange={setFiltersDraft}
         onClose={() => setFiltersOpen(false)}
@@ -963,6 +1051,21 @@ export const LeaderboardPage = () => {
           setFiltersApplied(filtersDraft)
           setPage(1)
         }}
+      />
+
+      <FiltersPanel
+        open={exportOpen}
+        mode="export"
+        title={
+          isVenueLeaderboard
+            ? 'Export Data - Venue Leaderboard'
+            : 'Export Data - Expert Leaderboard'
+        }
+        value={filtersDraft}
+        onChange={setFiltersDraft}
+        onClose={() => setExportOpen(false)}
+        onExport={handleExportData}
+        isExporting={isExporting}
       />
 
       {profilePartnerId && (

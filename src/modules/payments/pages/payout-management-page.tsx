@@ -1,20 +1,43 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 import { Eye, TrendingUp } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
+import { fetchFinancePayouts } from '@/modules/payments/api/finance-api'
 import { useFinanceDashboard, useFinancePayouts } from '@/modules/payments/hooks/use-finance'
 import { formatInr, mapPayoutToRow } from '@/modules/payments/utils/finance-mappers'
 import type { PayoutRow, PayoutStatus } from '@/modules/payments/mock/payout-management.mock'
+import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 import { DataTable } from '@/shared/components/table/data-table'
 import {
   TableActionsDropdown,
   TableActionsItem,
 } from '@/shared/components/table/table-actions-dropdown'
 import { cn } from '@/shared/lib/cn'
+import type { FilterValues } from '@/shared/types/data-filter'
+import { exportDisplayValue } from '@/shared/utils/export-utils'
+import {
+  buildFinancePayoutsListQueryParams,
+  createFinancePayoutsFilteredExportHandler,
+} from '@/shared/utils/export-filter-utils'
 
 const PAGE_SIZE = 10
+
+const EXPORT_COLUMN_MAP: Record<string, { header: string; accessor: (row: PayoutRow) => string }> =
+  {
+    payoutId: { header: 'Payout ID', accessor: (row) => exportDisplayValue(row.payoutId) },
+    recipient: { header: 'Recipient', accessor: (row) => exportDisplayValue(row.recipient) },
+    type: { header: 'Type', accessor: (row) => exportDisplayValue(row.type) },
+    amount: { header: 'Amount', accessor: (row) => exportDisplayValue(row.amount) },
+    method: { header: 'Method', accessor: (row) => exportDisplayValue(row.method) },
+    initiatedDate: {
+      header: 'Initiated Date',
+      accessor: (row) => exportDisplayValue(row.initiatedDate),
+    },
+    description: { header: 'Description', accessor: (row) => exportDisplayValue(row.description) },
+    status: { header: 'Status', accessor: (row) => exportDisplayValue(row.status) },
+  }
 
 function SummaryCard({
   label,
@@ -52,32 +75,65 @@ function getStatusClassName(status: PayoutStatus) {
 export function PayoutManagementPage() {
   const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
+  const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [selectedRowIds, setSelectedRowIds] = useState<string[]>([])
 
-  const { data, isLoading, isFetching, isError } = useFinancePayouts({
-    page: currentPage,
-    limit: PAGE_SIZE,
-  })
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setDebouncedSearch(searchQuery.trim())
+      setCurrentPage(1)
+    }, 300)
+    return () => window.clearTimeout(timer)
+  }, [searchQuery])
+
+  const listQueryParams = useMemo(
+    () =>
+      buildFinancePayoutsListQueryParams(appliedFilters, {
+        page: currentPage,
+        limit: PAGE_SIZE,
+        search: debouncedSearch || undefined,
+      }),
+    [appliedFilters, currentPage, debouncedSearch],
+  )
+
+  const { data, isLoading, isFetching, isError } = useFinancePayouts(listQueryParams)
   const dashboardQuery = useFinanceDashboard()
 
   const rows = useMemo(() => (data?.data?.rows ?? []).map(mapPayoutToRow), [data])
   const meta = data?.data?.meta
   const summary = dashboardQuery.data?.data
 
-  const filteredRows = useMemo(() => {
-    const query = searchQuery.trim().toLowerCase()
-    if (!query) return rows
-    return rows.filter((row) =>
-      [row.payoutId, row.recipient, row.type, row.amount, row.method, row.description, row.status]
-        .join(' ')
-        .toLowerCase()
-        .includes(query),
-    )
-  }, [rows, searchQuery])
+  const handleApplyFilters = useCallback((values: FilterValues) => {
+    toast.success('Filters applied')
+    setAppliedFilters(values)
+    setCurrentPage(1)
+  }, [])
 
-  const pageRows = searchQuery.trim() ? filteredRows : rows
+  const handleExportData = useMemo(() => {
+    const fetchForExport = async (params: Record<string, unknown>) => {
+      const result = await fetchFinancePayouts(params)
+      return { data: (result.data?.rows ?? []).map(mapPayoutToRow) }
+    }
+    return createFinancePayoutsFilteredExportHandler(
+      fetchForExport,
+      EXPORT_COLUMN_MAP,
+      'finance_payouts_export',
+      { search: debouncedSearch || undefined },
+    )
+  }, [debouncedSearch])
+
+  const {
+    onAdvancedFilter,
+    onExport,
+    modals: exportFilterModals,
+  } = useModuleExportFilters({
+    moduleKey: 'finance-payouts',
+    onApplyFilters: handleApplyFilters,
+    onExportData: handleExportData,
+  })
 
   const summaryCards = [
     {
@@ -106,7 +162,7 @@ export function PayoutManagementPage() {
     },
   ]
 
-  const visibleRowIds = useMemo(() => pageRows.map((row) => row.id), [pageRows])
+  const visibleRowIds = useMemo(() => rows.map((row) => row.id), [rows])
   const allVisibleSelected =
     visibleRowIds.length > 0 && visibleRowIds.every((id) => selectedRowIds.includes(id))
   const someVisibleSelected = visibleRowIds.some((id) => selectedRowIds.includes(id))
@@ -239,18 +295,16 @@ export function PayoutManagementPage() {
 
       <DataTable
         columns={columns}
-        data={pageRows}
+        data={rows}
         getRowId={(row) => row.id}
         isLoading={isLoading || isFetching}
         searchValue={searchQuery}
-        onSearchChange={(value) => {
-          setSearchQuery(value)
-          setCurrentPage(1)
-        }}
+        onSearchChange={setSearchQuery}
         searchPlaceholder="Search by name, ID or profession"
         advancedFilterLabel="Advance Filters"
-        onAdvancedFilter={() => toast.message('Advance filters coming soon')}
-        onExport={() => toast.message('Export coming soon')}
+        onAdvancedFilter={onAdvancedFilter}
+        advancedFilterVariant="primary"
+        onExport={onExport}
         pagination={{
           page: meta?.page ?? currentPage,
           pageSize: meta?.limit ?? PAGE_SIZE,
@@ -261,6 +315,8 @@ export function PayoutManagementPage() {
         resourceLabel="payouts"
         emptyMessage="No payout records found."
       />
+
+      {exportFilterModals}
     </div>
   )
 }

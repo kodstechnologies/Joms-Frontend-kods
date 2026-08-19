@@ -6,7 +6,10 @@ import { toast } from 'sonner'
 import type { FilterValues } from '@/shared/types/data-filter'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter/use-module-export-filters'
 import { exportDisplayValue } from '@/shared/utils/export-utils'
-import { buildFilterParams, createFilteredExportHandler } from '@/shared/utils/export-filter-utils'
+import {
+  buildExpertListQueryParams,
+  createFilteredExportHandler,
+} from '@/shared/utils/export-filter-utils'
 import { fetchExperts } from '../../api/expert-api'
 import { useActivateExpert, useExperts } from '../../hooks/use-expert'
 import type { Expert } from '../../type/expert'
@@ -26,31 +29,34 @@ import {
   TableActionsItem,
 } from '@/shared/components/table/table-actions-dropdown'
 
+const formatExportDateTime = (value?: string | null) =>
+  value
+    ? new Date(value).toLocaleString('en-IN', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      })
+    : ''
+
 const EXPORT_COLUMN_MAP: Record<string, { header: string; accessor: (e: Expert) => string }> = {
-  expertId: { header: 'ID', accessor: (e) => exportDisplayValue(e.id || e.expertId) },
+  expertId: { header: 'Expert ID', accessor: (e) => exportDisplayValue(e.expertId) },
   name: { header: 'Name', accessor: (e) => exportDisplayValue(e.name) },
-  email: { header: 'Email', accessor: (e) => exportDisplayValue(e.email) },
-  phone: {
-    header: 'Phone Number',
-    accessor: (e) => exportDisplayValue((e as Expert & { phone?: string }).phone),
-  },
+  email: { header: 'Email ID', accessor: (e) => exportDisplayValue(e.email) },
   profession: { header: 'Profession', accessor: (e) => exportDisplayValue(e.profession) },
-  tier: {
-    header: 'Tier',
-    accessor: (e) => exportDisplayValue((e as Expert & { tier?: string }).tier),
-  },
-  serviceType: { header: 'Service Type', accessor: (e) => exportDisplayValue(e.serviceType) },
   status: { header: 'Status', accessor: (e) => exportDisplayValue(e.status) },
-  createdAt: {
-    header: 'Created At',
-    accessor: (e) =>
-      exportDisplayValue(e.createdAt ? new Date(e.createdAt).toLocaleDateString() : undefined),
-  },
-  lastActive: {
-    header: 'Last Active',
-    accessor: (e) =>
-      exportDisplayValue(e.lastActive ? new Date(e.lastActive).toLocaleDateString() : undefined),
-  },
+  serviceType: { header: 'Service Type', accessor: (e) => exportDisplayValue(e.serviceType) },
+  createdAt: { header: 'Created At', accessor: (e) => formatExportDateTime(e.createdAt) },
+  lastActive: { header: 'Last Active', accessor: (e) => formatExportDateTime(e.lastActive) },
+}
+
+const fetchSuspendedExpertsForExport = async (params: Record<string, unknown>) => {
+  const response = await fetchExperts({ ...params, status: 'suspended' })
+  return {
+    data: (response.data || []).filter((expert) => expert.status === 'suspended'),
+    meta: response.meta,
+  }
 }
 
 export function ExpertSuspendedExpertsPage() {
@@ -60,15 +66,18 @@ export function ExpertSuspendedExpertsPage() {
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
 
-  const apiFilterParams = useMemo(() => buildFilterParams(appliedFilters), [appliedFilters])
+  const expertQueryParams = useMemo(
+    () =>
+      buildExpertListQueryParams(appliedFilters, {
+        page: currentPage,
+        limit: 10,
+        search: searchQuery,
+        status: 'suspended',
+      }),
+    [appliedFilters, currentPage, searchQuery],
+  )
 
-  const { data, isLoading } = useExperts({
-    page: currentPage,
-    limit: 10,
-    status: 'suspended',
-    search: searchQuery,
-    ...apiFilterParams,
-  })
+  const { data, isLoading } = useExperts(expertQueryParams)
 
   const experts = useMemo(() => data?.data || [], [data?.data])
   const meta = data?.meta
@@ -82,10 +91,15 @@ export function ExpertSuspendedExpertsPage() {
 
   const handleExportData = useMemo(
     () =>
-      createFilteredExportHandler(fetchExperts, EXPORT_COLUMN_MAP, 'suspended_experts_export', {
-        status: 'suspended',
-      }),
-    [],
+      createFilteredExportHandler(
+        fetchSuspendedExpertsForExport,
+        EXPORT_COLUMN_MAP,
+        'suspended_experts_export',
+        {
+          search: searchQuery.trim() || undefined,
+        },
+      ),
+    [searchQuery],
   )
 
   const {

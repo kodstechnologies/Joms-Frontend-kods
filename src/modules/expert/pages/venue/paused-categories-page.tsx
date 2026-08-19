@@ -6,18 +6,24 @@ import createIcon from '@/assets/JOMS_ICONS-2/icons8-create.svg'
 import { Button } from '@/shared/components/ui/button'
 import { DataTable } from '@/shared/components/table/data-table'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
-import { exportDataToFile, exportDisplayValue } from '@/shared/utils/export-utils'
+import { exportDisplayValue } from '@/shared/utils/export-utils'
 import type { FilterValues } from '@/shared/types/data-filter'
-
+import {
+  buildVenueCategoryListQueryParams,
+  createVenueCategoryFilteredExportHandler,
+} from '@/shared/utils/export-filter-utils'
+import { fetchPausedVenueCategories } from '../../api/venue-category-api'
 import CategoryHeader from '../../components/category/CategoryHeader'
 import { pausedVenueCategoryColumns } from '../../components/category/PausedVenueCategoryColumns'
+import { type VenueCategory } from '../../components/category/venue-category-table-columns'
 import { usePausedVenueCategoryList } from '../../hooks/use-venue-category-management'
+import { mapVenueCategoryToUi } from '../../utils/category-mapper'
 
 const PAGE_SIZE = 10
 
 const EXPORT_COLUMN_MAP: Record<
   string,
-  { header: string; accessor: (cat: Record<string, unknown>) => string }
+  { header: string; accessor: (cat: VenueCategory) => string }
 > = {
   categoryId: {
     header: 'Category ID',
@@ -31,11 +37,11 @@ const EXPORT_COLUMN_MAP: Record<
   },
   venues: {
     header: 'No. Of Venues',
-    accessor: (cat) => exportDisplayValue(cat.venues as string | number),
+    accessor: (cat) => exportDisplayValue(cat.venues),
   },
   revenue: {
     header: 'Revenue Generated',
-    accessor: (cat) => exportDisplayValue(cat.revenue as string | number),
+    accessor: (cat) => exportDisplayValue(cat.revenue),
   },
 }
 
@@ -50,26 +56,33 @@ export function PausedVenueCategoriesPage() {
     setAppliedFilters(values)
   }, [])
 
-  const { data, isLoading, isError } = usePausedVenueCategoryList({
-    search: searchValue.trim() || undefined,
-    page,
-    limit: PAGE_SIZE,
-    ...appliedFilters,
-  })
+  const categoryQueryParams = useMemo(
+    () =>
+      buildVenueCategoryListQueryParams(appliedFilters, {
+        page,
+        limit: PAGE_SIZE,
+        search: searchValue.trim() || undefined,
+      }),
+    [appliedFilters, page, searchValue],
+  )
+
+  const { data, isLoading, isError } = usePausedVenueCategoryList(categoryQueryParams)
 
   const pausedCategories = useMemo(() => data?.categories ?? [], [data?.categories])
   const totalItems = data?.pagination?.total ?? pausedCategories.length
   const totalPages = Math.max(1, data?.pagination?.totalPages ?? Math.ceil(totalItems / PAGE_SIZE))
 
-  const handleExportData = useCallback(
-    (values: FilterValues, format: string) => {
-      const exportCols = Object.values(EXPORT_COLUMN_MAP)
-      const headers = exportCols.map((c) => c.header)
-      const exportRows = pausedCategories.map((cat) => exportCols.map((c) => c.accessor(cat)))
-
-      exportDataToFile(headers, exportRows, format, 'paused_venue_categories_export')
-    },
-    [pausedCategories],
+  const handleExportData = useMemo(
+    () =>
+      createVenueCategoryFilteredExportHandler(
+        async (params) => {
+          const response = await fetchPausedVenueCategories(params)
+          return { data: (response.data ?? []).map(mapVenueCategoryToUi) }
+        },
+        EXPORT_COLUMN_MAP,
+        'paused_venue_categories_export',
+      ),
+    [],
   )
 
   const {

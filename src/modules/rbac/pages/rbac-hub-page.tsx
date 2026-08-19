@@ -41,6 +41,7 @@ import {
   useReactivateSubAdmin,
   useUpdateSubAdminPassword,
 } from '../hooks/use-rbac'
+import { fetchRoleUsers, fetchRoles, fetchSubAdmins } from '../api/rbac-api'
 import { useRbacStore } from '../store/rbac-store'
 import type { Role, SubAdmin } from '../types/rbac'
 import { DataTable } from '@/shared/components/table/data-table'
@@ -51,8 +52,11 @@ import {
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
-import { exportDataToFile, exportDisplayValue } from '@/shared/utils/export-utils'
-import { buildFilterParams } from '@/shared/utils/export-filter-utils'
+import { exportDisplayValue } from '@/shared/utils/export-utils'
+import {
+  buildRbacListQueryParams,
+  createRbacFilteredExportHandler,
+} from '@/shared/utils/export-filter-utils'
 import type { FilterValues } from '@/shared/types/data-filter'
 
 const EXPORT_USER_COLUMN_MAP: Record<
@@ -149,31 +153,31 @@ export function RbacHubPage() {
 
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
 
-  const apiFilterParams = useMemo(() => buildFilterParams(appliedFilters), [appliedFilters])
+  const apiFilterParams = useMemo(() => buildRbacListQueryParams(appliedFilters), [appliedFilters])
 
   const { data: statsData, isLoading: statsLoading } = useRbacStats()
   const { data: rolesData, isLoading: rolesLoading } = useRoles({
+    ...apiFilterParams,
     page: currentPage,
     limit: 10,
     search: searchQuery || undefined,
-    ...apiFilterParams,
   })
   const { data: subAdminsData, isLoading: subAdminsLoading } = useSubAdmins(
     {
+      ...apiFilterParams,
       page: currentPage,
       limit: 10,
       search: searchQuery || undefined,
-      ...apiFilterParams,
     },
     { enabled: activeTab === 'users' && !roleFilterId },
   )
   const { data: roleUsersData, isLoading: roleUsersLoading } = useRoleUsers(
     roleFilterId || '',
     {
+      ...apiFilterParams,
       page: currentPage,
       limit: 10,
       search: searchQuery || undefined,
-      ...apiFilterParams,
     },
     { enabled: activeTab === 'users' && Boolean(roleFilterId) },
   )
@@ -205,22 +209,29 @@ export function RbacHubPage() {
     [setCurrentPage],
   )
 
-  const handleExportData = useCallback(
-    (values: FilterValues, format: string) => {
-      if (activeTab === 'users') {
-        const exportCols = Object.values(EXPORT_USER_COLUMN_MAP)
-        const headers = exportCols.map((c) => c.header)
-        const exportRows = subAdmins.map((user) => exportCols.map((c) => c.accessor(user)))
-        exportDataToFile(headers, exportRows, format, 'rbac_users_export')
-      } else {
-        const exportCols = Object.values(EXPORT_ROLE_COLUMN_MAP)
-        const headers = exportCols.map((c) => c.header)
-        const exportRows = roles.map((role) => exportCols.map((c) => c.accessor(role)))
-        exportDataToFile(headers, exportRows, format, 'rbac_roles_export')
+  const handleExportData = useMemo(() => {
+    if (activeTab === 'users') {
+      const fetchUsers = async (params: Record<string, unknown>) => {
+        if (roleFilterId) {
+          const result = await fetchRoleUsers(roleFilterId, params)
+          return { data: result.data?.users ?? [] }
+        }
+        return fetchSubAdmins(params)
       }
-    },
-    [activeTab, subAdmins, roles],
-  )
+      return createRbacFilteredExportHandler(
+        fetchUsers,
+        EXPORT_USER_COLUMN_MAP,
+        'rbac_users_export',
+        { search: searchQuery || undefined },
+      )
+    }
+    return createRbacFilteredExportHandler(
+      fetchRoles,
+      EXPORT_ROLE_COLUMN_MAP,
+      'rbac_roles_export',
+      { search: searchQuery || undefined },
+    )
+  }, [activeTab, roleFilterId, searchQuery])
 
   const {
     onAdvancedFilter,
@@ -749,6 +760,7 @@ export function RbacHubPage() {
           onSearchChange={setSearchQuery}
           searchPlaceholder="Search by name, ID or profession"
           onAdvancedFilter={onAdvancedFilter}
+          advancedFilterVariant="primary"
           onExport={onExport}
           pagination={{
             page: currentPage,
@@ -770,6 +782,7 @@ export function RbacHubPage() {
           onSearchChange={setSearchQuery}
           searchPlaceholder="Search by name, ID or profession"
           onAdvancedFilter={onAdvancedFilter}
+          advancedFilterVariant="primary"
           onExport={onExport}
           pagination={{
             page: currentPage,

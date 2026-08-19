@@ -2,13 +2,12 @@ import { useMemo, useState, useEffect, useCallback } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 import { Ban, Eye } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
-import { toast } from 'sonner'
 
 import { fetchExpertReports } from '../../api/expert-api'
 import type { FilterValues } from '@/shared/types/data-filter'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter/use-module-export-filters'
-import { exportDataToFile } from '@/shared/utils/export-utils'
-import { buildFilterParams } from '@/shared/utils/export-filter-utils'
+import { exportDisplayValue } from '@/shared/utils/export-utils'
+import { buildFilterParams, createFilteredExportHandler } from '@/shared/utils/export-filter-utils'
 import {
   ExpertReportDetailModal,
   type ExpertReportItem,
@@ -19,6 +18,64 @@ import {
   TableActionsDropdown,
   TableActionsItem,
 } from '@/shared/components/table/table-actions-dropdown'
+
+const formatExportDateTime = (value?: string | null) =>
+  value
+    ? new Date(value).toLocaleString('en-IN', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      })
+    : ''
+
+const EXPORT_COLUMN_MAP: Record<
+  string,
+  { header: string; accessor: (item: ExpertReportItem) => string }
+> = {
+  reportId: { header: 'Report ID', accessor: (item) => exportDisplayValue(item.reportId) },
+  expertName: {
+    header: 'Reported Expert',
+    accessor: (item) => exportDisplayValue(item.expertName),
+  },
+  partnerId: { header: 'Expert ID', accessor: (item) => exportDisplayValue(item.partnerId) },
+  reporterName: {
+    header: 'Reported By',
+    accessor: (item) => exportDisplayValue(item.reporterName),
+  },
+  reporterType: {
+    header: 'Reporter Type',
+    accessor: (item) => exportDisplayValue(item.reporterType),
+  },
+  issueType: { header: 'Issue Type', accessor: (item) => exportDisplayValue(item.issueType) },
+  reason: { header: 'Reason', accessor: (item) => exportDisplayValue(item.reason) },
+  status: {
+    header: 'Status',
+    accessor: (item) => exportDisplayValue(item.investigationStatus || 'New'),
+  },
+  reportedAt: {
+    header: 'Reported At',
+    accessor: (item) => formatExportDateTime(item.submittedAt),
+  },
+}
+
+const fetchExpertReportsForExport = async (params: Record<string, unknown>) => {
+  const response = await fetchExpertReports(params)
+  const payload = response?.data ?? response
+  const items = (payload?.items || []) as ExpertReportItem[]
+  const pagination = payload?.pagination || response?.pagination
+
+  return {
+    data: items,
+    meta: {
+      pagination: {
+        pages: pagination?.pages ?? pagination?.totalPages,
+        totalPages: pagination?.totalPages ?? pagination?.pages,
+      },
+    },
+  }
+}
 
 export function ExpertReportedExpertsPage() {
   const navigate = useNavigate()
@@ -77,65 +134,17 @@ export function ExpertReportedExpertsPage() {
     setCurrentPage(1)
   }, [])
 
-  const handleExportData = useCallback(
-    async (values: FilterValues, format: string) => {
-      try {
-        toast.loading('Exporting expert reports...')
-
-        const data = await fetchExpertReports({
-          search: searchQuery,
-          ...apiFilterParams,
-          limit: 1000,
-        })
-        const items = data?.data?.items || data?.items || []
-
-        if (!items || items.length === 0) {
-          toast.dismiss()
-          toast.error('No report records found to export.')
-          return
-        }
-
-        const headers = [
-          'Report ID',
-          'Expert ID',
-          'Expert Name',
-          'Reporter Type',
-          'Reporter ID',
-          'Reporter Name',
-          'Issue Type',
-          'Business Impact',
-          'Status',
-          'Report Date',
-        ]
-
-        const rows = items.map((item: ExpertReportItem) => [
-          item.reportId || '',
-          item.partnerId || '',
-          item.expertName || '',
-          item.reporterType || '',
-          item.reporterId || '',
-          item.reporterName || '',
-          item.issueType || '',
-          item.businessImpact || '',
-          item.investigationStatus || '',
-          item.submittedAt ? new Date(item.submittedAt as string).toLocaleString() : '',
-        ])
-
-        exportDataToFile(
-          headers,
-          rows,
-          format,
-          `Expert_Reports_${new Date().toISOString().split('T')[0]}`,
-        )
-
-        toast.dismiss()
-        toast.success('Expert reports exported successfully')
-      } catch (err: unknown) {
-        toast.dismiss()
-        toast.error(err instanceof Error ? err.message : 'Failed to export report')
-      }
-    },
-    [searchQuery, apiFilterParams],
+  const handleExportData = useMemo(
+    () =>
+      createFilteredExportHandler(
+        fetchExpertReportsForExport,
+        EXPORT_COLUMN_MAP,
+        'reported_experts_export',
+        {
+          search: searchQuery.trim() || undefined,
+        },
+      ),
+    [searchQuery],
   )
 
   const {

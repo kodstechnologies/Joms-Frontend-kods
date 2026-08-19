@@ -20,7 +20,7 @@ export const useBackupMetrics = () =>
     queryFn: fetchBackupMetrics,
   })
 
-export const useBackups = (params?: { page?: number; limit?: number; search?: string }) =>
+export const useBackups = (params?: Record<string, unknown>) =>
   useQuery({
     queryKey: backupKeys.list(params),
     queryFn: () => fetchBackups(params),

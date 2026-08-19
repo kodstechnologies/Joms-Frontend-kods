@@ -454,7 +454,7 @@ export const MODULE_METRICS_REGISTRY: Record<string, ModuleMetricsDefinition> = 
   'incident-tracking': {
     moduleKey: 'incident-tracking',
     moduleName: 'Incident Tracking',
-    returnTo: '/settings/health',
+    returnTo: '/settings/main',
     maxActiveMetrics: 4,
     metrics: [
       metric('open-incidents', 'Open Incidents', 'Count', 'Currently open', true),

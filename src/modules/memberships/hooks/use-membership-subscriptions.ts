@@ -16,15 +16,9 @@ import type {
   ChangePlanPayload,
   ExtendSubscriptionPayload,
   PauseSubscriptionPayload,
-  SubscriptionStatus,
 } from '../types/membership-subscription'
 
-export const useExpertSubscriptions = (params?: {
-  status?: SubscriptionStatus
-  search?: string
-  page?: number
-  limit?: number
-}) => {
+export const useExpertSubscriptions = (params?: Record<string, unknown>) => {
   return useQuery({
     queryKey: ['expert-subscriptions', params],
     queryFn: () => fetchExpertSubscriptions(params),

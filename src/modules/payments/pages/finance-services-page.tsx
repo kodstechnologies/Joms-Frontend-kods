@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 import { useQueryClient } from '@tanstack/react-query'
 import { AlertTriangle, Eye, SlidersHorizontal, Tag, Trash2 } from 'lucide-react'
@@ -15,6 +15,7 @@ import {
   useFinanceEscrow,
   useFinanceRevenue,
 } from '@/modules/payments/hooks/use-finance'
+import { fetchFinanceEscrow, fetchFinanceRevenue } from '@/modules/payments/api/finance-api'
 import {
   mapEscrowToServiceRow,
   mapPaymentToServiceRow,
@@ -32,8 +33,28 @@ import {
 } from '@/shared/components/table/table-actions-dropdown'
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
+import { useModuleExportFilters } from '@/shared/components/advanced-filter'
+import { exportDisplayValue } from '@/shared/utils/export-utils'
+import {
+  buildFinanceServicesListQueryParams,
+  createFinanceServicesFilteredExportHandler,
+} from '@/shared/utils/export-filter-utils'
+import type { FilterValues } from '@/shared/types/data-filter'
 
 const PAGE_SIZE = 10
+
+const EXPORT_COLUMN_MAP: Record<
+  string,
+  { header: string; accessor: (row: FinanceServiceRow) => string }
+> = {
+  'service-id': { header: 'Service ID', accessor: (row) => exportDisplayValue(row.serviceId) },
+  name: { header: 'Name', accessor: (row) => exportDisplayValue(row.name) },
+  'expert-name': { header: 'Expert Name', accessor: (row) => exportDisplayValue(row.expertName) },
+  'booking-id': { header: 'Booking ID', accessor: (row) => exportDisplayValue(row.bookingId) },
+  'user-name': { header: 'User Name', accessor: (row) => exportDisplayValue(row.userName) },
+  status: { header: 'Status', accessor: (row) => exportDisplayValue(row.status) },
+  revenue: { header: 'Revenue', accessor: (row) => exportDisplayValue(row.revenue) },
+}
 
 function getStatusClassName(status: FinanceServiceRow['status']) {
   if (status === 'Paid') {
@@ -47,33 +68,37 @@ export function FinanceServicesPage() {
   const queryClient = useQueryClient()
   const [activeTab, setActiveTab] = useState<FinanceServiceTab>('all')
   const [searchQuery, setSearchQuery] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
+  const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [selectedRowIds, setSelectedRowIds] = useState<string[]>([])
   const [tagTarget, setTagTarget] = useState<FinanceServiceRow | null>(null)
   const addNote = useAddFinanceNote()
   const tableColumnPreferencesQuery = useTableColumnPreferences(FINANCE_SERVICES_MODULE_KEY)
 
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setDebouncedSearch(searchQuery.trim())
+      setCurrentPage(1)
+    }, 300)
+    return () => window.clearTimeout(timer)
+  }, [searchQuery])
+
   const isEscrowTab = activeTab === 'escrow'
-  const module =
-    activeTab === 'by-service'
-      ? 'service'
-      : activeTab === 'by-consultation'
-        ? 'consultation'
-        : undefined
+  const listQueryParams = useMemo(
+    () =>
+      buildFinanceServicesListQueryParams(appliedFilters, {
+        page: currentPage,
+        limit: PAGE_SIZE,
+        search: debouncedSearch || undefined,
+        tab: activeTab,
+      }),
+    [activeTab, appliedFilters, currentPage, debouncedSearch],
+  )
 
-  const revenueParams = {
-    page: currentPage,
-    limit: PAGE_SIZE,
-    module,
-  }
-  const escrowParams = {
-    page: currentPage,
-    limit: PAGE_SIZE,
-  }
-
-  const revenueQuery = useFinanceRevenue(revenueParams, !isEscrowTab)
-  const escrowQuery = useFinanceEscrow(escrowParams, isEscrowTab)
+  const revenueQuery = useFinanceRevenue(listQueryParams, !isEscrowTab)
+  const escrowQuery = useFinanceEscrow(listQueryParams, isEscrowTab)
 
   const handleTabChange = (tabId: FinanceServiceTab) => {
     if (tabId !== activeTab) {
@@ -81,6 +106,7 @@ export function FinanceServicesPage() {
       setCurrentPage(1)
       setSearchQuery('')
       setSelectedRowIds([])
+      setAppliedFilters({})
     }
 
     // Always refetch for the tab (cache was keeping prior tab data until full refresh)
@@ -97,31 +123,49 @@ export function FinanceServicesPage() {
     if (isEscrowTab) {
       return (escrowQuery.data?.data?.rows ?? []).map(mapEscrowToServiceRow)
     }
-    const payments = revenueQuery.data?.data?.rows ?? []
-    const filtered =
-      activeTab === 'all'
-        ? payments.filter((p) => p.module === 'service' || p.module === 'consultation')
-        : payments
-    return filtered.map((row) => mapPaymentToServiceRow(row, activeTab))
+    return (revenueQuery.data?.data?.rows ?? []).map((row) =>
+      mapPaymentToServiceRow(row, activeTab),
+    )
   }, [activeTab, escrowQuery.data, isEscrowTab, revenueQuery.data])
 
   const meta = isEscrowTab ? escrowQuery.data?.data?.meta : revenueQuery.data?.data?.meta
 
-  const filteredRows = useMemo(() => {
-    const query = searchQuery.trim().toLowerCase()
-    if (!query) return liveRows
+  const handleApplyFilters = useCallback((values: FilterValues) => {
+    toast.success('Filters applied')
+    setAppliedFilters(values)
+    setCurrentPage(1)
+  }, [])
 
-    return liveRows.filter((row) =>
-      [row.serviceId, row.name, row.expertName, row.bookingId, row.userName]
-        .join(' ')
-        .toLowerCase()
-        .includes(query),
+  const handleExportData = useMemo(() => {
+    const fetchForExport = async (params: Record<string, unknown>) => {
+      if (isEscrowTab) {
+        const result = await fetchFinanceEscrow(params)
+        return { data: (result.data?.rows ?? []).map(mapEscrowToServiceRow) }
+      }
+      const result = await fetchFinanceRevenue(params)
+      return {
+        data: (result.data?.rows ?? []).map((row) => mapPaymentToServiceRow(row, activeTab)),
+      }
+    }
+    return createFinanceServicesFilteredExportHandler(
+      fetchForExport,
+      EXPORT_COLUMN_MAP,
+      'finance_services_export',
+      { search: debouncedSearch || undefined, tab: activeTab },
     )
-  }, [searchQuery, liveRows])
+  }, [activeTab, debouncedSearch, isEscrowTab])
 
-  const pageRows = searchQuery.trim() ? filteredRows : liveRows
+  const {
+    onAdvancedFilter,
+    onExport,
+    modals: exportFilterModals,
+  } = useModuleExportFilters({
+    moduleKey: 'finance-services',
+    onApplyFilters: handleApplyFilters,
+    onExportData: handleExportData,
+  })
 
-  const visibleRowIds = useMemo(() => pageRows.map((row) => row.id), [pageRows])
+  const visibleRowIds = useMemo(() => liveRows.map((row) => row.id), [liveRows])
   const allVisibleSelected =
     visibleRowIds.length > 0 && visibleRowIds.every((id) => selectedRowIds.includes(id))
   const someVisibleSelected = visibleRowIds.some((id) => selectedRowIds.includes(id))
@@ -311,7 +355,7 @@ export function FinanceServicesPage() {
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-h2 text-brand-text tracking-tight">Serivce</h1>
+          <h1 className="text-h2 text-brand-text tracking-tight">Services</h1>
           <p className="text-body-sm text-muted mt-1 leading-[20px]">
             Manage service bookings, expert commissions, and payouts
           </p>
@@ -352,18 +396,16 @@ export function FinanceServicesPage() {
 
       <DataTable
         columns={columns}
-        data={pageRows}
+        data={liveRows}
         getRowId={(row) => row.id}
         isLoading={isLoading || isFetching}
         searchValue={searchQuery}
-        onSearchChange={(value) => {
-          setSearchQuery(value)
-          setCurrentPage(1)
-        }}
+        onSearchChange={setSearchQuery}
         searchPlaceholder="Search by name, ID or profession"
         advancedFilterLabel="Advance Filters"
-        onAdvancedFilter={() => toast.message('Advance filters coming soon')}
-        onExport={() => toast.message('Export coming soon')}
+        onAdvancedFilter={onAdvancedFilter}
+        advancedFilterVariant="primary"
+        onExport={onExport}
         pagination={{
           page: meta?.page ?? currentPage,
           pageSize: meta?.limit ?? PAGE_SIZE,
@@ -398,6 +440,8 @@ export function FinanceServicesPage() {
           }
         }}
       />
+
+      {exportFilterModals}
     </div>
   )
 }

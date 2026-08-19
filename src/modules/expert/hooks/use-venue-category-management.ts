@@ -37,16 +37,10 @@ const invalidateVenueCategories = (queryClient: ReturnType<typeof useQueryClient
 export const useVenueCategoryManagementList = (params?: Record<string, unknown>) =>
   useQuery({
     queryKey: [VENUE_CATEGORY_QUERY_KEY, 'list', params],
-    queryFn: () =>
-      fetchVenueCategoryList({
-        ...params,
-        page: 1,
-        limit: 200,
-      }),
+    queryFn: () => fetchVenueCategoryList(params),
     select: (response) => ({
-      categories: (response.data || [])
-        .map(mapVenueCategoryToUi)
-        .filter((category) => category.status !== 'Paused'),
+      categories: (response.data || []).map(mapVenueCategoryToUi),
+      pagination: response.meta,
       message: response.message,
     }),
   })

@@ -9,14 +9,47 @@ import {
   type FinanceCategoryRow,
   type FinanceCategoryStatus,
 } from '@/modules/payments/mock/finance-category.mock'
+import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 import { DataTable } from '@/shared/components/table/data-table'
 import {
   TableActionsDropdown,
   TableActionsItem,
 } from '@/shared/components/table/table-actions-dropdown'
 import { cn } from '@/shared/lib/cn'
+import type { FilterValues } from '@/shared/types/data-filter'
+import { exportDisplayValue } from '@/shared/utils/export-utils'
+import {
+  createClientFilteredExportHandler,
+  rowMatchesClientFilters,
+} from '@/shared/utils/export-filter-utils'
 
 const PAGE_SIZE = 10
+
+const CATEGORY_FILTER_ACCESSORS: Record<string, (row: FinanceCategoryRow) => string> = {
+  categoryName: (row) => row.categoryName,
+  module: (row) => row.module,
+  status: (row) => row.status,
+  payoutCycle: (row) => row.payoutCycle,
+}
+
+const EXPORT_COLUMN_MAP: Record<
+  string,
+  { header: string; accessor: (row: FinanceCategoryRow) => string }
+> = {
+  categoryName: {
+    header: 'Category Name',
+    accessor: (row) => exportDisplayValue(row.categoryName),
+  },
+  module: { header: 'Module', accessor: (row) => exportDisplayValue(row.module) },
+  platformFee: { header: 'Platform Fee', accessor: (row) => exportDisplayValue(row.platformFee) },
+  commissionRate: {
+    header: 'Commission Rate',
+    accessor: (row) => exportDisplayValue(row.commissionRate),
+  },
+  taxRate: { header: 'Tax Rate', accessor: (row) => exportDisplayValue(row.taxRate) },
+  payoutCycle: { header: 'Payout Cycle', accessor: (row) => exportDisplayValue(row.payoutCycle) },
+  status: { header: 'Status', accessor: (row) => exportDisplayValue(row.status) },
+}
 
 function getStatusClassName(status: FinanceCategoryStatus) {
   if (status === 'Active')
@@ -27,25 +60,16 @@ function getStatusClassName(status: FinanceCategoryStatus) {
 export function FinanceCategoryPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
+  const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
 
-  const filteredRows = useMemo(() => {
-    const query = searchQuery.trim().toLowerCase()
-    if (!query) return financeCategoryRowsMock
-    return financeCategoryRowsMock.filter((row) =>
-      [
-        row.categoryName,
-        row.module,
-        row.platformFee,
-        row.commissionRate,
-        row.payoutCycle,
-        row.status,
-      ]
-        .join(' ')
-        .toLowerCase()
-        .includes(query),
-    )
-  }, [searchQuery])
+  const filteredRows = useMemo(
+    () =>
+      financeCategoryRowsMock.filter((row) =>
+        rowMatchesClientFilters(row, appliedFilters, searchQuery, CATEGORY_FILTER_ACCESSORS),
+      ),
+    [appliedFilters, searchQuery],
+  )
 
   const totalItems = filteredRows.length
   const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE))
@@ -78,6 +102,35 @@ export function FinanceCategoryPage() {
     ),
     [activeDropdownId],
   )
+
+  const handleApplyFilters = useCallback((values: FilterValues) => {
+    toast.success('Filters applied')
+    setAppliedFilters(values)
+    setCurrentPage(1)
+  }, [])
+
+  const handleExportData = useMemo(
+    () =>
+      createClientFilteredExportHandler(
+        (values) =>
+          financeCategoryRowsMock.filter((row) =>
+            rowMatchesClientFilters(row, values, searchQuery, CATEGORY_FILTER_ACCESSORS),
+          ),
+        EXPORT_COLUMN_MAP,
+        'finance_categories_export',
+      ),
+    [searchQuery],
+  )
+
+  const {
+    onAdvancedFilter,
+    onExport,
+    modals: exportFilterModals,
+  } = useModuleExportFilters({
+    moduleKey: 'finance-categories',
+    onApplyFilters: handleApplyFilters,
+    onExportData: handleExportData,
+  })
 
   const columns = useMemo<ColumnDef<FinanceCategoryRow>[]>(
     () => [
@@ -138,8 +191,9 @@ export function FinanceCategoryPage() {
         }}
         searchPlaceholder="Search by category or module"
         advancedFilterLabel="Advance Filters"
-        onAdvancedFilter={() => toast.message('Advance filters coming soon')}
-        onExport={() => toast.message('Export coming soon')}
+        onAdvancedFilter={onAdvancedFilter}
+        advancedFilterVariant="primary"
+        onExport={onExport}
         pagination={{
           page: safePage,
           pageSize: PAGE_SIZE,
@@ -150,6 +204,8 @@ export function FinanceCategoryPage() {
         resourceLabel="categories"
         emptyMessage="No finance categories found."
       />
+
+      {exportFilterModals}
     </div>
   )
 }

@@ -1,6 +1,7 @@
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { SlidersHorizontal } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import { toast } from 'sonner'
 
 import {
   DEFAULT_ESCALATIONS_METRIC_IDS,
@@ -21,6 +22,14 @@ import { Button } from '@/shared/components/ui/button'
 import { DataTable } from '@/shared/components/table/data-table'
 import { StatCard } from '@/shared/components/dashboard/stat-card'
 import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
+import { useModuleExportFilters } from '@/shared/components/advanced-filter'
+import type { FilterValues } from '@/shared/types/data-filter'
+import { exportDisplayValue } from '@/shared/utils/export-utils'
+import {
+  buildPrefixedListQueryParams,
+  createPrefixedListExportHandler,
+} from '@/shared/utils/export-filter-utils'
+import { fetchAllEscalations, type EscalationListItem } from '@/modules/my-tasks/api/escalation-api'
 
 import {
   DEFAULT_ESCALATIONS_VISIBLE_COLUMN_IDS,
@@ -29,18 +38,44 @@ import {
 import { useTableColumnPreferences } from '@/modules/expert/hooks/use-ui-preferences'
 import { escalationColumns } from './escalation-table-columns'
 
+const ESCALATION_EXPORT_COLUMN_MAP: Record<
+  string,
+  { header: string; accessor: (row: EscalationListItem) => string }
+> = {
+  escalationId: {
+    header: 'Escalation ID',
+    accessor: (row) => exportDisplayValue(row.escalationId),
+  },
+  roleId: { header: 'Roles ID', accessor: (row) => exportDisplayValue(row.roleId) },
+  roleName: { header: 'Role Name', accessor: (row) => exportDisplayValue(row.roleName) },
+  escalationType: {
+    header: 'Escalation Type',
+    accessor: (row) => exportDisplayValue(row.escalationType),
+  },
+  priority: { header: 'Priority', accessor: (row) => exportDisplayValue(row.priority) },
+  status: { header: 'Status', accessor: (row) => exportDisplayValue(row.status) },
+  createdOn: { header: 'Created On', accessor: (row) => exportDisplayValue(row.createdOn) },
+}
+
 export function EscalationDetails() {
   const navigate = useNavigate()
   const [searchValue, setSearchValue] = useState('')
   const [page, setPage] = useState(1)
+  const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
   const pageSize = 10
 
   const { data: metricsResponse, isLoading: isMetricsLoading } = useEscalationMetrics()
-  const { data: escalationsResponse, isLoading: isEscalationsLoading } = useAllEscalations({
-    page,
-    limit: pageSize,
-    search: searchValue,
-  })
+  const listQueryParams = useMemo(
+    () =>
+      buildPrefixedListQueryParams(appliedFilters, {
+        page,
+        limit: pageSize,
+        search: searchValue || undefined,
+      }),
+    [appliedFilters, page, searchValue],
+  )
+  const { data: escalationsResponse, isLoading: isEscalationsLoading } =
+    useAllEscalations(listQueryParams)
 
   const tableColumnPreferencesQuery = useTableColumnPreferences(ESCALATIONS_MODULE_KEY)
 
@@ -64,6 +99,35 @@ export function EscalationDetails() {
 
   const escalations = escalationsResponse?.data?.escalations || []
   const meta = escalationsResponse?.data?.meta
+
+  const handleApplyFilters = useCallback((values: FilterValues) => {
+    toast.success('Filters applied')
+    setAppliedFilters(values)
+    setPage(1)
+  }, [])
+
+  const handleExportData = useMemo(() => {
+    const fetchForExport = async (params: Record<string, unknown>) => {
+      const result = await fetchAllEscalations(params)
+      return { data: result.data?.escalations ?? [] }
+    }
+    return createPrefixedListExportHandler(
+      fetchForExport,
+      ESCALATION_EXPORT_COLUMN_MAP,
+      'escalations_export',
+      { search: searchValue || undefined },
+    )
+  }, [searchValue])
+
+  const {
+    onAdvancedFilter,
+    onExport,
+    modals: exportFilterModals,
+  } = useModuleExportFilters({
+    moduleKey: 'escalations',
+    onApplyFilters: handleApplyFilters,
+    onExportData: handleExportData,
+  })
 
   const columns = useMemo(() => {
     const catalogIds = ESCALATIONS_TABLE_COLUMNS_CATALOG.map((column) => column.id)
@@ -131,8 +195,9 @@ export function EscalationDetails() {
         }}
         searchPlaceholder="Search by name, ID or profession"
         advancedFilterLabel="Advance Filters"
-        onAdvancedFilter={() => {}}
-        onExport={() => {}}
+        onAdvancedFilter={onAdvancedFilter}
+        advancedFilterVariant="primary"
+        onExport={onExport}
         isLoading={isEscalationsLoading}
         pagination={{
           page,
@@ -143,6 +208,7 @@ export function EscalationDetails() {
         }}
         resourceLabel="escalations"
       />
+      {exportFilterModals}
     </div>
   )
 }
