@@ -24,17 +24,24 @@ import {
   TableActionsItem,
 } from '@/shared/components/table/table-actions-dropdown'
 
+const formatExportDateTime = (value?: string | null) =>
+  value
+    ? new Date(value).toLocaleString('en-IN', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      })
+    : ''
+
 const EXPORT_COLUMN_MAP: Record<string, { header: string; accessor: (s: Service) => string }> = {
   serviceId: { header: 'Service ID', accessor: (s) => exportDisplayValue(s.serviceid || s._id) },
   title: { header: 'Service Name', accessor: (s) => exportDisplayValue(s.title) },
   serviceType: { header: 'Type', accessor: (s) => exportDisplayValue(s.serviceType) },
   expertName: { header: 'Expert Name', accessor: (s) => exportDisplayValue(s.expertName) },
   reason: { header: 'Reason', accessor: (s) => exportDisplayValue(s.reason) },
-  deletedAt: {
-    header: 'Deleted At',
-    accessor: (s) =>
-      exportDisplayValue(s.deletedAt ? new Date(s.deletedAt).toLocaleDateString() : undefined),
-  },
+  deletedAt: { header: 'Deleted At', accessor: (s) => formatExportDateTime(s.deletedAt) },
 }
 
 export function DeletedServicesPage() {

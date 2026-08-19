@@ -2,13 +2,12 @@ import { useMemo, useState, useEffect, useCallback } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 import { Ban, Eye } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
-import { toast } from 'sonner'
 
 import { fetchServiceReports } from '../../api/service-api'
 import type { FilterValues } from '@/shared/types/data-filter'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter/use-module-export-filters'
-import { exportDataToFile, exportDisplayValue } from '@/shared/utils/export-utils'
-import { buildFilterParams } from '@/shared/utils/export-filter-utils'
+import { exportDisplayValue } from '@/shared/utils/export-utils'
+import { buildFilterParams, createFilteredExportHandler } from '@/shared/utils/export-filter-utils'
 import {
   ServiceReportDetailModal,
   type ServiceReportItem,
@@ -20,42 +19,62 @@ import {
   TableActionsItem,
 } from '@/shared/components/table/table-actions-dropdown'
 
+const formatExportDateTime = (value?: string | null) =>
+  value
+    ? new Date(value).toLocaleString('en-IN', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      })
+    : ''
+
 const EXPORT_COLUMN_MAP: Record<
   string,
   { header: string; accessor: (item: ServiceReportItem) => string }
 > = {
   reportId: { header: 'Report ID', accessor: (item) => exportDisplayValue(item.reportId) },
-  serviceId: { header: 'Service ID', accessor: (item) => exportDisplayValue(item.serviceId) },
   serviceTitle: {
-    header: 'Service Title',
+    header: 'Reported Service',
     accessor: (item) => exportDisplayValue(item.serviceTitle),
   },
-  partnerId: { header: 'Partner ID', accessor: (item) => exportDisplayValue(item.partnerId) },
+  serviceId: { header: 'Service ID', accessor: (item) => exportDisplayValue(item.serviceId) },
+  reporterName: {
+    header: 'Reported By',
+    accessor: (item) => exportDisplayValue(item.reporterName),
+  },
   reporterType: {
     header: 'Reporter Type',
     accessor: (item) => exportDisplayValue(item.reporterType),
   },
-  reporterId: { header: 'Reporter ID', accessor: (item) => exportDisplayValue(item.reporterId) },
-  reporterName: {
-    header: 'Reporter Name',
-    accessor: (item) => exportDisplayValue(item.reporterName),
-  },
   issueType: { header: 'Issue Type', accessor: (item) => exportDisplayValue(item.issueType) },
-  businessImpact: {
-    header: 'Business Impact',
-    accessor: (item) => exportDisplayValue(item.businessImpact),
-  },
-  investigationStatus: {
+  reason: { header: 'Reason', accessor: (item) => exportDisplayValue(item.reason) },
+  status: {
     header: 'Status',
-    accessor: (item) => exportDisplayValue(item.investigationStatus),
+    accessor: (item) => exportDisplayValue(item.investigationStatus || 'New'),
   },
-  createdAt: {
-    header: 'Report Date',
-    accessor: (item) =>
-      exportDisplayValue(
-        item.submittedAt ? new Date(item.submittedAt as string).toLocaleString() : undefined,
-      ),
+  reportedAt: {
+    header: 'Reported At',
+    accessor: (item) => formatExportDateTime(item.submittedAt || item.createdAt),
   },
+}
+
+const fetchServiceReportsForExport = async (params: Record<string, unknown>) => {
+  const response = await fetchServiceReports(params)
+  const payload = response?.data ?? response
+  const items = (payload?.items || []) as ServiceReportItem[]
+  const pagination = payload?.pagination || response?.pagination
+
+  return {
+    data: items,
+    meta: {
+      pagination: {
+        pages: pagination?.pages ?? pagination?.totalPages,
+        totalPages: pagination?.totalPages ?? pagination?.pages,
+      },
+    },
+  }
 }
 
 export function ServiceReportedServicesPage() {
@@ -115,43 +134,17 @@ export function ServiceReportedServicesPage() {
     setCurrentPage(1)
   }, [])
 
-  const handleExportData = useCallback(
-    async (values: FilterValues, format: string) => {
-      try {
-        toast.loading('Exporting service reports...')
-
-        const data = await fetchServiceReports({
-          search: searchQuery,
-          ...apiFilterParams,
-          limit: 1000,
-        })
-        const items = data?.data?.items || data?.items || []
-
-        if (!items || items.length === 0) {
-          toast.dismiss()
-          toast.error('No report records found to export.')
-          return
-        }
-
-        const exportCols = Object.values(EXPORT_COLUMN_MAP)
-        const headers = exportCols.map((c) => c.header)
-        const rows = items.map((item: ServiceReportItem) => exportCols.map((c) => c.accessor(item)))
-
-        exportDataToFile(
-          headers,
-          rows,
-          format,
-          `Service_Reports_${new Date().toISOString().split('T')[0]}`,
-        )
-
-        toast.dismiss()
-        toast.success('Service reports exported successfully')
-      } catch (err: unknown) {
-        toast.dismiss()
-        toast.error(err instanceof Error ? err.message : 'Failed to export report')
-      }
-    },
-    [searchQuery, apiFilterParams],
+  const handleExportData = useMemo(
+    () =>
+      createFilteredExportHandler(
+        fetchServiceReportsForExport,
+        EXPORT_COLUMN_MAP,
+        'reported_services_export',
+        {
+          search: searchQuery.trim() || undefined,
+        },
+      ),
+    [searchQuery],
   )
 
   const {

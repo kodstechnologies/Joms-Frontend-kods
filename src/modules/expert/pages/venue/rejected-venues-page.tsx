@@ -29,26 +29,10 @@ import { Button } from '@/shared/components/ui/button'
 const EXPORT_COLUMN_MAP: Record<string, { header: string; accessor: (v: Venue) => string }> = {
   venueId: { header: 'Venue ID', accessor: (v) => exportDisplayValue(getVenueDisplayId(v)) },
   venueName: { header: 'Name', accessor: (v) => exportDisplayValue(v.venueName) },
-  partnerName: { header: 'Expert Name', accessor: (v) => exportDisplayValue(v.partnerName) },
-  city: { header: 'Location', accessor: (v) => exportDisplayValue(v.city) },
   eventType: { header: 'Venue Type', accessor: (v) => exportDisplayValue(v.eventType) },
   spaceId: { header: 'Space ID', accessor: (v) => exportDisplayValue(getVenueDisplaySpaceId(v)) },
   spaceName: { header: 'Space Name', accessor: (v) => exportDisplayValue(v.spaceName) },
   venueCategory: { header: 'Event Type', accessor: (v) => exportDisplayValue(v.venueCategory) },
-  status: { header: 'Status', accessor: (v) => exportDisplayValue(v.status) },
-  createdAt: {
-    header: 'Created At',
-    accessor: (v) =>
-      v.createdAt
-        ? new Date(v.createdAt).toLocaleString('en-IN', {
-            day: '2-digit',
-            month: 'short',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-          })
-        : '',
-  },
 }
 
 export function VenueRejectedPage() {

@@ -13,8 +13,6 @@ import {
   createCategoryFilteredExportHandler,
 } from '@/shared/utils/export-filter-utils'
 import { fetchCategories } from '../../api/category-api'
-import { mapServiceCategoryToUi } from '../../utils/category-mapper'
-
 import { StatCard } from '../../components/stat-card'
 import { type Category, categoryColumns } from '../../components/category/category-table-columns'
 import {
@@ -27,6 +25,7 @@ import {
 } from '../../components/category/category-list-shared'
 import { orderByActiveMetricIds, useActiveMetricIds } from '../../hooks/use-active-metric-ids'
 import { useServiceCategories } from '../../hooks/use-category-management'
+import { mapServiceCategoryToUi } from '../../utils/category-mapper'
 import { useTableColumnPreferences } from '../../hooks/use-ui-preferences'
 import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
 

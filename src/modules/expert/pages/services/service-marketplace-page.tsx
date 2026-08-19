@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import {
   Bar,
   CartesianGrid,
@@ -25,6 +25,7 @@ import { SERVICE_DASHBOARD_MODULE_KEY } from '../../api/ui-preferences-api'
 import { orderByActiveMetricIds, useActiveMetricIds } from '../../hooks/use-active-metric-ids'
 import { useMarketplaceDashboard } from '@/modules/services/hooks/use-marketplace-dashboard'
 import type { DateRangePreset } from '@/modules/services/types/marketplace-dashboard.types'
+import { exportServiceMarketplaceExcel } from './service-marketplace-export'
 
 const ZERO_SERVICE_METRICS: MarketplaceMetric[] = [
   { id: 'listed-services', label: 'Listed Services', value: '0' },
@@ -155,6 +156,12 @@ const RANGE_PRESETS_MAP: Record<string, DateRangePreset> = {
   'last-3-months': 'quarter',
   'last-6-months': 'quarter',
   'last-12-months': 'year',
+}
+
+const RANGE_LABELS: Record<string, string> = {
+  'last-3-months': 'Last 3 Months',
+  'last-6-months': 'Last 6 Months',
+  'last-12-months': 'Last 12 Months',
 }
 
 export function ServiceMarketplacePage() {
@@ -335,6 +342,30 @@ export function ServiceMarketplacePage() {
   )
   const visibleConsultationMetrics = liveConsultationMetrics
 
+  const handleExportData = useCallback(() => {
+    if (isLoading) {
+      toast.message('Please wait for data to load')
+      return
+    }
+
+    if (visibleServiceMetrics.length === 0 && visibleConsultationMetrics.length === 0) {
+      toast.error('No data available to export')
+      return
+    }
+
+    try {
+      exportServiceMarketplaceExcel({
+        serviceMetrics: visibleServiceMetrics,
+        consultationMetrics: visibleConsultationMetrics,
+        trendPoints,
+        rangeLabel: RANGE_LABELS[selectedRange] ?? selectedRange,
+      })
+      toast.success('Exported as Excel')
+    } catch {
+      toast.error('Failed to export data')
+    }
+  }, [isLoading, visibleServiceMetrics, visibleConsultationMetrics, trendPoints, selectedRange])
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -356,10 +387,7 @@ export function ServiceMarketplacePage() {
             Manage Metrics
           </Button>
 
-          <Button
-            className="ui-export-data h-9"
-            onClick={() => toast.message('Export coming soon')}
-          >
+          <Button className="ui-export-data h-9" onClick={handleExportData}>
             <Download className="size-4" />
             Export Data
           </Button>

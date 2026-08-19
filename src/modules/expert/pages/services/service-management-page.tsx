@@ -277,10 +277,7 @@ export const ServiceManagementPage = () => {
         {
           'service-id': {
             header: 'Service ID',
-            accessor: (s: Service) =>
-              exportDisplayValue(
-                ((s as unknown as Record<string, unknown>).serviceid as string) || s._id,
-              ),
+            accessor: (s: Service) => exportDisplayValue(s.serviceid || s._id),
           },
           name: { header: 'Service Name', accessor: (s: Service) => exportDisplayValue(s.title) },
           category: {
@@ -291,11 +288,19 @@ export const ServiceManagementPage = () => {
             header: 'Service Type',
             accessor: (s: Service) => exportDisplayValue(s.serviceType),
           },
-          status: { header: 'Status', accessor: (s: Service) => exportDisplayValue(s.status) },
+          pricing: {
+            header: 'Pricing',
+            accessor: (s: Service) => exportDisplayValue(s.pricing),
+          },
+          expertId: {
+            header: 'Expert ID',
+            accessor: (s: Service) => exportDisplayValue(s.expertid || s.partnerId),
+          },
           expertName: {
             header: 'Expert Name',
-            accessor: (s: Service) => exportDisplayValue(s.expertName),
+            accessor: (s: Service) => exportDisplayValue(s.expertName || s.partnerName),
           },
+          status: { header: 'Status', accessor: (s: Service) => exportDisplayValue(s.status) },
           createdAt: {
             header: 'Created At',
             accessor: (s: Service) =>
@@ -311,8 +316,12 @@ export const ServiceManagementPage = () => {
           },
         },
         'services_export',
+        {
+          status: activeStatus !== 'all' ? activeStatus : undefined,
+          search: searchQuery || undefined,
+        },
       ),
-    [],
+    [activeStatus, searchQuery],
   )
 
   const {
