@@ -34,7 +34,7 @@ const ZERO_SERVICE_METRICS: MarketplaceMetric[] = [
   { id: 'avg-delivery-time', label: 'Avg. Delivery Time', value: '0d 0h' },
   { id: 'total-service-revenue', label: 'Total Service Revenue', value: '₹0.00' },
   { id: 'avg-revenue-service', label: 'Avg. Revenue/Service', value: '₹0.00' },
-  { id: 'repeat-service', label: 'Repeat Service %', value: '0' },
+  { id: 'repeat-service', label: 'Repeat Service %', value: '0%' },
   { id: 'avg-service-rating', label: 'Avg. Service Rating', value: '0/5' },
   { id: 'customer-satisfaction', label: 'Customer Satisfaction', value: '0%' },
   { id: 'on-time-delivery', label: 'On-Time Delivery', value: '0%' },
@@ -49,7 +49,7 @@ const ZERO_CONSULTATION_METRICS: MarketplaceMetric[] = [
   { id: 'avg-consultation-time', label: 'Avg. Consultation Time', value: '0 min' },
   { id: 'total-consultation-revenue', label: 'Total Consultation Revenue', value: '₹0.00' },
   { id: 'avg-revenue-consultation', label: 'Avg. Revenue/Consultation', value: '₹0.00' },
-  { id: 'repeat-consultation', label: 'Repeat Consultation %', value: '0' },
+  { id: 'repeat-consultation', label: 'Repeat Consultation %', value: '0%' },
 ]
 
 function CompactMetricCard({ label, value, trend }: MarketplaceMetric) {
@@ -176,8 +176,7 @@ export function ServiceMarketplacePage() {
     if (!dashboardData) return ZERO_SERVICE_METRICS
 
     const s = dashboardData.services
-    const cancellationPct =
-      s.orders.total > 0 ? ((s.orders.terminated / s.orders.total) * 100).toFixed(1) : '0.0'
+    const cancellationPct = s.orders.cancellationRate ?? 0
 
     return [
       {
@@ -218,17 +217,17 @@ export function ServiceMarketplacePage() {
       {
         id: 'repeat-service',
         label: 'Repeat Service %',
-        value: `${s.experts.avgServicesPerExpert ?? 0}`,
+        value: `${s.repeatServicePct ?? 0}%`,
       },
       {
         id: 'avg-service-rating',
         label: 'Avg. Service Rating',
-        value: '0/5',
+        value: `${Number(s.quality?.avgRating ?? 0).toFixed(1)}/5`,
       },
       {
         id: 'customer-satisfaction',
         label: 'Customer Satisfaction',
-        value: '0%',
+        value: `${s.quality?.customerSatisfactionPct ?? 0}%`,
       },
       {
         id: 'on-time-delivery',
@@ -287,7 +286,7 @@ export function ServiceMarketplacePage() {
       {
         id: 'repeat-consultation',
         label: 'Repeat Consultation %',
-        value: String(c.bookings.scheduled ?? 0),
+        value: `${c.bookings.repeatConsultationPct ?? 0}%`,
       },
     ]
   }, [dashboardData])

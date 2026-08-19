@@ -40,7 +40,11 @@ import {
 } from 'lucide-react'
 
 import { fetchConsultationById, fetchServiceById } from '../../api/service-api'
-import { getServiceManagementViewPath } from '../../lib/service-navigation'
+import {
+  consultationPerformancePath,
+  getExpertServiceDrilldownPath,
+  getServiceManagementViewPath,
+} from '../../lib/service-navigation'
 import { openExpertKycFromProfile } from '../../utils/expert-application-navigation'
 import {
   useDeactivateExpert,
@@ -152,11 +156,14 @@ const viewExpertService = async (
   try {
     await fetchServiceById(service._id)
     navigate(
-      getServiceManagementViewPath({
-        _id: service._id,
-        serviceType: 'Service',
-        partnerId: expertId,
-      }),
+      getExpertServiceDrilldownPath(
+        {
+          _id: service._id,
+          serviceType: 'Service',
+          partnerId: expertId,
+        },
+        expertId,
+      ),
     )
   } catch {
     toast.error('Service not found')
@@ -175,12 +182,15 @@ const viewExpertConsultation = async (
 
   try {
     await fetchConsultationById(consultation._id)
+    const isPendingReview = (consultation.status || '').toLowerCase() === 'submitted'
     navigate(
-      getServiceManagementViewPath({
-        _id: consultation._id,
-        serviceType: 'Consultation',
-        partnerId: expertId,
-      }),
+      isPendingReview
+        ? getServiceManagementViewPath({
+            _id: consultation._id,
+            serviceType: 'Consultation',
+            partnerId: expertId,
+          })
+        : consultationPerformancePath(expertId, consultation._id),
     )
   } catch {
     toast.error('Consultation not found')
@@ -698,7 +708,13 @@ function ConsultationDetailCard({
             <span className="bg-brand-accent w-[3px] shrink-0 rounded-full" aria-hidden="true" />
             <div className="min-w-0">
               <h3 className="text-[18px] leading-tight font-bold text-white">
-                {consultation.title || 'Untitled Consultation'}
+                <button
+                  type="button"
+                  className="text-left hover:underline"
+                  onClick={() => viewExpertConsultation(consultation, expertId, navigate)}
+                >
+                  {consultation.title || 'Untitled Consultation'}
+                </button>
               </h3>
               <p className="text-muted mt-1 text-[13px]">Business</p>
             </div>

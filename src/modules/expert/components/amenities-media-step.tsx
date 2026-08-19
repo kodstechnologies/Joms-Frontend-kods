@@ -11,7 +11,8 @@ import { rebuildVenueGalleryPreviewsFromForm } from '../utils/venue-form'
 type AmenitySubCategory = {
   _id: string
   name: string
-  image: string
+  image?: string
+  icon?: string
 }
 
 type AmenityCategory = {
@@ -199,16 +200,23 @@ export const AmenitiesMediaStep = ({ venueData, setVenueData }: AmenitiesMediaSt
                     <button
                       key={item._id}
                       type="button"
-                      onClick={() => toggleAmenity(category._id, item._id, item.name, item.image)}
+                      onClick={() =>
+                        toggleAmenity(
+                          category._id,
+                          item._id,
+                          item.name,
+                          item.image || item.icon || '',
+                        )
+                      }
                       className={`text-body-sm flex items-center gap-1.5 rounded-full border px-3 py-1.5 font-medium transition-all ${
                         selectedAmenities.some((a) => a.subCategoryId === item._id)
                           ? 'border-white bg-white text-black'
                           : 'border-white/10 bg-transparent text-white hover:border-white/30'
                       }`}
                     >
-                      {item.image && (
+                      {(item.image || item.icon) && (
                         <img
-                          src={item.image}
+                          src={item.image || item.icon}
                           alt={item.name}
                           className="h-3.5 w-3.5 object-contain"
                         />

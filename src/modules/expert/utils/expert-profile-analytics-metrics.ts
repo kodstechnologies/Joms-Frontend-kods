@@ -7,9 +7,13 @@ export type ExpertProfileAnalyticsMetricCard = {
   value: string
 }
 
-function formatCount(value: number | undefined | null, suffix = '') {
-  if (value == null) return `0${suffix}`
-  return `${value.toLocaleString('en-IN')}${suffix}`
+function formatTrackedCount(
+  metric?: { value?: number | null; available?: boolean } | null,
+  suffix = '',
+) {
+  if (metric?.available === false) return '--'
+  if (metric?.value == null) return `0${suffix}`
+  return `${metric.value.toLocaleString('en-IN')}${suffix}`
 }
 
 export function buildExpertProfileAnalyticsMetricCards(
@@ -18,15 +22,19 @@ export function buildExpertProfileAnalyticsMetricCards(
   const sa = analytics?.serviceAnalytics
 
   const valueById: Record<string, string> = {
-    'events-hosted': formatCount(sa?.eventsHosted?.value),
-    'total-attendees': formatCount(sa?.totalAttendees?.value, sa?.totalAttendees?.value ? '+' : ''),
-    'repeat-attendees': formatCount(sa?.repeatAttendees?.value),
-    'upcoming-events': formatCount(sa?.upcomingEvents?.value),
+    'events-hosted': formatTrackedCount(sa?.eventsHosted),
+    'total-attendees': formatTrackedCount(sa?.totalAttendees),
+    'repeat-attendees': formatTrackedCount(sa?.repeatAttendees),
+    'upcoming-events': formatTrackedCount(sa?.upcomingEvents),
     'event-completion-rate':
-      sa?.eventCompletionRate?.value != null ? `${sa.eventCompletionRate.value}%` : '0%',
+      sa?.eventCompletionRate?.available === false
+        ? '--'
+        : sa?.eventCompletionRate?.value != null
+          ? `${sa.eventCompletionRate.value}%`
+          : '0%',
     'avg-response-time': sa?.avgResponseTime?.label || '--',
-    'events-rejected': formatCount(sa?.eventsRejected?.value),
-    'events-suspended': formatCount(sa?.eventsSuspended?.value),
+    'events-rejected': formatTrackedCount(sa?.eventsRejected),
+    'events-suspended': formatTrackedCount(sa?.eventsSuspended),
   }
 
   return EXPERT_PROFILE_ANALYTICS_METRICS_CATALOG.map((metric) => ({

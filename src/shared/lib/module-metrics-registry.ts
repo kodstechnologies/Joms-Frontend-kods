@@ -111,6 +111,12 @@ import {
   VENUE_VIEW_ANALYTICS_METRICS_CATALOG,
   VENUE_VIEW_ANALYTICS_MODULE_KEY,
 } from '@/modules/expert/config/venue-view-analytics-metrics.config'
+import {
+  SERVICE_PERFORMANCE_MAX_ACTIVE_METRICS,
+  SERVICE_PERFORMANCE_METRICS_CATALOG,
+  SERVICE_PERFORMANCE_MODULE_KEY,
+} from '@/modules/expert/config/service-performance-metrics.config'
+import { SERVICE_PERFORMANCE_TABLE_COLUMNS_CATALOG } from '@/modules/expert/config/service-performance-table-columns.config'
 
 export type MetricsCatalogItem = {
   id: string
@@ -653,6 +659,26 @@ export const MODULE_METRICS_REGISTRY: Record<string, ModuleMetricsDefinition> = 
       type: item.type,
       description: item.description,
       defaultActive: item.defaultActive,
+    })),
+  },
+  'service-performance': {
+    moduleKey: SERVICE_PERFORMANCE_MODULE_KEY,
+    moduleName: 'Service Performance',
+    returnTo: '/experts/management',
+    maxActiveMetrics: SERVICE_PERFORMANCE_MAX_ACTIVE_METRICS,
+    metrics: SERVICE_PERFORMANCE_METRICS_CATALOG.map((item) => ({
+      id: item.id,
+      label: item.label,
+      type: item.type,
+      description: item.description,
+      defaultActive: item.defaultActive,
+    })),
+    columns: SERVICE_PERFORMANCE_TABLE_COLUMNS_CATALOG.map((item) => ({
+      id: item.id,
+      label: item.label,
+      type: item.type,
+      description: item.description,
+      defaultVisible: item.defaultVisible,
     })),
   },
   'service-dashboard': {

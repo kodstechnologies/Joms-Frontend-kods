@@ -155,7 +155,15 @@ export interface VenueFullViewAmenities {
   spaceId?: string
   amenities?: Array<{
     categoryId: string
+    category?: string | null
     subCategoryIds: string[]
+    items?: Array<{
+      _id: string
+      name?: string | null
+      image?: string | null
+      icon?: string | null
+      category?: string | null
+    }>
     _id?: string
   }>
 }

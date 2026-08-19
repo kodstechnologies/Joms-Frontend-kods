@@ -244,6 +244,8 @@ export const ExpertManagementPage = () => {
     reportedExperts: 0,
     suspendedExperts: 0,
     deletedExperts: 0,
+    activeExperts: 0,
+    totalExperts: 0,
   }
 
   const toggleVisibleexperts = useCallback(() => {
@@ -1090,7 +1092,7 @@ export const ExpertManagementPage = () => {
     {
       id: 'active-experts',
       label: 'Active Experts',
-      count: meta?.pagination?.total ?? 0,
+      count: counts.activeExperts ?? 0,
       gradient: statusCardTones.warning.background,
       border: statusCardTones.warning.border,
       icon: Users,
@@ -1099,7 +1101,7 @@ export const ExpertManagementPage = () => {
     {
       id: 'total-experts',
       label: 'Total Experts',
-      count: meta?.pagination?.total ?? 0,
+      count: counts.totalExperts ?? 0,
       gradient: statusCardTones.warning.background,
       border: statusCardTones.warning.border,
       icon: User,

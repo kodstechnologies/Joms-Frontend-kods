@@ -63,6 +63,36 @@ const DeletedServicesPage = lazy(() =>
 const ServiceManagementPage = lazy(() =>
   import('@/modules/expert').then((m) => ({ default: m.ServiceManagementPage })),
 )
+const ServiceDetailPage = lazy(() =>
+  import('@/modules/expert').then((m) => ({ default: m.ServiceDetailPage })),
+)
+const ConsultationDetailPage = lazy(() =>
+  import('@/modules/expert').then((m) => ({ default: m.ConsultationDetailPage })),
+)
+const ConsultationPerformancePage = lazy(() =>
+  import('@/modules/expert').then((m) => ({ default: m.ConsultationPerformancePage })),
+)
+const ConsultationBookingPage = lazy(() =>
+  import('@/modules/expert').then((m) => ({ default: m.ConsultationBookingPage })),
+)
+const ServicePerformancePage = lazy(() =>
+  import('@/modules/expert').then((m) => ({ default: m.ServicePerformancePage })),
+)
+const OrderDetailPage = lazy(() =>
+  import('@/modules/expert').then((m) => ({ default: m.OrderDetailPage })),
+)
+const FileVaultPage = lazy(() =>
+  import('@/modules/expert').then((m) => ({ default: m.FileVaultPage })),
+)
+const MonitorMessagesPage = lazy(() =>
+  import('@/modules/expert').then((m) => ({ default: m.MonitorMessagesPage })),
+)
+const QuotationViewPage = lazy(() =>
+  import('@/modules/expert').then((m) => ({ default: m.QuotationViewPage })),
+)
+const ProposalViewPage = lazy(() =>
+  import('@/modules/expert').then((m) => ({ default: m.ProposalViewPage })),
+)
 const ServiceViewPage = lazy(() =>
   import('@/modules/expert').then((m) => ({ default: m.ServiceViewPage })),
 )
@@ -965,7 +995,55 @@ export function AppRouter() {
 
                 <Route
                   path="/experts/management/profile/:expertId/service/:serviceId"
+                  element={<ServiceDetailPage />}
+                />
+                <Route
+                  path="/experts/management/profile/:expertId/service/:serviceId/review"
                   element={<ServiceViewPage />}
+                />
+                <Route
+                  path="/experts/management/profile/:expertId/service/:serviceId/performance"
+                  element={<ServicePerformancePage />}
+                />
+                <Route
+                  path="/experts/management/profile/:expertId/service/:serviceId/orders/:orderId"
+                  element={<OrderDetailPage />}
+                />
+                <Route
+                  path="/experts/management/profile/:expertId/service/:serviceId/orders/:orderId/files"
+                  element={<FileVaultPage />}
+                />
+                <Route
+                  path="/experts/management/profile/:expertId/service/:serviceId/orders/:orderId/messages"
+                  element={<MonitorMessagesPage />}
+                />
+                <Route
+                  path="/experts/management/profile/:expertId/service/:serviceId/orders/:orderId/quotation"
+                  element={<QuotationViewPage />}
+                />
+                <Route
+                  path="/experts/management/profile/:expertId/service/:serviceId/orders/:orderId/proposal"
+                  element={<ProposalViewPage />}
+                />
+                <Route
+                  path="/experts/management/profile/:expertId/consultation/:consultationId"
+                  element={<ConsultationDetailPage />}
+                />
+                <Route
+                  path="/experts/management/profile/:expertId/consultation/:consultationId/performance"
+                  element={<ConsultationPerformancePage />}
+                />
+                <Route
+                  path="/experts/management/profile/:expertId/consultation/:consultationId/bookings/:bookingId"
+                  element={<ConsultationBookingPage />}
+                />
+                <Route
+                  path="/experts/management/profile/:expertId/consultation/:consultationId/bookings/:bookingId/files"
+                  element={<FileVaultPage />}
+                />
+                <Route
+                  path="/experts/management/profile/:expertId/consultation/:consultationId/bookings/:bookingId/messages"
+                  element={<MonitorMessagesPage />}
                 />
                 <Route
                   path="/experts/management/application/:id"

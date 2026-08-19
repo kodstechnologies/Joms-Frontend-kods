@@ -1,24 +1,18 @@
-import { healthMetricsMock, type HealthMetric } from '@/modules/settings/mock/settings.defaults'
 import { PLATFORM_HEALTH_METRICS_CATALOG } from '@/modules/settings/config/platform-health-metrics.config'
+import type { PlatformHealthMetric } from '@/modules/settings/types/platform-health'
 
-export type PlatformHealthMetricCard = HealthMetric & { id: string }
+export function buildPlatformHealthMetricCards(
+  metrics: PlatformHealthMetric[] = [],
+): PlatformHealthMetric[] {
+  const byId = new Map(metrics.map((metric) => [metric.id, metric]))
 
-const mockByTitle = new Map(healthMetricsMock.map((metric) => [metric.title, metric]))
-
-export function buildPlatformHealthMetricCards(): PlatformHealthMetricCard[] {
   return PLATFORM_HEALTH_METRICS_CATALOG.map((item) => {
-    const mock = mockByTitle.get(item.label)
-    if (!mock) {
-      return {
-        id: item.id,
-        title: item.label,
-        value: '—',
-      }
-    }
-
+    const live = byId.get(item.id)
+    if (live) return live
     return {
       id: item.id,
-      ...mock,
+      label: item.label,
+      value: '0',
     }
   })
 }

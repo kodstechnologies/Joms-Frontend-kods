@@ -43,6 +43,7 @@ type AmenitySubCategory = {
   _id: string
   name: string
   image?: string
+  icon?: string
 }
 
 type AmenityCategory = {
@@ -119,12 +120,12 @@ function Chip({ children }: { children: ReactNode }) {
 }
 
 function resolveAmenities(data: VenueFullView, masters: AmenityCategory[]) {
-  const categories = new Map(masters.map((category) => [category._id, category]))
+  const categories = new Map(masters.map((category) => [String(category._id), category]))
   const subCategories = new Map<string, AmenitySubCategory & { categoryName?: string }>()
 
   masters.forEach((category) => {
     category.subCategories?.forEach((subCategory) => {
-      subCategories.set(subCategory._id, {
+      subCategories.set(String(subCategory._id), {
         ...subCategory,
         categoryName: category.category,
       })
@@ -132,15 +133,24 @@ function resolveAmenities(data: VenueFullView, masters: AmenityCategory[]) {
   })
 
   return (data.overview.amenities?.amenities || []).flatMap((amenity) => {
-    const category = categories.get(amenity.categoryId)
+    const category = categories.get(String(amenity.categoryId))
+    if (Array.isArray(amenity.items) && amenity.items.length) {
+      return amenity.items.map((item) => ({
+        id: `${amenity.categoryId}-${item._id}`,
+        categoryName: amenity.category || category?.category || String(amenity.categoryId),
+        name: item.name || String(item._id),
+        image: item.image || item.icon || null,
+      }))
+    }
 
-    return amenity.subCategoryIds.map((subCategoryId) => {
-      const subCategory = subCategories.get(subCategoryId)
+    return (amenity.subCategoryIds || []).map((subCategoryId) => {
+      const id = String(subCategoryId)
+      const subCategory = subCategories.get(id)
       return {
-        id: `${amenity.categoryId}-${subCategoryId}`,
-        categoryName: category?.category || amenity.categoryId,
-        name: subCategory?.name || subCategoryId,
-        image: subCategory?.image,
+        id: `${amenity.categoryId}-${id}`,
+        categoryName: category?.category || String(amenity.categoryId),
+        name: subCategory?.name || id,
+        image: subCategory?.image || subCategory?.icon || null,
       }
     })
   })

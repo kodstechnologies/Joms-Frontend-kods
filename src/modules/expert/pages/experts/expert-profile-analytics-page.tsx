@@ -159,12 +159,12 @@ export function ExpertProfileAnalyticsPage() {
     return [
       {
         label: 'Profile Views',
-        value: String(vm?.profileViews?.count ?? 0),
+        value: vm?.profileViews?.available ? String(vm.profileViews.count ?? 0) : '--',
         trend: vm?.profileViews?.available ? (vm.profileViews.trendPercentage ?? 0) : undefined,
       },
       {
         label: 'Total Clicks',
-        value: String(vm?.totalClicks?.count ?? 0),
+        value: vm?.totalClicks?.available ? String(vm.totalClicks.count ?? 0) : '--',
         trend: vm?.totalClicks?.available ? (vm.totalClicks.trendPercentage ?? 0) : undefined,
       },
       {
@@ -187,7 +187,7 @@ export function ExpertProfileAnalyticsPage() {
     return [
       {
         label: 'Average first response time',
-        value: sa?.avgResponseTime?.available ? sa.avgResponseTime.label || '0' : '0',
+        value: sa?.avgResponseTime?.label || '--',
       },
       {
         label: 'Active Services',

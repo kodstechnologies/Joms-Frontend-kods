@@ -132,7 +132,10 @@ export function TableActionsItem({
   return (
     <button
       type="button"
-      onClick={onClick}
+      onClick={(event) => {
+        event.stopPropagation()
+        onClick()
+      }}
       className={cn(
         'ui-table-actions-item',
         tone === 'dark' && 'ui-table-actions-item-dark',

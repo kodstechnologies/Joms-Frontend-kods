@@ -23,6 +23,7 @@ import {
   buildVenueGalleryPreviewsFromUrls,
   mapHoursToCancellationPolicy,
   mapSpaceTypeFromApi,
+  mapVenueAmenitySelections,
   type VenueFormData,
 } from '../../utils/venue-form'
 
@@ -33,6 +34,7 @@ type DraftAmenity = {
   categoryId?: string | { _id: string }
   subCategoryIds?: DraftAmenitySubCategory[]
   subCategories?: DraftAmenitySubCategory[]
+  items?: Array<{ _id?: string; name?: string; image?: string; icon?: string }>
 }
 type DraftContact = { name?: string; phone?: string; email?: string }
 type DraftFaq = { question?: string; answer?: string }
@@ -60,6 +62,7 @@ type DraftVenueSpace = {
   spaceCoverImages?: Array<{ url: string }>
   galleryImages?: Array<{ url: string }>
   galleryContact?: { contacts?: DraftContact[] }
+  amenities?: { amenities?: DraftAmenity[] }
   availability?: {
     weeklyAvailability?: DraftWeeklyAvailabilityEntry[]
     blockedDates?: DraftBlockedDate[]
@@ -227,21 +230,12 @@ export const CreateVenueListingPage = () => {
           inHouseCatering: isEditMode ? (space?.inHouseCatering ?? false) : false,
           decorationAvailable: isEditMode ? (space?.decorationAvailable ?? false) : false,
 
-          amenities:
-            isEditMode && Array.isArray(venue?.amenities?.amenities)
-              ? venue.amenities.amenities.flatMap((amenity) => {
-                  const subs = amenity.subCategoryIds || amenity.subCategories || []
-                  return subs.map((subCategory) => {
-                    const subId = typeof subCategory === 'object' ? subCategory._id : subCategory
-                    return {
-                      categoryId: toEntityId(amenity.categoryId) || '',
-                      subCategoryId: String(subId || ''),
-                      name: typeof subCategory === 'object' ? subCategory.name || '' : '',
-                      image: typeof subCategory === 'object' ? subCategory.image || '' : '',
-                    }
-                  })
-                })
-              : [],
+          amenities: isEditMode
+            ? mapVenueAmenitySelections(
+                (space?.amenities as Record<string, unknown> | undefined) ||
+                  (venue?.amenities as Record<string, unknown> | undefined),
+              )
+            : [],
 
           venueCoverImageUrl: galleryUrls.venueCoverImageUrl || prev.venueCoverImageUrl,
           venueImageUrl: galleryUrls.venueImageUrl || prev.venueImageUrl,

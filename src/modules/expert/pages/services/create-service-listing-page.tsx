@@ -30,14 +30,20 @@ import {
 import { useConsultation } from '@/modules/expert/hooks/use-services'
 import { useExpertProfile } from '@/modules/expert/hooks/use-expert-profile'
 import {
+  fetchListingPricingConfig,
   fetchPricingRecommendation,
+  type ListingPricingConfig,
   type PricingRecommendationResult,
 } from '@/modules/expert/api/service-api'
 import {
   CONSULTATION_MODES,
+  DISCOUNT_PRESET_PCTS,
   DURATION_OPTIONS,
+  computeListingFeeBreakdown,
+  formatDiscountChip,
   getApiErrorMessage,
   normalizeTimelineUnit,
+  parseDiscountPct,
   parsePrice,
 } from '@/modules/expert/lib/listing-form-utils'
 import type { ConsultationTopic } from '@/modules/expert/type/service'
@@ -206,6 +212,7 @@ export const CreateServiceListingPage = () => {
   const [pricingRecommendation, setPricingRecommendation] =
     useState<PricingRecommendationResult | null>(null)
   const [isRecommendationLoading, setIsRecommendationLoading] = useState(false)
+  const [pricingConfig, setPricingConfig] = useState<ListingPricingConfig | null>(null)
 
   const allowedPricingTypes = useMemo(() => {
     const allowed: Array<'fixed' | 'custom' | 'tiered'> = []
@@ -219,16 +226,61 @@ export const CreateServiceListingPage = () => {
     ? pricingTypePreference
     : (allowedPricingTypes[0] ?? 'fixed')
 
-  const maxDiscountPct = maxListingDiscountPercent || 50
-  const selectedDiscountPct = Number.parseInt(selectedDiscountPreference.replace('%', ''), 10) || 0
+  const maxDiscountPct = pricingConfig?.maxDiscountPercent || maxListingDiscountPercent || 50
+  const selectedDiscountPct = parseDiscountPct(selectedDiscountPreference)
   const selectedDiscount =
     selectedDiscountPct > maxDiscountPct
-      ? `${Math.min(10, maxDiscountPct)}%`
+      ? formatDiscountChip(Math.min(10, maxDiscountPct))
       : selectedDiscountPreference
+  const discountPresets = (
+    pricingConfig?.discountPresets?.length
+      ? pricingConfig.discountPresets
+      : [...DISCOUNT_PRESET_PCTS]
+  ).filter((pct) => pct <= maxDiscountPct)
 
   const activeCategoryName = useMemo(() => {
     return categories.find((c) => c._id === selectedCategoryId)?.name || ''
   }, [categories, selectedCategoryId])
+
+  const currentNumericPrice = useMemo(() => {
+    const rawPrice =
+      pricingType === 'fixed'
+        ? fixedPrice
+        : pricingType === 'custom'
+          ? customPrice
+          : tiers.find((t) => t.name === selectedTier)?.price || '0'
+    return parsePrice(rawPrice)
+  }, [pricingType, fixedPrice, customPrice, tiers, selectedTier])
+
+  const feeBreakdown = useMemo(() => {
+    const platformFeePct =
+      pricingConfig?.platformFeePercent ?? pricingRecommendation?.breakdown?.platform_fee_pct ?? 10
+    const gstPct = pricingConfig?.gstPercent ?? pricingRecommendation?.breakdown?.gst_pct ?? 18
+    return computeListingFeeBreakdown(
+      currentNumericPrice,
+      parseDiscountPct(selectedDiscount),
+      platformFeePct,
+      gstPct,
+    )
+  }, [pricingConfig, pricingRecommendation, currentNumericPrice, selectedDiscount])
+
+  useEffect(() => {
+    let cancelled = false
+    const loadPricingConfig = async () => {
+      try {
+        const res = await fetchListingPricingConfig()
+        if (!cancelled && res.success && res.data) {
+          setPricingConfig(res.data)
+        }
+      } catch (err) {
+        console.warn('Failed to fetch listing pricing config:', err)
+      }
+    }
+    void loadPricingConfig()
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   useEffect(() => {
     let cancelled = false
@@ -241,7 +293,7 @@ export const CreateServiceListingPage = () => {
           : tiers.find((t) => t.name === selectedTier)?.price || '0'
 
     const numericPrice = parsePrice(rawPrice)
-    const discountNum = Number.parseInt(selectedDiscount.replace('%', ''), 10) || 0
+    const discountNum = parseDiscountPct(selectedDiscount)
 
     const loadRecommendation = async () => {
       if (!displayAiPriceRecommendation) {
@@ -408,7 +460,7 @@ export const CreateServiceListingPage = () => {
         pricingType: 'fixed',
         fixedPricing: {
           price: parsePrice(fixedPrice),
-          discountPercent: Number.parseInt(selectedDiscount.replace('%', ''), 10) || 0,
+          discountPercent: parseDiscountPct(selectedDiscount),
           timelineValue: Number.parseInt(fixedTimeline, 10) || 0,
           timelineUnit: normalizeTimelineUnit(fixedTimelineUnit),
         },
@@ -1535,14 +1587,12 @@ export const CreateServiceListingPage = () => {
                         <Info className="text-muted size-3 cursor-help" />
                       </div>
                       <div className="flex flex-wrap gap-3">
-                        {['00%', '10%', '15%', '20%', '30%', '40%', '50%']
-                          .filter((discount) => {
-                            const pct = Number.parseInt(discount, 10) || 0
-                            return pct <= (maxListingDiscountPercent || 50)
-                          })
-                          .map((discount) => (
+                        {discountPresets.map((pct) => {
+                          const discount = formatDiscountChip(pct)
+                          return (
                             <button
                               key={discount}
+                              type="button"
                               onClick={() => setSelectedDiscount(discount)}
                               className={cn(
                                 'text-body-sm rounded-md px-4 py-2 font-bold transition-all duration-200',
@@ -1553,14 +1603,38 @@ export const CreateServiceListingPage = () => {
                             >
                               {discount}
                             </button>
-                          ))}
+                          )
+                        })}
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-muted text-[11px] font-semibold tracking-tight">
+                          Manual discount
+                        </label>
+                        <input
+                          type="number"
+                          min={0}
+                          max={maxDiscountPct}
+                          step={1}
+                          placeholder={`0–${maxDiscountPct}`}
+                          value={parseDiscountPct(selectedDiscount)}
+                          onChange={(e) => {
+                            const raw = e.target.value
+                            if (raw === '') {
+                              setSelectedDiscount(formatDiscountChip(0))
+                              return
+                            }
+                            const next = Math.min(maxDiscountPct, Math.max(0, Number(raw) || 0))
+                            setSelectedDiscount(formatDiscountChip(next))
+                          }}
+                          className="focus:border-brand-accent/50 text-body-sm placeholder:text-muted h-9 w-full max-w-[160px] rounded-lg border border-white/5 bg-black px-3 text-white transition-colors outline-none"
+                        />
                       </div>
                     </div>
                   </div>
 
-                  {displayAiPriceRecommendation && (
-                    <div className="w-full md:w-[280px]">
-                      <div className="border-brand-positive/15 bg-brand-positive/20 flex flex-col gap-2 rounded-lg border p-4">
+                  <div className="w-full md:w-[280px]">
+                    <div className="border-brand-positive/15 bg-brand-positive/20 flex flex-col gap-2 rounded-lg border p-4">
+                      {displayAiPriceRecommendation && (
                         <div className="flex items-start gap-2.5">
                           <div className="bg-brand-positive/40 flex size-6 shrink-0 items-center justify-center rounded-full">
                             {isRecommendationLoading ? (
@@ -1583,39 +1657,23 @@ export const CreateServiceListingPage = () => {
                             )}
                           </div>
                         </div>
-                        {pricingRecommendation?.breakdown && (
-                          <div className="mt-2 space-y-1 border-t border-emerald-500/20 pt-2 text-[10px] text-emerald-100/70">
-                            <div className="flex justify-between">
-                              <span>
-                                Platform Fee ({pricingRecommendation.breakdown.platform_fee_pct}%):
-                              </span>
-                              <span>
-                                ₹
-                                {pricingRecommendation.breakdown.platform_fee.toLocaleString(
-                                  'en-IN',
-                                )}
-                              </span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span>GST ({pricingRecommendation.breakdown.gst_pct}%):</span>
-                              <span>
-                                ₹{pricingRecommendation.breakdown.gst.toLocaleString('en-IN')}
-                              </span>
-                            </div>
-                            <div className="flex justify-between pt-1 font-bold text-white">
-                              <span>Estimated Earnings:</span>
-                              <span>
-                                ₹
-                                {pricingRecommendation.breakdown.estimated_earnings.toLocaleString(
-                                  'en-IN',
-                                )}
-                              </span>
-                            </div>
-                          </div>
-                        )}
+                      )}
+                      <div className="space-y-1 border-t border-emerald-500/20 pt-2 text-[10px] text-emerald-100/70">
+                        <div className="flex justify-between">
+                          <span>Platform Fee ({feeBreakdown.platform_fee_pct}%):</span>
+                          <span>₹{feeBreakdown.platform_fee.toLocaleString('en-IN')}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>GST ({feeBreakdown.gst_pct}%):</span>
+                          <span>₹{feeBreakdown.gst.toLocaleString('en-IN')}</span>
+                        </div>
+                        <div className="flex justify-between pt-1 font-bold text-white">
+                          <span>Estimated Earnings:</span>
+                          <span>₹{feeBreakdown.estimated_earnings.toLocaleString('en-IN')}</span>
+                        </div>
                       </div>
                     </div>
-                  )}
+                  </div>
                 </div>
               </div>
             )}
@@ -1753,6 +1811,20 @@ export const CreateServiceListingPage = () => {
                                 {pricingRecommendation.recommendation}
                               </p>
                             )}
+                          </div>
+                        </div>
+                        <div className="space-y-1 border-t border-emerald-500/20 pt-2 text-[10px] text-emerald-100/70">
+                          <div className="flex justify-between">
+                            <span>Platform Fee ({feeBreakdown.platform_fee_pct}%):</span>
+                            <span>₹{feeBreakdown.platform_fee.toLocaleString('en-IN')}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>GST ({feeBreakdown.gst_pct}%):</span>
+                            <span>₹{feeBreakdown.gst.toLocaleString('en-IN')}</span>
+                          </div>
+                          <div className="flex justify-between pt-1 font-bold text-white">
+                            <span>Estimated Earnings:</span>
+                            <span>₹{feeBreakdown.estimated_earnings.toLocaleString('en-IN')}</span>
                           </div>
                         </div>
                       </div>
