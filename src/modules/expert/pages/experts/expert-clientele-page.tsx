@@ -27,8 +27,14 @@ import {
   TableActionsItem,
 } from '@/shared/components/table/table-actions-dropdown'
 import { cn } from '@/shared/lib/cn'
-import { exportDataToFile } from '@/shared/utils/export-utils'
+import { exportDisplayValue } from '@/shared/utils/export-utils'
 import { getApiErrorMessage } from '@/shared/lib/api-error'
+import { useModuleExportFilters } from '@/shared/components/advanced-filter'
+import type { FilterValues } from '@/shared/types/data-filter'
+import {
+  buildPrefixedListQueryParams,
+  createPrefixedListExportHandler,
+} from '@/shared/utils/export-filter-utils'
 
 type ClienteleItem = {
   bookingId: string
@@ -105,6 +111,40 @@ const EMPTY_METRICS: Metrics = {
 }
 
 const EMPTY_CLIENTELE_ITEMS: ClienteleItem[] = []
+
+const CLIENTELE_EXPORT_COLUMN_MAP: Record<
+  string,
+  { header: string; accessor: (row: ClienteleItem) => string }
+> = {
+  bookingId: { header: 'Order / Booking ID', accessor: (row) => exportDisplayValue(row.bookingId) },
+  clientId: { header: 'Client ID', accessor: (row) => exportDisplayValue(row.clientId) },
+  clientName: { header: 'Client Name', accessor: (row) => exportDisplayValue(row.clientName) },
+  bookingSource: {
+    header: 'Booking Source',
+    accessor: (row) => exportDisplayValue(row.bookingSource),
+  },
+  listingType: { header: 'Listing Type', accessor: (row) => exportDisplayValue(row.listingType) },
+  listingName: { header: 'Listing Name', accessor: (row) => exportDisplayValue(row.listingName) },
+  status: { header: 'Booking Status', accessor: (row) => exportDisplayValue(row.status) },
+  pricingType: { header: 'Pricing Type', accessor: (row) => exportDisplayValue(row.pricingType) },
+  bookingDate: {
+    header: 'Booking Date',
+    accessor: (row) => exportDisplayValue(formatDate(row.bookingDate)),
+  },
+  orderValue: {
+    header: 'Order Value',
+    accessor: (row) => exportDisplayValue(formatPrice(row.orderValue ?? row.price)),
+  },
+  paymentStatus: {
+    header: 'Payment Status',
+    accessor: (row) => exportDisplayValue(row.paymentStatus),
+  },
+  rating: {
+    header: 'Rating',
+    accessor: (row) =>
+      row.rating == null ? '—' : exportDisplayValue(Number(row.rating).toFixed(1)),
+  },
+}
 
 function MetricCardSkeleton() {
   return (
@@ -183,7 +223,47 @@ export function ExpertClientelePage() {
 
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
+  const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
   const [activeActionMenu, setActiveActionMenu] = useState<string | null>(null)
+
+  const listQueryParams = useMemo(
+    () =>
+      buildPrefixedListQueryParams(appliedFilters, {
+        page,
+        limit: 10,
+        search: search || undefined,
+      }),
+    [appliedFilters, page, search],
+  )
+
+  const handleApplyFilters = useCallback((values: FilterValues) => {
+    toast.success('Filters applied')
+    setAppliedFilters(values)
+    setPage(1)
+  }, [])
+
+  const handleExportData = useMemo(() => {
+    const fetchForExport = async (params: Record<string, unknown>) => {
+      const result = await fetchExpertClientele(expertId, params)
+      return { data: result.data?.items ?? [] }
+    }
+    return createPrefixedListExportHandler(
+      fetchForExport,
+      CLIENTELE_EXPORT_COLUMN_MAP,
+      'expert_clientele_export',
+      { search: search || undefined },
+    )
+  }, [expertId, search])
+
+  const {
+    onAdvancedFilter,
+    onExport,
+    modals: exportFilterModals,
+  } = useModuleExportFilters({
+    moduleKey: 'expert-clientele',
+    onApplyFilters: handleApplyFilters,
+    onExportData: handleExportData,
+  })
 
   const tableColumnPreferencesQuery = useTableColumnPreferences(EXPERT_CLIENTELE_MODULE_KEY)
   const activeMetricIds = useActiveMetricIds(EXPERT_CLIENTELE_MODULE_KEY, [
@@ -209,8 +289,8 @@ export function ExpertClientelePage() {
     isError,
     error,
   } = useQuery({
-    queryKey: ['expert-clientele', expertId, page, search],
-    queryFn: () => fetchExpertClientele(expertId, { page, search, limit: 10 }),
+    queryKey: ['expert-clientele', expertId, listQueryParams],
+    queryFn: () => fetchExpertClientele(expertId, listQueryParams),
     enabled: Boolean(expertId),
   })
 
@@ -238,76 +318,6 @@ export function ExpertClientelePage() {
     if (entries.length === 0) return 'No membership breakdown yet'
     return entries.map(([tier, count]) => `${tier}: ${count}`).join(', ')
   }, [metrics.clientsByMembership])
-
-  const handleExport = useCallback(() => {
-    if (items.length === 0) {
-      toast.error('No booking records available to export.')
-      return
-    }
-
-    try {
-      const headers = [
-        'Order / Booking ID',
-        'Client ID',
-        'Client Name',
-        'Booking Source',
-        'Listing Type',
-        'Listing Name',
-        'Listing ID',
-        'Booking Status',
-        'Pricing Type',
-        'Tier Name',
-        'Booking Date',
-        'Start Date',
-        'Completion Date',
-        'Order Value',
-        'Payment ID',
-        'Transaction ID',
-        'Payment Method',
-        'Payment Status',
-        'Rating',
-        'Review Submitted',
-        'Dispute Raised',
-        'Dispute Status',
-        'Refund Issued',
-        'Refund Amount',
-        'Refund Status',
-        'Last Updated',
-      ]
-      const rows = items.map((item) => [
-        item.bookingId,
-        item.clientId,
-        item.clientName,
-        item.bookingSource || '—',
-        item.listingType,
-        item.listingName || '—',
-        item.listingId || '—',
-        item.status,
-        item.pricingType,
-        item.tierName || '—',
-        formatDate(item.bookingDate),
-        formatDate(item.startDate, true),
-        formatDate(item.completionDate || item.endDate, true),
-        formatPrice(item.orderValue ?? item.price),
-        item.paymentId || '—',
-        item.transactionId || '—',
-        item.paymentMethod || '—',
-        item.paymentStatus || '—',
-        item.rating == null ? '—' : String(item.rating),
-        item.reviewSubmitted ? 'Yes' : 'No',
-        item.disputeRaised ? 'Yes' : 'No',
-        item.disputeStatus || '—',
-        item.refundIssued ? 'Yes' : 'No',
-        item.refundAmount == null ? '—' : formatPrice(item.refundAmount),
-        item.refundStatus || '—',
-        formatDate(item.lastUpdated, true),
-      ])
-      exportDataToFile(headers, rows, 'excel', 'expert_clientele_export')
-      toast.success(`Exported ${items.length} booking record(s)`)
-    } catch {
-      toast.error('Failed to export clientele data.')
-    }
-  }, [items])
 
   const openCommunicate = useCallback(
     (channel: 'email' | 'push') => {
@@ -555,7 +565,7 @@ export function ExpertClientelePage() {
                 tone="light"
                 onClick={() => {
                   setActiveActionMenu(null)
-                  handleExport()
+                  onExport()
                 }}
               >
                 Export Booking Record
@@ -571,8 +581,8 @@ export function ExpertClientelePage() {
     activeActionMenu,
     dataColumnsById,
     expertId,
-    handleExport,
     navigate,
+    onExport,
     openCommunicate,
     tableColumnPreferencesQuery.data,
   ])
@@ -638,14 +648,9 @@ export function ExpertClientelePage() {
         }}
         searchPlaceholder="Search by name, ID or listing"
         resourceLabel="bookings"
-        showAdvancedFilter
-        showExport
-        onExport={handleExport}
-        onAdvancedFilter={() =>
-          toast.message(
-            'Use search for now. Advanced filters will use booking status, listing type, and payment filters.',
-          )
-        }
+        onAdvancedFilter={onAdvancedFilter}
+        advancedFilterVariant="primary"
+        onExport={onExport}
         pagination={{
           page,
           pageSize: 10,
@@ -654,6 +659,7 @@ export function ExpertClientelePage() {
           onPageChange: setPage,
         }}
       />
+      {exportFilterModals}
     </div>
   )
 }

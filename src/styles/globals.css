@@ -3967,7 +3967,7 @@ select::-ms-expand {
   font-size: 14px;
   font-weight: 600;
   background: transparent;
-  border: 1px solid rgb(255 255 255 / 45%);
+  border: 1px solid #ffffff;
   color: #ffffff;
   transition:
     background-color 0.15s ease,

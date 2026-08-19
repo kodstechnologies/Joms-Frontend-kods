@@ -32,10 +32,14 @@ export const usePartnerInsights = (
     enabled: Boolean(partnerUserId),
   })
 
-export const useExpertServices = (expertId?: string, page = 1, limit = 10, enabled = false) =>
+export const useExpertServices = (
+  expertId?: string,
+  params?: Record<string, unknown>,
+  enabled = false,
+) =>
   useQuery({
-    queryKey: ['expert-services', expertId, page, limit],
-    queryFn: () => fetchExpertServices(expertId as string, { page, limit }),
+    queryKey: ['expert-services', expertId, params],
+    queryFn: () => fetchExpertServices(expertId as string, params),
     enabled: Boolean(expertId) && enabled,
   })
 

@@ -1,6 +1,6 @@
 import type { FilterSectionConfig, ModuleFilterConfig } from '@/shared/types/data-filter'
 
-import { createStandardModuleSections, prefixSectionFields } from './base-filter-sections'
+import { prefixSectionFields } from './base-filter-sections'
 
 const byUsersSection: FilterSectionConfig = {
   id: 'by-users',
@@ -9,30 +9,10 @@ const byUsersSection: FilterSectionConfig = {
   fields: [
     { id: 'adminCode', label: 'User ID', type: 'text', placeholder: 'Search by User ID' },
     { id: 'fullname', label: 'Username', type: 'text', placeholder: 'Search by Username' },
-    { id: 'email', label: 'Email', type: 'text', placeholder: 'Search by Email' },
-    { id: 'department', label: 'Department', type: 'text', placeholder: 'Search by Department' },
-    { id: 'jobTitle', label: 'Job Title', type: 'text', placeholder: 'Search by Job Title' },
-    {
-      id: 'employmentType',
-      label: 'Employment Type',
-      type: 'checkbox-group',
-      options: [
-        { label: 'Full Time', value: 'full-time' },
-        { label: 'Part Time', value: 'part-time' },
-        { label: 'Contract', value: 'contract' },
-      ],
-    },
-    {
-      id: 'workplaceFlexibility',
-      label: 'Workplace Flexibility',
-      type: 'checkbox-group',
-      options: [
-        { label: 'Remote', value: 'remote' },
-        { label: 'Hybrid', value: 'hybrid' },
-        { label: 'On-site', value: 'on-site' },
-      ],
-    },
-    { id: 'location', label: 'Location', type: 'location' },
+    { id: 'roleCode', label: 'Role ID', type: 'text', placeholder: 'Search by Role ID' },
+    { id: 'roleName', label: 'Role Name', type: 'text', placeholder: 'Search by Role Name' },
+    { id: 'scopes', label: 'Scope', type: 'text', placeholder: 'Search by Scope' },
+    { id: 'permissions', label: 'Permissions', type: 'text', placeholder: 'Search by Permission' },
     {
       id: 'mfaEnabled',
       label: 'MFA Enabled',
@@ -51,7 +31,13 @@ const byUsersSection: FilterSectionConfig = {
         { label: 'Suspended', value: 'suspended' },
       ],
     },
-    { id: 'createdAt', label: 'Created Date', type: 'date-range' },
+    {
+      id: 'lastActionAt',
+      label: 'Last Action Performed',
+      type: 'date-range',
+      fromPlaceholder: 'From',
+      toPlaceholder: 'To',
+    },
   ],
 }
 
@@ -63,7 +49,8 @@ const byRolesSection: FilterSectionConfig = {
     { id: 'roleCode', label: 'Role ID', type: 'text', placeholder: 'Search by Role ID' },
     { id: 'name', label: 'Role Name', type: 'text', placeholder: 'Search by Role Name' },
     { id: 'description', label: 'Description', type: 'text', placeholder: 'Search by Description' },
-    { id: 'scopes', label: 'Scopes', type: 'text', placeholder: 'Search by Scope' },
+    { id: 'scopes', label: 'Scope', type: 'text', placeholder: 'Search by Scope' },
+    { id: 'permissions', label: 'Permissions', type: 'text', placeholder: 'Search by Permission' },
     {
       id: 'riskLevel',
       label: 'Risk Level',
@@ -95,10 +82,11 @@ const byRolesSection: FilterSectionConfig = {
     },
     {
       id: 'userCount',
-      label: 'User Count',
+      label: 'Users (No.)',
       type: 'number-range',
+      fromPlaceholder: 'Min',
+      toPlaceholder: 'Max',
     },
-    { id: 'createdAt', label: 'Created Date', type: 'date-range' },
   ],
 }
 
@@ -111,5 +99,5 @@ export const rbacManagementFilterConfig: ModuleFilterConfig = {
   moduleKey: 'rbac-management',
   moduleName: 'RBAC Management',
   sections: rbacAdvancedSections,
-  exportSections: createStandardModuleSections(),
+  exportSections: rbacAdvancedSections,
 }

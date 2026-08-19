@@ -61,13 +61,7 @@ export type EscalationMetrics = {
 
 export { fetchEscalationAssignees }
 
-export const fetchAllEscalations = async (params?: {
-  page?: number
-  limit?: number
-  search?: string
-  status?: string
-  moduleKey?: string
-}) => {
+export const fetchAllEscalations = async (params?: Record<string, unknown>) => {
   const response = await adminApiClient.get<{
     success: boolean
     data: {

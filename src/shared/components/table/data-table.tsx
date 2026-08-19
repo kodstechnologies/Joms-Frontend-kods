@@ -40,6 +40,8 @@ export type DataTableProps<TData> = {
   searchPlaceholder?: string
   advancedFilterLabel?: string
   onAdvancedFilter?: () => void
+  /** `primary` uses the gold fill (same as Export Data). Default is white outline. */
+  advancedFilterVariant?: 'primary' | 'secondary'
   onExport?: () => void
   isExporting?: boolean
   showAdvancedFilter?: boolean
@@ -77,6 +79,7 @@ export function DataTable<TData>({
   searchPlaceholder = 'Search records',
   advancedFilterLabel = 'Advance Filters',
   onAdvancedFilter,
+  advancedFilterVariant = 'secondary',
   onExport,
   isExporting = false,
   showAdvancedFilter = true,
@@ -147,10 +150,15 @@ export function DataTable<TData>({
             {showAdvancedFilter ? (
               <Button
                 type="button"
-                variant="secondary"
+                variant={advancedFilterVariant === 'primary' ? 'primary' : 'secondary'}
                 onClick={onAdvancedFilter}
                 disabled={!onAdvancedFilter}
-                className="table-advance-filter-btn gap-2"
+                className={cn(
+                  'gap-2',
+                  advancedFilterVariant === 'primary'
+                    ? 'table-export-btn'
+                    : 'table-advance-filter-btn',
+                )}
               >
                 <Filter className="size-3.5" aria-hidden="true" />
                 {advancedFilterLabel}

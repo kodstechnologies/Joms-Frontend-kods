@@ -1,9 +1,10 @@
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 import { ArrowLeft, Eye, X } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
 import { useSettingsLogs } from '../hooks/use-settings'
+import { fetchSettingsLogs } from '../api/settings-api'
 import type { SettingsLog } from '../types/settings'
 import { SectionHeader } from '@/shared/components/dashboard/section-header'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
@@ -11,8 +12,28 @@ import { DataTable } from '@/shared/components/table/data-table'
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
 import { uiTokens } from '@/shared/lib/design-tokens'
+import { useModuleExportFilters } from '@/shared/components/advanced-filter'
+import type { FilterValues } from '@/shared/types/data-filter'
+import { exportDisplayValue } from '@/shared/utils/export-utils'
+import {
+  buildPrefixedListQueryParams,
+  createPrefixedListExportHandler,
+} from '@/shared/utils/export-filter-utils'
+import { toast } from 'sonner'
 
 const PAGE_SIZE = 10
+
+const SETTINGS_LOG_EXPORT_COLUMN_MAP: Record<
+  string,
+  { header: string; accessor: (row: SettingsLog) => string }
+> = {
+  createdAt: { header: 'Timestamp', accessor: (row) => exportDisplayValue(row.createdAt) },
+  module: { header: 'Module', accessor: (row) => exportDisplayValue(row.module) },
+  action: { header: 'Action', accessor: (row) => exportDisplayValue(row.action) },
+  status: { header: 'Status', accessor: (row) => exportDisplayValue(row.status) },
+  performedBy: { header: 'Performed By', accessor: (row) => exportDisplayValue(row.performedBy) },
+  ipAddress: { header: 'IP', accessor: (row) => exportDisplayValue(row.ipAddress) },
+}
 
 const formatDateTime = (value?: string) => {
   if (!value) return '—'
@@ -54,12 +75,52 @@ export function SettingsLogsPage() {
   const navigate = useNavigate()
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
+  const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
   const [selectedLog, setSelectedLog] = useState<SettingsLog | null>(null)
 
-  const { data, isLoading } = useSettingsLogs({ page, limit: PAGE_SIZE, search })
+  const listQueryParams = useMemo(
+    () =>
+      buildPrefixedListQueryParams(appliedFilters, {
+        page,
+        limit: PAGE_SIZE,
+        search: search || undefined,
+      }),
+    [appliedFilters, page, search],
+  )
+
+  const { data, isLoading } = useSettingsLogs(listQueryParams)
 
   const rows = data?.data ?? []
   const meta = data?.meta ?? { page, limit: PAGE_SIZE, total: rows.length, totalPages: 1 }
+
+  const handleApplyFilters = useCallback((values: FilterValues) => {
+    toast.success('Filters applied')
+    setAppliedFilters(values)
+    setPage(1)
+  }, [])
+
+  const handleExportData = useMemo(() => {
+    const fetchForExport = async (params: Record<string, unknown>) => {
+      const result = await fetchSettingsLogs(params)
+      return { data: result.data ?? [] }
+    }
+    return createPrefixedListExportHandler(
+      fetchForExport,
+      SETTINGS_LOG_EXPORT_COLUMN_MAP,
+      'settings_logs_export',
+      { search: search || undefined },
+    )
+  }, [search])
+
+  const {
+    onAdvancedFilter,
+    onExport,
+    modals: exportFilterModals,
+  } = useModuleExportFilters({
+    moduleKey: 'settings-logs',
+    onApplyFilters: handleApplyFilters,
+    onExportData: handleExportData,
+  })
 
   const columns = useMemo<ColumnDef<SettingsLog>[]>(
     () => [
@@ -149,6 +210,9 @@ export function SettingsLogsPage() {
             setPage(1)
           }}
           searchPlaceholder="Search by action, IP, or admin…"
+          onAdvancedFilter={onAdvancedFilter}
+          advancedFilterVariant="primary"
+          onExport={onExport}
           pagination={{
             page: meta.page,
             pageSize: meta.limit,
@@ -169,6 +233,8 @@ export function SettingsLogsPage() {
           onRowClick={(row) => setSelectedLog(row)}
         />
       </div>
+
+      {exportFilterModals}
 
       {selectedLog ? (
         <div className="fixed inset-0 z-50 grid place-items-center bg-black/70 p-4">

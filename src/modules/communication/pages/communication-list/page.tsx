@@ -28,7 +28,10 @@ import {
 import { useTableColumnPreferences } from '@/modules/expert/hooks/use-ui-preferences'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 import { exportDisplayValue } from '@/shared/utils/export-utils'
-import { createFilteredExportHandler } from '@/shared/utils/export-filter-utils'
+import {
+  buildCommunicationListQueryParams,
+  createCommunicationFilteredExportHandler,
+} from '@/shared/utils/export-filter-utils'
 import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
 import { fetchCommunications } from '../../api/communication-api'
 import type { FilterValues } from '@/shared/types/data-filter'
@@ -77,18 +80,16 @@ export function CommunicationListPage() {
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
 
   const metricsQuery = useCommunicationMetrics()
-  const listQuery = useCommunications({
-    page,
-    limit: PAGE_SIZE,
-    search: debouncedSearch || undefined,
-    status: (appliedFilters.status as string[])?.join(',') || undefined,
-    channel: (appliedFilters.channel as string[])?.join(',') || undefined,
-    audience: (appliedFilters.audience as string[])?.join(',') || undefined,
-    type: (appliedFilters.type as string[])?.join(',') || undefined,
-    messageId: (appliedFilters.messageId as string) || undefined,
-    title: (appliedFilters.title as string) || undefined,
-    createdBy: (appliedFilters.createdBy as string) || undefined,
-  })
+  const listQueryParams = useMemo(
+    () =>
+      buildCommunicationListQueryParams(appliedFilters, {
+        page,
+        limit: PAGE_SIZE,
+        search: debouncedSearch || undefined,
+      }),
+    [appliedFilters, debouncedSearch, page],
+  )
+  const listQuery = useCommunications(listQueryParams)
   const activeMetricIds = useActiveMetricIds(COMMUNICATION_MODULE_KEY, [
     ...DEFAULT_COMMUNICATION_METRIC_IDS,
   ])
@@ -127,8 +128,13 @@ export function CommunicationListPage() {
 
   const handleExportData = useMemo(
     () =>
-      createFilteredExportHandler(fetchCommunications, EXPORT_COLUMN_MAP, 'communications_export'),
-    [],
+      createCommunicationFilteredExportHandler(
+        fetchCommunications,
+        EXPORT_COLUMN_MAP,
+        'communications_export',
+        { search: debouncedSearch || undefined },
+      ),
+    [debouncedSearch],
   )
 
   const {

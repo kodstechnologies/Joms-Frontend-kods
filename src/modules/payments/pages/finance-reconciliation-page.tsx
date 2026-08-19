@@ -1,10 +1,11 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 import { Eye, SlidersHorizontal } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
 import { type FinanceReconciliationRow } from '@/modules/payments/mock/finance-reconciliation.mock'
+import { fetchFinanceReconciliation } from '@/modules/payments/api/finance-api'
 import { useFinanceReconciliation } from '@/modules/payments/hooks/use-finance'
 import { mapReconToRow } from '@/modules/payments/utils/finance-mappers'
 import {
@@ -12,6 +13,7 @@ import {
   FINANCE_RECONCILIATION_MODULE_KEY,
 } from '@/modules/payments/config/finance-reconciliation-table-columns.config'
 import { useTableColumnPreferences } from '@/modules/expert/hooks/use-ui-preferences'
+import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 import { DataTable } from '@/shared/components/table/data-table'
 import {
   TableActionsDropdown,
@@ -19,8 +21,42 @@ import {
 } from '@/shared/components/table/table-actions-dropdown'
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
+import type { FilterValues } from '@/shared/types/data-filter'
+import { exportDisplayValue } from '@/shared/utils/export-utils'
+import {
+  buildFinanceReconciliationListQueryParams,
+  createFinanceReconciliationFilteredExportHandler,
+} from '@/shared/utils/export-filter-utils'
 
 const PAGE_SIZE = 10
+
+const EXPORT_COLUMN_MAP: Record<
+  string,
+  { header: string; accessor: (row: FinanceReconciliationRow) => string }
+> = {
+  'reconciliation-id': {
+    header: 'Reconciliation ID',
+    accessor: (row) => exportDisplayValue(row.reconciliationId),
+  },
+  gateway: { header: 'Gateway', accessor: (row) => exportDisplayValue(row.gateway) },
+  'transaction-id': {
+    header: 'Transaction ID',
+    accessor: (row) => exportDisplayValue(row.transactionId),
+  },
+  'platform-record-id': {
+    header: 'Platform Record ID',
+    accessor: (row) => exportDisplayValue(row.platformRecordId),
+  },
+  'gateway-amount': {
+    header: 'Gateway Amount',
+    accessor: (row) => exportDisplayValue(row.gatewayAmount),
+  },
+  'platform-amount': {
+    header: 'Platform Amount',
+    accessor: (row) => exportDisplayValue(row.platformAmount),
+  },
+  difference: { header: 'Difference', accessor: (row) => exportDisplayValue(row.difference) },
+}
 
 function getDifferenceClassName(difference: FinanceReconciliationRow['difference']) {
   if (difference === 'Matched') {
@@ -35,42 +71,66 @@ function getDifferenceClassName(difference: FinanceReconciliationRow['difference
 export function FinanceReconciliationPage() {
   const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
+  const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [selectedRowIds, setSelectedRowIds] = useState<string[]>([])
   const tableColumnPreferencesQuery = useTableColumnPreferences(FINANCE_RECONCILIATION_MODULE_KEY)
 
-  const { data, isLoading, isFetching } = useFinanceReconciliation({
-    page: currentPage,
-    limit: PAGE_SIZE,
-  })
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setDebouncedSearch(searchQuery.trim())
+      setCurrentPage(1)
+    }, 300)
+    return () => window.clearTimeout(timer)
+  }, [searchQuery])
+
+  const listQueryParams = useMemo(
+    () =>
+      buildFinanceReconciliationListQueryParams(appliedFilters, {
+        page: currentPage,
+        limit: PAGE_SIZE,
+        search: debouncedSearch || undefined,
+      }),
+    [appliedFilters, currentPage, debouncedSearch],
+  )
+
+  const { data, isLoading, isFetching } = useFinanceReconciliation(listQueryParams)
 
   const rows = useMemo(() => (data?.data?.rows ?? []).map(mapReconToRow), [data])
   const meta = data?.data?.meta
 
-  const filteredRows = useMemo(() => {
-    const query = searchQuery.trim().toLowerCase()
-    if (!query) return rows
+  const handleApplyFilters = useCallback((values: FilterValues) => {
+    toast.success('Filters applied')
+    setAppliedFilters(values)
+    setCurrentPage(1)
+  }, [])
 
-    return rows.filter((row) =>
-      [
-        row.reconciliationId,
-        row.gateway,
-        row.transactionId,
-        row.platformRecordId,
-        row.gatewayAmount,
-        row.platformAmount,
-        row.difference,
-      ]
-        .join(' ')
-        .toLowerCase()
-        .includes(query),
+  const handleExportData = useMemo(() => {
+    const fetchForExport = async (params: Record<string, unknown>) => {
+      const result = await fetchFinanceReconciliation(params)
+      return { data: (result.data?.rows ?? []).map(mapReconToRow) }
+    }
+    return createFinanceReconciliationFilteredExportHandler(
+      fetchForExport,
+      EXPORT_COLUMN_MAP,
+      'finance_reconciliation_export',
+      { search: debouncedSearch || undefined },
     )
-  }, [rows, searchQuery])
+  }, [debouncedSearch])
 
-  const pageRows = searchQuery.trim() ? filteredRows : rows
+  const {
+    onAdvancedFilter,
+    onExport,
+    modals: exportFilterModals,
+  } = useModuleExportFilters({
+    moduleKey: 'finance-reconciliation',
+    onApplyFilters: handleApplyFilters,
+    onExportData: handleExportData,
+  })
 
-  const visibleRowIds = useMemo(() => pageRows.map((row) => row.id), [pageRows])
+  const visibleRowIds = useMemo(() => rows.map((row) => row.id), [rows])
   const allVisibleSelected =
     visibleRowIds.length > 0 && visibleRowIds.every((id) => selectedRowIds.includes(id))
   const someVisibleSelected = visibleRowIds.some((id) => selectedRowIds.includes(id))
@@ -256,18 +316,16 @@ export function FinanceReconciliationPage() {
 
       <DataTable
         columns={columns}
-        data={pageRows}
+        data={rows}
         getRowId={(row) => row.id}
         isLoading={isLoading || isFetching}
         searchValue={searchQuery}
-        onSearchChange={(value) => {
-          setSearchQuery(value)
-          setCurrentPage(1)
-        }}
+        onSearchChange={setSearchQuery}
         searchPlaceholder="Search by name, ID or profession"
         advancedFilterLabel="Advance Filters"
-        onAdvancedFilter={() => toast.message('Advance filters coming soon')}
-        onExport={() => toast.message('Export coming soon')}
+        onAdvancedFilter={onAdvancedFilter}
+        advancedFilterVariant="primary"
+        onExport={onExport}
         pagination={{
           page: meta?.page ?? currentPage,
           pageSize: meta?.limit ?? PAGE_SIZE,
@@ -278,6 +336,8 @@ export function FinanceReconciliationPage() {
         resourceLabel="records"
         emptyMessage="No reconciliation records found."
       />
+
+      {exportFilterModals}
     </div>
   )
 }

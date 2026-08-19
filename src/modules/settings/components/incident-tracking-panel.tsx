@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 import { ClipboardList } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
@@ -12,6 +12,7 @@ import {
   INCIDENT_MODULE_KEY,
 } from '../config/incident-metrics.config'
 import { useAssignIncident, useIncidentMetrics, useIncidents } from '../hooks/use-incidents'
+import { fetchIncidents } from '../api/incidents-api'
 import type { IncidentRow, IncidentSeverity, IncidentStatus } from '../types/settings'
 import { StatCard } from '@/shared/components/dashboard/stat-card'
 import { DataTable } from '@/shared/components/table/data-table'
@@ -19,6 +20,13 @@ import { ResponsiveGrid } from '@/shared/components/responsive/responsive-grid'
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
 import { uiTokens } from '@/shared/lib/design-tokens'
+import { useModuleExportFilters } from '@/shared/components/advanced-filter'
+import type { FilterValues } from '@/shared/types/data-filter'
+import { exportDisplayValue } from '@/shared/utils/export-utils'
+import {
+  buildPrefixedListQueryParams,
+  createPrefixedListExportHandler,
+} from '@/shared/utils/export-filter-utils'
 import {
   orderByActiveMetricIds,
   useActiveMetricIds,
@@ -26,6 +34,21 @@ import {
 import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
 
 const PAGE_SIZE = 8
+
+const INCIDENT_EXPORT_COLUMN_MAP: Record<
+  string,
+  { header: string; accessor: (row: IncidentRow) => string }
+> = {
+  incidentId: { header: 'Incident ID', accessor: (row) => exportDisplayValue(row.incidentId) },
+  severity: { header: 'Severity', accessor: (row) => exportDisplayValue(row.severity) },
+  module: { header: 'Module', accessor: (row) => exportDisplayValue(row.module) },
+  status: { header: 'Status', accessor: (row) => exportDisplayValue(row.status) },
+  assignee: {
+    header: 'Assignee',
+    accessor: (row) => exportDisplayValue(row.assignee || 'Unassigned'),
+  },
+  createdOn: { header: 'Created On', accessor: (row) => exportDisplayValue(row.createdOn) },
+}
 
 function SeverityBadge({ severity }: { severity: IncidentSeverity }) {
   const styles: Record<IncidentSeverity, string> = {
@@ -65,6 +88,7 @@ export function IncidentTrackingPanel() {
   const navigate = useNavigate()
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
+  const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
   const [selected, setSelected] = useState<IncidentRow | null>(null)
 
   const activeMetricIds = useActiveMetricIds(INCIDENT_MODULE_KEY, DEFAULT_INCIDENT_METRIC_IDS)
@@ -86,13 +110,52 @@ export function IncidentTrackingPanel() {
     )
   }, [filteredActiveMetricIds, metrics])
 
-  const { data: incidentsResult, isLoading } = useIncidents({ page, limit: PAGE_SIZE, search })
+  const listQueryParams = useMemo(
+    () =>
+      buildPrefixedListQueryParams(appliedFilters, {
+        page,
+        limit: PAGE_SIZE,
+        search: search || undefined,
+      }),
+    [appliedFilters, page, search],
+  )
+
+  const { data: incidentsResult, isLoading } = useIncidents(listQueryParams)
   const assignMutation = useAssignIncident()
 
   const rows = incidentsResult?.data ?? []
   const meta = incidentsResult?.meta
   const totalPages = meta?.totalPages ?? 1
   const totalItems = meta?.total ?? 0
+
+  const handleApplyFilters = useCallback((values: FilterValues) => {
+    toast.success('Filters applied')
+    setAppliedFilters(values)
+    setPage(1)
+  }, [])
+
+  const handleExportData = useMemo(() => {
+    const fetchForExport = async (params: Record<string, unknown>) => {
+      const result = await fetchIncidents(params)
+      return { data: result.data ?? [] }
+    }
+    return createPrefixedListExportHandler(
+      fetchForExport,
+      INCIDENT_EXPORT_COLUMN_MAP,
+      'incidents_export',
+      { search: search || undefined },
+    )
+  }, [search])
+
+  const {
+    onAdvancedFilter,
+    onExport,
+    modals: exportFilterModals,
+  } = useModuleExportFilters({
+    moduleKey: 'incidents',
+    onApplyFilters: handleApplyFilters,
+    onExportData: handleExportData,
+  })
 
   const columns = useMemo<ColumnDef<IncidentRow>[]>(
     () => [
@@ -194,8 +257,9 @@ export function IncidentTrackingPanel() {
             setPage(1)
           }}
           searchPlaceholder="Search by name, ID or profession"
-          onAdvancedFilter={() => toast.message('Advanced filters coming soon')}
-          onExport={() => toast.success('Export started')}
+          onAdvancedFilter={onAdvancedFilter}
+          advancedFilterVariant="primary"
+          onExport={onExport}
           pagination={{
             page,
             pageSize: PAGE_SIZE,
@@ -206,6 +270,8 @@ export function IncidentTrackingPanel() {
           resourceLabel="incidents"
         />
       </div>
+
+      {exportFilterModals}
 
       <AssignUserModal
         open={Boolean(selected)}

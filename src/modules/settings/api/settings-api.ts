@@ -44,14 +44,7 @@ export const resetSettings = async <M extends SettingsModule>(module: M) => {
   return response.data.data
 }
 
-export const fetchSettingsLogs = async (params?: {
-  page?: number
-  limit?: number
-  search?: string
-  module?: SettingsModule
-  action?: 'update' | 'reset' | 'restore'
-  status?: 'success' | 'failed' | 'pending'
-}) => {
+export const fetchSettingsLogs = async (params?: Record<string, unknown>) => {
   const response = await settingsApiClient.get<{
     success: boolean
     message: string

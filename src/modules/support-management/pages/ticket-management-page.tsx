@@ -29,7 +29,6 @@ import {
 import {
   useDeleteSupportTicket,
   useEscalateSupportTicket,
-  useExportSupportTickets,
   useLiveSupportUpdates,
   useSupportAgents,
   useSupportTickets,
@@ -38,7 +37,6 @@ import {
 import { useSupportStore } from '../store/support-store'
 import type { SupportTicket, TicketTab } from '../types/support'
 import {
-  downloadBlob,
   getApiErrorMessage,
   getPriorityLabel,
   getStatusLabel,
@@ -51,6 +49,7 @@ import {
   useActiveMetricIds,
 } from '@/modules/expert/hooks/use-active-metric-ids'
 import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
+import { fetchSupportTickets } from '../api/support-api'
 import { DataTable } from '@/shared/components/table/data-table'
 import {
   TableActionsDropdown,
@@ -58,12 +57,41 @@ import {
 } from '@/shared/components/table/table-actions-dropdown'
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
+import { useModuleExportFilters } from '@/shared/components/advanced-filter'
+import type { FilterValues } from '@/shared/types/data-filter'
+import { exportDisplayValue } from '@/shared/utils/export-utils'
+import {
+  buildSupportTicketsListQueryParams,
+  createSupportTicketsFilteredExportHandler,
+} from '@/shared/utils/export-filter-utils'
 
 const TABS: { key: TicketTab; label: string }[] = [
   { key: 'my_tickets', label: 'My Tickets' },
   { key: 'escalated', label: 'Escalated Tickets' },
   { key: 'all', label: 'All Tickets' },
 ]
+
+const EXPORT_COLUMN_MAP: Record<
+  string,
+  { header: string; accessor: (ticket: SupportTicket) => string }
+> = {
+  id: { header: 'Ticket ID', accessor: (ticket) => exportDisplayValue(ticket.id) },
+  subject: { header: 'Subject', accessor: (ticket) => exportDisplayValue(ticket.subject) },
+  status: {
+    header: 'Status',
+    accessor: (ticket) => exportDisplayValue(getStatusLabel(ticket.status)),
+  },
+  priority: {
+    header: 'Priority',
+    accessor: (ticket) => exportDisplayValue(getPriorityLabel(ticket.priority)),
+  },
+  category: { header: 'Category', accessor: (ticket) => exportDisplayValue(ticket.category) },
+  reporter: { header: 'Reporter', accessor: (ticket) => exportDisplayValue(ticket.reporter) },
+  assignedTo: {
+    header: 'Assigned To',
+    accessor: (ticket) => exportDisplayValue(ticket.assignedTo),
+  },
+}
 
 function TicketMetricCard({
   title,
@@ -122,18 +150,24 @@ export function TicketManagementPage() {
   const [escalateTicketId, setEscalateTicketId] = useState<string | null>(null)
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [activeTicketId, setActiveTicketId] = useState<string | null>(null)
+  const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
 
-  const { data, isLoading } = useSupportTickets({
-    page: currentPage,
-    limit: 10,
-    search: searchQuery || undefined,
-    tab: activeTab,
-    includeClosed: true,
-  })
+  const listQueryParams = useMemo(
+    () =>
+      buildSupportTicketsListQueryParams(appliedFilters, {
+        page: currentPage,
+        limit: 10,
+        search: searchQuery || undefined,
+        tab: activeTab,
+        includeClosed: true,
+      }),
+    [activeTab, appliedFilters, currentPage, searchQuery],
+  )
+
+  const { data, isLoading } = useSupportTickets(listQueryParams)
   const updateMutation = useUpdateSupportTicket()
   const escalateMutation = useEscalateSupportTicket()
   const deleteMutation = useDeleteSupportTicket()
-  const exportMutation = useExportSupportTickets()
   const agentsQuery = useSupportAgents()
   useLiveSupportUpdates()
   const activeMetricIds = useActiveMetricIds(TICKET_MANAGEMENT_MODULE_KEY, [
@@ -170,18 +204,41 @@ export function TicketManagementPage() {
     )
   }, [tickets])
 
-  const handleExport = useCallback(async () => {
-    try {
-      const blob = await exportMutation.mutateAsync({
-        search: searchQuery || undefined,
+  const handleApplyFilters = useCallback(
+    (values: FilterValues) => {
+      toast.success('Filters applied')
+      setAppliedFilters(values)
+      setCurrentPage(1)
+    },
+    [setCurrentPage],
+  )
+
+  const handleExportData = useMemo(() => {
+    const fetchForExport = async (params: Record<string, unknown>) => {
+      const result = await fetchSupportTickets({
+        ...params,
         tab: activeTab,
+        includeClosed: true,
       })
-      downloadBlob(blob, 'support-tickets.csv')
-      toast.success('Export downloaded')
-    } catch (err) {
-      toast.error(getApiErrorMessage(err, 'Failed to export tickets'))
+      return { data: result.data?.tickets ?? [] }
     }
-  }, [activeTab, exportMutation, searchQuery])
+    return createSupportTicketsFilteredExportHandler(
+      fetchForExport,
+      EXPORT_COLUMN_MAP,
+      'support_tickets_export',
+      { search: searchQuery || undefined, tab: activeTab, includeClosed: true },
+    )
+  }, [activeTab, searchQuery])
+
+  const {
+    onAdvancedFilter,
+    onExport,
+    modals: exportFilterModals,
+  } = useModuleExportFilters({
+    moduleKey: 'support-tickets',
+    onApplyFilters: handleApplyFilters,
+    onExportData: handleExportData,
+  })
 
   const renderActions = useCallback(
     (record: SupportTicket) => {
@@ -378,8 +435,7 @@ export function TicketManagementPage() {
           <Button
             type="button"
             variant="primary"
-            onClick={handleExport}
-            disabled={exportMutation.isPending}
+            onClick={onExport}
             className="ui-export-data ui-cta ui-cta-primary"
           >
             <Upload className="icon-sm shrink-0" aria-hidden="true" />
@@ -444,9 +500,9 @@ export function TicketManagementPage() {
         }}
         searchPlaceholder="Search by name, ID or profession"
         advancedFilterLabel="Advance Filters"
-        onAdvancedFilter={() => toast.message('Advanced filters coming soon')}
-        onExport={handleExport}
-        isExporting={exportMutation.isPending}
+        onAdvancedFilter={onAdvancedFilter}
+        advancedFilterVariant="primary"
+        onExport={onExport}
         isLoading={isLoading}
         pagination={{
           page: currentPage,
@@ -510,6 +566,7 @@ export function TicketManagementPage() {
           }
         }}
       />
+      {exportFilterModals}
     </div>
   )
 }

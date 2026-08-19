@@ -16,22 +16,7 @@ import type {
   UpdateSubAdminPasswordPayload,
 } from '../types/rbac'
 
-type ListParams = {
-  page?: number
-  limit?: number
-  search?: string
-  status?: string
-  mfaRequired?: string
-  riskLevel?: string
-  roleId?: string
-  roleName?: string
-  mfaEnabled?: string
-  role?: string
-  adminCode?: string
-  fullname?: string
-  email?: string
-  department?: string
-}
+type ListParams = Record<string, unknown>
 
 export const fetchRbacMe = async () => {
   const response = await adminApiClient.get<{ success: boolean; data: AdminProfile }>(

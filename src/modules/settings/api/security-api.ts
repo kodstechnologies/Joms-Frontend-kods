@@ -35,12 +35,7 @@ export const unlockAccount = async (id: string) => {
   return response.data.data
 }
 
-export const fetchLoginTrails = async (params?: {
-  page?: number
-  limit?: number
-  search?: string
-  status?: string
-}) => {
+export const fetchLoginTrails = async (params?: Record<string, unknown>) => {
   const response = await settingsApiClient.get<ApiEnvelope<LoginTrailRow[]>>(
     '/settings/security/login-trails',
     {

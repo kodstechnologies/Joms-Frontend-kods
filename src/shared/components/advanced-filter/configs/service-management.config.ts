@@ -14,7 +14,7 @@ const yesNoDisputedOptions = [
 ]
 
 /** By Services — matches Figma Advanced Filters - Service Management */
-const serviceByServicesSection: FilterSectionConfig = {
+export const serviceByServicesSection: FilterSectionConfig = {
   id: 'by-services',
   title: 'By Services',
   defaultExpanded: true,

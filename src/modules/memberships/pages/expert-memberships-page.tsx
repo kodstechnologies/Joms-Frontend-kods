@@ -16,7 +16,9 @@ import {
 import { useExpertMembershipStore } from '../store/expert-membership-store'
 import type { MembershipSubscription } from '../types/membership-subscription'
 import { formatCurrency, formatMembershipDate } from '../utils/membership-format'
+import { fetchExpertSubscriptions } from '../api/membership-subscription-api'
 import { SectionHeader } from '@/shared/components/dashboard/section-header'
+import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 import { DataTable } from '@/shared/components/table/data-table'
 import {
   TableActionsDropdown,
@@ -25,6 +27,12 @@ import {
 import { AddTagModal } from '@/shared/components/modal/add-tag-modal'
 import { useEntityTags } from '@/shared/hooks/use-entity-tags'
 import { cn } from '@/shared/lib/cn'
+import type { FilterValues } from '@/shared/types/data-filter'
+import { exportDisplayValue } from '@/shared/utils/export-utils'
+import {
+  buildExpertMembershipsListQueryParams,
+  createExpertMembershipsFilteredExportHandler,
+} from '@/shared/utils/export-filter-utils'
 
 const PLAN_BADGE_COLORS = [
   'bg-rose-500/15 text-rose-300',
@@ -33,6 +41,39 @@ const PLAN_BADGE_COLORS = [
   'bg-blue-500/15 text-blue-300',
   'bg-purple-500/15 text-purple-300',
 ]
+
+const EXPORT_COLUMN_MAP: Record<
+  string,
+  { header: string; accessor: (row: MembershipSubscription) => string }
+> = {
+  subscriptionId: {
+    header: 'Plan ID',
+    accessor: (row) => exportDisplayValue(row.subscriptionId),
+  },
+  partnerName: { header: 'Username', accessor: (row) => exportDisplayValue(row.partnerName) },
+  planName: { header: 'Plan name', accessor: (row) => exportDisplayValue(row.planName) },
+  billingCycleName: {
+    header: 'Plan cycle',
+    accessor: (row) => exportDisplayValue(row.billingCycleName),
+  },
+  autoRenew: {
+    header: 'Auto Renewal',
+    accessor: (row) => (row.autoRenew ? 'Yes' : 'No'),
+  },
+  status: { header: 'Status', accessor: (row) => exportDisplayValue(row.status) },
+  startedAt: {
+    header: 'Started at',
+    accessor: (row) => exportDisplayValue(formatMembershipDate(row.startedAt)),
+  },
+  expiresAt: {
+    header: 'Expiry at',
+    accessor: (row) => exportDisplayValue(formatMembershipDate(row.expiresAt)),
+  },
+  purchasedPrice: {
+    header: 'Price',
+    accessor: (row) => exportDisplayValue(formatCurrency(row.purchasedPrice)),
+  },
+}
 
 export function ExpertMembershipsPage() {
   const navigate = useNavigate()
@@ -46,12 +87,19 @@ export function ExpertMembershipsPage() {
   const { tagModalOpen, openTagModal, closeTagModal, saveTags, initialTags } = useEntityTags()
 
   const { searchQuery, setSearchQuery, currentPage, setCurrentPage } = useExpertMembershipStore()
+  const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
 
-  const { data, isLoading } = useExpertSubscriptions({
-    search: searchQuery || undefined,
-    page: currentPage,
-    limit: 10,
-  })
+  const listQueryParams = useMemo(
+    () =>
+      buildExpertMembershipsListQueryParams(appliedFilters, {
+        page: currentPage,
+        limit: 10,
+        search: searchQuery || undefined,
+      }),
+    [appliedFilters, currentPage, searchQuery],
+  )
+
+  const { data, isLoading } = useExpertSubscriptions(listQueryParams)
 
   const upgradeMutation = useUpgradeSubscription()
   const downgradeMutation = useDowngradeSubscription()
@@ -60,6 +108,38 @@ export function ExpertMembershipsPage() {
 
   const subscriptions = data?.data?.subscriptions ?? []
   const meta = data?.data?.meta
+
+  const handleApplyFilters = useCallback(
+    (values: FilterValues) => {
+      toast.success('Filters applied')
+      setAppliedFilters(values)
+      setCurrentPage(1)
+    },
+    [setCurrentPage],
+  )
+
+  const handleExportData = useMemo(() => {
+    const fetchForExport = async (params: Record<string, unknown>) => {
+      const result = await fetchExpertSubscriptions(params)
+      return { data: result.data?.subscriptions ?? [] }
+    }
+    return createExpertMembershipsFilteredExportHandler(
+      fetchForExport,
+      EXPORT_COLUMN_MAP,
+      'expert_memberships_export',
+      { search: searchQuery || undefined },
+    )
+  }, [searchQuery])
+
+  const {
+    onAdvancedFilter,
+    onExport,
+    modals: exportFilterModals,
+  } = useModuleExportFilters({
+    moduleKey: 'expert-memberships',
+    onApplyFilters: handleApplyFilters,
+    onExportData: handleExportData,
+  })
 
   const openAction = useCallback(
     (subscription: MembershipSubscription, action: typeof actionType) => {
@@ -226,8 +306,9 @@ export function ExpertMembershipsPage() {
         searchValue={searchQuery}
         onSearchChange={setSearchQuery}
         searchPlaceholder="Search by name, ID or profession"
-        showAdvancedFilter={false}
-        onExport={() => toast.info('Export coming soon')}
+        onAdvancedFilter={onAdvancedFilter}
+        advancedFilterVariant="primary"
+        onExport={onExport}
         pagination={{
           page: currentPage,
           pageSize: meta?.limit ?? 10,
@@ -237,6 +318,8 @@ export function ExpertMembershipsPage() {
         }}
         resourceLabel="subscriptions"
       />
+
+      {exportFilterModals}
 
       <MembershipActionModals
         subscription={selectedSubscription}
