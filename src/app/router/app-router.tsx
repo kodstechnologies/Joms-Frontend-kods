@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react'
-import { BrowserRouter, Route, Routes } from 'react-router-dom'
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { DashboardLayout } from '@/app/layouts/dashboard-layout'
 import { ProtectedRoute } from '@/app/router/protected-route'
 import { ContactSetupRoute } from '@/app/router/contact-setup-route'
@@ -837,13 +837,14 @@ export function AppRouter() {
           }
         />
         <Route
-          path="/payment-finance-testing"
+          path="/dev/payment-finance-testing"
           element={
             <Suspense fallback={<PageLoader />}>
               <PaymentFinanceTestingPage />
             </Suspense>
           }
         />
+        <Route path="/payment-finance-testing" element={<Navigate to="/dev/payment-finance-testing" replace />} />
 
         <Route element={<ProtectedRoute />}>
           <Route

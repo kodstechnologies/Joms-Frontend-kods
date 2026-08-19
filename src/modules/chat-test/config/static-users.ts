@@ -1,7 +1,7 @@
 /**
- * Chat harness users. Do not commit JWTs or phones.
- * Set VITE_CHAT_TEST_USERS_JSON to a JSON array of
- * { id, username, phone_e164, accessToken } from `pnpm mint-static-users`.
+ * TEMP static test users for chat / quotation — delete when real user auth exists.
+ * Tokens from: chat-service `pnpm mint-static-users`.
+ * Optional override: VITE_CHAT_TEST_USERS_JSON (same shape).
  */
 export type StaticChatUser = {
   id: string
@@ -9,6 +9,44 @@ export type StaticChatUser = {
   phone_e164: string
   accessToken: string
 }
+
+const DEFAULT_CHAT_USERS: StaticChatUser[] = [
+  {
+    id: 'aa9d814f-8d63-43ed-8a65-fb56ed06bbb8',
+    username: 'usertest111',
+    phone_e164: '9986269941',
+    accessToken:
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImFhOWQ4MTRmLThkNjMtNDNlZC04YTY1LWZiNTZlZDA2YmJiOCIsInVzZXJUeXBlIjoidXNlciIsIm5hbWUiOiJ1c2VydGVzdDExMSIsImlhdCI6MTc4NTM5MzYyMCwiZXhwIjoxODE2OTI5NjIwfQ.J1pMHuZmGVWGEtQFAlFuKfsiVmb95NVo0uhveQvvURY',
+  },
+  {
+    id: 'e1700e23-1970-4d9b-b3ea-31d00bb9a19b',
+    username: 'usertest222',
+    phone_e164: '9986269942',
+    accessToken:
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImUxNzAwZTIzLTE5NzAtNGQ5Yi1iM2VhLTMxZDAwYmI5YTE5YiIsInVzZXJUeXBlIjoidXNlciIsIm5hbWUiOiJ1c2VydGVzdDIyMiIsImlhdCI6MTc4NTM5MzYyMCwiZXhwIjoxODE2OTI5NjIwfQ.WuvQHLX2Qp5wG4F7NIl7EuAQV8i-STZC8-QrEbkKHNU',
+  },
+  {
+    id: '01c6875d-4a99-4a30-b3ac-3eec537bc7f2',
+    username: 'usertest333',
+    phone_e164: '9986269943',
+    accessToken:
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjAxYzY4NzVkLTRhOTktNGEzMC1iM2FjLTNlZWM1MzdiYzdmMiIsInVzZXJUeXBlIjoidXNlciIsIm5hbWUiOiJ1c2VydGVzdDMzMyIsImlhdCI6MTc4NTM5MzYyMCwiZXhwIjoxODE2OTI5NjIwfQ.A14FLnxfSkp8C3TCaIBxAre8RlGUpUtd3Ca4AhWzQsQ',
+  },
+  {
+    id: '776c815a-02ce-4f18-a894-fe1e0adf060f',
+    username: 'usertest444',
+    phone_e164: '9986269944',
+    accessToken:
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6Ijc3NmM4MTVhLTAyY2UtNGYxOC1hODk0LWZlMWUwYWRmMDYwZiIsInVzZXJUeXBlIjoidXNlciIsIm5hbWUiOiJ1c2VydGVzdDQ0NCIsImlhdCI6MTc4NTM5MzYyMCwiZXhwIjoxODE2OTI5NjIwfQ.mgXXRTkDEafkqzXXXacdHk2DNNWEBg_JqYeqQhV2Xfk',
+  },
+  {
+    id: '87201e92-5c12-45d6-9f3a-55fdc014ba5c',
+    username: 'usertest555',
+    phone_e164: '9986269945',
+    accessToken:
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6Ijg3MjAxZTkyLTVjMTItNDVkNi05ZjNhLTU1ZmRjMDE0YmE1YyIsInVzZXJUeXBlIjoidXNlciIsIm5hbWUiOiJ1c2VydGVzdDU1NSIsImlhdCI6MTc4NTM5MzYyMCwiZXhwIjoxODE2OTI5NjIwfQ.NL8ciWXLmpRagcKEjmIg-l7cTZ3vtZQokrW9fomFoIk',
+  },
+]
 
 function readUsersFromEnv(): StaticChatUser[] {
   const raw = import.meta.env.VITE_CHAT_TEST_USERS_JSON
@@ -30,4 +68,5 @@ function readUsersFromEnv(): StaticChatUser[] {
   }
 }
 
-export const STATIC_CHAT_USERS: StaticChatUser[] = readUsersFromEnv()
+const fromEnv = readUsersFromEnv()
+export const STATIC_CHAT_USERS: StaticChatUser[] = fromEnv.length > 0 ? fromEnv : DEFAULT_CHAT_USERS
