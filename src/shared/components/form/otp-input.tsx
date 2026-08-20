@@ -14,13 +14,19 @@ export function OtpInput({ value, onChange, length = 6, className }: OtpInputPro
   const chars = useMemo(() => value.padEnd(length, ' ').slice(0, length).split(''), [length, value])
 
   return (
-    <div className={cn('flex items-center justify-center gap-2', className)}>
+    <div
+      className={cn('flex items-center justify-center gap-2', className)}
+      role="group"
+      aria-label="One-time password"
+    >
       {chars.map((char, index) => (
         <input
           key={`${id}-${index}`}
           inputMode="numeric"
           pattern="[0-9]*"
           maxLength={1}
+          autoComplete={index === 0 ? 'one-time-code' : 'off'}
+          aria-label={`Digit ${index + 1} of ${length}`}
           value={char.trim()}
           onChange={(event) => {
             const nextChar = event.target.value.replace(/\D/g, '').slice(0, 1)

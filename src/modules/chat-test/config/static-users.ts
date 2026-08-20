@@ -1,6 +1,7 @@
 /**
  * TEMP static test users for chat / quotation — delete when real user auth exists.
- * Tokens from: chat-service `pnpm mint-static-users`
+ * Tokens from: chat-service `pnpm mint-static-users`.
+ * Optional override: VITE_CHAT_TEST_USERS_JSON (same shape).
  */
 export type StaticChatUser = {
   id: string
@@ -9,7 +10,7 @@ export type StaticChatUser = {
   accessToken: string
 }
 
-export const STATIC_CHAT_USERS: StaticChatUser[] = [
+const DEFAULT_CHAT_USERS: StaticChatUser[] = [
   {
     id: 'aa9d814f-8d63-43ed-8a65-fb56ed06bbb8',
     username: 'usertest111',
@@ -46,3 +47,25 @@ export const STATIC_CHAT_USERS: StaticChatUser[] = [
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6Ijg3MjAxZTkyLTVjMTItNDVkNi05ZjNhLTU1ZmRjMDE0YmE1YyIsInVzZXJUeXBlIjoidXNlciIsIm5hbWUiOiJ1c2VydGVzdDU1NSIsImlhdCI6MTc4NTM5MzYyMCwiZXhwIjoxODE2OTI5NjIwfQ.NL8ciWXLmpRagcKEjmIg-l7cTZ3vtZQokrW9fomFoIk',
   },
 ]
+
+function readUsersFromEnv(): StaticChatUser[] {
+  const raw = import.meta.env.VITE_CHAT_TEST_USERS_JSON
+  if (!raw || typeof raw !== 'string') return []
+  try {
+    const parsed = JSON.parse(raw) as unknown
+    if (!Array.isArray(parsed)) return []
+    return parsed.filter((row): row is StaticChatUser =>
+      Boolean(
+        row &&
+        typeof row === 'object' &&
+        typeof (row as StaticChatUser).id === 'string' &&
+        typeof (row as StaticChatUser).accessToken === 'string',
+      ),
+    )
+  } catch {
+    return []
+  }
+}
+
+const fromEnv = readUsersFromEnv()
+export const STATIC_CHAT_USERS: StaticChatUser[] = fromEnv.length > 0 ? fromEnv : DEFAULT_CHAT_USERS

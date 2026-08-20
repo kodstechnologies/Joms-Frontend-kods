@@ -1,3 +1,4 @@
+import { useRef } from 'react'
 import {
   AlertTriangle,
   Check,
@@ -9,6 +10,7 @@ import {
 } from 'lucide-react'
 import calendarIcon from '@/assets/JOMS_ICONS-2/icons8-calendar.svg'
 import { cn } from '@/shared/lib/cn'
+import { useDialogFocusTrap } from '@/shared/hooks/use-dialog-focus-trap'
 
 export type DecisionActionModalVariant =
   | 'approve'
@@ -210,6 +212,9 @@ export function DecisionActionModal({
   heroLayout = 'stack',
   checkIconColor,
 }: DecisionActionModalProps) {
+  const dialogRef = useRef<HTMLDivElement>(null)
+  useDialogFocusTrap(open, onClose, dialogRef)
+
   if (!open) return null
 
   const styles = variantStyles[variant]
@@ -257,6 +262,7 @@ export function DecisionActionModal({
       onClick={onClose}
     >
       <div
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby="decision-action-modal-title"

@@ -5,7 +5,12 @@ import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
 import { type RevenueOverviewRow } from '@/modules/payments/mock/revenue-overview.mock'
-import { useAddFinanceNote, useFinanceRevenue } from '@/modules/payments/hooks/use-finance'
+import {
+  useAddFinanceNote,
+  useEscalateFinance,
+  useFinanceRevenue,
+  useSoftDeleteFinance,
+} from '@/modules/payments/hooks/use-finance'
 import { fetchFinanceRevenue } from '@/modules/payments/api/finance-api'
 import {
   DEFAULT_FINANCE_REVENUE_VISIBLE_COLUMN_IDS,
@@ -14,6 +19,10 @@ import {
 import { useTableColumnPreferences } from '@/modules/expert/hooks/use-ui-preferences'
 import { mapPaymentToRevenueRow } from '@/modules/payments/utils/finance-mappers'
 import { AddTagsModal } from '@/shared/components/modals/add-tags-modal'
+import {
+  FinanceEscalateDeleteModal,
+  type FinanceEscalateDeleteAction,
+} from '@/modules/payments/components/finance-escalate-delete-modal'
 import { DataTable } from '@/shared/components/table/data-table'
 import {
   TableActionsDropdown,
@@ -69,7 +78,10 @@ export function RevenueOverviewPage() {
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [selectedRowIds, setSelectedRowIds] = useState<string[]>([])
   const [tagTarget, setTagTarget] = useState<RevenueOverviewRow | null>(null)
+  const [rowAction, setRowAction] = useState<FinanceEscalateDeleteAction | null>(null)
   const addNote = useAddFinanceNote()
+  const escalate = useEscalateFinance()
+  const softDelete = useSoftDeleteFinance()
   const tableColumnPreferencesQuery = useTableColumnPreferences(FINANCE_REVENUE_MODULE_KEY)
 
   useEffect(() => {
@@ -181,7 +193,7 @@ export function RevenueOverviewPage() {
             className="text-slate-800 hover:bg-slate-100 hover:text-slate-900"
             onClick={() => {
               setActiveDropdownId(null)
-              toast.message('Escalate coming soon')
+              setRowAction({ kind: 'escalate', id: record.id, resourceType: 'Payment' })
             }}
           >
             Escalate
@@ -191,7 +203,7 @@ export function RevenueOverviewPage() {
             className="text-brand-danger hover:bg-brand-danger/10 hover:text-brand-danger"
             onClick={() => {
               setActiveDropdownId(null)
-              toast.message('Delete coming soon')
+              setRowAction({ kind: 'delete', id: record.id, resourceType: 'Payment' })
             }}
           >
             Delete
@@ -376,6 +388,13 @@ export function RevenueOverviewPage() {
             throw err
           }
         }}
+      />
+
+      <FinanceEscalateDeleteModal
+        action={rowAction}
+        onClose={() => setRowAction(null)}
+        escalate={escalate}
+        softDelete={softDelete}
       />
 
       {exportFilterModals}

@@ -37,6 +37,7 @@ import {
   fetchFinanceTax,
   fetchFinanceReconciliation,
   fetchFinanceEscrow,
+  backfillFinanceArtifacts,
 } from '@/modules/payments/api/finance-api'
 import { fetchExpertSubscriptions } from '@/modules/memberships/api/membership-subscription-api'
 import { useAuthStore } from '@/modules/auth/store/auth-store'
@@ -1399,6 +1400,95 @@ function VenuesActions({ user }: { user: StaticChatUser | null }) {
   )
 }
 
+/** Tax / Reconciliation: backfill from fulfilled payments, then verify admin screens. */
+function TaxReconActions({
+  verifyHref,
+  verifyLabel,
+  check,
+}: {
+  verifyHref: string
+  verifyLabel: string
+  check: () => Promise<string>
+}) {
+  const adminToken = useAuthStore((s) => s.token)
+  const [busy, setBusy] = useState(false)
+  const [status, setStatus] = useState<StatusMsg>(null)
+  const [checking, setChecking] = useState(false)
+  const [checkResult, setCheckResult] = useState<StatusMsg>(null)
+
+  const runBackfill = async () => {
+    if (!adminToken) {
+      setStatus(flash(false, 'Login Admin in the session bar first.'))
+      return
+    }
+    setBusy(true)
+    setStatus({ ok: true, text: 'Backfilling tax + reconciliation from fulfilled payments…' })
+    toast.message('Backfilling finance artifacts…')
+    try {
+      const res = await backfillFinanceArtifacts({ limit: 25 })
+      const results = res?.data?.results ?? []
+      const created = results.filter((r) => !r.skipped)
+      const taxTotal = created.reduce((sum, r) => sum + (r.taxRecordsCreated ?? 0), 0)
+      const reconTotal = created.filter((r) => r.reconciliationId).length
+      setStatus(
+        flash(
+          true,
+          `Backfill done · ${created.length} payment(s) updated · ${taxTotal} tax row(s) · ${reconTotal} recon row(s). Open ${verifyLabel}.`,
+        ),
+      )
+    } catch (err) {
+      setStatus(flash(false, errText(err)))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const refreshReflection = async () => {
+    setChecking(true)
+    setCheckResult(null)
+    try {
+      if (!adminToken) {
+        setCheckResult(flash(false, 'Admin not logged in.'))
+        return
+      }
+      const text = await check()
+      setCheckResult(flash(true, text))
+    } catch (err) {
+      setCheckResult(flash(false, errText(err)))
+    } finally {
+      setChecking(false)
+    }
+  }
+
+  return (
+    <div className="space-y-4">
+      <ActionBanner
+        status={status || checkResult}
+        phase={busy ? 'Backfilling' : checking ? 'Checking' : null}
+      />
+      <p className="text-sm text-zinc-400">
+        New pays auto-create tax + reconciliation on fulfill. For older fulfilled payments, run
+        backfill (admin JWT). Seed a pay on Revenue/Services/Memberships first if lists are empty.
+      </p>
+      <button
+        type="button"
+        disabled={!adminToken || busy}
+        onClick={() => void runBackfill()}
+        className="rounded-lg bg-violet-400 px-4 py-3 text-sm font-semibold text-zinc-950 disabled:opacity-40"
+      >
+        {busy ? 'Backfilling…' : 'Backfill tax + reconciliation (last 25 fulfilled pays)'}
+      </button>
+      <VerifyBar
+        href={verifyHref}
+        label={verifyLabel}
+        onCheck={() => void refreshReflection()}
+        checking={checking}
+        checkResult={checkResult}
+      />
+    </div>
+  )
+}
+
 function SimpleOpenAndCheck({
   href,
   label,
@@ -1647,9 +1737,9 @@ export function FinanceTestInteractiveActions({ model, partner, onPartnerChange,
 
   if (model.id === 'tax') {
     return (
-      <SimpleOpenAndCheck
-        href="/finance/tax"
-        label="Tax & Compliance"
+      <TaxReconActions
+        verifyHref="/finance/tax"
+        verifyLabel="Tax & Compliance"
         check={async () => {
           const res = await fetchFinanceTax({ limit: 5 })
           const t = res?.data?.meta?.total ?? res?.data?.rows?.length ?? 0
@@ -1661,9 +1751,9 @@ export function FinanceTestInteractiveActions({ model, partner, onPartnerChange,
 
   if (model.id === 'reconciliation') {
     return (
-      <SimpleOpenAndCheck
-        href="/finance/reconciliation"
-        label="Reconciliation"
+      <TaxReconActions
+        verifyHref="/finance/reconciliation"
+        verifyLabel="Reconciliation"
         check={async () => {
           const res = await fetchFinanceReconciliation({ limit: 5 })
           const t = res?.data?.meta?.total ?? res?.data?.rows?.length ?? 0

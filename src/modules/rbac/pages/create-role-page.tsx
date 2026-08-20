@@ -88,10 +88,11 @@ export function CreateRolePage() {
 
         <div className="mt-5 grid gap-4 md:grid-cols-2">
           <div className="space-y-2">
-            <label className="text-brand-text text-sm font-medium">
+            <label htmlFor="role-name" className="text-brand-text text-sm font-medium">
               Role Name <RequiredMark />
             </label>
             <Input
+              id="role-name"
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g. Venues Manager"
@@ -99,10 +100,11 @@ export function CreateRolePage() {
             />
           </div>
           <div className="space-y-2 md:col-span-2">
-            <label className="text-brand-text text-sm font-medium">
+            <label htmlFor="role-description" className="text-brand-text text-sm font-medium">
               Description <RequiredMark />
             </label>
             <textarea
+              id="role-description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Describe what this role is responsible for"

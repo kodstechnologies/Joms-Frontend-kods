@@ -4,6 +4,7 @@ import {
   addFinanceNote,
   escalateFinanceDispute,
   escalateFinanceRefund,
+  escalateFinanceResource,
   fetchFinanceDashboard,
   fetchFinanceDisputeById,
   fetchFinanceDisputes,
@@ -346,13 +347,48 @@ export const useRetryPayout = () => {
 export const useReleasePayout = () => {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, adminNote }: { id: string; adminNote: string }) =>
-      releaseFinancePayout(id, adminNote),
+    mutationFn: ({
+      id,
+      adminNote,
+      bankReference,
+    }: {
+      id: string
+      adminNote: string
+      bankReference: string
+    }) => releaseFinancePayout(id, adminNote, bankReference),
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['finance-payouts'] })
       queryClient.invalidateQueries({ queryKey: ['finance-payout'] })
       queryClient.invalidateQueries({ queryKey: financeKeys.payout(variables.id) })
       queryClient.invalidateQueries({ queryKey: financeKeys.dashboard })
+    },
+  })
+}
+
+const invalidateFinanceLists = (queryClient: ReturnType<typeof useQueryClient>) => {
+  queryClient.invalidateQueries({ queryKey: ['finance-revenue'] })
+  queryClient.invalidateQueries({ queryKey: ['finance-escrow'] })
+  queryClient.invalidateQueries({ queryKey: ['finance-tax'] })
+  queryClient.invalidateQueries({ queryKey: ['finance-refunds'] })
+  queryClient.invalidateQueries({ queryKey: ['finance-disputes'] })
+  queryClient.invalidateQueries({ queryKey: ['finance-reconciliation'] })
+  queryClient.invalidateQueries({ queryKey: financeKeys.dashboard })
+}
+
+export const useEscalateFinance = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({
+      id,
+      resourceType,
+      adminNote,
+    }: {
+      id: string
+      resourceType: string
+      adminNote: string
+    }) => escalateFinanceResource(id, resourceType, adminNote),
+    onSuccess: (_data, variables) => {
+      void queryClient.invalidateQueries({ queryKey: financeKeys.notes(variables.id) })
     },
   })
 }
@@ -370,8 +406,7 @@ export const useSoftDeleteFinance = () => {
       adminNote: string
     }) => softDeleteFinanceResource(id, resourceType, adminNote),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['finance-revenue'] })
-      queryClient.invalidateQueries({ queryKey: financeKeys.dashboard })
+      invalidateFinanceLists(queryClient)
     },
   })
 }

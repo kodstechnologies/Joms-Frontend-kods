@@ -25,9 +25,11 @@ import {
 } from '@/modules/payments/mock/finance-refunds.mock'
 import {
   useAddFinanceNote,
+  useEscalateFinance,
   useFinanceDashboard,
   useFinanceDisputes,
   useFinanceRefunds,
+  useSoftDeleteFinance,
   useUpdateDisputeStatus,
   useUpdateRefundStatus,
 } from '@/modules/payments/hooks/use-finance'
@@ -50,6 +52,12 @@ import { useTableColumnPreferences } from '@/modules/expert/hooks/use-ui-prefere
 import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
 import { mapDisputeToRefundRow, mapRefundToRow } from '@/modules/payments/utils/finance-mappers'
 import { AddTagsModal } from '@/shared/components/modals/add-tags-modal'
+import { MergeTicketsModal } from '@/modules/payments/components/merge-tickets-modal'
+import {
+  FinanceEscalateDeleteModal,
+  type FinanceEscalateDeleteAction,
+} from '@/modules/payments/components/finance-escalate-delete-modal'
+import { useTagsApi } from '@/modules/payments/hooks/use-tags-api'
 import { ChangeStatusModal } from '@/shared/components/modals/change-status-modal'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 import { DataTable } from '@/shared/components/table/data-table'
@@ -140,6 +148,8 @@ export function FinanceRefundsPage() {
   const [selectedRowIds, setSelectedRowIds] = useState<string[]>([])
   const [statusTarget, setStatusTarget] = useState<RefundChargebackRow | null>(null)
   const [tagTarget, setTagTarget] = useState<RefundChargebackRow | null>(null)
+  const [mergeTarget, setMergeTarget] = useState<RefundChargebackRow | null>(null)
+  const [rowAction, setRowAction] = useState<FinanceEscalateDeleteAction | null>(null)
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -191,6 +201,9 @@ export function FinanceRefundsPage() {
   const updateDisputeStatus = useUpdateDisputeStatus()
   const updateRefundStatus = useUpdateRefundStatus()
   const addNote = useAddFinanceNote()
+  const escalate = useEscalateFinance()
+  const softDelete = useSoftDeleteFinance()
+  const { mergeTickets } = useTagsApi()
   const tableColumnPreferencesQuery = useTableColumnPreferences(FINANCE_REFUNDS_MODULE_KEY)
 
   const apiErrorMessage = (err: unknown, fallback: string) =>
@@ -371,14 +384,25 @@ export function FinanceRefundsPage() {
           <TableActionsItem
             icon={<Trash2 className="text-brand-danger size-3.5" aria-hidden="true" />}
             className="text-brand-danger hover:bg-brand-danger/10 hover:text-brand-danger"
-            onClick={() => toast.message('Delete coming soon')}
+            onClick={() => {
+              setActiveDropdownId(null)
+              const isDispute = record.kind === 'dispute' || record.type === 'Dispute'
+              setRowAction({
+                kind: 'delete',
+                id: record.id,
+                resourceType: isDispute ? 'Dispute' : 'Refund',
+              })
+            }}
           >
             Delete
           </TableActionsItem>
           <TableActionsItem
             icon={<GitMerge className="size-3.5 text-slate-700" aria-hidden="true" />}
             className="text-slate-800 hover:bg-slate-100 hover:text-slate-900"
-            onClick={() => toast.message('Merge coming soon')}
+            onClick={() => {
+              setActiveDropdownId(null)
+              setMergeTarget(record)
+            }}
           >
             Merge
           </TableActionsItem>
@@ -392,6 +416,21 @@ export function FinanceRefundsPage() {
     statusTarget?.kind === 'dispute' || statusTarget?.type === 'Dispute'
       ? DISPUTE_STATUS_OPTIONS
       : REFUND_STATUS_OPTIONS
+
+  const mergeCandidates = useMemo(() => {
+    const baseRows =
+      selectedRowIds.length > 1
+        ? rows.filter((row) => selectedRowIds.includes(row.id))
+        : mergeTarget
+          ? [mergeTarget]
+          : []
+    return baseRows.map((row) => ({
+      id: row.id,
+      title: row.recordId,
+      description: `${row.type} - ${row.relatedEntity}`,
+      date: row.initiatedDate,
+    }))
+  }, [mergeTarget, rows, selectedRowIds])
 
   const columns = useMemo<ColumnDef<RefundChargebackRow>[]>(() => {
     const selectColumn: ColumnDef<RefundChargebackRow> = {
@@ -609,6 +648,29 @@ export function FinanceRefundsPage() {
             throw err
           }
         }}
+      />
+
+      <MergeTicketsModal
+        isOpen={!!mergeTarget}
+        onClose={() => setMergeTarget(null)}
+        availableTickets={mergeCandidates}
+        onMerge={async ({ ticketIds, adminNotes }) => {
+          try {
+            await mergeTickets(ticketIds, adminNotes)
+            toast.success('Tickets merged')
+            setMergeTarget(null)
+          } catch (err) {
+            toast.error(apiErrorMessage(err, 'Failed to merge tickets'))
+            throw err
+          }
+        }}
+      />
+
+      <FinanceEscalateDeleteModal
+        action={rowAction}
+        onClose={() => setRowAction(null)}
+        escalate={escalate}
+        softDelete={softDelete}
       />
 
       {exportFilterModals}

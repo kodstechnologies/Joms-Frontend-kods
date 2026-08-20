@@ -12,8 +12,10 @@ import {
 } from '@/modules/payments/mock/finance-services.mock'
 import {
   useAddFinanceNote,
+  useEscalateFinance,
   useFinanceEscrow,
   useFinanceRevenue,
+  useSoftDeleteFinance,
 } from '@/modules/payments/hooks/use-finance'
 import { fetchFinanceEscrow, fetchFinanceRevenue } from '@/modules/payments/api/finance-api'
 import {
@@ -26,6 +28,10 @@ import {
 } from '@/modules/payments/config/finance-services-table-columns.config'
 import { useTableColumnPreferences } from '@/modules/expert/hooks/use-ui-preferences'
 import { AddTagsModal } from '@/shared/components/modals/add-tags-modal'
+import {
+  FinanceEscalateDeleteModal,
+  type FinanceEscalateDeleteAction,
+} from '@/modules/payments/components/finance-escalate-delete-modal'
 import { DataTable } from '@/shared/components/table/data-table'
 import {
   TableActionsDropdown,
@@ -74,7 +80,10 @@ export function FinanceServicesPage() {
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [selectedRowIds, setSelectedRowIds] = useState<string[]>([])
   const [tagTarget, setTagTarget] = useState<FinanceServiceRow | null>(null)
+  const [rowAction, setRowAction] = useState<FinanceEscalateDeleteAction | null>(null)
   const addNote = useAddFinanceNote()
+  const escalate = useEscalateFinance()
+  const softDelete = useSoftDeleteFinance()
   const tableColumnPreferencesQuery = useTableColumnPreferences(FINANCE_SERVICES_MODULE_KEY)
 
   useEffect(() => {
@@ -226,7 +235,11 @@ export function FinanceServicesPage() {
             className="text-slate-800 hover:bg-slate-100 hover:text-slate-900"
             onClick={() => {
               setActiveDropdownId(null)
-              toast.message('Escalate coming soon')
+              setRowAction({
+                kind: 'escalate',
+                id: record.id,
+                resourceType: record.tab === 'escrow' ? 'EscrowHold' : 'Payment',
+              })
             }}
           >
             Escalate
@@ -236,7 +249,11 @@ export function FinanceServicesPage() {
             className="text-brand-danger hover:bg-brand-danger/10 hover:text-brand-danger"
             onClick={() => {
               setActiveDropdownId(null)
-              toast.message('Delete coming soon')
+              setRowAction({
+                kind: 'delete',
+                id: record.id,
+                resourceType: record.tab === 'escrow' ? 'EscrowHold' : 'Payment',
+              })
             }}
           >
             Delete
@@ -439,6 +456,13 @@ export function FinanceServicesPage() {
             throw err
           }
         }}
+      />
+
+      <FinanceEscalateDeleteModal
+        action={rowAction}
+        onClose={() => setRowAction(null)}
+        escalate={escalate}
+        softDelete={softDelete}
       />
 
       {exportFilterModals}

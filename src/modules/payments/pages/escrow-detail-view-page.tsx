@@ -168,10 +168,10 @@ export function EscrowDetailViewPage() {
 
             <InnerCard title="Financial Details">
               <DetailRow label="Escrow Amount" value={formatInr(escrow.amountHeld)} />
-              <DetailRow label="Module" value={titleCase(escrow.module)} />
+              <DetailRow label="Platform Fee" value={formatInr(escrow.platformFee ?? 0)} />
               <DetailRow
-                label="Hold Reason"
-                value={escrow.holdReason || 'Awaiting approval'}
+                label="Release Amount"
+                value={formatInr(escrow.releaseAmount ?? escrow.amountHeld)}
                 valueClassName="text-body-sm-semibold"
               />
             </InnerCard>

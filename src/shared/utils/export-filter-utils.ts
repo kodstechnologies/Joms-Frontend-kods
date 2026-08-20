@@ -1337,6 +1337,101 @@ export const createSupportTicketsFilteredExportHandler = createFinanceExportHand
 export const buildRbacListQueryParams = buildPrefixedListQueryParams
 export const createRbacFilteredExportHandler = createPrefixedListExportHandler
 
+type ServicePerformanceQueryOptions = {
+  page?: number
+  limit?: number
+  search?: string
+}
+
+export function buildServicePerformanceQueryParams(
+  filterValues: FilterValues,
+  options: ServicePerformanceQueryOptions = {},
+): Record<string, unknown> {
+  const params: Record<string, unknown> = {
+    page: options.page ?? 1,
+    limit: options.limit ?? 10,
+  }
+
+  if (options.search?.trim()) params.search = options.search.trim()
+
+  Object.entries(filterValues).forEach(([rawKey, val]) => {
+    if (val === undefined || val === null || val === '') return
+
+    const parts = rawKey.split('.')
+    const fieldId = parts.length > 1 ? parts.slice(1).join('.') : rawKey
+
+    if (Array.isArray(val)) {
+      if (val.length > 0) {
+        if (fieldId === 'disputeStatus' && val.length === 1) {
+          params.disputeStatus = val[0]
+        } else if (fieldId !== 'disputeStatus') {
+          params[fieldId] = val.join(',')
+        }
+      }
+      return
+    }
+
+    if (typeof val === 'object' && val !== null) {
+      const range = val as { from?: string | number; to?: string | number }
+      if (fieldId === 'dateRange') {
+        if (range.from) params.dateFrom = String(range.from)
+        if (range.to) params.dateTo = String(range.to)
+      } else if (fieldId === 'priceRange') {
+        if (range.from) params.minPrice = String(range.from)
+        if (range.to) params.maxPrice = String(range.to)
+      } else if (fieldId === 'ratingRange') {
+        if (range.from) params.minRating = String(range.from)
+        if (range.to) params.maxRating = String(range.to)
+      }
+      return
+    }
+  })
+
+  return params
+}
+
+export function buildConsultationPerformanceQueryParams(
+  filterValues: FilterValues,
+  options: ServicePerformanceQueryOptions = {},
+): Record<string, unknown> {
+  const params: Record<string, unknown> = {
+    page: options.page ?? 1,
+    limit: options.limit ?? 10,
+  }
+
+  if (options.search?.trim()) params.search = options.search.trim()
+
+  Object.entries(filterValues).forEach(([rawKey, val]) => {
+    if (val === undefined || val === null || val === '') return
+
+    const parts = rawKey.split('.')
+    const fieldId = parts.length > 1 ? parts.slice(1).join('.') : rawKey
+
+    if (Array.isArray(val)) {
+      if (val.length > 0) {
+        if (fieldId === 'status') {
+          params.status = val.join(',')
+        }
+      }
+      return
+    }
+
+    if (typeof val === 'object' && val !== null) {
+      const range = val as { from?: string | number; to?: string | number }
+      if (fieldId === 'dateRange') {
+        if (range.from) params.dateFrom = String(range.from)
+        if (range.to) params.dateTo = String(range.to)
+      } else if (fieldId === 'priceRange') {
+        if (range.from) params.minPrice = String(range.from)
+        if (range.to) params.maxPrice = String(range.to)
+      }
+      return
+    }
+  })
+
+  return params
+}
+
 export function createClientFilteredExportHandler<T>(
   getRows: (values: FilterValues) => T[],
   columnMap: Record<string, { header: string; accessor: (item: T) => string }>,

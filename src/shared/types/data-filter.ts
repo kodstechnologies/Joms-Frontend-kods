@@ -88,3 +88,5 @@ export type ModuleFilterKey =
   | 'backups'
   | 'escalations'
   | 'leaderboard-management'
+  | 'service-performance'
+  | 'consultation-performance'

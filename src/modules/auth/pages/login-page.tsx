@@ -2,7 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { UserRound } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { toast } from 'sonner'
 
 import { useAuthStore } from '@/modules/auth/store/auth-store'
@@ -24,6 +24,7 @@ import { Input } from '@/shared/components/ui/input'
 
 export function LoginPage() {
   const navigate = useNavigate()
+  const location = useLocation()
   const setSession = useAuthStore((state) => state.setSession)
   const updateUser = useAuthStore((state) => state.updateUser)
   const { mutateAsync: login, isPending: isLoginPending } = useLoginMutation()
@@ -43,6 +44,17 @@ export function LoginPage() {
     resolver: zodResolver(otpSchema),
     defaultValues: { code: '' },
   })
+
+  const postLoginPath = (sessionUser: Parameters<typeof getDefaultHomeRoute>[0]) => {
+    const from = (
+      location.state as { from?: { pathname?: string; search?: string; hash?: string } } | null
+    )?.from
+    const pathname = from?.pathname
+    if (pathname && pathname.startsWith('/') && !pathname.startsWith('/auth')) {
+      return `${pathname}${from.search ?? ''}${from.hash ?? ''}`
+    }
+    return getDefaultHomeRoute(sessionUser)
+  }
 
   const onSubmitCredentials = async (values: LoginSchema) => {
     try {
@@ -136,7 +148,7 @@ export function LoginPage() {
       }
 
       toast.success('Welcome back')
-      navigate(getDefaultHomeRoute(sessionUser), { replace: true })
+      navigate(postLoginPath(sessionUser), { replace: true })
     } catch {
       toast.error('Invalid or expired OTP')
     }
@@ -180,8 +192,9 @@ export function LoginPage() {
               <FormField label="Email ID" error={credentialsForm.formState.errors.email?.message}>
                 <Input
                   type="email"
-                  className="border-0 border-b border-white/10 bg-transparent text-slate-100 shadow-none focus-visible:ring-0"
-                  placeholder="admin@kods.com"
+                  className="border-0 border-b border-white/10 bg-transparent text-slate-100 shadow-none focus-visible:ring-2 focus-visible:ring-white/50"
+                  placeholder="Enter your email"
+                  autoComplete="username"
                   {...credentialsForm.register('email')}
                 />
               </FormField>
@@ -192,8 +205,9 @@ export function LoginPage() {
               >
                 <Input
                   type="password"
-                  className="border-0 border-b border-white/10 bg-transparent text-slate-100 shadow-none focus-visible:ring-0"
+                  className="border-0 border-b border-white/10 bg-transparent text-slate-100 shadow-none focus-visible:ring-2 focus-visible:ring-white/50"
                   placeholder="Enter your password"
+                  autoComplete="current-password"
                   {...credentialsForm.register('password')}
                 />
               </FormField>

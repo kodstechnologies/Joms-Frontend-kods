@@ -6,7 +6,12 @@ import { toast } from 'sonner'
 
 import { type TaxComplianceRow } from '@/modules/payments/mock/finance-tax-compliance.mock'
 import { fetchFinanceTax } from '@/modules/payments/api/finance-api'
-import { useAddFinanceNote, useFinanceTax } from '@/modules/payments/hooks/use-finance'
+import {
+  useAddFinanceNote,
+  useEscalateFinance,
+  useFinanceTax,
+  useSoftDeleteFinance,
+} from '@/modules/payments/hooks/use-finance'
 import { mapTaxToRow } from '@/modules/payments/utils/finance-mappers'
 import {
   DEFAULT_FINANCE_TAX_VISIBLE_COLUMN_IDS,
@@ -14,6 +19,10 @@ import {
 } from '@/modules/payments/config/finance-tax-table-columns.config'
 import { useTableColumnPreferences } from '@/modules/expert/hooks/use-ui-preferences'
 import { AddTagsModal } from '@/shared/components/modals/add-tags-modal'
+import {
+  FinanceEscalateDeleteModal,
+  type FinanceEscalateDeleteAction,
+} from '@/modules/payments/components/finance-escalate-delete-modal'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 import { DataTable } from '@/shared/components/table/data-table'
 import {
@@ -64,7 +73,10 @@ export function FinanceTaxCompliancePage() {
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [selectedRowIds, setSelectedRowIds] = useState<string[]>([])
   const [tagTarget, setTagTarget] = useState<TaxComplianceRow | null>(null)
+  const [rowAction, setRowAction] = useState<FinanceEscalateDeleteAction | null>(null)
   const addNote = useAddFinanceNote()
+  const escalate = useEscalateFinance()
+  const softDelete = useSoftDeleteFinance()
   const tableColumnPreferencesQuery = useTableColumnPreferences(FINANCE_TAX_MODULE_KEY)
 
   useEffect(() => {
@@ -175,7 +187,7 @@ export function FinanceTaxCompliancePage() {
             className="text-slate-800 hover:bg-slate-100 hover:text-slate-900"
             onClick={() => {
               setActiveDropdownId(null)
-              toast.message('Escalate coming soon')
+              setRowAction({ kind: 'escalate', id: record.id, resourceType: 'TaxRecord' })
             }}
           >
             Escalate
@@ -185,7 +197,7 @@ export function FinanceTaxCompliancePage() {
             className="text-brand-danger hover:bg-brand-danger/10 hover:text-brand-danger"
             onClick={() => {
               setActiveDropdownId(null)
-              toast.message('Delete coming soon')
+              setRowAction({ kind: 'delete', id: record.id, resourceType: 'TaxRecord' })
             }}
           >
             Delete
@@ -375,6 +387,13 @@ export function FinanceTaxCompliancePage() {
             throw err
           }
         }}
+      />
+
+      <FinanceEscalateDeleteModal
+        action={rowAction}
+        onClose={() => setRowAction(null)}
+        escalate={escalate}
+        softDelete={softDelete}
       />
 
       {exportFilterModals}

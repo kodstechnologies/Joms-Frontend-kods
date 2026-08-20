@@ -167,11 +167,12 @@ export const FINANCE_TEST_MODELS: FinanceTestModel[] = [
     route: '/finance/tax',
     startsAs: ['partner', 'system'],
     summary:
-      'Compliance from partner KYC/docs; tax from ledger/settings. Not seeded via chat-user. Empty list OK early.',
+      'GST/TDS rows auto-created on payment fulfill. Backfill older pays from this step, then open /finance/tax.',
     steps: [
-      'Ensure service partner KYC / DigiLocker / verifications as applicable.',
-      'Open /finance/tax — list loads (empty OK).',
-      'Open detail if a row exists.',
+      'Login Admin. Seed a pay on Revenue/Memberships/Services if needed.',
+      'New pays: tax rows appear automatically after fulfill.',
+      'Older pays: click Backfill tax + reconciliation on this step.',
+      'Open /finance/tax — confirm GST (and TDS for service/venue) rows.',
     ],
     panels: ['none'],
     verifyHints: ['List/API loads', 'Detail when data exists'],
@@ -201,11 +202,12 @@ export const FINANCE_TEST_MODELS: FinanceTestModel[] = [
     route: '/finance/reconciliation',
     startsAs: ['system'],
     summary:
-      'Gateway settlement vs platform. Needs Razorpay settlement ingest. Empty early is expected.',
+      'Gateway vs platform amounts auto-created on fulfill. Backfill older pays, then open /finance/reconciliation.',
     steps: [
-      'Open /finance/reconciliation.',
-      'Confirm list loads (empty OK).',
-      'Open detail if any row exists.',
+      'Login Admin. Seed a pay on Revenue/Memberships/Services if needed.',
+      'New pays: reconciliation row appears automatically after fulfill.',
+      'Older pays: click Backfill tax + reconciliation on this step.',
+      'Open /finance/reconciliation — matched/mismatch rows.',
     ],
     panels: ['none'],
     verifyHints: ['Screen loads', 'Empty state acceptable'],

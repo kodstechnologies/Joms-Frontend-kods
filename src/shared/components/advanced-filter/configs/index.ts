@@ -32,6 +32,8 @@ import { incidentsFilterConfig } from './incidents.config'
 import { backupsFilterConfig } from './backups.config'
 import { escalationsFilterConfig } from './escalations.config'
 import { leaderboardManagementFilterConfig } from './leaderboard-management.config'
+import { servicePerformanceFilterConfig } from './service-performance.config'
+import { consultationPerformanceFilterConfig } from './consultation-performance.config'
 
 export const moduleFilterConfigs: Record<ModuleFilterKey, ModuleFilterConfig> = {
   'expert-management': expertManagementFilterConfig,
@@ -66,6 +68,8 @@ export const moduleFilterConfigs: Record<ModuleFilterKey, ModuleFilterConfig> = 
   backups: backupsFilterConfig,
   escalations: escalationsFilterConfig,
   'leaderboard-management': leaderboardManagementFilterConfig,
+  'service-performance': servicePerformanceFilterConfig,
+  'consultation-performance': consultationPerformanceFilterConfig,
 }
 
 export function getModuleFilterConfig(moduleKey: ModuleFilterKey): ModuleFilterConfig {

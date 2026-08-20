@@ -1,9 +1,10 @@
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import { ArrowLeft, Check, Download, SquarePen } from 'lucide-react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 
-import { useFinanceTaxDetail } from '@/modules/payments/hooks/use-finance'
+import { AddFinanceNoteModal } from '@/modules/payments/components/add-finance-note-modal'
+import { useAddFinanceNote, useFinanceTaxDetail } from '@/modules/payments/hooks/use-finance'
 import { formatDate, formatInr, titleCase } from '@/modules/payments/utils/finance-mappers'
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
@@ -68,6 +69,8 @@ export function TaxComplianceDetailViewPage() {
   const navigate = useNavigate()
   const { id = '' } = useParams<{ id: string }>()
   const { data, isLoading, isError } = useFinanceTaxDetail(id)
+  const noteMutation = useAddFinanceNote()
+  const [isNoteModalOpen, setIsNoteModalOpen] = useState(false)
   const tax = data?.data
 
   if (isLoading) {
@@ -189,7 +192,7 @@ export function TaxComplianceDetailViewPage() {
               <SquarePen className="size-4" />
               Edit Tax Record
             </Button>
-            <Button onClick={() => toast.message('Add notes coming soon')}>
+            <Button onClick={() => setIsNoteModalOpen(true)}>
               <SquarePen className="size-4" />
               Add Notes
             </Button>
@@ -307,6 +310,24 @@ export function TaxComplianceDetailViewPage() {
           Mark as Filed
         </button>
       </footer>
+
+      <AddFinanceNoteModal
+        open={isNoteModalOpen}
+        isSubmitting={noteMutation.isPending}
+        onClose={() => setIsNoteModalOpen(false)}
+        onSubmit={(adminNote) => {
+          noteMutation.mutate(
+            { id: tax._id, resourceType: 'TaxRecord', adminNote },
+            {
+              onSuccess: () => {
+                toast.success('Note saved')
+                setIsNoteModalOpen(false)
+              },
+              onError: () => toast.error('Failed to save note'),
+            },
+          )
+        }}
+      />
     </div>
   )
 }

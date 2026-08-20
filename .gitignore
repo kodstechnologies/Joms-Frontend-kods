@@ -11,11 +11,13 @@ lerna-debug.log*
 .env
 .env.*
 !.env.example
+local-env.md
 
 node_modules
 dist
 dist-ssr
 *.local
+pnpm-lock.yaml
 
 # Coverage / reports
 coverage

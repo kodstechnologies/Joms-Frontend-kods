@@ -11,12 +11,8 @@ import {
   TableActionsDropdown,
   TableActionsItem,
 } from '@/shared/components/table/table-actions-dropdown'
-import {
-  AdvancedFilterSheet,
-  ExportDataModal,
-} from '@/shared/components/advanced-filter/module-filter-modals'
-import { createEmptyFilterValuesForConfig } from '@/shared/components/advanced-filter/filter-utils'
-import type { FilterValues, ModuleFilterConfig } from '@/shared/types/data-filter'
+import { useModuleExportFilters } from '@/shared/components/advanced-filter/use-module-export-filters'
+import { buildConsultationPerformanceQueryParams } from '@/shared/utils/export-filter-utils'
 import { exportDataToFile } from '@/shared/utils/export-utils'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 
@@ -65,30 +61,6 @@ const canCancelBooking = (status?: string | null) => {
   return !['cancelled', 'canceled', 'completed', 'terminated'].includes(normalized)
 }
 
-const buildFilterConfig = (): ModuleFilterConfig => ({
-  moduleKey: 'consultation-performance',
-  moduleName: 'Consultation Performance',
-  sections: [
-    {
-      id: 'by-booking',
-      title: 'By Booking',
-      defaultExpanded: true,
-      fields: [
-        {
-          id: 'status',
-          label: 'Status',
-          type: 'checkbox-group',
-          options: [
-            { value: 'scheduled', label: 'Scheduled' },
-            { value: 'completed', label: 'Completed' },
-            { value: 'cancelled', label: 'Cancelled' },
-          ],
-        },
-      ],
-    },
-  ],
-})
-
 export function ConsultationPerformancePage() {
   const { expertId = '', consultationId = '' } = useParams<{
     expertId: string
@@ -98,17 +70,11 @@ export function ConsultationPerformancePage() {
 
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
-  const [status, setStatus] = useState<string | undefined>()
+  const [appliedFilters, setAppliedFilters] = useState<Record<string, unknown>>({})
   const [activeActionMenu, setActiveActionMenu] = useState<string | null>(null)
   const [paymentBookingId, setPaymentBookingId] = useState<string | null>(null)
   const [cancelBookingRow, setCancelBookingRow] = useState<ConsultationBookingRow | null>(null)
   const [cancelAdminNotes, setCancelAdminNotes] = useState('')
-  const [isFilterOpen, setIsFilterOpen] = useState(false)
-  const [isExportOpen, setIsExportOpen] = useState(false)
-  const filterConfig = useMemo(() => buildFilterConfig(), [])
-  const [filterValues, setFilterValues] = useState<FilterValues>(() =>
-    createEmptyFilterValuesForConfig(filterConfig),
-  )
 
   const performanceQuery = useConsultationPerformance(consultationId)
   const performance = performanceQuery.data?.data
@@ -116,7 +82,7 @@ export function ConsultationPerformancePage() {
     page,
     limit: PAGE_SIZE,
     search: search || undefined,
-    status,
+    ...appliedFilters,
   })
   const bookings = useMemo(
     () => bookingsQuery.data?.data.items ?? [],
@@ -124,6 +90,25 @@ export function ConsultationPerformancePage() {
   )
   const pagination = bookingsQuery.data?.data.pagination
   const cancelBooking = useCancelConsultationBooking(consultationId)
+
+  const {
+    modals: filterModals,
+    onAdvancedFilter,
+    onExport,
+  } = useModuleExportFilters({
+    moduleKey: 'consultation-performance',
+    onApplyFilters: (values) => {
+      const q = buildConsultationPerformanceQueryParams(values)
+      delete q.page
+      delete q.limit
+      setAppliedFilters(q)
+      setPage(1)
+    },
+    onExportData: (values, format) => {
+      if (bookings.length === 0) throw new Error('NO_RECORDS')
+      handleExport(format)
+    },
+  })
 
   const metricCards = useMemo(
     () =>
@@ -182,7 +167,6 @@ export function ConsultationPerformancePage() {
       ])
       exportDataToFile(headers, rows, format, 'consultation_bookings_export')
       toast.success(`Exported ${bookings.length} booking(s)`)
-      setIsExportOpen(false)
     },
     [bookings],
   )
@@ -300,6 +284,8 @@ export function ConsultationPerformancePage() {
         onClose={() => setPaymentBookingId(null)}
       />
 
+      {filterModals}
+
       <DecisionActionModal
         open={Boolean(cancelBookingRow)}
         variant="warn"
@@ -312,40 +298,6 @@ export function ConsultationPerformancePage() {
         onClose={closeCancelModal}
         onSubmit={handleCancelConsultation}
         isSubmitting={cancelBooking.isPending}
-      />
-
-      <AdvancedFilterSheet
-        open={isFilterOpen}
-        config={filterConfig}
-        values={filterValues}
-        onChange={(fieldId, value) =>
-          setFilterValues((current) => ({ ...current, [fieldId]: value }))
-        }
-        onClose={() => setIsFilterOpen(false)}
-        onReset={() => {
-          const empty = createEmptyFilterValuesForConfig(filterConfig)
-          setFilterValues(empty)
-          setStatus(undefined)
-          setPage(1)
-          toast.message('Filters reset')
-        }}
-        onApply={() => {
-          const selected = Array.isArray(filterValues.status) ? filterValues.status : []
-          setStatus(selected[0])
-          setPage(1)
-          setIsFilterOpen(false)
-        }}
-      />
-
-      <ExportDataModal
-        open={isExportOpen}
-        config={filterConfig}
-        values={filterValues}
-        onChange={(fieldId, value) =>
-          setFilterValues((current) => ({ ...current, [fieldId]: value }))
-        }
-        onClose={() => setIsExportOpen(false)}
-        onExport={handleExport}
       />
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -414,8 +366,8 @@ export function ConsultationPerformancePage() {
         emptyMessage="No bookings for this consultation yet."
         showAdvancedFilter
         showExport
-        onAdvancedFilter={() => setIsFilterOpen(true)}
-        onExport={() => setIsExportOpen(true)}
+        onAdvancedFilter={onAdvancedFilter}
+        onExport={onExport}
         onRowClick={openBooking}
         pagination={{
           page,
