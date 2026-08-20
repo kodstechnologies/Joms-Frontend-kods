@@ -11,6 +11,22 @@ export interface CategoryApiSubCategory {
   deletedAt?: string | null
   createdAt?: string
   updatedAt?: string
+  createdBy?: string | null
+  createdByName?: string | null
+  activeListings?: number
+  totalListings?: number
+  experts?: number
+  services?: number
+  totalOrders?: number
+  completedOrders?: number
+  inProgressOrders?: number
+  cancelledOrders?: number
+  revenue?: number
+  revenueLabel?: string
+  repeatBookingPct?: number
+  totalVenues?: number
+  activeVenues?: number
+  venues?: number
 }
 
 export interface ServiceCategoryApi {
@@ -25,6 +41,20 @@ export interface ServiceCategoryApi {
   subCategories: CategoryApiSubCategory[]
   createdAt?: string
   updatedAt?: string
+  createdBy?: string | null
+  createdByName?: string | null
+  subCategoryCount?: number
+  activeListings?: number
+  totalListings?: number
+  experts?: number
+  services?: number
+  totalOrders?: number
+  completedOrders?: number
+  inProgressOrders?: number
+  cancelledOrders?: number
+  revenue?: number
+  revenueLabel?: string
+  repeatBookingPct?: number
 }
 
 export interface VenueCategoryApi {
@@ -40,6 +70,36 @@ export interface VenueCategoryApi {
   subCategories: CategoryApiSubCategory[]
   createdAt?: string
   updatedAt?: string
+  createdBy?: string | null
+  createdByName?: string | null
+  subCategoryCount?: number
+  totalVenues?: number
+  activeVenues?: number
+  venues?: number
+  revenue?: number
+  revenueLabel?: string
+}
+
+export interface VenueCategoryMetricsResponse {
+  success: boolean
+  message: string
+  data: {
+    totalCategories: number
+    activeCategories: number
+    pausedCategories: number
+    deletedCategories: number
+    totalSubCategories: number
+    totalVenues: number
+    totalRevenue: number
+    totalRevenueLabel: string
+    topCategory: {
+      id: string
+      name: string
+      revenue: number
+      revenueLabel: string
+      label: string
+    } | null
+  }
 }
 
 export interface PaginationMeta {
@@ -57,6 +117,47 @@ export interface ApiSuccessResponse<T> {
   meta?: PaginationMeta | { pagination: PaginationMeta }
 }
 
+export interface CategoryMetricsResponse {
+  success: boolean
+  message: string
+  data: {
+    totalCategories: number
+    activeCategories: number
+    pausedCategories: number
+    deletedCategories: number
+    totalSubCategories: number
+    totalServices: number
+    totalOrders: number
+    completedOrders: number
+    orderCompletionRate: number
+    totalRevenue: number
+    totalRevenueLabel: string
+    topCategory: {
+      id: string
+      name: string
+      revenue: number
+      revenueLabel: string
+      label: string
+    } | null
+    lowestRevenueCategory: {
+      id: string
+      name: string
+      revenue: number
+      revenueLabel: string
+    } | null
+    highestOrderCategory: {
+      id: string
+      name: string
+      completedOrders: number
+    } | null
+    lowestOrderCategory: {
+      id: string
+      name: string
+      completedOrders: number
+    } | null
+  }
+}
+
 export interface CategoryListResponse {
   success: boolean
   message: string
@@ -69,7 +170,7 @@ export interface CategoryListResponse {
 export interface SubCategoryListResponse {
   success: boolean
   message: string
-  data: Array<{ _id: string; name: string }>
+  data: CategoryApiSubCategory[]
   meta?: {
     pagination: PaginationMeta
   }

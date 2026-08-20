@@ -28,8 +28,8 @@ import { orderByActiveMetricIds, useActiveMetricIds } from '../../hooks/use-acti
 import {
   useDeletedVenueCategoryList,
   usePausedVenueCategoryList,
-  useVenueCategoryDetails,
   useVenueCategoryManagementList,
+  useVenueCategoryMetrics,
 } from '../../hooks/use-venue-category-management'
 import { useTableColumnPreferences } from '../../hooks/use-ui-preferences'
 import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
@@ -79,6 +79,7 @@ export function VenueCategoryManagementPage() {
   )
 
   const { data, isLoading, isError } = useVenueCategoryManagementList(categoryQueryParams)
+  const { data: metrics } = useVenueCategoryMetrics()
 
   const categories = useMemo(() => data?.categories ?? [], [data?.categories])
   const totalItems = data?.pagination?.total ?? categories.length
@@ -114,80 +115,65 @@ export function VenueCategoryManagementPage() {
   const { data: deletedData } = useDeletedVenueCategoryList()
   const deletedCategories = deletedData?.categories || []
 
-  const { data: details = [] } = useVenueCategoryDetails()
+  const pausedCount =
+    metrics?.pausedCategories ?? pausedData?.pagination?.total ?? pausedCategories.length
+  const deletedCount =
+    metrics?.deletedCategories ?? deletedData?.pagination?.total ?? deletedCategories.length
 
-  const activeCount = useMemo(
-    () =>
-      details.filter((item) => {
-        const status = item.status?.toUpperCase()
-        return status === 'ACTIVE'
-      }).length,
-    [details],
-  )
-
-  const totalSubCategories = useMemo(
-    () => details.reduce((sum, item) => sum + (item.subCategoryCount || 0), 0),
-    [details],
-  )
-
-  const activeMetricIds = useActiveMetricIds(VENUE_CATEGORY_MANAGEMENT_MODULE_KEY, [
+  const savedMetricIds = useActiveMetricIds(VENUE_CATEGORY_MANAGEMENT_MODULE_KEY, [
     ...DEFAULT_VENUE_CATEGORY_MANAGEMENT_METRIC_IDS,
   ])
+  const activeMetricIds = useMemo(() => {
+    const missingDefaults = DEFAULT_VENUE_CATEGORY_MANAGEMENT_METRIC_IDS.filter(
+      (id) => !savedMetricIds.includes(id),
+    )
+    return [...missingDefaults, ...savedMetricIds]
+  }, [savedMetricIds])
 
   const metricCardCatalog = useMemo(
     () => [
       {
         id: 'total-categories',
         title: 'Total categories',
-        value: String(details.length || totalItems),
+        value: String(metrics?.totalCategories ?? totalItems),
       },
       {
         id: 'active-categories',
         title: 'Active Categories',
-        value: String(activeCount || totalItems),
+        value: String(metrics?.activeCategories ?? totalItems),
       },
       {
         id: 'total-sub-categories',
         title: 'Total Sub-Category',
-        value: String(totalSubCategories),
+        value: String(metrics?.totalSubCategories ?? 0),
       },
       {
         id: 'top-category',
         title: 'Top Category',
-        value: categories[0]?.name || '—',
+        value: metrics?.topCategory?.label || metrics?.topCategory?.name || '—',
       },
       {
         id: 'paused-categories',
         title: 'Paused Categories',
-        value: String(pausedData?.pagination?.total ?? pausedCategories.length),
+        value: String(pausedCount),
       },
       {
         id: 'deleted-categories',
         title: 'Deleted Categories',
-        value: String(deletedData?.pagination?.total ?? deletedCategories.length),
+        value: String(deletedCount),
       },
       {
         id: 'total-venues',
         title: 'Total Venues',
-        value: '0',
+        value: String(metrics?.totalVenues ?? 0),
       },
       {
         id: 'total-revenue',
         title: 'Total Revenue',
-        value: '—',
+        value: metrics?.totalRevenueLabel || '₹0.00',
       },
     ],
-    [
-      activeCount,
-      categories,
-      deletedCategories.length,
-      deletedData?.pagination?.total,
-      details.length,
-      pausedCategories.length,
-      pausedData?.pagination?.total,
-      totalItems,
-      totalSubCategories,
-    ],
+    [deletedCount, metrics, pausedCount, totalItems],
   )
 
   const metricCards = orderByActiveMetricIds(metricCardCatalog, activeMetricIds)
@@ -226,8 +212,8 @@ export function VenueCategoryManagementPage() {
       </div>
 
       <CategoryQuickLinks
-        pausedCount={pausedCategories.length}
-        deletedCount={deletedCategories.length}
+        pausedCount={pausedCount}
+        deletedCount={deletedCount}
         pausedPath="/venues/categories/management/paused"
         deletedPath="/venues/categories/management/deleted"
       />

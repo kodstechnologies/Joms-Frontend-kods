@@ -13,6 +13,7 @@ import {
   useSoftDeleteServiceSubCategory,
 } from '../../hooks/use-category-management'
 import { getErrorMessage } from '../../utils/category-mapper'
+import { MODERATION_CATEGORY_SLUGS } from '@/modules/settings/api/templates-api'
 
 export const SubCategoryViewHeaderActions = () => {
   const navigate = useNavigate()
@@ -48,6 +49,10 @@ export const SubCategoryViewHeaderActions = () => {
       <PauseCategoryModal
         open={pauseModalOpen}
         onClose={() => setPauseModalOpen(false)}
+        reasonCategorySlug={MODERATION_CATEGORY_SLUGS.pauseCategory}
+        title="Pause Sub-Category"
+        heading="Are you sure you want  Pause this Sub-Category."
+        submitLabel="Pause Sub-Category"
         onConfirm={() => {
           if (!categoryId || !subCategoryId) return
           pauseMutation.mutate(

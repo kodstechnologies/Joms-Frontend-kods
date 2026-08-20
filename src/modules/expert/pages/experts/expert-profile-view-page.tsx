@@ -101,6 +101,7 @@ import {
   DecisionActionModal,
   type DecisionActionModalOption,
 } from '@/shared/components/modal/decision-action-modal'
+import { PauseCategoryModal } from '../../components/category/pause-category-modal'
 import { AddTagModal } from '@/shared/components/modal/add-tag-modal'
 import { ShareProfileModal } from '@/shared/components/modal/share-profile-modal'
 import { AdminNotesModal } from '@/modules/settings/components/admin-notes-modal'
@@ -1274,11 +1275,6 @@ function ServicesSubTab({
   const [bulkDeleteAdminNotes, setBulkDeleteAdminNotes] = useState('')
 
   const [isBulkPauseModalOpen, setIsBulkPauseModalOpen] = useState(false)
-  const [bulkPauseReasons, setBulkPauseReasons] = useState<string[]>([])
-  const [bulkPauseStartDate, setBulkPauseStartDate] = useState('')
-  const [bulkPauseEndDate, setBulkPauseEndDate] = useState('')
-  const [bulkPauseIndefinitely, setBulkPauseIndefinitely] = useState(false)
-  const [bulkPauseAdminNotes, setBulkPauseAdminNotes] = useState('')
 
   const [isEscalateModalOpen, setIsEscalateModalOpen] = useState(false)
   const [escalateAdminNotes, setEscalateAdminNotes] = useState('')
@@ -1299,7 +1295,7 @@ function ServicesSubTab({
     MODERATION_CATEGORY_SLUGS.deleteService,
   )
   const { options: pauseReasonOptions } = useModerationReasonOptions(
-    MODERATION_CATEGORY_SLUGS.suspendService,
+    MODERATION_CATEGORY_SLUGS.pauseService,
   )
 
   const closeEscalateModal = useCallback(() => {
@@ -1357,50 +1353,40 @@ function ServicesSubTab({
     setIsBulkPauseModalOpen(true)
   }, [selectedServiceIds])
 
-  const confirmBulkPause = useCallback(() => {
-    if (selectedServiceIds.length === 0) return
-    if (pauseReasonOptions.length > 0 && bulkPauseReasons.length === 0) {
-      toast.error('Please select at least one reason for pausing.')
-      return
-    }
-    if (!bulkPauseAdminNotes.trim()) {
-      toast.error('Admin notes are required for pausing.')
-      return
-    }
+  const confirmBulkPause = useCallback(
+    (payload: { reasons: string[]; adminNotes: string }) => {
+      if (selectedServiceIds.length === 0) return
+      if (pauseReasonOptions.length > 0 && payload.reasons.length === 0) {
+        toast.error('Please select at least one reason for pausing.')
+        return
+      }
+      if (!payload.adminNotes.trim()) {
+        toast.error('Admin notes are required for pausing.')
+        return
+      }
 
-    bulkPauseMutation.mutate(
-      {
-        serviceIds: selectedServiceIds,
-        selectedReasons: bulkPauseReasons,
-        adminNotes: bulkPauseAdminNotes.trim(),
-        startDate: bulkPauseStartDate,
-        endDate: bulkPauseEndDate,
-        indefinite: bulkPauseIndefinitely,
-      },
-      {
-        onSuccess: () => {
-          toast.success(`Paused ${selectedServiceIds.length} selected service(s)`)
-          setSelectedServiceIds([])
-          setIsBulkPauseModalOpen(false)
-          setBulkPauseReasons([])
-          setBulkPauseAdminNotes('')
+      bulkPauseMutation.mutate(
+        {
+          serviceIds: selectedServiceIds,
+          selectedReasons: payload.reasons,
+          adminNotes: payload.adminNotes.trim(),
+          indefinite: true,
         },
-        onError: (err: unknown) => {
-          const error = err as { response?: { data?: { message?: string } } }
-          toast.error(error?.response?.data?.message || 'Failed to pause services')
+        {
+          onSuccess: () => {
+            toast.success(`Paused ${selectedServiceIds.length} selected service(s)`)
+            setSelectedServiceIds([])
+            setIsBulkPauseModalOpen(false)
+          },
+          onError: (err: unknown) => {
+            const error = err as { response?: { data?: { message?: string } } }
+            toast.error(error?.response?.data?.message || 'Failed to pause services')
+          },
         },
-      },
-    )
-  }, [
-    selectedServiceIds,
-    bulkPauseReasons,
-    bulkPauseAdminNotes,
-    pauseReasonOptions.length,
-    bulkPauseStartDate,
-    bulkPauseEndDate,
-    bulkPauseIndefinitely,
-    bulkPauseMutation,
-  ])
+      )
+    },
+    [selectedServiceIds, pauseReasonOptions.length, bulkPauseMutation],
+  )
 
   const handleBulkHide = useCallback(() => {
     if (selectedServiceIds.length === 0) return
@@ -1529,8 +1515,7 @@ function ServicesSubTab({
 
       if (successCount === 0) {
         const firstError = results.find((result) => result.status === 'rejected') as
-          | PromiseRejectedResult
-          | undefined
+          PromiseRejectedResult | undefined
         toast.error(getApiErrorMessage(firstError?.reason) || 'Failed to escalate services.')
         return
       }
@@ -1730,40 +1715,23 @@ function ServicesSubTab({
         isSubmitting={bulkDeleteMutation.isPending}
       />
 
-      <DecisionActionModal
+      <PauseCategoryModal
         open={isBulkPauseModalOpen}
-        variant="suspend"
         title={
           selectedServiceIds.length > 1
             ? `Pause ${selectedServiceIds.length} Services`
             : 'Pause Service'
         }
-        description={`Are you sure you want to pause ${selectedServiceIds.length} selected service(s)? They will be hidden from clients until reactivated.`}
-        submitLabel={
+        heading={
           selectedServiceIds.length > 1
-            ? `Pause ${selectedServiceIds.length} Services`
-            : 'Pause Service'
+            ? `Are you sure you want  Pause these ${selectedServiceIds.length} Services.`
+            : 'Are you sure you want  Pause this Service.'
         }
-        reasonOptions={pauseReasonOptions}
-        selectedReasons={bulkPauseReasons}
-        onReasonToggle={(value) =>
-          setBulkPauseReasons((current) =>
-            current.includes(value)
-              ? current.filter((item) => item !== value)
-              : [...current, value],
-          )
-        }
-        showTimeline
-        startDate={bulkPauseStartDate}
-        onStartDateChange={setBulkPauseStartDate}
-        endDate={bulkPauseEndDate}
-        onEndDateChange={setBulkPauseEndDate}
-        indefinite={bulkPauseIndefinitely}
-        onIndefiniteChange={setBulkPauseIndefinitely}
-        adminNotes={bulkPauseAdminNotes}
-        onAdminNotesChange={setBulkPauseAdminNotes}
+        description="This will result in hiding this service from users."
+        submitLabel="Pause Service"
+        reasonCategorySlug={MODERATION_CATEGORY_SLUGS.pauseService}
         onClose={() => setIsBulkPauseModalOpen(false)}
-        onSubmit={confirmBulkPause}
+        onConfirm={confirmBulkPause}
         isSubmitting={bulkPauseMutation.isPending}
       />
 

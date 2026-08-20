@@ -5,6 +5,7 @@ import {
   createCategory,
   fetchCategories,
   fetchCategoryById,
+  fetchCategoryMetrics,
   pauseCategory,
   pauseSubCategory,
   permanentDeleteCategory,
@@ -38,6 +39,13 @@ export const useServiceCategories = (params?: CategoryListParams) =>
       pagination: response.meta?.pagination,
       message: response.message,
     }),
+  })
+
+export const useServiceCategoryMetrics = () =>
+  useQuery({
+    queryKey: [CATEGORY_QUERY_KEY, 'metrics'],
+    queryFn: fetchCategoryMetrics,
+    select: (response) => response.data,
   })
 
 export const useServiceCategory = (id?: string) =>
