@@ -24,7 +24,10 @@ import {
   CategoryQuickLinks,
 } from '../../components/category/category-list-shared'
 import { orderByActiveMetricIds, useActiveMetricIds } from '../../hooks/use-active-metric-ids'
-import { useServiceCategories } from '../../hooks/use-category-management'
+import {
+  useServiceCategories,
+  useServiceCategoryMetrics,
+} from '../../hooks/use-category-management'
 import { mapServiceCategoryToUi } from '../../utils/category-mapper'
 import { useTableColumnPreferences } from '../../hooks/use-ui-preferences'
 import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
@@ -74,6 +77,7 @@ export function CategoryManagementPage() {
   )
 
   const { data, isLoading, isError } = useServiceCategories(categoryQueryParams)
+  const { data: metrics } = useServiceCategoryMetrics()
 
   const categories = useMemo(() => data?.categories ?? [], [data?.categories])
 
@@ -121,66 +125,63 @@ export function CategoryManagementPage() {
   const totalItems = data?.pagination?.total ?? categories.length
   const totalPages = Math.max(1, data?.pagination?.pages ?? Math.ceil(totalItems / PAGE_SIZE))
 
-  const totalSubCategories = useMemo(
-    () => categories.reduce((sum, category) => sum + category.subCategory, 0),
-    [categories],
-  )
+  const pausedCount = metrics?.pausedCategories ?? pausedData?.pagination?.total ?? 0
+  const deletedCount = metrics?.deletedCategories ?? deletedData?.pagination?.total ?? 0
 
-  const activeMetricIds = useActiveMetricIds(SERVICE_CATEGORY_MANAGEMENT_MODULE_KEY, [
+  const savedMetricIds = useActiveMetricIds(SERVICE_CATEGORY_MANAGEMENT_MODULE_KEY, [
     ...DEFAULT_SERVICE_CATEGORY_MANAGEMENT_METRIC_IDS,
   ])
+  const activeMetricIds = useMemo(() => {
+    const missingDefaults = DEFAULT_SERVICE_CATEGORY_MANAGEMENT_METRIC_IDS.filter(
+      (id) => !savedMetricIds.includes(id),
+    )
+    return [...missingDefaults, ...savedMetricIds]
+  }, [savedMetricIds])
 
   const metricCardCatalog = useMemo(
     () => [
       {
         id: 'total-categories',
         title: 'Total categories',
-        value: String(allData?.pagination?.total ?? totalItems),
+        value: String(metrics?.totalCategories ?? allData?.pagination?.total ?? totalItems),
       },
       {
         id: 'active-categories',
         title: 'Active Categories',
-        value: String(totalItems),
+        value: String(metrics?.activeCategories ?? totalItems),
       },
       {
         id: 'total-sub-categories',
         title: 'Total Sub-Category',
-        value: String(totalSubCategories),
+        value: String(metrics?.totalSubCategories ?? 0),
       },
       {
         id: 'top-category',
         title: 'Top Category',
-        value: categories[0]?.name || '—',
+        value: metrics?.topCategory?.label || metrics?.topCategory?.name || '—',
       },
       {
         id: 'paused-categories',
         title: 'Paused Categories',
-        value: String(pausedData?.pagination?.total ?? 0),
+        value: String(pausedCount),
       },
       {
         id: 'deleted-categories',
         title: 'Deleted Categories',
-        value: String(deletedData?.pagination?.total ?? 0),
+        value: String(deletedCount),
       },
       {
         id: 'total-services',
         title: 'Total Services',
-        value: '0',
+        value: String(metrics?.totalServices ?? 0),
       },
       {
         id: 'total-revenue',
         title: 'Total Revenue',
-        value: '—',
+        value: metrics?.totalRevenueLabel || '₹0.00',
       },
     ],
-    [
-      allData?.pagination?.total,
-      categories,
-      deletedData?.pagination?.total,
-      pausedData?.pagination?.total,
-      totalItems,
-      totalSubCategories,
-    ],
+    [allData?.pagination?.total, deletedCount, metrics, pausedCount, totalItems],
   )
 
   const metricCards = orderByActiveMetricIds(metricCardCatalog, activeMetricIds)
@@ -219,8 +220,8 @@ export function CategoryManagementPage() {
       </div>
 
       <CategoryQuickLinks
-        pausedCount={pausedData?.pagination?.total ?? 0}
-        deletedCount={deletedData?.pagination?.total ?? 0}
+        pausedCount={pausedCount}
+        deletedCount={deletedCount}
         pausedPath={categoryPath(scope, 'paused')}
         deletedPath={categoryPath(scope, 'deleted')}
       />
