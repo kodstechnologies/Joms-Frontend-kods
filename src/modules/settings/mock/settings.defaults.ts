@@ -19,7 +19,7 @@ export const platformDefaults: PlatformSettings = {
   displayPreferences: {
     timezone: 'IST, +5:30, Kolkata, India',
     dateTimeFormat: 'DD/MM/YY',
-    defaultCurrency: '$ USD',
+    defaultCurrency: '₹ INR',
     language: 'English',
   },
   generalSettings: {

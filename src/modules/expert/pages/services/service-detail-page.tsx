@@ -698,7 +698,7 @@ export const ServiceDetailPage = () => {
           <button
             type="button"
             onClick={() => navigate(servicePerformancePath(expertId, serviceId))}
-            className="mt-10 flex w-full items-center justify-between rounded-lg border border-white px-4 py-3 text-left text-[14px] font-medium text-white transition-colors hover:bg-white/5 lg:mt-auto"
+            className="mt-8 flex w-full items-center justify-between rounded-lg border border-white px-4 py-3 text-left text-[14px] font-medium text-white transition-colors hover:bg-white/5"
           >
             <span>Service Performance</span>
             <ChevronRight className="size-4" aria-hidden="true" />

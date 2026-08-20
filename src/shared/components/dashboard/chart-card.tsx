@@ -38,8 +38,9 @@ export function ChartCard({
         ) : null}
 
         {isLoading ? (
-          <div className="radius-md grid h-[240px] place-items-center border border-white/10 bg-white/5">
-            <p className="text-body-sm text-muted">Loading chart...</p>
+          <div className="grid h-[240px] gap-3 rounded-md border border-white/10 bg-white/5 p-4">
+            <div className="h-4 w-1/3 animate-pulse rounded bg-white/10" />
+            <div className="h-full animate-pulse rounded bg-white/10" />
           </div>
         ) : isEmpty ? (
           <div className="radius-md grid h-[240px] place-items-center border border-white/10 bg-white/5">

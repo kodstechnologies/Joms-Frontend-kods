@@ -437,6 +437,7 @@ export const MODULE_METRICS_REGISTRY: Record<string, ModuleMetricsDefinition> = 
       description: item.description,
       defaultActive: item.defaultActive,
     })),
+    columns: [],
   },
   'platform-health': {
     moduleKey: PLATFORM_HEALTH_MODULE_KEY,

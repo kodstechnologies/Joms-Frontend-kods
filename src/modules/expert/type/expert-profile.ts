@@ -20,6 +20,7 @@ export type ExpertBasicProfile = {
   experienceMonths?: number
   serviceType?: string
   serviceCategory?: string[]
+  serviceCategoryDisplay?: string[]
   offerings?: string[]
   sampleWorkLink?: string
   sampleWorkFile?: string
@@ -52,9 +53,16 @@ export type ExpertProfileDetail = {
   subCategory?: unknown[]
   customUrl?: string
   profileUrl?: string
+  customLink?: string
+  shareUrl?: string
   customUsername?: string
   deepLink?: string
+  bio?: string
+  listedServices?: ExpertService[]
+  listedConsultations?: ExpertConsultation[]
   expertId?: string
+  adminTags?: string[]
+  lastActiveAt?: string
   rating?: number
   ratings?: number
   reviewCount?: number | string
@@ -178,6 +186,7 @@ export type ExpertAnalyticsData = {
     accountStatus?: string
     lastActiveAt?: string
     customUrl?: string
+    bio?: string
     profession?: string
     experience?: string
     avatarUrl?: string | null
@@ -270,6 +279,7 @@ export type PartnerInsightReview = {
   rating: number
   text: string
   userName: string
+  userRole?: string | null
   userAvatarUrl?: string | null
   engagementType?: string
   engagementId?: string

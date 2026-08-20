@@ -8,7 +8,7 @@ export const timezoneOptions = ['IST, +5:30, Kolkata, India', 'UTC', 'EST, -5:00
 
 export const dateFormatOptions = ['DD/MM/YY', 'MM/DD/YY', 'YYYY-MM-DD']
 
-export const currencyOptions = ['$ USD', '₹ INR', '€ EUR', '£ GBP']
+export const currencyOptions = ['₹ INR']
 
 export const languageOptions = ['English', 'Hindi', 'Tamil']
 

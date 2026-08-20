@@ -5,6 +5,7 @@ import { ArrowLeft, Check, Star, User, Users, X } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { StatCard } from '@/shared/components/dashboard/stat-card'
+import { DecisionActionModal } from '@/shared/components/modal/decision-action-modal'
 import { DataTable } from '@/shared/components/table/data-table'
 import {
   TableActionsDropdown,
@@ -59,6 +60,11 @@ const formatClientCode = (row: ConsultationBookingRow) => {
   return `CLT-${row.clientId.replace(/-/g, '').slice(-5).toUpperCase()}`
 }
 
+const canCancelBooking = (status?: string | null) => {
+  const normalized = String(status || '').toLowerCase()
+  return !['cancelled', 'canceled', 'completed', 'terminated'].includes(normalized)
+}
+
 const buildFilterConfig = (): ModuleFilterConfig => ({
   moduleKey: 'consultation-performance',
   moduleName: 'Consultation Performance',
@@ -95,6 +101,8 @@ export function ConsultationPerformancePage() {
   const [status, setStatus] = useState<string | undefined>()
   const [activeActionMenu, setActiveActionMenu] = useState<string | null>(null)
   const [paymentBookingId, setPaymentBookingId] = useState<string | null>(null)
+  const [cancelBookingRow, setCancelBookingRow] = useState<ConsultationBookingRow | null>(null)
+  const [cancelAdminNotes, setCancelAdminNotes] = useState('')
   const [isFilterOpen, setIsFilterOpen] = useState(false)
   const [isExportOpen, setIsExportOpen] = useState(false)
   const filterConfig = useMemo(() => buildFilterConfig(), [])
@@ -131,6 +139,22 @@ export function ConsultationPerformancePage() {
     },
     [consultationId, expertId, navigate],
   )
+
+  const closeCancelModal = () => {
+    setCancelBookingRow(null)
+    setCancelAdminNotes('')
+  }
+
+  const handleCancelConsultation = async () => {
+    if (!cancelBookingRow) return
+    try {
+      await cancelBooking.mutateAsync(cancelBookingRow.id)
+      toast.success('Consultation cancelled')
+      closeCancelModal()
+    } catch {
+      toast.error('Failed to cancel the consultation.')
+    }
+  }
 
   const handleExport = useCallback(
     (format = 'excel') => {
@@ -220,7 +244,7 @@ export function ConsultationPerformancePage() {
         cell: ({ row }) => {
           const booking = row.original
           return (
-            <div className="flex justify-end">
+            <div className="flex justify-end" onClick={(event) => event.stopPropagation()}>
               <TableActionsDropdown
                 label="Booking actions"
                 isOpen={activeActionMenu === booking.id}
@@ -246,18 +270,14 @@ export function ConsultationPerformancePage() {
                 >
                   View Payment Details
                 </TableActionsItem>
-                {booking.status !== 'cancelled' ? (
+                {canCancelBooking(booking.status) ? (
                   <TableActionsItem
                     tone="light"
                     icon={<X className="size-3.5" />}
-                    onClick={async () => {
+                    onClick={() => {
                       setActiveActionMenu(null)
-                      try {
-                        await cancelBooking.mutateAsync(booking.id)
-                        toast.success('Consultation cancelled')
-                      } catch {
-                        toast.error('Failed to cancel the consultation.')
-                      }
+                      setCancelAdminNotes('')
+                      setCancelBookingRow(booking)
                     }}
                   >
                     Cancel Consultation
@@ -269,7 +289,7 @@ export function ConsultationPerformancePage() {
         },
       },
     ],
-    [activeActionMenu, cancelBooking, openBooking],
+    [activeActionMenu, openBooking],
   )
 
   return (
@@ -278,6 +298,20 @@ export function ConsultationPerformancePage() {
         open={Boolean(paymentBookingId)}
         bookingId={paymentBookingId}
         onClose={() => setPaymentBookingId(null)}
+      />
+
+      <DecisionActionModal
+        open={Boolean(cancelBookingRow)}
+        variant="warn"
+        title="Cancel Consultation"
+        description={`Are you sure you want to cancel ${cancelBookingRow?.title || 'this consultation'} for ${cancelBookingRow?.clientName || 'this client'}? The client will be notified.`}
+        submitLabel="Cancel Consultation"
+        adminNotes={cancelAdminNotes}
+        onAdminNotesChange={setCancelAdminNotes}
+        reasonRequired={false}
+        onClose={closeCancelModal}
+        onSubmit={handleCancelConsultation}
+        isSubmitting={cancelBooking.isPending}
       />
 
       <AdvancedFilterSheet

@@ -60,6 +60,7 @@ export type ExpertApplicationExpert = {
     experienceMonths?: number
     serviceType?: string
     serviceCategory?: string[]
+    serviceCategoryDisplay?: string[]
     offerings?: string[]
     sampleWorkLink?: string
     sampleWorkFile?: string

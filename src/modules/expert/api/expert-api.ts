@@ -340,3 +340,43 @@ export const bulkRaiseTicketExperts = async (payload: BulkActionPayload) => {
   )
   return response.data
 }
+
+export const updateExpertAdminNotes = async (partnerId: string, internalNotes: string) => {
+  const response = await adminApiClient.patch(
+    `/admin/internal/admin/partners/${partnerId}/admin-notes`,
+    { internalNotes },
+  )
+  return response.data
+}
+
+export const updateExpertAdminTags = async (partnerId: string, tags: string[]) => {
+  const response = await adminApiClient.patch(
+    `/admin/internal/admin/partners/${partnerId}/admin-tags`,
+    { tags },
+  )
+  return response.data
+}
+
+export type PartnerAvailabilityWindow = {
+  day?: string
+  from?: string
+  to?: string
+}
+
+export type PartnerUnavailabilityWindow = {
+  date?: string
+  from?: string
+  to?: string
+}
+
+export type PartnerAvailability = {
+  weeklyAvailability?: PartnerAvailabilityWindow[]
+  unavailableDates?: PartnerUnavailabilityWindow[]
+}
+
+export const fetchExpertAvailability = async (partnerId: string) => {
+  const response = await adminApiClient.get<{ success: boolean; data: PartnerAvailability }>(
+    `/admin/internal/admin/partners/${partnerId}/availability`,
+  )
+  return response.data
+}

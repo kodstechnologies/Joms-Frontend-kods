@@ -60,6 +60,12 @@ export interface VenueFullViewVenue {
   bookingsCount?: number
   insights?: VenueFullViewInsights
   adminInternalNotes?: string | null
+  adminTags?: string[]
+  lastActiveAt?: string | null
+  customUrl?: string | null
+  customLink?: string | null
+  shareUrl?: string | null
+  customUsername?: string | null
   venueImages?: string[]
   createdAt?: string
   updatedAt?: string

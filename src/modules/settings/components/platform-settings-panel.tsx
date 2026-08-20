@@ -17,7 +17,6 @@ import {
   useUpdateErrorTemplate,
 } from '../hooks/use-settings'
 import {
-  currencyOptions,
   dateFormatOptions,
   exportFormatOptions,
   languageOptions,
@@ -134,7 +133,11 @@ export function PlatformSettingsPanel({ value, onChange }: PlatformSettingsPanel
   const updateDisplay = (patch: Partial<PlatformSettings['displayPreferences']>) => {
     onChange({
       ...value,
-      displayPreferences: { ...value.displayPreferences, ...patch },
+      displayPreferences: {
+        ...value.displayPreferences,
+        ...patch,
+        defaultCurrency: 'INR',
+      },
     })
   }
 
@@ -226,14 +229,10 @@ export function PlatformSettingsPanel({ value, onChange }: PlatformSettingsPanel
           <SettingsSelectField
             id="display-currency"
             label="Default Currency"
-            value={value.displayPreferences.defaultCurrency || '$ USD'}
-            onChange={(event) => updateDisplay({ defaultCurrency: event.target.value })}
+            value="INR"
+            onChange={() => updateDisplay({ defaultCurrency: 'INR' })}
           >
-            {currencyOptions.map((option) => (
-              <option key={option} value={option}>
-                {option}
-              </option>
-            ))}
+            <option value="INR">INR</option>
           </SettingsSelectField>
           <SettingsSelectField
             id="display-language"
