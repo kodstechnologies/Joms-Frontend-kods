@@ -160,6 +160,9 @@ export function CreateVenueOnboardingPage() {
       if (!formData.address.trim()) return 'Address is required.'
       if (!formData.city.trim()) return 'City is required.'
       if (!formData.pincode.trim()) return 'Pin code is required.'
+      const imageCount = formData.venueImages.length + formData.venueImageUrls.length
+      if (imageCount === 0) return 'At least one venue image is required.'
+      if (imageCount > 3) return 'A maximum of 3 venue images are allowed.'
     }
     if (step === 3) {
       if (!formData.idType) return 'ID type is required.'

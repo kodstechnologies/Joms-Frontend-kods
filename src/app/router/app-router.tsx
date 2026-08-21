@@ -895,6 +895,15 @@ export function AppRouter() {
                 <Route path="/memberships/plans/deleted" element={<MembershipDeletedPlansPage />} />
                 <Route path="/memberships/experts" element={<ExpertMembershipsPage />} />
                 <Route path="/memberships/experts/:id" element={<MembershipDetailsPage />} />
+
+                <Route
+                  path="/settings/membership-upgrade-details/:id"
+                  element={<MembershipUpgradeDetailsPage />}
+                />
+                <Route
+                  path="/settings/membership-upgrade-details"
+                  element={<MembershipUpgradeDetailsPage />}
+                />
               </Route>
 
               <Route element={<PermissionRoute module="settings" />}>
@@ -968,6 +977,9 @@ export function AppRouter() {
                 />
                 <Route path="/finance/refunds/:id/dispute" element={<DisputeDetailViewPage />} />
                 <Route path="/finance/refunds/:id" element={<RefundDetailViewPage />} />
+
+                <Route path="/settings/refund-details/:id" element={<RefundDetailsPage />} />
+                <Route path="/settings/refund-details" element={<RefundDetailsPage />} />
               </Route>
 
               <Route element={<PermissionRoute module="experts" />}>
@@ -1139,12 +1151,6 @@ export function AppRouter() {
 
                 <Route path="/settings/escalations" element={<EscalationPage />} />
 
-                <Route path="/settings/refund-details" element={<RefundDetailsPage />} />
-
-                <Route
-                  path="/settings/membership-upgrade-details"
-                  element={<MembershipUpgradeDetailsPage />}
-                />
                 <Route path="/venues/management/pending" element={<VenuePendingApprovalsPage />} />
                 <Route path="/venues/management/suspended" element={<VenueSuspendedPage />} />
                 <Route path="/venues/management/reported" element={<VenueReportedPage />} />

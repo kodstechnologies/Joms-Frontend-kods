@@ -1,9 +1,18 @@
 import { useCallback, useMemo, useState, type ReactNode } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { CircleArrowDown, CircleArrowUp, ClipboardList, Tag, Waypoints, X } from 'lucide-react'
+import {
+  CircleArrowDown,
+  CircleArrowUp,
+  ClipboardList,
+  Flag,
+  Tag,
+  Waypoints,
+  X,
+} from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
+import { EscalateMembershipUpgradeModal } from '../components/escalate-membership-upgrade-modal'
 import { MembershipActionModals } from '../components/membership-action-modals'
 import { MembershipStatsBar } from '../components/membership-stats-bar'
 import {
@@ -17,6 +26,7 @@ import { useExpertMembershipStore } from '../store/expert-membership-store'
 import type { MembershipSubscription } from '../types/membership-subscription'
 import { formatCurrency, formatMembershipDate } from '../utils/membership-format'
 import { fetchExpertSubscriptions } from '../api/membership-subscription-api'
+import { useAuthStore } from '@/modules/auth/store/auth-store'
 import { SectionHeader } from '@/shared/components/dashboard/section-header'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 import { DataTable } from '@/shared/components/table/data-table'
@@ -77,6 +87,7 @@ const EXPORT_COLUMN_MAP: Record<
 
 export function ExpertMembershipsPage() {
   const navigate = useNavigate()
+  const isSuperAdmin = useAuthStore((state) => state.user?.isSuperAdmin)
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [selectedSubscription, setSelectedSubscription] = useState<MembershipSubscription | null>(
     null,
@@ -84,6 +95,7 @@ export function ExpertMembershipsPage() {
   const [actionType, setActionType] = useState<
     'upgrade' | 'downgrade' | 'extend' | 'cancel' | null
   >(null)
+  const [escalateOpen, setEscalateOpen] = useState(false)
   const { tagModalOpen, openTagModal, closeTagModal, saveTags, initialTags } = useEntityTags()
 
   const { searchQuery, setSearchQuery, currentPage, setCurrentPage } = useExpertMembershipStore()
@@ -254,6 +266,18 @@ export function ExpertMembershipsPage() {
             >
               Upgrade plan
             </TableActionsItem>
+            {isSuperAdmin ? (
+              <TableActionsItem
+                icon={<Flag className="size-4" strokeWidth={1.85} />}
+                onClick={() => {
+                  setActiveDropdownId(null)
+                  setSelectedSubscription(row.original)
+                  setEscalateOpen(true)
+                }}
+              >
+                Escalate Upgrade
+              </TableActionsItem>
+            ) : null}
             <TableActionsItem
               icon={<CircleArrowDown className="size-4" strokeWidth={1.85} />}
               onClick={() => openAction(row.original, 'downgrade')}
@@ -277,7 +301,7 @@ export function ExpertMembershipsPage() {
         ),
       },
     ],
-    [activeDropdownId, navigate, openAction, openTagModal],
+    [activeDropdownId, isSuperAdmin, navigate, openAction, openTagModal],
   )
 
   return (
@@ -320,6 +344,15 @@ export function ExpertMembershipsPage() {
       />
 
       {exportFilterModals}
+
+      <EscalateMembershipUpgradeModal
+        open={escalateOpen}
+        subscription={selectedSubscription}
+        onClose={() => {
+          setEscalateOpen(false)
+          setSelectedSubscription(null)
+        }}
+      />
 
       <MembershipActionModals
         subscription={selectedSubscription}

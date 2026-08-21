@@ -2,7 +2,13 @@ import { adminApiClient } from '@/shared/lib/axios'
 
 import { fetchEscalationAssignees } from '@/modules/expert/api/expert-application-api'
 
-export type AdminEscalationEntityType = 'partner' | 'service' | 'consultation' | 'venue_space'
+export type AdminEscalationEntityType =
+  | 'partner'
+  | 'service'
+  | 'consultation'
+  | 'venue_space'
+  | 'refund'
+  | 'membership_upgrade'
 
 export type AdminEscalation = {
   _id?: string
@@ -12,7 +18,7 @@ export type AdminEscalation = {
   partnerId?: string
   venueId?: string
   moduleKey?: string
-  escalationTarget?: 'kyc' | 'banking' | 'application'
+  escalationTarget?: 'kyc' | 'banking' | 'application' | 'refund' | 'membership_upgrade'
   applicationUrl?: string
   escalatedToSubAdminId?: string
   escalatedToAuthAdminId?: string
@@ -23,6 +29,9 @@ export type AdminEscalation = {
   escalatedByName?: string
   escalationStatus?: 'assigned' | 'in_progress' | 'completed'
   priority?: 'Low' | 'Medium' | 'High' | 'Critical'
+  metadata?: Record<string, unknown>
+  decision?: string
+  decisionNote?: string
 }
 
 export type EscalateAdminEntityPayload = {
@@ -32,7 +41,26 @@ export type EscalateAdminEntityPayload = {
   venueId?: string
   applicationUrl?: string
   entityTitle?: string
-  escalationTarget?: 'kyc' | 'banking' | 'application'
+  escalationTarget?: 'kyc' | 'banking' | 'application' | 'refund' | 'membership_upgrade'
+  partnerId?: string
+  priority?: 'Low' | 'Medium' | 'High' | 'Critical'
+  metadata?: Record<string, unknown>
+  refundId?: string
+  amount?: number | string
+  reason?: string
+  paymentMethod?: string
+  serviceName?: string
+  requestedBy?: string
+  transactionId?: string
+  newMembershipPlanId?: string
+  newPlanName?: string
+  currentPlanId?: string
+  currentPlanName?: string
+  billingCycleName?: string
+  reasons?: string[]
+  adminNotes?: string
+  sourceApp?: string
+  username?: string
 }
 
 export type EscalationListItem = {
@@ -46,6 +74,8 @@ export type EscalationListItem = {
   applicationUrl: string
   entityType: AdminEscalationEntityType
   entityId: string
+  venueId?: string
+  serviceType?: string
   moduleKey: string
   escalationTarget?: string
   escalatedByName?: string
@@ -140,12 +170,68 @@ export const escalateVenueSpaceApplication = async (
   return response.data
 }
 
+export const escalateRefundApplication = async (
+  id: string,
+  payload: EscalateAdminEntityPayload,
+) => {
+  const response = await adminApiClient.patch(
+    `/admin/internal/admin/refunds/${id}/escalate`,
+    payload,
+  )
+  return response.data
+}
+
+export const escalateMembershipUpgradeApplication = async (
+  subscriptionId: string,
+  payload: EscalateAdminEntityPayload,
+) => {
+  const response = await adminApiClient.patch(
+    `/admin/internal/admin/membership-upgrades/${subscriptionId}/escalate`,
+    payload,
+  )
+  return response.data
+}
+
+export const approveMembershipUpgradeEscalation = async (
+  subscriptionId: string,
+  payload?: { decisionNote?: string; adminNotes?: string },
+) => {
+  const response = await adminApiClient.patch(
+    `/admin/internal/admin/membership-upgrades/${subscriptionId}/approve`,
+    payload || {},
+  )
+  return response.data
+}
+
+export const denyMembershipUpgradeEscalation = async (
+  subscriptionId: string,
+  payload?: { decisionNote?: string; adminNote?: string; adminNotes?: string },
+) => {
+  const response = await adminApiClient.patch(
+    `/admin/internal/admin/membership-upgrades/${subscriptionId}/deny`,
+    payload || {},
+  )
+  return response.data
+}
+
 export const startAdminEscalationReview = async (
   entityType: AdminEscalationEntityType,
   entityId: string,
 ) => {
   const response = await adminApiClient.patch(
     `/admin/internal/admin/escalations/${entityType}/${entityId}/start`,
+  )
+  return response.data
+}
+
+export const completeAdminEscalation = async (
+  entityType: AdminEscalationEntityType,
+  entityId: string,
+  payload?: { decision?: string; decisionNote?: string; adminNote?: string },
+) => {
+  const response = await adminApiClient.patch(
+    `/admin/internal/admin/escalations/${entityType}/${entityId}/complete`,
+    payload || {},
   )
   return response.data
 }

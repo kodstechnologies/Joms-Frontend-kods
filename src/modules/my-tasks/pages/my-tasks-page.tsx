@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react'
 import { ClipboardList } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
 
 import { useMyTasks } from '../hooks/use-my-tasks'
+import { useOpenEscalation } from '../hooks/use-open-escalation'
 import type { MyTask, TaskStatus, TaskTab } from '../types/my-tasks'
 import { useAuthStore } from '@/modules/auth/store/auth-store'
 import { cn } from '@/shared/lib/cn'
@@ -150,7 +150,7 @@ function TaskSection({
 }
 
 export function MyTasksPage() {
-  const navigate = useNavigate()
+  const openEscalation = useOpenEscalation()
   const user = useAuthStore((state) => state.user)
   const [activeTab, setActiveTab] = useState<TaskTab>('all')
   const { data, isLoading, isError } = useMyTasks(activeTab)
@@ -166,7 +166,13 @@ export function MyTasksPage() {
   const escalatedTasks = escalatedData?.data.tasks ?? []
 
   const handleOpenTask = (task: MyTask) => {
-    navigate(task.applicationUrl)
+    openEscalation({
+      entityType: task.entityType,
+      entityId: task.entityId,
+      venueId: task.venueId,
+      serviceType: task.serviceType,
+      applicationUrl: task.applicationUrl,
+    })
   }
 
   return (
