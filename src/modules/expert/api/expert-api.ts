@@ -357,6 +357,36 @@ export const updateExpertAdminTags = async (partnerId: string, tags: string[]) =
   return response.data
 }
 
+export type ExpertCustomLinkDetails = {
+  partnerId: string
+  expertName?: string | null
+  username?: string | null
+  link: string | null
+  visible: boolean
+  createdAt?: string | null
+  status: string
+  usage: string
+  traffic: string
+  trafficCount?: number
+  orders: number
+}
+
+export const fetchExpertCustomLink = async (partnerId: string) => {
+  const response = await adminApiClient.get<{
+    success: boolean
+    data: ExpertCustomLinkDetails
+  }>(`/admin/internal/admin/partners/${partnerId}/custom-link`)
+  return response.data.data
+}
+
+export const updateExpertCustomLinkVisibility = async (partnerId: string, visible: boolean) => {
+  const response = await adminApiClient.patch<{
+    success: boolean
+    data: ExpertCustomLinkDetails
+  }>(`/admin/internal/admin/partners/${partnerId}/custom-link`, { visible })
+  return response.data.data
+}
+
 export type PartnerAvailabilityWindow = {
   day?: string
   from?: string

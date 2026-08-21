@@ -4,12 +4,14 @@ import {
   fetchExpertAnalytics,
   fetchExpertAvailability,
   fetchExpertConsultations,
+  fetchExpertCustomLink,
   fetchExpertProfile,
   fetchExpertReports,
   fetchExpertServices,
   fetchPartnerInsights,
   updateExpertAdminNotes,
   updateExpertAdminTags,
+  updateExpertCustomLinkVisibility,
 } from '../api/expert-api'
 
 export const useExpertProfile = (id?: string) =>
@@ -50,6 +52,26 @@ export const useUpdateExpertAdminTags = (partnerId?: string) => {
     mutationFn: (tags: string[]) => updateExpertAdminTags(partnerId as string, tags),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['expert-profile', partnerId] })
+    },
+  })
+}
+
+export const useExpertCustomLink = (partnerId?: string, enabled = false) =>
+  useQuery({
+    queryKey: ['expert-custom-link', partnerId],
+    queryFn: () => fetchExpertCustomLink(partnerId as string),
+    enabled: Boolean(partnerId) && enabled,
+  })
+
+export const useUpdateExpertCustomLinkVisibility = (partnerId?: string) => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (visible: boolean) =>
+      updateExpertCustomLinkVisibility(partnerId as string, visible),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['expert-custom-link', partnerId] })
+      void queryClient.invalidateQueries({ queryKey: ['expert-profile', partnerId] })
+      void queryClient.invalidateQueries({ queryKey: ['expert-analytics', partnerId] })
     },
   })
 }

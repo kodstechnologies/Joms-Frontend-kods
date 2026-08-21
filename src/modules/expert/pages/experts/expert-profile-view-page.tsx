@@ -73,12 +73,14 @@ import {
   useExpertAnalytics,
   useExpertAvailability,
   useExpertConsultations,
+  useExpertCustomLink,
   useExpertProfile,
   useExpertReportsForPartner,
   useExpertServices,
   usePartnerInsights,
   useUpdateExpertAdminNotes,
   useUpdateExpertAdminTags,
+  useUpdateExpertCustomLinkVisibility,
 } from '../../hooks/use-expert-profile'
 import {
   DEFAULT_EXPERT_PROFILE_ANALYTICS_METRIC_IDS,
@@ -104,6 +106,7 @@ import {
 import { PauseCategoryModal } from '../../components/category/pause-category-modal'
 import { AddTagModal } from '@/shared/components/modal/add-tag-modal'
 import { ShareProfileModal } from '@/shared/components/modal/share-profile-modal'
+import { CustomUrlModal } from '../../components/custom-url-modal'
 import { AdminNotesModal } from '@/modules/settings/components/admin-notes-modal'
 import { UpdatePasswordModal } from '@/modules/rbac/components/update-password-modal'
 import { MODERATION_CATEGORY_SLUGS } from '@/modules/settings/api/templates-api'
@@ -458,6 +461,7 @@ function ProfileSidebar({
   tickets = [],
   ticketsLoading = false,
   onCheckTimelines,
+  onOpenCustomUrl,
 }: {
   profile: ExpertProfileDetail
   partnerId: string
@@ -465,12 +469,14 @@ function ProfileSidebar({
   tickets?: SupportTicket[]
   ticketsLoading?: boolean
   onCheckTimelines?: () => void
+  onOpenCustomUrl?: () => void
 }) {
   const navigate = useNavigate()
   const basic = profile.basicProfile
   const kycBadge = getKycBadge(profile.finalReview)
 
   const customUrl = resolveCustomUrl(profile, analytics)
+  const customLinkVisible = profile.customLinkVisible !== false
 
   const deepLink =
     ((profile as unknown as Record<string, unknown>).deepLink as string | undefined) ||
@@ -535,26 +541,24 @@ function ProfileSidebar({
         </SidebarRow>
         <SidebarRow label="Expert Custom URL">
           {customUrl ? (
-            <a
-              href={customUrl}
-              title={deepLink ? `Custom URL: ${customUrl}\nDeep Link: ${deepLink}` : customUrl}
-              onClick={(event) => {
-                event.preventDefault()
-                if (deepLink) {
-                  try {
-                    window.location.href = deepLink
-                  } catch {
-                    // Ignore deep link errors
-                  }
-                }
-                setTimeout(() => {
-                  window.open(customUrl, '_blank')
-                }, 300)
-              }}
-              className="block truncate font-medium text-white underline transition-colors hover:text-[#E0A263]"
-            >
-              {customUrl}
-            </a>
+            customLinkVisible ? (
+              <button
+                type="button"
+                title={deepLink ? `Custom URL: ${customUrl}\nDeep Link: ${deepLink}` : customUrl}
+                onClick={() => onOpenCustomUrl?.()}
+                className="block max-w-full truncate font-medium text-white underline transition-colors hover:text-[#E0A263]"
+              >
+                {customUrl}
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => onOpenCustomUrl?.()}
+                className="font-medium text-white/50 underline transition-colors hover:text-[#E0A263]"
+              >
+                Hidden
+              </button>
+            )
           ) : (
             '—'
           )}
@@ -1455,7 +1459,7 @@ function ServicesSubTab({
     }
     const params = new URLSearchParams({
       channel: 'push',
-      audience: 'service-management',
+      audience: 'experts',
       partnerIds: expertId,
     })
     navigate(`/communication/create?${params.toString()}`)
@@ -1468,7 +1472,7 @@ function ServicesSubTab({
     }
     const params = new URLSearchParams({
       channel: 'email',
-      audience: 'service-management',
+      audience: 'experts',
       partnerIds: expertId,
     })
     navigate(`/communication/create?${params.toString()}`)
@@ -1515,7 +1519,8 @@ function ServicesSubTab({
 
       if (successCount === 0) {
         const firstError = results.find((result) => result.status === 'rejected') as
-          PromiseRejectedResult | undefined
+          | PromiseRejectedResult
+          | undefined
         toast.error(getApiErrorMessage(firstError?.reason) || 'Failed to escalate services.')
         return
       }
@@ -2560,6 +2565,7 @@ export function ExpertProfileViewPage() {
   const [deleteAdminNotes, setDeleteAdminNotes] = useState('')
   const [notesModalOpen, setNotesModalOpen] = useState(false)
   const [shareModalOpen, setShareModalOpen] = useState(false)
+  const [customUrlModalOpen, setCustomUrlModalOpen] = useState(false)
   const [selectedReport, setSelectedReport] = useState<ExpertReportItem | null>(null)
   const scrollToTimelineRef = useRef(false)
   const { tagModalOpen, openTagModal, closeTagModal } = useEntityTags()
@@ -2585,6 +2591,8 @@ export function ExpertProfileViewPage() {
   const { data: analyticsRes } = useExpertAnalytics(id)
   const updateNotesMutation = useUpdateExpertAdminNotes(id)
   const updateTagsMutation = useUpdateExpertAdminTags(id)
+  const customLinkQuery = useExpertCustomLink(id, customUrlModalOpen)
+  const updateCustomLinkVisibilityMutation = useUpdateExpertCustomLinkVisibility(id)
   const { data: availabilityRes, isLoading: availabilityLoading } = useExpertAvailability(
     id,
     activeTab === 'availability',
@@ -3175,6 +3183,7 @@ export function ExpertProfileViewPage() {
           tickets={activeTickets}
           ticketsLoading={ticketsLoading}
           onCheckTimelines={handleCheckTimelines}
+          onOpenCustomUrl={() => setCustomUrlModalOpen(true)}
         />
 
         <div className="flex flex-col gap-5">
@@ -3294,6 +3303,29 @@ export function ExpertProfileViewPage() {
         url={resolveCustomUrl(profile, analyticsRes?.data) || ''}
         title={`Check out ${displayName}'s expert profile`}
         onClose={() => setShareModalOpen(false)}
+      />
+
+      <CustomUrlModal
+        open={customUrlModalOpen}
+        expertName={displayName}
+        details={customLinkQuery.data ?? null}
+        isLoading={customLinkQuery.isLoading}
+        isSaving={updateCustomLinkVisibilityMutation.isPending}
+        onClose={() => setCustomUrlModalOpen(false)}
+        onToggleVisible={(visible) => {
+          updateCustomLinkVisibilityMutation.mutate(visible, {
+            onSuccess: () => {
+              toast.success(
+                visible
+                  ? 'Custom URL is now visible on the profile'
+                  : 'Custom URL is now hidden from the profile',
+              )
+            },
+            onError: (error) => {
+              toast.error(getApiErrorMessage(error))
+            },
+          })
+        }}
       />
 
       <ExpertReportDetailModal

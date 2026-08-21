@@ -883,7 +883,7 @@ export const LeaderboardPage = () => {
           <div className="flex flex-wrap items-center gap-3">
             <Button
               variant="secondary"
-              className="ui-advance-filters gap-2"
+              className="ui-advance-filters table-advance-filter-btn gap-2"
               onClick={() => setFiltersOpen(true)}
             >
               <SlidersHorizontal className="size-4" />

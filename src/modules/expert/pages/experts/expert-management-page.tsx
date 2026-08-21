@@ -714,14 +714,14 @@ export const ExpertManagementPage = () => {
       } else if (actionLabel.includes('Notify')) {
         const params = new URLSearchParams({
           channel: 'push',
-          audience: 'expert-management',
+          audience: 'experts',
           partnerIds: ids.join(','),
         })
         navigate(`/communication/create?${params.toString()}`)
       } else if (actionLabel.includes('Message') || actionLabel.includes('Communicate')) {
         const params = new URLSearchParams({
           channel: 'email',
-          audience: 'expert-management',
+          audience: 'experts',
           partnerIds: ids.join(','),
         })
         navigate(`/communication/create?${params.toString()}`)

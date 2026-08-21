@@ -56,6 +56,8 @@ export type ExpertProfileDetail = {
   customLink?: string
   shareUrl?: string
   customUsername?: string
+  customLinkVisible?: boolean
+  customUsernameSetAt?: string | null
   deepLink?: string
   bio?: string
   listedServices?: ExpertService[]

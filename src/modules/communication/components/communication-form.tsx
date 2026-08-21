@@ -6,10 +6,12 @@ import { toast } from 'sonner'
 import {
   COMMUNICATION_AUDIENCE_OPTIONS,
   COMMUNICATION_CHANNEL_OPTIONS,
+  COMMUNICATION_PRIORITY_OPTIONS,
   COMMUNICATION_TYPE_OPTIONS,
   type CommunicationAudience,
   type CommunicationChannel,
   type CommunicationDeliveryType,
+  type CommunicationPriority,
   type CommunicationType,
   type CreateCommunicationPayload,
 } from '../api/communication-api'
@@ -37,6 +39,7 @@ type FormValues = {
   type: CommunicationType | ''
   audience: CommunicationAudience | ''
   deliveryType: CommunicationDeliveryType
+  priority: CommunicationPriority
   scheduledAt: string
   subject: string
   messageContent: string
@@ -49,6 +52,7 @@ const emptyForm: FormValues = {
   type: '',
   audience: '',
   deliveryType: 'send-now',
+  priority: 'medium',
   scheduledAt: '',
   subject: '',
   messageContent: '',
@@ -61,6 +65,11 @@ const labelClass = 'text-body-sm text-muted mb-1.5 block'
 
 const CHANNEL_VALUES = new Set(['in-app', 'email', 'push'])
 const AUDIENCE_VALUES = new Set([
+  'experts',
+  'venue-partners',
+  'members',
+  'admins',
+  'custom-segment',
   'expert-management',
   'service-management',
   'venue-management',
@@ -88,7 +97,7 @@ export function CommunicationForm() {
   const prefillAudience = AUDIENCE_VALUES.has(prefillAudienceRaw)
     ? (prefillAudienceRaw as CommunicationAudience)
     : prefillPartnerIds.length
-      ? 'expert-management'
+      ? 'experts'
       : ''
 
   const optionsQuery = useCommunicationOptions()
@@ -127,6 +136,7 @@ export function CommunicationForm() {
           type: item.type ?? '',
           audience: item.audience ?? '',
           deliveryType: item.deliveryType ?? 'send-now',
+          priority: item.priority ?? 'medium',
           scheduledAt: toDateTimeLocalValue(item.scheduledAt),
           subject: item.subject ?? '',
           messageContent: item.messageContent ?? '',
@@ -152,6 +162,7 @@ export function CommunicationForm() {
       audiences={optionsQuery.data?.audiences}
       channels={optionsQuery.data?.channels}
       types={optionsQuery.data?.types}
+      priorities={optionsQuery.data?.priorities}
       isSubmitting={createMutation.isPending || updateMutation.isPending}
       onCreate={(payload, handlers) => createMutation.mutate(payload, handlers)}
       onUpdate={(id, payload, handlers) => updateMutation.mutate({ id, payload }, handlers)}
@@ -167,6 +178,7 @@ type CommunicationFormFieldsProps = {
   audiences?: typeof COMMUNICATION_AUDIENCE_OPTIONS
   channels?: typeof COMMUNICATION_CHANNEL_OPTIONS
   types?: typeof COMMUNICATION_TYPE_OPTIONS
+  priorities?: typeof COMMUNICATION_PRIORITY_OPTIONS
   isSubmitting: boolean
   onCreate: (
     payload: CreateCommunicationPayload,
@@ -187,6 +199,7 @@ function CommunicationFormFields({
   audiences,
   channels,
   types,
+  priorities,
   isSubmitting,
   onCreate,
   onUpdate,
@@ -201,18 +214,23 @@ function CommunicationFormFields({
   const [deliveryType, setDeliveryType] = useState<CommunicationDeliveryType>(
     initialValues.deliveryType,
   )
+  const [priority, setPriority] = useState<CommunicationPriority>(initialValues.priority)
   const [scheduledAt, setScheduledAt] = useState(initialValues.scheduledAt)
   const [subject, setSubject] = useState(initialValues.subject)
   const [messageContent, setMessageContent] = useState(initialValues.messageContent)
   const [additionalNotes, setAdditionalNotes] = useState(initialValues.additionalNotes)
 
   const audienceOptions = useMemo(() => {
-    const options = audiences ?? COMMUNICATION_AUDIENCE_OPTIONS
-    return options.filter((opt) => opt.value !== 'all-users')
-  }, [audiences])
+    const options = [...(audiences ?? COMMUNICATION_AUDIENCE_OPTIONS)]
+    if (audience && !options.some((opt) => opt.value === audience)) {
+      options.push({ value: audience, label: audience })
+    }
+    return options
+  }, [audience, audiences])
 
   const channelOptions = useMemo(() => channels ?? COMMUNICATION_CHANNEL_OPTIONS, [channels])
   const typeOptions = useMemo(() => types ?? COMMUNICATION_TYPE_OPTIONS, [types])
+  const priorityOptions = useMemo(() => priorities ?? COMMUNICATION_PRIORITY_OPTIONS, [priorities])
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -238,6 +256,7 @@ function CommunicationFormFields({
       type,
       audience,
       deliveryType,
+      priority,
       scheduledAt: deliveryType === 'schedule' ? new Date(scheduledAt).toISOString() : null,
       subject: subject.trim(),
       messageContent: messageContent.trim(),
@@ -355,6 +374,21 @@ function CommunicationFormFields({
                 ))}
               </select>
             </div>
+          </div>
+
+          <div>
+            <label className={labelClass}>Priority</label>
+            <select
+              className={selectClass}
+              value={priority}
+              onChange={(e) => setPriority(e.target.value as CommunicationPriority)}
+            >
+              {priorityOptions.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div>

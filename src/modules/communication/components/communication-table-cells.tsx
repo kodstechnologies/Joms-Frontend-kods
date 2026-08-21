@@ -1,30 +1,53 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
+import { Ban, Copy, Eye, Pause, Play } from 'lucide-react'
 
-import type { Communication } from '../api/communication-api'
-import { useDeleteCommunication } from '../hooks/use-communications'
+import type { Communication, CommunicationStatus } from '../api/communication-api'
+import {
+  useCancelCommunication,
+  useDeleteCommunication,
+  useDuplicateCommunication,
+  usePauseCommunication,
+  useResumeCommunication,
+} from '../hooks/use-communications'
 import {
   TableActionsDropdown,
   TableActionsItem,
 } from '@/shared/components/table/table-actions-dropdown'
 import { getApiErrorMessage } from '@/shared/lib/api-error'
 
-import { Eye } from 'lucide-react'
 import editIcon from '@/assets/JOMS_ICONS-2/edit.svg'
 import deleteIcon from '@/assets/JOMS_ICONS-2/icons8-delete.svg'
+
+const canEdit = (status: CommunicationStatus) =>
+  !['processing', 'sent', 'delivered'].includes(status)
+
+const canCancel = (status: CommunicationStatus) =>
+  !['sent', 'delivered', 'cancelled'].includes(status)
+
+const canPause = (status: CommunicationStatus) => status === 'scheduled' || status === 'active'
+
+const canResume = (status: CommunicationStatus) => status === 'paused'
+
+const canDelete = (status: CommunicationStatus) =>
+  status === 'draft' || status === 'cancelled' || status === 'failed'
 
 export function CommunicationActions({ communication }: { communication: Communication }) {
   const [open, setOpen] = useState(false)
   const navigate = useNavigate()
   const deleteMutation = useDeleteCommunication()
+  const duplicateMutation = useDuplicateCommunication()
+  const cancelMutation = useCancelCommunication()
+  const pauseMutation = usePauseCommunication()
+  const resumeMutation = useResumeCommunication()
 
   return (
     <TableActionsDropdown
       label="Communication actions"
       isOpen={open}
       onOpenChange={setOpen}
-      menuWidth={180}
+      menuWidth={200}
     >
       <TableActionsItem
         icon={<Eye className="size-3.5" />}
@@ -36,29 +59,91 @@ export function CommunicationActions({ communication }: { communication: Communi
       >
         View Details
       </TableActionsItem>
+      {canEdit(communication.status) ? (
+        <TableActionsItem
+          icon={<img src={editIcon} alt="" className="size-3.5" aria-hidden="true" />}
+          className="text-slate-800 hover:bg-slate-100 hover:text-slate-900"
+          onClick={() => {
+            setOpen(false)
+            navigate(`/communication/create?edit=${communication.id}`)
+          }}
+        >
+          Edit
+        </TableActionsItem>
+      ) : null}
       <TableActionsItem
-        icon={<img src={editIcon} alt="" className="size-3.5" aria-hidden="true" />}
+        icon={<Copy className="size-3.5" />}
         className="text-slate-800 hover:bg-slate-100 hover:text-slate-900"
         onClick={() => {
           setOpen(false)
-          navigate(`/communication/create?edit=${communication.id}`)
-        }}
-      >
-        Edit
-      </TableActionsItem>
-      <TableActionsItem
-        icon={<img src={deleteIcon} alt="" className="size-3.5" aria-hidden="true" />}
-        className="text-brand-danger hover:bg-brand-danger/10 hover:text-brand-danger"
-        onClick={() => {
-          setOpen(false)
-          deleteMutation.mutate(communication.id, {
-            onSuccess: () => toast.success('Communication deleted'),
+          duplicateMutation.mutate(communication.id, {
+            onSuccess: () => toast.success('Communication duplicated as a draft'),
             onError: (error) => toast.error(getApiErrorMessage(error)),
           })
         }}
       >
-        Delete
+        Duplicate
       </TableActionsItem>
+      {canPause(communication.status) ? (
+        <TableActionsItem
+          icon={<Pause className="size-3.5" />}
+          className="text-slate-800 hover:bg-slate-100 hover:text-slate-900"
+          onClick={() => {
+            setOpen(false)
+            pauseMutation.mutate(communication.id, {
+              onSuccess: () => toast.success('Campaign paused'),
+              onError: (error) => toast.error(getApiErrorMessage(error)),
+            })
+          }}
+        >
+          Pause Campaign
+        </TableActionsItem>
+      ) : null}
+      {canResume(communication.status) ? (
+        <TableActionsItem
+          icon={<Play className="size-3.5" />}
+          className="text-slate-800 hover:bg-slate-100 hover:text-slate-900"
+          onClick={() => {
+            setOpen(false)
+            resumeMutation.mutate(communication.id, {
+              onSuccess: () => toast.success('Campaign resumed'),
+              onError: (error) => toast.error(getApiErrorMessage(error)),
+            })
+          }}
+        >
+          Resume Campaign
+        </TableActionsItem>
+      ) : null}
+      {canCancel(communication.status) ? (
+        <TableActionsItem
+          icon={<Ban className="size-3.5" />}
+          className="text-brand-danger hover:bg-brand-danger/10 hover:text-brand-danger"
+          onClick={() => {
+            setOpen(false)
+            cancelMutation.mutate(communication.id, {
+              onSuccess: () => toast.success('Communication withdrawn'),
+              onError: (error) => toast.error(getApiErrorMessage(error)),
+            })
+          }}
+        >
+          Cancel
+        </TableActionsItem>
+      ) : null}
+      {canDelete(communication.status) ? (
+        <TableActionsItem
+          icon={<img src={deleteIcon} alt="" className="size-3.5" aria-hidden="true" />}
+          className="text-brand-danger hover:bg-brand-danger/10 hover:text-brand-danger"
+          onClick={() => {
+            setOpen(false)
+            deleteMutation.mutate(communication.id, {
+              onSuccess: () => toast.success('Communication deleted'),
+              onError: (error) => toast.error(getApiErrorMessage(error)),
+            })
+          }}
+        >
+          Delete
+        </TableActionsItem>
+      ) : null}
     </TableActionsDropdown>
   )
 }
@@ -66,10 +151,14 @@ export function CommunicationActions({ communication }: { communication: Communi
 export function CommunicationStatusBadge({ status }: { status: string }) {
   const statusStyles: Record<string, { bg: string; color: string }> = {
     Sent: { bg: 'rgb(0 166 62 / 15%)', color: '#00A63E' },
+    Delivered: { bg: 'rgb(0 166 62 / 15%)', color: '#00A63E' },
     Active: { bg: 'rgb(0 166 62 / 15%)', color: '#00A63E' },
     Scheduled: { bg: 'rgb(246 203 134 / 15%)', color: '#F6CB86' },
+    Processing: { bg: 'rgb(246 203 134 / 15%)', color: '#F6CB86' },
+    Paused: { bg: 'rgb(246 203 134 / 15%)', color: '#F6CB86' },
     Draft: { bg: 'rgb(255 255 255 / 10%)', color: '#B3B3B3' },
     Failed: { bg: 'rgb(211 25 28 / 15%)', color: '#D3191C' },
+    Cancelled: { bg: 'rgb(211 25 28 / 15%)', color: '#D3191C' },
   }
 
   const style = statusStyles[status] ?? { bg: 'rgb(255 255 255 / 10%)', color: '#B3B3B3' }

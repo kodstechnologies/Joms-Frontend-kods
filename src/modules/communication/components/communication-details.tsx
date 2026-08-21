@@ -30,13 +30,48 @@ export function CommunicationDetails() {
     )
   }
 
+  const analytics = data.analytics || {
+    sent: 0,
+    delivered: 0,
+    opened: 0,
+    clicked: 0,
+    failed: 0,
+    bounced: 0,
+  }
+
+  const rateHint = (part: number, whole: number, label: string) =>
+    whole > 0 ? `${((part / whole) * 100).toFixed(1)}% of ${label}` : undefined
+
   const analyticsMetrics = [
-    { title: 'Sent', value: String(data.analytics.sent) },
-    { title: 'Delivered', value: String(data.analytics.delivered) },
-    { title: 'Opened', value: String(data.analytics.opened) },
-    { title: 'Clicked', value: String(data.analytics.clicked) },
-    { title: 'Failed', value: String(data.analytics.failed) },
-    { title: 'Bounced', value: String(data.analytics.bounced) },
+    { title: 'Sent', value: String(analytics.sent) },
+    {
+      title: 'Delivered',
+      value: String(analytics.delivered),
+      hint: rateHint(analytics.delivered, analytics.sent, 'sent'),
+    },
+    {
+      title: 'Opened',
+      value: String(analytics.opened),
+      hint: rateHint(analytics.opened, analytics.delivered || analytics.sent, 'delivered'),
+    },
+    {
+      title: 'Clicked',
+      value: String(analytics.clicked),
+      hint: rateHint(analytics.clicked, analytics.opened || analytics.delivered, 'opened'),
+    },
+    {
+      title: 'Failed',
+      value: String(analytics.failed),
+      hint: rateHint(analytics.failed, analytics.sent, 'sent'),
+    },
+    {
+      title: 'Open Rate',
+      value: `${data.openRate ?? 0}%`,
+    },
+    {
+      title: 'Click Rate',
+      value: `${data.clickRate ?? 0}%`,
+    },
   ]
 
   const scheduleLabel = data.scheduledAt
@@ -102,7 +137,7 @@ export function CommunicationDetails() {
         </div>
 
         {/* Type / Audience / Channel */}
-        <div className="radius-md bg-brand-bg mb-5 grid grid-cols-3 gap-4 border border-white/[0.06] px-5 py-4">
+        <div className="radius-md bg-brand-bg mb-5 grid grid-cols-2 gap-4 border border-white/[0.06] px-5 py-4 sm:grid-cols-4">
           <div>
             <p className="text-body-sm text-muted">Type</p>
             <p className="text-body-md-semibold text-brand-text mt-1">{data.typeLabel}</p>
@@ -114,6 +149,29 @@ export function CommunicationDetails() {
           <div>
             <p className="text-body-sm text-muted">Channel</p>
             <p className="text-body-md-semibold text-brand-text mt-1">{data.channelLabel}</p>
+          </div>
+          <div>
+            <p className="text-body-sm text-muted">Priority</p>
+            <p className="text-body-md-semibold text-brand-text mt-1">{data.priorityLabel}</p>
+          </div>
+        </div>
+
+        <div className="radius-md bg-brand-bg mb-5 grid grid-cols-2 gap-4 border border-white/[0.06] px-5 py-4 sm:grid-cols-4">
+          <div>
+            <p className="text-body-sm text-muted">Message ID</p>
+            <p className="text-body-md-semibold text-brand-text mt-1">{data.messageId}</p>
+          </div>
+          <div>
+            <p className="text-body-sm text-muted">Campaign ID</p>
+            <p className="text-body-md-semibold text-brand-text mt-1">{data.campaignId || '—'}</p>
+          </div>
+          <div>
+            <p className="text-body-sm text-muted">Audience Size</p>
+            <p className="text-body-md-semibold text-brand-text mt-1">{data.audienceSize || 0}</p>
+          </div>
+          <div>
+            <p className="text-body-sm text-muted">Sent At</p>
+            <p className="text-body-md-semibold text-brand-text mt-1">{data.sentAtLabel || '—'}</p>
           </div>
         </div>
 
@@ -147,6 +205,15 @@ export function CommunicationDetails() {
           </div>
         ) : null}
 
+        {data.failureReason ? (
+          <div className="mb-5">
+            <p className="text-body-sm-semibold text-brand-text mb-2">Failure Reason</p>
+            <div className="radius-md bg-brand-bg border border-white/[0.06] px-4 py-3">
+              <p className="text-body-sm text-brand-text/80">{data.failureReason}</p>
+            </div>
+          </div>
+        ) : null}
+
         {/* Delivery Analytics */}
         <div className="border-t border-white/[0.06] pt-5">
           <p className="text-body-sm-semibold text-brand-text mb-1">Delivery Analytics</p>
@@ -160,8 +227,7 @@ export function CommunicationDetails() {
                 key={metric.title}
                 title={metric.title}
                 value={metric.value}
-                trend={{ direction: 'up', percentage: 6.7, label: 'vs last month' }}
-                className="h-[130px]"
+                hint={metric.hint}
               />
             ))}
           </div>

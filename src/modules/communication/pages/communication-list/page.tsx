@@ -9,7 +9,6 @@ import {
   CommunicationActions,
   CommunicationStatusBadge,
 } from '../../components/communication-table-cells'
-import { PushAllPartnersPanel } from '../../components/push-all-partners-panel'
 import {
   COMMUNICATION_METRIC_IDS,
   COMMUNICATION_METRIC_ID_SET,
@@ -54,13 +53,36 @@ const EXPORT_COLUMN_MAP: Record<
   { header: string; accessor: (c: Communication) => string }
 > = {
   'message-id': { header: 'Message ID', accessor: (c) => exportDisplayValue(c.messageId) },
+  'campaign-id': { header: 'Campaign ID', accessor: (c) => exportDisplayValue(c.campaignId) },
   title: { header: 'Title', accessor: (c) => exportDisplayValue(c.title) },
   channel: { header: 'Channel', accessor: (c) => exportDisplayValue(c.channelLabel) },
   type: { header: 'Type', accessor: (c) => exportDisplayValue(c.typeLabel) },
   audience: { header: 'Audience', accessor: (c) => exportDisplayValue(c.audienceLabel) },
+  'audience-size': {
+    header: 'Audience Size',
+    accessor: (c) => exportDisplayValue(c.audienceSize),
+  },
+  'content-preview': {
+    header: 'Content Preview',
+    accessor: (c) => exportDisplayValue(c.contentPreview),
+  },
   status: { header: 'Status', accessor: (c) => exportDisplayValue(c.statusLabel) },
+  priority: { header: 'Priority', accessor: (c) => exportDisplayValue(c.priorityLabel) },
   'created-by': { header: 'Created By', accessor: (c) => exportDisplayValue(c.createdBy) },
   'created-on': { header: 'Created On', accessor: (c) => exportDisplayValue(c.createdAtLabel) },
+  'scheduled-at': {
+    header: 'Scheduled At',
+    accessor: (c) => exportDisplayValue(c.scheduledAtLabel),
+  },
+  'sent-at': { header: 'Sent At', accessor: (c) => exportDisplayValue(c.sentAtLabel) },
+  'delivered-count': {
+    header: 'Delivered Count',
+    accessor: (c) => exportDisplayValue(c.deliveredCount),
+  },
+  'failed-count': { header: 'Failed Count', accessor: (c) => exportDisplayValue(c.failedCount) },
+  'open-rate': { header: 'Open Rate', accessor: (c) => `${c.openRate ?? 0}%` },
+  'click-rate': { header: 'Click Rate', accessor: (c) => `${c.clickRate ?? 0}%` },
+  'last-updated': { header: 'Last Updated', accessor: (c) => exportDisplayValue(c.updatedAtLabel) },
 }
 
 export function CommunicationListPage() {
@@ -161,6 +183,11 @@ export function CommunicationListPage() {
         accessorKey: 'messageId',
         header: 'Message ID',
       },
+      'campaign-id': {
+        id: 'campaign-id',
+        accessorKey: 'campaignId',
+        header: 'Campaign ID',
+      },
       title: {
         id: 'title',
         accessorKey: 'title',
@@ -181,11 +208,26 @@ export function CommunicationListPage() {
         accessorKey: 'audienceLabel',
         header: 'Audience',
       },
+      'audience-size': {
+        id: 'audience-size',
+        accessorKey: 'audienceSize',
+        header: 'Audience Size',
+      },
+      'content-preview': {
+        id: 'content-preview',
+        accessorKey: 'contentPreview',
+        header: 'Content Preview',
+      },
       status: {
         id: 'status',
         accessorKey: 'statusLabel',
         header: 'Status',
         cell: ({ row }) => <CommunicationStatusBadge status={row.original.statusLabel} />,
+      },
+      priority: {
+        id: 'priority',
+        accessorKey: 'priorityLabel',
+        header: 'Priority',
       },
       'created-by': {
         id: 'created-by',
@@ -196,6 +238,41 @@ export function CommunicationListPage() {
         id: 'created-on',
         accessorKey: 'createdAtLabel',
         header: 'Created On',
+      },
+      'scheduled-at': {
+        id: 'scheduled-at',
+        accessorKey: 'scheduledAtLabel',
+        header: 'Scheduled At',
+      },
+      'sent-at': {
+        id: 'sent-at',
+        accessorKey: 'sentAtLabel',
+        header: 'Sent At',
+      },
+      'delivered-count': {
+        id: 'delivered-count',
+        accessorKey: 'deliveredCount',
+        header: 'Delivered Count',
+      },
+      'failed-count': {
+        id: 'failed-count',
+        accessorKey: 'failedCount',
+        header: 'Failed Count',
+      },
+      'open-rate': {
+        id: 'open-rate',
+        header: 'Open Rate',
+        accessorFn: (row) => `${row.openRate ?? 0}%`,
+      },
+      'click-rate': {
+        id: 'click-rate',
+        header: 'Click Rate',
+        accessorFn: (row) => `${row.clickRate ?? 0}%`,
+      },
+      'last-updated': {
+        id: 'last-updated',
+        accessorKey: 'updatedAtLabel',
+        header: 'Last Updated',
       },
     }
 
@@ -253,7 +330,7 @@ export function CommunicationListPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
+      <div className="grid grid-cols-1 items-stretch gap-4 sm:grid-cols-2 xl:grid-cols-5">
         {stats.map((stat) => (
           <StatCard
             key={stat.id}
@@ -261,12 +338,9 @@ export function CommunicationListPage() {
             value={stat.value}
             trend={stat.trend}
             hint={stat.hint}
-            className="h-[130px]"
           />
         ))}
       </div>
-
-      <PushAllPartnersPanel />
 
       <DataTable
         columns={columns}

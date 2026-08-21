@@ -227,24 +227,9 @@ export const navigationConfig: NavItem[] = [
         to: '/settings/access',
       },
       {
-        key: 'settings.categories',
-        label: 'Category Management',
-        to: '/settings/categories',
-      },
-      {
-        key: 'settings.system',
-        label: 'System Configuration',
-        to: '/settings/system',
-      },
-      {
         key: 'settings.escalations',
         label: 'Escalations',
         to: '/settings/escalations',
-      },
-      {
-        key: 'settings.api-keys',
-        label: 'API Key Management',
-        to: '/settings/api-keys',
       },
     ],
   },

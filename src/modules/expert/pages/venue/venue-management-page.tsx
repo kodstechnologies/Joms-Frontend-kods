@@ -418,7 +418,7 @@ export const VenueManagementPage = () => {
     }
     const params = new URLSearchParams({
       channel: 'push',
-      audience: 'venue-management',
+      audience: 'venue-partners',
       partnerIds: selectedPartnerIds.join(','),
     })
     navigate(`/communication/create?${params.toString()}`)
@@ -431,7 +431,7 @@ export const VenueManagementPage = () => {
     }
     const params = new URLSearchParams({
       channel: 'email',
-      audience: 'venue-management',
+      audience: 'venue-partners',
       partnerIds: selectedPartnerIds.join(','),
     })
     navigate(`/communication/create?${params.toString()}`)

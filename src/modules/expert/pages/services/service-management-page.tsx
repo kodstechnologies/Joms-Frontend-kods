@@ -422,7 +422,7 @@ export const ServiceManagementPage = () => {
     }
     const params = new URLSearchParams({
       channel: 'push',
-      audience: 'service-management',
+      audience: 'experts',
       partnerIds: selectedPartnerIds.join(','),
     })
     navigate(`/communication/create?${params.toString()}`)
@@ -435,7 +435,7 @@ export const ServiceManagementPage = () => {
     }
     const params = new URLSearchParams({
       channel: 'email',
-      audience: 'service-management',
+      audience: 'experts',
       partnerIds: selectedPartnerIds.join(','),
     })
     navigate(`/communication/create?${params.toString()}`)
@@ -485,7 +485,8 @@ export const ServiceManagementPage = () => {
 
       if (successCount === 0) {
         const firstError = results.find((result) => result.status === 'rejected') as
-          PromiseRejectedResult | undefined
+          | PromiseRejectedResult
+          | undefined
         toast.error(getApiErrorMessage(firstError?.reason) || 'Failed to escalate services.')
         return
       }

@@ -869,7 +869,7 @@ function SpacesTab({ data, venueId }: { data: VenueFullView; venueId: string }) 
     }
     const params = new URLSearchParams({
       channel: 'push',
-      audience: 'venue-management',
+      audience: 'venue-partners',
       partnerIds: partnerId,
     })
     navigate(`/communication/create?${params.toString()}`)
@@ -882,7 +882,7 @@ function SpacesTab({ data, venueId }: { data: VenueFullView; venueId: string }) 
     }
     const params = new URLSearchParams({
       channel: 'email',
-      audience: 'venue-management',
+      audience: 'venue-partners',
       partnerIds: partnerId,
     })
     navigate(`/communication/create?${params.toString()}`)

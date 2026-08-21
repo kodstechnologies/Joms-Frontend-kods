@@ -327,7 +327,7 @@ export function ExpertClientelePage() {
       }
       const params = new URLSearchParams({
         channel,
-        audience: 'expert-management',
+        audience: 'experts',
         partnerIds: expertId,
       })
       navigate(`/communication/create?${params.toString()}`)
