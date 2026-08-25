@@ -83,6 +83,8 @@ export const env = {
   firebaseMessagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '',
   firebaseAppId: import.meta.env.VITE_FIREBASE_APP_ID || '',
   firebaseVapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY || '',
+  /** Dev harness only — matches notification-service INTERNAL_SERVICE_KEY */
+  internalServiceKey: import.meta.env.VITE_INTERNAL_SERVICE_KEY || 'joms-internal-key',
   googleMapsApiKey:
     import.meta.env.VITE_GOOGLE_MAPS_API_KEY ||
     import.meta.env.VITE_JOMS_GOOGLE_MAPS_KEY ||
