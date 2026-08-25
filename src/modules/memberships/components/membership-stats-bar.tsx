@@ -23,37 +23,59 @@ function buildMembershipKpiStats(
 ): MembershipKpiStat[] {
   const mock = membershipMemberMetricsMock
 
+  const totalMembersVal =
+    apiStats?.totalMembers !== undefined
+      ? String(apiStats.totalMembers)
+      : apiStats?.totalActivePlans !== undefined
+        ? String(apiStats.totalActivePlans)
+        : mock.totalMembers.value
+
+  const expiredVal =
+    apiStats?.expiredMemberships !== undefined
+      ? String(apiStats.expiredMemberships)
+      : mock.expiredMemberships.value
+
+  const revenueVal =
+    apiStats?.totalRevenue !== undefined && apiStats?.totalRevenue !== null
+      ? `₹${Number(apiStats.totalRevenue).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+      : mock.totalRevenue.value
+
+  const renewalVal =
+    apiStats?.renewalRate !== undefined && apiStats?.renewalRate !== null
+      ? `${apiStats.renewalRate}%`
+      : mock.renewalRate.value
+
+  const mostSubscribedVal = apiStats?.mostSubscribedPlan || mock.mostSubscribedPlan.value || '—'
+
   return [
     {
       id: 'total-members',
       title: 'Total Members',
-      value: String(apiStats?.totalActivePlans ?? mock.totalMembers.value),
-      trend: mock.totalMembers.trend,
+      value: totalMembersVal,
+      trend: apiStats?.trends?.totalMembers ?? mock.totalMembers.trend,
     },
     {
       id: 'expired-memberships',
       title: 'Expired Memberships',
-      value: String(apiStats?.expiredMemberships ?? mock.expiredMemberships.value),
+      value: expiredVal,
       hint: mock.expiredMemberships.hint,
     },
     {
       id: 'total-revenue',
       title: 'Total Revenue',
-      value: apiStats?.totalRevenue
-        ? `₹${apiStats.totalRevenue.toLocaleString('en-IN')}`
-        : mock.totalRevenue.value,
-      trend: mock.totalRevenue.trend,
+      value: revenueVal,
+      trend: apiStats?.trends?.totalRevenue ?? mock.totalRevenue.trend,
     },
     {
       id: 'renewal-rate',
       title: 'Renewal Rate',
-      value: apiStats?.renewalRate ? `${apiStats.renewalRate}%` : mock.renewalRate.value,
-      trend: mock.renewalRate.trend,
+      value: renewalVal,
+      trend: apiStats?.trends?.renewalRate ?? mock.renewalRate.trend,
     },
     {
       id: 'most-subscribed-plan',
       title: 'Most Subscribed Plan',
-      value: apiStats?.mostSubscribedPlan ?? mock.mostSubscribedPlan.value ?? '—',
+      value: mostSubscribedVal,
       hint: mock.mostSubscribedPlan.hint,
     },
   ]

@@ -92,10 +92,16 @@ export type MembershipStatsResponse = {
   data: {
     totalPlans: number
     totalActivePlans: number
+    totalMembers?: number
     expiredMemberships: number
     totalRevenue: number
     renewalRate: number
     mostSubscribedPlan: string | null
+    trends?: {
+      totalMembers?: { direction: 'up' | 'down'; percentage: number; label: string }
+      totalRevenue?: { direction: 'up' | 'down'; percentage: number; label: string }
+      renewalRate?: { direction: 'up' | 'down'; percentage: number; label: string }
+    }
     counts: MembershipListMeta['counts']
     typeCounts: {
       user: number

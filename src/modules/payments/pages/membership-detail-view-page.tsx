@@ -5,6 +5,7 @@ import { ArrowLeft, Check, Download } from 'lucide-react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 
+import { useBranding } from '@/app/providers/use-branding'
 import {
   useCancelSubscription,
   usePauseSubscription,
@@ -16,6 +17,10 @@ import { mapSubscriptionToFinanceDetail } from '@/modules/payments/utils/finance
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
+import {
+  downloadInvoiceDocument,
+  invoiceFromMembershipSubscription,
+} from '@/shared/utils/invoice-document'
 
 const cardClass = 'radius-lg border border-white/[0.06] bg-brand-surface p-4 sm:p-5'
 const sectionTitleClass = 'text-body-md-semibold text-brand-text leading-[20px]'
@@ -53,6 +58,7 @@ function getStatusBadgeClass(status: string) {
 export function MembershipDetailViewPage() {
   const navigate = useNavigate()
   const { id = '' } = useParams<{ id: string }>()
+  const { logoUrl } = useBranding()
   const [pauseOpen, setPauseOpen] = useState(false)
   const [cancelOpen, setCancelOpen] = useState(false)
 
@@ -60,7 +66,8 @@ export function MembershipDetailViewPage() {
   const pauseMutation = usePauseSubscription()
   const cancelMutation = useCancelSubscription()
 
-  const detail = data?.data ? mapSubscriptionToFinanceDetail(data.data) : null
+  const subscription = data?.data
+  const detail = subscription ? mapSubscriptionToFinanceDetail(subscription) : null
   const canManage = detail?.rawStatus === 'active'
 
   if (isLoading) {
@@ -110,9 +117,19 @@ export function MembershipDetailViewPage() {
             <h2 className={sectionTitleClass}>Subscription Details</h2>
             <p className={sectionSubtitleClass}>Provide details about your Consultation</p>
           </div>
-          <Button onClick={() => toast.message('Download filing report coming soon')}>
+          <Button
+            onClick={() => {
+              if (!subscription) return
+              void downloadInvoiceDocument(
+                invoiceFromMembershipSubscription(subscription, { logoUrl }),
+                subscription.paymentInfo?.paymentId || subscription.subscriptionId,
+              )
+                .then(() => toast.success('Invoice downloaded'))
+                .catch(() => toast.error('Failed to download invoice'))
+            }}
+          >
             <Download className="size-4" />
-            Download Filing Report
+            Download Invoice
           </Button>
         </div>
 

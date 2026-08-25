@@ -41,6 +41,8 @@ export type ReferralMetrics = {
   membershipsUnlocked: number
   averageReferralsPerUser: number
   averageDaysToReachGoal: number
+  vsLastMonthPercent?: number
+  trends?: Record<string, { direction: 'up' | 'down'; percentage: number; label?: string }>
   counts?: {
     expertInvites: number
     pendingExpertInvites: number

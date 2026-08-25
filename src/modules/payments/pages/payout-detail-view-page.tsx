@@ -1,9 +1,10 @@
 import { useState, type ReactNode } from 'react'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, Download } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 
+import { useBranding } from '@/app/providers/use-branding'
 import { AddFinanceNoteModal } from '@/modules/payments/components/add-finance-note-modal'
 import { fetchPartnerDisplayNames } from '@/modules/payments/api/partner-lookup-api'
 import {
@@ -20,6 +21,7 @@ import {
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
+import { downloadInvoiceDocument, invoiceFromFinancePayout } from '@/shared/utils/invoice-document'
 
 const cardClass = 'radius-lg border border-white/[0.06] bg-brand-surface p-4 sm:p-5'
 const sectionTitleClass = 'text-body-md-semibold text-brand-text leading-[20px]'
@@ -62,6 +64,7 @@ const maskAccount = (value?: string | null) => {
 export function PayoutDetailViewPage() {
   const navigate = useNavigate()
   const { id = '' } = useParams<{ id: string }>()
+  const { logoUrl } = useBranding()
   const { data, isLoading, isError, isFetching, refetch } = useFinancePayout(id)
   const retryMutation = useRetryPayout()
   const releaseMutation = useReleasePayout()
@@ -141,6 +144,23 @@ export function PayoutDetailViewPage() {
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
+            <Button
+              className="ui-cta"
+              onClick={() => {
+                void downloadInvoiceDocument(
+                  invoiceFromFinancePayout(payout, {
+                    logoUrl,
+                    recipientName: typeof partnerLabel === 'string' ? partnerLabel : undefined,
+                  }),
+                  payout.payoutId,
+                )
+                  .then(() => toast.success('Invoice downloaded'))
+                  .catch(() => toast.error('Failed to download invoice'))
+              }}
+            >
+              <Download className="size-4" />
+              Download Invoice
+            </Button>
             {canRetry ? (
               <Button className="ui-cta" onClick={() => setNoteModal('retry')}>
                 Retry Payout

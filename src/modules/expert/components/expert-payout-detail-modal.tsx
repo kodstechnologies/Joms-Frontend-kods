@@ -1,7 +1,9 @@
 import { ArrowLeft, Download, X } from 'lucide-react'
 import { toast } from 'sonner'
+import { useBranding } from '@/app/providers/use-branding'
 import { Button } from '@/shared/components/ui/button'
 import type { PayoutItem } from '@/modules/expert/type/payout'
+import { downloadInvoiceDocument, invoiceFromPayout } from '@/shared/utils/invoice-document'
 
 interface ExpertPayoutDetailModalProps {
   isOpen: boolean
@@ -10,6 +12,8 @@ interface ExpertPayoutDetailModalProps {
 }
 
 export function ExpertPayoutDetailModal({ isOpen, onClose, payout }: ExpertPayoutDetailModalProps) {
+  const { logoUrl } = useBranding()
+
   if (!isOpen || !payout) return null
 
   const isCustomMilestone = payout.serviceType === 'Custom' || Boolean(payout.milestones?.length)
@@ -60,7 +64,14 @@ export function ExpertPayoutDetailModal({ isOpen, onClose, payout }: ExpertPayou
               </div>
               <Button
                 type="button"
-                onClick={() => toast.success('Invoice download started')}
+                onClick={() => {
+                  void downloadInvoiceDocument(
+                    invoiceFromPayout(payout, { logoUrl }),
+                    payout.payoutId,
+                  )
+                    .then(() => toast.success('Invoice downloaded'))
+                    .catch(() => toast.error('Failed to download invoice'))
+                }}
                 className="flex h-auto w-fit items-center gap-2 rounded-lg bg-[#E5B54E] px-4 py-2 text-xs font-semibold text-black hover:bg-[#d4a53d]"
               >
                 <Download className="size-4" />

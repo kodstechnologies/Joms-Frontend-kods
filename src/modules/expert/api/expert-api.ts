@@ -317,14 +317,6 @@ export const bulkVerifyKycExperts = async (payload: BulkActionPayload) => {
   return response.data
 }
 
-export const bulkVerifyDigilockerExperts = async (payload: BulkActionPayload) => {
-  const response = await adminApiClient.post(
-    '/admin/internal/admin/partners/bulk-verify-digilocker',
-    payload,
-  )
-  return response.data
-}
-
 export const bulkEscalateExperts = async (payload: BulkActionPayload) => {
   const response = await adminApiClient.post(
     '/admin/internal/admin/partners/bulk-escalate',

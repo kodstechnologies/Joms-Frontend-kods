@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { Eye, TrendingUp } from 'lucide-react'
+import { Download, Eye, TrendingUp } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
-import { fetchFinancePayouts } from '@/modules/payments/api/finance-api'
+import { useBranding } from '@/app/providers/use-branding'
+import { fetchFinancePayoutById, fetchFinancePayouts } from '@/modules/payments/api/finance-api'
 import { useFinanceDashboard, useFinancePayouts } from '@/modules/payments/hooks/use-finance'
 import { formatInr, mapPayoutToRow } from '@/modules/payments/utils/finance-mappers'
 import type { PayoutRow, PayoutStatus } from '@/modules/payments/mock/payout-management.mock'
@@ -21,6 +22,7 @@ import {
   buildFinancePayoutsListQueryParams,
   createFinancePayoutsFilteredExportHandler,
 } from '@/shared/utils/export-filter-utils'
+import { downloadInvoiceDocument, invoiceFromFinancePayout } from '@/shared/utils/invoice-document'
 
 const PAGE_SIZE = 10
 
@@ -74,6 +76,7 @@ function getStatusClassName(status: PayoutStatus) {
 
 export function PayoutManagementPage() {
   const navigate = useNavigate()
+  const { logoUrl } = useBranding()
   const [searchQuery, setSearchQuery] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
@@ -198,9 +201,29 @@ export function PayoutManagementPage() {
         >
           View Details
         </TableActionsItem>
+        <TableActionsItem
+          icon={<Download className="size-3.5 text-slate-700" aria-hidden="true" />}
+          className="text-slate-800 hover:bg-slate-100 hover:text-slate-900"
+          onClick={() => {
+            setActiveDropdownId(null)
+            void fetchFinancePayoutById(record.id)
+              .then(async (result) => {
+                const payout = result.data
+                if (!payout) throw new Error('Payout not found')
+                await downloadInvoiceDocument(
+                  invoiceFromFinancePayout(payout, { logoUrl }),
+                  payout.payoutId,
+                )
+                toast.success('Invoice downloaded')
+              })
+              .catch(() => toast.error('Failed to download invoice'))
+          }}
+        >
+          Download Invoice
+        </TableActionsItem>
       </TableActionsDropdown>
     ),
-    [activeDropdownId, navigate],
+    [activeDropdownId, logoUrl, navigate],
   )
 
   const columns = useMemo<ColumnDef<PayoutRow>[]>(

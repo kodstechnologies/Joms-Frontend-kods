@@ -7,7 +7,10 @@ import type { ReferralMetrics } from '../types/referral'
 
 export type ReferralMetricFormat = 'integer' | 'percentage' | 'decimal' | 'string'
 
-export type ReferralMetricsValues = Omit<ReferralMetrics, 'counts'>
+export type ReferralMetricsValues = Omit<
+  ReferralMetrics,
+  'counts' | 'trends' | 'vsLastMonthPercent'
+>
 
 export type ReferralMetricDefinition = {
   id: string
@@ -155,8 +158,9 @@ export function formatReferralMetricValue(
   return value.toLocaleString('en-US', { maximumFractionDigits: 1, minimumFractionDigits: 0 })
 }
 
-export function mergeReferralMetrics(
-  partial?: Partial<ReferralMetricsValues> | null,
-): ReferralMetricsValues {
-  return { ...REFERRAL_METRICS_SEED, ...(partial ?? {}) }
+export function mergeReferralMetrics(partial?: Partial<ReferralMetrics> | null): ReferralMetrics {
+  return {
+    ...REFERRAL_METRICS_SEED,
+    ...(partial ?? {}),
+  } as ReferralMetrics
 }

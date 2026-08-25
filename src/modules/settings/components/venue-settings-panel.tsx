@@ -74,7 +74,7 @@ export function VenueSettingsPanel({ value, onChange }: VenueSettingsPanelProps)
       >
         <SettingsToggleRow
           label="Add venues"
-          description="Allow creating new venue listings from the admin panel"
+          description="Allow creating new venues from the admin panel and the partner app. When off, both return an error that admin blocked venue creation."
           checked={value.venueControls.allowAddVenues}
           onChange={(checked) => patchControls({ allowAddVenues: checked })}
         />

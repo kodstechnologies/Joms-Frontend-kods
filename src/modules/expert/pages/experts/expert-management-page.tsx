@@ -38,7 +38,6 @@ import {
   useBulkRejectExperts,
   useBulkRestoreExperts,
   useBulkVerifyKycExperts,
-  useBulkVerifyDigilockerExperts,
   useBulkEscalateExperts,
 } from '../../hooks/use-expert'
 import { MembershipActionModals } from '@/modules/memberships/components/membership-action-modals'
@@ -330,7 +329,6 @@ export const ExpertManagementPage = () => {
   const bulkRejectMutation = useBulkRejectExperts()
   const bulkRestoreMutation = useBulkRestoreExperts()
   const bulkVerifyKycMutation = useBulkVerifyKycExperts()
-  const bulkVerifyDigilockerMutation = useBulkVerifyDigilockerExperts()
   const bulkEscalateMutation = useBulkEscalateExperts()
 
   const [isMembershipModalOpen, setIsMembershipModalOpen] = useState(false)
@@ -781,20 +779,6 @@ export const ExpertManagementPage = () => {
             },
           },
         )
-      } else if (actionLabel.includes('DigiLocker')) {
-        bulkVerifyDigilockerMutation.mutate(
-          { partnerIds: ids },
-          {
-            onSuccess: () => {
-              toast.success(`DigiLocker marked as verified for ${ids.length} expert(s)`)
-              setSelectedExpertIds([])
-            },
-            onError: (err: unknown) => {
-              const error = err as { response?: { data?: { message?: string } } }
-              toast.error(error?.response?.data?.message || 'Failed to verify DigiLocker.')
-            },
-          },
-        )
       } else {
         toast.info(`${actionLabel} completed for ${ids.length} expert(s)`)
         setSelectedExpertIds([])
@@ -804,7 +788,6 @@ export const ExpertManagementPage = () => {
       bulkApproveMutation,
       bulkRejectMutation,
       bulkRestoreMutation,
-      bulkVerifyDigilockerMutation,
       bulkVerifyKycMutation,
       experts,
       handleBulkExportSelected,

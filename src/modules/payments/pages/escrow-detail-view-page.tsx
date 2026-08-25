@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 
+import { useBranding } from '@/app/providers/use-branding'
 import { AddFinanceNoteModal } from '@/modules/payments/components/add-finance-note-modal'
 import { fetchPartnerDisplayNames } from '@/modules/payments/api/partner-lookup-api'
 import { useFinanceEscrowDetail, useReleaseEscrow } from '@/modules/payments/hooks/use-finance'
@@ -15,6 +16,7 @@ import {
 } from '@/modules/payments/utils/finance-mappers'
 import { cn } from '@/shared/lib/cn'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
+import { downloadInvoiceDocument, invoiceFromEscrow } from '@/shared/utils/invoice-document'
 
 const cardClass = 'radius-lg border border-white/[0.06] bg-brand-surface p-4 sm:p-5'
 const sectionTitleClass = 'text-body-md-semibold text-brand-text leading-[20px]'
@@ -71,6 +73,7 @@ function StatusBadge({ status }: { status: string }) {
 export function EscrowDetailViewPage() {
   const navigate = useNavigate()
   const { id = '' } = useParams<{ id: string }>()
+  const { logoUrl } = useBranding()
   const { data, isLoading, isError, refetch } = useFinanceEscrowDetail(id)
   const releaseMutation = useReleaseEscrow()
   const [isReleaseModalOpen, setIsReleaseModalOpen] = useState(false)
@@ -200,10 +203,20 @@ export function EscrowDetailViewPage() {
           ) : (
             <button
               type="button"
-              onClick={() => toast.message('Download invoice coming soon')}
+              onClick={() => {
+                void downloadInvoiceDocument(
+                  invoiceFromEscrow(escrow, {
+                    logoUrl,
+                    expertName: typeof expertName === 'string' ? expertName : undefined,
+                  }),
+                  escrow.escrowId,
+                )
+                  .then(() => toast.success('Invoice downloaded'))
+                  .catch(() => toast.error('Failed to download invoice'))
+              }}
               className="ui-cta ui-cta-primary"
             >
-              {status === 'Released' ? 'Released to payout' : 'Download Invoice'}
+              Download Invoice
             </button>
           )}
         </div>

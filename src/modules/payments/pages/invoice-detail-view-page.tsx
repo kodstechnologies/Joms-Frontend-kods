@@ -3,11 +3,13 @@ import { ArrowLeft, Download } from 'lucide-react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 
+import { useBranding } from '@/app/providers/use-branding'
 import { useFinanceInvoice } from '@/modules/payments/hooks/use-finance'
 import { formatDate, formatInr, titleCase } from '@/modules/payments/utils/finance-mappers'
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
+import { downloadInvoiceDocument, invoiceFromFinanceInvoice } from '@/shared/utils/invoice-document'
 
 const cardClass = 'radius-lg border border-white/[0.06] bg-brand-surface p-4 sm:p-5'
 const sectionTitleClass = 'text-body-md-semibold text-brand-text leading-[20px]'
@@ -20,10 +22,12 @@ function DetailCard({
   title,
   subtitle,
   children,
+  onDownload,
 }: {
   title: string
   subtitle?: string
   children: ReactNode
+  onDownload: () => void
 }) {
   return (
     <section className={cn(cardClass, 'flex flex-col gap-6 p-5')}>
@@ -32,9 +36,9 @@ function DetailCard({
           <h2 className={sectionTitleClass}>{title}</h2>
           {subtitle ? <p className={sectionSubtitleClass}>{subtitle}</p> : null}
         </div>
-        <Button onClick={() => toast.message('Download filing report coming soon')}>
+        <Button onClick={onDownload}>
           <Download className="size-4" />
-          Download Filing Report
+          Download Invoice
         </Button>
       </div>
       <div>{children}</div>
@@ -68,6 +72,7 @@ function getStatusBadgeClass(status: string) {
 export function InvoiceDetailViewPage() {
   const navigate = useNavigate()
   const { id = '' } = useParams<{ id: string }>()
+  const { logoUrl } = useBranding()
   const { data, isLoading, isError } = useFinanceInvoice(id)
   const invoice = data?.data
 
@@ -121,7 +126,18 @@ export function InvoiceDetailViewPage() {
         </div>
       </header>
 
-      <DetailCard title="Invoice Details" subtitle="Issued invoice for a successful payment">
+      <DetailCard
+        title="Invoice Details"
+        subtitle="Issued invoice for a successful payment"
+        onDownload={() => {
+          void downloadInvoiceDocument(
+            invoiceFromFinanceInvoice(invoice, { logoUrl }),
+            invoice.invoiceNumber,
+          )
+            .then(() => toast.success('Invoice downloaded'))
+            .catch(() => toast.error('Failed to download invoice'))
+        }}
+      >
         <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
           <section className={innerPanelClass}>
             <h3 className="text-body-md-semibold text-brand-text mb-3">Invoice Information</h3>

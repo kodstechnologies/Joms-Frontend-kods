@@ -58,7 +58,7 @@ type MembershipPlansPageProps = {
 export function MembershipPlansPage({
   fixedStatus,
   title = 'Membership Management',
-  subtitle = 'Centralized expert membership system with analytics, plan configuration, and lifecycle controls',
+  subtitle = 'Centralized membership system supporting User App and Expert App with analytics, plan configuration, and lifecycle controls',
 }: MembershipPlansPageProps) {
   const navigate = useNavigate()
   const [createOpen, setCreateOpen] = useState(false)

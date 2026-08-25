@@ -3,6 +3,7 @@ export interface Expert {
   expertId: string
   name: string
   email: string
+  phone?: string | null
   profession?: string | null
   serviceType: string | null
   venueKycId?: string | null
@@ -10,6 +11,9 @@ export interface Expert {
   venueBankingStatus?: string | null
   status: string
   reason?: string | null
+  blockedUntil?: string | null
+  blockedReason?: string | null
+  blockedAt?: string | null
   createdAt: string
   lastActive: string | null
   reportedAt?: string | null

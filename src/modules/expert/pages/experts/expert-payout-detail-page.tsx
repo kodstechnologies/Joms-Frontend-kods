@@ -4,8 +4,10 @@ import { useMemo } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 
+import { useBranding } from '@/app/providers/use-branding'
 import { Button } from '@/shared/components/ui/button'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
+import { downloadInvoiceDocument, invoiceFromPayout } from '@/shared/utils/invoice-document'
 import { fetchExpertPayoutDetail } from '../../api/expert-api'
 import type { PayoutItem } from '../../type/payout'
 
@@ -27,6 +29,7 @@ function extractPayoutItem(data: unknown): PayoutItem | null {
 export function ExpertPayoutDetailPage() {
   const params = useParams<{ expertId?: string; payoutId?: string }>()
   const navigate = useNavigate()
+  const { logoUrl } = useBranding()
 
   const resolvedPayoutId = params.payoutId || params.expertId || ''
   const resolvedExpertId = params.payoutId ? params.expertId || '' : ''
@@ -142,7 +145,11 @@ export function ExpertPayoutDetailPage() {
           </div>
           <Button
             type="button"
-            onClick={() => toast.success('Invoice download started')}
+            onClick={() => {
+              void downloadInvoiceDocument(invoiceFromPayout(payout, { logoUrl }), payout.payoutId)
+                .then(() => toast.success('Invoice downloaded'))
+                .catch(() => toast.error('Failed to download invoice'))
+            }}
             className="flex h-auto w-fit items-center gap-2 rounded-lg bg-[#E5B54E] px-4 py-2.5 text-xs font-semibold text-black shadow-md hover:bg-[#d4a53d]"
           >
             <Download className="size-4" />
