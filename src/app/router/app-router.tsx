@@ -24,6 +24,9 @@ const PartnerSupportTestPage = lazy(() =>
 const PartnerChatTestPage = lazy(() =>
   import('@/modules/chat-test').then((m) => ({ default: m.PartnerChatTestPage })),
 )
+const PushNotificationTestPage = lazy(() =>
+  import('@/modules/chat-test').then((m) => ({ default: m.PushNotificationTestPage })),
+)
 const PaymentFinanceTestingPage = lazy(() =>
   import('@/modules/chat-test/pages/payment-finance-testing-page').then((m) => ({
     default: m.PaymentFinanceTestingPage,
@@ -833,6 +836,14 @@ export function AppRouter() {
           element={
             <Suspense fallback={<PageLoader />}>
               <UserVenueChatTestPage />
+            </Suspense>
+          }
+        />
+        <Route
+          path="/dev/push-notification-test"
+          element={
+            <Suspense fallback={<PageLoader />}>
+              <PushNotificationTestPage />
             </Suspense>
           }
         />
