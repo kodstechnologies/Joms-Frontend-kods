@@ -6,7 +6,6 @@ import {
   CartesianGrid,
   Cell,
   ComposedChart,
-  Legend,
   Pie,
   PieChart,
   ResponsiveContainer,
@@ -14,8 +13,6 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
-import { RefreshCw } from 'lucide-react'
-
 import { useSupportStats } from '../hooks/use-support'
 import { cn } from '@/shared/lib/cn'
 
@@ -59,35 +56,75 @@ const tooltipStyle: React.CSSProperties = {
 }
 
 const axisTickStyle = { fill: BRAND_MUTED, fontSize: 11 }
-const legendStyle: React.CSSProperties = { color: BRAND_MUTED, fontSize: 12, paddingTop: 12 }
 
 const colorForKey = (key: string, index: number, known?: Record<string, string>) =>
   known?.[key] || SERIES_PALETTE[index % SERIES_PALETTE.length]
+
+function ChartLegend({
+  series,
+  colorMap,
+}: {
+  series: Array<{ key: string; name: string }>
+  colorMap?: Record<string, string>
+}) {
+  if (!series.length) return null
+  return (
+    <ul className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
+      {series.map((item, index) => (
+        <li key={item.key} className="text-muted flex items-center gap-2 text-xs">
+          <span
+            className="size-2.5 shrink-0 rounded-sm"
+            style={{ backgroundColor: colorForKey(item.key, index, colorMap) }}
+          />
+          <span className="leading-none">{item.name}</span>
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+function CompactSeriesTooltip({
+  active,
+  payload,
+  label,
+}: {
+  active?: boolean
+  payload?: Array<{ name?: string; value?: number; color?: string; dataKey?: string }>
+  label?: string
+}) {
+  if (!active || !payload?.length) return null
+  const items = payload.filter((entry) => Number(entry.value ?? 0) > 0)
+  return (
+    <div style={tooltipStyle}>
+      <p className="text-body-sm-semibold text-brand-text-dark mb-1.5">{label}</p>
+      {items.length ? (
+        <div className="space-y-1">
+          {items.map((entry) => (
+            <p key={String(entry.dataKey)} className="text-body-sm" style={{ color: entry.color }}>
+              {entry.name}:{' '}
+              <span className="text-brand-text-dark font-semibold">{entry.value ?? 0}</span>
+            </p>
+          ))}
+        </div>
+      ) : (
+        <p className="text-body-sm text-muted">No tickets</p>
+      )}
+    </div>
+  )
+}
 
 function ChartCard({
   title,
   children,
   className,
-  onRefresh,
-  refreshing,
 }: PropsWithChildren<{
   title: string
   className?: string
-  onRefresh?: () => void
-  refreshing?: boolean
 }>) {
   return (
     <div className={cn('radius-lg bg-brand-surface border border-white/[0.06] p-5', className)}>
-      <div className="mb-4 flex items-center justify-between gap-3">
+      <div className="mb-4">
         <h2 className="text-body-md-semibold text-brand-text">{title}</h2>
-        <button
-          type="button"
-          aria-label="Refresh"
-          onClick={onRefresh}
-          className="text-muted hover:text-brand-text grid size-8 place-items-center rounded-lg border border-white/10 bg-black/40 transition-colors hover:bg-white/5"
-        >
-          <RefreshCw className={cn('size-3.5', refreshing && 'animate-spin')} />
-        </button>
       </div>
       {children}
     </div>
@@ -128,7 +165,7 @@ function TicketTrendTooltip({
 }
 
 export function SupportDashboardCharts() {
-  const { data, isFetching, isLoading, refetch } = useSupportStats()
+  const { data, isLoading } = useSupportStats()
   const charts = data?.data?.charts
   const emptyLabel = isLoading ? 'Loading…' : 'No tickets in this period'
   const ticketTrends = charts?.ticketTrends ?? []
@@ -152,15 +189,10 @@ export function SupportDashboardCharts() {
   )
 
   return (
-    <>
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[652fr_584fr]">
-        <ChartCard
-          title="Ticket Trends"
-          className="h-[382px]"
-          onRefresh={refetch}
-          refreshing={isFetching}
-        >
-          <div className="h-[300px] w-full">
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+        <ChartCard title="Ticket Trends">
+          <div className="h-[280px] w-full min-w-0">
             {hasTrendData ? (
               <ResponsiveContainer width="100%" height="100%">
                 <ComposedChart
@@ -210,45 +242,40 @@ export function SupportDashboardCharts() {
           </div>
         </ChartCard>
 
-        <ChartCard
-          title="Tickets by User Type"
-          className="h-[382px]"
-          onRefresh={refetch}
-          refreshing={isFetching}
-        >
+        <ChartCard title="Tickets by User Type">
           {hasUserTypeData ? (
-            <div className="flex h-full items-center gap-8">
-              <div className="h-[220px] w-[220px] shrink-0">
+            <div className="flex flex-col items-center gap-6 sm:flex-row sm:items-center">
+              <div className="relative h-[200px] w-[200px] shrink-0 overflow-visible">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
                       data={ticketsByUserType}
                       dataKey="value"
                       nameKey="name"
-                      innerRadius={60}
-                      outerRadius={95}
+                      innerRadius={58}
+                      outerRadius={88}
                       stroke="rgba(255,255,255,0.06)"
                       strokeWidth={2}
+                      isAnimationActive={false}
                     >
                       {ticketsByUserType.map((entry, index) => (
                         <Cell key={entry.key} fill={PIE_COLORS[index % PIE_COLORS.length]} />
                       ))}
                     </Pie>
-                    <Tooltip contentStyle={tooltipStyle} />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
 
-              <div className="flex flex-1 flex-col gap-5">
+              <div className="flex w-full flex-1 flex-col gap-4">
                 {ticketsByUserType.map((entry, index) => (
                   <div key={entry.key} className="flex items-start justify-between gap-4">
-                    <div className="flex items-start gap-2">
+                    <div className="flex min-w-0 items-start gap-2">
                       <span
                         className="mt-[3px] inline-block size-3 shrink-0 rounded-full"
                         style={{ backgroundColor: PIE_COLORS[index % PIE_COLORS.length] }}
                       />
-                      <div>
-                        <p className="text-body-sm-medium text-brand-text">{entry.name}</p>
+                      <div className="min-w-0">
+                        <p className="text-body-sm-medium text-brand-text truncate">{entry.name}</p>
                         <p className="text-body-sm text-muted">{entry.value}</p>
                       </div>
                     </div>
@@ -268,45 +295,47 @@ export function SupportDashboardCharts() {
         </ChartCard>
       </div>
 
-      <ChartCard title="Tickets by Module" onRefresh={refetch} refreshing={isFetching}>
-        <div className="h-[300px] w-full">
-          {hasModuleData && ticketsByModule ? (
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                data={ticketsByModule.data}
-                margin={{ left: 0, right: 8, top: 8, bottom: 0 }}
-                barGap={4}
-              >
-                <CartesianGrid stroke="rgba(255,255,255,0.04)" vertical={false} />
-                <XAxis dataKey="month" tickLine={false} axisLine={false} tick={axisTickStyle} />
-                <YAxis
-                  tickLine={false}
-                  axisLine={false}
-                  tick={axisTickStyle}
-                  allowDecimals={false}
-                />
-                <Tooltip contentStyle={tooltipStyle} cursor={{ fill: 'transparent' }} />
-                <Legend wrapperStyle={legendStyle} />
-                {ticketsByModule.series.map((series, index) => (
-                  <Bar
-                    key={series.key}
-                    dataKey={series.key}
-                    name={series.name}
-                    fill={colorForKey(series.key, index, MODULE_COLOR_BY_KEY)}
-                    radius={[3, 3, 0, 0]}
-                    maxBarSize={20}
+      <ChartCard title="Tickets by Module">
+        {hasModuleData && ticketsByModule ? (
+          <div className="min-w-0">
+            <div className="h-[260px] w-full min-w-0">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={ticketsByModule.data}
+                  margin={{ left: 0, right: 8, top: 8, bottom: 0 }}
+                  barGap={4}
+                >
+                  <CartesianGrid stroke="rgba(255,255,255,0.04)" vertical={false} />
+                  <XAxis dataKey="month" tickLine={false} axisLine={false} tick={axisTickStyle} />
+                  <YAxis
+                    tickLine={false}
+                    axisLine={false}
+                    tick={axisTickStyle}
+                    allowDecimals={false}
                   />
-                ))}
-              </BarChart>
-            </ResponsiveContainer>
-          ) : (
-            <ChartEmpty label={emptyLabel} />
-          )}
-        </div>
+                  <Tooltip content={<CompactSeriesTooltip />} cursor={{ fill: 'transparent' }} />
+                  {ticketsByModule.series.map((series, index) => (
+                    <Bar
+                      key={series.key}
+                      dataKey={series.key}
+                      name={series.name}
+                      fill={colorForKey(series.key, index, MODULE_COLOR_BY_KEY)}
+                      radius={[3, 3, 0, 0]}
+                      maxBarSize={20}
+                    />
+                  ))}
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+            <ChartLegend series={ticketsByModule.series} colorMap={MODULE_COLOR_BY_KEY} />
+          </div>
+        ) : (
+          <ChartEmpty label={emptyLabel} />
+        )}
       </ChartCard>
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-        <ChartCard title="Tickets by Reason" onRefresh={refetch} refreshing={isFetching}>
+        <ChartCard title="Tickets by Reason">
           {ticketsByReason.length ? (
             <div className="space-y-5 py-1">
               {ticketsByReason.map((reason, index) => (
@@ -336,43 +365,45 @@ export function SupportDashboardCharts() {
           )}
         </ChartCard>
 
-        <ChartCard title="Escalations to Other Teams" onRefresh={refetch} refreshing={isFetching}>
-          <div className="h-[280px] w-full">
-            {hasEscalationData && escalations ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={escalations.data}
-                  margin={{ left: 0, right: 8, top: 8, bottom: 0 }}
-                  barGap={4}
-                >
-                  <CartesianGrid stroke="rgba(255,255,255,0.04)" vertical={false} />
-                  <XAxis dataKey="day" tickLine={false} axisLine={false} tick={axisTickStyle} />
-                  <YAxis
-                    tickLine={false}
-                    axisLine={false}
-                    tick={axisTickStyle}
-                    allowDecimals={false}
-                  />
-                  <Tooltip contentStyle={tooltipStyle} cursor={{ fill: 'transparent' }} />
-                  <Legend wrapperStyle={legendStyle} />
-                  {escalations.series.map((series, index) => (
-                    <Bar
-                      key={series.key}
-                      dataKey={series.key}
-                      name={series.name}
-                      fill={colorForKey(series.key, index, TEAM_COLOR_BY_KEY)}
-                      radius={[3, 3, 0, 0]}
-                      maxBarSize={24}
+        <ChartCard title="Escalations to Other Teams">
+          {hasEscalationData && escalations ? (
+            <div className="min-w-0">
+              <div className="h-[240px] w-full min-w-0">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={escalations.data}
+                    margin={{ left: 0, right: 8, top: 8, bottom: 0 }}
+                    barGap={4}
+                  >
+                    <CartesianGrid stroke="rgba(255,255,255,0.04)" vertical={false} />
+                    <XAxis dataKey="day" tickLine={false} axisLine={false} tick={axisTickStyle} />
+                    <YAxis
+                      tickLine={false}
+                      axisLine={false}
+                      tick={axisTickStyle}
+                      allowDecimals={false}
                     />
-                  ))}
-                </BarChart>
-              </ResponsiveContainer>
-            ) : (
-              <ChartEmpty label={emptyLabel} />
-            )}
-          </div>
+                    <Tooltip content={<CompactSeriesTooltip />} cursor={{ fill: 'transparent' }} />
+                    {escalations.series.map((series, index) => (
+                      <Bar
+                        key={series.key}
+                        dataKey={series.key}
+                        name={series.name}
+                        fill={colorForKey(series.key, index, TEAM_COLOR_BY_KEY)}
+                        radius={[3, 3, 0, 0]}
+                        maxBarSize={24}
+                      />
+                    ))}
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+              <ChartLegend series={escalations.series} colorMap={TEAM_COLOR_BY_KEY} />
+            </div>
+          ) : (
+            <ChartEmpty label={emptyLabel} />
+          )}
         </ChartCard>
       </div>
-    </>
+    </div>
   )
 }

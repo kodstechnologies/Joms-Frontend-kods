@@ -27,14 +27,12 @@ import {
   useActiveMetricIds,
 } from '@/modules/expert/hooks/use-active-metric-ids'
 import {
+  DEFAULT_EXECUTIVE_METRIC_IDS,
   EXECUTIVE_OVERVIEW_METRIC_IDS,
   EXECUTIVE_OVERVIEW_METRIC_ID_SET,
-} from '@/modules/dashboard/config/executive-overview-metrics.config'
-import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
-import {
-  DEFAULT_EXECUTIVE_METRIC_IDS,
   EXECUTIVE_OVERVIEW_MODULE_KEY,
 } from '@/modules/dashboard/config/executive-overview-metrics.config'
+import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
 import { useExecutiveOverview } from '@/modules/dashboard/hooks/use-executive-overview'
 import { logExecutiveOverviewExport } from '@/modules/dashboard/api/executive-overview-api'
 import { buildExecutiveKpiStats } from '@/modules/dashboard/utils/executive-overview-metrics'

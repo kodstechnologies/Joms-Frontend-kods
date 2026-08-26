@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { ArrowLeft, Eye, PlayCircle } from 'lucide-react'
+import { ArrowLeft, BarChart3, Eye, PlayCircle } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
@@ -13,23 +13,23 @@ import {
   createServiceFilteredExportHandler,
 } from '@/shared/utils/export-filter-utils'
 import { fetchServices } from '../../api/service-api'
+import { SERVICE_SUSPENDED_MODULE_KEY } from '../../api/ui-preferences-api'
+import { DEFAULT_SERVICE_SUSPENDED_VISIBLE_COLUMN_IDS } from '../../config/service-management-table-columns.config'
+import { useTableColumnPreferences } from '../../hooks/use-ui-preferences'
 
 import { useActivateService, useServices } from '../../hooks/use-services'
 import { getServiceManagementViewPath } from '../../lib/service-navigation'
 import type { Service } from '../../type/service'
+import {
+  buildServiceDataColumnsById,
+  pickServicePreferenceColumns,
+} from '../../utils/service-preference-columns'
 import { DataTable } from '@/shared/components/table/data-table'
-import { TableDateTimeCell } from '@/shared/components/table/table-datetime-cell'
 import {
   TableActionsDropdown,
   TableActionsItem,
 } from '@/shared/components/table/table-actions-dropdown'
-
-const formatPrice = (price: number) =>
-  new Intl.NumberFormat('en-IN', {
-    style: 'currency',
-    currency: 'INR',
-    maximumFractionDigits: 0,
-  }).format(price)
+import { Button } from '@/shared/components/ui/button'
 
 const formatExportDateTime = (value?: string | null) =>
   value
@@ -43,21 +43,26 @@ const formatExportDateTime = (value?: string | null) =>
     : ''
 
 const EXPORT_COLUMN_MAP: Record<string, { header: string; accessor: (s: Service) => string }> = {
-  serviceId: { header: 'Service ID', accessor: (s) => exportDisplayValue(s.serviceid || s._id) },
-  title: { header: 'Service Name', accessor: (s) => exportDisplayValue(s.title) },
-  categoryName: { header: 'Service Category', accessor: (s) => exportDisplayValue(s.categoryName) },
-  serviceType: { header: 'Service Type', accessor: (s) => exportDisplayValue(s.serviceType) },
-  pricing: {
-    header: 'Service',
-    accessor: (s) => exportDisplayValue(s.pricing ? formatPrice(s.pricing) : undefined),
+  serviceId: { header: 'Listing ID', accessor: (s) => exportDisplayValue(s.serviceid || s._id) },
+  title: { header: 'Listing Name', accessor: (s) => exportDisplayValue(s.title) },
+  suspensionReason: {
+    header: 'Suspension Reason',
+    accessor: (s) => exportDisplayValue(s.suspensionReason),
   },
-  expertId: {
-    header: 'Expert ID',
-    accessor: (s) => exportDisplayValue(s.expertid || s.partnerId),
+  suspensionType: {
+    header: 'Suspension Type',
+    accessor: (s) => exportDisplayValue(s.suspensionType),
   },
-  expertName: { header: 'Expert Name', accessor: (s) => exportDisplayValue(s.expertName) },
-  status: { header: 'Status', accessor: (s) => exportDisplayValue(s.status) },
-  createdAt: { header: 'Created At', accessor: (s) => formatExportDateTime(s.createdAt) },
+  suspendedAt: { header: 'Suspended At', accessor: (s) => formatExportDateTime(s.suspendedAt) },
+  suspensionUntil: {
+    header: 'Suspension Until',
+    accessor: (s) => formatExportDateTime(s.suspensionUntil),
+  },
+  suspendedBy: { header: 'Suspended By', accessor: (s) => exportDisplayValue(s.suspendedBy) },
+  lastUpdatedAt: {
+    header: 'Last Updated At',
+    accessor: (s) => formatExportDateTime(s.lastUpdatedAt),
+  },
 }
 
 export function SuspendedServicesPage() {
@@ -67,6 +72,7 @@ export function SuspendedServicesPage() {
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [selectedServiceIds, setSelectedServiceIds] = useState<string[]>([])
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
+  const tableColumnPreferencesQuery = useTableColumnPreferences(SERVICE_SUSPENDED_MODULE_KEY)
 
   const serviceQueryParams = useMemo(
     () =>
@@ -115,7 +121,7 @@ export function SuspendedServicesPage() {
     onExport,
     modals: exportFilterModals,
   } = useModuleExportFilters({
-    moduleKey: 'service-management',
+    moduleKey: SERVICE_SUSPENDED_MODULE_KEY,
     onApplyFilters: handleApplyFilters,
     onExportData: handleExportData,
   })
@@ -155,8 +161,13 @@ export function SuspendedServicesPage() {
     [activateServiceMutation],
   )
 
-  const columns = useMemo<ColumnDef<Service>[]>(
-    () => [
+  const columns = useMemo<ColumnDef<Service>[]>(() => {
+    const dataColumnsById = buildServiceDataColumnsById()
+    const visibleIds = tableColumnPreferencesQuery.data?.visibleColumnIds?.length
+      ? tableColumnPreferencesQuery.data.visibleColumnIds
+      : DEFAULT_SERVICE_SUSPENDED_VISIBLE_COLUMN_IDS
+
+    return [
       {
         id: 'select',
         header: () => (
@@ -187,63 +198,11 @@ export function SuspendedServicesPage() {
           cellClassName: 'pl-5',
         },
       },
-      {
-        accessorKey: 'serviceid',
-        header: 'Service ID',
-        cell: ({ row }) => (
-          <span className="ui-table-id uppercase">
-            {row.original.serviceid || row.original._id}
-          </span>
-        ),
-      },
-      {
-        accessorKey: 'title',
-        header: 'Service Name',
-        cell: ({ row }) => <span className="font-medium text-white">{row.original.title}</span>,
-      },
-      {
-        accessorKey: 'categoryName',
-        header: 'Service Category',
-        cell: ({ row }) => {
-          const value = row.original.categoryName
-          if (!value) return <span className="text-[#777]">—</span>
-          return <span>{value}</span>
-        },
-      },
-      {
-        accessorKey: 'serviceType',
-        header: 'Service Type',
-      },
-      {
-        accessorKey: 'pricing',
-        header: 'Service',
-        cell: ({ row }) => formatPrice(row.original.pricing),
-      },
-      {
-        accessorKey: 'expertid',
-        header: 'Expert ID',
-        cell: ({ row }) => (
-          <span className="ui-table-id">{row.original.expertid || 'Not provided'}</span>
-        ),
-      },
-      {
-        accessorKey: 'expertName',
-        header: 'Expert Name',
-      },
-      {
-        accessorKey: 'status',
-        header: 'Status',
-        cell: () => (
-          <span className="rounded-full bg-purple-500/10 px-2.5 py-0.5 text-[10px] font-semibold text-purple-400 uppercase">
-            Suspended
-          </span>
-        ),
-      },
-      {
-        accessorKey: 'createdAt',
-        header: 'Created at',
-        cell: ({ row }) => <TableDateTimeCell value={row.original.createdAt} />,
-      },
+      ...pickServicePreferenceColumns(
+        dataColumnsById,
+        visibleIds,
+        DEFAULT_SERVICE_SUSPENDED_VISIBLE_COLUMN_IDS,
+      ),
       {
         id: 'actions',
         accessorFn: () => null,
@@ -285,18 +244,18 @@ export function SuspendedServicesPage() {
           )
         },
       },
-    ],
-    [
-      activeDropdownId,
-      allVisibleServicesSelected,
-      handleActivate,
-      navigate,
-      selectedServiceIds,
-      someVisibleServicesSelected,
-      toggleServiceSelection,
-      toggleVisibleServices,
-    ],
-  )
+    ]
+  }, [
+    activeDropdownId,
+    allVisibleServicesSelected,
+    handleActivate,
+    navigate,
+    selectedServiceIds,
+    someVisibleServicesSelected,
+    tableColumnPreferencesQuery.data,
+    toggleServiceSelection,
+    toggleVisibleServices,
+  ])
 
   return (
     <div className="flex flex-col gap-5 md:gap-6">
@@ -323,6 +282,17 @@ export function SuspendedServicesPage() {
             <span className="font-bold text-white">Suspended Services</span>
           </div>
         </header>
+        <Button
+          className="ui-manage-metrics h-9 w-full md:w-auto"
+          onClick={() =>
+            navigate(
+              '/metrics/service-suspended?returnTo=/services/management/suspended&section=table',
+            )
+          }
+        >
+          <BarChart3 className="size-4" />
+          Manage Metrics
+        </Button>
       </div>
 
       <DataTable

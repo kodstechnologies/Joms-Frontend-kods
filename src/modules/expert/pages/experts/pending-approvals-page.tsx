@@ -6,8 +6,17 @@ import { toast } from 'sonner'
 
 import { fetchExpertApplicationView, updateExpertKycStatus } from '../../api/expert-application-api'
 import { fetchExperts } from '../../api/expert-api'
+import {
+  DEFAULT_EXPERT_PENDING_VISIBLE_COLUMN_IDS,
+  EXPERT_PENDING_APPROVALS_MODULE_KEY,
+} from '../../config/expert-management-table-columns.config'
 import { useExperts } from '../../hooks/use-expert'
+import { useTableColumnPreferences } from '../../hooks/use-ui-preferences'
 import type { Expert } from '../../type/expert'
+import {
+  buildExpertDataColumnsById,
+  pickPreferenceColumns,
+} from '../../utils/expert-preference-columns'
 import { isKycSubmittedForApplication } from '../../utils/expert-application-helpers'
 import { openExpertApplicationView } from '../../utils/expert-application-navigation'
 import type { FilterValues } from '@/shared/types/data-filter'
@@ -18,14 +27,7 @@ import {
   createFilteredExportHandler,
 } from '@/shared/utils/export-filter-utils'
 import { ExpertListHeader } from './expert-list-shared'
-import {
-  createExpertBaseColumns,
-  createExpertCreatedAtColumn,
-  createExpertLastActiveColumn,
-  createExpertSelectColumn,
-  createExpertServiceTypeColumn,
-  createExpertStatusColumn,
-} from './expert-list-columns'
+import { createExpertSelectColumn } from './expert-list-columns'
 import { useExpertListSelection } from './use-expert-list-selection'
 import { DecisionActionModal } from '@/shared/components/modal/decision-action-modal'
 import { DataTable } from '@/shared/components/table/data-table'
@@ -134,10 +136,12 @@ export function ExpertPendingApprovalsPage() {
     onExport,
     modals: exportFilterModals,
   } = useModuleExportFilters({
-    moduleKey: 'expert-management',
+    moduleKey: EXPERT_PENDING_APPROVALS_MODULE_KEY,
     onApplyFilters: handleApplyFilters,
     onExportData: handleExportData,
   })
+
+  const tableColumnPreferencesQuery = useTableColumnPreferences(EXPERT_PENDING_APPROVALS_MODULE_KEY)
 
   const toggleRevokeReason = useCallback((value: string) => {
     setRevokeReasons((current) =>
@@ -284,8 +288,13 @@ export function ExpertPendingApprovalsPage() {
     }
   }, [approveConfirmed, approveExpertTarget, closeApproveModal, navigate, queryClient])
 
-  const columns = useMemo<ColumnDef<Expert>[]>(
-    () => [
+  const columns = useMemo<ColumnDef<Expert>[]>(() => {
+    const dataColumnsById = buildExpertDataColumnsById()
+    const visibleIds = tableColumnPreferencesQuery.data?.visibleColumnIds?.length
+      ? tableColumnPreferencesQuery.data.visibleColumnIds
+      : DEFAULT_EXPERT_PENDING_VISIBLE_COLUMN_IDS
+
+    return [
       createExpertSelectColumn({
         allVisibleSelected: selection.allVisibleSelected,
         someVisibleSelected: selection.someVisibleSelected,
@@ -293,11 +302,11 @@ export function ExpertPendingApprovalsPage() {
         toggleVisible: selection.toggleVisible,
         toggleOne: selection.toggleOne,
       }),
-      ...createExpertBaseColumns(),
-      createExpertStatusColumn(),
-      createExpertServiceTypeColumn(),
-      createExpertCreatedAtColumn(),
-      createExpertLastActiveColumn(),
+      ...pickPreferenceColumns(
+        dataColumnsById,
+        visibleIds,
+        DEFAULT_EXPERT_PENDING_VISIBLE_COLUMN_IDS,
+      ),
       {
         id: 'actions',
         header: 'Actions',
@@ -372,15 +381,15 @@ export function ExpertPendingApprovalsPage() {
           )
         },
       },
-    ],
-    [activeDropdownId, navigate, selection],
-  )
+    ]
+  }, [activeDropdownId, navigate, selection, tableColumnPreferencesQuery.data])
 
   return (
     <div className="flex flex-col gap-5 md:gap-6">
       <ExpertListHeader
         title="Pending Approvals"
         breadcrumb="User Management / Pending Approvals"
+        metricsPath="/metrics/expert-pending-approvals?returnTo=/experts/pending-approvals"
       />
 
       <DataTable

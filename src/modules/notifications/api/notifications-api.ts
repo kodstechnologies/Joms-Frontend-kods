@@ -1,4 +1,6 @@
-import { notificationApiClient } from '@/shared/lib/axios'
+import { adminApiClient, notificationApiClient } from '@/shared/lib/axios'
+
+export type InboxKind = 'notification' | 'alert'
 
 export type InAppNotification = {
   id: string
@@ -8,11 +10,17 @@ export type InAppNotification = {
   body: string
   additionalNotes?: string
   type: string
+  eventType?: string | null
+  kind?: InboxKind
   channel: string
   source: string
   sourceId?: string | null
   messageId?: string | null
   audience?: string | null
+  deepLink?: {
+    screen: string | null
+    params: Record<string, string>
+  }
   metadata?: {
     category?: string
     requester?: string
@@ -23,6 +31,7 @@ export type InAppNotification = {
   sender?: {
     imageUrl: string
     type: 'admin' | 'system' | 'partner'
+    name?: string | null
   }
   senderImageUrl?: string
   senderType?: 'admin' | 'system' | 'partner'
@@ -48,6 +57,7 @@ export const fetchMyInAppNotifications = async (params?: {
   page?: number
   limit?: number
   isRead?: boolean
+  kind?: InboxKind
 }) => {
   const response = await notificationApiClient.get<ApiEnvelope<InAppNotification[]>>(
     '/notifications/in-app/me',
@@ -56,9 +66,10 @@ export const fetchMyInAppNotifications = async (params?: {
   return response.data
 }
 
-export const fetchMyUnreadNotificationCount = async () => {
+export const fetchMyUnreadNotificationCount = async (kind?: InboxKind) => {
   const response = await notificationApiClient.get<ApiEnvelope<{ unreadCount: number }>>(
     '/notifications/in-app/me/unread-count',
+    { params: kind ? { kind } : undefined },
   )
   return response.data
 }
@@ -98,5 +109,16 @@ export const unregisterDeviceToken = async (token: string) => {
       data: { token },
     },
   )
+  return response.data
+}
+
+export const seedAdminInboxAlerts = async () => {
+  const response = await adminApiClient.post<
+    ApiEnvelope<{
+      count: number
+      ids: Record<string, string | null>
+      results: Array<{ eventType: string; path: string; sent: boolean; skipped: boolean }>
+    }>
+  >('/admin/inbox/seed-alerts')
   return response.data
 }

@@ -122,7 +122,12 @@ export function TicketCasePanel({
             </button>
           </div>
           <div className="mt-2 flex items-center gap-2">
-            <SupportAvatar name={assignedTo} src={assignedToAvatarUrl} sizeClassName="size-8" />
+            <SupportAvatar
+              name={assignedTo}
+              src={assignedToAvatarUrl}
+              sizeClassName="size-8"
+              fallback="icon"
+            />
             <span className="text-body-md text-brand-text">{assignedTo}</span>
           </div>
         </div>

@@ -3,6 +3,7 @@ import { Outlet, useLocation } from 'react-router-dom'
 import { PanelLeftClose } from 'lucide-react'
 import { cn } from '@/shared/lib/cn'
 
+import { AlertsPanel } from '@/app/layouts/components/alerts-panel'
 import { NotificationPanel } from '@/app/layouts/components/notification-dropdown'
 import { Sidebar } from '@/app/layouts/components/sidebar'
 import { SidebarBrand } from '@/app/layouts/components/sidebar-brand'
@@ -29,6 +30,7 @@ export function DashboardLayout() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false)
+  const [isAlertsOpen, setIsAlertsOpen] = useState(false)
   const location = useLocation()
   const isTabletCompact = useMediaQuery('(min-width: 768px) and (max-width: 1023px)')
   const isDesktopShell = useMediaQuery('(min-width: 768px)')
@@ -40,6 +42,7 @@ export function DashboardLayout() {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- close overlays on route change
     setIsSidebarOpen(false)
     setIsNotificationsOpen(false)
+    setIsAlertsOpen(false)
   }, [location.pathname])
 
   const showCompact = isTabletCompact || isCollapsed
@@ -90,6 +93,7 @@ export function DashboardLayout() {
 
       <SidebarMobile open={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
       <NotificationPanel open={isNotificationsOpen} onClose={() => setIsNotificationsOpen(false)} />
+      <AlertsPanel open={isAlertsOpen} onClose={() => setIsAlertsOpen(false)} />
 
       <div
         className={cn(
@@ -102,7 +106,15 @@ export function DashboardLayout() {
         <Topbar
           onMenuClick={() => setIsSidebarOpen((prev) => !prev)}
           notificationsOpen={isNotificationsOpen}
-          onNotificationsOpen={() => setIsNotificationsOpen(true)}
+          onNotificationsOpen={() => {
+            setIsAlertsOpen(false)
+            setIsNotificationsOpen(true)
+          }}
+          alertsOpen={isAlertsOpen}
+          onAlertsOpen={() => {
+            setIsNotificationsOpen(false)
+            setIsAlertsOpen(true)
+          }}
           showCompact={showCompact}
         />
         <main

@@ -11,12 +11,46 @@ export interface Service {
   createdAt: string
   serviceType: string
   categoryName: string
+  subCategoryName?: string | null
   pricing: number
+  pricingModel?: string | null
+  tierName?: string | null
+  platformDiscountPercent?: number | null
+  finalPrice?: number | null
+  platformDiscountActive?: string | null
+  promoted?: string | null
   expertName: string
   expertid?: string
+  expertRating?: number | null
+  expertAccountStatus?: string | null
   partnerName?: string
   reason?: string | null
   deletedAt?: string | null
+  approvedAt?: string | null
+  submittedAt?: string | null
+  lastUpdatedAt?: string | null
+  totalTransactions?: number | null
+  scheduledBookings?: number | null
+  inProgressOrders?: number | null
+  completedTransactions?: number | null
+  cancelledTerminatedTransactions?: number | null
+  totalDisputes?: number | null
+  clientRaisedDisputes?: number | null
+  expertRaisedDisputes?: number | null
+  repeatBookingPercent?: number | null
+  averageRating?: number | null
+  totalRevenue?: number | null
+  cancellationRate?: number | null
+  suspensionReason?: string | null
+  suspensionType?: string | null
+  suspendedAt?: string | null
+  suspensionUntil?: string | null
+  suspendedBy?: string | null
+  complianceStatus?: string | null
+  deletedBy?: string | null
+  deletedById?: string | null
+  deletionReason?: string | null
+  restoreEligible?: string | null
 }
 
 export interface SuspendServicePayload {
@@ -110,7 +144,8 @@ export type UpdateServiceStatusRejectPayload = {
 }
 
 export type UpdateServiceStatusPayload =
-  UpdateServiceStatusApprovePayload | UpdateServiceStatusRejectPayload
+  | UpdateServiceStatusApprovePayload
+  | UpdateServiceStatusRejectPayload
 
 export interface ServiceDetail {
   _id: string
@@ -224,7 +259,8 @@ export type UpdateConsultationStatusRejectPayload = {
 }
 
 export type UpdateConsultationStatusPayload =
-  UpdateConsultationStatusApprovePayload | UpdateConsultationStatusRejectPayload
+  | UpdateConsultationStatusApprovePayload
+  | UpdateConsultationStatusRejectPayload
 
 export interface ConsultationStatusUpdateResponse {
   success: boolean

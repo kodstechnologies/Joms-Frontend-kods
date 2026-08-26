@@ -8,7 +8,7 @@ import {
   Search,
   Trash2,
 } from 'lucide-react'
-import { useMemo, useState, type ComponentProps, type ReactNode } from 'react'
+import { useCallback, useMemo, useState, type ComponentProps, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import type { LucideIcon } from 'lucide-react'
@@ -34,6 +34,10 @@ import {
 } from '../hooks/use-memberships'
 import { useMembershipStore } from '../store/membership-store'
 import type { MembershipPlan, MembershipStatus } from '../types/membership'
+import {
+  exportMembershipPlansToExcel,
+  fetchAllMembershipPlansForExport,
+} from '../utils/export-membership-plans'
 import { getFeatureLines } from '../utils/membership-format'
 import { DecisionActionModal } from '@/shared/components/modal/decision-action-modal'
 import { Button } from '@/shared/components/ui/button'
@@ -62,6 +66,7 @@ export function MembershipPlansPage({
 }: MembershipPlansPageProps) {
   const navigate = useNavigate()
   const [createOpen, setCreateOpen] = useState(false)
+  const [isExporting, setIsExporting] = useState(false)
   const [selectedPlan, setSelectedPlan] = useState<MembershipPlan | null>(null)
   const [modalType, setModalType] = useState<
     | 'pause'
@@ -272,6 +277,29 @@ export function MembershipPlansPage({
     }
   }
 
+  const handleExportData = useCallback(async () => {
+    if (isExporting) return
+    setIsExporting(true)
+    try {
+      const plans = await fetchAllMembershipPlansForExport({
+        search: searchQuery || undefined,
+        status: statusFilter,
+      })
+
+      if (!plans.length) {
+        toast.error('No membership plans found to export')
+        return
+      }
+
+      await exportMembershipPlansToExcel(plans)
+      toast.success('Membership plans exported to Excel')
+    } catch {
+      toast.error('Failed to export membership plans')
+    } finally {
+      setIsExporting(false)
+    }
+  }, [isExporting, searchQuery, statusFilter])
+
   const handleSetValidity = async () => {
     if (!selectedPlan || !validityStart || !validityEnd) {
       toast.error('Select validity dates')
@@ -332,9 +360,13 @@ export function MembershipPlansPage({
           />
         </div>
         <div className="flex flex-wrap gap-2.5">
-          <Button className="ui-export-data" onClick={() => toast.info('Export coming soon')}>
+          <Button
+            className="ui-export-data"
+            onClick={() => void handleExportData()}
+            disabled={isExporting}
+          >
             <Download className="size-4" />
-            Export Data
+            {isExporting ? 'Exporting...' : 'Export Data'}
           </Button>
           <Button className="ui-cta ui-cta-primary" onClick={() => setCreateOpen(true)}>
             <Plus className="size-4" />

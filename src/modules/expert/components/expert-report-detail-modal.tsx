@@ -8,6 +8,7 @@ export interface ExpertReportItem {
   id: string
   reportId: string
   partnerId: string
+  expertId?: string | null
   expertName: string
   reporterType: string
   reporterId: string
@@ -20,6 +21,8 @@ export interface ExpertReportItem {
   investigationStatus: string
   investigatingAdmin?: string
   adminWhoEscalated?: string
+  escalationTimestamp?: string
+  escalatedAt?: string | null
   finalOutcome?: string
   internalNotes?: string
   complianceReviewRequired?: boolean

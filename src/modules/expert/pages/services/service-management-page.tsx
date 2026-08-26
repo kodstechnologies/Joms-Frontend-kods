@@ -23,6 +23,7 @@ import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
 import { SERVICE_MANAGEMENT_MODULE_KEY } from '../../api/ui-preferences-api'
+import { DEFAULT_SERVICE_MANAGEMENT_VISIBLE_COLUMN_IDS } from '../../config/service-management-table-columns.config'
 import { orderByActiveMetricIds, useActiveMetricIds } from '../../hooks/use-active-metric-ids'
 import {
   useServices,
@@ -37,9 +38,11 @@ import { useTableColumnPreferences } from '../../hooks/use-ui-preferences'
 import { getServiceManagementViewPath } from '../../lib/service-navigation'
 import { useServiceStore } from '../../store/service-store'
 import type { Service } from '../../type/service'
-import { getManagementStatusDisplay } from '../../utils/management-status'
+import {
+  buildServiceDataColumnsById,
+  pickServicePreferenceColumns,
+} from '../../utils/service-preference-columns'
 import { DataTable } from '@/shared/components/table/data-table'
-import { TableDateTimeCell } from '@/shared/components/table/table-datetime-cell'
 import {
   TableActionsDropdown,
   TableActionsItem,
@@ -74,13 +77,6 @@ import {
   escalateConsultationApplication,
   escalateServiceApplication,
 } from '@/modules/my-tasks/api/escalation-api'
-
-const formatPrice = (price: number) =>
-  new Intl.NumberFormat('en-IN', {
-    style: 'currency',
-    currency: 'INR',
-    maximumFractionDigits: 0,
-  }).format(price)
 
 export const ServiceManagementPage = () => {
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
@@ -732,95 +728,18 @@ export const ServiceManagementPage = () => {
       },
     }
 
-    const dataColumnsById: Record<string, ColumnDef<Service>> = {
-      'service-id': {
-        id: 'service-id',
-        accessorKey: 'serviceid',
-        header: 'Service ID',
-        cell: ({ row }) => (
-          <span className="ui-table-id uppercase">
-            {row.original.serviceid || row.original._id}
-          </span>
-        ),
-      },
-      name: {
-        id: 'name',
-        accessorKey: 'title',
-        header: 'Service Name',
-        cell: ({ row }) => <span className="font-medium text-white">{row.original.title}</span>,
-      },
-      category: {
-        id: 'category',
-        accessorKey: 'categoryName',
-        header: 'Service Category',
-        cell: ({ row }) => {
-          const value = row.original.categoryName
-          if (!value) return <span className="text-[#777]">—</span>
-          return <span>{value}</span>
-        },
-      },
-      type: {
-        id: 'type',
-        accessorKey: 'serviceType',
-        header: 'Service Type',
-      },
-      pricing: {
-        id: 'pricing',
-        accessorKey: 'pricing',
-        header: 'Pricing',
-        cell: ({ row }) => formatPrice(row.original.pricing),
-      },
-      'expert-id': {
-        id: 'expert-id',
-        accessorKey: 'expertid',
-        header: 'Expert ID',
-        cell: ({ row }) => (
-          <span className="ui-table-id">{row.original.expertid || 'Not provided'}</span>
-        ),
-      },
-      'expert-name': {
-        id: 'expert-name',
-        accessorKey: 'expertName',
-        header: 'Expert Name',
-      },
-      status: {
-        id: 'status',
-        accessorKey: 'status',
-        header: 'Status',
-        cell: ({ row }) => {
-          const { label, className } = getManagementStatusDisplay(row.original.status, {
-            isSuspend: row.original.isSuspend,
-            isDeleted: row.original.status === 'deleted',
-          })
-
-          return <span className={className}>{label}</span>
-        },
-      },
-      'created-at': {
-        id: 'created-at',
-        accessorKey: 'createdAt',
-        header: 'Created At',
-        cell: ({ row }) => <TableDateTimeCell value={row.original.createdAt} />,
-      },
-    }
-
-    const defaultVisibleIds = [
-      'service-id',
-      'name',
-      'category',
-      'type',
-      'pricing',
-      'expert-id',
-      'expert-name',
-      'status',
-      'created-at',
-    ]
+    const dataColumnsById = buildServiceDataColumnsById()
+    const defaultVisibleIds = DEFAULT_SERVICE_MANAGEMENT_VISIBLE_COLUMN_IDS
 
     const visibleIds = tableColumnPreferencesQuery.data?.visibleColumnIds?.length
       ? tableColumnPreferencesQuery.data.visibleColumnIds
       : defaultVisibleIds
 
-    const preferenceColumns = visibleIds.map((id) => dataColumnsById[id]).filter(Boolean)
+    const preferenceColumns = pickServicePreferenceColumns(
+      dataColumnsById,
+      visibleIds,
+      defaultVisibleIds,
+    )
 
     const actionsColumn: ColumnDef<Service> = {
       id: 'actions',
@@ -1025,7 +944,9 @@ export const ServiceManagementPage = () => {
         <div className="flex w-full flex-col items-center gap-3 md:w-auto md:flex-row">
           <Button
             className="ui-manage-metrics h-9 w-full md:w-auto"
-            onClick={() => navigate('/services/management/metrics?section=table')}
+            onClick={() =>
+              navigate('/metrics/service-management?returnTo=/services/management&section=table')
+            }
           >
             <BarChart3 className="size-4" />
             Manage Metrics
