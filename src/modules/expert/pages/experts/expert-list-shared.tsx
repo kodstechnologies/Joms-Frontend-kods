@@ -6,7 +6,15 @@ import { displayExpertValue } from './expert-list-format'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import { Button } from '@/shared/components/ui/button'
 
-export function ExpertListHeader({ title, breadcrumb }: { title: string; breadcrumb: string }) {
+export function ExpertListHeader({
+  title,
+  breadcrumb,
+  metricsPath = '/experts/management/metrics?section=table',
+}: {
+  title: string
+  breadcrumb: string
+  metricsPath?: string
+}) {
   const navigate = useNavigate()
 
   return (
@@ -24,7 +32,7 @@ export function ExpertListHeader({ title, breadcrumb }: { title: string; breadcr
       </header>
       <Button
         className="ui-manage-metrics h-9 w-full md:w-auto"
-        onClick={() => navigate('/experts/management/metrics?section=table')}
+        onClick={() => navigate(metricsPath)}
       >
         <BarChart3 className="size-4" />
         Manage Metrics

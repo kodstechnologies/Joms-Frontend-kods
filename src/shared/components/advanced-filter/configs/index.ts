@@ -37,7 +37,15 @@ import { consultationPerformanceFilterConfig } from './consultation-performance.
 
 export const moduleFilterConfigs: Record<ModuleFilterKey, ModuleFilterConfig> = {
   'expert-management': expertManagementFilterConfig,
+  'expert-pending-approvals': expertManagementFilterConfig,
+  'expert-reported': expertManagementFilterConfig,
+  'expert-suspended': expertManagementFilterConfig,
+  'expert-deleted': expertManagementFilterConfig,
   'service-management': serviceManagementFilterConfig,
+  'service-pending-approvals': serviceManagementFilterConfig,
+  'service-reported': serviceManagementFilterConfig,
+  'service-suspended': serviceManagementFilterConfig,
+  'service-deleted': serviceManagementFilterConfig,
   'venue-management': venueManagementFilterConfig,
   'service-category-management': serviceCategoryManagementFilterConfig,
   'venue-category-management': venueCategoryManagementFilterConfig,

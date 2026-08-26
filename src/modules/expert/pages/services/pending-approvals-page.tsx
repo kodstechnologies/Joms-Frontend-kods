@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { ArrowLeft, CheckCircle2, Eye } from 'lucide-react'
+import { ArrowLeft, BarChart3, CheckCircle2, Eye } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
@@ -12,16 +12,23 @@ import {
   createServiceFilteredExportHandler,
 } from '@/shared/utils/export-filter-utils'
 import { fetchServices } from '../../api/service-api'
+import { SERVICE_PENDING_APPROVALS_MODULE_KEY } from '../../api/ui-preferences-api'
+import { DEFAULT_SERVICE_PENDING_VISIBLE_COLUMN_IDS } from '../../config/service-management-table-columns.config'
+import { useTableColumnPreferences } from '../../hooks/use-ui-preferences'
 
 import { useServices } from '../../hooks/use-services'
 import { getServiceManagementViewPath } from '../../lib/service-navigation'
 import type { Service } from '../../type/service'
+import {
+  buildServiceDataColumnsById,
+  pickServicePreferenceColumns,
+} from '../../utils/service-preference-columns'
 import { DataTable } from '@/shared/components/table/data-table'
-import { TableDateTimeCell } from '@/shared/components/table/table-datetime-cell'
 import {
   TableActionsDropdown,
   TableActionsItem,
 } from '@/shared/components/table/table-actions-dropdown'
+import { Button } from '@/shared/components/ui/button'
 
 const formatPrice = (price: number) =>
   new Intl.NumberFormat('en-IN', {
@@ -42,12 +49,12 @@ const formatExportDateTime = (value?: string | null) =>
     : ''
 
 const EXPORT_COLUMN_MAP: Record<string, { header: string; accessor: (s: Service) => string }> = {
-  serviceId: { header: 'Service ID', accessor: (s) => exportDisplayValue(s.serviceid || s._id) },
-  title: { header: 'Service Name', accessor: (s) => exportDisplayValue(s.title) },
-  categoryName: { header: 'Service Category', accessor: (s) => exportDisplayValue(s.categoryName) },
-  serviceType: { header: 'Service Type', accessor: (s) => exportDisplayValue(s.serviceType) },
+  serviceId: { header: 'Listing ID', accessor: (s) => exportDisplayValue(s.serviceid || s._id) },
+  title: { header: 'Listing Name', accessor: (s) => exportDisplayValue(s.title) },
+  categoryName: { header: 'Category', accessor: (s) => exportDisplayValue(s.categoryName) },
+  serviceType: { header: 'Listing Type', accessor: (s) => exportDisplayValue(s.serviceType) },
   pricing: {
-    header: 'Service',
+    header: 'Base Price',
     accessor: (s) => exportDisplayValue(s.pricing ? formatPrice(s.pricing) : undefined),
   },
   expertId: {
@@ -55,8 +62,11 @@ const EXPORT_COLUMN_MAP: Record<string, { header: string; accessor: (s: Service)
     accessor: (s) => exportDisplayValue(s.expertid || s.partnerId),
   },
   expertName: { header: 'Expert Name', accessor: (s) => exportDisplayValue(s.expertName) },
-  status: { header: 'Status', accessor: (s) => exportDisplayValue(s.status) },
-  createdAt: { header: 'Created At', accessor: (s) => formatExportDateTime(s.createdAt) },
+  submittedAt: { header: 'Submitted At', accessor: (s) => formatExportDateTime(s.submittedAt) },
+  lastUpdatedAt: {
+    header: 'Last Updated At',
+    accessor: (s) => formatExportDateTime(s.lastUpdatedAt),
+  },
 }
 
 export function PendingApprovalsPage() {
@@ -66,6 +76,9 @@ export function PendingApprovalsPage() {
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [selectedServiceIds, setSelectedServiceIds] = useState<string[]>([])
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
+  const tableColumnPreferencesQuery = useTableColumnPreferences(
+    SERVICE_PENDING_APPROVALS_MODULE_KEY,
+  )
 
   const serviceQueryParams = useMemo(
     () =>
@@ -112,7 +125,7 @@ export function PendingApprovalsPage() {
     onExport,
     modals: exportFilterModals,
   } = useModuleExportFilters({
-    moduleKey: 'service-management',
+    moduleKey: SERVICE_PENDING_APPROVALS_MODULE_KEY,
     onApplyFilters: handleApplyFilters,
     onExportData: handleExportData,
   })
@@ -135,8 +148,13 @@ export function PendingApprovalsPage() {
     )
   }, [])
 
-  const columns = useMemo<ColumnDef<Service>[]>(
-    () => [
+  const columns = useMemo<ColumnDef<Service>[]>(() => {
+    const dataColumnsById = buildServiceDataColumnsById()
+    const visibleIds = tableColumnPreferencesQuery.data?.visibleColumnIds?.length
+      ? tableColumnPreferencesQuery.data.visibleColumnIds
+      : DEFAULT_SERVICE_PENDING_VISIBLE_COLUMN_IDS
+
+    return [
       {
         id: 'select',
         header: () => (
@@ -167,61 +185,11 @@ export function PendingApprovalsPage() {
           cellClassName: 'pl-5',
         },
       },
-      {
-        accessorKey: 'serviceid',
-        header: 'Service ID',
-        cell: ({ row }) => (
-          <span className="ui-table-id uppercase">{row.original.serviceid || 'SER001'}</span>
-        ),
-      },
-      {
-        accessorKey: 'title',
-        header: 'Service Name',
-        cell: ({ row }) => <span className="font-medium text-white">{row.original.title}</span>,
-      },
-      {
-        accessorKey: 'categoryName',
-        header: 'Service Category',
-        cell: ({ row }) => {
-          const value = row.original.categoryName
-          if (!value) return <span className="text-[#777]">—</span>
-          return <span>{value}</span>
-        },
-      },
-      {
-        accessorKey: 'serviceType',
-        header: 'Service Type',
-      },
-      {
-        accessorKey: 'pricing',
-        header: 'Service',
-        cell: ({ row }) => formatPrice(row.original.pricing),
-      },
-      {
-        accessorKey: 'expertid',
-        header: 'Expert ID',
-        cell: ({ row }) => (
-          <span className="ui-table-id">{row.original.expertid || 'Not provided'}</span>
-        ),
-      },
-      {
-        accessorKey: 'expertName',
-        header: 'Expert Name',
-      },
-      {
-        accessorKey: 'status',
-        header: 'Status',
-        cell: () => (
-          <span className="rounded-full bg-amber-500/10 px-2.5 py-0.5 text-[10px] font-semibold text-amber-400">
-            Pending
-          </span>
-        ),
-      },
-      {
-        accessorKey: 'createdAt',
-        header: 'Created at',
-        cell: ({ row }) => <TableDateTimeCell value={row.original.createdAt} />,
-      },
+      ...pickServicePreferenceColumns(
+        dataColumnsById,
+        visibleIds,
+        DEFAULT_SERVICE_PENDING_VISIBLE_COLUMN_IDS,
+      ),
       {
         id: 'actions',
         accessorFn: () => null,
@@ -263,17 +231,17 @@ export function PendingApprovalsPage() {
           )
         },
       },
-    ],
-    [
-      activeDropdownId,
-      allVisibleServicesSelected,
-      navigate,
-      selectedServiceIds,
-      someVisibleServicesSelected,
-      toggleServiceSelection,
-      toggleVisibleServices,
-    ],
-  )
+    ]
+  }, [
+    activeDropdownId,
+    allVisibleServicesSelected,
+    navigate,
+    selectedServiceIds,
+    someVisibleServicesSelected,
+    tableColumnPreferencesQuery.data,
+    toggleServiceSelection,
+    toggleVisibleServices,
+  ])
 
   return (
     <div className="flex flex-col gap-5 md:gap-6">
@@ -300,6 +268,17 @@ export function PendingApprovalsPage() {
             <span className="font-bold text-white">Pending Approvals</span>
           </div>
         </header>
+        <Button
+          className="ui-manage-metrics h-9 w-full md:w-auto"
+          onClick={() =>
+            navigate(
+              '/metrics/service-pending-approvals?returnTo=/services/management/pending&section=table',
+            )
+          }
+        >
+          <BarChart3 className="size-4" />
+          Manage Metrics
+        </Button>
       </div>
 
       <DataTable

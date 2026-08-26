@@ -60,18 +60,19 @@ export const getReferralStatusClassName = (status: string) => {
   }
 }
 
-export const getReferralStatusLabel = (status: string) => {
+export const getReferralStatusLabel = (status: string, statusLabel?: string | null) => {
+  if (statusLabel) return statusLabel
   switch (status) {
     case 'accepted':
-      return 'Accepted'
+      return 'Successful'
     case 'pending':
-      return 'Pending'
+      return 'Invited'
     case 'rejected':
-      return 'Rejected'
+      return 'Cancelled'
     case 'expired':
       return 'Expired'
     default:
-      return status.charAt(0).toUpperCase() + status.slice(1)
+      return status ? status.charAt(0).toUpperCase() + status.slice(1) : '—'
   }
 }
 

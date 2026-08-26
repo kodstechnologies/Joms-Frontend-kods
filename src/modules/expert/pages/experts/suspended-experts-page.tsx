@@ -11,16 +11,18 @@ import {
   createFilteredExportHandler,
 } from '@/shared/utils/export-filter-utils'
 import { fetchExperts } from '../../api/expert-api'
+import {
+  DEFAULT_EXPERT_SUSPENDED_VISIBLE_COLUMN_IDS,
+  EXPERT_SUSPENDED_MODULE_KEY,
+} from '../../config/expert-management-table-columns.config'
 import { useActivateExpert, useExperts } from '../../hooks/use-expert'
+import { useTableColumnPreferences } from '../../hooks/use-ui-preferences'
 import type { Expert } from '../../type/expert'
 import {
-  createExpertBaseColumns,
-  createExpertCreatedAtColumn,
-  createExpertLastActiveColumn,
-  createExpertSelectColumn,
-  createExpertServiceTypeColumn,
-  createExpertStatusColumn,
-} from './expert-list-columns'
+  buildExpertDataColumnsById,
+  pickPreferenceColumns,
+} from '../../utils/expert-preference-columns'
+import { createExpertSelectColumn } from './expert-list-columns'
 import { ExpertListHeader } from './expert-list-shared'
 import { useExpertListSelection } from './use-expert-list-selection'
 import { DataTable } from '@/shared/components/table/data-table'
@@ -107,10 +109,12 @@ export function ExpertSuspendedExpertsPage() {
     onExport,
     modals: exportFilterModals,
   } = useModuleExportFilters({
-    moduleKey: 'expert-management',
+    moduleKey: EXPERT_SUSPENDED_MODULE_KEY,
     onApplyFilters: handleApplyFilters,
     onExportData: handleExportData,
   })
+
+  const tableColumnPreferencesQuery = useTableColumnPreferences(EXPERT_SUSPENDED_MODULE_KEY)
 
   const handleActivate = useCallback(
     (expert: Expert) => {
@@ -129,8 +133,13 @@ export function ExpertSuspendedExpertsPage() {
     [activateExpertMutation],
   )
 
-  const columns = useMemo<ColumnDef<Expert>[]>(
-    () => [
+  const columns = useMemo<ColumnDef<Expert>[]>(() => {
+    const dataColumnsById = buildExpertDataColumnsById()
+    const visibleIds = tableColumnPreferencesQuery.data?.visibleColumnIds?.length
+      ? tableColumnPreferencesQuery.data.visibleColumnIds
+      : DEFAULT_EXPERT_SUSPENDED_VISIBLE_COLUMN_IDS
+
+    return [
       createExpertSelectColumn({
         allVisibleSelected: selection.allVisibleSelected,
         someVisibleSelected: selection.someVisibleSelected,
@@ -138,11 +147,11 @@ export function ExpertSuspendedExpertsPage() {
         toggleVisible: selection.toggleVisible,
         toggleOne: selection.toggleOne,
       }),
-      ...createExpertBaseColumns(),
-      createExpertStatusColumn(),
-      createExpertServiceTypeColumn(),
-      createExpertCreatedAtColumn(),
-      createExpertLastActiveColumn(),
+      ...pickPreferenceColumns(
+        dataColumnsById,
+        visibleIds,
+        DEFAULT_EXPERT_SUSPENDED_VISIBLE_COLUMN_IDS,
+      ),
       {
         id: 'actions',
         header: 'Actions',
@@ -183,13 +192,16 @@ export function ExpertSuspendedExpertsPage() {
           )
         },
       },
-    ],
-    [activeDropdownId, handleActivate, navigate, selection],
-  )
+    ]
+  }, [activeDropdownId, handleActivate, navigate, selection, tableColumnPreferencesQuery.data])
 
   return (
     <div className="flex flex-col gap-5 md:gap-6">
-      <ExpertListHeader title="Suspended Experts" breadcrumb="User Management / Suspended Users" />
+      <ExpertListHeader
+        title="Suspended Experts"
+        breadcrumb="User Management / Suspended Users"
+        metricsPath="/metrics/expert-suspended?returnTo=/experts/suspended"
+      />
 
       <DataTable
         columns={columns}

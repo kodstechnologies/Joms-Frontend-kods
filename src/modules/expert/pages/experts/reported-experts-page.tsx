@@ -4,6 +4,11 @@ import { Ban, Eye } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
 import { fetchExpertReports } from '../../api/expert-api'
+import {
+  DEFAULT_EXPERT_REPORTED_VISIBLE_COLUMN_IDS,
+  EXPERT_REPORTED_MODULE_KEY,
+} from '../../config/expert-management-table-columns.config'
+import { useTableColumnPreferences } from '../../hooks/use-ui-preferences'
 import type { FilterValues } from '@/shared/types/data-filter'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter/use-module-export-filters'
 import { exportDisplayValue } from '@/shared/utils/export-utils'
@@ -18,6 +23,7 @@ import {
   TableActionsDropdown,
   TableActionsItem,
 } from '@/shared/components/table/table-actions-dropdown'
+import { TableDateTimeCell } from '@/shared/components/table/table-datetime-cell'
 
 const formatExportDateTime = (value?: string | null) =>
   value
@@ -76,6 +82,9 @@ const fetchExpertReportsForExport = async (params: Record<string, unknown>) => {
     },
   }
 }
+
+const dash = (value: unknown) =>
+  value === null || value === undefined || value === '' ? '—' : String(value)
 
 export function ExpertReportedExpertsPage() {
   const navigate = useNavigate()
@@ -152,72 +161,102 @@ export function ExpertReportedExpertsPage() {
     onExport,
     modals: exportFilterModals,
   } = useModuleExportFilters({
-    moduleKey: 'expert-management',
+    moduleKey: EXPERT_REPORTED_MODULE_KEY,
     onApplyFilters: handleApplyFilters,
     onExportData: handleExportData,
   })
+
+  const tableColumnPreferencesQuery = useTableColumnPreferences(EXPERT_REPORTED_MODULE_KEY)
 
   useEffect(() => {
     loadReports()
   }, [loadReports])
 
-  const columns = useMemo<ColumnDef<ExpertReportItem>[]>(
-    () => [
-      {
-        accessorKey: 'reportId',
+  const columns = useMemo<ColumnDef<ExpertReportItem>[]>(() => {
+    const dataColumnsById: Record<string, ColumnDef<ExpertReportItem>> = {
+      'report-id': {
+        id: 'report-id',
         header: 'Report ID',
         cell: ({ row }) => (
           <span className="font-mono font-semibold text-[#E5B54E]">
-            {row.original.reportId || 'REP000'}
+            {row.original.reportId || '—'}
           </span>
         ),
       },
-      {
-        accessorKey: 'expertName',
-        header: 'Reported Expert',
+      'expert-id': {
+        id: 'expert-id',
+        header: 'Expert ID',
+        cell: ({ row }) =>
+          dash(
+            row.original.expertId ||
+              (row.original.partnerId
+                ? `EXP-${String(row.original.partnerId).slice(-4).toUpperCase()}`
+                : null),
+          ),
+      },
+      'expert-name': {
+        id: 'expert-name',
+        header: 'Expert Name',
         cell: ({ row }) => (
-          <div>
-            <div className="font-semibold text-white">{row.original.expertName}</div>
-            <div className="text-[11px] text-slate-400">ID: {row.original.partnerId}</div>
-          </div>
+          <span className="font-semibold text-white">{dash(row.original.expertName)}</span>
         ),
       },
-      {
-        accessorKey: 'reporterName',
+      'reported-by': {
+        id: 'reported-by',
         header: 'Reported By',
         cell: ({ row }) => (
           <div>
-            <div className="font-medium text-slate-200">{row.original.reporterName}</div>
-            <div className="text-[11px] text-slate-400">{row.original.reporterType}</div>
+            <div className="font-medium text-slate-200">{dash(row.original.reporterName)}</div>
+            <div className="text-[11px] text-slate-400">{dash(row.original.reporterType)}</div>
           </div>
         ),
       },
-      {
-        accessorKey: 'issueType',
-        header: 'Issue Type',
+      'reporter-id': {
+        id: 'reporter-id',
+        header: 'Reporter ID',
+        cell: ({ row }) => dash(row.original.reporterId),
+      },
+      'report-category': {
+        id: 'report-category',
+        header: 'Report Category',
         cell: ({ row }) => (
           <span className="rounded-full bg-red-500/15 px-2.5 py-0.5 text-xs font-semibold text-red-400">
-            {row.original.issueType}
+            {dash(row.original.issueType)}
           </span>
         ),
       },
-      {
-        accessorKey: 'reason',
-        header: 'Reason',
+      'report-reason': {
+        id: 'report-reason',
+        header: 'Report Reason',
         cell: ({ row }) => (
           <div className="max-w-xs truncate text-xs text-slate-300" title={row.original.reason}>
-            {row.original.reason}
+            {dash(row.original.reason)}
           </div>
         ),
       },
-      {
-        accessorKey: 'investigationStatus',
-        header: 'Status',
+      'evidence-attached': {
+        id: 'evidence-attached',
+        header: 'Evidence Attached',
+        cell: ({ row }) =>
+          dash(
+            row.original.hasSupportingDocuments ||
+              (row.original.supportingDocuments?.length ?? 0) > 0
+              ? 'Yes'
+              : 'No',
+          ),
+      },
+      severity: {
+        id: 'severity',
+        header: 'Severity',
+        cell: ({ row }) => dash(row.original.businessImpact),
+      },
+      'case-status': {
+        id: 'case-status',
+        header: 'Case Status',
         cell: ({ row }) => {
           const status = row.original.investigationStatus || 'New'
           const isResolved = status === 'Resolved' || status === 'Closed'
           const isReview = status === 'Under Review' || status === 'Escalated'
-
           return (
             <span
               className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${
@@ -233,17 +272,79 @@ export function ExpertReportedExpertsPage() {
           )
         },
       },
-      {
-        accessorKey: 'submittedAt',
-        header: 'Reported At',
-        cell: ({ row }) => (
-          <span className="text-xs text-slate-400">
-            {row.original.submittedAt
-              ? new Date(row.original.submittedAt).toLocaleDateString('en-GB')
-              : '—'}
-          </span>
-        ),
+      'assigned-to': {
+        id: 'assigned-to',
+        header: 'Assigned To',
+        cell: ({ row }) => dash(row.original.investigatingAdmin),
       },
+      'reported-at': {
+        id: 'reported-at',
+        header: 'Reported At',
+        cell: ({ row }) =>
+          row.original.submittedAt ? <TableDateTimeCell value={row.original.submittedAt} /> : '—',
+      },
+      'last-updated': {
+        id: 'last-updated',
+        header: 'Last Updated',
+        cell: ({ row }) =>
+          row.original.latestActionTimestamp ? (
+            <TableDateTimeCell value={row.original.latestActionTimestamp} />
+          ) : (
+            '—'
+          ),
+      },
+      'escalated-by': {
+        id: 'escalated-by',
+        header: 'Escalated By',
+        cell: ({ row }) => dash(row.original.adminWhoEscalated),
+      },
+      'escalated-at': {
+        id: 'escalated-at',
+        header: 'Escalated At',
+        cell: ({ row }) => {
+          const value = row.original.escalatedAt || row.original.escalationTimestamp
+          return value ? <TableDateTimeCell value={value} /> : '—'
+        },
+      },
+      resolution: {
+        id: 'resolution',
+        header: 'Resolution',
+        cell: ({ row }) => dash(row.original.finalOutcome),
+      },
+      'resolution-notes': {
+        id: 'resolution-notes',
+        header: 'Resolution Notes',
+        cell: ({ row }) => dash(row.original.internalNotes),
+      },
+      'compliance-flag': {
+        id: 'compliance-flag',
+        header: 'Compliance Flag',
+        cell: ({ row }) =>
+          dash(
+            row.original.complianceReviewRequired == null
+              ? null
+              : row.original.complianceReviewRequired
+                ? 'Yes'
+                : 'No',
+          ),
+      },
+      'related-ticket-id': {
+        id: 'related-ticket-id',
+        header: 'Related Ticket ID',
+        cell: ({ row }) => dash(row.original.linkedSupportTicket),
+      },
+    }
+
+    const visibleIds = tableColumnPreferencesQuery.data?.visibleColumnIds?.length
+      ? tableColumnPreferencesQuery.data.visibleColumnIds
+      : DEFAULT_EXPERT_REPORTED_VISIBLE_COLUMN_IDS
+
+    const preferenceColumns = visibleIds
+      .map((id) => dataColumnsById[id])
+      .filter(Boolean) as ColumnDef<ExpertReportItem>[]
+
+    return [
+      ...preferenceColumns,
       {
         id: 'actions',
         header: 'Actions',
@@ -285,13 +386,16 @@ export function ExpertReportedExpertsPage() {
           )
         },
       },
-    ],
-    [activeDropdownId, navigate],
-  )
+    ]
+  }, [activeDropdownId, navigate, tableColumnPreferencesQuery.data])
 
   return (
     <div className="flex flex-col gap-5 md:gap-6">
-      <ExpertListHeader title="Reported Experts" breadcrumb="User Management / Reported Users" />
+      <ExpertListHeader
+        title="Reported Experts"
+        breadcrumb="User Management / Reported Users"
+        metricsPath="/metrics/expert-reported?returnTo=/experts/reported"
+      />
 
       <DataTable
         columns={columns}

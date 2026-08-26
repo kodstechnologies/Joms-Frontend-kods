@@ -29,7 +29,7 @@ function buildMetricCards(metrics: ReferralMetrics, activeMetricIds?: string[]):
     const trendObj = metrics.trends?.[def.key]
     const trendPercent =
       trendObj?.percentage ??
-      (typeof metrics.vsLastMonthPercent === 'number' ? metrics.vsLastMonthPercent : 6.7)
+      (typeof metrics.vsLastMonthPercent === 'number' ? metrics.vsLastMonthPercent : 0)
     const trendDirection = trendObj?.direction ?? 'up'
     const trendLabel = trendObj?.label ?? 'vs last month'
 
