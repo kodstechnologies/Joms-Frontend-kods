@@ -37,7 +37,7 @@ function labelToMetricId(label: string): string | null {
   return map[label] ?? null
 }
 
-function withMockTrend(metric: TrendMetric): TrendMetric {
+function addTrend(metric: TrendMetric): TrendMetric {
   return {
     ...metric,
     change: metric.change.includes('%') ? metric.change : '6.7%',
@@ -52,7 +52,7 @@ export function buildFinanceDashboardMetricCards(
   const cards: FinanceDashboardMetricCard[] = []
 
   const push = (id: string, metric: TrendMetric) => {
-    cards.push({ id, ...withMockTrend(metric) })
+    cards.push({ id, ...addTrend(metric) })
   }
 
   push(

@@ -17,12 +17,11 @@ type FormFieldProps = PropsWithChildren<{
 export function FormField({ label, error, htmlFor, children }: FormFieldProps) {
   const generatedId = useId()
   const fieldId = htmlFor || generatedId
-  const labelledChild =
-    isValidElement(children)
-      ? cloneElement(children as ReactElement<{ id?: string }>, {
-          id: (children as ReactElement<{ id?: string }>).props.id || fieldId,
-        })
-      : children
+  const labelledChild = isValidElement(children)
+    ? cloneElement(children as ReactElement<{ id?: string }>, {
+        id: (children as ReactElement<{ id?: string }>).props.id || fieldId,
+      })
+    : children
 
   return (
     <div className="space-y-2">

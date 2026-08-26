@@ -43,7 +43,6 @@ export const REFERRAL_REWARD_UNLOCK_RULE = {
   retentionPeriodDays: 30,
 }
 
-/** Exactly 12 cards — same labels as the design (no extras). */
 export const REFERRAL_METRIC_DEFINITIONS: ReferralMetricDefinition[] = [
   {
     id: 'total-referrals',

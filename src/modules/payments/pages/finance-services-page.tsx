@@ -22,6 +22,7 @@ import {
   mapEscrowToServiceRow,
   mapPaymentToServiceRow,
 } from '@/modules/payments/utils/finance-mappers'
+import { escalateUrl } from '@/modules/payments/utils/finance-escalate'
 import {
   DEFAULT_FINANCE_SERVICES_VISIBLE_COLUMN_IDS,
   FINANCE_SERVICES_MODULE_KEY,
@@ -235,11 +236,13 @@ export function FinanceServicesPage() {
             className="text-slate-800 hover:bg-slate-100 hover:text-slate-900"
             onClick={() => {
               setActiveDropdownId(null)
-              setRowAction({
-                kind: 'escalate',
-                id: record.id,
-                resourceType: record.tab === 'escrow' ? 'EscrowHold' : 'Payment',
-              })
+              navigate(
+                escalateUrl(record.id, {
+                  kind: 'resource',
+                  resourceType: record.tab === 'escrow' ? 'EscrowHold' : 'Payment',
+                  returnTo: '/finance/services',
+                }),
+              )
             }}
           >
             Escalate

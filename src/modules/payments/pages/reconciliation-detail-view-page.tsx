@@ -4,8 +4,15 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 
 import { AddFinanceNoteModal } from '@/modules/payments/components/add-finance-note-modal'
-import { useAddFinanceNote, useFinanceReconciliationDetail } from '@/modules/payments/hooks/use-finance'
+import {
+  useAddFinanceNote,
+  useFinanceReconciliationDetail,
+} from '@/modules/payments/hooks/use-finance'
 import { formatDate, formatInr, titleCase } from '@/modules/payments/utils/finance-mappers'
+import {
+  downloadKeyValueReport,
+  flattenExportPairs,
+} from '@/modules/payments/hooks/use-finance-list-filters'
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
@@ -159,7 +166,18 @@ export function ReconciliationDetailViewPage() {
             <p className={cn(sectionSubtitleClass, 'leading-[20px]')}>{detail.recordDescription}</p>
           </div>
           <div className="flex flex-wrap items-center gap-3">
-            <Button onClick={() => toast.message('Download report coming soon')}>
+            <Button
+              onClick={() =>
+                downloadKeyValueReport(
+                  'reconciliation_report',
+                  flattenExportPairs({
+                    Reconciliation: detail.reconciliationInformation,
+                    Gateway: detail.gatewayDetails,
+                    Platform: detail.platformRecordSummary,
+                  }),
+                )
+              }
+            >
               <Download className="size-4" />
               Download Report
             </Button>

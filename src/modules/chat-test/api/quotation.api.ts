@@ -174,8 +174,13 @@ function client(token: string) {
 }
 
 export async function listPartnerOfferings(token: string, partnerId: string) {
-  const res = await client(token).get(`/quotations/offerings/${partnerId}`)
-  return res.data?.data as PartnerOfferings
+  const res = await client(token).get(`/quotations/offerings/${encodeURIComponent(partnerId)}`)
+  const payload = (res.data?.data ?? res.data) as PartnerOfferings | undefined
+  return {
+    partnerId: String(payload?.partnerId || partnerId),
+    services: Array.isArray(payload?.services) ? payload.services : [],
+    consultations: Array.isArray(payload?.consultations) ? payload.consultations : [],
+  } as PartnerOfferings
 }
 
 export type CreateQuotationBody = {

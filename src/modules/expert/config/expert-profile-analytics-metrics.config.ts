@@ -8,7 +8,6 @@ export type ExpertProfileAnalyticsMetricCatalogItem = {
   defaultActive: boolean
 }
 
-/** Exactly 8 Service Analytics metrics — matches the Expert Profile Service Analytics tab. */
 export const EXPERT_PROFILE_ANALYTICS_METRICS_CATALOG: ExpertProfileAnalyticsMetricCatalogItem[] = [
   {
     id: 'events-hosted',

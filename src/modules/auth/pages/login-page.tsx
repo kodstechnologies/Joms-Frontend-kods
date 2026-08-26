@@ -13,6 +13,7 @@ import {
 } from '@/app/layouts/navigation/navigation.filter'
 import { useLoginMutation } from '@/modules/auth/hooks/use-login-mutation'
 import { useVerifyOtpMutation } from '@/modules/auth/hooks/use-verify-otp-mutation'
+import { postLoginPath } from '@/modules/auth/utils/post-login-path'
 import { type LoginSchema, loginSchema } from '@/modules/auth/validations/login-schema'
 import { type OtpSchema, otpSchema } from '@/modules/auth/validations/otp-schema'
 import { getApiErrorMessage } from '@/shared/lib/api-error'
@@ -45,16 +46,13 @@ export function LoginPage() {
     defaultValues: { code: '' },
   })
 
-  const postLoginPath = (sessionUser: Parameters<typeof getDefaultHomeRoute>[0]) => {
-    const from = (
-      location.state as { from?: { pathname?: string; search?: string; hash?: string } } | null
-    )?.from
-    const pathname = from?.pathname
-    if (pathname && pathname.startsWith('/') && !pathname.startsWith('/auth')) {
-      return `${pathname}${from.search ?? ''}${from.hash ?? ''}`
-    }
-    return getDefaultHomeRoute(sessionUser)
-  }
+  const homeAfterLogin = (sessionUser: Parameters<typeof getDefaultHomeRoute>[0]) =>
+    postLoginPath(
+      sessionUser,
+      (location.state as { from?: { pathname?: string; search?: string; hash?: string } } | null)
+        ?.from,
+      getDefaultHomeRoute,
+    )
 
   const onSubmitCredentials = async (values: LoginSchema) => {
     try {
@@ -148,7 +146,7 @@ export function LoginPage() {
       }
 
       toast.success('Welcome back')
-      navigate(postLoginPath(sessionUser), { replace: true })
+      navigate(homeAfterLogin(sessionUser), { replace: true })
     } catch {
       toast.error('Invalid or expired OTP')
     }
@@ -223,11 +221,7 @@ export function LoginPage() {
                   control={otpForm.control}
                   name="code"
                   render={({ field }) => (
-                    <OtpInput
-                      length={6}
-                      value={field.value}
-                      onChange={field.onChange}
-                    />
+                    <OtpInput length={6} value={field.value} onChange={field.onChange} />
                   )}
                 />
                 {otpForm.formState.errors.code?.message ? (

@@ -16,7 +16,6 @@ function loadSession(): PartnerLoginResult | null {
   }
 }
 
-/** Landing for temp chat harness links */
 export function ChatTestPage() {
   const navigate = useNavigate()
   const [googleSession, setGoogleSession] = useState<PartnerLoginResult | null>(() => loadSession())
@@ -24,7 +23,7 @@ export function ChatTestPage() {
   return (
     <div className="min-h-screen bg-zinc-950 p-6 text-zinc-100">
       <div className="mx-auto max-w-lg space-y-4">
-        <h1 className="text-2xl font-semibold">Chat test harness</h1>
+        <h1 className="text-2xl font-semibold">Chat test</h1>
         <p className="text-sm text-zinc-400">Temporary — delete later.</p>
 
         <section className="space-y-3 rounded-xl border border-white/15 bg-zinc-900/70 px-4 py-4">

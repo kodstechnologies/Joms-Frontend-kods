@@ -1,9 +1,14 @@
 import type { ReactNode } from 'react'
 import { ArrowLeft, Download } from 'lucide-react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { toast } from 'sonner'
 
 import { useFinanceInvoice } from '@/modules/payments/hooks/use-finance'
+import { downloadKeyValueReport } from '@/modules/payments/hooks/use-finance-list-filters'
+import {
+  getInvoiceDetailById,
+  type InvoiceDetail,
+} from '@/modules/payments/mock/invoice-detail.mock'
+import type { FinanceInvoice } from '@/modules/payments/types/finance-api'
 import { formatDate, formatInr, titleCase } from '@/modules/payments/utils/finance-mappers'
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
@@ -19,10 +24,12 @@ const innerPanelClass = 'radius-lg border border-white/[0.04] bg-brand-bg p-4'
 function DetailCard({
   title,
   subtitle,
+  onDownload,
   children,
 }: {
   title: string
   subtitle?: string
+  onDownload?: () => void
   children: ReactNode
 }) {
   return (
@@ -32,7 +39,7 @@ function DetailCard({
           <h2 className={sectionTitleClass}>{title}</h2>
           {subtitle ? <p className={sectionSubtitleClass}>{subtitle}</p> : null}
         </div>
-        <Button onClick={() => toast.message('Download filing report coming soon')}>
+        <Button onClick={onDownload}>
           <Download className="size-4" />
           Download Filing Report
         </Button>
@@ -65,39 +72,48 @@ function getStatusBadgeClass(status: string) {
   return 'border-brand-danger/25 bg-brand-danger/10 text-brand-danger'
 }
 
-export function InvoiceDetailViewPage() {
-  const navigate = useNavigate()
-  const { id = '' } = useParams<{ id: string }>()
-  const { data, isLoading, isError } = useFinanceInvoice(id)
-  const invoice = data?.data
+function looksLikeEmail(value?: string | null) {
+  return Boolean(value && value.includes('@'))
+}
 
-  if (isLoading) {
-    return <p className="text-body-sm text-muted">Loading invoice details...</p>
-  }
-
-  if (isError || !invoice) {
-    return (
-      <div className="space-y-4">
-        <p className="text-body-sm text-brand-danger">Invoice not found.</p>
-        <button
-          type="button"
-          onClick={() => navigateBackOrFallback(navigate, '/finance/invoices')}
-          className="ui-cta ui-cta-secondary"
-        >
-          Back to Invoices
-        </button>
-      </div>
-    )
-  }
-
+function mapLiveInvoice(invoice: FinanceInvoice): InvoiceDetail {
   const status =
     invoice.invoiceStatus === 'paid' || invoice.paymentStatus === 'paid'
       ? 'Paid'
       : invoice.invoiceStatus === 'cancelled' || invoice.invoiceStatus === 'void'
         ? 'Overdue'
         : 'Pending'
-
   const primaryItem = invoice.lineItems?.[0]
+  const emailCandidate = invoice.clientEmail || invoice.userId || invoice.partnerId
+
+  return {
+    id: invoice._id,
+    invoiceId: invoice.invoiceNumber,
+    type: titleCase(invoice.module),
+    issueDate: formatDate(invoice.issuedAt || invoice.createdAt),
+    dueDate: formatDate(invoice.dueDate),
+    status,
+    recipientName: invoice.clientName || '—',
+    recipientEmail: looksLikeEmail(emailCandidate) ? String(emailCandidate) : '—',
+    itemDescription: primaryItem?.label || titleCase(invoice.module),
+    platformFee: formatInr(invoice.platformFee ?? 0),
+    unitPrice: formatInr(primaryItem?.amount ?? invoice.subtotal ?? invoice.total),
+    subtotal: formatInr(invoice.subtotal ?? invoice.total),
+    tax: formatInr(invoice.taxAmount ?? 0),
+    totalAmount: formatInr(invoice.total),
+  }
+}
+
+export function InvoiceDetailViewPage() {
+  const navigate = useNavigate()
+  const { id = '' } = useParams<{ id: string }>()
+  const { data, isLoading } = useFinanceInvoice(id)
+  const invoice = data?.data
+  const detail = invoice ? mapLiveInvoice(invoice) : getInvoiceDetailById(id)
+
+  if (isLoading) {
+    return <p className="text-body-sm text-muted">Loading invoice details...</p>
+  }
 
   return (
     <div className="bg-brand-bg flex flex-col gap-5 pb-6">
@@ -121,27 +137,44 @@ export function InvoiceDetailViewPage() {
         </div>
       </header>
 
-      <DetailCard title="Invoice Details" subtitle="Issued invoice for a successful payment">
+      <DetailCard
+        title="Invoice Details"
+        subtitle="Provide details about your Consultation"
+        onDownload={() =>
+          downloadKeyValueReport('invoice_report', [
+            ['Invoice ID', detail.invoiceId],
+            ['Type', detail.type],
+            ['Issue Date', detail.issueDate],
+            ['Due Date', detail.dueDate],
+            ['Status', detail.status],
+            ['Recipient Name', detail.recipientName],
+            ['Recipient Email', detail.recipientEmail],
+            ['Item Description', detail.itemDescription],
+            ['Platform Fee', detail.platformFee],
+            ['Unit Price', detail.unitPrice],
+            ['Subtotal', detail.subtotal],
+            ['Tax', detail.tax],
+            ['Total Amount', detail.totalAmount],
+          ])
+        }
+      >
         <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
           <section className={innerPanelClass}>
             <h3 className="text-body-md-semibold text-brand-text mb-3">Invoice Information</h3>
-            <DetailRow label="Invoice ID" value={invoice.invoiceNumber} />
-            <DetailRow label="Type" value={titleCase(invoice.module)} />
-            <DetailRow
-              label="Issue Date"
-              value={formatDate(invoice.issuedAt || invoice.createdAt)}
-            />
-            <DetailRow label="Due Date" value={formatDate(invoice.dueDate)} />
+            <DetailRow label="Invoice ID" value={detail.invoiceId} />
+            <DetailRow label="Type" value={detail.type} />
+            <DetailRow label="Issue Date" value={detail.issueDate} />
+            <DetailRow label="Due Date" value={detail.dueDate} />
             <DetailRow
               label="Status"
               value={
                 <span
                   className={cn(
                     'text-body-sm-semibold inline-flex rounded-full border px-2.5 py-0.5',
-                    getStatusBadgeClass(status),
+                    getStatusBadgeClass(detail.status),
                   )}
                 >
-                  {status}
+                  {detail.status}
                 </span>
               }
             />
@@ -149,30 +182,24 @@ export function InvoiceDetailViewPage() {
 
           <section className={innerPanelClass}>
             <h3 className="text-body-md-semibold text-brand-text mb-3">Recipient Details</h3>
-            <DetailRow label="Name" value={invoice.clientName || '—'} />
-            <DetailRow label="Email" value={invoice.partnerId || invoice.userId || '—'} />
+            <DetailRow label="Name" value={detail.recipientName} />
+            <DetailRow label="Email" value={detail.recipientEmail} />
           </section>
 
           <section className={innerPanelClass}>
             <h3 className="text-body-md-semibold text-brand-text mb-3">Invoice Items</h3>
-            <DetailRow
-              label="Description"
-              value={primaryItem?.label || titleCase(invoice.module)}
-            />
-            <DetailRow label="Platform Fee" value={formatInr(0)} />
-            <DetailRow
-              label="Unit Price"
-              value={formatInr(primaryItem?.amount ?? invoice.subtotal ?? invoice.total)}
-            />
+            <DetailRow label="Description" value={detail.itemDescription} />
+            <DetailRow label="Platform Fees" value={detail.platformFee} />
+            <DetailRow label="Unit Price" value={detail.unitPrice} />
           </section>
 
           <section className={innerPanelClass}>
             <h3 className="text-body-md-semibold text-brand-text mb-3">Financial Summary</h3>
-            <DetailRow label="Subtotal" value={formatInr(invoice.subtotal ?? invoice.total)} />
-            <DetailRow label="Tax (18% GST)" value={formatInr(invoice.taxAmount ?? 0)} />
+            <DetailRow label="Subtotal" value={detail.subtotal} />
+            <DetailRow label="Tax (18% GST)" value={detail.tax} />
             <DetailRow
               label="Total Amount"
-              value={formatInr(invoice.total)}
+              value={detail.totalAmount}
               valueClassName="text-body-md-semibold"
             />
           </section>

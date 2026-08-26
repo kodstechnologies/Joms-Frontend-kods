@@ -1,13 +1,26 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { ArrowLeft, CircleDollarSign, Check } from 'lucide-react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
 
+import { EscalateToSuperAdminModal } from '@/modules/payments/components/escalate-to-super-admin-modal'
+import {
+  useEscalateDispute,
+  useEscalateFinance,
+  useEscalateRefund,
+  useFinanceDispute,
+  useFinanceEscrowDetail,
+  useFinancePayment,
+  useFinanceRefund,
+  useFinanceTaxDetail,
+} from '@/modules/payments/hooks/use-finance'
 import {
   getRefundEscalationRequestById,
   refundAuthorityRolesMock,
   type RefundAuthorityRole,
 } from '@/modules/payments/mock/refund-escalation.mock'
+import { formatInr, titleCase } from '@/modules/payments/utils/finance-mappers'
+import { type FinanceEscalateKind } from '@/modules/payments/utils/finance-escalate'
 import { cn } from '@/shared/lib/cn'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 
@@ -123,16 +136,145 @@ function RoleCard({
   )
 }
 
+function escalateKind(kindParam: string | null, resourceType: string | null): FinanceEscalateKind {
+  if (kindParam === 'dispute' || kindParam === 'resource' || kindParam === 'refund') {
+    return kindParam
+  }
+  if (resourceType === 'Dispute') return 'dispute'
+  if (resourceType === 'Refund' || !resourceType) return 'refund'
+  return 'resource'
+}
+
+function apiErrorMessage(err: unknown, fallback: string) {
+  return (
+    (err as { response?: { data?: { message?: string } } })?.response?.data?.message || fallback
+  )
+}
+
 export function AssignRefundAuthorityPage() {
   const navigate = useNavigate()
-  const { id = 'refund-02' } = useParams<{ id: string }>()
-  const request = getRefundEscalationRequestById(id)
+  const { id = '' } = useParams<{ id: string }>()
+  const [searchParams] = useSearchParams()
+  const resourceTypeParam = searchParams.get('resourceType')
+  const kind = escalateKind(searchParams.get('kind'), resourceTypeParam)
+  const resourceType =
+    resourceTypeParam || (kind === 'dispute' ? 'Dispute' : kind === 'refund' ? 'Refund' : 'Payment')
+  const fallbackReturnTo =
+    kind === 'dispute'
+      ? `/finance/refunds/${id}/dispute`
+      : kind === 'refund'
+        ? `/finance/refunds/${id}`
+        : '/finance/refunds'
+  const returnTo = searchParams.get('returnTo') || fallbackReturnTo
+
+  const refundQuery = useFinanceRefund(kind === 'refund' ? id : '')
+  const disputeQuery = useFinanceDispute(kind === 'dispute' ? id : '')
+  const paymentQuery = useFinancePayment(
+    kind === 'resource' && resourceType === 'Payment' ? id : '',
+  )
+  const taxQuery = useFinanceTaxDetail(
+    kind === 'resource' && resourceType === 'TaxRecord' ? id : '',
+  )
+  const escrowQuery = useFinanceEscrowDetail(
+    kind === 'resource' && resourceType === 'EscrowHold' ? id : '',
+  )
+
+  const refund = refundQuery.data?.data
+  const dispute = disputeQuery.data?.data
+  const payment = paymentQuery.data?.data
+  const tax = taxQuery.data?.data
+  const escrow = escrowQuery.data?.data
+  const mockRequest = getRefundEscalationRequestById(id)
+
+  const summary = useMemo(() => {
+    if (refund) {
+      return {
+        requestId: refund.refundId || id,
+        customerName: refund.beneficiary || refund.initiatedBy || mockRequest.customerName,
+        amount: formatInr(refund.amount),
+        reason: refund.reason || mockRequest.reason,
+        moduleType: titleCase(refund.module) || mockRequest.moduleType,
+        serviceType: titleCase(refund.refundType) || mockRequest.serviceType,
+        paymentMode: refund.refundMode || mockRequest.paymentMode,
+        requestedBy: refund.initiatedBy || refund.beneficiary || '—',
+      }
+    }
+    if (dispute) {
+      return {
+        requestId: dispute.disputeId || id,
+        customerName: dispute.raisedBy || dispute.userId || mockRequest.customerName,
+        amount: formatInr(dispute.originalAmount),
+        reason: dispute.reason || mockRequest.reason,
+        moduleType: titleCase(dispute.module) || mockRequest.moduleType,
+        serviceType: titleCase(dispute.caseType) || mockRequest.serviceType,
+        paymentMode: dispute.source || mockRequest.paymentMode,
+        requestedBy: dispute.raisedBy || '—',
+      }
+    }
+    if (payment) {
+      return {
+        requestId: payment.orderId || payment._id,
+        customerName: payment.userId || mockRequest.customerName,
+        amount: formatInr(payment.amount),
+        reason: mockRequest.reason,
+        moduleType: titleCase(payment.module) || mockRequest.moduleType,
+        serviceType: titleCase(payment.pricingType) || mockRequest.serviceType,
+        paymentMode: mockRequest.paymentMode,
+        requestedBy: payment.userId || '—',
+      }
+    }
+    if (tax) {
+      return {
+        requestId: tax.taxRecordId || id,
+        customerName: tax.partnerId || tax.userId || mockRequest.customerName,
+        amount: formatInr(tax.taxAmount),
+        reason: tax.taxType || mockRequest.reason,
+        moduleType: titleCase(tax.module) || mockRequest.moduleType,
+        serviceType: tax.taxType || mockRequest.serviceType,
+        paymentMode: mockRequest.paymentMode,
+        requestedBy: tax.partnerId || tax.userId || '—',
+      }
+    }
+    if (escrow) {
+      return {
+        requestId: escrow.escrowId || id,
+        customerName: escrow.userName || escrow.userId || mockRequest.customerName,
+        amount: formatInr(escrow.amountHeld),
+        reason: escrow.holdReason || mockRequest.reason,
+        moduleType: titleCase(escrow.module) || mockRequest.moduleType,
+        serviceType: titleCase(escrow.pricingType) || mockRequest.serviceType,
+        paymentMode: mockRequest.paymentMode,
+        requestedBy: escrow.userName || escrow.userId || '—',
+      }
+    }
+    return {
+      requestId: mockRequest.requestId,
+      customerName: mockRequest.customerName,
+      amount: mockRequest.amount,
+      reason: mockRequest.reason,
+      moduleType: mockRequest.moduleType,
+      serviceType: mockRequest.serviceType,
+      paymentMode: mockRequest.paymentMode,
+      requestedBy: mockRequest.customerName,
+    }
+  }, [dispute, escrow, id, mockRequest, payment, refund, tax])
+
   const [selectedRoleId, setSelectedRoleId] = useState('finance-admin')
+  const [isEscalateOpen, setIsEscalateOpen] = useState(false)
+
+  const escalateRefund = useEscalateRefund()
+  const escalateDispute = useEscalateDispute()
+  const escalateResource = useEscalateFinance()
+  const selectedRole = refundAuthorityRolesMock.find((role) => role.id === selectedRoleId)
+
+  const goBack = () => navigateBackOrFallback(navigate, returnTo)
 
   const handleContinue = () => {
-    const selectedRole = refundAuthorityRolesMock.find((role) => role.id === selectedRoleId)
-    toast.success(`Dispute authority assigned to ${selectedRole?.title ?? 'selected role'}`)
-    navigate(`/finance/refunds/${id}/dispute`)
+    if (!selectedRoleId) {
+      toast.error('Select a refund authority before continuing')
+      return
+    }
+    setIsEscalateOpen(true)
   }
 
   return (
@@ -141,7 +283,7 @@ export function AssignRefundAuthorityPage() {
         <header>
           <button
             type="button"
-            onClick={() => navigateBackOrFallback(navigate, `/finance/refunds/${id}/dispute`)}
+            onClick={goBack}
             className="group text-h3 hover:text-brand-accent text-brand-text flex w-fit items-center gap-2 tracking-tight transition-colors"
           >
             <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
@@ -152,10 +294,7 @@ export function AssignRefundAuthorityPage() {
               Finance Management
             </Link>
             <span> / </span>
-            <Link
-              to={`/finance/refunds/${id}/dispute`}
-              className="hover:text-brand-text transition-colors"
-            >
+            <Link to={returnTo} className="hover:text-brand-text transition-colors">
               Payment View Details
             </Link>
           </p>
@@ -163,7 +302,7 @@ export function AssignRefundAuthorityPage() {
 
         <section className={cn(cardClass, 'px-5 py-5')}>
           <div>
-            <h1 className="text-h4 text-brand-text">Assign Dispute Authority</h1>
+            <h1 className="text-h4 text-brand-text">Assign Refund Authority</h1>
             <p className="text-body-sm text-muted mt-1">
               Select the role responsible for reviewing and processing this refund request
             </p>
@@ -172,17 +311,17 @@ export function AssignRefundAuthorityPage() {
           <div className="my-5 border-b border-white/[0.06]" />
 
           <div className="grid grid-cols-2 gap-x-6 gap-y-5 sm:grid-cols-3 lg:grid-cols-7">
-            <InfoItem label="Request ID" value={request.requestId} />
-            <InfoItem label="Customer" value={request.customerName} href="#" />
-            <InfoItem label="Amount" value={request.amount} />
+            <InfoItem label="Request ID" value={summary.requestId} />
+            <InfoItem label="Customer" value={summary.customerName} />
+            <InfoItem label="Amount" value={summary.amount} />
             <InfoItem
               label="Reason"
-              value={request.reason}
+              value={summary.reason}
               className="sm:col-span-2 lg:col-span-1"
             />
-            <InfoItem label="Module type" value={request.moduleType} />
-            <InfoItem label="Service type" value={request.serviceType} />
-            <InfoItem label="Payment mode" value={request.paymentMode} />
+            <InfoItem label="Module type" value={summary.moduleType} />
+            <InfoItem label="Service type" value={summary.serviceType} />
+            <InfoItem label="Payment mode" value={summary.paymentMode} />
           </div>
         </section>
 
@@ -205,7 +344,7 @@ export function AssignRefundAuthorityPage() {
         <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
           <button
             type="button"
-            onClick={() => navigateBackOrFallback(navigate, `/finance/refunds/${id}/dispute`)}
+            onClick={goBack}
             className="ui-cta ui-cta-secondary w-full sm:w-auto sm:min-w-[120px]"
           >
             Close
@@ -219,6 +358,37 @@ export function AssignRefundAuthorityPage() {
           </button>
         </div>
       </footer>
+
+      <EscalateToSuperAdminModal
+        open={isEscalateOpen}
+        refundId={summary.requestId}
+        requestedBy={summary.requestedBy}
+        amount={summary.amount}
+        onClose={() => setIsEscalateOpen(false)}
+        onSubmit={async ({ priority, adminNotes }) => {
+          const assignedTo = selectedRole?.title || 'selected role'
+          const note = [adminNotes.trim(), `Assigned to ${assignedTo}`].filter(Boolean).join(' — ')
+          try {
+            if (kind === 'dispute') {
+              await escalateDispute.mutateAsync({ id, priority, adminNotes: note })
+            } else if (kind === 'refund') {
+              await escalateRefund.mutateAsync({ id, priority, adminNotes: note })
+            } else {
+              await escalateResource.mutateAsync({
+                id,
+                resourceType,
+                adminNote: `[${priority}] ${note}`,
+              })
+            }
+            toast.success(`Escalated to admin · ${assignedTo}`)
+            setIsEscalateOpen(false)
+            navigate(returnTo)
+          } catch (err) {
+            toast.error(apiErrorMessage(err, 'Failed to escalate'))
+            throw err
+          }
+        }}
+      />
     </div>
   )
 }

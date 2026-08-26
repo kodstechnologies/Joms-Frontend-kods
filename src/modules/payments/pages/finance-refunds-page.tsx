@@ -51,6 +51,7 @@ import {
 import { useTableColumnPreferences } from '@/modules/expert/hooks/use-ui-preferences'
 import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
 import { mapDisputeToRefundRow, mapRefundToRow } from '@/modules/payments/utils/finance-mappers'
+import { escalateUrl } from '@/modules/payments/utils/finance-escalate'
 import { AddTagsModal } from '@/shared/components/modals/add-tags-modal'
 import { MergeTicketsModal } from '@/modules/payments/components/merge-tickets-modal'
 import {
@@ -376,7 +377,14 @@ export function FinanceRefundsPage() {
             className="text-slate-800 hover:bg-slate-100 hover:text-slate-900"
             onClick={() => {
               setActiveDropdownId(null)
-              navigate(`/finance/refunds/${record.id}/escalate`)
+              const isDispute = record.kind === 'dispute' || record.type === 'Dispute'
+              navigate(
+                escalateUrl(record.id, {
+                  kind: isDispute ? 'dispute' : 'refund',
+                  resourceType: isDispute ? 'Dispute' : 'Refund',
+                  returnTo: '/finance/refunds',
+                }),
+              )
             }}
           >
             Escalate

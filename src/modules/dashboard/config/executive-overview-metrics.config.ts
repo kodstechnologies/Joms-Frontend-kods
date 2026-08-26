@@ -8,7 +8,6 @@ export type ExecutiveOverviewMetricCatalogItem = {
   defaultActive: boolean
 }
 
-/** Canonical list of exactly 8 executive overview KPI metrics. */
 export const EXECUTIVE_OVERVIEW_METRICS_CATALOG: ExecutiveOverviewMetricCatalogItem[] = [
   {
     id: 'total-platform-revenue',

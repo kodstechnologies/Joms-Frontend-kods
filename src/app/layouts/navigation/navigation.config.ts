@@ -175,7 +175,6 @@ export const navigationConfig: NavItem[] = [
     children: [
       { key: 'finance.dashboard', label: 'Dashboard', to: '/finance/dashboard' },
       { key: 'finance.revenue', label: 'Revenue Overview', to: '/finance/revenue' },
-      // Events muted — no finance event payment pipeline yet (route kept, hidden from nav)
       { key: 'finance.services', label: 'Services', to: '/finance/services' },
       { key: 'finance.venues', label: 'Venues', to: '/finance/venues' },
       { key: 'finance.memberships', label: 'Memberships', to: '/finance/memberships' },

@@ -13,7 +13,6 @@ const yesNoDisputedOptions = [
   { label: 'Disputed', value: 'disputed' },
 ]
 
-/** By Services — matches Figma Advanced Filters - Service Management */
 export const serviceByServicesSection: FilterSectionConfig = {
   id: 'by-services',
   title: 'By Services',
@@ -58,7 +57,6 @@ export const serviceByServicesSection: FilterSectionConfig = {
   ],
 }
 
-/** By Experts — matches Figma */
 const serviceByExpertsSection: FilterSectionConfig = {
   id: 'by-experts',
   title: 'By Experts',
@@ -132,7 +130,6 @@ const serviceByExpertsSection: FilterSectionConfig = {
   ],
 }
 
-/** By Orders — matches Figma (checkbox groups only) */
 const serviceByOrdersSection: FilterSectionConfig = {
   id: 'by-orders',
   title: 'By Orders',
@@ -222,7 +219,6 @@ const serviceByOrdersSection: FilterSectionConfig = {
   ],
 }
 
-/** By Customers — Figma shows only these two fields (not full shared section) */
 const serviceByCustomersSection: FilterSectionConfig = {
   id: 'by-customers',
   title: 'By Customers',

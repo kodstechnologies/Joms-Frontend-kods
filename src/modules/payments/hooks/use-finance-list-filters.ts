@@ -1,5 +1,7 @@
 import { useCallback, useMemo, useState } from 'react'
 
+import { toast } from 'sonner'
+
 import type { FinanceListParams } from '@/modules/payments/types/finance-api'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter/use-module-export-filters'
 import type { FilterValues } from '@/shared/types/data-filter'
@@ -33,7 +35,9 @@ export function createFinanceRowsExportHandler<T>(options: {
   }
 }
 
-export function useFinanceListFilters(onExportData: (values: FilterValues, format: string) => void | Promise<void>) {
+export function useFinanceListFilters(
+  onExportData: (values: FilterValues, format: string) => void | Promise<void>,
+) {
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
   const apiFilterParams = useMemo(() => toFinanceListFilterParams(appliedFilters), [appliedFilters])
 
@@ -50,11 +54,34 @@ export function useFinanceListFilters(onExportData: (values: FilterValues, forma
   return { apiFilterParams, ...filters }
 }
 
+export function flattenExportPairs(
+  sections: Record<string, Record<string, unknown> | undefined | null>,
+): Array<[string, unknown]> {
+  const pairs: Array<[string, unknown]> = []
+  for (const [section, fields] of Object.entries(sections)) {
+    if (!fields) continue
+    for (const [label, value] of Object.entries(fields)) {
+      if (typeof value === 'object' && value !== null) continue
+      pairs.push([`${section} — ${label}`, value])
+    }
+  }
+  return pairs
+}
+
 export function downloadKeyValueReport(fileName: string, pairs: Array<[string, unknown]>) {
-  exportDataToFile(
-    ['Field', 'Value'],
-    pairs.map(([key, value]) => [key, exportDisplayValue(value)]),
-    'csv',
-    fileName,
-  )
+  try {
+    exportDataToFile(
+      ['Field', 'Value'],
+      pairs.map(([key, value]) => [key, exportDisplayValue(value)]),
+      'csv',
+      fileName,
+    )
+    toast.success('CSV report downloaded')
+  } catch (error) {
+    if (error instanceof Error && error.message === 'NO_RECORDS') {
+      toast.error('No records found to export')
+      return
+    }
+    toast.error('Failed to export CSV')
+  }
 }

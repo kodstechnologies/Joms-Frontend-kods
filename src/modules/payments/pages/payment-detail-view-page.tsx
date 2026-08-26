@@ -7,15 +7,17 @@ import { toast } from 'sonner'
 import { fetchPartnerDisplayNames } from '@/modules/payments/api/partner-lookup-api'
 import { AddFinanceNoteModal } from '@/modules/payments/components/add-finance-note-modal'
 import { FinanceInternalNotesCard } from '@/modules/payments/components/finance-internal-notes-card'
-import { useAddFinanceNote, useEscalateFinance, useFinancePayment } from '@/modules/payments/hooks/use-finance'
+import { useAddFinanceNote, useFinancePayment } from '@/modules/payments/hooks/use-finance'
 import {
   formatDate,
   formatInr,
   mapPaymentStatus,
   titleCase,
 } from '@/modules/payments/utils/finance-mappers'
+import { escalateUrl } from '@/modules/payments/utils/finance-escalate'
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
+import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import { downloadKeyValueReport } from '@/modules/payments/hooks/use-finance-list-filters'
 
 const cardClass = 'radius-lg border border-white/[0.06] bg-brand-surface p-4 sm:p-5'
@@ -72,9 +74,7 @@ export function PaymentDetailViewPage() {
   const { id = '' } = useParams<{ id: string }>()
   const { data, isLoading, isError } = useFinancePayment(id)
   const noteMutation = useAddFinanceNote()
-  const escalateMutation = useEscalateFinance()
   const [isNoteModalOpen, setIsNoteModalOpen] = useState(false)
-  const [isEscalateModalOpen, setIsEscalateModalOpen] = useState(false)
   const payment = data?.data
   const snapshot = (payment?.moduleSnapshot || {}) as Record<string, unknown>
   const moduleData = (payment?.moduleData || {}) as Record<string, unknown>
@@ -146,7 +146,10 @@ export function PaymentDetailViewPage() {
   const gross = num(payment.amount)
   const gstRate = num(snapshot.taxRate ?? snapshot.taxRateApplied, 18)
   const gstAmount = num(snapshot.taxAmount, round2((gross * gstRate) / 100))
-  const commissionPct = num(snapshot.platformCommissionPercent, payment.module === 'membership' ? 0 : 10)
+  const commissionPct = num(
+    snapshot.platformCommissionPercent,
+    payment.module === 'membership' ? 0 : 10,
+  )
   const gatewayPct = num(snapshot.convenienceFeePercent, 2)
   const platformFee = round2((gross * commissionPct) / 100)
   const gatewayFee = round2((gross * gatewayPct) / 100)
@@ -171,7 +174,9 @@ export function PaymentDetailViewPage() {
   const endAt = typeof snapshot.endAt === 'string' ? snapshot.endAt : null
   const durationHours = snapshot.bookingDurationHours
   const bookingDates =
-    startAt && endAt ? `${formatDate(startAt)} - ${formatDate(endAt)}` : formatDate(payment.createdAt)
+    startAt && endAt
+      ? `${formatDate(startAt)} - ${formatDate(endAt)}`
+      : formatDate(payment.createdAt)
 
   const detail = {
     serviceTitle: title,
@@ -255,7 +260,9 @@ export function PaymentDetailViewPage() {
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
             <h2 className={sectionTitleClass}>{detail.serviceTitle}</h2>
-            <p className={cn(sectionSubtitleClass, 'leading-[20px]')}>{detail.serviceDescription}</p>
+            <p className={cn(sectionSubtitleClass, 'leading-[20px]')}>
+              {detail.serviceDescription}
+            </p>
           </div>
           <div className="flex flex-wrap items-center gap-3">
             <Button
@@ -277,7 +284,17 @@ export function PaymentDetailViewPage() {
               <SquarePen className="size-4" />
               Add Notes
             </Button>
-            <Button onClick={() => setIsEscalateModalOpen(true)}>
+            <Button
+              onClick={() =>
+                navigate(
+                  escalateUrl(payment._id, {
+                    kind: 'resource',
+                    resourceType: 'Payment',
+                    returnTo: `/finance/revenue/${payment._id}`,
+                  }),
+                )
+              }
+            >
               <SquarePen className="size-4" />
               Escalate
             </Button>
@@ -372,7 +389,10 @@ export function PaymentDetailViewPage() {
               label="Platform Record ID"
               value={detail.transactionReferences.platformRecordId}
             />
-            <DetailRow label="Settlement Date" value={detail.transactionReferences.settlementDate} />
+            <DetailRow
+              label="Settlement Date"
+              value={detail.transactionReferences.settlementDate}
+            />
           </DetailCard>
 
           {detail.additionalVenueContext ? (
@@ -406,29 +426,6 @@ export function PaymentDetailViewPage() {
                 setIsNoteModalOpen(false)
               },
               onError: () => toast.error('Failed to save note'),
-            },
-          )
-        }}
-      />
-
-      <AddFinanceNoteModal
-        open={isEscalateModalOpen}
-        title="Escalate"
-        description="This records an escalation for admin review and audit history."
-        placeholder="Enter escalation note"
-        submitLabel="Escalate"
-        submittingLabel="Escalating..."
-        isSubmitting={escalateMutation.isPending}
-        onClose={() => setIsEscalateModalOpen(false)}
-        onSubmit={(adminNote) => {
-          escalateMutation.mutate(
-            { id: payment._id, resourceType: 'Payment', adminNote },
-            {
-              onSuccess: () => {
-                toast.success('Escalated')
-                setIsEscalateModalOpen(false)
-              },
-              onError: () => toast.error('Failed to escalate'),
             },
           )
         }}

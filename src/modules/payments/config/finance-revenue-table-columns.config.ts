@@ -8,7 +8,6 @@ export type FinanceRevenueTableColumnCatalogItem = {
   defaultVisible: boolean
 }
 
-/** Revenue Overview table columns — matches the Revenue Overview page table. */
 export const FINANCE_REVENUE_TABLE_COLUMNS_CATALOG: FinanceRevenueTableColumnCatalogItem[] = [
   {
     id: 'module',

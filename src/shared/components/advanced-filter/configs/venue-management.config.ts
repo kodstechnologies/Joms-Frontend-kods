@@ -2,7 +2,6 @@ import type { FilterSectionConfig, ModuleFilterConfig } from '@/shared/types/dat
 
 import { byLocationSection, prefixSectionFields } from './base-filter-sections'
 
-/** By Venues — matches Figma Advanced Filters - Venue Management */
 const venueByVenuesSection: FilterSectionConfig = {
   id: 'by-venues',
   title: 'By Venues',
@@ -73,7 +72,6 @@ const venueByVenuesSection: FilterSectionConfig = {
   ],
 }
 
-/** By Bookings — matches Figma */
 const venueByBookingsSection: FilterSectionConfig = {
   id: 'by-bookings',
   title: 'By Bookings',
@@ -132,7 +130,6 @@ const venueByBookingsSection: FilterSectionConfig = {
   ],
 }
 
-/** By Customers — Figma shows Registration Date only */
 const venueByCustomersSection: FilterSectionConfig = {
   id: 'by-customers',
   title: 'By Customers',

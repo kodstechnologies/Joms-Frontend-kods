@@ -139,15 +139,7 @@ function PauseSubscriptionModalForm({
         </label>
       </div>
 
-      <div className="ui-modal-footer flex-col-reverse sm:flex-row sm:justify-end">
-        <button
-          type="button"
-          onClick={onDismiss}
-          disabled={isSubmitting}
-          className="ui-modal-btn ui-modal-btn-cancel"
-        >
-          Cancel
-        </button>
+      <div className="ui-modal-footer flex-col sm:flex-row">
         <button
           type="button"
           onClick={() => {
@@ -158,6 +150,14 @@ function PauseSubscriptionModalForm({
         >
           <Pause className="icon-sm" />
           {isSubmitting ? 'Pausing...' : 'Pause Subscription'}
+        </button>
+        <button
+          type="button"
+          onClick={onDismiss}
+          disabled={isSubmitting}
+          className="ui-modal-btn ui-modal-btn-cancel"
+        >
+          Cancel
         </button>
       </div>
     </div>

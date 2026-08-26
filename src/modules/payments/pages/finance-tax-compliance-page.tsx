@@ -13,6 +13,7 @@ import {
   useSoftDeleteFinance,
 } from '@/modules/payments/hooks/use-finance'
 import { mapTaxToRow } from '@/modules/payments/utils/finance-mappers'
+import { escalateUrl } from '@/modules/payments/utils/finance-escalate'
 import {
   DEFAULT_FINANCE_TAX_VISIBLE_COLUMN_IDS,
   FINANCE_TAX_MODULE_KEY,
@@ -187,7 +188,13 @@ export function FinanceTaxCompliancePage() {
             className="text-slate-800 hover:bg-slate-100 hover:text-slate-900"
             onClick={() => {
               setActiveDropdownId(null)
-              setRowAction({ kind: 'escalate', id: record.id, resourceType: 'TaxRecord' })
+              navigate(
+                escalateUrl(record.id, {
+                  kind: 'resource',
+                  resourceType: 'TaxRecord',
+                  returnTo: '/finance/tax',
+                }),
+              )
             }}
           >
             Escalate

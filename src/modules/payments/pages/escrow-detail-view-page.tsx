@@ -1,20 +1,28 @@
 import { useState, type ReactNode } from 'react'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, Download, SquarePen } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 
 import { AddFinanceNoteModal } from '@/modules/payments/components/add-finance-note-modal'
+import { FinanceInternalNotesCard } from '@/modules/payments/components/finance-internal-notes-card'
 import { fetchPartnerDisplayNames } from '@/modules/payments/api/partner-lookup-api'
-import { useFinanceEscrowDetail, useReleaseEscrow } from '@/modules/payments/hooks/use-finance'
+import {
+  useAddFinanceNote,
+  useFinanceEscrowDetail,
+  useReleaseEscrow,
+} from '@/modules/payments/hooks/use-finance'
 import {
   formatDate,
   formatInr,
   mapEscrowStatus,
   titleCase,
 } from '@/modules/payments/utils/finance-mappers'
+import { PermissionGate } from '@/modules/rbac/components/permission-gate'
+import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
+import { PERMISSION_LEVELS } from '@/shared/lib/permissions'
 
 const cardClass = 'radius-lg border border-white/[0.06] bg-brand-surface p-4 sm:p-5'
 const sectionTitleClass = 'text-body-md-semibold text-brand-text leading-[20px]'
@@ -73,7 +81,8 @@ export function EscrowDetailViewPage() {
   const { id = '' } = useParams<{ id: string }>()
   const { data, isLoading, isError, refetch } = useFinanceEscrowDetail(id)
   const releaseMutation = useReleaseEscrow()
-  const [isReleaseModalOpen, setIsReleaseModalOpen] = useState(false)
+  const noteMutation = useAddFinanceNote()
+  const [activeModal, setActiveModal] = useState<'release' | 'note' | null>(null)
   const [now] = useState(() => Date.now())
   const escrow = data?.data
   const status = escrow ? mapEscrowStatus(escrow.status) : 'Active'
@@ -96,10 +105,10 @@ export function EscrowDetailViewPage() {
         <p className="text-body-sm text-brand-danger">Escrow hold not found.</p>
         <button
           type="button"
-          onClick={() => navigateBackOrFallback(navigate, '/finance/escrow')}
+          onClick={() => navigateBackOrFallback(navigate, '/finance/services')}
           className="ui-cta ui-cta-secondary"
         >
-          Back to Escrow
+          Back to Services
         </button>
       </div>
     )
@@ -114,12 +123,25 @@ export function EscrowDetailViewPage() {
   const expertName = escrow.partnerName || (partnerId ? partnerNameMap?.[partnerId] : null) || '—'
   const transactionId = escrow.transactionId || escrow.paymentOrderId || String(escrow.paymentId)
 
+  const handleDownloadInvoice = () => {
+    if (escrow.invoicePdfUrl) {
+      window.open(escrow.invoicePdfUrl, '_blank', 'noopener,noreferrer')
+      return
+    }
+    const invoiceKey = escrow.invoiceId || escrow.invoiceNumber
+    if (invoiceKey) {
+      navigate(`/finance/invoices/${invoiceKey}`)
+      return
+    }
+    toast.message('Invoice not available for this escrow yet')
+  }
+
   return (
     <div className="bg-brand-bg flex flex-col gap-5 pb-6">
       <header>
         <button
           type="button"
-          onClick={() => navigateBackOrFallback(navigate, '/finance/escrow')}
+          onClick={() => navigateBackOrFallback(navigate, '/finance/services')}
           className="group text-h3 hover:text-brand-accent text-brand-text flex w-fit items-center gap-2 tracking-tight transition-colors"
         >
           <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
@@ -130,14 +152,44 @@ export function EscrowDetailViewPage() {
             Finance Management
           </Link>
           <span> / </span>
+          <Link to="/finance/services" className="hover:text-brand-text transition-colors">
+            Service
+          </Link>
+          <span> / </span>
           <span className="text-brand-text font-semibold">Escrow View Details</span>
         </p>
       </header>
 
       <section className={cn(cardClass, 'p-5')}>
-        <div className="mb-4">
-          <h2 className={sectionTitleClass}>Escrow Hold Details</h2>
-          <p className={sectionSubtitleClass}>Hold details for custom / milestone settlement</p>
+        <div className="mb-4 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <h2 className={sectionTitleClass}>Escrow Hold Details</h2>
+            <p className={sectionSubtitleClass}>Hold details for custom / milestone settlement</p>
+          </div>
+          <div className="flex flex-wrap items-center gap-3">
+            <Button type="button" variant="secondary" onClick={handleDownloadInvoice}>
+              <Download className="size-4" />
+              Download Invoice
+            </Button>
+            <Button type="button" variant="secondary" onClick={() => setActiveModal('note')}>
+              <SquarePen className="size-4" />
+              Add Internal Note
+            </Button>
+            {isHeld ? (
+              <PermissionGate
+                permission="finance.release_escrow"
+                minLevel={PERMISSION_LEVELS.SECONDARY_APPROVAL}
+              >
+                <Button
+                  type="button"
+                  disabled={releaseMutation.isPending}
+                  onClick={() => setActiveModal('release')}
+                >
+                  Release Escrow
+                </Button>
+              </PermissionGate>
+            ) : null}
+          </div>
         </div>
         <div className="mb-5 border-b border-white/5" />
 
@@ -179,66 +231,64 @@ export function EscrowDetailViewPage() {
         </div>
       </section>
 
+      <FinanceInternalNotesCard resourceId={escrow._id} />
+
       <footer className="flex items-center justify-between gap-3">
         <button
           type="button"
-          onClick={() => navigateBackOrFallback(navigate, '/finance/escrow')}
+          onClick={() => navigateBackOrFallback(navigate, '/finance/services')}
           className="ui-cta ui-cta-secondary"
         >
           Close
         </button>
-        <div className="flex gap-3">
-          {isHeld ? (
-            <button
-              type="button"
-              className="ui-cta ui-cta-primary"
-              disabled={releaseMutation.isPending}
-              onClick={() => setIsReleaseModalOpen(true)}
-            >
-              Release Escrow
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={() => toast.message('Download invoice coming soon')}
-              className="ui-cta ui-cta-primary"
-            >
-              {status === 'Released' ? 'Released to payout' : 'Download Invoice'}
-            </button>
-          )}
-        </div>
       </footer>
 
       <AddFinanceNoteModal
-        open={isReleaseModalOpen}
+        open={activeModal === 'release'}
         title="Release Escrow"
         description="Add an admin note to confirm releasing this escrow hold to payout."
         placeholder="Enter release note"
         submitLabel="Release Escrow"
         submittingLabel="Releasing..."
         isSubmitting={releaseMutation.isPending}
-        onClose={() => setIsReleaseModalOpen(false)}
+        onClose={() => setActiveModal(null)}
         onSubmit={(adminNote) => {
           releaseMutation.mutate(
             { id: escrow._id, adminNote },
             {
               onSuccess: () => {
                 toast.success('Escrow released to payout')
-                setIsReleaseModalOpen(false)
+                setActiveModal(null)
                 void refetch()
-                navigate('/finance/escrow')
               },
               onError: (err) => {
                 const msg =
                   (err as { response?: { data?: { message?: string } } })?.response?.data
                     ?.message || 'Failed to release escrow'
                 toast.error(msg)
-                // Already released (stale UI) — refresh so Release button hides.
                 if (/released_to_payout|cannot release/i.test(msg)) {
                   void refetch()
-                  setIsReleaseModalOpen(false)
+                  setActiveModal(null)
                 }
               },
+            },
+          )
+        }}
+      />
+
+      <AddFinanceNoteModal
+        open={activeModal === 'note'}
+        isSubmitting={noteMutation.isPending}
+        onClose={() => setActiveModal(null)}
+        onSubmit={(adminNote) => {
+          noteMutation.mutate(
+            { id: escrow._id, resourceType: 'EscrowHold', adminNote },
+            {
+              onSuccess: () => {
+                toast.success('Note saved')
+                setActiveModal(null)
+              },
+              onError: () => toast.error('Failed to save note'),
             },
           )
         }}

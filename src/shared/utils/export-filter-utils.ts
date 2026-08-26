@@ -1,16 +1,6 @@
-/**
- * Shared utilities for filter-based export across all management pages.
- * Converts FilterValues from the export modal into API query params,
- * fetches filtered data, then calls exportDataToFile.
- */
-
 import type { FilterValues } from '@/shared/types/data-filter'
 import { exportDataToFile } from './export-utils'
 
-/**
- * Converts filter values (keyed as "section.fieldId") into flat API query params.
- * Handles text, arrays (checkboxes), range objects, and location objects.
- */
 export function buildFilterParams(filterValues: FilterValues): Record<string, string> {
   const params: Record<string, string> = {}
 
@@ -58,14 +48,9 @@ type ExpertListQueryOptions = {
   page?: number
   limit?: number
   search?: string
-  /** Fixed list status from quick-link tabs (e.g. suspended, pending). */
   status?: string
 }
 
-/**
- * Builds query params for expert list APIs from advanced filter state.
- * Maps section-prefixed keys to backend param names (avoids experts.category vs services.category collision).
- */
 export function buildExpertListQueryParams(
   filterValues: FilterValues,
   options: ExpertListQueryOptions = {},
@@ -152,14 +137,9 @@ type ServiceListQueryOptions = {
   page?: number
   limit?: number
   search?: string
-  /** Fixed list status from quick-link tabs (e.g. suspended, in_review). */
   status?: string
 }
 
-/**
- * Builds query params for service list APIs from advanced filter state.
- * Maps section-prefixed keys to backend param names.
- */
 export function buildServiceListQueryParams(
   filterValues: FilterValues,
   options: ServiceListQueryOptions = {},
@@ -234,9 +214,6 @@ export function buildServiceListQueryParams(
   return params
 }
 
-/**
- * Query params for Expert Profile → Service Listings → Services advanced filters (Figma field set).
- */
 export function buildExpertProfileServicesQueryParams(
   filterValues: FilterValues,
   options: ServiceListQueryOptions = {},
@@ -351,18 +328,6 @@ function extractExportPage<T>(result: PaginatedExportResult<T> | T[]): {
   }
 }
 
-/**
- * Creates an async export handler that:
- * 1. Converts filter values to API params
- * 2. Fetches all matching pages from the API
- * 3. Maps data through the column map
- * 4. Calls exportDataToFile
- *
- * @param fetchFn  - the API function (accepts params, returns { data: T[] } or T[])
- * @param columnMap - EXPORT_COLUMN_MAP for this page
- * @param fileName  - base filename for the export
- * @param baseParams - fixed params always added (e.g. { status: 'suspended' })
- */
 export function createFilteredExportHandler<T>(
   fetchFn: (params: Record<string, unknown>) => Promise<PaginatedExportResult<T> | T[]>,
   columnMap: ExportColumnMap<T>,
@@ -400,7 +365,6 @@ export function createFilteredExportHandler<T>(
   }
 }
 
-/** Export handler for service list pages using section-aware filter params. */
 export function createServiceFilteredExportHandler<T>(
   fetchFn: (params: Record<string, unknown>) => Promise<{ data?: T[]; data_?: T[] } | T[]>,
   columnMap: ExportColumnMap<T>,
@@ -429,14 +393,9 @@ type CategoryListQueryOptions = {
   page?: number
   limit?: number
   search?: string
-  /** Fixed list status from page tab (ACTIVE, PAUSED, DELETED). */
   status?: 'ACTIVE' | 'PAUSED' | 'DELETED'
 }
 
-/**
- * Builds query params for service category list APIs from advanced filter state.
- * Maps section-prefixed keys to backend param names.
- */
 export function buildCategoryListQueryParams(
   filterValues: FilterValues,
   options: CategoryListQueryOptions = {},
@@ -516,7 +475,6 @@ export function buildCategoryListQueryParams(
   return params
 }
 
-/** Export handler for service category list pages using section-aware filter params. */
 export function createCategoryFilteredExportHandler<T>(
   fetchFn: (params: Record<string, unknown>) => Promise<{ data?: T[] } | T[]>,
   columnMap: ExportColumnMap<T>,
@@ -545,14 +503,9 @@ type VenueListQueryOptions = {
   page?: number
   limit?: number
   search?: string
-  /** Fixed list status from page tab (active, suspended, in_review, rejected, deleted). */
   status?: string
 }
 
-/**
- * Builds query params for venue list APIs from advanced filter state.
- * Maps section-prefixed keys to backend param names.
- */
 export function buildVenueListQueryParams(
   filterValues: FilterValues,
   options: VenueListQueryOptions = {},
@@ -625,7 +578,6 @@ export function buildVenueListQueryParams(
   return params
 }
 
-/** Export handler for venue list pages using section-aware filter params. */
 export function createVenueFilteredExportHandler<T>(
   fetchFn: (params: Record<string, unknown>) => Promise<{ data?: T[] } | T[]>,
   columnMap: Record<string, { header: string; accessor: (item: T) => string }>,
@@ -654,13 +606,9 @@ type VenueCategoryListQueryOptions = {
   page?: number
   limit?: number
   search?: string
-  /** Main category list excludes paused/deleted; paused and deleted use dedicated endpoints. */
   excludePaused?: boolean
 }
 
-/**
- * Builds query params for venue category list APIs from advanced filter state.
- */
 export function buildVenueCategoryListQueryParams(
   filterValues: FilterValues,
   options: VenueCategoryListQueryOptions = {},
@@ -678,7 +626,6 @@ export function buildVenueCategoryListQueryParams(
   return params
 }
 
-/** Export handler for venue category list pages. */
 export function createVenueCategoryFilteredExportHandler<T>(
   fetchFn: (params: Record<string, unknown>) => Promise<{ data?: T[] } | T[]>,
   columnMap: Record<string, { header: string; accessor: (item: T) => string }>,
@@ -714,10 +661,6 @@ const COMMUNICATION_DATE_RANGE_PARAMS: Record<string, [string, string]> = {
   scheduledAt: ['scheduledAtFrom', 'scheduledAtTo'],
 }
 
-/**
- * Builds query params for communication list APIs from advanced filter state.
- * Maps date ranges to From/To to match settings-service list query names.
- */
 export function buildCommunicationListQueryParams(
   filterValues: FilterValues,
   options: CommunicationListQueryOptions = {},
@@ -774,7 +717,6 @@ export function buildCommunicationListQueryParams(
   return params
 }
 
-/** Export handler for communication list pages using section-aware filter params. */
 export function createCommunicationFilteredExportHandler<T>(
   fetchFn: (params: Record<string, unknown>) => Promise<{ data?: T[] } | T[]>,
   columnMap: Record<string, { header: string; accessor: (item: T) => string }>,
@@ -812,9 +754,6 @@ const REFERRAL_DATE_RANGE_PARAMS: Record<string, [string, string]> = {
   expiresAt: ['expiresAtFrom', 'expiresAtTo'],
 }
 
-/**
- * Builds query params for referral list APIs from advanced filter state.
- */
 export function buildReferralListQueryParams(
   filterValues: FilterValues,
   options: ReferralListQueryOptions = {},
@@ -871,7 +810,6 @@ export function buildReferralListQueryParams(
   return params
 }
 
-/** Export handler for referral list pages using section-aware filter params. */
 export function createReferralFilteredExportHandler<T>(
   fetchFn: (params: Record<string, unknown>) => Promise<{ data?: T[] } | T[]>,
   columnMap: Record<string, { header: string; accessor: (item: T) => string }>,
@@ -906,9 +844,6 @@ const REVENUE_DATE_RANGE_PARAMS: Record<string, [string, string]> = {
   createdAt: ['createdAtFrom', 'createdAtTo'],
 }
 
-/**
- * Builds query params for revenue overview list APIs from advanced filter state.
- */
 export function buildRevenueListQueryParams(
   filterValues: FilterValues,
   options: RevenueListQueryOptions = {},
@@ -965,7 +900,6 @@ export function buildRevenueListQueryParams(
   return params
 }
 
-/** Export handler for revenue overview using section-aware filter params. */
 export function createRevenueFilteredExportHandler<T>(
   fetchFn: (params: Record<string, unknown>) => Promise<{ data?: T[] } | T[]>,
   columnMap: Record<string, { header: string; accessor: (item: T) => string }>,
@@ -997,10 +931,6 @@ type FinanceServicesListQueryOptions = {
   tab?: 'all' | 'escrow' | 'by-service' | 'by-consultation'
 }
 
-/**
- * Builds query params for finance services payment/escrow list APIs.
- * Tab always constrains module on payment lists; status maps to stored values.
- */
 export function buildFinanceServicesListQueryParams(
   filterValues: FilterValues,
   options: FinanceServicesListQueryOptions = {},
@@ -1045,7 +975,6 @@ export function buildFinanceServicesListQueryParams(
   return params
 }
 
-/** Export handler for finance services pages. */
 export function createFinanceServicesFilteredExportHandler<T>(
   fetchFn: (params: Record<string, unknown>) => Promise<{ data?: T[] } | T[]>,
   columnMap: Record<string, { header: string; accessor: (item: T) => string }>,
@@ -1076,10 +1005,6 @@ type FinanceVenuesListQueryOptions = {
   search?: string
 }
 
-/**
- * Builds query params for finance venues payment list APIs.
- * Always constrains module to venue; status maps table labels to stored values.
- */
 export function buildFinanceVenuesListQueryParams(
   filterValues: FilterValues,
   options: FinanceVenuesListQueryOptions = {},
@@ -1110,7 +1035,6 @@ export function buildFinanceVenuesListQueryParams(
   return params
 }
 
-/** Export handler for finance venues pages. */
 export function createFinanceVenuesFilteredExportHandler<T>(
   fetchFn: (params: Record<string, unknown>) => Promise<{ data?: T[] } | T[]>,
   columnMap: Record<string, { header: string; accessor: (item: T) => string }>,

@@ -8,7 +8,6 @@ export type VenueProfileAnalyticsMetricCatalogItem = {
   defaultActive: boolean
 }
 
-/** Exactly 8 Venue Analytics metrics — matches the Venue Profile Venue Analytics tab. */
 export const VENUE_PROFILE_ANALYTICS_METRICS_CATALOG: VenueProfileAnalyticsMetricCatalogItem[] = [
   {
     id: 'events-hosted',

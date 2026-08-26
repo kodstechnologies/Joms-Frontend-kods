@@ -8,7 +8,6 @@ export type VenueLeaderboardTableColumnCatalogItem = {
   defaultVisible: boolean
 }
 
-/** Venue Leaderboard table columns — matches the venue leaderboard table. */
 export const VENUE_LEADERBOARD_TABLE_COLUMNS_CATALOG: VenueLeaderboardTableColumnCatalogItem[] = [
   {
     id: 'rank',

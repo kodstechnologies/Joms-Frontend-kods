@@ -32,7 +32,7 @@ Update this file whenever filter backend wiring changes.
 
 ## Expert Management (`expert-management`)
 
-**Filter UI:** Figma-exact fields (`figma-expert-management-filters.config.ts`), shared with Expert Profile Services.
+**Filter UI:** Expert management fields (`expert-management-filters.config.ts`), shared with Expert Profile Services.
 
 | Section      | Fields                                                                                                                                                           |
 | ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |

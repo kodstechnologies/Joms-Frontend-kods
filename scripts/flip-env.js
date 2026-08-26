@@ -7,6 +7,10 @@ const frontendRoot = join(__dirname, '..')
 const envPath = join(frontendRoot, '.env')
 const productionEnvPath = join(frontendRoot, '.env.production')
 
+// Maps key: set VITE_GOOGLE_MAPS_API_KEY in the environment or edit .env locally.
+// Never commit a live key in this file.
+const mapsKey = process.env.VITE_GOOGLE_MAPS_API_KEY || ''
+
 const LOCAL_ENV = `VITE_AUTH_API_BASE_URL=http://localhost:8000
 VITE_ADMIN_API_BASE_URL=http://localhost:8001
 VITE_SERVICE_API_BASE_URL=http://localhost:8004
@@ -14,7 +18,7 @@ VITE_VENUE_API_BASE_URL=http://localhost:8005
 VITE_KYC_API_BASE_URL=http://localhost:8003
 VITE_MEMBERSHIP_API_BASE_URL=http://localhost:8006
 VITE_SETTINGS_API_BASE_URL=http://localhost:8007
-VITE_GOOGLE_MAPS_API_KEY=AIzaSyC7gzHb0335ZzYsdSLRdkDF7uFhWjlxYus
+VITE_GOOGLE_MAPS_API_KEY=${mapsKey}
 `
 
 const PROD_ENV = `VITE_AUTH_API_BASE_URL=https://auth.api.kods.online
@@ -24,7 +28,7 @@ VITE_VENUE_API_BASE_URL=https://venues.api.kods.online
 VITE_KYC_API_BASE_URL=https://kyc.api.kods.online
 VITE_MEMBERSHIP_API_BASE_URL=https://membership.api.kods.online
 VITE_SETTINGS_API_BASE_URL=https://settings.api.kods.online
-VITE_GOOGLE_MAPS_API_KEY=AIzaSyC7gzHb0335ZzYsdSLRdkDF7uFhWjlxYus
+VITE_GOOGLE_MAPS_API_KEY=${mapsKey}
 `
 
 function detectMode(content) {

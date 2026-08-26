@@ -29,3 +29,6 @@ jobs:
 
       - name: Unit tests
         run: pnpm test
+
+      - name: Auth/regression coverage on critical Admin files
+        run: pnpm test:coverage

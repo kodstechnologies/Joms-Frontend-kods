@@ -2,9 +2,6 @@ import ExcelJS from 'exceljs'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 
-/**
- * Formats a value for export, returning empty string if missing or empty.
- */
 export function exportDisplayValue(value: unknown): string {
   if (value === null || value === undefined) return ''
   if (typeof value === 'string' && value.trim() === '') return ''
@@ -12,14 +9,6 @@ export function exportDisplayValue(value: unknown): string {
   return String(value)
 }
 
-/**
- * Utility to export tabular data to CSV, Excel, or PDF formats.
- *
- * @param headers An array of strings representing the column headers.
- * @param rows An array of string arrays, where each string array represents a row of data.
- * @param format The desired export format ('csv' | 'excel' | 'pdf').
- * @param fileNamePrefix The prefix for the downloaded file (e.g., 'venue_data').
- */
 export function exportDataToFile(
   headers: string[],
   rows: string[][],
@@ -30,16 +19,19 @@ export function exportDataToFile(
     throw new Error('NO_RECORDS')
   }
 
+  const normalized = String(format || 'csv')
+    .trim()
+    .toLowerCase()
   const rowsForExport = [headers, ...rows]
 
-  if (format === 'excel') {
+  if (normalized === 'excel' || normalized === 'xlsx') {
     void writeExcelFile(rowsForExport, fileNamePrefix).catch(() => {
       exportCsv(rowsForExport, `${fileNamePrefix}.csv`)
     })
     return
   }
 
-  if (format === 'pdf') {
+  if (normalized === 'pdf') {
     try {
       const doc = new jsPDF()
       autoTable(doc, {

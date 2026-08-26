@@ -1,13 +1,24 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { Eye, TrendingUp } from 'lucide-react'
+import { Banknote, Eye, SquarePen, TrendingUp } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
+import { AddFinanceNoteModal } from '@/modules/payments/components/add-finance-note-modal'
 import { fetchFinancePayouts } from '@/modules/payments/api/finance-api'
-import { useFinanceDashboard, useFinancePayouts } from '@/modules/payments/hooks/use-finance'
-import { formatInr, mapPayoutToRow } from '@/modules/payments/utils/finance-mappers'
+import {
+  useAddFinanceNote,
+  useFinanceDashboard,
+  useFinancePayouts,
+  useReleasePayout,
+} from '@/modules/payments/hooks/use-finance'
+import {
+  canReleasePayout,
+  formatInr,
+  mapPayoutToRow,
+} from '@/modules/payments/utils/finance-mappers'
 import type { PayoutRow, PayoutStatus } from '@/modules/payments/mock/payout-management.mock'
+import { PermissionGate } from '@/modules/rbac/components/permission-gate'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 import { DataTable } from '@/shared/components/table/data-table'
 import {
@@ -15,6 +26,7 @@ import {
   TableActionsItem,
 } from '@/shared/components/table/table-actions-dropdown'
 import { cn } from '@/shared/lib/cn'
+import { PERMISSION_LEVELS } from '@/shared/lib/permissions'
 import type { FilterValues } from '@/shared/types/data-filter'
 import { exportDisplayValue } from '@/shared/utils/export-utils'
 import {
@@ -27,16 +39,45 @@ const PAGE_SIZE = 10
 const EXPORT_COLUMN_MAP: Record<string, { header: string; accessor: (row: PayoutRow) => string }> =
   {
     payoutId: { header: 'Payout ID', accessor: (row) => exportDisplayValue(row.payoutId) },
-    recipient: { header: 'Recipient', accessor: (row) => exportDisplayValue(row.recipient) },
-    type: { header: 'Type', accessor: (row) => exportDisplayValue(row.type) },
-    amount: { header: 'Amount', accessor: (row) => exportDisplayValue(row.amount) },
-    method: { header: 'Method', accessor: (row) => exportDisplayValue(row.method) },
-    initiatedDate: {
-      header: 'Initiated Date',
-      accessor: (row) => exportDisplayValue(row.initiatedDate),
+    payeeId: { header: 'Payee ID', accessor: (row) => exportDisplayValue(row.payeeId) },
+    payeeName: { header: 'Payee Name', accessor: (row) => exportDisplayValue(row.payeeName) },
+    payeeType: { header: 'Payee Type', accessor: (row) => exportDisplayValue(row.payeeType) },
+    relatedTransaction: {
+      header: 'Related Transaction',
+      accessor: (row) => exportDisplayValue(row.relatedTransaction),
     },
-    description: { header: 'Description', accessor: (row) => exportDisplayValue(row.description) },
-    status: { header: 'Status', accessor: (row) => exportDisplayValue(row.status) },
+    grossAmount: { header: 'Gross Amount', accessor: (row) => exportDisplayValue(row.grossAmount) },
+    platformCommission: {
+      header: 'Platform Commission',
+      accessor: (row) => exportDisplayValue(row.platformCommission),
+    },
+    taxDeduction: {
+      header: 'Tax Deduction',
+      accessor: (row) => exportDisplayValue(row.taxDeduction),
+    },
+    gatewayCharges: {
+      header: 'Gateway Charges',
+      accessor: (row) => exportDisplayValue(row.gatewayCharges),
+    },
+    netPayout: { header: 'Net Payout', accessor: (row) => exportDisplayValue(row.netPayout) },
+    currency: { header: 'Currency', accessor: (row) => exportDisplayValue(row.currency) },
+    bankReference: {
+      header: 'Bank Reference',
+      accessor: (row) => exportDisplayValue(row.bankReference),
+    },
+    scheduledDate: {
+      header: 'Scheduled Date',
+      accessor: (row) => exportDisplayValue(row.scheduledDate),
+    },
+    processedDate: {
+      header: 'Processed Date',
+      accessor: (row) => exportDisplayValue(row.processedDate),
+    },
+    status: { header: 'Payout Status', accessor: (row) => exportDisplayValue(row.status) },
+    financeApprover: {
+      header: 'Finance Approver',
+      accessor: (row) => exportDisplayValue(row.financeApprover),
+    },
   }
 
 function SummaryCard({
@@ -66,9 +107,13 @@ function SummaryCard({
 }
 
 function getStatusClassName(status: PayoutStatus) {
-  if (status === 'Completed')
+  if (status === 'Paid' || status === 'Completed') {
     return 'border-brand-positive/25 bg-brand-positive/10 text-brand-positive'
-  if (status === 'Pending') return 'border-brand-accent/25 bg-brand-accent/10 text-brand-accent'
+  }
+  if (status === 'Pending' || status === 'Processing') {
+    return 'border-brand-accent/25 bg-brand-accent/10 text-brand-accent'
+  }
+  if (status === 'On Hold') return 'border-brand-accent/40 bg-brand-accent/10 text-brand-accent'
   return 'border-brand-danger/25 bg-brand-danger/10 text-brand-danger'
 }
 
@@ -80,6 +125,9 @@ export function PayoutManagementPage() {
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [selectedRowIds, setSelectedRowIds] = useState<string[]>([])
+  const [rowAction, setRowAction] = useState<{ type: 'release' | 'note'; row: PayoutRow } | null>(
+    null,
+  )
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -101,6 +149,8 @@ export function PayoutManagementPage() {
 
   const { data, isLoading, isFetching, isError } = useFinancePayouts(listQueryParams)
   const dashboardQuery = useFinanceDashboard()
+  const releaseMutation = useReleasePayout()
+  const noteMutation = useAddFinanceNote()
 
   const rows = useMemo(() => (data?.data?.rows ?? []).map(mapPayoutToRow), [data])
   const meta = data?.data?.meta
@@ -186,7 +236,7 @@ export function PayoutManagementPage() {
         label="Open payout actions"
         isOpen={activeDropdownId === record.id}
         onOpenChange={(open) => setActiveDropdownId(open ? record.id : null)}
-        menuWidth={200}
+        menuWidth={220}
       >
         <TableActionsItem
           icon={<Eye className="size-3.5 text-slate-700" aria-hidden="true" />}
@@ -197,6 +247,33 @@ export function PayoutManagementPage() {
           }}
         >
           View Details
+        </TableActionsItem>
+        {canReleasePayout(record.rawStatus) ? (
+          <PermissionGate
+            permission="finance.approve_payout"
+            minLevel={PERMISSION_LEVELS.SECONDARY_APPROVAL}
+          >
+            <TableActionsItem
+              icon={<Banknote className="size-3.5 text-slate-700" aria-hidden="true" />}
+              className="text-slate-800 hover:bg-slate-100 hover:text-slate-900"
+              onClick={() => {
+                setActiveDropdownId(null)
+                setRowAction({ type: 'release', row: record })
+              }}
+            >
+              Release Payout
+            </TableActionsItem>
+          </PermissionGate>
+        ) : null}
+        <TableActionsItem
+          icon={<SquarePen className="size-3.5 text-slate-700" aria-hidden="true" />}
+          className="text-slate-800 hover:bg-slate-100 hover:text-slate-900"
+          onClick={() => {
+            setActiveDropdownId(null)
+            setRowAction({ type: 'note', row: record })
+          }}
+        >
+          Add Internal Note
         </TableActionsItem>
       </TableActionsDropdown>
     ),
@@ -222,7 +299,7 @@ export function PayoutManagementPage() {
         cell: ({ row }) => (
           <input
             type="checkbox"
-            aria-label={`Select ${row.original.recipient}`}
+            aria-label={`Select ${row.original.payeeName}`}
             checked={selectedRowIds.includes(row.original.id)}
             onChange={() => toggleRowSelection(row.original.id)}
             onClick={(event) => event.stopPropagation()}
@@ -232,15 +309,22 @@ export function PayoutManagementPage() {
         meta: { headerClassName: 'pl-5', cellClassName: 'pl-5' },
       },
       { accessorKey: 'payoutId', header: 'Payout ID' },
-      { accessorKey: 'recipient', header: 'Recipient' },
-      { accessorKey: 'type', header: 'Type' },
-      { accessorKey: 'amount', header: 'Amount' },
-      { accessorKey: 'method', header: 'Method' },
-      { accessorKey: 'initiatedDate', header: 'Initiated Date' },
-      { accessorKey: 'description', header: 'Description' },
+      { accessorKey: 'payeeId', header: 'Payee ID' },
+      { accessorKey: 'payeeName', header: 'Payee Name' },
+      { accessorKey: 'payeeType', header: 'Payee Type' },
+      { accessorKey: 'relatedTransaction', header: 'Related Transaction' },
+      { accessorKey: 'grossAmount', header: 'Gross Amount' },
+      { accessorKey: 'platformCommission', header: 'Platform Commission' },
+      { accessorKey: 'taxDeduction', header: 'Tax Deduction' },
+      { accessorKey: 'gatewayCharges', header: 'Gateway Charges' },
+      { accessorKey: 'netPayout', header: 'Net Payout' },
+      { accessorKey: 'currency', header: 'Currency' },
+      { accessorKey: 'bankReference', header: 'Bank Reference' },
+      { accessorKey: 'scheduledDate', header: 'Scheduled Date' },
+      { accessorKey: 'processedDate', header: 'Processed Date' },
       {
         accessorKey: 'status',
-        header: 'Status',
+        header: 'Payout Status',
         cell: ({ row }) => (
           <span
             className={cn(
@@ -252,6 +336,7 @@ export function PayoutManagementPage() {
           </span>
         ),
       },
+      { accessorKey: 'financeApprover', header: 'Finance Approver' },
       {
         id: 'actions',
         header: 'Actions',
@@ -300,7 +385,7 @@ export function PayoutManagementPage() {
         isLoading={isLoading || isFetching}
         searchValue={searchQuery}
         onSearchChange={setSearchQuery}
-        searchPlaceholder="Search by name, ID or profession"
+        searchPlaceholder="Search by payout ID or payee name"
         advancedFilterLabel="Advance Filters"
         onAdvancedFilter={onAdvancedFilter}
         advancedFilterVariant="primary"
@@ -317,6 +402,63 @@ export function PayoutManagementPage() {
       />
 
       {exportFilterModals}
+
+      <AddFinanceNoteModal
+        open={rowAction?.type === 'release'}
+        title="Release Payout"
+        description="Record the manual bank transfer, then mark this payout as paid."
+        placeholder="Enter release note"
+        submitLabel="Release Payout"
+        submittingLabel="Releasing..."
+        extraField={{
+          label: 'Transfer Reference (UTR)',
+          placeholder: 'Enter bank UTR / reference',
+          required: true,
+          minLength: 6,
+        }}
+        isSubmitting={releaseMutation.isPending}
+        onClose={() => setRowAction(null)}
+        onSubmit={(adminNote, bankReference) => {
+          if (!rowAction || !bankReference) {
+            toast.error('Bank transfer reference (UTR) is required')
+            return
+          }
+          releaseMutation.mutate(
+            { id: rowAction.row.id, adminNote, bankReference },
+            {
+              onSuccess: () => {
+                toast.success('Payout marked as paid')
+                setRowAction(null)
+              },
+              onError: (err) => {
+                const msg =
+                  (err as { response?: { data?: { message?: string } } })?.response?.data
+                    ?.message || 'Release failed'
+                toast.error(msg)
+              },
+            },
+          )
+        }}
+      />
+
+      <AddFinanceNoteModal
+        open={rowAction?.type === 'note'}
+        isSubmitting={noteMutation.isPending}
+        onClose={() => setRowAction(null)}
+        onSubmit={(adminNote) => {
+          if (!rowAction) return
+          noteMutation.mutate(
+            { id: rowAction.row.id, resourceType: 'Payout', adminNote },
+            {
+              onSuccess: () => {
+                toast.success('Note saved')
+                setRowAction(null)
+              },
+              onError: () => toast.error('Failed to save note'),
+            },
+          )
+        }}
+      />
     </div>
   )
 }

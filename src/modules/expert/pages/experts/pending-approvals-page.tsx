@@ -276,17 +276,13 @@ export function ExpertPendingApprovalsPage() {
       queryClient.invalidateQueries({ queryKey: ['experts'] })
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } }
-      toast.error(err?.response?.data?.message || 'Failed to approve application. Please try again.')
+      toast.error(
+        err?.response?.data?.message || 'Failed to approve application. Please try again.',
+      )
     } finally {
       setIsApproving(false)
     }
-  }, [
-    approveConfirmed,
-    approveExpertTarget,
-    closeApproveModal,
-    navigate,
-    queryClient,
-  ])
+  }, [approveConfirmed, approveExpertTarget, closeApproveModal, navigate, queryClient])
 
   const columns = useMemo<ColumnDef<Expert>[]>(
     () => [

@@ -18,6 +18,7 @@ import {
 } from '@/modules/payments/config/finance-revenue-table-columns.config'
 import { useTableColumnPreferences } from '@/modules/expert/hooks/use-ui-preferences'
 import { mapPaymentToRevenueRow } from '@/modules/payments/utils/finance-mappers'
+import { escalateUrl } from '@/modules/payments/utils/finance-escalate'
 import { AddTagsModal } from '@/shared/components/modals/add-tags-modal'
 import {
   FinanceEscalateDeleteModal,
@@ -193,7 +194,13 @@ export function RevenueOverviewPage() {
             className="text-slate-800 hover:bg-slate-100 hover:text-slate-900"
             onClick={() => {
               setActiveDropdownId(null)
-              setRowAction({ kind: 'escalate', id: record.id, resourceType: 'Payment' })
+              navigate(
+                escalateUrl(record.id, {
+                  kind: 'resource',
+                  resourceType: 'Payment',
+                  returnTo: '/finance/revenue',
+                }),
+              )
             }}
           >
             Escalate

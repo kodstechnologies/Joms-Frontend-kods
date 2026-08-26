@@ -8,7 +8,6 @@ export type ExpertLeaderboardTableColumnCatalogItem = {
   defaultVisible: boolean
 }
 
-/** Expert Leaderboard table columns — matches the leaderboard table. */
 export const EXPERT_LEADERBOARD_TABLE_COLUMNS_CATALOG: ExpertLeaderboardTableColumnCatalogItem[] = [
   {
     id: 'rank',

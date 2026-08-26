@@ -20,10 +20,10 @@ export type MembershipRow = {
 }
 
 export const membershipSummaryMetricsMock: MembershipSummaryMetric[] = [
-  { label: 'Active Subscriptions', value: '08', change: '+5.2%', changeNote: 'vs last month' },
-  { label: 'Started', value: '$487,650', change: '+5.2%', changeNote: 'vs last month' },
-  { label: 'Cancelled', value: '$487,650', change: '+5.2%', changeNote: 'vs last month' },
-  { label: 'Expired', value: '$487,650', change: '+5.2%', changeNote: 'vs last month' },
+  { label: 'Active Subscriptions', value: '00', change: '', changeNote: 'subscriptions' },
+  { label: 'Paused', value: '00', change: '', changeNote: 'subscriptions' },
+  { label: 'Cancelled', value: '00', change: '', changeNote: 'subscriptions' },
+  { label: 'Expired', value: '00', change: '', changeNote: 'subscriptions' },
 ]
 
 export const membershipRowsMock: MembershipRow[] = [

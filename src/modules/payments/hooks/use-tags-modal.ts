@@ -1,33 +1,29 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback } from 'react'
 
 interface UseTagsModalReturn {
-  isOpen: boolean;
-  openModal: () => void;
-  closeModal: () => void;
-  toggleModal: () => void;
-  selectedTags: string[];
-  setSelectedTags: (tags: string[]) => void;
+  isOpen: boolean
+  openModal: () => void
+  closeModal: () => void
+  toggleModal: () => void
+  selectedTags: string[]
+  setSelectedTags: (tags: string[]) => void
 }
 
-/**
- * Hook to manage tags modal state
- * Handles open/close and tag selection
- */
 export const useTagsModal = (): UseTagsModalReturn => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [isOpen, setIsOpen] = useState(false)
+  const [selectedTags, setSelectedTags] = useState<string[]>([])
 
   const openModal = useCallback(() => {
-    setIsOpen(true);
-  }, []);
+    setIsOpen(true)
+  }, [])
 
   const closeModal = useCallback(() => {
-    setIsOpen(false);
-  }, []);
+    setIsOpen(false)
+  }, [])
 
   const toggleModal = useCallback(() => {
-    setIsOpen((prev) => !prev);
-  }, []);
+    setIsOpen((prev) => !prev)
+  }, [])
 
   return {
     isOpen,
@@ -36,5 +32,5 @@ export const useTagsModal = (): UseTagsModalReturn => {
     toggleModal,
     selectedTags,
     setSelectedTags,
-  };
-};
+  }
+}

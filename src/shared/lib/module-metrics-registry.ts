@@ -65,6 +65,11 @@ import {
 } from '@/modules/payments/config/finance-refunds-metrics.config'
 import { FINANCE_REFUNDS_TABLE_COLUMNS_CATALOG } from '@/modules/payments/config/finance-refunds-table-columns.config'
 import {
+  FINANCE_MEMBERSHIPS_MAX_ACTIVE_METRICS,
+  FINANCE_MEMBERSHIPS_METRICS_CATALOG,
+  FINANCE_MEMBERSHIPS_MODULE_KEY,
+} from '@/modules/payments/config/finance-memberships-metrics.config'
+import {
   MEMBERSHIP_MAX_ACTIVE_METRICS,
   MEMBERSHIP_METRICS_CATALOG,
   MEMBERSHIPS_MODULE_KEY,
@@ -164,7 +169,6 @@ const column = (
   defaultVisible,
 })
 
-/** Frontend fallback catalogs for modules without (or with empty) server catalogs */
 export const MODULE_METRICS_REGISTRY: Record<string, ModuleMetricsDefinition> = {
   'finance-dashboard': {
     moduleKey: FINANCE_DASHBOARD_MODULE_KEY,
@@ -201,6 +205,19 @@ export const MODULE_METRICS_REGISTRY: Record<string, ModuleMetricsDefinition> = 
       type: item.type,
       description: item.description,
       defaultVisible: item.defaultVisible,
+    })),
+  },
+  'finance-memberships': {
+    moduleKey: FINANCE_MEMBERSHIPS_MODULE_KEY,
+    moduleName: 'Membership Management',
+    returnTo: '/finance/memberships',
+    maxActiveMetrics: FINANCE_MEMBERSHIPS_MAX_ACTIVE_METRICS,
+    metrics: FINANCE_MEMBERSHIPS_METRICS_CATALOG.map((item) => ({
+      id: item.id,
+      label: item.label,
+      type: item.type,
+      description: item.description,
+      defaultActive: item.defaultActive,
     })),
   },
   'finance-refunds': {

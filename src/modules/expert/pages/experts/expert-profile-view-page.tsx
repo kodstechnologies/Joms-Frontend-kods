@@ -46,6 +46,7 @@ import {
   getExpertServiceDrilldownPath,
   getServiceManagementViewPath,
 } from '../../lib/service-navigation'
+import { displayServiceTitle } from '../../components/service-drilldown/drilldown-format'
 import { openExpertKycFromProfile } from '../../utils/expert-application-navigation'
 import {
   useDeactivateExpert,
@@ -1529,7 +1530,9 @@ function ServiceListCard({
       </div>
 
       <div className="ml-1 min-w-0 flex-1">
-        <p className="text-body-md font-bold text-white">{service.title || 'Untitled Service'}</p>
+        <p className="text-body-md font-bold text-white">
+          {displayServiceTitle(service.title) || 'Untitled Service'}
+        </p>
         <p className="text-body-sm text-muted mt-0.5">{service.category?.name || '—'}</p>
         <p className="text-body-sm text-muted mt-0.5">{formatPricingType(service.pricingType)}</p>
       </div>

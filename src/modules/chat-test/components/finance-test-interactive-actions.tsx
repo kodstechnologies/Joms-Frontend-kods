@@ -90,7 +90,28 @@ function flash(ok: boolean, text: string): StatusMsg {
   return { ok, text }
 }
 
-/** Dummy skip-QR, or official Razorpay Checkout + verify. */
+async function loadOfferingsForPartner(userToken: string, partner: PartnerLoginResult) {
+  const partnerId = String(partner.id)
+  let data = await listPartnerOfferings(userToken, partnerId)
+  if (!data.services.length && !data.consultations.length && partner.accessToken) {
+    data = await listPartnerOfferings(partner.accessToken, partnerId)
+  }
+  return data
+}
+
+function offeringsStatusText(
+  data: { services: PartnerOffering[]; consultations: PartnerOffering[] },
+  partner: PartnerLoginResult,
+) {
+  const svc = data.services.length
+  const consult = data.consultations.length
+  const who = partner.fullname || String(partner.id)
+  if (!svc && !consult) {
+    return `No listings for ${who}. Finance “Service: 24” is platform payments, not this partner’s catalogue. Create/approve a listing for this partner, then reload.`
+  }
+  return `Loaded ${svc} services · ${consult} consultations for ${who}`
+}
+
 async function fulfillHarnessPayment(
   token: string,
   order: Awaited<ReturnType<typeof createPaymentOrder>>,
@@ -234,7 +255,6 @@ function VerifyBar({
   )
 }
 
-/** Revenue + Memberships: pick plan → pick cycle → Pay (partner Razorpay) */
 function MembershipPayActions({
   partner,
   onPartnerChange,
@@ -587,7 +607,6 @@ function MembershipPayActions({
   )
 }
 
-/** Services: load offerings → tap Order+pay / consultation book */
 function ServicesActions({
   partner,
   onPartnerChange,
@@ -619,15 +638,10 @@ function ServicesActions({
     setStatus({ ok: true, text: 'Loading offerings…' })
     toast.message('Loading offerings…')
     try {
-      const data = await listPartnerOfferings(user.accessToken, String(partner.id))
-      setServices(data.services || [])
-      setConsultations(data.consultations || [])
-      setStatus(
-        flash(
-          true,
-          `Loaded ${(data.services || []).length} services · ${(data.consultations || []).length} consultations`,
-        ),
-      )
+      const data = await loadOfferingsForPartner(user.accessToken, partner)
+      setServices(data.services)
+      setConsultations(data.consultations)
+      setStatus(flash(true, offeringsStatusText(data, partner)))
     } catch (err) {
       setStatus(flash(false, errText(err)))
     } finally {
@@ -638,20 +652,14 @@ function ServicesActions({
   useEffect(() => {
     if (!user?.accessToken || !partner?.id) return
     const token = user.accessToken
-    const partnerId = String(partner.id)
     let active = true
     void (async () => {
       try {
-        const data = await listPartnerOfferings(token, partnerId)
+        const data = await loadOfferingsForPartner(token, partner)
         if (!active) return
-        setServices(data.services || [])
-        setConsultations(data.consultations || [])
-        setStatus(
-          flash(
-            true,
-            `Loaded ${(data.services || []).length} services · ${(data.consultations || []).length} consultations`,
-          ),
-        )
+        setServices(data.services)
+        setConsultations(data.consultations)
+        setStatus(flash(true, offeringsStatusText(data, partner)))
       } catch (err) {
         if (!active) return
         setStatus(flash(false, errText(err)))
@@ -662,7 +670,7 @@ function ServicesActions({
     return () => {
       active = false
     }
-  }, [user?.id, user?.accessToken, partner?.id])
+  }, [user?.id, user?.accessToken, partner?.id, partner?.accessToken])
 
   const selectedService = services.find((s) => s._id === selectedServiceId) || null
   const serviceTiers = selectedService?.tiers || []
@@ -707,7 +715,6 @@ function ServicesActions({
     )
   }
 
-  /** LIVE finance: create listing order → payment-service order → dummy or Razorpay verify. */
   const orderAndPay = async (mode: PayMode = payMode) => {
     const item = selectedService
     if (!user || !item) {
@@ -818,10 +825,6 @@ function ServicesActions({
     }
   }
 
-  /**
-   * Escrow LIVE seed: quotation → proposal (one_time|milestone) → send → accept →
-   * payment-service create + dummy/Razorpay (kind: payment_request). Do not use listing /pay.
-   */
   const seedEscrow = async (
     paymentType: 'one_time' | 'milestone',
     offeringOverride?: PartnerOffering,
@@ -870,7 +873,7 @@ function ServicesActions({
         partnerName: activePartner.fullname || undefined,
         title: `Harness escrow · ${offering.title}`,
         category: 'General',
-        description: 'Payment-finance harness escrow seed (custom/milestone hold).',
+        description: 'Escrow seed (custom/milestone hold).',
         budget: { min: 3000, max: 8000 },
         duration: '1-2 weeks',
         username: user.username,
@@ -977,15 +980,27 @@ function ServicesActions({
         setCheckResult(flash(false, 'Admin not logged in — Open Services screen instead.'))
         return
       }
-      const [svc, consult, escrow] = await Promise.all([
+      const partnerId = partner ? String(partner.id) : undefined
+      const [svcMine, consultMine, escrowMine, svc, consult, escrow] = await Promise.all([
+        fetchFinanceRevenue({ module: 'service', limit: 1, partnerId }),
+        fetchFinanceRevenue({ module: 'consultation', limit: 1, partnerId }),
+        fetchFinanceEscrow({ limit: 1, partnerId }),
         fetchFinanceRevenue({ module: 'service', limit: 5 }),
         fetchFinanceRevenue({ module: 'consultation', limit: 5 }),
         fetchFinanceEscrow({ limit: 5 }),
       ])
+      const mineS = svcMine?.data?.meta?.total ?? 0
+      const mineC = consultMine?.data?.meta?.total ?? 0
+      const mineE = escrowMine?.data?.meta?.total ?? escrowMine?.data?.rows?.length ?? 0
       const st = svc?.data?.meta?.total ?? 0
       const ct = consult?.data?.meta?.total ?? 0
       const et = escrow?.data?.meta?.total ?? escrow?.data?.rows?.length ?? 0
-      setCheckResult(flash(true, `Service: ${st} · Consultation: ${ct} · Escrow: ${et}`))
+      setCheckResult(
+        flash(
+          true,
+          `This partner — Service: ${mineS} · Consultation: ${mineC} · Escrow: ${mineE}. Platform — Service: ${st} · Consultation: ${ct} · Escrow: ${et}`,
+        ),
+      )
     } catch (err) {
       setCheckResult(flash(false, errText(err)))
     } finally {
@@ -1093,7 +1108,9 @@ function ServicesActions({
           })}
           {!services.length ? (
             <p className="text-xs text-zinc-500">
-              No services — create/approve a listing for this partner.
+              No services for this partner ({partner?.fullname || partner?.id || 'not logged in'}).
+              Platform finance counts are other experts’ payments — they do not fill this list.
+              Create/approve a listing for this partner, then Load offerings.
             </p>
           ) : null}
         </div>
@@ -1210,7 +1227,6 @@ function ServicesActions({
   )
 }
 
-/** Venues: admin catalog → user LIVE dummy/Razorpay pay → /finance/venues */
 function VenuesActions({ user }: { user: StaticChatUser | null }) {
   const adminToken = useAuthStore((s) => s.token)
   const [venues, setVenues] = useState<HarnessVenue[]>([])
@@ -1400,7 +1416,6 @@ function VenuesActions({ user }: { user: StaticChatUser | null }) {
   )
 }
 
-/** Tax / Reconciliation: backfill from fulfilled payments, then verify admin screens. */
 function TaxReconActions({
   verifyHref,
   verifyLabel,
@@ -1462,7 +1477,10 @@ function TaxReconActions({
 
   return (
     <div className="space-y-4">
-      <ActionBanner status={status || checkResult} phase={busy ? 'Backfilling' : checking ? 'Checking' : null} />
+      <ActionBanner
+        status={status || checkResult}
+        phase={busy ? 'Backfilling' : checking ? 'Checking' : null}
+      />
       <p className="text-sm text-zinc-400">
         New pays auto-create tax + reconciliation on fulfill. For older fulfilled payments, run
         backfill (admin JWT). Seed a pay on Revenue/Services/Memberships first if lists are empty.
@@ -1533,7 +1551,6 @@ function SimpleOpenAndCheck({
   )
 }
 
-/** Refunds: stuck service/venue payment (paid · fulfill pending) → refund or chargeback. */
 function RefundsActions() {
   const adminToken = useAuthStore((s) => s.token)
   const [busy, setBusy] = useState<string | null>(null)

@@ -65,7 +65,9 @@ export function FinanceEscalateDeleteModal({
               onClose()
             },
             onError: (err) => {
-              toast.error(apiErrorMessage(err, isEscalate ? 'Failed to escalate' : 'Failed to delete'))
+              toast.error(
+                apiErrorMessage(err, isEscalate ? 'Failed to escalate' : 'Failed to delete'),
+              )
             },
           },
         )

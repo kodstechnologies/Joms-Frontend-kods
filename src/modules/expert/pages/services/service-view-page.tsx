@@ -38,6 +38,7 @@ import {
   type DecisionActionModalOption,
 } from '@/shared/components/modal/decision-action-modal'
 import { cn } from '@/shared/lib/cn'
+import { displayServiceTitle } from '../../components/service-drilldown/drilldown-format'
 import { useAuthStore } from '@/modules/auth/store/auth-store'
 import {
   useAdminEscalation,
@@ -945,7 +946,7 @@ export const ServiceViewPage = () => {
           <div className="mb-1 flex items-start justify-between gap-4">
             <div>
               <h1 className="text-[22px] leading-tight font-semibold text-white">
-                {service.title}
+                {displayServiceTitle(service.title)}
               </h1>
               {categoryName && <p className="text-body-sm text-muted mt-1">{categoryName}</p>}
             </div>

@@ -658,7 +658,7 @@ const InvoicesBillingPage = lazy(() =>
 )
 
 const InvoiceDetailViewPage = lazy(() =>
-  import('@/modules/payments').then((m) => ({
+  import('@/modules/payments/pages/invoice-detail-view-page').then((m) => ({
     default: m.InvoiceDetailViewPage,
   })),
 )
@@ -844,7 +844,10 @@ export function AppRouter() {
             </Suspense>
           }
         />
-        <Route path="/payment-finance-testing" element={<Navigate to="/dev/payment-finance-testing" replace />} />
+        <Route
+          path="/payment-finance-testing"
+          element={<Navigate to="/dev/payment-finance-testing" replace />}
+        />
 
         <Route element={<ProtectedRoute />}>
           <Route

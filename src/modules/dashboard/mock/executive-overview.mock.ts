@@ -63,7 +63,6 @@ const KPI_VALUES_BY_ID: Record<string, Omit<ExecutiveKpiStat, 'id' | 'title'>> =
   },
 }
 
-/** Exactly 8 KPI cards — ids and titles match Manage Metrics catalog. */
 export const kpiStatsMock: ExecutiveKpiStat[] = EXECUTIVE_OVERVIEW_METRICS_CATALOG.map(
   (metric) => ({
     id: metric.id,

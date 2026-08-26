@@ -6,10 +6,6 @@ type Props = {
   partnerId: string | null
 }
 
-/**
- * Lightweight launcher for partner membership purchase.
- * Full Razorpay flow lives on /payment-test.html — we prefill token via localStorage key that page already uses.
- */
 export function FinanceTestMembershipPanel({ partnerToken, partnerId }: Props) {
   const [planId, setPlanId] = useState('')
   const [copied, setCopied] = useState(false)

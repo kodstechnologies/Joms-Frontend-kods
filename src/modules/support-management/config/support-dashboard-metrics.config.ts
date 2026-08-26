@@ -8,7 +8,6 @@ export type SupportDashboardMetricCatalogItem = {
   defaultActive: boolean
 }
 
-/** Exactly 8 support dashboard metrics — matches the Support Management page. */
 export const SUPPORT_DASHBOARD_METRICS_CATALOG: SupportDashboardMetricCatalogItem[] = [
   {
     id: 'total-open-tickets',

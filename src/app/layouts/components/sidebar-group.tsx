@@ -52,7 +52,6 @@ export function SidebarGroup({
   const firstTo = getFirstNavigableTo(item)
 
   // Expanded: only the active module can open its submenu. Other modules switch by navigating.
-  // Collapsed: all icons stay clickable and jump to that module (Figma).
   const canExpandOwnSubmenu =
     hasChildren && !compact && !shouldSwitchModule && (isActiveModule || !isTopLevel)
 

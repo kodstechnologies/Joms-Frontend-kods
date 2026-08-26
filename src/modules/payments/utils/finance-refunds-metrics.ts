@@ -11,7 +11,7 @@ export type FinanceRefundsMetricCard = RefundSummaryMetric & { id: string }
 
 const mockByLabel = new Map(refundSummaryMetricsMock.map((metric) => [metric.label, metric]))
 
-function withDisplayTrend(metric: RefundSummaryMetric): RefundSummaryMetric {
+function addTrend(metric: RefundSummaryMetric): RefundSummaryMetric {
   const change = metric.change.replace(/^▲\s*/, '')
   return {
     ...metric,
@@ -42,7 +42,7 @@ export function buildFinanceRefundsMetricCards(params: {
   }
 
   return FINANCE_REFUNDS_METRICS_CATALOG.map((item) => {
-    const mock = withDisplayTrend(mockByLabel.get(item.label)!)
+    const mock = addTrend(mockByLabel.get(item.label)!)
 
     return {
       id: item.id,

@@ -134,9 +134,13 @@ function MergeTicketsModalInner({
                     className="mt-1 rounded border-slate-700 bg-transparent"
                   />
                   <span>
-                    <span className="text-body-sm-medium text-brand-text block">{ticket.title}</span>
+                    <span className="text-body-sm-medium text-brand-text block">
+                      {ticket.title}
+                    </span>
                     {ticket.description ? (
-                      <span className="text-body-sm text-muted mt-1 block">{ticket.description}</span>
+                      <span className="text-body-sm text-muted mt-1 block">
+                        {ticket.description}
+                      </span>
                     ) : null}
                   </span>
                 </label>

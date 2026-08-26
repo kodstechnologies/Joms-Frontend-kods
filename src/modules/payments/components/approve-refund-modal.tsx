@@ -20,7 +20,6 @@ export type ApproveRefundModalData = {
   supportRecommendation: string
   reason: string
   maxRefundableAmount: number
-  /** Optional static override; otherwise retain is computed from max − refunded. */
   platformRetainAmount?: string
 }
 

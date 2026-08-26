@@ -13,6 +13,7 @@ import {
 import { CancelSubscriptionModal } from '@/modules/payments/components/cancel-subscription-modal'
 import { PauseSubscriptionModal } from '@/modules/payments/components/pause-subscription-modal'
 import { mapSubscriptionToFinanceDetail } from '@/modules/payments/utils/finance-membership-mapper'
+import { downloadKeyValueReport } from '@/modules/payments/hooks/use-finance-list-filters'
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
@@ -110,7 +111,25 @@ export function MembershipDetailViewPage() {
             <h2 className={sectionTitleClass}>Subscription Details</h2>
             <p className={sectionSubtitleClass}>Provide details about your Consultation</p>
           </div>
-          <Button onClick={() => toast.message('Download filing report coming soon')}>
+          <Button
+            onClick={() =>
+              downloadKeyValueReport('membership_subscription_report', [
+                ['Subscription ID', detail.subscriptionId],
+                ['Plan', detail.plan],
+                ['Start Date', detail.startDate],
+                ['Status', detail.status],
+                ['Billing Cycle', detail.billingCycle],
+                ['Amount', detail.amount],
+                ['Payment Method', detail.paymentMethod],
+                ['Last Payment', detail.lastPayment],
+                ['Next Renewal', detail.nextRenewal],
+                ['User Name', detail.userName],
+                ['User ID', detail.userId],
+                ['User Type', detail.userType],
+                ['Plan Features', detail.planFeatures.join('; ')],
+              ])
+            }
+          >
             <Download className="size-4" />
             Download Filing Report
           </Button>

@@ -8,7 +8,6 @@ export type MembershipMetricCatalogItem = {
   defaultActive: boolean
 }
 
-/** Exactly 5 membership dashboard metrics — matches the management page cards. */
 export const MEMBERSHIP_METRICS_CATALOG: MembershipMetricCatalogItem[] = [
   {
     id: 'total-members',

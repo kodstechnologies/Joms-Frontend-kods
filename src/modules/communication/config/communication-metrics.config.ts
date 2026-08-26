@@ -8,7 +8,6 @@ export type CommunicationMetricCatalogItem = {
   defaultActive: boolean
 }
 
-/** Exactly 5 communication dashboard metrics — matches the management page cards. */
 export const COMMUNICATION_METRICS_CATALOG: CommunicationMetricCatalogItem[] = [
   {
     id: 'total-messages-sent',

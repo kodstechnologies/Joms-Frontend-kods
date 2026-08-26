@@ -54,14 +54,13 @@ function readUsersFromEnv(): StaticChatUser[] {
   try {
     const parsed = JSON.parse(raw) as unknown
     if (!Array.isArray(parsed)) return []
-    return parsed.filter(
-      (row): row is StaticChatUser =>
-        Boolean(
-          row &&
-            typeof row === 'object' &&
-            typeof (row as StaticChatUser).id === 'string' &&
-            typeof (row as StaticChatUser).accessToken === 'string',
-        ),
+    return parsed.filter((row): row is StaticChatUser =>
+      Boolean(
+        row &&
+        typeof row === 'object' &&
+        typeof (row as StaticChatUser).id === 'string' &&
+        typeof (row as StaticChatUser).accessToken === 'string',
+      ),
     )
   } catch {
     return []

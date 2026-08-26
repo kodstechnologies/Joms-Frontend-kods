@@ -56,9 +56,9 @@ describe('assertFileWithinUploadLimit', () => {
   })
 
   it('rejects an oversized file', () => {
-    expect(() =>
-      assertFileWithinUploadLimit({ size: 51 * 1024 * 1024 } as File),
-    ).toThrow(/Maximum upload/)
+    expect(() => assertFileWithinUploadLimit({ size: 51 * 1024 * 1024 } as File)).toThrow(
+      /Maximum upload/,
+    )
   })
 })
 
@@ -105,8 +105,11 @@ describe('catalogs', () => {
 
 describe('navigateBackOrFallback', () => {
   it('uses fallback when history is empty', () => {
-    const calls: unknown[] = []
-    navigateBackOrFallback((to, opts) => calls.push([to, opts]), '/home')
+    const calls: Array<[unknown, unknown]> = []
+    const navigate = ((to: unknown, opts?: unknown) => {
+      calls.push([to, opts])
+    }) as unknown as import('react-router-dom').NavigateFunction
+    navigateBackOrFallback(navigate, '/home')
     expect(calls[0]?.[0]).toBe('/home')
   })
 })

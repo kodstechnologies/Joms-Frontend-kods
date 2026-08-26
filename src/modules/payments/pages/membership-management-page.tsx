@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { Eye } from 'lucide-react'
+import { Eye, SlidersHorizontal, TrendingUp } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
@@ -8,17 +8,30 @@ import { fetchExpertSubscriptions } from '@/modules/memberships/api/membership-s
 import { useExpertSubscriptions } from '@/modules/memberships/hooks/use-membership-subscriptions'
 import type { SubscriptionStatus } from '@/modules/memberships/types/membership-subscription'
 import {
+  DEFAULT_FINANCE_MEMBERSHIPS_METRIC_IDS,
+  FINANCE_MEMBERSHIPS_METRIC_IDS,
+  FINANCE_MEMBERSHIPS_METRIC_ID_SET,
+  FINANCE_MEMBERSHIPS_MODULE_KEY,
+} from '@/modules/payments/config/finance-memberships-metrics.config'
+import {
   mapSubscriptionToFinanceRow,
   type FinanceMembershipRow,
   type FinanceMembershipStatus,
 } from '@/modules/payments/utils/finance-membership-mapper'
+import { buildFinanceMembershipsMetricCards } from '@/modules/payments/utils/finance-memberships-metrics'
+import {
+  orderByActiveMetricIds,
+  useActiveMetricIds,
+} from '@/modules/expert/hooks/use-active-metric-ids'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 import { DataTable } from '@/shared/components/table/data-table'
 import {
   TableActionsDropdown,
   TableActionsItem,
 } from '@/shared/components/table/table-actions-dropdown'
+import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
+import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
 import type { FilterValues } from '@/shared/types/data-filter'
 import { exportDisplayValue } from '@/shared/utils/export-utils'
 import {
@@ -63,6 +76,34 @@ function getStatusClassName(status: FinanceMembershipStatus) {
   return 'membership-status-badge membership-status-expired'
 }
 
+function SummaryCard({
+  label,
+  value,
+  change,
+  changeNote,
+}: {
+  label: string
+  value: string
+  change: string
+  changeNote: string
+}) {
+  return (
+    <div className="radius-lg bg-brand-surface flex min-h-[130px] flex-col justify-center border border-white/[0.06] p-5">
+      <p className="text-body-sm-medium text-muted">{label}</p>
+      <p className="text-h2 text-brand-text mt-2 tracking-tight">{value}</p>
+      <div className="mt-3 flex min-h-[24px] flex-wrap items-center gap-2">
+        {change ? (
+          <span className="text-body-sm-semibold bg-brand-positive/15 text-brand-positive inline-flex items-center gap-1 rounded-md px-2 py-0.5">
+            <TrendingUp className="size-3" />
+            {change}
+          </span>
+        ) : null}
+        {changeNote ? <span className="text-body-sm text-muted">{changeNote}</span> : null}
+      </div>
+    </div>
+  )
+}
+
 export function MembershipManagementPage() {
   const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState('')
@@ -99,6 +140,24 @@ export function MembershipManagementPage() {
   )
   const meta = data?.data?.meta
   const counts = meta?.counts
+
+  const activeMetricIds = useActiveMetricIds(FINANCE_MEMBERSHIPS_MODULE_KEY, [
+    ...DEFAULT_FINANCE_MEMBERSHIPS_METRIC_IDS,
+  ])
+
+  const filteredActiveMetricIds = useMemo(
+    () =>
+      sortIdsByCatalogOrder(
+        activeMetricIds.filter((id) => FINANCE_MEMBERSHIPS_METRIC_ID_SET.has(id)),
+        FINANCE_MEMBERSHIPS_METRIC_IDS,
+      ),
+    [activeMetricIds],
+  )
+
+  const visibleSummaryMetrics = useMemo(() => {
+    const allMetrics = buildFinanceMembershipsMetricCards(counts)
+    return orderByActiveMetricIds(allMetrics, filteredActiveMetricIds)
+  }, [counts, filteredActiveMetricIds])
 
   const handleApplyFilters = useCallback((values: FilterValues) => {
     toast.success('Filters applied')
@@ -248,18 +307,33 @@ export function MembershipManagementPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="membership-page-title">Membership Management</h1>
-        <p className="membership-page-subtitle mt-1 leading-[20px]">
-          Track revenue, payouts, and financial performance
-        </p>
-        <p className="text-body-sm text-muted mt-3 leading-[20px]">
-          <Link to="/finance/dashboard" className="hover:text-brand-text transition-colors">
-            Finance Management
-          </Link>
-          <span> / </span>
-          <span className="text-brand-text font-semibold">Memberships</span>
-        </p>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h1 className="membership-page-title">Membership Management</h1>
+          <p className="membership-page-subtitle mt-1 leading-[20px]">
+            Track revenue, payouts, and financial performance
+          </p>
+          <p className="text-body-sm text-muted mt-3 leading-[20px]">
+            <Link to="/finance/dashboard" className="hover:text-brand-text transition-colors">
+              Finance Management
+            </Link>
+            <span> / </span>
+            <span className="text-brand-text font-semibold">Memberships</span>
+          </p>
+        </div>
+        <Button
+          className="ui-manage-metrics"
+          onClick={() => navigate('/metrics/finance-memberships')}
+        >
+          <SlidersHorizontal className="size-4" />
+          Manage Metrics
+        </Button>
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {visibleSummaryMetrics.map((metric) => (
+          <SummaryCard key={metric.id} {...metric} />
+        ))}
       </div>
 
       <div className="flex flex-wrap gap-2">
