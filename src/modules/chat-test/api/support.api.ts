@@ -25,6 +25,9 @@ export type SupportTicket = {
   zohoTicketNumber?: string | null
   zohoTicketId?: string | null
   salesiqConversationId?: string | null
+  assignedTo?: string | null
+  assignedToId?: string | null
+  assignedToAvatarUrl?: string | null
 }
 
 export type SupportChatState = {

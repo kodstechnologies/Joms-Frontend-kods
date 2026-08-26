@@ -12,6 +12,22 @@ export function exportDisplayValue(value: unknown): string {
   return String(value)
 }
 
+function normalizeExportFormat(format: string) {
+  const value = String(format || 'csv')
+    .toLowerCase()
+    .trim()
+  if (value === 'xlsx' || value === 'xls' || value === 'excel') return 'excel'
+  if (value === 'pdf') return 'pdf'
+  return 'csv'
+}
+
+function excelBufferToBlob(buffer: ExcelJS.Buffer) {
+  const bytes = buffer instanceof Uint8Array ? buffer : new Uint8Array(buffer as ArrayBuffer)
+  return new Blob([bytes], {
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  })
+}
+
 /**
  * Utility to export tabular data to CSV, Excel, or PDF formats.
  *
@@ -20,7 +36,7 @@ export function exportDisplayValue(value: unknown): string {
  * @param format The desired export format ('csv' | 'excel' | 'pdf').
  * @param fileNamePrefix The prefix for the downloaded file (e.g., 'venue_data').
  */
-export function exportDataToFile(
+export async function exportDataToFile(
   headers: string[],
   rows: string[][],
   format: string,
@@ -31,43 +47,86 @@ export function exportDataToFile(
   }
 
   const rowsForExport = [headers, ...rows]
+  const normalizedFormat = normalizeExportFormat(format)
 
-  if (format === 'excel') {
-    void writeExcelFile(rowsForExport, fileNamePrefix).catch(() => {
-      exportCsv(rowsForExport, `${fileNamePrefix}.csv`)
-    })
+  if (normalizedFormat === 'excel') {
+    await writeExcelFile(rowsForExport, fileNamePrefix)
     return
   }
 
-  if (format === 'pdf') {
-    try {
-      const doc = new jsPDF()
-      autoTable(doc, {
-        head: [headers],
-        body: rows,
-      })
-      doc.save(`${fileNamePrefix}.pdf`)
-      return
-    } catch {
-      exportCsv(rowsForExport, `${fileNamePrefix}.csv`)
-      return
-    }
+  if (normalizedFormat === 'pdf') {
+    const doc = new jsPDF({
+      orientation: headers.length > 6 ? 'landscape' : 'portrait',
+    })
+    autoTable(doc, {
+      head: [headers],
+      body: rows,
+      styles: { fontSize: 8, cellPadding: 2 },
+      headStyles: { fillColor: [33, 33, 33] },
+    })
+    doc.save(`${fileNamePrefix}.pdf`)
+    return
   }
 
   exportCsv(rowsForExport, `${fileNamePrefix}.csv`)
 }
 
+export type ExcelSheetData = {
+  name: string
+  headers: string[]
+  rows: (string | number)[][]
+}
+
+/**
+ * Downloads a multi-sheet Excel workbook. Empty sheets are skipped.
+ */
+export async function exportSheetsToExcel(sheets: ExcelSheetData[], fileNamePrefix: string) {
+  const validSheets = sheets.filter((sheet) => sheet.headers.length > 0 && sheet.rows.length > 0)
+  if (!validSheets.length) {
+    throw new Error('NO_RECORDS')
+  }
+
+  const workbook = new ExcelJS.Workbook()
+
+  for (const sheetData of validSheets) {
+    const sheet = workbook.addWorksheet(sheetData.name.slice(0, 31))
+    const headerRow = sheet.addRow(sheetData.headers)
+    headerRow.font = { bold: true }
+    sheetData.rows.forEach((row) => {
+      sheet.addRow(row)
+    })
+    sheet.columns.forEach((column) => {
+      let maxLength = 12
+      column.eachCell?.({ includeEmpty: true }, (cell) => {
+        const length = String(cell.value ?? '').length
+        if (length > maxLength) maxLength = length
+      })
+      column.width = Math.min(maxLength + 2, 40)
+    })
+  }
+
+  const buffer = await workbook.xlsx.writeBuffer()
+  downloadBlob(excelBufferToBlob(buffer), `${fileNamePrefix}.xlsx`)
+}
+
 async function writeExcelFile(rowsForExport: string[][], fileNamePrefix: string) {
   const workbook = new ExcelJS.Workbook()
   const sheet = workbook.addWorksheet('Data')
-  rowsForExport.forEach((row) => {
+  const headerRow = sheet.addRow(rowsForExport[0] ?? [])
+  headerRow.font = { bold: true }
+  rowsForExport.slice(1).forEach((row) => {
     sheet.addRow(row)
   })
-  const buffer = await workbook.xlsx.writeBuffer()
-  const blob = new Blob([buffer as ArrayBuffer], {
-    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  sheet.columns.forEach((column) => {
+    let maxLength = 12
+    column.eachCell?.({ includeEmpty: true }, (cell) => {
+      const length = String(cell.value ?? '').length
+      if (length > maxLength) maxLength = length
+    })
+    column.width = Math.min(maxLength + 2, 40)
   })
-  downloadBlob(blob, `${fileNamePrefix}.xlsx`)
+  const buffer = await workbook.xlsx.writeBuffer()
+  downloadBlob(excelBufferToBlob(buffer), `${fileNamePrefix}.xlsx`)
 }
 
 function downloadBlob(blob: Blob, filename: string) {

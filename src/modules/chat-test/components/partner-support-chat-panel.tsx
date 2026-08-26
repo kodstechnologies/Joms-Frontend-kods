@@ -7,6 +7,7 @@ import {
   type SupportChatState,
   type SupportTicket,
 } from '../api/support.api'
+import { SupportAvatar } from '../../support-management/components/support-avatar'
 import { DEFAULT_SUPPORT_CATEGORIES } from '../config/support-backend'
 import { useSupportChatSocket } from '../hooks/use-support-chat-socket'
 
@@ -318,9 +319,18 @@ export function PartnerSupportChatPanel({
   return (
     <div className="mx-auto max-w-md overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 shadow-xl">
       <header className="flex items-center gap-3 border-b border-zinc-800 px-4 py-3">
-        <div className="size-10 rounded-full bg-zinc-700" />
+        <SupportAvatar
+          name={ticket?.assignedTo || 'Support'}
+          src={ticket?.assignedToAvatarUrl}
+          sizeClassName="size-10"
+          fallback="icon"
+        />
         <div className="min-w-0 flex-1">
-          <h2 className="font-semibold text-zinc-100">Support</h2>
+          <h2 className="truncate font-semibold text-zinc-100">
+            {ticket?.assignedTo && ticket.assignedTo !== 'Unassigned'
+              ? ticket.assignedTo
+              : 'Support'}
+          </h2>
           <p className="flex items-center gap-2 text-xs text-zinc-400">
             <span
               className={`inline-block size-2 rounded-full ${connected && !closed ? 'bg-emerald-400' : 'bg-zinc-500'}`}

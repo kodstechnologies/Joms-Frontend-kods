@@ -4,6 +4,8 @@ type SupportAvatarProps = {
   name?: string
   src?: string | null
   sizeClassName?: string
+  /** `icon` = human logo when there is no photo (mobile chat / assigned agent). */
+  fallback?: 'initials' | 'icon'
 }
 
 const initialsFromName = (name = '') => {
@@ -14,24 +16,31 @@ const initialsFromName = (name = '') => {
   return `${first}${second}`.toUpperCase()
 }
 
-export function SupportAvatar({ name = '', src, sizeClassName = 'size-10' }: SupportAvatarProps) {
-  if (src) {
+export function SupportAvatar({
+  name = '',
+  src,
+  sizeClassName = 'size-10',
+  fallback = 'initials',
+}: SupportAvatarProps) {
+  const photo = String(src || '').trim()
+  if (photo) {
     return (
       <img
-        src={src}
+        src={photo}
         alt={name || 'Profile'}
         className={`${sizeClassName} shrink-0 rounded-full object-cover ring-1 ring-white/10`}
       />
     )
   }
 
-  const initials = initialsFromName(name)
+  const initials = fallback === 'icon' ? '' : initialsFromName(name)
 
   return (
     <div
       className={`${sizeClassName} text-body-sm-semibold text-brand-text/90 grid shrink-0 place-items-center rounded-full bg-white/10 ring-1 ring-white/10`}
+      aria-label={name || 'Support'}
     >
-      {initials || <UserRound className="size-4" />}
+      {initials || <UserRound className="text-brand-text/80 size-[55%]" />}
     </div>
   )
 }

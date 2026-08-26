@@ -151,10 +151,16 @@ export function PastTicketsPage() {
   const handleExportData = useMemo(() => {
     const fetchForExport = async (
       params: Record<string, unknown>,
-    ): Promise<{ data: SupportTicket[] }> => {
+    ): Promise<{
+      data: SupportTicket[]
+      meta?: { page: number; limit: number; total: number; totalPages: number }
+    }> => {
       if (!userId) return { data: [] }
       const result = await fetchPastTickets(userId, params)
-      return { data: result.data?.tickets ?? [] }
+      return {
+        data: result.data?.tickets ?? [],
+        meta: result.data?.meta,
+      }
     }
     return createSupportTicketsFilteredExportHandler(
       fetchForExport,

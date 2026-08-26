@@ -49,7 +49,6 @@ import {
   useActiveMetricIds,
 } from '@/modules/expert/hooks/use-active-metric-ids'
 import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
-import { fetchSupportTickets } from '../api/support-api'
 import { DataTable } from '@/shared/components/table/data-table'
 import {
   TableActionsDropdown,
@@ -59,11 +58,12 @@ import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 import type { FilterValues } from '@/shared/types/data-filter'
-import { exportDisplayValue } from '@/shared/utils/export-utils'
+import { exportDataToFile, exportDisplayValue } from '@/shared/utils/export-utils'
 import {
   buildSupportTicketsListQueryParams,
   createSupportTicketsFilteredExportHandler,
 } from '@/shared/utils/export-filter-utils'
+import { fetchSupportTickets } from '../api/support-api'
 
 const TABS: { key: TicketTab; label: string }[] = [
   { key: 'my_tickets', label: 'My Tickets' },
@@ -151,6 +151,7 @@ export function TicketManagementPage() {
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [activeTicketId, setActiveTicketId] = useState<string | null>(null)
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
+  const [isExportingMetrics, setIsExportingMetrics] = useState(false)
 
   const listQueryParams = useMemo(
     () =>
@@ -213,14 +214,18 @@ export function TicketManagementPage() {
     [setCurrentPage],
   )
 
-  const handleExportData = useMemo(() => {
+  const handleExportTickets = useMemo(() => {
     const fetchForExport = async (params: Record<string, unknown>) => {
       const result = await fetchSupportTickets({
         ...params,
         tab: activeTab,
         includeClosed: true,
       })
-      return { data: result.data?.tickets ?? [] }
+      return {
+        data: result.data?.tickets ?? [],
+        meta: result.data?.meta,
+        pagination: result.data?.pagination,
+      }
     }
     return createSupportTicketsFilteredExportHandler(
       fetchForExport,
@@ -233,12 +238,38 @@ export function TicketManagementPage() {
   const {
     onAdvancedFilter,
     onExport,
+    isExporting,
     modals: exportFilterModals,
   } = useModuleExportFilters({
     moduleKey: 'support-tickets',
     onApplyFilters: handleApplyFilters,
-    onExportData: handleExportData,
+    onExportData: handleExportTickets,
   })
+
+  const handleExportMetrics = useCallback(async () => {
+    if (isExportingMetrics) return
+    setIsExportingMetrics(true)
+    try {
+      if (!stats.length) {
+        toast.error('No metrics found to export')
+        return
+      }
+
+      const headers = ['Metric', 'Value', 'Change vs Last Month']
+      const rows = stats.map((stat) => [
+        stat.title,
+        stat.value,
+        `${stat.direction === 'up' ? '+' : ''}${stat.percentage}%`,
+      ])
+      const date = new Date().toISOString().slice(0, 10)
+      await exportDataToFile(headers, rows, 'excel', `ticket_management_metrics_${date}`)
+      toast.success('Ticket metrics exported to Excel')
+    } catch {
+      toast.error('Failed to export ticket metrics')
+    } finally {
+      setIsExportingMetrics(false)
+    }
+  }, [isExportingMetrics, stats])
 
   const renderActions = useCallback(
     (record: SupportTicket) => {
@@ -435,11 +466,12 @@ export function TicketManagementPage() {
           <Button
             type="button"
             variant="primary"
-            onClick={onExport}
+            onClick={() => void handleExportMetrics()}
+            disabled={isExportingMetrics}
             className="ui-export-data ui-cta ui-cta-primary"
           >
             <Upload className="icon-sm shrink-0" aria-hidden="true" />
-            Export Data
+            {isExportingMetrics ? 'Exporting...' : 'Export Data'}
           </Button>
           <button
             type="button"
@@ -503,6 +535,7 @@ export function TicketManagementPage() {
         onAdvancedFilter={onAdvancedFilter}
         advancedFilterVariant="primary"
         onExport={onExport}
+        isExporting={isExporting}
         isLoading={isLoading}
         pagination={{
           page: currentPage,

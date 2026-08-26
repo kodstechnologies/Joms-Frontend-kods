@@ -396,7 +396,7 @@ export function createFilteredExportHandler<T>(
     const headers = exportCols.map((c) => c.header)
     const rows = items.map((item) => exportCols.map((c) => c.accessor(item)))
 
-    exportDataToFile(headers, rows, format, fileName)
+    await exportDataToFile(headers, rows, format, fileName)
   }
 }
 
@@ -421,7 +421,7 @@ export function createServiceFilteredExportHandler<T>(
     const headers = exportCols.map((c) => c.header)
     const rows = items.map((item) => exportCols.map((c) => c.accessor(item)))
 
-    exportDataToFile(headers, rows, format, fileName)
+    await exportDataToFile(headers, rows, format, fileName)
   }
 }
 
@@ -537,7 +537,7 @@ export function createCategoryFilteredExportHandler<T>(
     const headers = exportCols.map((c) => c.header)
     const rows = items.map((item) => exportCols.map((c) => c.accessor(item)))
 
-    exportDataToFile(headers, rows, format, fileName)
+    await exportDataToFile(headers, rows, format, fileName)
   }
 }
 
@@ -646,7 +646,7 @@ export function createVenueFilteredExportHandler<T>(
     const headers = exportCols.map((c) => c.header)
     const rows = items.map((item) => exportCols.map((c) => c.accessor(item)))
 
-    exportDataToFile(headers, rows, format, fileName)
+    await exportDataToFile(headers, rows, format, fileName)
   }
 }
 
@@ -699,7 +699,7 @@ export function createVenueCategoryFilteredExportHandler<T>(
     const headers = exportCols.map((c) => c.header)
     const rows = items.map((item) => exportCols.map((c) => c.accessor(item)))
 
-    exportDataToFile(headers, rows, format, fileName)
+    await exportDataToFile(headers, rows, format, fileName)
   }
 }
 
@@ -795,7 +795,7 @@ export function createCommunicationFilteredExportHandler<T>(
     const headers = exportCols.map((c) => c.header)
     const rows = items.map((item) => exportCols.map((c) => c.accessor(item)))
 
-    exportDataToFile(headers, rows, format, fileName)
+    await exportDataToFile(headers, rows, format, fileName)
   }
 }
 
@@ -892,7 +892,7 @@ export function createReferralFilteredExportHandler<T>(
     const headers = exportCols.map((c) => c.header)
     const rows = items.map((item) => exportCols.map((c) => c.accessor(item)))
 
-    exportDataToFile(headers, rows, format, fileName)
+    await exportDataToFile(headers, rows, format, fileName)
   }
 }
 
@@ -986,7 +986,7 @@ export function createRevenueFilteredExportHandler<T>(
     const headers = exportCols.map((c) => c.header)
     const rows = items.map((item) => exportCols.map((c) => c.accessor(item)))
 
-    exportDataToFile(headers, rows, format, fileName)
+    await exportDataToFile(headers, rows, format, fileName)
   }
 }
 
@@ -1066,7 +1066,7 @@ export function createFinanceServicesFilteredExportHandler<T>(
     const headers = exportCols.map((c) => c.header)
     const rows = items.map((item) => exportCols.map((c) => c.accessor(item)))
 
-    exportDataToFile(headers, rows, format, fileName)
+    await exportDataToFile(headers, rows, format, fileName)
   }
 }
 
@@ -1131,7 +1131,7 @@ export function createFinanceVenuesFilteredExportHandler<T>(
     const headers = exportCols.map((c) => c.header)
     const rows = items.map((item) => exportCols.map((c) => c.accessor(item)))
 
-    exportDataToFile(headers, rows, format, fileName)
+    await exportDataToFile(headers, rows, format, fileName)
   }
 }
 
@@ -1159,7 +1159,7 @@ function createFinanceExportHandler(
       const items: T[] = Array.isArray(result) ? result : ((result as { data?: T[] }).data ?? [])
       if (items.length === 0) throw new Error('NO_RECORDS')
       const exportCols = Object.values(columnMap)
-      exportDataToFile(
+      await exportDataToFile(
         exportCols.map((col) => col.header),
         items.map((item) => exportCols.map((col) => col.accessor(item))),
         format,
@@ -1330,9 +1330,43 @@ export function buildSupportTicketsListQueryParams(
   return { ...params, ...rest }
 }
 
-export const createSupportTicketsFilteredExportHandler = createFinanceExportHandler(
-  buildSupportTicketsListQueryParams,
-)
+export function createSupportTicketsFilteredExportHandler<T>(
+  fetchFn: (params: Record<string, unknown>) => Promise<PaginatedExportResult<T> | T[]>,
+  columnMap: Record<string, { header: string; accessor: (item: T) => string }>,
+  fileName: string,
+  baseParams: Record<string, unknown> = {},
+) {
+  return async (values: FilterValues, format: string): Promise<void> => {
+    const filterParams = buildSupportTicketsListQueryParams(values, baseParams)
+    const items: T[] = []
+    let page = 1
+    let totalPages = 1
+
+    while (page <= totalPages) {
+      const result = await fetchFn({
+        ...filterParams,
+        page,
+        limit: EXPORT_PAGE_SIZE,
+      })
+      const extracted = extractExportPage<T>(result)
+      items.push(...extracted.items)
+      totalPages = Math.min(extracted.pages, EXPORT_MAX_PAGES)
+      page += 1
+    }
+
+    if (items.length === 0) {
+      throw new Error('NO_RECORDS')
+    }
+
+    const exportCols = Object.values(columnMap)
+    await exportDataToFile(
+      exportCols.map((col) => col.header),
+      items.map((item) => exportCols.map((col) => col.accessor(item))),
+      format,
+      fileName,
+    )
+  }
+}
 
 export const buildRbacListQueryParams = buildPrefixedListQueryParams
 export const createRbacFilteredExportHandler = createPrefixedListExportHandler
@@ -1441,7 +1475,7 @@ export function createClientFilteredExportHandler<T>(
     const items = getRows(values)
     if (items.length === 0) throw new Error('NO_RECORDS')
     const exportCols = Object.values(columnMap)
-    exportDataToFile(
+    await exportDataToFile(
       exportCols.map((col) => col.header),
       items.map((item) => exportCols.map((col) => col.accessor(item))),
       format,
