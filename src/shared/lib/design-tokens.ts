@@ -29,4 +29,8 @@ export const statusCardTones = {
     background: 'ui-status-card-tone-danger',
     border: '',
   },
+  neutral: {
+    background: 'ui-status-card-tone-danger',
+    border: '',
+  },
 } as const

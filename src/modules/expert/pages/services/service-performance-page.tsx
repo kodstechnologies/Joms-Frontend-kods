@@ -207,6 +207,7 @@ export function ServicePerformancePage() {
     () => ({
       'order-id': {
         id: 'order-id',
+        accessorKey: 'orderId',
         header: 'Order ID',
         cell: ({ row }) => (
           <span className="ui-table-id text-muted font-mono text-xs uppercase">
@@ -216,6 +217,7 @@ export function ServicePerformancePage() {
       },
       'client-id': {
         id: 'client-id',
+        accessorKey: 'clientId',
         header: 'Client ID',
         cell: ({ row }) => (
           <span className="ui-table-id text-muted font-mono text-xs uppercase">
@@ -225,6 +227,7 @@ export function ServicePerformancePage() {
       },
       'client-name': {
         id: 'client-name',
+        accessorKey: 'clientName',
         header: 'Name',
         cell: ({ row }) => (
           <span className="font-medium text-white">{row.original.clientName || DASH}</span>
@@ -232,6 +235,7 @@ export function ServicePerformancePage() {
       },
       'listing-type': {
         id: 'listing-type',
+        accessorFn: (row) => listingTypeLabel(row),
         header: 'Listing Type',
         cell: ({ row }) => (
           <span className="text-sm text-white">{listingTypeLabel(row.original)}</span>
@@ -239,11 +243,13 @@ export function ServicePerformancePage() {
       },
       'order-status': {
         id: 'order-status',
+        accessorKey: 'orderStatus',
         header: 'Status',
         cell: ({ row }) => <StatusPill status={row.original.orderStatus} />,
       },
       'pricing-type': {
         id: 'pricing-type',
+        accessorKey: 'pricingType',
         header: 'Pricing Type',
         cell: ({ row }) => (
           <span className="text-sm text-white">{titleCase(row.original.pricingType)}</span>
@@ -251,6 +257,7 @@ export function ServicePerformancePage() {
       },
       'client-source': {
         id: 'client-source',
+        accessorKey: 'clientSource',
         header: 'Client Source',
         cell: ({ row }) => (
           <span className="text-muted text-sm">{row.original.clientSource || DASH}</span>
@@ -258,6 +265,7 @@ export function ServicePerformancePage() {
       },
       'client-phone': {
         id: 'client-phone',
+        accessorKey: 'clientPhone',
         header: 'Client Phone',
         cell: ({ row }) => (
           <span className="text-muted text-sm">{row.original.clientPhone || DASH}</span>
@@ -265,6 +273,7 @@ export function ServicePerformancePage() {
       },
       'ordered-at': {
         id: 'ordered-at',
+        accessorKey: 'orderedAt',
         header: 'Ordered At',
         cell: ({ row }) => (
           <span className="text-muted text-xs">{formatDate(row.original.orderedAt)}</span>
@@ -272,6 +281,7 @@ export function ServicePerformancePage() {
       },
       'start-date': {
         id: 'start-date',
+        accessorKey: 'startDate',
         header: 'Start Date',
         cell: ({ row }) => (
           <span className="text-muted text-xs">{formatDateTime(row.original.startDate)}</span>
@@ -279,6 +289,7 @@ export function ServicePerformancePage() {
       },
       'end-date': {
         id: 'end-date',
+        accessorKey: 'endDate',
         header: 'End Date',
         cell: ({ row }) => (
           <span className="text-muted text-xs">{formatDateTime(row.original.endDate)}</span>
@@ -286,6 +297,7 @@ export function ServicePerformancePage() {
       },
       'delivery-duration': {
         id: 'delivery-duration',
+        accessorKey: 'deliveryDuration',
         header: 'Delivery Duration',
         cell: ({ row }) => (
           <span className="text-muted text-sm">{row.original.deliveryDuration || DASH}</span>
@@ -293,6 +305,7 @@ export function ServicePerformancePage() {
       },
       price: {
         id: 'price',
+        accessorKey: 'price',
         header: 'Price',
         cell: ({ row }) => (
           <span className="font-semibold text-white">
@@ -302,6 +315,7 @@ export function ServicePerformancePage() {
       },
       'payment-id': {
         id: 'payment-id',
+        accessorKey: 'paymentId',
         header: 'Payment ID',
         cell: ({ row }) => (
           <span className="ui-table-id text-muted font-mono text-xs">
@@ -311,6 +325,7 @@ export function ServicePerformancePage() {
       },
       'payment-method': {
         id: 'payment-method',
+        accessorKey: 'paymentMethod',
         header: 'Payment Method',
         cell: ({ row }) => (
           <span className="text-muted text-sm">
@@ -320,6 +335,7 @@ export function ServicePerformancePage() {
       },
       'transaction-id': {
         id: 'transaction-id',
+        accessorKey: 'transactionId',
         header: 'Transaction ID',
         cell: ({ row }) => (
           <span className="ui-table-id text-muted font-mono text-xs">
@@ -329,6 +345,7 @@ export function ServicePerformancePage() {
       },
       rating: {
         id: 'rating',
+        accessorKey: 'rating',
         header: 'Rating',
         cell: ({ row }) => (
           <span className="text-muted text-sm">
@@ -338,6 +355,7 @@ export function ServicePerformancePage() {
       },
       'payout-status': {
         id: 'payout-status',
+        accessorKey: 'payoutStatus',
         header: 'Payout Status',
         cell: ({ row }) =>
           row.original.payoutStatus ? (
@@ -351,6 +369,7 @@ export function ServicePerformancePage() {
       },
       disputed: {
         id: 'disputed',
+        accessorKey: 'disputed',
         header: 'Disputed',
         cell: ({ row }) => (
           <span className="text-muted text-sm">{row.original.disputed ? 'Yes' : 'No'}</span>
@@ -358,6 +377,7 @@ export function ServicePerformancePage() {
       },
       'dispute-period-lapsed': {
         id: 'dispute-period-lapsed',
+        accessorKey: 'disputePeriodLapsed',
         header: 'Dispute Period Lapsed',
         cell: ({ row }) => (
           <span className="text-muted text-sm">
@@ -371,6 +391,7 @@ export function ServicePerformancePage() {
       },
       'dispute-end-date': {
         id: 'dispute-end-date',
+        accessorKey: 'disputeEndDate',
         header: 'Dispute End Date',
         cell: ({ row }) => (
           <span className="text-muted text-xs">{formatDate(row.original.disputeEndDate)}</span>
@@ -378,6 +399,7 @@ export function ServicePerformancePage() {
       },
       'dispute-raised-at': {
         id: 'dispute-raised-at',
+        accessorKey: 'disputeRaisedAt',
         header: 'Dispute Raised At',
         cell: ({ row }) => (
           <span className="text-muted text-xs">{formatDate(row.original.disputeRaisedAt)}</span>
@@ -385,6 +407,7 @@ export function ServicePerformancePage() {
       },
       'dispute-ticket-id': {
         id: 'dispute-ticket-id',
+        accessorFn: (row) => row.disputeId || row.supportTicketId || '',
         header: 'Dispute / Ticket ID',
         cell: ({ row }) => (
           <span className="ui-table-id text-muted font-mono text-xs">
@@ -394,6 +417,7 @@ export function ServicePerformancePage() {
       },
       'refund-issued': {
         id: 'refund-issued',
+        accessorKey: 'refundIssued',
         header: 'Refund Issued',
         cell: ({ row }) => (
           <span className="text-muted text-sm">{row.original.refundIssued ? 'Yes' : 'No'}</span>
@@ -401,6 +425,7 @@ export function ServicePerformancePage() {
       },
       'refund-amount': {
         id: 'refund-amount',
+        accessorKey: 'refundAmount',
         header: 'Refund Amount',
         cell: ({ row }) => (
           <span className="text-muted text-sm">
@@ -412,6 +437,7 @@ export function ServicePerformancePage() {
       },
       'refund-status': {
         id: 'refund-status',
+        accessorKey: 'refundStatus',
         header: 'Refund Status',
         cell: ({ row }) =>
           row.original.refundStatus ? (
@@ -422,6 +448,7 @@ export function ServicePerformancePage() {
       },
       'refunded-at': {
         id: 'refunded-at',
+        accessorKey: 'refundedAt',
         header: 'Refunded At',
         cell: ({ row }) => (
           <span className="text-muted text-xs">{formatDate(row.original.refundedAt)}</span>

@@ -86,6 +86,15 @@ export function ExecutiveOverviewPage() {
     boxShadow: '0 20px 50px rgba(0,0,0,0.4)',
   }
 
+  const handleRefresh = async () => {
+    try {
+      await overviewQuery.refetch()
+      toast.success('Executive overview refreshed')
+    } catch {
+      toast.error('Failed to refresh overview')
+    }
+  }
+
   const handleExport = async () => {
     if (!payload) {
       toast.error('Overview data is not ready to export')
@@ -139,6 +148,8 @@ export function ExecutiveOverviewPage() {
           title="Revenue & Member Growth"
           description="Monthly trendlines across revenue and new member acquisition"
           isLoading={isLoading}
+          refreshing={overviewQuery.isFetching}
+          onRefresh={handleRefresh}
           isEmpty={!revenueMemberGrowth.length}
         >
           <div className="h-[220px] min-h-[220px] w-full sm:h-[260px]">
@@ -187,6 +198,8 @@ export function ExecutiveOverviewPage() {
           title="Membership Trends"
           description="Active, expired, and new membership movement"
           isLoading={isLoading}
+          refreshing={overviewQuery.isFetching}
+          onRefresh={handleRefresh}
           isEmpty={!membershipTrends.length}
         >
           <div className="h-[220px] min-h-[220px] w-full sm:h-[260px]">
@@ -222,6 +235,8 @@ export function ExecutiveOverviewPage() {
           title="Conversion Funnel"
           description="User journey from sign up to paid membership"
           isLoading={isLoading}
+          refreshing={overviewQuery.isFetching}
+          onRefresh={handleRefresh}
           isEmpty={!conversionFunnel.length}
         >
           <div className="h-[220px] min-h-[220px] w-full sm:h-[260px]">
@@ -253,9 +268,11 @@ export function ExecutiveOverviewPage() {
         </ChartCard>
 
         <ChartCard
-          title="Service type distribution"
+          title="Service Type Distribution"
           description="Distribution by service type engagement"
           isLoading={isLoading}
+          refreshing={overviewQuery.isFetching}
+          onRefresh={handleRefresh}
           isEmpty={!serviceDistribution.length}
         >
           <div className="h-[220px] min-h-[220px] w-full sm:h-[260px]">

@@ -16,7 +16,7 @@ import {
   Bell,
   Mail,
   FileText,
-  CircleOff,
+  XCircle,
   EyeOff,
   TrendingUp,
   type LucideIcon,
@@ -93,17 +93,68 @@ type ManagementMetric = {
   note?: string
 }
 
+import {
+  DEFAULT_VENUE_MANAGEMENT_ACTIVE_METRIC_IDS,
+  DEFAULT_VENUE_MANAGEMENT_VISIBLE_COLUMN_IDS,
+} from '@/modules/expert/config/venue-management-table-columns.config'
+
 const EXPORT_COLUMN_MAP: Record<string, { header: string; accessor: (v: Venue) => string }> = {
   'venue-id': { header: 'Venue ID', accessor: (v) => exportDisplayValue(getVenueDisplayId(v)) },
   name: { header: 'Venue Name', accessor: (v) => exportDisplayValue(v.venueName) },
   category: { header: 'Venue Category', accessor: (v) => exportDisplayValue(v.venueCategory) },
+  'venue-type': {
+    header: 'Venue Type',
+    accessor: (v) => exportDisplayValue(v.venueType || v.eventType),
+  },
+  'venue-rating': {
+    header: 'Venue Rating',
+    accessor: (v) => exportDisplayValue(v.venueRating ?? v.ratings),
+  },
+  'venue-location': {
+    header: 'Venue Location',
+    accessor: (v) => exportDisplayValue(v.venueLocation),
+  },
+  status: { header: 'Venue Status', accessor: (v) => exportDisplayValue(v.status) },
   'space-id': {
     header: 'Space ID',
     accessor: (v) => exportDisplayValue(getVenueDisplaySpaceId(v)),
   },
   'space-name': { header: 'Space Name', accessor: (v) => exportDisplayValue(v.spaceName) },
-  status: { header: 'Status', accessor: (v) => exportDisplayValue(v.status) },
-  'event-type': { header: 'Event Type', accessor: (v) => exportDisplayValue(v.eventType) },
+  'space-category': {
+    header: 'Space Category',
+    accessor: (v) => exportDisplayValue(v.spaceCategory),
+  },
+  'space-location': {
+    header: 'Space Location',
+    accessor: (v) => exportDisplayValue(v.spaceLocation),
+  },
+  'space-type': { header: 'Space Type', accessor: (v) => exportDisplayValue(v.spaceType) },
+  'space-status': { header: 'Space Status', accessor: (v) => exportDisplayValue(v.spaceStatus) },
+  'space-price': { header: 'Space Price', accessor: (v) => exportDisplayValue(v.spacePrice) },
+  'space-rating': { header: 'Space Rating', accessor: (v) => exportDisplayValue(v.spaceRating) },
+  revenue: { header: 'Revenue', accessor: (v) => exportDisplayValue(v.revenue) },
+  city: { header: 'City', accessor: (v) => exportDisplayValue(v.city) },
+  'events-hosted': {
+    header: 'Number of Events Hosted',
+    accessor: (v) => exportDisplayValue(v.eventsHosted),
+  },
+  'meetups-hosted': {
+    header: 'Number of Meetups Hosted',
+    accessor: (v) => exportDisplayValue(v.meetupsHosted),
+  },
+  'repeat-booking-rate': {
+    header: 'Repeat Booking Rate',
+    accessor: (v) => exportDisplayValue(v.repeatBookingRate),
+  },
+  'space-utilization': {
+    header: 'Space Utilization %',
+    accessor: (v) => exportDisplayValue(v.spaceUtilization),
+  },
+  'venue-nps': { header: 'Venue NPS', accessor: (v) => exportDisplayValue(v.venueNps) },
+  'host-cancellation-rate': {
+    header: 'Host Cancellation Rate',
+    accessor: (v) => exportDisplayValue(v.hostCancellationRate),
+  },
   'created-at': {
     header: 'Created At',
     accessor: (v) =>
@@ -117,18 +168,24 @@ const EXPORT_COLUMN_MAP: Record<string, { header: string; accessor: (v: Venue) =
           })
         : '',
   },
+  'last-updated-at': {
+    header: 'Last Updated At',
+    accessor: (v) => {
+      const d = v.lastUpdatedAt || v.updatedAt
+      return d
+        ? new Date(d).toLocaleString('en-IN', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+          })
+        : ''
+    },
+  },
 }
 
-const DEFAULT_VISIBLE_IDS = [
-  'venue-id',
-  'name',
-  'category',
-  'space-id',
-  'space-name',
-  'status',
-  'event-type',
-  'created-at',
-]
+const DEFAULT_VISIBLE_IDS = DEFAULT_VENUE_MANAGEMENT_VISIBLE_COLUMN_IDS
 
 const ACTION_ITEM_CLASS = 'text-slate-800 hover:bg-slate-100 hover:text-slate-900'
 
@@ -721,18 +778,7 @@ export const VenueManagementPage = () => {
     deletedVenues: meta?.counts?.deletedVenues ?? 0,
   }
 
-  const defaultMetricIds = useMemo(
-    () => [
-      'total-venues-listed',
-      'active-venues',
-      'total-bookings',
-      'completed-bookings',
-      'cancellation-pct',
-      'total-revenue',
-      'avg-venue-ratings',
-    ],
-    [],
-  )
+  const defaultMetricIds = useMemo(() => DEFAULT_VENUE_MANAGEMENT_ACTIVE_METRIC_IDS, [])
   const activeMetricIds = useActiveMetricIds(VENUE_MANAGEMENT_MODULE_KEY, defaultMetricIds)
 
   const managementMetricsQuery = useVenueManagementMetrics()
@@ -742,13 +788,12 @@ export const VenueManagementPage = () => {
     () => [
       { id: 'total-venues-listed', label: 'Total Venues Listed', value: '0' },
       { id: 'active-venues', label: 'Active Venues', value: '0' },
+      { id: 'pending-venues', label: 'Pending Venues', value: '0' },
       { id: 'total-bookings', label: 'Total Bookings', value: '0' },
       { id: 'completed-bookings', label: 'Completed Bookings', value: '0' },
       { id: 'cancellation-pct', label: 'Cancellation %', value: '0%' },
       { id: 'total-revenue', label: 'Total Revenue', value: '₹0' },
       { id: 'avg-venue-ratings', label: 'Avg. Venue Ratings', value: '0/5' },
-      { id: 'pending-venues', label: 'Pending Venues', value: '0' },
-      { id: 'avg-booking-value', label: 'Avg. Booking Value', value: '₹0' },
     ],
     [],
   )
@@ -809,15 +854,15 @@ export const VenueManagementPage = () => {
       count: counts.rejectedVenues,
       gradient: statusCardTones.danger.background,
       border: statusCardTones.danger.border,
-      icon: CircleOff,
-      href: '/venues/management/rejected',
+      icon: XCircle,
+      href: '/venues/management',
     },
     {
       id: 'deleted-venues',
       label: 'Deleted Venues',
       count: counts.deletedVenues,
-      gradient: statusCardTones.danger.background,
-      border: statusCardTones.danger.border,
+      gradient: statusCardTones.neutral.background,
+      border: statusCardTones.neutral.border,
       icon: Trash2,
       href: '/venues/management/deleted',
     },
@@ -866,12 +911,67 @@ export const VenueManagementPage = () => {
         id: 'name',
         accessorKey: 'venueName',
         header: 'Venue Name',
-        cell: ({ row }) => <span className="font-medium text-white">{row.original.venueName}</span>,
+        cell: ({ row }) => (
+          <span className="font-medium text-white">{row.original.venueName || '—'}</span>
+        ),
       },
       category: {
         id: 'category',
         accessorKey: 'venueCategory',
         header: 'Venue Category',
+        cell: ({ row }) => (
+          <span className="text-slate-300">{row.original.venueCategory || '—'}</span>
+        ),
+      },
+      'venue-type': {
+        id: 'venue-type',
+        accessorKey: 'venueType',
+        header: 'Venue Type',
+        cell: ({ row }) => (
+          <span className="text-slate-300">
+            {row.original.venueType || row.original.eventType || '—'}
+          </span>
+        ),
+      },
+      'venue-rating': {
+        id: 'venue-rating',
+        accessorKey: 'venueRating',
+        header: 'Venue Rating',
+        cell: ({ row }) => {
+          const rating = row.original.venueRating ?? row.original.ratings
+          return rating ? (
+            <span className="inline-flex items-center gap-1 font-medium text-amber-400">
+              ★ {rating}
+            </span>
+          ) : (
+            '—'
+          )
+        },
+      },
+      'venue-location': {
+        id: 'venue-location',
+        accessorKey: 'venueLocation',
+        header: 'Venue Location',
+        cell: ({ row }) => (
+          <span
+            className="block max-w-[200px] truncate text-slate-300"
+            title={row.original.venueLocation}
+          >
+            {row.original.venueLocation || '—'}
+          </span>
+        ),
+      },
+      status: {
+        id: 'status',
+        accessorKey: 'status',
+        header: 'Venue Status',
+        cell: ({ row }) => {
+          const { label, className } = getManagementStatusDisplay(row.original.status, {
+            isSuspend: row.original.isSuspend,
+          })
+
+          return <span className={className}>{label}</span>
+        },
       },
       'space-id': {
         id: 'space-id',
@@ -887,28 +987,143 @@ export const VenueManagementPage = () => {
         header: 'Space Name',
         cell: ({ row }) => row.original.spaceName || '—',
       },
-      status: {
-        id: 'status',
-        accessorKey: 'status',
-        header: 'Status',
+      'space-category': {
+        id: 'space-category',
+        accessorKey: 'spaceCategory',
+        header: 'Space Category',
+        cell: ({ row }) => (
+          <span className="text-slate-300">{row.original.spaceCategory || '—'}</span>
+        ),
+      },
+      'space-location': {
+        id: 'space-location',
+        accessorKey: 'spaceLocation',
+        header: 'Space Location',
+        cell: ({ row }) => (
+          <span
+            className="block max-w-[180px] truncate text-slate-300"
+            title={row.original.spaceLocation}
+          >
+            {row.original.spaceLocation || '—'}
+          </span>
+        ),
+      },
+      'space-type': {
+        id: 'space-type',
+        accessorKey: 'spaceType',
+        header: 'Space Type',
+        cell: ({ row }) => <span className="text-slate-300">{row.original.spaceType || '—'}</span>,
+      },
+      'space-status': {
+        id: 'space-status',
+        accessorKey: 'spaceStatus',
+        header: 'Space Status',
         cell: ({ row }) => {
-          const { label, className } = getManagementStatusDisplay(row.original.status, {
-            isSuspend: row.original.isSuspend,
-          })
-
+          const status = row.original.spaceStatus || 'active'
+          const { label, className } = getManagementStatusDisplay(status, {})
           return <span className={className}>{label}</span>
         },
       },
-      'event-type': {
-        id: 'event-type',
-        accessorKey: 'eventType',
-        header: 'Event Type',
+      'space-price': {
+        id: 'space-price',
+        accessorKey: 'spacePrice',
+        header: 'Space Price',
+        cell: ({ row }) => {
+          const price = row.original.spacePrice
+          return price != null ? `₹${Number(price).toLocaleString('en-IN')}` : '—'
+        },
+      },
+      'space-rating': {
+        id: 'space-rating',
+        accessorKey: 'spaceRating',
+        header: 'Space Rating',
+        cell: ({ row }) => {
+          const rating = row.original.spaceRating
+          return rating ? (
+            <span className="inline-flex items-center gap-1 font-medium text-amber-400">
+              ★ {rating}
+            </span>
+          ) : (
+            '—'
+          )
+        },
+      },
+      revenue: {
+        id: 'revenue',
+        accessorKey: 'revenue',
+        header: 'Revenue',
+        cell: ({ row }) => {
+          const rev = row.original.revenue
+          return rev != null ? `₹${Number(rev).toLocaleString('en-IN')}` : '₹0'
+        },
+      },
+      city: {
+        id: 'city',
+        accessorKey: 'city',
+        header: 'City',
+        cell: ({ row }) => row.original.city || '—',
+      },
+      'events-hosted': {
+        id: 'events-hosted',
+        accessorKey: 'eventsHosted',
+        header: 'Number of Events Hosted',
+        cell: ({ row }) => row.original.eventsHosted ?? '0',
+      },
+      'meetups-hosted': {
+        id: 'meetups-hosted',
+        accessorKey: 'meetupsHosted',
+        header: 'Number of Meetups Hosted',
+        cell: ({ row }) => row.original.meetupsHosted ?? '0',
+      },
+      'repeat-booking-rate': {
+        id: 'repeat-booking-rate',
+        accessorKey: 'repeatBookingRate',
+        header: 'Repeat Booking Rate',
+        cell: ({ row }) => {
+          const rate = row.original.repeatBookingRate
+          return rate != null ? `${rate}%` : '—'
+        },
+      },
+      'space-utilization': {
+        id: 'space-utilization',
+        accessorKey: 'spaceUtilization',
+        header: 'Space Utilization %',
+        cell: ({ row }) => {
+          const rate = row.original.spaceUtilization
+          return rate != null ? `${rate}%` : '—'
+        },
+      },
+      'venue-nps': {
+        id: 'venue-nps',
+        accessorKey: 'venueNps',
+        header: 'Venue NPS',
+        cell: ({ row }) => {
+          const nps = row.original.venueNps
+          return nps != null ? nps : '—'
+        },
+      },
+      'host-cancellation-rate': {
+        id: 'host-cancellation-rate',
+        accessorKey: 'hostCancellationRate',
+        header: 'Host Cancellation Rate',
+        cell: ({ row }) => {
+          const rate = row.original.hostCancellationRate
+          return rate != null ? `${rate}%` : '0%'
+        },
       },
       'created-at': {
         id: 'created-at',
         accessorKey: 'createdAt',
         header: 'Created At',
         cell: ({ row }) => <TableDateTimeCell value={row.original.createdAt} />,
+      },
+      'last-updated-at': {
+        id: 'last-updated-at',
+        accessorKey: 'lastUpdatedAt',
+        header: 'Last Updated At',
+        cell: ({ row }) => (
+          <TableDateTimeCell value={row.original.lastUpdatedAt || row.original.updatedAt} />
+        ),
       },
     }
 

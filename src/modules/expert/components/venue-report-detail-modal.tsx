@@ -26,6 +26,10 @@ export interface VenueReportItem {
   internalNotes?: string
   complianceReviewRequired?: boolean
   linkedSupportTicket?: string
+  escalatedBy?: string
+  escalationReason?: string
+  escalatedAt?: string
+  complianceStatus?: string
   createdAt?: string
   submittedAt?: string
 }

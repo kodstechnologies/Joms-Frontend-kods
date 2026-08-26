@@ -162,7 +162,7 @@ export const navigationConfig: NavItem[] = [
   },
   {
     key: 'referral',
-    label: 'Referral Management',
+    label: 'Referrals',
     icon: BadgePercent,
     permissionModule: 'referrals',
     to: '/referrals/management',

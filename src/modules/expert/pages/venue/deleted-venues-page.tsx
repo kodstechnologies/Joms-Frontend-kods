@@ -15,11 +15,10 @@ import {
 } from '@/shared/utils/export-filter-utils'
 import { fetchVenues } from '../../api/venue-api'
 
-import { formatDeletedAt } from '../../constants/soft-delete'
 import { useRestoreVenue, useVenues } from '../../hooks/use-venues'
 import { useVenueManagementControls } from '@/modules/settings/hooks/use-venue-public-settings'
 import type { Venue } from '../../type/venue'
-import { getVenueApiId, getVenueDisplayId, getVenueDisplaySpaceId } from '../../utils/venue-list'
+import { getVenueApiId, getVenueDisplayId } from '../../utils/venue-list'
 import { DataTable } from '@/shared/components/table/data-table'
 import {
   TableActionsDropdown,
@@ -27,15 +26,30 @@ import {
 } from '@/shared/components/table/table-actions-dropdown'
 import { Button } from '@/shared/components/ui/button'
 
+import { useTableColumnPreferences } from '../../hooks/use-ui-preferences'
+import {
+  VENUE_DELETED_MODULE_KEY,
+  DEFAULT_VENUE_DELETED_VISIBLE_COLUMN_IDS,
+} from '@/modules/expert/config/venue-management-table-columns.config'
+import { TableDateTimeCell } from '@/shared/components/table/table-datetime-cell'
+
 const EXPORT_COLUMN_MAP: Record<string, { header: string; accessor: (v: Venue) => string }> = {
-  venueId: { header: 'Venue ID', accessor: (v) => exportDisplayValue(getVenueDisplayId(v)) },
-  venueName: { header: 'Name', accessor: (v) => exportDisplayValue(v.venueName) },
-  eventType: { header: 'Venue Type', accessor: (v) => exportDisplayValue(v.eventType) },
-  spaceId: { header: 'Space ID', accessor: (v) => exportDisplayValue(getVenueDisplaySpaceId(v)) },
-  spaceName: { header: 'Space Name', accessor: (v) => exportDisplayValue(v.spaceName) },
-  reason: { header: 'Reason', accessor: (v) => exportDisplayValue(v.reason) },
-  venueCategory: { header: 'Event Type', accessor: (v) => exportDisplayValue(v.venueCategory) },
-  deletedAt: {
+  'deletion-id': {
+    header: 'Deletion ID',
+    accessor: (v) => exportDisplayValue(v.deletionId || `DEL-${getVenueDisplayId(v)}`),
+  },
+  'venue-id': { header: 'Venue ID', accessor: (v) => exportDisplayValue(getVenueDisplayId(v)) },
+  'venue-name': { header: 'Venue Name', accessor: (v) => exportDisplayValue(v.venueName) },
+  'deleted-by': {
+    header: 'Deleted By',
+    accessor: (v) => exportDisplayValue(v.deletedBy || 'Admin'),
+  },
+  'deletion-reason': {
+    header: 'Deletion Reason',
+    accessor: (v) => exportDisplayValue(v.deletionReason || v.reason || 'User Request'),
+  },
+  'admin-id': { header: 'Admin ID', accessor: (v) => exportDisplayValue(v.adminId || 'ADM-001') },
+  'deleted-at': {
     header: 'Deleted At',
     accessor: (v) =>
       v.deletedAt
@@ -48,6 +62,33 @@ const EXPORT_COLUMN_MAP: Record<string, { header: string; accessor: (v: Venue) =
           })
         : '',
   },
+  'escalated-by': {
+    header: 'Escalated By',
+    accessor: (v) => exportDisplayValue(v.escalatedBy || 'Admin'),
+  },
+  'escalation-reason': {
+    header: 'Escalation Reason',
+    accessor: (v) => exportDisplayValue(v.escalationReason || '—'),
+  },
+  'escalated-at': {
+    header: 'Escalated At',
+    accessor: (v) => {
+      const d = v.escalatedAt
+      return d
+        ? new Date(d).toLocaleString('en-IN', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+          })
+        : ''
+    },
+  },
+  'compliance-status': {
+    header: 'Compliance Status',
+    accessor: (v) => exportDisplayValue(v.complianceStatus || 'Archived'),
+  },
 }
 
 export function VenueDeletedPage() {
@@ -58,6 +99,8 @@ export function VenueDeletedPage() {
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [selectedVenueIds, setSelectedVenueIds] = useState<string[]>([])
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
+
+  const tableColumnPreferencesQuery = useTableColumnPreferences(VENUE_DELETED_MODULE_KEY)
 
   const venueQueryParams = useMemo(
     () =>
@@ -133,124 +176,193 @@ export function VenueDeletedPage() {
     [restoreVenueMutation],
   )
 
-  const columns = useMemo<ColumnDef<Venue>[]>(
-    () => [
-      {
-        id: 'select',
-        header: () => (
-          <input
-            type="checkbox"
-            aria-label="Select all deleted venues"
-            checked={allVisibleVenuesSelected}
-            ref={(input) => {
-              if (input)
-                input.indeterminate = someVisibleVenuesSelected && !allVisibleVenuesSelected
-            }}
-            onChange={toggleVisibleVenues}
-            className="rounded border-slate-700 bg-transparent"
-          />
-        ),
+  const columns = useMemo<ColumnDef<Venue>[]>(() => {
+    const selectColumn: ColumnDef<Venue> = {
+      id: 'select',
+      header: () => (
+        <input
+          type="checkbox"
+          aria-label="Select all deleted venues"
+          checked={allVisibleVenuesSelected}
+          ref={(input) => {
+            if (input) input.indeterminate = someVisibleVenuesSelected && !allVisibleVenuesSelected
+          }}
+          onChange={toggleVisibleVenues}
+          className="rounded border-slate-700 bg-transparent"
+        />
+      ),
+      cell: ({ row }) => (
+        <input
+          type="checkbox"
+          aria-label={`Select ${row.original.venueName}`}
+          checked={selectedVenueIds.includes(row.original._id)}
+          onChange={() => toggleVenueSelection(row.original._id)}
+          onClick={(event) => event.stopPropagation()}
+          className="rounded border-slate-700 bg-transparent"
+        />
+      ),
+      meta: { headerClassName: 'pl-5', cellClassName: 'pl-5' },
+    }
+
+    const dataColumnsById: Record<string, ColumnDef<Venue>> = {
+      'deletion-id': {
+        id: 'deletion-id',
+        accessorKey: 'deletionId',
+        header: 'Deletion ID',
         cell: ({ row }) => (
-          <input
-            type="checkbox"
-            aria-label={`Select ${row.original.venueName}`}
-            checked={selectedVenueIds.includes(row.original._id)}
-            onChange={() => toggleVenueSelection(row.original._id)}
-            onClick={(event) => event.stopPropagation()}
-            className="rounded border-slate-700 bg-transparent"
-          />
+          <span className="font-mono font-semibold text-[#E5B54E]">
+            {row.original.deletionId || `DEL-${getVenueDisplayId(row.original)}`}
+          </span>
         ),
-        meta: { headerClassName: 'pl-5', cellClassName: 'pl-5' },
       },
-      {
+      'venue-id': {
+        id: 'venue-id',
         accessorKey: 'venueid',
         header: 'Venue ID',
         cell: ({ row }) => (
           <span className="ui-table-id uppercase">{getVenueDisplayId(row.original)}</span>
         ),
       },
-      { accessorKey: 'venueName', header: 'Name' },
-      {
-        accessorKey: 'eventType',
-        header: 'Venue Type',
-        cell: ({ row }) => row.original.eventType || '—',
-      },
-      {
-        accessorKey: 'spaceid',
-        header: 'Space ID',
+      'venue-name': {
+        id: 'venue-name',
+        accessorKey: 'venueName',
+        header: 'Venue Name',
         cell: ({ row }) => (
-          <span className="ui-table-id">{getVenueDisplaySpaceId(row.original)}</span>
+          <span className="font-medium text-white">{row.original.venueName || '—'}</span>
         ),
       },
-      {
-        accessorKey: 'spaceName',
-        header: 'Space Name',
-        cell: ({ row }) => row.original.spaceName || '—',
+      'deleted-by': {
+        id: 'deleted-by',
+        accessorKey: 'deletedBy',
+        header: 'Deleted By',
+        cell: ({ row }) => (
+          <span className="text-slate-300">{row.original.deletedBy || 'Admin'}</span>
+        ),
       },
-      {
+      'deletion-reason': {
+        id: 'deletion-reason',
         accessorKey: 'reason',
-        header: 'Reason',
-        cell: ({ row }) => row.original.reason || '—',
+        header: 'Deletion Reason',
+        cell: ({ row }) => (
+          <span
+            className="block max-w-[200px] truncate text-slate-300"
+            title={row.original.deletionReason || row.original.reason || 'User Request'}
+          >
+            {row.original.deletionReason || row.original.reason || 'User Request'}
+          </span>
+        ),
       },
-      {
-        accessorKey: 'venueCategory',
-        header: 'Event Type',
-        cell: ({ row }) => row.original.venueCategory || '—',
+      'admin-id': {
+        id: 'admin-id',
+        accessorKey: 'adminId',
+        header: 'Admin ID',
+        cell: ({ row }) => <span className="ui-table-id">{row.original.adminId || 'ADM-001'}</span>,
       },
-      {
+      'deleted-at': {
+        id: 'deleted-at',
         accessorKey: 'deletedAt',
         header: 'Deleted At',
-        cell: ({ row }) => formatDeletedAt(row.original.deletedAt),
+        cell: ({ row }) =>
+          row.original.deletedAt ? (
+            <TableDateTimeCell value={row.original.deletedAt} />
+          ) : (
+            <span className="text-slate-400">—</span>
+          ),
       },
-      {
-        id: 'actions',
-        accessorFn: () => null,
-        header: 'Actions',
-        meta: { headerClassName: 'pr-5 text-right', cellClassName: 'relative pr-5 text-right' },
+      'escalated-by': {
+        id: 'escalated-by',
+        accessorKey: 'escalatedBy',
+        header: 'Escalated By',
+        cell: ({ row }) => (
+          <span className="text-slate-300">{row.original.escalatedBy || 'Admin'}</span>
+        ),
+      },
+      'escalation-reason': {
+        id: 'escalation-reason',
+        accessorKey: 'escalationReason',
+        header: 'Escalation Reason',
+        cell: ({ row }) => (
+          <span className="text-slate-300">{row.original.escalationReason || '—'}</span>
+        ),
+      },
+      'escalated-at': {
+        id: 'escalated-at',
+        accessorKey: 'escalatedAt',
+        header: 'Escalated At',
+        cell: ({ row }) =>
+          row.original.escalatedAt ? <TableDateTimeCell value={row.original.escalatedAt} /> : '—',
+      },
+      'compliance-status': {
+        id: 'compliance-status',
+        accessorKey: 'complianceStatus',
+        header: 'Compliance Status',
         cell: ({ row }) => {
-          const venue = row.original
-          const isOpen = activeDropdownId === venue._id
-
+          const status = row.original.complianceStatus || 'Archived'
           return (
-            <TableActionsDropdown
-              label={`Open actions for ${venue.venueName}`}
-              isOpen={isOpen}
-              onOpenChange={(open) => setActiveDropdownId(open ? venue._id : null)}
-              menuWidth={192}
-            >
-              <TableActionsItem
-                icon={<RotateCcw className="size-3.5" />}
-                onClick={() => {
-                  setActiveDropdownId(null)
-                  handleRestore(venue)
-                }}
-              >
-                Restore Venue
-              </TableActionsItem>
-              <TableActionsItem
-                icon={<Upload className="size-3.5" />}
-                onClick={() => {
-                  setActiveDropdownId(null)
-                  toast.message('Export Data is coming soon')
-                }}
-              >
-                Export Data
-              </TableActionsItem>
-            </TableActionsDropdown>
+            <span className="rounded-full border border-slate-700 bg-slate-800 px-2.5 py-0.5 text-xs font-semibold text-slate-300">
+              {status}
+            </span>
           )
         },
       },
-    ],
-    [
-      activeDropdownId,
-      allVisibleVenuesSelected,
-      handleRestore,
-      selectedVenueIds,
-      someVisibleVenuesSelected,
-      toggleVenueSelection,
-      toggleVisibleVenues,
-    ],
-  )
+    }
+
+    const visibleIds = tableColumnPreferencesQuery.data?.visibleColumnIds?.length
+      ? tableColumnPreferencesQuery.data.visibleColumnIds
+      : DEFAULT_VENUE_DELETED_VISIBLE_COLUMN_IDS
+
+    const preferenceColumns = visibleIds.map((id) => dataColumnsById[id]).filter(Boolean)
+
+    const actionsColumn: ColumnDef<Venue> = {
+      id: 'actions',
+      accessorFn: () => null,
+      header: 'Actions',
+      meta: { headerClassName: 'pr-5 text-right', cellClassName: 'relative pr-5 text-right' },
+      cell: ({ row }) => {
+        const venue = row.original
+        const isOpen = activeDropdownId === venue._id
+
+        return (
+          <TableActionsDropdown
+            label={`Open actions for ${venue.venueName}`}
+            isOpen={isOpen}
+            onOpenChange={(open) => setActiveDropdownId(open ? venue._id : null)}
+            menuWidth={192}
+          >
+            <TableActionsItem
+              icon={<RotateCcw className="size-3.5" />}
+              onClick={() => {
+                setActiveDropdownId(null)
+                handleRestore(venue)
+              }}
+            >
+              Restore Venue
+            </TableActionsItem>
+            <TableActionsItem
+              icon={<Upload className="size-3.5" />}
+              onClick={() => {
+                setActiveDropdownId(null)
+                toast.message('Export Data is coming soon')
+              }}
+            >
+              Export Data
+            </TableActionsItem>
+          </TableActionsDropdown>
+        )
+      },
+    }
+
+    return [selectColumn, ...preferenceColumns, actionsColumn]
+  }, [
+    activeDropdownId,
+    allVisibleVenuesSelected,
+    handleRestore,
+    selectedVenueIds,
+    someVisibleVenuesSelected,
+    tableColumnPreferencesQuery.data,
+    toggleVenueSelection,
+    toggleVisibleVenues,
+  ])
 
   return (
     <div className="flex flex-col gap-5 md:gap-6">
@@ -280,7 +392,7 @@ export function VenueDeletedPage() {
         <div className="flex w-full flex-col items-center gap-3 md:w-auto md:flex-row">
           <Button
             className="ui-manage-metrics h-9 w-full md:w-auto"
-            onClick={() => navigate('/venues/management/metrics?section=table')}
+            onClick={() => navigate('/metrics/venue-deleted?returnTo=/venues/management/deleted')}
           >
             <SlidersHorizontal className="size-4" />
             Manage Metrics

@@ -19,6 +19,15 @@ import {
   TableActionsItem,
 } from '@/shared/components/table/table-actions-dropdown'
 
+import { SlidersHorizontal } from 'lucide-react'
+import { Button } from '@/shared/components/ui/button'
+import { useTableColumnPreferences } from '../../hooks/use-ui-preferences'
+import {
+  VENUE_REPORTED_MODULE_KEY,
+  DEFAULT_VENUE_REPORTED_VISIBLE_COLUMN_IDS,
+} from '@/modules/expert/config/venue-management-table-columns.config'
+import { TableDateTimeCell } from '@/shared/components/table/table-datetime-cell'
+
 const formatExportDateTime = (value?: string | null) =>
   value
     ? new Date(value).toLocaleString('en-IN', {
@@ -34,29 +43,42 @@ const EXPORT_COLUMN_MAP: Record<
   string,
   { header: string; accessor: (item: VenueReportItem) => string }
 > = {
-  reportId: { header: 'Report ID', accessor: (item) => exportDisplayValue(item.reportId) },
-  venueName: {
-    header: 'Reported Venue',
+  'report-id': { header: 'Report ID', accessor: (item) => exportDisplayValue(item.reportId) },
+  'venue-id': { header: 'Venue ID', accessor: (item) => exportDisplayValue(item.venueId) },
+  'venue-name': {
+    header: 'Venue Name',
     accessor: (item) => exportDisplayValue(item.venueName),
   },
-  venueId: { header: 'Venue ID', accessor: (item) => exportDisplayValue(item.venueId) },
-  reporterName: {
+  'report-reason': {
+    header: 'Report Reason',
+    accessor: (item) => exportDisplayValue(item.reason || item.issueType),
+  },
+  'reported-by': {
     header: 'Reported By',
     accessor: (item) => exportDisplayValue(item.reporterName),
   },
-  reporterType: {
-    header: 'Reporter Type',
-    accessor: (item) => exportDisplayValue(item.reporterType),
-  },
-  issueType: { header: 'Issue Type', accessor: (item) => exportDisplayValue(item.issueType) },
-  reason: { header: 'Reason', accessor: (item) => exportDisplayValue(item.reason) },
-  status: {
-    header: 'Status',
-    accessor: (item) => exportDisplayValue(item.investigationStatus || 'New'),
-  },
-  reportedAt: {
+  'reported-at': {
     header: 'Reported At',
     accessor: (item) => formatExportDateTime(item.submittedAt || item.createdAt),
+  },
+  'escalated-by': {
+    header: 'Escalated By',
+    accessor: (item) => exportDisplayValue(item.escalatedBy || 'Admin'),
+  },
+  'escalation-reason': {
+    header: 'Escalation Reason',
+    accessor: (item) => exportDisplayValue(item.escalationReason || '—'),
+  },
+  'escalated-at': {
+    header: 'Escalated At',
+    accessor: (item) => formatExportDateTime(item.escalatedAt),
+  },
+  'compliance-status': {
+    header: 'Compliance Status',
+    accessor: (item) =>
+      exportDisplayValue(
+        item.complianceStatus || item.investigationStatus || 'Under Investigation',
+      ),
   },
 }
 
@@ -82,6 +104,8 @@ export function VenueReportedVenuesPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
+
+  const tableColumnPreferencesQuery = useTableColumnPreferences(VENUE_REPORTED_MODULE_KEY)
 
   const [reports, setReports] = useState<VenueReportItem[]>([])
   const [loading, setLoading] = useState(true)
@@ -161,9 +185,10 @@ export function VenueReportedVenuesPage() {
     loadReports()
   }, [loadReports])
 
-  const columns = useMemo<ColumnDef<VenueReportItem>[]>(
-    () => [
-      {
+  const columns = useMemo<ColumnDef<VenueReportItem>[]>(() => {
+    const dataColumnsById: Record<string, ColumnDef<VenueReportItem>> = {
+      'report-id': {
+        id: 'report-id',
         accessorKey: 'reportId',
         header: 'Report ID',
         cell: ({ row }) => (
@@ -172,49 +197,83 @@ export function VenueReportedVenuesPage() {
           </span>
         ),
       },
-      {
-        accessorKey: 'venueName',
-        header: 'Reported Venue',
+      'venue-id': {
+        id: 'venue-id',
+        accessorKey: 'venueId',
+        header: 'Venue ID',
         cell: ({ row }) => (
-          <div>
-            <div className="font-semibold text-white">{row.original.venueName}</div>
-            <div className="text-[11px] text-slate-400">ID: {row.original.venueId}</div>
+          <span className="ui-table-id uppercase">{row.original.venueId || '—'}</span>
+        ),
+      },
+      'venue-name': {
+        id: 'venue-name',
+        accessorKey: 'venueName',
+        header: 'Venue Name',
+        cell: ({ row }) => (
+          <span className="font-semibold text-white">{row.original.venueName || '—'}</span>
+        ),
+      },
+      'report-reason': {
+        id: 'report-reason',
+        accessorKey: 'reason',
+        header: 'Report Reason',
+        cell: ({ row }) => (
+          <div
+            className="max-w-xs truncate text-xs text-slate-300"
+            title={row.original.reason || row.original.issueType}
+          >
+            {row.original.reason || row.original.issueType || '—'}
           </div>
         ),
       },
-      {
+      'reported-by': {
+        id: 'reported-by',
         accessorKey: 'reporterName',
         header: 'Reported By',
         cell: ({ row }) => (
           <div>
-            <div className="font-medium text-slate-200">{row.original.reporterName}</div>
-            <div className="text-[11px] text-slate-400">{row.original.reporterType}</div>
+            <div className="font-medium text-slate-200">{row.original.reporterName || '—'}</div>
+            <div className="text-[11px] text-slate-400">{row.original.reporterType || 'User'}</div>
           </div>
         ),
       },
-      {
-        accessorKey: 'issueType',
-        header: 'Issue Type',
+      'reported-at': {
+        id: 'reported-at',
+        accessorKey: 'createdAt',
+        header: 'Reported At',
         cell: ({ row }) => (
-          <span className="rounded-full bg-red-500/15 px-2.5 py-0.5 text-xs font-semibold text-red-400">
-            {row.original.issueType}
-          </span>
+          <TableDateTimeCell value={row.original.submittedAt || row.original.createdAt} />
         ),
       },
-      {
-        accessorKey: 'reason',
-        header: 'Reason',
+      'escalated-by': {
+        id: 'escalated-by',
+        accessorKey: 'escalatedBy',
+        header: 'Escalated By',
         cell: ({ row }) => (
-          <div className="max-w-xs truncate text-xs text-slate-300" title={row.original.reason}>
-            {row.original.reason}
-          </div>
+          <span className="text-slate-300">{row.original.escalatedBy || 'Admin'}</span>
         ),
       },
-      {
+      'escalation-reason': {
+        id: 'escalation-reason',
+        accessorKey: 'escalationReason',
+        header: 'Escalation Reason',
+        cell: ({ row }) => (
+          <span className="text-slate-300">{row.original.escalationReason || '—'}</span>
+        ),
+      },
+      'escalated-at': {
+        id: 'escalated-at',
+        accessorKey: 'escalatedAt',
+        header: 'Escalated At',
+        cell: ({ row }) =>
+          row.original.escalatedAt ? <TableDateTimeCell value={row.original.escalatedAt} /> : '—',
+      },
+      'compliance-status': {
+        id: 'compliance-status',
         accessorKey: 'investigationStatus',
-        header: 'Status',
+        header: 'Compliance Status',
         cell: ({ row }) => {
-          const status = row.original.investigationStatus || 'New'
+          const status = row.original.investigationStatus || 'Under Investigation'
           const isResolved = status === 'Resolved' || status === 'Closed'
           const isReview = status === 'Under Review' || status === 'Escalated'
 
@@ -233,65 +292,71 @@ export function VenueReportedVenuesPage() {
           )
         },
       },
-      {
-        accessorKey: 'createdAt',
-        header: 'Reported At',
-        cell: ({ row }) => (
-          <span className="text-xs text-slate-400">
-            {row.original.createdAt
-              ? new Date(row.original.createdAt).toLocaleDateString('en-GB')
-              : '—'}
-          </span>
-        ),
-      },
-      {
-        id: 'actions',
-        header: 'Actions',
-        meta: {
-          headerClassName: 'pr-5 text-right',
-          cellClassName: 'relative pr-5 text-right',
-        },
-        cell: ({ row }) => {
-          const reportItem = row.original
-          const isOpen = activeDropdownId === reportItem.reportId
+    }
 
-          return (
-            <TableActionsDropdown
-              label={`Open actions for report ${reportItem.reportId}`}
-              isOpen={isOpen}
-              onOpenChange={(open) => setActiveDropdownId(open ? reportItem.reportId : null)}
-              menuWidth={176}
-            >
-              <TableActionsItem
-                icon={<Eye className="size-3.5" aria-hidden="true" />}
-                onClick={() => {
-                  setActiveDropdownId(null)
-                  navigate(`/venues/management/full-view/${reportItem.venueId}`)
-                }}
-              >
-                View Venue
-              </TableActionsItem>
-              <TableActionsItem
-                icon={<Ban className="size-3.5 text-red-400" aria-hidden="true" />}
-                onClick={() => {
-                  setActiveDropdownId(null)
-                  setSelectedReport(reportItem)
-                  setIsModalOpen(true)
-                }}
-              >
-                View Report
-              </TableActionsItem>
-            </TableActionsDropdown>
-          )
-        },
+    const visibleIds = tableColumnPreferencesQuery.data?.visibleColumnIds?.length
+      ? tableColumnPreferencesQuery.data.visibleColumnIds
+      : DEFAULT_VENUE_REPORTED_VISIBLE_COLUMN_IDS
+
+    const preferenceColumns = visibleIds.map((id) => dataColumnsById[id]).filter(Boolean)
+
+    const actionsColumn: ColumnDef<VenueReportItem> = {
+      id: 'actions',
+      header: 'Actions',
+      meta: {
+        headerClassName: 'pr-5 text-right',
+        cellClassName: 'relative pr-5 text-right',
       },
-    ],
-    [activeDropdownId, navigate],
-  )
+      cell: ({ row }) => {
+        const reportItem = row.original
+        const isOpen = activeDropdownId === reportItem.reportId
+
+        return (
+          <TableActionsDropdown
+            label={`Open actions for report ${reportItem.reportId}`}
+            isOpen={isOpen}
+            onOpenChange={(open) => setActiveDropdownId(open ? reportItem.reportId : null)}
+            menuWidth={176}
+          >
+            <TableActionsItem
+              icon={<Eye className="size-3.5" aria-hidden="true" />}
+              onClick={() => {
+                setActiveDropdownId(null)
+                navigate(`/venues/management/full-view/${reportItem.venueId}`)
+              }}
+            >
+              View Venue
+            </TableActionsItem>
+            <TableActionsItem
+              icon={<Ban className="size-3.5 text-red-400" aria-hidden="true" />}
+              onClick={() => {
+                setActiveDropdownId(null)
+                setSelectedReport(reportItem)
+                setIsModalOpen(true)
+              }}
+            >
+              View Report
+            </TableActionsItem>
+          </TableActionsDropdown>
+        )
+      },
+    }
+
+    return [...preferenceColumns, actionsColumn]
+  }, [activeDropdownId, navigate, tableColumnPreferencesQuery.data])
 
   return (
     <div className="flex flex-col gap-5 md:gap-6">
-      <ExpertListHeader title="Reported Venues" breadcrumb="Venue Management / Reported Venues" />
+      <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
+        <ExpertListHeader title="Reported Venues" breadcrumb="Venue Management / Reported Venues" />
+        <Button
+          className="ui-manage-metrics h-9 w-full md:w-auto"
+          onClick={() => navigate('/metrics/venue-reported?returnTo=/venues/management/reported')}
+        >
+          <SlidersHorizontal className="size-4" />
+          Manage Metrics
+        </Button>
+      </div>
 
       <DataTable
         columns={columns}

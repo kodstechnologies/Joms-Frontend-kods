@@ -175,6 +175,7 @@ export function ConsultationPerformancePage() {
     () => [
       {
         id: 'client-id',
+        accessorFn: (row) => formatClientCode(row),
         header: 'Client ID',
         cell: ({ row }) => (
           <span className="ui-table-id text-muted font-mono text-xs uppercase">
@@ -184,6 +185,7 @@ export function ConsultationPerformancePage() {
       },
       {
         id: 'client-name',
+        accessorKey: 'clientName',
         header: 'Name',
         cell: ({ row }) => (
           <span className="font-medium text-white">{row.original.clientName || DASH}</span>
@@ -191,16 +193,19 @@ export function ConsultationPerformancePage() {
       },
       {
         id: 'consultation-name',
+        accessorKey: 'title',
         header: 'Consultation Name',
         cell: ({ row }) => <span className="text-sm text-white">{row.original.title}</span>,
       },
       {
         id: 'status',
+        accessorKey: 'status',
         header: 'Status',
         cell: ({ row }) => <StatusPill status={row.original.status} />,
       },
       {
         id: 'slot-duration',
+        accessorKey: 'durationLabel',
         header: 'Slot Duration',
         cell: ({ row }) => (
           <span className="text-muted text-sm">{row.original.durationLabel || DASH}</span>
@@ -208,6 +213,7 @@ export function ConsultationPerformancePage() {
       },
       {
         id: 'start-date',
+        accessorKey: 'startDate',
         header: 'Start Date',
         cell: ({ row }) => (
           <span className="text-muted text-xs">{formatDateTime(row.original.startDate)}</span>
@@ -215,6 +221,7 @@ export function ConsultationPerformancePage() {
       },
       {
         id: 'price',
+        accessorKey: 'price',
         header: 'Price',
         cell: ({ row }) => (
           <span className="font-semibold text-white">
@@ -224,6 +231,7 @@ export function ConsultationPerformancePage() {
       },
       {
         id: 'actions',
+        enableSorting: false,
         header: () => <div className="text-right">Actions</div>,
         cell: ({ row }) => {
           const booking = row.original
