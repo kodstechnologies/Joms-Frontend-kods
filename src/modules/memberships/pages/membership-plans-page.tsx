@@ -331,7 +331,9 @@ export function MembershipPlansPage({
         </div>
         <Button
           className="ui-manage-metrics ui-cta ui-cta-primary w-full shrink-0 md:w-auto"
-          onClick={() => navigate('/metrics/memberships')}
+          onClick={() =>
+            navigate('/metrics/memberships?returnTo=/memberships/plans&section=dashboard')
+          }
         >
           <BarChart3 className="size-4" />
           Manage Metrics

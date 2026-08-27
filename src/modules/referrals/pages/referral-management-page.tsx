@@ -116,14 +116,6 @@ const EXPORT_COLUMN_MAP: Record<
     header: 'Reward Status',
     accessor: (invite) => exportDisplayValue(invite.rewardStatus),
   },
-  'reward-type': {
-    header: 'Reward Type',
-    accessor: (invite) => exportDisplayValue(invite.rewardType),
-  },
-  'reward-value': {
-    header: 'Reward Value',
-    accessor: (invite) => exportDisplayValue(invite.rewardValue),
-  },
   'referred-at': {
     header: 'Referred At',
     accessor: (invite) =>
@@ -276,19 +268,6 @@ function buildReferralDataColumnsById(): Record<string, ColumnDef<ExpertInvite>>
       id: 'reward-status',
       header: 'Reward Status',
       cell: ({ row }) => badge(row.original.rewardStatus),
-    },
-    'reward-type': {
-      id: 'reward-type',
-      header: 'Reward Type',
-      cell: ({ row }) => dash(row.original.rewardType),
-    },
-    'reward-value': {
-      id: 'reward-value',
-      header: 'Reward Value',
-      cell: ({ row }) =>
-        row.original.rewardValue == null
-          ? '—'
-          : `₹${Number(row.original.rewardValue).toLocaleString('en-IN')}`,
     },
     'referred-at': {
       id: 'referred-at',

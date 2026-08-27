@@ -97,6 +97,7 @@ import {
   MEMBERSHIP_MAX_ACTIVE_METRICS,
   MEMBERSHIP_METRICS_CATALOG,
   MEMBERSHIPS_MODULE_KEY,
+  MEMBERSHIPS_TABLE_COLUMNS_CATALOG,
 } from '@/modules/memberships/config/membership-metrics.config'
 import {
   RBAC_HUB_MAX_ACTIVE_METRICS,
@@ -337,8 +338,8 @@ export const MODULE_METRICS_REGISTRY: Record<string, ModuleMetricsDefinition> = 
   },
   memberships: {
     moduleKey: MEMBERSHIPS_MODULE_KEY,
-    moduleName: 'Membership Plans',
-    returnTo: '/memberships/plans',
+    moduleName: 'Membership Management',
+    returnTo: '/memberships/experts',
     maxActiveMetrics: MEMBERSHIP_MAX_ACTIVE_METRICS,
     metrics: MEMBERSHIP_METRICS_CATALOG.map((item) => ({
       id: item.id,
@@ -346,6 +347,13 @@ export const MODULE_METRICS_REGISTRY: Record<string, ModuleMetricsDefinition> = 
       type: item.type,
       description: item.description,
       defaultActive: item.defaultActive,
+    })),
+    columns: MEMBERSHIPS_TABLE_COLUMNS_CATALOG.map((item) => ({
+      id: item.id,
+      label: item.label,
+      type: item.type,
+      description: item.description,
+      defaultVisible: item.defaultVisible,
     })),
   },
   'support-dashboard': {

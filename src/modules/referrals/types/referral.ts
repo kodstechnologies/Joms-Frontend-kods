@@ -23,10 +23,9 @@ export type ExpertInvite = {
   }
   goalProgressPercent?: number | null
   rewardStatus?: string | null
-  rewardType?: string | null
-  rewardValue?: number | null
   referredAt?: string | null
   signupDate?: string | null
+  partnerSignupAt?: string | null
   goalCompletedAt?: string | null
   referralExpiryDate?: string | null
   lastActivity?: string | null
@@ -58,13 +57,13 @@ export type ReferralMetrics = {
   referralExpiryRate: number
   topReferralSource: string
   totalReferralGoalsCompleted: number
-  membershipsUnlocked: number | null
+  membershipsUnlocked: number
   averageReferralsPerUser: number
-  averageDaysToReachGoal: number | null
+  averageDaysToReachGoal: number
   signupsViaReferralCode: number
-  pendingRewards: number | null
-  rewardsDistributed: number | null
-  rewardDistributionRate: number | null
+  pendingRewards: number
+  rewardsDistributed: number
+  rewardDistributionRate: number
   // Legacy optional fields
   userToUserShareRate?: number
   adminSendSuccessRate?: number
