@@ -101,8 +101,8 @@ export function SupportDashboardPage() {
           <SupportStatCard
             key={stat.id}
             title={stat.title}
-            value={stat.value}
-            percentage={stat.trend.percentage}
+            value={isLoading ? '—' : stat.value}
+            percentage={isLoading ? 0 : stat.trend.percentage}
             direction={stat.trend.direction}
             label={stat.trend.label}
           />

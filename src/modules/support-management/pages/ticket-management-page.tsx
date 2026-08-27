@@ -806,17 +806,13 @@ export function TicketManagementPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {(isLoading && stats.length === 0
-          ? filteredActiveMetricIds.map((id) => ({
-              id,
-              title: 'Loading',
-              value: '—',
-              percentage: 0,
-              direction: 'up' as const,
-            }))
-          : stats
-        ).map((stat) => (
-          <TicketMetricCard key={stat.id} {...stat} />
+        {stats.map((stat) => (
+          <TicketMetricCard
+            key={stat.id}
+            {...stat}
+            value={isLoading ? '—' : stat.value}
+            percentage={isLoading ? 0 : stat.percentage}
+          />
         ))}
       </div>
 
@@ -866,7 +862,13 @@ export function TicketManagementPage() {
           onPageChange: setCurrentPage,
         }}
         resourceLabel="tickets"
-        emptyMessage="No tickets found."
+        emptyMessage={
+          activeTab === 'my_tickets'
+            ? 'No tickets assigned to you. Open the All Tickets tab to see the full queue.'
+            : activeTab === 'escalated'
+              ? 'No escalated tickets.'
+              : 'No tickets found.'
+        }
       />
 
       <AddTagModal

@@ -15,34 +15,34 @@ export type SupportDashboardMetricCard = {
   }
 }
 
-const mockTrend = {
+const emptyTrend = {
   direction: 'up' as const,
-  percentage: 6.7,
+  percentage: 0,
   label: 'vs last month',
 }
 
-const mockValues: Record<string, string> = {
-  'total-open-tickets': '$487,650',
-  'new-tickets-today': '$487,650',
-  'tickets-in-progress': '$487,650',
-  'escalated-tickets': '$487,650',
-  'resolved-today': '$487,650',
-  'priority-tickets': '$487,650',
-  'avg-response-time': '$487,650',
-  'avg-resolution-time': '$487,650',
+const emptyValueById: Record<string, string> = {
+  'total-open-tickets': '0',
+  'new-tickets-today': '0',
+  'tickets-in-progress': '0',
+  'escalated-tickets': '0',
+  'resolved-today': '0',
+  'priority-tickets': '0',
+  'avg-response-time': '00:00:00',
+  'avg-resolution-time': '00:00:00',
 }
 
 const labelById = new Map(
   SUPPORT_DASHBOARD_METRICS_CATALOG.map((metric) => [metric.id, metric.label]),
 )
 
-export function buildSupportDashboardMetricCardsMock(): SupportDashboardMetricCard[] {
-  return SUPPORT_DASHBOARD_METRIC_IDS.map((id) => ({
-    id,
-    title: labelById.get(id) ?? id,
-    value: mockValues[id] ?? '—',
-    trend: mockTrend,
-  }))
+function emptyValueFor(id: string) {
+  return emptyValueById[id] ?? '0'
+}
+
+function displayValue(id: string, value: string | number | null | undefined) {
+  if (value == null || value === '' || value === '—') return emptyValueFor(id)
+  return String(value)
 }
 
 export function buildSupportDashboardMetricCardsFromApi(
@@ -55,7 +55,7 @@ export function buildSupportDashboardMetricCardsFromApi(
     .map((card) => ({
       id: card.key,
       title: labelById.get(card.key) ?? card.title,
-      value: String(card.value),
+      value: displayValue(card.key, card.value),
       trend: {
         direction: (card.changeDirection ?? 'up') as 'up' | 'down',
         percentage: card.changePercent ?? 0,
@@ -67,10 +67,19 @@ export function buildSupportDashboardMetricCardsFromApi(
 export function buildSupportDashboardMetricCards(
   cards?: SupportStatCard[],
 ): SupportDashboardMetricCard[] {
-  const mockById = new Map(buildSupportDashboardMetricCardsMock().map((card) => [card.id, card]))
   const apiById = new Map(
     buildSupportDashboardMetricCardsFromApi(cards ?? []).map((card) => [card.id, card]),
   )
 
-  return SUPPORT_DASHBOARD_METRIC_IDS.map((id) => apiById.get(id) ?? mockById.get(id)!)
+  return SUPPORT_DASHBOARD_METRIC_IDS.map((id) => {
+    const fromApi = apiById.get(id)
+    if (fromApi) return fromApi
+
+    return {
+      id,
+      title: labelById.get(id) ?? id,
+      value: emptyValueFor(id),
+      trend: emptyTrend,
+    }
+  })
 }

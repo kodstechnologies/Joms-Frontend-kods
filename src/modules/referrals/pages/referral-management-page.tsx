@@ -28,6 +28,7 @@ import {
   getReferralStatusClassName,
   getReferralStatusLabel,
   formatReferralDate,
+  isReferralUsed,
 } from '../utils/referral-format'
 import { REFERRAL_METRIC_DEFINITIONS } from '../utils/referral-metrics-definitions'
 import { useActiveMetricIds } from '@/modules/expert/hooks/use-active-metric-ids'
@@ -100,8 +101,12 @@ const EXPORT_COLUMN_MAP: Record<
   },
   status: {
     header: 'Status',
-    accessor: (invite) =>
-      exportDisplayValue(getReferralStatusLabel(invite.status, invite.statusLabel)),
+    accessor: (invite) => {
+      const used = isReferralUsed(invite)
+      return exportDisplayValue(
+        used ? 'Successful' : getReferralStatusLabel(invite.status, invite.statusLabel),
+      )
+    },
   },
   'goal-progress': {
     header: 'Goal Progress',
@@ -237,16 +242,22 @@ function buildReferralDataColumnsById(): Record<string, ColumnDef<ExpertInvite>>
       id: 'status',
       header: 'Status',
       accessorFn: (row) => row.status ?? '',
-      cell: ({ row }) => (
-        <span
-          className={cn(
-            'rounded-full border px-2.5 py-0.5 text-[11px] font-semibold',
-            getReferralStatusClassName(row.original.status),
-          )}
-        >
-          {getReferralStatusLabel(row.original.status, row.original.statusLabel)}
-        </span>
-      ),
+      cell: ({ row }) => {
+        const used = isReferralUsed(row.original)
+        const status = used ? 'accepted' : row.original.status
+        return (
+          <span
+            className={cn(
+              'rounded-full border px-2.5 py-0.5 text-[11px] font-semibold',
+              getReferralStatusClassName(status),
+            )}
+          >
+            {used
+              ? 'Successful'
+              : getReferralStatusLabel(row.original.status, row.original.statusLabel)}
+          </span>
+        )
+      },
     },
     'goal-progress': {
       id: 'goal-progress',

@@ -1,4 +1,4 @@
-import { useMemo, useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { partnerLoginWithPhone, type PartnerLoginResult } from '../api/partner-auth.api'
 import { PartnerSupportChatPanel } from '../components/partner-support-chat-panel'
@@ -9,6 +9,8 @@ import {
   type SupportBackendMode,
 } from '../config/support-backend'
 
+import { isAccessTokenUnusable } from '../utils/jwt-session'
+
 const SESSION_KEY = 'joms_dev_partner_support'
 
 function loadSession(): PartnerLoginResult | null {
@@ -16,6 +18,11 @@ function loadSession(): PartnerLoginResult | null {
     const raw = localStorage.getItem(SESSION_KEY) || sessionStorage.getItem(SESSION_KEY)
     if (!raw) return null
     const parsed = JSON.parse(raw) as PartnerLoginResult
+    if (isAccessTokenUnusable(parsed.accessToken)) {
+      localStorage.removeItem(SESSION_KEY)
+      sessionStorage.removeItem(SESSION_KEY)
+      return null
+    }
     localStorage.setItem(SESSION_KEY, raw)
     sessionStorage.removeItem(SESSION_KEY)
     return parsed
@@ -58,8 +65,28 @@ export function PartnerSupportTestPage() {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [supportMode, setSupportMode] = useState<SupportBackendMode>(() => loadSupportBackendMode())
+  const [zoho, setZoho] = useState<{
+    connected?: boolean
+    source?: string | null
+    organizationId?: string | null
+  } | null>(null)
 
   const adminBaseUrl = useMemo(() => resolveSupportBaseUrl(supportMode), [supportMode])
+
+  useEffect(() => {
+    let cancelled = false
+    void fetch(`${adminBaseUrl}/admin/zoho/config`)
+      .then((res) => res.json())
+      .then((body) => {
+        if (!cancelled) setZoho(body?.data ?? { connected: false })
+      })
+      .catch(() => {
+        if (!cancelled) setZoho({ connected: false })
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [adminBaseUrl])
 
   const handleModeChange = (mode: SupportBackendMode) => {
     setSupportMode(mode)
@@ -104,7 +131,8 @@ export function PartnerSupportTestPage() {
               </Link>
             </div>
             <p className="text-sm text-zinc-400">
-              Partner JWT via auth-service. Support chat uses admin-service REST + Socket.IO.
+              Partner JWT via auth-service. Support chat uses admin-service REST + Socket.IO. If the
+              socket said the token was invalid or expired, log in again here.
             </p>
             <div className="flex flex-wrap items-center gap-2 rounded-lg border border-zinc-800 bg-zinc-900/60 px-3 py-2">
               <span className="text-xs tracking-wide text-zinc-500 uppercase">Admin backend</span>
@@ -178,16 +206,29 @@ export function PartnerSupportTestPage() {
             </div>
           </div>
           <p className="text-sm text-zinc-400">
-            Each service selection creates a new ticket. Messages sync to Zoho Desk Live Chat
-            (SalesIQ). Zoho OAuth:{' '}
-            <a
-              className="text-sky-400 hover:underline"
-              href={`${adminBaseUrl}/admin/zoho/connect`}
-              target="_blank"
-              rel="noreferrer"
-            >
-              connect
-            </a>
+            Each service selection creates a new ticket. Messages sync to Zoho Desk. The grey
+            Offline dot is the live chat socket, not Zoho.
+          </p>
+          <p className="text-sm">
+            {zoho?.connected ? (
+              <span className="text-emerald-400">
+                Zoho Desk: connected
+                {zoho.source ? ` (${zoho.source})` : ''}
+                {zoho.organizationId ? ` · org ${zoho.organizationId}` : ''}
+              </span>
+            ) : (
+              <span className="text-amber-300">
+                Zoho Desk: not connected.{' '}
+                <a
+                  className="text-sky-400 hover:underline"
+                  href={`${adminBaseUrl}/admin/zoho/connect`}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Connect Zoho
+                </a>
+              </span>
+            )}
           </p>
           <div className="flex flex-wrap items-center gap-2 rounded-lg border border-zinc-800 bg-zinc-900/60 px-3 py-2">
             <span className="text-xs tracking-wide text-zinc-500 uppercase">Admin backend</span>
@@ -204,6 +245,7 @@ export function PartnerSupportTestPage() {
           adminBaseUrl={adminBaseUrl}
           reporterName={session.fullname || session.phone || 'Partner'}
           reporterPhone={session.phone ?? undefined}
+          onAuthInvalid={handleLogout}
         />
       </div>
     </div>
