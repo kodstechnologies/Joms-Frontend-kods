@@ -97,6 +97,7 @@ import {
   MEMBERSHIP_MAX_ACTIVE_METRICS,
   MEMBERSHIP_METRICS_CATALOG,
   MEMBERSHIPS_MODULE_KEY,
+  MEMBERSHIPS_TABLE_COLUMNS_CATALOG,
 } from '@/modules/memberships/config/membership-metrics.config'
 import {
   RBAC_HUB_MAX_ACTIVE_METRICS,
@@ -337,8 +338,8 @@ export const MODULE_METRICS_REGISTRY: Record<string, ModuleMetricsDefinition> = 
   },
   memberships: {
     moduleKey: MEMBERSHIPS_MODULE_KEY,
-    moduleName: 'Membership Plans',
-    returnTo: '/memberships/plans',
+    moduleName: 'Membership Management',
+    returnTo: '/memberships/experts',
     maxActiveMetrics: MEMBERSHIP_MAX_ACTIVE_METRICS,
     metrics: MEMBERSHIP_METRICS_CATALOG.map((item) => ({
       id: item.id,
@@ -346,6 +347,13 @@ export const MODULE_METRICS_REGISTRY: Record<string, ModuleMetricsDefinition> = 
       type: item.type,
       description: item.description,
       defaultActive: item.defaultActive,
+    })),
+    columns: MEMBERSHIPS_TABLE_COLUMNS_CATALOG.map((item) => ({
+      id: item.id,
+      label: item.label,
+      type: item.type,
+      description: item.description,
+      defaultVisible: item.defaultVisible,
     })),
   },
   'support-dashboard': {
@@ -378,8 +386,28 @@ export const MODULE_METRICS_REGISTRY: Record<string, ModuleMetricsDefinition> = 
       column('subject', 'Subject', 'Text', 'Ticket subject'),
       column('status', 'Status', 'Status', 'Current status'),
       column('priority', 'Priority', 'Text', 'Priority level'),
-      column('created-at', 'Created At', 'Date', 'Created timestamp'),
-      column('assignee', 'Assignee', 'Text', 'Assigned agent', false),
+      column('category', 'Category', 'Text', 'Ticket category'),
+      column('reporter', 'Reporter', 'Text', 'User who created the ticket'),
+      column('sla-timer', 'SLA Timer', 'Duration', 'Remaining SLA time'),
+      column('first-response-due', 'First Response Due', 'Date', 'First response SLA deadline'),
+      column('resolution-due', 'Resolution Due', 'Date', 'Resolution SLA deadline'),
+      column('assigned-on', 'Assigned On', 'Date', 'Assignment timestamp'),
+      column('assigned-by', 'Assigned By', 'Text', 'Assigning admin'),
+      column('assigned-to', 'Assigned To', 'Text', 'Assigned support agent'),
+      column('escalated-by', 'Escalated By', 'Text', 'Admin who escalated the ticket'),
+      column('escalated-to', 'Escalated To', 'Text', 'Escalation recipient'),
+      column('escalated-at', 'Escalated At', 'Date', 'Escalation timestamp'),
+      column(
+        'escalation-status',
+        'Escalation Status',
+        'Status',
+        'Pending, Accepted, Rejected, or Completed',
+      ),
+      column('escalated-for', 'Escalated For', 'Text', 'Escalation reason'),
+      column('resolved-at', 'Resolved At', 'Date', 'Resolution timestamp'),
+      column('resolved-by', 'Resolved By', 'Text', 'Resolving admin'),
+      column('resolution-time', 'Resolution Time', 'Duration', 'Total resolution duration'),
+      column('last-updated-at', 'Last Updated At', 'Date', 'Latest ticket activity'),
     ],
   },
   'past-tickets': {

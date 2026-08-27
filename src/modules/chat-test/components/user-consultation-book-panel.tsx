@@ -2,12 +2,12 @@ import { useMemo, useState } from 'react'
 import {
   createConsultationBooking,
   getConsultationSlots,
-  payConsultationBooking,
   testSetupConsultationBooking,
   type ConsultationBooking,
   type ConsultationSlot,
 } from '../api/consultation-booking.api'
 import type { PartnerOffering } from '../api/quotation.api'
+import { payConsultationBookingWithRazorpay } from '../lib/harness-payment'
 
 const PARTNER_SESSION_KEY = 'joms_dev_partner_chat'
 
@@ -166,7 +166,7 @@ export function UserConsultationBookPanel({
       setPendingBooking(created)
       setPendingSlotLabel(`${slot.startTime} – ${slot.endTime}`)
       onSuccess?.(
-        `Slot reserved (${slot.startTime}–${slot.endTime}) · payment pending — tap Dummy pay`,
+        `Slot reserved (${slot.startTime}–${slot.endTime}) · payment pending — tap Pay with Razorpay`,
       )
     } catch (err) {
       onError?.(errMessage(err))
@@ -175,16 +175,18 @@ export function UserConsultationBookPanel({
     }
   }
 
-  const handleDummyPay = async () => {
+  const handleRazorpayPay = async () => {
     if (!pendingBooking?._id) return
     setPaying(true)
     onError?.(null)
     try {
       const label = pendingSlotLabel
-      const paid = await payConsultationBooking(token, pendingBooking._id)
+      const verified = await payConsultationBookingWithRazorpay(token, pendingBooking._id)
       setPendingBooking(null)
       setPendingSlotLabel('')
-      onSuccess?.(`Dummy paid · ${paid.title || item.title} · ${label || 'consultation booked'}`)
+      onSuccess?.(
+        `Razorpay paid (${verified.status}) · ${pendingBooking.title || item.title} · ${label || 'consultation booked'}`,
+      )
       onBooked?.()
     } catch (err) {
       onError?.(errMessage(err))
@@ -373,15 +375,16 @@ export function UserConsultationBookPanel({
             <button
               type="button"
               disabled={paying}
-              onClick={() => void handleDummyPay()}
+              onClick={() => void handleRazorpayPay()}
               className="w-full rounded-lg bg-amber-400 px-4 py-2.5 text-sm font-medium text-zinc-950 disabled:opacity-50"
             >
               {paying
-                ? 'Paying…'
-                : `Dummy pay ₹${pendingBooking.price?.toLocaleString('en-IN') ?? '0'}`}
+                ? 'Opening Razorpay…'
+                : `Pay with Razorpay · ₹${pendingBooking.price?.toLocaleString('en-IN') ?? '0'}`}
             </button>
             <p className="text-[10px] text-zinc-500">
-              Calls <span className="font-mono">POST /consultation-bookings/:id/pay</span>
+              Uses payment-service <span className="font-mono">POST /payments/orders</span> +
+              official Razorpay checkout
             </p>
           </div>
         ) : null}

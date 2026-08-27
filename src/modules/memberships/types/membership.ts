@@ -86,22 +86,44 @@ export type MembershipListResponse = {
   }
 }
 
+export type MembershipTrend = {
+  direction: 'up' | 'down'
+  percentage: number
+  label?: string
+}
+
 export type MembershipStatsResponse = {
   success: boolean
   message: string
   data: {
+    totalMembershipPlans: number
+    activeMembershipPlans: number
     totalPlans: number
     totalActivePlans: number
+    totalSubscribers: number
+    activeSubscribers: number
     totalMembers?: number
     expiredMemberships: number
+    cancelledMemberships: number
+    totalMembershipRevenue: number
     totalRevenue: number
+    monthlyRecurringRevenue: number
+    revenueGrowthRate: number
+    averageRevenuePerSubscriber: number
     renewalRate: number
-    mostSubscribedPlan: string | null
-    trends?: {
-      totalMembers?: { direction: 'up' | 'down'; percentage: number; label: string }
-      totalRevenue?: { direction: 'up' | 'down'; percentage: number; label: string }
-      renewalRate?: { direction: 'up' | 'down'; percentage: number; label: string }
-    }
+    failedRenewals: number
+    mostSubscribedPlan: string
+    subscribersByPlan: string
+    membershipUpgrades: number
+    membershipDowngrades: number
+    membershipRenewals: number
+    newSubscribersCurrentMonth: number
+    cancellationsCurrentMonth: number
+    mostSelectedBillingCycle: string
+    trialToPaidConversionRate: number
+    mostCancelledPlan: string
+    churnRate: number
+    trends?: Record<string, MembershipTrend>
     counts: MembershipListMeta['counts']
     typeCounts: {
       user: number

@@ -116,14 +116,6 @@ const EXPORT_COLUMN_MAP: Record<
     header: 'Reward Status',
     accessor: (invite) => exportDisplayValue(invite.rewardStatus),
   },
-  'reward-type': {
-    header: 'Reward Type',
-    accessor: (invite) => exportDisplayValue(invite.rewardType),
-  },
-  'reward-value': {
-    header: 'Reward Value',
-    accessor: (invite) => exportDisplayValue(invite.rewardValue),
-  },
   'referred-at': {
     header: 'Referred At',
     accessor: (invite) =>

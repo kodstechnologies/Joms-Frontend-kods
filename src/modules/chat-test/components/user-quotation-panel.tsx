@@ -8,7 +8,6 @@ import {
   getQuotationDetail,
   listMyQuotations,
   listPartnerOfferings,
-  payPaymentRequest,
   rejectProposal,
   type PartnerOffering,
   type PaymentRequest,
@@ -19,14 +18,17 @@ import {
   approveServiceOrder,
   createServiceOrder,
   listMyServiceOrders,
-  payServiceOrder,
   type ServiceOrder,
 } from '../api/service-order.api'
 import {
   listMyConsultationBookings,
-  payConsultationBooking,
   type ConsultationBooking,
 } from '../api/consultation-booking.api'
+import {
+  payConsultationBookingWithRazorpay,
+  payPaymentRequestWithRazorpay,
+  payServiceOrderWithRazorpay,
+} from '../lib/harness-payment'
 import {
   listEligibleReviews,
   submitPartnerReview,
@@ -331,9 +333,9 @@ export function UserQuotationPanel({ user }: Props) {
         username: form.username.trim() || user.username,
         phone_e164: form.phone_e164.trim(),
       })
-      const paid = await payServiceOrder(user.accessToken, order._id)
+      const verified = await payServiceOrderWithRazorpay(user.accessToken, order._id)
       setOk(
-        `Service order ${paid._id} created + dummy paid · work ${paid.workStatus} — partner must Accept`,
+        `Service order ${order._id} created + Razorpay paid (${verified.status}) — partner must Accept`,
       )
       await refresh()
     } catch (err) {
@@ -368,7 +370,7 @@ export function UserQuotationPanel({ user }: Props) {
         )
         setOk(
           result.paymentRequest
-            ? `Accepted · payment request ${result.paymentRequest._id} (₹${result.paymentRequest.amount}) — use Dummy pay below`
+            ? `Accepted · payment request ${result.paymentRequest._id} (₹${result.paymentRequest.amount}) — use Pay with Razorpay below`
             : 'Proposal accepted — waiting for partner payment request',
         )
       } else {
@@ -388,10 +390,8 @@ export function UserQuotationPanel({ user }: Props) {
     setError(null)
     setOk(null)
     try {
-      const result = await payPaymentRequest(user.accessToken, paymentRequestId)
-      setOk(
-        `Dummy paid · proposal work ${result.proposal.workStatus || result.proposal.milestones?.find((m) => m.status === 'ongoing')?.title || 'started'}`,
-      )
+      const verified = await payPaymentRequestWithRazorpay(user.accessToken, paymentRequestId)
+      setOk(`Razorpay paid (${verified.status}) · payment request fulfilled`)
       await refresh()
     } catch (err) {
       setError(errMessage(err))
@@ -657,8 +657,8 @@ export function UserQuotationPanel({ user }: Props) {
               {isDirectOrder ? (
                 <div className="space-y-2 rounded-lg border border-amber-500/30 bg-amber-500/5 p-3">
                   <p className="text-xs text-amber-200">
-                    Fixed/Tiered — create order + dummy pay. Partner then Accepts on My Projects
-                    (not chat). After partner marks completed, Approve here.
+                    Fixed/Tiered — create order + Razorpay checkout. Partner then Accepts on My
+                    Projects (not chat). After partner marks completed, Approve here.
                   </p>
                   {selected.pricingType === 'tiered' ? (
                     <label className="block space-y-1 text-xs">
@@ -682,7 +682,7 @@ export function UserQuotationPanel({ user }: Props) {
                     onClick={() => void handleDirectOrder()}
                     className="w-full rounded-lg bg-amber-400 px-3 py-2 text-sm font-medium text-zinc-950 disabled:opacity-50"
                   >
-                    {loading ? 'Ordering…' : 'Create order + dummy pay'}
+                    {loading ? 'Ordering…' : 'Create order + Pay with Razorpay'}
                   </button>
                 </div>
               ) : null}
@@ -746,8 +746,11 @@ export function UserQuotationPanel({ user }: Props) {
                       void (async () => {
                         setLoading(true)
                         try {
-                          await payServiceOrder(user.accessToken, order._id)
-                          setOk('Service order dummy paid')
+                          const verified = await payServiceOrderWithRazorpay(
+                            user.accessToken,
+                            order._id,
+                          )
+                          setOk(`Service order Razorpay paid (${verified.status})`)
                           await refresh()
                         } catch (err) {
                           setError(errMessage(err))
@@ -757,7 +760,7 @@ export function UserQuotationPanel({ user }: Props) {
                       })()
                     }
                   >
-                    Dummy pay
+                    Pay with Razorpay
                   </button>
                 ) : null}
                 {order.workStatus === 'review_pending' ? (
@@ -829,8 +832,11 @@ export function UserQuotationPanel({ user }: Props) {
                     void (async () => {
                       setLoading(true)
                       try {
-                        await payConsultationBooking(user.accessToken, booking._id)
-                        setOk('Consultation booking paid')
+                        const verified = await payConsultationBookingWithRazorpay(
+                          user.accessToken,
+                          booking._id,
+                        )
+                        setOk(`Consultation Razorpay paid (${verified.status})`)
                         await refresh()
                       } catch (err) {
                         setError(errMessage(err))
@@ -840,7 +846,7 @@ export function UserQuotationPanel({ user }: Props) {
                     })()
                   }
                 >
-                  Dummy pay
+                  Pay with Razorpay
                 </button>
               ) : null}
             </li>
@@ -915,7 +921,7 @@ export function UserQuotationPanel({ user }: Props) {
                       className="rounded border border-amber-500 px-2 py-1 text-[11px] text-amber-300 disabled:opacity-50"
                       onClick={() => void handlePayPaymentRequest(q.openPaymentRequest!._id)}
                     >
-                      Dummy pay ₹{q.openPaymentRequest.amount}
+                      Pay with Razorpay ₹{q.openPaymentRequest.amount}
                       {q.openPaymentRequest.milestoneIndex != null
                         ? ` · milestone ${q.openPaymentRequest.milestoneIndex + 1}`
                         : ''}

@@ -17,7 +17,7 @@ export type ReferralMetricDefinition = {
   registryType: 'Count' | 'Percentage' | 'Average' | 'Text'
 }
 
-/** Fallback when API has not loaded. null → UI shows — for untracked metrics. */
+/** Fallback when API has not loaded. Dashboard never uses null — always 0 / "—". */
 export const REFERRAL_METRICS_SEED: ReferralMetricsValues = {
   totalReferralsGenerated: 0,
   userToUserReferrals: 0,
@@ -30,13 +30,13 @@ export const REFERRAL_METRICS_SEED: ReferralMetricsValues = {
   referralExpiryRate: 0,
   topReferralSource: '—',
   totalReferralGoalsCompleted: 0,
-  membershipsUnlocked: null,
+  membershipsUnlocked: 0,
   averageReferralsPerUser: 0,
-  averageDaysToReachGoal: null,
+  averageDaysToReachGoal: 0,
   signupsViaReferralCode: 0,
-  pendingRewards: null,
-  rewardsDistributed: null,
-  rewardDistributionRate: null,
+  pendingRewards: 0,
+  rewardsDistributed: 0,
+  rewardDistributionRate: 0,
 }
 
 export const REFERRAL_METRIC_TREND_PERCENT = 0
@@ -89,20 +89,38 @@ export const REFERRAL_METRIC_DEFINITIONS: ReferralMetricDefinition[] =
 export function formatReferralMetricValue(
   format: ReferralMetricFormat,
   value: number | string | undefined | null,
+  options?: { appendDays?: boolean },
 ): string {
+  // null / undefined / empty → em dash (cannot compute or not tracked)
   if (value === undefined || value === null || value === '') {
     return '—'
   }
-  if (format === 'string') return String(value || '—')
+  if (format === 'string') {
+    const text = String(value).trim()
+    return text || '—'
+  }
   if (typeof value !== 'number' || Number.isNaN(value)) return '—'
+  // Real zeros render as 0 / 0%
   if (format === 'integer') return value.toLocaleString('en-US')
   if (format === 'percentage') return `${value}%`
-  return value.toLocaleString('en-US', { maximumFractionDigits: 1, minimumFractionDigits: 0 })
+  const decimal = value.toLocaleString('en-US', {
+    maximumFractionDigits: 1,
+    minimumFractionDigits: 0,
+  })
+  if (options?.appendDays) return `${decimal} Days`
+  return decimal
 }
 
 export function mergeReferralMetrics(partial?: Partial<ReferralMetrics> | null): ReferralMetrics {
-  return {
+  const merged = {
     ...REFERRAL_METRICS_SEED,
     ...(partial ?? {}),
   } as ReferralMetrics
+  // Coerce any lingering nulls from older API payloads to seed defaults (0 / "—")
+  for (const key of Object.keys(REFERRAL_METRICS_SEED) as Array<keyof ReferralMetricsValues>) {
+    if (merged[key] === null || merged[key] === undefined) {
+      ;(merged as ReferralMetricsValues)[key] = REFERRAL_METRICS_SEED[key] as never
+    }
+  }
+  return merged
 }

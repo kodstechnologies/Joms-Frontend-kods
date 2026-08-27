@@ -18,8 +18,10 @@ import { toast } from 'sonner'
 
 import { AddTagModal } from '@/shared/components/modal/add-tag-modal'
 import { EscalateTicketModal } from '../components/reassign-ticket-modal'
+import { EscalationStatusBadge } from '../components/escalation-status-badge'
 import { TicketPriorityBadge } from '../components/ticket-priority-badge'
 import { TicketStatusBadge } from '../components/ticket-status-badge'
+import { SlaTimerCell } from '../components/sla-timer-cell'
 import {
   DEFAULT_TICKET_MANAGEMENT_METRIC_IDS,
   TICKET_MANAGEMENT_METRIC_IDS,
@@ -38,10 +40,14 @@ import { useSupportStore } from '../store/support-store'
 import type { SupportTicket, TicketTab } from '../types/support'
 import {
   getApiErrorMessage,
+  getEscalationStatusLabel,
   getPriorityLabel,
   getStatusLabel,
   nextPriority,
   nextStatus,
+  formatTicketDateTime,
+  formatTicketDurationHms,
+  dashIfEmpty,
 } from '../utils/support-format'
 import { buildTicketManagementMetricCards } from '../utils/ticket-management-metrics'
 import {
@@ -87,10 +93,139 @@ const EXPORT_COLUMN_MAP: Record<
   },
   category: { header: 'Category', accessor: (ticket) => exportDisplayValue(ticket.category) },
   reporter: { header: 'Reporter', accessor: (ticket) => exportDisplayValue(ticket.reporter) },
+  slaTimer: {
+    header: 'SLA Timer',
+    accessor: (ticket) => exportDisplayValue(ticket.slaTimer),
+  },
+  firstResponseDueAt: {
+    header: 'First Response Due',
+    accessor: (ticket) => exportDisplayValue(formatTicketDateTime(ticket.firstResponseDueAt)),
+  },
+  resolutionDueAt: {
+    header: 'Resolution Due',
+    accessor: (ticket) =>
+      exportDisplayValue(formatTicketDateTime(ticket.resolutionDueAt || ticket.slaDueAt)),
+  },
+  assignedAt: {
+    header: 'Assigned On',
+    accessor: (ticket) => exportDisplayValue(formatTicketDateTime(ticket.assignedAt)),
+  },
+  assignedBy: {
+    header: 'Assigned By',
+    accessor: (ticket) => exportDisplayValue(dashIfEmpty(ticket.assignedBy)),
+  },
   assignedTo: {
     header: 'Assigned To',
     accessor: (ticket) => exportDisplayValue(ticket.assignedTo),
   },
+  resolvedAt: {
+    header: 'Resolved At',
+    accessor: (ticket) => exportDisplayValue(formatTicketDateTime(ticket.resolvedAt)),
+  },
+  resolvedBy: {
+    header: 'Resolved By',
+    accessor: (ticket) => exportDisplayValue(dashIfEmpty(ticket.resolvedBy)),
+  },
+  resolutionTime: {
+    header: 'Resolution Time',
+    accessor: (ticket) =>
+      exportDisplayValue(
+        formatTicketDurationHms(ticket.resolutionTime, ticket.createdAt, ticket.resolvedAt),
+      ),
+  },
+  lastUpdatedAt: {
+    header: 'Last Updated At',
+    accessor: (ticket) =>
+      exportDisplayValue(formatTicketDateTime(ticket.lastUpdatedAt || ticket.createdAt)),
+  },
+  escalatedAt: {
+    header: 'Escalated At',
+    accessor: (ticket) => exportDisplayValue(formatTicketDateTime(ticket.escalatedAt)),
+  },
+  escalatedFor: {
+    header: 'Escalated For',
+    accessor: (ticket) => exportDisplayValue(dashIfEmpty(ticket.escalatedFor)),
+  },
+  escalatedTo: {
+    header: 'Escalated To',
+    accessor: (ticket) => exportDisplayValue(dashIfEmpty(ticket.escalatedTo)),
+  },
+  escalatedBy: {
+    header: 'Escalated By',
+    accessor: (ticket) => exportDisplayValue(dashIfEmpty(ticket.escalatedBy)),
+  },
+  escalationStatus: {
+    header: 'Escalation Status',
+    accessor: (ticket) =>
+      exportDisplayValue(dashIfEmpty(getEscalationStatusLabel(ticket.escalationStatus))),
+  },
+}
+
+const ALL_TICKETS_EXPORT_KEYS = [
+  'id',
+  'subject',
+  'status',
+  'priority',
+  'category',
+  'reporter',
+  'slaTimer',
+  'firstResponseDueAt',
+  'resolutionDueAt',
+  'assignedAt',
+  'assignedBy',
+  'assignedTo',
+  'resolvedAt',
+  'resolvedBy',
+  'resolutionTime',
+  'lastUpdatedAt',
+] as const
+
+const MY_TICKETS_EXPORT_KEYS = [
+  'id',
+  'subject',
+  'status',
+  'priority',
+  'category',
+  'reporter',
+  'slaTimer',
+  'assignedAt',
+  'assignedBy',
+  'escalatedAt',
+  'escalatedFor',
+  'escalatedTo',
+  'resolutionTime',
+  'lastUpdatedAt',
+] as const
+
+const ESCALATED_TICKETS_EXPORT_KEYS = [
+  'id',
+  'subject',
+  'status',
+  'priority',
+  'category',
+  'reporter',
+  'slaTimer',
+  'assignedAt',
+  'assignedBy',
+  'assignedTo',
+  'escalatedBy',
+  'escalatedTo',
+  'escalatedAt',
+  'escalationStatus',
+  'escalatedFor',
+  'lastUpdatedAt',
+] as const
+
+function exportKeysForTab(tab: TicketTab) {
+  if (tab === 'my_tickets') return MY_TICKETS_EXPORT_KEYS
+  if (tab === 'escalated') return ESCALATED_TICKETS_EXPORT_KEYS
+  return ALL_TICKETS_EXPORT_KEYS
+}
+
+function pickExportColumns(keys: readonly string[]) {
+  return Object.fromEntries(
+    keys.filter((key) => EXPORT_COLUMN_MAP[key]).map((key) => [key, EXPORT_COLUMN_MAP[key]]),
+  )
 }
 
 function TicketMetricCard({
@@ -229,7 +364,7 @@ export function TicketManagementPage() {
     }
     return createSupportTicketsFilteredExportHandler(
       fetchForExport,
-      EXPORT_COLUMN_MAP,
+      pickExportColumns(exportKeysForTab(activeTab)),
       'support_tickets_export',
       { search: searchQuery || undefined, tab: activeTab, includeClosed: true },
     )
@@ -390,30 +525,41 @@ export function TicketManagementPage() {
     [activeDropdownId, deleteMutation, navigate, setSelectedTicketId, updateMutation],
   )
 
-  const columns = useMemo<ColumnDef<SupportTicket>[]>(
-    () => [
-      {
-        id: 'select',
-        header: () => (
-          <input
-            type="checkbox"
-            aria-label="Select all"
-            className="rounded border-white/20"
-            checked={tickets.length > 0 && selectedIds.length === tickets.length}
-            onChange={toggleSelectAll}
-          />
-        ),
-        cell: ({ row }) => (
-          <input
-            type="checkbox"
-            aria-label={`Select ${row.original.id}`}
-            className="rounded border-white/20"
-            checked={selectedIds.includes(row.original.id)}
-            onChange={() => toggleSelect(row.original.id)}
-          />
-        ),
-        meta: { headerClassName: 'pl-5 w-10', cellClassName: 'pl-5 w-10' },
-      },
+  const columns = useMemo<ColumnDef<SupportTicket>[]>(() => {
+    const nowrap = {
+      headerClassName: 'whitespace-nowrap',
+      cellClassName: 'whitespace-nowrap',
+    }
+    const dateCell = (value?: string | null) => (
+      <span className="text-body-sm text-brand-text whitespace-nowrap tabular-nums">
+        {formatTicketDateTime(value)}
+      </span>
+    )
+
+    const selectColumn: ColumnDef<SupportTicket> = {
+      id: 'select',
+      header: () => (
+        <input
+          type="checkbox"
+          aria-label="Select all"
+          className="rounded border-white/20"
+          checked={tickets.length > 0 && selectedIds.length === tickets.length}
+          onChange={toggleSelectAll}
+        />
+      ),
+      cell: ({ row }) => (
+        <input
+          type="checkbox"
+          aria-label={`Select ${row.original.id}`}
+          className="rounded border-white/20"
+          checked={selectedIds.includes(row.original.id)}
+          onChange={() => toggleSelect(row.original.id)}
+        />
+      ),
+      meta: { headerClassName: 'pl-5 w-10', cellClassName: 'pl-5 w-10' },
+    }
+
+    const sharedLeadColumns: ColumnDef<SupportTicket>[] = [
       {
         accessorKey: 'id',
         header: 'Ticket ID',
@@ -438,16 +584,191 @@ export function TicketManagementPage() {
       },
       { accessorKey: 'category', header: 'Category' },
       { accessorKey: 'reporter', header: 'Reporter' },
+      {
+        accessorKey: 'slaTimer',
+        header: 'SLA Timer',
+        cell: ({ row }) => (
+          <SlaTimerCell
+            slaTimer={row.original.slaTimer}
+            slaDueAt={row.original.slaDueAt || row.original.resolutionDueAt}
+            status={row.original.status}
+          />
+        ),
+        meta: nowrap,
+      },
+    ]
+
+    const myTicketColumns: ColumnDef<SupportTicket>[] = [
+      {
+        accessorKey: 'assignedAt',
+        header: 'Assigned On',
+        cell: ({ row }) => dateCell(row.original.assignedAt),
+        meta: nowrap,
+      },
+      {
+        accessorKey: 'assignedBy',
+        header: 'Assigned By',
+        cell: ({ row }) => dashIfEmpty(row.original.assignedBy),
+      },
+      {
+        accessorKey: 'escalatedAt',
+        header: 'Escalated At',
+        cell: ({ row }) => dateCell(row.original.escalatedAt),
+        meta: nowrap,
+      },
+      {
+        accessorKey: 'escalatedFor',
+        header: 'Escalated For',
+        cell: ({ row }) => dashIfEmpty(row.original.escalatedFor),
+      },
+      {
+        accessorKey: 'escalatedTo',
+        header: 'Escalated To',
+        cell: ({ row }) => dashIfEmpty(row.original.escalatedTo),
+      },
+      {
+        accessorKey: 'resolutionTime',
+        header: 'Resolution Time',
+        cell: ({ row }) => (
+          <span className="text-body-sm text-brand-text whitespace-nowrap tabular-nums">
+            {formatTicketDurationHms(
+              row.original.resolutionTime,
+              row.original.createdAtIso,
+              row.original.resolvedAt,
+            )}
+          </span>
+        ),
+        meta: nowrap,
+      },
+      {
+        accessorKey: 'lastUpdatedAt',
+        header: 'Last Updated At',
+        cell: ({ row }) => dateCell(row.original.lastUpdatedAt),
+        meta: nowrap,
+      },
+    ]
+
+    const escalatedTicketColumns: ColumnDef<SupportTicket>[] = [
+      {
+        accessorKey: 'assignedAt',
+        header: 'Assigned On',
+        cell: ({ row }) => dateCell(row.original.assignedAt),
+        meta: nowrap,
+      },
+      {
+        accessorKey: 'assignedBy',
+        header: 'Assigned By',
+        cell: ({ row }) => dashIfEmpty(row.original.assignedBy),
+      },
       { accessorKey: 'assignedTo', header: 'Assigned To' },
       {
-        id: 'actions',
-        header: 'Actions',
-        meta: { headerClassName: 'pr-5 text-right', cellClassName: 'relative pr-5 text-right' },
-        cell: ({ row }) => renderActions(row.original),
+        accessorKey: 'escalatedBy',
+        header: 'Escalated By',
+        cell: ({ row }) => dashIfEmpty(row.original.escalatedBy),
       },
-    ],
-    [renderActions, selectedIds, tickets.length, toggleSelect, toggleSelectAll],
-  )
+      {
+        accessorKey: 'escalatedTo',
+        header: 'Escalated To',
+        cell: ({ row }) => dashIfEmpty(row.original.escalatedTo),
+      },
+      {
+        accessorKey: 'escalatedAt',
+        header: 'Escalated At',
+        cell: ({ row }) => dateCell(row.original.escalatedAt),
+        meta: nowrap,
+      },
+      {
+        accessorKey: 'escalationStatus',
+        header: 'Escalation Status',
+        cell: ({ row }) => <EscalationStatusBadge status={row.original.escalationStatus} />,
+      },
+      {
+        accessorKey: 'escalatedFor',
+        header: 'Escalated For',
+        cell: ({ row }) => dashIfEmpty(row.original.escalatedFor),
+      },
+      {
+        accessorKey: 'lastUpdatedAt',
+        header: 'Last Updated At',
+        cell: ({ row }) => dateCell(row.original.lastUpdatedAt),
+        meta: nowrap,
+      },
+    ]
+
+    const allTicketColumns: ColumnDef<SupportTicket>[] = [
+      {
+        accessorKey: 'firstResponseDueAt',
+        header: 'First Response Due',
+        cell: ({ row }) => dateCell(row.original.firstResponseDueAt),
+        meta: nowrap,
+      },
+      {
+        accessorKey: 'resolutionDueAt',
+        header: 'Resolution Due',
+        cell: ({ row }) => dateCell(row.original.resolutionDueAt || row.original.slaDueAt),
+        meta: nowrap,
+      },
+      {
+        accessorKey: 'assignedAt',
+        header: 'Assigned On',
+        cell: ({ row }) => dateCell(row.original.assignedAt),
+        meta: nowrap,
+      },
+      {
+        accessorKey: 'assignedBy',
+        header: 'Assigned By',
+        cell: ({ row }) => dashIfEmpty(row.original.assignedBy),
+      },
+      { accessorKey: 'assignedTo', header: 'Assigned To' },
+      {
+        accessorKey: 'resolvedAt',
+        header: 'Resolved At',
+        cell: ({ row }) => dateCell(row.original.resolvedAt),
+        meta: nowrap,
+      },
+      {
+        accessorKey: 'resolvedBy',
+        header: 'Resolved By',
+        cell: ({ row }) => dashIfEmpty(row.original.resolvedBy),
+      },
+      {
+        accessorKey: 'resolutionTime',
+        header: 'Resolution Time',
+        cell: ({ row }) => (
+          <span className="text-body-sm text-brand-text whitespace-nowrap tabular-nums">
+            {formatTicketDurationHms(
+              row.original.resolutionTime,
+              row.original.createdAtIso,
+              row.original.resolvedAt,
+            )}
+          </span>
+        ),
+        meta: nowrap,
+      },
+      {
+        accessorKey: 'lastUpdatedAt',
+        header: 'Last Updated At',
+        cell: ({ row }) => dateCell(row.original.lastUpdatedAt),
+        meta: nowrap,
+      },
+    ]
+
+    const actionsColumn: ColumnDef<SupportTicket> = {
+      id: 'actions',
+      header: 'Actions',
+      meta: { headerClassName: 'pr-5 text-right', cellClassName: 'relative pr-5 text-right' },
+      cell: ({ row }) => renderActions(row.original),
+    }
+
+    const tabColumns =
+      activeTab === 'my_tickets'
+        ? myTicketColumns
+        : activeTab === 'escalated'
+          ? escalatedTicketColumns
+          : allTicketColumns
+
+    return [selectColumn, ...sharedLeadColumns, ...tabColumns, actionsColumn]
+  }, [activeTab, renderActions, selectedIds, tickets.length, toggleSelect, toggleSelectAll])
 
   const activeTicket = tickets.find((t) => t.id === activeTicketId)
   const escalateTicket = tickets.find((t) => t.id === escalateTicketId)

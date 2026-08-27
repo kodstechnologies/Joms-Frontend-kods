@@ -19,6 +19,7 @@ type MetricCardData = {
   label: string
   description: string
   value: string
+  isTextValue: boolean
   trendPercent: number
   trendDirection?: 'up' | 'down'
   trendLabel?: string
@@ -32,12 +33,16 @@ function buildMetricCards(metrics: ReferralMetrics, activeMetricIds?: string[]):
       (typeof metrics.vsLastMonthPercent === 'number' ? metrics.vsLastMonthPercent : 0)
     const trendDirection = trendObj?.direction ?? 'up'
     const trendLabel = trendObj?.label ?? 'vs last month'
+    const raw = metrics[def.key]
 
     return {
       id: def.id,
       label: def.label,
       description: def.description,
-      value: formatReferralMetricValue(def.format, metrics[def.key]),
+      value: formatReferralMetricValue(def.format, raw, {
+        appendDays: def.id === 'avg-days-to-goal',
+      }),
+      isTextValue: def.format === 'string',
       trendPercent,
       trendDirection,
       trendLabel,
@@ -59,7 +64,14 @@ function ReferralMetricCard({ metric }: { metric: MetricCardData }) {
       title={metric.description}
     >
       <p className="referral-stats-label">{metric.label}</p>
-      <p className="referral-stats-value mt-2">{metric.value}</p>
+      <p
+        className={cn(
+          'referral-stats-value mt-2',
+          metric.isTextValue && 'referral-stats-value--text',
+        )}
+      >
+        {metric.value}
+      </p>
       <div className="mt-auto flex items-center gap-2 pt-3">
         <span
           className={cn(
