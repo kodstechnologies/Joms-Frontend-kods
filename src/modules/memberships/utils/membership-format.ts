@@ -1,4 +1,4 @@
-import type { MembershipFeatures, MembershipPlan } from '../types/membership'
+import type { MembershipFeatures, MembershipPlan, MembershipPlanConfig } from '../types/membership'
 
 export const formatCurrency = (value: number) =>
   new Intl.NumberFormat('en-IN', {
@@ -124,33 +124,31 @@ export const getStatusClassName = (status: MembershipPlan['status']) => {
   }
 }
 
-export const getFeatureLines = (features: MembershipFeatures) => {
+export const getFeatureLines = (
+  features: MembershipFeatures | MembershipPlanConfig | undefined,
+) => {
   const lines: string[] = []
+  if (!features) return lines
 
-  if (features.accessToBasicNetworkingFeatures) {
-    lines.push('Access to basic networking features')
+  const planConfig =
+    'benefits' in features && Array.isArray((features as MembershipPlanConfig).benefits)
+      ? (features as MembershipPlanConfig)
+      : (features as MembershipFeatures).planConfig
+
+  if (planConfig) {
+    for (const item of planConfig.benefits ?? []) {
+      if (item.enabled !== false) lines.push(item.label)
+    }
+    for (const item of planConfig.partnerApp ?? []) {
+      if (item.enabled !== false) lines.push(item.label)
+    }
+    return lines
   }
 
-  if (features.joinCommunities.enabled) {
-    lines.push(`Join up to ${features.joinCommunities.count} communities`)
-  }
-
-  if (features.platformHostedEvents.enabled) {
-    lines.push(`Attend ${features.platformHostedEvents.count} events per month`)
-  }
-
-  if (features.profileCustomization) {
-    lines.push('Basic profile customization')
-  }
-
-  if (features.dedicatedAccountManager) {
-    lines.push('Dedicated account manager')
-  }
-
-  for (const feature of features.customFeatures ?? []) {
-    lines.push(feature)
-  }
-
+  const legacy = features as MembershipFeatures
+  if (legacy.profileCustomization) lines.push('Profile customization')
+  if (legacy.dedicatedAccountManager) lines.push('Dedicated Account Manager')
+  for (const feature of legacy.customFeatures ?? []) lines.push(feature)
   return lines
 }
 

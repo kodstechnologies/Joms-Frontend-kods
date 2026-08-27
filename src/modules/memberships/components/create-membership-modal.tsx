@@ -1,4 +1,4 @@
-import { Plus, X } from 'lucide-react'
+import { Save, X } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { MembershipPlanForm, type MembershipPlanFormValues } from './membership-plan-form'
@@ -31,6 +31,7 @@ export function CreateMembershipModal({ open, onClose }: CreateMembershipModalPr
         planName: values.planName.trim(),
         pricing: values.pricing,
         features: values.features,
+        planConfig: values.planConfig,
         trialPeriodDays: values.trialPeriodDays,
         enableAutoRenew: values.enableAutoRenew,
         allowPlanUpgrades: values.allowPlanUpgrades,
@@ -90,7 +91,7 @@ export function CreateMembershipModal({ open, onClose }: CreateMembershipModalPr
             disabled={createMutation.isPending}
             className="ui-cta ui-cta-primary min-w-[120px]"
           >
-            <Plus className="size-4" strokeWidth={2.25} />
+            <Save className="size-4" strokeWidth={2} />
             {createMutation.isPending ? 'Creating...' : 'Create'}
           </button>
         </div>
