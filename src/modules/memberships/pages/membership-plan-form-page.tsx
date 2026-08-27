@@ -1,4 +1,4 @@
-import { ArrowLeft, Pencil, Plus, X } from 'lucide-react'
+import { ArrowLeft, Pencil, Save, X } from 'lucide-react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 
@@ -45,6 +45,7 @@ export function MembershipPlanFormPage() {
             planName: values.planName,
             pricing: values.pricing,
             features: values.features,
+            planConfig: values.planConfig,
             trialPeriodDays: values.trialPeriodDays,
             enableAutoRenew: values.enableAutoRenew,
             allowPlanUpgrades: values.allowPlanUpgrades,
@@ -60,6 +61,7 @@ export function MembershipPlanFormPage() {
           planName: values.planName,
           pricing: values.pricing,
           features: values.features,
+          planConfig: values.planConfig,
           trialPeriodDays: values.trialPeriodDays,
           enableAutoRenew: values.enableAutoRenew,
           allowPlanUpgrades: values.allowPlanUpgrades,
@@ -155,7 +157,7 @@ export function MembershipPlanFormPage() {
               </>
             ) : (
               <>
-                <Plus className="size-4" strokeWidth={2.25} />
+                <Save className="size-4" strokeWidth={2} />
                 {isSubmitting ? 'Creating...' : 'Create'}
               </>
             )}

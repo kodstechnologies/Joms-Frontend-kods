@@ -572,14 +572,10 @@ export function MembershipPlansPage({
         <InfoModal title="Feature List" onClose={closeModal}>
           <ul className="space-y-2">
             {getFeatureLines(
-              featuresQuery.data?.data?.features ??
-                selectedPlan?.features ?? {
-                  accessToBasicNetworkingFeatures: false,
-                  joinCommunities: { enabled: false, count: 0 },
-                  platformHostedEvents: { enabled: false, count: 0 },
-                  profileCustomization: false,
-                  dedicatedAccountManager: false,
-                },
+              featuresQuery.data?.data?.planConfig ??
+                featuresQuery.data?.data?.features ??
+                selectedPlan?.planConfig ??
+                selectedPlan?.features,
             ).map((feature) => (
               <li key={feature} className="text-body-md text-brand-text/80">
                 • {feature}
