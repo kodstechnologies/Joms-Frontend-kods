@@ -9,9 +9,24 @@ const pausedCategoryDefaults = {
   createdBy: 'Admin',
   adminNotes: '',
   subCategories: [],
+  totalOrders: 0,
+  completedOrders: 0,
+  inProgressOrders: 0,
+  cancelledOrders: 0,
+  repeatBookingPct: '0%',
 } satisfies Pick<
   PausedCategory,
-  'description' | 'createdAt' | 'updatedAt' | 'createdBy' | 'adminNotes' | 'subCategories'
+  | 'description'
+  | 'createdAt'
+  | 'updatedAt'
+  | 'createdBy'
+  | 'adminNotes'
+  | 'subCategories'
+  | 'totalOrders'
+  | 'completedOrders'
+  | 'inProgressOrders'
+  | 'cancelledOrders'
+  | 'repeatBookingPct'
 >
 
 const data: PausedCategory[] = [

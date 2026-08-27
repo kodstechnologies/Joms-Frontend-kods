@@ -1,5 +1,16 @@
 import type { Category } from './category/category-table-columns'
 
+const categoryOrderMetrics = {
+  totalOrders: 0,
+  completedOrders: 0,
+  inProgressOrders: 0,
+  cancelledOrders: 0,
+  repeatBookingPct: '0%',
+} satisfies Pick<
+  Category,
+  'totalOrders' | 'completedOrders' | 'inProgressOrders' | 'cancelledOrders' | 'repeatBookingPct'
+>
+
 export const dummyData: Category[] = [
   {
     id: 'CAT001',
@@ -12,6 +23,7 @@ export const dummyData: Category[] = [
     services: 42,
     experts: 42,
     revenue: '₹3,45,000',
+    ...categoryOrderMetrics,
     createdAt: '15 Jan 2025',
     updatedAt: '20 Jan 2025',
     createdBy: 'Super Admin',
@@ -75,6 +87,7 @@ export const dummyData: Category[] = [
     services: 58,
     experts: 58,
     revenue: '₹3,45,000',
+    ...categoryOrderMetrics,
     createdAt: '15 Jan 2025',
     updatedAt: '20 Jan 2025',
     createdBy: 'Super Admin',
@@ -138,6 +151,7 @@ export const dummyData: Category[] = [
     services: 89,
     experts: 89,
     revenue: '₹3,45,000',
+    ...categoryOrderMetrics,
     createdAt: '15 Jan 2025',
     updatedAt: '20 Jan 2025',
     createdBy: 'Super Admin',
@@ -201,6 +215,7 @@ export const dummyData: Category[] = [
     services: 10,
     experts: 10,
     revenue: '₹3,45,000',
+    ...categoryOrderMetrics,
     createdAt: '15 Jan 2025',
     updatedAt: '20 Jan 2025',
     createdBy: 'Super Admin',
@@ -264,6 +279,7 @@ export const dummyData: Category[] = [
     services: 42,
     experts: 42,
     revenue: '₹3,45,000',
+    ...categoryOrderMetrics,
     createdAt: '15 Jan 2025',
     updatedAt: '20 Jan 2025',
     createdBy: 'Super Admin',
@@ -327,6 +343,7 @@ export const dummyData: Category[] = [
     services: 232,
     experts: 232,
     revenue: '₹3,45,000',
+    ...categoryOrderMetrics,
     createdAt: '15 Jan 2025',
     updatedAt: '20 Jan 2025',
     createdBy: 'Super Admin',
@@ -390,6 +407,7 @@ export const dummyData: Category[] = [
     services: 67,
     experts: 67,
     revenue: '₹3,45,000',
+    ...categoryOrderMetrics,
     createdAt: '15 Jan 2025',
     updatedAt: '20 Jan 2025',
     createdBy: 'Super Admin',
@@ -453,6 +471,7 @@ export const dummyData: Category[] = [
     services: 34,
     experts: 34,
     revenue: '₹3,45,000',
+    ...categoryOrderMetrics,
     createdAt: '15 Jan 2025',
     updatedAt: '20 Jan 2025',
     createdBy: 'Super Admin',
@@ -517,6 +536,7 @@ export const dummyData: Category[] = [
     services: 42,
     experts: 42,
     revenue: '₹3,45,000',
+    ...categoryOrderMetrics,
     createdAt: '15 Jan 2025',
     updatedAt: '20 Jan 2025',
     createdBy: 'Super Admin',
@@ -580,6 +600,7 @@ export const dummyData: Category[] = [
     services: 42,
     experts: 42,
     revenue: '₹3,45,000',
+    ...categoryOrderMetrics,
     createdAt: '15 Jan 2025',
     updatedAt: '20 Jan 2025',
     createdBy: 'Super Admin',
