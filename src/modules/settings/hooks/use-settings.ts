@@ -17,7 +17,7 @@ import {
   updateSettings,
 } from '../api/settings-api'
 import type { ModuleSettingsMap, SettingsModule } from '../types/settings'
-import { getModulePlaceholder, mergeWithDefaults } from '../utils/branding-defaults'
+import { mergeWithDefaults } from '../utils/branding-defaults'
 
 export const settingsKeys = {
   all: ['settings'] as const,
@@ -35,8 +35,7 @@ export const useSettingsModule = <M extends SettingsModule>(module: M) =>
   useQuery({
     queryKey: settingsKeys.module(module),
     queryFn: () => fetchSettings(module),
-    // Keep UI filled with general defaults while loading / if the request fails.
-    placeholderData: getModulePlaceholder(module),
+    staleTime: 60 * 1000,
     retry: 1,
   })
 
@@ -45,7 +44,8 @@ export const useUpdateSettings = <M extends SettingsModule>(module: M) => {
 
   return useMutation({
     mutationFn: (config: ModuleSettingsMap[M]) => updateSettings(module, config),
-    onSuccess: () => {
+    onSuccess: (data) => {
+      queryClient.setQueryData(settingsKeys.module(module), data)
       void queryClient.invalidateQueries({ queryKey: settingsKeys.module(module) })
       void queryClient.invalidateQueries({ queryKey: [...settingsKeys.all, 'logs'] })
       if (module === 'platform') {
@@ -74,7 +74,8 @@ export const useResetSettings = <M extends SettingsModule>(module: M) => {
 
   return useMutation({
     mutationFn: () => resetSettings(module),
-    onSuccess: () => {
+    onSuccess: (data) => {
+      queryClient.setQueryData(settingsKeys.module(module), data)
       void queryClient.invalidateQueries({ queryKey: settingsKeys.module(module) })
       void queryClient.invalidateQueries({ queryKey: [...settingsKeys.all, 'logs'] })
       if (module === 'platform') {
@@ -102,7 +103,9 @@ export const useResetSettings = <M extends SettingsModule>(module: M) => {
  * Always falls back to defaults when API data is missing.
  */
 export function useSettingsDraft<T>(queryData: { config: T } | undefined, defaults: T) {
-  const [draft, setDraft] = useState<T>(defaults)
+  const [draft, setDraft] = useState<T>(() =>
+    queryData?.config ? mergeWithDefaults(defaults, queryData.config) : defaults,
+  )
   const [hydratedData, setHydratedData] = useState(queryData)
 
   if (queryData && queryData !== hydratedData) {

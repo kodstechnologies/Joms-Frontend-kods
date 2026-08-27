@@ -168,11 +168,13 @@ function buildReferralDataColumnsById(): Record<string, ColumnDef<ExpertInvite>>
     'referral-id': {
       id: 'referral-id',
       header: 'Referral ID',
+      accessorFn: (row) => row.referralId ?? '',
       cell: ({ row }) => <span className="ui-table-id">{dash(row.original.referralId)}</span>,
     },
     'referral-code': {
       id: 'referral-code',
       header: 'Referral Code',
+      accessorFn: (row) => row.referralCode ?? '',
       cell: ({ row }) => (
         <span className="font-mono text-xs">{dash(row.original.referralCode)}</span>
       ),
@@ -180,16 +182,19 @@ function buildReferralDataColumnsById(): Record<string, ColumnDef<ExpertInvite>>
     'referrer-name': {
       id: 'referrer-name',
       header: 'Referrer Name',
+      accessorFn: (row) => row.referrerName ?? '',
       cell: ({ row }) => dash(row.original.referrerName),
     },
     referrer: {
       id: 'referrer',
       header: 'Referrer Name',
+      accessorFn: (row) => row.referrerName ?? '',
       cell: ({ row }) => dash(row.original.referrerName),
     },
     'referrer-user-id': {
       id: 'referrer-user-id',
       header: 'Referrer User ID',
+      accessorFn: (row) => row.referrerUserId || row.referrerId || '',
       cell: ({ row }) => (
         <span className="ui-table-id">
           {dash(row.original.referrerUserId || row.original.referrerId)}
@@ -199,11 +204,13 @@ function buildReferralDataColumnsById(): Record<string, ColumnDef<ExpertInvite>>
     'referrer-type': {
       id: 'referrer-type',
       header: 'Referrer Type',
+      accessorFn: (row) => row.referrerType ?? '',
       cell: ({ row }) => badge(row.original.referrerType),
     },
     'referred-user-name': {
       id: 'referred-user-name',
       header: 'Referred User Name',
+      accessorFn: (row) => row.referredUserName || row.referredExpertName || '',
       cell: ({ row }) => (
         <span className="font-medium text-white">
           {dash(row.original.referredUserName || row.original.referredExpertName)}
@@ -213,26 +220,31 @@ function buildReferralDataColumnsById(): Record<string, ColumnDef<ExpertInvite>>
     'referred-expert': {
       id: 'referred-expert',
       header: 'Referred User Name',
+      accessorFn: (row) => row.referredUserName || row.referredExpertName || '',
       cell: ({ row }) => dash(row.original.referredUserName || row.original.referredExpertName),
     },
     'referred-user-id': {
       id: 'referred-user-id',
       header: 'Referred User ID',
+      accessorFn: (row) => row.referredUserId ?? '',
       cell: ({ row }) => <span className="ui-table-id">{dash(row.original.referredUserId)}</span>,
     },
     'referred-entity-type': {
       id: 'referred-entity-type',
       header: 'Referred Entity Type',
+      accessorFn: (row) => row.referredEntityType || 'Expert',
       cell: ({ row }) => badge(row.original.referredEntityType || 'Expert'),
     },
     'source-type': {
       id: 'source-type',
       header: 'Source Type',
+      accessorFn: (row) => row.sourceType ?? '',
       cell: ({ row }) => badge(row.original.sourceType),
     },
     status: {
       id: 'status',
       header: 'Status',
+      accessorFn: (row) => row.status ?? '',
       cell: ({ row }) => (
         <span
           className={cn(
@@ -247,6 +259,14 @@ function buildReferralDataColumnsById(): Record<string, ColumnDef<ExpertInvite>>
     'goal-progress': {
       id: 'goal-progress',
       header: 'Goal Progress',
+      accessorFn: (row) =>
+        row.goalProgressPercent ??
+        Math.min(
+          100,
+          Math.round(
+            ((row.goalProgress?.signedUpCount ?? 0) / (row.goalProgress?.maxReferrals || 10)) * 100,
+          ),
+        ),
       meta: { headerClassName: 'text-center', cellClassName: 'text-center' },
       cell: ({ row }) => {
         const percent =
@@ -275,16 +295,19 @@ function buildReferralDataColumnsById(): Record<string, ColumnDef<ExpertInvite>>
     'reward-status': {
       id: 'reward-status',
       header: 'Reward Status',
+      accessorFn: (row) => row.rewardStatus ?? '',
       cell: ({ row }) => badge(row.original.rewardStatus),
     },
     'reward-type': {
       id: 'reward-type',
       header: 'Reward Type',
+      accessorFn: (row) => row.rewardType ?? '',
       cell: ({ row }) => dash(row.original.rewardType),
     },
     'reward-value': {
       id: 'reward-value',
       header: 'Reward Value',
+      accessorFn: (row) => row.rewardValue ?? 0,
       cell: ({ row }) =>
         row.original.rewardValue == null
           ? '—'
@@ -293,6 +316,7 @@ function buildReferralDataColumnsById(): Record<string, ColumnDef<ExpertInvite>>
     'referred-at': {
       id: 'referred-at',
       header: 'Referred At',
+      accessorFn: (row) => row.referredAt || row.createdAt || '',
       cell: ({ row }) => (
         <TableDateTimeCell value={row.original.referredAt || row.original.createdAt} />
       ),
@@ -300,6 +324,7 @@ function buildReferralDataColumnsById(): Record<string, ColumnDef<ExpertInvite>>
     'created-at': {
       id: 'created-at',
       header: 'Referred At',
+      accessorFn: (row) => row.referredAt || row.createdAt || '',
       cell: ({ row }) => (
         <TableDateTimeCell value={row.original.referredAt || row.original.createdAt} />
       ),
@@ -307,12 +332,14 @@ function buildReferralDataColumnsById(): Record<string, ColumnDef<ExpertInvite>>
     'signup-date': {
       id: 'signup-date',
       header: 'Signup Date',
+      accessorFn: (row) => row.signupDate ?? '',
       cell: ({ row }) =>
         row.original.signupDate ? <TableDateTimeCell value={row.original.signupDate} /> : '—',
     },
     'goal-completed-at': {
       id: 'goal-completed-at',
       header: 'Goal Completed At',
+      accessorFn: (row) => row.goalCompletedAt ?? '',
       cell: ({ row }) =>
         row.original.goalCompletedAt ? (
           <TableDateTimeCell value={row.original.goalCompletedAt} />
@@ -323,6 +350,7 @@ function buildReferralDataColumnsById(): Record<string, ColumnDef<ExpertInvite>>
     'referral-expiry-date': {
       id: 'referral-expiry-date',
       header: 'Referral Expiry Date',
+      accessorFn: (row) => row.referralExpiryDate || row.expiresAt || '',
       cell: ({ row }) => {
         const value = row.original.referralExpiryDate || row.original.expiresAt
         return value ? <TableDateTimeCell value={value} /> : '—'
@@ -331,6 +359,7 @@ function buildReferralDataColumnsById(): Record<string, ColumnDef<ExpertInvite>>
     'last-activity': {
       id: 'last-activity',
       header: 'Last Activity',
+      accessorFn: (row) => row.lastActivity ?? '',
       cell: ({ row }) =>
         row.original.lastActivity ? <TableDateTimeCell value={row.original.lastActivity} /> : '—',
     },

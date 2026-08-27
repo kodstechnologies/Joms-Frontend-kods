@@ -16,6 +16,7 @@ import {
   CheckSquare,
   ChevronLeft,
   ChevronRight,
+  CircleArrowOutUpRight,
   CircleMinus,
   Clock,
   Eye,
@@ -1653,7 +1654,7 @@ function ServicesSubTab({
               title="Escalate selected services"
               className="flex size-8 items-center justify-center rounded-md bg-black text-white transition-colors hover:bg-white/10"
             >
-              <FileText className="size-3.5" aria-hidden="true" />
+              <CircleArrowOutUpRight className="size-3.5" aria-hidden="true" />
             </button>
           </div>
         </div>

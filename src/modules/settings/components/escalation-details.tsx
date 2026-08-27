@@ -57,6 +57,24 @@ const ESCALATION_EXPORT_COLUMN_MAP: Record<
   createdOn: { header: 'Created On', accessor: (row) => exportDisplayValue(row.createdOn) },
 }
 
+function EscalationMetricCardSkeleton() {
+  return (
+    <div className="bg-brand-surface flex min-h-[130px] flex-col justify-between gap-3 overflow-hidden rounded-2xl border border-white/10 p-5 shadow-[0_10px_30px_rgba(0,0,0,0.35)]">
+      <div className="flex min-w-0 items-start justify-between gap-3">
+        <div className="min-w-0 flex-1 space-y-2">
+          <div className="h-3.5 w-24 animate-pulse rounded bg-white/10" />
+          <div className="mt-2 h-7 w-20 animate-pulse rounded bg-white/10" />
+        </div>
+        <div className="size-10 shrink-0 animate-pulse rounded border border-white/10 bg-white/5" />
+      </div>
+      <div className="flex items-center gap-2">
+        <div className="h-4 w-12 animate-pulse rounded bg-white/10" />
+        <div className="h-3 w-20 animate-pulse rounded bg-white/5" />
+      </div>
+    </div>
+  )
+}
+
 export function EscalationDetails() {
   const navigate = useNavigate()
   const [searchValue, setSearchValue] = useState('')
@@ -93,6 +111,7 @@ export function EscalationDetails() {
   )
 
   const visibleMetrics = useMemo(() => {
+    if (!metricsResponse?.data) return []
     const allMetrics = buildEscalationsMetricCards(metricsResponse?.data)
     return orderByActiveMetricIds(allMetrics, filteredActiveMetricIds)
   }, [filteredActiveMetricIds, metricsResponse?.data])
@@ -167,22 +186,18 @@ export function EscalationDetails() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {(isMetricsLoading && visibleMetrics.length === 0
-          ? filteredActiveMetricIds.map((id) => ({
-              id,
-              title: 'Loading',
-              value: '—',
-              trend: { direction: 'up' as const, percentage: 0, label: 'vs last month' },
-            }))
-          : visibleMetrics
-        ).map((metric) => (
-          <StatCard
-            key={metric.id}
-            title={metric.title}
-            value={metric.value}
-            trend={metric.trend}
-          />
-        ))}
+        {isMetricsLoading || (!metricsResponse?.data && visibleMetrics.length === 0)
+          ? Array.from({ length: filteredActiveMetricIds.length || 4 }).map((_, index) => (
+              <EscalationMetricCardSkeleton key={`escalation-metric-skeleton-${index}`} />
+            ))
+          : visibleMetrics.map((metric) => (
+              <StatCard
+                key={metric.id}
+                title={metric.title}
+                value={metric.value}
+                trend={metric.trend}
+              />
+            ))}
       </div>
 
       <DataTable

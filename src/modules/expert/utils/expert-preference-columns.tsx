@@ -31,6 +31,7 @@ const textCol = (
 ): ColumnDef<Expert> => ({
   id,
   header,
+  accessorFn: (row) => (accessor(row) ?? '') as string | number,
   cell: ({ row }) => dash(accessor(row.original)),
 })
 
@@ -41,6 +42,7 @@ const dateCol = (
 ): ColumnDef<Expert> => ({
   id,
   header,
+  accessorFn: (row) => accessor(row) ?? '',
   cell: ({ row }) => formatDateTime(accessor(row.original)),
 })
 
@@ -51,6 +53,7 @@ const statusCol = (
 ): ColumnDef<Expert> => ({
   id,
   header,
+  accessorFn: (row) => accessor(row) ?? '',
   cell: ({ row }) => {
     const value = accessor(row.original)
     if (!value) return '—'
@@ -69,6 +72,7 @@ export function buildExpertDataColumnsById(): Record<string, ColumnDef<Expert>> 
     name: {
       id: 'name',
       header: 'Expert Name',
+      accessorFn: (row) => row.name ?? '',
       cell: ({ row }) => <span className="font-medium text-white">{dash(row.original.name)}</span>,
     },
     email: textCol('email', 'Email ID', (e) => e.email),
@@ -79,6 +83,7 @@ export function buildExpertDataColumnsById(): Record<string, ColumnDef<Expert>> 
     status: {
       id: 'status',
       header: 'Status',
+      accessorFn: (row) => row.status ?? '',
       cell: ({ row }) => <ExpertStatusBadge status={row.original.status} />,
     },
     'membership-type': textCol('membership-type', 'Membership Type', (e) => e.membershipType),
@@ -123,6 +128,7 @@ export function buildExpertDataColumnsById(): Record<string, ColumnDef<Expert>> 
     'total-earnings': {
       id: 'total-earnings',
       header: 'Total Earnings',
+      accessorFn: (row) => row.totalEarnings ?? 0,
       cell: ({ row }) => formatMoney(row.original.totalEarnings),
     },
     'total-services-listed': textCol(
@@ -180,6 +186,7 @@ export function buildExpertDataColumnsById(): Record<string, ColumnDef<Expert>> 
     'repeat-client-percent': {
       id: 'repeat-client-percent',
       header: 'Repeat Client %',
+      accessorFn: (row) => row.repeatClientPercent ?? 0,
       cell: ({ row }) => formatPercent(row.original.repeatClientPercent),
     },
     'quotations-received': textCol(
@@ -215,6 +222,7 @@ export function buildExpertDataColumnsById(): Record<string, ColumnDef<Expert>> 
     'client-satisfaction-score': {
       id: 'client-satisfaction-score',
       header: 'Client Satisfaction Score (CSAT)',
+      accessorFn: (row) => row.clientSatisfactionScore ?? 0,
       cell: ({ row }) => formatPercent(row.original.clientSatisfactionScore),
     },
     'net-promoter-score': textCol(

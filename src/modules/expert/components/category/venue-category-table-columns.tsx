@@ -75,6 +75,7 @@ export const venueCategoryColumns: ColumnDef<VenueCategory>[] = [
   {
     id: 'actions',
     header: 'Actions',
+    enableSorting: false,
     meta: { headerClassName: 'text-right', cellClassName: 'text-right' },
     cell: ({ row }) => (
       <div className="flex items-center justify-end gap-2">

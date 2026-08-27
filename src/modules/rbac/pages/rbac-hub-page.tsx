@@ -524,11 +524,13 @@ export function RbacHubPage() {
       'users-fullname': { id: 'users-fullname', accessorKey: 'fullname', header: 'Username' },
       'users-role-id': {
         id: 'users-role-id',
+        accessorFn: (row) => row.roles.map((r) => r.roleCode).join(', '),
         header: 'Role ID',
         cell: ({ row }) => row.original.roles.map((r) => r.roleCode).join(', ') || '—',
       },
       'users-role-name': {
         id: 'users-role-name',
+        accessorFn: (row) => row.roles.map((r) => r.name).join(', '),
         header: 'RoleName',
         cell: ({ row }) => row.original.roles.map((r) => r.name).join(', ') || '—',
       },

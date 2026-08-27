@@ -3275,6 +3275,8 @@ select::-ms-expand {
   line-height: 22px;
   color: #ffffff;
   outline: none;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 .ui-textarea::placeholder {

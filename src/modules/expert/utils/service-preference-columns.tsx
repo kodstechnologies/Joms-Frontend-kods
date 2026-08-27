@@ -40,6 +40,7 @@ const textCol = (
 ): ColumnDef<Service> => ({
   id,
   header,
+  accessorFn: (row) => (accessor(row) ?? '') as string | number,
   cell: ({ row }) => dash(accessor(row.original)),
 })
 
@@ -50,6 +51,7 @@ const dateCol = (
 ): ColumnDef<Service> => ({
   id,
   header,
+  accessorFn: (row) => accessor(row) ?? '',
   cell: ({ row }) => formatDateTime(accessor(row.original)),
 })
 
@@ -60,6 +62,7 @@ const moneyCol = (
 ): ColumnDef<Service> => ({
   id,
   header,
+  accessorFn: (row) => accessor(row) ?? 0,
   cell: ({ row }) => formatMoney(accessor(row.original)),
 })
 
@@ -70,6 +73,7 @@ const percentCol = (
 ): ColumnDef<Service> => ({
   id,
   header,
+  accessorFn: (row) => accessor(row) ?? 0,
   cell: ({ row }) => formatPercent(accessor(row.original)),
 })
 
@@ -80,6 +84,7 @@ const ratingCol = (
 ): ColumnDef<Service> => ({
   id,
   header,
+  accessorFn: (row) => accessor(row) ?? 0,
   cell: ({ row }) => formatRating(accessor(row.original)),
 })
 
@@ -90,6 +95,7 @@ const badgeCol = (
 ): ColumnDef<Service> => ({
   id,
   header,
+  accessorFn: (row) => accessor(row) ?? '',
   cell: ({ row }) => {
     const value = accessor(row.original)
     if (!value) return '—'
@@ -108,6 +114,7 @@ const countCol = (
 ): ColumnDef<Service> => ({
   id,
   header,
+  accessorFn: (row) => accessor(row) ?? 0,
   cell: ({ row }) => {
     const value = accessor(row.original)
     if (value == null || Number.isNaN(Number(value))) return '—'
@@ -121,6 +128,7 @@ export function buildServiceDataColumnsById(): Record<string, ColumnDef<Service>
     'service-id': {
       id: 'service-id',
       header: 'Listing ID',
+      accessorFn: (row) => row.serviceid || row._id || '',
       cell: ({ row }) => (
         <span className="ui-table-id uppercase">{row.original.serviceid || row.original._id}</span>
       ),
@@ -128,6 +136,7 @@ export function buildServiceDataColumnsById(): Record<string, ColumnDef<Service>
     name: {
       id: 'name',
       header: 'Listing Name',
+      accessorFn: (row) => row.title ?? '',
       cell: ({ row }) => <span className="font-medium text-white">{dash(row.original.title)}</span>,
     },
     type: badgeCol('type', 'Listing Type', (s) => s.serviceType),
@@ -136,6 +145,7 @@ export function buildServiceDataColumnsById(): Record<string, ColumnDef<Service>
     status: {
       id: 'status',
       header: 'Status',
+      accessorFn: (row) => row.status ?? '',
       cell: ({ row }) => {
         const { label, className } = getManagementStatusDisplay(row.original.status, {
           isSuspend: row.original.isSuspend,
@@ -162,6 +172,7 @@ export function buildServiceDataColumnsById(): Record<string, ColumnDef<Service>
     'expert-id': {
       id: 'expert-id',
       header: 'Expert ID',
+      accessorFn: (row) => row.expertid ?? '',
       cell: ({ row }) => (
         <span className="ui-table-id">{row.original.expertid || 'Not provided'}</span>
       ),
@@ -256,6 +267,7 @@ export function buildServiceReportDataColumnsById(): Record<string, ColumnDef<Se
     'report-id': {
       id: 'report-id',
       header: 'Report ID',
+      accessorFn: (row) => row.reportId ?? '',
       cell: ({ row }) => (
         <span className="font-mono font-semibold text-[#E5B54E]">
           {row.original.reportId || '—'}
@@ -265,11 +277,13 @@ export function buildServiceReportDataColumnsById(): Record<string, ColumnDef<Se
     'listing-id': {
       id: 'listing-id',
       header: 'Listing ID',
+      accessorFn: (row) => row.serviceId ?? '',
       cell: ({ row }) => <span className="ui-table-id">{dash(row.original.serviceId)}</span>,
     },
     'listing-name': {
       id: 'listing-name',
       header: 'Listing Name',
+      accessorFn: (row) => row.serviceTitle ?? '',
       cell: ({ row }) => (
         <span className="font-medium text-white">{dash(row.original.serviceTitle)}</span>
       ),
@@ -277,11 +291,13 @@ export function buildServiceReportDataColumnsById(): Record<string, ColumnDef<Se
     'reported-at': {
       id: 'reported-at',
       header: 'Reported At',
+      accessorFn: (row) => row.createdAt || row.submittedAt || '',
       cell: ({ row }) => formatDateTime(row.original.createdAt || row.original.submittedAt),
     },
     'report-reason': {
       id: 'report-reason',
       header: 'Report Reason',
+      accessorFn: (row) => row.issueType ?? '',
       cell: ({ row }) => (
         <span className="rounded-full bg-red-500/15 px-2.5 py-0.5 text-xs font-semibold text-red-400">
           {row.original.issueType || '—'}
@@ -291,16 +307,19 @@ export function buildServiceReportDataColumnsById(): Record<string, ColumnDef<Se
     'reported-by': {
       id: 'reported-by',
       header: 'Reported By',
+      accessorFn: (row) => row.reporterType ?? '',
       cell: ({ row }) => dash(row.original.reporterType),
     },
     'reporter-id': {
       id: 'reporter-id',
       header: 'Reporter ID',
+      accessorFn: (row) => row.reporterId ?? '',
       cell: ({ row }) => <span className="ui-table-id">{dash(row.original.reporterId)}</span>,
     },
     'case-status': {
       id: 'case-status',
       header: 'Case Status',
+      accessorFn: (row) => row.investigationStatus || 'New',
       cell: ({ row }) => {
         const status = row.original.investigationStatus || 'New'
         return (
@@ -313,6 +332,7 @@ export function buildServiceReportDataColumnsById(): Record<string, ColumnDef<Se
     'assigned-admin': {
       id: 'assigned-admin',
       header: 'Assigned Admin',
+      accessorFn: (row) => row.investigatingAdmin ?? '',
       cell: ({ row }) => dash(row.original.investigatingAdmin),
     },
   }

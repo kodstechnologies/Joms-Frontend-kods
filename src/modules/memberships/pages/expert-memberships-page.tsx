@@ -238,6 +238,7 @@ export function ExpertMembershipsPage() {
       {
         id: 'actions',
         header: 'Actions',
+        enableSorting: false,
         cell: ({ row }) => (
           <TableActionsDropdown
             label={`Actions for ${row.original.partnerName}`}

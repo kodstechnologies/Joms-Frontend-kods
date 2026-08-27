@@ -149,6 +149,24 @@ function TaskSection({
   )
 }
 
+function TaskCardSkeleton() {
+  return (
+    <div className="radius-lg bg-brand-surface flex w-full items-start justify-between gap-4 border border-white/5 px-4 py-4">
+      <div className="flex min-w-0 flex-1 items-start gap-3">
+        <div className="mt-0.5 size-6 shrink-0 animate-pulse rounded-lg bg-white/10" />
+        <div className="min-w-0 flex-1 space-y-2">
+          <div className="h-4 w-48 animate-pulse rounded bg-white/10" />
+          <div className="h-3 w-3/4 animate-pulse rounded bg-white/5" />
+        </div>
+      </div>
+      <div className="flex shrink-0 flex-col items-end gap-2">
+        <div className="h-5 w-16 animate-pulse rounded bg-white/10" />
+        <div className="h-4 w-20 animate-pulse rounded bg-white/5" />
+      </div>
+    </div>
+  )
+}
+
 export function MyTasksPage() {
   const openEscalation = useOpenEscalation()
   const user = useAuthStore((state) => state.user)
@@ -201,8 +219,10 @@ export function MyTasksPage() {
       </div>
 
       {isLoading ? (
-        <div className="flex h-[40vh] items-center justify-center">
-          <div className="border-brand-accent size-9 animate-spin rounded-full border-4 border-t-transparent" />
+        <div className="space-y-3">
+          {Array.from({ length: 4 }).map((_, index) => (
+            <TaskCardSkeleton key={`task-skeleton-${index}`} />
+          ))}
         </div>
       ) : isError ? (
         <div className="radius-lg border-brand-danger/30 bg-brand-danger/10 text-body-md text-brand-danger border px-4 py-3">

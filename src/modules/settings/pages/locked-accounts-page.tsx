@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from 'react'
-import { ArrowLeft, X } from 'lucide-react'
+import { ArrowDown, ArrowLeft, ArrowUp, ArrowUpDown, X } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
@@ -101,14 +101,49 @@ export function LockedAccountsPage() {
   const navigate = useNavigate()
   const [selected, setSelected] = useState<LockedAccountRow | null>(null)
   const [page, setPage] = useState(1)
+  const [sortKey, setSortKey] = useState<keyof LockedAccountRow | null>(null)
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc' | null>(null)
 
   const pageSize = 10
   const { data: accountsResult, isLoading } = useLockedAccounts({ page, limit: pageSize })
   const unlockMutation = useUnlockAccount()
 
-  const rows = accountsResult?.data ?? []
   const meta = accountsResult?.meta
   const totalPages = meta?.totalPages ?? 1
+
+  const handleSort = (key: keyof LockedAccountRow) => {
+    if (sortKey !== key) {
+      setSortKey(key)
+      setSortOrder('asc')
+    } else if (sortOrder === 'asc') {
+      setSortOrder('desc')
+    } else {
+      setSortKey(null)
+      setSortOrder(null)
+    }
+  }
+
+  const rows = useMemo(() => {
+    const rawRows = accountsResult?.data ?? []
+    if (!sortKey || !sortOrder) return rawRows
+    return [...rawRows].sort((a, b) => {
+      const aVal = String(a[sortKey] ?? '').toLowerCase()
+      const bVal = String(b[sortKey] ?? '').toLowerCase()
+      const comparison = aVal.localeCompare(bVal)
+      return sortOrder === 'asc' ? comparison : -comparison
+    })
+  }, [accountsResult?.data, sortKey, sortOrder])
+
+  const renderSortIcon = (key: keyof LockedAccountRow) => {
+    if (sortKey !== key || !sortOrder) {
+      return <ArrowUpDown className="text-muted/50 size-[14px]" aria-hidden="true" />
+    }
+    return sortOrder === 'asc' ? (
+      <ArrowUp className="text-brand-primary size-[14px]" aria-hidden="true" />
+    ) : (
+      <ArrowDown className="text-brand-primary size-[14px]" aria-hidden="true" />
+    )
+  }
 
   const handleUnlock = useCallback(
     (id: string) => {
@@ -153,11 +188,34 @@ export function LockedAccountsPage() {
           <table className="locked-accounts-table">
             <thead>
               <tr>
-                <th>Admin</th>
-                <th>Roles</th>
-                <th>Reason</th>
-                <th>Locked Since</th>
-                <th>Duration</th>
+                <th onClick={() => handleSort('admin')} className="cursor-pointer select-none">
+                  <div className="inline-flex items-center gap-1.5">
+                    Admin {renderSortIcon('admin')}
+                  </div>
+                </th>
+                <th onClick={() => handleSort('role')} className="cursor-pointer select-none">
+                  <div className="inline-flex items-center gap-1.5">
+                    Roles {renderSortIcon('role')}
+                  </div>
+                </th>
+                <th onClick={() => handleSort('reason')} className="cursor-pointer select-none">
+                  <div className="inline-flex items-center gap-1.5">
+                    Reason {renderSortIcon('reason')}
+                  </div>
+                </th>
+                <th
+                  onClick={() => handleSort('lockedSince')}
+                  className="cursor-pointer select-none"
+                >
+                  <div className="inline-flex items-center gap-1.5">
+                    Locked Since {renderSortIcon('lockedSince')}
+                  </div>
+                </th>
+                <th onClick={() => handleSort('duration')} className="cursor-pointer select-none">
+                  <div className="inline-flex items-center gap-1.5">
+                    Duration {renderSortIcon('duration')}
+                  </div>
+                </th>
                 <th className="text-right">Actions</th>
               </tr>
             </thead>

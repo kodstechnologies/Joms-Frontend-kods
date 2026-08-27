@@ -177,6 +177,7 @@ export function ExpertReportedExpertsPage() {
       'report-id': {
         id: 'report-id',
         header: 'Report ID',
+        accessorFn: (row) => row.reportId ?? '',
         cell: ({ row }) => (
           <span className="font-mono font-semibold text-[#E5B54E]">
             {row.original.reportId || '—'}
@@ -186,6 +187,9 @@ export function ExpertReportedExpertsPage() {
       'expert-id': {
         id: 'expert-id',
         header: 'Expert ID',
+        accessorFn: (row) =>
+          row.expertId ||
+          (row.partnerId ? `EXP-${String(row.partnerId).slice(-4).toUpperCase()}` : ''),
         cell: ({ row }) =>
           dash(
             row.original.expertId ||
@@ -197,6 +201,7 @@ export function ExpertReportedExpertsPage() {
       'expert-name': {
         id: 'expert-name',
         header: 'Expert Name',
+        accessorFn: (row) => row.expertName ?? '',
         cell: ({ row }) => (
           <span className="font-semibold text-white">{dash(row.original.expertName)}</span>
         ),
@@ -204,6 +209,7 @@ export function ExpertReportedExpertsPage() {
       'reported-by': {
         id: 'reported-by',
         header: 'Reported By',
+        accessorFn: (row) => row.reporterName ?? '',
         cell: ({ row }) => (
           <div>
             <div className="font-medium text-slate-200">{dash(row.original.reporterName)}</div>
@@ -214,11 +220,13 @@ export function ExpertReportedExpertsPage() {
       'reporter-id': {
         id: 'reporter-id',
         header: 'Reporter ID',
+        accessorFn: (row) => row.reporterId ?? '',
         cell: ({ row }) => dash(row.original.reporterId),
       },
       'report-category': {
         id: 'report-category',
         header: 'Report Category',
+        accessorFn: (row) => row.issueType ?? '',
         cell: ({ row }) => (
           <span className="rounded-full bg-red-500/15 px-2.5 py-0.5 text-xs font-semibold text-red-400">
             {dash(row.original.issueType)}
@@ -228,6 +236,7 @@ export function ExpertReportedExpertsPage() {
       'report-reason': {
         id: 'report-reason',
         header: 'Report Reason',
+        accessorFn: (row) => row.reason ?? '',
         cell: ({ row }) => (
           <div className="max-w-xs truncate text-xs text-slate-300" title={row.original.reason}>
             {dash(row.original.reason)}
@@ -237,6 +246,8 @@ export function ExpertReportedExpertsPage() {
       'evidence-attached': {
         id: 'evidence-attached',
         header: 'Evidence Attached',
+        accessorFn: (row) =>
+          row.hasSupportingDocuments || (row.supportingDocuments?.length ?? 0) > 0 ? 'Yes' : 'No',
         cell: ({ row }) =>
           dash(
             row.original.hasSupportingDocuments ||
@@ -248,11 +259,13 @@ export function ExpertReportedExpertsPage() {
       severity: {
         id: 'severity',
         header: 'Severity',
+        accessorFn: (row) => row.businessImpact ?? '',
         cell: ({ row }) => dash(row.original.businessImpact),
       },
       'case-status': {
         id: 'case-status',
         header: 'Case Status',
+        accessorFn: (row) => row.investigationStatus || 'New',
         cell: ({ row }) => {
           const status = row.original.investigationStatus || 'New'
           const isResolved = status === 'Resolved' || status === 'Closed'
@@ -275,17 +288,20 @@ export function ExpertReportedExpertsPage() {
       'assigned-to': {
         id: 'assigned-to',
         header: 'Assigned To',
+        accessorFn: (row) => row.investigatingAdmin ?? '',
         cell: ({ row }) => dash(row.original.investigatingAdmin),
       },
       'reported-at': {
         id: 'reported-at',
         header: 'Reported At',
+        accessorFn: (row) => row.submittedAt ?? '',
         cell: ({ row }) =>
           row.original.submittedAt ? <TableDateTimeCell value={row.original.submittedAt} /> : '—',
       },
       'last-updated': {
         id: 'last-updated',
         header: 'Last Updated',
+        accessorFn: (row) => row.latestActionTimestamp ?? '',
         cell: ({ row }) =>
           row.original.latestActionTimestamp ? (
             <TableDateTimeCell value={row.original.latestActionTimestamp} />
@@ -296,11 +312,13 @@ export function ExpertReportedExpertsPage() {
       'escalated-by': {
         id: 'escalated-by',
         header: 'Escalated By',
+        accessorFn: (row) => row.adminWhoEscalated ?? '',
         cell: ({ row }) => dash(row.original.adminWhoEscalated),
       },
       'escalated-at': {
         id: 'escalated-at',
         header: 'Escalated At',
+        accessorFn: (row) => row.escalatedAt || row.escalationTimestamp || '',
         cell: ({ row }) => {
           const value = row.original.escalatedAt || row.original.escalationTimestamp
           return value ? <TableDateTimeCell value={value} /> : '—'
@@ -309,16 +327,20 @@ export function ExpertReportedExpertsPage() {
       resolution: {
         id: 'resolution',
         header: 'Resolution',
+        accessorFn: (row) => row.finalOutcome ?? '',
         cell: ({ row }) => dash(row.original.finalOutcome),
       },
       'resolution-notes': {
         id: 'resolution-notes',
         header: 'Resolution Notes',
+        accessorFn: (row) => row.internalNotes ?? '',
         cell: ({ row }) => dash(row.original.internalNotes),
       },
       'compliance-flag': {
         id: 'compliance-flag',
         header: 'Compliance Flag',
+        accessorFn: (row) =>
+          row.complianceReviewRequired == null ? '' : row.complianceReviewRequired ? 'Yes' : 'No',
         cell: ({ row }) =>
           dash(
             row.original.complianceReviewRequired == null
@@ -331,6 +353,7 @@ export function ExpertReportedExpertsPage() {
       'related-ticket-id': {
         id: 'related-ticket-id',
         header: 'Related Ticket ID',
+        accessorFn: (row) => row.linkedSupportTicket ?? '',
         cell: ({ row }) => dash(row.original.linkedSupportTicket),
       },
     }
