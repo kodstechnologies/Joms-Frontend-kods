@@ -9,6 +9,7 @@ import { useVenueFullView } from '../../hooks/use-venues'
 import { useVenueProfileAnalytics } from '../../hooks/use-venue-analytics'
 import {
   DEFAULT_VENUE_PROFILE_ANALYTICS_METRIC_IDS,
+  VENUE_PROFILE_ANALYTICS_LEGACY_METRIC_ID_MAP,
   VENUE_PROFILE_ANALYTICS_METRIC_ID_SET,
   VENUE_PROFILE_ANALYTICS_METRIC_IDS,
   VENUE_PROFILE_ANALYTICS_MODULE_KEY,
@@ -54,9 +55,15 @@ export function VenueProfileAnalyticsPage() {
   const filteredActiveMetricIds = useMemo(
     () =>
       sortIdsByCatalogOrder(
-        activeMetricIds.filter((metricId) => VENUE_PROFILE_ANALYTICS_METRIC_ID_SET.has(metricId)),
+        [
+          ...new Set(
+            activeMetricIds
+              .map((metricId) => VENUE_PROFILE_ANALYTICS_LEGACY_METRIC_ID_MAP[metricId] ?? metricId)
+              .filter((metricId) => VENUE_PROFILE_ANALYTICS_METRIC_ID_SET.has(metricId)),
+          ),
+        ],
         VENUE_PROFILE_ANALYTICS_METRIC_IDS,
-      ),
+      ).slice(0, 8),
     [activeMetricIds],
   )
 

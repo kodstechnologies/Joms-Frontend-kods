@@ -29,6 +29,14 @@ import {
   buildFinanceEscrowListQueryParams,
   createFinanceEscrowFilteredExportHandler,
 } from '@/shared/utils/export-filter-utils'
+import {
+  DEFAULT_FINANCE_ESCROW_VISIBLE_COLUMN_IDS,
+  FINANCE_ESCROW_LEGACY_COLUMN_ID_MAP,
+  FINANCE_ESCROW_MODULE_KEY,
+  FINANCE_ESCROW_TABLE_COLUMNS_CATALOG,
+} from '@/modules/payments/config/finance-escrow-table-columns.config'
+import { useTableColumnPreferences } from '@/modules/expert/hooks/use-ui-preferences'
+import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
 
 const PAGE_SIZE = 10
 
@@ -105,6 +113,8 @@ export function EscrowManagementPage() {
     isFetching,
     isError,
   } = useFinanceEscrow(listQueryParams, isEscrowTab)
+
+  const tableColumnPreferencesQuery = useTableColumnPreferences(FINANCE_ESCROW_MODULE_KEY)
 
   const liveEscrowRows = useMemo(
     () => (escrowData?.data?.rows ?? []).map(mapEscrowToRow),
@@ -255,35 +265,36 @@ export function EscrowManagementPage() {
     [activeDropdownId, navigate],
   )
 
-  const escrowColumns = useMemo<ColumnDef<EscrowHoldRow>[]>(
-    () => [
-      {
-        id: 'select',
-        header: () => (
-          <input
-            type="checkbox"
-            aria-label="Select all escrow records"
-            checked={allVisibleSelected}
-            ref={(input) => {
-              if (input) input.indeterminate = someVisibleSelected && !allVisibleSelected
-            }}
-            onChange={toggleVisibleRows}
-            className="rounded border-slate-700 bg-transparent"
-          />
-        ),
-        cell: ({ row }) => (
-          <input
-            type="checkbox"
-            aria-label={`Select ${row.original.escrowId}`}
-            checked={selectedRowIds.includes(row.original.id)}
-            onChange={() => toggleRowSelection(row.original.id)}
-            onClick={(event) => event.stopPropagation()}
-            className="rounded border-slate-700 bg-transparent"
-          />
-        ),
-        meta: { headerClassName: 'pl-5', cellClassName: 'pl-5' },
-      },
-      {
+  const escrowColumns = useMemo<ColumnDef<EscrowHoldRow>[]>(() => {
+    const selectColumn: ColumnDef<EscrowHoldRow> = {
+      id: 'select',
+      header: () => (
+        <input
+          type="checkbox"
+          aria-label="Select all escrow records"
+          checked={allVisibleSelected}
+          ref={(input) => {
+            if (input) input.indeterminate = someVisibleSelected && !allVisibleSelected
+          }}
+          onChange={toggleVisibleRows}
+          className="rounded border-slate-700 bg-transparent"
+        />
+      ),
+      cell: ({ row }) => (
+        <input
+          type="checkbox"
+          aria-label={`Select ${row.original.escrowId}`}
+          checked={selectedRowIds.includes(row.original.id)}
+          onChange={() => toggleRowSelection(row.original.id)}
+          onClick={(event) => event.stopPropagation()}
+          className="rounded border-slate-700 bg-transparent"
+        />
+      ),
+      meta: { headerClassName: 'pl-5', cellClassName: 'pl-5' },
+    }
+
+    const dataColumnsById: Record<string, ColumnDef<EscrowHoldRow>> = {
+      'escrow-id': {
         accessorKey: 'escrowId',
         header: 'Escrow ID',
         enableSorting: false,
@@ -293,7 +304,7 @@ export function EscrowManagementPage() {
           </span>
         ),
       },
-      {
+      'transaction-id': {
         accessorKey: 'transactionId',
         header: 'Transaction ID',
         enableSorting: false,
@@ -303,8 +314,13 @@ export function EscrowManagementPage() {
           </span>
         ),
       },
-      { accessorKey: 'type', header: 'Type', enableSorting: false },
-      {
+      module: {
+        id: 'module',
+        accessorKey: 'type',
+        header: 'Module',
+        enableSorting: false,
+      },
+      amount: {
         accessorKey: 'amount',
         header: 'Amount',
         enableSorting: false,
@@ -312,12 +328,30 @@ export function EscrowManagementPage() {
           <span className="text-brand-text font-semibold">{row.original.amount}</span>
         ),
       },
-      { accessorKey: 'holdReason', header: 'Hold Reason', enableSorting: false },
-      { accessorKey: 'initiatedDate', header: 'Initiated Date' },
-      { accessorKey: 'expectedRelease', header: 'Expected Release', enableSorting: false },
-      {
+      'hold-reason': {
+        accessorKey: 'holdReason',
+        header: 'Hold Reason',
+        enableSorting: false,
+      },
+      'hold-created-at': {
+        id: 'hold-created-at',
+        accessorKey: 'initiatedDate',
+        header: 'Hold Created At',
+      },
+      'expected-release': {
+        accessorKey: 'expectedRelease',
+        header: 'Expected Release',
+        enableSorting: false,
+      },
+      'released-at': {
+        id: 'released-at',
+        header: 'Released At',
+        cell: ({ row }) => (row.original as { releasedAt?: string }).releasedAt || '—',
+      },
+      'release-status': {
+        id: 'release-status',
         accessorKey: 'status',
-        header: 'Status',
+        header: 'Release Status',
         cell: ({ row }) => (
           <span
             className={cn(
@@ -329,22 +363,48 @@ export function EscrowManagementPage() {
           </span>
         ),
       },
-      {
-        id: 'actions',
-        header: 'Actions',
-        meta: { headerClassName: 'pr-5 text-right', cellClassName: 'relative pr-5 text-right' },
-        cell: ({ row }) => renderEscrowActions(row.original),
+      'created-by': {
+        id: 'created-by',
+        header: 'Created By',
+        cell: ({ row }) => (row.original as { createdBy?: string }).createdBy || '—',
       },
-    ],
-    [
-      allVisibleSelected,
-      renderEscrowActions,
-      selectedRowIds,
-      someVisibleSelected,
-      toggleRowSelection,
-      toggleVisibleRows,
-    ],
-  )
+      'last-updated': {
+        id: 'last-updated',
+        header: 'Last Updated',
+        cell: ({ row }) => (row.original as { lastUpdated?: string }).lastUpdated || '—',
+      },
+    }
+
+    const catalogIds = FINANCE_ESCROW_TABLE_COLUMNS_CATALOG.map((column) => column.id)
+    const rawVisibleIds = tableColumnPreferencesQuery.data?.visibleColumnIds?.length
+      ? tableColumnPreferencesQuery.data.visibleColumnIds
+      : DEFAULT_FINANCE_ESCROW_VISIBLE_COLUMN_IDS
+    const visibleIds = sortIdsByCatalogOrder(
+      [...new Set(rawVisibleIds.map((id) => FINANCE_ESCROW_LEGACY_COLUMN_ID_MAP[id] ?? id))].filter(
+        (id) => catalogIds.includes(id),
+      ),
+      catalogIds,
+    )
+
+    const preferenceColumns = visibleIds.map((id) => dataColumnsById[id]).filter(Boolean)
+
+    const actionsColumn: ColumnDef<EscrowHoldRow> = {
+      id: 'actions',
+      header: 'Actions',
+      meta: { headerClassName: 'pr-5 text-right', cellClassName: 'relative pr-5 text-right' },
+      cell: ({ row }) => renderEscrowActions(row.original),
+    }
+
+    return [selectColumn, ...preferenceColumns, actionsColumn]
+  }, [
+    allVisibleSelected,
+    renderEscrowActions,
+    selectedRowIds,
+    someVisibleSelected,
+    tableColumnPreferencesQuery.data,
+    toggleRowSelection,
+    toggleVisibleRows,
+  ])
 
   const bookingColumns = useMemo<ColumnDef<EscrowBookingRow>[]>(
     () => [

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { Eye } from 'lucide-react'
+import { Eye, SlidersHorizontal } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
@@ -18,6 +18,7 @@ import {
   TableActionsDropdown,
   TableActionsItem,
 } from '@/shared/components/table/table-actions-dropdown'
+import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
 import type { FilterValues } from '@/shared/types/data-filter'
 import { exportDisplayValue } from '@/shared/utils/export-utils'
@@ -248,18 +249,27 @@ export function MembershipManagementPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="membership-page-title">Membership Management</h1>
-        <p className="membership-page-subtitle mt-1 leading-[20px]">
-          Track revenue, payouts, and financial performance
-        </p>
-        <p className="text-body-sm text-muted mt-3 leading-[20px]">
-          <Link to="/finance/dashboard" className="hover:text-brand-text transition-colors">
-            Finance Management
-          </Link>
-          <span> / </span>
-          <span className="text-brand-text font-semibold">Memberships</span>
-        </p>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h1 className="membership-page-title">Membership Management</h1>
+          <p className="membership-page-subtitle mt-1 leading-[20px]">
+            Track revenue, payouts, and financial performance
+          </p>
+          <p className="text-body-sm text-muted mt-3 leading-[20px]">
+            <Link to="/finance/dashboard" className="hover:text-brand-text transition-colors">
+              Finance Management
+            </Link>
+            <span> / </span>
+            <span className="text-brand-text font-semibold">Memberships</span>
+          </p>
+        </div>
+        <Button
+          className="ui-manage-metrics"
+          onClick={() => navigate('/metrics/finance-memberships?section=table')}
+        >
+          <SlidersHorizontal className="size-4" />
+          Manage Metrics
+        </Button>
       </div>
 
       <div className="flex flex-wrap gap-2">

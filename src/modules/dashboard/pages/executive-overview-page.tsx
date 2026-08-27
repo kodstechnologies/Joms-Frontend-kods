@@ -86,7 +86,7 @@ export function ExecutiveOverviewPage() {
 
   const handleRefresh = async () => {
     try {
-      await overviewQuery.refetch()
+      await overviewQuery.refresh()
       toast.success('Executive overview refreshed')
     } catch {
       toast.error('Failed to refresh overview')

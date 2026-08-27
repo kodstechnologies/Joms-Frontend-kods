@@ -11,28 +11,28 @@ export type IncidentMetricCatalogItem = {
 export const INCIDENT_METRICS_CATALOG: IncidentMetricCatalogItem[] = [
   {
     id: 'open-incidents',
-    label: 'Active Incidents',
+    label: 'Open Incidents',
     type: 'Count',
-    description: 'Open and investigating incidents',
+    description: 'Currently open and investigating incidents',
     defaultActive: true,
   },
   {
     id: 'critical',
-    label: 'Critical Errors',
+    label: 'Critical',
     type: 'Count',
     description: 'Unresolved critical incidents',
     defaultActive: true,
   },
   {
     id: 'resolved-mtd',
-    label: 'Resolved',
+    label: 'Resolved (MTD)',
     type: 'Count',
     description: 'Resolved this month',
     defaultActive: true,
   },
   {
     id: 'mttr',
-    label: 'Avg. Resolution Time',
+    label: 'MTTR',
     type: 'Average',
     description: 'Mean time to resolve this month',
     defaultActive: true,

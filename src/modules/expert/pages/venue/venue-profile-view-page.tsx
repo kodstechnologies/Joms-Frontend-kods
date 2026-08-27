@@ -51,6 +51,7 @@ import { useBlockExpert, useForceLogoutExpert } from '../../hooks/use-expert'
 import { useVenueProfileAnalytics } from '../../hooks/use-venue-analytics'
 import {
   DEFAULT_VENUE_PROFILE_ANALYTICS_METRIC_IDS,
+  VENUE_PROFILE_ANALYTICS_LEGACY_METRIC_ID_MAP,
   VENUE_PROFILE_ANALYTICS_METRIC_ID_SET,
   VENUE_PROFILE_ANALYTICS_METRIC_IDS,
   VENUE_PROFILE_ANALYTICS_MODULE_KEY,
@@ -1262,9 +1263,15 @@ function AnalyticsTab({ data, venueId }: { data: VenueFullView; venueId: string 
   const filteredActiveMetricIds = useMemo(
     () =>
       sortIdsByCatalogOrder(
-        activeMetricIds.filter((id) => VENUE_PROFILE_ANALYTICS_METRIC_ID_SET.has(id)),
+        [
+          ...new Set(
+            activeMetricIds
+              .map((id) => VENUE_PROFILE_ANALYTICS_LEGACY_METRIC_ID_MAP[id] ?? id)
+              .filter((id) => VENUE_PROFILE_ANALYTICS_METRIC_ID_SET.has(id)),
+          ),
+        ],
         VENUE_PROFILE_ANALYTICS_METRIC_IDS,
-      ),
+      ).slice(0, 8),
     [activeMetricIds],
   )
 

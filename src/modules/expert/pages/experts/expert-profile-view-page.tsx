@@ -85,6 +85,7 @@ import {
 } from '../../hooks/use-expert-profile'
 import {
   DEFAULT_EXPERT_PROFILE_ANALYTICS_METRIC_IDS,
+  EXPERT_PROFILE_ANALYTICS_LEGACY_METRIC_ID_MAP,
   EXPERT_PROFILE_ANALYTICS_METRIC_ID_SET,
   EXPERT_PROFILE_ANALYTICS_METRIC_IDS,
   EXPERT_PROFILE_ANALYTICS_MODULE_KEY,
@@ -2344,9 +2345,15 @@ function AnalyticsTab({ expertId }: { expertId?: string }) {
   const filteredActiveMetricIds = useMemo(
     () =>
       sortIdsByCatalogOrder(
-        activeMetricIds.filter((id) => EXPERT_PROFILE_ANALYTICS_METRIC_ID_SET.has(id)),
+        [
+          ...new Set(
+            activeMetricIds
+              .map((id) => EXPERT_PROFILE_ANALYTICS_LEGACY_METRIC_ID_MAP[id] ?? id)
+              .filter((id) => EXPERT_PROFILE_ANALYTICS_METRIC_ID_SET.has(id)),
+          ),
+        ],
         EXPERT_PROFILE_ANALYTICS_METRIC_IDS,
-      ),
+      ).slice(0, 8),
     [activeMetricIds],
   )
 

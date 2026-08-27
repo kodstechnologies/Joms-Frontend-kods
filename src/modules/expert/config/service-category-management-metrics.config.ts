@@ -1,3 +1,9 @@
+/**
+ * Service Category Management — dashboard metrics catalog.
+ * Source: JOMS_KODS_Web_Admin_Panel_full_data (Category Management → Service Marketplace Categories).
+ * Keep ids kebab-case to match Manage Metrics / ui-preferences.
+ */
+
 export const SERVICE_CATEGORY_MANAGEMENT_MODULE_KEY = 'service-category-management'
 
 export type ServiceCategoryManagementMetricCatalogItem = {
@@ -8,73 +14,86 @@ export type ServiceCategoryManagementMetricCatalogItem = {
   defaultActive: boolean
 }
 
+const metric = (
+  id: string,
+  label: string,
+  type: string,
+  description: string,
+  defaultActive = false,
+): ServiceCategoryManagementMetricCatalogItem => ({
+  id,
+  label,
+  type,
+  description,
+  defaultActive,
+})
+
 export const SERVICE_CATEGORY_MANAGEMENT_METRICS_CATALOG: ServiceCategoryManagementMetricCatalogItem[] =
   [
-    {
-      id: 'total-categories',
-      label: 'Total Categories',
-      type: 'Count',
-      description: 'All service categories',
-      defaultActive: true,
-    },
-    {
-      id: 'active-categories',
-      label: 'Active Categories',
-      type: 'Count',
-      description: 'Currently active categories',
-      defaultActive: true,
-    },
-    {
-      id: 'total-sub-categories',
-      label: 'Total Sub-Category',
-      type: 'Count',
-      description: 'Sum of sub-categories',
-      defaultActive: true,
-    },
-    {
-      id: 'top-category',
-      label: 'Top Category',
-      type: 'Text',
-      description: 'Highest performing category',
-      defaultActive: true,
-    },
-    {
-      id: 'paused-categories',
-      label: 'Paused Categories',
-      type: 'Count',
-      description: 'Categories currently paused',
-      defaultActive: false,
-    },
-    {
-      id: 'deleted-categories',
-      label: 'Deleted Categories',
-      type: 'Count',
-      description: 'Soft-deleted categories',
-      defaultActive: false,
-    },
-    {
-      id: 'total-services',
-      label: 'Total Services',
-      type: 'Count',
-      description: 'Services across categories',
-      defaultActive: false,
-    },
-    {
-      id: 'total-revenue',
-      label: 'Total Revenue',
-      type: 'Currency',
-      description: 'Revenue across categories',
-      defaultActive: false,
-    },
+    metric(
+      'total-categories',
+      'Total Categories',
+      'Count',
+      'Count(Service Categories where IsDeleted = False)',
+      true,
+    ),
+    metric(
+      'active-categories',
+      'Active Categories',
+      'Count',
+      'Count(Category Status = Active)',
+      true,
+    ),
+    metric('paused-categories', 'Paused Categories', 'Count', 'Count(Category Status = Paused)'),
+    metric('deleted-categories', 'Deleted Categories', 'Count', 'Count(IsDeleted = True)'),
+    metric(
+      'top-revenue-category',
+      'Top Revenue Category',
+      'Text',
+      'Category with Highest Revenue',
+      true,
+    ),
+    metric(
+      'lowest-revenue-category',
+      'Lowest Revenue Category',
+      'Text',
+      'Category with Lowest Revenue (>0 Revenue)',
+    ),
+    metric(
+      'highest-order-category',
+      'Highest Order Category',
+      'Text',
+      'Category with Highest Completed Orders',
+    ),
+    metric(
+      'lowest-order-category',
+      'Lowest Order Category',
+      'Text',
+      'Category with Lowest Completed Orders',
+    ),
+    metric('total-orders', 'Total Orders', 'Count', 'Count(All Orders)'),
+    metric('completed-orders', 'Completed Orders', 'Count', 'Count(Status=Completed)'),
+    metric(
+      'order-completion-rate',
+      'Order Completion Rate',
+      'Percentage',
+      'Completed Orders / Total Orders ×100',
+    ),
+    metric('total-revenue', 'Total Revenue', 'Currency', 'Sum(Category Revenue)', true),
   ]
 
 export const SERVICE_CATEGORY_MANAGEMENT_METRIC_IDS =
-  SERVICE_CATEGORY_MANAGEMENT_METRICS_CATALOG.map((metric) => metric.id)
+  SERVICE_CATEGORY_MANAGEMENT_METRICS_CATALOG.map((item) => item.id)
 
 export const DEFAULT_SERVICE_CATEGORY_MANAGEMENT_METRIC_IDS =
-  SERVICE_CATEGORY_MANAGEMENT_METRICS_CATALOG.filter((metric) => metric.defaultActive).map(
-    (metric) => metric.id,
+  SERVICE_CATEGORY_MANAGEMENT_METRICS_CATALOG.filter((item) => item.defaultActive).map(
+    (item) => item.id,
   )
 
 export const SERVICE_CATEGORY_MANAGEMENT_MAX_ACTIVE_METRICS =
   SERVICE_CATEGORY_MANAGEMENT_METRICS_CATALOG.length
+
+/** Maps legacy camelCase / old kebab prefs → current catalog ids. */
+export const SERVICE_CATEGORY_LEGACY_METRIC_ID_MAP: Record<string, string> = {
+  'top-category': 'top-revenue-category',
+}

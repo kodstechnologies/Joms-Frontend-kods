@@ -3,57 +3,38 @@ import type { ColumnDef } from '@tanstack/react-table'
 import DeletedVenueCategoryActions from './DeletedVenueCategoryActions'
 import VenueViewCategoryButton from './venue-view-category-button'
 import { CategoryStatusBadge } from './category-list-shared'
-import type { VenueCategory } from './venue-category-table-columns'
+import { venueCategoryColumns, type VenueCategory } from './venue-category-table-columns'
 
 function getDisplayStatus(category: VenueCategory) {
   return category.previousStatus ?? category.status
 }
 
-export const deletedVenueCategoryColumns: ColumnDef<VenueCategory>[] = [
-  {
-    id: 'categoryId',
-    header: 'Category ID',
-    accessorFn: (row) => row.categoryId || row.id,
-    meta: { cellClassName: 'text-white font-medium' },
+/** Full Manage Metrics catalog columns for deleted venue categories. */
+export const deletedVenueCategoryColumns: ColumnDef<VenueCategory>[] = venueCategoryColumns.map(
+  (column) => {
+    if (column.id === 'status') {
+      return {
+        ...column,
+        cell: ({ row }) => <CategoryStatusBadge status={getDisplayStatus(row.original)} />,
+      }
+    }
+    if (column.id === 'actions') {
+      return {
+        id: 'actions',
+        header: 'Actions',
+        meta: { headerClassName: 'text-right', cellClassName: 'text-right' },
+        enableSorting: false,
+        enableHiding: false,
+        cell: ({ row }) => (
+          <div className="flex items-center justify-end gap-2">
+            <VenueViewCategoryButton id={row.original.id} />
+            <DeletedVenueCategoryActions category={row.original} />
+          </div>
+        ),
+      }
+    }
+    return column
   },
-  {
-    accessorKey: 'name',
-    header: 'Category Name',
-    meta: { cellClassName: 'text-white' },
-  },
-  {
-    accessorKey: 'status',
-    header: 'Status',
-    cell: ({ row }) => <CategoryStatusBadge status={getDisplayStatus(row.original)} />,
-  },
-  {
-    accessorKey: 'subCategory',
-    header: 'No. of Sub Category',
-    meta: { cellClassName: 'text-white' },
-  },
-  {
-    accessorKey: 'venues',
-    header: 'No.Of Venues',
-    meta: { cellClassName: 'text-white' },
-  },
-  {
-    accessorKey: 'revenue',
-    header: 'Revenue Generated',
-    meta: { cellClassName: 'text-white font-medium' },
-  },
-  {
-    id: 'actions',
-    header: 'Actions',
-    meta: { headerClassName: 'text-right', cellClassName: 'text-right' },
-    enableSorting: false,
-    enableHiding: false,
-    cell: ({ row }) => (
-      <div className="flex items-center justify-end gap-2">
-        <VenueViewCategoryButton id={row.original.id} />
-        <DeletedVenueCategoryActions category={row.original} />
-      </div>
-    ),
-  },
-]
+)
 
 export type { VenueCategory as DeletedVenueCategory }

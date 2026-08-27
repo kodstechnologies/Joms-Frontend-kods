@@ -2,7 +2,13 @@ import {
   SERVICE_PERFORMANCE_METRICS_CATALOG,
   type ServicePerformanceMetricCatalogItem,
 } from '../config/service-performance-metrics.config'
+import {
+  CONSULTATION_PERFORMANCE_METRIC_API_ALIASES,
+  CONSULTATION_PERFORMANCE_METRICS_CATALOG,
+  type ConsultationPerformanceMetricCatalogItem,
+} from '../config/consultation-performance-metrics.config'
 import type { ServiceKpi, ServiceMetric, ServicePerformance } from '../type/service-drilldown'
+import type { ConsultationPerformance } from '../type/consultation-drilldown'
 import { DASH } from '../components/service-drilldown/drilldown-format'
 
 export type ServicePerformanceCard = {
@@ -14,10 +20,20 @@ export type ServicePerformanceCard = {
   notInstrumented: boolean
 }
 
+type PerformanceLike = {
+  kpis?: ServiceKpi[]
+  metrics?: Record<string, ServiceMetric>
+}
+
 const currency = (value: number) =>
   `₹${Number(value).toLocaleString('en-IN', { maximumFractionDigits: 0 })}`
 
-const formatByType = (type: ServicePerformanceMetricCatalogItem['type'], value: number) => {
+const formatByType = (
+  type:
+    | ServicePerformanceMetricCatalogItem['type']
+    | ConsultationPerformanceMetricCatalogItem['type'],
+  value: number,
+) => {
   switch (type) {
     case 'Currency':
       return currency(value)
@@ -33,23 +49,50 @@ const formatByType = (type: ServicePerformanceMetricCatalogItem['type'], value: 
 }
 
 const resolveMetric = (
-  performance: ServicePerformance | undefined,
+  performance: PerformanceLike | undefined,
   id: string,
+  aliases: string[] = [],
 ): { metric: ServiceMetric | null; kpi: ServiceKpi | null } => {
-  const kpi = performance?.kpis.find((item) => item.id === id) ?? null
-  const metric = performance?.metrics?.[id] ?? null
+  const keys = [id, ...aliases]
+  const metrics = performance?.metrics || {}
+  const kpis = performance?.kpis || []
+
+  let metric: ServiceMetric | null = null
+  for (const key of keys) {
+    if (metrics[key]) {
+      metric = metrics[key]
+      break
+    }
+  }
+
+  let kpi: ServiceKpi | null = null
+  for (const key of keys) {
+    const found = kpis.find((item) => item.id === key)
+    if (found) {
+      kpi = found
+      break
+    }
+  }
+
   return { metric, kpi }
 }
 
-/**
- * Every catalog metric becomes a card. Metrics without a data source render a
- * dash and carry the backend's reason as the hint, never a substituted number.
- */
-export const buildServicePerformanceCards = (
-  performance: ServicePerformance | undefined,
+const buildCardsFromCatalog = (
+  performance: PerformanceLike | undefined,
+  catalog: Array<{
+    id: string
+    label: string
+    type: string
+    description: string
+  }>,
+  aliasMap: Record<string, string[]> = {},
 ): ServicePerformanceCard[] =>
-  SERVICE_PERFORMANCE_METRICS_CATALOG.map((catalogItem) => {
-    const { metric, kpi } = resolveMetric(performance, catalogItem.id)
+  catalog.map((catalogItem) => {
+    const { metric, kpi } = resolveMetric(
+      performance,
+      catalogItem.id,
+      aliasMap[catalogItem.id] || [],
+    )
     const rawValue = metric ? metric.value : (kpi?.value ?? null)
     const notInstrumented = Boolean(metric?.notInstrumented)
 
@@ -75,3 +118,21 @@ export const buildServicePerformanceCards = (
       notInstrumented,
     }
   })
+
+/**
+ * Every catalog metric becomes a card. Metrics without a data source render a
+ * dash and carry the backend's reason as the hint, never a substituted number.
+ */
+export const buildServicePerformanceCards = (
+  performance: ServicePerformance | undefined,
+): ServicePerformanceCard[] =>
+  buildCardsFromCatalog(performance, SERVICE_PERFORMANCE_METRICS_CATALOG)
+
+export const buildConsultationPerformanceCards = (
+  performance: ConsultationPerformance | undefined,
+): ServicePerformanceCard[] =>
+  buildCardsFromCatalog(
+    performance,
+    CONSULTATION_PERFORMANCE_METRICS_CATALOG,
+    CONSULTATION_PERFORMANCE_METRIC_API_ALIASES,
+  )

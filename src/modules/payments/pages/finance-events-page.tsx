@@ -23,6 +23,14 @@ import {
   createClientFilteredExportHandler,
   rowMatchesClientFilters,
 } from '@/shared/utils/export-filter-utils'
+import {
+  DEFAULT_FINANCE_EVENTS_VISIBLE_COLUMN_IDS,
+  FINANCE_EVENTS_LEGACY_COLUMN_ID_MAP,
+  FINANCE_EVENTS_MODULE_KEY,
+  FINANCE_EVENTS_TABLE_COLUMNS_CATALOG,
+} from '@/modules/payments/config/finance-events-table-columns.config'
+import { useTableColumnPreferences } from '@/modules/expert/hooks/use-ui-preferences'
+import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
 
 const PAGE_SIZE = 10
 
@@ -70,6 +78,8 @@ export function FinanceEventsPage() {
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [selectedRowIds, setSelectedRowIds] = useState<string[]>([])
+
+  const tableColumnPreferencesQuery = useTableColumnPreferences(FINANCE_EVENTS_MODULE_KEY)
 
   const filteredRows = useMemo(
     () =>
@@ -158,56 +168,74 @@ export function FinanceEventsPage() {
     [activeDropdownId],
   )
 
-  const columns = useMemo<ColumnDef<FinanceEventRow>[]>(
-    () => [
-      {
-        id: 'select',
-        header: () => (
-          <input
-            type="checkbox"
-            aria-label="Select all events"
-            checked={allVisibleSelected}
-            ref={(input) => {
-              if (input) input.indeterminate = someVisibleSelected && !allVisibleSelected
-            }}
-            onChange={toggleVisibleRows}
-            className="h-[18px] w-[18px] rounded border-slate-700 bg-transparent"
-          />
-        ),
-        cell: ({ row }) => (
-          <input
-            type="checkbox"
-            aria-label={`Select ${row.original.eventName}`}
-            checked={selectedRowIds.includes(row.original.id)}
-            onChange={() => toggleRowSelection(row.original.id)}
-            onClick={(event) => event.stopPropagation()}
-            className="h-[18px] w-[18px] rounded border-slate-700 bg-transparent"
-          />
-        ),
-        meta: { headerClassName: 'pl-5', cellClassName: 'pl-5' },
-      },
-      {
+  const columns = useMemo<ColumnDef<FinanceEventRow>[]>(() => {
+    const selectColumn: ColumnDef<FinanceEventRow> = {
+      id: 'select',
+      header: () => (
+        <input
+          type="checkbox"
+          aria-label="Select all events"
+          checked={allVisibleSelected}
+          ref={(input) => {
+            if (input) input.indeterminate = someVisibleSelected && !allVisibleSelected
+          }}
+          onChange={toggleVisibleRows}
+          className="h-[18px] w-[18px] rounded border-slate-700 bg-transparent"
+        />
+      ),
+      cell: ({ row }) => (
+        <input
+          type="checkbox"
+          aria-label={`Select ${row.original.eventName}`}
+          checked={selectedRowIds.includes(row.original.id)}
+          onChange={() => toggleRowSelection(row.original.id)}
+          onClick={(event) => event.stopPropagation()}
+          className="h-[18px] w-[18px] rounded border-slate-700 bg-transparent"
+        />
+      ),
+      meta: { headerClassName: 'pl-5', cellClassName: 'pl-5' },
+    }
+
+    const dataColumnsById: Record<string, ColumnDef<FinanceEventRow>> = {
+      'promotion-id': {
+        id: 'promotion-id',
         accessorKey: 'eventId',
-        header: 'Event ID',
+        header: 'Promotion ID',
         cell: ({ row }) => (
           <span className="text-body-sm-semibold text-brand-text font-mono uppercase">
             {row.original.eventId}
           </span>
         ),
       },
-      { accessorKey: 'eventName', header: 'Event Name' },
-      { accessorKey: 'organizer', header: 'Organizer' },
-      {
+      module: { id: 'module', header: 'Module', cell: () => 'Events' },
+      'promotion-type': { id: 'promotion-type', header: 'Promotion Type', cell: () => '—' },
+      'entity-name': {
+        id: 'entity-name',
+        accessorKey: 'eventName',
+        header: 'Entity Name',
+      },
+      'start-date': {
+        id: 'start-date',
+        accessorKey: 'eventDate',
+        header: 'Start Date',
+      },
+      'end-date': { id: 'end-date', header: 'End Date', cell: () => '—' },
+      'amount-paid': {
+        id: 'amount-paid',
         accessorKey: 'ticketSales',
-        header: 'Ticket Sales',
+        header: 'Amount Paid',
         cell: ({ row }) => (
           <span className="text-brand-text font-semibold">{row.original.ticketSales}</span>
         ),
       },
-      { accessorKey: 'platformFee', header: 'Platform Fee' },
-      { accessorKey: 'netRevenue', header: 'Net Revenue' },
-      { accessorKey: 'eventDate', header: 'Event Date' },
-      {
+      'payment-method': { id: 'payment-method', header: 'Payment Method', cell: () => '—' },
+      revenue: {
+        id: 'revenue',
+        accessorKey: 'netRevenue',
+        header: 'Revenue',
+        cell: ({ row }) => row.original.netRevenue,
+      },
+      status: {
         accessorKey: 'status',
         header: 'Status',
         cell: ({ row }) => (
@@ -221,22 +249,38 @@ export function FinanceEventsPage() {
           </span>
         ),
       },
-      {
-        id: 'actions',
-        header: 'Actions',
-        meta: { headerClassName: 'pr-5 text-right', cellClassName: 'relative pr-5 text-right' },
-        cell: ({ row }) => renderActions(row.original),
-      },
-    ],
-    [
-      allVisibleSelected,
-      renderActions,
-      selectedRowIds,
-      someVisibleSelected,
-      toggleRowSelection,
-      toggleVisibleRows,
-    ],
-  )
+    }
+
+    const catalogIds = FINANCE_EVENTS_TABLE_COLUMNS_CATALOG.map((column) => column.id)
+    const rawVisibleIds = tableColumnPreferencesQuery.data?.visibleColumnIds?.length
+      ? tableColumnPreferencesQuery.data.visibleColumnIds
+      : DEFAULT_FINANCE_EVENTS_VISIBLE_COLUMN_IDS
+    const visibleIds = sortIdsByCatalogOrder(
+      [...new Set(rawVisibleIds.map((id) => FINANCE_EVENTS_LEGACY_COLUMN_ID_MAP[id] ?? id))].filter(
+        (id) => catalogIds.includes(id),
+      ),
+      catalogIds,
+    )
+
+    const preferenceColumns = visibleIds.map((id) => dataColumnsById[id]).filter(Boolean)
+
+    const actionsColumn: ColumnDef<FinanceEventRow> = {
+      id: 'actions',
+      header: 'Actions',
+      meta: { headerClassName: 'pr-5 text-right', cellClassName: 'relative pr-5 text-right' },
+      cell: ({ row }) => renderActions(row.original),
+    }
+
+    return [selectColumn, ...preferenceColumns, actionsColumn]
+  }, [
+    allVisibleSelected,
+    renderActions,
+    selectedRowIds,
+    someVisibleSelected,
+    tableColumnPreferencesQuery.data,
+    toggleRowSelection,
+    toggleVisibleRows,
+  ])
 
   return (
     <div className="flex flex-col gap-6">

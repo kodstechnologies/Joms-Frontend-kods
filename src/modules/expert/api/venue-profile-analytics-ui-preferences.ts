@@ -1,5 +1,6 @@
 import {
   DEFAULT_VENUE_PROFILE_ANALYTICS_METRIC_IDS,
+  VENUE_PROFILE_ANALYTICS_LEGACY_METRIC_ID_MAP,
   VENUE_PROFILE_ANALYTICS_METRICS_CATALOG,
   VENUE_PROFILE_ANALYTICS_METRIC_IDS,
   VENUE_PROFILE_ANALYTICS_MODULE_KEY,
@@ -22,8 +23,11 @@ function buildVenueProfileAnalyticsPreferences(
   isDefault: boolean,
 ): DashboardMetricPreferences {
   const catalogIdSet = new Set(VENUE_PROFILE_ANALYTICS_METRICS_CATALOG.map((metric) => metric.id))
+  const mappedIds = activeMetricIds.map(
+    (id) => VENUE_PROFILE_ANALYTICS_LEGACY_METRIC_ID_MAP[id] ?? id,
+  )
   const filteredIds = sortIdsByCatalogOrder(
-    activeMetricIds.filter((id) => catalogIdSet.has(id)),
+    [...new Set(mappedIds.filter((id) => catalogIdSet.has(id)))],
     VENUE_PROFILE_ANALYTICS_METRIC_IDS,
   )
 

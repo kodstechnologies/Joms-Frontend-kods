@@ -31,6 +31,7 @@ import {
 } from '@/modules/payments/mock/finance-dashboard.mock'
 import {
   DEFAULT_FINANCE_DASHBOARD_METRIC_IDS,
+  FINANCE_DASHBOARD_LEGACY_METRIC_ID_MAP,
   FINANCE_DASHBOARD_METRIC_IDS,
   FINANCE_DASHBOARD_METRIC_ID_SET,
   FINANCE_DASHBOARD_MODULE_KEY,
@@ -289,14 +290,12 @@ export function FinanceDashboardPage() {
     ...DEFAULT_FINANCE_DASHBOARD_METRIC_IDS,
   ])
 
-  const filteredActiveMetricIds = useMemo(
-    () =>
-      sortIdsByCatalogOrder(
-        activeMetricIds.filter((id) => FINANCE_DASHBOARD_METRIC_ID_SET.has(id)),
-        FINANCE_DASHBOARD_METRIC_IDS,
-      ),
-    [activeMetricIds],
-  )
+  const filteredActiveMetricIds = useMemo(() => {
+    const normalized = [
+      ...new Set(activeMetricIds.map((id) => FINANCE_DASHBOARD_LEGACY_METRIC_ID_MAP[id] ?? id)),
+    ].filter((id) => FINANCE_DASHBOARD_METRIC_ID_SET.has(id))
+    return sortIdsByCatalogOrder(normalized, FINANCE_DASHBOARD_METRIC_IDS)
+  }, [activeMetricIds])
 
   const visibleMetricCards = useMemo(() => {
     const allCards = buildFinanceDashboardMetricCards(summary)

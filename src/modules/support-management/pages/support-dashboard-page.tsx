@@ -7,6 +7,7 @@ import { SupportDashboardCharts } from '../components/support-dashboard-charts'
 import { SupportStatCard } from '../components/support-stat-card'
 import {
   DEFAULT_SUPPORT_DASHBOARD_METRIC_IDS,
+  SUPPORT_DASHBOARD_LEGACY_METRIC_ID_MAP,
   SUPPORT_DASHBOARD_METRIC_IDS,
   SUPPORT_DASHBOARD_METRIC_ID_SET,
   SUPPORT_DASHBOARD_MODULE_KEY,
@@ -36,7 +37,9 @@ export function SupportDashboardPage() {
   const filteredActiveMetricIds = useMemo(
     () =>
       sortIdsByCatalogOrder(
-        activeMetricIds.filter((id) => SUPPORT_DASHBOARD_METRIC_ID_SET.has(id)),
+        [
+          ...new Set(activeMetricIds.map((id) => SUPPORT_DASHBOARD_LEGACY_METRIC_ID_MAP[id] ?? id)),
+        ].filter((id) => SUPPORT_DASHBOARD_METRIC_ID_SET.has(id)),
         SUPPORT_DASHBOARD_METRIC_IDS,
       ),
     [activeMetricIds],

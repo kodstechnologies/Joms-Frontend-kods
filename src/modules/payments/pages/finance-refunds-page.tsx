@@ -41,6 +41,7 @@ import {
 } from '@/modules/payments/config/finance-refunds-metrics.config'
 import {
   DEFAULT_FINANCE_REFUNDS_VISIBLE_COLUMN_IDS,
+  FINANCE_REFUNDS_LEGACY_COLUMN_ID_MAP,
   FINANCE_REFUNDS_TABLE_COLUMNS_CATALOG,
 } from '@/modules/payments/config/finance-refunds-table-columns.config'
 import { buildFinanceRefundsMetricCards } from '@/modules/payments/utils/finance-refunds-metrics'
@@ -461,37 +462,80 @@ export function FinanceRefundsPage() {
     }
 
     const dataColumnsById: Record<string, ColumnDef<RefundChargebackRow>> = {
-      'record-id': {
-        id: 'record-id',
+      'refund-id': {
+        id: 'refund-id',
         accessorKey: 'recordId',
-        header: 'ID',
+        header: 'Refund ID',
         cell: ({ row }) => (
           <span className="text-body-sm-semibold text-brand-text font-mono uppercase">
             {row.original.recordId}
           </span>
         ),
       },
-      type: { id: 'type', accessorKey: 'type', header: 'Type' },
-      'related-entity': {
-        id: 'related-entity',
-        accessorKey: 'relatedEntity',
-        header: 'Related Entity',
+      'transaction-id': {
+        id: 'transaction-id',
+        header: 'Transaction ID',
+        cell: ({ row }) => (row.original as { transactionId?: string }).transactionId || '—',
       },
-      amount: {
-        id: 'amount',
+      module: {
+        id: 'module',
+        header: 'Module',
+        cell: ({ row }) =>
+          (row.original as { module?: string }).module || row.original.relatedEntity || '—',
+      },
+      'customer-name': {
+        id: 'customer-name',
+        header: 'Customer Name',
+        cell: ({ row }) => (row.original as { customerName?: string }).customerName || '—',
+      },
+      'refund-type': {
+        id: 'refund-type',
+        accessorKey: 'type',
+        header: 'Refund Type',
+      },
+      'refund-reason': {
+        id: 'refund-reason',
+        accessorKey: 'reason',
+        header: 'Refund Reason',
+      },
+      'refund-amount': {
+        id: 'refund-amount',
         accessorKey: 'amount',
-        header: 'Amount',
+        header: 'Refund Amount',
         cell: ({ row }) => (
           <span className="text-brand-text font-semibold">{row.original.amount}</span>
         ),
       },
-      reason: { id: 'reason', accessorKey: 'reason', header: 'Reason' },
-      'initiated-date': {
-        id: 'initiated-date',
-        accessorKey: 'initiatedDate',
-        header: 'Initiated Date',
+      'refund-mode': {
+        id: 'refund-mode',
+        header: 'Refund Mode',
+        cell: ({ row }) => (row.original as { refundMode?: string }).refundMode || '—',
       },
-      description: { id: 'description', accessorKey: 'description', header: 'Description' },
+      'initiated-by': {
+        id: 'initiated-by',
+        header: 'Initiated By',
+        cell: ({ row }) => (row.original as { initiatedBy?: string }).initiatedBy || '—',
+      },
+      'approved-by': {
+        id: 'approved-by',
+        header: 'Approved By',
+        cell: ({ row }) => (row.original as { approvedBy?: string }).approvedBy || '—',
+      },
+      'refund-date': {
+        id: 'refund-date',
+        accessorKey: 'initiatedDate',
+        header: 'Refund Date',
+      },
+      'chargeback-flag': {
+        id: 'chargeback-flag',
+        header: 'Chargeback Flag',
+        cell: ({ row }) => (row.original as { chargebackFlag?: string }).chargebackFlag || '—',
+      },
+      gateway: {
+        id: 'gateway',
+        header: 'Gateway',
+        cell: ({ row }) => (row.original as { gateway?: string }).gateway || '—',
+      },
       status: {
         id: 'status',
         accessorKey: 'status',
@@ -510,11 +554,13 @@ export function FinanceRefundsPage() {
     }
 
     const catalogIds = FINANCE_REFUNDS_TABLE_COLUMNS_CATALOG.map((column) => column.id)
-    const visibleIds = tableColumnPreferencesQuery.data?.visibleColumnIds?.length
+    const rawVisibleIds = tableColumnPreferencesQuery.data?.visibleColumnIds?.length
       ? tableColumnPreferencesQuery.data.visibleColumnIds
       : DEFAULT_FINANCE_REFUNDS_VISIBLE_COLUMN_IDS
     const preferenceColumns = sortIdsByCatalogOrder(
-      visibleIds.filter((id) => catalogIds.includes(id)),
+      [
+        ...new Set(rawVisibleIds.map((id) => FINANCE_REFUNDS_LEGACY_COLUMN_ID_MAP[id] ?? id)),
+      ].filter((id) => catalogIds.includes(id)),
       catalogIds,
     )
       .map((id) => dataColumnsById[id])

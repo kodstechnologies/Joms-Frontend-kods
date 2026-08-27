@@ -76,6 +76,12 @@ export interface VenueCategoryApi {
   totalVenues?: number
   activeVenues?: number
   venues?: number
+  totalSpaces?: number
+  activeSpaces?: number
+  spaces?: number
+  totalBookings?: number
+  completedBookings?: number
+  bookings?: number
   revenue?: number
   revenueLabel?: string
 }
@@ -90,6 +96,9 @@ export interface VenueCategoryMetricsResponse {
     deletedCategories: number
     totalSubCategories: number
     totalVenues: number
+    totalBookings: number
+    completedBookings: number
+    bookingCompletionRate: number
     totalRevenue: number
     totalRevenueLabel: string
     topCategory: {
@@ -98,6 +107,13 @@ export interface VenueCategoryMetricsResponse {
       revenue: number
       revenueLabel: string
       label: string
+    } | null
+    lowestRevenueCategory: {
+      id: string
+      name: string
+      revenue: number
+      revenueLabel: string
+      label?: string
     } | null
   }
 }

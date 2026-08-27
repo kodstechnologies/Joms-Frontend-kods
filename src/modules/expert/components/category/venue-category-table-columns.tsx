@@ -14,7 +14,11 @@ export type VenueCategory = {
   status: string
   previousStatus?: string
   subCategory: number
+  spaces: number
+  activeSpaces: number
   venues: number
+  bookings: number
+  completedBookings: number
   revenue: string
   createdAt: string
   updatedAt: string
@@ -37,16 +41,52 @@ export type VenueCategory = {
 
 export const venueCategoryColumns: ColumnDef<VenueCategory>[] = [
   {
-    id: 'categoryId',
+    id: 'category-id',
     header: 'Category ID',
     accessorFn: (row) => row.categoryId || row.id,
     meta: { cellClassName: 'text-white font-medium' },
   },
   {
-    id: 'name',
+    id: 'category-name',
     accessorKey: 'name',
     header: 'Category Name',
     meta: { cellClassName: 'text-white' },
+  },
+  {
+    id: 'spaces',
+    accessorKey: 'spaces',
+    header: 'Spaces',
+    meta: { cellClassName: 'text-white' },
+  },
+  {
+    id: 'venues',
+    accessorKey: 'venues',
+    header: 'Venues',
+    meta: { cellClassName: 'text-white' },
+  },
+  {
+    id: 'active-spaces',
+    accessorKey: 'activeSpaces',
+    header: 'Active Spaces',
+    meta: { cellClassName: 'text-white' },
+  },
+  {
+    id: 'bookings',
+    accessorKey: 'bookings',
+    header: 'Bookings',
+    meta: { cellClassName: 'text-white' },
+  },
+  {
+    id: 'completed-bookings',
+    accessorKey: 'completedBookings',
+    header: 'Completed Bookings',
+    meta: { cellClassName: 'text-white' },
+  },
+  {
+    id: 'revenue',
+    accessorKey: 'revenue',
+    header: 'Revenue',
+    meta: { cellClassName: 'text-white font-medium' },
   },
   {
     id: 'status',
@@ -55,22 +95,22 @@ export const venueCategoryColumns: ColumnDef<VenueCategory>[] = [
     cell: ({ row }) => <CategoryStatusBadge status={row.original.status} />,
   },
   {
-    id: 'subCategory',
-    accessorKey: 'subCategory',
-    header: 'No. of Sub Category',
+    id: 'created-by',
+    accessorKey: 'createdBy',
+    header: 'Created By',
     meta: { cellClassName: 'text-white' },
   },
   {
-    id: 'venues',
-    accessorKey: 'venues',
-    header: 'No. Of Venues',
+    id: 'created-at',
+    accessorKey: 'createdAt',
+    header: 'Created At',
     meta: { cellClassName: 'text-white' },
   },
   {
-    id: 'revenue',
-    accessorKey: 'revenue',
-    header: 'Revenue Generated',
-    meta: { cellClassName: 'text-white font-medium' },
+    id: 'last-updated',
+    accessorKey: 'updatedAt',
+    header: 'Last Updated',
+    meta: { cellClassName: 'text-white' },
   },
   {
     id: 'actions',

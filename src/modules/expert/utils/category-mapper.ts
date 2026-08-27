@@ -82,6 +82,7 @@ const mapVenueSubCategory = (
 
 export const mapServiceCategoryToUi = (category: ServiceCategoryApi): Category => {
   const activeSubs = (category.subCategories || []).filter((sub) => sub.status !== 'DELETED')
+  const repeatPct = typeof category.repeatBookingPct === 'number' ? category.repeatBookingPct : 0
 
   return {
     id: category._id,
@@ -94,7 +95,12 @@ export const mapServiceCategoryToUi = (category: ServiceCategoryApi): Category =
     subCategory: category.subCategoryCount ?? activeSubs.length,
     services: category.services ?? category.activeListings ?? 0,
     experts: category.experts ?? 0,
+    totalOrders: category.totalOrders ?? 0,
+    completedOrders: category.completedOrders ?? 0,
+    inProgressOrders: category.inProgressOrders ?? 0,
+    cancelledOrders: category.cancelledOrders ?? 0,
     revenue: formatRevenueLabel(category),
+    repeatBookingPct: `${repeatPct}%`,
     createdAt: formatDate(category.createdAt),
     updatedAt: formatDate(category.updatedAt),
     createdBy: category.createdByName || category.createdBy || 'Admin',
@@ -117,7 +123,11 @@ export const mapVenueCategoryToUi = (category: VenueCategoryApi): VenueCategory 
     image: category.image || undefined,
     status,
     subCategory: activeSubs.length,
+    spaces: category.totalSpaces ?? category.spaces ?? 0,
+    activeSpaces: category.activeSpaces ?? 0,
     venues: category.venues ?? category.totalVenues ?? 0,
+    bookings: category.totalBookings ?? category.bookings ?? 0,
+    completedBookings: category.completedBookings ?? 0,
     revenue: formatRevenueLabel(category),
     createdAt: formatDate(category.createdAt),
     updatedAt: formatDate(category.updatedAt),

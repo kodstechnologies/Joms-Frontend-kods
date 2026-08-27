@@ -33,9 +33,10 @@ import { fetchAllEscalations, type EscalationListItem } from '@/modules/my-tasks
 
 import {
   DEFAULT_ESCALATIONS_VISIBLE_COLUMN_IDS,
-  ESCALATIONS_TABLE_COLUMNS_CATALOG,
+  ESCALATIONS_LEGACY_COLUMN_ID_MAP,
 } from '../config/escalations-table-columns.config'
 import { useTableColumnPreferences } from '@/modules/expert/hooks/use-ui-preferences'
+import { selectPreferredColumns } from '@/modules/expert/utils/select-preferred-columns'
 import { escalationColumns } from './escalation-table-columns'
 
 const ESCALATION_EXPORT_COLUMN_MAP: Record<
@@ -149,21 +150,15 @@ export function EscalationDetails() {
   })
 
   const columns = useMemo(() => {
-    const catalogIds = ESCALATIONS_TABLE_COLUMNS_CATALOG.map((column) => column.id)
-    const visibleIds = tableColumnPreferencesQuery.data?.visibleColumnIds?.length
+    const rawVisibleIds = tableColumnPreferencesQuery.data?.visibleColumnIds?.length
       ? tableColumnPreferencesQuery.data.visibleColumnIds
       : DEFAULT_ESCALATIONS_VISIBLE_COLUMN_IDS
-    const dataColumnsById = Object.fromEntries(
-      escalationColumns.map((column) => [column.id, column] as const),
+    return selectPreferredColumns(
+      escalationColumns,
+      rawVisibleIds,
+      DEFAULT_ESCALATIONS_VISIBLE_COLUMN_IDS,
+      ESCALATIONS_LEGACY_COLUMN_ID_MAP,
     )
-    const preferenceColumns = sortIdsByCatalogOrder(
-      visibleIds.filter((id) => catalogIds.includes(id)),
-      catalogIds,
-    )
-      .map((id) => dataColumnsById[id])
-      .filter(Boolean)
-    const actionsColumn = dataColumnsById.actions
-    return actionsColumn ? [...preferenceColumns, actionsColumn] : preferenceColumns
   }, [tableColumnPreferencesQuery.data])
 
   return (
@@ -178,7 +173,7 @@ export function EscalationDetails() {
 
         <Button
           className="ui-manage-metrics ui-cta ui-cta-primary w-full shrink-0 sm:w-auto"
-          onClick={() => navigate('/metrics/escalations')}
+          onClick={() => navigate('/metrics/escalations?section=table')}
         >
           <SlidersHorizontal className="size-4" />
           Manage Metrics
