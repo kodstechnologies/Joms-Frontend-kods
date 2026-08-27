@@ -66,6 +66,7 @@ import {
   TableActionsItem,
 } from '@/shared/components/table/table-actions-dropdown'
 import { Button } from '@/shared/components/ui/button'
+import { StatCardSkeleton } from '@/shared/components/ui/skeleton'
 import { cn } from '@/shared/lib/cn'
 import type { FilterValues } from '@/shared/types/data-filter'
 import { exportDisplayValue } from '@/shared/utils/export-utils'
@@ -561,9 +562,9 @@ export function FinanceRefundsPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {visibleSummaryMetrics.map((metric) => (
-          <SummaryCard key={metric.id} {...metric} />
-        ))}
+        {isLoading
+          ? filteredActiveMetricIds.map((id) => <StatCardSkeleton key={id} />)
+          : visibleSummaryMetrics.map((metric) => <SummaryCard key={metric.id} {...metric} />)}
       </div>
 
       {isError ? (

@@ -19,6 +19,7 @@ import { useCommunicationMetrics, useCommunications } from '../../hooks/use-comm
 import type { Communication } from '../../api/communication-api'
 import { DataTable } from '@/shared/components/table/data-table'
 import { StatCard } from '@/shared/components/dashboard/stat-card'
+import { StatCardSkeleton } from '@/shared/components/ui/skeleton'
 import { getApiErrorMessage } from '@/shared/lib/api-error'
 import {
   orderByActiveMetricIds,
@@ -331,15 +332,17 @@ export function CommunicationListPage() {
       </div>
 
       <div className="grid grid-cols-1 items-stretch gap-4 sm:grid-cols-2 xl:grid-cols-5">
-        {stats.map((stat) => (
-          <StatCard
-            key={stat.id}
-            title={stat.title}
-            value={stat.value}
-            trend={stat.trend}
-            hint={stat.hint}
-          />
-        ))}
+        {metricsQuery.isLoading
+          ? filteredActiveMetricIds.map((id) => <StatCardSkeleton key={id} />)
+          : stats.map((stat) => (
+              <StatCard
+                key={stat.id}
+                title={stat.title}
+                value={stat.value}
+                trend={stat.trend}
+                hint={stat.hint}
+              />
+            ))}
       </div>
 
       <DataTable

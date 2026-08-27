@@ -1,24 +1,24 @@
 import type { ActivityItem, ChatMessage, QueueTicket, SupportTicket } from '../types/support'
 
 export const supportDashboardStats = [
-  { title: 'Total Tickets', value: '487,650', change: '+6.7%', changeType: 'up' as const },
-  { title: 'Open Tickets', value: '487,650', change: '+6.7%', changeType: 'up' as const },
-  { title: 'Tickets In Progress', value: '487,650', change: '+6.7%', changeType: 'up' as const },
-  { title: 'Assigned to Me', value: '43', change: '+6.7%', changeType: 'up' as const },
-  { title: 'Escalated by Me', value: '12', change: '+6.7%', changeType: 'up' as const },
+  { title: 'Total Tickets', value: '0', change: '0%', changeType: 'up' as const },
+  { title: 'Open Tickets', value: '0', change: '0%', changeType: 'up' as const },
+  { title: 'Tickets In Progress', value: '0', change: '0%', changeType: 'up' as const },
+  { title: 'Assigned to Me', value: '0', change: '0%', changeType: 'up' as const },
+  { title: 'Escalated by Me', value: '0', change: '0%', changeType: 'up' as const },
   {
     title: 'Average First Response Time',
-    value: '00:02:03',
-    change: '+6.7%',
+    value: '00:00:00',
+    change: '0%',
     changeType: 'up' as const,
   },
   {
     title: 'Average Resolution Time',
-    value: '02:30:00',
-    change: '+6.7%',
+    value: '00:00:00',
+    change: '0%',
     changeType: 'up' as const,
   },
-  { title: 'Tickets Resolved Today', value: '34', change: '+6.7%', changeType: 'up' as const },
+  { title: 'Tickets Resolved Today', value: '0', change: '0%', changeType: 'up' as const },
 ]
 
 export const ticketManagementStats = [

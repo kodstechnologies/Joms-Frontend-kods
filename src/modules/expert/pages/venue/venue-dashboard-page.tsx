@@ -10,7 +10,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
-import { BarChart3, Download, RefreshCw, Star, TrendingDown, TrendingUp } from 'lucide-react'
+import { BarChart3, RefreshCw, Star, TrendingDown, TrendingUp, Upload } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
@@ -341,7 +341,7 @@ export const VenueDashboardPage = () => {
             className="ui-export-data h-9"
             onClick={() => toast.message('Export coming soon')}
           >
-            <Download className="size-4" />
+            <Upload className="size-4" />
             Export Data
           </Button>
         </div>

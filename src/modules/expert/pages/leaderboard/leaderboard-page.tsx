@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   ArrowUpDown,
   CalendarDays,
-  Download,
   ExternalLink,
   Search,
   SlidersHorizontal,
@@ -897,7 +896,7 @@ export const LeaderboardPage = () => {
               className="ui-export-data gap-2"
               disabled={isExporting}
             >
-              <Download className="size-4" />
+              <Upload className="size-4" />
               Export Data
             </Button>
           </div>

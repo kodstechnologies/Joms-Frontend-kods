@@ -10,7 +10,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
-import { BarChart3, Download, RefreshCw } from 'lucide-react'
+import { BarChart3, RefreshCw, Upload } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
@@ -387,7 +387,7 @@ export function ServiceMarketplacePage() {
           </Button>
 
           <Button className="ui-export-data h-9" onClick={handleExportData}>
-            <Download className="size-4" />
+            <Upload className="size-4" />
             Export Data
           </Button>
         </div>

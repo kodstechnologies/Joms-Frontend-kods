@@ -164,10 +164,29 @@ function TicketTrendTooltip({
   )
 }
 
+import { ChartSkeleton } from '@/shared/components/ui/skeleton'
+
 export function SupportDashboardCharts() {
   const { data, isLoading } = useSupportStats()
   const charts = data?.data?.charts
-  const emptyLabel = isLoading ? 'Loading…' : 'No tickets in this period'
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+          <ChartSkeleton title="Ticket Trends" height="280px" />
+          <ChartSkeleton title="Tickets by User Type" height="280px" />
+        </div>
+        <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
+          <ChartSkeleton title="Tickets by Module" height="240px" />
+          <ChartSkeleton title="Tickets by Reason" height="240px" />
+          <ChartSkeleton title="Escalations to Other Teams" height="240px" />
+        </div>
+      </div>
+    )
+  }
+
+  const emptyLabel = 'No tickets in this period'
   const ticketTrends = charts?.ticketTrends ?? []
   const ticketsByUserType = charts?.ticketsByUserType ?? []
   const ticketsByModule = charts?.ticketsByModule

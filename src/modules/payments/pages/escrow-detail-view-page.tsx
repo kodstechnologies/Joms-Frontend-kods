@@ -14,6 +14,7 @@ import {
   mapEscrowStatus,
   titleCase,
 } from '@/modules/payments/utils/finance-mappers'
+import { DetailViewSkeleton } from '@/shared/components/ui/skeleton'
 import { cn } from '@/shared/lib/cn'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import { downloadInvoiceDocument, invoiceFromEscrow } from '@/shared/utils/invoice-document'
@@ -90,7 +91,7 @@ export function EscrowDetailViewPage() {
   })
 
   if (isLoading) {
-    return <p className="text-body-sm text-muted">Loading escrow details...</p>
+    return <DetailViewSkeleton pillCount={6} cardCount={2} />
   }
 
   if (isError || !escrow) {

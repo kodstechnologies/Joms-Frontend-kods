@@ -61,6 +61,7 @@ import {
   TableActionsItem,
 } from '@/shared/components/table/table-actions-dropdown'
 import { Button } from '@/shared/components/ui/button'
+import { StatCardSkeleton } from '@/shared/components/ui/skeleton'
 import { cn } from '@/shared/lib/cn'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 import type { FilterValues } from '@/shared/types/data-filter'
@@ -806,18 +807,9 @@ export function TicketManagementPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {(isLoading && stats.length === 0
-          ? filteredActiveMetricIds.map((id) => ({
-              id,
-              title: 'Loading',
-              value: '—',
-              percentage: 0,
-              direction: 'up' as const,
-            }))
-          : stats
-        ).map((stat) => (
-          <TicketMetricCard key={stat.id} {...stat} />
-        ))}
+        {isLoading
+          ? filteredActiveMetricIds.map((id) => <StatCardSkeleton key={id} />)
+          : stats.map((stat) => <TicketMetricCard key={stat.id} {...stat} />)}
       </div>
 
       <div className="bg-brand-surface flex h-[47px] w-full items-center rounded-[10px] border border-white/[0.06] p-1">

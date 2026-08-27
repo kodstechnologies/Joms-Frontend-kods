@@ -1,13 +1,4 @@
-import {
-  AlertCircle,
-  Ban,
-  BarChart3,
-  Download,
-  Hourglass,
-  Plus,
-  Search,
-  Trash2,
-} from 'lucide-react'
+import { AlertCircle, Ban, BarChart3, Hourglass, Plus, Search, Trash2, Upload } from 'lucide-react'
 import { useCallback, useMemo, useState, type ComponentProps, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
@@ -367,7 +358,7 @@ export function MembershipPlansPage({
             onClick={() => void handleExportData()}
             disabled={isExporting}
           >
-            <Download className="size-4" />
+            <Upload className="size-4" />
             {isExporting ? 'Exporting...' : 'Export Data'}
           </Button>
           <Button className="ui-cta ui-cta-primary" onClick={() => setCreateOpen(true)}>

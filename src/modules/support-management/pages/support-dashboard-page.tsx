@@ -1,10 +1,11 @@
 import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
-import { Download, SlidersHorizontal } from 'lucide-react'
+import { SlidersHorizontal, Upload } from 'lucide-react'
 
 import { SupportDashboardCharts } from '../components/support-dashboard-charts'
 import { SupportStatCard } from '../components/support-stat-card'
+import { StatCardSkeleton } from '@/shared/components/ui/skeleton'
 import {
   DEFAULT_SUPPORT_DASHBOARD_METRIC_IDS,
   SUPPORT_DASHBOARD_METRIC_IDS,
@@ -75,7 +76,7 @@ export function SupportDashboardPage() {
             disabled={exportMutation.isPending}
             className="ui-export-data ui-cta ui-cta-primary inline-flex items-center gap-2 px-4"
           >
-            <Download className="icon-sm shrink-0" />
+            <Upload className="icon-sm shrink-0" />
             Export Data
           </button>
           <button
@@ -91,24 +92,18 @@ export function SupportDashboardPage() {
 
       {/* Stats — 2 rows of 4 */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {(isLoading && stats.length === 0
-          ? filteredActiveMetricIds.map((id) => ({
-              id,
-              title: 'Loading',
-              value: '—',
-              trend: { direction: 'up' as const, percentage: 0, label: 'vs last month' },
-            }))
-          : stats
-        ).map((stat) => (
-          <SupportStatCard
-            key={stat.id}
-            title={stat.title}
-            value={stat.value}
-            percentage={stat.trend.percentage}
-            direction={stat.trend.direction}
-            label={stat.trend.label}
-          />
-        ))}
+        {isLoading
+          ? filteredActiveMetricIds.map((id) => <StatCardSkeleton key={id} />)
+          : stats.map((stat) => (
+              <SupportStatCard
+                key={stat.id}
+                title={stat.title}
+                value={stat.value}
+                percentage={stat.trend.percentage}
+                direction={stat.trend.direction}
+                label={stat.trend.label}
+              />
+            ))}
       </div>
 
       <SupportDashboardCharts />

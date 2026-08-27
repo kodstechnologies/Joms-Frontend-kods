@@ -150,6 +150,7 @@ export function SupportWorkspacePage() {
             }}
             disableClientFilter
             showFilters={showFilters}
+            isLoading={queueQuery.isLoading}
             filterPanel={
               <TicketFilterPanel
                 onApply={() => setShowFilters(false)}

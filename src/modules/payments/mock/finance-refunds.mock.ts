@@ -26,26 +26,26 @@ export type RefundChargebackRow = {
 export const refundSummaryMetricsMock: RefundSummaryMetric[] = [
   {
     label: 'Pending Refunds',
-    value: '08',
-    change: '▲ 6.7%',
+    value: '0',
+    change: '0%',
     changeNote: 'vs last month',
   },
   {
     label: 'Active Disputes',
-    value: '$487,650',
-    change: '▲ 6.7%',
+    value: '0',
+    change: '0%',
     changeNote: 'vs last month',
   },
   {
     label: 'Amount in Disputed',
-    value: '$487,650',
-    change: '▲ 6.7%',
+    value: '₹0',
+    change: '0%',
     changeNote: 'vs last month',
   },
   {
     label: 'Resolved',
-    value: '$487,650',
-    change: '▲ 6.7%',
+    value: '0',
+    change: '0%',
     changeNote: 'vs last month',
   },
 ]

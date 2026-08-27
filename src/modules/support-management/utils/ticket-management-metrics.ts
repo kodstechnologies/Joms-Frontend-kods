@@ -1,5 +1,4 @@
 import type { SupportStatCard } from '@/modules/support-management/api/support-api'
-import { ticketManagementStats } from '@/modules/support-management/mock/support.mock'
 import {
   TICKET_MANAGEMENT_METRICS_CATALOG,
   TICKET_MANAGEMENT_METRIC_IDS,
@@ -17,13 +16,11 @@ const labelById = new Map(
   TICKET_MANAGEMENT_METRICS_CATALOG.map((metric) => [metric.id, metric.label]),
 )
 
-const mockByTitle = new Map(ticketManagementStats.map((stat) => [stat.title, stat]))
-
-const mockById: Record<string, { value: string; changePercent: number }> = {
-  'my-open-tickets': { value: '43', changePercent: 6.7 },
-  'tickets-in-progress': { value: '34', changePercent: 6.7 },
-  'avg-response-time': { value: '2.03 mins', changePercent: 6.7 },
-  'avg-resolution-time': { value: '2 hr 30 mins', changePercent: 6.7 },
+const defaultById: Record<string, { value: string; changePercent: number }> = {
+  'my-open-tickets': { value: '0', changePercent: 0 },
+  'tickets-in-progress': { value: '0', changePercent: 0 },
+  'avg-response-time': { value: '00:00:00', changePercent: 0 },
+  'avg-resolution-time': { value: '00:00:00', changePercent: 0 },
 }
 
 function buildFromApi(cards: SupportStatCard[]): TicketManagementMetricCard[] {
@@ -35,7 +32,7 @@ function buildFromApi(cards: SupportStatCard[]): TicketManagementMetricCard[] {
       id: card.key,
       title: labelById.get(card.key) ?? card.title,
       value: String(card.value),
-      percentage: card.changePercent ?? 6.7,
+      percentage: card.changePercent ?? 0,
       direction: (card.changeDirection ?? 'up') as 'up' | 'down',
     }))
 }
@@ -43,14 +40,13 @@ function buildFromApi(cards: SupportStatCard[]): TicketManagementMetricCard[] {
 function buildMockCards(): TicketManagementMetricCard[] {
   return TICKET_MANAGEMENT_METRIC_IDS.map((id) => {
     const label = labelById.get(id) ?? id
-    const mockStat = mockByTitle.get(label)
-    const fallback = mockById[id]
+    const fallback = defaultById[id]
 
     return {
       id,
       title: label,
-      value: mockStat?.value ?? fallback?.value ?? '—',
-      percentage: fallback?.changePercent ?? 6.7,
+      value: fallback?.value ?? '0',
+      percentage: fallback?.changePercent ?? 0,
       direction: 'up' as const,
     }
   })

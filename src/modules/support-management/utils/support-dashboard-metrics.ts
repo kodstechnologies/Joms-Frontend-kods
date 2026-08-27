@@ -15,21 +15,21 @@ export type SupportDashboardMetricCard = {
   }
 }
 
-const mockTrend = {
+const defaultTrend = {
   direction: 'up' as const,
-  percentage: 6.7,
+  percentage: 0,
   label: 'vs last month',
 }
 
-const mockValues: Record<string, string> = {
-  'total-open-tickets': '$487,650',
-  'new-tickets-today': '$487,650',
-  'tickets-in-progress': '$487,650',
-  'escalated-tickets': '$487,650',
-  'resolved-today': '$487,650',
-  'priority-tickets': '$487,650',
-  'avg-response-time': '$487,650',
-  'avg-resolution-time': '$487,650',
+const defaultValues: Record<string, string> = {
+  'total-open-tickets': '0',
+  'new-tickets-today': '0',
+  'tickets-in-progress': '0',
+  'escalated-tickets': '0',
+  'resolved-today': '0',
+  'priority-tickets': '0',
+  'avg-response-time': '00:00:00',
+  'avg-resolution-time': '00:00:00',
 }
 
 const labelById = new Map(
@@ -40,8 +40,8 @@ export function buildSupportDashboardMetricCardsMock(): SupportDashboardMetricCa
   return SUPPORT_DASHBOARD_METRIC_IDS.map((id) => ({
     id,
     title: labelById.get(id) ?? id,
-    value: mockValues[id] ?? '—',
-    trend: mockTrend,
+    value: defaultValues[id] ?? '0',
+    trend: defaultTrend,
   }))
 }
 
