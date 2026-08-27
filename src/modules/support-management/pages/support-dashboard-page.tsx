@@ -91,20 +91,12 @@ export function SupportDashboardPage() {
 
       {/* Stats — 2 rows of 4 */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {(isLoading && stats.length === 0
-          ? filteredActiveMetricIds.map((id) => ({
-              id,
-              title: 'Loading',
-              value: '—',
-              trend: { direction: 'up' as const, percentage: 0, label: 'vs last month' },
-            }))
-          : stats
-        ).map((stat) => (
+        {stats.map((stat) => (
           <SupportStatCard
             key={stat.id}
             title={stat.title}
-            value={stat.value}
-            percentage={stat.trend.percentage}
+            value={isLoading ? '—' : stat.value}
+            percentage={isLoading ? 0 : stat.trend.percentage}
             direction={stat.trend.direction}
             label={stat.trend.label}
           />

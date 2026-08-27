@@ -93,22 +93,17 @@ function CompactSeriesTooltip({
   label?: string
 }) {
   if (!active || !payload?.length) return null
-  const items = payload.filter((entry) => Number(entry.value ?? 0) > 0)
   return (
     <div style={tooltipStyle}>
       <p className="text-body-sm-semibold text-brand-text-dark mb-1.5">{label}</p>
-      {items.length ? (
-        <div className="space-y-1">
-          {items.map((entry) => (
-            <p key={String(entry.dataKey)} className="text-body-sm" style={{ color: entry.color }}>
-              {entry.name}:{' '}
-              <span className="text-brand-text-dark font-semibold">{entry.value ?? 0}</span>
-            </p>
-          ))}
-        </div>
-      ) : (
-        <p className="text-body-sm text-muted">No tickets</p>
-      )}
+      <div className="space-y-1">
+        {payload.map((entry) => (
+          <p key={String(entry.dataKey)} className="text-body-sm" style={{ color: entry.color }}>
+            {entry.name}:{' '}
+            <span className="text-brand-text-dark font-semibold">{entry.value ?? 0}</span>
+          </p>
+        ))}
+      </div>
     </div>
   )
 }
@@ -131,13 +126,54 @@ function ChartCard({
   )
 }
 
-function ChartEmpty({ label = 'No tickets in this period' }: { label?: string }) {
+function ChartEmpty({ label = 'Loading…' }: { label?: string }) {
   return (
     <div className="text-muted flex h-full min-h-[180px] items-center justify-center text-sm">
       {label}
     </div>
   )
 }
+
+const DEFAULT_USER_TYPES = [
+  { key: 'user', name: 'Users', value: 0, percent: 0 },
+  { key: 'expert', name: 'Experts', value: 0, percent: 0 },
+  { key: 'event_host', name: 'Event Hosts', value: 0, percent: 0 },
+  { key: 'venue_partner', name: 'Venue Partners', value: 0, percent: 0 },
+]
+
+const DEFAULT_MODULE_SERIES = [
+  { key: 'events', name: 'Events' },
+  { key: 'networking', name: 'Networking' },
+  { key: 'services', name: 'Services' },
+  { key: 'venues', name: 'Venues' },
+]
+
+const DEFAULT_TEAM_SERIES = [
+  { key: 'team_a', name: 'Team A' },
+  { key: 'team_b', name: 'Team B' },
+  { key: 'team_c', name: 'Team C' },
+]
+
+const WEEKDAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+
+function lastNDayLabels(count = 7) {
+  const now = new Date()
+  return Array.from({ length: count }, (_, index) => {
+    const date = new Date(now)
+    date.setDate(now.getDate() - (count - 1 - index))
+    return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
+  })
+}
+
+function lastNMonthLabels(count = 6) {
+  const now = new Date()
+  return Array.from({ length: count }, (_, index) => {
+    const date = new Date(Date.UTC(now.getFullYear(), now.getMonth() - (count - 1 - index), 1))
+    return date.toLocaleDateString('en-US', { month: 'short', timeZone: 'UTC' })
+  })
+}
+
+const yAxisDomain = [0, (dataMax: number) => Math.max(4, Number(dataMax) || 0)] as const
 
 function TicketTrendTooltip({
   active,
@@ -167,33 +203,46 @@ function TicketTrendTooltip({
 export function SupportDashboardCharts() {
   const { data, isLoading } = useSupportStats()
   const charts = data?.data?.charts
-  const emptyLabel = isLoading ? 'Loading…' : 'No tickets in this period'
-  const ticketTrends = charts?.ticketTrends ?? []
-  const ticketsByUserType = charts?.ticketsByUserType ?? []
-  const ticketsByModule = charts?.ticketsByModule
+  const ticketTrends = charts?.ticketTrends?.length
+    ? charts.ticketTrends
+    : lastNDayLabels().map((day) => ({ day, total: 0, resolved: 0 }))
+  const ticketsByUserType = charts?.ticketsByUserType?.length
+    ? charts.ticketsByUserType
+    : DEFAULT_USER_TYPES
+  const ticketsByModule = charts?.ticketsByModule?.series.length
+    ? charts.ticketsByModule
+    : {
+        series: DEFAULT_MODULE_SERIES,
+        data: lastNMonthLabels().map((month) => {
+          const point: Record<string, string | number> = { month }
+          for (const series of DEFAULT_MODULE_SERIES) point[series.key] = 0
+          return point
+        }),
+      }
   const ticketsByReason = charts?.ticketsByReason ?? []
-  const escalations = charts?.escalations
+  const escalations = charts?.escalations?.series.length
+    ? charts.escalations
+    : {
+        series: DEFAULT_TEAM_SERIES,
+        data: WEEKDAY_LABELS.map((day) => {
+          const point: Record<string, string | number> = { day }
+          for (const series of DEFAULT_TEAM_SERIES) point[series.key] = 0
+          return point
+        }),
+      }
   const totalReasonTickets = ticketsByReason.reduce((sum, reason) => sum + reason.count, 0)
-  const hasTrendData = ticketTrends.some((point) => point.total > 0 || point.resolved > 0)
-  const hasUserTypeData = ticketsByUserType.some((entry) => entry.value > 0)
-  const hasModuleData = Boolean(
-    ticketsByModule?.data.some((point) =>
-      ticketsByModule.series.some((series) => Number(point[series.key] ?? 0) > 0),
-    ),
-  )
-  const hasEscalationData = Boolean(
-    escalations?.series.length &&
-    escalations.data.some((point) =>
-      escalations.series.some((series) => Number(point[series.key] ?? 0) > 0),
-    ),
-  )
+
+  const userTypeTotal = ticketsByUserType.reduce((sum, entry) => sum + entry.value, 0)
+  const pieData = userTypeTotal > 0 ? ticketsByUserType : [{ key: 'empty', name: 'None', value: 1 }]
 
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
         <ChartCard title="Ticket Trends">
           <div className="h-[280px] w-full min-w-0">
-            {hasTrendData ? (
+            {isLoading ? (
+              <ChartEmpty />
+            ) : (
               <ResponsiveContainer width="100%" height="100%">
                 <ComposedChart
                   data={ticketTrends}
@@ -216,6 +265,7 @@ export function SupportDashboardCharts() {
                     axisLine={false}
                     tick={axisTickStyle}
                     allowDecimals={false}
+                    domain={yAxisDomain}
                   />
                   <Tooltip content={<TicketTrendTooltip />} />
                   <Area
@@ -236,20 +286,20 @@ export function SupportDashboardCharts() {
                   />
                 </ComposedChart>
               </ResponsiveContainer>
-            ) : (
-              <ChartEmpty label={emptyLabel} />
             )}
           </div>
         </ChartCard>
 
         <ChartCard title="Tickets by User Type">
-          {hasUserTypeData ? (
+          {isLoading ? (
+            <ChartEmpty />
+          ) : (
             <div className="flex flex-col items-center gap-6 sm:flex-row sm:items-center">
               <div className="relative h-[200px] w-[200px] shrink-0 overflow-visible">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
-                      data={ticketsByUserType}
+                      data={pieData}
                       dataKey="value"
                       nameKey="name"
                       innerRadius={58}
@@ -258,12 +308,24 @@ export function SupportDashboardCharts() {
                       strokeWidth={2}
                       isAnimationActive={false}
                     >
-                      {ticketsByUserType.map((entry, index) => (
-                        <Cell key={entry.key} fill={PIE_COLORS[index % PIE_COLORS.length]} />
+                      {pieData.map((entry, index) => (
+                        <Cell
+                          key={entry.key}
+                          fill={
+                            userTypeTotal > 0
+                              ? PIE_COLORS[index % PIE_COLORS.length]
+                              : 'rgba(255,255,255,0.08)'
+                          }
+                        />
                       ))}
                     </Pie>
                   </PieChart>
                 </ResponsiveContainer>
+                {userTypeTotal === 0 ? (
+                  <span className="text-h2 text-brand-text pointer-events-none absolute inset-0 flex items-center justify-center">
+                    0
+                  </span>
+                ) : null}
               </div>
 
               <div className="flex w-full flex-1 flex-col gap-4">
@@ -289,14 +351,14 @@ export function SupportDashboardCharts() {
                 ))}
               </div>
             </div>
-          ) : (
-            <ChartEmpty label={emptyLabel} />
           )}
         </ChartCard>
       </div>
 
       <ChartCard title="Tickets by Module">
-        {hasModuleData && ticketsByModule ? (
+        {isLoading ? (
+          <ChartEmpty />
+        ) : (
           <div className="min-w-0">
             <div className="h-[260px] w-full min-w-0">
               <ResponsiveContainer width="100%" height="100%">
@@ -312,6 +374,7 @@ export function SupportDashboardCharts() {
                     axisLine={false}
                     tick={axisTickStyle}
                     allowDecimals={false}
+                    domain={yAxisDomain}
                   />
                   <Tooltip content={<CompactSeriesTooltip />} cursor={{ fill: 'transparent' }} />
                   {ticketsByModule.series.map((series, index) => (
@@ -329,14 +392,14 @@ export function SupportDashboardCharts() {
             </div>
             <ChartLegend series={ticketsByModule.series} colorMap={MODULE_COLOR_BY_KEY} />
           </div>
-        ) : (
-          <ChartEmpty label={emptyLabel} />
         )}
       </ChartCard>
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
         <ChartCard title="Tickets by Reason">
-          {ticketsByReason.length ? (
+          {isLoading ? (
+            <ChartEmpty />
+          ) : (
             <div className="space-y-5 py-1">
               {ticketsByReason.map((reason, index) => (
                 <div key={reason.label}>
@@ -360,13 +423,13 @@ export function SupportDashboardCharts() {
                 <span className="text-body-sm-semibold text-brand-text">{totalReasonTickets}</span>
               </div>
             </div>
-          ) : (
-            <ChartEmpty label={emptyLabel} />
           )}
         </ChartCard>
 
         <ChartCard title="Escalations to Other Teams">
-          {hasEscalationData && escalations ? (
+          {isLoading ? (
+            <ChartEmpty />
+          ) : (
             <div className="min-w-0">
               <div className="h-[240px] w-full min-w-0">
                 <ResponsiveContainer width="100%" height="100%">
@@ -382,6 +445,7 @@ export function SupportDashboardCharts() {
                       axisLine={false}
                       tick={axisTickStyle}
                       allowDecimals={false}
+                      domain={yAxisDomain}
                     />
                     <Tooltip content={<CompactSeriesTooltip />} cursor={{ fill: 'transparent' }} />
                     {escalations.series.map((series, index) => (
@@ -399,8 +463,6 @@ export function SupportDashboardCharts() {
               </div>
               <ChartLegend series={escalations.series} colorMap={TEAM_COLOR_BY_KEY} />
             </div>
-          ) : (
-            <ChartEmpty label={emptyLabel} />
           )}
         </ChartCard>
       </div>

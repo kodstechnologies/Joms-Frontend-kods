@@ -17,6 +17,7 @@ export function useSupportChatSocket(
   const socketRef = useRef<Socket | null>(null)
   const getHandlersRef = useRef(getHandlers)
   const [connected, setConnected] = useState(false)
+  const [connectError, setConnectError] = useState('')
 
   useEffect(() => {
     getHandlersRef.current = getHandlers
@@ -28,7 +29,6 @@ export function useSupportChatSocket(
     const socket = io(baseUrl, {
       path: '/socket.io',
       auth: { token },
-      extraHeaders: { Authorization: `Bearer ${token}` },
       withCredentials: true,
       transports: ['websocket', 'polling'],
       reconnection: true,
@@ -40,6 +40,7 @@ export function useSupportChatSocket(
 
     const onConnect = () => {
       setConnected(true)
+      setConnectError('')
       socket.emit('join_support', {})
       getHandlersRef.current()?.onReconnect?.()
     }
@@ -50,7 +51,10 @@ export function useSupportChatSocket(
 
     socket.on('connect', onConnect)
     socket.on('reconnect', onConnect)
-    socket.on('connect_error', () => setConnected(false))
+    socket.on('connect_error', (err) => {
+      setConnected(false)
+      setConnectError(err?.message || 'Socket connection failed')
+    })
     socket.on('disconnect', () => setConnected(false))
     socket.on('support_chat_state', (payload: SupportChatState) =>
       getHandlersRef.current()?.onChatState?.(payload),
@@ -73,6 +77,7 @@ export function useSupportChatSocket(
       socket.disconnect()
       socketRef.current = null
       setConnected(false)
+      setConnectError('')
     }
   }, [token, baseUrl])
 
@@ -101,5 +106,5 @@ export function useSupportChatSocket(
     [],
   )
 
-  return { connected, sendSupportMessage }
+  return { connected, connectError, sendSupportMessage }
 }
