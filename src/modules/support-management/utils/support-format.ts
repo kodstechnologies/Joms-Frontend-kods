@@ -1,4 +1,4 @@
-import type { TicketPriority, TicketStatus } from '../types/support'
+import type { EscalationStatus, TicketPriority, TicketStatus } from '../types/support'
 import { cn } from '@/shared/lib/cn'
 
 export const getStatusLabel = (status: TicketStatus) => {
@@ -124,6 +124,32 @@ export const getPriorityClassName = (priority: TicketPriority) =>
     priority === 'low' && 'border-brand-positive/40 bg-brand-positive/10 text-brand-positive',
   )
 
+export const getEscalationStatusLabel = (status?: EscalationStatus | string | null) => {
+  const map: Record<EscalationStatus, string> = {
+    pending: 'Pending',
+    accepted: 'Accepted',
+    rejected: 'Rejected',
+    completed: 'Completed',
+  }
+  const key = String(status || '')
+    .trim()
+    .toLowerCase() as EscalationStatus
+  return map[key] || ''
+}
+
+export const getEscalationStatusClassName = (status?: EscalationStatus | string | null) => {
+  const key = String(status || '')
+    .trim()
+    .toLowerCase()
+  return cn(
+    'text-body-sm-semibold inline-flex h-[25px] items-center rounded-full border px-2.5',
+    key === 'pending' && 'border-brand-orange/40 bg-brand-orange/10 text-brand-orange',
+    key === 'accepted' && 'border-brand-accent/40 bg-brand-accent/10 text-brand-accent',
+    key === 'rejected' && 'border-brand-danger/40 bg-brand-danger/10 text-brand-danger',
+    key === 'completed' && 'border-brand-positive/40 bg-brand-positive/10 text-brand-positive',
+  )
+}
+
 export const isTerminalTicketStatus = (status?: TicketStatus | string | null) =>
   status === 'resolved' || status === 'closed'
 
@@ -145,6 +171,59 @@ export function formatSlaCountdown(remainingMs: number) {
   if (!Number.isFinite(remainingMs)) return '—'
   if (remainingMs >= 0) return formatSlaDuration(remainingMs)
   return `Overdue ${formatSlaDuration(Math.abs(remainingMs))}`
+}
+
+const pad2 = (value: number) => String(value).padStart(2, '0')
+
+/** Spec table format: DD MMM YYYY HH:mm */
+export function formatTicketDateTime(value?: string | Date | null) {
+  if (!value) return '—'
+  const date = value instanceof Date ? value : new Date(value)
+  if (Number.isNaN(date.getTime())) return '—'
+
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Asia/Kolkata',
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).formatToParts(date)
+
+  const pick = (type: Intl.DateTimeFormatPartTypes) =>
+    parts.find((part) => part.type === type)?.value || ''
+
+  return `${pick('day')} ${pick('month')} ${pick('year')} ${pick('hour')}:${pick('minute')}`
+}
+
+/** Spec duration format: HH:mm:ss */
+export function formatTicketDurationHms(
+  value?: string | null,
+  start?: string | null,
+  end?: string | null,
+) {
+  const text = String(value || '').trim()
+  if (text && text !== '—' && /^\d{1,}:\d{2}:\d{2}$/.test(text)) {
+    const [hours, minutes, seconds] = text.split(':')
+    return `${pad2(Number(hours))}:${minutes}:${seconds}`
+  }
+  if (start && end) {
+    const ms = new Date(end).getTime() - new Date(start).getTime()
+    if (!Number.isFinite(ms) || ms < 0) return '—'
+    const totalSeconds = Math.round(ms / 1000)
+    const hours = Math.floor(totalSeconds / 3600)
+    const minutes = Math.floor((totalSeconds % 3600) / 60)
+    const seconds = totalSeconds % 60
+    return `${pad2(hours)}:${pad2(minutes)}:${pad2(seconds)}`
+  }
+  return '—'
+}
+
+export const dashIfEmpty = (value?: string | null) => {
+  const text = String(value || '').trim()
+  if (!text || text === 'Unassigned') return '—'
+  return text
 }
 
 export const getReporterTypeLabel = (type: string) => {
