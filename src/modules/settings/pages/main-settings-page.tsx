@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
@@ -130,7 +130,11 @@ export function MainSettingsPage() {
     (activeTab === 'venue' && venueQuery.isLoading) ||
     (activeTab === 'service' && serviceQuery.isLoading)
 
+  const saveInFlight = useRef(false)
+  const [saveLock, setSaveLock] = useState(false)
+
   const isSaving =
+    saveLock ||
     updatePlatform.isPending ||
     updateSecurity.isPending ||
     updateNotifications.isPending ||
@@ -153,6 +157,10 @@ export function MainSettingsPage() {
       toast.message('This tab is static for now')
       return
     }
+    // Sync guard: two clicks can land before mutation isPending flips (NET-05).
+    if (saveInFlight.current) return
+    saveInFlight.current = true
+    setSaveLock(true)
 
     try {
       if (activeTab === 'platform') {
@@ -173,6 +181,9 @@ export function MainSettingsPage() {
       toast.success(`${TABS.find((t) => t.key === activeTab)?.label} settings saved`)
     } catch {
       toast.error('Failed to save settings')
+    } finally {
+      saveInFlight.current = false
+      setSaveLock(false)
     }
   }
 
