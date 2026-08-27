@@ -9,7 +9,7 @@ export const marketplaceQueryKeys = {
 }
 
 /**
- * Fetch complete marketplace dashboard (KPIs + Charts + Trends + Summary) in ONE query.
+ * Marketplace dashboard query (KPIs, charts, trends, summary).
  */
 export const useMarketplaceDashboard = (filters: DashboardFilters = {}) => {
   return useQuery({
@@ -20,9 +20,7 @@ export const useMarketplaceDashboard = (filters: DashboardFilters = {}) => {
   })
 }
 
-/**
- * Filter state manager
- */
+/** Local filter state for the marketplace dashboard. */
 export const useMarketplaceDashboardFilters = (
   initialFilters: DashboardFilters = { dateRange: 'last30days' },
 ) => {

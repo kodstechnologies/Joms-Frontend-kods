@@ -7,8 +7,6 @@ export function ByCustomersFilter() {
         <h2 className="text-brand-text text-sm font-medium">By Customers</h2>
       </div>
 
-      {/* Customer Lifetime Spend */}
-
       <div className="space-y-4">
         <h3 className="text-brand-text text-sm font-medium">Customer Lifetime Spend</h3>
 
@@ -26,8 +24,6 @@ export function ByCustomersFilter() {
           </div>
         </div>
       </div>
-
-      {/* Customer Cancellation */}
 
       <div className="space-y-4">
         <h3 className="text-brand-text text-sm font-medium">Customer Cancellation Rate %</h3>

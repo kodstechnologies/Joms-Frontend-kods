@@ -28,7 +28,6 @@ export type ExpertOnboardingFormData = {
   profileImageUrl: string
   sampleWorkFileName: string
 
-  // Step 2 - Identity Verification
   idType: string
   idNumber: string
   gstAvailable: boolean
@@ -44,14 +43,11 @@ export type ExpertOnboardingFormData = {
   certificateFileUrl: string
   gstCertificateFileUrl: string
 
-  // Step 3 - Work Experience
   workExperience: ExpertWorkExperienceEntry[]
 
-  // Step 4 - Gallery
   galleryImages: File[]
   galleryPreviews: string[]
 
-  // Step 5 - Final Review
   internalNotes: string
   isVerified: boolean
 }

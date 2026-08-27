@@ -1143,10 +1143,8 @@ export const ExpertManagementPage = () => {
         emptyMessage="No experts found."
       />
 
-      {/* Export & Advanced Filter Modals */}
       {exportFilterModals}
 
-      {/* Payout History Drawer */}
       <PayoutHistoryDrawer
         isOpen={Boolean(payoutDrawerTarget)}
         onClose={() => setPayoutDrawerTarget(null)}

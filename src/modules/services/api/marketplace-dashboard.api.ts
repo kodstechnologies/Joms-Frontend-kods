@@ -1,6 +1,6 @@
 /**
  * Marketplace Dashboard API
- * Calls single endpoint on serviceListing-service: GET /admin/marketplace/dashboard
+ * GET /admin/marketplace/dashboard (serviceListing-service)
  */
 import { expertApiClient } from '@/shared/lib/axios'
 import type {
@@ -21,10 +21,7 @@ const buildParams = (filters: DashboardFilters): Record<string, string | number>
   return params
 }
 
-/**
- * Fetch the complete Marketplace Dashboard in ONE single API call.
- * GET /admin/marketplace/dashboard
- */
+/** Fetch marketplace dashboard KPIs and charts. */
 export const fetchMarketplaceDashboard = async (
   filters: DashboardFilters = {},
 ): Promise<MarketplaceDashboardData> => {

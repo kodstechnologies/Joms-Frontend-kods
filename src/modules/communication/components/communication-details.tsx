@@ -88,7 +88,6 @@ export function CommunicationDetails() {
 
   return (
     <div className="flex flex-col gap-6 pb-8">
-      {/* Breadcrumb */}
       <div>
         <button
           type="button"
@@ -111,9 +110,7 @@ export function CommunicationDetails() {
         </p>
       </div>
 
-      {/* Main card */}
       <div className="radius-lg bg-brand-surface border border-white/[0.06] p-5">
-        {/* Title row */}
         <div className="mb-4 flex items-start justify-between gap-4">
           <div>
             <h2 className="text-h4 text-brand-text">{data.title}</h2>
@@ -136,7 +133,6 @@ export function CommunicationDetails() {
           </span>
         </div>
 
-        {/* Type / Audience / Channel */}
         <div className="radius-md bg-brand-bg mb-5 grid grid-cols-2 gap-4 border border-white/[0.06] px-5 py-4 sm:grid-cols-4">
           <div>
             <p className="text-body-sm text-muted">Type</p>
@@ -175,7 +171,6 @@ export function CommunicationDetails() {
           </div>
         </div>
 
-        {/* Subject */}
         {data.subject ? (
           <div className="mb-5">
             <p className="text-body-sm-semibold text-brand-text mb-2">Subject</p>
@@ -185,7 +180,6 @@ export function CommunicationDetails() {
           </div>
         ) : null}
 
-        {/* Message Content */}
         <div className="mb-5">
           <p className="text-body-sm-semibold text-brand-text mb-2">Message Content</p>
           <div className="radius-md bg-brand-bg border border-white/[0.06] px-4 py-3">
@@ -195,7 +189,6 @@ export function CommunicationDetails() {
           </div>
         </div>
 
-        {/* Additional Notes */}
         {data.additionalNotes ? (
           <div className="mb-5">
             <p className="text-body-sm-semibold text-brand-text mb-2">Additional Notes</p>
@@ -214,7 +207,6 @@ export function CommunicationDetails() {
           </div>
         ) : null}
 
-        {/* Delivery Analytics */}
         <div className="border-t border-white/[0.06] pt-5">
           <p className="text-body-sm-semibold text-brand-text mb-1">Delivery Analytics</p>
           {data.deliveryMeta?.note ? (
@@ -234,7 +226,6 @@ export function CommunicationDetails() {
         </div>
       </div>
 
-      {/* Footer */}
       <div className="radius-lg bg-brand-surface flex items-center justify-between border border-white/[0.06] px-5 py-4">
         <button
           type="button"

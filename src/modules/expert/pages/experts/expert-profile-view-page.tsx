@@ -191,7 +191,7 @@ const unwrapReportItems = (payload: unknown): ExpertReportItem[] => {
 }
 
 const formatClock = (value?: string | null) => {
-  if (!value) return '—'
+  if (!value) return 'â€”'
   const raw = String(value).trim()
   if (/[ap]m/i.test(raw)) return raw
   const [hours, minutes] = raw.split(':').map(Number)
@@ -245,7 +245,7 @@ const buildExpertTimelineEvents = (
     events.push({
       id: `ticket-${ticket.id}`,
       title: closed ? 'Support ticket closed' : 'Support ticket opened',
-      detail: `#${ticket.id} – ${ticket.subject}`,
+      detail: `#${ticket.id} â€“ ${ticket.subject}`,
       at: closed ? ticket.resolvedAt || ticket.createdAt : ticket.createdAt,
     })
   })
@@ -335,7 +335,7 @@ const viewExpertConsultation = async (
 const formatExpertId = formatListingExpertId
 
 const formatExperience = (years?: number, months?: number) => {
-  if (!years && !months) return '—'
+  if (!years && !months) return 'â€”'
   const parts: string[] = []
   if (years) parts.push(`${years} Year${years === 1 ? '' : 's'}`)
   if (months) parts.push(`${months} Month${months === 1 ? '' : 's'}`)
@@ -350,9 +350,9 @@ const formatWorkDate = (value?: string | null) => {
 }
 
 const formatReviewDate = (value?: string | null) => {
-  if (!value) return '—'
+  if (!value) return 'â€”'
   const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return '—'
+  if (Number.isNaN(date.getTime())) return 'â€”'
   return date.toLocaleDateString('en-GB', {
     day: '2-digit',
     month: 'short',
@@ -368,15 +368,15 @@ const toInsightsSort = (filter: string): 'recent' | 'top' | 'all' => {
 
 const formatWorkPeriod = (entry: ExpertWorkExperience) => {
   const start = formatWorkDate(entry.startDate)
-  const end = entry.currentlyWorking ? 'Present' : formatWorkDate(entry.endDate) || '—'
-  if (!start) return '—'
+  const end = entry.currentlyWorking ? 'Present' : formatWorkDate(entry.endDate) || 'â€”'
+  if (!start) return 'â€”'
   return `${start}- ${end}`
 }
 
 const formatLastActive = (value?: string) => {
-  if (!value) return '—'
+  if (!value) return 'â€”'
   const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return '—'
+  if (Number.isNaN(date.getTime())) return 'â€”'
   return date.toLocaleString('en-IN', {
     day: '2-digit',
     month: 'short',
@@ -396,12 +396,12 @@ const getKycBadge = (finalReview?: { isVerified?: boolean; approvalStatus?: stri
 }
 
 const formatServiceType = (value?: string) => {
-  if (!value) return '—'
+  if (!value) return 'â€”'
   return value.charAt(0).toUpperCase() + value.slice(1)
 }
 
 const formatPricingType = (value?: string) => {
-  if (!value) return '—'
+  if (!value) return 'â€”'
   return value
     .split(/[_\s-]+/)
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
@@ -413,7 +413,7 @@ const formatPricing = (option: { durationMinutes: number; pricingType: string; p
   if (option.pricingType === 'free' || option.price === 0) {
     return `${mins} (Free)`
   }
-  return `${mins} (₹${option.price.toLocaleString('en-IN')})`
+  return `${mins} (â‚¹${option.price.toLocaleString('en-IN')})`
 }
 
 function SafeImage({
@@ -483,7 +483,6 @@ function ProfileSidebar({
     ((profile as unknown as Record<string, unknown>).deepLink as string | undefined) ||
     (customUrl && profile.customUsername ? `jomspartner://profile/${profile.customUsername}` : null)
 
-  // Ratings data from Analytics or Profile API (No static fallbacks)
   const ratingAverage =
     analytics?.ratingsSummary?.average ??
     profile.ratings ??
@@ -500,26 +499,22 @@ function ProfileSidebar({
     analytics?.ratingsSummary?.available === true ||
     (typeof ratingCount === 'number' && ratingCount > 0 && ratingAverage != null)
 
-  // NPS score from Analytics or Profile API (No static fallbacks)
   const npsScore =
     analytics?.nps?.available === false
       ? null
       : (analytics?.nps?.score ?? profile.nps ?? profile.analytics?.nps)
 
-  // Experience from basic profile or profile
   const experienceYears = basic?.experienceYears
   const experienceMonths = basic?.experienceMonths
   const formattedExperience =
     formatExperience(experienceYears, experienceMonths) ||
     (profile.experience ? `${profile.experience} Years` : null)
 
-  // Total Earnings from Analytics listingOverview or Profile API
   const rawEarnings =
     analytics?.listingOverview?.totalEarnings ??
     profile.totalEarnings ??
     profile.analytics?.totalEarnings
 
-  // Total Orders Completed from Analytics listingOverview or Profile API
   const rawOrdersCompleted =
     analytics?.listingOverview?.ordersCompleted ??
     profile.totalOrdersCompleted ??
@@ -561,7 +556,7 @@ function ProfileSidebar({
               </button>
             )
           ) : (
-            '—'
+            'â€”'
           )}
         </SidebarRow>
         <SidebarRow label="Ratings">
@@ -569,20 +564,20 @@ function ProfileSidebar({
             <Star className="size-3.5 fill-[#E0A263] text-[#E0A263]" />
             {ratingsAvailable && ratingAverage !== undefined && ratingAverage !== null
               ? Number(ratingAverage).toFixed(1)
-              : '—'}
+              : 'â€”'}
             <span className="text-body-sm text-muted font-normal">
               ({ratingsAvailable && ratingCount != null ? ratingCount : 0})
             </span>
           </span>
         </SidebarRow>
         <SidebarRow label="NPS">
-          {npsScore !== undefined && npsScore !== null ? npsScore : '—'}
+          {npsScore !== undefined && npsScore !== null ? npsScore : 'â€”'}
         </SidebarRow>
-        <SidebarRow label="Experience">{formattedExperience || '—'}</SidebarRow>
+        <SidebarRow label="Experience">{formattedExperience || 'â€”'}</SidebarRow>
         <SidebarRow label="Total Earnings">
           {rawEarnings !== undefined && rawEarnings !== null
-            ? `₹${Number(rawEarnings).toLocaleString('en-IN')}`
-            : '₹0'}
+            ? `â‚¹${Number(rawEarnings).toLocaleString('en-IN')}`
+            : 'â‚¹0'}
         </SidebarRow>
         <SidebarRow label="Total Order Completed">
           {rawOrdersCompleted !== undefined && rawOrdersCompleted !== null ? rawOrdersCompleted : 0}
@@ -617,7 +612,7 @@ function ProfileSidebar({
         <div className="rounded-lg bg-[#050505] p-3">
           <p className="text-muted text-[10px]">Active Tickets</p>
           {ticketsLoading ? (
-            <p className="text-body-sm text-muted mt-1 font-medium">Loading…</p>
+            <p className="text-body-sm text-muted mt-1 font-medium">Loadingâ€¦</p>
           ) : tickets.length === 0 ? (
             <p className="text-body-sm mt-1 font-medium text-white">None</p>
           ) : (
@@ -629,7 +624,7 @@ function ProfileSidebar({
                     onClick={() => navigate(`/support/tickets/${ticket.id}`)}
                     className="text-body-sm w-full truncate text-left font-medium text-white underline-offset-2 hover:underline"
                   >
-                    # {ticket.id} – {ticket.subject}
+                    # {ticket.id} â€“ {ticket.subject}
                   </button>
                 </li>
               ))}
@@ -885,7 +880,7 @@ function OverviewTab({
                   <Briefcase className="size-4 text-white/80" />
                 </div>
                 <div className="min-w-0 pt-0.5">
-                  <p className="text-[13px] font-semibold text-white">{entry.jobTitle || '—'}</p>
+                  <p className="text-[13px] font-semibold text-white">{entry.jobTitle || 'â€”'}</p>
                   <p className="mt-0.5 text-[12px] text-white/45">
                     {entry.companyName || 'Company name'} | {formatWorkPeriod(entry)}
                   </p>
@@ -921,7 +916,7 @@ function OverviewTab({
         </div>
         <div className="space-y-4">
           {reviewsLoading ? (
-            <p className="text-[13px] text-white/50">Loading reviews…</p>
+            <p className="text-[13px] text-white/50">Loading reviewsâ€¦</p>
           ) : reviews.length === 0 ? (
             <p className="text-[13px] text-white/40">No reviews yet for this expert.</p>
           ) : (
@@ -945,7 +940,9 @@ function OverviewTab({
                       </div>
                       <p className="truncate text-[13px] font-semibold text-white">
                         {review.userName || 'User'}
-                        {role ? <span className="font-normal text-white/45"> • {role}</span> : null}
+                        {role ? (
+                          <span className="font-normal text-white/45"> â€¢ {role}</span>
+                        ) : null}
                       </p>
                     </div>
                     {review.title ? (
@@ -1138,14 +1135,14 @@ function ConsultationDetailCard({
             <Phone className="mx-auto size-4 text-[#E0A263]" />
             <p className="text-body-sm text-muted mt-2">Mode</p>
             <p className="text-body-sm font-semibold text-white capitalize">
-              {consultation.mode || '—'}
+              {consultation.mode || 'â€”'}
             </p>
           </div>
           <div className="rounded-lg bg-[#050505] p-3 text-center">
             <Languages className="mx-auto size-4 text-[#E0A263]" />
             <p className="text-body-sm text-muted mt-2">Language</p>
             <p className="text-body-sm font-semibold text-white">
-              {(consultation.languages ?? []).join(', ') || '—'}
+              {(consultation.languages ?? []).join(', ') || 'â€”'}
             </p>
           </div>
           <div className="rounded-lg bg-[#050505] p-3 text-center">
@@ -1154,7 +1151,7 @@ function ConsultationDetailCard({
             <p className="text-body-sm font-semibold text-white">
               {consultation.hasFollowUp && consultation.followUpDays
                 ? `${consultation.followUpDays} Days`
-                : '—'}
+                : 'â€”'}
             </p>
           </div>
         </div>
@@ -1846,7 +1843,7 @@ function ServiceListCard({
 
       <div className="ml-1 min-w-0 flex-1">
         <p className="text-body-md font-bold text-white">{service.title || 'Untitled Service'}</p>
-        <p className="text-body-sm text-muted mt-0.5">{service.category?.name || '—'}</p>
+        <p className="text-body-sm text-muted mt-0.5">{service.category?.name || 'â€”'}</p>
         <p className="text-body-sm text-muted mt-0.5">{formatPricingType(service.pricingType)}</p>
       </div>
     </div>
@@ -2116,7 +2113,7 @@ function ConsultationsSubTab({
       <DecisionActionModal
         open={Boolean(requestChangesTarget)}
         variant="requestChanges"
-        title="Request Changes – Consultation Approval"
+        title="Request Changes â€“ Consultation Approval"
         description="Are you sure you want to Request Changes to this application? The applicant will be notified via email."
         submitLabel="Request Changes"
         reasonOptions={requestChangesReasonOptions}
@@ -2270,7 +2267,7 @@ function AvailabilityTab({
         <div>
           <h3 className="text-body-md mb-4 font-semibold text-white">Availability</h3>
           {isLoading ? (
-            <p className="text-muted text-sm">Loading availability…</p>
+            <p className="text-muted text-sm">Loading availabilityâ€¦</p>
           ) : weekly.length === 0 ? (
             <p className="text-muted text-sm">No weekly availability set.</p>
           ) : (
@@ -2287,11 +2284,11 @@ function AvailabilityTab({
                     <span className="text-white">{day}</span>
                     <span className="text-muted inline-flex w-fit items-center gap-1 rounded-full bg-black px-3 py-1">
                       <Clock className="size-3" />
-                      {window?.from ? formatClock(window.from) : '—'}
+                      {window?.from ? formatClock(window.from) : 'â€”'}
                     </span>
                     <span className="text-muted inline-flex w-fit items-center gap-1 rounded-full bg-black px-3 py-1">
                       <Clock className="size-3" />
-                      {window?.to ? formatClock(window.to) : '—'}
+                      {window?.to ? formatClock(window.to) : 'â€”'}
                     </span>
                   </div>
                 )
@@ -2302,7 +2299,7 @@ function AvailabilityTab({
         <div>
           <h3 className="text-body-md mb-4 font-semibold text-white">Unavailability</h3>
           {isLoading ? (
-            <p className="text-muted text-sm">Loading unavailability…</p>
+            <p className="text-muted text-sm">Loading unavailabilityâ€¦</p>
           ) : unavailable.length === 0 ? (
             <p className="text-muted text-sm">No blocked dates recorded.</p>
           ) : (
@@ -2317,7 +2314,7 @@ function AvailabilityTab({
                   key={`${item.date}-${index}`}
                   className="text-body-sm grid grid-cols-3 items-center px-4 py-3"
                 >
-                  <span className="text-white">{item.date || '—'}</span>
+                  <span className="text-white">{item.date || 'â€”'}</span>
                   <span className="text-muted inline-flex w-fit items-center gap-1 rounded-full bg-black px-3 py-1">
                     <Clock className="size-3" />
                     {formatClock(item.from)}
@@ -2526,8 +2523,8 @@ function HealthTab({
                   <p className="mt-2 text-[13px] font-semibold text-white">{incident.title}</p>
                   <p className="text-body-sm text-muted mt-1">{incident.detail}</p>
                   <p className="text-muted mt-2 text-[10px]">
-                    Raised On: {incident.raisedOn || '—'}
-                    {incident.updatedOn ? ` · Last Updated: ${incident.updatedOn}` : ''}
+                    Raised On: {incident.raisedOn || 'â€”'}
+                    {incident.updatedOn ? ` Â· Last Updated: ${incident.updatedOn}` : ''}
                   </p>
                 </div>
                 <button
@@ -2754,7 +2751,7 @@ export function ExpertProfileViewPage() {
             exportCell(customUrl),
             exportCell(ratings),
             exportCell(nps),
-            exportCell(experience === '—' ? '' : experience),
+            exportCell(experience === 'â€”' ? '' : experience),
             exportCell(earnings),
             exportCell(orders),
             exportCell(kycLabel),
@@ -2973,7 +2970,7 @@ export function ExpertProfileViewPage() {
   const displayName = basic?.fullname || profile.fullname || 'Expert'
   const coverImage = basic?.coverImage
   const avatarImage = basic?.profileImage
-  const subtitle = [basic?.industry, basic?.location].filter(Boolean).join(' • ')
+  const subtitle = [basic?.industry, basic?.location].filter(Boolean).join(' â€¢ ')
 
   const headerActions = [
     {
@@ -3157,7 +3154,7 @@ export function ExpertProfileViewPage() {
                   # 1 Ranking
                 </span>
               </div>
-              <p className="text-body-sm text-white/50">{subtitle || '—'}</p>
+              <p className="text-body-sm text-white/50">{subtitle || 'â€”'}</p>
             </div>
           </div>
           <div className="flex w-full max-w-[600px] flex-wrap items-center justify-end gap-2 sm:w-auto sm:shrink-0">

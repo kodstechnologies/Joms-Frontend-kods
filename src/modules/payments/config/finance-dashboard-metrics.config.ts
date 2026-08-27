@@ -11,7 +11,6 @@ export type FinanceDashboardMetricCatalogItem = {
   section: FinanceDashboardMetricSection
 }
 
-/** Exactly 11 finance dashboard metrics — matches the dashboard screenshot. */
 export const FINANCE_DASHBOARD_METRICS_CATALOG: FinanceDashboardMetricCatalogItem[] = [
   {
     id: 'total-in-escrow',

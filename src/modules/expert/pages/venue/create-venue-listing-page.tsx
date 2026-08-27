@@ -278,7 +278,6 @@ export const CreateVenueListingPage = () => {
           blockedDates,
         }))
       } catch (err) {
-        console.error('Failed to load venue draft', err)
         const message = getApiErrorMessage(err)
         if (/unauthorized|token/i.test(message)) {
           toast.error('Session expired or missing. Please log in again.')
@@ -378,7 +377,6 @@ export const CreateVenueListingPage = () => {
       }
       setCurrentStep((prev) => Math.min(prev + 1, 7))
     } catch (err: unknown) {
-      console.error('Step save failed', err)
       const error = err as { response?: { data?: { message?: string } } }
       toast.error(error?.response?.data?.message || 'Failed to save. Please try again.')
     }

@@ -195,7 +195,6 @@ export const ExpertDashboardPage = () => {
     isLoading,
     refetch,
     isError,
-    error,
   } = useQuery({
     queryKey: ['expert-dashboard-analytics'],
     queryFn: () => fetchExpertDashboardAnalytics(),
@@ -203,9 +202,8 @@ export const ExpertDashboardPage = () => {
 
   useEffect(() => {
     if (!isError) return
-    console.error('Failed to load expert dashboard analytics:', error)
     toast.error('Unable to load expert dashboard analytics.')
-  }, [isError, error])
+  }, [isError])
 
   const d = res?.data
   const metricsList: Metric[] = d?.metrics?.length ? d.metrics : ZERO_METRICS

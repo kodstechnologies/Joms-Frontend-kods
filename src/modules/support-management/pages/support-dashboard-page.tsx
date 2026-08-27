@@ -59,7 +59,6 @@ export function SupportDashboardPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-h2 text-brand-text tracking-tight">Support Management</h1>
@@ -89,13 +88,12 @@ export function SupportDashboardPage() {
         </div>
       </div>
 
-      {/* Stats — 2 rows of 4 */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {(isLoading && stats.length === 0
           ? filteredActiveMetricIds.map((id) => ({
               id,
               title: 'Loading',
-              value: '—',
+              value: 'â€”',
               trend: { direction: 'up' as const, percentage: 0, label: 'vs last month' },
             }))
           : stats

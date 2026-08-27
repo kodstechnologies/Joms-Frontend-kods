@@ -9,7 +9,6 @@ import {
 import { useCreateMembership, useMembership, useUpdateMembership } from '../hooks/use-memberships'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 
-/** Edit / Create plan page — matches Create Membership Figma shell */
 export function MembershipPlanFormPage() {
   const { id } = useParams()
   const navigate = useNavigate()
@@ -90,7 +89,6 @@ export function MembershipPlanFormPage() {
 
   return (
     <div className="flex justify-center py-2">
-      {/* Figma shell: 701 wide — same panel as Create Membership */}
       <div
         className="create-membership-modal flex w-full flex-col overflow-hidden text-white"
         style={{ minHeight: 'min(90vh, 1458px)' }}

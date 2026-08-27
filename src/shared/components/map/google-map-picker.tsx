@@ -305,9 +305,8 @@ export function GoogleMapPicker({
 
         setIsLoading(false)
       })
-      .catch((err: unknown) => {
+      .catch(() => {
         if (!isMounted) return
-        console.error('Failed to load Google Maps:', err)
         setLoadError('Failed to load Google Maps API.')
         setIsLoading(false)
       })
@@ -346,8 +345,7 @@ export function GoogleMapPicker({
         }
         setIsLocating(false)
       },
-      (err: unknown) => {
-        console.warn('Geolocation error:', err)
+      () => {
         setIsLocating(false)
       },
       { timeout: 10000, enableHighAccuracy: true },

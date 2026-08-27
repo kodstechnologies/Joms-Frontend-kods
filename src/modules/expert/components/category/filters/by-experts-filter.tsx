@@ -3,28 +3,24 @@ import { Input } from '@/shared/components/ui/input'
 export function ByExpertsFilter() {
   return (
     <section className="space-y-8 pt-10">
-      {/* Header */}
       <h2 className="text-brand-text text-sm font-medium">By Experts</h2>
 
-      {/* Expert Search */}
       <div className="space-y-2">
         <label className="text-brand-text text-sm font-medium">Category</label>
 
         <Input placeholder="Search by name" className="bg-brand-surface border-white/10" />
 
-        {/* Selected Chips */}
         <div className="flex flex-wrap gap-2 pt-2">
           <div className="text-brand-text rounded-full bg-white/10 px-3 py-1 text-xs">
-            Sarah Johnson ✕
+            Sarah Johnson âœ•
           </div>
 
           <div className="text-brand-text rounded-full bg-white/10 px-3 py-1 text-xs">
-            David Kim ✕
+            David Kim âœ•
           </div>
         </div>
       </div>
 
-      {/* Category Status */}
       <div className="space-y-3">
         <h3 className="text-brand-text text-sm font-medium">Category Status</h3>
 
@@ -44,7 +40,6 @@ export function ByExpertsFilter() {
         </div>
       </div>
 
-      {/* Service Performance */}
       <div className="space-y-3">
         <h3 className="text-brand-text text-sm font-medium">Service Performance</h3>
 
@@ -64,7 +59,6 @@ export function ByExpertsFilter() {
         </div>
       </div>
 
-      {/* Account Status */}
       <div className="space-y-3">
         <h3 className="text-brand-text text-sm font-medium">Account Status</h3>
 
@@ -87,7 +81,6 @@ export function ByExpertsFilter() {
         </div>
       </div>
 
-      {/* Verification Status */}
       <div className="space-y-3">
         <h3 className="text-brand-text text-sm font-medium">Verification Status</h3>
 
@@ -110,7 +103,6 @@ export function ByExpertsFilter() {
         </div>
       </div>
 
-      {/* Organisation Type */}
       <div className="space-y-3">
         <h3 className="text-brand-text text-sm font-medium">Organisation Type</h3>
 
@@ -130,7 +122,6 @@ export function ByExpertsFilter() {
         </div>
       </div>
 
-      {/* Pending Payouts */}
       <div className="space-y-3">
         <h3 className="text-brand-text text-sm font-medium">Pending Payouts</h3>
 
@@ -147,7 +138,6 @@ export function ByExpertsFilter() {
         </div>
       </div>
 
-      {/* Membership Purchased */}
       <div className="space-y-3">
         <h3 className="text-brand-text text-sm font-medium">Membership Purchased</h3>
 
@@ -161,7 +151,6 @@ export function ByExpertsFilter() {
         </div>
       </div>
 
-      {/* Membership Type */}
       <div className="space-y-3">
         <h3 className="text-brand-text text-sm font-medium">Membership Type</h3>
 

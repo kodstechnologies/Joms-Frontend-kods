@@ -5,15 +5,11 @@ import { Input } from '@/shared/components/ui/input'
 export function ByCustomersFilter() {
   return (
     <section className="bg-brand-surface-2 space-y-8 rounded-xl border border-white/10 p-8">
-      {/* Header */}
-
       <div className="flex items-center justify-between">
         <h2 className="text-brand-text text-sm font-medium">By Customers</h2>
 
         <Plus className="text-brand-text h-5 w-5 cursor-pointer" />
       </div>
-
-      {/* Registration Date */}
 
       <div className="space-y-4">
         <h3 className="text-brand-text text-sm font-medium">Registration Date</h3>
@@ -32,8 +28,6 @@ export function ByCustomersFilter() {
           </div>
         </div>
       </div>
-
-      {/* Customer Total Bookings */}
 
       <div className="space-y-4">
         <h3 className="text-brand-text text-sm font-medium">Customer Total Bookings</h3>

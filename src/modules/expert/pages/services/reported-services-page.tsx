@@ -128,8 +128,7 @@ export function ServiceReportedServicesPage() {
         setTotalItems(pagination?.total || items.length)
         setTotalPages(pagination?.totalPages || 1)
       })
-      .catch((err: unknown) => {
-        console.error('Failed to load reported services:', err)
+      .catch(() => {
         setReports([])
       })
       .finally(() => {

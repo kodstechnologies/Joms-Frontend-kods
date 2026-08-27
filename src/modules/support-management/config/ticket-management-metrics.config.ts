@@ -8,7 +8,6 @@ export type TicketManagementMetricCatalogItem = {
   defaultActive: boolean
 }
 
-/** Exactly 4 ticket management dashboard metrics — matches the Ticket Management page. */
 export const TICKET_MANAGEMENT_METRICS_CATALOG: TicketManagementMetricCatalogItem[] = [
   {
     id: 'my-open-tickets',

@@ -67,7 +67,10 @@ export function PushNotificationTestPage() {
           <p className="text-sm text-zinc-400">
             Fire every partner <code className="text-violet-300">eventType</code> via internal
             notify (in-app + FCM). Confirm deepLink navigation payloads match{' '}
-            <code className="text-violet-300">PARTNER_FLUTTER_PUSH_NOTIFICATIONS.md</code>.
+            <code className="text-violet-300">
+              Joms-Dev-Tools/docs/backend/notification-service/PARTNER_FLUTTER_PUSH_NOTIFICATIONS.md
+            </code>
+            .
           </p>
         </header>
 

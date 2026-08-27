@@ -49,7 +49,6 @@ export function CreateMembershipModal({ open, onClose }: CreateMembershipModalPr
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
-      {/* Figma: 701 × 1458 */}
       <div
         className="create-membership-modal flex w-full flex-col overflow-hidden text-white"
         style={{ maxHeight: 'min(1458px, 92vh)' }}
