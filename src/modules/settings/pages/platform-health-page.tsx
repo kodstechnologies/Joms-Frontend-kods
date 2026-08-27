@@ -24,6 +24,11 @@ import {
   PLATFORM_HEALTH_METRIC_ID_SET,
   PLATFORM_HEALTH_MODULE_KEY,
 } from '../config/platform-health-metrics.config'
+import {
+  DEFAULT_PLATFORM_HEALTH_VISIBLE_COLUMN_IDS,
+  PLATFORM_HEALTH_LEGACY_COLUMN_ID_MAP,
+  PLATFORM_HEALTH_TABLE_COLUMNS_CATALOG,
+} from '../config/platform-health-table-columns.config'
 import { usePlatformHealthDashboard } from '../hooks/use-platform-health'
 import type {
   PlatformHealthDateRange,
@@ -35,6 +40,7 @@ import {
   orderByActiveMetricIds,
   useActiveMetricIds,
 } from '@/modules/expert/hooks/use-active-metric-ids'
+import { useTableColumnPreferences } from '@/modules/expert/hooks/use-ui-preferences'
 import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
 import { cn } from '@/shared/lib/cn'
 import { uiTokens } from '@/shared/lib/design-tokens'
@@ -202,6 +208,7 @@ export function PlatformHealthPage() {
   const dashboardData = dashboardQuery.data
   const isLoading = dashboardQuery.isLoading
 
+  const tableColumnPreferencesQuery = useTableColumnPreferences(PLATFORM_HEALTH_MODULE_KEY)
   const activeMetricIds = useActiveMetricIds(PLATFORM_HEALTH_MODULE_KEY, [
     ...DEFAULT_PLATFORM_HEALTH_METRIC_IDS,
   ])
@@ -219,6 +226,22 @@ export function PlatformHealthPage() {
     const allMetrics = buildPlatformHealthMetricCards(dashboardData?.metrics)
     return orderByActiveMetricIds(allMetrics, filteredActiveMetricIds)
   }, [dashboardData?.metrics, filteredActiveMetricIds])
+
+  const visibleInfraColumnIds = useMemo(() => {
+    const catalogIds = PLATFORM_HEALTH_TABLE_COLUMNS_CATALOG.map((column) => column.id)
+    const rawVisibleIds = tableColumnPreferencesQuery.data?.visibleColumnIds?.length
+      ? tableColumnPreferencesQuery.data.visibleColumnIds
+      : DEFAULT_PLATFORM_HEALTH_VISIBLE_COLUMN_IDS
+    const normalized = [
+      ...new Set(rawVisibleIds.map((id) => PLATFORM_HEALTH_LEGACY_COLUMN_ID_MAP[id] ?? id)),
+    ]
+    return sortIdsByCatalogOrder(
+      normalized.filter((id) => catalogIds.includes(id)),
+      catalogIds,
+    )
+  }, [tableColumnPreferencesQuery.data])
+
+  const infraColumnVisible = useMemo(() => new Set(visibleInfraColumnIds), [visibleInfraColumnIds])
 
   const charts = dashboardData?.charts
   const infrastructure = dashboardData?.infrastructure || []
@@ -250,7 +273,7 @@ export function PlatformHealthPage() {
           </button>
           <button
             type="button"
-            onClick={() => navigate('/metrics/platform-health')}
+            onClick={() => navigate('/metrics/platform-health?section=table')}
             className="ui-manage-metrics ui-cta ui-cta-primary inline-flex items-center gap-2 px-4"
           >
             <Settings2 className="size-4" />
@@ -695,60 +718,153 @@ export function PlatformHealthPage() {
             ? Array.from({ length: 6 }).map((_, index) => (
                 <TableRowSkeleton key={`infra-row-${index}`} />
               ))
-            : infrastructure.map((row) => (
-                <div
-                  key={row.id}
-                  className="radius-lg bg-brand-bg grid gap-4 border border-white/10 px-4 py-4 lg:grid-cols-[minmax(0,1.5fr)_110px_90px_90px_90px_minmax(0,1fr)] lg:items-center"
-                >
-                  <div className="flex items-start gap-3">
-                    <span
-                      className={cn(
-                        'mt-1.5 inline-block size-2 rounded-full',
-                        row.status === 'Healthy'
-                          ? 'bg-brand-positive'
-                          : row.status === 'Warning'
-                            ? 'bg-amber-400'
-                            : row.status === 'Offline'
-                              ? 'bg-white/30'
-                              : 'bg-brand-danger',
-                      )}
-                    />
-                    <div>
-                      <p className="text-body-md-semibold text-brand-text">{row.name}</p>
-                      <p className={cn('text-body-sm', STATUS_STYLES[row.status])}>
-                        {row.serviceType} · {row.status}
-                      </p>
-                    </div>
+            : infrastructure.map((row) => {
+                const showName = infraColumnVisible.has('infrastructure-name')
+                const showId = infraColumnVisible.has('infrastructure-id')
+                const showServiceType = infraColumnVisible.has('service-type')
+                const showStatus = infraColumnVisible.has('status')
+                const showUptime = infraColumnVisible.has('uptime')
+                const showCpu = infraColumnVisible.has('cpu-usage')
+                const showMemory = infraColumnVisible.has('memory-usage')
+                const showStorage = infraColumnVisible.has('storage-usage')
+                const showLatency = infraColumnVisible.has('network-latency')
+                const showAvgResponse = infraColumnVisible.has('average-response-time')
+                const showErrors = infraColumnVisible.has('error-count')
+                const showLastCheck = infraColumnVisible.has('last-health-check')
+                const showLoadBar = showCpu || showMemory || showStorage
+
+                return (
+                  <div
+                    key={row.id}
+                    className="radius-lg bg-brand-bg grid gap-4 border border-white/10 px-4 py-4 lg:grid-cols-[minmax(0,1.5fr)_repeat(auto-fit,minmax(90px,1fr))] lg:items-center"
+                  >
+                    {(showName || showId || showServiceType || showStatus) && (
+                      <div className="flex items-start gap-3">
+                        {showStatus ? (
+                          <span
+                            className={cn(
+                              'mt-1.5 inline-block size-2 rounded-full',
+                              row.status === 'Healthy'
+                                ? 'bg-brand-positive'
+                                : row.status === 'Warning'
+                                  ? 'bg-amber-400'
+                                  : row.status === 'Offline'
+                                    ? 'bg-white/30'
+                                    : 'bg-brand-danger',
+                            )}
+                          />
+                        ) : null}
+                        <div>
+                          {showName ? (
+                            <p className="text-body-md-semibold text-brand-text">{row.name}</p>
+                          ) : null}
+                          {showId ? (
+                            <p className="text-body-sm text-muted font-mono">{row.id}</p>
+                          ) : null}
+                          {(showServiceType || showStatus) && (
+                            <p
+                              className={cn(
+                                'text-body-sm',
+                                showStatus && STATUS_STYLES[row.status],
+                              )}
+                            >
+                              {[
+                                showServiceType ? row.serviceType : null,
+                                showStatus ? row.status : null,
+                              ]
+                                .filter(Boolean)
+                                .join(' · ')}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                    {showUptime ? (
+                      <div>
+                        <p className="text-body-sm-semibold text-muted tracking-wide uppercase">
+                          Uptime
+                        </p>
+                        <p className="text-body-md-semibold text-brand-text mt-1">
+                          {row.uptime.toFixed(2)}%
+                        </p>
+                      </div>
+                    ) : null}
+                    {showCpu ? (
+                      <div>
+                        <p className="text-body-sm-semibold text-muted tracking-wide uppercase">
+                          CPU
+                        </p>
+                        <p className="text-body-md-semibold text-brand-text mt-1">
+                          {row.cpuUsage}%
+                        </p>
+                      </div>
+                    ) : null}
+                    {showMemory ? (
+                      <div>
+                        <p className="text-body-sm-semibold text-muted tracking-wide uppercase">
+                          Memory
+                        </p>
+                        <p className="text-body-md-semibold text-brand-text mt-1">
+                          {row.memoryUsage}%
+                        </p>
+                      </div>
+                    ) : null}
+                    {showStorage ? (
+                      <div>
+                        <p className="text-body-sm-semibold text-muted tracking-wide uppercase">
+                          Storage
+                        </p>
+                        <p className="text-body-md-semibold text-brand-text mt-1">
+                          {row.storageUsage}%
+                        </p>
+                      </div>
+                    ) : null}
+                    {showLatency ? (
+                      <div>
+                        <p className="text-body-sm-semibold text-muted tracking-wide uppercase">
+                          Latency
+                        </p>
+                        <p className="text-body-md-semibold text-brand-text mt-1">
+                          {row.networkLatencyMs == null ? '—' : `${row.networkLatencyMs} ms`}
+                        </p>
+                      </div>
+                    ) : null}
+                    {showAvgResponse ? (
+                      <div>
+                        <p className="text-body-sm-semibold text-muted tracking-wide uppercase">
+                          Avg Response
+                        </p>
+                        <p className="text-body-md-semibold text-brand-text mt-1">
+                          {row.avgResponseTimeMs == null ? '—' : `${row.avgResponseTimeMs} ms`}
+                        </p>
+                      </div>
+                    ) : null}
+                    {showErrors ? (
+                      <div>
+                        <p className="text-body-sm-semibold text-muted tracking-wide uppercase">
+                          Errors
+                        </p>
+                        <p className="text-body-md-semibold text-brand-text mt-1">
+                          {row.errorCount}
+                        </p>
+                      </div>
+                    ) : null}
+                    {showLastCheck ? (
+                      <div>
+                        <p className="text-body-sm-semibold text-muted tracking-wide uppercase">
+                          Last Check
+                        </p>
+                        <p className="text-body-md-semibold text-brand-text mt-1">
+                          {row.lastHealthCheck || '—'}
+                        </p>
+                      </div>
+                    ) : null}
+                    {showLoadBar ? (
+                      <LoadBar value={Math.max(row.cpuUsage, row.memoryUsage, row.storageUsage)} />
+                    ) : null}
                   </div>
-                  <div>
-                    <p className="text-body-sm-semibold text-muted tracking-wide uppercase">
-                      Uptime
-                    </p>
-                    <p className="text-body-md-semibold text-brand-text mt-1">
-                      {row.uptime.toFixed(2)}%
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-body-sm-semibold text-muted tracking-wide uppercase">CPU</p>
-                    <p className="text-body-md-semibold text-brand-text mt-1">{row.cpuUsage}%</p>
-                  </div>
-                  <div>
-                    <p className="text-body-sm-semibold text-muted tracking-wide uppercase">
-                      Latency
-                    </p>
-                    <p className="text-body-md-semibold text-brand-text mt-1">
-                      {row.networkLatencyMs == null ? '—' : `${row.networkLatencyMs} ms`}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-body-sm-semibold text-muted tracking-wide uppercase">
-                      Errors
-                    </p>
-                    <p className="text-body-md-semibold text-brand-text mt-1">{row.errorCount}</p>
-                  </div>
-                  <LoadBar value={Math.max(row.cpuUsage, row.memoryUsage, row.storageUsage)} />
-                </div>
-              ))}
+                )
+              })}
         </div>
       </section>
     </div>

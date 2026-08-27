@@ -18,7 +18,6 @@ import {
   bulkRejectExperts,
   bulkRestoreExperts,
   bulkVerifyKycExperts,
-  bulkVerifyDigilockerExperts,
   bulkEscalateExperts,
   bulkRaiseTicketExperts,
   type BulkActionPayload,
@@ -222,17 +221,6 @@ export const useBulkVerifyKycExperts = () => {
 
   return useMutation({
     mutationFn: (payload: BulkActionPayload) => bulkVerifyKycExperts(payload),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['experts'] })
-    },
-  })
-}
-
-export const useBulkVerifyDigilockerExperts = () => {
-  const queryClient = useQueryClient()
-
-  return useMutation({
-    mutationFn: (payload: BulkActionPayload) => bulkVerifyDigilockerExperts(payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['experts'] })
     },

@@ -19,18 +19,13 @@ export const FinanceRecordWithTags: React.FC<FinanceRecordWithTagsProps> = ({
   const [isModalOpen, setIsModalOpen] = useState(false)
 
   useEffect(() => {
-    // Load tags when component mounts
     fetchTags(recordId)
   }, [recordId, fetchTags])
 
   const handleAddTags = async (selectedTags: string[]) => {
     await addTags(recordId, selectedTags)
     setIsModalOpen(false)
-
-    // Notify parent component
     onTagsUpdate?.([...tags, ...selectedTags])
-
-    // Refresh tags
     await fetchTags(recordId)
   }
 
@@ -41,7 +36,6 @@ export const FinanceRecordWithTags: React.FC<FinanceRecordWithTagsProps> = ({
 
   return (
     <div className="space-y-4">
-      {/* Tags Display Section */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <label className="text-sm font-medium text-gray-300">Tags</label>
@@ -55,7 +49,6 @@ export const FinanceRecordWithTags: React.FC<FinanceRecordWithTagsProps> = ({
           </Button>
         </div>
 
-        {/* Tags List */}
         {tags.length > 0 ? (
           <div className="flex flex-wrap gap-2">
             {tags.map((tag) => (
@@ -79,14 +72,13 @@ export const FinanceRecordWithTags: React.FC<FinanceRecordWithTagsProps> = ({
         )}
       </div>
 
-      {/* Add Tags Modal */}
       <AddTagsModal
         isOpen={isModalOpen}
         onClose={() => {
           setIsModalOpen(false)
         }}
-        onSubmit={async ({ tags }) => {
-          await handleAddTags(tags)
+        onSubmit={async ({ tags: selectedTags }) => {
+          await handleAddTags(selectedTags)
         }}
         initialTags={tags}
         title={`Add tags to ${recordType}`}

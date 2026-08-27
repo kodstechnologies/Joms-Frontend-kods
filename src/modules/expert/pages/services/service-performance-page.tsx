@@ -11,12 +11,8 @@ import {
   TableActionsDropdown,
   TableActionsItem,
 } from '@/shared/components/table/table-actions-dropdown'
-import {
-  AdvancedFilterSheet,
-  ExportDataModal,
-} from '@/shared/components/advanced-filter/module-filter-modals'
-import { createEmptyFilterValuesForConfig } from '@/shared/components/advanced-filter/filter-utils'
-import type { FilterValues, ModuleFilterConfig, RangeFilterValue } from '@/shared/types/data-filter'
+import { useModuleExportFilters } from '@/shared/components/advanced-filter/use-module-export-filters'
+import { buildServicePerformanceQueryParams } from '@/shared/utils/export-filter-utils'
 import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
 import { exportDataToFile } from '@/shared/utils/export-utils'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
@@ -27,7 +23,11 @@ import {
   SERVICE_PERFORMANCE_METRIC_IDS,
   SERVICE_PERFORMANCE_MODULE_KEY,
 } from '../../config/service-performance-metrics.config'
-import { SERVICE_PERFORMANCE_TABLE_COLUMNS_CATALOG } from '../../config/service-performance-table-columns.config'
+import {
+  DEFAULT_SERVICE_PERFORMANCE_VISIBLE_COLUMN_IDS,
+  SERVICE_PERFORMANCE_LEGACY_COLUMN_ID_MAP,
+  SERVICE_PERFORMANCE_TABLE_COLUMNS_CATALOG,
+} from '../../config/service-performance-table-columns.config'
 import { orderByActiveMetricIds, useActiveMetricIds } from '../../hooks/use-active-metric-ids'
 import { useTableColumnPreferences } from '../../hooks/use-ui-preferences'
 import { useServiceOrders, useServicePerformance } from '../../hooks/use-service-drilldown'
@@ -46,23 +46,14 @@ import type { ServiceOrderRow, ServiceOrdersQuery } from '../../type/service-dri
 
 const PAGE_SIZE = 10
 
-const DESIGN_VISIBLE_COLUMN_IDS = [
-  'client-id',
-  'client-name',
-  'listing-type',
-  'order-status',
-  'pricing-type',
-  'start-date',
-  'end-date',
-  'price',
-] as const
-
-const METRIC_ICONS = {
+const METRIC_ICONS: Record<string, typeof Users> = {
   activeClients: Users,
   completedOrders: Check,
   averageRating: Star,
   terminatedOrders: X,
-} as const
+  totalOrders: Users,
+  inProgressOrders: Users,
+}
 
 const listingTypeLabel = (order: ServiceOrderRow) =>
   order.engagementType === 'proposal' ? 'Custom' : 'Service'
@@ -71,92 +62,6 @@ const formatClientCode = (clientId?: string | null) => {
   if (!clientId) return DASH
   const compact = clientId.replace(/-/g, '').slice(-5).toUpperCase()
   return `CLT-${compact}`
-}
-
-const buildFilterConfig = (options: {
-  orderStatus: string[]
-  paymentMethod: string[]
-}): ModuleFilterConfig => ({
-  moduleKey: SERVICE_PERFORMANCE_MODULE_KEY,
-  moduleName: 'Service Performance',
-  sections: [
-    {
-      id: 'by-order',
-      title: 'By Order',
-      defaultExpanded: true,
-      fields: [
-        { id: 'dateRange', label: 'Date Range', type: 'date-range' },
-        {
-          id: 'orderStatus',
-          label: 'Order Status',
-          type: 'checkbox-group',
-          options: options.orderStatus.map((value) => ({ value, label: titleCase(value) })),
-        },
-        { id: 'priceRange', label: 'Price Range', type: 'number-range' },
-        { id: 'ratingRange', label: 'Rating Range', type: 'number-range' },
-      ],
-    },
-    {
-      id: 'by-payment',
-      title: 'By Payment',
-      fields: [
-        {
-          id: 'paymentMethod',
-          label: 'Payment Method',
-          type: 'checkbox-group',
-          options: options.paymentMethod.map((value) => ({ value, label: titleCase(value) })),
-        },
-        {
-          id: 'refundStatus',
-          label: 'Refund Status',
-          type: 'checkbox-group',
-          options: [
-            { value: 'none', label: 'No Refund' },
-            { value: 'processed', label: 'Refunded' },
-            { value: 'pending', label: 'Refund Pending' },
-            { value: 'failed', label: 'Refund Failed' },
-          ],
-        },
-        {
-          id: 'disputeStatus',
-          label: 'Dispute Status',
-          type: 'checkbox-group',
-          options: [
-            { value: 'disputed', label: 'Disputed' },
-            { value: 'not_disputed', label: 'Not Disputed' },
-          ],
-        },
-      ],
-    },
-  ],
-})
-
-const asRange = (value: FilterValues[string] | undefined): RangeFilterValue =>
-  value && typeof value === 'object' && 'from' in value
-    ? (value as RangeFilterValue)
-    : { from: '', to: '' }
-
-const asList = (value: FilterValues[string] | undefined): string[] =>
-  Array.isArray(value) ? value : []
-
-const buildQueryFromFilters = (values: FilterValues): ServiceOrdersQuery => {
-  const dateRange = asRange(values.dateRange)
-  const priceRange = asRange(values.priceRange)
-  const ratingRange = asRange(values.ratingRange)
-  const disputeStatus = asList(values.disputeStatus)
-
-  return {
-    dateFrom: dateRange.from || undefined,
-    dateTo: dateRange.to || undefined,
-    minPrice: priceRange.from || undefined,
-    maxPrice: priceRange.to || undefined,
-    minRating: ratingRange.from || undefined,
-    maxRating: ratingRange.to || undefined,
-    orderStatus: asList(values.orderStatus).join(',') || undefined,
-    paymentMethod: asList(values.paymentMethod).join(',') || undefined,
-    refundStatus: asList(values.refundStatus).join(',') || undefined,
-    disputeStatus: disputeStatus.length === 1 ? disputeStatus[0] : undefined,
-  }
 }
 
 export function ServicePerformancePage() {
@@ -168,8 +73,6 @@ export function ServicePerformancePage() {
   const [appliedFilters, setAppliedFilters] = useState<ServiceOrdersQuery>({})
   const [activeActionMenu, setActiveActionMenu] = useState<string | null>(null)
   const [paymentModalOrder, setPaymentModalOrder] = useState<ServiceOrderRow | null>(null)
-  const [isFilterOpen, setIsFilterOpen] = useState(false)
-  const [isExportOpen, setIsExportOpen] = useState(false)
 
   const performanceQuery = useServicePerformance(serviceId)
   const performance = performanceQuery.data?.data
@@ -183,18 +86,24 @@ export function ServicePerformancePage() {
   const ordersData = ordersQuery.data?.data
   const orders = useMemo(() => ordersData?.orders ?? [], [ordersData?.orders])
 
-  const filterConfig = useMemo(
-    () =>
-      buildFilterConfig({
-        orderStatus: ordersData?.filterOptions.orderStatus ?? [],
-        paymentMethod: ordersData?.filterOptions.paymentMethod ?? [],
-      }),
-    [ordersData?.filterOptions.orderStatus, ordersData?.filterOptions.paymentMethod],
-  )
-
-  const [filterValues, setFilterValues] = useState<FilterValues>(() =>
-    createEmptyFilterValuesForConfig(buildFilterConfig({ orderStatus: [], paymentMethod: [] })),
-  )
+  const {
+    modals: filterModals,
+    onAdvancedFilter,
+    onExport,
+  } = useModuleExportFilters({
+    moduleKey: 'service-performance',
+    onApplyFilters: (values) => {
+      const q = buildServicePerformanceQueryParams(values) as Record<string, unknown>
+      delete q.page
+      delete q.limit
+      setAppliedFilters(q as ServiceOrdersQuery)
+      setPage(1)
+    },
+    onExportData: (values, format) => {
+      if (orders.length === 0) throw new Error('NO_RECORDS')
+      handleExport(format)
+    },
+  })
 
   const tableColumnPreferencesQuery = useTableColumnPreferences(SERVICE_PERFORMANCE_MODULE_KEY)
   const activeMetricIds = useActiveMetricIds(SERVICE_PERFORMANCE_MODULE_KEY, [
@@ -215,7 +124,7 @@ export function ServicePerformancePage() {
     [orderedMetricIds, performance],
   )
 
-  const manageMetricsPath = `/metrics/service-performance?returnTo=${encodeURIComponent(
+  const manageMetricsPath = `/metrics/service-performance?section=table&returnTo=${encodeURIComponent(
     `/experts/management/profile/${expertId}/service/${serviceId}/performance`,
   )}`
 
@@ -285,7 +194,6 @@ export function ServicePerformancePage() {
 
       exportDataToFile(headers, rows, format, 'service_orders_export')
       toast.success(`Exported ${orders.length} order(s)`)
-      setIsExportOpen(false)
     },
     [orders],
   )
@@ -294,6 +202,7 @@ export function ServicePerformancePage() {
     () => ({
       'order-id': {
         id: 'order-id',
+        accessorKey: 'orderId',
         header: 'Order ID',
         cell: ({ row }) => (
           <span className="ui-table-id text-muted font-mono text-xs uppercase">
@@ -303,6 +212,7 @@ export function ServicePerformancePage() {
       },
       'client-id': {
         id: 'client-id',
+        accessorKey: 'clientId',
         header: 'Client ID',
         cell: ({ row }) => (
           <span className="ui-table-id text-muted font-mono text-xs uppercase">
@@ -312,13 +222,15 @@ export function ServicePerformancePage() {
       },
       'client-name': {
         id: 'client-name',
-        header: 'Name',
+        accessorKey: 'clientName',
+        header: 'Client Name',
         cell: ({ row }) => (
           <span className="font-medium text-white">{row.original.clientName || DASH}</span>
         ),
       },
       'listing-type': {
         id: 'listing-type',
+        accessorFn: (row) => listingTypeLabel(row),
         header: 'Listing Type',
         cell: ({ row }) => (
           <span className="text-sm text-white">{listingTypeLabel(row.original)}</span>
@@ -326,11 +238,13 @@ export function ServicePerformancePage() {
       },
       'order-status': {
         id: 'order-status',
-        header: 'Status',
+        accessorKey: 'orderStatus',
+        header: 'Order Status',
         cell: ({ row }) => <StatusPill status={row.original.orderStatus} />,
       },
       'pricing-type': {
         id: 'pricing-type',
+        accessorKey: 'pricingType',
         header: 'Pricing Type',
         cell: ({ row }) => (
           <span className="text-sm text-white">{titleCase(row.original.pricingType)}</span>
@@ -338,6 +252,7 @@ export function ServicePerformancePage() {
       },
       'client-source': {
         id: 'client-source',
+        accessorKey: 'clientSource',
         header: 'Client Source',
         cell: ({ row }) => (
           <span className="text-muted text-sm">{row.original.clientSource || DASH}</span>
@@ -345,13 +260,15 @@ export function ServicePerformancePage() {
       },
       'client-phone': {
         id: 'client-phone',
-        header: 'Client Phone',
+        accessorKey: 'clientPhone',
+        header: 'Client Phone Number',
         cell: ({ row }) => (
           <span className="text-muted text-sm">{row.original.clientPhone || DASH}</span>
         ),
       },
       'ordered-at': {
         id: 'ordered-at',
+        accessorKey: 'orderedAt',
         header: 'Ordered At',
         cell: ({ row }) => (
           <span className="text-muted text-xs">{formatDate(row.original.orderedAt)}</span>
@@ -359,6 +276,7 @@ export function ServicePerformancePage() {
       },
       'start-date': {
         id: 'start-date',
+        accessorKey: 'startDate',
         header: 'Start Date',
         cell: ({ row }) => (
           <span className="text-muted text-xs">{formatDateTime(row.original.startDate)}</span>
@@ -366,6 +284,7 @@ export function ServicePerformancePage() {
       },
       'end-date': {
         id: 'end-date',
+        accessorKey: 'endDate',
         header: 'End Date',
         cell: ({ row }) => (
           <span className="text-muted text-xs">{formatDateTime(row.original.endDate)}</span>
@@ -373,6 +292,7 @@ export function ServicePerformancePage() {
       },
       'delivery-duration': {
         id: 'delivery-duration',
+        accessorKey: 'deliveryDuration',
         header: 'Delivery Duration',
         cell: ({ row }) => (
           <span className="text-muted text-sm">{row.original.deliveryDuration || DASH}</span>
@@ -380,6 +300,7 @@ export function ServicePerformancePage() {
       },
       price: {
         id: 'price',
+        accessorKey: 'price',
         header: 'Price',
         cell: ({ row }) => (
           <span className="font-semibold text-white">
@@ -389,6 +310,7 @@ export function ServicePerformancePage() {
       },
       'payment-id': {
         id: 'payment-id',
+        accessorKey: 'paymentId',
         header: 'Payment ID',
         cell: ({ row }) => (
           <span className="ui-table-id text-muted font-mono text-xs">
@@ -398,6 +320,7 @@ export function ServicePerformancePage() {
       },
       'payment-method': {
         id: 'payment-method',
+        accessorKey: 'paymentMethod',
         header: 'Payment Method',
         cell: ({ row }) => (
           <span className="text-muted text-sm">
@@ -407,6 +330,7 @@ export function ServicePerformancePage() {
       },
       'transaction-id': {
         id: 'transaction-id',
+        accessorKey: 'transactionId',
         header: 'Transaction ID',
         cell: ({ row }) => (
           <span className="ui-table-id text-muted font-mono text-xs">
@@ -416,6 +340,7 @@ export function ServicePerformancePage() {
       },
       rating: {
         id: 'rating',
+        accessorKey: 'rating',
         header: 'Rating',
         cell: ({ row }) => (
           <span className="text-muted text-sm">
@@ -425,6 +350,7 @@ export function ServicePerformancePage() {
       },
       'payout-status': {
         id: 'payout-status',
+        accessorKey: 'payoutStatus',
         header: 'Payout Status',
         cell: ({ row }) =>
           row.original.payoutStatus ? (
@@ -438,6 +364,7 @@ export function ServicePerformancePage() {
       },
       disputed: {
         id: 'disputed',
+        accessorKey: 'disputed',
         header: 'Disputed',
         cell: ({ row }) => (
           <span className="text-muted text-sm">{row.original.disputed ? 'Yes' : 'No'}</span>
@@ -445,6 +372,7 @@ export function ServicePerformancePage() {
       },
       'dispute-period-lapsed': {
         id: 'dispute-period-lapsed',
+        accessorKey: 'disputePeriodLapsed',
         header: 'Dispute Period Lapsed',
         cell: ({ row }) => (
           <span className="text-muted text-sm">
@@ -458,13 +386,15 @@ export function ServicePerformancePage() {
       },
       'dispute-end-date': {
         id: 'dispute-end-date',
-        header: 'Dispute End Date',
+        accessorKey: 'disputeEndDate',
+        header: 'Dispute Period End Date',
         cell: ({ row }) => (
           <span className="text-muted text-xs">{formatDate(row.original.disputeEndDate)}</span>
         ),
       },
       'dispute-raised-at': {
         id: 'dispute-raised-at',
+        accessorKey: 'disputeRaisedAt',
         header: 'Dispute Raised At',
         cell: ({ row }) => (
           <span className="text-muted text-xs">{formatDate(row.original.disputeRaisedAt)}</span>
@@ -472,6 +402,7 @@ export function ServicePerformancePage() {
       },
       'dispute-ticket-id': {
         id: 'dispute-ticket-id',
+        accessorFn: (row) => row.disputeId || row.supportTicketId || '',
         header: 'Dispute / Ticket ID',
         cell: ({ row }) => (
           <span className="ui-table-id text-muted font-mono text-xs">
@@ -481,6 +412,7 @@ export function ServicePerformancePage() {
       },
       'refund-issued': {
         id: 'refund-issued',
+        accessorKey: 'refundIssued',
         header: 'Refund Issued',
         cell: ({ row }) => (
           <span className="text-muted text-sm">{row.original.refundIssued ? 'Yes' : 'No'}</span>
@@ -488,6 +420,7 @@ export function ServicePerformancePage() {
       },
       'refund-amount': {
         id: 'refund-amount',
+        accessorKey: 'refundAmount',
         header: 'Refund Amount',
         cell: ({ row }) => (
           <span className="text-muted text-sm">
@@ -499,6 +432,7 @@ export function ServicePerformancePage() {
       },
       'refund-status': {
         id: 'refund-status',
+        accessorKey: 'refundStatus',
         header: 'Refund Status',
         cell: ({ row }) =>
           row.original.refundStatus ? (
@@ -509,6 +443,7 @@ export function ServicePerformancePage() {
       },
       'refunded-at': {
         id: 'refunded-at',
+        accessorKey: 'refundedAt',
         header: 'Refunded At',
         cell: ({ row }) => (
           <span className="text-muted text-xs">{formatDate(row.original.refundedAt)}</span>
@@ -520,15 +455,16 @@ export function ServicePerformancePage() {
 
   const columns = useMemo<ColumnDef<ServiceOrderRow>[]>(() => {
     const catalogIds = SERVICE_PERFORMANCE_TABLE_COLUMNS_CATALOG.map((column) => column.id)
-    const savedIds = tableColumnPreferencesQuery.data?.visibleColumnIds ?? []
-    const visibleIds =
-      savedIds.includes('listing-type') && savedIds.includes('pricing-type')
-        ? savedIds.filter((id) => catalogIds.includes(id))
-        : [...DESIGN_VISIBLE_COLUMN_IDS]
+    const rawIds = tableColumnPreferencesQuery.data?.visibleColumnIds?.length
+      ? tableColumnPreferencesQuery.data.visibleColumnIds
+      : DEFAULT_SERVICE_PERFORMANCE_VISIBLE_COLUMN_IDS
+    const mappedIds = rawIds.map((id) => SERVICE_PERFORMANCE_LEGACY_COLUMN_ID_MAP[id] ?? id)
+    const visibleIds = sortIdsByCatalogOrder(
+      [...new Set(mappedIds.filter((id) => catalogIds.includes(id)))],
+      catalogIds,
+    )
 
-    const preferenceColumns = sortIdsByCatalogOrder(visibleIds, catalogIds)
-      .map((id) => dataColumnsById[id])
-      .filter(Boolean)
+    const preferenceColumns = visibleIds.map((id) => dataColumnsById[id]).filter(Boolean)
 
     const actionsColumn: ColumnDef<ServiceOrderRow> = {
       id: 'actions',
@@ -588,38 +524,7 @@ export function ServicePerformancePage() {
         onClose={() => setPaymentModalOrder(null)}
       />
 
-      <AdvancedFilterSheet
-        open={isFilterOpen}
-        config={filterConfig}
-        values={filterValues}
-        onChange={(fieldId, value) =>
-          setFilterValues((current) => ({ ...current, [fieldId]: value }))
-        }
-        onClose={() => setIsFilterOpen(false)}
-        onReset={() => {
-          const empty = createEmptyFilterValuesForConfig(filterConfig)
-          setFilterValues(empty)
-          setAppliedFilters({})
-          setPage(1)
-          toast.message('Filters reset')
-        }}
-        onApply={() => {
-          setAppliedFilters(buildQueryFromFilters(filterValues))
-          setPage(1)
-          setIsFilterOpen(false)
-        }}
-      />
-
-      <ExportDataModal
-        open={isExportOpen}
-        config={filterConfig}
-        values={filterValues}
-        onChange={(fieldId, value) =>
-          setFilterValues((current) => ({ ...current, [fieldId]: value }))
-        }
-        onClose={() => setIsExportOpen(false)}
-        onExport={handleExport}
-      />
+      {filterModals}
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
@@ -666,7 +571,7 @@ export function ServicePerformancePage() {
                 key={card.id}
                 title={card.label}
                 value={card.value}
-                icon={METRIC_ICONS[card.id as keyof typeof METRIC_ICONS]}
+                icon={METRIC_ICONS[card.id] || Users}
                 hint={card.notInstrumented ? card.hint : undefined}
                 trend={
                   card.deltaPercent === null || card.notInstrumented
@@ -696,8 +601,8 @@ export function ServicePerformancePage() {
         emptyMessage="No orders placed for this service yet."
         showAdvancedFilter
         showExport
-        onAdvancedFilter={() => setIsFilterOpen(true)}
-        onExport={() => setIsExportOpen(true)}
+        onAdvancedFilter={onAdvancedFilter}
+        onExport={onExport}
         onRowClick={openOrderDetail}
         pagination={{
           page,

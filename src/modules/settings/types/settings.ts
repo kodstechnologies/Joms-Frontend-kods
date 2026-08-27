@@ -324,6 +324,8 @@ export type IncidentStatus = 'Open' | 'Investigating' | 'Resolved'
 export type IncidentRow = {
   id: string
   incidentId: string
+  /** Short title / subject when available */
+  title?: string
   severity: IncidentSeverity
   module: string
   status: IncidentStatus
@@ -333,6 +335,11 @@ export type IncidentRow = {
   sourceTicketId?: string | null
   sourceTicketNumber?: string
   createdOn: string
+  /** Prefer over createdOn when present (Excel: reported-at) */
+  reportedAt?: string
+  firstResponseTime?: string | null
+  closedAt?: string | null
+  rootCause?: string | null
 }
 
 export type BackupHistoryRow = {

@@ -1,5 +1,6 @@
 import {
   DEFAULT_EXPERT_PROFILE_ANALYTICS_METRIC_IDS,
+  EXPERT_PROFILE_ANALYTICS_LEGACY_METRIC_ID_MAP,
   EXPERT_PROFILE_ANALYTICS_METRICS_CATALOG,
   EXPERT_PROFILE_ANALYTICS_METRIC_IDS,
   EXPERT_PROFILE_ANALYTICS_MODULE_KEY,
@@ -22,8 +23,11 @@ function buildExpertProfileAnalyticsPreferences(
   isDefault: boolean,
 ): DashboardMetricPreferences {
   const catalogIdSet = new Set(EXPERT_PROFILE_ANALYTICS_METRICS_CATALOG.map((metric) => metric.id))
+  const mappedIds = activeMetricIds.map(
+    (id) => EXPERT_PROFILE_ANALYTICS_LEGACY_METRIC_ID_MAP[id] ?? id,
+  )
   const filteredIds = sortIdsByCatalogOrder(
-    activeMetricIds.filter((id) => catalogIdSet.has(id)),
+    [...new Set(mappedIds.filter((id) => catalogIdSet.has(id)))],
     EXPERT_PROFILE_ANALYTICS_METRIC_IDS,
   )
 

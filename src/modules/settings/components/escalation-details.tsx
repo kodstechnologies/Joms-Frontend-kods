@@ -33,9 +33,10 @@ import { fetchAllEscalations, type EscalationListItem } from '@/modules/my-tasks
 
 import {
   DEFAULT_ESCALATIONS_VISIBLE_COLUMN_IDS,
-  ESCALATIONS_TABLE_COLUMNS_CATALOG,
+  ESCALATIONS_LEGACY_COLUMN_ID_MAP,
 } from '../config/escalations-table-columns.config'
 import { useTableColumnPreferences } from '@/modules/expert/hooks/use-ui-preferences'
+import { selectPreferredColumns } from '@/modules/expert/utils/select-preferred-columns'
 import { escalationColumns } from './escalation-table-columns'
 
 const ESCALATION_EXPORT_COLUMN_MAP: Record<
@@ -55,6 +56,24 @@ const ESCALATION_EXPORT_COLUMN_MAP: Record<
   priority: { header: 'Priority', accessor: (row) => exportDisplayValue(row.priority) },
   status: { header: 'Status', accessor: (row) => exportDisplayValue(row.status) },
   createdOn: { header: 'Created On', accessor: (row) => exportDisplayValue(row.createdOn) },
+}
+
+function EscalationMetricCardSkeleton() {
+  return (
+    <div className="bg-brand-surface flex min-h-[130px] flex-col justify-between gap-3 overflow-hidden rounded-2xl border border-white/10 p-5 shadow-[0_10px_30px_rgba(0,0,0,0.35)]">
+      <div className="flex min-w-0 items-start justify-between gap-3">
+        <div className="min-w-0 flex-1 space-y-2">
+          <div className="h-3.5 w-24 animate-pulse rounded bg-white/10" />
+          <div className="mt-2 h-7 w-20 animate-pulse rounded bg-white/10" />
+        </div>
+        <div className="size-10 shrink-0 animate-pulse rounded border border-white/10 bg-white/5" />
+      </div>
+      <div className="flex items-center gap-2">
+        <div className="h-4 w-12 animate-pulse rounded bg-white/10" />
+        <div className="h-3 w-20 animate-pulse rounded bg-white/5" />
+      </div>
+    </div>
+  )
 }
 
 export function EscalationDetails() {
@@ -93,6 +112,7 @@ export function EscalationDetails() {
   )
 
   const visibleMetrics = useMemo(() => {
+    if (!metricsResponse?.data) return []
     const allMetrics = buildEscalationsMetricCards(metricsResponse?.data)
     return orderByActiveMetricIds(allMetrics, filteredActiveMetricIds)
   }, [filteredActiveMetricIds, metricsResponse?.data])
@@ -130,21 +150,15 @@ export function EscalationDetails() {
   })
 
   const columns = useMemo(() => {
-    const catalogIds = ESCALATIONS_TABLE_COLUMNS_CATALOG.map((column) => column.id)
-    const visibleIds = tableColumnPreferencesQuery.data?.visibleColumnIds?.length
+    const rawVisibleIds = tableColumnPreferencesQuery.data?.visibleColumnIds?.length
       ? tableColumnPreferencesQuery.data.visibleColumnIds
       : DEFAULT_ESCALATIONS_VISIBLE_COLUMN_IDS
-    const dataColumnsById = Object.fromEntries(
-      escalationColumns.map((column) => [column.id, column] as const),
+    return selectPreferredColumns(
+      escalationColumns,
+      rawVisibleIds,
+      DEFAULT_ESCALATIONS_VISIBLE_COLUMN_IDS,
+      ESCALATIONS_LEGACY_COLUMN_ID_MAP,
     )
-    const preferenceColumns = sortIdsByCatalogOrder(
-      visibleIds.filter((id) => catalogIds.includes(id)),
-      catalogIds,
-    )
-      .map((id) => dataColumnsById[id])
-      .filter(Boolean)
-    const actionsColumn = dataColumnsById.actions
-    return actionsColumn ? [...preferenceColumns, actionsColumn] : preferenceColumns
   }, [tableColumnPreferencesQuery.data])
 
   return (
@@ -159,7 +173,7 @@ export function EscalationDetails() {
 
         <Button
           className="ui-manage-metrics ui-cta ui-cta-primary w-full shrink-0 sm:w-auto"
-          onClick={() => navigate('/metrics/escalations')}
+          onClick={() => navigate('/metrics/escalations?section=table')}
         >
           <SlidersHorizontal className="size-4" />
           Manage Metrics
@@ -167,22 +181,18 @@ export function EscalationDetails() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {(isMetricsLoading && visibleMetrics.length === 0
-          ? filteredActiveMetricIds.map((id) => ({
-              id,
-              title: 'Loading',
-              value: '—',
-              trend: { direction: 'up' as const, percentage: 0, label: 'vs last month' },
-            }))
-          : visibleMetrics
-        ).map((metric) => (
-          <StatCard
-            key={metric.id}
-            title={metric.title}
-            value={metric.value}
-            trend={metric.trend}
-          />
-        ))}
+        {isMetricsLoading || (!metricsResponse?.data && visibleMetrics.length === 0)
+          ? Array.from({ length: filteredActiveMetricIds.length || 4 }).map((_, index) => (
+              <EscalationMetricCardSkeleton key={`escalation-metric-skeleton-${index}`} />
+            ))
+          : visibleMetrics.map((metric) => (
+              <StatCard
+                key={metric.id}
+                title={metric.title}
+                value={metric.value}
+                trend={metric.trend}
+              />
+            ))}
       </div>
 
       <DataTable

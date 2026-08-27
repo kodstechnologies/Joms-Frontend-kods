@@ -75,7 +75,8 @@ export function UserChatTestPage() {
           </div>
           <p className="text-sm text-zinc-400">
             Pick a partner&apos;s offerings: book consultations, request quotations, or order
-            fixed/tiered (dummy pay). Partner Accepts fixed/tiered on My Projects, then you Approve.
+            fixed/tiered (Razorpay checkout). Partner Accepts fixed/tiered on My Projects, then you
+            Approve.
           </p>
         </header>
 

@@ -323,11 +323,15 @@ export async function markMilestoneCompleted(token: string, proposalId: string, 
   return res.data?.data as Proposal
 }
 
+/**
+ * Partner JWT: start next milestone (PaymentRequest).
+ * User JWT: approve completed milestone (Proposal).
+ */
 export async function approveMilestone(token: string, proposalId: string, index: number) {
   const res = await client(token).post(
     `/quotations/proposals/${proposalId}/milestones/${index}/approve`,
   )
-  return res.data?.data as Proposal
+  return res.data?.data as Proposal | PaymentRequest
 }
 
 export async function getProposal(token: string, proposalId: string) {

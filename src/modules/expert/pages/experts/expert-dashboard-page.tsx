@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import {
@@ -126,12 +126,14 @@ function ChartCardSkeleton({ title }: { title: string }) {
 
 function ChartCard({
   title,
-  children,
   onRefresh,
+  isLoading,
+  children,
 }: {
   title: string
-  children: ReactNode
   onRefresh?: () => void
+  isLoading?: boolean
+  children: React.ReactNode
 }) {
   return (
     <div className="rounded-brand-lg bg-brand-surface border border-white/[0.06] px-5 py-6">
@@ -140,11 +142,14 @@ function ChartCard({
         {onRefresh ? (
           <button
             type="button"
-            aria-label="Refresh chart"
+            aria-label={`Refresh ${title}`}
             onClick={onRefresh}
-            className="text-muted grid h-8 w-8 place-items-center rounded-lg border border-white/10 bg-black transition-colors hover:bg-white/5"
+            disabled={isLoading}
+            className="text-muted grid h-8 w-8 cursor-pointer place-items-center rounded-lg border border-white/10 bg-black transition-colors hover:bg-white/5 hover:text-white disabled:opacity-50"
           >
-            <RefreshCw className="size-3.5" />
+            <RefreshCw
+              className={cn('size-3.5 transition-transform', isLoading && 'animate-spin')}
+            />
           </button>
         ) : null}
       </div>
@@ -190,7 +195,6 @@ export const ExpertDashboardPage = () => {
     isLoading,
     refetch,
     isError,
-    error,
   } = useQuery({
     queryKey: ['expert-dashboard-analytics'],
     queryFn: () => fetchExpertDashboardAnalytics(),
@@ -198,9 +202,8 @@ export const ExpertDashboardPage = () => {
 
   useEffect(() => {
     if (!isError) return
-    console.error('Failed to load expert dashboard analytics:', error)
     toast.error('Unable to load expert dashboard analytics.')
-  }, [isError, error])
+  }, [isError])
 
   const d = res?.data
   const metricsList: Metric[] = d?.metrics?.length ? d.metrics : ZERO_METRICS

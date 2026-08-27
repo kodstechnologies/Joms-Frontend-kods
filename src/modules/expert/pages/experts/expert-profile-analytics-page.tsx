@@ -19,6 +19,7 @@ import { ArrowLeft, SlidersHorizontal, Star, Upload, User } from 'lucide-react'
 import { useExpertAnalytics, useExpertProfile } from '../../hooks/use-expert-profile'
 import {
   DEFAULT_EXPERT_PROFILE_ANALYTICS_METRIC_IDS,
+  EXPERT_PROFILE_ANALYTICS_LEGACY_METRIC_ID_MAP,
   EXPERT_PROFILE_ANALYTICS_METRIC_ID_SET,
   EXPERT_PROFILE_ANALYTICS_METRIC_IDS,
   EXPERT_PROFILE_ANALYTICS_MODULE_KEY,
@@ -76,9 +77,17 @@ export function ExpertProfileAnalyticsPage() {
   const filteredActiveMetricIds = useMemo(
     () =>
       sortIdsByCatalogOrder(
-        activeMetricIds.filter((metricId) => EXPERT_PROFILE_ANALYTICS_METRIC_ID_SET.has(metricId)),
+        [
+          ...new Set(
+            activeMetricIds
+              .map(
+                (metricId) => EXPERT_PROFILE_ANALYTICS_LEGACY_METRIC_ID_MAP[metricId] ?? metricId,
+              )
+              .filter((metricId) => EXPERT_PROFILE_ANALYTICS_METRIC_ID_SET.has(metricId)),
+          ),
+        ],
         EXPERT_PROFILE_ANALYTICS_METRIC_IDS,
-      ),
+      ).slice(0, 8),
     [activeMetricIds],
   )
 

@@ -1,26 +1,19 @@
 import { useState, useCallback } from 'react'
 import { toast } from 'sonner'
-import tagsApi from '../api/tags-api'
+import tagsApi, { type TagsData } from '../api/tags-api'
 
 interface UseTagsApiReturn {
-  // State
   tags: string[]
   loading: boolean
   error: string | null
-
-  // Methods
   fetchTags: (recordId: string) => Promise<void>
   addTags: (recordId: string, tags: string[], adminNotes?: string) => Promise<void>
   removeTags: (recordId: string, tags: string[]) => Promise<void>
   updateTags: (recordId: string, tags: string[], adminNotes?: string) => Promise<void>
   clearTags: () => void
-
-  // Merge operations
   mergeTickets: (ticketIds: string[], adminNotes?: string) => Promise<void>
-  getMergePreview: (ticketIds: string[]) => Promise<any>
-
-  // Search
-  searchByTags: (tags: string[], recordType?: string) => Promise<any>
+  getMergePreview: (ticketIds: string[]) => Promise<TagsData | null>
+  searchByTags: (tags: string[], recordType?: string) => Promise<TagsData | null>
 }
 
 export const useTagsApi = (): UseTagsApiReturn => {
@@ -146,7 +139,7 @@ export const useTagsApi = (): UseTagsApiReturn => {
         setLoading(true)
         clearError()
         const response = await tagsApi.getMergePreview(ticketIds)
-        return response.data
+        return response.data ?? null
       } catch (err) {
         const errorMsg = err instanceof Error ? err.message : 'Failed to get merge preview'
         setError(errorMsg)
@@ -164,7 +157,7 @@ export const useTagsApi = (): UseTagsApiReturn => {
         setLoading(true)
         clearError()
         const response = await tagsApi.searchByTags(searchTags, recordType)
-        return response.data
+        return response.data ?? null
       } catch (err) {
         const errorMsg = err instanceof Error ? err.message : 'Failed to search by tags'
         setError(errorMsg)

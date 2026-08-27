@@ -1,3 +1,8 @@
+/**
+ * Escalations — main table column catalog.
+ * Keep ids kebab-case to match Manage Metrics / ui-preferences.
+ */
+
 export type EscalationsTableColumnCatalogItem = {
   id: string
   label: string
@@ -61,3 +66,13 @@ export const ESCALATIONS_TABLE_COLUMNS_CATALOG: EscalationsTableColumnCatalogIte
 export const DEFAULT_ESCALATIONS_VISIBLE_COLUMN_IDS = ESCALATIONS_TABLE_COLUMNS_CATALOG.filter(
   (column) => column.defaultVisible,
 ).map((column) => column.id)
+
+/** Maps legacy camelCase preference ids → current catalog ids. */
+export const ESCALATIONS_LEGACY_COLUMN_ID_MAP: Record<string, string> = {
+  escalationId: 'escalation-id',
+  roleId: 'roles-id',
+  rolesId: 'roles-id',
+  roleName: 'role-name',
+  escalationType: 'escalation-type',
+  createdOn: 'created-on',
+}

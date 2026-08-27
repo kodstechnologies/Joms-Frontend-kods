@@ -31,6 +31,7 @@ import {
 } from '@/modules/payments/mock/finance-dashboard.mock'
 import {
   DEFAULT_FINANCE_DASHBOARD_METRIC_IDS,
+  FINANCE_DASHBOARD_LEGACY_METRIC_ID_MAP,
   FINANCE_DASHBOARD_METRIC_IDS,
   FINANCE_DASHBOARD_METRIC_ID_SET,
   FINANCE_DASHBOARD_MODULE_KEY,
@@ -65,17 +66,31 @@ function ChartCard({
   title,
   children,
   className,
-}: PropsWithChildren<{ title: string; className?: string }>) {
+  onRefresh,
+  refreshing,
+}: PropsWithChildren<{
+  title: string
+  className?: string
+  onRefresh?: () => void
+  refreshing?: boolean
+}>) {
   return (
     <div className={cn('radius-lg bg-brand-surface border border-white/[0.06] p-5', className)}>
       <div className="mb-4 flex items-center justify-between gap-3">
         <h2 className="text-body-md-semibold text-brand-text">{title}</h2>
         <button
           type="button"
-          aria-label="Refresh"
-          className="text-muted hover:text-brand-text grid size-8 place-items-center rounded-lg border border-white/10 bg-black/40 transition-colors hover:bg-white/5"
+          aria-label={`Refresh ${title}`}
+          onClick={onRefresh}
+          disabled={refreshing || !onRefresh}
+          className={cn(
+            'text-muted hover:text-brand-text grid size-8 place-items-center rounded-lg border border-white/10 bg-black/40 transition-colors hover:bg-white/5 disabled:opacity-50',
+            onRefresh && 'cursor-pointer active:scale-95',
+          )}
         >
-          <RefreshCw className="size-3.5" />
+          <RefreshCw
+            className={cn('size-3.5 transition-transform', refreshing && 'animate-spin')}
+          />
         </button>
       </div>
       {children}
@@ -275,14 +290,12 @@ export function FinanceDashboardPage() {
     ...DEFAULT_FINANCE_DASHBOARD_METRIC_IDS,
   ])
 
-  const filteredActiveMetricIds = useMemo(
-    () =>
-      sortIdsByCatalogOrder(
-        activeMetricIds.filter((id) => FINANCE_DASHBOARD_METRIC_ID_SET.has(id)),
-        FINANCE_DASHBOARD_METRIC_IDS,
-      ),
-    [activeMetricIds],
-  )
+  const filteredActiveMetricIds = useMemo(() => {
+    const normalized = [
+      ...new Set(activeMetricIds.map((id) => FINANCE_DASHBOARD_LEGACY_METRIC_ID_MAP[id] ?? id)),
+    ].filter((id) => FINANCE_DASHBOARD_METRIC_ID_SET.has(id))
+    return sortIdsByCatalogOrder(normalized, FINANCE_DASHBOARD_METRIC_IDS)
+  }, [activeMetricIds])
 
   const visibleMetricCards = useMemo(() => {
     const allCards = buildFinanceDashboardMetricCards(summary)
@@ -362,7 +375,12 @@ export function FinanceDashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[652fr_584fr]">
-        <ChartCard title="Revenue & Fee Trends" className="h-[382px]">
+        <ChartCard
+          title="Revenue & Fee Trends"
+          className="h-[382px]"
+          onRefresh={() => void refetch()}
+          refreshing={isFetching}
+        >
           <div className="h-[300px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <ComposedChart
@@ -414,7 +432,12 @@ export function FinanceDashboardPage() {
           </div>
         </ChartCard>
 
-        <ChartCard title="Revenue by category" className="xl:col-span-1">
+        <ChartCard
+          title="Revenue by category"
+          className="xl:col-span-1"
+          onRefresh={() => void refetch()}
+          refreshing={isFetching}
+        >
           <div className="flex h-full min-h-[300px] flex-col items-center justify-center gap-6 xl:flex-row">
             <div className="h-[220px] w-[220px] shrink-0">
               <ResponsiveContainer width="100%" height="100%">
@@ -442,7 +465,11 @@ export function FinanceDashboardPage() {
         </ChartCard>
       </div>
 
-      <ChartCard title="Monthly Comparison">
+      <ChartCard
+        title="Monthly Comparison"
+        onRefresh={() => void refetch()}
+        refreshing={isFetching}
+      >
         <div className="h-[300px] w-full">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
@@ -497,7 +524,11 @@ export function FinanceDashboardPage() {
       </ChartCard>
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-        <ChartCard title="Escrow Status Breakdown">
+        <ChartCard
+          title="Escrow Status Breakdown"
+          onRefresh={() => void refetch()}
+          refreshing={isFetching}
+        >
           <div className="space-y-5">
             {escrowStatusMock.map((item) => {
               const widthPercent = Math.round((item.value / totalEscrowAmount) * 100)
@@ -528,7 +559,11 @@ export function FinanceDashboardPage() {
           </div>
         </ChartCard>
 
-        <ChartCard title="Weekly Payout Schedule">
+        <ChartCard
+          title="Weekly Payout Schedule"
+          onRefresh={() => void refetch()}
+          refreshing={isFetching}
+        >
           <div className="h-[280px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart

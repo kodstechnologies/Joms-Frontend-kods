@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from 'react'
-import { Bell, FileText, X } from 'lucide-react'
+import { Bell, X } from 'lucide-react'
 
 import {
   useMarkNotificationRead,
@@ -7,39 +7,12 @@ import {
   useUnreadNotificationCount,
   type InAppNotification,
 } from '@/modules/notifications'
+import {
+  getInboxRowIcon,
+  getNotificationCategoryLabel,
+} from '@/modules/notifications/utils/inbox-icons'
+import { formatInboxRelativeTime, splitInboxByDay } from '@/modules/notifications/utils/inbox-time'
 import { cn } from '@/shared/lib/cn'
-
-const isSameDay = (a: Date, b: Date) =>
-  a.getFullYear() === b.getFullYear() &&
-  a.getMonth() === b.getMonth() &&
-  a.getDate() === b.getDate()
-
-const formatRelativeTime = (value?: string) => {
-  if (!value) return ''
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return ''
-
-  const diffMs = Date.now() - date.getTime()
-  const diffMinutes = Math.max(0, Math.floor(diffMs / 60_000))
-
-  if (diffMinutes < 1) return 'Just now'
-  if (diffMinutes < 60) return `${diffMinutes} min ago`
-
-  const diffHours = Math.floor(diffMinutes / 60)
-  if (diffHours < 24) return `${diffHours} hr ago`
-
-  const diffDays = Math.floor(diffHours / 24)
-  if (diffDays === 1) return '1 day ago'
-  if (diffDays < 7) return `${diffDays} days ago`
-
-  return date.toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-  })
-}
-
-const getNotificationCategory = (item: InAppNotification) =>
-  item.metadata?.category || item.metadata?.typeLabel || 'Communication'
 
 const getNotificationDetail = (item: InAppNotification) => {
   if (item.metadata?.requester) {
@@ -51,31 +24,19 @@ const getNotificationDetail = (item: InAppNotification) => {
 
 function NotificationIcon({ item }: { item: InAppNotification }) {
   const imageUrl = item.sender?.imageUrl || item.senderImageUrl
-  const category = getNotificationCategory(item)
-  const isModeration = /moderation|content|report/i.test(category)
+  const iconSrc = getInboxRowIcon(item)
 
-  if (imageUrl) {
+  if (imageUrl && !/joms|admin/i.test(String(item.senderType || ''))) {
     return (
       <div className="grid size-10 shrink-0 place-items-center overflow-hidden rounded-full bg-white/5">
-        <img
-          src={imageUrl}
-          alt="Sender"
-          className="size-full object-cover"
-          onError={(event) => {
-            event.currentTarget.style.display = 'none'
-          }}
-        />
+        <img src={imageUrl} alt="" className="size-full object-cover" />
       </div>
     )
   }
 
   return (
     <div className="text-brand-text grid size-10 shrink-0 place-items-center rounded-full bg-white/5">
-      {isModeration ? (
-        <FileText className="size-4" aria-hidden="true" />
-      ) : (
-        <Bell className="size-4" aria-hidden="true" />
-      )}
+      <img src={iconSrc} alt="" className="size-4 brightness-0 invert" />
     </div>
   )
 }
@@ -87,16 +48,16 @@ function NotificationRow({
 }: {
   item: InAppNotification
   selected: boolean
-  onSelect: (id: string) => void
+  onSelect: (item: InAppNotification) => void
 }) {
-  const category = getNotificationCategory(item)
+  const category = getNotificationCategoryLabel(item)
   const detail = getNotificationDetail(item)
 
   return (
     <li className="border-b border-white/10 last:border-b-0">
       <button
         type="button"
-        onClick={() => onSelect(item.id)}
+        onClick={() => onSelect(item)}
         className={cn(
           'flex w-full items-start gap-3 px-5 py-4 text-left transition-colors hover:bg-white/[0.03]',
           selected && 'ring-brand-accent/70 bg-white/[0.03] ring-1 ring-inset',
@@ -117,7 +78,7 @@ function NotificationRow({
               </p>
             </div>
             <span className="text-brand-muted text-body-sm shrink-0 pt-0.5">
-              {formatRelativeTime(item.createdAt)}
+              {formatInboxRelativeTime(item.createdAt)}
             </span>
           </div>
         </div>
@@ -142,7 +103,7 @@ function NotificationSection({
   label: string
   items: InAppNotification[]
   selectedId: string | null
-  onSelect: (id: string) => void
+  onSelect: (item: InAppNotification) => void
 }) {
   if (items.length === 0) return null
 
@@ -171,30 +132,14 @@ type NotificationPanelProps = {
 }
 
 export function NotificationPanel({ open, onClose }: NotificationPanelProps) {
-  const notificationsQuery = useMyNotifications(open)
+  const notificationsQuery = useMyNotifications(open, 'notification')
   const markReadMutation = useMarkNotificationRead()
   const notifications = useMemo(
     () => notificationsQuery.data?.data ?? [],
     [notificationsQuery.data?.data],
   )
   const totalCount = notificationsQuery.data?.meta?.total ?? notifications.length
-
-  const { todayItems, olderItems } = useMemo(() => {
-    const today: InAppNotification[] = []
-    const older: InAppNotification[] = []
-    const now = new Date()
-
-    notifications.forEach((item) => {
-      const createdAt = new Date(item.createdAt)
-      if (!Number.isNaN(createdAt.getTime()) && isSameDay(createdAt, now)) {
-        today.push(item)
-      } else {
-        older.push(item)
-      }
-    })
-
-    return { todayItems: today, olderItems: older }
-  }, [notifications])
+  const { todayItems, olderItems } = useMemo(() => splitInboxByDay(notifications), [notifications])
 
   const selectedId = useMemo(
     () => notifications.find((item) => !item.isRead)?.id ?? notifications[0]?.id ?? null,
@@ -218,10 +163,9 @@ export function NotificationPanel({ open, onClose }: NotificationPanelProps) {
     }
   }, [open, onClose])
 
-  const handleSelect = (id: string) => {
-    const item = notifications.find((entry) => entry.id === id)
-    if (item && !item.isRead) {
-      markReadMutation.mutate(id)
+  const handleSelect = (item: InAppNotification) => {
+    if (!item.isRead) {
+      markReadMutation.mutate(item.id)
     }
   }
 
@@ -264,7 +208,7 @@ export function NotificationPanel({ open, onClose }: NotificationPanelProps) {
               </div>
               <p className="text-brand-text text-sm font-semibold">No notifications</p>
               <p className="text-brand-muted text-xs leading-relaxed">
-                In-app messages from Communication Management will show up here.
+                Account, support, and moderation updates will show up here.
               </p>
             </div>
           ) : (
@@ -295,7 +239,7 @@ type NotificationTriggerProps = {
 }
 
 export function NotificationTrigger({ open, onOpen }: NotificationTriggerProps) {
-  const unreadQuery = useUnreadNotificationCount()
+  const unreadQuery = useUnreadNotificationCount('notification')
   const count = unreadQuery.data ?? 0
 
   return (

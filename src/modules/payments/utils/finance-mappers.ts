@@ -78,15 +78,26 @@ export const mapPaymentToRevenueRow = (payment: FinancePayment) => {
   const snapshot = payment.moduleSnapshot || {}
   return {
     id: payment._id,
+    transactionId: payment.orderId || payment.razorpayPaymentId || payment._id,
     module: titleCase(payment.module),
     entityType: titleCase(payment.pricingType || payment.referenceType || payment.module),
     entityId: payment.referenceId || payment.orderId,
     entityName: (snapshot.title as string) || payment.description || payment.orderId,
     category: (snapshot.category as string) || titleCase(payment.module),
+    subCategory: (snapshot.subCategory as string) || '—',
     ownerType: payment.userType === 'partner' ? 'Expert' : titleCase(payment.userType),
     ownerName: (snapshot.partnerName as string) || payment.partnerId || payment.userId || '—',
     grossAmount: formatInr(payment.amount),
+    discounts: '—',
+    refundAmount: '—',
+    taxAmount: '—',
+    netRevenue: '—',
+    platformCommission: '—',
+    netProfit: '—',
     status: mapPaymentStatus(payment.status),
+    settlementStatus: payment.settlementStatus ? titleCase(payment.settlementStatus) : '—',
+    complianceStatus: '—',
+    lastUpdated: formatDate(payment.updatedAt || payment.createdAt),
   }
 }
 
@@ -102,12 +113,15 @@ export const mapEscrowToRow = (escrow: FinanceEscrowHold) => ({
   tab: 'escrow' as const,
   escrowId: escrow.escrowId,
   transactionId: String(escrow.transactionId || escrow.paymentOrderId || escrow.paymentId),
-  type: titleCase(escrow.pricingType),
+  type: titleCase(escrow.module || escrow.pricingType),
   amount: formatInr(escrow.amountHeld),
   holdReason: escrow.holdReason || 'Awaiting approval',
   initiatedDate: formatDate(escrow.heldAt || escrow.createdAt),
   expectedRelease: formatDate(escrow.expectedReleaseAt),
+  releasedAt: formatDate(escrow.releasedAt),
   status: mapEscrowStatus(escrow.status),
+  createdBy: '—',
+  lastUpdated: formatDate(escrow.createdAt),
 })
 
 export const mapPayeeType = (value?: string | null) => {
@@ -185,6 +199,14 @@ export const mapDisputeToRefundRow = (dispute: FinanceDispute) => ({
   description: dispute.summary || dispute.reason || '—',
   status: mapDisputeStatus(dispute.status),
   rawStatus: dispute.status,
+  transactionId: dispute.paymentId || '—',
+  module: titleCase(dispute.module),
+  customerName: '—',
+  refundMode: '—',
+  initiatedBy: '—',
+  approvedBy: '—',
+  chargebackFlag: dispute.caseType === 'chargeback' ? 'Yes' : 'No',
+  gateway: '—',
 })
 
 export const mapRefundToRow = (refund: FinanceRefund) => ({
@@ -199,13 +221,21 @@ export const mapRefundToRow = (refund: FinanceRefund) => ({
   description: titleCase(refund.refundType),
   status: mapRefundStatus(refund.status),
   rawStatus: refund.status,
+  transactionId: refund.paymentId || '—',
+  module: titleCase(refund.module),
+  customerName: refund.beneficiary || '—',
+  refundMode: refund.refundMode || '—',
+  initiatedBy: refund.initiatedBy || '—',
+  approvedBy: '—',
+  chargebackFlag: 'No',
+  gateway: '—',
 })
 
 export const mapReconToRow = (row: FinanceReconciliation) => ({
   id: row._id,
   reconciliationId: row.recordId,
   gateway: row.gateway || 'Razorpay',
-  transactionId: String(row.paymentId),
+  transactionId: String(row.gatewayReference || row.paymentId),
   platformRecordId: row.recordId,
   gatewayAmount: formatInr(row.gatewayAmount),
   platformAmount: formatInr(row.platformReceivedAmount),
@@ -217,6 +247,9 @@ export const mapReconToRow = (row: FinanceReconciliation) => ({
         : row.status === 'investigating'
           ? ('Pending' as const)
           : ('Mismatch' as const),
+  settlementDate: formatDate(row.settlementDate),
+  reconciledBy: '—',
+  status: titleCase(row.status),
 })
 
 export const mapTaxToRow = (row: FinanceTaxRecord) => ({
@@ -229,6 +262,18 @@ export const mapTaxToRow = (row: FinanceTaxRecord) => ({
   bookingTitle: row.taxType,
   status: titleCase(row.filingStatus) as 'Completed' | 'Pending' | 'Filed',
   revenue: formatInr(row.taxAmount),
+  transactionId: row.paymentId || '—',
+  module: titleCase(row.module),
+  region: row.region || '—',
+  taxType: row.taxType || '—',
+  taxRate:
+    row.taxRatePercent != null && Number.isFinite(row.taxRatePercent)
+      ? `${row.taxRatePercent}%`
+      : '—',
+  taxAmount: formatInr(row.taxAmount),
+  invoiceNumber: row.invoiceNumber || '—',
+  filingPeriod: row.filingPeriod || '—',
+  filingStatus: titleCase(row.filingStatus),
 })
 
 export const mapInvoiceToRow = (row: FinanceInvoice) => ({

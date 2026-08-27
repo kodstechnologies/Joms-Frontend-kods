@@ -1,26 +1,15 @@
 import { useMemo, useState } from 'react'
-import { ArrowLeft, CircleDollarSign, Check } from 'lucide-react'
-import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { ArrowLeft, Check, CircleDollarSign } from 'lucide-react'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 
-import { EscalateToSuperAdminModal } from '@/modules/payments/components/escalate-to-super-admin-modal'
 import {
-  useEscalateDispute,
-  useEscalateFinance,
-  useEscalateRefund,
-  useFinanceDispute,
-  useFinanceEscrowDetail,
-  useFinancePayment,
-  useFinanceRefund,
-  useFinanceTaxDetail,
-} from '@/modules/payments/hooks/use-finance'
-import {
-  getRefundEscalationRequestById,
-  refundAuthorityRolesMock,
-  type RefundAuthorityRole,
-} from '@/modules/payments/mock/refund-escalation.mock'
+  escalateRefundApplication,
+  fetchEscalationAssignees,
+} from '@/modules/my-tasks/api/escalation-api'
+import { useFinanceRefund } from '@/modules/payments/hooks/use-finance'
 import { formatInr, titleCase } from '@/modules/payments/utils/finance-mappers'
-import { type FinanceEscalateKind } from '@/modules/payments/utils/finance-escalate'
 import { cn } from '@/shared/lib/cn'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 
@@ -53,34 +42,14 @@ function InfoItem({
   )
 }
 
-function PermissionItem({ label, active }: { label: string; active: boolean }) {
-  return (
-    <li className="flex items-center gap-2.5">
-      <span
-        className={cn(
-          'grid size-4 shrink-0 place-items-center rounded-full border',
-          active ? 'border-white/30' : 'border-white/15',
-        )}
-      >
-        <Check
-          className={cn('size-2.5', active ? 'text-brand-text' : 'text-muted')}
-          strokeWidth={2.5}
-          aria-hidden="true"
-        />
-      </span>
-      <span className={cn('text-body-sm', active ? 'text-brand-text/80' : 'text-muted')}>
-        {label}
-      </span>
-    </li>
-  )
-}
-
-function RoleCard({
-  role,
+function AssigneeCard({
+  name,
+  email,
   selected,
   onSelect,
 }: {
-  role: RefundAuthorityRole
+  name: string
+  email?: string
   selected: boolean
   onSelect: () => void
 }) {
@@ -89,7 +58,7 @@ function RoleCard({
       type="button"
       onClick={onSelect}
       className={cn(
-        'radius-lg flex min-h-[228px] w-full flex-col border p-5 text-left transition-colors',
+        'radius-lg flex min-h-[140px] w-full flex-col border p-5 text-left transition-colors',
         selected
           ? 'bg-brand-surface border-white'
           : 'bg-brand-surface hover:bg-brand-surface/80 border-transparent',
@@ -111,170 +80,95 @@ function RoleCard({
               selected ? 'text-brand-text' : 'text-brand-text/90',
             )}
           >
-            {role.title}
+            {name}
           </h3>
-          <p className="text-body-sm text-muted mt-1">{role.description}</p>
+          {email ? <p className="text-body-sm text-muted mt-1 truncate">{email}</p> : null}
         </div>
+        {selected ? (
+          <span className="border-brand-positive text-brand-positive grid size-5 place-items-center rounded-full border">
+            <Check className="size-3" strokeWidth={2.5} />
+          </span>
+        ) : null}
       </div>
-
-      <div className="mt-5 flex-1">
-        <p
-          className={cn(
-            'text-body-sm-semibold mb-3',
-            selected ? 'text-brand-text' : 'text-brand-text/80',
-          )}
-        >
-          Permissions
-        </p>
-        <ul className="space-y-2.5">
-          {role.permissions.map((permission) => (
-            <PermissionItem key={permission} label={permission} active={selected} />
-          ))}
-        </ul>
-      </div>
+      <p className="text-body-sm text-muted mt-4">
+        Will review and process this refund from My Tasks.
+      </p>
     </button>
-  )
-}
-
-function escalateKind(kindParam: string | null, resourceType: string | null): FinanceEscalateKind {
-  if (kindParam === 'dispute' || kindParam === 'resource' || kindParam === 'refund') {
-    return kindParam
-  }
-  if (resourceType === 'Dispute') return 'dispute'
-  if (resourceType === 'Refund' || !resourceType) return 'refund'
-  return 'resource'
-}
-
-function apiErrorMessage(err: unknown, fallback: string) {
-  return (
-    (err as { response?: { data?: { message?: string } } })?.response?.data?.message || fallback
   )
 }
 
 export function AssignRefundAuthorityPage() {
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const { id = '' } = useParams<{ id: string }>()
-  const [searchParams] = useSearchParams()
-  const resourceTypeParam = searchParams.get('resourceType')
-  const kind = escalateKind(searchParams.get('kind'), resourceTypeParam)
-  const resourceType =
-    resourceTypeParam || (kind === 'dispute' ? 'Dispute' : kind === 'refund' ? 'Refund' : 'Payment')
-  const fallbackReturnTo =
-    kind === 'dispute'
-      ? `/finance/refunds/${id}/dispute`
-      : kind === 'refund'
-        ? `/finance/refunds/${id}`
-        : '/finance/refunds'
-  const returnTo = searchParams.get('returnTo') || fallbackReturnTo
-
-  const refundQuery = useFinanceRefund(kind === 'refund' ? id : '')
-  const disputeQuery = useFinanceDispute(kind === 'dispute' ? id : '')
-  const paymentQuery = useFinancePayment(
-    kind === 'resource' && resourceType === 'Payment' ? id : '',
-  )
-  const taxQuery = useFinanceTaxDetail(
-    kind === 'resource' && resourceType === 'TaxRecord' ? id : '',
-  )
-  const escrowQuery = useFinanceEscrowDetail(
-    kind === 'resource' && resourceType === 'EscrowHold' ? id : '',
-  )
-
+  const refundQuery = useFinanceRefund(id)
   const refund = refundQuery.data?.data
-  const dispute = disputeQuery.data?.data
-  const payment = paymentQuery.data?.data
-  const tax = taxQuery.data?.data
-  const escrow = escrowQuery.data?.data
-  const mockRequest = getRefundEscalationRequestById(id)
 
-  const summary = useMemo(() => {
-    if (refund) {
-      return {
-        requestId: refund.refundId || id,
-        customerName: refund.beneficiary || refund.initiatedBy || mockRequest.customerName,
-        amount: formatInr(refund.amount),
-        reason: refund.reason || mockRequest.reason,
-        moduleType: titleCase(refund.module) || mockRequest.moduleType,
-        serviceType: titleCase(refund.refundType) || mockRequest.serviceType,
-        paymentMode: refund.refundMode || mockRequest.paymentMode,
-        requestedBy: refund.initiatedBy || refund.beneficiary || '—',
-      }
-    }
-    if (dispute) {
-      return {
-        requestId: dispute.disputeId || id,
-        customerName: dispute.raisedBy || dispute.userId || mockRequest.customerName,
-        amount: formatInr(dispute.originalAmount),
-        reason: dispute.reason || mockRequest.reason,
-        moduleType: titleCase(dispute.module) || mockRequest.moduleType,
-        serviceType: titleCase(dispute.caseType) || mockRequest.serviceType,
-        paymentMode: dispute.source || mockRequest.paymentMode,
-        requestedBy: dispute.raisedBy || '—',
-      }
-    }
-    if (payment) {
-      return {
-        requestId: payment.orderId || payment._id,
-        customerName: payment.userId || mockRequest.customerName,
-        amount: formatInr(payment.amount),
-        reason: mockRequest.reason,
-        moduleType: titleCase(payment.module) || mockRequest.moduleType,
-        serviceType: titleCase(payment.pricingType) || mockRequest.serviceType,
-        paymentMode: mockRequest.paymentMode,
-        requestedBy: payment.userId || '—',
-      }
-    }
-    if (tax) {
-      return {
-        requestId: tax.taxRecordId || id,
-        customerName: tax.partnerId || tax.userId || mockRequest.customerName,
-        amount: formatInr(tax.taxAmount),
-        reason: tax.taxType || mockRequest.reason,
-        moduleType: titleCase(tax.module) || mockRequest.moduleType,
-        serviceType: tax.taxType || mockRequest.serviceType,
-        paymentMode: mockRequest.paymentMode,
-        requestedBy: tax.partnerId || tax.userId || '—',
-      }
-    }
-    if (escrow) {
-      return {
-        requestId: escrow.escrowId || id,
-        customerName: escrow.userName || escrow.userId || mockRequest.customerName,
-        amount: formatInr(escrow.amountHeld),
-        reason: escrow.holdReason || mockRequest.reason,
-        moduleType: titleCase(escrow.module) || mockRequest.moduleType,
-        serviceType: titleCase(escrow.pricingType) || mockRequest.serviceType,
-        paymentMode: mockRequest.paymentMode,
-        requestedBy: escrow.userName || escrow.userId || '—',
-      }
-    }
-    return {
-      requestId: mockRequest.requestId,
-      customerName: mockRequest.customerName,
-      amount: mockRequest.amount,
-      reason: mockRequest.reason,
-      moduleType: mockRequest.moduleType,
-      serviceType: mockRequest.serviceType,
-      paymentMode: mockRequest.paymentMode,
-      requestedBy: mockRequest.customerName,
-    }
-  }, [dispute, escrow, id, mockRequest, payment, refund, tax])
+  const assigneesQuery = useQuery({
+    queryKey: ['escalation-assignees', 'finance.*'],
+    queryFn: () => fetchEscalationAssignees('finance.*'),
+  })
 
-  const [selectedRoleId, setSelectedRoleId] = useState('finance-admin')
-  const [isEscalateOpen, setIsEscalateOpen] = useState(false)
+  const assignees = useMemo(() => {
+    const list = assigneesQuery.data?.data
+    if (Array.isArray(list) && list.length > 0) return list
+    // Fallback: any active sub-admin if finance permission filter returns empty
+    return []
+  }, [assigneesQuery.data?.data])
 
-  const escalateRefund = useEscalateRefund()
-  const escalateDispute = useEscalateDispute()
-  const escalateResource = useEscalateFinance()
-  const selectedRole = refundAuthorityRolesMock.find((role) => role.id === selectedRoleId)
+  const fallbackAssigneesQuery = useQuery({
+    queryKey: ['escalation-assignees', 'experts.*'],
+    queryFn: () => fetchEscalationAssignees('experts.*'),
+    enabled: !assigneesQuery.isLoading && assignees.length === 0,
+  })
 
-  const goBack = () => navigateBackOrFallback(navigate, returnTo)
+  const resolvedAssignees =
+    assignees.length > 0 ? assignees : fallbackAssigneesQuery.data?.data || []
 
-  const handleContinue = () => {
-    if (!selectedRoleId) {
-      toast.error('Select a refund authority before continuing')
+  const [selectedId, setSelectedId] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  const selected = resolvedAssignees.find((item) => item.id === selectedId) || resolvedAssignees[0]
+
+  const handleContinue = async () => {
+    if (!id) {
+      toast.error('Refund id is missing')
       return
     }
-    setIsEscalateOpen(true)
+    if (!selected?.id) {
+      toast.error('Select a sub-admin to assign this refund')
+      return
+    }
+
+    setIsSubmitting(true)
+    try {
+      await escalateRefundApplication(id, {
+        assigneeSubAdminId: selected.id,
+        assigneeName: selected.fullname,
+        adminNote: refund?.adminNote || 'Escalated refund assigned for review',
+        entityTitle: refund?.refundId || `Refund ${id}`,
+        applicationUrl: `/settings/refund-details/${id}`,
+        refundId: refund?.refundId,
+        amount: refund?.amount,
+        reason: refund?.reason || refund?.adminNote,
+        paymentMethod: refund?.refundMode || undefined,
+        serviceName: refund?.module,
+        requestedBy: refund?.beneficiary,
+        transactionId: refund?.paymentId ? String(refund.paymentId) : undefined,
+        priority: 'High',
+      })
+      void queryClient.invalidateQueries({ queryKey: ['my-tasks'] })
+      void queryClient.invalidateQueries({ queryKey: ['all-escalations'] })
+      toast.success(`Refund assigned to ${selected.fullname}`)
+      navigate(`/settings/refund-details/${id}`)
+    } catch (err) {
+      const message =
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+        'Failed to assign refund authority'
+      toast.error(message)
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -283,7 +177,7 @@ export function AssignRefundAuthorityPage() {
         <header>
           <button
             type="button"
-            onClick={goBack}
+            onClick={() => navigateBackOrFallback(navigate, `/finance/refunds/${id}`)}
             className="group text-h3 hover:text-brand-accent text-brand-text flex w-fit items-center gap-2 tracking-tight transition-colors"
           >
             <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-1" />
@@ -294,49 +188,56 @@ export function AssignRefundAuthorityPage() {
               Finance Management
             </Link>
             <span> / </span>
-            <Link to={returnTo} className="hover:text-brand-text transition-colors">
-              Payment View Details
+            <Link to={`/finance/refunds/${id}`} className="hover:text-brand-text transition-colors">
+              Refund Details
             </Link>
           </p>
         </header>
 
         <section className={cn(cardClass, 'px-5 py-5')}>
           <div>
-            <h1 className="text-h4 text-brand-text">Assign Refund Authority</h1>
+            <h1 className="text-h4 text-brand-text">Assign Dispute Authority</h1>
             <p className="text-body-sm text-muted mt-1">
-              Select the role responsible for reviewing and processing this refund request
+              Select the sub-admin responsible for reviewing and processing this refund request
             </p>
           </div>
 
           <div className="my-5 border-b border-white/[0.06]" />
 
           <div className="grid grid-cols-2 gap-x-6 gap-y-5 sm:grid-cols-3 lg:grid-cols-7">
-            <InfoItem label="Request ID" value={summary.requestId} />
-            <InfoItem label="Customer" value={summary.customerName} />
-            <InfoItem label="Amount" value={summary.amount} />
+            <InfoItem label="Request ID" value={refund?.refundId || id || '—'} />
+            <InfoItem label="Customer" value={titleCase(refund?.beneficiary) || '—'} />
+            <InfoItem label="Amount" value={refund ? formatInr(refund.amount) : '—'} />
             <InfoItem
               label="Reason"
-              value={summary.reason}
+              value={refund?.reason || refund?.adminNote || '—'}
               className="sm:col-span-2 lg:col-span-1"
             />
-            <InfoItem label="Module type" value={summary.moduleType} />
-            <InfoItem label="Service type" value={summary.serviceType} />
-            <InfoItem label="Payment mode" value={summary.paymentMode} />
+            <InfoItem label="Module type" value={titleCase(refund?.module) || '—'} />
+            <InfoItem label="Service type" value={titleCase(refund?.refundType) || '—'} />
+            <InfoItem label="Payment mode" value={refund?.refundMode || '—'} />
           </div>
         </section>
 
         <section className="flex-1 pb-4">
           <p className="text-body-sm-medium text-brand-text mb-4">Select and assign the refund:</p>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {refundAuthorityRolesMock.map((role) => (
-              <RoleCard
-                key={role.id}
-                role={role}
-                selected={selectedRoleId === role.id}
-                onSelect={() => setSelectedRoleId(role.id)}
-              />
-            ))}
-          </div>
+          {assigneesQuery.isLoading || fallbackAssigneesQuery.isLoading ? (
+            <p className="text-body-sm text-muted">Loading assignees...</p>
+          ) : resolvedAssignees.length === 0 ? (
+            <p className="text-body-sm text-muted">No active sub-admins available to assign.</p>
+          ) : (
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {resolvedAssignees.map((assignee) => (
+                <AssigneeCard
+                  key={assignee.id}
+                  name={assignee.fullname}
+                  email={assignee.email}
+                  selected={(selectedId || resolvedAssignees[0]?.id) === assignee.id}
+                  onSelect={() => setSelectedId(assignee.id)}
+                />
+              ))}
+            </div>
+          )}
         </section>
       </div>
 
@@ -344,51 +245,21 @@ export function AssignRefundAuthorityPage() {
         <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
           <button
             type="button"
-            onClick={goBack}
+            onClick={() => navigateBackOrFallback(navigate, `/finance/refunds/${id}`)}
             className="ui-cta ui-cta-secondary w-full sm:w-auto sm:min-w-[120px]"
           >
             Close
           </button>
           <button
             type="button"
-            onClick={handleContinue}
-            className="ui-cta ui-cta-primary w-full sm:ml-auto sm:w-auto sm:min-w-[120px]"
+            disabled={isSubmitting || !selected?.id}
+            onClick={() => void handleContinue()}
+            className="ui-cta ui-cta-primary w-full disabled:opacity-60 sm:ml-auto sm:w-auto sm:min-w-[120px]"
           >
-            Continue
+            {isSubmitting ? 'Assigning...' : 'Continue'}
           </button>
         </div>
       </footer>
-
-      <EscalateToSuperAdminModal
-        open={isEscalateOpen}
-        refundId={summary.requestId}
-        requestedBy={summary.requestedBy}
-        amount={summary.amount}
-        onClose={() => setIsEscalateOpen(false)}
-        onSubmit={async ({ priority, adminNotes }) => {
-          const assignedTo = selectedRole?.title || 'selected role'
-          const note = [adminNotes.trim(), `Assigned to ${assignedTo}`].filter(Boolean).join(' — ')
-          try {
-            if (kind === 'dispute') {
-              await escalateDispute.mutateAsync({ id, priority, adminNotes: note })
-            } else if (kind === 'refund') {
-              await escalateRefund.mutateAsync({ id, priority, adminNotes: note })
-            } else {
-              await escalateResource.mutateAsync({
-                id,
-                resourceType,
-                adminNote: `[${priority}] ${note}`,
-              })
-            }
-            toast.success(`Escalated to admin · ${assignedTo}`)
-            setIsEscalateOpen(false)
-            navigate(returnTo)
-          } catch (err) {
-            toast.error(apiErrorMessage(err, 'Failed to escalate'))
-            throw err
-          }
-        }}
-      />
     </div>
   )
 }

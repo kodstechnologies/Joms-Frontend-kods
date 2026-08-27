@@ -22,6 +22,7 @@ import { OtpInput } from '@/shared/components/form/otp-input'
 import { Button } from '@/shared/components/ui/button'
 import { Card } from '@/shared/components/ui/card'
 import { Input } from '@/shared/components/ui/input'
+import jomsLogo from '@/assets/joms-logo.png'
 
 export function LoginPage() {
   const navigate = useNavigate()
@@ -161,7 +162,7 @@ export function LoginPage() {
   return (
     <main className="relative min-h-screen overflow-hidden bg-gradient-to-r from-[#6F6857] via-[#B8AF9A] to-[#F2E1B9]">
       <header className="absolute top-6 left-6 flex items-center gap-3">
-        <div className="size-9 rounded-full bg-amber-400" />
+        <img src={jomsLogo} alt="JOMS" className="size-9 rounded-full object-contain shadow-sm" />
         <p className="text-lg font-semibold tracking-wide text-white">JOMS</p>
       </header>
 

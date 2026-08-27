@@ -7,6 +7,7 @@ import {
   type SupportChatState,
   type SupportTicket,
 } from '../api/support.api'
+import { SupportAvatar } from '../../support-management/components/support-avatar'
 import { DEFAULT_SUPPORT_CATEGORIES } from '../config/support-backend'
 import { useSupportChatSocket } from '../hooks/use-support-chat-socket'
 
@@ -64,6 +65,7 @@ type PartnerSupportChatPanelProps = {
   reporterName: string
   reporterEmail?: string | null
   reporterPhone?: string | null
+  onAuthInvalid?: () => void
 }
 
 export function PartnerSupportChatPanel({
@@ -72,6 +74,7 @@ export function PartnerSupportChatPanel({
   reporterName,
   reporterEmail = '',
   reporterPhone = '',
+  onAuthInvalid,
 }: PartnerSupportChatPanelProps) {
   const fileRef = useRef<HTMLInputElement>(null)
   const ticketRef = useRef<SupportTicket | null>(null)
@@ -180,11 +183,23 @@ export function PartnerSupportChatPanel({
     [accessToken, adminBaseUrl, applyState],
   )
 
-  const { connected, sendSupportMessage } = useSupportChatSocket(
+  const { connected, connectError, sendSupportMessage } = useSupportChatSocket(
     accessToken,
     handlers,
     adminBaseUrl,
   )
+
+  useEffect(() => {
+    if (!connectError) return
+    const normalized = connectError.toLowerCase()
+    if (
+      normalized.includes('expired') ||
+      normalized.includes('invalid') ||
+      normalized.includes('unauthorized')
+    ) {
+      onAuthInvalid?.()
+    }
+  }, [connectError, onAuthInvalid])
 
   useEffect(() => {
     if (!accessToken || !adminBaseUrl) return
@@ -200,9 +215,10 @@ export function PartnerSupportChatPanel({
 
   const statusLabel = useMemo(() => {
     if (closed) return 'Ticket closed'
-    if (!ticket?.id) return 'Select a service'
-    return connected ? 'Online' : 'Connecting…'
-  }, [closed, connected, ticket?.id])
+    if (!connected) return connectError ? `Offline · ${connectError}` : 'Offline'
+    if (!ticket?.id) return 'Online · Select a service'
+    return 'Online'
+  }, [closed, connectError, connected, ticket?.id])
 
   const partnerFields = () => ({
     reporterName,
@@ -216,12 +232,19 @@ export function PartnerSupportChatPanel({
       applyState(socketResult.data)
       return socketResult
     }
-    if (socketResult.message === 'Socket not connected' || socketResult.message === 'Timeout') {
+    try {
       const rest = await sendPartnerSupportChat(adminBaseUrl, accessToken, payload)
       applyState(rest)
       return { success: true, data: rest }
+    } catch (err) {
+      const axiosMessage =
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+        (err instanceof Error ? err.message : '')
+      return {
+        success: false,
+        message: axiosMessage || socketResult.message || 'Failed to reach support',
+      }
     }
-    return socketResult
   }
 
   const handlePickFile = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -318,9 +341,18 @@ export function PartnerSupportChatPanel({
   return (
     <div className="mx-auto max-w-md overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 shadow-xl">
       <header className="flex items-center gap-3 border-b border-zinc-800 px-4 py-3">
-        <div className="size-10 rounded-full bg-zinc-700" />
+        <SupportAvatar
+          name={ticket?.assignedTo || 'Support'}
+          src={ticket?.assignedToAvatarUrl}
+          sizeClassName="size-10"
+          fallback="icon"
+        />
         <div className="min-w-0 flex-1">
-          <h2 className="font-semibold text-zinc-100">Support</h2>
+          <h2 className="truncate font-semibold text-zinc-100">
+            {ticket?.assignedTo && ticket.assignedTo !== 'Unassigned'
+              ? ticket.assignedTo
+              : 'Support'}
+          </h2>
           <p className="flex items-center gap-2 text-xs text-zinc-400">
             <span
               className={`inline-block size-2 rounded-full ${connected && !closed ? 'bg-emerald-400' : 'bg-zinc-500'}`}

@@ -38,7 +38,6 @@ export const useVenueStepMutations = () => {
     queryClient.invalidateQueries({ queryKey: ['venue-profile'] })
   }
 
-  // Step 1 — save venue details (category + aboutVenue)
   const saveVenueDetails = useMutation({
     mutationFn: ({
       venueId,
@@ -54,7 +53,6 @@ export const useVenueStepMutations = () => {
     onSuccess: invalidateDraft,
   })
 
-  // Step 2 — save location
   const saveLocation = useMutation({
     mutationFn: ({ venueId, venueData }: { venueId: string; venueData: Partial<VenueFormData> }) =>
       updateAdminVenueLocation(venueId, {
@@ -74,7 +72,6 @@ export const useVenueStepMutations = () => {
     onSuccess: invalidateDraft,
   })
 
-  // Step 3 — create or update space
   const saveSpace = useMutation({
     mutationFn: ({
       venueId,
@@ -96,7 +93,6 @@ export const useVenueStepMutations = () => {
     onSuccess: invalidateDraft,
   })
 
-  // Step 4 — save amenities then gallery
   const saveAmenitiesAndMedia = useMutation({
     mutationFn: async ({
       venueId,
@@ -107,9 +103,7 @@ export const useVenueStepMutations = () => {
       spaceId: string
       venueData: VenueFormData
     }) => {
-      // Build amenities payload grouped by categoryId
-      // venueData.amenities holds subCategoryIds selected by user
-      // For now send as flat structure; backend expects [{categoryId, subCategoryIds}]
+      // Group amenities by categoryId for backend [{categoryId, subCategoryIds}]
       const groupedAmenities = Object.values(
         venueData.amenities.reduce(
           (
@@ -146,7 +140,6 @@ export const useVenueStepMutations = () => {
     onSuccess: invalidateDraft,
   })
 
-  // Step 5 — save pricing then availability
   const savePricing = useMutation({
     mutationFn: async ({ spaceId, venueData }: { spaceId: string; venueData: VenueFormData }) => {
       await createPricing(spaceId, buildPricingPayload(venueData))
@@ -162,7 +155,6 @@ export const useVenueStepMutations = () => {
     onSuccess: invalidateDraft,
   })
 
-  // Step 6 — save terms
   const saveTerms = useMutation({
     mutationFn: ({ venueId, venueData }: { venueId: string; venueData: VenueFormData }) =>
       createVenueTerms(venueId, buildTermsPayload(venueData)),

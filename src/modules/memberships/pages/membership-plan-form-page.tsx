@@ -1,4 +1,4 @@
-import { ArrowLeft, Pencil, Plus, X } from 'lucide-react'
+import { ArrowLeft, Pencil, Save, X } from 'lucide-react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 
@@ -9,7 +9,6 @@ import {
 import { useCreateMembership, useMembership, useUpdateMembership } from '../hooks/use-memberships'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 
-/** Edit / Create plan page — matches Create Membership Figma shell */
 export function MembershipPlanFormPage() {
   const { id } = useParams()
   const navigate = useNavigate()
@@ -45,6 +44,7 @@ export function MembershipPlanFormPage() {
             planName: values.planName,
             pricing: values.pricing,
             features: values.features,
+            planConfig: values.planConfig,
             trialPeriodDays: values.trialPeriodDays,
             enableAutoRenew: values.enableAutoRenew,
             allowPlanUpgrades: values.allowPlanUpgrades,
@@ -60,6 +60,7 @@ export function MembershipPlanFormPage() {
           planName: values.planName,
           pricing: values.pricing,
           features: values.features,
+          planConfig: values.planConfig,
           trialPeriodDays: values.trialPeriodDays,
           enableAutoRenew: values.enableAutoRenew,
           allowPlanUpgrades: values.allowPlanUpgrades,
@@ -88,7 +89,6 @@ export function MembershipPlanFormPage() {
 
   return (
     <div className="flex justify-center py-2">
-      {/* Figma shell: 701 wide — same panel as Create Membership */}
       <div
         className="create-membership-modal flex w-full flex-col overflow-hidden text-white"
         style={{ minHeight: 'min(90vh, 1458px)' }}
@@ -155,7 +155,7 @@ export function MembershipPlanFormPage() {
               </>
             ) : (
               <>
-                <Plus className="size-4" strokeWidth={2.25} />
+                <Save className="size-4" strokeWidth={2} />
                 {isSubmitting ? 'Creating...' : 'Create'}
               </>
             )}

@@ -1,5 +1,4 @@
 import type { InputHTMLAttributes, ReactNode, SelectHTMLAttributes } from 'react'
-import { ChevronDown } from 'lucide-react'
 
 import { cn } from '@/shared/lib/cn'
 
@@ -54,16 +53,13 @@ export function SettingsSelectField({
 }) {
   return (
     <SettingsStackedField label={label} htmlFor={id}>
-      <div className="settings-field-select-wrap">
-        <select
-          id={id}
-          className={cn('settings-control settings-field-input settings-field-select', className)}
-          {...props}
-        >
-          {children}
-        </select>
-        <ChevronDown className="settings-field-select-icon" aria-hidden />
-      </div>
+      <select
+        id={id}
+        className={cn('settings-control settings-field-input settings-field-select', className)}
+        {...props}
+      >
+        {children}
+      </select>
     </SettingsStackedField>
   )
 }

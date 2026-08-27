@@ -162,7 +162,7 @@ export const navigationConfig: NavItem[] = [
   },
   {
     key: 'referral',
-    label: 'Referral Management',
+    label: 'Referrals',
     icon: BadgePercent,
     permissionModule: 'referrals',
     to: '/referrals/management',
@@ -226,24 +226,9 @@ export const navigationConfig: NavItem[] = [
         to: '/settings/access',
       },
       {
-        key: 'settings.categories',
-        label: 'Category Management',
-        to: '/settings/categories',
-      },
-      {
-        key: 'settings.system',
-        label: 'System Configuration',
-        to: '/settings/system',
-      },
-      {
         key: 'settings.escalations',
         label: 'Escalations',
         to: '/settings/escalations',
-      },
-      {
-        key: 'settings.api-keys',
-        label: 'API Key Management',
-        to: '/settings/api-keys',
       },
     ],
   },

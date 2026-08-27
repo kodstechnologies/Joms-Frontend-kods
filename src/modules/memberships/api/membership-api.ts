@@ -52,6 +52,9 @@ const buildMembershipFormData = (payload: CreateMembershipPayload) => {
   formData.append('planName', payload.planName)
   formData.append('pricing', JSON.stringify(payload.pricing))
   formData.append('features', JSON.stringify(payload.features))
+  if (payload.planConfig) {
+    formData.append('planConfig', JSON.stringify(payload.planConfig))
+  }
   formData.append('trialPeriodDays', String(payload.trialPeriodDays ?? 0))
   formData.append('enableAutoRenew', String(payload.enableAutoRenew ?? false))
   formData.append('allowPlanUpgrades', String(payload.allowPlanUpgrades ?? false))
@@ -75,6 +78,7 @@ const buildUpdateMembershipFormData = (payload: Partial<CreateMembershipPayload>
   if (payload.planName) formData.append('planName', payload.planName)
   if (payload.pricing) formData.append('pricing', JSON.stringify(payload.pricing))
   if (payload.features) formData.append('features', JSON.stringify(payload.features))
+  if (payload.planConfig) formData.append('planConfig', JSON.stringify(payload.planConfig))
   if (payload.trialPeriodDays !== undefined) {
     formData.append('trialPeriodDays', String(payload.trialPeriodDays))
   }

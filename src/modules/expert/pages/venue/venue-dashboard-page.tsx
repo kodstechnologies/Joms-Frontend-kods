@@ -15,7 +15,10 @@ import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
-import { VENUE_DASHBOARD_MODULE_KEY } from '../../api/ui-preferences-api'
+import {
+  VENUE_DASHBOARD_MODULE_KEY,
+  DEFAULT_VENUE_DASHBOARD_ACTIVE_METRIC_IDS,
+} from '@/modules/expert/config/venue-management-table-columns.config'
 import { orderByActiveMetricIds, useActiveMetricIds } from '../../hooks/use-active-metric-ids'
 import { useVenueDashboard } from '../../hooks/use-venue-dashboard'
 import { Button } from '@/shared/components/ui/button'
@@ -54,21 +57,35 @@ type VenueRow = {
 const ZERO_METRICS: Metric[] = [
   { id: 'total-venues', label: 'Total Venues', value: '0' },
   { id: 'active-venues', label: 'Active Venues', value: '0' },
-  { id: 'avg-utilization', label: 'Avg. Utilization Rate', value: '0%' },
-  { id: 'events-per-venue', label: 'Events Per Venue', value: '0' },
-  { id: 'revenue-contribution', label: 'Revenue Contribution', value: '₹0' },
-  { id: 'venue-cancellation-rate', label: 'Venue Cancellation Rate', value: '0%' },
-  { id: 'avg-venue-rating', label: 'Avg. Venue Rating', value: '0/5' },
-  { id: 'venue-satisfaction', label: 'Venue Satisfaction Score', value: '0%' },
-  { id: 'peak-utilization', label: 'Peak Utilization Hours', value: '0' },
-  { id: 'avg-booking-lead-time', label: 'Avg. Booking Lead Time', value: '0 days' },
-  { id: 'venue-turnover-rate', label: 'Venue Turnover Rate', value: '0 hrs' },
-  { id: 'off-peak-potential', label: 'Off-Peak Potential', value: '0%' },
+  { id: 'suspended-venues', label: 'Suspended Venues', value: '0' },
+  { id: 'reported-venues', label: 'Reported Venues', value: '0' },
+  { id: 'deleted-venues', label: 'Deleted Venues', value: '0' },
+  { id: 'total-spaces', label: 'Total Spaces', value: '0' },
+  { id: 'active-spaces', label: 'Active Spaces', value: '0' },
+  { id: 'suspended-spaces', label: 'Suspended Spaces', value: '0' },
+  { id: 'reported-spaces', label: 'Reported Spaces', value: '0' },
+  { id: 'deleted-spaces', label: 'Deleted Spaces', value: '0' },
+  { id: 'total-event-bookings', label: 'Total Event Bookings', value: '0' },
+  { id: 'total-meetup-bookings', label: 'Total Meetup Bookings', value: '0' },
+  { id: 'events-per-venue', label: 'Average Events per Venue', value: '0' },
+  { id: 'avg-meetups-per-venue', label: 'Average Meetups per Venue', value: '0' },
+  { id: 'total-venue-revenue', label: 'Total Venue Revenue', value: '₹0' },
+  { id: 'avg-revenue-per-venue', label: 'Average Revenue per Venue', value: '₹0' },
+  { id: 'avg-revenue-per-space', label: 'Average Revenue per Space', value: '₹0' },
+  { id: 'avg-booking-value', label: 'Average Booking Value', value: '₹0' },
+  { id: 'space-utilization-rate', label: 'Space Utilization Rate', value: '0%' },
+  { id: 'space-cancellation-rate', label: 'Space Cancellation Rate', value: '0%' },
+  { id: 'avg-venue-rating', label: 'Average Venue Rating', value: '0/5' },
+  { id: 'venue-satisfaction-score', label: 'Venue Satisfaction Score', value: '0%' },
   { id: 'repeat-booking-rate', label: 'Repeat Booking Rate', value: '0%' },
-  { id: 'avg-revenue-per-venue', label: 'Avg. Revenue Per Venue', value: '₹0' },
+  { id: 'peak-utilization-hours', label: 'Peak Utilization Hours', value: '—' },
+  { id: 'total-refund-amount', label: 'Total Refund Amount', value: '₹0' },
+  { id: 'refund-rate', label: 'Refund Rate', value: '0%' },
+  { id: 'host-cancellation-rate', label: 'Host Cancellation Rate', value: '0%' },
+  { id: 'host-initiated-cancellations', label: 'Host Initiated Cancellations', value: '0' },
 ]
 
-const DEFAULT_METRIC_IDS = ZERO_METRICS.map((metric) => metric.id)
+const DEFAULT_METRIC_IDS = DEFAULT_VENUE_DASHBOARD_ACTIVE_METRIC_IDS
 
 const STATUS_STYLES: Record<VenueRow['status'], string> = {
   'High Performing': 'bg-brand-positive/15 text-brand-positive border-brand-positive/20',
@@ -146,59 +163,110 @@ export const VenueDashboardPage = () => {
   const liveMetrics: Metric[] = useMemo(() => {
     if (!dashboardData) return ZERO_METRICS
 
-    const m = dashboardData.metrics
+    const m = dashboardData.metrics || {}
+
     return [
-      { id: 'total-venues', label: 'Total Venues', value: String(m.totalVenues ?? 0) },
-      { id: 'active-venues', label: 'Active Venues', value: String(m.activeVenues ?? 0) },
       {
-        id: 'avg-utilization',
-        label: 'Avg. Utilization Rate',
-        value: `${m.spaceUtilizationRate ?? 0}%`,
+        id: 'total-venues',
+        label: 'Total Venues',
+        value: String(m.totalVenues ?? 0),
+      },
+      {
+        id: 'active-venues',
+        label: 'Active Venues',
+        value: String(m.activeVenues ?? 0),
+      },
+      {
+        id: 'suspended-venues',
+        label: 'Suspended Venues',
+        value: String(m.suspendedVenues ?? 0),
+      },
+      {
+        id: 'reported-venues',
+        label: 'Reported Venues',
+        value: String(m.reportedVenues ?? 0),
+      },
+      {
+        id: 'deleted-venues',
+        label: 'Deleted Venues',
+        value: String(m.deletedVenues ?? 0),
+      },
+      { id: 'total-spaces', label: 'Total Spaces', value: String(m.totalSpaces ?? 0) },
+      { id: 'active-spaces', label: 'Active Spaces', value: String(m.activeSpaces ?? 0) },
+      { id: 'suspended-spaces', label: 'Suspended Spaces', value: String(m.suspendedSpaces ?? 0) },
+      { id: 'reported-spaces', label: 'Reported Spaces', value: String(m.reportedSpaces ?? 0) },
+      { id: 'deleted-spaces', label: 'Deleted Spaces', value: String(m.deletedSpaces ?? 0) },
+      {
+        id: 'total-event-bookings',
+        label: 'Total Event Bookings',
+        value: String(m.totalEventBookings ?? 0),
+      },
+      {
+        id: 'total-meetup-bookings',
+        label: 'Total Meetup Bookings',
+        value: String(m.totalMeetupBookings ?? 0),
       },
       {
         id: 'events-per-venue',
-        label: 'Events Per Venue',
-        value: String(m.avgEventsPerVenue ?? 0),
+        label: 'Average Events per Venue',
+        value: String(m.avgEventsPerVenue ?? m.eventsPerVenue ?? 0),
       },
       {
-        id: 'revenue-contribution',
-        label: 'Revenue Contribution',
-        value: m.totalVenueRevenue?.label || '₹0',
+        id: 'avg-meetups-per-venue',
+        label: 'Average Meetups per Venue',
+        value: String(m.avgMeetupsPerVenue ?? 0),
       },
       {
-        id: 'venue-cancellation-rate',
-        label: 'Venue Cancellation Rate',
+        id: 'total-venue-revenue',
+        label: 'Total Venue Revenue',
+        value:
+          typeof m.totalVenueRevenue === 'object'
+            ? m.totalVenueRevenue?.label || '₹0'
+            : `₹${Number(m.totalVenueRevenue || 0).toLocaleString('en-IN')}`,
+      },
+      {
+        id: 'avg-revenue-per-venue',
+        label: 'Average Revenue per Venue',
+        value:
+          typeof m.avgRevenuePerVenue === 'object'
+            ? m.avgRevenuePerVenue?.label || '₹0'
+            : `₹${Number(m.avgRevenuePerVenue || 0).toLocaleString('en-IN')}`,
+      },
+      {
+        id: 'avg-revenue-per-space',
+        label: 'Average Revenue per Space',
+        value:
+          typeof m.avgRevenuePerSpace === 'object'
+            ? m.avgRevenuePerSpace?.label || '₹0'
+            : `₹${Number(m.avgRevenuePerSpace || 0).toLocaleString('en-IN')}`,
+      },
+      {
+        id: 'avg-booking-value',
+        label: 'Average Booking Value',
+        value:
+          typeof m.avgBookingValue === 'object'
+            ? m.avgBookingValue?.label || '₹0'
+            : `₹${Number(m.avgBookingValue || 0).toLocaleString('en-IN')}`,
+      },
+      {
+        id: 'space-utilization-rate',
+        label: 'Space Utilization Rate',
+        value: `${m.spaceUtilizationRate ?? m.avgUtilization ?? 0}%`,
+      },
+      {
+        id: 'space-cancellation-rate',
+        label: 'Space Cancellation Rate',
         value: `${m.spaceCancellationRate ?? 0}%`,
       },
       {
         id: 'avg-venue-rating',
-        label: 'Avg. Venue Rating',
+        label: 'Average Venue Rating',
         value: `${m.avgVenueRating ?? 0}/5`,
       },
       {
-        id: 'venue-satisfaction',
+        id: 'venue-satisfaction-score',
         label: 'Venue Satisfaction Score',
-        value: `${m.venueSatisfactionScore ?? 0}%`,
-      },
-      {
-        id: 'peak-utilization',
-        label: 'Peak Utilization Hours',
-        value: m.peakUtilizationHours || '0',
-      },
-      {
-        id: 'avg-booking-lead-time',
-        label: 'Avg. Booking Lead Time',
-        value: m.avgBookingLeadTime || '0 days',
-      },
-      {
-        id: 'venue-turnover-rate',
-        label: 'Venue Turnover Rate',
-        value: m.venueTurnoverRate || '0 hrs',
-      },
-      {
-        id: 'off-peak-potential',
-        label: 'Off-Peak Potential',
-        value: m.offPeakPotential || '0%',
+        value: `${m.venueSatisfactionScore ?? m.satisfaction ?? 0}%`,
       },
       {
         id: 'repeat-booking-rate',
@@ -206,9 +274,32 @@ export const VenueDashboardPage = () => {
         value: `${m.repeatBookingRate ?? 0}%`,
       },
       {
-        id: 'avg-revenue-per-venue',
-        label: 'Avg. Revenue Per Venue',
-        value: m.avgRevenuePerVenue?.label || '₹0',
+        id: 'peak-utilization-hours',
+        label: 'Peak Utilization Hours',
+        value: m.peakUtilizationHours || '—',
+      },
+      {
+        id: 'total-refund-amount',
+        label: 'Total Refund Amount',
+        value:
+          typeof m.totalRefundAmount === 'object'
+            ? m.totalRefundAmount?.label || '₹0'
+            : `₹${Number(m.totalRefundAmount || 0).toLocaleString('en-IN')}`,
+      },
+      {
+        id: 'refund-rate',
+        label: 'Refund Rate',
+        value: `${m.refundRate ?? 0}%`,
+      },
+      {
+        id: 'host-cancellation-rate',
+        label: 'Host Cancellation Rate',
+        value: `${m.hostCancellationRate ?? m.cancellationRate ?? 0}%`,
+      },
+      {
+        id: 'host-initiated-cancellations',
+        label: 'Host Initiated Cancellations',
+        value: String(m.hostInitiatedCancellations ?? 0),
       },
     ]
   }, [dashboardData])

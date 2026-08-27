@@ -1,8 +1,9 @@
-import { ArrowLeft, CircleArrowDown, CircleArrowUp, ExternalLink } from 'lucide-react'
+import { ArrowLeft, CircleArrowDown, CircleArrowUp, ExternalLink, Flag } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 
+import { EscalateMembershipUpgradeModal } from '../components/escalate-membership-upgrade-modal'
 import { MembershipActionModals } from '../components/membership-action-modals'
 import { MembershipHistoryModal } from '../components/membership-history-modal'
 import {
@@ -13,14 +14,23 @@ import {
   useUpgradeSubscription,
 } from '../hooks/use-membership-subscriptions'
 import { formatCurrency, formatMembershipDateTime } from '../utils/membership-format'
+import { useAuthStore } from '@/modules/auth/store/auth-store'
+import { useBranding } from '@/app/providers/use-branding'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
+import {
+  downloadInvoiceDocument,
+  invoiceFromMembershipSubscription,
+} from '@/shared/utils/invoice-document'
 
 export function MembershipDetailsPage() {
   const { id = '' } = useParams()
   const navigate = useNavigate()
+  const { logoUrl } = useBranding()
+  const isSuperAdmin = useAuthStore((state) => state.user?.isSuperAdmin)
   const [actionType, setActionType] = useState<
     'upgrade' | 'downgrade' | 'extend' | 'cancel' | null
   >(null)
+  const [escalateOpen, setEscalateOpen] = useState(false)
   const [historyOpen, setHistoryOpen] = useState(false)
 
   const { data, isLoading } = useSubscription(id)
@@ -100,7 +110,14 @@ export function MembershipDetailsPage() {
             <div className="flex items-end pb-0.5">
               <button
                 type="button"
-                onClick={() => toast.info('Invoice view coming soon')}
+                onClick={() => {
+                  void downloadInvoiceDocument(
+                    invoiceFromMembershipSubscription(subscription, { logoUrl }),
+                    subscription.paymentInfo?.paymentId || subscription.subscriptionId,
+                  )
+                    .then(() => toast.success('Invoice downloaded'))
+                    .catch(() => toast.error('Failed to download invoice'))
+                }}
                 className="text-body-md-semibold text-brand-text hover:text-brand-text/80 underline underline-offset-[3px]"
               >
                 View Invoice
@@ -148,7 +165,17 @@ export function MembershipDetailsPage() {
         </section>
       </div>
 
-      <div className="radius-lg bg-brand-surface mt-6 flex items-center justify-end gap-3 px-5 py-4">
+      <div className="radius-lg bg-brand-surface mt-6 flex flex-wrap items-center justify-end gap-3 px-5 py-4">
+        {isSuperAdmin ? (
+          <button
+            type="button"
+            onClick={() => setEscalateOpen(true)}
+            className="ui-cta ui-cta-secondary inline-flex h-10 items-center gap-2 px-4"
+          >
+            Escalate Upgrade
+            <Flag className="size-4" strokeWidth={1.75} />
+          </button>
+        ) : null}
         <button
           type="button"
           onClick={() => setActionType('upgrade')}
@@ -171,6 +198,12 @@ export function MembershipDetailsPage() {
         open={historyOpen}
         onClose={() => setHistoryOpen(false)}
         subscription={subscription}
+      />
+
+      <EscalateMembershipUpgradeModal
+        open={escalateOpen}
+        subscription={subscription}
+        onClose={() => setEscalateOpen(false)}
       />
 
       <MembershipActionModals

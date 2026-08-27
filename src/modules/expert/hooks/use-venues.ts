@@ -24,7 +24,9 @@ import {
   type SetVenueOwnerPasswordPayload,
   type BulkVenueActionPayload,
   type BulkSpaceVisibilityPayload,
+  fetchVenueReports,
 } from '../api/venue-api.ts'
+import { updateExpertAdminNotes, updateExpertAdminTags } from '../api/expert-api'
 
 export const useVenues = (params?: Record<string, unknown>) => {
   const isDeletedList = params?.status === 'deleted'
@@ -220,3 +222,32 @@ export const useBulkUpdateSpaceVisibility = (venueId?: string) => {
     },
   })
 }
+
+export const useUpdateVenueOwnerAdminNotes = (ownerId?: string) => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (internalNotes: string) => updateExpertAdminNotes(ownerId as string, internalNotes),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['venue-full-view'] })
+      queryClient.invalidateQueries({ queryKey: ['expert-profile', ownerId] })
+    },
+  })
+}
+
+export const useUpdateVenueOwnerAdminTags = (ownerId?: string) => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (tags: string[]) => updateExpertAdminTags(ownerId as string, tags),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['venue-full-view'] })
+      queryClient.invalidateQueries({ queryKey: ['expert-profile', ownerId] })
+    },
+  })
+}
+
+export const useVenueReportsForVenue = (venueId?: string) =>
+  useQuery({
+    queryKey: ['venue-reports', venueId],
+    queryFn: () => fetchVenueReports({ venueId, limit: 50 }),
+    enabled: Boolean(venueId),
+  })

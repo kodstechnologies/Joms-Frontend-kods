@@ -5,6 +5,8 @@ export type MembershipSubscription = {
   subscriptionId: string
   partnerId: string
   partnerName: string
+  userId?: string | null
+  username?: string | null
   membershipPlanId:
     | string
     | {
@@ -26,12 +28,20 @@ export type MembershipSubscription = {
   expiresAt: string
   nextBillingDate?: string | null
   sourceApp: string
+  source?: string | null
   upgradedBy?: 'partner' | 'admin' | null
   previousMembership?: {
     planId?: string
     planName?: string
     membershipPlanId?: string
   }
+  previousPlanName?: string | null
+  paymentStatus?: string | null
+  paymentMethod?: string | null
+  transactionId?: string | null
+  couponCode?: string | null
+  discountAmount?: number | null
+  lastRenewedAt?: string | null
   actionHistory?: Array<{
     action: string
     fromPlanName?: string
@@ -68,6 +78,7 @@ export type MembershipSubscription = {
   createdAt?: string
   updatedAt?: string
   updatedBy?: string | null
+  isExpired?: boolean
 }
 
 export type SubscriptionListResponse = {

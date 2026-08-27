@@ -314,7 +314,6 @@ function MembershipActionModalsContent({
           </>
         }
       >
-        {/* Figma: Upgrade = current → target | Downgrade = target ← current */}
         <div className="flex items-start justify-center gap-6 pt-2">
           {isUpgrade ? currentCard : targetCard}
 

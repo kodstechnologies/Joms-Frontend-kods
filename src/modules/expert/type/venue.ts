@@ -6,11 +6,47 @@ export interface Venue {
   _id: string
   venueId?: string
   venueid?: string
+  name?: string
   venueName: string
   venueCategory?: string
+  venueType?: string
+  venueRating?: number | null
+  ratings?: number | null
+  reviewsCount?: number | null
+  venueLocation?: string
   spaceId?: string | null
   spaceid?: string | null
   spaceName?: string
+  spaceCategory?: string
+  spaceLocation?: string
+  spaceType?: string
+  spaceStatus?: string
+  spacePrice?: number | null
+  spaceRating?: number | null
+  revenue?: number
+  city?: string
+  eventsHosted?: number
+  meetupsHosted?: number
+  repeatBookingRate?: number | null
+  spaceUtilization?: number | null
+  venueNps?: number | null
+  hostCancellationRate?: number
+  lastUpdatedAt?: string
+  submittedAt?: string
+  submittedBy?: string
+  suspensionId?: string
+  suspensionReason?: string
+  suspendedBy?: string
+  adminId?: string
+  suspendedAt?: string
+  suspensionUntil?: string
+  deletionId?: string
+  deletedBy?: string
+  deletionReason?: string
+  escalatedBy?: string
+  escalationReason?: string
+  escalatedAt?: string
+  complianceStatus?: string
   expertName?: string
   partnerName?: string
   ownerId?: string
@@ -21,7 +57,6 @@ export interface Venue {
   isSuspend?: boolean
   createdAt?: string
   updatedAt?: string
-  city?: string
   weekdayPrice?: number
   reason?: string | null
   deletedAt?: string | null

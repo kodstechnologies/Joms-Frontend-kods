@@ -33,10 +33,8 @@ const SubCategoryInfoCard = ({ category, subCategory }: Props) => {
       }}
     >
       <div className="flex items-start justify-between gap-10">
-        {/* Left Content */}
         <div className="flex-1">
           <div className="grid grid-cols-4 gap-x-12 gap-y-10">
-            {/* Row 1 */}
             <div>
               <p className={categoryViewTheme.labelClass}>Main Category Name</p>
               <p className={`mt-2 ${categoryViewTheme.valueLgClass}`}>{category.name}</p>
@@ -49,7 +47,7 @@ const SubCategoryInfoCard = ({ category, subCategory }: Props) => {
 
             <div>
               <p className={categoryViewTheme.labelClass}>Created At</p>
-              <p className={`mt-2 ${categoryViewTheme.valueClass}`}>January 15 2025</p>
+              <p className={`mt-2 ${categoryViewTheme.valueClass}`}>{subCategory.addedOn}</p>
             </div>
 
             <div>
@@ -62,7 +60,6 @@ const SubCategoryInfoCard = ({ category, subCategory }: Props) => {
               </button>
             </div>
 
-            {/* Row 2 */}
             <div>
               <p className={categoryViewTheme.labelClass}>Sub-Category ID</p>
               <p className={`mt-2 ${categoryViewTheme.valueLgClass}`}>
@@ -87,7 +84,6 @@ const SubCategoryInfoCard = ({ category, subCategory }: Props) => {
           </div>
         </div>
 
-        {/* Right Side */}
         <div className="flex shrink-0 items-start gap-8">
           <div className="flex flex-col items-center">
             <p className={categoryViewTheme.labelClass}>Icon</p>

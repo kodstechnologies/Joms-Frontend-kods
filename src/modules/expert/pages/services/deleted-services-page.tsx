@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { ArrowLeft, Eye, RotateCcw, Upload } from 'lucide-react'
+import { ArrowLeft, BarChart3, Eye, RotateCcw, Upload } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
@@ -13,16 +13,23 @@ import {
   createServiceFilteredExportHandler,
 } from '@/shared/utils/export-filter-utils'
 import { fetchServices } from '../../api/service-api'
+import { SERVICE_DELETED_MODULE_KEY } from '../../api/ui-preferences-api'
+import { DEFAULT_SERVICE_DELETED_VISIBLE_COLUMN_IDS } from '../../config/service-management-table-columns.config'
+import { useTableColumnPreferences } from '../../hooks/use-ui-preferences'
 
-import { formatDeletedAt } from '../../constants/soft-delete'
 import { useRestoreService, useServices } from '../../hooks/use-services'
 import { getServiceManagementViewPath } from '../../lib/service-navigation'
 import type { Service } from '../../type/service'
+import {
+  buildServiceDataColumnsById,
+  pickServicePreferenceColumns,
+} from '../../utils/service-preference-columns'
 import { DataTable } from '@/shared/components/table/data-table'
 import {
   TableActionsDropdown,
   TableActionsItem,
 } from '@/shared/components/table/table-actions-dropdown'
+import { Button } from '@/shared/components/ui/button'
 
 const formatExportDateTime = (value?: string | null) =>
   value
@@ -36,12 +43,23 @@ const formatExportDateTime = (value?: string | null) =>
     : ''
 
 const EXPORT_COLUMN_MAP: Record<string, { header: string; accessor: (s: Service) => string }> = {
-  serviceId: { header: 'Service ID', accessor: (s) => exportDisplayValue(s.serviceid || s._id) },
-  title: { header: 'Service Name', accessor: (s) => exportDisplayValue(s.title) },
-  serviceType: { header: 'Type', accessor: (s) => exportDisplayValue(s.serviceType) },
-  expertName: { header: 'Expert Name', accessor: (s) => exportDisplayValue(s.expertName) },
-  reason: { header: 'Reason', accessor: (s) => exportDisplayValue(s.reason) },
+  serviceId: { header: 'Listing ID', accessor: (s) => exportDisplayValue(s.serviceid || s._id) },
+  title: { header: 'Listing Name', accessor: (s) => exportDisplayValue(s.title) },
+  deletedBy: { header: 'Deleted By', accessor: (s) => exportDisplayValue(s.deletedBy) },
+  deletedById: { header: 'Deleted By ID', accessor: (s) => exportDisplayValue(s.deletedById) },
+  deletionReason: {
+    header: 'Deletion Reason',
+    accessor: (s) => exportDisplayValue(s.deletionReason || s.reason),
+  },
   deletedAt: { header: 'Deleted At', accessor: (s) => formatExportDateTime(s.deletedAt) },
+  restoreEligible: {
+    header: 'Restore Eligible',
+    accessor: (s) => exportDisplayValue(s.restoreEligible),
+  },
+  lastUpdatedAt: {
+    header: 'Last Updated At',
+    accessor: (s) => formatExportDateTime(s.lastUpdatedAt),
+  },
 }
 
 export function DeletedServicesPage() {
@@ -50,6 +68,7 @@ export function DeletedServicesPage() {
   const [currentPage, setCurrentPage] = useState(1)
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
+  const tableColumnPreferencesQuery = useTableColumnPreferences(SERVICE_DELETED_MODULE_KEY)
 
   const serviceQueryParams = useMemo(
     () =>
@@ -91,7 +110,7 @@ export function DeletedServicesPage() {
     onExport,
     modals: exportFilterModals,
   } = useModuleExportFilters({
-    moduleKey: 'service-management',
+    moduleKey: SERVICE_DELETED_MODULE_KEY,
     onApplyFilters: handleApplyFilters,
     onExportData: handleExportData,
   })
@@ -109,28 +128,18 @@ export function DeletedServicesPage() {
     [restoreServiceMutation],
   )
 
-  const columns = useMemo<ColumnDef<Service>[]>(
-    () => [
-      {
-        accessorKey: 'serviceid',
-        header: 'Service ID',
-        cell: ({ row }) => (
-          <span className="ui-table-id uppercase">{row.original.serviceid || '—'}</span>
-        ),
-      },
-      { accessorKey: 'title', header: 'Service Name' },
-      { accessorKey: 'serviceType', header: 'Type' },
-      { accessorKey: 'expertName', header: 'Expert Name' },
-      {
-        accessorKey: 'reason',
-        header: 'Reason',
-        cell: ({ row }) => row.original.reason || '—',
-      },
-      {
-        accessorKey: 'deletedAt',
-        header: 'Deleted At',
-        cell: ({ row }) => formatDeletedAt(row.original.deletedAt),
-      },
+  const columns = useMemo<ColumnDef<Service>[]>(() => {
+    const dataColumnsById = buildServiceDataColumnsById()
+    const visibleIds = tableColumnPreferencesQuery.data?.visibleColumnIds?.length
+      ? tableColumnPreferencesQuery.data.visibleColumnIds
+      : DEFAULT_SERVICE_DELETED_VISIBLE_COLUMN_IDS
+
+    return [
+      ...pickServicePreferenceColumns(
+        dataColumnsById,
+        visibleIds,
+        DEFAULT_SERVICE_DELETED_VISIBLE_COLUMN_IDS,
+      ),
       {
         id: 'actions',
         accessorFn: () => null,
@@ -178,9 +187,8 @@ export function DeletedServicesPage() {
           )
         },
       },
-    ],
-    [activeDropdownId, handleRestore, navigate],
-  )
+    ]
+  }, [activeDropdownId, handleRestore, navigate, tableColumnPreferencesQuery.data])
 
   return (
     <div className="flex flex-col gap-5 md:gap-6">
@@ -207,6 +215,15 @@ export function DeletedServicesPage() {
             <span className="font-bold text-white">Deleted Services</span>
           </div>
         </header>
+        <Button
+          className="ui-manage-metrics h-9 w-full md:w-auto"
+          onClick={() =>
+            navigate('/metrics/service-deleted?returnTo=/services/management/deleted&section=table')
+          }
+        >
+          <BarChart3 className="size-4" />
+          Manage Metrics
+        </Button>
       </div>
 
       <DataTable

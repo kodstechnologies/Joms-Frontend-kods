@@ -12,6 +12,7 @@ import {
   useSoftDeleteVenueCategory,
 } from '../../hooks/use-venue-category-management'
 import { getErrorMessage } from '../../utils/category-mapper'
+import { MODERATION_CATEGORY_SLUGS } from '@/modules/settings/api/templates-api'
 
 export const VenueCategoryViewHeaderActions = () => {
   const navigate = useNavigate()
@@ -62,6 +63,8 @@ export const VenueCategoryViewHeaderActions = () => {
       <PauseCategoryModal
         open={pauseModalOpen}
         onClose={() => setPauseModalOpen(false)}
+        reasonCategorySlug={MODERATION_CATEGORY_SLUGS.pauseCategory}
+        submitLabel="Pause Category"
         onConfirm={() => {
           if (!id) return
           pauseMutation.mutate(id, {

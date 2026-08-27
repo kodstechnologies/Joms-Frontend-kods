@@ -7,17 +7,31 @@ import { toast } from 'sonner'
 import { SlaTimerCell } from '../components/sla-timer-cell'
 import { TicketPriorityBadge } from '../components/ticket-priority-badge'
 import { TicketStatusBadge } from '../components/ticket-status-badge'
+import {
+  DEFAULT_PAST_TICKETS_VISIBLE_COLUMN_IDS,
+  PAST_TICKETS_LEGACY_COLUMN_ID_MAP,
+  PAST_TICKETS_MODULE_KEY,
+  PAST_TICKETS_TABLE_COLUMNS_CATALOG,
+} from '../config/past-tickets-table-columns.config'
 import { usePastTickets } from '../hooks/use-support'
 import { useSupportStore } from '../store/support-store'
 import type { SupportTicket } from '../types/support'
-import { getPriorityLabel, getStatusLabel } from '../utils/support-format'
+import {
+  dashIfEmpty,
+  formatTicketDateTime,
+  formatTicketDurationHms,
+  getPriorityLabel,
+  getStatusLabel,
+} from '../utils/support-format'
 import { fetchPastTickets } from '../api/support-api'
+import { useTableColumnPreferences } from '@/modules/expert/hooks/use-ui-preferences'
 import { DataTable } from '@/shared/components/table/data-table'
 import {
   TableActionsDropdown,
   TableActionsItem,
 } from '@/shared/components/table/table-actions-dropdown'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
+import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 import type { FilterValues } from '@/shared/types/data-filter'
 import { exportDisplayValue } from '@/shared/utils/export-utils'
@@ -26,11 +40,65 @@ import {
   createSupportTicketsFilteredExportHandler,
 } from '@/shared/utils/export-filter-utils'
 
+const EXPORT_COLUMN_MAP: Record<
+  string,
+  { header: string; accessor: (ticket: SupportTicket) => string }
+> = {
+  'ticket-id': { header: 'Ticket ID', accessor: (ticket) => exportDisplayValue(ticket.id) },
+  subject: { header: 'Subject', accessor: (ticket) => exportDisplayValue(ticket.subject) },
+  status: {
+    header: 'Status',
+    accessor: (ticket) => exportDisplayValue(getStatusLabel(ticket.status)),
+  },
+  priority: {
+    header: 'Priority',
+    accessor: (ticket) => exportDisplayValue(getPriorityLabel(ticket.priority)),
+  },
+  category: { header: 'Category', accessor: (ticket) => exportDisplayValue(ticket.category) },
+  'sla-timer': {
+    header: 'SLA Timer',
+    accessor: (ticket) => exportDisplayValue(ticket.slaTimer),
+  },
+  'assigned-on': {
+    header: 'Assigned On',
+    accessor: (ticket) => exportDisplayValue(formatTicketDateTime(ticket.assignedAt)),
+  },
+  'assigned-by': {
+    header: 'Assigned By',
+    accessor: (ticket) => exportDisplayValue(dashIfEmpty(ticket.assignedBy)),
+  },
+  'assigned-to': {
+    header: 'Assigned To',
+    accessor: (ticket) => exportDisplayValue(ticket.assignedTo),
+  },
+  'resolved-at': {
+    header: 'Resolved At',
+    accessor: (ticket) => exportDisplayValue(formatTicketDateTime(ticket.resolvedAt)),
+  },
+  'resolved-by': {
+    header: 'Resolved By',
+    accessor: (ticket) => exportDisplayValue(dashIfEmpty(ticket.resolvedBy)),
+  },
+  'resolution-time': {
+    header: 'Resolution Time',
+    accessor: (ticket) =>
+      exportDisplayValue(
+        formatTicketDurationHms(ticket.resolutionTime, ticket.createdAt, ticket.resolvedAt),
+      ),
+  },
+  'last-updated-at': {
+    header: 'Last Updated At',
+    accessor: (ticket) =>
+      exportDisplayValue(formatTicketDateTime(ticket.lastUpdatedAt || ticket.createdAt)),
+  },
+}
+
 export function PastTicketsPage() {
   const navigate = useNavigate()
   const { userId } = useParams<{ userId: string }>()
   const { searchQuery, setSearchQuery, currentPage, setCurrentPage } = useSupportStore()
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
+  const tableColumnPreferencesQuery = useTableColumnPreferences(PAST_TICKETS_MODULE_KEY)
 
   const listQueryParams = useMemo(
     () =>
@@ -70,23 +138,35 @@ export function PastTicketsPage() {
     [navigate],
   )
 
-  const columns = useMemo<ColumnDef<SupportTicket>[]>(
-    () => [
-      {
-        id: 'select',
-        header: () => (
-          <input type="checkbox" aria-label="Select all" className="rounded border-white/20" />
-        ),
-        cell: ({ row }) => (
-          <input
-            type="checkbox"
-            aria-label={`Select ${row.original.id}`}
-            className="rounded border-white/20"
-          />
-        ),
-        meta: { headerClassName: 'pl-5 w-10', cellClassName: 'pl-5 w-10' },
-      },
-      {
+  const columns = useMemo<ColumnDef<SupportTicket>[]>(() => {
+    const nowrap = {
+      headerClassName: 'whitespace-nowrap',
+      cellClassName: 'whitespace-nowrap',
+    }
+    const dateCell = (value?: string | null) => (
+      <span className="text-body-sm text-brand-text whitespace-nowrap tabular-nums">
+        {formatTicketDateTime(value)}
+      </span>
+    )
+
+    const selectColumn: ColumnDef<SupportTicket> = {
+      id: 'select',
+      header: () => (
+        <input type="checkbox" aria-label="Select all" className="rounded border-white/20" />
+      ),
+      cell: ({ row }) => (
+        <input
+          type="checkbox"
+          aria-label={`Select ${row.original.id}`}
+          className="rounded border-white/20"
+        />
+      ),
+      meta: { headerClassName: 'pl-5 w-10', cellClassName: 'pl-5 w-10' },
+    }
+
+    const dataColumnsById: Record<string, ColumnDef<SupportTicket>> = {
+      'ticket-id': {
+        id: 'ticket-id',
         accessorKey: 'id',
         header: 'Ticket ID',
         cell: ({ row }) => (
@@ -98,27 +178,34 @@ export function PastTicketsPage() {
           </Link>
         ),
       },
-      {
+      subject: {
+        id: 'subject',
         accessorKey: 'subject',
         header: 'Subject',
         cell: ({ row }) => (
           <span className="text-body-sm text-brand-text">{row.original.subject}</span>
         ),
       },
-      {
+      status: {
+        id: 'status',
         accessorKey: 'status',
         header: 'Status',
         cell: ({ row }) => <TicketStatusBadge status={row.original.status} />,
       },
-      {
+      priority: {
+        id: 'priority',
         accessorKey: 'priority',
         header: 'Priority',
         cell: ({ row }) => <TicketPriorityBadge priority={row.original.priority} />,
       },
-      { accessorKey: 'category', header: 'Category' },
-      { accessorKey: 'reporter', header: 'Reporter' },
-      { accessorKey: 'assignedTo', header: 'Assigned To' },
-      {
+      category: {
+        id: 'category',
+        accessorKey: 'category',
+        header: 'Category',
+        cell: ({ row }) => dashIfEmpty(row.original.category),
+      },
+      'sla-timer': {
+        id: 'sla-timer',
         accessorKey: 'slaTimer',
         header: 'SLA Timer',
         cell: ({ row }) => (
@@ -128,16 +215,87 @@ export function PastTicketsPage() {
             status={row.original.status}
           />
         ),
+        meta: nowrap,
       },
-      {
-        id: 'actions',
-        header: 'Actions',
-        meta: { headerClassName: 'pr-5 text-right', cellClassName: 'relative pr-5 text-right' },
-        cell: ({ row }) => renderActions(row.original),
+      'assigned-on': {
+        id: 'assigned-on',
+        accessorKey: 'assignedAt',
+        header: 'Assigned On',
+        cell: ({ row }) => dateCell(row.original.assignedAt),
+        meta: nowrap,
       },
-    ],
-    [renderActions],
-  )
+      'assigned-by': {
+        id: 'assigned-by',
+        accessorKey: 'assignedBy',
+        header: 'Assigned By',
+        cell: ({ row }) => dashIfEmpty(row.original.assignedBy),
+      },
+      'assigned-to': {
+        id: 'assigned-to',
+        accessorKey: 'assignedTo',
+        header: 'Assigned To',
+        cell: ({ row }) => dashIfEmpty(row.original.assignedTo),
+      },
+      'resolved-at': {
+        id: 'resolved-at',
+        accessorKey: 'resolvedAt',
+        header: 'Resolved At',
+        cell: ({ row }) => dateCell(row.original.resolvedAt),
+        meta: nowrap,
+      },
+      'resolved-by': {
+        id: 'resolved-by',
+        accessorKey: 'resolvedBy',
+        header: 'Resolved By',
+        cell: ({ row }) => dashIfEmpty(row.original.resolvedBy),
+      },
+      'resolution-time': {
+        id: 'resolution-time',
+        accessorKey: 'resolutionTime',
+        header: 'Resolution Time',
+        cell: ({ row }) => (
+          <span className="text-body-sm text-brand-text whitespace-nowrap tabular-nums">
+            {formatTicketDurationHms(
+              row.original.resolutionTime,
+              row.original.createdAtIso,
+              row.original.resolvedAt,
+            )}
+          </span>
+        ),
+        meta: nowrap,
+      },
+      'last-updated-at': {
+        id: 'last-updated-at',
+        accessorKey: 'lastUpdatedAt',
+        header: 'Last Updated At',
+        cell: ({ row }) => dateCell(row.original.lastUpdatedAt),
+        meta: nowrap,
+      },
+    }
+
+    const catalogIds = PAST_TICKETS_TABLE_COLUMNS_CATALOG.map((column) => column.id)
+    const rawVisibleIds = tableColumnPreferencesQuery.data?.visibleColumnIds?.length
+      ? tableColumnPreferencesQuery.data.visibleColumnIds
+      : DEFAULT_PAST_TICKETS_VISIBLE_COLUMN_IDS
+
+    const preferenceColumns = sortIdsByCatalogOrder(
+      [...new Set(rawVisibleIds.map((id) => PAST_TICKETS_LEGACY_COLUMN_ID_MAP[id] ?? id))].filter(
+        (id) => catalogIds.includes(id),
+      ),
+      catalogIds,
+    )
+      .map((id) => dataColumnsById[id])
+      .filter(Boolean)
+
+    const actionsColumn: ColumnDef<SupportTicket> = {
+      id: 'actions',
+      header: 'Actions',
+      meta: { headerClassName: 'pr-5 text-right', cellClassName: 'relative pr-5 text-right' },
+      cell: ({ row }) => renderActions(row.original),
+    }
+
+    return [selectColumn, ...preferenceColumns, actionsColumn]
+  }, [renderActions, tableColumnPreferencesQuery.data])
 
   const handleApplyFilters = useCallback(
     (values: FilterValues) => {
@@ -151,31 +309,20 @@ export function PastTicketsPage() {
   const handleExportData = useMemo(() => {
     const fetchForExport = async (
       params: Record<string, unknown>,
-    ): Promise<{ data: SupportTicket[] }> => {
+    ): Promise<{
+      data: SupportTicket[]
+      meta?: { page: number; limit: number; total: number; totalPages: number }
+    }> => {
       if (!userId) return { data: [] }
       const result = await fetchPastTickets(userId, params)
-      return { data: result.data?.tickets ?? [] }
+      return {
+        data: result.data?.tickets ?? [],
+        meta: result.data?.meta,
+      }
     }
     return createSupportTicketsFilteredExportHandler(
       fetchForExport,
-      {
-        id: { header: 'Ticket ID', accessor: (ticket) => exportDisplayValue(ticket.id) },
-        subject: { header: 'Subject', accessor: (ticket) => exportDisplayValue(ticket.subject) },
-        status: {
-          header: 'Status',
-          accessor: (ticket) => exportDisplayValue(getStatusLabel(ticket.status)),
-        },
-        priority: {
-          header: 'Priority',
-          accessor: (ticket) => exportDisplayValue(getPriorityLabel(ticket.priority)),
-        },
-        category: { header: 'Category', accessor: (ticket) => exportDisplayValue(ticket.category) },
-        reporter: { header: 'Reporter', accessor: (ticket) => exportDisplayValue(ticket.reporter) },
-        assignedTo: {
-          header: 'Assigned To',
-          accessor: (ticket) => exportDisplayValue(ticket.assignedTo),
-        },
-      },
+      EXPORT_COLUMN_MAP,
       'past_tickets_export',
       { search: searchQuery || undefined },
     )
@@ -193,7 +340,6 @@ export function PastTicketsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex items-start gap-3">
           <button
@@ -212,7 +358,7 @@ export function PastTicketsPage() {
         </div>
         <button
           type="button"
-          onClick={() => navigate('/metrics/past-tickets')}
+          onClick={() => navigate('/metrics/past-tickets?section=table')}
           className="ui-manage-metrics ui-cta ui-cta-primary shrink-0"
         >
           <SlidersHorizontal className="icon-sm shrink-0" />

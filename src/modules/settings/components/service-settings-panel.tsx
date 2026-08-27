@@ -33,13 +33,13 @@ export function ServiceSettingsPanel({ value, onChange }: ServiceSettingsPanelPr
       <SettingsSectionCard title="Service Listing Details">
         <SettingsToggleRow
           label="Allow new service Listings"
-          description="Letting experts list new services on the platform."
+          description="When off, experts cannot create new services from admin or the partner app."
           checked={value.listingDetails.allowNewServiceListings}
           onChange={(checked) => patchListing({ allowNewServiceListings: checked })}
         />
         <SettingsToggleRow
           label="Allow new consultation Listings"
-          description="Letting experts list new consultations on the platform."
+          description="When off, experts cannot create new consultations from admin or the partner app."
           checked={value.listingDetails.allowNewConsultationListings}
           onChange={(checked) => patchListing({ allowNewConsultationListings: checked })}
         />

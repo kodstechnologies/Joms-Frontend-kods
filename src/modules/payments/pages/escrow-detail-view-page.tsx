@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 
+import { useBranding } from '@/app/providers/use-branding'
 import { AddFinanceNoteModal } from '@/modules/payments/components/add-finance-note-modal'
 import { FinanceInternalNotesCard } from '@/modules/payments/components/finance-internal-notes-card'
 import { fetchPartnerDisplayNames } from '@/modules/payments/api/partner-lookup-api'
@@ -23,6 +24,7 @@ import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import { PERMISSION_LEVELS } from '@/shared/lib/permissions'
+import { downloadInvoiceDocument, invoiceFromEscrow } from '@/shared/utils/invoice-document'
 
 const cardClass = 'radius-lg border border-white/[0.06] bg-brand-surface p-4 sm:p-5'
 const sectionTitleClass = 'text-body-md-semibold text-brand-text leading-[20px]'
@@ -79,6 +81,7 @@ function StatusBadge({ status }: { status: string }) {
 export function EscrowDetailViewPage() {
   const navigate = useNavigate()
   const { id = '' } = useParams<{ id: string }>()
+  const { logoUrl } = useBranding()
   const { data, isLoading, isError, refetch } = useFinanceEscrowDetail(id)
   const releaseMutation = useReleaseEscrow()
   const noteMutation = useAddFinanceNote()
@@ -124,16 +127,15 @@ export function EscrowDetailViewPage() {
   const transactionId = escrow.transactionId || escrow.paymentOrderId || String(escrow.paymentId)
 
   const handleDownloadInvoice = () => {
-    if (escrow.invoicePdfUrl) {
-      window.open(escrow.invoicePdfUrl, '_blank', 'noopener,noreferrer')
-      return
-    }
-    const invoiceKey = escrow.invoiceId || escrow.invoiceNumber
-    if (invoiceKey) {
-      navigate(`/finance/invoices/${invoiceKey}`)
-      return
-    }
-    toast.message('Invoice not available for this escrow yet')
+    void downloadInvoiceDocument(
+      invoiceFromEscrow(escrow, {
+        logoUrl,
+        expertName: typeof expertName === 'string' ? expertName : undefined,
+      }),
+      escrow.escrowId,
+    )
+      .then(() => toast.success('Invoice downloaded'))
+      .catch(() => toast.error('Failed to download invoice'))
   }
 
   return (

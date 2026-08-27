@@ -24,7 +24,14 @@ export function FinancialSettingsFields({
   onChange,
   title = 'Event Financial & Transaction Settings',
 }: FinancialSettingsFieldsProps) {
-  const patch = (partial: Partial<FinancialSettings>) => onChange({ ...value, ...partial })
+  const patch = (partial: Partial<FinancialSettings>) =>
+    onChange({
+      ...value,
+      ...partial,
+      region: 'India',
+      currency: 'INR',
+      taxType: 'GST',
+    })
 
   return (
     <SettingsSectionCard title={title} description="Controls money flow, accounting, and payouts.">
@@ -77,12 +84,10 @@ export function FinancialSettingsFields({
         <SettingsSelectField
           label="Region"
           id="financial-region"
-          value={value.region}
-          onChange={(e) => patch({ region: e.target.value })}
+          value="India"
+          onChange={() => patch({ region: 'India' })}
         >
           <option value="India">India</option>
-          <option value="UAE">UAE</option>
-          <option value="USA">USA</option>
         </SettingsSelectField>
         <SettingsInputField
           label="Tax rate"
@@ -96,22 +101,18 @@ export function FinancialSettingsFields({
         <SettingsSelectField
           label="Currency"
           id="financial-currency"
-          value={value.currency}
-          onChange={(e) => patch({ currency: e.target.value })}
+          value="INR"
+          onChange={() => patch({ currency: 'INR' })}
         >
           <option value="INR">INR</option>
-          <option value="USD">USD</option>
-          <option value="AED">AED</option>
         </SettingsSelectField>
         <SettingsSelectField
           label="Tax type"
           id="financial-tax-type"
-          value={value.taxType}
-          onChange={(e) => patch({ taxType: e.target.value })}
+          value="GST"
+          onChange={() => patch({ taxType: 'GST' })}
         >
           <option value="GST">GST</option>
-          <option value="VAT">VAT</option>
-          <option value="None">None</option>
         </SettingsSelectField>
         <SettingsSelectField
           label="Tax handling"

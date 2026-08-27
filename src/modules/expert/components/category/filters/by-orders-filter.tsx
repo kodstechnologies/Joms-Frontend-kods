@@ -1,15 +1,11 @@
 export function ByOrdersFilter() {
   return (
     <section className="bg-brand-surface-2 space-y-8 rounded-xl border border-white/10 p-8">
-      {/* Header */}
-
       <div className="flex items-center justify-between">
         <h2 className="text-brand-text text-sm font-medium">By Orders</h2>
 
         <button className="text-brand-text text-xl">+</button>
       </div>
-
-      {/* Service Order Status */}
 
       <div className="space-y-3">
         <h3 className="text-brand-text text-sm font-medium">Service Order Status</h3>
@@ -33,8 +29,6 @@ export function ByOrdersFilter() {
         </div>
       </div>
 
-      {/* Delays Beyond SLA */}
-
       <div className="space-y-3">
         <h3 className="text-brand-text text-sm font-medium">
           Delays Beyond SLA (Service Timelines Extended)
@@ -49,8 +43,6 @@ export function ByOrdersFilter() {
           </label>
         </div>
       </div>
-
-      {/* Payment Status */}
 
       <div className="space-y-3">
         <h3 className="text-brand-text text-sm font-medium">Payment Status</h3>
@@ -74,8 +66,6 @@ export function ByOrdersFilter() {
         </div>
       </div>
 
-      {/* Payment Method */}
-
       <div className="space-y-3">
         <h3 className="text-brand-text text-sm font-medium">Payment Method</h3>
 
@@ -91,8 +81,6 @@ export function ByOrdersFilter() {
           </label>
         </div>
       </div>
-
-      {/* Payout Status */}
 
       <div className="space-y-3">
         <h3 className="text-brand-text text-sm font-medium">Payout Status</h3>
@@ -116,8 +104,6 @@ export function ByOrdersFilter() {
         </div>
       </div>
 
-      {/* Dispute Status */}
-
       <div className="space-y-3">
         <h3 className="text-brand-text text-sm font-medium">Dispute Status</h3>
 
@@ -130,8 +116,6 @@ export function ByOrdersFilter() {
           </label>
         </div>
       </div>
-
-      {/* Refund Status */}
 
       <div className="space-y-3">
         <h3 className="text-brand-text text-sm font-medium">Refund Status</h3>
@@ -154,8 +138,6 @@ export function ByOrdersFilter() {
           </label>
         </div>
       </div>
-
-      {/* Risk */}
 
       <div className="space-y-3">
         <h3 className="text-brand-text text-sm font-medium">

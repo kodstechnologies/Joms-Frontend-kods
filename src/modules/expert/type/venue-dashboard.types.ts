@@ -40,6 +40,15 @@ export interface VenueMetrics {
   avgBookingLeadTime: string
   venueTurnoverRate: string
   offPeakPotential: string
+
+  avgUtilization?: number
+  satisfaction?: number
+  eventsPerVenue?: number
+  cancellationRate?: number
+  totalRefundAmount?: MoneyValue | number
+  refundRate?: number
+  hostCancellationRate?: number
+  hostInitiatedCancellations?: number
 }
 
 export interface VenueTrendPoint {

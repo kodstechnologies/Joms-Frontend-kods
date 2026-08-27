@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { Bell, Eye, TrendingUp } from 'lucide-react'
+import { Bell, Download, Eye, SlidersHorizontal, TrendingUp } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
+import { useBranding } from '@/app/providers/use-branding'
 import { type InvoiceRow, type InvoiceStatus } from '@/modules/payments/mock/invoices-billing.mock'
-import { fetchFinanceInvoices } from '@/modules/payments/api/finance-api'
+import { fetchFinanceInvoiceById, fetchFinanceInvoices } from '@/modules/payments/api/finance-api'
 import { useFinanceInvoices } from '@/modules/payments/hooks/use-finance'
 import { formatInr, mapInvoiceToRow } from '@/modules/payments/utils/finance-mappers'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
@@ -14,6 +15,7 @@ import {
   TableActionsDropdown,
   TableActionsItem,
 } from '@/shared/components/table/table-actions-dropdown'
+import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
 import type { FilterValues } from '@/shared/types/data-filter'
 import { exportDisplayValue } from '@/shared/utils/export-utils'
@@ -21,6 +23,7 @@ import {
   buildFinanceInvoicesListQueryParams,
   createFinanceInvoicesFilteredExportHandler,
 } from '@/shared/utils/export-filter-utils'
+import { downloadInvoiceDocument, invoiceFromFinanceInvoice } from '@/shared/utils/invoice-document'
 
 const PAGE_SIZE = 10
 
@@ -69,6 +72,7 @@ function getStatusClassName(status: InvoiceStatus) {
 
 export function InvoicesBillingPage() {
   const navigate = useNavigate()
+  const { logoUrl } = useBranding()
   const [searchQuery, setSearchQuery] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
@@ -195,6 +199,26 @@ export function InvoicesBillingPage() {
           View Invoice
         </TableActionsItem>
         <TableActionsItem
+          icon={<Download className="size-3.5 text-slate-700" aria-hidden="true" />}
+          className="text-slate-800 hover:bg-slate-100 hover:text-slate-900"
+          onClick={() => {
+            setActiveDropdownId(null)
+            void fetchFinanceInvoiceById(record.id)
+              .then(async (result) => {
+                const invoice = result.data
+                if (!invoice) throw new Error('Invoice not found')
+                await downloadInvoiceDocument(
+                  invoiceFromFinanceInvoice(invoice, { logoUrl }),
+                  invoice.invoiceNumber,
+                )
+                toast.success('Invoice downloaded')
+              })
+              .catch(() => toast.error('Failed to download invoice'))
+          }}
+        >
+          Download Invoice
+        </TableActionsItem>
+        <TableActionsItem
           icon={<Bell className="size-3.5 text-slate-700" aria-hidden="true" />}
           className="text-slate-800 hover:bg-slate-100 hover:text-slate-900"
           onClick={() => {
@@ -206,7 +230,7 @@ export function InvoicesBillingPage() {
         </TableActionsItem>
       </TableActionsDropdown>
     ),
-    [activeDropdownId, navigate],
+    [activeDropdownId, logoUrl, navigate],
   )
 
   const columns = useMemo<ColumnDef<InvoiceRow>[]>(
@@ -288,18 +312,24 @@ export function InvoicesBillingPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-h2 text-brand-text tracking-tight">Invoices & Billing</h1>
-        <p className="text-body-md text-muted mt-1 leading-[20px]">
-          Track revenue, payouts, and financial performance
-        </p>
-        <p className="text-body-sm text-muted mt-3 leading-[20px]">
-          <Link to="/finance/dashboard" className="hover:text-brand-text transition-colors">
-            Payment & Finance
-          </Link>
-          <span> / </span>
-          <span className="text-brand-text font-semibold">Invoices & Billing</span>
-        </p>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h1 className="text-h2 text-brand-text tracking-tight">Invoices & Billing</h1>
+          <p className="text-body-md text-muted mt-1 leading-[20px]">
+            Track revenue, payouts, and financial performance
+          </p>
+          <p className="text-body-sm text-muted mt-3 leading-[20px]">
+            <Link to="/finance/dashboard" className="hover:text-brand-text transition-colors">
+              Payment & Finance
+            </Link>
+            <span> / </span>
+            <span className="text-brand-text font-semibold">Invoices & Billing</span>
+          </p>
+        </div>
+        <Button className="ui-manage-metrics" onClick={() => navigate('/metrics/finance-invoices')}>
+          <SlidersHorizontal className="size-4" />
+          Manage Metrics
+        </Button>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">

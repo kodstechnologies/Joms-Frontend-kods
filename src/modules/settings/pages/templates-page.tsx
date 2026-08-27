@@ -312,6 +312,7 @@ export function TemplatesPage({ embedded = false }: { embedded?: boolean }) {
     createReasonMutation.mutate(
       {
         categoryId: activeCategoryId,
+        slug: selectedCategory?.slug,
         ...values,
       },
       {
@@ -319,7 +320,11 @@ export function TemplatesPage({ embedded = false }: { embedded?: boolean }) {
           toast.success('Reason created')
           setReasonModalOpen(false)
         },
-        onError: () => toast.error('Failed to create reason'),
+        onError: (error) => {
+          const apiMessage = (error as { response?: { data?: { message?: string } } }).response
+            ?.data?.message
+          toast.error(apiMessage || 'Failed to create reason')
+        },
       },
     )
   }

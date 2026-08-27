@@ -38,7 +38,6 @@ import {
   useBulkRejectExperts,
   useBulkRestoreExperts,
   useBulkVerifyKycExperts,
-  useBulkVerifyDigilockerExperts,
   useBulkEscalateExperts,
 } from '../../hooks/use-expert'
 import { MembershipActionModals } from '@/modules/memberships/components/membership-action-modals'
@@ -47,12 +46,15 @@ import type { MembershipSubscription } from '@/modules/memberships/types/members
 import { orderByActiveMetricIds, useActiveMetricIds } from '../../hooks/use-active-metric-ids'
 import { useTableColumnPreferences } from '../../hooks/use-ui-preferences'
 import { EXPERT_MANAGEMENT_MODULE_KEY } from '../../api/ui-preferences-api'
+import { DEFAULT_EXPERT_MANAGEMENT_VISIBLE_COLUMN_IDS } from '../../config/expert-management-table-columns.config'
+import {
+  buildExpertDataColumnsById,
+  pickPreferenceColumns,
+} from '../../utils/expert-preference-columns'
 import { useExpertStore } from '../../store/expert-store'
 import type { Expert } from '../../type/expert'
 import { openExpertApplicationView } from '../../utils/expert-application-navigation'
-import { getManagementStatusDisplay } from '../../utils/management-status'
 import { DataTable } from '@/shared/components/table/data-table'
-import { TableDateTimeCell } from '@/shared/components/table/table-datetime-cell'
 import {
   TableActionsDropdown,
   TableActionsItem,
@@ -84,10 +86,6 @@ const displayValue = (value: unknown): string => {
   if (typeof value === 'string' && value.trim() === '') return 'N/A'
   return String(value)
 }
-
-const formatDateTimeCell = (value?: string | null) => (
-  <TableDateTimeCell value={value} emptyLabel="N/A" />
-)
 
 const EXPORT_COLUMN_MAP: Record<string, { header: string; accessor: (e: Expert) => string }> = {
   'expert-id': { header: 'Expert ID', accessor: (e) => exportDisplayValue(e.expertId) },
@@ -151,16 +149,7 @@ const EXPORT_COLUMN_MAP: Record<string, { header: string; accessor: (e: Expert) 
   },
 }
 
-const DEFAULT_VISIBLE_IDS = [
-  'expert-id',
-  'name',
-  'email',
-  'profession',
-  'status',
-  'service-type',
-  'created-at',
-  'last-active',
-]
+const DEFAULT_VISIBLE_IDS = DEFAULT_EXPERT_MANAGEMENT_VISIBLE_COLUMN_IDS
 
 export const ExpertManagementPage = () => {
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
@@ -330,7 +319,6 @@ export const ExpertManagementPage = () => {
   const bulkRejectMutation = useBulkRejectExperts()
   const bulkRestoreMutation = useBulkRestoreExperts()
   const bulkVerifyKycMutation = useBulkVerifyKycExperts()
-  const bulkVerifyDigilockerMutation = useBulkVerifyDigilockerExperts()
   const bulkEscalateMutation = useBulkEscalateExperts()
 
   const [isMembershipModalOpen, setIsMembershipModalOpen] = useState(false)
@@ -714,14 +702,14 @@ export const ExpertManagementPage = () => {
       } else if (actionLabel.includes('Notify')) {
         const params = new URLSearchParams({
           channel: 'push',
-          audience: 'expert-management',
+          audience: 'experts',
           partnerIds: ids.join(','),
         })
         navigate(`/communication/create?${params.toString()}`)
       } else if (actionLabel.includes('Message') || actionLabel.includes('Communicate')) {
         const params = new URLSearchParams({
           channel: 'email',
-          audience: 'expert-management',
+          audience: 'experts',
           partnerIds: ids.join(','),
         })
         navigate(`/communication/create?${params.toString()}`)
@@ -781,20 +769,6 @@ export const ExpertManagementPage = () => {
             },
           },
         )
-      } else if (actionLabel.includes('DigiLocker')) {
-        bulkVerifyDigilockerMutation.mutate(
-          { partnerIds: ids },
-          {
-            onSuccess: () => {
-              toast.success(`DigiLocker marked as verified for ${ids.length} expert(s)`)
-              setSelectedExpertIds([])
-            },
-            onError: (err: unknown) => {
-              const error = err as { response?: { data?: { message?: string } } }
-              toast.error(error?.response?.data?.message || 'Failed to verify DigiLocker.')
-            },
-          },
-        )
       } else {
         toast.info(`${actionLabel} completed for ${ids.length} expert(s)`)
         setSelectedExpertIds([])
@@ -804,7 +778,6 @@ export const ExpertManagementPage = () => {
       bulkApproveMutation,
       bulkRejectMutation,
       bulkRestoreMutation,
-      bulkVerifyDigilockerMutation,
       bulkVerifyKycMutation,
       experts,
       handleBulkExportSelected,
@@ -848,87 +821,17 @@ export const ExpertManagementPage = () => {
       },
     }
 
-    const dataColumnsById: Record<string, ColumnDef<Expert>> = {
-      'expert-id': {
-        id: 'expert-id',
-        accessorKey: 'expertId',
-        header: 'Expert ID',
-        cell: ({ row }) => (
-          <span className="ui-table-id uppercase">{displayValue(row.original.expertId)}</span>
-        ),
-      },
-      name: {
-        id: 'name',
-        accessorKey: 'name',
-        header: 'Name',
-        cell: ({ row }) => (
-          <span className="font-medium text-white">{displayValue(row.original.name)}</span>
-        ),
-      },
-      email: {
-        id: 'email',
-        accessorKey: 'email',
-        header: 'Email ID',
-        cell: ({ row }) => displayValue(row.original.email),
-      },
-      profession: {
-        id: 'profession',
-        accessorKey: 'profession',
-        header: 'Profession',
-        cell: ({ row }) => displayValue(row.original.profession),
-      },
-      status: {
-        id: 'status',
-        accessorKey: 'status',
-        header: 'Status',
-        cell: ({ row }) => {
-          const { label, className } = getManagementStatusDisplay(row.original.status)
-          return <span className={className}>{label}</span>
-        },
-      },
-      'service-type': {
-        id: 'service-type',
-        accessorKey: 'serviceType',
-        header: 'Service Type',
-        cell: ({ row }) => displayValue(row.original.serviceType),
-      },
-      'created-at': {
-        id: 'created-at',
-        accessorKey: 'createdAt',
-        header: 'Created At',
-        cell: ({ row }) => formatDateTimeCell(row.original.createdAt),
-      },
-      'last-active': {
-        id: 'last-active',
-        accessorKey: 'lastActive',
-        header: 'Last Active',
-        cell: ({ row }) => formatDateTimeCell(row.original.lastActive),
-      },
-      reason: {
-        id: 'reason',
-        accessorKey: 'reason',
-        header: 'Reason',
-        cell: ({ row }) => displayValue(row.original.reason),
-      },
-      'reported-at': {
-        id: 'reported-at',
-        accessorKey: 'reportedAt',
-        header: 'Reported At',
-        cell: ({ row }) => formatDateTimeCell(row.original.reportedAt),
-      },
-      'deleted-at': {
-        id: 'deleted-at',
-        accessorKey: 'deletedAt',
-        header: 'Deleted At',
-        cell: ({ row }) => formatDateTimeCell(row.original.deletedAt),
-      },
-    }
+    const dataColumnsById = buildExpertDataColumnsById()
 
     const visibleIds = tableColumnPreferencesQuery.data?.visibleColumnIds?.length
       ? tableColumnPreferencesQuery.data.visibleColumnIds
       : DEFAULT_VISIBLE_IDS
 
-    const preferenceColumns = visibleIds.map((id) => dataColumnsById[id]).filter(Boolean)
+    const preferenceColumns = pickPreferenceColumns(
+      dataColumnsById,
+      visibleIds,
+      DEFAULT_VISIBLE_IDS,
+    )
 
     const actionsColumn: ColumnDef<Expert> = {
       id: 'actions',
@@ -1137,7 +1040,7 @@ export const ExpertManagementPage = () => {
         <div className="flex w-full flex-col items-center gap-3 md:w-auto md:flex-row">
           <Button
             className="ui-manage-metrics h-9 w-full md:w-auto"
-            onClick={() => navigate('/experts/management/metrics?section=table')}
+            onClick={() => navigate('/metrics/expert-management?returnTo=/experts/management')}
           >
             <BarChart3 className="size-4" />
             Manage Metrics
@@ -1240,10 +1143,8 @@ export const ExpertManagementPage = () => {
         emptyMessage="No experts found."
       />
 
-      {/* Export & Advanced Filter Modals */}
       {exportFilterModals}
 
-      {/* Payout History Drawer */}
       <PayoutHistoryDrawer
         isOpen={Boolean(payoutDrawerTarget)}
         onClose={() => setPayoutDrawerTarget(null)}

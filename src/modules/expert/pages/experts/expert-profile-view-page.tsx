@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useNavigate, useParams, type NavigateFunction } from 'react-router-dom'
 
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
@@ -14,7 +14,9 @@ import {
   Briefcase,
   Check,
   CheckSquare,
+  ChevronLeft,
   ChevronRight,
+  CircleArrowOutUpRight,
   CircleMinus,
   Clock,
   Eye,
@@ -37,6 +39,7 @@ import {
   Upload,
   User,
   Users,
+  X,
   Filter,
 } from 'lucide-react'
 
@@ -67,15 +70,23 @@ import {
 import { useEscalationAssignees } from '@/modules/my-tasks/hooks/use-admin-escalation'
 import { escalateServiceApplication } from '@/modules/my-tasks/api/escalation-api'
 import { exportDataToFile } from '@/shared/utils/export-utils'
+import { buildExpertProfileServicesQueryParams } from '@/shared/utils/export-filter-utils'
 import {
   useExpertAnalytics,
+  useExpertAvailability,
   useExpertConsultations,
+  useExpertCustomLink,
   useExpertProfile,
+  useExpertReportsForPartner,
   useExpertServices,
   usePartnerInsights,
+  useUpdateExpertAdminNotes,
+  useUpdateExpertAdminTags,
+  useUpdateExpertCustomLinkVisibility,
 } from '../../hooks/use-expert-profile'
 import {
   DEFAULT_EXPERT_PROFILE_ANALYTICS_METRIC_IDS,
+  EXPERT_PROFILE_ANALYTICS_LEGACY_METRIC_ID_MAP,
   EXPERT_PROFILE_ANALYTICS_METRIC_ID_SET,
   EXPERT_PROFILE_ANALYTICS_METRIC_IDS,
   EXPERT_PROFILE_ANALYTICS_MODULE_KEY,
@@ -95,7 +106,11 @@ import {
   DecisionActionModal,
   type DecisionActionModalOption,
 } from '@/shared/components/modal/decision-action-modal'
+import { PauseCategoryModal } from '../../components/category/pause-category-modal'
 import { AddTagModal } from '@/shared/components/modal/add-tag-modal'
+import { ShareProfileModal } from '@/shared/components/modal/share-profile-modal'
+import { CustomUrlModal } from '../../components/custom-url-modal'
+import { AdminNotesModal } from '@/modules/settings/components/admin-notes-modal'
 import { UpdatePasswordModal } from '@/modules/rbac/components/update-password-modal'
 import { MODERATION_CATEGORY_SLUGS } from '@/modules/settings/api/templates-api'
 import {
@@ -111,7 +126,14 @@ import { useEntityTags } from '@/shared/hooks/use-entity-tags'
 import { cn } from '@/shared/lib/cn'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 import type { FilterValues } from '@/shared/types/data-filter'
-import { buildExpertProfileServicesQueryParams } from '@/shared/utils/export-filter-utils'
+import { fetchSupportTickets } from '@/modules/support-management/api/support-api'
+import type { SupportTicket } from '@/modules/support-management/types/support'
+import {
+  ExpertReportDetailModal,
+  type ExpertReportItem,
+} from '../../components/expert-report-detail-modal'
+import type { PartnerAvailability } from '../../api/expert-api'
+import { useQuery } from '@tanstack/react-query'
 
 type TabKey = 'overview' | 'service-listings' | 'availability' | 'analytics' | 'health'
 
@@ -138,13 +160,123 @@ const PROFILE_ACTIVE_PILL = 'bg-[linear-gradient(180deg,#F6CB86_0%,#E0A263_100%)
 const PROFILE_IDLE_PILL = 'border border-[#FFFFFF33] bg-[#050505] text-white hover:bg-white/5'
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+const DAY_KEYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const
+const ACTIVE_TICKET_STATUSES = new Set(['open', 'in_progress', 'on_hold', 'waiting'])
+const OPEN_REPORT_STATUSES = new Set([
+  'new',
+  'under review',
+  'waiting for response',
+  'escalated',
+  'open',
+])
+const VIOLATION_ISSUE_TYPES = new Set(['fraud', 'misconduct', 'spam', 'fake profile', 'harassment'])
 
 const getApiErrorMessage = (error: unknown) => {
   const err = error as { response?: { data?: { message?: string } } }
   return err?.response?.data?.message || 'Unable to load expert profile.'
 }
 
-const comingSoon = (label: string) => toast.message(`${label} is coming soon`)
+const resolveCustomUrl = (profile: ExpertProfileDetail, analytics?: ExpertAnalyticsData) =>
+  profile.customUrl ||
+  profile.customLink ||
+  profile.profileUrl ||
+  profile.shareUrl ||
+  analytics?.profileSummary?.customUrl ||
+  (analytics as unknown as { profileHeader?: { customUrl?: string } })?.profileHeader?.customUrl ||
+  null
+
+const unwrapReportItems = (payload: unknown): ExpertReportItem[] => {
+  const root = payload as { data?: { items?: ExpertReportItem[] }; items?: ExpertReportItem[] }
+  if (Array.isArray(root?.data?.items)) return root.data.items
+  if (Array.isArray(root?.items)) return root.items
+  return []
+}
+
+const formatClock = (value?: string | null) => {
+  if (!value) return 'â€”'
+  const raw = String(value).trim()
+  if (/[ap]m/i.test(raw)) return raw
+  const [hours, minutes] = raw.split(':').map(Number)
+  if (Number.isNaN(hours)) return raw
+  const suffix = hours >= 12 ? 'PM' : 'AM'
+  const hour12 = hours % 12 || 12
+  return `${hour12}:${String(minutes || 0).padStart(2, '0')} ${suffix}`
+}
+
+const exportCell = (value: unknown) => {
+  if (value == null) return ''
+  if (typeof value === 'string' && value.trim() === '') return ''
+  if (typeof value === 'boolean') return value ? 'Yes' : 'No'
+  return String(value)
+}
+
+const buildExpertTimelineEvents = (
+  profile: ExpertProfileDetail,
+  tickets: SupportTicket[],
+  reports: ExpertReportItem[],
+) => {
+  const events: Array<{ id: string; title: string; detail?: string; at?: string }> = []
+  const createdAt = profile.createdAt
+  const createdMs = createdAt ? new Date(createdAt).getTime() : NaN
+
+  const kycApproved =
+    profile.finalReview?.approvalStatus === 'approved' ||
+    profile.finalReview?.isVerified === true ||
+    String(profile.kycStatus || '').toLowerCase() === 'verified'
+  if (kycApproved) {
+    events.push({
+      id: 'kyc-verified',
+      title: 'KYC verified',
+      detail: profile.finalReview?.approvalStatus || profile.kycStatus || 'Approved',
+      at: profile.updatedAt || createdAt,
+    })
+  }
+
+  const lastActive = profile.lastActiveAt
+  const lastActiveMs = lastActive ? new Date(lastActive).getTime() : NaN
+  if (lastActive && (!Number.isFinite(createdMs) || lastActiveMs !== createdMs)) {
+    events.push({
+      id: 'last-active',
+      title: 'Last active',
+      at: lastActive,
+    })
+  }
+
+  tickets.forEach((ticket) => {
+    const closed = ['resolved', 'closed'].includes(String(ticket.status).toLowerCase())
+    events.push({
+      id: `ticket-${ticket.id}`,
+      title: closed ? 'Support ticket closed' : 'Support ticket opened',
+      detail: `#${ticket.id} â€“ ${ticket.subject}`,
+      at: closed ? ticket.resolvedAt || ticket.createdAt : ticket.createdAt,
+    })
+  })
+
+  reports.forEach((report) => {
+    events.push({
+      id: `report-${report.id || report.reportId}`,
+      title: 'Expert report',
+      detail: report.issueType || report.reason,
+      at: report.submittedAt || report.latestActionTimestamp,
+    })
+  })
+
+  if (events.length === 0) return []
+
+  if (createdAt) {
+    events.push({
+      id: 'account-created',
+      title: 'Account created',
+      at: createdAt,
+    })
+  }
+
+  return events.sort((a, b) => {
+    const aTime = a.at ? new Date(a.at).getTime() : 0
+    const bTime = b.at ? new Date(b.at).getTime() : 0
+    return aTime - bTime
+  })
+}
 
 const toIso = (date: string) => new Date(date).toISOString()
 
@@ -205,7 +337,7 @@ const viewExpertConsultation = async (
 const formatExpertId = formatListingExpertId
 
 const formatExperience = (years?: number, months?: number) => {
-  if (!years && !months) return '—'
+  if (!years && !months) return 'â€”'
   const parts: string[] = []
   if (years) parts.push(`${years} Year${years === 1 ? '' : 's'}`)
   if (months) parts.push(`${months} Month${months === 1 ? '' : 's'}`)
@@ -220,9 +352,9 @@ const formatWorkDate = (value?: string | null) => {
 }
 
 const formatReviewDate = (value?: string | null) => {
-  if (!value) return '—'
+  if (!value) return 'â€”'
   const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return '—'
+  if (Number.isNaN(date.getTime())) return 'â€”'
   return date.toLocaleDateString('en-GB', {
     day: '2-digit',
     month: 'short',
@@ -238,15 +370,15 @@ const toInsightsSort = (filter: string): 'recent' | 'top' | 'all' => {
 
 const formatWorkPeriod = (entry: ExpertWorkExperience) => {
   const start = formatWorkDate(entry.startDate)
-  const end = entry.currentlyWorking ? 'Present' : formatWorkDate(entry.endDate) || '—'
-  if (!start) return '—'
-  return `${start} - ${end}`
+  const end = entry.currentlyWorking ? 'Present' : formatWorkDate(entry.endDate) || 'â€”'
+  if (!start) return 'â€”'
+  return `${start}- ${end}`
 }
 
 const formatLastActive = (value?: string) => {
-  if (!value) return '—'
+  if (!value) return 'â€”'
   const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return '—'
+  if (Number.isNaN(date.getTime())) return 'â€”'
   return date.toLocaleString('en-IN', {
     day: '2-digit',
     month: 'short',
@@ -266,12 +398,12 @@ const getKycBadge = (finalReview?: { isVerified?: boolean; approvalStatus?: stri
 }
 
 const formatServiceType = (value?: string) => {
-  if (!value) return '—'
+  if (!value) return 'â€”'
   return value.charAt(0).toUpperCase() + value.slice(1)
 }
 
 const formatPricingType = (value?: string) => {
-  if (!value) return '—'
+  if (!value) return 'â€”'
   return value
     .split(/[_\s-]+/)
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
@@ -283,7 +415,7 @@ const formatPricing = (option: { durationMinutes: number; pricingType: string; p
   if (option.pricingType === 'free' || option.price === 0) {
     return `${mins} (Free)`
   }
-  return `${mins} (₹${option.price.toLocaleString('en-IN')})`
+  return `${mins} (â‚¹${option.price.toLocaleString('en-IN')})`
 }
 
 function SafeImage({
@@ -329,30 +461,30 @@ function ProfileSidebar({
   profile,
   partnerId,
   analytics,
+  tickets = [],
+  ticketsLoading = false,
+  onCheckTimelines,
+  onOpenCustomUrl,
 }: {
   profile: ExpertProfileDetail
   partnerId: string
   analytics?: ExpertAnalyticsData
+  tickets?: SupportTicket[]
+  ticketsLoading?: boolean
+  onCheckTimelines?: () => void
+  onOpenCustomUrl?: () => void
 }) {
   const navigate = useNavigate()
   const basic = profile.basicProfile
   const kycBadge = getKycBadge(profile.finalReview)
 
-  // Exact Custom Link from Profile API (profile.customUrl / profile.customLink / profile.shareUrl)
-  const customUrl =
-    profile.customUrl ||
-    ((profile as unknown as Record<string, unknown>).customLink as string | undefined) ||
-    profile.profileUrl ||
-    ((profile as unknown as Record<string, unknown>).shareUrl as string | undefined) ||
-    (analytics as unknown as { profileHeader?: { customUrl?: string } })?.profileHeader
-      ?.customUrl ||
-    null
+  const customUrl = resolveCustomUrl(profile, analytics)
+  const customLinkVisible = profile.customLinkVisible !== false
 
   const deepLink =
     ((profile as unknown as Record<string, unknown>).deepLink as string | undefined) ||
     (customUrl && profile.customUsername ? `jomspartner://profile/${profile.customUsername}` : null)
 
-  // Ratings data from Analytics or Profile API (No static fallbacks)
   const ratingAverage =
     analytics?.ratingsSummary?.average ??
     profile.ratings ??
@@ -369,26 +501,22 @@ function ProfileSidebar({
     analytics?.ratingsSummary?.available === true ||
     (typeof ratingCount === 'number' && ratingCount > 0 && ratingAverage != null)
 
-  // NPS score from Analytics or Profile API (No static fallbacks)
   const npsScore =
     analytics?.nps?.available === false
       ? null
       : (analytics?.nps?.score ?? profile.nps ?? profile.analytics?.nps)
 
-  // Experience from basic profile or profile
   const experienceYears = basic?.experienceYears
   const experienceMonths = basic?.experienceMonths
   const formattedExperience =
     formatExperience(experienceYears, experienceMonths) ||
     (profile.experience ? `${profile.experience} Years` : null)
 
-  // Total Earnings from Analytics listingOverview or Profile API
   const rawEarnings =
     analytics?.listingOverview?.totalEarnings ??
     profile.totalEarnings ??
     profile.analytics?.totalEarnings
 
-  // Total Orders Completed from Analytics listingOverview or Profile API
   const rawOrdersCompleted =
     analytics?.listingOverview?.ordersCompleted ??
     profile.totalOrdersCompleted ??
@@ -411,28 +539,26 @@ function ProfileSidebar({
         </SidebarRow>
         <SidebarRow label="Expert Custom URL">
           {customUrl ? (
-            <a
-              href={customUrl}
-              title={deepLink ? `Custom URL: ${customUrl}\nDeep Link: ${deepLink}` : customUrl}
-              onClick={(event) => {
-                event.preventDefault()
-                if (deepLink) {
-                  try {
-                    window.location.href = deepLink
-                  } catch {
-                    // Ignore deep link errors
-                  }
-                }
-                setTimeout(() => {
-                  window.open(customUrl, '_blank')
-                }, 300)
-              }}
-              className="block truncate font-medium text-white underline transition-colors hover:text-[#E0A263]"
-            >
-              {customUrl}
-            </a>
+            customLinkVisible ? (
+              <button
+                type="button"
+                title={deepLink ? `Custom URL: ${customUrl}\nDeep Link: ${deepLink}` : customUrl}
+                onClick={() => onOpenCustomUrl?.()}
+                className="block max-w-full truncate font-medium text-white underline transition-colors hover:text-[#E0A263]"
+              >
+                {customUrl}
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => onOpenCustomUrl?.()}
+                className="font-medium text-white/50 underline transition-colors hover:text-[#E0A263]"
+              >
+                Hidden
+              </button>
+            )
           ) : (
-            '—'
+            'â€”'
           )}
         </SidebarRow>
         <SidebarRow label="Ratings">
@@ -440,25 +566,27 @@ function ProfileSidebar({
             <Star className="size-3.5 fill-[#E0A263] text-[#E0A263]" />
             {ratingsAvailable && ratingAverage !== undefined && ratingAverage !== null
               ? Number(ratingAverage).toFixed(1)
-              : '—'}
+              : 'â€”'}
             <span className="text-body-sm text-muted font-normal">
               ({ratingsAvailable && ratingCount != null ? ratingCount : 0})
             </span>
           </span>
         </SidebarRow>
         <SidebarRow label="NPS">
-          {npsScore !== undefined && npsScore !== null ? npsScore : '—'}
+          {npsScore !== undefined && npsScore !== null ? npsScore : 'â€”'}
         </SidebarRow>
-        <SidebarRow label="Experience">{formattedExperience || '—'}</SidebarRow>
+        <SidebarRow label="Experience">{formattedExperience || 'â€”'}</SidebarRow>
         <SidebarRow label="Total Earnings">
           {rawEarnings !== undefined && rawEarnings !== null
-            ? `₹${Number(rawEarnings).toLocaleString('en-IN')}`
-            : '₹0'}
+            ? `â‚¹${Number(rawEarnings).toLocaleString('en-IN')}`
+            : 'â‚¹0'}
         </SidebarRow>
         <SidebarRow label="Total Order Completed">
           {rawOrdersCompleted !== undefined && rawOrdersCompleted !== null ? rawOrdersCompleted : 0}
         </SidebarRow>
-        <SidebarRow label="Last Active">{formatLastActive(profile.updatedAt)}</SidebarRow>
+        <SidebarRow label="Last Active">
+          {formatLastActive(profile.lastActiveAt || profile.updatedAt)}
+        </SidebarRow>
         <SidebarRow label="KYC">
           <button
             type="button"
@@ -475,11 +603,7 @@ function ProfileSidebar({
           </button>
         </SidebarRow>
         <SidebarRow label="Timelines">
-          <button
-            type="button"
-            onClick={() => comingSoon('Timelines')}
-            className={PROFILE_BTN_PRIMARY}
-          >
+          <button type="button" onClick={onCheckTimelines} className={PROFILE_BTN_PRIMARY}>
             Check Timelines
           </button>
         </SidebarRow>
@@ -489,7 +613,25 @@ function ProfileSidebar({
         <h3 className="mb-4 text-[13px] font-semibold text-white">Support &amp; Admin</h3>
         <div className="rounded-lg bg-[#050505] p-3">
           <p className="text-muted text-[10px]">Active Tickets</p>
-          <p className="text-body-sm mt-1 font-medium text-white">None</p>
+          {ticketsLoading ? (
+            <p className="text-body-sm text-muted mt-1 font-medium">Loadingâ€¦</p>
+          ) : tickets.length === 0 ? (
+            <p className="text-body-sm mt-1 font-medium text-white">None</p>
+          ) : (
+            <ul className="mt-2 space-y-2">
+              {tickets.slice(0, 3).map((ticket) => (
+                <li key={ticket.id}>
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/support/tickets/${ticket.id}`)}
+                    className="text-body-sm w-full truncate text-left font-medium text-white underline-offset-2 hover:underline"
+                  >
+                    # {ticket.id} â€“ {ticket.subject}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
         <div className="mt-3 rounded-lg bg-[#050505] p-3">
           <p className="text-muted text-[10px]">Admin notes</p>
@@ -502,7 +644,173 @@ function ProfileSidebar({
   )
 }
 
-function OverviewTab({ profile, partnerId }: { profile: ExpertProfileDetail; partnerId: string }) {
+function ProfileGallery({ images }: { images: string[] }) {
+  const visibleCount = 4
+  const maxOffset = Math.max(0, images.length - visibleCount)
+  const [offset, setOffset] = useState(0)
+  const [activeIndex, setActiveIndex] = useState<number | null>(null)
+
+  const clampedOffset = Math.min(offset, maxOffset)
+  const visibleImages = images.slice(clampedOffset, clampedOffset + visibleCount)
+  const canGoPrevious = clampedOffset > 0
+  const canGoNext = clampedOffset < maxOffset
+
+  const shiftPrevious = useCallback(() => {
+    setOffset((current) => Math.max(0, current - 1))
+  }, [])
+  const shiftNext = useCallback(() => {
+    setOffset((current) => Math.min(maxOffset, current + 1))
+  }, [maxOffset])
+
+  const closeViewer = useCallback(() => setActiveIndex(null), [])
+  const showPrevious = useCallback(() => {
+    setActiveIndex((current) =>
+      current == null ? current : (current - 1 + images.length) % images.length,
+    )
+  }, [images.length])
+  const showNext = useCallback(() => {
+    setActiveIndex((current) => (current == null ? current : (current + 1) % images.length))
+  }, [images.length])
+
+  useEffect(() => {
+    if (activeIndex == null) return
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') closeViewer()
+      if (event.key === 'ArrowLeft') showPrevious()
+      if (event.key === 'ArrowRight') showNext()
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [activeIndex, closeViewer, showNext, showPrevious])
+
+  return (
+    <>
+      <div className="relative mt-4">
+        {images.length > visibleCount ? (
+          <button
+            type="button"
+            aria-label="Previous gallery images"
+            disabled={!canGoPrevious}
+            onClick={shiftPrevious}
+            className={cn(
+              'absolute top-1/2 left-0 z-10 flex size-8 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-[#1C1C1C] text-white shadow-lg',
+              canGoPrevious ? 'hover:bg-[#2A2A2A]' : 'cursor-not-allowed opacity-40',
+            )}
+          >
+            <ChevronLeft className="size-4" />
+          </button>
+        ) : null}
+
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {visibleImages.map((image, index) => {
+            const actualIndex = clampedOffset + index
+            return (
+              <button
+                key={`${image}-${actualIndex}`}
+                type="button"
+                onClick={() => setActiveIndex(actualIndex)}
+                className="aspect-square overflow-hidden rounded-xl bg-[#050505]"
+              >
+                <SafeImage
+                  src={image}
+                  alt={`Gallery ${actualIndex + 1}`}
+                  className="size-full object-cover"
+                  fallback={
+                    <div className="text-muted flex size-full items-center justify-center">
+                      <ImageOff className="size-5" />
+                    </div>
+                  }
+                />
+              </button>
+            )
+          })}
+        </div>
+
+        {images.length > visibleCount ? (
+          <button
+            type="button"
+            aria-label="Next gallery images"
+            disabled={!canGoNext}
+            onClick={shiftNext}
+            className={cn(
+              'absolute top-1/2 right-0 z-10 flex size-8 translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-[#1C1C1C] text-white shadow-lg',
+              canGoNext ? 'hover:bg-[#2A2A2A]' : 'cursor-not-allowed opacity-40',
+            )}
+          >
+            <ChevronRight className="size-4" />
+          </button>
+        ) : null}
+      </div>
+
+      {activeIndex != null && images[activeIndex] ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+          onClick={closeViewer}
+        >
+          <button
+            type="button"
+            aria-label="Close gallery"
+            onClick={closeViewer}
+            className="absolute top-4 right-4 rounded-full bg-white/10 p-2 text-white hover:bg-white/20"
+          >
+            <X className="size-5" />
+          </button>
+          {images.length > 1 ? (
+            <button
+              type="button"
+              aria-label="Previous image"
+              onClick={(event) => {
+                event.stopPropagation()
+                showPrevious()
+              }}
+              className="absolute left-4 rounded-full bg-white/10 p-2 text-white hover:bg-white/20"
+            >
+              <ChevronLeft className="size-6" />
+            </button>
+          ) : null}
+          <div
+            className="flex max-h-[85vh] max-w-[min(900px,90vw)] flex-col items-center"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <img
+              src={images[activeIndex]}
+              alt={`Gallery ${activeIndex + 1}`}
+              className="max-h-[80vh] max-w-full rounded-lg object-contain"
+            />
+            <p className="mt-3 text-[13px] text-white/70">
+              {activeIndex + 1} / {images.length}
+            </p>
+          </div>
+          {images.length > 1 ? (
+            <button
+              type="button"
+              aria-label="Next image"
+              onClick={(event) => {
+                event.stopPropagation()
+                showNext()
+              }}
+              className="absolute right-4 rounded-full bg-white/10 p-2 text-white hover:bg-white/20"
+            >
+              <ChevronRight className="size-6" />
+            </button>
+          ) : null}
+        </div>
+      ) : null}
+    </>
+  )
+}
+
+function OverviewTab({
+  profile,
+  partnerId,
+  tags = [],
+  timelineEvents = [],
+}: {
+  profile: ExpertProfileDetail
+  partnerId: string
+  tags?: string[]
+  timelineEvents?: Array<{ id: string; title: string; detail?: string; at?: string }>
+}) {
   const basic = profile.basicProfile
   const offerings = basic?.offerings ?? []
   const galleryImages = profile.gallery?.images ?? []
@@ -516,97 +824,80 @@ function OverviewTab({ profile, partnerId }: { profile: ExpertProfileDetail; par
   const reviews: PartnerInsightReview[] = insightsRes?.data?.reviews ?? []
 
   return (
-    <div className="flex flex-col gap-5">
-      <div className={cn(PROFILE_CARD, 'p-6')}>
-        <section>
-          <h3 className="text-body-md mb-3 font-semibold text-white">About</h3>
-          <p className="text-[13px] leading-relaxed text-white/70">
-            {basic?.bio || 'No bio provided.'}
-          </p>
+    <div className={cn(PROFILE_CARD, 'p-6')}>
+      <section>
+        <h3 className="text-[15px] font-semibold text-white">About</h3>
+        <p className="mt-3 text-[13px] leading-relaxed text-white/70">
+          {profile.bio || basic?.bio || 'No bio provided.'}
+        </p>
+        {tags.length > 0 ? (
           <div className="mt-4 flex flex-wrap gap-2">
-            {profile.phoneVerified && (
-              <span className="rounded-md bg-[rgb(0_166_62_/_30%)] px-2.5 py-1 text-[10px] font-bold text-[#00A63E]">
-                Phone Verified
+            {tags.map((tag) => (
+              <span
+                key={tag}
+                className="rounded-md border border-white/20 bg-black/40 px-2.5 py-1 text-[11px] font-semibold text-white"
+              >
+                {tag}
               </span>
-            )}
-            {profile.emailVerified && (
-              <span className="rounded-md bg-[rgb(0_166_62_/_30%)] px-2.5 py-1 text-[10px] font-bold text-[#00A63E]">
-                Email Verified
-              </span>
-            )}
+            ))}
           </div>
-        </section>
+        ) : null}
+      </section>
 
+      <section className="mt-6 border-t border-white/5 pt-6">
+        <h3 className="text-[15px] font-semibold text-white">Core Offerings</h3>
         {offerings.length > 0 ? (
-          <section className="mt-5 pt-5">
-            <h3 className="text-body-md mb-4 font-semibold text-white">Core Offerings</h3>
-            <ul className="space-y-2.5">
-              {offerings.map((item) => (
-                <li key={item} className="flex items-center gap-2 text-[13px] text-white/70">
-                  <Check className="size-4 shrink-0 text-white" strokeWidth={2.5} />
-                  {item}
-                </li>
-              ))}
-            </ul>
-          </section>
-        ) : null}
+          <ul className="mt-4 space-y-2.5">
+            {offerings.map((item) => (
+              <li key={item} className="flex items-center gap-2.5 text-[13px] text-white/70">
+                <Check className="size-4 shrink-0 text-white" strokeWidth={2.5} />
+                {item}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="mt-3 text-[13px] text-white/40">No core offerings added yet.</p>
+        )}
+      </section>
 
+      <section className="mt-6 border-t border-white/5 pt-6">
+        <h3 className="text-[15px] font-semibold text-white">Gallery</h3>
         {galleryImages.length > 0 ? (
-          <section className="mt-5 pt-5">
-            <h3 className="text-body-md mb-4 font-semibold text-white">Gallery</h3>
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5">
-              {galleryImages.map((image, index) => (
-                <div
-                  key={`${image}-${index}`}
-                  className="aspect-square overflow-hidden rounded-lg bg-[#050505]"
-                >
-                  <SafeImage
-                    src={image}
-                    alt={`Gallery ${index + 1}`}
-                    className="size-full object-cover"
-                    fallback={
-                      <div className="text-muted flex size-full items-center justify-center">
-                        <ImageOff className="size-5" />
-                      </div>
-                    }
-                  />
-                </div>
-              ))}
-            </div>
-          </section>
-        ) : null}
-      </div>
+          <ProfileGallery images={galleryImages} />
+        ) : (
+          <p className="mt-3 text-[13px] text-white/40">No gallery images yet.</p>
+        )}
+      </section>
 
-      {workExperience.length > 0 ? (
-        <div className={cn(PROFILE_CARD, 'p-6')}>
-          <h3 className="text-body-md mb-4 font-semibold text-white">Work Experience</h3>
-          <div className="space-y-3">
+      <section className="mt-6 border-t border-white/5 pt-6">
+        <h3 className="text-[15px] font-semibold text-white">Work Experience</h3>
+        {workExperience.length > 0 ? (
+          <div className="mt-4 space-y-3">
             {workExperience.map((entry) => (
               <div
                 key={entry._id || `${entry.jobTitle}-${entry.companyName}`}
-                className="flex gap-3 rounded-lg bg-[#050505] p-4"
+                className="flex items-start gap-3"
               >
-                <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#141414]">
-                  <Briefcase className="size-4 text-[#E0A263]" />
+                <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#050505]">
+                  <Briefcase className="size-4 text-white/80" />
                 </div>
-                <div>
-                  <p className="text-[13px] font-semibold text-white">{entry.jobTitle || '—'}</p>
-                  <p className="text-body-sm text-white/50">
-                    {entry.companyName || '—'} | {formatWorkPeriod(entry)}
+                <div className="min-w-0 pt-0.5">
+                  <p className="text-[13px] font-semibold text-white">{entry.jobTitle || 'â€”'}</p>
+                  <p className="mt-0.5 text-[12px] text-white/45">
+                    {entry.companyName || 'Company name'} | {formatWorkPeriod(entry)}
                   </p>
-                  {entry.description ? (
-                    <p className="text-body-sm mt-1 text-white/70">{entry.description}</p>
-                  ) : null}
                 </div>
               </div>
             ))}
           </div>
-        </div>
-      ) : null}
+        ) : (
+          <p className="mt-3 text-[13px] text-white/40">No work experience added yet.</p>
+        )}
+      </section>
 
-      <div className={cn(PROFILE_CARD, 'p-6')}>
-        <h3 className="text-body-md mb-4 font-semibold text-white">Reviews &amp; Ratings</h3>
-        <div className="mb-4 flex flex-wrap gap-2">
+      <section className="mt-6 border-t border-white/5 pt-6">
+        <h3 className="text-[15px] font-semibold text-white">Reviews &amp; Ratings</h3>
+        <div className="mt-4 mb-4 flex flex-wrap gap-2">
           {[
             { key: 'all', label: 'All Reviews' },
             { key: 'recent', label: 'Most Recent' },
@@ -617,7 +908,7 @@ function OverviewTab({ profile, partnerId }: { profile: ExpertProfileDetail; par
               type="button"
               onClick={() => setReviewFilter(filter.key)}
               className={cn(
-                'text-body-sm rounded-lg px-3 py-1.5 font-semibold transition-colors',
+                'rounded-lg px-3 py-1.5 text-[12px] font-semibold transition-colors',
                 reviewFilter === filter.key ? PROFILE_ACTIVE_PILL : PROFILE_IDLE_PILL,
               )}
             >
@@ -625,57 +916,91 @@ function OverviewTab({ profile, partnerId }: { profile: ExpertProfileDetail; par
             </button>
           ))}
         </div>
-        <div className="space-y-3">
+        <div className="space-y-4">
           {reviewsLoading ? (
-            <p className="text-body-sm rounded-lg bg-[#050505] p-4 text-white/50">
-              Loading reviews…
-            </p>
+            <p className="text-[13px] text-white/50">Loading reviewsâ€¦</p>
           ) : reviews.length === 0 ? (
-            <p className="text-body-sm rounded-lg bg-[#050505] p-4 text-white/50">
-              No reviews yet for this expert.
-            </p>
+            <p className="text-[13px] text-white/40">No reviews yet for this expert.</p>
           ) : (
-            reviews.map((review) => (
-              <div key={review.id} className="rounded-lg bg-[#050505] p-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-center gap-3">
-                    <div className="flex size-9 items-center justify-center overflow-hidden rounded-full bg-[#141414]">
-                      {review.userAvatarUrl ? (
-                        <img src={review.userAvatarUrl} alt="" className="size-full object-cover" />
-                      ) : (
-                        <User className="text-muted size-4" />
-                      )}
-                    </div>
-                    <div>
-                      <p className="text-[13px] font-semibold text-white">
+            reviews.map((review) => {
+              const rating = Math.max(0, Math.min(5, Number(review.rating) || 0))
+              const role = review.userRole?.trim()
+              return (
+                <div key={review.id} className="flex items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-3">
+                      <div className="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#050505]">
+                        {review.userAvatarUrl ? (
+                          <img
+                            src={review.userAvatarUrl}
+                            alt=""
+                            className="size-full object-cover"
+                          />
+                        ) : (
+                          <User className="text-muted size-4" />
+                        )}
+                      </div>
+                      <p className="truncate text-[13px] font-semibold text-white">
                         {review.userName || 'User'}
+                        {role ? (
+                          <span className="font-normal text-white/45"> â€¢ {role}</span>
+                        ) : null}
                       </p>
                     </div>
+                    {review.title ? (
+                      <p className="mt-2 pl-12 text-[12px] text-white/45">
+                        Service Availed: {review.title}
+                      </p>
+                    ) : null}
+                    {review.text ? (
+                      <p className="mt-1 pl-12 text-[13px] leading-relaxed text-white/70">
+                        {review.text}
+                      </p>
+                    ) : null}
                   </div>
-                  <div className="text-right">
-                    <div className="flex items-center gap-0.5">
-                      {Array.from({
-                        length: Math.max(0, Math.min(5, review.rating || 0)),
-                      }).map((_, index) => (
-                        <Star key={index} className="size-3 fill-[#E0A263] text-[#E0A263]" />
+                  <div className="shrink-0 pt-1 text-right">
+                    <div className="flex items-center justify-end gap-0.5">
+                      {Array.from({ length: 5 }).map((_, index) => (
+                        <Star
+                          key={index}
+                          className={cn(
+                            'size-3',
+                            index < rating
+                              ? 'fill-[#E0A263] text-[#E0A263]'
+                              : 'fill-transparent text-white/20',
+                          )}
+                        />
                       ))}
                     </div>
-                    <p className="mt-1 text-[10px] text-white/50">
-                      {review.relativeLabel || formatReviewDate(review.createdAt)}
+                    <p className="mt-1 text-[11px] text-white/45">
+                      {formatReviewDate(review.createdAt)}
                     </p>
                   </div>
                 </div>
-                {review.title ? (
-                  <p className="text-body-sm mt-2 text-white/50">Service Availed: {review.title}</p>
-                ) : null}
-                {review.text ? (
-                  <p className="text-body-sm mt-2 text-white/70">{review.text}</p>
-                ) : null}
-              </div>
-            ))
+              )
+            })
           )}
         </div>
-      </div>
+      </section>
+
+      <section id="expert-timeline" className="mt-6 scroll-mt-6 border-t border-white/5 pt-6">
+        <h3 className="text-[15px] font-semibold text-white">Timeline</h3>
+        {timelineEvents.length === 0 ? (
+          <p className="mt-3 text-[13px] text-white/40">No timeline events yet.</p>
+        ) : (
+          <ol className="mt-4 space-y-3">
+            {timelineEvents.map((event) => (
+              <li key={event.id} className="rounded-lg bg-[#050505] px-4 py-3">
+                <p className="text-[13px] font-semibold text-white">{event.title}</p>
+                {event.detail ? (
+                  <p className="text-muted mt-1 text-[12px]">{event.detail}</p>
+                ) : null}
+                <p className="text-muted mt-1 text-[11px]">{formatReviewDate(event.at)}</p>
+              </li>
+            ))}
+          </ol>
+        )}
+      </section>
     </div>
   )
 }
@@ -812,14 +1137,14 @@ function ConsultationDetailCard({
             <Phone className="mx-auto size-4 text-[#E0A263]" />
             <p className="text-body-sm text-muted mt-2">Mode</p>
             <p className="text-body-sm font-semibold text-white capitalize">
-              {consultation.mode || '—'}
+              {consultation.mode || 'â€”'}
             </p>
           </div>
           <div className="rounded-lg bg-[#050505] p-3 text-center">
             <Languages className="mx-auto size-4 text-[#E0A263]" />
             <p className="text-body-sm text-muted mt-2">Language</p>
             <p className="text-body-sm font-semibold text-white">
-              {(consultation.languages ?? []).join(', ') || '—'}
+              {(consultation.languages ?? []).join(', ') || 'â€”'}
             </p>
           </div>
           <div className="rounded-lg bg-[#050505] p-3 text-center">
@@ -828,7 +1153,7 @@ function ConsultationDetailCard({
             <p className="text-body-sm font-semibold text-white">
               {consultation.hasFollowUp && consultation.followUpDays
                 ? `${consultation.followUpDays} Days`
-                : '—'}
+                : 'â€”'}
             </p>
           </div>
         </div>
@@ -862,7 +1187,30 @@ function ConsultationDetailCard({
   )
 }
 
-function ServicesSubTab({ expertId }: { expertId: string }) {
+const unwrapExpertList = <T,>(payload: unknown): T[] => {
+  if (!payload) return []
+  if (Array.isArray(payload)) return payload as T[]
+  if (typeof payload === 'object') {
+    const value = payload as { data?: unknown }
+    if (Array.isArray(value.data)) return value.data as T[]
+    if (
+      value.data &&
+      typeof value.data === 'object' &&
+      Array.isArray((value.data as { data?: unknown }).data)
+    ) {
+      return (value.data as { data: T[] }).data
+    }
+  }
+  return []
+}
+
+function ServicesSubTab({
+  expertId,
+  fallbackServices = [],
+}: {
+  expertId: string
+  fallbackServices?: ExpertService[]
+}) {
   const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState('')
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
@@ -878,17 +1226,13 @@ function ServicesSubTab({ expertId }: { expertId: string }) {
   )
 
   const { data, isLoading, isError } = useExpertServices(expertId, serviceQueryParams, true)
-  const services = useMemo(() => {
-    if (!data) return []
-    if (Array.isArray(data.data)) return data.data
-    if (Array.isArray((data as { data?: ExpertService[] }).data)) {
-      return (data as { data: ExpertService[] }).data
-    }
-    if (Array.isArray(data)) return data as unknown as ExpertService[]
-    return []
-  }, [data])
-
   const hasSearchOrFilters = Boolean(searchQuery.trim()) || Object.keys(appliedFilters).length > 0
+  const services = useMemo(() => {
+    const fetched = unwrapExpertList<ExpertService>(data)
+    if (fetched.length > 0) return fetched
+    if (!hasSearchOrFilters) return fallbackServices
+    return []
+  }, [data, fallbackServices, hasSearchOrFilters])
 
   const handleApplyFilters = useCallback((values: FilterValues) => {
     toast.success('Filters applied')
@@ -935,11 +1279,6 @@ function ServicesSubTab({ expertId }: { expertId: string }) {
   const [bulkDeleteAdminNotes, setBulkDeleteAdminNotes] = useState('')
 
   const [isBulkPauseModalOpen, setIsBulkPauseModalOpen] = useState(false)
-  const [bulkPauseReasons, setBulkPauseReasons] = useState<string[]>([])
-  const [bulkPauseStartDate, setBulkPauseStartDate] = useState('')
-  const [bulkPauseEndDate, setBulkPauseEndDate] = useState('')
-  const [bulkPauseIndefinitely, setBulkPauseIndefinitely] = useState(false)
-  const [bulkPauseAdminNotes, setBulkPauseAdminNotes] = useState('')
 
   const [isEscalateModalOpen, setIsEscalateModalOpen] = useState(false)
   const [escalateAdminNotes, setEscalateAdminNotes] = useState('')
@@ -960,7 +1299,7 @@ function ServicesSubTab({ expertId }: { expertId: string }) {
     MODERATION_CATEGORY_SLUGS.deleteService,
   )
   const { options: pauseReasonOptions } = useModerationReasonOptions(
-    MODERATION_CATEGORY_SLUGS.suspendService,
+    MODERATION_CATEGORY_SLUGS.pauseService,
   )
 
   const closeEscalateModal = useCallback(() => {
@@ -1018,50 +1357,40 @@ function ServicesSubTab({ expertId }: { expertId: string }) {
     setIsBulkPauseModalOpen(true)
   }, [selectedServiceIds])
 
-  const confirmBulkPause = useCallback(() => {
-    if (selectedServiceIds.length === 0) return
-    if (pauseReasonOptions.length > 0 && bulkPauseReasons.length === 0) {
-      toast.error('Please select at least one reason for pausing.')
-      return
-    }
-    if (!bulkPauseAdminNotes.trim()) {
-      toast.error('Admin notes are required for pausing.')
-      return
-    }
+  const confirmBulkPause = useCallback(
+    (payload: { reasons: string[]; adminNotes: string }) => {
+      if (selectedServiceIds.length === 0) return
+      if (pauseReasonOptions.length > 0 && payload.reasons.length === 0) {
+        toast.error('Please select at least one reason for pausing.')
+        return
+      }
+      if (!payload.adminNotes.trim()) {
+        toast.error('Admin notes are required for pausing.')
+        return
+      }
 
-    bulkPauseMutation.mutate(
-      {
-        serviceIds: selectedServiceIds,
-        selectedReasons: bulkPauseReasons,
-        adminNotes: bulkPauseAdminNotes.trim(),
-        startDate: bulkPauseStartDate,
-        endDate: bulkPauseEndDate,
-        indefinite: bulkPauseIndefinitely,
-      },
-      {
-        onSuccess: () => {
-          toast.success(`Paused ${selectedServiceIds.length} selected service(s)`)
-          setSelectedServiceIds([])
-          setIsBulkPauseModalOpen(false)
-          setBulkPauseReasons([])
-          setBulkPauseAdminNotes('')
+      bulkPauseMutation.mutate(
+        {
+          serviceIds: selectedServiceIds,
+          selectedReasons: payload.reasons,
+          adminNotes: payload.adminNotes.trim(),
+          indefinite: true,
         },
-        onError: (err: unknown) => {
-          const error = err as { response?: { data?: { message?: string } } }
-          toast.error(error?.response?.data?.message || 'Failed to pause services')
+        {
+          onSuccess: () => {
+            toast.success(`Paused ${selectedServiceIds.length} selected service(s)`)
+            setSelectedServiceIds([])
+            setIsBulkPauseModalOpen(false)
+          },
+          onError: (err: unknown) => {
+            const error = err as { response?: { data?: { message?: string } } }
+            toast.error(error?.response?.data?.message || 'Failed to pause services')
+          },
         },
-      },
-    )
-  }, [
-    selectedServiceIds,
-    bulkPauseReasons,
-    bulkPauseAdminNotes,
-    pauseReasonOptions.length,
-    bulkPauseStartDate,
-    bulkPauseEndDate,
-    bulkPauseIndefinitely,
-    bulkPauseMutation,
-  ])
+      )
+    },
+    [selectedServiceIds, pauseReasonOptions.length, bulkPauseMutation],
+  )
 
   const handleBulkHide = useCallback(() => {
     if (selectedServiceIds.length === 0) return
@@ -1130,7 +1459,7 @@ function ServicesSubTab({ expertId }: { expertId: string }) {
     }
     const params = new URLSearchParams({
       channel: 'push',
-      audience: 'service-management',
+      audience: 'experts',
       partnerIds: expertId,
     })
     navigate(`/communication/create?${params.toString()}`)
@@ -1143,7 +1472,7 @@ function ServicesSubTab({ expertId }: { expertId: string }) {
     }
     const params = new URLSearchParams({
       channel: 'email',
-      audience: 'service-management',
+      audience: 'experts',
       partnerIds: expertId,
     })
     navigate(`/communication/create?${params.toString()}`)
@@ -1324,7 +1653,7 @@ function ServicesSubTab({ expertId }: { expertId: string }) {
               title="Escalate selected services"
               className="flex size-8 items-center justify-center rounded-md bg-black text-white transition-colors hover:bg-white/10"
             >
-              <FileText className="size-3.5" aria-hidden="true" />
+              <CircleArrowOutUpRight className="size-3.5" aria-hidden="true" />
             </button>
           </div>
         </div>
@@ -1335,14 +1664,16 @@ function ServicesSubTab({ expertId }: { expertId: string }) {
           <div className="border-brand-accent size-8 animate-spin rounded-full border-4 border-t-transparent" />
         </div>
       )}
-      {(isError || (!isLoading && services.length === 0)) && (
+      {!isLoading && services.length === 0 && (
         <div className={cn(PROFILE_CARD, 'p-8 text-center text-[13px] text-white/50')}>
-          {hasSearchOrFilters
-            ? 'No matching services found.'
-            : 'No services found for this expert.'}
+          {isError
+            ? 'Unable to load services for this expert.'
+            : hasSearchOrFilters
+              ? 'No matching services found.'
+              : 'No services found for this expert.'}
         </div>
       )}
-      {!isLoading && !isError && services.length > 0 && (
+      {!isLoading && services.length > 0 && (
         <div className="space-y-3">
           {services.map((service) => (
             <ServiceListCard
@@ -1389,40 +1720,23 @@ function ServicesSubTab({ expertId }: { expertId: string }) {
         isSubmitting={bulkDeleteMutation.isPending}
       />
 
-      <DecisionActionModal
+      <PauseCategoryModal
         open={isBulkPauseModalOpen}
-        variant="suspend"
         title={
           selectedServiceIds.length > 1
             ? `Pause ${selectedServiceIds.length} Services`
             : 'Pause Service'
         }
-        description={`Are you sure you want to pause ${selectedServiceIds.length} selected service(s)? They will be hidden from clients until reactivated.`}
-        submitLabel={
+        heading={
           selectedServiceIds.length > 1
-            ? `Pause ${selectedServiceIds.length} Services`
-            : 'Pause Service'
+            ? `Are you sure you want  Pause these ${selectedServiceIds.length} Services.`
+            : 'Are you sure you want  Pause this Service.'
         }
-        reasonOptions={pauseReasonOptions}
-        selectedReasons={bulkPauseReasons}
-        onReasonToggle={(value) =>
-          setBulkPauseReasons((current) =>
-            current.includes(value)
-              ? current.filter((item) => item !== value)
-              : [...current, value],
-          )
-        }
-        showTimeline
-        startDate={bulkPauseStartDate}
-        onStartDateChange={setBulkPauseStartDate}
-        endDate={bulkPauseEndDate}
-        onEndDateChange={setBulkPauseEndDate}
-        indefinite={bulkPauseIndefinitely}
-        onIndefiniteChange={setBulkPauseIndefinitely}
-        adminNotes={bulkPauseAdminNotes}
-        onAdminNotesChange={setBulkPauseAdminNotes}
+        description="This will result in hiding this service from users."
+        submitLabel="Pause Service"
+        reasonCategorySlug={MODERATION_CATEGORY_SLUGS.pauseService}
         onClose={() => setIsBulkPauseModalOpen(false)}
-        onSubmit={confirmBulkPause}
+        onConfirm={confirmBulkPause}
         isSubmitting={bulkPauseMutation.isPending}
       />
 
@@ -1540,10 +1854,17 @@ function ServiceListCard({
   )
 }
 
-function ConsultationsSubTab({ expertId }: { expertId: string }) {
+function ConsultationsSubTab({
+  expertId,
+  fallbackConsultations = [],
+}: {
+  expertId: string
+  fallbackConsultations?: ExpertConsultation[]
+}) {
   const navigate = useNavigate()
-  const { data, isLoading, isError } = useExpertConsultations(expertId, 1, 10, true)
-  const consultations = data?.data ?? []
+  const { data, isLoading, isError } = useExpertConsultations(expertId, 1, 100, true)
+  const consultations = unwrapExpertList<ExpertConsultation>(data)
+  const visibleConsultations = consultations.length > 0 ? consultations : fallbackConsultations
 
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null)
   const [requestChangesTarget, setRequestChangesTarget] = useState<ExpertConsultation | null>(null)
@@ -1764,19 +2085,18 @@ function ConsultationsSubTab({ expertId }: { expertId: string }) {
           <div className="border-brand-accent size-8 animate-spin rounded-full border-4 border-t-transparent" />
         </div>
       )}
-      {isError && (
+      {isError && visibleConsultations.length === 0 && (
         <div className="bg-brand-danger/10 rounded-lg border border-red-500/40 px-4 py-3 text-sm text-red-400">
           Consultation not found
         </div>
       )}
-      {!isLoading && !isError && consultations.length === 0 && (
+      {!isLoading && visibleConsultations.length === 0 && !isError && (
         <div className="rounded-xl bg-[#141414] p-8 text-center text-[13px] text-white/50">
           Consultation not found
         </div>
       )}
       {!isLoading &&
-        !isError &&
-        consultations.map((consultation) => (
+        visibleConsultations.map((consultation) => (
           <ConsultationDetailCard
             key={consultation._id}
             consultation={consultation}
@@ -1797,7 +2117,7 @@ function ConsultationsSubTab({ expertId }: { expertId: string }) {
       <DecisionActionModal
         open={Boolean(requestChangesTarget)}
         variant="requestChanges"
-        title="Request Changes – Consultation Approval"
+        title="Request Changes â€“ Consultation Approval"
         description="Are you sure you want to Request Changes to this application? The applicant will be notified via email."
         submitLabel="Request Changes"
         reasonOptions={requestChangesReasonOptions}
@@ -1878,10 +2198,14 @@ function ServiceListingsTab({
   expertId,
   listingSubTab,
   onSubTabChange,
+  fallbackServices = [],
+  fallbackConsultations = [],
 }: {
   expertId: string
   listingSubTab: ListingSubTab
   onSubTabChange: (tab: ListingSubTab) => void
+  fallbackServices?: ExpertService[]
+  fallbackConsultations?: ExpertConsultation[]
 }) {
   const navigate = useNavigate()
   return (
@@ -1912,60 +2236,101 @@ function ServiceListingsTab({
         </button>
       </div>
 
-      {listingSubTab === 'services' && <ServicesSubTab expertId={expertId} />}
+      {listingSubTab === 'services' && (
+        <ServicesSubTab expertId={expertId} fallbackServices={fallbackServices} />
+      )}
 
-      {listingSubTab === 'consultations' && <ConsultationsSubTab expertId={expertId} />}
+      {listingSubTab === 'consultations' && (
+        <ConsultationsSubTab expertId={expertId} fallbackConsultations={fallbackConsultations} />
+      )}
     </div>
   )
 }
 
-function AvailabilityTab() {
+function AvailabilityTab({
+  availability,
+  isLoading,
+}: {
+  availability?: PartnerAvailability | null
+  isLoading?: boolean
+}) {
+  const weekly = availability?.weeklyAvailability ?? []
+  const unavailable = availability?.unavailableDates ?? []
+  const weeklyByDay = new Map(
+    weekly.map((item) => [
+      String(item.day || '')
+        .toLowerCase()
+        .slice(0, 3),
+      item,
+    ]),
+  )
+
   return (
     <div className="rounded-xl bg-[#141414] p-6">
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <div>
           <h3 className="text-body-md mb-4 font-semibold text-white">Availability</h3>
-          <div className="overflow-hidden rounded-lg">
-            <div className="text-body-sm text-muted grid grid-cols-3 bg-black px-4 py-2 font-semibold">
-              <span>Days</span>
-              <span>From</span>
-              <span>To</span>
-            </div>
-            {DAYS.map((day) => (
-              <div key={day} className="text-body-sm grid grid-cols-3 items-center px-4 py-3">
-                <span className="text-white">{day}</span>
-                <span className="text-muted inline-flex w-fit items-center gap-1 rounded-full bg-black px-3 py-1">
-                  <Clock className="size-3" />
-                  10:00 AM
-                </span>
-                <span className="text-muted inline-flex w-fit items-center gap-1 rounded-full bg-black px-3 py-1">
-                  <Clock className="size-3" />
-                  6:00 PM
-                </span>
+          {isLoading ? (
+            <p className="text-muted text-sm">Loading availabilityâ€¦</p>
+          ) : weekly.length === 0 ? (
+            <p className="text-muted text-sm">No weekly availability set.</p>
+          ) : (
+            <div className="overflow-hidden rounded-lg">
+              <div className="text-body-sm text-muted grid grid-cols-3 bg-black px-4 py-2 font-semibold">
+                <span>Days</span>
+                <span>From</span>
+                <span>To</span>
               </div>
-            ))}
-          </div>
+              {DAYS.map((day, index) => {
+                const window = weeklyByDay.get(DAY_KEYS[index])
+                return (
+                  <div key={day} className="text-body-sm grid grid-cols-3 items-center px-4 py-3">
+                    <span className="text-white">{day}</span>
+                    <span className="text-muted inline-flex w-fit items-center gap-1 rounded-full bg-black px-3 py-1">
+                      <Clock className="size-3" />
+                      {window?.from ? formatClock(window.from) : 'â€”'}
+                    </span>
+                    <span className="text-muted inline-flex w-fit items-center gap-1 rounded-full bg-black px-3 py-1">
+                      <Clock className="size-3" />
+                      {window?.to ? formatClock(window.to) : 'â€”'}
+                    </span>
+                  </div>
+                )
+              })}
+            </div>
+          )}
         </div>
         <div>
           <h3 className="text-body-md mb-4 font-semibold text-white">Unavailability</h3>
-          <div className="overflow-hidden rounded-lg">
-            <div className="text-body-sm text-muted grid grid-cols-3 bg-black px-4 py-2 font-semibold">
-              <span>Date</span>
-              <span>From</span>
-              <span>To</span>
+          {isLoading ? (
+            <p className="text-muted text-sm">Loading unavailabilityâ€¦</p>
+          ) : unavailable.length === 0 ? (
+            <p className="text-muted text-sm">No blocked dates recorded.</p>
+          ) : (
+            <div className="overflow-hidden rounded-lg">
+              <div className="text-body-sm text-muted grid grid-cols-3 bg-black px-4 py-2 font-semibold">
+                <span>Date</span>
+                <span>From</span>
+                <span>To</span>
+              </div>
+              {unavailable.map((item, index) => (
+                <div
+                  key={`${item.date}-${index}`}
+                  className="text-body-sm grid grid-cols-3 items-center px-4 py-3"
+                >
+                  <span className="text-white">{item.date || 'â€”'}</span>
+                  <span className="text-muted inline-flex w-fit items-center gap-1 rounded-full bg-black px-3 py-1">
+                    <Clock className="size-3" />
+                    {formatClock(item.from)}
+                  </span>
+                  <span className="text-muted inline-flex w-fit items-center gap-1 rounded-full bg-black px-3 py-1">
+                    <Clock className="size-3" />
+                    {formatClock(item.to)}
+                  </span>
+                </div>
+              ))}
             </div>
-            <div className="text-body-sm grid grid-cols-3 items-center px-4 py-3">
-              <span className="text-white">01/01/2025</span>
-              <span className="text-muted inline-flex w-fit items-center gap-1 rounded-full bg-black px-3 py-1">
-                <Clock className="size-3" />
-                10:00 AM
-              </span>
-              <span className="text-muted inline-flex w-fit items-center gap-1 rounded-full bg-black px-3 py-1">
-                <Clock className="size-3" />
-                10:00 AM
-              </span>
-            </div>
-          </div>
+          )}
         </div>
       </div>
     </div>
@@ -1983,9 +2348,15 @@ function AnalyticsTab({ expertId }: { expertId?: string }) {
   const filteredActiveMetricIds = useMemo(
     () =>
       sortIdsByCatalogOrder(
-        activeMetricIds.filter((id) => EXPERT_PROFILE_ANALYTICS_METRIC_ID_SET.has(id)),
+        [
+          ...new Set(
+            activeMetricIds
+              .map((id) => EXPERT_PROFILE_ANALYTICS_LEGACY_METRIC_ID_MAP[id] ?? id)
+              .filter((id) => EXPERT_PROFILE_ANALYTICS_METRIC_ID_SET.has(id)),
+          ),
+        ],
         EXPERT_PROFILE_ANALYTICS_METRIC_IDS,
-      ),
+      ).slice(0, 8),
     [activeMetricIds],
   )
 
@@ -2036,35 +2407,72 @@ function AnalyticsTab({ expertId }: { expertId?: string }) {
   )
 }
 
-function HealthTab() {
+function HealthTab({
+  reports,
+  tickets,
+  onOpenReport,
+}: {
+  reports: ExpertReportItem[]
+  tickets: SupportTicket[]
+  onOpenReport: (report: ExpertReportItem) => void
+}) {
+  const navigate = useNavigate()
   const [filter, setFilter] = useState('all')
 
-  const incidents = [
-    {
-      type: 'Violation',
-      typeClass: 'bg-brand-danger/15 text-red-400',
-      status: 'Open',
-      statusClass: 'border-red-500/40 text-red-400',
-      action: 'View Details',
-      icon: Eye,
-    },
-    {
-      type: 'Reported Against',
-      typeClass: 'bg-amber-500/15 text-amber-300',
-      status: 'under review',
-      statusClass: 'border-amber-500/40 text-amber-300',
-      action: 'View Ticket',
-      icon: FileText,
-    },
-    {
+  const incidents = useMemo(() => {
+    const reportRows = reports.map((report) => {
+      const issue = String(report.issueType || '').toLowerCase()
+      const status = String(report.investigationStatus || '').toLowerCase()
+      const isViolation = VIOLATION_ISSUE_TYPES.has(issue) || OPEN_REPORT_STATUSES.has(status)
+      return {
+        id: report.id || report.reportId,
+        kind: isViolation ? 'violation' : 'reported-against',
+        type: isViolation ? 'Violation' : 'Reported Against',
+        typeClass: isViolation
+          ? 'bg-brand-danger/15 text-red-400'
+          : 'bg-amber-500/15 text-amber-300',
+        status: report.investigationStatus || 'New',
+        statusClass: OPEN_REPORT_STATUSES.has(
+          String(report.investigationStatus || '').toLowerCase(),
+        )
+          ? 'border-red-500/40 text-red-400'
+          : 'border-emerald-500/40 text-brand-positive',
+        title: report.issueType || 'Expert report',
+        detail: report.reason || 'No reason provided.',
+        raisedOn: report.submittedAt,
+        updatedOn: report.latestActionTimestamp || report.submittedAt,
+        action: 'View Details',
+        icon: Eye,
+        onAction: () => onOpenReport(report),
+      }
+    })
+
+    const ticketRows = tickets.map((ticket) => ({
+      id: ticket.id,
+      kind: 'reported-by',
       type: 'Reported By',
       typeClass: 'bg-blue-500/15 text-blue-400',
-      status: 'Resolved',
-      statusClass: 'border-emerald-500/40 text-brand-positive',
+      status: ticket.status,
+      statusClass: ACTIVE_TICKET_STATUSES.has(String(ticket.status).toLowerCase())
+        ? 'border-amber-500/40 text-amber-300'
+        : 'border-emerald-500/40 text-brand-positive',
+      title: ticket.subject,
+      detail: ticket.issueType || ticket.category || 'Support ticket',
+      raisedOn: ticket.createdAt,
+      updatedOn: ticket.resolvedAt || ticket.createdAt,
       action: 'View Ticket',
       icon: FileText,
-    },
-  ]
+      onAction: () => navigate(`/support/tickets/${ticket.id}`),
+    }))
+
+    return [...reportRows, ...ticketRows]
+  }, [navigate, onOpenReport, reports, tickets])
+
+  const visible = incidents.filter((item) => filter === 'all' || item.kind === filter)
+  const atRisk =
+    reports.some((report) =>
+      OPEN_REPORT_STATUSES.has(String(report.investigationStatus || '').toLowerCase()),
+    ) || tickets.some((ticket) => ACTIVE_TICKET_STATUSES.has(String(ticket.status).toLowerCase()))
 
   return (
     <div className="rounded-xl bg-[#141414] p-6">
@@ -2089,51 +2497,58 @@ function HealthTab() {
             </button>
           ))}
         </div>
-        <span className="text-body-sm font-bold text-red-400">Profile Health: At Risk</span>
+        <span
+          className={cn('text-body-sm font-bold', atRisk ? 'text-red-400' : 'text-brand-positive')}
+        >
+          Profile Health: {atRisk ? 'At Risk' : 'Healthy'}
+        </span>
       </div>
 
       <div className="mt-4 space-y-3">
-        {incidents.map((incident) => (
-          <div key={incident.type} className="rounded-lg bg-[#050505] p-4">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <span
-                    className={cn(
-                      'rounded-md px-2 py-0.5 text-[10px] font-bold',
-                      incident.typeClass,
-                    )}
-                  >
-                    {incident.type}
-                  </span>
-                  <span
-                    className={cn(
-                      'rounded-md border px-2 py-0.5 text-[10px] font-bold capitalize',
-                      incident.statusClass,
-                    )}
-                  >
-                    {incident.status}
-                  </span>
+        {visible.length === 0 ? (
+          <p className="text-muted py-8 text-center text-sm">No reported issues for this expert.</p>
+        ) : (
+          visible.map((incident) => (
+            <div key={`${incident.kind}-${incident.id}`} className="rounded-lg bg-[#050505] p-4">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span
+                      className={cn(
+                        'rounded-md px-2 py-0.5 text-[10px] font-bold',
+                        incident.typeClass,
+                      )}
+                    >
+                      {incident.type}
+                    </span>
+                    <span
+                      className={cn(
+                        'rounded-md border px-2 py-0.5 text-[10px] font-bold capitalize',
+                        incident.statusClass,
+                      )}
+                    >
+                      {incident.status}
+                    </span>
+                  </div>
+                  <p className="mt-2 text-[13px] font-semibold text-white">{incident.title}</p>
+                  <p className="text-body-sm text-muted mt-1">{incident.detail}</p>
+                  <p className="text-muted mt-2 text-[10px]">
+                    Raised On: {incident.raisedOn || 'â€”'}
+                    {incident.updatedOn ? ` Â· Last Updated: ${incident.updatedOn}` : ''}
+                  </p>
                 </div>
-                <p className="mt-2 text-[13px] font-semibold text-white">Spam Content Detected</p>
-                <p className="text-body-sm text-muted mt-1">
-                  Multiple identical messages sent to different users within short timeframe
-                </p>
-                <p className="text-muted mt-2 text-[10px]">
-                  Raised On: 2024-02-10 14:32 · Last Updated: 2 hours ago
-                </p>
+                <button
+                  type="button"
+                  onClick={incident.onAction}
+                  className="text-body-sm flex items-center gap-1.5 rounded-lg bg-[linear-gradient(180deg,#F6CB86_0%,#E0A263_100%)] px-3 py-2 font-semibold text-[#050505]"
+                >
+                  <incident.icon className="size-3.5" />
+                  {incident.action}
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={() => comingSoon(incident.action)}
-                className="text-body-sm flex items-center gap-1.5 rounded-lg bg-[linear-gradient(180deg,#F6CB86_0%,#E0A263_100%)] px-3 py-2 font-semibold text-[#050505]"
-              >
-                <incident.icon className="size-3.5" />
-                {incident.action}
-              </button>
             </div>
-          </div>
-        ))}
+          ))
+        )}
       </div>
     </div>
   )
@@ -2156,7 +2571,12 @@ export function ExpertProfileViewPage() {
   const [suspendAdminNotes, setSuspendAdminNotes] = useState('')
   const [deleteReasons, setDeleteReasons] = useState<string[]>([])
   const [deleteAdminNotes, setDeleteAdminNotes] = useState('')
-  const { tagModalOpen, openTagModal, closeTagModal, saveTags, initialTags } = useEntityTags()
+  const [notesModalOpen, setNotesModalOpen] = useState(false)
+  const [shareModalOpen, setShareModalOpen] = useState(false)
+  const [customUrlModalOpen, setCustomUrlModalOpen] = useState(false)
+  const [selectedReport, setSelectedReport] = useState<ExpertReportItem | null>(null)
+  const scrollToTimelineRef = useRef(false)
+  const { tagModalOpen, openTagModal, closeTagModal } = useEntityTags()
 
   const suspendExpertMutation = useSuspendExpert()
   const blockExpertMutation = useBlockExpert()
@@ -2177,8 +2597,48 @@ export function ExpertProfileViewPage() {
   } = useExpertProfile(id)
 
   const { data: analyticsRes } = useExpertAnalytics(id)
+  const updateNotesMutation = useUpdateExpertAdminNotes(id)
+  const updateTagsMutation = useUpdateExpertAdminTags(id)
+  const customLinkQuery = useExpertCustomLink(id, customUrlModalOpen)
+  const updateCustomLinkVisibilityMutation = useUpdateExpertCustomLinkVisibility(id)
+  const { data: availabilityRes, isLoading: availabilityLoading } = useExpertAvailability(
+    id,
+    activeTab === 'availability',
+  )
+  const { data: reportsRes, refetch: refetchReports } = useExpertReportsForPartner(id)
+  const { data: ticketsRes, isLoading: ticketsLoading } = useQuery({
+    queryKey: ['expert-support-tickets', id],
+    queryFn: () =>
+      fetchSupportTickets({
+        reporterId: id,
+        includeClosed: true,
+        limit: 50,
+      }),
+    enabled: Boolean(id),
+  })
 
   const profile = profileResponse?.data
+  const reports = useMemo(() => unwrapReportItems(reportsRes), [reportsRes])
+  const allTickets = useMemo(() => ticketsRes?.data?.tickets ?? [], [ticketsRes])
+  const activeTickets = useMemo(
+    () =>
+      allTickets.filter((ticket) =>
+        ACTIVE_TICKET_STATUSES.has(String(ticket.status).toLowerCase()),
+      ),
+    [allTickets],
+  )
+  const timelineEvents = useMemo(
+    () => (profile ? buildExpertTimelineEvents(profile, allTickets, reports) : []),
+    [allTickets, profile, reports],
+  )
+
+  useEffect(() => {
+    if (!scrollToTimelineRef.current || activeTab !== 'overview') return
+    document
+      .getElementById('expert-timeline')
+      ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    scrollToTimelineRef.current = false
+  }, [activeTab])
 
   const navigateToCreateListing = useCallback(() => {
     if (!id) return
@@ -2199,6 +2659,129 @@ export function ExpertProfileViewPage() {
     setDeleteReasons([])
     setDeleteAdminNotes('')
   }, [])
+
+  const handleCheckTimelines = useCallback(() => {
+    const scrollToTimeline = () => {
+      document
+        .getElementById('expert-timeline')
+        ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
+    if (activeTab === 'overview') {
+      scrollToTimeline()
+      return
+    }
+    scrollToTimelineRef.current = true
+    setActiveTab('overview')
+  }, [activeTab])
+
+  const handleSaveNotes = useCallback(
+    (notes: string) => {
+      updateNotesMutation.mutate(notes, {
+        onSuccess: () => {
+          toast.success('Admin notes saved')
+          setNotesModalOpen(false)
+        },
+        onError: (error: unknown) => {
+          toast.error(getApiErrorMessage(error) || 'Failed to save admin notes')
+        },
+      })
+    },
+    [updateNotesMutation],
+  )
+
+  const handleSaveTags = useCallback(
+    async (tags: string[]) => {
+      await updateTagsMutation.mutateAsync(tags)
+      toast.success('Tags updated')
+    },
+    [updateTagsMutation],
+  )
+
+  const handleShareProfile = useCallback(() => {
+    if (!profile) return
+    const url = resolveCustomUrl(profile, analyticsRes?.data)
+    if (!url) {
+      toast.error('No custom URL is set for this expert.')
+      return
+    }
+    setShareModalOpen(true)
+  }, [analyticsRes?.data, profile])
+
+  const handleExportProfile = useCallback(() => {
+    if (!profile || !id) return
+    const basic = profile.basicProfile
+    const analytics = analyticsRes?.data
+    const customUrl = resolveCustomUrl(profile, analytics)
+    const expertCode = formatExpertId(id)
+    const ratings =
+      analytics?.ratingsSummary?.average ??
+      profile.ratings ??
+      profile.rating ??
+      profile.analytics?.rating
+    const nps =
+      analytics?.nps?.available === false
+        ? ''
+        : (analytics?.nps?.score ?? profile.nps ?? profile.analytics?.nps)
+    const experience =
+      formatExperience(basic?.experienceYears, basic?.experienceMonths) ||
+      (profile.experience ? `${profile.experience} Years` : '')
+    const earnings =
+      analytics?.listingOverview?.totalEarnings ??
+      profile.totalEarnings ??
+      profile.analytics?.totalEarnings
+    const orders =
+      analytics?.listingOverview?.ordersCompleted ??
+      profile.totalOrdersCompleted ??
+      profile.completedOrders ??
+      profile.analytics?.completedOrders
+    const kycLabel = getKycBadge(profile.finalReview).label
+
+    try {
+      exportDataToFile(
+        [
+          'Name',
+          'Expert ID',
+          'Type',
+          'Custom URL',
+          'Ratings',
+          'NPS',
+          'Experience',
+          'Earnings',
+          'Orders',
+          'KYC',
+          'Last Active',
+          'Notes',
+          'Tags',
+        ],
+        [
+          [
+            exportCell(basic?.fullname || profile.fullname),
+            exportCell(expertCode),
+            exportCell(profile.servicetype || basic?.serviceType),
+            exportCell(customUrl),
+            exportCell(ratings),
+            exportCell(nps),
+            exportCell(experience === 'â€”' ? '' : experience),
+            exportCell(earnings),
+            exportCell(orders),
+            exportCell(kycLabel),
+            exportCell(profile.lastActiveAt || profile.updatedAt),
+            exportCell(profile.finalReview?.internalNotes),
+            exportCell((profile.adminTags || []).join(', ')),
+          ],
+        ],
+        'excel',
+        `expert_${expertCode}_profile`,
+      )
+      toast.success('Profile exported')
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error && error.message === 'NO_RECORDS'
+          ? 'Nothing to export'
+          : 'Failed to export profile'
+      toast.error(message)
+    }
+  }, [analyticsRes?.data, id, profile])
 
   const handlePasswordSubmit = useCallback(
     async (payload: { oldPassword: string; newPassword: string; confirmNewPassword: string }) => {
@@ -2397,7 +2980,7 @@ export function ExpertProfileViewPage() {
   const displayName = basic?.fullname || profile.fullname || 'Expert'
   const coverImage = basic?.coverImage
   const avatarImage = basic?.profileImage
-  const subtitle = [basic?.industry, basic?.location].filter(Boolean).join(' • ')
+  const subtitle = [basic?.industry, basic?.location].filter(Boolean).join(' â€¢ ')
 
   const headerActions = [
     {
@@ -2408,18 +2991,18 @@ export function ExpertProfileViewPage() {
     {
       label: 'Add Notes',
       icon: FileText,
-      onClick: () => comingSoon('Add Notes'),
+      onClick: () => setNotesModalOpen(true),
     },
     { label: 'Add Tags', icon: Tag, onClick: () => openTagModal(id || displayName) },
     {
       label: 'Export Data',
       icon: Upload,
-      onClick: () => comingSoon('Export Data'),
+      onClick: handleExportProfile,
     },
     {
       label: 'Share Profile',
       icon: Share2,
-      onClick: () => comingSoon('Share Profile'),
+      onClick: handleShareProfile,
     },
   ]
 
@@ -2581,7 +3164,7 @@ export function ExpertProfileViewPage() {
                   # 1 Ranking
                 </span>
               </div>
-              <p className="text-body-sm text-white/50">{subtitle || '—'}</p>
+              <p className="text-body-sm text-white/50">{subtitle || 'â€”'}</p>
             </div>
           </div>
           <div className="flex w-full max-w-[600px] flex-wrap items-center justify-end gap-2 sm:w-auto sm:shrink-0">
@@ -2601,7 +3184,15 @@ export function ExpertProfileViewPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[320px_1fr]">
-        <ProfileSidebar profile={profile} partnerId={id} analytics={analyticsRes?.data} />
+        <ProfileSidebar
+          profile={profile}
+          partnerId={id}
+          analytics={analyticsRes?.data}
+          tickets={activeTickets}
+          ticketsLoading={ticketsLoading}
+          onCheckTimelines={handleCheckTimelines}
+          onOpenCustomUrl={() => setCustomUrlModalOpen(true)}
+        />
 
         <div className="flex flex-col gap-5">
           <div className="flex h-[50px] items-stretch gap-1 overflow-x-auto rounded-xl bg-[#141414] px-2">
@@ -2622,17 +3213,30 @@ export function ExpertProfileViewPage() {
             ))}
           </div>
 
-          {activeTab === 'overview' && <OverviewTab profile={profile} partnerId={id} />}
+          {activeTab === 'overview' && (
+            <OverviewTab
+              profile={profile}
+              partnerId={id}
+              tags={profile.adminTags ?? []}
+              timelineEvents={timelineEvents}
+            />
+          )}
           {activeTab === 'service-listings' && (
             <ServiceListingsTab
               expertId={id}
               listingSubTab={listingSubTab}
               onSubTabChange={setListingSubTab}
+              fallbackServices={profile.listedServices ?? []}
+              fallbackConsultations={profile.listedConsultations ?? []}
             />
           )}
-          {activeTab === 'availability' && <AvailabilityTab />}
+          {activeTab === 'availability' && (
+            <AvailabilityTab availability={availabilityRes?.data} isLoading={availabilityLoading} />
+          )}
           {activeTab === 'analytics' && <AnalyticsTab expertId={id} />}
-          {activeTab === 'health' && <HealthTab />}
+          {activeTab === 'health' && (
+            <HealthTab reports={reports} tickets={allTickets} onOpenReport={setSelectedReport} />
+          )}
         </div>
       </div>
 
@@ -2691,8 +3295,54 @@ export function ExpertProfileViewPage() {
       <AddTagModal
         open={tagModalOpen}
         onClose={closeTagModal}
-        initialTags={initialTags}
-        onSubmit={saveTags}
+        initialTags={profile.adminTags ?? []}
+        onSubmit={handleSaveTags}
+      />
+
+      <AdminNotesModal
+        open={notesModalOpen}
+        initialNotes={profile.finalReview?.internalNotes || ''}
+        onClose={() => setNotesModalOpen(false)}
+        onSubmit={handleSaveNotes}
+      />
+
+      <ShareProfileModal
+        open={shareModalOpen}
+        url={resolveCustomUrl(profile, analyticsRes?.data) || ''}
+        title={`Check out ${displayName}'s expert profile`}
+        onClose={() => setShareModalOpen(false)}
+      />
+
+      <CustomUrlModal
+        open={customUrlModalOpen}
+        expertName={displayName}
+        details={customLinkQuery.data ?? null}
+        isLoading={customLinkQuery.isLoading}
+        isSaving={updateCustomLinkVisibilityMutation.isPending}
+        onClose={() => setCustomUrlModalOpen(false)}
+        onToggleVisible={(visible) => {
+          updateCustomLinkVisibilityMutation.mutate(visible, {
+            onSuccess: () => {
+              toast.success(
+                visible
+                  ? 'Custom URL is now visible on the profile'
+                  : 'Custom URL is now hidden from the profile',
+              )
+            },
+            onError: (error) => {
+              toast.error(getApiErrorMessage(error))
+            },
+          })
+        }}
+      />
+
+      <ExpertReportDetailModal
+        report={selectedReport}
+        isOpen={Boolean(selectedReport)}
+        onClose={() => setSelectedReport(null)}
+        onUpdated={() => {
+          void refetchReports()
+        }}
       />
     </div>
   )

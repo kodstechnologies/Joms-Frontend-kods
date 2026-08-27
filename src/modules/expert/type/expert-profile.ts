@@ -20,6 +20,7 @@ export type ExpertBasicProfile = {
   experienceMonths?: number
   serviceType?: string
   serviceCategory?: string[]
+  serviceCategoryDisplay?: string[]
   offerings?: string[]
   sampleWorkLink?: string
   sampleWorkFile?: string
@@ -52,9 +53,18 @@ export type ExpertProfileDetail = {
   subCategory?: unknown[]
   customUrl?: string
   profileUrl?: string
+  customLink?: string
+  shareUrl?: string
   customUsername?: string
+  customLinkVisible?: boolean
+  customUsernameSetAt?: string | null
   deepLink?: string
+  bio?: string
+  listedServices?: ExpertService[]
+  listedConsultations?: ExpertConsultation[]
   expertId?: string
+  adminTags?: string[]
+  lastActiveAt?: string
   rating?: number
   ratings?: number
   reviewCount?: number | string
@@ -177,7 +187,9 @@ export type ExpertAnalyticsData = {
     kycStatus?: string
     accountStatus?: string
     lastActiveAt?: string
+    membershipType?: string
     customUrl?: string
+    bio?: string
     profession?: string
     experience?: string
     avatarUrl?: string | null
@@ -205,11 +217,30 @@ export type ExpertAnalyticsData = {
   marketplacePerformance?: {
     servicesListed?: number
     activeServices?: number
+    pausedServices?: number
+    closedServices?: number
+    deletedServices?: number
+    consultationsListed?: number
+    quotationsReceived?: number
     proposalsCreated?: number
     ordersCompleted?: number
     ordersInProgress?: number
     terminatedOrders?: number
+    consultationsCompleted?: number
+    scheduledConsultations?: number
+    terminatedConsultations?: number
     conversionRate?: number
+  }
+  revenuePerformance?: {
+    totalRevenue?: number
+    revenueGrowthRate?: number
+    highestDemandService?: string
+    highestRevenueService?: string
+    averageOrderValue?: number
+    customOrdersCreated?: number
+    customOrdersAccepted?: number
+    customOrdersCompleted?: number
+    customOrdersRejected?: number
   }
   listingOverview?: {
     servicesListed?: number
@@ -220,6 +251,31 @@ export type ExpertAnalyticsData = {
     proposalsCreated?: number
     totalOrders?: number
     totalEarnings?: number
+    averageOrderValue?: number
+    customOrdersCreated?: number
+    customOrdersAccepted?: number
+    customOrdersCompleted?: number
+    customOrdersRejected?: number
+    lastServiceRequestReceived?: string | null
+    lastServiceCompleted?: string | null
+  }
+  customerAnalytics?: {
+    clientSatisfactionScore?: number | null
+    repeatClientRate?: number
+    ordersByMembership?: Record<string, number>
+    netPromoterScore?: {
+      score?: number | null
+      available?: boolean
+      promoters?: number
+      passives?: number
+      detractors?: number
+    }
+    lastServiceRequestReceived?: string | null
+    lastServiceCompleted?: string | null
+  }
+  operationalPerformance?: {
+    orderCompletionRate?: number
+    averageFirstResponseTime?: string
   }
   ratingsSummary?: {
     average?: number
@@ -270,6 +326,7 @@ export type PartnerInsightReview = {
   rating: number
   text: string
   userName: string
+  userRole?: string | null
   userAvatarUrl?: string | null
   engagementType?: string
   engagementId?: string

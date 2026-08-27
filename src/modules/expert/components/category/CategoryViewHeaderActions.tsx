@@ -13,6 +13,7 @@ import {
   useSoftDeleteServiceCategory,
 } from '../../hooks/use-category-management'
 import { getErrorMessage } from '../../utils/category-mapper'
+import { MODERATION_CATEGORY_SLUGS } from '@/modules/settings/api/templates-api'
 
 export const CategoryViewHeaderActions = () => {
   const navigate = useNavigate()
@@ -58,6 +59,8 @@ export const CategoryViewHeaderActions = () => {
       <PauseCategoryModal
         open={pauseModalOpen}
         onClose={() => setPauseModalOpen(false)}
+        reasonCategorySlug={MODERATION_CATEGORY_SLUGS.pauseCategory}
+        submitLabel="Pause Category"
         onConfirm={() => {
           if (!id) return
           pauseMutation.mutate(id, {

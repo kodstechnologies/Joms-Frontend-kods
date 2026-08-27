@@ -49,8 +49,8 @@ export const usePushNotifications = () => {
 
           void queryClient.invalidateQueries({ queryKey: notificationKeys.all })
         })
-      } catch (err) {
-        console.error('[usePushNotifications] Failed to initialize push notifications:', err)
+      } catch {
+        // Push init is best-effort; failures leave in-app notifications unaffected.
       }
     }
 

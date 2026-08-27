@@ -36,6 +36,17 @@ const mapSubStatus = (
 const toCategoryId = (category: { _id: string; categoryId?: string }) =>
   category.categoryId || `CAT${category._id.toString().slice(-3).toUpperCase()}`
 
+const formatRevenueLabel = (category: { revenue?: number; revenueLabel?: string }) => {
+  if (category.revenueLabel) return category.revenueLabel
+  if (typeof category.revenue === 'number') {
+    return `₹${category.revenue.toLocaleString('en-IN', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`
+  }
+  return '₹0.00'
+}
+
 const toSubCategoryId = (subId: string) => `SUB${subId.toString().slice(-3).toUpperCase()}`
 
 const mapServiceSubCategory = (sub: CategoryApiSubCategory): Category['subCategories'][number] => ({
@@ -47,10 +58,10 @@ const mapServiceSubCategory = (sub: CategoryApiSubCategory): Category['subCatego
   adminNotes: '',
   icon: sub.vectorIcon || undefined,
   addedOn: formatDate(sub.createdAt),
-  createdBy: 'Admin',
+  createdBy: sub.createdByName || sub.createdBy || 'Admin',
   updatedAt: formatDate(sub.updatedAt),
-  services: 0,
-  experts: 0,
+  services: sub.services ?? sub.activeListings ?? 0,
+  experts: sub.experts ?? 0,
 })
 
 const mapVenueSubCategory = (
@@ -64,13 +75,14 @@ const mapVenueSubCategory = (
   adminNotes: '',
   icon: sub.vectorIcon || undefined,
   addedOn: formatDate(sub.createdAt),
-  createdBy: 'Admin',
+  createdBy: sub.createdByName || sub.createdBy || 'Admin',
   updatedAt: formatDate(sub.updatedAt),
-  venues: 0,
+  venues: sub.venues ?? sub.totalVenues ?? 0,
 })
 
 export const mapServiceCategoryToUi = (category: ServiceCategoryApi): Category => {
   const activeSubs = (category.subCategories || []).filter((sub) => sub.status !== 'DELETED')
+  const repeatPct = typeof category.repeatBookingPct === 'number' ? category.repeatBookingPct : 0
 
   return {
     id: category._id,
@@ -80,13 +92,18 @@ export const mapServiceCategoryToUi = (category: ServiceCategoryApi): Category =
     icon: category.icon3D || undefined,
     image: category.image || undefined,
     status: mapServiceStatus(category.status),
-    subCategory: activeSubs.length,
-    services: 0,
-    experts: 0,
-    revenue: '₹0',
+    subCategory: category.subCategoryCount ?? activeSubs.length,
+    services: category.services ?? category.activeListings ?? 0,
+    experts: category.experts ?? 0,
+    totalOrders: category.totalOrders ?? 0,
+    completedOrders: category.completedOrders ?? 0,
+    inProgressOrders: category.inProgressOrders ?? 0,
+    cancelledOrders: category.cancelledOrders ?? 0,
+    revenue: formatRevenueLabel(category),
+    repeatBookingPct: `${repeatPct}%`,
     createdAt: formatDate(category.createdAt),
     updatedAt: formatDate(category.updatedAt),
-    createdBy: 'Admin',
+    createdBy: category.createdByName || category.createdBy || 'Admin',
     adminNotes: '',
     subCategories: activeSubs.map(mapServiceSubCategory),
   }
@@ -106,11 +123,15 @@ export const mapVenueCategoryToUi = (category: VenueCategoryApi): VenueCategory 
     image: category.image || undefined,
     status,
     subCategory: activeSubs.length,
-    venues: 0,
-    revenue: '₹0',
+    spaces: category.totalSpaces ?? category.spaces ?? 0,
+    activeSpaces: category.activeSpaces ?? 0,
+    venues: category.venues ?? category.totalVenues ?? 0,
+    bookings: category.totalBookings ?? category.bookings ?? 0,
+    completedBookings: category.completedBookings ?? 0,
+    revenue: formatRevenueLabel(category),
     createdAt: formatDate(category.createdAt),
     updatedAt: formatDate(category.updatedAt),
-    createdBy: 'Admin',
+    createdBy: category.createdByName || category.createdBy || 'Admin',
     adminNotes: '',
     subCategories: activeSubs.map(mapVenueSubCategory),
   }

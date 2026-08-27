@@ -5,7 +5,13 @@ export type TaskTab = 'all' | TaskStatus | 'escalated_by_you'
 export type MyTask = {
   id: string
   partnerId: string
-  entityType?: 'partner' | 'service' | 'consultation' | 'venue_space'
+  entityType?:
+    | 'partner'
+    | 'service'
+    | 'consultation'
+    | 'venue_space'
+    | 'refund'
+    | 'membership_upgrade'
   entityId?: string
   venueId?: string
   title: string
@@ -14,7 +20,7 @@ export type MyTask = {
   moduleKey: string
   status: TaskStatus
   reviewStatus: string
-  escalationTarget: 'kyc' | 'banking' | 'application'
+  escalationTarget: 'kyc' | 'banking' | 'application' | 'refund' | 'membership_upgrade'
   serviceType: string
   assigneeSubAdminId: string
   assigneeName: string

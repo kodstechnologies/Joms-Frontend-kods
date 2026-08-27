@@ -3,6 +3,12 @@ import calendarIcon from '@/assets/JOMS_ICONS-2/icons8-calendar.svg'
 import type { ComponentType } from 'react'
 import { toast } from 'sonner'
 
+import { useBranding } from '@/app/providers/use-branding'
+import {
+  downloadInvoiceDocument,
+  invoiceFromMembershipSubscription,
+} from '@/shared/utils/invoice-document'
+
 import type { MembershipSubscription } from '../types/membership-subscription'
 import {
   formatMembershipTimelineDate,
@@ -30,6 +36,8 @@ export function MembershipHistoryModal({
   onClose,
   subscription,
 }: MembershipHistoryModalProps) {
+  const { logoUrl } = useBranding()
+
   if (!open) return null
 
   const history = [...(subscription.actionHistory ?? [])].sort((a, b) => {
@@ -122,7 +130,17 @@ export function MembershipHistoryModal({
 
                         <button
                           type="button"
-                          onClick={() => toast.info('Invoice view coming soon')}
+                          onClick={() => {
+                            void downloadInvoiceDocument(
+                              invoiceFromMembershipSubscription(subscription, {
+                                logoUrl,
+                                historyAction: getHistoryActionTitle(entry.action),
+                              }),
+                              `${subscription.subscriptionId}-${entry.action}`,
+                            )
+                              .then(() => toast.success('Invoice downloaded'))
+                              .catch(() => toast.error('Failed to download invoice'))
+                          }}
                           className="ui-cta ui-cta-outline mt-0.5 h-8 shrink-0 rounded-full px-3.5"
                         >
                           View Invoice

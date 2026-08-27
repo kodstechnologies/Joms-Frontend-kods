@@ -40,6 +40,8 @@ export const getExpertCurrentRole = (expert?: ExpertApplicationExpert) => {
   return jobTitle || undefined
 }
 
+const MONGO_ID_RE = /^[a-fA-F0-9]{24}$/
+
 const getSubCategoryId = (entry: unknown) => {
   if (typeof entry === 'string') return entry
   if (entry && typeof entry === 'object') {
@@ -55,30 +57,37 @@ export const resolveExpertServiceCategoryDisplay = (
   expert?: ExpertApplicationExpert,
   categoryGroups?: ExpertServiceCategoryGroups,
 ) => {
-  const namedCategories = expert?.basicProfile?.serviceCategory?.filter(Boolean) ?? []
-  if (namedCategories.length > 0) {
-    return namedCategories.join(', ')
+  const preResolved = expert?.basicProfile?.serviceCategoryDisplay
+  if (Array.isArray(preResolved) && preResolved.some((name) => Boolean(name?.trim()))) {
+    return preResolved.filter((name) => Boolean(name?.trim())).join(', ')
   }
-
-  const subCategories = expert?.subCategory ?? []
-  if (!subCategories.length) return undefined
 
   const idToName = new Map<string, string>()
   Object.values(categoryGroups ?? {})
     .flat()
     .forEach((item) => {
-      idToName.set(item.id, item.name)
+      if (!item) return
+      if (item.id && item.name) idToName.set(String(item.id), item.name)
+      const raw = item as { _id?: string; id?: string; name?: string }
+      if (raw._id && raw.name) idToName.set(String(raw._id), raw.name)
     })
 
-  const resolvedNames = subCategories.map((entry) => {
+  const resolveOne = (entry: unknown) => {
     if (entry && typeof entry === 'object' && 'name' in entry) {
       const namedEntry = entry as { name?: string }
-      if (namedEntry.name?.trim()) return namedEntry.name.trim()
+      if (namedEntry.name?.trim() && !MONGO_ID_RE.test(namedEntry.name.trim())) {
+        return namedEntry.name.trim()
+      }
     }
 
     const id = getSubCategoryId(entry)
-    return idToName.get(id) || id
-  })
+    if (!id) return ''
+    return idToName.get(id) || (MONGO_ID_RE.test(id) ? '' : id)
+  }
 
-  return resolvedNames.filter(Boolean).join(', ') || undefined
+  const fromProfile = expert?.basicProfile?.serviceCategory ?? []
+  const fromSubCategory = expert?.subCategory ?? []
+  const resolvedNames = [...fromProfile, ...fromSubCategory].map(resolveOne).filter(Boolean)
+
+  return [...new Set(resolvedNames)].join(', ') || undefined
 }

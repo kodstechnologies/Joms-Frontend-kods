@@ -7,7 +7,7 @@ import { GoogleMapPicker, type LocationDetails } from '@/shared/components/map'
 
 const fieldClass = 'ui-input'
 
-const MAX_VENUE_IMAGES = 10
+const MAX_VENUE_IMAGES = 3
 
 type Props = {
   formData: VenueOnboardingFormData
@@ -17,9 +17,12 @@ type Props = {
 export const VenueOnboardingLocationStep = ({ formData, setFormData }: Props) => {
   const imageInputRef = useRef<HTMLInputElement>(null)
 
+  const totalImages = formData.venueImages.length + formData.venueImageUrls.length
+
   const handleImagesAdd = (files: FileList | null) => {
     if (!files?.length) return
-    const remaining = MAX_VENUE_IMAGES - formData.venueImages.length
+    const remaining = MAX_VENUE_IMAGES - totalImages
+    if (remaining <= 0) return
     const newFiles = Array.from(files).slice(0, remaining)
     setFormData((prev) => ({
       ...prev,
@@ -54,8 +57,6 @@ export const VenueOnboardingLocationStep = ({ formData, setFormData }: Props) =>
       landmark: details.landmark || prev.landmark,
     }))
   }
-
-  const totalImages = formData.venueImages.length + formData.venueImageUrls.length
 
   return (
     <div className="mx-auto w-full max-w-[1140px] space-y-6">
@@ -153,13 +154,19 @@ export const VenueOnboardingLocationStep = ({ formData, setFormData }: Props) =>
                 </button>
               )}
             </div>
+            <p className="text-muted mt-2 text-xs">
+              Upload up to {MAX_VENUE_IMAGES} images ({totalImages}/{MAX_VENUE_IMAGES})
+            </p>
             <input
               ref={imageInputRef}
               type="file"
               accept="image/*"
               multiple
               className="hidden"
-              onChange={(e) => handleImagesAdd(e.target.files)}
+              onChange={(e) => {
+                handleImagesAdd(e.target.files)
+                e.target.value = ''
+              }}
             />
           </div>
 

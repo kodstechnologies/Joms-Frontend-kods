@@ -1,9 +1,10 @@
 import { useEffect, useState, type ReactNode } from 'react'
-import { ArrowLeft, SquarePen } from 'lucide-react'
+import { ArrowLeft, Download, SquarePen } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
 
+import { useBranding } from '@/app/providers/use-branding'
 import { AddFinanceNoteModal } from '@/modules/payments/components/add-finance-note-modal'
 import { FinanceInternalNotesCard } from '@/modules/payments/components/finance-internal-notes-card'
 import { fetchPartnerDisplayNames } from '@/modules/payments/api/partner-lookup-api'
@@ -26,6 +27,7 @@ import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import { PERMISSION_LEVELS } from '@/shared/lib/permissions'
+import { downloadInvoiceDocument, invoiceFromFinancePayout } from '@/shared/utils/invoice-document'
 
 const cardClass = 'radius-lg border border-white/[0.06] bg-brand-surface p-4 sm:p-5'
 const sectionTitleClass = 'text-body-md-semibold text-brand-text leading-[20px]'
@@ -72,6 +74,7 @@ export function PayoutDetailViewPage() {
   const navigate = useNavigate()
   const { id = '' } = useParams<{ id: string }>()
   const [searchParams, setSearchParams] = useSearchParams()
+  const { logoUrl } = useBranding()
   const { data, isLoading, isError, isFetching, refetch } = useFinancePayout(id)
   const retryMutation = useRetryPayout()
   const releaseMutation = useReleasePayout()
@@ -161,6 +164,23 @@ export function PayoutDetailViewPage() {
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
+            <Button
+              className="ui-cta"
+              onClick={() => {
+                void downloadInvoiceDocument(
+                  invoiceFromFinancePayout(payout, {
+                    logoUrl,
+                    recipientName: typeof payeeName === 'string' ? payeeName : undefined,
+                  }),
+                  payout.payoutId,
+                )
+                  .then(() => toast.success('Invoice downloaded'))
+                  .catch(() => toast.error('Failed to download invoice'))
+              }}
+            >
+              <Download className="size-4" />
+              Download Invoice
+            </Button>
             <Button type="button" variant="secondary" onClick={() => setNoteModal('note')}>
               <SquarePen className="size-4" />
               Add Internal Note

@@ -57,7 +57,15 @@ export type FilterValues = Record<
 
 export type ModuleFilterKey =
   | 'expert-management'
+  | 'expert-pending-approvals'
+  | 'expert-reported'
+  | 'expert-suspended'
+  | 'expert-deleted'
   | 'service-management'
+  | 'service-pending-approvals'
+  | 'service-reported'
+  | 'service-suspended'
+  | 'service-deleted'
   | 'venue-management'
   | 'service-category-management'
   | 'venue-category-management'
@@ -88,3 +96,5 @@ export type ModuleFilterKey =
   | 'backups'
   | 'escalations'
   | 'leaderboard-management'
+  | 'service-performance'
+  | 'consultation-performance'

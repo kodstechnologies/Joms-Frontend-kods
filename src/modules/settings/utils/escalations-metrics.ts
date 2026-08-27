@@ -13,27 +13,20 @@ const mockTrend = {
   label: 'vs last month',
 }
 
-const mockValues: Record<string, string> = {
-  'total-escalation': '08',
-  'open-escalation': '456',
-  'in-review': '234',
-  resolved: '34',
-}
-
 const labelById = new Map(ESCALATIONS_METRICS_CATALOG.map((metric) => [metric.id, metric.label]))
 
 function formatMetricValue(id: string, metrics?: EscalationMetrics | null): string {
-  if (!metrics) return mockValues[id] ?? '—'
+  if (!metrics) return '—'
 
   switch (id) {
     case 'total-escalation':
-      return String(metrics.total).padStart(2, '0')
+      return String(metrics.total ?? 0).padStart(2, '0')
     case 'open-escalation':
-      return String(metrics.open)
+      return String(metrics.open ?? 0)
     case 'in-review':
-      return String(metrics.inReview)
+      return String(metrics.inReview ?? 0)
     case 'resolved':
-      return String(metrics.resolved)
+      return String(metrics.resolved ?? 0)
     default:
       return '—'
   }

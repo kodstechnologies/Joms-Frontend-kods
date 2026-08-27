@@ -16,6 +16,7 @@ import { toFinanceListFilterParams } from '@/modules/payments/hooks/use-finance-
 import { getModuleFilterConfig } from '@/shared/components/advanced-filter/configs'
 import { financeRevenueFilterConfig } from '@/shared/components/advanced-filter/configs/finance-revenue.config'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
+import type { NavigateFunction } from 'react-router-dom'
 import { MODULE_TAG_OPTIONS } from '@/shared/constants/module-tags'
 import { uiTokens } from '@/shared/lib/design-tokens'
 
@@ -105,10 +106,10 @@ describe('catalogs', () => {
 
 describe('navigateBackOrFallback', () => {
   it('uses fallback when history is empty', () => {
-    const calls: Array<[unknown, unknown]> = []
+    const calls: Array<[unknown, unknown?]> = []
     const navigate = ((to: unknown, opts?: unknown) => {
       calls.push([to, opts])
-    }) as unknown as import('react-router-dom').NavigateFunction
+    }) as NavigateFunction
     navigateBackOrFallback(navigate, '/home')
     expect(calls[0]?.[0]).toBe('/home')
   })

@@ -9,7 +9,6 @@ import {
   deleteModerationReason,
   fetchModerationCategories,
   fetchModerationReasons,
-  fetchModerationReasonsBySlug,
   recordModerationReasonUsage,
   toggleModerationReason,
   updateModerationCategory,
@@ -39,15 +38,31 @@ export const useModerationReasons = (categoryId: string) =>
   })
 
 export const useModerationReasonOptions = (categorySlug: string, enabled = true) => {
-  const query = useQuery({
-    queryKey: templateKeys.reasonsBySlug(categorySlug, true),
-    queryFn: () => fetchModerationReasonsBySlug(categorySlug, { activeOnly: true }),
+  const categoriesQuery = useQuery({
+    queryKey: templateKeys.categories(''),
+    queryFn: () => fetchModerationCategories(),
     enabled: Boolean(categorySlug) && enabled,
     staleTime: 0,
     refetchOnMount: 'always',
   })
 
-  const reasons = useMemo(() => query.data?.reasons ?? [], [query.data?.reasons])
+  const category = useMemo(
+    () => (categoriesQuery.data ?? []).find((item) => item.slug === categorySlug) ?? null,
+    [categoriesQuery.data, categorySlug],
+  )
+
+  const reasonsQuery = useQuery({
+    queryKey: templateKeys.reasons(category?.id ?? ''),
+    queryFn: () => fetchModerationReasons(category!.id),
+    enabled: Boolean(category?.id) && enabled,
+    staleTime: 0,
+    refetchOnMount: 'always',
+  })
+
+  const reasons = useMemo(
+    () => (reasonsQuery.data ?? []).filter((reason) => reason.isActive !== false),
+    [reasonsQuery.data],
+  )
 
   const options = useMemo<DecisionActionModalOption[]>(
     () => reasons.map((reason) => ({ label: reason.title, value: reason.id })),
@@ -58,8 +73,10 @@ export const useModerationReasonOptions = (categorySlug: string, enabled = true)
     buildModerationActionPayload(reasons, selectedReasonIds)
 
   return {
-    ...query,
-    category: query.data?.category ?? null,
+    ...reasonsQuery,
+    isLoading: categoriesQuery.isLoading || reasonsQuery.isLoading,
+    isFetching: categoriesQuery.isFetching || reasonsQuery.isFetching,
+    category,
     reasons,
     options,
     buildPayload,

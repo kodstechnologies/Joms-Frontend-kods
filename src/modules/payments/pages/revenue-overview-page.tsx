@@ -14,9 +14,12 @@ import {
 import { fetchFinanceRevenue } from '@/modules/payments/api/finance-api'
 import {
   DEFAULT_FINANCE_REVENUE_VISIBLE_COLUMN_IDS,
+  FINANCE_REVENUE_LEGACY_COLUMN_ID_MAP,
   FINANCE_REVENUE_MODULE_KEY,
+  FINANCE_REVENUE_TABLE_COLUMNS_CATALOG,
 } from '@/modules/payments/config/finance-revenue-table-columns.config'
 import { useTableColumnPreferences } from '@/modules/expert/hooks/use-ui-preferences'
+import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
 import { mapPaymentToRevenueRow } from '@/modules/payments/utils/finance-mappers'
 import { escalateUrl } from '@/modules/payments/utils/finance-escalate'
 import { AddTagsModal } from '@/shared/components/modals/add-tags-modal'
@@ -253,6 +256,17 @@ export function RevenueOverviewPage() {
     }
 
     const dataColumnsById: Record<string, ColumnDef<RevenueOverviewRow>> = {
+      'transaction-id': {
+        id: 'transaction-id',
+        header: 'Transaction ID',
+        cell: ({ row }) => (
+          <span className="text-body-sm-semibold text-brand-text font-mono uppercase">
+            {(row.original as { transactionId?: string }).transactionId ||
+              row.original.entityId ||
+              '—'}
+          </span>
+        ),
+      },
       module: { accessorKey: 'module', header: 'Module' },
       'entity-type': { accessorKey: 'entityType', header: 'Entity Type' },
       'entity-id': {
@@ -272,18 +286,56 @@ export function RevenueOverviewPage() {
         ),
       },
       category: { accessorKey: 'category', header: 'Category' },
+      'sub-category': {
+        id: 'sub-category',
+        header: 'Sub Category',
+        cell: ({ row }) => (row.original as { subCategory?: string }).subCategory || '—',
+      },
       'owner-type': { accessorKey: 'ownerType', header: 'Owner Type' },
       'owner-name': { accessorKey: 'ownerName', header: 'Owner Name' },
-      'gross-amount': {
+      'gross-revenue': {
+        id: 'gross-revenue',
         accessorKey: 'grossAmount',
-        header: 'Gross Amount',
+        header: 'Gross Revenue',
         cell: ({ row }) => (
           <span className="text-brand-text font-semibold">{row.original.grossAmount}</span>
         ),
       },
-      status: {
+      discounts: {
+        id: 'discounts',
+        header: 'Discounts',
+        cell: ({ row }) => (row.original as { discounts?: string }).discounts || '—',
+      },
+      'refund-amount': {
+        id: 'refund-amount',
+        header: 'Refund Amount',
+        cell: ({ row }) => (row.original as { refundAmount?: string }).refundAmount || '—',
+      },
+      'tax-amount': {
+        id: 'tax-amount',
+        header: 'Tax Amount',
+        cell: ({ row }) => (row.original as { taxAmount?: string }).taxAmount || '—',
+      },
+      'net-revenue': {
+        id: 'net-revenue',
+        header: 'Net Revenue',
+        cell: ({ row }) => (row.original as { netRevenue?: string }).netRevenue || '—',
+      },
+      'platform-commission': {
+        id: 'platform-commission',
+        header: 'Platform Commission',
+        cell: ({ row }) =>
+          (row.original as { platformCommission?: string }).platformCommission || '—',
+      },
+      'net-profit': {
+        id: 'net-profit',
+        header: 'Net Profit',
+        cell: ({ row }) => (row.original as { netProfit?: string }).netProfit || '—',
+      },
+      'payment-status': {
+        id: 'payment-status',
         accessorKey: 'status',
-        header: 'Status',
+        header: 'Payment Status',
         cell: ({ row }) => (
           <span
             className={cn(
@@ -295,11 +347,33 @@ export function RevenueOverviewPage() {
           </span>
         ),
       },
+      'settlement-status': {
+        id: 'settlement-status',
+        header: 'Settlement Status',
+        cell: ({ row }) => (row.original as { settlementStatus?: string }).settlementStatus || '—',
+      },
+      'compliance-status': {
+        id: 'compliance-status',
+        header: 'Compliance Status',
+        cell: ({ row }) => (row.original as { complianceStatus?: string }).complianceStatus || '—',
+      },
+      'last-updated': {
+        id: 'last-updated',
+        header: 'Last Updated',
+        cell: ({ row }) => (row.original as { lastUpdated?: string }).lastUpdated || '—',
+      },
     }
 
-    const visibleIds = tableColumnPreferencesQuery.data?.visibleColumnIds?.length
+    const catalogIds = FINANCE_REVENUE_TABLE_COLUMNS_CATALOG.map((column) => column.id)
+    const rawVisibleIds = tableColumnPreferencesQuery.data?.visibleColumnIds?.length
       ? tableColumnPreferencesQuery.data.visibleColumnIds
       : DEFAULT_FINANCE_REVENUE_VISIBLE_COLUMN_IDS
+    const visibleIds = sortIdsByCatalogOrder(
+      [
+        ...new Set(rawVisibleIds.map((id) => FINANCE_REVENUE_LEGACY_COLUMN_ID_MAP[id] ?? id)),
+      ].filter((id) => catalogIds.includes(id)),
+      catalogIds,
+    )
 
     const preferenceColumns = visibleIds.map((id) => dataColumnsById[id]).filter(Boolean)
 

@@ -27,7 +27,14 @@ export type DecisionActionModalOption = {
   value: string
 }
 
-export type DecisionActionSubmitIcon = 'check' | 'x' | 'trash' | 'userMinus' | 'pause' | 'none'
+export type DecisionActionSubmitIcon =
+  | 'check'
+  | 'x'
+  | 'trash'
+  | 'userMinus'
+  | 'pause'
+  | 'circleArrowOutUpRight'
+  | 'none'
 
 type DecisionActionModalProps = {
   open: boolean
@@ -115,6 +122,7 @@ const variantStyles: Record<
   },
   escalate: {
     submit: 'ui-modal-btn-gold',
+    submitIcon: 'circleArrowOutUpRight',
     showHero: true,
     heroShape: 'circle',
     adminNotesMinHeight: 'min-h-[100px]',
@@ -563,6 +571,13 @@ export function DecisionActionModal({
                   aria-hidden="true"
                 />
               </span>
+            ) : null}
+            {resolvedSubmitIcon === 'circleArrowOutUpRight' ? (
+              <CircleArrowOutUpRight
+                className="size-4 shrink-0 text-black"
+                strokeWidth={2.2}
+                aria-hidden="true"
+              />
             ) : null}
           </button>
         </div>

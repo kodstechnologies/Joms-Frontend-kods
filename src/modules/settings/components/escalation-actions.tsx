@@ -1,11 +1,11 @@
 import { useState } from 'react'
 import { User } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
 
 import {
   TableActionsDropdown,
   TableActionsItem,
 } from '@/shared/components/table/table-actions-dropdown'
+import { useOpenEscalation } from '@/modules/my-tasks/hooks/use-open-escalation'
 
 import type { Escalation } from '../mock/escalation-data'
 
@@ -15,17 +15,17 @@ type EscalationActionsProps = {
 
 export function EscalationActions({ escalation }: EscalationActionsProps) {
   const [open, setOpen] = useState(false)
-  const navigate = useNavigate()
+  const openEscalation = useOpenEscalation()
 
   const handleView = () => {
     setOpen(false)
-
-    if (escalation.applicationUrl) {
-      navigate(escalation.applicationUrl)
-      return
-    }
-
-    navigate('/settings/escalations')
+    openEscalation({
+      entityType: escalation.entityType,
+      entityId: escalation.entityId,
+      venueId: escalation.venueId,
+      serviceType: escalation.serviceType,
+      applicationUrl: escalation.applicationUrl,
+    })
   }
 
   return (

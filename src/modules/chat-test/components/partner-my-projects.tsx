@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import {
-  createPaymentRequest,
+  approveMilestone,
   getProposalWork,
   getQuotationDetail,
   listPartnerServiceProjects,
@@ -626,9 +626,7 @@ export function PartnerMyProjects({ token }: Props) {
                           onClick={() =>
                             void runAction(
                               async () => {
-                                await createPaymentRequest(token, workProposal._id, {
-                                  milestoneIndex: index,
-                                })
+                                await approveMilestone(token, workProposal._id, index)
                               },
                               index === 0
                                 ? `Payment requested for milestone ${index + 1}`
@@ -638,8 +636,8 @@ export function PartnerMyProjects({ token }: Props) {
                           className="mt-2 rounded-lg bg-emerald-400 px-3 py-1.5 text-xs font-medium text-zinc-950 disabled:opacity-50"
                         >
                           {index === 0
-                            ? 'Request payment'
-                            : `Approve & start next · Request payment (M${index + 1})`}
+                            ? 'Request payment (start M1)'
+                            : `Start next milestone · Request payment (M${index + 1})`}
                         </button>
                       ) : null}
 

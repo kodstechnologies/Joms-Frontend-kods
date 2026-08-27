@@ -95,14 +95,14 @@ export function ExpertSettingsPanel({ value, onChange }: ExpertSettingsPanelProp
         <SettingsToggleRow
           indented
           label="Same Phone Number"
-          description="Detects if a phone number is already linked to another account."
+          description="Exact numbers are always unique. This toggle also blocks phone aliases (same 10 digits with or without +91)."
           checked={value.accountCreation.samePhoneNumber}
           onChange={(checked) => patchAccount({ samePhoneNumber: checked })}
         />
         <SettingsToggleRow
           indented
           label="Same Email ID"
-          description="Prevents multiple accounts using the same email address."
+          description="Exact emails are always unique. This toggle also blocks aliases such as Gmail dots and +tags."
           checked={value.accountCreation.sameEmailId}
           onChange={(checked) => patchAccount({ sameEmailId: checked })}
         />
@@ -152,7 +152,7 @@ export function ExpertSettingsPanel({ value, onChange }: ExpertSettingsPanelProp
         </SettingsFieldRow>
         <SettingsToggleRow
           label="Suspend on new device login"
-          description="Require verification when logging in from new device"
+          description="Suspends the account until an admin unlocks it. The first device at registration is not treated as new."
           checked={value.autoSuspension.suspendOnNewDeviceLogin}
           onChange={(checked) => patchSuspension({ suspendOnNewDeviceLogin: checked })}
         />

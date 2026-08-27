@@ -1,11 +1,17 @@
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
 import {
   fetchExpertAnalytics,
+  fetchExpertAvailability,
   fetchExpertConsultations,
+  fetchExpertCustomLink,
   fetchExpertProfile,
+  fetchExpertReports,
   fetchExpertServices,
   fetchPartnerInsights,
+  updateExpertAdminNotes,
+  updateExpertAdminTags,
+  updateExpertCustomLinkVisibility,
 } from '../api/expert-api'
 
 export const useExpertProfile = (id?: string) =>
@@ -14,6 +20,61 @@ export const useExpertProfile = (id?: string) =>
     queryFn: () => fetchExpertProfile(id as string),
     enabled: Boolean(id),
   })
+
+export const useExpertAvailability = (partnerId?: string, enabled = false) =>
+  useQuery({
+    queryKey: ['expert-availability', partnerId],
+    queryFn: () => fetchExpertAvailability(partnerId as string),
+    enabled: Boolean(partnerId) && enabled,
+  })
+
+export const useExpertReportsForPartner = (partnerId?: string, enabled = true) =>
+  useQuery({
+    queryKey: ['expert-reports', partnerId],
+    queryFn: () => fetchExpertReports({ partnerId, limit: 50 }),
+    enabled: Boolean(partnerId) && enabled,
+  })
+
+export const useUpdateExpertAdminNotes = (partnerId?: string) => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (internalNotes: string) =>
+      updateExpertAdminNotes(partnerId as string, internalNotes),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['expert-profile', partnerId] })
+    },
+  })
+}
+
+export const useUpdateExpertAdminTags = (partnerId?: string) => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (tags: string[]) => updateExpertAdminTags(partnerId as string, tags),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['expert-profile', partnerId] })
+    },
+  })
+}
+
+export const useExpertCustomLink = (partnerId?: string, enabled = false) =>
+  useQuery({
+    queryKey: ['expert-custom-link', partnerId],
+    queryFn: () => fetchExpertCustomLink(partnerId as string),
+    enabled: Boolean(partnerId) && enabled,
+  })
+
+export const useUpdateExpertCustomLinkVisibility = (partnerId?: string) => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (visible: boolean) =>
+      updateExpertCustomLinkVisibility(partnerId as string, visible),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['expert-custom-link', partnerId] })
+      void queryClient.invalidateQueries({ queryKey: ['expert-profile', partnerId] })
+      void queryClient.invalidateQueries({ queryKey: ['expert-analytics', partnerId] })
+    },
+  })
+}
 
 export const useExpertAnalytics = (expertId?: string, timeRange?: string) =>
   useQuery({

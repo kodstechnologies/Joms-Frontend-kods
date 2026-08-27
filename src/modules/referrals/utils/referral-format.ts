@@ -45,6 +45,24 @@ export const formatReferralDateRange = (start?: string | null, end?: string | nu
   }
 }
 
+export const isReferralUsed = (
+  invite?: {
+    status?: string | null
+    statusLabel?: string | null
+    acceptedAt?: string | null
+    signupDate?: string | null
+    partnerSignupAt?: string | null
+    referredUserId?: string | null
+  } | null,
+) => {
+  if (!invite) return false
+  if (invite.status === 'accepted') return true
+  if (invite.statusLabel && /success/i.test(invite.statusLabel)) return true
+  return Boolean(
+    invite.acceptedAt || invite.signupDate || invite.partnerSignupAt || invite.referredUserId,
+  )
+}
+
 export const getReferralStatusClassName = (status: string) => {
   switch (status) {
     case 'accepted':
@@ -60,18 +78,19 @@ export const getReferralStatusClassName = (status: string) => {
   }
 }
 
-export const getReferralStatusLabel = (status: string) => {
+export const getReferralStatusLabel = (status: string, statusLabel?: string | null) => {
+  if (statusLabel) return statusLabel
   switch (status) {
     case 'accepted':
-      return 'Accepted'
+      return 'Successful'
     case 'pending':
-      return 'Pending'
+      return 'Invited'
     case 'rejected':
-      return 'Rejected'
+      return 'Cancelled'
     case 'expired':
       return 'Expired'
     default:
-      return status.charAt(0).toUpperCase() + status.slice(1)
+      return status ? status.charAt(0).toUpperCase() + status.slice(1) : '—'
   }
 }
 

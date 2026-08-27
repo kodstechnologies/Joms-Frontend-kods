@@ -26,7 +26,10 @@ const byCommunicationSection: FilterSectionConfig = {
       options: [
         { label: 'Transactional', value: 'transactional' },
         { label: 'Marketing', value: 'marketing' },
+        { label: 'Promotional', value: 'promotional' },
+        { label: 'Reminder', value: 'reminder' },
         { label: 'Announcement', value: 'announcement' },
+        { label: 'System Message', value: 'system' },
       ],
     },
     {
@@ -34,10 +37,22 @@ const byCommunicationSection: FilterSectionConfig = {
       label: 'Audience',
       type: 'checkbox-group',
       options: [
-        { label: 'Expert Management', value: 'expert-management' },
-        { label: 'Service Management', value: 'service-management' },
-        { label: 'Venue Management', value: 'venue-management' },
-        { label: 'All Partners', value: 'all-partners' },
+        { label: 'Experts', value: 'experts' },
+        { label: 'Venue Partners', value: 'venue-partners' },
+        { label: 'Members', value: 'members' },
+        { label: 'Admins', value: 'admins' },
+        { label: 'Custom Segment', value: 'custom-segment' },
+      ],
+    },
+    {
+      id: 'priority',
+      label: 'Priority',
+      type: 'checkbox-group',
+      options: [
+        { label: 'Low', value: 'low' },
+        { label: 'Medium', value: 'medium' },
+        { label: 'High', value: 'high' },
+        { label: 'Critical', value: 'critical' },
       ],
     },
     {
@@ -56,8 +71,12 @@ const byCommunicationSection: FilterSectionConfig = {
       options: [
         { label: 'Draft', value: 'draft' },
         { label: 'Scheduled', value: 'scheduled' },
+        { label: 'Processing', value: 'processing' },
         { label: 'Sent', value: 'sent' },
+        { label: 'Delivered', value: 'delivered' },
         { label: 'Failed', value: 'failed' },
+        { label: 'Cancelled', value: 'cancelled' },
+        { label: 'Paused', value: 'paused' },
         { label: 'Active', value: 'active' },
       ],
     },

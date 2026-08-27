@@ -27,7 +27,7 @@ export function TicketDetailPage() {
   if (isLoading && !ticket) {
     return (
       <div className="space-y-6">
-        <p className="text-body-md text-muted">Loading ticket…</p>
+        <p className="text-body-md text-muted">Loading ticketâ€¦</p>
       </div>
     )
   }
@@ -42,7 +42,6 @@ export function TicketDetailPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-start gap-3">
         <button
           type="button"
@@ -60,9 +59,7 @@ export function TicketDetailPage() {
         </div>
       </div>
 
-      {/* Ticket info card */}
       <div className="radius-lg bg-brand-surface border border-white/[0.06] p-5">
-        {/* Top row: ID + status */}
         <div className="mb-5 flex items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <span className="text-body-sm text-muted">Ticket ID</span>
@@ -71,13 +68,12 @@ export function TicketDetailPage() {
           <TicketStatusBadge status={ticket.status} />
         </div>
 
-        {/* Detail pills row */}
         <div className="flex flex-wrap gap-3">
           <InfoPill label="Subject" value={ticket.subject} width={203} />
           <InfoPill label="Category" value={ticket.category} width={110} />
           <InfoPill label="Priority" value={getPriorityLabel(ticket.priority)} width={70} />
           <InfoPill label="Requester" value={ticket.reporter} width={108} />
-          <InfoPill label="Assigned To" value={ticket.assignedTo ?? '—'} width={196} />
+          <InfoPill label="Assigned To" value={ticket.assignedTo ?? 'â€”'} width={196} />
           <InfoPill label="Created On" value={ticket.createdAt} width={126} />
           <InfoPill
             label="Assigned On"
@@ -89,7 +85,6 @@ export function TicketDetailPage() {
           )}
         </div>
 
-        {/* Description */}
         {ticket.description ? (
           <div className="mt-5">
             <p className="text-body-sm text-muted mb-2">Description</p>
@@ -98,7 +93,6 @@ export function TicketDetailPage() {
         ) : null}
       </div>
 
-      {/* Conversation History */}
       <section className="space-y-3">
         <h2 className="text-body-md-semibold text-brand-text">Conversation History</h2>
         <div className="radius-lg bg-brand-surface space-y-4 border border-white/[0.06] p-5">
@@ -110,7 +104,6 @@ export function TicketDetailPage() {
                 key={msg.id}
                 className={cn('flex gap-3', msg.role === 'agent' ? 'flex-row-reverse' : 'flex-row')}
               >
-                {/* Avatar */}
                 <div className="size-[50px] shrink-0 rounded-full bg-white/10" />
                 <div
                   className={cn(
@@ -169,7 +162,6 @@ export function TicketDetailPage() {
         </div>
       </section>
 
-      {/* Resolution */}
       {ticket.resolution ? (
         <section className="space-y-3">
           <h2 className="text-body-md-semibold text-brand-text">Resolution</h2>
@@ -179,7 +171,6 @@ export function TicketDetailPage() {
         </section>
       ) : null}
 
-      {/* Footer */}
       <div className="flex items-center justify-between border-t border-white/[0.06] pt-5">
         <button
           type="button"

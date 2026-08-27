@@ -101,6 +101,15 @@ export function ChatTestPage() {
             <div className="text-sm text-zinc-400">Separate — book venue/space + dummy pay</div>
           </Link>
           <Link
+            to="/dev/push-notification-test"
+            className="rounded-xl border border-violet-500/40 bg-violet-500/10 px-4 py-3 hover:bg-violet-500/20"
+          >
+            <div className="font-medium text-violet-300">Push notification test</div>
+            <div className="text-sm text-zinc-400">
+              Transactional FCM types + deepLink IDs from live partner data
+            </div>
+          </Link>
+          <Link
             to="/dev/payment-finance-testing"
             className="rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-4 py-3 hover:bg-emerald-500/20"
           >

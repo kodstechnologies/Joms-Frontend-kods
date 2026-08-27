@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { Banknote, Eye, SquarePen, TrendingUp } from 'lucide-react'
+import { Banknote, Download, Eye, SlidersHorizontal, SquarePen, TrendingUp } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
+import { useBranding } from '@/app/providers/use-branding'
 import { AddFinanceNoteModal } from '@/modules/payments/components/add-finance-note-modal'
-import { fetchFinancePayouts } from '@/modules/payments/api/finance-api'
+import { fetchFinancePayoutById, fetchFinancePayouts } from '@/modules/payments/api/finance-api'
 import {
   useAddFinanceNote,
   useFinanceDashboard,
@@ -25,6 +26,7 @@ import {
   TableActionsDropdown,
   TableActionsItem,
 } from '@/shared/components/table/table-actions-dropdown'
+import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
 import { PERMISSION_LEVELS } from '@/shared/lib/permissions'
 import type { FilterValues } from '@/shared/types/data-filter'
@@ -33,6 +35,7 @@ import {
   buildFinancePayoutsListQueryParams,
   createFinancePayoutsFilteredExportHandler,
 } from '@/shared/utils/export-filter-utils'
+import { downloadInvoiceDocument, invoiceFromFinancePayout } from '@/shared/utils/invoice-document'
 
 const PAGE_SIZE = 10
 
@@ -119,6 +122,7 @@ function getStatusClassName(status: PayoutStatus) {
 
 export function PayoutManagementPage() {
   const navigate = useNavigate()
+  const { logoUrl } = useBranding()
   const [searchQuery, setSearchQuery] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
@@ -275,9 +279,29 @@ export function PayoutManagementPage() {
         >
           Add Internal Note
         </TableActionsItem>
+        <TableActionsItem
+          icon={<Download className="size-3.5 text-slate-700" aria-hidden="true" />}
+          className="text-slate-800 hover:bg-slate-100 hover:text-slate-900"
+          onClick={() => {
+            setActiveDropdownId(null)
+            void fetchFinancePayoutById(record.id)
+              .then(async (result) => {
+                const payout = result.data
+                if (!payout) throw new Error('Payout not found')
+                await downloadInvoiceDocument(
+                  invoiceFromFinancePayout(payout, { logoUrl }),
+                  payout.payoutId,
+                )
+                toast.success('Invoice downloaded')
+              })
+              .catch(() => toast.error('Failed to download invoice'))
+          }}
+        >
+          Download Invoice
+        </TableActionsItem>
       </TableActionsDropdown>
     ),
-    [activeDropdownId, navigate],
+    [activeDropdownId, logoUrl, navigate],
   )
 
   const columns = useMemo<ColumnDef<PayoutRow>[]>(
@@ -356,18 +380,24 @@ export function PayoutManagementPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-h2 text-brand-text tracking-tight">Payout Management</h1>
-        <p className="text-body-md text-muted mt-1 leading-[20px]">
-          Track revenue, payouts, and financial performance
-        </p>
-        <p className="text-body-sm text-muted mt-3 leading-[20px]">
-          <Link to="/finance/dashboard" className="hover:text-brand-text transition-colors">
-            Payment & Finance
-          </Link>
-          <span> / </span>
-          <span className="text-brand-text font-semibold">Payout Management</span>
-        </p>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h1 className="text-h2 text-brand-text tracking-tight">Payout Management</h1>
+          <p className="text-body-md text-muted mt-1 leading-[20px]">
+            Track revenue, payouts, and financial performance
+          </p>
+          <p className="text-body-sm text-muted mt-3 leading-[20px]">
+            <Link to="/finance/dashboard" className="hover:text-brand-text transition-colors">
+              Payment & Finance
+            </Link>
+            <span> / </span>
+            <span className="text-brand-text font-semibold">Payout Management</span>
+          </p>
+        </div>
+        <Button className="ui-manage-metrics" onClick={() => navigate('/metrics/finance-payouts')}>
+          <SlidersHorizontal className="size-4" />
+          Manage Metrics
+        </Button>
       </div>
 
       {isError ? <p className="text-body-sm text-brand-danger">Failed to load payouts.</p> : null}

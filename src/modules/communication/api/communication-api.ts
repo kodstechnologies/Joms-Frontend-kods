@@ -1,14 +1,36 @@
 import { settingsApiClient } from '@/shared/lib/axios'
 
 export type CommunicationChannel = 'in-app' | 'email' | 'push'
-export type CommunicationType = 'transactional' | 'marketing' | 'announcement'
+export type CommunicationType =
+  | 'transactional'
+  | 'marketing'
+  | 'promotional'
+  | 'reminder'
+  | 'announcement'
+  | 'system'
 export type CommunicationAudience =
+  | 'all-users'
+  | 'experts'
+  | 'venue-partners'
+  | 'members'
+  | 'admins'
+  | 'custom-segment'
   | 'expert-management'
   | 'service-management'
   | 'venue-management'
   | 'all-partners'
 export type CommunicationDeliveryType = 'send-now' | 'schedule'
-export type CommunicationStatus = 'draft' | 'scheduled' | 'sent' | 'failed' | 'active'
+export type CommunicationPriority = 'low' | 'medium' | 'high' | 'critical'
+export type CommunicationStatus =
+  | 'draft'
+  | 'scheduled'
+  | 'processing'
+  | 'sent'
+  | 'delivered'
+  | 'failed'
+  | 'cancelled'
+  | 'paused'
+  | 'active'
 
 export type CommunicationAnalytics = {
   sent: number
@@ -22,6 +44,7 @@ export type CommunicationAnalytics = {
 export type Communication = {
   id: string
   messageId: string
+  campaignId: string
   title: string
   channel: CommunicationChannel
   channelLabel: string
@@ -29,19 +52,32 @@ export type Communication = {
   typeLabel: string
   audience: CommunicationAudience
   audienceLabel: string
+  audienceSize: number
+  contentPreview: string
   deliveryType: CommunicationDeliveryType
+  priority: CommunicationPriority
+  priorityLabel: string
   scheduledAt: string | null
+  scheduledAtLabel: string
+  sentAt: string | null
+  sentAtLabel: string
   subject: string
   messageContent: string
   additionalNotes: string
   status: CommunicationStatus
   statusLabel: string
+  failureReason: string
   createdBy: string
   createdById: string | null
   createdAt: string | null
   createdAtLabel: string
   updatedAt: string | null
+  updatedAtLabel: string
   partnerIds?: string[]
+  deliveredCount: number
+  failedCount: number
+  openRate: number
+  clickRate: number
   analytics: CommunicationAnalytics
   deliveryMeta: {
     providerConnected: boolean
@@ -68,6 +104,9 @@ export type CommunicationMetrics = {
   delivered?: number
   failed?: number
   openRate?: number
+  clickThroughRate?: number
+  deliveryRate?: number
+  bounceRate?: number
 }
 
 export type CommunicationOption = {
@@ -79,6 +118,7 @@ export type CommunicationOptions = {
   audiences: CommunicationOption[]
   channels: CommunicationOption[]
   types: CommunicationOption[]
+  priorities: CommunicationOption[]
 }
 
 export type CreateCommunicationPayload = {
@@ -87,6 +127,7 @@ export type CreateCommunicationPayload = {
   type: CommunicationType
   audience: CommunicationAudience
   deliveryType: CommunicationDeliveryType
+  priority?: CommunicationPriority
   scheduledAt?: string | null
   subject?: string
   messageContent: string
@@ -112,10 +153,11 @@ type ApiEnvelope<T> = {
 }
 
 export const COMMUNICATION_AUDIENCE_OPTIONS: CommunicationOption[] = [
-  { value: 'expert-management', label: 'Expert Management' },
-  { value: 'service-management', label: 'Service Management' },
-  { value: 'venue-management', label: 'Venue Management' },
-  { value: 'all-partners', label: 'All Partners' },
+  { value: 'experts', label: 'Experts' },
+  { value: 'venue-partners', label: 'Venue Partners' },
+  { value: 'members', label: 'Members' },
+  { value: 'admins', label: 'Admins' },
+  { value: 'custom-segment', label: 'Custom Segment' },
 ]
 
 export const COMMUNICATION_CHANNEL_OPTIONS: CommunicationOption[] = [
@@ -127,7 +169,17 @@ export const COMMUNICATION_CHANNEL_OPTIONS: CommunicationOption[] = [
 export const COMMUNICATION_TYPE_OPTIONS: CommunicationOption[] = [
   { value: 'transactional', label: 'Transactional' },
   { value: 'marketing', label: 'Marketing' },
+  { value: 'promotional', label: 'Promotional' },
+  { value: 'reminder', label: 'Reminder' },
   { value: 'announcement', label: 'Announcement' },
+  { value: 'system', label: 'System Message' },
+]
+
+export const COMMUNICATION_PRIORITY_OPTIONS: CommunicationOption[] = [
+  { value: 'low', label: 'Low' },
+  { value: 'medium', label: 'Medium' },
+  { value: 'high', label: 'High' },
+  { value: 'critical', label: 'Critical' },
 ]
 
 export const fetchCommunicationMetrics = async () => {
@@ -152,6 +204,7 @@ export type CommunicationListParams = {
   channel?: string
   audience?: string
   type?: string
+  priority?: string
   messageId?: string
   title?: string
   createdBy?: string
@@ -201,6 +254,34 @@ export const updateCommunication = async (id: string, payload: UpdateCommunicati
 export const deleteCommunication = async (id: string) => {
   const response = await settingsApiClient.delete<ApiEnvelope<{ id: string }>>(
     `/settings/communications/${id}`,
+  )
+  return response.data.data
+}
+
+export const duplicateCommunication = async (id: string) => {
+  const response = await settingsApiClient.post<ApiEnvelope<Communication>>(
+    `/settings/communications/${id}/duplicate`,
+  )
+  return response.data.data
+}
+
+export const cancelCommunication = async (id: string) => {
+  const response = await settingsApiClient.patch<ApiEnvelope<Communication>>(
+    `/settings/communications/${id}/cancel`,
+  )
+  return response.data.data
+}
+
+export const pauseCommunication = async (id: string) => {
+  const response = await settingsApiClient.patch<ApiEnvelope<Communication>>(
+    `/settings/communications/${id}/pause`,
+  )
+  return response.data.data
+}
+
+export const resumeCommunication = async (id: string) => {
+  const response = await settingsApiClient.patch<ApiEnvelope<Communication>>(
+    `/settings/communications/${id}/resume`,
   )
   return response.data.data
 }

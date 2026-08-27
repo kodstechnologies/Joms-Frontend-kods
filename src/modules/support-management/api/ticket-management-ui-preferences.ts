@@ -1,5 +1,6 @@
 import {
   DEFAULT_TICKET_MANAGEMENT_METRIC_IDS,
+  TICKET_MANAGEMENT_LEGACY_METRIC_ID_MAP,
   TICKET_MANAGEMENT_METRICS_CATALOG,
   TICKET_MANAGEMENT_METRIC_IDS,
   TICKET_MANAGEMENT_MODULE_KEY,
@@ -23,7 +24,9 @@ function buildTicketManagementPreferences(
 ): DashboardMetricPreferences {
   const catalogIdSet = new Set(TICKET_MANAGEMENT_METRICS_CATALOG.map((metric) => metric.id))
   const filteredIds = sortIdsByCatalogOrder(
-    activeMetricIds.filter((id) => catalogIdSet.has(id)),
+    [
+      ...new Set(activeMetricIds.map((id) => TICKET_MANAGEMENT_LEGACY_METRIC_ID_MAP[id] ?? id)),
+    ].filter((id) => catalogIdSet.has(id)),
     TICKET_MANAGEMENT_METRIC_IDS,
   )
 

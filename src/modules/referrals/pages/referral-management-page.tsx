@@ -17,16 +17,23 @@ import {
   useResendExpertInvite,
 } from '../hooks/use-referrals'
 import { fetchExpertInvites } from '../api/referral-api'
+import {
+  DEFAULT_REFERRALS_ACTIVE_METRIC_IDS,
+  DEFAULT_REFERRALS_VISIBLE_COLUMN_IDS,
+  REFERRALS_MODULE_KEY,
+} from '../config/referral-management-table-columns.config'
 import { useReferralStore } from '../store/referral-store'
 import type { ExpertInvite } from '../types/referral'
 import {
   getReferralStatusClassName,
   getReferralStatusLabel,
-  formatReferralDateRange,
+  formatReferralDate,
+  isReferralUsed,
 } from '../utils/referral-format'
 import { REFERRAL_METRIC_DEFINITIONS } from '../utils/referral-metrics-definitions'
 import { useActiveMetricIds } from '@/modules/expert/hooks/use-active-metric-ids'
 import { useTableColumnPreferences } from '@/modules/expert/hooks/use-ui-preferences'
+import { TableDateTimeCell } from '@/shared/components/table/table-datetime-cell'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 import { exportDisplayValue } from '@/shared/utils/export-utils'
 import {
@@ -42,19 +49,15 @@ import {
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
 
-const REFERRALS_MODULE_KEY = 'referrals'
+const DEFAULT_METRIC_IDS =
+  DEFAULT_REFERRALS_ACTIVE_METRIC_IDS.length > 0
+    ? DEFAULT_REFERRALS_ACTIVE_METRIC_IDS
+    : REFERRAL_METRIC_DEFINITIONS.map((metric) => metric.id)
 
-const DEFAULT_METRIC_IDS = REFERRAL_METRIC_DEFINITIONS.map((metric) => metric.id)
-
-const DEFAULT_VISIBLE_COLUMN_IDS = [
-  'referral-id',
-  'referrer',
-  'referred-expert',
-  'source-type',
-  'status',
-  'goal-progress',
-  'created-at',
-]
+const dash = (value: unknown) => {
+  if (value === null || value === undefined || value === '') return '—'
+  return String(value)
+}
 
 const EXPORT_COLUMN_MAP: Record<
   string,
@@ -64,10 +67,33 @@ const EXPORT_COLUMN_MAP: Record<
     header: 'Referral ID',
     accessor: (invite) => exportDisplayValue(invite.referralId),
   },
-  referrer: { header: 'Referrer', accessor: (invite) => exportDisplayValue(invite.referrerName) },
-  'referred-expert': {
-    header: 'Referred Expert',
-    accessor: (invite) => exportDisplayValue(invite.referredExpertName),
+  'referral-code': {
+    header: 'Referral Code',
+    accessor: (invite) => exportDisplayValue(invite.referralCode),
+  },
+  'referrer-name': {
+    header: 'Referrer Name',
+    accessor: (invite) => exportDisplayValue(invite.referrerName),
+  },
+  'referrer-user-id': {
+    header: 'Referrer User ID',
+    accessor: (invite) => exportDisplayValue(invite.referrerUserId || invite.referrerId),
+  },
+  'referrer-type': {
+    header: 'Referrer Type',
+    accessor: (invite) => exportDisplayValue(invite.referrerType),
+  },
+  'referred-user-name': {
+    header: 'Referred User Name',
+    accessor: (invite) => exportDisplayValue(invite.referredUserName || invite.referredExpertName),
+  },
+  'referred-user-id': {
+    header: 'Referred User ID',
+    accessor: (invite) => exportDisplayValue(invite.referredUserId),
+  },
+  'referred-entity-type': {
+    header: 'Referred Entity Type',
+    accessor: (invite) => exportDisplayValue(invite.referredEntityType || 'Expert'),
   },
   'source-type': {
     header: 'Source Type',
@@ -75,19 +101,47 @@ const EXPORT_COLUMN_MAP: Record<
   },
   status: {
     header: 'Status',
-    accessor: (invite) => exportDisplayValue(getReferralStatusLabel(invite.status)),
+    accessor: (invite) => {
+      const used = isReferralUsed(invite)
+      return exportDisplayValue(
+        used ? 'Successful' : getReferralStatusLabel(invite.status, invite.statusLabel),
+      )
+    },
   },
   'goal-progress': {
     header: 'Goal Progress',
     accessor: (invite) =>
       exportDisplayValue(
-        `${invite.goalProgress?.signedUpCount ?? 0}/${invite.goalProgress?.maxReferrals ?? 10}`,
+        invite.goalProgressPercent != null
+          ? `${invite.goalProgressPercent}%`
+          : `${invite.goalProgress?.signedUpCount ?? 0}/${invite.goalProgress?.maxReferrals ?? 10}`,
       ),
   },
-  'created-at': {
-    header: 'Created At',
+  'reward-status': {
+    header: 'Reward Status',
+    accessor: (invite) => exportDisplayValue(invite.rewardStatus),
+  },
+  'referred-at': {
+    header: 'Referred At',
     accessor: (invite) =>
-      exportDisplayValue(formatReferralDateRange(invite.createdAt, invite.expiresAt).range),
+      exportDisplayValue(formatReferralDate(invite.referredAt || invite.createdAt)),
+  },
+  'signup-date': {
+    header: 'Signup Date',
+    accessor: (invite) => exportDisplayValue(formatReferralDate(invite.signupDate)),
+  },
+  'goal-completed-at': {
+    header: 'Goal Completed At',
+    accessor: (invite) => exportDisplayValue(formatReferralDate(invite.goalCompletedAt)),
+  },
+  'referral-expiry-date': {
+    header: 'Referral Expiry Date',
+    accessor: (invite) =>
+      exportDisplayValue(formatReferralDate(invite.referralExpiryDate || invite.expiresAt)),
+  },
+  'last-activity': {
+    header: 'Last Activity',
+    accessor: (invite) => exportDisplayValue(formatReferralDate(invite.lastActivity)),
   },
 }
 
@@ -95,6 +149,224 @@ function getApiErrorMessage(err: unknown, fallback: string) {
   return (
     (err as { response?: { data?: { message?: string } } })?.response?.data?.message || fallback
   )
+}
+
+function buildReferralDataColumnsById(): Record<string, ColumnDef<ExpertInvite>> {
+  const badge = (value?: string | null) => {
+    if (!value) return '—'
+    return (
+      <span className="rounded bg-slate-500/10 px-2 py-0.5 text-[10px] font-bold text-slate-300 uppercase">
+        {value}
+      </span>
+    )
+  }
+
+  return {
+    'referral-id': {
+      id: 'referral-id',
+      header: 'Referral ID',
+      accessorFn: (row) => row.referralId ?? '',
+      cell: ({ row }) => <span className="ui-table-id">{dash(row.original.referralId)}</span>,
+    },
+    'referral-code': {
+      id: 'referral-code',
+      header: 'Referral Code',
+      accessorFn: (row) => row.referralCode ?? '',
+      cell: ({ row }) => (
+        <span className="font-mono text-xs">{dash(row.original.referralCode)}</span>
+      ),
+    },
+    'referrer-name': {
+      id: 'referrer-name',
+      header: 'Referrer Name',
+      accessorFn: (row) => row.referrerName ?? '',
+      cell: ({ row }) => dash(row.original.referrerName),
+    },
+    referrer: {
+      id: 'referrer',
+      header: 'Referrer Name',
+      accessorFn: (row) => row.referrerName ?? '',
+      cell: ({ row }) => dash(row.original.referrerName),
+    },
+    'referrer-user-id': {
+      id: 'referrer-user-id',
+      header: 'Referrer User ID',
+      accessorFn: (row) => row.referrerUserId || row.referrerId || '',
+      cell: ({ row }) => (
+        <span className="ui-table-id">
+          {dash(row.original.referrerUserId || row.original.referrerId)}
+        </span>
+      ),
+    },
+    'referrer-type': {
+      id: 'referrer-type',
+      header: 'Referrer Type',
+      accessorFn: (row) => row.referrerType ?? '',
+      cell: ({ row }) => badge(row.original.referrerType),
+    },
+    'referred-user-name': {
+      id: 'referred-user-name',
+      header: 'Referred User Name',
+      accessorFn: (row) => row.referredUserName || row.referredExpertName || '',
+      cell: ({ row }) => (
+        <span className="font-medium text-white">
+          {dash(row.original.referredUserName || row.original.referredExpertName)}
+        </span>
+      ),
+    },
+    'referred-expert': {
+      id: 'referred-expert',
+      header: 'Referred User Name',
+      accessorFn: (row) => row.referredUserName || row.referredExpertName || '',
+      cell: ({ row }) => dash(row.original.referredUserName || row.original.referredExpertName),
+    },
+    'referred-user-id': {
+      id: 'referred-user-id',
+      header: 'Referred User ID',
+      accessorFn: (row) => row.referredUserId ?? '',
+      cell: ({ row }) => <span className="ui-table-id">{dash(row.original.referredUserId)}</span>,
+    },
+    'referred-entity-type': {
+      id: 'referred-entity-type',
+      header: 'Referred Entity Type',
+      accessorFn: (row) => row.referredEntityType || 'Expert',
+      cell: ({ row }) => badge(row.original.referredEntityType || 'Expert'),
+    },
+    'source-type': {
+      id: 'source-type',
+      header: 'Source Type',
+      accessorFn: (row) => row.sourceType ?? '',
+      cell: ({ row }) => badge(row.original.sourceType),
+    },
+    status: {
+      id: 'status',
+      header: 'Status',
+      accessorFn: (row) => row.status ?? '',
+      cell: ({ row }) => {
+        const used = isReferralUsed(row.original)
+        const status = used ? 'accepted' : row.original.status
+        return (
+          <span
+            className={cn(
+              'rounded-full border px-2.5 py-0.5 text-[11px] font-semibold',
+              getReferralStatusClassName(status),
+            )}
+          >
+            {used
+              ? 'Successful'
+              : getReferralStatusLabel(row.original.status, row.original.statusLabel)}
+          </span>
+        )
+      },
+    },
+    'goal-progress': {
+      id: 'goal-progress',
+      header: 'Goal Progress',
+      accessorFn: (row) =>
+        row.goalProgressPercent ??
+        Math.min(
+          100,
+          Math.round(
+            ((row.goalProgress?.signedUpCount ?? 0) / (row.goalProgress?.maxReferrals || 10)) * 100,
+          ),
+        ),
+      meta: { headerClassName: 'text-center', cellClassName: 'text-center' },
+      cell: ({ row }) => {
+        const percent =
+          row.original.goalProgressPercent ??
+          Math.min(
+            100,
+            Math.round(
+              ((row.original.goalProgress?.signedUpCount ?? 0) /
+                (row.original.goalProgress?.maxReferrals || 10)) *
+                100,
+            ),
+          )
+        return (
+          <div className="mx-auto flex w-28 flex-col gap-1">
+            <div className="h-1.5 overflow-hidden rounded-full bg-white/10">
+              <div
+                className="bg-brand-accent h-full rounded-full"
+                style={{ width: `${percent}%` }}
+              />
+            </div>
+            <span className="text-brand-text text-xs font-medium">{percent}%</span>
+          </div>
+        )
+      },
+    },
+    'reward-status': {
+      id: 'reward-status',
+      header: 'Reward Status',
+      accessorFn: (row) => row.rewardStatus ?? '',
+      cell: ({ row }) => badge(row.original.rewardStatus),
+    },
+    'reward-type': {
+      id: 'reward-type',
+      header: 'Reward Type',
+      accessorFn: (row) => row.rewardType ?? '',
+      cell: ({ row }) => dash(row.original.rewardType),
+    },
+    'reward-value': {
+      id: 'reward-value',
+      header: 'Reward Value',
+      accessorFn: (row) => row.rewardValue ?? 0,
+      cell: ({ row }) =>
+        row.original.rewardValue == null
+          ? '—'
+          : `₹${Number(row.original.rewardValue).toLocaleString('en-IN')}`,
+    },
+    'referred-at': {
+      id: 'referred-at',
+      header: 'Referred At',
+      accessorFn: (row) => row.referredAt || row.createdAt || '',
+      cell: ({ row }) => (
+        <TableDateTimeCell value={row.original.referredAt || row.original.createdAt} />
+      ),
+    },
+    'created-at': {
+      id: 'created-at',
+      header: 'Referred At',
+      accessorFn: (row) => row.referredAt || row.createdAt || '',
+      cell: ({ row }) => (
+        <TableDateTimeCell value={row.original.referredAt || row.original.createdAt} />
+      ),
+    },
+    'signup-date': {
+      id: 'signup-date',
+      header: 'Signup Date',
+      accessorFn: (row) => row.signupDate ?? '',
+      cell: ({ row }) =>
+        row.original.signupDate ? <TableDateTimeCell value={row.original.signupDate} /> : '—',
+    },
+    'goal-completed-at': {
+      id: 'goal-completed-at',
+      header: 'Goal Completed At',
+      accessorFn: (row) => row.goalCompletedAt ?? '',
+      cell: ({ row }) =>
+        row.original.goalCompletedAt ? (
+          <TableDateTimeCell value={row.original.goalCompletedAt} />
+        ) : (
+          '—'
+        ),
+    },
+    'referral-expiry-date': {
+      id: 'referral-expiry-date',
+      header: 'Referral Expiry Date',
+      accessorFn: (row) => row.referralExpiryDate || row.expiresAt || '',
+      cell: ({ row }) => {
+        const value = row.original.referralExpiryDate || row.original.expiresAt
+        return value ? <TableDateTimeCell value={value} /> : '—'
+      },
+    },
+    'last-activity': {
+      id: 'last-activity',
+      header: 'Last Activity',
+      accessorFn: (row) => row.lastActivity ?? '',
+      cell: ({ row }) =>
+        row.original.lastActivity ? <TableDateTimeCell value={row.original.lastActivity} /> : '—',
+    },
+  }
 }
 
 export function ReferralManagementPage() {
@@ -226,77 +498,10 @@ export function ReferralManagementPage() {
   )
 
   const expertColumns = useMemo<ColumnDef<ExpertInvite>[]>(() => {
-    const dataColumnsById: Record<string, ColumnDef<ExpertInvite>> = {
-      'referral-id': {
-        id: 'referral-id',
-        accessorKey: 'referralId',
-        header: 'Referral ID',
-      },
-      referrer: {
-        id: 'referrer',
-        accessorKey: 'referrerName',
-        header: 'Referrer',
-      },
-      'referred-expert': {
-        id: 'referred-expert',
-        accessorKey: 'referredExpertName',
-        header: 'Referred Expert',
-      },
-      'source-type': {
-        id: 'source-type',
-        accessorKey: 'sourceType',
-        header: 'Source Type',
-        cell: ({ row }) => <span className="capitalize">{row.original.sourceType}</span>,
-      },
-      status: {
-        id: 'status',
-        accessorKey: 'status',
-        header: 'Status',
-        cell: ({ row }) => (
-          <span
-            className={cn(
-              'rounded-full border px-2.5 py-0.5 text-[11px] font-semibold',
-              getReferralStatusClassName(row.original.status),
-            )}
-          >
-            {getReferralStatusLabel(row.original.status)}
-          </span>
-        ),
-      },
-      'goal-progress': {
-        id: 'goal-progress',
-        accessorKey: 'goalProgress',
-        header: 'Goal Progress',
-        meta: { headerClassName: 'text-center', cellClassName: 'text-center' },
-        cell: ({ row }) => (
-          <span className="text-brand-text text-sm font-medium">
-            {row.original.goalProgress?.signedUpCount ?? 0}/
-            {row.original.goalProgress?.maxReferrals ?? 10}
-          </span>
-        ),
-      },
-      'created-at': {
-        id: 'created-at',
-        accessorKey: 'createdAt',
-        header: 'Created At',
-        cell: ({ row }) => {
-          const { range, days } = formatReferralDateRange(
-            row.original.createdAt,
-            row.original.expiresAt,
-          )
-          return (
-            <div className="flex flex-col gap-0.5">
-              <span className="text-brand-text text-sm font-medium">{range}</span>
-              <span className="text-muted text-xs">{days}</span>
-            </div>
-          )
-        },
-      },
-    }
-
+    const dataColumnsById = buildReferralDataColumnsById()
     const visibleIds = tableColumnPreferencesQuery.data?.visibleColumnIds?.length
       ? tableColumnPreferencesQuery.data.visibleColumnIds
-      : DEFAULT_VISIBLE_COLUMN_IDS
+      : DEFAULT_REFERRALS_VISIBLE_COLUMN_IDS
 
     const preferenceColumns = visibleIds.map((id) => dataColumnsById[id]).filter(Boolean)
 
@@ -322,7 +527,9 @@ export function ReferralManagementPage() {
         <div className="flex w-full flex-col gap-2 sm:flex-row md:w-auto">
           <Button
             className="ui-manage-metrics ui-cta ui-cta-primary h-9 w-full px-5 md:w-auto"
-            onClick={() => navigate('/metrics/referrals')}
+            onClick={() =>
+              navigate('/metrics/referrals?returnTo=/referrals/management&section=dashboard')
+            }
           >
             <SlidersHorizontal className="size-4" />
             Manage Metrics

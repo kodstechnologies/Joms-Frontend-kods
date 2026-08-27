@@ -1,11 +1,15 @@
-import { Plus, X, BadgeCheck } from 'lucide-react'
+import { Plus, X } from 'lucide-react'
 import { useMemo, useRef, useState, type FormEvent } from 'react'
 
 import { RequiredMark } from '@/shared/components/form/required-mark'
 import { DEFAULT_BILLING_CYCLES } from '../mock/membership-metrics.mock'
-import type { MembershipFeatures, MembershipPlan, MembershipPricing } from '../types/membership'
+import type {
+  MembershipPlan,
+  MembershipPlanConfig,
+  MembershipPlanConfigItem,
+  MembershipPricing,
+} from '../types/membership'
 
-/** Figma: #FFFFFF @ 10% */
 const SEP = 'rgba(255, 255, 255, 0.1)'
 
 const BASE_CYCLES = ['Weekly', '3 Months', '6 Months', 'Annual'] as const
@@ -14,7 +18,8 @@ export type MembershipPlanFormValues = {
   type: 'expert'
   planName: string
   pricing: MembershipPricing[]
-  features: MembershipFeatures
+  features: { planConfig: MembershipPlanConfig }
+  planConfig: MembershipPlanConfig
   trialPeriodDays: number
   enableAutoRenew: boolean
   allowPlanUpgrades: boolean
@@ -27,14 +32,70 @@ type MembershipPlanFormProps = {
   onSubmit: (values: MembershipPlanFormValues) => void
 }
 
-const defaultFeatures = (): MembershipFeatures => ({
-  accessToBasicNetworkingFeatures: false,
-  joinCommunities: { enabled: true, count: 10 },
-  platformHostedEvents: { enabled: true, count: 10 },
-  profileCustomization: false,
-  dedicatedAccountManager: false,
-  customFeatures: [],
+const slugify = (label: string) =>
+  label
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 64) || `item-${Date.now()}`
+
+const defaultPlanConfig = (): MembershipPlanConfig => ({
+  commissionRatePercent: 0,
+  benefits: [
+    { id: 'profile-customization', label: 'Profile customization', enabled: true },
+    { id: 'dedicated-account-manager', label: 'Dedicated Account Manager', enabled: true },
+  ],
+  partnerApp: [],
+  eligibility: [],
+  otherSettings: [],
 })
+
+const resolveInitialPlanConfig = (plan?: MembershipPlan | null): MembershipPlanConfig => {
+  if (plan?.planConfig) {
+    return {
+      commissionRatePercent: Number(plan.planConfig.commissionRatePercent ?? 0),
+      benefits: plan.planConfig.benefits?.length
+        ? plan.planConfig.benefits
+        : defaultPlanConfig().benefits,
+      partnerApp: plan.planConfig.partnerApp ?? [],
+      eligibility: plan.planConfig.eligibility ?? [],
+      otherSettings: plan.planConfig.otherSettings ?? [],
+    }
+  }
+
+  const features = plan?.features
+  if (!features) return defaultPlanConfig()
+
+  if (features.planConfig)
+    return resolveInitialPlanConfig({ ...plan, planConfig: features.planConfig })
+
+  const benefits: MembershipPlanConfigItem[] = [
+    {
+      id: 'profile-customization',
+      label: 'Profile customization',
+      enabled: Boolean(features.profileCustomization),
+    },
+    {
+      id: 'dedicated-account-manager',
+      label: 'Dedicated Account Manager',
+      enabled: Boolean(features.dedicatedAccountManager),
+    },
+    ...(features.customFeatures ?? []).map((label) => ({
+      id: slugify(label),
+      label,
+      enabled: true,
+    })),
+  ]
+
+  return {
+    commissionRatePercent: 0,
+    benefits,
+    partnerApp: [],
+    eligibility: [],
+    otherSettings: [],
+  }
+}
 
 const buildPricingState = (pricing: MembershipPricing[] = []) => {
   const cyclePool = Array.from(
@@ -64,14 +125,15 @@ export function MembershipPlanForm({ initialPlan, onSubmit }: MembershipPlanForm
   const [pricing, setPricing] = useState<Record<string, MembershipPricing>>(
     initialPricing.pricingMap,
   )
-  const [features, setFeatures] = useState<MembershipFeatures>(
-    initialPlan?.features ?? defaultFeatures(),
+  const [planConfig, setPlanConfig] = useState<MembershipPlanConfig>(() =>
+    resolveInitialPlanConfig(initialPlan),
   )
-  const [customFeatureDraft, setCustomFeatureDraft] = useState('')
   const [addingFeature, setAddingFeature] = useState(false)
+  const [featureLabelDraft, setFeatureLabelDraft] = useState('')
   const [addingCycle, setAddingCycle] = useState(false)
   const [cycleDraft, setCycleDraft] = useState('')
   const [trialPeriodDays, setTrialPeriodDays] = useState(initialPlan?.trialPeriodDays ?? 0)
+  const [trialFocused, setTrialFocused] = useState(false)
   const [enableAutoRenew, setEnableAutoRenew] = useState(initialPlan?.enableAutoRenew ?? true)
   const [allowPlanUpgrades, setAllowPlanUpgrades] = useState(initialPlan?.allowPlanUpgrades ?? true)
   const [allowDowngradePlans, setAllowDowngradePlans] = useState(
@@ -113,21 +175,38 @@ export function MembershipPlanForm({ initialPlan, onSubmit }: MembershipPlanForm
     setAddingCycle(false)
   }
 
-  const addCustomFeature = () => {
-    const value = customFeatureDraft.trim()
-    if (!value) return
-    setFeatures((prev) => ({
-      ...prev,
-      customFeatures: [...(prev.customFeatures ?? []), value],
-    }))
-    setCustomFeatureDraft('')
+  const addBenefitFeature = () => {
+    const label = featureLabelDraft.trim()
+    if (!label) return
+    const id = slugify(label)
+    setPlanConfig((prev) => {
+      if (
+        prev.benefits.some(
+          (item) => item.id === id || item.label.toLowerCase() === label.toLowerCase(),
+        )
+      ) {
+        return prev
+      }
+      return {
+        ...prev,
+        benefits: [...prev.benefits, { id, label, enabled: true }],
+      }
+    })
+    setFeatureLabelDraft('')
     setAddingFeature(false)
   }
 
-  const removeCustomFeature = (index: number) => {
-    setFeatures((prev) => ({
+  const removeBenefitFeature = (id: string) => {
+    setPlanConfig((prev) => ({
       ...prev,
-      customFeatures: (prev.customFeatures ?? []).filter((_, i) => i !== index),
+      benefits: prev.benefits.filter((item) => item.id !== id),
+    }))
+  }
+
+  const toggleBenefitFeature = (id: string, enabled: boolean) => {
+    setPlanConfig((prev) => ({
+      ...prev,
+      benefits: prev.benefits.map((item) => (item.id === id ? { ...item, enabled } : item)),
     }))
   }
 
@@ -142,7 +221,8 @@ export function MembershipPlanForm({ initialPlan, onSubmit }: MembershipPlanForm
       type: 'expert',
       planName: planName.trim(),
       pricing: pricingList,
-      features,
+      planConfig,
+      features: { planConfig },
       trialPeriodDays,
       enableAutoRenew,
       allowPlanUpgrades,
@@ -153,7 +233,6 @@ export function MembershipPlanForm({ initialPlan, onSubmit }: MembershipPlanForm
 
   return (
     <form id="membership-plan-form" onSubmit={handleSubmit} className="space-y-6">
-      {/* —— Basic Information —— */}
       <section className="space-y-4">
         <h3 className="text-[16px] leading-6 font-semibold text-white">Basic Information</h3>
 
@@ -178,13 +257,12 @@ export function MembershipPlanForm({ initialPlan, onSubmit }: MembershipPlanForm
             <button
               type="button"
               onClick={() => iconInputRef.current?.click()}
-              className="flex size-[70px] items-center justify-center overflow-hidden rounded-full border border-white/10 bg-black transition-colors hover:border-white/25"
-              aria-label="Upload plan icon"
+              className="flex size-[42px] items-center justify-center overflow-hidden rounded-[8px] border border-white/10 bg-black"
             >
               {iconPreview ? (
                 <img src={iconPreview} alt="" className="size-full object-cover" />
               ) : (
-                <BadgeCheck className="size-6 text-white" />
+                <Plus className="size-4 text-white/50" />
               )}
             </button>
             <input
@@ -196,129 +274,87 @@ export function MembershipPlanForm({ initialPlan, onSubmit }: MembershipPlanForm
             />
           </div>
         </div>
-
-        {initialPlan ? (
-          <p className="text-[12px] leading-[18px] text-white/50">Plan ID: {initialPlan.planId}</p>
-        ) : null}
-
-        <div className="space-y-2">
-          <span className="block text-[12px] leading-[18px] text-white/50">
-            Billing Cycle format <RequiredMark />
-          </span>
-          <div className="flex min-h-[42px] flex-nowrap items-center gap-2 overflow-x-auto pb-1">
-            {availableCycles.map((cycle) => {
-              const selected = selectedCycles.includes(cycle)
-              return (
-                <button
-                  key={cycle}
-                  type="button"
-                  onClick={() => toggleCycle(cycle)}
-                  className="inline-flex h-[42px] shrink-0 items-center gap-1.5 rounded-[8px] border px-3 text-[14px] leading-[22px] font-medium whitespace-nowrap transition-colors"
-                  style={
-                    selected
-                      ? {
-                          borderColor: '#ffffff',
-                          backgroundColor: '#ffffff',
-                          color: '#000000',
-                        }
-                      : {
-                          borderColor: 'rgba(255, 255, 255, 0.2)',
-                          backgroundColor: 'transparent',
-                          color: '#ffffff',
-                        }
-                  }
-                >
-                  {selected ? (
-                    <>
-                      <X className="size-3.5 shrink-0" strokeWidth={2.25} />
-                      {cycle}
-                    </>
-                  ) : (
-                    <>
-                      <Plus className="size-3.5 shrink-0" strokeWidth={2.25} />
-                      {cycle}
-                    </>
-                  )}
-                </button>
-              )
-            })}
-            {addingCycle ? (
-              <div className="flex h-[42px] shrink-0 items-center gap-2">
-                <input
-                  value={cycleDraft}
-                  onChange={(e) => setCycleDraft(e.target.value)}
-                  placeholder="Name"
-                  className="box-border h-[42px] w-[100px] rounded-[8px] border border-white/10 bg-black px-3 text-[14px] text-white outline-none focus:border-white/30"
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault()
-                      addCustomCycle()
-                    }
-                  }}
-                />
-                <button
-                  type="button"
-                  onClick={addCustomCycle}
-                  className="text-[14px] font-medium text-[#f6cb86]"
-                >
-                  Add
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setAddingCycle(false)
-                    setCycleDraft('')
-                  }}
-                  className="text-white/50"
-                >
-                  <X className="size-4" />
-                </button>
-              </div>
-            ) : (
-              <button
-                type="button"
-                onClick={() => setAddingCycle(true)}
-                className="inline-flex h-[42px] shrink-0 items-center gap-1.5 rounded-[8px] border border-dashed border-white/20 px-3 text-[14px] leading-[22px] font-medium whitespace-nowrap text-white/70 hover:border-white/40"
-              >
-                <Plus className="size-3.5 shrink-0" strokeWidth={2.25} />
-                Add New
-              </button>
-            )}
-          </div>
-        </div>
       </section>
 
-      {/* —— Pricing Information —— */}
+      <div className="h-px w-full" style={{ backgroundColor: SEP }} aria-hidden />
+
       <section className="space-y-4">
         <h3 className="text-[16px] leading-6 font-semibold text-white">Pricing Information</h3>
-        <div className="flex flex-wrap gap-x-4 gap-y-5">
+
+        <div className="flex flex-wrap gap-2">
+          {availableCycles.map((cycle) => {
+            const active = selectedCycles.includes(cycle)
+            return (
+              <button
+                key={cycle}
+                type="button"
+                onClick={() => toggleCycle(cycle)}
+                className={`inline-flex h-9 items-center gap-1.5 rounded-full border px-3 text-[13px] ${
+                  active
+                    ? 'border-white/30 bg-white/10 text-white'
+                    : 'border-white/10 bg-transparent text-white/50'
+                }`}
+              >
+                {cycle}
+                {active ? <X className="size-3.5 opacity-70" /> : null}
+              </button>
+            )
+          })}
+          {addingCycle ? (
+            <div className="flex items-center gap-2">
+              <input
+                value={cycleDraft}
+                onChange={(e) => setCycleDraft(e.target.value)}
+                placeholder="Cycle name"
+                className="box-border h-9 w-32 rounded-[8px] border border-white/10 bg-black px-2 text-[13px] text-white outline-none"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault()
+                    addCustomCycle()
+                  }
+                }}
+              />
+              <button type="button" onClick={addCustomCycle} className="ui-cta ui-cta-primary h-9">
+                Add
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setAddingCycle(true)}
+              className="inline-flex h-9 items-center rounded-full border border-dashed border-white/20 px-3 text-[13px] text-white/60"
+            >
+              + Add New
+            </button>
+          )}
+        </div>
+
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {selectedCycles.map((cycle) => (
-            <div key={cycle} className="space-y-3">
-              <label className="block space-y-2">
-                <span className="block text-[12px] leading-[18px] text-white/50">
+            <div key={cycle} className="space-y-2">
+              <label className="block space-y-1.5">
+                <span className="block text-[12px] text-white/50">
                   {cycle} Price <RequiredMark />
                 </span>
                 <input
                   type="number"
                   min={0}
-                  step="0.01"
+                  required
                   value={pricing[cycle]?.price ?? 0}
                   onChange={(e) =>
                     setPricing((prev) => ({
                       ...prev,
                       [cycle]: {
-                        ...prev[cycle],
-                        billingCycleName: cycle,
+                        ...(prev[cycle] ?? { billingCycleName: cycle, discount: 0 }),
                         price: Number(e.target.value),
                       },
                     }))
                   }
-                  required
-                  className="membership-number-input box-border h-[42px] w-[150px] rounded-[8px] border border-white/10 bg-black px-3.5 text-[14px] leading-[22px] text-white outline-none focus:border-white/30"
+                  className="box-border h-[42px] w-full rounded-[8px] border border-white/10 bg-black px-3 text-[14px] text-white outline-none focus:border-[#155dfc]"
                 />
               </label>
-              <label className="block space-y-2">
-                <span className="block text-[12px] leading-[18px] text-white/50">Discount %</span>
+              <label className="block space-y-1.5">
+                <span className="block text-[12px] text-white/50">Discount %</span>
                 <input
                   type="number"
                   min={0}
@@ -328,13 +364,12 @@ export function MembershipPlanForm({ initialPlan, onSubmit }: MembershipPlanForm
                     setPricing((prev) => ({
                       ...prev,
                       [cycle]: {
-                        ...prev[cycle],
-                        billingCycleName: cycle,
+                        ...(prev[cycle] ?? { billingCycleName: cycle, price: 0 }),
                         discount: Number(e.target.value),
                       },
                     }))
                   }
-                  className="membership-number-input box-border h-[42px] w-[90px] rounded-[8px] border border-white/10 bg-black px-3 text-[14px] leading-[22px] text-white outline-none focus:border-white/30"
+                  className="box-border h-[42px] w-full rounded-[8px] border border-white/10 bg-black px-3 text-[14px] text-white outline-none focus:border-[#155dfc]"
                 />
               </label>
             </div>
@@ -344,102 +379,58 @@ export function MembershipPlanForm({ initialPlan, onSubmit }: MembershipPlanForm
 
       <div className="h-px w-full" style={{ backgroundColor: SEP }} aria-hidden />
 
-      {/* —— Plan Features —— */}
       <section className="space-y-1">
         <h3 className="text-[16px] leading-6 font-semibold text-white">Plan Features</h3>
         <p className="mb-2 text-[12px] leading-[18px] text-white/50">Feature list:</p>
 
-        <FeatureRow
-          label="Access to basic networking features"
-          checked={features.accessToBasicNetworkingFeatures}
-          onChange={(checked) =>
-            setFeatures((prev) => ({ ...prev, accessToBasicNetworkingFeatures: checked }))
-          }
-        />
-        <FeatureRow
-          label="Join Communities"
-          checked={features.joinCommunities.enabled}
-          count={features.joinCommunities.count}
-          onChange={(checked) =>
-            setFeatures((prev) => ({
-              ...prev,
-              joinCommunities: { ...prev.joinCommunities, enabled: checked },
-            }))
-          }
-          onCountChange={(count) =>
-            setFeatures((prev) => ({
-              ...prev,
-              joinCommunities: { ...prev.joinCommunities, count },
-            }))
-          }
-        />
-        <FeatureRow
-          label="Platform Hosted Events"
-          checked={features.platformHostedEvents.enabled}
-          count={features.platformHostedEvents.count}
-          onChange={(checked) =>
-            setFeatures((prev) => ({
-              ...prev,
-              platformHostedEvents: { ...prev.platformHostedEvents, enabled: checked },
-            }))
-          }
-          onCountChange={(count) =>
-            setFeatures((prev) => ({
-              ...prev,
-              platformHostedEvents: { ...prev.platformHostedEvents, count },
-            }))
-          }
-        />
-        <FeatureRow
-          label="Profile customization"
-          checked={features.profileCustomization}
-          onChange={(checked) =>
-            setFeatures((prev) => ({ ...prev, profileCustomization: checked }))
-          }
-        />
-        <FeatureRow
-          label="Dedicated Account Manager"
-          checked={features.dedicatedAccountManager}
-          onChange={(checked) =>
-            setFeatures((prev) => ({ ...prev, dedicatedAccountManager: checked }))
-          }
-        />
-
-        {(features.customFeatures ?? []).map((feature, index) => (
-          <div
-            key={`${feature}-${index}`}
-            className="flex items-center justify-between gap-3 py-3"
-            style={{ borderBottom: `1px solid ${SEP}` }}
-          >
-            <span className="text-[14px] leading-[22px] text-white">{feature}</span>
-            <button
-              type="button"
-              onClick={() => removeCustomFeature(index)}
-              className="text-white/50 hover:text-[#d3191c]"
-              aria-label="Remove feature"
+        <div className="w-full max-w-[597px]">
+          {planConfig.benefits.map((item) => (
+            <div
+              key={item.id}
+              className="flex h-6 items-center justify-between gap-3"
+              style={{ marginBottom: 16 }}
             >
-              <X className="size-4" />
-            </button>
-          </div>
-        ))}
+              <span className="min-w-0 flex-1 truncate text-[14px] leading-[22px] text-white">
+                {item.label}
+              </span>
+              <div className="flex shrink-0 items-center gap-2">
+                <Toggle
+                  checked={item.enabled !== false}
+                  onChange={(checked) => toggleBenefitFeature(item.id, checked)}
+                />
+                {item.id !== 'profile-customization' && item.id !== 'dedicated-account-manager' ? (
+                  <button
+                    type="button"
+                    onClick={() => removeBenefitFeature(item.id)}
+                    className="text-white/40 hover:text-[#d3191c]"
+                    aria-label={`Remove ${item.label}`}
+                  >
+                    <X className="size-3.5" />
+                  </button>
+                ) : null}
+              </div>
+            </div>
+          ))}
+        </div>
 
         {addingFeature ? (
-          <div className="flex items-center gap-2 pt-3">
+          <div className="flex max-w-[648px] items-center gap-2 pt-2">
             <input
-              value={customFeatureDraft}
-              onChange={(e) => setCustomFeatureDraft(e.target.value)}
+              value={featureLabelDraft}
+              onChange={(e) => setFeatureLabelDraft(e.target.value)}
               placeholder="Feature name"
+              autoFocus
               className="box-border h-[42px] min-w-0 flex-1 rounded-[8px] border border-white/10 bg-black px-3.5 text-[14px] text-white outline-none focus:border-[#155dfc]"
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
                   e.preventDefault()
-                  addCustomFeature()
+                  addBenefitFeature()
                 }
               }}
             />
             <button
               type="button"
-              onClick={addCustomFeature}
+              onClick={addBenefitFeature}
               className="ui-cta ui-cta-primary shrink-0"
             >
               Add
@@ -448,7 +439,7 @@ export function MembershipPlanForm({ initialPlan, onSubmit }: MembershipPlanForm
               type="button"
               onClick={() => {
                 setAddingFeature(false)
-                setCustomFeatureDraft('')
+                setFeatureLabelDraft('')
               }}
               className="ui-cta ui-cta-outline shrink-0"
             >
@@ -459,19 +450,15 @@ export function MembershipPlanForm({ initialPlan, onSubmit }: MembershipPlanForm
           <button
             type="button"
             onClick={() => setAddingFeature(true)}
-            className="mt-3 flex h-[42px] w-full max-w-[648px] items-center justify-center rounded-[10px] border border-white/20 text-[14px] leading-[22px] font-medium text-white transition-colors hover:bg-white/5"
+            className="mt-3 box-border flex h-[42px] w-full max-w-[648px] items-center justify-center rounded-[10px] border border-white/20 bg-black text-[14px] leading-[22px] font-medium text-white transition-colors hover:bg-white/5"
           >
-            Add more features
+            Add more Features
           </button>
         )}
       </section>
 
-      {/* —— Trial + Additional (Figma: 224 × 243) —— */}
-      <section
-        className="w-full max-w-[224px] space-y-5 rounded-[10px] border p-4"
-        style={{ borderColor: SEP }}
-      >
-        <div className="space-y-3">
+      <div>
+        <section className="space-y-3">
           <h3 className="text-[16px] leading-6 font-semibold text-white">
             Trial Period Management
           </h3>
@@ -480,72 +467,45 @@ export function MembershipPlanForm({ initialPlan, onSubmit }: MembershipPlanForm
               Trial Period (days)
             </span>
             <input
-              type="number"
-              min={0}
-              value={trialPeriodDays}
-              onChange={(e) => setTrialPeriodDays(Number(e.target.value))}
-              className="box-border h-[42px] w-full rounded-[8px] border border-white/10 bg-black px-3 text-[14px] leading-[22px] text-white outline-none focus:border-[#155dfc]"
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              value={
+                trialFocused ? String(trialPeriodDays) : String(trialPeriodDays).padStart(2, '0')
+              }
+              onFocus={() => setTrialFocused(true)}
+              onBlur={() => setTrialFocused(false)}
+              onChange={(e) => {
+                const digits = e.target.value.replace(/\D/g, '')
+                setTrialPeriodDays(digits === '' ? 0 : Number(digits))
+              }}
+              className="box-border h-[42px] w-[150px] rounded-[8px] border border-white/10 bg-black px-3 text-[14px] leading-[22px] text-white outline-none focus:border-[#155dfc]"
             />
           </label>
-        </div>
+        </section>
 
-        <div className="h-px w-full" style={{ backgroundColor: SEP }} aria-hidden />
-
-        <div className="space-y-3">
+        <section className="w-[224px] space-y-3" style={{ marginTop: 42 }}>
           <h3 className="text-[16px] leading-6 font-semibold text-white">Additional Settings</h3>
-          <CheckboxRow
-            label="Enable Auto-Renew by default"
-            checked={enableAutoRenew}
-            onChange={setEnableAutoRenew}
-          />
-          <CheckboxRow
-            label="Allow plan upgrades"
-            checked={allowPlanUpgrades}
-            onChange={setAllowPlanUpgrades}
-          />
-          <CheckboxRow
-            label="Allow downgrade plans"
-            checked={allowDowngradePlans}
-            onChange={setAllowDowngradePlans}
-          />
-        </div>
-      </section>
-    </form>
-  )
-}
-
-function FeatureRow({
-  label,
-  checked,
-  onChange,
-  count,
-  onCountChange,
-}: {
-  label: string
-  checked: boolean
-  onChange: (checked: boolean) => void
-  count?: number
-  onCountChange?: (count: number) => void
-}) {
-  const hasCount = typeof count === 'number'
-
-  return (
-    <div className="py-3" style={{ borderBottom: `1px solid ${SEP}` }}>
-      <div className="flex items-center justify-between gap-3">
-        <span className="min-w-0 flex-1 text-[14px] leading-[22px] text-white">{label}</span>
-        <Toggle checked={checked} onChange={onChange} />
+          <div className="space-y-2.5">
+            <CheckboxRow
+              label="Enable Auto-Renew by default"
+              checked={enableAutoRenew}
+              onChange={setEnableAutoRenew}
+            />
+            <CheckboxRow
+              label="Allow plan upgrades"
+              checked={allowPlanUpgrades}
+              onChange={setAllowPlanUpgrades}
+            />
+            <CheckboxRow
+              label="Allow downgrade plans"
+              checked={allowDowngradePlans}
+              onChange={setAllowDowngradePlans}
+            />
+          </div>
+        </section>
       </div>
-      {hasCount ? (
-        <input
-          type="number"
-          min={0}
-          value={count}
-          disabled={!checked}
-          onChange={(e) => onCountChange?.(Number(e.target.value))}
-          className="membership-number-input mt-3 box-border h-[42px] w-[242px] max-w-full rounded-[8px] border border-white/10 bg-black px-3 text-[14px] leading-[22px] text-white outline-none focus:border-white/30 disabled:opacity-40"
-        />
-      ) : null}
-    </div>
+    </form>
   )
 }
 
@@ -558,18 +518,14 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (value: boo
       onClick={() => onChange(!checked)}
       className="relative h-[22px] w-[40px] shrink-0 rounded-full transition-colors"
       style={{
-        // Figma: ON = white track + dark knob on right; OFF = empty track + white knob on left
-        backgroundColor: checked ? '#ffffff' : 'transparent',
-        border: checked ? 'none' : '1.5px solid rgba(255, 255, 255, 0.35)',
+        backgroundColor: checked ? 'rgba(255, 255, 255, 0.2)' : 'transparent',
+        border: '1.5px solid rgba(255, 255, 255, 0.45)',
         boxSizing: 'border-box',
       }}
     >
       <span
-        className="absolute top-1/2 block size-[14px] -translate-y-1/2 rounded-full transition-[left,background-color]"
-        style={{
-          left: checked ? '22px' : '3px',
-          backgroundColor: checked ? '#0a0a0a' : '#ffffff',
-        }}
+        className="absolute top-1/2 block size-[14px] -translate-y-1/2 rounded-full bg-white transition-[left]"
+        style={{ left: checked ? '22px' : '3px' }}
       />
     </button>
   )
@@ -586,11 +542,28 @@ function CheckboxRow({
 }) {
   return (
     <label className="flex cursor-pointer items-start gap-2.5 text-[12px] leading-[18px] text-white">
+      <span
+        className="mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-[3px] border border-white"
+        style={{ backgroundColor: checked ? '#ffffff' : 'transparent' }}
+        aria-hidden
+      >
+        {checked ? (
+          <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+            <path
+              d="M1 4L3.5 6.5L9 1"
+              stroke="#000000"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        ) : null}
+      </span>
       <input
         type="checkbox"
         checked={checked}
         onChange={(e) => onChange(e.target.checked)}
-        className="mt-0.5 size-4 shrink-0 accent-white"
+        className="sr-only"
       />
       <span>{label}</span>
     </label>

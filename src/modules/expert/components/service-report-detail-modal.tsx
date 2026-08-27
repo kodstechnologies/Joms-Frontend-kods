@@ -84,7 +84,6 @@ export function ServiceReportDetailModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
       <div className="flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-xl border border-slate-800 bg-[#0F172A] text-slate-100 shadow-2xl">
-        {/* Modal Header */}
         <div className="flex items-center justify-between border-b border-slate-800 px-6 py-4">
           <div>
             <span className="font-mono text-xs font-semibold text-[#E5B54E]">
@@ -100,9 +99,7 @@ export function ServiceReportDetailModal({
           </button>
         </div>
 
-        {/* Modal Body */}
         <div className="flex-1 space-y-6 overflow-y-auto p-6">
-          {/* Summary Grid */}
           <div className="grid grid-cols-2 gap-4 rounded-lg border border-slate-800/80 bg-slate-900/60 p-4">
             <div>
               <div className="text-xs text-slate-400">Reported Service</div>
@@ -131,7 +128,6 @@ export function ServiceReportDetailModal({
             </div>
           </div>
 
-          {/* Reason Section */}
           <div>
             <h4 className="mb-2 text-xs font-semibold tracking-wider text-slate-400 uppercase">
               Reason / Complaint Description
@@ -141,7 +137,6 @@ export function ServiceReportDetailModal({
             </div>
           </div>
 
-          {/* Supporting Documents */}
           {report.supportingDocuments && report.supportingDocuments.length > 0 && (
             <div>
               <h4 className="mb-2 text-xs font-semibold tracking-wider text-slate-400 uppercase">
@@ -164,7 +159,6 @@ export function ServiceReportDetailModal({
             </div>
           )}
 
-          {/* Investigation & Admin Controls */}
           <div className="space-y-4 border-t border-slate-800 pt-4">
             <h4 className="text-xs font-semibold tracking-wider text-slate-400 uppercase">
               Admin Investigation Controls
@@ -234,7 +228,6 @@ export function ServiceReportDetailModal({
           </div>
         </div>
 
-        {/* Modal Footer */}
         <div className="flex items-center justify-end gap-3 border-t border-slate-800 px-6 py-4">
           <Button variant="outline" onClick={onClose} disabled={updating}>
             Cancel

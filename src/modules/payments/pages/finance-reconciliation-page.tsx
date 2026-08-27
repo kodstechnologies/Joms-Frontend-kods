@@ -11,8 +11,10 @@ import { mapReconToRow } from '@/modules/payments/utils/finance-mappers'
 import {
   DEFAULT_FINANCE_RECONCILIATION_VISIBLE_COLUMN_IDS,
   FINANCE_RECONCILIATION_MODULE_KEY,
+  FINANCE_RECONCILIATION_TABLE_COLUMNS_CATALOG,
 } from '@/modules/payments/config/finance-reconciliation-table-columns.config'
 import { useTableColumnPreferences } from '@/modules/expert/hooks/use-ui-preferences'
+import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 import { DataTable } from '@/shared/components/table/data-table'
 import {
@@ -265,11 +267,31 @@ export function FinanceReconciliationPage() {
           </span>
         ),
       },
+      'settlement-date': {
+        id: 'settlement-date',
+        header: 'Settlement Date',
+        cell: ({ row }) => (row.original as { settlementDate?: string }).settlementDate || '—',
+      },
+      'reconciled-by': {
+        id: 'reconciled-by',
+        header: 'Reconciled By',
+        cell: ({ row }) => (row.original as { reconciledBy?: string }).reconciledBy || '—',
+      },
+      status: {
+        id: 'status',
+        header: 'Status',
+        cell: ({ row }) => (row.original as { status?: string }).status || '—',
+      },
     }
 
-    const visibleIds = tableColumnPreferencesQuery.data?.visibleColumnIds?.length
+    const catalogIds = FINANCE_RECONCILIATION_TABLE_COLUMNS_CATALOG.map((column) => column.id)
+    const rawVisibleIds = tableColumnPreferencesQuery.data?.visibleColumnIds?.length
       ? tableColumnPreferencesQuery.data.visibleColumnIds
       : DEFAULT_FINANCE_RECONCILIATION_VISIBLE_COLUMN_IDS
+    const visibleIds = sortIdsByCatalogOrder(
+      rawVisibleIds.filter((id) => catalogIds.includes(id)),
+      catalogIds,
+    )
 
     const preferenceColumns = visibleIds.map((id) => dataColumnsById[id]).filter(Boolean)
 

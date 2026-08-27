@@ -39,6 +39,17 @@ export const ExpertBasicProfileStep = ({ formData, setFormData, lockedServiceTyp
     () => Object.values(categoryGroups).flatMap((items) => items.map((item) => item.name)),
     [categoryGroups],
   )
+  const categoryNameToGroup = useMemo(() => {
+    const map = new Map<string, string>()
+    for (const [groupName, items] of Object.entries(categoryGroups)) {
+      for (const item of items) {
+        map.set(item.name, groupName)
+      }
+    }
+    return map
+  }, [categoryGroups])
+
+  const isVenueService = serviceType === 'venue'
 
   const handleImageChange = (field: 'coverImage' | 'profileImage', file: File | null) => {
     setFormData((prev) => {
@@ -68,13 +79,29 @@ export const ExpertBasicProfileStep = ({ formData, setFormData, lockedServiceTyp
     setCategorySearch('')
   }
 
-  const toggleCategory = (categoryName: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      serviceCategory: prev.serviceCategory.includes(categoryName)
-        ? prev.serviceCategory.filter((item) => item !== categoryName)
-        : [...prev.serviceCategory, categoryName],
-    }))
+  const toggleCategory = (categoryName: string, groupName?: string) => {
+    setFormData((prev) => {
+      if (prev.serviceCategory.includes(categoryName)) {
+        return {
+          ...prev,
+          serviceCategory: prev.serviceCategory.filter((item) => item !== categoryName),
+        }
+      }
+
+      // Venue: one main category; multiple sub-categories within that group.
+      if (isVenueService) {
+        const targetGroup = groupName ?? categoryNameToGroup.get(categoryName)
+        const next = prev.serviceCategory.filter(
+          (item) => categoryNameToGroup.get(item) === targetGroup,
+        )
+        return { ...prev, serviceCategory: [...next, categoryName] }
+      }
+
+      return {
+        ...prev,
+        serviceCategory: [...prev.serviceCategory, categoryName],
+      }
+    })
   }
 
   const addOffering = (value: string, reset: () => void) => {
@@ -343,7 +370,7 @@ export const ExpertBasicProfileStep = ({ formData, setFormData, lockedServiceTyp
                                   <button
                                     key={category.id}
                                     type="button"
-                                    onClick={() => toggleCategory(category.name)}
+                                    onClick={() => toggleCategory(category.name, groupName)}
                                     className={cn(
                                       'rounded-md border px-2.5 py-1 text-[10px] font-semibold transition-colors',
                                       isSelected
@@ -361,6 +388,12 @@ export const ExpertBasicProfileStep = ({ formData, setFormData, lockedServiceTyp
                       </div>
                     )}
                   </div>
+                  {isVenueService ? (
+                    <p className="text-muted mt-2 text-xs">
+                      You can only select maximum of one category. Multiple sub-categories are
+                      allowed within that category.
+                    </p>
+                  ) : null}
                 </>
               )}
 

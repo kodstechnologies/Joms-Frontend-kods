@@ -3275,6 +3275,8 @@ select::-ms-expand {
   line-height: 22px;
   color: #ffffff;
   outline: none;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 .ui-textarea::placeholder {
@@ -3612,7 +3614,8 @@ select::-ms-expand {
   border: 1px solid rgb(255 255 255 / 6%);
   border-radius: 12px;
   min-height: 130px;
-  width: 280px;
+  width: 100%;
+  min-width: 0;
 }
 
 .referral-stats-card:hover {
@@ -3630,6 +3633,14 @@ select::-ms-expand {
   font-size: 24px;
   font-weight: 700;
   letter-spacing: -0.02em;
+  line-height: 1.2;
+  word-break: break-word;
+}
+
+.referral-stats-value--text {
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
 }
 
 .referral-stats-trend-badge {
@@ -3958,7 +3969,7 @@ select::-ms-expand {
   color: #2dd4bf;
 }
 
-/* Table Button Styles */
+/* Table Button Styles — Advance Filters: white outline (not gold fill) */
 .table-advance-filter-btn {
   height: 50px;
   min-height: 50px;
@@ -3967,9 +3978,10 @@ select::-ms-expand {
   padding: 0 16px;
   font-size: 14px;
   font-weight: 600;
-  background: transparent;
-  border: 1px solid #ffffff;
-  color: #ffffff;
+  background: transparent !important;
+  border: 1px solid #ffffff !important;
+  color: #ffffff !important;
+  filter: none !important;
   transition:
     background-color 0.15s ease,
     border-color 0.15s ease,
@@ -3977,8 +3989,10 @@ select::-ms-expand {
 }
 
 .table-advance-filter-btn:hover {
-  background: rgb(255 255 255 / 5%);
-  border-color: #f6cb86;
+  background: rgb(255 255 255 / 5%) !important;
+  border-color: #f6cb86 !important;
+  color: #ffffff !important;
+  filter: none !important;
 }
 
 .table-export-btn {

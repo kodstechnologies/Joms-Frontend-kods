@@ -1,13 +1,13 @@
 import { useMemo } from 'react'
 
-import { membershipMemberMetricsMock } from '../mock/membership-metrics.mock'
-import { useMembershipStats } from '../hooks/use-memberships'
 import {
   DEFAULT_MEMBERSHIP_METRIC_IDS,
   MEMBERSHIP_METRIC_IDS,
   MEMBERSHIP_METRIC_ID_SET,
+  MEMBERSHIPS_DASHBOARD_METRICS_CATALOG,
   MEMBERSHIPS_MODULE_KEY,
 } from '../config/membership-metrics.config'
+import { useMembershipStats } from '../hooks/use-memberships'
 import type { MembershipStatsResponse } from '../types/membership'
 import {
   orderByActiveMetricIds,
@@ -18,45 +18,87 @@ import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
 
 type MembershipKpiStat = StatCardProps & { id: string }
 
+function formatCurrencyValue(value: number | undefined | null) {
+  const amount = Number(value ?? 0)
+  return `₹${amount.toLocaleString('en-IN', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`
+}
+
+function formatPercent(value: number | undefined | null) {
+  return `${Number(value ?? 0)}%`
+}
+
+function formatCount(value: number | undefined | null) {
+  return String(Number(value ?? 0))
+}
+
+function formatText(value: string | undefined | null) {
+  const text = String(value ?? '').trim()
+  return text || '—'
+}
+
 function buildMembershipKpiStats(
   apiStats: MembershipStatsResponse['data'] | undefined,
 ): MembershipKpiStat[] {
-  const mock = membershipMemberMetricsMock
+  const trends = apiStats?.trends || {}
 
-  return [
-    {
-      id: 'total-members',
-      title: 'Total Members',
-      value: String(apiStats?.totalActivePlans ?? mock.totalMembers.value),
-      trend: mock.totalMembers.trend,
-    },
-    {
-      id: 'expired-memberships',
-      title: 'Expired Memberships',
-      value: String(apiStats?.expiredMemberships ?? mock.expiredMemberships.value),
-      hint: mock.expiredMemberships.hint,
-    },
-    {
-      id: 'total-revenue',
-      title: 'Total Revenue',
-      value: apiStats?.totalRevenue
-        ? `₹${apiStats.totalRevenue.toLocaleString('en-IN')}`
-        : mock.totalRevenue.value,
-      trend: mock.totalRevenue.trend,
-    },
-    {
-      id: 'renewal-rate',
-      title: 'Renewal Rate',
-      value: apiStats?.renewalRate ? `${apiStats.renewalRate}%` : mock.renewalRate.value,
-      trend: mock.renewalRate.trend,
-    },
-    {
-      id: 'most-subscribed-plan',
-      title: 'Most Subscribed Plan',
-      value: apiStats?.mostSubscribedPlan ?? mock.mostSubscribedPlan.value ?? '—',
-      hint: mock.mostSubscribedPlan.hint,
-    },
-  ]
+  const valueById: Record<string, string> = {
+    'total-membership-plans': formatCount(apiStats?.totalMembershipPlans ?? apiStats?.totalPlans),
+    'active-membership-plans': formatCount(
+      apiStats?.activeMembershipPlans ?? apiStats?.totalActivePlans,
+    ),
+    'total-subscribers': formatCount(apiStats?.totalSubscribers),
+    'active-subscribers': formatCount(apiStats?.activeSubscribers ?? apiStats?.totalMembers),
+    'expired-memberships': formatCount(apiStats?.expiredMemberships),
+    'cancelled-memberships': formatCount(apiStats?.cancelledMemberships),
+    'total-membership-revenue': formatCurrencyValue(
+      apiStats?.totalMembershipRevenue ?? apiStats?.totalRevenue,
+    ),
+    'monthly-recurring-revenue': formatCurrencyValue(apiStats?.monthlyRecurringRevenue),
+    'revenue-growth-rate': formatPercent(apiStats?.revenueGrowthRate),
+    'average-revenue-per-subscriber': formatCurrencyValue(apiStats?.averageRevenuePerSubscriber),
+    'renewal-rate': formatPercent(apiStats?.renewalRate),
+    'failed-renewals': formatCount(apiStats?.failedRenewals),
+    'most-subscribed-plan': formatText(apiStats?.mostSubscribedPlan),
+    'subscribers-by-plan': formatText(apiStats?.subscribersByPlan),
+    'membership-upgrades': formatCount(apiStats?.membershipUpgrades),
+    'membership-downgrades': formatCount(apiStats?.membershipDowngrades),
+    'membership-renewals': formatCount(apiStats?.membershipRenewals),
+    'new-subscribers-current-month': formatCount(apiStats?.newSubscribersCurrentMonth),
+    'cancellations-current-month': formatCount(apiStats?.cancellationsCurrentMonth),
+    'most-selected-billing-cycle': formatText(apiStats?.mostSelectedBillingCycle),
+    'trial-to-paid-conversion-rate': formatPercent(apiStats?.trialToPaidConversionRate),
+    'most-cancelled-plan': formatText(apiStats?.mostCancelledPlan),
+    'churn-rate': formatPercent(apiStats?.churnRate),
+  }
+
+  const trendKeyById: Record<string, string> = {
+    'total-subscribers': 'totalSubscribers',
+    'active-subscribers': 'activeSubscribers',
+    'total-membership-revenue': 'totalMembershipRevenue',
+    'monthly-recurring-revenue': 'monthlyRecurringRevenue',
+    'renewal-rate': 'renewalRate',
+    'churn-rate': 'churnRate',
+  }
+
+  return MEMBERSHIPS_DASHBOARD_METRICS_CATALOG.map((item) => {
+    const trendKey = trendKeyById[item.id]
+    const trend = trendKey ? trends[trendKey] : undefined
+    return {
+      id: item.id,
+      title: item.label,
+      value: valueById[item.id] ?? '0',
+      trend: trend
+        ? {
+            direction: trend.direction,
+            percentage: trend.percentage,
+            label: trend.label || 'vs last month',
+          }
+        : undefined,
+    }
+  })
 }
 
 export function MembershipStatsBar() {
@@ -80,8 +122,15 @@ export function MembershipStatsBar() {
     return orderByActiveMetricIds(allStats, filteredActiveMetricIds)
   }, [apiStats, filteredActiveMetricIds])
 
+  const columnsClass =
+    visibleStats.length <= 3
+      ? 'md:grid-cols-2 xl:grid-cols-3'
+      : visibleStats.length <= 5
+        ? 'md:grid-cols-2 xl:grid-cols-5'
+        : 'md:grid-cols-2 xl:grid-cols-4'
+
   return (
-    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
+    <div className={`grid grid-cols-1 gap-4 ${columnsClass}`}>
       {visibleStats.map((stat) => (
         <StatCard
           key={stat.id}

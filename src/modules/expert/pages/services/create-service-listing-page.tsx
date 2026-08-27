@@ -272,8 +272,8 @@ export const CreateServiceListingPage = () => {
         if (!cancelled && res.success && res.data) {
           setPricingConfig(res.data)
         }
-      } catch (err) {
-        console.warn('Failed to fetch listing pricing config:', err)
+      } catch {
+        // Pricing config is optional for the listing form.
       }
     }
     void loadPricingConfig()
@@ -313,8 +313,8 @@ export const CreateServiceListingPage = () => {
         if (!cancelled && res.success && res.data) {
           setPricingRecommendation(res.data)
         }
-      } catch (err) {
-        console.warn('Failed to fetch AI pricing recommendation:', err)
+      } catch {
+        // AI recommendation is optional; leave panel empty on failure.
       } finally {
         if (!cancelled) {
           setIsRecommendationLoading(false)

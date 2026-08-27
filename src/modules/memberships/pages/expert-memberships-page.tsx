@@ -1,11 +1,24 @@
 import { useCallback, useMemo, useState, type ReactNode } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { CircleArrowDown, CircleArrowUp, ClipboardList, Tag, Waypoints, X } from 'lucide-react'
+import {
+  CircleArrowDown,
+  CircleArrowUp,
+  ClipboardList,
+  Flag,
+  Tag,
+  Waypoints,
+  X,
+} from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
+import { EscalateMembershipUpgradeModal } from '../components/escalate-membership-upgrade-modal'
 import { MembershipActionModals } from '../components/membership-action-modals'
 import { MembershipStatsBar } from '../components/membership-stats-bar'
+import {
+  DEFAULT_MEMBERSHIPS_VISIBLE_COLUMN_IDS,
+  MEMBERSHIPS_MODULE_KEY,
+} from '../config/membership-metrics.config'
 import {
   useCancelSubscription,
   useDowngradeSubscription,
@@ -16,9 +29,13 @@ import {
 import { useExpertMembershipStore } from '../store/expert-membership-store'
 import type { MembershipSubscription } from '../types/membership-subscription'
 import { formatCurrency, formatMembershipDate } from '../utils/membership-format'
+import { buildMembershipDataColumnsById } from '../utils/membership-preference-columns'
 import { fetchExpertSubscriptions } from '../api/membership-subscription-api'
+import { useAuthStore } from '@/modules/auth/store/auth-store'
+import { useTableColumnPreferences } from '@/modules/expert/hooks/use-ui-preferences'
 import { SectionHeader } from '@/shared/components/dashboard/section-header'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
+import { Button } from '@/shared/components/ui/button'
 import { DataTable } from '@/shared/components/table/data-table'
 import {
   TableActionsDropdown,
@@ -34,49 +51,104 @@ import {
   createExpertMembershipsFilteredExportHandler,
 } from '@/shared/utils/export-filter-utils'
 
-const PLAN_BADGE_COLORS = [
-  'bg-rose-500/15 text-rose-300',
-  'bg-amber-500/15 text-amber-300',
-  'bg-emerald-500/15 text-emerald-300',
-  'bg-blue-500/15 text-blue-300',
-  'bg-purple-500/15 text-purple-300',
-]
-
 const EXPORT_COLUMN_MAP: Record<
   string,
   { header: string; accessor: (row: MembershipSubscription) => string }
 > = {
-  subscriptionId: {
-    header: 'Plan ID',
+  'subscription-id': {
+    header: 'Subscription ID',
     accessor: (row) => exportDisplayValue(row.subscriptionId),
   },
-  partnerName: { header: 'Username', accessor: (row) => exportDisplayValue(row.partnerName) },
-  planName: { header: 'Plan name', accessor: (row) => exportDisplayValue(row.planName) },
-  billingCycleName: {
-    header: 'Plan cycle',
+  'user-id': {
+    header: 'User ID',
+    accessor: (row) => exportDisplayValue(row.userId || row.partnerId),
+  },
+  username: {
+    header: 'Username',
+    accessor: (row) => exportDisplayValue(row.username || row.partnerName),
+  },
+  'plan-id': {
+    header: 'Plan ID',
+    accessor: (row) => exportDisplayValue(row.planId),
+  },
+  'plan-name': {
+    header: 'Plan Name',
+    accessor: (row) => exportDisplayValue(row.planName),
+  },
+  'plan-cycle': {
+    header: 'Plan Cycle',
     accessor: (row) => exportDisplayValue(row.billingCycleName),
   },
-  autoRenew: {
+  'subscription-status': {
+    header: 'Subscription Status',
+    accessor: (row) => exportDisplayValue(row.status),
+  },
+  'started-at': {
+    header: 'Started At',
+    accessor: (row) => exportDisplayValue(formatMembershipDate(row.startedAt)),
+  },
+  'expiry-at': {
+    header: 'Expiry At',
+    accessor: (row) => exportDisplayValue(formatMembershipDate(row.expiresAt)),
+  },
+  'price-paid': {
+    header: 'Price Paid',
+    accessor: (row) => exportDisplayValue(formatCurrency(row.purchasedPrice)),
+  },
+  'payment-status': {
+    header: 'Payment Status',
+    accessor: (row) => exportDisplayValue(row.paymentStatus),
+  },
+  'payment-method': {
+    header: 'Payment Method',
+    accessor: (row) => exportDisplayValue(row.paymentMethod || row.paymentInfo?.paymentMethod),
+  },
+  'transaction-id': {
+    header: 'Transaction ID',
+    accessor: (row) => exportDisplayValue(row.transactionId),
+  },
+  'previous-plan-name': {
+    header: 'Previous Plan Name',
+    accessor: (row) => exportDisplayValue(row.previousPlanName || row.previousMembership?.planName),
+  },
+  'auto-renewal': {
     header: 'Auto Renewal',
     accessor: (row) => (row.autoRenew ? 'Yes' : 'No'),
   },
-  status: { header: 'Status', accessor: (row) => exportDisplayValue(row.status) },
-  startedAt: {
-    header: 'Started at',
-    accessor: (row) => exportDisplayValue(formatMembershipDate(row.startedAt)),
+  'next-billing-date': {
+    header: 'Next Billing Date',
+    accessor: (row) => exportDisplayValue(formatMembershipDate(row.nextBillingDate)),
   },
-  expiresAt: {
-    header: 'Expiry at',
-    accessor: (row) => exportDisplayValue(formatMembershipDate(row.expiresAt)),
+  source: {
+    header: 'Source',
+    accessor: (row) => exportDisplayValue(row.source || row.sourceApp),
   },
-  purchasedPrice: {
-    header: 'Price',
-    accessor: (row) => exportDisplayValue(formatCurrency(row.purchasedPrice)),
+  'coupon-code': {
+    header: 'Coupon Code',
+    accessor: (row) => exportDisplayValue(row.couponCode),
+  },
+  'discount-amount': {
+    header: 'Discount Amount',
+    accessor: (row) =>
+      row.discountAmount == null ? '—' : exportDisplayValue(formatCurrency(row.discountAmount)),
+  },
+  'last-renewed-at': {
+    header: 'Last Renewed At',
+    accessor: (row) => exportDisplayValue(formatMembershipDate(row.lastRenewedAt)),
+  },
+  'created-at': {
+    header: 'Created At',
+    accessor: (row) => exportDisplayValue(formatMembershipDate(row.createdAt)),
+  },
+  'updated-at': {
+    header: 'Updated At',
+    accessor: (row) => exportDisplayValue(formatMembershipDate(row.updatedAt)),
   },
 }
 
 export function ExpertMembershipsPage() {
   const navigate = useNavigate()
+  const isSuperAdmin = useAuthStore((state) => state.user?.isSuperAdmin)
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [selectedSubscription, setSelectedSubscription] = useState<MembershipSubscription | null>(
     null,
@@ -84,6 +156,7 @@ export function ExpertMembershipsPage() {
   const [actionType, setActionType] = useState<
     'upgrade' | 'downgrade' | 'extend' | 'cancel' | null
   >(null)
+  const [escalateOpen, setEscalateOpen] = useState(false)
   const { tagModalOpen, openTagModal, closeTagModal, saveTags, initialTags } = useEntityTags()
 
   const { searchQuery, setSearchQuery, currentPage, setCurrentPage } = useExpertMembershipStore()
@@ -100,6 +173,7 @@ export function ExpertMembershipsPage() {
   )
 
   const { data, isLoading } = useExpertSubscriptions(listQueryParams)
+  const tableColumnPreferencesQuery = useTableColumnPreferences(MEMBERSHIPS_MODULE_KEY)
 
   const upgradeMutation = useUpgradeSubscription()
   const downgradeMutation = useDowngradeSubscription()
@@ -155,137 +229,106 @@ export function ExpertMembershipsPage() {
     setActionType(null)
   }
 
-  const columns = useMemo<ColumnDef<MembershipSubscription>[]>(
-    () => [
-      {
-        accessorKey: 'subscriptionId',
-        header: 'Plan ID',
-        cell: ({ row }) => (
-          <span className="font-medium text-slate-200">{row.original.subscriptionId}</span>
-        ),
-      },
-      {
-        accessorKey: 'partnerName',
-        header: 'Username',
-      },
-      {
-        accessorKey: 'planName',
-        header: 'Plan name',
-        cell: ({ row }) => (
-          <span
-            className={cn(
-              'rounded-full px-2.5 py-1 text-[11px] font-semibold',
-              PLAN_BADGE_COLORS[row.index % PLAN_BADGE_COLORS.length],
-            )}
+  const renderActions = useCallback(
+    (subscription: MembershipSubscription) => (
+      <TableActionsDropdown
+        label={`Actions for ${subscription.partnerName}`}
+        isOpen={activeDropdownId === subscription._id}
+        onOpenChange={(open) => setActiveDropdownId(open ? subscription._id : null)}
+        menuWidth={180}
+      >
+        <TableActionsItem
+          icon={<ClipboardList className="size-4" strokeWidth={1.85} />}
+          onClick={() => navigate(`/memberships/experts/${subscription._id}`)}
+        >
+          View Details
+        </TableActionsItem>
+        <TableActionsItem
+          icon={<Tag className="size-4" strokeWidth={1.85} />}
+          onClick={() => {
+            setActiveDropdownId(null)
+            openTagModal(subscription._id)
+          }}
+        >
+          Add Tags
+        </TableActionsItem>
+        <TableActionsItem
+          icon={<CircleArrowUp className="size-4" strokeWidth={1.85} />}
+          onClick={() => openAction(subscription, 'upgrade')}
+        >
+          Upgrade plan
+        </TableActionsItem>
+        {isSuperAdmin ? (
+          <TableActionsItem
+            icon={<Flag className="size-4" strokeWidth={1.85} />}
+            onClick={() => {
+              setActiveDropdownId(null)
+              setSelectedSubscription(subscription)
+              setEscalateOpen(true)
+            }}
           >
-            {row.original.planName}
-          </span>
-        ),
-      },
-      {
-        accessorKey: 'billingCycleName',
-        header: 'Plan cycle',
-      },
-      {
-        accessorKey: 'autoRenew',
-        header: 'Auto Renewal',
-        cell: ({ row }) => (row.original.autoRenew ? 'Yes' : 'No'),
-      },
-      {
-        accessorKey: 'status',
-        header: 'Status',
-        cell: ({ row }) => (
-          <span
-            className={cn(
-              'rounded-full px-2.5 py-1 text-[11px] font-semibold capitalize',
-              row.original.status === 'active' && 'bg-emerald-500/15 text-emerald-300',
-              row.original.status === 'paused' && 'bg-amber-500/15 text-amber-300',
-              row.original.status === 'cancelled' && 'bg-rose-500/15 text-rose-300',
-              row.original.status === 'expired' && 'bg-blue-500/15 text-blue-300',
-            )}
-          >
-            {row.original.status}
-          </span>
-        ),
-      },
-      {
-        accessorKey: 'startedAt',
-        header: 'Started at',
-        cell: ({ row }) => formatMembershipDate(row.original.startedAt),
-      },
-      {
-        accessorKey: 'expiresAt',
-        header: 'Expiry at',
-        cell: ({ row }) => formatMembershipDate(row.original.expiresAt),
-      },
-      {
-        accessorKey: 'purchasedPrice',
-        header: 'Price',
-        cell: ({ row }) => formatCurrency(row.original.purchasedPrice),
-      },
-      {
-        id: 'actions',
-        header: 'Actions',
-        cell: ({ row }) => (
-          <TableActionsDropdown
-            label={`Actions for ${row.original.partnerName}`}
-            isOpen={activeDropdownId === row.original._id}
-            onOpenChange={(open) => setActiveDropdownId(open ? row.original._id : null)}
-            menuWidth={180}
-          >
-            <TableActionsItem
-              icon={<ClipboardList className="size-4" strokeWidth={1.85} />}
-              onClick={() => navigate(`/memberships/experts/${row.original._id}`)}
-            >
-              View Details
-            </TableActionsItem>
-            <TableActionsItem
-              icon={<Tag className="size-4" strokeWidth={1.85} />}
-              onClick={() => {
-                setActiveDropdownId(null)
-                openTagModal(row.original._id)
-              }}
-            >
-              Add Tags
-            </TableActionsItem>
-            <TableActionsItem
-              icon={<CircleArrowUp className="size-4" strokeWidth={1.85} />}
-              onClick={() => openAction(row.original, 'upgrade')}
-            >
-              Upgrade plan
-            </TableActionsItem>
-            <TableActionsItem
-              icon={<CircleArrowDown className="size-4" strokeWidth={1.85} />}
-              onClick={() => openAction(row.original, 'downgrade')}
-            >
-              Downgrade Plan
-            </TableActionsItem>
-            <TableActionsItem
-              icon={<Waypoints className="size-4" strokeWidth={1.85} />}
-              onClick={() => openAction(row.original, 'extend')}
-            >
-              Extend Plan
-            </TableActionsItem>
-            <TableActionsItem
-              icon={<CancelPlanIcon />}
-              className="text-brand-danger hover:bg-brand-danger/8 hover:text-brand-danger"
-              onClick={() => openAction(row.original, 'cancel')}
-            >
-              Cancel Plan
-            </TableActionsItem>
-          </TableActionsDropdown>
-        ),
-      },
-    ],
-    [activeDropdownId, navigate, openAction, openTagModal],
+            Escalate Upgrade
+          </TableActionsItem>
+        ) : null}
+        <TableActionsItem
+          icon={<CircleArrowDown className="size-4" strokeWidth={1.85} />}
+          onClick={() => openAction(subscription, 'downgrade')}
+        >
+          Downgrade Plan
+        </TableActionsItem>
+        <TableActionsItem
+          icon={<Waypoints className="size-4" strokeWidth={1.85} />}
+          onClick={() => openAction(subscription, 'extend')}
+        >
+          Extend Plan
+        </TableActionsItem>
+        <TableActionsItem
+          icon={<CancelPlanIcon />}
+          className="text-brand-danger hover:bg-brand-danger/8 hover:text-brand-danger"
+          onClick={() => openAction(subscription, 'cancel')}
+        >
+          Cancel Plan
+        </TableActionsItem>
+      </TableActionsDropdown>
+    ),
+    [activeDropdownId, isSuperAdmin, navigate, openAction, openTagModal],
   )
+
+  const columns = useMemo<ColumnDef<MembershipSubscription>[]>(() => {
+    const dataColumnsById = buildMembershipDataColumnsById()
+    const visibleIds = tableColumnPreferencesQuery.data?.visibleColumnIds?.length
+      ? tableColumnPreferencesQuery.data.visibleColumnIds
+      : DEFAULT_MEMBERSHIPS_VISIBLE_COLUMN_IDS
+
+    const preferenceColumns = visibleIds.map((id) => dataColumnsById[id]).filter(Boolean)
+
+    const actionsColumn: ColumnDef<MembershipSubscription> = {
+      id: 'actions',
+      header: 'Actions',
+      cell: ({ row }) => renderActions(row.original),
+    }
+
+    return [...preferenceColumns, actionsColumn]
+  }, [renderActions, tableColumnPreferencesQuery.data])
 
   return (
     <div className="space-y-6">
-      <SectionHeader
-        title="Membership Management"
-        subtitle="Manage expert membership subscriptions, lifecycle actions, and plan changes."
-      />
+      <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
+        <SectionHeader
+          title="Membership Management"
+          subtitle="Manage expert membership subscriptions, lifecycle actions, and plan changes."
+        />
+        <Button
+          className="ui-manage-metrics ui-cta ui-cta-primary h-9 w-full px-5 md:w-auto"
+          onClick={() =>
+            navigate(
+              `/metrics/${MEMBERSHIPS_MODULE_KEY}?returnTo=/memberships/experts&section=dashboard`,
+            )
+          }
+        >
+          Manage Metrics
+        </Button>
+      </div>
 
       <MembershipStatsBar />
 
@@ -320,6 +363,15 @@ export function ExpertMembershipsPage() {
       />
 
       {exportFilterModals}
+
+      <EscalateMembershipUpgradeModal
+        open={escalateOpen}
+        subscription={selectedSubscription}
+        onClose={() => {
+          setEscalateOpen(false)
+          setSelectedSubscription(null)
+        }}
+      />
 
       <MembershipActionModals
         subscription={selectedSubscription}

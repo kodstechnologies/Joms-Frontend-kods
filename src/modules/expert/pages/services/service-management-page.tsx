@@ -23,6 +23,7 @@ import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
 import { SERVICE_MANAGEMENT_MODULE_KEY } from '../../api/ui-preferences-api'
+import { DEFAULT_SERVICE_MANAGEMENT_VISIBLE_COLUMN_IDS } from '../../config/service-management-table-columns.config'
 import { orderByActiveMetricIds, useActiveMetricIds } from '../../hooks/use-active-metric-ids'
 import {
   useServices,
@@ -37,9 +38,11 @@ import { useTableColumnPreferences } from '../../hooks/use-ui-preferences'
 import { getServiceManagementViewPath } from '../../lib/service-navigation'
 import { useServiceStore } from '../../store/service-store'
 import type { Service } from '../../type/service'
-import { getManagementStatusDisplay } from '../../utils/management-status'
+import {
+  buildServiceDataColumnsById,
+  pickServicePreferenceColumns,
+} from '../../utils/service-preference-columns'
 import { DataTable } from '@/shared/components/table/data-table'
-import { TableDateTimeCell } from '@/shared/components/table/table-datetime-cell'
 import {
   TableActionsDropdown,
   TableActionsItem,
@@ -48,6 +51,7 @@ import {
   DecisionActionModal,
   type DecisionActionModalOption,
 } from '@/shared/components/modal/decision-action-modal'
+import { PauseCategoryModal } from '../../components/category/pause-category-modal'
 import { AddTagModal } from '@/shared/components/modal/add-tag-modal'
 import { StatusQuickLinkCard, StatusQuickLinkRow } from '@/shared/components/status-quick-link-card'
 import { Button } from '@/shared/components/ui/button'
@@ -74,13 +78,6 @@ import {
   escalateServiceApplication,
 } from '@/modules/my-tasks/api/escalation-api'
 
-const formatPrice = (price: number) =>
-  new Intl.NumberFormat('en-IN', {
-    style: 'currency',
-    currency: 'INR',
-    maximumFractionDigits: 0,
-  }).format(price)
-
 export const ServiceManagementPage = () => {
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [selectedServiceIds, setSelectedServiceIds] = useState<string[]>([])
@@ -104,11 +101,6 @@ export const ServiceManagementPage = () => {
   const [bulkDeleteAdminNotes, setBulkDeleteAdminNotes] = useState('')
 
   const [isBulkPauseModalOpen, setIsBulkPauseModalOpen] = useState(false)
-  const [bulkPauseReasons, setBulkPauseReasons] = useState<string[]>([])
-  const [bulkPauseStartDate, setBulkPauseStartDate] = useState('')
-  const [bulkPauseEndDate, setBulkPauseEndDate] = useState('')
-  const [bulkPauseIndefinitely, setBulkPauseIndefinitely] = useState(false)
-  const [bulkPauseAdminNotes, setBulkPauseAdminNotes] = useState('')
 
   const [isEscalateModalOpen, setIsEscalateModalOpen] = useState(false)
   const [escalateAdminNotes, setEscalateAdminNotes] = useState('')
@@ -135,6 +127,8 @@ export const ServiceManagementPage = () => {
   const recordReasonUsage = useRecordModerationReasonUsage()
   const { options: suspendReasonOptions, buildPayload: buildSuspendReasonPayload } =
     useModerationReasonOptions(MODERATION_CATEGORY_SLUGS.suspendService)
+  const { options: pauseReasonOptions, buildPayload: buildPauseReasonPayload } =
+    useModerationReasonOptions(MODERATION_CATEGORY_SLUGS.pauseService)
   const { options: deleteReasonOptions, buildPayload: buildDeleteReasonPayload } =
     useModerationReasonOptions(MODERATION_CATEGORY_SLUGS.deleteService)
 
@@ -177,50 +171,50 @@ export const ServiceManagementPage = () => {
     bulkDeleteMutation,
   ])
 
-  const confirmBulkPause = useCallback(() => {
-    if (selectedServiceIds.length === 0) return
-    if (suspendReasonOptions.length > 0 && bulkPauseReasons.length === 0) {
-      toast.error('Please select at least one reason for pausing.')
-      return
-    }
-    if (!bulkPauseAdminNotes.trim()) {
-      toast.error('Admin notes are required for pausing.')
-      return
-    }
+  const confirmBulkPause = useCallback(
+    (payload: { reasons: string[]; adminNotes: string }) => {
+      if (selectedServiceIds.length === 0) return
+      const reasonPayload = buildPauseReasonPayload(payload.reasons)
+      if (pauseReasonOptions.length > 0 && reasonPayload.selectedReasons.length === 0) {
+        toast.error('Please select at least one reason for pausing.')
+        return
+      }
+      if (!payload.adminNotes.trim()) {
+        toast.error('Admin notes are required for pausing.')
+        return
+      }
 
-    bulkPauseMutation.mutate(
-      {
-        serviceIds: selectedServiceIds,
-        selectedReasons: bulkPauseReasons,
-        adminNotes: bulkPauseAdminNotes.trim(),
-        startDate: bulkPauseStartDate,
-        endDate: bulkPauseEndDate,
-        indefinite: bulkPauseIndefinitely,
-      },
-      {
-        onSuccess: () => {
-          toast.success(`Paused ${selectedServiceIds.length} selected service(s)`)
-          setSelectedServiceIds([])
-          setIsBulkPauseModalOpen(false)
-          setBulkPauseReasons([])
-          setBulkPauseAdminNotes('')
+      bulkPauseMutation.mutate(
+        {
+          serviceIds: selectedServiceIds,
+          selectedReasons: reasonPayload.selectedReasons,
+          adminNotes: payload.adminNotes.trim(),
+          indefinite: true,
         },
-        onError: (err: unknown) => {
-          const error = err as { response?: { data?: { message?: string } } }
-          toast.error(error?.response?.data?.message || 'Failed to pause services')
+        {
+          onSuccess: () => {
+            if (reasonPayload.reasonIds.length > 0) {
+              recordReasonUsage.mutate(reasonPayload.reasonIds)
+            }
+            toast.success(`Paused ${selectedServiceIds.length} selected service(s)`)
+            setSelectedServiceIds([])
+            setIsBulkPauseModalOpen(false)
+          },
+          onError: (err: unknown) => {
+            const error = err as { response?: { data?: { message?: string } } }
+            toast.error(error?.response?.data?.message || 'Failed to pause services')
+          },
         },
-      },
-    )
-  }, [
-    selectedServiceIds,
-    bulkPauseReasons,
-    bulkPauseAdminNotes,
-    suspendReasonOptions.length,
-    bulkPauseStartDate,
-    bulkPauseEndDate,
-    bulkPauseIndefinitely,
-    bulkPauseMutation,
-  ])
+      )
+    },
+    [
+      selectedServiceIds,
+      pauseReasonOptions.length,
+      buildPauseReasonPayload,
+      recordReasonUsage,
+      bulkPauseMutation,
+    ],
+  )
 
   const handleBulkHide = useCallback(() => {
     if (selectedServiceIds.length === 0) return
@@ -424,7 +418,7 @@ export const ServiceManagementPage = () => {
     }
     const params = new URLSearchParams({
       channel: 'push',
-      audience: 'service-management',
+      audience: 'experts',
       partnerIds: selectedPartnerIds.join(','),
     })
     navigate(`/communication/create?${params.toString()}`)
@@ -437,7 +431,7 @@ export const ServiceManagementPage = () => {
     }
     const params = new URLSearchParams({
       channel: 'email',
-      audience: 'service-management',
+      audience: 'experts',
       partnerIds: selectedPartnerIds.join(','),
     })
     navigate(`/communication/create?${params.toString()}`)
@@ -734,95 +728,18 @@ export const ServiceManagementPage = () => {
       },
     }
 
-    const dataColumnsById: Record<string, ColumnDef<Service>> = {
-      'service-id': {
-        id: 'service-id',
-        accessorKey: 'serviceid',
-        header: 'Service ID',
-        cell: ({ row }) => (
-          <span className="ui-table-id uppercase">
-            {row.original.serviceid || row.original._id}
-          </span>
-        ),
-      },
-      name: {
-        id: 'name',
-        accessorKey: 'title',
-        header: 'Service Name',
-        cell: ({ row }) => <span className="font-medium text-white">{row.original.title}</span>,
-      },
-      category: {
-        id: 'category',
-        accessorKey: 'categoryName',
-        header: 'Service Category',
-        cell: ({ row }) => {
-          const value = row.original.categoryName
-          if (!value) return <span className="text-[#777]">—</span>
-          return <span>{value}</span>
-        },
-      },
-      type: {
-        id: 'type',
-        accessorKey: 'serviceType',
-        header: 'Service Type',
-      },
-      pricing: {
-        id: 'pricing',
-        accessorKey: 'pricing',
-        header: 'Pricing',
-        cell: ({ row }) => formatPrice(row.original.pricing),
-      },
-      'expert-id': {
-        id: 'expert-id',
-        accessorKey: 'expertid',
-        header: 'Expert ID',
-        cell: ({ row }) => (
-          <span className="ui-table-id">{row.original.expertid || 'Not provided'}</span>
-        ),
-      },
-      'expert-name': {
-        id: 'expert-name',
-        accessorKey: 'expertName',
-        header: 'Expert Name',
-      },
-      status: {
-        id: 'status',
-        accessorKey: 'status',
-        header: 'Status',
-        cell: ({ row }) => {
-          const { label, className } = getManagementStatusDisplay(row.original.status, {
-            isSuspend: row.original.isSuspend,
-            isDeleted: row.original.status === 'deleted',
-          })
-
-          return <span className={className}>{label}</span>
-        },
-      },
-      'created-at': {
-        id: 'created-at',
-        accessorKey: 'createdAt',
-        header: 'Created At',
-        cell: ({ row }) => <TableDateTimeCell value={row.original.createdAt} />,
-      },
-    }
-
-    const defaultVisibleIds = [
-      'service-id',
-      'name',
-      'category',
-      'type',
-      'pricing',
-      'expert-id',
-      'expert-name',
-      'status',
-      'created-at',
-    ]
+    const dataColumnsById = buildServiceDataColumnsById()
+    const defaultVisibleIds = DEFAULT_SERVICE_MANAGEMENT_VISIBLE_COLUMN_IDS
 
     const visibleIds = tableColumnPreferencesQuery.data?.visibleColumnIds?.length
       ? tableColumnPreferencesQuery.data.visibleColumnIds
       : defaultVisibleIds
 
-    const preferenceColumns = visibleIds.map((id) => dataColumnsById[id]).filter(Boolean)
+    const preferenceColumns = pickServicePreferenceColumns(
+      dataColumnsById,
+      visibleIds,
+      defaultVisibleIds,
+    )
 
     const actionsColumn: ColumnDef<Service> = {
       id: 'actions',
@@ -1027,7 +944,9 @@ export const ServiceManagementPage = () => {
         <div className="flex w-full flex-col items-center gap-3 md:w-auto md:flex-row">
           <Button
             className="ui-manage-metrics h-9 w-full md:w-auto"
-            onClick={() => navigate('/services/management/metrics?section=table')}
+            onClick={() =>
+              navigate('/metrics/service-management?returnTo=/services/management&section=table')
+            }
           >
             <BarChart3 className="size-4" />
             Manage Metrics
@@ -1199,40 +1118,23 @@ export const ServiceManagementPage = () => {
         isSubmitting={bulkDeleteMutation.isPending}
       />
 
-      <DecisionActionModal
+      <PauseCategoryModal
         open={isBulkPauseModalOpen}
-        variant="suspend"
         title={
           selectedServiceIds.length > 1
             ? `Pause ${selectedServiceIds.length} Services`
             : 'Pause Service'
         }
-        description={`Are you sure you want to pause ${selectedServiceIds.length} selected service(s)? They will be hidden from clients until reactivated.`}
-        submitLabel={
+        heading={
           selectedServiceIds.length > 1
-            ? `Pause ${selectedServiceIds.length} Services`
-            : 'Pause Service'
+            ? `Are you sure you want  Pause these ${selectedServiceIds.length} Services.`
+            : 'Are you sure you want  Pause this Service.'
         }
-        reasonOptions={suspendReasonOptions}
-        selectedReasons={bulkPauseReasons}
-        onReasonToggle={(value) =>
-          setBulkPauseReasons((current) =>
-            current.includes(value)
-              ? current.filter((item) => item !== value)
-              : [...current, value],
-          )
-        }
-        showTimeline
-        startDate={bulkPauseStartDate}
-        onStartDateChange={setBulkPauseStartDate}
-        endDate={bulkPauseEndDate}
-        onEndDateChange={setBulkPauseEndDate}
-        indefinite={bulkPauseIndefinitely}
-        onIndefiniteChange={setBulkPauseIndefinitely}
-        adminNotes={bulkPauseAdminNotes}
-        onAdminNotesChange={setBulkPauseAdminNotes}
+        description="This will result in hiding this service from users."
+        submitLabel="Pause Service"
+        reasonCategorySlug={MODERATION_CATEGORY_SLUGS.pauseService}
         onClose={() => setIsBulkPauseModalOpen(false)}
-        onSubmit={confirmBulkPause}
+        onConfirm={confirmBulkPause}
         isSubmitting={bulkPauseMutation.isPending}
       />
 

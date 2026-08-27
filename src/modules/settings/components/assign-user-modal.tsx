@@ -21,7 +21,7 @@ export function AssignUserModal({ open, incident, onClose, onSubmit }: AssignUse
 
   const subAdminsQuery = useSubAdmins({ page: 1, limit: 500, status: 'active' }, { enabled: open })
 
-  const subAdmins = subAdminsQuery.data?.data ?? []
+  const subAdmins = useMemo(() => subAdminsQuery.data?.data ?? [], [subAdminsQuery.data?.data])
 
   const departmentOptions = useMemo(() => {
     const values = subAdmins.map((item) => item.department?.trim()).filter(Boolean) as string[]

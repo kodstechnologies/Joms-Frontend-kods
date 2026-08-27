@@ -13,6 +13,7 @@ import {
   fetchVenueCategoryById,
   fetchVenueCategoryDetails,
   fetchVenueCategoryList,
+  fetchVenueCategoryMetrics,
   hardDeleteVenueCategory,
   hardDeleteVenueSubCategory,
   pauseVenueCategory,
@@ -43,6 +44,13 @@ export const useVenueCategoryManagementList = (params?: Record<string, unknown>)
       pagination: response.meta,
       message: response.message,
     }),
+  })
+
+export const useVenueCategoryMetrics = () =>
+  useQuery({
+    queryKey: [VENUE_CATEGORY_QUERY_KEY, 'metrics'],
+    queryFn: fetchVenueCategoryMetrics,
+    select: (response) => response.data,
   })
 
 export const usePausedVenueCategoryList = (params?: Record<string, unknown>) =>

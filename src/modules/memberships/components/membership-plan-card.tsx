@@ -27,7 +27,6 @@ import {
 } from '../utils/membership-format'
 import { cn } from '@/shared/lib/cn'
 
-/** Figma inspect: separator stroke = #FFFFFF @ 10%, 1px */
 const MUTE = 'text-white/50'
 const SEP = 'rgba(255, 255, 255, 0.1)'
 
@@ -102,7 +101,6 @@ export function MembershipPlanCard({
 
   return (
     <article className="relative flex h-[623px] w-[394px] max-w-full flex-col overflow-hidden rounded-[16px] border border-white/10 bg-black">
-      {/* Header */}
       <div className="flex items-start justify-between gap-3 px-[22px] pt-5 pb-4">
         <div className="flex min-w-0 flex-1 items-center gap-3">
           <div className="bg-brand-surface flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/10">
@@ -215,7 +213,6 @@ export function MembershipPlanCard({
 
       <HRule />
 
-      {/* Pricing */}
       <div className="flex items-center px-2 py-4">
         {pricingSlots.map((item, index) => (
           <div
@@ -237,7 +234,6 @@ export function MembershipPlanCard({
 
       <HRule />
 
-      {/* Features — 291 × 125 */}
       <div className="px-[22px] py-4">
         <p className={cn('text-body-sm mb-3', MUTE)}>Features</p>
         <ul className="h-[125px] w-[291px] max-w-full space-y-2.5 overflow-hidden">
@@ -255,7 +251,6 @@ export function MembershipPlanCard({
 
       <HRule />
 
-      {/* Subscription Stats — pills 80 × 66 */}
       <div className="px-[22px] py-4">
         <p className={cn('text-body-sm mb-3', MUTE)}>Subscription Stats</p>
         <div className="flex gap-2">
@@ -266,7 +261,6 @@ export function MembershipPlanCard({
         </div>
       </div>
 
-      {/* Meta + CTA — Edit 350 × 40 */}
       <div className="mt-auto flex flex-col gap-3 px-[22px] pt-1 pb-5">
         <div className="flex items-center justify-between gap-3">
           <span className={cn('text-body-sm', MUTE)}>Version :{plan.version}</span>

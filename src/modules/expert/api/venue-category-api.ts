@@ -3,6 +3,7 @@ import type {
   ApiSuccessResponse,
   VenueCategoryApi,
   VenueCategoryListResponse,
+  VenueCategoryMetricsResponse,
 } from '../type/category'
 import type {
   AddSubCategoryPayload,
@@ -45,6 +46,13 @@ export const fetchVenueCategoryList = async (params?: Record<string, unknown>) =
   const response = await venueApiClient.get<VenueCategoryListResponse>('/venue-categories', {
     params,
   })
+  return response.data
+}
+
+export const fetchVenueCategoryMetrics = async () => {
+  const response = await venueApiClient.get<VenueCategoryMetricsResponse>(
+    '/venue-categories/metrics',
+  )
   return response.data
 }
 

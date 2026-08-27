@@ -9,19 +9,37 @@ export type MembershipPricing = {
   finalPrice?: number
 }
 
+export type MembershipPlanConfigItem = {
+  id: string
+  label: string
+  enabled?: boolean
+  required?: boolean
+  value?: string | null
+}
+
+export type MembershipPlanConfig = {
+  commissionRatePercent: number
+  benefits: MembershipPlanConfigItem[]
+  partnerApp: MembershipPlanConfigItem[]
+  eligibility: MembershipPlanConfigItem[]
+  otherSettings: MembershipPlanConfigItem[]
+}
+
+/** Legacy + planConfig-aware features payload used by admin create/update. */
 export type MembershipFeatures = {
-  accessToBasicNetworkingFeatures: boolean
-  joinCommunities: {
+  accessToBasicNetworkingFeatures?: boolean
+  joinCommunities?: {
     enabled: boolean
     count: number
   }
-  platformHostedEvents: {
+  platformHostedEvents?: {
     enabled: boolean
     count: number
   }
-  profileCustomization: boolean
-  dedicatedAccountManager: boolean
+  profileCustomization?: boolean
+  dedicatedAccountManager?: boolean
   customFeatures?: string[]
+  planConfig?: MembershipPlanConfig
 }
 
 export type SubscriptionStats = {
@@ -40,6 +58,7 @@ export type MembershipPlan = {
   icon: string | null
   pricing: MembershipPricing[]
   features: MembershipFeatures
+  planConfig?: MembershipPlanConfig
   trialPeriodDays: number
   enableAutoRenew: boolean
   allowPlanUpgrades: boolean
@@ -86,16 +105,44 @@ export type MembershipListResponse = {
   }
 }
 
+export type MembershipTrend = {
+  direction: 'up' | 'down'
+  percentage: number
+  label?: string
+}
+
 export type MembershipStatsResponse = {
   success: boolean
   message: string
   data: {
+    totalMembershipPlans: number
+    activeMembershipPlans: number
     totalPlans: number
     totalActivePlans: number
+    totalSubscribers: number
+    activeSubscribers: number
+    totalMembers?: number
     expiredMemberships: number
+    cancelledMemberships: number
+    totalMembershipRevenue: number
     totalRevenue: number
+    monthlyRecurringRevenue: number
+    revenueGrowthRate: number
+    averageRevenuePerSubscriber: number
     renewalRate: number
-    mostSubscribedPlan: string | null
+    failedRenewals: number
+    mostSubscribedPlan: string
+    subscribersByPlan: string
+    membershipUpgrades: number
+    membershipDowngrades: number
+    membershipRenewals: number
+    newSubscribersCurrentMonth: number
+    cancellationsCurrentMonth: number
+    mostSelectedBillingCycle: string
+    trialToPaidConversionRate: number
+    mostCancelledPlan: string
+    churnRate: number
+    trends?: Record<string, MembershipTrend>
     counts: MembershipListMeta['counts']
     typeCounts: {
       user: number
@@ -115,6 +162,7 @@ export type CreateMembershipPayload = {
   planName: string
   pricing: MembershipPricing[]
   features: MembershipFeatures
+  planConfig?: MembershipPlanConfig
   trialPeriodDays?: number
   enableAutoRenew?: boolean
   allowPlanUpgrades?: boolean

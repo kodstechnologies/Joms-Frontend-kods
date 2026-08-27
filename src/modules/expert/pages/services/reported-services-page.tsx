@@ -4,6 +4,9 @@ import { Ban, Eye } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
 import { fetchServiceReports } from '../../api/service-api'
+import { SERVICE_REPORTED_MODULE_KEY } from '../../api/ui-preferences-api'
+import { DEFAULT_SERVICE_REPORTED_VISIBLE_COLUMN_IDS } from '../../config/service-management-table-columns.config'
+import { useTableColumnPreferences } from '../../hooks/use-ui-preferences'
 import type { FilterValues } from '@/shared/types/data-filter'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter/use-module-export-filters'
 import { exportDisplayValue } from '@/shared/utils/export-utils'
@@ -13,6 +16,10 @@ import {
   type ServiceReportItem,
 } from '../../components/service-report-detail-modal'
 import { ExpertListHeader } from '../experts/expert-list-shared'
+import {
+  buildServiceReportDataColumnsById,
+  pickServicePreferenceColumns,
+} from '../../utils/service-preference-columns'
 import { DataTable } from '@/shared/components/table/data-table'
 import {
   TableActionsDropdown,
@@ -35,28 +42,28 @@ const EXPORT_COLUMN_MAP: Record<
   { header: string; accessor: (item: ServiceReportItem) => string }
 > = {
   reportId: { header: 'Report ID', accessor: (item) => exportDisplayValue(item.reportId) },
+  serviceId: { header: 'Listing ID', accessor: (item) => exportDisplayValue(item.serviceId) },
   serviceTitle: {
-    header: 'Reported Service',
+    header: 'Listing Name',
     accessor: (item) => exportDisplayValue(item.serviceTitle),
-  },
-  serviceId: { header: 'Service ID', accessor: (item) => exportDisplayValue(item.serviceId) },
-  reporterName: {
-    header: 'Reported By',
-    accessor: (item) => exportDisplayValue(item.reporterName),
-  },
-  reporterType: {
-    header: 'Reporter Type',
-    accessor: (item) => exportDisplayValue(item.reporterType),
-  },
-  issueType: { header: 'Issue Type', accessor: (item) => exportDisplayValue(item.issueType) },
-  reason: { header: 'Reason', accessor: (item) => exportDisplayValue(item.reason) },
-  status: {
-    header: 'Status',
-    accessor: (item) => exportDisplayValue(item.investigationStatus || 'New'),
   },
   reportedAt: {
     header: 'Reported At',
     accessor: (item) => formatExportDateTime(item.submittedAt || item.createdAt),
+  },
+  issueType: { header: 'Report Reason', accessor: (item) => exportDisplayValue(item.issueType) },
+  reporterType: {
+    header: 'Reported By',
+    accessor: (item) => exportDisplayValue(item.reporterType),
+  },
+  reporterId: { header: 'Reporter ID', accessor: (item) => exportDisplayValue(item.reporterId) },
+  status: {
+    header: 'Case Status',
+    accessor: (item) => exportDisplayValue(item.investigationStatus || 'New'),
+  },
+  assignedAdmin: {
+    header: 'Assigned Admin',
+    accessor: (item) => exportDisplayValue(item.investigatingAdmin),
   },
 }
 
@@ -82,6 +89,7 @@ export function ServiceReportedServicesPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
+  const tableColumnPreferencesQuery = useTableColumnPreferences(SERVICE_REPORTED_MODULE_KEY)
 
   const [reports, setReports] = useState<ServiceReportItem[]>([])
   const [loading, setLoading] = useState(true)
@@ -120,8 +128,7 @@ export function ServiceReportedServicesPage() {
         setTotalItems(pagination?.total || items.length)
         setTotalPages(pagination?.totalPages || 1)
       })
-      .catch((err: unknown) => {
-        console.error('Failed to load reported services:', err)
+      .catch(() => {
         setReports([])
       })
       .finally(() => {
@@ -152,7 +159,7 @@ export function ServiceReportedServicesPage() {
     onExport,
     modals: exportFilterModals,
   } = useModuleExportFilters({
-    moduleKey: 'service-management',
+    moduleKey: SERVICE_REPORTED_MODULE_KEY,
     onApplyFilters: handleApplyFilters,
     onExportData: handleExportData,
   })
@@ -161,89 +168,18 @@ export function ServiceReportedServicesPage() {
     loadReports()
   }, [loadReports])
 
-  const columns = useMemo<ColumnDef<ServiceReportItem>[]>(
-    () => [
-      {
-        accessorKey: 'reportId',
-        header: 'Report ID',
-        cell: ({ row }) => (
-          <span className="font-mono font-semibold text-[#E5B54E]">
-            {row.original.reportId || 'SR000'}
-          </span>
-        ),
-      },
-      {
-        accessorKey: 'serviceTitle',
-        header: 'Reported Service',
-        cell: ({ row }) => (
-          <div>
-            <div className="font-semibold text-white">{row.original.serviceTitle}</div>
-            <div className="text-[11px] text-slate-400">ID: {row.original.serviceId}</div>
-          </div>
-        ),
-      },
-      {
-        accessorKey: 'reporterName',
-        header: 'Reported By',
-        cell: ({ row }) => (
-          <div>
-            <div className="font-medium text-slate-200">{row.original.reporterName}</div>
-            <div className="text-[11px] text-slate-400">{row.original.reporterType}</div>
-          </div>
-        ),
-      },
-      {
-        accessorKey: 'issueType',
-        header: 'Issue Type',
-        cell: ({ row }) => (
-          <span className="rounded-full bg-red-500/15 px-2.5 py-0.5 text-xs font-semibold text-red-400">
-            {row.original.issueType}
-          </span>
-        ),
-      },
-      {
-        accessorKey: 'reason',
-        header: 'Reason',
-        cell: ({ row }) => (
-          <div className="max-w-xs truncate text-xs text-slate-300" title={row.original.reason}>
-            {row.original.reason}
-          </div>
-        ),
-      },
-      {
-        accessorKey: 'investigationStatus',
-        header: 'Status',
-        cell: ({ row }) => {
-          const status = row.original.investigationStatus || 'New'
-          const isResolved = status === 'Resolved' || status === 'Closed'
-          const isReview = status === 'Under Review' || status === 'Escalated'
+  const columns = useMemo<ColumnDef<ServiceReportItem>[]>(() => {
+    const dataColumnsById = buildServiceReportDataColumnsById()
+    const visibleIds = tableColumnPreferencesQuery.data?.visibleColumnIds?.length
+      ? tableColumnPreferencesQuery.data.visibleColumnIds
+      : DEFAULT_SERVICE_REPORTED_VISIBLE_COLUMN_IDS
 
-          return (
-            <span
-              className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-                isResolved
-                  ? 'bg-emerald-500/15 text-emerald-400'
-                  : isReview
-                    ? 'bg-amber-500/15 text-amber-400'
-                    : 'bg-blue-500/15 text-blue-400'
-              }`}
-            >
-              {status}
-            </span>
-          )
-        },
-      },
-      {
-        accessorKey: 'createdAt',
-        header: 'Reported At',
-        cell: ({ row }) => (
-          <span className="text-xs text-slate-400">
-            {row.original.createdAt
-              ? new Date(row.original.createdAt).toLocaleDateString('en-GB')
-              : '—'}
-          </span>
-        ),
-      },
+    return [
+      ...pickServicePreferenceColumns(
+        dataColumnsById,
+        visibleIds,
+        DEFAULT_SERVICE_REPORTED_VISIBLE_COLUMN_IDS,
+      ),
       {
         id: 'actions',
         header: 'Actions',
@@ -285,15 +221,15 @@ export function ServiceReportedServicesPage() {
           )
         },
       },
-    ],
-    [activeDropdownId, navigate],
-  )
+    ]
+  }, [activeDropdownId, navigate, tableColumnPreferencesQuery.data])
 
   return (
     <div className="flex flex-col gap-5 md:gap-6">
       <ExpertListHeader
         title="Reported Services"
         breadcrumb="Service Management / Reported Services"
+        metricsPath="/metrics/service-reported?returnTo=/services/management/reported&section=table"
       />
 
       <DataTable

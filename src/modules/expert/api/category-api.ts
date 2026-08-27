@@ -2,6 +2,7 @@ import { expertApiClient } from '@/shared/lib/axios'
 import type {
   ApiSuccessResponse,
   CategoryListResponse,
+  CategoryMetricsResponse,
   ServiceCategoryApi,
   SubCategoryListResponse,
 } from '../type/category'
@@ -78,6 +79,11 @@ export const fetchCategories = async (params?: CategoryListParams) => {
   const response = await expertApiClient.get<CategoryListResponse>('/categories', {
     params,
   })
+  return response.data
+}
+
+export const fetchCategoryMetrics = async () => {
+  const response = await expertApiClient.get<CategoryMetricsResponse>('/categories/metrics')
   return response.data
 }
 

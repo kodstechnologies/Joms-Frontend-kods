@@ -5,15 +5,11 @@ import { Input } from '@/shared/components/ui/input'
 export function ByBookingsFilter() {
   return (
     <section className="bg-brand-surface-2 space-y-8 rounded-xl border border-white/10 p-8">
-      {/* Header */}
-
       <div className="flex items-center justify-between">
         <h2 className="text-brand-text text-sm font-medium">By Bookings</h2>
 
         <Plus className="text-brand-text h-5 w-5 cursor-pointer" />
       </div>
-
-      {/* Total Number Of Bookings */}
 
       <div className="space-y-4">
         <h3 className="text-brand-text text-sm font-medium">Total Number Of Bookings</h3>
@@ -32,8 +28,6 @@ export function ByBookingsFilter() {
           </div>
         </div>
       </div>
-
-      {/* Booking Status */}
 
       <div className="space-y-3">
         <h3 className="text-brand-text text-sm font-medium">Booking Status</h3>
@@ -71,8 +65,6 @@ export function ByBookingsFilter() {
         </div>
       </div>
 
-      {/* Payment Status */}
-
       <div className="space-y-3">
         <h3 className="text-brand-text text-sm font-medium">Payment Status</h3>
 
@@ -99,8 +91,6 @@ export function ByBookingsFilter() {
         </div>
       </div>
 
-      {/* Payment Method */}
-
       <div className="space-y-3">
         <h3 className="text-brand-text text-sm font-medium">Payment Method</h3>
 
@@ -121,8 +111,6 @@ export function ByBookingsFilter() {
           </label>
         </div>
       </div>
-
-      {/* Refunded Status */}
 
       <div className="space-y-3">
         <h3 className="text-brand-text text-sm font-medium">Refunded Status</h3>

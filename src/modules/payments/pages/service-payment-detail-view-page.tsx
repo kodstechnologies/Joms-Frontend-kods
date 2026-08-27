@@ -5,20 +5,17 @@ import { toast } from 'sonner'
 
 import { AddFinanceNoteModal } from '@/modules/payments/components/add-finance-note-modal'
 import { FinanceInternalNotesCard } from '@/modules/payments/components/finance-internal-notes-card'
-import { useAddFinanceNote, useFinancePayment } from '@/modules/payments/hooks/use-finance'
+import {
+  useAddFinanceNote,
+  useEscalateFinance,
+  useFinancePayment,
+} from '@/modules/payments/hooks/use-finance'
 import {
   formatDate,
+  formatInr,
   mapPaymentStatus,
-  firstDate,
   titleCase,
-  displayServiceTitle,
-  formatServiceTypeLabel,
 } from '@/modules/payments/utils/finance-mappers'
-import { escalateUrl } from '@/modules/payments/utils/finance-escalate'
-import {
-  downloadKeyValueReport,
-  flattenExportPairs,
-} from '@/modules/payments/hooks/use-finance-list-filters'
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
@@ -83,7 +80,9 @@ export function ServicePaymentDetailViewPage() {
   const { id = '' } = useParams<{ id: string }>()
   const { data, isLoading, isError } = useFinancePayment(id)
   const noteMutation = useAddFinanceNote()
+  const escalateMutation = useEscalateFinance()
   const [isNoteModalOpen, setIsNoteModalOpen] = useState(false)
+  const [isEscalateModalOpen, setIsEscalateModalOpen] = useState(false)
   const payment = data?.data
 
   if (isLoading) {
@@ -106,62 +105,13 @@ export function ServicePaymentDetailViewPage() {
   }
 
   const snapshot = payment.moduleSnapshot || {}
-  const fulfillment = payment.fulfillmentResult || {}
-  const linkedPayout = payment.linkedPayout
-  const linkedEscrow = payment.linkedEscrow
   const status = mapPaymentStatus(payment.status)
   const paymentStatus =
     status === 'Paid' ? 'Successful' : status === 'Failed' ? 'Failed' : 'Pending'
-  const isPaid = status === 'Paid'
-
-  const rawTitle =
-    (typeof snapshot.title === 'string' && snapshot.title) || payment.description || ''
-  const serviceName = displayServiceTitle(rawTitle) || payment.orderId
-  const serviceType = formatServiceTypeLabel(
-    (typeof snapshot.pricingType === 'string' && snapshot.pricingType) ||
-      payment.pricingType ||
-      rawTitle,
-  )
-
-  const scheduledEndAt = firstDate(snapshot.endDate, snapshot.endAt, snapshot.endedAt)
-  const completedEndAt =
-    scheduledEndAt &&
-    new Date(scheduledEndAt).getTime() <=
-      new Date(payment.updatedAt || payment.createdAt || 0).getTime()
-      ? scheduledEndAt
-      : null
-  const serviceCompletedAt = firstDate(
-    snapshot.completedAt,
-    snapshot.approvedAt,
-    completedEndAt,
-    fulfillment.completedAt,
-    fulfillment.approvedAt,
-    fulfillment.endAt,
-    linkedEscrow?.releasedAt,
-    isPaid ? payment.updatedAt || payment.createdAt : null,
-  )
-  const payoutReleasedAt = firstDate(
-    linkedPayout?.paidAt,
-    linkedPayout?.initiatedAt,
-    linkedPayout?.scheduledAt,
-    linkedEscrow?.releasedAt,
-    linkedEscrow?.expectedReleaseAt,
-  )
-  const startAt = firstDate(
-    snapshot.startDate,
-    snapshot.startAt,
-    snapshot.consultationDate,
-    payment.createdAt,
-  )
-  const endAt = firstDate(scheduledEndAt, serviceCompletedAt)
-  const payoutStatusLabel =
-    linkedPayout?.status === 'paid'
-      ? 'Settled'
-      : titleCase(linkedPayout?.status || payment.settlementStatus || payment.pricingType)
 
   const detail = {
-    serviceTitle: 'Service Information',
-    serviceDescription: 'Provide details about your Consultation',
+    serviceTitle: (snapshot.title as string) || payment.description || titleCase(payment.module),
+    serviceDescription: payment.description || `${titleCase(payment.module)} payment details`,
     paymentInformation: {
       paymentId: payment.orderId,
       transactionId: payment._id,
@@ -169,18 +119,16 @@ export function ServicePaymentDetailViewPage() {
       paymentMethod: payment.paymentMethod || 'Razorpay',
       paymentGateway: 'Razorpay',
       createdOn: formatDate(payment.createdAt),
-      settlementStatus: payoutStatusLabel || '—',
+      settlementStatus: titleCase(payment.pricingType) || '—',
       paymentStatus: paymentStatus as 'Successful' | 'Pending' | 'Failed',
     },
     serviceInformation: {
-      serviceName,
-      serviceType,
+      serviceName: (snapshot.title as string) || payment.description || payment.orderId,
+      serviceType: titleCase(payment.pricingType || payment.referenceType),
       category: (snapshot.category as string) || titleCase(payment.module),
-      startDate: formatDate(startAt),
-      endDate: formatDate(endAt),
-      serviceCompletedOn: formatDate(serviceCompletedAt),
-      payoutDate: formatDate(payoutReleasedAt),
-      completionStatus: (isPaid ? 'Completed' : 'Pending') as
+      startDate: formatDate(payment.createdAt),
+      endDate: formatDate(payment.updatedAt || payment.createdAt),
+      completionStatus: (status === 'Paid' ? 'Completed' : 'Pending') as
         | 'Completed'
         | 'In Progress'
         | 'Pending',
@@ -188,9 +136,9 @@ export function ServicePaymentDetailViewPage() {
     },
     timelineInformation: {
       bookingDate: formatDate(payment.createdAt),
-      paymentDate: formatDate(isPaid ? payment.updatedAt || payment.createdAt : payment.createdAt),
-      serviceCompletedOn: formatDate(serviceCompletedAt),
-      payoutReleasedOn: formatDate(payoutReleasedAt),
+      paymentDate: formatDate(payment.createdAt),
+      serviceCompletedOn: '—',
+      payoutReleasedOn: '—',
     },
     parties: {
       clientId: payment.userId || '—',
@@ -199,10 +147,10 @@ export function ServicePaymentDetailViewPage() {
       expertName: (snapshot.partnerName as string) || payment.partnerId || '—',
     },
     financialBreakdown: {
-      payoutId: linkedPayout?.payoutId || '—',
+      payoutId: formatInr(payment.amount),
       payoutMethod: payment.paymentMethod || 'Bank Transfer',
-      serviceCompletedOn: formatDate(serviceCompletedAt),
-      payoutDate: formatDate(payoutReleasedAt),
+      serviceCompletedOn: '—',
+      payoutDate: '—',
       paymentStatus: paymentStatus as 'Successful' | 'Pending' | 'Failed',
     },
   }
@@ -240,20 +188,7 @@ export function ServicePaymentDetailViewPage() {
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-3">
-            <Button
-              onClick={() =>
-                downloadKeyValueReport(
-                  'service_payment_report',
-                  flattenExportPairs({
-                    Payment: detail.paymentInformation,
-                    Service: detail.serviceInformation,
-                    Timeline: detail.timelineInformation,
-                    Parties: detail.parties,
-                    Financial: detail.financialBreakdown,
-                  }),
-                )
-              }
-            >
+            <Button onClick={() => toast.message('Download report coming soon')}>
               <Download className="size-4" />
               Download Report
             </Button>
@@ -261,17 +196,7 @@ export function ServicePaymentDetailViewPage() {
               <SquarePen className="size-4" />
               Add Notes
             </Button>
-            <Button
-              onClick={() =>
-                navigate(
-                  escalateUrl(payment._id, {
-                    kind: 'resource',
-                    resourceType: 'Payment',
-                    returnTo: `/finance/services/${payment._id}`,
-                  }),
-                )
-              }
-            >
+            <Button onClick={() => setIsEscalateModalOpen(true)}>
               <SquarePen className="size-4" />
               Escalate
             </Button>
@@ -334,11 +259,6 @@ export function ServicePaymentDetailViewPage() {
             <DetailRow label="Start Date" value={detail.serviceInformation.startDate} />
             <DetailRow label="End Date" value={detail.serviceInformation.endDate} />
             <DetailRow
-              label="Service Completed On"
-              value={detail.serviceInformation.serviceCompletedOn}
-            />
-            <DetailRow label="Payout Date" value={detail.serviceInformation.payoutDate} />
-            <DetailRow
               label="Completion Status"
               value={<StatusBadge status={detail.serviceInformation.completionStatus} />}
             />
@@ -372,6 +292,29 @@ export function ServicePaymentDetailViewPage() {
                 setIsNoteModalOpen(false)
               },
               onError: () => toast.error('Failed to save note'),
+            },
+          )
+        }}
+      />
+
+      <AddFinanceNoteModal
+        open={isEscalateModalOpen}
+        title="Escalate"
+        description="This records an escalation for admin review and audit history."
+        placeholder="Enter escalation note"
+        submitLabel="Escalate"
+        submittingLabel="Escalating..."
+        isSubmitting={escalateMutation.isPending}
+        onClose={() => setIsEscalateModalOpen(false)}
+        onSubmit={(adminNote) => {
+          escalateMutation.mutate(
+            { id: payment._id, resourceType: 'Payment', adminNote },
+            {
+              onSuccess: () => {
+                toast.success('Escalated')
+                setIsEscalateModalOpen(false)
+              },
+              onError: () => toast.error('Failed to escalate'),
             },
           )
         }}

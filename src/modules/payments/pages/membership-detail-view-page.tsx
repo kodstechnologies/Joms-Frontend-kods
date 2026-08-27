@@ -5,6 +5,7 @@ import { ArrowLeft, Check, Download } from 'lucide-react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 
+import { useBranding } from '@/app/providers/use-branding'
 import {
   useCancelSubscription,
   usePauseSubscription,
@@ -13,10 +14,13 @@ import {
 import { CancelSubscriptionModal } from '@/modules/payments/components/cancel-subscription-modal'
 import { PauseSubscriptionModal } from '@/modules/payments/components/pause-subscription-modal'
 import { mapSubscriptionToFinanceDetail } from '@/modules/payments/utils/finance-membership-mapper'
-import { downloadKeyValueReport } from '@/modules/payments/hooks/use-finance-list-filters'
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
+import {
+  downloadInvoiceDocument,
+  invoiceFromMembershipSubscription,
+} from '@/shared/utils/invoice-document'
 
 const cardClass = 'radius-lg border border-white/[0.06] bg-brand-surface p-4 sm:p-5'
 const sectionTitleClass = 'text-body-md-semibold text-brand-text leading-[20px]'
@@ -54,6 +58,7 @@ function getStatusBadgeClass(status: string) {
 export function MembershipDetailViewPage() {
   const navigate = useNavigate()
   const { id = '' } = useParams<{ id: string }>()
+  const { logoUrl } = useBranding()
   const [pauseOpen, setPauseOpen] = useState(false)
   const [cancelOpen, setCancelOpen] = useState(false)
 
@@ -61,7 +66,8 @@ export function MembershipDetailViewPage() {
   const pauseMutation = usePauseSubscription()
   const cancelMutation = useCancelSubscription()
 
-  const detail = data?.data ? mapSubscriptionToFinanceDetail(data.data) : null
+  const subscription = data?.data
+  const detail = subscription ? mapSubscriptionToFinanceDetail(subscription) : null
   const canManage = detail?.rawStatus === 'active'
 
   if (isLoading) {
@@ -112,26 +118,18 @@ export function MembershipDetailViewPage() {
             <p className={sectionSubtitleClass}>Provide details about your Consultation</p>
           </div>
           <Button
-            onClick={() =>
-              downloadKeyValueReport('membership_subscription_report', [
-                ['Subscription ID', detail.subscriptionId],
-                ['Plan', detail.plan],
-                ['Start Date', detail.startDate],
-                ['Status', detail.status],
-                ['Billing Cycle', detail.billingCycle],
-                ['Amount', detail.amount],
-                ['Payment Method', detail.paymentMethod],
-                ['Last Payment', detail.lastPayment],
-                ['Next Renewal', detail.nextRenewal],
-                ['User Name', detail.userName],
-                ['User ID', detail.userId],
-                ['User Type', detail.userType],
-                ['Plan Features', detail.planFeatures.join('; ')],
-              ])
-            }
+            onClick={() => {
+              if (!subscription) return
+              void downloadInvoiceDocument(
+                invoiceFromMembershipSubscription(subscription, { logoUrl }),
+                subscription.paymentInfo?.paymentId || subscription.subscriptionId,
+              )
+                .then(() => toast.success('Invoice downloaded'))
+                .catch(() => toast.error('Failed to download invoice'))
+            }}
           >
             <Download className="size-4" />
-            Download Filing Report
+            Download Invoice
           </Button>
         </div>
 

@@ -31,6 +31,7 @@ export const MODERATION_CATEGORY_SLUGS = {
   deleteService: 'delete-service',
   rejectService: 'reject-service',
   pauseService: 'pause-service',
+  pauseCategory: 'pause-category',
   requestChangesService: 'request-changes-service',
   suspendVenue: 'suspend-venue',
   deleteVenue: 'delete-venue',
@@ -93,6 +94,7 @@ export const fetchModerationReasonsBySlug = async (
 
 export const createModerationReason = async (payload: {
   categoryId: string
+  slug?: string
   title: string
   description?: string
   defaultMessageTemplate?: string

@@ -1,6 +1,5 @@
 import { useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ChevronDown } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { SecurityQuestionsModal } from './security-questions-modal'
@@ -44,7 +43,6 @@ function SecuritySelect({
           </option>
         ))}
       </select>
-      <ChevronDown className="security-select-icon" aria-hidden />
     </div>
   )
 }

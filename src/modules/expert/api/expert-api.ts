@@ -317,14 +317,6 @@ export const bulkVerifyKycExperts = async (payload: BulkActionPayload) => {
   return response.data
 }
 
-export const bulkVerifyDigilockerExperts = async (payload: BulkActionPayload) => {
-  const response = await adminApiClient.post(
-    '/admin/internal/admin/partners/bulk-verify-digilocker',
-    payload,
-  )
-  return response.data
-}
-
 export const bulkEscalateExperts = async (payload: BulkActionPayload) => {
   const response = await adminApiClient.post(
     '/admin/internal/admin/partners/bulk-escalate',
@@ -337,6 +329,76 @@ export const bulkRaiseTicketExperts = async (payload: BulkActionPayload) => {
   const response = await adminApiClient.post(
     '/admin/internal/admin/partners/bulk-raise-ticket',
     payload,
+  )
+  return response.data
+}
+
+export const updateExpertAdminNotes = async (partnerId: string, internalNotes: string) => {
+  const response = await adminApiClient.patch(
+    `/admin/internal/admin/partners/${partnerId}/admin-notes`,
+    { internalNotes },
+  )
+  return response.data
+}
+
+export const updateExpertAdminTags = async (partnerId: string, tags: string[]) => {
+  const response = await adminApiClient.patch(
+    `/admin/internal/admin/partners/${partnerId}/admin-tags`,
+    { tags },
+  )
+  return response.data
+}
+
+export type ExpertCustomLinkDetails = {
+  partnerId: string
+  expertName?: string | null
+  username?: string | null
+  link: string | null
+  visible: boolean
+  createdAt?: string | null
+  status: string
+  usage: string
+  traffic: string
+  trafficCount?: number
+  orders: number
+}
+
+export const fetchExpertCustomLink = async (partnerId: string) => {
+  const response = await adminApiClient.get<{
+    success: boolean
+    data: ExpertCustomLinkDetails
+  }>(`/admin/internal/admin/partners/${partnerId}/custom-link`)
+  return response.data.data
+}
+
+export const updateExpertCustomLinkVisibility = async (partnerId: string, visible: boolean) => {
+  const response = await adminApiClient.patch<{
+    success: boolean
+    data: ExpertCustomLinkDetails
+  }>(`/admin/internal/admin/partners/${partnerId}/custom-link`, { visible })
+  return response.data.data
+}
+
+export type PartnerAvailabilityWindow = {
+  day?: string
+  from?: string
+  to?: string
+}
+
+export type PartnerUnavailabilityWindow = {
+  date?: string
+  from?: string
+  to?: string
+}
+
+export type PartnerAvailability = {
+  weeklyAvailability?: PartnerAvailabilityWindow[]
+  unavailableDates?: PartnerUnavailabilityWindow[]
+}
+
+export const fetchExpertAvailability = async (partnerId: string) => {
+  const response = await adminApiClient.get<{ success: boolean; data: PartnerAvailability }>(
+    `/admin/internal/admin/partners/${partnerId}/availability`,
   )
   return response.data
 }

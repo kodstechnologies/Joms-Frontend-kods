@@ -1,5 +1,3 @@
-// ─── Filter params ────────────────────────────────────────────────────────────
-
 export type DateRangePreset =
   | 'today'
   | 'last7days'
@@ -32,8 +30,6 @@ export interface DashboardFilters {
   limit?: number
 }
 
-// ─── Shared ───────────────────────────────────────────────────────────────────
-
 export interface MoneyValue {
   amount: number
   currency: string
@@ -50,8 +46,6 @@ export interface OptedCategory {
   name: string
   count: number
 }
-
-// ─── Service KPIs ─────────────────────────────────────────────────────────────
 
 export interface ServiceListingCounts {
   listed: number
@@ -105,8 +99,6 @@ export interface ServiceKpis {
   mostOptedCategory: OptedCategory | null
 }
 
-// ─── Consultation KPIs ────────────────────────────────────────────────────────
-
 export interface ConsultationListingCounts {
   listed: number
   active: number
@@ -142,8 +134,6 @@ export interface ConsultationKpis {
   mostOptedCategory: OptedCategory | null
 }
 
-// ─── Summary ──────────────────────────────────────────────────────────────────
-
 export interface DashboardSummary {
   totalListings: number
   totalServiceListings: number
@@ -159,8 +149,6 @@ export interface DashboardFiltersApplied {
   startDate: string | null
   endDate: string | null
 }
-
-// ─── Chart Data ───────────────────────────────────────────────────────────────
 
 export interface TrendPoint {
   date: string
@@ -212,8 +200,6 @@ export interface DashboardChartTrends {
   servicesListed: TrendPoint[]
   consultationsListed: TrendPoint[]
 }
-
-// ─── Single Unified Dashboard Response ────────────────────────────────────────
 
 export interface MarketplaceDashboardData {
   summary: DashboardSummary

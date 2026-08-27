@@ -1,6 +1,7 @@
 import { Menu } from 'lucide-react'
 import { useLocation, useNavigate } from 'react-router-dom'
 
+import { AlertsTrigger } from '@/app/layouts/components/alerts-panel'
 import { NotificationTrigger } from '@/app/layouts/components/notification-dropdown'
 import { SidebarBrand } from '@/app/layouts/components/sidebar-brand'
 import { getVisibleNavigation } from '@/app/layouts/navigation/navigation.filter'
@@ -34,11 +35,15 @@ export function Topbar({
   onMenuClick,
   notificationsOpen,
   onNotificationsOpen,
+  alertsOpen,
+  onAlertsOpen,
   showCompact = false,
 }: {
   onMenuClick: () => void
   notificationsOpen: boolean
   onNotificationsOpen: () => void
+  alertsOpen: boolean
+  onAlertsOpen: () => void
   showCompact?: boolean
 }) {
   const location = useLocation()
@@ -93,6 +98,7 @@ export function Topbar({
           </div>
 
           <div className="flex items-center gap-3">
+            <AlertsTrigger open={alertsOpen} onOpen={onAlertsOpen} />
             <NotificationTrigger open={notificationsOpen} onOpen={onNotificationsOpen} />
 
             <div className="hidden h-8 w-px bg-white/10 sm:block" aria-hidden />
