@@ -1,3 +1,8 @@
+/**
+ * Support Management dashboard metrics catalog.
+ * Source: JOMS Excel → Support Management → Dashboard Metrics (8).
+ */
+
 export const SUPPORT_DASHBOARD_MODULE_KEY = 'support-dashboard'
 
 export type SupportDashboardMetricCatalogItem = {
@@ -8,65 +13,73 @@ export type SupportDashboardMetricCatalogItem = {
   defaultActive: boolean
 }
 
-/** Exactly 8 support dashboard metrics — matches the Support Management page. */
 export const SUPPORT_DASHBOARD_METRICS_CATALOG: SupportDashboardMetricCatalogItem[] = [
   {
-    id: 'total-open-tickets',
-    label: 'Total Open Tickets',
+    id: 'total-tickets',
+    label: 'Total Tickets',
     type: 'Count',
-    description: 'Total currently open support tickets',
+    description: 'Total tickets in the system',
     defaultActive: true,
   },
   {
-    id: 'new-tickets-today',
-    label: 'New Tickets Today',
+    id: 'open-tickets',
+    label: 'Open Tickets',
     type: 'Count',
-    description: 'Tickets created today',
+    description: 'Currently open tickets (Open, Assigned, In Progress, Pending Customer)',
     defaultActive: true,
   },
   {
     id: 'tickets-in-progress',
-    label: 'Tickets In-Progress',
+    label: 'Tickets In Progress',
     type: 'Count',
-    description: 'Tickets actively being worked on',
+    description: 'Active tickets being worked on',
     defaultActive: true,
   },
   {
-    id: 'escalated-tickets',
-    label: 'Escalated Tickets',
+    id: 'assigned-to-me',
+    label: 'Assigned to Me',
     type: 'Count',
-    description: 'Tickets that have been escalated',
+    description: 'Tickets assigned to the logged-in admin',
     defaultActive: true,
   },
   {
-    id: 'resolved-today',
-    label: 'Resolved Today',
+    id: 'escalated-by-me',
+    label: 'Escalated by Me',
+    type: 'Count',
+    description: 'Tickets escalated by the logged-in admin',
+    defaultActive: true,
+  },
+  {
+    id: 'average-first-response-time',
+    label: 'Average First Response Time',
+    type: 'Duration',
+    description: 'Average time to first response',
+    defaultActive: true,
+  },
+  {
+    id: 'average-resolution-time',
+    label: 'Average Resolution Time',
+    type: 'Duration',
+    description: 'Average resolution duration',
+    defaultActive: true,
+  },
+  {
+    id: 'tickets-resolved-today',
+    label: 'Tickets Resolved Today',
     type: 'Count',
     description: 'Tickets resolved today',
     defaultActive: true,
   },
-  {
-    id: 'priority-tickets',
-    label: 'Priority Tickets',
-    type: 'Count',
-    description: 'High and critical priority tickets',
-    defaultActive: true,
-  },
-  {
-    id: 'avg-response-time',
-    label: 'Avg. Response Time',
-    type: 'Duration',
-    description: 'Average first response time',
-    defaultActive: true,
-  },
-  {
-    id: 'avg-resolution-time',
-    label: 'Avg. Resolution Time',
-    type: 'Duration',
-    description: 'Average ticket resolution time',
-    defaultActive: true,
-  },
 ]
+
+/** Maps legacy preference / API ids → current Excel catalog ids. */
+export const SUPPORT_DASHBOARD_LEGACY_METRIC_ID_MAP: Record<string, string> = {
+  'total-open-tickets': 'open-tickets',
+  'escalated-tickets': 'escalated-by-me',
+  'resolved-today': 'tickets-resolved-today',
+  'avg-response-time': 'average-first-response-time',
+  'avg-resolution-time': 'average-resolution-time',
+}
 
 export const SUPPORT_DASHBOARD_METRIC_IDS = SUPPORT_DASHBOARD_METRICS_CATALOG.map(
   (metric) => metric.id,

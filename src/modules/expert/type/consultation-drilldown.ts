@@ -67,6 +67,9 @@ export type ConsultationBookingRow = {
   durationLabel: string | null
   startDate: string | null
   endDate: string | null
+  bookedAt?: string | null
+  lastUpdatedAt?: string | null
+  clientSource?: string | null
   price: number
   currency: string
   threadId: string | null

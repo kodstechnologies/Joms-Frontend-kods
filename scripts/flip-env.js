@@ -7,25 +7,37 @@ const frontendRoot = join(__dirname, '..')
 const envPath = join(frontendRoot, '.env')
 const productionEnvPath = join(frontendRoot, '.env.production')
 
-const LOCAL_ENV = `VITE_AUTH_API_BASE_URL=http://localhost:8000
+function readExistingMapsKey() {
+  for (const path of [envPath, productionEnvPath]) {
+    if (!existsSync(path)) continue
+    const match = readFileSync(path, 'utf8').match(/^VITE_GOOGLE_MAPS_API_KEY=(.*)$/m)
+    if (match) return match[1].trim()
+  }
+  return ''
+}
+
+function buildEnv(target, mapsKey) {
+  const urls =
+    target === 'local'
+      ? `VITE_AUTH_API_BASE_URL=http://localhost:8000
 VITE_ADMIN_API_BASE_URL=http://localhost:8001
 VITE_SERVICE_API_BASE_URL=http://localhost:8004
 VITE_VENUE_API_BASE_URL=http://localhost:8005
 VITE_KYC_API_BASE_URL=http://localhost:8003
 VITE_MEMBERSHIP_API_BASE_URL=http://localhost:8006
-VITE_SETTINGS_API_BASE_URL=http://localhost:8007
-VITE_GOOGLE_MAPS_API_KEY=AIzaSyC7gzHb0335ZzYsdSLRdkDF7uFhWjlxYus
-`
-
-const PROD_ENV = `VITE_AUTH_API_BASE_URL=https://auth.api.kods.online
+VITE_SETTINGS_API_BASE_URL=http://localhost:8007`
+      : `VITE_AUTH_API_BASE_URL=https://auth.api.kods.online
 VITE_ADMIN_API_BASE_URL=https://admin.api.kods.online
 VITE_SERVICE_API_BASE_URL=https://services.api.kods.online
 VITE_VENUE_API_BASE_URL=https://venues.api.kods.online
 VITE_KYC_API_BASE_URL=https://kyc.api.kods.online
 VITE_MEMBERSHIP_API_BASE_URL=https://membership.api.kods.online
-VITE_SETTINGS_API_BASE_URL=https://settings.api.kods.online
-VITE_GOOGLE_MAPS_API_KEY=AIzaSyC7gzHb0335ZzYsdSLRdkDF7uFhWjlxYus
+VITE_SETTINGS_API_BASE_URL=https://settings.api.kods.online`
+
+  return `${urls}
+VITE_GOOGLE_MAPS_API_KEY=${mapsKey}
 `
+}
 
 function detectMode(content) {
   return content.includes('localhost') ? 'local' : 'production'
@@ -50,7 +62,8 @@ function resolveTargetMode(arg) {
 
 function main() {
   const target = resolveTargetMode(process.argv[2])
-  const content = target === 'local' ? LOCAL_ENV : PROD_ENV
+  const mapsKey = readExistingMapsKey()
+  const content = buildEnv(target, mapsKey)
 
   writeFileSync(envPath, content, 'utf8')
   if (existsSync(productionEnvPath)) {

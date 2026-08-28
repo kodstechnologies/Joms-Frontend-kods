@@ -11,8 +11,6 @@ export function VenueAdvancedFilter() {
 
   return (
     <div className="bg-brand-bg text-brand-text min-h-screen">
-      {/* Header */}
-
       <div className="flex items-center justify-between border-b border-white/10 px-8 py-5">
         <div className="flex items-center gap-4">
           <Button
@@ -35,8 +33,6 @@ export function VenueAdvancedFilter() {
         </Button>
       </div>
 
-      {/* Body */}
-
       <div className="mx-auto max-w-7xl space-y-6 px-8 py-8">
         <ByVenuesFilter />
 
@@ -46,8 +42,6 @@ export function VenueAdvancedFilter() {
 
         <ByLocationFilter />
       </div>
-
-      {/* Footer */}
 
       <div className="bg-brand-bg sticky bottom-0 border-t border-white/10 px-8 py-5">
         <div className="flex items-center justify-between">

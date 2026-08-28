@@ -94,6 +94,32 @@ import {
 } from '@/modules/payments/config/finance-refunds-metrics.config'
 import { FINANCE_REFUNDS_TABLE_COLUMNS_CATALOG } from '@/modules/payments/config/finance-refunds-table-columns.config'
 import {
+  FINANCE_ESCROW_MAX_ACTIVE_METRICS,
+  FINANCE_ESCROW_METRICS_CATALOG,
+  FINANCE_ESCROW_MODULE_KEY,
+} from '@/modules/payments/config/finance-escrow-metrics.config'
+import { FINANCE_ESCROW_TABLE_COLUMNS_CATALOG } from '@/modules/payments/config/finance-escrow-table-columns.config'
+import {
+  FINANCE_EVENTS_MODULE_KEY,
+  FINANCE_EVENTS_TABLE_COLUMNS_CATALOG,
+} from '@/modules/payments/config/finance-events-table-columns.config'
+import {
+  FINANCE_PAYOUTS_MODULE_KEY,
+  FINANCE_PAYOUTS_TABLE_COLUMNS_CATALOG,
+  FINANCE_PAYOUTS_MAX_ACTIVE_METRICS,
+  FINANCE_PAYOUTS_METRICS_CATALOG,
+} from '@/modules/payments/config/finance-payouts-table-columns.config'
+import {
+  FINANCE_INVOICES_MODULE_KEY,
+  FINANCE_INVOICES_TABLE_COLUMNS_CATALOG,
+  FINANCE_INVOICES_MAX_ACTIVE_METRICS,
+  FINANCE_INVOICES_METRICS_CATALOG,
+} from '@/modules/payments/config/finance-invoices-table-columns.config'
+import {
+  FINANCE_MEMBERSHIPS_MODULE_KEY,
+  FINANCE_MEMBERSHIPS_TABLE_COLUMNS_CATALOG,
+} from '@/modules/payments/config/finance-memberships-table-columns.config'
+import {
   MEMBERSHIP_MAX_ACTIVE_METRICS,
   MEMBERSHIP_METRICS_CATALOG,
   MEMBERSHIPS_MODULE_KEY,
@@ -115,6 +141,13 @@ import {
   TICKET_MANAGEMENT_METRICS_CATALOG,
   TICKET_MANAGEMENT_MODULE_KEY,
 } from '@/modules/support-management/config/ticket-management-metrics.config'
+import { TICKET_MANAGEMENT_TABLE_COLUMNS_CATALOG } from '@/modules/support-management/config/ticket-management-table-columns.config'
+import {
+  PAST_TICKETS_MAX_ACTIVE_METRICS,
+  PAST_TICKETS_METRICS_CATALOG,
+  PAST_TICKETS_MODULE_KEY,
+} from '@/modules/support-management/config/past-tickets-metrics.config'
+import { PAST_TICKETS_TABLE_COLUMNS_CATALOG } from '@/modules/support-management/config/past-tickets-table-columns.config'
 import {
   ESCALATIONS_MAX_ACTIVE_METRICS,
   ESCALATIONS_METRICS_CATALOG,
@@ -126,6 +159,13 @@ import {
   PLATFORM_HEALTH_METRICS_CATALOG,
   PLATFORM_HEALTH_MODULE_KEY,
 } from '@/modules/settings/config/platform-health-metrics.config'
+import { PLATFORM_HEALTH_TABLE_COLUMNS_CATALOG } from '@/modules/settings/config/platform-health-table-columns.config'
+import {
+  INCIDENT_MAX_ACTIVE_METRICS,
+  INCIDENT_METRICS_CATALOG,
+  INCIDENT_MODULE_KEY,
+} from '@/modules/settings/config/incident-metrics.config'
+import { INCIDENT_TRACKING_TABLE_COLUMNS_CATALOG } from '@/modules/settings/config/incident-table-columns.config'
 import {
   EXPERT_PROFILE_ANALYTICS_MAX_ACTIVE_METRICS,
   EXPERT_PROFILE_ANALYTICS_METRICS_CATALOG,
@@ -147,6 +187,12 @@ import {
   SERVICE_PERFORMANCE_MODULE_KEY,
 } from '@/modules/expert/config/service-performance-metrics.config'
 import { SERVICE_PERFORMANCE_TABLE_COLUMNS_CATALOG } from '@/modules/expert/config/service-performance-table-columns.config'
+import {
+  CONSULTATION_PERFORMANCE_MAX_ACTIVE_METRICS,
+  CONSULTATION_PERFORMANCE_METRICS_CATALOG,
+  CONSULTATION_PERFORMANCE_MODULE_KEY,
+} from '@/modules/expert/config/consultation-performance-metrics.config'
+import { CONSULTATION_PERFORMANCE_TABLE_COLUMNS_CATALOG } from '@/modules/expert/config/consultation-performance-table-columns.config'
 import {
   VENUE_MANAGEMENT_MODULE_KEY,
   VENUE_MANAGEMENT_TABLE_COLUMNS_CATALOG,
@@ -293,16 +339,88 @@ export const MODULE_METRICS_REGISTRY: Record<string, ModuleMetricsDefinition> = 
     })),
   },
   'finance-escrow': {
-    moduleKey: 'finance-escrow',
+    moduleKey: FINANCE_ESCROW_MODULE_KEY,
     moduleName: 'Escrow Management',
     returnTo: '/finance/escrow',
-    maxActiveMetrics: 4,
-    metrics: [
-      metric('active-escrows', 'Active Escrows', 'Count', 'Open escrow holds', true),
-      metric('held-amount', 'Held Amount', 'Currency', 'Total held in escrow', true),
-      metric('released-mtd', 'Released (MTD)', 'Currency', 'Released this month', true),
-      metric('disputed', 'Disputed', 'Count', 'Disputed escrows', true),
-    ],
+    maxActiveMetrics: FINANCE_ESCROW_MAX_ACTIVE_METRICS,
+    metrics: FINANCE_ESCROW_METRICS_CATALOG.map((item) => ({
+      id: item.id,
+      label: item.label,
+      type: item.type,
+      description: item.description,
+      defaultActive: item.defaultActive,
+    })),
+    columns: FINANCE_ESCROW_TABLE_COLUMNS_CATALOG.map((item) => ({
+      id: item.id,
+      label: item.label,
+      type: item.type,
+      description: item.description,
+      defaultVisible: item.defaultVisible,
+    })),
+  },
+  'finance-events': {
+    moduleKey: FINANCE_EVENTS_MODULE_KEY,
+    moduleName: 'Finance Events',
+    returnTo: '/finance/events',
+    columns: FINANCE_EVENTS_TABLE_COLUMNS_CATALOG.map((item) => ({
+      id: item.id,
+      label: item.label,
+      type: item.type,
+      description: item.description,
+      defaultVisible: item.defaultVisible,
+    })),
+  },
+  'finance-payouts': {
+    moduleKey: FINANCE_PAYOUTS_MODULE_KEY,
+    moduleName: 'Payout Management',
+    returnTo: '/finance/payouts',
+    maxActiveMetrics: FINANCE_PAYOUTS_MAX_ACTIVE_METRICS,
+    metrics: FINANCE_PAYOUTS_METRICS_CATALOG.map((item) => ({
+      id: item.id,
+      label: item.label,
+      type: item.type,
+      description: item.description,
+      defaultActive: item.defaultActive,
+    })),
+    columns: FINANCE_PAYOUTS_TABLE_COLUMNS_CATALOG.map((item) => ({
+      id: item.id,
+      label: item.label,
+      type: item.type,
+      description: item.description,
+      defaultVisible: item.defaultVisible,
+    })),
+  },
+  'finance-invoices': {
+    moduleKey: FINANCE_INVOICES_MODULE_KEY,
+    moduleName: 'Invoices & Billing',
+    returnTo: '/finance/invoices',
+    maxActiveMetrics: FINANCE_INVOICES_MAX_ACTIVE_METRICS,
+    metrics: FINANCE_INVOICES_METRICS_CATALOG.map((item) => ({
+      id: item.id,
+      label: item.label,
+      type: item.type,
+      description: item.description,
+      defaultActive: item.defaultActive,
+    })),
+    columns: FINANCE_INVOICES_TABLE_COLUMNS_CATALOG.map((item) => ({
+      id: item.id,
+      label: item.label,
+      type: item.type,
+      description: item.description,
+      defaultVisible: item.defaultVisible,
+    })),
+  },
+  'finance-memberships': {
+    moduleKey: FINANCE_MEMBERSHIPS_MODULE_KEY,
+    moduleName: 'Membership Revenue',
+    returnTo: '/finance/memberships',
+    columns: FINANCE_MEMBERSHIPS_TABLE_COLUMNS_CATALOG.map((item) => ({
+      id: item.id,
+      label: item.label,
+      type: item.type,
+      description: item.description,
+      defaultVisible: item.defaultVisible,
+    })),
   },
   'finance-revenue': {
     moduleKey: FINANCE_REVENUE_MODULE_KEY,
@@ -381,46 +499,33 @@ export const MODULE_METRICS_REGISTRY: Record<string, ModuleMetricsDefinition> = 
       description: item.description,
       defaultActive: item.defaultActive,
     })),
-    columns: [
-      column('ticket-id', 'Ticket ID', 'Text', 'Unique ticket id'),
-      column('subject', 'Subject', 'Text', 'Ticket subject'),
-      column('status', 'Status', 'Status', 'Current status'),
-      column('priority', 'Priority', 'Text', 'Priority level'),
-      column('category', 'Category', 'Text', 'Ticket category'),
-      column('reporter', 'Reporter', 'Text', 'User who created the ticket'),
-      column('sla-timer', 'SLA Timer', 'Duration', 'Remaining SLA time'),
-      column('first-response-due', 'First Response Due', 'Date', 'First response SLA deadline'),
-      column('resolution-due', 'Resolution Due', 'Date', 'Resolution SLA deadline'),
-      column('assigned-on', 'Assigned On', 'Date', 'Assignment timestamp'),
-      column('assigned-by', 'Assigned By', 'Text', 'Assigning admin'),
-      column('assigned-to', 'Assigned To', 'Text', 'Assigned support agent'),
-      column('escalated-by', 'Escalated By', 'Text', 'Admin who escalated the ticket'),
-      column('escalated-to', 'Escalated To', 'Text', 'Escalation recipient'),
-      column('escalated-at', 'Escalated At', 'Date', 'Escalation timestamp'),
-      column(
-        'escalation-status',
-        'Escalation Status',
-        'Status',
-        'Pending, Accepted, Rejected, or Completed',
-      ),
-      column('escalated-for', 'Escalated For', 'Text', 'Escalation reason'),
-      column('resolved-at', 'Resolved At', 'Date', 'Resolution timestamp'),
-      column('resolved-by', 'Resolved By', 'Text', 'Resolving admin'),
-      column('resolution-time', 'Resolution Time', 'Duration', 'Total resolution duration'),
-      column('last-updated-at', 'Last Updated At', 'Date', 'Latest ticket activity'),
-    ],
+    columns: TICKET_MANAGEMENT_TABLE_COLUMNS_CATALOG.map((item) => ({
+      id: item.id,
+      label: item.label,
+      type: item.type,
+      description: item.description,
+      defaultVisible: item.defaultVisible,
+    })),
   },
   'past-tickets': {
-    moduleKey: 'past-tickets',
+    moduleKey: PAST_TICKETS_MODULE_KEY,
     moduleName: 'Past Tickets',
     returnTo: '/support/past-tickets',
-    maxActiveMetrics: 4,
-    metrics: [
-      metric('closed', 'Closed', 'Count', 'Closed tickets', true),
-      metric('resolved', 'Resolved', 'Count', 'Resolved tickets', true),
-      metric('avg-resolution', 'Avg. Resolution', 'Average', 'Average resolution time', true),
-      metric('reopened', 'Reopened', 'Count', 'Reopened tickets', true),
-    ],
+    maxActiveMetrics: PAST_TICKETS_MAX_ACTIVE_METRICS,
+    metrics: PAST_TICKETS_METRICS_CATALOG.map((item) => ({
+      id: item.id,
+      label: item.label,
+      type: item.type,
+      description: item.description,
+      defaultActive: item.defaultActive,
+    })),
+    columns: PAST_TICKETS_TABLE_COLUMNS_CATALOG.map((item) => ({
+      id: item.id,
+      label: item.label,
+      type: item.type,
+      description: item.description,
+      defaultVisible: item.defaultVisible,
+    })),
   },
   'executive-overview': {
     moduleKey: EXECUTIVE_OVERVIEW_MODULE_KEY,
@@ -448,18 +553,33 @@ export const MODULE_METRICS_REGISTRY: Record<string, ModuleMetricsDefinition> = 
       description: item.description,
       defaultActive: item.defaultActive,
     })),
+    columns: PLATFORM_HEALTH_TABLE_COLUMNS_CATALOG.map((item) => ({
+      id: item.id,
+      label: item.label,
+      type: item.type,
+      description: item.description,
+      defaultVisible: item.defaultVisible,
+    })),
   },
   'incident-tracking': {
-    moduleKey: 'incident-tracking',
+    moduleKey: INCIDENT_MODULE_KEY,
     moduleName: 'Incident Tracking',
     returnTo: '/settings/main',
-    maxActiveMetrics: 4,
-    metrics: [
-      metric('open-incidents', 'Open Incidents', 'Count', 'Currently open', true),
-      metric('critical', 'Critical', 'Count', 'Critical severity', true),
-      metric('resolved-mtd', 'Resolved (MTD)', 'Count', 'Resolved this month', true),
-      metric('mttr', 'MTTR', 'Average', 'Mean time to resolve', true),
-    ],
+    maxActiveMetrics: INCIDENT_MAX_ACTIVE_METRICS,
+    metrics: INCIDENT_METRICS_CATALOG.map((item) => ({
+      id: item.id,
+      label: item.label,
+      type: item.type,
+      description: item.description,
+      defaultActive: item.defaultActive,
+    })),
+    columns: INCIDENT_TRACKING_TABLE_COLUMNS_CATALOG.map((item) => ({
+      id: item.id,
+      label: item.label,
+      type: item.type,
+      description: item.description,
+      defaultVisible: item.defaultVisible,
+    })),
   },
   communication: {
     moduleKey: COMMUNICATION_MODULE_KEY,
@@ -816,174 +936,32 @@ export const MODULE_METRICS_REGISTRY: Record<string, ModuleMetricsDefinition> = 
       defaultVisible: item.defaultVisible,
     })),
   },
+  'consultation-performance': {
+    moduleKey: CONSULTATION_PERFORMANCE_MODULE_KEY,
+    moduleName: 'Consultation Performance',
+    returnTo: '/experts/management',
+    maxActiveMetrics: CONSULTATION_PERFORMANCE_MAX_ACTIVE_METRICS,
+    metrics: CONSULTATION_PERFORMANCE_METRICS_CATALOG.map((item) => ({
+      id: item.id,
+      label: item.label,
+      type: item.type,
+      description: item.description,
+      defaultActive: item.defaultActive,
+    })),
+    columns: CONSULTATION_PERFORMANCE_TABLE_COLUMNS_CATALOG.map((item) => ({
+      id: item.id,
+      label: item.label,
+      type: item.type,
+      description: item.description,
+      defaultVisible: item.defaultVisible,
+    })),
+  },
   'service-dashboard': {
     moduleKey: 'service-dashboard',
     moduleName: 'Service Marketplace',
     returnTo: '/services/dashboard',
     maxActiveMetrics: 100,
-    metrics: [] /*
-      metric('listed-services', 'Listed Services', 'Count', 'Total listed services', true),
-      metric('active-services', 'Active Services', 'Count', 'Live and bookable services', true),
-      metric('paused-services', 'Paused Services', 'Count', 'Temporarily unavailable services'),
-      metric('archived-services', 'Archived Services', 'Count', 'No longer available services'),
-      metric('deleted-services', 'Deleted Services', 'Count', 'Soft-deleted services'),
-      metric(
-        'most-opted-service-category',
-        'Most Opted Service Category',
-        'Text',
-        'Category with highest completed orders',
-      ),
-      metric(
-        'most-opted-service-sub-category',
-        'Most Opted Service Sub-Category',
-        'Text',
-        'Sub-category with highest completed orders',
-      ),
-      metric(
-        'total-service-orders',
-        'Total Service Orders',
-        'Count',
-        'Total service orders placed',
-        true,
-      ),
-      metric(
-        'completed-service-orders',
-        'Completed Service Orders',
-        'Count',
-        'Successfully completed orders',
-      ),
-      metric('in-progress-service-orders', 'In Progress Service Orders', 'Count', 'Active orders'),
-      metric(
-        'disputed-service-orders',
-        'Disputed Service Orders',
-        'Count',
-        'Orders with active disputes',
-      ),
-      metric(
-        'service-completion-rate',
-        'Service Completion Rate',
-        'Percentage',
-        'Percentage of completed orders',
-      ),
-      metric('avg-delivery-time', 'Average Delivery Time', 'Average', 'Average delivery duration'),
-      metric(
-        'total-service-revenue',
-        'Total Service Revenue',
-        'Currency',
-        'Revenue from completed service orders',
-        true,
-      ),
-      metric(
-        'avg-revenue-per-service',
-        'Average Revenue per Service',
-        'Currency',
-        'Average revenue per completed service',
-      ),
-      metric('avg-order-value', 'Average Order Value (AOV)', 'Currency', 'Average order value'),
-      metric('avg-service-rating', 'Average Service Rating', 'Average', 'Average customer rating'),
-      metric(
-        'customer-satisfaction',
-        'Customer Satisfaction',
-        'Percentage',
-        'Positive feedback percentage',
-      ),
-      metric(
-        'on-time-delivery',
-        'On-Time Delivery %',
-        'Percentage',
-        'Orders delivered within promised SLA',
-      ),
-      metric(
-        'avg-services-per-expert',
-        'Average services per Expert',
-        'Average',
-        'Average services listed by each expert',
-      ),
-      metric(
-        'total-refund-amount',
-        'Total Refund Amount',
-        'Currency',
-        'Total refunds issued for services',
-      ),
-      metric('refund-rate', 'Refund Rate', 'Percentage', 'Percentage of refunded service orders'),
-      metric(
-        'listed-consultations',
-        'Listed Consultations',
-        'Count',
-        'Total consultation listings',
-      ),
-      metric('active-consultations', 'Active Consultations', 'Count', 'Live consultations'),
-      metric('paused-consultations', 'Paused Consultations', 'Count', 'Temporarily unavailable'),
-      metric('archived-consultations', 'Archived Consultations', 'Count', 'No longer offered'),
-      metric(
-        'deleted-consultations',
-        'Deleted Consultations',
-        'Count',
-        'Soft-deleted consultations',
-      ),
-      metric('consultation-bookings', 'Consultation Bookings', 'Count', 'Total bookings'),
-      metric(
-        'completed-consultations',
-        'Completed Consultations',
-        'Count',
-        'Successfully completed bookings',
-      ),
-      metric(
-        'scheduled-consultations',
-        'Scheduled Consultations',
-        'Count',
-        'Upcoming confirmed consultations',
-      ),
-      metric('cancelled-consultations', 'Cancelled Consultations', 'Count', 'Cancelled bookings'),
-      metric(
-        'consultation-completion-rate',
-        'Consultation Completion Rate',
-        'Percentage',
-        'Successful completion percentage',
-      ),
-      metric(
-        'avg-consultation-duration',
-        'Average Consultation Duration',
-        'Average',
-        'Average consultation length',
-      ),
-      metric(
-        'total-consultation-revenue',
-        'Total Consultation Revenue',
-        'Currency',
-        'Revenue from completed consultations',
-      ),
-      metric(
-        'avg-revenue-per-consultation',
-        'Average Revenue per Consultation',
-        'Currency',
-        'Revenue per completed consultations',
-      ),
-      metric(
-        'avg-booking-value',
-        'Average Booking Value',
-        'Currency',
-        'Average consultation booking value',
-      ),
-      metric(
-        'most-opted-consultation-category',
-        'Most Opted Consultation Category',
-        'Text',
-        'Most booked consultation category',
-      ),
-      metric(
-        'avg-consultation-rating',
-        'Average Consultation Rating',
-        'Average',
-        'Average consultation rating',
-      ),
-      metric(
-        'consultation-satisfaction',
-        'Consultation Satisfaction',
-        'Percentage',
-        'Positive consultation feedback',
-      ),
-    */,
+    metrics: [],
   },
   'venue-management': {
     moduleKey: VENUE_MANAGEMENT_MODULE_KEY,

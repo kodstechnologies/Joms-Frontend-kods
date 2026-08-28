@@ -84,15 +84,12 @@ export function ExpertReportDetailModal({
 
   return (
     <>
-      {/* Backdrop */}
       <div
         className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs transition-opacity"
         onClick={onClose}
       />
 
-      {/* Drawer / Modal Panel */}
       <div className="fixed inset-y-0 right-0 z-50 flex w-full max-w-xl flex-col border-l border-white/10 bg-[#121417] text-white shadow-2xl transition-transform duration-300">
-        {/* Header */}
         <div className="flex items-center justify-between border-b border-white/10 p-5">
           <div className="flex items-center gap-3">
             <div className="rounded-lg bg-[#E5B54E]/15 p-2 text-[#E5B54E]">
@@ -114,9 +111,7 @@ export function ExpertReportDetailModal({
           </button>
         </div>
 
-        {/* Content Body */}
         <div className="flex-1 space-y-6 overflow-y-auto p-6">
-          {/* Section: Overview */}
           <div className="space-y-3 rounded-xl border border-white/10 bg-[#1A1D21] p-4">
             <h3 className="flex items-center gap-2 text-xs font-semibold tracking-wider text-slate-400 uppercase">
               <User className="size-4 text-[#E5B54E]" /> Reported Target & Reporter
@@ -135,7 +130,6 @@ export function ExpertReportDetailModal({
             </div>
           </div>
 
-          {/* Section: Issue Details */}
           <div className="space-y-3 rounded-xl border border-white/10 bg-[#1A1D21] p-4">
             <h3 className="flex items-center gap-2 text-xs font-semibold tracking-wider text-slate-400 uppercase">
               <FileText className="size-4 text-[#E5B54E]" /> Issue Summary
@@ -174,7 +168,6 @@ export function ExpertReportDetailModal({
             </div>
           </div>
 
-          {/* Section: Admin Investigation Form */}
           <div className="space-y-4 rounded-xl border border-white/10 bg-[#1A1D21] p-4">
             <h3 className="flex items-center gap-2 text-xs font-semibold tracking-wider text-slate-400 uppercase">
               <CheckCircle className="size-4 text-[#E5B54E]" /> Admin Investigation Workflow
@@ -243,7 +236,6 @@ export function ExpertReportDetailModal({
           </div>
         </div>
 
-        {/* Footer Actions */}
         <div className="flex items-center justify-end gap-3 border-t border-white/10 p-4">
           <Button
             type="button"

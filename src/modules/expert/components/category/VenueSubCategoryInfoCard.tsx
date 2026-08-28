@@ -32,10 +32,8 @@ const VenueSubCategoryInfoCard = ({ category, subCategory }: Props) => {
       }}
     >
       <div className="flex items-start justify-between gap-10">
-        {/* Left Content */}
         <div className="flex-1">
           <div className="grid grid-cols-4 gap-x-12 gap-y-10">
-            {/* Row 1 */}
             <div>
               <p className={categoryViewTheme.labelClass}>Main Category Name</p>
               <p className={`mt-2 ${categoryViewTheme.valueLgClass}`}>{category.name}</p>
@@ -48,7 +46,9 @@ const VenueSubCategoryInfoCard = ({ category, subCategory }: Props) => {
 
             <div>
               <p className={categoryViewTheme.labelClass}>Created At</p>
-              <p className={`mt-2 ${categoryViewTheme.valueClass}`}>{subCategory.addedOn || '—'}</p>
+              <p className={`mt-2 ${categoryViewTheme.valueClass}`}>
+                {subCategory.addedOn || 'â€”'}
+              </p>
             </div>
 
             <div>
@@ -61,7 +61,6 @@ const VenueSubCategoryInfoCard = ({ category, subCategory }: Props) => {
               </button>
             </div>
 
-            {/* Row 2 */}
             <div>
               <p className={categoryViewTheme.labelClass}>Category ID</p>
               <p className={`mt-2 ${categoryViewTheme.valueLgClass}`}>
@@ -81,12 +80,10 @@ const VenueSubCategoryInfoCard = ({ category, subCategory }: Props) => {
               <p className={`mt-2 ${categoryViewTheme.valueLgClass}`}>{subCategory.venues}</p>
             </div>
 
-            {/* Empty column to match design */}
             <div />
           </div>
         </div>
 
-        {/* Right Side */}
         <div className="flex shrink-0 items-start gap-8">
           <div className="flex flex-col items-center">
             <p className={categoryViewTheme.labelClass}>Icon</p>

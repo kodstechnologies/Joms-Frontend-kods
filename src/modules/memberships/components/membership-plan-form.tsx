@@ -10,7 +10,6 @@ import type {
   MembershipPricing,
 } from '../types/membership'
 
-/** Figma: #FFFFFF @ 10% */
 const SEP = 'rgba(255, 255, 255, 0.1)'
 
 const BASE_CYCLES = ['Weekly', '3 Months', '6 Months', 'Annual'] as const
@@ -234,7 +233,6 @@ export function MembershipPlanForm({ initialPlan, onSubmit }: MembershipPlanForm
 
   return (
     <form id="membership-plan-form" onSubmit={handleSubmit} className="space-y-6">
-      {/* —— Basic Information —— */}
       <section className="space-y-4">
         <h3 className="text-[16px] leading-6 font-semibold text-white">Basic Information</h3>
 
@@ -280,7 +278,6 @@ export function MembershipPlanForm({ initialPlan, onSubmit }: MembershipPlanForm
 
       <div className="h-px w-full" style={{ backgroundColor: SEP }} aria-hidden />
 
-      {/* —— Duration / Pricing (unchanged structure) —— */}
       <section className="space-y-4">
         <h3 className="text-[16px] leading-6 font-semibold text-white">Pricing Information</h3>
 
@@ -382,7 +379,6 @@ export function MembershipPlanForm({ initialPlan, onSubmit }: MembershipPlanForm
 
       <div className="h-px w-full" style={{ backgroundColor: SEP }} aria-hidden />
 
-      {/* —— Plan Features (Figma) —— */}
       <section className="space-y-1">
         <h3 className="text-[16px] leading-6 font-semibold text-white">Plan Features</h3>
         <p className="mb-2 text-[12px] leading-[18px] text-white/50">Feature list:</p>
@@ -461,7 +457,6 @@ export function MembershipPlanForm({ initialPlan, onSubmit }: MembershipPlanForm
         )}
       </section>
 
-      {/* —— Trial + Additional Settings (Figma spacing: 42px between) —— */}
       <div>
         <section className="space-y-3">
           <h3 className="text-[16px] leading-6 font-semibold text-white">
@@ -514,7 +509,6 @@ export function MembershipPlanForm({ initialPlan, onSubmit }: MembershipPlanForm
   )
 }
 
-/** Figma: ON = dark track + white thumb; OFF = outlined track + white thumb left */
 function Toggle({ checked, onChange }: { checked: boolean; onChange: (value: boolean) => void }) {
   return (
     <button

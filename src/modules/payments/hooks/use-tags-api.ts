@@ -3,29 +3,19 @@ import { toast } from 'sonner'
 import tagsApi, { type TagsData } from '../api/tags-api'
 
 interface UseTagsApiReturn {
-  // State
   tags: string[]
   loading: boolean
   error: string | null
-
-  // Methods
   fetchTags: (recordId: string) => Promise<void>
   addTags: (recordId: string, tags: string[], adminNotes?: string) => Promise<void>
   removeTags: (recordId: string, tags: string[]) => Promise<void>
   updateTags: (recordId: string, tags: string[], adminNotes?: string) => Promise<void>
   clearTags: () => void
-
-  // Merge operations
   mergeTickets: (ticketIds: string[], adminNotes?: string) => Promise<void>
   getMergePreview: (ticketIds: string[]) => Promise<TagsData | null>
-
-  // Search
   searchByTags: (tags: string[], recordType?: string) => Promise<TagsData | null>
 }
 
-/**
- * Hook to manage tags API calls with automatic error/success handling
- */
 export const useTagsApi = (): UseTagsApiReturn => {
   const [tags, setTags] = useState<string[]>([])
   const [loading, setLoading] = useState(false)

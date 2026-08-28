@@ -23,7 +23,11 @@ import {
   SERVICE_PERFORMANCE_METRIC_IDS,
   SERVICE_PERFORMANCE_MODULE_KEY,
 } from '../../config/service-performance-metrics.config'
-import { SERVICE_PERFORMANCE_TABLE_COLUMNS_CATALOG } from '../../config/service-performance-table-columns.config'
+import {
+  DEFAULT_SERVICE_PERFORMANCE_VISIBLE_COLUMN_IDS,
+  SERVICE_PERFORMANCE_LEGACY_COLUMN_ID_MAP,
+  SERVICE_PERFORMANCE_TABLE_COLUMNS_CATALOG,
+} from '../../config/service-performance-table-columns.config'
 import { orderByActiveMetricIds, useActiveMetricIds } from '../../hooks/use-active-metric-ids'
 import { useTableColumnPreferences } from '../../hooks/use-ui-preferences'
 import { useServiceOrders, useServicePerformance } from '../../hooks/use-service-drilldown'
@@ -42,23 +46,14 @@ import type { ServiceOrderRow, ServiceOrdersQuery } from '../../type/service-dri
 
 const PAGE_SIZE = 10
 
-const DESIGN_VISIBLE_COLUMN_IDS = [
-  'client-id',
-  'client-name',
-  'listing-type',
-  'order-status',
-  'pricing-type',
-  'start-date',
-  'end-date',
-  'price',
-] as const
-
-const METRIC_ICONS = {
+const METRIC_ICONS: Record<string, typeof Users> = {
   activeClients: Users,
   completedOrders: Check,
   averageRating: Star,
   terminatedOrders: X,
-} as const
+  totalOrders: Users,
+  inProgressOrders: Users,
+}
 
 const listingTypeLabel = (order: ServiceOrderRow) =>
   order.engagementType === 'proposal' ? 'Custom' : 'Service'
@@ -129,7 +124,7 @@ export function ServicePerformancePage() {
     [orderedMetricIds, performance],
   )
 
-  const manageMetricsPath = `/metrics/service-performance?returnTo=${encodeURIComponent(
+  const manageMetricsPath = `/metrics/service-performance?section=table&returnTo=${encodeURIComponent(
     `/experts/management/profile/${expertId}/service/${serviceId}/performance`,
   )}`
 
@@ -228,7 +223,7 @@ export function ServicePerformancePage() {
       'client-name': {
         id: 'client-name',
         accessorKey: 'clientName',
-        header: 'Name',
+        header: 'Client Name',
         cell: ({ row }) => (
           <span className="font-medium text-white">{row.original.clientName || DASH}</span>
         ),
@@ -244,7 +239,7 @@ export function ServicePerformancePage() {
       'order-status': {
         id: 'order-status',
         accessorKey: 'orderStatus',
-        header: 'Status',
+        header: 'Order Status',
         cell: ({ row }) => <StatusPill status={row.original.orderStatus} />,
       },
       'pricing-type': {
@@ -266,7 +261,7 @@ export function ServicePerformancePage() {
       'client-phone': {
         id: 'client-phone',
         accessorKey: 'clientPhone',
-        header: 'Client Phone',
+        header: 'Client Phone Number',
         cell: ({ row }) => (
           <span className="text-muted text-sm">{row.original.clientPhone || DASH}</span>
         ),
@@ -392,7 +387,7 @@ export function ServicePerformancePage() {
       'dispute-end-date': {
         id: 'dispute-end-date',
         accessorKey: 'disputeEndDate',
-        header: 'Dispute End Date',
+        header: 'Dispute Period End Date',
         cell: ({ row }) => (
           <span className="text-muted text-xs">{formatDate(row.original.disputeEndDate)}</span>
         ),
@@ -460,15 +455,16 @@ export function ServicePerformancePage() {
 
   const columns = useMemo<ColumnDef<ServiceOrderRow>[]>(() => {
     const catalogIds = SERVICE_PERFORMANCE_TABLE_COLUMNS_CATALOG.map((column) => column.id)
-    const savedIds = tableColumnPreferencesQuery.data?.visibleColumnIds ?? []
-    const visibleIds =
-      savedIds.includes('listing-type') && savedIds.includes('pricing-type')
-        ? savedIds.filter((id) => catalogIds.includes(id))
-        : [...DESIGN_VISIBLE_COLUMN_IDS]
+    const rawIds = tableColumnPreferencesQuery.data?.visibleColumnIds?.length
+      ? tableColumnPreferencesQuery.data.visibleColumnIds
+      : DEFAULT_SERVICE_PERFORMANCE_VISIBLE_COLUMN_IDS
+    const mappedIds = rawIds.map((id) => SERVICE_PERFORMANCE_LEGACY_COLUMN_ID_MAP[id] ?? id)
+    const visibleIds = sortIdsByCatalogOrder(
+      [...new Set(mappedIds.filter((id) => catalogIds.includes(id)))],
+      catalogIds,
+    )
 
-    const preferenceColumns = sortIdsByCatalogOrder(visibleIds, catalogIds)
-      .map((id) => dataColumnsById[id])
-      .filter(Boolean)
+    const preferenceColumns = visibleIds.map((id) => dataColumnsById[id]).filter(Boolean)
 
     const actionsColumn: ColumnDef<ServiceOrderRow> = {
       id: 'actions',
@@ -575,7 +571,7 @@ export function ServicePerformancePage() {
                 key={card.id}
                 title={card.label}
                 value={card.value}
-                icon={METRIC_ICONS[card.id as keyof typeof METRIC_ICONS]}
+                icon={METRIC_ICONS[card.id] || Users}
                 hint={card.notInstrumented ? card.hint : undefined}
                 trend={
                   card.deltaPercent === null || card.notInstrumented

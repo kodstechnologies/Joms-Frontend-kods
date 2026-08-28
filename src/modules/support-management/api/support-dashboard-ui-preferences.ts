@@ -1,5 +1,6 @@
 import {
   DEFAULT_SUPPORT_DASHBOARD_METRIC_IDS,
+  SUPPORT_DASHBOARD_LEGACY_METRIC_ID_MAP,
   SUPPORT_DASHBOARD_METRICS_CATALOG,
   SUPPORT_DASHBOARD_METRIC_IDS,
   SUPPORT_DASHBOARD_MODULE_KEY,
@@ -23,7 +24,9 @@ function buildSupportDashboardPreferences(
 ): DashboardMetricPreferences {
   const catalogIdSet = new Set(SUPPORT_DASHBOARD_METRICS_CATALOG.map((metric) => metric.id))
   const filteredIds = sortIdsByCatalogOrder(
-    activeMetricIds.filter((id) => catalogIdSet.has(id)),
+    [
+      ...new Set(activeMetricIds.map((id) => SUPPORT_DASHBOARD_LEGACY_METRIC_ID_MAP[id] ?? id)),
+    ].filter((id) => catalogIdSet.has(id)),
     SUPPORT_DASHBOARD_METRIC_IDS,
   )
 

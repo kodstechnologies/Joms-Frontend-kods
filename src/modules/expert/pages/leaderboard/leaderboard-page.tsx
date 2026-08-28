@@ -27,11 +27,13 @@ import { fetchExpertLeaderboard } from '../../api/leaderboard-api'
 import { useExpertLeaderboard, useExpertLeaderboardProfile } from '../../hooks/use-leaderboard'
 import {
   DEFAULT_EXPERT_LEADERBOARD_VISIBLE_COLUMN_IDS,
+  EXPERT_LEADERBOARD_LEGACY_COLUMN_ID_MAP,
   EXPERT_LEADERBOARD_MODULE_KEY,
   EXPERT_LEADERBOARD_TABLE_COLUMNS_CATALOG,
 } from '../../config/expert-leaderboard-table-columns.config'
 import {
   DEFAULT_VENUE_LEADERBOARD_VISIBLE_COLUMN_IDS,
+  VENUE_LEADERBOARD_LEGACY_COLUMN_ID_MAP,
   VENUE_LEADERBOARD_MODULE_KEY,
   VENUE_LEADERBOARD_TABLE_COLUMNS_CATALOG,
 } from '../../config/venue-leaderboard-table-columns.config'
@@ -127,6 +129,24 @@ function TableRowsShimmer({ rows = 8, columnCount = 7 }: { rows?: number; column
   )
 }
 
+function formatPercent(value: number | null | undefined): string {
+  if (value == null || Number.isNaN(Number(value))) return '—'
+  return `${Number(value).toFixed(1)}%`
+}
+
+function formatLastActive(value: string | null | undefined): string {
+  if (!value) return '—'
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return '—'
+  return date.toLocaleString(undefined, {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
 function getLeaderboardExportValue(columnId: string, row: LeaderboardRow): string {
   switch (columnId) {
     case 'rank':
@@ -139,12 +159,32 @@ function getLeaderboardExportValue(columnId: string, row: LeaderboardRow): strin
       return row.name || ''
     case 'category':
       return row.category || ''
+    case 'membership-type':
+      return row.membershipType || ''
+    case 'orders-completed':
     case 'events-count':
-      return String(row.eventsCompleted ?? '')
+      return String(row.ordersCompleted ?? row.eventsCompleted ?? '')
+    case 'average-rating':
     case 'ratings':
       return row.averageRating != null ? String(row.averageRating) : ''
     case 'score':
       return String(row.score ?? '')
+    case 'profile-health-score':
+      return String(row.profileHealth ?? '')
+    case 'client-satisfaction-score':
+      return row.ratingsAvailable ? formatPercent(row.clientSatisfaction) : '—'
+    case 'total-revenue':
+      return row.totalRevenueLabel || (row.totalRevenue != null ? String(row.totalRevenue) : '—')
+    case 'services-listed':
+      return String(row.servicesListed ?? '')
+    case 'consultations-listed':
+      return String(row.consultationsListed ?? '')
+    case 'repeat-client-rate':
+      return formatPercent(row.repeatClientRate)
+    case 'order-completion-rate':
+      return formatPercent(row.orderCompletionRate)
+    case 'last-active':
+      return formatLastActive(row.lastActiveAt)
     default:
       return ''
   }
@@ -178,8 +218,12 @@ function renderLeaderboardCell(
           {row.category}
         </span>
       )
+    case 'membership-type':
+      return row.membershipType || '—'
+    case 'orders-completed':
     case 'events-count':
-      return row.eventsCompleted
+      return row.ordersCompleted ?? row.eventsCompleted ?? 0
+    case 'average-rating':
     case 'ratings':
       return (
         <span className="inline-flex items-center gap-1">
@@ -191,10 +235,50 @@ function renderLeaderboardCell(
       )
     case 'score':
       return <span className="font-semibold text-white">{row.score}</span>
+    case 'profile-health-score':
+      return <span className="font-semibold text-white">{row.profileHealth ?? '—'}</span>
+    case 'client-satisfaction-score':
+      return row.ratingsAvailable ? formatPercent(row.clientSatisfaction) : '—'
+    case 'total-revenue':
+      return (
+        <span className="font-semibold text-white">
+          {row.totalRevenueLabel ||
+            (row.totalRevenue != null
+              ? `₹${Number(row.totalRevenue).toLocaleString('en-IN')}`
+              : '—')}
+        </span>
+      )
+    case 'services-listed':
+      return row.servicesListed ?? 0
+    case 'consultations-listed':
+      return row.consultationsListed ?? 0
+    case 'repeat-client-rate':
+      return formatPercent(row.repeatClientRate)
+    case 'order-completion-rate':
+      return formatPercent(row.orderCompletionRate)
+    case 'last-active':
+      return (
+        <span className="text-muted whitespace-nowrap">{formatLastActive(row.lastActiveAt)}</span>
+      )
     default:
-      return null
+      return '—'
   }
 }
+
+const SORTABLE_LEADERBOARD_COLUMN_IDS = new Set([
+  'orders-completed',
+  'events-count',
+  'average-rating',
+  'ratings',
+  'score',
+  'profile-health-score',
+  'client-satisfaction-score',
+  'total-revenue',
+  'services-listed',
+  'consultations-listed',
+  'repeat-client-rate',
+  'order-completion-rate',
+])
 
 function RankBadge({ rank }: { rank: number }) {
   if (rank <= 3) {
@@ -647,6 +731,9 @@ export const LeaderboardPage = () => {
   const defaultVisibleColumnIds = isVenueLeaderboard
     ? DEFAULT_VENUE_LEADERBOARD_VISIBLE_COLUMN_IDS
     : DEFAULT_EXPERT_LEADERBOARD_VISIBLE_COLUMN_IDS
+  const legacyColumnIdMap = isVenueLeaderboard
+    ? VENUE_LEADERBOARD_LEGACY_COLUMN_ID_MAP
+    : EXPERT_LEADERBOARD_LEGACY_COLUMN_ID_MAP
   const metricsPath = isVenueLeaderboard
     ? '/metrics/venue-leaderboard?section=table'
     : isServiceLeaderboard
@@ -697,14 +784,35 @@ export const LeaderboardPage = () => {
 
   const visibleColumnIds = useMemo(() => {
     const catalogIds = tableColumnsCatalog.map((column) => column.id)
-    const ids = tableColumnPreferencesQuery.data?.visibleColumnIds?.length
+    const rawIds = tableColumnPreferencesQuery.data?.visibleColumnIds?.length
       ? tableColumnPreferencesQuery.data.visibleColumnIds
       : defaultVisibleColumnIds
+    let mappedIds = rawIds.map((id) => legacyColumnIdMap[id] ?? id)
+
+    // Venue: ensure CSAT + revenue stay visible even with older saved prefs,
+    // and drop listing columns that no longer exist for venues.
+    if (isVenueLeaderboard) {
+      mappedIds = mappedIds.filter(
+        (id) => id !== 'services-listed' && id !== 'consultations-listed',
+      )
+      for (const requiredId of ['client-satisfaction-score', 'total-revenue'] as const) {
+        if (catalogIds.includes(requiredId) && !mappedIds.includes(requiredId)) {
+          mappedIds.push(requiredId)
+        }
+      }
+    }
+
     return sortIdsByCatalogOrder(
-      ids.filter((id) => catalogIds.includes(id)),
+      [...new Set(mappedIds.filter((id) => catalogIds.includes(id)))],
       catalogIds,
     )
-  }, [defaultVisibleColumnIds, tableColumnPreferencesQuery.data, tableColumnsCatalog])
+  }, [
+    defaultVisibleColumnIds,
+    isVenueLeaderboard,
+    legacyColumnIdMap,
+    tableColumnPreferencesQuery.data,
+    tableColumnsCatalog,
+  ])
 
   const visibleColumns = useMemo(
     () =>
@@ -917,7 +1025,7 @@ export const LeaderboardPage = () => {
         )}
 
         <div className="mt-3 overflow-x-auto">
-          <table className="w-full min-w-[820px] border-collapse text-left">
+          <table className="w-full min-w-[1100px] border-collapse text-left">
             <thead>
               <tr className="text-muted text-[10px] font-semibold tracking-wide uppercase">
                 <th className="px-3 py-3">
@@ -938,9 +1046,7 @@ export const LeaderboardPage = () => {
                 </th>
                 {visibleColumns.map((column) => (
                   <th key={column.id} className="px-3 py-3">
-                    {column.id === 'events-count' ||
-                    column.id === 'ratings' ||
-                    column.id === 'score' ? (
+                    {SORTABLE_LEADERBOARD_COLUMN_IDS.has(column.id) ? (
                       <span className="inline-flex items-center gap-1">
                         {column.label} <ArrowUpDown className="size-3 opacity-40" />
                       </span>

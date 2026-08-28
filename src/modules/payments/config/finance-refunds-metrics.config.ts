@@ -8,7 +8,6 @@ export type FinanceRefundsMetricCatalogItem = {
   defaultActive: boolean
 }
 
-/** Exactly 4 refunds dashboard metrics — matches the Refunds & Chargebacks page. */
 export const FINANCE_REFUNDS_METRICS_CATALOG: FinanceRefundsMetricCatalogItem[] = [
   {
     id: 'pending-refunds',

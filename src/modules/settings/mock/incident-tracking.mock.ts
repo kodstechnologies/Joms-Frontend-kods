@@ -1,20 +1,20 @@
 export const incidentMetricsMock = [
   {
-    title: 'Active Incidents',
+    title: 'Open Incidents',
     value: '10',
     trend: { direction: 'up' as const, percentage: 12, label: 'vs last month' },
   },
   {
-    title: 'Critical Errors',
+    title: 'Critical',
     value: '03',
     trend: { direction: 'down' as const, percentage: 6.7, label: 'vs last month' },
   },
   {
-    title: 'Resolved',
+    title: 'Resolved (MTD)',
     value: '18',
     trend: { direction: 'up' as const, percentage: 6.7, label: 'vs last month' },
   },
-  { title: 'Avg. Resolution Time', value: '42m', hint: 'Target: 60m' },
+  { title: 'MTTR', value: '42m', hint: 'Target: 60m' },
 ]
 
 export const incidentsMock = [

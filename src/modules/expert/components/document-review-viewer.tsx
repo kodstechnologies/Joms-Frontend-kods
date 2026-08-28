@@ -134,8 +134,7 @@ function DocumentReviewViewerContent({
           isLoading: false,
         })
       })
-      .catch((err) => {
-        console.error('Failed to load document blob:', err)
+      .catch(() => {
         if (isMounted) {
           setBlobData({ url, type: mimeType || null, isLoading: false })
         }
@@ -148,14 +147,6 @@ function DocumentReviewViewerContent({
 
   const actualUrl = blobData.url || url
   const actualMimeType = blobData.type || mimeType
-
-  console.log({
-    originalUrl: url,
-    actualUrl,
-    actualMimeType,
-    filename,
-    showPdf: isPdfFile(actualUrl, filename, actualMimeType),
-  })
 
   const resolvedReviewStatus = resolveDocumentReviewStatus(url, reviewStatus)
   const decisionActionsDisabled =

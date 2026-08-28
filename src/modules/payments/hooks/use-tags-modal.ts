@@ -9,10 +9,6 @@ interface UseTagsModalReturn {
   setSelectedTags: (tags: string[]) => void
 }
 
-/**
- * Hook to manage tags modal state
- * Handles open/close and tag selection
- */
 export const useTagsModal = (): UseTagsModalReturn => {
   const [isOpen, setIsOpen] = useState(false)
   const [selectedTags, setSelectedTags] = useState<string[]>([])

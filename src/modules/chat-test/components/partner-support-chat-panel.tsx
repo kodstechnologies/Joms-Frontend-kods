@@ -65,6 +65,7 @@ type PartnerSupportChatPanelProps = {
   reporterName: string
   reporterEmail?: string | null
   reporterPhone?: string | null
+  onAuthInvalid?: () => void
 }
 
 export function PartnerSupportChatPanel({
@@ -73,6 +74,7 @@ export function PartnerSupportChatPanel({
   reporterName,
   reporterEmail = '',
   reporterPhone = '',
+  onAuthInvalid,
 }: PartnerSupportChatPanelProps) {
   const fileRef = useRef<HTMLInputElement>(null)
   const ticketRef = useRef<SupportTicket | null>(null)
@@ -181,11 +183,23 @@ export function PartnerSupportChatPanel({
     [accessToken, adminBaseUrl, applyState],
   )
 
-  const { connected, sendSupportMessage } = useSupportChatSocket(
+  const { connected, connectError, sendSupportMessage } = useSupportChatSocket(
     accessToken,
     handlers,
     adminBaseUrl,
   )
+
+  useEffect(() => {
+    if (!connectError) return
+    const normalized = connectError.toLowerCase()
+    if (
+      normalized.includes('expired') ||
+      normalized.includes('invalid') ||
+      normalized.includes('unauthorized')
+    ) {
+      onAuthInvalid?.()
+    }
+  }, [connectError, onAuthInvalid])
 
   useEffect(() => {
     if (!accessToken || !adminBaseUrl) return
@@ -201,9 +215,10 @@ export function PartnerSupportChatPanel({
 
   const statusLabel = useMemo(() => {
     if (closed) return 'Ticket closed'
-    if (!ticket?.id) return 'Select a service'
-    return connected ? 'Online' : 'Connecting…'
-  }, [closed, connected, ticket?.id])
+    if (!connected) return connectError ? `Offline · ${connectError}` : 'Offline'
+    if (!ticket?.id) return 'Online · Select a service'
+    return 'Online'
+  }, [closed, connectError, connected, ticket?.id])
 
   const partnerFields = () => ({
     reporterName,
@@ -217,12 +232,19 @@ export function PartnerSupportChatPanel({
       applyState(socketResult.data)
       return socketResult
     }
-    if (socketResult.message === 'Socket not connected' || socketResult.message === 'Timeout') {
+    try {
       const rest = await sendPartnerSupportChat(adminBaseUrl, accessToken, payload)
       applyState(rest)
       return { success: true, data: rest }
+    } catch (err) {
+      const axiosMessage =
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+        (err instanceof Error ? err.message : '')
+      return {
+        success: false,
+        message: axiosMessage || socketResult.message || 'Failed to reach support',
+      }
     }
-    return socketResult
   }
 
   const handlePickFile = (event: React.ChangeEvent<HTMLInputElement>) => {

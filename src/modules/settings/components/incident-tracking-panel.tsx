@@ -11,6 +11,10 @@ import {
   INCIDENT_METRIC_ID_SET,
   INCIDENT_MODULE_KEY,
 } from '../config/incident-metrics.config'
+import {
+  DEFAULT_INCIDENT_TRACKING_VISIBLE_COLUMN_IDS,
+  INCIDENT_TRACKING_LEGACY_COLUMN_ID_MAP,
+} from '../config/incident-table-columns.config'
 import { useAssignIncident, useIncidentMetrics, useIncidents } from '../hooks/use-incidents'
 import { fetchIncidents } from '../api/incidents-api'
 import type { IncidentRow, IncidentSeverity, IncidentStatus } from '../types/settings'
@@ -31,23 +35,46 @@ import {
   orderByActiveMetricIds,
   useActiveMetricIds,
 } from '@/modules/expert/hooks/use-active-metric-ids'
+import { useTableColumnPreferences } from '@/modules/expert/hooks/use-ui-preferences'
+import { selectPreferredColumns } from '@/modules/expert/utils/select-preferred-columns'
 import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
 
 const PAGE_SIZE = 8
+
+const dash = (value: string | null | undefined) => (value && String(value).trim() ? value : '—')
 
 const INCIDENT_EXPORT_COLUMN_MAP: Record<
   string,
   { header: string; accessor: (row: IncidentRow) => string }
 > = {
-  incidentId: { header: 'Incident ID', accessor: (row) => exportDisplayValue(row.incidentId) },
+  'incident-id': { header: 'Incident ID', accessor: (row) => exportDisplayValue(row.incidentId) },
+  'incident-title': {
+    header: 'Incident Title',
+    accessor: (row) => exportDisplayValue(dash(row.title)),
+  },
+  'reported-at': {
+    header: 'Reported At',
+    accessor: (row) => exportDisplayValue(dash(row.reportedAt || row.createdOn)),
+  },
   severity: { header: 'Severity', accessor: (row) => exportDisplayValue(row.severity) },
+  'first-response-time': {
+    header: 'First Response Time',
+    accessor: (row) => exportDisplayValue(dash(row.firstResponseTime)),
+  },
+  'closed-at': {
+    header: 'Closed At',
+    accessor: (row) => exportDisplayValue(dash(row.closedAt)),
+  },
   module: { header: 'Module', accessor: (row) => exportDisplayValue(row.module) },
   status: { header: 'Status', accessor: (row) => exportDisplayValue(row.status) },
   assignee: {
     header: 'Assignee',
     accessor: (row) => exportDisplayValue(row.assignee || 'Unassigned'),
   },
-  createdOn: { header: 'Created On', accessor: (row) => exportDisplayValue(row.createdOn) },
+  'root-cause': {
+    header: 'Root Cause',
+    accessor: (row) => exportDisplayValue(dash(row.rootCause)),
+  },
 }
 
 function SeverityBadge({ severity }: { severity: IncidentSeverity }) {
@@ -84,6 +111,77 @@ function StatusBadge({ status }: { status: IncidentStatus }) {
   )
 }
 
+const ALL_INCIDENT_COLUMNS: ColumnDef<IncidentRow>[] = [
+  {
+    id: 'incident-id',
+    accessorKey: 'incidentId',
+    header: 'Incident ID',
+    cell: ({ row }) => <span className="font-medium text-white">{row.original.incidentId}</span>,
+  },
+  {
+    id: 'incident-title',
+    accessorKey: 'title',
+    header: 'Incident Title',
+    cell: ({ row }) => <span className="text-slate-300">{dash(row.original.title)}</span>,
+  },
+  {
+    id: 'reported-at',
+    accessorFn: (row) => row.reportedAt || row.createdOn,
+    header: 'Reported At',
+    cell: ({ row }) => (
+      <span className="text-slate-400">
+        {dash(row.original.reportedAt || row.original.createdOn)}
+      </span>
+    ),
+  },
+  {
+    id: 'severity',
+    accessorKey: 'severity',
+    header: 'Severity',
+    cell: ({ row }) => <SeverityBadge severity={row.original.severity} />,
+  },
+  {
+    id: 'first-response-time',
+    accessorKey: 'firstResponseTime',
+    header: 'First Response Time',
+    cell: ({ row }) => (
+      <span className="text-slate-400">{dash(row.original.firstResponseTime)}</span>
+    ),
+  },
+  {
+    id: 'closed-at',
+    accessorKey: 'closedAt',
+    header: 'Closed At',
+    cell: ({ row }) => <span className="text-slate-400">{dash(row.original.closedAt)}</span>,
+  },
+  {
+    id: 'module',
+    accessorKey: 'module',
+    header: 'Module',
+    cell: ({ row }) => <span className="text-slate-300">{row.original.module}</span>,
+  },
+  {
+    id: 'status',
+    accessorKey: 'status',
+    header: 'Status',
+    cell: ({ row }) => <StatusBadge status={row.original.status} />,
+  },
+  {
+    id: 'assignee',
+    accessorKey: 'assignee',
+    header: 'Assignee',
+    cell: ({ row }) => (
+      <span className="text-slate-400">{row.original.assignee || 'Unassigned'}</span>
+    ),
+  },
+  {
+    id: 'root-cause',
+    accessorKey: 'rootCause',
+    header: 'Root Cause',
+    cell: ({ row }) => <span className="text-slate-400">{dash(row.original.rootCause)}</span>,
+  },
+]
+
 export function IncidentTrackingPanel() {
   const navigate = useNavigate()
   const [search, setSearch] = useState('')
@@ -91,6 +189,7 @@ export function IncidentTrackingPanel() {
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
   const [selected, setSelected] = useState<IncidentRow | null>(null)
 
+  const tableColumnPreferencesQuery = useTableColumnPreferences(INCIDENT_MODULE_KEY)
   const activeMetricIds = useActiveMetricIds(INCIDENT_MODULE_KEY, DEFAULT_INCIDENT_METRIC_IDS)
   const filteredActiveMetricIds = useMemo(
     () =>
@@ -157,59 +256,35 @@ export function IncidentTrackingPanel() {
     onExportData: handleExportData,
   })
 
-  const columns = useMemo<ColumnDef<IncidentRow>[]>(
-    () => [
-      {
-        accessorKey: 'incidentId',
-        header: 'Incident ID',
-        cell: ({ row }) => (
-          <span className="font-medium text-white">{row.original.incidentId}</span>
-        ),
-      },
-      {
-        accessorKey: 'severity',
-        header: 'Severity',
-        cell: ({ row }) => <SeverityBadge severity={row.original.severity} />,
-      },
-      {
-        accessorKey: 'module',
-        header: 'Module',
-        cell: ({ row }) => <span className="text-slate-300">{row.original.module}</span>,
-      },
-      {
-        accessorKey: 'status',
-        header: 'Status',
-        cell: ({ row }) => <StatusBadge status={row.original.status} />,
-      },
-      {
-        accessorKey: 'assignee',
-        header: 'Assignee',
-        cell: ({ row }) => (
-          <span className="text-slate-400">{row.original.assignee || 'Unassigned'}</span>
-        ),
-      },
-      {
-        accessorKey: 'createdOn',
-        header: 'Created On',
-        cell: ({ row }) => <span className="text-slate-400">{row.original.createdOn}</span>,
-      },
-      {
-        id: 'actions',
-        header: 'Actions',
-        cell: ({ row }) => (
-          <button
-            type="button"
-            onClick={() => setSelected(row.original)}
-            className="rounded p-1 text-slate-500 hover:bg-white/5 hover:text-white"
-            aria-label="Assign user"
-          >
-            <ClipboardList className="size-4" />
-          </button>
-        ),
-      },
-    ],
-    [],
-  )
+  const columns = useMemo(() => {
+    const rawVisibleIds = tableColumnPreferencesQuery.data?.visibleColumnIds?.length
+      ? tableColumnPreferencesQuery.data.visibleColumnIds
+      : DEFAULT_INCIDENT_TRACKING_VISIBLE_COLUMN_IDS
+
+    const preferenceColumns = selectPreferredColumns(
+      ALL_INCIDENT_COLUMNS,
+      rawVisibleIds,
+      DEFAULT_INCIDENT_TRACKING_VISIBLE_COLUMN_IDS,
+      INCIDENT_TRACKING_LEGACY_COLUMN_ID_MAP,
+    )
+
+    const actionsColumn: ColumnDef<IncidentRow> = {
+      id: 'actions',
+      header: 'Actions',
+      cell: ({ row }) => (
+        <button
+          type="button"
+          onClick={() => setSelected(row.original)}
+          className="rounded p-1 text-slate-500 hover:bg-white/5 hover:text-white"
+          aria-label="Assign user"
+        >
+          <ClipboardList className="size-4" />
+        </button>
+      ),
+    }
+
+    return [...preferenceColumns.filter((column) => column.id !== 'actions'), actionsColumn]
+  }, [tableColumnPreferencesQuery.data])
 
   return (
     <div className="space-y-6">
@@ -221,7 +296,7 @@ export function IncidentTrackingPanel() {
         <Button
           variant="secondary"
           className="ui-manage-metrics"
-          onClick={() => navigate('/metrics/incident-tracking')}
+          onClick={() => navigate('/metrics/incident-tracking?section=table')}
         >
           Manage Metrics
         </Button>

@@ -5,15 +5,11 @@ import { Input } from '@/shared/components/ui/input'
 export function ByVenuesFilter() {
   return (
     <section className="bg-brand-surface-2 space-y-8 rounded-xl border border-white/10 p-8">
-      {/* Header */}
-
       <div className="flex items-center justify-between">
         <h2 className="text-brand-text text-sm font-medium">By Venues</h2>
 
         <Plus className="text-brand-text h-5 w-5 cursor-pointer" />
       </div>
-
-      {/* Category */}
 
       <div className="space-y-2">
         <label className="text-brand-text text-sm font-medium">Category</label>
@@ -21,15 +17,11 @@ export function ByVenuesFilter() {
         <Input placeholder="Search by name" className="bg-brand-surface border-white/10" />
       </div>
 
-      {/* Sub Category */}
-
       <div className="space-y-2">
         <label className="text-brand-text text-sm font-medium">Sub-category</label>
 
         <Input placeholder="Search by name" className="bg-brand-surface border-white/10" />
       </div>
-
-      {/* Location */}
 
       <div className="space-y-3">
         <h3 className="text-brand-text text-sm font-medium">Location</h3>
@@ -40,8 +32,6 @@ export function ByVenuesFilter() {
           <Input placeholder="City" className="bg-brand-surface border-white/10" />
         </div>
       </div>
-
-      {/* Venue Type */}
 
       <div className="space-y-3">
         <h3 className="text-brand-text text-sm font-medium">Venue Type</h3>
@@ -58,8 +48,6 @@ export function ByVenuesFilter() {
           </label>
         </div>
       </div>
-
-      {/* Venue Status */}
 
       <div className="space-y-3">
         <h3 className="text-brand-text text-sm font-medium">Venue Status</h3>
@@ -82,8 +70,6 @@ export function ByVenuesFilter() {
         </div>
       </div>
 
-      {/* Approval Status */}
-
       <div className="space-y-3">
         <h3 className="text-brand-text text-sm font-medium">Approval Status</h3>
 
@@ -104,8 +90,6 @@ export function ByVenuesFilter() {
           </label>
         </div>
       </div>
-
-      {/* Type */}
 
       <div className="space-y-3">
         <h3 className="text-brand-text text-sm font-medium">Type</h3>
@@ -138,8 +122,6 @@ export function ByVenuesFilter() {
         </div>
       </div>
 
-      {/* Availability */}
-
       <div className="space-y-3">
         <h3 className="text-brand-text text-sm font-medium">Availability</h3>
 
@@ -171,8 +153,6 @@ export function ByVenuesFilter() {
         </div>
       </div>
 
-      {/* Amenities */}
-
       <div className="space-y-3">
         <h3 className="text-brand-text text-sm font-medium">Amenities</h3>
 
@@ -203,8 +183,6 @@ export function ByVenuesFilter() {
           </label>
         </div>
       </div>
-
-      {/* Number of Spaces */}
 
       <div className="space-y-4">
         <h3 className="text-brand-text text-sm font-medium">Number of Spaces</h3>

@@ -29,7 +29,7 @@ function formatExp(token: string | null | undefined): string {
   const exp = decodeJwtExp(token)
   if (!exp) return 'exp unknown'
   const ms = exp * 1000 - Date.now()
-  if (ms <= 0) return 'EXPIRED — refresh now'
+  if (ms <= 0) return 'EXPIRED â€” refresh now'
   const mins = Math.floor(ms / 60000)
   if (mins < 60) return `expires in ~${mins}m`
   const hours = Math.floor(mins / 60)
@@ -229,7 +229,7 @@ export function FinanceTestSessionBar({
   return (
     <section className="space-y-3 rounded-xl border border-zinc-800 bg-zinc-900/60 p-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-sm font-semibold text-zinc-200">Sessions — login / refresh tokens</h2>
+        <h2 className="text-sm font-semibold text-zinc-200">Sessions â€” login / refresh tokens</h2>
         <button
           type="button"
           onClick={() => setCollapsed((c) => !c)}
@@ -241,15 +241,14 @@ export function FinanceTestSessionBar({
 
       {collapsed ? (
         <p className="text-xs text-zinc-500">
-          Partner {partner ? '✓' : '✗'} · User {selectedUser?.username || '—'} · Admin{' '}
-          {adminUser ? '✓' : '✗'} — expand to refresh tokens.
+          Partner {partner ? 'âœ“' : 'âœ—'} Â· User {selectedUser?.username || 'â€”'} Â· Admin{' '}
+          {adminUser ? 'âœ“' : 'âœ—'} â€” expand to refresh tokens.
         </p>
       ) : null}
 
       {collapsed ? null : (
         <>
           <div className="grid gap-3 lg:grid-cols-3">
-            {/* Partner — always show login fields */}
             <div className="rounded-xl border border-amber-500/40 bg-zinc-900/80 p-3">
               <div className="mb-2 flex items-center justify-between gap-2">
                 <span className="text-sm font-semibold text-amber-200">Partner</span>
@@ -308,7 +307,7 @@ export function FinanceTestSessionBar({
                     disabled={partnerBusy}
                     className="flex-1 rounded-lg bg-amber-400 px-3 py-1.5 text-sm font-medium text-zinc-950 disabled:opacity-50"
                   >
-                    {partnerBusy ? '…' : partner ? 'Refresh partner token' : 'Login partner'}
+                    {partnerBusy ? 'â€¦' : partner ? 'Refresh partner token' : 'Login partner'}
                   </button>
                   {partner ? (
                     <button
@@ -330,7 +329,6 @@ export function FinanceTestSessionBar({
               {partnerMsg ? <p className="mt-2 text-xs text-emerald-300">{partnerMsg}</p> : null}
             </div>
 
-            {/* User static */}
             <div className="rounded-xl border border-sky-500/40 bg-zinc-900/80 p-3">
               <div className="mb-2 flex items-center justify-between gap-2">
                 <span className="text-sm font-semibold text-sky-200">User (static JWT)</span>
@@ -345,7 +343,7 @@ export function FinanceTestSessionBar({
               >
                 {STATIC_CHAT_USERS.map((u) => (
                   <option key={u.id} value={u.id}>
-                    {u.username} · {u.phone_e164}
+                    {u.username} Â· {u.phone_e164}
                   </option>
                 ))}
               </select>
@@ -370,7 +368,6 @@ export function FinanceTestSessionBar({
               ) : null}
             </div>
 
-            {/* Admin — login + OTP on page */}
             <div className="rounded-xl border border-violet-500/40 bg-zinc-900/80 p-3">
               <div className="mb-2 flex items-center justify-between gap-2">
                 <span className="text-sm font-semibold text-violet-200">Admin</span>
@@ -420,7 +417,7 @@ export function FinanceTestSessionBar({
                       className="flex-1 rounded-lg bg-violet-400 px-3 py-1.5 text-sm font-medium text-zinc-950 disabled:opacity-50"
                     >
                       {adminBusy
-                        ? '…'
+                        ? 'â€¦'
                         : adminUser
                           ? 'Refresh admin (send OTP)'
                           : 'Login admin (send OTP)'}
@@ -457,7 +454,7 @@ export function FinanceTestSessionBar({
                       disabled={adminBusy || adminOtp.trim().length !== 6}
                       className="flex-1 rounded-lg bg-violet-400 px-3 py-1.5 text-sm font-medium text-zinc-950 disabled:opacity-50"
                     >
-                      {adminBusy ? '…' : 'Verify OTP & save token'}
+                      {adminBusy ? 'â€¦' : 'Verify OTP & save token'}
                     </button>
                     <button
                       type="button"

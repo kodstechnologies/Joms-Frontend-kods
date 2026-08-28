@@ -8,6 +8,7 @@ import { SupportStatCard } from '../components/support-stat-card'
 import { StatCardSkeleton } from '@/shared/components/ui/skeleton'
 import {
   DEFAULT_SUPPORT_DASHBOARD_METRIC_IDS,
+  SUPPORT_DASHBOARD_LEGACY_METRIC_ID_MAP,
   SUPPORT_DASHBOARD_METRIC_IDS,
   SUPPORT_DASHBOARD_METRIC_ID_SET,
   SUPPORT_DASHBOARD_MODULE_KEY,
@@ -37,7 +38,9 @@ export function SupportDashboardPage() {
   const filteredActiveMetricIds = useMemo(
     () =>
       sortIdsByCatalogOrder(
-        activeMetricIds.filter((id) => SUPPORT_DASHBOARD_METRIC_ID_SET.has(id)),
+        [
+          ...new Set(activeMetricIds.map((id) => SUPPORT_DASHBOARD_LEGACY_METRIC_ID_MAP[id] ?? id)),
+        ].filter((id) => SUPPORT_DASHBOARD_METRIC_ID_SET.has(id)),
         SUPPORT_DASHBOARD_METRIC_IDS,
       ),
     [activeMetricIds],
@@ -60,7 +63,6 @@ export function SupportDashboardPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-h2 text-brand-text tracking-tight">Support Management</h1>
@@ -90,7 +92,6 @@ export function SupportDashboardPage() {
         </div>
       </div>
 
-      {/* Stats — 2 rows of 4 */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {isLoading
           ? filteredActiveMetricIds.map((id) => <StatCardSkeleton key={id} />)

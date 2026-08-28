@@ -22,7 +22,7 @@ export function buildExecutiveKpiStats(
       title: item.label,
       value: data?.notInstrumented ? '—' : data?.formatted || '—',
       trend: data?.notInstrumented ? undefined : trend,
-      hint: data?.hint || undefined,
+      hint: data?.hint || data?.proxy || undefined,
     }
   })
 }

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { Download, Eye, TrendingUp } from 'lucide-react'
+import { Download, Eye, SlidersHorizontal, TrendingUp } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
@@ -15,6 +15,7 @@ import {
   TableActionsDropdown,
   TableActionsItem,
 } from '@/shared/components/table/table-actions-dropdown'
+import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
 import { StatCardSkeleton } from '@/shared/components/ui/skeleton'
 import type { FilterValues } from '@/shared/types/data-filter'
@@ -295,18 +296,24 @@ export function PayoutManagementPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-h2 text-brand-text tracking-tight">Payout Management</h1>
-        <p className="text-body-md text-muted mt-1 leading-[20px]">
-          Track revenue, payouts, and financial performance
-        </p>
-        <p className="text-body-sm text-muted mt-3 leading-[20px]">
-          <Link to="/finance/dashboard" className="hover:text-brand-text transition-colors">
-            Payment & Finance
-          </Link>
-          <span> / </span>
-          <span className="text-brand-text font-semibold">Payout Management</span>
-        </p>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h1 className="text-h2 text-brand-text tracking-tight">Payout Management</h1>
+          <p className="text-body-md text-muted mt-1 leading-[20px]">
+            Track revenue, payouts, and financial performance
+          </p>
+          <p className="text-body-sm text-muted mt-3 leading-[20px]">
+            <Link to="/finance/dashboard" className="hover:text-brand-text transition-colors">
+              Payment & Finance
+            </Link>
+            <span> / </span>
+            <span className="text-brand-text font-semibold">Payout Management</span>
+          </p>
+        </div>
+        <Button className="ui-manage-metrics" onClick={() => navigate('/metrics/finance-payouts')}>
+          <SlidersHorizontal className="size-4" />
+          Manage Metrics
+        </Button>
       </div>
 
       {isError ? <p className="text-body-sm text-brand-danger">Failed to load payouts.</p> : null}

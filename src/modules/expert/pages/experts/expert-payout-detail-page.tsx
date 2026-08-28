@@ -99,7 +99,7 @@ export function ExpertPayoutDetailPage() {
     payout.milestoneId ||
     payout.itemId ||
     payout.payoutId ||
-    '—'
+    'â€”'
   const serviceTitle = payout.serviceTitle || 'Payout Details'
   const platformFeeLabel =
     payout.platformFeePercent != null && Number(payout.platformFeePercent) > 0
@@ -113,7 +113,6 @@ export function ExpertPayoutDetailPage() {
 
   return (
     <div className="mx-auto w-full max-w-6xl space-y-6 p-4 text-white sm:p-6 lg:p-8">
-      {/* Header Bar */}
       <div className="flex flex-col gap-2 border-b border-white/10 pb-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <button
@@ -132,9 +131,7 @@ export function ExpertPayoutDetailPage() {
         </div>
       </div>
 
-      {/* Main Content Card */}
       <div className="space-y-6 rounded-2xl border border-white/10 bg-[#16191D] p-6 shadow-xl">
-        {/* Booking Details Header & Download Action */}
         <div className="flex flex-col gap-4 border-b border-white/10 pb-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 className="text-lg font-bold text-white">Booking Details</h2>
@@ -157,15 +154,13 @@ export function ExpertPayoutDetailPage() {
           </Button>
         </div>
 
-        {/* 2-Column Grid */}
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          {/* Left Column: Booking Information */}
           <div className="space-y-3 rounded-xl border border-white/10 bg-[#1A1D21] p-5">
             <h3 className="mb-3 text-sm font-bold text-white">Booking Information</h3>
             <div className="space-y-3 text-xs">
               <div className="flex items-center justify-between border-b border-white/5 pb-2">
                 <span className="text-slate-400">Booking ID</span>
-                <span className="font-semibold text-slate-200">{payout.bookingId || '—'}</span>
+                <span className="font-semibold text-slate-200">{payout.bookingId || 'â€”'}</span>
               </div>
 
               {isConsultation ? (
@@ -182,11 +177,11 @@ export function ExpertPayoutDetailPage() {
 
               <div className="flex items-center justify-between border-b border-white/5 pb-2">
                 <span className="text-slate-400">Client Name</span>
-                <span className="font-semibold text-slate-200">{payout.clientName || '—'}</span>
+                <span className="font-semibold text-slate-200">{payout.clientName || 'â€”'}</span>
               </div>
               <div className="flex items-center justify-between border-b border-white/5 pb-2">
                 <span className="text-slate-400">Client ID</span>
-                <span className="font-semibold text-slate-200">{payout.clientId || '—'}</span>
+                <span className="font-semibold text-slate-200">{payout.clientId || 'â€”'}</span>
               </div>
 
               {isCustomMilestone ? (
@@ -194,13 +189,13 @@ export function ExpertPayoutDetailPage() {
                   <div className="flex items-center justify-between border-b border-white/5 pb-2">
                     <span className="text-slate-400">Milestone Start Date</span>
                     <span className="font-semibold text-slate-200">
-                      {payout.milestoneStartDate || '—'}
+                      {payout.milestoneStartDate || 'â€”'}
                     </span>
                   </div>
                   <div className="flex items-center justify-between border-b border-white/5 pb-2">
                     <span className="text-slate-400">Milestone End Date</span>
                     <span className="font-semibold text-slate-200">
-                      {payout.milestoneEndDate || '—'}
+                      {payout.milestoneEndDate || 'â€”'}
                     </span>
                   </div>
                 </>
@@ -209,13 +204,13 @@ export function ExpertPayoutDetailPage() {
                   <div className="flex items-center justify-between border-b border-white/5 pb-2">
                     <span className="text-slate-400">Consultation Date</span>
                     <span className="font-semibold text-slate-200">
-                      {payout.consultationDate || '—'}
+                      {payout.consultationDate || 'â€”'}
                     </span>
                   </div>
                   <div className="flex items-center justify-between border-b border-white/5 pb-2">
                     <span className="text-slate-400">Consultation Fee</span>
                     <span className="font-semibold text-slate-200">
-                      ₹{(Number(payout.consultationFee) || 0).toLocaleString('en-IN')}
+                      â‚¹{(Number(payout.consultationFee) || 0).toLocaleString('en-IN')}
                     </span>
                   </div>
                 </>
@@ -224,13 +219,13 @@ export function ExpertPayoutDetailPage() {
                   <div className="flex items-center justify-between border-b border-white/5 pb-2">
                     <span className="text-slate-400">Service Start Date</span>
                     <span className="font-semibold text-slate-200">
-                      {payout.serviceStartDate || '—'}
+                      {payout.serviceStartDate || 'â€”'}
                     </span>
                   </div>
                   <div className="flex items-center justify-between border-b border-white/5 pb-2">
                     <span className="text-slate-400">Service End Date</span>
                     <span className="font-semibold text-slate-200">
-                      {payout.serviceEndDate || '—'}
+                      {payout.serviceEndDate || 'â€”'}
                     </span>
                   </div>
                 </>
@@ -238,45 +233,46 @@ export function ExpertPayoutDetailPage() {
 
               <div className="flex items-center justify-between border-b border-white/5 pb-2">
                 <span className="text-slate-400">Payment Method</span>
-                <span className="font-semibold text-slate-200">{payout.paymentMethod || '—'}</span>
+                <span className="font-semibold text-slate-200">
+                  {payout.paymentMethod || 'â€”'}
+                </span>
               </div>
               <div className="flex items-center justify-between border-b border-white/5 pb-2">
                 <span className="text-slate-400">Transaction ID</span>
-                <span className="font-semibold text-slate-200">{payout.transactionId || '—'}</span>
+                <span className="font-semibold text-slate-200">
+                  {payout.transactionId || 'â€”'}
+                </span>
               </div>
               <div className="flex items-center justify-between pt-1">
                 <span className="text-slate-400">Payment Status</span>
                 <span className="rounded-full border border-emerald-500/30 bg-emerald-500/15 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-400">
-                  {payout.paymentStatus || '—'}
+                  {payout.paymentStatus || 'â€”'}
                 </span>
               </div>
             </div>
           </div>
 
-          {/* Right Column: Expert Details & Payout Details */}
           <div className="space-y-5 rounded-xl border border-white/10 bg-[#1A1D21] p-5">
-            {/* Expert Details */}
             <div>
               <h3 className="mb-3 text-sm font-bold text-white">Expert Details</h3>
               <div className="space-y-3 border-b border-white/10 pb-4 text-xs">
                 <div className="flex items-center justify-between">
                   <span className="text-slate-400">Expert Name</span>
-                  <span className="font-semibold text-slate-200">{payout.expertName || '—'}</span>
+                  <span className="font-semibold text-slate-200">{payout.expertName || 'â€”'}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-slate-400">Expert ID</span>
-                  <span className="font-semibold text-slate-200">{payout.expertId || '—'}</span>
+                  <span className="font-semibold text-slate-200">{payout.expertId || 'â€”'}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-slate-400">Service Category</span>
                   <span className="font-semibold text-slate-200">
-                    {payout.serviceCategory || '—'}
+                    {payout.serviceCategory || 'â€”'}
                   </span>
                 </div>
               </div>
             </div>
 
-            {/* Payout Details */}
             <div>
               <h3 className="mb-3 text-sm font-bold text-white">Payout Details</h3>
               <div className="space-y-3 text-xs">
@@ -284,7 +280,7 @@ export function ExpertPayoutDetailPage() {
                   <div className="flex items-center justify-between border-b border-white/5 pb-2">
                     <span className="text-slate-400">Total Milestone Fee</span>
                     <span className="font-semibold text-slate-200">
-                      ₹
+                      â‚¹
                       {(
                         Number(payout.totalMilestoneFee ?? payout.consultationFee) || 0
                       ).toLocaleString('en-IN')}
@@ -295,25 +291,25 @@ export function ExpertPayoutDetailPage() {
                     <div className="flex items-center justify-between border-b border-white/5 pb-2">
                       <span className="text-slate-400">{feeLabel}</span>
                       <span className="font-semibold text-slate-200">
-                        ₹{(Number(payout.consultationFee) || 0).toLocaleString('en-IN')}
+                        â‚¹{(Number(payout.consultationFee) || 0).toLocaleString('en-IN')}
                       </span>
                     </div>
                     <div className="flex items-center justify-between border-b border-white/5 pb-2">
                       <span className="text-slate-400">{platformFeeLabel}</span>
                       <span className="font-semibold text-slate-200">
-                        ₹{(Number(payout.platformFee) || 0).toLocaleString('en-IN')}
+                        â‚¹{(Number(payout.platformFee) || 0).toLocaleString('en-IN')}
                       </span>
                     </div>
                     <div className="flex items-center justify-between border-b border-white/5 pb-2">
                       <span className="text-slate-400">Tax (GST)</span>
                       <span className="font-semibold text-slate-200">
-                        ₹{(Number(payout.taxAmount) || 0).toLocaleString('en-IN')}
+                        â‚¹{(Number(payout.taxAmount) || 0).toLocaleString('en-IN')}
                       </span>
                     </div>
                     <div className="flex items-center justify-between border-b border-white/5 pb-2">
                       <span className="font-semibold text-slate-400">Final Payout Amount</span>
                       <span className="font-bold text-emerald-400">
-                        ₹{(Number(payout.finalPayoutAmount) || 0).toLocaleString('en-IN')}
+                        â‚¹{(Number(payout.finalPayoutAmount) || 0).toLocaleString('en-IN')}
                       </span>
                     </div>
                   </>
@@ -322,19 +318,19 @@ export function ExpertPayoutDetailPage() {
                 <div className="flex items-center justify-between border-b border-white/5 pb-2">
                   <span className="text-slate-400">Payout ID</span>
                   <span className="font-semibold text-slate-200">
-                    {payout.payoutIdFull || payout.payoutId || '—'}
+                    {payout.payoutIdFull || payout.payoutId || 'â€”'}
                   </span>
                 </div>
                 <div className="flex items-center justify-between border-b border-white/5 pb-2">
                   <span className="text-slate-400">Credited On</span>
                   <span className="font-semibold text-slate-200">
-                    {payout.creditedOnFull || payout.creditedOn || payout.payoutDate || '—'}
+                    {payout.creditedOnFull || payout.creditedOn || payout.payoutDate || 'â€”'}
                   </span>
                 </div>
                 <div className="flex items-center justify-between pt-1">
                   <span className="text-slate-400">Payout Status</span>
                   <span className="rounded-full border border-emerald-500/30 bg-emerald-500/15 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-400">
-                    {payout.payoutStatus || payout.status || '—'}
+                    {payout.payoutStatus || payout.status || 'â€”'}
                   </span>
                 </div>
               </div>
@@ -342,7 +338,6 @@ export function ExpertPayoutDetailPage() {
           </div>
         </div>
 
-        {/* Bottom Milestone Breakdown Section (If Custom / Milestone) */}
         {isCustomMilestone && payout.milestones && payout.milestones.length > 0 && (
           <div className="space-y-4 border-t border-white/10 pt-4">
             <h3 className="text-base font-bold text-white">Milestone Breakdown</h3>
@@ -361,38 +356,37 @@ export function ExpertPayoutDetailPage() {
                     <div className="flex items-center justify-between border-b border-white/5 pb-1.5">
                       <span className="text-slate-400">Client Paid</span>
                       <span className="font-semibold text-slate-200">
-                        ₹{(Number(m.clientPaid) || 0).toLocaleString('en-IN')}
+                        â‚¹{(Number(m.clientPaid) || 0).toLocaleString('en-IN')}
                       </span>
                     </div>
                     <div className="flex items-center justify-between border-b border-white/5 pb-1.5">
                       <span className="text-slate-400">Platform Commission</span>
                       <span className="font-semibold text-slate-200">
-                        ₹{(Number(m.platformCommission) || 0).toLocaleString('en-IN')}
+                        â‚¹{(Number(m.platformCommission) || 0).toLocaleString('en-IN')}
                       </span>
                     </div>
                     <div className="flex items-center justify-between border-b border-white/5 pb-1.5">
                       <span className="text-slate-400">Tax (GST)</span>
                       <span className="font-semibold text-slate-200">
-                        ₹{(Number(m.taxAmount) || 0).toLocaleString('en-IN')}
+                        â‚¹{(Number(m.taxAmount) || 0).toLocaleString('en-IN')}
                       </span>
                     </div>
                     <div className="flex items-center justify-between border-b border-white/5 pb-1.5">
                       <span className="font-semibold text-slate-400">Final Payout Amount</span>
                       <span className="font-bold text-emerald-400">
-                        ₹{(Number(m.finalPayoutAmount) || 0).toLocaleString('en-IN')}
+                        â‚¹{(Number(m.finalPayoutAmount) || 0).toLocaleString('en-IN')}
                       </span>
                     </div>
                     <div className="flex items-center justify-between border-b border-white/5 pb-1.5">
                       <span className="text-slate-400">Start Date</span>
-                      <span className="font-semibold text-slate-200">{m.startDate || '—'}</span>
+                      <span className="font-semibold text-slate-200">{m.startDate || 'â€”'}</span>
                     </div>
                     <div className="flex items-center justify-between pb-1.5">
                       <span className="text-slate-400">End Date</span>
-                      <span className="font-semibold text-slate-200">{m.endDate || '—'}</span>
+                      <span className="font-semibold text-slate-200">{m.endDate || 'â€”'}</span>
                     </div>
                   </div>
 
-                  {/* Payment Timeline */}
                   {m.paymentTimeline && (
                     <div className="mt-3 border-t border-white/10 pt-3">
                       <h5 className="mb-2 text-xs font-bold text-white">Payment Timeline</h5>
@@ -400,25 +394,25 @@ export function ExpertPayoutDetailPage() {
                         <div className="flex items-center justify-between">
                           <span className="text-slate-400">Milestone Funded</span>
                           <span className="font-medium text-slate-300">
-                            {m.paymentTimeline.milestoneFunded || '—'}
+                            {m.paymentTimeline.milestoneFunded || 'â€”'}
                           </span>
                         </div>
                         <div className="flex items-center justify-between">
                           <span className="text-slate-400">Milestone Approved by User</span>
                           <span className="font-medium text-slate-300">
-                            {m.paymentTimeline.milestoneApprovedByUser || '—'}
+                            {m.paymentTimeline.milestoneApprovedByUser || 'â€”'}
                           </span>
                         </div>
                         <div className="flex items-center justify-between">
                           <span className="text-slate-400">Payout released to Expert</span>
                           <span className="font-medium text-slate-300">
-                            {m.paymentTimeline.payoutReleasedToExpert || '—'}
+                            {m.paymentTimeline.payoutReleasedToExpert || 'â€”'}
                           </span>
                         </div>
                         <div className="flex items-center justify-between">
                           <span className="text-slate-400">Milestone Completed</span>
                           <span className="font-medium text-slate-300">
-                            {m.paymentTimeline.milestoneCompleted || '—'}
+                            {m.paymentTimeline.milestoneCompleted || 'â€”'}
                           </span>
                         </div>
                       </div>

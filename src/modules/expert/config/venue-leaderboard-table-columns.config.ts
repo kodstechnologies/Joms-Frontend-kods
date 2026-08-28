@@ -1,3 +1,9 @@
+/**
+ * Venue Leaderboard — table column catalog.
+ * Mirrors Experts Leaderboard with venue naming (no service/consultation listing cols).
+ * Keep ids kebab-case to match Manage Metrics / ui-preferences.
+ */
+
 export const VENUE_LEADERBOARD_MODULE_KEY = 'venue-leaderboard'
 
 export type VenueLeaderboardTableColumnCatalogItem = {
@@ -8,60 +14,86 @@ export type VenueLeaderboardTableColumnCatalogItem = {
   defaultVisible: boolean
 }
 
-/** Venue Leaderboard table columns — matches the venue leaderboard table. */
+const col = (
+  id: string,
+  label: string,
+  type: string,
+  description: string,
+  defaultVisible = false,
+): VenueLeaderboardTableColumnCatalogItem => ({
+  id,
+  label,
+  type,
+  description,
+  defaultVisible,
+})
+
 export const VENUE_LEADERBOARD_TABLE_COLUMNS_CATALOG: VenueLeaderboardTableColumnCatalogItem[] = [
-  {
-    id: 'rank',
-    label: 'Rank',
-    type: 'Count',
-    description: 'Venue leaderboard rank position',
-    defaultVisible: true,
-  },
-  {
-    id: 'venue-id',
-    label: 'Venue ID',
-    type: 'Text',
-    description: 'Unique venue identifier',
-    defaultVisible: true,
-  },
-  {
-    id: 'venue-name',
-    label: 'Venue Name',
-    type: 'Text',
-    description: 'Venue display name',
-    defaultVisible: true,
-  },
-  {
-    id: 'category',
-    label: 'Category',
-    type: 'Text',
-    description: 'Venue category',
-    defaultVisible: true,
-  },
-  {
-    id: 'events-count',
-    label: 'No.Of Events',
-    type: 'Count',
-    description: 'Number of events hosted',
-    defaultVisible: true,
-  },
-  {
-    id: 'ratings',
-    label: 'Ratings',
-    type: 'Average',
-    description: 'Average venue rating',
-    defaultVisible: true,
-  },
-  {
-    id: 'score',
-    label: 'Score',
-    type: 'Count',
-    description: 'Performance score',
-    defaultVisible: true,
-  },
+  col('rank', 'Leaderboard Rank', 'Count', 'Current ranking position', true),
+  col('venue-id', 'Venue ID', 'Text', 'Unique venue identifier', true),
+  col('venue-name', 'Venue Name', 'Text', 'Registered venue name', true),
+  col('category', 'Category', 'Text', 'Marketplace category', true),
+  col('membership-type', 'Membership Type', 'Text', 'Venue subscription plan', true),
+  col(
+    'orders-completed',
+    'Orders Completed',
+    'Count',
+    'Successfully completed venue bookings and events',
+    true,
+  ),
+  col('average-rating', 'Average Rating', 'Average', 'Overall customer rating', true),
+  col('score', 'Performance Score', 'Count', 'Calculated performance score (0–100)', true),
+  col(
+    'profile-health-score',
+    'Profile Health Score',
+    'Count',
+    'Overall profile completeness and compliance score',
+  ),
+  col(
+    'client-satisfaction-score',
+    'Client Satisfaction Score',
+    'Percentage',
+    'Percentage of positive customer ratings',
+    true,
+  ),
+  col('total-revenue', 'Total Revenue', 'Currency', 'Total revenue generated', true),
+  col('repeat-client-rate', 'Repeat Client Rate', 'Percentage', 'Percentage of returning clients'),
+  col(
+    'order-completion-rate',
+    'Order Completion Rate',
+    'Percentage',
+    'Percentage of successfully completed orders',
+  ),
+  col('last-active', 'Last Active', 'Date', 'Most recent platform activity', true),
 ]
 
 export const DEFAULT_VENUE_LEADERBOARD_VISIBLE_COLUMN_IDS =
   VENUE_LEADERBOARD_TABLE_COLUMNS_CATALOG.filter((column) => column.defaultVisible).map(
     (column) => column.id,
   )
+
+/** Maps legacy preference ids → current catalog ids. */
+export const VENUE_LEADERBOARD_LEGACY_COLUMN_ID_MAP: Record<string, string> = {
+  'events-count': 'orders-completed',
+  ratings: 'average-rating',
+  eventsCompleted: 'orders-completed',
+  averageRating: 'average-rating',
+  membershipType: 'membership-type',
+  ordersCompleted: 'orders-completed',
+  profileHealth: 'profile-health-score',
+  clientSatisfaction: 'client-satisfaction-score',
+  totalRevenue: 'total-revenue',
+  // Dropped venue-inapplicable listing columns → nearest useful metric columns
+  servicesListed: 'total-revenue',
+  consultationsListed: 'client-satisfaction-score',
+  'services-listed': 'total-revenue',
+  'consultations-listed': 'client-satisfaction-score',
+  repeatClientRate: 'repeat-client-rate',
+  orderCompletionRate: 'order-completion-rate',
+  lastActiveAt: 'last-active',
+  lastActive: 'last-active',
+  venueId: 'venue-id',
+  venueName: 'venue-name',
+  'expert-id': 'venue-id',
+  'expert-name': 'venue-name',
+}

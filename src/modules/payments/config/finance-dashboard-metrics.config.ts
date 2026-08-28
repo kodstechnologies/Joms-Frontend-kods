@@ -1,6 +1,16 @@
+/**
+ * Finance Dashboard — metric catalog.
+ * Source: JOMS Excel → Finance Dashboard (21 metrics).
+ * Keep ids kebab-case to match Manage Metrics / ui-preferences.
+ */
+
 export const FINANCE_DASHBOARD_MODULE_KEY = 'finance-dashboard'
 
-export type FinanceDashboardMetricSection = 'escrow' | 'revenue-profit' | 'payouts-cash-flow'
+export type FinanceDashboardMetricSection =
+  | 'escrow'
+  | 'revenue-profit'
+  | 'payouts-cash-flow'
+  | 'commissions'
 
 export type FinanceDashboardMetricCatalogItem = {
   id: string
@@ -11,107 +21,201 @@ export type FinanceDashboardMetricCatalogItem = {
   section: FinanceDashboardMetricSection
 }
 
-/** Exactly 11 finance dashboard metrics — matches the dashboard screenshot. */
+const metric = (
+  id: string,
+  label: string,
+  type: string,
+  description: string,
+  section: FinanceDashboardMetricSection,
+  defaultActive = false,
+): FinanceDashboardMetricCatalogItem => ({
+  id,
+  label,
+  type,
+  description,
+  defaultActive,
+  section,
+})
+
 export const FINANCE_DASHBOARD_METRICS_CATALOG: FinanceDashboardMetricCatalogItem[] = [
-  {
-    id: 'total-in-escrow',
-    label: 'Total In Escrow',
-    type: 'Currency',
-    description: 'Total funds held in escrow',
-    defaultActive: true,
-    section: 'escrow',
-  },
-  {
-    id: 'pending-payout',
-    label: 'Pending Payout',
-    type: 'Currency',
-    description: 'Single pending payout amount awaiting release',
-    defaultActive: true,
-    section: 'escrow',
-  },
-  {
-    id: 'disputed-amount',
-    label: 'Disputed Amount',
-    type: 'Currency',
-    description: 'Total amount under dispute',
-    defaultActive: true,
-    section: 'escrow',
-  },
-  {
-    id: 'total-platform-revenue',
-    label: 'Total Platform Revenue',
-    type: 'Currency',
-    description: 'Total revenue generated on the platform',
-    defaultActive: true,
-    section: 'revenue-profit',
-  },
-  {
-    id: 'monthly-recurring-revenue',
-    label: 'Monthly Recurring Revenue',
-    type: 'Currency',
-    description: 'Monthly recurring revenue',
-    defaultActive: true,
-    section: 'revenue-profit',
-  },
-  {
-    id: 'gross-margin',
-    label: 'Gross Margin',
-    type: 'Currency',
-    description: 'Gross margin across platform transactions',
-    defaultActive: true,
-    section: 'revenue-profit',
-  },
-  {
-    id: 'net-profit',
-    label: 'Net Profit',
-    type: 'Currency',
-    description: 'Net profit after costs',
-    defaultActive: true,
-    section: 'revenue-profit',
-  },
-  {
-    id: 'pending-payouts',
-    label: 'Pending Payouts',
-    type: 'Currency',
-    description: 'Total pending payouts awaiting processing',
-    defaultActive: true,
-    section: 'payouts-cash-flow',
-  },
-  {
-    id: 'avg-payout-cycle-time',
-    label: 'Avg. Payout Cycle Time',
-    type: 'Average',
-    description: 'Average time to complete a payout cycle',
-    defaultActive: true,
-    section: 'payouts-cash-flow',
-  },
-  {
-    id: 'refund-rate',
-    label: 'Refund Rate',
-    type: 'Percentage',
-    description: 'Percentage of transactions refunded',
-    defaultActive: true,
-    section: 'payouts-cash-flow',
-  },
-  {
-    id: 'chargeback-rate',
-    label: 'Chargeback Rate',
-    type: 'Percentage',
-    description: 'Percentage of transactions charged back',
-    defaultActive: true,
-    section: 'payouts-cash-flow',
-  },
+  metric(
+    'total-amount-in-escrow',
+    'Total Amount in Escrow',
+    'Currency',
+    'Funds currently held in escrow awaiting payout or dispute resolution',
+    'escrow',
+    true,
+  ),
+  metric(
+    'pending-payouts',
+    'Pending Payouts',
+    'Currency',
+    'Payout amount pending release to partners',
+    'escrow',
+    true,
+  ),
+  metric(
+    'disputed-amount',
+    'Disputed Amount',
+    'Currency',
+    'Funds currently under dispute',
+    'escrow',
+    true,
+  ),
+  metric(
+    'escrow-release-rate',
+    'Escrow Release Rate',
+    'Percentage',
+    'Percentage of escrow funds released',
+    'escrow',
+  ),
+  metric(
+    'gmv',
+    'Gross Merchandise Value (GMV)',
+    'Currency',
+    'Total transaction value before deductions',
+    'revenue-profit',
+    true,
+  ),
+  metric(
+    'total-platform-revenue',
+    'Total Platform Revenue',
+    'Currency',
+    'Revenue retained by the platform',
+    'revenue-profit',
+    true,
+  ),
+  metric(
+    'monthly-recurring-revenue',
+    'Monthly Recurring Revenue (MRR)',
+    'Currency',
+    'Revenue from active recurring memberships',
+    'revenue-profit',
+    true,
+  ),
+  metric(
+    'platform-gross-margin',
+    'Platform Gross Margin',
+    'Percentage',
+    'Margin after partner payouts',
+    'revenue-profit',
+    true,
+  ),
+  metric(
+    'net-profit',
+    'Net Profit',
+    'Currency',
+    'Net platform earnings after operating expenses',
+    'revenue-profit',
+    true,
+  ),
+  metric(
+    'net-revenue',
+    'Net Revenue',
+    'Currency',
+    'Revenue after refunds and chargebacks',
+    'revenue-profit',
+  ),
+  metric(
+    'revenue-growth',
+    'Revenue Growth (7D / 30D / 90D / 1Y)',
+    'Percentage',
+    'Revenue growth across selected period',
+    'revenue-profit',
+  ),
+  metric(
+    'collections-this-month',
+    'Collections This Month',
+    'Currency',
+    'Total payments successfully collected during the current month',
+    'payouts-cash-flow',
+    true,
+  ),
+  metric(
+    'payouts-released-this-month',
+    'Payouts Released This Month',
+    'Currency',
+    'Total payouts processed during the current month',
+    'payouts-cash-flow',
+  ),
+  metric(
+    'average-payout-cycle-time',
+    'Average Payout Cycle Time',
+    'Duration',
+    'Average duration from service completion to payout',
+    'payouts-cash-flow',
+    true,
+  ),
+  metric(
+    'refund-rate',
+    'Refund Rate',
+    'Percentage',
+    'Percentage of refunded transactions',
+    'payouts-cash-flow',
+    true,
+  ),
+  metric(
+    'chargeback-rate',
+    'Chargeback Rate',
+    'Percentage',
+    'Percentage of chargeback transactions',
+    'payouts-cash-flow',
+    true,
+  ),
+  metric(
+    'failed-transactions',
+    'Failed Transactions',
+    'Count',
+    'Transactions that failed',
+    'payouts-cash-flow',
+  ),
+  metric(
+    'platform-commission-earned',
+    'Platform Commission Earned',
+    'Currency',
+    'Total commission earned across all modules',
+    'commissions',
+  ),
+  metric(
+    'service-marketplace-commission',
+    'Service Marketplace Commission',
+    'Currency',
+    'Commission earned from services and consultations',
+    'commissions',
+  ),
+  metric(
+    'event-commission',
+    'Event Commission',
+    'Currency',
+    'Commission earned from events',
+    'commissions',
+  ),
+  metric(
+    'venue-commission',
+    'Venue Commission',
+    'Currency',
+    'Commission earned from venue bookings',
+    'commissions',
+  ),
 ]
 
+/** Maps legacy preference ids → current catalog ids. */
+export const FINANCE_DASHBOARD_LEGACY_METRIC_ID_MAP: Record<string, string> = {
+  'total-in-escrow': 'total-amount-in-escrow',
+  'pending-payout': 'pending-payouts',
+  'gross-margin': 'platform-gross-margin',
+  'avg-payout-cycle-time': 'average-payout-cycle-time',
+}
+
 export const FINANCE_DASHBOARD_METRIC_IDS = FINANCE_DASHBOARD_METRICS_CATALOG.map(
-  (metric) => metric.id,
+  (metricItem) => metricItem.id,
 )
 
 export const FINANCE_DASHBOARD_METRIC_ID_SET = new Set(FINANCE_DASHBOARD_METRIC_IDS)
 
 export const DEFAULT_FINANCE_DASHBOARD_METRIC_IDS = FINANCE_DASHBOARD_METRICS_CATALOG.filter(
-  (metric) => metric.defaultActive,
-).map((metric) => metric.id)
+  (metricItem) => metricItem.defaultActive,
+).map((metricItem) => metricItem.id)
 
 export const FINANCE_DASHBOARD_MAX_ACTIVE_METRICS = FINANCE_DASHBOARD_METRICS_CATALOG.length
 
@@ -125,23 +229,49 @@ export const FINANCE_DASHBOARD_SECTIONS: {
     key: 'escrow',
     title: null,
     gridClassName: 'grid grid-cols-1 gap-3 md:grid-cols-3',
-    metricIds: ['total-in-escrow', 'pending-payout', 'disputed-amount'],
+    metricIds: [
+      'total-amount-in-escrow',
+      'pending-payouts',
+      'disputed-amount',
+      'escrow-release-rate',
+    ],
   },
   {
     key: 'revenue-profit',
     title: 'Revenue & Profit',
     gridClassName: 'grid grid-cols-2 gap-3 lg:grid-cols-4',
     metricIds: [
+      'gmv',
       'total-platform-revenue',
       'monthly-recurring-revenue',
-      'gross-margin',
+      'platform-gross-margin',
       'net-profit',
+      'net-revenue',
+      'revenue-growth',
     ],
   },
   {
     key: 'payouts-cash-flow',
     title: 'Payouts & Cash Flow',
     gridClassName: 'grid grid-cols-2 gap-3 lg:grid-cols-4',
-    metricIds: ['pending-payouts', 'avg-payout-cycle-time', 'refund-rate', 'chargeback-rate'],
+    metricIds: [
+      'collections-this-month',
+      'payouts-released-this-month',
+      'average-payout-cycle-time',
+      'refund-rate',
+      'chargeback-rate',
+      'failed-transactions',
+    ],
+  },
+  {
+    key: 'commissions',
+    title: 'Commissions',
+    gridClassName: 'grid grid-cols-2 gap-3 lg:grid-cols-4',
+    metricIds: [
+      'platform-commission-earned',
+      'service-marketplace-commission',
+      'event-commission',
+      'venue-commission',
+    ],
   },
 ]

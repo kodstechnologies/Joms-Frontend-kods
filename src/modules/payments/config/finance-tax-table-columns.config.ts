@@ -1,3 +1,8 @@
+/**
+ * Finance Tax & Compliance — table column catalog.
+ * Source: JOMS Excel → Finance Management → Tax & Compliance.
+ */
+
 export const FINANCE_TAX_MODULE_KEY = 'finance-tax'
 
 export type FinanceTaxTableColumnCatalogItem = {
@@ -8,64 +13,38 @@ export type FinanceTaxTableColumnCatalogItem = {
   defaultVisible: boolean
 }
 
+const col = (
+  id: string,
+  label: string,
+  type: string,
+  description: string,
+  defaultVisible = false,
+): FinanceTaxTableColumnCatalogItem => ({
+  id,
+  label,
+  type,
+  description,
+  defaultVisible,
+})
+
 export const FINANCE_TAX_TABLE_COLUMNS_CATALOG: FinanceTaxTableColumnCatalogItem[] = [
-  {
-    id: 'record-id',
-    label: 'Record ID',
-    type: 'Text',
-    description: 'Tax record identifier',
-    defaultVisible: true,
-  },
-  {
-    id: 'entity-type',
-    label: 'Entity Type',
-    type: 'Text',
-    description: 'Type of taxed entity',
-    defaultVisible: true,
-  },
-  {
-    id: 'entity-id',
-    label: 'Entity ID',
-    type: 'Text',
-    description: 'Unique entity identifier',
-    defaultVisible: true,
-  },
-  {
-    id: 'owner',
-    label: 'Owner',
-    type: 'Text',
-    description: 'Record owner name',
-    defaultVisible: true,
-  },
-  {
-    id: 'booking-id',
-    label: 'Booking ID',
-    type: 'Text',
-    description: 'Related booking identifier',
-    defaultVisible: true,
-  },
-  {
-    id: 'booking-title',
-    label: 'Booking Title',
-    type: 'Text',
-    description: 'Related booking title',
-    defaultVisible: true,
-  },
-  {
-    id: 'status',
-    label: 'Status',
-    type: 'Status',
-    description: 'Filing or compliance status',
-    defaultVisible: true,
-  },
-  {
-    id: 'revenue',
-    label: 'Revenue',
-    type: 'Currency',
-    description: 'Taxable revenue amount',
-    defaultVisible: true,
-  },
+  col('tax-record-id', 'Tax Record ID', 'Text', 'Unique tax record identifier', true),
+  col('transaction-id', 'Transaction ID', 'Text', 'Linked transaction identifier', true),
+  col('module', 'Module', 'Text', 'Business vertical', true),
+  col('region', 'Region', 'Text', 'Tax jurisdiction / region', true),
+  col('tax-type', 'Tax Type', 'Text', 'Tax type (GST/VAT etc.)', true),
+  col('tax-rate', 'Tax Rate', 'Percentage', 'Applicable tax rate'),
+  col('tax-amount', 'Tax Amount', 'Currency', 'Calculated tax amount', true),
+  col('invoice-number', 'Invoice Number', 'Text', 'Related invoice number'),
+  col('filing-period', 'Filing Period', 'Text', 'Tax filing period'),
+  col('filing-status', 'Filing Status', 'Status', 'Filing or compliance status', true),
 ]
+
+/** Maps legacy preference ids → current catalog ids. */
+export const FINANCE_TAX_LEGACY_COLUMN_ID_MAP: Record<string, string> = {
+  'record-id': 'tax-record-id',
+  status: 'filing-status',
+}
 
 export const DEFAULT_FINANCE_TAX_VISIBLE_COLUMN_IDS = FINANCE_TAX_TABLE_COLUMNS_CATALOG.filter(
   (column) => column.defaultVisible,

@@ -15,9 +15,12 @@ import {
 import { mapTaxToRow } from '@/modules/payments/utils/finance-mappers'
 import {
   DEFAULT_FINANCE_TAX_VISIBLE_COLUMN_IDS,
+  FINANCE_TAX_LEGACY_COLUMN_ID_MAP,
   FINANCE_TAX_MODULE_KEY,
+  FINANCE_TAX_TABLE_COLUMNS_CATALOG,
 } from '@/modules/payments/config/finance-tax-table-columns.config'
 import { useTableColumnPreferences } from '@/modules/expert/hooks/use-ui-preferences'
+import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
 import { AddTagsModal } from '@/shared/components/modals/add-tags-modal'
 import {
   FinanceEscalateDeleteModal,
@@ -240,39 +243,66 @@ export function FinanceTaxCompliancePage() {
     }
 
     const dataColumnsById: Record<string, ColumnDef<TaxComplianceRow>> = {
-      'record-id': {
+      'tax-record-id': {
+        id: 'tax-record-id',
         accessorKey: 'recordId',
-        header: 'Record ID',
+        header: 'Tax Record ID',
         cell: ({ row }) => (
           <span className="text-body-sm-semibold text-brand-text font-mono uppercase">
             {row.original.recordId}
           </span>
         ),
       },
-      'entity-type': { accessorKey: 'entityType', header: 'Entity Type' },
-      'entity-id': {
-        accessorKey: 'entityId',
-        header: 'Entity ID',
+      'transaction-id': {
+        id: 'transaction-id',
+        header: 'Transaction ID',
+        cell: ({ row }) => (row.original as { transactionId?: string }).transactionId || '—',
+      },
+      module: {
+        id: 'module',
+        header: 'Module',
+        cell: ({ row }) =>
+          (row.original as { module?: string }).module || row.original.entityType || '—',
+      },
+      region: {
+        id: 'region',
+        header: 'Region',
+        cell: ({ row }) => (row.original as { region?: string }).region || '—',
+      },
+      'tax-type': {
+        id: 'tax-type',
+        header: 'Tax Type',
+        cell: ({ row }) =>
+          (row.original as { taxType?: string }).taxType || row.original.bookingTitle || '—',
+      },
+      'tax-rate': {
+        id: 'tax-rate',
+        header: 'Tax Rate',
+        cell: ({ row }) => (row.original as { taxRate?: string }).taxRate || '—',
+      },
+      'tax-amount': {
+        id: 'tax-amount',
+        header: 'Tax Amount',
         cell: ({ row }) => (
-          <span className="text-body-sm-semibold text-brand-text font-mono uppercase">
-            {row.original.entityId}
+          <span className="text-brand-text font-semibold">
+            {(row.original as { taxAmount?: string }).taxAmount || row.original.revenue}
           </span>
         ),
       },
-      owner: { accessorKey: 'owner', header: 'Owner' },
-      'booking-id': {
-        accessorKey: 'bookingId',
-        header: 'Booking ID',
-        cell: ({ row }) => (
-          <span className="text-body-sm-semibold text-brand-text font-mono uppercase">
-            {row.original.bookingId}
-          </span>
-        ),
+      'invoice-number': {
+        id: 'invoice-number',
+        header: 'Invoice Number',
+        cell: ({ row }) => (row.original as { invoiceNumber?: string }).invoiceNumber || '—',
       },
-      'booking-title': { accessorKey: 'bookingTitle', header: 'Booking Title' },
-      status: {
+      'filing-period': {
+        id: 'filing-period',
+        header: 'Filing Period',
+        cell: ({ row }) => (row.original as { filingPeriod?: string }).filingPeriod || '—',
+      },
+      'filing-status': {
+        id: 'filing-status',
         accessorKey: 'status',
-        header: 'Status',
+        header: 'Filing Status',
         cell: ({ row }) => (
           <span
             className={cn(
@@ -280,22 +310,22 @@ export function FinanceTaxCompliancePage() {
               getStatusClassName(row.original.status),
             )}
           >
-            {row.original.status}
+            {(row.original as { filingStatus?: string }).filingStatus || row.original.status}
           </span>
-        ),
-      },
-      revenue: {
-        accessorKey: 'revenue',
-        header: 'Revenue',
-        cell: ({ row }) => (
-          <span className="text-brand-text font-semibold">{row.original.revenue}</span>
         ),
       },
     }
 
-    const visibleIds = tableColumnPreferencesQuery.data?.visibleColumnIds?.length
+    const catalogIds = FINANCE_TAX_TABLE_COLUMNS_CATALOG.map((column) => column.id)
+    const rawVisibleIds = tableColumnPreferencesQuery.data?.visibleColumnIds?.length
       ? tableColumnPreferencesQuery.data.visibleColumnIds
       : DEFAULT_FINANCE_TAX_VISIBLE_COLUMN_IDS
+    const visibleIds = sortIdsByCatalogOrder(
+      [...new Set(rawVisibleIds.map((id) => FINANCE_TAX_LEGACY_COLUMN_ID_MAP[id] ?? id))].filter(
+        (id) => catalogIds.includes(id),
+      ),
+      catalogIds,
+    )
 
     const preferenceColumns = visibleIds.map((id) => dataColumnsById[id]).filter(Boolean)
 

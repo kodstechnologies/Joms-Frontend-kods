@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useState } from 'react'
+import type { ColumnDef } from '@tanstack/react-table'
 import { SlidersHorizontal } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import createIcon from '@/assets/JOMS_ICONS-2/icons8-create.svg'
@@ -12,37 +13,48 @@ import {
   buildVenueCategoryListQueryParams,
   createVenueCategoryFilteredExportHandler,
 } from '@/shared/utils/export-filter-utils'
+import { VENUE_CATEGORY_MANAGEMENT_MODULE_KEY } from '../../api/ui-preferences-api'
 import { fetchDeletedVenueCategories } from '../../api/venue-category-api'
 import CategoryHeader from '../../components/category/CategoryHeader'
 import { deletedVenueCategoryColumns } from '../../components/category/DeletedVenueCategoryColumns'
 import { type VenueCategory } from '../../components/category/venue-category-table-columns'
+import {
+  DEFAULT_VENUE_CATEGORY_MANAGEMENT_VISIBLE_COLUMN_IDS,
+  VENUE_CATEGORY_LEGACY_COLUMN_ID_MAP,
+} from '../../config/venue-category-management-table-columns.config'
 import { useDeletedVenueCategoryList } from '../../hooks/use-venue-category-management'
+import { useTableColumnPreferences } from '../../hooks/use-ui-preferences'
 import { mapVenueCategoryToUi } from '../../utils/category-mapper'
+import { selectPreferredColumns } from '../../utils/select-preferred-columns'
 
 const PAGE_SIZE = 10
+const DEFAULT_VISIBLE_IDS = DEFAULT_VENUE_CATEGORY_MANAGEMENT_VISIBLE_COLUMN_IDS
 
 const EXPORT_COLUMN_MAP: Record<
   string,
   { header: string; accessor: (cat: VenueCategory) => string }
 > = {
-  categoryId: {
+  'category-id': {
     header: 'Category ID',
     accessor: (cat) => exportDisplayValue(cat.categoryId || cat.id),
   },
-  name: { header: 'Category Name', accessor: (cat) => exportDisplayValue(cat.name) },
+  'category-name': { header: 'Category Name', accessor: (cat) => exportDisplayValue(cat.name) },
+  spaces: { header: 'Spaces', accessor: (cat) => exportDisplayValue(cat.spaces) },
+  venues: { header: 'Venues', accessor: (cat) => exportDisplayValue(cat.venues) },
+  'active-spaces': {
+    header: 'Active Spaces',
+    accessor: (cat) => exportDisplayValue(cat.activeSpaces),
+  },
+  bookings: { header: 'Bookings', accessor: (cat) => exportDisplayValue(cat.bookings) },
+  'completed-bookings': {
+    header: 'Completed Bookings',
+    accessor: (cat) => exportDisplayValue(cat.completedBookings),
+  },
+  revenue: { header: 'Revenue', accessor: (cat) => exportDisplayValue(cat.revenue) },
   status: { header: 'Status', accessor: (cat) => exportDisplayValue(cat.status) },
-  subCategory: {
-    header: 'No. of Sub Category',
-    accessor: (cat) => exportDisplayValue(cat.subCategory),
-  },
-  venues: {
-    header: 'No. Of Venues',
-    accessor: (cat) => exportDisplayValue(cat.venues),
-  },
-  revenue: {
-    header: 'Revenue Generated',
-    accessor: (cat) => exportDisplayValue(cat.revenue),
-  },
+  'created-by': { header: 'Created By', accessor: (cat) => exportDisplayValue(cat.createdBy) },
+  'created-at': { header: 'Created At', accessor: (cat) => exportDisplayValue(cat.createdAt) },
+  'last-updated': { header: 'Last Updated', accessor: (cat) => exportDisplayValue(cat.updatedAt) },
 }
 
 export function DeletedVenueCategoriesPage() {
@@ -50,6 +62,7 @@ export function DeletedVenueCategoriesPage() {
   const [searchValue, setSearchValue] = useState('')
   const [page, setPage] = useState(1)
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
+  const preferencesQuery = useTableColumnPreferences(VENUE_CATEGORY_MANAGEMENT_MODULE_KEY)
 
   const handleApplyFilters = useCallback((values: FilterValues) => {
     setPage(1)
@@ -71,6 +84,18 @@ export function DeletedVenueCategoriesPage() {
   const deletedCategories = useMemo(() => data?.categories ?? [], [data?.categories])
   const totalItems = data?.pagination?.total ?? deletedCategories.length
   const totalPages = Math.max(1, data?.pagination?.totalPages ?? Math.ceil(totalItems / PAGE_SIZE))
+
+  const columns = useMemo<ColumnDef<VenueCategory>[]>(() => {
+    const rawVisibleIds = preferencesQuery.data?.visibleColumnIds?.length
+      ? preferencesQuery.data.visibleColumnIds
+      : DEFAULT_VISIBLE_IDS
+    return selectPreferredColumns(
+      deletedVenueCategoryColumns,
+      rawVisibleIds,
+      DEFAULT_VISIBLE_IDS,
+      VENUE_CATEGORY_LEGACY_COLUMN_ID_MAP,
+    )
+  }, [preferencesQuery.data])
 
   const handleExportData = useMemo(
     () =>
@@ -129,7 +154,7 @@ export function DeletedVenueCategoriesPage() {
       </div>
 
       <DataTable
-        columns={deletedVenueCategoryColumns}
+        columns={columns}
         data={deletedCategories}
         getRowId={(row) => row.id}
         searchValue={searchValue}

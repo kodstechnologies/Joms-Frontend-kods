@@ -25,8 +25,10 @@ import {
 import {
   DEFAULT_FINANCE_SERVICES_VISIBLE_COLUMN_IDS,
   FINANCE_SERVICES_MODULE_KEY,
+  FINANCE_SERVICES_TABLE_COLUMNS_CATALOG,
 } from '@/modules/payments/config/finance-services-table-columns.config'
 import { useTableColumnPreferences } from '@/modules/expert/hooks/use-ui-preferences'
+import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
 import { AddTagsModal } from '@/shared/components/modals/add-tags-modal'
 import {
   FinanceEscalateDeleteModal,
@@ -342,11 +344,72 @@ export function FinanceServicesPage() {
           <span className="text-brand-text font-semibold">{row.original.revenue}</span>
         ),
       },
+      'transaction-id': { id: 'transaction-id', header: 'Transaction ID', cell: () => '—' },
+      module: { id: 'module', header: 'Module', cell: () => '—' },
+      'related-entity-id': {
+        id: 'related-entity-id',
+        header: 'Related Entity ID',
+        cell: ({ row }) => row.original.serviceId || '—',
+      },
+      'client-id': { id: 'client-id', header: 'Client ID', cell: () => '—' },
+      'client-name': {
+        id: 'client-name',
+        header: 'Client Name',
+        cell: ({ row }) => row.original.userName || '—',
+      },
+      'partner-id': { id: 'partner-id', header: 'Partner ID', cell: () => '—' },
+      'partner-name': {
+        id: 'partner-name',
+        header: 'Partner Name',
+        cell: ({ row }) => row.original.expertName || '—',
+      },
+      'transaction-date': { id: 'transaction-date', header: 'Transaction Date', cell: () => '—' },
+      'gross-amount': {
+        id: 'gross-amount',
+        header: 'Gross Amount',
+        cell: ({ row }) => row.original.revenue || '—',
+      },
+      discount: { id: 'discount', header: 'Discount', cell: () => '—' },
+      tax: { id: 'tax', header: 'Tax', cell: () => '—' },
+      'gateway-charges': { id: 'gateway-charges', header: 'Gateway Charges', cell: () => '—' },
+      'platform-commission-pct': {
+        id: 'platform-commission-pct',
+        header: 'Platform Commission %',
+        cell: () => '—',
+      },
+      'platform-commission': {
+        id: 'platform-commission',
+        header: 'Platform Commission',
+        cell: () => '—',
+      },
+      'partner-payout': { id: 'partner-payout', header: 'Partner Payout', cell: () => '—' },
+      'refund-amount': { id: 'refund-amount', header: 'Refund Amount', cell: () => '—' },
+      'net-revenue': { id: 'net-revenue', header: 'Net Revenue', cell: () => '—' },
+      'net-profit': { id: 'net-profit', header: 'Net Profit', cell: () => '—' },
+      'payment-method': { id: 'payment-method', header: 'Payment Method', cell: () => '—' },
+      gateway: { id: 'gateway', header: 'Gateway', cell: () => '—' },
+      'transaction-status': {
+        id: 'transaction-status',
+        header: 'Transaction Status',
+        cell: ({ row }) => row.original.status || '—',
+      },
+      'settlement-status': {
+        id: 'settlement-status',
+        header: 'Settlement Status',
+        cell: () => '—',
+      },
+      'settlement-date': { id: 'settlement-date', header: 'Settlement Date', cell: () => '—' },
+      'invoice-id': { id: 'invoice-id', header: 'Invoice ID', cell: () => '—' },
     }
 
-    const visibleIds = tableColumnPreferencesQuery.data?.visibleColumnIds?.length
+    const catalogIds = FINANCE_SERVICES_TABLE_COLUMNS_CATALOG.map((column) => column.id)
+    const rawVisibleIds = tableColumnPreferencesQuery.data?.visibleColumnIds?.length
       ? tableColumnPreferencesQuery.data.visibleColumnIds
       : DEFAULT_FINANCE_SERVICES_VISIBLE_COLUMN_IDS
+    const visibleIds = sortIdsByCatalogOrder(
+      rawVisibleIds.filter((id) => catalogIds.includes(id)),
+      catalogIds,
+    )
 
     const preferenceColumns = visibleIds.map((id) => dataColumnsById[id]).filter(Boolean)
 

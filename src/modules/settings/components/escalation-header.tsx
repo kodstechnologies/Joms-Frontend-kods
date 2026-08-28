@@ -17,7 +17,7 @@ export function EscalationHeader() {
 
       <Button
         className="ui-manage-metrics ui-cta ui-cta-primary"
-        onClick={() => navigate('/metrics/escalations')}
+        onClick={() => navigate('/metrics/escalations?section=table')}
       >
         <SlidersHorizontal className="size-4" />
         Manage Metrics
