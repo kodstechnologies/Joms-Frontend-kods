@@ -32,6 +32,7 @@ import {
   MetricCard,
   PeriodSelect,
   SectionTitle,
+  VenueAnalyticsMetricIcon,
 } from '../../components/venue-analytics/analytics-ui'
 import { CHART_TOOLTIP } from '../../components/venue-analytics/analytics-constants'
 import { Button } from '@/shared/components/ui/button'
@@ -431,7 +432,12 @@ export function ExpertProfileAnalyticsPage() {
         <SectionTitle title="Service Analytics" subtitle="Event and engagement metrics" />
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {serviceAnalyticsCards.map((item) => (
-            <MetricCard key={item.id} label={item.label} value={item.value} />
+            <MetricCard
+              key={item.id}
+              label={item.label}
+              value={item.value}
+              icon={<VenueAnalyticsMetricIcon />}
+            />
           ))}
         </div>
       </div>

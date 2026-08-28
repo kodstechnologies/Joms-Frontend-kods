@@ -5,13 +5,13 @@ import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import { useQueryClient } from '@tanstack/react-query'
 import deleteIcon from '@/assets/JOMS_ICONS-2/icons8-delete.svg'
 import editIcon from '@/assets/JOMS_ICONS-2/edit.svg'
+import bagSolidIcon from '@/assets/JOMS_ICONS-2/basil-bag-solid.svg'
 import { toast } from 'sonner'
 import {
   AlertOctagon,
   ArrowLeft,
   Ban,
   Bell,
-  Briefcase,
   Check,
   CheckSquare,
   ChevronLeft,
@@ -91,6 +91,7 @@ import {
   EXPERT_PROFILE_ANALYTICS_MODULE_KEY,
 } from '../../config/expert-profile-analytics-metrics.config'
 import { orderByActiveMetricIds, useActiveMetricIds } from '../../hooks/use-active-metric-ids'
+import { VenueAnalyticsMetricIcon } from '../../components/venue-analytics'
 import { buildExpertProfileAnalyticsMetricCards } from '../../utils/expert-profile-analytics-metrics'
 import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
 import type {
@@ -878,7 +879,7 @@ function OverviewTab({
                 className="flex items-start gap-3"
               >
                 <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#050505]">
-                  <Briefcase className="size-4 text-white/80" />
+                  <img src={bagSolidIcon} alt="" className="size-6 brightness-0 invert" />
                 </div>
                 <div className="min-w-0 pt-0.5">
                   <p className="text-[13px] font-semibold text-white">{entry.jobTitle || 'â€”'}</p>
@@ -1518,8 +1519,7 @@ function ServicesSubTab({
 
       if (successCount === 0) {
         const firstError = results.find((result) => result.status === 'rejected') as
-          | PromiseRejectedResult
-          | undefined
+          PromiseRejectedResult | undefined
         toast.error(getApiErrorMessage(firstError?.reason) || 'Failed to escalate services.')
         return
       }
@@ -2383,7 +2383,7 @@ function AnalyticsTab({ expertId }: { expertId?: string }) {
           <div key={card.id} className="rounded-lg bg-[#050505] p-4">
             <div className="flex items-center justify-between">
               <p className="text-body-sm text-muted">{card.label}</p>
-              <Briefcase className="size-4 text-[#E0A263]" />
+              <VenueAnalyticsMetricIcon />
             </div>
             <p className="mt-3 text-xl font-bold text-white">{card.value}</p>
           </div>

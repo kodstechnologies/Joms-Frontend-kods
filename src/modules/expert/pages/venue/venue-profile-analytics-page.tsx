@@ -26,6 +26,7 @@ import {
   RevenueTab,
   SectionTitle,
   SpacesTab,
+  VenueAnalyticsMetricIcon,
   VisualAnalyticsTab,
 } from '../../components/venue-analytics'
 
@@ -69,8 +70,7 @@ export function VenueProfileAnalyticsPage() {
 
   const venueAnalyticsCards = useMemo(() => {
     const venueAnalytics = data?.data?.profile as
-      | ({ analytics?: Record<string, unknown> } & Record<string, unknown>)
-      | undefined
+      ({ analytics?: Record<string, unknown> } & Record<string, unknown>) | undefined
     const allCards = buildVenueProfileAnalyticsMetricCards(
       analyticsData,
       venueAnalytics?.analytics ?? null,
@@ -136,7 +136,12 @@ export function VenueProfileAnalyticsPage() {
                 </div>
               ))
             : venueAnalyticsCards.map((item) => (
-                <MetricCard key={item.id} label={item.label} value={item.value} />
+                <MetricCard
+                  key={item.id}
+                  label={item.label}
+                  value={item.value}
+                  icon={<VenueAnalyticsMetricIcon />}
+                />
               ))}
         </div>
       </div>
