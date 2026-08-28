@@ -14,6 +14,8 @@ import {
 } from '../../components/venue-report-detail-modal'
 import { ExpertListHeader } from '../experts/expert-list-shared'
 import { DataTable } from '@/shared/components/table/data-table'
+import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
+import { VENUE_REPORTED_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
 import {
   TableActionsDropdown,
   TableActionsItem,
@@ -101,8 +103,8 @@ const fetchVenueReportsForExport = async (params: Record<string, unknown>) => {
 
 export function VenueReportedVenuesPage() {
   const navigate = useNavigate()
-  const [searchQuery, setSearchQuery] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
+  const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setCurrentPage(1) })
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
 
   const tableColumnPreferencesQuery = useTableColumnPreferences(VENUE_REPORTED_MODULE_KEY)
@@ -117,12 +119,13 @@ export function VenueReportedVenuesPage() {
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
 
   const apiFilterParams = useMemo(() => buildFilterParams(appliedFilters), [appliedFilters])
+  const searchParams = useMemo(() => enhancedSearch.buildSearchParams(), [enhancedSearch])
 
   const [prevKey, setPrevKey] = useState(
-    `${currentPage}-${searchQuery}-${JSON.stringify(apiFilterParams)}`,
+    `${currentPage}-${JSON.stringify(searchParams)}-${JSON.stringify(apiFilterParams)}`,
   )
 
-  const currentKey = `${currentPage}-${searchQuery}-${JSON.stringify(apiFilterParams)}`
+  const currentKey = `${currentPage}-${JSON.stringify(searchParams)}-${JSON.stringify(apiFilterParams)}`
 
   if (currentKey !== prevKey) {
     setPrevKey(currentKey)
@@ -133,7 +136,7 @@ export function VenueReportedVenuesPage() {
     fetchVenueReports({
       page: currentPage,
       limit: 10,
-      search: searchQuery,
+      ...searchParams,
       ...apiFilterParams,
     })
       .then((res) => {
@@ -150,7 +153,7 @@ export function VenueReportedVenuesPage() {
       .finally(() => {
         setLoading(false)
       })
-  }, [currentPage, searchQuery, apiFilterParams])
+  }, [currentPage, searchParams, apiFilterParams])
 
   const handleApplyFilters = useCallback((values: FilterValues) => {
     setAppliedFilters(values)
@@ -164,10 +167,10 @@ export function VenueReportedVenuesPage() {
         EXPORT_COLUMN_MAP,
         'reported_venues_export',
         {
-          search: searchQuery.trim() || undefined,
+          search: enhancedSearch.globalSearch.trim() || undefined,
         },
       ),
-    [searchQuery],
+    [enhancedSearch.globalSearch],
   )
 
   const {
@@ -362,11 +365,13 @@ export function VenueReportedVenuesPage() {
         data={reports}
         getRowId={(r) => r.reportId || r.id}
         isLoading={loading}
-        searchValue={searchQuery}
-        onSearchChange={(value) => {
-          setSearchQuery(value)
-          setCurrentPage(1)
-        }}
+        searchValue={enhancedSearch.globalSearch}
+        onSearchChange={enhancedSearch.setGlobalSearch}
+        searchableColumns={VENUE_REPORTED_SEARCH_COLUMNS}
+        columnSearches={enhancedSearch.columnSearches}
+        onColumnSearchChange={enhancedSearch.setColumnSearch}
+        onColumnSearchRemove={enhancedSearch.removeColumnSearch}
+        onClearAllSearches={enhancedSearch.clearAll}
         searchPlaceholder="Search by report ID, venue name, or reporter"
         onAdvancedFilter={onAdvancedFilter}
         onExport={onExport}

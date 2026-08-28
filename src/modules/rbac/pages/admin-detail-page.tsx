@@ -17,6 +17,8 @@ import {
 } from '../hooks/use-rbac'
 import type { AuditLog } from '../types/rbac'
 import { DataTable } from '@/shared/components/table/data-table'
+import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
+import { RBAC_ADMIN_LOGS_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
 import { cn } from '@/shared/lib/cn'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import deleteIcon from '@/assets/JOMS_ICONS-2/icons8-delete.svg'
@@ -74,8 +76,7 @@ type RoleHistoryRow = {
 
 const mapLogToRoleHistory = (log: AuditLog): RoleHistoryRow => {
   const previousVersion = log.metadata?.previousVersion as
-    | { roleIds?: string[]; firstName?: string; lastName?: string }
-    | undefined
+    { roleIds?: string[]; firstName?: string; lastName?: string } | undefined
 
   return {
     id: log.id || log._id || log.action,
@@ -93,7 +94,7 @@ export function AdminDetailPage() {
   const navigate = useNavigate()
 
   const [historyPage, setHistoryPage] = useState(1)
-  const [historySearch, setHistorySearch] = useState('')
+  const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setHistoryPage(1) })
   const [passwordModalOpen, setPasswordModalOpen] = useState(false)
   const [selectedAdminNote, setSelectedAdminNote] = useState<string | null>(null)
 
@@ -101,7 +102,7 @@ export function AdminDetailPage() {
   const { data: logsData, isLoading: logsLoading } = useSubAdminLogs(id, {
     page: historyPage,
     limit: PAGE_SIZE,
-    search: historySearch || undefined,
+    ...enhancedSearch.buildSearchParams(),
   })
 
   const suspendMutation = useSuspendSubAdmin()
@@ -385,11 +386,13 @@ export function AdminDetailPage() {
           data={historyRows}
           getRowId={(row) => row.id}
           isLoading={logsLoading}
-          searchValue={historySearch}
-          onSearchChange={(value) => {
-            setHistorySearch(value)
-            setHistoryPage(1)
-          }}
+          searchValue={enhancedSearch.globalSearch}
+          onSearchChange={enhancedSearch.setGlobalSearch}
+          searchableColumns={RBAC_ADMIN_LOGS_SEARCH_COLUMNS}
+          columnSearches={enhancedSearch.columnSearches}
+          onColumnSearchChange={enhancedSearch.setColumnSearch}
+          onColumnSearchRemove={enhancedSearch.removeColumnSearch}
+          onClearAllSearches={enhancedSearch.clearAll}
           searchPlaceholder="Search by role, note or action"
           showAdvancedFilter={false}
           onExport={() => toast.info('Export coming soon')}

@@ -13,6 +13,8 @@ import {
 } from '../../config/venue-category-management-table-columns.config'
 import { useTableExportColumnIds } from '@/shared/hooks/use-table-export-column-ids'
 import { DataTable } from '@/shared/components/table/data-table'
+import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
+import { VENUE_CATEGORY_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 import { VENUE_CATEGORY_EXPORT_COLUMN_MAP } from '../../utils/table-export-column-maps'
 import type { FilterValues } from '@/shared/types/data-filter'
@@ -53,8 +55,8 @@ const normalizeVenueMetricIds = (ids: string[]) =>
 const DEFAULT_VISIBLE_IDS = DEFAULT_VENUE_CATEGORY_MANAGEMENT_VISIBLE_COLUMN_IDS
 
 export function VenueCategoryManagementPage() {
-  const [searchValue, setSearchValue] = useState('')
   const [page, setPage] = useState(1)
+  const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setPage(1) })
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
   const preferencesQuery = useTableColumnPreferences(VENUE_CATEGORY_MANAGEMENT_MODULE_KEY)
 
@@ -79,10 +81,10 @@ export function VenueCategoryManagementPage() {
       buildVenueCategoryListQueryParams(appliedFilters, {
         page,
         limit: PAGE_SIZE,
-        search: searchValue.trim() || undefined,
+        ...enhancedSearch.buildSearchParams(),
         excludePaused: true,
       }),
-    [appliedFilters, page, searchValue],
+    [appliedFilters, enhancedSearch, page],
   )
 
   const { data, isLoading, isError } = useVenueCategoryManagementList(categoryQueryParams)
@@ -243,11 +245,13 @@ export function VenueCategoryManagementPage() {
         columns={columns}
         data={categories}
         getRowId={(row) => row.id}
-        searchValue={searchValue}
-        onSearchChange={(value) => {
-          setSearchValue(value)
-          setPage(1)
-        }}
+        searchValue={enhancedSearch.globalSearch}
+        onSearchChange={enhancedSearch.setGlobalSearch}
+        searchableColumns={VENUE_CATEGORY_SEARCH_COLUMNS}
+        columnSearches={enhancedSearch.columnSearches}
+        onColumnSearchChange={enhancedSearch.setColumnSearch}
+        onColumnSearchRemove={enhancedSearch.removeColumnSearch}
+        onClearAllSearches={enhancedSearch.clearAll}
         searchPlaceholder="Search by name or ID"
         onAdvancedFilter={onAdvancedFilter}
         onExport={onExport}

@@ -11,6 +11,8 @@ import {
 } from '@/modules/payments/mock/finance-events.mock'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 import { DataTable } from '@/shared/components/table/data-table'
+import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
+import { FINANCE_EVENTS_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
 import {
   TableActionsDropdown,
   TableActionsItem,
@@ -60,8 +62,8 @@ function getStatusClassName(status: FinanceEventStatus) {
 export function FinanceEventsPage() {
   const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState<FinanceEventTab>('all')
-  const [searchQuery, setSearchQuery] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
+  const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setCurrentPage(1) })
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [selectedRowIds, setSelectedRowIds] = useState<string[]>([])
@@ -81,10 +83,25 @@ export function FinanceEventsPage() {
 
   const filteredRows = useMemo(
     () =>
-      financeEventRowsMock.filter((row) =>
-        rowMatchesClientFilters(row, appliedFilters, searchQuery, EVENT_FILTER_ACCESSORS),
-      ),
-    [appliedFilters, searchQuery],
+      financeEventRowsMock.filter((row) => {
+        if (
+          !rowMatchesClientFilters(
+            row,
+            appliedFilters,
+            enhancedSearch.globalSearch,
+            EVENT_FILTER_ACCESSORS,
+          )
+        ) {
+          return false
+        }
+        for (const [colId, val] of Object.entries(enhancedSearch.columnSearches)) {
+          if (!val) continue
+          const cellVal = String((row as Record<string, unknown>)[colId] ?? '').toLowerCase()
+          if (!cellVal.includes(val.toLowerCase())) return false
+        }
+        return true
+      }),
+    [appliedFilters, enhancedSearch.columnSearches, enhancedSearch.globalSearch],
   )
 
   const totalItems = filteredRows.length
@@ -125,13 +142,18 @@ export function FinanceEventsPage() {
       createClientFilteredExportHandler(
         (values) =>
           financeEventRowsMock.filter((row) =>
-            rowMatchesClientFilters(row, values, searchQuery, EVENT_FILTER_ACCESSORS),
+            rowMatchesClientFilters(
+              row,
+              values,
+              enhancedSearch.globalSearch,
+              EVENT_FILTER_ACCESSORS,
+            ),
           ),
         FINANCE_EVENTS_EXPORT_COLUMN_MAP,
         'finance_events_export',
         { columnIds: exportColumnIds, catalogOrder: catalogColumnIds },
       ),
-    [catalogColumnIds, exportColumnIds, searchQuery],
+    [catalogColumnIds, enhancedSearch.globalSearch, exportColumnIds],
   )
 
   const {
@@ -311,7 +333,7 @@ export function FinanceEventsPage() {
             onClick={() => {
               setActiveTab(tab.id)
               setCurrentPage(1)
-              setSearchQuery('')
+              enhancedSearch.clearAll()
               setSelectedRowIds([])
             }}
             className={cn(
@@ -330,11 +352,13 @@ export function FinanceEventsPage() {
         columns={columns}
         data={pageRows}
         getRowId={(row) => row.id}
-        searchValue={searchQuery}
-        onSearchChange={(value) => {
-          setSearchQuery(value)
-          setCurrentPage(1)
-        }}
+        searchValue={enhancedSearch.globalSearch}
+        onSearchChange={enhancedSearch.setGlobalSearch}
+        searchableColumns={FINANCE_EVENTS_SEARCH_COLUMNS}
+        columnSearches={enhancedSearch.columnSearches}
+        onColumnSearchChange={enhancedSearch.setColumnSearch}
+        onColumnSearchRemove={enhancedSearch.removeColumnSearch}
+        onClearAllSearches={enhancedSearch.clearAll}
         searchPlaceholder="Search by name, ID or profession"
         advancedFilterLabel="Advance Filters"
         onAdvancedFilter={onAdvancedFilter}

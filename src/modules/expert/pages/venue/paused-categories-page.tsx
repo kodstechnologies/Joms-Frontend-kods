@@ -6,6 +6,8 @@ import createIcon from '@/assets/JOMS_ICONS-2/icons8-create.svg'
 
 import { Button } from '@/shared/components/ui/button'
 import { DataTable } from '@/shared/components/table/data-table'
+import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
+import { VENUE_CATEGORY_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 import { VENUE_CATEGORY_EXPORT_COLUMN_MAP } from '../../utils/table-export-column-maps'
 import type { FilterValues } from '@/shared/types/data-filter'
@@ -34,8 +36,8 @@ const DEFAULT_VISIBLE_IDS = DEFAULT_VENUE_CATEGORY_MANAGEMENT_VISIBLE_COLUMN_IDS
 
 export function PausedVenueCategoriesPage() {
   const navigate = useNavigate()
-  const [searchValue, setSearchValue] = useState('')
   const [page, setPage] = useState(1)
+  const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setPage(1) })
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
   const preferencesQuery = useTableColumnPreferences(VENUE_CATEGORY_MANAGEMENT_MODULE_KEY)
 
@@ -60,9 +62,9 @@ export function PausedVenueCategoriesPage() {
       buildVenueCategoryListQueryParams(appliedFilters, {
         page,
         limit: PAGE_SIZE,
-        search: searchValue.trim() || undefined,
+        ...enhancedSearch.buildSearchParams(),
       }),
-    [appliedFilters, page, searchValue],
+    [appliedFilters, enhancedSearch, page],
   )
 
   const { data, isLoading, isError } = usePausedVenueCategoryList(categoryQueryParams)
@@ -145,11 +147,13 @@ export function PausedVenueCategoriesPage() {
         columns={columns}
         data={pausedCategories}
         getRowId={(row) => row.id}
-        searchValue={searchValue}
-        onSearchChange={(value) => {
-          setSearchValue(value)
-          setPage(1)
-        }}
+        searchValue={enhancedSearch.globalSearch}
+        onSearchChange={enhancedSearch.setGlobalSearch}
+        searchableColumns={VENUE_CATEGORY_SEARCH_COLUMNS}
+        columnSearches={enhancedSearch.columnSearches}
+        onColumnSearchChange={enhancedSearch.setColumnSearch}
+        onColumnSearchRemove={enhancedSearch.removeColumnSearch}
+        onClearAllSearches={enhancedSearch.clearAll}
         searchPlaceholder="Search by name or ID"
         onAdvancedFilter={onAdvancedFilter}
         onExport={onExport}

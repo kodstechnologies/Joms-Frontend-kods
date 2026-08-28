@@ -44,6 +44,8 @@ import {
 } from '@/shared/utils/export-filter-utils'
 import type { FilterValues } from '@/shared/types/data-filter'
 import { DataTable } from '@/shared/components/table/data-table'
+import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
+import { REFERRALS_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
 import {
   TableActionsDropdown,
   TableActionsItem,
@@ -373,8 +375,9 @@ function buildReferralDataColumnsById(): Record<string, ColumnDef<ExpertInvite>>
 
 export function ReferralManagementPage() {
   const navigate = useNavigate()
-  const { searchQuery, setSearchQuery, currentPage, setCurrentPage } = useReferralStore()
+  const { currentPage, setCurrentPage } = useReferralStore()
 
+  const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setCurrentPage(1) })
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [inviteOpen, setInviteOpen] = useState(false)
   const [detailsExpert, setDetailsExpert] = useState<ExpertInvite | null>(null)
@@ -387,9 +390,9 @@ export function ReferralManagementPage() {
       buildReferralListQueryParams(appliedFilters, {
         page: currentPage,
         limit: 10,
-        search: searchQuery || undefined,
+        ...enhancedSearch.buildSearchParams(),
       }),
-    [appliedFilters, currentPage, searchQuery],
+    [appliedFilters, currentPage, enhancedSearch],
   )
   const { data: expertData, isLoading: expertLoading } = useExpertInvites(listQueryParams)
   const activeMetricIds = useActiveMetricIds(REFERRALS_MODULE_KEY, DEFAULT_METRIC_IDS)
@@ -432,11 +435,11 @@ export function ReferralManagementPage() {
       EXPORT_COLUMN_MAP,
       'referrals_export',
       {
-        search: searchQuery || undefined,
+        search: enhancedSearch.globalSearch || undefined,
       },
       { columnIds: exportColumnIds, catalogOrder: catalogColumnIds },
     )
-  }, [catalogColumnIds, exportColumnIds, searchQuery])
+  }, [catalogColumnIds, enhancedSearch.globalSearch, exportColumnIds])
 
   const {
     onAdvancedFilter,
@@ -566,8 +569,13 @@ export function ReferralManagementPage() {
         data={expertInvites}
         getRowId={(row) => row.referralId}
         isLoading={expertLoading}
-        searchValue={searchQuery}
-        onSearchChange={setSearchQuery}
+        searchValue={enhancedSearch.globalSearch}
+        onSearchChange={enhancedSearch.setGlobalSearch}
+        searchableColumns={REFERRALS_SEARCH_COLUMNS}
+        columnSearches={enhancedSearch.columnSearches}
+        onColumnSearchChange={enhancedSearch.setColumnSearch}
+        onColumnSearchRemove={enhancedSearch.removeColumnSearch}
+        onClearAllSearches={enhancedSearch.clearAll}
         searchPlaceholder="Search by name, ID or email"
         onAdvancedFilter={onAdvancedFilter}
         advancedFilterVariant="primary"

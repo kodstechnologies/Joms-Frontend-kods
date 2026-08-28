@@ -11,6 +11,8 @@ import { InviteStatusBadge } from '../components/invite-status-badge'
 import { formatInviteTimestamp } from '../utils/invite-format'
 import { InviteActionModals } from '../components/invite-action-modals'
 import { DataTable } from '@/shared/components/table/data-table'
+import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
+import { RBAC_INVITE_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
 import {
   TableActionsDropdown,
   TableActionsItem,
@@ -48,7 +50,7 @@ export function InvitesOverviewPage() {
   const navigate = useNavigate()
 
   const [page, setPage] = useState(1)
-  const [searchQuery, setSearchQuery] = useState('')
+  const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setPage(1) })
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [selectedInvite, setSelectedInvite] = useState<SubAdminInvite | null>(null)
@@ -59,9 +61,9 @@ export function InvitesOverviewPage() {
       buildPrefixedListQueryParams(appliedFilters, {
         page,
         limit: PAGE_SIZE,
-        search: searchQuery || undefined,
+        ...enhancedSearch.buildSearchParams(),
       }),
-    [appliedFilters, page, searchQuery],
+    [appliedFilters, enhancedSearch, page],
   )
 
   const { data, isLoading } = useAllInvites(listQueryParams)
@@ -84,9 +86,9 @@ export function InvitesOverviewPage() {
       fetchForExport,
       INVITE_EXPORT_COLUMN_MAP,
       'rbac_invites_export',
-      { search: searchQuery || undefined },
+      { search: enhancedSearch.globalSearch || undefined },
     )
-  }, [searchQuery])
+  }, [enhancedSearch.globalSearch])
 
   const {
     onAdvancedFilter,
@@ -205,11 +207,13 @@ export function InvitesOverviewPage() {
         data={invites}
         getRowId={(row) => row.id}
         isLoading={isLoading}
-        searchValue={searchQuery}
-        onSearchChange={(value) => {
-          setSearchQuery(value)
-          setPage(1)
-        }}
+        searchValue={enhancedSearch.globalSearch}
+        onSearchChange={enhancedSearch.setGlobalSearch}
+        searchableColumns={RBAC_INVITE_SEARCH_COLUMNS}
+        columnSearches={enhancedSearch.columnSearches}
+        onColumnSearchChange={enhancedSearch.setColumnSearch}
+        onColumnSearchRemove={enhancedSearch.removeColumnSearch}
+        onClearAllSearches={enhancedSearch.clearAll}
         searchPlaceholder="Search by name, ID or profession"
         onAdvancedFilter={onAdvancedFilter}
         advancedFilterVariant="primary"

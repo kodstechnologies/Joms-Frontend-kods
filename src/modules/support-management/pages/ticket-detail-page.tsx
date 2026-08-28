@@ -71,7 +71,7 @@ export function TicketDetailPage() {
           <InfoPill label="Category" value={ticket.category} width={110} />
           <InfoPill label="Priority" value={getPriorityLabel(ticket.priority)} width={70} />
           <InfoPill label="Requester" value={ticket.reporter} width={108} />
-          <InfoPill label="Assigned To" value={ticket.assignedTo ?? 'â€”'} width={196} />
+          <InfoPill label="Assigned To" value={ticket.assignedTo ?? '—'} width={196} />
           <InfoPill label="Created On" value={ticket.createdAt} width={126} />
           <InfoPill
             label="Assigned On"

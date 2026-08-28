@@ -8,6 +8,8 @@ import { Button } from '@/shared/components/ui/button'
 import { StatCard } from '@/shared/components/dashboard/stat-card'
 import { DecisionActionModal } from '@/shared/components/modal/decision-action-modal'
 import { DataTable } from '@/shared/components/table/data-table'
+import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
+import { CONSULTATION_PERFORMANCE_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
 import {
   TableActionsDropdown,
   TableActionsItem,
@@ -78,8 +80,8 @@ export function ConsultationPerformancePage() {
   }>()
   const navigate = useNavigate()
 
-  const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
+  const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setPage(1) })
   const [appliedFilters, setAppliedFilters] = useState<Record<string, unknown>>({})
   const [activeActionMenu, setActiveActionMenu] = useState<string | null>(null)
   const [paymentBookingId, setPaymentBookingId] = useState<string | null>(null)
@@ -91,7 +93,7 @@ export function ConsultationPerformancePage() {
   const bookingsQuery = useConsultationBookings(consultationId, {
     page,
     limit: PAGE_SIZE,
-    search: search || undefined,
+    ...enhancedSearch.buildSearchParams(),
     ...appliedFilters,
   })
   const bookings = useMemo(
@@ -575,11 +577,13 @@ export function ConsultationPerformancePage() {
         data={bookings}
         getRowId={(row) => row.id}
         isLoading={bookingsQuery.isLoading}
-        searchValue={search}
-        onSearchChange={(value) => {
-          setPage(1)
-          setSearch(value)
-        }}
+        searchValue={enhancedSearch.globalSearch}
+        onSearchChange={enhancedSearch.setGlobalSearch}
+        searchableColumns={CONSULTATION_PERFORMANCE_SEARCH_COLUMNS}
+        columnSearches={enhancedSearch.columnSearches}
+        onColumnSearchChange={enhancedSearch.setColumnSearch}
+        onColumnSearchRemove={enhancedSearch.removeColumnSearch}
+        onClearAllSearches={enhancedSearch.clearAll}
         searchPlaceholder="Search by client or consultation"
         resourceLabel="bookings"
         emptyMessage="No bookings for this consultation yet."

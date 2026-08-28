@@ -16,6 +16,8 @@ import { fetchBackups } from '../api/backups-api'
 import type { BackupHistoryRow, SettingsMetric } from '../types/settings'
 import { StatCard } from '@/shared/components/dashboard/stat-card'
 import { DataTable } from '@/shared/components/table/data-table'
+import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
+import { SETTINGS_BACKUPS_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
 import { ResponsiveGrid } from '@/shared/components/responsive/responsive-grid'
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
@@ -60,8 +62,8 @@ function StatusBadge({ status }: { status: BackupHistoryRow['status'] }) {
 
 export function BackupRestorePanel() {
   const navigate = useNavigate()
-  const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
+  const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setPage(1) })
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null)
   const [restoreTarget, setRestoreTarget] = useState<BackupHistoryRow | null>(null)
@@ -73,9 +75,9 @@ export function BackupRestorePanel() {
       buildPrefixedListQueryParams(appliedFilters, {
         page,
         limit: PAGE_SIZE,
-        search: search || undefined,
+        ...enhancedSearch.buildSearchParams(),
       }),
-    [appliedFilters, page, search],
+    [appliedFilters, enhancedSearch, page],
   )
   const { data: backupsResult, isLoading } = useBackups(listQueryParams)
   const runBackupMutation = useRunBackup()
@@ -102,9 +104,9 @@ export function BackupRestorePanel() {
       fetchForExport,
       BACKUP_EXPORT_COLUMN_MAP,
       'backups_export',
-      { search: search || undefined },
+      { search: enhancedSearch.globalSearch || undefined },
     )
-  }, [search])
+  }, [enhancedSearch.globalSearch])
 
   const {
     onAdvancedFilter,
@@ -253,11 +255,13 @@ export function BackupRestorePanel() {
           data={rows}
           getRowId={(row) => row.id}
           isLoading={isLoading}
-          searchValue={search}
-          onSearchChange={(value) => {
-            setSearch(value)
-            setPage(1)
-          }}
+          searchValue={enhancedSearch.globalSearch}
+          onSearchChange={enhancedSearch.setGlobalSearch}
+          searchableColumns={SETTINGS_BACKUPS_SEARCH_COLUMNS}
+          columnSearches={enhancedSearch.columnSearches}
+          onColumnSearchChange={enhancedSearch.setColumnSearch}
+          onColumnSearchRemove={enhancedSearch.removeColumnSearch}
+          onClearAllSearches={enhancedSearch.clearAll}
           searchPlaceholder="Search by name, ID or profession"
           onAdvancedFilter={onAdvancedFilter}
           advancedFilterVariant="primary"

@@ -4,12 +4,7 @@ export type FilterOption = {
 }
 
 export type FilterFieldType =
-  | 'text'
-  | 'checkbox-group'
-  | 'number-range'
-  | 'date-range'
-  | 'search'
-  | 'location'
+  'text' | 'checkbox-group' | 'number-range' | 'date-range' | 'search' | 'location'
 
 export type FilterFieldConfig = {
   id: string
@@ -98,3 +93,4 @@ export type ModuleFilterKey =
   | 'leaderboard-management'
   | 'service-performance'
   | 'consultation-performance'
+  | 'venue-profile-spaces'

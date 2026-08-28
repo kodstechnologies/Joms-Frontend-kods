@@ -31,6 +31,8 @@ import { createExpertSelectColumn } from './expert-list-columns'
 import { useExpertListSelection } from './use-expert-list-selection'
 import { DecisionActionModal } from '@/shared/components/modal/decision-action-modal'
 import { DataTable } from '@/shared/components/table/data-table'
+import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
+import { EXPERT_PENDING_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
 import {
   TableActionsDropdown,
   TableActionsItem,
@@ -53,8 +55,8 @@ const fetchPendingExpertsForExport = async (params: Record<string, unknown>) => 
 export function ExpertPendingApprovalsPage() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
-  const [searchQuery, setSearchQuery] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
+  const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setCurrentPage(1) })
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [revokeExpertTarget, setRevokeExpertTarget] = useState<Expert | null>(null)
   const [approveExpertTarget, setApproveExpertTarget] = useState<Expert | null>(null)
@@ -76,10 +78,10 @@ export function ExpertPendingApprovalsPage() {
       buildExpertListQueryParams(appliedFilters, {
         page: currentPage,
         limit: 10,
-        search: searchQuery,
+        ...enhancedSearch.buildSearchParams(),
         status: 'pending',
       }),
-    [appliedFilters, currentPage, searchQuery],
+    [appliedFilters, currentPage, enhancedSearch],
   )
 
   const { data, isLoading } = useExperts(expertQueryParams)
@@ -103,10 +105,10 @@ export function ExpertPendingApprovalsPage() {
         EXPERT_EXPORT_COLUMN_MAP,
         'pending_experts_export',
         {
-          search: searchQuery.trim() || undefined,
+          search: enhancedSearch.globalSearch.trim() || undefined,
         },
       ),
-    [searchQuery],
+    [enhancedSearch.globalSearch],
   )
 
   const {
@@ -375,11 +377,13 @@ export function ExpertPendingApprovalsPage() {
         data={experts}
         getRowId={(expert) => expert.expertId}
         isLoading={isLoading}
-        searchValue={searchQuery}
-        onSearchChange={(value) => {
-          setSearchQuery(value)
-          setCurrentPage(1)
-        }}
+        searchValue={enhancedSearch.globalSearch}
+        onSearchChange={enhancedSearch.setGlobalSearch}
+        searchableColumns={EXPERT_PENDING_SEARCH_COLUMNS}
+        columnSearches={enhancedSearch.columnSearches}
+        onColumnSearchChange={enhancedSearch.setColumnSearch}
+        onColumnSearchRemove={enhancedSearch.removeColumnSearch}
+        onClearAllSearches={enhancedSearch.clearAll}
         searchPlaceholder="Search by name or ID"
         onAdvancedFilter={onAdvancedFilter}
         onExport={onExport}

@@ -10,6 +10,8 @@ import { ArrowUpDown, ArrowDown, ArrowUp, Filter, Search, Upload } from 'lucide-
 
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
+import type { SearchableColumn, ColumnSearchValues } from '@/shared/types/search-types'
+import { EnhancedSearchBar } from './enhanced-search-bar'
 
 declare module '@tanstack/react-table' {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars -- required to match upstream ColumnMeta signature for declaration merging
@@ -54,6 +56,16 @@ export type DataTableProps<TData> = {
   contentClassName?: string
   tone?: 'default' | 'category'
   onRowClick?: (row: TData) => void
+  /** Column-specific search: searchable column definitions. When provided, the enhanced search bar is shown. */
+  searchableColumns?: SearchableColumn[]
+  /** Column-specific search: current values for column searches. */
+  columnSearches?: ColumnSearchValues
+  /** Column-specific search: called when a column search value changes. */
+  onColumnSearchChange?: (key: string, value: string) => void
+  /** Column-specific search: called when a column search is cleared. */
+  onColumnSearchRemove?: (key: string) => void
+  /** Column-specific search: called to clear all column searches. */
+  onClearAllSearches?: () => void
 }
 
 const getVisiblePages = (currentPage: number, totalPages: number) => {
@@ -91,6 +103,11 @@ export function DataTable<TData>({
   contentClassName,
   tone = 'default',
   onRowClick,
+  searchableColumns,
+  columnSearches,
+  onColumnSearchChange,
+  onColumnSearchRemove,
+  onClearAllSearches,
 }: DataTableProps<TData>) {
   const [sorting, setSorting] = useState<SortingState>([])
 
@@ -132,17 +149,35 @@ export function DataTable<TData>({
     >
       <div className={cn('px-4 pt-4 sm:px-5 sm:pt-5', contentClassName)}>
         <div className="flex flex-wrap items-center justify-between gap-3 pb-2">
-          <div className="ui-table-search-wrap">
-            <Search className="ui-table-search-icon" aria-hidden="true" />
-            <input
-              type="search"
-              value={searchValue}
-              onChange={(event) => onSearchChange(event.target.value)}
-              placeholder={searchPlaceholder}
-              aria-label={`Search ${resourceLabel}`}
-              className="ui-table-search h-[50px]"
+          {searchableColumns &&
+          columnSearches &&
+          onColumnSearchChange &&
+          onColumnSearchRemove &&
+          onClearAllSearches ? (
+            <EnhancedSearchBar
+              globalSearch={searchValue}
+              onGlobalSearchChange={onSearchChange}
+              searchPlaceholder={searchPlaceholder}
+              resourceLabel={resourceLabel}
+              searchableColumns={searchableColumns}
+              columnSearches={columnSearches}
+              onColumnSearchChange={onColumnSearchChange}
+              onColumnSearchRemove={onColumnSearchRemove}
+              onClearAll={onClearAllSearches}
             />
-          </div>
+          ) : (
+            <div className="ui-table-search-wrap">
+              <Search className="ui-table-search-icon" aria-hidden="true" />
+              <input
+                type="search"
+                value={searchValue}
+                onChange={(event) => onSearchChange(event.target.value)}
+                placeholder={searchPlaceholder}
+                aria-label={`Search ${resourceLabel}`}
+                className="ui-table-search h-[50px]"
+              />
+            </div>
+          )}
 
           <div className="flex shrink-0 items-center justify-end gap-3">
             {toolbarContent}

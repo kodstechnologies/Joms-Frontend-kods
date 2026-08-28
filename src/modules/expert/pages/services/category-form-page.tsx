@@ -106,7 +106,11 @@ const CategoryFormContent = ({ mode, id, scope, category }: CategoryFormContentP
     createMutation.isPending || updateMutation.isPending || addSubCategoryMutation.isPending
 
   const handleCategoryIcon = (file: File | null) => {
-    if (!file) return
+    if (!file) {
+      setIconFile(null)
+      setIconPreview(undefined)
+      return
+    }
     setIconFile(file)
     setHeaderFile(null)
     setHeaderPreview(undefined)
@@ -114,7 +118,11 @@ const CategoryFormContent = ({ mode, id, scope, category }: CategoryFormContentP
   }
 
   const handleHeaderImage = (file: File | null) => {
-    if (!file) return
+    if (!file) {
+      setHeaderFile(null)
+      setHeaderPreview(undefined)
+      return
+    }
     setHeaderFile(file)
     setIconFile(null)
     setIconPreview(undefined)
@@ -135,7 +143,20 @@ const CategoryFormContent = ({ mode, id, scope, category }: CategoryFormContentP
   }
 
   const handleRemoveSubCategory = (subId: number) => {
-    setSubCategories((prev) => prev.filter((item) => item.id !== subId))
+    setSubCategories((prev) => {
+      if (prev.length <= 1) {
+        return [
+          {
+            id: Date.now(),
+            name: '',
+            description: '',
+            icon: '',
+            iconFile: null,
+          },
+        ]
+      }
+      return prev.filter((item) => item.id !== subId)
+    })
   }
 
   const handleNameChange = (subId: number, value: string) => {

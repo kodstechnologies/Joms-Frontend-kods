@@ -25,6 +25,8 @@ import {
   pickServicePreferenceColumns,
 } from '../../utils/service-preference-columns'
 import { DataTable } from '@/shared/components/table/data-table'
+import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
+import { SERVICE_DELETED_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
 import {
   TableActionsDropdown,
   TableActionsItem,
@@ -64,8 +66,8 @@ const EXPORT_COLUMN_MAP: Record<string, { header: string; accessor: (s: Service)
 
 export function DeletedServicesPage() {
   const navigate = useNavigate()
-  const [searchQuery, setSearchQuery] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
+  const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setCurrentPage(1) })
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
   const tableColumnPreferencesQuery = useTableColumnPreferences(SERVICE_DELETED_MODULE_KEY)
@@ -75,10 +77,10 @@ export function DeletedServicesPage() {
       buildServiceListQueryParams(appliedFilters, {
         page: currentPage,
         limit: 10,
-        search: searchQuery,
+        ...enhancedSearch.buildSearchParams(),
         status: 'deleted',
       }),
-    [appliedFilters, currentPage, searchQuery],
+    [appliedFilters, currentPage, enhancedSearch],
   )
 
   const { data, isLoading } = useServices(serviceQueryParams)
@@ -100,9 +102,10 @@ export function DeletedServicesPage() {
         'deleted_services_export',
         {
           status: 'deleted',
+          ...enhancedSearch.buildSearchParams(),
         },
       ),
-    [],
+    [enhancedSearch],
   )
 
   const {
@@ -231,11 +234,13 @@ export function DeletedServicesPage() {
         data={services}
         getRowId={(service) => service._id}
         isLoading={isLoading}
-        searchValue={searchQuery}
-        onSearchChange={(value) => {
-          setSearchQuery(value)
-          setCurrentPage(1)
-        }}
+        searchValue={enhancedSearch.globalSearch}
+        onSearchChange={enhancedSearch.setGlobalSearch}
+        searchableColumns={SERVICE_DELETED_SEARCH_COLUMNS}
+        columnSearches={enhancedSearch.columnSearches}
+        onColumnSearchChange={enhancedSearch.setColumnSearch}
+        onColumnSearchRemove={enhancedSearch.removeColumnSearch}
+        onClearAllSearches={enhancedSearch.clearAll}
         onAdvancedFilter={onAdvancedFilter}
         onExport={onExport}
         searchPlaceholder="Search by name, ID or profession"

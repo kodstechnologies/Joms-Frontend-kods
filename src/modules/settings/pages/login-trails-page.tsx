@@ -11,6 +11,8 @@ import { securityDefaults } from '../mock/settings.defaults'
 import type { LoginTrailRow, SecuritySettings } from '../types/settings'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import { DataTable } from '@/shared/components/table/data-table'
+import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
+import { SETTINGS_LOGIN_TRAILS_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
 import { cn } from '@/shared/lib/cn'
 import { exportDisplayValue } from '@/shared/utils/export-utils'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
@@ -51,7 +53,7 @@ function StatusBadge({ status }: { status: LoginTrailRow['status'] }) {
 export function LoginTrailsPage() {
   const navigate = useNavigate()
   const [page, setPage] = useState(1)
-  const [search, setSearch] = useState('')
+  const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setPage(1) })
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
 
@@ -65,9 +67,9 @@ export function LoginTrailsPage() {
       buildPrefixedListQueryParams(appliedFilters, {
         page,
         limit: PAGE_SIZE,
-        search: search || undefined,
+        ...enhancedSearch.buildSearchParams(),
       }),
-    [appliedFilters, page, search],
+    [appliedFilters, enhancedSearch, page],
   )
 
   const { data: trailsResult, isLoading, refetch, isFetching } = useLoginTrails(listQueryParams)
@@ -92,9 +94,9 @@ export function LoginTrailsPage() {
       fetchForExport,
       TRAIL_EXPORT_COLUMN_MAP,
       'login_trails_export',
-      { search: search || undefined },
+      { search: enhancedSearch.globalSearch || undefined },
     )
-  }, [search])
+  }, [enhancedSearch.globalSearch])
 
   const {
     onAdvancedFilter,
@@ -248,11 +250,13 @@ export function LoginTrailsPage() {
           data={rows}
           getRowId={(row) => row.id}
           isLoading={isLoading}
-          searchValue={search}
-          onSearchChange={(value) => {
-            setSearch(value)
-            setPage(1)
-          }}
+          searchValue={enhancedSearch.globalSearch}
+          onSearchChange={enhancedSearch.setGlobalSearch}
+          searchableColumns={SETTINGS_LOGIN_TRAILS_SEARCH_COLUMNS}
+          columnSearches={enhancedSearch.columnSearches}
+          onColumnSearchChange={enhancedSearch.setColumnSearch}
+          onColumnSearchRemove={enhancedSearch.removeColumnSearch}
+          onClearAllSearches={enhancedSearch.clearAll}
           searchPlaceholder="Search by name, ID or profession."
           onAdvancedFilter={onAdvancedFilter}
           advancedFilterVariant="primary"

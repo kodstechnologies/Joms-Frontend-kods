@@ -9,6 +9,8 @@ import type { SettingsLog } from '../types/settings'
 import { SectionHeader } from '@/shared/components/dashboard/section-header'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import { DataTable } from '@/shared/components/table/data-table'
+import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
+import { SETTINGS_LOGS_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
 import { uiTokens } from '@/shared/lib/design-tokens'
@@ -74,7 +76,7 @@ function ActionBadge({ action }: { action: string }) {
 export function SettingsLogsPage() {
   const navigate = useNavigate()
   const [page, setPage] = useState(1)
-  const [search, setSearch] = useState('')
+  const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setPage(1) })
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
   const [selectedLog, setSelectedLog] = useState<SettingsLog | null>(null)
 
@@ -83,9 +85,9 @@ export function SettingsLogsPage() {
       buildPrefixedListQueryParams(appliedFilters, {
         page,
         limit: PAGE_SIZE,
-        search: search || undefined,
+        ...enhancedSearch.buildSearchParams(),
       }),
-    [appliedFilters, page, search],
+    [appliedFilters, enhancedSearch, page],
   )
 
   const { data, isLoading } = useSettingsLogs(listQueryParams)
@@ -108,9 +110,9 @@ export function SettingsLogsPage() {
       fetchForExport,
       SETTINGS_LOG_EXPORT_COLUMN_MAP,
       'settings_logs_export',
-      { search: search || undefined },
+      { search: enhancedSearch.globalSearch || undefined },
     )
-  }, [search])
+  }, [enhancedSearch.globalSearch])
 
   const {
     onAdvancedFilter,
@@ -204,11 +206,13 @@ export function SettingsLogsPage() {
           loadingRowCount={PAGE_SIZE}
           emptyMessage="No settings actions found."
           stickyHeader
-          searchValue={search}
-          onSearchChange={(value) => {
-            setSearch(value)
-            setPage(1)
-          }}
+          searchValue={enhancedSearch.globalSearch}
+          onSearchChange={enhancedSearch.setGlobalSearch}
+          searchableColumns={SETTINGS_LOGS_SEARCH_COLUMNS}
+          columnSearches={enhancedSearch.columnSearches}
+          onColumnSearchChange={enhancedSearch.setColumnSearch}
+          onColumnSearchRemove={enhancedSearch.removeColumnSearch}
+          onClearAllSearches={enhancedSearch.clearAll}
           searchPlaceholder="Search by action, IP, or admin…"
           onAdvancedFilter={onAdvancedFilter}
           advancedFilterVariant="primary"

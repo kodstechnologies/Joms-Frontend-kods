@@ -25,6 +25,7 @@ interface Props {
 const SubCategoryCard = ({
   subCategories,
   onAdd,
+  onRemove,
   onNameChange,
   onDescriptionChange,
   onIconChange,
@@ -79,9 +80,8 @@ const SubCategoryCard = ({
                   <Button
                     type="button"
                     variant="secondary"
-                    onClick={() => onIconChange(item.id, null)}
-                    disabled={!item.icon}
-                    aria-label="Remove uploaded icon"
+                    onClick={() => onRemove(item.id)}
+                    aria-label="Remove sub-category"
                     className="!bg-brand-accent hover:!bg-brand-gold-from size-11 shrink-0 border-0 p-0"
                   >
                     <Trash2 className="text-brand-danger size-[18px]" aria-hidden="true" />

@@ -13,6 +13,8 @@ import {
 } from '../../config/service-category-management-table-columns.config'
 import { useTableExportColumnIds } from '@/shared/hooks/use-table-export-column-ids'
 import { DataTable } from '@/shared/components/table/data-table'
+import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
+import { SERVICE_CATEGORY_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 import { SERVICE_CATEGORY_EXPORT_COLUMN_MAP } from '../../utils/table-export-column-maps'
 import type { FilterValues } from '@/shared/types/data-filter'
@@ -51,8 +53,8 @@ const normalizeServiceMetricIds = (ids: string[]) =>
 const DEFAULT_VISIBLE_IDS = DEFAULT_SERVICE_CATEGORY_MANAGEMENT_VISIBLE_COLUMN_IDS
 
 export function CategoryManagementPage() {
-  const [searchValue, setSearchValue] = useState('')
   const [page, setPage] = useState(1)
+  const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setPage(1) })
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
 
   const scope = useCategoryManagementScope()
@@ -79,10 +81,10 @@ export function CategoryManagementPage() {
       buildCategoryListQueryParams(appliedFilters, {
         page,
         limit: PAGE_SIZE,
-        search: searchValue.trim() || undefined,
+        ...enhancedSearch.buildSearchParams(),
         status: 'ACTIVE',
       }),
-    [appliedFilters, page, searchValue],
+    [appliedFilters, enhancedSearch, page],
   )
 
   const { data, isLoading, isError } = useServiceCategories(categoryQueryParams)
@@ -268,11 +270,13 @@ export function CategoryManagementPage() {
         columns={columns}
         data={categories}
         getRowId={(row) => row.id}
-        searchValue={searchValue}
-        onSearchChange={(value) => {
-          setSearchValue(value)
-          setPage(1)
-        }}
+        searchValue={enhancedSearch.globalSearch}
+        onSearchChange={enhancedSearch.setGlobalSearch}
+        searchableColumns={SERVICE_CATEGORY_SEARCH_COLUMNS}
+        columnSearches={enhancedSearch.columnSearches}
+        onColumnSearchChange={enhancedSearch.setColumnSearch}
+        onColumnSearchRemove={enhancedSearch.removeColumnSearch}
+        onClearAllSearches={enhancedSearch.clearAll}
         searchPlaceholder="Search by name or ID"
         onAdvancedFilter={onAdvancedFilter}
         onExport={onExport}

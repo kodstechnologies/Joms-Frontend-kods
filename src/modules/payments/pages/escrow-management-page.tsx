@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 import { Eye, SlidersHorizontal } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
@@ -17,6 +17,8 @@ import { useFinanceEscrow } from '@/modules/payments/hooks/use-finance'
 import { mapEscrowToRow } from '@/modules/payments/utils/finance-mappers'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 import { DataTable } from '@/shared/components/table/data-table'
+import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
+import { FINANCE_ESCROW_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
 import {
   TableActionsDropdown,
   TableActionsItem,
@@ -58,31 +60,22 @@ function getBookingStatusClassName(status: EscrowBookingRow['status']) {
 export function EscrowManagementPage() {
   const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState<EscrowManagementTab>('escrow')
-  const [searchQuery, setSearchQuery] = useState('')
-  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
+  const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setCurrentPage(1) })
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [selectedRowIds, setSelectedRowIds] = useState<string[]>([])
 
   const isEscrowTab = activeTab === 'escrow' || activeTab === 'all'
 
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      setDebouncedSearch(searchQuery.trim())
-      setCurrentPage(1)
-    }, 300)
-    return () => window.clearTimeout(timer)
-  }, [searchQuery])
-
   const listQueryParams = useMemo(
     () =>
       buildFinanceEscrowListQueryParams(appliedFilters, {
         page: currentPage,
         limit: PAGE_SIZE,
-        search: debouncedSearch || undefined,
+        ...enhancedSearch.buildSearchParams(),
       }),
-    [appliedFilters, currentPage, debouncedSearch],
+    [appliedFilters, currentPage, enhancedSearch],
   )
 
   const {
@@ -126,10 +119,10 @@ export function EscrowManagementPage() {
       fetchForExport,
       FINANCE_ESCROW_EXPORT_COLUMN_MAP,
       'finance_escrow_export',
-      { search: debouncedSearch || undefined },
+      { search: enhancedSearch.globalSearch || undefined },
       { columnIds: exportColumnIds, catalogOrder: catalogColumnIds },
     )
-  }, [catalogColumnIds, debouncedSearch, exportColumnIds])
+  }, [catalogColumnIds, enhancedSearch.globalSearch, exportColumnIds])
 
   const {
     onAdvancedFilter,
@@ -154,7 +147,7 @@ export function EscrowManagementPage() {
   const filteredEscrowRows = escrowTabRows
 
   const filteredBookingRows = useMemo(() => {
-    const query = searchQuery.trim().toLowerCase()
+    const query = enhancedSearch.globalSearch.trim().toLowerCase()
     if (!query) return bookingTabRows
 
     return bookingTabRows.filter((row) =>
@@ -163,7 +156,7 @@ export function EscrowManagementPage() {
         .toLowerCase()
         .includes(query),
     )
-  }, [bookingTabRows, searchQuery])
+  }, [bookingTabRows, enhancedSearch.globalSearch])
 
   const totalItems = isEscrowTab
     ? (escrowMeta?.total ?? filteredEscrowRows.length)
@@ -519,7 +512,7 @@ export function EscrowManagementPage() {
             onClick={() => {
               setActiveTab(tab.id)
               setCurrentPage(1)
-              setSearchQuery('')
+              enhancedSearch.clearAll()
               setSelectedRowIds([])
               setAppliedFilters({})
             }}
@@ -545,11 +538,13 @@ export function EscrowManagementPage() {
           data={pageEscrowRows}
           getRowId={(row) => row.id}
           isLoading={isLoading || isFetching}
-          searchValue={searchQuery}
-          onSearchChange={(value) => {
-            setSearchQuery(value)
-            setCurrentPage(1)
-          }}
+          searchValue={enhancedSearch.globalSearch}
+          onSearchChange={enhancedSearch.setGlobalSearch}
+          searchableColumns={FINANCE_ESCROW_SEARCH_COLUMNS}
+          columnSearches={enhancedSearch.columnSearches}
+          onColumnSearchChange={enhancedSearch.setColumnSearch}
+          onColumnSearchRemove={enhancedSearch.removeColumnSearch}
+          onClearAllSearches={enhancedSearch.clearAll}
           searchPlaceholder="Search by name, ID or profession"
           advancedFilterLabel="Advance Filters"
           onAdvancedFilter={onAdvancedFilter}
@@ -570,11 +565,13 @@ export function EscrowManagementPage() {
           columns={bookingColumns}
           data={pageBookingRows}
           getRowId={(row) => row.id}
-          searchValue={searchQuery}
-          onSearchChange={(value) => {
-            setSearchQuery(value)
-            setCurrentPage(1)
-          }}
+          searchValue={enhancedSearch.globalSearch}
+          onSearchChange={enhancedSearch.setGlobalSearch}
+          searchableColumns={FINANCE_ESCROW_SEARCH_COLUMNS}
+          columnSearches={enhancedSearch.columnSearches}
+          onColumnSearchChange={enhancedSearch.setColumnSearch}
+          onColumnSearchRemove={enhancedSearch.removeColumnSearch}
+          onClearAllSearches={enhancedSearch.clearAll}
           searchPlaceholder="Search by name, ID or profession"
           advancedFilterLabel="Advance Filters"
           onAdvancedFilter={onAdvancedFilter}

@@ -37,6 +37,8 @@ import { SectionHeader } from '@/shared/components/dashboard/section-header'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 import { Button } from '@/shared/components/ui/button'
 import { DataTable } from '@/shared/components/table/data-table'
+import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
+import { EXPERT_MEMBERSHIPS_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
 import {
   TableActionsDropdown,
   TableActionsItem,
@@ -159,7 +161,8 @@ export function ExpertMembershipsPage() {
   const [escalateOpen, setEscalateOpen] = useState(false)
   const { tagModalOpen, openTagModal, closeTagModal, saveTags, initialTags } = useEntityTags()
 
-  const { searchQuery, setSearchQuery, currentPage, setCurrentPage } = useExpertMembershipStore()
+  const { currentPage, setCurrentPage } = useExpertMembershipStore()
+  const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setCurrentPage(1) })
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
 
   const listQueryParams = useMemo(
@@ -167,9 +170,9 @@ export function ExpertMembershipsPage() {
       buildExpertMembershipsListQueryParams(appliedFilters, {
         page: currentPage,
         limit: 10,
-        search: searchQuery || undefined,
+        ...enhancedSearch.buildSearchParams(),
       }),
-    [appliedFilters, currentPage, searchQuery],
+    [appliedFilters, currentPage, enhancedSearch],
   )
 
   const { data, isLoading } = useExpertSubscriptions(listQueryParams)
@@ -201,9 +204,9 @@ export function ExpertMembershipsPage() {
       fetchForExport,
       EXPORT_COLUMN_MAP,
       'expert_memberships_export',
-      { search: searchQuery || undefined },
+      { search: enhancedSearch.globalSearch || undefined },
     )
-  }, [searchQuery])
+  }, [enhancedSearch.globalSearch])
 
   const {
     onAdvancedFilter,
@@ -346,8 +349,13 @@ export function ExpertMembershipsPage() {
         data={subscriptions}
         getRowId={(subscription) => subscription._id}
         isLoading={isLoading}
-        searchValue={searchQuery}
-        onSearchChange={setSearchQuery}
+        searchValue={enhancedSearch.globalSearch}
+        onSearchChange={enhancedSearch.setGlobalSearch}
+        searchableColumns={EXPERT_MEMBERSHIPS_SEARCH_COLUMNS}
+        columnSearches={enhancedSearch.columnSearches}
+        onColumnSearchChange={enhancedSearch.setColumnSearch}
+        onColumnSearchRemove={enhancedSearch.removeColumnSearch}
+        onClearAllSearches={enhancedSearch.clearAll}
         searchPlaceholder="Search by name, ID or profession"
         onAdvancedFilter={onAdvancedFilter}
         advancedFilterVariant="primary"

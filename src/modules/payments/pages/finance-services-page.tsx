@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 import { useQueryClient } from '@tanstack/react-query'
 import { AlertTriangle, Eye, SlidersHorizontal, Tag, Trash2 } from 'lucide-react'
@@ -37,6 +37,8 @@ import {
   type FinanceEscalateDeleteAction,
 } from '@/modules/payments/components/finance-escalate-delete-modal'
 import { DataTable } from '@/shared/components/table/data-table'
+import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
+import { FINANCE_SERVICES_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
 import {
   TableActionsDropdown,
   TableActionsItem,
@@ -64,9 +66,8 @@ export function FinanceServicesPage() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const [activeTab, setActiveTab] = useState<FinanceServiceTab>('all')
-  const [searchQuery, setSearchQuery] = useState('')
-  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
+  const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setCurrentPage(1) })
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [selectedRowIds, setSelectedRowIds] = useState<string[]>([])
@@ -88,24 +89,16 @@ export function FinanceServicesPage() {
     legacyColumnIdMap: FINANCE_SERVICES_LEGACY_COLUMN_ID_MAP,
   })
 
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      setDebouncedSearch(searchQuery.trim())
-      setCurrentPage(1)
-    }, 300)
-    return () => window.clearTimeout(timer)
-  }, [searchQuery])
-
   const isEscrowTab = activeTab === 'escrow'
   const listQueryParams = useMemo(
     () =>
       buildFinanceServicesListQueryParams(appliedFilters, {
         page: currentPage,
         limit: PAGE_SIZE,
-        search: debouncedSearch || undefined,
+        ...enhancedSearch.buildSearchParams(),
         tab: activeTab,
       }),
-    [activeTab, appliedFilters, currentPage, debouncedSearch],
+    [activeTab, appliedFilters, currentPage, enhancedSearch],
   )
 
   const revenueQuery = useFinanceRevenue(listQueryParams, !isEscrowTab)
@@ -115,7 +108,7 @@ export function FinanceServicesPage() {
     if (tabId !== activeTab) {
       setActiveTab(tabId)
       setCurrentPage(1)
-      setSearchQuery('')
+      enhancedSearch.clearAll()
       setSelectedRowIds([])
       setAppliedFilters({})
     }
@@ -162,10 +155,10 @@ export function FinanceServicesPage() {
       fetchForExport,
       FINANCE_SERVICES_EXPORT_COLUMN_MAP,
       'finance_services_export',
-      { search: debouncedSearch || undefined, tab: activeTab },
+      { search: enhancedSearch.globalSearch || undefined, tab: activeTab },
       { columnIds: exportColumnIds, catalogOrder: catalogColumnIds },
     )
-  }, [activeTab, catalogColumnIds, debouncedSearch, exportColumnIds, isEscrowTab])
+  }, [activeTab, catalogColumnIds, enhancedSearch.globalSearch, exportColumnIds, isEscrowTab])
 
   const {
     onAdvancedFilter,
@@ -480,8 +473,13 @@ export function FinanceServicesPage() {
         data={liveRows}
         getRowId={(row) => row.id}
         isLoading={isLoading || isFetching}
-        searchValue={searchQuery}
-        onSearchChange={setSearchQuery}
+        searchValue={enhancedSearch.globalSearch}
+        onSearchChange={enhancedSearch.setGlobalSearch}
+        searchableColumns={FINANCE_SERVICES_SEARCH_COLUMNS}
+        columnSearches={enhancedSearch.columnSearches}
+        onColumnSearchChange={enhancedSearch.setColumnSearch}
+        onColumnSearchRemove={enhancedSearch.removeColumnSearch}
+        onClearAllSearches={enhancedSearch.clearAll}
         searchPlaceholder="Search by name, ID or profession"
         advancedFilterLabel="Advance Filters"
         onAdvancedFilter={onAdvancedFilter}

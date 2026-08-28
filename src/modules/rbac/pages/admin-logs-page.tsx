@@ -12,6 +12,8 @@ import { RbacLoader } from '../components/rbac-loader'
 import { RoleUsersModal } from '../components/role-users-modal'
 import { VersionHistoryPanel } from '../components/version-history-panel'
 import { DataTable } from '@/shared/components/table/data-table'
+import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
+import { RBAC_ADMIN_LOGS_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
 import {
   TableActionsDropdown,
   TableActionsItem,
@@ -261,7 +263,7 @@ export function AdminLogsPage() {
   const isRole = location.pathname.includes('/roles/')
 
   const [page, setPage] = useState(1)
-  const [searchQuery, setSearchQuery] = useState('')
+  const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setPage(1) })
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [historyOpen, setHistoryOpen] = useState(false)
@@ -273,9 +275,9 @@ export function AdminLogsPage() {
       buildPrefixedListQueryParams(appliedFilters, {
         page,
         limit: PAGE_SIZE,
-        search: searchQuery || undefined,
+        ...enhancedSearch.buildSearchParams(),
       }),
-    [appliedFilters, page, searchQuery],
+    [appliedFilters, enhancedSearch, page],
   )
   const historyParams = { page: 1, limit: 50 }
 
@@ -316,9 +318,9 @@ export function AdminLogsPage() {
       fetchForExport,
       LOG_EXPORT_COLUMN_MAP,
       'rbac_admin_logs_export',
-      { search: searchQuery || undefined },
+      { search: enhancedSearch.globalSearch || undefined },
     )
-  }, [id, isRole, searchQuery])
+  }, [enhancedSearch.globalSearch, id, isRole])
 
   const {
     onAdvancedFilter,
@@ -587,11 +589,13 @@ export function AdminLogsPage() {
         data={logs}
         getRowId={(row) => row.id || row._id || row.action}
         isLoading={logsQuery.isLoading}
-        searchValue={searchQuery}
-        onSearchChange={(value) => {
-          setSearchQuery(value)
-          setPage(1)
-        }}
+        searchValue={enhancedSearch.globalSearch}
+        onSearchChange={enhancedSearch.setGlobalSearch}
+        searchableColumns={RBAC_ADMIN_LOGS_SEARCH_COLUMNS}
+        columnSearches={enhancedSearch.columnSearches}
+        onColumnSearchChange={enhancedSearch.setColumnSearch}
+        onColumnSearchRemove={enhancedSearch.removeColumnSearch}
+        onClearAllSearches={enhancedSearch.clearAll}
         searchPlaceholder="Search by action, module or note"
         onAdvancedFilter={onAdvancedFilter}
         advancedFilterVariant="primary"

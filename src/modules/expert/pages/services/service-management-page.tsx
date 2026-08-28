@@ -47,6 +47,8 @@ import {
   pickServicePreferenceColumns,
 } from '../../utils/service-preference-columns'
 import { DataTable } from '@/shared/components/table/data-table'
+import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
+import { SERVICE_MANAGEMENT_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
 import {
   TableActionsDropdown,
   TableActionsItem,
@@ -260,14 +262,8 @@ export const ServiceManagementPage = () => {
   })
 
   const navigate = useNavigate()
-  const {
-    searchQuery,
-    setSearchQuery,
-    currentPage,
-    setCurrentPage,
-    activeStatus,
-    setActiveStatus,
-  } = useServiceStore()
+  const { currentPage, setCurrentPage, activeStatus, setActiveStatus } = useServiceStore()
+  const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setCurrentPage(1) })
 
   const handleApplyFilters = useCallback(
     (values: FilterValues) => {
@@ -275,7 +271,7 @@ export const ServiceManagementPage = () => {
       setCurrentPage(1)
       toast.success('Filters applied')
     },
-    [setCurrentPage],
+    [setCurrentPage, setAppliedAdvancedFilters],
   )
 
   const handleExportData = useMemo(
@@ -286,11 +282,11 @@ export const ServiceManagementPage = () => {
         'services_export',
         {
           status: activeStatus !== 'all' ? activeStatus : undefined,
-          search: searchQuery || undefined,
+          ...enhancedSearch.buildSearchParams(),
         },
         { columnIds: exportColumnIds, catalogOrder: catalogColumnIds },
       ),
-    [activeStatus, catalogColumnIds, exportColumnIds, searchQuery],
+    [activeStatus, catalogColumnIds, enhancedSearch, exportColumnIds],
   )
 
   const {
@@ -308,10 +304,10 @@ export const ServiceManagementPage = () => {
       buildServiceListQueryParams(appliedAdvancedFilters, {
         page: currentPage,
         limit: 10,
-        search: searchQuery,
+        ...enhancedSearch.buildSearchParams(),
         status: activeStatus !== 'all' ? activeStatus : undefined,
       }),
-    [appliedAdvancedFilters, activeStatus, currentPage, searchQuery],
+    [appliedAdvancedFilters, activeStatus, currentPage, enhancedSearch],
   )
 
   const { data, isLoading } = useServices(serviceQueryParams)
@@ -456,8 +452,7 @@ export const ServiceManagementPage = () => {
 
       if (successCount === 0) {
         const firstError = results.find((result) => result.status === 'rejected') as
-          | PromiseRejectedResult
-          | undefined
+          PromiseRejectedResult | undefined
         toast.error(getApiErrorMessage(firstError?.reason) || 'Failed to escalate services.')
         return
       }
@@ -999,8 +994,13 @@ export const ServiceManagementPage = () => {
         data={services}
         getRowId={(service) => service._id}
         isLoading={isLoading}
-        searchValue={searchQuery}
-        onSearchChange={setSearchQuery}
+        searchValue={enhancedSearch.globalSearch}
+        onSearchChange={enhancedSearch.setGlobalSearch}
+        searchableColumns={SERVICE_MANAGEMENT_SEARCH_COLUMNS}
+        columnSearches={enhancedSearch.columnSearches}
+        onColumnSearchChange={enhancedSearch.setColumnSearch}
+        onColumnSearchRemove={enhancedSearch.removeColumnSearch}
+        onClearAllSearches={enhancedSearch.clearAll}
         searchPlaceholder="Search by name, ID or profession"
         onAdvancedFilter={onAdvancedFilter}
         onExport={onExport}
