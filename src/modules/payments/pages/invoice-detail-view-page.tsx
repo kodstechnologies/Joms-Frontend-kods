@@ -7,6 +7,7 @@ import { useBranding } from '@/app/providers/use-branding'
 import { useFinanceInvoice } from '@/modules/payments/hooks/use-finance'
 import { formatDate, formatInr, titleCase } from '@/modules/payments/utils/finance-mappers'
 import { Button } from '@/shared/components/ui/button'
+import { DetailViewSkeleton } from '@/shared/components/ui/skeleton'
 import { cn } from '@/shared/lib/cn'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import { downloadInvoiceDocument, invoiceFromFinanceInvoice } from '@/shared/utils/invoice-document'
@@ -77,7 +78,7 @@ export function InvoiceDetailViewPage() {
   const invoice = data?.data
 
   if (isLoading) {
-    return <p className="text-body-sm text-muted">Loading invoice details...</p>
+    return <DetailViewSkeleton pillCount={5} cardCount={2} />
   }
 
   if (isError || !invoice) {

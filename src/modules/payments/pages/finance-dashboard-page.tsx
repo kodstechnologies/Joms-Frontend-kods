@@ -14,13 +14,19 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
-import { RefreshCw, SlidersHorizontal, TrendingUp } from 'lucide-react'
+import {
+  BadgeIndianRupee,
+  ChartLine,
+  Clock,
+  Lock,
+  SlidersHorizontal,
+  TrendingUp,
+} from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import type { PropsWithChildren, ReactNode } from 'react'
 
 import {
   escrowStatusMock,
-  keyFinancialMetricsMock,
   monthlyComparisonMock,
   revenueByCategoryMock,
   revenueFeeTrendsMock,
@@ -46,6 +52,7 @@ import {
 } from '@/modules/expert/hooks/use-active-metric-ids'
 import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
 import { Button } from '@/shared/components/ui/button'
+import { StatCardSkeleton, ChartSkeleton } from '@/shared/components/ui/skeleton'
 import { cn } from '@/shared/lib/cn'
 
 const BRAND_GREEN = 'var(--brand-green)'
@@ -66,32 +73,14 @@ function ChartCard({
   title,
   children,
   className,
-  onRefresh,
-  refreshing,
 }: PropsWithChildren<{
   title: string
   className?: string
-  onRefresh?: () => void
-  refreshing?: boolean
 }>) {
   return (
     <div className={cn('radius-lg bg-brand-surface border border-white/[0.06] p-5', className)}>
       <div className="mb-4 flex items-center justify-between gap-3">
         <h2 className="text-body-md-semibold text-brand-text">{title}</h2>
-        <button
-          type="button"
-          aria-label={`Refresh ${title}`}
-          onClick={onRefresh}
-          disabled={refreshing || !onRefresh}
-          className={cn(
-            'text-muted hover:text-brand-text grid size-8 place-items-center rounded-lg border border-white/10 bg-black/40 transition-colors hover:bg-white/5 disabled:opacity-50',
-            onRefresh && 'cursor-pointer active:scale-95',
-          )}
-        >
-          <RefreshCw
-            className={cn('size-3.5 transition-transform', refreshing && 'animate-spin')}
-          />
-        </button>
       </div>
       {children}
     </div>
@@ -283,7 +272,7 @@ function formatCurrency(value: number) {
 
 export function FinanceDashboardPage() {
   const navigate = useNavigate()
-  const { data, isError, refetch, isFetching } = useFinanceDashboard()
+  const { data, isLoading, isError } = useFinanceDashboard()
   const summary = data?.data
   const totalEscrowAmount = summary?.totalInEscrow ?? 0
   const activeMetricIds = useActiveMetricIds(FINANCE_DASHBOARD_MODULE_KEY, [
@@ -307,6 +296,38 @@ export function FinanceDashboardPage() {
     [visibleMetricCards],
   )
 
+  const keyFinancialMetrics = useMemo(
+    () => [
+      {
+        label: 'GMV',
+        value: formatInr(summary?.totalPlatformRevenue ?? 0),
+        change: '0%',
+        changeType: 'up' as const,
+        icon: BadgeIndianRupee,
+      },
+      {
+        label: 'Platform Revenue',
+        value: formatInr(summary?.collectionsThisMonth ?? 0),
+        change: '0%',
+        changeType: 'up' as const,
+        icon: ChartLine,
+      },
+      {
+        label: 'In Escrow',
+        value: formatInr(summary?.totalInEscrow ?? 0),
+        subtext: `${summary?.activeEscrows ?? 0} Holds`,
+        icon: Lock,
+      },
+      {
+        label: 'Pending Payouts',
+        value: formatInr(summary?.pendingPayouts ?? 0),
+        subtext: `${summary?.pendingPayoutCount ?? 0} Pending`,
+        icon: Clock,
+      },
+    ],
+    [summary],
+  )
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -316,15 +337,7 @@ export function FinanceDashboardPage() {
             Track revenue, payouts, and financial performance
           </p>
         </div>
-        <div className="flex gap-2">
-          <Button
-            className="ui-cta ui-cta-secondary"
-            onClick={() => void refetch()}
-            disabled={isFetching}
-          >
-            <RefreshCw className={cn('size-4', isFetching && 'animate-spin')} />
-            Refresh
-          </Button>
+        <div>
           <Button
             className="ui-manage-metrics"
             onClick={() => navigate('/metrics/finance-dashboard')}
@@ -345,7 +358,8 @@ export function FinanceDashboardPage() {
           .map((id) => visibleMetricCards.find((metric) => metric.id === id))
           .filter(Boolean) as typeof visibleMetricCards
 
-        if (!sectionMetrics.length) return null
+        const activeCount = section.metricIds.filter((id) => visibleMetricIds.has(id)).length
+        if (!activeCount && !sectionMetrics.length) return null
 
         const cards = sectionMetrics
 
@@ -353,13 +367,17 @@ export function FinanceDashboardPage() {
           <div key={section.key}>
             {section.title ? <SectionTitle>{section.title}</SectionTitle> : null}
             <div className={section.gridClassName}>
-              {cards.map((metric) =>
-                section.key === 'escrow' ? (
-                  <SummaryCard key={metric.id ?? metric.label} metric={metric} />
-                ) : (
-                  <MetricCard key={metric.id ?? metric.label} metric={metric} />
-                ),
-              )}
+              {isLoading
+                ? Array.from({ length: activeCount || 3 }).map((_, idx) => (
+                    <StatCardSkeleton key={`sec-skel-${section.key}-${idx}`} />
+                  ))
+                : cards.map((metric) =>
+                    section.key === 'escrow' ? (
+                      <SummaryCard key={metric.id ?? metric.label} metric={metric} />
+                    ) : (
+                      <MetricCard key={metric.id ?? metric.label} metric={metric} />
+                    ),
+                  )}
             </div>
           </div>
         )
@@ -368,236 +386,237 @@ export function FinanceDashboardPage() {
       <div>
         <SectionTitle>Key Financial Metrics</SectionTitle>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {keyFinancialMetricsMock.map((metric) => (
-            <KeyMetricCard key={metric.label} metric={metric} />
-          ))}
+          {isLoading
+            ? Array.from({ length: 4 }).map((_, idx) => (
+                <StatCardSkeleton key={`key-metric-skel-${idx}`} />
+              ))
+            : keyFinancialMetrics.map((metric) => (
+                <KeyMetricCard key={metric.label} metric={metric} />
+              ))}
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[652fr_584fr]">
-        <ChartCard
-          title="Revenue & Fee Trends"
-          className="h-[382px]"
-          onRefresh={() => void refetch()}
-          refreshing={isFetching}
-        >
-          <div className="h-[300px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart
-                data={revenueFeeTrendsMock}
-                margin={{ left: 0, right: 8, top: 8, bottom: 0 }}
-              >
-                <defs>
-                  <linearGradient id="revenueAreaFill" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor={BRAND_GREEN} stopOpacity={0.35} />
-                    <stop offset="100%" stopColor={BRAND_GREEN} stopOpacity={0.02} />
-                  </linearGradient>
-                  <linearGradient id="platformFeeAreaFill" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor={BRAND_BLUE} stopOpacity={0.45} />
-                    <stop offset="100%" stopColor={BRAND_BLUE} stopOpacity={0.02} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid stroke="rgba(255,255,255,0.04)" vertical={false} />
-                <XAxis
-                  dataKey="date"
-                  tickLine={false}
-                  axisLine={false}
-                  tick={{ fill: BRAND_MUTED, fontSize: 11 }}
-                />
-                <YAxis
-                  domain={[0, 60000]}
-                  ticks={[0, 20000, 40000, 60000]}
-                  tickLine={false}
-                  axisLine={false}
-                  tick={{ fill: BRAND_MUTED, fontSize: 11 }}
-                  tickFormatter={(v) => v.toLocaleString('en-IN')}
-                />
-                <Tooltip content={<RevenueFeeTooltip />} />
-                <Area
-                  type="monotone"
-                  dataKey="revenue"
-                  stroke={BRAND_GREEN}
-                  strokeWidth={2}
-                  fill="url(#revenueAreaFill)"
-                />
-                <Area
-                  type="monotone"
-                  dataKey="platformFee"
-                  stroke={BRAND_BLUE}
-                  strokeWidth={2}
-                  fill="url(#platformFeeAreaFill)"
-                />
-              </ComposedChart>
-            </ResponsiveContainer>
+      {isLoading ? (
+        <>
+          <div className="grid grid-cols-1 gap-6 xl:grid-cols-[652fr_584fr]">
+            <ChartSkeleton title="Revenue & Fee Trends" height="300px" />
+            <ChartSkeleton title="Revenue by category" height="300px" />
           </div>
-        </ChartCard>
-
-        <ChartCard
-          title="Revenue by category"
-          className="xl:col-span-1"
-          onRefresh={() => void refetch()}
-          refreshing={isFetching}
-        >
-          <div className="flex h-full min-h-[300px] flex-col items-center justify-center gap-6 xl:flex-row">
-            <div className="h-[220px] w-[220px] shrink-0">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={revenueByCategoryMock}
-                    dataKey="amount"
-                    nameKey="name"
-                    innerRadius={60}
-                    outerRadius={95}
-                    stroke="rgba(255,255,255,0.06)"
-                    strokeWidth={2}
+          <ChartSkeleton title="Monthly Comparison" height="300px" />
+          <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+            <ChartSkeleton title="Escrow Status Breakdown" height="280px" />
+            <ChartSkeleton title="Weekly Payout Schedule" height="280px" />
+          </div>
+        </>
+      ) : (
+        <>
+          <div className="grid grid-cols-1 gap-6 xl:grid-cols-[652fr_584fr]">
+            <ChartCard title="Revenue & Fee Trends" className="h-[382px]">
+              <div className="h-[300px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <ComposedChart
+                    data={revenueFeeTrendsMock}
+                    margin={{ left: 0, right: 8, top: 8, bottom: 0 }}
                   >
-                    {revenueByCategoryMock.map((item) => (
-                      <Cell key={item.name} fill={item.color} />
-                    ))}
-                  </Pie>
-                </PieChart>
+                    <defs>
+                      <linearGradient id="revenueAreaFill" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor={BRAND_GREEN} stopOpacity={0.35} />
+                        <stop offset="100%" stopColor={BRAND_GREEN} stopOpacity={0.02} />
+                      </linearGradient>
+                      <linearGradient id="platformFeeAreaFill" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor={BRAND_BLUE} stopOpacity={0.45} />
+                        <stop offset="100%" stopColor={BRAND_BLUE} stopOpacity={0.02} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid stroke="rgba(255,255,255,0.04)" vertical={false} />
+                    <XAxis
+                      dataKey="date"
+                      tickLine={false}
+                      axisLine={false}
+                      tick={{ fill: BRAND_MUTED, fontSize: 11 }}
+                    />
+                    <YAxis
+                      domain={[0, 60000]}
+                      ticks={[0, 20000, 40000, 60000]}
+                      tickLine={false}
+                      axisLine={false}
+                      tick={{ fill: BRAND_MUTED, fontSize: 11 }}
+                      tickFormatter={(v) => v.toLocaleString('en-IN')}
+                    />
+                    <Tooltip content={<RevenueFeeTooltip />} />
+                    <Area
+                      type="monotone"
+                      dataKey="revenue"
+                      stroke={BRAND_GREEN}
+                      strokeWidth={2}
+                      fill="url(#revenueAreaFill)"
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="platformFee"
+                      stroke={BRAND_BLUE}
+                      strokeWidth={2}
+                      fill="url(#platformFeeAreaFill)"
+                    />
+                  </ComposedChart>
+                </ResponsiveContainer>
+              </div>
+            </ChartCard>
+
+            <ChartCard title="Revenue by category" className="xl:col-span-1">
+              <div className="flex h-full min-h-[300px] flex-col items-center justify-center gap-6 xl:flex-row">
+                <div className="h-[220px] w-[220px] shrink-0">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={revenueByCategoryMock}
+                        dataKey="amount"
+                        nameKey="name"
+                        innerRadius={60}
+                        outerRadius={95}
+                        stroke="rgba(255,255,255,0.06)"
+                        strokeWidth={2}
+                      >
+                        {revenueByCategoryMock.map((item) => (
+                          <Cell key={item.name} fill={item.color} />
+                        ))}
+                      </Pie>
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="w-full flex-1">
+                  <CategoryLegend items={revenueByCategoryMock} />
+                </div>
+              </div>
+            </ChartCard>
+          </div>
+
+          <ChartCard title="Monthly Comparison">
+            <div className="h-[300px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={monthlyComparisonMock}
+                  margin={{ left: 0, right: 8, top: 8, bottom: 0 }}
+                  barGap={6}
+                >
+                  <CartesianGrid stroke="rgba(255,255,255,0.04)" vertical={false} />
+                  <XAxis
+                    dataKey="month"
+                    tickLine={false}
+                    axisLine={false}
+                    tick={{ fill: BRAND_MUTED, fontSize: 11 }}
+                  />
+                  <YAxis
+                    domain={[0, 100000]}
+                    ticks={[0, 20000, 40000, 60000, 80000, 100000]}
+                    tickLine={false}
+                    axisLine={false}
+                    tick={{ fill: BRAND_MUTED, fontSize: 11 }}
+                    tickFormatter={(v) => v.toLocaleString('en-IN')}
+                  />
+                  <Tooltip
+                    content={<MonthlyComparisonTooltip />}
+                    cursor={{ fill: 'transparent' }}
+                  />
+                  <Legend
+                    wrapperStyle={{ color: BRAND_MUTED, fontSize: 12, paddingTop: 12 }}
+                    formatter={(value) => <span className="text-body-sm text-muted">{value}</span>}
+                  />
+                  <Bar
+                    dataKey="totalRevenue"
+                    name="Total Revenue"
+                    fill={BRAND_GREEN}
+                    radius={[3, 3, 0, 0]}
+                    maxBarSize={32}
+                  />
+                  <Bar
+                    dataKey="mrr"
+                    name="MRR"
+                    fill={BRAND_BLUE}
+                    radius={[3, 3, 0, 0]}
+                    maxBarSize={32}
+                  />
+                  <Bar
+                    dataKey="netProfit"
+                    name="Net Profit"
+                    fill={BRAND_ORANGE}
+                    radius={[3, 3, 0, 0]}
+                    maxBarSize={32}
+                  />
+                </BarChart>
               </ResponsiveContainer>
             </div>
-            <div className="w-full flex-1">
-              <CategoryLegend items={revenueByCategoryMock} />
-            </div>
-          </div>
-        </ChartCard>
-      </div>
+          </ChartCard>
 
-      <ChartCard
-        title="Monthly Comparison"
-        onRefresh={() => void refetch()}
-        refreshing={isFetching}
-      >
-        <div className="h-[300px] w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart
-              data={monthlyComparisonMock}
-              margin={{ left: 0, right: 8, top: 8, bottom: 0 }}
-              barGap={6}
-            >
-              <CartesianGrid stroke="rgba(255,255,255,0.04)" vertical={false} />
-              <XAxis
-                dataKey="month"
-                tickLine={false}
-                axisLine={false}
-                tick={{ fill: BRAND_MUTED, fontSize: 11 }}
-              />
-              <YAxis
-                domain={[0, 100000]}
-                ticks={[0, 20000, 40000, 60000, 80000, 100000]}
-                tickLine={false}
-                axisLine={false}
-                tick={{ fill: BRAND_MUTED, fontSize: 11 }}
-                tickFormatter={(v) => v.toLocaleString('en-IN')}
-              />
-              <Tooltip content={<MonthlyComparisonTooltip />} cursor={{ fill: 'transparent' }} />
-              <Legend
-                wrapperStyle={{ color: BRAND_MUTED, fontSize: 12, paddingTop: 12 }}
-                formatter={(value) => <span className="text-body-sm text-muted">{value}</span>}
-              />
-              <Bar
-                dataKey="totalRevenue"
-                name="Total Revenue"
-                fill={BRAND_GREEN}
-                radius={[3, 3, 0, 0]}
-                maxBarSize={32}
-              />
-              <Bar
-                dataKey="mrr"
-                name="MRR"
-                fill={BRAND_BLUE}
-                radius={[3, 3, 0, 0]}
-                maxBarSize={32}
-              />
-              <Bar
-                dataKey="netProfit"
-                name="Net Profit"
-                fill={BRAND_ORANGE}
-                radius={[3, 3, 0, 0]}
-                maxBarSize={32}
-              />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </ChartCard>
+          <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+            <ChartCard title="Escrow Status Breakdown">
+              <div className="space-y-5">
+                {escrowStatusMock.map((item) => {
+                  const widthPercent = Math.round((item.value / totalEscrowAmount) * 100)
 
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-        <ChartCard
-          title="Escrow Status Breakdown"
-          onRefresh={() => void refetch()}
-          refreshing={isFetching}
-        >
-          <div className="space-y-5">
-            {escrowStatusMock.map((item) => {
-              const widthPercent = Math.round((item.value / totalEscrowAmount) * 100)
-
-              return (
-                <div key={item.label} className="space-y-2">
-                  <div className="text-body-sm flex items-center justify-between gap-3">
-                    <span className="text-muted">{item.label}</span>
-                    <span className="text-brand-text font-semibold">
-                      {formatCurrency(item.value)}
-                    </span>
-                  </div>
-                  <div className="h-2 overflow-hidden rounded-full bg-white/10">
-                    <div
-                      className="h-full rounded-full transition-all"
-                      style={{ width: `${widthPercent}%`, backgroundColor: item.color }}
-                    />
-                  </div>
+                  return (
+                    <div key={item.label} className="space-y-2">
+                      <div className="text-body-sm flex items-center justify-between gap-3">
+                        <span className="text-muted">{item.label}</span>
+                        <span className="text-brand-text font-semibold">
+                          {formatCurrency(item.value)}
+                        </span>
+                      </div>
+                      <div className="h-2 overflow-hidden rounded-full bg-white/10">
+                        <div
+                          className="h-full rounded-full transition-all"
+                          style={{ width: `${widthPercent}%`, backgroundColor: item.color }}
+                        />
+                      </div>
+                    </div>
+                  )
+                })}
+                <div className="flex items-center justify-between border-t border-white/10 pt-4">
+                  <span className="text-body-md-semibold text-brand-text">Total In Escrow</span>
+                  <span className="text-body-md-semibold text-brand-text">
+                    {formatInr(totalEscrowAmount)}
+                  </span>
                 </div>
-              )
-            })}
-            <div className="flex items-center justify-between border-t border-white/10 pt-4">
-              <span className="text-body-md-semibold text-brand-text">Total In Escrow</span>
-              <span className="text-body-md-semibold text-brand-text">
-                {formatInr(totalEscrowAmount)}
-              </span>
-            </div>
-          </div>
-        </ChartCard>
+              </div>
+            </ChartCard>
 
-        <ChartCard
-          title="Weekly Payout Schedule"
-          onRefresh={() => void refetch()}
-          refreshing={isFetching}
-        >
-          <div className="h-[280px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                data={weeklyPayoutScheduleMock}
-                margin={{ left: 0, right: 8, top: 8, bottom: 0 }}
-              >
-                <CartesianGrid stroke="rgba(255,255,255,0.04)" vertical={false} />
-                <XAxis
-                  dataKey="day"
-                  tickLine={false}
-                  axisLine={false}
-                  tick={{ fill: BRAND_MUTED, fontSize: 11 }}
-                />
-                <YAxis
-                  domain={[0, 100000]}
-                  ticks={[0, 20000, 40000, 60000, 80000, 100000]}
-                  tickLine={false}
-                  axisLine={false}
-                  tick={{ fill: BRAND_MUTED, fontSize: 11 }}
-                  tickFormatter={(v) => v.toLocaleString('en-IN')}
-                />
-                <Tooltip content={<WeeklyPayoutTooltip />} cursor={{ fill: 'transparent' }} />
-                <Bar
-                  dataKey="amount"
-                  name="Amount"
-                  fill="var(--brand-accent)"
-                  radius={[4, 4, 0, 0]}
-                  maxBarSize={48}
-                />
-              </BarChart>
-            </ResponsiveContainer>
+            <ChartCard title="Weekly Payout Schedule">
+              <div className="h-[280px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={weeklyPayoutScheduleMock}
+                    margin={{ left: 0, right: 8, top: 8, bottom: 0 }}
+                  >
+                    <CartesianGrid stroke="rgba(255,255,255,0.04)" vertical={false} />
+                    <XAxis
+                      dataKey="day"
+                      tickLine={false}
+                      axisLine={false}
+                      tick={{ fill: BRAND_MUTED, fontSize: 11 }}
+                    />
+                    <YAxis
+                      domain={[0, 100000]}
+                      ticks={[0, 20000, 40000, 60000, 80000, 100000]}
+                      tickLine={false}
+                      axisLine={false}
+                      tick={{ fill: BRAND_MUTED, fontSize: 11 }}
+                      tickFormatter={(v) => v.toLocaleString('en-IN')}
+                    />
+                    <Tooltip content={<WeeklyPayoutTooltip />} cursor={{ fill: 'transparent' }} />
+                    <Bar
+                      dataKey="amount"
+                      name="Amount"
+                      fill="var(--brand-accent)"
+                      radius={[4, 4, 0, 0]}
+                      maxBarSize={48}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </ChartCard>
           </div>
-        </ChartCard>
-      </div>
+        </>
+      )}
     </div>
   )
 }

@@ -194,7 +194,7 @@ export function MonitorMessagesButton({ onClick }: { onClick: () => void }) {
 }
 
 const TONE_BAR: Record<StatusTone, string> = {
-  success: 'bg-[#287D3C]',
+  success: 'bg-[#23783F]',
   active: 'bg-[#8A5A2B]',
   idle: 'bg-[#3A3A3A]',
   danger: 'bg-[#7A2E2E]',
@@ -214,7 +214,7 @@ export function StatusBar({
   return (
     <div
       className={cn(
-        'flex items-center justify-between px-5 py-2.5 text-sm font-semibold text-white',
+        'flex items-center justify-between px-5 py-3 text-sm font-semibold text-white',
         TONE_BAR[tone],
       )}
     >
@@ -229,7 +229,7 @@ export function StatusBar({
       </button>
       <span className="flex items-center gap-2">
         {workLabel === 'Completed' ? (
-          <CheckCircle2 className="size-4" aria-hidden="true" />
+          <CheckCircle2 className="size-4.5 fill-white text-[#23783F]" aria-hidden="true" />
         ) : workLabel === 'Ongoing' || workLabel === 'Pending Review' ? (
           <Hourglass className="size-4" aria-hidden="true" />
         ) : (
@@ -265,7 +265,7 @@ export function EngagementCard({
   onPaymentClick?: () => void
 }) {
   return (
-    <article className="max-w-[560px] overflow-hidden rounded-[28px] bg-[#1A1A1A]">
+    <article className="max-w-[560px] overflow-hidden rounded-[20px] border border-white/[0.06] bg-[#141414]">
       <StatusBar
         paymentLabel={paymentLabel}
         workLabel={workLabel}
@@ -273,21 +273,23 @@ export function EngagementCard({
         onPaymentClick={onPaymentClick}
       />
       <div className="px-6 py-5">
-        <p className="text-muted text-[12px]">{typeLabel}</p>
-        <h2 className="mt-1 text-xl font-bold text-white">{title}</h2>
+        <p className="text-muted text-[12px] font-medium">{typeLabel}</p>
+        <h2 className="mt-1 text-lg font-bold text-white">{title}</h2>
         {description ? (
           <p className="text-muted mt-3 text-sm leading-relaxed">{description}</p>
         ) : null}
-        <div className="mt-6 grid grid-cols-2 gap-6">
+        <div className="mt-6 grid grid-cols-2 gap-6 border-t border-white/[0.08] pt-4">
           <FundStat
             icon={<Calendar className="size-4" />}
             label="Timelines"
             value={timeline || DASH}
+            align="left"
           />
           <FundStat
             icon={<Landmark className="size-4" />}
             label="Allotted Fund"
             value={formatCurrency(allottedFund, currency, 2)}
+            align="right"
           />
         </div>
       </div>
@@ -303,34 +305,37 @@ export function MilestoneStatusCard({
   currency: string
 }) {
   const chrome = milestoneChrome(milestone)
-  const title = milestone.title.toLowerCase().startsWith('milestone')
-    ? milestone.title
-    : `Milestone ${milestone.index + 1}: ${milestone.title}`
+  const milestoneLabel = `Milestone ${milestone.index + 1}`
+  const cleanTitle =
+    milestone.title.replace(/^milestone\s*\d*\s*[:\-–—]?\s*/i, '').trim() || milestone.title
 
   return (
-    <article className="min-w-0 flex-1 overflow-hidden rounded-[24px] bg-[#1A1A1A]">
+    <article className="min-w-0 flex-1 overflow-hidden rounded-[20px] border border-white/[0.06] bg-[#141414]">
       <StatusBar
         paymentLabel={chrome.paymentLabel}
         workLabel={chrome.workLabel}
         tone={chrome.tone}
       />
       <div className="px-5 py-4">
-        <h3 className="text-sm font-semibold text-white">{title}</h3>
+        <p className="text-muted text-[12px] font-medium">{milestoneLabel}</p>
+        <h3 className="mt-1 text-sm font-bold text-white">{cleanTitle}</h3>
         {milestone.description || milestone.goal ? (
-          <p className="text-muted mt-2 line-clamp-3 text-[12px] leading-relaxed">
+          <p className="text-muted mt-2.5 line-clamp-3 text-[12px] leading-relaxed">
             {milestone.description || milestone.goal}
           </p>
         ) : null}
-        <div className="mt-4 grid grid-cols-2 gap-4">
+        <div className="mt-5 grid grid-cols-2 gap-4 border-t border-white/[0.08] pt-4">
           <FundStat
             icon={<Calendar className="size-3.5" />}
             label="Timelines"
             value={milestone.timeline || DASH}
+            align="left"
           />
           <FundStat
             icon={<Landmark className="size-3.5" />}
             label="Allotted Fund"
             value={formatCurrency(milestone.advanceAmount ?? milestone.price, currency, 2)}
+            align="right"
           />
         </div>
       </div>
@@ -338,13 +343,28 @@ export function MilestoneStatusCard({
   )
 }
 
-function FundStat({ icon, label, value }: { icon: ReactNode; label: string; value: string }) {
+function FundStat({
+  icon,
+  label,
+  value,
+  align = 'left',
+}: {
+  icon: ReactNode
+  label: string
+  value: string
+  align?: 'left' | 'right'
+}) {
   return (
-    <div>
+    <div className={cn(align === 'right' ? 'text-right' : 'text-left')}>
       <p className="text-muted text-[11px]">{label}</p>
-      <p className="mt-1 flex items-center gap-2 text-sm font-semibold text-white">
+      <p
+        className={cn(
+          'mt-1 flex items-center gap-2 text-sm font-semibold text-white',
+          align === 'right' ? 'justify-end' : 'justify-start',
+        )}
+      >
         <span className="text-white/80">{icon}</span>
-        {value}
+        <span>{value}</span>
       </p>
     </div>
   )

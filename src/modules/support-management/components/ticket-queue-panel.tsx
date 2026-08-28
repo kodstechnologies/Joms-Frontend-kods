@@ -18,6 +18,7 @@ type TicketQueuePanelProps = {
   disableClientFilter?: boolean
   showFilters: boolean
   filterPanel?: React.ReactNode
+  isLoading?: boolean
 }
 
 export function TicketQueuePanel({
@@ -31,6 +32,7 @@ export function TicketQueuePanel({
   disableClientFilter = false,
   showFilters,
   filterPanel,
+  isLoading = false,
 }: TicketQueuePanelProps) {
   const filtered = disableClientFilter
     ? tickets
@@ -83,35 +85,57 @@ export function TicketQueuePanel({
       </div>
 
       <div className="min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain p-3">
-        {filtered.map((ticket) => (
-          <button
-            key={ticket.id}
-            type="button"
-            onClick={() => onSelect(ticket.id)}
-            className={cn(
-              'w-full rounded-xl border p-3 text-left transition-colors',
-              selectedId === ticket.id
-                ? 'border-l-brand-accent bg-brand-surface border-l-4 border-white/10'
-                : 'bg-brand-bg border-white/5 hover:border-white/10',
-            )}
-          >
-            <div className="flex items-center justify-between gap-2">
-              <span className="text-body-sm-semibold text-brand-accent">#{ticket.id}</span>
-              <span className="text-body-sm text-muted flex items-center gap-1">
-                <img src={calendarIcon} alt="calendar" className="size-3" />
-                {ticket.createdAt}
-              </span>
+        {isLoading ? (
+          Array.from({ length: 6 }).map((_, idx) => (
+            <div
+              key={`queue-skel-${idx}`}
+              className="bg-brand-bg w-full animate-pulse space-y-2.5 rounded-xl border border-white/5 p-3"
+            >
+              <div className="flex items-center justify-between">
+                <div className="h-3.5 w-16 rounded bg-white/10" />
+                <div className="h-3 w-20 rounded bg-white/10" />
+              </div>
+              <div className="h-4 w-3/4 rounded bg-white/10" />
+              <div className="h-3 w-1/2 rounded bg-white/5" />
+              <div className="flex gap-2 pt-1">
+                <div className="h-4 w-12 rounded-full bg-white/10" />
+                <div className="h-4 w-14 rounded-full bg-white/10" />
+              </div>
             </div>
-            <p className="text-body-md-medium text-brand-text mt-2">{ticket.subject}</p>
-            <p className="text-body-sm text-muted mt-1">
-              {ticket.reporter} • {getReporterTypeLabel(ticket.reporterType)}
-            </p>
-            <div className="mt-2 flex flex-wrap gap-1.5">
-              <TicketPriorityBadge priority={ticket.priority} />
-              <TicketStatusBadge status={ticket.status} />
-            </div>
-          </button>
-        ))}
+          ))
+        ) : filtered.length === 0 ? (
+          <p className="text-muted text-body-sm py-8 text-center">No tickets in queue</p>
+        ) : (
+          filtered.map((ticket) => (
+            <button
+              key={ticket.id}
+              type="button"
+              onClick={() => onSelect(ticket.id)}
+              className={cn(
+                'w-full rounded-xl border p-3 text-left transition-colors',
+                selectedId === ticket.id
+                  ? 'border-l-brand-accent bg-brand-surface border-l-4 border-white/10'
+                  : 'bg-brand-bg border-white/5 hover:border-white/10',
+              )}
+            >
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-body-sm-semibold text-brand-accent">#{ticket.id}</span>
+                <span className="text-body-sm text-muted flex items-center gap-1">
+                  <img src={calendarIcon} alt="calendar" className="size-3" />
+                  {ticket.createdAt}
+                </span>
+              </div>
+              <p className="text-body-md-medium text-brand-text mt-2">{ticket.subject}</p>
+              <p className="text-body-sm text-muted mt-1">
+                {ticket.reporter} • {getReporterTypeLabel(ticket.reporterType)}
+              </p>
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                <TicketPriorityBadge priority={ticket.priority} />
+                <TicketStatusBadge status={ticket.status} />
+              </div>
+            </button>
+          ))
+        )}
       </div>
     </div>
   )

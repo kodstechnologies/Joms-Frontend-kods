@@ -7,6 +7,7 @@ import { AddFinanceNoteModal } from '@/modules/payments/components/add-finance-n
 import { useAddFinanceNote, useFinanceTaxDetail } from '@/modules/payments/hooks/use-finance'
 import { formatDate, formatInr, titleCase } from '@/modules/payments/utils/finance-mappers'
 import { Button } from '@/shared/components/ui/button'
+import { DetailViewSkeleton } from '@/shared/components/ui/skeleton'
 import { cn } from '@/shared/lib/cn'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 
@@ -74,7 +75,7 @@ export function TaxComplianceDetailViewPage() {
   const tax = data?.data
 
   if (isLoading) {
-    return <p className="text-body-sm text-muted">Loading tax record...</p>
+    return <DetailViewSkeleton pillCount={6} cardCount={2} />
   }
 
   if (isError || !tax) {

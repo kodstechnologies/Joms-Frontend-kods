@@ -13,6 +13,8 @@ import { getApiErrorMessage, getPriorityLabel } from '../utils/support-format'
 import { cn } from '@/shared/lib/cn'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 
+import { DetailViewSkeleton } from '@/shared/components/ui/skeleton'
+
 export function TicketDetailPage() {
   const navigate = useNavigate()
   const { id } = useParams<{ id: string }>()
@@ -25,11 +27,7 @@ export function TicketDetailPage() {
   const messages = data?.data?.messages ?? []
 
   if (isLoading && !ticket) {
-    return (
-      <div className="space-y-6">
-        <p className="text-body-md text-muted">Loading ticketâ€¦</p>
-      </div>
-    )
+    return <DetailViewSkeleton pillCount={8} cardCount={2} />
   }
 
   if (!ticket) {

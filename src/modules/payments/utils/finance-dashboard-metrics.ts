@@ -137,8 +137,87 @@ export function buildFinanceDashboardMetricCards(
 
   push(
     'monthly-recurring-revenue',
-    mockOrPlaceholder('monthly-recurring-revenue', 'Monthly Recurring Revenue (MRR)'),
+    summary
+      ? {
+          label: 'Monthly Recurring Revenue',
+          value: formatInr(summary.collectionsThisMonth),
+          change: '0%',
+          changeType: 'up',
+          changeNote: 'vs last month',
+        }
+      : mockById.get('monthly-recurring-revenue')!,
   )
+
+  const grossMarginValue =
+    summary && summary.totalPlatformRevenue > 0
+      ? `${Math.round((Math.max(0, summary.totalPlatformRevenue - summary.pendingPayouts) / summary.totalPlatformRevenue) * 100)}%`
+      : '0%'
+
+  push(
+    'gross-margin',
+    summary
+      ? {
+          label: 'Gross Margin',
+          value: grossMarginValue,
+          change: '0%',
+          changeType: 'up',
+          changeNote: 'vs last month',
+        }
+      : mockById.get('gross-margin')!,
+  )
+
+  const netProfitValue = summary
+    ? Math.max(0, summary.totalPlatformRevenue - summary.pendingPayouts)
+    : 0
+
+  push(
+    'net-profit',
+    summary
+      ? {
+          label: 'Net Profit',
+          value: formatInr(netProfitValue),
+          change: '0%',
+          changeType: 'up',
+          changeNote: 'vs last month',
+        }
+      : mockById.get('net-profit')!,
+  )
+
+  push(
+    'pending-payouts',
+    summary
+      ? {
+          label: 'Pending Payouts',
+          value: formatInr(summary.pendingPayouts),
+          change: '0%',
+          changeType: 'up',
+          changeNote: 'vs last month',
+        }
+      : mockById.get('pending-payouts')!,
+  )
+
+  push('avg-payout-cycle-time', mockById.get('avg-payout-cycle-time')!)
+
+  const refundRateValue =
+    summary && summary.totalPlatformRevenue > 0
+      ? `${((summary.disputedAmount / summary.totalPlatformRevenue) * 100).toFixed(1)}%`
+      : '0%'
+
+  push(
+    'refund-rate',
+    summary
+      ? {
+          label: 'Refund Rate',
+          value: refundRateValue,
+          change: '0%',
+          changeType: 'up',
+          changeNote: 'vs last month',
+        }
+      : mockById.get('refund-rate')!,
+  )
+
+  push('chargeback-rate', mockById.get('chargeback-rate')!)
+  mockOrPlaceholder('monthly-recurring-revenue', 'Monthly Recurring Revenue (MRR)')
 
   push(
     'platform-gross-margin',

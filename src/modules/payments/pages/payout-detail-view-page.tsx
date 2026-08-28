@@ -19,6 +19,7 @@ import {
   titleCase,
 } from '@/modules/payments/utils/finance-mappers'
 import { Button } from '@/shared/components/ui/button'
+import { DetailViewSkeleton } from '@/shared/components/ui/skeleton'
 import { cn } from '@/shared/lib/cn'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import { downloadInvoiceDocument, invoiceFromFinancePayout } from '@/shared/utils/invoice-document'
@@ -81,7 +82,7 @@ export function PayoutDetailViewPage() {
   })
 
   if (isLoading && !payout) {
-    return <p className="text-body-sm text-muted">Loading payout details...</p>
+    return <DetailViewSkeleton pillCount={6} cardCount={2} />
   }
 
   if (isError || !payout) {

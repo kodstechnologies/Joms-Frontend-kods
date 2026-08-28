@@ -1,4 +1,4 @@
-import { useEffect, type RefObject } from 'react'
+import { useEffect, useRef, type RefObject } from 'react'
 
 const FOCUSABLE =
   'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
@@ -8,6 +8,12 @@ export function useDialogFocusTrap(
   onClose: () => void,
   dialogRef: RefObject<HTMLElement | null>,
 ) {
+  const onCloseRef = useRef(onClose)
+
+  useEffect(() => {
+    onCloseRef.current = onClose
+  }, [onClose])
+
   useEffect(() => {
     if (!open) return undefined
 
@@ -18,12 +24,15 @@ export function useDialogFocusTrap(
         (el) => !el.hasAttribute('disabled') && el.tabIndex !== -1,
       )
 
-    focusables()[0]?.focus()
+    // Only set initial focus if focus is not already inside the dialog
+    if (dialog && !dialog.contains(document.activeElement)) {
+      focusables()[0]?.focus()
+    }
 
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         event.preventDefault()
-        onClose()
+        onCloseRef.current?.()
         return
       }
       if (event.key !== 'Tab') return
@@ -49,5 +58,5 @@ export function useDialogFocusTrap(
       document.body.style.overflow = previousOverflow
       previous?.focus()
     }
-  }, [open, onClose, dialogRef])
+  }, [open, dialogRef])
 }

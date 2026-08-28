@@ -17,6 +17,7 @@ import {
 } from '@/shared/components/table/table-actions-dropdown'
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
+import { StatCardSkeleton } from '@/shared/components/ui/skeleton'
 import type { FilterValues } from '@/shared/types/data-filter'
 import { exportDisplayValue } from '@/shared/utils/export-utils'
 import {
@@ -318,9 +319,11 @@ export function PayoutManagementPage() {
       {isError ? <p className="text-body-sm text-brand-danger">Failed to load payouts.</p> : null}
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {summaryCards.map((metric) => (
-          <SummaryCard key={metric.label} {...metric} />
-        ))}
+        {isLoading || dashboardQuery.isLoading
+          ? Array.from({ length: 4 }).map((_, idx) => (
+              <StatCardSkeleton key={`payout-skel-${idx}`} />
+            ))
+          : summaryCards.map((metric) => <SummaryCard key={metric.label} {...metric} />)}
       </div>
 
       <DataTable

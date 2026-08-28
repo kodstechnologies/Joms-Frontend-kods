@@ -8,6 +8,7 @@ type SupportStatCardProps = {
   percentage?: number
   direction?: 'up' | 'down'
   label?: string
+  isLoading?: boolean
 }
 
 export function SupportStatCard({
@@ -16,7 +17,21 @@ export function SupportStatCard({
   percentage = 0,
   direction = 'up',
   label = 'vs last month',
+  isLoading = false,
 }: SupportStatCardProps) {
+  if (isLoading) {
+    return (
+      <div className="radius-lg bg-brand-surface flex min-h-[130px] animate-pulse flex-col justify-center border border-white/[0.06] p-5">
+        <div className="h-3.5 w-28 rounded bg-white/10" />
+        <div className="mt-3 h-8 w-24 rounded bg-white/10" />
+        <div className="mt-3 flex items-center gap-2">
+          <div className="h-4 w-12 rounded-md bg-white/10" />
+          <div className="h-3 w-16 rounded bg-white/5" />
+        </div>
+      </div>
+    )
+  }
+
   const isUp = direction === 'up'
 
   return (

@@ -14,6 +14,7 @@ import {
   useActiveMetricIds,
 } from '@/modules/expert/hooks/use-active-metric-ids'
 import { StatCard, type StatCardProps } from '@/shared/components/dashboard/stat-card'
+import { StatCardSkeleton } from '@/shared/components/ui/skeleton'
 import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
 
 type MembershipKpiStat = StatCardProps & { id: string }
@@ -102,7 +103,7 @@ function buildMembershipKpiStats(
 }
 
 export function MembershipStatsBar() {
-  const { data } = useMembershipStats()
+  const { data, isLoading } = useMembershipStats()
   const apiStats = data?.data
   const activeMetricIds = useActiveMetricIds(MEMBERSHIPS_MODULE_KEY, [
     ...DEFAULT_MEMBERSHIP_METRIC_IDS,
@@ -123,30 +124,48 @@ export function MembershipStatsBar() {
   }, [apiStats, filteredActiveMetricIds])
 
   const columnsClass =
-    visibleStats.length <= 3
+    (isLoading ? filteredActiveMetricIds.length : visibleStats.length) <= 3
       ? 'md:grid-cols-2 xl:grid-cols-3'
-      : visibleStats.length <= 5
+      : (isLoading ? filteredActiveMetricIds.length : visibleStats.length) <= 5
         ? 'md:grid-cols-2 xl:grid-cols-5'
         : 'md:grid-cols-2 xl:grid-cols-4'
 
   return (
     <div className={`grid grid-cols-1 gap-4 ${columnsClass}`}>
-      {visibleStats.map((stat) => (
-        <StatCard
-          key={stat.id}
-          title={stat.title}
-          value={stat.value}
-          trend={stat.trend}
-          hint={stat.hint}
-        />
-      ))}
+      {isLoading
+        ? filteredActiveMetricIds.map((id) => <StatCardSkeleton key={id} />)
+        : visibleStats.map((stat) => (
+            <StatCard
+              key={stat.id}
+              title={stat.title}
+              value={stat.value}
+              trend={stat.trend}
+              hint={stat.hint}
+            />
+          ))}
     </div>
   )
 }
 
 export function MembershipPlanStatsBar() {
-  const { data } = useMembershipStats()
+  const { data, isLoading } = useMembershipStats()
   const counts = data?.data?.counts
+
+  if (isLoading) {
+    return (
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+        {Array.from({ length: 4 }).map((_, idx) => (
+          <div
+            key={idx}
+            className="animate-pulse space-y-2 rounded-xl border border-white/10 bg-white/5 px-4 py-3"
+          >
+            <div className="h-3 w-20 rounded bg-white/10" />
+            <div className="h-7 w-12 rounded bg-white/10" />
+          </div>
+        ))}
+      </div>
+    )
+  }
 
   return (
     <div className="grid grid-cols-2 gap-3 md:grid-cols-4">

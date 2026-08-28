@@ -28,17 +28,21 @@ export function buildFinanceRefundsMetricCards(params: {
     (row) => row.type === 'Refund' && row.status === 'Pending',
   ).length
 
+  const activeDisputes =
+    params.summary?.openDisputes ??
+    params.rows.filter(
+      (row) =>
+        row.type === 'Dispute' &&
+        (row.status === 'Open' || row.status === 'In Review' || row.status === 'Pending'),
+    ).length
+
+  const resolvedCount = params.rows.filter((row) => row.status === 'Resolved').length
+
   const liveValues: Record<string, string> = {
-    'pending-refunds':
-      pendingRefunds > 0
-        ? String(pendingRefunds).padStart(2, '0')
-        : mockByLabel.get('Pending Refunds')!.value,
-    'active-disputes': mockByLabel.get('Active Disputes')!.value,
-    'amount-in-disputed':
-      params.summary != null
-        ? formatInr(params.summary.disputedAmount)
-        : mockByLabel.get('Amount in Disputed')!.value,
-    resolved: mockByLabel.get('Resolved')!.value,
+    'pending-refunds': String(pendingRefunds).padStart(2, '0'),
+    'active-disputes': String(activeDisputes).padStart(2, '0'),
+    'amount-in-disputed': params.summary != null ? formatInr(params.summary.disputedAmount) : '₹0',
+    resolved: String(resolvedCount).padStart(2, '0'),
   }
 
   return FINANCE_REFUNDS_METRICS_CATALOG.map((item) => {

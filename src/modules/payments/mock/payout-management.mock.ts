@@ -20,10 +20,10 @@ export type PayoutRow = {
 }
 
 export const payoutSummaryMetricsMock: PayoutSummaryMetric[] = [
-  { label: 'Total Payments', value: '08', change: '+5.2%', changeNote: 'vs last month' },
-  { label: 'Completed', value: '$487,650', change: '+5.2%', changeNote: 'vs last month' },
-  { label: 'Pending', value: '$487,650', change: '+5.2%', changeNote: 'vs last month' },
-  { label: 'Failed', value: '$487,650', change: '+5.2%', changeNote: 'vs last month' },
+  { label: 'Total Payments', value: '0', change: '0%', changeNote: 'vs last month' },
+  { label: 'Completed', value: '₹0', change: '0%', changeNote: 'vs last month' },
+  { label: 'Pending', value: '0', change: '0%', changeNote: 'vs last month' },
+  { label: 'Failed', value: '0', change: '0%', changeNote: 'vs last month' },
 ]
 
 export const payoutRowsMock: PayoutRow[] = [
@@ -32,7 +32,7 @@ export const payoutRowsMock: PayoutRow[] = [
     payoutId: 'PYMT_0021',
     recipient: 'Sarah Wilson',
     type: 'Event (Service)',
-    amount: '$12,500',
+    amount: '₹12,500',
     method: 'Credit Card',
     initiatedDate: '01/02/2023',
     description: 'Event hosting payment',
@@ -43,7 +43,7 @@ export const payoutRowsMock: PayoutRow[] = [
     payoutId: 'PYMT_0022',
     recipient: 'Alex Johnson',
     type: 'Venue Rental',
-    amount: '$8,200',
+    amount: '₹8,200',
     method: 'Bank Transfer',
     initiatedDate: '02/02/2023',
     description: 'Venue booking payout',
@@ -54,7 +54,7 @@ export const payoutRowsMock: PayoutRow[] = [
     payoutId: 'PYMT_0023',
     recipient: 'Rajesh Kumar',
     type: 'Consultation',
-    amount: '$4,500',
+    amount: '₹4,500',
     method: 'UPI',
     initiatedDate: '03/02/2023',
     description: 'Expert consultation fee',
@@ -65,7 +65,7 @@ export const payoutRowsMock: PayoutRow[] = [
     payoutId: 'PYMT_0024',
     recipient: 'Legal Corp Inc.',
     type: 'Service',
-    amount: '$15,000',
+    amount: '₹15,000',
     method: 'Credit Card',
     initiatedDate: '04/02/2023',
     description: 'NDA review service payout',

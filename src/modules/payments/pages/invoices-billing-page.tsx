@@ -17,6 +17,7 @@ import {
 } from '@/shared/components/table/table-actions-dropdown'
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
+import { StatCardSkeleton } from '@/shared/components/ui/skeleton'
 import type { FilterValues } from '@/shared/types/data-filter'
 import { exportDisplayValue } from '@/shared/utils/export-utils'
 import {
@@ -333,9 +334,11 @@ export function InvoicesBillingPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {invoiceSummaryMetrics.map((metric) => (
-          <SummaryCard key={metric.label} {...metric} />
-        ))}
+        {isLoading
+          ? Array.from({ length: 4 }).map((_, idx) => (
+              <StatCardSkeleton key={`invoice-skel-${idx}`} />
+            ))
+          : invoiceSummaryMetrics.map((metric) => <SummaryCard key={metric.label} {...metric} />)}
       </div>
 
       {isError ? <p className="text-body-sm text-brand-danger">Failed to load invoices.</p> : null}

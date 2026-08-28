@@ -20,6 +20,7 @@ import {
   mapRefundStatus,
   titleCase,
 } from '@/modules/payments/utils/finance-mappers'
+import { DetailViewSkeleton } from '@/shared/components/ui/skeleton'
 import { cn } from '@/shared/lib/cn'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 
@@ -106,7 +107,7 @@ export function RefundDetailViewPage() {
     (err as { response?: { data?: { message?: string } } })?.response?.data?.message || fallback
 
   if (isLoading) {
-    return <p className="text-body-sm text-muted">Loading refund details...</p>
+    return <DetailViewSkeleton pillCount={6} cardCount={2} />
   }
 
   if (isError || !refund) {

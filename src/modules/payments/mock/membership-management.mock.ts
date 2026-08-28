@@ -20,10 +20,10 @@ export type MembershipRow = {
 }
 
 export const membershipSummaryMetricsMock: MembershipSummaryMetric[] = [
-  { label: 'Active Subscriptions', value: '08', change: '+5.2%', changeNote: 'vs last month' },
-  { label: 'Started', value: '$487,650', change: '+5.2%', changeNote: 'vs last month' },
-  { label: 'Cancelled', value: '$487,650', change: '+5.2%', changeNote: 'vs last month' },
-  { label: 'Expired', value: '$487,650', change: '+5.2%', changeNote: 'vs last month' },
+  { label: 'Active Subscriptions', value: '0', change: '0%', changeNote: 'vs last month' },
+  { label: 'Started', value: '0', change: '0%', changeNote: 'vs last month' },
+  { label: 'Cancelled', value: '0', change: '0%', changeNote: 'vs last month' },
+  { label: 'Expired', value: '0', change: '0%', changeNote: 'vs last month' },
 ]
 
 export const membershipRowsMock: MembershipRow[] = [
@@ -32,7 +32,7 @@ export const membershipRowsMock: MembershipRow[] = [
     subscriptionId: 'PMT_0021',
     name: 'Alex Johnson',
     planName: 'Rising Star',
-    amount: '$12,500',
+    amount: '₹12,500',
     billingCycle: 'Monthly',
     startDate: '01/02/2023',
     nextBilling: '01/03/2023',
@@ -54,7 +54,7 @@ export const membershipRowsMock: MembershipRow[] = [
     subscriptionId: 'PMT_0023',
     name: 'Sarah Wilson',
     planName: 'Premium Pro',
-    amount: '$24,999',
+    amount: '₹24,999',
     billingCycle: 'Yearly',
     startDate: '10/01/2023',
     nextBilling: '10/01/2024',
@@ -65,7 +65,7 @@ export const membershipRowsMock: MembershipRow[] = [
     subscriptionId: 'PMT_0024',
     name: 'Dr. Michael Chen',
     planName: 'Expert Plus',
-    amount: '$8,999',
+    amount: '₹8,999',
     billingCycle: 'Monthly',
     startDate: '05/06/2022',
     nextBilling: '—',
