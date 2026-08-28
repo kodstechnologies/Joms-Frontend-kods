@@ -21,7 +21,7 @@ import { isKycSubmittedForApplication } from '../../utils/expert-application-hel
 import { openExpertApplicationView } from '../../utils/expert-application-navigation'
 import type { FilterValues } from '@/shared/types/data-filter'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter/use-module-export-filters'
-import { exportDisplayValue } from '@/shared/utils/export-utils'
+import { EXPERT_EXPORT_COLUMN_MAP } from '../../utils/table-export-column-maps'
 import {
   buildExpertListQueryParams,
   createFilteredExportHandler,
@@ -41,28 +41,6 @@ import {
   useModerationReasonOptions,
   useRecordModerationReasonUsage,
 } from '@/modules/settings/hooks/use-templates'
-
-const formatExportDateTime = (value?: string | null) =>
-  value
-    ? new Date(value).toLocaleString('en-IN', {
-        day: '2-digit',
-        month: 'short',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-      })
-    : ''
-
-const EXPORT_COLUMN_MAP: Record<string, { header: string; accessor: (e: Expert) => string }> = {
-  expertId: { header: 'Expert ID', accessor: (e) => exportDisplayValue(e.expertId) },
-  name: { header: 'Name', accessor: (e) => exportDisplayValue(e.name) },
-  email: { header: 'Email ID', accessor: (e) => exportDisplayValue(e.email) },
-  profession: { header: 'Profession', accessor: (e) => exportDisplayValue(e.profession) },
-  status: { header: 'Status', accessor: (e) => exportDisplayValue(e.status) },
-  serviceType: { header: 'Service Type', accessor: (e) => exportDisplayValue(e.serviceType) },
-  createdAt: { header: 'Created At', accessor: (e) => formatExportDateTime(e.createdAt) },
-  lastActive: { header: 'Last Active', accessor: (e) => formatExportDateTime(e.lastActive) },
-}
 
 const fetchPendingExpertsForExport = async (params: Record<string, unknown>) => {
   const response = await fetchExperts({ ...params, status: 'pending' })
@@ -122,7 +100,7 @@ export function ExpertPendingApprovalsPage() {
     () =>
       createFilteredExportHandler(
         fetchPendingExpertsForExport,
-        EXPORT_COLUMN_MAP,
+        EXPERT_EXPORT_COLUMN_MAP,
         'pending_experts_export',
         {
           search: searchQuery.trim() || undefined,

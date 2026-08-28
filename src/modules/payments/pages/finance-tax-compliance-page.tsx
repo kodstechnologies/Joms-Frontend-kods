@@ -20,6 +20,7 @@ import {
   FINANCE_TAX_TABLE_COLUMNS_CATALOG,
 } from '@/modules/payments/config/finance-tax-table-columns.config'
 import { useTableColumnPreferences } from '@/modules/expert/hooks/use-ui-preferences'
+import { useTableExportColumnIds } from '@/shared/hooks/use-table-export-column-ids'
 import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
 import { AddTagsModal } from '@/shared/components/modals/add-tags-modal'
 import {
@@ -35,30 +36,13 @@ import {
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
 import type { FilterValues } from '@/shared/types/data-filter'
-import { exportDisplayValue } from '@/shared/utils/export-utils'
+import { FINANCE_TAX_EXPORT_COLUMN_MAP } from '@/modules/payments/utils/finance-export-column-maps'
 import {
   buildFinanceTaxListQueryParams,
   createFinanceTaxFilteredExportHandler,
 } from '@/shared/utils/export-filter-utils'
 
 const PAGE_SIZE = 10
-
-const EXPORT_COLUMN_MAP: Record<
-  string,
-  { header: string; accessor: (row: TaxComplianceRow) => string }
-> = {
-  'record-id': { header: 'Record ID', accessor: (row) => exportDisplayValue(row.recordId) },
-  'entity-type': { header: 'Entity Type', accessor: (row) => exportDisplayValue(row.entityType) },
-  'entity-id': { header: 'Entity ID', accessor: (row) => exportDisplayValue(row.entityId) },
-  owner: { header: 'Owner', accessor: (row) => exportDisplayValue(row.owner) },
-  'booking-id': { header: 'Booking ID', accessor: (row) => exportDisplayValue(row.bookingId) },
-  'booking-title': {
-    header: 'Booking Title',
-    accessor: (row) => exportDisplayValue(row.bookingTitle),
-  },
-  status: { header: 'Status', accessor: (row) => exportDisplayValue(row.status) },
-  revenue: { header: 'Revenue', accessor: (row) => exportDisplayValue(row.revenue) },
-}
 
 function getStatusClassName(status: TaxComplianceRow['status']) {
   if (status === 'Completed' || status === 'Filed') {
@@ -81,6 +65,17 @@ export function FinanceTaxCompliancePage() {
   const escalate = useEscalateFinance()
   const softDelete = useSoftDeleteFinance()
   const tableColumnPreferencesQuery = useTableColumnPreferences(FINANCE_TAX_MODULE_KEY)
+
+  const catalogColumnIds = useMemo(
+    () => FINANCE_TAX_TABLE_COLUMNS_CATALOG.map((column) => column.id),
+    [],
+  )
+  const exportColumnIds = useTableExportColumnIds({
+    visibleColumnIds: tableColumnPreferencesQuery.data?.visibleColumnIds,
+    defaultColumnIds: DEFAULT_FINANCE_TAX_VISIBLE_COLUMN_IDS,
+    catalogColumnIds,
+    legacyColumnIdMap: FINANCE_TAX_LEGACY_COLUMN_ID_MAP,
+  })
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -118,11 +113,12 @@ export function FinanceTaxCompliancePage() {
     }
     return createFinanceTaxFilteredExportHandler(
       fetchForExport,
-      EXPORT_COLUMN_MAP,
+      FINANCE_TAX_EXPORT_COLUMN_MAP,
       'finance_tax_export',
       { search: debouncedSearch || undefined },
+      { columnIds: exportColumnIds, catalogOrder: catalogColumnIds },
     )
-  }, [debouncedSearch])
+  }, [catalogColumnIds, debouncedSearch, exportColumnIds])
 
   const {
     onAdvancedFilter,

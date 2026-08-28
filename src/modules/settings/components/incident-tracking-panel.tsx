@@ -14,6 +14,7 @@ import {
 import {
   DEFAULT_INCIDENT_TRACKING_VISIBLE_COLUMN_IDS,
   INCIDENT_TRACKING_LEGACY_COLUMN_ID_MAP,
+  INCIDENT_TRACKING_TABLE_COLUMNS_CATALOG,
 } from '../config/incident-table-columns.config'
 import { useAssignIncident, useIncidentMetrics, useIncidents } from '../hooks/use-incidents'
 import { fetchIncidents } from '../api/incidents-api'
@@ -36,6 +37,7 @@ import {
   useActiveMetricIds,
 } from '@/modules/expert/hooks/use-active-metric-ids'
 import { useTableColumnPreferences } from '@/modules/expert/hooks/use-ui-preferences'
+import { useTableExportColumnIds } from '@/shared/hooks/use-table-export-column-ids'
 import { selectPreferredColumns } from '@/modules/expert/utils/select-preferred-columns'
 import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
 
@@ -190,6 +192,18 @@ export function IncidentTrackingPanel() {
   const [selected, setSelected] = useState<IncidentRow | null>(null)
 
   const tableColumnPreferencesQuery = useTableColumnPreferences(INCIDENT_MODULE_KEY)
+
+  const catalogColumnIds = useMemo(
+    () => INCIDENT_TRACKING_TABLE_COLUMNS_CATALOG.map((column) => column.id),
+    [],
+  )
+  const exportColumnIds = useTableExportColumnIds({
+    visibleColumnIds: tableColumnPreferencesQuery.data?.visibleColumnIds,
+    defaultColumnIds: DEFAULT_INCIDENT_TRACKING_VISIBLE_COLUMN_IDS,
+    catalogColumnIds,
+    legacyColumnIdMap: INCIDENT_TRACKING_LEGACY_COLUMN_ID_MAP,
+  })
+
   const activeMetricIds = useActiveMetricIds(INCIDENT_MODULE_KEY, DEFAULT_INCIDENT_METRIC_IDS)
   const filteredActiveMetricIds = useMemo(
     () =>
@@ -243,8 +257,9 @@ export function IncidentTrackingPanel() {
       INCIDENT_EXPORT_COLUMN_MAP,
       'incidents_export',
       { search: search || undefined },
+      { columnIds: exportColumnIds, catalogOrder: catalogColumnIds },
     )
-  }, [search])
+  }, [catalogColumnIds, exportColumnIds, search])
 
   const {
     onAdvancedFilter,

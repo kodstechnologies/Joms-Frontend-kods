@@ -23,7 +23,11 @@ import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
 import { SERVICE_MANAGEMENT_MODULE_KEY } from '../../api/ui-preferences-api'
-import { DEFAULT_SERVICE_MANAGEMENT_VISIBLE_COLUMN_IDS } from '../../config/service-management-table-columns.config'
+import {
+  DEFAULT_SERVICE_MANAGEMENT_VISIBLE_COLUMN_IDS,
+  SERVICE_MANAGEMENT_TABLE_COLUMNS_CATALOG,
+} from '../../config/service-management-table-columns.config'
+import { useTableExportColumnIds } from '@/shared/hooks/use-table-export-column-ids'
 import { orderByActiveMetricIds, useActiveMetricIds } from '../../hooks/use-active-metric-ids'
 import {
   useServices,
@@ -66,7 +70,7 @@ import {
   createServiceFilteredExportHandler,
 } from '@/shared/utils/export-filter-utils'
 import { fetchServices } from '../../api/service-api'
-import { exportDisplayValue } from '@/shared/utils/export-utils'
+import { SERVICE_EXPORT_COLUMN_MAP } from '../../utils/table-export-column-maps'
 import { MODERATION_CATEGORY_SLUGS } from '@/modules/settings/api/templates-api'
 import {
   useModerationReasonOptions,
@@ -244,8 +248,18 @@ export const ServiceManagementPage = () => {
     })
   }, [selectedServiceIds, bulkDisableMutation])
 
-  const navigate = useNavigate()
   const tableColumnPreferencesQuery = useTableColumnPreferences(SERVICE_MANAGEMENT_MODULE_KEY)
+  const catalogColumnIds = useMemo(
+    () => SERVICE_MANAGEMENT_TABLE_COLUMNS_CATALOG.map((column) => column.id),
+    [],
+  )
+  const exportColumnIds = useTableExportColumnIds({
+    visibleColumnIds: tableColumnPreferencesQuery.data?.visibleColumnIds,
+    defaultColumnIds: DEFAULT_SERVICE_MANAGEMENT_VISIBLE_COLUMN_IDS,
+    catalogColumnIds,
+  })
+
+  const navigate = useNavigate()
   const {
     searchQuery,
     setSearchQuery,
@@ -268,54 +282,15 @@ export const ServiceManagementPage = () => {
     () =>
       createServiceFilteredExportHandler(
         fetchServices,
-        {
-          'service-id': {
-            header: 'Service ID',
-            accessor: (s: Service) => exportDisplayValue(s.serviceid || s._id),
-          },
-          name: { header: 'Service Name', accessor: (s: Service) => exportDisplayValue(s.title) },
-          category: {
-            header: 'Service Category',
-            accessor: (s: Service) => exportDisplayValue(s.categoryName),
-          },
-          type: {
-            header: 'Service Type',
-            accessor: (s: Service) => exportDisplayValue(s.serviceType),
-          },
-          pricing: {
-            header: 'Pricing',
-            accessor: (s: Service) => exportDisplayValue(s.pricing),
-          },
-          expertId: {
-            header: 'Expert ID',
-            accessor: (s: Service) => exportDisplayValue(s.expertid || s.partnerId),
-          },
-          expertName: {
-            header: 'Expert Name',
-            accessor: (s: Service) => exportDisplayValue(s.expertName || s.partnerName),
-          },
-          status: { header: 'Status', accessor: (s: Service) => exportDisplayValue(s.status) },
-          createdAt: {
-            header: 'Created At',
-            accessor: (s: Service) =>
-              s.createdAt
-                ? new Date(s.createdAt).toLocaleString('en-IN', {
-                    day: '2-digit',
-                    month: 'short',
-                    year: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })
-                : '',
-          },
-        },
+        SERVICE_EXPORT_COLUMN_MAP,
         'services_export',
         {
           status: activeStatus !== 'all' ? activeStatus : undefined,
           search: searchQuery || undefined,
         },
+        { columnIds: exportColumnIds, catalogOrder: catalogColumnIds },
       ),
-    [activeStatus, searchQuery],
+    [activeStatus, catalogColumnIds, exportColumnIds, searchQuery],
   )
 
   const {

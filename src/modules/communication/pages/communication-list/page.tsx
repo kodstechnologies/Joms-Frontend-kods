@@ -25,6 +25,7 @@ import {
   useActiveMetricIds,
 } from '@/modules/expert/hooks/use-active-metric-ids'
 import { useTableColumnPreferences } from '@/modules/expert/hooks/use-ui-preferences'
+import { useTableExportColumnIds } from '@/shared/hooks/use-table-export-column-ids'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 import { exportDisplayValue } from '@/shared/utils/export-utils'
 import {
@@ -124,6 +125,12 @@ export function CommunicationListPage() {
     [activeMetricIds],
   )
   const tableColumnPreferencesQuery = useTableColumnPreferences(COMMUNICATION_MODULE_KEY)
+  const catalogColumnIds = useMemo(() => Object.keys(EXPORT_COLUMN_MAP), [])
+  const exportColumnIds = useTableExportColumnIds({
+    visibleColumnIds: tableColumnPreferencesQuery.data?.visibleColumnIds,
+    defaultColumnIds: DEFAULT_VISIBLE_COLUMN_IDS,
+    catalogColumnIds,
+  })
 
   useEffect(() => {
     if (listQuery.isError) {
@@ -155,8 +162,9 @@ export function CommunicationListPage() {
         EXPORT_COLUMN_MAP,
         'communications_export',
         { search: debouncedSearch || undefined },
+        { columnIds: exportColumnIds, catalogOrder: catalogColumnIds },
       ),
-    [debouncedSearch],
+    [catalogColumnIds, debouncedSearch, exportColumnIds],
   )
 
   const {

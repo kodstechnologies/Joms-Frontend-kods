@@ -34,8 +34,10 @@ import { fetchAllEscalations, type EscalationListItem } from '@/modules/my-tasks
 import {
   DEFAULT_ESCALATIONS_VISIBLE_COLUMN_IDS,
   ESCALATIONS_LEGACY_COLUMN_ID_MAP,
+  ESCALATIONS_TABLE_COLUMNS_CATALOG,
 } from '../config/escalations-table-columns.config'
 import { useTableColumnPreferences } from '@/modules/expert/hooks/use-ui-preferences'
+import { useTableExportColumnIds } from '@/shared/hooks/use-table-export-column-ids'
 import { selectPreferredColumns } from '@/modules/expert/utils/select-preferred-columns'
 import { escalationColumns } from './escalation-table-columns'
 
@@ -43,19 +45,19 @@ const ESCALATION_EXPORT_COLUMN_MAP: Record<
   string,
   { header: string; accessor: (row: EscalationListItem) => string }
 > = {
-  escalationId: {
+  'escalation-id': {
     header: 'Escalation ID',
     accessor: (row) => exportDisplayValue(row.escalationId),
   },
-  roleId: { header: 'Roles ID', accessor: (row) => exportDisplayValue(row.roleId) },
-  roleName: { header: 'Role Name', accessor: (row) => exportDisplayValue(row.roleName) },
-  escalationType: {
+  'roles-id': { header: 'Roles ID', accessor: (row) => exportDisplayValue(row.roleId) },
+  'role-name': { header: 'Role Name', accessor: (row) => exportDisplayValue(row.roleName) },
+  'escalation-type': {
     header: 'Escalation Type',
     accessor: (row) => exportDisplayValue(row.escalationType),
   },
   priority: { header: 'Priority', accessor: (row) => exportDisplayValue(row.priority) },
   status: { header: 'Status', accessor: (row) => exportDisplayValue(row.status) },
-  createdOn: { header: 'Created On', accessor: (row) => exportDisplayValue(row.createdOn) },
+  'created-on': { header: 'Created On', accessor: (row) => exportDisplayValue(row.createdOn) },
 }
 
 function EscalationMetricCardSkeleton() {
@@ -98,6 +100,17 @@ export function EscalationDetails() {
 
   const tableColumnPreferencesQuery = useTableColumnPreferences(ESCALATIONS_MODULE_KEY)
 
+  const catalogColumnIds = useMemo(
+    () => ESCALATIONS_TABLE_COLUMNS_CATALOG.map((column) => column.id),
+    [],
+  )
+  const exportColumnIds = useTableExportColumnIds({
+    visibleColumnIds: tableColumnPreferencesQuery.data?.visibleColumnIds,
+    defaultColumnIds: DEFAULT_ESCALATIONS_VISIBLE_COLUMN_IDS,
+    catalogColumnIds,
+    legacyColumnIdMap: ESCALATIONS_LEGACY_COLUMN_ID_MAP,
+  })
+
   const activeMetricIds = useActiveMetricIds(ESCALATIONS_MODULE_KEY, [
     ...DEFAULT_ESCALATIONS_METRIC_IDS,
   ])
@@ -136,8 +149,9 @@ export function EscalationDetails() {
       ESCALATION_EXPORT_COLUMN_MAP,
       'escalations_export',
       { search: searchValue || undefined },
+      { columnIds: exportColumnIds, catalogOrder: catalogColumnIds },
     )
-  }, [searchValue])
+  }, [catalogColumnIds, exportColumnIds, searchValue])
 
   const {
     onAdvancedFilter,

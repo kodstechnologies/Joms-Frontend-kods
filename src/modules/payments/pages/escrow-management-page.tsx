@@ -24,7 +24,7 @@ import {
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
 import type { FilterValues } from '@/shared/types/data-filter'
-import { exportDisplayValue } from '@/shared/utils/export-utils'
+import { FINANCE_ESCROW_EXPORT_COLUMN_MAP } from '@/modules/payments/utils/finance-export-column-maps'
 import {
   buildFinanceEscrowListQueryParams,
   createFinanceEscrowFilteredExportHandler,
@@ -36,32 +36,10 @@ import {
   FINANCE_ESCROW_TABLE_COLUMNS_CATALOG,
 } from '@/modules/payments/config/finance-escrow-table-columns.config'
 import { useTableColumnPreferences } from '@/modules/expert/hooks/use-ui-preferences'
+import { useTableExportColumnIds } from '@/shared/hooks/use-table-export-column-ids'
 import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
 
 const PAGE_SIZE = 10
-
-const EXPORT_COLUMN_MAP: Record<
-  string,
-  { header: string; accessor: (row: EscrowHoldRow) => string }
-> = {
-  escrowId: { header: 'Escrow ID', accessor: (row) => exportDisplayValue(row.escrowId) },
-  transactionId: {
-    header: 'Transaction ID',
-    accessor: (row) => exportDisplayValue(row.transactionId),
-  },
-  type: { header: 'Type', accessor: (row) => exportDisplayValue(row.type) },
-  amount: { header: 'Amount', accessor: (row) => exportDisplayValue(row.amount) },
-  holdReason: { header: 'Hold Reason', accessor: (row) => exportDisplayValue(row.holdReason) },
-  initiatedDate: {
-    header: 'Initiated Date',
-    accessor: (row) => exportDisplayValue(row.initiatedDate),
-  },
-  expectedRelease: {
-    header: 'Expected Release',
-    accessor: (row) => exportDisplayValue(row.expectedRelease),
-  },
-  status: { header: 'Status', accessor: (row) => exportDisplayValue(row.status) },
-}
 
 function getEscrowStatusClassName(status: EscrowHoldStatus) {
   if (status === 'Active' || status === 'Released') {
@@ -116,6 +94,17 @@ export function EscrowManagementPage() {
 
   const tableColumnPreferencesQuery = useTableColumnPreferences(FINANCE_ESCROW_MODULE_KEY)
 
+  const catalogColumnIds = useMemo(
+    () => FINANCE_ESCROW_TABLE_COLUMNS_CATALOG.map((column) => column.id),
+    [],
+  )
+  const exportColumnIds = useTableExportColumnIds({
+    visibleColumnIds: tableColumnPreferencesQuery.data?.visibleColumnIds,
+    defaultColumnIds: DEFAULT_FINANCE_ESCROW_VISIBLE_COLUMN_IDS,
+    catalogColumnIds,
+    legacyColumnIdMap: FINANCE_ESCROW_LEGACY_COLUMN_ID_MAP,
+  })
+
   const liveEscrowRows = useMemo(
     () => (escrowData?.data?.rows ?? []).map(mapEscrowToRow),
     [escrowData],
@@ -135,11 +124,12 @@ export function EscrowManagementPage() {
     }
     return createFinanceEscrowFilteredExportHandler(
       fetchForExport,
-      EXPORT_COLUMN_MAP,
+      FINANCE_ESCROW_EXPORT_COLUMN_MAP,
       'finance_escrow_export',
       { search: debouncedSearch || undefined },
+      { columnIds: exportColumnIds, catalogOrder: catalogColumnIds },
     )
-  }, [debouncedSearch])
+  }, [catalogColumnIds, debouncedSearch, exportColumnIds])
 
   const {
     onAdvancedFilter,

@@ -7,7 +7,7 @@ import createIcon from '@/assets/JOMS_ICONS-2/icons8-create.svg'
 import { Button } from '@/shared/components/ui/button'
 import { DataTable } from '@/shared/components/table/data-table'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
-import { exportDisplayValue } from '@/shared/utils/export-utils'
+import { VENUE_CATEGORY_EXPORT_COLUMN_MAP } from '../../utils/table-export-column-maps'
 import type { FilterValues } from '@/shared/types/data-filter'
 import {
   buildVenueCategoryListQueryParams,
@@ -21,7 +21,9 @@ import { type VenueCategory } from '../../components/category/venue-category-tab
 import {
   DEFAULT_VENUE_CATEGORY_MANAGEMENT_VISIBLE_COLUMN_IDS,
   VENUE_CATEGORY_LEGACY_COLUMN_ID_MAP,
+  VENUE_CATEGORY_MANAGEMENT_TABLE_COLUMNS_CATALOG,
 } from '../../config/venue-category-management-table-columns.config'
+import { useTableExportColumnIds } from '@/shared/hooks/use-table-export-column-ids'
 import { usePausedVenueCategoryList } from '../../hooks/use-venue-category-management'
 import { useTableColumnPreferences } from '../../hooks/use-ui-preferences'
 import { mapVenueCategoryToUi } from '../../utils/category-mapper'
@@ -30,39 +32,23 @@ import { selectPreferredColumns } from '../../utils/select-preferred-columns'
 const PAGE_SIZE = 10
 const DEFAULT_VISIBLE_IDS = DEFAULT_VENUE_CATEGORY_MANAGEMENT_VISIBLE_COLUMN_IDS
 
-const EXPORT_COLUMN_MAP: Record<
-  string,
-  { header: string; accessor: (cat: VenueCategory) => string }
-> = {
-  'category-id': {
-    header: 'Category ID',
-    accessor: (cat) => exportDisplayValue(cat.categoryId || cat.id),
-  },
-  'category-name': { header: 'Category Name', accessor: (cat) => exportDisplayValue(cat.name) },
-  spaces: { header: 'Spaces', accessor: (cat) => exportDisplayValue(cat.spaces) },
-  venues: { header: 'Venues', accessor: (cat) => exportDisplayValue(cat.venues) },
-  'active-spaces': {
-    header: 'Active Spaces',
-    accessor: (cat) => exportDisplayValue(cat.activeSpaces),
-  },
-  bookings: { header: 'Bookings', accessor: (cat) => exportDisplayValue(cat.bookings) },
-  'completed-bookings': {
-    header: 'Completed Bookings',
-    accessor: (cat) => exportDisplayValue(cat.completedBookings),
-  },
-  revenue: { header: 'Revenue', accessor: (cat) => exportDisplayValue(cat.revenue) },
-  status: { header: 'Status', accessor: (cat) => exportDisplayValue(cat.status) },
-  'created-by': { header: 'Created By', accessor: (cat) => exportDisplayValue(cat.createdBy) },
-  'created-at': { header: 'Created At', accessor: (cat) => exportDisplayValue(cat.createdAt) },
-  'last-updated': { header: 'Last Updated', accessor: (cat) => exportDisplayValue(cat.updatedAt) },
-}
-
 export function PausedVenueCategoriesPage() {
   const navigate = useNavigate()
   const [searchValue, setSearchValue] = useState('')
   const [page, setPage] = useState(1)
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
   const preferencesQuery = useTableColumnPreferences(VENUE_CATEGORY_MANAGEMENT_MODULE_KEY)
+
+  const catalogColumnIds = useMemo(
+    () => VENUE_CATEGORY_MANAGEMENT_TABLE_COLUMNS_CATALOG.map((c) => c.id),
+    [],
+  )
+  const exportColumnIds = useTableExportColumnIds({
+    visibleColumnIds: preferencesQuery.data?.visibleColumnIds,
+    defaultColumnIds: DEFAULT_VENUE_CATEGORY_MANAGEMENT_VISIBLE_COLUMN_IDS,
+    catalogColumnIds,
+    legacyColumnIdMap: VENUE_CATEGORY_LEGACY_COLUMN_ID_MAP,
+  })
 
   const handleApplyFilters = useCallback((values: FilterValues) => {
     setPage(1)
@@ -104,10 +90,12 @@ export function PausedVenueCategoriesPage() {
           const response = await fetchPausedVenueCategories(params)
           return { data: (response.data ?? []).map(mapVenueCategoryToUi) }
         },
-        EXPORT_COLUMN_MAP,
+        VENUE_CATEGORY_EXPORT_COLUMN_MAP,
         'paused_venue_categories_export',
+        {},
+        { columnIds: exportColumnIds, catalogOrder: catalogColumnIds },
       ),
-    [],
+    [catalogColumnIds, exportColumnIds],
   )
 
   const {

@@ -50,6 +50,7 @@ import {
   useActiveMetricIds,
 } from '@/modules/expert/hooks/use-active-metric-ids'
 import { useTableColumnPreferences } from '@/modules/expert/hooks/use-ui-preferences'
+import { useTableExportColumnIds } from '@/shared/hooks/use-table-export-column-ids'
 import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
 import { mapDisputeToRefundRow, mapRefundToRow } from '@/modules/payments/utils/finance-mappers'
 import { AddTagsModal } from '@/shared/components/modals/add-tags-modal'
@@ -69,33 +70,13 @@ import {
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
 import type { FilterValues } from '@/shared/types/data-filter'
-import { exportDisplayValue } from '@/shared/utils/export-utils'
+import { FINANCE_REFUNDS_EXPORT_COLUMN_MAP } from '@/modules/payments/utils/finance-export-column-maps'
 import {
   buildFinanceRefundsListQueryParams,
   createFinanceRefundsFilteredExportHandler,
 } from '@/shared/utils/export-filter-utils'
 
 const PAGE_SIZE = 10
-
-const EXPORT_COLUMN_MAP: Record<
-  string,
-  { header: string; accessor: (row: RefundChargebackRow) => string }
-> = {
-  'record-id': { header: 'ID', accessor: (row) => exportDisplayValue(row.recordId) },
-  type: { header: 'Type', accessor: (row) => exportDisplayValue(row.type) },
-  'related-entity': {
-    header: 'Related Entity',
-    accessor: (row) => exportDisplayValue(row.relatedEntity),
-  },
-  amount: { header: 'Amount', accessor: (row) => exportDisplayValue(row.amount) },
-  reason: { header: 'Reason', accessor: (row) => exportDisplayValue(row.reason) },
-  'initiated-date': {
-    header: 'Initiated Date',
-    accessor: (row) => exportDisplayValue(row.initiatedDate),
-  },
-  description: { header: 'Description', accessor: (row) => exportDisplayValue(row.description) },
-  status: { header: 'Status', accessor: (row) => exportDisplayValue(row.status) },
-}
 
 function getStatusClassName(status: RefundChargebackStatus) {
   if (status === 'Resolved') {
@@ -207,6 +188,17 @@ export function FinanceRefundsPage() {
   const { mergeTickets } = useTagsApi()
   const tableColumnPreferencesQuery = useTableColumnPreferences(FINANCE_REFUNDS_MODULE_KEY)
 
+  const catalogColumnIds = useMemo(
+    () => FINANCE_REFUNDS_TABLE_COLUMNS_CATALOG.map((column) => column.id),
+    [],
+  )
+  const exportColumnIds = useTableExportColumnIds({
+    visibleColumnIds: tableColumnPreferencesQuery.data?.visibleColumnIds,
+    defaultColumnIds: DEFAULT_FINANCE_REFUNDS_VISIBLE_COLUMN_IDS,
+    catalogColumnIds,
+    legacyColumnIdMap: FINANCE_REFUNDS_LEGACY_COLUMN_ID_MAP,
+  })
+
   const apiErrorMessage = (err: unknown, fallback: string) =>
     (err as { response?: { data?: { message?: string } } })?.response?.data?.message || fallback
 
@@ -259,11 +251,12 @@ export function FinanceRefundsPage() {
     }
     return createFinanceRefundsFilteredExportHandler(
       fetchForExport,
-      EXPORT_COLUMN_MAP,
+      FINANCE_REFUNDS_EXPORT_COLUMN_MAP,
       'finance_refunds_export',
       { search: debouncedSearch || undefined },
+      { columnIds: exportColumnIds, catalogOrder: catalogColumnIds },
     )
-  }, [debouncedSearch])
+  }, [catalogColumnIds, debouncedSearch, exportColumnIds])
 
   const {
     onAdvancedFilter,

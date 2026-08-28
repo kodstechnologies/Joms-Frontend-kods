@@ -24,10 +24,12 @@ import {
 } from '@/modules/payments/utils/finance-mappers'
 import {
   DEFAULT_FINANCE_SERVICES_VISIBLE_COLUMN_IDS,
+  FINANCE_SERVICES_LEGACY_COLUMN_ID_MAP,
   FINANCE_SERVICES_MODULE_KEY,
   FINANCE_SERVICES_TABLE_COLUMNS_CATALOG,
 } from '@/modules/payments/config/finance-services-table-columns.config'
 import { useTableColumnPreferences } from '@/modules/expert/hooks/use-ui-preferences'
+import { useTableExportColumnIds } from '@/shared/hooks/use-table-export-column-ids'
 import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
 import { AddTagsModal } from '@/shared/components/modals/add-tags-modal'
 import {
@@ -42,27 +44,14 @@ import {
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
-import { exportDisplayValue } from '@/shared/utils/export-utils'
 import {
   buildFinanceServicesListQueryParams,
   createFinanceServicesFilteredExportHandler,
 } from '@/shared/utils/export-filter-utils'
+import { FINANCE_SERVICES_EXPORT_COLUMN_MAP } from '@/modules/payments/utils/finance-export-column-maps'
 import type { FilterValues } from '@/shared/types/data-filter'
 
 const PAGE_SIZE = 10
-
-const EXPORT_COLUMN_MAP: Record<
-  string,
-  { header: string; accessor: (row: FinanceServiceRow) => string }
-> = {
-  'service-id': { header: 'Service ID', accessor: (row) => exportDisplayValue(row.serviceId) },
-  name: { header: 'Name', accessor: (row) => exportDisplayValue(row.name) },
-  'expert-name': { header: 'Expert Name', accessor: (row) => exportDisplayValue(row.expertName) },
-  'booking-id': { header: 'Booking ID', accessor: (row) => exportDisplayValue(row.bookingId) },
-  'user-name': { header: 'User Name', accessor: (row) => exportDisplayValue(row.userName) },
-  status: { header: 'Status', accessor: (row) => exportDisplayValue(row.status) },
-  revenue: { header: 'Revenue', accessor: (row) => exportDisplayValue(row.revenue) },
-}
 
 function getStatusClassName(status: FinanceServiceRow['status']) {
   if (status === 'Paid') {
@@ -87,6 +76,17 @@ export function FinanceServicesPage() {
   const escalate = useEscalateFinance()
   const softDelete = useSoftDeleteFinance()
   const tableColumnPreferencesQuery = useTableColumnPreferences(FINANCE_SERVICES_MODULE_KEY)
+
+  const catalogColumnIds = useMemo(
+    () => FINANCE_SERVICES_TABLE_COLUMNS_CATALOG.map((column) => column.id),
+    [],
+  )
+  const exportColumnIds = useTableExportColumnIds({
+    visibleColumnIds: tableColumnPreferencesQuery.data?.visibleColumnIds,
+    defaultColumnIds: DEFAULT_FINANCE_SERVICES_VISIBLE_COLUMN_IDS,
+    catalogColumnIds,
+    legacyColumnIdMap: FINANCE_SERVICES_LEGACY_COLUMN_ID_MAP,
+  })
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -160,11 +160,12 @@ export function FinanceServicesPage() {
     }
     return createFinanceServicesFilteredExportHandler(
       fetchForExport,
-      EXPORT_COLUMN_MAP,
+      FINANCE_SERVICES_EXPORT_COLUMN_MAP,
       'finance_services_export',
       { search: debouncedSearch || undefined, tab: activeTab },
+      { columnIds: exportColumnIds, catalogOrder: catalogColumnIds },
     )
-  }, [activeTab, debouncedSearch, isEscrowTab])
+  }, [activeTab, catalogColumnIds, debouncedSearch, exportColumnIds, isEscrowTab])
 
   const {
     onAdvancedFilter,

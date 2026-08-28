@@ -21,6 +21,7 @@ import {
   DEFAULT_REFERRALS_ACTIVE_METRIC_IDS,
   DEFAULT_REFERRALS_VISIBLE_COLUMN_IDS,
   REFERRALS_MODULE_KEY,
+  REFERRALS_TABLE_COLUMNS_CATALOG,
 } from '../config/referral-management-table-columns.config'
 import { useReferralStore } from '../store/referral-store'
 import type { ExpertInvite } from '../types/referral'
@@ -33,6 +34,7 @@ import {
 import { REFERRAL_METRIC_DEFINITIONS } from '../utils/referral-metrics-definitions'
 import { useActiveMetricIds } from '@/modules/expert/hooks/use-active-metric-ids'
 import { useTableColumnPreferences } from '@/modules/expert/hooks/use-ui-preferences'
+import { useTableExportColumnIds } from '@/shared/hooks/use-table-export-column-ids'
 import { TableDateTimeCell } from '@/shared/components/table/table-datetime-cell'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 import { exportDisplayValue } from '@/shared/utils/export-utils'
@@ -393,6 +395,16 @@ export function ReferralManagementPage() {
   const activeMetricIds = useActiveMetricIds(REFERRALS_MODULE_KEY, DEFAULT_METRIC_IDS)
   const tableColumnPreferencesQuery = useTableColumnPreferences(REFERRALS_MODULE_KEY)
 
+  const catalogColumnIds = useMemo(
+    () => REFERRALS_TABLE_COLUMNS_CATALOG.map((column) => column.id),
+    [],
+  )
+  const exportColumnIds = useTableExportColumnIds({
+    visibleColumnIds: tableColumnPreferencesQuery.data?.visibleColumnIds,
+    defaultColumnIds: DEFAULT_REFERRALS_VISIBLE_COLUMN_IDS,
+    catalogColumnIds,
+  })
+
   const createExpertMutation = useCreateExpertInvite()
   const createBulkMutation = useCreateBulkExpertInvites()
   const deleteExpertMutation = useDeleteExpertInvite()
@@ -422,8 +434,9 @@ export function ReferralManagementPage() {
       {
         search: searchQuery || undefined,
       },
+      { columnIds: exportColumnIds, catalogOrder: catalogColumnIds },
     )
-  }, [searchQuery])
+  }, [catalogColumnIds, exportColumnIds, searchQuery])
 
   const {
     onAdvancedFilter,

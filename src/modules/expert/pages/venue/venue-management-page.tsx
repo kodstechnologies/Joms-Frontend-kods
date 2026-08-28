@@ -96,7 +96,9 @@ type ManagementMetric = {
 import {
   DEFAULT_VENUE_MANAGEMENT_ACTIVE_METRIC_IDS,
   DEFAULT_VENUE_MANAGEMENT_VISIBLE_COLUMN_IDS,
+  VENUE_MANAGEMENT_TABLE_COLUMNS_CATALOG,
 } from '@/modules/expert/config/venue-management-table-columns.config'
+import { useTableExportColumnIds } from '@/shared/hooks/use-table-export-column-ids'
 
 const EXPORT_COLUMN_MAP: Record<string, { header: string; accessor: (v: Venue) => string }> = {
   'venue-id': { header: 'Venue ID', accessor: (v) => exportDisplayValue(getVenueDisplayId(v)) },
@@ -248,6 +250,15 @@ export const VenueManagementPage = () => {
   const { options: deleteReasonOptions, buildPayload: buildDeleteReasonPayload } =
     useModerationReasonOptions(MODERATION_CATEGORY_SLUGS.deleteVenue)
   const tableColumnPreferencesQuery = useTableColumnPreferences(VENUE_MANAGEMENT_MODULE_KEY)
+  const catalogColumnIds = useMemo(
+    () => VENUE_MANAGEMENT_TABLE_COLUMNS_CATALOG.map((column) => column.id),
+    [],
+  )
+  const exportColumnIds = useTableExportColumnIds({
+    visibleColumnIds: tableColumnPreferencesQuery.data?.visibleColumnIds,
+    defaultColumnIds: DEFAULT_VENUE_MANAGEMENT_VISIBLE_COLUMN_IDS,
+    catalogColumnIds,
+  })
 
   const confirmBulkDelete = useCallback(() => {
     if (selectedVenueIds.length === 0) return
@@ -390,10 +401,16 @@ export const VenueManagementPage = () => {
 
   const handleExportData = useMemo(
     () =>
-      createVenueFilteredExportHandler(fetchVenues, EXPORT_COLUMN_MAP, 'venues_export', {
-        status: activeStatus !== 'all' ? activeStatus : undefined,
-      }),
-    [activeStatus],
+      createVenueFilteredExportHandler(
+        fetchVenues,
+        EXPORT_COLUMN_MAP,
+        'venues_export',
+        {
+          status: activeStatus !== 'all' ? activeStatus : undefined,
+        },
+        { columnIds: exportColumnIds, catalogOrder: catalogColumnIds },
+      ),
+    [activeStatus, catalogColumnIds, exportColumnIds],
   )
 
   const {

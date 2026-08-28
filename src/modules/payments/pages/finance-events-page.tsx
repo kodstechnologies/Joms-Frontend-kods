@@ -18,7 +18,7 @@ import {
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
 import type { FilterValues } from '@/shared/types/data-filter'
-import { exportDisplayValue } from '@/shared/utils/export-utils'
+import { FINANCE_EVENTS_EXPORT_COLUMN_MAP } from '@/modules/payments/utils/finance-export-column-maps'
 import {
   createClientFilteredExportHandler,
   rowMatchesClientFilters,
@@ -30,6 +30,7 @@ import {
   FINANCE_EVENTS_TABLE_COLUMNS_CATALOG,
 } from '@/modules/payments/config/finance-events-table-columns.config'
 import { useTableColumnPreferences } from '@/modules/expert/hooks/use-ui-preferences'
+import { useTableExportColumnIds } from '@/shared/hooks/use-table-export-column-ids'
 import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
 
 const PAGE_SIZE = 10
@@ -40,20 +41,6 @@ const EVENT_FILTER_ACCESSORS: Record<string, (row: FinanceEventRow) => string> =
   organizer: (row) => row.organizer,
   status: (row) => row.status,
   eventDate: (row) => row.eventDate,
-}
-
-const EXPORT_COLUMN_MAP: Record<
-  string,
-  { header: string; accessor: (row: FinanceEventRow) => string }
-> = {
-  eventId: { header: 'Event ID', accessor: (row) => exportDisplayValue(row.eventId) },
-  eventName: { header: 'Event Name', accessor: (row) => exportDisplayValue(row.eventName) },
-  organizer: { header: 'Organizer', accessor: (row) => exportDisplayValue(row.organizer) },
-  ticketSales: { header: 'Ticket Sales', accessor: (row) => exportDisplayValue(row.ticketSales) },
-  platformFee: { header: 'Platform Fee', accessor: (row) => exportDisplayValue(row.platformFee) },
-  netRevenue: { header: 'Net Revenue', accessor: (row) => exportDisplayValue(row.netRevenue) },
-  eventDate: { header: 'Event Date', accessor: (row) => exportDisplayValue(row.eventDate) },
-  status: { header: 'Status', accessor: (row) => exportDisplayValue(row.status) },
 }
 
 type FinanceEventTab = 'all' | 'ticketing' | 'promotions' | 'publishing'
@@ -80,6 +67,17 @@ export function FinanceEventsPage() {
   const [selectedRowIds, setSelectedRowIds] = useState<string[]>([])
 
   const tableColumnPreferencesQuery = useTableColumnPreferences(FINANCE_EVENTS_MODULE_KEY)
+
+  const catalogColumnIds = useMemo(
+    () => FINANCE_EVENTS_TABLE_COLUMNS_CATALOG.map((column) => column.id),
+    [],
+  )
+  const exportColumnIds = useTableExportColumnIds({
+    visibleColumnIds: tableColumnPreferencesQuery.data?.visibleColumnIds,
+    defaultColumnIds: DEFAULT_FINANCE_EVENTS_VISIBLE_COLUMN_IDS,
+    catalogColumnIds,
+    legacyColumnIdMap: FINANCE_EVENTS_LEGACY_COLUMN_ID_MAP,
+  })
 
   const filteredRows = useMemo(
     () =>
@@ -129,10 +127,11 @@ export function FinanceEventsPage() {
           financeEventRowsMock.filter((row) =>
             rowMatchesClientFilters(row, values, searchQuery, EVENT_FILTER_ACCESSORS),
           ),
-        EXPORT_COLUMN_MAP,
+        FINANCE_EVENTS_EXPORT_COLUMN_MAP,
         'finance_events_export',
+        { columnIds: exportColumnIds, catalogOrder: catalogColumnIds },
       ),
-    [searchQuery],
+    [catalogColumnIds, exportColumnIds, searchQuery],
   )
 
   const {

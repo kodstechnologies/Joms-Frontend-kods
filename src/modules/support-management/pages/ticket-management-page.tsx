@@ -64,6 +64,7 @@ import {
   useActiveMetricIds,
 } from '@/modules/expert/hooks/use-active-metric-ids'
 import { useTableColumnPreferences } from '@/modules/expert/hooks/use-ui-preferences'
+import { useTableExportColumnIds } from '@/shared/hooks/use-table-export-column-ids'
 import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
 import { DataTable } from '@/shared/components/table/data-table'
 import {
@@ -171,73 +172,6 @@ const EXPORT_COLUMN_MAP: Record<
   },
 }
 
-const ALL_TICKETS_EXPORT_KEYS = [
-  'ticket-id',
-  'subject',
-  'status',
-  'priority',
-  'category',
-  'reporter',
-  'sla-timer',
-  'first-response-due',
-  'resolution-due',
-  'assigned-on',
-  'assigned-by',
-  'assigned-to',
-  'resolved-at',
-  'resolved-by',
-  'resolution-time',
-  'last-updated-at',
-] as const
-
-const MY_TICKETS_EXPORT_KEYS = [
-  'ticket-id',
-  'subject',
-  'status',
-  'priority',
-  'category',
-  'reporter',
-  'sla-timer',
-  'assigned-on',
-  'assigned-by',
-  'escalated-at',
-  'escalated-for',
-  'escalated-to',
-  'resolution-time',
-  'last-updated-at',
-] as const
-
-const ESCALATED_TICKETS_EXPORT_KEYS = [
-  'ticket-id',
-  'subject',
-  'status',
-  'priority',
-  'category',
-  'reporter',
-  'sla-timer',
-  'assigned-on',
-  'assigned-by',
-  'assigned-to',
-  'escalated-by',
-  'escalated-to',
-  'escalated-at',
-  'escalation-status',
-  'escalated-for',
-  'last-updated-at',
-] as const
-
-function exportKeysForTab(tab: TicketTab) {
-  if (tab === 'my_tickets') return MY_TICKETS_EXPORT_KEYS
-  if (tab === 'escalated') return ESCALATED_TICKETS_EXPORT_KEYS
-  return ALL_TICKETS_EXPORT_KEYS
-}
-
-function pickExportColumns(keys: readonly string[]) {
-  return Object.fromEntries(
-    keys.filter((key) => EXPORT_COLUMN_MAP[key]).map((key) => [key, EXPORT_COLUMN_MAP[key]]),
-  )
-}
-
 function TicketMetricCard({
   title,
   value,
@@ -317,6 +251,28 @@ export function TicketManagementPage() {
   const agentsQuery = useSupportAgents()
   useLiveSupportUpdates()
   const tableColumnPreferencesQuery = useTableColumnPreferences(TICKET_MANAGEMENT_MODULE_KEY)
+
+  const catalogColumnIds = useMemo(
+    () => TICKET_MANAGEMENT_TABLE_COLUMNS_CATALOG.map((column) => column.id),
+    [],
+  )
+  const tabAllowedColumnIds = useMemo(
+    () =>
+      activeTab === 'my_tickets'
+        ? MY_TAB_COLUMN_ID_SET
+        : activeTab === 'escalated'
+          ? ESCALATED_TAB_COLUMN_ID_SET
+          : ALL_TAB_COLUMN_ID_SET,
+    [activeTab],
+  )
+  const exportColumnIds = useTableExportColumnIds({
+    visibleColumnIds: tableColumnPreferencesQuery.data?.visibleColumnIds,
+    defaultColumnIds: DEFAULT_TICKET_MANAGEMENT_VISIBLE_COLUMN_IDS,
+    catalogColumnIds,
+    legacyColumnIdMap: TICKET_MANAGEMENT_LEGACY_COLUMN_ID_MAP,
+    allowedColumnIds: tabAllowedColumnIds,
+  })
+
   const activeMetricIds = useActiveMetricIds(TICKET_MANAGEMENT_MODULE_KEY, [
     ...DEFAULT_TICKET_MANAGEMENT_METRIC_IDS,
   ])
@@ -377,11 +333,12 @@ export function TicketManagementPage() {
     }
     return createSupportTicketsFilteredExportHandler(
       fetchForExport,
-      pickExportColumns(exportKeysForTab(activeTab)),
+      EXPORT_COLUMN_MAP,
       'support_tickets_export',
       { search: searchQuery || undefined, tab: activeTab, includeClosed: true },
+      { columnIds: exportColumnIds, catalogOrder: catalogColumnIds },
     )
-  }, [activeTab, searchQuery])
+  }, [activeTab, catalogColumnIds, exportColumnIds, searchQuery])
 
   const {
     onAdvancedFilter,

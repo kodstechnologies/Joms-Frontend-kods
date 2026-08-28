@@ -19,6 +19,7 @@ import {
   FINANCE_VENUES_TABLE_COLUMNS_CATALOG,
 } from '@/modules/payments/config/finance-venues-table-columns.config'
 import { useTableColumnPreferences } from '@/modules/expert/hooks/use-ui-preferences'
+import { useTableExportColumnIds } from '@/shared/hooks/use-table-export-column-ids'
 import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
 import { AddTagsModal } from '@/shared/components/modals/add-tags-modal'
 import {
@@ -33,7 +34,7 @@ import {
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
-import { exportDisplayValue } from '@/shared/utils/export-utils'
+import { FINANCE_VENUES_EXPORT_COLUMN_MAP } from '@/modules/payments/utils/finance-export-column-maps'
 import {
   buildFinanceVenuesListQueryParams,
   createFinanceVenuesFilteredExportHandler,
@@ -42,22 +43,6 @@ import type { FilterValues } from '@/shared/types/data-filter'
 import type { FinancePayment } from '@/modules/payments/types/finance-api'
 
 const PAGE_SIZE = 10
-
-const EXPORT_COLUMN_MAP: Record<
-  string,
-  { header: string; accessor: (row: FinanceVenueRow) => string }
-> = {
-  'venue-id': { header: 'Venue ID', accessor: (row) => exportDisplayValue(row.venueId) },
-  name: { header: 'Name', accessor: (row) => exportDisplayValue(row.name) },
-  owner: { header: 'Owner', accessor: (row) => exportDisplayValue(row.owner) },
-  'booking-id': { header: 'Booking ID', accessor: (row) => exportDisplayValue(row.bookingId) },
-  'booking-title': {
-    header: 'Booking Title',
-    accessor: (row) => exportDisplayValue(row.bookingTitle),
-  },
-  status: { header: 'Status', accessor: (row) => exportDisplayValue(row.status) },
-  revenue: { header: 'Revenue', accessor: (row) => exportDisplayValue(row.revenue) },
-}
 
 function getStatusClassName(status: FinanceVenueRow['status']) {
   if (status === 'Completed') {
@@ -83,6 +68,16 @@ export function FinanceVenuesPage() {
   const escalate = useEscalateFinance()
   const softDelete = useSoftDeleteFinance()
   const tableColumnPreferencesQuery = useTableColumnPreferences(FINANCE_VENUES_MODULE_KEY)
+
+  const catalogColumnIds = useMemo(
+    () => FINANCE_VENUES_TABLE_COLUMNS_CATALOG.map((column) => column.id),
+    [],
+  )
+  const exportColumnIds = useTableExportColumnIds({
+    visibleColumnIds: tableColumnPreferencesQuery.data?.visibleColumnIds,
+    defaultColumnIds: DEFAULT_FINANCE_VENUES_VISIBLE_COLUMN_IDS,
+    catalogColumnIds,
+  })
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -121,11 +116,12 @@ export function FinanceVenuesPage() {
     }
     return createFinanceVenuesFilteredExportHandler(
       fetchForExport,
-      EXPORT_COLUMN_MAP,
+      FINANCE_VENUES_EXPORT_COLUMN_MAP,
       'finance_venues_export',
       { search: debouncedSearch || undefined },
+      { columnIds: exportColumnIds, catalogOrder: catalogColumnIds },
     )
-  }, [debouncedSearch])
+  }, [catalogColumnIds, debouncedSearch, exportColumnIds])
 
   const {
     onAdvancedFilter,

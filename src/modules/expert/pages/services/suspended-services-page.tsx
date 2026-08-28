@@ -7,14 +7,18 @@ import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import { toast } from 'sonner'
 import type { FilterValues } from '@/shared/types/data-filter'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter/use-module-export-filters'
-import { exportDisplayValue } from '@/shared/utils/export-utils'
+import { useTableExportColumnIds } from '@/shared/hooks/use-table-export-column-ids'
+import { SERVICE_EXPORT_COLUMN_MAP } from '../../utils/table-export-column-maps'
 import {
   buildServiceListQueryParams,
   createServiceFilteredExportHandler,
 } from '@/shared/utils/export-filter-utils'
 import { fetchServices } from '../../api/service-api'
 import { SERVICE_SUSPENDED_MODULE_KEY } from '../../api/ui-preferences-api'
-import { DEFAULT_SERVICE_SUSPENDED_VISIBLE_COLUMN_IDS } from '../../config/service-management-table-columns.config'
+import {
+  DEFAULT_SERVICE_SUSPENDED_VISIBLE_COLUMN_IDS,
+  SERVICE_SUSPENDED_TABLE_COLUMNS_CATALOG,
+} from '../../config/service-management-table-columns.config'
 import { useTableColumnPreferences } from '../../hooks/use-ui-preferences'
 
 import { useActivateService, useServices } from '../../hooks/use-services'
@@ -31,40 +35,6 @@ import {
 } from '@/shared/components/table/table-actions-dropdown'
 import { Button } from '@/shared/components/ui/button'
 
-const formatExportDateTime = (value?: string | null) =>
-  value
-    ? new Date(value).toLocaleString('en-IN', {
-        day: '2-digit',
-        month: 'short',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-      })
-    : ''
-
-const EXPORT_COLUMN_MAP: Record<string, { header: string; accessor: (s: Service) => string }> = {
-  serviceId: { header: 'Listing ID', accessor: (s) => exportDisplayValue(s.serviceid || s._id) },
-  title: { header: 'Listing Name', accessor: (s) => exportDisplayValue(s.title) },
-  suspensionReason: {
-    header: 'Suspension Reason',
-    accessor: (s) => exportDisplayValue(s.suspensionReason),
-  },
-  suspensionType: {
-    header: 'Suspension Type',
-    accessor: (s) => exportDisplayValue(s.suspensionType),
-  },
-  suspendedAt: { header: 'Suspended At', accessor: (s) => formatExportDateTime(s.suspendedAt) },
-  suspensionUntil: {
-    header: 'Suspension Until',
-    accessor: (s) => formatExportDateTime(s.suspensionUntil),
-  },
-  suspendedBy: { header: 'Suspended By', accessor: (s) => exportDisplayValue(s.suspendedBy) },
-  lastUpdatedAt: {
-    header: 'Last Updated At',
-    accessor: (s) => formatExportDateTime(s.lastUpdatedAt),
-  },
-}
-
 export function SuspendedServicesPage() {
   const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState('')
@@ -73,6 +43,15 @@ export function SuspendedServicesPage() {
   const [selectedServiceIds, setSelectedServiceIds] = useState<string[]>([])
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
   const tableColumnPreferencesQuery = useTableColumnPreferences(SERVICE_SUSPENDED_MODULE_KEY)
+  const catalogColumnIds = useMemo(
+    () => SERVICE_SUSPENDED_TABLE_COLUMNS_CATALOG.map((column) => column.id),
+    [],
+  )
+  const exportColumnIds = useTableExportColumnIds({
+    visibleColumnIds: tableColumnPreferencesQuery.data?.visibleColumnIds,
+    defaultColumnIds: DEFAULT_SERVICE_SUSPENDED_VISIBLE_COLUMN_IDS,
+    catalogColumnIds,
+  })
 
   const serviceQueryParams = useMemo(
     () =>
@@ -107,13 +86,14 @@ export function SuspendedServicesPage() {
     () =>
       createServiceFilteredExportHandler(
         fetchServices,
-        EXPORT_COLUMN_MAP,
+        SERVICE_EXPORT_COLUMN_MAP,
         'suspended_services_export',
         {
           status: 'suspended',
         },
+        { columnIds: exportColumnIds, catalogOrder: catalogColumnIds },
       ),
-    [],
+    [catalogColumnIds, exportColumnIds],
   )
 
   const {

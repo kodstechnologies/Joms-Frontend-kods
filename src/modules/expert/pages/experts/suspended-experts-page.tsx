@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import type { FilterValues } from '@/shared/types/data-filter'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter/use-module-export-filters'
-import { exportDisplayValue } from '@/shared/utils/export-utils'
+import { EXPERT_EXPORT_COLUMN_MAP } from '../../utils/table-export-column-maps'
 import {
   buildExpertListQueryParams,
   createFilteredExportHandler,
@@ -14,7 +14,9 @@ import { fetchExperts } from '../../api/expert-api'
 import {
   DEFAULT_EXPERT_SUSPENDED_VISIBLE_COLUMN_IDS,
   EXPERT_SUSPENDED_MODULE_KEY,
+  EXPERT_SUSPENDED_TABLE_COLUMNS_CATALOG,
 } from '../../config/expert-management-table-columns.config'
+import { useTableExportColumnIds } from '@/shared/hooks/use-table-export-column-ids'
 import { useActivateExpert, useExperts } from '../../hooks/use-expert'
 import { useTableColumnPreferences } from '../../hooks/use-ui-preferences'
 import type { Expert } from '../../type/expert'
@@ -30,28 +32,6 @@ import {
   TableActionsDropdown,
   TableActionsItem,
 } from '@/shared/components/table/table-actions-dropdown'
-
-const formatExportDateTime = (value?: string | null) =>
-  value
-    ? new Date(value).toLocaleString('en-IN', {
-        day: '2-digit',
-        month: 'short',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-      })
-    : ''
-
-const EXPORT_COLUMN_MAP: Record<string, { header: string; accessor: (e: Expert) => string }> = {
-  expertId: { header: 'Expert ID', accessor: (e) => exportDisplayValue(e.expertId) },
-  name: { header: 'Name', accessor: (e) => exportDisplayValue(e.name) },
-  email: { header: 'Email ID', accessor: (e) => exportDisplayValue(e.email) },
-  profession: { header: 'Profession', accessor: (e) => exportDisplayValue(e.profession) },
-  status: { header: 'Status', accessor: (e) => exportDisplayValue(e.status) },
-  serviceType: { header: 'Service Type', accessor: (e) => exportDisplayValue(e.serviceType) },
-  createdAt: { header: 'Created At', accessor: (e) => formatExportDateTime(e.createdAt) },
-  lastActive: { header: 'Last Active', accessor: (e) => formatExportDateTime(e.lastActive) },
-}
 
 const fetchSuspendedExpertsForExport = async (params: Record<string, unknown>) => {
   const response = await fetchExperts({ ...params, status: 'suspended' })
@@ -85,6 +65,16 @@ export function ExpertSuspendedExpertsPage() {
   const meta = data?.meta
   const selection = useExpertListSelection(experts)
   const activateExpertMutation = useActivateExpert()
+  const tableColumnPreferencesQuery = useTableColumnPreferences(EXPERT_SUSPENDED_MODULE_KEY)
+  const catalogColumnIds = useMemo(
+    () => EXPERT_SUSPENDED_TABLE_COLUMNS_CATALOG.map((column) => column.id),
+    [],
+  )
+  const exportColumnIds = useTableExportColumnIds({
+    visibleColumnIds: tableColumnPreferencesQuery.data?.visibleColumnIds,
+    defaultColumnIds: DEFAULT_EXPERT_SUSPENDED_VISIBLE_COLUMN_IDS,
+    catalogColumnIds,
+  })
 
   const handleApplyFilters = useCallback((values: FilterValues) => {
     setAppliedFilters(values)
@@ -95,13 +85,14 @@ export function ExpertSuspendedExpertsPage() {
     () =>
       createFilteredExportHandler(
         fetchSuspendedExpertsForExport,
-        EXPORT_COLUMN_MAP,
+        EXPERT_EXPORT_COLUMN_MAP,
         'suspended_experts_export',
         {
           search: searchQuery.trim() || undefined,
         },
+        { columnIds: exportColumnIds, catalogOrder: catalogColumnIds },
       ),
-    [searchQuery],
+    [catalogColumnIds, exportColumnIds, searchQuery],
   )
 
   const {
@@ -113,8 +104,6 @@ export function ExpertSuspendedExpertsPage() {
     onApplyFilters: handleApplyFilters,
     onExportData: handleExportData,
   })
-
-  const tableColumnPreferencesQuery = useTableColumnPreferences(EXPERT_SUSPENDED_MODULE_KEY)
 
   const handleActivate = useCallback(
     (expert: Expert) => {

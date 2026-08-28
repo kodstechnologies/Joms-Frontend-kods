@@ -46,7 +46,11 @@ import type { MembershipSubscription } from '@/modules/memberships/types/members
 import { orderByActiveMetricIds, useActiveMetricIds } from '../../hooks/use-active-metric-ids'
 import { useTableColumnPreferences } from '../../hooks/use-ui-preferences'
 import { EXPERT_MANAGEMENT_MODULE_KEY } from '../../api/ui-preferences-api'
-import { DEFAULT_EXPERT_MANAGEMENT_VISIBLE_COLUMN_IDS } from '../../config/expert-management-table-columns.config'
+import { useTableExportColumnIds } from '@/shared/hooks/use-table-export-column-ids'
+import {
+  DEFAULT_EXPERT_MANAGEMENT_VISIBLE_COLUMN_IDS,
+  EXPERT_MANAGEMENT_TABLE_COLUMNS_CATALOG,
+} from '../../config/expert-management-table-columns.config'
 import {
   buildExpertDataColumnsById,
   pickPreferenceColumns,
@@ -71,7 +75,8 @@ import { statusCardTones } from '@/shared/lib/design-tokens'
 import { useEntityTags } from '@/shared/hooks/use-entity-tags'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 import type { FilterValues } from '@/shared/types/data-filter'
-import { exportDataToFile, exportDisplayValue } from '@/shared/utils/export-utils'
+import { exportDataToFile } from '@/shared/utils/export-utils'
+import { EXPERT_EXPORT_COLUMN_MAP } from '../../utils/table-export-column-maps'
 import { MODERATION_CATEGORY_SLUGS } from '@/modules/settings/api/templates-api'
 import {
   useModerationReasonOptions,
@@ -85,68 +90,6 @@ const displayValue = (value: unknown): string => {
   if (value === null || value === undefined) return 'N/A'
   if (typeof value === 'string' && value.trim() === '') return 'N/A'
   return String(value)
-}
-
-const EXPORT_COLUMN_MAP: Record<string, { header: string; accessor: (e: Expert) => string }> = {
-  'expert-id': { header: 'Expert ID', accessor: (e) => exportDisplayValue(e.expertId) },
-  name: { header: 'Name', accessor: (e) => exportDisplayValue(e.name) },
-  email: { header: 'Email ID', accessor: (e) => exportDisplayValue(e.email) },
-  profession: { header: 'Profession', accessor: (e) => exportDisplayValue(e.profession) },
-  status: { header: 'Status', accessor: (e) => exportDisplayValue(e.status) },
-  'service-type': { header: 'Service Type', accessor: (e) => exportDisplayValue(e.serviceType) },
-  'created-at': {
-    header: 'Created At',
-    accessor: (e) =>
-      e.createdAt
-        ? new Date(e.createdAt).toLocaleString('en-IN', {
-            day: '2-digit',
-            month: 'short',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-          })
-        : '',
-  },
-  'last-active': {
-    header: 'Last Active',
-    accessor: (e) =>
-      e.lastActive
-        ? new Date(e.lastActive).toLocaleString('en-IN', {
-            day: '2-digit',
-            month: 'short',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-          })
-        : '',
-  },
-  reason: { header: 'Reason', accessor: (e) => exportDisplayValue(e.reason) },
-  'reported-at': {
-    header: 'Reported At',
-    accessor: (e) =>
-      e.reportedAt
-        ? new Date(e.reportedAt).toLocaleString('en-IN', {
-            day: '2-digit',
-            month: 'short',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-          })
-        : '',
-  },
-  'deleted-at': {
-    header: 'Deleted At',
-    accessor: (e) =>
-      e.deletedAt
-        ? new Date(e.deletedAt).toLocaleString('en-IN', {
-            day: '2-digit',
-            month: 'short',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-          })
-        : '',
-  },
 }
 
 const DEFAULT_VISIBLE_IDS = DEFAULT_EXPERT_MANAGEMENT_VISIBLE_COLUMN_IDS
@@ -175,6 +118,15 @@ export const ExpertManagementPage = () => {
   const { options: deleteReasonOptions, buildPayload: buildDeleteReasonPayload } =
     useModerationReasonOptions(MODERATION_CATEGORY_SLUGS.deleteExpert)
   const tableColumnPreferencesQuery = useTableColumnPreferences(EXPERT_MANAGEMENT_MODULE_KEY)
+  const catalogColumnIds = useMemo(
+    () => EXPERT_MANAGEMENT_TABLE_COLUMNS_CATALOG.map((column) => column.id),
+    [],
+  )
+  const exportColumnIds = useTableExportColumnIds({
+    visibleColumnIds: tableColumnPreferencesQuery.data?.visibleColumnIds,
+    defaultColumnIds: DEFAULT_EXPERT_MANAGEMENT_VISIBLE_COLUMN_IDS,
+    catalogColumnIds,
+  })
   const {
     searchQuery,
     setSearchQuery,
@@ -209,11 +161,17 @@ export const ExpertManagementPage = () => {
 
   const handleExportData = useMemo(
     () =>
-      createFilteredExportHandler(fetchExperts, EXPORT_COLUMN_MAP, 'experts_export', {
-        status: activeStatus !== 'all' ? activeStatus : undefined,
-        search: searchQuery || undefined,
-      }),
-    [activeStatus, searchQuery],
+      createFilteredExportHandler(
+        fetchExperts,
+        EXPERT_EXPORT_COLUMN_MAP,
+        'experts_export',
+        {
+          status: activeStatus !== 'all' ? activeStatus : undefined,
+          search: searchQuery || undefined,
+        },
+        { columnIds: exportColumnIds, catalogOrder: catalogColumnIds },
+      ),
+    [activeStatus, catalogColumnIds, exportColumnIds, searchQuery],
   )
 
   const {

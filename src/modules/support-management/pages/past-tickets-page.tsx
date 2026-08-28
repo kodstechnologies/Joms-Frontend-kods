@@ -25,6 +25,7 @@ import {
 } from '../utils/support-format'
 import { fetchPastTickets } from '../api/support-api'
 import { useTableColumnPreferences } from '@/modules/expert/hooks/use-ui-preferences'
+import { useTableExportColumnIds } from '@/shared/hooks/use-table-export-column-ids'
 import { DataTable } from '@/shared/components/table/data-table'
 import {
   TableActionsDropdown,
@@ -99,6 +100,17 @@ export function PastTicketsPage() {
   const { searchQuery, setSearchQuery, currentPage, setCurrentPage } = useSupportStore()
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
   const tableColumnPreferencesQuery = useTableColumnPreferences(PAST_TICKETS_MODULE_KEY)
+
+  const catalogColumnIds = useMemo(
+    () => PAST_TICKETS_TABLE_COLUMNS_CATALOG.map((column) => column.id),
+    [],
+  )
+  const exportColumnIds = useTableExportColumnIds({
+    visibleColumnIds: tableColumnPreferencesQuery.data?.visibleColumnIds,
+    defaultColumnIds: DEFAULT_PAST_TICKETS_VISIBLE_COLUMN_IDS,
+    catalogColumnIds,
+    legacyColumnIdMap: PAST_TICKETS_LEGACY_COLUMN_ID_MAP,
+  })
 
   const listQueryParams = useMemo(
     () =>
@@ -325,8 +337,9 @@ export function PastTicketsPage() {
       EXPORT_COLUMN_MAP,
       'past_tickets_export',
       { search: searchQuery || undefined },
+      { columnIds: exportColumnIds, catalogOrder: catalogColumnIds },
     )
-  }, [searchQuery, userId])
+  }, [catalogColumnIds, exportColumnIds, searchQuery, userId])
 
   const {
     onAdvancedFilter,

@@ -14,6 +14,7 @@ import {
   FINANCE_RECONCILIATION_TABLE_COLUMNS_CATALOG,
 } from '@/modules/payments/config/finance-reconciliation-table-columns.config'
 import { useTableColumnPreferences } from '@/modules/expert/hooks/use-ui-preferences'
+import { useTableExportColumnIds } from '@/shared/hooks/use-table-export-column-ids'
 import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 import { DataTable } from '@/shared/components/table/data-table'
@@ -24,41 +25,13 @@ import {
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
 import type { FilterValues } from '@/shared/types/data-filter'
-import { exportDisplayValue } from '@/shared/utils/export-utils'
+import { FINANCE_RECONCILIATION_EXPORT_COLUMN_MAP } from '@/modules/payments/utils/finance-export-column-maps'
 import {
   buildFinanceReconciliationListQueryParams,
   createFinanceReconciliationFilteredExportHandler,
 } from '@/shared/utils/export-filter-utils'
 
 const PAGE_SIZE = 10
-
-const EXPORT_COLUMN_MAP: Record<
-  string,
-  { header: string; accessor: (row: FinanceReconciliationRow) => string }
-> = {
-  'reconciliation-id': {
-    header: 'Reconciliation ID',
-    accessor: (row) => exportDisplayValue(row.reconciliationId),
-  },
-  gateway: { header: 'Gateway', accessor: (row) => exportDisplayValue(row.gateway) },
-  'transaction-id': {
-    header: 'Transaction ID',
-    accessor: (row) => exportDisplayValue(row.transactionId),
-  },
-  'platform-record-id': {
-    header: 'Platform Record ID',
-    accessor: (row) => exportDisplayValue(row.platformRecordId),
-  },
-  'gateway-amount': {
-    header: 'Gateway Amount',
-    accessor: (row) => exportDisplayValue(row.gatewayAmount),
-  },
-  'platform-amount': {
-    header: 'Platform Amount',
-    accessor: (row) => exportDisplayValue(row.platformAmount),
-  },
-  difference: { header: 'Difference', accessor: (row) => exportDisplayValue(row.difference) },
-}
 
 function getDifferenceClassName(difference: FinanceReconciliationRow['difference']) {
   if (difference === 'Matched') {
@@ -79,6 +52,16 @@ export function FinanceReconciliationPage() {
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [selectedRowIds, setSelectedRowIds] = useState<string[]>([])
   const tableColumnPreferencesQuery = useTableColumnPreferences(FINANCE_RECONCILIATION_MODULE_KEY)
+
+  const catalogColumnIds = useMemo(
+    () => FINANCE_RECONCILIATION_TABLE_COLUMNS_CATALOG.map((column) => column.id),
+    [],
+  )
+  const exportColumnIds = useTableExportColumnIds({
+    visibleColumnIds: tableColumnPreferencesQuery.data?.visibleColumnIds,
+    defaultColumnIds: DEFAULT_FINANCE_RECONCILIATION_VISIBLE_COLUMN_IDS,
+    catalogColumnIds,
+  })
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -116,11 +99,12 @@ export function FinanceReconciliationPage() {
     }
     return createFinanceReconciliationFilteredExportHandler(
       fetchForExport,
-      EXPORT_COLUMN_MAP,
+      FINANCE_RECONCILIATION_EXPORT_COLUMN_MAP,
       'finance_reconciliation_export',
       { search: debouncedSearch || undefined },
+      { columnIds: exportColumnIds, catalogOrder: catalogColumnIds },
     )
-  }, [debouncedSearch])
+  }, [catalogColumnIds, debouncedSearch, exportColumnIds])
 
   const {
     onAdvancedFilter,
