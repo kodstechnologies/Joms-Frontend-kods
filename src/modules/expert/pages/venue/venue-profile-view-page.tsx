@@ -26,7 +26,6 @@ import {
   PauseCircle,
   Plus,
   Search,
-  Share2,
   SlidersHorizontal,
   Star,
   Tag,
@@ -69,8 +68,13 @@ import {
   DecisionActionModal,
   type DecisionActionModalOption,
 } from '@/shared/components/modal/decision-action-modal'
+import { useModuleExportFilters } from '@/shared/components/advanced-filter'
+import type {
+  FilterValues,
+  LocationFilterValue,
+  RangeFilterValue,
+} from '@/shared/types/data-filter'
 import { AddTagModal } from '@/shared/components/modal/add-tag-modal'
-import { ShareProfileModal } from '@/shared/components/modal/share-profile-modal'
 import { AdminNotesModal } from '@/modules/settings/components/admin-notes-modal'
 import { UpdatePasswordModal } from '@/modules/rbac/components/update-password-modal'
 import { MODERATION_CATEGORY_SLUGS } from '@/modules/settings/api/templates-api'
@@ -152,9 +156,6 @@ const VIOLATION_ISSUE_TYPES = new Set([
   'harassment',
   'safety hazard',
 ])
-
-const resolveVenueShareUrl = (venue?: VenueFullView['overview']['venue'] | null) =>
-  venue?.customUrl || venue?.customLink || venue?.shareUrl || null
 
 const unwrapVenueReportItems = (payload: unknown): VenueReportItem[] => {
   const root = payload as { data?: { items?: VenueReportItem[] }; items?: VenueReportItem[] }
@@ -245,8 +246,6 @@ const buildVenueTimelineEvents = (
     return aTime - bTime
   })
 }
-
-const comingSoon = (label: string) => toast.message(`${label} is coming soon`)
 
 const formatReviewDate = (value?: string | null) => {
   if (!value) return '—'
@@ -682,11 +681,85 @@ function SpacesTab({ data, venueId }: { data: VenueFullView; venueId: string }) 
     [assigneesData?.data],
   )
 
-  const spaces = useMemo(
-    () =>
-      data.spaces.filter((space) => space.spaceName.toLowerCase().includes(search.toLowerCase())),
-    [data.spaces, search],
-  )
+  const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
+
+  const handleApplyFilters = useCallback((values: FilterValues) => {
+    toast.success('Filters applied')
+    setAppliedFilters(values)
+  }, [])
+
+  const { onAdvancedFilter, modals: exportFilterModals } = useModuleExportFilters({
+    moduleKey: 'venue-profile-spaces',
+    onApplyFilters: handleApplyFilters,
+  })
+
+  const spaces = useMemo(() => {
+    return data.spaces.filter((space) => {
+      if (search.trim()) {
+        const query = search.toLowerCase().trim()
+        const matchName = space.spaceName?.toLowerCase().includes(query)
+        const matchCity = space.city?.toLowerCase().includes(query)
+        const matchState = space.state?.toLowerCase().includes(query)
+        if (!matchName && !matchCity && !matchState) return false
+      }
+
+      const loc = appliedFilters.location as LocationFilterValue | undefined
+      if (loc) {
+        if (loc.state && !space.state?.toLowerCase().includes(loc.state.toLowerCase())) return false
+        if (loc.city && !space.city?.toLowerCase().includes(loc.city.toLowerCase())) return false
+      }
+
+      const statusFilter = appliedFilters.status
+      if (Array.isArray(statusFilter) && statusFilter.length > 0) {
+        const spaceStatus = space.status || 'submitted'
+        if (!statusFilter.includes(spaceStatus)) return false
+      }
+
+      const visibilityFilter = appliedFilters.visibility
+      if (Array.isArray(visibilityFilter) && visibilityFilter.length > 0) {
+        const isSuspended = Boolean(space.isSuspend)
+        const isHidden = Boolean(space.isHidden)
+        const isActive = !isSuspended && !isHidden
+
+        const matches = visibilityFilter.some((val) => {
+          if (val === 'active') return isActive
+          if (val === 'hidden') return isHidden
+          if (val === 'suspended') return isSuspended
+          return false
+        })
+        if (!matches) return false
+      }
+
+      const capacityRange = appliedFilters.capacity as RangeFilterValue | undefined
+      if (capacityRange) {
+        const capNum = Number(space.capacity) || 0
+        const from = capacityRange.from ? Number(capacityRange.from) : null
+        const to = capacityRange.to ? Number(capacityRange.to) : null
+        if (from !== null && !Number.isNaN(from) && capNum < from) return false
+        if (to !== null && !Number.isNaN(to) && capNum > to) return false
+      }
+
+      const weekdayRange = appliedFilters.weekdayPrice as RangeFilterValue | undefined
+      if (weekdayRange) {
+        const price = space.weekdayPrice ?? 0
+        const from = weekdayRange.from ? Number(weekdayRange.from) : null
+        const to = weekdayRange.to ? Number(weekdayRange.to) : null
+        if (from !== null && !Number.isNaN(from) && price < from) return false
+        if (to !== null && !Number.isNaN(to) && price > to) return false
+      }
+
+      const weekendRange = appliedFilters.weekendPrice as RangeFilterValue | undefined
+      if (weekendRange) {
+        const price = space.weekendPrice ?? 0
+        const from = weekendRange.from ? Number(weekendRange.from) : null
+        const to = weekendRange.to ? Number(weekendRange.to) : null
+        if (from !== null && !Number.isNaN(from) && price < from) return false
+        if (to !== null && !Number.isNaN(to) && price > to) return false
+      }
+
+      return true
+    })
+  }, [data.spaces, search, appliedFilters])
 
   const visibleSpaceIds = useMemo(() => spaces.map((space) => space.spaceId), [spaces])
   const allVisibleSelected =
@@ -975,7 +1048,7 @@ function SpacesTab({ data, venueId }: { data: VenueFullView; venueId: string }) 
         </div>
         <button
           type="button"
-          onClick={() => comingSoon('Advance Filters')}
+          onClick={onAdvancedFilter}
           className="ui-advance-filters ui-cta ui-cta-outline text-body-sm gap-2 px-4 font-semibold"
         >
           <SlidersHorizontal className="size-4" />
@@ -1245,6 +1318,8 @@ function SpacesTab({ data, venueId }: { data: VenueFullView; venueId: string }) 
         }}
         isSubmitting={isEscalating}
       />
+
+      {exportFilterModals}
     </div>
   )
 }
@@ -1495,7 +1570,6 @@ export function VenueProfileViewPage() {
   const [deleteAdminNotes, setDeleteAdminNotes] = useState('')
   const [deleteConfirmed, setDeleteConfirmed] = useState(false)
   const [notesModalOpen, setNotesModalOpen] = useState(false)
-  const [shareModalOpen, setShareModalOpen] = useState(false)
   const [selectedReport, setSelectedReport] = useState<VenueReportItem | null>(null)
   const scrollToTimelineRef = useRef(false)
   const { tagModalOpen, openTagModal, closeTagModal } = useEntityTags()
@@ -1655,15 +1729,6 @@ export function VenueProfileViewPage() {
     },
     [ownerPartnerId, updateTagsMutation],
   )
-
-  const handleShareProfile = useCallback(() => {
-    const url = resolveVenueShareUrl(fullView?.overview?.venue)
-    if (!url) {
-      toast.error('No custom URL is set for this venue.')
-      return
-    }
-    setShareModalOpen(true)
-  }, [fullView])
 
   const handleExportProfile = useCallback(() => {
     if (!fullView) return
@@ -1963,7 +2028,6 @@ export function VenueProfileViewPage() {
       onClick: () => openTagModal(ownerPartnerId || resolvedVenueId || venue.name),
     },
     { label: 'Export Data', icon: Upload, onClick: handleExportProfile },
-    { label: 'Share Profile', icon: Share2, onClick: handleShareProfile },
   ]
 
   return (
@@ -2254,13 +2318,6 @@ export function VenueProfileViewPage() {
         initialNotes={fullView.overview.venue.adminInternalNotes || ''}
         onClose={() => setNotesModalOpen(false)}
         onSubmit={handleSaveNotes}
-      />
-
-      <ShareProfileModal
-        open={shareModalOpen}
-        url={resolveVenueShareUrl(fullView.overview.venue) || ''}
-        title={`Check out ${venue.name}`}
-        onClose={() => setShareModalOpen(false)}
       />
 
       <VenueReportDetailModal

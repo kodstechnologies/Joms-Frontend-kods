@@ -98,3 +98,4 @@ export type ModuleFilterKey =
   | 'leaderboard-management'
   | 'service-performance'
   | 'consultation-performance'
+  | 'venue-profile-spaces'
