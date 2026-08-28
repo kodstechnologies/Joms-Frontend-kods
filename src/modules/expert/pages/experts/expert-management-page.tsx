@@ -58,6 +58,8 @@ import {
 import { useExpertStore } from '../../store/expert-store'
 import type { Expert } from '../../type/expert'
 import { openExpertApplicationView } from '../../utils/expert-application-navigation'
+import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
+import { EXPERT_MANAGEMENT_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
 import { DataTable } from '@/shared/components/table/data-table'
 import {
   TableActionsDropdown,
@@ -127,14 +129,8 @@ export const ExpertManagementPage = () => {
     defaultColumnIds: DEFAULT_EXPERT_MANAGEMENT_VISIBLE_COLUMN_IDS,
     catalogColumnIds,
   })
-  const {
-    searchQuery,
-    setSearchQuery,
-    currentPage,
-    setCurrentPage,
-    activeStatus,
-    setActiveStatus,
-  } = useExpertStore()
+  const { currentPage, setCurrentPage, activeStatus, setActiveStatus } = useExpertStore()
+  const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setCurrentPage(1) })
 
   const handleApplyFilters = useCallback(
     (values: FilterValues) => {
@@ -150,10 +146,10 @@ export const ExpertManagementPage = () => {
       buildExpertListQueryParams(appliedAdvancedFilters, {
         page: currentPage,
         limit: 10,
-        search: searchQuery,
+        ...enhancedSearch.buildSearchParams(),
         status: activeStatus !== 'all' ? activeStatus : undefined,
       }),
-    [appliedAdvancedFilters, activeStatus, currentPage, searchQuery],
+    [appliedAdvancedFilters, activeStatus, currentPage, enhancedSearch],
   )
 
   const { data, isLoading } = useExperts(expertQueryParams)
@@ -167,11 +163,11 @@ export const ExpertManagementPage = () => {
         'experts_export',
         {
           status: activeStatus !== 'all' ? activeStatus : undefined,
-          search: searchQuery || undefined,
+          ...enhancedSearch.buildSearchParams(),
         },
         { columnIds: exportColumnIds, catalogOrder: catalogColumnIds },
       ),
-    [activeStatus, catalogColumnIds, exportColumnIds, searchQuery],
+    [activeStatus, catalogColumnIds, enhancedSearch, exportColumnIds],
   )
 
   const {
@@ -1085,8 +1081,13 @@ export const ExpertManagementPage = () => {
         data={experts}
         getRowId={(expert) => expert.expertId}
         isLoading={isLoading}
-        searchValue={searchQuery}
-        onSearchChange={setSearchQuery}
+        searchValue={enhancedSearch.globalSearch}
+        onSearchChange={enhancedSearch.setGlobalSearch}
+        searchableColumns={EXPERT_MANAGEMENT_SEARCH_COLUMNS}
+        columnSearches={enhancedSearch.columnSearches}
+        onColumnSearchChange={enhancedSearch.setColumnSearch}
+        onColumnSearchRemove={enhancedSearch.removeColumnSearch}
+        onClearAllSearches={enhancedSearch.clearAll}
         searchPlaceholder="Search by name or expert ID"
         onAdvancedFilter={onAdvancedFilter}
         onExport={onExport}

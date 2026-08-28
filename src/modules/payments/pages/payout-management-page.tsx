@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 import { Download, Eye, SlidersHorizontal, TrendingUp } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
@@ -11,6 +11,8 @@ import { formatInr, mapPayoutToRow } from '@/modules/payments/utils/finance-mapp
 import type { PayoutRow, PayoutStatus } from '@/modules/payments/mock/payout-management.mock'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 import { DataTable } from '@/shared/components/table/data-table'
+import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
+import { FINANCE_PAYOUT_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
 import {
   TableActionsDropdown,
   TableActionsItem,
@@ -79,29 +81,20 @@ function getStatusClassName(status: PayoutStatus) {
 export function PayoutManagementPage() {
   const navigate = useNavigate()
   const { logoUrl } = useBranding()
-  const [searchQuery, setSearchQuery] = useState('')
-  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
+  const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setCurrentPage(1) })
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [selectedRowIds, setSelectedRowIds] = useState<string[]>([])
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      setDebouncedSearch(searchQuery.trim())
-      setCurrentPage(1)
-    }, 300)
-    return () => window.clearTimeout(timer)
-  }, [searchQuery])
 
   const listQueryParams = useMemo(
     () =>
       buildFinancePayoutsListQueryParams(appliedFilters, {
         page: currentPage,
         limit: PAGE_SIZE,
-        search: debouncedSearch || undefined,
+        ...enhancedSearch.buildSearchParams(),
       }),
-    [appliedFilters, currentPage, debouncedSearch],
+    [appliedFilters, currentPage, enhancedSearch],
   )
 
   const { data, isLoading, isFetching, isError } = useFinancePayouts(listQueryParams)
@@ -126,9 +119,9 @@ export function PayoutManagementPage() {
       fetchForExport,
       EXPORT_COLUMN_MAP,
       'finance_payouts_export',
-      { search: debouncedSearch || undefined },
+      { search: enhancedSearch.globalSearch || undefined },
     )
-  }, [debouncedSearch])
+  }, [enhancedSearch.globalSearch])
 
   const {
     onAdvancedFilter,
@@ -331,8 +324,13 @@ export function PayoutManagementPage() {
         data={rows}
         getRowId={(row) => row.id}
         isLoading={isLoading || isFetching}
-        searchValue={searchQuery}
-        onSearchChange={setSearchQuery}
+        searchValue={enhancedSearch.globalSearch}
+        onSearchChange={enhancedSearch.setGlobalSearch}
+        searchableColumns={FINANCE_PAYOUT_SEARCH_COLUMNS}
+        columnSearches={enhancedSearch.columnSearches}
+        onColumnSearchChange={enhancedSearch.setColumnSearch}
+        onColumnSearchRemove={enhancedSearch.removeColumnSearch}
+        onClearAllSearches={enhancedSearch.clearAll}
         searchPlaceholder="Search by name, ID or profession"
         advancedFilterLabel="Advance Filters"
         onAdvancedFilter={onAdvancedFilter}

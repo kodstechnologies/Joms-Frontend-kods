@@ -11,6 +11,8 @@ import {
 } from '@/modules/payments/mock/finance-category.mock'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 import { DataTable } from '@/shared/components/table/data-table'
+import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
+import { FINANCE_CATEGORY_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
 import {
   TableActionsDropdown,
   TableActionsItem,
@@ -58,17 +60,32 @@ function getStatusClassName(status: FinanceCategoryStatus) {
 }
 
 export function FinanceCategoryPage() {
-  const [searchQuery, setSearchQuery] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
+  const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setCurrentPage(1) })
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
 
   const filteredRows = useMemo(
     () =>
-      financeCategoryRowsMock.filter((row) =>
-        rowMatchesClientFilters(row, appliedFilters, searchQuery, CATEGORY_FILTER_ACCESSORS),
-      ),
-    [appliedFilters, searchQuery],
+      financeCategoryRowsMock.filter((row) => {
+        if (
+          !rowMatchesClientFilters(
+            row,
+            appliedFilters,
+            enhancedSearch.globalSearch,
+            CATEGORY_FILTER_ACCESSORS,
+          )
+        ) {
+          return false
+        }
+        for (const [colId, val] of Object.entries(enhancedSearch.columnSearches)) {
+          if (!val) continue
+          const cellVal = String((row as Record<string, unknown>)[colId] ?? '').toLowerCase()
+          if (!cellVal.includes(val.toLowerCase())) return false
+        }
+        return true
+      }),
+    [appliedFilters, enhancedSearch.columnSearches, enhancedSearch.globalSearch],
   )
 
   const totalItems = filteredRows.length
@@ -114,12 +131,17 @@ export function FinanceCategoryPage() {
       createClientFilteredExportHandler(
         (values) =>
           financeCategoryRowsMock.filter((row) =>
-            rowMatchesClientFilters(row, values, searchQuery, CATEGORY_FILTER_ACCESSORS),
+            rowMatchesClientFilters(
+              row,
+              values,
+              enhancedSearch.globalSearch,
+              CATEGORY_FILTER_ACCESSORS,
+            ),
           ),
         EXPORT_COLUMN_MAP,
         'finance_categories_export',
       ),
-    [searchQuery],
+    [enhancedSearch.globalSearch],
   )
 
   const {
@@ -184,11 +206,13 @@ export function FinanceCategoryPage() {
         columns={columns}
         data={pageRows}
         getRowId={(row) => row.id}
-        searchValue={searchQuery}
-        onSearchChange={(value) => {
-          setSearchQuery(value)
-          setCurrentPage(1)
-        }}
+        searchValue={enhancedSearch.globalSearch}
+        onSearchChange={enhancedSearch.setGlobalSearch}
+        searchableColumns={FINANCE_CATEGORY_SEARCH_COLUMNS}
+        columnSearches={enhancedSearch.columnSearches}
+        onColumnSearchChange={enhancedSearch.setColumnSearch}
+        onColumnSearchRemove={enhancedSearch.removeColumnSearch}
+        onClearAllSearches={enhancedSearch.clearAll}
         searchPlaceholder="Search by category or module"
         advancedFilterLabel="Advance Filters"
         onAdvancedFilter={onAdvancedFilter}

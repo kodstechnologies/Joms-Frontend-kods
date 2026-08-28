@@ -41,6 +41,8 @@ import { useVenueStore } from '../../store'
 import type { Venue } from '../../type/venue'
 import { DataTable } from '@/shared/components/table/data-table'
 import { TableDateTimeCell } from '@/shared/components/table/table-datetime-cell'
+import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
+import { VENUE_MANAGEMENT_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
 import {
   TableActionsDropdown,
   TableActionsItem,
@@ -374,7 +376,8 @@ export const VenueManagementPage = () => {
 
   const navigate = useNavigate()
 
-  const { searchQuery, setSearchQuery, currentPage, setCurrentPage, activeStatus } = useVenueStore()
+  const { currentPage, setCurrentPage, activeStatus } = useVenueStore()
+  const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setCurrentPage(1) })
 
   const handleApplyFilters = useCallback(
     (values: FilterValues) => {
@@ -390,10 +393,10 @@ export const VenueManagementPage = () => {
       buildVenueListQueryParams(appliedAdvancedFilters, {
         page: currentPage,
         limit: 10,
-        search: searchQuery,
+        ...enhancedSearch.buildSearchParams(),
         status: activeStatus !== 'all' ? activeStatus : undefined,
       }),
-    [appliedAdvancedFilters, currentPage, searchQuery, activeStatus],
+    [appliedAdvancedFilters, currentPage, enhancedSearch, activeStatus],
   )
 
   const { data, isLoading } = useVenues(venueQueryParams)
@@ -407,10 +410,11 @@ export const VenueManagementPage = () => {
         'venues_export',
         {
           status: activeStatus !== 'all' ? activeStatus : undefined,
+          ...enhancedSearch.buildSearchParams(),
         },
         { columnIds: exportColumnIds, catalogOrder: catalogColumnIds },
       ),
-    [activeStatus, catalogColumnIds, exportColumnIds],
+    [activeStatus, catalogColumnIds, enhancedSearch, exportColumnIds],
   )
 
   const {
@@ -1418,8 +1422,13 @@ export const VenueManagementPage = () => {
         data={venues}
         getRowId={(venue) => venue._id}
         isLoading={isLoading}
-        searchValue={searchQuery}
-        onSearchChange={setSearchQuery}
+        searchValue={enhancedSearch.globalSearch}
+        onSearchChange={enhancedSearch.setGlobalSearch}
+        searchableColumns={VENUE_MANAGEMENT_SEARCH_COLUMNS}
+        columnSearches={enhancedSearch.columnSearches}
+        onColumnSearchChange={enhancedSearch.setColumnSearch}
+        onColumnSearchRemove={enhancedSearch.removeColumnSearch}
+        onClearAllSearches={enhancedSearch.clearAll}
         searchPlaceholder="Search by venue name or venue ID"
         onAdvancedFilter={onAdvancedFilter}
         onExport={onExport}

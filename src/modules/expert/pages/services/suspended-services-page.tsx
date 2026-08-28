@@ -29,6 +29,8 @@ import {
   pickServicePreferenceColumns,
 } from '../../utils/service-preference-columns'
 import { DataTable } from '@/shared/components/table/data-table'
+import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
+import { SERVICE_SUSPENDED_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
 import {
   TableActionsDropdown,
   TableActionsItem,
@@ -37,8 +39,8 @@ import { Button } from '@/shared/components/ui/button'
 
 export function SuspendedServicesPage() {
   const navigate = useNavigate()
-  const [searchQuery, setSearchQuery] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
+  const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setCurrentPage(1) })
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [selectedServiceIds, setSelectedServiceIds] = useState<string[]>([])
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
@@ -58,10 +60,10 @@ export function SuspendedServicesPage() {
       buildServiceListQueryParams(appliedFilters, {
         page: currentPage,
         limit: 10,
-        search: searchQuery,
+        ...enhancedSearch.buildSearchParams(),
         status: 'suspended',
       }),
-    [appliedFilters, currentPage, searchQuery],
+    [appliedFilters, currentPage, enhancedSearch],
   )
 
   const { data, isLoading } = useServices(serviceQueryParams)
@@ -90,10 +92,11 @@ export function SuspendedServicesPage() {
         'suspended_services_export',
         {
           status: 'suspended',
+          ...enhancedSearch.buildSearchParams(),
         },
         { columnIds: exportColumnIds, catalogOrder: catalogColumnIds },
       ),
-    [catalogColumnIds, exportColumnIds],
+    [catalogColumnIds, enhancedSearch, exportColumnIds],
   )
 
   const {
@@ -279,11 +282,13 @@ export function SuspendedServicesPage() {
         columns={columns}
         data={services}
         isLoading={isLoading}
-        searchValue={searchQuery}
-        onSearchChange={(value) => {
-          setSearchQuery(value)
-          setCurrentPage(1)
-        }}
+        searchValue={enhancedSearch.globalSearch}
+        onSearchChange={enhancedSearch.setGlobalSearch}
+        searchableColumns={SERVICE_SUSPENDED_SEARCH_COLUMNS}
+        columnSearches={enhancedSearch.columnSearches}
+        onColumnSearchChange={enhancedSearch.setColumnSearch}
+        onColumnSearchRemove={enhancedSearch.removeColumnSearch}
+        onClearAllSearches={enhancedSearch.clearAll}
         onAdvancedFilter={onAdvancedFilter}
         onExport={onExport}
         searchPlaceholder="Search by name, ID or profession"

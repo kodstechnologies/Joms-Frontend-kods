@@ -45,6 +45,11 @@ import { fetchRoleUsers, fetchRoles, fetchSubAdmins } from '../api/rbac-api'
 import { useRbacStore } from '../store/rbac-store'
 import type { Role, SubAdmin } from '../types/rbac'
 import { DataTable } from '@/shared/components/table/data-table'
+import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
+import {
+  RBAC_ROLE_SEARCH_COLUMNS,
+  RBAC_USER_SEARCH_COLUMNS,
+} from '@/shared/components/table/search-configs'
 import {
   TableActionsDropdown,
   TableActionsItem,
@@ -137,17 +142,10 @@ const formatRiskLevel = (value?: string) => {
 
 export function RbacHubPage() {
   const navigate = useNavigate()
-  const {
-    activeTab,
-    setActiveTab,
-    searchQuery,
-    setSearchQuery,
-    currentPage,
-    setCurrentPage,
-    roleFilterId,
-    setRoleFilterId,
-  } = useRbacStore()
+  const { activeTab, setActiveTab, currentPage, setCurrentPage, roleFilterId, setRoleFilterId } =
+    useRbacStore()
 
+  const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setCurrentPage(1) })
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [passwordResetUser, setPasswordResetUser] = useState<SubAdmin | null>(null)
 
@@ -158,16 +156,16 @@ export function RbacHubPage() {
   const { data: statsData, isLoading: statsLoading } = useRbacStats()
   const { data: rolesData, isLoading: rolesLoading } = useRoles({
     ...apiFilterParams,
+    ...enhancedSearch.buildSearchParams(),
     page: currentPage,
     limit: 10,
-    search: searchQuery || undefined,
   })
   const { data: subAdminsData, isLoading: subAdminsLoading } = useSubAdmins(
     {
       ...apiFilterParams,
+      ...enhancedSearch.buildSearchParams(),
       page: currentPage,
       limit: 10,
-      search: searchQuery || undefined,
     },
     { enabled: activeTab === 'users' && !roleFilterId },
   )
@@ -175,9 +173,9 @@ export function RbacHubPage() {
     roleFilterId || '',
     {
       ...apiFilterParams,
+      ...enhancedSearch.buildSearchParams(),
       page: currentPage,
       limit: 10,
-      search: searchQuery || undefined,
     },
     { enabled: activeTab === 'users' && Boolean(roleFilterId) },
   )
@@ -222,16 +220,16 @@ export function RbacHubPage() {
         fetchUsers,
         EXPORT_USER_COLUMN_MAP,
         'rbac_users_export',
-        { search: searchQuery || undefined },
+        { search: enhancedSearch.globalSearch || undefined },
       )
     }
     return createRbacFilteredExportHandler(
       fetchRoles,
       EXPORT_ROLE_COLUMN_MAP,
       'rbac_roles_export',
-      { search: searchQuery || undefined },
+      { search: enhancedSearch.globalSearch || undefined },
     )
-  }, [activeTab, roleFilterId, searchQuery])
+  }, [activeTab, enhancedSearch.globalSearch, roleFilterId])
 
   const {
     onAdvancedFilter,
@@ -758,8 +756,13 @@ export function RbacHubPage() {
           data={roles}
           getRowId={(row) => row.id}
           isLoading={isLoading}
-          searchValue={searchQuery}
-          onSearchChange={setSearchQuery}
+          searchValue={enhancedSearch.globalSearch}
+          onSearchChange={enhancedSearch.setGlobalSearch}
+          searchableColumns={RBAC_ROLE_SEARCH_COLUMNS}
+          columnSearches={enhancedSearch.columnSearches}
+          onColumnSearchChange={enhancedSearch.setColumnSearch}
+          onColumnSearchRemove={enhancedSearch.removeColumnSearch}
+          onClearAllSearches={enhancedSearch.clearAll}
           searchPlaceholder="Search by name, ID or profession"
           onAdvancedFilter={onAdvancedFilter}
           advancedFilterVariant="primary"
@@ -780,8 +783,13 @@ export function RbacHubPage() {
           data={subAdmins}
           getRowId={(row) => row.id}
           isLoading={isLoading}
-          searchValue={searchQuery}
-          onSearchChange={setSearchQuery}
+          searchValue={enhancedSearch.globalSearch}
+          onSearchChange={enhancedSearch.setGlobalSearch}
+          searchableColumns={RBAC_USER_SEARCH_COLUMNS}
+          columnSearches={enhancedSearch.columnSearches}
+          onColumnSearchChange={enhancedSearch.setColumnSearch}
+          onColumnSearchRemove={enhancedSearch.removeColumnSearch}
+          onClearAllSearches={enhancedSearch.clearAll}
           searchPlaceholder="Search by name, ID or profession"
           onAdvancedFilter={onAdvancedFilter}
           advancedFilterVariant="primary"

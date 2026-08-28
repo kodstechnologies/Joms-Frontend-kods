@@ -22,6 +22,8 @@ import { buildExpertClienteleMetricCards } from '../../utils/expert-clientele-me
 import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
 import { Button } from '@/shared/components/ui/button'
 import { DataTable } from '@/shared/components/table/data-table'
+import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
+import { EXPERT_CLIENTELE_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
 import {
   TableActionsDropdown,
   TableActionsItem,
@@ -221,8 +223,8 @@ export function ExpertClientelePage() {
   const navigate = useNavigate()
   const expertId = id || ''
 
-  const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
+  const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setPage(1) })
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
   const [activeActionMenu, setActiveActionMenu] = useState<string | null>(null)
 
@@ -231,9 +233,9 @@ export function ExpertClientelePage() {
       buildPrefixedListQueryParams(appliedFilters, {
         page,
         limit: 10,
-        search: search || undefined,
+        ...enhancedSearch.buildSearchParams(),
       }),
-    [appliedFilters, page, search],
+    [appliedFilters, enhancedSearch, page],
   )
 
   const handleApplyFilters = useCallback((values: FilterValues) => {
@@ -251,9 +253,9 @@ export function ExpertClientelePage() {
       fetchForExport,
       CLIENTELE_EXPORT_COLUMN_MAP,
       'expert_clientele_export',
-      { search: search || undefined },
+      { search: enhancedSearch.globalSearch || undefined },
     )
-  }, [expertId, search])
+  }, [enhancedSearch.globalSearch, expertId])
 
   const {
     onAdvancedFilter,
@@ -641,11 +643,13 @@ export function ExpertClientelePage() {
         data={items}
         getRowId={(row) => row.bookingId}
         isLoading={loading}
-        searchValue={search}
-        onSearchChange={(value) => {
-          setPage(1)
-          setSearch(value)
-        }}
+        searchValue={enhancedSearch.globalSearch}
+        onSearchChange={enhancedSearch.setGlobalSearch}
+        searchableColumns={EXPERT_CLIENTELE_SEARCH_COLUMNS}
+        columnSearches={enhancedSearch.columnSearches}
+        onColumnSearchChange={enhancedSearch.setColumnSearch}
+        onColumnSearchRemove={enhancedSearch.removeColumnSearch}
+        onClearAllSearches={enhancedSearch.clearAll}
         searchPlaceholder="Search by name, ID or listing"
         resourceLabel="bookings"
         onAdvancedFilter={onAdvancedFilter}

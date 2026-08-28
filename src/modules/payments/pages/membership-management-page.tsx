@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 import { Eye, SlidersHorizontal } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
@@ -14,6 +14,8 @@ import {
 } from '@/modules/payments/utils/finance-membership-mapper'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 import { DataTable } from '@/shared/components/table/data-table'
+import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
+import { FINANCE_MEMBERSHIP_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
 import {
   TableActionsDropdown,
   TableActionsItem,
@@ -66,31 +68,22 @@ function getStatusClassName(status: FinanceMembershipStatus) {
 
 export function MembershipManagementPage() {
   const navigate = useNavigate()
-  const [searchQuery, setSearchQuery] = useState('')
-  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
+  const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setCurrentPage(1) })
   const [statusFilter, setStatusFilter] = useState<SubscriptionStatus | 'all'>('all')
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [selectedRowIds, setSelectedRowIds] = useState<string[]>([])
 
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      setDebouncedSearch(searchQuery.trim())
-      setCurrentPage(1)
-    }, 300)
-    return () => window.clearTimeout(timer)
-  }, [searchQuery])
-
   const listQueryParams = useMemo(() => {
     const params = buildFinanceMembershipsListQueryParams(appliedFilters, {
       page: currentPage,
       limit: PAGE_SIZE,
-      search: debouncedSearch || undefined,
+      ...enhancedSearch.buildSearchParams(),
     })
     if (!params.status && statusFilter !== 'all') params.status = statusFilter
     return params
-  }, [appliedFilters, currentPage, debouncedSearch, statusFilter])
+  }, [appliedFilters, currentPage, enhancedSearch, statusFilter])
 
   const { data, isLoading, isFetching } = useExpertSubscriptions(listQueryParams)
 
@@ -117,11 +110,11 @@ export function MembershipManagementPage() {
       EXPORT_COLUMN_MAP,
       'finance_memberships_export',
       {
-        search: debouncedSearch || undefined,
+        search: enhancedSearch.globalSearch || undefined,
         status: statusFilter === 'all' ? undefined : statusFilter,
       },
     )
-  }, [debouncedSearch, statusFilter])
+  }, [enhancedSearch.globalSearch, statusFilter])
 
   const {
     onAdvancedFilter,
@@ -303,8 +296,13 @@ export function MembershipManagementPage() {
         data={rows}
         getRowId={(row) => row.id}
         isLoading={isLoading || isFetching}
-        searchValue={searchQuery}
-        onSearchChange={setSearchQuery}
+        searchValue={enhancedSearch.globalSearch}
+        onSearchChange={enhancedSearch.setGlobalSearch}
+        searchableColumns={FINANCE_MEMBERSHIP_SEARCH_COLUMNS}
+        columnSearches={enhancedSearch.columnSearches}
+        onColumnSearchChange={enhancedSearch.setColumnSearch}
+        onColumnSearchRemove={enhancedSearch.removeColumnSearch}
+        onClearAllSearches={enhancedSearch.clearAll}
         searchPlaceholder="Search by name, ID or profession"
         advancedFilterLabel="Advance Filters"
         onAdvancedFilter={onAdvancedFilter}
@@ -317,7 +315,7 @@ export function MembershipManagementPage() {
           totalPages: meta?.totalPages ?? 1,
           onPageChange: setCurrentPage,
         }}
-        resourceLabel="subscriptions"
+        resourceLabel="memberships"
         emptyMessage="No membership records found."
       />
 

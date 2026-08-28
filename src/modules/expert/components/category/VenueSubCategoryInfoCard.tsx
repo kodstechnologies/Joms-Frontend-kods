@@ -46,9 +46,7 @@ const VenueSubCategoryInfoCard = ({ category, subCategory }: Props) => {
 
             <div>
               <p className={categoryViewTheme.labelClass}>Created At</p>
-              <p className={`mt-2 ${categoryViewTheme.valueClass}`}>
-                {subCategory.addedOn || 'â€”'}
-              </p>
+              <p className={`mt-2 ${categoryViewTheme.valueClass}`}>{subCategory.addedOn || '—'}</p>
             </div>
 
             <div>

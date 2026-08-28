@@ -21,6 +21,8 @@ import { fetchIncidents } from '../api/incidents-api'
 import type { IncidentRow, IncidentSeverity, IncidentStatus } from '../types/settings'
 import { StatCard } from '@/shared/components/dashboard/stat-card'
 import { DataTable } from '@/shared/components/table/data-table'
+import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
+import { SETTINGS_INCIDENTS_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
 import { ResponsiveGrid } from '@/shared/components/responsive/responsive-grid'
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
@@ -186,8 +188,8 @@ const ALL_INCIDENT_COLUMNS: ColumnDef<IncidentRow>[] = [
 
 export function IncidentTrackingPanel() {
   const navigate = useNavigate()
-  const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
+  const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setPage(1) })
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
   const [selected, setSelected] = useState<IncidentRow | null>(null)
 
@@ -228,9 +230,9 @@ export function IncidentTrackingPanel() {
       buildPrefixedListQueryParams(appliedFilters, {
         page,
         limit: PAGE_SIZE,
-        search: search || undefined,
+        ...enhancedSearch.buildSearchParams(),
       }),
-    [appliedFilters, page, search],
+    [appliedFilters, enhancedSearch, page],
   )
 
   const { data: incidentsResult, isLoading } = useIncidents(listQueryParams)
@@ -256,10 +258,10 @@ export function IncidentTrackingPanel() {
       fetchForExport,
       INCIDENT_EXPORT_COLUMN_MAP,
       'incidents_export',
-      { search: search || undefined },
+      { search: enhancedSearch.globalSearch || undefined },
       { columnIds: exportColumnIds, catalogOrder: catalogColumnIds },
     )
-  }, [catalogColumnIds, exportColumnIds, search])
+  }, [catalogColumnIds, enhancedSearch.globalSearch, exportColumnIds])
 
   const {
     onAdvancedFilter,
@@ -341,11 +343,13 @@ export function IncidentTrackingPanel() {
           data={rows}
           getRowId={(row) => row.id}
           isLoading={isLoading}
-          searchValue={search}
-          onSearchChange={(value) => {
-            setSearch(value)
-            setPage(1)
-          }}
+          searchValue={enhancedSearch.globalSearch}
+          onSearchChange={enhancedSearch.setGlobalSearch}
+          searchableColumns={SETTINGS_INCIDENTS_SEARCH_COLUMNS}
+          columnSearches={enhancedSearch.columnSearches}
+          onColumnSearchChange={enhancedSearch.setColumnSearch}
+          onColumnSearchRemove={enhancedSearch.removeColumnSearch}
+          onClearAllSearches={enhancedSearch.clearAll}
           searchPlaceholder="Search by name, ID or profession"
           onAdvancedFilter={onAdvancedFilter}
           advancedFilterVariant="primary"

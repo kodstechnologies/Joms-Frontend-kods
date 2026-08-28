@@ -213,12 +213,24 @@ export function buildFilterParams(filterValues: FilterValues): Record<string, st
   return params
 }
 
+function assignExtraOptions(params: Record<string, unknown>, options: Record<string, unknown>) {
+  Object.entries(options).forEach(([key, val]) => {
+    if (key === 'page' || key === 'limit' || key === 'status' || key === 'search') return
+    if (typeof val === 'string' && val.trim()) {
+      params[key] = val.trim()
+    } else if (val !== undefined && val !== null && val !== '') {
+      params[key] = val
+    }
+  })
+}
+
 type ExpertListQueryOptions = {
   page?: number
   limit?: number
   search?: string
   /** Fixed list status from quick-link tabs (e.g. suspended, pending). */
   status?: string
+  [key: string]: unknown
 }
 
 /**
@@ -304,6 +316,8 @@ export function buildExpertListQueryParams(
     params.status = options.status.trim()
   }
 
+  assignExtraOptions(params, options)
+
   return params
 }
 
@@ -313,6 +327,7 @@ type ServiceListQueryOptions = {
   search?: string
   /** Fixed list status from quick-link tabs (e.g. suspended, in_review). */
   status?: string
+  [key: string]: unknown
 }
 
 /**
@@ -389,6 +404,8 @@ export function buildServiceListQueryParams(
   if (options.status?.trim()) {
     params.status = options.status.trim()
   }
+
+  assignExtraOptions(params, options)
 
   return params
 }
@@ -467,6 +484,8 @@ export function buildExpertProfileServicesQueryParams(
   if (options.status?.trim()) {
     params.status = options.status.trim()
   }
+
+  assignExtraOptions(params, options)
 
   return params
 }
@@ -574,6 +593,7 @@ type CategoryListQueryOptions = {
   search?: string
   /** Fixed list status from page tab (ACTIVE, PAUSED, DELETED). */
   status?: 'ACTIVE' | 'PAUSED' | 'DELETED'
+  [key: string]: unknown
 }
 
 /**
@@ -656,6 +676,8 @@ export function buildCategoryListQueryParams(
     params.status = options.status
   }
 
+  assignExtraOptions(params, options)
+
   return params
 }
 
@@ -683,6 +705,7 @@ type VenueListQueryOptions = {
   search?: string
   /** Fixed list status from page tab (active, suspended, in_review, rejected, deleted). */
   status?: string
+  [key: string]: unknown
 }
 
 /**
@@ -757,6 +780,8 @@ export function buildVenueListQueryParams(
   if (options.status) {
     params.status = options.status
   }
+
+  assignExtraOptions(params, options)
 
   return params
 }
@@ -1069,6 +1094,8 @@ export function buildRevenueListQueryParams(
   if (options.search?.trim()) {
     params.search = options.search.trim()
   }
+
+  assignExtraOptions(params, options)
 
   return params
 }

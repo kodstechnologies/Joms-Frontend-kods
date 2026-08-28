@@ -26,6 +26,8 @@ import { createExpertSelectColumn } from './expert-list-columns'
 import { ExpertListHeader } from './expert-list-shared'
 import { useExpertListSelection } from './use-expert-list-selection'
 import { DataTable } from '@/shared/components/table/data-table'
+import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
+import { EXPERT_DELETED_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
 import {
   TableActionsDropdown,
   TableActionsItem,
@@ -41,8 +43,8 @@ const fetchDeletedExpertsForExport = async (params: Record<string, unknown>) => 
 
 export function ExpertDeletedExpertsPage() {
   const navigate = useNavigate()
-  const [searchQuery, setSearchQuery] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
+  const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setCurrentPage(1) })
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
 
@@ -51,10 +53,10 @@ export function ExpertDeletedExpertsPage() {
       buildExpertListQueryParams(appliedFilters, {
         page: currentPage,
         limit: 10,
-        search: searchQuery,
+        ...enhancedSearch.buildSearchParams(),
         status: 'deactivated',
       }),
-    [appliedFilters, currentPage, searchQuery],
+    [appliedFilters, currentPage, enhancedSearch],
   )
 
   const { data, isLoading } = useExperts(expertQueryParams)
@@ -76,10 +78,10 @@ export function ExpertDeletedExpertsPage() {
         EXPERT_EXPORT_COLUMN_MAP,
         'deleted_experts_export',
         {
-          search: searchQuery.trim() || undefined,
+          ...enhancedSearch.buildSearchParams(),
         },
       ),
-    [searchQuery],
+    [enhancedSearch],
   )
 
   const {
@@ -193,11 +195,13 @@ export function ExpertDeletedExpertsPage() {
         data={experts}
         getRowId={(expert) => expert.expertId}
         isLoading={isLoading}
-        searchValue={searchQuery}
-        onSearchChange={(value) => {
-          setSearchQuery(value)
-          setCurrentPage(1)
-        }}
+        searchValue={enhancedSearch.globalSearch}
+        onSearchChange={enhancedSearch.setGlobalSearch}
+        searchableColumns={EXPERT_DELETED_SEARCH_COLUMNS}
+        columnSearches={enhancedSearch.columnSearches}
+        onColumnSearchChange={enhancedSearch.setColumnSearch}
+        onColumnSearchRemove={enhancedSearch.removeColumnSearch}
+        onClearAllSearches={enhancedSearch.clearAll}
         searchPlaceholder="Search by name or ID"
         onAdvancedFilter={onAdvancedFilter}
         onExport={onExport}

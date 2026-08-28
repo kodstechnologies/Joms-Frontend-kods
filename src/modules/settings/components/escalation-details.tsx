@@ -20,6 +20,8 @@ import {
 } from '@/modules/expert/hooks/use-active-metric-ids'
 import { Button } from '@/shared/components/ui/button'
 import { DataTable } from '@/shared/components/table/data-table'
+import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
+import { SETTINGS_ESCALATIONS_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
 import { StatCard } from '@/shared/components/dashboard/stat-card'
 import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
@@ -80,8 +82,8 @@ function EscalationMetricCardSkeleton() {
 
 export function EscalationDetails() {
   const navigate = useNavigate()
-  const [searchValue, setSearchValue] = useState('')
   const [page, setPage] = useState(1)
+  const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setPage(1) })
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
   const pageSize = 10
 
@@ -91,9 +93,9 @@ export function EscalationDetails() {
       buildPrefixedListQueryParams(appliedFilters, {
         page,
         limit: pageSize,
-        search: searchValue || undefined,
+        ...enhancedSearch.buildSearchParams(),
       }),
-    [appliedFilters, page, searchValue],
+    [appliedFilters, enhancedSearch, page],
   )
   const { data: escalationsResponse, isLoading: isEscalationsLoading } =
     useAllEscalations(listQueryParams)
@@ -148,10 +150,10 @@ export function EscalationDetails() {
       fetchForExport,
       ESCALATION_EXPORT_COLUMN_MAP,
       'escalations_export',
-      { search: searchValue || undefined },
+      { search: enhancedSearch.globalSearch || undefined },
       { columnIds: exportColumnIds, catalogOrder: catalogColumnIds },
     )
-  }, [catalogColumnIds, exportColumnIds, searchValue])
+  }, [catalogColumnIds, enhancedSearch.globalSearch, exportColumnIds])
 
   const {
     onAdvancedFilter,
@@ -212,11 +214,13 @@ export function EscalationDetails() {
       <DataTable
         columns={columns}
         data={escalations}
-        searchValue={searchValue}
-        onSearchChange={(value) => {
-          setSearchValue(value)
-          setPage(1)
-        }}
+        searchValue={enhancedSearch.globalSearch}
+        onSearchChange={enhancedSearch.setGlobalSearch}
+        searchableColumns={SETTINGS_ESCALATIONS_SEARCH_COLUMNS}
+        columnSearches={enhancedSearch.columnSearches}
+        onColumnSearchChange={enhancedSearch.setColumnSearch}
+        onColumnSearchRemove={enhancedSearch.removeColumnSearch}
+        onClearAllSearches={enhancedSearch.clearAll}
         searchPlaceholder="Search by name, ID or profession"
         advancedFilterLabel="Advance Filters"
         onAdvancedFilter={onAdvancedFilter}

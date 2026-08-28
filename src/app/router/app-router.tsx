@@ -241,7 +241,7 @@ const VenueReportedPage = lazy(() =>
 )
 const VenueRejectedPage = lazy(() =>
   import('@/modules/expert').then((m) => ({
-    default: m.VenueRejectedPage,
+    default: m.RejectedVenuesPage,
   })),
 )
 const VenueDeletedPage = lazy(() =>

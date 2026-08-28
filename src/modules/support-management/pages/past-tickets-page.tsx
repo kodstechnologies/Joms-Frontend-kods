@@ -27,6 +27,8 @@ import { fetchPastTickets } from '../api/support-api'
 import { useTableColumnPreferences } from '@/modules/expert/hooks/use-ui-preferences'
 import { useTableExportColumnIds } from '@/shared/hooks/use-table-export-column-ids'
 import { DataTable } from '@/shared/components/table/data-table'
+import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
+import { SUPPORT_TICKET_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
 import {
   TableActionsDropdown,
   TableActionsItem,
@@ -97,7 +99,8 @@ const EXPORT_COLUMN_MAP: Record<
 export function PastTicketsPage() {
   const navigate = useNavigate()
   const { userId } = useParams<{ userId: string }>()
-  const { searchQuery, setSearchQuery, currentPage, setCurrentPage } = useSupportStore()
+  const { currentPage, setCurrentPage } = useSupportStore()
+  const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setCurrentPage(1) })
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
   const tableColumnPreferencesQuery = useTableColumnPreferences(PAST_TICKETS_MODULE_KEY)
 
@@ -117,9 +120,9 @@ export function PastTicketsPage() {
       buildSupportTicketsListQueryParams(appliedFilters, {
         page: currentPage,
         limit: 10,
-        search: searchQuery || undefined,
+        ...enhancedSearch.buildSearchParams(),
       }),
-    [appliedFilters, currentPage, searchQuery],
+    [appliedFilters, currentPage, enhancedSearch],
   )
 
   const { data, isLoading } = usePastTickets(userId, listQueryParams)
@@ -336,10 +339,10 @@ export function PastTicketsPage() {
       fetchForExport,
       EXPORT_COLUMN_MAP,
       'past_tickets_export',
-      { search: searchQuery || undefined },
+      { search: enhancedSearch.globalSearch || undefined },
       { columnIds: exportColumnIds, catalogOrder: catalogColumnIds },
     )
-  }, [catalogColumnIds, exportColumnIds, searchQuery, userId])
+  }, [catalogColumnIds, enhancedSearch.globalSearch, exportColumnIds, userId])
 
   const {
     onAdvancedFilter,
@@ -383,11 +386,13 @@ export function PastTicketsPage() {
         columns={columns}
         data={tickets}
         getRowId={(row) => row.id}
-        searchValue={searchQuery}
-        onSearchChange={(val) => {
-          setSearchQuery(val)
-          setCurrentPage(1)
-        }}
+        searchValue={enhancedSearch.globalSearch}
+        onSearchChange={enhancedSearch.setGlobalSearch}
+        searchableColumns={SUPPORT_TICKET_SEARCH_COLUMNS}
+        columnSearches={enhancedSearch.columnSearches}
+        onColumnSearchChange={enhancedSearch.setColumnSearch}
+        onColumnSearchRemove={enhancedSearch.removeColumnSearch}
+        onClearAllSearches={enhancedSearch.clearAll}
         searchPlaceholder="Search by name, ID or profession"
         advancedFilterLabel="Advance Filters"
         onAdvancedFilter={onAdvancedFilter}

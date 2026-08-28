@@ -12,11 +12,11 @@ export function ByExpertsFilter() {
 
         <div className="flex flex-wrap gap-2 pt-2">
           <div className="text-brand-text rounded-full bg-white/10 px-3 py-1 text-xs">
-            Sarah Johnson âœ•
+            Sarah Johnson ✕
           </div>
 
           <div className="text-brand-text rounded-full bg-white/10 px-3 py-1 text-xs">
-            David Kim âœ•
+            David Kim ✕
           </div>
         </div>
       </div>

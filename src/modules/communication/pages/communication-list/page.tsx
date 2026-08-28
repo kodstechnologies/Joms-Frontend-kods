@@ -18,6 +18,8 @@ import {
 import { useCommunicationMetrics, useCommunications } from '../../hooks/use-communications'
 import type { Communication } from '../../api/communication-api'
 import { DataTable } from '@/shared/components/table/data-table'
+import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
+import { COMMUNICATION_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
 import { StatCard } from '@/shared/components/dashboard/stat-card'
 import { StatCardSkeleton } from '@/shared/components/ui/skeleton'
 import { getApiErrorMessage } from '@/shared/lib/api-error'
@@ -88,18 +90,9 @@ const EXPORT_COLUMN_MAP: Record<
 }
 
 export function CommunicationListPage() {
-  const [searchValue, setSearchValue] = useState('')
-  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [page, setPage] = useState(1)
+  const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setPage(1) })
   const navigate = useNavigate()
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      setDebouncedSearch(searchValue.trim())
-      setPage(1)
-    }, 300)
-    return () => window.clearTimeout(timer)
-  }, [searchValue])
 
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
 
@@ -109,9 +102,9 @@ export function CommunicationListPage() {
       buildCommunicationListQueryParams(appliedFilters, {
         page,
         limit: PAGE_SIZE,
-        search: debouncedSearch || undefined,
+        ...enhancedSearch.buildSearchParams(),
       }),
-    [appliedFilters, debouncedSearch, page],
+    [appliedFilters, enhancedSearch, page],
   )
   const listQuery = useCommunications(listQueryParams)
   const activeMetricIds = useActiveMetricIds(COMMUNICATION_MODULE_KEY, [
@@ -162,10 +155,10 @@ export function CommunicationListPage() {
         fetchCommunications,
         EXPORT_COLUMN_MAP,
         'communications_export',
-        { search: debouncedSearch || undefined },
+        { search: enhancedSearch.globalSearch || undefined },
         { columnIds: exportColumnIds, catalogOrder: catalogColumnIds },
       ),
-    [catalogColumnIds, debouncedSearch, exportColumnIds],
+    [catalogColumnIds, enhancedSearch.globalSearch, exportColumnIds],
   )
 
   const {
@@ -357,8 +350,13 @@ export function CommunicationListPage() {
         columns={columns}
         data={rows}
         getRowId={(row) => row.id}
-        searchValue={searchValue}
-        onSearchChange={setSearchValue}
+        searchValue={enhancedSearch.globalSearch}
+        onSearchChange={enhancedSearch.setGlobalSearch}
+        searchableColumns={COMMUNICATION_SEARCH_COLUMNS}
+        columnSearches={enhancedSearch.columnSearches}
+        onColumnSearchChange={enhancedSearch.setColumnSearch}
+        onColumnSearchRemove={enhancedSearch.removeColumnSearch}
+        onClearAllSearches={enhancedSearch.clearAll}
         searchPlaceholder="Search by name, ID or profession"
         advancedFilterLabel="Advance Filters"
         onAdvancedFilter={onAdvancedFilter}

@@ -8,6 +8,8 @@ import { useContactSetupProfile, useMySubAdminLogs } from '../hooks/use-rbac'
 import { RbacLoader } from '../components/rbac-loader'
 import type { AuditLog } from '../types/rbac'
 import { DataTable } from '@/shared/components/table/data-table'
+import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
+import { RBAC_ADMIN_LOGS_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
 import { useAuthStore } from '@/modules/auth/store/auth-store'
 import { cn } from '@/shared/lib/cn'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
@@ -63,7 +65,7 @@ export function MyProfilePage() {
   const navigate = useNavigate()
   const user = useAuthStore((state) => state.user)
   const [historyPage, setHistoryPage] = useState(1)
-  const [historySearch, setHistorySearch] = useState('')
+  const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setHistoryPage(1) })
   const historySectionRef = useRef<HTMLDivElement | null>(null)
 
   const { data: profileData, isLoading: profileLoading } = useContactSetupProfile(
@@ -72,7 +74,7 @@ export function MyProfilePage() {
   const { data: logsData, isLoading: logsLoading } = useMySubAdminLogs({
     page: historyPage,
     limit: PAGE_SIZE,
-    search: historySearch || undefined,
+    ...enhancedSearch.buildSearchParams(),
   })
 
   const subAdmin = profileData?.data.profile
@@ -333,11 +335,13 @@ export function MyProfilePage() {
           data={historyRows}
           getRowId={(row) => row.id}
           isLoading={logsLoading}
-          searchValue={historySearch}
-          onSearchChange={(value) => {
-            setHistorySearch(value)
-            setHistoryPage(1)
-          }}
+          searchValue={enhancedSearch.globalSearch}
+          onSearchChange={enhancedSearch.setGlobalSearch}
+          searchableColumns={RBAC_ADMIN_LOGS_SEARCH_COLUMNS}
+          columnSearches={enhancedSearch.columnSearches}
+          onColumnSearchChange={enhancedSearch.setColumnSearch}
+          onColumnSearchRemove={enhancedSearch.removeColumnSearch}
+          onClearAllSearches={enhancedSearch.clearAll}
           searchPlaceholder="Search by action, note, or module"
           showAdvancedFilter={false}
           onExport={() => toast.info('Export coming soon')}

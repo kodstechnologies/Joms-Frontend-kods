@@ -7,6 +7,8 @@ import { toast } from 'sonner'
 import { Button } from '@/shared/components/ui/button'
 import { StatCard } from '@/shared/components/dashboard/stat-card'
 import { DataTable } from '@/shared/components/table/data-table'
+import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
+import { SERVICE_PERFORMANCE_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
 import {
   TableActionsDropdown,
   TableActionsItem,
@@ -68,8 +70,8 @@ export function ServicePerformancePage() {
   const { expertId = '', serviceId = '' } = useParams<{ expertId: string; serviceId: string }>()
   const navigate = useNavigate()
 
-  const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
+  const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setPage(1) })
   const [appliedFilters, setAppliedFilters] = useState<ServiceOrdersQuery>({})
   const [activeActionMenu, setActiveActionMenu] = useState<string | null>(null)
   const [paymentModalOrder, setPaymentModalOrder] = useState<ServiceOrderRow | null>(null)
@@ -80,7 +82,7 @@ export function ServicePerformancePage() {
   const ordersQuery = useServiceOrders(serviceId, {
     page,
     limit: PAGE_SIZE,
-    search: search || undefined,
+    ...enhancedSearch.buildSearchParams(),
     ...appliedFilters,
   })
   const ordersData = ordersQuery.data?.data
@@ -591,11 +593,13 @@ export function ServicePerformancePage() {
         data={orders}
         getRowId={(row) => row.id}
         isLoading={ordersQuery.isLoading}
-        searchValue={search}
-        onSearchChange={(value) => {
-          setPage(1)
-          setSearch(value)
-        }}
+        searchValue={enhancedSearch.globalSearch}
+        onSearchChange={enhancedSearch.setGlobalSearch}
+        searchableColumns={SERVICE_PERFORMANCE_SEARCH_COLUMNS}
+        columnSearches={enhancedSearch.columnSearches}
+        onColumnSearchChange={enhancedSearch.setColumnSearch}
+        onColumnSearchRemove={enhancedSearch.removeColumnSearch}
+        onClearAllSearches={enhancedSearch.clearAll}
         searchPlaceholder="Search by name, ID or profession"
         resourceLabel="orders"
         emptyMessage="No orders placed for this service yet."

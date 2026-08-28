@@ -19,6 +19,8 @@ import {
 } from '../../components/expert-report-detail-modal'
 import { ExpertListHeader } from './expert-list-shared'
 import { DataTable } from '@/shared/components/table/data-table'
+import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
+import { EXPERT_REPORTED_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
 import {
   TableActionsDropdown,
   TableActionsItem,
@@ -88,8 +90,8 @@ const dash = (value: unknown) =>
 
 export function ExpertReportedExpertsPage() {
   const navigate = useNavigate()
-  const [searchQuery, setSearchQuery] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
+  const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setCurrentPage(1) })
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
 
   const [reports, setReports] = useState<ExpertReportItem[]>([])
@@ -102,12 +104,13 @@ export function ExpertReportedExpertsPage() {
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
 
   const apiFilterParams = useMemo(() => buildFilterParams(appliedFilters), [appliedFilters])
+  const searchParams = useMemo(() => enhancedSearch.buildSearchParams(), [enhancedSearch])
 
   const [prevKey, setPrevKey] = useState(
-    `${currentPage}-${searchQuery}-${JSON.stringify(apiFilterParams)}`,
+    `${currentPage}-${JSON.stringify(searchParams)}-${JSON.stringify(apiFilterParams)}`,
   )
 
-  const currentKey = `${currentPage}-${searchQuery}-${JSON.stringify(apiFilterParams)}`
+  const currentKey = `${currentPage}-${JSON.stringify(searchParams)}-${JSON.stringify(apiFilterParams)}`
 
   if (currentKey !== prevKey) {
     setPrevKey(currentKey)
@@ -118,7 +121,7 @@ export function ExpertReportedExpertsPage() {
     fetchExpertReports({
       page: currentPage,
       limit: 10,
-      search: searchQuery,
+      ...searchParams,
       ...apiFilterParams,
     })
       .then((res) => {
@@ -135,7 +138,7 @@ export function ExpertReportedExpertsPage() {
       .finally(() => {
         setLoading(false)
       })
-  }, [currentPage, searchQuery, apiFilterParams])
+  }, [currentPage, searchParams, apiFilterParams])
 
   const handleApplyFilters = useCallback((values: FilterValues) => {
     setAppliedFilters(values)
@@ -149,10 +152,10 @@ export function ExpertReportedExpertsPage() {
         EXPORT_COLUMN_MAP,
         'reported_experts_export',
         {
-          search: searchQuery.trim() || undefined,
+          search: enhancedSearch.globalSearch.trim() || undefined,
         },
       ),
-    [searchQuery],
+    [enhancedSearch.globalSearch],
   )
 
   const {
@@ -424,11 +427,13 @@ export function ExpertReportedExpertsPage() {
         data={reports}
         getRowId={(r) => r.reportId || r.id}
         isLoading={loading}
-        searchValue={searchQuery}
-        onSearchChange={(value) => {
-          setSearchQuery(value)
-          setCurrentPage(1)
-        }}
+        searchValue={enhancedSearch.globalSearch}
+        onSearchChange={enhancedSearch.setGlobalSearch}
+        searchableColumns={EXPERT_REPORTED_SEARCH_COLUMNS}
+        columnSearches={enhancedSearch.columnSearches}
+        onColumnSearchChange={enhancedSearch.setColumnSearch}
+        onColumnSearchRemove={enhancedSearch.removeColumnSearch}
+        onClearAllSearches={enhancedSearch.clearAll}
         searchPlaceholder="Search by report ID, expert, or reporter"
         onAdvancedFilter={onAdvancedFilter}
         onExport={onExport}

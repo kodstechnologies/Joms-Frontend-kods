@@ -20,6 +20,8 @@ import { useVenueManagementControls } from '@/modules/settings/hooks/use-venue-p
 import type { Venue } from '../../type/venue'
 import { getVenueApiId, getVenueDisplayId, getVenueDisplaySpaceId } from '../../utils/venue-list'
 import { DataTable } from '@/shared/components/table/data-table'
+import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
+import { VENUE_REJECTED_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
 import {
   TableActionsDropdown,
   TableActionsItem,
@@ -35,11 +37,11 @@ const EXPORT_COLUMN_MAP: Record<string, { header: string; accessor: (v: Venue) =
   venueCategory: { header: 'Event Type', accessor: (v) => exportDisplayValue(v.venueCategory) },
 }
 
-export function VenueRejectedPage() {
+export function RejectedVenuesPage() {
   const navigate = useNavigate()
   const { allowAddVenues } = useVenueManagementControls()
-  const [searchQuery, setSearchQuery] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
+  const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setCurrentPage(1) })
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [selectedVenueIds, setSelectedVenueIds] = useState<string[]>([])
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
@@ -49,10 +51,10 @@ export function VenueRejectedPage() {
       buildVenueListQueryParams(appliedFilters, {
         page: currentPage,
         limit: 10,
-        search: searchQuery,
+        ...enhancedSearch.buildSearchParams(),
         status: 'rejected',
       }),
-    [appliedFilters, currentPage, searchQuery],
+    [appliedFilters, currentPage, enhancedSearch],
   )
 
   const { data, isLoading } = useVenues(venueQueryParams)
@@ -289,11 +291,13 @@ export function VenueRejectedPage() {
         data={venues}
         getRowId={(venue) => venue._id}
         isLoading={isLoading}
-        searchValue={searchQuery}
-        onSearchChange={(value) => {
-          setSearchQuery(value)
-          setCurrentPage(1)
-        }}
+        searchValue={enhancedSearch.globalSearch}
+        onSearchChange={enhancedSearch.setGlobalSearch}
+        searchableColumns={VENUE_REJECTED_SEARCH_COLUMNS}
+        columnSearches={enhancedSearch.columnSearches}
+        onColumnSearchChange={enhancedSearch.setColumnSearch}
+        onColumnSearchRemove={enhancedSearch.removeColumnSearch}
+        onClearAllSearches={enhancedSearch.clearAll}
         searchPlaceholder="Search by name, ID or profession"
         onAdvancedFilter={onAdvancedFilter}
         onExport={onExport}

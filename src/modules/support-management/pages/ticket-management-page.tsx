@@ -67,6 +67,8 @@ import { useTableColumnPreferences } from '@/modules/expert/hooks/use-ui-prefere
 import { useTableExportColumnIds } from '@/shared/hooks/use-table-export-column-ids'
 import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
 import { DataTable } from '@/shared/components/table/data-table'
+import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
+import { SUPPORT_TICKET_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
 import {
   TableActionsDropdown,
   TableActionsItem,
@@ -214,16 +216,10 @@ function TicketMetricCard({
 
 export function TicketManagementPage() {
   const navigate = useNavigate()
-  const {
-    searchQuery,
-    setSearchQuery,
-    currentPage,
-    setCurrentPage,
-    activeTab,
-    setActiveTab,
-    setSelectedTicketId,
-  } = useSupportStore()
+  const { currentPage, setCurrentPage, activeTab, setActiveTab, setSelectedTicketId } =
+    useSupportStore()
 
+  const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setCurrentPage(1) })
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [tagModalOpen, setTagModalOpen] = useState(false)
   const [escalateOpen, setEscalateOpen] = useState(false)
@@ -238,11 +234,11 @@ export function TicketManagementPage() {
       buildSupportTicketsListQueryParams(appliedFilters, {
         page: currentPage,
         limit: 10,
-        search: searchQuery || undefined,
+        ...enhancedSearch.buildSearchParams(),
         tab: activeTab,
         includeClosed: true,
       }),
-    [activeTab, appliedFilters, currentPage, searchQuery],
+    [activeTab, appliedFilters, currentPage, enhancedSearch],
   )
 
   const { data, isLoading } = useSupportTickets(listQueryParams)
@@ -336,10 +332,10 @@ export function TicketManagementPage() {
       fetchForExport,
       EXPORT_COLUMN_MAP,
       'support_tickets_export',
-      { search: searchQuery || undefined, tab: activeTab, includeClosed: true },
+      { search: enhancedSearch.globalSearch || undefined, tab: activeTab, includeClosed: true },
       { columnIds: exportColumnIds, catalogOrder: catalogColumnIds },
     )
-  }, [activeTab, catalogColumnIds, exportColumnIds, searchQuery])
+  }, [activeTab, catalogColumnIds, enhancedSearch.globalSearch, exportColumnIds])
 
   const {
     onAdvancedFilter,
@@ -794,11 +790,13 @@ export function TicketManagementPage() {
         columns={columns}
         data={tickets}
         getRowId={(row) => row.id}
-        searchValue={searchQuery}
-        onSearchChange={(val) => {
-          setSearchQuery(val)
-          setCurrentPage(1)
-        }}
+        searchValue={enhancedSearch.globalSearch}
+        onSearchChange={enhancedSearch.setGlobalSearch}
+        searchableColumns={SUPPORT_TICKET_SEARCH_COLUMNS}
+        columnSearches={enhancedSearch.columnSearches}
+        onColumnSearchChange={enhancedSearch.setColumnSearch}
+        onColumnSearchRemove={enhancedSearch.removeColumnSearch}
+        onClearAllSearches={enhancedSearch.clearAll}
         searchPlaceholder="Search by name, ID or profession"
         advancedFilterLabel="Advance Filters"
         onAdvancedFilter={onAdvancedFilter}
