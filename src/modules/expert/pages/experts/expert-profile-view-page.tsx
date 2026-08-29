@@ -83,6 +83,7 @@ import {
   useUpdateExpertAdminTags,
   useUpdateExpertCustomLinkVisibility,
 } from '../../hooks/use-expert-profile'
+import { useExpertLeaderboardProfile } from '../../hooks/use-leaderboard'
 import {
   DEFAULT_EXPERT_PROFILE_ANALYTICS_METRIC_IDS,
   EXPERT_PROFILE_ANALYTICS_LEGACY_METRIC_ID_MAP,
@@ -2681,6 +2682,7 @@ export function ExpertProfileViewPage() {
     error: profileErrorDetail,
   } = useExpertProfile(id)
 
+  const { data: leaderboardProfileRes } = useExpertLeaderboardProfile(id ?? null, {})
   const { data: analyticsRes } = useExpertAnalytics(id)
   const updateNotesMutation = useUpdateExpertAdminNotes(id)
   const updateTagsMutation = useUpdateExpertAdminTags(id)
@@ -3066,6 +3068,13 @@ export function ExpertProfileViewPage() {
   const coverImage = basic?.coverImage
   const avatarImage = basic?.profileImage
   const subtitle = [basic?.industry, basic?.location].filter(Boolean).join(' • ')
+  const leaderboardRank = leaderboardProfileRes?.data?.rank
+  const expertRank =
+    leaderboardRank ??
+    (profile as unknown as { rank?: number; leaderboardRank?: number })?.rank ??
+    (profile as unknown as { leaderboardRank?: number })?.leaderboardRank
+  const rankingBadgeText =
+    expertRank != null && Number(expertRank) > 0 ? `# ${expertRank} Ranking` : 'Unranked'
 
   const headerActions = [
     {
@@ -3246,7 +3255,7 @@ export function ExpertProfileViewPage() {
               <div className="flex flex-wrap items-center gap-2">
                 <h2 className="text-lg font-bold text-white">{displayName}</h2>
                 <span className="rounded-full border border-[#1E563D]/50 bg-[#143D2B] px-2.5 py-0.5 text-[10px] font-bold text-white">
-                  # 1 Ranking
+                  {rankingBadgeText}
                 </span>
               </div>
               <p className="text-body-sm text-white/50">{subtitle || '—'}</p>

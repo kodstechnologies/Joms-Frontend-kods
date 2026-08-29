@@ -19,11 +19,6 @@ import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import { Input } from '@/shared/components/ui/input'
 import { cn } from '@/shared/lib/cn'
 import { uiTokens } from '@/shared/lib/design-tokens'
-import { useSecurityPolicy } from '@/modules/settings/hooks/use-security-policy'
-import {
-  describePasswordPolicy,
-  validatePasswordAgainstPolicy,
-} from '@/modules/settings/utils/password-policy'
 
 type Step = 'form' | 'review'
 
@@ -73,7 +68,6 @@ export function CreateSubAdminPage() {
 
   const [step, setStep] = useState<Step>('form')
   const [form, setForm] = useState<CreateSubAdminPayload>(emptyForm)
-  const [confirmPassword, setConfirmPassword] = useState('')
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [adminNote, setAdminNote] = useState('')
   const [roleSearch, setRoleSearch] = useState('')
@@ -94,8 +88,6 @@ export function CreateSubAdminPage() {
   })
   const createMutation = useCreateSubAdmin()
   const updateMutation = useUpdateSubAdmin()
-  const { passwordPolicy } = useSecurityPolicy()
-  const passwordRules = describePasswordPolicy(passwordPolicy)
 
   const editKey = `${editId}:${isEditMode}`
   if (editKey !== hydratedEditKey) {
@@ -103,7 +95,6 @@ export function CreateSubAdminPage() {
     setFormHydrated(false)
     if (!isEditMode) {
       setForm(emptyForm)
-      setConfirmPassword('')
       setStep('form')
       setAdminNote('')
     }
@@ -188,21 +179,6 @@ export function CreateSubAdminPage() {
       toast.error('First name, last name and email are required')
       return false
     }
-    if (!isEditMode) {
-      if (!form.password) {
-        toast.error('Password is required')
-        return false
-      }
-      const policyCheck = validatePasswordAgainstPolicy(form.password, passwordPolicy)
-      if (!policyCheck.valid) {
-        toast.error(policyCheck.message || 'Password does not meet policy')
-        return false
-      }
-      if (form.password !== confirmPassword) {
-        toast.error('Passwords do not match')
-        return false
-      }
-    }
     if (!form.roleIds.length) {
       toast.error('Select at least one role')
       return false
@@ -221,8 +197,8 @@ export function CreateSubAdminPage() {
       setConfirmOpen(false)
       toast.success(
         result?.data?.notificationSent
-          ? 'User created. Login credentials have been emailed.'
-          : 'User created. They can log in with the email and password you set.',
+          ? 'User created. Login credentials have been emailed to the user.'
+          : 'User created successfully.',
       )
       navigate('/settings/access')
     } catch {
@@ -335,39 +311,6 @@ export function CreateSubAdminPage() {
                   />
                 </div>
               ))}
-              {!isEditMode ? (
-                <>
-                  <div className="space-y-2">
-                    <label className="text-brand-text text-sm font-medium">
-                      Password <RequiredMark />
-                    </label>
-                    <Input
-                      type="password"
-                      value={form.password}
-                      onChange={(e) => updateField('password', e.target.value)}
-                      placeholder={`Set login password (min ${passwordPolicy.minimumLength} characters)`}
-                      autoComplete="new-password"
-                    />
-                    <ul className="text-body-sm text-muted mt-2 list-disc space-y-1 pl-4">
-                      {passwordRules.map((rule) => (
-                        <li key={rule}>{rule}</li>
-                      ))}
-                    </ul>
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-brand-text text-sm font-medium">
-                      Confirm Password <RequiredMark />
-                    </label>
-                    <Input
-                      type="password"
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      placeholder="Re-enter password"
-                      autoComplete="new-password"
-                    />
-                  </div>
-                </>
-              ) : null}
               <div className="rounded-brand-md flex items-center justify-between border border-white/10 px-4 py-3 md:col-span-2">
                 <div>
                   <p className="text-brand-text text-sm font-medium">2 Factor Authentication</p>

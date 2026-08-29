@@ -116,7 +116,7 @@ export type CreateSubAdminPayload = {
   firstName: string
   lastName: string
   email: string
-  password: string
+  password?: string
   department?: string
   jobTitle?: string
   employeeId?: string

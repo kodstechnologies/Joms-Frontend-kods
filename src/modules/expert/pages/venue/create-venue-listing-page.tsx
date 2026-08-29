@@ -101,8 +101,27 @@ type DraftVenue = {
   }
 }
 
-const toEntityId = (value?: string | { _id: string }) =>
-  typeof value === 'object' ? value?._id : value
+const toEntityId = (value?: unknown) => {
+  if (!value) return ''
+  if (typeof value === 'string') return value
+  if (typeof value === 'object' && '_id' in (value as Record<string, unknown>)) {
+    return String((value as { _id: unknown })._id || '')
+  }
+  if (typeof value === 'object' && 'id' in (value as Record<string, unknown>)) {
+    return String((value as { id: unknown }).id || '')
+  }
+  return String(value)
+}
+
+const extractVenueCategory = (venue?: DraftVenue) => {
+  if (Array.isArray(venue?.venueCategoryId) && venue.venueCategoryId.length > 0) {
+    return toEntityId(venue.venueCategoryId[0])
+  }
+  if (venue?.venueCategoryId) {
+    return toEntityId(venue.venueCategoryId as unknown)
+  }
+  return (venue as unknown as { venueCategory?: string })?.venueCategory || ''
+}
 
 const getApiErrorMessage = (error: unknown) => {
   const err = error as { response?: { data?: { message?: string } } }
@@ -200,7 +219,7 @@ export const CreateVenueListingPage = () => {
           ...prev,
           venueName: venue?.name || '',
           venueType: venue?.venueType || '',
-          venueCategory: toEntityId(venue?.venueCategoryId?.[0]) || '',
+          venueCategory: extractVenueCategory(venue),
           aboutVenue: venue?.aboutVenue || '',
           address: venue?.location?.address || '',
           landmark: venue?.location?.landmark || '',
