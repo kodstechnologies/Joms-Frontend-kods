@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { ChevronRight, Trash2, X } from 'lucide-react'
 import clockIcon from '@/assets/JOMS_ICONS-2/icons8-clock-24.svg'
 
@@ -24,28 +24,16 @@ export const PricingStep = ({ venueData, setVenueData }: PricingStepProps) => {
 
   const allowBaseRates =
     pricingControls?.hourlyRates !== false || pricingControls?.fullDayRates !== false
-  const allowWeekend = Boolean(pricingControls?.weekendPricing)
-  const allowPeak = Boolean(pricingControls?.peakPricing)
+  const hasExistingWeekend = Boolean(venueData.weekendPrice)
+  const hasExistingPeak = Boolean(venueData.reservationFee)
+  const hasExistingBlackout = (venueData.blockedDates?.length || 0) > 0
+
+  const allowWeekend = Boolean(pricingControls?.weekendPricing) || hasExistingWeekend
+  const allowPeak = Boolean(pricingControls?.peakPricing) || hasExistingPeak
+  const allowBlackout = blackoutDatesEnabled || hasExistingBlackout
   const allowFullDay = pricingControls?.fullDayRates !== false
   const allowHourlyOnly =
     pricingControls?.hourlyRates !== false && pricingControls?.fullDayRates === false
-
-  useEffect(() => {
-    if (!venueSettings) return
-    setVenueData((prev) => {
-      let next = prev
-      if (!allowWeekend && prev.weekendPrice) {
-        next = { ...next, weekendPrice: '' }
-      }
-      if (!allowPeak && prev.reservationFee) {
-        next = { ...next, reservationFee: '' }
-      }
-      if (!blackoutDatesEnabled && (prev.blockedDates?.length || 0) > 0) {
-        next = { ...next, blockedDates: [] }
-      }
-      return next
-    })
-  }, [venueSettings, allowWeekend, allowPeak, blackoutDatesEnabled, setVenueData])
 
   const weeklyAvailability =
     venueData.weeklyAvailability?.length > 0
@@ -69,7 +57,7 @@ export const PricingStep = ({ venueData, setVenueData }: PricingStepProps) => {
   }
 
   const addBlockedDate = () => {
-    if (!blackoutDatesEnabled) return
+    if (!allowBlackout) return
     setVenueData((prev) => ({
       ...prev,
       blockedDates: [

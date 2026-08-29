@@ -8,6 +8,7 @@ import type { ColumnDef } from '@tanstack/react-table'
 import type { FilterValues } from '@/shared/types/data-filter'
 import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
 import { exportDataToFile, exportDisplayValue } from './export-utils'
+export { exportDataToFile, exportDisplayValue }
 
 export type ExportColumnDef<T> = { header: string; accessor: (item: T) => string }
 export type ExportColumnMap<T> = Record<string, ExportColumnDef<T>>

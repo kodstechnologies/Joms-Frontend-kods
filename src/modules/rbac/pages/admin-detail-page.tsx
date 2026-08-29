@@ -15,16 +15,40 @@ import {
   useReactivateSubAdmin,
   useUpdateSubAdminPassword,
 } from '../hooks/use-rbac'
-import type { AuditLog } from '../types/rbac'
+import { fetchSubAdminLogs } from '../api/rbac-api'
+import type { AuditLog, UpdateSubAdminPasswordPayload } from '../types/rbac'
 import { DataTable } from '@/shared/components/table/data-table'
 import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
 import { RBAC_ADMIN_LOGS_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
+import { exportDisplayValue } from '@/shared/utils/export-utils'
+import { createPrefixedListExportHandler } from '@/shared/utils/export-filter-utils'
+import { useModuleExportFilters } from '@/shared/components/advanced-filter/use-module-export-filters'
 import { cn } from '@/shared/lib/cn'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import deleteIcon from '@/assets/JOMS_ICONS-2/icons8-delete.svg'
 import { uiTokens } from '@/shared/lib/design-tokens'
 
 const PAGE_SIZE = 10
+
+const ROLE_HISTORY_EXPORT_COLUMN_MAP: Record<
+  string,
+  { header: string; accessor: (log: AuditLog) => string }
+> = {
+  previousRole: {
+    header: 'Previous Role',
+    accessor: (log) => exportDisplayValue((log.metadata?.previousRole as string) || '—'),
+  },
+  changedTo: {
+    header: 'Changed To',
+    accessor: (log) => exportDisplayValue((log.metadata?.changedTo as string) || log.action || '—'),
+  },
+  changedOn: { header: 'Changed On', accessor: (log) => exportDisplayValue(log.createdAt) },
+  changedBy: {
+    header: 'Changed BY',
+    accessor: (log) => exportDisplayValue(log.performedBy || '—'),
+  },
+  adminNote: { header: 'Admin Note', accessor: (log) => exportDisplayValue(log.adminNote || '—') },
+}
 
 const goldActionButtonClass =
   'ui-cta ui-cta-primary rounded-brand-md inline-flex items-center gap-2 px-4 py-2.5'
@@ -118,6 +142,24 @@ export function AdminDetailPage() {
 
   const historyRows = useMemo(() => logs.map(mapLogToRoleHistory), [logs])
 
+  const handleExportData = useMemo(() => {
+    const fetchForExport = async (params: Record<string, unknown>) => {
+      const result = await fetchSubAdminLogs(id, params)
+      return { data: result.data?.logs ?? [] }
+    }
+    return createPrefixedListExportHandler(
+      fetchForExport,
+      ROLE_HISTORY_EXPORT_COLUMN_MAP,
+      'admin_role_history_export',
+      { search: enhancedSearch.globalSearch || undefined },
+    )
+  }, [enhancedSearch.globalSearch, id])
+
+  const { onExport, modals: exportFilterModals } = useModuleExportFilters({
+    moduleKey: 'rbac-admin-logs',
+    onExportData: handleExportData,
+  })
+
   const historyColumns = useMemo<ColumnDef<RoleHistoryRow>[]>(
     () => [
       { accessorKey: 'previousRole', header: 'Previous Role' },
@@ -145,45 +187,44 @@ export function AdminDetailPage() {
   )
 
   const handleSuspend = useCallback(async () => {
-    if (!id) return
     try {
       await suspendMutation.mutateAsync(id)
-      toast.success('User suspended')
+      toast.success('Admin suspended')
     } catch {
-      toast.error('Failed to suspend user')
+      toast.error('Failed to suspend admin')
     }
   }, [id, suspendMutation])
 
   const handleReactivate = useCallback(async () => {
-    if (!id) return
     try {
       await reactivateMutation.mutateAsync(id)
-      toast.success('User reactivated')
+      toast.success('Admin reactivated')
     } catch {
-      toast.error('Failed to reactivate user')
+      toast.error('Failed to reactivate admin')
     }
   }, [id, reactivateMutation])
 
   const handleDelete = useCallback(async () => {
-    if (!id) return
     try {
       await deleteMutation.mutateAsync(id)
-      toast.success('User deleted')
+      toast.success('Admin deleted')
       navigate('/settings/access')
     } catch {
-      toast.error('Failed to delete user')
+      toast.error('Failed to delete admin')
     }
   }, [deleteMutation, id, navigate])
 
   const handlePasswordUpdate = useCallback(
-    async (payload: { oldPassword: string; newPassword: string; confirmNewPassword: string }) => {
-      if (!id) return
+    async (data: UpdateSubAdminPasswordPayload) => {
       try {
-        await updatePasswordMutation.mutateAsync({ id, payload })
+        await updatePasswordMutation.mutateAsync({
+          id,
+          payload: data,
+        })
         toast.success('Password updated successfully')
         setPasswordModalOpen(false)
-      } catch {
-        toast.error('Failed to update password')
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : 'Failed to update password')
       }
     },
     [id, updatePasswordMutation],
@@ -205,13 +246,7 @@ export function AdminDetailPage() {
           <span>Admin Details</span>
         </button>
         <div className="text-body-sm-medium text-muted flex items-center gap-1.5 pl-7">
-          <button
-            type="button"
-            onClick={() => navigateBackOrFallback(navigate, '/settings/access')}
-            className="hover:text-brand-text transition-colors"
-          >
-            Role Based Access
-          </button>
+          <span>Role Based Access</span>
           <span className="text-brand-text/30">/</span>
           <span className="text-brand-text font-bold">{subAdmin.fullname}</span>
         </div>
@@ -231,7 +266,7 @@ export function AdminDetailPage() {
           <button
             type="button"
             className={goldOutlineActionButtonClass}
-            onClick={() => toast.info('Assigned tasks coming soon')}
+            onClick={() => navigate('/my-tasks')}
           >
             <Clock className="size-4" />
             View Assigned Tasks
@@ -249,134 +284,113 @@ export function AdminDetailPage() {
               <span className="grid size-5 place-items-center rounded-full bg-white/20">
                 <X className="size-3" />
               </span>
-              Suspend
+              Suspend Admin
             </button>
           ) : (
             <button type="button" className={goldActionButtonClass} onClick={handleReactivate}>
               <UserCheck className="size-4" />
-              Reactivate
+              Reactivate Admin
             </button>
           )}
           <button type="button" className={dangerActionButtonClass} onClick={handleDelete}>
             <span className="grid size-5 place-items-center rounded-full bg-white/20">
-              <img src={deleteIcon} alt="delete" className="size-3" />
+              <img src={deleteIcon} alt="Delete" className="size-4 invert" />
             </span>
-            Delete User
+            Delete
           </button>
         </div>
       </div>
 
-      <section>
-        <div className={cn(uiTokens.radiusCard, uiTokens.borderSubtle, 'bg-brand-surface p-6')}>
-          <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
-            <div className="flex items-center gap-2">
-              <div className="rounded-brand-md bg-brand-accent/10 text-brand-accent grid size-9 place-items-center">
-                <UserRound className="size-4" />
-              </div>
-              <h3 className="text-brand-text text-base font-semibold">Admin Info</h3>
+      <section className={cn(uiTokens.radiusCard, uiTokens.borderSubtle, 'bg-brand-surface p-6')}>
+        <div className="mb-5 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="rounded-brand-md bg-brand-accent/10 text-brand-accent grid size-9 place-items-center">
+              <UserRound className="size-4" />
             </div>
-            <span
-              className={cn(
-                'text-body-sm-semibold inline-flex rounded-full border px-2.5 py-0.5 capitalize',
-                subAdmin.status === 'active'
-                  ? 'border-brand-success/25 bg-brand-success/10 text-brand-success'
-                  : 'border-brand-danger/25 bg-brand-danger/10 text-brand-danger',
-              )}
-            >
-              {subAdmin.status}
-            </span>
+            <h3 className="text-brand-text text-base font-semibold">Admin Info</h3>
           </div>
+          <span
+            className={cn(
+              'text-body-sm-semibold rounded-full border px-2.5 py-0.5 capitalize',
+              subAdmin.status === 'active'
+                ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400'
+                : 'border-rose-500/30 bg-rose-500/10 text-rose-400',
+            )}
+          >
+            {subAdmin.status}
+          </span>
+        </div>
 
-          <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
-            <div className="bg-brand-surface grid size-24 shrink-0 place-items-center overflow-hidden rounded-full border border-white/10">
-              {subAdmin.profileImageUrl ? (
-                <img
-                  src={subAdmin.profileImageUrl}
-                  alt={subAdmin.fullname}
-                  className="size-full object-cover"
-                />
-              ) : (
-                <UserRound className="text-brand-muted size-10" />
-              )}
-            </div>
-
-            <div className="grid flex-1 gap-5 md:grid-cols-2 xl:grid-cols-4">
-              {[
-                ['First Name', subAdmin.firstName],
-                ['Last Name', subAdmin.lastName],
-                ['Role', roleLabel],
-                ['Employee ID', subAdmin.employeeId || '—'],
-                ['Department', subAdmin.department || '—'],
-                ['2FA Status', subAdmin.mfaEnabled ? 'Enabled' : 'Disabled'],
-                ['Workplace', subAdmin.workplaceFlexibility || '—'],
-              ].map(([label, value]) => (
-                <div key={label}>
-                  <p className="text-brand-muted text-xs">{label}</p>
-                  {label === 'Role' ? (
-                    <span className="text-brand-text mt-2 inline-flex rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold">
-                      {value}
-                    </span>
-                  ) : (
-                    <p className="text-brand-text mt-1 text-sm font-medium">{value}</p>
-                  )}
-                </div>
-              ))}
-            </div>
-
-            <div className="text-brand-muted text-right text-xs lg:min-w-[180px]">
-              <p>
-                Last Active:{' '}
-                <span className="text-brand-text font-medium">
-                  {formatOverviewDate(subAdmin.lastActionAt)}
-                </span>
-              </p>
-            </div>
+        <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
+          <div>
+            <p className="text-brand-muted text-xs">Full Name</p>
+            <p className="text-brand-text mt-1 text-sm font-medium">{subAdmin.fullname}</p>
+          </div>
+          <div>
+            <p className="text-brand-muted text-xs">Email ID</p>
+            <p className="text-brand-text mt-1 text-sm font-medium">{subAdmin.email}</p>
+          </div>
+          <div>
+            <p className="text-brand-muted text-xs">Phone Number</p>
+            <p className="text-brand-text mt-1 text-sm font-medium">{subAdmin.phone || '—'}</p>
+          </div>
+          <div>
+            <p className="text-brand-muted text-xs">Role</p>
+            <p className="text-brand-text mt-1 text-sm font-medium">{roleLabel}</p>
+          </div>
+          <div>
+            <p className="text-brand-muted text-xs">Added On</p>
+            <p className="text-brand-text mt-1 text-sm font-medium">
+              {formatOverviewDate(subAdmin.createdAt)}
+            </p>
+          </div>
+          <div>
+            <p className="text-brand-muted text-xs">Last Active</p>
+            <p className="text-brand-text mt-1 text-sm font-medium">
+              {formatOverviewDate(subAdmin.lastActionAt)}
+            </p>
+          </div>
+          <div>
+            <p className="text-brand-muted text-xs">Emergency contact name</p>
+            <p className="text-brand-text mt-1 text-sm font-medium">
+              {subAdmin.emergencyContactName || '—'}
+            </p>
+          </div>
+          <div>
+            <p className="text-brand-muted text-xs">Emergency contact details</p>
+            <p className="text-brand-text mt-1 text-sm font-medium">
+              {subAdmin.emergencyContact || '—'}
+            </p>
+          </div>
+          <div>
+            <p className="text-brand-muted text-xs">Blood Group</p>
+            <p className="text-brand-text mt-1 text-sm font-medium">{subAdmin.bloodGroup || '—'}</p>
           </div>
         </div>
       </section>
 
-      <section>
-        <h2 className="text-brand-text mb-3 text-sm font-semibold">More Details</h2>
-        <div className={cn(uiTokens.radiusCard, uiTokens.borderSubtle, 'bg-brand-surface p-6')}>
-          <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-            {[
-              ['Date Of Birth', formatDateOnly(subAdmin.dateOfBirth)],
-              ['Email ID', subAdmin.email],
-              ['Phone number', subAdmin.phone || '—'],
-              ['Blood Group', subAdmin.bloodGroup || '—'],
-              ['Created By', subAdmin.createdBy || 'Super Admin'],
-              ['Location', subAdmin.location || '—'],
-              ['Previous Role', '—'],
-              ['Created At', formatOverviewDate(subAdmin.createdAt)],
-              ['Emergency contact name', subAdmin.emergencyContactName || '—'],
-              ['Contact details', subAdmin.emergencyContact || '—'],
-            ].map(([label, value]) => (
-              <div key={label}>
-                <p className="text-brand-muted text-xs">{label}</p>
-                <p className="text-brand-text mt-1 text-sm font-medium">{value}</p>
-              </div>
-            ))}
-
-            <div>
-              <p className="text-brand-muted text-xs">Password Updated</p>
-              <div className="text-brand-text mt-1 flex flex-wrap items-center gap-2 text-sm">
-                <span>{formatOverviewDate(subAdmin.updatedAt)}</span>
-                <button
-                  type="button"
-                  onClick={() => setPasswordModalOpen(true)}
-                  className="text-brand-accent hover:text-brand-gold-from underline underline-offset-2"
-                >
-                  Change Password
-                </button>
-              </div>
-            </div>
+      <section className={cn(uiTokens.radiusCard, uiTokens.borderSubtle, 'bg-brand-surface p-6')}>
+        <h3 className="text-brand-text mb-4 text-base font-semibold">Security Settings</h3>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-brand-text text-sm font-medium">Password</p>
+            <p className="text-brand-muted text-xs">
+              Last reset: {formatDateOnly(subAdmin.lastActionAt)}
+            </p>
           </div>
+          <button
+            type="button"
+            onClick={() => setPasswordModalOpen(true)}
+            className="text-brand-accent decoration-brand-accent/40 text-body-sm-semibold underline underline-offset-2"
+          >
+            Reset Password
+          </button>
         </div>
       </section>
 
       <section>
         <div className="mb-3">
-          <h2 className="text-brand-text text-lg font-semibold">Role History &amp; Change Log</h2>
+          <h3 className="text-brand-text text-lg font-semibold">Role History &amp; Change Log</h3>
           <p className="text-brand-muted mt-1 text-sm">
             Complete history of actions performed on this admin
           </p>
@@ -396,7 +410,7 @@ export function AdminDetailPage() {
           onClearAllSearches={enhancedSearch.clearAll}
           searchPlaceholder="Search by role, note or action"
           showAdvancedFilter={false}
-          onExport={() => toast.info('Export coming soon')}
+          onExport={onExport}
           pagination={{
             page: historyPage,
             pageSize: PAGE_SIZE,
@@ -422,6 +436,8 @@ export function AdminDetailPage() {
         note={selectedAdminNote ?? undefined}
         onClose={() => setSelectedAdminNote(null)}
       />
+
+      {exportFilterModals}
     </div>
   )
 }

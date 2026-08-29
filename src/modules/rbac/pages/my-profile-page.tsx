@@ -1,21 +1,50 @@
-import { useMemo, useRef, useState } from 'react'
+import { useMemo, useRef, useState, useCallback } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 import { ArrowLeft, Clock, UserRound } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
-import { useContactSetupProfile, useMySubAdminLogs } from '../hooks/use-rbac'
+import {
+  useContactSetupProfile,
+  useMySubAdminLogs,
+  useUpdateSubAdminPassword,
+} from '../hooks/use-rbac'
+import { fetchMySubAdminLogs } from '../api/rbac-api'
 import { RbacLoader } from '../components/rbac-loader'
-import type { AuditLog } from '../types/rbac'
+import { UpdatePasswordModal } from '../components/update-password-modal'
+import type { AuditLog, UpdateSubAdminPasswordPayload } from '../types/rbac'
 import { DataTable } from '@/shared/components/table/data-table'
 import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
 import { RBAC_ADMIN_LOGS_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
+import { exportDisplayValue } from '@/shared/utils/export-utils'
+import { createPrefixedListExportHandler } from '@/shared/utils/export-filter-utils'
+import { useModuleExportFilters } from '@/shared/components/advanced-filter/use-module-export-filters'
 import { useAuthStore } from '@/modules/auth/store/auth-store'
 import { cn } from '@/shared/lib/cn'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import { uiTokens } from '@/shared/lib/design-tokens'
 
 const PAGE_SIZE = 10
+
+const ROLE_HISTORY_EXPORT_COLUMN_MAP: Record<
+  string,
+  { header: string; accessor: (log: AuditLog) => string }
+> = {
+  previousRole: {
+    header: 'Previous Role',
+    accessor: (log) => exportDisplayValue((log.metadata?.previousRole as string) || '—'),
+  },
+  changedTo: {
+    header: 'Changed To',
+    accessor: (log) => exportDisplayValue((log.metadata?.changedTo as string) || log.action || '—'),
+  },
+  changedOn: { header: 'Changed On', accessor: (log) => exportDisplayValue(log.createdAt) },
+  changedBy: {
+    header: 'Changed BY',
+    accessor: (log) => exportDisplayValue(log.performedBy || '—'),
+  },
+  adminNote: { header: 'Admin Note', accessor: (log) => exportDisplayValue(log.adminNote || '—') },
+}
 
 const formatDateTime = (value?: string | null) => {
   if (!value) return '—'
@@ -87,7 +116,28 @@ export function MyProfilePage() {
     return passwordLog?.createdAt
   }, [logs])
 
+  const [passwordModalOpen, setPasswordModalOpen] = useState(false)
+  const updatePasswordMutation = useUpdateSubAdminPassword()
+
   const historyRows = useMemo(() => logs.map(mapLogToRoleHistory), [logs])
+
+  const handleExportData = useMemo(() => {
+    const fetchForExport = async (params: Record<string, unknown>) => {
+      const result = await fetchMySubAdminLogs(params)
+      return { data: result.data?.logs ?? [] }
+    }
+    return createPrefixedListExportHandler(
+      fetchForExport,
+      ROLE_HISTORY_EXPORT_COLUMN_MAP,
+      'my_profile_role_history_export',
+      { search: enhancedSearch.globalSearch || undefined },
+    )
+  }, [enhancedSearch.globalSearch])
+
+  const { onExport, modals: exportFilterModals } = useModuleExportFilters({
+    moduleKey: 'rbac-admin-logs',
+    onExportData: handleExportData,
+  })
 
   const historyColumns = useMemo<ColumnDef<RoleHistoryRow>[]>(
     () => [
@@ -114,6 +164,23 @@ export function MyProfilePage() {
       },
     ],
     [],
+  )
+
+  const handlePasswordUpdate = useCallback(
+    async (data: UpdateSubAdminPasswordPayload) => {
+      if (!subAdmin?.id) return
+      try {
+        await updatePasswordMutation.mutateAsync({
+          id: subAdmin.id,
+          payload: data,
+        })
+        toast.success('Password updated successfully')
+        setPasswordModalOpen(false)
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : 'Failed to update password')
+      }
+    },
+    [subAdmin, updatePasswordMutation],
   )
 
   if (user?.isSuperAdmin) {
@@ -151,7 +218,7 @@ export function MyProfilePage() {
         <div className="flex flex-wrap gap-2">
           <button
             type="button"
-            onClick={() => toast.info('All tasks coming soon')}
+            onClick={() => navigate('/my-tasks')}
             className="ui-cta ui-cta-primary rounded-brand-md inline-flex items-center gap-2 px-4"
           >
             <Clock className="size-4" />
@@ -180,28 +247,17 @@ export function MyProfilePage() {
           </div>
           <span
             className={cn(
-              'text-body-sm-semibold inline-flex rounded-full border px-2.5 py-0.5 capitalize',
+              'text-body-sm-semibold rounded-full border px-2.5 py-0.5 capitalize',
               subAdmin.status === 'active'
-                ? 'border-brand-success/25 bg-brand-success/10 text-brand-success'
-                : 'border-brand-danger/25 bg-brand-danger/10 text-brand-danger',
+                ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400'
+                : 'border-rose-500/30 bg-rose-500/10 text-rose-400',
             )}
           >
             {subAdmin.status}
           </span>
         </div>
 
-        <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-5">
-          <div className="bg-brand-surface grid size-20 place-items-center overflow-hidden rounded-full border border-white/10">
-            {subAdmin.profileImageUrl ? (
-              <img
-                src={subAdmin.profileImageUrl}
-                alt={subAdmin.fullname}
-                className="size-full object-cover"
-              />
-            ) : (
-              <UserRound className="text-brand-muted size-9" />
-            )}
-          </div>
+        <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
           <div>
             <p className="text-brand-muted text-xs">First Name</p>
             <p className="text-brand-text mt-1 text-sm font-medium">{subAdmin.firstName || '—'}</p>
@@ -209,59 +265,6 @@ export function MyProfilePage() {
           <div>
             <p className="text-brand-muted text-xs">Last Name</p>
             <p className="text-brand-text mt-1 text-sm font-medium">{subAdmin.lastName || '—'}</p>
-          </div>
-          <div>
-            <p className="text-brand-muted text-xs">Role</p>
-            <span className="text-brand-text text-body-sm-semibold mt-2 inline-flex rounded-full border border-white/10 bg-white/5 px-2.5 py-0.5">
-              {roleLabel}
-            </span>
-          </div>
-          <div>
-            <p className="text-brand-muted text-xs">Job title</p>
-            <p className="text-brand-text mt-1 text-sm font-medium">{subAdmin.jobTitle || '—'}</p>
-          </div>
-          <div>
-            <p className="text-brand-muted text-xs">Employee ID</p>
-            <p className="text-brand-text mt-1 text-sm font-medium">{subAdmin.employeeId || '—'}</p>
-          </div>
-          <div>
-            <p className="text-brand-muted text-xs">Department</p>
-            <p className="text-brand-text mt-1 text-sm font-medium">{subAdmin.department || '—'}</p>
-          </div>
-          <div>
-            <p className="text-brand-muted text-xs">2FA Status</p>
-            <p className="text-brand-text mt-1 text-sm font-medium">
-              {subAdmin.mfaEnabled ? 'Enabled' : 'Disabled'}
-            </p>
-          </div>
-          <div>
-            <p className="text-brand-muted text-xs">Workplace</p>
-            <p className="text-brand-text mt-1 text-sm font-medium">
-              {subAdmin.workplaceFlexibility || '—'}
-            </p>
-          </div>
-          <div className="text-right">
-            <p className="text-brand-muted text-xs">Last Active</p>
-            <p className="text-brand-text mt-1 text-sm font-medium">
-              {formatDateTime(subAdmin.lastActionAt || subAdmin.updatedAt)}
-            </p>
-          </div>
-        </div>
-      </section>
-
-      <section className={cn(uiTokens.radiusCard, uiTokens.borderSubtle, 'bg-brand-surface p-6')}>
-        <div className="mb-5 flex items-center gap-2">
-          <div className="rounded-brand-md bg-brand-accent/10 text-brand-accent grid size-9 place-items-center">
-            <UserRound className="size-4" />
-          </div>
-          <h3 className="text-brand-text text-base font-semibold">More Details</h3>
-        </div>
-        <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-5">
-          <div>
-            <p className="text-brand-muted text-xs">Date Of Birth</p>
-            <p className="text-brand-text mt-1 text-sm font-medium">
-              {formatDateOnly(subAdmin.dateOfBirth)}
-            </p>
           </div>
           <div>
             <p className="text-brand-muted text-xs">Email ID</p>
@@ -272,22 +275,54 @@ export function MyProfilePage() {
             <p className="text-brand-text mt-1 text-sm font-medium">{subAdmin.phone || '—'}</p>
           </div>
           <div>
-            <p className="text-brand-muted text-xs">Blood Group</p>
-            <p className="text-brand-text mt-1 text-sm font-medium">{subAdmin.bloodGroup || '—'}</p>
+            <p className="text-brand-muted text-xs">Role</p>
+            <p className="text-brand-text mt-1 text-sm font-medium">{roleLabel}</p>
           </div>
           <div>
-            <p className="text-brand-muted text-xs">Created By</p>
+            <p className="text-brand-muted text-xs">Employee ID</p>
+            <p className="text-brand-text mt-1 text-sm font-medium">{subAdmin.employeeId || '—'}</p>
+          </div>
+          <div>
+            <p className="text-brand-muted text-xs">Department</p>
+            <p className="text-brand-text mt-1 text-sm font-medium">{subAdmin.department || '—'}</p>
+          </div>
+          <div>
+            <p className="text-brand-muted text-xs">Date Of Birth</p>
             <p className="text-brand-text mt-1 text-sm font-medium">
-              {subAdmin.createdBy || 'Super Admin'}
+              {formatDateOnly(subAdmin.dateOfBirth)}
             </p>
+          </div>
+          <div>
+            <p className="text-brand-muted text-xs">Blood Group</p>
+            <p className="text-brand-text mt-1 text-sm font-medium">{subAdmin.bloodGroup || '—'}</p>
           </div>
           <div>
             <p className="text-brand-muted text-xs">Location</p>
             <p className="text-brand-text mt-1 text-sm font-medium">{subAdmin.location || '—'}</p>
           </div>
           <div>
-            <p className="text-brand-muted text-xs">Previous Role</p>
-            <p className="text-brand-text mt-1 text-sm font-medium">—</p>
+            <p className="text-brand-muted text-xs">Workplace</p>
+            <p className="text-brand-text mt-1 text-sm font-medium">
+              {subAdmin.workplaceFlexibility || '—'}
+            </p>
+          </div>
+          <div>
+            <p className="text-brand-muted text-xs">2FA Status</p>
+            <p className="text-brand-text mt-1 text-sm font-medium">
+              {subAdmin.mfaEnabled ? 'Enabled' : 'Disabled'}
+            </p>
+          </div>
+          <div>
+            <p className="text-brand-muted text-xs">Last Active</p>
+            <p className="text-brand-text mt-1 text-sm font-medium">
+              {formatDateTime(subAdmin.lastActionAt || subAdmin.updatedAt)}
+            </p>
+          </div>
+          <div>
+            <p className="text-brand-muted text-xs">Created By</p>
+            <p className="text-brand-text mt-1 text-sm font-medium">
+              {subAdmin.createdBy || 'Super Admin'}
+            </p>
           </div>
           <div>
             <p className="text-brand-muted text-xs">Created At</p>
@@ -302,23 +337,11 @@ export function MyProfilePage() {
             </p>
             <button
               type="button"
-              onClick={() => toast.info('Password change from profile will be enabled soon')}
+              onClick={() => setPasswordModalOpen(true)}
               className="text-brand-accent decoration-brand-accent/40 text-body-sm-semibold mt-1 underline underline-offset-2"
             >
               Change Password
             </button>
-          </div>
-          <div>
-            <p className="text-brand-muted text-xs">Emergency contact name</p>
-            <p className="text-brand-text mt-1 text-sm font-medium">
-              {subAdmin.emergencyContactName || '—'}
-            </p>
-          </div>
-          <div>
-            <p className="text-brand-muted text-xs">Contact details</p>
-            <p className="text-brand-text mt-1 text-sm font-medium">
-              {subAdmin.emergencyContact || '—'}
-            </p>
           </div>
         </div>
       </section>
@@ -344,7 +367,7 @@ export function MyProfilePage() {
           onClearAllSearches={enhancedSearch.clearAll}
           searchPlaceholder="Search by action, note, or module"
           showAdvancedFilter={false}
-          onExport={() => toast.info('Export coming soon')}
+          onExport={onExport}
           pagination={{
             page: historyPage,
             pageSize: PAGE_SIZE,
@@ -356,6 +379,16 @@ export function MyProfilePage() {
           emptyMessage="No role history found."
         />
       </section>
+
+      <UpdatePasswordModal
+        open={passwordModalOpen}
+        userName={subAdmin.fullname}
+        isSubmitting={updatePasswordMutation.isPending}
+        onClose={() => setPasswordModalOpen(false)}
+        onSubmit={handlePasswordUpdate}
+      />
+
+      {exportFilterModals}
     </div>
   )
 }

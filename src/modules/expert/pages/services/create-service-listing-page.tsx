@@ -219,8 +219,17 @@ export const CreateServiceListingPage = () => {
     if (allowSinglePriceListing) allowed.push('fixed')
     if (allowCustomPriceListing) allowed.push('custom')
     if (allowTierPriceListing) allowed.push('tiered')
+    // Grandfathering: preserve existing listing pricing type if already set/loaded
+    if (pricingTypePreference && !allowed.includes(pricingTypePreference)) {
+      allowed.push(pricingTypePreference)
+    }
     return allowed
-  }, [allowSinglePriceListing, allowCustomPriceListing, allowTierPriceListing])
+  }, [
+    allowSinglePriceListing,
+    allowCustomPriceListing,
+    allowTierPriceListing,
+    pricingTypePreference,
+  ])
 
   const pricingType = allowedPricingTypes.includes(pricingTypePreference)
     ? pricingTypePreference
@@ -1451,7 +1460,7 @@ export const CreateServiceListingPage = () => {
             </div>
 
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              {allowSinglePriceListing && (
+              {(allowSinglePriceListing || pricingTypePreference === 'fixed') && (
                 <button
                   onClick={() => setPricingType('fixed')}
                   className={cn(
@@ -1478,7 +1487,7 @@ export const CreateServiceListingPage = () => {
                 </button>
               )}
 
-              {allowCustomPriceListing && (
+              {(allowCustomPriceListing || pricingTypePreference === 'custom') && (
                 <button
                   onClick={() => setPricingType('custom')}
                   className={cn(
@@ -1505,7 +1514,7 @@ export const CreateServiceListingPage = () => {
                 </button>
               )}
 
-              {allowTierPriceListing && (
+              {(allowTierPriceListing || pricingTypePreference === 'tiered') && (
                 <button
                   onClick={() => setPricingType('tiered')}
                   className={cn(
