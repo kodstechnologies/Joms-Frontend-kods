@@ -100,7 +100,8 @@ type RoleHistoryRow = {
 
 const mapLogToRoleHistory = (log: AuditLog): RoleHistoryRow => {
   const previousVersion = log.metadata?.previousVersion as
-    { roleIds?: string[]; firstName?: string; lastName?: string } | undefined
+    | { roleIds?: string[]; firstName?: string; lastName?: string }
+    | undefined
 
   return {
     id: log.id || log._id || log.action,

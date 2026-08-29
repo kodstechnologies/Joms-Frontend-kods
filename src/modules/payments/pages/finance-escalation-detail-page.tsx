@@ -260,12 +260,12 @@ export function FinanceEscalationDetailPage() {
   const userName =
     titleCase(refund?.beneficiary) ||
     escrow?.userName ||
-    (typeof snapshot.userName === 'string' && snapshot.userName) ||
-    (typeof snapshot.customerName === 'string' && snapshot.customerName) ||
+    (typeof snapshot?.userName === 'string' ? snapshot.userName : '') ||
+    (typeof snapshot?.customerName === 'string' ? snapshot.customerName : '') ||
     userId
   const userEmail =
-    (typeof snapshot.email === 'string' && snapshot.email) ||
-    (typeof snapshot.userEmail === 'string' && snapshot.userEmail) ||
+    (typeof snapshot?.email === 'string' ? snapshot.email : '') ||
+    (typeof snapshot?.userEmail === 'string' ? snapshot.userEmail : '') ||
     '—'
   const assignedTo = assigneeFromQuery || latestEscalate?.escalateToAdminId || 'Assigned admin'
   const escalationNote = latestEscalate?.adminNote || '—'
