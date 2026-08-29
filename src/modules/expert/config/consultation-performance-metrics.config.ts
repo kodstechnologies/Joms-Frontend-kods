@@ -143,7 +143,8 @@ export const DEFAULT_CONSULTATION_PERFORMANCE_METRIC_IDS =
     (item) => item.id,
   )
 
-export const CONSULTATION_PERFORMANCE_MAX_ACTIVE_METRICS = 4
+export const CONSULTATION_PERFORMANCE_MAX_ACTIVE_METRICS =
+  CONSULTATION_PERFORMANCE_METRICS_CATALOG.length
 
 /**
  * Catalog id → alternate API metric / KPI keys (legacy service-shaped payload).

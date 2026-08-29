@@ -132,7 +132,11 @@ export const requestFinanceDisputeInfo = async (
 
 export const escalateFinanceDispute = async (
   id: string,
-  body: { priority?: 'urgent' | 'high' | 'normal'; adminNotes?: string },
+  body: {
+    priority?: 'urgent' | 'high' | 'normal'
+    adminNotes?: string
+    escalateToAdminId?: string
+  },
 ) => {
   const response = await paymentApiClient.post<ApiSuccess<FinanceDispute>>(
     `/admin/finance/disputes/${id}/escalate`,
@@ -175,7 +179,11 @@ export const rejectFinanceRefund = async (
 
 export const escalateFinanceRefund = async (
   id: string,
-  body: { priority?: 'urgent' | 'high' | 'normal'; adminNotes?: string },
+  body: {
+    priority?: 'urgent' | 'high' | 'normal'
+    adminNotes?: string
+    escalateToAdminId?: string
+  },
 ) => {
   const response = await paymentApiClient.post<ApiSuccess<FinanceRefund>>(
     `/admin/finance/refunds/${id}/escalate`,
@@ -260,6 +268,14 @@ export const fetchFinanceTaxById = async (id: string) => {
   return res
 }
 
+export const markFinanceTaxFiled = async (id: string, adminNote?: string) => {
+  const response = await paymentApiClient.post<ApiSuccess<FinanceTaxRecord>>(
+    `/admin/finance/tax/${id}/file`,
+    { adminNote: adminNote || 'Marked as filed' },
+  )
+  return response.data
+}
+
 export const fetchFinanceInvoices = async (params?: FinanceListParams) => {
   const res = await getData<Paginated<FinanceInvoice>>('/admin/finance/invoices', params)
   return res
@@ -297,10 +313,12 @@ export const escalateFinanceResource = async (
   id: string,
   resourceType: string,
   adminNote: string,
+  escalateToAdminId?: string,
+  priority?: 'urgent' | 'high' | 'normal',
 ) => {
   const response = await paymentApiClient.post<ApiSuccess<unknown>>(
     `/admin/finance/${id}/escalate`,
-    { resourceType, adminNote },
+    { resourceType, adminNote, escalateToAdminId, priority },
   )
   return response.data
 }

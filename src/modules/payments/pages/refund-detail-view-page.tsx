@@ -5,11 +5,9 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 
 import { DenyRefundModal } from '@/modules/payments/components/deny-refund-modal'
-import { EscalateToSuperAdminModal } from '@/modules/payments/components/escalate-to-super-admin-modal'
 import { IssuePartialRefundModal } from '@/modules/payments/components/issue-partial-refund-modal'
 import { IssueRefundModal } from '@/modules/payments/components/issue-refund-modal'
 import {
-  useEscalateRefund,
   useFinanceRefund,
   useIssueRefund,
   useRejectRefund,
@@ -20,6 +18,7 @@ import {
   mapRefundStatus,
   titleCase,
 } from '@/modules/payments/utils/finance-mappers'
+import { escalateUrl } from '@/modules/payments/utils/finance-escalate'
 import { DetailViewSkeleton } from '@/shared/components/ui/skeleton'
 import { cn } from '@/shared/lib/cn'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
@@ -96,12 +95,10 @@ export function RefundDetailViewPage() {
   const { data, isLoading, isError, refetch } = useFinanceRefund(id)
   const issueMutation = useIssueRefund()
   const rejectMutation = useRejectRefund()
-  const escalateMutation = useEscalateRefund()
   const refund = data?.data
   const [isIssueRefundOpen, setIsIssueRefundOpen] = useState(false)
   const [isDenyRefundOpen, setIsDenyRefundOpen] = useState(false)
   const [isPartialRefundOpen, setIsPartialRefundOpen] = useState(false)
-  const [isEscalateOpen, setIsEscalateOpen] = useState(false)
 
   const apiErrorMessage = (err: unknown, fallback: string) =>
     (err as { response?: { data?: { message?: string } } })?.response?.data?.message || fallback
@@ -216,8 +213,16 @@ export function RefundDetailViewPage() {
           <button
             type="button"
             className="ui-cta ui-cta-secondary"
-            disabled={!canAct || escalateMutation.isPending}
-            onClick={() => setIsEscalateOpen(true)}
+            disabled={!canAct}
+            onClick={() =>
+              navigate(
+                escalateUrl(id, {
+                  kind: 'refund',
+                  resourceType: 'Refund',
+                  returnTo: `/finance/refunds/${id}`,
+                }),
+              )
+            }
           >
             <Flag className="size-4" />
             Escalate
@@ -286,24 +291,6 @@ export function RefundDetailViewPage() {
             navigate('/finance/refunds')
           } catch (err) {
             toast.error(apiErrorMessage(err, 'Failed to issue partial refund'))
-            throw err
-          }
-        }}
-      />
-      <EscalateToSuperAdminModal
-        open={isEscalateOpen}
-        refundId={refund.refundId}
-        requestedBy={requestedBy}
-        amount={amountLabel}
-        onClose={() => setIsEscalateOpen(false)}
-        onSubmit={async ({ priority, adminNotes }) => {
-          try {
-            await escalateMutation.mutateAsync({ id, priority, adminNotes })
-            toast.success('Refund escalated')
-            setIsEscalateOpen(false)
-            navigate(`/finance/refunds/${id}/escalate`)
-          } catch (err) {
-            toast.error(apiErrorMessage(err, 'Failed to escalate refund'))
             throw err
           }
         }}

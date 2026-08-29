@@ -213,7 +213,8 @@ export const DEFAULT_VENUE_PROFILE_ANALYTICS_METRIC_IDS =
     (item) => item.id,
   )
 
-export const VENUE_PROFILE_ANALYTICS_MAX_ACTIVE_METRICS = 8
+export const VENUE_PROFILE_ANALYTICS_MAX_ACTIVE_METRICS =
+  VENUE_PROFILE_ANALYTICS_METRICS_CATALOG.length
 
 export const VENUE_PROFILE_ANALYTICS_LEGACY_METRIC_ID_MAP: Record<string, string> = {
   'events-hosted': 'total-event-bookings-confirmed',

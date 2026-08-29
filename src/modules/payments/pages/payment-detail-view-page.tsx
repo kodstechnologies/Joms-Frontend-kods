@@ -7,11 +7,8 @@ import { toast } from 'sonner'
 import { fetchPartnerDisplayNames } from '@/modules/payments/api/partner-lookup-api'
 import { AddFinanceNoteModal } from '@/modules/payments/components/add-finance-note-modal'
 import { FinanceInternalNotesCard } from '@/modules/payments/components/finance-internal-notes-card'
-import {
-  useAddFinanceNote,
-  useEscalateFinance,
-  useFinancePayment,
-} from '@/modules/payments/hooks/use-finance'
+import { useAddFinanceNote, useFinancePayment } from '@/modules/payments/hooks/use-finance'
+import { escalateUrl } from '@/modules/payments/utils/finance-escalate'
 import {
   formatDate,
   formatInr,
@@ -22,7 +19,10 @@ import { Button } from '@/shared/components/ui/button'
 import { DetailViewSkeleton } from '@/shared/components/ui/skeleton'
 import { cn } from '@/shared/lib/cn'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
-import { downloadKeyValueReport } from '@/modules/payments/hooks/use-finance-list-filters'
+import {
+  downloadKeyValueReport,
+  flattenExportPairs,
+} from '@/modules/payments/hooks/use-finance-list-filters'
 
 const cardClass = 'radius-lg border border-white/[0.06] bg-brand-surface p-4 sm:p-5'
 const sectionTitleClass = 'text-body-md-semibold text-brand-text leading-[20px]'
@@ -78,9 +78,7 @@ export function PaymentDetailViewPage() {
   const { id = '' } = useParams<{ id: string }>()
   const { data, isLoading, isError } = useFinancePayment(id)
   const noteMutation = useAddFinanceNote()
-  const escalateMutation = useEscalateFinance()
   const [isNoteModalOpen, setIsNoteModalOpen] = useState(false)
-  const [isEscalateModalOpen, setIsEscalateModalOpen] = useState(false)
   const payment = data?.data
   const snapshot = (payment?.moduleSnapshot || {}) as Record<string, unknown>
   const moduleData = (payment?.moduleData || {}) as Record<string, unknown>
@@ -273,14 +271,28 @@ export function PaymentDetailViewPage() {
           <div className="flex flex-wrap items-center gap-3">
             <Button
               onClick={() =>
-                downloadKeyValueReport('payment_report', [
-                  ['ID', payment._id],
-                  ['Order ID', payment.orderId],
-                  ['Module', payment.module],
-                  ['Amount', payment.amount],
-                  ['Status', payment.status],
-                  ['Created', payment.createdAt],
-                ])
+                void downloadKeyValueReport(
+                  'payment_report',
+                  flattenExportPairs({
+                    Overview: {
+                      title: detail.serviceTitle,
+                      revenueId: detail.revenueId,
+                      sourceModule: detail.sourceModule,
+                      sourceType: detail.sourceType,
+                      sourceId: detail.sourceId,
+                      sourceName: detail.sourceName,
+                      hostOwner: detail.hostOwner,
+                      transactionDate: detail.transactionDate,
+                      currency: detail.currency,
+                      paymentStatus: detail.paymentStatus,
+                    },
+                    Breakdown: detail.revenueBreakdown,
+                    TaxAndFees: detail.taxFeeBreakdown,
+                    RevenueFlow: detail.revenueFlow,
+                    References: detail.transactionReferences,
+                    Venue: detail.additionalVenueContext,
+                  }),
+                )
               }
             >
               <Download className="size-4" />
@@ -290,7 +302,17 @@ export function PaymentDetailViewPage() {
               <SquarePen className="size-4" />
               Add Notes
             </Button>
-            <Button onClick={() => setIsEscalateModalOpen(true)}>
+            <Button
+              onClick={() =>
+                navigate(
+                  escalateUrl(payment._id, {
+                    kind: 'resource',
+                    resourceType: 'Payment',
+                    returnTo: `/finance/revenue/${id}`,
+                  }),
+                )
+              }
+            >
               <SquarePen className="size-4" />
               Escalate
             </Button>
@@ -422,29 +444,6 @@ export function PaymentDetailViewPage() {
                 setIsNoteModalOpen(false)
               },
               onError: () => toast.error('Failed to save note'),
-            },
-          )
-        }}
-      />
-
-      <AddFinanceNoteModal
-        open={isEscalateModalOpen}
-        title="Escalate"
-        description="This records an escalation for admin review and audit history."
-        placeholder="Enter escalation note"
-        submitLabel="Escalate"
-        submittingLabel="Escalating..."
-        isSubmitting={escalateMutation.isPending}
-        onClose={() => setIsEscalateModalOpen(false)}
-        onSubmit={(adminNote) => {
-          escalateMutation.mutate(
-            { id: payment._id, resourceType: 'Payment', adminNote },
-            {
-              onSuccess: () => {
-                toast.success('Escalated')
-                setIsEscalateModalOpen(false)
-              },
-              onError: () => toast.error('Failed to escalate'),
             },
           )
         }}

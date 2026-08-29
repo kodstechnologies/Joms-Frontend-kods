@@ -967,7 +967,7 @@ export const MODULE_METRICS_REGISTRY: Record<string, ModuleMetricsDefinition> = 
     moduleKey: VENUE_MANAGEMENT_MODULE_KEY,
     moduleName: 'Venue Management',
     returnTo: '/venues/management',
-    maxActiveMetrics: 8,
+    maxActiveMetrics: VENUE_MANAGEMENT_DASHBOARD_METRICS_CATALOG.length,
     metrics: VENUE_MANAGEMENT_DASHBOARD_METRICS_CATALOG.map((item) => ({
       id: item.id,
       label: item.label,
@@ -1035,7 +1035,7 @@ export const MODULE_METRICS_REGISTRY: Record<string, ModuleMetricsDefinition> = 
     moduleKey: VENUE_DASHBOARD_MODULE_KEY,
     moduleName: 'Venue Dashboard',
     returnTo: '/venues/dashboard',
-    maxActiveMetrics: 28,
+    maxActiveMetrics: VENUE_DASHBOARD_METRICS_CATALOG.length,
     metrics: VENUE_DASHBOARD_METRICS_CATALOG.map((item) => ({
       id: item.id,
       label: item.label,

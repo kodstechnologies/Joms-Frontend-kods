@@ -9,6 +9,10 @@ import {
   useFinanceReconciliationDetail,
 } from '@/modules/payments/hooks/use-finance'
 import { formatDate, formatInr, titleCase } from '@/modules/payments/utils/finance-mappers'
+import {
+  downloadKeyValueReport,
+  flattenExportPairs,
+} from '@/modules/payments/hooks/use-finance-list-filters'
 import { Button } from '@/shared/components/ui/button'
 import { DetailViewSkeleton } from '@/shared/components/ui/skeleton'
 import { cn } from '@/shared/lib/cn'
@@ -163,13 +167,20 @@ export function ReconciliationDetailViewPage() {
             <p className={cn(sectionSubtitleClass, 'leading-[20px]')}>{detail.recordDescription}</p>
           </div>
           <div className="flex flex-wrap items-center gap-3">
-            <Button onClick={() => toast.message('Download report coming soon')}>
+            <Button
+              onClick={() =>
+                downloadKeyValueReport(
+                  'reconciliation_report',
+                  flattenExportPairs({
+                    Reconciliation: detail.reconciliationInformation,
+                    Gateway: detail.gatewayDetails,
+                    Platform: detail.platformRecordSummary,
+                  }),
+                )
+              }
+            >
               <Download className="size-4" />
               Download Report
-            </Button>
-            <Button onClick={() => toast.message('Edit tax record coming soon')}>
-              <SquarePen className="size-4" />
-              Edit Tax Record
             </Button>
             <Button onClick={() => setIsNoteModalOpen(true)}>
               <SquarePen className="size-4" />

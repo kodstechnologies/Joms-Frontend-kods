@@ -8,7 +8,6 @@ export const ServiceMetricsPage = () => (
     returnTo="/services/management"
     section="table"
     includeDashboard={false}
-    maxActiveMetrics={12}
   />
 )
 

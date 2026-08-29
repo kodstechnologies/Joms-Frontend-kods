@@ -13,6 +13,7 @@ import {
 } from '@/modules/payments/hooks/use-finance'
 import { fetchFinanceRevenue } from '@/modules/payments/api/finance-api'
 import { mapPaymentToVenueRow } from '@/modules/payments/utils/finance-mappers'
+import { escalateUrl } from '@/modules/payments/utils/finance-escalate'
 import {
   DEFAULT_FINANCE_VENUES_VISIBLE_COLUMN_IDS,
   FINANCE_VENUES_MODULE_KEY,
@@ -182,7 +183,13 @@ export function FinanceVenuesPage() {
             className="text-slate-800 hover:bg-slate-100 hover:text-slate-900"
             onClick={() => {
               setActiveDropdownId(null)
-              setRowAction({ kind: 'escalate', id: record.id, resourceType: 'Payment' })
+              navigate(
+                escalateUrl(record.id, {
+                  kind: 'resource',
+                  resourceType: 'Payment',
+                  returnTo: '/finance/venues',
+                }),
+              )
             }}
           >
             Escalate

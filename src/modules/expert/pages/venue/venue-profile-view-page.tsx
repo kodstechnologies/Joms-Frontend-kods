@@ -11,7 +11,6 @@ import {
   ArrowLeft,
   Ban,
   Bell,
-  Briefcase,
   Building2,
   CheckSquare,
   ChevronRight,
@@ -56,6 +55,7 @@ import {
   VENUE_PROFILE_ANALYTICS_MODULE_KEY,
 } from '../../config/venue-profile-analytics-metrics.config'
 import { orderByActiveMetricIds, useActiveMetricIds } from '../../hooks/use-active-metric-ids'
+import { VenueAnalyticsMetricIcon } from '../../components/venue-analytics'
 import { buildVenueProfileAnalyticsMetricCards } from '../../utils/venue-profile-analytics-metrics'
 import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
 import type {
@@ -1346,7 +1346,7 @@ function AnalyticsTab({ data, venueId }: { data: VenueFullView; venueId: string 
           ),
         ],
         VENUE_PROFILE_ANALYTICS_METRIC_IDS,
-      ).slice(0, 8),
+      ),
     [activeMetricIds],
   )
 
@@ -1383,7 +1383,7 @@ function AnalyticsTab({ data, venueId }: { data: VenueFullView; venueId: string 
               <div key={card.id} className="rounded-lg bg-[#050505] p-4">
                 <div className="flex items-center justify-between">
                   <p className="text-body-sm text-muted">{card.label}</p>
-                  <Briefcase className="size-4 text-[#E0A263]" />
+                  <VenueAnalyticsMetricIcon />
                 </div>
                 <p className="mt-3 text-xl font-bold text-white">{card.value}</p>
               </div>

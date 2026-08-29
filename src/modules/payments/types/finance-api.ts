@@ -196,6 +196,8 @@ export type FinanceTaxRecord = {
   filingPeriod?: string | null
   currency?: string
   paymentId?: string
+  filedAt?: string | null
+  filedByAdminId?: string | null
   createdAt?: string
 }
 
@@ -226,6 +228,9 @@ export type FinanceAdminNote = {
   action?: string
   adminId?: string
   adminNote: string
+  escalateToAdminId?: string | null
+  priority?: string | null
+  payload?: Record<string, unknown> | null
   createdAt?: string
 }
 

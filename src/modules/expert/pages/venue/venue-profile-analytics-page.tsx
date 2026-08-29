@@ -26,6 +26,7 @@ import {
   RevenueTab,
   SectionTitle,
   SpacesTab,
+  VenueAnalyticsMetricIcon,
   VisualAnalyticsTab,
 } from '../../components/venue-analytics'
 
@@ -63,7 +64,7 @@ export function VenueProfileAnalyticsPage() {
           ),
         ],
         VENUE_PROFILE_ANALYTICS_METRIC_IDS,
-      ).slice(0, 8),
+      ),
     [activeMetricIds],
   )
 
@@ -136,7 +137,12 @@ export function VenueProfileAnalyticsPage() {
                 </div>
               ))
             : venueAnalyticsCards.map((item) => (
-                <MetricCard key={item.id} label={item.label} value={item.value} />
+                <MetricCard
+                  key={item.id}
+                  label={item.label}
+                  value={item.value}
+                  icon={<VenueAnalyticsMetricIcon />}
+                />
               ))}
         </div>
       </div>

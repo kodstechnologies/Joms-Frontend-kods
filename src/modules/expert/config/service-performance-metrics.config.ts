@@ -118,5 +118,4 @@ export const DEFAULT_SERVICE_PERFORMANCE_METRIC_IDS = SERVICE_PERFORMANCE_METRIC
   (item) => item.defaultActive,
 ).map((item) => item.id)
 
-/** The performance header shows four KPI cards at a time. */
-export const SERVICE_PERFORMANCE_MAX_ACTIVE_METRICS = 4
+export const SERVICE_PERFORMANCE_MAX_ACTIVE_METRICS = SERVICE_PERFORMANCE_METRICS_CATALOG.length

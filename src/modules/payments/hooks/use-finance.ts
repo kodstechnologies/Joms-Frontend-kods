@@ -24,6 +24,7 @@ import {
   fetchFinanceTax,
   fetchFinanceTaxById,
   issueFinanceRefund,
+  markFinanceTaxFiled,
   rejectFinanceDispute,
   rejectFinanceRefund,
   releaseFinanceEscrow,
@@ -206,11 +207,13 @@ export const useEscalateDispute = () => {
       id,
       priority,
       adminNotes,
+      escalateToAdminId,
     }: {
       id: string
       priority?: 'urgent' | 'high' | 'normal'
       adminNotes?: string
-    }) => escalateFinanceDispute(id, { priority, adminNotes }),
+      escalateToAdminId?: string
+    }) => escalateFinanceDispute(id, { priority, adminNotes, escalateToAdminId }),
     onSuccess: (_data, variables) => invalidateDisputeQueries(queryClient, variables.id),
   })
 }
@@ -249,11 +252,13 @@ export const useEscalateRefund = () => {
       id,
       priority,
       adminNotes,
+      escalateToAdminId,
     }: {
       id: string
       priority?: 'urgent' | 'high' | 'normal'
       adminNotes?: string
-    }) => escalateFinanceRefund(id, { priority, adminNotes }),
+      escalateToAdminId?: string
+    }) => escalateFinanceRefund(id, { priority, adminNotes, escalateToAdminId }),
     onSuccess: (_data, variables) => invalidateRefundQueries(queryClient, variables.id),
   })
 }
@@ -301,6 +306,20 @@ export const useFinanceTaxDetail = (id: string) =>
     queryFn: () => fetchFinanceTaxById(id),
     enabled: !!id,
   })
+
+export const useMarkTaxFiled = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, adminNote }: { id: string; adminNote?: string }) =>
+      markFinanceTaxFiled(id, adminNote),
+    onSuccess: (data, variables) => {
+      queryClient.setQueryData(financeKeys.taxDetail(variables.id), data)
+      void queryClient.invalidateQueries({ queryKey: ['finance-tax-detail'] })
+      void queryClient.invalidateQueries({ queryKey: ['finance-tax'] })
+      void queryClient.invalidateQueries({ queryKey: financeKeys.dashboard })
+    },
+  })
+}
 
 export const useFinanceInvoices = (params?: FinanceListParams) =>
   useQuery({
@@ -382,11 +401,15 @@ export const useEscalateFinance = () => {
       id,
       resourceType,
       adminNote,
+      escalateToAdminId,
+      priority,
     }: {
       id: string
       resourceType: string
       adminNote: string
-    }) => escalateFinanceResource(id, resourceType, adminNote),
+      escalateToAdminId?: string
+      priority?: 'urgent' | 'high' | 'normal'
+    }) => escalateFinanceResource(id, resourceType, adminNote, escalateToAdminId, priority),
     onSuccess: (_data, variables) => {
       void queryClient.invalidateQueries({ queryKey: financeKeys.notes(variables.id) })
     },

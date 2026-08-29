@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { ArrowLeft, Download, SquarePen } from 'lucide-react'
+import { ArrowLeft, Download, Flag, SquarePen } from 'lucide-react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 
@@ -8,6 +8,7 @@ import { fetchPartnerDisplayNames } from '@/modules/payments/api/partner-lookup-
 import { AddFinanceNoteModal } from '@/modules/payments/components/add-finance-note-modal'
 import { FinanceInternalNotesCard } from '@/modules/payments/components/finance-internal-notes-card'
 import { useAddFinanceNote, useFinancePayment } from '@/modules/payments/hooks/use-finance'
+import { escalateUrl } from '@/modules/payments/utils/finance-escalate'
 import {
   formatDate,
   formatInr,
@@ -18,6 +19,10 @@ import { Button } from '@/shared/components/ui/button'
 import { DetailViewSkeleton } from '@/shared/components/ui/skeleton'
 import { cn } from '@/shared/lib/cn'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
+import {
+  downloadKeyValueReport,
+  flattenExportPairs,
+} from '@/modules/payments/hooks/use-finance-list-filters'
 
 const cardClass = 'radius-lg border border-white/[0.06] bg-brand-surface p-4 sm:p-5'
 const sectionTitleClass = 'text-body-md-semibold text-brand-text leading-[20px]'
@@ -303,13 +308,41 @@ export function VenuePaymentDetailViewPage() {
             <p className={sectionSubtitleClass}>{detail.venueDescription}</p>
           </div>
           <div className="flex flex-wrap items-center gap-3">
-            <Button onClick={() => toast.message('Download report coming soon')}>
+            <Button
+              onClick={() =>
+                downloadKeyValueReport(
+                  'venue_payment_report',
+                  flattenExportPairs({
+                    Payment: detail.paymentInformation,
+                    Timeline: detail.timelineInformation,
+                    Financial: detail.financialBreakdown,
+                    Venue: detail.venueInformation,
+                    Parties: detail.parties,
+                    Settlement: detail.finalCalculation,
+                  }),
+                )
+              }
+            >
               <Download className="size-4" />
               Download Report
             </Button>
             <Button onClick={() => setIsNoteModalOpen(true)}>
               <SquarePen className="size-4" />
               Add Notes
+            </Button>
+            <Button
+              onClick={() =>
+                navigate(
+                  escalateUrl(payment._id, {
+                    kind: 'resource',
+                    resourceType: 'Payment',
+                    returnTo: `/finance/venues/${id}`,
+                  }),
+                )
+              }
+            >
+              <Flag className="size-4" />
+              Escalate
             </Button>
           </div>
         </div>

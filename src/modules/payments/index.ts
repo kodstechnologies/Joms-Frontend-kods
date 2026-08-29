@@ -1,4 +1,5 @@
 export { DisputeDetailViewPage } from '@/modules/payments/pages/dispute-detail-view-page'
+export { FinanceEscalationDetailPage } from '@/modules/payments/pages/finance-escalation-detail-page'
 export { AssignRefundAuthorityPage } from '@/modules/payments/pages/assign-refund-authority-page'
 export { EscrowDetailViewPage } from '@/modules/payments/pages/escrow-detail-view-page'
 export { EscrowManagementPage } from '@/modules/payments/pages/escrow-management-page'

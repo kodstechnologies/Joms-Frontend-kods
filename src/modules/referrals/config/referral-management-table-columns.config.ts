@@ -48,7 +48,6 @@ const metric = (
 })
 
 export const REFERRALS_MODULE_KEY = 'referrals'
-export const REFERRALS_MAX_ACTIVE_METRICS = 18
 
 export const REFERRALS_DASHBOARD_METRICS_CATALOG: ReferralDashboardMetricCatalogItem[] = [
   metric(
@@ -185,3 +184,5 @@ export const DEFAULT_REFERRALS_VISIBLE_COLUMN_IDS = REFERRALS_TABLE_COLUMNS_CATA
 export const DEFAULT_REFERRALS_ACTIVE_METRIC_IDS = REFERRALS_DASHBOARD_METRICS_CATALOG.filter(
   (m) => m.defaultActive,
 ).map((m) => m.id)
+
+export const REFERRALS_MAX_ACTIVE_METRICS = REFERRALS_DASHBOARD_METRICS_CATALOG.length
