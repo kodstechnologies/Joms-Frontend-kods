@@ -1517,7 +1517,8 @@ function ServicesSubTab({
 
       if (successCount === 0) {
         const firstError = results.find((result) => result.status === 'rejected') as
-          PromiseRejectedResult | undefined
+          | PromiseRejectedResult
+          | undefined
         toast.error(getApiErrorMessage(firstError?.reason) || 'Failed to escalate services.')
         return
       }
@@ -2351,7 +2352,7 @@ function AnalyticsTab({ expertId }: { expertId?: string }) {
           ),
         ],
         EXPERT_PROFILE_ANALYTICS_METRIC_IDS,
-      ).slice(0, 8),
+      ),
     [activeMetricIds],
   )
 

@@ -1,17 +1,13 @@
-import { useEffect, useMemo, useState } from 'react'
-import { useQueryClient } from '@tanstack/react-query'
+import { useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { toast } from 'sonner'
 import { ExternalLink, Siren, X } from 'lucide-react'
 
 import {
-  seedAdminInboxAlerts,
   useMarkNotificationRead,
   useMyNotifications,
   useUnreadNotificationCount,
   type InAppNotification,
 } from '@/modules/notifications'
-import { notificationKeys } from '@/modules/notifications/hooks/use-notifications'
 import { resolveAdminInboxPath } from '@/modules/notifications/utils/admin-inbox-navigation'
 import { formatInboxRelativeTime, splitInboxByDay } from '@/modules/notifications/utils/inbox-time'
 import { cn } from '@/shared/lib/cn'
@@ -84,8 +80,6 @@ type AlertsPanelProps = {
 
 export function AlertsPanel({ open, onClose }: AlertsPanelProps) {
   const navigate = useNavigate()
-  const queryClient = useQueryClient()
-  const [seeding, setSeeding] = useState(false)
   const alertsQuery = useMyNotifications(open, 'alert')
   const markReadMutation = useMarkNotificationRead()
   const alerts = useMemo(() => alertsQuery.data?.data ?? [], [alertsQuery.data?.data])
@@ -108,23 +102,6 @@ export function AlertsPanel({ open, onClose }: AlertsPanelProps) {
       window.removeEventListener('keydown', onKeyDown)
     }
   }, [open, onClose])
-
-  const handleSeedAlerts = async () => {
-    setSeeding(true)
-    try {
-      const result = await seedAdminInboxAlerts()
-      const sent = result.data?.results?.filter((row) => row.sent).length ?? result.data?.count ?? 0
-      toast.success(`Created ${sent} alerts for this admin`)
-      void queryClient.invalidateQueries({ queryKey: notificationKeys.all })
-    } catch (error) {
-      toast.error(
-        (error as { response?: { data?: { message?: string } } })?.response?.data?.message ||
-          'Could not create test alerts',
-      )
-    } finally {
-      setSeeding(false)
-    }
-  }
 
   const handleOpen = (item: InAppNotification) => {
     if (!item.isRead) {
@@ -155,24 +132,14 @@ export function AlertsPanel({ open, onClose }: AlertsPanelProps) {
           <h2 className="text-brand-text text-lg font-semibold tracking-tight">
             Alerts ({totalCount})
           </h2>
-          <div className="flex items-center gap-1">
-            <button
-              type="button"
-              onClick={() => void handleSeedAlerts()}
-              disabled={seeding}
-              className="rounded-brand-md text-brand-muted hover:text-brand-text px-2 py-1 text-xs transition-colors hover:bg-white/5 disabled:opacity-60"
-            >
-              {seeding ? 'Creating…' : 'Create all alerts'}
-            </button>
-            <button
-              type="button"
-              onClick={onClose}
-              className="rounded-brand-md text-brand-muted hover:text-brand-text focus-visible:ring-brand-accent/30 grid size-9 place-items-center transition-colors hover:bg-white/5 focus-visible:ring-2 focus-visible:outline-none"
-              aria-label="Close alerts panel"
-            >
-              <X className="size-5" />
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-brand-md text-brand-muted hover:text-brand-text focus-visible:ring-brand-accent/30 grid size-9 place-items-center transition-colors hover:bg-white/5 focus-visible:ring-2 focus-visible:outline-none"
+            aria-label="Close alerts panel"
+          >
+            <X className="size-5" />
+          </button>
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">

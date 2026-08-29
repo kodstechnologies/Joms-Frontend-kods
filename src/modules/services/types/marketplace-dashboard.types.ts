@@ -201,10 +201,22 @@ export interface DashboardChartTrends {
   consultationsListed: TrendPoint[]
 }
 
+export interface MetricTrend {
+  direction: 'up' | 'down'
+  percentage: number
+  label: string
+}
+
+export interface MarketplaceMetricTrends {
+  services: Record<string, MetricTrend>
+  consultations: Record<string, MetricTrend>
+}
+
 export interface MarketplaceDashboardData {
   summary: DashboardSummary
   services: ServiceKpis
   consultations: ConsultationKpis
+  metricTrends?: MarketplaceMetricTrends
   trends: DashboardChartTrends
   distribution: {
     servicesByCategory: CategoryPoint[]

@@ -104,10 +104,10 @@ const tooltipStyle = {
 
 function MetricCard({ metric }: { metric: Metric }) {
   return (
-    <div className="rounded-brand-lg bg-brand-surface border border-white/[0.06] p-4 transition-colors hover:border-white/10">
+    <div className="rounded-brand-lg bg-brand-surface flex min-h-[130px] flex-col border border-white/[0.06] p-4 transition-colors hover:border-white/10">
       <p className="text-body-sm text-muted font-medium">{metric.label}</p>
       <p className="text-h3 mt-2 font-bold tracking-tight text-white">{metric.value}</p>
-      <div className="mt-2 flex items-center gap-2">
+      <div className="mt-auto flex items-center gap-2 pt-3">
         {metric.change ? (
           <>
             <span
@@ -139,13 +139,30 @@ function MetricCard({ metric }: { metric: Metric }) {
 
 function MetricCardSkeleton() {
   return (
-    <div className="rounded-brand-lg bg-brand-surface border border-white/[0.06] p-4">
+    <div className="rounded-brand-lg bg-brand-surface min-h-[130px] border border-white/[0.06] p-4">
       <div className="h-3 w-28 animate-pulse rounded bg-white/10" />
       <div className="mt-3 h-7 w-20 animate-pulse rounded bg-white/10" />
-      <div className="mt-4 h-5 w-32 animate-pulse rounded bg-white/5" />
+      <div className="mt-auto pt-6">
+        <div className="h-5 w-32 animate-pulse rounded bg-white/5" />
+      </div>
     </div>
   )
 }
+
+const attachMetricTrends = (
+  metrics: Metric[],
+  trends?: Record<string, { change: string; changeType: 'up' | 'down'; changeNote: string } | null>,
+): Metric[] =>
+  metrics.map((metric) => {
+    const trend = trends?.[metric.id]
+    if (!trend) return metric
+    return {
+      ...metric,
+      change: trend.change,
+      changeType: trend.changeType,
+      changeNote: trend.changeNote,
+    }
+  })
 
 export const VenueDashboardPage = () => {
   const navigate = useNavigate()
@@ -305,8 +322,12 @@ export const VenueDashboardPage = () => {
   }, [dashboardData])
 
   const visibleMetrics = useMemo(
-    () => orderByActiveMetricIds(liveMetrics, activeMetricIds),
-    [liveMetrics, activeMetricIds],
+    () =>
+      orderByActiveMetricIds(
+        attachMetricTrends(liveMetrics, dashboardData?.metricTrends),
+        activeMetricIds,
+      ),
+    [liveMetrics, activeMetricIds, dashboardData?.metricTrends],
   )
 
   const trendData: TrendPoint[] = useMemo(

@@ -71,8 +71,15 @@ export interface VenueRowData {
   status: 'High Performing' | 'Stable' | 'Needs Attention'
 }
 
+export interface VenueMetricTrend {
+  change: string
+  changeType: 'up' | 'down'
+  changeNote: string
+}
+
 export interface VenueDashboardResponse {
   metrics: VenueMetrics
+  metricTrends?: Record<string, VenueMetricTrend | null>
   trends: VenueTrendPoint[]
   topVenues: VenueRowData[]
   generatedAt: string

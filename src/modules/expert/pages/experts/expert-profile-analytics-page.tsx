@@ -1,5 +1,6 @@
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { toast } from 'sonner'
 
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import {
@@ -26,6 +27,7 @@ import {
 } from '../../config/expert-profile-analytics-metrics.config'
 import { orderByActiveMetricIds, useActiveMetricIds } from '../../hooks/use-active-metric-ids'
 import { buildExpertProfileAnalyticsMetricCards } from '../../utils/expert-profile-analytics-metrics'
+import { exportExpertProfileAnalyticsToExcel } from '../../utils/export-expert-profile-analytics'
 import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
 import {
   AnalyticsCard,
@@ -88,7 +90,7 @@ export function ExpertProfileAnalyticsPage() {
           ),
         ],
         EXPERT_PROFILE_ANALYTICS_METRIC_IDS,
-      ).slice(0, 8),
+      ),
     [activeMetricIds],
   )
 
@@ -324,6 +326,68 @@ export function ExpertProfileAnalyticsPage() {
     ).day
   }, [hasMostActiveTime, mostActiveTime])
 
+  const handleExport = useCallback(async () => {
+    if (!analyticsData) {
+      toast.error('Analytics data is not ready to export')
+      return
+    }
+
+    try {
+      await exportExpertProfileAnalyticsToExcel({
+        expertName: profile.name,
+        expertId: id,
+        visibilityPeriod,
+        revenuePeriod,
+        profileSummary: [
+          { label: 'Profession', value: profile.profession },
+          { label: 'Role', value: profile.role },
+          { label: 'Rating', value: profile.rating },
+          { label: 'Badge', value: profile.badge },
+          { label: 'Account Status', value: profile.accountStatus },
+          { label: 'Last Active', value: profile.lastActive },
+          { label: 'Services Listed', value: profile.servicesListed },
+          { label: 'Consultations Listed', value: profile.consultationsListed },
+          { label: 'Orders Completed', value: profile.ordersCompleted },
+          { label: 'Revenue', value: profile.revenue },
+        ],
+        serviceAnalytics: serviceAnalyticsCards,
+        visibilityMetrics,
+        expertListings: expertListingsMetrics,
+        ticketingInsights,
+        mostActiveTime: hasMostActiveTime ? mostActiveTime : [],
+        topViewsByLocation,
+        topViewsByRole,
+        conversionFunnel: hasConversionFunnel ? conversionFunnel : [],
+        revenueTrend: hasRevenueTrend ? revenueTrend : [],
+      })
+      toast.success('Export downloaded')
+    } catch (error) {
+      if (error instanceof Error && error.message === 'NO_RECORDS') {
+        toast.error('No analytics data available to export')
+        return
+      }
+      toast.error('Failed to export analytics data')
+    }
+  }, [
+    analyticsData,
+    conversionFunnel,
+    expertListingsMetrics,
+    hasConversionFunnel,
+    hasMostActiveTime,
+    hasRevenueTrend,
+    id,
+    mostActiveTime,
+    profile,
+    revenuePeriod,
+    revenueTrend,
+    serviceAnalyticsCards,
+    ticketingInsights,
+    topViewsByLocation,
+    topViewsByRole,
+    visibilityMetrics,
+    visibilityPeriod,
+  ])
+
   return (
     <div className="mx-auto flex max-w-[1120px] flex-col gap-5 pb-8">
       <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -364,7 +428,7 @@ export function ExpertProfileAnalyticsPage() {
             <SlidersHorizontal className="size-4" />
             Manage Metrics
           </Button>
-          <Button className="ui-export-data h-9">
+          <Button className="ui-export-data h-9" onClick={handleExport}>
             <Upload className="size-4" />
             Export Data
           </Button>

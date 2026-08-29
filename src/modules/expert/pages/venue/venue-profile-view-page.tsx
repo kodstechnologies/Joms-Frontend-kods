@@ -1002,7 +1002,8 @@ function SpacesTab({ data, venueId }: { data: VenueFullView; venueId: string }) 
 
       if (successCount === 0) {
         const firstError = results.find((result) => result.status === 'rejected') as
-          PromiseRejectedResult | undefined
+          | PromiseRejectedResult
+          | undefined
         toast.error(getSharedApiErrorMessage(firstError?.reason) || 'Failed to escalate spaces.')
         return
       }
@@ -1327,7 +1328,8 @@ function AnalyticsTab({ data, venueId }: { data: VenueFullView; venueId: string 
   const navigate = useNavigate()
   const { data: analyticsData, isLoading } = useVenueProfileAnalytics(venueId)
   const profileAnalytics = data?.profile as
-    (typeof data.profile & { analytics?: Record<string, unknown> }) | undefined
+    | (typeof data.profile & { analytics?: Record<string, unknown> })
+    | undefined
   const venueAnalytics = profileAnalytics?.analytics
   const activeMetricIds = useActiveMetricIds(VENUE_PROFILE_ANALYTICS_MODULE_KEY, [
     ...DEFAULT_VENUE_PROFILE_ANALYTICS_METRIC_IDS,
@@ -1344,7 +1346,7 @@ function AnalyticsTab({ data, venueId }: { data: VenueFullView; venueId: string 
           ),
         ],
         VENUE_PROFILE_ANALYTICS_METRIC_IDS,
-      ).slice(0, 8),
+      ),
     [activeMetricIds],
   )
 
