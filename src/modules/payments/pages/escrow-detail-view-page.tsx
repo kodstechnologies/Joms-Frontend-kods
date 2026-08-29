@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, Flag } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
@@ -8,6 +8,7 @@ import { useBranding } from '@/app/providers/use-branding'
 import { AddFinanceNoteModal } from '@/modules/payments/components/add-finance-note-modal'
 import { fetchPartnerDisplayNames } from '@/modules/payments/api/partner-lookup-api'
 import { useFinanceEscrowDetail, useReleaseEscrow } from '@/modules/payments/hooks/use-finance'
+import { escalateUrl } from '@/modules/payments/utils/finance-escalate'
 import {
   formatDate,
   formatInr,
@@ -139,9 +140,27 @@ export function EscrowDetailViewPage() {
       </header>
 
       <section className={cn(cardClass, 'p-5')}>
-        <div className="mb-4">
-          <h2 className={sectionTitleClass}>Escrow Hold Details</h2>
-          <p className={sectionSubtitleClass}>Hold details for custom / milestone settlement</p>
+        <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <h2 className={sectionTitleClass}>Escrow Hold Details</h2>
+            <p className={sectionSubtitleClass}>Hold details for custom / milestone settlement</p>
+          </div>
+          <button
+            type="button"
+            onClick={() =>
+              navigate(
+                escalateUrl(escrow._id, {
+                  kind: 'resource',
+                  resourceType: 'EscrowHold',
+                  returnTo: `/finance/escrow/${id}`,
+                }),
+              )
+            }
+            className="ui-cta ui-cta-secondary shrink-0"
+          >
+            <Flag className="size-4" />
+            Escalate
+          </button>
         </div>
         <div className="mb-5 border-b border-white/5" />
 

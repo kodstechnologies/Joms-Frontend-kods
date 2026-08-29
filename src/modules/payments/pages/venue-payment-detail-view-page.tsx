@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { ArrowLeft, Download, SquarePen } from 'lucide-react'
+import { ArrowLeft, Download, Flag, SquarePen } from 'lucide-react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 
@@ -8,6 +8,7 @@ import { fetchPartnerDisplayNames } from '@/modules/payments/api/partner-lookup-
 import { AddFinanceNoteModal } from '@/modules/payments/components/add-finance-note-modal'
 import { FinanceInternalNotesCard } from '@/modules/payments/components/finance-internal-notes-card'
 import { useAddFinanceNote, useFinancePayment } from '@/modules/payments/hooks/use-finance'
+import { escalateUrl } from '@/modules/payments/utils/finance-escalate'
 import {
   formatDate,
   formatInr,
@@ -310,6 +311,20 @@ export function VenuePaymentDetailViewPage() {
             <Button onClick={() => setIsNoteModalOpen(true)}>
               <SquarePen className="size-4" />
               Add Notes
+            </Button>
+            <Button
+              onClick={() =>
+                navigate(
+                  escalateUrl(payment._id, {
+                    kind: 'resource',
+                    resourceType: 'Payment',
+                    returnTo: `/finance/venues/${id}`,
+                  }),
+                )
+              }
+            >
+              <Flag className="size-4" />
+              Escalate
             </Button>
           </div>
         </div>

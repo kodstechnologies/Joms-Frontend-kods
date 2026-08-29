@@ -15,11 +15,9 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 
 import { ApproveRefundModal } from '@/modules/payments/components/approve-refund-modal'
-import { EscalateToSuperAdminModal } from '@/modules/payments/components/escalate-to-super-admin-modal'
 import { RejectRefundModal } from '@/modules/payments/components/reject-refund-modal'
 import { RequestMoreInformationModal } from '@/modules/payments/components/request-more-information-modal'
 import {
-  useEscalateDispute,
   useFinanceDispute,
   useRejectDispute,
   useRequestDisputeInfo,
@@ -31,6 +29,7 @@ import {
   mapDisputeStatus,
   titleCase,
 } from '@/modules/payments/utils/finance-mappers'
+import { escalateUrl } from '@/modules/payments/utils/finance-escalate'
 import { DetailViewSkeleton } from '@/shared/components/ui/skeleton'
 import { cn } from '@/shared/lib/cn'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
@@ -113,7 +112,6 @@ export function DisputeDetailViewPage() {
   const resolveMutation = useResolveDispute()
   const rejectMutation = useRejectDispute()
   const requestInfoMutation = useRequestDisputeInfo()
-  const escalateMutation = useEscalateDispute()
   const dispute = data?.data
   const evidenceFiles = (dispute?.evidence ?? []).map((file, index) => ({
     id: `evidence-${index + 1}`,
@@ -125,7 +123,6 @@ export function DisputeDetailViewPage() {
   const [isApproveRefundOpen, setIsApproveRefundOpen] = useState(false)
   const [isRejectRefundOpen, setIsRejectRefundOpen] = useState(false)
   const [isRequestMoreInfoOpen, setIsRequestMoreInfoOpen] = useState(false)
-  const [isEscalateOpen, setIsEscalateOpen] = useState(false)
 
   const apiErrorMessage = (err: unknown, fallback: string) =>
     (err as { response?: { data?: { message?: string } } })?.response?.data?.message || fallback
@@ -364,8 +361,16 @@ export function DisputeDetailViewPage() {
               </button>
               <button
                 type="button"
-                disabled={!canAct || escalateMutation.isPending}
-                onClick={() => setIsEscalateOpen(true)}
+                disabled={!canAct}
+                onClick={() =>
+                  navigate(
+                    escalateUrl(id, {
+                      kind: 'dispute',
+                      resourceType: 'Dispute',
+                      returnTo: `/finance/refunds/${id}/dispute`,
+                    }),
+                  )
+                }
                 className="ui-cta ui-cta-secondary shrink-0"
               >
                 Escalate
@@ -516,25 +521,6 @@ export function DisputeDetailViewPage() {
             void refetch()
           } catch (err) {
             toast.error(apiErrorMessage(err, 'Failed to request information'))
-            throw err
-          }
-        }}
-      />
-
-      <EscalateToSuperAdminModal
-        open={isEscalateOpen}
-        refundId={detail.disputeId}
-        requestedBy={detail.escalatedBy}
-        amount={detail.amount}
-        onClose={() => setIsEscalateOpen(false)}
-        onSubmit={async ({ priority, adminNotes }) => {
-          try {
-            await escalateMutation.mutateAsync({ id, priority, adminNotes })
-            toast.success('Dispute escalated')
-            setIsEscalateOpen(false)
-            navigate(`/finance/refunds/${id}/escalate`)
-          } catch (err) {
-            toast.error(apiErrorMessage(err, 'Failed to escalate dispute'))
             throw err
           }
         }}

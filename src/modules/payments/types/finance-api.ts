@@ -226,6 +226,9 @@ export type FinanceAdminNote = {
   action?: string
   adminId?: string
   adminNote: string
+  escalateToAdminId?: string | null
+  priority?: string | null
+  payload?: Record<string, unknown> | null
   createdAt?: string
 }
 

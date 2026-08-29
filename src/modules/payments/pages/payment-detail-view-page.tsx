@@ -7,11 +7,8 @@ import { toast } from 'sonner'
 import { fetchPartnerDisplayNames } from '@/modules/payments/api/partner-lookup-api'
 import { AddFinanceNoteModal } from '@/modules/payments/components/add-finance-note-modal'
 import { FinanceInternalNotesCard } from '@/modules/payments/components/finance-internal-notes-card'
-import {
-  useAddFinanceNote,
-  useEscalateFinance,
-  useFinancePayment,
-} from '@/modules/payments/hooks/use-finance'
+import { useAddFinanceNote, useFinancePayment } from '@/modules/payments/hooks/use-finance'
+import { escalateUrl } from '@/modules/payments/utils/finance-escalate'
 import {
   formatDate,
   formatInr,
@@ -78,9 +75,7 @@ export function PaymentDetailViewPage() {
   const { id = '' } = useParams<{ id: string }>()
   const { data, isLoading, isError } = useFinancePayment(id)
   const noteMutation = useAddFinanceNote()
-  const escalateMutation = useEscalateFinance()
   const [isNoteModalOpen, setIsNoteModalOpen] = useState(false)
-  const [isEscalateModalOpen, setIsEscalateModalOpen] = useState(false)
   const payment = data?.data
   const snapshot = (payment?.moduleSnapshot || {}) as Record<string, unknown>
   const moduleData = (payment?.moduleData || {}) as Record<string, unknown>
@@ -290,7 +285,17 @@ export function PaymentDetailViewPage() {
               <SquarePen className="size-4" />
               Add Notes
             </Button>
-            <Button onClick={() => setIsEscalateModalOpen(true)}>
+            <Button
+              onClick={() =>
+                navigate(
+                  escalateUrl(payment._id, {
+                    kind: 'resource',
+                    resourceType: 'Payment',
+                    returnTo: `/finance/revenue/${id}`,
+                  }),
+                )
+              }
+            >
               <SquarePen className="size-4" />
               Escalate
             </Button>
@@ -422,29 +427,6 @@ export function PaymentDetailViewPage() {
                 setIsNoteModalOpen(false)
               },
               onError: () => toast.error('Failed to save note'),
-            },
-          )
-        }}
-      />
-
-      <AddFinanceNoteModal
-        open={isEscalateModalOpen}
-        title="Escalate"
-        description="This records an escalation for admin review and audit history."
-        placeholder="Enter escalation note"
-        submitLabel="Escalate"
-        submittingLabel="Escalating..."
-        isSubmitting={escalateMutation.isPending}
-        onClose={() => setIsEscalateModalOpen(false)}
-        onSubmit={(adminNote) => {
-          escalateMutation.mutate(
-            { id: payment._id, resourceType: 'Payment', adminNote },
-            {
-              onSuccess: () => {
-                toast.success('Escalated')
-                setIsEscalateModalOpen(false)
-              },
-              onError: () => toast.error('Failed to escalate'),
             },
           )
         }}

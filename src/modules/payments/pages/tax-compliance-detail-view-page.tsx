@@ -1,10 +1,11 @@
 import { useState, type ReactNode } from 'react'
-import { ArrowLeft, Check, Download, SquarePen } from 'lucide-react'
+import { ArrowLeft, Check, Download, Flag, SquarePen } from 'lucide-react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 
 import { AddFinanceNoteModal } from '@/modules/payments/components/add-finance-note-modal'
 import { useAddFinanceNote, useFinanceTaxDetail } from '@/modules/payments/hooks/use-finance'
+import { escalateUrl } from '@/modules/payments/utils/finance-escalate'
 import { formatDate, formatInr, titleCase } from '@/modules/payments/utils/finance-mappers'
 import { Button } from '@/shared/components/ui/button'
 import { DetailViewSkeleton } from '@/shared/components/ui/skeleton'
@@ -196,6 +197,20 @@ export function TaxComplianceDetailViewPage() {
             <Button onClick={() => setIsNoteModalOpen(true)}>
               <SquarePen className="size-4" />
               Add Notes
+            </Button>
+            <Button
+              onClick={() =>
+                navigate(
+                  escalateUrl(tax._id, {
+                    kind: 'resource',
+                    resourceType: 'TaxRecord',
+                    returnTo: `/finance/tax/${id}`,
+                  }),
+                )
+              }
+            >
+              <Flag className="size-4" />
+              Escalate
             </Button>
           </div>
         </div>
