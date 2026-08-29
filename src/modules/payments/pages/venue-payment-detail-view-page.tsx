@@ -19,6 +19,10 @@ import { Button } from '@/shared/components/ui/button'
 import { DetailViewSkeleton } from '@/shared/components/ui/skeleton'
 import { cn } from '@/shared/lib/cn'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
+import {
+  downloadKeyValueReport,
+  flattenExportPairs,
+} from '@/modules/payments/hooks/use-finance-list-filters'
 
 const cardClass = 'radius-lg border border-white/[0.06] bg-brand-surface p-4 sm:p-5'
 const sectionTitleClass = 'text-body-md-semibold text-brand-text leading-[20px]'
@@ -304,7 +308,21 @@ export function VenuePaymentDetailViewPage() {
             <p className={sectionSubtitleClass}>{detail.venueDescription}</p>
           </div>
           <div className="flex flex-wrap items-center gap-3">
-            <Button onClick={() => toast.message('Download report coming soon')}>
+            <Button
+              onClick={() =>
+                downloadKeyValueReport(
+                  'venue_payment_report',
+                  flattenExportPairs({
+                    Payment: detail.paymentInformation,
+                    Timeline: detail.timelineInformation,
+                    Financial: detail.financialBreakdown,
+                    Venue: detail.venueInformation,
+                    Parties: detail.parties,
+                    Settlement: detail.finalCalculation,
+                  }),
+                )
+              }
+            >
               <Download className="size-4" />
               Download Report
             </Button>

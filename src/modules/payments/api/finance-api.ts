@@ -268,6 +268,14 @@ export const fetchFinanceTaxById = async (id: string) => {
   return res
 }
 
+export const markFinanceTaxFiled = async (id: string, adminNote?: string) => {
+  const response = await paymentApiClient.post<ApiSuccess<FinanceTaxRecord>>(
+    `/admin/finance/tax/${id}/file`,
+    { adminNote: adminNote || 'Marked as filed' },
+  )
+  return response.data
+}
+
 export const fetchFinanceInvoices = async (params?: FinanceListParams) => {
   const res = await getData<Paginated<FinanceInvoice>>('/admin/finance/invoices', params)
   return res

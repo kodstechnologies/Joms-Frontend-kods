@@ -13,6 +13,10 @@ import {
   mapPaymentStatus,
   titleCase,
 } from '@/modules/payments/utils/finance-mappers'
+import {
+  downloadKeyValueReport,
+  flattenExportPairs,
+} from '@/modules/payments/hooks/use-finance-list-filters'
 import { Button } from '@/shared/components/ui/button'
 import { DetailViewSkeleton } from '@/shared/components/ui/skeleton'
 import { cn } from '@/shared/lib/cn'
@@ -184,7 +188,20 @@ export function ServicePaymentDetailViewPage() {
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-3">
-            <Button onClick={() => toast.message('Download report coming soon')}>
+            <Button
+              onClick={() =>
+                void downloadKeyValueReport(
+                  'service_payment_report',
+                  flattenExportPairs({
+                    Payment: detail.paymentInformation,
+                    Service: detail.serviceInformation,
+                    Timeline: detail.timelineInformation,
+                    Parties: detail.parties,
+                    Financial: detail.financialBreakdown,
+                  }),
+                )
+              }
+            >
               <Download className="size-4" />
               Download Report
             </Button>

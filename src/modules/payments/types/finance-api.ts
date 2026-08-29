@@ -196,6 +196,8 @@ export type FinanceTaxRecord = {
   filingPeriod?: string | null
   currency?: string
   paymentId?: string
+  filedAt?: string | null
+  filedByAdminId?: string | null
   createdAt?: string
 }
 

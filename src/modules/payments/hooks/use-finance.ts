@@ -24,6 +24,7 @@ import {
   fetchFinanceTax,
   fetchFinanceTaxById,
   issueFinanceRefund,
+  markFinanceTaxFiled,
   rejectFinanceDispute,
   rejectFinanceRefund,
   releaseFinanceEscrow,
@@ -305,6 +306,20 @@ export const useFinanceTaxDetail = (id: string) =>
     queryFn: () => fetchFinanceTaxById(id),
     enabled: !!id,
   })
+
+export const useMarkTaxFiled = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, adminNote }: { id: string; adminNote?: string }) =>
+      markFinanceTaxFiled(id, adminNote),
+    onSuccess: (data, variables) => {
+      queryClient.setQueryData(financeKeys.taxDetail(variables.id), data)
+      void queryClient.invalidateQueries({ queryKey: ['finance-tax-detail'] })
+      void queryClient.invalidateQueries({ queryKey: ['finance-tax'] })
+      void queryClient.invalidateQueries({ queryKey: financeKeys.dashboard })
+    },
+  })
+}
 
 export const useFinanceInvoices = (params?: FinanceListParams) =>
   useQuery({
