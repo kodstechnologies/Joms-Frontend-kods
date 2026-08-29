@@ -8,6 +8,7 @@ import { useBranding } from '@/app/providers/use-branding'
 import { Button } from '@/shared/components/ui/button'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import { downloadInvoiceDocument, invoiceFromPayout } from '@/shared/utils/invoice-document'
+import { statusBadgeClass } from '../../utils/payout-status'
 import { fetchExpertPayoutDetail } from '../../api/expert-api'
 import type { PayoutItem } from '../../type/payout'
 
@@ -241,7 +242,9 @@ export function ExpertPayoutDetailPage() {
               </div>
               <div className="flex items-center justify-between pt-1">
                 <span className="text-slate-400">Payment Status</span>
-                <span className="rounded-full border border-emerald-500/30 bg-emerald-500/15 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-400">
+                <span
+                  className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${statusBadgeClass(payout.paymentStatus)}`}
+                >
                   {payout.paymentStatus || '—'}
                 </span>
               </div>

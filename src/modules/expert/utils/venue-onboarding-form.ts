@@ -46,6 +46,8 @@ export type VenueOnboardingFormData = {
 
   internalNotes: string
   isVerified: boolean
+  isPhoneVerified?: boolean
+  isEmailVerified?: boolean
 }
 
 export const VENUE_TYPE_OPTIONS = [
@@ -117,6 +119,8 @@ export const createEmptyVenueOnboardingForm = (): VenueOnboardingFormData => ({
 
   internalNotes: '',
   isVerified: false,
+  isPhoneVerified: false,
+  isEmailVerified: false,
 })
 
 export const buildBasicProfileFormData = (

@@ -3369,6 +3369,18 @@ select::-ms-expand {
   color: rgb(255 255 255 / 50%);
 }
 
+.ui-modal-backdrop,
+.ui-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(5, 5, 5, 0.8);
+  padding: 1rem;
+}
+
 .ui-modal-shell {
   display: flex;
   width: 100%;

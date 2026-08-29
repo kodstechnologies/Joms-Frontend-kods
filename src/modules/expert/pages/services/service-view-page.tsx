@@ -7,7 +7,6 @@ import {
   ArrowLeft,
   ChevronLeft,
   ChevronRight,
-  Clock,
   Eye,
   History,
   Image as ImageIcon,
@@ -28,7 +27,6 @@ import {
 import { useExpertProfile } from '../../hooks/use-expert-profile'
 import { formatExpertDateTime, formatListingExpertId } from '../experts/expert-list-format'
 import { Button } from '@/shared/components/ui/button'
-import { RequiredMark } from '@/shared/components/form/required-mark'
 import {
   DecisionControlButtons,
   DecisionControlsHeader,
@@ -188,11 +186,6 @@ const splitSessionContent = (outline?: string) => {
     outline: parts[0] || outline || '',
     benefits: parts[1] || '',
   }
-}
-
-const formatConsultationMode = (mode?: string) => {
-  if (!mode) return EMPTY_VALUE
-  return mode.charAt(0).toUpperCase() + mode.slice(1)
 }
 
 export const ServiceViewPage = () => {
@@ -686,7 +679,7 @@ export const ServiceViewPage = () => {
 
   const DetailChip = ({ value, label }: { value: string; label: string }) => (
     <div className="flex flex-col items-center gap-1.5">
-      <div className="bg-brand-surface text-body-sm rounded-md px-4 py-2.5 font-semibold text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.05)]">
+      <div className="text-body-sm rounded-md bg-[#050505] px-4 py-2.5 font-semibold text-white">
         {value}
       </div>
       <span className="text-muted text-[10px]">{label}</span>
@@ -729,16 +722,16 @@ export const ServiceViewPage = () => {
   )
 
   const renderTieredPricing = () => (
-    <div className="mt-6 space-y-4">
-      <div className="bg-brand-bg flex w-full max-w-[360px] rounded-full p-0.5">
+    <div className="space-y-4">
+      <div className="flex w-full rounded-full bg-[#050505] p-1">
         {service.tieredPricing?.tiers.map((tier, index) => (
           <button
             key={tier.name}
             type="button"
             onClick={() => setActiveTierIndex(index)}
             className={cn(
-              'flex-1 rounded-full py-2 text-[10px] font-medium transition-colors',
-              activeTierIndex === index ? 'bg-white text-black' : 'text-white',
+              'flex-1 rounded-full py-1.5 text-center text-xs font-semibold capitalize transition-colors',
+              activeTierIndex === index ? 'bg-white text-black' : 'text-white/70 hover:text-white',
             )}
           >
             {tier.name}
@@ -747,20 +740,18 @@ export const ServiceViewPage = () => {
       </div>
 
       {tierDetails?.description && (
-        <p className="text-body-sm max-w-[560px] leading-relaxed text-white">
-          {tierDetails.description}
-        </p>
+        <p className="text-body-sm leading-relaxed text-white">{tierDetails.description}</p>
       )}
 
-      {Boolean(tierDetails?.features.length) && (
-        <ul className="text-body-sm list-disc space-y-1 pl-4 leading-relaxed text-white">
+      {Boolean(tierDetails?.features?.length) && (
+        <ul className="text-body-sm list-disc space-y-1.5 pl-4 leading-relaxed text-white">
           {tierDetails?.features.map((feature) => (
             <li key={feature}>{feature}</li>
           ))}
         </ul>
       )}
 
-      <div className="flex flex-wrap gap-8">
+      <div className="flex flex-wrap gap-6 pt-1">
         <DetailChip value={formatMoney(tierDetails?.price)} label="Pricing" />
         <DetailChip
           value={
@@ -775,125 +766,137 @@ export const ServiceViewPage = () => {
   )
 
   const renderConsultationDetails = () => (
-    <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-      <div className="space-y-5">
-        <div>
-          <h1 className="decoration-brand-accent text-[22px] leading-tight font-semibold text-white underline decoration-2 underline-offset-4">
-            {consultationTitle}
-          </h1>
-          {categoryName && <p className="text-body-sm text-muted mt-2">{categoryName}</p>}
-        </div>
+    <div className="max-w-[1102px] py-2">
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1.15fr_0.85fr] lg:gap-10">
+        <div className="space-y-6">
+          <div className="flex items-stretch gap-3">
+            <span className="bg-brand-accent w-[3px] shrink-0 rounded-full" aria-hidden="true" />
+            <div className="min-w-0">
+              <h1 className="text-h2 leading-tight font-bold text-white">{consultationTitle}</h1>
+              {categoryName && <p className="text-muted mt-1 text-[13px]">{categoryName}</p>}
+            </div>
+          </div>
 
-        {consultationTopics.length > 0 && (
-          <div className="flex flex-wrap gap-2">
-            {consultationTopics.map((topic) => (
-              <span
-                key={topic._id}
-                className="text-muted rounded-full border border-white/20 px-3 py-1 text-[10px] font-medium"
-              >
-                {topic.name}
-              </span>
-            ))}
-          </div>
-        )}
-
-        {outlineItems.length > 0 && (
-          <div>
-            <h3 className="text-body-sm font-semibold text-white">Session outline</h3>
-            <ul className="text-body-sm text-muted mt-2 list-disc space-y-1.5 pl-4 leading-relaxed">
-              {outlineItems.map((item) => (
-                <li key={item}>{item}</li>
-              ))}
-            </ul>
-          </div>
-        )}
-
-        {benefitItems.length > 0 && (
-          <div>
-            <h3 className="text-body-sm font-semibold text-white">Benefits</h3>
-            <ul className="text-body-sm text-muted mt-2 list-disc space-y-1.5 pl-4 leading-relaxed">
-              {benefitItems.map((item) => (
-                <li key={item}>{item}</li>
-              ))}
-            </ul>
-          </div>
-        )}
-
-        {(service.whoItsFor || service.whoIsItFor) && (
-          <div>
-            <h3 className="text-body-sm font-semibold text-white">Who is it for?</h3>
-            <p className="text-body-sm text-muted mt-2 leading-relaxed">
-              {service.whoItsFor || service.whoIsItFor}
-            </p>
-          </div>
-        )}
-      </div>
-
-      <div className="space-y-5">
-        <div className="grid grid-cols-3 gap-3">
-          <div className="flex flex-col items-center gap-2 rounded-lg border border-white/5 bg-black p-4 text-center">
-            <Phone className="text-brand-accent size-4" aria-hidden="true" />
-            <span className="text-muted text-[10px]">Mode</span>
-            <span className="text-body-sm font-semibold text-white">
-              {formatConsultationMode(service.mode || service.modeOfConsultation)}
-            </span>
-          </div>
-          <div className="flex flex-col items-center gap-2 rounded-lg border border-white/5 bg-black p-4 text-center">
-            <Languages className="text-brand-accent size-4" aria-hidden="true" />
-            <span className="text-muted text-[10px]">Language</span>
-            <span className="text-body-sm font-semibold text-white">{consultationLanguages}</span>
-          </div>
-          <div className="flex flex-col items-center gap-2 rounded-lg border border-white/5 bg-black p-4 text-center">
-            <Clock className="text-brand-accent size-4" aria-hidden="true" />
-            <span className="text-muted text-[10px]">FollowUps</span>
-            <span className="text-body-sm font-semibold text-white">{followUpLabel}</span>
-          </div>
-        </div>
-
-        <div className="space-y-3">
-          <div>
-            <p className="text-body-sm font-semibold text-white">Post-session requirement</p>
-            <p className="text-body-sm text-muted mt-1 leading-relaxed">
-              {service.hasPostSessionMessage && service.postSessionMessage?.trim()
-                ? service.postSessionMessage
-                : 'Keep your requirements and questions ready.'}
-            </p>
-          </div>
-          <div>
-            <p className="text-body-sm font-semibold text-white">Pre-session requirement</p>
-            <p className="text-body-sm text-muted mt-1 leading-relaxed">
-              {service.hasPreSessionRequirement && service.preSessionRequirement?.trim()
-                ? service.preSessionRequirement
-                : 'Keep your requirements and questions ready.'}
-            </p>
-          </div>
-        </div>
-
-        {consultationDurations.length > 0 && (
-          <div>
-            <h3 className="text-body-sm mb-3 font-semibold text-white">Duration &amp; Pricing</h3>
-            <div className="flex flex-wrap gap-3">
-              {consultationDurations.map((duration) => (
+          {consultationTopics.length > 0 && (
+            <div className="flex flex-wrap gap-2.5">
+              {consultationTopics.map((topic) => (
                 <span
-                  key={duration.key}
-                  className="bg-brand-surface rounded-md px-4 py-2.5 text-[10px] font-semibold text-white"
+                  key={topic._id}
+                  className="rounded-md border border-white/20 px-3 py-1 text-[11px] font-medium text-white"
                 >
-                  {duration.label}
+                  {topic.name}
                 </span>
               ))}
             </div>
+          )}
+
+          {outlineItems.length > 0 && (
+            <div>
+              <h3 className="text-body-sm font-semibold text-white">Session outline</h3>
+              <ul className="text-body-sm text-muted mt-2 list-disc space-y-1.5 pl-4 leading-relaxed">
+                {outlineItems.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {benefitItems.length > 0 && (
+            <div>
+              <h3 className="text-body-sm font-semibold text-white">Benefits</h3>
+              <ul className="text-body-sm text-muted mt-2 list-disc space-y-1.5 pl-4 leading-relaxed">
+                {benefitItems.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {(service.whoItsFor || service.whoIsItFor) && (
+            <div>
+              <h3 className="text-body-sm font-semibold text-white">Who is it for?</h3>
+              <p className="text-body-sm text-muted mt-2 leading-relaxed">
+                {service.whoItsFor || service.whoIsItFor}
+              </p>
+            </div>
+          )}
+        </div>
+
+        <div className="space-y-6 lg:border-l lg:border-white/5 lg:pl-8">
+          <div>
+            <h3 className="text-body-sm mb-4 font-semibold text-white">Additional Information</h3>
+            <div className="flex flex-wrap items-center gap-6">
+              <div className="flex flex-col items-center gap-1.5">
+                <div className="flex size-12 items-center justify-center rounded-lg bg-[#050505]">
+                  <Phone className="size-4 text-white" aria-hidden="true" />
+                </div>
+                <span className="text-muted text-[10px]">Mode</span>
+              </div>
+              <div className="flex flex-col items-center gap-1.5">
+                <div className="flex size-12 items-center justify-center rounded-lg bg-[#050505]">
+                  <Languages className="size-4 text-white" aria-hidden="true" />
+                </div>
+                <span className="text-muted text-[10px]">{consultationLanguages}</span>
+              </div>
+              <div className="flex flex-col items-center gap-1.5">
+                <div className="text-body-sm flex h-12 min-w-14 items-center justify-center rounded-lg bg-[#050505] px-3 font-semibold text-white">
+                  {followUpLabel}
+                </div>
+                <span className="text-muted text-[10px]">FollowUps</span>
+              </div>
+            </div>
           </div>
-        )}
+
+          <div className="space-y-4">
+            <div>
+              <p className="text-body-sm font-semibold text-white">Post-session requirement</p>
+              <p className="text-body-sm text-muted mt-1 leading-relaxed">
+                {service.hasPostSessionMessage && service.postSessionMessage?.trim()
+                  ? service.postSessionMessage
+                  : 'Keep your requirements and questions ready.'}
+              </p>
+            </div>
+            <div>
+              <p className="text-body-sm font-semibold text-white">Pre-session requirement</p>
+              <p className="text-body-sm text-muted mt-1 leading-relaxed">
+                {service.hasPreSessionRequirement && service.preSessionRequirement?.trim()
+                  ? service.preSessionRequirement
+                  : 'Keep your requirements and questions ready.'}
+              </p>
+            </div>
+          </div>
+
+          {consultationDurations.length > 0 && (
+            <div className="border-t border-white/5 pt-4">
+              <h3 className="text-body-sm mb-3 font-semibold text-white">Duration &amp; Pricing</h3>
+              <div className="flex flex-wrap gap-2.5">
+                {consultationDurations.map((duration) => (
+                  <span
+                    key={duration.key}
+                    className="rounded-lg bg-[#050505] px-4 py-2.5 text-xs font-semibold text-white"
+                  >
+                    {duration.label}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )
 
   const renderServiceDetails = () => (
-    <>
-      <div className="mb-4 flex justify-end">
+    <div className="space-y-6">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-[22px] leading-tight font-semibold text-white">{service.title}</h1>
+          {categoryName && <p className="text-body-sm text-muted mt-1">{categoryName}</p>}
+        </div>
+
         <span
           className={cn(
-            'rounded-full px-3 py-1 text-[10px] font-bold tracking-wide uppercase',
+            'rounded-md px-3.5 py-1.5 text-[11px] font-semibold tracking-wide',
             statusBadge.className,
           )}
         >
@@ -901,9 +904,9 @@ export const ServiceViewPage = () => {
         </span>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[340px_minmax(0,1fr)]">
-        <div className="flex flex-col gap-4">
-          <div className="bg-brand-bg relative h-[220px] w-full overflow-hidden rounded-lg">
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-[380px_minmax(0,1fr)]">
+        <div className="space-y-6">
+          <div className="relative h-[230px] w-full overflow-hidden rounded-lg bg-[#050505]">
             {activeImage ? (
               <img src={activeImage} alt={service.title} className="h-full w-full object-cover" />
             ) : (
@@ -939,30 +942,21 @@ export const ServiceViewPage = () => {
               {imageCount > 0 ? `${activeImageIndex + 1}/${imageCount}` : '0/0'}
             </div>
           </div>
+
+          {resolvedPricingType === 'tiered' && renderTieredPricing()}
         </div>
 
-        <div className="flex min-w-0 flex-col">
-          <div className="mb-1 flex items-start justify-between gap-4">
-            <div>
-              <h1 className="text-[22px] leading-tight font-semibold text-white">
-                {service.title}
-              </h1>
-              {categoryName && <p className="text-body-sm text-muted mt-1">{categoryName}</p>}
-            </div>
-          </div>
-
+        <div className="flex min-w-0 flex-col space-y-4">
           {service.description && (
-            <p className="text-body-sm mt-4 max-w-[640px] leading-relaxed text-white">
-              {service.description}
-            </p>
+            <p className="text-body-sm leading-relaxed text-white">{service.description}</p>
           )}
 
           {Boolean(service.subCategory?.length) && (
-            <div className="mt-4 flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2 pt-1">
               {service.subCategory?.map((item) => (
                 <span
                   key={item._id}
-                  className="rounded border border-white/30 px-2.5 py-1 text-[10px] font-medium text-white"
+                  className="rounded-md border border-white/20 px-3 py-1 text-[11px] font-medium text-white"
                 >
                   {item.name}
                 </span>
@@ -972,10 +966,9 @@ export const ServiceViewPage = () => {
 
           {resolvedPricingType === 'fixed' && renderFixedPricing()}
           {resolvedPricingType === 'custom' && renderCustomPricing()}
-          {resolvedPricingType === 'tiered' && renderTieredPricing()}
         </div>
       </div>
-    </>
+    </div>
   )
 
   return (
@@ -1068,7 +1061,9 @@ export const ServiceViewPage = () => {
         </div>
       </header>
 
-      <div className="bg-brand-bg rounded-xl border border-white/5 p-6">
+      <h2 className="text-body-md font-semibold text-white">{detailsSectionTitle}</h2>
+
+      <div className="rounded-xl bg-[#141414] p-6">
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div>
             <h2 className="text-2xl font-bold text-white">{expertName}</h2>
@@ -1087,17 +1082,17 @@ export const ServiceViewPage = () => {
         </div>
 
         <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <div className="rounded-lg border border-white/5 bg-black p-4">
+          <div className="rounded-lg bg-[#050505] p-4">
             <p className="text-body-sm text-muted">Expert ID</p>
             <p className="mt-1 font-mono text-[13px] font-semibold text-white">#{expertIdLabel}</p>
           </div>
-          <div className="rounded-lg border border-white/5 bg-black p-4">
+          <div className="rounded-lg bg-[#050505] p-4">
             <p className="text-body-sm text-muted">Submitted</p>
             <p className="mt-1 text-[13px] font-semibold text-white">
               {formatExpertDateTime(submittedAt)}
             </p>
           </div>
-          <div className="rounded-lg border border-white/5 bg-black p-4">
+          <div className="rounded-lg bg-[#050505] p-4">
             <p className="text-body-sm text-muted">Last Updated</p>
             <p className="mt-1 text-[13px] font-semibold text-white">
               {formatExpertDateTime(service.updatedAt)}
@@ -1106,21 +1101,22 @@ export const ServiceViewPage = () => {
         </div>
       </div>
 
-      <h2 className="text-body-md font-semibold text-white">{detailsSectionTitle}</h2>
-
-      <div className="bg-brand-bg rounded-xl border border-white/5 p-5">
+      <div className="py-2">
         {isConsultation ? renderConsultationDetails() : renderServiceDetails()}
       </div>
 
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
-        <div className="bg-brand-bg rounded-xl border border-white/5 p-5">
+      <div
+        className={cn(
+          'grid grid-cols-1 gap-5',
+          showApprovalControls ? 'lg:grid-cols-2' : 'max-w-2xl',
+        )}
+      >
+        <div className="rounded-xl bg-[#141414] p-5">
           <div className="text-body-md mb-4 flex items-center gap-2 font-semibold text-white">
             <History className="text-brand-accent size-4" aria-hidden="true" />
-            <h3>
-              Internal Notes <RequiredMark />
-            </h3>
+            <h3>Internal Notes</h3>
           </div>
-          <div className="text-body-sm text-muted min-h-[120px] rounded-lg border border-white/5 bg-black p-4">
+          <div className="text-body-sm text-muted min-h-[120px] rounded-lg bg-[#050505] p-4">
             {service.adminNote?.trim() || 'No notes yet.'}
             {escalation?.escalatedByName ? (
               <p className="text-body-sm text-muted mt-3">
@@ -1133,7 +1129,7 @@ export const ServiceViewPage = () => {
         </div>
 
         {showApprovalControls && (
-          <div className="bg-brand-bg rounded-xl border border-white/5 p-5">
+          <div className="rounded-xl bg-[#141414] p-5">
             <DecisionControlsHeader className="mb-4" />
             <DecisionControlButtons
               onApprove={() => openDecisionModal('approve')}

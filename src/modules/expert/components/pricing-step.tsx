@@ -229,7 +229,7 @@ export const PricingStep = ({ venueData, setVenueData }: PricingStepProps) => {
       </div>
 
       {showAvailabilityModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#050505]/80">
           <div className="ui-modal-shell max-h-[90vh] w-[650px] max-w-[650px] overflow-y-auto">
             <div className="ui-modal-header">
               <div>

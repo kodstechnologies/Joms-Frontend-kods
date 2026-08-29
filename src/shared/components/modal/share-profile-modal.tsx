@@ -114,7 +114,7 @@ export function ShareProfileModal({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[140] flex items-center justify-center bg-black/70 p-4"
+      className="fixed inset-0 z-[140] flex items-center justify-center bg-[#050505]/80 p-4"
       role="presentation"
       onClick={onClose}
     >

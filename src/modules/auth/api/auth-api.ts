@@ -24,3 +24,29 @@ export async function logout() {
   const response = await authApiClient.post('/auth/admin/logout')
   return response.data
 }
+
+export async function sendPartnerPhoneOtp(phone: string) {
+  const response = await authApiClient.post('/auth/otp/send', {
+    phone,
+    type: 'register',
+  })
+  return response.data
+}
+
+export async function verifyPartnerPhoneOtp(phone: string, otp: string) {
+  const response = await authApiClient.post('/auth/otp/verify', {
+    phone,
+    otp,
+  })
+  return response.data
+}
+
+export async function sendPartnerEmailOtp(email: string) {
+  const response = await authApiClient.post('/auth/otp/email/send', { email })
+  return response.data
+}
+
+export async function verifyPartnerEmailOtp(email: string, otp: string) {
+  const response = await authApiClient.post('/auth/otp/email/verify', { email, otp })
+  return response.data
+}

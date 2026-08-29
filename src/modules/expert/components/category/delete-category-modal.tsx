@@ -62,9 +62,9 @@ export function DeleteCategoryModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden bg-black/70 px-4 py-6"
+      className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden bg-[#050505]/80 px-4 py-6"
       role="presentation"
-      onClick={handleClose}
+      onClick={onClose}
     >
       <div
         role="dialog"

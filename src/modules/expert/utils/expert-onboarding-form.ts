@@ -50,6 +50,8 @@ export type ExpertOnboardingFormData = {
 
   internalNotes: string
   isVerified: boolean
+  isPhoneVerified?: boolean
+  isEmailVerified?: boolean
 }
 
 export const createEmptyWorkExperienceEntry = (): ExpertWorkExperienceEntry => ({
@@ -104,6 +106,8 @@ export const createEmptyExpertOnboardingForm = (): ExpertOnboardingFormData => (
 
   internalNotes: '',
   isVerified: false,
+  isPhoneVerified: false,
+  isEmailVerified: false,
 })
 
 export const buildBasicProfileFormData = (form: ExpertOnboardingFormData): FormData => {

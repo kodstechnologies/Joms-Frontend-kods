@@ -108,8 +108,9 @@ const variantStyles: Record<
     submitIcon: 'x',
     showHero: false,
     showReasonsLabel: true,
-    adminNotesMinHeight: 'min-h-[99px]',
-    reasonMinHeight: 'min-h-[99px]',
+    adminNotesMinHeight: 'min-h-[137px]',
+    reasonMinHeight: 'min-h-[65px]',
+    descriptionMaxWidth: 'max-w-none',
   },
   requestChanges: {
     submit: 'ui-modal-btn-request-changes',
@@ -117,8 +118,9 @@ const variantStyles: Record<
     checkIconColor: 'text-[#F97316]',
     showHero: false,
     showReasonsLabel: true,
-    adminNotesMinHeight: 'min-h-[151px]',
-    reasonMinHeight: 'min-h-[99px]',
+    adminNotesMinHeight: 'min-h-[137px]',
+    reasonMinHeight: 'min-h-[65px]',
+    descriptionMaxWidth: 'max-w-none',
   },
   escalate: {
     submit: 'ui-modal-btn-gold',
@@ -156,9 +158,7 @@ const variantStyles: Record<
     submitIcon: 'none',
     showHero: true,
     heroShape: 'circle',
-    showReasonsLabel: true,
-    adminNotesMinHeight: 'min-h-[119px]',
-    descriptionMaxWidth: 'max-w-[333px]',
+    showReasonsLabel: false,
   },
 }
 
@@ -193,7 +193,7 @@ export function DecisionActionModal({
   reason = '',
   onReasonChange,
   reasonLabel = 'Reason',
-  reasonRequired = true,
+  reasonRequired = false,
   reasonFieldType = 'textarea',
   reasonOptions = [],
   selectedReasons = [],
@@ -203,7 +203,7 @@ export function DecisionActionModal({
   confirmationChecked = false,
   onConfirmationChange,
   escalationOptions = [],
-  selectedEscalationOption,
+  selectedEscalationOption = '',
   onEscalationOptionChange,
   isSubmitting = false,
   submitDisabled = false,
@@ -214,25 +214,38 @@ export function DecisionActionModal({
   onEndDateChange,
   indefinite = false,
   onIndefiniteChange,
-  indefiniteLabel = 'Suspend indefinitely (until manually reactivated)',
+  indefiniteLabel = 'Set Indefinitely',
   submitIcon,
   showHeroIcon,
   heroLayout = 'stack',
   checkIconColor,
 }: DecisionActionModalProps) {
-  const dialogRef = useRef<HTMLDivElement>(null)
+  const dialogRef = useRef<HTMLDivElement | null>(null)
+
   useDialogFocusTrap(open, onClose, dialogRef)
 
-  if (!open) return null
+  if (!open) {
+    return null
+  }
 
   const styles = variantStyles[variant]
-  const showReasonInput = Boolean(onReasonChange)
-  const showEscalationOptions = escalationOptions.length > 0
-  const showConfirmation = Boolean(confirmationLabel && onConfirmationChange)
   const resolvedShowHero = showHeroIcon ?? styles.showHero ?? false
-  const resolvedShowReasonsLabel = showReasonsLabel ?? styles.showReasonsLabel ?? false
-  const showReasons = reasonOptions.length > 0 || resolvedShowReasonsLabel
-  const resolvedSubmitIcon = submitIcon ?? styles.submitIcon ?? 'none'
+  const resolvedShowReasonsLabel = showReasonsLabel ?? styles.showReasonsLabel ?? true
+  const showReasons =
+    Boolean(onReasonToggle) &&
+    (variant === 'reject' ||
+      variant === 'requestChanges' ||
+      variant === 'pause' ||
+      reasonOptions.length > 0)
+  const showReasonInput = Boolean(onReasonChange)
+  const showConfirmation = Boolean(onConfirmationChange)
+  const showEscalationOptions = escalationOptions.length > 0 && Boolean(onEscalationOptionChange)
+  const resolvedConfirmationLabel =
+    confirmationLabel ??
+    (variant === 'delete'
+      ? 'I confirm that I want to delete this item'
+      : 'I confirm that I want to suspend this item')
+  const resolvedSubmitIcon = submitIcon ?? styles.submitIcon
   const resolvedCheckIconColor =
     checkIconColor ??
     styles.checkIconColor ??
@@ -240,7 +253,10 @@ export function DecisionActionModal({
   const isInlineHero = heroLayout === 'inline' && resolvedShowHero
   const hasBodyDescription = Boolean(description.trim())
   const isLeftAlignedCopy =
-    Boolean(warning) || isInlineHero || (Boolean(headerDescription) && !resolvedShowHero)
+    Boolean(warning) ||
+    isInlineHero ||
+    (Boolean(headerDescription) && !resolvedShowHero) ||
+    !resolvedShowHero
   const { primary, secondary } = splitDescription(description)
 
   const deleteHeroIcon = (
@@ -258,14 +274,14 @@ export function DecisionActionModal({
           : cn('mx-auto text-center', styles.descriptionMaxWidth ?? 'max-w-[333px]'),
       )}
     >
-      <p className="text-body-md-semibold text-brand-text">{primary}</p>
-      {secondary ? <p className="text-body-md text-brand-text">{secondary}</p> : null}
+      <p className="text-body-sm text-muted">{primary}</p>
+      {secondary ? <p className="text-body-sm text-muted">{secondary}</p> : null}
     </div>
   ) : null
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-6"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-[#050505]/80 px-4 py-6"
       role="presentation"
       onClick={onClose}
     >
@@ -363,7 +379,7 @@ export function DecisionActionModal({
                             : 'ui-modal-reason-chip-idle',
                         )}
                       >
-                        {option.label}
+                        {option.label.replace(/^\[|\]$/g, '')}
                       </button>
                     )
                   })
@@ -384,7 +400,7 @@ export function DecisionActionModal({
                 onChange={(event) => onConfirmationChange?.(event.target.checked)}
                 className="mt-0.5 size-[15px] shrink-0 accent-white"
               />
-              <span>{confirmationLabel}</span>
+              <span>{resolvedConfirmationLabel}</span>
             </label>
           ) : null}
 

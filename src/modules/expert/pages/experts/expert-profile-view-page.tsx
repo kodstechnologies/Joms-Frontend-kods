@@ -391,10 +391,13 @@ const getKycBadge = (finalReview?: { isVerified?: boolean; approvalStatus?: stri
   if (finalReview?.approvalStatus === 'approved') {
     return {
       label: 'KYC Verified',
-      className: 'bg-[rgb(0_166_62_/_30%)] text-[#00A63E]',
+      className: 'bg-[#143D2B] text-white border border-[#1E563D]/50',
     }
   }
-  return { label: 'Review Pending', className: 'bg-amber-500/15 text-amber-300' }
+  return {
+    label: 'Review Pending',
+    className: 'bg-amber-500/15 text-amber-300 border border-amber-500/30',
+  }
 }
 
 const formatServiceType = (value?: string) => {
@@ -1052,7 +1055,7 @@ function ConsultationDetailCard({
               {(consultation.topics ?? []).map((topic) => (
                 <span
                   key={topic._id}
-                  className="bg-brand-muted text-body-sm rounded-md px-3.5 py-1.5 font-medium text-black"
+                  className="rounded-md bg-[#8E8E93] px-3.5 py-1 text-xs font-semibold text-black"
                 >
                   {topic.name}
                 </span>
@@ -1121,65 +1124,88 @@ function ConsultationDetailCard({
         </div>
       )}
 
-      {consultation.whoItsFor && (
-        <div className="mt-5">
-          <p className="text-body-sm mb-2 font-semibold text-white">Who is it for?</p>
-          <p className="text-body-sm text-muted">{consultation.whoItsFor}</p>
-        </div>
-      )}
+      <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2">
+        <div className="flex flex-col gap-5">
+          {consultation.whoItsFor && (
+            <div>
+              <p className="text-body-sm mb-1.5 font-semibold text-white">Who is it for?</p>
+              <p className="text-body-sm text-white/50">{consultation.whoItsFor}</p>
+            </div>
+          )}
 
-      <div className="mt-5">
-        <p className="text-body-sm mb-3 font-semibold text-white">Additional Information</p>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <div className="rounded-lg bg-[#050505] p-3 text-center">
-            <Phone className="mx-auto size-4 text-[#E0A263]" />
-            <p className="text-body-sm text-muted mt-2">Mode</p>
-            <p className="text-body-sm font-semibold text-white capitalize">
-              {consultation.mode || '—'}
+          <div>
+            <p className="text-body-sm mb-3 font-semibold text-white">Additional Information</p>
+            <div className="flex flex-wrap items-center gap-4">
+              <div className="flex flex-col items-center gap-1.5">
+                <div className="flex size-12 items-center justify-center rounded-xl border border-white/5 bg-[#1C1C1C]">
+                  <Phone className="size-5 text-white" />
+                </div>
+                <span className="text-[11px] font-medium text-white/60 capitalize">
+                  {consultation.mode || 'Mode'}
+                </span>
+              </div>
+              <div className="flex flex-col items-center gap-1.5">
+                <div className="flex size-12 items-center justify-center rounded-xl border border-white/5 bg-[#1C1C1C]">
+                  <Languages className="size-5 text-white" />
+                </div>
+                <span className="text-[11px] font-medium text-white/60">
+                  {(consultation.languages ?? [])[0] || 'English'}
+                </span>
+              </div>
+              <div className="flex flex-col items-center gap-1.5">
+                <div className="flex size-12 items-center justify-center rounded-xl border border-white/5 bg-[#1C1C1C]">
+                  <span className="text-xs font-bold text-white">
+                    {consultation.hasFollowUp && consultation.followUpDays
+                      ? `${consultation.followUpDays} Days`
+                      : '5 Days'}
+                  </span>
+                </div>
+                <span className="text-[11px] font-medium text-white/60">FollowUps</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-4">
+          <div>
+            <p className="text-body-sm mb-1 font-semibold text-white">Pre-session requirement</p>
+            <p className="text-body-sm text-white/50">
+              {consultation.preSessionRequirement || 'Keep your requirements and questions ready.'}
             </p>
           </div>
-          <div className="rounded-lg bg-[#050505] p-3 text-center">
-            <Languages className="mx-auto size-4 text-[#E0A263]" />
-            <p className="text-body-sm text-muted mt-2">Language</p>
-            <p className="text-body-sm font-semibold text-white">
-              {(consultation.languages ?? []).join(', ') || '—'}
+
+          <div>
+            <p className="text-body-sm mb-1 font-semibold text-white">Post Session Requirement</p>
+            <p className="text-body-sm text-white/50">
+              {consultation.postSessionMessage || 'Keep your requirements and questions ready.'}
             </p>
           </div>
-          <div className="rounded-lg bg-[#050505] p-3 text-center">
-            <Clock className="mx-auto size-4 text-[#E0A263]" />
-            <p className="text-body-sm text-muted mt-2">FollowUps</p>
-            <p className="text-body-sm font-semibold text-white">
-              {consultation.hasFollowUp && consultation.followUpDays
-                ? `${consultation.followUpDays} Days`
-                : '—'}
-            </p>
-          </div>
+
+          {(consultation.pricingOptions ?? []).length > 0 && (
+            <div>
+              <p className="text-body-sm mb-2 font-semibold text-white">Duration &amp; Pricing</p>
+              <div className="flex flex-wrap gap-2">
+                {(consultation.pricingOptions ?? []).map((option) => (
+                  <span
+                    key={`${option.durationMinutes}-${option.price}`}
+                    className="rounded-xl border border-white/10 bg-[#1C1C1C] px-3.5 py-2 text-xs font-semibold text-white"
+                  >
+                    {formatPricing(option)}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
-
-      {(consultation.pricingOptions ?? []).length > 0 && (
-        <div className="mt-5">
-          <p className="text-body-sm mb-3 font-semibold text-white">Duration &amp; Pricing</p>
-          <div className="flex flex-wrap gap-2">
-            {(consultation.pricingOptions ?? []).map((option) => (
-              <span
-                key={`${option.durationMinutes}-${option.price}`}
-                className="text-body-sm rounded-lg bg-[#050505] px-3 py-2 font-semibold text-white"
-              >
-                {formatPricing(option)}
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
 
       <button
         type="button"
         onClick={() => viewExpertConsultation(consultation, expertId, navigate)}
-        className="text-body-sm mt-5 flex w-full items-center justify-between rounded-lg bg-[#050505] px-4 py-3 font-semibold text-white transition-colors hover:bg-white/5"
+        className="mt-6 flex w-full items-center justify-between rounded-xl border border-[#E0A263] bg-transparent px-5 py-3.5 text-[13px] font-semibold text-white transition-colors hover:bg-white/5"
       >
-        Consultation Performance
-        <ChevronRight className="size-4" />
+        <span>Consultation Performance</span>
+        <ChevronRight className="size-4 text-[#E0A263]" />
       </button>
     </div>
   )
@@ -1275,6 +1301,7 @@ function ServicesSubTab({
   const [isBulkDeleteModalOpen, setIsBulkDeleteModalOpen] = useState(false)
   const [bulkDeleteReasons, setBulkDeleteReasons] = useState<string[]>([])
   const [bulkDeleteAdminNotes, setBulkDeleteAdminNotes] = useState('')
+  const [bulkDeleteConfirmed, setBulkDeleteConfirmed] = useState(false)
 
   const [isBulkPauseModalOpen, setIsBulkPauseModalOpen] = useState(false)
 
@@ -1317,6 +1344,10 @@ function ServicesSubTab({
       toast.error('Please select at least one reason for deletion.')
       return
     }
+    if (!bulkDeleteConfirmed) {
+      toast.error('Please confirm the delete reasons before continuing.')
+      return
+    }
     if (!bulkDeleteAdminNotes.trim()) {
       toast.error('Admin notes are required for deletion.')
       return
@@ -1335,6 +1366,7 @@ function ServicesSubTab({
           setIsBulkDeleteModalOpen(false)
           setBulkDeleteReasons([])
           setBulkDeleteAdminNotes('')
+          setBulkDeleteConfirmed(false)
         },
         onError: (err: unknown) => {
           const error = err as { response?: { data?: { message?: string } } }
@@ -1345,6 +1377,7 @@ function ServicesSubTab({
   }, [
     selectedServiceIds,
     bulkDeleteReasons,
+    bulkDeleteConfirmed,
     bulkDeleteAdminNotes,
     deleteReasonOptions.length,
     bulkDeleteMutation,
@@ -1695,7 +1728,11 @@ function ServicesSubTab({
             ? `Delete ${selectedServiceIds.length} Services`
             : 'Delete Service'
         }
-        description={`Are you sure you want to delete ${selectedServiceIds.length} selected service(s)? This action cannot be undone.`}
+        description={
+          selectedServiceIds.length > 1
+            ? `Are you sure you want to delete ${selectedServiceIds.length} selected service(s)? This action cannot be undone.`
+            : 'Are you sure you want to delete this service? This action cannot be undone.'
+        }
         submitLabel={
           selectedServiceIds.length > 1
             ? `Delete ${selectedServiceIds.length} Services`
@@ -1711,9 +1748,16 @@ function ServicesSubTab({
               : [...current, value],
           )
         }
+        showReasonsLabel
+        confirmationLabel="I confirm the documents are not approved due to above reasons."
+        confirmationChecked={bulkDeleteConfirmed}
+        onConfirmationChange={setBulkDeleteConfirmed}
         adminNotes={bulkDeleteAdminNotes}
         onAdminNotesChange={setBulkDeleteAdminNotes}
-        onClose={() => setIsBulkDeleteModalOpen(false)}
+        onClose={() => {
+          setIsBulkDeleteModalOpen(false)
+          setBulkDeleteConfirmed(false)
+        }}
         onSubmit={confirmBulkDelete}
         isSubmitting={bulkDeleteMutation.isPending}
       />
@@ -1787,64 +1831,77 @@ function ServiceListCard({
     if (isDeleted) return 'Deleted'
     if (isSuspended) return 'Suspended'
     if (!status) return null
-    if (status === 'live') return 'Instant'
+    if (status === 'live' || status === 'instant') return 'Instant'
     return status.charAt(0).toUpperCase() + status.slice(1).replace(/_/g, ' ')
   })()
   const statusClass = isDeleted
-    ? 'bg-brand-danger'
+    ? 'bg-rose-500/90 text-white'
     : isSuspended
-      ? 'bg-amber-500'
-      : status === 'live'
-        ? 'bg-[#22C55E]'
+      ? 'bg-amber-500/90 text-white'
+      : status === 'live' || status === 'instant' || status === 'preview'
+        ? 'bg-[#16A34A] text-white'
         : status === 'rejected'
-          ? 'bg-brand-danger'
+          ? 'bg-rose-500/90 text-white'
           : status === 'closed'
-            ? 'bg-amber-500'
-            : 'bg-[#22C55E]'
+            ? 'bg-amber-500/90 text-white'
+            : 'bg-[#16A34A] text-white'
 
   return (
     <div
       onClick={() => viewExpertService(service, expertId, navigate)}
       className={cn(
-        'flex w-full cursor-pointer items-center gap-3 rounded-xl bg-[#141414] px-4 py-4 text-left transition-colors hover:bg-[#1a1a1a]',
+        'flex w-full cursor-pointer items-center justify-between gap-3 rounded-xl bg-[#141414] px-4 py-4 text-left transition-colors hover:bg-[#1a1a1a]',
         selected && 'border border-blue-500 bg-blue-950/20',
       )}
     >
-      <input
-        type="checkbox"
-        checked={selected}
-        onClick={(event) => event.stopPropagation()}
-        onChange={onToggleSelect}
-        className="size-5 shrink-0 rounded border-white/30 bg-transparent"
-      />
-
-      <div className="relative ml-1 h-28 w-32 shrink-0 overflow-hidden rounded-xl bg-black">
-        <SafeImage
-          src={coverImage}
-          alt={service.title || 'Service'}
-          className="size-full object-cover"
-          fallback={
-            <div className="text-muted flex size-full items-center justify-center">
-              <ImageOff className="size-5" />
-            </div>
-          }
+      <div className="flex min-w-0 flex-1 items-center gap-3">
+        <input
+          type="checkbox"
+          checked={selected}
+          onClick={(event) => event.stopPropagation()}
+          onChange={onToggleSelect}
+          className="size-5 shrink-0 rounded border-white/30 bg-transparent"
         />
-        {statusLabel && (
-          <span
-            className={cn(
-              'absolute top-2 left-2 rounded-md px-1.5 py-0.5 text-[10px] leading-none font-bold text-white',
-              statusClass,
-            )}
-          >
-            {statusLabel}
-          </span>
-        )}
+
+        <div className="relative ml-1 h-28 w-32 shrink-0 overflow-hidden rounded-xl bg-black">
+          <SafeImage
+            src={coverImage}
+            alt={service.title || 'Service'}
+            className="size-full object-cover"
+            fallback={
+              <div className="text-muted flex size-full items-center justify-center">
+                <ImageOff className="size-5" />
+              </div>
+            }
+          />
+          {statusLabel && (
+            <span
+              className={cn(
+                'absolute top-2 left-2 rounded-md px-2 py-0.5 text-[10px] leading-none font-bold text-white shadow-xs',
+                statusClass,
+              )}
+            >
+              {statusLabel}
+            </span>
+          )}
+        </div>
+
+        <div className="ml-1 min-w-0 flex-1">
+          <p className="text-body-md font-bold text-white">{service.title || 'Untitled Service'}</p>
+          <p className="text-body-sm text-muted mt-0.5">{service.category?.name || '—'}</p>
+          <p className="text-body-sm text-muted mt-0.5">{formatPricingType(service.pricingType)}</p>
+        </div>
       </div>
 
-      <div className="ml-1 min-w-0 flex-1">
-        <p className="text-body-md font-bold text-white">{service.title || 'Untitled Service'}</p>
-        <p className="text-body-sm text-muted mt-0.5">{service.category?.name || '—'}</p>
-        <p className="text-body-sm text-muted mt-0.5">{formatPricingType(service.pricingType)}</p>
+      <div className="flex shrink-0 items-center gap-4">
+        {service.priceStarts != null && service.priceStarts > 0 && (
+          <div className="text-right">
+            <p className="text-[13px] font-bold text-white">
+              ₹{Number(service.priceStarts).toLocaleString('en-IN')}
+            </p>
+          </div>
+        )}
+        <ChevronRight className="size-4 text-white/50" />
       </div>
     </div>
   )
@@ -2418,23 +2475,34 @@ function HealthTab({
   const incidents = useMemo(() => {
     const reportRows = reports.map((report) => {
       const issue = String(report.issueType || '').toLowerCase()
-      const status = String(report.investigationStatus || '').toLowerCase()
-      const isViolation = VIOLATION_ISSUE_TYPES.has(issue) || OPEN_REPORT_STATUSES.has(status)
+      const statusRaw = String(report.investigationStatus || '').toLowerCase()
+      const isViolation = VIOLATION_ISSUE_TYPES.has(issue) || OPEN_REPORT_STATUSES.has(statusRaw)
+      const isOpen =
+        OPEN_REPORT_STATUSES.has(statusRaw) || statusRaw === 'open' || statusRaw === 'new'
+      const isUnderReview =
+        statusRaw === 'under review' || statusRaw === 'in review' || statusRaw === 'waiting'
+
+      const typeClass = isViolation
+        ? 'bg-[#3D1414] border border-[#5C1D1D]/50 text-white'
+        : 'bg-[#3D2814] border border-[#5C3D1D]/50 text-white'
+
+      const statusClass = isOpen
+        ? 'bg-[#3D1414] border border-[#5C1D1D]/50 text-white'
+        : isUnderReview
+          ? 'bg-[#3D2814] border border-[#5C3D1D]/50 text-white'
+          : 'bg-[#143D2B] border border-[#1E563D]/50 text-[#00E065]'
+
       return {
         id: report.id || report.reportId,
         kind: isViolation ? 'violation' : 'reported-against',
-        type: isViolation ? 'Violation' : 'Reported Against',
-        typeClass: isViolation
-          ? 'bg-brand-danger/15 text-red-400'
-          : 'bg-amber-500/15 text-amber-300',
-        status: report.investigationStatus || 'New',
-        statusClass: OPEN_REPORT_STATUSES.has(
-          String(report.investigationStatus || '').toLowerCase(),
-        )
-          ? 'border-red-500/40 text-red-400'
-          : 'border-emerald-500/40 text-brand-positive',
-        title: report.issueType || 'Expert report',
-        detail: report.reason || 'No reason provided.',
+        type: isViolation ? 'Violation' : 'Report Against',
+        typeClass,
+        status: report.investigationStatus || 'Open',
+        statusClass,
+        title: report.issueType || 'Spam Content Detected',
+        detail:
+          report.reason ||
+          'Multiple identical messages sent to different users within short timeframe',
         raisedOn: report.submittedAt,
         updatedOn: report.latestActionTimestamp || report.submittedAt,
         action: 'View Details',
@@ -2443,23 +2511,37 @@ function HealthTab({
       }
     })
 
-    const ticketRows = tickets.map((ticket) => ({
-      id: ticket.id,
-      kind: 'reported-by',
-      type: 'Reported By',
-      typeClass: 'bg-blue-500/15 text-blue-400',
-      status: ticket.status,
-      statusClass: ACTIVE_TICKET_STATUSES.has(String(ticket.status).toLowerCase())
-        ? 'border-amber-500/40 text-amber-300'
-        : 'border-emerald-500/40 text-brand-positive',
-      title: ticket.subject,
-      detail: ticket.issueType || ticket.category || 'Support ticket',
-      raisedOn: ticket.createdAt,
-      updatedOn: ticket.resolvedAt || ticket.createdAt,
-      action: 'View Ticket',
-      icon: FileText,
-      onAction: () => navigate(`/support/tickets/${ticket.id}`),
-    }))
+    const ticketRows = tickets.map((ticket) => {
+      const statusRaw = String(ticket.status || '').toLowerCase()
+      const isActive =
+        ACTIVE_TICKET_STATUSES.has(statusRaw) || statusRaw === 'open' || statusRaw === 'in_progress'
+      const isResolved = statusRaw === 'resolved' || statusRaw === 'closed'
+
+      const statusClass = isResolved
+        ? 'bg-[#143D2B] border border-[#1E563D]/50 text-[#00E065]'
+        : isActive
+          ? 'bg-[#3D2814] border border-[#5C3D1D]/50 text-white'
+          : 'bg-[#3D1414] border border-[#5C1D1D]/50 text-white'
+
+      return {
+        id: ticket.id,
+        kind: 'reported-by',
+        type: 'Reported By',
+        typeClass: 'bg-[#14243D] border border-[#1D365C]/50 text-white',
+        status: ticket.status || 'Resolved',
+        statusClass,
+        title: ticket.subject || 'Spam Content Detected',
+        detail:
+          ticket.issueType ||
+          ticket.category ||
+          'Multiple identical messages sent to different users within short timeframe',
+        raisedOn: ticket.createdAt,
+        updatedOn: ticket.resolvedAt || ticket.createdAt,
+        action: 'View Ticket',
+        icon: Eye,
+        onAction: () => navigate(`/support/tickets/${ticket.id}`),
+      }
+    })
 
     return [...reportRows, ...ticketRows]
   }, [navigate, onOpenReport, reports, tickets])
@@ -2485,7 +2567,7 @@ function HealthTab({
               type="button"
               onClick={() => setFilter(chip.key)}
               className={cn(
-                'text-body-sm rounded-md px-3 py-1.5 font-semibold transition-colors',
+                'rounded-lg px-4 py-1.5 text-xs font-semibold transition-colors',
                 filter === chip.key ? PROFILE_ACTIVE_PILL : PROFILE_IDLE_PILL,
               )}
             >
@@ -2494,7 +2576,12 @@ function HealthTab({
           ))}
         </div>
         <span
-          className={cn('text-body-sm font-bold', atRisk ? 'text-red-400' : 'text-brand-positive')}
+          className={cn(
+            'rounded-full px-3.5 py-1 text-xs font-semibold text-white',
+            atRisk
+              ? 'border border-[#5C1D1D]/50 bg-[#3D1414]'
+              : 'border border-[#1E563D]/50 bg-[#143D2B]',
+          )}
         >
           Profile Health: {atRisk ? 'At Risk' : 'Healthy'}
         </span>
@@ -2505,38 +2592,40 @@ function HealthTab({
           <p className="text-muted py-8 text-center text-sm">No reported issues for this expert.</p>
         ) : (
           visible.map((incident) => (
-            <div key={`${incident.kind}-${incident.id}`} className="rounded-lg bg-[#050505] p-4">
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span
-                      className={cn(
-                        'rounded-md px-2 py-0.5 text-[10px] font-bold',
-                        incident.typeClass,
-                      )}
-                    >
-                      {incident.type}
-                    </span>
-                    <span
-                      className={cn(
-                        'rounded-md border px-2 py-0.5 text-[10px] font-bold capitalize',
-                        incident.statusClass,
-                      )}
-                    >
-                      {incident.status}
-                    </span>
+            <div key={`${incident.kind}-${incident.id}`} className="rounded-xl bg-[#050505] p-5">
+              <div className="flex items-center justify-between">
+                <span
+                  className={cn(
+                    'rounded-full px-3 py-0.5 text-[11px] font-semibold',
+                    incident.typeClass,
+                  )}
+                >
+                  {incident.type}
+                </span>
+                <span
+                  className={cn(
+                    'rounded-full px-3 py-0.5 text-[11px] font-semibold',
+                    incident.statusClass,
+                  )}
+                >
+                  {incident.status}
+                </span>
+              </div>
+
+              <div className="mt-3 flex flex-wrap items-end justify-between gap-4">
+                <div className="min-w-0 flex-1">
+                  <p className="text-[14px] font-bold text-white">{incident.title}</p>
+                  <p className="text-body-sm mt-1 text-white/50">{incident.detail}</p>
+                  <div className="mt-3 space-y-0.5 text-xs text-white/40">
+                    <p>Raised On: {incident.raisedOn || '—'}</p>
+                    {incident.updatedOn ? <p>Last Updated: {incident.updatedOn}</p> : null}
                   </div>
-                  <p className="mt-2 text-[13px] font-semibold text-white">{incident.title}</p>
-                  <p className="text-body-sm text-muted mt-1">{incident.detail}</p>
-                  <p className="text-muted mt-2 text-[10px]">
-                    Raised On: {incident.raisedOn || '—'}
-                    {incident.updatedOn ? ` · Last Updated: ${incident.updatedOn}` : ''}
-                  </p>
                 </div>
+
                 <button
                   type="button"
                   onClick={incident.onAction}
-                  className="text-body-sm flex items-center gap-1.5 rounded-lg bg-[linear-gradient(180deg,#F6CB86_0%,#E0A263_100%)] px-3 py-2 font-semibold text-[#050505]"
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-[linear-gradient(180deg,#F6CB86_0%,#E0A263_100%)] px-4 py-2 text-xs font-semibold text-[#050505] transition-[filter] hover:brightness-95"
                 >
                   <incident.icon className="size-3.5" />
                   {incident.action}
@@ -3156,7 +3245,7 @@ export function ExpertProfileViewPage() {
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
                 <h2 className="text-lg font-bold text-white">{displayName}</h2>
-                <span className="rounded-full bg-[rgb(0_166_62_/_30%)] px-2.5 py-0.5 text-[10px] font-bold text-[#00A63E]">
+                <span className="rounded-full border border-[#1E563D]/50 bg-[#143D2B] px-2.5 py-0.5 text-[10px] font-bold text-white">
                   # 1 Ranking
                 </span>
               </div>

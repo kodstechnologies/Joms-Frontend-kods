@@ -318,12 +318,12 @@ const formatVenueKycStatusLabel = (status?: string | null) => {
 const getVenueKycStatusTone = (status?: string | null) => {
   const normalized = (status || '').toLowerCase()
   if (normalized === 'approved' || normalized === 'live') {
-    return 'bg-[rgb(0_166_62_/_30%)] text-[#00A63E]'
+    return 'bg-[#143D2B] text-white border border-[#1E563D]/50'
   }
   if (normalized === 'rejected' || normalized === 'suspended') {
     return 'bg-brand-danger/15 text-red-400'
   }
-  return 'bg-amber-500/15 text-amber-300'
+  return 'bg-amber-500/15 text-amber-300 border border-amber-500/30'
 }
 
 function ProfileSidebar({
@@ -1485,7 +1485,7 @@ function HealthTab({
               type="button"
               onClick={() => setFilter(chip.key)}
               className={cn(
-                'text-body-sm rounded-md px-3 py-1.5 font-semibold transition-colors',
+                'rounded-lg px-4 py-1.5 text-xs font-semibold transition-colors',
                 filter === chip.key ? PROFILE_ACTIVE_PILL : PROFILE_IDLE_PILL,
               )}
             >
@@ -1494,7 +1494,12 @@ function HealthTab({
           ))}
         </div>
         <span
-          className={cn('text-body-sm font-bold', atRisk ? 'text-red-400' : 'text-brand-positive')}
+          className={cn(
+            'rounded-full px-3.5 py-1 text-xs font-semibold text-white',
+            atRisk
+              ? 'border border-[#5C1D1D]/50 bg-[#3D1414]'
+              : 'border border-[#1E563D]/50 bg-[#143D2B]',
+          )}
         >
           Profile Health: {atRisk ? 'At Risk' : 'Healthy'}
         </span>
@@ -1507,37 +1512,39 @@ function HealthTab({
           </p>
         ) : (
           visible.map((incident) => (
-            <div key={`${incident.kind}-${incident.id}`} className="rounded-lg bg-[#050505] p-4">
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span
-                      className={cn(
-                        'rounded-md px-2 py-0.5 text-[10px] font-bold',
-                        incident.typeClass,
-                      )}
-                    >
-                      {incident.type}
-                    </span>
-                    <span
-                      className={cn(
-                        'rounded-md border px-2 py-0.5 text-[10px] font-bold capitalize',
-                        incident.statusClass,
-                      )}
-                    >
-                      {incident.status}
-                    </span>
-                  </div>
-                  <p className="mt-2 text-[13px] font-semibold text-white">{incident.title}</p>
-                  <p className="text-body-sm text-muted mt-1">{incident.detail}</p>
-                  <p className="text-muted mt-2 text-[10px]">
+            <div key={`${incident.kind}-${incident.id}`} className="rounded-xl bg-[#050505] p-5">
+              <div className="flex items-center justify-between">
+                <span
+                  className={cn(
+                    'rounded-full px-3 py-0.5 text-[11px] font-semibold',
+                    incident.typeClass,
+                  )}
+                >
+                  {incident.type}
+                </span>
+                <span
+                  className={cn(
+                    'rounded-full px-3 py-0.5 text-[11px] font-semibold',
+                    incident.statusClass,
+                  )}
+                >
+                  {incident.status}
+                </span>
+              </div>
+
+              <div className="mt-3 flex flex-wrap items-end justify-between gap-4">
+                <div className="min-w-0 flex-1">
+                  <p className="text-[14px] font-bold text-white">{incident.title}</p>
+                  <p className="text-body-sm mt-1 text-white/50">{incident.detail}</p>
+                  <p className="mt-3 text-xs text-white/40">
                     Raised On: {incident.raisedOn || '—'}
                   </p>
                 </div>
+
                 <button
                   type="button"
                   onClick={incident.onAction}
-                  className="text-body-sm flex items-center gap-1.5 rounded-lg bg-[linear-gradient(180deg,#F6CB86_0%,#E0A263_100%)] px-3 py-2 font-semibold text-[#050505]"
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-[linear-gradient(180deg,#F6CB86_0%,#E0A263_100%)] px-4 py-2 text-xs font-semibold text-[#050505] transition-[filter] hover:brightness-95"
                 >
                   <incident.icon className="size-3.5" />
                   {incident.action}

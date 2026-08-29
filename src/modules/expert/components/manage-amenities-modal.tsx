@@ -71,7 +71,7 @@ export const ManageAmenitiesModal = ({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#050505]/80 backdrop-blur-sm">
       <div className="ui-modal-shell max-h-[80vh] max-w-4xl overflow-y-auto">
         <div className="ui-modal-header bg-brand-surface sticky top-0">
           <h2 className="text-h2 font-semibold text-white">Manage amenities</h2>

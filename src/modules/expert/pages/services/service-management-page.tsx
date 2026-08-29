@@ -105,6 +105,7 @@ export const ServiceManagementPage = () => {
   const [isBulkDeleteModalOpen, setIsBulkDeleteModalOpen] = useState(false)
   const [bulkDeleteReasons, setBulkDeleteReasons] = useState<string[]>([])
   const [bulkDeleteAdminNotes, setBulkDeleteAdminNotes] = useState('')
+  const [bulkDeleteConfirmed, setBulkDeleteConfirmed] = useState(false)
 
   const [isBulkPauseModalOpen, setIsBulkPauseModalOpen] = useState(false)
 
@@ -144,6 +145,10 @@ export const ServiceManagementPage = () => {
       toast.error('Please select at least one reason for deletion.')
       return
     }
+    if (!bulkDeleteConfirmed) {
+      toast.error('Please confirm the delete reasons before continuing.')
+      return
+    }
     if (!bulkDeleteAdminNotes.trim()) {
       toast.error('Admin notes are required for deletion.')
       return
@@ -162,6 +167,7 @@ export const ServiceManagementPage = () => {
           setIsBulkDeleteModalOpen(false)
           setBulkDeleteReasons([])
           setBulkDeleteAdminNotes('')
+          setBulkDeleteConfirmed(false)
         },
         onError: (err: unknown) => {
           const error = err as { response?: { data?: { message?: string } } }
@@ -172,6 +178,7 @@ export const ServiceManagementPage = () => {
   }, [
     selectedServiceIds,
     bulkDeleteReasons,
+    bulkDeleteConfirmed,
     bulkDeleteAdminNotes,
     deleteReasonOptions.length,
     bulkDeleteMutation,
@@ -1071,7 +1078,11 @@ export const ServiceManagementPage = () => {
             ? `Delete ${selectedServiceIds.length} Services`
             : 'Delete Service'
         }
-        description={`Are you sure you want to delete ${selectedServiceIds.length} selected service(s)? This action cannot be undone.`}
+        description={
+          selectedServiceIds.length > 1
+            ? `Are you sure you want to delete ${selectedServiceIds.length} selected service(s)? This action cannot be undone.`
+            : 'Are you sure you want to delete this service? This action cannot be undone.'
+        }
         submitLabel={
           selectedServiceIds.length > 1
             ? `Delete ${selectedServiceIds.length} Services`
@@ -1087,9 +1098,16 @@ export const ServiceManagementPage = () => {
               : [...current, value],
           )
         }
+        showReasonsLabel
+        confirmationLabel="I confirm the documents are not approved due to above reasons."
+        confirmationChecked={bulkDeleteConfirmed}
+        onConfirmationChange={setBulkDeleteConfirmed}
         adminNotes={bulkDeleteAdminNotes}
         onAdminNotesChange={setBulkDeleteAdminNotes}
-        onClose={() => setIsBulkDeleteModalOpen(false)}
+        onClose={() => {
+          setIsBulkDeleteModalOpen(false)
+          setBulkDeleteConfirmed(false)
+        }}
         onSubmit={confirmBulkDelete}
         isSubmitting={bulkDeleteMutation.isPending}
       />

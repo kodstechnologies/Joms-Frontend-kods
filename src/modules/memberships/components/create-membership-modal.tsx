@@ -48,7 +48,11 @@ export function CreateMembershipModal({ open, onClose }: CreateMembershipModalPr
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-[#050505]/80 p-4"
+      onClick={onClose}
+      role="presentation"
+    >
       <div
         className="create-membership-modal flex w-full flex-col overflow-hidden text-white"
         style={{ maxHeight: 'min(1458px, 92vh)' }}

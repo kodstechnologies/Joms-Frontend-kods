@@ -63,7 +63,7 @@ export const AddAmenityModal = ({ onClose }: AddAmenityModalProps) => {
   }
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/75">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-[#050505]/80">
       <div className="ui-modal-shell w-[580px] max-w-[580px]">
         <div className="ui-modal-header">
           <h2 className="text-h4 font-semibold text-white">Add amenities</h2>
