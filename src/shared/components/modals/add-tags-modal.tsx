@@ -129,7 +129,7 @@ function AddTagsModalInner({
             <textarea
               value={notes}
               onChange={(event) => setNotes(event.target.value)}
-              placeholder="Enter here"
+              placeholder="Add admin notes"
               className="ui-textarea"
               rows={3}
             />

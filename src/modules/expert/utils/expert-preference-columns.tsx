@@ -2,7 +2,7 @@ import type { ColumnDef } from '@tanstack/react-table'
 import type { ReactNode } from 'react'
 
 import type { Expert } from '../type/expert'
-import { TableDateTimeCell } from '@/shared/components/table/table-datetime-cell'
+import { renderTableDateTimeCell as formatDateTime } from '@/shared/components/table/table-datetime-column'
 import { displayExpertValue } from '../pages/experts/expert-list-format'
 import { ExpertStatusBadge } from '../pages/experts/expert-list-shared'
 
@@ -10,9 +10,6 @@ const dash = (value: unknown): ReactNode => {
   if (value === null || value === undefined || value === '') return '—'
   return displayExpertValue(value as string | number | null | undefined)
 }
-
-const formatDateTime = (value?: string | null) =>
-  value ? <TableDateTimeCell value={value} /> : '—'
 
 const formatMoney = (value?: number | null) => {
   if (value == null || Number.isNaN(Number(value))) return '—'

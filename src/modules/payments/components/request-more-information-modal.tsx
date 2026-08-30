@@ -2,6 +2,11 @@ import { X } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { toast } from 'sonner'
+import { FinanceDetailRow as BaseDetailRow } from '@/modules/payments/components/finance-detail-layout'
+
+const DetailRow = (props: Parameters<typeof BaseDetailRow>[0]) => (
+  <BaseDetailRow compact {...props} />
+)
 
 export type RequestMoreInformationModalData = {
   denyAmount: string
@@ -154,14 +159,5 @@ export function RequestMoreInformationModal({
       </div>
     </div>,
     document.body,
-  )
-}
-
-function DetailRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex items-center justify-between gap-4 border-b border-white/5 py-2.5 last:border-b-0">
-      <span className="text-body-md text-muted">{label}</span>
-      <span className="text-body-md text-brand-text block shrink-0 text-right">{value}</span>
-    </div>
   )
 }

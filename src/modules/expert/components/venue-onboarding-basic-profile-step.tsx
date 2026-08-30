@@ -182,7 +182,7 @@ export const VenueOnboardingBasicProfileStep = ({ formData, setFormData }: Props
               onChange={(e) =>
                 setFormData((prev) => ({ ...prev, hostingSinceYears: e.target.value }))
               }
-              placeholder="Enter year"
+              placeholder="Enter founding year"
               type="number"
               min={0}
               className={fieldClass}
@@ -234,7 +234,7 @@ export const VenueOnboardingBasicProfileStep = ({ formData, setFormData }: Props
             <input
               value={formData.pocName}
               onChange={(e) => setFormData((prev) => ({ ...prev, pocName: e.target.value }))}
-              placeholder="Enter Name"
+              placeholder="Enter full name"
               className={fieldClass}
             />
           </div>

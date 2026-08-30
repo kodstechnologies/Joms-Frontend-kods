@@ -1,31 +1,9 @@
-export type EscrowManagementTab = 'all' | 'escrow' | 'by-service' | 'by-consultation'
-
-export type EscrowHoldStatus = 'Active' | 'Released' | 'Dispute'
-
-export type EscrowHoldRow = {
-  id: string
-  tab: EscrowManagementTab
-  escrowId: string
-  transactionId: string
-  type: string
-  amount: string
-  holdReason: string
-  initiatedDate: string
-  expectedRelease: string
-  status: EscrowHoldStatus
-}
-
-export type EscrowBookingRow = {
-  id: string
-  tab: EscrowManagementTab
-  serviceId: string
-  name: string
-  expertName: string
-  bookingId: string
-  userName: string
-  status: 'Paid' | 'Pending'
-  revenue: string
-}
+import type {
+  EscrowBookingRow,
+  EscrowHoldRow,
+  EscrowHoldStatus,
+  EscrowManagementTab,
+} from '@/modules/payments/types/finance-table-rows'
 
 const serviceTypes = ['Fixed Service', 'Custom Service']
 const holdReasons = [
@@ -34,7 +12,34 @@ const holdReasons = [
   'Pending verification',
   'Awaiting completion',
 ]
-const statuses: EscrowHoldStatus[] = ['Active', 'Released', 'Dispute', 'Active', 'Released']
+const holdStatuses: EscrowHoldStatus[] = ['Active', 'Released', 'Dispute', 'Active', 'Released']
+
+function createEscrowRows(tab: EscrowManagementTab, count: number): EscrowHoldRow[] {
+  return Array.from({ length: count }, (_, index) => {
+    const rowIndex = index + 1
+    const typeIndex = index % serviceTypes.length
+
+    return {
+      id: `${tab}-escrow-${rowIndex.toString().padStart(2, '0')}`,
+      tab,
+      escrowId: `ESC${rowIndex.toString().padStart(3, '0')}`,
+      transactionId: `TXN_${8820 + rowIndex}`,
+      type: serviceTypes[typeIndex],
+      amount: '₹1,25,000',
+      holdReason: holdReasons[typeIndex],
+      initiatedDate: '01/02/2025',
+      expectedRelease: '01/05/2025',
+      status: holdStatuses[index % holdStatuses.length],
+    }
+  })
+}
+
+export const escrowHoldRowsMock: EscrowHoldRow[] = [
+  ...createEscrowRows('all', 20),
+  ...createEscrowRows('escrow', 20),
+  ...createEscrowRows('by-service', 15),
+  ...createEscrowRows('by-consultation', 14),
+]
 
 const serviceNames = [
   'Business Coaching Session',
@@ -52,26 +57,6 @@ const expertNames = [
   'Priya Sharma',
 ]
 const userNames = ['Alex Smith', 'John Carter', 'Maria Lopez', 'David Kim', 'Sophie Turner']
-
-function createEscrowRows(tab: EscrowManagementTab, count: number): EscrowHoldRow[] {
-  return Array.from({ length: count }, (_, index) => {
-    const rowIndex = index + 1
-    const typeIndex = index % serviceTypes.length
-
-    return {
-      id: `${tab}-escrow-${rowIndex.toString().padStart(2, '0')}`,
-      tab,
-      escrowId: `ESC${rowIndex.toString().padStart(3, '0')}`,
-      transactionId: `TXN_${8820 + rowIndex}`,
-      type: serviceTypes[typeIndex],
-      amount: '₹1,25,000',
-      holdReason: holdReasons[typeIndex],
-      initiatedDate: '01/02/2025',
-      expectedRelease: '01/05/2025',
-      status: statuses[index % statuses.length],
-    }
-  })
-}
 
 function createBookingRows(tab: EscrowManagementTab, count: number): EscrowBookingRow[] {
   return Array.from({ length: count }, (_, index) => {
@@ -91,13 +76,6 @@ function createBookingRows(tab: EscrowManagementTab, count: number): EscrowBooki
     }
   })
 }
-
-export const escrowHoldRowsMock: EscrowHoldRow[] = [
-  ...createEscrowRows('all', 20),
-  ...createEscrowRows('escrow', 20),
-  ...createEscrowRows('by-service', 15),
-  ...createEscrowRows('by-consultation', 14),
-]
 
 export const escrowBookingRowsMock: EscrowBookingRow[] = [
   ...createBookingRows('all', 20),

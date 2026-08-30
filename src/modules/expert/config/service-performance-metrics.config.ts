@@ -1,8 +1,4 @@
-/**
- * Service Performance — KPI catalog.
- * Source: JOMS_KODS_Web_Admin_Panel_full_data → Service Performance Metrics.
- * Ids stay camelCase to match serviceListing-service performance metrics payload.
- */
+/** Ids stay camelCase to match serviceListing-service performance metrics payload. */
 
 export const SERVICE_PERFORMANCE_MODULE_KEY = 'service-performance'
 

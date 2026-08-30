@@ -4,7 +4,7 @@ import { AlertTriangle, Eye, SlidersHorizontal, Tag, Trash2 } from 'lucide-react
 import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
-import { type TaxComplianceRow } from '@/modules/payments/mock/finance-tax-compliance.mock'
+import type { TaxComplianceRow } from '@/modules/payments/types/finance-table-rows'
 import { fetchFinanceTax } from '@/modules/payments/api/finance-api'
 import {
   useAddFinanceNote,

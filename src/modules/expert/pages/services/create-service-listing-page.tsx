@@ -41,11 +41,11 @@ import {
   DURATION_OPTIONS,
   computeListingFeeBreakdown,
   formatDiscountChip,
-  getApiErrorMessage,
   normalizeTimelineUnit,
   parseDiscountPct,
   parsePrice,
 } from '@/modules/expert/lib/listing-form-utils'
+import { apiErrorMessage as getApiErrorMessage } from '@/shared/lib/api-error'
 import type { ConsultationTopic } from '@/modules/expert/type/service'
 import type { UpdateServicePricingPayload } from '@/modules/expert/type/service'
 import { guardUploadFiles } from '@/shared/lib/upload-file'
@@ -1690,7 +1690,7 @@ export const CreateServiceListingPage = () => {
                       </label>
                       <input
                         type="text"
-                        placeholder="Enter Price"
+                        placeholder="Enter amount"
                         value={fixedPrice}
                         onChange={(e) => setFixedPrice(e.target.value)}
                         className="focus:border-brand-accent/50 text-body-sm placeholder:text-muted h-9 w-full rounded-lg border border-white/5 bg-black px-3 text-white transition-colors outline-none"
@@ -1833,7 +1833,7 @@ export const CreateServiceListingPage = () => {
                       </label>
                       <input
                         type="text"
-                        placeholder="Enter price"
+                        placeholder="Enter amount"
                         value={customPrice}
                         onChange={(e) => setCustomPrice(e.target.value)}
                         className="focus:border-brand-accent/50 text-body-sm placeholder:text-muted h-9 w-full rounded-lg border border-white/5 bg-black px-3 text-white transition-colors outline-none"

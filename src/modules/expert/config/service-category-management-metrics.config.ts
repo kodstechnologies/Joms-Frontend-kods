@@ -1,8 +1,4 @@
-/**
- * Service Category Management — dashboard metrics catalog.
- * Source: JOMS_KODS_Web_Admin_Panel_full_data (Category Management → Service Marketplace Categories).
- * Keep ids kebab-case to match Manage Metrics / ui-preferences.
- */
+/** Keep ids kebab-case to match Manage Metrics / ui-preferences. */
 
 export const SERVICE_CATEGORY_MANAGEMENT_MODULE_KEY = 'service-category-management'
 

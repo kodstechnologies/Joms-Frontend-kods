@@ -14,13 +14,13 @@ export function ByCustomersFilter() {
           <div className="space-y-2">
             <label className="text-brand-muted-light text-xs">From</label>
 
-            <Input placeholder="Enter Number" className="bg-brand-surface border-white/10" />
+            <Input placeholder="Enter number" className="bg-brand-surface border-white/10" />
           </div>
 
           <div className="space-y-2">
             <label className="text-brand-muted-light text-xs">To</label>
 
-            <Input placeholder="Enter Number" className="bg-brand-surface border-white/10" />
+            <Input placeholder="Enter number" className="bg-brand-surface border-white/10" />
           </div>
         </div>
       </div>
@@ -32,13 +32,13 @@ export function ByCustomersFilter() {
           <div className="space-y-2">
             <label className="text-brand-muted-light text-xs">From</label>
 
-            <Input placeholder="Enter Number" className="bg-brand-surface border-white/10" />
+            <Input placeholder="Enter number" className="bg-brand-surface border-white/10" />
           </div>
 
           <div className="space-y-2">
             <label className="text-brand-muted-light text-xs">To</label>
 
-            <Input placeholder="Enter Number" className="bg-brand-surface border-white/10" />
+            <Input placeholder="Enter number" className="bg-brand-surface border-white/10" />
           </div>
         </div>
       </div>

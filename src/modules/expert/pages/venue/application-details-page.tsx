@@ -5,7 +5,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import { toast } from 'sonner'
-import { ArrowLeft, CheckCircle2, ImageOff, MapPin } from 'lucide-react'
+import { ArrowLeft, CheckCircle2, MapPin } from 'lucide-react'
 
 import {
   fetchAmenityMasters,
@@ -36,6 +36,8 @@ import {
   useEscalationAssignees,
   useStartAdminEscalationReview,
 } from '@/modules/my-tasks/hooks/use-admin-escalation'
+import { apiErrorMessage as getApiErrorMessage } from '@/shared/lib/api-error'
+import { SafeImage } from '@/shared/components/media/safe-image'
 
 type DecisionVariant = 'approve' | 'reject' | 'requestChanges' | 'escalate'
 
@@ -52,44 +54,9 @@ type AmenityCategory = {
   subCategories?: AmenitySubCategory[]
 }
 
-const getApiErrorMessage = (error: unknown) => {
-  const err = error as { response?: { data?: { message?: string } } }
-  return err?.response?.data?.message || 'Something went wrong. Please try again.'
-}
-
 const formatCurrency = (value?: number | null) => {
   if (value === null || value === undefined) return '—'
   return `₹${value.toLocaleString('en-IN')}`
-}
-
-function SafeImage({
-  src,
-  alt,
-  className,
-}: {
-  src?: string | null
-  alt: string
-  className?: string
-}) {
-  const [errored, setErrored] = useState(false)
-
-  if (!src || errored) {
-    return (
-      <div className={cn('text-muted flex items-center justify-center bg-black', className)}>
-        <ImageOff className="size-5" />
-      </div>
-    )
-  }
-
-  return (
-    <img
-      src={src}
-      alt={alt}
-      className={className}
-      loading="lazy"
-      onError={() => setErrored(true)}
-    />
-  )
 }
 
 function SectionCard({

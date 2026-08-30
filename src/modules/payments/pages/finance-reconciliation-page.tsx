@@ -4,7 +4,7 @@ import { Eye, SlidersHorizontal } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
-import { type FinanceReconciliationRow } from '@/modules/payments/mock/finance-reconciliation.mock'
+import type { FinanceReconciliationRow } from '@/modules/payments/types/finance-table-rows'
 import { fetchFinanceReconciliation } from '@/modules/payments/api/finance-api'
 import { useFinanceReconciliation } from '@/modules/payments/hooks/use-finance'
 import { mapReconToRow } from '@/modules/payments/utils/finance-mappers'

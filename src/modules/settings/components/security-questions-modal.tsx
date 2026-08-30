@@ -253,7 +253,7 @@ function SecurityQuestionsModalContent({
                             cancelEdit()
                           }
                         }}
-                        placeholder="Enter security question"
+                        placeholder="Enter your security question"
                         className="sq-question-input"
                       />
                     ) : (

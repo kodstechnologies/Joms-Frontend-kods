@@ -4,7 +4,7 @@ import { AlertTriangle, Eye, SlidersHorizontal, Tag, Trash2 } from 'lucide-react
 import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
-import { type FinanceVenueRow } from '@/modules/payments/mock/finance-venues.mock'
+import type { FinanceVenueRow } from '@/modules/payments/types/finance-table-rows'
 import {
   useAddFinanceNote,
   useEscalateFinance,

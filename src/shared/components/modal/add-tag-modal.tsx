@@ -105,7 +105,7 @@ function AddTagModalBody({ onClose, initialTags, onSubmit }: Omit<AddTagModalPro
             <textarea
               value={notes}
               onChange={(event) => setNotes(event.target.value)}
-              placeholder="Enter here"
+              placeholder="Add admin notes"
               className="ui-textarea min-h-[119px]"
             />
           </label>

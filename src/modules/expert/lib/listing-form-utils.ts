@@ -1,5 +1,3 @@
-import axios from 'axios'
-
 export const parsePrice = (value: string) => {
   const numeric = value.replace(/[^\d.]/g, '')
   const parsed = Number.parseFloat(numeric)
@@ -43,13 +41,6 @@ export const normalizeTimelineUnit = (unit: string): 'days' | 'weeks' | 'months'
     default:
       return 'days'
   }
-}
-
-export const getApiErrorMessage = (error: unknown, fallback: string) => {
-  if (axios.isAxiosError(error)) {
-    return error.response?.data?.message || fallback
-  }
-  return fallback
 }
 
 export const DURATION_OPTIONS = [15, 30, 45, 60, 90, 120] as const

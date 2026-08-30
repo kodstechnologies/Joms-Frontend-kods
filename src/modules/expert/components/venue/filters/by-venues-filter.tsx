@@ -191,13 +191,13 @@ export function ByVenuesFilter() {
           <div className="space-y-2">
             <label className="text-brand-muted-light text-xs">Max</label>
 
-            <Input placeholder="Enter Number" className="bg-brand-surface border-white/10" />
+            <Input placeholder="Enter number" className="bg-brand-surface border-white/10" />
           </div>
 
           <div className="space-y-2">
             <label className="text-brand-muted-light text-xs">Min</label>
 
-            <Input placeholder="Enter Number" className="bg-brand-surface border-white/10" />
+            <Input placeholder="Enter number" className="bg-brand-surface border-white/10" />
           </div>
         </div>
       </div>

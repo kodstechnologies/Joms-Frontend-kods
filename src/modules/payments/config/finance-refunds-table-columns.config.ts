@@ -1,8 +1,3 @@
-/**
- * Finance Refunds & Chargebacks — table column catalog.
- * Source: JOMS Excel → Finance Management → Refunds & Chargebacks (14 cols).
- */
-
 export type FinanceRefundsTableColumnCatalogItem = {
   id: string
   label: string
@@ -42,7 +37,6 @@ export const FINANCE_REFUNDS_TABLE_COLUMNS_CATALOG: FinanceRefundsTableColumnCat
   col('status', 'Status', 'Status', 'Current refund status', true),
 ]
 
-/** Maps legacy preference ids → current catalog ids. */
 export const FINANCE_REFUNDS_LEGACY_COLUMN_ID_MAP: Record<string, string> = {
   'record-id': 'refund-id',
   amount: 'refund-amount',

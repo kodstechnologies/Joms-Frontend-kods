@@ -13,7 +13,6 @@ import {
   ChevronRight,
   CopyPlus,
   Eye,
-  ImageOff,
   MapPin,
   RotateCcw,
   Star,
@@ -55,6 +54,8 @@ import {
   useModerationReasonOptions,
   useRecordModerationReasonUsage,
 } from '@/modules/settings/hooks/use-templates'
+import { apiErrorMessage as getApiErrorMessage } from '@/shared/lib/api-error'
+import { SafeImage } from '@/shared/components/media/safe-image'
 
 type AmenitySubCategory = {
   _id: string
@@ -72,44 +73,9 @@ type AmenityCategory = {
 type SpaceAction = 'hide' | 'suspend'
 type DecisionVariant = 'approve' | 'reject' | 'requestChanges' | 'escalate'
 
-const getApiErrorMessage = (error: unknown) => {
-  const err = error as { response?: { data?: { message?: string } } }
-  return err?.response?.data?.message || 'Something went wrong. Please try again.'
-}
-
 const formatCurrency = (value?: number | null) => {
   if (value === null || value === undefined) return '—'
   return `₹${value.toLocaleString('en-IN')}`
-}
-
-function SafeImage({
-  src,
-  alt,
-  className,
-}: {
-  src?: string | null
-  alt: string
-  className?: string
-}) {
-  const [errored, setErrored] = useState(false)
-
-  if (!src || errored) {
-    return (
-      <div className={cn('text-muted flex items-center justify-center bg-black', className)}>
-        <ImageOff className="size-5" />
-      </div>
-    )
-  }
-
-  return (
-    <img
-      src={src}
-      alt={alt}
-      className={className}
-      loading="lazy"
-      onError={() => setErrored(true)}
-    />
-  )
 }
 
 function Card({

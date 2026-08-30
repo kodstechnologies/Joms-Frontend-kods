@@ -1,8 +1,3 @@
-/**
- * Finance Escrow Management — table column catalog.
- * Source: JOMS Excel → Finance Management → Escrow Management Table.
- */
-
 export const FINANCE_ESCROW_MODULE_KEY = 'finance-escrow'
 
 export type FinanceEscrowTableColumnCatalogItem = {
@@ -47,7 +42,6 @@ export const FINANCE_ESCROW_TABLE_COLUMNS_CATALOG: FinanceEscrowTableColumnCatal
   col('last-updated', 'Last Updated', 'Date', 'Latest update timestamp'),
 ]
 
-/** Maps legacy preference ids → current catalog ids. */
 export const FINANCE_ESCROW_LEGACY_COLUMN_ID_MAP: Record<string, string> = {
   type: 'module',
   'initiated-date': 'hold-created-at',

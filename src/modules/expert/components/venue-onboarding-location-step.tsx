@@ -87,7 +87,7 @@ export const VenueOnboardingLocationStep = ({ formData, setFormData }: Props) =>
               <input
                 value={formData.city}
                 onChange={(e) => setFormData((prev) => ({ ...prev, city: e.target.value }))}
-                placeholder="Enter name here"
+                placeholder="Enter name"
                 className={fieldClass}
               />
             </div>
@@ -98,7 +98,7 @@ export const VenueOnboardingLocationStep = ({ formData, setFormData }: Props) =>
               <input
                 value={formData.pincode}
                 onChange={(e) => setFormData((prev) => ({ ...prev, pincode: e.target.value }))}
-                placeholder="Enter name here"
+                placeholder="Enter name"
                 className={fieldClass}
               />
             </div>

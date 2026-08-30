@@ -65,6 +65,21 @@ export function getApiErrorMessage(
   return fallback
 }
 
+/**
+ * Returns the server-provided message, or the fallback. Unlike getApiErrorMessage
+ * this never surfaces raw axios/Error text, so it is safe for user-facing toasts.
+ */
+export function apiErrorMessage(
+  error: unknown,
+  fallback = 'Something went wrong. Please try again.',
+) {
+  if (axios.isAxiosError(error)) {
+    return error.response?.data?.message || fallback
+  }
+  const shaped = error as { response?: { data?: { message?: string } } }
+  return shaped?.response?.data?.message || fallback
+}
+
 export function assertFileWithinUploadLimit(file: File) {
   if (file.size > MAX_UPLOAD_FILE_SIZE_BYTES) {
     throw new Error(FILE_TOO_LARGE_MESSAGE)

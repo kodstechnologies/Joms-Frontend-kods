@@ -1,16 +1,7 @@
-/**
- * Finance Dashboard — metric catalog.
- * Source: JOMS Excel → Finance Dashboard (21 metrics).
- * Keep ids kebab-case to match Manage Metrics / ui-preferences.
- */
-
 export const FINANCE_DASHBOARD_MODULE_KEY = 'finance-dashboard'
 
 export type FinanceDashboardMetricSection =
-  | 'escrow'
-  | 'revenue-profit'
-  | 'payouts-cash-flow'
-  | 'commissions'
+  'escrow' | 'revenue-profit' | 'payouts-cash-flow' | 'commissions'
 
 export type FinanceDashboardMetricCatalogItem = {
   id: string
@@ -199,7 +190,6 @@ export const FINANCE_DASHBOARD_METRICS_CATALOG: FinanceDashboardMetricCatalogIte
   ),
 ]
 
-/** Maps legacy preference ids → current catalog ids. */
 export const FINANCE_DASHBOARD_LEGACY_METRIC_ID_MAP: Record<string, string> = {
   'total-in-escrow': 'total-amount-in-escrow',
   'pending-payout': 'pending-payouts',

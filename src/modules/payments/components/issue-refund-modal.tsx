@@ -84,7 +84,7 @@ function IssueRefundModalInner({
       await onSubmit?.({ refundAmount, reason, adminNotes })
       handleClose()
     } catch {
-      // Parent surfaces API errors via toast
+      // submit error surfaced by parent
     }
   }
 
@@ -140,7 +140,7 @@ function IssueRefundModalInner({
                 value={refundAmount}
                 inputMode="decimal"
                 onChange={(event) => setRefundAmount(event.target.value.replace(/[^\d.]/g, ''))}
-                placeholder="Enter Refund Amount"
+                placeholder="Enter refund amount"
                 className="pl-8"
               />
             </div>
@@ -167,7 +167,7 @@ function IssueRefundModalInner({
                 value={adminNotes}
                 rows={4}
                 onChange={(event) => setAdminNotes(event.target.value.slice(0, MAX_NOTES_LENGTH))}
-                placeholder="Enter Text Here"
+                placeholder="Add internal notes (optional)"
                 className="ui-textarea min-h-28 pb-8"
               />
               <span className="text-body-sm text-muted pointer-events-none absolute right-3 bottom-3">

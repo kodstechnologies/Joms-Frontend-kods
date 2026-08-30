@@ -1,8 +1,3 @@
-/**
- * Finance Revenue Overview — table column catalog.
- * Source: JOMS Excel → Finance Management → Revenue Overview Table (20 cols).
- */
-
 export const FINANCE_REVENUE_MODULE_KEY = 'finance-revenue'
 
 export type FinanceRevenueTableColumnCatalogItem = {
@@ -50,7 +45,6 @@ export const FINANCE_REVENUE_TABLE_COLUMNS_CATALOG: FinanceRevenueTableColumnCat
   col('last-updated', 'Last Updated', 'DateTime', 'Last modification timestamp'),
 ]
 
-/** Maps legacy preference ids → current catalog ids. */
 export const FINANCE_REVENUE_LEGACY_COLUMN_ID_MAP: Record<string, string> = {
   'gross-amount': 'gross-revenue',
   status: 'payment-status',

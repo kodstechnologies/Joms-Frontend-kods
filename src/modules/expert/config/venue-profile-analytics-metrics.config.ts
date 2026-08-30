@@ -1,9 +1,3 @@
-/**
- * Venue Profile Analytics — KPI catalog.
- * Source: JOMS_KODS_Web_Admin_Panel_full_data → Venue Partner Analytics.
- * Metrics only (Excel has no table-columns section for this sheet).
- */
-
 export const VENUE_PROFILE_ANALYTICS_MODULE_KEY = 'venue-profile-analytics'
 
 export type VenueProfileAnalyticsMetricCatalogItem = {

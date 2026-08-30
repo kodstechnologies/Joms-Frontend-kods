@@ -1,8 +1,4 @@
-/**
- * Service Performance — Orders table column catalog.
- * Source: JOMS_KODS_Web_Admin_Panel_full_data → Service Performance → Orders Table.
- * Keep ids kebab-case to match Manage Metrics / ui-preferences.
- */
+/** Keep ids kebab-case to match Manage Metrics / ui-preferences. */
 
 export type ServicePerformanceTableColumnCatalogItem = {
   id: string

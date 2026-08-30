@@ -51,6 +51,7 @@ import type {
   ServiceDetail,
 } from '../../type/service'
 import { MODERATION_CATEGORY_SLUGS } from '@/modules/settings/api/templates-api'
+import { apiErrorMessage as getApiErrorMessage } from '@/shared/lib/api-error'
 import {
   useModerationReasonOptions,
   useRecordModerationReasonUsage,
@@ -117,13 +118,6 @@ const formatCustomTimeline = (custom?: CustomPricing) => {
 }
 
 type ServiceDecisionAction = 'approve' | 'reject' | 'requestChanges' | 'suspend' | 'escalate'
-
-const getApiErrorMessage = (error: unknown) => {
-  if (axios.isAxiosError(error)) {
-    return error.response?.data?.message || 'Something went wrong. Please try again.'
-  }
-  return 'Something went wrong. Please try again.'
-}
 
 const formatAppliedAgo = (value?: string) => {
   if (!value) return 'Applied recently'

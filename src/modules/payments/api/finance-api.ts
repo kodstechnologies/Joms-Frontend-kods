@@ -214,7 +214,6 @@ export const updateFinanceRefundStatus = async (
   return response.data
 }
 
-/** Dev/harness: stuck service/venue payment → refund or chargeback. */
 export const seedFinanceRefundCase = async (body: {
   mode: 'refund_request' | 'chargeback'
   module?: 'service' | 'venue'
@@ -328,7 +327,6 @@ export const fetchFinanceNotes = async (id: string) => {
   return res
 }
 
-/** Backfill tax + reconciliation for fulfilled payments missing artifacts. */
 export const backfillFinanceArtifacts = async (body?: { paymentId?: string; limit?: number }) => {
   const response = await paymentApiClient.post<
     ApiSuccess<{

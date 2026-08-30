@@ -1,30 +1,4 @@
-export type FinanceEventStatus = 'Paid' | 'Pending' | 'Refunded'
-
-export type FinanceEventSummaryMetric = {
-  label: string
-  value: string
-  change: string
-  changeNote: string
-}
-
-export type FinanceEventRow = {
-  id: string
-  eventId: string
-  eventName: string
-  organizer: string
-  ticketSales: string
-  platformFee: string
-  netRevenue: string
-  eventDate: string
-  status: FinanceEventStatus
-}
-
-export const financeEventSummaryMetricsMock: FinanceEventSummaryMetric[] = [
-  { label: 'Total Events', value: '24', change: '+4.1%', changeNote: 'vs last month' },
-  { label: 'Ticket Revenue', value: '$1,24,500', change: '+4.1%', changeNote: 'vs last month' },
-  { label: 'Pending Settlements', value: '$18,200', change: '+4.1%', changeNote: 'vs last month' },
-  { label: 'Refunded', value: '$3,400', change: '+4.1%', changeNote: 'vs last month' },
-]
+import type { FinanceEventRow } from '@/modules/payments/types/finance-table-rows'
 
 export const financeEventRowsMock: FinanceEventRow[] = [
   {

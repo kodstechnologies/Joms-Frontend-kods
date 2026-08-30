@@ -1,8 +1,4 @@
-/**
- * Consultation Performance — KPI catalog.
- * Source: JOMS_KODS_Web_Admin_Panel_full_data → Consultation Performance Metrics.
- * Ids stay camelCase to match consultation performance metrics payload.
- */
+/** Ids stay camelCase to match consultation performance metrics payload. */
 
 export const CONSULTATION_PERFORMANCE_MODULE_KEY = 'consultation-performance'
 

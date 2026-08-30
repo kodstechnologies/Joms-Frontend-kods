@@ -68,7 +68,7 @@ export function AddTagModal({ open, onClose }: AddTagModalProps) {
             <textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="Enter here"
+              placeholder="Add admin notes"
               className="ui-textarea"
             />
           </label>

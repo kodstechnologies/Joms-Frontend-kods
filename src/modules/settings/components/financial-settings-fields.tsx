@@ -44,7 +44,7 @@ export function FinancialSettingsFields({
           type="number"
           inputMode="decimal"
           className={settingsControlClass}
-          placeholder="Enter %"
+          placeholder="Enter percentage"
           value={displayNumber(value.platformCommissionPercent)}
           onChange={(e) =>
             patch({ platformCommissionPercent: parseOptionalNumber(e.target.value) })
@@ -59,7 +59,7 @@ export function FinancialSettingsFields({
           type="number"
           inputMode="decimal"
           className={settingsControlClass}
-          placeholder="Enter %"
+          placeholder="Enter percentage"
           value={displayNumber(value.expertRevenueSharePercent)}
           onChange={(e) =>
             patch({ expertRevenueSharePercent: parseOptionalNumber(e.target.value) })
@@ -74,7 +74,7 @@ export function FinancialSettingsFields({
           type="number"
           inputMode="decimal"
           className={settingsControlClass}
-          placeholder="Enter %"
+          placeholder="Enter percentage"
           value={displayNumber(value.convenienceFeePercent)}
           onChange={(e) => patch({ convenienceFeePercent: parseOptionalNumber(e.target.value) })}
         />

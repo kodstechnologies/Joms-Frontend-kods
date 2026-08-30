@@ -4,11 +4,11 @@ import { Eye, SlidersHorizontal } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
-import {
-  financeEventRowsMock,
-  type FinanceEventRow,
-  type FinanceEventStatus,
-} from '@/modules/payments/mock/finance-events.mock'
+import { financeEventRowsMock } from '@/modules/payments/mock/finance-events.mock'
+import type {
+  FinanceEventRow,
+  FinanceEventStatus,
+} from '@/modules/payments/types/finance-table-rows'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 import { DataTable } from '@/shared/components/table/data-table'
 import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'

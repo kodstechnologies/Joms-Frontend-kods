@@ -5,11 +5,11 @@ import { AlertTriangle, Eye, SlidersHorizontal, Tag, Trash2 } from 'lucide-react
 import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
-import {
-  financeServiceTabs,
-  type FinanceServiceRow,
-  type FinanceServiceTab,
-} from '@/modules/payments/mock/finance-services.mock'
+import { financeServiceTabs } from '@/modules/payments/mock/finance-services.mock'
+import type {
+  FinanceServiceRow,
+  FinanceServiceTab,
+} from '@/modules/payments/types/finance-table-rows'
 import {
   useAddFinanceNote,
   useEscalateFinance,

@@ -5,7 +5,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
 import { useBranding } from '@/app/providers/use-branding'
-import { type InvoiceRow, type InvoiceStatus } from '@/modules/payments/mock/invoices-billing.mock'
+import type { InvoiceRow, InvoiceStatus } from '@/modules/payments/types/finance-table-rows'
 import { fetchFinanceInvoiceById, fetchFinanceInvoices } from '@/modules/payments/api/finance-api'
 import { useFinanceInvoices } from '@/modules/payments/hooks/use-finance'
 import { formatInr, mapInvoiceToRow } from '@/modules/payments/utils/finance-mappers'

@@ -1,8 +1,4 @@
-/**
- * Service Category Management — main table column catalog.
- * Source: JOMS_KODS_Web_Admin_Panel_full_data (SERVICE CATEGORY MANAGEMENT → Main Table).
- * Keep ids kebab-case to match Manage Metrics / ui-preferences.
- */
+/** Keep ids kebab-case to match Manage Metrics / ui-preferences. */
 
 export type ServiceCategoryManagementTableColumnCatalogItem = {
   id: string

@@ -1,8 +1,3 @@
-/**
- * Finance Memberships — Membership Revenue table column catalog.
- * Source: JOMS Excel → Finance Management → Membership Revenue.
- */
-
 export const FINANCE_MEMBERSHIPS_MODULE_KEY = 'finance-memberships'
 
 export type FinanceMembershipsTableColumnCatalogItem = {

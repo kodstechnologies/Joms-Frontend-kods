@@ -7,11 +7,13 @@ import { toast } from 'sonner'
 import {
   escrowBookingRowsMock,
   escrowManagementTabs,
-  type EscrowBookingRow,
-  type EscrowHoldRow,
-  type EscrowHoldStatus,
-  type EscrowManagementTab,
 } from '@/modules/payments/mock/finance-escrow.mock'
+import type {
+  EscrowBookingRow,
+  EscrowHoldRow,
+  EscrowHoldStatus,
+  EscrowManagementTab,
+} from '@/modules/payments/types/finance-table-rows'
 import { fetchFinanceEscrow } from '@/modules/payments/api/finance-api'
 import { useFinanceEscrow } from '@/modules/payments/hooks/use-finance'
 import { mapEscrowToRow } from '@/modules/payments/utils/finance-mappers'

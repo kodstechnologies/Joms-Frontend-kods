@@ -1,8 +1,3 @@
-/**
- * Finance Reconciliation — table column catalog.
- * Source: JOMS Excel → Finance Management → Financial Reconciliation.
- */
-
 export const FINANCE_RECONCILIATION_MODULE_KEY = 'finance-reconciliation'
 
 export type FinanceReconciliationTableColumnCatalogItem = {

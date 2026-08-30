@@ -25,6 +25,7 @@ import {
   type ExpertOnboardingFormData,
 } from '../../utils/expert-onboarding-form'
 import { validateMobileNumber } from '@/shared/lib/phone'
+import { apiErrorMessage as getApiErrorMessage } from '@/shared/lib/api-error'
 
 const STEPS = [
   { id: '01', title: 'Basic Profile', description: 'Core Information' },
@@ -33,11 +34,6 @@ const STEPS = [
   { id: '04', title: 'Gallery', description: 'Work Images' },
   { id: '05', title: 'Final Review', description: 'Preview' },
 ]
-
-const getApiErrorMessage = (error: unknown) => {
-  const err = error as { response?: { data?: { message?: string } } }
-  return err?.response?.data?.message || 'Something went wrong. Please try again.'
-}
 
 const validateStep = (
   step: number,

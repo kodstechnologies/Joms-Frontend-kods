@@ -1,15 +1,4 @@
-export type FinanceCategoryStatus = 'Active' | 'Paused'
-
-export type FinanceCategoryRow = {
-  id: string
-  categoryName: string
-  module: string
-  platformFee: string
-  commissionRate: string
-  taxRate: string
-  payoutCycle: string
-  status: FinanceCategoryStatus
-}
+import type { FinanceCategoryRow } from '@/modules/payments/types/finance-table-rows'
 
 export const financeCategoryRowsMock: FinanceCategoryRow[] = [
   {

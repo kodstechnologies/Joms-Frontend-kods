@@ -38,6 +38,7 @@ import { useTableExportColumnIds } from '@/shared/hooks/use-table-export-column-
 import { TableDateTimeCell } from '@/shared/components/table/table-datetime-cell'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 import { exportDisplayValue } from '@/shared/utils/export-utils'
+import { apiErrorMessage as getApiErrorMessage } from '@/shared/lib/api-error'
 import {
   buildReferralListQueryParams,
   createReferralFilteredExportHandler,
@@ -152,12 +153,6 @@ const EXPORT_COLUMN_MAP: Record<
     header: 'Last Activity',
     accessor: (invite) => exportDisplayValue(formatReferralDate(invite.lastActivity)),
   },
-}
-
-function getApiErrorMessage(err: unknown, fallback: string) {
-  return (
-    (err as { response?: { data?: { message?: string } } })?.response?.data?.message || fallback
-  )
 }
 
 function buildReferralDataColumnsById(): Record<string, ColumnDef<ExpertInvite>> {

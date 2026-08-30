@@ -78,7 +78,7 @@ export function FinanceTransactionalPanel({ value, onChange }: FinanceTransactio
               className={settingsControlClass}
               value={value.expertsPayout.custom}
               onChange={(event) => patchPayout({ custom: event.target.value })}
-              placeholder="Enter here"
+              placeholder="Enter custom payout rule"
             />
           </SettingsFieldRow>
         </SettingsSectionCard>

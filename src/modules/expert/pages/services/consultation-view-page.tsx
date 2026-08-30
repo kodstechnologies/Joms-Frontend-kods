@@ -33,6 +33,7 @@ import {
   useModerationReasonOptions,
   useRecordModerationReasonUsage,
 } from '@/modules/settings/hooks/use-templates'
+import { apiErrorMessage as getApiErrorMessage } from '@/shared/lib/api-error'
 
 type ConsultationDecisionAction = 'approve' | 'reject' | 'requestChanges' | 'escalate'
 
@@ -45,13 +46,6 @@ type ConsultationViewDetail = ConsultationDetail & {
 }
 
 const EMPTY_VALUE = 'Not provided'
-
-const getApiErrorMessage = (error: unknown) => {
-  if (axios.isAxiosError(error)) {
-    return error.response?.data?.message || 'Something went wrong. Please try again.'
-  }
-  return 'Something went wrong. Please try again.'
-}
 
 const formatAppliedAgo = (value?: string | null) => {
   if (!value) return 'Applied recently'

@@ -219,7 +219,7 @@ export function UpdateContactInformationPage() {
               <Input
                 value={phone}
                 onChange={(event) => setPhone(event.target.value)}
-                placeholder="Enter Phone Number here."
+                placeholder="Enter phone number"
               />
             </div>
 
@@ -230,7 +230,7 @@ export function UpdateContactInformationPage() {
               <Input
                 value={emergencyContact}
                 onChange={(event) => setEmergencyContact(event.target.value)}
-                placeholder="Enter number here."
+                placeholder="Enter emergency contact number"
               />
             </div>
 
@@ -241,7 +241,7 @@ export function UpdateContactInformationPage() {
               <Input
                 value={emergencyContactName}
                 onChange={(event) => setEmergencyContactName(event.target.value)}
-                placeholder="Enter name."
+                placeholder="Enter emergency contact name"
               />
             </div>
 
@@ -268,7 +268,7 @@ export function UpdateContactInformationPage() {
               <Input
                 value={bloodGroup}
                 onChange={(event) => setBloodGroup(event.target.value)}
-                placeholder="Enter text."
+                placeholder="Enter blood group"
               />
             </div>
 
@@ -309,7 +309,7 @@ export function UpdateContactInformationPage() {
                     onChange={(event) =>
                       setMfaCode(event.target.value.replace(/\D/g, '').slice(0, 6))
                     }
-                    placeholder="Enter number here."
+                    placeholder="Enter emergency contact number"
                     inputMode="numeric"
                   />
                 </div>

@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react'
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
+import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import { DashboardLayout } from '@/app/layouts/dashboard-layout'
 import { ProtectedRoute } from '@/app/router/protected-route'
 import { ContactSetupRoute } from '@/app/router/contact-setup-route'
@@ -8,29 +8,6 @@ import { HomeRedirect } from '@/app/router/home-redirect'
 import { SuperAdminRoute } from '@/app/router/super-admin-route'
 const LoginPage = lazy(() =>
   import('@/modules/auth/pages/login-page').then((m) => ({ default: m.LoginPage })),
-)
-const ChatTestPage = lazy(() =>
-  import('@/modules/chat-test').then((m) => ({ default: m.ChatTestPage })),
-)
-const UserChatTestPage = lazy(() =>
-  import('@/modules/chat-test').then((m) => ({ default: m.UserChatTestPage })),
-)
-const UserVenueChatTestPage = lazy(() =>
-  import('@/modules/chat-test').then((m) => ({ default: m.UserVenueChatTestPage })),
-)
-const PartnerSupportTestPage = lazy(() =>
-  import('@/modules/chat-test').then((m) => ({ default: m.PartnerSupportTestPage })),
-)
-const PartnerChatTestPage = lazy(() =>
-  import('@/modules/chat-test').then((m) => ({ default: m.PartnerChatTestPage })),
-)
-const PushNotificationTestPage = lazy(() =>
-  import('@/modules/chat-test').then((m) => ({ default: m.PushNotificationTestPage })),
-)
-const PaymentFinanceTestingPage = lazy(() =>
-  import('@/modules/chat-test/pages/payment-finance-testing-page').then((m) => ({
-    default: m.PaymentFinanceTestingPage,
-  })),
 )
 const ExecutiveOverviewPage = lazy(() =>
   import('@/modules/dashboard/pages/executive-overview-page').then((m) => ({
@@ -792,67 +769,6 @@ export function AppRouter() {
               <LoginPage />
             </Suspense>
           }
-        />
-
-        <Route
-          path="/dev/chat-test"
-          element={
-            <Suspense fallback={<PageLoader />}>
-              <ChatTestPage />
-            </Suspense>
-          }
-        />
-        <Route
-          path="/dev/chat-partner-support"
-          element={
-            <Suspense fallback={<PageLoader />}>
-              <PartnerSupportTestPage />
-            </Suspense>
-          }
-        />
-        <Route
-          path="/dev/chat-partner"
-          element={
-            <Suspense fallback={<PageLoader />}>
-              <PartnerChatTestPage />
-            </Suspense>
-          }
-        />
-        <Route
-          path="/dev/chat-user"
-          element={
-            <Suspense fallback={<PageLoader />}>
-              <UserChatTestPage />
-            </Suspense>
-          }
-        />
-        <Route
-          path="/dev/chat-user-venue"
-          element={
-            <Suspense fallback={<PageLoader />}>
-              <UserVenueChatTestPage />
-            </Suspense>
-          }
-        />
-        <Route
-          path="/dev/push-notification-test"
-          element={
-            <Suspense fallback={<PageLoader />}>
-              <PushNotificationTestPage />
-            </Suspense>
-          }
-        />
-        <Route
-          path="/dev/payment-finance-testing"
-          element={
-            <Suspense fallback={<PageLoader />}>
-              <PaymentFinanceTestingPage />
-            </Suspense>
-          }
-        />
-        <Route
-          path="/payment-finance-testing"
-          element={<Navigate to="/dev/payment-finance-testing" replace />}
         />
 
         <Route element={<ProtectedRoute />}>

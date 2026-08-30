@@ -1,8 +1,3 @@
-/**
- * Finance Escrow Management — dashboard metric catalog.
- * Keep current 4 product KPIs.
- */
-
 export const FINANCE_ESCROW_MODULE_KEY = 'finance-escrow'
 
 export type FinanceEscrowMetricCatalogItem = {

@@ -1069,7 +1069,7 @@ export const LeaderboardPage = () => {
               type="text"
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
-              placeholder="Search by name, ID or profession"
+              placeholder="Search by name or ID"
               className="ui-table-search"
             />
           </div>

@@ -1,8 +1,8 @@
-import {
-  refundSummaryMetricsMock,
-  type RefundChargebackRow,
-  type RefundSummaryMetric,
-} from '@/modules/payments/mock/finance-refunds.mock'
+import { refundSummaryMetricsMock } from '@/modules/payments/mock/finance-refunds.mock'
+import type {
+  RefundChargebackRow,
+  RefundSummaryMetric,
+} from '@/modules/payments/types/finance-table-rows'
 import type { FinanceDashboardSummary } from '@/modules/payments/types/finance-api'
 import { formatInr } from '@/modules/payments/utils/finance-mappers'
 import { FINANCE_REFUNDS_METRICS_CATALOG } from '@/modules/payments/config/finance-refunds-metrics.config'

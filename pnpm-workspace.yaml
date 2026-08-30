@@ -1,0 +1,6 @@
+allowBuilds:
+  '@firebase/util': true
+  core-js: true
+  esbuild: true
+  lefthook: true
+  protobufjs: true

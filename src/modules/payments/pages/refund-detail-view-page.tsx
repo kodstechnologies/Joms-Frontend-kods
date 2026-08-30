@@ -21,11 +21,14 @@ import {
 import { escalateUrl } from '@/modules/payments/utils/finance-escalate'
 import { cn } from '@/shared/lib/cn'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
+import { FinanceDetailRow as BaseDetailRow } from '@/modules/payments/components/finance-detail-layout'
+
+const DetailRow = (props: Parameters<typeof BaseDetailRow>[0]) => (
+  <BaseDetailRow constrainValue {...props} />
+)
 
 const cardClass = 'radius-lg border border-white/[0.06] bg-brand-surface p-4 sm:p-5'
 const sectionTitleClass = 'text-body-md-semibold text-brand-text leading-[20px]'
-const labelClass = 'text-body-sm text-muted'
-const valueClass = 'text-body-sm-medium text-brand-text'
 const textPanelClass =
   'radius-lg border border-white/[0.06] bg-brand-bg p-4 text-body-sm text-brand-text/80'
 
@@ -47,23 +50,6 @@ function InnerCard({
       <div className="mb-4 border-b border-white/5" />
       {children}
     </section>
-  )
-}
-
-function DetailRow({
-  label,
-  value,
-  valueClassName,
-}: {
-  label: string
-  value: ReactNode
-  valueClassName?: string
-}) {
-  return (
-    <div className="flex items-center justify-between gap-4 border-b border-white/5 py-3 last:border-b-0">
-      <span className={labelClass}>{label}</span>
-      <span className={cn('max-w-[60%] text-right', valueClass, valueClassName)}>{value}</span>
-    </div>
   )
 }
 

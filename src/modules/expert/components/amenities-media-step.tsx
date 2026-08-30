@@ -403,7 +403,7 @@ export const AmenitiesMediaStep = ({ venueData, setVenueData }: AmenitiesMediaSt
                   <input
                     value={contact.name}
                     onChange={(e) => updateContact(index, 'name', e.target.value)}
-                    placeholder="Enter name here..."
+                    placeholder="Enter amenity name"
                     className="ui-input ui-input-icon-left"
                   />
                 </div>

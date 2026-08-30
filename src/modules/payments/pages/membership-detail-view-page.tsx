@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import type { ReactNode } from 'react'
 import axios from 'axios'
 import { ArrowLeft, Check, Download } from 'lucide-react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
@@ -18,6 +17,7 @@ import { Button } from '@/shared/components/ui/button'
 import { DetailViewSkeleton } from '@/shared/components/ui/skeleton'
 import { cn } from '@/shared/lib/cn'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
+import { FinanceDetailRow as DetailRow } from '@/modules/payments/components/finance-detail-layout'
 import {
   downloadInvoiceDocument,
   invoiceFromMembershipSubscription,
@@ -26,8 +26,6 @@ import {
 const cardClass = 'radius-lg border border-white/[0.06] bg-brand-surface p-4 sm:p-5'
 const sectionTitleClass = 'text-body-md-semibold text-brand-text leading-[20px]'
 const sectionSubtitleClass = 'text-body-sm text-muted mt-1 leading-[20px]'
-const labelClass = 'text-body-sm text-muted'
-const valueClass = 'text-body-sm-medium text-brand-text'
 const innerPanelClass = 'radius-lg border border-white/[0.04] bg-brand-bg p-4'
 
 function getErrorMessage(error: unknown, fallback: string) {
@@ -37,15 +35,6 @@ function getErrorMessage(error: unknown, fallback: string) {
   }
   if (error instanceof Error && error.message) return error.message
   return fallback
-}
-
-function DetailRow({ label, value }: { label: string; value: ReactNode }) {
-  return (
-    <div className="flex items-center justify-between gap-4 border-b border-white/5 py-3 last:border-b-0">
-      <span className={labelClass}>{label}</span>
-      <span className={cn(valueClass, 'text-right')}>{value}</span>
-    </div>
-  )
 }
 
 function getStatusBadgeClass(status: string) {

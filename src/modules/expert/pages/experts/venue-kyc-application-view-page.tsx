@@ -55,6 +55,8 @@ import {
   useModerationReasonOptions,
   useRecordModerationReasonUsage,
 } from '@/modules/settings/hooks/use-templates'
+import { apiErrorMessage as getApiErrorMessage } from '@/shared/lib/api-error'
+import { formatDateTimeEnUsApplication24h as formatDateTime } from '@/shared/lib/format-datetime'
 
 type TabKey = 'overview' | 'kyc' | 'banking'
 type DecisionVariant = 'approve' | 'reject' | 'requestChanges' | 'escalate'
@@ -74,31 +76,10 @@ const TABS: { key: TabKey; label: string }[] = [
   { key: 'banking', label: 'Banking Details' },
 ]
 
-const getApiErrorMessage = (error: unknown) => {
-  const err = error as {
-    response?: { status?: number; data?: { message?: string } }
-  }
-  return err?.response?.data?.message || 'Something went wrong. Please try again.'
-}
-
 const displayValue = (value?: string | number | null) => {
   if (value === null || value === undefined) return 'N/A'
   if (typeof value === 'string' && !value.trim()) return 'N/A'
   return String(value)
-}
-
-const formatDateTime = (value?: string | null) => {
-  if (!value) return 'N/A'
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return 'N/A'
-  return date.toLocaleString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-  })
 }
 
 const formatRelativeApplied = (value?: string | null) => {

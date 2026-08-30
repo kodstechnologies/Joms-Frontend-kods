@@ -32,6 +32,7 @@ import {
   buildPrefixedListQueryParams,
   createPrefixedListExportHandler,
 } from '@/shared/utils/export-filter-utils'
+import { formatDateTimeEnInLogs as formatDateTime } from '@/shared/lib/format-datetime'
 
 const PAGE_SIZE = 10
 
@@ -63,17 +64,6 @@ const LOG_EXPORT_COLUMN_MAP: Record<
   status: { header: 'Status', accessor: (log) => exportDisplayValue(log.status) },
   ipAddress: { header: 'IP Address', accessor: (log) => exportDisplayValue(log.ipAddress) },
   createdAt: { header: 'Timestamp', accessor: (log) => exportDisplayValue(log.createdAt) },
-}
-
-const formatDateTime = (value?: string) => {
-  if (!value) return '—'
-  return new Date(value).toLocaleString('en-IN', {
-    hour: '2-digit',
-    minute: '2-digit',
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  })
 }
 
 const formatOverviewDate = (value?: string) => {

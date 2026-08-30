@@ -1,9 +1,3 @@
-/**
- * Finance Venues — table column catalog.
- * Existing venue-specific columns remain defaultVisible; Excel Financial Transactions
- * columns are added with defaultVisible false until row data is wired.
- */
-
 export const FINANCE_VENUES_MODULE_KEY = 'finance-venues'
 
 export type FinanceVenuesTableColumnCatalogItem = {

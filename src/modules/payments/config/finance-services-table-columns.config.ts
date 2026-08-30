@@ -1,9 +1,3 @@
-/**
- * Finance Services — table column catalog.
- * Existing service-specific columns remain defaultVisible; Excel Financial Transactions
- * columns are added with defaultVisible false until row data is wired.
- */
-
 export const FINANCE_SERVICES_MODULE_KEY = 'finance-services'
 
 export type FinanceServicesTableColumnCatalogItem = {
@@ -69,7 +63,6 @@ export const FINANCE_SERVICES_TABLE_COLUMNS_CATALOG: FinanceServicesTableColumnC
   col('invoice-id', 'Invoice ID', 'Text', 'Related invoice identifier'),
 ]
 
-/** Maps legacy preference / alias ids. */
 export const FINANCE_SERVICES_LEGACY_COLUMN_ID_MAP: Record<string, string> = {
   'service-id': 'service-id',
 }

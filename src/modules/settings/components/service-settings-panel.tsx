@@ -153,7 +153,7 @@ export function ServiceSettingsPanel({ value, onChange }: ServiceSettingsPanelPr
           </div>
           <input
             className={settingsControlClass}
-            placeholder="Custom — Enter here"
+            placeholder="Enter custom payout frequency"
             value={value.pricingDetails.payoutFrequency.custom}
             onChange={(e) => patchPayout({ custom: e.target.value })}
           />

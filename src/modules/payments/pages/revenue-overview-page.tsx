@@ -4,7 +4,7 @@ import { AlertTriangle, Eye, SlidersHorizontal, Tag, Trash2 } from 'lucide-react
 import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
-import { type RevenueOverviewRow } from '@/modules/payments/mock/revenue-overview.mock'
+import type { RevenueOverviewRow } from '@/modules/payments/types/finance-table-rows'
 import {
   useAddFinanceNote,
   useEscalateFinance,

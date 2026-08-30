@@ -27,6 +27,7 @@ import {
   type VenueOnboardingFormData,
 } from '@/modules/expert/utils/venue-onboarding-form'
 import { sanitizeMobileNumber, validateMobileNumber } from '@/shared/lib/phone'
+import { apiErrorMessage as getApiErrorMessage } from '@/shared/lib/api-error'
 
 const ONBOARDING_STEPS = [
   { id: '01', title: 'Basic Profile', description: 'Core Information' },
@@ -34,11 +35,6 @@ const ONBOARDING_STEPS = [
   { id: '03', title: 'KYC Details', description: 'Government Documents' },
   { id: '04', title: 'Final Review', description: 'Preview' },
 ]
-
-const getApiErrorMessage = (error: unknown) => {
-  const err = error as { response?: { data?: { message?: string } } }
-  return err?.response?.data?.message || 'Something went wrong. Please try again.'
-}
 
 const inferStepFromCurrentStep = (currentStep?: string) => {
   if (!currentStep) return 1

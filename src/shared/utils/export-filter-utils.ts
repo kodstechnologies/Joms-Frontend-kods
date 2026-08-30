@@ -1289,81 +1289,39 @@ function createFinanceExportHandler(
   }
 }
 
-export function buildFinanceMembershipsListQueryParams(
-  filterValues: FilterValues,
-  options: FinanceListQueryOptions = {},
-): Record<string, unknown> {
-  return buildRevenueListQueryParams(filterValues, options)
-}
-
+export const buildFinanceMembershipsListQueryParams = buildRevenueListQueryParams
 export const createFinanceMembershipsFilteredExportHandler = createFinanceExportHandler(
-  buildFinanceMembershipsListQueryParams,
+  buildRevenueListQueryParams,
 )
 
-export function buildFinancePayoutsListQueryParams(
-  filterValues: FilterValues,
-  options: FinanceListQueryOptions = {},
-): Record<string, unknown> {
-  return buildRevenueListQueryParams(filterValues, options)
-}
-
+export const buildFinancePayoutsListQueryParams = buildRevenueListQueryParams
 export const createFinancePayoutsFilteredExportHandler = createFinanceExportHandler(
-  buildFinancePayoutsListQueryParams,
+  buildRevenueListQueryParams,
 )
 
-export function buildFinanceRefundsListQueryParams(
-  filterValues: FilterValues,
-  options: FinanceListQueryOptions = {},
-): Record<string, unknown> {
-  return buildRevenueListQueryParams(filterValues, options)
-}
-
+export const buildFinanceRefundsListQueryParams = buildRevenueListQueryParams
 export const createFinanceRefundsFilteredExportHandler = createFinanceExportHandler(
-  buildFinanceRefundsListQueryParams,
+  buildRevenueListQueryParams,
 )
 
-export function buildFinanceTaxListQueryParams(
-  filterValues: FilterValues,
-  options: FinanceListQueryOptions = {},
-): Record<string, unknown> {
-  return buildRevenueListQueryParams(filterValues, options)
-}
-
+export const buildFinanceTaxListQueryParams = buildRevenueListQueryParams
 export const createFinanceTaxFilteredExportHandler = createFinanceExportHandler(
-  buildFinanceTaxListQueryParams,
+  buildRevenueListQueryParams,
 )
 
-export function buildFinanceInvoicesListQueryParams(
-  filterValues: FilterValues,
-  options: FinanceListQueryOptions = {},
-): Record<string, unknown> {
-  return buildRevenueListQueryParams(filterValues, options)
-}
-
+export const buildFinanceInvoicesListQueryParams = buildRevenueListQueryParams
 export const createFinanceInvoicesFilteredExportHandler = createFinanceExportHandler(
-  buildFinanceInvoicesListQueryParams,
+  buildRevenueListQueryParams,
 )
 
-export function buildFinanceReconciliationListQueryParams(
-  filterValues: FilterValues,
-  options: FinanceListQueryOptions = {},
-): Record<string, unknown> {
-  return buildRevenueListQueryParams(filterValues, options)
-}
-
+export const buildFinanceReconciliationListQueryParams = buildRevenueListQueryParams
 export const createFinanceReconciliationFilteredExportHandler = createFinanceExportHandler(
-  buildFinanceReconciliationListQueryParams,
+  buildRevenueListQueryParams,
 )
 
-export function buildFinanceEscrowListQueryParams(
-  filterValues: FilterValues,
-  options: FinanceListQueryOptions = {},
-): Record<string, unknown> {
-  return buildRevenueListQueryParams(filterValues, options)
-}
-
+export const buildFinanceEscrowListQueryParams = buildRevenueListQueryParams
 export const createFinanceEscrowFilteredExportHandler = createFinanceExportHandler(
-  buildFinanceEscrowListQueryParams,
+  buildRevenueListQueryParams,
 )
 
 const getPrefixedFilterEntries = (filterValues: FilterValues) =>

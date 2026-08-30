@@ -6,22 +6,12 @@ import type { SettingsLog, SettingsModule } from '../types/settings'
 import { useSettingsModuleVersions } from '../hooks/use-settings'
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
+import { formatDateTimeEnInSettingsVersion as formatDateTime } from '@/shared/lib/format-datetime'
 
 type VersionHistoryPanelProps = {
   open: boolean
   module: SettingsModule | null
   onClose: () => void
-}
-
-const formatDateTime = (value?: string) => {
-  if (!value) return '—'
-  return new Date(value).toLocaleString('en-IN', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
 }
 
 function VersionCard({ version, isFirst }: { version: SettingsLog; isFirst: boolean }) {

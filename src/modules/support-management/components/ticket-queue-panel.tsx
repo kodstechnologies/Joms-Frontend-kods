@@ -78,7 +78,7 @@ export function TicketQueuePanel({
             type="text"
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
-            placeholder="Search by name, ID or profession"
+            placeholder="Search by ticket ID or subject"
             className="text-brand-text placeholder:text-muted h-full flex-1 bg-transparent text-sm outline-none"
           />
         </div>

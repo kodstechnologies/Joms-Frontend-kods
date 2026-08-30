@@ -25,6 +25,7 @@ import {
   createPrefixedListExportHandler,
 } from '@/shared/utils/export-filter-utils'
 import { toast } from 'sonner'
+import { formatDateTimeEnInLogs as formatDateTime } from '@/shared/lib/format-datetime'
 
 const PAGE_SIZE = 10
 
@@ -47,17 +48,6 @@ const SETTINGS_LOG_EXPORT_COLUMN_MAP: Record<
   status: { header: 'Status', accessor: (row) => exportDisplayValue(row.status) },
   performedBy: { header: 'Performed By', accessor: (row) => exportDisplayValue(row.performedBy) },
   ipAddress: { header: 'IP', accessor: (row) => exportDisplayValue(row.ipAddress) },
-}
-
-const formatDateTime = (value?: string) => {
-  if (!value) return '—'
-  return new Date(value).toLocaleString('en-IN', {
-    hour: '2-digit',
-    minute: '2-digit',
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  })
 }
 
 function StatusBadge({ status }: { status: string }) {

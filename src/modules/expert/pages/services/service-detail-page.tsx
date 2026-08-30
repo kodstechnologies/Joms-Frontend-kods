@@ -1,6 +1,5 @@
 import { useMemo, useState, type ReactNode } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import axios from 'axios'
 import {
   ArrowLeft,
   Ban,
@@ -48,15 +47,9 @@ import {
   titleCase,
 } from '../../components/service-drilldown/drilldown-format'
 import { servicePerformancePath } from '../../lib/service-navigation'
+import { apiErrorMessage as getApiErrorMessage } from '@/shared/lib/api-error'
 
 type DetailAction = 'pause' | 'requestChanges' | 'flag' | 'suspend' | null
-
-const getApiErrorMessage = (error: unknown, fallback: string) => {
-  if (axios.isAxiosError(error)) {
-    return error.response?.data?.message || fallback
-  }
-  return fallback
-}
 
 const parseTierDescription = (description = '') => {
   const [summary, ...features] = description

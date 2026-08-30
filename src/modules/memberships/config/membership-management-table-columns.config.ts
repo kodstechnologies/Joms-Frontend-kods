@@ -1,7 +1,5 @@
 /**
- * Membership Management — dashboard metric + subscription table catalogs.
  * Keep ids kebab-case to match Manage Metrics / ui-preferences.
- * Source: JOMS_KODS_Web_Admin_Panel_full_data (Membership Management sheet).
  */
 
 export type MembershipTableColumnCatalogItem = {

@@ -1,8 +1,4 @@
-/**
- * Expert Leaderboard — table column catalog.
- * Source: JOMS_KODS_Web_Admin_Panel_full_data → Experts Leaderboard.
- * Keep ids kebab-case to match Manage Metrics / ui-preferences.
- */
+/** Keep ids kebab-case to match Manage Metrics / ui-preferences. */
 
 export const EXPERT_LEADERBOARD_MODULE_KEY = 'expert-leaderboard'
 

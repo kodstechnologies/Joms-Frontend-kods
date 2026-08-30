@@ -1,8 +1,4 @@
-/**
- * Venue Category Management — dashboard metrics catalog.
- * Source: JOMS_KODS_Web_Admin_Panel_full_data (Category Management → Venue Categories).
- * Keep ids kebab-case to match Manage Metrics / ui-preferences.
- */
+/** Keep ids kebab-case to match Manage Metrics / ui-preferences. */
 
 export const VENUE_CATEGORY_MANAGEMENT_MODULE_KEY = 'venue-category-management'
 

@@ -71,7 +71,7 @@ function MergeTicketsModalInner({
       setAdminNotes('')
       onClose()
     } catch {
-      // Parent surfaces API errors
+      // submit error surfaced by parent
     } finally {
       setSubmitting(false)
     }

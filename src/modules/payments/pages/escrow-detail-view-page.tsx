@@ -26,12 +26,11 @@ import { cn } from '@/shared/lib/cn'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import { PERMISSION_LEVELS } from '@/shared/lib/permissions'
 import { downloadInvoiceDocument, invoiceFromEscrow } from '@/shared/utils/invoice-document'
+import { FinanceDetailRow as DetailRow } from '@/modules/payments/components/finance-detail-layout'
 
 const cardClass = 'radius-lg border border-white/[0.06] bg-brand-surface p-4 sm:p-5'
 const sectionTitleClass = 'text-body-md-semibold text-brand-text leading-[20px]'
 const sectionSubtitleClass = 'text-body-sm text-muted mt-1 leading-[20px]'
-const labelClass = 'text-body-sm text-muted'
-const valueClass = 'text-body-sm-medium text-brand-text'
 
 function InnerCard({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -40,23 +39,6 @@ function InnerCard({ title, children }: { title: string; children: ReactNode }) 
       <div className="mb-4 border-b border-white/5" />
       {children}
     </section>
-  )
-}
-
-function DetailRow({
-  label,
-  value,
-  valueClassName,
-}: {
-  label: string
-  value: ReactNode
-  valueClassName?: string
-}) {
-  return (
-    <div className="flex items-center justify-between gap-4 border-b border-white/5 py-3 last:border-b-0">
-      <span className={labelClass}>{label}</span>
-      <span className={cn('text-right', valueClass, valueClassName)}>{value}</span>
-    </div>
   )
 }
 

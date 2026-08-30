@@ -344,7 +344,7 @@ export function InviteExpertReferralModal({
             <textarea
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              placeholder="Enter here"
+              placeholder="Write your invitation message"
               className="ui-textarea h-32"
             />
           </Field>

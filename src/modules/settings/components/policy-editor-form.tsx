@@ -181,7 +181,7 @@ export function PolicyEditorForm({
               rows={8}
               value={values.content}
               onChange={(event) => onChange({ content: event.target.value })}
-              placeholder="Enter Policy Content Here..."
+              placeholder="Enter policy content"
               className="policy-content-textarea"
             />
           </div>

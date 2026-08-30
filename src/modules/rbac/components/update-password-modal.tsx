@@ -167,7 +167,7 @@ export function UpdatePasswordModal({
                   type="password"
                   value={oldPassword}
                   onChange={(event) => setOldPassword(event.target.value)}
-                  placeholder="Enter here.."
+                  placeholder="Enter current password"
                   autoComplete="current-password"
                   className="ui-input"
                 />
@@ -183,7 +183,7 @@ export function UpdatePasswordModal({
                 type="password"
                 value={newPassword}
                 onChange={(event) => setNewPassword(event.target.value)}
-                placeholder="Enter here.."
+                placeholder="Enter new password"
                 autoComplete="new-password"
                 className="ui-input"
               />
@@ -198,7 +198,7 @@ export function UpdatePasswordModal({
                 type="password"
                 value={confirmNewPassword}
                 onChange={(event) => setConfirmNewPassword(event.target.value)}
-                placeholder="Enter here.."
+                placeholder="Confirm new password"
                 autoComplete="new-password"
                 className="ui-input"
               />

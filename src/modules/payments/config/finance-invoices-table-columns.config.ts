@@ -1,8 +1,3 @@
-/**
- * Finance Invoices — table + metric catalogs.
- * Source: JOMS Excel → Finance Management → Invoice & Billing.
- */
-
 export const FINANCE_INVOICES_MODULE_KEY = 'finance-invoices'
 
 export type FinanceInvoicesTableColumnCatalogItem = {

@@ -11,6 +11,7 @@ import { uiTokens } from '@/shared/lib/design-tokens'
 
 import { useRollbackAuditLog } from '../hooks/use-rbac'
 import type { AuditLog } from '../types/rbac'
+import { formatDateTimeEnInRbacVersion as formatDateTime } from '@/shared/lib/format-datetime'
 
 type VersionHistoryPanelProps = {
   open: boolean
@@ -18,18 +19,6 @@ type VersionHistoryPanelProps = {
   isLoading?: boolean
   onClose: () => void
   onRolledBack?: () => void
-}
-
-const formatDateTime = (value?: string) => {
-  if (!value) return '—'
-  return new Date(value).toLocaleString('en-IN', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit',
-    hour12: true,
-  })
 }
 
 const snapshotOf = (log: AuditLog, version: 'new' | 'previous') => {

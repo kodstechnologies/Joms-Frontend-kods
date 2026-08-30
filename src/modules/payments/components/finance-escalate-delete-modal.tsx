@@ -1,6 +1,7 @@
 import { toast } from 'sonner'
 
 import { AddFinanceNoteModal } from '@/modules/payments/components/add-finance-note-modal'
+import { apiErrorMessage } from '@/modules/payments/utils/finance-mappers'
 
 export type FinanceEscalateDeleteAction = {
   kind: 'escalate' | 'delete'
@@ -24,12 +25,6 @@ type FinanceEscalateDeleteModalProps = {
   onClose: () => void
   escalate: MutationLike
   softDelete: MutationLike
-}
-
-function apiErrorMessage(err: unknown, fallback: string) {
-  return (
-    (err as { response?: { data?: { message?: string } } })?.response?.data?.message || fallback
-  )
 }
 
 export function FinanceEscalateDeleteModal({

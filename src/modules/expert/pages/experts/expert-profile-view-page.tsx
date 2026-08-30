@@ -70,6 +70,7 @@ import { useEscalationAssignees } from '@/modules/my-tasks/hooks/use-admin-escal
 import { escalateServiceApplication } from '@/modules/my-tasks/api/escalation-api'
 import { exportDataToFile } from '@/shared/utils/export-utils'
 import { buildExpertProfileServicesQueryParams } from '@/shared/utils/export-filter-utils'
+import { apiErrorMessage } from '@/shared/lib/api-error'
 import {
   useExpertAnalytics,
   useExpertAvailability,
@@ -135,6 +136,7 @@ import {
 } from '../../components/expert-report-detail-modal'
 import type { PartnerAvailability } from '../../api/expert-api'
 import { useQuery } from '@tanstack/react-query'
+import { SafeImage } from '@/shared/components/media/safe-image'
 
 type TabKey = 'overview' | 'service-listings' | 'availability' | 'analytics' | 'health'
 
@@ -172,10 +174,8 @@ const OPEN_REPORT_STATUSES = new Set([
 ])
 const VIOLATION_ISSUE_TYPES = new Set(['fraud', 'misconduct', 'spam', 'fake profile', 'harassment'])
 
-const getApiErrorMessage = (error: unknown) => {
-  const err = error as { response?: { data?: { message?: string } } }
-  return err?.response?.data?.message || 'Unable to load expert profile.'
-}
+const getApiErrorMessage = (error: unknown) =>
+  apiErrorMessage(error, 'Unable to load expert profile.')
 
 const resolveCustomUrl = (profile: ExpertProfileDetail, analytics?: ExpertAnalyticsData) =>
   profile.customUrl ||
@@ -420,34 +420,6 @@ const formatPricing = (option: { durationMinutes: number; pricingType: string; p
     return `${mins} (Free)`
   }
   return `${mins} (₹${option.price.toLocaleString('en-IN')})`
-}
-
-function SafeImage({
-  src,
-  alt,
-  className,
-  fallback,
-}: {
-  src?: string | null
-  alt: string
-  className?: string
-  fallback: ReactNode
-}) {
-  const [errored, setErrored] = useState(false)
-
-  if (!src || errored) {
-    return <>{fallback}</>
-  }
-
-  return (
-    <img
-      src={src}
-      alt={alt}
-      className={className}
-      loading="lazy"
-      onError={() => setErrored(true)}
-    />
-  )
 }
 
 function SidebarRow({ label, children }: { label: string; children: ReactNode }) {
@@ -1551,8 +1523,7 @@ function ServicesSubTab({
 
       if (successCount === 0) {
         const firstError = results.find((result) => result.status === 'rejected') as
-          | PromiseRejectedResult
-          | undefined
+          PromiseRejectedResult | undefined
         toast.error(getApiErrorMessage(firstError?.reason) || 'Failed to escalate services.')
         return
       }

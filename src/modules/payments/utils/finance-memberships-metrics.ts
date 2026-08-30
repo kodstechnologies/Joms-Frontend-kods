@@ -1,7 +1,4 @@
-import {
-  membershipSummaryMetricsMock,
-  type MembershipSummaryMetric,
-} from '@/modules/payments/mock/membership-management.mock'
+import type { MembershipSummaryMetric } from '@/modules/payments/types/finance-table-rows'
 import { FINANCE_MEMBERSHIPS_METRICS_CATALOG } from '@/modules/payments/config/finance-memberships-metrics.config'
 
 export type FinanceMembershipsMetricCard = MembershipSummaryMetric & { id: string }
@@ -12,6 +9,13 @@ export type FinanceMembershipStatusCounts = {
   cancelled?: number
   expired?: number
 }
+
+const membershipSummaryMetricsMock: MembershipSummaryMetric[] = [
+  { label: 'Active Subscriptions', value: '0', change: '0%', changeNote: 'vs last month' },
+  { label: 'Started', value: '0', change: '0%', changeNote: 'vs last month' },
+  { label: 'Cancelled', value: '0', change: '0%', changeNote: 'vs last month' },
+  { label: 'Expired', value: '0', change: '0%', changeNote: 'vs last month' },
+]
 
 function formatCount(value: number | undefined): string {
   return String(value ?? 0).padStart(2, '0')

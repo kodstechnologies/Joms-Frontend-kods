@@ -1,8 +1,3 @@
-/**
- * Finance Events — Promotion Revenue table column catalog.
- * Source: JOMS Excel → Finance Management → Promotion Revenue.
- */
-
 export const FINANCE_EVENTS_MODULE_KEY = 'finance-events'
 
 export type FinanceEventsTableColumnCatalogItem = {
@@ -40,7 +35,6 @@ export const FINANCE_EVENTS_TABLE_COLUMNS_CATALOG: FinanceEventsTableColumnCatal
   col('status', 'Status', 'Status', 'Promotion payment status', true),
 ]
 
-/** Maps legacy event-page preference ids → promotion catalog ids. */
 export const FINANCE_EVENTS_LEGACY_COLUMN_ID_MAP: Record<string, string> = {
   'event-id': 'promotion-id',
   'event-name': 'entity-name',

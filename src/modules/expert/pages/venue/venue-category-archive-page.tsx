@@ -1,0 +1,208 @@
+import { useCallback, useMemo, useState } from 'react'
+import type { ColumnDef } from '@tanstack/react-table'
+import { SlidersHorizontal } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import createIcon from '@/assets/JOMS_ICONS-2/icons8-create.svg'
+
+import { Button } from '@/shared/components/ui/button'
+import { DataTable } from '@/shared/components/table/data-table'
+import { VENUE_CATEGORY_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
+import { useModuleExportFilters } from '@/shared/components/advanced-filter'
+import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
+import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'
+import { buildCatalogSortFieldMap } from '@/shared/utils/table-sort-field-maps'
+import { withServerSortMeta } from '@/shared/utils/table-sort'
+import { VENUE_CATEGORY_EXPORT_COLUMN_MAP } from '../../utils/table-export-column-maps'
+import type { FilterValues } from '@/shared/types/data-filter'
+import {
+  buildVenueCategoryListQueryParams,
+  createVenueCategoryFilteredExportHandler,
+} from '@/shared/utils/export-filter-utils'
+import { VENUE_CATEGORY_MANAGEMENT_MODULE_KEY } from '../../api/ui-preferences-api'
+import {
+  fetchDeletedVenueCategories,
+  fetchPausedVenueCategories,
+} from '../../api/venue-category-api'
+import CategoryHeader from '../../components/category/CategoryHeader'
+import { type VenueCategory } from '../../components/category/venue-category-table-columns'
+import {
+  DEFAULT_VENUE_CATEGORY_MANAGEMENT_VISIBLE_COLUMN_IDS,
+  VENUE_CATEGORY_LEGACY_COLUMN_ID_MAP,
+  VENUE_CATEGORY_MANAGEMENT_TABLE_COLUMNS_CATALOG,
+} from '../../config/venue-category-management-table-columns.config'
+import { useTableExportColumnIds } from '@/shared/hooks/use-table-export-column-ids'
+import {
+  useDeletedVenueCategoryList,
+  usePausedVenueCategoryList,
+} from '../../hooks/use-venue-category-management'
+import { useTableColumnPreferences } from '../../hooks/use-ui-preferences'
+import { mapVenueCategoryToUi } from '../../utils/category-mapper'
+import { selectPreferredColumns } from '../../utils/select-preferred-columns'
+
+const PAGE_SIZE = 10
+const DEFAULT_VISIBLE_IDS = DEFAULT_VENUE_CATEGORY_MANAGEMENT_VISIBLE_COLUMN_IDS
+
+const VENUE_CATEGORY_COLUMN_SORT_FIELDS = buildCatalogSortFieldMap(
+  VENUE_CATEGORY_MANAGEMENT_TABLE_COLUMNS_CATALOG,
+)
+
+type VenueCategoryListHook = typeof usePausedVenueCategoryList | typeof useDeletedVenueCategoryList
+
+type VenueCategoryListFetch = typeof fetchPausedVenueCategories | typeof fetchDeletedVenueCategories
+
+export function VenueCategoryArchivePage({
+  title,
+  sourceColumns,
+  exportFileName,
+  useList,
+  fetchList,
+}: {
+  title: string
+  sourceColumns: ColumnDef<VenueCategory>[]
+  exportFileName: string
+  useList: VenueCategoryListHook
+  fetchList: VenueCategoryListFetch
+}) {
+  const navigate = useNavigate()
+  const [page, setPage] = useState(1)
+  const serverSort = useServerTableSort({
+    sortFieldMap: VENUE_CATEGORY_COLUMN_SORT_FIELDS,
+    onPageReset: () => setPage(1),
+  })
+  const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setPage(1) })
+  const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
+  const preferencesQuery = useTableColumnPreferences(VENUE_CATEGORY_MANAGEMENT_MODULE_KEY)
+  const label = title.toLowerCase()
+
+  const catalogColumnIds = useMemo(
+    () => VENUE_CATEGORY_MANAGEMENT_TABLE_COLUMNS_CATALOG.map((c) => c.id),
+    [],
+  )
+  const exportColumnIds = useTableExportColumnIds({
+    visibleColumnIds: preferencesQuery.data?.visibleColumnIds,
+    defaultColumnIds: DEFAULT_VENUE_CATEGORY_MANAGEMENT_VISIBLE_COLUMN_IDS,
+    catalogColumnIds,
+    legacyColumnIdMap: VENUE_CATEGORY_LEGACY_COLUMN_ID_MAP,
+  })
+
+  const handleApplyFilters = useCallback((values: FilterValues) => {
+    setPage(1)
+    setAppliedFilters(values)
+  }, [])
+
+  const categoryQueryParams = useMemo(
+    () =>
+      buildVenueCategoryListQueryParams(appliedFilters, {
+        page,
+        limit: PAGE_SIZE,
+        ...serverSort.sortParams,
+        ...enhancedSearch.buildSearchParams(),
+      }),
+    [appliedFilters, enhancedSearch, page, serverSort.sortParams],
+  )
+
+  const { data, isLoading, isError } = useList(categoryQueryParams)
+
+  const categories = useMemo(() => data?.categories ?? [], [data?.categories])
+  const totalItems = data?.pagination?.total ?? categories.length
+  const totalPages = Math.max(1, data?.pagination?.totalPages ?? Math.ceil(totalItems / PAGE_SIZE))
+
+  const columns = useMemo<ColumnDef<VenueCategory>[]>(() => {
+    const rawVisibleIds = preferencesQuery.data?.visibleColumnIds?.length
+      ? preferencesQuery.data.visibleColumnIds
+      : DEFAULT_VISIBLE_IDS
+    return withServerSortMeta(
+      selectPreferredColumns(
+        sourceColumns,
+        rawVisibleIds,
+        DEFAULT_VISIBLE_IDS,
+        VENUE_CATEGORY_LEGACY_COLUMN_ID_MAP,
+      ),
+      VENUE_CATEGORY_COLUMN_SORT_FIELDS,
+    )
+  }, [preferencesQuery.data, sourceColumns])
+
+  const handleExportData = useMemo(
+    () =>
+      createVenueCategoryFilteredExportHandler(
+        async (params) => {
+          const response = await fetchList(params)
+          return { data: (response.data ?? []).map(mapVenueCategoryToUi) }
+        },
+        VENUE_CATEGORY_EXPORT_COLUMN_MAP,
+        exportFileName,
+        {},
+        { columnIds: exportColumnIds, catalogOrder: catalogColumnIds },
+      ),
+    [catalogColumnIds, exportColumnIds, exportFileName, fetchList],
+  )
+
+  const {
+    onAdvancedFilter,
+    onExport,
+    modals: exportFilterModals,
+  } = useModuleExportFilters({
+    moduleKey: 'venue-category-management',
+    onApplyFilters: handleApplyFilters,
+    onExportData: handleExportData,
+  })
+
+  const emptyMessage = useMemo(
+    () => (isError ? `Failed to load ${label}.` : `No ${label} found.`),
+    [isError, label],
+  )
+
+  return (
+    <div className="flex flex-col gap-4 p-0 md:gap-6">
+      <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
+        <CategoryHeader title={title} breadcrumb={title} backPath="/venues/categories/management" />
+
+        <div className="flex w-full flex-col items-center gap-3 md:w-auto md:flex-row">
+          <Button
+            className="ui-manage-metrics h-9 w-full md:w-auto"
+            onClick={() => navigate('/venues/categories/management/metrics?section=table')}
+          >
+            <SlidersHorizontal className="size-4" />
+            Manage Metrics
+          </Button>
+          <Button
+            type="button"
+            className="h-9 w-full md:w-auto"
+            onClick={() => navigate('/venues/categories/management/create')}
+          >
+            <img src={createIcon} alt="create" className="size-4" />
+            Add New Category
+          </Button>
+        </div>
+      </div>
+
+      <DataTable
+        columns={columns}
+        data={categories}
+        getRowId={(row) => row.id}
+        searchValue={enhancedSearch.globalSearch}
+        onSearchChange={enhancedSearch.setGlobalSearch}
+        searchableColumns={VENUE_CATEGORY_SEARCH_COLUMNS}
+        columnSearches={enhancedSearch.columnSearches}
+        onColumnSearchChange={enhancedSearch.setColumnSearch}
+        onColumnSearchRemove={enhancedSearch.removeColumnSearch}
+        onClearAllSearches={enhancedSearch.clearAll}
+        searchPlaceholder="Search by name or ID"
+        onAdvancedFilter={onAdvancedFilter}
+        onExport={onExport}
+        {...serverSort.dataTableSortProps}
+        isLoading={isLoading}
+        emptyMessage={emptyMessage}
+        pagination={{
+          page,
+          pageSize: PAGE_SIZE,
+          totalItems,
+          totalPages,
+          onPageChange: setPage,
+        }}
+        resourceLabel="categories"
+      />
+      {exportFilterModals}
+    </div>
+  )
+}

@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react'
+import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { ArrowLeft, Download, SquarePen } from 'lucide-react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
@@ -6,6 +6,10 @@ import { toast } from 'sonner'
 
 import { fetchPartnerDisplayNames } from '@/modules/payments/api/partner-lookup-api'
 import { AddFinanceNoteModal } from '@/modules/payments/components/add-finance-note-modal'
+import {
+  FinanceDetailCard as DetailCard,
+  FinanceDetailRow as DetailRow,
+} from '@/modules/payments/components/finance-detail-layout'
 import { FinanceInternalNotesCard } from '@/modules/payments/components/finance-internal-notes-card'
 import { useAddFinanceNote, useFinancePayment } from '@/modules/payments/hooks/use-finance'
 import { escalateUrl } from '@/modules/payments/utils/finance-escalate'
@@ -27,34 +31,6 @@ import {
 const cardClass = 'radius-lg border border-white/[0.06] bg-brand-surface p-4 sm:p-5'
 const sectionTitleClass = 'text-body-md-semibold text-brand-text leading-[20px]'
 const sectionSubtitleClass = 'text-body-sm text-muted mt-1'
-const labelClass = 'text-body-sm text-muted'
-const valueClass = 'text-body-sm-medium text-brand-text'
-
-function DetailCard({ title, children }: { title: string; children: ReactNode }) {
-  return (
-    <section className={cn(cardClass, 'p-5')}>
-      <h2 className={cn(sectionTitleClass, 'mb-4')}>{title}</h2>
-      {children}
-    </section>
-  )
-}
-
-function DetailRow({
-  label,
-  value,
-  valueClassName,
-}: {
-  label: string
-  value: ReactNode
-  valueClassName?: string
-}) {
-  return (
-    <div className="flex items-center justify-between gap-4 border-b border-white/5 py-3 last:border-b-0">
-      <span className={labelClass}>{label}</span>
-      <span className={cn('text-right', valueClass, valueClassName)}>{value}</span>
-    </div>
-  )
-}
 
 function getStatusBadgeClass(status: string) {
   if (status === 'Successful' || status === 'Paid') {

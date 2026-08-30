@@ -75,8 +75,7 @@ function pickComponent(
   )
   if (named) return named[1] as ComponentType<Record<string, unknown>>
   return Object.values(mod).find((value) => typeof value === 'function') as
-    | ComponentType<Record<string, unknown>>
-    | undefined
+    ComponentType<Record<string, unknown>> | undefined
 }
 
 export async function mountCoveragePage(
@@ -92,12 +91,14 @@ export async function mountCoveragePage(
     try {
       root.render(
         <QueryClientProvider client={queryClient}>
-          <MemoryRouter initialEntries={['/coverage/id-1/sub-1?partnerId=id-1']}>
-            <Routes>
-              <Route path="/coverage/:id/:subCategoryId" element={<Component />} />
-              <Route path="/coverage/:id" element={<Component />} />
-            </Routes>
-          </MemoryRouter>
+          <CoverageErrorBoundary>
+            <MemoryRouter initialEntries={['/coverage/id-1/sub-1?partnerId=id-1']}>
+              <Routes>
+                <Route path="/coverage/:id/:subCategoryId" element={<Component />} />
+                <Route path="/coverage/:id" element={<Component />} />
+              </Routes>
+            </MemoryRouter>
+          </CoverageErrorBoundary>
         </QueryClientProvider>,
       )
     } catch {
@@ -122,9 +123,11 @@ export async function mountCoverageComponent(
     try {
       root.render(
         <QueryClientProvider client={queryClient}>
-          <MemoryRouter initialEntries={['/coverage/id-1']}>
-            <Component {...props} />
-          </MemoryRouter>
+          <CoverageErrorBoundary>
+            <MemoryRouter initialEntries={['/coverage/id-1']}>
+              <Component {...props} />
+            </MemoryRouter>
+          </CoverageErrorBoundary>
         </QueryClientProvider>,
       )
     } catch {

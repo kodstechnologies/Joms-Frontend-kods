@@ -1,8 +1,3 @@
-/**
- * Finance Payouts — table + metric catalogs.
- * Source: JOMS Excel → Finance Management → Payout Management.
- */
-
 export const FINANCE_PAYOUTS_MODULE_KEY = 'finance-payouts'
 
 export type FinancePayoutsTableColumnCatalogItem = {

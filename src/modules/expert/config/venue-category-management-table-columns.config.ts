@@ -1,8 +1,4 @@
-/**
- * Venue Category Management — main table column catalog.
- * Source: JOMS_KODS_Web_Admin_Panel_full_data (VENUE CATEGORY MANAGEMENT → Main Table).
- * Keep ids kebab-case to match Manage Metrics / ui-preferences.
- */
+/** Keep ids kebab-case to match Manage Metrics / ui-preferences. */
 
 export type VenueCategoryManagementTableColumnCatalogItem = {
   id: string

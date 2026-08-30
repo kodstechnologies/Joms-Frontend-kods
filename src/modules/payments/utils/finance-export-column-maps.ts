@@ -1,10 +1,12 @@
-import type { FinanceServiceRow } from '../mock/finance-services.mock'
-import type { FinanceVenueRow } from '../mock/finance-venues.mock'
-import type { RefundChargebackRow } from '../mock/finance-refunds.mock'
-import type { TaxComplianceRow } from '../mock/finance-tax-compliance.mock'
-import type { FinanceReconciliationRow } from '../mock/finance-reconciliation.mock'
-import type { FinanceEventRow } from '../mock/finance-events.mock'
-import type { EscrowHoldRow } from '../mock/finance-escrow.mock'
+import type {
+  EscrowHoldRow,
+  FinanceEventRow,
+  FinanceReconciliationRow,
+  FinanceServiceRow,
+  FinanceVenueRow,
+  RefundChargebackRow,
+  TaxComplianceRow,
+} from '../types/finance-table-rows'
 import { FINANCE_SERVICES_TABLE_COLUMNS_CATALOG } from '../config/finance-services-table-columns.config'
 import { FINANCE_VENUES_TABLE_COLUMNS_CATALOG } from '../config/finance-venues-table-columns.config'
 import { FINANCE_REFUNDS_TABLE_COLUMNS_CATALOG } from '../config/finance-refunds-table-columns.config'

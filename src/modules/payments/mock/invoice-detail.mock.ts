@@ -1,4 +1,4 @@
-import type { InvoiceStatus } from './invoices-billing.mock'
+import type { InvoiceStatus } from '@/modules/payments/types/finance-table-rows'
 
 export type InvoiceDetail = {
   id: string

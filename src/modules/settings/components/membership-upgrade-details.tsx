@@ -11,9 +11,7 @@ import {
   startAdminEscalationReview,
 } from '@/modules/my-tasks/api/escalation-api'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
-
-const apiErrorMessage = (err: unknown, fallback: string) =>
-  (err as { response?: { data?: { message?: string } } })?.response?.data?.message || fallback
+import { apiErrorMessage } from '@/modules/payments/utils/finance-mappers'
 
 export function MembershipUpgradeDetails() {
   const navigate = useNavigate()

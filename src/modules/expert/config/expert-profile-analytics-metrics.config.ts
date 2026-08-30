@@ -1,9 +1,3 @@
-/**
- * Expert Profile Analytics — KPI catalog.
- * Source: JOMS_KODS_Web_Admin_Panel_full_data → Expert Analytics.
- * Metrics only (Excel has no table-columns section for this sheet).
- */
-
 export const EXPERT_PROFILE_ANALYTICS_MODULE_KEY = 'expert-profile-analytics'
 
 export type ExpertProfileAnalyticsMetricCatalogItem = {

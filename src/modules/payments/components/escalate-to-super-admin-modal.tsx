@@ -79,7 +79,7 @@ export function EscalateToSuperAdminModal({
       await onSubmit?.({ priority, adminNotes: notes })
       handleClose()
     } catch {
-      // Parent surfaces API errors via toast
+      // submit error surfaced by parent
     }
   }
 
@@ -188,7 +188,7 @@ export function EscalateToSuperAdminModal({
             <textarea
               value={adminNotes}
               onChange={(event) => setAdminNotes(event.target.value)}
-              placeholder="Enter Text Here"
+              placeholder="Add internal notes (optional)"
               rows={4}
               className="ui-textarea"
             />

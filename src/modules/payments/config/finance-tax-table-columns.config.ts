@@ -1,8 +1,3 @@
-/**
- * Finance Tax & Compliance — table column catalog.
- * Source: JOMS Excel → Finance Management → Tax & Compliance.
- */
-
 export const FINANCE_TAX_MODULE_KEY = 'finance-tax'
 
 export type FinanceTaxTableColumnCatalogItem = {
@@ -40,7 +35,6 @@ export const FINANCE_TAX_TABLE_COLUMNS_CATALOG: FinanceTaxTableColumnCatalogItem
   col('filing-status', 'Filing Status', 'Status', 'Filing or compliance status', true),
 ]
 
-/** Maps legacy preference ids → current catalog ids. */
 export const FINANCE_TAX_LEGACY_COLUMN_ID_MAP: Record<string, string> = {
   'record-id': 'tax-record-id',
   status: 'filing-status',

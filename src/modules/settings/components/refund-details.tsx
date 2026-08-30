@@ -22,11 +22,9 @@ import {
   formatInr,
   mapRefundStatus,
   titleCase,
+  apiErrorMessage,
 } from '@/modules/payments/utils/finance-mappers'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
-
-const apiErrorMessage = (err: unknown, fallback: string) =>
-  (err as { response?: { data?: { message?: string } } })?.response?.data?.message || fallback
 
 export function RefundDetails() {
   const navigate = useNavigate()

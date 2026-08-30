@@ -21,6 +21,7 @@ import {
   Lock,
   SlidersHorizontal,
   TrendingUp,
+  type LucideIcon,
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import type { PropsWithChildren, ReactNode } from 'react'
@@ -31,7 +32,6 @@ import {
   revenueByCategoryMock,
   revenueFeeTrendsMock,
   weeklyPayoutScheduleMock,
-  type KeyMetric,
   type RevenueCategoryPoint,
   type TrendMetric,
 } from '@/modules/payments/mock/finance-dashboard.mock'
@@ -121,6 +121,15 @@ function MetricCard({ metric }: { metric: TrendMetric }) {
       <TrendBadge change={metric.change} changeNote={metric.changeNote} />
     </div>
   )
+}
+
+type KeyMetric = {
+  label: string
+  value: string
+  change?: string
+  changeType?: 'up' | 'down'
+  subtext?: string
+  icon: LucideIcon
 }
 
 function KeyMetricCard({ metric }: { metric: KeyMetric }) {

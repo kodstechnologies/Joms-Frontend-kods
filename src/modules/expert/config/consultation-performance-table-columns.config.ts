@@ -1,8 +1,4 @@
-/**
- * Consultation Performance — Bookings table column catalog.
- * Source: JOMS_KODS_Web_Admin_Panel_full_data → Consultation Performance → Bookings Table.
- * Keep ids kebab-case to match Manage Metrics / ui-preferences.
- */
+/** Keep ids kebab-case to match Manage Metrics / ui-preferences. */
 
 export type ConsultationPerformanceTableColumnCatalogItem = {
   id: string

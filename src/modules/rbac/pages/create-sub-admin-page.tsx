@@ -740,7 +740,7 @@ export function CreateSubAdminPage() {
                   value={adminNote}
                   onChange={(e) => setAdminNote(e.target.value)}
                   rows={3}
-                  placeholder="Enter here.."
+                  placeholder="Add admin notes"
                   className="rounded-brand-md bg-brand-bg text-brand-text placeholder:text-brand-muted focus:ring-brand-accent/40 mt-2 w-full resize-none border border-white/10 px-4 py-3 text-sm outline-none focus:ring-2"
                 />
               </>

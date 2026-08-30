@@ -32,6 +32,7 @@ import {
 import { escalateUrl } from '@/modules/payments/utils/finance-escalate'
 import { cn } from '@/shared/lib/cn'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
+import { FinanceDetailRow as DetailRow } from '@/modules/payments/components/finance-detail-layout'
 
 const cardClass = 'radius-lg border border-white/[0.06] bg-brand-surface p-4 sm:p-5'
 const sectionTitleClass = 'text-body-md-semibold text-brand-text leading-[20px]'
@@ -50,15 +51,6 @@ function InfoItem({ label, value }: { label: string; value: ReactNode }) {
     <div className="min-w-[130px] shrink-0 space-y-1.5 sm:min-w-0 sm:shrink">
       <p className={labelClass}>{label}</p>
       <div className={valueClass}>{value}</div>
-    </div>
-  )
-}
-
-function DetailRow({ label, value }: { label: string; value: ReactNode }) {
-  return (
-    <div className="flex items-center justify-between gap-4 border-b border-white/5 py-3 last:border-b-0">
-      <span className={labelClass}>{label}</span>
-      <span className={cn(valueClass, 'text-right')}>{value}</span>
     </div>
   )
 }

@@ -19,10 +19,10 @@ import {
   DISPUTE_STATUS_OPTIONS,
   REFUND_STATUS_OPTIONS,
 } from '@/modules/payments/constants/refund-status-options'
-import {
-  type RefundChargebackRow,
-  type RefundChargebackStatus,
-} from '@/modules/payments/mock/finance-refunds.mock'
+import type {
+  RefundChargebackRow,
+  RefundChargebackStatus,
+} from '@/modules/payments/types/finance-table-rows'
 import {
   useAddFinanceNote,
   useEscalateFinance,

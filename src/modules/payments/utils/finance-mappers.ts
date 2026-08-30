@@ -10,6 +10,8 @@ import type {
   FinanceTaxRecord,
 } from '../types/finance-api'
 
+export { apiErrorMessage } from '@/shared/lib/api-error'
+
 export const formatInr = (amount?: number | null) => {
   const value = Number(amount) || 0
   return `₹${value.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`
@@ -35,18 +37,7 @@ export const formatDate = (value?: string | null) => {
   })
 }
 
-export const formatDateTime = (value?: string | null) => {
-  if (!value) return '—'
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return '—'
-  return date.toLocaleString('en-IN', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
-}
+export { formatDateTimeEnInFinance as formatDateTime } from '@/shared/lib/format-datetime'
 
 export const titleCase = (value?: string | null) => {
   if (!value) return '—'
@@ -337,8 +328,7 @@ export const mapEscrowToServiceRow = (escrow: FinanceEscrowHold) => ({
   bookingId: escrow.referenceId || String(escrow.transactionId || escrow.paymentId),
   userName: escrow.userName || escrow.userId || '—',
   status: (mapEscrowStatus(escrow.status) === 'Released' ? 'Paid' : 'Pending') as
-    | 'Paid'
-    | 'Pending',
+    'Paid' | 'Pending',
   revenue: formatInr(escrow.amountHeld),
 })
 
@@ -372,9 +362,7 @@ export const mapPaymentToVenueRow = (payment: FinancePayment) => {
       (typeof snapshot.title === 'string' && snapshot.title) ||
       titleCase(payment.pricingType || payment.module),
     status: (status === 'Paid' ? 'Completed' : status === 'Failed' ? 'Cancelled' : 'Pending') as
-      | 'Completed'
-      | 'Pending'
-      | 'Cancelled',
+      'Completed' | 'Pending' | 'Cancelled',
     revenue: formatInr(payment.amount),
   }
 }

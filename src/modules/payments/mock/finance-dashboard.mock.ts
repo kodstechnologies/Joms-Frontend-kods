@@ -1,21 +1,9 @@
-import type { LucideIcon } from 'lucide-react'
-import { BadgeIndianRupee, ChartLine, Clock, Lock } from 'lucide-react'
-
 export type TrendMetric = {
   label: string
   value: string
   change: string
   changeType: 'up' | 'down'
   changeNote?: string
-}
-
-export type KeyMetric = {
-  label: string
-  value: string
-  change?: string
-  changeType?: 'up' | 'down'
-  subtext?: string
-  icon: LucideIcon
 }
 
 export const topSummaryCardsMock: TrendMetric[] = [
@@ -104,35 +92,6 @@ export const payoutsCashFlowCardsMock: TrendMetric[] = [
   },
 ]
 
-export const keyFinancialMetricsMock: KeyMetric[] = [
-  {
-    label: 'GMV',
-    value: '₹10,00,000',
-    change: '18.4%',
-    changeType: 'up',
-    icon: BadgeIndianRupee,
-  },
-  {
-    label: 'Platform Revenue',
-    value: '₹1,15,986',
-    change: '22.3%',
-    changeType: 'up',
-    icon: ChartLine,
-  },
-  {
-    label: 'In Escrow',
-    value: '₹8,43,290',
-    subtext: '12 Holds',
-    icon: Lock,
-  },
-  {
-    label: 'Pending Payouts',
-    value: '₹2,14,500',
-    subtext: '5 Pending',
-    icon: Clock,
-  },
-]
-
 export type RevenueFeeTrendPoint = {
   date: string
   platformFee: number
@@ -190,8 +149,6 @@ export const escrowStatusMock: EscrowStatusItem[] = [
   { label: 'Dispute hold', value: 45500, color: '#F54900' },
   { label: 'Ready to release', value: 67490, color: '#00A63E' },
 ]
-
-export const totalEscrowAmount = 843290
 
 export type WeeklyPayoutPoint = {
   day: string

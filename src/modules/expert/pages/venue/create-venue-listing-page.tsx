@@ -17,6 +17,7 @@ import {
 
 import { useVenueStepMutations } from '@/modules/expert/hooks/use-create-venue'
 import { fetchAdminDraftVenue } from '../../api/venue-api'
+import { apiErrorMessage as getApiErrorMessage } from '@/shared/lib/api-error'
 import {
   createDefaultWeeklyAvailability,
   createEmptyVenueFormData,
@@ -121,11 +122,6 @@ const extractVenueCategory = (venue?: DraftVenue) => {
     return toEntityId(venue.venueCategoryId as unknown)
   }
   return (venue as unknown as { venueCategory?: string })?.venueCategory || ''
-}
-
-const getApiErrorMessage = (error: unknown) => {
-  const err = error as { response?: { data?: { message?: string } } }
-  return err?.response?.data?.message || 'Something went wrong. Please try again.'
 }
 
 const resolveGalleryUrls = (source?: {

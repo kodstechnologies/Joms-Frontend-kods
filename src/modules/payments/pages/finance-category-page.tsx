@@ -4,11 +4,11 @@ import { SquarePen } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { toast } from 'sonner'
 
-import {
-  financeCategoryRowsMock,
-  type FinanceCategoryRow,
-  type FinanceCategoryStatus,
-} from '@/modules/payments/mock/finance-category.mock'
+import { financeCategoryRowsMock } from '@/modules/payments/mock/finance-category.mock'
+import type {
+  FinanceCategoryRow,
+  FinanceCategoryStatus,
+} from '@/modules/payments/types/finance-table-rows'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 import { DataTable } from '@/shared/components/table/data-table'
 import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'

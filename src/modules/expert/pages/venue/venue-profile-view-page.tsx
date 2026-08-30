@@ -93,10 +93,14 @@ import { fetchVenueKycByPartnerId } from '../../api/venue-kyc-api'
 import { useEscalationAssignees } from '@/modules/my-tasks/hooks/use-admin-escalation'
 import { escalateVenueSpaceApplication } from '@/modules/my-tasks/api/escalation-api'
 import { exportDataToFile } from '@/shared/utils/export-utils'
-import { getApiErrorMessage as getSharedApiErrorMessage } from '@/shared/lib/api-error'
+import {
+  apiErrorMessage,
+  getApiErrorMessage as getSharedApiErrorMessage,
+} from '@/shared/lib/api-error'
 import type { UpdateVenueSpaceVisibilityPayload } from '../../api/venue-api'
 import { fetchSupportTickets } from '@/modules/support-management/api/support-api'
 import type { SupportTicket } from '@/modules/support-management/types/support'
+import { SafeImage } from '@/shared/components/media/safe-image'
 import {
   VenueReportDetailModal,
   type VenueReportItem,
@@ -123,10 +127,8 @@ const PROFILE_ACTIVE_PILL = 'bg-[linear-gradient(180deg,#F6CB86_0%,#E0A263_100%)
 
 const PROFILE_IDLE_PILL = 'border border-[#FFFFFF33] bg-[#050505] text-white hover:bg-white/5'
 
-const getApiErrorMessage = (error: unknown) => {
-  const err = error as { response?: { data?: { message?: string } } }
-  return err?.response?.data?.message || 'Unable to load venue profile.'
-}
+const getApiErrorMessage = (error: unknown) =>
+  apiErrorMessage(error, 'Unable to load venue profile.')
 
 const formatCurrency = (value?: number | null) => {
   if (value === null || value === undefined) return '—'
@@ -262,34 +264,6 @@ const toInsightsSort = (filter: string): 'recent' | 'top' | 'all' => {
   if (filter === 'top') return 'top'
   if (filter === 'all') return 'all'
   return 'recent'
-}
-
-function SafeImage({
-  src,
-  alt,
-  className,
-  fallback,
-}: {
-  src?: string | null
-  alt: string
-  className?: string
-  fallback: ReactNode
-}) {
-  const [errored, setErrored] = useState(false)
-
-  if (!src || errored) {
-    return <>{fallback}</>
-  }
-
-  return (
-    <img
-      src={src}
-      alt={alt}
-      className={className}
-      loading="lazy"
-      onError={() => setErrored(true)}
-    />
-  )
 }
 
 function SidebarRow({ label, children }: { label: string; children: ReactNode }) {
@@ -1002,8 +976,7 @@ function SpacesTab({ data, venueId }: { data: VenueFullView; venueId: string }) 
 
       if (successCount === 0) {
         const firstError = results.find((result) => result.status === 'rejected') as
-          | PromiseRejectedResult
-          | undefined
+          PromiseRejectedResult | undefined
         toast.error(getSharedApiErrorMessage(firstError?.reason) || 'Failed to escalate spaces.')
         return
       }
@@ -1328,8 +1301,7 @@ function AnalyticsTab({ data, venueId }: { data: VenueFullView; venueId: string 
   const navigate = useNavigate()
   const { data: analyticsData, isLoading } = useVenueProfileAnalytics(venueId)
   const profileAnalytics = data?.profile as
-    | (typeof data.profile & { analytics?: Record<string, unknown> })
-    | undefined
+    (typeof data.profile & { analytics?: Record<string, unknown> }) | undefined
   const venueAnalytics = profileAnalytics?.analytics
   const activeMetricIds = useActiveMetricIds(VENUE_PROFILE_ANALYTICS_MODULE_KEY, [
     ...DEFAULT_VENUE_PROFILE_ANALYTICS_METRIC_IDS,

@@ -3,16 +3,13 @@ import type { ReactNode } from 'react'
 
 import type { Service } from '../type/service'
 import type { ServiceReportItem } from '../components/service-report-detail-modal'
-import { TableDateTimeCell } from '@/shared/components/table/table-datetime-cell'
+import { renderTableDateTimeCell as formatDateTime } from '@/shared/components/table/table-datetime-column'
 import { getManagementStatusDisplay } from './management-status'
 
 const dash = (value: unknown): ReactNode => {
   if (value === null || value === undefined || value === '') return '—'
   return String(value)
 }
-
-const formatDateTime = (value?: string | null) =>
-  value ? <TableDateTimeCell value={value} /> : '—'
 
 const formatMoney = (value?: number | null) => {
   if (value == null || Number.isNaN(Number(value))) return '—'

@@ -1,6 +1,8 @@
 import type { EscalationStatus, TicketPriority, TicketStatus } from '../types/support'
 import { cn } from '@/shared/lib/cn'
 
+export { apiErrorMessage as getApiErrorMessage } from '@/shared/lib/api-error'
+
 export const getStatusLabel = (status: TicketStatus) => {
   const map: Record<TicketStatus, string> = {
     open: 'Open',
@@ -98,12 +100,6 @@ export const nextStatus = (status: TicketStatus): TicketStatus => {
 export const nextPriority = (priority: TicketPriority): TicketPriority => {
   const idx = PRIORITY_CYCLE.indexOf(priority)
   return PRIORITY_CYCLE[(idx + 1) % PRIORITY_CYCLE.length]
-}
-
-export function getApiErrorMessage(err: unknown, fallback: string) {
-  return (
-    (err as { response?: { data?: { message?: string } } })?.response?.data?.message || fallback
-  )
 }
 
 export function downloadBlob(blob: Blob, filename: string) {
