@@ -34,6 +34,7 @@ import { escalationsFilterConfig } from './escalations.config'
 import { leaderboardManagementFilterConfig } from './leaderboard-management.config'
 import { servicePerformanceFilterConfig } from './service-performance.config'
 import { consultationPerformanceFilterConfig } from './consultation-performance.config'
+import { venueProfileSpacesFilterConfig } from './venue-profile-spaces.config'
 
 export const moduleFilterConfigs: Record<ModuleFilterKey, ModuleFilterConfig> = {
   'expert-management': expertManagementFilterConfig,
@@ -78,6 +79,7 @@ export const moduleFilterConfigs: Record<ModuleFilterKey, ModuleFilterConfig> = 
   'leaderboard-management': leaderboardManagementFilterConfig,
   'service-performance': servicePerformanceFilterConfig,
   'consultation-performance': consultationPerformanceFilterConfig,
+  'venue-profile-spaces': venueProfileSpacesFilterConfig,
 }
 
 export function getModuleFilterConfig(moduleKey: ModuleFilterKey): ModuleFilterConfig {

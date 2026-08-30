@@ -13,6 +13,8 @@ export const fetchLockedAccounts = async (params?: {
   page?: number
   limit?: number
   search?: string
+  sortBy?: string
+  sortOrder?: 'asc' | 'desc'
 }) => {
   const response = await settingsApiClient.get<ApiEnvelope<LockedAccountRow[]>>(
     '/settings/security/locked-accounts',

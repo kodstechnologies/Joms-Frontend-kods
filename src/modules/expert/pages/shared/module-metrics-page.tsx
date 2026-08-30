@@ -143,7 +143,8 @@ export function ModuleMetricsPage({
 
   const moduleName = moduleNameProp ?? registry?.moduleName ?? 'Module'
   const returnTo = returnToProp ?? registry?.returnTo ?? '/'
-  const maxActiveMetrics = maxActiveProp ?? registry?.maxActiveMetrics ?? 8
+  const maxActiveMetrics =
+    maxActiveProp ?? registry?.maxActiveMetrics ?? registry?.metrics?.length ?? 999
 
   const section = sectionProp ?? parseSectionParam(searchParams.get('section')) ?? 'all'
 

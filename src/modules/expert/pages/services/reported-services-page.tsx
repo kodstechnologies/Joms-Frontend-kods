@@ -21,6 +21,11 @@ import {
   pickServicePreferenceColumns,
 } from '../../utils/service-preference-columns'
 import { DataTable } from '@/shared/components/table/data-table'
+import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'
+import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
+import { withServerSortMeta } from '@/shared/utils/table-sort'
+import { SERVICE_COLUMN_SORT_FIELDS } from '@/shared/utils/table-sort-field-maps'
+import { SERVICE_REPORTED_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
 import {
   TableActionsDropdown,
   TableActionsItem,
@@ -86,8 +91,12 @@ const fetchServiceReportsForExport = async (params: Record<string, unknown>) => 
 
 export function ServiceReportedServicesPage() {
   const navigate = useNavigate()
-  const [searchQuery, setSearchQuery] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
+  const serverSort = useServerTableSort({
+    sortFieldMap: SERVICE_COLUMN_SORT_FIELDS,
+    onPageReset: () => setCurrentPage(1),
+  })
+  const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setCurrentPage(1) })
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const tableColumnPreferencesQuery = useTableColumnPreferences(SERVICE_REPORTED_MODULE_KEY)
 
@@ -101,12 +110,13 @@ export function ServiceReportedServicesPage() {
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
 
   const apiFilterParams = useMemo(() => buildFilterParams(appliedFilters), [appliedFilters])
+  const searchParams = useMemo(() => enhancedSearch.buildSearchParams(), [enhancedSearch])
 
   const [prevKey, setPrevKey] = useState(
-    `${currentPage}-${searchQuery}-${JSON.stringify(apiFilterParams)}`,
+    `${currentPage}-${JSON.stringify(searchParams)}-${JSON.stringify(apiFilterParams)}-${JSON.stringify(serverSort.sortParams)}`,
   )
 
-  const currentKey = `${currentPage}-${searchQuery}-${JSON.stringify(apiFilterParams)}`
+  const currentKey = `${currentPage}-${JSON.stringify(searchParams)}-${JSON.stringify(apiFilterParams)}-${JSON.stringify(serverSort.sortParams)}`
 
   if (currentKey !== prevKey) {
     setPrevKey(currentKey)
@@ -117,7 +127,8 @@ export function ServiceReportedServicesPage() {
     fetchServiceReports({
       page: currentPage,
       limit: 10,
-      search: searchQuery,
+      ...serverSort.sortParams,
+      ...searchParams,
       ...apiFilterParams,
     })
       .then((res) => {
@@ -134,7 +145,7 @@ export function ServiceReportedServicesPage() {
       .finally(() => {
         setLoading(false)
       })
-  }, [currentPage, searchQuery, apiFilterParams])
+  }, [currentPage, searchParams, apiFilterParams, serverSort.sortParams])
 
   const handleApplyFilters = useCallback((values: FilterValues) => {
     setAppliedFilters(values)
@@ -148,10 +159,10 @@ export function ServiceReportedServicesPage() {
         EXPORT_COLUMN_MAP,
         'reported_services_export',
         {
-          search: searchQuery.trim() || undefined,
+          search: enhancedSearch.globalSearch.trim() || undefined,
         },
       ),
-    [searchQuery],
+    [enhancedSearch.globalSearch],
   )
 
   const {
@@ -174,54 +185,57 @@ export function ServiceReportedServicesPage() {
       ? tableColumnPreferencesQuery.data.visibleColumnIds
       : DEFAULT_SERVICE_REPORTED_VISIBLE_COLUMN_IDS
 
-    return [
-      ...pickServicePreferenceColumns(
-        dataColumnsById,
-        visibleIds,
-        DEFAULT_SERVICE_REPORTED_VISIBLE_COLUMN_IDS,
-      ),
-      {
-        id: 'actions',
-        header: 'Actions',
-        meta: {
-          headerClassName: 'pr-5 text-right',
-          cellClassName: 'relative pr-5 text-right',
-        },
-        cell: ({ row }) => {
-          const reportItem = row.original
-          const isOpen = activeDropdownId === reportItem.reportId
+    return withServerSortMeta(
+      [
+        ...pickServicePreferenceColumns(
+          dataColumnsById,
+          visibleIds,
+          DEFAULT_SERVICE_REPORTED_VISIBLE_COLUMN_IDS,
+        ),
+        {
+          id: 'actions',
+          header: 'Actions',
+          meta: {
+            headerClassName: 'pr-5 text-right',
+            cellClassName: 'relative pr-5 text-right',
+          },
+          cell: ({ row }) => {
+            const reportItem = row.original
+            const isOpen = activeDropdownId === reportItem.reportId
 
-          return (
-            <TableActionsDropdown
-              label={`Open actions for report ${reportItem.reportId}`}
-              isOpen={isOpen}
-              onOpenChange={(open) => setActiveDropdownId(open ? reportItem.reportId : null)}
-              menuWidth={176}
-            >
-              <TableActionsItem
-                icon={<Eye className="size-3.5" aria-hidden="true" />}
-                onClick={() => {
-                  setActiveDropdownId(null)
-                  navigate(`/services/management/full-view/${reportItem.serviceId}`)
-                }}
+            return (
+              <TableActionsDropdown
+                label={`Open actions for report ${reportItem.reportId}`}
+                isOpen={isOpen}
+                onOpenChange={(open) => setActiveDropdownId(open ? reportItem.reportId : null)}
+                menuWidth={176}
               >
-                View Service
-              </TableActionsItem>
-              <TableActionsItem
-                icon={<Ban className="size-3.5 text-red-400" aria-hidden="true" />}
-                onClick={() => {
-                  setActiveDropdownId(null)
-                  setSelectedReport(reportItem)
-                  setIsModalOpen(true)
-                }}
-              >
-                View Report
-              </TableActionsItem>
-            </TableActionsDropdown>
-          )
+                <TableActionsItem
+                  icon={<Eye className="size-3.5" aria-hidden="true" />}
+                  onClick={() => {
+                    setActiveDropdownId(null)
+                    navigate(`/services/management/full-view/${reportItem.serviceId}`)
+                  }}
+                >
+                  View Service
+                </TableActionsItem>
+                <TableActionsItem
+                  icon={<Ban className="size-3.5 text-red-400" aria-hidden="true" />}
+                  onClick={() => {
+                    setActiveDropdownId(null)
+                    setSelectedReport(reportItem)
+                    setIsModalOpen(true)
+                  }}
+                >
+                  View Report
+                </TableActionsItem>
+              </TableActionsDropdown>
+            )
+          },
         },
-      },
-    ]
+      ],
+      SERVICE_COLUMN_SORT_FIELDS,
+    )
   }, [activeDropdownId, navigate, tableColumnPreferencesQuery.data])
 
   return (
@@ -237,14 +251,17 @@ export function ServiceReportedServicesPage() {
         data={reports}
         getRowId={(r) => r.reportId || r.id}
         isLoading={loading}
-        searchValue={searchQuery}
-        onSearchChange={(value) => {
-          setSearchQuery(value)
-          setCurrentPage(1)
-        }}
+        searchValue={enhancedSearch.globalSearch}
+        onSearchChange={enhancedSearch.setGlobalSearch}
+        searchableColumns={SERVICE_REPORTED_SEARCH_COLUMNS}
+        columnSearches={enhancedSearch.columnSearches}
+        onColumnSearchChange={enhancedSearch.setColumnSearch}
+        onColumnSearchRemove={enhancedSearch.removeColumnSearch}
+        onClearAllSearches={enhancedSearch.clearAll}
         searchPlaceholder="Search by report ID, service title, or reporter"
         onAdvancedFilter={onAdvancedFilter}
         onExport={onExport}
+        {...serverSort.dataTableSortProps}
         pagination={{
           page: currentPage,
           pageSize: 10,

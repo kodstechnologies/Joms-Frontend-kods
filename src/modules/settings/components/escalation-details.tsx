@@ -20,6 +20,11 @@ import {
 } from '@/modules/expert/hooks/use-active-metric-ids'
 import { Button } from '@/shared/components/ui/button'
 import { DataTable } from '@/shared/components/table/data-table'
+import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'
+import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
+import { withServerSortMeta } from '@/shared/utils/table-sort'
+import { buildCatalogSortFieldMap } from '@/shared/utils/table-sort-field-maps'
+import { SETTINGS_ESCALATIONS_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
 import { StatCard } from '@/shared/components/dashboard/stat-card'
 import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
@@ -34,28 +39,32 @@ import { fetchAllEscalations, type EscalationListItem } from '@/modules/my-tasks
 import {
   DEFAULT_ESCALATIONS_VISIBLE_COLUMN_IDS,
   ESCALATIONS_LEGACY_COLUMN_ID_MAP,
+  ESCALATIONS_TABLE_COLUMNS_CATALOG,
 } from '../config/escalations-table-columns.config'
 import { useTableColumnPreferences } from '@/modules/expert/hooks/use-ui-preferences'
+import { useTableExportColumnIds } from '@/shared/hooks/use-table-export-column-ids'
 import { selectPreferredColumns } from '@/modules/expert/utils/select-preferred-columns'
 import { escalationColumns } from './escalation-table-columns'
+
+const ESCALATION_SORT_FIELD_MAP = buildCatalogSortFieldMap(ESCALATIONS_TABLE_COLUMNS_CATALOG)
 
 const ESCALATION_EXPORT_COLUMN_MAP: Record<
   string,
   { header: string; accessor: (row: EscalationListItem) => string }
 > = {
-  escalationId: {
+  'escalation-id': {
     header: 'Escalation ID',
     accessor: (row) => exportDisplayValue(row.escalationId),
   },
-  roleId: { header: 'Roles ID', accessor: (row) => exportDisplayValue(row.roleId) },
-  roleName: { header: 'Role Name', accessor: (row) => exportDisplayValue(row.roleName) },
-  escalationType: {
+  'roles-id': { header: 'Roles ID', accessor: (row) => exportDisplayValue(row.roleId) },
+  'role-name': { header: 'Role Name', accessor: (row) => exportDisplayValue(row.roleName) },
+  'escalation-type': {
     header: 'Escalation Type',
     accessor: (row) => exportDisplayValue(row.escalationType),
   },
   priority: { header: 'Priority', accessor: (row) => exportDisplayValue(row.priority) },
   status: { header: 'Status', accessor: (row) => exportDisplayValue(row.status) },
-  createdOn: { header: 'Created On', accessor: (row) => exportDisplayValue(row.createdOn) },
+  'created-on': { header: 'Created On', accessor: (row) => exportDisplayValue(row.createdOn) },
 }
 
 function EscalationMetricCardSkeleton() {
@@ -78,8 +87,12 @@ function EscalationMetricCardSkeleton() {
 
 export function EscalationDetails() {
   const navigate = useNavigate()
-  const [searchValue, setSearchValue] = useState('')
   const [page, setPage] = useState(1)
+  const serverSort = useServerTableSort({
+    sortFieldMap: ESCALATION_SORT_FIELD_MAP,
+    onPageReset: () => setPage(1),
+  })
+  const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setPage(1) })
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
   const pageSize = 10
 
@@ -89,14 +102,26 @@ export function EscalationDetails() {
       buildPrefixedListQueryParams(appliedFilters, {
         page,
         limit: pageSize,
-        search: searchValue || undefined,
+        ...enhancedSearch.buildSearchParams(),
+        ...serverSort.sortParams,
       }),
-    [appliedFilters, page, searchValue],
+    [appliedFilters, enhancedSearch, page, serverSort.sortParams],
   )
   const { data: escalationsResponse, isLoading: isEscalationsLoading } =
     useAllEscalations(listQueryParams)
 
   const tableColumnPreferencesQuery = useTableColumnPreferences(ESCALATIONS_MODULE_KEY)
+
+  const catalogColumnIds = useMemo(
+    () => ESCALATIONS_TABLE_COLUMNS_CATALOG.map((column) => column.id),
+    [],
+  )
+  const exportColumnIds = useTableExportColumnIds({
+    visibleColumnIds: tableColumnPreferencesQuery.data?.visibleColumnIds,
+    defaultColumnIds: DEFAULT_ESCALATIONS_VISIBLE_COLUMN_IDS,
+    catalogColumnIds,
+    legacyColumnIdMap: ESCALATIONS_LEGACY_COLUMN_ID_MAP,
+  })
 
   const activeMetricIds = useActiveMetricIds(ESCALATIONS_MODULE_KEY, [
     ...DEFAULT_ESCALATIONS_METRIC_IDS,
@@ -135,9 +160,10 @@ export function EscalationDetails() {
       fetchForExport,
       ESCALATION_EXPORT_COLUMN_MAP,
       'escalations_export',
-      { search: searchValue || undefined },
+      { search: enhancedSearch.globalSearch || undefined },
+      { columnIds: exportColumnIds, catalogOrder: catalogColumnIds },
     )
-  }, [searchValue])
+  }, [catalogColumnIds, enhancedSearch.globalSearch, exportColumnIds])
 
   const {
     onAdvancedFilter,
@@ -153,11 +179,14 @@ export function EscalationDetails() {
     const rawVisibleIds = tableColumnPreferencesQuery.data?.visibleColumnIds?.length
       ? tableColumnPreferencesQuery.data.visibleColumnIds
       : DEFAULT_ESCALATIONS_VISIBLE_COLUMN_IDS
-    return selectPreferredColumns(
-      escalationColumns,
-      rawVisibleIds,
-      DEFAULT_ESCALATIONS_VISIBLE_COLUMN_IDS,
-      ESCALATIONS_LEGACY_COLUMN_ID_MAP,
+    return withServerSortMeta(
+      selectPreferredColumns(
+        escalationColumns,
+        rawVisibleIds,
+        DEFAULT_ESCALATIONS_VISIBLE_COLUMN_IDS,
+        ESCALATIONS_LEGACY_COLUMN_ID_MAP,
+      ),
+      ESCALATION_SORT_FIELD_MAP,
     )
   }, [tableColumnPreferencesQuery.data])
 
@@ -198,11 +227,14 @@ export function EscalationDetails() {
       <DataTable
         columns={columns}
         data={escalations}
-        searchValue={searchValue}
-        onSearchChange={(value) => {
-          setSearchValue(value)
-          setPage(1)
-        }}
+        {...serverSort.dataTableSortProps}
+        searchValue={enhancedSearch.globalSearch}
+        onSearchChange={enhancedSearch.setGlobalSearch}
+        searchableColumns={SETTINGS_ESCALATIONS_SEARCH_COLUMNS}
+        columnSearches={enhancedSearch.columnSearches}
+        onColumnSearchChange={enhancedSearch.setColumnSearch}
+        onColumnSearchRemove={enhancedSearch.removeColumnSearch}
+        onClearAllSearches={enhancedSearch.clearAll}
         searchPlaceholder="Search by name, ID or profession"
         advancedFilterLabel="Advance Filters"
         onAdvancedFilter={onAdvancedFilter}

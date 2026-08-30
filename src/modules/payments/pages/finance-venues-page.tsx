@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 import { AlertTriangle, Eye, SlidersHorizontal, Tag, Trash2 } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
@@ -20,6 +20,7 @@ import {
   FINANCE_VENUES_TABLE_COLUMNS_CATALOG,
 } from '@/modules/payments/config/finance-venues-table-columns.config'
 import { useTableColumnPreferences } from '@/modules/expert/hooks/use-ui-preferences'
+import { useTableExportColumnIds } from '@/shared/hooks/use-table-export-column-ids'
 import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
 import { AddTagsModal } from '@/shared/components/modals/add-tags-modal'
 import {
@@ -27,6 +28,11 @@ import {
   type FinanceEscalateDeleteAction,
 } from '@/modules/payments/components/finance-escalate-delete-modal'
 import { DataTable } from '@/shared/components/table/data-table'
+import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'
+import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
+import { withServerSortMeta } from '@/shared/utils/table-sort'
+import { buildCatalogSortFieldMap } from '@/shared/utils/table-sort-field-maps'
+import { FINANCE_VENUES_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
 import {
   TableActionsDropdown,
   TableActionsItem,
@@ -34,7 +40,7 @@ import {
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
-import { exportDisplayValue } from '@/shared/utils/export-utils'
+import { FINANCE_VENUES_EXPORT_COLUMN_MAP } from '@/modules/payments/utils/finance-export-column-maps'
 import {
   buildFinanceVenuesListQueryParams,
   createFinanceVenuesFilteredExportHandler,
@@ -44,21 +50,7 @@ import type { FinancePayment } from '@/modules/payments/types/finance-api'
 
 const PAGE_SIZE = 10
 
-const EXPORT_COLUMN_MAP: Record<
-  string,
-  { header: string; accessor: (row: FinanceVenueRow) => string }
-> = {
-  'venue-id': { header: 'Venue ID', accessor: (row) => exportDisplayValue(row.venueId) },
-  name: { header: 'Name', accessor: (row) => exportDisplayValue(row.name) },
-  owner: { header: 'Owner', accessor: (row) => exportDisplayValue(row.owner) },
-  'booking-id': { header: 'Booking ID', accessor: (row) => exportDisplayValue(row.bookingId) },
-  'booking-title': {
-    header: 'Booking Title',
-    accessor: (row) => exportDisplayValue(row.bookingTitle),
-  },
-  status: { header: 'Status', accessor: (row) => exportDisplayValue(row.status) },
-  revenue: { header: 'Revenue', accessor: (row) => exportDisplayValue(row.revenue) },
-}
+const SORT_FIELD_MAP = buildCatalogSortFieldMap(FINANCE_VENUES_TABLE_COLUMNS_CATALOG)
 
 function getStatusClassName(status: FinanceVenueRow['status']) {
   if (status === 'Completed') {
@@ -72,9 +64,12 @@ function getStatusClassName(status: FinanceVenueRow['status']) {
 
 export function FinanceVenuesPage() {
   const navigate = useNavigate()
-  const [searchQuery, setSearchQuery] = useState('')
-  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
+  const serverSort = useServerTableSort({
+    sortFieldMap: SORT_FIELD_MAP,
+    onPageReset: () => setCurrentPage(1),
+  })
+  const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setCurrentPage(1) })
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [selectedRowIds, setSelectedRowIds] = useState<string[]>([])
@@ -85,22 +80,25 @@ export function FinanceVenuesPage() {
   const softDelete = useSoftDeleteFinance()
   const tableColumnPreferencesQuery = useTableColumnPreferences(FINANCE_VENUES_MODULE_KEY)
 
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      setDebouncedSearch(searchQuery.trim())
-      setCurrentPage(1)
-    }, 300)
-    return () => window.clearTimeout(timer)
-  }, [searchQuery])
+  const catalogColumnIds = useMemo(
+    () => FINANCE_VENUES_TABLE_COLUMNS_CATALOG.map((column) => column.id),
+    [],
+  )
+  const exportColumnIds = useTableExportColumnIds({
+    visibleColumnIds: tableColumnPreferencesQuery.data?.visibleColumnIds,
+    defaultColumnIds: DEFAULT_FINANCE_VENUES_VISIBLE_COLUMN_IDS,
+    catalogColumnIds,
+  })
 
   const listQueryParams = useMemo(
     () =>
       buildFinanceVenuesListQueryParams(appliedFilters, {
         page: currentPage,
         limit: PAGE_SIZE,
-        search: debouncedSearch || undefined,
+        ...enhancedSearch.buildSearchParams(),
+        ...serverSort.sortParams,
       }),
-    [appliedFilters, currentPage, debouncedSearch],
+    [appliedFilters, currentPage, enhancedSearch, serverSort.sortParams],
   )
 
   const { data, isLoading, isFetching, isError } = useFinanceRevenue(listQueryParams)
@@ -122,11 +120,12 @@ export function FinanceVenuesPage() {
     }
     return createFinanceVenuesFilteredExportHandler(
       fetchForExport,
-      EXPORT_COLUMN_MAP,
+      FINANCE_VENUES_EXPORT_COLUMN_MAP,
       'finance_venues_export',
-      { search: debouncedSearch || undefined },
+      { search: enhancedSearch.globalSearch || undefined },
+      { columnIds: exportColumnIds, catalogOrder: catalogColumnIds },
     )
-  }, [debouncedSearch])
+  }, [catalogColumnIds, enhancedSearch.globalSearch, exportColumnIds])
 
   const {
     onAdvancedFilter,
@@ -371,7 +370,7 @@ export function FinanceVenuesPage() {
       cell: ({ row }) => renderActions(row.original),
     }
 
-    return [selectColumn, ...preferenceColumns, actionsColumn]
+    return withServerSortMeta([selectColumn, ...preferenceColumns, actionsColumn], SORT_FIELD_MAP)
   }, [
     allVisibleSelected,
     renderActions,
@@ -415,9 +414,15 @@ export function FinanceVenuesPage() {
         columns={columns}
         data={rows}
         getRowId={(row) => row.id}
+        {...serverSort.dataTableSortProps}
         isLoading={isLoading || isFetching}
-        searchValue={searchQuery}
-        onSearchChange={setSearchQuery}
+        searchValue={enhancedSearch.globalSearch}
+        onSearchChange={enhancedSearch.setGlobalSearch}
+        searchableColumns={FINANCE_VENUES_SEARCH_COLUMNS}
+        columnSearches={enhancedSearch.columnSearches}
+        onColumnSearchChange={enhancedSearch.setColumnSearch}
+        onColumnSearchRemove={enhancedSearch.removeColumnSearch}
+        onClearAllSearches={enhancedSearch.clearAll}
         searchPlaceholder="Search by name, ID or profession"
         advancedFilterLabel="Advance Filters"
         onAdvancedFilter={onAdvancedFilter}

@@ -64,13 +64,20 @@ import {
   useActiveMetricIds,
 } from '@/modules/expert/hooks/use-active-metric-ids'
 import { useTableColumnPreferences } from '@/modules/expert/hooks/use-ui-preferences'
+import { useTableExportColumnIds } from '@/shared/hooks/use-table-export-column-ids'
 import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
 import { DataTable } from '@/shared/components/table/data-table'
+import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'
+import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
+import { withServerSortMeta } from '@/shared/utils/table-sort'
+import { buildCatalogSortFieldMap } from '@/shared/utils/table-sort-field-maps'
+import { SUPPORT_TICKET_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
 import {
   TableActionsDropdown,
   TableActionsItem,
 } from '@/shared/components/table/table-actions-dropdown'
 import { Button } from '@/shared/components/ui/button'
+import { StatCardSkeleton } from '@/shared/components/ui/skeleton'
 import { cn } from '@/shared/lib/cn'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 import type { FilterValues } from '@/shared/types/data-filter'
@@ -80,6 +87,8 @@ import {
   createSupportTicketsFilteredExportHandler,
 } from '@/shared/utils/export-filter-utils'
 import { fetchSupportTickets } from '../api/support-api'
+
+const TICKET_SORT_FIELD_MAP = buildCatalogSortFieldMap(TICKET_MANAGEMENT_TABLE_COLUMNS_CATALOG)
 
 const TABS: { key: TicketTab; label: string }[] = [
   { key: 'my_tickets', label: 'My Tickets' },
@@ -171,73 +180,6 @@ const EXPORT_COLUMN_MAP: Record<
   },
 }
 
-const ALL_TICKETS_EXPORT_KEYS = [
-  'ticket-id',
-  'subject',
-  'status',
-  'priority',
-  'category',
-  'reporter',
-  'sla-timer',
-  'first-response-due',
-  'resolution-due',
-  'assigned-on',
-  'assigned-by',
-  'assigned-to',
-  'resolved-at',
-  'resolved-by',
-  'resolution-time',
-  'last-updated-at',
-] as const
-
-const MY_TICKETS_EXPORT_KEYS = [
-  'ticket-id',
-  'subject',
-  'status',
-  'priority',
-  'category',
-  'reporter',
-  'sla-timer',
-  'assigned-on',
-  'assigned-by',
-  'escalated-at',
-  'escalated-for',
-  'escalated-to',
-  'resolution-time',
-  'last-updated-at',
-] as const
-
-const ESCALATED_TICKETS_EXPORT_KEYS = [
-  'ticket-id',
-  'subject',
-  'status',
-  'priority',
-  'category',
-  'reporter',
-  'sla-timer',
-  'assigned-on',
-  'assigned-by',
-  'assigned-to',
-  'escalated-by',
-  'escalated-to',
-  'escalated-at',
-  'escalation-status',
-  'escalated-for',
-  'last-updated-at',
-] as const
-
-function exportKeysForTab(tab: TicketTab) {
-  if (tab === 'my_tickets') return MY_TICKETS_EXPORT_KEYS
-  if (tab === 'escalated') return ESCALATED_TICKETS_EXPORT_KEYS
-  return ALL_TICKETS_EXPORT_KEYS
-}
-
-function pickExportColumns(keys: readonly string[]) {
-  return Object.fromEntries(
-    keys.filter((key) => EXPORT_COLUMN_MAP[key]).map((key) => [key, EXPORT_COLUMN_MAP[key]]),
-  )
-}
-
 function TicketMetricCard({
   title,
   value,
@@ -279,16 +221,14 @@ function TicketMetricCard({
 
 export function TicketManagementPage() {
   const navigate = useNavigate()
-  const {
-    searchQuery,
-    setSearchQuery,
-    currentPage,
-    setCurrentPage,
-    activeTab,
-    setActiveTab,
-    setSelectedTicketId,
-  } = useSupportStore()
+  const { currentPage, setCurrentPage, activeTab, setActiveTab, setSelectedTicketId } =
+    useSupportStore()
 
+  const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setCurrentPage(1) })
+  const serverSort = useServerTableSort({
+    sortFieldMap: TICKET_SORT_FIELD_MAP,
+    onPageReset: () => setCurrentPage(1),
+  })
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [tagModalOpen, setTagModalOpen] = useState(false)
   const [escalateOpen, setEscalateOpen] = useState(false)
@@ -303,11 +243,12 @@ export function TicketManagementPage() {
       buildSupportTicketsListQueryParams(appliedFilters, {
         page: currentPage,
         limit: 10,
-        search: searchQuery || undefined,
+        ...enhancedSearch.buildSearchParams(),
+        ...serverSort.sortParams,
         tab: activeTab,
         includeClosed: true,
       }),
-    [activeTab, appliedFilters, currentPage, searchQuery],
+    [activeTab, appliedFilters, currentPage, enhancedSearch, serverSort.sortParams],
   )
 
   const { data, isLoading } = useSupportTickets(listQueryParams)
@@ -317,6 +258,28 @@ export function TicketManagementPage() {
   const agentsQuery = useSupportAgents()
   useLiveSupportUpdates()
   const tableColumnPreferencesQuery = useTableColumnPreferences(TICKET_MANAGEMENT_MODULE_KEY)
+
+  const catalogColumnIds = useMemo(
+    () => TICKET_MANAGEMENT_TABLE_COLUMNS_CATALOG.map((column) => column.id),
+    [],
+  )
+  const tabAllowedColumnIds = useMemo(
+    () =>
+      activeTab === 'my_tickets'
+        ? MY_TAB_COLUMN_ID_SET
+        : activeTab === 'escalated'
+          ? ESCALATED_TAB_COLUMN_ID_SET
+          : ALL_TAB_COLUMN_ID_SET,
+    [activeTab],
+  )
+  const exportColumnIds = useTableExportColumnIds({
+    visibleColumnIds: tableColumnPreferencesQuery.data?.visibleColumnIds,
+    defaultColumnIds: DEFAULT_TICKET_MANAGEMENT_VISIBLE_COLUMN_IDS,
+    catalogColumnIds,
+    legacyColumnIdMap: TICKET_MANAGEMENT_LEGACY_COLUMN_ID_MAP,
+    allowedColumnIds: tabAllowedColumnIds,
+  })
+
   const activeMetricIds = useActiveMetricIds(TICKET_MANAGEMENT_MODULE_KEY, [
     ...DEFAULT_TICKET_MANAGEMENT_METRIC_IDS,
   ])
@@ -377,11 +340,12 @@ export function TicketManagementPage() {
     }
     return createSupportTicketsFilteredExportHandler(
       fetchForExport,
-      pickExportColumns(exportKeysForTab(activeTab)),
+      EXPORT_COLUMN_MAP,
       'support_tickets_export',
-      { search: searchQuery || undefined, tab: activeTab, includeClosed: true },
+      { search: enhancedSearch.globalSearch || undefined, tab: activeTab, includeClosed: true },
+      { columnIds: exportColumnIds, catalogOrder: catalogColumnIds },
     )
-  }, [activeTab, searchQuery])
+  }, [activeTab, catalogColumnIds, enhancedSearch.globalSearch, exportColumnIds])
 
   const {
     onAdvancedFilter,
@@ -758,7 +722,10 @@ export function TicketManagementPage() {
       cell: ({ row }) => renderActions(row.original),
     }
 
-    return [selectColumn, ...preferenceColumns, actionsColumn]
+    return withServerSortMeta(
+      [selectColumn, ...preferenceColumns, actionsColumn],
+      TICKET_SORT_FIELD_MAP,
+    )
   }, [
     activeTab,
     renderActions,
@@ -805,14 +772,9 @@ export function TicketManagementPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {stats.map((stat) => (
-          <TicketMetricCard
-            key={stat.id}
-            {...stat}
-            value={isLoading ? '—' : stat.value}
-            percentage={isLoading ? 0 : stat.percentage}
-          />
-        ))}
+        {isLoading
+          ? filteredActiveMetricIds.map((id) => <StatCardSkeleton key={id} />)
+          : stats.map((stat) => <TicketMetricCard key={stat.id} {...stat} />)}
       </div>
 
       <div className="bg-brand-surface flex h-[47px] w-full items-center rounded-[10px] border border-white/[0.06] p-1">
@@ -841,11 +803,14 @@ export function TicketManagementPage() {
         columns={columns}
         data={tickets}
         getRowId={(row) => row.id}
-        searchValue={searchQuery}
-        onSearchChange={(val) => {
-          setSearchQuery(val)
-          setCurrentPage(1)
-        }}
+        {...serverSort.dataTableSortProps}
+        searchValue={enhancedSearch.globalSearch}
+        onSearchChange={enhancedSearch.setGlobalSearch}
+        searchableColumns={SUPPORT_TICKET_SEARCH_COLUMNS}
+        columnSearches={enhancedSearch.columnSearches}
+        onColumnSearchChange={enhancedSearch.setColumnSearch}
+        onColumnSearchRemove={enhancedSearch.removeColumnSearch}
+        onClearAllSearches={enhancedSearch.clearAll}
         searchPlaceholder="Search by name, ID or profession"
         advancedFilterLabel="Advance Filters"
         onAdvancedFilter={onAdvancedFilter}

@@ -7,14 +7,18 @@ import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import { toast } from 'sonner'
 import type { FilterValues } from '@/shared/types/data-filter'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter/use-module-export-filters'
-import { exportDisplayValue } from '@/shared/utils/export-utils'
+import { useTableExportColumnIds } from '@/shared/hooks/use-table-export-column-ids'
+import { SERVICE_EXPORT_COLUMN_MAP } from '../../utils/table-export-column-maps'
 import {
   buildServiceListQueryParams,
   createServiceFilteredExportHandler,
 } from '@/shared/utils/export-filter-utils'
 import { fetchServices } from '../../api/service-api'
 import { SERVICE_SUSPENDED_MODULE_KEY } from '../../api/ui-preferences-api'
-import { DEFAULT_SERVICE_SUSPENDED_VISIBLE_COLUMN_IDS } from '../../config/service-management-table-columns.config'
+import {
+  DEFAULT_SERVICE_SUSPENDED_VISIBLE_COLUMN_IDS,
+  SERVICE_SUSPENDED_TABLE_COLUMNS_CATALOG,
+} from '../../config/service-management-table-columns.config'
 import { useTableColumnPreferences } from '../../hooks/use-ui-preferences'
 
 import { useActivateService, useServices } from '../../hooks/use-services'
@@ -25,64 +29,49 @@ import {
   pickServicePreferenceColumns,
 } from '../../utils/service-preference-columns'
 import { DataTable } from '@/shared/components/table/data-table'
+import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'
+import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
+import { withServerSortMeta } from '@/shared/utils/table-sort'
+import { SERVICE_COLUMN_SORT_FIELDS } from '@/shared/utils/table-sort-field-maps'
+import { SERVICE_SUSPENDED_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
 import {
   TableActionsDropdown,
   TableActionsItem,
 } from '@/shared/components/table/table-actions-dropdown'
 import { Button } from '@/shared/components/ui/button'
 
-const formatExportDateTime = (value?: string | null) =>
-  value
-    ? new Date(value).toLocaleString('en-IN', {
-        day: '2-digit',
-        month: 'short',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-      })
-    : ''
-
-const EXPORT_COLUMN_MAP: Record<string, { header: string; accessor: (s: Service) => string }> = {
-  serviceId: { header: 'Listing ID', accessor: (s) => exportDisplayValue(s.serviceid || s._id) },
-  title: { header: 'Listing Name', accessor: (s) => exportDisplayValue(s.title) },
-  suspensionReason: {
-    header: 'Suspension Reason',
-    accessor: (s) => exportDisplayValue(s.suspensionReason),
-  },
-  suspensionType: {
-    header: 'Suspension Type',
-    accessor: (s) => exportDisplayValue(s.suspensionType),
-  },
-  suspendedAt: { header: 'Suspended At', accessor: (s) => formatExportDateTime(s.suspendedAt) },
-  suspensionUntil: {
-    header: 'Suspension Until',
-    accessor: (s) => formatExportDateTime(s.suspensionUntil),
-  },
-  suspendedBy: { header: 'Suspended By', accessor: (s) => exportDisplayValue(s.suspendedBy) },
-  lastUpdatedAt: {
-    header: 'Last Updated At',
-    accessor: (s) => formatExportDateTime(s.lastUpdatedAt),
-  },
-}
-
 export function SuspendedServicesPage() {
   const navigate = useNavigate()
-  const [searchQuery, setSearchQuery] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
+  const serverSort = useServerTableSort({
+    sortFieldMap: SERVICE_COLUMN_SORT_FIELDS,
+    onPageReset: () => setCurrentPage(1),
+  })
+  const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setCurrentPage(1) })
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [selectedServiceIds, setSelectedServiceIds] = useState<string[]>([])
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
   const tableColumnPreferencesQuery = useTableColumnPreferences(SERVICE_SUSPENDED_MODULE_KEY)
+  const catalogColumnIds = useMemo(
+    () => SERVICE_SUSPENDED_TABLE_COLUMNS_CATALOG.map((column) => column.id),
+    [],
+  )
+  const exportColumnIds = useTableExportColumnIds({
+    visibleColumnIds: tableColumnPreferencesQuery.data?.visibleColumnIds,
+    defaultColumnIds: DEFAULT_SERVICE_SUSPENDED_VISIBLE_COLUMN_IDS,
+    catalogColumnIds,
+  })
 
   const serviceQueryParams = useMemo(
     () =>
       buildServiceListQueryParams(appliedFilters, {
         page: currentPage,
         limit: 10,
-        search: searchQuery,
+        ...serverSort.sortParams,
+        ...enhancedSearch.buildSearchParams(),
         status: 'suspended',
       }),
-    [appliedFilters, currentPage, searchQuery],
+    [appliedFilters, currentPage, enhancedSearch, serverSort.sortParams],
   )
 
   const { data, isLoading } = useServices(serviceQueryParams)
@@ -107,13 +96,15 @@ export function SuspendedServicesPage() {
     () =>
       createServiceFilteredExportHandler(
         fetchServices,
-        EXPORT_COLUMN_MAP,
+        SERVICE_EXPORT_COLUMN_MAP,
         'suspended_services_export',
         {
           status: 'suspended',
+          ...enhancedSearch.buildSearchParams(),
         },
+        { columnIds: exportColumnIds, catalogOrder: catalogColumnIds },
       ),
-    [],
+    [catalogColumnIds, enhancedSearch, exportColumnIds],
   )
 
   const {
@@ -167,84 +158,87 @@ export function SuspendedServicesPage() {
       ? tableColumnPreferencesQuery.data.visibleColumnIds
       : DEFAULT_SERVICE_SUSPENDED_VISIBLE_COLUMN_IDS
 
-    return [
-      {
-        id: 'select',
-        header: () => (
-          <input
-            type="checkbox"
-            aria-label="Select all suspended services"
-            checked={allVisibleServicesSelected}
-            ref={(input) => {
-              if (input)
-                input.indeterminate = someVisibleServicesSelected && !allVisibleServicesSelected
-            }}
-            onChange={toggleVisibleServices}
-            className="rounded border-slate-700 bg-transparent"
-          />
-        ),
-        cell: ({ row }) => (
-          <input
-            type="checkbox"
-            aria-label={`Select ${row.original.title}`}
-            checked={selectedServiceIds.includes(row.original._id)}
-            onChange={() => toggleServiceSelection(row.original._id)}
-            onClick={(event) => event.stopPropagation()}
-            className="rounded border-slate-700 bg-transparent"
-          />
-        ),
-        meta: {
-          headerClassName: 'pl-5',
-          cellClassName: 'pl-5',
+    return withServerSortMeta(
+      [
+        {
+          id: 'select',
+          header: () => (
+            <input
+              type="checkbox"
+              aria-label="Select all suspended services"
+              checked={allVisibleServicesSelected}
+              ref={(input) => {
+                if (input)
+                  input.indeterminate = someVisibleServicesSelected && !allVisibleServicesSelected
+              }}
+              onChange={toggleVisibleServices}
+              className="rounded border-slate-700 bg-transparent"
+            />
+          ),
+          cell: ({ row }) => (
+            <input
+              type="checkbox"
+              aria-label={`Select ${row.original.title}`}
+              checked={selectedServiceIds.includes(row.original._id)}
+              onChange={() => toggleServiceSelection(row.original._id)}
+              onClick={(event) => event.stopPropagation()}
+              className="rounded border-slate-700 bg-transparent"
+            />
+          ),
+          meta: {
+            headerClassName: 'pl-5',
+            cellClassName: 'pl-5',
+          },
         },
-      },
-      ...pickServicePreferenceColumns(
-        dataColumnsById,
-        visibleIds,
-        DEFAULT_SERVICE_SUSPENDED_VISIBLE_COLUMN_IDS,
-      ),
-      {
-        id: 'actions',
-        accessorFn: () => null,
-        header: 'Actions',
-        meta: {
-          headerClassName: 'pr-5 text-right',
-          cellClassName: 'relative pr-5 text-right',
-        },
-        cell: ({ row }) => {
-          const service = row.original
-          const isOpen = activeDropdownId === service._id
+        ...pickServicePreferenceColumns(
+          dataColumnsById,
+          visibleIds,
+          DEFAULT_SERVICE_SUSPENDED_VISIBLE_COLUMN_IDS,
+        ),
+        {
+          id: 'actions',
+          accessorFn: () => null,
+          header: 'Actions',
+          meta: {
+            headerClassName: 'pr-5 text-right',
+            cellClassName: 'relative pr-5 text-right',
+          },
+          cell: ({ row }) => {
+            const service = row.original
+            const isOpen = activeDropdownId === service._id
 
-          return (
-            <TableActionsDropdown
-              label={`Open actions for ${service.title}`}
-              isOpen={isOpen}
-              onOpenChange={(open) => setActiveDropdownId(open ? service._id : null)}
-              menuWidth={180}
-            >
-              <TableActionsItem
-                icon={<Eye className="size-3.5" aria-hidden="true" />}
-                onClick={() => {
-                  setActiveDropdownId(null)
-                  navigate(getServiceManagementViewPath(service))
-                }}
+            return (
+              <TableActionsDropdown
+                label={`Open actions for ${service.title}`}
+                isOpen={isOpen}
+                onOpenChange={(open) => setActiveDropdownId(open ? service._id : null)}
+                menuWidth={180}
               >
-                View Details
-              </TableActionsItem>
-              <TableActionsItem
-                icon={<PlayCircle className="size-3.5" aria-hidden="true" />}
-                onClick={() => {
-                  setActiveDropdownId(null)
-                  handleActivate(service)
-                }}
-              >
-                Activate Service
-              </TableActionsItem>
-            </TableActionsDropdown>
-          )
+                <TableActionsItem
+                  icon={<Eye className="size-3.5" aria-hidden="true" />}
+                  onClick={() => {
+                    setActiveDropdownId(null)
+                    navigate(getServiceManagementViewPath(service))
+                  }}
+                >
+                  View Details
+                </TableActionsItem>
+                <TableActionsItem
+                  icon={<PlayCircle className="size-3.5" aria-hidden="true" />}
+                  onClick={() => {
+                    setActiveDropdownId(null)
+                    handleActivate(service)
+                  }}
+                >
+                  Activate Service
+                </TableActionsItem>
+              </TableActionsDropdown>
+            )
+          },
         },
-      },
-    ]
+      ],
+      SERVICE_COLUMN_SORT_FIELDS,
+    )
   }, [
     activeDropdownId,
     allVisibleServicesSelected,
@@ -299,13 +293,16 @@ export function SuspendedServicesPage() {
         columns={columns}
         data={services}
         isLoading={isLoading}
-        searchValue={searchQuery}
-        onSearchChange={(value) => {
-          setSearchQuery(value)
-          setCurrentPage(1)
-        }}
+        searchValue={enhancedSearch.globalSearch}
+        onSearchChange={enhancedSearch.setGlobalSearch}
+        searchableColumns={SERVICE_SUSPENDED_SEARCH_COLUMNS}
+        columnSearches={enhancedSearch.columnSearches}
+        onColumnSearchChange={enhancedSearch.setColumnSearch}
+        onColumnSearchRemove={enhancedSearch.removeColumnSearch}
+        onClearAllSearches={enhancedSearch.clearAll}
         onAdvancedFilter={onAdvancedFilter}
         onExport={onExport}
+        {...serverSort.dataTableSortProps}
         searchPlaceholder="Search by name, ID or profession"
         pagination={{
           page: currentPage,

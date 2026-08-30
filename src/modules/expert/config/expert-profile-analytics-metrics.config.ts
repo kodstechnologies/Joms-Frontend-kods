@@ -120,8 +120,9 @@ export const DEFAULT_EXPERT_PROFILE_ANALYTICS_METRIC_IDS =
     (item) => item.id,
   )
 
-/** Profile analytics tab shows up to this many active KPI cards. */
-export const EXPERT_PROFILE_ANALYTICS_MAX_ACTIVE_METRICS = 8
+/** Users may activate every KPI in the catalog. */
+export const EXPERT_PROFILE_ANALYTICS_MAX_ACTIVE_METRICS =
+  EXPERT_PROFILE_ANALYTICS_METRICS_CATALOG.length
 
 /** Maps legacy event-style preference ids → Excel catalog ids. */
 export const EXPERT_PROFILE_ANALYTICS_LEGACY_METRIC_ID_MAP: Record<string, string> = {

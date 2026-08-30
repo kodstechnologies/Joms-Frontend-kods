@@ -8,6 +8,5 @@ export const ExpertManagementMetricsPage = () => (
     returnTo="/experts/management"
     section="table"
     includeDashboard={false}
-    maxActiveMetrics={4}
   />
 )

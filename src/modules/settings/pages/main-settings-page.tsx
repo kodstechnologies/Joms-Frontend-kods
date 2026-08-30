@@ -1,5 +1,5 @@
-import { useRef, useState } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useState } from 'react'
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
 
 import { BackupRestorePanel } from '../components/backup-restore-panel'
@@ -28,6 +28,7 @@ import {
   serviceDefaults,
   venueDefaults,
 } from '../mock/settings.defaults'
+import { normalizeSecuritySettings, countEnabledMfaMethods } from '../utils/security-settings'
 import type { SettingsModule } from '../types/settings'
 import { SectionHeader } from '@/shared/components/dashboard/section-header'
 import { Button } from '@/shared/components/ui/button'
@@ -73,8 +74,18 @@ const TABS: { key: SettingsTab; label: string }[] = [
 export function MainSettingsPage() {
   const location = useLocation()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const [activeTab, setActiveTab] = useState<SettingsTab>('platform')
   const [hydratedLocationState, setHydratedLocationState] = useState(location.state)
+  const [hydratedTabQuery, setHydratedTabQuery] = useState(searchParams.get('tab'))
+
+  const tabFromQuery = searchParams.get('tab') as SettingsTab | null
+  if (tabFromQuery && tabFromQuery !== hydratedTabQuery) {
+    setHydratedTabQuery(tabFromQuery)
+    if (TABS.some((tab) => tab.key === tabFromQuery)) {
+      setActiveTab(tabFromQuery)
+    }
+  }
 
   if (location.state !== hydratedLocationState) {
     setHydratedLocationState(location.state)
@@ -93,7 +104,11 @@ export function MainSettingsPage() {
   const serviceQuery = useSettingsModule('service')
 
   const [platformConfig, setPlatformConfig] = useSettingsDraft(platformQuery.data, platformDefaults)
-  const [securityConfig, setSecurityConfig] = useSettingsDraft(securityQuery.data, securityDefaults)
+  const [securityConfig, setSecurityConfig] = useSettingsDraft(
+    securityQuery.data,
+    securityDefaults,
+    normalizeSecuritySettings,
+  )
   const [notificationsConfig, setNotificationsConfig] = useSettingsDraft(
     notificationsQuery.data,
     notificationsDefaults,
@@ -130,11 +145,7 @@ export function MainSettingsPage() {
     (activeTab === 'venue' && venueQuery.isLoading) ||
     (activeTab === 'service' && serviceQuery.isLoading)
 
-  const saveInFlight = useRef(false)
-  const [saveLock, setSaveLock] = useState(false)
-
   const isSaving =
-    saveLock ||
     updatePlatform.isPending ||
     updateSecurity.isPending ||
     updateNotifications.isPending ||
@@ -157,16 +168,17 @@ export function MainSettingsPage() {
       toast.message('This tab is static for now')
       return
     }
-    // Sync guard: two clicks can land before mutation isPending flips (NET-05).
-    if (saveInFlight.current) return
-    saveInFlight.current = true
-    setSaveLock(true)
 
     try {
       if (activeTab === 'platform') {
         await updatePlatform.mutateAsync(platformConfig)
       } else if (activeTab === 'security') {
-        await updateSecurity.mutateAsync(securityConfig)
+        const normalizedSecurity = normalizeSecuritySettings(securityConfig)
+        if (countEnabledMfaMethods(normalizedSecurity.mfa) === 0) {
+          toast.error('Enable at least one MFA method before saving')
+          return
+        }
+        await updateSecurity.mutateAsync(normalizedSecurity)
       } else if (activeTab === 'notifications') {
         await updateNotifications.mutateAsync(notificationsConfig)
       } else if (activeTab === 'finance') {
@@ -181,9 +193,6 @@ export function MainSettingsPage() {
       toast.success(`${TABS.find((t) => t.key === activeTab)?.label} settings saved`)
     } catch {
       toast.error('Failed to save settings')
-    } finally {
-      saveInFlight.current = false
-      setSaveLock(false)
     }
   }
 
@@ -261,7 +270,7 @@ export function MainSettingsPage() {
       </nav>
 
       {isLoading && isApiTab ? (
-        <div className="space-y-4 rounded-2xl border border-white/10 bg-[#111111] p-6 sm:p-8">
+        <div className="space-y-4 rounded-2xl border border-white/10 bg-[#141414] p-6 sm:p-8">
           <div className="h-5 w-48 animate-pulse rounded bg-white/10" />
           <div className="h-4 w-72 animate-pulse rounded bg-white/5" />
           <div className="mt-6 space-y-4">
@@ -287,7 +296,9 @@ export function MainSettingsPage() {
           {activeTab === 'finance' ? (
             <FinanceTransactionalPanel value={financeConfig} onChange={setFinanceConfig} />
           ) : null}
-          {activeTab === 'incident' ? <IncidentTrackingPanel /> : null}
+          {activeTab === 'incident' ? (
+            <IncidentTrackingPanel highlightIncidentId={searchParams.get('incidentId')} />
+          ) : null}
           {activeTab === 'backup' ? <BackupRestorePanel /> : null}
           {activeTab === 'templates' ? <TemplatesPage embedded /> : null}
           {activeTab === 'expert' ? (

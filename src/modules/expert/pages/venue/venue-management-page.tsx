@@ -40,7 +40,12 @@ import { useTableColumnPreferences } from '../../hooks/use-ui-preferences'
 import { useVenueStore } from '../../store'
 import type { Venue } from '../../type/venue'
 import { DataTable } from '@/shared/components/table/data-table'
+import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'
+import { withServerSortMeta } from '@/shared/utils/table-sort'
+import { VENUE_COLUMN_SORT_FIELDS } from '@/shared/utils/table-sort-field-maps'
 import { TableDateTimeCell } from '@/shared/components/table/table-datetime-cell'
+import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
+import { VENUE_MANAGEMENT_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
 import {
   TableActionsDropdown,
   TableActionsItem,
@@ -96,7 +101,9 @@ type ManagementMetric = {
 import {
   DEFAULT_VENUE_MANAGEMENT_ACTIVE_METRIC_IDS,
   DEFAULT_VENUE_MANAGEMENT_VISIBLE_COLUMN_IDS,
+  VENUE_MANAGEMENT_TABLE_COLUMNS_CATALOG,
 } from '@/modules/expert/config/venue-management-table-columns.config'
+import { useTableExportColumnIds } from '@/shared/hooks/use-table-export-column-ids'
 
 const EXPORT_COLUMN_MAP: Record<string, { header: string; accessor: (v: Venue) => string }> = {
   'venue-id': { header: 'Venue ID', accessor: (v) => exportDisplayValue(getVenueDisplayId(v)) },
@@ -248,6 +255,15 @@ export const VenueManagementPage = () => {
   const { options: deleteReasonOptions, buildPayload: buildDeleteReasonPayload } =
     useModerationReasonOptions(MODERATION_CATEGORY_SLUGS.deleteVenue)
   const tableColumnPreferencesQuery = useTableColumnPreferences(VENUE_MANAGEMENT_MODULE_KEY)
+  const catalogColumnIds = useMemo(
+    () => VENUE_MANAGEMENT_TABLE_COLUMNS_CATALOG.map((column) => column.id),
+    [],
+  )
+  const exportColumnIds = useTableExportColumnIds({
+    visibleColumnIds: tableColumnPreferencesQuery.data?.visibleColumnIds,
+    defaultColumnIds: DEFAULT_VENUE_MANAGEMENT_VISIBLE_COLUMN_IDS,
+    catalogColumnIds,
+  })
 
   const confirmBulkDelete = useCallback(() => {
     if (selectedVenueIds.length === 0) return
@@ -363,7 +379,12 @@ export const VenueManagementPage = () => {
 
   const navigate = useNavigate()
 
-  const { searchQuery, setSearchQuery, currentPage, setCurrentPage, activeStatus } = useVenueStore()
+  const { currentPage, setCurrentPage, activeStatus } = useVenueStore()
+  const serverSort = useServerTableSort({
+    sortFieldMap: VENUE_COLUMN_SORT_FIELDS,
+    onPageReset: () => setCurrentPage(1),
+  })
+  const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setCurrentPage(1) })
 
   const handleApplyFilters = useCallback(
     (values: FilterValues) => {
@@ -379,10 +400,11 @@ export const VenueManagementPage = () => {
       buildVenueListQueryParams(appliedAdvancedFilters, {
         page: currentPage,
         limit: 10,
-        search: searchQuery,
+        ...serverSort.sortParams,
+        ...enhancedSearch.buildSearchParams(),
         status: activeStatus !== 'all' ? activeStatus : undefined,
       }),
-    [appliedAdvancedFilters, currentPage, searchQuery, activeStatus],
+    [appliedAdvancedFilters, currentPage, enhancedSearch, activeStatus, serverSort.sortParams],
   )
 
   const { data, isLoading } = useVenues(venueQueryParams)
@@ -390,10 +412,17 @@ export const VenueManagementPage = () => {
 
   const handleExportData = useMemo(
     () =>
-      createVenueFilteredExportHandler(fetchVenues, EXPORT_COLUMN_MAP, 'venues_export', {
-        status: activeStatus !== 'all' ? activeStatus : undefined,
-      }),
-    [activeStatus],
+      createVenueFilteredExportHandler(
+        fetchVenues,
+        EXPORT_COLUMN_MAP,
+        'venues_export',
+        {
+          status: activeStatus !== 'all' ? activeStatus : undefined,
+          ...enhancedSearch.buildSearchParams(),
+        },
+        { columnIds: exportColumnIds, catalogOrder: catalogColumnIds },
+      ),
+    [activeStatus, catalogColumnIds, enhancedSearch, exportColumnIds],
   )
 
   const {
@@ -1201,7 +1230,10 @@ export const VenueManagementPage = () => {
       },
     }
 
-    return [selectColumn, ...preferenceColumns, actionsColumn]
+    return withServerSortMeta(
+      [selectColumn, ...preferenceColumns, actionsColumn],
+      VENUE_COLUMN_SORT_FIELDS,
+    )
   }, [
     activeDropdownId,
     allVisibleVenuesSelected,
@@ -1401,8 +1433,14 @@ export const VenueManagementPage = () => {
         data={venues}
         getRowId={(venue) => venue._id}
         isLoading={isLoading}
-        searchValue={searchQuery}
-        onSearchChange={setSearchQuery}
+        {...serverSort.dataTableSortProps}
+        searchValue={enhancedSearch.globalSearch}
+        onSearchChange={enhancedSearch.setGlobalSearch}
+        searchableColumns={VENUE_MANAGEMENT_SEARCH_COLUMNS}
+        columnSearches={enhancedSearch.columnSearches}
+        onColumnSearchChange={enhancedSearch.setColumnSearch}
+        onColumnSearchRemove={enhancedSearch.removeColumnSearch}
+        onClearAllSearches={enhancedSearch.clearAll}
         searchPlaceholder="Search by venue name or venue ID"
         onAdvancedFilter={onAdvancedFilter}
         onExport={onExport}

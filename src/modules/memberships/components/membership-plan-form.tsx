@@ -2,6 +2,7 @@ import { Plus, X } from 'lucide-react'
 import { useMemo, useRef, useState, type FormEvent } from 'react'
 
 import { RequiredMark } from '@/shared/components/form/required-mark'
+import { guardUploadFile } from '@/shared/lib/upload-file'
 import { DEFAULT_BILLING_CYCLES } from '../mock/membership-metrics.mock'
 import type {
   MembershipPlan,
@@ -211,6 +212,7 @@ export function MembershipPlanForm({ initialPlan, onSubmit }: MembershipPlanForm
   }
 
   const handleIconChange = (file: File | null) => {
+    if (file && !guardUploadFile(file)) return
     setIconFile(file)
     if (file) setIconPreview(URL.createObjectURL(file))
   }

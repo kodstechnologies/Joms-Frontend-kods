@@ -12,6 +12,7 @@ import { exportDisplayValue } from '@/shared/utils/export-utils'
 import {
   buildVenueListQueryParams,
   createVenueFilteredExportHandler,
+  exportMappedItemsToFile,
 } from '@/shared/utils/export-filter-utils'
 import { fetchVenues } from '../../api/venue-api'
 
@@ -20,6 +21,11 @@ import { useVenueManagementControls } from '@/modules/settings/hooks/use-venue-p
 import type { Venue } from '../../type/venue'
 import { getVenueApiId, getVenueDisplayId } from '../../utils/venue-list'
 import { DataTable } from '@/shared/components/table/data-table'
+import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'
+import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
+import { withServerSortMeta } from '@/shared/utils/table-sort'
+import { VENUE_DELETED_SORT_FIELDS } from '@/shared/utils/table-sort-field-maps'
+import { VENUE_DELETED_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
 import {
   TableActionsDropdown,
   TableActionsItem,
@@ -94,8 +100,12 @@ const EXPORT_COLUMN_MAP: Record<string, { header: string; accessor: (v: Venue) =
 export function VenueDeletedPage() {
   const navigate = useNavigate()
   const { allowAddVenues } = useVenueManagementControls()
-  const [searchQuery, setSearchQuery] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
+  const serverSort = useServerTableSort({
+    sortFieldMap: VENUE_DELETED_SORT_FIELDS,
+    onPageReset: () => setCurrentPage(1),
+  })
+  const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setCurrentPage(1) })
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [selectedVenueIds, setSelectedVenueIds] = useState<string[]>([])
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
@@ -107,10 +117,11 @@ export function VenueDeletedPage() {
       buildVenueListQueryParams(appliedFilters, {
         page: currentPage,
         limit: 10,
-        search: searchQuery,
+        ...serverSort.sortParams,
+        ...enhancedSearch.buildSearchParams(),
         status: 'deleted',
       }),
-    [appliedFilters, currentPage, searchQuery],
+    [appliedFilters, currentPage, enhancedSearch, serverSort.sortParams],
   )
 
   const { data, isLoading } = useVenues(venueQueryParams)
@@ -127,6 +138,31 @@ export function VenueDeletedPage() {
     setAppliedFilters(values)
     setCurrentPage(1)
   }, [])
+
+  const handleExportVenueRow = useCallback(
+    async (venue: Venue) => {
+      const visibleIds = tableColumnPreferencesQuery.data?.visibleColumnIds?.length
+        ? tableColumnPreferencesQuery.data.visibleColumnIds
+        : DEFAULT_VENUE_DELETED_VISIBLE_COLUMN_IDS
+
+      try {
+        await exportMappedItemsToFile(
+          EXPORT_COLUMN_MAP,
+          [venue],
+          'excel',
+          `deleted_venue_${getVenueDisplayId(venue)}`,
+          {
+            columnIds: visibleIds,
+            catalogOrder: DEFAULT_VENUE_DELETED_VISIBLE_COLUMN_IDS,
+          },
+        )
+        toast.success('Venue exported')
+      } catch {
+        toast.error('Failed to export venue')
+      }
+    },
+    [tableColumnPreferencesQuery.data],
+  )
 
   const handleExportData = useMemo(
     () =>
@@ -342,7 +378,7 @@ export function VenueDeletedPage() {
               icon={<Upload className="size-3.5" />}
               onClick={() => {
                 setActiveDropdownId(null)
-                toast.message('Export Data is coming soon')
+                void handleExportVenueRow(venue)
               }}
             >
               Export Data
@@ -352,10 +388,14 @@ export function VenueDeletedPage() {
       },
     }
 
-    return [selectColumn, ...preferenceColumns, actionsColumn]
+    return withServerSortMeta(
+      [selectColumn, ...preferenceColumns, actionsColumn],
+      VENUE_DELETED_SORT_FIELDS,
+    )
   }, [
     activeDropdownId,
     allVisibleVenuesSelected,
+    handleExportVenueRow,
     handleRestore,
     selectedVenueIds,
     someVisibleVenuesSelected,
@@ -420,14 +460,17 @@ export function VenueDeletedPage() {
         data={venues}
         getRowId={(venue) => venue._id}
         isLoading={isLoading}
-        searchValue={searchQuery}
-        onSearchChange={(value) => {
-          setSearchQuery(value)
-          setCurrentPage(1)
-        }}
+        searchValue={enhancedSearch.globalSearch}
+        onSearchChange={enhancedSearch.setGlobalSearch}
+        searchableColumns={VENUE_DELETED_SEARCH_COLUMNS}
+        columnSearches={enhancedSearch.columnSearches}
+        onColumnSearchChange={enhancedSearch.setColumnSearch}
+        onColumnSearchRemove={enhancedSearch.removeColumnSearch}
+        onClearAllSearches={enhancedSearch.clearAll}
         searchPlaceholder="Search by name, ID or profession"
         onAdvancedFilter={onAdvancedFilter}
         onExport={onExport}
+        {...serverSort.dataTableSortProps}
         pagination={{
           page: currentPage,
           pageSize: meta?.pagination.limit || 10,

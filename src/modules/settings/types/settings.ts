@@ -199,7 +199,7 @@ export type SecuritySettings = {
     requireSpecialChar: boolean
   }
   mfa: {
-    requireForAllAdmins: boolean
+    requireForAllSubAdmins: boolean
     authenticatorApp: boolean
     smsOtp: boolean
     emailOtp: boolean

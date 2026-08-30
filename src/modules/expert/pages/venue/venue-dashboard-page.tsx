@@ -10,8 +10,8 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
-import { BarChart3, Download, RefreshCw, Star, TrendingDown, TrendingUp } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { BarChart3, RefreshCw, Star, TrendingDown, TrendingUp, Upload } from 'lucide-react'
+import { useCallback, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
@@ -21,6 +21,7 @@ import {
 } from '@/modules/expert/config/venue-management-table-columns.config'
 import { orderByActiveMetricIds, useActiveMetricIds } from '../../hooks/use-active-metric-ids'
 import { useVenueDashboard } from '../../hooks/use-venue-dashboard'
+import { exportVenueDashboardToExcel } from '../../utils/export-venue-dashboard'
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
 
@@ -104,10 +105,10 @@ const tooltipStyle = {
 
 function MetricCard({ metric }: { metric: Metric }) {
   return (
-    <div className="rounded-brand-lg bg-brand-surface border border-white/[0.06] p-4 transition-colors hover:border-white/10">
+    <div className="rounded-brand-lg bg-brand-surface flex min-h-[130px] flex-col border border-white/[0.06] p-4 transition-colors hover:border-white/10">
       <p className="text-body-sm text-muted font-medium">{metric.label}</p>
       <p className="text-h3 mt-2 font-bold tracking-tight text-white">{metric.value}</p>
-      <div className="mt-2 flex items-center gap-2">
+      <div className="mt-auto flex items-center gap-2 pt-3">
         {metric.change ? (
           <>
             <span
@@ -139,13 +140,30 @@ function MetricCard({ metric }: { metric: Metric }) {
 
 function MetricCardSkeleton() {
   return (
-    <div className="rounded-brand-lg bg-brand-surface border border-white/[0.06] p-4">
+    <div className="rounded-brand-lg bg-brand-surface min-h-[130px] border border-white/[0.06] p-4">
       <div className="h-3 w-28 animate-pulse rounded bg-white/10" />
       <div className="mt-3 h-7 w-20 animate-pulse rounded bg-white/10" />
-      <div className="mt-4 h-5 w-32 animate-pulse rounded bg-white/5" />
+      <div className="mt-auto pt-6">
+        <div className="h-5 w-32 animate-pulse rounded bg-white/5" />
+      </div>
     </div>
   )
 }
+
+const attachMetricTrends = (
+  metrics: Metric[],
+  trends?: Record<string, { change: string; changeType: 'up' | 'down'; changeNote: string } | null>,
+): Metric[] =>
+  metrics.map((metric) => {
+    const trend = trends?.[metric.id]
+    if (!trend) return metric
+    return {
+      ...metric,
+      change: trend.change,
+      changeType: trend.changeType,
+      changeNote: trend.changeNote,
+    }
+  })
 
 export const VenueDashboardPage = () => {
   const navigate = useNavigate()
@@ -305,8 +323,12 @@ export const VenueDashboardPage = () => {
   }, [dashboardData])
 
   const visibleMetrics = useMemo(
-    () => orderByActiveMetricIds(liveMetrics, activeMetricIds),
-    [liveMetrics, activeMetricIds],
+    () =>
+      orderByActiveMetricIds(
+        attachMetricTrends(liveMetrics, dashboardData?.metricTrends),
+        activeMetricIds,
+      ),
+    [liveMetrics, activeMetricIds, dashboardData?.metricTrends],
   )
 
   const trendData: TrendPoint[] = useMemo(
@@ -318,6 +340,37 @@ export const VenueDashboardPage = () => {
     () => (dashboardData?.topVenues?.length ? dashboardData.topVenues : []),
     [dashboardData],
   )
+
+  const handleExportData = useCallback(async () => {
+    if (isLoading) {
+      toast.message('Please wait for data to load')
+      return
+    }
+
+    if (visibleMetrics.length === 0 && trendData.length === 0 && topVenues.length === 0) {
+      toast.error('No data available to export')
+      return
+    }
+
+    const rangeLabel =
+      selectedRange === '3'
+        ? 'Last 3 Months'
+        : selectedRange === '6'
+          ? 'Last 6 Months'
+          : 'Last 12 Months'
+
+    try {
+      await exportVenueDashboardToExcel({
+        rangeLabel,
+        metrics: visibleMetrics,
+        trendPoints: trendData,
+        topVenues,
+      })
+      toast.success('Exported as Excel')
+    } catch {
+      toast.error('Failed to export venue dashboard')
+    }
+  }, [isLoading, selectedRange, topVenues, trendData, visibleMetrics])
 
   return (
     <div className="space-y-6">
@@ -337,11 +390,8 @@ export const VenueDashboardPage = () => {
             Manage Metrics
           </Button>
 
-          <Button
-            className="ui-export-data h-9"
-            onClick={() => toast.message('Export coming soon')}
-          >
-            <Download className="size-4" />
+          <Button className="ui-export-data h-9" onClick={handleExportData}>
+            <Upload className="size-4" />
             Export Data
           </Button>
         </div>

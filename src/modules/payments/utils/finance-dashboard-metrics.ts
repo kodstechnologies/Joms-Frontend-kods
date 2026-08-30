@@ -45,17 +45,23 @@ function labelToMetricId(label: string): string | null {
   return map[label] ?? null
 }
 
-function addTrend(metric: TrendMetric): TrendMetric {
+function withMockTrend(metric: TrendMetric | undefined | null, fallbackLabel = '—'): TrendMetric {
+  if (!metric) {
+    return placeholder(fallbackLabel)
+  }
+
+  const change = metric.change ?? '—'
+
   return {
     ...metric,
-    change: metric.change.includes('%') ? metric.change : '6.7%',
+    change: change.includes('%') ? change : '6.7%',
     changeNote: metric.changeNote ?? 'vs last month',
     changeType: metric.changeType ?? 'up',
   }
 }
 
 function placeholder(label: string, value = '—'): TrendMetric {
-  return addTrend({
+  return withMockTrend({
     label,
     value,
     change: '—',
@@ -77,8 +83,8 @@ export function buildFinanceDashboardMetricCards(
 ): FinanceDashboardMetricCard[] {
   const cards: FinanceDashboardMetricCard[] = []
 
-  const push = (id: string, metric: TrendMetric) => {
-    cards.push({ id, ...addTrend(metric) })
+  const push = (id: string, metric: TrendMetric | undefined | null, fallbackLabel?: string) => {
+    cards.push({ id, ...withMockTrend(metric, fallbackLabel) })
   }
 
   push(
@@ -137,8 +143,77 @@ export function buildFinanceDashboardMetricCards(
 
   push(
     'monthly-recurring-revenue',
-    mockOrPlaceholder('monthly-recurring-revenue', 'Monthly Recurring Revenue (MRR)'),
+    summary
+      ? {
+          label: 'Monthly Recurring Revenue',
+          value: formatInr(summary.collectionsThisMonth),
+          change: '0%',
+          changeType: 'up',
+          changeNote: 'vs last month',
+        }
+      : mockOrPlaceholder('monthly-recurring-revenue', 'Monthly Recurring Revenue'),
   )
+
+  const grossMarginValue =
+    summary && summary.totalPlatformRevenue > 0
+      ? `${Math.round((Math.max(0, summary.totalPlatformRevenue - summary.pendingPayouts) / summary.totalPlatformRevenue) * 100)}%`
+      : '0%'
+
+  push(
+    'platform-gross-margin',
+    summary
+      ? {
+          label: 'Platform Gross Margin',
+          value: grossMarginValue,
+          change: '0%',
+          changeType: 'up',
+          changeNote: 'vs last month',
+        }
+      : mockOrPlaceholder('platform-gross-margin', 'Platform Gross Margin', '0%'),
+  )
+
+  const netProfitValue = summary
+    ? Math.max(0, summary.totalPlatformRevenue - summary.pendingPayouts)
+    : 0
+
+  push(
+    'net-profit',
+    summary
+      ? {
+          label: 'Net Profit',
+          value: formatInr(netProfitValue),
+          change: '0%',
+          changeType: 'up',
+          changeNote: 'vs last month',
+        }
+      : mockOrPlaceholder('net-profit', 'Net Profit'),
+  )
+
+  push(
+    'average-payout-cycle-time',
+    mockOrPlaceholder('average-payout-cycle-time', 'Average Payout Cycle Time', '24-48 hrs'),
+  )
+
+  const refundRateValue =
+    summary && summary.totalPlatformRevenue > 0
+      ? `${((summary.disputedAmount / summary.totalPlatformRevenue) * 100).toFixed(1)}%`
+      : '0%'
+
+  push(
+    'refund-rate',
+    summary
+      ? {
+          label: 'Refund Rate',
+          value: refundRateValue,
+          change: '0%',
+          changeType: 'up',
+          changeNote: 'vs last month',
+        }
+      : mockOrPlaceholder('refund-rate', 'Refund Rate', '0%'),
+  )
+
+  push('chargeback-rate', mockOrPlaceholder('chargeback-rate', 'Chargeback Rate', '0%'))
+  mockOrPlaceholder('monthly-recurring-revenue', 'Monthly Recurring Revenue (MRR)')
 
   push(
     'platform-gross-margin',

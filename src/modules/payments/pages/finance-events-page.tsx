@@ -11,6 +11,11 @@ import {
 } from '@/modules/payments/mock/finance-events.mock'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 import { DataTable } from '@/shared/components/table/data-table'
+import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'
+import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
+import { sortClientRows, withServerSortMeta } from '@/shared/utils/table-sort'
+import { buildCatalogSortFieldMap } from '@/shared/utils/table-sort-field-maps'
+import { FINANCE_EVENTS_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
 import {
   TableActionsDropdown,
   TableActionsItem,
@@ -18,7 +23,7 @@ import {
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
 import type { FilterValues } from '@/shared/types/data-filter'
-import { exportDisplayValue } from '@/shared/utils/export-utils'
+import { FINANCE_EVENTS_EXPORT_COLUMN_MAP } from '@/modules/payments/utils/finance-export-column-maps'
 import {
   createClientFilteredExportHandler,
   rowMatchesClientFilters,
@@ -30,9 +35,12 @@ import {
   FINANCE_EVENTS_TABLE_COLUMNS_CATALOG,
 } from '@/modules/payments/config/finance-events-table-columns.config'
 import { useTableColumnPreferences } from '@/modules/expert/hooks/use-ui-preferences'
+import { useTableExportColumnIds } from '@/shared/hooks/use-table-export-column-ids'
 import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
 
 const PAGE_SIZE = 10
+
+const FINANCE_EVENTS_SORT_FIELD_MAP = buildCatalogSortFieldMap(FINANCE_EVENTS_TABLE_COLUMNS_CATALOG)
 
 const EVENT_FILTER_ACCESSORS: Record<string, (row: FinanceEventRow) => string> = {
   eventId: (row) => row.eventId,
@@ -40,20 +48,6 @@ const EVENT_FILTER_ACCESSORS: Record<string, (row: FinanceEventRow) => string> =
   organizer: (row) => row.organizer,
   status: (row) => row.status,
   eventDate: (row) => row.eventDate,
-}
-
-const EXPORT_COLUMN_MAP: Record<
-  string,
-  { header: string; accessor: (row: FinanceEventRow) => string }
-> = {
-  eventId: { header: 'Event ID', accessor: (row) => exportDisplayValue(row.eventId) },
-  eventName: { header: 'Event Name', accessor: (row) => exportDisplayValue(row.eventName) },
-  organizer: { header: 'Organizer', accessor: (row) => exportDisplayValue(row.organizer) },
-  ticketSales: { header: 'Ticket Sales', accessor: (row) => exportDisplayValue(row.ticketSales) },
-  platformFee: { header: 'Platform Fee', accessor: (row) => exportDisplayValue(row.platformFee) },
-  netRevenue: { header: 'Net Revenue', accessor: (row) => exportDisplayValue(row.netRevenue) },
-  eventDate: { header: 'Event Date', accessor: (row) => exportDisplayValue(row.eventDate) },
-  status: { header: 'Status', accessor: (row) => exportDisplayValue(row.status) },
 }
 
 type FinanceEventTab = 'all' | 'ticketing' | 'promotions' | 'publishing'
@@ -73,30 +67,70 @@ function getStatusClassName(status: FinanceEventStatus) {
 export function FinanceEventsPage() {
   const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState<FinanceEventTab>('all')
-  const [searchQuery, setSearchQuery] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
+  const serverSort = useServerTableSort({
+    sortFieldMap: FINANCE_EVENTS_SORT_FIELD_MAP,
+    onPageReset: () => setCurrentPage(1),
+  })
+  const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setCurrentPage(1) })
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [selectedRowIds, setSelectedRowIds] = useState<string[]>([])
 
   const tableColumnPreferencesQuery = useTableColumnPreferences(FINANCE_EVENTS_MODULE_KEY)
 
+  const catalogColumnIds = useMemo(
+    () => FINANCE_EVENTS_TABLE_COLUMNS_CATALOG.map((column) => column.id),
+    [],
+  )
+  const exportColumnIds = useTableExportColumnIds({
+    visibleColumnIds: tableColumnPreferencesQuery.data?.visibleColumnIds,
+    defaultColumnIds: DEFAULT_FINANCE_EVENTS_VISIBLE_COLUMN_IDS,
+    catalogColumnIds,
+    legacyColumnIdMap: FINANCE_EVENTS_LEGACY_COLUMN_ID_MAP,
+  })
+
   const filteredRows = useMemo(
     () =>
-      financeEventRowsMock.filter((row) =>
-        rowMatchesClientFilters(row, appliedFilters, searchQuery, EVENT_FILTER_ACCESSORS),
-      ),
-    [appliedFilters, searchQuery],
+      financeEventRowsMock.filter((row) => {
+        if (
+          !rowMatchesClientFilters(
+            row,
+            appliedFilters,
+            enhancedSearch.globalSearch,
+            EVENT_FILTER_ACCESSORS,
+          )
+        ) {
+          return false
+        }
+        for (const [colId, val] of Object.entries(enhancedSearch.columnSearches)) {
+          if (!val) continue
+          const cellVal = String((row as Record<string, unknown>)[colId] ?? '').toLowerCase()
+          if (!cellVal.includes(val.toLowerCase())) return false
+        }
+        return true
+      }),
+    [appliedFilters, enhancedSearch.columnSearches, enhancedSearch.globalSearch],
   )
 
-  const totalItems = filteredRows.length
+  const sortedRows = useMemo(
+    () =>
+      sortClientRows(
+        filteredRows as Array<FinanceEventRow & Record<string, unknown>>,
+        serverSort.sortBy,
+        serverSort.sortOrder,
+      ),
+    [filteredRows, serverSort.sortBy, serverSort.sortOrder],
+  )
+
+  const totalItems = sortedRows.length
   const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE))
   const safePage = Math.min(currentPage, totalPages)
 
   const pageRows = useMemo(() => {
     const start = (safePage - 1) * PAGE_SIZE
-    return filteredRows.slice(start, start + PAGE_SIZE)
-  }, [filteredRows, safePage])
+    return sortedRows.slice(start, start + PAGE_SIZE)
+  }, [sortedRows, safePage])
 
   const visibleRowIds = useMemo(() => pageRows.map((row) => row.id), [pageRows])
   const allVisibleSelected =
@@ -127,12 +161,18 @@ export function FinanceEventsPage() {
       createClientFilteredExportHandler(
         (values) =>
           financeEventRowsMock.filter((row) =>
-            rowMatchesClientFilters(row, values, searchQuery, EVENT_FILTER_ACCESSORS),
+            rowMatchesClientFilters(
+              row,
+              values,
+              enhancedSearch.globalSearch,
+              EVENT_FILTER_ACCESSORS,
+            ),
           ),
-        EXPORT_COLUMN_MAP,
+        FINANCE_EVENTS_EXPORT_COLUMN_MAP,
         'finance_events_export',
+        { columnIds: exportColumnIds, catalogOrder: catalogColumnIds },
       ),
-    [searchQuery],
+    [catalogColumnIds, enhancedSearch.globalSearch, exportColumnIds],
   )
 
   const {
@@ -271,7 +311,10 @@ export function FinanceEventsPage() {
       cell: ({ row }) => renderActions(row.original),
     }
 
-    return [selectColumn, ...preferenceColumns, actionsColumn]
+    return withServerSortMeta(
+      [selectColumn, ...preferenceColumns, actionsColumn],
+      FINANCE_EVENTS_SORT_FIELD_MAP,
+    )
   }, [
     allVisibleSelected,
     renderActions,
@@ -312,7 +355,7 @@ export function FinanceEventsPage() {
             onClick={() => {
               setActiveTab(tab.id)
               setCurrentPage(1)
-              setSearchQuery('')
+              enhancedSearch.clearAll()
               setSelectedRowIds([])
             }}
             className={cn(
@@ -331,16 +374,19 @@ export function FinanceEventsPage() {
         columns={columns}
         data={pageRows}
         getRowId={(row) => row.id}
-        searchValue={searchQuery}
-        onSearchChange={(value) => {
-          setSearchQuery(value)
-          setCurrentPage(1)
-        }}
+        searchValue={enhancedSearch.globalSearch}
+        onSearchChange={enhancedSearch.setGlobalSearch}
+        searchableColumns={FINANCE_EVENTS_SEARCH_COLUMNS}
+        columnSearches={enhancedSearch.columnSearches}
+        onColumnSearchChange={enhancedSearch.setColumnSearch}
+        onColumnSearchRemove={enhancedSearch.removeColumnSearch}
+        onClearAllSearches={enhancedSearch.clearAll}
         searchPlaceholder="Search by name, ID or profession"
         advancedFilterLabel="Advance Filters"
         onAdvancedFilter={onAdvancedFilter}
         advancedFilterVariant="primary"
         onExport={onExport}
+        {...serverSort.dataTableSortProps}
         pagination={{
           page: safePage,
           pageSize: PAGE_SIZE,

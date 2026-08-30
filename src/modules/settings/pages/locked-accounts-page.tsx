@@ -7,6 +7,8 @@ import { useLockedAccounts, useUnlockAccount } from '../hooks/use-security'
 import type { LockedAccountRow } from '../types/settings'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import { cn } from '@/shared/lib/cn'
+import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'
+import { buildDefaultTableSortFieldMap } from '@/shared/utils/table-sort-field-maps'
 
 function AccountDetailsModal({
   open,
@@ -97,51 +99,59 @@ function AccountDetailsModal({
   )
 }
 
+const LOCKED_ACCOUNT_SORT_FIELD_MAP = buildDefaultTableSortFieldMap([
+  'admin',
+  'role',
+  'reason',
+  'lockedSince',
+  'duration',
+])
+
 export function LockedAccountsPage() {
   const navigate = useNavigate()
   const [selected, setSelected] = useState<LockedAccountRow | null>(null)
   const [page, setPage] = useState(1)
-  const [sortKey, setSortKey] = useState<keyof LockedAccountRow | null>(null)
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc' | null>(null)
+  const serverSort = useServerTableSort({
+    sortFieldMap: LOCKED_ACCOUNT_SORT_FIELD_MAP,
+    defaultSortBy: 'lockedSince',
+    onPageReset: () => setPage(1),
+  })
 
   const pageSize = 10
-  const { data: accountsResult, isLoading } = useLockedAccounts({ page, limit: pageSize })
+  const { data: accountsResult, isLoading } = useLockedAccounts({
+    page,
+    limit: pageSize,
+    ...serverSort.sortParams,
+  })
   const unlockMutation = useUnlockAccount()
 
   const meta = accountsResult?.meta
   const totalPages = meta?.totalPages ?? 1
 
-  const handleSort = (key: keyof LockedAccountRow) => {
-    if (sortKey !== key) {
-      setSortKey(key)
-      setSortOrder('asc')
-    } else if (sortOrder === 'asc') {
-      setSortOrder('desc')
-    } else {
-      setSortKey(null)
-      setSortOrder(null)
-    }
+  const handleColumnSort = (columnId: string) => {
+    serverSort.onSortingChange((prev) => {
+      const current = prev[0]
+      if (!current || current.id !== columnId) {
+        return [{ id: columnId, desc: false }]
+      }
+      if (!current.desc) {
+        return [{ id: columnId, desc: true }]
+      }
+      return []
+    })
   }
 
-  const rows = useMemo(() => {
-    const rawRows = accountsResult?.data ?? []
-    if (!sortKey || !sortOrder) return rawRows
-    return [...rawRows].sort((a, b) => {
-      const aVal = String(a[sortKey] ?? '').toLowerCase()
-      const bVal = String(b[sortKey] ?? '').toLowerCase()
-      const comparison = aVal.localeCompare(bVal)
-      return sortOrder === 'asc' ? comparison : -comparison
-    })
-  }, [accountsResult?.data, sortKey, sortOrder])
+  const rows = accountsResult?.data ?? []
 
-  const renderSortIcon = (key: keyof LockedAccountRow) => {
-    if (sortKey !== key || !sortOrder) {
+  const renderSortIcon = (columnId: string) => {
+    const active = serverSort.sorting[0]
+    if (!active || active.id !== columnId) {
       return <ArrowUpDown className="text-muted/50 size-[14px]" aria-hidden="true" />
     }
-    return sortOrder === 'asc' ? (
-      <ArrowUp className="text-brand-primary size-[14px]" aria-hidden="true" />
-    ) : (
+    return active.desc ? (
       <ArrowDown className="text-brand-primary size-[14px]" aria-hidden="true" />
+    ) : (
+      <ArrowUp className="text-brand-primary size-[14px]" aria-hidden="true" />
     )
   }
 
@@ -188,30 +198,39 @@ export function LockedAccountsPage() {
           <table className="locked-accounts-table">
             <thead>
               <tr>
-                <th onClick={() => handleSort('admin')} className="cursor-pointer select-none">
+                <th
+                  onClick={() => handleColumnSort('admin')}
+                  className="cursor-pointer select-none"
+                >
                   <div className="inline-flex items-center gap-1.5">
                     Admin {renderSortIcon('admin')}
                   </div>
                 </th>
-                <th onClick={() => handleSort('role')} className="cursor-pointer select-none">
+                <th onClick={() => handleColumnSort('role')} className="cursor-pointer select-none">
                   <div className="inline-flex items-center gap-1.5">
                     Roles {renderSortIcon('role')}
                   </div>
                 </th>
-                <th onClick={() => handleSort('reason')} className="cursor-pointer select-none">
+                <th
+                  onClick={() => handleColumnSort('reason')}
+                  className="cursor-pointer select-none"
+                >
                   <div className="inline-flex items-center gap-1.5">
                     Reason {renderSortIcon('reason')}
                   </div>
                 </th>
                 <th
-                  onClick={() => handleSort('lockedSince')}
+                  onClick={() => handleColumnSort('lockedSince')}
                   className="cursor-pointer select-none"
                 >
                   <div className="inline-flex items-center gap-1.5">
                     Locked Since {renderSortIcon('lockedSince')}
                   </div>
                 </th>
-                <th onClick={() => handleSort('duration')} className="cursor-pointer select-none">
+                <th
+                  onClick={() => handleColumnSort('duration')}
+                  className="cursor-pointer select-none"
+                >
                   <div className="inline-flex items-center gap-1.5">
                     Duration {renderSortIcon('duration')}
                   </div>

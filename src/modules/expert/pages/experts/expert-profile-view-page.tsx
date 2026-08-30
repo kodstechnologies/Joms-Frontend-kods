@@ -5,13 +5,13 @@ import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import { useQueryClient } from '@tanstack/react-query'
 import deleteIcon from '@/assets/JOMS_ICONS-2/icons8-delete.svg'
 import editIcon from '@/assets/JOMS_ICONS-2/edit.svg'
+import bagSolidIcon from '@/assets/JOMS_ICONS-2/basil-bag-solid.svg'
 import { toast } from 'sonner'
 import {
   AlertOctagon,
   ArrowLeft,
   Ban,
   Bell,
-  Briefcase,
   Check,
   CheckSquare,
   ChevronLeft,
@@ -49,7 +49,6 @@ import {
   getExpertServiceDrilldownPath,
   getServiceManagementViewPath,
 } from '../../lib/service-navigation'
-import { displayServiceTitle } from '../../components/service-drilldown/drilldown-format'
 import { openExpertKycFromProfile } from '../../utils/expert-application-navigation'
 import {
   useDeactivateExpert,
@@ -84,6 +83,7 @@ import {
   useUpdateExpertAdminTags,
   useUpdateExpertCustomLinkVisibility,
 } from '../../hooks/use-expert-profile'
+import { useExpertLeaderboardProfile } from '../../hooks/use-leaderboard'
 import {
   DEFAULT_EXPERT_PROFILE_ANALYTICS_METRIC_IDS,
   EXPERT_PROFILE_ANALYTICS_LEGACY_METRIC_ID_MAP,
@@ -92,6 +92,7 @@ import {
   EXPERT_PROFILE_ANALYTICS_MODULE_KEY,
 } from '../../config/expert-profile-analytics-metrics.config'
 import { orderByActiveMetricIds, useActiveMetricIds } from '../../hooks/use-active-metric-ids'
+import { VenueAnalyticsMetricIcon } from '../../components/venue-analytics'
 import { buildExpertProfileAnalyticsMetricCards } from '../../utils/expert-profile-analytics-metrics'
 import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
 import type {
@@ -193,7 +194,7 @@ const unwrapReportItems = (payload: unknown): ExpertReportItem[] => {
 }
 
 const formatClock = (value?: string | null) => {
-  if (!value) return 'â€”'
+  if (!value) return '—'
   const raw = String(value).trim()
   if (/[ap]m/i.test(raw)) return raw
   const [hours, minutes] = raw.split(':').map(Number)
@@ -247,7 +248,7 @@ const buildExpertTimelineEvents = (
     events.push({
       id: `ticket-${ticket.id}`,
       title: closed ? 'Support ticket closed' : 'Support ticket opened',
-      detail: `#${ticket.id} â€“ ${ticket.subject}`,
+      detail: `#${ticket.id} – ${ticket.subject}`,
       at: closed ? ticket.resolvedAt || ticket.createdAt : ticket.createdAt,
     })
   })
@@ -337,7 +338,7 @@ const viewExpertConsultation = async (
 const formatExpertId = formatListingExpertId
 
 const formatExperience = (years?: number, months?: number) => {
-  if (!years && !months) return 'â€”'
+  if (!years && !months) return '—'
   const parts: string[] = []
   if (years) parts.push(`${years} Year${years === 1 ? '' : 's'}`)
   if (months) parts.push(`${months} Month${months === 1 ? '' : 's'}`)
@@ -352,9 +353,9 @@ const formatWorkDate = (value?: string | null) => {
 }
 
 const formatReviewDate = (value?: string | null) => {
-  if (!value) return 'â€”'
+  if (!value) return '—'
   const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return 'â€”'
+  if (Number.isNaN(date.getTime())) return '—'
   return date.toLocaleDateString('en-GB', {
     day: '2-digit',
     month: 'short',
@@ -370,15 +371,15 @@ const toInsightsSort = (filter: string): 'recent' | 'top' | 'all' => {
 
 const formatWorkPeriod = (entry: ExpertWorkExperience) => {
   const start = formatWorkDate(entry.startDate)
-  const end = entry.currentlyWorking ? 'Present' : formatWorkDate(entry.endDate) || 'â€”'
-  if (!start) return 'â€”'
+  const end = entry.currentlyWorking ? 'Present' : formatWorkDate(entry.endDate) || '—'
+  if (!start) return '—'
   return `${start}- ${end}`
 }
 
 const formatLastActive = (value?: string) => {
-  if (!value) return 'â€”'
+  if (!value) return '—'
   const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return 'â€”'
+  if (Number.isNaN(date.getTime())) return '—'
   return date.toLocaleString('en-IN', {
     day: '2-digit',
     month: 'short',
@@ -391,19 +392,22 @@ const getKycBadge = (finalReview?: { isVerified?: boolean; approvalStatus?: stri
   if (finalReview?.approvalStatus === 'approved') {
     return {
       label: 'KYC Verified',
-      className: 'bg-[rgb(0_166_62_/_30%)] text-[#00A63E]',
+      className: 'bg-[#143D2B] text-white border border-[#1E563D]/50',
     }
   }
-  return { label: 'Review Pending', className: 'bg-amber-500/15 text-amber-300' }
+  return {
+    label: 'Review Pending',
+    className: 'bg-amber-500/15 text-amber-300 border border-amber-500/30',
+  }
 }
 
 const formatServiceType = (value?: string) => {
-  if (!value) return 'â€”'
+  if (!value) return '—'
   return value.charAt(0).toUpperCase() + value.slice(1)
 }
 
 const formatPricingType = (value?: string) => {
-  if (!value) return 'â€”'
+  if (!value) return '—'
   return value
     .split(/[_\s-]+/)
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
@@ -415,7 +419,7 @@ const formatPricing = (option: { durationMinutes: number; pricingType: string; p
   if (option.pricingType === 'free' || option.price === 0) {
     return `${mins} (Free)`
   }
-  return `${mins} (â‚¹${option.price.toLocaleString('en-IN')})`
+  return `${mins} (₹${option.price.toLocaleString('en-IN')})`
 }
 
 function SafeImage({
@@ -558,7 +562,7 @@ function ProfileSidebar({
               </button>
             )
           ) : (
-            'â€”'
+            '—'
           )}
         </SidebarRow>
         <SidebarRow label="Ratings">
@@ -566,20 +570,20 @@ function ProfileSidebar({
             <Star className="size-3.5 fill-[#E0A263] text-[#E0A263]" />
             {ratingsAvailable && ratingAverage !== undefined && ratingAverage !== null
               ? Number(ratingAverage).toFixed(1)
-              : 'â€”'}
+              : '—'}
             <span className="text-body-sm text-muted font-normal">
               ({ratingsAvailable && ratingCount != null ? ratingCount : 0})
             </span>
           </span>
         </SidebarRow>
         <SidebarRow label="NPS">
-          {npsScore !== undefined && npsScore !== null ? npsScore : 'â€”'}
+          {npsScore !== undefined && npsScore !== null ? npsScore : '—'}
         </SidebarRow>
-        <SidebarRow label="Experience">{formattedExperience || 'â€”'}</SidebarRow>
+        <SidebarRow label="Experience">{formattedExperience || '—'}</SidebarRow>
         <SidebarRow label="Total Earnings">
           {rawEarnings !== undefined && rawEarnings !== null
-            ? `â‚¹${Number(rawEarnings).toLocaleString('en-IN')}`
-            : 'â‚¹0'}
+            ? `₹${Number(rawEarnings).toLocaleString('en-IN')}`
+            : '₹0'}
         </SidebarRow>
         <SidebarRow label="Total Order Completed">
           {rawOrdersCompleted !== undefined && rawOrdersCompleted !== null ? rawOrdersCompleted : 0}
@@ -614,7 +618,7 @@ function ProfileSidebar({
         <div className="rounded-lg bg-[#050505] p-3">
           <p className="text-muted text-[10px]">Active Tickets</p>
           {ticketsLoading ? (
-            <p className="text-body-sm text-muted mt-1 font-medium">Loadingâ€¦</p>
+            <p className="text-body-sm text-muted mt-1 font-medium">Loading...</p>
           ) : tickets.length === 0 ? (
             <p className="text-body-sm mt-1 font-medium text-white">None</p>
           ) : (
@@ -626,7 +630,7 @@ function ProfileSidebar({
                     onClick={() => navigate(`/support/tickets/${ticket.id}`)}
                     className="text-body-sm w-full truncate text-left font-medium text-white underline-offset-2 hover:underline"
                   >
-                    # {ticket.id} â€“ {ticket.subject}
+                    # {ticket.id} – {ticket.subject}
                   </button>
                 </li>
               ))}
@@ -879,10 +883,10 @@ function OverviewTab({
                 className="flex items-start gap-3"
               >
                 <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#050505]">
-                  <Briefcase className="size-4 text-white/80" />
+                  <img src={bagSolidIcon} alt="" className="size-6 brightness-0 invert" />
                 </div>
                 <div className="min-w-0 pt-0.5">
-                  <p className="text-[13px] font-semibold text-white">{entry.jobTitle || 'â€”'}</p>
+                  <p className="text-[13px] font-semibold text-white">{entry.jobTitle || '—'}</p>
                   <p className="mt-0.5 text-[12px] text-white/45">
                     {entry.companyName || 'Company name'} | {formatWorkPeriod(entry)}
                   </p>
@@ -918,7 +922,7 @@ function OverviewTab({
         </div>
         <div className="space-y-4">
           {reviewsLoading ? (
-            <p className="text-[13px] text-white/50">Loading reviewsâ€¦</p>
+            <p className="text-[13px] text-white/50">Loading reviews...</p>
           ) : reviews.length === 0 ? (
             <p className="text-[13px] text-white/40">No reviews yet for this expert.</p>
           ) : (
@@ -942,9 +946,7 @@ function OverviewTab({
                       </div>
                       <p className="truncate text-[13px] font-semibold text-white">
                         {review.userName || 'User'}
-                        {role ? (
-                          <span className="font-normal text-white/45"> â€¢ {role}</span>
-                        ) : null}
+                        {role ? <span className="font-normal text-white/45"> • {role}</span> : null}
                       </p>
                     </div>
                     {review.title ? (
@@ -1054,7 +1056,7 @@ function ConsultationDetailCard({
               {(consultation.topics ?? []).map((topic) => (
                 <span
                   key={topic._id}
-                  className="bg-brand-muted text-body-sm rounded-md px-3.5 py-1.5 font-medium text-black"
+                  className="rounded-md bg-[#8E8E93] px-3.5 py-1 text-xs font-semibold text-black"
                 >
                   {topic.name}
                 </span>
@@ -1123,65 +1125,88 @@ function ConsultationDetailCard({
         </div>
       )}
 
-      {consultation.whoItsFor && (
-        <div className="mt-5">
-          <p className="text-body-sm mb-2 font-semibold text-white">Who is it for?</p>
-          <p className="text-body-sm text-muted">{consultation.whoItsFor}</p>
-        </div>
-      )}
+      <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2">
+        <div className="flex flex-col gap-5">
+          {consultation.whoItsFor && (
+            <div>
+              <p className="text-body-sm mb-1.5 font-semibold text-white">Who is it for?</p>
+              <p className="text-body-sm text-white/50">{consultation.whoItsFor}</p>
+            </div>
+          )}
 
-      <div className="mt-5">
-        <p className="text-body-sm mb-3 font-semibold text-white">Additional Information</p>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <div className="rounded-lg bg-[#050505] p-3 text-center">
-            <Phone className="mx-auto size-4 text-[#E0A263]" />
-            <p className="text-body-sm text-muted mt-2">Mode</p>
-            <p className="text-body-sm font-semibold text-white capitalize">
-              {consultation.mode || 'â€”'}
+          <div>
+            <p className="text-body-sm mb-3 font-semibold text-white">Additional Information</p>
+            <div className="flex flex-wrap items-center gap-4">
+              <div className="flex flex-col items-center gap-1.5">
+                <div className="flex size-12 items-center justify-center rounded-xl border border-white/5 bg-[#1C1C1C]">
+                  <Phone className="size-5 text-white" />
+                </div>
+                <span className="text-[11px] font-medium text-white/60 capitalize">
+                  {consultation.mode || 'Mode'}
+                </span>
+              </div>
+              <div className="flex flex-col items-center gap-1.5">
+                <div className="flex size-12 items-center justify-center rounded-xl border border-white/5 bg-[#1C1C1C]">
+                  <Languages className="size-5 text-white" />
+                </div>
+                <span className="text-[11px] font-medium text-white/60">
+                  {(consultation.languages ?? [])[0] || 'English'}
+                </span>
+              </div>
+              <div className="flex flex-col items-center gap-1.5">
+                <div className="flex size-12 items-center justify-center rounded-xl border border-white/5 bg-[#1C1C1C]">
+                  <span className="text-xs font-bold text-white">
+                    {consultation.hasFollowUp && consultation.followUpDays
+                      ? `${consultation.followUpDays} Days`
+                      : '5 Days'}
+                  </span>
+                </div>
+                <span className="text-[11px] font-medium text-white/60">FollowUps</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-4">
+          <div>
+            <p className="text-body-sm mb-1 font-semibold text-white">Pre-session requirement</p>
+            <p className="text-body-sm text-white/50">
+              {consultation.preSessionRequirement || 'Keep your requirements and questions ready.'}
             </p>
           </div>
-          <div className="rounded-lg bg-[#050505] p-3 text-center">
-            <Languages className="mx-auto size-4 text-[#E0A263]" />
-            <p className="text-body-sm text-muted mt-2">Language</p>
-            <p className="text-body-sm font-semibold text-white">
-              {(consultation.languages ?? []).join(', ') || 'â€”'}
+
+          <div>
+            <p className="text-body-sm mb-1 font-semibold text-white">Post Session Requirement</p>
+            <p className="text-body-sm text-white/50">
+              {consultation.postSessionMessage || 'Keep your requirements and questions ready.'}
             </p>
           </div>
-          <div className="rounded-lg bg-[#050505] p-3 text-center">
-            <Clock className="mx-auto size-4 text-[#E0A263]" />
-            <p className="text-body-sm text-muted mt-2">FollowUps</p>
-            <p className="text-body-sm font-semibold text-white">
-              {consultation.hasFollowUp && consultation.followUpDays
-                ? `${consultation.followUpDays} Days`
-                : 'â€”'}
-            </p>
-          </div>
+
+          {(consultation.pricingOptions ?? []).length > 0 && (
+            <div>
+              <p className="text-body-sm mb-2 font-semibold text-white">Duration &amp; Pricing</p>
+              <div className="flex flex-wrap gap-2">
+                {(consultation.pricingOptions ?? []).map((option) => (
+                  <span
+                    key={`${option.durationMinutes}-${option.price}`}
+                    className="rounded-xl border border-white/10 bg-[#1C1C1C] px-3.5 py-2 text-xs font-semibold text-white"
+                  >
+                    {formatPricing(option)}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
-
-      {(consultation.pricingOptions ?? []).length > 0 && (
-        <div className="mt-5">
-          <p className="text-body-sm mb-3 font-semibold text-white">Duration &amp; Pricing</p>
-          <div className="flex flex-wrap gap-2">
-            {(consultation.pricingOptions ?? []).map((option) => (
-              <span
-                key={`${option.durationMinutes}-${option.price}`}
-                className="text-body-sm rounded-lg bg-[#050505] px-3 py-2 font-semibold text-white"
-              >
-                {formatPricing(option)}
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
 
       <button
         type="button"
         onClick={() => viewExpertConsultation(consultation, expertId, navigate)}
-        className="text-body-sm mt-5 flex w-full items-center justify-between rounded-lg bg-[#050505] px-4 py-3 font-semibold text-white transition-colors hover:bg-white/5"
+        className="mt-6 flex w-full items-center justify-between rounded-xl border border-[#E0A263] bg-transparent px-5 py-3.5 text-[13px] font-semibold text-white transition-colors hover:bg-white/5"
       >
-        Consultation Performance
-        <ChevronRight className="size-4" />
+        <span>Consultation Performance</span>
+        <ChevronRight className="size-4 text-[#E0A263]" />
       </button>
     </div>
   )
@@ -1277,6 +1302,7 @@ function ServicesSubTab({
   const [isBulkDeleteModalOpen, setIsBulkDeleteModalOpen] = useState(false)
   const [bulkDeleteReasons, setBulkDeleteReasons] = useState<string[]>([])
   const [bulkDeleteAdminNotes, setBulkDeleteAdminNotes] = useState('')
+  const [bulkDeleteConfirmed, setBulkDeleteConfirmed] = useState(false)
 
   const [isBulkPauseModalOpen, setIsBulkPauseModalOpen] = useState(false)
 
@@ -1319,6 +1345,10 @@ function ServicesSubTab({
       toast.error('Please select at least one reason for deletion.')
       return
     }
+    if (!bulkDeleteConfirmed) {
+      toast.error('Please confirm the delete reasons before continuing.')
+      return
+    }
     if (!bulkDeleteAdminNotes.trim()) {
       toast.error('Admin notes are required for deletion.')
       return
@@ -1337,6 +1367,7 @@ function ServicesSubTab({
           setIsBulkDeleteModalOpen(false)
           setBulkDeleteReasons([])
           setBulkDeleteAdminNotes('')
+          setBulkDeleteConfirmed(false)
         },
         onError: (err: unknown) => {
           const error = err as { response?: { data?: { message?: string } } }
@@ -1347,6 +1378,7 @@ function ServicesSubTab({
   }, [
     selectedServiceIds,
     bulkDeleteReasons,
+    bulkDeleteConfirmed,
     bulkDeleteAdminNotes,
     deleteReasonOptions.length,
     bulkDeleteMutation,
@@ -1697,7 +1729,11 @@ function ServicesSubTab({
             ? `Delete ${selectedServiceIds.length} Services`
             : 'Delete Service'
         }
-        description={`Are you sure you want to delete ${selectedServiceIds.length} selected service(s)? This action cannot be undone.`}
+        description={
+          selectedServiceIds.length > 1
+            ? `Are you sure you want to delete ${selectedServiceIds.length} selected service(s)? This action cannot be undone.`
+            : 'Are you sure you want to delete this service? This action cannot be undone.'
+        }
         submitLabel={
           selectedServiceIds.length > 1
             ? `Delete ${selectedServiceIds.length} Services`
@@ -1713,9 +1749,16 @@ function ServicesSubTab({
               : [...current, value],
           )
         }
+        showReasonsLabel
+        confirmationLabel="I confirm the documents are not approved due to above reasons."
+        confirmationChecked={bulkDeleteConfirmed}
+        onConfirmationChange={setBulkDeleteConfirmed}
         adminNotes={bulkDeleteAdminNotes}
         onAdminNotesChange={setBulkDeleteAdminNotes}
-        onClose={() => setIsBulkDeleteModalOpen(false)}
+        onClose={() => {
+          setIsBulkDeleteModalOpen(false)
+          setBulkDeleteConfirmed(false)
+        }}
         onSubmit={confirmBulkDelete}
         isSubmitting={bulkDeleteMutation.isPending}
       />
@@ -1789,66 +1832,77 @@ function ServiceListCard({
     if (isDeleted) return 'Deleted'
     if (isSuspended) return 'Suspended'
     if (!status) return null
-    if (status === 'live') return 'Instant'
+    if (status === 'live' || status === 'instant') return 'Instant'
     return status.charAt(0).toUpperCase() + status.slice(1).replace(/_/g, ' ')
   })()
   const statusClass = isDeleted
-    ? 'bg-brand-danger'
+    ? 'bg-rose-500/90 text-white'
     : isSuspended
-      ? 'bg-amber-500'
-      : status === 'live'
-        ? 'bg-[#22C55E]'
+      ? 'bg-amber-500/90 text-white'
+      : status === 'live' || status === 'instant' || status === 'preview'
+        ? 'bg-[#16A34A] text-white'
         : status === 'rejected'
-          ? 'bg-brand-danger'
+          ? 'bg-rose-500/90 text-white'
           : status === 'closed'
-            ? 'bg-amber-500'
-            : 'bg-[#22C55E]'
+            ? 'bg-amber-500/90 text-white'
+            : 'bg-[#16A34A] text-white'
 
   return (
     <div
       onClick={() => viewExpertService(service, expertId, navigate)}
       className={cn(
-        'flex w-full cursor-pointer items-center gap-3 rounded-xl bg-[#141414] px-4 py-4 text-left transition-colors hover:bg-[#1a1a1a]',
+        'flex w-full cursor-pointer items-center justify-between gap-3 rounded-xl bg-[#141414] px-4 py-4 text-left transition-colors hover:bg-[#1a1a1a]',
         selected && 'border border-blue-500 bg-blue-950/20',
       )}
     >
-      <input
-        type="checkbox"
-        checked={selected}
-        onClick={(event) => event.stopPropagation()}
-        onChange={onToggleSelect}
-        className="size-5 shrink-0 rounded border-white/30 bg-transparent"
-      />
-
-      <div className="relative ml-1 h-28 w-32 shrink-0 overflow-hidden rounded-xl bg-black">
-        <SafeImage
-          src={coverImage}
-          alt={service.title || 'Service'}
-          className="size-full object-cover"
-          fallback={
-            <div className="text-muted flex size-full items-center justify-center">
-              <ImageOff className="size-5" />
-            </div>
-          }
+      <div className="flex min-w-0 flex-1 items-center gap-3">
+        <input
+          type="checkbox"
+          checked={selected}
+          onClick={(event) => event.stopPropagation()}
+          onChange={onToggleSelect}
+          className="size-5 shrink-0 rounded border-white/30 bg-transparent"
         />
-        {statusLabel && (
-          <span
-            className={cn(
-              'absolute top-2 left-2 rounded-md px-1.5 py-0.5 text-[10px] leading-none font-bold text-white',
-              statusClass,
-            )}
-          >
-            {statusLabel}
-          </span>
-        )}
+
+        <div className="relative ml-1 h-28 w-32 shrink-0 overflow-hidden rounded-xl bg-black">
+          <SafeImage
+            src={coverImage}
+            alt={service.title || 'Service'}
+            className="size-full object-cover"
+            fallback={
+              <div className="text-muted flex size-full items-center justify-center">
+                <ImageOff className="size-5" />
+              </div>
+            }
+          />
+          {statusLabel && (
+            <span
+              className={cn(
+                'absolute top-2 left-2 rounded-md px-2 py-0.5 text-[10px] leading-none font-bold text-white shadow-xs',
+                statusClass,
+              )}
+            >
+              {statusLabel}
+            </span>
+          )}
+        </div>
+
+        <div className="ml-1 min-w-0 flex-1">
+          <p className="text-body-md font-bold text-white">{service.title || 'Untitled Service'}</p>
+          <p className="text-body-sm text-muted mt-0.5">{service.category?.name || '—'}</p>
+          <p className="text-body-sm text-muted mt-0.5">{formatPricingType(service.pricingType)}</p>
+        </div>
       </div>
 
-      <div className="ml-1 min-w-0 flex-1">
-        <p className="text-body-md font-bold text-white">
-          {displayServiceTitle(service.title) || 'Untitled Service'}
-        </p>
-        <p className="text-body-sm text-muted mt-0.5">{service.category?.name || '—'}</p>
-        <p className="text-body-sm text-muted mt-0.5">{formatPricingType(service.pricingType)}</p>
+      <div className="flex shrink-0 items-center gap-4">
+        {service.priceStarts != null && service.priceStarts > 0 && (
+          <div className="text-right">
+            <p className="text-[13px] font-bold text-white">
+              ₹{Number(service.priceStarts).toLocaleString('en-IN')}
+            </p>
+          </div>
+        )}
+        <ChevronRight className="size-4 text-white/50" />
       </div>
     </div>
   )
@@ -2117,7 +2171,7 @@ function ConsultationsSubTab({
       <DecisionActionModal
         open={Boolean(requestChangesTarget)}
         variant="requestChanges"
-        title="Request Changes â€“ Consultation Approval"
+        title="Request Changes – Consultation Approval"
         description="Are you sure you want to Request Changes to this application? The applicant will be notified via email."
         submitLabel="Request Changes"
         reasonOptions={requestChangesReasonOptions}
@@ -2271,7 +2325,7 @@ function AvailabilityTab({
         <div>
           <h3 className="text-body-md mb-4 font-semibold text-white">Availability</h3>
           {isLoading ? (
-            <p className="text-muted text-sm">Loading availabilityâ€¦</p>
+            <p className="text-muted text-sm">Loading availability...</p>
           ) : weekly.length === 0 ? (
             <p className="text-muted text-sm">No weekly availability set.</p>
           ) : (
@@ -2288,11 +2342,11 @@ function AvailabilityTab({
                     <span className="text-white">{day}</span>
                     <span className="text-muted inline-flex w-fit items-center gap-1 rounded-full bg-black px-3 py-1">
                       <Clock className="size-3" />
-                      {window?.from ? formatClock(window.from) : 'â€”'}
+                      {window?.from ? formatClock(window.from) : '—'}
                     </span>
                     <span className="text-muted inline-flex w-fit items-center gap-1 rounded-full bg-black px-3 py-1">
                       <Clock className="size-3" />
-                      {window?.to ? formatClock(window.to) : 'â€”'}
+                      {window?.to ? formatClock(window.to) : '—'}
                     </span>
                   </div>
                 )
@@ -2303,7 +2357,7 @@ function AvailabilityTab({
         <div>
           <h3 className="text-body-md mb-4 font-semibold text-white">Unavailability</h3>
           {isLoading ? (
-            <p className="text-muted text-sm">Loading unavailabilityâ€¦</p>
+            <p className="text-muted text-sm">Loading unavailability...</p>
           ) : unavailable.length === 0 ? (
             <p className="text-muted text-sm">No blocked dates recorded.</p>
           ) : (
@@ -2318,7 +2372,7 @@ function AvailabilityTab({
                   key={`${item.date}-${index}`}
                   className="text-body-sm grid grid-cols-3 items-center px-4 py-3"
                 >
-                  <span className="text-white">{item.date || 'â€”'}</span>
+                  <span className="text-white">{item.date || '—'}</span>
                   <span className="text-muted inline-flex w-fit items-center gap-1 rounded-full bg-black px-3 py-1">
                     <Clock className="size-3" />
                     {formatClock(item.from)}
@@ -2356,7 +2410,7 @@ function AnalyticsTab({ expertId }: { expertId?: string }) {
           ),
         ],
         EXPERT_PROFILE_ANALYTICS_METRIC_IDS,
-      ).slice(0, 8),
+      ),
     [activeMetricIds],
   )
 
@@ -2386,7 +2440,7 @@ function AnalyticsTab({ expertId }: { expertId?: string }) {
           <div key={card.id} className="rounded-lg bg-[#050505] p-4">
             <div className="flex items-center justify-between">
               <p className="text-body-sm text-muted">{card.label}</p>
-              <Briefcase className="size-4 text-[#E0A263]" />
+              <VenueAnalyticsMetricIcon />
             </div>
             <p className="mt-3 text-xl font-bold text-white">{card.value}</p>
           </div>
@@ -2422,23 +2476,34 @@ function HealthTab({
   const incidents = useMemo(() => {
     const reportRows = reports.map((report) => {
       const issue = String(report.issueType || '').toLowerCase()
-      const status = String(report.investigationStatus || '').toLowerCase()
-      const isViolation = VIOLATION_ISSUE_TYPES.has(issue) || OPEN_REPORT_STATUSES.has(status)
+      const statusRaw = String(report.investigationStatus || '').toLowerCase()
+      const isViolation = VIOLATION_ISSUE_TYPES.has(issue) || OPEN_REPORT_STATUSES.has(statusRaw)
+      const isOpen =
+        OPEN_REPORT_STATUSES.has(statusRaw) || statusRaw === 'open' || statusRaw === 'new'
+      const isUnderReview =
+        statusRaw === 'under review' || statusRaw === 'in review' || statusRaw === 'waiting'
+
+      const typeClass = isViolation
+        ? 'bg-[#3D1414] border border-[#5C1D1D]/50 text-white'
+        : 'bg-[#3D2814] border border-[#5C3D1D]/50 text-white'
+
+      const statusClass = isOpen
+        ? 'bg-[#3D1414] border border-[#5C1D1D]/50 text-white'
+        : isUnderReview
+          ? 'bg-[#3D2814] border border-[#5C3D1D]/50 text-white'
+          : 'bg-[#143D2B] border border-[#1E563D]/50 text-[#00E065]'
+
       return {
         id: report.id || report.reportId,
         kind: isViolation ? 'violation' : 'reported-against',
-        type: isViolation ? 'Violation' : 'Reported Against',
-        typeClass: isViolation
-          ? 'bg-brand-danger/15 text-red-400'
-          : 'bg-amber-500/15 text-amber-300',
-        status: report.investigationStatus || 'New',
-        statusClass: OPEN_REPORT_STATUSES.has(
-          String(report.investigationStatus || '').toLowerCase(),
-        )
-          ? 'border-red-500/40 text-red-400'
-          : 'border-emerald-500/40 text-brand-positive',
-        title: report.issueType || 'Expert report',
-        detail: report.reason || 'No reason provided.',
+        type: isViolation ? 'Violation' : 'Report Against',
+        typeClass,
+        status: report.investigationStatus || 'Open',
+        statusClass,
+        title: report.issueType || 'Spam Content Detected',
+        detail:
+          report.reason ||
+          'Multiple identical messages sent to different users within short timeframe',
         raisedOn: report.submittedAt,
         updatedOn: report.latestActionTimestamp || report.submittedAt,
         action: 'View Details',
@@ -2447,23 +2512,37 @@ function HealthTab({
       }
     })
 
-    const ticketRows = tickets.map((ticket) => ({
-      id: ticket.id,
-      kind: 'reported-by',
-      type: 'Reported By',
-      typeClass: 'bg-blue-500/15 text-blue-400',
-      status: ticket.status,
-      statusClass: ACTIVE_TICKET_STATUSES.has(String(ticket.status).toLowerCase())
-        ? 'border-amber-500/40 text-amber-300'
-        : 'border-emerald-500/40 text-brand-positive',
-      title: ticket.subject,
-      detail: ticket.issueType || ticket.category || 'Support ticket',
-      raisedOn: ticket.createdAt,
-      updatedOn: ticket.resolvedAt || ticket.createdAt,
-      action: 'View Ticket',
-      icon: FileText,
-      onAction: () => navigate(`/support/tickets/${ticket.id}`),
-    }))
+    const ticketRows = tickets.map((ticket) => {
+      const statusRaw = String(ticket.status || '').toLowerCase()
+      const isActive =
+        ACTIVE_TICKET_STATUSES.has(statusRaw) || statusRaw === 'open' || statusRaw === 'in_progress'
+      const isResolved = statusRaw === 'resolved' || statusRaw === 'closed'
+
+      const statusClass = isResolved
+        ? 'bg-[#143D2B] border border-[#1E563D]/50 text-[#00E065]'
+        : isActive
+          ? 'bg-[#3D2814] border border-[#5C3D1D]/50 text-white'
+          : 'bg-[#3D1414] border border-[#5C1D1D]/50 text-white'
+
+      return {
+        id: ticket.id,
+        kind: 'reported-by',
+        type: 'Reported By',
+        typeClass: 'bg-[#14243D] border border-[#1D365C]/50 text-white',
+        status: ticket.status || 'Resolved',
+        statusClass,
+        title: ticket.subject || 'Spam Content Detected',
+        detail:
+          ticket.issueType ||
+          ticket.category ||
+          'Multiple identical messages sent to different users within short timeframe',
+        raisedOn: ticket.createdAt,
+        updatedOn: ticket.resolvedAt || ticket.createdAt,
+        action: 'View Ticket',
+        icon: Eye,
+        onAction: () => navigate(`/support/tickets/${ticket.id}`),
+      }
+    })
 
     return [...reportRows, ...ticketRows]
   }, [navigate, onOpenReport, reports, tickets])
@@ -2489,7 +2568,7 @@ function HealthTab({
               type="button"
               onClick={() => setFilter(chip.key)}
               className={cn(
-                'text-body-sm rounded-md px-3 py-1.5 font-semibold transition-colors',
+                'rounded-lg px-4 py-1.5 text-xs font-semibold transition-colors',
                 filter === chip.key ? PROFILE_ACTIVE_PILL : PROFILE_IDLE_PILL,
               )}
             >
@@ -2498,7 +2577,12 @@ function HealthTab({
           ))}
         </div>
         <span
-          className={cn('text-body-sm font-bold', atRisk ? 'text-red-400' : 'text-brand-positive')}
+          className={cn(
+            'rounded-full px-3.5 py-1 text-xs font-semibold text-white',
+            atRisk
+              ? 'border border-[#5C1D1D]/50 bg-[#3D1414]'
+              : 'border border-[#1E563D]/50 bg-[#143D2B]',
+          )}
         >
           Profile Health: {atRisk ? 'At Risk' : 'Healthy'}
         </span>
@@ -2509,38 +2593,40 @@ function HealthTab({
           <p className="text-muted py-8 text-center text-sm">No reported issues for this expert.</p>
         ) : (
           visible.map((incident) => (
-            <div key={`${incident.kind}-${incident.id}`} className="rounded-lg bg-[#050505] p-4">
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span
-                      className={cn(
-                        'rounded-md px-2 py-0.5 text-[10px] font-bold',
-                        incident.typeClass,
-                      )}
-                    >
-                      {incident.type}
-                    </span>
-                    <span
-                      className={cn(
-                        'rounded-md border px-2 py-0.5 text-[10px] font-bold capitalize',
-                        incident.statusClass,
-                      )}
-                    >
-                      {incident.status}
-                    </span>
+            <div key={`${incident.kind}-${incident.id}`} className="rounded-xl bg-[#050505] p-5">
+              <div className="flex items-center justify-between">
+                <span
+                  className={cn(
+                    'rounded-full px-3 py-0.5 text-[11px] font-semibold',
+                    incident.typeClass,
+                  )}
+                >
+                  {incident.type}
+                </span>
+                <span
+                  className={cn(
+                    'rounded-full px-3 py-0.5 text-[11px] font-semibold',
+                    incident.statusClass,
+                  )}
+                >
+                  {incident.status}
+                </span>
+              </div>
+
+              <div className="mt-3 flex flex-wrap items-end justify-between gap-4">
+                <div className="min-w-0 flex-1">
+                  <p className="text-[14px] font-bold text-white">{incident.title}</p>
+                  <p className="text-body-sm mt-1 text-white/50">{incident.detail}</p>
+                  <div className="mt-3 space-y-0.5 text-xs text-white/40">
+                    <p>Raised On: {incident.raisedOn || '—'}</p>
+                    {incident.updatedOn ? <p>Last Updated: {incident.updatedOn}</p> : null}
                   </div>
-                  <p className="mt-2 text-[13px] font-semibold text-white">{incident.title}</p>
-                  <p className="text-body-sm text-muted mt-1">{incident.detail}</p>
-                  <p className="text-muted mt-2 text-[10px]">
-                    Raised On: {incident.raisedOn || 'â€”'}
-                    {incident.updatedOn ? ` Â· Last Updated: ${incident.updatedOn}` : ''}
-                  </p>
                 </div>
+
                 <button
                   type="button"
                   onClick={incident.onAction}
-                  className="text-body-sm flex items-center gap-1.5 rounded-lg bg-[linear-gradient(180deg,#F6CB86_0%,#E0A263_100%)] px-3 py-2 font-semibold text-[#050505]"
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-[linear-gradient(180deg,#F6CB86_0%,#E0A263_100%)] px-4 py-2 text-xs font-semibold text-[#050505] transition-[filter] hover:brightness-95"
                 >
                   <incident.icon className="size-3.5" />
                   {incident.action}
@@ -2596,6 +2682,7 @@ export function ExpertProfileViewPage() {
     error: profileErrorDetail,
   } = useExpertProfile(id)
 
+  const { data: leaderboardProfileRes } = useExpertLeaderboardProfile(id ?? null, {})
   const { data: analyticsRes } = useExpertAnalytics(id)
   const updateNotesMutation = useUpdateExpertAdminNotes(id)
   const updateTagsMutation = useUpdateExpertAdminTags(id)
@@ -2761,7 +2848,7 @@ export function ExpertProfileViewPage() {
             exportCell(customUrl),
             exportCell(ratings),
             exportCell(nps),
-            exportCell(experience === 'â€”' ? '' : experience),
+            exportCell(experience === '—' ? '' : experience),
             exportCell(earnings),
             exportCell(orders),
             exportCell(kycLabel),
@@ -2980,7 +3067,14 @@ export function ExpertProfileViewPage() {
   const displayName = basic?.fullname || profile.fullname || 'Expert'
   const coverImage = basic?.coverImage
   const avatarImage = basic?.profileImage
-  const subtitle = [basic?.industry, basic?.location].filter(Boolean).join(' â€¢ ')
+  const subtitle = [basic?.industry, basic?.location].filter(Boolean).join(' • ')
+  const leaderboardRank = leaderboardProfileRes?.data?.rank
+  const expertRank =
+    leaderboardRank ??
+    (profile as unknown as { rank?: number; leaderboardRank?: number })?.rank ??
+    (profile as unknown as { leaderboardRank?: number })?.leaderboardRank
+  const rankingBadgeText =
+    expertRank != null && Number(expertRank) > 0 ? `# ${expertRank} Ranking` : 'Unranked'
 
   const headerActions = [
     {
@@ -3160,11 +3254,11 @@ export function ExpertProfileViewPage() {
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
                 <h2 className="text-lg font-bold text-white">{displayName}</h2>
-                <span className="rounded-full bg-[rgb(0_166_62_/_30%)] px-2.5 py-0.5 text-[10px] font-bold text-[#00A63E]">
-                  # 1 Ranking
+                <span className="rounded-full border border-[#1E563D]/50 bg-[#143D2B] px-2.5 py-0.5 text-[10px] font-bold text-white">
+                  {rankingBadgeText}
                 </span>
               </div>
-              <p className="text-body-sm text-white/50">{subtitle || 'â€”'}</p>
+              <p className="text-body-sm text-white/50">{subtitle || '—'}</p>
             </div>
           </div>
           <div className="flex w-full max-w-[600px] flex-wrap items-center justify-end gap-2 sm:w-auto sm:shrink-0">

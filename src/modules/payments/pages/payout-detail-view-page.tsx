@@ -24,6 +24,7 @@ import {
 } from '@/modules/payments/utils/finance-mappers'
 import { PermissionGate } from '@/modules/rbac/components/permission-gate'
 import { Button } from '@/shared/components/ui/button'
+import { DetailViewSkeleton } from '@/shared/components/ui/skeleton'
 import { cn } from '@/shared/lib/cn'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import { PERMISSION_LEVELS } from '@/shared/lib/permissions'
@@ -101,7 +102,7 @@ export function PayoutDetailViewPage() {
   }, [canRelease, payout, searchParams, setSearchParams])
 
   if (isLoading && !payout) {
-    return <p className="text-body-sm text-muted">Loading payout details...</p>
+    return <DetailViewSkeleton pillCount={6} cardCount={2} />
   }
 
   if (isError || !payout) {

@@ -1,5 +1,4 @@
 import { useCallback, useMemo, useState } from 'react'
-
 import { toast } from 'sonner'
 
 import type { FinanceListParams } from '@/modules/payments/types/finance-api'

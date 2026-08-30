@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
+  ArrowDown,
+  ArrowUp,
   ArrowUpDown,
   CalendarDays,
-  Download,
   ExternalLink,
   Search,
   SlidersHorizontal,
@@ -18,6 +19,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
+import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'
 import { exportDataToFile } from '@/shared/utils/export-utils'
 
 import rank2Icon from '@/assets/JOMS_ADMIN_PANEL_3D_ICONS/change-the-engraved-gold-number--1--on-the-circula (1).png'
@@ -267,6 +269,13 @@ function renderLeaderboardCell(
 }
 
 const SORTABLE_LEADERBOARD_COLUMN_IDS = new Set([
+  'rank',
+  'expert-id',
+  'venue-id',
+  'expert-name',
+  'venue-name',
+  'category',
+  'membership-type',
   'orders-completed',
   'events-count',
   'average-rating',
@@ -279,7 +288,31 @@ const SORTABLE_LEADERBOARD_COLUMN_IDS = new Set([
   'consultations-listed',
   'repeat-client-rate',
   'order-completion-rate',
+  'last-active',
 ])
+
+const LEADERBOARD_SORT_FIELD_MAP: Record<string, string> = {
+  rank: 'rank',
+  'expert-id': 'expertId',
+  'venue-id': 'expertId',
+  'expert-name': 'name',
+  'venue-name': 'name',
+  category: 'category',
+  'membership-type': 'membershipType',
+  'orders-completed': 'ordersCompleted',
+  'events-count': 'ordersCompleted',
+  'average-rating': 'averageRating',
+  ratings: 'averageRating',
+  score: 'score',
+  'profile-health-score': 'profileHealth',
+  'client-satisfaction-score': 'clientSatisfaction',
+  'total-revenue': 'totalRevenue',
+  'services-listed': 'servicesListed',
+  'consultations-listed': 'consultationsListed',
+  'repeat-client-rate': 'repeatClientRate',
+  'order-completion-rate': 'orderCompletionRate',
+  'last-active': 'lastActiveAt',
+}
 
 function RankBadge({ rank }: { rank: number }) {
   if (rank <= 3) {
@@ -374,6 +407,8 @@ function buildLeaderboardQuery(
     limit?: number
     search?: string
     serviceType: 'venue' | 'concierge'
+    sortBy?: string
+    sortOrder?: 'asc' | 'desc'
   },
 ): ExpertLeaderboardQuery {
   return {
@@ -390,6 +425,8 @@ function buildLeaderboardQuery(
     revenueMin: filters.revenueMin || undefined,
     revenueMax: filters.revenueMax || undefined,
     serviceType: extras.serviceType,
+    sortBy: extras.sortBy,
+    sortOrder: extras.sortOrder,
   }
 }
 
@@ -757,6 +794,13 @@ export const LeaderboardPage = () => {
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [profilePartnerId, setProfilePartnerId] = useState<string | null>(null)
 
+  const serverSort = useServerTableSort({
+    sortFieldMap: LEADERBOARD_SORT_FIELD_MAP,
+    defaultSortBy: 'rank',
+    defaultSortOrder: 'asc',
+    onPageReset: () => setPage(1),
+  })
+
   useEffect(() => {
     const timer = window.setTimeout(() => {
       setSearch(searchInput.trim())
@@ -774,8 +818,9 @@ export const LeaderboardPage = () => {
         limit: 10,
         search,
         serviceType,
+        ...serverSort.sortParams,
       }),
-    [filtersApplied, page, search, serviceType],
+    [filtersApplied, page, search, serverSort.sortParams, serviceType],
   )
 
   const { data, isLoading, isError, isFetching } = useExpertLeaderboard(query)
@@ -834,6 +879,38 @@ export const LeaderboardPage = () => {
   const pagination = leaderboard?.pagination
   const allSelected = rows.length > 0 && rows.every((row) => selectedIds.includes(row.partnerId))
 
+  const handleColumnSort = useCallback(
+    (columnId: string) => {
+      if (!SORTABLE_LEADERBOARD_COLUMN_IDS.has(columnId)) return
+      serverSort.onSortingChange((prev) => {
+        const current = prev[0]
+        if (!current || current.id !== columnId) {
+          return [{ id: columnId, desc: false }]
+        }
+        if (!current.desc) {
+          return [{ id: columnId, desc: true }]
+        }
+        return []
+      })
+    },
+    [serverSort],
+  )
+
+  const renderSortIcon = useCallback(
+    (columnId: string) => {
+      const active = serverSort.sorting[0]
+      if (!active || active.id !== columnId) {
+        return <ArrowUpDown className="text-muted/50 size-[18px]" aria-hidden="true" />
+      }
+      return active.desc ? (
+        <ArrowDown className="text-brand-primary size-[18px]" aria-hidden="true" />
+      ) : (
+        <ArrowUp className="text-brand-primary size-[18px]" aria-hidden="true" />
+      )
+    },
+    [serverSort.sorting],
+  )
+
   const handleExportData = useCallback(
     async (format: string) => {
       setIsExporting(true)
@@ -844,6 +921,7 @@ export const LeaderboardPage = () => {
           limit: pageSize,
           search,
           serviceType,
+          ...serverSort.sortParams,
         })
         const firstPage = await fetchExpertLeaderboard(exportQuery)
         const firstList = firstPage.data?.list ?? []
@@ -885,7 +963,15 @@ export const LeaderboardPage = () => {
         setIsExporting(false)
       }
     },
-    [filtersDraft, isVenueLeaderboard, search, serviceType, tableColumnsCatalog, visibleColumns],
+    [
+      filtersDraft,
+      isVenueLeaderboard,
+      search,
+      serverSort.sortParams,
+      serviceType,
+      tableColumnsCatalog,
+      visibleColumns,
+    ],
   )
 
   const openProfile = (row: LeaderboardRow | { partnerId: string }) => {
@@ -897,7 +983,7 @@ export const LeaderboardPage = () => {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-white">
-            {isVenueLeaderboard ? 'Venue Leaderboard' : 'Expert Leader board'}
+            {isVenueLeaderboard ? 'Venue Leaderboard' : 'Expert Leaderboard'}
           </h1>
           <p className="text-body-md text-muted mt-1">
             {isVenueLeaderboard
@@ -1005,19 +1091,28 @@ export const LeaderboardPage = () => {
               className="ui-export-data gap-2"
               disabled={isExporting}
             >
-              <Download className="size-4" />
+              <Upload className="size-4" />
               Export Data
             </Button>
           </div>
         </div>
 
-        <p className="text-body-sm text-muted mt-4">
+        <p className="ui-table-showing mt-4">
           {showShimmer ? (
             <ShimmerBlock className="inline-block h-4 w-48 bg-white/5 align-middle" />
           ) : pagination ? (
-            `Showing ${pagination.showingFrom}-${pagination.showingTo} of ${pagination.total} users`
+            <>
+              Showing{' '}
+              <span className="ui-table-showing-value">
+                {pagination.showingFrom}-{pagination.showingTo}
+              </span>{' '}
+              of <span className="ui-table-showing-value">{pagination.total}</span> users
+            </>
           ) : (
-            'Showing 0-0 of 0 users'
+            <>
+              Showing <span className="ui-table-showing-value">0-0</span> of{' '}
+              <span className="ui-table-showing-value">0</span> users
+            </>
           )}
         </p>
 
@@ -1026,10 +1121,10 @@ export const LeaderboardPage = () => {
         )}
 
         <div className="mt-3 overflow-x-auto">
-          <table className="w-full min-w-[1100px] border-collapse text-left">
-            <thead>
-              <tr className="text-muted text-[10px] font-semibold tracking-wide uppercase">
-                <th className="px-3 py-3">
+          <table className="ui-data-table-table min-w-[1100px]">
+            <thead className="bg-brand-surface border-white/10">
+              <tr className="text-brand-text">
+                <th scope="col" className="px-3 py-3 whitespace-nowrap">
                   <input
                     type="checkbox"
                     aria-label="Select all"
@@ -1045,20 +1140,26 @@ export const LeaderboardPage = () => {
                     className="rounded border-slate-700 bg-transparent"
                   />
                 </th>
-                {visibleColumns.map((column) => (
-                  <th key={column.id} className="px-3 py-3">
-                    {SORTABLE_LEADERBOARD_COLUMN_IDS.has(column.id) ? (
-                      <span className="inline-flex items-center gap-1">
-                        {column.label} <ArrowUpDown className="size-3 opacity-40" />
-                      </span>
-                    ) : (
-                      column.label
-                    )}
-                  </th>
-                ))}
+                {visibleColumns.map((column) => {
+                  const isSortable = SORTABLE_LEADERBOARD_COLUMN_IDS.has(column.id)
+                  return (
+                    <th key={column.id} scope="col" className="px-3 py-3 whitespace-nowrap">
+                      <div
+                        className={cn(
+                          'inline-flex items-center gap-1.5',
+                          isSortable && 'cursor-pointer select-none',
+                        )}
+                        onClick={isSortable ? () => handleColumnSort(column.id) : undefined}
+                      >
+                        {column.label}
+                        {isSortable ? renderSortIcon(column.id) : null}
+                      </div>
+                    </th>
+                  )
+                })}
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-white/10">
               {showShimmer ? (
                 <TableRowsShimmer columnCount={visibleColumns.length} />
               ) : (
@@ -1066,9 +1167,9 @@ export const LeaderboardPage = () => {
                   {rows.map((row) => (
                     <tr
                       key={row.partnerId}
-                      className="text-body-sm text-brand-text border-b border-white/5 transition-colors hover:bg-white/[0.02]"
+                      className="text-brand-stroke transition-colors hover:bg-white/[0.03]"
                     >
-                      <td className="px-3 py-3">
+                      <td className="px-3 py-3 align-middle">
                         <input
                           type="checkbox"
                           aria-label={`Select ${row.expertId}`}
@@ -1084,7 +1185,10 @@ export const LeaderboardPage = () => {
                         />
                       </td>
                       {visibleColumns.map((column) => (
-                        <td key={`${row.partnerId}-${column.id}`} className="px-3 py-3">
+                        <td
+                          key={`${row.partnerId}-${column.id}`}
+                          className="px-3 py-3 align-middle"
+                        >
                           {renderLeaderboardCell(column.id, row, openProfile)}
                         </td>
                       ))}

@@ -55,11 +55,16 @@ function MembershipModalShell({
   footer: ReactNode
 }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-[#050505]/80 p-4"
+      onClick={onClose}
+      role="presentation"
+    >
       <div
         className="ui-modal-shell w-full max-w-[551px] !bg-[#141414]"
         role="dialog"
         aria-modal="true"
+        onClick={(e) => e.stopPropagation()}
       >
         <div className="ui-modal-header !items-start">
           <div className="min-w-0 flex-1">

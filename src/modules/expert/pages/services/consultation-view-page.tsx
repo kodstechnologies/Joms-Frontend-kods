@@ -21,6 +21,7 @@ import {
   type DecisionActionModalOption,
 } from '@/shared/components/modal/decision-action-modal'
 import { Button } from '@/shared/components/ui/button'
+import { cn } from '@/shared/lib/cn'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 
 import { useExpertProfile } from '../../hooks/use-expert-profile'
@@ -40,6 +41,7 @@ type ConsultationViewDetail = ConsultationDetail & {
   adminNote?: string | null
   consultationCategory?: string
   whoIsItFor?: string
+  modeOfConsultation?: string
 }
 
 const EMPTY_VALUE = 'Not provided'
@@ -328,12 +330,19 @@ export const ConsultationViewPage = () => {
   const sessionContent = splitSessionContent(consultation.sessionOutline)
   const outlineItems = parseOutlineItems(sessionContent.outline)
   const benefitItems = parseOutlineItems(sessionContent.benefits)
-  const primaryLanguage = consultation.languages?.[0] || EMPTY_VALUE
+  const languagesLabel =
+    consultation.languages && consultation.languages.length > 0
+      ? consultation.languages.join(', ')
+      : EMPTY_VALUE
   const followUpLabel =
     consultation.hasFollowUp && consultation.followUpDays
       ? `${consultation.followUpDays} Days`
       : EMPTY_VALUE
   const pricingOptions = consultation.pricingOptions || []
+  const durations = pricingOptions.map((option) => ({
+    key: `${option.durationMinutes}-${option.price ?? 'free'}`,
+    label: `${option.durationMinutes}mins (${formatConsultationPrice(option)})`,
+  }))
   const submittedAt = consultation.submittedAt || consultation.createdAt
   const showApprovalControls = isPendingReview(consultation.status)
   const escalateDisabled = !showApprovalControls || escalateConsultation.isPending
@@ -363,7 +372,7 @@ export const ConsultationViewPage = () => {
           reasonOptions: rejectReasonOptions,
         },
         requestChanges: {
-          title: 'Request Changes – Consultation Approval',
+          title: 'Request Changes',
           description:
             'Are you sure you want to Request Changes to this application? The applicant will be notified via email.',
           submitLabel: 'Request Changes',
@@ -461,7 +470,7 @@ export const ConsultationViewPage = () => {
 
       <h2 className="text-body-md font-semibold text-white">Consultation Details</h2>
 
-      <div className="bg-brand-bg rounded-xl border border-white/5 p-6">
+      <div className="rounded-xl bg-[#141414] p-6">
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div>
             <h2 className="text-[22px] font-bold text-white">{expertName}</h2>
@@ -480,19 +489,19 @@ export const ConsultationViewPage = () => {
         </div>
 
         <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <div className="rounded-lg border border-white/5 bg-black p-4">
+          <div className="rounded-lg bg-[#050505] p-4">
             <p className="text-body-sm text-muted">Expert ID</p>
             <p className="mt-1 font-mono text-[13px] font-semibold text-white">
               {expertIdLabel.startsWith('#') ? expertIdLabel : `#${expertIdLabel}`}
             </p>
           </div>
-          <div className="rounded-lg border border-white/5 bg-black p-4">
+          <div className="rounded-lg bg-[#050505] p-4">
             <p className="text-body-sm text-muted">Submitted</p>
             <p className="mt-1 text-[13px] font-semibold text-white">
               {formatExpertDateTime(submittedAt)}
             </p>
           </div>
-          <div className="rounded-lg border border-white/5 bg-black p-4">
+          <div className="rounded-lg bg-[#050505] p-4">
             <p className="text-body-sm text-muted">Last Updated</p>
             <p className="mt-1 text-[13px] font-semibold text-white">
               {formatExpertDateTime(consultation.updatedAt)}
@@ -501,8 +510,8 @@ export const ConsultationViewPage = () => {
         </div>
       </div>
 
-      <div className="bg-brand-bg rounded-xl border border-white/5 p-6 lg:p-7">
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(260px,0.78fr)] lg:gap-10">
+      <div className="max-w-[1102px] py-2">
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1.15fr_0.85fr] lg:gap-10">
           <div className="space-y-6">
             <div className="flex items-stretch gap-3">
               <span className="bg-brand-accent w-[3px] shrink-0 rounded-full" aria-hidden="true" />
@@ -521,7 +530,7 @@ export const ConsultationViewPage = () => {
                 {topics.map((topic) => (
                   <span
                     key={topic._id}
-                    className="bg-brand-muted text-body-sm rounded-md px-3.5 py-1.5 font-medium text-black"
+                    className="rounded-md border border-white/20 px-3 py-1 text-[11px] font-medium text-white"
                   >
                     {topic.name}
                   </span>
@@ -531,8 +540,8 @@ export const ConsultationViewPage = () => {
 
             {outlineItems.length > 0 && (
               <div>
-                <h3 className="text-[13px] font-semibold text-white">Session outline</h3>
-                <ul className="text-body-sm text-muted mt-2.5 list-disc space-y-1.5 pl-4 leading-relaxed">
+                <h3 className="text-body-sm font-semibold text-white">Session outline</h3>
+                <ul className="text-body-sm text-muted mt-2 list-disc space-y-1.5 pl-4 leading-relaxed">
                   {outlineItems.map((item) => (
                     <li key={item}>{item}</li>
                   ))}
@@ -542,8 +551,8 @@ export const ConsultationViewPage = () => {
 
             {benefitItems.length > 0 && (
               <div>
-                <h3 className="text-[13px] font-semibold text-white">Benefits</h3>
-                <ul className="text-body-sm text-muted mt-2.5 list-disc space-y-1.5 pl-4 leading-relaxed">
+                <h3 className="text-body-sm font-semibold text-white">Benefits</h3>
+                <ul className="text-body-sm text-muted mt-2 list-disc space-y-1.5 pl-4 leading-relaxed">
                   {benefitItems.map((item) => (
                     <li key={item}>{item}</li>
                   ))}
@@ -553,35 +562,36 @@ export const ConsultationViewPage = () => {
 
             {(consultation.whoItsFor || consultation.whoIsItFor) && (
               <div>
-                <h3 className="text-[13px] font-semibold text-white">Who is it for?</h3>
-                <p className="text-body-sm text-muted mt-2.5 leading-relaxed">
+                <h3 className="text-body-sm font-semibold text-white">Who is it for?</h3>
+                <p className="text-body-sm text-muted mt-2 leading-relaxed">
                   {consultation.whoItsFor || consultation.whoIsItFor}
                 </p>
               </div>
             )}
           </div>
 
-          <div className="space-y-5 border-t border-white/10 pt-6 lg:border-t-0 lg:border-l lg:pt-0 lg:pl-8">
-            <div className="flex flex-wrap gap-5">
-              <div className="flex flex-col items-center gap-1.5">
-                <div className="bg-brand-surface flex h-10 min-w-12 items-center justify-center rounded-md px-4 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.05)]">
-                  <Phone className="size-4 text-white" aria-hidden="true" />
+          <div className="space-y-6 lg:border-l lg:border-white/5 lg:pl-8">
+            <div>
+              <h3 className="text-body-sm mb-4 font-semibold text-white">Additional Information</h3>
+              <div className="flex flex-wrap items-center gap-6">
+                <div className="flex flex-col items-center gap-1.5">
+                  <div className="flex size-12 items-center justify-center rounded-lg bg-[#050505]">
+                    <Phone className="size-4 text-white" aria-hidden="true" />
+                  </div>
+                  <span className="text-muted text-[10px]">Mode</span>
                 </div>
-                <span className="text-muted text-[10px]">Mode</span>
-              </div>
-
-              <div className="flex flex-col items-center gap-1.5">
-                <div className="bg-brand-surface flex h-10 min-w-12 items-center justify-center rounded-md px-4 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.05)]">
-                  <Languages className="size-4 text-white" aria-hidden="true" />
+                <div className="flex flex-col items-center gap-1.5">
+                  <div className="flex size-12 items-center justify-center rounded-lg bg-[#050505]">
+                    <Languages className="size-4 text-white" aria-hidden="true" />
+                  </div>
+                  <span className="text-muted text-[10px]">{languagesLabel}</span>
                 </div>
-                <span className="text-muted text-[10px]">{primaryLanguage}</span>
-              </div>
-
-              <div className="flex flex-col items-center gap-1.5">
-                <div className="bg-brand-surface text-body-sm flex h-10 min-w-12 items-center justify-center rounded-md px-4 font-semibold text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.05)]">
-                  {followUpLabel}
+                <div className="flex flex-col items-center gap-1.5">
+                  <div className="text-body-sm flex h-12 min-w-14 items-center justify-center rounded-lg bg-[#050505] px-3 font-semibold text-white">
+                    {followUpLabel}
+                  </div>
+                  <span className="text-muted text-[10px]">FollowUps</span>
                 </div>
-                <span className="text-muted text-[10px]">FollowUps</span>
               </div>
             </div>
 
@@ -605,18 +615,18 @@ export const ConsultationViewPage = () => {
               </div>
             </div>
 
-            {pricingOptions.length > 0 && (
-              <div>
+            {durations.length > 0 && (
+              <div className="border-t border-white/5 pt-4">
                 <h3 className="text-body-sm mb-3 font-semibold text-white">
                   Duration &amp; Pricing
                 </h3>
                 <div className="flex flex-wrap gap-2.5">
-                  {pricingOptions.map((option) => (
+                  {durations.map((duration) => (
                     <span
-                      key={`${option.durationMinutes}-${option.price ?? 'free'}`}
-                      className="bg-brand-surface text-body-sm rounded-md border border-white/10 px-3.5 py-2 font-semibold text-white"
+                      key={duration.key}
+                      className="rounded-lg bg-[#050505] px-4 py-2.5 text-xs font-semibold text-white"
                     >
-                      {option.durationMinutes}mins ({formatConsultationPrice(option)})
+                      {duration.label}
                     </span>
                   ))}
                 </div>
@@ -626,13 +636,18 @@ export const ConsultationViewPage = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1.15fr_0.85fr]">
-        <div className="bg-brand-bg rounded-xl border border-white/5 p-5">
+      <div
+        className={cn(
+          'grid grid-cols-1 gap-5',
+          showApprovalControls ? 'lg:grid-cols-2' : 'max-w-2xl',
+        )}
+      >
+        <div className="rounded-xl bg-[#141414] p-5">
           <div className="text-body-md mb-4 flex items-center gap-2 font-semibold text-white">
             <History className="text-brand-accent size-4" aria-hidden="true" />
             <h3>Internal Notes</h3>
           </div>
-          <div className="text-body-sm text-muted min-h-[120px] rounded-lg border border-white/5 bg-black p-4">
+          <div className="text-body-sm text-muted min-h-[120px] rounded-lg bg-[#050505] p-4">
             {consultation.adminNote?.trim() || 'No notes yet.'}
             {escalation?.escalatedByName ? (
               <p className="text-body-sm text-muted mt-3">
@@ -644,9 +659,9 @@ export const ConsultationViewPage = () => {
           </div>
         </div>
 
-        <div className="bg-brand-bg rounded-xl border border-white/5 p-5">
-          <DecisionControlsHeader className="mb-4" />
-          {showApprovalControls ? (
+        {showApprovalControls && (
+          <div className="rounded-xl bg-[#141414] p-5">
+            <DecisionControlsHeader className="mb-4" />
             <DecisionControlButtons
               onApprove={() => openDecisionModal('approve')}
               onRequestChanges={() => openDecisionModal('requestChanges')}
@@ -655,13 +670,8 @@ export const ConsultationViewPage = () => {
               showEscalate={isSuperAdmin}
               escalateDisabled={escalateDisabled}
             />
-          ) : (
-            <p className="text-body-sm text-muted rounded-md border border-white/5 bg-black px-3 py-2 font-medium">
-              This consultation is currently{' '}
-              <span className="font-bold text-white">{consultation.status || '—'}</span>.
-            </p>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   )

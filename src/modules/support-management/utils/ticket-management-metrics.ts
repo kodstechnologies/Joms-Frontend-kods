@@ -16,27 +16,31 @@ export type TicketManagementMetricCard = {
 /** Re-export for consumers resolving saved preference ids. */
 export { TICKET_MANAGEMENT_LEGACY_METRIC_ID_MAP }
 
+const defaultById: Record<string, { value: string; changePercent: number }> = {
+  'assigned-to-me': { value: '0', changePercent: 0 },
+  'tickets-in-progress': { value: '0', changePercent: 0 },
+  'average-first-response-time': { value: '00:00:00', changePercent: 0 },
+  'average-resolution-time': { value: '00:00:00', changePercent: 0 },
+  'escalated-by-me': { value: '0', changePercent: 0 },
+  // legacy keys fallback
+  'my-open-tickets': { value: '0', changePercent: 0 },
+  'avg-response-time': { value: '00:00:00', changePercent: 0 },
+  'avg-resolution-time': { value: '00:00:00', changePercent: 0 },
+}
+
 const labelById = new Map(
   TICKET_MANAGEMENT_METRICS_CATALOG.map((metric) => [metric.id, metric.label]),
 )
-
-const emptyValueById: Record<string, string> = {
-  'assigned-to-me': '0',
-  'tickets-in-progress': '0',
-  'average-first-response-time': '00:00:00',
-  'average-resolution-time': '00:00:00',
-  'escalated-by-me': '0',
-}
 
 export function resolveTicketManagementMetricId(id: string): string {
   return TICKET_MANAGEMENT_LEGACY_METRIC_ID_MAP[id] ?? id
 }
 
-function emptyValueFor(id: string) {
-  return emptyValueById[id] ?? '0'
+function emptyValueFor(id: string): string {
+  return defaultById[id]?.value ?? (id.includes('time') ? '00:00:00' : '0')
 }
 
-function displayValue(id: string, value: string | number | null | undefined) {
+function displayValue(id: string, value: string | number | null | undefined): string {
   if (value == null || value === '' || value === '—') return emptyValueFor(id)
   return String(value)
 }
@@ -62,6 +66,21 @@ function buildFromApi(cards: SupportStatCard[]): TicketManagementMetricCard[] {
   ) as TicketManagementMetricCard[]
 }
 
+export function buildMockCards(): TicketManagementMetricCard[] {
+  return TICKET_MANAGEMENT_METRIC_IDS.map((id) => {
+    const label = labelById.get(id) ?? id
+    const fallback = defaultById[id]
+
+    return {
+      id,
+      title: label,
+      value: fallback?.value ?? emptyValueFor(id),
+      percentage: fallback?.changePercent ?? 0,
+      direction: 'up' as const,
+    }
+  })
+}
+
 export function buildTicketManagementMetricCards(
   cards?: SupportStatCard[],
 ): TicketManagementMetricCard[] {
@@ -75,7 +94,7 @@ export function buildTicketManagementMetricCards(
       id,
       title: labelById.get(id) ?? id,
       value: emptyValueFor(id),
-      percentage: 0,
+      percentage: defaultById[id]?.changePercent ?? 0,
       direction: 'up' as const,
     }
   })

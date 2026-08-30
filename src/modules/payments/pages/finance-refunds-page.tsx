@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 import {
   AlertTriangle,
@@ -50,6 +50,7 @@ import {
   useActiveMetricIds,
 } from '@/modules/expert/hooks/use-active-metric-ids'
 import { useTableColumnPreferences } from '@/modules/expert/hooks/use-ui-preferences'
+import { useTableExportColumnIds } from '@/shared/hooks/use-table-export-column-ids'
 import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
 import { mapDisputeToRefundRow, mapRefundToRow } from '@/modules/payments/utils/finance-mappers'
 import { escalateUrl } from '@/modules/payments/utils/finance-escalate'
@@ -63,14 +64,20 @@ import { useTagsApi } from '@/modules/payments/hooks/use-tags-api'
 import { ChangeStatusModal } from '@/shared/components/modals/change-status-modal'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 import { DataTable } from '@/shared/components/table/data-table'
+import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'
+import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
+import { withServerSortMeta } from '@/shared/utils/table-sort'
+import { buildCatalogSortFieldMap } from '@/shared/utils/table-sort-field-maps'
+import { FINANCE_REFUNDS_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
 import {
   TableActionsDropdown,
   TableActionsItem,
 } from '@/shared/components/table/table-actions-dropdown'
 import { Button } from '@/shared/components/ui/button'
+import { StatCardSkeleton } from '@/shared/components/ui/skeleton'
 import { cn } from '@/shared/lib/cn'
 import type { FilterValues } from '@/shared/types/data-filter'
-import { exportDisplayValue } from '@/shared/utils/export-utils'
+import { FINANCE_REFUNDS_EXPORT_COLUMN_MAP } from '@/modules/payments/utils/finance-export-column-maps'
 import {
   buildFinanceRefundsListQueryParams,
   createFinanceRefundsFilteredExportHandler,
@@ -78,25 +85,7 @@ import {
 
 const PAGE_SIZE = 10
 
-const EXPORT_COLUMN_MAP: Record<
-  string,
-  { header: string; accessor: (row: RefundChargebackRow) => string }
-> = {
-  'record-id': { header: 'ID', accessor: (row) => exportDisplayValue(row.recordId) },
-  type: { header: 'Type', accessor: (row) => exportDisplayValue(row.type) },
-  'related-entity': {
-    header: 'Related Entity',
-    accessor: (row) => exportDisplayValue(row.relatedEntity),
-  },
-  amount: { header: 'Amount', accessor: (row) => exportDisplayValue(row.amount) },
-  reason: { header: 'Reason', accessor: (row) => exportDisplayValue(row.reason) },
-  'initiated-date': {
-    header: 'Initiated Date',
-    accessor: (row) => exportDisplayValue(row.initiatedDate),
-  },
-  description: { header: 'Description', accessor: (row) => exportDisplayValue(row.description) },
-  status: { header: 'Status', accessor: (row) => exportDisplayValue(row.status) },
-}
+const SORT_FIELD_MAP = buildCatalogSortFieldMap(FINANCE_REFUNDS_TABLE_COLUMNS_CATALOG)
 
 function getStatusClassName(status: RefundChargebackStatus) {
   if (status === 'Resolved') {
@@ -142,9 +131,12 @@ function SummaryCard({
 
 export function FinanceRefundsPage() {
   const navigate = useNavigate()
-  const [searchQuery, setSearchQuery] = useState('')
-  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
+  const serverSort = useServerTableSort({
+    sortFieldMap: SORT_FIELD_MAP,
+    onPageReset: () => setCurrentPage(1),
+  })
+  const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setCurrentPage(1) })
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [selectedRowIds, setSelectedRowIds] = useState<string[]>([])
@@ -153,22 +145,15 @@ export function FinanceRefundsPage() {
   const [mergeTarget, setMergeTarget] = useState<RefundChargebackRow | null>(null)
   const [rowAction, setRowAction] = useState<FinanceEscalateDeleteAction | null>(null)
 
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      setDebouncedSearch(searchQuery.trim())
-      setCurrentPage(1)
-    }, 300)
-    return () => window.clearTimeout(timer)
-  }, [searchQuery])
-
   const listQueryParams = useMemo(
     () =>
       buildFinanceRefundsListQueryParams(appliedFilters, {
         page: currentPage,
         limit: PAGE_SIZE,
-        search: debouncedSearch || undefined,
+        ...enhancedSearch.buildSearchParams(),
+        ...serverSort.sortParams,
       }),
-    [appliedFilters, currentPage, debouncedSearch],
+    [appliedFilters, currentPage, enhancedSearch, serverSort.sortParams],
   )
 
   const selectedTypes = String(listQueryParams.type || '')
@@ -207,6 +192,17 @@ export function FinanceRefundsPage() {
   const softDelete = useSoftDeleteFinance()
   const { mergeTickets } = useTagsApi()
   const tableColumnPreferencesQuery = useTableColumnPreferences(FINANCE_REFUNDS_MODULE_KEY)
+
+  const catalogColumnIds = useMemo(
+    () => FINANCE_REFUNDS_TABLE_COLUMNS_CATALOG.map((column) => column.id),
+    [],
+  )
+  const exportColumnIds = useTableExportColumnIds({
+    visibleColumnIds: tableColumnPreferencesQuery.data?.visibleColumnIds,
+    defaultColumnIds: DEFAULT_FINANCE_REFUNDS_VISIBLE_COLUMN_IDS,
+    catalogColumnIds,
+    legacyColumnIdMap: FINANCE_REFUNDS_LEGACY_COLUMN_ID_MAP,
+  })
 
   const apiErrorMessage = (err: unknown, fallback: string) =>
     (err as { response?: { data?: { message?: string } } })?.response?.data?.message || fallback
@@ -260,11 +256,12 @@ export function FinanceRefundsPage() {
     }
     return createFinanceRefundsFilteredExportHandler(
       fetchForExport,
-      EXPORT_COLUMN_MAP,
+      FINANCE_REFUNDS_EXPORT_COLUMN_MAP,
       'finance_refunds_export',
-      { search: debouncedSearch || undefined },
+      { search: enhancedSearch.globalSearch || undefined },
+      { columnIds: exportColumnIds, catalogOrder: catalogColumnIds },
     )
-  }, [debouncedSearch])
+  }, [catalogColumnIds, enhancedSearch.globalSearch, exportColumnIds])
 
   const {
     onAdvancedFilter,
@@ -581,7 +578,7 @@ export function FinanceRefundsPage() {
       cell: ({ row }) => renderActions(row.original),
     }
 
-    return [selectColumn, ...preferenceColumns, actionsColumn]
+    return withServerSortMeta([selectColumn, ...preferenceColumns, actionsColumn], SORT_FIELD_MAP)
   }, [
     allVisibleSelected,
     renderActions,
@@ -615,9 +612,9 @@ export function FinanceRefundsPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {visibleSummaryMetrics.map((metric) => (
-          <SummaryCard key={metric.id} {...metric} />
-        ))}
+        {isLoading
+          ? filteredActiveMetricIds.map((id) => <StatCardSkeleton key={id} />)
+          : visibleSummaryMetrics.map((metric) => <SummaryCard key={metric.id} {...metric} />)}
       </div>
 
       {isError ? (
@@ -628,9 +625,15 @@ export function FinanceRefundsPage() {
         columns={columns}
         data={rows}
         getRowId={(row) => row.id}
+        {...serverSort.dataTableSortProps}
         isLoading={isLoading || isFetching}
-        searchValue={searchQuery}
-        onSearchChange={setSearchQuery}
+        searchValue={enhancedSearch.globalSearch}
+        onSearchChange={enhancedSearch.setGlobalSearch}
+        searchableColumns={FINANCE_REFUNDS_SEARCH_COLUMNS}
+        columnSearches={enhancedSearch.columnSearches}
+        onColumnSearchChange={enhancedSearch.setColumnSearch}
+        onColumnSearchRemove={enhancedSearch.removeColumnSearch}
+        onClearAllSearches={enhancedSearch.clearAll}
         searchPlaceholder="Search by name, ID or profession"
         advancedFilterLabel="Advance Filters"
         onAdvancedFilter={onAdvancedFilter}

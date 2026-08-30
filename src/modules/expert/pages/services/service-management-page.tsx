@@ -23,7 +23,11 @@ import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
 import { SERVICE_MANAGEMENT_MODULE_KEY } from '../../api/ui-preferences-api'
-import { DEFAULT_SERVICE_MANAGEMENT_VISIBLE_COLUMN_IDS } from '../../config/service-management-table-columns.config'
+import {
+  DEFAULT_SERVICE_MANAGEMENT_VISIBLE_COLUMN_IDS,
+  SERVICE_MANAGEMENT_TABLE_COLUMNS_CATALOG,
+} from '../../config/service-management-table-columns.config'
+import { useTableExportColumnIds } from '@/shared/hooks/use-table-export-column-ids'
 import { orderByActiveMetricIds, useActiveMetricIds } from '../../hooks/use-active-metric-ids'
 import {
   useServices,
@@ -43,6 +47,11 @@ import {
   pickServicePreferenceColumns,
 } from '../../utils/service-preference-columns'
 import { DataTable } from '@/shared/components/table/data-table'
+import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'
+import { withServerSortMeta } from '@/shared/utils/table-sort'
+import { SERVICE_COLUMN_SORT_FIELDS } from '@/shared/utils/table-sort-field-maps'
+import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
+import { SERVICE_MANAGEMENT_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
 import {
   TableActionsDropdown,
   TableActionsItem,
@@ -66,7 +75,7 @@ import {
   createServiceFilteredExportHandler,
 } from '@/shared/utils/export-filter-utils'
 import { fetchServices } from '../../api/service-api'
-import { exportDisplayValue } from '@/shared/utils/export-utils'
+import { SERVICE_EXPORT_COLUMN_MAP } from '../../utils/table-export-column-maps'
 import { MODERATION_CATEGORY_SLUGS } from '@/modules/settings/api/templates-api'
 import {
   useModerationReasonOptions,
@@ -99,6 +108,7 @@ export const ServiceManagementPage = () => {
   const [isBulkDeleteModalOpen, setIsBulkDeleteModalOpen] = useState(false)
   const [bulkDeleteReasons, setBulkDeleteReasons] = useState<string[]>([])
   const [bulkDeleteAdminNotes, setBulkDeleteAdminNotes] = useState('')
+  const [bulkDeleteConfirmed, setBulkDeleteConfirmed] = useState(false)
 
   const [isBulkPauseModalOpen, setIsBulkPauseModalOpen] = useState(false)
 
@@ -138,6 +148,10 @@ export const ServiceManagementPage = () => {
       toast.error('Please select at least one reason for deletion.')
       return
     }
+    if (!bulkDeleteConfirmed) {
+      toast.error('Please confirm the delete reasons before continuing.')
+      return
+    }
     if (!bulkDeleteAdminNotes.trim()) {
       toast.error('Admin notes are required for deletion.')
       return
@@ -156,6 +170,7 @@ export const ServiceManagementPage = () => {
           setIsBulkDeleteModalOpen(false)
           setBulkDeleteReasons([])
           setBulkDeleteAdminNotes('')
+          setBulkDeleteConfirmed(false)
         },
         onError: (err: unknown) => {
           const error = err as { response?: { data?: { message?: string } } }
@@ -166,6 +181,7 @@ export const ServiceManagementPage = () => {
   }, [
     selectedServiceIds,
     bulkDeleteReasons,
+    bulkDeleteConfirmed,
     bulkDeleteAdminNotes,
     deleteReasonOptions.length,
     bulkDeleteMutation,
@@ -244,16 +260,24 @@ export const ServiceManagementPage = () => {
     })
   }, [selectedServiceIds, bulkDisableMutation])
 
-  const navigate = useNavigate()
   const tableColumnPreferencesQuery = useTableColumnPreferences(SERVICE_MANAGEMENT_MODULE_KEY)
-  const {
-    searchQuery,
-    setSearchQuery,
-    currentPage,
-    setCurrentPage,
-    activeStatus,
-    setActiveStatus,
-  } = useServiceStore()
+  const catalogColumnIds = useMemo(
+    () => SERVICE_MANAGEMENT_TABLE_COLUMNS_CATALOG.map((column) => column.id),
+    [],
+  )
+  const exportColumnIds = useTableExportColumnIds({
+    visibleColumnIds: tableColumnPreferencesQuery.data?.visibleColumnIds,
+    defaultColumnIds: DEFAULT_SERVICE_MANAGEMENT_VISIBLE_COLUMN_IDS,
+    catalogColumnIds,
+  })
+
+  const navigate = useNavigate()
+  const { currentPage, setCurrentPage, activeStatus, setActiveStatus } = useServiceStore()
+  const serverSort = useServerTableSort({
+    sortFieldMap: SERVICE_COLUMN_SORT_FIELDS,
+    onPageReset: () => setCurrentPage(1),
+  })
+  const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setCurrentPage(1) })
 
   const handleApplyFilters = useCallback(
     (values: FilterValues) => {
@@ -261,61 +285,22 @@ export const ServiceManagementPage = () => {
       setCurrentPage(1)
       toast.success('Filters applied')
     },
-    [setCurrentPage],
+    [setCurrentPage, setAppliedAdvancedFilters],
   )
 
   const handleExportData = useMemo(
     () =>
       createServiceFilteredExportHandler(
         fetchServices,
-        {
-          'service-id': {
-            header: 'Service ID',
-            accessor: (s: Service) => exportDisplayValue(s.serviceid || s._id),
-          },
-          name: { header: 'Service Name', accessor: (s: Service) => exportDisplayValue(s.title) },
-          category: {
-            header: 'Service Category',
-            accessor: (s: Service) => exportDisplayValue(s.categoryName),
-          },
-          type: {
-            header: 'Service Type',
-            accessor: (s: Service) => exportDisplayValue(s.serviceType),
-          },
-          pricing: {
-            header: 'Pricing',
-            accessor: (s: Service) => exportDisplayValue(s.pricing),
-          },
-          expertId: {
-            header: 'Expert ID',
-            accessor: (s: Service) => exportDisplayValue(s.expertid || s.partnerId),
-          },
-          expertName: {
-            header: 'Expert Name',
-            accessor: (s: Service) => exportDisplayValue(s.expertName || s.partnerName),
-          },
-          status: { header: 'Status', accessor: (s: Service) => exportDisplayValue(s.status) },
-          createdAt: {
-            header: 'Created At',
-            accessor: (s: Service) =>
-              s.createdAt
-                ? new Date(s.createdAt).toLocaleString('en-IN', {
-                    day: '2-digit',
-                    month: 'short',
-                    year: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })
-                : '',
-          },
-        },
+        SERVICE_EXPORT_COLUMN_MAP,
         'services_export',
         {
           status: activeStatus !== 'all' ? activeStatus : undefined,
-          search: searchQuery || undefined,
+          ...enhancedSearch.buildSearchParams(),
         },
+        { columnIds: exportColumnIds, catalogOrder: catalogColumnIds },
       ),
-    [activeStatus, searchQuery],
+    [activeStatus, catalogColumnIds, enhancedSearch, exportColumnIds],
   )
 
   const {
@@ -333,10 +318,11 @@ export const ServiceManagementPage = () => {
       buildServiceListQueryParams(appliedAdvancedFilters, {
         page: currentPage,
         limit: 10,
-        search: searchQuery,
+        ...serverSort.sortParams,
+        ...enhancedSearch.buildSearchParams(),
         status: activeStatus !== 'all' ? activeStatus : undefined,
       }),
-    [appliedAdvancedFilters, activeStatus, currentPage, searchQuery],
+    [appliedAdvancedFilters, activeStatus, currentPage, enhancedSearch, serverSort.sortParams],
   )
 
   const { data, isLoading } = useServices(serviceQueryParams)
@@ -801,7 +787,10 @@ export const ServiceManagementPage = () => {
       },
     }
 
-    return [selectColumn, ...preferenceColumns, actionsColumn]
+    return withServerSortMeta(
+      [selectColumn, ...preferenceColumns, actionsColumn],
+      SERVICE_COLUMN_SORT_FIELDS,
+    )
   }, [
     activeDropdownId,
     allVisibleServicesSelected,
@@ -1024,8 +1013,14 @@ export const ServiceManagementPage = () => {
         data={services}
         getRowId={(service) => service._id}
         isLoading={isLoading}
-        searchValue={searchQuery}
-        onSearchChange={setSearchQuery}
+        {...serverSort.dataTableSortProps}
+        searchValue={enhancedSearch.globalSearch}
+        onSearchChange={enhancedSearch.setGlobalSearch}
+        searchableColumns={SERVICE_MANAGEMENT_SEARCH_COLUMNS}
+        columnSearches={enhancedSearch.columnSearches}
+        onColumnSearchChange={enhancedSearch.setColumnSearch}
+        onColumnSearchRemove={enhancedSearch.removeColumnSearch}
+        onClearAllSearches={enhancedSearch.clearAll}
         searchPlaceholder="Search by name, ID or profession"
         onAdvancedFilter={onAdvancedFilter}
         onExport={onExport}
@@ -1095,7 +1090,11 @@ export const ServiceManagementPage = () => {
             ? `Delete ${selectedServiceIds.length} Services`
             : 'Delete Service'
         }
-        description={`Are you sure you want to delete ${selectedServiceIds.length} selected service(s)? This action cannot be undone.`}
+        description={
+          selectedServiceIds.length > 1
+            ? `Are you sure you want to delete ${selectedServiceIds.length} selected service(s)? This action cannot be undone.`
+            : 'Are you sure you want to delete this service? This action cannot be undone.'
+        }
         submitLabel={
           selectedServiceIds.length > 1
             ? `Delete ${selectedServiceIds.length} Services`
@@ -1111,9 +1110,16 @@ export const ServiceManagementPage = () => {
               : [...current, value],
           )
         }
+        showReasonsLabel
+        confirmationLabel="I confirm the documents are not approved due to above reasons."
+        confirmationChecked={bulkDeleteConfirmed}
+        onConfirmationChange={setBulkDeleteConfirmed}
         adminNotes={bulkDeleteAdminNotes}
         onAdminNotesChange={setBulkDeleteAdminNotes}
-        onClose={() => setIsBulkDeleteModalOpen(false)}
+        onClose={() => {
+          setIsBulkDeleteModalOpen(false)
+          setBulkDeleteConfirmed(false)
+        }}
         onSubmit={confirmBulkDelete}
         isSubmitting={bulkDeleteMutation.isPending}
       />

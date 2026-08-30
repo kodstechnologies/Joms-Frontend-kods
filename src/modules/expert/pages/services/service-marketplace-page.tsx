@@ -10,7 +10,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
-import { BarChart3, Download, RefreshCw } from 'lucide-react'
+import { BarChart3, RefreshCw, Star, TrendingDown, TrendingUp, Upload } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
@@ -24,7 +24,10 @@ import { cn } from '@/shared/lib/cn'
 import { SERVICE_DASHBOARD_MODULE_KEY } from '../../api/ui-preferences-api'
 import { orderByActiveMetricIds, useActiveMetricIds } from '../../hooks/use-active-metric-ids'
 import { useMarketplaceDashboard } from '@/modules/services/hooks/use-marketplace-dashboard'
-import type { DateRangePreset } from '@/modules/services/types/marketplace-dashboard.types'
+import type {
+  DateRangePreset,
+  MetricTrend,
+} from '@/modules/services/types/marketplace-dashboard.types'
 import { exportServiceMarketplaceExcel } from './service-marketplace-export'
 
 const ZERO_SERVICE_METRICS: MarketplaceMetric[] = [
@@ -57,30 +60,39 @@ function CompactMetricCard({ label, value, trend }: MarketplaceMetric) {
   const isUp = trend?.direction === 'up'
 
   return (
-    <div className="rounded-xl border border-white/10 bg-white/5 px-3 py-3 sm:px-4 sm:py-4">
-      <p className="text-[11px] leading-snug font-medium text-slate-400">{label}</p>
-      <p className="mt-1 text-lg font-semibold tracking-tight text-slate-100 sm:text-xl">{value}</p>
-      {trend ? (
-        <p
-          className={cn(
-            'mt-2 text-[10px] font-medium sm:text-[11px]',
-            isUp ? 'text-emerald-400' : 'text-rose-400',
-          )}
-        >
-          {isUp ? '↑' : '↓'} {isUp ? '+' : '-'}
-          {trend.percentage}% {trend.label ?? 'vs last month'}
-        </p>
-      ) : null}
+    <div className="rounded-brand-lg bg-brand-surface flex min-h-[130px] flex-col border border-white/[0.06] p-4 transition-colors hover:border-white/10">
+      <p className="text-body-sm text-muted font-medium">{label}</p>
+      <p className="text-h3 mt-2 font-bold tracking-tight text-white">{value}</p>
+      <div className="mt-auto flex items-center gap-2 pt-3">
+        {trend ? (
+          <>
+            <span
+              className={cn(
+                'inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-bold',
+                isUp
+                  ? 'bg-brand-positive/15 text-brand-positive'
+                  : 'bg-brand-danger/10 text-brand-danger',
+              )}
+            >
+              {isUp ? <TrendingUp className="size-3" /> : <TrendingDown className="size-3" />}
+              {trend.percentage}%
+            </span>
+            <span className="text-muted text-[10px]">{trend.label ?? 'vs last month'}</span>
+          </>
+        ) : null}
+      </div>
     </div>
   )
 }
 
 function MetricCardSkeleton() {
   return (
-    <div className="rounded-xl border border-white/10 bg-white/5 px-3 py-3 sm:px-4 sm:py-4">
+    <div className="rounded-brand-lg bg-brand-surface min-h-[130px] border border-white/[0.06] p-4">
       <div className="h-3 w-24 animate-pulse rounded bg-white/10" />
-      <div className="mt-3 h-6 w-16 animate-pulse rounded bg-white/10" />
-      <div className="mt-3 h-4 w-20 animate-pulse rounded bg-white/5" />
+      <div className="mt-3 h-7 w-20 animate-pulse rounded bg-white/10" />
+      <div className="mt-auto pt-6">
+        <div className="h-5 w-32 animate-pulse rounded bg-white/5" />
+      </div>
     </div>
   )
 }
@@ -95,8 +107,9 @@ function MetricsSection({
   isLoading?: boolean
 }) {
   return (
-    <DashboardCard title={title}>
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+    <div className="rounded-brand-lg bg-brand-surface border border-white/[0.06] p-5">
+      <h2 className="text-body-md mb-5 font-bold text-white">{title}</h2>
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
         {isLoading
           ? Array.from({ length: Math.max(metrics.length, 8) }).map((_, index) => (
               <MetricCardSkeleton key={`${title}-skeleton-${index}`} />
@@ -105,8 +118,22 @@ function MetricsSection({
               <CompactMetricCard key={metric.id || metric.label} {...metric} />
             ))}
       </div>
-    </DashboardCard>
+    </div>
   )
+}
+
+const CHART_COLORS = {
+  services: '#2196F3',
+  consultations: '#4CAF50',
+  revenue: '#FF9800',
+} as const
+
+const trendsTooltipStyle = {
+  background: '#ffffff',
+  border: '1px solid #3B82F6',
+  borderRadius: 8,
+  padding: '12px 14px',
+  boxShadow: '0 12px 32px rgba(0,0,0,0.18)',
 }
 
 type TrendsTooltipProps = {
@@ -126,29 +153,62 @@ function TrendsTooltip({ active, payload, label }: TrendsTooltipProps) {
   }, {})
 
   return (
-    <div className="rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-xs shadow-lg">
-      <p className="mb-2 font-semibold text-slate-900">{label}</p>
-      <div className="space-y-1">
-        <p className="text-emerald-600">
+    <div style={trendsTooltipStyle}>
+      <p className="mb-2 text-sm font-semibold text-slate-900">{label}</p>
+      <div className="space-y-1 text-xs">
+        <p style={{ color: CHART_COLORS.consultations }}>
           Consultation completed:{' '}
           <span className="font-semibold">{data.consultationsCompleted ?? 0}</span>
         </p>
-        <p className="text-amber-600">
-          Revenue (₹):{' '}
+        <p style={{ color: CHART_COLORS.revenue }}>
+          Revenue(₹):{' '}
           <span className="font-semibold">
-            {(data.revenue ?? 0).toLocaleString('en-IN', {
-              minimumFractionDigits: 2,
-              maximumFractionDigits: 2,
-            })}
+            {(data.revenue ?? 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}
           </span>
         </p>
-        <p className="text-blue-600">
+        <p style={{ color: CHART_COLORS.services }}>
           Service delivered: <span className="font-semibold">{data.servicesDelivered ?? 0}</span>
         </p>
       </div>
     </div>
   )
 }
+
+function TrendsLegend() {
+  const items = [
+    { label: 'Consultations Completed', color: CHART_COLORS.consultations },
+    { label: 'Revenue (₹)', color: CHART_COLORS.revenue },
+    { label: 'Services Delivered', color: CHART_COLORS.services },
+  ]
+
+  return (
+    <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 pt-4">
+      {items.map((item) => (
+        <div key={item.label} className="flex items-center gap-1.5">
+          <Star className="size-3.5" style={{ color: item.color, fill: item.color }} />
+          <span className="text-xs text-slate-400">{item.label}</span>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+const niceAxisMax = (value: number) => {
+  if (value <= 0) return 100
+  const magnitude = 10 ** Math.floor(Math.log10(value))
+  const normalized = value / magnitude
+  const nice = normalized <= 1 ? 1 : normalized <= 2 ? 2 : normalized <= 5 ? 5 : 10
+  return nice * magnitude
+}
+
+const attachTrend = (
+  metrics: MarketplaceMetric[],
+  trends?: Record<string, MetricTrend>,
+): MarketplaceMetric[] =>
+  metrics.map((metric) => ({
+    ...metric,
+    trend: trends?.[metric.id],
+  }))
 
 const DEFAULT_SERVICE_METRIC_IDS = ZERO_SERVICE_METRICS.map((metric) => metric.id)
 
@@ -162,6 +222,36 @@ const RANGE_LABELS: Record<string, string> = {
   'last-3-months': 'Last 3 Months',
   'last-6-months': 'Last 6 Months',
   'last-12-months': 'Last 12 Months',
+}
+
+const MONTH_LABELS = [
+  'Jan',
+  'Feb',
+  'Mar',
+  'Apr',
+  'May',
+  'Jun',
+  'Jul',
+  'Aug',
+  'Sep',
+  'Oct',
+  'Nov',
+  'Dec',
+] as const
+
+const buildTrendBucket = (date: string, aggregateByMonth: boolean) => {
+  if (aggregateByMonth && date.length >= 7) {
+    const year = date.slice(0, 4)
+    const month = date.slice(5, 7)
+    const monthIndex = Number.parseInt(month, 10) - 1
+    return {
+      sortKey: `${year}-${month}`,
+      label: MONTH_LABELS[monthIndex] ?? `${year}-${month}`,
+    }
+  }
+
+  const shortDate = date.length >= 10 ? date.slice(5) : date
+  return { sortKey: date, label: shortDate }
 }
 
 export function ServiceMarketplacePage() {
@@ -301,14 +391,22 @@ export function ServiceMarketplacePage() {
   const trendPoints: ServiceConsultationTrendPoint[] = useMemo(() => {
     if (!dashboardData) return []
 
+    const aggregateByMonth = true
     const map = new Map<
       string,
-      { month: string; consultationsCompleted: number; servicesDelivered: number; revenue: number }
+      {
+        sortKey: string
+        month: string
+        consultationsCompleted: number
+        servicesDelivered: number
+        revenue: number
+      }
     >()
 
     for (const d of dashboardData.trends.serviceRevenue || []) {
-      const label = d.date.length >= 10 ? d.date.slice(5) : d.date
-      const current = map.get(label) || {
+      const { sortKey, label } = buildTrendBucket(d.date, aggregateByMonth)
+      const current = map.get(sortKey) || {
+        sortKey,
         month: label,
         consultationsCompleted: 0,
         servicesDelivered: 0,
@@ -316,30 +414,59 @@ export function ServiceMarketplacePage() {
       }
       current.revenue += d.revenue ?? 0
       current.servicesDelivered += d.orders ?? 0
-      map.set(label, current)
+      map.set(sortKey, current)
     }
 
     for (const d of dashboardData.trends.consultationRevenue || []) {
-      const label = d.date.length >= 10 ? d.date.slice(5) : d.date
-      const current = map.get(label) || {
+      const { sortKey, label } = buildTrendBucket(d.date, aggregateByMonth)
+      const current = map.get(sortKey) || {
+        sortKey,
         month: label,
         consultationsCompleted: 0,
         servicesDelivered: 0,
         revenue: 0,
       }
       current.revenue += d.revenue ?? 0
-      current.consultationsCompleted += d.bookings ?? 0
-      map.set(label, current)
+      current.consultationsCompleted += d.bookings ?? d.count ?? 0
+      map.set(sortKey, current)
     }
 
-    return Array.from(map.values()).sort((a, b) => a.month.localeCompare(b.month))
+    return Array.from(map.values())
+      .sort((a, b) => a.sortKey.localeCompare(b.sortKey))
+      .map(({ month, consultationsCompleted, servicesDelivered, revenue }) => ({
+        month,
+        consultationsCompleted,
+        servicesDelivered,
+        revenue,
+      }))
   }, [dashboardData])
 
   const visibleServiceMetrics = useMemo(
-    () => orderByActiveMetricIds(liveServiceMetrics, activeMetricIds),
-    [liveServiceMetrics, activeMetricIds],
+    () =>
+      orderByActiveMetricIds(
+        attachTrend(liveServiceMetrics, dashboardData?.metricTrends?.services),
+        activeMetricIds,
+      ),
+    [liveServiceMetrics, activeMetricIds, dashboardData?.metricTrends?.services],
   )
-  const visibleConsultationMetrics = liveConsultationMetrics
+  const visibleConsultationMetrics = useMemo(
+    () => attachTrend(liveConsultationMetrics, dashboardData?.metricTrends?.consultations),
+    [liveConsultationMetrics, dashboardData?.metricTrends?.consultations],
+  )
+
+  const chartAxisDomains = useMemo(() => {
+    const maxCount = trendPoints.reduce(
+      (max, point) =>
+        Math.max(max, point.consultationsCompleted ?? 0, point.servicesDelivered ?? 0),
+      0,
+    )
+    const maxRevenue = trendPoints.reduce((max, point) => Math.max(max, point.revenue ?? 0), 0)
+
+    return {
+      left: [0, niceAxisMax(maxCount)] as [number, number],
+      right: [0, niceAxisMax(maxRevenue)] as [number, number],
+    }
+  }, [trendPoints])
 
   const handleExportData = useCallback(() => {
     if (isLoading) {
@@ -387,7 +514,7 @@ export function ServiceMarketplacePage() {
           </Button>
 
           <Button className="ui-export-data h-9" onClick={handleExportData}>
-            <Download className="size-4" />
+            <Upload className="size-4" />
             Export Data
           </Button>
         </div>
@@ -406,7 +533,7 @@ export function ServiceMarketplacePage() {
       />
 
       <DashboardCard
-        className="p-0"
+        className="border-white/[0.06] p-5"
         title="Service & Consultation Trends"
         rightSlot={
           <div className="flex items-center gap-2">
@@ -414,7 +541,7 @@ export function ServiceMarketplacePage() {
               <select
                 value={selectedRange}
                 onChange={(e) => setSelectedRange(e.target.value)}
-                className="appearance-none rounded-lg border border-white/10 bg-white/5 py-1.5 pr-8 pl-3 text-xs font-medium text-slate-200 outline-none focus:border-white/20"
+                className="ui-input focus:border-brand-accent/50 text-body-sm h-9 cursor-pointer appearance-none pr-8 font-medium outline-none"
               >
                 <option value="last-3-months">Last 3 Months</option>
                 <option value="last-6-months">Last 6 Months</option>
@@ -423,89 +550,94 @@ export function ServiceMarketplacePage() {
             </div>
             <button
               type="button"
-              className="grid size-8 place-items-center rounded-full border border-white/10 bg-white/5 text-slate-300 transition-colors hover:border-white/15 hover:bg-white/10"
+              aria-label="Refresh trends"
+              className="text-muted grid size-9 place-items-center rounded-lg border border-white/10 bg-black transition-colors hover:bg-white/5"
               onClick={() => {
                 dashboardQuery.refetch()
               }}
             >
-              <RefreshCw className={`size-4 ${dashboardQuery.isFetching ? 'animate-spin' : ''}`} />
+              <RefreshCw
+                className={`size-3.5 ${dashboardQuery.isFetching ? 'animate-spin' : ''}`}
+              />
             </button>
           </div>
         }
       >
-        <div className="px-4 pb-5 sm:px-5 sm:pb-6">
-          {isLoading ? (
-            <div className="h-[280px] animate-pulse rounded-lg bg-white/5 sm:h-[340px]" />
-          ) : trendPoints.length === 0 ? (
-            <div className="flex h-[280px] items-center justify-center text-sm text-slate-400 sm:h-[340px]">
-              No trend data available.
-            </div>
-          ) : (
-            <div className="h-[280px] sm:h-[340px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <ComposedChart
-                  data={trendPoints}
-                  margin={{ left: 4, right: 8, top: 8, bottom: 8 }}
-                  barGap={4}
-                  barCategoryGap="18%"
-                >
-                  <CartesianGrid stroke="rgba(255,255,255,0.05)" vertical={false} />
-                  <XAxis
-                    dataKey="month"
-                    tickLine={false}
-                    axisLine={false}
-                    tick={{ fill: 'rgba(148,163,184,0.85)', fontSize: 12 }}
-                  />
-                  <YAxis
-                    yAxisId="left"
-                    tickLine={false}
-                    axisLine={false}
-                    tick={{ fill: 'rgba(148,163,184,0.85)', fontSize: 12 }}
-                  />
-                  <YAxis
-                    yAxisId="right"
-                    orientation="right"
-                    tickLine={false}
-                    axisLine={false}
-                    tick={{ fill: 'rgba(148,163,184,0.85)', fontSize: 12 }}
-                    tickFormatter={(v: number) => `₹${v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v}`}
-                  />
-                  <Tooltip content={<TrendsTooltip />} />
-                  <Legend
-                    wrapperStyle={{ color: 'rgba(148,163,184,0.85)', paddingTop: 12 }}
-                    formatter={(value) => <span className="text-xs text-slate-400">{value}</span>}
-                  />
-                  <Bar
-                    yAxisId="left"
-                    dataKey="consultationsCompleted"
-                    name="Consultations Completed"
-                    fill="#4CAF50"
-                    radius={[4, 4, 0, 0]}
-                    maxBarSize={28}
-                  />
-                  <Bar
-                    yAxisId="left"
-                    dataKey="servicesDelivered"
-                    name="Services Delivered"
-                    fill="#2196F3"
-                    radius={[4, 4, 0, 0]}
-                    maxBarSize={28}
-                  />
-                  <Line
-                    yAxisId="right"
-                    type="monotone"
-                    dataKey="revenue"
-                    name="Revenue (₹)"
-                    stroke="#FF9800"
-                    strokeWidth={2}
-                    dot={{ fill: '#FF9800', r: 4 }}
-                    activeDot={{ r: 6 }}
-                  />
-                </ComposedChart>
-              </ResponsiveContainer>
-            </div>
-          )}
-        </div>
+        {isLoading ? (
+          <div className="h-[340px] w-full animate-pulse rounded-lg bg-white/5 sm:h-[400px]" />
+        ) : trendPoints.length === 0 ? (
+          <div className="text-muted flex h-[340px] items-center justify-center text-sm sm:h-[400px]">
+            No trend data available.
+          </div>
+        ) : (
+          <div className="h-[340px] w-full sm:h-[400px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <ComposedChart
+                data={trendPoints}
+                margin={{ left: 4, right: 12, top: 12, bottom: 4 }}
+                barGap={2}
+                barCategoryGap="24%"
+              >
+                <CartesianGrid stroke="rgba(255,255,255,0.08)" strokeDasharray="4 4" />
+                <XAxis
+                  dataKey="month"
+                  tickLine={false}
+                  axisLine={false}
+                  tick={{ fill: 'rgba(148,163,184,0.85)', fontSize: 12 }}
+                  dy={8}
+                />
+                <YAxis
+                  yAxisId="left"
+                  domain={chartAxisDomains.left}
+                  tickLine={false}
+                  axisLine={false}
+                  tick={{ fill: 'rgba(148,163,184,0.85)', fontSize: 12 }}
+                  tickCount={5}
+                />
+                <YAxis
+                  yAxisId="right"
+                  orientation="right"
+                  domain={chartAxisDomains.right}
+                  tickLine={false}
+                  axisLine={false}
+                  tick={{ fill: 'rgba(148,163,184,0.85)', fontSize: 12 }}
+                  tickCount={5}
+                  tickFormatter={(v: number) =>
+                    v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v)
+                  }
+                />
+                <Tooltip content={<TrendsTooltip />} cursor={{ fill: 'rgba(255,255,255,0.03)' }} />
+                <Legend content={<TrendsLegend />} />
+                <Bar
+                  yAxisId="left"
+                  dataKey="servicesDelivered"
+                  name="Services Delivered"
+                  fill={CHART_COLORS.services}
+                  radius={[4, 4, 0, 0]}
+                  maxBarSize={32}
+                />
+                <Bar
+                  yAxisId="left"
+                  dataKey="consultationsCompleted"
+                  name="Consultations Completed"
+                  fill={CHART_COLORS.consultations}
+                  radius={[4, 4, 0, 0]}
+                  maxBarSize={32}
+                />
+                <Line
+                  yAxisId="right"
+                  type="monotone"
+                  dataKey="revenue"
+                  name="Revenue (₹)"
+                  stroke={CHART_COLORS.revenue}
+                  strokeWidth={2}
+                  dot={{ fill: CHART_COLORS.revenue, r: 4, strokeWidth: 0 }}
+                  activeDot={{ r: 6, fill: CHART_COLORS.revenue }}
+                />
+              </ComposedChart>
+            </ResponsiveContainer>
+          </div>
+        )}
       </DashboardCard>
     </div>
   )

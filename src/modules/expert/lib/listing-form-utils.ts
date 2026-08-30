@@ -28,7 +28,7 @@ export const computeListingFeeBreakdown = (
     platform_fee_pct: platformFeePct,
     gst,
     gst_pct: gstPct,
-    estimated_earnings: Math.max(discounted - platformFee, 0),
+    estimated_earnings: Math.max(discounted - platformFee - gst, 0),
   }
 }
 

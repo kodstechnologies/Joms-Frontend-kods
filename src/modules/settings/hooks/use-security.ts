@@ -8,7 +8,13 @@ export const securityKeys = {
   loginTrails: (params?: object) => [...securityKeys.all, 'login-trails', params] as const,
 }
 
-export const useLockedAccounts = (params?: { page?: number; limit?: number; search?: string }) =>
+export const useLockedAccounts = (params?: {
+  page?: number
+  limit?: number
+  search?: string
+  sortBy?: string
+  sortOrder?: 'asc' | 'desc'
+}) =>
   useQuery({
     queryKey: securityKeys.lockedAccounts(params),
     queryFn: () => fetchLockedAccounts(params),

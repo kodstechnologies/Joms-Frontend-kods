@@ -50,6 +50,8 @@ export type ExpertOnboardingFormData = {
 
   internalNotes: string
   isVerified: boolean
+  isPhoneVerified?: boolean
+  isEmailVerified?: boolean
 }
 
 export const createEmptyWorkExperienceEntry = (): ExpertWorkExperienceEntry => ({
@@ -104,6 +106,8 @@ export const createEmptyExpertOnboardingForm = (): ExpertOnboardingFormData => (
 
   internalNotes: '',
   isVerified: false,
+  isPhoneVerified: false,
+  isEmailVerified: false,
 })
 
 export const buildBasicProfileFormData = (form: ExpertOnboardingFormData): FormData => {
@@ -202,7 +206,14 @@ export const mapExpertProfileToOnboardingForm = (profile: {
   fullname?: string
   phone?: string
   email?: string
+  phoneVerified?: boolean
+  emailVerified?: boolean
   servicetype?: string
+  expertType?: string
+  location?: string
+  bio?: string
+  experience?: string | number
+  subCategory?: unknown[]
   basicProfile?: {
     coverImage?: string
     profileImage?: string
@@ -210,11 +221,12 @@ export const mapExpertProfileToOnboardingForm = (profile: {
     location?: string
     bio?: string
     industry?: string
-    experienceYears?: number
-    experienceMonths?: number
+    experienceYears?: number | string
+    experienceMonths?: number | string
     serviceType?: string
-    serviceCategory?: string[]
-    offerings?: string[]
+    serviceCategory?: unknown[]
+    serviceCategoryDisplay?: string[]
+    offerings?: unknown[]
     sampleWorkLink?: string
     sampleWorkFile?: string
     phoneNumber?: string
@@ -223,11 +235,15 @@ export const mapExpertProfileToOnboardingForm = (profile: {
   identityVerification?: Record<string, unknown> | null
   workExperience?: Array<{
     jobTitle?: string
+    title?: string
     companyName?: string
+    company?: string
     employmentType?: string
+    type?: string
     startDate?: string
     endDate?: string | null
     currentlyWorking?: boolean
+    isCurrent?: boolean
     description?: string
   }>
   gallery?: { images?: string[] }
@@ -235,74 +251,148 @@ export const mapExpertProfileToOnboardingForm = (profile: {
     internalNotes?: string
     isVerified?: boolean
   }
+  adminNotes?: string
+  isVerified?: boolean
 }): ExpertOnboardingFormData => {
   const basic = profile.basicProfile || {}
-  const identity = profile.identityVerification || {}
-  const galleryImages = profile.gallery?.images?.filter(Boolean) || []
+  const identity = (profile.identityVerification || {}) as Record<string, unknown>
+
+  // Robust category extraction: handles strings, objects { name, _id }, and display arrays
+  const rawCategories =
+    Array.isArray(basic.serviceCategoryDisplay) && basic.serviceCategoryDisplay.length > 0
+      ? basic.serviceCategoryDisplay
+      : Array.isArray(basic.serviceCategory) && basic.serviceCategory.length > 0
+        ? basic.serviceCategory
+        : Array.isArray(profile.subCategory)
+          ? profile.subCategory
+          : []
+
+  const serviceCategory = rawCategories
+    .map((item: unknown) => {
+      if (typeof item === 'string') return item
+      if (item && typeof item === 'object') {
+        const obj = item as Record<string, unknown>
+        return String(obj.name || obj.title || obj._id || '')
+      }
+      return ''
+    })
+    .filter(Boolean)
+
+  const rawOfferings = Array.isArray(basic.offerings) ? basic.offerings : []
+  const offerings = rawOfferings
+    .map((item: unknown) => {
+      if (typeof item === 'string') return item
+      if (item && typeof item === 'object') {
+        const obj = item as Record<string, unknown>
+        return String(obj.name || obj.title || '')
+      }
+      return ''
+    })
+    .filter(Boolean)
+
+  const galleryImages =
+    profile.gallery?.images?.filter(Boolean) ||
+    (profile as unknown as { galleryImages?: string[] }).galleryImages?.filter(Boolean) ||
+    []
+
+  const rawWork =
+    profile.workExperience && profile.workExperience.length > 0
+      ? profile.workExperience
+      : (profile as unknown as { concierge?: { workExperience?: typeof profile.workExperience } })
+          .concierge?.workExperience || []
 
   const workExperience =
-    profile.workExperience && profile.workExperience.length > 0
-      ? profile.workExperience.map((entry) => ({
-          jobTitle: entry.jobTitle || '',
-          companyName: entry.companyName || '',
-          employmentType: entry.employmentType || '',
+    rawWork.length > 0
+      ? rawWork.map((entry) => ({
+          jobTitle: entry.jobTitle || entry.title || '',
+          companyName: entry.companyName || entry.company || '',
+          employmentType: entry.employmentType || entry.type || '',
           startDate: entry.startDate ? String(entry.startDate).slice(0, 10) : '',
           endDate: entry.endDate ? String(entry.endDate).slice(0, 10) : '',
-          currentlyWorking: Boolean(entry.currentlyWorking),
+          currentlyWorking: Boolean(entry.currentlyWorking ?? entry.isCurrent),
           description: entry.description || '',
         }))
       : [createEmptyWorkExperienceEntry()]
 
+  const panCardFileUrl =
+    typeof identity.panCardFile === 'string'
+      ? identity.panCardFile
+      : typeof identity.panCard === 'string'
+        ? identity.panCard
+        : typeof identity.panCardUrl === 'string'
+          ? identity.panCardUrl
+          : ''
+
+  const certificateFileUrl =
+    typeof identity.certificateFile === 'string'
+      ? identity.certificateFile
+      : typeof identity.certificate === 'string'
+        ? identity.certificate
+        : typeof identity.certificateUrl === 'string'
+          ? identity.certificateUrl
+          : ''
+
+  const gstCertificateFileUrl =
+    typeof identity.gstCertificateFile === 'string'
+      ? identity.gstCertificateFile
+      : typeof identity.gstCertificate === 'string'
+        ? identity.gstCertificate
+        : typeof identity.gstCertificateUrl === 'string'
+          ? identity.gstCertificateUrl
+          : ''
+
   return {
     ...createEmptyExpertOnboardingForm(),
     fullname: basic.fullname || profile.fullname || '',
-    location: basic.location || '',
-    bio: basic.bio || '',
+    location: basic.location || profile.location || '',
+    bio: basic.bio || profile.bio || '',
     sampleWorkLink: basic.sampleWorkLink || '',
     industry: basic.industry || '',
     experienceYears:
-      basic.experienceYears != null && basic.experienceYears !== undefined
+      basic.experienceYears != null && basic.experienceYears !== ''
         ? String(basic.experienceYears)
-        : '',
+        : profile.experience != null && profile.experience !== ''
+          ? String(profile.experience)
+          : '',
     experienceMonths:
-      basic.experienceMonths != null && basic.experienceMonths !== undefined
+      basic.experienceMonths != null && basic.experienceMonths !== ''
         ? String(basic.experienceMonths)
         : '',
-    serviceType: basic.serviceType || profile.servicetype || 'concierge',
-    serviceCategory: basic.serviceCategory || [],
-    offerings: basic.offerings || [],
+    serviceType: basic.serviceType || profile.servicetype || profile.expertType || 'concierge',
+    serviceCategory,
+    offerings,
     phoneNumber: basic.phoneNumber || profile.phone || '',
     email: basic.email || profile.email || '',
     coverImageUrl: basic.coverImage || '',
     profileImageUrl: basic.profileImage || '',
     sampleWorkFileName: fileNameFromUrl(basic.sampleWorkFile),
 
-    idType: String(identity.idType || ''),
-    idNumber: String(identity.idNumber || ''),
-    gstAvailable: identity.gstAvailable !== false,
-    gstNumber: String(identity.gstNumber || ''),
-    panNumber: String(identity.panNumber || ''),
-    panCardFileUrl: typeof identity.panCardFile === 'string' ? identity.panCardFile : '',
-    certificateFileUrl:
-      typeof identity.certificateFile === 'string' ? identity.certificateFile : '',
-    gstCertificateFileUrl:
-      typeof identity.gstCertificateFile === 'string' ? identity.gstCertificateFile : '',
-    panCardFileName: fileNameFromUrl(
-      typeof identity.panCardFile === 'string' ? identity.panCardFile : '',
-    ),
-    certificateFileName: fileNameFromUrl(
-      typeof identity.certificateFile === 'string' ? identity.certificateFile : '',
-    ),
-    gstCertificateFileName: fileNameFromUrl(
-      typeof identity.gstCertificateFile === 'string' ? identity.gstCertificateFile : '',
-    ),
+    idType: String(identity.idType || identity.id_type || ''),
+    idNumber: String(identity.idNumber || identity.id_number || ''),
+    gstAvailable:
+      identity.gstAvailable !== false &&
+      identity.hasGST !== false &&
+      (Boolean(identity.gstNumber) ||
+        identity.gstAvailable === true ||
+        identity.hasGST === true ||
+        !identity.idNumber),
+    gstNumber: String(identity.gstNumber || identity.gst || ''),
+    panNumber: String(identity.panNumber || identity.pan || ''),
+    panCardFileUrl,
+    certificateFileUrl,
+    gstCertificateFileUrl,
+    panCardFileName: fileNameFromUrl(panCardFileUrl),
+    certificateFileName: fileNameFromUrl(certificateFileUrl),
+    gstCertificateFileName: fileNameFromUrl(gstCertificateFileUrl),
 
     workExperience,
     galleryImages: [],
     galleryPreviews: galleryImages,
 
-    internalNotes: profile.finalReview?.internalNotes || '',
-    isVerified: Boolean(profile.finalReview?.isVerified),
+    internalNotes: profile.finalReview?.internalNotes || profile.adminNotes || '',
+    isVerified: Boolean(profile.finalReview?.isVerified ?? profile.isVerified),
+    isPhoneVerified: Boolean(profile.phoneVerified ?? true),
+    isEmailVerified: Boolean(profile.emailVerified ?? true),
   }
 }
 

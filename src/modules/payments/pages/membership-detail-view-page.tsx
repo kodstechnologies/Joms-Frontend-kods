@@ -15,6 +15,7 @@ import { CancelSubscriptionModal } from '@/modules/payments/components/cancel-su
 import { PauseSubscriptionModal } from '@/modules/payments/components/pause-subscription-modal'
 import { mapSubscriptionToFinanceDetail } from '@/modules/payments/utils/finance-membership-mapper'
 import { Button } from '@/shared/components/ui/button'
+import { DetailViewSkeleton } from '@/shared/components/ui/skeleton'
 import { cn } from '@/shared/lib/cn'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import {
@@ -71,7 +72,7 @@ export function MembershipDetailViewPage() {
   const canManage = detail?.rawStatus === 'active'
 
   if (isLoading) {
-    return <p className="text-body-sm text-muted">Loading subscription details...</p>
+    return <DetailViewSkeleton pillCount={6} cardCount={2} />
   }
 
   if (isError || !detail) {

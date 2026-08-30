@@ -10,7 +10,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
-import { ArrowLeft, Download, RefreshCw, SlidersHorizontal, Star } from 'lucide-react'
+import { ArrowLeft, RefreshCw, SlidersHorizontal, Star, Upload } from 'lucide-react'
 
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import { Button } from '@/shared/components/ui/button'
@@ -116,7 +116,7 @@ export function SpaceAnalyticsPage() {
               URL.revokeObjectURL(url)
             }}
           >
-            <Download className="size-4" />
+            <Upload className="size-4" />
             Export Data
           </Button>
         </div>

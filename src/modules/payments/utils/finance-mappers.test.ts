@@ -31,7 +31,7 @@ import {
   mapPaymentToServiceRow,
   mapPaymentToVenueRow,
   mapPayoutStatus,
-  mapPayoutToRow,
+  mapPayoutToAdminRow,
   mapReconToRow,
   mapRefundStatus,
   mapRefundToRow,
@@ -114,7 +114,7 @@ describe('finance-mappers', () => {
     expect(canReleasePayout('failed')).toBe(true)
     expect(canReleasePayout('paid')).toBe(false)
 
-    const payoutRow = mapPayoutToRow({
+    const payoutRow = mapPayoutToAdminRow({
       _id: 'po1',
       payoutId: 'py-1',
       status: 'paid',

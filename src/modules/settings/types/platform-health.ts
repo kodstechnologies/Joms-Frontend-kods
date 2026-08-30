@@ -3,9 +3,18 @@ export type PlatformHealthDateRange =
   | 'last7days'
   | 'last30days'
   | 'thisMonth'
+  | 'lastMonth'
   | 'quarter'
   | 'year'
   | 'custom'
+
+export type PlatformHealthMetricTrend = {
+  value: string
+  tone: 'positive' | 'negative'
+  direction?: 'up' | 'down'
+  label?: string
+  variant?: 'percent' | 'absolute'
+}
 
 export type PlatformHealthMetric = {
   id: string
@@ -13,7 +22,7 @@ export type PlatformHealthMetric = {
   value: string
   hint?: string
   status?: string
-  trend?: { text: string; tone: 'positive' | 'negative' } | null
+  trend?: PlatformHealthMetricTrend | null
 }
 
 export type PlatformHealthInfraRow = {
@@ -48,6 +57,18 @@ export type PlatformHealthDashboard = {
     maintenanceActive: boolean
   }
   charts: {
+    platformTrends: Array<{
+      date: string
+      transactions: number
+      supportTickets: number
+      uptime: number
+    }>
+    systemPerformance24h: Array<{
+      time: string
+      memoryUsage: number
+      cpuUsage: number
+      requestsPerMin: number
+    }>
     healthTrend: Array<{ date: string; healthScore: number; uptime: number; errorRate: number }>
     performance: Array<{
       time: string
@@ -57,7 +78,12 @@ export type PlatformHealthDashboard = {
     }>
     apiTraffic: Array<{ date: string; requests: number }>
     errorDistribution: Array<{ name: string; value: number }>
-    securityCompliance: Array<{ month: string; security: number; compliance: number }>
+    securityCompliance: Array<{
+      month: string
+      compliance: number
+      issuesResolved: number
+      security: number
+    }>
     backupTrend: Array<{ date: string; successRate: number }>
     infrastructureUtilization: Array<{
       date: string

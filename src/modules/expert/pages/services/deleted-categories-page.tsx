@@ -6,8 +6,13 @@ import createIcon from '@/assets/JOMS_ICONS-2/icons8-create.svg'
 
 import { Button } from '@/shared/components/ui/button'
 import { DataTable } from '@/shared/components/table/data-table'
+import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'
+import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
+import { withServerSortMeta } from '@/shared/utils/table-sort'
+import { buildCatalogSortFieldMap } from '@/shared/utils/table-sort-field-maps'
+import { SERVICE_CATEGORY_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
-import { exportDisplayValue } from '@/shared/utils/export-utils'
+import { SERVICE_CATEGORY_EXPORT_COLUMN_MAP } from '../../utils/table-export-column-maps'
 import type { FilterValues } from '@/shared/types/data-filter'
 import {
   buildCategoryListQueryParams,
@@ -25,70 +30,43 @@ import {
 import {
   DEFAULT_SERVICE_CATEGORY_MANAGEMENT_VISIBLE_COLUMN_IDS,
   SERVICE_CATEGORY_LEGACY_COLUMN_ID_MAP,
+  SERVICE_CATEGORY_MANAGEMENT_TABLE_COLUMNS_CATALOG,
 } from '../../config/service-category-management-table-columns.config'
+import { useTableExportColumnIds } from '@/shared/hooks/use-table-export-column-ids'
 import { useServiceCategories } from '../../hooks/use-category-management'
 import { useTableColumnPreferences } from '../../hooks/use-ui-preferences'
 import { mapServiceCategoryToUi } from '../../utils/category-mapper'
 import { selectPreferredColumns } from '../../utils/select-preferred-columns'
 
-const EXPORT_COLUMN_MAP: Record<string, { header: string; accessor: (cat: Category) => string }> = {
-  'category-id': {
-    header: 'Category ID',
-    accessor: (cat) => exportDisplayValue(cat.categoryId || cat.id),
-  },
-  'category-name': { header: 'Category Name', accessor: (cat) => exportDisplayValue(cat.name) },
-  'sub-categories': {
-    header: 'Number of Sub Categories',
-    accessor: (cat) => exportDisplayValue(cat.subCategory),
-  },
-  'active-listings': {
-    header: 'Active Listings',
-    accessor: (cat) => exportDisplayValue(cat.services),
-  },
-  'total-experts': {
-    header: 'Total Experts',
-    accessor: (cat) => exportDisplayValue(cat.experts),
-  },
-  'total-orders': {
-    header: 'Total Orders',
-    accessor: (cat) => exportDisplayValue(cat.totalOrders),
-  },
-  'completed-orders': {
-    header: 'Completed Orders',
-    accessor: (cat) => exportDisplayValue(cat.completedOrders),
-  },
-  'in-progress-orders': {
-    header: 'In Progress Orders',
-    accessor: (cat) => exportDisplayValue(cat.inProgressOrders),
-  },
-  'cancelled-orders': {
-    header: 'Cancelled Orders',
-    accessor: (cat) => exportDisplayValue(cat.cancelledOrders),
-  },
-  'revenue-generated': {
-    header: 'Revenue Generated',
-    accessor: (cat) => exportDisplayValue(cat.revenue),
-  },
-  'repeat-booking-pct': {
-    header: 'Repeat Booking %',
-    accessor: (cat) => exportDisplayValue(cat.repeatBookingPct),
-  },
-  status: { header: 'Status', accessor: (cat) => exportDisplayValue(cat.status) },
-  'created-by': { header: 'Created By', accessor: (cat) => exportDisplayValue(cat.createdBy) },
-  'created-at': { header: 'Created At', accessor: (cat) => exportDisplayValue(cat.createdAt) },
-  'last-updated': { header: 'Last Updated', accessor: (cat) => exportDisplayValue(cat.updatedAt) },
-}
-
 const PAGE_SIZE = 10
 const DEFAULT_VISIBLE_IDS = DEFAULT_SERVICE_CATEGORY_MANAGEMENT_VISIBLE_COLUMN_IDS
+
+const SERVICE_CATEGORY_COLUMN_SORT_FIELDS = buildCatalogSortFieldMap(
+  SERVICE_CATEGORY_MANAGEMENT_TABLE_COLUMNS_CATALOG,
+)
 
 export const DeletedCategoriesPage = () => {
   const navigate = useNavigate()
   const scope = useCategoryManagementScope()
-  const [searchValue, setSearchValue] = useState('')
   const [page, setPage] = useState(1)
+  const serverSort = useServerTableSort({
+    sortFieldMap: SERVICE_CATEGORY_COLUMN_SORT_FIELDS,
+    onPageReset: () => setPage(1),
+  })
+  const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setPage(1) })
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
   const preferencesQuery = useTableColumnPreferences(SERVICE_CATEGORY_MANAGEMENT_MODULE_KEY)
+
+  const catalogColumnIds = useMemo(
+    () => SERVICE_CATEGORY_MANAGEMENT_TABLE_COLUMNS_CATALOG.map((c) => c.id),
+    [],
+  )
+  const exportColumnIds = useTableExportColumnIds({
+    visibleColumnIds: preferencesQuery.data?.visibleColumnIds,
+    defaultColumnIds: DEFAULT_SERVICE_CATEGORY_MANAGEMENT_VISIBLE_COLUMN_IDS,
+    catalogColumnIds,
+    legacyColumnIdMap: SERVICE_CATEGORY_LEGACY_COLUMN_ID_MAP,
+  })
 
   const handleApplyFilters = useCallback((values: FilterValues) => {
     setPage(1)
@@ -100,10 +78,11 @@ export const DeletedCategoriesPage = () => {
       buildCategoryListQueryParams(appliedFilters, {
         page,
         limit: PAGE_SIZE,
-        search: searchValue.trim() || undefined,
+        ...serverSort.sortParams,
+        ...enhancedSearch.buildSearchParams(),
         status: 'DELETED',
       }),
-    [appliedFilters, page, searchValue],
+    [appliedFilters, enhancedSearch, page, serverSort.sortParams],
   )
 
   const { data, isLoading, isError } = useServiceCategories(categoryQueryParams)
@@ -116,11 +95,14 @@ export const DeletedCategoriesPage = () => {
     const rawVisibleIds = preferencesQuery.data?.visibleColumnIds?.length
       ? preferencesQuery.data.visibleColumnIds
       : DEFAULT_VISIBLE_IDS
-    return selectPreferredColumns(
-      deletedCategoryColumns,
-      rawVisibleIds,
-      DEFAULT_VISIBLE_IDS,
-      SERVICE_CATEGORY_LEGACY_COLUMN_ID_MAP,
+    return withServerSortMeta(
+      selectPreferredColumns(
+        deletedCategoryColumns,
+        rawVisibleIds,
+        DEFAULT_VISIBLE_IDS,
+        SERVICE_CATEGORY_LEGACY_COLUMN_ID_MAP,
+      ),
+      SERVICE_CATEGORY_COLUMN_SORT_FIELDS,
     )
   }, [preferencesQuery.data])
 
@@ -131,11 +113,12 @@ export const DeletedCategoriesPage = () => {
           const response = await fetchCategories(params)
           return { data: (response.data ?? []).map(mapServiceCategoryToUi) }
         },
-        EXPORT_COLUMN_MAP,
+        SERVICE_CATEGORY_EXPORT_COLUMN_MAP,
         'deleted_service_categories_export',
         { status: 'DELETED' },
+        { columnIds: exportColumnIds, catalogOrder: catalogColumnIds },
       ),
-    [],
+    [catalogColumnIds, exportColumnIds],
   )
 
   const {
@@ -186,14 +169,17 @@ export const DeletedCategoriesPage = () => {
         columns={columns}
         data={deletedCategories}
         getRowId={(row) => row.id}
-        searchValue={searchValue}
-        onSearchChange={(value) => {
-          setSearchValue(value)
-          setPage(1)
-        }}
+        searchValue={enhancedSearch.globalSearch}
+        onSearchChange={enhancedSearch.setGlobalSearch}
+        searchableColumns={SERVICE_CATEGORY_SEARCH_COLUMNS}
+        columnSearches={enhancedSearch.columnSearches}
+        onColumnSearchChange={enhancedSearch.setColumnSearch}
+        onColumnSearchRemove={enhancedSearch.removeColumnSearch}
+        onClearAllSearches={enhancedSearch.clearAll}
         searchPlaceholder="Search by name or ID"
         onAdvancedFilter={onAdvancedFilter}
         onExport={onExport}
+        {...serverSort.dataTableSortProps}
         isLoading={isLoading}
         emptyMessage={emptyMessage}
         pagination={{

@@ -1,7 +1,7 @@
 import { useMemo, useState, useEffect, useCallback } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 import { Ban, Eye } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 
 import { fetchExpertReports } from '../../api/expert-api'
 import {
@@ -19,6 +19,11 @@ import {
 } from '../../components/expert-report-detail-modal'
 import { ExpertListHeader } from './expert-list-shared'
 import { DataTable } from '@/shared/components/table/data-table'
+import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'
+import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
+import { withServerSortMeta } from '@/shared/utils/table-sort'
+import { EXPERT_COLUMN_SORT_FIELDS } from '@/shared/utils/table-sort-field-maps'
+import { EXPERT_REPORTED_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
 import {
   TableActionsDropdown,
   TableActionsItem,
@@ -88,8 +93,13 @@ const dash = (value: unknown) =>
 
 export function ExpertReportedExpertsPage() {
   const navigate = useNavigate()
-  const [searchQuery, setSearchQuery] = useState('')
+  const location = useLocation()
   const [currentPage, setCurrentPage] = useState(1)
+  const serverSort = useServerTableSort({
+    sortFieldMap: EXPERT_COLUMN_SORT_FIELDS,
+    onPageReset: () => setCurrentPage(1),
+  })
+  const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setCurrentPage(1) })
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
 
   const [reports, setReports] = useState<ExpertReportItem[]>([])
@@ -102,12 +112,13 @@ export function ExpertReportedExpertsPage() {
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
 
   const apiFilterParams = useMemo(() => buildFilterParams(appliedFilters), [appliedFilters])
+  const searchParams = useMemo(() => enhancedSearch.buildSearchParams(), [enhancedSearch])
 
   const [prevKey, setPrevKey] = useState(
-    `${currentPage}-${searchQuery}-${JSON.stringify(apiFilterParams)}`,
+    `${currentPage}-${JSON.stringify(searchParams)}-${JSON.stringify(apiFilterParams)}-${JSON.stringify(serverSort.sortParams)}`,
   )
 
-  const currentKey = `${currentPage}-${searchQuery}-${JSON.stringify(apiFilterParams)}`
+  const currentKey = `${currentPage}-${JSON.stringify(searchParams)}-${JSON.stringify(apiFilterParams)}-${JSON.stringify(serverSort.sortParams)}`
 
   if (currentKey !== prevKey) {
     setPrevKey(currentKey)
@@ -118,7 +129,8 @@ export function ExpertReportedExpertsPage() {
     fetchExpertReports({
       page: currentPage,
       limit: 10,
-      search: searchQuery,
+      ...serverSort.sortParams,
+      ...searchParams,
       ...apiFilterParams,
     })
       .then((res) => {
@@ -135,7 +147,7 @@ export function ExpertReportedExpertsPage() {
       .finally(() => {
         setLoading(false)
       })
-  }, [currentPage, searchQuery, apiFilterParams])
+  }, [currentPage, searchParams, apiFilterParams, serverSort.sortParams])
 
   const handleApplyFilters = useCallback((values: FilterValues) => {
     setAppliedFilters(values)
@@ -149,10 +161,10 @@ export function ExpertReportedExpertsPage() {
         EXPORT_COLUMN_MAP,
         'reported_experts_export',
         {
-          search: searchQuery.trim() || undefined,
+          search: enhancedSearch.globalSearch.trim() || undefined,
         },
       ),
-    [searchQuery],
+    [enhancedSearch.globalSearch],
   )
 
   const {
@@ -170,6 +182,21 @@ export function ExpertReportedExpertsPage() {
   useEffect(() => {
     loadReports()
   }, [loadReports])
+
+  useEffect(() => {
+    const openReportId = (location.state as { openReportId?: string } | null)?.openReportId
+    if (!openReportId || loading || !reports.length) return
+
+    const match = reports.find(
+      (report) => report.reportId === openReportId || report.id === openReportId,
+    )
+    if (!match) return
+
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- open report detail from navigation state
+    setSelectedReport(match)
+    setIsModalOpen(true)
+    navigate(location.pathname, { replace: true, state: null })
+  }, [loading, location.pathname, location.state, navigate, reports])
 
   const columns = useMemo<ColumnDef<ExpertReportItem>[]>(() => {
     const dataColumnsById: Record<string, ColumnDef<ExpertReportItem>> = {
@@ -365,50 +392,53 @@ export function ExpertReportedExpertsPage() {
       .map((id) => dataColumnsById[id])
       .filter(Boolean) as ColumnDef<ExpertReportItem>[]
 
-    return [
-      ...preferenceColumns,
-      {
-        id: 'actions',
-        header: 'Actions',
-        meta: {
-          headerClassName: 'pr-5 text-right',
-          cellClassName: 'relative pr-5 text-right',
-        },
-        cell: ({ row }) => {
-          const reportItem = row.original
-          const isOpen = activeDropdownId === reportItem.reportId
+    return withServerSortMeta(
+      [
+        ...preferenceColumns,
+        {
+          id: 'actions',
+          header: 'Actions',
+          meta: {
+            headerClassName: 'pr-5 text-right',
+            cellClassName: 'relative pr-5 text-right',
+          },
+          cell: ({ row }) => {
+            const reportItem = row.original
+            const isOpen = activeDropdownId === reportItem.reportId
 
-          return (
-            <TableActionsDropdown
-              label={`Open actions for report ${reportItem.reportId}`}
-              isOpen={isOpen}
-              onOpenChange={(open) => setActiveDropdownId(open ? reportItem.reportId : null)}
-              menuWidth={176}
-            >
-              <TableActionsItem
-                icon={<Eye className="size-3.5" aria-hidden="true" />}
-                onClick={() => {
-                  setActiveDropdownId(null)
-                  navigate(`/experts/management/profile/${reportItem.partnerId}`)
-                }}
+            return (
+              <TableActionsDropdown
+                label={`Open actions for report ${reportItem.reportId}`}
+                isOpen={isOpen}
+                onOpenChange={(open) => setActiveDropdownId(open ? reportItem.reportId : null)}
+                menuWidth={176}
               >
-                View Expert
-              </TableActionsItem>
-              <TableActionsItem
-                icon={<Ban className="size-3.5 text-red-400" aria-hidden="true" />}
-                onClick={() => {
-                  setActiveDropdownId(null)
-                  setSelectedReport(reportItem)
-                  setIsModalOpen(true)
-                }}
-              >
-                View Report
-              </TableActionsItem>
-            </TableActionsDropdown>
-          )
+                <TableActionsItem
+                  icon={<Eye className="size-3.5" aria-hidden="true" />}
+                  onClick={() => {
+                    setActiveDropdownId(null)
+                    navigate(`/experts/management/profile/${reportItem.partnerId}`)
+                  }}
+                >
+                  View Expert
+                </TableActionsItem>
+                <TableActionsItem
+                  icon={<Ban className="size-3.5 text-red-400" aria-hidden="true" />}
+                  onClick={() => {
+                    setActiveDropdownId(null)
+                    setSelectedReport(reportItem)
+                    setIsModalOpen(true)
+                  }}
+                >
+                  View Report
+                </TableActionsItem>
+              </TableActionsDropdown>
+            )
+          },
         },
-      },
-    ]
+      ],
+      EXPERT_COLUMN_SORT_FIELDS,
+    )
   }, [activeDropdownId, navigate, tableColumnPreferencesQuery.data])
 
   return (
@@ -424,14 +454,17 @@ export function ExpertReportedExpertsPage() {
         data={reports}
         getRowId={(r) => r.reportId || r.id}
         isLoading={loading}
-        searchValue={searchQuery}
-        onSearchChange={(value) => {
-          setSearchQuery(value)
-          setCurrentPage(1)
-        }}
+        searchValue={enhancedSearch.globalSearch}
+        onSearchChange={enhancedSearch.setGlobalSearch}
+        searchableColumns={EXPERT_REPORTED_SEARCH_COLUMNS}
+        columnSearches={enhancedSearch.columnSearches}
+        onColumnSearchChange={enhancedSearch.setColumnSearch}
+        onColumnSearchRemove={enhancedSearch.removeColumnSearch}
+        onClearAllSearches={enhancedSearch.clearAll}
         searchPlaceholder="Search by report ID, expert, or reporter"
         onAdvancedFilter={onAdvancedFilter}
         onExport={onExport}
+        {...serverSort.dataTableSortProps}
         pagination={{
           page: currentPage,
           pageSize: 10,

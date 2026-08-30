@@ -14,6 +14,7 @@ export type PartnerLoginResult = {
 const PARTNER_SESSION_KEY = 'joms_dev_partner_chat'
 const PARTNER_CREDS_KEY = 'joms_finance_test_partner_creds'
 
+/** Web OAuth client for GIS in the browser (not the Android client). */
 export const GOOGLE_WEB_CLIENT_ID =
   '989282193672-ocn2g4rqsmn09lpprehgn6bv5i3eo1ip.apps.googleusercontent.com'
 
@@ -42,7 +43,7 @@ export async function fetchGoogleAuthConfig() {
 export async function partnerSignInWithGoogle(idToken: string) {
   const res = await axios.post(
     `${env.authApiBaseUrl}/auth/google/signin`,
-    { idToken, platform: 'web', deviceName: 'chat-test' },
+    { idToken, platform: 'web', deviceName: 'chat-test-harness' },
     { timeout: 30000, withCredentials: true },
   )
   return res.data?.data as PartnerLoginResult
@@ -59,6 +60,20 @@ export function clearPartnerSession() {
   sessionStorage.removeItem(PARTNER_SESSION_KEY)
 }
 
+/** Partner JWT from chat-test login (localStorage / sessionStorage). */
+export function loadPartnerAccessToken() {
+  try {
+    const raw =
+      localStorage.getItem(PARTNER_SESSION_KEY) || sessionStorage.getItem(PARTNER_SESSION_KEY)
+    if (!raw) return ''
+    const parsed = JSON.parse(raw) as { accessToken?: string }
+    return parsed.accessToken || ''
+  } catch {
+    return ''
+  }
+}
+
+/** Re-login using harness-saved partner creds (invalidates other partner tabs). */
 export async function refreshPartnerFromStoredCreds(): Promise<PartnerLoginResult> {
   const raw = localStorage.getItem(PARTNER_CREDS_KEY)
   if (!raw) {

@@ -18,13 +18,20 @@ import {
 import { useCommunicationMetrics, useCommunications } from '../../hooks/use-communications'
 import type { Communication } from '../../api/communication-api'
 import { DataTable } from '@/shared/components/table/data-table'
+import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'
+import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
+import { withServerSortMeta } from '@/shared/utils/table-sort'
+import { buildDefaultTableSortFieldMap } from '@/shared/utils/table-sort-field-maps'
+import { COMMUNICATION_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
 import { StatCard } from '@/shared/components/dashboard/stat-card'
+import { StatCardSkeleton } from '@/shared/components/ui/skeleton'
 import { getApiErrorMessage } from '@/shared/lib/api-error'
 import {
   orderByActiveMetricIds,
   useActiveMetricIds,
 } from '@/modules/expert/hooks/use-active-metric-ids'
 import { useTableColumnPreferences } from '@/modules/expert/hooks/use-ui-preferences'
+import { useTableExportColumnIds } from '@/shared/hooks/use-table-export-column-ids'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 import { exportDisplayValue } from '@/shared/utils/export-utils'
 import {
@@ -85,19 +92,16 @@ const EXPORT_COLUMN_MAP: Record<
   'last-updated': { header: 'Last Updated', accessor: (c) => exportDisplayValue(c.updatedAtLabel) },
 }
 
-export function CommunicationListPage() {
-  const [searchValue, setSearchValue] = useState('')
-  const [debouncedSearch, setDebouncedSearch] = useState('')
-  const [page, setPage] = useState(1)
-  const navigate = useNavigate()
+const COMMUNICATION_SORT_FIELD_MAP = buildDefaultTableSortFieldMap(Object.keys(EXPORT_COLUMN_MAP))
 
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      setDebouncedSearch(searchValue.trim())
-      setPage(1)
-    }, 300)
-    return () => window.clearTimeout(timer)
-  }, [searchValue])
+export function CommunicationListPage() {
+  const [page, setPage] = useState(1)
+  const serverSort = useServerTableSort({
+    sortFieldMap: COMMUNICATION_SORT_FIELD_MAP,
+    onPageReset: () => setPage(1),
+  })
+  const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setPage(1) })
+  const navigate = useNavigate()
 
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
 
@@ -107,9 +111,10 @@ export function CommunicationListPage() {
       buildCommunicationListQueryParams(appliedFilters, {
         page,
         limit: PAGE_SIZE,
-        search: debouncedSearch || undefined,
+        ...enhancedSearch.buildSearchParams(),
+        ...serverSort.sortParams,
       }),
-    [appliedFilters, debouncedSearch, page],
+    [appliedFilters, enhancedSearch, page, serverSort.sortParams],
   )
   const listQuery = useCommunications(listQueryParams)
   const activeMetricIds = useActiveMetricIds(COMMUNICATION_MODULE_KEY, [
@@ -124,6 +129,12 @@ export function CommunicationListPage() {
     [activeMetricIds],
   )
   const tableColumnPreferencesQuery = useTableColumnPreferences(COMMUNICATION_MODULE_KEY)
+  const catalogColumnIds = useMemo(() => Object.keys(EXPORT_COLUMN_MAP), [])
+  const exportColumnIds = useTableExportColumnIds({
+    visibleColumnIds: tableColumnPreferencesQuery.data?.visibleColumnIds,
+    defaultColumnIds: DEFAULT_VISIBLE_COLUMN_IDS,
+    catalogColumnIds,
+  })
 
   useEffect(() => {
     if (listQuery.isError) {
@@ -154,9 +165,10 @@ export function CommunicationListPage() {
         fetchCommunications,
         EXPORT_COLUMN_MAP,
         'communications_export',
-        { search: debouncedSearch || undefined },
+        { search: enhancedSearch.globalSearch || undefined },
+        { columnIds: exportColumnIds, catalogOrder: catalogColumnIds },
       ),
-    [debouncedSearch],
+    [catalogColumnIds, enhancedSearch.globalSearch, exportColumnIds],
   )
 
   const {
@@ -298,7 +310,10 @@ export function CommunicationListPage() {
       cell: ({ row }) => <CommunicationActions communication={row.original} />,
     }
 
-    return [selectColumn, ...preferenceColumns, actionsColumn]
+    return withServerSortMeta(
+      [selectColumn, ...preferenceColumns, actionsColumn],
+      COMMUNICATION_SORT_FIELD_MAP,
+    )
   }, [tableColumnPreferencesQuery.data])
 
   return (
@@ -331,23 +346,31 @@ export function CommunicationListPage() {
       </div>
 
       <div className="grid grid-cols-1 items-stretch gap-4 sm:grid-cols-2 xl:grid-cols-5">
-        {stats.map((stat) => (
-          <StatCard
-            key={stat.id}
-            title={stat.title}
-            value={stat.value}
-            trend={stat.trend}
-            hint={stat.hint}
-          />
-        ))}
+        {metricsQuery.isLoading
+          ? filteredActiveMetricIds.map((id) => <StatCardSkeleton key={id} />)
+          : stats.map((stat) => (
+              <StatCard
+                key={stat.id}
+                title={stat.title}
+                value={stat.value}
+                trend={stat.trend}
+                hint={stat.hint}
+              />
+            ))}
       </div>
 
       <DataTable
         columns={columns}
         data={rows}
         getRowId={(row) => row.id}
-        searchValue={searchValue}
-        onSearchChange={setSearchValue}
+        {...serverSort.dataTableSortProps}
+        searchValue={enhancedSearch.globalSearch}
+        onSearchChange={enhancedSearch.setGlobalSearch}
+        searchableColumns={COMMUNICATION_SEARCH_COLUMNS}
+        columnSearches={enhancedSearch.columnSearches}
+        onColumnSearchChange={enhancedSearch.setColumnSearch}
+        onColumnSearchRemove={enhancedSearch.removeColumnSearch}
+        onClearAllSearches={enhancedSearch.clearAll}
         searchPlaceholder="Search by name, ID or profession"
         advancedFilterLabel="Advance Filters"
         onAdvancedFilter={onAdvancedFilter}

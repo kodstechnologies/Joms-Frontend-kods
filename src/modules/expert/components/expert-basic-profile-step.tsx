@@ -1,11 +1,13 @@
 import { useMemo, useRef, useState } from 'react'
 import { ImageIcon, Search, Upload, XCircle } from 'lucide-react'
+import { toast } from 'sonner'
 
 import { useServiceCategoriesByType } from '../hooks/use-service-categories'
 import type { ExpertOnboardingFormData } from '../utils/expert-onboarding-form'
+import { VerificationOtpModal } from './verification-otp-modal'
 import { RequiredMark } from '@/shared/components/form/required-mark'
 import { cn } from '@/shared/lib/cn'
-import { sanitizeMobileNumber } from '@/shared/lib/phone'
+import { sanitizeMobileNumber, validateMobileNumber } from '@/shared/lib/phone'
 
 const fieldClass = 'ui-input'
 
@@ -27,6 +29,53 @@ export const ExpertBasicProfileStep = ({ formData, setFormData, lockedServiceTyp
 
   const [categorySearch, setCategorySearch] = useState('')
   const [offeringInput, setOfferingInput] = useState('')
+  const [verifyModal, setVerifyModal] = useState<{
+    open: boolean
+    type: 'phone' | 'email'
+    targetValue: string
+  }>({
+    open: false,
+    type: 'phone',
+    targetValue: '',
+  })
+
+  const handleOpenPhoneVerify = () => {
+    const error = validateMobileNumber(formData.phoneNumber)
+    if (error) {
+      toast.error(error)
+      return
+    }
+    setVerifyModal({
+      open: true,
+      type: 'phone',
+      targetValue: formData.phoneNumber,
+    })
+  }
+
+  const handleOpenEmailVerify = () => {
+    if (!formData.email.trim()) {
+      toast.error('Please enter an email ID before verifying.')
+      return
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(formData.email.trim())) {
+      toast.error('Please enter a valid email address.')
+      return
+    }
+    setVerifyModal({
+      open: true,
+      type: 'email',
+      targetValue: formData.email.trim(),
+    })
+  }
+
+  const handleVerified = () => {
+    if (verifyModal.type === 'phone') {
+      setFormData((prev) => ({ ...prev, isPhoneVerified: true }))
+    } else {
+      setFormData((prev) => ({ ...prev, isEmailVerified: true }))
+    }
+  }
 
   const serviceType = (lockedServiceType ?? formData.serviceType) as 'concierge' | 'venue' | ''
   const { data: categoriesResponse, isLoading: isCategoriesLoading } = useServiceCategoriesByType(
@@ -305,29 +354,26 @@ export const ExpertBasicProfileStep = ({ formData, setFormData, lockedServiceTyp
               <label className="mb-2 block text-xs font-medium text-white">
                 Service Type <RequiredMark />
               </label>
-              <div className="relative">
-                <select
-                  value={serviceType}
-                  onChange={(e) => handleServiceTypeChange(e.target.value)}
-                  disabled={Boolean(lockedServiceType)}
-                  className={cn(
-                    fieldClass,
-                    'appearance-none pr-10',
-                    lockedServiceType
-                      ? 'text-muted cursor-not-allowed opacity-70'
-                      : 'cursor-pointer',
-                  )}
-                >
-                  <option value="" disabled>
-                    Select service type
+              <select
+                value={serviceType}
+                onChange={(e) => handleServiceTypeChange(e.target.value)}
+                disabled={Boolean(lockedServiceType)}
+                className={cn(
+                  fieldClass,
+                  'appearance-none bg-none [&::-ms-expand]:hidden',
+                  lockedServiceType ? 'text-muted cursor-not-allowed opacity-70' : 'cursor-pointer',
+                )}
+                style={{ backgroundImage: 'none' }}
+              >
+                <option value="" disabled>
+                  Select service type
+                </option>
+                {SERVICE_TYPE_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
                   </option>
-                  {SERVICE_TYPE_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
+                ))}
+              </select>
             </div>
 
             <div>
@@ -451,27 +497,42 @@ export const ExpertBasicProfileStep = ({ formData, setFormData, lockedServiceTyp
             </div>
 
             <div>
-              <h3 className="mb-3 text-xs font-bold text-white">Verification</h3>
+              <h3 className="mb-3 text-sm font-bold text-white">Verification</h3>
               <div className="space-y-4">
                 <div>
                   <label className="mb-2 block text-xs font-medium text-white">
                     Phone Number <RequiredMark />
                   </label>
 
-                  <input
-                    type="tel"
-                    inputMode="numeric"
-                    maxLength={10}
-                    value={formData.phoneNumber}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        phoneNumber: sanitizeMobileNumber(e.target.value),
-                      }))
-                    }
-                    placeholder="Enter phone number"
-                    className={fieldClass}
-                  />
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="tel"
+                      inputMode="numeric"
+                      maxLength={10}
+                      value={formData.phoneNumber}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          phoneNumber: sanitizeMobileNumber(e.target.value),
+                          isPhoneVerified: false,
+                        }))
+                      }
+                      placeholder="Enter phone number"
+                      className={fieldClass}
+                    />
+                    <button
+                      type="button"
+                      onClick={handleOpenPhoneVerify}
+                      className={cn(
+                        'shrink-0 rounded-xl px-5 py-2.5 text-xs font-semibold transition-all',
+                        formData.isPhoneVerified
+                          ? 'border border-[#1E563D]/50 bg-[#143D2B] text-[#00E065]'
+                          : 'bg-[linear-gradient(180deg,#F6CB86_0%,#E0A263_100%)] text-[#050505] hover:brightness-95',
+                      )}
+                    >
+                      {formData.isPhoneVerified ? 'Verified ✓' : 'Verify'}
+                    </button>
+                  </div>
                 </div>
 
                 <div>
@@ -479,19 +540,47 @@ export const ExpertBasicProfileStep = ({ formData, setFormData, lockedServiceTyp
                     Email ID <RequiredMark />
                   </label>
 
-                  <input
-                    value={formData.email}
-                    onChange={(e) => setFormData((prev) => ({ ...prev, email: e.target.value }))}
-                    placeholder="Enter Email ID"
-                    type="email"
-                    className={fieldClass}
-                  />
+                  <div className="flex items-center gap-3">
+                    <input
+                      value={formData.email}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          email: e.target.value,
+                          isEmailVerified: false,
+                        }))
+                      }
+                      placeholder="Enter Email ID"
+                      type="email"
+                      className={fieldClass}
+                    />
+                    <button
+                      type="button"
+                      onClick={handleOpenEmailVerify}
+                      className={cn(
+                        'shrink-0 rounded-xl px-5 py-2.5 text-xs font-semibold transition-all',
+                        formData.isEmailVerified
+                          ? 'border border-[#1E563D]/50 bg-[#143D2B] text-[#00E065]'
+                          : 'bg-[linear-gradient(180deg,#F6CB86_0%,#E0A263_100%)] text-[#050505] hover:brightness-95',
+                      )}
+                    >
+                      {formData.isEmailVerified ? 'Verified ✓' : 'Verify'}
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
       </div>
+
+      <VerificationOtpModal
+        open={verifyModal.open}
+        type={verifyModal.type}
+        targetValue={verifyModal.targetValue}
+        onClose={() => setVerifyModal((prev) => ({ ...prev, open: false }))}
+        onVerified={handleVerified}
+      />
     </div>
   )
 }

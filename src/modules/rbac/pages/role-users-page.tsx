@@ -6,22 +6,34 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { useRoleUsers } from '../hooks/use-rbac'
 import type { SubAdmin } from '../types/rbac'
 import { DataTable } from '@/shared/components/table/data-table'
+import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'
+import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
+import { withServerSortMeta } from '@/shared/utils/table-sort'
+import { buildDefaultTableSortFieldMap } from '@/shared/utils/table-sort-field-maps'
+import { RBAC_USER_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
 import { cn } from '@/shared/lib/cn'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import { uiTokens } from '@/shared/lib/design-tokens'
 
 const PAGE_SIZE = 10
 
+const SORT_FIELD_MAP = buildDefaultTableSortFieldMap(['adminCode', 'fullname', 'roleName', 'email'])
+
 export function RoleUsersPage() {
   const { id = '' } = useParams()
   const navigate = useNavigate()
   const [page, setPage] = useState(1)
-  const [searchQuery, setSearchQuery] = useState('')
+  const serverSort = useServerTableSort({
+    sortFieldMap: SORT_FIELD_MAP,
+    onPageReset: () => setPage(1),
+  })
+  const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setPage(1) })
 
   const { data, isLoading } = useRoleUsers(id, {
     page,
     limit: PAGE_SIZE,
-    search: searchQuery || undefined,
+    ...enhancedSearch.buildSearchParams(),
+    ...serverSort.sortParams,
   })
 
   const role = data?.data.role
@@ -29,43 +41,47 @@ export function RoleUsersPage() {
   const meta = data?.meta
 
   const columns = useMemo<ColumnDef<SubAdmin>[]>(
-    () => [
-      { accessorKey: 'adminCode', header: 'User ID' },
-      {
-        accessorKey: 'fullname',
-        header: 'Username',
-        cell: ({ row }) => (
-          <button
-            type="button"
-            onClick={() => navigate(`/settings/access/users/${row.original.id}`)}
-            className="text-brand-accent decoration-brand-accent/40 hover:text-brand-gold-from text-left text-sm font-medium underline underline-offset-2"
-          >
-            {row.original.fullname}
-          </button>
-        ),
-      },
-      {
-        id: 'roleName',
-        header: 'Role',
-        cell: ({ row }) => row.original.roles.map((item) => item.name).join(', ') || '—',
-      },
-      { accessorKey: 'email', header: 'Email ID' },
-      {
-        id: 'open',
-        header: '',
-        enableSorting: false,
-        cell: ({ row }) => (
-          <button
-            type="button"
-            aria-label={`Open ${row.original.fullname} details`}
-            onClick={() => navigate(`/settings/access/users/${row.original.id}`)}
-            className="text-brand-muted hover:text-brand-accent transition-colors"
-          >
-            <ExternalLink className="size-4" />
-          </button>
-        ),
-      },
-    ],
+    () =>
+      withServerSortMeta(
+        [
+          { accessorKey: 'adminCode', header: 'User ID' },
+          {
+            accessorKey: 'fullname',
+            header: 'Username',
+            cell: ({ row }) => (
+              <button
+                type="button"
+                onClick={() => navigate(`/settings/access/users/${row.original.id}`)}
+                className="text-brand-accent decoration-brand-accent/40 hover:text-brand-gold-from text-left text-sm font-medium underline underline-offset-2"
+              >
+                {row.original.fullname}
+              </button>
+            ),
+          },
+          {
+            id: 'roleName',
+            header: 'Role',
+            cell: ({ row }) => row.original.roles.map((item) => item.name).join(', ') || '—',
+          },
+          { accessorKey: 'email', header: 'Email ID' },
+          {
+            id: 'open',
+            header: '',
+            enableSorting: false,
+            cell: ({ row }) => (
+              <button
+                type="button"
+                aria-label={`Open ${row.original.fullname} details`}
+                onClick={() => navigate(`/settings/access/users/${row.original.id}`)}
+                className="text-brand-muted hover:text-brand-accent transition-colors"
+              >
+                <ExternalLink className="size-4" />
+              </button>
+            ),
+          },
+        ],
+        SORT_FIELD_MAP,
+      ),
     [navigate],
   )
 
@@ -103,12 +119,15 @@ export function RoleUsersPage() {
         columns={columns}
         data={users}
         getRowId={(row) => row.id}
+        {...serverSort.dataTableSortProps}
         isLoading={isLoading}
-        searchValue={searchQuery}
-        onSearchChange={(value) => {
-          setSearchQuery(value)
-          setPage(1)
-        }}
+        searchValue={enhancedSearch.globalSearch}
+        onSearchChange={enhancedSearch.setGlobalSearch}
+        searchableColumns={RBAC_USER_SEARCH_COLUMNS}
+        columnSearches={enhancedSearch.columnSearches}
+        onColumnSearchChange={enhancedSearch.setColumnSearch}
+        onColumnSearchRemove={enhancedSearch.removeColumnSearch}
+        onClearAllSearches={enhancedSearch.clearAll}
         searchPlaceholder="Search by name, ID or email"
         pagination={{
           page,

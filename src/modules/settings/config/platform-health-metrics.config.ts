@@ -8,7 +8,7 @@ export type PlatformHealthMetricCatalogItem = {
   defaultActive: boolean
 }
 
-/** Spec: Settings → Platform Health dashboard metrics. */
+/** Figma / spec dashboard metrics for Settings → Platform Health. */
 export const PLATFORM_HEALTH_METRICS_CATALOG: PlatformHealthMetricCatalogItem[] = [
   {
     id: 'system-uptime',
@@ -18,10 +18,24 @@ export const PLATFORM_HEALTH_METRICS_CATALOG: PlatformHealthMetricCatalogItem[] 
     defaultActive: true,
   },
   {
+    id: 'failed-transactions',
+    label: 'Failed Transactions',
+    type: 'Count',
+    description: 'Failed payment or booking transactions in range',
+    defaultActive: true,
+  },
+  {
     id: 'compliance-flags',
     label: 'Compliance Flags',
     type: 'Count',
     description: 'Open compliance and security flags',
+    defaultActive: true,
+  },
+  {
+    id: 'open-support-tickets',
+    label: 'Open Support Tickets',
+    type: 'Count',
+    description: 'Active unresolved support tickets',
     defaultActive: true,
   },
   {
@@ -53,17 +67,10 @@ export const PLATFORM_HEALTH_METRICS_CATALOG: PlatformHealthMetricCatalogItem[] 
     defaultActive: true,
   },
   {
-    id: 'avg-api-response-time',
-    label: 'Average API Response Time',
+    id: 'api-response-time',
+    label: 'API Response Time',
     type: 'Average',
     description: 'Average backend health-probe latency',
-    defaultActive: true,
-  },
-  {
-    id: 'api-success-rate',
-    label: 'API Success Rate',
-    type: 'Percentage',
-    description: 'Successful probes ÷ total probes',
     defaultActive: true,
   },
   {
@@ -74,76 +81,48 @@ export const PLATFORM_HEALTH_METRICS_CATALOG: PlatformHealthMetricCatalogItem[] 
     defaultActive: true,
   },
   {
-    id: 'database-health-score',
-    label: 'Database Health Score',
-    type: 'Percentage',
-    description: 'Derived from Mongo ping latency',
-    defaultActive: true,
-  },
-  {
-    id: 'background-jobs-success-rate',
-    label: 'Background Jobs Success Rate',
-    type: 'Percentage',
-    description: 'Successful backups and scheduled jobs ÷ attempts',
-    defaultActive: true,
-  },
-  {
-    id: 'queue-processing-time',
-    label: 'Queue Processing Time',
+    id: 'database-query-time',
+    label: 'Database Query Time',
     type: 'Average',
-    description: 'Average completed job duration',
+    description: 'Mongo ping latency',
     defaultActive: true,
   },
   {
     id: 'data-backup-success',
-    label: 'Data Backup Success Rate',
+    label: 'Data Backup Success',
     type: 'Percentage',
     description: 'Successful backups ÷ backup attempts',
     defaultActive: true,
   },
   {
-    id: 'last-successful-backup',
-    label: 'Last Successful Backup',
-    type: 'DateTime',
-    description: 'Timestamp of the latest completed backup',
+    id: 'avg-ticket-resolution-time',
+    label: 'Avg. Ticket Resolution Time',
+    type: 'Average',
+    description: 'Average ticket resolution duration',
     defaultActive: true,
   },
   {
-    id: 'active-incidents',
-    label: 'Active Incidents',
-    type: 'Count',
-    description: 'Open and investigating production incidents',
+    id: 'first-response-time',
+    label: 'First Response Time',
+    type: 'Average',
+    description: 'Average first response duration',
     defaultActive: true,
   },
   {
-    id: 'security-alerts',
-    label: 'Security Alerts',
-    type: 'Count',
-    description: 'Failed logins, locked accounts, impersonation, critical incidents',
-    defaultActive: true,
-  },
-  {
-    id: 'failed-login-attempts',
-    label: 'Failed Login Attempts',
-    type: 'Count',
-    description: 'Failed admin login attempts in the selected range',
-    defaultActive: true,
-  },
-  {
-    id: 'storage-utilization',
-    label: 'Storage Utilization',
+    id: 'customer-satisfaction-csat',
+    label: 'Customer Satisfaction (CSAT)',
     type: 'Percentage',
-    description: 'Used Mongo storage ÷ allocated storage',
-    defaultActive: true,
-  },
-  {
-    id: 'cache-hit-rate',
-    label: 'Cache Hit Rate',
-    type: 'Percentage',
-    description: 'Cache hits ÷ cache requests',
+    description: 'Positive support feedback percentage',
     defaultActive: true,
   },
 ]
+
+export const PLATFORM_HEALTH_LEGACY_METRIC_ID_MAP: Record<string, string> = {
+  'avg-api-response-time': 'api-response-time',
+  'database-health-score': 'database-query-time',
+  'active-incidents': 'open-support-tickets',
+  'data-backup-success-rate': 'data-backup-success',
+}
 
 export const PLATFORM_HEALTH_METRIC_IDS = PLATFORM_HEALTH_METRICS_CATALOG.map((metric) => metric.id)
 

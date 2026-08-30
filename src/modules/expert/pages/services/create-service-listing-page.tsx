@@ -27,7 +27,7 @@ import {
   useUpdateServiceGallery,
   useUpdateServicePricing,
 } from '@/modules/expert/hooks/use-create-listing'
-import { useConsultation } from '@/modules/expert/hooks/use-services'
+import { useConsultation, useService } from '@/modules/expert/hooks/use-services'
 import { useExpertProfile } from '@/modules/expert/hooks/use-expert-profile'
 import {
   fetchListingPricingConfig,
@@ -48,6 +48,7 @@ import {
 } from '@/modules/expert/lib/listing-form-utils'
 import type { ConsultationTopic } from '@/modules/expert/type/service'
 import type { UpdateServicePricingPayload } from '@/modules/expert/type/service'
+import { guardUploadFiles } from '@/shared/lib/upload-file'
 import { cn } from '@/shared/lib/cn'
 import { RequiredMark } from '@/shared/components/form/required-mark'
 import { CreateListingWizard } from '@/modules/expert/components'
@@ -98,22 +99,34 @@ export const CreateServiceListingPage = () => {
   const [searchParams] = useSearchParams()
   const partnerId = searchParams.get('partnerId') || ''
   const consultationIdParam = searchParams.get('consultationId') || ''
-  const isEditMode = searchParams.get('mode') === 'edit' && Boolean(consultationIdParam)
+  const serviceIdParam = searchParams.get('serviceId') || searchParams.get('id') || ''
+  const isConsultationEditMode = searchParams.get('mode') === 'edit' && Boolean(consultationIdParam)
+  const isServiceEditMode = searchParams.get('mode') === 'edit' && Boolean(serviceIdParam)
+  const isEditMode = isConsultationEditMode || isServiceEditMode
 
   const { data: expertProfileResponse } = useExpertProfile(partnerId || undefined)
   const { data: consultationEditResponse, isLoading: isConsultationEditLoading } = useConsultation(
     consultationIdParam,
-    isEditMode,
+    isConsultationEditMode,
   )
+  const { data: serviceEditResponse, isLoading: isServiceEditLoading } = useService(
+    serviceIdParam,
+    isServiceEditMode,
+  )
+  const isEditLoading =
+    (isConsultationEditMode && isConsultationEditLoading) ||
+    (isServiceEditMode && isServiceEditLoading)
   const expertName =
     expertProfileResponse?.data?.basicProfile?.fullname ||
     expertProfileResponse?.data?.fullname ||
     'Expert'
   const [currentStep, setCurrentStep] = useState(isEditMode ? 2 : 1)
   const [selectedType, setSelectedType] = useState<'service' | 'consultation' | null>(
-    isEditMode ? 'consultation' : 'service',
+    isConsultationEditMode ? 'consultation' : isServiceEditMode ? 'service' : 'service',
   )
-  const [listingId, setListingId] = useState<string | null>(isEditMode ? consultationIdParam : null)
+  const [listingId, setListingId] = useState<string | null>(
+    isConsultationEditMode ? consultationIdParam : isServiceEditMode ? serviceIdParam : null,
+  )
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [hasPrefill, setHasPrefill] = useState(false)
 
@@ -219,8 +232,17 @@ export const CreateServiceListingPage = () => {
     if (allowSinglePriceListing) allowed.push('fixed')
     if (allowCustomPriceListing) allowed.push('custom')
     if (allowTierPriceListing) allowed.push('tiered')
+    // Grandfathering: preserve existing listing pricing type if already set/loaded
+    if (pricingTypePreference && !allowed.includes(pricingTypePreference)) {
+      allowed.push(pricingTypePreference)
+    }
     return allowed
-  }, [allowSinglePriceListing, allowCustomPriceListing, allowTierPriceListing])
+  }, [
+    allowSinglePriceListing,
+    allowCustomPriceListing,
+    allowTierPriceListing,
+    pricingTypePreference,
+  ])
 
   const pricingType = allowedPricingTypes.includes(pricingTypePreference)
     ? pricingTypePreference
@@ -361,15 +383,34 @@ export const CreateServiceListingPage = () => {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const MAX_IMAGES = 5
 
-  if (isEditMode && !hasPrefill && consultationEditResponse?.data) {
+  if (isConsultationEditMode && !hasPrefill && consultationEditResponse?.data) {
     const consultation = consultationEditResponse.data
     setListingId(consultation._id)
     setSelectedType('consultation')
     setConsultationTitle(consultation.title || '')
-    setTopics(consultation.topics || [])
+
+    const rawTopics =
+      (consultation as unknown as { topics?: unknown[] }).topics ||
+      (consultation as unknown as { topicIds?: unknown[] }).topicIds ||
+      []
+    const normalizedTopics: ConsultationTopic[] = rawTopics.map((t: unknown) => {
+      if (typeof t === 'string') return { _id: t, name: t }
+      const obj = t as Record<string, unknown>
+      return {
+        _id: String(obj._id || obj.id || obj.name || ''),
+        name: String(obj.name || obj.title || obj._id || ''),
+      }
+    })
+    setTopics(normalizedTopics)
+
     setSessionOutline(consultation.sessionOutline || '')
-    setWhoItsFor(consultation.whoItsFor || '')
-    setLanguages((consultation.languages || []).join(', '))
+    setWhoItsFor(
+      consultation.whoItsFor ||
+        (consultation as unknown as { whoIsItFor?: string }).whoIsItFor ||
+        '',
+    )
+    const langs = (consultation as unknown as { languages?: string[] | string }).languages
+    setLanguages(Array.isArray(langs) ? langs.join(', ') : typeof langs === 'string' ? langs : '')
     setHasPreSessionRequirement(Boolean(consultation.hasPreSessionRequirement))
     setPreSessionRequirement(consultation.preSessionRequirement || '')
     setHasPostSessionMessage(Boolean(consultation.hasPostSessionMessage))
@@ -377,19 +418,123 @@ export const CreateServiceListingPage = () => {
     setHasFollowUp(Boolean(consultation.hasFollowUp))
     setFollowUpDays(consultation.followUpDays != null ? String(consultation.followUpDays) : '7')
 
-    const mode = consultation.mode
+    const mode =
+      consultation.mode ||
+      (consultation as unknown as { modeOfConsultation?: 'audio' | 'video' | 'chat' })
+        .modeOfConsultation
     if (mode === 'audio' || mode === 'video' || mode === 'chat') {
       setConsultationMode(mode)
     }
 
-    const primaryPricing = consultation.pricingOptions?.[0]
+    const primaryPricing =
+      consultation.pricingOptions?.[0] ||
+      (
+        consultation as unknown as {
+          pricing?: Array<{
+            durationMinutes?: number
+            pricingType?: 'free' | 'paid'
+            price?: number
+          }>
+        }
+      ).pricing?.[0]
     if (primaryPricing) {
       setConsultationDuration(primaryPricing.durationMinutes || 30)
-      const pricingType = primaryPricing.pricingType === 'free' ? 'free' : 'paid'
-      setConsultationPricingType(pricingType)
+      const pType = primaryPricing.pricingType === 'free' ? 'free' : 'paid'
+      setConsultationPricingType(pType)
       setConsultationPrice(
-        pricingType === 'paid' && primaryPricing.price != null ? String(primaryPricing.price) : '',
+        pType === 'paid' && primaryPricing.price != null ? String(primaryPricing.price) : '',
       )
+    }
+
+    setHasPrefill(true)
+  } else if (isServiceEditMode && !hasPrefill && serviceEditResponse?.data) {
+    const service = serviceEditResponse.data
+    setListingId(service._id)
+    setSelectedType('service')
+    setServiceTitle(service.title || '')
+    setSelectedCategoryId(
+      typeof (service as unknown as { categoryId?: unknown }).categoryId === 'object'
+        ? String((service as unknown as { categoryId?: { _id?: string } }).categoryId?._id || '')
+        : String(
+            (service as unknown as { categoryId?: string; category?: string }).categoryId ||
+              (service as unknown as { category?: string }).category ||
+              '',
+          ),
+    )
+    const rawSubCategories =
+      (
+        service as unknown as {
+          subCategoryIds?: unknown[]
+          subCategories?: unknown[]
+          subCategory?: unknown[]
+        }
+      ).subCategoryIds ||
+      (service as unknown as { subCategories?: unknown[] }).subCategories ||
+      (service as unknown as { subCategory?: unknown[] }).subCategory ||
+      []
+    setSelectedSubCategoryIds(
+      rawSubCategories
+        .map((s: unknown) =>
+          typeof s === 'object' && s !== null
+            ? String((s as { _id?: string; id?: string })._id || (s as { id?: string }).id || '')
+            : String(s),
+        )
+        .filter(Boolean),
+    )
+    setDescription(service.description || '')
+    setDeliverables(service.deliverables || '')
+
+    const sData = service as unknown as {
+      pricingType?: 'fixed' | 'custom' | 'tiered'
+      price?: number
+      timelineValue?: number | string
+      timelineUnit?: string
+      timelineMin?: number | string
+      timelineMax?: number | string
+      tiers?: Array<{
+        name: TierName
+        description?: string
+        price?: number
+        timelineValue?: number | string
+        timelineUnit?: string
+      }>
+    }
+
+    if (sData.pricingType) {
+      setPricingType(sData.pricingType)
+    }
+    if (sData.price != null) {
+      const formatted = `₹${sData.price}`
+      setFixedPrice(formatted)
+      setCustomPrice(formatted)
+    }
+    if (sData.timelineValue != null) {
+      setFixedTimeline(String(sData.timelineValue))
+    }
+    if (sData.timelineUnit) {
+      setFixedTimelineUnit(sData.timelineUnit)
+      setCustomTimelineUnit(sData.timelineUnit)
+    }
+    if (sData.timelineMin != null) {
+      setCustomTimelineMin(String(sData.timelineMin))
+    }
+    if (sData.timelineMax != null) {
+      setCustomTimelineMax(String(sData.timelineMax))
+    }
+
+    if (Array.isArray(sData.tiers) && sData.tiers.length > 0) {
+      const loadedTiers: ServiceTierForm[] = DEFAULT_SERVICE_TIERS.map((defTier) => {
+        const matched = sData.tiers?.find((t) => t.name === defTier.name)
+        if (!matched) return defTier
+        return {
+          name: defTier.name,
+          description: matched.description || '',
+          price: matched.price != null ? `₹${matched.price}` : '',
+          timelineValue: matched.timelineValue != null ? String(matched.timelineValue) : '',
+          timelineUnit: matched.timelineUnit || 'Days',
+        }
+      })
+      setTiers(loadedTiers)
     }
 
     setHasPrefill(true)
@@ -399,7 +544,7 @@ export const CreateServiceListingPage = () => {
     (files: FileList | null) => {
       if (!files) return
       const remaining = MAX_IMAGES - uploadedImages.length
-      const toAdd = Array.from(files).slice(0, remaining)
+      const toAdd = guardUploadFiles(Array.from(files).slice(0, remaining))
       const newImages: UploadedImage[] = toAdd.map((file) => ({
         id: crypto.randomUUID(),
         url: URL.createObjectURL(file),
@@ -1226,9 +1371,7 @@ export const CreateServiceListingPage = () => {
         ),
         onClick: handlePrimaryAction,
         disabled:
-          (currentStep === 1 && !selectedType) ||
-          isSubmitting ||
-          (isEditMode && isConsultationEditLoading),
+          (currentStep === 1 && !selectedType) || isSubmitting || (isEditMode && isEditLoading),
         className: primaryActionClassName,
       }}
     >
@@ -1451,7 +1594,7 @@ export const CreateServiceListingPage = () => {
             </div>
 
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              {allowSinglePriceListing && (
+              {(allowSinglePriceListing || pricingTypePreference === 'fixed') && (
                 <button
                   onClick={() => setPricingType('fixed')}
                   className={cn(
@@ -1478,7 +1621,7 @@ export const CreateServiceListingPage = () => {
                 </button>
               )}
 
-              {allowCustomPriceListing && (
+              {(allowCustomPriceListing || pricingTypePreference === 'custom') && (
                 <button
                   onClick={() => setPricingType('custom')}
                   className={cn(
@@ -1505,7 +1648,7 @@ export const CreateServiceListingPage = () => {
                 </button>
               )}
 
-              {allowTierPriceListing && (
+              {(allowTierPriceListing || pricingTypePreference === 'tiered') && (
                 <button
                   onClick={() => setPricingType('tiered')}
                   className={cn(

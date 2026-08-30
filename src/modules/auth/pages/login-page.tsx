@@ -5,7 +5,8 @@ import { Controller, useForm } from 'react-hook-form'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { toast } from 'sonner'
 
-import { useAuthStore } from '@/modules/auth/store/auth-store'
+import type { AdminSessionUser } from '@/modules/auth/api/auth-api'
+import { type AdminUser, useAuthStore } from '@/modules/auth/store/auth-store'
 import { fetchRbacMe } from '@/modules/rbac/api/rbac-api'
 import {
   getDefaultHomeRoute,
@@ -13,7 +14,6 @@ import {
 } from '@/app/layouts/navigation/navigation.filter'
 import { useLoginMutation } from '@/modules/auth/hooks/use-login-mutation'
 import { useVerifyOtpMutation } from '@/modules/auth/hooks/use-verify-otp-mutation'
-import { postLoginPath } from '@/modules/auth/utils/post-login-path'
 import { type LoginSchema, loginSchema } from '@/modules/auth/validations/login-schema'
 import { type OtpSchema, otpSchema } from '@/modules/auth/validations/otp-schema'
 import { getApiErrorMessage } from '@/shared/lib/api-error'
@@ -23,6 +23,31 @@ import { Button } from '@/shared/components/ui/button'
 import { Card } from '@/shared/components/ui/card'
 import { Input } from '@/shared/components/ui/input'
 import jomsLogo from '@/assets/joms-logo.png'
+
+function buildSessionUser(admin: AdminSessionUser | undefined, fallbackEmail: string): AdminUser {
+  if (admin) {
+    return {
+      id: admin.id,
+      email: admin.email,
+      fullname: admin.fullname,
+      kind: admin.kind ?? 'subadmin',
+      isSuperAdmin: Boolean(admin.isSuperAdmin),
+      permissions: normalizeUserPermissions(admin.permissions ?? []),
+      mfaEnabled: admin.mfaEnabled,
+      status: admin.status,
+      subAdminId: admin.subAdminId ?? undefined,
+    }
+  }
+
+  return {
+    id: '',
+    email: fallbackEmail,
+    fullname: 'Admin',
+    kind: 'superadmin',
+    isSuperAdmin: true,
+    permissions: [],
+  }
+}
 
 export function LoginPage() {
   const navigate = useNavigate()
@@ -47,13 +72,56 @@ export function LoginPage() {
     defaultValues: { code: '' },
   })
 
-  const homeAfterLogin = (sessionUser: Parameters<typeof getDefaultHomeRoute>[0]) =>
-    postLoginPath(
-      sessionUser,
-      (location.state as { from?: { pathname?: string; search?: string; hash?: string } } | null)
-        ?.from,
-      getDefaultHomeRoute,
-    )
+  const postLoginPath = (sessionUser: AdminUser) => {
+    const from = (
+      location.state as { from?: { pathname?: string; search?: string; hash?: string } } | null
+    )?.from
+    const pathname = from?.pathname
+    if (pathname && pathname.startsWith('/') && !pathname.startsWith('/auth')) {
+      return `${pathname}${from.search ?? ''}${from.hash ?? ''}`
+    }
+    return getDefaultHomeRoute(sessionUser)
+  }
+
+  const finalizeLogin = async (
+    token: string,
+    admin: AdminSessionUser | undefined,
+    email: string,
+  ) => {
+    let sessionUser = buildSessionUser(admin, email)
+    setSession(sessionUser, token)
+
+    if (!sessionUser.isSuperAdmin) {
+      try {
+        const profileResponse = await fetchRbacMe()
+        const profile = profileResponse.data
+        const resolvedSubAdminId = profile.subAdminId || admin?.subAdminId || undefined
+        updateUser({
+          subAdminId: resolvedSubAdminId,
+          permissions: normalizeUserPermissions(profile.permissions ?? []),
+          requiresContactSetup: Boolean(profile.requiresContactSetup),
+          contactSetupCompleted: Boolean(profile.contactSetupCompleted),
+        })
+
+        sessionUser = {
+          ...sessionUser,
+          subAdminId: resolvedSubAdminId,
+          permissions: normalizeUserPermissions(profile.permissions ?? []),
+        }
+
+        if (profile.requiresContactSetup) {
+          toast.success('Please complete your contact information')
+          navigate('/auth/contact-information', { replace: true })
+          return
+        }
+      } catch {
+        // Fall through to default home if profile fetch fails
+      }
+    }
+
+    toast.success('Welcome back')
+    navigate(postLoginPath(sessionUser), { replace: true })
+  }
 
   const onSubmitCredentials = async (values: LoginSchema) => {
     try {
@@ -61,7 +129,19 @@ export function LoginPage() {
         toast.error('Email is required')
         return
       }
-      await login({ email: values.email, password: values.password })
+
+      const response = await login({ email: values.email, password: values.password })
+      const session = response?.data
+
+      if (session?.mfaRequired === false) {
+        if (!session.token) {
+          toast.error('Login succeeded but no auth token was returned')
+          return
+        }
+        await finalizeLogin(session.token, session.admin, values.email)
+        return
+      }
+
       setPendingEmail(values.email)
       setStep('otp')
       toast.success('OTP sent to your email')
@@ -84,7 +164,6 @@ export function LoginPage() {
     try {
       const response = await verifyOtp({ email: pendingEmail, otp: values.code })
       const session = response?.data
-      const admin = session?.admin
       const token = session?.token
 
       if (!token) {
@@ -92,62 +171,7 @@ export function LoginPage() {
         return
       }
 
-      let sessionUser
-
-      if (admin) {
-        sessionUser = {
-          id: admin.id,
-          email: admin.email,
-          fullname: admin.fullname,
-          kind: admin.kind ?? 'subadmin',
-          isSuperAdmin: Boolean(admin.isSuperAdmin),
-          permissions: normalizeUserPermissions(admin.permissions ?? []),
-          mfaEnabled: admin.mfaEnabled,
-          status: admin.status,
-          subAdminId: admin.subAdminId,
-        }
-        setSession(sessionUser, token)
-      } else {
-        sessionUser = {
-          id: '',
-          email: pendingEmail,
-          fullname: 'Admin',
-          kind: 'superadmin' as const,
-          isSuperAdmin: true,
-          permissions: [],
-        }
-        setSession(sessionUser, token)
-      }
-
-      if (!sessionUser.isSuperAdmin) {
-        try {
-          const profileResponse = await fetchRbacMe()
-          const profile = profileResponse.data
-          updateUser({
-            subAdminId: profile.subAdminId || admin.subAdminId,
-            permissions: normalizeUserPermissions(profile.permissions ?? []),
-            requiresContactSetup: Boolean(profile.requiresContactSetup),
-            contactSetupCompleted: Boolean(profile.contactSetupCompleted),
-          })
-
-          sessionUser = {
-            ...sessionUser,
-            subAdminId: profile.subAdminId || admin?.subAdminId,
-            permissions: normalizeUserPermissions(profile.permissions ?? []),
-          }
-
-          if (profile.requiresContactSetup) {
-            toast.success('Please complete your contact information')
-            navigate('/auth/contact-information', { replace: true })
-            return
-          }
-        } catch {
-          // Fall through to default home if profile fetch fails
-        }
-      }
-
-      toast.success('Welcome back')
-      navigate(homeAfterLogin(sessionUser), { replace: true })
+      await finalizeLogin(token, session?.admin, pendingEmail)
     } catch {
       toast.error('Invalid or expired OTP')
     }

@@ -1869,7 +1869,7 @@ select.settings-control,
   overflow-x: auto;
   border-radius: 12px;
   border: 1px solid rgb(255 255 255 / 10%);
-  background: #111111;
+  background: var(--settings-card-bg);
   padding: 4px;
   scrollbar-width: none;
   -ms-overflow-style: none;
@@ -2416,7 +2416,7 @@ select.settings-control,
   overflow: hidden;
   border-radius: 16px;
   border: 1px solid rgb(255 255 255 / 10%);
-  background: #000000;
+  background: var(--settings-card-bg);
   color: #ffffff;
   box-shadow: 0 24px 80px rgb(0 0 0 / 65%);
 }
@@ -3367,6 +3367,18 @@ select::-ms-expand {
   font-size: 16px;
   line-height: 24px;
   color: rgb(255 255 255 / 50%);
+}
+
+.ui-modal-backdrop,
+.ui-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(5, 5, 5, 0.8);
+  padding: 1rem;
 }
 
 .ui-modal-shell {

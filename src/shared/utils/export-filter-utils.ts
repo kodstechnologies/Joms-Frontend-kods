@@ -1,6 +1,187 @@
-import type { FilterValues } from '@/shared/types/data-filter'
-import { exportDataToFile } from './export-utils'
+/**
+ * Shared utilities for filter-based export across all management pages.
+ * Converts FilterValues from the export modal into API query params,
+ * fetches filtered data, then calls exportDataToFile.
+ */
 
+import type { ColumnDef } from '@tanstack/react-table'
+import type { FilterValues } from '@/shared/types/data-filter'
+import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
+import { exportDataToFile, exportDisplayValue } from './export-utils'
+export { exportDataToFile, exportDisplayValue }
+
+export type ExportColumnDef<T> = { header: string; accessor: (item: T) => string }
+export type ExportColumnMap<T> = Record<string, ExportColumnDef<T>>
+
+export type ExportHandlerOptions = {
+  /** When set, only these column ids are exported (table Manage Metrics visible columns). */
+  columnIds?: string[]
+  /** Catalog order used when sorting export columns. */
+  catalogOrder?: string[]
+}
+
+export function pickExportColumns<T>(
+  columnMap: ExportColumnMap<T>,
+  options?: ExportHandlerOptions,
+): ExportColumnDef<T>[] {
+  const columnIds = options?.columnIds
+  if (!columnIds?.length) {
+    return Object.values(columnMap)
+  }
+
+  const ordered = options?.catalogOrder?.length
+    ? sortIdsByCatalogOrder(
+        columnIds.filter((id) => columnMap[id]),
+        options.catalogOrder,
+      )
+    : columnIds.filter((id) => columnMap[id])
+
+  return ordered.map((id) => columnMap[id])
+}
+
+export function resolveVisibleExportColumnIds({
+  visibleColumnIds,
+  defaultColumnIds,
+  catalogColumnIds,
+  legacyColumnIdMap = {},
+  allowedColumnIds,
+}: {
+  visibleColumnIds?: string[]
+  defaultColumnIds: readonly string[]
+  catalogColumnIds: readonly string[]
+  legacyColumnIdMap?: Record<string, string>
+  allowedColumnIds?: ReadonlySet<string> | readonly string[]
+}): string[] {
+  const catalogSet = new Set(catalogColumnIds)
+  const allowedSet =
+    allowedColumnIds === undefined
+      ? null
+      : allowedColumnIds instanceof Set
+        ? allowedColumnIds
+        : new Set(allowedColumnIds)
+
+  const normalize = (ids: readonly string[]) =>
+    [...new Set(ids.map((id) => legacyColumnIdMap[id] ?? id))].filter(
+      (id) => catalogSet.has(id) && (!allowedSet || allowedSet.has(id)),
+    )
+
+  const fromPrefs = normalize(visibleColumnIds ?? [])
+  const fallback = normalize(defaultColumnIds)
+  return sortIdsByCatalogOrder(fromPrefs.length ? fromPrefs : fallback, [...catalogColumnIds])
+}
+
+export function buildExportColumnMapFromCatalog<T>(
+  catalog: ReadonlyArray<{ id: string; label: string }>,
+  accessors: Record<string, (row: T) => unknown>,
+): ExportColumnMap<T> {
+  return Object.fromEntries(
+    catalog.map((column) => [
+      column.id,
+      {
+        header: column.label,
+        accessor: (row: T) => exportDisplayValue(accessors[column.id]?.(row)),
+      },
+    ]),
+  )
+}
+
+function getNestedRowValue(row: unknown, key: string): unknown {
+  return key.split('.').reduce<unknown>((value, segment) => {
+    if (value == null || typeof value !== 'object') return undefined
+    return (value as Record<string, unknown>)[segment]
+  }, row)
+}
+
+function readColumnDefExportValue<T>(col: ColumnDef<T>, row: T): unknown {
+  if ('accessorFn' in col && typeof col.accessorFn === 'function') {
+    return col.accessorFn(row, 0)
+  }
+
+  const accessorKey = (col as { accessorKey?: string | number }).accessorKey
+  if (accessorKey != null) {
+    return getNestedRowValue(row, String(accessorKey))
+  }
+
+  return undefined
+}
+
+/** Builds a full export map from table column definitions (matches on-screen table cells). */
+export function buildExportColumnMapFromColumnDefs<T>(
+  columns: ColumnDef<T>[] | Record<string, ColumnDef<T>>,
+  catalog?: ReadonlyArray<{ id: string; label: string }>,
+): ExportColumnMap<T> {
+  const labelById = catalog
+    ? Object.fromEntries(catalog.map((column) => [column.id, column.label]))
+    : {}
+  const entries: Array<[string, ColumnDef<T>]> = Array.isArray(columns)
+    ? columns.filter((column) => column.id).map((column) => [column.id!, column])
+    : Object.entries(columns)
+
+  const map: ExportColumnMap<T> = {}
+
+  for (const [key, column] of entries) {
+    const id = column.id ?? key
+    if (!id || id === 'actions' || id === 'select') continue
+
+    const header = labelById[id] ?? (typeof column.header === 'string' ? column.header : String(id))
+
+    map[id] = {
+      header,
+      accessor: (row: T) => exportDisplayValue(readColumnDefExportValue(column, row)),
+    }
+  }
+
+  return map
+}
+
+/** Merges catalog accessors with column-def accessors; column defs win on conflicts. */
+export function buildExportColumnMap<T>(
+  catalog: ReadonlyArray<{ id: string; label: string }>,
+  accessors: Record<string, (row: T) => unknown>,
+  columns?: ColumnDef<T>[] | Record<string, ColumnDef<T>>,
+): ExportColumnMap<T> {
+  const fromCatalog = buildExportColumnMapFromCatalog(catalog, accessors)
+  if (!columns) return fromCatalog
+
+  const fromDefs = buildExportColumnMapFromColumnDefs(columns, catalog)
+  return { ...fromCatalog, ...fromDefs }
+}
+
+async function exportMappedRows<T>(
+  columnMap: ExportColumnMap<T>,
+  items: T[],
+  format: string,
+  fileName: string,
+  options?: ExportHandlerOptions,
+) {
+  if (items.length === 0) {
+    throw new Error('NO_RECORDS')
+  }
+
+  const exportCols = pickExportColumns(columnMap, options)
+  await exportDataToFile(
+    exportCols.map((col) => col.header),
+    items.map((item) => exportCols.map((col) => col.accessor(item))),
+    format,
+    fileName,
+  )
+}
+
+/** Export one or more rows using a column map (e.g. row action export). */
+export async function exportMappedItemsToFile<T>(
+  columnMap: ExportColumnMap<T>,
+  items: T[],
+  format: string,
+  fileName: string,
+  options?: ExportHandlerOptions,
+) {
+  await exportMappedRows(columnMap, items, format, fileName, options)
+}
+
+/**
+ * Converts filter values (keyed as "section.fieldId") into flat API query params.
+ * Handles text, arrays (checkboxes), range objects, and location objects.
+ */
 export function buildFilterParams(filterValues: FilterValues): Record<string, string> {
   const params: Record<string, string> = {}
 
@@ -44,13 +225,30 @@ export function buildFilterParams(filterValues: FilterValues): Record<string, st
   return params
 }
 
+function assignExtraOptions(params: Record<string, unknown>, options: Record<string, unknown>) {
+  Object.entries(options).forEach(([key, val]) => {
+    if (key === 'page' || key === 'limit' || key === 'status' || key === 'search') return
+    if (typeof val === 'string' && val.trim()) {
+      params[key] = val.trim()
+    } else if (val !== undefined && val !== null && val !== '') {
+      params[key] = val
+    }
+  })
+}
+
 type ExpertListQueryOptions = {
   page?: number
   limit?: number
   search?: string
+  /** Fixed list status from quick-link tabs (e.g. suspended, pending). */
   status?: string
+  [key: string]: unknown
 }
 
+/**
+ * Builds query params for expert list APIs from advanced filter state.
+ * Maps section-prefixed keys to backend param names (avoids experts.category vs services.category collision).
+ */
 export function buildExpertListQueryParams(
   filterValues: FilterValues,
   options: ExpertListQueryOptions = {},
@@ -130,6 +328,8 @@ export function buildExpertListQueryParams(
     params.status = options.status.trim()
   }
 
+  assignExtraOptions(params, options)
+
   return params
 }
 
@@ -137,9 +337,15 @@ type ServiceListQueryOptions = {
   page?: number
   limit?: number
   search?: string
+  /** Fixed list status from quick-link tabs (e.g. suspended, in_review). */
   status?: string
+  [key: string]: unknown
 }
 
+/**
+ * Builds query params for service list APIs from advanced filter state.
+ * Maps section-prefixed keys to backend param names.
+ */
 export function buildServiceListQueryParams(
   filterValues: FilterValues,
   options: ServiceListQueryOptions = {},
@@ -211,9 +417,14 @@ export function buildServiceListQueryParams(
     params.status = options.status.trim()
   }
 
+  assignExtraOptions(params, options)
+
   return params
 }
 
+/**
+ * Query params for Expert Profile → Service Listings → Services advanced filters (Figma field set).
+ */
 export function buildExpertProfileServicesQueryParams(
   filterValues: FilterValues,
   options: ServiceListQueryOptions = {},
@@ -286,10 +497,10 @@ export function buildExpertProfileServicesQueryParams(
     params.status = options.status.trim()
   }
 
+  assignExtraOptions(params, options)
+
   return params
 }
-
-type ExportColumnMap<T> = Record<string, { header: string; accessor: (item: T) => string }>
 
 type PaginatedExportResult<T> = {
   data?: T[]
@@ -328,11 +539,24 @@ function extractExportPage<T>(result: PaginatedExportResult<T> | T[]): {
   }
 }
 
+/**
+ * Creates an async export handler that:
+ * 1. Converts filter values to API params
+ * 2. Fetches all matching pages from the API
+ * 3. Maps data through the column map
+ * 4. Calls exportDataToFile
+ *
+ * @param fetchFn  - the API function (accepts params, returns { data: T[] } or T[])
+ * @param columnMap - EXPORT_COLUMN_MAP for this page
+ * @param fileName  - base filename for the export
+ * @param baseParams - fixed params always added (e.g. { status: 'suspended' })
+ */
 export function createFilteredExportHandler<T>(
   fetchFn: (params: Record<string, unknown>) => Promise<PaginatedExportResult<T> | T[]>,
   columnMap: ExportColumnMap<T>,
   fileName: string,
   baseParams: Record<string, unknown> = {},
+  options?: ExportHandlerOptions,
 ) {
   return async (values: FilterValues, format: string): Promise<void> => {
     const filterParams = buildFilterParams(values)
@@ -353,23 +577,17 @@ export function createFilteredExportHandler<T>(
       page += 1
     }
 
-    if (items.length === 0) {
-      throw new Error('NO_RECORDS')
-    }
-
-    const exportCols = Object.values(columnMap)
-    const headers = exportCols.map((c) => c.header)
-    const rows = items.map((item) => exportCols.map((c) => c.accessor(item)))
-
-    await exportDataToFile(headers, rows, format, fileName)
+    await exportMappedRows(columnMap, items, format, fileName, options)
   }
 }
 
+/** Export handler for service list pages using section-aware filter params. */
 export function createServiceFilteredExportHandler<T>(
   fetchFn: (params: Record<string, unknown>) => Promise<{ data?: T[]; data_?: T[] } | T[]>,
   columnMap: ExportColumnMap<T>,
   fileName: string,
   baseParams: Record<string, unknown> = {},
+  options?: ExportHandlerOptions,
 ) {
   return async (values: FilterValues, format: string): Promise<void> => {
     const filterParams = buildServiceListQueryParams(values, baseParams)
@@ -377,15 +595,7 @@ export function createServiceFilteredExportHandler<T>(
 
     const items: T[] = Array.isArray(result) ? result : ((result as { data?: T[] }).data ?? [])
 
-    if (items.length === 0) {
-      throw new Error('NO_RECORDS')
-    }
-
-    const exportCols = Object.values(columnMap)
-    const headers = exportCols.map((c) => c.header)
-    const rows = items.map((item) => exportCols.map((c) => c.accessor(item)))
-
-    await exportDataToFile(headers, rows, format, fileName)
+    await exportMappedRows(columnMap, items, format, fileName, options)
   }
 }
 
@@ -393,9 +603,15 @@ type CategoryListQueryOptions = {
   page?: number
   limit?: number
   search?: string
+  /** Fixed list status from page tab (ACTIVE, PAUSED, DELETED). */
   status?: 'ACTIVE' | 'PAUSED' | 'DELETED'
+  [key: string]: unknown
 }
 
+/**
+ * Builds query params for service category list APIs from advanced filter state.
+ * Maps section-prefixed keys to backend param names.
+ */
 export function buildCategoryListQueryParams(
   filterValues: FilterValues,
   options: CategoryListQueryOptions = {},
@@ -472,14 +688,18 @@ export function buildCategoryListQueryParams(
     params.status = options.status
   }
 
+  assignExtraOptions(params, options)
+
   return params
 }
 
+/** Export handler for service category list pages using section-aware filter params. */
 export function createCategoryFilteredExportHandler<T>(
   fetchFn: (params: Record<string, unknown>) => Promise<{ data?: T[] } | T[]>,
   columnMap: ExportColumnMap<T>,
   fileName: string,
   baseParams: Record<string, unknown> = {},
+  options?: ExportHandlerOptions,
 ) {
   return async (values: FilterValues, format: string): Promise<void> => {
     const filterParams = buildCategoryListQueryParams(values, baseParams)
@@ -487,15 +707,7 @@ export function createCategoryFilteredExportHandler<T>(
 
     const items: T[] = Array.isArray(result) ? result : ((result as { data?: T[] }).data ?? [])
 
-    if (items.length === 0) {
-      throw new Error('NO_RECORDS')
-    }
-
-    const exportCols = Object.values(columnMap)
-    const headers = exportCols.map((c) => c.header)
-    const rows = items.map((item) => exportCols.map((c) => c.accessor(item)))
-
-    await exportDataToFile(headers, rows, format, fileName)
+    await exportMappedRows(columnMap, items, format, fileName, options)
   }
 }
 
@@ -503,9 +715,15 @@ type VenueListQueryOptions = {
   page?: number
   limit?: number
   search?: string
+  /** Fixed list status from page tab (active, suspended, in_review, rejected, deleted). */
   status?: string
+  [key: string]: unknown
 }
 
+/**
+ * Builds query params for venue list APIs from advanced filter state.
+ * Maps section-prefixed keys to backend param names.
+ */
 export function buildVenueListQueryParams(
   filterValues: FilterValues,
   options: VenueListQueryOptions = {},
@@ -575,14 +793,18 @@ export function buildVenueListQueryParams(
     params.status = options.status
   }
 
+  assignExtraOptions(params, options)
+
   return params
 }
 
+/** Export handler for venue list pages using section-aware filter params. */
 export function createVenueFilteredExportHandler<T>(
   fetchFn: (params: Record<string, unknown>) => Promise<{ data?: T[] } | T[]>,
   columnMap: Record<string, { header: string; accessor: (item: T) => string }>,
   fileName: string,
   baseParams: Record<string, unknown> = {},
+  options?: ExportHandlerOptions,
 ) {
   return async (values: FilterValues, format: string): Promise<void> => {
     const filterParams = buildVenueListQueryParams(values, baseParams)
@@ -590,15 +812,7 @@ export function createVenueFilteredExportHandler<T>(
 
     const items: T[] = Array.isArray(result) ? result : ((result as { data?: T[] }).data ?? [])
 
-    if (items.length === 0) {
-      throw new Error('NO_RECORDS')
-    }
-
-    const exportCols = Object.values(columnMap)
-    const headers = exportCols.map((c) => c.header)
-    const rows = items.map((item) => exportCols.map((c) => c.accessor(item)))
-
-    await exportDataToFile(headers, rows, format, fileName)
+    await exportMappedRows(columnMap, items, format, fileName, options)
   }
 }
 
@@ -606,9 +820,13 @@ type VenueCategoryListQueryOptions = {
   page?: number
   limit?: number
   search?: string
+  /** Main category list excludes paused/deleted; paused and deleted use dedicated endpoints. */
   excludePaused?: boolean
 }
 
+/**
+ * Builds query params for venue category list APIs from advanced filter state.
+ */
 export function buildVenueCategoryListQueryParams(
   filterValues: FilterValues,
   options: VenueCategoryListQueryOptions = {},
@@ -626,11 +844,13 @@ export function buildVenueCategoryListQueryParams(
   return params
 }
 
+/** Export handler for venue category list pages. */
 export function createVenueCategoryFilteredExportHandler<T>(
   fetchFn: (params: Record<string, unknown>) => Promise<{ data?: T[] } | T[]>,
   columnMap: Record<string, { header: string; accessor: (item: T) => string }>,
   fileName: string,
   baseParams: Record<string, unknown> = {},
+  options?: ExportHandlerOptions,
 ) {
   return async (values: FilterValues, format: string): Promise<void> => {
     const filterParams = buildVenueCategoryListQueryParams(values, baseParams)
@@ -638,15 +858,7 @@ export function createVenueCategoryFilteredExportHandler<T>(
 
     const items: T[] = Array.isArray(result) ? result : ((result as { data?: T[] }).data ?? [])
 
-    if (items.length === 0) {
-      throw new Error('NO_RECORDS')
-    }
-
-    const exportCols = Object.values(columnMap)
-    const headers = exportCols.map((c) => c.header)
-    const rows = items.map((item) => exportCols.map((c) => c.accessor(item)))
-
-    await exportDataToFile(headers, rows, format, fileName)
+    await exportMappedRows(columnMap, items, format, fileName, options)
   }
 }
 
@@ -661,6 +873,10 @@ const COMMUNICATION_DATE_RANGE_PARAMS: Record<string, [string, string]> = {
   scheduledAt: ['scheduledAtFrom', 'scheduledAtTo'],
 }
 
+/**
+ * Builds query params for communication list APIs from advanced filter state.
+ * Maps date ranges to From/To to match settings-service list query names.
+ */
 export function buildCommunicationListQueryParams(
   filterValues: FilterValues,
   options: CommunicationListQueryOptions = {},
@@ -717,11 +933,13 @@ export function buildCommunicationListQueryParams(
   return params
 }
 
+/** Export handler for communication list pages using section-aware filter params. */
 export function createCommunicationFilteredExportHandler<T>(
   fetchFn: (params: Record<string, unknown>) => Promise<{ data?: T[] } | T[]>,
   columnMap: Record<string, { header: string; accessor: (item: T) => string }>,
   fileName: string,
   baseParams: Record<string, unknown> = {},
+  options?: ExportHandlerOptions,
 ) {
   return async (values: FilterValues, format: string): Promise<void> => {
     const filterParams = buildCommunicationListQueryParams(values, baseParams)
@@ -729,15 +947,7 @@ export function createCommunicationFilteredExportHandler<T>(
 
     const items: T[] = Array.isArray(result) ? result : ((result as { data?: T[] }).data ?? [])
 
-    if (items.length === 0) {
-      throw new Error('NO_RECORDS')
-    }
-
-    const exportCols = Object.values(columnMap)
-    const headers = exportCols.map((c) => c.header)
-    const rows = items.map((item) => exportCols.map((c) => c.accessor(item)))
-
-    await exportDataToFile(headers, rows, format, fileName)
+    await exportMappedRows(columnMap, items, format, fileName, options)
   }
 }
 
@@ -754,6 +964,9 @@ const REFERRAL_DATE_RANGE_PARAMS: Record<string, [string, string]> = {
   expiresAt: ['expiresAtFrom', 'expiresAtTo'],
 }
 
+/**
+ * Builds query params for referral list APIs from advanced filter state.
+ */
 export function buildReferralListQueryParams(
   filterValues: FilterValues,
   options: ReferralListQueryOptions = {},
@@ -810,11 +1023,13 @@ export function buildReferralListQueryParams(
   return params
 }
 
+/** Export handler for referral list pages using section-aware filter params. */
 export function createReferralFilteredExportHandler<T>(
   fetchFn: (params: Record<string, unknown>) => Promise<{ data?: T[] } | T[]>,
   columnMap: Record<string, { header: string; accessor: (item: T) => string }>,
   fileName: string,
   baseParams: Record<string, unknown> = {},
+  options?: ExportHandlerOptions,
 ) {
   return async (values: FilterValues, format: string): Promise<void> => {
     const filterParams = buildReferralListQueryParams(values, baseParams)
@@ -822,15 +1037,7 @@ export function createReferralFilteredExportHandler<T>(
 
     const items: T[] = Array.isArray(result) ? result : ((result as { data?: T[] }).data ?? [])
 
-    if (items.length === 0) {
-      throw new Error('NO_RECORDS')
-    }
-
-    const exportCols = Object.values(columnMap)
-    const headers = exportCols.map((c) => c.header)
-    const rows = items.map((item) => exportCols.map((c) => c.accessor(item)))
-
-    await exportDataToFile(headers, rows, format, fileName)
+    await exportMappedRows(columnMap, items, format, fileName, options)
   }
 }
 
@@ -844,6 +1051,9 @@ const REVENUE_DATE_RANGE_PARAMS: Record<string, [string, string]> = {
   createdAt: ['createdAtFrom', 'createdAtTo'],
 }
 
+/**
+ * Builds query params for revenue overview list APIs from advanced filter state.
+ */
 export function buildRevenueListQueryParams(
   filterValues: FilterValues,
   options: RevenueListQueryOptions = {},
@@ -897,14 +1107,18 @@ export function buildRevenueListQueryParams(
     params.search = options.search.trim()
   }
 
+  assignExtraOptions(params, options)
+
   return params
 }
 
+/** Export handler for revenue overview using section-aware filter params. */
 export function createRevenueFilteredExportHandler<T>(
   fetchFn: (params: Record<string, unknown>) => Promise<{ data?: T[] } | T[]>,
   columnMap: Record<string, { header: string; accessor: (item: T) => string }>,
   fileName: string,
   baseParams: Record<string, unknown> = {},
+  options?: ExportHandlerOptions,
 ) {
   return async (values: FilterValues, format: string): Promise<void> => {
     const filterParams = buildRevenueListQueryParams(values, baseParams)
@@ -912,15 +1126,7 @@ export function createRevenueFilteredExportHandler<T>(
 
     const items: T[] = Array.isArray(result) ? result : ((result as { data?: T[] }).data ?? [])
 
-    if (items.length === 0) {
-      throw new Error('NO_RECORDS')
-    }
-
-    const exportCols = Object.values(columnMap)
-    const headers = exportCols.map((c) => c.header)
-    const rows = items.map((item) => exportCols.map((c) => c.accessor(item)))
-
-    await exportDataToFile(headers, rows, format, fileName)
+    await exportMappedRows(columnMap, items, format, fileName, options)
   }
 }
 
@@ -931,6 +1137,10 @@ type FinanceServicesListQueryOptions = {
   tab?: 'all' | 'escrow' | 'by-service' | 'by-consultation'
 }
 
+/**
+ * Builds query params for finance services payment/escrow list APIs.
+ * Tab always constrains module on payment lists; status maps to stored values.
+ */
 export function buildFinanceServicesListQueryParams(
   filterValues: FilterValues,
   options: FinanceServicesListQueryOptions = {},
@@ -975,11 +1185,13 @@ export function buildFinanceServicesListQueryParams(
   return params
 }
 
+/** Export handler for finance services pages. */
 export function createFinanceServicesFilteredExportHandler<T>(
   fetchFn: (params: Record<string, unknown>) => Promise<{ data?: T[] } | T[]>,
   columnMap: Record<string, { header: string; accessor: (item: T) => string }>,
   fileName: string,
   baseParams: Record<string, unknown> = {},
+  options?: ExportHandlerOptions,
 ) {
   return async (values: FilterValues, format: string): Promise<void> => {
     const filterParams = buildFinanceServicesListQueryParams(values, baseParams)
@@ -987,15 +1199,7 @@ export function createFinanceServicesFilteredExportHandler<T>(
 
     const items: T[] = Array.isArray(result) ? result : ((result as { data?: T[] }).data ?? [])
 
-    if (items.length === 0) {
-      throw new Error('NO_RECORDS')
-    }
-
-    const exportCols = Object.values(columnMap)
-    const headers = exportCols.map((c) => c.header)
-    const rows = items.map((item) => exportCols.map((c) => c.accessor(item)))
-
-    await exportDataToFile(headers, rows, format, fileName)
+    await exportMappedRows(columnMap, items, format, fileName, options)
   }
 }
 
@@ -1005,6 +1209,10 @@ type FinanceVenuesListQueryOptions = {
   search?: string
 }
 
+/**
+ * Builds query params for finance venues payment list APIs.
+ * Always constrains module to venue; status maps table labels to stored values.
+ */
 export function buildFinanceVenuesListQueryParams(
   filterValues: FilterValues,
   options: FinanceVenuesListQueryOptions = {},
@@ -1035,11 +1243,13 @@ export function buildFinanceVenuesListQueryParams(
   return params
 }
 
+/** Export handler for finance venues pages. */
 export function createFinanceVenuesFilteredExportHandler<T>(
   fetchFn: (params: Record<string, unknown>) => Promise<{ data?: T[] } | T[]>,
   columnMap: Record<string, { header: string; accessor: (item: T) => string }>,
   fileName: string,
   baseParams: Record<string, unknown> = {},
+  options?: ExportHandlerOptions,
 ) {
   return async (values: FilterValues, format: string): Promise<void> => {
     const filterParams = buildFinanceVenuesListQueryParams(values, baseParams)
@@ -1047,15 +1257,7 @@ export function createFinanceVenuesFilteredExportHandler<T>(
 
     const items: T[] = Array.isArray(result) ? result : ((result as { data?: T[] }).data ?? [])
 
-    if (items.length === 0) {
-      throw new Error('NO_RECORDS')
-    }
-
-    const exportCols = Object.values(columnMap)
-    const headers = exportCols.map((c) => c.header)
-    const rows = items.map((item) => exportCols.map((c) => c.accessor(item)))
-
-    await exportDataToFile(headers, rows, format, fileName)
+    await exportMappedRows(columnMap, items, format, fileName, options)
   }
 }
 
@@ -1076,19 +1278,13 @@ function createFinanceExportHandler(
     columnMap: Record<string, { header: string; accessor: (item: T) => string }>,
     fileName: string,
     baseParams: Record<string, unknown> = {},
+    exportOptions?: ExportHandlerOptions,
   ) => {
     return async (values: FilterValues, format: string): Promise<void> => {
       const filterParams = buildParams(values, baseParams)
       const result = await fetchFn({ ...filterParams, limit: 1000 })
       const items: T[] = Array.isArray(result) ? result : ((result as { data?: T[] }).data ?? [])
-      if (items.length === 0) throw new Error('NO_RECORDS')
-      const exportCols = Object.values(columnMap)
-      await exportDataToFile(
-        exportCols.map((col) => col.header),
-        items.map((item) => exportCols.map((col) => col.accessor(item))),
-        format,
-        fileName,
-      )
+      await exportMappedRows(columnMap, items, format, fileName, exportOptions)
     }
   }
 }
@@ -1259,6 +1455,7 @@ export function createSupportTicketsFilteredExportHandler<T>(
   columnMap: Record<string, { header: string; accessor: (item: T) => string }>,
   fileName: string,
   baseParams: Record<string, unknown> = {},
+  options?: ExportHandlerOptions,
 ) {
   return async (values: FilterValues, format: string): Promise<void> => {
     const filterParams = buildSupportTicketsListQueryParams(values, baseParams)
@@ -1278,17 +1475,7 @@ export function createSupportTicketsFilteredExportHandler<T>(
       page += 1
     }
 
-    if (items.length === 0) {
-      throw new Error('NO_RECORDS')
-    }
-
-    const exportCols = Object.values(columnMap)
-    await exportDataToFile(
-      exportCols.map((col) => col.header),
-      items.map((item) => exportCols.map((col) => col.accessor(item))),
-      format,
-      fileName,
-    )
+    await exportMappedRows(columnMap, items, format, fileName, options)
   }
 }
 
@@ -1392,18 +1579,12 @@ export function buildConsultationPerformanceQueryParams(
 
 export function createClientFilteredExportHandler<T>(
   getRows: (values: FilterValues) => T[],
-  columnMap: Record<string, { header: string; accessor: (item: T) => string }>,
+  columnMap: ExportColumnMap<T>,
   fileName: string,
+  options?: ExportHandlerOptions,
 ) {
   return async (values: FilterValues, format: string): Promise<void> => {
     const items = getRows(values)
-    if (items.length === 0) throw new Error('NO_RECORDS')
-    const exportCols = Object.values(columnMap)
-    await exportDataToFile(
-      exportCols.map((col) => col.header),
-      items.map((item) => exportCols.map((col) => col.accessor(item))),
-      format,
-      fileName,
-    )
+    await exportMappedRows(columnMap, items, format, fileName, options)
   }
 }

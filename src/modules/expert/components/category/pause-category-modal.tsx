@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { AlertTriangle, X } from 'lucide-react'
+import { Pause, X } from 'lucide-react'
 
 import { cn } from '@/shared/lib/cn'
 import { MODERATION_CATEGORY_SLUGS } from '@/modules/settings/api/templates-api'
@@ -23,6 +23,7 @@ type PauseCategoryModalProps = {
   heading?: string
   description?: string
   submitLabel?: string
+  notificationNote?: string
 }
 
 export function PauseCategoryModal({
@@ -31,10 +32,11 @@ export function PauseCategoryModal({
   onConfirm,
   isSubmitting = false,
   reasonCategorySlug = MODERATION_CATEGORY_SLUGS.pauseCategory,
-  title = 'Pause Category',
-  heading = 'Are you sure you want  Pause this Category.',
-  description = 'This will result in hiding this category from users.',
-  submitLabel = 'Pause Category',
+  title = 'Pause Service',
+  heading,
+  description = 'Pausing this service will temporarily stop all new requests.',
+  submitLabel = 'Pause Service',
+  notificationNote = 'This reason will be notified to the expert.',
 }: PauseCategoryModalProps) {
   useEffect(() => {
     if (!open) return
@@ -59,6 +61,7 @@ export function PauseCategoryModal({
       heading={heading}
       description={description}
       submitLabel={submitLabel}
+      notificationNote={notificationNote}
     />
   )
 }
@@ -68,10 +71,11 @@ function PauseCategoryModalDialog({
   onConfirm,
   isSubmitting = false,
   reasonCategorySlug = MODERATION_CATEGORY_SLUGS.pauseCategory,
-  title,
+  title = 'Pause Service',
   heading,
-  description,
-  submitLabel,
+  description = 'Pausing this service will temporarily stop all new requests.',
+  submitLabel = 'Pause Service',
+  notificationNote = 'This reason will be notified to the expert.',
 }: Omit<PauseCategoryModalProps, 'open'>) {
   const [selectedReasons, setSelectedReasons] = useState<string[]>([])
   const [confirmed, setConfirmed] = useState(false)
@@ -100,7 +104,7 @@ function PauseCategoryModalDialog({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden bg-black/70 px-4 py-6"
+      className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden bg-[#050505]/80 px-4 py-6"
       role="presentation"
       onClick={onClose}
     >
@@ -108,13 +112,16 @@ function PauseCategoryModalDialog({
         role="dialog"
         aria-modal="true"
         aria-labelledby="pause-category-modal-title"
-        className="ui-modal-shell"
+        className="ui-modal-shell w-full max-w-[551px]"
         onClick={(event) => event.stopPropagation()}
       >
-        <div className="ui-modal-header">
-          <h2 id="pause-category-modal-title" className="text-h2 text-brand-text">
-            {title}
-          </h2>
+        <div className="ui-modal-header !items-start !gap-3">
+          <div className="min-w-0 flex-1">
+            <h2 id="pause-category-modal-title" className="text-h2 text-brand-text">
+              {title}
+            </h2>
+            {description ? <p className="mt-1 text-xs text-white/50">{description}</p> : null}
+          </div>
           <button
             type="button"
             aria-label="Close modal"
@@ -126,14 +133,7 @@ function PauseCategoryModalDialog({
         </div>
 
         <div className="ui-modal-body space-y-4">
-          <div className="flex flex-col items-center text-center">
-            <span className="bg-brand-accent/20 mb-3 flex size-12 items-center justify-center rounded-full">
-              <AlertTriangle className="icon-md text-brand-accent" aria-hidden="true" />
-            </span>
-
-            <p className="text-body-md-semibold text-brand-text">{heading}</p>
-            <p className="text-body-sm text-muted mt-1.5">{description}</p>
-          </div>
+          {heading ? <p className="text-body-md text-brand-text">{heading}</p> : null}
 
           <div>
             <span className="text-body-sm-medium text-muted mb-[10px] block">Reasons</span>
@@ -147,6 +147,7 @@ function PauseCategoryModalDialog({
               ) : (
                 reasonOptions.map((option) => {
                   const isSelected = selectedReasons.includes(option.value)
+                  const labelClean = option.label.replace(/^\[|\]$/g, '')
 
                   return (
                     <button
@@ -158,7 +159,7 @@ function PauseCategoryModalDialog({
                         isSelected ? 'ui-modal-reason-chip-selected' : 'ui-modal-reason-chip-idle',
                       )}
                     >
-                      {/^\s*\[.*\]\s*$/.test(option.label) ? option.label : `[${option.label}]`}
+                      {labelClean}
                     </button>
                   )
                 })
@@ -178,18 +179,26 @@ function PauseCategoryModalDialog({
 
           <label className="block">
             <span className="text-body-sm-medium text-brand-text mb-2 block">
-              Admin notes <span className="text-brand-danger">*</span>
+              Admin notes <span className="text-[#D3191C]">*</span>
             </span>
             <textarea
               value={adminNotes}
               onChange={(event) => setAdminNotes(event.target.value)}
-              className="ui-textarea min-h-[72px]"
+              className="ui-textarea min-h-[119px]"
             />
           </label>
+
+          {notificationNote ? (
+            <p className="text-center text-xs text-white/60">{notificationNote}</p>
+          ) : null}
         </div>
 
-        <div className="ui-modal-footer">
-          <button type="button" onClick={onClose} className="ui-modal-btn ui-modal-btn-cancel">
+        <div className="ui-modal-footer px-6 pb-6">
+          <button
+            type="button"
+            onClick={onClose}
+            className="ui-modal-btn ui-modal-btn-cancel h-10 max-w-[239px] flex-1"
+          >
             Cancel
           </button>
           <button
@@ -204,9 +213,17 @@ function PauseCategoryModalDialog({
                 adminNotes: adminNotes.trim(),
               })
             }}
-            className="ui-modal-btn ui-modal-btn-gold"
+            className="ui-modal-btn ui-modal-btn-negative h-10 max-w-[238px] flex-1 overflow-visible"
           >
-            {submitLabel}
+            <span className="truncate">{submitLabel}</span>
+            <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-white">
+              <Pause
+                className="size-3 text-[#D3191C]"
+                strokeWidth={2.5}
+                fill="currentColor"
+                aria-hidden="true"
+              />
+            </span>
           </button>
         </div>
       </div>

@@ -38,7 +38,7 @@ function AddTagModalBody({ onClose, initialTags, onSubmit }: Omit<AddTagModalPro
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-6"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-[#050505]/80 px-4 py-6"
       role="presentation"
       onClick={onClose}
     >

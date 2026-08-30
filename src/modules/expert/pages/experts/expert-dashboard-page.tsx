@@ -78,37 +78,48 @@ const tooltipStyle = {
 
 function MetricCard({ metric }: { metric: Metric }) {
   return (
-    <div className="rounded-brand-lg bg-brand-surface border border-white/[0.06] p-4 transition-colors hover:border-white/10">
+    <div className="rounded-brand-lg bg-brand-surface flex min-h-[130px] flex-col border border-white/[0.06] p-4 transition-colors hover:border-white/10">
       <p className="text-body-sm text-muted font-medium">{metric.label}</p>
       <p className="text-h3 mt-2 font-bold tracking-tight text-white">{metric.value}</p>
-      {metric.change ? (
-        <div className="mt-2 flex items-center gap-2">
-          <span
-            className={cn(
-              'inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-bold',
-              'bg-brand-positive/15 text-brand-positive',
+      <div className="mt-auto flex items-center gap-2 pt-3">
+        {metric.change ? (
+          <>
+            <span
+              className={cn(
+                'inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-bold',
+                metric.changeType === 'down'
+                  ? 'bg-brand-danger/10 text-brand-danger'
+                  : 'bg-brand-positive/15 text-brand-positive',
+              )}
+            >
+              {metric.changeType === 'down' ? (
+                <TrendingDown className="size-3" />
+              ) : (
+                <TrendingUp className="size-3" />
+              )}
+              {metric.change}
+            </span>
+            {metric.changeNote && (
+              <span className="text-muted text-[10px]">{metric.changeNote}</span>
             )}
-          >
-            {metric.changeType === 'down' ? (
-              <TrendingDown className="size-3" />
-            ) : (
-              <TrendingUp className="size-3" />
-            )}
-            {metric.change}
-          </span>
-          {metric.changeNote && <span className="text-muted text-[10px]">{metric.changeNote}</span>}
-        </div>
-      ) : null}
+          </>
+        ) : null}
+      </div>
     </div>
   )
 }
 
 function MetricCardSkeleton() {
   return (
-    <div className="rounded-brand-lg bg-brand-surface border border-white/[0.06] p-4">
+    <div className="rounded-brand-lg bg-brand-surface min-h-[130px] border border-white/[0.06] p-4">
       <div className="h-3 w-28 animate-pulse rounded bg-white/10" />
       <div className="mt-3 h-7 w-20 animate-pulse rounded bg-white/10" />
-      <div className="mt-4 h-5 w-32 animate-pulse rounded bg-white/5" />
+      <div className="mt-auto pt-6">
+        <div className="h-5 w-32 animate-pulse rounded bg-white/5" />
+      </div>
+      <div className="mt-auto pt-6">
+        <div className="h-5 w-32 animate-pulse rounded bg-white/5" />
+      </div>
     </div>
   )
 }

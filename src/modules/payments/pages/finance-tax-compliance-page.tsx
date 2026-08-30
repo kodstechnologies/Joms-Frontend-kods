@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 import { AlertTriangle, Eye, SlidersHorizontal, Tag, Trash2 } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
@@ -21,6 +21,7 @@ import {
   FINANCE_TAX_TABLE_COLUMNS_CATALOG,
 } from '@/modules/payments/config/finance-tax-table-columns.config'
 import { useTableColumnPreferences } from '@/modules/expert/hooks/use-ui-preferences'
+import { useTableExportColumnIds } from '@/shared/hooks/use-table-export-column-ids'
 import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
 import { AddTagsModal } from '@/shared/components/modals/add-tags-modal'
 import {
@@ -29,6 +30,11 @@ import {
 } from '@/modules/payments/components/finance-escalate-delete-modal'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 import { DataTable } from '@/shared/components/table/data-table'
+import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'
+import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
+import { withServerSortMeta } from '@/shared/utils/table-sort'
+import { buildCatalogSortFieldMap } from '@/shared/utils/table-sort-field-maps'
+import { FINANCE_TAX_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
 import {
   TableActionsDropdown,
   TableActionsItem,
@@ -36,7 +42,7 @@ import {
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
 import type { FilterValues } from '@/shared/types/data-filter'
-import { exportDisplayValue } from '@/shared/utils/export-utils'
+import { FINANCE_TAX_EXPORT_COLUMN_MAP } from '@/modules/payments/utils/finance-export-column-maps'
 import {
   buildFinanceTaxListQueryParams,
   createFinanceTaxFilteredExportHandler,
@@ -44,22 +50,7 @@ import {
 
 const PAGE_SIZE = 10
 
-const EXPORT_COLUMN_MAP: Record<
-  string,
-  { header: string; accessor: (row: TaxComplianceRow) => string }
-> = {
-  'record-id': { header: 'Record ID', accessor: (row) => exportDisplayValue(row.recordId) },
-  'entity-type': { header: 'Entity Type', accessor: (row) => exportDisplayValue(row.entityType) },
-  'entity-id': { header: 'Entity ID', accessor: (row) => exportDisplayValue(row.entityId) },
-  owner: { header: 'Owner', accessor: (row) => exportDisplayValue(row.owner) },
-  'booking-id': { header: 'Booking ID', accessor: (row) => exportDisplayValue(row.bookingId) },
-  'booking-title': {
-    header: 'Booking Title',
-    accessor: (row) => exportDisplayValue(row.bookingTitle),
-  },
-  status: { header: 'Status', accessor: (row) => exportDisplayValue(row.status) },
-  revenue: { header: 'Revenue', accessor: (row) => exportDisplayValue(row.revenue) },
-}
+const SORT_FIELD_MAP = buildCatalogSortFieldMap(FINANCE_TAX_TABLE_COLUMNS_CATALOG)
 
 function getStatusClassName(status: TaxComplianceRow['status']) {
   if (status === 'Completed' || status === 'Filed') {
@@ -70,9 +61,12 @@ function getStatusClassName(status: TaxComplianceRow['status']) {
 
 export function FinanceTaxCompliancePage() {
   const navigate = useNavigate()
-  const [searchQuery, setSearchQuery] = useState('')
-  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
+  const serverSort = useServerTableSort({
+    sortFieldMap: SORT_FIELD_MAP,
+    onPageReset: () => setCurrentPage(1),
+  })
+  const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setCurrentPage(1) })
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [selectedRowIds, setSelectedRowIds] = useState<string[]>([])
@@ -83,22 +77,26 @@ export function FinanceTaxCompliancePage() {
   const softDelete = useSoftDeleteFinance()
   const tableColumnPreferencesQuery = useTableColumnPreferences(FINANCE_TAX_MODULE_KEY)
 
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      setDebouncedSearch(searchQuery.trim())
-      setCurrentPage(1)
-    }, 300)
-    return () => window.clearTimeout(timer)
-  }, [searchQuery])
+  const catalogColumnIds = useMemo(
+    () => FINANCE_TAX_TABLE_COLUMNS_CATALOG.map((column) => column.id),
+    [],
+  )
+  const exportColumnIds = useTableExportColumnIds({
+    visibleColumnIds: tableColumnPreferencesQuery.data?.visibleColumnIds,
+    defaultColumnIds: DEFAULT_FINANCE_TAX_VISIBLE_COLUMN_IDS,
+    catalogColumnIds,
+    legacyColumnIdMap: FINANCE_TAX_LEGACY_COLUMN_ID_MAP,
+  })
 
   const listQueryParams = useMemo(
     () =>
       buildFinanceTaxListQueryParams(appliedFilters, {
         page: currentPage,
         limit: PAGE_SIZE,
-        search: debouncedSearch || undefined,
+        ...enhancedSearch.buildSearchParams(),
+        ...serverSort.sortParams,
       }),
-    [appliedFilters, currentPage, debouncedSearch],
+    [appliedFilters, currentPage, enhancedSearch, serverSort.sortParams],
   )
 
   const { data, isLoading, isFetching } = useFinanceTax(listQueryParams)
@@ -119,11 +117,12 @@ export function FinanceTaxCompliancePage() {
     }
     return createFinanceTaxFilteredExportHandler(
       fetchForExport,
-      EXPORT_COLUMN_MAP,
+      FINANCE_TAX_EXPORT_COLUMN_MAP,
       'finance_tax_export',
-      { search: debouncedSearch || undefined },
+      { search: enhancedSearch.globalSearch || undefined },
+      { columnIds: exportColumnIds, catalogOrder: catalogColumnIds },
     )
-  }, [debouncedSearch])
+  }, [catalogColumnIds, enhancedSearch.globalSearch, exportColumnIds])
 
   const {
     onAdvancedFilter,
@@ -343,7 +342,7 @@ export function FinanceTaxCompliancePage() {
       cell: ({ row }) => renderActions(row.original),
     }
 
-    return [selectColumn, ...preferenceColumns, actionsColumn]
+    return withServerSortMeta([selectColumn, ...preferenceColumns, actionsColumn], SORT_FIELD_MAP)
   }, [
     allVisibleSelected,
     renderActions,
@@ -383,9 +382,15 @@ export function FinanceTaxCompliancePage() {
         columns={columns}
         data={rows}
         getRowId={(row) => row.id}
+        {...serverSort.dataTableSortProps}
         isLoading={isLoading || isFetching}
-        searchValue={searchQuery}
-        onSearchChange={setSearchQuery}
+        searchValue={enhancedSearch.globalSearch}
+        onSearchChange={enhancedSearch.setGlobalSearch}
+        searchableColumns={FINANCE_TAX_SEARCH_COLUMNS}
+        columnSearches={enhancedSearch.columnSearches}
+        onColumnSearchChange={enhancedSearch.setColumnSearch}
+        onColumnSearchRemove={enhancedSearch.removeColumnSearch}
+        onClearAllSearches={enhancedSearch.clearAll}
         searchPlaceholder="Search by name, ID or profession"
         advancedFilterLabel="Advance Filters"
         onAdvancedFilter={onAdvancedFilter}

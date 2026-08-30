@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 import { AlertTriangle, Eye, SlidersHorizontal, Tag, Trash2 } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
@@ -28,6 +28,11 @@ import {
   type FinanceEscalateDeleteAction,
 } from '@/modules/payments/components/finance-escalate-delete-modal'
 import { DataTable } from '@/shared/components/table/data-table'
+import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'
+import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
+import { withServerSortMeta } from '@/shared/utils/table-sort'
+import { buildCatalogSortFieldMap } from '@/shared/utils/table-sort-field-maps'
+import { FINANCE_REVENUE_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
 import {
   TableActionsDropdown,
   TableActionsItem,
@@ -35,33 +40,58 @@ import {
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
-import { exportDisplayValue } from '@/shared/utils/export-utils'
 import {
   buildRevenueListQueryParams,
+  buildExportColumnMapFromCatalog,
   createRevenueFilteredExportHandler,
 } from '@/shared/utils/export-filter-utils'
+import { useTableExportColumnIds } from '@/shared/hooks/use-table-export-column-ids'
 import type { FilterValues } from '@/shared/types/data-filter'
 import type { FinancePayment } from '@/modules/payments/types/finance-api'
 
 const PAGE_SIZE = 10
 
-const EXPORT_COLUMN_MAP: Record<
-  string,
-  { header: string; accessor: (row: RevenueOverviewRow) => string }
-> = {
-  module: { header: 'Module', accessor: (row) => exportDisplayValue(row.module) },
-  'entity-type': { header: 'Entity Type', accessor: (row) => exportDisplayValue(row.entityType) },
-  'entity-id': { header: 'Entity ID', accessor: (row) => exportDisplayValue(row.entityId) },
-  'entity-name': { header: 'Entity Name', accessor: (row) => exportDisplayValue(row.entityName) },
-  category: { header: 'Category', accessor: (row) => exportDisplayValue(row.category) },
-  'owner-type': { header: 'Owner Type', accessor: (row) => exportDisplayValue(row.ownerType) },
-  'owner-name': { header: 'Owner Name', accessor: (row) => exportDisplayValue(row.ownerName) },
-  'gross-amount': {
-    header: 'Gross Amount',
-    accessor: (row) => exportDisplayValue(row.grossAmount),
-  },
-  status: { header: 'Status', accessor: (row) => exportDisplayValue(row.status) },
+const SORT_FIELD_MAP = buildCatalogSortFieldMap(FINANCE_REVENUE_TABLE_COLUMNS_CATALOG)
+
+type RevenueExportRow = RevenueOverviewRow & {
+  transactionId?: string
+  subCategory?: string
+  discounts?: string
+  refundAmount?: string
+  taxAmount?: string
+  netRevenue?: string
+  platformCommission?: string
+  netProfit?: string
+  settlementStatus?: string
+  complianceStatus?: string
+  lastUpdated?: string
 }
+
+const EXPORT_COLUMN_MAP = buildExportColumnMapFromCatalog<RevenueExportRow>(
+  FINANCE_REVENUE_TABLE_COLUMNS_CATALOG,
+  {
+    'transaction-id': (row) => row.transactionId || row.entityId,
+    module: (row) => row.module,
+    'entity-type': (row) => row.entityType,
+    'entity-id': (row) => row.entityId,
+    'entity-name': (row) => row.entityName,
+    category: (row) => row.category,
+    'sub-category': (row) => row.subCategory,
+    'owner-type': (row) => row.ownerType,
+    'owner-name': (row) => row.ownerName,
+    'gross-revenue': (row) => row.grossAmount,
+    discounts: (row) => row.discounts,
+    'refund-amount': (row) => row.refundAmount,
+    'tax-amount': (row) => row.taxAmount,
+    'net-revenue': (row) => row.netRevenue,
+    'platform-commission': (row) => row.platformCommission,
+    'net-profit': (row) => row.netProfit,
+    'payment-status': (row) => row.status,
+    'settlement-status': (row) => row.settlementStatus,
+    'compliance-status': (row) => row.complianceStatus,
+    'last-updated': (row) => row.lastUpdated,
+  },
+)
 
 function getStatusClassName(status: RevenueOverviewRow['status']) {
   if (status === 'Paid') {
@@ -75,9 +105,12 @@ function getStatusClassName(status: RevenueOverviewRow['status']) {
 
 export function RevenueOverviewPage() {
   const navigate = useNavigate()
-  const [searchQuery, setSearchQuery] = useState('')
-  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
+  const serverSort = useServerTableSort({
+    sortFieldMap: SORT_FIELD_MAP,
+    onPageReset: () => setCurrentPage(1),
+  })
+  const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setCurrentPage(1) })
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [selectedRowIds, setSelectedRowIds] = useState<string[]>([])
@@ -88,22 +121,26 @@ export function RevenueOverviewPage() {
   const softDelete = useSoftDeleteFinance()
   const tableColumnPreferencesQuery = useTableColumnPreferences(FINANCE_REVENUE_MODULE_KEY)
 
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      setDebouncedSearch(searchQuery.trim())
-      setCurrentPage(1)
-    }, 300)
-    return () => window.clearTimeout(timer)
-  }, [searchQuery])
+  const catalogColumnIds = useMemo(
+    () => FINANCE_REVENUE_TABLE_COLUMNS_CATALOG.map((column) => column.id),
+    [],
+  )
+  const exportColumnIds = useTableExportColumnIds({
+    visibleColumnIds: tableColumnPreferencesQuery.data?.visibleColumnIds,
+    defaultColumnIds: DEFAULT_FINANCE_REVENUE_VISIBLE_COLUMN_IDS,
+    catalogColumnIds,
+    legacyColumnIdMap: FINANCE_REVENUE_LEGACY_COLUMN_ID_MAP,
+  })
 
   const listQueryParams = useMemo(
     () =>
       buildRevenueListQueryParams(appliedFilters, {
         page: currentPage,
         limit: PAGE_SIZE,
-        search: debouncedSearch || undefined,
+        ...enhancedSearch.buildSearchParams(),
+        ...serverSort.sortParams,
       }),
-    [appliedFilters, currentPage, debouncedSearch],
+    [appliedFilters, currentPage, enhancedSearch, serverSort.sortParams],
   )
 
   const { data, isLoading, isFetching, isError } = useFinanceRevenue(listQueryParams)
@@ -127,9 +164,10 @@ export function RevenueOverviewPage() {
       fetchForExport,
       EXPORT_COLUMN_MAP,
       'revenue_overview_export',
-      { search: debouncedSearch || undefined },
+      { search: enhancedSearch.globalSearch || undefined },
+      { columnIds: exportColumnIds, catalogOrder: catalogColumnIds },
     )
-  }, [debouncedSearch])
+  }, [catalogColumnIds, enhancedSearch.globalSearch, exportColumnIds])
 
   const {
     onAdvancedFilter,
@@ -384,7 +422,7 @@ export function RevenueOverviewPage() {
       cell: ({ row }) => renderActions(row.original),
     }
 
-    return [selectColumn, ...preferenceColumns, actionsColumn]
+    return withServerSortMeta([selectColumn, ...preferenceColumns, actionsColumn], SORT_FIELD_MAP)
   }, [
     allVisibleSelected,
     renderActions,
@@ -428,9 +466,15 @@ export function RevenueOverviewPage() {
         columns={columns}
         data={rows}
         getRowId={(row) => row.id}
+        {...serverSort.dataTableSortProps}
         isLoading={isLoading || isFetching}
-        searchValue={searchQuery}
-        onSearchChange={setSearchQuery}
+        searchValue={enhancedSearch.globalSearch}
+        onSearchChange={enhancedSearch.setGlobalSearch}
+        searchableColumns={FINANCE_REVENUE_SEARCH_COLUMNS}
+        columnSearches={enhancedSearch.columnSearches}
+        onColumnSearchChange={enhancedSearch.setColumnSearch}
+        onColumnSearchRemove={enhancedSearch.removeColumnSearch}
+        onClearAllSearches={enhancedSearch.clearAll}
         searchPlaceholder="Search by name, ID or profession"
         advancedFilterLabel="Advance Filters"
         onAdvancedFilter={onAdvancedFilter}

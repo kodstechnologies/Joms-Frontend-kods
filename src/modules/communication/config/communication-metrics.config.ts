@@ -124,4 +124,4 @@ export const DEFAULT_COMMUNICATION_METRIC_IDS = COMMUNICATION_METRICS_CATALOG.fi
   (metric) => metric.defaultActive,
 ).map((metric) => metric.id)
 
-export const COMMUNICATION_MAX_ACTIVE_METRICS = 5
+export const COMMUNICATION_MAX_ACTIVE_METRICS = COMMUNICATION_METRICS_CATALOG.length

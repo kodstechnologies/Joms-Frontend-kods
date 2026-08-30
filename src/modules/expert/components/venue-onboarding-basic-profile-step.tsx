@@ -1,10 +1,13 @@
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import { Search, Upload } from 'lucide-react'
+import { toast } from 'sonner'
 
 import { useServiceCategoriesByType } from '../hooks/use-service-categories'
 import { type VenueOnboardingFormData } from '../utils/venue-onboarding-form'
+import { VerificationOtpModal } from './verification-otp-modal'
 import { RequiredMark } from '@/shared/components/form/required-mark'
-import { sanitizeMobileNumber } from '@/shared/lib/phone'
+import { cn } from '@/shared/lib/cn'
+import { sanitizeMobileNumber, validateMobileNumber } from '@/shared/lib/phone'
 
 const fieldClass = 'ui-input'
 
@@ -16,6 +19,54 @@ type Props = {
 export const VenueOnboardingBasicProfileStep = ({ formData, setFormData }: Props) => {
   const profileInputRef = useRef<HTMLInputElement>(null)
   const coverInputRef = useRef<HTMLInputElement>(null)
+  const [verifyModal, setVerifyModal] = useState<{
+    open: boolean
+    type: 'phone' | 'email'
+    targetValue: string
+  }>({
+    open: false,
+    type: 'phone',
+    targetValue: '',
+  })
+
+  const handleOpenPhoneVerify = () => {
+    const error = validateMobileNumber(formData.phone)
+    if (error) {
+      toast.error(error)
+      return
+    }
+    setVerifyModal({
+      open: true,
+      type: 'phone',
+      targetValue: formData.phone,
+    })
+  }
+
+  const handleOpenEmailVerify = () => {
+    if (!formData.email.trim()) {
+      toast.error('Please enter an email ID before verifying.')
+      return
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(formData.email.trim())) {
+      toast.error('Please enter a valid email address.')
+      return
+    }
+    setVerifyModal({
+      open: true,
+      type: 'email',
+      targetValue: formData.email.trim(),
+    })
+  }
+
+  const handleVerified = () => {
+    if (verifyModal.type === 'phone') {
+      setFormData((prev) => ({ ...prev, isPhoneVerified: true }))
+    } else {
+      setFormData((prev) => ({ ...prev, isEmailVerified: true }))
+    }
+  }
+
   const { data: categoriesData, isLoading: isCategoriesLoading } =
     useServiceCategoriesByType('venue')
   const categoryGroups = categoriesData?.data || {}
@@ -204,36 +255,79 @@ export const VenueOnboardingBasicProfileStep = ({ formData, setFormData }: Props
             <label className="mb-2 block text-xs font-medium text-white">
               Phone Number <RequiredMark />
             </label>
-            <input
-              type="tel"
-              inputMode="numeric"
-              maxLength={10}
-              value={formData.phone}
-              onChange={(e) =>
-                setFormData((prev) => ({
-                  ...prev,
-                  phone: sanitizeMobileNumber(e.target.value),
-                }))
-              }
-              placeholder="Enter 10-digit mobile number"
-              className={fieldClass}
-            />
+            <div className="flex items-center gap-3">
+              <input
+                type="tel"
+                inputMode="numeric"
+                maxLength={10}
+                value={formData.phone}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    phone: sanitizeMobileNumber(e.target.value),
+                    isPhoneVerified: false,
+                  }))
+                }
+                placeholder="Enter 10-digit mobile number"
+                className={fieldClass}
+              />
+              <button
+                type="button"
+                onClick={handleOpenPhoneVerify}
+                className={cn(
+                  'shrink-0 rounded-xl px-5 py-2.5 text-xs font-semibold transition-all',
+                  formData.isPhoneVerified
+                    ? 'border border-[#1E563D]/50 bg-[#143D2B] text-[#00E065]'
+                    : 'bg-[linear-gradient(180deg,#F6CB86_0%,#E0A263_100%)] text-[#050505] hover:brightness-95',
+                )}
+              >
+                {formData.isPhoneVerified ? 'Verified ✓' : 'Verify'}
+              </button>
+            </div>
           </div>
 
           <div>
             <label className="mb-2 block text-xs font-medium text-white">
               Email ID <RequiredMark />
             </label>
-            <input
-              value={formData.email}
-              onChange={(e) => setFormData((prev) => ({ ...prev, email: e.target.value }))}
-              placeholder="Enter Email ID"
-              type="email"
-              className={fieldClass}
-            />
+            <div className="flex items-center gap-3">
+              <input
+                value={formData.email}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    email: e.target.value,
+                    isEmailVerified: false,
+                  }))
+                }
+                placeholder="Enter Email ID"
+                type="email"
+                className={fieldClass}
+              />
+              <button
+                type="button"
+                onClick={handleOpenEmailVerify}
+                className={cn(
+                  'shrink-0 rounded-xl px-5 py-2.5 text-xs font-semibold transition-all',
+                  formData.isEmailVerified
+                    ? 'border border-[#1E563D]/50 bg-[#143D2B] text-[#00E065]'
+                    : 'bg-[linear-gradient(180deg,#F6CB86_0%,#E0A263_100%)] text-[#050505] hover:brightness-95',
+                )}
+              >
+                {formData.isEmailVerified ? 'Verified ✓' : 'Verify'}
+              </button>
+            </div>
           </div>
         </div>
       </div>
+
+      <VerificationOtpModal
+        open={verifyModal.open}
+        type={verifyModal.type}
+        targetValue={verifyModal.targetValue}
+        onClose={() => setVerifyModal((prev) => ({ ...prev, open: false }))}
+        onVerified={handleVerified}
+      />
     </div>
   )
 }

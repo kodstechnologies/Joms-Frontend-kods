@@ -19,13 +19,13 @@ export type SupportDashboardMetricCard = {
 /** Re-export for consumers resolving saved preference ids. */
 export { SUPPORT_DASHBOARD_LEGACY_METRIC_ID_MAP }
 
-const emptyTrend = {
+const defaultTrend = {
   direction: 'up' as const,
   percentage: 0,
   label: 'vs last month',
 }
 
-const emptyValueById: Record<string, string> = {
+const defaultValues: Record<string, string> = {
   'total-tickets': '0',
   'open-tickets': '0',
   'tickets-in-progress': '0',
@@ -34,6 +34,14 @@ const emptyValueById: Record<string, string> = {
   'average-first-response-time': '00:00:00',
   'average-resolution-time': '00:00:00',
   'tickets-resolved-today': '0',
+  // legacy keys fallback
+  'total-open-tickets': '0',
+  'new-tickets-today': '0',
+  'escalated-tickets': '0',
+  'resolved-today': '0',
+  'priority-tickets': '0',
+  'avg-response-time': '00:00:00',
+  'avg-resolution-time': '00:00:00',
 }
 
 const labelById = new Map(
@@ -44,13 +52,22 @@ export function resolveSupportDashboardMetricId(id: string): string {
   return SUPPORT_DASHBOARD_LEGACY_METRIC_ID_MAP[id] ?? id
 }
 
-function emptyValueFor(id: string) {
-  return emptyValueById[id] ?? '0'
+function emptyValueFor(id: string): string {
+  return defaultValues[id] ?? (id.includes('time') ? '00:00:00' : '0')
 }
 
-function displayValue(id: string, value: string | number | null | undefined) {
+function displayValue(id: string, value: string | number | null | undefined): string {
   if (value == null || value === '' || value === '—') return emptyValueFor(id)
   return String(value)
+}
+
+export function buildSupportDashboardMetricCardsMock(): SupportDashboardMetricCard[] {
+  return SUPPORT_DASHBOARD_METRIC_IDS.map((id) => ({
+    id,
+    title: labelById.get(id) ?? id,
+    value: emptyValueFor(id),
+    trend: defaultTrend,
+  }))
 }
 
 export function buildSupportDashboardMetricCardsFromApi(
@@ -94,7 +111,7 @@ export function buildSupportDashboardMetricCards(
       id,
       title: labelById.get(id) ?? id,
       value: emptyValueFor(id),
-      trend: emptyTrend,
+      trend: defaultTrend,
     }
   })
 }

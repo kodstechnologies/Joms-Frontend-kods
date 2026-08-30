@@ -378,7 +378,8 @@ export function ManageMetrics({
   const dashboardAvailable = dashboard?.available ?? EMPTY_AVAILABLE_ITEMS
   const tableVisible = tableColumns?.visible ?? EMPTY_LIST_ITEMS
   const tableHidden = tableColumns?.hidden ?? EMPTY_AVAILABLE_ITEMS
-  const maxActive = dashboard?.maxActive ?? 8
+  const catalogMetricCount = dashboardActive.length + dashboardAvailable.length
+  const maxActive = dashboard?.maxActive ?? catalogMetricCount
 
   const [localActiveMetrics, setLocalActiveMetrics] = useState(dashboardActive)
   const [localAvailableMetrics, setLocalAvailableMetrics] = useState(dashboardAvailable)

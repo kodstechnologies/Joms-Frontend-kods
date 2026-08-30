@@ -41,7 +41,7 @@ function CustomUrlModalContent({
   const link = details?.link || '—'
 
   return createPortal(
-    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/75 px-4 py-6">
+    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-[#050505]/80 px-4 py-6">
       <div
         role="dialog"
         aria-modal="true"

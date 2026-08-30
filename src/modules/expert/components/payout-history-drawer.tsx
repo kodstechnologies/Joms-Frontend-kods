@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 
 import { Button } from '@/shared/components/ui/button'
 import { getApiErrorMessage } from '@/shared/lib/api-error'
+import { statusBadgeClass } from '../utils/payout-status'
 import { fetchExpertPayoutHistory } from '../api/expert-api'
 import type { PayoutItem } from '../type/payout'
 
@@ -16,23 +17,6 @@ interface PayoutHistoryDrawerProps {
   onClose: () => void
   expertId: string
   expertName?: string
-}
-
-const statusBadgeClass = (status?: string) => {
-  const value = String(status || '').toLowerCase()
-  if (value === 'credited' || value === 'successful' || value === 'paid') {
-    return 'bg-emerald-500/15 text-emerald-400'
-  }
-  if (value === 'processing' || value === 'scheduled' || value === 'pending approval') {
-    return 'bg-amber-500/15 text-amber-400'
-  }
-  if (value === 'disputed') {
-    return 'bg-violet-500/15 text-violet-300'
-  }
-  if (value === 'failed' || value === 'cancelled') {
-    return 'bg-rose-500/15 text-rose-400'
-  }
-  return 'bg-white/10 text-slate-300'
 }
 
 export function PayoutHistoryDrawer({ isOpen, onClose, expertId }: PayoutHistoryDrawerProps) {

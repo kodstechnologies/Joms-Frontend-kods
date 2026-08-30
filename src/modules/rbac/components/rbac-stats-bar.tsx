@@ -14,7 +14,6 @@ import {
   useActiveMetricIds,
 } from '@/modules/expert/hooks/use-active-metric-ids'
 import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
-import { cn } from '@/shared/lib/cn'
 
 type RbacMetricCard = {
   id: string
@@ -62,14 +61,13 @@ export function RbacStatsBar({ stats, isLoading }: RbacStatsBarProps) {
           className="rounded-brand-lg bg-brand-surface border border-white/10 px-4 py-4"
         >
           <p className="text-brand-muted text-xs font-medium md:text-sm">{card.label}</p>
-          <p
-            className={cn(
-              'text-brand-text mt-2 text-2xl font-semibold tracking-tight',
-              isLoading && 'animate-pulse',
-            )}
-          >
-            {isLoading ? '—' : String(stats?.[card.statsKey] ?? 0).padStart(2, '0')}
-          </p>
+          {isLoading ? (
+            <div className="mt-2 h-8 w-12 animate-pulse rounded bg-white/10" />
+          ) : (
+            <p className="text-brand-text mt-2 text-2xl font-semibold tracking-tight">
+              {String(stats?.[card.statsKey] ?? 0).padStart(2, '0')}
+            </p>
+          )}
         </div>
       ))}
     </div>

@@ -18,6 +18,7 @@ import { MembershipStatsBar } from '../components/membership-stats-bar'
 import {
   DEFAULT_MEMBERSHIPS_VISIBLE_COLUMN_IDS,
   MEMBERSHIPS_MODULE_KEY,
+  MEMBERSHIPS_TABLE_COLUMNS_CATALOG,
 } from '../config/membership-metrics.config'
 import {
   useCancelSubscription,
@@ -37,6 +38,11 @@ import { SectionHeader } from '@/shared/components/dashboard/section-header'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 import { Button } from '@/shared/components/ui/button'
 import { DataTable } from '@/shared/components/table/data-table'
+import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'
+import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
+import { withServerSortMeta } from '@/shared/utils/table-sort'
+import { buildCatalogSortFieldMap } from '@/shared/utils/table-sort-field-maps'
+import { EXPERT_MEMBERSHIPS_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
 import {
   TableActionsDropdown,
   TableActionsItem,
@@ -50,6 +56,8 @@ import {
   buildExpertMembershipsListQueryParams,
   createExpertMembershipsFilteredExportHandler,
 } from '@/shared/utils/export-filter-utils'
+
+const MEMBERSHIP_SORT_FIELD_MAP = buildCatalogSortFieldMap(MEMBERSHIPS_TABLE_COLUMNS_CATALOG)
 
 const EXPORT_COLUMN_MAP: Record<
   string,
@@ -159,7 +167,12 @@ export function ExpertMembershipsPage() {
   const [escalateOpen, setEscalateOpen] = useState(false)
   const { tagModalOpen, openTagModal, closeTagModal, saveTags, initialTags } = useEntityTags()
 
-  const { searchQuery, setSearchQuery, currentPage, setCurrentPage } = useExpertMembershipStore()
+  const { currentPage, setCurrentPage } = useExpertMembershipStore()
+  const serverSort = useServerTableSort({
+    sortFieldMap: MEMBERSHIP_SORT_FIELD_MAP,
+    onPageReset: () => setCurrentPage(1),
+  })
+  const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setCurrentPage(1) })
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
 
   const listQueryParams = useMemo(
@@ -167,9 +180,10 @@ export function ExpertMembershipsPage() {
       buildExpertMembershipsListQueryParams(appliedFilters, {
         page: currentPage,
         limit: 10,
-        search: searchQuery || undefined,
+        ...enhancedSearch.buildSearchParams(),
+        ...serverSort.sortParams,
       }),
-    [appliedFilters, currentPage, searchQuery],
+    [appliedFilters, currentPage, enhancedSearch, serverSort.sortParams],
   )
 
   const { data, isLoading } = useExpertSubscriptions(listQueryParams)
@@ -201,9 +215,9 @@ export function ExpertMembershipsPage() {
       fetchForExport,
       EXPORT_COLUMN_MAP,
       'expert_memberships_export',
-      { search: searchQuery || undefined },
+      { search: enhancedSearch.globalSearch || undefined },
     )
-  }, [searchQuery])
+  }, [enhancedSearch.globalSearch])
 
   const {
     onAdvancedFilter,
@@ -308,7 +322,7 @@ export function ExpertMembershipsPage() {
       cell: ({ row }) => renderActions(row.original),
     }
 
-    return [...preferenceColumns, actionsColumn]
+    return withServerSortMeta([...preferenceColumns, actionsColumn], MEMBERSHIP_SORT_FIELD_MAP)
   }, [renderActions, tableColumnPreferencesQuery.data])
 
   return (
@@ -346,12 +360,18 @@ export function ExpertMembershipsPage() {
         data={subscriptions}
         getRowId={(subscription) => subscription._id}
         isLoading={isLoading}
-        searchValue={searchQuery}
-        onSearchChange={setSearchQuery}
+        searchValue={enhancedSearch.globalSearch}
+        onSearchChange={enhancedSearch.setGlobalSearch}
+        searchableColumns={EXPERT_MEMBERSHIPS_SEARCH_COLUMNS}
+        columnSearches={enhancedSearch.columnSearches}
+        onColumnSearchChange={enhancedSearch.setColumnSearch}
+        onColumnSearchRemove={enhancedSearch.removeColumnSearch}
+        onClearAllSearches={enhancedSearch.clearAll}
         searchPlaceholder="Search by name, ID or profession"
         onAdvancedFilter={onAdvancedFilter}
         advancedFilterVariant="primary"
         onExport={onExport}
+        {...serverSort.dataTableSortProps}
         pagination={{
           page: currentPage,
           pageSize: meta?.limit ?? 10,

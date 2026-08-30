@@ -1,34 +1,28 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { Banknote, Download, Eye, SlidersHorizontal, SquarePen, TrendingUp } from 'lucide-react'
+import { Download, Eye, SlidersHorizontal, TrendingUp } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
 import { useBranding } from '@/app/providers/use-branding'
-import { AddFinanceNoteModal } from '@/modules/payments/components/add-finance-note-modal'
 import { fetchFinancePayoutById, fetchFinancePayouts } from '@/modules/payments/api/finance-api'
-import {
-  useAddFinanceNote,
-  useFinanceDashboard,
-  useFinancePayouts,
-  useReleasePayout,
-} from '@/modules/payments/hooks/use-finance'
-import {
-  canReleasePayout,
-  formatInr,
-  mapPayoutToRow,
-} from '@/modules/payments/utils/finance-mappers'
+import { useFinanceDashboard, useFinancePayouts } from '@/modules/payments/hooks/use-finance'
+import { formatInr, mapPayoutToRow } from '@/modules/payments/utils/finance-mappers'
 import type { PayoutRow, PayoutStatus } from '@/modules/payments/mock/payout-management.mock'
-import { PermissionGate } from '@/modules/rbac/components/permission-gate'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 import { DataTable } from '@/shared/components/table/data-table'
+import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'
+import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
+import { withServerSortMeta } from '@/shared/utils/table-sort'
+import { buildDefaultTableSortFieldMap } from '@/shared/utils/table-sort-field-maps'
+import { FINANCE_PAYOUT_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
 import {
   TableActionsDropdown,
   TableActionsItem,
 } from '@/shared/components/table/table-actions-dropdown'
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
-import { PERMISSION_LEVELS } from '@/shared/lib/permissions'
+import { StatCardSkeleton } from '@/shared/components/ui/skeleton'
 import type { FilterValues } from '@/shared/types/data-filter'
 import { exportDisplayValue } from '@/shared/utils/export-utils'
 import {
@@ -39,48 +33,30 @@ import { downloadInvoiceDocument, invoiceFromFinancePayout } from '@/shared/util
 
 const PAGE_SIZE = 10
 
+const SORT_FIELD_MAP = buildDefaultTableSortFieldMap([
+  'payoutId',
+  'recipient',
+  'type',
+  'amount',
+  'method',
+  'initiatedDate',
+  'description',
+  'status',
+])
+
 const EXPORT_COLUMN_MAP: Record<string, { header: string; accessor: (row: PayoutRow) => string }> =
   {
     payoutId: { header: 'Payout ID', accessor: (row) => exportDisplayValue(row.payoutId) },
-    payeeId: { header: 'Payee ID', accessor: (row) => exportDisplayValue(row.payeeId) },
-    payeeName: { header: 'Payee Name', accessor: (row) => exportDisplayValue(row.payeeName) },
-    payeeType: { header: 'Payee Type', accessor: (row) => exportDisplayValue(row.payeeType) },
-    relatedTransaction: {
-      header: 'Related Transaction',
-      accessor: (row) => exportDisplayValue(row.relatedTransaction),
+    recipient: { header: 'Recipient', accessor: (row) => exportDisplayValue(row.recipient) },
+    type: { header: 'Type', accessor: (row) => exportDisplayValue(row.type) },
+    amount: { header: 'Amount', accessor: (row) => exportDisplayValue(row.amount) },
+    method: { header: 'Method', accessor: (row) => exportDisplayValue(row.method) },
+    initiatedDate: {
+      header: 'Initiated Date',
+      accessor: (row) => exportDisplayValue(row.initiatedDate),
     },
-    grossAmount: { header: 'Gross Amount', accessor: (row) => exportDisplayValue(row.grossAmount) },
-    platformCommission: {
-      header: 'Platform Commission',
-      accessor: (row) => exportDisplayValue(row.platformCommission),
-    },
-    taxDeduction: {
-      header: 'Tax Deduction',
-      accessor: (row) => exportDisplayValue(row.taxDeduction),
-    },
-    gatewayCharges: {
-      header: 'Gateway Charges',
-      accessor: (row) => exportDisplayValue(row.gatewayCharges),
-    },
-    netPayout: { header: 'Net Payout', accessor: (row) => exportDisplayValue(row.netPayout) },
-    currency: { header: 'Currency', accessor: (row) => exportDisplayValue(row.currency) },
-    bankReference: {
-      header: 'Bank Reference',
-      accessor: (row) => exportDisplayValue(row.bankReference),
-    },
-    scheduledDate: {
-      header: 'Scheduled Date',
-      accessor: (row) => exportDisplayValue(row.scheduledDate),
-    },
-    processedDate: {
-      header: 'Processed Date',
-      accessor: (row) => exportDisplayValue(row.processedDate),
-    },
-    status: { header: 'Payout Status', accessor: (row) => exportDisplayValue(row.status) },
-    financeApprover: {
-      header: 'Finance Approver',
-      accessor: (row) => exportDisplayValue(row.financeApprover),
-    },
+    description: { header: 'Description', accessor: (row) => exportDisplayValue(row.description) },
+    status: { header: 'Status', accessor: (row) => exportDisplayValue(row.status) },
   }
 
 function SummaryCard({
@@ -110,51 +86,38 @@ function SummaryCard({
 }
 
 function getStatusClassName(status: PayoutStatus) {
-  if (status === 'Paid' || status === 'Completed') {
+  if (status === 'Completed')
     return 'border-brand-positive/25 bg-brand-positive/10 text-brand-positive'
-  }
-  if (status === 'Pending' || status === 'Processing') {
-    return 'border-brand-accent/25 bg-brand-accent/10 text-brand-accent'
-  }
-  if (status === 'On Hold') return 'border-brand-accent/40 bg-brand-accent/10 text-brand-accent'
+  if (status === 'Pending') return 'border-brand-accent/25 bg-brand-accent/10 text-brand-accent'
   return 'border-brand-danger/25 bg-brand-danger/10 text-brand-danger'
 }
 
 export function PayoutManagementPage() {
   const navigate = useNavigate()
   const { logoUrl } = useBranding()
-  const [searchQuery, setSearchQuery] = useState('')
-  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
+  const serverSort = useServerTableSort({
+    sortFieldMap: SORT_FIELD_MAP,
+    onPageReset: () => setCurrentPage(1),
+  })
+  const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setCurrentPage(1) })
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [selectedRowIds, setSelectedRowIds] = useState<string[]>([])
-  const [rowAction, setRowAction] = useState<{ type: 'release' | 'note'; row: PayoutRow } | null>(
-    null,
-  )
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      setDebouncedSearch(searchQuery.trim())
-      setCurrentPage(1)
-    }, 300)
-    return () => window.clearTimeout(timer)
-  }, [searchQuery])
 
   const listQueryParams = useMemo(
     () =>
       buildFinancePayoutsListQueryParams(appliedFilters, {
         page: currentPage,
         limit: PAGE_SIZE,
-        search: debouncedSearch || undefined,
+        ...enhancedSearch.buildSearchParams(),
+        ...serverSort.sortParams,
       }),
-    [appliedFilters, currentPage, debouncedSearch],
+    [appliedFilters, currentPage, enhancedSearch, serverSort.sortParams],
   )
 
   const { data, isLoading, isFetching, isError } = useFinancePayouts(listQueryParams)
   const dashboardQuery = useFinanceDashboard()
-  const releaseMutation = useReleasePayout()
-  const noteMutation = useAddFinanceNote()
 
   const rows = useMemo(() => (data?.data?.rows ?? []).map(mapPayoutToRow), [data])
   const meta = data?.data?.meta
@@ -175,9 +138,9 @@ export function PayoutManagementPage() {
       fetchForExport,
       EXPORT_COLUMN_MAP,
       'finance_payouts_export',
-      { search: debouncedSearch || undefined },
+      { search: enhancedSearch.globalSearch || undefined },
     )
-  }, [debouncedSearch])
+  }, [enhancedSearch.globalSearch])
 
   const {
     onAdvancedFilter,
@@ -240,7 +203,7 @@ export function PayoutManagementPage() {
         label="Open payout actions"
         isOpen={activeDropdownId === record.id}
         onOpenChange={(open) => setActiveDropdownId(open ? record.id : null)}
-        menuWidth={220}
+        menuWidth={200}
       >
         <TableActionsItem
           icon={<Eye className="size-3.5 text-slate-700" aria-hidden="true" />}
@@ -251,33 +214,6 @@ export function PayoutManagementPage() {
           }}
         >
           View Details
-        </TableActionsItem>
-        {canReleasePayout(record.rawStatus) ? (
-          <PermissionGate
-            permission="finance.approve_payout"
-            minLevel={PERMISSION_LEVELS.SECONDARY_APPROVAL}
-          >
-            <TableActionsItem
-              icon={<Banknote className="size-3.5 text-slate-700" aria-hidden="true" />}
-              className="text-slate-800 hover:bg-slate-100 hover:text-slate-900"
-              onClick={() => {
-                setActiveDropdownId(null)
-                setRowAction({ type: 'release', row: record })
-              }}
-            >
-              Release Payout
-            </TableActionsItem>
-          </PermissionGate>
-        ) : null}
-        <TableActionsItem
-          icon={<SquarePen className="size-3.5 text-slate-700" aria-hidden="true" />}
-          className="text-slate-800 hover:bg-slate-100 hover:text-slate-900"
-          onClick={() => {
-            setActiveDropdownId(null)
-            setRowAction({ type: 'note', row: record })
-          }}
-        >
-          Add Internal Note
         </TableActionsItem>
         <TableActionsItem
           icon={<Download className="size-3.5 text-slate-700" aria-hidden="true" />}
@@ -305,69 +241,65 @@ export function PayoutManagementPage() {
   )
 
   const columns = useMemo<ColumnDef<PayoutRow>[]>(
-    () => [
-      {
-        id: 'select',
-        header: () => (
-          <input
-            type="checkbox"
-            aria-label="Select all payouts"
-            checked={allVisibleSelected}
-            ref={(input) => {
-              if (input) input.indeterminate = someVisibleSelected && !allVisibleSelected
-            }}
-            onChange={toggleVisibleRows}
-            className="rounded border-slate-700 bg-transparent"
-          />
-        ),
-        cell: ({ row }) => (
-          <input
-            type="checkbox"
-            aria-label={`Select ${row.original.payeeName}`}
-            checked={selectedRowIds.includes(row.original.id)}
-            onChange={() => toggleRowSelection(row.original.id)}
-            onClick={(event) => event.stopPropagation()}
-            className="rounded border-slate-700 bg-transparent"
-          />
-        ),
-        meta: { headerClassName: 'pl-5', cellClassName: 'pl-5' },
-      },
-      { accessorKey: 'payoutId', header: 'Payout ID' },
-      { accessorKey: 'payeeId', header: 'Payee ID' },
-      { accessorKey: 'payeeName', header: 'Payee Name' },
-      { accessorKey: 'payeeType', header: 'Payee Type' },
-      { accessorKey: 'relatedTransaction', header: 'Related Transaction' },
-      { accessorKey: 'grossAmount', header: 'Gross Amount' },
-      { accessorKey: 'platformCommission', header: 'Platform Commission' },
-      { accessorKey: 'taxDeduction', header: 'Tax Deduction' },
-      { accessorKey: 'gatewayCharges', header: 'Gateway Charges' },
-      { accessorKey: 'netPayout', header: 'Net Payout' },
-      { accessorKey: 'currency', header: 'Currency' },
-      { accessorKey: 'bankReference', header: 'Bank Reference' },
-      { accessorKey: 'scheduledDate', header: 'Scheduled Date' },
-      { accessorKey: 'processedDate', header: 'Processed Date' },
-      {
-        accessorKey: 'status',
-        header: 'Payout Status',
-        cell: ({ row }) => (
-          <span
-            className={cn(
-              'text-body-sm-semibold inline-flex rounded-full border px-2.5 py-0.5',
-              getStatusClassName(row.original.status),
-            )}
-          >
-            {row.original.status}
-          </span>
-        ),
-      },
-      { accessorKey: 'financeApprover', header: 'Finance Approver' },
-      {
-        id: 'actions',
-        header: 'Actions',
-        meta: { headerClassName: 'pr-5 text-right', cellClassName: 'relative pr-5 text-right' },
-        cell: ({ row }) => renderActions(row.original),
-      },
-    ],
+    () =>
+      withServerSortMeta(
+        [
+          {
+            id: 'select',
+            header: () => (
+              <input
+                type="checkbox"
+                aria-label="Select all payouts"
+                checked={allVisibleSelected}
+                ref={(input) => {
+                  if (input) input.indeterminate = someVisibleSelected && !allVisibleSelected
+                }}
+                onChange={toggleVisibleRows}
+                className="rounded border-slate-700 bg-transparent"
+              />
+            ),
+            cell: ({ row }) => (
+              <input
+                type="checkbox"
+                aria-label={`Select ${row.original.recipient}`}
+                checked={selectedRowIds.includes(row.original.id)}
+                onChange={() => toggleRowSelection(row.original.id)}
+                onClick={(event) => event.stopPropagation()}
+                className="rounded border-slate-700 bg-transparent"
+              />
+            ),
+            meta: { headerClassName: 'pl-5', cellClassName: 'pl-5' },
+          },
+          { accessorKey: 'payoutId', header: 'Payout ID' },
+          { accessorKey: 'recipient', header: 'Recipient' },
+          { accessorKey: 'type', header: 'Type' },
+          { accessorKey: 'amount', header: 'Amount' },
+          { accessorKey: 'method', header: 'Method' },
+          { accessorKey: 'initiatedDate', header: 'Initiated Date' },
+          { accessorKey: 'description', header: 'Description' },
+          {
+            accessorKey: 'status',
+            header: 'Status',
+            cell: ({ row }) => (
+              <span
+                className={cn(
+                  'text-body-sm-semibold inline-flex rounded-full border px-2.5 py-0.5',
+                  getStatusClassName(row.original.status),
+                )}
+              >
+                {row.original.status}
+              </span>
+            ),
+          },
+          {
+            id: 'actions',
+            header: 'Actions',
+            meta: { headerClassName: 'pr-5 text-right', cellClassName: 'relative pr-5 text-right' },
+            cell: ({ row }) => renderActions(row.original),
+          },
+        ],
+        SORT_FIELD_MAP,
+      ),
     [
       allVisibleSelected,
       renderActions,
@@ -403,19 +335,27 @@ export function PayoutManagementPage() {
       {isError ? <p className="text-body-sm text-brand-danger">Failed to load payouts.</p> : null}
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {summaryCards.map((metric) => (
-          <SummaryCard key={metric.label} {...metric} />
-        ))}
+        {isLoading || dashboardQuery.isLoading
+          ? Array.from({ length: 4 }).map((_, idx) => (
+              <StatCardSkeleton key={`payout-skel-${idx}`} />
+            ))
+          : summaryCards.map((metric) => <SummaryCard key={metric.label} {...metric} />)}
       </div>
 
       <DataTable
         columns={columns}
         data={rows}
         getRowId={(row) => row.id}
+        {...serverSort.dataTableSortProps}
         isLoading={isLoading || isFetching}
-        searchValue={searchQuery}
-        onSearchChange={setSearchQuery}
-        searchPlaceholder="Search by payout ID or payee name"
+        searchValue={enhancedSearch.globalSearch}
+        onSearchChange={enhancedSearch.setGlobalSearch}
+        searchableColumns={FINANCE_PAYOUT_SEARCH_COLUMNS}
+        columnSearches={enhancedSearch.columnSearches}
+        onColumnSearchChange={enhancedSearch.setColumnSearch}
+        onColumnSearchRemove={enhancedSearch.removeColumnSearch}
+        onClearAllSearches={enhancedSearch.clearAll}
+        searchPlaceholder="Search by name, ID or profession"
         advancedFilterLabel="Advance Filters"
         onAdvancedFilter={onAdvancedFilter}
         advancedFilterVariant="primary"
@@ -432,63 +372,6 @@ export function PayoutManagementPage() {
       />
 
       {exportFilterModals}
-
-      <AddFinanceNoteModal
-        open={rowAction?.type === 'release'}
-        title="Release Payout"
-        description="Record the manual bank transfer, then mark this payout as paid."
-        placeholder="Enter release note"
-        submitLabel="Release Payout"
-        submittingLabel="Releasing..."
-        extraField={{
-          label: 'Transfer Reference (UTR)',
-          placeholder: 'Enter bank UTR / reference',
-          required: true,
-          minLength: 6,
-        }}
-        isSubmitting={releaseMutation.isPending}
-        onClose={() => setRowAction(null)}
-        onSubmit={(adminNote, bankReference) => {
-          if (!rowAction || !bankReference) {
-            toast.error('Bank transfer reference (UTR) is required')
-            return
-          }
-          releaseMutation.mutate(
-            { id: rowAction.row.id, adminNote, bankReference },
-            {
-              onSuccess: () => {
-                toast.success('Payout marked as paid')
-                setRowAction(null)
-              },
-              onError: (err) => {
-                const msg =
-                  (err as { response?: { data?: { message?: string } } })?.response?.data
-                    ?.message || 'Release failed'
-                toast.error(msg)
-              },
-            },
-          )
-        }}
-      />
-
-      <AddFinanceNoteModal
-        open={rowAction?.type === 'note'}
-        isSubmitting={noteMutation.isPending}
-        onClose={() => setRowAction(null)}
-        onSubmit={(adminNote) => {
-          if (!rowAction) return
-          noteMutation.mutate(
-            { id: rowAction.row.id, resourceType: 'Payout', adminNote },
-            {
-              onSuccess: () => {
-                toast.success('Note saved')
-                setRowAction(null)
-              },
-              onError: () => toast.error('Failed to save note'),
-            },
-          )
-        }}
-      />
     </div>
   )
 }

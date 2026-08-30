@@ -102,15 +102,21 @@ export const useResetSettings = <M extends SettingsModule>(module: M) => {
  * a reset). Syncing happens during render rather than in an effect.
  * Always falls back to defaults when API data is missing.
  */
-export function useSettingsDraft<T>(queryData: { config: T } | undefined, defaults: T) {
+export function useSettingsDraft<T>(
+  queryData: { config: T } | undefined,
+  defaults: T,
+  normalize?: (config: T) => T,
+) {
+  const applyNormalize = (config: T) => (normalize ? normalize(config) : config)
+
   const [draft, setDraft] = useState<T>(() =>
-    queryData?.config ? mergeWithDefaults(defaults, queryData.config) : defaults,
+    queryData?.config ? applyNormalize(mergeWithDefaults(defaults, queryData.config)) : defaults,
   )
   const [hydratedData, setHydratedData] = useState(queryData)
 
   if (queryData && queryData !== hydratedData) {
     setHydratedData(queryData)
-    setDraft(mergeWithDefaults(defaults, queryData.config))
+    setDraft(applyNormalize(mergeWithDefaults(defaults, queryData.config)))
   }
 
   return [draft, setDraft] as const

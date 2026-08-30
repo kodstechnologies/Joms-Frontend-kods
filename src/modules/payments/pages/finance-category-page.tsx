@@ -11,6 +11,11 @@ import {
 } from '@/modules/payments/mock/finance-category.mock'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 import { DataTable } from '@/shared/components/table/data-table'
+import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'
+import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
+import { sortClientRows, withServerSortMeta } from '@/shared/utils/table-sort'
+import { buildDefaultTableSortFieldMap } from '@/shared/utils/table-sort-field-maps'
+import { FINANCE_CATEGORY_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
 import {
   TableActionsDropdown,
   TableActionsItem,
@@ -24,6 +29,16 @@ import {
 } from '@/shared/utils/export-filter-utils'
 
 const PAGE_SIZE = 10
+
+const FINANCE_CATEGORY_SORT_FIELD_MAP = buildDefaultTableSortFieldMap([
+  'categoryName',
+  'module',
+  'platformFee',
+  'commissionRate',
+  'taxRate',
+  'payoutCycle',
+  'status',
+])
 
 const CATEGORY_FILTER_ACCESSORS: Record<string, (row: FinanceCategoryRow) => string> = {
   categoryName: (row) => row.categoryName,
@@ -58,27 +73,51 @@ function getStatusClassName(status: FinanceCategoryStatus) {
 }
 
 export function FinanceCategoryPage() {
-  const [searchQuery, setSearchQuery] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
+  const serverSort = useServerTableSort({
+    sortFieldMap: FINANCE_CATEGORY_SORT_FIELD_MAP,
+    onPageReset: () => setCurrentPage(1),
+  })
+  const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setCurrentPage(1) })
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
 
   const filteredRows = useMemo(
     () =>
-      financeCategoryRowsMock.filter((row) =>
-        rowMatchesClientFilters(row, appliedFilters, searchQuery, CATEGORY_FILTER_ACCESSORS),
-      ),
-    [appliedFilters, searchQuery],
+      financeCategoryRowsMock.filter((row) => {
+        if (
+          !rowMatchesClientFilters(
+            row,
+            appliedFilters,
+            enhancedSearch.globalSearch,
+            CATEGORY_FILTER_ACCESSORS,
+          )
+        ) {
+          return false
+        }
+        for (const [colId, val] of Object.entries(enhancedSearch.columnSearches)) {
+          if (!val) continue
+          const cellVal = String((row as Record<string, unknown>)[colId] ?? '').toLowerCase()
+          if (!cellVal.includes(val.toLowerCase())) return false
+        }
+        return true
+      }),
+    [appliedFilters, enhancedSearch.columnSearches, enhancedSearch.globalSearch],
   )
 
-  const totalItems = filteredRows.length
+  const sortedRows = useMemo(
+    () => sortClientRows(filteredRows, serverSort.sortBy, serverSort.sortOrder),
+    [filteredRows, serverSort.sortBy, serverSort.sortOrder],
+  )
+
+  const totalItems = sortedRows.length
   const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE))
   const safePage = Math.min(currentPage, totalPages)
 
   const pageRows = useMemo(() => {
     const start = (safePage - 1) * PAGE_SIZE
-    return filteredRows.slice(start, start + PAGE_SIZE)
-  }, [filteredRows, safePage])
+    return sortedRows.slice(start, start + PAGE_SIZE)
+  }, [sortedRows, safePage])
 
   const renderActions = useCallback(
     (record: FinanceCategoryRow) => (
@@ -114,12 +153,17 @@ export function FinanceCategoryPage() {
       createClientFilteredExportHandler(
         (values) =>
           financeCategoryRowsMock.filter((row) =>
-            rowMatchesClientFilters(row, values, searchQuery, CATEGORY_FILTER_ACCESSORS),
+            rowMatchesClientFilters(
+              row,
+              values,
+              enhancedSearch.globalSearch,
+              CATEGORY_FILTER_ACCESSORS,
+            ),
           ),
         EXPORT_COLUMN_MAP,
         'finance_categories_export',
       ),
-    [searchQuery],
+    [enhancedSearch.globalSearch],
   )
 
   const {
@@ -133,34 +177,38 @@ export function FinanceCategoryPage() {
   })
 
   const columns = useMemo<ColumnDef<FinanceCategoryRow>[]>(
-    () => [
-      { accessorKey: 'categoryName', header: 'Category Name' },
-      { accessorKey: 'module', header: 'Module' },
-      { accessorKey: 'platformFee', header: 'Platform Fee' },
-      { accessorKey: 'commissionRate', header: 'Commission Rate' },
-      { accessorKey: 'taxRate', header: 'Tax Rate' },
-      { accessorKey: 'payoutCycle', header: 'Payout Cycle' },
-      {
-        accessorKey: 'status',
-        header: 'Status',
-        cell: ({ row }) => (
-          <span
-            className={cn(
-              'text-body-sm-semibold inline-flex rounded-full border px-2.5 py-0.5',
-              getStatusClassName(row.original.status),
-            )}
-          >
-            {row.original.status}
-          </span>
-        ),
-      },
-      {
-        id: 'actions',
-        header: 'Actions',
-        meta: { headerClassName: 'pr-5 text-right', cellClassName: 'relative pr-5 text-right' },
-        cell: ({ row }) => renderActions(row.original),
-      },
-    ],
+    () =>
+      withServerSortMeta(
+        [
+          { accessorKey: 'categoryName', header: 'Category Name' },
+          { accessorKey: 'module', header: 'Module' },
+          { accessorKey: 'platformFee', header: 'Platform Fee' },
+          { accessorKey: 'commissionRate', header: 'Commission Rate' },
+          { accessorKey: 'taxRate', header: 'Tax Rate' },
+          { accessorKey: 'payoutCycle', header: 'Payout Cycle' },
+          {
+            accessorKey: 'status',
+            header: 'Status',
+            cell: ({ row }) => (
+              <span
+                className={cn(
+                  'text-body-sm-semibold inline-flex rounded-full border px-2.5 py-0.5',
+                  getStatusClassName(row.original.status),
+                )}
+              >
+                {row.original.status}
+              </span>
+            ),
+          },
+          {
+            id: 'actions',
+            header: 'Actions',
+            meta: { headerClassName: 'pr-5 text-right', cellClassName: 'relative pr-5 text-right' },
+            cell: ({ row }) => renderActions(row.original),
+          },
+        ],
+        FINANCE_CATEGORY_SORT_FIELD_MAP,
+      ),
     [renderActions],
   )
 
@@ -184,11 +232,14 @@ export function FinanceCategoryPage() {
         columns={columns}
         data={pageRows}
         getRowId={(row) => row.id}
-        searchValue={searchQuery}
-        onSearchChange={(value) => {
-          setSearchQuery(value)
-          setCurrentPage(1)
-        }}
+        {...serverSort.dataTableSortProps}
+        searchValue={enhancedSearch.globalSearch}
+        onSearchChange={enhancedSearch.setGlobalSearch}
+        searchableColumns={FINANCE_CATEGORY_SEARCH_COLUMNS}
+        columnSearches={enhancedSearch.columnSearches}
+        onColumnSearchChange={enhancedSearch.setColumnSearch}
+        onColumnSearchRemove={enhancedSearch.removeColumnSearch}
+        onClearAllSearches={enhancedSearch.clearAll}
         searchPlaceholder="Search by category or module"
         advancedFilterLabel="Advance Filters"
         onAdvancedFilter={onAdvancedFilter}

@@ -11,7 +11,6 @@ import {
   ArrowLeft,
   Ban,
   Bell,
-  Briefcase,
   Building2,
   CheckSquare,
   ChevronRight,
@@ -26,7 +25,6 @@ import {
   PauseCircle,
   Plus,
   Search,
-  Share2,
   SlidersHorizontal,
   Star,
   Tag,
@@ -57,6 +55,7 @@ import {
   VENUE_PROFILE_ANALYTICS_MODULE_KEY,
 } from '../../config/venue-profile-analytics-metrics.config'
 import { orderByActiveMetricIds, useActiveMetricIds } from '../../hooks/use-active-metric-ids'
+import { VenueAnalyticsMetricIcon } from '../../components/venue-analytics'
 import { buildVenueProfileAnalyticsMetricCards } from '../../utils/venue-profile-analytics-metrics'
 import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
 import type {
@@ -69,8 +68,13 @@ import {
   DecisionActionModal,
   type DecisionActionModalOption,
 } from '@/shared/components/modal/decision-action-modal'
+import { useModuleExportFilters } from '@/shared/components/advanced-filter'
+import type {
+  FilterValues,
+  LocationFilterValue,
+  RangeFilterValue,
+} from '@/shared/types/data-filter'
 import { AddTagModal } from '@/shared/components/modal/add-tag-modal'
-import { ShareProfileModal } from '@/shared/components/modal/share-profile-modal'
 import { AdminNotesModal } from '@/modules/settings/components/admin-notes-modal'
 import { UpdatePasswordModal } from '@/modules/rbac/components/update-password-modal'
 import { MODERATION_CATEGORY_SLUGS } from '@/modules/settings/api/templates-api'
@@ -152,9 +156,6 @@ const VIOLATION_ISSUE_TYPES = new Set([
   'harassment',
   'safety hazard',
 ])
-
-const resolveVenueShareUrl = (venue?: VenueFullView['overview']['venue'] | null) =>
-  venue?.customUrl || venue?.customLink || venue?.shareUrl || null
 
 const unwrapVenueReportItems = (payload: unknown): VenueReportItem[] => {
   const root = payload as { data?: { items?: VenueReportItem[] }; items?: VenueReportItem[] }
@@ -246,8 +247,6 @@ const buildVenueTimelineEvents = (
   })
 }
 
-const comingSoon = (label: string) => toast.message(`${label} is coming soon`)
-
 const formatReviewDate = (value?: string | null) => {
   if (!value) return '—'
   const date = new Date(value)
@@ -319,12 +318,12 @@ const formatVenueKycStatusLabel = (status?: string | null) => {
 const getVenueKycStatusTone = (status?: string | null) => {
   const normalized = (status || '').toLowerCase()
   if (normalized === 'approved' || normalized === 'live') {
-    return 'bg-[rgb(0_166_62_/_30%)] text-[#00A63E]'
+    return 'bg-[#143D2B] text-white border border-[#1E563D]/50'
   }
   if (normalized === 'rejected' || normalized === 'suspended') {
     return 'bg-brand-danger/15 text-red-400'
   }
-  return 'bg-amber-500/15 text-amber-300'
+  return 'bg-amber-500/15 text-amber-300 border border-amber-500/30'
 }
 
 function ProfileSidebar({
@@ -682,11 +681,85 @@ function SpacesTab({ data, venueId }: { data: VenueFullView; venueId: string }) 
     [assigneesData?.data],
   )
 
-  const spaces = useMemo(
-    () =>
-      data.spaces.filter((space) => space.spaceName.toLowerCase().includes(search.toLowerCase())),
-    [data.spaces, search],
-  )
+  const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
+
+  const handleApplyFilters = useCallback((values: FilterValues) => {
+    toast.success('Filters applied')
+    setAppliedFilters(values)
+  }, [])
+
+  const { onAdvancedFilter, modals: exportFilterModals } = useModuleExportFilters({
+    moduleKey: 'venue-profile-spaces',
+    onApplyFilters: handleApplyFilters,
+  })
+
+  const spaces = useMemo(() => {
+    return data.spaces.filter((space) => {
+      if (search.trim()) {
+        const query = search.toLowerCase().trim()
+        const matchName = space.spaceName?.toLowerCase().includes(query)
+        const matchCity = space.city?.toLowerCase().includes(query)
+        const matchState = space.state?.toLowerCase().includes(query)
+        if (!matchName && !matchCity && !matchState) return false
+      }
+
+      const loc = appliedFilters.location as LocationFilterValue | undefined
+      if (loc) {
+        if (loc.state && !space.state?.toLowerCase().includes(loc.state.toLowerCase())) return false
+        if (loc.city && !space.city?.toLowerCase().includes(loc.city.toLowerCase())) return false
+      }
+
+      const statusFilter = appliedFilters.status
+      if (Array.isArray(statusFilter) && statusFilter.length > 0) {
+        const spaceStatus = space.status || 'submitted'
+        if (!statusFilter.includes(spaceStatus)) return false
+      }
+
+      const visibilityFilter = appliedFilters.visibility
+      if (Array.isArray(visibilityFilter) && visibilityFilter.length > 0) {
+        const isSuspended = Boolean(space.isSuspend)
+        const isHidden = Boolean(space.isHidden)
+        const isActive = !isSuspended && !isHidden
+
+        const matches = visibilityFilter.some((val) => {
+          if (val === 'active') return isActive
+          if (val === 'hidden') return isHidden
+          if (val === 'suspended') return isSuspended
+          return false
+        })
+        if (!matches) return false
+      }
+
+      const capacityRange = appliedFilters.capacity as RangeFilterValue | undefined
+      if (capacityRange) {
+        const capNum = Number(space.capacity) || 0
+        const from = capacityRange.from ? Number(capacityRange.from) : null
+        const to = capacityRange.to ? Number(capacityRange.to) : null
+        if (from !== null && !Number.isNaN(from) && capNum < from) return false
+        if (to !== null && !Number.isNaN(to) && capNum > to) return false
+      }
+
+      const weekdayRange = appliedFilters.weekdayPrice as RangeFilterValue | undefined
+      if (weekdayRange) {
+        const price = space.weekdayPrice ?? 0
+        const from = weekdayRange.from ? Number(weekdayRange.from) : null
+        const to = weekdayRange.to ? Number(weekdayRange.to) : null
+        if (from !== null && !Number.isNaN(from) && price < from) return false
+        if (to !== null && !Number.isNaN(to) && price > to) return false
+      }
+
+      const weekendRange = appliedFilters.weekendPrice as RangeFilterValue | undefined
+      if (weekendRange) {
+        const price = space.weekendPrice ?? 0
+        const from = weekendRange.from ? Number(weekendRange.from) : null
+        const to = weekendRange.to ? Number(weekendRange.to) : null
+        if (from !== null && !Number.isNaN(from) && price < from) return false
+        if (to !== null && !Number.isNaN(to) && price > to) return false
+      }
+
+      return true
+    })
+  }, [data.spaces, search, appliedFilters])
 
   const visibleSpaceIds = useMemo(() => spaces.map((space) => space.spaceId), [spaces])
   const allVisibleSelected =
@@ -975,7 +1048,7 @@ function SpacesTab({ data, venueId }: { data: VenueFullView; venueId: string }) 
         </div>
         <button
           type="button"
-          onClick={() => comingSoon('Advance Filters')}
+          onClick={onAdvancedFilter}
           className="ui-advance-filters ui-cta ui-cta-outline text-body-sm gap-2 px-4 font-semibold"
         >
           <SlidersHorizontal className="size-4" />
@@ -1245,6 +1318,8 @@ function SpacesTab({ data, venueId }: { data: VenueFullView; venueId: string }) 
         }}
         isSubmitting={isEscalating}
       />
+
+      {exportFilterModals}
     </div>
   )
 }
@@ -1271,7 +1346,7 @@ function AnalyticsTab({ data, venueId }: { data: VenueFullView; venueId: string 
           ),
         ],
         VENUE_PROFILE_ANALYTICS_METRIC_IDS,
-      ).slice(0, 8),
+      ),
     [activeMetricIds],
   )
 
@@ -1308,7 +1383,7 @@ function AnalyticsTab({ data, venueId }: { data: VenueFullView; venueId: string 
               <div key={card.id} className="rounded-lg bg-[#050505] p-4">
                 <div className="flex items-center justify-between">
                   <p className="text-body-sm text-muted">{card.label}</p>
-                  <Briefcase className="size-4 text-[#E0A263]" />
+                  <VenueAnalyticsMetricIcon />
                 </div>
                 <p className="mt-3 text-xl font-bold text-white">{card.value}</p>
               </div>
@@ -1410,7 +1485,7 @@ function HealthTab({
               type="button"
               onClick={() => setFilter(chip.key)}
               className={cn(
-                'text-body-sm rounded-md px-3 py-1.5 font-semibold transition-colors',
+                'rounded-lg px-4 py-1.5 text-xs font-semibold transition-colors',
                 filter === chip.key ? PROFILE_ACTIVE_PILL : PROFILE_IDLE_PILL,
               )}
             >
@@ -1419,7 +1494,12 @@ function HealthTab({
           ))}
         </div>
         <span
-          className={cn('text-body-sm font-bold', atRisk ? 'text-red-400' : 'text-brand-positive')}
+          className={cn(
+            'rounded-full px-3.5 py-1 text-xs font-semibold text-white',
+            atRisk
+              ? 'border border-[#5C1D1D]/50 bg-[#3D1414]'
+              : 'border border-[#1E563D]/50 bg-[#143D2B]',
+          )}
         >
           Profile Health: {atRisk ? 'At Risk' : 'Healthy'}
         </span>
@@ -1432,37 +1512,39 @@ function HealthTab({
           </p>
         ) : (
           visible.map((incident) => (
-            <div key={`${incident.kind}-${incident.id}`} className="rounded-lg bg-[#050505] p-4">
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span
-                      className={cn(
-                        'rounded-md px-2 py-0.5 text-[10px] font-bold',
-                        incident.typeClass,
-                      )}
-                    >
-                      {incident.type}
-                    </span>
-                    <span
-                      className={cn(
-                        'rounded-md border px-2 py-0.5 text-[10px] font-bold capitalize',
-                        incident.statusClass,
-                      )}
-                    >
-                      {incident.status}
-                    </span>
-                  </div>
-                  <p className="mt-2 text-[13px] font-semibold text-white">{incident.title}</p>
-                  <p className="text-body-sm text-muted mt-1">{incident.detail}</p>
-                  <p className="text-muted mt-2 text-[10px]">
+            <div key={`${incident.kind}-${incident.id}`} className="rounded-xl bg-[#050505] p-5">
+              <div className="flex items-center justify-between">
+                <span
+                  className={cn(
+                    'rounded-full px-3 py-0.5 text-[11px] font-semibold',
+                    incident.typeClass,
+                  )}
+                >
+                  {incident.type}
+                </span>
+                <span
+                  className={cn(
+                    'rounded-full px-3 py-0.5 text-[11px] font-semibold',
+                    incident.statusClass,
+                  )}
+                >
+                  {incident.status}
+                </span>
+              </div>
+
+              <div className="mt-3 flex flex-wrap items-end justify-between gap-4">
+                <div className="min-w-0 flex-1">
+                  <p className="text-[14px] font-bold text-white">{incident.title}</p>
+                  <p className="text-body-sm mt-1 text-white/50">{incident.detail}</p>
+                  <p className="mt-3 text-xs text-white/40">
                     Raised On: {incident.raisedOn || '—'}
                   </p>
                 </div>
+
                 <button
                   type="button"
                   onClick={incident.onAction}
-                  className="text-body-sm flex items-center gap-1.5 rounded-lg bg-[linear-gradient(180deg,#F6CB86_0%,#E0A263_100%)] px-3 py-2 font-semibold text-[#050505]"
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-[linear-gradient(180deg,#F6CB86_0%,#E0A263_100%)] px-4 py-2 text-xs font-semibold text-[#050505] transition-[filter] hover:brightness-95"
                 >
                   <incident.icon className="size-3.5" />
                   {incident.action}
@@ -1495,7 +1577,6 @@ export function VenueProfileViewPage() {
   const [deleteAdminNotes, setDeleteAdminNotes] = useState('')
   const [deleteConfirmed, setDeleteConfirmed] = useState(false)
   const [notesModalOpen, setNotesModalOpen] = useState(false)
-  const [shareModalOpen, setShareModalOpen] = useState(false)
   const [selectedReport, setSelectedReport] = useState<VenueReportItem | null>(null)
   const scrollToTimelineRef = useRef(false)
   const { tagModalOpen, openTagModal, closeTagModal } = useEntityTags()
@@ -1655,15 +1736,6 @@ export function VenueProfileViewPage() {
     },
     [ownerPartnerId, updateTagsMutation],
   )
-
-  const handleShareProfile = useCallback(() => {
-    const url = resolveVenueShareUrl(fullView?.overview?.venue)
-    if (!url) {
-      toast.error('No custom URL is set for this venue.')
-      return
-    }
-    setShareModalOpen(true)
-  }, [fullView])
 
   const handleExportProfile = useCallback(() => {
     if (!fullView) return
@@ -1963,7 +2035,6 @@ export function VenueProfileViewPage() {
       onClick: () => openTagModal(ownerPartnerId || resolvedVenueId || venue.name),
     },
     { label: 'Export Data', icon: Upload, onClick: handleExportProfile },
-    { label: 'Share Profile', icon: Share2, onClick: handleShareProfile },
   ]
 
   return (
@@ -2254,13 +2325,6 @@ export function VenueProfileViewPage() {
         initialNotes={fullView.overview.venue.adminInternalNotes || ''}
         onClose={() => setNotesModalOpen(false)}
         onSubmit={handleSaveNotes}
-      />
-
-      <ShareProfileModal
-        open={shareModalOpen}
-        url={resolveVenueShareUrl(fullView.overview.venue) || ''}
-        title={`Check out ${venue.name}`}
-        onClose={() => setShareModalOpen(false)}
       />
 
       <VenueReportDetailModal

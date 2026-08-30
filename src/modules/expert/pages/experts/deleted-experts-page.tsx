@@ -5,10 +5,11 @@ import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import type { FilterValues } from '@/shared/types/data-filter'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter/use-module-export-filters'
-import { exportDisplayValue } from '@/shared/utils/export-utils'
+import { EXPERT_EXPORT_COLUMN_MAP } from '../../utils/table-export-column-maps'
 import {
   buildExpertListQueryParams,
   createFilteredExportHandler,
+  exportMappedItemsToFile,
 } from '@/shared/utils/export-filter-utils'
 import { fetchExperts } from '../../api/expert-api'
 import {
@@ -26,31 +27,15 @@ import { createExpertSelectColumn } from './expert-list-columns'
 import { ExpertListHeader } from './expert-list-shared'
 import { useExpertListSelection } from './use-expert-list-selection'
 import { DataTable } from '@/shared/components/table/data-table'
+import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'
+import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
+import { withServerSortMeta } from '@/shared/utils/table-sort'
+import { EXPERT_COLUMN_SORT_FIELDS } from '@/shared/utils/table-sort-field-maps'
+import { EXPERT_DELETED_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
 import {
   TableActionsDropdown,
   TableActionsItem,
 } from '@/shared/components/table/table-actions-dropdown'
-
-const formatExportDateTime = (value?: string | null) =>
-  value
-    ? new Date(value).toLocaleString('en-IN', {
-        day: '2-digit',
-        month: 'short',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-      })
-    : ''
-
-const EXPORT_COLUMN_MAP: Record<string, { header: string; accessor: (e: Expert) => string }> = {
-  expertId: { header: 'Expert ID', accessor: (e) => exportDisplayValue(e.expertId) },
-  name: { header: 'Name', accessor: (e) => exportDisplayValue(e.name) },
-  email: { header: 'Email ID', accessor: (e) => exportDisplayValue(e.email) },
-  profession: { header: 'Profession', accessor: (e) => exportDisplayValue(e.profession) },
-  serviceType: { header: 'Service Type', accessor: (e) => exportDisplayValue(e.serviceType) },
-  reason: { header: 'Reason', accessor: (e) => exportDisplayValue(e.reason) },
-  deletedAt: { header: 'Deleted At', accessor: (e) => formatExportDateTime(e.deletedAt) },
-}
 
 const fetchDeletedExpertsForExport = async (params: Record<string, unknown>) => {
   const response = await fetchExperts({ ...params, status: 'deactivated' })
@@ -62,8 +47,12 @@ const fetchDeletedExpertsForExport = async (params: Record<string, unknown>) => 
 
 export function ExpertDeletedExpertsPage() {
   const navigate = useNavigate()
-  const [searchQuery, setSearchQuery] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
+  const serverSort = useServerTableSort({
+    sortFieldMap: EXPERT_COLUMN_SORT_FIELDS,
+    onPageReset: () => setCurrentPage(1),
+  })
+  const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setCurrentPage(1) })
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
 
@@ -72,10 +61,11 @@ export function ExpertDeletedExpertsPage() {
       buildExpertListQueryParams(appliedFilters, {
         page: currentPage,
         limit: 10,
-        search: searchQuery,
+        ...serverSort.sortParams,
+        ...enhancedSearch.buildSearchParams(),
         status: 'deactivated',
       }),
-    [appliedFilters, currentPage, searchQuery],
+    [appliedFilters, currentPage, enhancedSearch, serverSort.sortParams],
   )
 
   const { data, isLoading } = useExperts(expertQueryParams)
@@ -90,17 +80,44 @@ export function ExpertDeletedExpertsPage() {
     setCurrentPage(1)
   }, [])
 
+  const tableColumnPreferencesQuery = useTableColumnPreferences(EXPERT_DELETED_MODULE_KEY)
+
+  const handleExportExpertRow = useCallback(
+    async (expert: Expert) => {
+      const visibleIds = tableColumnPreferencesQuery.data?.visibleColumnIds?.length
+        ? tableColumnPreferencesQuery.data.visibleColumnIds
+        : DEFAULT_EXPERT_DELETED_VISIBLE_COLUMN_IDS
+
+      try {
+        await exportMappedItemsToFile(
+          EXPERT_EXPORT_COLUMN_MAP,
+          [expert],
+          'excel',
+          `deleted_expert_${expert.expertId || expert.id}`,
+          {
+            columnIds: visibleIds,
+            catalogOrder: DEFAULT_EXPERT_DELETED_VISIBLE_COLUMN_IDS,
+          },
+        )
+        toast.success('Expert exported')
+      } catch {
+        toast.error('Failed to export expert')
+      }
+    },
+    [tableColumnPreferencesQuery.data],
+  )
+
   const handleExportData = useMemo(
     () =>
       createFilteredExportHandler(
         fetchDeletedExpertsForExport,
-        EXPORT_COLUMN_MAP,
+        EXPERT_EXPORT_COLUMN_MAP,
         'deleted_experts_export',
         {
-          search: searchQuery.trim() || undefined,
+          ...enhancedSearch.buildSearchParams(),
         },
       ),
-    [searchQuery],
+    [enhancedSearch],
   )
 
   const {
@@ -113,88 +130,90 @@ export function ExpertDeletedExpertsPage() {
     onExportData: handleExportData,
   })
 
-  const tableColumnPreferencesQuery = useTableColumnPreferences(EXPERT_DELETED_MODULE_KEY)
-
   const columns = useMemo<ColumnDef<Expert>[]>(() => {
     const dataColumnsById = buildExpertDataColumnsById()
     const visibleIds = tableColumnPreferencesQuery.data?.visibleColumnIds?.length
       ? tableColumnPreferencesQuery.data.visibleColumnIds
       : DEFAULT_EXPERT_DELETED_VISIBLE_COLUMN_IDS
 
-    return [
-      createExpertSelectColumn({
-        allVisibleSelected: selection.allVisibleSelected,
-        someVisibleSelected: selection.someVisibleSelected,
-        selectedExpertIds: selection.selectedExpertIds,
-        toggleVisible: selection.toggleVisible,
-        toggleOne: selection.toggleOne,
-      }),
-      ...pickPreferenceColumns(
-        dataColumnsById,
-        visibleIds,
-        DEFAULT_EXPERT_DELETED_VISIBLE_COLUMN_IDS,
-      ),
-      {
-        id: 'actions',
-        header: 'Actions',
-        meta: {
-          headerClassName: 'pr-5 text-right',
-          cellClassName: 'relative pr-5 text-right',
-        },
-        cell: ({ row }) => {
-          const expert = row.original
-          const isOpen = activeDropdownId === expert.expertId
+    return withServerSortMeta(
+      [
+        createExpertSelectColumn({
+          allVisibleSelected: selection.allVisibleSelected,
+          someVisibleSelected: selection.someVisibleSelected,
+          selectedExpertIds: selection.selectedExpertIds,
+          toggleVisible: selection.toggleVisible,
+          toggleOne: selection.toggleOne,
+        }),
+        ...pickPreferenceColumns(
+          dataColumnsById,
+          visibleIds,
+          DEFAULT_EXPERT_DELETED_VISIBLE_COLUMN_IDS,
+        ),
+        {
+          id: 'actions',
+          header: 'Actions',
+          meta: {
+            headerClassName: 'pr-5 text-right',
+            cellClassName: 'relative pr-5 text-right',
+          },
+          cell: ({ row }) => {
+            const expert = row.original
+            const isOpen = activeDropdownId === expert.expertId
 
-          return (
-            <TableActionsDropdown
-              label={`Open actions for ${expert.name}`}
-              isOpen={isOpen}
-              onOpenChange={(open) => setActiveDropdownId(open ? expert.expertId : null)}
-              menuWidth={192}
-            >
-              <TableActionsItem
-                icon={<Eye className="size-3.5" aria-hidden="true" />}
-                onClick={() => {
-                  setActiveDropdownId(null)
-                  navigate(`/experts/management/profile/${expert.id}`)
-                }}
+            return (
+              <TableActionsDropdown
+                label={`Open actions for ${expert.name}`}
+                isOpen={isOpen}
+                onOpenChange={(open) => setActiveDropdownId(open ? expert.expertId : null)}
+                menuWidth={192}
               >
-                View Expert
-              </TableActionsItem>
-              <TableActionsItem
-                icon={<RotateCcw className="size-3.5" aria-hidden="true" />}
-                onClick={() => {
-                  setActiveDropdownId(null)
-                  restoreExpertMutation.mutate(expert.id, {
-                    onSuccess: () => toast.success('Expert account restored successfully'),
-                    onError: (error: unknown) => {
-                      const err = error as { response?: { data?: { message?: string } } }
-                      toast.error(
-                        err?.response?.data?.message ||
-                          'Failed to restore expert. Please try again.',
-                      )
-                    },
-                  })
-                }}
-              >
-                Retrieve Account
-              </TableActionsItem>
-              <TableActionsItem
-                icon={<Upload className="size-3.5" aria-hidden="true" />}
-                onClick={() => {
-                  setActiveDropdownId(null)
-                  toast.message('Export Data is coming soon')
-                }}
-              >
-                Export Data
-              </TableActionsItem>
-            </TableActionsDropdown>
-          )
+                <TableActionsItem
+                  icon={<Eye className="size-3.5" aria-hidden="true" />}
+                  onClick={() => {
+                    setActiveDropdownId(null)
+                    navigate(`/experts/management/profile/${expert.id}`)
+                  }}
+                >
+                  View Expert
+                </TableActionsItem>
+                <TableActionsItem
+                  icon={<RotateCcw className="size-3.5" aria-hidden="true" />}
+                  onClick={() => {
+                    setActiveDropdownId(null)
+                    restoreExpertMutation.mutate(expert.id, {
+                      onSuccess: () => toast.success('Expert account restored successfully'),
+                      onError: (error: unknown) => {
+                        const err = error as { response?: { data?: { message?: string } } }
+                        toast.error(
+                          err?.response?.data?.message ||
+                            'Failed to restore expert. Please try again.',
+                        )
+                      },
+                    })
+                  }}
+                >
+                  Retrieve Account
+                </TableActionsItem>
+                <TableActionsItem
+                  icon={<Upload className="size-3.5" aria-hidden="true" />}
+                  onClick={() => {
+                    setActiveDropdownId(null)
+                    void handleExportExpertRow(expert)
+                  }}
+                >
+                  Export Data
+                </TableActionsItem>
+              </TableActionsDropdown>
+            )
+          },
         },
-      },
-    ]
+      ],
+      EXPERT_COLUMN_SORT_FIELDS,
+    )
   }, [
     activeDropdownId,
+    handleExportExpertRow,
     navigate,
     restoreExpertMutation,
     selection,
@@ -214,14 +233,17 @@ export function ExpertDeletedExpertsPage() {
         data={experts}
         getRowId={(expert) => expert.expertId}
         isLoading={isLoading}
-        searchValue={searchQuery}
-        onSearchChange={(value) => {
-          setSearchQuery(value)
-          setCurrentPage(1)
-        }}
+        searchValue={enhancedSearch.globalSearch}
+        onSearchChange={enhancedSearch.setGlobalSearch}
+        searchableColumns={EXPERT_DELETED_SEARCH_COLUMNS}
+        columnSearches={enhancedSearch.columnSearches}
+        onColumnSearchChange={enhancedSearch.setColumnSearch}
+        onColumnSearchRemove={enhancedSearch.removeColumnSearch}
+        onClearAllSearches={enhancedSearch.clearAll}
         searchPlaceholder="Search by name or ID"
         onAdvancedFilter={onAdvancedFilter}
         onExport={onExport}
+        {...serverSort.dataTableSortProps}
         pagination={{
           page: currentPage,
           pageSize: meta?.pagination.limit || 10,

@@ -46,7 +46,11 @@ import type { MembershipSubscription } from '@/modules/memberships/types/members
 import { orderByActiveMetricIds, useActiveMetricIds } from '../../hooks/use-active-metric-ids'
 import { useTableColumnPreferences } from '../../hooks/use-ui-preferences'
 import { EXPERT_MANAGEMENT_MODULE_KEY } from '../../api/ui-preferences-api'
-import { DEFAULT_EXPERT_MANAGEMENT_VISIBLE_COLUMN_IDS } from '../../config/expert-management-table-columns.config'
+import { useTableExportColumnIds } from '@/shared/hooks/use-table-export-column-ids'
+import {
+  DEFAULT_EXPERT_MANAGEMENT_VISIBLE_COLUMN_IDS,
+  EXPERT_MANAGEMENT_TABLE_COLUMNS_CATALOG,
+} from '../../config/expert-management-table-columns.config'
 import {
   buildExpertDataColumnsById,
   pickPreferenceColumns,
@@ -54,7 +58,12 @@ import {
 import { useExpertStore } from '../../store/expert-store'
 import type { Expert } from '../../type/expert'
 import { openExpertApplicationView } from '../../utils/expert-application-navigation'
+import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
+import { EXPERT_MANAGEMENT_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
 import { DataTable } from '@/shared/components/table/data-table'
+import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'
+import { withServerSortMeta } from '@/shared/utils/table-sort'
+import { EXPERT_COLUMN_SORT_FIELDS } from '@/shared/utils/table-sort-field-maps'
 import {
   TableActionsDropdown,
   TableActionsItem,
@@ -71,7 +80,10 @@ import { statusCardTones } from '@/shared/lib/design-tokens'
 import { useEntityTags } from '@/shared/hooks/use-entity-tags'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 import type { FilterValues } from '@/shared/types/data-filter'
-import { exportDataToFile, exportDisplayValue } from '@/shared/utils/export-utils'
+import { exportDataToFile } from '@/shared/utils/export-utils'
+import { EXPERT_EXPORT_COLUMN_MAP } from '../../utils/table-export-column-maps'
+import { ExpertReportSubmitModal } from '../../components/expert-report-submit-modal'
+import { useAuthStore } from '@/modules/auth/store/auth-store'
 import { MODERATION_CATEGORY_SLUGS } from '@/modules/settings/api/templates-api'
 import {
   useModerationReasonOptions,
@@ -85,68 +97,6 @@ const displayValue = (value: unknown): string => {
   if (value === null || value === undefined) return 'N/A'
   if (typeof value === 'string' && value.trim() === '') return 'N/A'
   return String(value)
-}
-
-const EXPORT_COLUMN_MAP: Record<string, { header: string; accessor: (e: Expert) => string }> = {
-  'expert-id': { header: 'Expert ID', accessor: (e) => exportDisplayValue(e.expertId) },
-  name: { header: 'Name', accessor: (e) => exportDisplayValue(e.name) },
-  email: { header: 'Email ID', accessor: (e) => exportDisplayValue(e.email) },
-  profession: { header: 'Profession', accessor: (e) => exportDisplayValue(e.profession) },
-  status: { header: 'Status', accessor: (e) => exportDisplayValue(e.status) },
-  'service-type': { header: 'Service Type', accessor: (e) => exportDisplayValue(e.serviceType) },
-  'created-at': {
-    header: 'Created At',
-    accessor: (e) =>
-      e.createdAt
-        ? new Date(e.createdAt).toLocaleString('en-IN', {
-            day: '2-digit',
-            month: 'short',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-          })
-        : '',
-  },
-  'last-active': {
-    header: 'Last Active',
-    accessor: (e) =>
-      e.lastActive
-        ? new Date(e.lastActive).toLocaleString('en-IN', {
-            day: '2-digit',
-            month: 'short',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-          })
-        : '',
-  },
-  reason: { header: 'Reason', accessor: (e) => exportDisplayValue(e.reason) },
-  'reported-at': {
-    header: 'Reported At',
-    accessor: (e) =>
-      e.reportedAt
-        ? new Date(e.reportedAt).toLocaleString('en-IN', {
-            day: '2-digit',
-            month: 'short',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-          })
-        : '',
-  },
-  'deleted-at': {
-    header: 'Deleted At',
-    accessor: (e) =>
-      e.deletedAt
-        ? new Date(e.deletedAt).toLocaleString('en-IN', {
-            day: '2-digit',
-            month: 'short',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-          })
-        : '',
-  },
 }
 
 const DEFAULT_VISIBLE_IDS = DEFAULT_EXPERT_MANAGEMENT_VISIBLE_COLUMN_IDS
@@ -165,8 +115,10 @@ export const ExpertManagementPage = () => {
   const [suspendAdminNotes, setSuspendAdminNotes] = useState('')
   const [deleteReasons, setDeleteReasons] = useState<string[]>([])
   const [deleteAdminNotes, setDeleteAdminNotes] = useState('')
+  const [reportExpertTarget, setReportExpertTarget] = useState<Expert | null>(null)
   const [appliedAdvancedFilters, setAppliedAdvancedFilters] = useState<FilterValues>({})
   const navigate = useNavigate()
+  const authUser = useAuthStore((state) => state.user)
   const suspendExpertMutation = useSuspendExpert()
   const deactivateExpertMutation = useDeactivateExpert()
   const recordReasonUsage = useRecordModerationReasonUsage()
@@ -175,14 +127,21 @@ export const ExpertManagementPage = () => {
   const { options: deleteReasonOptions, buildPayload: buildDeleteReasonPayload } =
     useModerationReasonOptions(MODERATION_CATEGORY_SLUGS.deleteExpert)
   const tableColumnPreferencesQuery = useTableColumnPreferences(EXPERT_MANAGEMENT_MODULE_KEY)
-  const {
-    searchQuery,
-    setSearchQuery,
-    currentPage,
-    setCurrentPage,
-    activeStatus,
-    setActiveStatus,
-  } = useExpertStore()
+  const catalogColumnIds = useMemo(
+    () => EXPERT_MANAGEMENT_TABLE_COLUMNS_CATALOG.map((column) => column.id),
+    [],
+  )
+  const exportColumnIds = useTableExportColumnIds({
+    visibleColumnIds: tableColumnPreferencesQuery.data?.visibleColumnIds,
+    defaultColumnIds: DEFAULT_EXPERT_MANAGEMENT_VISIBLE_COLUMN_IDS,
+    catalogColumnIds,
+  })
+  const { currentPage, setCurrentPage, activeStatus, setActiveStatus } = useExpertStore()
+  const serverSort = useServerTableSort({
+    sortFieldMap: EXPERT_COLUMN_SORT_FIELDS,
+    onPageReset: () => setCurrentPage(1),
+  })
+  const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setCurrentPage(1) })
 
   const handleApplyFilters = useCallback(
     (values: FilterValues) => {
@@ -198,10 +157,11 @@ export const ExpertManagementPage = () => {
       buildExpertListQueryParams(appliedAdvancedFilters, {
         page: currentPage,
         limit: 10,
-        search: searchQuery,
+        ...serverSort.sortParams,
+        ...enhancedSearch.buildSearchParams(),
         status: activeStatus !== 'all' ? activeStatus : undefined,
       }),
-    [appliedAdvancedFilters, activeStatus, currentPage, searchQuery],
+    [appliedAdvancedFilters, activeStatus, currentPage, enhancedSearch, serverSort.sortParams],
   )
 
   const { data, isLoading } = useExperts(expertQueryParams)
@@ -209,11 +169,17 @@ export const ExpertManagementPage = () => {
 
   const handleExportData = useMemo(
     () =>
-      createFilteredExportHandler(fetchExperts, EXPORT_COLUMN_MAP, 'experts_export', {
-        status: activeStatus !== 'all' ? activeStatus : undefined,
-        search: searchQuery || undefined,
-      }),
-    [activeStatus, searchQuery],
+      createFilteredExportHandler(
+        fetchExperts,
+        EXPERT_EXPORT_COLUMN_MAP,
+        'experts_export',
+        {
+          status: activeStatus !== 'all' ? activeStatus : undefined,
+          ...enhancedSearch.buildSearchParams(),
+        },
+        { columnIds: exportColumnIds, catalogOrder: catalogColumnIds },
+      ),
+    [activeStatus, catalogColumnIds, enhancedSearch, exportColumnIds],
   )
 
   const {
@@ -919,7 +885,7 @@ export const ExpertManagementPage = () => {
               className={ACTION_ITEM_CLASS}
               onClick={() => {
                 setActiveDropdownId(null)
-                toast.message('Report Expert is coming soon')
+                setReportExpertTarget(expert)
               }}
             >
               Report Expert
@@ -929,7 +895,10 @@ export const ExpertManagementPage = () => {
       },
     }
 
-    return [selectColumn, ...preferenceColumns, actionsColumn]
+    return withServerSortMeta(
+      [selectColumn, ...preferenceColumns, actionsColumn],
+      EXPERT_COLUMN_SORT_FIELDS,
+    )
   }, [
     activeDropdownId,
     allVisibleExpertsSelected,
@@ -1127,8 +1096,14 @@ export const ExpertManagementPage = () => {
         data={experts}
         getRowId={(expert) => expert.expertId}
         isLoading={isLoading}
-        searchValue={searchQuery}
-        onSearchChange={setSearchQuery}
+        {...serverSort.dataTableSortProps}
+        searchValue={enhancedSearch.globalSearch}
+        onSearchChange={enhancedSearch.setGlobalSearch}
+        searchableColumns={EXPERT_MANAGEMENT_SEARCH_COLUMNS}
+        columnSearches={enhancedSearch.columnSearches}
+        onColumnSearchChange={enhancedSearch.setColumnSearch}
+        onColumnSearchRemove={enhancedSearch.removeColumnSearch}
+        onClearAllSearches={enhancedSearch.clearAll}
         searchPlaceholder="Search by name or expert ID"
         onAdvancedFilter={onAdvancedFilter}
         onExport={onExport}
@@ -1274,6 +1249,18 @@ export const ExpertManagementPage = () => {
         initialTags={initialTags}
         onSubmit={saveTags}
       />
+
+      {reportExpertTarget && authUser && (
+        <ExpertReportSubmitModal
+          open={Boolean(reportExpertTarget)}
+          expertId={reportExpertTarget.expertId}
+          partnerId={reportExpertTarget.id || reportExpertTarget.expertId}
+          expertName={reportExpertTarget.name}
+          reporterId={authUser.id}
+          reporterName={authUser.fullname || authUser.email}
+          onClose={() => setReportExpertTarget(null)}
+        />
+      )}
     </div>
   )
 }

@@ -48,8 +48,9 @@ export function MembershipHistoryModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-[#050505]/80 p-4"
       onClick={onClose}
+      role="presentation"
     >
       <div
         className="ui-modal-shell h-[min(519px,85vh)] max-w-[723px]"

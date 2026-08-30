@@ -1,6 +1,21 @@
+import bagSolidIcon from '@/assets/JOMS_ICONS-2/basil-bag-solid.svg'
 import { TrendingUp } from 'lucide-react'
 
 import { cn } from '@/shared/lib/cn'
+
+export function VenueAnalyticsMetricIcon({ className }: { className?: string }) {
+  return (
+    <span
+      className={cn(
+        'flex size-10 shrink-0 items-center justify-center rounded-full bg-white/10',
+        className,
+      )}
+      aria-hidden="true"
+    >
+      <img src={bagSolidIcon} alt="" className="size-6 brightness-0 invert" />
+    </span>
+  )
+}
 
 export type MetricTrend = {
   percent: number
@@ -44,12 +59,14 @@ export function MetricCard({
   label,
   value,
   trend,
+  icon,
   isLoading,
   className,
 }: {
   label: string
   value: string
   trend?: MetricTrend
+  icon?: React.ReactNode
   isLoading?: boolean
   className?: string
 }) {
@@ -61,7 +78,10 @@ export function MetricCard({
     <AnalyticsCard className={cn('flex flex-col justify-between', className)}>
       <div className="flex items-start justify-between gap-2">
         <p className="text-[11px] text-[#999]">{label}</p>
-        {trend ? <TrendBadge percent={trend.percent} /> : null}
+        <div className="flex shrink-0 items-center gap-2">
+          {trend ? <TrendBadge percent={trend.percent} /> : null}
+          {icon}
+        </div>
       </div>
       <p className="mt-3 text-xl font-bold text-white">{value}</p>
       {trend?.vsLastMonth ? (

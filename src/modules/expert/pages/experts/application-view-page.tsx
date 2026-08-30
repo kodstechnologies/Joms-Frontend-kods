@@ -145,7 +145,7 @@ function SectionCard({
   children: ReactNode
 }) {
   return (
-    <div className="bg-brand-bg rounded-xl border border-white/5 p-5">
+    <div className="bg-brand-surface rounded-xl border border-white/5 p-5">
       {title ? (
         <div className="mb-5 flex items-center gap-2 text-sm font-semibold text-white">
           {icon}
@@ -548,7 +548,7 @@ export function ExpertApplicationViewPage() {
         </div>
       </header>
 
-      <div className="bg-brand-bg rounded-xl border border-white/5 p-6">
+      <div className="bg-brand-surface rounded-xl border border-white/5 p-6">
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div>
             <h2 className="text-2xl font-bold text-white">

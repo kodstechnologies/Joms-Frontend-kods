@@ -143,7 +143,24 @@ export const mapPayoutStatus = (status: string) => {
 export const canReleasePayout = (status?: string | null) =>
   ['scheduled', 'pending_approval', 'failed'].includes(String(status || ''))
 
-export const mapPayoutToRow = (payout: FinancePayout) => {
+export const mapPayoutToRow = (payout: FinancePayout) => ({
+  id: payout._id,
+  payoutId: payout.payoutId,
+  recipient: payout.partnerName || payout.partnerId || '—',
+  type: titleCase(payout.module || 'payout'),
+  amount: formatInr(payout.fees?.netPayable ?? payout.fees?.grossAmount),
+  method: payout.bankingSnapshot?.bankReference || payout.settlementPath || 'Bank Transfer',
+  initiatedDate: formatDate(payout.scheduledAt || payout.createdAt),
+  description: `${titleCase(payout.pricingType || 'payout')} · ${titleCase(payout.status)}`,
+  status:
+    payout.status === 'paid'
+      ? ('Completed' as const)
+      : payout.status === 'failed'
+        ? ('Failed' as const)
+        : ('Pending' as const),
+})
+
+export const mapPayoutToAdminRow = (payout: FinancePayout) => {
   const fees = payout.fees || {}
   const taxDeduction = (Number(fees.taxGst) || 0) + (Number(fees.taxTds) || 0)
   return {

@@ -8,6 +8,11 @@ import { Button } from '@/shared/components/ui/button'
 import { StatCard } from '@/shared/components/dashboard/stat-card'
 import { DecisionActionModal } from '@/shared/components/modal/decision-action-modal'
 import { DataTable } from '@/shared/components/table/data-table'
+import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'
+import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
+import { withServerSortMeta } from '@/shared/utils/table-sort'
+import { SERVICE_COLUMN_SORT_FIELDS } from '@/shared/utils/table-sort-field-maps'
+import { CONSULTATION_PERFORMANCE_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
 import {
   TableActionsDropdown,
   TableActionsItem,
@@ -78,8 +83,12 @@ export function ConsultationPerformancePage() {
   }>()
   const navigate = useNavigate()
 
-  const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
+  const serverSort = useServerTableSort({
+    sortFieldMap: SERVICE_COLUMN_SORT_FIELDS,
+    onPageReset: () => setPage(1),
+  })
+  const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setPage(1) })
   const [appliedFilters, setAppliedFilters] = useState<Record<string, unknown>>({})
   const [activeActionMenu, setActiveActionMenu] = useState<string | null>(null)
   const [paymentBookingId, setPaymentBookingId] = useState<string | null>(null)
@@ -91,7 +100,8 @@ export function ConsultationPerformancePage() {
   const bookingsQuery = useConsultationBookings(consultationId, {
     page,
     limit: PAGE_SIZE,
-    search: search || undefined,
+    ...serverSort.sortParams,
+    ...enhancedSearch.buildSearchParams(),
     ...appliedFilters,
   })
   const bookings = useMemo(
@@ -483,7 +493,7 @@ export function ConsultationPerformancePage() {
       },
     }
 
-    return [...preferenceColumns, actionsColumn]
+    return withServerSortMeta([...preferenceColumns, actionsColumn], SERVICE_COLUMN_SORT_FIELDS)
   }, [activeActionMenu, dataColumnsById, openBooking, tableColumnPreferencesQuery.data])
 
   return (
@@ -575,11 +585,13 @@ export function ConsultationPerformancePage() {
         data={bookings}
         getRowId={(row) => row.id}
         isLoading={bookingsQuery.isLoading}
-        searchValue={search}
-        onSearchChange={(value) => {
-          setPage(1)
-          setSearch(value)
-        }}
+        searchValue={enhancedSearch.globalSearch}
+        onSearchChange={enhancedSearch.setGlobalSearch}
+        searchableColumns={CONSULTATION_PERFORMANCE_SEARCH_COLUMNS}
+        columnSearches={enhancedSearch.columnSearches}
+        onColumnSearchChange={enhancedSearch.setColumnSearch}
+        onColumnSearchRemove={enhancedSearch.removeColumnSearch}
+        onClearAllSearches={enhancedSearch.clearAll}
         searchPlaceholder="Search by client or consultation"
         resourceLabel="bookings"
         emptyMessage="No bookings for this consultation yet."
@@ -588,6 +600,7 @@ export function ConsultationPerformancePage() {
         onAdvancedFilter={onAdvancedFilter}
         onExport={onExport}
         onRowClick={openBooking}
+        {...serverSort.dataTableSortProps}
         pagination={{
           page,
           pageSize: PAGE_SIZE,

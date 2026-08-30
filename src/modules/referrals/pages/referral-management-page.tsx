@@ -21,6 +21,7 @@ import {
   DEFAULT_REFERRALS_ACTIVE_METRIC_IDS,
   DEFAULT_REFERRALS_VISIBLE_COLUMN_IDS,
   REFERRALS_MODULE_KEY,
+  REFERRALS_TABLE_COLUMNS_CATALOG,
 } from '../config/referral-management-table-columns.config'
 import { useReferralStore } from '../store/referral-store'
 import type { ExpertInvite } from '../types/referral'
@@ -33,6 +34,7 @@ import {
 import { REFERRAL_METRIC_DEFINITIONS } from '../utils/referral-metrics-definitions'
 import { useActiveMetricIds } from '@/modules/expert/hooks/use-active-metric-ids'
 import { useTableColumnPreferences } from '@/modules/expert/hooks/use-ui-preferences'
+import { useTableExportColumnIds } from '@/shared/hooks/use-table-export-column-ids'
 import { TableDateTimeCell } from '@/shared/components/table/table-datetime-cell'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 import { exportDisplayValue } from '@/shared/utils/export-utils'
@@ -42,11 +44,18 @@ import {
 } from '@/shared/utils/export-filter-utils'
 import type { FilterValues } from '@/shared/types/data-filter'
 import { DataTable } from '@/shared/components/table/data-table'
+import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'
+import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
+import { withServerSortMeta } from '@/shared/utils/table-sort'
+import { buildCatalogSortFieldMap } from '@/shared/utils/table-sort-field-maps'
+import { REFERRALS_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
 import {
   TableActionsDropdown,
   TableActionsItem,
 } from '@/shared/components/table/table-actions-dropdown'
 import { Button } from '@/shared/components/ui/button'
+
+const REFERRAL_SORT_FIELD_MAP = buildCatalogSortFieldMap(REFERRALS_TABLE_COLUMNS_CATALOG)
 import { cn } from '@/shared/lib/cn'
 
 const DEFAULT_METRIC_IDS =
@@ -371,8 +380,13 @@ function buildReferralDataColumnsById(): Record<string, ColumnDef<ExpertInvite>>
 
 export function ReferralManagementPage() {
   const navigate = useNavigate()
-  const { searchQuery, setSearchQuery, currentPage, setCurrentPage } = useReferralStore()
+  const { currentPage, setCurrentPage } = useReferralStore()
 
+  const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setCurrentPage(1) })
+  const serverSort = useServerTableSort({
+    sortFieldMap: REFERRAL_SORT_FIELD_MAP,
+    onPageReset: () => setCurrentPage(1),
+  })
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [inviteOpen, setInviteOpen] = useState(false)
   const [detailsExpert, setDetailsExpert] = useState<ExpertInvite | null>(null)
@@ -385,13 +399,24 @@ export function ReferralManagementPage() {
       buildReferralListQueryParams(appliedFilters, {
         page: currentPage,
         limit: 10,
-        search: searchQuery || undefined,
+        ...enhancedSearch.buildSearchParams(),
+        ...serverSort.sortParams,
       }),
-    [appliedFilters, currentPage, searchQuery],
+    [appliedFilters, currentPage, enhancedSearch, serverSort.sortParams],
   )
   const { data: expertData, isLoading: expertLoading } = useExpertInvites(listQueryParams)
   const activeMetricIds = useActiveMetricIds(REFERRALS_MODULE_KEY, DEFAULT_METRIC_IDS)
   const tableColumnPreferencesQuery = useTableColumnPreferences(REFERRALS_MODULE_KEY)
+
+  const catalogColumnIds = useMemo(
+    () => REFERRALS_TABLE_COLUMNS_CATALOG.map((column) => column.id),
+    [],
+  )
+  const exportColumnIds = useTableExportColumnIds({
+    visibleColumnIds: tableColumnPreferencesQuery.data?.visibleColumnIds,
+    defaultColumnIds: DEFAULT_REFERRALS_VISIBLE_COLUMN_IDS,
+    catalogColumnIds,
+  })
 
   const createExpertMutation = useCreateExpertInvite()
   const createBulkMutation = useCreateBulkExpertInvites()
@@ -420,10 +445,11 @@ export function ReferralManagementPage() {
       EXPORT_COLUMN_MAP,
       'referrals_export',
       {
-        search: searchQuery || undefined,
+        search: enhancedSearch.globalSearch || undefined,
       },
+      { columnIds: exportColumnIds, catalogOrder: catalogColumnIds },
     )
-  }, [searchQuery])
+  }, [catalogColumnIds, enhancedSearch.globalSearch, exportColumnIds])
 
   const {
     onAdvancedFilter,
@@ -512,7 +538,7 @@ export function ReferralManagementPage() {
       cell: ({ row }) => renderActions(row.original),
     }
 
-    return [...preferenceColumns, actionsColumn]
+    return withServerSortMeta([...preferenceColumns, actionsColumn], REFERRAL_SORT_FIELD_MAP)
   }, [renderActions, tableColumnPreferencesQuery.data])
 
   return (
@@ -552,9 +578,15 @@ export function ReferralManagementPage() {
         columns={expertColumns}
         data={expertInvites}
         getRowId={(row) => row.referralId}
+        {...serverSort.dataTableSortProps}
         isLoading={expertLoading}
-        searchValue={searchQuery}
-        onSearchChange={setSearchQuery}
+        searchValue={enhancedSearch.globalSearch}
+        onSearchChange={enhancedSearch.setGlobalSearch}
+        searchableColumns={REFERRALS_SEARCH_COLUMNS}
+        columnSearches={enhancedSearch.columnSearches}
+        onColumnSearchChange={enhancedSearch.setColumnSearch}
+        onColumnSearchRemove={enhancedSearch.removeColumnSearch}
+        onClearAllSearches={enhancedSearch.clearAll}
         searchPlaceholder="Search by name, ID or email"
         onAdvancedFilter={onAdvancedFilter}
         advancedFilterVariant="primary"

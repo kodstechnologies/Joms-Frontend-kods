@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 import { useQueryClient } from '@tanstack/react-query'
 import { AlertTriangle, Eye, SlidersHorizontal, Tag, Trash2 } from 'lucide-react'
@@ -25,10 +25,12 @@ import {
 import { escalateUrl } from '@/modules/payments/utils/finance-escalate'
 import {
   DEFAULT_FINANCE_SERVICES_VISIBLE_COLUMN_IDS,
+  FINANCE_SERVICES_LEGACY_COLUMN_ID_MAP,
   FINANCE_SERVICES_MODULE_KEY,
   FINANCE_SERVICES_TABLE_COLUMNS_CATALOG,
 } from '@/modules/payments/config/finance-services-table-columns.config'
 import { useTableColumnPreferences } from '@/modules/expert/hooks/use-ui-preferences'
+import { useTableExportColumnIds } from '@/shared/hooks/use-table-export-column-ids'
 import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
 import { AddTagsModal } from '@/shared/components/modals/add-tags-modal'
 import {
@@ -36,6 +38,11 @@ import {
   type FinanceEscalateDeleteAction,
 } from '@/modules/payments/components/finance-escalate-delete-modal'
 import { DataTable } from '@/shared/components/table/data-table'
+import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'
+import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
+import { withServerSortMeta } from '@/shared/utils/table-sort'
+import { buildCatalogSortFieldMap } from '@/shared/utils/table-sort-field-maps'
+import { FINANCE_SERVICES_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
 import {
   TableActionsDropdown,
   TableActionsItem,
@@ -43,27 +50,16 @@ import {
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
-import { exportDisplayValue } from '@/shared/utils/export-utils'
 import {
   buildFinanceServicesListQueryParams,
   createFinanceServicesFilteredExportHandler,
 } from '@/shared/utils/export-filter-utils'
+import { FINANCE_SERVICES_EXPORT_COLUMN_MAP } from '@/modules/payments/utils/finance-export-column-maps'
 import type { FilterValues } from '@/shared/types/data-filter'
 
 const PAGE_SIZE = 10
 
-const EXPORT_COLUMN_MAP: Record<
-  string,
-  { header: string; accessor: (row: FinanceServiceRow) => string }
-> = {
-  'service-id': { header: 'Service ID', accessor: (row) => exportDisplayValue(row.serviceId) },
-  name: { header: 'Name', accessor: (row) => exportDisplayValue(row.name) },
-  'expert-name': { header: 'Expert Name', accessor: (row) => exportDisplayValue(row.expertName) },
-  'booking-id': { header: 'Booking ID', accessor: (row) => exportDisplayValue(row.bookingId) },
-  'user-name': { header: 'User Name', accessor: (row) => exportDisplayValue(row.userName) },
-  status: { header: 'Status', accessor: (row) => exportDisplayValue(row.status) },
-  revenue: { header: 'Revenue', accessor: (row) => exportDisplayValue(row.revenue) },
-}
+const SORT_FIELD_MAP = buildCatalogSortFieldMap(FINANCE_SERVICES_TABLE_COLUMNS_CATALOG)
 
 function getStatusClassName(status: FinanceServiceRow['status']) {
   if (status === 'Paid') {
@@ -76,9 +72,12 @@ export function FinanceServicesPage() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const [activeTab, setActiveTab] = useState<FinanceServiceTab>('all')
-  const [searchQuery, setSearchQuery] = useState('')
-  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
+  const serverSort = useServerTableSort({
+    sortFieldMap: SORT_FIELD_MAP,
+    onPageReset: () => setCurrentPage(1),
+  })
+  const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setCurrentPage(1) })
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [selectedRowIds, setSelectedRowIds] = useState<string[]>([])
@@ -89,13 +88,16 @@ export function FinanceServicesPage() {
   const softDelete = useSoftDeleteFinance()
   const tableColumnPreferencesQuery = useTableColumnPreferences(FINANCE_SERVICES_MODULE_KEY)
 
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      setDebouncedSearch(searchQuery.trim())
-      setCurrentPage(1)
-    }, 300)
-    return () => window.clearTimeout(timer)
-  }, [searchQuery])
+  const catalogColumnIds = useMemo(
+    () => FINANCE_SERVICES_TABLE_COLUMNS_CATALOG.map((column) => column.id),
+    [],
+  )
+  const exportColumnIds = useTableExportColumnIds({
+    visibleColumnIds: tableColumnPreferencesQuery.data?.visibleColumnIds,
+    defaultColumnIds: DEFAULT_FINANCE_SERVICES_VISIBLE_COLUMN_IDS,
+    catalogColumnIds,
+    legacyColumnIdMap: FINANCE_SERVICES_LEGACY_COLUMN_ID_MAP,
+  })
 
   const isEscrowTab = activeTab === 'escrow'
   const listQueryParams = useMemo(
@@ -103,10 +105,11 @@ export function FinanceServicesPage() {
       buildFinanceServicesListQueryParams(appliedFilters, {
         page: currentPage,
         limit: PAGE_SIZE,
-        search: debouncedSearch || undefined,
+        ...enhancedSearch.buildSearchParams(),
+        ...serverSort.sortParams,
         tab: activeTab,
       }),
-    [activeTab, appliedFilters, currentPage, debouncedSearch],
+    [activeTab, appliedFilters, currentPage, enhancedSearch, serverSort.sortParams],
   )
 
   const revenueQuery = useFinanceRevenue(listQueryParams, !isEscrowTab)
@@ -116,7 +119,7 @@ export function FinanceServicesPage() {
     if (tabId !== activeTab) {
       setActiveTab(tabId)
       setCurrentPage(1)
-      setSearchQuery('')
+      enhancedSearch.clearAll()
       setSelectedRowIds([])
       setAppliedFilters({})
     }
@@ -161,11 +164,12 @@ export function FinanceServicesPage() {
     }
     return createFinanceServicesFilteredExportHandler(
       fetchForExport,
-      EXPORT_COLUMN_MAP,
+      FINANCE_SERVICES_EXPORT_COLUMN_MAP,
       'finance_services_export',
-      { search: debouncedSearch || undefined, tab: activeTab },
+      { search: enhancedSearch.globalSearch || undefined, tab: activeTab },
+      { columnIds: exportColumnIds, catalogOrder: catalogColumnIds },
     )
-  }, [activeTab, debouncedSearch, isEscrowTab])
+  }, [activeTab, catalogColumnIds, enhancedSearch.globalSearch, exportColumnIds, isEscrowTab])
 
   const {
     onAdvancedFilter,
@@ -423,7 +427,7 @@ export function FinanceServicesPage() {
       cell: ({ row }) => renderActions(row.original),
     }
 
-    return [selectColumn, ...preferenceColumns, actionsColumn]
+    return withServerSortMeta([selectColumn, ...preferenceColumns, actionsColumn], SORT_FIELD_MAP)
   }, [
     allVisibleSelected,
     renderActions,
@@ -481,9 +485,15 @@ export function FinanceServicesPage() {
         columns={columns}
         data={liveRows}
         getRowId={(row) => row.id}
+        {...serverSort.dataTableSortProps}
         isLoading={isLoading || isFetching}
-        searchValue={searchQuery}
-        onSearchChange={setSearchQuery}
+        searchValue={enhancedSearch.globalSearch}
+        onSearchChange={enhancedSearch.setGlobalSearch}
+        searchableColumns={FINANCE_SERVICES_SEARCH_COLUMNS}
+        columnSearches={enhancedSearch.columnSearches}
+        onColumnSearchChange={enhancedSearch.setColumnSearch}
+        onColumnSearchRemove={enhancedSearch.removeColumnSearch}
+        onClearAllSearches={enhancedSearch.clearAll}
         searchPlaceholder="Search by name, ID or profession"
         advancedFilterLabel="Advance Filters"
         onAdvancedFilter={onAdvancedFilter}

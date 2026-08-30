@@ -9,10 +9,17 @@ import {
 import {
   DEFAULT_VENUE_CATEGORY_MANAGEMENT_VISIBLE_COLUMN_IDS,
   VENUE_CATEGORY_LEGACY_COLUMN_ID_MAP,
+  VENUE_CATEGORY_MANAGEMENT_TABLE_COLUMNS_CATALOG,
 } from '../../config/venue-category-management-table-columns.config'
+import { useTableExportColumnIds } from '@/shared/hooks/use-table-export-column-ids'
 import { DataTable } from '@/shared/components/table/data-table'
+import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'
+import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
+import { withServerSortMeta } from '@/shared/utils/table-sort'
+import { buildCatalogSortFieldMap } from '@/shared/utils/table-sort-field-maps'
+import { VENUE_CATEGORY_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
-import { exportDisplayValue } from '@/shared/utils/export-utils'
+import { VENUE_CATEGORY_EXPORT_COLUMN_MAP } from '../../utils/table-export-column-maps'
 import type { FilterValues } from '@/shared/types/data-filter'
 import {
   buildVenueCategoryListQueryParams,
@@ -42,32 +49,9 @@ import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
 
 const PAGE_SIZE = 10
 
-const EXPORT_COLUMN_MAP: Record<
-  string,
-  { header: string; accessor: (cat: VenueCategory) => string }
-> = {
-  'category-id': {
-    header: 'Category ID',
-    accessor: (cat) => exportDisplayValue(cat.categoryId || cat.id),
-  },
-  'category-name': { header: 'Category Name', accessor: (cat) => exportDisplayValue(cat.name) },
-  spaces: { header: 'Spaces', accessor: (cat) => exportDisplayValue(cat.spaces) },
-  venues: { header: 'Venues', accessor: (cat) => exportDisplayValue(cat.venues) },
-  'active-spaces': {
-    header: 'Active Spaces',
-    accessor: (cat) => exportDisplayValue(cat.activeSpaces),
-  },
-  bookings: { header: 'Bookings', accessor: (cat) => exportDisplayValue(cat.bookings) },
-  'completed-bookings': {
-    header: 'Completed Bookings',
-    accessor: (cat) => exportDisplayValue(cat.completedBookings),
-  },
-  revenue: { header: 'Revenue', accessor: (cat) => exportDisplayValue(cat.revenue) },
-  status: { header: 'Status', accessor: (cat) => exportDisplayValue(cat.status) },
-  'created-by': { header: 'Created By', accessor: (cat) => exportDisplayValue(cat.createdBy) },
-  'created-at': { header: 'Created At', accessor: (cat) => exportDisplayValue(cat.createdAt) },
-  'last-updated': { header: 'Last Updated', accessor: (cat) => exportDisplayValue(cat.updatedAt) },
-}
+const VENUE_CATEGORY_COLUMN_SORT_FIELDS = buildCatalogSortFieldMap(
+  VENUE_CATEGORY_MANAGEMENT_TABLE_COLUMNS_CATALOG,
+)
 
 const normalizeVenueColumnIds = (ids: string[]) =>
   ids.map((id) => VENUE_CATEGORY_LEGACY_COLUMN_ID_MAP[id] ?? id)
@@ -78,10 +62,25 @@ const normalizeVenueMetricIds = (ids: string[]) =>
 const DEFAULT_VISIBLE_IDS = DEFAULT_VENUE_CATEGORY_MANAGEMENT_VISIBLE_COLUMN_IDS
 
 export function VenueCategoryManagementPage() {
-  const [searchValue, setSearchValue] = useState('')
   const [page, setPage] = useState(1)
+  const serverSort = useServerTableSort({
+    sortFieldMap: VENUE_CATEGORY_COLUMN_SORT_FIELDS,
+    onPageReset: () => setPage(1),
+  })
+  const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setPage(1) })
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
   const preferencesQuery = useTableColumnPreferences(VENUE_CATEGORY_MANAGEMENT_MODULE_KEY)
+
+  const catalogColumnIds = useMemo(
+    () => VENUE_CATEGORY_MANAGEMENT_TABLE_COLUMNS_CATALOG.map((c) => c.id),
+    [],
+  )
+  const exportColumnIds = useTableExportColumnIds({
+    visibleColumnIds: preferencesQuery.data?.visibleColumnIds,
+    defaultColumnIds: DEFAULT_VENUE_CATEGORY_MANAGEMENT_VISIBLE_COLUMN_IDS,
+    catalogColumnIds,
+    legacyColumnIdMap: VENUE_CATEGORY_LEGACY_COLUMN_ID_MAP,
+  })
 
   const handleApplyFilters = useCallback((values: FilterValues) => {
     setPage(1)
@@ -93,10 +92,11 @@ export function VenueCategoryManagementPage() {
       buildVenueCategoryListQueryParams(appliedFilters, {
         page,
         limit: PAGE_SIZE,
-        search: searchValue.trim() || undefined,
+        ...serverSort.sortParams,
+        ...enhancedSearch.buildSearchParams(),
         excludePaused: true,
       }),
-    [appliedFilters, page, searchValue],
+    [appliedFilters, enhancedSearch, page, serverSort.sortParams],
   )
 
   const { data, isLoading, isError } = useVenueCategoryManagementList(categoryQueryParams)
@@ -113,11 +113,12 @@ export function VenueCategoryManagementPage() {
           const response = await fetchVenueCategoryList(params)
           return { data: (response.data ?? []).map(mapVenueCategoryToUi) }
         },
-        EXPORT_COLUMN_MAP,
+        VENUE_CATEGORY_EXPORT_COLUMN_MAP,
         'venue_categories_export',
         { excludePaused: true },
+        { columnIds: exportColumnIds, catalogOrder: catalogColumnIds },
       ),
-    [],
+    [catalogColumnIds, exportColumnIds],
   )
 
   const {
@@ -226,7 +227,10 @@ export function VenueCategoryManagementPage() {
       .filter(Boolean)
     const actionsColumn = dataColumnsById.actions
 
-    return actionsColumn ? [...selectedDataColumns, actionsColumn] : selectedDataColumns
+    return withServerSortMeta(
+      actionsColumn ? [...selectedDataColumns, actionsColumn] : selectedDataColumns,
+      VENUE_CATEGORY_COLUMN_SORT_FIELDS,
+    )
   }, [preferencesQuery.data])
 
   return (
@@ -256,14 +260,17 @@ export function VenueCategoryManagementPage() {
         columns={columns}
         data={categories}
         getRowId={(row) => row.id}
-        searchValue={searchValue}
-        onSearchChange={(value) => {
-          setSearchValue(value)
-          setPage(1)
-        }}
+        searchValue={enhancedSearch.globalSearch}
+        onSearchChange={enhancedSearch.setGlobalSearch}
+        searchableColumns={VENUE_CATEGORY_SEARCH_COLUMNS}
+        columnSearches={enhancedSearch.columnSearches}
+        onColumnSearchChange={enhancedSearch.setColumnSearch}
+        onColumnSearchRemove={enhancedSearch.removeColumnSearch}
+        onClearAllSearches={enhancedSearch.clearAll}
         searchPlaceholder="Search by name or ID"
         onAdvancedFilter={onAdvancedFilter}
         onExport={onExport}
+        {...serverSort.dataTableSortProps}
         isLoading={isLoading}
         pagination={{
           page,

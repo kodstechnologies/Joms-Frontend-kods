@@ -9,6 +9,11 @@ import type { SettingsLog } from '../types/settings'
 import { SectionHeader } from '@/shared/components/dashboard/section-header'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import { DataTable } from '@/shared/components/table/data-table'
+import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'
+import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
+import { withServerSortMeta } from '@/shared/utils/table-sort'
+import { buildDefaultTableSortFieldMap } from '@/shared/utils/table-sort-field-maps'
+import { SETTINGS_LOGS_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
 import { uiTokens } from '@/shared/lib/design-tokens'
@@ -22,6 +27,15 @@ import {
 import { toast } from 'sonner'
 
 const PAGE_SIZE = 10
+
+const SETTINGS_LOG_SORT_FIELD_MAP = buildDefaultTableSortFieldMap([
+  'createdAt',
+  'module',
+  'action',
+  'status',
+  'performedBy',
+  'ipAddress',
+])
 
 const SETTINGS_LOG_EXPORT_COLUMN_MAP: Record<
   string,
@@ -74,7 +88,12 @@ function ActionBadge({ action }: { action: string }) {
 export function SettingsLogsPage() {
   const navigate = useNavigate()
   const [page, setPage] = useState(1)
-  const [search, setSearch] = useState('')
+  const serverSort = useServerTableSort({
+    sortFieldMap: SETTINGS_LOG_SORT_FIELD_MAP,
+    defaultSortBy: 'createdAt',
+    onPageReset: () => setPage(1),
+  })
+  const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setPage(1) })
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
   const [selectedLog, setSelectedLog] = useState<SettingsLog | null>(null)
 
@@ -83,9 +102,10 @@ export function SettingsLogsPage() {
       buildPrefixedListQueryParams(appliedFilters, {
         page,
         limit: PAGE_SIZE,
-        search: search || undefined,
+        ...enhancedSearch.buildSearchParams(),
+        ...serverSort.sortParams,
       }),
-    [appliedFilters, page, search],
+    [appliedFilters, enhancedSearch, page, serverSort.sortParams],
   )
 
   const { data, isLoading } = useSettingsLogs(listQueryParams)
@@ -108,9 +128,9 @@ export function SettingsLogsPage() {
       fetchForExport,
       SETTINGS_LOG_EXPORT_COLUMN_MAP,
       'settings_logs_export',
-      { search: search || undefined },
+      { search: enhancedSearch.globalSearch || undefined },
     )
-  }, [search])
+  }, [enhancedSearch.globalSearch])
 
   const {
     onAdvancedFilter,
@@ -123,48 +143,54 @@ export function SettingsLogsPage() {
   })
 
   const columns = useMemo<ColumnDef<SettingsLog>[]>(
-    () => [
-      {
-        accessorKey: 'createdAt',
-        header: 'Timestamp',
-        cell: ({ row }) => (
-          <span className="text-brand-text text-sm">{formatDateTime(row.original.createdAt)}</span>
-        ),
-      },
-      {
-        accessorKey: 'module',
-        header: 'Module',
-        cell: ({ row }) => (
-          <span className="text-brand-text text-sm font-medium capitalize">
-            {row.original.module}
-          </span>
-        ),
-      },
-      {
-        accessorKey: 'action',
-        header: 'Action',
-        cell: ({ row }) => <ActionBadge action={row.original.action} />,
-      },
-      {
-        accessorKey: 'status',
-        header: 'Status',
-        cell: ({ row }) => <StatusBadge status={row.original.status} />,
-      },
-      {
-        accessorKey: 'performedBy',
-        header: 'Performed By',
-        cell: ({ row }) => (
-          <span className="text-brand-muted text-sm">{row.original.performedBy || '—'}</span>
-        ),
-      },
-      {
-        accessorKey: 'ipAddress',
-        header: 'IP',
-        cell: ({ row }) => (
-          <span className="text-brand-muted text-sm">{row.original.ipAddress || '—'}</span>
-        ),
-      },
-    ],
+    () =>
+      withServerSortMeta(
+        [
+          {
+            accessorKey: 'createdAt',
+            header: 'Timestamp',
+            cell: ({ row }) => (
+              <span className="text-brand-text text-sm">
+                {formatDateTime(row.original.createdAt)}
+              </span>
+            ),
+          },
+          {
+            accessorKey: 'module',
+            header: 'Module',
+            cell: ({ row }) => (
+              <span className="text-brand-text text-sm font-medium capitalize">
+                {row.original.module}
+              </span>
+            ),
+          },
+          {
+            accessorKey: 'action',
+            header: 'Action',
+            cell: ({ row }) => <ActionBadge action={row.original.action} />,
+          },
+          {
+            accessorKey: 'status',
+            header: 'Status',
+            cell: ({ row }) => <StatusBadge status={row.original.status} />,
+          },
+          {
+            accessorKey: 'performedBy',
+            header: 'Performed By',
+            cell: ({ row }) => (
+              <span className="text-brand-muted text-sm">{row.original.performedBy || '—'}</span>
+            ),
+          },
+          {
+            accessorKey: 'ipAddress',
+            header: 'IP',
+            cell: ({ row }) => (
+              <span className="text-brand-muted text-sm">{row.original.ipAddress || '—'}</span>
+            ),
+          },
+        ],
+        SETTINGS_LOG_SORT_FIELD_MAP,
+      ),
     [],
   )
 
@@ -200,15 +226,18 @@ export function SettingsLogsPage() {
           columns={columns}
           data={rows}
           getRowId={(row) => row.id}
+          {...serverSort.dataTableSortProps}
           isLoading={isLoading}
           loadingRowCount={PAGE_SIZE}
           emptyMessage="No settings actions found."
           stickyHeader
-          searchValue={search}
-          onSearchChange={(value) => {
-            setSearch(value)
-            setPage(1)
-          }}
+          searchValue={enhancedSearch.globalSearch}
+          onSearchChange={enhancedSearch.setGlobalSearch}
+          searchableColumns={SETTINGS_LOGS_SEARCH_COLUMNS}
+          columnSearches={enhancedSearch.columnSearches}
+          onColumnSearchChange={enhancedSearch.setColumnSearch}
+          onColumnSearchRemove={enhancedSearch.removeColumnSearch}
+          onClearAllSearches={enhancedSearch.clearAll}
           searchPlaceholder="Search by action, IP, or admin…"
           onAdvancedFilter={onAdvancedFilter}
           advancedFilterVariant="primary"
