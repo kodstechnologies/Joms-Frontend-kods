@@ -9,7 +9,7 @@ import {
   getFeatureLines,
 } from '@/modules/memberships/utils/membership-format'
 
-export type FinanceMembershipStatus = 'Active' | 'Paused' | 'Cancelled' | 'Expired'
+export type FinanceMembershipStatus = 'Active' | 'Paused' | 'Cancelled' | 'Expired' | 'Suspended'
 
 export type FinanceMembershipRow = {
   id: string
@@ -46,6 +46,7 @@ const STATUS_LABEL: Record<SubscriptionStatus, FinanceMembershipStatus> = {
   paused: 'Paused',
   cancelled: 'Cancelled',
   expired: 'Expired',
+  suspended: 'Suspended',
 }
 
 export function toFinanceStatus(status: SubscriptionStatus): FinanceMembershipStatus {

@@ -47,6 +47,9 @@ import {
   pickServicePreferenceColumns,
 } from '../../utils/service-preference-columns'
 import { DataTable } from '@/shared/components/table/data-table'
+import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'
+import { withServerSortMeta } from '@/shared/utils/table-sort'
+import { SERVICE_COLUMN_SORT_FIELDS } from '@/shared/utils/table-sort-field-maps'
 import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
 import { SERVICE_MANAGEMENT_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
 import {
@@ -270,6 +273,10 @@ export const ServiceManagementPage = () => {
 
   const navigate = useNavigate()
   const { currentPage, setCurrentPage, activeStatus, setActiveStatus } = useServiceStore()
+  const serverSort = useServerTableSort({
+    sortFieldMap: SERVICE_COLUMN_SORT_FIELDS,
+    onPageReset: () => setCurrentPage(1),
+  })
   const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setCurrentPage(1) })
 
   const handleApplyFilters = useCallback(
@@ -311,10 +318,11 @@ export const ServiceManagementPage = () => {
       buildServiceListQueryParams(appliedAdvancedFilters, {
         page: currentPage,
         limit: 10,
+        ...serverSort.sortParams,
         ...enhancedSearch.buildSearchParams(),
         status: activeStatus !== 'all' ? activeStatus : undefined,
       }),
-    [appliedAdvancedFilters, activeStatus, currentPage, enhancedSearch],
+    [appliedAdvancedFilters, activeStatus, currentPage, enhancedSearch, serverSort.sortParams],
   )
 
   const { data, isLoading } = useServices(serviceQueryParams)
@@ -779,7 +787,10 @@ export const ServiceManagementPage = () => {
       },
     }
 
-    return [selectColumn, ...preferenceColumns, actionsColumn]
+    return withServerSortMeta(
+      [selectColumn, ...preferenceColumns, actionsColumn],
+      SERVICE_COLUMN_SORT_FIELDS,
+    )
   }, [
     activeDropdownId,
     allVisibleServicesSelected,
@@ -1002,6 +1013,7 @@ export const ServiceManagementPage = () => {
         data={services}
         getRowId={(service) => service._id}
         isLoading={isLoading}
+        {...serverSort.dataTableSortProps}
         searchValue={enhancedSearch.globalSearch}
         onSearchChange={enhancedSearch.setGlobalSearch}
         searchableColumns={SERVICE_MANAGEMENT_SEARCH_COLUMNS}
@@ -1029,8 +1041,8 @@ export const ServiceManagementPage = () => {
         open={Boolean(suspendServiceTarget)}
         variant="suspend"
         title="Suspend Service"
-        description="Are you sure you want to suspend this Service? This will result in removal of the account."
-        submitLabel="Suspend User"
+        description="Are you sure you want to suspend this service? It will be hidden from users until reactivated."
+        submitLabel="Suspend Service"
         reasonOptions={suspendReasonOptions}
         selectedReasons={suspendReasons}
         onReasonToggle={toggleSuspendReason}
@@ -1053,14 +1065,14 @@ export const ServiceManagementPage = () => {
         open={Boolean(deleteServiceTarget)}
         variant="delete"
         title="Delete Service"
-        description="Are you sure you want to delete this user? This will result in removal of the account."
-        submitLabel="Delete User"
+        description="Are you sure you want to delete this service? This action cannot be undone."
+        submitLabel="Delete Service"
         heroLayout="inline"
         reasonOptions={deleteReasonOptions}
         selectedReasons={deleteReasons}
         onReasonToggle={toggleDeleteReason}
         showReasonsLabel
-        confirmationLabel="I confirm the documents are not approved due to above reasons."
+        confirmationLabel="I confirm that I want to delete this service."
         confirmationChecked={deleteConfirmed}
         onConfirmationChange={setDeleteConfirmed}
         adminNotes={deleteAdminNotes}
@@ -1099,7 +1111,7 @@ export const ServiceManagementPage = () => {
           )
         }
         showReasonsLabel
-        confirmationLabel="I confirm the documents are not approved due to above reasons."
+        confirmationLabel="I confirm that I want to delete the selected service(s)."
         confirmationChecked={bulkDeleteConfirmed}
         onConfirmationChange={setBulkDeleteConfirmed}
         adminNotes={bulkDeleteAdminNotes}

@@ -67,7 +67,10 @@ import { useTableColumnPreferences } from '@/modules/expert/hooks/use-ui-prefere
 import { useTableExportColumnIds } from '@/shared/hooks/use-table-export-column-ids'
 import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
 import { DataTable } from '@/shared/components/table/data-table'
+import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'
 import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
+import { withServerSortMeta } from '@/shared/utils/table-sort'
+import { buildCatalogSortFieldMap } from '@/shared/utils/table-sort-field-maps'
 import { SUPPORT_TICKET_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
 import {
   TableActionsDropdown,
@@ -84,6 +87,8 @@ import {
   createSupportTicketsFilteredExportHandler,
 } from '@/shared/utils/export-filter-utils'
 import { fetchSupportTickets } from '../api/support-api'
+
+const TICKET_SORT_FIELD_MAP = buildCatalogSortFieldMap(TICKET_MANAGEMENT_TABLE_COLUMNS_CATALOG)
 
 const TABS: { key: TicketTab; label: string }[] = [
   { key: 'my_tickets', label: 'My Tickets' },
@@ -220,6 +225,10 @@ export function TicketManagementPage() {
     useSupportStore()
 
   const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setCurrentPage(1) })
+  const serverSort = useServerTableSort({
+    sortFieldMap: TICKET_SORT_FIELD_MAP,
+    onPageReset: () => setCurrentPage(1),
+  })
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [tagModalOpen, setTagModalOpen] = useState(false)
   const [escalateOpen, setEscalateOpen] = useState(false)
@@ -235,10 +244,11 @@ export function TicketManagementPage() {
         page: currentPage,
         limit: 10,
         ...enhancedSearch.buildSearchParams(),
+        ...serverSort.sortParams,
         tab: activeTab,
         includeClosed: true,
       }),
-    [activeTab, appliedFilters, currentPage, enhancedSearch],
+    [activeTab, appliedFilters, currentPage, enhancedSearch, serverSort.sortParams],
   )
 
   const { data, isLoading } = useSupportTickets(listQueryParams)
@@ -712,7 +722,10 @@ export function TicketManagementPage() {
       cell: ({ row }) => renderActions(row.original),
     }
 
-    return [selectColumn, ...preferenceColumns, actionsColumn]
+    return withServerSortMeta(
+      [selectColumn, ...preferenceColumns, actionsColumn],
+      TICKET_SORT_FIELD_MAP,
+    )
   }, [
     activeTab,
     renderActions,
@@ -790,6 +803,7 @@ export function TicketManagementPage() {
         columns={columns}
         data={tickets}
         getRowId={(row) => row.id}
+        {...serverSort.dataTableSortProps}
         searchValue={enhancedSearch.globalSearch}
         onSearchChange={enhancedSearch.setGlobalSearch}
         searchableColumns={SUPPORT_TICKET_SEARCH_COLUMNS}

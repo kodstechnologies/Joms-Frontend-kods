@@ -64,7 +64,10 @@ import { useTagsApi } from '@/modules/payments/hooks/use-tags-api'
 import { ChangeStatusModal } from '@/shared/components/modals/change-status-modal'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 import { DataTable } from '@/shared/components/table/data-table'
+import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'
 import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
+import { withServerSortMeta } from '@/shared/utils/table-sort'
+import { buildCatalogSortFieldMap } from '@/shared/utils/table-sort-field-maps'
 import { FINANCE_REFUNDS_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
 import {
   TableActionsDropdown,
@@ -79,8 +82,14 @@ import {
   buildFinanceRefundsListQueryParams,
   createFinanceRefundsFilteredExportHandler,
 } from '@/shared/utils/export-filter-utils'
+import { FINANCE_REFUND_SORT_OVERRIDES } from '@/modules/payments/config/finance-table-sort-fields'
 
 const PAGE_SIZE = 10
+
+const SORT_FIELD_MAP = buildCatalogSortFieldMap(
+  FINANCE_REFUNDS_TABLE_COLUMNS_CATALOG,
+  FINANCE_REFUND_SORT_OVERRIDES,
+)
 
 function getStatusClassName(status: RefundChargebackStatus) {
   if (status === 'Resolved') {
@@ -127,6 +136,10 @@ function SummaryCard({
 export function FinanceRefundsPage() {
   const navigate = useNavigate()
   const [currentPage, setCurrentPage] = useState(1)
+  const serverSort = useServerTableSort({
+    sortFieldMap: SORT_FIELD_MAP,
+    onPageReset: () => setCurrentPage(1),
+  })
   const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setCurrentPage(1) })
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
@@ -142,8 +155,9 @@ export function FinanceRefundsPage() {
         page: currentPage,
         limit: PAGE_SIZE,
         ...enhancedSearch.buildSearchParams(),
+        ...serverSort.sortParams,
       }),
-    [appliedFilters, currentPage, enhancedSearch],
+    [appliedFilters, currentPage, enhancedSearch, serverSort.sortParams],
   )
 
   const selectedTypes = String(listQueryParams.type || '')
@@ -568,7 +582,7 @@ export function FinanceRefundsPage() {
       cell: ({ row }) => renderActions(row.original),
     }
 
-    return [selectColumn, ...preferenceColumns, actionsColumn]
+    return withServerSortMeta([selectColumn, ...preferenceColumns, actionsColumn], SORT_FIELD_MAP)
   }, [
     allVisibleSelected,
     renderActions,
@@ -615,6 +629,7 @@ export function FinanceRefundsPage() {
         columns={columns}
         data={rows}
         getRowId={(row) => row.id}
+        {...serverSort.dataTableSortProps}
         isLoading={isLoading || isFetching}
         searchValue={enhancedSearch.globalSearch}
         onSearchChange={enhancedSearch.setGlobalSearch}

@@ -16,7 +16,10 @@ import { fetchBackups } from '../api/backups-api'
 import type { BackupHistoryRow, SettingsMetric } from '../types/settings'
 import { StatCard } from '@/shared/components/dashboard/stat-card'
 import { DataTable } from '@/shared/components/table/data-table'
+import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'
 import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
+import { withServerSortMeta } from '@/shared/utils/table-sort'
+import { buildDefaultTableSortFieldMap } from '@/shared/utils/table-sort-field-maps'
 import { SETTINGS_BACKUPS_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
 import { ResponsiveGrid } from '@/shared/components/responsive/responsive-grid'
 import { Button } from '@/shared/components/ui/button'
@@ -31,6 +34,16 @@ import {
 } from '@/shared/utils/export-filter-utils'
 
 const PAGE_SIZE = 8
+
+const BACKUP_SORT_FIELD_MAP = buildDefaultTableSortFieldMap([
+  'name',
+  'type',
+  'scope',
+  'createdBy',
+  'timestamp',
+  'size',
+  'status',
+])
 
 const BACKUP_EXPORT_COLUMN_MAP: Record<
   string,
@@ -63,6 +76,10 @@ function StatusBadge({ status }: { status: BackupHistoryRow['status'] }) {
 export function BackupRestorePanel() {
   const navigate = useNavigate()
   const [page, setPage] = useState(1)
+  const serverSort = useServerTableSort({
+    sortFieldMap: BACKUP_SORT_FIELD_MAP,
+    onPageReset: () => setPage(1),
+  })
   const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setPage(1) })
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null)
@@ -76,8 +93,9 @@ export function BackupRestorePanel() {
         page,
         limit: PAGE_SIZE,
         ...enhancedSearch.buildSearchParams(),
+        ...serverSort.sortParams,
       }),
-    [appliedFilters, enhancedSearch, page],
+    [appliedFilters, enhancedSearch, page, serverSort.sortParams],
   )
   const { data: backupsResult, isLoading } = useBackups(listQueryParams)
   const runBackupMutation = useRunBackup()
@@ -119,89 +137,95 @@ export function BackupRestorePanel() {
   })
 
   const columns = useMemo<ColumnDef<BackupHistoryRow>[]>(
-    () => [
-      {
-        accessorKey: 'name',
-        header: 'Backup ID / Name',
-        cell: ({ row }) => <span className="font-medium text-white">{row.original.name}</span>,
-      },
-      {
-        accessorKey: 'type',
-        header: 'Type',
-        cell: ({ row }) => <span className="text-slate-400">{row.original.type}</span>,
-      },
-      {
-        accessorKey: 'scope',
-        header: 'Scope',
-        cell: ({ row }) => <span className="text-slate-300">{row.original.scope}</span>,
-      },
-      {
-        accessorKey: 'createdBy',
-        header: 'Created By',
-        cell: ({ row }) => <span className="text-slate-400">{row.original.createdBy}</span>,
-      },
-      {
-        accessorKey: 'timestamp',
-        header: 'Timestamp',
-        cell: ({ row }) => <span className="text-slate-400">{row.original.timestamp}</span>,
-      },
-      {
-        accessorKey: 'size',
-        header: 'Size',
-        cell: ({ row }) => <span className="text-slate-300">{row.original.size}</span>,
-      },
-      {
-        accessorKey: 'status',
-        header: 'Status',
-        cell: ({ row }) => <StatusBadge status={row.original.status} />,
-      },
-      {
-        id: 'actions',
-        header: 'Actions',
-        cell: ({ row }) => (
-          <div className="relative">
-            <button
-              type="button"
-              onClick={() =>
-                setMenuOpenId((current) => (current === row.original.id ? null : row.original.id))
-              }
-              className="rounded p-1 text-slate-500 hover:bg-white/5 hover:text-white"
-            >
-              <MoreVertical className="size-4" />
-            </button>
-            {menuOpenId === row.original.id ? (
-              <div className="ui-table-actions-menu absolute right-0 z-10 mt-1">
+    () =>
+      withServerSortMeta(
+        [
+          {
+            accessorKey: 'name',
+            header: 'Backup ID / Name',
+            cell: ({ row }) => <span className="font-medium text-white">{row.original.name}</span>,
+          },
+          {
+            accessorKey: 'type',
+            header: 'Type',
+            cell: ({ row }) => <span className="text-slate-400">{row.original.type}</span>,
+          },
+          {
+            accessorKey: 'scope',
+            header: 'Scope',
+            cell: ({ row }) => <span className="text-slate-300">{row.original.scope}</span>,
+          },
+          {
+            accessorKey: 'createdBy',
+            header: 'Created By',
+            cell: ({ row }) => <span className="text-slate-400">{row.original.createdBy}</span>,
+          },
+          {
+            accessorKey: 'timestamp',
+            header: 'Timestamp',
+            cell: ({ row }) => <span className="text-slate-400">{row.original.timestamp}</span>,
+          },
+          {
+            accessorKey: 'size',
+            header: 'Size',
+            cell: ({ row }) => <span className="text-slate-300">{row.original.size}</span>,
+          },
+          {
+            accessorKey: 'status',
+            header: 'Status',
+            cell: ({ row }) => <StatusBadge status={row.original.status} />,
+          },
+          {
+            id: 'actions',
+            header: 'Actions',
+            cell: ({ row }) => (
+              <div className="relative">
                 <button
                   type="button"
-                  className="ui-table-actions-item"
-                  onClick={() => {
-                    setRestoreTarget(row.original)
-                    setMenuOpenId(null)
-                  }}
+                  onClick={() =>
+                    setMenuOpenId((current) =>
+                      current === row.original.id ? null : row.original.id,
+                    )
+                  }
+                  className="rounded p-1 text-slate-500 hover:bg-white/5 hover:text-white"
                 >
-                  Restore
+                  <MoreVertical className="size-4" />
                 </button>
-                <button
-                  type="button"
-                  className="ui-table-actions-item text-rose-600 hover:bg-rose-50"
-                  onClick={() => {
-                    deleteMutation.mutate(row.original.id, {
-                      onSuccess: () => {
+                {menuOpenId === row.original.id ? (
+                  <div className="ui-table-actions-menu absolute right-0 z-10 mt-1">
+                    <button
+                      type="button"
+                      className="ui-table-actions-item"
+                      onClick={() => {
+                        setRestoreTarget(row.original)
                         setMenuOpenId(null)
-                        toast.success('Backup deleted')
-                      },
-                      onError: () => toast.error('Failed to delete backup'),
-                    })
-                  }}
-                >
-                  Delete
-                </button>
+                      }}
+                    >
+                      Restore
+                    </button>
+                    <button
+                      type="button"
+                      className="ui-table-actions-item text-rose-600 hover:bg-rose-50"
+                      onClick={() => {
+                        deleteMutation.mutate(row.original.id, {
+                          onSuccess: () => {
+                            setMenuOpenId(null)
+                            toast.success('Backup deleted')
+                          },
+                          onError: () => toast.error('Failed to delete backup'),
+                        })
+                      }}
+                    >
+                      Delete
+                    </button>
+                  </div>
+                ) : null}
               </div>
-            ) : null}
-          </div>
-        ),
-      },
-    ],
+            ),
+          },
+        ],
+        BACKUP_SORT_FIELD_MAP,
+      ),
     [menuOpenId, deleteMutation],
   )
 
@@ -254,6 +278,7 @@ export function BackupRestorePanel() {
           columns={columns}
           data={rows}
           getRowId={(row) => row.id}
+          {...serverSort.dataTableSortProps}
           isLoading={isLoading}
           searchValue={enhancedSearch.globalSearch}
           onSearchChange={enhancedSearch.setGlobalSearch}

@@ -21,6 +21,7 @@ import {
 } from '../api/chat.api'
 import { useChatSocket } from '../hooks/use-chat-socket'
 import { FileVaultModal } from './file-vault-modal'
+import { PartnerChatMyProjectsModal } from './partner-chat-my-projects-modal'
 
 export type ChatRole = 'partner' | 'user'
 
@@ -69,6 +70,7 @@ export function ChatTestPanel({
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [vaultOpen, setVaultOpen] = useState(false)
+  const [myProjectsOpen, setMyProjectsOpen] = useState(false)
   const [attachMenuOpen, setAttachMenuOpen] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [callBusy, setCallBusy] = useState(false)
@@ -1076,6 +1078,19 @@ export function ChatTestPanel({
                 >
                   Add call
                 </button>
+                {role === 'partner' ? (
+                  <button
+                    type="button"
+                    className="w-full rounded-lg px-3 py-2 text-left text-sm hover:bg-zinc-800"
+                    disabled={!counterpartId.trim()}
+                    onClick={() => {
+                      setAttachMenuOpen(false)
+                      setMyProjectsOpen(true)
+                    }}
+                  >
+                    My projects
+                  </button>
+                ) : null}
               </div>
             ) : null}
             <input
@@ -1148,6 +1163,16 @@ export function ChatTestPanel({
           open={vaultOpen}
           chatBaseUrl={chatBaseUrl}
           onClose={() => setVaultOpen(false)}
+        />
+      ) : null}
+
+      {role === 'partner' ? (
+        <PartnerChatMyProjectsModal
+          token={identity.accessToken}
+          userId={counterpartId}
+          userLabel={counterpartName || counterpartId}
+          open={myProjectsOpen}
+          onClose={() => setMyProjectsOpen(false)}
         />
       ) : null}
     </div>

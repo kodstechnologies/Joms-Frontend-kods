@@ -5,16 +5,12 @@ export type FinanceTestModel = {
   number: number
   title: string
   route: string
-  /** Who initiates the money / data for this screen */
   startsAs: FinanceTestRole[]
   summary: string
-  /** Ordered checklist shown on the step */
   steps: string[]
-  /** Which action panels to show on this step */
   panels: Array<'user-book' | 'partner-inbox' | 'membership-pay' | 'admin-links' | 'none'>
   adminSeedLinks?: Array<{ label: string; href: string }>
   verifyHints: string[]
-  /** Optional finance API path for reflection count (admin JWT) */
   reflection?: {
     kind:
       | 'revenue'
@@ -30,7 +26,6 @@ export type FinanceTestModel = {
   }
 }
 
-/** The 10 sidebar models (Dashboard & Events excluded / muted). */
 export const FINANCE_TEST_MODELS: FinanceTestModel[] = [
   {
     id: 'revenue',
@@ -38,13 +33,11 @@ export const FINANCE_TEST_MODELS: FinanceTestModel[] = [
     title: 'Revenue Overview',
     route: '/finance/revenue',
     startsAs: ['partner', 'user'],
-    summary:
-      'Any successful Payment lands here. Easiest LIVE seed is partner membership; service/consultation need real pay after chat-user dummy pay.',
+    summary: 'Paid rows land here. Membership is the easiest seed.',
     steps: [
-      'Ensure Partner + User sessions are logged in (top bar).',
-      'Seed money: either Membership (step 4 panel) or Services (step 2 panels).',
-      'For LIVE rows after chat-user dummy pay, run real /payments/orders (see Appendix in docs).',
-      'Click “Open finance screen” and confirm the payment row + View Details + Add note.',
+      'Log in Partner + User on the top bar.',
+      'Seed money via Membership (step 4) or Services (step 2).',
+      'Open the finance screen and check the payment row, details, and note.',
     ],
     panels: ['membership-pay', 'user-book'],
     verifyHints: [
@@ -61,13 +54,12 @@ export const FINANCE_TEST_MODELS: FinanceTestModel[] = [
     route: '/finance/services',
     startsAs: ['user', 'partner'],
     summary:
-      'User pays. Fixed/tiered → by-service + payout. Consultation → by-consultation. Custom/milestone → escrow (harness Seed escrow or partner payment request).',
+      'User pays. Fixed/tiered go to by-service + payout. Consultation to by-consultation. Custom/milestone to escrow.',
     steps: [
-      'Partner must have a live service and/or consultation (create in admin if needed).',
-      'USER panel: load offerings → Order + LIVE dummy pay (fixed/tiered) OR Book consultation.',
-      'Escrow: same panel → Seed escrow (one-time / milestone) — quotation → proposal → LIVE payment_request dummy pay.',
-      'Open /finance/services — check tabs: all / by-service / by-consultation / escrow.',
-      'Open a row → detail. For escrow holds also open /finance/escrow.',
+      'Partner needs a live service or consultation.',
+      'User: load offerings → order + dummy pay, or book a consultation.',
+      'Escrow: seed one-time / milestone from the same panel.',
+      'Open /finance/services and check the tabs, then a row.',
     ],
     panels: ['user-book', 'partner-inbox', 'admin-links'],
     adminSeedLinks: [
@@ -88,13 +80,11 @@ export const FINANCE_TEST_MODELS: FinanceTestModel[] = [
     title: 'Venues',
     route: '/finance/venues',
     startsAs: ['partner', 'user'],
-    summary:
-      'Admin creates venue (catalog). User LIVE dummy pay on this harness → payment-service module=venue → /finance/venues. Needs Admin + User session.',
+    summary: 'User books a venue here. Needs Admin + User on the session bar.',
     steps: [
-      'Login Admin + select User on the session bar.',
-      'Create venue if catalog empty, then Load venues.',
-      'Tap venue → Book + LIVE dummy pay.',
-      'Open /finance/venues — confirm payment row.',
+      'Login Admin and pick User.',
+      'Create a venue if the catalog is empty, then load venues.',
+      'Book + dummy pay, then check /finance/venues.',
     ],
     panels: ['admin-links'],
     adminSeedLinks: [
@@ -111,14 +101,11 @@ export const FINANCE_TEST_MODELS: FinanceTestModel[] = [
     title: 'Memberships',
     route: '/finance/memberships',
     startsAs: ['partner'],
-    summary:
-      'Partner → JOMS receivable. Admin creates plan; partner buys via payment-test.html. Also feeds Revenue + Invoices. No payout.',
+    summary: 'Partner buys a plan. Also shows on Revenue and Invoices. No payout.',
     steps: [
-      'Admin: create membership plan → copy plan Mongo id.',
-      'Use Membership pay panel below (or /payment-test.html) with partner JWT.',
-      'Create order → Pay Razorpay → verify.',
-      'Open /finance/memberships → detail → Pause / Cancel when active.',
-      'Also confirm row on Revenue Overview.',
+      'Admin: create a plan and copy the id.',
+      'Use the membership panel (or /payment-test.html) with the partner JWT.',
+      'Pay, then check /finance/memberships — Pause / Cancel on an active row.',
     ],
     panels: ['membership-pay', 'admin-links'],
     adminSeedLinks: [{ label: 'Membership plans', href: '/memberships/plans' }],
@@ -151,7 +138,7 @@ export const FINANCE_TEST_MODELS: FinanceTestModel[] = [
     summary:
       'Stuck service/venue pay only: paid but fulfill pending → refund or chargeback. Not for fully completed LIVE pays.',
     steps: [
-      'Login Admin on the harness.',
+      'Login Admin on this page.',
       'Stuck service → refund / chargeback, or Stuck venue → refund / chargeback.',
       'Open /finance/refunds — Refund + Dispute rows (refund status initiated).',
       'Walk detail / escalate (some modals still UI-only).',
@@ -219,7 +206,7 @@ export const FINANCE_TEST_MODELS: FinanceTestModel[] = [
     title: 'Category Management',
     route: '/finance/categories',
     startsAs: ['admin'],
-    summary: 'MOCK only — no LIVE seed from partner/user. UI table check.',
+    summary: 'UI table only — nothing to seed from partner/user.',
     steps: [
       'Open /finance/categories.',
       'Confirm table/search UI only — no chat-user create path.',

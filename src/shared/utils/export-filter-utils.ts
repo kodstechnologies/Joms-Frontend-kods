@@ -167,6 +167,17 @@ async function exportMappedRows<T>(
   )
 }
 
+/** Export one or more rows using a column map (e.g. row action export). */
+export async function exportMappedItemsToFile<T>(
+  columnMap: ExportColumnMap<T>,
+  items: T[],
+  format: string,
+  fileName: string,
+  options?: ExportHandlerOptions,
+) {
+  await exportMappedRows(columnMap, items, format, fileName, options)
+}
+
 /**
  * Converts filter values (keyed as "section.fieldId") into flat API query params.
  * Handles text, arrays (checkboxes), range objects, and location objects.
@@ -216,7 +227,8 @@ export function buildFilterParams(filterValues: FilterValues): Record<string, st
 
 function assignExtraOptions(params: Record<string, unknown>, options: Record<string, unknown>) {
   Object.entries(options).forEach(([key, val]) => {
-    if (key === 'page' || key === 'limit' || key === 'status' || key === 'search') return
+    if (key === 'page' || key === 'limit' || key === 'status' || key === 'search' || key === 'tab')
+      return
     if (typeof val === 'string' && val.trim()) {
       params[key] = val.trim()
     } else if (val !== undefined && val !== null && val !== '') {
@@ -1034,6 +1046,9 @@ type RevenueListQueryOptions = {
   page?: number
   limit?: number
   search?: string
+  sortBy?: string
+  sortOrder?: 'asc' | 'desc'
+  [key: string]: unknown
 }
 
 const REVENUE_DATE_RANGE_PARAMS: Record<string, [string, string]> = {
@@ -1119,10 +1134,7 @@ export function createRevenueFilteredExportHandler<T>(
   }
 }
 
-type FinanceServicesListQueryOptions = {
-  page?: number
-  limit?: number
-  search?: string
+type FinanceServicesListQueryOptions = RevenueListQueryOptions & {
   tab?: 'all' | 'escrow' | 'by-service' | 'by-consultation'
 }
 
@@ -1134,13 +1146,9 @@ export function buildFinanceServicesListQueryParams(
   filterValues: FilterValues,
   options: FinanceServicesListQueryOptions = {},
 ): Record<string, unknown> {
-  const params = buildRevenueListQueryParams(filterValues, {
-    page: options.page,
-    limit: options.limit,
-    search: options.search,
-  })
+  const { tab = 'all', ...revenueOptions } = options
+  const params = buildRevenueListQueryParams(filterValues, revenueOptions)
 
-  const tab = options.tab ?? 'all'
   if (tab === 'by-service') {
     params.module = 'service'
   } else if (tab === 'by-consultation') {
@@ -1192,11 +1200,7 @@ export function createFinanceServicesFilteredExportHandler<T>(
   }
 }
 
-type FinanceVenuesListQueryOptions = {
-  page?: number
-  limit?: number
-  search?: string
-}
+type FinanceVenuesListQueryOptions = RevenueListQueryOptions
 
 /**
  * Builds query params for finance venues payment list APIs.
@@ -1206,11 +1210,7 @@ export function buildFinanceVenuesListQueryParams(
   filterValues: FilterValues,
   options: FinanceVenuesListQueryOptions = {},
 ): Record<string, unknown> {
-  const params = buildRevenueListQueryParams(filterValues, {
-    page: options.page,
-    limit: options.limit,
-    search: options.search,
-  })
+  const params = buildRevenueListQueryParams(filterValues, options)
 
   params.module = 'venue'
 
@@ -1250,11 +1250,7 @@ export function createFinanceVenuesFilteredExportHandler<T>(
   }
 }
 
-type FinanceListQueryOptions = {
-  page?: number
-  limit?: number
-  search?: string
-}
+type FinanceListQueryOptions = RevenueListQueryOptions
 
 function createFinanceExportHandler(
   buildParams: (

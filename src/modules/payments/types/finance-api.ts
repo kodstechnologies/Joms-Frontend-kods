@@ -47,6 +47,20 @@ export type FinancePayment = {
   moduleData?: Record<string, unknown> | null
   moduleSnapshot?: Record<string, unknown> | null
   fulfillmentResult?: Record<string, unknown> | null
+  linkedPayout?: {
+    payoutId: string
+    status?: string | null
+    paidAt?: string | null
+    scheduledAt?: string | null
+    initiatedAt?: string | null
+  } | null
+  linkedEscrow?: {
+    escrowId?: string | null
+    status?: string | null
+    heldAt?: string | null
+    releasedAt?: string | null
+    expectedReleaseAt?: string | null
+  } | null
   razorpayOrderId?: string | null
   razorpayPaymentId?: string | null
   gatewayAmount?: number | null
@@ -62,10 +76,8 @@ export type FinanceEscrowHold = {
   paymentId: string
   partnerId: string
   userId: string
-  /** Enriched from linked payment snapshot when available */
   partnerName?: string | null
   userName?: string | null
-  /** Prefer orderId / razorpay id over raw payment Mongo id */
   transactionId?: string | null
   paymentOrderId?: string | null
   module: string
@@ -82,6 +94,9 @@ export type FinanceEscrowHold = {
   referenceType?: string
   referenceId?: string
   createdAt?: string
+  invoiceId?: string | null
+  invoiceNumber?: string | null
+  invoicePdfUrl?: string | null
 }
 
 export type FinancePayout = {
@@ -93,12 +108,16 @@ export type FinancePayout = {
   module: string
   pricingType: string
   settlementPath?: string
+  paymentId?: string | null
+  referenceId?: string | null
+  relatedTransaction?: string | null
   fees: {
     grossAmount: number
     platformCommission?: number
     gatewayCharges?: number
     taxGst?: number
     taxTds?: number
+    refundAdjustments?: number
     netPayable: number
     currency?: string
   }
@@ -112,9 +131,12 @@ export type FinancePayout = {
   }
   status: string
   scheduledAt?: string
+  initiatedAt?: string | null
   paidAt?: string | null
   failedAt?: string | null
   failureReason?: string | null
+  financeApproverId?: string | null
+  releasedByAdminId?: string | null
   createdAt?: string
 }
 
@@ -136,6 +158,12 @@ export type FinanceDispute = {
   raisedBy?: string
   source?: string
   paymentId?: string | null
+  razorpayDisputeId?: string | null
+  razorpayPaymentId?: string | null
+  phase?: string | null
+  gatewayStatus?: string | null
+  respondBy?: string | null
+  amountDeducted?: number
   referenceId?: string | null
   adminNote?: string | null
   adminNotes?: string | null
@@ -156,6 +184,10 @@ export type FinanceRefund = {
   refundType?: string
   paymentId?: string
   beneficiary?: string
+  razorpayPaymentId?: string | null
+  razorpayRefundId?: string | null
+  gatewayStatus?: string | null
+  chargebackFlag?: boolean
   refundMode?: string | null
   adminNote?: string
   initiatedBy?: string | null
@@ -206,10 +238,12 @@ export type FinanceInvoice = {
   _id: string
   invoiceNumber: string
   clientName?: string
+  clientEmail?: string | null
   module: string
   total: number
   subtotal?: number
   taxAmount?: number
+  platformFee?: number
   invoiceStatus: string
   paymentStatus?: string
   issuedAt?: string

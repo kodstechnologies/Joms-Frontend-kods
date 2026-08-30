@@ -27,7 +27,10 @@ import { fetchPastTickets } from '../api/support-api'
 import { useTableColumnPreferences } from '@/modules/expert/hooks/use-ui-preferences'
 import { useTableExportColumnIds } from '@/shared/hooks/use-table-export-column-ids'
 import { DataTable } from '@/shared/components/table/data-table'
+import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'
 import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
+import { withServerSortMeta } from '@/shared/utils/table-sort'
+import { buildCatalogSortFieldMap } from '@/shared/utils/table-sort-field-maps'
 import { SUPPORT_TICKET_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
 import {
   TableActionsDropdown,
@@ -42,6 +45,8 @@ import {
   buildSupportTicketsListQueryParams,
   createSupportTicketsFilteredExportHandler,
 } from '@/shared/utils/export-filter-utils'
+
+const PAST_TICKET_SORT_FIELD_MAP = buildCatalogSortFieldMap(PAST_TICKETS_TABLE_COLUMNS_CATALOG)
 
 const EXPORT_COLUMN_MAP: Record<
   string,
@@ -100,6 +105,10 @@ export function PastTicketsPage() {
   const navigate = useNavigate()
   const { userId } = useParams<{ userId: string }>()
   const { currentPage, setCurrentPage } = useSupportStore()
+  const serverSort = useServerTableSort({
+    sortFieldMap: PAST_TICKET_SORT_FIELD_MAP,
+    onPageReset: () => setCurrentPage(1),
+  })
   const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setCurrentPage(1) })
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
   const tableColumnPreferencesQuery = useTableColumnPreferences(PAST_TICKETS_MODULE_KEY)
@@ -121,8 +130,9 @@ export function PastTicketsPage() {
         page: currentPage,
         limit: 10,
         ...enhancedSearch.buildSearchParams(),
+        ...serverSort.sortParams,
       }),
-    [appliedFilters, currentPage, enhancedSearch],
+    [appliedFilters, currentPage, enhancedSearch, serverSort.sortParams],
   )
 
   const { data, isLoading } = usePastTickets(userId, listQueryParams)
@@ -309,7 +319,10 @@ export function PastTicketsPage() {
       cell: ({ row }) => renderActions(row.original),
     }
 
-    return [selectColumn, ...preferenceColumns, actionsColumn]
+    return withServerSortMeta(
+      [selectColumn, ...preferenceColumns, actionsColumn],
+      PAST_TICKET_SORT_FIELD_MAP,
+    )
   }, [renderActions, tableColumnPreferencesQuery.data])
 
   const handleApplyFilters = useCallback(
@@ -386,6 +399,7 @@ export function PastTicketsPage() {
         columns={columns}
         data={tickets}
         getRowId={(row) => row.id}
+        {...serverSort.dataTableSortProps}
         searchValue={enhancedSearch.globalSearch}
         onSearchChange={enhancedSearch.setGlobalSearch}
         searchableColumns={SUPPORT_TICKET_SEARCH_COLUMNS}

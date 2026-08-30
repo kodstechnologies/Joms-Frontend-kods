@@ -17,6 +17,7 @@ import { RequiredMark } from '@/shared/components/form/required-mark'
 import { Button } from '@/shared/components/ui/button'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import { Input } from '@/shared/components/ui/input'
+import { useSecurityPolicy } from '@/modules/settings/hooks/use-security-policy'
 import { cn } from '@/shared/lib/cn'
 import { uiTokens } from '@/shared/lib/design-tokens'
 
@@ -88,6 +89,9 @@ export function CreateSubAdminPage() {
   })
   const createMutation = useCreateSubAdmin()
   const updateMutation = useUpdateSubAdmin()
+  const { mfa: mfaPolicy } = useSecurityPolicy()
+  const mfaForcedByPolicy = mfaPolicy.requireForAllSubAdmins
+  const effectiveMfaEnabled = mfaForcedByPolicy || form.mfaEnabled
 
   const editKey = `${editId}:${isEditMode}`
   if (editKey !== hydratedEditKey) {
@@ -193,7 +197,11 @@ export function CreateSubAdminPage() {
 
   const handleCreate = async () => {
     try {
-      const result = await createMutation.mutateAsync({ ...form, adminNote })
+      const result = await createMutation.mutateAsync({
+        ...form,
+        mfaEnabled: effectiveMfaEnabled,
+        adminNote,
+      })
       setConfirmOpen(false)
       toast.success(
         result?.data?.notificationSent
@@ -219,7 +227,6 @@ export function CreateSubAdminPage() {
         employmentType,
         workplaceFlexibility,
         location,
-        mfaEnabled,
         roleIds,
       } = form
       await updateMutation.mutateAsync({
@@ -233,7 +240,7 @@ export function CreateSubAdminPage() {
           employmentType,
           workplaceFlexibility,
           location,
-          mfaEnabled,
+          mfaEnabled: effectiveMfaEnabled,
           roleIds,
         },
       })
@@ -315,21 +322,28 @@ export function CreateSubAdminPage() {
                 <div>
                   <p className="text-brand-text text-sm font-medium">2 Factor Authentication</p>
                   <p className="text-brand-muted text-xs">
-                    Every time the user tries to login they need verify via 2FA
+                    {mfaForcedByPolicy
+                      ? 'Required for all sub-admins by organization MFA policy'
+                      : 'Every time the user tries to login they need verify via 2FA'}
                   </p>
                 </div>
                 <button
                   type="button"
-                  onClick={() => updateField('mfaEnabled', !form.mfaEnabled)}
+                  disabled={mfaForcedByPolicy}
+                  onClick={() => {
+                    if (mfaForcedByPolicy) return
+                    updateField('mfaEnabled', !form.mfaEnabled)
+                  }}
                   className={cn(
                     'relative h-7 w-12 rounded-full transition-colors',
-                    form.mfaEnabled ? 'bg-brand-accent' : 'bg-white/20',
+                    effectiveMfaEnabled ? 'bg-brand-accent' : 'bg-white/20',
+                    mfaForcedByPolicy && 'cursor-not-allowed opacity-70',
                   )}
                 >
                   <span
                     className={cn(
                       'absolute top-0.5 size-6 rounded-full bg-white transition-transform',
-                      form.mfaEnabled ? 'left-5' : 'left-0.5',
+                      effectiveMfaEnabled ? 'left-5' : 'left-0.5',
                     )}
                   />
                 </button>
@@ -537,7 +551,7 @@ export function CreateSubAdminPage() {
                 ['Employee ID', form.employeeId || '—'],
                 ['Employment type', form.employmentType || '—'],
                 ['Location', form.location || '—'],
-                ['2FA Status', form.mfaEnabled ? 'Enabled' : 'Disabled'],
+                ['2FA Status', effectiveMfaEnabled ? 'Enabled' : 'Disabled'],
                 ['Workplace', form.workplaceFlexibility || '—'],
               ].map(([label, value]) => (
                 <div key={label}>

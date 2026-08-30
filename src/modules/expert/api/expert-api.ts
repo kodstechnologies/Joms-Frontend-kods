@@ -184,6 +184,20 @@ export const updateExpertReport = async (id: string, payload: Record<string, unk
   return response.data
 }
 
+export type SubmitExpertReportPayload = {
+  partnerId: string
+  issueType: string
+  reason: string
+  reporterId: string
+  reporterName: string
+  reporterType?: string
+}
+
+export const submitExpertReport = async (payload: SubmitExpertReportPayload) => {
+  const response = await adminApiClient.post('/admin/internal/reports/expert', payload)
+  return response.data
+}
+
 export const exportExpertReportsCSV = async (params?: Record<string, unknown>) => {
   const data = await fetchExpertReports({ ...params, limit: 1000 })
   const items = data?.data?.items || data?.items || []

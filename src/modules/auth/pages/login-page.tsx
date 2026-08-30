@@ -5,6 +5,7 @@ import { Controller, useForm } from 'react-hook-form'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { toast } from 'sonner'
 
+import type { AdminSessionUser } from '@/modules/auth/api/auth-api'
 import { type AdminUser, useAuthStore } from '@/modules/auth/store/auth-store'
 import { fetchRbacMe } from '@/modules/rbac/api/rbac-api'
 import {
@@ -22,6 +23,31 @@ import { Button } from '@/shared/components/ui/button'
 import { Card } from '@/shared/components/ui/card'
 import { Input } from '@/shared/components/ui/input'
 import jomsLogo from '@/assets/joms-logo.png'
+
+function buildSessionUser(admin: AdminSessionUser | undefined, fallbackEmail: string): AdminUser {
+  if (admin) {
+    return {
+      id: admin.id,
+      email: admin.email,
+      fullname: admin.fullname,
+      kind: admin.kind ?? 'subadmin',
+      isSuperAdmin: Boolean(admin.isSuperAdmin),
+      permissions: normalizeUserPermissions(admin.permissions ?? []),
+      mfaEnabled: admin.mfaEnabled,
+      status: admin.status,
+      subAdminId: admin.subAdminId ?? undefined,
+    }
+  }
+
+  return {
+    id: '',
+    email: fallbackEmail,
+    fullname: 'Admin',
+    kind: 'superadmin',
+    isSuperAdmin: true,
+    permissions: [],
+  }
+}
 
 export function LoginPage() {
   const navigate = useNavigate()
@@ -46,7 +72,7 @@ export function LoginPage() {
     defaultValues: { code: '' },
   })
 
-  const postLoginPath = (sessionUser: Parameters<typeof getDefaultHomeRoute>[0]) => {
+  const postLoginPath = (sessionUser: AdminUser) => {
     const from = (
       location.state as { from?: { pathname?: string; search?: string; hash?: string } } | null
     )?.from
@@ -57,59 +83,13 @@ export function LoginPage() {
     return getDefaultHomeRoute(sessionUser)
   }
 
-  const handleSuccessfulAdminSession = async (
-    session:
-      | {
-          admin?: {
-            id: string
-            email: string
-            fullname: string
-            kind?: string
-            isSuperAdmin?: boolean
-            permissions?: string[]
-            mfaEnabled?: boolean
-            status?: string
-            subAdminId?: string | null
-          }
-          token?: string
-        }
-      | undefined,
-    fallbackEmail: string,
+  const finalizeLogin = async (
+    token: string,
+    admin: AdminSessionUser | undefined,
+    email: string,
   ) => {
-    const admin = session?.admin
-    const token = session?.token
-
-    if (!token) {
-      toast.error('Login succeeded but no auth token was returned')
-      return
-    }
-
-    let sessionUser: AdminUser
-
-    if (admin) {
-      sessionUser = {
-        id: admin.id,
-        email: admin.email,
-        fullname: admin.fullname,
-        kind: admin.kind === 'superadmin' ? 'superadmin' : 'subadmin',
-        isSuperAdmin: Boolean(admin.isSuperAdmin),
-        permissions: normalizeUserPermissions(admin.permissions ?? []),
-        mfaEnabled: admin.mfaEnabled,
-        status: admin.status,
-        subAdminId: admin.subAdminId || undefined,
-      }
-      setSession(sessionUser, token)
-    } else {
-      sessionUser = {
-        id: '',
-        email: fallbackEmail,
-        fullname: 'Admin',
-        kind: 'superadmin',
-        isSuperAdmin: true,
-        permissions: [],
-      }
-      setSession(sessionUser, token)
-    }
+    let sessionUser = buildSessionUser(admin, email)
+    setSession(sessionUser, token)
 
     if (!sessionUser.isSuperAdmin) {
       try {
@@ -149,34 +129,22 @@ export function LoginPage() {
         toast.error('Email is required')
         return
       }
-      const response = await login({ email: values.email, password: values.password })
-      const data = response?.data as
-        | {
-            requiresMfa?: boolean
-            email?: string
-            token?: string
-            admin?: {
-              id: string
-              email: string
-              fullname: string
-              kind?: string
-              isSuperAdmin?: boolean
-              permissions?: string[]
-              mfaEnabled?: boolean
-              status?: string
-              subAdminId?: string | null
-            }
-          }
-        | undefined
 
-      if (data?.requiresMfa || !data?.token) {
-        setPendingEmail(values.email)
-        setStep('otp')
-        toast.success('OTP sent to your email')
+      const response = await login({ email: values.email, password: values.password })
+      const session = response?.data
+
+      if (session?.mfaRequired === false) {
+        if (!session.token) {
+          toast.error('Login succeeded but no auth token was returned')
+          return
+        }
+        await finalizeLogin(session.token, session.admin, values.email)
         return
       }
 
-      await handleSuccessfulAdminSession(data, values.email)
+      setPendingEmail(values.email)
+      setStep('otp')
+      toast.success('OTP sent to your email')
     } catch (error) {
       toast.error(getApiErrorMessage(error, 'Invalid credentials'))
     }
@@ -195,7 +163,15 @@ export function LoginPage() {
 
     try {
       const response = await verifyOtp({ email: pendingEmail, otp: values.code })
-      await handleSuccessfulAdminSession(response?.data, pendingEmail)
+      const session = response?.data
+      const token = session?.token
+
+      if (!token) {
+        toast.error('Login succeeded but no auth token was returned')
+        return
+      }
+
+      await finalizeLogin(token, session?.admin, pendingEmail)
     } catch {
       toast.error('Invalid or expired OTP')
     }

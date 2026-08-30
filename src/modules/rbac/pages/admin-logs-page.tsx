@@ -13,7 +13,10 @@ import { RbacLoader } from '../components/rbac-loader'
 import { RoleUsersModal } from '../components/role-users-modal'
 import { VersionHistoryPanel } from '../components/version-history-panel'
 import { DataTable } from '@/shared/components/table/data-table'
+import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'
 import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
+import { withServerSortMeta } from '@/shared/utils/table-sort'
+import { buildDefaultTableSortFieldMap } from '@/shared/utils/table-sort-field-maps'
 import { RBAC_ADMIN_LOGS_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
 import {
   TableActionsDropdown,
@@ -32,6 +35,24 @@ import {
 } from '@/shared/utils/export-filter-utils'
 
 const PAGE_SIZE = 10
+
+const USER_LOG_SORT_FIELD_MAP = buildDefaultTableSortFieldMap([
+  'action',
+  'module',
+  'createdAt',
+  'status',
+  'ipAddress',
+  'adminNote',
+])
+const ROLE_LOG_SORT_FIELD_MAP = buildDefaultTableSortFieldMap([
+  'action',
+  'username',
+  'module',
+  'createdAt',
+  'status',
+  'ipAddress',
+  'adminNote',
+])
 
 const LOG_EXPORT_COLUMN_MAP: Record<
   string,
@@ -264,6 +285,11 @@ export function AdminLogsPage() {
   const isRole = location.pathname.includes('/roles/')
 
   const [page, setPage] = useState(1)
+  const serverSort = useServerTableSort({
+    sortFieldMap: isRole ? ROLE_LOG_SORT_FIELD_MAP : USER_LOG_SORT_FIELD_MAP,
+    defaultSortBy: 'createdAt',
+    onPageReset: () => setPage(1),
+  })
   const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setPage(1) })
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
@@ -277,8 +303,9 @@ export function AdminLogsPage() {
         page,
         limit: PAGE_SIZE,
         ...enhancedSearch.buildSearchParams(),
+        ...serverSort.sortParams,
       }),
-    [appliedFilters, enhancedSearch, page],
+    [appliedFilters, enhancedSearch, page, serverSort.sortParams],
   )
   const historyParams = { page: 1, limit: 50 }
 
@@ -391,147 +418,165 @@ export function AdminLogsPage() {
   }, [])
 
   const userColumns = useMemo<ColumnDef<AuditLog>[]>(
-    () => [
-      {
-        accessorKey: 'action',
-        header: 'Action',
-        cell: ({ row }) => (
-          <button
-            type="button"
-            onClick={openHistory}
-            className="text-brand-accent decoration-brand-accent/40 hover:text-brand-gold-from text-left text-xs font-semibold underline underline-offset-2"
-          >
-            {row.original.action}
-          </button>
-        ),
-      },
-      {
-        accessorKey: 'module',
-        header: 'Module',
-        cell: ({ row }) => (
-          <span className="text-brand-text text-body-sm-semibold inline-flex rounded-full border border-white/10 bg-white/5 px-2.5 py-0.5 font-medium">
-            {row.original.module}
-          </span>
-        ),
-      },
-      {
-        accessorKey: 'createdAt',
-        header: 'Timestamp',
-        cell: ({ row }) => formatDateTime(row.original.createdAt),
-      },
-      {
-        accessorKey: 'status',
-        header: 'Status',
-        cell: ({ row }) => <StatusBadge status={row.original.status} />,
-      },
-      { accessorKey: 'ipAddress', header: 'IP Address' },
-      {
-        accessorKey: 'adminNote',
-        header: 'Admin Note',
-        cell: ({ row }) => renderAdminNoteCell(row.original.adminNote),
-      },
-      {
-        id: 'actions',
-        header: 'Actions',
-        enableSorting: false,
-        meta: { headerClassName: 'pr-5 text-right', cellClassName: 'relative pr-5 text-right' },
-        cell: ({ row }) => {
-          const logId = row.original.id || row.original._id || ''
-          return (
-            <TableActionsDropdown
-              label="Open log actions"
-              isOpen={activeDropdownId === logId}
-              onOpenChange={(open) => setActiveDropdownId(open ? logId : null)}
-            >
-              <TableActionsItem icon={<ClipboardList className="size-3.5" />} onClick={openHistory}>
-                View Pre-Version
-              </TableActionsItem>
-              <TableActionsItem
-                icon={<Flag className="text-brand-danger size-3.5" />}
-                onClick={() => handleFlag(logId)}
+    () =>
+      withServerSortMeta(
+        [
+          {
+            accessorKey: 'action',
+            header: 'Action',
+            cell: ({ row }) => (
+              <button
+                type="button"
+                onClick={openHistory}
+                className="text-brand-accent decoration-brand-accent/40 hover:text-brand-gold-from text-left text-xs font-semibold underline underline-offset-2"
               >
-                <span className={row.original.flagged ? 'text-brand-muted' : 'text-brand-danger'}>
-                  {row.original.flagged ? 'Already Flagged' : 'Flag Action'}
-                </span>
-              </TableActionsItem>
-            </TableActionsDropdown>
-          )
-        },
-      },
-    ],
+                {row.original.action}
+              </button>
+            ),
+          },
+          {
+            accessorKey: 'module',
+            header: 'Module',
+            cell: ({ row }) => (
+              <span className="text-brand-text text-body-sm-semibold inline-flex rounded-full border border-white/10 bg-white/5 px-2.5 py-0.5 font-medium">
+                {row.original.module}
+              </span>
+            ),
+          },
+          {
+            accessorKey: 'createdAt',
+            header: 'Timestamp',
+            cell: ({ row }) => formatDateTime(row.original.createdAt),
+          },
+          {
+            accessorKey: 'status',
+            header: 'Status',
+            cell: ({ row }) => <StatusBadge status={row.original.status} />,
+          },
+          { accessorKey: 'ipAddress', header: 'IP Address' },
+          {
+            accessorKey: 'adminNote',
+            header: 'Admin Note',
+            cell: ({ row }) => renderAdminNoteCell(row.original.adminNote),
+          },
+          {
+            id: 'actions',
+            header: 'Actions',
+            enableSorting: false,
+            meta: { headerClassName: 'pr-5 text-right', cellClassName: 'relative pr-5 text-right' },
+            cell: ({ row }) => {
+              const logId = row.original.id || row.original._id || ''
+              return (
+                <TableActionsDropdown
+                  label="Open log actions"
+                  isOpen={activeDropdownId === logId}
+                  onOpenChange={(open) => setActiveDropdownId(open ? logId : null)}
+                >
+                  <TableActionsItem
+                    icon={<ClipboardList className="size-3.5" />}
+                    onClick={openHistory}
+                  >
+                    View Pre-Version
+                  </TableActionsItem>
+                  <TableActionsItem
+                    icon={<Flag className="text-brand-danger size-3.5" />}
+                    onClick={() => handleFlag(logId)}
+                  >
+                    <span
+                      className={row.original.flagged ? 'text-brand-muted' : 'text-brand-danger'}
+                    >
+                      {row.original.flagged ? 'Already Flagged' : 'Flag Action'}
+                    </span>
+                  </TableActionsItem>
+                </TableActionsDropdown>
+              )
+            },
+          },
+        ],
+        USER_LOG_SORT_FIELD_MAP,
+      ),
     [activeDropdownId, handleFlag, openHistory, renderAdminNoteCell],
   )
 
   const roleColumns = useMemo<ColumnDef<AuditLog>[]>(
-    () => [
-      {
-        accessorKey: 'action',
-        header: 'Activity',
-        cell: ({ row }) => (
-          <button
-            type="button"
-            onClick={openHistory}
-            className="text-brand-accent text-left text-xs font-semibold hover:underline"
-          >
-            {row.original.action}
-          </button>
-        ),
-      },
-      { accessorKey: 'username', header: 'Username' },
-      {
-        accessorKey: 'module',
-        header: 'Module',
-        cell: ({ row }) => (
-          <span className="text-brand-text text-body-sm-semibold inline-flex rounded-full border border-white/10 bg-white/5 px-2.5 py-0.5 font-medium">
-            {row.original.module}
-          </span>
-        ),
-      },
-      {
-        accessorKey: 'createdAt',
-        header: 'Timestamp',
-        cell: ({ row }) => formatDateTime(row.original.createdAt),
-      },
-      {
-        accessorKey: 'status',
-        header: 'Status',
-        cell: ({ row }) => <StatusBadge status={row.original.status} />,
-      },
-      { accessorKey: 'ipAddress', header: 'IP Address' },
-      {
-        accessorKey: 'adminNote',
-        header: 'Admin Note',
-        cell: ({ row }) => renderAdminNoteCell(row.original.adminNote),
-      },
-      {
-        id: 'actions',
-        header: 'Actions',
-        enableSorting: false,
-        meta: { headerClassName: 'pr-5 text-right', cellClassName: 'relative pr-5 text-right' },
-        cell: ({ row }) => {
-          const logId = row.original.id || row.original._id || ''
-          return (
-            <TableActionsDropdown
-              label="Open log actions"
-              isOpen={activeDropdownId === logId}
-              onOpenChange={(open) => setActiveDropdownId(open ? logId : null)}
-            >
-              <TableActionsItem icon={<ClipboardList className="size-3.5" />} onClick={openHistory}>
-                View Pre-Version
-              </TableActionsItem>
-              <TableActionsItem
-                icon={<Flag className="text-brand-danger size-3.5" />}
-                onClick={() => handleFlag(logId)}
+    () =>
+      withServerSortMeta(
+        [
+          {
+            accessorKey: 'action',
+            header: 'Activity',
+            cell: ({ row }) => (
+              <button
+                type="button"
+                onClick={openHistory}
+                className="text-brand-accent text-left text-xs font-semibold hover:underline"
               >
-                <span className={row.original.flagged ? 'text-brand-muted' : 'text-brand-danger'}>
-                  {row.original.flagged ? 'Already Flagged' : 'Flag Action'}
-                </span>
-              </TableActionsItem>
-            </TableActionsDropdown>
-          )
-        },
-      },
-    ],
+                {row.original.action}
+              </button>
+            ),
+          },
+          { accessorKey: 'username', header: 'Username' },
+          {
+            accessorKey: 'module',
+            header: 'Module',
+            cell: ({ row }) => (
+              <span className="text-brand-text text-body-sm-semibold inline-flex rounded-full border border-white/10 bg-white/5 px-2.5 py-0.5 font-medium">
+                {row.original.module}
+              </span>
+            ),
+          },
+          {
+            accessorKey: 'createdAt',
+            header: 'Timestamp',
+            cell: ({ row }) => formatDateTime(row.original.createdAt),
+          },
+          {
+            accessorKey: 'status',
+            header: 'Status',
+            cell: ({ row }) => <StatusBadge status={row.original.status} />,
+          },
+          { accessorKey: 'ipAddress', header: 'IP Address' },
+          {
+            accessorKey: 'adminNote',
+            header: 'Admin Note',
+            cell: ({ row }) => renderAdminNoteCell(row.original.adminNote),
+          },
+          {
+            id: 'actions',
+            header: 'Actions',
+            enableSorting: false,
+            meta: { headerClassName: 'pr-5 text-right', cellClassName: 'relative pr-5 text-right' },
+            cell: ({ row }) => {
+              const logId = row.original.id || row.original._id || ''
+              return (
+                <TableActionsDropdown
+                  label="Open log actions"
+                  isOpen={activeDropdownId === logId}
+                  onOpenChange={(open) => setActiveDropdownId(open ? logId : null)}
+                >
+                  <TableActionsItem
+                    icon={<ClipboardList className="size-3.5" />}
+                    onClick={openHistory}
+                  >
+                    View Pre-Version
+                  </TableActionsItem>
+                  <TableActionsItem
+                    icon={<Flag className="text-brand-danger size-3.5" />}
+                    onClick={() => handleFlag(logId)}
+                  >
+                    <span
+                      className={row.original.flagged ? 'text-brand-muted' : 'text-brand-danger'}
+                    >
+                      {row.original.flagged ? 'Already Flagged' : 'Flag Action'}
+                    </span>
+                  </TableActionsItem>
+                </TableActionsDropdown>
+              )
+            },
+          },
+        ],
+        ROLE_LOG_SORT_FIELD_MAP,
+      ),
     [activeDropdownId, handleFlag, openHistory, renderAdminNoteCell],
   )
 
@@ -589,6 +634,7 @@ export function AdminLogsPage() {
         columns={columns}
         data={logs}
         getRowId={(row) => row.id || row._id || row.action}
+        {...serverSort.dataTableSortProps}
         isLoading={logsQuery.isLoading}
         searchValue={enhancedSearch.globalSearch}
         onSearchChange={enhancedSearch.setGlobalSearch}

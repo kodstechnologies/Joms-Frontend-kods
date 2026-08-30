@@ -20,7 +20,10 @@ import { useVenueManagementControls } from '@/modules/settings/hooks/use-venue-p
 import type { Venue } from '../../type/venue'
 import { getVenueApiId, getVenueDisplayId, getVenueDisplaySpaceId } from '../../utils/venue-list'
 import { DataTable } from '@/shared/components/table/data-table'
+import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'
 import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
+import { withServerSortMeta } from '@/shared/utils/table-sort'
+import { VENUE_REJECTED_SORT_FIELDS } from '@/shared/utils/table-sort-field-maps'
 import { VENUE_REJECTED_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
 import {
   TableActionsDropdown,
@@ -41,6 +44,10 @@ export function RejectedVenuesPage() {
   const navigate = useNavigate()
   const { allowAddVenues } = useVenueManagementControls()
   const [currentPage, setCurrentPage] = useState(1)
+  const serverSort = useServerTableSort({
+    sortFieldMap: VENUE_REJECTED_SORT_FIELDS,
+    onPageReset: () => setCurrentPage(1),
+  })
   const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setCurrentPage(1) })
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [selectedVenueIds, setSelectedVenueIds] = useState<string[]>([])
@@ -51,10 +58,11 @@ export function RejectedVenuesPage() {
       buildVenueListQueryParams(appliedFilters, {
         page: currentPage,
         limit: 10,
+        ...serverSort.sortParams,
         ...enhancedSearch.buildSearchParams(),
         status: 'rejected',
       }),
-    [appliedFilters, currentPage, enhancedSearch],
+    [appliedFilters, currentPage, enhancedSearch, serverSort.sortParams],
   )
 
   const { data, isLoading } = useVenues(venueQueryParams)
@@ -125,104 +133,110 @@ export function RejectedVenuesPage() {
   )
 
   const columns = useMemo<ColumnDef<Venue>[]>(
-    () => [
-      {
-        id: 'select',
-        header: () => (
-          <input
-            type="checkbox"
-            aria-label="Select all rejected venues"
-            checked={allVisibleVenuesSelected}
-            ref={(input) => {
-              if (input)
-                input.indeterminate = someVisibleVenuesSelected && !allVisibleVenuesSelected
-            }}
-            onChange={toggleVisibleVenues}
-            className="rounded border-slate-700 bg-transparent"
-          />
-        ),
-        cell: ({ row }) => (
-          <input
-            type="checkbox"
-            aria-label={`Select ${row.original.venueName}`}
-            checked={selectedVenueIds.includes(row.original._id)}
-            onChange={() => toggleVenueSelection(row.original._id)}
-            onClick={(event) => event.stopPropagation()}
-            className="rounded border-slate-700 bg-transparent"
-          />
-        ),
-        meta: {
-          headerClassName: 'pl-5',
-          cellClassName: 'pl-5',
-        },
-      },
-      {
-        accessorKey: 'venueid',
-        header: 'Venue ID',
-        cell: ({ row }) => (
-          <span className="ui-table-id uppercase">{getVenueDisplayId(row.original)}</span>
-        ),
-      },
-      {
-        accessorKey: 'venueName',
-        header: 'Name',
-        cell: ({ row }) => <span className="font-medium text-white">{row.original.venueName}</span>,
-      },
-      {
-        accessorKey: 'eventType',
-        header: 'Venue Type',
-        cell: ({ row }) => row.original.eventType || '—',
-      },
-      {
-        accessorKey: 'spaceid',
-        header: 'Space ID',
-        cell: ({ row }) => (
-          <span className="ui-table-id">{getVenueDisplaySpaceId(row.original)}</span>
-        ),
-      },
-      {
-        accessorKey: 'spaceName',
-        header: 'Space Name',
-        cell: ({ row }) => row.original.spaceName || '—',
-      },
-      {
-        accessorKey: 'venueCategory',
-        header: 'Event Type',
-        cell: ({ row }) => row.original.venueCategory || '—',
-      },
-      {
-        id: 'actions',
-        accessorFn: () => null,
-        header: 'Actions',
-        meta: {
-          headerClassName: 'pr-5 text-right',
-          cellClassName: 'relative pr-5 text-right',
-        },
-        cell: ({ row }) => {
-          const venue = row.original
-          const isOpen = activeDropdownId === venue._id
-
-          return (
-            <TableActionsDropdown
-              label={`Open actions for ${venue.venueName}`}
-              isOpen={isOpen}
-              onOpenChange={(open) => setActiveDropdownId(open ? venue._id : null)}
-              menuWidth={160}
-            >
-              <TableActionsItem
-                icon={<PlayCircle className="size-3.5" aria-hidden="true" />}
-                onClick={() => {
-                  setActiveDropdownId(null)
-                  handleActivate(venue)
+    () =>
+      withServerSortMeta(
+        [
+          {
+            id: 'select',
+            header: () => (
+              <input
+                type="checkbox"
+                aria-label="Select all rejected venues"
+                checked={allVisibleVenuesSelected}
+                ref={(input) => {
+                  if (input)
+                    input.indeterminate = someVisibleVenuesSelected && !allVisibleVenuesSelected
                 }}
-              >
-                Active Venue
-              </TableActionsItem>
-            </TableActionsDropdown>
-          )
-        },
-      },
-    ],
+                onChange={toggleVisibleVenues}
+                className="rounded border-slate-700 bg-transparent"
+              />
+            ),
+            cell: ({ row }) => (
+              <input
+                type="checkbox"
+                aria-label={`Select ${row.original.venueName}`}
+                checked={selectedVenueIds.includes(row.original._id)}
+                onChange={() => toggleVenueSelection(row.original._id)}
+                onClick={(event) => event.stopPropagation()}
+                className="rounded border-slate-700 bg-transparent"
+              />
+            ),
+            meta: {
+              headerClassName: 'pl-5',
+              cellClassName: 'pl-5',
+            },
+          },
+          {
+            accessorKey: 'venueid',
+            header: 'Venue ID',
+            cell: ({ row }) => (
+              <span className="ui-table-id uppercase">{getVenueDisplayId(row.original)}</span>
+            ),
+          },
+          {
+            accessorKey: 'venueName',
+            header: 'Name',
+            cell: ({ row }) => (
+              <span className="font-medium text-white">{row.original.venueName}</span>
+            ),
+          },
+          {
+            accessorKey: 'eventType',
+            header: 'Venue Type',
+            cell: ({ row }) => row.original.eventType || '—',
+          },
+          {
+            accessorKey: 'spaceid',
+            header: 'Space ID',
+            cell: ({ row }) => (
+              <span className="ui-table-id">{getVenueDisplaySpaceId(row.original)}</span>
+            ),
+          },
+          {
+            accessorKey: 'spaceName',
+            header: 'Space Name',
+            cell: ({ row }) => row.original.spaceName || '—',
+          },
+          {
+            accessorKey: 'venueCategory',
+            header: 'Event Type',
+            cell: ({ row }) => row.original.venueCategory || '—',
+          },
+          {
+            id: 'actions',
+            accessorFn: () => null,
+            header: 'Actions',
+            meta: {
+              headerClassName: 'pr-5 text-right',
+              cellClassName: 'relative pr-5 text-right',
+            },
+            cell: ({ row }) => {
+              const venue = row.original
+              const isOpen = activeDropdownId === venue._id
+
+              return (
+                <TableActionsDropdown
+                  label={`Open actions for ${venue.venueName}`}
+                  isOpen={isOpen}
+                  onOpenChange={(open) => setActiveDropdownId(open ? venue._id : null)}
+                  menuWidth={160}
+                >
+                  <TableActionsItem
+                    icon={<PlayCircle className="size-3.5" aria-hidden="true" />}
+                    onClick={() => {
+                      setActiveDropdownId(null)
+                      handleActivate(venue)
+                    }}
+                  >
+                    Active Venue
+                  </TableActionsItem>
+                </TableActionsDropdown>
+              )
+            },
+          },
+        ],
+        VENUE_REJECTED_SORT_FIELDS,
+      ),
     [
       activeDropdownId,
       allVisibleVenuesSelected,
@@ -301,6 +315,7 @@ export function RejectedVenuesPage() {
         searchPlaceholder="Search by name, ID or profession"
         onAdvancedFilter={onAdvancedFilter}
         onExport={onExport}
+        {...serverSort.dataTableSortProps}
         pagination={{
           page: currentPage,
           pageSize: meta?.pagination.limit || 10,

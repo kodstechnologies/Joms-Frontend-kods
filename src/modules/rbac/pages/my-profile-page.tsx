@@ -14,7 +14,10 @@ import { RbacLoader } from '../components/rbac-loader'
 import { UpdatePasswordModal } from '../components/update-password-modal'
 import type { AuditLog, UpdateSubAdminPasswordPayload } from '../types/rbac'
 import { DataTable } from '@/shared/components/table/data-table'
+import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'
 import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
+import { withServerSortMeta } from '@/shared/utils/table-sort'
+import { buildDefaultTableSortFieldMap } from '@/shared/utils/table-sort-field-maps'
 import { RBAC_ADMIN_LOGS_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
 import { exportDisplayValue } from '@/shared/utils/export-utils'
 import { createPrefixedListExportHandler } from '@/shared/utils/export-filter-utils'
@@ -44,6 +47,17 @@ const ROLE_HISTORY_EXPORT_COLUMN_MAP: Record<
     accessor: (log) => exportDisplayValue(log.performedBy || '—'),
   },
   adminNote: { header: 'Admin Note', accessor: (log) => exportDisplayValue(log.adminNote || '—') },
+}
+
+const HISTORY_SORT_FIELD_MAP = {
+  ...buildDefaultTableSortFieldMap([
+    'previousRole',
+    'changedTo',
+    'changedOn',
+    'changedBy',
+    'adminNote',
+  ]),
+  changedOn: 'createdAt',
 }
 
 const formatDateTime = (value?: string | null) => {
@@ -94,6 +108,11 @@ export function MyProfilePage() {
   const navigate = useNavigate()
   const user = useAuthStore((state) => state.user)
   const [historyPage, setHistoryPage] = useState(1)
+  const serverSort = useServerTableSort({
+    sortFieldMap: HISTORY_SORT_FIELD_MAP,
+    defaultSortBy: 'changedOn',
+    onPageReset: () => setHistoryPage(1),
+  })
   const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setHistoryPage(1) })
   const historySectionRef = useRef<HTMLDivElement | null>(null)
 
@@ -104,6 +123,7 @@ export function MyProfilePage() {
     page: historyPage,
     limit: PAGE_SIZE,
     ...enhancedSearch.buildSearchParams(),
+    ...serverSort.sortParams,
   })
 
   const subAdmin = profileData?.data.profile
@@ -140,29 +160,33 @@ export function MyProfilePage() {
   })
 
   const historyColumns = useMemo<ColumnDef<RoleHistoryRow>[]>(
-    () => [
-      { accessorKey: 'previousRole', header: 'Previous Role' },
-      {
-        accessorKey: 'changedTo',
-        header: 'Changed To',
-        cell: ({ row }) => (
-          <span className="text-brand-text text-body-sm-semibold inline-flex rounded-full border border-white/10 bg-white/5 px-2.5 py-0.5">
-            {row.original.changedTo}
-          </span>
-        ),
-      },
-      { accessorKey: 'changedOn', header: 'Changed On' },
-      { accessorKey: 'changedBy', header: 'Changed BY' },
-      {
-        accessorKey: 'adminNote',
-        header: 'Admin Note',
-        cell: ({ row }) => (
-          <span className="text-brand-text line-clamp-2 max-w-[340px] text-xs">
-            {row.original.adminNote}
-          </span>
-        ),
-      },
-    ],
+    () =>
+      withServerSortMeta(
+        [
+          { accessorKey: 'previousRole', header: 'Previous Role' },
+          {
+            accessorKey: 'changedTo',
+            header: 'Changed To',
+            cell: ({ row }) => (
+              <span className="text-brand-text text-body-sm-semibold inline-flex rounded-full border border-white/10 bg-white/5 px-2.5 py-0.5">
+                {row.original.changedTo}
+              </span>
+            ),
+          },
+          { accessorKey: 'changedOn', header: 'Changed On' },
+          { accessorKey: 'changedBy', header: 'Changed BY' },
+          {
+            accessorKey: 'adminNote',
+            header: 'Admin Note',
+            cell: ({ row }) => (
+              <span className="text-brand-text line-clamp-2 max-w-[340px] text-xs">
+                {row.original.adminNote}
+              </span>
+            ),
+          },
+        ],
+        HISTORY_SORT_FIELD_MAP,
+      ),
     [],
   )
 
@@ -357,6 +381,7 @@ export function MyProfilePage() {
           columns={historyColumns}
           data={historyRows}
           getRowId={(row) => row.id}
+          {...serverSort.dataTableSortProps}
           isLoading={logsLoading}
           searchValue={enhancedSearch.globalSearch}
           onSearchChange={enhancedSearch.setGlobalSearch}

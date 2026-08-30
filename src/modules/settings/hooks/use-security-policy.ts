@@ -6,6 +6,7 @@ import { useAuthStore } from '@/modules/auth/store/auth-store'
 import { fetchSettings } from '@/modules/settings/api/settings-api'
 import { settingsKeys } from '@/modules/settings/hooks/use-settings'
 import type { SecuritySettings } from '@/modules/settings/types/settings'
+import { securityDefaults } from '@/modules/settings/mock/settings.defaults'
 import {
   DEFAULT_PASSWORD_POLICY,
   DEFAULT_SESSION_TIMEOUT_MINUTES,
@@ -14,9 +15,31 @@ import {
 type PublicSecurityPolicy = {
   sessionTimeout: SecuritySettings['sessionTimeout']
   passwordPolicy: SecuritySettings['passwordPolicy']
+  mfa?: SecuritySettings['mfa'] & { requireForAllAdmins?: boolean }
 }
 
-async function fetchPublicSecurityPolicy(): Promise<PublicSecurityPolicy> {
+function normalizeMfaPolicy(
+  mfa: PublicSecurityPolicy['mfa'] | SecuritySettings['mfa'] | undefined,
+): SecuritySettings['mfa'] {
+  const source = mfa || securityDefaults.mfa
+  const legacyRequireForAllAdmins = (source as { requireForAllAdmins?: boolean })
+    .requireForAllAdmins
+  return {
+    requireForAllSubAdmins:
+      typeof source.requireForAllSubAdmins === 'boolean'
+        ? source.requireForAllSubAdmins
+        : typeof legacyRequireForAllAdmins === 'boolean'
+          ? legacyRequireForAllAdmins
+          : securityDefaults.mfa.requireForAllSubAdmins,
+    authenticatorApp: source.authenticatorApp ?? securityDefaults.mfa.authenticatorApp,
+    smsOtp: source.smsOtp ?? securityDefaults.mfa.smsOtp,
+    emailOtp: source.emailOtp ?? securityDefaults.mfa.emailOtp,
+  }
+}
+
+async function fetchPublicSecurityPolicy(): Promise<
+  PublicSecurityPolicy & { mfa: SecuritySettings['mfa'] }
+> {
   const response = await axios.get<{
     success: boolean
     data: PublicSecurityPolicy
@@ -32,6 +55,7 @@ async function fetchPublicSecurityPolicy(): Promise<PublicSecurityPolicy> {
       ...DEFAULT_PASSWORD_POLICY,
       ...(response.data.data?.passwordPolicy || {}),
     },
+    mfa: normalizeMfaPolicy(response.data.data?.mfa),
   }
 }
 
@@ -73,9 +97,14 @@ export function useSecurityPolicy() {
     (config && 'sessionTimeout' in config ? config.sessionTimeout?.durationMinutes : undefined) ??
     DEFAULT_SESSION_TIMEOUT_MINUTES
 
+  const mfa = normalizeMfaPolicy(
+    config && 'mfa' in config ? (config.mfa as SecuritySettings['mfa']) : undefined,
+  )
+
   return {
     passwordPolicy,
     sessionTimeoutMinutes,
+    mfa,
     isLoading: authedQuery.isLoading || publicQuery.isLoading,
   }
 }

@@ -17,7 +17,10 @@ import { useFinanceEscrow } from '@/modules/payments/hooks/use-finance'
 import { mapEscrowToRow } from '@/modules/payments/utils/finance-mappers'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 import { DataTable } from '@/shared/components/table/data-table'
+import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'
 import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
+import { sortClientRows, withServerSortMeta } from '@/shared/utils/table-sort'
+import { buildCatalogSortFieldMap } from '@/shared/utils/table-sort-field-maps'
 import { FINANCE_ESCROW_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
 import {
   TableActionsDropdown,
@@ -41,7 +44,14 @@ import { useTableColumnPreferences } from '@/modules/expert/hooks/use-ui-prefere
 import { useTableExportColumnIds } from '@/shared/hooks/use-table-export-column-ids'
 import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
 
+import { FINANCE_ESCROW_SORT_OVERRIDES } from '@/modules/payments/config/finance-table-sort-fields'
+
 const PAGE_SIZE = 10
+
+const SORT_FIELD_MAP = buildCatalogSortFieldMap(
+  FINANCE_ESCROW_TABLE_COLUMNS_CATALOG,
+  FINANCE_ESCROW_SORT_OVERRIDES,
+)
 
 function getEscrowStatusClassName(status: EscrowHoldStatus) {
   if (status === 'Active' || status === 'Released') {
@@ -61,6 +71,10 @@ export function EscrowManagementPage() {
   const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState<EscrowManagementTab>('escrow')
   const [currentPage, setCurrentPage] = useState(1)
+  const serverSort = useServerTableSort({
+    sortFieldMap: SORT_FIELD_MAP,
+    onPageReset: () => setCurrentPage(1),
+  })
   const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setCurrentPage(1) })
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
@@ -74,8 +88,9 @@ export function EscrowManagementPage() {
         page: currentPage,
         limit: PAGE_SIZE,
         ...enhancedSearch.buildSearchParams(),
+        ...serverSort.sortParams,
       }),
-    [appliedFilters, currentPage, enhancedSearch],
+    [appliedFilters, currentPage, enhancedSearch, serverSort.sortParams],
   )
 
   const {
@@ -158,9 +173,19 @@ export function EscrowManagementPage() {
     )
   }, [bookingTabRows, enhancedSearch.globalSearch])
 
+  const sortedBookingRows = useMemo(() => {
+    const sortColumnId = serverSort.sorting[0]?.id
+    if (!sortColumnId) return filteredBookingRows
+    return sortClientRows(
+      filteredBookingRows as Array<EscrowBookingRow & Record<string, unknown>>,
+      sortColumnId,
+      serverSort.sortOrder,
+    )
+  }, [filteredBookingRows, serverSort.sortOrder, serverSort.sorting])
+
   const totalItems = isEscrowTab
     ? (escrowMeta?.total ?? filteredEscrowRows.length)
-    : filteredBookingRows.length
+    : sortedBookingRows.length
   const totalPages = isEscrowTab
     ? (escrowMeta?.totalPages ?? 1)
     : Math.max(1, Math.ceil(totalItems / PAGE_SIZE))
@@ -170,8 +195,8 @@ export function EscrowManagementPage() {
 
   const pageBookingRows = useMemo(() => {
     const start = (safePage - 1) * PAGE_SIZE
-    return filteredBookingRows.slice(start, start + PAGE_SIZE)
-  }, [filteredBookingRows, safePage])
+    return sortedBookingRows.slice(start, start + PAGE_SIZE)
+  }, [sortedBookingRows, safePage])
 
   const pageRows = isEscrowTab ? pageEscrowRows : pageBookingRows
   const visibleRowIds = useMemo(() => pageRows.map((row) => row.id), [pageRows])
@@ -378,7 +403,7 @@ export function EscrowManagementPage() {
       cell: ({ row }) => renderEscrowActions(row.original),
     }
 
-    return [selectColumn, ...preferenceColumns, actionsColumn]
+    return withServerSortMeta([selectColumn, ...preferenceColumns, actionsColumn], SORT_FIELD_MAP)
   }, [
     allVisibleSelected,
     renderEscrowActions,
@@ -390,86 +415,92 @@ export function EscrowManagementPage() {
   ])
 
   const bookingColumns = useMemo<ColumnDef<EscrowBookingRow>[]>(
-    () => [
-      {
-        id: 'select',
-        header: () => (
-          <input
-            type="checkbox"
-            aria-label="Select all booking records"
-            checked={allVisibleSelected}
-            ref={(input) => {
-              if (input) input.indeterminate = someVisibleSelected && !allVisibleSelected
-            }}
-            onChange={toggleVisibleRows}
-            className="rounded border-slate-700 bg-transparent"
-          />
-        ),
-        cell: ({ row }) => (
-          <input
-            type="checkbox"
-            aria-label={`Select ${row.original.name}`}
-            checked={selectedRowIds.includes(row.original.id)}
-            onChange={() => toggleRowSelection(row.original.id)}
-            onClick={(event) => event.stopPropagation()}
-            className="rounded border-slate-700 bg-transparent"
-          />
-        ),
-        meta: { headerClassName: 'pl-5', cellClassName: 'pl-5' },
-      },
-      {
-        accessorKey: 'serviceId',
-        header: 'Service ID',
-        cell: ({ row }) => (
-          <span className="text-body-sm-semibold text-brand-text font-mono uppercase">
-            {row.original.serviceId}
-          </span>
-        ),
-      },
-      {
-        accessorKey: 'name',
-        header: 'Name',
-        cell: ({ row }) => <span className="text-brand-text font-medium">{row.original.name}</span>,
-      },
-      { accessorKey: 'expertName', header: 'Expert Name' },
-      {
-        accessorKey: 'bookingId',
-        header: 'Booking ID',
-        cell: ({ row }) => (
-          <span className="text-body-sm-semibold text-brand-text font-mono uppercase">
-            {row.original.bookingId}
-          </span>
-        ),
-      },
-      { accessorKey: 'userName', header: 'User Name' },
-      {
-        accessorKey: 'status',
-        header: 'Status',
-        cell: ({ row }) => (
-          <span
-            className={cn(
-              'text-body-sm-semibold inline-flex rounded-full border px-2.5 py-0.5',
-              getBookingStatusClassName(row.original.status),
-            )}
-          >
-            {row.original.status}
-          </span>
-        ),
-      },
-      {
-        accessorKey: 'revenue',
-        header: 'Revenue',
-        cell: ({ row }) => (
-          <span className="text-brand-text font-semibold">{row.original.revenue}</span>
-        ),
-      },
-      {
-        id: 'actions',
-        header: 'Actions',
-        meta: { headerClassName: 'pr-5 text-right', cellClassName: 'relative pr-5 text-right' },
-        cell: ({ row }) => renderBookingActions(row.original),
-      },
-    ],
+    () =>
+      withServerSortMeta(
+        [
+          {
+            id: 'select',
+            header: () => (
+              <input
+                type="checkbox"
+                aria-label="Select all booking records"
+                checked={allVisibleSelected}
+                ref={(input) => {
+                  if (input) input.indeterminate = someVisibleSelected && !allVisibleSelected
+                }}
+                onChange={toggleVisibleRows}
+                className="rounded border-slate-700 bg-transparent"
+              />
+            ),
+            cell: ({ row }) => (
+              <input
+                type="checkbox"
+                aria-label={`Select ${row.original.name}`}
+                checked={selectedRowIds.includes(row.original.id)}
+                onChange={() => toggleRowSelection(row.original.id)}
+                onClick={(event) => event.stopPropagation()}
+                className="rounded border-slate-700 bg-transparent"
+              />
+            ),
+            meta: { headerClassName: 'pl-5', cellClassName: 'pl-5' },
+          },
+          {
+            accessorKey: 'serviceId',
+            header: 'Service ID',
+            cell: ({ row }) => (
+              <span className="text-body-sm-semibold text-brand-text font-mono uppercase">
+                {row.original.serviceId}
+              </span>
+            ),
+          },
+          {
+            accessorKey: 'name',
+            header: 'Name',
+            cell: ({ row }) => (
+              <span className="text-brand-text font-medium">{row.original.name}</span>
+            ),
+          },
+          { accessorKey: 'expertName', header: 'Expert Name' },
+          {
+            accessorKey: 'bookingId',
+            header: 'Booking ID',
+            cell: ({ row }) => (
+              <span className="text-body-sm-semibold text-brand-text font-mono uppercase">
+                {row.original.bookingId}
+              </span>
+            ),
+          },
+          { accessorKey: 'userName', header: 'User Name' },
+          {
+            accessorKey: 'status',
+            header: 'Status',
+            cell: ({ row }) => (
+              <span
+                className={cn(
+                  'text-body-sm-semibold inline-flex rounded-full border px-2.5 py-0.5',
+                  getBookingStatusClassName(row.original.status),
+                )}
+              >
+                {row.original.status}
+              </span>
+            ),
+          },
+          {
+            accessorKey: 'revenue',
+            header: 'Revenue',
+            cell: ({ row }) => (
+              <span className="text-brand-text font-semibold">{row.original.revenue}</span>
+            ),
+          },
+          {
+            id: 'actions',
+            header: 'Actions',
+            meta: { headerClassName: 'pr-5 text-right', cellClassName: 'relative pr-5 text-right' },
+            cell: ({ row }) => renderBookingActions(row.original),
+          },
+        ],
+        SORT_FIELD_MAP,
+      ),
     [
       allVisibleSelected,
       renderBookingActions,
@@ -537,6 +568,7 @@ export function EscrowManagementPage() {
           columns={escrowColumns}
           data={pageEscrowRows}
           getRowId={(row) => row.id}
+          {...serverSort.dataTableSortProps}
           isLoading={isLoading || isFetching}
           searchValue={enhancedSearch.globalSearch}
           onSearchChange={enhancedSearch.setGlobalSearch}
@@ -565,6 +597,7 @@ export function EscrowManagementPage() {
           columns={bookingColumns}
           data={pageBookingRows}
           getRowId={(row) => row.id}
+          {...serverSort.dataTableSortProps}
           searchValue={enhancedSearch.globalSearch}
           onSearchChange={enhancedSearch.setGlobalSearch}
           searchableColumns={FINANCE_ESCROW_SEARCH_COLUMNS}

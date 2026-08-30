@@ -11,7 +11,10 @@ import { securityDefaults } from '../mock/settings.defaults'
 import type { LoginTrailRow, SecuritySettings } from '../types/settings'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import { DataTable } from '@/shared/components/table/data-table'
+import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'
 import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
+import { withServerSortMeta } from '@/shared/utils/table-sort'
+import { buildDefaultTableSortFieldMap } from '@/shared/utils/table-sort-field-maps'
 import { SETTINGS_LOGIN_TRAILS_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
 import { cn } from '@/shared/lib/cn'
 import { exportDisplayValue } from '@/shared/utils/export-utils'
@@ -23,6 +26,16 @@ import {
 } from '@/shared/utils/export-filter-utils'
 
 const PAGE_SIZE = 10
+
+const SORT_FIELD_MAP = buildDefaultTableSortFieldMap([
+  'date',
+  'time',
+  'ipAddress',
+  'action',
+  'status',
+  'location',
+  'device',
+])
 
 const TRAIL_EXPORT_COLUMN_MAP: Record<
   string,
@@ -53,6 +66,10 @@ function StatusBadge({ status }: { status: LoginTrailRow['status'] }) {
 export function LoginTrailsPage() {
   const navigate = useNavigate()
   const [page, setPage] = useState(1)
+  const serverSort = useServerTableSort({
+    sortFieldMap: SORT_FIELD_MAP,
+    onPageReset: () => setPage(1),
+  })
   const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setPage(1) })
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
@@ -68,8 +85,9 @@ export function LoginTrailsPage() {
         page,
         limit: PAGE_SIZE,
         ...enhancedSearch.buildSearchParams(),
+        ...serverSort.sortParams,
       }),
-    [appliedFilters, enhancedSearch, page],
+    [appliedFilters, enhancedSearch, page, serverSort.sortParams],
   )
 
   const { data: trailsResult, isLoading, refetch, isFetching } = useLoginTrails(listQueryParams)
@@ -128,65 +146,73 @@ export function LoginTrailsPage() {
   }, [])
 
   const columns = useMemo<ColumnDef<LoginTrailRow>[]>(
-    () => [
-      {
-        id: 'select',
-        header: () => (
-          <input
-            type="checkbox"
-            aria-label="Select all rows"
-            checked={allSelected}
-            onChange={toggleAll}
-            className="security-checkbox-input"
-          />
-        ),
-        cell: ({ row }) => (
-          <input
-            type="checkbox"
-            aria-label={`Select row ${row.original.id}`}
-            checked={selectedIds.has(row.original.id)}
-            onChange={() => toggleOne(row.original.id)}
-            className="security-checkbox-input"
-          />
-        ),
-        meta: { headerClassName: 'w-10', cellClassName: 'w-10' },
-      },
-      {
-        accessorKey: 'date',
-        header: 'Date',
-        cell: ({ row }) => <span className="text-white/80">{row.original.date}</span>,
-      },
-      {
-        accessorKey: 'time',
-        header: 'Time',
-        cell: ({ row }) => <span className="text-white/60">{row.original.time}</span>,
-      },
-      {
-        accessorKey: 'ipAddress',
-        header: 'IP Address',
-        cell: ({ row }) => <span className="text-white/80">{row.original.ipAddress || '—'}</span>,
-      },
-      {
-        accessorKey: 'action',
-        header: 'Action',
-        cell: ({ row }) => <span className="text-white/80">{row.original.action}</span>,
-      },
-      {
-        accessorKey: 'status',
-        header: 'Status',
-        cell: ({ row }) => <StatusBadge status={row.original.status} />,
-      },
-      {
-        accessorKey: 'location',
-        header: 'Location',
-        cell: ({ row }) => <span className="text-white/60">{row.original.location || '—'}</span>,
-      },
-      {
-        accessorKey: 'device',
-        header: 'Device',
-        cell: ({ row }) => <span className="text-white/60">{row.original.device || '—'}</span>,
-      },
-    ],
+    () =>
+      withServerSortMeta(
+        [
+          {
+            id: 'select',
+            header: () => (
+              <input
+                type="checkbox"
+                aria-label="Select all rows"
+                checked={allSelected}
+                onChange={toggleAll}
+                className="security-checkbox-input"
+              />
+            ),
+            cell: ({ row }) => (
+              <input
+                type="checkbox"
+                aria-label={`Select row ${row.original.id}`}
+                checked={selectedIds.has(row.original.id)}
+                onChange={() => toggleOne(row.original.id)}
+                className="security-checkbox-input"
+              />
+            ),
+            meta: { headerClassName: 'w-10', cellClassName: 'w-10' },
+          },
+          {
+            accessorKey: 'date',
+            header: 'Date',
+            cell: ({ row }) => <span className="text-white/80">{row.original.date}</span>,
+          },
+          {
+            accessorKey: 'time',
+            header: 'Time',
+            cell: ({ row }) => <span className="text-white/60">{row.original.time}</span>,
+          },
+          {
+            accessorKey: 'ipAddress',
+            header: 'IP Address',
+            cell: ({ row }) => (
+              <span className="text-white/80">{row.original.ipAddress || '—'}</span>
+            ),
+          },
+          {
+            accessorKey: 'action',
+            header: 'Action',
+            cell: ({ row }) => <span className="text-white/80">{row.original.action}</span>,
+          },
+          {
+            accessorKey: 'status',
+            header: 'Status',
+            cell: ({ row }) => <StatusBadge status={row.original.status} />,
+          },
+          {
+            accessorKey: 'location',
+            header: 'Location',
+            cell: ({ row }) => (
+              <span className="text-white/60">{row.original.location || '—'}</span>
+            ),
+          },
+          {
+            accessorKey: 'device',
+            header: 'Device',
+            cell: ({ row }) => <span className="text-white/60">{row.original.device || '—'}</span>,
+          },
+        ],
+        SORT_FIELD_MAP,
+      ),
     [allSelected, selectedIds, toggleAll, toggleOne],
   )
 
@@ -261,7 +287,7 @@ export function LoginTrailsPage() {
           onAdvancedFilter={onAdvancedFilter}
           advancedFilterVariant="primary"
           onExport={onExport}
-          showSortIcons={false}
+          {...serverSort.dataTableSortProps}
           pagination={{
             page,
             pageSize: PAGE_SIZE,

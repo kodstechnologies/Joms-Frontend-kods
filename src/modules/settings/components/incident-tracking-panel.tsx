@@ -21,7 +21,10 @@ import { fetchIncidents } from '../api/incidents-api'
 import type { IncidentRow, IncidentSeverity, IncidentStatus } from '../types/settings'
 import { StatCard } from '@/shared/components/dashboard/stat-card'
 import { DataTable } from '@/shared/components/table/data-table'
+import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'
 import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
+import { withServerSortMeta } from '@/shared/utils/table-sort'
+import { buildCatalogSortFieldMap } from '@/shared/utils/table-sort-field-maps'
 import { SETTINGS_INCIDENTS_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
 import { ResponsiveGrid } from '@/shared/components/responsive/responsive-grid'
 import { Button } from '@/shared/components/ui/button'
@@ -44,6 +47,12 @@ import { selectPreferredColumns } from '@/modules/expert/utils/select-preferred-
 import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
 
 const PAGE_SIZE = 8
+
+type IncidentTrackingPanelProps = {
+  highlightIncidentId?: string | null
+}
+
+const INCIDENT_SORT_FIELD_MAP = buildCatalogSortFieldMap(INCIDENT_TRACKING_TABLE_COLUMNS_CATALOG)
 
 const dash = (value: string | null | undefined) => (value && String(value).trim() ? value : '—')
 
@@ -186,9 +195,13 @@ const ALL_INCIDENT_COLUMNS: ColumnDef<IncidentRow>[] = [
   },
 ]
 
-export function IncidentTrackingPanel() {
+export function IncidentTrackingPanel({ highlightIncidentId = null }: IncidentTrackingPanelProps) {
   const navigate = useNavigate()
   const [page, setPage] = useState(1)
+  const serverSort = useServerTableSort({
+    sortFieldMap: INCIDENT_SORT_FIELD_MAP,
+    onPageReset: () => setPage(1),
+  })
   const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setPage(1) })
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
   const [selected, setSelected] = useState<IncidentRow | null>(null)
@@ -231,17 +244,31 @@ export function IncidentTrackingPanel() {
         page,
         limit: PAGE_SIZE,
         ...enhancedSearch.buildSearchParams(),
+        ...serverSort.sortParams,
       }),
-    [appliedFilters, enhancedSearch, page],
+    [appliedFilters, enhancedSearch, page, serverSort.sortParams],
   )
 
   const { data: incidentsResult, isLoading } = useIncidents(listQueryParams)
   const assignMutation = useAssignIncident()
 
-  const rows = incidentsResult?.data ?? []
+  const rows = useMemo(() => incidentsResult?.data ?? [], [incidentsResult?.data])
   const meta = incidentsResult?.meta
   const totalPages = meta?.totalPages ?? 1
   const totalItems = meta?.total ?? 0
+
+  const [highlightDismissedId, setHighlightDismissedId] = useState<string | null>(null)
+
+  const highlightedRow = useMemo(() => {
+    const incidentId = String(highlightIncidentId || '').trim()
+    if (!incidentId || isLoading || !rows.length) return null
+    return rows.find((row) => row.incidentId === incidentId || row.id === incidentId) ?? null
+  }, [highlightIncidentId, isLoading, rows])
+
+  const activeHighlightId = String(highlightIncidentId || '').trim()
+  const selectedRow =
+    selected ??
+    (highlightedRow && highlightDismissedId !== activeHighlightId ? highlightedRow : null)
 
   const handleApplyFilters = useCallback((values: FilterValues) => {
     toast.success('Filters applied')
@@ -300,7 +327,10 @@ export function IncidentTrackingPanel() {
       ),
     }
 
-    return [...preferenceColumns.filter((column) => column.id !== 'actions'), actionsColumn]
+    return withServerSortMeta(
+      [...preferenceColumns.filter((column) => column.id !== 'actions'), actionsColumn],
+      INCIDENT_SORT_FIELD_MAP,
+    )
   }, [tableColumnPreferencesQuery.data])
 
   return (
@@ -342,6 +372,7 @@ export function IncidentTrackingPanel() {
           columns={columns}
           data={rows}
           getRowId={(row) => row.id}
+          {...serverSort.dataTableSortProps}
           isLoading={isLoading}
           searchValue={enhancedSearch.globalSearch}
           onSearchChange={enhancedSearch.setGlobalSearch}
@@ -368,17 +399,23 @@ export function IncidentTrackingPanel() {
       {exportFilterModals}
 
       <AssignUserModal
-        open={Boolean(selected)}
-        incident={selected}
-        onClose={() => setSelected(null)}
+        open={Boolean(selectedRow)}
+        incident={selectedRow}
+        onClose={() => {
+          setSelected(null)
+          if (highlightedRow) {
+            setHighlightDismissedId(activeHighlightId)
+          }
+        }}
         onSubmit={(department, user, assigneeId) => {
-          if (!selected) return
+          if (!selectedRow) return
           assignMutation.mutate(
-            { id: selected.id, department, assignee: user, assigneeId },
+            { id: selectedRow.id, department, assignee: user, assigneeId },
             {
               onSuccess: () => {
-                const ticketId = selected.sourceTicketId
+                const ticketId = selectedRow.sourceTicketId
                 setSelected(null)
+                setHighlightDismissedId(activeHighlightId)
                 toast.success(`Assigned ${user} from ${department}`, {
                   action: ticketId
                     ? {

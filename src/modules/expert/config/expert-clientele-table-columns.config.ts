@@ -6,7 +6,6 @@ export type ExpertClienteleTableColumnCatalogItem = {
   defaultVisible: boolean
 }
 
-/** Expert Clientele table columns — matches the bookings table. */
 export const EXPERT_CLIENTELE_TABLE_COLUMNS_CATALOG: ExpertClienteleTableColumnCatalogItem[] = [
   {
     id: 'booking-id',

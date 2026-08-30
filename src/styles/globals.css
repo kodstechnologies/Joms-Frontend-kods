@@ -1869,7 +1869,7 @@ select.settings-control,
   overflow-x: auto;
   border-radius: 12px;
   border: 1px solid rgb(255 255 255 / 10%);
-  background: #111111;
+  background: var(--settings-card-bg);
   padding: 4px;
   scrollbar-width: none;
   -ms-overflow-style: none;
@@ -2394,7 +2394,7 @@ select.settings-control,
   gap: 10px;
 }
 
-/* ===== Schedule Maintenance modal (Figma ~881x645) ===== */
+/* Schedule maintenance modal */
 .sm-modal-overlay {
   position: fixed;
   inset: 0;
@@ -2416,7 +2416,7 @@ select.settings-control,
   overflow: hidden;
   border-radius: 16px;
   border: 1px solid rgb(255 255 255 / 10%);
-  background: #000000;
+  background: var(--settings-card-bg);
   color: #ffffff;
   box-shadow: 0 24px 80px rgb(0 0 0 / 65%);
 }
@@ -3338,6 +3338,20 @@ select::-ms-expand {
   color: var(--brand-accent);
 }
 
+.ui-table-actions-item-danger,
+.ui-table-actions-item-danger:hover {
+  color: var(--brand-danger);
+}
+
+.ui-table-actions-item-danger:hover {
+  background: rgb(211 25 28 / 8%);
+}
+
+.ui-table-actions-item-danger svg {
+  color: currentColor;
+  stroke: currentColor;
+}
+
 .ui-table-datetime {
   display: flex;
   box-sizing: border-box;
@@ -3903,6 +3917,70 @@ select::-ms-expand {
   font-weight: 400;
   line-height: 18px;
   letter-spacing: 0;
+  padding: 16px 24px;
+}
+
+.invite-modal-footer {
+  flex-shrink: 0;
+}
+
+.invite-modal-footer-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  border-top: 1px solid rgb(255 255 255 / 20%);
+  padding: 16px 24px 24px;
+}
+
+.invite-modal-btn-cancel,
+.invite-modal-btn-submit {
+  display: inline-flex;
+  box-sizing: border-box;
+  height: 40px;
+  min-height: 40px;
+  max-height: 40px;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--brand-radius-lg);
+  padding: 0 16px;
+  font-family: 'Figtree', ui-sans-serif, system-ui, sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 22px;
+  letter-spacing: 0;
+  white-space: nowrap;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    opacity 0.15s ease;
+}
+
+.invite-modal-btn-cancel {
+  min-width: 101px;
+  border: 1px solid #ffffff;
+  background: transparent;
+  color: #ffffff;
+}
+
+.invite-modal-btn-cancel:hover {
+  background: rgb(255 255 255 / 5%);
+}
+
+.invite-modal-btn-submit {
+  min-width: 218px;
+  border: none;
+  background: var(--brand-gold-gradient);
+  color: #000000;
+}
+
+.invite-modal-btn-submit:hover {
+  filter: brightness(0.96);
+}
+
+.invite-modal-btn-submit:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
 }
 
 /* Membership Management Page Styles */
@@ -4073,7 +4151,7 @@ select::-ms-expand {
 .create-membership-modal {
   max-width: 701px;
   border-radius: 16px;
-  background: #000000;
+  background: #141414;
   border: 1px solid rgb(255 255 255 / 10%);
   box-shadow: 0 24px 80px rgba(0, 0, 0, 0.65);
 }

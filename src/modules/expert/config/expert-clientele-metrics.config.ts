@@ -8,7 +8,6 @@ export type ExpertClienteleMetricCatalogItem = {
   defaultActive: boolean
 }
 
-/** Expert Clientele dashboard metrics — matches the clientele summary cards. */
 export const EXPERT_CLIENTELE_METRICS_CATALOG: ExpertClienteleMetricCatalogItem[] = [
   {
     id: 'services-listed',

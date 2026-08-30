@@ -72,6 +72,7 @@ export function TicketCasePanel({
   onViewProfile,
 }: TicketCasePanelProps) {
   const [commentDraft, setCommentDraft] = useState(comments)
+  const actionsDisabled = fieldsDisabled
 
   return (
     <div className="radius-lg bg-brand-surface flex h-full min-h-0 flex-col overflow-hidden border border-white/10">
@@ -115,8 +116,9 @@ export function TicketCasePanel({
             </p>
             <button
               type="button"
-              className="text-body-sm text-brand-accent hover:underline"
-              onClick={onReassign ?? (() => toast.message('Reassign coming soon'))}
+              className="ui-cta ui-cta-primary !h-auto px-3 py-1 text-xs disabled:cursor-not-allowed disabled:opacity-50"
+              disabled={actionsDisabled || !onReassign}
+              onClick={onReassign}
             >
               Reassign
             </button>
@@ -201,22 +203,25 @@ export function TicketCasePanel({
       <div className="flex shrink-0 gap-2 border-t border-white/5 p-4">
         <button
           type="button"
-          className="ui-cta ui-cta-primary flex-1"
-          onClick={onEscalate ?? (() => toast.message('Escalation coming soon'))}
+          className="ui-cta ui-cta-primary flex-1 disabled:cursor-not-allowed disabled:opacity-50"
+          disabled={actionsDisabled || !onEscalate}
+          onClick={onEscalate}
         >
           Escalate
         </button>
         <button
           type="button"
-          className="ui-cta ui-cta-primary flex-1"
-          onClick={onResolve ?? (() => toast.success('Ticket marked as resolved (static preview)'))}
+          className="ui-cta ui-cta-primary flex-1 disabled:cursor-not-allowed disabled:opacity-50"
+          disabled={actionsDisabled || !onResolve}
+          onClick={onResolve}
         >
           Mark as Resolved
         </button>
         <button
           type="button"
-          className="ui-cta ui-cta-ghost flex-1"
-          onClick={onCloseTicket ?? (() => toast.message('Close ticket coming soon'))}
+          className="ui-cta ui-cta-ghost flex-1 disabled:cursor-not-allowed disabled:opacity-50"
+          disabled={actionsDisabled || !onCloseTicket}
+          onClick={onCloseTicket}
         >
           Close
         </button>

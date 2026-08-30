@@ -1,19 +1,16 @@
 pre-commit:
   parallel: true
   commands:
-    eslint:
-      glob: '*.{js,jsx,ts,tsx}'
-      run: npx eslint {staged_files}
     prettier:
       glob: '*.{js,jsx,ts,tsx,css,json,md,yml,yaml,html}'
-      run: npx prettier --write {staged_files}
+      run: pnpm exec prettier --write {staged_files}
       stage_fixed: true
     typecheck:
       glob: '*.{ts,tsx}'
-      run: npm run typecheck
+      run: pnpm typecheck
 
 pre-push:
   parallel: false
   commands:
     build:
-      run: npm run build
+      run: pnpm build

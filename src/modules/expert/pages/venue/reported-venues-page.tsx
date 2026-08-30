@@ -14,7 +14,10 @@ import {
 } from '../../components/venue-report-detail-modal'
 import { ExpertListHeader } from '../experts/expert-list-shared'
 import { DataTable } from '@/shared/components/table/data-table'
+import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'
 import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
+import { withServerSortMeta } from '@/shared/utils/table-sort'
+import { VENUE_REPORTED_SORT_FIELDS } from '@/shared/utils/table-sort-field-maps'
 import { VENUE_REPORTED_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
 import {
   TableActionsDropdown,
@@ -104,6 +107,10 @@ const fetchVenueReportsForExport = async (params: Record<string, unknown>) => {
 export function VenueReportedVenuesPage() {
   const navigate = useNavigate()
   const [currentPage, setCurrentPage] = useState(1)
+  const serverSort = useServerTableSort({
+    sortFieldMap: VENUE_REPORTED_SORT_FIELDS,
+    onPageReset: () => setCurrentPage(1),
+  })
   const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setCurrentPage(1) })
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
 
@@ -122,10 +129,10 @@ export function VenueReportedVenuesPage() {
   const searchParams = useMemo(() => enhancedSearch.buildSearchParams(), [enhancedSearch])
 
   const [prevKey, setPrevKey] = useState(
-    `${currentPage}-${JSON.stringify(searchParams)}-${JSON.stringify(apiFilterParams)}`,
+    `${currentPage}-${JSON.stringify(searchParams)}-${JSON.stringify(apiFilterParams)}-${JSON.stringify(serverSort.sortParams)}`,
   )
 
-  const currentKey = `${currentPage}-${JSON.stringify(searchParams)}-${JSON.stringify(apiFilterParams)}`
+  const currentKey = `${currentPage}-${JSON.stringify(searchParams)}-${JSON.stringify(apiFilterParams)}-${JSON.stringify(serverSort.sortParams)}`
 
   if (currentKey !== prevKey) {
     setPrevKey(currentKey)
@@ -136,6 +143,7 @@ export function VenueReportedVenuesPage() {
     fetchVenueReports({
       page: currentPage,
       limit: 10,
+      ...serverSort.sortParams,
       ...searchParams,
       ...apiFilterParams,
     })
@@ -153,7 +161,7 @@ export function VenueReportedVenuesPage() {
       .finally(() => {
         setLoading(false)
       })
-  }, [currentPage, searchParams, apiFilterParams])
+  }, [currentPage, searchParams, apiFilterParams, serverSort.sortParams])
 
   const handleApplyFilters = useCallback((values: FilterValues) => {
     setAppliedFilters(values)
@@ -344,7 +352,7 @@ export function VenueReportedVenuesPage() {
       },
     }
 
-    return [...preferenceColumns, actionsColumn]
+    return withServerSortMeta([...preferenceColumns, actionsColumn], VENUE_REPORTED_SORT_FIELDS)
   }, [activeDropdownId, navigate, tableColumnPreferencesQuery.data])
 
   return (
@@ -375,6 +383,7 @@ export function VenueReportedVenuesPage() {
         searchPlaceholder="Search by report ID, venue name, or reporter"
         onAdvancedFilter={onAdvancedFilter}
         onExport={onExport}
+        {...serverSort.dataTableSortProps}
         pagination={{
           page: currentPage,
           pageSize: 10,

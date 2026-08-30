@@ -4,12 +4,13 @@ import { navigationConfig, type NavItem } from './navigation.config'
 import {
   hasModulePermissionAccess,
   normalizePermissionGrant,
+  normalizePermissionKey,
   normalizeUserPermissions,
   type PermissionModuleKey,
 } from '@/shared/lib/permissions'
 
 export type PermissionModule = PermissionModuleKey
-export { normalizeUserPermissions }
+export { normalizePermissionKey, normalizeUserPermissions }
 
 export function hasModuleAccess(
   user: AdminUser | null | undefined,

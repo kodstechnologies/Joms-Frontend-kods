@@ -7,9 +7,8 @@ import {
   type ConsultationSlot,
 } from '../api/consultation-booking.api'
 import type { PartnerOffering } from '../api/quotation.api'
+import { loadPartnerAccessToken } from '../api/partner-auth.api'
 import { payConsultationBookingWithRazorpay } from '../lib/harness-payment'
-
-const PARTNER_SESSION_KEY = 'joms_dev_partner_chat'
 
 type Props = {
   token: string
@@ -18,18 +17,6 @@ type Props = {
   onSetupComplete?: (updated: PartnerOffering) => void
   onError?: (message: string | null) => void
   onSuccess?: (message: string) => void
-}
-
-function loadPartnerToken() {
-  try {
-    const raw =
-      localStorage.getItem(PARTNER_SESSION_KEY) || sessionStorage.getItem(PARTNER_SESSION_KEY)
-    if (!raw) return ''
-    const parsed = JSON.parse(raw) as { accessToken?: string }
-    return parsed.accessToken || ''
-  } catch {
-    return ''
-  }
 }
 
 function errMessage(err: unknown) {
@@ -70,7 +57,7 @@ export function UserConsultationBookPanel({
   onSuccess,
 }: Props) {
   const [item, setItem] = useState(consultation)
-  const [partnerToken, setPartnerToken] = useState(loadPartnerToken)
+  const [partnerToken, setPartnerToken] = useState(loadPartnerAccessToken)
   const [setupLoading, setSetupLoading] = useState(false)
   const [availFrom, setAvailFrom] = useState('09:00')
   const [availTo, setAvailTo] = useState('21:00')
@@ -251,9 +238,20 @@ export function UserConsultationBookPanel({
           </button>
         </section>
       ) : (
-        <p className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 px-3 py-2 text-xs text-emerald-200">
-          Ready to book · status <strong>live</strong> · mode <strong>{item.mode}</strong>
-        </p>
+        <div className="space-y-2">
+          <p className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 px-3 py-2 text-xs text-emerald-200">
+            Ready to book · status <strong>live</strong> · mode <strong>{item.mode}</strong>
+          </p>
+          <p className="rounded-lg border border-zinc-700 bg-zinc-900/60 px-3 py-2 text-[11px] text-zinc-400">
+            <strong className="text-zinc-300">Dev tip:</strong> book + pay once, then reuse that
+            paid booking below — use <strong>Start join window (test)</strong> to shift the slot to
+            now (no new Razorpay). Partner joins on{' '}
+            <a href="/dev/chat-partner" className="text-sky-300 hover:underline">
+              /dev/chat-partner
+            </a>
+            .
+          </p>
+        </div>
       )}
 
       <div>

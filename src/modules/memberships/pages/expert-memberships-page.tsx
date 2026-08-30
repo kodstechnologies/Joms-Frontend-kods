@@ -3,11 +3,10 @@ import type { ColumnDef } from '@tanstack/react-table'
 import {
   CircleArrowDown,
   CircleArrowUp,
+  CircleX,
   ClipboardList,
   Flag,
-  Tag,
   Waypoints,
-  X,
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
@@ -19,6 +18,7 @@ import {
   DEFAULT_MEMBERSHIPS_VISIBLE_COLUMN_IDS,
   MEMBERSHIPS_MODULE_KEY,
 } from '../config/membership-metrics.config'
+import { EXPERT_MEMBERSHIP_SORT_FIELD_MAP } from '../config/membership-table-sort-fields'
 import {
   useCancelSubscription,
   useDowngradeSubscription,
@@ -37,14 +37,14 @@ import { SectionHeader } from '@/shared/components/dashboard/section-header'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 import { Button } from '@/shared/components/ui/button'
 import { DataTable } from '@/shared/components/table/data-table'
+import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'
 import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
+import { withServerSortMeta } from '@/shared/utils/table-sort'
 import { EXPERT_MEMBERSHIPS_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
 import {
   TableActionsDropdown,
   TableActionsItem,
 } from '@/shared/components/table/table-actions-dropdown'
-import { AddTagModal } from '@/shared/components/modal/add-tag-modal'
-import { useEntityTags } from '@/shared/hooks/use-entity-tags'
 import { cn } from '@/shared/lib/cn'
 import type { FilterValues } from '@/shared/types/data-filter'
 import { exportDisplayValue } from '@/shared/utils/export-utils'
@@ -52,6 +52,8 @@ import {
   buildExpertMembershipsListQueryParams,
   createExpertMembershipsFilteredExportHandler,
 } from '@/shared/utils/export-filter-utils'
+
+const MEMBERSHIP_SORT_FIELD_MAP = EXPERT_MEMBERSHIP_SORT_FIELD_MAP
 
 const EXPORT_COLUMN_MAP: Record<
   string,
@@ -159,9 +161,12 @@ export function ExpertMembershipsPage() {
     'upgrade' | 'downgrade' | 'extend' | 'cancel' | null
   >(null)
   const [escalateOpen, setEscalateOpen] = useState(false)
-  const { tagModalOpen, openTagModal, closeTagModal, saveTags, initialTags } = useEntityTags()
 
   const { currentPage, setCurrentPage } = useExpertMembershipStore()
+  const serverSort = useServerTableSort({
+    sortFieldMap: MEMBERSHIP_SORT_FIELD_MAP,
+    onPageReset: () => setCurrentPage(1),
+  })
   const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setCurrentPage(1) })
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
 
@@ -171,8 +176,9 @@ export function ExpertMembershipsPage() {
         page: currentPage,
         limit: 10,
         ...enhancedSearch.buildSearchParams(),
+        ...serverSort.sortParams,
       }),
-    [appliedFilters, currentPage, enhancedSearch],
+    [appliedFilters, currentPage, enhancedSearch, serverSort.sortParams],
   )
 
   const { data, isLoading } = useExpertSubscriptions(listQueryParams)
@@ -247,15 +253,6 @@ export function ExpertMembershipsPage() {
           View Details
         </TableActionsItem>
         <TableActionsItem
-          icon={<Tag className="size-4" strokeWidth={1.85} />}
-          onClick={() => {
-            setActiveDropdownId(null)
-            openTagModal(subscription._id)
-          }}
-        >
-          Add Tags
-        </TableActionsItem>
-        <TableActionsItem
           icon={<CircleArrowUp className="size-4" strokeWidth={1.85} />}
           onClick={() => openAction(subscription, 'upgrade')}
         >
@@ -286,15 +283,15 @@ export function ExpertMembershipsPage() {
           Extend Plan
         </TableActionsItem>
         <TableActionsItem
-          icon={<CancelPlanIcon />}
-          className="text-brand-danger hover:bg-brand-danger/8 hover:text-brand-danger"
+          icon={<CircleX className="size-4" strokeWidth={1.85} />}
+          className="ui-table-actions-item-danger"
           onClick={() => openAction(subscription, 'cancel')}
         >
           Cancel Plan
         </TableActionsItem>
       </TableActionsDropdown>
     ),
-    [activeDropdownId, isSuperAdmin, navigate, openAction, openTagModal],
+    [activeDropdownId, isSuperAdmin, navigate, openAction],
   )
 
   const columns = useMemo<ColumnDef<MembershipSubscription>[]>(() => {
@@ -311,7 +308,7 @@ export function ExpertMembershipsPage() {
       cell: ({ row }) => renderActions(row.original),
     }
 
-    return [...preferenceColumns, actionsColumn]
+    return withServerSortMeta([...preferenceColumns, actionsColumn], MEMBERSHIP_SORT_FIELD_MAP)
   }, [renderActions, tableColumnPreferencesQuery.data])
 
   return (
@@ -360,6 +357,7 @@ export function ExpertMembershipsPage() {
         onAdvancedFilter={onAdvancedFilter}
         advancedFilterVariant="primary"
         onExport={onExport}
+        {...serverSort.dataTableSortProps}
         pagination={{
           page: currentPage,
           pageSize: meta?.limit ?? 10,
@@ -444,22 +442,7 @@ export function ExpertMembershipsPage() {
           }
         }}
       />
-
-      <AddTagModal
-        open={tagModalOpen}
-        onClose={closeTagModal}
-        initialTags={initialTags}
-        onSubmit={saveTags}
-      />
     </div>
-  )
-}
-
-function CancelPlanIcon() {
-  return (
-    <span className="bg-brand-danger inline-flex size-4 items-center justify-center rounded-full">
-      <X className="size-2.5 text-white" strokeWidth={3} />
-    </span>
   )
 }
 

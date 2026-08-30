@@ -1,4 +1,35 @@
 import type { MembershipFeatures, MembershipPlan, MembershipPlanConfig } from '../types/membership'
+import type { MembershipSubscription } from '../types/membership-subscription'
+
+export const resolveSubscriptionPlanName = (
+  subscription: MembershipSubscription,
+  plan?: MembershipPlan | null,
+) => {
+  if (plan?.planName) return plan.planName
+
+  const populatedPlanName =
+    subscription.membershipPlanId && typeof subscription.membershipPlanId === 'object'
+      ? subscription.membershipPlanId.planName
+      : null
+
+  if (populatedPlanName) return populatedPlanName
+
+  const rawName = subscription.planName?.trim() ?? ''
+  const billingCycle = subscription.billingCycleName?.trim()
+
+  if (!rawName || !billingCycle) return rawName
+
+  const suffix = ` ${billingCycle}`
+  if (rawName.endsWith(suffix)) {
+    return rawName.slice(0, -suffix.length).trim()
+  }
+
+  if (rawName.endsWith(billingCycle)) {
+    return rawName.slice(0, -billingCycle.length).trim()
+  }
+
+  return rawName
+}
 
 export const formatCurrency = (value: number) =>
   new Intl.NumberFormat('en-IN', {
@@ -6,6 +37,9 @@ export const formatCurrency = (value: number) =>
     currency: 'INR',
     maximumFractionDigits: 0,
   }).format(value)
+
+export const formatMembershipPriceValue = (value: number) =>
+  new Intl.NumberFormat('en-IN', { maximumFractionDigits: 0 }).format(value)
 
 export const formatMembershipDate = (value?: string | null) => {
   if (!value) return '—'

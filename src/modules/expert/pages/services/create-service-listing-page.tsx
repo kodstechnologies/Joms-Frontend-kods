@@ -48,6 +48,7 @@ import {
 } from '@/modules/expert/lib/listing-form-utils'
 import type { ConsultationTopic } from '@/modules/expert/type/service'
 import type { UpdateServicePricingPayload } from '@/modules/expert/type/service'
+import { guardUploadFiles } from '@/shared/lib/upload-file'
 import { cn } from '@/shared/lib/cn'
 import { RequiredMark } from '@/shared/components/form/required-mark'
 import { CreateListingWizard } from '@/modules/expert/components'
@@ -543,7 +544,7 @@ export const CreateServiceListingPage = () => {
     (files: FileList | null) => {
       if (!files) return
       const remaining = MAX_IMAGES - uploadedImages.length
-      const toAdd = Array.from(files).slice(0, remaining)
+      const toAdd = guardUploadFiles(Array.from(files).slice(0, remaining))
       const newImages: UploadedImage[] = toAdd.map((file) => ({
         id: crypto.randomUUID(),
         url: URL.createObjectURL(file),

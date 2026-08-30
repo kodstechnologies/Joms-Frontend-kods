@@ -6,7 +6,10 @@ import createIcon from '@/assets/JOMS_ICONS-2/icons8-create.svg'
 
 import { Button } from '@/shared/components/ui/button'
 import { DataTable } from '@/shared/components/table/data-table'
+import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'
 import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
+import { withServerSortMeta } from '@/shared/utils/table-sort'
+import { buildCatalogSortFieldMap } from '@/shared/utils/table-sort-field-maps'
 import { SERVICE_CATEGORY_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 import { SERVICE_CATEGORY_EXPORT_COLUMN_MAP } from '../../utils/table-export-column-maps'
@@ -38,10 +41,18 @@ import { selectPreferredColumns } from '../../utils/select-preferred-columns'
 const PAGE_SIZE = 10
 const DEFAULT_VISIBLE_IDS = DEFAULT_SERVICE_CATEGORY_MANAGEMENT_VISIBLE_COLUMN_IDS
 
+const SERVICE_CATEGORY_COLUMN_SORT_FIELDS = buildCatalogSortFieldMap(
+  SERVICE_CATEGORY_MANAGEMENT_TABLE_COLUMNS_CATALOG,
+)
+
 export const DeletedCategoriesPage = () => {
   const navigate = useNavigate()
   const scope = useCategoryManagementScope()
   const [page, setPage] = useState(1)
+  const serverSort = useServerTableSort({
+    sortFieldMap: SERVICE_CATEGORY_COLUMN_SORT_FIELDS,
+    onPageReset: () => setPage(1),
+  })
   const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setPage(1) })
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
   const preferencesQuery = useTableColumnPreferences(SERVICE_CATEGORY_MANAGEMENT_MODULE_KEY)
@@ -67,10 +78,11 @@ export const DeletedCategoriesPage = () => {
       buildCategoryListQueryParams(appliedFilters, {
         page,
         limit: PAGE_SIZE,
+        ...serverSort.sortParams,
         ...enhancedSearch.buildSearchParams(),
         status: 'DELETED',
       }),
-    [appliedFilters, enhancedSearch, page],
+    [appliedFilters, enhancedSearch, page, serverSort.sortParams],
   )
 
   const { data, isLoading, isError } = useServiceCategories(categoryQueryParams)
@@ -83,11 +95,14 @@ export const DeletedCategoriesPage = () => {
     const rawVisibleIds = preferencesQuery.data?.visibleColumnIds?.length
       ? preferencesQuery.data.visibleColumnIds
       : DEFAULT_VISIBLE_IDS
-    return selectPreferredColumns(
-      deletedCategoryColumns,
-      rawVisibleIds,
-      DEFAULT_VISIBLE_IDS,
-      SERVICE_CATEGORY_LEGACY_COLUMN_ID_MAP,
+    return withServerSortMeta(
+      selectPreferredColumns(
+        deletedCategoryColumns,
+        rawVisibleIds,
+        DEFAULT_VISIBLE_IDS,
+        SERVICE_CATEGORY_LEGACY_COLUMN_ID_MAP,
+      ),
+      SERVICE_CATEGORY_COLUMN_SORT_FIELDS,
     )
   }, [preferencesQuery.data])
 
@@ -164,6 +179,7 @@ export const DeletedCategoriesPage = () => {
         searchPlaceholder="Search by name or ID"
         onAdvancedFilter={onAdvancedFilter}
         onExport={onExport}
+        {...serverSort.dataTableSortProps}
         isLoading={isLoading}
         emptyMessage={emptyMessage}
         pagination={{

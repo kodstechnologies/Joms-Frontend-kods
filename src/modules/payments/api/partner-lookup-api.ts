@@ -7,7 +7,6 @@ type PartnerDetailsRow = {
   name?: string
 }
 
-/** Resolve partner display names via auth (same source as venue admin list). */
 export async function fetchPartnerDisplayNames(ids: string[]) {
   const unique = [...new Set(ids.map(String).filter(Boolean))]
   if (!unique.length) return {} as Record<string, string>

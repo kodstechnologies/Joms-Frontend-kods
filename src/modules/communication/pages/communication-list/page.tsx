@@ -18,7 +18,10 @@ import {
 import { useCommunicationMetrics, useCommunications } from '../../hooks/use-communications'
 import type { Communication } from '../../api/communication-api'
 import { DataTable } from '@/shared/components/table/data-table'
+import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'
 import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
+import { withServerSortMeta } from '@/shared/utils/table-sort'
+import { buildDefaultTableSortFieldMap } from '@/shared/utils/table-sort-field-maps'
 import { COMMUNICATION_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
 import { StatCard } from '@/shared/components/dashboard/stat-card'
 import { StatCardSkeleton } from '@/shared/components/ui/skeleton'
@@ -89,8 +92,14 @@ const EXPORT_COLUMN_MAP: Record<
   'last-updated': { header: 'Last Updated', accessor: (c) => exportDisplayValue(c.updatedAtLabel) },
 }
 
+const COMMUNICATION_SORT_FIELD_MAP = buildDefaultTableSortFieldMap(Object.keys(EXPORT_COLUMN_MAP))
+
 export function CommunicationListPage() {
   const [page, setPage] = useState(1)
+  const serverSort = useServerTableSort({
+    sortFieldMap: COMMUNICATION_SORT_FIELD_MAP,
+    onPageReset: () => setPage(1),
+  })
   const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setPage(1) })
   const navigate = useNavigate()
 
@@ -103,8 +112,9 @@ export function CommunicationListPage() {
         page,
         limit: PAGE_SIZE,
         ...enhancedSearch.buildSearchParams(),
+        ...serverSort.sortParams,
       }),
-    [appliedFilters, enhancedSearch, page],
+    [appliedFilters, enhancedSearch, page, serverSort.sortParams],
   )
   const listQuery = useCommunications(listQueryParams)
   const activeMetricIds = useActiveMetricIds(COMMUNICATION_MODULE_KEY, [
@@ -300,7 +310,10 @@ export function CommunicationListPage() {
       cell: ({ row }) => <CommunicationActions communication={row.original} />,
     }
 
-    return [selectColumn, ...preferenceColumns, actionsColumn]
+    return withServerSortMeta(
+      [selectColumn, ...preferenceColumns, actionsColumn],
+      COMMUNICATION_SORT_FIELD_MAP,
+    )
   }, [tableColumnPreferencesQuery.data])
 
   return (
@@ -350,6 +363,7 @@ export function CommunicationListPage() {
         columns={columns}
         data={rows}
         getRowId={(row) => row.id}
+        {...serverSort.dataTableSortProps}
         searchValue={enhancedSearch.globalSearch}
         onSearchChange={enhancedSearch.setGlobalSearch}
         searchableColumns={COMMUNICATION_SEARCH_COLUMNS}

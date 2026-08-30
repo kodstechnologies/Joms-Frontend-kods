@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { CloudUpload } from 'lucide-react'
+import { guardUploadFile } from '@/shared/lib/upload-file'
 import { toast } from 'sonner'
 
 import { AdminNotesModal } from './admin-notes-modal'
@@ -50,7 +51,7 @@ function BrandingUploadTile({
   const showPreview = Boolean(imageUrl) && !uploading && failedPreviewUrl !== imageUrl
 
   const handleFile = async (file: File | null) => {
-    if (!file) return
+    if (!file || !guardUploadFile(file)) return
     if (!file.type.startsWith('image/')) {
       toast.error('Please upload an image file')
       return

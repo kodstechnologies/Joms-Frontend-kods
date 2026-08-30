@@ -174,8 +174,13 @@ function client(token: string) {
 }
 
 export async function listPartnerOfferings(token: string, partnerId: string) {
-  const res = await client(token).get(`/quotations/offerings/${partnerId}`)
-  return res.data?.data as PartnerOfferings
+  const res = await client(token).get(`/quotations/offerings/${encodeURIComponent(partnerId)}`)
+  const payload = (res.data?.data ?? res.data) as PartnerOfferings | undefined
+  return {
+    partnerId: String(payload?.partnerId || partnerId),
+    services: Array.isArray(payload?.services) ? payload.services : [],
+    consultations: Array.isArray(payload?.consultations) ? payload.consultations : [],
+  } as PartnerOfferings
 }
 
 export type CreateQuotationBody = {
@@ -213,6 +218,17 @@ export async function listPartnerServiceProjects(
   status: ServiceProjectStatus = 'all',
 ) {
   const res = await client(token).get('/quotations/projects/services', {
+    params: { status, page: 1, limit: 50 },
+  })
+  return (res.data?.data || []) as ServiceProjectCard[]
+}
+
+export async function listPartnerServiceProjectsWithUser(
+  token: string,
+  userId: string,
+  status: ServiceProjectStatus = 'all',
+) {
+  const res = await client(token).get(`/quotations/projects/services/with-user/${userId}`, {
     params: { status, page: 1, limit: 50 },
   })
   return (res.data?.data || []) as ServiceProjectCard[]

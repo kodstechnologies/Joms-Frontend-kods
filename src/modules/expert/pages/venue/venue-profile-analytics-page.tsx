@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
@@ -16,6 +16,7 @@ import {
 } from '../../config/venue-profile-analytics-metrics.config'
 import { orderByActiveMetricIds, useActiveMetricIds } from '../../hooks/use-active-metric-ids'
 import { buildVenueProfileAnalyticsMetricCards } from '../../utils/venue-profile-analytics-metrics'
+import { exportVenueProfileAnalyticsToExcel } from '../../utils/export-venue-profile-analytics'
 import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
@@ -85,6 +86,29 @@ export function VenueProfileAnalyticsPage() {
 
   const venueName = data?.data?.overview.venue.name ?? 'Venue'
 
+  const handleExportData = useCallback(async () => {
+    if (analyticsQuery.isLoading) {
+      toast.message('Please wait for analytics to load')
+      return
+    }
+
+    try {
+      await exportVenueProfileAnalyticsToExcel({
+        venueName,
+        venueId,
+        metricCards: venueAnalyticsCards,
+        analytics: analyticsData,
+      })
+      toast.success('Export downloaded')
+    } catch (error) {
+      if (error instanceof Error && error.message === 'NO_RECORDS') {
+        toast.error('No analytics data available to export')
+        return
+      }
+      toast.error('Failed to export analytics data')
+    }
+  }, [analyticsData, analyticsQuery.isLoading, venueAnalyticsCards, venueId, venueName])
+
   return (
     <div className="mx-auto flex max-w-[1120px] flex-col gap-5">
       <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -113,10 +137,7 @@ export function VenueProfileAnalyticsPage() {
             <SlidersHorizontal className="size-4" />
             Manage Metrics
           </Button>
-          <Button
-            className="ui-export-data h-9"
-            onClick={() => toast.message('Export coming soon')}
-          >
+          <Button className="ui-export-data h-9" onClick={handleExportData}>
             <Upload className="size-4" />
             Export Data
           </Button>

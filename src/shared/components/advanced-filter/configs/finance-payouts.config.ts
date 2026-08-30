@@ -8,7 +8,7 @@ const byFinancePayoutsSection: FilterSectionConfig = {
   defaultExpanded: true,
   fields: [
     { id: 'payoutId', label: 'Payout ID', type: 'text', placeholder: 'Enter Payout ID' },
-    { id: 'recipient', label: 'Recipient', type: 'text', placeholder: 'Enter Recipient Name' },
+    { id: 'recipient', label: 'Payee Name', type: 'text', placeholder: 'Enter Payee Name' },
     {
       id: 'module',
       label: 'Type',
@@ -32,9 +32,10 @@ const byFinancePayoutsSection: FilterSectionConfig = {
       label: 'Status',
       type: 'checkbox-group',
       options: [
-        { label: 'Completed', value: 'Completed' },
+        { label: 'Paid', value: 'Paid' },
         { label: 'Pending', value: 'Pending' },
         { label: 'Failed', value: 'Failed' },
+        { label: 'On Hold', value: 'paused_dispute' },
       ],
     },
     {
@@ -69,7 +70,7 @@ const byFinancePayoutsSection: FilterSectionConfig = {
     },
     {
       id: 'scheduledAt',
-      label: 'Initiated Date',
+      label: 'Scheduled Date',
       type: 'date-range',
       fromPlaceholder: 'From',
       toPlaceholder: 'To',

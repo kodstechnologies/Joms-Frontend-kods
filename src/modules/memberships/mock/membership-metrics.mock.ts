@@ -30,6 +30,15 @@ export const PAUSE_REASON_OPTIONS = [
   { label: 'Low demand period', value: 'low_demand_period' },
 ]
 
+export const PLAN_CHANGE_REASON_OPTIONS = [
+  { label: 'User request', value: 'user_request' },
+  { label: 'Performance upgrade', value: 'performance_upgrade' },
+  { label: 'Billing adjustment', value: 'billing_adjustment' },
+  { label: 'Policy compliance', value: 'policy_compliance' },
+  { label: 'Partner eligibility', value: 'partner_eligibility' },
+  { label: 'Admin discretion', value: 'admin_discretion' },
+]
+
 export const DELETE_REASON_OPTIONS = [
   { label: 'Plan discontinued', value: 'plan_discontinued' },
   { label: 'Merged with another plan', value: 'merged_plan' },

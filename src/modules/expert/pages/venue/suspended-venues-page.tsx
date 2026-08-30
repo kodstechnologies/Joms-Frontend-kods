@@ -19,7 +19,10 @@ import { useVenueManagementControls } from '@/modules/settings/hooks/use-venue-p
 import type { Venue } from '../../type/venue'
 import { getVenueApiId, getVenueDisplayId } from '../../utils/venue-list'
 import { DataTable } from '@/shared/components/table/data-table'
+import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'
 import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
+import { withServerSortMeta } from '@/shared/utils/table-sort'
+import { VENUE_SUSPENDED_SORT_FIELDS } from '@/shared/utils/table-sort-field-maps'
 import { VENUE_SUSPENDED_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
 import {
   TableActionsDropdown,
@@ -113,6 +116,10 @@ export function VenueSuspendedPage() {
   const navigate = useNavigate()
   const { allowAddVenues } = useVenueManagementControls()
   const [currentPage, setCurrentPage] = useState(1)
+  const serverSort = useServerTableSort({
+    sortFieldMap: VENUE_SUSPENDED_SORT_FIELDS,
+    onPageReset: () => setCurrentPage(1),
+  })
   const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setCurrentPage(1) })
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [selectedVenueIds, setSelectedVenueIds] = useState<string[]>([])
@@ -125,10 +132,11 @@ export function VenueSuspendedPage() {
       buildVenueListQueryParams(appliedFilters, {
         page: currentPage,
         limit: 10,
+        ...serverSort.sortParams,
         ...enhancedSearch.buildSearchParams(),
         status: 'suspended',
       }),
-    [appliedFilters, currentPage, enhancedSearch],
+    [appliedFilters, currentPage, enhancedSearch, serverSort.sortParams],
   )
 
   const { data, isLoading } = useVenues(venueQueryParams)
@@ -386,7 +394,10 @@ export function VenueSuspendedPage() {
       },
     }
 
-    return [selectColumn, ...preferenceColumns, actionsColumn]
+    return withServerSortMeta(
+      [selectColumn, ...preferenceColumns, actionsColumn],
+      VENUE_SUSPENDED_SORT_FIELDS,
+    )
   }, [
     activeDropdownId,
     allVisibleVenuesSelected,
@@ -467,6 +478,7 @@ export function VenueSuspendedPage() {
         searchPlaceholder="Search by name, ID or profession"
         onAdvancedFilter={onAdvancedFilter}
         onExport={onExport}
+        {...serverSort.dataTableSortProps}
         pagination={{
           page: currentPage,
           pageSize: meta?.pagination.limit || 10,

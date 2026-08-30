@@ -169,21 +169,17 @@ export function NotificationPanel({ open, onClose }: NotificationPanelProps) {
     }
   }
 
+  if (!open) return null
+
   return (
     <>
-      {open ? (
-        <div className="fixed inset-0 z-50 bg-black/60" onClick={onClose} aria-hidden="true" />
-      ) : null}
+      <div className="fixed inset-0 z-50 bg-black/60" onClick={onClose} aria-hidden="true" />
 
-      <aside
-        className={cn(
-          'bg-brand-surface fixed inset-y-0 right-0 z-50 flex w-full max-w-[26rem] flex-col border-l border-white/10 shadow-[-18px_0_50px_rgba(0,0,0,0.45)] transition-transform duration-200',
-          open ? 'pointer-events-auto translate-x-0' : 'pointer-events-none translate-x-full',
-        )}
+      <div
+        className="bg-brand-surface pointer-events-auto fixed inset-y-0 right-0 z-50 flex w-full max-w-[26rem] translate-x-0 flex-col border-l border-white/10 shadow-[-18px_0_50px_rgba(0,0,0,0.45)]"
         role="dialog"
         aria-modal="true"
         aria-label="Notifications"
-        aria-hidden={!open}
       >
         <div className="flex items-center justify-between gap-3 border-b border-white/10 px-5 py-5">
           <h2 className="text-brand-text text-lg font-semibold tracking-tight">
@@ -232,7 +228,7 @@ export function NotificationPanel({ open, onClose }: NotificationPanelProps) {
             </>
           )}
         </div>
-      </aside>
+      </div>
     </>
   )
 }

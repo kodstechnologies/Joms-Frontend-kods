@@ -18,7 +18,10 @@ import {
 import { fetchSubAdminLogs } from '../api/rbac-api'
 import type { AuditLog, UpdateSubAdminPasswordPayload } from '../types/rbac'
 import { DataTable } from '@/shared/components/table/data-table'
+import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'
 import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
+import { withServerSortMeta } from '@/shared/utils/table-sort'
+import { buildDefaultTableSortFieldMap } from '@/shared/utils/table-sort-field-maps'
 import { RBAC_ADMIN_LOGS_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
 import { exportDisplayValue } from '@/shared/utils/export-utils'
 import { createPrefixedListExportHandler } from '@/shared/utils/export-filter-utils'
@@ -48,6 +51,17 @@ const ROLE_HISTORY_EXPORT_COLUMN_MAP: Record<
     accessor: (log) => exportDisplayValue(log.performedBy || '—'),
   },
   adminNote: { header: 'Admin Note', accessor: (log) => exportDisplayValue(log.adminNote || '—') },
+}
+
+const HISTORY_SORT_FIELD_MAP = {
+  ...buildDefaultTableSortFieldMap([
+    'previousRole',
+    'changedTo',
+    'changedOn',
+    'changedBy',
+    'adminNote',
+  ]),
+  changedOn: 'createdAt',
 }
 
 const goldActionButtonClass =
@@ -119,6 +133,11 @@ export function AdminDetailPage() {
   const navigate = useNavigate()
 
   const [historyPage, setHistoryPage] = useState(1)
+  const serverSort = useServerTableSort({
+    sortFieldMap: HISTORY_SORT_FIELD_MAP,
+    defaultSortBy: 'changedOn',
+    onPageReset: () => setHistoryPage(1),
+  })
   const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setHistoryPage(1) })
   const [passwordModalOpen, setPasswordModalOpen] = useState(false)
   const [selectedAdminNote, setSelectedAdminNote] = useState<string | null>(null)
@@ -128,6 +147,7 @@ export function AdminDetailPage() {
     page: historyPage,
     limit: PAGE_SIZE,
     ...enhancedSearch.buildSearchParams(),
+    ...serverSort.sortParams,
   })
 
   const suspendMutation = useSuspendSubAdmin()
@@ -161,28 +181,32 @@ export function AdminDetailPage() {
   })
 
   const historyColumns = useMemo<ColumnDef<RoleHistoryRow>[]>(
-    () => [
-      { accessorKey: 'previousRole', header: 'Previous Role' },
-      { accessorKey: 'changedTo', header: 'Changed To' },
-      { accessorKey: 'changedOn', header: 'Changed On' },
-      { accessorKey: 'changedBy', header: 'Changed BY' },
-      {
-        accessorKey: 'adminNote',
-        header: 'Admin Note',
-        cell: ({ row }) =>
-          row.original.adminNote && row.original.adminNote !== '—' ? (
-            <button
-              type="button"
-              onClick={() => setSelectedAdminNote(row.original.adminNote)}
-              className="text-brand-accent decoration-brand-accent/40 hover:text-brand-gold-from max-w-[260px] truncate text-left text-xs font-medium underline underline-offset-2"
-            >
-              {row.original.adminNote}
-            </button>
-          ) : (
-            '—'
-          ),
-      },
-    ],
+    () =>
+      withServerSortMeta(
+        [
+          { accessorKey: 'previousRole', header: 'Previous Role' },
+          { accessorKey: 'changedTo', header: 'Changed To' },
+          { accessorKey: 'changedOn', header: 'Changed On' },
+          { accessorKey: 'changedBy', header: 'Changed BY' },
+          {
+            accessorKey: 'adminNote',
+            header: 'Admin Note',
+            cell: ({ row }) =>
+              row.original.adminNote && row.original.adminNote !== '—' ? (
+                <button
+                  type="button"
+                  onClick={() => setSelectedAdminNote(row.original.adminNote)}
+                  className="text-brand-accent decoration-brand-accent/40 hover:text-brand-gold-from max-w-[260px] truncate text-left text-xs font-medium underline underline-offset-2"
+                >
+                  {row.original.adminNote}
+                </button>
+              ) : (
+                '—'
+              ),
+          },
+        ],
+        HISTORY_SORT_FIELD_MAP,
+      ),
     [],
   )
 
@@ -400,6 +424,7 @@ export function AdminDetailPage() {
           columns={historyColumns}
           data={historyRows}
           getRowId={(row) => row.id}
+          {...serverSort.dataTableSortProps}
           isLoading={logsLoading}
           searchValue={enhancedSearch.globalSearch}
           onSearchChange={enhancedSearch.setGlobalSearch}

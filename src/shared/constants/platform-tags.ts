@@ -1,4 +1,3 @@
-/** Tags from JOMS_KODS_Web_Admin_Panel_full_data → Notes for Developers. */
 export const PLATFORM_TAGS = [
   'VIP',
   'Fraud Risk',

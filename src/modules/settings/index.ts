@@ -10,11 +10,6 @@ export { PolicyCreatePage, PolicyManagementPage } from './pages/policy-managemen
 export { PolicyViewPage } from './pages/policy-view-page'
 export { PolicyEditPage, PolicyDetailPage } from './pages/policy-edit-page'
 export { PolicyTimelinePage } from './pages/policy-timeline-page'
-export {
-  SystemConfigurationPage,
-  EscalationsSettingsPage,
-  ApiKeyManagementPage,
-} from './pages/static-soon-page'
 
 export * from './components'
 export * from './pages'

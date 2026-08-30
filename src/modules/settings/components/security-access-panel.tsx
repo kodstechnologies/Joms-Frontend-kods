@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
 import { SecurityQuestionsModal } from './security-questions-modal'
+import { MFA_METHOD_KEYS, countEnabledMfaMethods } from '../utils/security-settings'
 import {
   blockReuseOptions,
   maxResetAttemptsOptions,
@@ -109,12 +110,20 @@ export function SecurityAccessPanel({ value, onChange }: SecurityAccessPanelProp
   const patchMfa = (patchValue: Partial<SecuritySettings['mfa']>) =>
     patch({ mfa: { ...value.mfa, ...patchValue } })
 
+  const patchMfaMethod = (key: (typeof MFA_METHOD_KEYS)[number], checked: boolean) => {
+    if (!checked && countEnabledMfaMethods(value.mfa) <= 1 && value.mfa[key]) {
+      toast.error('At least one MFA method must stay enabled')
+      return
+    }
+    patchMfa({ [key]: checked })
+  }
+
   const patchReset = (patchValue: Partial<SecuritySettings['passwordReset']>) =>
     patch({ passwordReset: { ...value.passwordReset, ...patchValue } })
 
   return (
     <div className="security-access-panel">
-      {/* Session Timeout — Figma ~1182 wide */}
+      {/* Session timeout */}
       <section className="security-section">
         <header className="security-section-header">
           <h2 className="security-section-title">Session Timeout</h2>
@@ -200,17 +209,17 @@ export function SecurityAccessPanel({ value, onChange }: SecurityAccessPanelProp
         </div>
       </section>
 
-      {/* MFA — Figma ~1206x204 */}
+      {/* MFA */}
       <section className="security-section security-section-mfa">
         <div className="security-toggle-header">
           <div>
             <h2 className="security-section-title">Multi-Factor Authentication (MFA)</h2>
-            <p className="security-section-desc">Require MFA for all admin users</p>
+            <p className="security-section-desc">Require MFA for all sub-admins</p>
           </div>
           <SecurityToggle
-            checked={value.mfa.requireForAllAdmins}
-            onChange={(checked) => patchMfa({ requireForAllAdmins: checked })}
-            ariaLabel="Require MFA for all admin users"
+            checked={value.mfa.requireForAllSubAdmins}
+            onChange={(checked) => patchMfa({ requireForAllSubAdmins: checked })}
+            ariaLabel="Require MFA for all sub-admins"
           />
         </div>
         <div className="security-section-divider" />
@@ -227,12 +236,12 @@ export function SecurityAccessPanel({ value, onChange }: SecurityAccessPanelProp
             emailOtp: value.mfa.emailOtp,
           }}
           onChange={(key, checked) =>
-            patchMfa({ [key]: checked } as Partial<SecuritySettings['mfa']>)
+            patchMfaMethod(key as (typeof MFA_METHOD_KEYS)[number], checked)
           }
         />
       </section>
 
-      {/* Password Reset Policy — Figma ~1206x355 */}
+      {/* Password reset */}
       <section className="security-section">
         <header className="security-section-header">
           <h2 className="security-section-title">Password Reset Policy</h2>
@@ -307,7 +316,7 @@ export function SecurityAccessPanel({ value, onChange }: SecurityAccessPanelProp
         </div>
       </section>
 
-      {/* Quick links — Figma 621x91 each */}
+      {/* Quick links */}
       <div className="security-quick-links">
         <QuickLinkCard
           title="Locked Accounts"

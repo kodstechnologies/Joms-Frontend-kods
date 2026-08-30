@@ -8,7 +8,7 @@ import {
   useUnreadNotificationCount,
   type InAppNotification,
 } from '@/modules/notifications'
-import { resolveAdminInboxPath } from '@/modules/notifications/utils/admin-inbox-navigation'
+import { resolveAdminInboxNavigation } from '@/modules/notifications/utils/admin-inbox-navigation'
 import { formatInboxRelativeTime, splitInboxByDay } from '@/modules/notifications/utils/inbox-time'
 import { cn } from '@/shared/lib/cn'
 
@@ -107,9 +107,9 @@ export function AlertsPanel({ open, onClose }: AlertsPanelProps) {
     if (!item.isRead) {
       markReadMutation.mutate(item.id)
     }
-    const path = resolveAdminInboxPath(item) || '/my-tasks'
+    const target = resolveAdminInboxNavigation(item)
     onClose()
-    navigate(path)
+    navigate(target.path, target.state ? { state: target.state } : undefined)
   }
 
   return (

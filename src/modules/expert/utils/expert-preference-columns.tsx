@@ -242,7 +242,14 @@ export function buildExpertDataColumnsById(): Record<string, ColumnDef<Expert>> 
     'reported-at': dateCol('reported-at', 'Reported At', (e) => e.reportedAt),
     'submitted-at': dateCol('submitted-at', 'Submitted At', (e) => e.submittedAt),
     'approval-stage': textCol('approval-stage', 'Approval Stage', (e) => e.approvalStage),
-    'approval-status': statusCol('approval-status', 'Approval Status', (e) => e.approvalStatus),
+    'approval-status': {
+      id: 'approval-status',
+      header: 'Approval Status',
+      accessorFn: (row) => row.approvalStatus ?? row.status ?? '',
+      cell: ({ row }) => (
+        <ExpertStatusBadge status={row.original.approvalStatus ?? row.original.status} />
+      ),
+    },
     'digilocker-status': statusCol(
       'digilocker-status',
       'DigiLocker Status',

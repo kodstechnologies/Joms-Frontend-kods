@@ -9,6 +9,7 @@ import { SettingsSectionCard } from './settings-section-card'
 import { SettingsToggleRow } from './settings-toggle-row'
 import { suspensionDurationOptions } from '../mock/finance-options.mock'
 import type { FinanceTransactionalSettings } from '../types/settings'
+import { extendMembershipSuspension } from '@/modules/memberships/api/membership-subscription-api'
 import { Button } from '@/shared/components/ui/button'
 
 type FinanceTransactionalPanelProps = {
@@ -18,6 +19,7 @@ type FinanceTransactionalPanelProps = {
 
 export function FinanceTransactionalPanel({ value, onChange }: FinanceTransactionalPanelProps) {
   const [extendSuspensionOpen, setExtendSuspensionOpen] = useState(false)
+  const [extendSuspensionSubmitting, setExtendSuspensionSubmitting] = useState(false)
 
   const patch = (patchValue: Partial<FinanceTransactionalSettings>) =>
     onChange({ ...value, ...patchValue })
@@ -44,7 +46,7 @@ export function FinanceTransactionalPanel({ value, onChange }: FinanceTransactio
         <SettingsSectionCard title="Escrow System" description="Manage escrow settings">
           <SettingsToggleRow
             label="Enable Escrow System"
-            description="Letting users opt escrow model for secure transaction on the platform"
+            description="Mirrors Service Marketplace escrow setting. Both must be enabled for escrow payouts."
             checked={value.escrow.enableEscrowSystem}
             onChange={(checked) => patchEscrow({ enableEscrowSystem: checked })}
           />
@@ -202,9 +204,24 @@ export function FinanceTransactionalPanel({ value, onChange }: FinanceTransactio
       <ExtendSuspensionModal
         open={extendSuspensionOpen}
         onClose={() => setExtendSuspensionOpen(false)}
-        onSubmit={() => {
-          setExtendSuspensionOpen(false)
-          toast.success('Suspension extended (static preview)')
+        isSubmitting={extendSuspensionSubmitting}
+        onSubmit={async ({ subscriptionId, startDate, endDate, adminNotes }) => {
+          setExtendSuspensionSubmitting(true)
+          try {
+            await extendMembershipSuspension(subscriptionId, {
+              startDate,
+              endDate,
+              adminNotes: adminNotes || undefined,
+            })
+            setExtendSuspensionOpen(false)
+            toast.success('Membership suspension extended')
+          } catch (error) {
+            const message = error instanceof Error ? error.message : 'Failed to extend suspension'
+            toast.error(message)
+            throw error instanceof Error ? error : new Error(message)
+          } finally {
+            setExtendSuspensionSubmitting(false)
+          }
         }}
       />
     </div>

@@ -13,7 +13,10 @@ import {
 } from '../../config/venue-category-management-table-columns.config'
 import { useTableExportColumnIds } from '@/shared/hooks/use-table-export-column-ids'
 import { DataTable } from '@/shared/components/table/data-table'
+import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'
 import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
+import { withServerSortMeta } from '@/shared/utils/table-sort'
+import { buildCatalogSortFieldMap } from '@/shared/utils/table-sort-field-maps'
 import { VENUE_CATEGORY_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 import { VENUE_CATEGORY_EXPORT_COLUMN_MAP } from '../../utils/table-export-column-maps'
@@ -46,6 +49,10 @@ import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
 
 const PAGE_SIZE = 10
 
+const VENUE_CATEGORY_COLUMN_SORT_FIELDS = buildCatalogSortFieldMap(
+  VENUE_CATEGORY_MANAGEMENT_TABLE_COLUMNS_CATALOG,
+)
+
 const normalizeVenueColumnIds = (ids: string[]) =>
   ids.map((id) => VENUE_CATEGORY_LEGACY_COLUMN_ID_MAP[id] ?? id)
 
@@ -56,6 +63,10 @@ const DEFAULT_VISIBLE_IDS = DEFAULT_VENUE_CATEGORY_MANAGEMENT_VISIBLE_COLUMN_IDS
 
 export function VenueCategoryManagementPage() {
   const [page, setPage] = useState(1)
+  const serverSort = useServerTableSort({
+    sortFieldMap: VENUE_CATEGORY_COLUMN_SORT_FIELDS,
+    onPageReset: () => setPage(1),
+  })
   const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setPage(1) })
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
   const preferencesQuery = useTableColumnPreferences(VENUE_CATEGORY_MANAGEMENT_MODULE_KEY)
@@ -81,10 +92,11 @@ export function VenueCategoryManagementPage() {
       buildVenueCategoryListQueryParams(appliedFilters, {
         page,
         limit: PAGE_SIZE,
+        ...serverSort.sortParams,
         ...enhancedSearch.buildSearchParams(),
         excludePaused: true,
       }),
-    [appliedFilters, enhancedSearch, page],
+    [appliedFilters, enhancedSearch, page, serverSort.sortParams],
   )
 
   const { data, isLoading, isError } = useVenueCategoryManagementList(categoryQueryParams)
@@ -215,7 +227,10 @@ export function VenueCategoryManagementPage() {
       .filter(Boolean)
     const actionsColumn = dataColumnsById.actions
 
-    return actionsColumn ? [...selectedDataColumns, actionsColumn] : selectedDataColumns
+    return withServerSortMeta(
+      actionsColumn ? [...selectedDataColumns, actionsColumn] : selectedDataColumns,
+      VENUE_CATEGORY_COLUMN_SORT_FIELDS,
+    )
   }, [preferencesQuery.data])
 
   return (
@@ -255,6 +270,7 @@ export function VenueCategoryManagementPage() {
         searchPlaceholder="Search by name or ID"
         onAdvancedFilter={onAdvancedFilter}
         onExport={onExport}
+        {...serverSort.dataTableSortProps}
         isLoading={isLoading}
         pagination={{
           page,

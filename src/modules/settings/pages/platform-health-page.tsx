@@ -1,17 +1,14 @@
-import { useMemo, useState, type ReactNode } from 'react'
-import { Check, RefreshCw, Settings2, Upload } from 'lucide-react'
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { RefreshCw, Settings2, Upload } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import {
   Area,
   Bar,
   CartesianGrid,
-  Cell,
   ComposedChart,
   Legend,
   Line,
-  Pie,
-  PieChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -19,7 +16,12 @@ import {
 } from 'recharts'
 
 import {
+  PlatformHealthMetricCard,
+  PlatformHealthMetricCardSkeleton,
+} from '../components/platform-health-metric-card'
+import {
   DEFAULT_PLATFORM_HEALTH_METRIC_IDS,
+  PLATFORM_HEALTH_LEGACY_METRIC_ID_MAP,
   PLATFORM_HEALTH_METRIC_IDS,
   PLATFORM_HEALTH_METRIC_ID_SET,
   PLATFORM_HEALTH_MODULE_KEY,
@@ -30,12 +32,9 @@ import {
   PLATFORM_HEALTH_TABLE_COLUMNS_CATALOG,
 } from '../config/platform-health-table-columns.config'
 import { usePlatformHealthDashboard } from '../hooks/use-platform-health'
-import type {
-  PlatformHealthDateRange,
-  PlatformHealthInfraRow,
-  PlatformHealthMetric,
-} from '../types/platform-health'
+import type { PlatformHealthDateRange, PlatformHealthInfraRow } from '../types/platform-health'
 import { buildPlatformHealthMetricCards } from '../utils/platform-health-metrics'
+import { exportPlatformHealthToExcel } from '../utils/export-platform-health'
 import {
   orderByActiveMetricIds,
   useActiveMetricIds,
@@ -47,15 +46,18 @@ import { uiTokens } from '@/shared/lib/design-tokens'
 
 const tooltipStyle = {
   background: '#ffffff',
-  border: '1px solid rgba(0,0,0,0.08)',
-  borderRadius: 10,
+  border: '1px solid #155dfc',
+  borderRadius: 8,
   padding: '10px 12px',
   color: '#111111',
   boxShadow: '0 12px 30px rgba(0,0,0,0.18)',
 } as const
 
+const RANGE_OPTIONS = ['Last 3 Months', 'Last Month', 'Last 30 Days', 'Last 7 Days'] as const
+
 const RANGE_MAP: Record<string, PlatformHealthDateRange> = {
   'Last 3 Months': 'quarter',
+  'Last Month': 'lastMonth',
   'Last 30 Days': 'last30days',
   'Last 7 Days': 'last7days',
 }
@@ -68,53 +70,182 @@ const STATUS_STYLES: Record<PlatformHealthInfraRow['status'], string> = {
   Offline: 'text-muted',
 }
 
-const PIE_COLORS = ['#155dfc', '#d3191c', '#f6cb86', '#64748b']
-
-function HealthMetricCard({ metric }: { metric: PlatformHealthMetric }) {
-  return (
-    <div className={cn(uiTokens.radiusCard, 'bg-brand-surface border border-white/10 p-4 sm:p-5')}>
-      <p className="text-body-sm text-muted">{metric.label}</p>
-      <p className="text-h2 text-brand-text sm:text-h2 mt-2 font-semibold tracking-tight">
-        {metric.value}
-      </p>
-      <div className="mt-3 min-h-[28px]">
-        {metric.trend ? (
-          <span
-            className={cn(
-              'text-body-sm-semibold inline-flex rounded-full px-2.5 py-1',
-              metric.trend.tone === 'positive'
-                ? 'bg-brand-positive/15 text-brand-positive'
-                : 'bg-brand-danger/15 text-brand-danger',
-            )}
-          >
-            {metric.trend.text}
-          </span>
-        ) : null}
-        {metric.hint ? <p className="text-body-sm-semibold text-muted">{metric.hint}</p> : null}
-        {metric.status ? (
-          <p className="text-body-sm-semibold text-muted inline-flex items-center gap-1.5">
-            <Check className="text-brand-text size-3.5" />
-            {metric.status}
-          </p>
-        ) : null}
-      </div>
-    </div>
-  )
+const CHART_COLORS = {
+  transactions: '#155dfc',
+  supportTickets: '#f6cb86',
+  uptime: '#00a63e',
+  memory: '#f6cb86',
+  cpu: '#155dfc',
+  requests: '#00a63e',
+  compliance: '#f6cb86',
+  resolved: '#00a63e',
+  security: '#d3191c',
 }
 
-function MetricCardSkeleton() {
+const PLATFORM_TREND_LEFT_MAX = 1600
+const PLATFORM_TREND_LEFT_TICKS = [0, 400, 800, 1200, 1600]
+const PLATFORM_TREND_UPTIME_TICKS = [99, 99.25, 99.5, 99.75, 100]
+const SYSTEM_PERF_LEFT_TICKS = [0, 25, 50, 75, 100]
+const SYSTEM_PERF_RIGHT_MAX = 3200
+const SYSTEM_PERF_RIGHT_TICKS = [0, 800, 1600, 2400, 3200]
+const SECURITY_TICKS = [0, 2, 4, 6, 8]
+
+/** Figma bar dimensions (px) */
+const PLATFORM_TREND_BAR_SIZE = 70
+const PLATFORM_TREND_BAR_GAP = 4
+const PLATFORM_TREND_CATEGORY_GAP = 40
+const SECURITY_BAR_SIZE = 40
+const SECURITY_BAR_GAP = 4
+const SECURITY_CATEGORY_GAP = 40
+const CHART_HEIGHT = 420
+
+function calcGroupedBarChartMinWidth(
+  dataLength: number,
+  barsPerGroup: number,
+  barSize: number,
+  barGap: number,
+  categoryGap = 40,
+) {
+  if (dataLength <= 0) return 0
+  const groupBarWidth = barsPerGroup * barSize + Math.max(0, barsPerGroup - 1) * barGap
+  return dataLength * (groupBarWidth + categoryGap) + 72
+}
+
+function useChartContainerWidth() {
+  const ref = useRef<HTMLDivElement>(null)
+  const [width, setWidth] = useState(960)
+
+  useEffect(() => {
+    const node = ref.current
+    if (!node) return
+
+    const update = () => {
+      setWidth(node.clientWidth || 960)
+    }
+
+    update()
+    const observer = new ResizeObserver(update)
+    observer.observe(node)
+    return () => observer.disconnect()
+  }, [])
+
+  return { ref, width }
+}
+
+function roundAxisTick(value: number) {
+  return Math.round(value * 100) / 100
+}
+
+function resolvePlatformTrendLeftAxis(
+  data: Array<{ supportTickets?: number; transactions?: number }>,
+) {
+  const peak = data.reduce(
+    (max, row) => Math.max(max, row.supportTickets || 0, row.transactions || 0),
+    0,
+  )
+  if (peak === 0) {
+    return {
+      domain: [0, PLATFORM_TREND_LEFT_MAX] as [number, number],
+      ticks: PLATFORM_TREND_LEFT_TICKS,
+    }
+  }
+  if (peak <= 80) {
+    const max = Math.max(20, Math.ceil(peak / 5) * 5)
+    const ticks = Array.from({ length: 5 }, (_, index) => Math.round((max / 4) * index))
+    return { domain: [0, max] as [number, number], ticks }
+  }
+  if (peak <= PLATFORM_TREND_LEFT_MAX) {
+    return {
+      domain: [0, PLATFORM_TREND_LEFT_MAX] as [number, number],
+      ticks: PLATFORM_TREND_LEFT_TICKS,
+    }
+  }
+  const roundedMax = Math.ceil(peak / 400) * 400
+  const ticks = Array.from({ length: 5 }, (_, index) => Math.round((roundedMax / 4) * index))
+  return { domain: [0, roundedMax] as [number, number], ticks }
+}
+
+function resolvePlatformTrendUptimeAxis(data: Array<{ uptime?: number }>) {
+  const values = data.map((row) => row.uptime ?? 0).filter((value) => value > 0)
+  if (!values.length) {
+    return { domain: [99, 100] as [number, number], ticks: PLATFORM_TREND_UPTIME_TICKS }
+  }
+
+  const min = Math.min(...values)
+  const max = Math.max(...values)
+
+  if (min >= 98 && max <= 100) {
+    return { domain: [99, 100] as [number, number], ticks: PLATFORM_TREND_UPTIME_TICKS }
+  }
+
+  const floor = Math.max(0, Math.floor(min / 5) * 5 - (min % 5 === 0 ? 0 : 5))
+  const ceil = Math.min(100, Math.ceil(max / 5) * 5 + (max % 5 === 0 ? 0 : 5))
+  const span = Math.max(5, ceil - floor)
+  const step = span / 4
+  const ticks = Array.from({ length: 5 }, (_, index) => roundAxisTick(floor + step * index))
+
+  return { domain: [floor, ceil] as [number, number], ticks }
+}
+
+function resolveSystemPerfRightAxis(data: Array<{ requestsPerMin?: number }>) {
+  const peak = data.reduce((max, row) => Math.max(max, row.requestsPerMin || 0), 0)
+  if (peak <= 0) {
+    return {
+      domain: [0, SYSTEM_PERF_RIGHT_MAX] as [number, number],
+      ticks: SYSTEM_PERF_RIGHT_TICKS,
+    }
+  }
+  if (peak <= SYSTEM_PERF_RIGHT_MAX) {
+    const max = Math.max(80, Math.ceil(peak / 40) * 40)
+    const ticks = Array.from({ length: 5 }, (_, index) => Math.round((max / 4) * index))
+    return { domain: [0, max] as [number, number], ticks }
+  }
+  const roundedMax = Math.ceil(peak / 800) * 800
+  const ticks = Array.from({ length: 5 }, (_, index) => Math.round((roundedMax / 4) * index))
+  return { domain: [0, roundedMax] as [number, number], ticks }
+}
+
+function resolveSecurityAxis(
+  data: Array<{ compliance?: number; issuesResolved?: number; security?: number }>,
+) {
+  const peak = data.reduce(
+    (max, row) => Math.max(max, row.compliance || 0, row.issuesResolved || 0, row.security || 0),
+    0,
+  )
+  if (peak <= 8) {
+    return { domain: [0, 8] as [number, number], ticks: SECURITY_TICKS }
+  }
+  const max = Math.ceil(peak / 2) * 2
+  const ticks = Array.from({ length: 5 }, (_, index) => Math.round((max / 4) * index))
+  return { domain: [0, max] as [number, number], ticks }
+}
+
+function formatPlatformTrendTooltip(value: number | string, name: string) {
+  if (name === 'Uptime %') return [`${Number(value).toFixed(2)}%`, name]
+  if (name === 'Transactions (K)') return [value, 'Transaction(K)']
+  return [value, name]
+}
+
+function ChartLegend({ payload }: { payload?: Array<{ value?: string; color?: string }> }) {
+  if (!payload?.length) return null
   return (
-    <div className={cn(uiTokens.radiusCard, 'bg-brand-surface border border-white/10 p-4 sm:p-5')}>
-      <div className="h-3 w-28 animate-pulse rounded bg-white/10" />
-      <div className="mt-3 h-8 w-20 animate-pulse rounded bg-white/10" />
-      <div className="mt-4 h-5 w-32 animate-pulse rounded bg-white/5" />
+    <div className="flex flex-wrap items-center justify-center gap-5 pt-4">
+      {payload.map((entry) => (
+        <div key={entry.value} className="flex items-center gap-2">
+          <span
+            className="inline-block size-2.5 rotate-45 rounded-[1px]"
+            style={{ backgroundColor: entry.color }}
+          />
+          <span className="text-body-sm text-muted">{entry.value}</span>
+        </div>
+      ))}
     </div>
   )
 }
 
 function ChartSkeleton() {
   return (
-    <div className="flex h-[300px] w-full items-end gap-2 px-2 pb-4">
+    <div className="flex h-[420px] w-full items-end gap-2 px-2 pb-4">
       {Array.from({ length: 12 }).map((_, index) => (
         <div
           key={`chart-skel-${index}`}
@@ -135,6 +266,9 @@ function TableRowSkeleton() {
     </div>
   )
 }
+
+const REFRESH_BUTTON_CLASS =
+  'text-muted hover:text-brand-text grid size-9 place-items-center rounded-full transition-colors'
 
 function ChartPanel({
   title,
@@ -161,16 +295,16 @@ function ChartPanel({
           <select
             value={range}
             onChange={(event) => onRangeChange(event.target.value)}
-            className="radius-md bg-brand-bg text-body-sm text-brand-text/80 h-9 border border-white/10 px-3"
+            className="radius-md bg-brand-bg text-body-sm text-brand-text/80 h-9 min-w-[140px] border border-white/10 px-3"
           >
-            <option>Last 3 Months</option>
-            <option>Last 30 Days</option>
-            <option>Last 7 Days</option>
+            {RANGE_OPTIONS.map((option) => (
+              <option key={option}>{option}</option>
+            ))}
           </select>
           <button
             type="button"
             onClick={onRefresh}
-            className="bg-brand-bg text-muted hover:text-brand-text grid size-9 place-items-center rounded-full border border-white/10"
+            className={REFRESH_BUTTON_CLASS}
             aria-label="Refresh chart"
           >
             <RefreshCw className={cn('size-4', isLoading && 'animate-spin')} />
@@ -197,10 +331,10 @@ function LoadBar({ value }: { value: number }) {
 
 export function PlatformHealthPage() {
   const navigate = useNavigate()
-  const [selectedRange, setSelectedRange] = useState('Last 30 Days')
+  const [selectedRange, setSelectedRange] = useState<string>('Last 3 Months')
   const [serviceStatus, setServiceStatus] = useState('')
 
-  const dateRange = RANGE_MAP[selectedRange] || 'last30days'
+  const dateRange = RANGE_MAP[selectedRange] || 'quarter'
   const dashboardQuery = usePlatformHealthDashboard({
     dateRange,
     serviceStatus: serviceStatus || undefined,
@@ -216,7 +350,9 @@ export function PlatformHealthPage() {
   const filteredActiveMetricIds = useMemo(
     () =>
       sortIdsByCatalogOrder(
-        activeMetricIds.filter((id) => PLATFORM_HEALTH_METRIC_ID_SET.has(id)),
+        activeMetricIds
+          .map((id) => PLATFORM_HEALTH_LEGACY_METRIC_ID_MAP[id] ?? id)
+          .filter((id) => PLATFORM_HEALTH_METRIC_ID_SET.has(id)),
         PLATFORM_HEALTH_METRIC_IDS,
       ),
     [activeMetricIds],
@@ -247,9 +383,90 @@ export function PlatformHealthPage() {
   const infrastructure = dashboardData?.infrastructure || []
   const skeletonCount = filteredActiveMetricIds.length || DEFAULT_PLATFORM_HEALTH_METRIC_IDS.length
 
+  const platformTrendAxis = useMemo(
+    () => resolvePlatformTrendLeftAxis(charts?.platformTrends || []),
+    [charts?.platformTrends],
+  )
+
+  const platformTrendUptimeAxis = useMemo(
+    () => resolvePlatformTrendUptimeAxis(charts?.platformTrends || []),
+    [charts?.platformTrends],
+  )
+
+  const systemPerfRightAxis = useMemo(
+    () => resolveSystemPerfRightAxis(charts?.systemPerformance24h || []),
+    [charts?.systemPerformance24h],
+  )
+
+  const securityAxis = useMemo(
+    () => resolveSecurityAxis(charts?.securityCompliance || []),
+    [charts?.securityCompliance],
+  )
+
+  const platformTrendData = charts?.platformTrends || []
+  const securityComplianceData = charts?.securityCompliance || []
+
+  const platformTrendChartMinWidth = useMemo(
+    () =>
+      calcGroupedBarChartMinWidth(
+        platformTrendData.length,
+        2,
+        PLATFORM_TREND_BAR_SIZE,
+        PLATFORM_TREND_BAR_GAP,
+        PLATFORM_TREND_CATEGORY_GAP,
+      ),
+    [platformTrendData.length],
+  )
+
+  const securityChartMinWidth = useMemo(
+    () =>
+      calcGroupedBarChartMinWidth(
+        securityComplianceData.length,
+        3,
+        SECURITY_BAR_SIZE,
+        SECURITY_BAR_GAP,
+        SECURITY_CATEGORY_GAP,
+      ),
+    [securityComplianceData.length],
+  )
+
+  const { ref: platformTrendChartRef, width: platformTrendChartContainerWidth } =
+    useChartContainerWidth()
+  const { ref: securityChartRef, width: securityChartContainerWidth } = useChartContainerWidth()
+
+  const platformTrendChartWidth = Math.max(
+    platformTrendChartMinWidth,
+    platformTrendChartContainerWidth,
+  )
+  const securityChartWidth = Math.max(securityChartMinWidth, securityChartContainerWidth)
+
   const refresh = () => {
     dashboardQuery.refetch()
   }
+
+  const handleExportData = useCallback(async () => {
+    if (isLoading) {
+      toast.message('Please wait for data to load')
+      return
+    }
+
+    if (!visibleMetrics.length && !dashboardData) {
+      toast.error('No data available to export')
+      return
+    }
+
+    try {
+      await exportPlatformHealthToExcel({
+        rangeLabel: selectedRange,
+        serviceStatusFilter: serviceStatus || 'All statuses',
+        metrics: visibleMetrics,
+        dashboard: dashboardData,
+      })
+      toast.success('Exported as Excel')
+    } catch {
+      toast.error('Failed to export platform health data')
+    }
+  }, [dashboardData, isLoading, selectedRange, serviceStatus, visibleMetrics])
 
   return (
     <div className="space-y-6">
@@ -265,7 +482,7 @@ export function PlatformHealthPage() {
         <div className="flex flex-wrap gap-2">
           <button
             type="button"
-            onClick={() => toast.message('Export coming soon')}
+            onClick={handleExportData}
             className="ui-export-data ui-cta ui-cta-primary inline-flex items-center gap-2 px-4"
           >
             <Upload className="size-4" />
@@ -285,76 +502,118 @@ export function PlatformHealthPage() {
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {isLoading
           ? Array.from({ length: skeletonCount }).map((_, index) => (
-              <MetricCardSkeleton key={`health-metric-skel-${index}`} />
+              <PlatformHealthMetricCardSkeleton key={`health-metric-skel-${index}`} />
             ))
-          : visibleMetrics.map((metric) => <HealthMetricCard key={metric.id} metric={metric} />)}
+          : visibleMetrics.map((metric) => (
+              <PlatformHealthMetricCard key={metric.id} metric={metric} />
+            ))}
       </div>
 
       <ChartPanel
-        title="Platform Health Trend"
+        title="Platform Health Trends"
         range={selectedRange}
         onRangeChange={setSelectedRange}
         onRefresh={refresh}
         isLoading={isLoading}
       >
-        <div className="h-[300px] w-full">
-          <ResponsiveContainer width="100%" height="100%">
+        <div ref={platformTrendChartRef} className="h-[420px] w-full overflow-x-auto">
+          <div style={{ width: platformTrendChartWidth, height: CHART_HEIGHT }}>
             <ComposedChart
-              data={charts?.healthTrend || []}
-              margin={{ left: 4, right: 8, top: 8, bottom: 0 }}
+              width={platformTrendChartWidth}
+              height={CHART_HEIGHT}
+              data={platformTrendData}
+              margin={{ left: 4, right: 16, top: 8, bottom: 0 }}
+              barGap={PLATFORM_TREND_BAR_GAP}
+              barCategoryGap={PLATFORM_TREND_CATEGORY_GAP}
             >
-              <CartesianGrid stroke="rgba(255,255,255,0.06)" strokeDasharray="3 3" vertical />
+              <CartesianGrid
+                stroke="rgba(255,255,255,0.06)"
+                strokeDasharray="3 3"
+                vertical={false}
+              />
               <XAxis
                 dataKey="date"
+                interval="preserveStartEnd"
+                minTickGap={28}
                 tickLine={false}
                 axisLine={false}
                 tick={{ fill: 'rgba(148,163,184,0.85)', fontSize: 12 }}
               />
               <YAxis
-                domain={[0, 100]}
+                yAxisId="left"
+                domain={platformTrendAxis.domain}
+                ticks={platformTrendAxis.ticks}
                 tickLine={false}
                 axisLine={false}
                 tick={{ fill: 'rgba(148,163,184,0.85)', fontSize: 12 }}
               />
-              <Tooltip contentStyle={tooltipStyle} />
-              <Legend
-                wrapperStyle={{ color: 'rgba(148,163,184,0.9)', fontSize: 12, paddingTop: 12 }}
+              <YAxis
+                yAxisId="right"
+                orientation="right"
+                domain={platformTrendUptimeAxis.domain}
+                ticks={platformTrendUptimeAxis.ticks}
+                tickFormatter={(value) => `${value}%`}
+                tickLine={false}
+                axisLine={false}
+                tick={{ fill: 'rgba(148,163,184,0.85)', fontSize: 12 }}
+              />
+              <Tooltip
+                contentStyle={tooltipStyle}
+                formatter={(value, name) =>
+                  formatPlatformTrendTooltip(value as number | string, String(name))
+                }
+              />
+              <Legend content={<ChartLegend />} />
+              <Bar
+                yAxisId="left"
+                dataKey="supportTickets"
+                name="Support tickets"
+                fill={CHART_COLORS.supportTickets}
+                radius={[4, 4, 0, 0]}
+                barSize={PLATFORM_TREND_BAR_SIZE}
+              />
+              <Bar
+                yAxisId="left"
+                dataKey="transactions"
+                name="Transactions (K)"
+                fill={CHART_COLORS.transactions}
+                radius={[4, 4, 0, 0]}
+                barSize={PLATFORM_TREND_BAR_SIZE}
               />
               <Line
-                type="monotone"
-                dataKey="healthScore"
-                name="Health score"
-                stroke="#155dfc"
-                strokeWidth={2}
-                dot={false}
-              />
-              <Line
+                yAxisId="right"
                 type="monotone"
                 dataKey="uptime"
                 name="Uptime %"
-                stroke="#00a63e"
+                stroke={CHART_COLORS.uptime}
                 strokeWidth={2}
-                dot={false}
+                dot={{ r: 4, fill: CHART_COLORS.uptime, strokeWidth: 0 }}
+                activeDot={{ r: 5, fill: CHART_COLORS.uptime }}
+                isAnimationActive={false}
               />
             </ComposedChart>
-          </ResponsiveContainer>
+          </div>
         </div>
       </ChartPanel>
 
       <ChartPanel
-        title="System Performance"
+        title="System Performance (24h)"
         range={selectedRange}
         onRangeChange={setSelectedRange}
         onRefresh={refresh}
         isLoading={isLoading}
       >
-        <div className="h-[300px] w-full">
+        <div className="h-[420px] w-full">
           <ResponsiveContainer width="100%" height="100%">
             <ComposedChart
-              data={charts?.performance || []}
-              margin={{ left: 4, right: 8, top: 8, bottom: 0 }}
+              data={charts?.systemPerformance24h || []}
+              margin={{ left: 4, right: 12, top: 8, bottom: 0 }}
             >
-              <CartesianGrid stroke="rgba(255,255,255,0.06)" strokeDasharray="3 3" vertical />
+              <CartesianGrid
+                stroke="rgba(255,255,255,0.06)"
+                strokeDasharray="3 3"
+                vertical={false}
+              />
               <XAxis
                 dataKey="time"
                 tickLine={false}
@@ -363,6 +622,8 @@ export function PlatformHealthPage() {
               />
               <YAxis
                 yAxisId="left"
+                domain={[0, 100]}
+                ticks={SYSTEM_PERF_LEFT_TICKS}
                 tickLine={false}
                 axisLine={false}
                 tick={{ fill: 'rgba(148,163,184,0.85)', fontSize: 12 }}
@@ -370,120 +631,48 @@ export function PlatformHealthPage() {
               <YAxis
                 yAxisId="right"
                 orientation="right"
+                domain={systemPerfRightAxis.domain}
+                ticks={systemPerfRightAxis.ticks}
                 tickLine={false}
                 axisLine={false}
                 tick={{ fill: 'rgba(148,163,184,0.85)', fontSize: 12 }}
               />
               <Tooltip contentStyle={tooltipStyle} />
-              <Legend
-                wrapperStyle={{ color: 'rgba(148,163,184,0.9)', fontSize: 12, paddingTop: 12 }}
-              />
-              <Line
+              <Legend content={<ChartLegend />} />
+              <Area
                 yAxisId="left"
                 type="monotone"
-                dataKey="apiResponseMs"
-                name="API response (ms)"
-                stroke="#155dfc"
+                dataKey="memoryUsage"
+                name="Memory usage"
+                stroke={CHART_COLORS.memory}
+                fill={CHART_COLORS.memory}
+                fillOpacity={0.2}
                 strokeWidth={2}
-                dot={false}
+              />
+              <Area
+                yAxisId="left"
+                type="monotone"
+                dataKey="cpuUsage"
+                name="CPU Usage"
+                stroke={CHART_COLORS.cpu}
+                fill={CHART_COLORS.cpu}
+                fillOpacity={0.2}
+                strokeWidth={2}
               />
               <Line
                 yAxisId="right"
                 type="monotone"
-                dataKey="errorRate"
-                name="Error rate %"
-                stroke="#d3191c"
+                dataKey="requestsPerMin"
+                name="Request/min"
+                stroke={CHART_COLORS.requests}
                 strokeWidth={2}
-                dot={false}
-              />
-              <Line
-                yAxisId="right"
-                type="monotone"
-                dataKey="queueSeconds"
-                name="Queue time (s)"
-                stroke="#f6cb86"
-                strokeWidth={2}
-                dot={false}
+                dot={{ r: 4, fill: CHART_COLORS.requests, strokeWidth: 0 }}
+                isAnimationActive={false}
               />
             </ComposedChart>
           </ResponsiveContainer>
         </div>
       </ChartPanel>
-
-      <div className="grid gap-6 xl:grid-cols-2">
-        <ChartPanel
-          title="API Traffic"
-          range={selectedRange}
-          onRangeChange={setSelectedRange}
-          onRefresh={refresh}
-          isLoading={isLoading}
-        >
-          <div className="h-[300px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart
-                data={charts?.apiTraffic || []}
-                margin={{ left: 4, right: 8, top: 8, bottom: 0 }}
-              >
-                <CartesianGrid stroke="rgba(255,255,255,0.06)" strokeDasharray="3 3" />
-                <XAxis
-                  dataKey="date"
-                  tickLine={false}
-                  axisLine={false}
-                  tick={{ fill: 'rgba(148,163,184,0.85)', fontSize: 12 }}
-                />
-                <YAxis
-                  tickLine={false}
-                  axisLine={false}
-                  tick={{ fill: 'rgba(148,163,184,0.85)', fontSize: 12 }}
-                />
-                <Tooltip contentStyle={tooltipStyle} />
-                <Line
-                  type="monotone"
-                  dataKey="requests"
-                  name="Probes"
-                  stroke="#00a63e"
-                  strokeWidth={2}
-                  dot={false}
-                />
-              </ComposedChart>
-            </ResponsiveContainer>
-          </div>
-        </ChartPanel>
-
-        <ChartPanel
-          title="Error Distribution"
-          range={selectedRange}
-          onRangeChange={setSelectedRange}
-          onRefresh={refresh}
-          isLoading={isLoading}
-        >
-          <div className="h-[300px] w-full">
-            {(charts?.errorDistribution || []).length ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={charts?.errorDistribution || []}
-                    dataKey="value"
-                    nameKey="name"
-                    innerRadius={70}
-                    outerRadius={110}
-                  >
-                    {(charts?.errorDistribution || []).map((entry, index) => (
-                      <Cell key={entry.name} fill={PIE_COLORS[index % PIE_COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip contentStyle={tooltipStyle} />
-                  <Legend />
-                </PieChart>
-              </ResponsiveContainer>
-            ) : (
-              <p className="text-muted flex h-full items-center justify-center text-sm">
-                No failed probes in this range
-              </p>
-            )}
-          </div>
-        </ChartPanel>
-      </div>
 
       <ChartPanel
         title="Security & Compliance Tracking"
@@ -492,11 +681,15 @@ export function PlatformHealthPage() {
         onRefresh={refresh}
         isLoading={isLoading}
       >
-        <div className="h-[300px] w-full">
-          <ResponsiveContainer width="100%" height="100%">
+        <div ref={securityChartRef} className="h-[420px] w-full overflow-x-auto">
+          <div style={{ width: securityChartWidth, height: CHART_HEIGHT }}>
             <ComposedChart
-              data={charts?.securityCompliance || []}
+              width={securityChartWidth}
+              height={CHART_HEIGHT}
+              data={securityComplianceData}
               margin={{ left: 4, right: 8, top: 8, bottom: 0 }}
+              barGap={SECURITY_BAR_GAP}
+              barCategoryGap={SECURITY_CATEGORY_GAP}
             >
               <CartesianGrid
                 stroke="rgba(255,255,255,0.06)"
@@ -510,179 +703,44 @@ export function PlatformHealthPage() {
                 tick={{ fill: 'rgba(148,163,184,0.85)', fontSize: 12 }}
               />
               <YAxis
+                domain={securityAxis.domain}
+                ticks={securityAxis.ticks}
+                allowDecimals={false}
+                tickFormatter={(value) => String(value).padStart(2, '0')}
                 tickLine={false}
                 axisLine={false}
                 tick={{ fill: 'rgba(148,163,184,0.85)', fontSize: 12 }}
               />
               <Tooltip contentStyle={tooltipStyle} />
-              <Legend
-                wrapperStyle={{ color: 'rgba(148,163,184,0.9)', fontSize: 12, paddingTop: 12 }}
-              />
+              <Legend content={<ChartLegend />} />
               <Bar
                 dataKey="compliance"
-                name="Compliance flags"
-                stackId="a"
-                fill="#f6cb86"
-                radius={[0, 0, 0, 0]}
+                name="Compliance Flags"
+                fill={CHART_COLORS.compliance}
+                radius={[4, 4, 0, 0]}
+                barSize={SECURITY_BAR_SIZE}
+                isAnimationActive={false}
+              />
+              <Bar
+                dataKey="issuesResolved"
+                name="Issues Resolved"
+                fill={CHART_COLORS.resolved}
+                radius={[4, 4, 0, 0]}
+                barSize={SECURITY_BAR_SIZE}
+                isAnimationActive={false}
               />
               <Bar
                 dataKey="security"
-                name="Security alerts"
-                stackId="a"
-                fill="#d3191c"
-                radius={[6, 6, 0, 0]}
+                name="Security Incidents"
+                fill={CHART_COLORS.security}
+                radius={[4, 4, 0, 0]}
+                barSize={SECURITY_BAR_SIZE}
+                isAnimationActive={false}
               />
             </ComposedChart>
-          </ResponsiveContainer>
+          </div>
         </div>
       </ChartPanel>
-
-      <div className="grid gap-6 xl:grid-cols-2">
-        <ChartPanel
-          title="Backup Success Trend"
-          range={selectedRange}
-          onRangeChange={setSelectedRange}
-          onRefresh={refresh}
-          isLoading={isLoading}
-        >
-          <div className="h-[300px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart
-                data={charts?.backupTrend || []}
-                margin={{ left: 4, right: 8, top: 8, bottom: 0 }}
-              >
-                <CartesianGrid stroke="rgba(255,255,255,0.06)" strokeDasharray="3 3" />
-                <XAxis
-                  dataKey="date"
-                  tickLine={false}
-                  axisLine={false}
-                  tick={{ fill: 'rgba(148,163,184,0.85)', fontSize: 12 }}
-                />
-                <YAxis
-                  domain={[0, 100]}
-                  tickLine={false}
-                  axisLine={false}
-                  tick={{ fill: 'rgba(148,163,184,0.85)', fontSize: 12 }}
-                />
-                <Tooltip contentStyle={tooltipStyle} />
-                <Line
-                  type="monotone"
-                  dataKey="successRate"
-                  name="Backup success %"
-                  stroke="#00a63e"
-                  strokeWidth={2}
-                  dot={false}
-                />
-              </ComposedChart>
-            </ResponsiveContainer>
-          </div>
-        </ChartPanel>
-
-        <ChartPanel
-          title="Infrastructure Utilization"
-          range={selectedRange}
-          onRangeChange={setSelectedRange}
-          onRefresh={refresh}
-          isLoading={isLoading}
-        >
-          <div className="h-[300px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart
-                data={charts?.infrastructureUtilization || []}
-                margin={{ left: 4, right: 8, top: 8, bottom: 0 }}
-              >
-                <CartesianGrid stroke="rgba(255,255,255,0.06)" strokeDasharray="3 3" />
-                <XAxis
-                  dataKey="date"
-                  tickLine={false}
-                  axisLine={false}
-                  tick={{ fill: 'rgba(148,163,184,0.85)', fontSize: 12 }}
-                />
-                <YAxis
-                  domain={[0, 100]}
-                  tickLine={false}
-                  axisLine={false}
-                  tick={{ fill: 'rgba(148,163,184,0.85)', fontSize: 12 }}
-                />
-                <Tooltip contentStyle={tooltipStyle} />
-                <Legend />
-                <Area
-                  type="monotone"
-                  dataKey="cpu"
-                  name="CPU %"
-                  stroke="#155dfc"
-                  fill="#155dfc"
-                  fillOpacity={0.2}
-                />
-                <Area
-                  type="monotone"
-                  dataKey="memory"
-                  name="Memory %"
-                  stroke="#f6cb86"
-                  fill="#f6cb86"
-                  fillOpacity={0.2}
-                />
-                <Area
-                  type="monotone"
-                  dataKey="storage"
-                  name="Storage %"
-                  stroke="#00a63e"
-                  fill="#00a63e"
-                  fillOpacity={0.2}
-                />
-              </ComposedChart>
-            </ResponsiveContainer>
-          </div>
-        </ChartPanel>
-      </div>
-
-      <section
-        className={cn(uiTokens.radiusCard, 'bg-brand-surface border border-white/10 p-4 sm:p-5')}
-      >
-        <div className="mb-4 flex items-center justify-between gap-3">
-          <h2 className="text-body-md-semibold text-brand-text">Active Incident Timeline</h2>
-          <button
-            type="button"
-            onClick={refresh}
-            className="bg-brand-bg text-muted hover:text-brand-text grid size-9 place-items-center rounded-full border border-white/10"
-            aria-label="Refresh incidents"
-          >
-            <RefreshCw className={cn('size-4', dashboardQuery.isFetching && 'animate-spin')} />
-          </button>
-        </div>
-        {isLoading ? (
-          <div className="space-y-3">
-            {Array.from({ length: 4 }).map((_, index) => (
-              <div
-                key={`incident-skel-${index}`}
-                className="h-12 animate-pulse rounded-lg bg-white/10"
-              />
-            ))}
-          </div>
-        ) : (charts?.incidentTimeline || []).length ? (
-          <div className="space-y-3">
-            {(charts?.incidentTimeline || []).map((incident) => (
-              <div
-                key={`${incident.id}-${incident.at}`}
-                className="radius-lg bg-brand-bg border border-white/10 px-4 py-3"
-              >
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <p className="text-body-md-semibold text-brand-text">
-                    {incident.id} · {incident.module}
-                  </p>
-                  <p className="text-body-sm text-muted">{incident.at}</p>
-                </div>
-                <p className="text-body-sm text-muted mt-1">
-                  {incident.severity} · {incident.status}
-                  {incident.reason ? ` · ${incident.reason}` : ''}
-                </p>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p className="text-muted text-sm">No incidents in this range</p>
-        )}
-      </section>
 
       <section
         className={cn(uiTokens.radiusCard, 'bg-brand-surface border border-white/10 p-4 sm:p-5')}
@@ -705,7 +763,7 @@ export function PlatformHealthPage() {
             <button
               type="button"
               onClick={refresh}
-              className="bg-brand-bg text-muted hover:text-brand-text grid size-9 place-items-center rounded-full border border-white/10"
+              className={REFRESH_BUTTON_CLASS}
               aria-label="Refresh infrastructure"
             >
               <RefreshCw className={cn('size-4', dashboardQuery.isFetching && 'animate-spin')} />

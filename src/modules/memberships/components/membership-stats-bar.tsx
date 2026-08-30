@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { TrendingDown, TrendingUp } from 'lucide-react'
 
 import {
   DEFAULT_MEMBERSHIP_METRIC_IDS,
@@ -8,16 +9,40 @@ import {
   MEMBERSHIPS_MODULE_KEY,
 } from '../config/membership-metrics.config'
 import { useMembershipStats } from '../hooks/use-memberships'
-import type { MembershipStatsResponse } from '../types/membership'
+import type { MembershipStatsResponse, MembershipTrend } from '../types/membership'
 import {
   orderByActiveMetricIds,
   useActiveMetricIds,
 } from '@/modules/expert/hooks/use-active-metric-ids'
-import { StatCard, type StatCardProps } from '@/shared/components/dashboard/stat-card'
 import { StatCardSkeleton } from '@/shared/components/ui/skeleton'
+import { cn } from '@/shared/lib/cn'
 import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
 
-type MembershipKpiStat = StatCardProps & { id: string }
+type MembershipKpiStat = {
+  id: string
+  label: string
+  value: string
+  trend?: MembershipTrend
+}
+
+const API_TREND_KEY_BY_METRIC_ID: Record<string, string> = {
+  'total-subscribers': 'totalSubscribers',
+  'active-subscribers': 'activeSubscribers',
+  'total-membership-revenue': 'totalMembershipRevenue',
+  'monthly-recurring-revenue': 'monthlyRecurringRevenue',
+  'revenue-growth-rate': 'revenueGrowthRate',
+  'average-revenue-per-subscriber': 'averageRevenuePerSubscriber',
+  'renewal-rate': 'renewalRate',
+  'churn-rate': 'churnRate',
+  'new-subscribers-current-month': 'newSubscribersCurrentMonth',
+  'membership-upgrades': 'membershipUpgrades',
+  'membership-downgrades': 'membershipDowngrades',
+  'membership-renewals': 'membershipRenewals',
+  'cancellations-current-month': 'cancellationsCurrentMonth',
+  'expired-memberships': 'expiredMemberships',
+  'cancelled-memberships': 'cancelledMemberships',
+  'failed-renewals': 'failedRenewals',
+}
 
 function formatCurrencyValue(value: number | undefined | null) {
   const amount = Number(value ?? 0)
@@ -75,31 +100,76 @@ function buildMembershipKpiStats(
     'churn-rate': formatPercent(apiStats?.churnRate),
   }
 
-  const trendKeyById: Record<string, string> = {
-    'total-subscribers': 'totalSubscribers',
-    'active-subscribers': 'activeSubscribers',
-    'total-membership-revenue': 'totalMembershipRevenue',
-    'monthly-recurring-revenue': 'monthlyRecurringRevenue',
-    'renewal-rate': 'renewalRate',
-    'churn-rate': 'churnRate',
-  }
-
   return MEMBERSHIPS_DASHBOARD_METRICS_CATALOG.map((item) => {
-    const trendKey = trendKeyById[item.id]
+    const trendKey = API_TREND_KEY_BY_METRIC_ID[item.id]
     const trend = trendKey ? trends[trendKey] : undefined
+
     return {
       id: item.id,
-      title: item.label,
+      label: item.label,
       value: valueById[item.id] ?? '0',
-      trend: trend
-        ? {
-            direction: trend.direction,
-            percentage: trend.percentage,
-            label: trend.label || 'vs last month',
-          }
-        : undefined,
+      trend,
     }
   })
+}
+
+const TEXT_VALUE_METRIC_IDS = new Set([
+  'most-subscribed-plan',
+  'subscribers-by-plan',
+  'most-selected-billing-cycle',
+  'most-cancelled-plan',
+])
+
+function MembershipMetricCard({ metric }: { metric: MembershipKpiStat }) {
+  const isUp = metric.trend?.direction === 'up'
+  const invertTrend = [
+    'churn-rate',
+    'cancellations-current-month',
+    'cancelled-memberships',
+    'failed-renewals',
+    'membership-downgrades',
+  ].includes(metric.id)
+  const isPositive = invertTrend ? !isUp : isUp
+  const isTextValue = TEXT_VALUE_METRIC_IDS.has(metric.id)
+  const expiredCount = metric.id === 'expired-memberships' ? Number(metric.value) || 0 : 0
+  const showAttentionHint = expiredCount > 0
+
+  return (
+    <div className="rounded-brand-lg bg-brand-surface flex min-h-[130px] flex-col border border-white/[0.06] p-4 transition-colors hover:border-white/10">
+      <p className="text-body-sm text-muted truncate font-medium">{metric.label}</p>
+      <p
+        className={cn(
+          'mt-2 font-bold tracking-tight text-white',
+          isTextValue ? 'text-body-sm line-clamp-2 leading-snug font-semibold' : 'text-h3 truncate',
+        )}
+      >
+        {metric.value}
+      </p>
+      <div className="mt-auto flex items-center gap-2 pt-3">
+        {showAttentionHint ? (
+          <span className="text-muted text-[10px]">Require attention</span>
+        ) : metric.trend ? (
+          <>
+            <span
+              className={cn(
+                'inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-bold',
+                isPositive
+                  ? 'bg-brand-positive/15 text-brand-positive'
+                  : 'bg-brand-danger/10 text-brand-danger',
+              )}
+            >
+              {isUp ? <TrendingUp className="size-3" /> : <TrendingDown className="size-3" />}
+              {isUp ? '+' : metric.trend.percentage === 0 ? '' : '-'}
+              {metric.trend.percentage}%
+            </span>
+            <span className="text-muted truncate text-[10px]">
+              {metric.trend.label ?? 'vs last month'}
+            </span>
+          </>
+        ) : null}
+      </div>
+    </div>
+  )
 }
 
 export function MembershipStatsBar() {
@@ -123,26 +193,11 @@ export function MembershipStatsBar() {
     return orderByActiveMetricIds(allStats, filteredActiveMetricIds)
   }, [apiStats, filteredActiveMetricIds])
 
-  const columnsClass =
-    (isLoading ? filteredActiveMetricIds.length : visibleStats.length) <= 3
-      ? 'md:grid-cols-2 xl:grid-cols-3'
-      : (isLoading ? filteredActiveMetricIds.length : visibleStats.length) <= 5
-        ? 'md:grid-cols-2 xl:grid-cols-5'
-        : 'md:grid-cols-2 xl:grid-cols-4'
-
   return (
-    <div className={`grid grid-cols-1 gap-4 ${columnsClass}`}>
+    <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4">
       {isLoading
         ? filteredActiveMetricIds.map((id) => <StatCardSkeleton key={id} />)
-        : visibleStats.map((stat) => (
-            <StatCard
-              key={stat.id}
-              title={stat.title}
-              value={stat.value}
-              trend={stat.trend}
-              hint={stat.hint}
-            />
-          ))}
+        : visibleStats.map((stat) => <MembershipMetricCard key={stat.id} metric={stat} />)}
     </div>
   )
 }
@@ -155,13 +210,7 @@ export function MembershipPlanStatsBar() {
     return (
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         {Array.from({ length: 4 }).map((_, idx) => (
-          <div
-            key={idx}
-            className="animate-pulse space-y-2 rounded-xl border border-white/10 bg-white/5 px-4 py-3"
-          >
-            <div className="h-3 w-20 rounded bg-white/10" />
-            <div className="h-7 w-12 rounded bg-white/10" />
-          </div>
+          <StatCardSkeleton key={idx} />
         ))}
       </div>
     )
@@ -179,9 +228,11 @@ export function MembershipPlanStatsBar() {
 
 function MiniStat({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
-      <p className="text-xs text-slate-400">{label}</p>
-      <p className="mt-1 text-2xl font-semibold text-white">{String(value).padStart(2, '0')}</p>
+    <div className="rounded-brand-lg bg-brand-surface flex min-h-[130px] flex-col border border-white/[0.06] p-4">
+      <p className="text-body-sm text-muted font-medium">{label}</p>
+      <p className="text-h3 mt-2 font-bold tracking-tight text-white">
+        {String(value).padStart(2, '0')}
+      </p>
     </div>
   )
 }

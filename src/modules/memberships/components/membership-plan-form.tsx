@@ -1,7 +1,8 @@
-import { Plus, X } from 'lucide-react'
+import { Box, ChevronsUpDown, Plus, X } from 'lucide-react'
 import { useMemo, useRef, useState, type FormEvent } from 'react'
 
 import { RequiredMark } from '@/shared/components/form/required-mark'
+import { guardUploadFile } from '@/shared/lib/upload-file'
 import { DEFAULT_BILLING_CYCLES } from '../mock/membership-metrics.mock'
 import type {
   MembershipPlan,
@@ -11,6 +12,14 @@ import type {
 } from '../types/membership'
 
 const SEP = 'rgba(255, 255, 255, 0.1)'
+
+const MEMBERSHIP_FIELD_CLASS =
+  'ui-input h-[42px] w-full placeholder:text-white/50 focus-visible:outline-none focus-visible:outline-offset-0 focus:border-[#155dfc] focus-visible:border-[#155dfc]'
+
+const BILLING_CYCLE_CHIP_CLASS =
+  'inline-flex h-[30px] items-center gap-1 rounded-[6px] px-2 text-[12px] leading-[18px] font-medium'
+
+const MEMBERSHIP_DISCOUNT_FIELD_CLASS = `${MEMBERSHIP_FIELD_CLASS} pr-9`
 
 const BASE_CYCLES = ['Weekly', '3 Months', '6 Months', 'Annual'] as const
 
@@ -211,6 +220,7 @@ export function MembershipPlanForm({ initialPlan, onSubmit }: MembershipPlanForm
   }
 
   const handleIconChange = (file: File | null) => {
+    if (file && !guardUploadFile(file)) return
     setIconFile(file)
     if (file) setIconPreview(URL.createObjectURL(file))
   }
@@ -246,7 +256,7 @@ export function MembershipPlanForm({ initialPlan, onSubmit }: MembershipPlanForm
               onChange={(e) => setPlanName(e.target.value)}
               placeholder="Basic Plan"
               required
-              className="box-border h-[42px] w-full rounded-[8px] border border-white/10 bg-black px-3.5 text-[14px] leading-[22px] text-white outline-none placeholder:text-white/50 focus:border-[#155dfc]"
+              className={MEMBERSHIP_FIELD_CLASS}
             />
           </label>
 
@@ -257,12 +267,12 @@ export function MembershipPlanForm({ initialPlan, onSubmit }: MembershipPlanForm
             <button
               type="button"
               onClick={() => iconInputRef.current?.click()}
-              className="flex size-[42px] items-center justify-center overflow-hidden rounded-[8px] border border-white/10 bg-black"
+              className="flex size-12 items-center justify-center overflow-hidden rounded-full border border-dashed border-white/30 bg-[#050505]"
             >
               {iconPreview ? (
                 <img src={iconPreview} alt="" className="size-full object-cover" />
               ) : (
-                <Plus className="size-4 text-white/50" />
+                <Box className="size-6 text-white/35" strokeWidth={1.5} />
               )}
             </button>
             <input
@@ -279,82 +289,102 @@ export function MembershipPlanForm({ initialPlan, onSubmit }: MembershipPlanForm
       <div className="h-px w-full" style={{ backgroundColor: SEP }} aria-hidden />
 
       <section className="space-y-4">
+        <label className="block space-y-2">
+          <span className="block text-[12px] leading-[18px] text-white/50">
+            Billing Cycle format <RequiredMark />
+          </span>
+          <div className="flex flex-wrap gap-2">
+            {availableCycles.map((cycle) => {
+              const active = selectedCycles.includes(cycle)
+              return (
+                <button
+                  key={cycle}
+                  type="button"
+                  onClick={() => toggleCycle(cycle)}
+                  className={
+                    active
+                      ? `${BILLING_CYCLE_CHIP_CLASS} bg-white text-black`
+                      : `${BILLING_CYCLE_CHIP_CLASS} border border-white/30 bg-transparent font-normal text-white`
+                  }
+                >
+                  {active ? (
+                    <X className="size-3 shrink-0" strokeWidth={2} />
+                  ) : (
+                    <Plus className="size-3 shrink-0" strokeWidth={2} />
+                  )}
+                  {cycle}
+                </button>
+              )
+            })}
+            {addingCycle ? (
+              <div className="flex items-center gap-2">
+                <input
+                  value={cycleDraft}
+                  onChange={(e) => setCycleDraft(e.target.value)}
+                  placeholder="Cycle name"
+                  className={`${MEMBERSHIP_FIELD_CLASS} h-9 w-32 px-2 text-[13px]`}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault()
+                      addCustomCycle()
+                    }
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={addCustomCycle}
+                  className="ui-cta ui-cta-primary h-9"
+                >
+                  Add
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setAddingCycle(true)}
+                className={`${BILLING_CYCLE_CHIP_CLASS} border border-dashed border-white/30 font-normal text-white`}
+              >
+                <Plus className="size-3 shrink-0" strokeWidth={2} />
+                Add New
+              </button>
+            )}
+          </div>
+        </label>
+
         <h3 className="text-[16px] leading-6 font-semibold text-white">Pricing Information</h3>
 
-        <div className="flex flex-wrap gap-2">
-          {availableCycles.map((cycle) => {
-            const active = selectedCycles.includes(cycle)
-            return (
-              <button
-                key={cycle}
-                type="button"
-                onClick={() => toggleCycle(cycle)}
-                className={`inline-flex h-9 items-center gap-1.5 rounded-full border px-3 text-[13px] ${
-                  active
-                    ? 'border-white/30 bg-white/10 text-white'
-                    : 'border-white/10 bg-transparent text-white/50'
-                }`}
-              >
-                {cycle}
-                {active ? <X className="size-3.5 opacity-70" /> : null}
-              </button>
-            )
-          })}
-          {addingCycle ? (
-            <div className="flex items-center gap-2">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {selectedCycles.map((cycle) => (
+            <label key={`${cycle}-price`} className="block space-y-1.5">
+              <span className="block text-[12px] text-white/50">
+                {cycle} Price <RequiredMark />
+              </span>
               <input
-                value={cycleDraft}
-                onChange={(e) => setCycleDraft(e.target.value)}
-                placeholder="Cycle name"
-                className="box-border h-9 w-32 rounded-[8px] border border-white/10 bg-black px-2 text-[13px] text-white outline-none"
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault()
-                    addCustomCycle()
-                  }
-                }}
+                type="number"
+                min={0}
+                step="0.01"
+                required
+                value={pricing[cycle]?.price ?? 0}
+                onChange={(e) =>
+                  setPricing((prev) => ({
+                    ...prev,
+                    [cycle]: {
+                      ...(prev[cycle] ?? { billingCycleName: cycle, discount: 0 }),
+                      price: Number(e.target.value),
+                    },
+                  }))
+                }
+                className={MEMBERSHIP_FIELD_CLASS}
               />
-              <button type="button" onClick={addCustomCycle} className="ui-cta ui-cta-primary h-9">
-                Add
-              </button>
-            </div>
-          ) : (
-            <button
-              type="button"
-              onClick={() => setAddingCycle(true)}
-              className="inline-flex h-9 items-center rounded-full border border-dashed border-white/20 px-3 text-[13px] text-white/60"
-            >
-              + Add New
-            </button>
-          )}
+            </label>
+          ))}
         </div>
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {selectedCycles.map((cycle) => (
-            <div key={cycle} className="space-y-2">
-              <label className="block space-y-1.5">
-                <span className="block text-[12px] text-white/50">
-                  {cycle} Price <RequiredMark />
-                </span>
-                <input
-                  type="number"
-                  min={0}
-                  required
-                  value={pricing[cycle]?.price ?? 0}
-                  onChange={(e) =>
-                    setPricing((prev) => ({
-                      ...prev,
-                      [cycle]: {
-                        ...(prev[cycle] ?? { billingCycleName: cycle, discount: 0 }),
-                        price: Number(e.target.value),
-                      },
-                    }))
-                  }
-                  className="box-border h-[42px] w-full rounded-[8px] border border-white/10 bg-black px-3 text-[14px] text-white outline-none focus:border-[#155dfc]"
-                />
-              </label>
-              <label className="block space-y-1.5">
-                <span className="block text-[12px] text-white/50">Discount %</span>
+            <label key={`${cycle}-discount`} className="block space-y-1.5">
+              <span className="block text-[12px] text-white/50">Discount %</span>
+              <div className="relative">
                 <input
                   type="number"
                   min={0}
@@ -369,10 +399,15 @@ export function MembershipPlanForm({ initialPlan, onSubmit }: MembershipPlanForm
                       },
                     }))
                   }
-                  className="box-border h-[42px] w-full rounded-[8px] border border-white/10 bg-black px-3 text-[14px] text-white outline-none focus:border-[#155dfc]"
+                  className={MEMBERSHIP_DISCOUNT_FIELD_CLASS}
                 />
-              </label>
-            </div>
+                <ChevronsUpDown
+                  className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-white/50"
+                  strokeWidth={1.75}
+                  aria-hidden
+                />
+              </div>
+            </label>
           ))}
         </div>
       </section>
@@ -420,7 +455,7 @@ export function MembershipPlanForm({ initialPlan, onSubmit }: MembershipPlanForm
               onChange={(e) => setFeatureLabelDraft(e.target.value)}
               placeholder="Feature name"
               autoFocus
-              className="box-border h-[42px] min-w-0 flex-1 rounded-[8px] border border-white/10 bg-black px-3.5 text-[14px] text-white outline-none focus:border-[#155dfc]"
+              className={MEMBERSHIP_FIELD_CLASS}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
                   e.preventDefault()
@@ -450,7 +485,7 @@ export function MembershipPlanForm({ initialPlan, onSubmit }: MembershipPlanForm
           <button
             type="button"
             onClick={() => setAddingFeature(true)}
-            className="mt-3 box-border flex h-[42px] w-full max-w-[648px] items-center justify-center rounded-[10px] border border-white/20 bg-black text-[14px] leading-[22px] font-medium text-white transition-colors hover:bg-white/5"
+            className="mt-3 box-border flex h-[42px] w-full max-w-[648px] items-center justify-center rounded-[10px] border border-white/20 bg-[#050505] text-[14px] leading-[22px] font-medium text-white transition-colors hover:bg-white/5"
           >
             Add more Features
           </button>
@@ -479,7 +514,7 @@ export function MembershipPlanForm({ initialPlan, onSubmit }: MembershipPlanForm
                 const digits = e.target.value.replace(/\D/g, '')
                 setTrialPeriodDays(digits === '' ? 0 : Number(digits))
               }}
-              className="box-border h-[42px] w-[150px] rounded-[8px] border border-white/10 bg-black px-3 text-[14px] leading-[22px] text-white outline-none focus:border-[#155dfc]"
+              className={`${MEMBERSHIP_FIELD_CLASS} w-[150px]`}
             />
           </label>
         </section>
@@ -518,14 +553,17 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (value: boo
       onClick={() => onChange(!checked)}
       className="relative h-[22px] w-[40px] shrink-0 rounded-full transition-colors"
       style={{
-        backgroundColor: checked ? 'rgba(255, 255, 255, 0.2)' : 'transparent',
-        border: '1.5px solid rgba(255, 255, 255, 0.45)',
+        backgroundColor: checked ? '#ffffff' : 'transparent',
+        border: checked ? '1.5px solid #ffffff' : '1.5px solid rgba(255, 255, 255, 0.45)',
         boxSizing: 'border-box',
       }}
     >
       <span
-        className="absolute top-1/2 block size-[14px] -translate-y-1/2 rounded-full bg-white transition-[left]"
-        style={{ left: checked ? '22px' : '3px' }}
+        className="absolute top-1/2 block size-[14px] -translate-y-1/2 rounded-full transition-[left]"
+        style={{
+          left: checked ? '22px' : '3px',
+          backgroundColor: checked ? '#141414' : '#ffffff',
+        }}
       />
     </button>
   )

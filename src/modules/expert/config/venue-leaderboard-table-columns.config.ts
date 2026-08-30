@@ -29,20 +29,20 @@ const col = (
 })
 
 export const VENUE_LEADERBOARD_TABLE_COLUMNS_CATALOG: VenueLeaderboardTableColumnCatalogItem[] = [
-  col('rank', 'Leaderboard Rank', 'Count', 'Current ranking position', true),
+  col('rank', 'Rank', 'Count', 'Current ranking position', true),
   col('venue-id', 'Venue ID', 'Text', 'Unique venue identifier', true),
   col('venue-name', 'Venue Name', 'Text', 'Registered venue name', true),
   col('category', 'Category', 'Text', 'Marketplace category', true),
-  col('membership-type', 'Membership Type', 'Text', 'Venue subscription plan', true),
+  col('membership-type', 'Membership Type', 'Text', 'Venue subscription plan'),
   col(
     'orders-completed',
-    'Orders Completed',
+    'No. Of Events',
     'Count',
     'Successfully completed venue bookings and events',
     true,
   ),
-  col('average-rating', 'Average Rating', 'Average', 'Overall customer rating', true),
-  col('score', 'Performance Score', 'Count', 'Calculated performance score (0–100)', true),
+  col('average-rating', 'Ratings', 'Average', 'Overall customer rating', true),
+  col('score', 'Score', 'Count', 'Calculated performance score (0–100)', true),
   col(
     'profile-health-score',
     'Profile Health Score',
@@ -54,9 +54,8 @@ export const VENUE_LEADERBOARD_TABLE_COLUMNS_CATALOG: VenueLeaderboardTableColum
     'Client Satisfaction Score',
     'Percentage',
     'Percentage of positive customer ratings',
-    true,
   ),
-  col('total-revenue', 'Total Revenue', 'Currency', 'Total revenue generated', true),
+  col('total-revenue', 'Total Revenue', 'Currency', 'Total revenue generated'),
   col('repeat-client-rate', 'Repeat Client Rate', 'Percentage', 'Percentage of returning clients'),
   col(
     'order-completion-rate',
@@ -64,7 +63,7 @@ export const VENUE_LEADERBOARD_TABLE_COLUMNS_CATALOG: VenueLeaderboardTableColum
     'Percentage',
     'Percentage of successfully completed orders',
   ),
-  col('last-active', 'Last Active', 'Date', 'Most recent platform activity', true),
+  col('last-active', 'Last Active', 'Date', 'Most recent platform activity'),
 ]
 
 export const DEFAULT_VENUE_LEADERBOARD_VISIBLE_COLUMN_IDS =
