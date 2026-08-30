@@ -16,25 +16,21 @@ export function AnalyticsWidget({
   isLoading?: boolean
 }) {
   return (
-    <DashboardCard title={title}>
-      <ResponsiveGrid mobileCols={2} tabletCols={3} desktopCols={6} gap={3}>
+    <DashboardCard title={title} className="p-5 sm:p-6">
+      <ResponsiveGrid mobileCols={2} tabletCols={3} desktopCols={6} gap={4}>
         {isLoading
           ? Array.from({ length: 6 }).map((_, index) => (
-              <div
-                key={`engagement-skel-${index}`}
-                className="radius-md border border-white/10 bg-white/5 px-4 py-4"
-              >
+              <div key={`engagement-skel-${index}`} className="flex flex-col gap-2">
                 <div className="h-3 w-24 animate-pulse rounded bg-white/10" />
-                <div className="mt-2 h-5 w-16 animate-pulse rounded bg-white/10" />
+                <div className="h-6 w-16 animate-pulse rounded bg-white/10" />
               </div>
             ))
           : metrics.map((metric) => (
-              <div
-                key={metric.label}
-                className="radius-md bg-brand-surface-2 hover:border-brand-accent-muted border border-white/10 px-4 py-4 transition-colors"
-              >
-                <p className="text-body-sm-semibold text-muted tracking-wide">{metric.label}</p>
-                <p className="text-body-md-semibold text-brand-text mt-1">{metric.value}</p>
+              <div key={metric.label} className="flex flex-col">
+                <p className="text-xs leading-4 font-normal text-white/50">{metric.label}</p>
+                <p className="mt-1.5 text-xl font-bold tracking-tight text-white sm:text-2xl">
+                  {metric.value}
+                </p>
               </div>
             ))}
       </ResponsiveGrid>

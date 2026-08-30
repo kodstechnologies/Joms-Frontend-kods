@@ -6,12 +6,13 @@ import {
   getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table'
-import { ArrowUpDown, ArrowDown, ArrowUp, Filter, Search, Upload } from 'lucide-react'
+import { ArrowUpDown, ArrowDown, ArrowUp, Search } from 'lucide-react'
 
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
 import type { SearchableColumn, ColumnSearchValues } from '@/shared/types/search-types'
 import { EnhancedSearchBar } from './enhanced-search-bar'
+import { AdvanceFilterIcon, ExportDataIcon } from '@/shared/components/icons/action-button-icons'
 
 declare module '@tanstack/react-table' {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars -- required to match upstream ColumnMeta signature for declaration merging
@@ -189,7 +190,7 @@ export function DataTable<TData>({
                 disabled={!onAdvancedFilter}
                 className="table-advance-filter-btn gap-2"
               >
-                <Filter className="size-3.5" aria-hidden="true" />
+                <AdvanceFilterIcon className="size-5 shrink-0" aria-hidden="true" />
                 {advancedFilterLabel}
               </Button>
             ) : null}
@@ -201,7 +202,7 @@ export function DataTable<TData>({
                 disabled={!onExport || isExporting}
                 className="table-export-btn gap-2"
               >
-                <Upload className="icon-md" aria-hidden="true" />
+                <ExportDataIcon className="size-5 shrink-0" aria-hidden="true" />
                 {isExporting ? 'Exporting...' : 'Export Data'}
               </Button>
             ) : null}

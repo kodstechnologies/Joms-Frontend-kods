@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { BarChart3 } from 'lucide-react'
+import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
 import { useNavigate } from 'react-router-dom'
 import createIcon from '@/assets/JOMS_ICONS-2/icons8-create.svg'
 
@@ -136,7 +136,7 @@ export const PausedCategoriesPage = () => {
             className="ui-manage-metrics w-full md:w-auto"
             onClick={() => navigate(`${scope.metricsPath}?section=table`)}
           >
-            <BarChart3 className="size-4" />
+            <ManageMetricsIcon className="size-5" />
             Manage Metrics
           </Button>
 

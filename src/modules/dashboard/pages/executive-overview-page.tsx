@@ -1,12 +1,12 @@
 import { useMemo } from 'react'
 import {
+  Area,
   Bar,
   BarChart,
   CartesianGrid,
   Cell,
-  Legend,
-  Line,
-  LineChart,
+  ComposedChart,
+  LabelList,
   Pie,
   PieChart,
   ResponsiveContainer,
@@ -41,6 +41,8 @@ import {
   downloadCsv,
 } from '@/modules/dashboard/utils/executive-overview-export'
 
+const PIE_COLORS = ['#EF4444', '#F97316', '#FFC849', '#10B981', '#06B6D4', '#8B5CF6']
+
 export function ExecutiveOverviewPage() {
   const navigate = useNavigate()
   const overviewQuery = useExecutiveOverview()
@@ -73,16 +75,25 @@ export function ExecutiveOverviewPage() {
   const revenueMemberGrowth = payload?.charts?.revenueMemberGrowth || []
   const membershipTrends = payload?.charts?.membershipTrends || []
   const conversionFunnel = payload?.charts?.conversionFunnel || []
-  const serviceDistribution = payload?.charts?.serviceTypeDistribution || []
-  const pieColors = ['#EF4444', '#F59E0B', '#60A5FA', '#34D399', '#A78BFA']
-  const tooltipStyle = {
-    background: 'rgba(255,255,255,0.95)',
-    border: '1px solid rgba(0,0,0,0.10)',
-    borderRadius: 14,
-    padding: '10px 12px',
-    color: 'rgba(0,0,0,0.85)',
-    boxShadow: '0 20px 50px rgba(0,0,0,0.4)',
-  }
+  const serviceDistribution = useMemo(
+    () => payload?.charts?.serviceTypeDistribution || [],
+    [payload?.charts?.serviceTypeDistribution],
+  )
+
+  const totalDistributionValue = useMemo(
+    () => serviceDistribution.reduce((acc, item) => acc + (Number(item.value) || 0), 0),
+    [serviceDistribution],
+  )
+
+  const distributionWithPercentage = useMemo(() => {
+    return serviceDistribution.map((item) => {
+      const pct = totalDistributionValue > 0 ? (item.value / totalDistributionValue) * 100 : 0
+      return {
+        ...item,
+        percentage: Math.round(pct * 10) / 10,
+      }
+    })
+  }, [serviceDistribution, totalDistributionValue])
 
   const handleRefresh = async () => {
     try {
@@ -144,154 +155,362 @@ export function ExecutiveOverviewPage() {
       <ResponsiveGrid mobileCols={1} tabletCols={2} desktopCols={2} gap={4}>
         <ChartCard
           title="Revenue & Member Growth"
-          description="Monthly trendlines across revenue and new member acquisition"
+          className="min-h-[380px]"
           isLoading={isLoading}
           refreshing={overviewQuery.isFetching}
           onRefresh={handleRefresh}
           isEmpty={!revenueMemberGrowth.length}
         >
-          <div className="h-[220px] min-h-[220px] w-full sm:h-[260px]">
-            <ResponsiveContainer width="100%" height="100%" minHeight={220}>
-              <LineChart
-                data={revenueMemberGrowth}
-                margin={{ left: 8, right: 8, top: 8, bottom: 8 }}
-              >
-                <CartesianGrid stroke="rgba(255,255,255,0.05)" vertical={false} />
-                <XAxis
-                  dataKey="month"
-                  tickLine={false}
-                  axisLine={false}
-                  tick={{ fill: 'rgba(148,163,184,0.85)', fontSize: 12 }}
-                />
-                <YAxis
-                  tickLine={false}
-                  axisLine={false}
-                  tick={{ fill: 'rgba(148,163,184,0.85)', fontSize: 12 }}
-                />
-                <Tooltip
-                  contentStyle={tooltipStyle}
-                  labelStyle={{ color: 'rgba(0,0,0,0.85)', fontWeight: 600 }}
-                />
-                <Legend wrapperStyle={{ color: '#ffffff' }} iconType="diamond" iconSize={10} />
-                <Line
-                  type="monotone"
-                  dataKey="newMembers"
-                  stroke="#60A5FA"
-                  strokeWidth={2}
-                  dot={false}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="revenue"
-                  stroke="#FBBF24"
-                  strokeWidth={2}
-                  dot={false}
-                />
-              </LineChart>
-            </ResponsiveContainer>
+          <div className="w-full">
+            <div className="h-[270px] min-h-[270px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <ComposedChart
+                  data={revenueMemberGrowth}
+                  margin={{ left: 0, right: 0, top: 12, bottom: 4 }}
+                >
+                  <defs>
+                    <linearGradient id="revenueGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#FFC849" stopOpacity={0.25} />
+                      <stop offset="100%" stopColor="#FFC849" stopOpacity={0} />
+                    </linearGradient>
+                    <linearGradient id="membersGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#2B426B" stopOpacity={0.45} />
+                      <stop offset="100%" stopColor="#000000" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid
+                    stroke="rgba(255,255,255,0.08)"
+                    strokeDasharray="3 3"
+                    vertical={false}
+                  />
+                  <XAxis
+                    dataKey="month"
+                    tickLine={false}
+                    axisLine={false}
+                    tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 11 }}
+                  />
+                  <YAxis
+                    yAxisId="left"
+                    tickLine={false}
+                    axisLine={false}
+                    tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 11 }}
+                    tickFormatter={(v) => (v >= 1000 ? `${v / 1000}K` : String(v))}
+                  />
+                  <YAxis
+                    yAxisId="right"
+                    orientation="right"
+                    tickLine={false}
+                    axisLine={false}
+                    tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 11 }}
+                    tickFormatter={(v) => String(v)}
+                  />
+                  <Tooltip
+                    cursor={{ stroke: 'rgba(96,165,250,0.5)', strokeWidth: 1.5 }}
+                    content={({ active, payload: tPayload, label }) => {
+                      if (active && tPayload && tPayload.length) {
+                        return (
+                          <div className="min-w-[130px] rounded-lg border border-black/5 bg-white px-3 py-2 shadow-2xl">
+                            <p className="mb-1 text-xs font-bold text-gray-900">{label}</p>
+                            {tPayload.map((item, i) => {
+                              const isRevenue = item.dataKey === 'revenue'
+                              return (
+                                <p
+                                  key={i}
+                                  className="text-xs font-semibold"
+                                  style={{ color: isRevenue ? '#FFC849' : '#2B426B' }}
+                                >
+                                  {isRevenue ? 'Revenue(₹)' : 'New Members'}:{' '}
+                                  {typeof item.value === 'number'
+                                    ? item.value.toLocaleString('en-IN')
+                                    : item.value}
+                                </p>
+                              )
+                            })}
+                          </div>
+                        )
+                      }
+                      return null
+                    }}
+                  />
+                  <Area
+                    yAxisId="left"
+                    type="monotone"
+                    dataKey="newMembers"
+                    name="New Members"
+                    stroke="#2B426B"
+                    strokeWidth={2}
+                    fill="url(#membersGrad)"
+                    dot={false}
+                    activeDot={{ r: 4, fill: '#2B426B', stroke: '#ffffff', strokeWidth: 1.5 }}
+                  />
+                  <Area
+                    yAxisId="right"
+                    type="monotone"
+                    dataKey="revenue"
+                    name="Revenue"
+                    stroke="#FFC849"
+                    strokeWidth={2}
+                    fill="url(#revenueGrad)"
+                    dot={false}
+                    activeDot={{ r: 4, fill: '#FFC849', stroke: '#ffffff', strokeWidth: 1.5 }}
+                  />
+                </ComposedChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="mt-4 flex items-center justify-center gap-6">
+              <div className="flex items-center gap-1.5 text-xs text-white/70">
+                <span className="text-sm font-bold text-[#2B426B]">✦</span>
+                <span>New Members</span>
+              </div>
+              <div className="flex items-center gap-1.5 text-xs text-white/70">
+                <span className="text-sm font-bold text-[#FFC849]">✦</span>
+                <span>Revenue</span>
+              </div>
+            </div>
           </div>
         </ChartCard>
 
         <ChartCard
           title="Membership Trends"
-          description="Active, expired, and new membership movement"
+          className="min-h-[380px]"
           isLoading={isLoading}
           refreshing={overviewQuery.isFetching}
           onRefresh={handleRefresh}
           isEmpty={!membershipTrends.length}
         >
-          <div className="h-[220px] min-h-[220px] w-full sm:h-[260px]">
-            <ResponsiveContainer width="100%" height="100%" minHeight={220}>
-              <BarChart data={membershipTrends} margin={{ left: 8, right: 8, top: 8, bottom: 8 }}>
-                <CartesianGrid stroke="rgba(255,255,255,0.05)" vertical={false} />
-                <XAxis
-                  dataKey="month"
-                  tickLine={false}
-                  axisLine={false}
-                  tick={{ fill: 'rgba(148,163,184,0.85)', fontSize: 12 }}
-                />
-                <YAxis
-                  tickLine={false}
-                  axisLine={false}
-                  tick={{ fill: 'rgba(148,163,184,0.85)', fontSize: 12 }}
-                />
-                <Tooltip contentStyle={tooltipStyle} />
-                <Legend
-                  wrapperStyle={{ color: 'rgba(148,163,184,0.85)' }}
-                  iconType="diamond"
-                  iconSize={10}
-                />
-                <Bar dataKey="active" fill="#155DFC" radius={[6, 6, 0, 0]} />
-                <Bar dataKey="expired" fill="#D3191C" radius={[6, 6, 0, 0]} />
-                <Bar dataKey="new" fill="#00A63E" radius={[6, 6, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+          <div className="w-full">
+            <div className="h-[270px] min-h-[270px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={membershipTrends}
+                  margin={{ left: 0, right: 0, top: 12, bottom: 4 }}
+                  barGap={4}
+                >
+                  <CartesianGrid
+                    stroke="rgba(255,255,255,0.08)"
+                    strokeDasharray="3 3"
+                    vertical={false}
+                  />
+                  <XAxis
+                    dataKey="month"
+                    tickLine={false}
+                    axisLine={false}
+                    tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 11 }}
+                  />
+                  <YAxis
+                    tickLine={false}
+                    axisLine={false}
+                    tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 11 }}
+                    tickFormatter={(v) => (v >= 1000 ? `${v / 1000}K` : String(v))}
+                  />
+                  <Tooltip
+                    content={({ active, payload: tPayload, label }) => {
+                      if (active && tPayload && tPayload.length) {
+                        return (
+                          <div className="min-w-[130px] rounded-lg border border-black/5 bg-white px-3 py-2 shadow-2xl">
+                            <p className="mb-1 text-xs font-bold text-gray-900">{label}</p>
+                            {tPayload.map((item, i) => (
+                              <p
+                                key={i}
+                                className="text-xs font-semibold"
+                                style={{
+                                  color: (item.color as string) || (item.fill as string) || '#111',
+                                }}
+                              >
+                                {item.name}:{' '}
+                                {typeof item.value === 'number'
+                                  ? item.value.toLocaleString('en-IN')
+                                  : item.value}
+                              </p>
+                            ))}
+                          </div>
+                        )
+                      }
+                      return null
+                    }}
+                  />
+                  <Bar
+                    dataKey="active"
+                    name="Active membership"
+                    fill="#155DFC"
+                    radius={[2, 2, 0, 0]}
+                    maxBarSize={18}
+                  />
+                  <Bar
+                    dataKey="new"
+                    name="New Members"
+                    fill="#00A63E"
+                    radius={[2, 2, 0, 0]}
+                    maxBarSize={18}
+                  />
+                  <Bar
+                    dataKey="expired"
+                    name="Expired"
+                    fill="#D3191C"
+                    radius={[2, 2, 0, 0]}
+                    maxBarSize={18}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="mt-4 flex items-center justify-center gap-6">
+              <div className="flex items-center gap-1.5 text-xs text-white/70">
+                <span className="text-sm font-bold text-[#155DFC]">✦</span>
+                <span>Active membership</span>
+              </div>
+              <div className="flex items-center gap-1.5 text-xs text-white/70">
+                <span className="text-sm font-bold text-[#D3191C]">✦</span>
+                <span>Expired</span>
+              </div>
+              <div className="flex items-center gap-1.5 text-xs text-white/70">
+                <span className="text-sm font-bold text-[#00A63E]">✦</span>
+                <span>New Members</span>
+              </div>
+            </div>
           </div>
         </ChartCard>
 
         <ChartCard
           title="Conversion Funnel"
-          description="User journey from sign up to paid membership"
           isLoading={isLoading}
           refreshing={overviewQuery.isFetching}
           onRefresh={handleRefresh}
           isEmpty={!conversionFunnel.length}
         >
-          <div className="h-[220px] min-h-[220px] w-full sm:h-[260px]">
-            <ResponsiveContainer width="100%" height="100%" minHeight={220}>
+          <div className="h-[280px] min-h-[280px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
               <BarChart
                 data={conversionFunnel}
                 layout="vertical"
-                margin={{ left: 12, right: 12, top: 8, bottom: 8 }}
+                margin={{ left: 16, right: 24, top: 8, bottom: 8 }}
               >
-                <CartesianGrid stroke="rgba(255,255,255,0.05)" horizontal={false} />
+                <CartesianGrid
+                  stroke="rgba(255,255,255,0.08)"
+                  strokeDasharray="3 3"
+                  horizontal={false}
+                />
                 <XAxis
                   type="number"
                   tickLine={false}
                   axisLine={false}
-                  tick={{ fill: 'rgba(148,163,184,0.85)', fontSize: 12 }}
+                  tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 11 }}
+                  tickFormatter={(v) => (v >= 1000 ? `${v / 1000}K` : String(v))}
                 />
                 <YAxis
                   type="category"
                   dataKey="stage"
                   tickLine={false}
                   axisLine={false}
-                  tick={{ fill: 'rgba(148,163,184,0.85)', fontSize: 12 }}
+                  tick={{ fill: 'rgba(255,255,255,0.7)', fontSize: 11 }}
+                  width={105}
                 />
-                <Tooltip contentStyle={tooltipStyle} />
-                <Bar dataKey="value" fill="#155DFC" radius={[10, 10, 10, 10]} />
+                <Tooltip
+                  content={({ active, payload: tPayload }) => {
+                    if (active && tPayload && tPayload.length) {
+                      const item = tPayload[0]
+                      return (
+                        <div className="rounded-lg border border-black/5 bg-white px-3 py-2 shadow-xl">
+                          <p className="text-xs font-bold text-gray-900">{item.payload?.stage}</p>
+                          <p className="text-xs font-semibold text-[#155DFC]">
+                            Count:{' '}
+                            {typeof item.value === 'number'
+                              ? item.value.toLocaleString('en-IN')
+                              : item.value}
+                          </p>
+                        </div>
+                      )
+                    }
+                    return null
+                  }}
+                />
+                <Bar dataKey="value" fill="#155DFC" radius={[6, 6, 6, 6]} barSize={20}>
+                  <LabelList
+                    dataKey="value"
+                    position="insideRight"
+                    formatter={(v: unknown) =>
+                      typeof v === 'number'
+                        ? v >= 1000
+                          ? `${(v / 1000).toFixed(v % 1000 === 0 ? 0 : 1)}K`
+                          : String(v)
+                        : String(v ?? '')
+                    }
+                    fill="#ffffff"
+                    style={{ fontSize: 11, fontWeight: 700, fill: '#ffffff' }}
+                  />
+                </Bar>
               </BarChart>
             </ResponsiveContainer>
           </div>
         </ChartCard>
 
         <ChartCard
-          title="Service Type Distribution"
-          description="Distribution by service type engagement"
+          title="Service type distribution"
           isLoading={isLoading}
           refreshing={overviewQuery.isFetching}
           onRefresh={handleRefresh}
           isEmpty={!serviceDistribution.length}
         >
-          <div className="h-[220px] min-h-[220px] w-full sm:h-[260px]">
-            <ResponsiveContainer width="100%" height="100%" minHeight={220}>
-              <PieChart>
-                <Tooltip contentStyle={tooltipStyle} />
-                <Legend wrapperStyle={{ color: 'rgba(148,163,184,0.85)' }} iconType="diamond" />
-                <Pie
-                  data={serviceDistribution}
-                  dataKey="value"
-                  nameKey="name"
-                  innerRadius={60}
-                  outerRadius={100}
-                  stroke="rgba(255,255,255,0.08)"
-                >
-                  {serviceDistribution.map((_, index) => (
-                    <Cell key={index} fill={pieColors[index % pieColors.length]} />
-                  ))}
-                </Pie>
-              </PieChart>
-            </ResponsiveContainer>
+          <div className="flex h-[280px] flex-col items-center justify-between gap-4 sm:flex-row">
+            <div className="h-[240px] w-full sm:w-[50%]">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Tooltip
+                    content={({ active, payload: tPayload }) => {
+                      if (active && tPayload && tPayload.length) {
+                        const item = tPayload[0]
+                        return (
+                          <div className="rounded-lg border border-black/5 bg-white px-3 py-2 shadow-xl">
+                            <p className="text-xs font-bold text-gray-900">{item.name}</p>
+                            <p
+                              className="text-xs font-semibold"
+                              style={{ color: (item.payload?.fill as string) || '#111' }}
+                            >
+                              {item.value} (
+                              {totalDistributionValue > 0
+                                ? ((Number(item.value) / totalDistributionValue) * 100).toFixed(1)
+                                : 0}
+                              %)
+                            </p>
+                          </div>
+                        )
+                      }
+                      return null
+                    }}
+                  />
+                  <Pie
+                    data={distributionWithPercentage}
+                    dataKey="value"
+                    nameKey="name"
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={0}
+                    outerRadius={95}
+                    stroke="#141414"
+                    strokeWidth={2}
+                  >
+                    {distributionWithPercentage.map((_, index) => (
+                      <Cell
+                        key={`pie-cell-${index}`}
+                        fill={PIE_COLORS[index % PIE_COLORS.length]}
+                      />
+                    ))}
+                  </Pie>
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="flex w-full flex-col justify-center gap-2.5 pl-0 sm:w-[50%] sm:pl-2">
+              {distributionWithPercentage.map((item, index) => (
+                <div key={item.name} className="flex items-center gap-2.5 text-xs text-white/80">
+                  <span
+                    className="size-2.5 shrink-0 rounded-sm"
+                    style={{ backgroundColor: PIE_COLORS[index % PIE_COLORS.length] }}
+                  />
+                  <span className="truncate">
+                    {item.name}: {item.value} ({item.percentage}%)
+                  </span>
+                </div>
+              ))}
+            </div>
           </div>
         </ChartCard>
       </ResponsiveGrid>

@@ -10,7 +10,8 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
-import { BarChart3, RefreshCw, Star, TrendingDown, TrendingUp, Upload } from 'lucide-react'
+import { RefreshCw, Star, TrendingDown, TrendingUp } from 'lucide-react'
+import { ExportDataIcon, ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
@@ -354,7 +355,7 @@ export const VenueDashboardPage = () => {
             className="ui-manage-metrics h-9"
             onClick={() => navigate('/venues/dashboard/metrics')}
           >
-            <BarChart3 className="size-4" />
+            <ManageMetricsIcon className="size-5" />
             Manage Metrics
           </Button>
 
@@ -362,7 +363,7 @@ export const VenueDashboardPage = () => {
             className="ui-export-data h-9"
             onClick={() => toast.message('Export coming soon')}
           >
-            <Upload className="size-4" />
+            <ExportDataIcon className="size-5" />
             Export Data
           </Button>
         </div>

@@ -1,8 +1,8 @@
 import type { PropsWithChildren, ReactNode } from 'react'
-import { BarChart3, Upload } from 'lucide-react'
 
 import { cn } from '@/shared/lib/cn'
 import { Button } from '@/shared/components/ui/button'
+import { ExportDataIcon, ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
 
 type SectionHeaderProps = PropsWithChildren<{
   title: string
@@ -56,9 +56,9 @@ export function SectionHeader({
                 {action.icon ? (
                   action.icon
                 ) : isManageMetrics ? (
-                  <BarChart3 className="size-4 shrink-0" />
+                  <ManageMetricsIcon className="size-5 shrink-0" />
                 ) : isExportData ? (
-                  <Upload className="size-4 shrink-0" />
+                  <ExportDataIcon className="size-5 shrink-0" />
                 ) : null}
                 {action.label}
               </Button>

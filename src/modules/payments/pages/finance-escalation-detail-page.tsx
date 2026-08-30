@@ -184,7 +184,7 @@ export function FinanceEscalationDetailPage() {
   const tax = taxQuery.data?.data
   const escrow = escrowQuery.data?.data
   const refund = refundQuery.data?.data
-  const notes = notesQuery.data?.data ?? []
+  const notes = useMemo(() => notesQuery.data?.data ?? [], [notesQuery.data?.data])
   const escalateNotes = notes.filter((note) => note.action === 'escalate')
   const latestEscalate = escalateNotes[0]
 

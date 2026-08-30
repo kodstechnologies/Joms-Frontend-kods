@@ -1,9 +1,9 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
+import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
 import {
   AlertCircle,
   Ban,
-  BarChart3,
   Bell,
   CheckSquare,
   CircleMinus,
@@ -926,7 +926,7 @@ export const ServiceManagementPage = () => {
               navigate('/metrics/service-management?returnTo=/services/management&section=table')
             }
           >
-            <BarChart3 className="size-4" />
+            <ManageMetricsIcon className="size-5" />
             Manage Metrics
           </Button>
         </div>

@@ -1,9 +1,10 @@
-import { AlertCircle, Ban, BarChart3, Hourglass, Plus, Search, Trash2, Upload } from 'lucide-react'
+import { AlertCircle, Ban, Hourglass, Plus, Search, Trash2, Upload } from 'lucide-react'
 import { useCallback, useMemo, useState, type ComponentProps, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import type { LucideIcon } from 'lucide-react'
 
+import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
 import { CreateMembershipModal } from '../components/create-membership-modal'
 import { MembershipPlanCard } from '../components/membership-plan-card'
 import {
@@ -326,7 +327,7 @@ export function MembershipPlansPage({
             navigate('/metrics/memberships?returnTo=/memberships/plans&section=dashboard')
           }
         >
-          <BarChart3 className="size-4" />
+          <ManageMetricsIcon className="size-5" />
           Manage Metrics
         </Button>
       </div>

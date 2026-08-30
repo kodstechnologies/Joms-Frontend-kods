@@ -1,8 +1,9 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { ArrowLeft, BarChart3, RotateCcw, XCircle } from 'lucide-react'
+import { ArrowLeft, RotateCcw, XCircle } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
+import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
 
 import { useAllInvites } from '../hooks/use-rbac'
 import { fetchAllInvites } from '../api/rbac-api'
@@ -193,7 +194,7 @@ export function InvitesOverviewPage() {
           className="ui-manage-metrics"
           onClick={() => navigate('/metrics/rbac-hub')}
         >
-          <BarChart3 className="size-4" />
+          <ManageMetricsIcon className="size-5" />
           Manage Metrics
         </Button>
       </div>

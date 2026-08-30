@@ -6,10 +6,10 @@ import {
 import { fetchExperts } from '../../api/expert-api'
 import type { ColumnDef } from '@tanstack/react-table'
 import createIcon from '@/assets/JOMS_ICONS-2/icons8-create.svg'
+import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
 import {
   AlertCircle,
   Ban,
-  BarChart3,
   Bell,
   CheckSquare,
   Hourglass,
@@ -996,7 +996,7 @@ export const ExpertManagementPage = () => {
             className="ui-manage-metrics h-9 w-full md:w-auto"
             onClick={() => navigate('/metrics/expert-management?returnTo=/experts/management')}
           >
-            <BarChart3 className="size-4" />
+            <ManageMetricsIcon className="size-5" />
             Manage Metrics
           </Button>
 
