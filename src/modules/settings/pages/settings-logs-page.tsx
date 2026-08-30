@@ -15,6 +15,7 @@ import { withServerSortMeta } from '@/shared/utils/table-sort'
 import { buildDefaultTableSortFieldMap } from '@/shared/utils/table-sort-field-maps'
 import { SETTINGS_LOGS_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
 import { Button } from '@/shared/components/ui/button'
+import { LogStatusBadge } from '@/shared/components/ui/log-status-badge'
 import { cn } from '@/shared/lib/cn'
 import { uiTokens } from '@/shared/lib/design-tokens'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
@@ -48,22 +49,6 @@ const SETTINGS_LOG_EXPORT_COLUMN_MAP: Record<
   status: { header: 'Status', accessor: (row) => exportDisplayValue(row.status) },
   performedBy: { header: 'Performed By', accessor: (row) => exportDisplayValue(row.performedBy) },
   ipAddress: { header: 'IP', accessor: (row) => exportDisplayValue(row.ipAddress) },
-}
-
-function StatusBadge({ status }: { status: string }) {
-  const isSuccess = status.toLowerCase() === 'success'
-  return (
-    <span
-      className={cn(
-        'inline-flex rounded-full border px-2.5 py-0.5 text-[11px] font-semibold capitalize',
-        isSuccess
-          ? 'border-brand-success/25 bg-brand-success/10 text-brand-success'
-          : 'border-brand-danger/25 bg-brand-danger/10 text-brand-danger',
-      )}
-    >
-      {isSuccess ? 'Success' : 'Failed'}
-    </span>
-  )
 }
 
 function ActionBadge({ action }: { action: string }) {
@@ -162,7 +147,7 @@ export function SettingsLogsPage() {
           {
             accessorKey: 'status',
             header: 'Status',
-            cell: ({ row }) => <StatusBadge status={row.original.status} />,
+            cell: ({ row }) => <LogStatusBadge status={row.original.status} />,
           },
           {
             accessorKey: 'performedBy',

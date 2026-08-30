@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 
 import { fetchExpertSubscriptions } from '@/modules/memberships/api/membership-subscription-api'
 import { useExpertSubscriptions } from '@/modules/memberships/hooks/use-membership-subscriptions'
+import { useFinanceRowSelection } from '@/modules/payments/hooks/use-finance-row-selection'
 import type { SubscriptionStatus } from '@/modules/memberships/types/membership-subscription'
 import {
   mapSubscriptionToFinanceRow,
@@ -92,7 +93,6 @@ export function MembershipManagementPage() {
   const [statusFilter, setStatusFilter] = useState<SubscriptionStatus | 'all'>('all')
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
-  const [selectedRowIds, setSelectedRowIds] = useState<string[]>([])
 
   const listQueryParams = useMemo(() => {
     const params = buildFinanceMembershipsListQueryParams(appliedFilters, {
@@ -114,11 +114,19 @@ export function MembershipManagementPage() {
   const meta = data?.data?.meta
   const counts = meta?.counts
 
-  const handleApplyFilters = useCallback((values: FilterValues) => {
+  const {
+    selectedRowIds,
+    allVisibleSelected,
+    someVisibleSelected,
+    toggleVisibleRows,
+    toggleRowSelection,
+  } = useFinanceRowSelection(rows)
+
+  function handleApplyFilters(values: FilterValues) {
     toast.success('Filters applied')
     setAppliedFilters(values)
     setCurrentPage(1)
-  }, [])
+  }
 
   const handleExportData = useMemo(() => {
     const fetchForExport = async (params: Record<string, unknown>) => {
@@ -145,24 +153,6 @@ export function MembershipManagementPage() {
     onApplyFilters: handleApplyFilters,
     onExportData: handleExportData,
   })
-
-  const visibleRowIds = useMemo(() => rows.map((row) => row.id), [rows])
-  const allVisibleSelected =
-    visibleRowIds.length > 0 && visibleRowIds.every((id) => selectedRowIds.includes(id))
-  const someVisibleSelected = visibleRowIds.some((id) => selectedRowIds.includes(id))
-
-  const toggleVisibleRows = useCallback(() => {
-    setSelectedRowIds((currentIds) => {
-      if (allVisibleSelected) return currentIds.filter((id) => !visibleRowIds.includes(id))
-      return Array.from(new Set([...currentIds, ...visibleRowIds]))
-    })
-  }, [allVisibleSelected, visibleRowIds])
-
-  const toggleRowSelection = useCallback((rowId: string) => {
-    setSelectedRowIds((currentIds) =>
-      currentIds.includes(rowId) ? currentIds.filter((id) => id !== rowId) : [...currentIds, rowId],
-    )
-  }, [])
 
   const renderActions = useCallback(
     (record: FinanceMembershipRow) => (

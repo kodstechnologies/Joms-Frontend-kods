@@ -21,6 +21,8 @@ import {
   FinanceDetailCard as DetailCard,
   FinanceDetailRow as BaseDetailRow,
 } from '@/modules/payments/components/finance-detail-layout'
+import { FinanceStatusBadge } from '@/modules/payments/components/finance-status-badge'
+import { financeReconciliationStatusClass } from '@/modules/payments/utils/finance-status-tones'
 
 const DetailRow = (props: Parameters<typeof BaseDetailRow>[0]) => (
   <BaseDetailRow constrainValue {...props} />
@@ -29,29 +31,6 @@ const DetailRow = (props: Parameters<typeof BaseDetailRow>[0]) => (
 const cardClass = 'radius-lg border border-white/[0.06] bg-brand-surface p-4 sm:p-5'
 const sectionTitleClass = 'text-body-md-semibold text-brand-text leading-[20px]'
 const sectionSubtitleClass = 'text-body-sm text-muted mt-1'
-
-function getStatusBadgeClass(status: string) {
-  if (status === 'Matched') {
-    return 'border-brand-positive/25 bg-brand-positive/10 text-brand-positive'
-  }
-  if (status === 'Pending') {
-    return 'border-brand-accent/40 bg-brand-accent/10 text-brand-accent'
-  }
-  return 'border-brand-danger/25 bg-brand-danger/10 text-brand-danger'
-}
-
-function StatusBadge({ status }: { status: string }) {
-  return (
-    <span
-      className={cn(
-        'text-body-sm-semibold inline-flex rounded-full border px-2.5 py-0.5',
-        getStatusBadgeClass(status),
-      )}
-    >
-      {status}
-    </span>
-  )
-}
 
 export function ReconciliationDetailViewPage() {
   const navigate = useNavigate()
@@ -204,7 +183,14 @@ export function ReconciliationDetailViewPage() {
           />
           <DetailRow
             label="Status"
-            value={<StatusBadge status={detail.reconciliationInformation.status} />}
+            value={
+              <FinanceStatusBadge
+                status={detail.reconciliationInformation.status}
+                toneClass={financeReconciliationStatusClass(
+                  detail.reconciliationInformation.status,
+                )}
+              />
+            }
           />
         </DetailCard>
 

@@ -22,6 +22,7 @@ import {
   TableActionsItem,
 } from '@/shared/components/table/table-actions-dropdown'
 import { Button } from '@/shared/components/ui/button'
+import { LogStatusBadge } from '@/shared/components/ui/log-status-badge'
 import { cn } from '@/shared/lib/cn'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import { uiTokens } from '@/shared/lib/design-tokens'
@@ -80,22 +81,6 @@ const formatOverviewDate = (value?: string) => {
     hour12: true,
   })
   return `${day}, ${time}`
-}
-
-function StatusBadge({ status }: { status: string }) {
-  const isSuccess = status.toLowerCase() === 'success'
-  return (
-    <span
-      className={cn(
-        'text-body-sm-semibold inline-flex rounded-full border px-2.5 py-0.5 capitalize',
-        isSuccess
-          ? 'border-brand-success/25 bg-brand-success/10 text-brand-success'
-          : 'border-brand-danger/25 bg-brand-danger/10 text-brand-danger',
-      )}
-    >
-      {isSuccess ? 'Success' : 'Failed'}
-    </span>
-  )
 }
 
 function UserOverviewCard({
@@ -440,7 +425,7 @@ export function AdminLogsPage() {
           {
             accessorKey: 'status',
             header: 'Status',
-            cell: ({ row }) => <StatusBadge status={row.original.status} />,
+            cell: ({ row }) => <LogStatusBadge status={row.original.status} />,
           },
           { accessorKey: 'ipAddress', header: 'IP Address' },
           {
@@ -522,7 +507,7 @@ export function AdminLogsPage() {
           {
             accessorKey: 'status',
             header: 'Status',
-            cell: ({ row }) => <StatusBadge status={row.original.status} />,
+            cell: ({ row }) => <LogStatusBadge status={row.original.status} />,
           },
           { accessorKey: 'ipAddress', header: 'IP Address' },
           {

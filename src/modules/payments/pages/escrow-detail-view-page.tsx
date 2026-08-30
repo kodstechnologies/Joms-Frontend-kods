@@ -27,6 +27,8 @@ import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import { PERMISSION_LEVELS } from '@/shared/lib/permissions'
 import { downloadInvoiceDocument, invoiceFromEscrow } from '@/shared/utils/invoice-document'
 import { FinanceDetailRow as DetailRow } from '@/modules/payments/components/finance-detail-layout'
+import { FinanceStatusBadge } from '@/modules/payments/components/finance-status-badge'
+import { financeEscrowStatusClass } from '@/modules/payments/utils/finance-status-tones'
 
 const cardClass = 'radius-lg border border-white/[0.06] bg-brand-surface p-4 sm:p-5'
 const sectionTitleClass = 'text-body-md-semibold text-brand-text leading-[20px]'
@@ -39,25 +41,6 @@ function InnerCard({ title, children }: { title: string; children: ReactNode }) 
       <div className="mb-4 border-b border-white/5" />
       {children}
     </section>
-  )
-}
-
-function StatusBadge({ status }: { status: string }) {
-  const isReleased = status === 'Released'
-  const isActive = status === 'Active'
-  return (
-    <span
-      className={cn(
-        'text-body-sm-semibold inline-flex rounded-full border px-2.5 py-0.5',
-        isReleased
-          ? 'border-brand-positive/25 bg-brand-positive/10 text-brand-positive'
-          : isActive
-            ? 'border-brand-accent/40 bg-brand-accent/10 text-brand-accent'
-            : 'border-brand-danger/25 bg-brand-danger/10 text-brand-danger',
-      )}
-    >
-      {status}
-    </span>
   )
 }
 
@@ -200,7 +183,15 @@ export function EscrowDetailViewPage() {
               <DetailRow label="Escrow ID" value={escrow.escrowId} />
               <DetailRow label="Transaction ID" value={transactionId} />
               <DetailRow label="Type" value={titleCase(escrow.pricingType)} />
-              <DetailRow label="Status" value={<StatusBadge status={status} />} />
+              <DetailRow
+                label="Status"
+                value={
+                  <FinanceStatusBadge
+                    status={status}
+                    toneClass={financeEscrowStatusClass(status)}
+                  />
+                }
+              />
               <DetailRow label="Created On" value={formatDate(heldAt)} />
               <DetailRow label="Days in Escrow" value={`${daysInEscrow} Days`} />
             </InnerCard>

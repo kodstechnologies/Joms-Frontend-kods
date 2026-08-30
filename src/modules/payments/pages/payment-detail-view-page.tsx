@@ -11,6 +11,8 @@ import {
   FinanceDetailRow as DetailRow,
 } from '@/modules/payments/components/finance-detail-layout'
 import { FinanceInternalNotesCard } from '@/modules/payments/components/finance-internal-notes-card'
+import { FinanceStatusBadge } from '@/modules/payments/components/finance-status-badge'
+import { financePaymentDetailStatusClass } from '@/modules/payments/utils/finance-status-tones'
 import { useAddFinanceNote, useFinancePayment } from '@/modules/payments/hooks/use-finance'
 import { escalateUrl } from '@/modules/payments/utils/finance-escalate'
 import {
@@ -31,16 +33,6 @@ import {
 const cardClass = 'radius-lg border border-white/[0.06] bg-brand-surface p-4 sm:p-5'
 const sectionTitleClass = 'text-body-md-semibold text-brand-text leading-[20px]'
 const sectionSubtitleClass = 'text-body-sm text-muted mt-1'
-
-function getStatusBadgeClass(status: string) {
-  if (status === 'Successful' || status === 'Paid') {
-    return 'border-brand-positive/25 bg-brand-positive/10 text-brand-positive'
-  }
-  if (status === 'Pending') {
-    return 'border-brand-accent/40 bg-brand-accent/10 text-brand-accent'
-  }
-  return 'border-brand-danger/25 bg-brand-danger/10 text-brand-danger'
-}
 
 const num = (value: unknown, fallback = 0) => {
   const n = Number(value)
@@ -310,14 +302,10 @@ export function PaymentDetailViewPage() {
             <DetailRow
               label="Payment Status"
               value={
-                <span
-                  className={cn(
-                    'text-body-sm-semibold inline-flex rounded-full border px-2.5 py-0.5',
-                    getStatusBadgeClass(detail.paymentStatus),
-                  )}
-                >
-                  {detail.paymentStatus}
-                </span>
+                <FinanceStatusBadge
+                  status={detail.paymentStatus}
+                  toneClass={financePaymentDetailStatusClass(detail.paymentStatus)}
+                />
               }
             />
           </DetailCard>

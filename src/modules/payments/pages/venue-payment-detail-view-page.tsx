@@ -27,38 +27,12 @@ import {
   downloadKeyValueReport,
   flattenExportPairs,
 } from '@/modules/payments/hooks/use-finance-list-filters'
+import { FinanceStatusBadge } from '@/modules/payments/components/finance-status-badge'
+import { financeVenuePaymentStatusClass } from '@/modules/payments/utils/finance-status-tones'
 
 const cardClass = 'radius-lg border border-white/[0.06] bg-brand-surface p-4 sm:p-5'
 const sectionTitleClass = 'text-body-md-semibold text-brand-text leading-[20px]'
 const sectionSubtitleClass = 'text-body-sm text-muted mt-1'
-
-function getStatusBadgeClass(status: string) {
-  if (
-    status === 'Successful' ||
-    status === 'Completed' ||
-    status === 'Confirmed' ||
-    status === 'Approved'
-  ) {
-    return 'border-brand-positive/25 bg-brand-positive/10 text-brand-positive'
-  }
-  if (status === 'Pending' || status === 'In Progress') {
-    return 'border-brand-accent/40 bg-brand-accent/10 text-brand-accent'
-  }
-  return 'border-brand-danger/25 bg-brand-danger/10 text-brand-danger'
-}
-
-function StatusBadge({ status }: { status: string }) {
-  return (
-    <span
-      className={cn(
-        'text-body-sm-semibold inline-flex rounded-full border px-2.5 py-0.5',
-        getStatusBadgeClass(status),
-      )}
-    >
-      {status}
-    </span>
-  )
-}
 
 export function VenuePaymentDetailViewPage() {
   const navigate = useNavigate()
@@ -335,7 +309,14 @@ export function VenuePaymentDetailViewPage() {
             <DetailRow label="Booking Duration" value={detail.paymentInformation.bookingDuration} />
             <DetailRow
               label="Booking Status"
-              value={<StatusBadge status={detail.paymentInformation.bookingStatus} />}
+              value={
+                <FinanceStatusBadge
+                  status={detail.paymentInformation.bookingStatus}
+                  toneClass={financeVenuePaymentStatusClass(
+                    detail.paymentInformation.bookingStatus,
+                  )}
+                />
+              }
             />
           </DetailCard>
 
@@ -381,7 +362,12 @@ export function VenuePaymentDetailViewPage() {
             <DetailRow label="Location" value={detail.venueInformation.location} />
             <DetailRow
               label="Approved Status"
-              value={<StatusBadge status={detail.venueInformation.approvedStatus} />}
+              value={
+                <FinanceStatusBadge
+                  status={detail.venueInformation.approvedStatus}
+                  toneClass={financeVenuePaymentStatusClass(detail.venueInformation.approvedStatus)}
+                />
+              }
             />
           </DetailCard>
 

@@ -22,6 +22,8 @@ import { escalateUrl } from '@/modules/payments/utils/finance-escalate'
 import { cn } from '@/shared/lib/cn'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import { FinanceDetailRow as BaseDetailRow } from '@/modules/payments/components/finance-detail-layout'
+import { FinanceStatusBadge } from '@/modules/payments/components/finance-status-badge'
+import { financeRefundStatusClass } from '@/modules/payments/utils/finance-status-tones'
 
 const DetailRow = (props: Parameters<typeof BaseDetailRow>[0]) => (
   <BaseDetailRow constrainValue {...props} />
@@ -50,23 +52,6 @@ function InnerCard({
       <div className="mb-4 border-b border-white/5" />
       {children}
     </section>
-  )
-}
-
-function StatusBadge({ status }: { status: string }) {
-  const tone =
-    status === 'Processed' || status === 'Resolved'
-      ? 'border-brand-positive/40 bg-brand-positive/10 text-brand-positive'
-      : status === 'Rejected'
-        ? 'border-brand-danger/40 bg-brand-danger/10 text-brand-danger'
-        : 'border-brand-accent/40 bg-brand-accent/10 text-brand-accent'
-
-  return (
-    <span
-      className={cn('text-body-sm-semibold inline-flex rounded-full border px-2.5 py-0.5', tone)}
-    >
-      {status}
-    </span>
   )
 }
 
@@ -138,7 +123,12 @@ export function RefundDetailViewPage() {
           <DetailRow label="Requested Date" value={formatDate(refund.createdAt)} />
           <DetailRow
             label="Status"
-            value={<StatusBadge status={mapRefundStatus(refund.status)} />}
+            value={
+              <FinanceStatusBadge
+                status={mapRefundStatus(refund.status)}
+                toneClass={financeRefundStatusClass(mapRefundStatus(refund.status))}
+              />
+            }
           />
         </InnerCard>
 

@@ -4,6 +4,7 @@ import { Eye, SlidersHorizontal } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
+import { useFinanceRowSelection } from '@/modules/payments/hooks/use-finance-row-selection'
 import { financeEventRowsMock } from '@/modules/payments/mock/finance-events.mock'
 import type {
   FinanceEventRow,
@@ -75,7 +76,6 @@ export function FinanceEventsPage() {
   const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setCurrentPage(1) })
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
-  const [selectedRowIds, setSelectedRowIds] = useState<string[]>([])
 
   const tableColumnPreferencesQuery = useTableColumnPreferences(FINANCE_EVENTS_MODULE_KEY)
 
@@ -132,29 +132,20 @@ export function FinanceEventsPage() {
     return sortedRows.slice(start, start + PAGE_SIZE)
   }, [sortedRows, safePage])
 
-  const visibleRowIds = useMemo(() => pageRows.map((row) => row.id), [pageRows])
-  const allVisibleSelected =
-    visibleRowIds.length > 0 && visibleRowIds.every((id) => selectedRowIds.includes(id))
-  const someVisibleSelected = visibleRowIds.some((id) => selectedRowIds.includes(id))
+  const {
+    selectedRowIds,
+    setSelectedRowIds,
+    allVisibleSelected,
+    someVisibleSelected,
+    toggleVisibleRows,
+    toggleRowSelection,
+  } = useFinanceRowSelection(pageRows)
 
-  const toggleVisibleRows = useCallback(() => {
-    setSelectedRowIds((currentIds) => {
-      if (allVisibleSelected) return currentIds.filter((id) => !visibleRowIds.includes(id))
-      return Array.from(new Set([...currentIds, ...visibleRowIds]))
-    })
-  }, [allVisibleSelected, visibleRowIds])
-
-  const toggleRowSelection = useCallback((rowId: string) => {
-    setSelectedRowIds((currentIds) =>
-      currentIds.includes(rowId) ? currentIds.filter((id) => id !== rowId) : [...currentIds, rowId],
-    )
-  }, [])
-
-  const handleApplyFilters = useCallback((values: FilterValues) => {
+  function handleApplyFilters(values: FilterValues) {
     toast.success('Filters applied')
     setAppliedFilters(values)
     setCurrentPage(1)
-  }, [])
+  }
 
   const handleExportData = useMemo(
     () =>

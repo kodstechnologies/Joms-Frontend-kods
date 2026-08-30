@@ -18,6 +18,8 @@ import { DetailViewSkeleton } from '@/shared/components/ui/skeleton'
 import { cn } from '@/shared/lib/cn'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import { FinanceDetailRow as DetailRow } from '@/modules/payments/components/finance-detail-layout'
+import { FinanceStatusBadge } from '@/modules/payments/components/finance-status-badge'
+import { financeMembershipStatusClass } from '@/modules/payments/utils/finance-status-tones'
 import {
   downloadInvoiceDocument,
   invoiceFromMembershipSubscription,
@@ -35,14 +37,6 @@ function getErrorMessage(error: unknown, fallback: string) {
   }
   if (error instanceof Error && error.message) return error.message
   return fallback
-}
-
-function getStatusBadgeClass(status: string) {
-  if (status === 'Active')
-    return 'border-brand-positive/25 bg-brand-positive/10 text-brand-positive'
-  if (status === 'Paused') return 'border-brand-accent/40 bg-brand-accent/10 text-brand-accent'
-  if (status === 'Expired') return 'border-white/15 bg-brand-bg text-muted'
-  return 'border-brand-danger/25 bg-brand-danger/10 text-brand-danger'
 }
 
 export function MembershipDetailViewPage() {
@@ -132,14 +126,10 @@ export function MembershipDetailViewPage() {
             <DetailRow
               label="Status"
               value={
-                <span
-                  className={cn(
-                    'text-body-sm-semibold inline-flex rounded-full border px-2.5 py-0.5',
-                    getStatusBadgeClass(detail.status),
-                  )}
-                >
-                  {detail.status}
-                </span>
+                <FinanceStatusBadge
+                  status={detail.status}
+                  toneClass={financeMembershipStatusClass(detail.status)}
+                />
               }
             />
           </section>

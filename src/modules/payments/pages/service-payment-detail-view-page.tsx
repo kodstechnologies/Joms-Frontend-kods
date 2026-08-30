@@ -25,33 +25,12 @@ import {
   FinanceDetailCard as DetailCard,
   FinanceDetailRow as DetailRow,
 } from '@/modules/payments/components/finance-detail-layout'
+import { FinanceStatusBadge } from '@/modules/payments/components/finance-status-badge'
+import { financeServicePaymentStatusClass } from '@/modules/payments/utils/finance-status-tones'
 
 const cardClass = 'radius-lg border border-white/[0.06] bg-brand-surface p-4 sm:p-5'
 const sectionTitleClass = 'text-body-md-semibold text-brand-text leading-[20px]'
 const sectionSubtitleClass = 'text-body-sm text-muted mt-1'
-
-function getStatusBadgeClass(status: string) {
-  if (status === 'Successful' || status === 'Completed') {
-    return 'border-brand-positive/25 bg-brand-positive/10 text-brand-positive'
-  }
-  if (status === 'Pending' || status === 'In Progress') {
-    return 'border-brand-accent/40 bg-brand-accent/10 text-brand-accent'
-  }
-  return 'border-brand-danger/25 bg-brand-danger/10 text-brand-danger'
-}
-
-function StatusBadge({ status }: { status: string }) {
-  return (
-    <span
-      className={cn(
-        'text-body-sm-semibold inline-flex rounded-full border px-2.5 py-0.5',
-        getStatusBadgeClass(status),
-      )}
-    >
-      {status}
-    </span>
-  )
-}
 
 export function ServicePaymentDetailViewPage() {
   const navigate = useNavigate()
@@ -216,7 +195,14 @@ export function ServicePaymentDetailViewPage() {
             />
             <DetailRow
               label="Payment Status"
-              value={<StatusBadge status={detail.paymentInformation.paymentStatus} />}
+              value={
+                <FinanceStatusBadge
+                  status={detail.paymentInformation.paymentStatus}
+                  toneClass={financeServicePaymentStatusClass(
+                    detail.paymentInformation.paymentStatus,
+                  )}
+                />
+              }
             />
           </DetailCard>
 
@@ -243,7 +229,14 @@ export function ServicePaymentDetailViewPage() {
             <DetailRow label="Payout Date" value={detail.financialBreakdown.payoutDate} />
             <DetailRow
               label="Payment Status"
-              value={<StatusBadge status={detail.financialBreakdown.paymentStatus} />}
+              value={
+                <FinanceStatusBadge
+                  status={detail.financialBreakdown.paymentStatus}
+                  toneClass={financeServicePaymentStatusClass(
+                    detail.financialBreakdown.paymentStatus,
+                  )}
+                />
+              }
             />
           </DetailCard>
         </div>
@@ -257,11 +250,25 @@ export function ServicePaymentDetailViewPage() {
             <DetailRow label="End Date" value={detail.serviceInformation.endDate} />
             <DetailRow
               label="Completion Status"
-              value={<StatusBadge status={detail.serviceInformation.completionStatus} />}
+              value={
+                <FinanceStatusBadge
+                  status={detail.serviceInformation.completionStatus}
+                  toneClass={financeServicePaymentStatusClass(
+                    detail.serviceInformation.completionStatus,
+                  )}
+                />
+              }
             />
             <DetailRow
               label="Payment Status"
-              value={<StatusBadge status={detail.serviceInformation.paymentStatus} />}
+              value={
+                <FinanceStatusBadge
+                  status={detail.serviceInformation.paymentStatus}
+                  toneClass={financeServicePaymentStatusClass(
+                    detail.serviceInformation.paymentStatus,
+                  )}
+                />
+              }
             />
           </DetailCard>
 

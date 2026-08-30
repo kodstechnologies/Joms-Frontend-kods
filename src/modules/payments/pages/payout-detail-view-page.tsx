@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useState } from 'react'
 import { ArrowLeft, Download, SquarePen } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
@@ -6,7 +6,13 @@ import { toast } from 'sonner'
 
 import { useBranding } from '@/app/providers/use-branding'
 import { AddFinanceNoteModal } from '@/modules/payments/components/add-finance-note-modal'
+import {
+  FinanceDetailCard as DetailCard,
+  FinanceDetailRow as DetailRow,
+} from '@/modules/payments/components/finance-detail-layout'
 import { FinanceInternalNotesCard } from '@/modules/payments/components/finance-internal-notes-card'
+import { FinanceStatusBadge } from '@/modules/payments/components/finance-status-badge'
+import { financePayoutStatusClass } from '@/modules/payments/utils/finance-status-tones'
 import { fetchPartnerDisplayNames } from '@/modules/payments/api/partner-lookup-api'
 import {
   useAddFinanceNote,
@@ -33,36 +39,6 @@ import { downloadInvoiceDocument, invoiceFromFinancePayout } from '@/shared/util
 const cardClass = 'radius-lg border border-white/[0.06] bg-brand-surface p-4 sm:p-5'
 const sectionTitleClass = 'text-body-md-semibold text-brand-text leading-[20px]'
 const sectionSubtitleClass = 'text-body-sm text-muted mt-1 leading-[20px]'
-const labelClass = 'text-body-sm text-muted'
-const valueClass = 'text-body-sm-medium text-brand-text'
-
-function DetailCard({ title, children }: { title: string; children: ReactNode }) {
-  return (
-    <section className={cn(cardClass, 'p-5')}>
-      <h2 className={cn(sectionTitleClass, 'mb-4')}>{title}</h2>
-      {children}
-    </section>
-  )
-}
-
-function DetailRow({ label, value }: { label: string; value: ReactNode }) {
-  return (
-    <div className="flex items-center justify-between gap-4 border-b border-white/5 py-3 last:border-b-0">
-      <span className={labelClass}>{label}</span>
-      <span className={cn(valueClass, 'text-right')}>{value}</span>
-    </div>
-  )
-}
-
-function getStatusBadgeClass(status: string) {
-  if (status === 'Paid' || status === 'Completed') {
-    return 'border-brand-positive/25 bg-brand-positive/10 text-brand-positive'
-  }
-  if (status === 'Pending' || status === 'Processing' || status === 'On Hold') {
-    return 'border-brand-accent/40 bg-brand-accent/10 text-brand-accent'
-  }
-  return 'border-brand-danger/25 bg-brand-danger/10 text-brand-danger'
-}
 
 const maskAccount = (value?: string | null) => {
   if (!value) return '—'
@@ -214,14 +190,7 @@ export function PayoutDetailViewPage() {
             <DetailRow
               label="Payout Status"
               value={
-                <span
-                  className={cn(
-                    'text-body-sm-semibold inline-flex rounded-full border px-2.5 py-0.5',
-                    getStatusBadgeClass(status),
-                  )}
-                >
-                  {status}
-                </span>
+                <FinanceStatusBadge status={status} toneClass={financePayoutStatusClass(status)} />
               }
             />
             <DetailRow label="Scheduled Date" value={formatDate(payout.scheduledAt)} />

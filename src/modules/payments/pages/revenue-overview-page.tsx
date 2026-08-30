@@ -11,6 +11,7 @@ import {
   useFinanceRevenue,
   useSoftDeleteFinance,
 } from '@/modules/payments/hooks/use-finance'
+import { useFinanceRowSelection } from '@/modules/payments/hooks/use-finance-row-selection'
 import { fetchFinanceRevenue } from '@/modules/payments/api/finance-api'
 import {
   DEFAULT_FINANCE_REVENUE_VISIBLE_COLUMN_IDS,
@@ -113,7 +114,6 @@ export function RevenueOverviewPage() {
   const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setCurrentPage(1) })
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
-  const [selectedRowIds, setSelectedRowIds] = useState<string[]>([])
   const [tagTarget, setTagTarget] = useState<RevenueOverviewRow | null>(null)
   const [rowAction, setRowAction] = useState<FinanceEscalateDeleteAction | null>(null)
   const addNote = useAddFinanceNote()
@@ -148,11 +148,19 @@ export function RevenueOverviewPage() {
   const rows = useMemo(() => (data?.data?.rows ?? []).map(mapPaymentToRevenueRow), [data])
   const meta = data?.data?.meta
 
-  const handleApplyFilters = useCallback((values: FilterValues) => {
+  const {
+    selectedRowIds,
+    allVisibleSelected,
+    someVisibleSelected,
+    toggleVisibleRows,
+    toggleRowSelection,
+  } = useFinanceRowSelection(rows)
+
+  function handleApplyFilters(values: FilterValues) {
     toast.success('Filters applied')
     setAppliedFilters(values)
     setCurrentPage(1)
-  }, [])
+  }
 
   const handleExportData = useMemo(() => {
     const fetchForExport = async (params: Record<string, unknown>) => {
@@ -178,26 +186,6 @@ export function RevenueOverviewPage() {
     onApplyFilters: handleApplyFilters,
     onExportData: handleExportData,
   })
-
-  const visibleRowIds = useMemo(() => rows.map((row) => row.id), [rows])
-  const allVisibleSelected =
-    visibleRowIds.length > 0 && visibleRowIds.every((id) => selectedRowIds.includes(id))
-  const someVisibleSelected = visibleRowIds.some((id) => selectedRowIds.includes(id))
-
-  const toggleVisibleRows = useCallback(() => {
-    setSelectedRowIds((currentIds) => {
-      if (allVisibleSelected) {
-        return currentIds.filter((id) => !visibleRowIds.includes(id))
-      }
-      return Array.from(new Set([...currentIds, ...visibleRowIds]))
-    })
-  }, [allVisibleSelected, visibleRowIds])
-
-  const toggleRowSelection = useCallback((rowId: string) => {
-    setSelectedRowIds((currentIds) =>
-      currentIds.includes(rowId) ? currentIds.filter((id) => id !== rowId) : [...currentIds, rowId],
-    )
-  }, [])
 
   const renderActions = useCallback(
     (record: RevenueOverviewRow) => {

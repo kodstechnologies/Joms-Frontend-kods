@@ -5,6 +5,9 @@ import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
 
 import { AddFinanceNoteModal } from '@/modules/payments/components/add-finance-note-modal'
+import { FinanceDetailRow as DetailRow } from '@/modules/payments/components/finance-detail-layout'
+import { FinanceStatusBadge } from '@/modules/payments/components/finance-status-badge'
+import { financeEscalationStatusClass } from '@/modules/payments/utils/finance-status-tones'
 import {
   useAddFinanceNote,
   useFinanceEscrowDetail,
@@ -47,15 +50,6 @@ function InfoItem({ label, value }: { label: string; value: ReactNode }) {
   )
 }
 
-function DetailRow({ label, value }: { label: string; value: ReactNode }) {
-  return (
-    <div className="flex items-center justify-between gap-4 border-b border-white/5 py-3 last:border-b-0">
-      <span className={labelClass}>{label}</span>
-      <span className={cn(valueClass, 'text-right')}>{value}</span>
-    </div>
-  )
-}
-
 function TextPanel({ children, className }: { children: ReactNode; className?: string }) {
   return <div className={cn(textPanelClass, className)}>{children}</div>
 }
@@ -77,14 +71,6 @@ function AssessmentBlock({
       </div>
       {children}
     </div>
-  )
-}
-
-function StatusBadge({ status }: { status: string }) {
-  return (
-    <span className="text-body-sm-semibold border-brand-accent/40 bg-brand-accent/10 text-brand-accent inline-flex rounded-full border px-2.5 py-0.5">
-      {status}
-    </span>
   )
 }
 
@@ -376,7 +362,12 @@ export function FinanceEscalationDetailPage() {
             <InfoItem label="Record ID" value={recordId} />
             <InfoItem label="Transaction ID" value={payment?._id || escrow?.paymentId || id} />
             <InfoItem label="Opened Date" value={openedDate} />
-            <InfoItem label="Status" value={<StatusBadge status={status} />} />
+            <InfoItem
+              label="Status"
+              value={
+                <FinanceStatusBadge status={status} toneClass={financeEscalationStatusClass} />
+              }
+            />
             <InfoItem label="Module type" value={moduleType} />
             <InfoItem label="Payment mode" value={paymentMode} />
           </div>

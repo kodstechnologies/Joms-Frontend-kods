@@ -17,6 +17,7 @@ import {
   useFinanceRevenue,
   useSoftDeleteFinance,
 } from '@/modules/payments/hooks/use-finance'
+import { useFinanceRowSelection } from '@/modules/payments/hooks/use-finance-row-selection'
 import { fetchFinanceEscrow, fetchFinanceRevenue } from '@/modules/payments/api/finance-api'
 import {
   mapEscrowToServiceRow,
@@ -80,7 +81,6 @@ export function FinanceServicesPage() {
   const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setCurrentPage(1) })
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
-  const [selectedRowIds, setSelectedRowIds] = useState<string[]>([])
   const [tagTarget, setTagTarget] = useState<FinanceServiceRow | null>(null)
   const [rowAction, setRowAction] = useState<FinanceEscalateDeleteAction | null>(null)
   const addNote = useAddFinanceNote()
@@ -115,6 +115,27 @@ export function FinanceServicesPage() {
   const revenueQuery = useFinanceRevenue(listQueryParams, !isEscrowTab)
   const escrowQuery = useFinanceEscrow(listQueryParams, isEscrowTab)
 
+  const isLoading = isEscrowTab ? escrowQuery.isLoading : revenueQuery.isLoading
+  const isFetching = isEscrowTab ? escrowQuery.isFetching : revenueQuery.isFetching
+
+  const liveRows = useMemo(() => {
+    if (isEscrowTab) {
+      return (escrowQuery.data?.data?.rows ?? []).map(mapEscrowToServiceRow)
+    }
+    return (revenueQuery.data?.data?.rows ?? []).map((row) =>
+      mapPaymentToServiceRow(row, activeTab),
+    )
+  }, [activeTab, escrowQuery.data, isEscrowTab, revenueQuery.data])
+
+  const {
+    selectedRowIds,
+    setSelectedRowIds,
+    allVisibleSelected,
+    someVisibleSelected,
+    toggleVisibleRows,
+    toggleRowSelection,
+  } = useFinanceRowSelection(liveRows)
+
   const handleTabChange = (tabId: FinanceServiceTab) => {
     if (tabId !== activeTab) {
       setActiveTab(tabId)
@@ -131,25 +152,14 @@ export function FinanceServicesPage() {
       void queryClient.invalidateQueries({ queryKey: ['finance-revenue'] })
     }
   }
-  const isLoading = isEscrowTab ? escrowQuery.isLoading : revenueQuery.isLoading
-  const isFetching = isEscrowTab ? escrowQuery.isFetching : revenueQuery.isFetching
-
-  const liveRows = useMemo(() => {
-    if (isEscrowTab) {
-      return (escrowQuery.data?.data?.rows ?? []).map(mapEscrowToServiceRow)
-    }
-    return (revenueQuery.data?.data?.rows ?? []).map((row) =>
-      mapPaymentToServiceRow(row, activeTab),
-    )
-  }, [activeTab, escrowQuery.data, isEscrowTab, revenueQuery.data])
 
   const meta = isEscrowTab ? escrowQuery.data?.data?.meta : revenueQuery.data?.data?.meta
 
-  const handleApplyFilters = useCallback((values: FilterValues) => {
+  function handleApplyFilters(values: FilterValues) {
     toast.success('Filters applied')
     setAppliedFilters(values)
     setCurrentPage(1)
-  }, [])
+  }
 
   const handleExportData = useMemo(() => {
     const fetchForExport = async (params: Record<string, unknown>) => {
@@ -180,26 +190,6 @@ export function FinanceServicesPage() {
     onApplyFilters: handleApplyFilters,
     onExportData: handleExportData,
   })
-
-  const visibleRowIds = useMemo(() => liveRows.map((row) => row.id), [liveRows])
-  const allVisibleSelected =
-    visibleRowIds.length > 0 && visibleRowIds.every((id) => selectedRowIds.includes(id))
-  const someVisibleSelected = visibleRowIds.some((id) => selectedRowIds.includes(id))
-
-  const toggleVisibleRows = useCallback(() => {
-    setSelectedRowIds((currentIds) => {
-      if (allVisibleSelected) {
-        return currentIds.filter((id) => !visibleRowIds.includes(id))
-      }
-      return Array.from(new Set([...currentIds, ...visibleRowIds]))
-    })
-  }, [allVisibleSelected, visibleRowIds])
-
-  const toggleRowSelection = useCallback((rowId: string) => {
-    setSelectedRowIds((currentIds) =>
-      currentIds.includes(rowId) ? currentIds.filter((id) => id !== rowId) : [...currentIds, rowId],
-    )
-  }, [])
 
   const renderActions = useCallback(
     (record: FinanceServiceRow) => {

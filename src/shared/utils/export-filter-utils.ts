@@ -1185,23 +1185,9 @@ export function buildFinanceServicesListQueryParams(
   return params
 }
 
-/** Export handler for finance services pages. */
-export function createFinanceServicesFilteredExportHandler<T>(
-  fetchFn: (params: Record<string, unknown>) => Promise<{ data?: T[] } | T[]>,
-  columnMap: Record<string, { header: string; accessor: (item: T) => string }>,
-  fileName: string,
-  baseParams: Record<string, unknown> = {},
-  options?: ExportHandlerOptions,
-) {
-  return async (values: FilterValues, format: string): Promise<void> => {
-    const filterParams = buildFinanceServicesListQueryParams(values, baseParams)
-    const result = await fetchFn({ ...filterParams, limit: 1000 })
-
-    const items: T[] = Array.isArray(result) ? result : ((result as { data?: T[] }).data ?? [])
-
-    await exportMappedRows(columnMap, items, format, fileName, options)
-  }
-}
+export const createFinanceServicesFilteredExportHandler = createFinanceExportHandler(
+  buildFinanceServicesListQueryParams,
+)
 
 type FinanceVenuesListQueryOptions = {
   page?: number
@@ -1243,23 +1229,9 @@ export function buildFinanceVenuesListQueryParams(
   return params
 }
 
-/** Export handler for finance venues pages. */
-export function createFinanceVenuesFilteredExportHandler<T>(
-  fetchFn: (params: Record<string, unknown>) => Promise<{ data?: T[] } | T[]>,
-  columnMap: Record<string, { header: string; accessor: (item: T) => string }>,
-  fileName: string,
-  baseParams: Record<string, unknown> = {},
-  options?: ExportHandlerOptions,
-) {
-  return async (values: FilterValues, format: string): Promise<void> => {
-    const filterParams = buildFinanceVenuesListQueryParams(values, baseParams)
-    const result = await fetchFn({ ...filterParams, limit: 1000 })
-
-    const items: T[] = Array.isArray(result) ? result : ((result as { data?: T[] }).data ?? [])
-
-    await exportMappedRows(columnMap, items, format, fileName, options)
-  }
-}
+export const createFinanceVenuesFilteredExportHandler = createFinanceExportHandler(
+  buildFinanceVenuesListQueryParams,
+)
 
 type FinanceListQueryOptions = {
   page?: number

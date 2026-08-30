@@ -7,6 +7,7 @@ import { toast } from 'sonner'
 import type { FinanceReconciliationRow } from '@/modules/payments/types/finance-table-rows'
 import { fetchFinanceReconciliation } from '@/modules/payments/api/finance-api'
 import { useFinanceReconciliation } from '@/modules/payments/hooks/use-finance'
+import { useFinanceRowSelection } from '@/modules/payments/hooks/use-finance-row-selection'
 import { mapReconToRow } from '@/modules/payments/utils/finance-mappers'
 import {
   DEFAULT_FINANCE_RECONCILIATION_VISIBLE_COLUMN_IDS,
@@ -60,7 +61,6 @@ export function FinanceReconciliationPage() {
   const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setCurrentPage(1) })
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
-  const [selectedRowIds, setSelectedRowIds] = useState<string[]>([])
   const tableColumnPreferencesQuery = useTableColumnPreferences(FINANCE_RECONCILIATION_MODULE_KEY)
 
   const catalogColumnIds = useMemo(
@@ -89,11 +89,19 @@ export function FinanceReconciliationPage() {
   const rows = useMemo(() => (data?.data?.rows ?? []).map(mapReconToRow), [data])
   const meta = data?.data?.meta
 
-  const handleApplyFilters = useCallback((values: FilterValues) => {
+  const {
+    selectedRowIds,
+    allVisibleSelected,
+    someVisibleSelected,
+    toggleVisibleRows,
+    toggleRowSelection,
+  } = useFinanceRowSelection(rows)
+
+  function handleApplyFilters(values: FilterValues) {
     toast.success('Filters applied')
     setAppliedFilters(values)
     setCurrentPage(1)
-  }, [])
+  }
 
   const handleExportData = useMemo(() => {
     const fetchForExport = async (params: Record<string, unknown>) => {
@@ -118,26 +126,6 @@ export function FinanceReconciliationPage() {
     onApplyFilters: handleApplyFilters,
     onExportData: handleExportData,
   })
-
-  const visibleRowIds = useMemo(() => rows.map((row) => row.id), [rows])
-  const allVisibleSelected =
-    visibleRowIds.length > 0 && visibleRowIds.every((id) => selectedRowIds.includes(id))
-  const someVisibleSelected = visibleRowIds.some((id) => selectedRowIds.includes(id))
-
-  const toggleVisibleRows = useCallback(() => {
-    setSelectedRowIds((currentIds) => {
-      if (allVisibleSelected) {
-        return currentIds.filter((id) => !visibleRowIds.includes(id))
-      }
-      return Array.from(new Set([...currentIds, ...visibleRowIds]))
-    })
-  }, [allVisibleSelected, visibleRowIds])
-
-  const toggleRowSelection = useCallback((rowId: string) => {
-    setSelectedRowIds((currentIds) =>
-      currentIds.includes(rowId) ? currentIds.filter((id) => id !== rowId) : [...currentIds, rowId],
-    )
-  }, [])
 
   const renderActions = useCallback(
     (record: FinanceReconciliationRow) => {

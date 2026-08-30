@@ -33,6 +33,8 @@ import { escalateUrl } from '@/modules/payments/utils/finance-escalate'
 import { cn } from '@/shared/lib/cn'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import { FinanceDetailRow as DetailRow } from '@/modules/payments/components/finance-detail-layout'
+import { FinanceStatusBadge } from '@/modules/payments/components/finance-status-badge'
+import { financeRefundStatusClass } from '@/modules/payments/utils/finance-status-tones'
 
 const cardClass = 'radius-lg border border-white/[0.06] bg-brand-surface p-4 sm:p-5'
 const sectionTitleClass = 'text-body-md-semibold text-brand-text leading-[20px]'
@@ -76,23 +78,6 @@ function AssessmentBlock({
       </div>
       {children}
     </div>
-  )
-}
-
-function StatusBadge({ status }: { status: string }) {
-  const tone =
-    status === 'Resolved'
-      ? 'border-brand-positive/40 bg-brand-positive/10 text-brand-positive'
-      : status === 'Rejected'
-        ? 'border-brand-danger/40 bg-brand-danger/10 text-brand-danger'
-        : 'border-brand-accent/40 bg-brand-accent/10 text-brand-accent'
-
-  return (
-    <span
-      className={cn('text-body-sm-semibold inline-flex rounded-full border px-2.5 py-0.5', tone)}
-    >
-      {status}
-    </span>
   )
 }
 
@@ -224,7 +209,15 @@ export function DisputeDetailViewPage() {
             <InfoItem label="Dispute ID" value={detail.disputeId} />
             <InfoItem label="Transaction ID" value={detail.transactionId} />
             <InfoItem label="Opened Date" value={detail.openedDate} />
-            <InfoItem label="Status" value={<StatusBadge status={detail.status} />} />
+            <InfoItem
+              label="Status"
+              value={
+                <FinanceStatusBadge
+                  status={detail.status}
+                  toneClass={financeRefundStatusClass(detail.status)}
+                />
+              }
+            />
             <InfoItem label="Module type" value={detail.moduleType} />
             <InfoItem label="Payment mode" value={detail.paymentMode} />
           </div>

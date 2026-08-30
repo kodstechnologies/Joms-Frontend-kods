@@ -33,6 +33,7 @@ import {
   useUpdateDisputeStatus,
   useUpdateRefundStatus,
 } from '@/modules/payments/hooks/use-finance'
+import { useFinanceRowSelection } from '@/modules/payments/hooks/use-finance-row-selection'
 import {
   DEFAULT_FINANCE_REFUNDS_METRIC_IDS,
   FINANCE_REFUNDS_METRIC_IDS,
@@ -139,7 +140,6 @@ export function FinanceRefundsPage() {
   const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setCurrentPage(1) })
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
-  const [selectedRowIds, setSelectedRowIds] = useState<string[]>([])
   const [statusTarget, setStatusTarget] = useState<RefundChargebackRow | null>(null)
   const [tagTarget, setTagTarget] = useState<RefundChargebackRow | null>(null)
   const [mergeTarget, setMergeTarget] = useState<RefundChargebackRow | null>(null)
@@ -224,11 +224,19 @@ export function FinanceRefundsPage() {
   const isFetching = disputesQuery.isFetching || refundsQuery.isFetching
   const isError = disputesQuery.isError || refundsQuery.isError
 
-  const handleApplyFilters = useCallback((values: FilterValues) => {
+  const {
+    selectedRowIds,
+    allVisibleSelected,
+    someVisibleSelected,
+    toggleVisibleRows,
+    toggleRowSelection,
+  } = useFinanceRowSelection(rows)
+
+  function handleApplyFilters(values: FilterValues) {
     toast.success('Filters applied')
     setAppliedFilters(values)
     setCurrentPage(1)
-  }, [])
+  }
 
   const handleExportData = useMemo(() => {
     const fetchForExport = async (params: Record<string, unknown>) => {
@@ -290,26 +298,6 @@ export function FinanceRefundsPage() {
     const allMetrics = buildFinanceRefundsMetricCards({ rows, summary })
     return orderByActiveMetricIds(allMetrics, filteredActiveMetricIds)
   }, [filteredActiveMetricIds, rows, summary])
-
-  const visibleRowIds = useMemo(() => rows.map((row) => row.id), [rows])
-  const allVisibleSelected =
-    visibleRowIds.length > 0 && visibleRowIds.every((id) => selectedRowIds.includes(id))
-  const someVisibleSelected = visibleRowIds.some((id) => selectedRowIds.includes(id))
-
-  const toggleVisibleRows = useCallback(() => {
-    setSelectedRowIds((currentIds) => {
-      if (allVisibleSelected) {
-        return currentIds.filter((id) => !visibleRowIds.includes(id))
-      }
-      return Array.from(new Set([...currentIds, ...visibleRowIds]))
-    })
-  }, [allVisibleSelected, visibleRowIds])
-
-  const toggleRowSelection = useCallback((rowId: string) => {
-    setSelectedRowIds((currentIds) =>
-      currentIds.includes(rowId) ? currentIds.filter((id) => id !== rowId) : [...currentIds, rowId],
-    )
-  }, [])
 
   const renderActions = useCallback(
     (record: RefundChargebackRow) => {
