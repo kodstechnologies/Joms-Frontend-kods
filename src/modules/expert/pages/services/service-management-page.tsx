@@ -1041,8 +1041,8 @@ export const ServiceManagementPage = () => {
         open={Boolean(suspendServiceTarget)}
         variant="suspend"
         title="Suspend Service"
-        description="Are you sure you want to suspend this Service? This will result in removal of the account."
-        submitLabel="Suspend User"
+        description="Are you sure you want to suspend this service? It will be hidden from users until reactivated."
+        submitLabel="Suspend Service"
         reasonOptions={suspendReasonOptions}
         selectedReasons={suspendReasons}
         onReasonToggle={toggleSuspendReason}
@@ -1065,14 +1065,14 @@ export const ServiceManagementPage = () => {
         open={Boolean(deleteServiceTarget)}
         variant="delete"
         title="Delete Service"
-        description="Are you sure you want to delete this user? This will result in removal of the account."
-        submitLabel="Delete User"
+        description="Are you sure you want to delete this service? This action cannot be undone."
+        submitLabel="Delete Service"
         heroLayout="inline"
         reasonOptions={deleteReasonOptions}
         selectedReasons={deleteReasons}
         onReasonToggle={toggleDeleteReason}
         showReasonsLabel
-        confirmationLabel="I confirm the documents are not approved due to above reasons."
+        confirmationLabel="I confirm that I want to delete this service."
         confirmationChecked={deleteConfirmed}
         onConfirmationChange={setDeleteConfirmed}
         adminNotes={deleteAdminNotes}
@@ -1111,7 +1111,7 @@ export const ServiceManagementPage = () => {
           )
         }
         showReasonsLabel
-        confirmationLabel="I confirm the documents are not approved due to above reasons."
+        confirmationLabel="I confirm that I want to delete the selected service(s)."
         confirmationChecked={bulkDeleteConfirmed}
         onConfirmationChange={setBulkDeleteConfirmed}
         adminNotes={bulkDeleteAdminNotes}

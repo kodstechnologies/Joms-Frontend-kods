@@ -8,18 +8,50 @@ export function isSortableColumnId(columnId: string) {
   return columnId.length > 0 && !NON_SORTABLE_COLUMN_IDS.has(columnId)
 }
 
+/** Resolve stable column id from explicit id or accessorKey (TanStack default). */
+export function resolveColumnDefId<T>(column: ColumnDef<T>): string {
+  if (column.id) return String(column.id)
+  if ('accessorKey' in column && column.accessorKey != null && column.accessorKey !== '') {
+    return String(column.accessorKey)
+  }
+  return ''
+}
+
+export function camelToKebab(value: string) {
+  return value
+    .replace(/([a-z0-9])([A-Z])/g, '$1-$2')
+    .replace(/([A-Z])([A-Z][a-z])/g, '$1-$2')
+    .toLowerCase()
+}
+
+/** Look up API sort field by column id or kebab-case catalog id. */
+export function resolveSortFieldMapEntry(
+  columnId: string,
+  sortFieldMap?: Record<string, string | null | undefined>,
+): string | null | undefined {
+  if (!sortFieldMap || !columnId) return undefined
+  if (Object.prototype.hasOwnProperty.call(sortFieldMap, columnId)) {
+    return sortFieldMap[columnId]
+  }
+  const kebab = camelToKebab(columnId)
+  if (Object.prototype.hasOwnProperty.call(sortFieldMap, kebab)) {
+    return sortFieldMap[kebab]
+  }
+  return undefined
+}
+
 /** Attach meta.sortField (defaults to column id) for server-side sorting. */
 export function withServerSortMeta<T>(
   columns: ColumnDef<T>[],
   sortFieldMap?: Record<string, string | null | undefined>,
 ): ColumnDef<T>[] {
   return columns.map((column) => {
-    const columnId = String(column.id ?? '')
+    const columnId = resolveColumnDefId(column)
     if (!isSortableColumnId(columnId)) {
       return { ...column, enableSorting: false }
     }
 
-    const mapped = sortFieldMap?.[columnId]
+    const mapped = resolveSortFieldMapEntry(columnId, sortFieldMap)
     if (mapped === null) {
       return { ...column, enableSorting: false }
     }
@@ -27,6 +59,7 @@ export function withServerSortMeta<T>(
     const sortField = mapped ?? columnId
     return {
       ...column,
+      id: column.id ?? columnId,
       enableSorting: true,
       meta: {
         ...column.meta,

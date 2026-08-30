@@ -1,12 +1,16 @@
-import { ArrowLeft, ArrowRight, ChevronDown, X } from 'lucide-react'
+import { ChevronDown, CircleX, X } from 'lucide-react'
 import calendarIcon from '@/assets/JOMS_ICONS-2/icons8-calendar.svg'
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 
 import { useMembership, useMemberships } from '../hooks/use-memberships'
 import type { MembershipPlan } from '../types/membership'
 import type { MembershipSubscription } from '../types/membership-subscription'
-import { PAUSE_REASON_OPTIONS } from '../mock/membership-metrics.mock'
-import { formatCurrency } from '../utils/membership-format'
+import { PAUSE_REASON_OPTIONS, PLAN_CHANGE_REASON_OPTIONS } from '../mock/membership-metrics.mock'
+import {
+  formatMembershipDate,
+  formatMembershipPriceValue,
+  resolveSubscriptionPlanName,
+} from '../utils/membership-format'
 import { RequiredMark } from '@/shared/components/form/required-mark'
 import { cn } from '@/shared/lib/cn'
 
@@ -140,7 +144,10 @@ function MembershipActionModalsContent({
     limit: 100,
   })
 
-  const expertPlans = plansData?.data?.memberships ?? []
+  const expertPlans = useMemo(
+    () => plansData?.data?.memberships ?? [],
+    [plansData?.data?.memberships],
+  )
 
   const currentPlanId =
     typeof subscription.membershipPlanId === 'string'
@@ -149,17 +156,36 @@ function MembershipActionModalsContent({
 
   const { data: currentPlanResponse } = useMembership(currentPlanId ?? '')
 
-  const currentPlan =
-    currentPlanResponse?.data ??
-    expertPlans.find((plan) => plan._id === currentPlanId) ??
-    expertPlans.find((plan) => plan.planId === subscription.planId) ??
-    null
+  const currentPlan = useMemo(() => {
+    const membershipPlanRef = subscription.membershipPlanId
+    const refId = typeof membershipPlanRef === 'string' ? membershipPlanRef : membershipPlanRef?._id
+    const refPlanId = typeof membershipPlanRef === 'object' ? membershipPlanRef?.planId : undefined
 
-  const currentPlanIcon =
-    currentPlan?.icon ??
-    (subscription.membershipPlanId && typeof subscription.membershipPlanId === 'object'
-      ? (subscription.membershipPlanId.icon ?? null)
-      : null)
+    return (
+      currentPlanResponse?.data ??
+      expertPlans.find((plan) => plan._id === refId) ??
+      expertPlans.find((plan) => plan.planId === subscription.planId) ??
+      expertPlans.find((plan) => plan.planId === refPlanId) ??
+      expertPlans.find((plan) => plan.planName === subscription.planName) ??
+      null
+    )
+  }, [
+    currentPlanResponse?.data,
+    expertPlans,
+    subscription.membershipPlanId,
+    subscription.planId,
+    subscription.planName,
+  ])
+
+  const currentPlanIcon = useMemo(
+    () => resolvePlanIcon(subscription, currentPlan, expertPlans),
+    [subscription, currentPlan, expertPlans],
+  )
+
+  const currentPlanLabel = useMemo(
+    () => resolveSubscriptionPlanName(subscription, currentPlan),
+    [subscription, currentPlan],
+  )
 
   const selectablePlans = expertPlans.filter((plan) => plan._id !== currentPlanId)
   const selectedPlan = expertPlans.find((plan) => plan._id === selectedPlanId)
@@ -184,7 +210,7 @@ function MembershipActionModalsContent({
     return (
       <MembershipModalShell
         title="Extend"
-        description={`Extend membership plan for ${subscription.partnerName}`}
+        description="Extend membership plans for the users"
         onClose={resetAndClose}
         footer={
           <>
@@ -212,50 +238,33 @@ function MembershipActionModalsContent({
           </>
         }
       >
-        <div className="rounded-[10px] border border-white/10 bg-white/5 p-4 text-[14px] text-white/50">
+        <div className="space-y-1 text-[14px] leading-[22px] text-white/50">
           <p>
-            Current Plan: <span className="font-semibold text-white">{subscription.planName}</span>
+            Current Plan: <span className="font-semibold text-white">{currentPlanLabel}</span>
           </p>
           <p>
-            Current Cycle:{' '}
+            Current Billing Cycle:{' '}
             <span className="font-semibold text-white">{subscription.billingCycleName}</span>
           </p>
           <p>
             Price:{' '}
             <span className="font-semibold text-white">
-              {formatCurrency(subscription.purchasedPrice)}
+              {formatMembershipPriceValue(subscription.purchasedPrice)}
             </span>
           </p>
         </div>
 
-        <label className="block space-y-2">
-          <span className="text-[12px] text-white/50">
-            End Date <RequiredMark />
-          </span>
-          <input
-            type="date"
-            value={endDate}
-            onChange={(e) => setEndDate(e.target.value)}
-            className="box-border h-[42px] w-full rounded-[8px] border border-white/10 bg-black px-3.5 text-[14px] text-white outline-none"
-          />
-        </label>
+        <ExtendEndDateField value={endDate} onChange={setEndDate} />
 
-        <ReasonTags selected={selectedReasons} onToggle={toggleReason} />
+        <ReasonTags
+          selected={selectedReasons}
+          onToggle={toggleReason}
+          options={PLAN_CHANGE_REASON_OPTIONS}
+        />
 
-        <label className="block space-y-2">
-          <span className="text-[14px] text-white">
-            Admin notes <RequiredMark />
-          </span>
-          <textarea
-            value={adminNotes}
-            onChange={(e) => setAdminNotes(e.target.value)}
-            className="box-border min-h-[119px] w-full resize-none rounded-[8px] border border-white/10 bg-black px-3.5 py-3 text-[14px] text-white outline-none"
-          />
-        </label>
+        <AdminNotesField value={adminNotes} onChange={setAdminNotes} />
 
-        <p className="text-[14px] text-white/70 italic">
-          Note: This action will be live once the super admin approves this action.
-        </p>
+        <ApprovalNote />
       </MembershipModalShell>
     )
   }
@@ -263,11 +272,7 @@ function MembershipActionModalsContent({
   if (action === 'upgrade' || action === 'downgrade') {
     const isUpgrade = action === 'upgrade'
     const currentCard = (
-      <PlanVisual
-        label={currentPlan?.planName ?? subscription.planName}
-        iconUrl={currentPlanIcon}
-        tone="current"
-      />
+      <PlanVisual label={currentPlanLabel} iconUrl={currentPlanIcon} tone="current" />
     )
     const targetCard = (
       <PlanPicker
@@ -322,12 +327,8 @@ function MembershipActionModalsContent({
         <div className="flex items-start justify-center gap-6 pt-2">
           {isUpgrade ? currentCard : targetCard}
 
-          <div className="flex h-[106px] items-center">
-            {isUpgrade ? (
-              <ArrowRight className="size-5 text-white/80" strokeWidth={1.75} />
-            ) : (
-              <ArrowLeft className="size-5 text-white/80" strokeWidth={1.75} />
-            )}
+          <div className="flex h-[80px] shrink-0 items-center">
+            <PlanTransitionArrow direction={isUpgrade ? 'right' : 'left'} />
           </div>
 
           {isUpgrade ? targetCard : currentCard}
@@ -350,22 +351,15 @@ function MembershipActionModalsContent({
           </label>
         ) : null}
 
-        <ReasonTags selected={selectedReasons} onToggle={toggleReason} />
+        <ReasonTags
+          selected={selectedReasons}
+          onToggle={toggleReason}
+          options={PLAN_CHANGE_REASON_OPTIONS}
+        />
 
-        <label className="block space-y-2">
-          <span className="text-[14px] text-white">
-            Admin notes <RequiredMark />
-          </span>
-          <textarea
-            value={adminNotes}
-            onChange={(e) => setAdminNotes(e.target.value)}
-            className="box-border min-h-[119px] w-full resize-none rounded-[8px] border border-white/10 bg-black px-3.5 py-3 text-[14px] text-white outline-none"
-          />
-        </label>
+        <AdminNotesField value={adminNotes} onChange={setAdminNotes} />
 
-        <p className="text-[14px] text-white/70 italic">
-          Note: This action will be live once the super admin approves this action.
-        </p>
+        <ApprovalNote />
       </MembershipModalShell>
     )
   }
@@ -399,14 +393,14 @@ function MembershipActionModalsContent({
               })
             }
           >
-            Send for Approval
+            Send for approval
           </button>
         </>
       }
     >
       <div className="flex flex-col items-center gap-3 pt-1 text-center">
-        <span className="inline-flex size-14 items-center justify-center rounded-full bg-[#d3191c]">
-          <X className="size-7 text-white" strokeWidth={2.5} />
+        <span className="inline-flex size-[70px] items-center justify-center rounded-full bg-[rgb(211_25_28_/_20%)]">
+          <CircleX className="size-7 text-[#D3191C]" strokeWidth={2} aria-hidden="true" />
         </span>
         <div className="max-w-[420px] space-y-1">
           <p className="text-[16px] leading-6 font-semibold text-white">
@@ -419,38 +413,77 @@ function MembershipActionModalsContent({
       </div>
 
       <div className="grid grid-cols-2 gap-3">
-        <CancelDateField label="From" value={fromDate} onChange={setFromDate} />
-        <CancelDateField label="To" value={toDate} onChange={setToDate} />
+        <ModalDateField label="From" value={fromDate} onChange={setFromDate} />
+        <ModalDateField label="To" value={toDate} onChange={setToDate} />
       </div>
 
-      <ReasonTags selected={selectedReasons} onToggle={toggleReason} />
+      <ReasonTags
+        selected={selectedReasons}
+        onToggle={toggleReason}
+        options={PLAN_CHANGE_REASON_OPTIONS}
+      />
 
-      <label className="block space-y-2">
-        <span className="text-[14px] text-white">
-          Admin notes <RequiredMark />
-        </span>
-        <textarea
-          value={adminNotes}
-          onChange={(e) => setAdminNotes(e.target.value)}
-          className="box-border min-h-[119px] w-full resize-none rounded-[8px] border border-white/10 bg-black px-3.5 py-3 text-[14px] text-white outline-none focus:border-white/30"
-        />
-      </label>
+      <AdminNotesField value={adminNotes} onChange={setAdminNotes} />
 
-      <p className="text-[14px] text-white/70 italic">
-        Note: This action will be live once the super admin approves this action.
-      </p>
+      <ApprovalNote />
     </MembershipModalShell>
   )
 }
 
-function CancelDateField({
+function ExtendEndDateField({
+  value,
+  onChange,
+}: {
+  value: string
+  onChange: (value: string) => void
+}) {
+  const displayValue = value ? formatMembershipDate(value) : null
+
+  return (
+    <label className="flex items-center justify-between gap-4">
+      <span className="shrink-0 text-[14px] leading-[22px] text-white">
+        End Date <RequiredMark />
+      </span>
+      <div className="relative w-full max-w-[238px]">
+        <input
+          type="date"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className={cn(
+            'box-border h-[40px] w-full rounded-full border border-white/10 bg-black px-4 pr-10 text-[14px] text-transparent [color-scheme:dark] outline-none focus:border-white/30',
+            '[&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0',
+          )}
+        />
+        <span
+          className={cn(
+            'pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-[14px] leading-[22px]',
+            displayValue ? 'text-white' : 'text-white/50',
+          )}
+        >
+          {displayValue ?? 'Custom Date'}
+        </span>
+        <img
+          src={calendarIcon}
+          alt=""
+          className="pointer-events-none absolute top-1/2 right-4 size-4 -translate-y-1/2 opacity-50"
+          style={{ filter: 'brightness(0) invert(1)' }}
+          aria-hidden="true"
+        />
+      </div>
+    </label>
+  )
+}
+
+function ModalDateField({
   label,
   value,
   onChange,
+  placeholder = 'Custom Date',
 }: {
   label: string
   value: string
   onChange: (value: string) => void
+  placeholder?: string
 }) {
   return (
     <label className="block space-y-2">
@@ -462,17 +495,118 @@ function CancelDateField({
           type="date"
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="box-border h-[42px] w-full rounded-[8px] border border-white/10 bg-black px-3.5 pr-10 text-[14px] text-white [color-scheme:dark] outline-none focus:border-white/30"
+          className={cn(
+            'box-border h-[42px] w-full rounded-[8px] border border-white/10 bg-black px-3.5 pr-10 text-[14px] text-white [color-scheme:dark] outline-none focus:border-white/30',
+            !value && 'text-transparent',
+            '[&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0',
+          )}
         />
+        {!value ? (
+          <span className="pointer-events-none absolute top-1/2 left-3.5 -translate-y-1/2 text-[14px] text-white/50">
+            {placeholder}
+          </span>
+        ) : null}
         <img
           src={calendarIcon}
-          alt="calendar"
-          className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-white/50"
+          alt=""
+          className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2"
+          style={{ filter: 'brightness(0) invert(1)' }}
           aria-hidden="true"
         />
       </div>
     </label>
   )
+}
+
+function AdminNotesField({
+  value,
+  onChange,
+}: {
+  value: string
+  onChange: (value: string) => void
+}) {
+  return (
+    <label className="block space-y-2">
+      <span className="text-[14px] text-white">
+        Admin notes <RequiredMark />
+      </span>
+      <textarea
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="box-border min-h-[119px] w-full resize-none rounded-[8px] border border-white/10 bg-black px-3.5 py-3 text-[14px] text-white outline-none focus:border-white/30"
+      />
+    </label>
+  )
+}
+
+function ApprovalNote() {
+  return (
+    <p className="text-[14px] text-white/70 italic">
+      *Note: This action will be live once the super admin approves this action.
+    </p>
+  )
+}
+
+function PlanTransitionArrow({ direction }: { direction: 'left' | 'right' }) {
+  return (
+    <svg
+      width="195"
+      height="12"
+      viewBox="0 0 195 12"
+      fill="none"
+      aria-hidden
+      className={cn('shrink-0 text-white', direction === 'left' && 'rotate-180')}
+    >
+      <path d="M1 6H181.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+      <path
+        d="M181.5 6L174 1.75M181.5 6L174 10.25"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
+
+function resolvePlanIcon(
+  subscription: MembershipSubscription,
+  plan: MembershipPlan | null | undefined,
+  plans: MembershipPlan[],
+) {
+  if (plan?.icon) return plan.icon
+
+  const membershipPlanRef = subscription.membershipPlanId
+  if (membershipPlanRef && typeof membershipPlanRef === 'object' && membershipPlanRef.icon) {
+    return membershipPlanRef.icon
+  }
+
+  const refId = typeof membershipPlanRef === 'string' ? membershipPlanRef : membershipPlanRef?._id
+
+  return (
+    plans.find((item) => item._id === refId)?.icon ??
+    plans.find((item) => item.planId === subscription.planId)?.icon ??
+    plans.find((item) => item.planName === subscription.planName)?.icon ??
+    null
+  )
+}
+
+function MembershipPlanIcon({
+  iconUrl,
+  dark = false,
+  className = 'size-full object-cover',
+  placeholderSize = 40,
+}: {
+  iconUrl?: string | null
+  dark?: boolean
+  className?: string
+  placeholderSize?: number
+}) {
+  if (!iconUrl) {
+    return <PlanIconPlaceholder dark={dark} size={placeholderSize} />
+  }
+
+  return <img src={iconUrl} alt="" className={className} />
 }
 
 function PlanVisual({
@@ -497,11 +631,7 @@ function PlanVisual({
             : undefined
         }
       >
-        {iconUrl ? (
-          <img src={iconUrl} alt="" className="size-full object-cover" />
-        ) : (
-          <PlanIconPlaceholder dark={tone === 'target'} />
-        )}
+        <MembershipPlanIcon iconUrl={iconUrl} dark={tone === 'target'} />
       </div>
       <p className="text-center text-[14px] leading-[22px] font-medium text-white">{label}</p>
     </div>
@@ -538,11 +668,7 @@ function PlanPicker({
         className="flex size-[80px] items-center justify-center overflow-hidden rounded-[16px]"
         style={{ background: `linear-gradient(180deg, ${GOLD} 0%, ${GOLD_TO} 100%)` }}
       >
-        {selectedPlan?.icon ? (
-          <img src={selectedPlan.icon} alt="" className="size-full object-cover" />
-        ) : (
-          <PlanIconPlaceholder dark />
-        )}
+        <MembershipPlanIcon iconUrl={selectedPlan?.icon} dark placeholderSize={40} />
       </div>
 
       <button
@@ -569,11 +695,11 @@ function PlanPicker({
                 )}
               >
                 <span className="flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-white/10 bg-black">
-                  {plan.icon ? (
-                    <img src={plan.icon} alt="" className="size-full object-cover" />
-                  ) : (
-                    <PlanIconPlaceholder size={18} />
-                  )}
+                  <MembershipPlanIcon
+                    iconUrl={plan.icon}
+                    placeholderSize={18}
+                    className="size-full object-cover"
+                  />
                 </span>
                 <span className="truncate">{plan.planName}</span>
               </button>
@@ -602,12 +728,12 @@ function PlanIconPlaceholder({ dark = false, size = 40 }: { dark?: boolean; size
 function ReasonTags({
   selected,
   onToggle,
+  options = PAUSE_REASON_OPTIONS,
 }: {
   selected: string[]
   onToggle: (value: string) => void
+  options?: Array<{ label: string; value: string }>
 }) {
-  const options = useMemo(() => PAUSE_REASON_OPTIONS, [])
-
   return (
     <div className="flex flex-wrap gap-2">
       {options.map((option) => {

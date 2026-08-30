@@ -348,25 +348,26 @@ export function InviteExpertReferralModal({
               className="ui-textarea h-32"
             />
           </Field>
-
-          <p className="invite-modal-note leading-relaxed">
-            Note: Partners receive the invite message and link by email (and SMS when phone is
-            provided).
-          </p>
         </div>
 
-        <div className="ui-modal-footer justify-end gap-3">
-          <button type="button" className="ui-cta ui-cta-outline" onClick={handleClose}>
-            Cancel
-          </button>
-          <button
-            type="button"
-            className="ui-cta ui-cta-primary min-w-[140px]"
-            onClick={() => void handleSubmit()}
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? 'Sending...' : 'Send Invite'}
-          </button>
+        <div className="invite-modal-footer">
+          <p className="invite-modal-note">
+            <span className="text-white">Note:</span> The users will get referral code to their
+            email ID &amp; notified through SMS/WhatsApp.
+          </p>
+          <div className="invite-modal-footer-actions">
+            <button type="button" className="invite-modal-btn-cancel" onClick={handleClose}>
+              Cancel
+            </button>
+            <button
+              type="button"
+              className="invite-modal-btn-submit"
+              onClick={() => void handleSubmit()}
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? 'Sending...' : 'Send Invite'}
+            </button>
+          </div>
         </div>
       </div>
     </div>

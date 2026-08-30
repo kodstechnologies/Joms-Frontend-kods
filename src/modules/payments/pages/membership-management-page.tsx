@@ -17,7 +17,7 @@ import { DataTable } from '@/shared/components/table/data-table'
 import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'
 import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
 import { withServerSortMeta } from '@/shared/utils/table-sort'
-import { buildDefaultTableSortFieldMap } from '@/shared/utils/table-sort-field-maps'
+import { FINANCE_MEMBERSHIP_SORT_OVERRIDES } from '@/modules/payments/config/finance-table-sort-fields'
 import { FINANCE_MEMBERSHIP_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
 import {
   TableActionsDropdown,
@@ -34,16 +34,7 @@ import {
 
 const PAGE_SIZE = 10
 
-const SORT_FIELD_MAP = buildDefaultTableSortFieldMap([
-  'subscriptionId',
-  'name',
-  'planName',
-  'amount',
-  'billingCycle',
-  'startDate',
-  'nextBilling',
-  'status',
-])
+const SORT_FIELD_MAP = FINANCE_MEMBERSHIP_SORT_OVERRIDES
 
 const EXPORT_COLUMN_MAP: Record<
   string,

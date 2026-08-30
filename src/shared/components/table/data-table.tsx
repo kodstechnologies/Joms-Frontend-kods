@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react'
-import type { ColumnDef, RowData, SortingState } from '@tanstack/react-table'
+import type { ColumnDef, Column, RowData, SortingState } from '@tanstack/react-table'
 import {
   flexRender,
   getCoreRowModel,
@@ -72,6 +72,18 @@ export type DataTableProps<TData> = {
   onColumnSearchRemove?: (key: string) => void
   /** Column-specific search: called to clear all column searches. */
   onClearAllSearches?: () => void
+}
+
+/** Server-sorted tables use enableSorting on column defs; TanStack getCanSort() also requires accessorFn. */
+function isHeaderSortable<TData>(column: Column<TData, unknown>, manualSorting: boolean) {
+  const columnId = column.id
+  if (!columnId || columnId === 'select' || columnId === 'actions' || columnId === 'action') {
+    return false
+  }
+  if (manualSorting) {
+    return column.columnDef.enableSorting === true
+  }
+  return column.getCanSort()
 }
 
 const getVisiblePages = (currentPage: number, totalPages: number) => {
@@ -259,12 +271,12 @@ export function DataTable<TData>({
                       <div
                         className={cn(
                           'inline-flex items-center gap-1.5',
-                          header.column.getCanSort() &&
+                          isHeaderSortable(header.column, manualSorting) &&
                             showSortIcons &&
                             'cursor-pointer select-none',
                         )}
                         onClick={
-                          header.column.getCanSort() && showSortIcons
+                          isHeaderSortable(header.column, manualSorting) && showSortIcons
                             ? () => {
                                 const column = header.column
                                 const columnId = column.id
@@ -285,9 +297,7 @@ export function DataTable<TData>({
                         }
                       >
                         {flexRender(header.column.columnDef.header, header.getContext())}
-                        {header.column.id !== 'select' &&
-                          header.column.id !== 'actions' &&
-                          header.column.getCanSort() &&
+                        {isHeaderSortable(header.column, manualSorting) &&
                           showSortIcons &&
                           (() => {
                             const columnId = header.column.id

@@ -18,7 +18,7 @@ export function PlatformHealthMetricCard({ metric }: { metric: PlatformHealthMet
       <p className="text-h2 text-brand-text mt-2 truncate font-bold tracking-tight">
         {metric.value}
       </p>
-      <div className="mt-auto flex min-h-[33px] items-center gap-2 pt-2">
+      <div className="mt-auto flex min-h-[33px] flex-wrap items-center gap-2 pt-2">
         {metric.status ? (
           <p className="text-muted inline-flex items-center gap-1.5 text-[10px]">
             <Check className="text-brand-text size-3.5 shrink-0" />
@@ -28,16 +28,14 @@ export function PlatformHealthMetricCard({ metric }: { metric: PlatformHealthMet
         {!metric.status && metric.hint ? (
           <p className="text-muted truncate text-[10px]">{metric.hint}</p>
         ) : null}
-        {!metric.status && !metric.hint && trend ? (
+        {trend ? (
           <>
             <span
               className={cn(
                 'inline-flex h-[33px] shrink-0 items-center gap-1 rounded-md px-1.5 text-[10px] font-bold',
-                isAbsoluteTrend
-                  ? 'bg-brand-danger/10 text-brand-danger'
-                  : trend.tone === 'positive'
-                    ? 'bg-brand-positive/15 text-brand-positive'
-                    : 'bg-brand-danger/10 text-brand-danger',
+                trend.tone === 'positive'
+                  ? 'bg-brand-positive/15 text-brand-positive'
+                  : 'bg-brand-danger/10 text-brand-danger',
               )}
             >
               {showClock ? (

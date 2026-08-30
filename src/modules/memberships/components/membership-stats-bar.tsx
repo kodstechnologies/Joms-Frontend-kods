@@ -120,8 +120,6 @@ const TEXT_VALUE_METRIC_IDS = new Set([
   'most-cancelled-plan',
 ])
 
-const METRIC_CARD_SIZE_CLASS = 'h-[130px] w-[230px] max-w-full'
-
 function MembershipMetricCard({ metric }: { metric: MembershipKpiStat }) {
   const isUp = metric.trend?.direction === 'up'
   const invertTrend = [
@@ -137,12 +135,7 @@ function MembershipMetricCard({ metric }: { metric: MembershipKpiStat }) {
   const showAttentionHint = expiredCount > 0
 
   return (
-    <div
-      className={cn(
-        METRIC_CARD_SIZE_CLASS,
-        'rounded-brand-lg bg-brand-surface flex flex-col border border-white/[0.06] p-4 transition-colors hover:border-white/10',
-      )}
-    >
+    <div className="rounded-brand-lg bg-brand-surface flex min-h-[130px] flex-col border border-white/[0.06] p-4 transition-colors hover:border-white/10">
       <p className="text-body-sm text-muted truncate font-medium">{metric.label}</p>
       <p
         className={cn(
@@ -152,14 +145,14 @@ function MembershipMetricCard({ metric }: { metric: MembershipKpiStat }) {
       >
         {metric.value}
       </p>
-      <div className="mt-auto flex min-h-[33px] items-center gap-2 pt-2">
+      <div className="mt-auto flex items-center gap-2 pt-3">
         {showAttentionHint ? (
           <span className="text-muted text-[10px]">Require attention</span>
         ) : metric.trend ? (
           <>
             <span
               className={cn(
-                'inline-flex h-[33px] shrink-0 items-center gap-1 rounded-md px-1.5 text-[10px] font-bold',
+                'inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-bold',
                 isPositive
                   ? 'bg-brand-positive/15 text-brand-positive'
                   : 'bg-brand-danger/10 text-brand-danger',
@@ -201,11 +194,9 @@ export function MembershipStatsBar() {
   }, [apiStats, filteredActiveMetricIds])
 
   return (
-    <div className="flex flex-wrap gap-3">
+    <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4">
       {isLoading
-        ? filteredActiveMetricIds.map((id) => (
-            <StatCardSkeleton key={id} className={METRIC_CARD_SIZE_CLASS} />
-          ))
+        ? filteredActiveMetricIds.map((id) => <StatCardSkeleton key={id} />)
         : visibleStats.map((stat) => <MembershipMetricCard key={stat.id} metric={stat} />)}
     </div>
   )
@@ -237,12 +228,7 @@ export function MembershipPlanStatsBar() {
 
 function MiniStat({ label, value }: { label: string; value: number }) {
   return (
-    <div
-      className={cn(
-        METRIC_CARD_SIZE_CLASS,
-        'rounded-brand-lg bg-brand-surface border border-white/[0.06] p-4',
-      )}
-    >
+    <div className="rounded-brand-lg bg-brand-surface flex min-h-[130px] flex-col border border-white/[0.06] p-4">
       <p className="text-body-sm text-muted font-medium">{label}</p>
       <p className="text-h3 mt-2 font-bold tracking-tight text-white">
         {String(value).padStart(2, '0')}

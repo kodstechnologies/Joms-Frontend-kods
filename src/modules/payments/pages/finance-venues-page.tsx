@@ -48,9 +48,14 @@ import {
 import type { FilterValues } from '@/shared/types/data-filter'
 import type { FinancePayment } from '@/modules/payments/types/finance-api'
 
+import { FINANCE_PAYMENT_SORT_OVERRIDES } from '@/modules/payments/config/finance-table-sort-fields'
+
 const PAGE_SIZE = 10
 
-const SORT_FIELD_MAP = buildCatalogSortFieldMap(FINANCE_VENUES_TABLE_COLUMNS_CATALOG)
+const SORT_FIELD_MAP = buildCatalogSortFieldMap(
+  FINANCE_VENUES_TABLE_COLUMNS_CATALOG,
+  FINANCE_PAYMENT_SORT_OVERRIDES,
+)
 
 function getStatusClassName(status: FinanceVenueRow['status']) {
   if (status === 'Completed') {

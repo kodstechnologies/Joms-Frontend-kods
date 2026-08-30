@@ -82,10 +82,14 @@ import {
   buildFinanceRefundsListQueryParams,
   createFinanceRefundsFilteredExportHandler,
 } from '@/shared/utils/export-filter-utils'
+import { FINANCE_REFUND_SORT_OVERRIDES } from '@/modules/payments/config/finance-table-sort-fields'
 
 const PAGE_SIZE = 10
 
-const SORT_FIELD_MAP = buildCatalogSortFieldMap(FINANCE_REFUNDS_TABLE_COLUMNS_CATALOG)
+const SORT_FIELD_MAP = buildCatalogSortFieldMap(
+  FINANCE_REFUNDS_TABLE_COLUMNS_CATALOG,
+  FINANCE_REFUND_SORT_OVERRIDES,
+)
 
 function getStatusClassName(status: RefundChargebackStatus) {
   if (status === 'Resolved') {

@@ -1,6 +1,8 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { SortingState } from '@tanstack/react-table'
 
+import { resolveSortFieldMapEntry } from '@/shared/utils/table-sort'
+
 export type ServerSortOrder = 'asc' | 'desc'
 
 export type ServerSortParams = {
@@ -27,7 +29,7 @@ export function useServerTableSort({
   const [sortOrder, setSortOrder] = useState<ServerSortOrder>(defaultSortOrder)
 
   const apiSortBy = useMemo(() => {
-    const mapped = sortFieldMap?.[sortBy]
+    const mapped = resolveSortFieldMapEntry(sortBy, sortFieldMap)
     if (mapped === null) return defaultSortBy
     if (mapped) return mapped
     return sortBy

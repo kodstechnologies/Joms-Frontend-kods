@@ -1,8 +1,10 @@
 import {
+  Ban,
   CalendarRange,
   Check,
   CircleArrowDown,
   CircleArrowUp,
+  CircleX,
   ClipboardList,
   Image,
   MoreVertical,
@@ -10,10 +12,8 @@ import {
   Pencil,
   PlayCircle,
   Power,
-  SquareDashed,
-  X,
 } from 'lucide-react'
-import { useEffect, useRef, useState, type ComponentType } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 
 import type { MembershipPlan } from '../types/membership'
 import {
@@ -100,7 +100,7 @@ export function MembershipPlanCard({
   }
 
   return (
-    <article className="relative flex h-[623px] w-[394px] max-w-full flex-col overflow-hidden rounded-[16px] border border-white/10 bg-black">
+    <article className="relative flex min-h-[623px] w-[394px] max-w-full flex-col rounded-[16px] border border-white/10 bg-black">
       <div className="flex items-start justify-between gap-3 px-[22px] pt-5 pb-4">
         <div className="flex min-w-0 flex-1 items-center gap-3">
           <div className="bg-brand-surface flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/10">
@@ -147,28 +147,28 @@ export function MembershipPlanCard({
               <div className="ui-table-actions-menu absolute right-0 z-30 mt-2">
                 <MenuButton
                   label="View Details"
-                  icon={ClipboardList}
+                  icon={<ClipboardList className="size-4" strokeWidth={1.85} />}
                   onClick={() => runAction(onEdit)}
                 />
                 <MenuButton
                   label="View Version History"
-                  icon={CircleArrowUp}
+                  icon={<CircleArrowUp className="size-4" strokeWidth={1.85} />}
                   onClick={() => runAction(onViewVersions)}
                 />
                 <MenuButton
                   label="View Feature List"
-                  icon={CircleArrowDown}
+                  icon={<CircleArrowDown className="size-4" strokeWidth={1.85} />}
                   onClick={() => runAction(onViewFeatures)}
                 />
                 <MenuButton
                   label="Set Plan validity"
-                  icon={CalendarRange}
+                  icon={<CalendarRange className="size-4" strokeWidth={1.85} />}
                   onClick={() => runAction(onSetValidity)}
                 />
                 {plan.status === 'active' ? (
                   <MenuButton
                     label="Pause Plan"
-                    icon={Pause}
+                    icon={<Pause className="size-4" strokeWidth={1.85} />}
                     onClick={() => runAction(onPause)}
                     danger
                   />
@@ -176,14 +176,14 @@ export function MembershipPlanCard({
                 {plan.status === 'paused' ? (
                   <MenuButton
                     label="Resume Plan"
-                    icon={PlayCircle}
+                    icon={<PlayCircle className="size-4" strokeWidth={1.85} />}
                     onClick={() => runAction(onResume)}
                   />
                 ) : null}
                 {plan.status === 'inactive' ? (
                   <MenuButton
                     label="Activate Plan"
-                    icon={Power}
+                    icon={<Power className="size-4" strokeWidth={1.85} />}
                     onClick={() => runAction(onActivate)}
                   />
                 ) : null}
@@ -192,14 +192,14 @@ export function MembershipPlanCard({
                     {plan.status === 'active' ? (
                       <MenuButton
                         label="Deactivate Plan"
-                        icon={DeactivateIcon}
+                        icon={<Ban className="size-4" strokeWidth={1.85} />}
                         onClick={() => runAction(onDeactivate)}
                         danger
                       />
                     ) : null}
                     <MenuButton
                       label="Delete Plan"
-                      icon={DeleteIcon}
+                      icon={<CircleX className="size-4" strokeWidth={1.85} />}
                       onClick={() => runAction(onDelete)}
                       danger
                     />
@@ -261,7 +261,7 @@ export function MembershipPlanCard({
         </div>
       </div>
 
-      <div className="mt-auto flex flex-col gap-3 px-[22px] pt-1 pb-5">
+      <div className="mt-auto flex flex-col gap-3 px-[22px] pt-2 pb-5">
         <div className="flex items-center justify-between gap-3">
           <span className={cn('text-body-sm', MUTE)}>Version :{plan.version}</span>
           <span
@@ -285,7 +285,7 @@ export function MembershipPlanCard({
         {plan.status !== 'deleted' ? (
           <button
             type="button"
-            className="ui-cta ui-cta-primary h-10 w-[350px] max-w-full"
+            className="ui-cta ui-cta-primary h-10 w-full"
             onClick={() => onEdit?.(plan)}
           >
             Edit
@@ -309,46 +309,22 @@ function StatPill({ label, value }: { label: string; value: number }) {
 function MenuButton({
   label,
   onClick,
-  icon: Icon,
+  icon,
   danger = false,
 }: {
   label: string
   onClick: () => void
-  icon: ComponentType<{ className?: string; strokeWidth?: number }>
+  icon: ReactNode
   danger?: boolean
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className={cn('ui-table-actions-item', danger && 'text-brand-danger hover:bg-brand-danger/8')}
+      className={cn('ui-table-actions-item', danger && 'ui-table-actions-item-danger')}
     >
-      <span className="flex size-4 shrink-0 items-center justify-center">
-        <Icon className="size-4" strokeWidth={1.85} />
-      </span>
+      <span className="flex size-4 shrink-0 items-center justify-center">{icon}</span>
       <span className="truncate">{label}</span>
     </button>
-  )
-}
-
-function DeactivateIcon({ className }: { className?: string; strokeWidth?: number }) {
-  return (
-    <span className={cn('relative inline-flex size-4', className)}>
-      <SquareDashed className="size-4" strokeWidth={1.75} />
-      <X className="absolute inset-0 m-auto size-2.5" strokeWidth={2.5} />
-    </span>
-  )
-}
-
-function DeleteIcon({ className }: { className?: string; strokeWidth?: number }) {
-  return (
-    <span
-      className={cn(
-        'bg-brand-danger inline-flex size-4 items-center justify-center rounded-full',
-        className,
-      )}
-    >
-      <X className="size-2.5 text-white" strokeWidth={3} />
-    </span>
   )
 }

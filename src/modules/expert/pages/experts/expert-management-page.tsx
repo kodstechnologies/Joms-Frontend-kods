@@ -1021,7 +1021,7 @@ export const ExpertManagementPage = () => {
             onClick={() => navigate('/experts/management/create')}
           >
             <img src={createIcon} alt="create" className="size-4" />
-            Create Account
+            Create Expert
           </Button>
         </div>
       </div>
@@ -1136,7 +1136,7 @@ export const ExpertManagementPage = () => {
             ? `Are you sure you want to suspend ${selectedExpertCount} selected expert(s)? This will restrict their account access.`
             : 'Are you sure you want to suspend this Expert? This will result in removal of the account.'
         }
-        submitLabel={isBulkSuspend ? `Suspend ${selectedExpertCount} Experts` : 'Suspend User'}
+        submitLabel={isBulkSuspend ? `Suspend ${selectedExpertCount} Experts` : 'Suspend Expert'}
         reasonOptions={suspendReasonOptions}
         selectedReasons={suspendReasons}
         onReasonToggle={toggleSuspendReason}

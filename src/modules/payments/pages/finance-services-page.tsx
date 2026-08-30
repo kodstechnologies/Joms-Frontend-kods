@@ -55,11 +55,13 @@ import {
   createFinanceServicesFilteredExportHandler,
 } from '@/shared/utils/export-filter-utils'
 import { FINANCE_SERVICES_EXPORT_COLUMN_MAP } from '@/modules/payments/utils/finance-export-column-maps'
+import {
+  FINANCE_ESCROW_SORT_OVERRIDES,
+  FINANCE_PAYMENT_SORT_OVERRIDES,
+} from '@/modules/payments/config/finance-table-sort-fields'
 import type { FilterValues } from '@/shared/types/data-filter'
 
 const PAGE_SIZE = 10
-
-const SORT_FIELD_MAP = buildCatalogSortFieldMap(FINANCE_SERVICES_TABLE_COLUMNS_CATALOG)
 
 function getStatusClassName(status: FinanceServiceRow['status']) {
   if (status === 'Paid') {
@@ -73,8 +75,17 @@ export function FinanceServicesPage() {
   const queryClient = useQueryClient()
   const [activeTab, setActiveTab] = useState<FinanceServiceTab>('all')
   const [currentPage, setCurrentPage] = useState(1)
+  const isEscrowTab = activeTab === 'escrow'
+  const sortFieldMap = useMemo(
+    () =>
+      buildCatalogSortFieldMap(
+        FINANCE_SERVICES_TABLE_COLUMNS_CATALOG,
+        isEscrowTab ? FINANCE_ESCROW_SORT_OVERRIDES : FINANCE_PAYMENT_SORT_OVERRIDES,
+      ),
+    [isEscrowTab],
+  )
   const serverSort = useServerTableSort({
-    sortFieldMap: SORT_FIELD_MAP,
+    sortFieldMap,
     onPageReset: () => setCurrentPage(1),
   })
   const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setCurrentPage(1) })
@@ -99,7 +110,6 @@ export function FinanceServicesPage() {
     legacyColumnIdMap: FINANCE_SERVICES_LEGACY_COLUMN_ID_MAP,
   })
 
-  const isEscrowTab = activeTab === 'escrow'
   const listQueryParams = useMemo(
     () =>
       buildFinanceServicesListQueryParams(appliedFilters, {
@@ -427,12 +437,13 @@ export function FinanceServicesPage() {
       cell: ({ row }) => renderActions(row.original),
     }
 
-    return withServerSortMeta([selectColumn, ...preferenceColumns, actionsColumn], SORT_FIELD_MAP)
+    return withServerSortMeta([selectColumn, ...preferenceColumns, actionsColumn], sortFieldMap)
   }, [
     allVisibleSelected,
     renderActions,
     selectedRowIds,
     someVisibleSelected,
+    sortFieldMap,
     tableColumnPreferencesQuery.data,
     toggleRowSelection,
     toggleVisibleRows,

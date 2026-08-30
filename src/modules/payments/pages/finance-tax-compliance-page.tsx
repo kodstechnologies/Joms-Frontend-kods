@@ -48,9 +48,14 @@ import {
   createFinanceTaxFilteredExportHandler,
 } from '@/shared/utils/export-filter-utils'
 
+import { FINANCE_TAX_SORT_OVERRIDES } from '@/modules/payments/config/finance-table-sort-fields'
+
 const PAGE_SIZE = 10
 
-const SORT_FIELD_MAP = buildCatalogSortFieldMap(FINANCE_TAX_TABLE_COLUMNS_CATALOG)
+const SORT_FIELD_MAP = buildCatalogSortFieldMap(
+  FINANCE_TAX_TABLE_COLUMNS_CATALOG,
+  FINANCE_TAX_SORT_OVERRIDES,
+)
 
 function getStatusClassName(status: TaxComplianceRow['status']) {
   if (status === 'Completed' || status === 'Filed') {
