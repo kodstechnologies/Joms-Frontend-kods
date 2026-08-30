@@ -20,7 +20,10 @@ import {
 } from '@/modules/expert/hooks/use-active-metric-ids'
 import { Button } from '@/shared/components/ui/button'
 import { DataTable } from '@/shared/components/table/data-table'
+import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'
 import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
+import { withServerSortMeta } from '@/shared/utils/table-sort'
+import { buildCatalogSortFieldMap } from '@/shared/utils/table-sort-field-maps'
 import { SETTINGS_ESCALATIONS_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
 import { StatCard } from '@/shared/components/dashboard/stat-card'
 import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
@@ -42,6 +45,8 @@ import { useTableColumnPreferences } from '@/modules/expert/hooks/use-ui-prefere
 import { useTableExportColumnIds } from '@/shared/hooks/use-table-export-column-ids'
 import { selectPreferredColumns } from '@/modules/expert/utils/select-preferred-columns'
 import { escalationColumns } from './escalation-table-columns'
+
+const ESCALATION_SORT_FIELD_MAP = buildCatalogSortFieldMap(ESCALATIONS_TABLE_COLUMNS_CATALOG)
 
 const ESCALATION_EXPORT_COLUMN_MAP: Record<
   string,
@@ -83,6 +88,10 @@ function EscalationMetricCardSkeleton() {
 export function EscalationDetails() {
   const navigate = useNavigate()
   const [page, setPage] = useState(1)
+  const serverSort = useServerTableSort({
+    sortFieldMap: ESCALATION_SORT_FIELD_MAP,
+    onPageReset: () => setPage(1),
+  })
   const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setPage(1) })
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
   const pageSize = 10
@@ -94,8 +103,9 @@ export function EscalationDetails() {
         page,
         limit: pageSize,
         ...enhancedSearch.buildSearchParams(),
+        ...serverSort.sortParams,
       }),
-    [appliedFilters, enhancedSearch, page],
+    [appliedFilters, enhancedSearch, page, serverSort.sortParams],
   )
   const { data: escalationsResponse, isLoading: isEscalationsLoading } =
     useAllEscalations(listQueryParams)
@@ -169,11 +179,14 @@ export function EscalationDetails() {
     const rawVisibleIds = tableColumnPreferencesQuery.data?.visibleColumnIds?.length
       ? tableColumnPreferencesQuery.data.visibleColumnIds
       : DEFAULT_ESCALATIONS_VISIBLE_COLUMN_IDS
-    return selectPreferredColumns(
-      escalationColumns,
-      rawVisibleIds,
-      DEFAULT_ESCALATIONS_VISIBLE_COLUMN_IDS,
-      ESCALATIONS_LEGACY_COLUMN_ID_MAP,
+    return withServerSortMeta(
+      selectPreferredColumns(
+        escalationColumns,
+        rawVisibleIds,
+        DEFAULT_ESCALATIONS_VISIBLE_COLUMN_IDS,
+        ESCALATIONS_LEGACY_COLUMN_ID_MAP,
+      ),
+      ESCALATION_SORT_FIELD_MAP,
     )
   }, [tableColumnPreferencesQuery.data])
 
@@ -214,6 +227,7 @@ export function EscalationDetails() {
       <DataTable
         columns={columns}
         data={escalations}
+        {...serverSort.dataTableSortProps}
         searchValue={enhancedSearch.globalSearch}
         onSearchChange={enhancedSearch.setGlobalSearch}
         searchableColumns={SETTINGS_ESCALATIONS_SEARCH_COLUMNS}

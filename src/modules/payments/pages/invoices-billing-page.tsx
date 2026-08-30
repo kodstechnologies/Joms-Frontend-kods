@@ -11,7 +11,10 @@ import { useFinanceInvoices } from '@/modules/payments/hooks/use-finance'
 import { formatInr, mapInvoiceToRow } from '@/modules/payments/utils/finance-mappers'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 import { DataTable } from '@/shared/components/table/data-table'
+import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'
 import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
+import { withServerSortMeta } from '@/shared/utils/table-sort'
+import { buildDefaultTableSortFieldMap } from '@/shared/utils/table-sort-field-maps'
 import { FINANCE_INVOICES_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
 import {
   TableActionsDropdown,
@@ -29,6 +32,16 @@ import {
 import { downloadInvoiceDocument, invoiceFromFinanceInvoice } from '@/shared/utils/invoice-document'
 
 const PAGE_SIZE = 10
+
+const SORT_FIELD_MAP = buildDefaultTableSortFieldMap([
+  'invoiceId',
+  'clientName',
+  'amount',
+  'issueDate',
+  'dueDate',
+  'description',
+  'status',
+])
 
 const EXPORT_COLUMN_MAP: Record<string, { header: string; accessor: (row: InvoiceRow) => string }> =
   {
@@ -77,6 +90,10 @@ export function InvoicesBillingPage() {
   const navigate = useNavigate()
   const { logoUrl } = useBranding()
   const [currentPage, setCurrentPage] = useState(1)
+  const serverSort = useServerTableSort({
+    sortFieldMap: SORT_FIELD_MAP,
+    onPageReset: () => setCurrentPage(1),
+  })
   const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setCurrentPage(1) })
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
@@ -88,8 +105,9 @@ export function InvoicesBillingPage() {
         page: currentPage,
         limit: PAGE_SIZE,
         ...enhancedSearch.buildSearchParams(),
+        ...serverSort.sortParams,
       }),
-    [appliedFilters, currentPage, enhancedSearch],
+    [appliedFilters, currentPage, enhancedSearch, serverSort.sortParams],
   )
 
   const { data, isLoading, isFetching, isError } = useFinanceInvoices(listQueryParams)
@@ -228,72 +246,78 @@ export function InvoicesBillingPage() {
   )
 
   const columns = useMemo<ColumnDef<InvoiceRow>[]>(
-    () => [
-      {
-        id: 'select',
-        header: () => (
-          <input
-            type="checkbox"
-            aria-label="Select all invoices"
-            checked={allVisibleSelected}
-            ref={(input) => {
-              if (input) input.indeterminate = someVisibleSelected && !allVisibleSelected
-            }}
-            onChange={toggleVisibleRows}
-            className="rounded border-slate-700 bg-transparent"
-          />
-        ),
-        cell: ({ row }) => (
-          <input
-            type="checkbox"
-            aria-label={`Select ${row.original.clientName}`}
-            checked={selectedRowIds.includes(row.original.id)}
-            onChange={() => toggleRowSelection(row.original.id)}
-            onClick={(event) => event.stopPropagation()}
-            className="rounded border-slate-700 bg-transparent"
-          />
-        ),
-        meta: { headerClassName: 'pl-5', cellClassName: 'pl-5' },
-      },
-      {
-        accessorKey: 'invoiceId',
-        header: 'Invoice ID',
-        cell: ({ row }) => (
-          <span className="text-body-sm-semibold text-brand-text font-mono uppercase">
-            {row.original.invoiceId}
-          </span>
-        ),
-      },
-      { accessorKey: 'clientName', header: 'Client Name' },
-      {
-        accessorKey: 'amount',
-        header: 'Amount',
-        cell: ({ row }) => <span className="font-semibold text-white">{row.original.amount}</span>,
-      },
-      { accessorKey: 'issueDate', header: 'Issue Date' },
-      { accessorKey: 'dueDate', header: 'Due Date' },
-      { accessorKey: 'description', header: 'Description' },
-      {
-        accessorKey: 'status',
-        header: 'Status',
-        cell: ({ row }) => (
-          <span
-            className={cn(
-              'text-body-sm-semibold inline-flex rounded-full border px-2.5 py-0.5',
-              getStatusClassName(row.original.status),
-            )}
-          >
-            {row.original.status}
-          </span>
-        ),
-      },
-      {
-        id: 'actions',
-        header: 'Actions',
-        meta: { headerClassName: 'pr-5 text-right', cellClassName: 'relative pr-5 text-right' },
-        cell: ({ row }) => renderActions(row.original),
-      },
-    ],
+    () =>
+      withServerSortMeta(
+        [
+          {
+            id: 'select',
+            header: () => (
+              <input
+                type="checkbox"
+                aria-label="Select all invoices"
+                checked={allVisibleSelected}
+                ref={(input) => {
+                  if (input) input.indeterminate = someVisibleSelected && !allVisibleSelected
+                }}
+                onChange={toggleVisibleRows}
+                className="rounded border-slate-700 bg-transparent"
+              />
+            ),
+            cell: ({ row }) => (
+              <input
+                type="checkbox"
+                aria-label={`Select ${row.original.clientName}`}
+                checked={selectedRowIds.includes(row.original.id)}
+                onChange={() => toggleRowSelection(row.original.id)}
+                onClick={(event) => event.stopPropagation()}
+                className="rounded border-slate-700 bg-transparent"
+              />
+            ),
+            meta: { headerClassName: 'pl-5', cellClassName: 'pl-5' },
+          },
+          {
+            accessorKey: 'invoiceId',
+            header: 'Invoice ID',
+            cell: ({ row }) => (
+              <span className="text-body-sm-semibold text-brand-text font-mono uppercase">
+                {row.original.invoiceId}
+              </span>
+            ),
+          },
+          { accessorKey: 'clientName', header: 'Client Name' },
+          {
+            accessorKey: 'amount',
+            header: 'Amount',
+            cell: ({ row }) => (
+              <span className="font-semibold text-white">{row.original.amount}</span>
+            ),
+          },
+          { accessorKey: 'issueDate', header: 'Issue Date' },
+          { accessorKey: 'dueDate', header: 'Due Date' },
+          { accessorKey: 'description', header: 'Description' },
+          {
+            accessorKey: 'status',
+            header: 'Status',
+            cell: ({ row }) => (
+              <span
+                className={cn(
+                  'text-body-sm-semibold inline-flex rounded-full border px-2.5 py-0.5',
+                  getStatusClassName(row.original.status),
+                )}
+              >
+                {row.original.status}
+              </span>
+            ),
+          },
+          {
+            id: 'actions',
+            header: 'Actions',
+            meta: { headerClassName: 'pr-5 text-right', cellClassName: 'relative pr-5 text-right' },
+            cell: ({ row }) => renderActions(row.original),
+          },
+        ],
+        SORT_FIELD_MAP,
+      ),
     [
       allVisibleSelected,
       renderActions,
@@ -340,6 +364,7 @@ export function InvoicesBillingPage() {
         columns={columns}
         data={rows}
         getRowId={(row) => row.id}
+        {...serverSort.dataTableSortProps}
         isLoading={isLoading || isFetching}
         searchValue={enhancedSearch.globalSearch}
         onSearchChange={enhancedSearch.setGlobalSearch}

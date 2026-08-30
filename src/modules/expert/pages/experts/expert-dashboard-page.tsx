@@ -117,6 +117,9 @@ function MetricCardSkeleton() {
       <div className="mt-auto pt-6">
         <div className="h-5 w-32 animate-pulse rounded bg-white/5" />
       </div>
+      <div className="mt-auto pt-6">
+        <div className="h-5 w-32 animate-pulse rounded bg-white/5" />
+      </div>
     </div>
   )
 }

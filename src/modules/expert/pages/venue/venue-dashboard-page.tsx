@@ -11,7 +11,7 @@ import {
   YAxis,
 } from 'recharts'
 import { BarChart3, RefreshCw, Star, TrendingDown, TrendingUp, Upload } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
@@ -21,6 +21,7 @@ import {
 } from '@/modules/expert/config/venue-management-table-columns.config'
 import { orderByActiveMetricIds, useActiveMetricIds } from '../../hooks/use-active-metric-ids'
 import { useVenueDashboard } from '../../hooks/use-venue-dashboard'
+import { exportVenueDashboardToExcel } from '../../utils/export-venue-dashboard'
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
 
@@ -340,6 +341,37 @@ export const VenueDashboardPage = () => {
     [dashboardData],
   )
 
+  const handleExportData = useCallback(async () => {
+    if (isLoading) {
+      toast.message('Please wait for data to load')
+      return
+    }
+
+    if (visibleMetrics.length === 0 && trendData.length === 0 && topVenues.length === 0) {
+      toast.error('No data available to export')
+      return
+    }
+
+    const rangeLabel =
+      selectedRange === '3'
+        ? 'Last 3 Months'
+        : selectedRange === '6'
+          ? 'Last 6 Months'
+          : 'Last 12 Months'
+
+    try {
+      await exportVenueDashboardToExcel({
+        rangeLabel,
+        metrics: visibleMetrics,
+        trendPoints: trendData,
+        topVenues,
+      })
+      toast.success('Exported as Excel')
+    } catch {
+      toast.error('Failed to export venue dashboard')
+    }
+  }, [isLoading, selectedRange, topVenues, trendData, visibleMetrics])
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -358,10 +390,7 @@ export const VenueDashboardPage = () => {
             Manage Metrics
           </Button>
 
-          <Button
-            className="ui-export-data h-9"
-            onClick={() => toast.message('Export coming soon')}
-          >
+          <Button className="ui-export-data h-9" onClick={handleExportData}>
             <Upload className="size-4" />
             Export Data
           </Button>

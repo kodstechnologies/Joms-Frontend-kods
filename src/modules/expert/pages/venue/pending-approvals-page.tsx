@@ -20,7 +20,10 @@ import { useVenues } from '../../hooks/use-venues'
 import type { Venue } from '../../type/venue'
 import { getVenueApiId, getVenueDisplayId, getVenueDisplaySpaceId } from '../../utils/venue-list'
 import { DataTable } from '@/shared/components/table/data-table'
+import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'
 import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
+import { withServerSortMeta } from '@/shared/utils/table-sort'
+import { VENUE_PENDING_SORT_FIELDS } from '@/shared/utils/table-sort-field-maps'
 import { VENUE_PENDING_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
 import {
   TableActionsDropdown,
@@ -91,6 +94,10 @@ export function VenuePendingApprovalsPage() {
   const navigate = useNavigate()
   const { allowAddVenues } = useVenueManagementControls()
   const [currentPage, setCurrentPage] = useState(1)
+  const serverSort = useServerTableSort({
+    sortFieldMap: VENUE_PENDING_SORT_FIELDS,
+    onPageReset: () => setCurrentPage(1),
+  })
   const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setCurrentPage(1) })
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [selectedVenueIds, setSelectedVenueIds] = useState<string[]>([])
@@ -103,10 +110,11 @@ export function VenuePendingApprovalsPage() {
       buildVenueListQueryParams(appliedFilters, {
         page: currentPage,
         limit: 10,
+        ...serverSort.sortParams,
         ...enhancedSearch.buildSearchParams(),
         status: 'in_review',
       }),
-    [appliedFilters, currentPage, enhancedSearch],
+    [appliedFilters, currentPage, enhancedSearch, serverSort.sortParams],
   )
 
   const { data, isLoading } = useVenues(venueQueryParams)
@@ -382,7 +390,10 @@ export function VenuePendingApprovalsPage() {
       },
     }
 
-    return [selectColumn, ...preferenceColumns, actionsColumn]
+    return withServerSortMeta(
+      [selectColumn, ...preferenceColumns, actionsColumn],
+      VENUE_PENDING_SORT_FIELDS,
+    )
   }, [
     activeDropdownId,
     allVisibleVenuesSelected,
@@ -452,6 +463,7 @@ export function VenuePendingApprovalsPage() {
         columns={columns}
         data={venues}
         getRowId={(venue) => venue._id}
+        {...serverSort.dataTableSortProps}
         isLoading={isLoading}
         searchValue={enhancedSearch.globalSearch}
         onSearchChange={enhancedSearch.setGlobalSearch}

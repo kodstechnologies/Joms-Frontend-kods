@@ -18,6 +18,8 @@ declare module '@tanstack/react-table' {
   interface ColumnMeta<TData extends RowData, TValue> {
     headerClassName?: string
     cellClassName?: string
+    /** API field used for server-side sorting; defaults to column id */
+    sortField?: string
   }
 }
 
@@ -55,6 +57,10 @@ export type DataTableProps<TData> = {
   showSortIcons?: boolean
   contentClassName?: string
   tone?: 'default' | 'category'
+  /** When true, sorting is handled server-side (no client row reordering). */
+  manualSorting?: boolean
+  sorting?: SortingState
+  onSortingChange?: (updater: SortingState | ((old: SortingState) => SortingState)) => void
   onRowClick?: (row: TData) => void
   /** Column-specific search: searchable column definitions. When provided, the enhanced search bar is shown. */
   searchableColumns?: SearchableColumn[]
@@ -103,13 +109,18 @@ export function DataTable<TData>({
   contentClassName,
   tone = 'default',
   onRowClick,
+  manualSorting = false,
+  sorting: controlledSorting,
+  onSortingChange: controlledOnSortingChange,
   searchableColumns,
   columnSearches,
   onColumnSearchChange,
   onColumnSearchRemove,
   onClearAllSearches,
 }: DataTableProps<TData>) {
-  const [sorting, setSorting] = useState<SortingState>([])
+  const [internalSorting, setInternalSorting] = useState<SortingState>([])
+  const sorting = controlledSorting ?? internalSorting
+  const onSortingChange = controlledOnSortingChange ?? setInternalSorting
 
   // eslint-disable-next-line react-hooks/incompatible-library -- useReactTable is intentionally opted out
   const table = useReactTable({
@@ -119,9 +130,9 @@ export function DataTable<TData>({
     state: {
       sorting,
     },
-    onSortingChange: setSorting,
+    onSortingChange,
     getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
+    ...(manualSorting ? { manualSorting: true } : { getSortedRowModel: getSortedRowModel() }),
   })
 
   const currentPage = Math.min(Math.max(pagination.page, 1), Math.max(pagination.totalPages, 1))
@@ -254,7 +265,22 @@ export function DataTable<TData>({
                         )}
                         onClick={
                           header.column.getCanSort() && showSortIcons
-                            ? header.column.getToggleSortingHandler()
+                            ? () => {
+                                const column = header.column
+                                const columnId = column.id
+                                if (!columnId) return
+
+                                const current = sorting.find((item) => item.id === columnId)
+                                let next: SortingState
+                                if (!current) {
+                                  next = [{ id: columnId, desc: false }]
+                                } else if (!current.desc) {
+                                  next = [{ id: columnId, desc: true }]
+                                } else {
+                                  next = []
+                                }
+                                onSortingChange(next)
+                              }
                             : undefined
                         }
                       >
@@ -263,19 +289,32 @@ export function DataTable<TData>({
                           header.column.id !== 'actions' &&
                           header.column.getCanSort() &&
                           showSortIcons &&
-                          (header.column.getIsSorted() === 'asc' ? (
-                            <ArrowUp
-                              className="text-brand-primary size-[18px]"
-                              aria-hidden="true"
-                            />
-                          ) : header.column.getIsSorted() === 'desc' ? (
-                            <ArrowDown
-                              className="text-brand-primary size-[18px]"
-                              aria-hidden="true"
-                            />
-                          ) : (
-                            <ArrowUpDown className="text-muted/50 size-[18px]" aria-hidden="true" />
-                          ))}
+                          (() => {
+                            const columnId = header.column.id
+                            const sorted = sorting.find((item) => item.id === columnId)
+                            if (sorted?.desc === false) {
+                              return (
+                                <ArrowUp
+                                  className="text-brand-primary size-[18px]"
+                                  aria-hidden="true"
+                                />
+                              )
+                            }
+                            if (sorted?.desc === true) {
+                              return (
+                                <ArrowDown
+                                  className="text-brand-primary size-[18px]"
+                                  aria-hidden="true"
+                                />
+                              )
+                            }
+                            return (
+                              <ArrowUpDown
+                                className="text-muted/50 size-[18px]"
+                                aria-hidden="true"
+                              />
+                            )
+                          })()}
                       </div>
                     )}
                   </th>

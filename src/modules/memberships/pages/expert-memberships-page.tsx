@@ -18,6 +18,7 @@ import { MembershipStatsBar } from '../components/membership-stats-bar'
 import {
   DEFAULT_MEMBERSHIPS_VISIBLE_COLUMN_IDS,
   MEMBERSHIPS_MODULE_KEY,
+  MEMBERSHIPS_TABLE_COLUMNS_CATALOG,
 } from '../config/membership-metrics.config'
 import {
   useCancelSubscription,
@@ -37,7 +38,10 @@ import { SectionHeader } from '@/shared/components/dashboard/section-header'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 import { Button } from '@/shared/components/ui/button'
 import { DataTable } from '@/shared/components/table/data-table'
+import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'
 import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
+import { withServerSortMeta } from '@/shared/utils/table-sort'
+import { buildCatalogSortFieldMap } from '@/shared/utils/table-sort-field-maps'
 import { EXPERT_MEMBERSHIPS_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
 import {
   TableActionsDropdown,
@@ -52,6 +56,8 @@ import {
   buildExpertMembershipsListQueryParams,
   createExpertMembershipsFilteredExportHandler,
 } from '@/shared/utils/export-filter-utils'
+
+const MEMBERSHIP_SORT_FIELD_MAP = buildCatalogSortFieldMap(MEMBERSHIPS_TABLE_COLUMNS_CATALOG)
 
 const EXPORT_COLUMN_MAP: Record<
   string,
@@ -162,6 +168,10 @@ export function ExpertMembershipsPage() {
   const { tagModalOpen, openTagModal, closeTagModal, saveTags, initialTags } = useEntityTags()
 
   const { currentPage, setCurrentPage } = useExpertMembershipStore()
+  const serverSort = useServerTableSort({
+    sortFieldMap: MEMBERSHIP_SORT_FIELD_MAP,
+    onPageReset: () => setCurrentPage(1),
+  })
   const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setCurrentPage(1) })
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
 
@@ -171,8 +181,9 @@ export function ExpertMembershipsPage() {
         page: currentPage,
         limit: 10,
         ...enhancedSearch.buildSearchParams(),
+        ...serverSort.sortParams,
       }),
-    [appliedFilters, currentPage, enhancedSearch],
+    [appliedFilters, currentPage, enhancedSearch, serverSort.sortParams],
   )
 
   const { data, isLoading } = useExpertSubscriptions(listQueryParams)
@@ -311,7 +322,7 @@ export function ExpertMembershipsPage() {
       cell: ({ row }) => renderActions(row.original),
     }
 
-    return [...preferenceColumns, actionsColumn]
+    return withServerSortMeta([...preferenceColumns, actionsColumn], MEMBERSHIP_SORT_FIELD_MAP)
   }, [renderActions, tableColumnPreferencesQuery.data])
 
   return (
@@ -360,6 +371,7 @@ export function ExpertMembershipsPage() {
         onAdvancedFilter={onAdvancedFilter}
         advancedFilterVariant="primary"
         onExport={onExport}
+        {...serverSort.dataTableSortProps}
         pagination={{
           page: currentPage,
           pageSize: meta?.limit ?? 10,

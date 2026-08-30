@@ -1,6 +1,7 @@
 import { useRef, useState, type DragEvent } from 'react'
 import { Upload, X } from 'lucide-react'
 import { toast } from 'sonner'
+import { guardUploadFiles } from '@/shared/lib/upload-file'
 
 import type { ExpertOnboardingFormData } from '../utils/expert-onboarding-form'
 
@@ -18,7 +19,7 @@ export const ExpertGalleryStep = ({ formData, setFormData }: Props) => {
   const addFiles = (files: FileList | null) => {
     if (!files || files.length === 0) return
 
-    const incoming = Array.from(files).filter((file) => file.type.startsWith('image/'))
+    const incoming = guardUploadFiles(files).filter((file) => file.type.startsWith('image/'))
     if (incoming.length === 0) return
 
     setFormData((prev) => {

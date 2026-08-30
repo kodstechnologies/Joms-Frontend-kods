@@ -28,7 +28,10 @@ import { createExpertSelectColumn } from './expert-list-columns'
 import { ExpertListHeader } from './expert-list-shared'
 import { useExpertListSelection } from './use-expert-list-selection'
 import { DataTable } from '@/shared/components/table/data-table'
+import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'
 import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
+import { withServerSortMeta } from '@/shared/utils/table-sort'
+import { EXPERT_COLUMN_SORT_FIELDS } from '@/shared/utils/table-sort-field-maps'
 import { EXPERT_SUSPENDED_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
 import {
   TableActionsDropdown,
@@ -46,6 +49,10 @@ const fetchSuspendedExpertsForExport = async (params: Record<string, unknown>) =
 export function ExpertSuspendedExpertsPage() {
   const navigate = useNavigate()
   const [currentPage, setCurrentPage] = useState(1)
+  const serverSort = useServerTableSort({
+    sortFieldMap: EXPERT_COLUMN_SORT_FIELDS,
+    onPageReset: () => setCurrentPage(1),
+  })
   const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setCurrentPage(1) })
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
@@ -55,10 +62,11 @@ export function ExpertSuspendedExpertsPage() {
       buildExpertListQueryParams(appliedFilters, {
         page: currentPage,
         limit: 10,
+        ...serverSort.sortParams,
         ...enhancedSearch.buildSearchParams(),
         status: 'suspended',
       }),
-    [appliedFilters, currentPage, enhancedSearch],
+    [appliedFilters, currentPage, enhancedSearch, serverSort.sortParams],
   )
 
   const { data, isLoading } = useExperts(expertQueryParams)
@@ -130,60 +138,63 @@ export function ExpertSuspendedExpertsPage() {
       ? tableColumnPreferencesQuery.data.visibleColumnIds
       : DEFAULT_EXPERT_SUSPENDED_VISIBLE_COLUMN_IDS
 
-    return [
-      createExpertSelectColumn({
-        allVisibleSelected: selection.allVisibleSelected,
-        someVisibleSelected: selection.someVisibleSelected,
-        selectedExpertIds: selection.selectedExpertIds,
-        toggleVisible: selection.toggleVisible,
-        toggleOne: selection.toggleOne,
-      }),
-      ...pickPreferenceColumns(
-        dataColumnsById,
-        visibleIds,
-        DEFAULT_EXPERT_SUSPENDED_VISIBLE_COLUMN_IDS,
-      ),
-      {
-        id: 'actions',
-        header: 'Actions',
-        meta: {
-          headerClassName: 'pr-5 text-right',
-          cellClassName: 'relative pr-5 text-right',
-        },
-        cell: ({ row }) => {
-          const expert = row.original
-          const isOpen = activeDropdownId === expert.expertId
+    return withServerSortMeta(
+      [
+        createExpertSelectColumn({
+          allVisibleSelected: selection.allVisibleSelected,
+          someVisibleSelected: selection.someVisibleSelected,
+          selectedExpertIds: selection.selectedExpertIds,
+          toggleVisible: selection.toggleVisible,
+          toggleOne: selection.toggleOne,
+        }),
+        ...pickPreferenceColumns(
+          dataColumnsById,
+          visibleIds,
+          DEFAULT_EXPERT_SUSPENDED_VISIBLE_COLUMN_IDS,
+        ),
+        {
+          id: 'actions',
+          header: 'Actions',
+          meta: {
+            headerClassName: 'pr-5 text-right',
+            cellClassName: 'relative pr-5 text-right',
+          },
+          cell: ({ row }) => {
+            const expert = row.original
+            const isOpen = activeDropdownId === expert.expertId
 
-          return (
-            <TableActionsDropdown
-              label={`Open actions for ${expert.name}`}
-              isOpen={isOpen}
-              onOpenChange={(open) => setActiveDropdownId(open ? expert.expertId : null)}
-              menuWidth={192}
-            >
-              <TableActionsItem
-                icon={<Eye className="size-3.5" aria-hidden="true" />}
-                onClick={() => {
-                  setActiveDropdownId(null)
-                  navigate(`/experts/management/profile/${expert.id}`)
-                }}
+            return (
+              <TableActionsDropdown
+                label={`Open actions for ${expert.name}`}
+                isOpen={isOpen}
+                onOpenChange={(open) => setActiveDropdownId(open ? expert.expertId : null)}
+                menuWidth={192}
               >
-                View Expert
-              </TableActionsItem>
-              <TableActionsItem
-                icon={<PlayCircle className="size-3.5" aria-hidden="true" />}
-                onClick={() => {
-                  setActiveDropdownId(null)
-                  handleActivate(expert)
-                }}
-              >
-                Activate Expert
-              </TableActionsItem>
-            </TableActionsDropdown>
-          )
+                <TableActionsItem
+                  icon={<Eye className="size-3.5" aria-hidden="true" />}
+                  onClick={() => {
+                    setActiveDropdownId(null)
+                    navigate(`/experts/management/profile/${expert.id}`)
+                  }}
+                >
+                  View Expert
+                </TableActionsItem>
+                <TableActionsItem
+                  icon={<PlayCircle className="size-3.5" aria-hidden="true" />}
+                  onClick={() => {
+                    setActiveDropdownId(null)
+                    handleActivate(expert)
+                  }}
+                >
+                  Activate Expert
+                </TableActionsItem>
+              </TableActionsDropdown>
+            )
+          },
         },
-      },
-    ]
+      ],
+      EXPERT_COLUMN_SORT_FIELDS,
+    )
   }, [activeDropdownId, handleActivate, navigate, selection, tableColumnPreferencesQuery.data])
 
   return (
@@ -209,6 +220,7 @@ export function ExpertSuspendedExpertsPage() {
         searchPlaceholder="Search by name or ID"
         onAdvancedFilter={onAdvancedFilter}
         onExport={onExport}
+        {...serverSort.dataTableSortProps}
         pagination={{
           page: currentPage,
           pageSize: meta?.pagination.limit || 10,

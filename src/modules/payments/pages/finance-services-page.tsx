@@ -38,7 +38,10 @@ import {
   type FinanceEscalateDeleteAction,
 } from '@/modules/payments/components/finance-escalate-delete-modal'
 import { DataTable } from '@/shared/components/table/data-table'
+import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'
 import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
+import { withServerSortMeta } from '@/shared/utils/table-sort'
+import { buildCatalogSortFieldMap } from '@/shared/utils/table-sort-field-maps'
 import { FINANCE_SERVICES_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
 import {
   TableActionsDropdown,
@@ -56,6 +59,8 @@ import type { FilterValues } from '@/shared/types/data-filter'
 
 const PAGE_SIZE = 10
 
+const SORT_FIELD_MAP = buildCatalogSortFieldMap(FINANCE_SERVICES_TABLE_COLUMNS_CATALOG)
+
 function getStatusClassName(status: FinanceServiceRow['status']) {
   if (status === 'Paid') {
     return 'border-brand-positive/25 bg-brand-positive/10 text-brand-positive'
@@ -68,6 +73,10 @@ export function FinanceServicesPage() {
   const queryClient = useQueryClient()
   const [activeTab, setActiveTab] = useState<FinanceServiceTab>('all')
   const [currentPage, setCurrentPage] = useState(1)
+  const serverSort = useServerTableSort({
+    sortFieldMap: SORT_FIELD_MAP,
+    onPageReset: () => setCurrentPage(1),
+  })
   const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setCurrentPage(1) })
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
@@ -97,9 +106,10 @@ export function FinanceServicesPage() {
         page: currentPage,
         limit: PAGE_SIZE,
         ...enhancedSearch.buildSearchParams(),
+        ...serverSort.sortParams,
         tab: activeTab,
       }),
-    [activeTab, appliedFilters, currentPage, enhancedSearch],
+    [activeTab, appliedFilters, currentPage, enhancedSearch, serverSort.sortParams],
   )
 
   const revenueQuery = useFinanceRevenue(listQueryParams, !isEscrowTab)
@@ -417,7 +427,7 @@ export function FinanceServicesPage() {
       cell: ({ row }) => renderActions(row.original),
     }
 
-    return [selectColumn, ...preferenceColumns, actionsColumn]
+    return withServerSortMeta([selectColumn, ...preferenceColumns, actionsColumn], SORT_FIELD_MAP)
   }, [
     allVisibleSelected,
     renderActions,
@@ -475,6 +485,7 @@ export function FinanceServicesPage() {
         columns={columns}
         data={liveRows}
         getRowId={(row) => row.id}
+        {...serverSort.dataTableSortProps}
         isLoading={isLoading || isFetching}
         searchValue={enhancedSearch.globalSearch}
         onSearchChange={enhancedSearch.setGlobalSearch}

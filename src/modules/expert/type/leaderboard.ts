@@ -131,4 +131,5 @@ export type ExpertLeaderboardQuery = {
   revenueMax?: number | string
   serviceType?: string
   sortBy?: string
+  sortOrder?: 'asc' | 'desc'
 }

@@ -57,7 +57,7 @@ describe('assertFileWithinUploadLimit', () => {
   })
 
   it('rejects an oversized file', () => {
-    expect(() => assertFileWithinUploadLimit({ size: 51 * 1024 * 1024 } as File)).toThrow(
+    expect(() => assertFileWithinUploadLimit({ size: 101 * 1024 * 1024 } as File)).toThrow(
       /Maximum upload/,
     )
   })

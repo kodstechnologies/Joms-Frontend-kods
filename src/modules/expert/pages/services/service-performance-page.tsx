@@ -7,7 +7,10 @@ import { toast } from 'sonner'
 import { Button } from '@/shared/components/ui/button'
 import { StatCard } from '@/shared/components/dashboard/stat-card'
 import { DataTable } from '@/shared/components/table/data-table'
+import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'
 import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
+import { withServerSortMeta } from '@/shared/utils/table-sort'
+import { SERVICE_COLUMN_SORT_FIELDS } from '@/shared/utils/table-sort-field-maps'
 import { SERVICE_PERFORMANCE_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
 import {
   TableActionsDropdown,
@@ -71,6 +74,10 @@ export function ServicePerformancePage() {
   const navigate = useNavigate()
 
   const [page, setPage] = useState(1)
+  const serverSort = useServerTableSort({
+    sortFieldMap: SERVICE_COLUMN_SORT_FIELDS,
+    onPageReset: () => setPage(1),
+  })
   const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setPage(1) })
   const [appliedFilters, setAppliedFilters] = useState<ServiceOrdersQuery>({})
   const [activeActionMenu, setActiveActionMenu] = useState<string | null>(null)
@@ -82,6 +89,7 @@ export function ServicePerformancePage() {
   const ordersQuery = useServiceOrders(serviceId, {
     page,
     limit: PAGE_SIZE,
+    ...serverSort.sortParams,
     ...enhancedSearch.buildSearchParams(),
     ...appliedFilters,
   })
@@ -506,7 +514,7 @@ export function ServicePerformancePage() {
       },
     }
 
-    return [...preferenceColumns, actionsColumn]
+    return withServerSortMeta([...preferenceColumns, actionsColumn], SERVICE_COLUMN_SORT_FIELDS)
   }, [activeActionMenu, dataColumnsById, openOrderDetail, tableColumnPreferencesQuery.data])
 
   const serviceTitle = performance?.service.title || ordersData?.service.title || 'Service'
@@ -608,6 +616,7 @@ export function ServicePerformancePage() {
         onAdvancedFilter={onAdvancedFilter}
         onExport={onExport}
         onRowClick={openOrderDetail}
+        {...serverSort.dataTableSortProps}
         pagination={{
           page,
           pageSize: PAGE_SIZE,

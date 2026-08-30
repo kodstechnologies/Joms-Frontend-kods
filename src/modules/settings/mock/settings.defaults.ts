@@ -159,7 +159,7 @@ export const securityDefaults: SecuritySettings = {
     requireSpecialChar: true,
   },
   mfa: {
-    requireForAllAdmins: true,
+    requireForAllSubAdmins: true,
     authenticatorApp: true,
     smsOtp: true,
     emailOtp: true,

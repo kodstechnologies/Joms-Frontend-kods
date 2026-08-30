@@ -47,6 +47,9 @@ import {
   pickServicePreferenceColumns,
 } from '../../utils/service-preference-columns'
 import { DataTable } from '@/shared/components/table/data-table'
+import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'
+import { withServerSortMeta } from '@/shared/utils/table-sort'
+import { SERVICE_COLUMN_SORT_FIELDS } from '@/shared/utils/table-sort-field-maps'
 import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
 import { SERVICE_MANAGEMENT_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
 import {
@@ -270,6 +273,10 @@ export const ServiceManagementPage = () => {
 
   const navigate = useNavigate()
   const { currentPage, setCurrentPage, activeStatus, setActiveStatus } = useServiceStore()
+  const serverSort = useServerTableSort({
+    sortFieldMap: SERVICE_COLUMN_SORT_FIELDS,
+    onPageReset: () => setCurrentPage(1),
+  })
   const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setCurrentPage(1) })
 
   const handleApplyFilters = useCallback(
@@ -311,10 +318,11 @@ export const ServiceManagementPage = () => {
       buildServiceListQueryParams(appliedAdvancedFilters, {
         page: currentPage,
         limit: 10,
+        ...serverSort.sortParams,
         ...enhancedSearch.buildSearchParams(),
         status: activeStatus !== 'all' ? activeStatus : undefined,
       }),
-    [appliedAdvancedFilters, activeStatus, currentPage, enhancedSearch],
+    [appliedAdvancedFilters, activeStatus, currentPage, enhancedSearch, serverSort.sortParams],
   )
 
   const { data, isLoading } = useServices(serviceQueryParams)
@@ -779,7 +787,10 @@ export const ServiceManagementPage = () => {
       },
     }
 
-    return [selectColumn, ...preferenceColumns, actionsColumn]
+    return withServerSortMeta(
+      [selectColumn, ...preferenceColumns, actionsColumn],
+      SERVICE_COLUMN_SORT_FIELDS,
+    )
   }, [
     activeDropdownId,
     allVisibleServicesSelected,
@@ -1002,6 +1013,7 @@ export const ServiceManagementPage = () => {
         data={services}
         getRowId={(service) => service._id}
         isLoading={isLoading}
+        {...serverSort.dataTableSortProps}
         searchValue={enhancedSearch.globalSearch}
         onSearchChange={enhancedSearch.setGlobalSearch}
         searchableColumns={SERVICE_MANAGEMENT_SEARCH_COLUMNS}

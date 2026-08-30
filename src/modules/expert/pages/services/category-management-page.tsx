@@ -13,7 +13,10 @@ import {
 } from '../../config/service-category-management-table-columns.config'
 import { useTableExportColumnIds } from '@/shared/hooks/use-table-export-column-ids'
 import { DataTable } from '@/shared/components/table/data-table'
+import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'
 import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
+import { withServerSortMeta } from '@/shared/utils/table-sort'
+import { buildCatalogSortFieldMap } from '@/shared/utils/table-sort-field-maps'
 import { SERVICE_CATEGORY_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 import { SERVICE_CATEGORY_EXPORT_COLUMN_MAP } from '../../utils/table-export-column-maps'
@@ -44,6 +47,10 @@ import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
 
 const PAGE_SIZE = 10
 
+const SERVICE_CATEGORY_COLUMN_SORT_FIELDS = buildCatalogSortFieldMap(
+  SERVICE_CATEGORY_MANAGEMENT_TABLE_COLUMNS_CATALOG,
+)
+
 const normalizeServiceColumnIds = (ids: string[]) =>
   ids.map((id) => SERVICE_CATEGORY_LEGACY_COLUMN_ID_MAP[id] ?? id)
 
@@ -54,6 +61,10 @@ const DEFAULT_VISIBLE_IDS = DEFAULT_SERVICE_CATEGORY_MANAGEMENT_VISIBLE_COLUMN_I
 
 export function CategoryManagementPage() {
   const [page, setPage] = useState(1)
+  const serverSort = useServerTableSort({
+    sortFieldMap: SERVICE_CATEGORY_COLUMN_SORT_FIELDS,
+    onPageReset: () => setPage(1),
+  })
   const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setPage(1) })
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
 
@@ -81,10 +92,11 @@ export function CategoryManagementPage() {
       buildCategoryListQueryParams(appliedFilters, {
         page,
         limit: PAGE_SIZE,
+        ...serverSort.sortParams,
         ...enhancedSearch.buildSearchParams(),
         status: 'ACTIVE',
       }),
-    [appliedFilters, enhancedSearch, page],
+    [appliedFilters, enhancedSearch, page, serverSort.sortParams],
   )
 
   const { data, isLoading, isError } = useServiceCategories(categoryQueryParams)
@@ -240,7 +252,10 @@ export function CategoryManagementPage() {
       .filter(Boolean)
     const actionsColumn = dataColumnsById.actions
 
-    return actionsColumn ? [...selectedDataColumns, actionsColumn] : selectedDataColumns
+    return withServerSortMeta(
+      actionsColumn ? [...selectedDataColumns, actionsColumn] : selectedDataColumns,
+      SERVICE_CATEGORY_COLUMN_SORT_FIELDS,
+    )
   }, [preferencesQuery.data])
 
   return (
@@ -280,6 +295,7 @@ export function CategoryManagementPage() {
         searchPlaceholder="Search by name or ID"
         onAdvancedFilter={onAdvancedFilter}
         onExport={onExport}
+        {...serverSort.dataTableSortProps}
         isLoading={isLoading}
         pagination={{
           page,

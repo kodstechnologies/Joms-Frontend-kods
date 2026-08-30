@@ -218,6 +218,17 @@ export async function listPartnerServiceProjects(
   return (res.data?.data || []) as ServiceProjectCard[]
 }
 
+export async function listPartnerServiceProjectsWithUser(
+  token: string,
+  userId: string,
+  status: ServiceProjectStatus = 'all',
+) {
+  const res = await client(token).get(`/quotations/projects/services/with-user/${userId}`, {
+    params: { status, page: 1, limit: 50 },
+  })
+  return (res.data?.data || []) as ServiceProjectCard[]
+}
+
 export async function getQuotationDetail(token: string, id: string) {
   const res = await client(token).get(`/quotations/${id}`)
   return res.data?.data as {

@@ -11,6 +11,7 @@ import { exportDisplayValue } from '@/shared/utils/export-utils'
 import {
   buildServiceListQueryParams,
   createServiceFilteredExportHandler,
+  exportMappedItemsToFile,
 } from '@/shared/utils/export-filter-utils'
 import { fetchServices } from '../../api/service-api'
 import { SERVICE_DELETED_MODULE_KEY } from '../../api/ui-preferences-api'
@@ -25,7 +26,10 @@ import {
   pickServicePreferenceColumns,
 } from '../../utils/service-preference-columns'
 import { DataTable } from '@/shared/components/table/data-table'
+import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'
 import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
+import { withServerSortMeta } from '@/shared/utils/table-sort'
+import { SERVICE_COLUMN_SORT_FIELDS } from '@/shared/utils/table-sort-field-maps'
 import { SERVICE_DELETED_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
 import {
   TableActionsDropdown,
@@ -67,6 +71,10 @@ const EXPORT_COLUMN_MAP: Record<string, { header: string; accessor: (s: Service)
 export function DeletedServicesPage() {
   const navigate = useNavigate()
   const [currentPage, setCurrentPage] = useState(1)
+  const serverSort = useServerTableSort({
+    sortFieldMap: SERVICE_COLUMN_SORT_FIELDS,
+    onPageReset: () => setCurrentPage(1),
+  })
   const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setCurrentPage(1) })
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
@@ -77,10 +85,11 @@ export function DeletedServicesPage() {
       buildServiceListQueryParams(appliedFilters, {
         page: currentPage,
         limit: 10,
+        ...serverSort.sortParams,
         ...enhancedSearch.buildSearchParams(),
         status: 'deleted',
       }),
-    [appliedFilters, currentPage, enhancedSearch],
+    [appliedFilters, currentPage, enhancedSearch, serverSort.sortParams],
   )
 
   const { data, isLoading } = useServices(serviceQueryParams)
@@ -93,6 +102,31 @@ export function DeletedServicesPage() {
     setAppliedFilters(values)
     setCurrentPage(1)
   }, [])
+
+  const handleExportServiceRow = useCallback(
+    async (service: Service) => {
+      const visibleIds = tableColumnPreferencesQuery.data?.visibleColumnIds?.length
+        ? tableColumnPreferencesQuery.data.visibleColumnIds
+        : DEFAULT_SERVICE_DELETED_VISIBLE_COLUMN_IDS
+
+      try {
+        await exportMappedItemsToFile(
+          EXPORT_COLUMN_MAP,
+          [service],
+          'excel',
+          `deleted_service_${service.serviceid || service._id}`,
+          {
+            columnIds: visibleIds,
+            catalogOrder: DEFAULT_SERVICE_DELETED_VISIBLE_COLUMN_IDS,
+          },
+        )
+        toast.success('Service exported')
+      } catch {
+        toast.error('Failed to export service')
+      }
+    },
+    [tableColumnPreferencesQuery.data],
+  )
 
   const handleExportData = useMemo(
     () =>
@@ -137,61 +171,70 @@ export function DeletedServicesPage() {
       ? tableColumnPreferencesQuery.data.visibleColumnIds
       : DEFAULT_SERVICE_DELETED_VISIBLE_COLUMN_IDS
 
-    return [
-      ...pickServicePreferenceColumns(
-        dataColumnsById,
-        visibleIds,
-        DEFAULT_SERVICE_DELETED_VISIBLE_COLUMN_IDS,
-      ),
-      {
-        id: 'actions',
-        accessorFn: () => null,
-        header: 'Actions',
-        meta: { headerClassName: 'pr-5 text-right', cellClassName: 'relative pr-5 text-right' },
-        cell: ({ row }) => {
-          const service = row.original
-          const isOpen = activeDropdownId === service._id
+    return withServerSortMeta(
+      [
+        ...pickServicePreferenceColumns(
+          dataColumnsById,
+          visibleIds,
+          DEFAULT_SERVICE_DELETED_VISIBLE_COLUMN_IDS,
+        ),
+        {
+          id: 'actions',
+          accessorFn: () => null,
+          header: 'Actions',
+          meta: { headerClassName: 'pr-5 text-right', cellClassName: 'relative pr-5 text-right' },
+          cell: ({ row }) => {
+            const service = row.original
+            const isOpen = activeDropdownId === service._id
 
-          return (
-            <TableActionsDropdown
-              label={`Open actions for ${service.title}`}
-              isOpen={isOpen}
-              onOpenChange={(open) => setActiveDropdownId(open ? service._id : null)}
-              menuWidth={192}
-            >
-              <TableActionsItem
-                icon={<Eye className="size-3.5" />}
-                onClick={() => {
-                  setActiveDropdownId(null)
-                  navigate(getServiceManagementViewPath(service))
-                }}
+            return (
+              <TableActionsDropdown
+                label={`Open actions for ${service.title}`}
+                isOpen={isOpen}
+                onOpenChange={(open) => setActiveDropdownId(open ? service._id : null)}
+                menuWidth={192}
               >
-                View Details
-              </TableActionsItem>
-              <TableActionsItem
-                icon={<RotateCcw className="size-3.5" />}
-                onClick={() => {
-                  setActiveDropdownId(null)
-                  handleRestore(service)
-                }}
-              >
-                Restore Service
-              </TableActionsItem>
-              <TableActionsItem
-                icon={<Upload className="size-3.5" />}
-                onClick={() => {
-                  setActiveDropdownId(null)
-                  toast.message('Export Data is coming soon')
-                }}
-              >
-                Export Data
-              </TableActionsItem>
-            </TableActionsDropdown>
-          )
+                <TableActionsItem
+                  icon={<Eye className="size-3.5" />}
+                  onClick={() => {
+                    setActiveDropdownId(null)
+                    navigate(getServiceManagementViewPath(service))
+                  }}
+                >
+                  View Details
+                </TableActionsItem>
+                <TableActionsItem
+                  icon={<RotateCcw className="size-3.5" />}
+                  onClick={() => {
+                    setActiveDropdownId(null)
+                    handleRestore(service)
+                  }}
+                >
+                  Restore Service
+                </TableActionsItem>
+                <TableActionsItem
+                  icon={<Upload className="size-3.5" />}
+                  onClick={() => {
+                    setActiveDropdownId(null)
+                    void handleExportServiceRow(service)
+                  }}
+                >
+                  Export Data
+                </TableActionsItem>
+              </TableActionsDropdown>
+            )
+          },
         },
-      },
-    ]
-  }, [activeDropdownId, handleRestore, navigate, tableColumnPreferencesQuery.data])
+      ],
+      SERVICE_COLUMN_SORT_FIELDS,
+    )
+  }, [
+    activeDropdownId,
+    handleExportServiceRow,
+    handleRestore,
+    navigate,
+    tableColumnPreferencesQuery.data,
+  ])
 
   return (
     <div className="flex flex-col gap-5 md:gap-6">
@@ -243,6 +286,7 @@ export function DeletedServicesPage() {
         onClearAllSearches={enhancedSearch.clearAll}
         onAdvancedFilter={onAdvancedFilter}
         onExport={onExport}
+        {...serverSort.dataTableSortProps}
         searchPlaceholder="Search by name, ID or profession"
         pagination={{
           page: currentPage,

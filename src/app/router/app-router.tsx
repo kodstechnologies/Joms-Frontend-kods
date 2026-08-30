@@ -314,17 +314,6 @@ const CategoryHubPage = lazy(() =>
     default: m.CategoryHubPage,
   })),
 )
-const SystemConfigurationPage = lazy(() =>
-  import('@/modules/settings').then((m) => ({
-    default: m.SystemConfigurationPage,
-  })),
-)
-
-const ApiKeyManagementPage = lazy(() =>
-  import('@/modules/settings').then((m) => ({
-    default: m.ApiKeyManagementPage,
-  })),
-)
 const PolicyManagementPage = lazy(() =>
   import('@/modules/settings').then((m) => ({
     default: m.PolicyManagementPage,
@@ -938,8 +927,6 @@ export function AppRouter() {
                 <Route path="/settings/policies/:id" element={<PolicyDetailPage />} />
                 <Route path="/settings/templates" element={<TemplatesPage />} />
                 <Route path="/settings/categories" element={<CategoryHubPage />} />
-                <Route path="/settings/system" element={<SystemConfigurationPage />} />
-                <Route path="/settings/api-keys" element={<ApiKeyManagementPage />} />
               </Route>
 
               <Route element={<PermissionRoute permission="settings.rbac_management" />}>

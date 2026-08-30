@@ -22,8 +22,10 @@ import {
 } from '../api/service-order.api'
 import {
   listMyConsultationBookings,
+  testStartConsultationJoinWindow,
   type ConsultationBooking,
 } from '../api/consultation-booking.api'
+import { loadPartnerAccessToken } from '../api/partner-auth.api'
 import {
   payConsultationBookingWithRazorpay,
   payPaymentRequestWithRazorpay,
@@ -165,6 +167,8 @@ export function UserQuotationPanel({ user }: Props) {
   const [ok, setOk] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [loadingOfferings, setLoadingOfferings] = useState(false)
+  const [partnerToken, setPartnerToken] = useState(loadPartnerAccessToken)
+  const [joinWindowBookingId, setJoinWindowBookingId] = useState<string | null>(null)
 
   const allOfferings = useMemo(() => [...services, ...consultations], [services, consultations])
 
@@ -806,6 +810,16 @@ export function UserQuotationPanel({ user }: Props) {
             Refresh
           </button>
         </div>
+        <p className="mb-3 rounded-lg border border-zinc-700 bg-zinc-900/60 px-3 py-2 text-[11px] text-zinc-400">
+          First run: book a slot above and pay once. For repeat join testing, reuse a{' '}
+          <strong className="text-zinc-300">paid</strong> booking —{' '}
+          <strong className="text-zinc-300">Start join window (test)</strong> moves the slot to now
+          (partner-only API; paste partner JWT). Then open{' '}
+          <a href="/dev/chat-partner" className="text-sky-300 hover:underline">
+            partner chat-test
+          </a>{' '}
+          and tap Join.
+        </p>
         <ul className="space-y-2">
           {consultationBookings.map((booking) => (
             <li
@@ -823,38 +837,99 @@ export function UserQuotationPanel({ user }: Props) {
                   </>
                 ) : null}
               </div>
-              {booking.paymentStatus === 'pending' ? (
-                <button
-                  type="button"
-                  disabled={loading}
-                  className="mt-2 rounded border border-violet-500 px-2 py-1 text-[11px] text-violet-300 disabled:opacity-50"
-                  onClick={() =>
-                    void (async () => {
-                      setLoading(true)
-                      try {
-                        const verified = await payConsultationBookingWithRazorpay(
-                          user.accessToken,
-                          booking._id,
-                        )
-                        setOk(`Consultation Razorpay paid (${verified.status})`)
-                        await refresh()
-                      } catch (err) {
-                        setError(errMessage(err))
-                      } finally {
-                        setLoading(false)
-                      }
-                    })()
-                  }
-                >
-                  Pay with Razorpay
-                </button>
-              ) : null}
+              <div className="mt-2 flex flex-wrap gap-2">
+                {booking.paymentStatus === 'pending' ? (
+                  <button
+                    type="button"
+                    disabled={loading}
+                    className="rounded border border-violet-500 px-2 py-1 text-[11px] text-violet-300 disabled:opacity-50"
+                    onClick={() =>
+                      void (async () => {
+                        setLoading(true)
+                        try {
+                          const verified = await payConsultationBookingWithRazorpay(
+                            user.accessToken,
+                            booking._id,
+                          )
+                          setOk(`Consultation Razorpay paid (${verified.status})`)
+                          await refresh()
+                        } catch (err) {
+                          setError(errMessage(err))
+                        } finally {
+                          setLoading(false)
+                        }
+                      })()
+                    }
+                  >
+                    Pay with Razorpay
+                  </button>
+                ) : null}
+                {booking.paymentStatus === 'paid' ? (
+                  <button
+                    type="button"
+                    disabled={
+                      loading || joinWindowBookingId === booking._id || !partnerToken.trim()
+                    }
+                    className="rounded border border-violet-500 px-2 py-1 text-[11px] text-violet-300 disabled:opacity-50"
+                    title={
+                      partnerToken.trim()
+                        ? 'Shift slot to now so partner can join'
+                        : 'Paste partner JWT below first'
+                    }
+                    onClick={() =>
+                      void (async () => {
+                        if (!partnerToken.trim()) {
+                          setError(
+                            'Paste partner JWT (from /dev/chat-partner login) to open join window',
+                          )
+                          return
+                        }
+                        setJoinWindowBookingId(booking._id)
+                        setLoading(true)
+                        setError(null)
+                        try {
+                          const updated = await testStartConsultationJoinWindow(
+                            partnerToken.trim(),
+                            booking._id,
+                          )
+                          setOk(
+                            `Join window opened · slot now ${new Date(updated.startAt).toLocaleTimeString()} — partner can Join on /dev/chat-partner`,
+                          )
+                          await refresh()
+                        } catch (err) {
+                          setError(errMessage(err))
+                        } finally {
+                          setJoinWindowBookingId(null)
+                          setLoading(false)
+                        }
+                      })()
+                    }
+                  >
+                    {joinWindowBookingId === booking._id
+                      ? 'Opening join window…'
+                      : 'Start join window (test)'}
+                  </button>
+                ) : null}
+              </div>
             </li>
           ))}
           {!consultationBookings.length ? (
             <li className="text-xs text-zinc-500">No consultation bookings yet</li>
           ) : null}
         </ul>
+        {consultationBookings.some((b) => b.paymentStatus === 'paid') ? (
+          <label className="mt-3 block space-y-1 text-xs">
+            <span className="tracking-wide text-zinc-500 uppercase">
+              Partner JWT (for test join)
+            </span>
+            <textarea
+              className="min-h-14 w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 font-mono text-[11px]"
+              value={partnerToken}
+              onChange={(e) => setPartnerToken(e.target.value)}
+              placeholder="From /dev/chat-partner login, or joms_dev_partner_chat in localStorage"
+            />
+          </label>
+        ) : null}
       </div>
 
       <div className="border-t border-zinc-800 pt-3">

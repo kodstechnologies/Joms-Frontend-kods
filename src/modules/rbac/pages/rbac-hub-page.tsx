@@ -45,7 +45,10 @@ import { fetchRoleUsers, fetchRoles, fetchSubAdmins } from '../api/rbac-api'
 import { useRbacStore } from '../store/rbac-store'
 import type { Role, SubAdmin } from '../types/rbac'
 import { DataTable } from '@/shared/components/table/data-table'
+import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'
 import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
+import { withServerSortMeta } from '@/shared/utils/table-sort'
+import { buildCatalogSortFieldMap } from '@/shared/utils/table-sort-field-maps'
 import {
   RBAC_ROLE_SEARCH_COLUMNS,
   RBAC_USER_SEARCH_COLUMNS,
@@ -140,12 +143,23 @@ const formatRiskLevel = (value?: string) => {
     .join(' ')
 }
 
+const ROLES_SORT_FIELD_MAP = buildCatalogSortFieldMap(RBAC_HUB_ROLES_TABLE_COLUMNS_CATALOG)
+const USERS_SORT_FIELD_MAP = buildCatalogSortFieldMap(RBAC_HUB_USERS_TABLE_COLUMNS_CATALOG)
+
 export function RbacHubPage() {
   const navigate = useNavigate()
   const { activeTab, setActiveTab, currentPage, setCurrentPage, roleFilterId, setRoleFilterId } =
     useRbacStore()
 
   const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setCurrentPage(1) })
+  const rolesServerSort = useServerTableSort({
+    sortFieldMap: ROLES_SORT_FIELD_MAP,
+    onPageReset: () => setCurrentPage(1),
+  })
+  const usersServerSort = useServerTableSort({
+    sortFieldMap: USERS_SORT_FIELD_MAP,
+    onPageReset: () => setCurrentPage(1),
+  })
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [passwordResetUser, setPasswordResetUser] = useState<SubAdmin | null>(null)
 
@@ -157,6 +171,7 @@ export function RbacHubPage() {
   const { data: rolesData, isLoading: rolesLoading } = useRoles({
     ...apiFilterParams,
     ...enhancedSearch.buildSearchParams(),
+    ...rolesServerSort.sortParams,
     page: currentPage,
     limit: 10,
   })
@@ -164,6 +179,7 @@ export function RbacHubPage() {
     {
       ...apiFilterParams,
       ...enhancedSearch.buildSearchParams(),
+      ...usersServerSort.sortParams,
       page: currentPage,
       limit: 10,
     },
@@ -174,6 +190,7 @@ export function RbacHubPage() {
     {
       ...apiFilterParams,
       ...enhancedSearch.buildSearchParams(),
+      ...usersServerSort.sortParams,
       page: currentPage,
       limit: 10,
     },
@@ -506,7 +523,7 @@ export function RbacHubPage() {
       ),
     }
 
-    return [...preferenceColumns, actionsColumn]
+    return withServerSortMeta([...preferenceColumns, actionsColumn], ROLES_SORT_FIELD_MAP)
   }, [
     activeDropdownId,
     handleDeleteRole,
@@ -650,7 +667,7 @@ export function RbacHubPage() {
       ),
     }
 
-    return [...preferenceColumns, actionsColumn]
+    return withServerSortMeta([...preferenceColumns, actionsColumn], USERS_SORT_FIELD_MAP)
   }, [
     activeDropdownId,
     handleDeleteUser,
@@ -755,6 +772,7 @@ export function RbacHubPage() {
           columns={roleColumns}
           data={roles}
           getRowId={(row) => row.id}
+          {...rolesServerSort.dataTableSortProps}
           isLoading={isLoading}
           searchValue={enhancedSearch.globalSearch}
           onSearchChange={enhancedSearch.setGlobalSearch}
@@ -782,6 +800,7 @@ export function RbacHubPage() {
           columns={userColumns}
           data={subAdmins}
           getRowId={(row) => row.id}
+          {...usersServerSort.dataTableSortProps}
           isLoading={isLoading}
           searchValue={enhancedSearch.globalSearch}
           onSearchChange={enhancedSearch.setGlobalSearch}

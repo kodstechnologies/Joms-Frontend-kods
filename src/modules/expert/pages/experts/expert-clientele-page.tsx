@@ -22,7 +22,10 @@ import { buildExpertClienteleMetricCards } from '../../utils/expert-clientele-me
 import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
 import { Button } from '@/shared/components/ui/button'
 import { DataTable } from '@/shared/components/table/data-table'
+import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'
 import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
+import { withServerSortMeta } from '@/shared/utils/table-sort'
+import { buildDefaultTableSortFieldMap } from '@/shared/utils/table-sort-field-maps'
 import { EXPERT_CLIENTELE_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
 import {
   TableActionsDropdown,
@@ -113,6 +116,10 @@ const EMPTY_METRICS: Metrics = {
 }
 
 const EMPTY_CLIENTELE_ITEMS: ClienteleItem[] = []
+
+const EXPERT_CLIENTELE_COLUMN_SORT_FIELDS = buildDefaultTableSortFieldMap(
+  EXPERT_CLIENTELE_TABLE_COLUMNS_CATALOG.map((column) => column.id),
+)
 
 const CLIENTELE_EXPORT_COLUMN_MAP: Record<
   string,
@@ -224,6 +231,10 @@ export function ExpertClientelePage() {
   const expertId = id || ''
 
   const [page, setPage] = useState(1)
+  const serverSort = useServerTableSort({
+    sortFieldMap: EXPERT_CLIENTELE_COLUMN_SORT_FIELDS,
+    onPageReset: () => setPage(1),
+  })
   const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setPage(1) })
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
   const [activeActionMenu, setActiveActionMenu] = useState<string | null>(null)
@@ -233,9 +244,10 @@ export function ExpertClientelePage() {
       buildPrefixedListQueryParams(appliedFilters, {
         page,
         limit: 10,
+        ...serverSort.sortParams,
         ...enhancedSearch.buildSearchParams(),
       }),
-    [appliedFilters, enhancedSearch, page],
+    [appliedFilters, enhancedSearch, page, serverSort.sortParams],
   )
 
   const handleApplyFilters = useCallback((values: FilterValues) => {
@@ -578,7 +590,10 @@ export function ExpertClientelePage() {
       },
     }
 
-    return [...preferenceColumns, actionsColumn]
+    return withServerSortMeta(
+      [...preferenceColumns, actionsColumn],
+      EXPERT_CLIENTELE_COLUMN_SORT_FIELDS,
+    )
   }, [
     activeActionMenu,
     dataColumnsById,
@@ -655,6 +670,7 @@ export function ExpertClientelePage() {
         onAdvancedFilter={onAdvancedFilter}
         advancedFilterVariant="primary"
         onExport={onExport}
+        {...serverSort.dataTableSortProps}
         pagination={{
           page,
           pageSize: 10,

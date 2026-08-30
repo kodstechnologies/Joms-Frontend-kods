@@ -60,6 +60,19 @@ export function clearPartnerSession() {
   sessionStorage.removeItem(PARTNER_SESSION_KEY)
 }
 
+/** Partner JWT from chat-test login (localStorage / sessionStorage). */
+export function loadPartnerAccessToken() {
+  try {
+    const raw =
+      localStorage.getItem(PARTNER_SESSION_KEY) || sessionStorage.getItem(PARTNER_SESSION_KEY)
+    if (!raw) return ''
+    const parsed = JSON.parse(raw) as { accessToken?: string }
+    return parsed.accessToken || ''
+  } catch {
+    return ''
+  }
+}
+
 /** Re-login using harness-saved partner creds (invalidates other partner tabs). */
 export async function refreshPartnerFromStoredCreds(): Promise<PartnerLoginResult> {
   const raw = localStorage.getItem(PARTNER_CREDS_KEY)

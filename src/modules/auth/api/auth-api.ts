@@ -10,8 +10,31 @@ export type VerifyOtpPayload = {
   otp: string
 }
 
+export type AdminSessionUser = {
+  id: string
+  email: string
+  fullname: string
+  kind: 'superadmin' | 'subadmin'
+  isSuperAdmin: boolean
+  permissions: string[]
+  mfaEnabled?: boolean
+  status?: string
+  subAdminId?: string | null
+}
+
+export type LoginResponse = {
+  email: string
+  mfaRequired: boolean
+  mfaMethod?: 'emailOtp'
+  token?: string
+  admin?: AdminSessionUser
+}
+
 export async function login(payload: LoginPayload) {
-  const response = await authApiClient.post('/auth/admin/login', payload)
+  const response = await authApiClient.post<{ success: boolean; data: LoginResponse }>(
+    '/auth/admin/login',
+    payload,
+  )
   return response.data
 }
 

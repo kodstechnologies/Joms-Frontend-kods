@@ -44,13 +44,18 @@ import {
 } from '@/shared/utils/export-filter-utils'
 import type { FilterValues } from '@/shared/types/data-filter'
 import { DataTable } from '@/shared/components/table/data-table'
+import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'
 import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
+import { withServerSortMeta } from '@/shared/utils/table-sort'
+import { buildCatalogSortFieldMap } from '@/shared/utils/table-sort-field-maps'
 import { REFERRALS_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
 import {
   TableActionsDropdown,
   TableActionsItem,
 } from '@/shared/components/table/table-actions-dropdown'
 import { Button } from '@/shared/components/ui/button'
+
+const REFERRAL_SORT_FIELD_MAP = buildCatalogSortFieldMap(REFERRALS_TABLE_COLUMNS_CATALOG)
 import { cn } from '@/shared/lib/cn'
 
 const DEFAULT_METRIC_IDS =
@@ -378,6 +383,10 @@ export function ReferralManagementPage() {
   const { currentPage, setCurrentPage } = useReferralStore()
 
   const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setCurrentPage(1) })
+  const serverSort = useServerTableSort({
+    sortFieldMap: REFERRAL_SORT_FIELD_MAP,
+    onPageReset: () => setCurrentPage(1),
+  })
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [inviteOpen, setInviteOpen] = useState(false)
   const [detailsExpert, setDetailsExpert] = useState<ExpertInvite | null>(null)
@@ -391,8 +400,9 @@ export function ReferralManagementPage() {
         page: currentPage,
         limit: 10,
         ...enhancedSearch.buildSearchParams(),
+        ...serverSort.sortParams,
       }),
-    [appliedFilters, currentPage, enhancedSearch],
+    [appliedFilters, currentPage, enhancedSearch, serverSort.sortParams],
   )
   const { data: expertData, isLoading: expertLoading } = useExpertInvites(listQueryParams)
   const activeMetricIds = useActiveMetricIds(REFERRALS_MODULE_KEY, DEFAULT_METRIC_IDS)
@@ -528,7 +538,7 @@ export function ReferralManagementPage() {
       cell: ({ row }) => renderActions(row.original),
     }
 
-    return [...preferenceColumns, actionsColumn]
+    return withServerSortMeta([...preferenceColumns, actionsColumn], REFERRAL_SORT_FIELD_MAP)
   }, [renderActions, tableColumnPreferencesQuery.data])
 
   return (
@@ -568,6 +578,7 @@ export function ReferralManagementPage() {
         columns={expertColumns}
         data={expertInvites}
         getRowId={(row) => row.referralId}
+        {...serverSort.dataTableSortProps}
         isLoading={expertLoading}
         searchValue={enhancedSearch.globalSearch}
         onSearchChange={enhancedSearch.setGlobalSearch}

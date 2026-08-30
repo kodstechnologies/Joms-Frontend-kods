@@ -61,6 +61,9 @@ import { openExpertApplicationView } from '../../utils/expert-application-naviga
 import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
 import { EXPERT_MANAGEMENT_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
 import { DataTable } from '@/shared/components/table/data-table'
+import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'
+import { withServerSortMeta } from '@/shared/utils/table-sort'
+import { EXPERT_COLUMN_SORT_FIELDS } from '@/shared/utils/table-sort-field-maps'
 import {
   TableActionsDropdown,
   TableActionsItem,
@@ -79,6 +82,8 @@ import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 import type { FilterValues } from '@/shared/types/data-filter'
 import { exportDataToFile } from '@/shared/utils/export-utils'
 import { EXPERT_EXPORT_COLUMN_MAP } from '../../utils/table-export-column-maps'
+import { ExpertReportSubmitModal } from '../../components/expert-report-submit-modal'
+import { useAuthStore } from '@/modules/auth/store/auth-store'
 import { MODERATION_CATEGORY_SLUGS } from '@/modules/settings/api/templates-api'
 import {
   useModerationReasonOptions,
@@ -110,8 +115,10 @@ export const ExpertManagementPage = () => {
   const [suspendAdminNotes, setSuspendAdminNotes] = useState('')
   const [deleteReasons, setDeleteReasons] = useState<string[]>([])
   const [deleteAdminNotes, setDeleteAdminNotes] = useState('')
+  const [reportExpertTarget, setReportExpertTarget] = useState<Expert | null>(null)
   const [appliedAdvancedFilters, setAppliedAdvancedFilters] = useState<FilterValues>({})
   const navigate = useNavigate()
+  const authUser = useAuthStore((state) => state.user)
   const suspendExpertMutation = useSuspendExpert()
   const deactivateExpertMutation = useDeactivateExpert()
   const recordReasonUsage = useRecordModerationReasonUsage()
@@ -130,6 +137,10 @@ export const ExpertManagementPage = () => {
     catalogColumnIds,
   })
   const { currentPage, setCurrentPage, activeStatus, setActiveStatus } = useExpertStore()
+  const serverSort = useServerTableSort({
+    sortFieldMap: EXPERT_COLUMN_SORT_FIELDS,
+    onPageReset: () => setCurrentPage(1),
+  })
   const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setCurrentPage(1) })
 
   const handleApplyFilters = useCallback(
@@ -146,10 +157,11 @@ export const ExpertManagementPage = () => {
       buildExpertListQueryParams(appliedAdvancedFilters, {
         page: currentPage,
         limit: 10,
+        ...serverSort.sortParams,
         ...enhancedSearch.buildSearchParams(),
         status: activeStatus !== 'all' ? activeStatus : undefined,
       }),
-    [appliedAdvancedFilters, activeStatus, currentPage, enhancedSearch],
+    [appliedAdvancedFilters, activeStatus, currentPage, enhancedSearch, serverSort.sortParams],
   )
 
   const { data, isLoading } = useExperts(expertQueryParams)
@@ -873,7 +885,7 @@ export const ExpertManagementPage = () => {
               className={ACTION_ITEM_CLASS}
               onClick={() => {
                 setActiveDropdownId(null)
-                toast.message('Report Expert is coming soon')
+                setReportExpertTarget(expert)
               }}
             >
               Report Expert
@@ -883,7 +895,10 @@ export const ExpertManagementPage = () => {
       },
     }
 
-    return [selectColumn, ...preferenceColumns, actionsColumn]
+    return withServerSortMeta(
+      [selectColumn, ...preferenceColumns, actionsColumn],
+      EXPERT_COLUMN_SORT_FIELDS,
+    )
   }, [
     activeDropdownId,
     allVisibleExpertsSelected,
@@ -1081,6 +1096,7 @@ export const ExpertManagementPage = () => {
         data={experts}
         getRowId={(expert) => expert.expertId}
         isLoading={isLoading}
+        {...serverSort.dataTableSortProps}
         searchValue={enhancedSearch.globalSearch}
         onSearchChange={enhancedSearch.setGlobalSearch}
         searchableColumns={EXPERT_MANAGEMENT_SEARCH_COLUMNS}
@@ -1233,6 +1249,18 @@ export const ExpertManagementPage = () => {
         initialTags={initialTags}
         onSubmit={saveTags}
       />
+
+      {reportExpertTarget && authUser && (
+        <ExpertReportSubmitModal
+          open={Boolean(reportExpertTarget)}
+          expertId={reportExpertTarget.expertId}
+          partnerId={reportExpertTarget.id || reportExpertTarget.expertId}
+          expertName={reportExpertTarget.name}
+          reporterId={authUser.id}
+          reporterName={authUser.fullname || authUser.email}
+          onClose={() => setReportExpertTarget(null)}
+        />
+      )}
     </div>
   )
 }

@@ -167,6 +167,17 @@ async function exportMappedRows<T>(
   )
 }
 
+/** Export one or more rows using a column map (e.g. row action export). */
+export async function exportMappedItemsToFile<T>(
+  columnMap: ExportColumnMap<T>,
+  items: T[],
+  format: string,
+  fileName: string,
+  options?: ExportHandlerOptions,
+) {
+  await exportMappedRows(columnMap, items, format, fileName, options)
+}
+
 /**
  * Converts filter values (keyed as "section.fieldId") into flat API query params.
  * Handles text, arrays (checkboxes), range objects, and location objects.

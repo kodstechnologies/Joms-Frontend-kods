@@ -14,7 +14,10 @@ import {
 } from '@/modules/payments/utils/finance-membership-mapper'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 import { DataTable } from '@/shared/components/table/data-table'
+import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'
 import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
+import { withServerSortMeta } from '@/shared/utils/table-sort'
+import { buildDefaultTableSortFieldMap } from '@/shared/utils/table-sort-field-maps'
 import { FINANCE_MEMBERSHIP_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
 import {
   TableActionsDropdown,
@@ -30,6 +33,17 @@ import {
 } from '@/shared/utils/export-filter-utils'
 
 const PAGE_SIZE = 10
+
+const SORT_FIELD_MAP = buildDefaultTableSortFieldMap([
+  'subscriptionId',
+  'name',
+  'planName',
+  'amount',
+  'billingCycle',
+  'startDate',
+  'nextBilling',
+  'status',
+])
 
 const EXPORT_COLUMN_MAP: Record<
   string,
@@ -69,6 +83,10 @@ function getStatusClassName(status: FinanceMembershipStatus) {
 export function MembershipManagementPage() {
   const navigate = useNavigate()
   const [currentPage, setCurrentPage] = useState(1)
+  const serverSort = useServerTableSort({
+    sortFieldMap: SORT_FIELD_MAP,
+    onPageReset: () => setCurrentPage(1),
+  })
   const enhancedSearch = useEnhancedSearch({ onSearchChange: () => setCurrentPage(1) })
   const [statusFilter, setStatusFilter] = useState<SubscriptionStatus | 'all'>('all')
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
@@ -80,10 +98,11 @@ export function MembershipManagementPage() {
       page: currentPage,
       limit: PAGE_SIZE,
       ...enhancedSearch.buildSearchParams(),
+      ...serverSort.sortParams,
     })
     if (!params.status && statusFilter !== 'all') params.status = statusFilter
     return params
-  }, [appliedFilters, currentPage, enhancedSearch, statusFilter])
+  }, [appliedFilters, currentPage, enhancedSearch, serverSort.sortParams, statusFilter])
 
   const { data, isLoading, isFetching } = useExpertSubscriptions(listQueryParams)
 
@@ -168,68 +187,72 @@ export function MembershipManagementPage() {
   )
 
   const columns = useMemo<ColumnDef<FinanceMembershipRow>[]>(
-    () => [
-      {
-        id: 'select',
-        header: () => (
-          <input
-            type="checkbox"
-            aria-label="Select all subscriptions"
-            checked={allVisibleSelected}
-            ref={(input) => {
-              if (input) input.indeterminate = someVisibleSelected && !allVisibleSelected
-            }}
-            onChange={toggleVisibleRows}
-            className="rounded border-slate-700 bg-transparent"
-          />
-        ),
-        cell: ({ row }) => (
-          <input
-            type="checkbox"
-            aria-label={`Select ${row.original.name}`}
-            checked={selectedRowIds.includes(row.original.id)}
-            onChange={() => toggleRowSelection(row.original.id)}
-            onClick={(event) => event.stopPropagation()}
-            className="rounded border-slate-700 bg-transparent"
-          />
-        ),
-        meta: { headerClassName: 'pl-5', cellClassName: 'pl-5' },
-      },
-      {
-        accessorKey: 'subscriptionId',
-        header: 'Subscription ID',
-        cell: ({ row }) => (
-          <span className="text-body-sm-semibold text-brand-text font-mono uppercase">
-            {row.original.subscriptionId}
-          </span>
-        ),
-      },
-      { accessorKey: 'name', header: 'Name' },
-      { accessorKey: 'planName', header: 'Plan Name' },
-      {
-        accessorKey: 'amount',
-        header: 'Amount',
-        cell: ({ row }) => (
-          <span className="text-brand-text font-semibold">{row.original.amount}</span>
-        ),
-      },
-      { accessorKey: 'billingCycle', header: 'Billing Cycle' },
-      { accessorKey: 'startDate', header: 'Start Date' },
-      { accessorKey: 'nextBilling', header: 'Next Billing' },
-      {
-        accessorKey: 'status',
-        header: 'Status',
-        cell: ({ row }) => (
-          <span className={getStatusClassName(row.original.status)}>{row.original.status}</span>
-        ),
-      },
-      {
-        id: 'actions',
-        header: 'Actions',
-        meta: { headerClassName: 'pr-5 text-right', cellClassName: 'relative pr-5 text-right' },
-        cell: ({ row }) => renderActions(row.original),
-      },
-    ],
+    () =>
+      withServerSortMeta(
+        [
+          {
+            id: 'select',
+            header: () => (
+              <input
+                type="checkbox"
+                aria-label="Select all subscriptions"
+                checked={allVisibleSelected}
+                ref={(input) => {
+                  if (input) input.indeterminate = someVisibleSelected && !allVisibleSelected
+                }}
+                onChange={toggleVisibleRows}
+                className="rounded border-slate-700 bg-transparent"
+              />
+            ),
+            cell: ({ row }) => (
+              <input
+                type="checkbox"
+                aria-label={`Select ${row.original.name}`}
+                checked={selectedRowIds.includes(row.original.id)}
+                onChange={() => toggleRowSelection(row.original.id)}
+                onClick={(event) => event.stopPropagation()}
+                className="rounded border-slate-700 bg-transparent"
+              />
+            ),
+            meta: { headerClassName: 'pl-5', cellClassName: 'pl-5' },
+          },
+          {
+            accessorKey: 'subscriptionId',
+            header: 'Subscription ID',
+            cell: ({ row }) => (
+              <span className="text-body-sm-semibold text-brand-text font-mono uppercase">
+                {row.original.subscriptionId}
+              </span>
+            ),
+          },
+          { accessorKey: 'name', header: 'Name' },
+          { accessorKey: 'planName', header: 'Plan Name' },
+          {
+            accessorKey: 'amount',
+            header: 'Amount',
+            cell: ({ row }) => (
+              <span className="text-brand-text font-semibold">{row.original.amount}</span>
+            ),
+          },
+          { accessorKey: 'billingCycle', header: 'Billing Cycle' },
+          { accessorKey: 'startDate', header: 'Start Date' },
+          { accessorKey: 'nextBilling', header: 'Next Billing' },
+          {
+            accessorKey: 'status',
+            header: 'Status',
+            cell: ({ row }) => (
+              <span className={getStatusClassName(row.original.status)}>{row.original.status}</span>
+            ),
+          },
+          {
+            id: 'actions',
+            header: 'Actions',
+            meta: { headerClassName: 'pr-5 text-right', cellClassName: 'relative pr-5 text-right' },
+            cell: ({ row }) => renderActions(row.original),
+          },
+        ],
+        SORT_FIELD_MAP,
+      ),
     [
       allVisibleSelected,
       renderActions,
@@ -295,6 +318,7 @@ export function MembershipManagementPage() {
         columns={columns}
         data={rows}
         getRowId={(row) => row.id}
+        {...serverSort.dataTableSortProps}
         isLoading={isLoading || isFetching}
         searchValue={enhancedSearch.globalSearch}
         onSearchChange={enhancedSearch.setGlobalSearch}
