@@ -1,4 +1,4 @@
-import { adminApiClient, authApiClient } from '@/shared/lib/axios'
+import { adminApiClient, authApiClient, profileApiClient } from '@/shared/lib/axios'
 
 export type ExpertOnboardingApiResponse<T = unknown> = {
   success: boolean
@@ -6,6 +6,8 @@ export type ExpertOnboardingApiResponse<T = unknown> = {
   data: T
   meta: unknown
 }
+
+export type ExpertServiceCategoryGroups = Record<string, ExpertServiceCategoryItem[]>
 
 export type ExpertBasicProfileData = {
   _id: string
@@ -107,8 +109,6 @@ export type ExpertServiceCategoryItem = {
   icon: string
 }
 
-export type ExpertServiceCategoryGroups = Record<string, ExpertServiceCategoryItem[]>
-
 export const fetchServiceCategoriesByType = async (params: {
   servicetype: 'concierge' | 'venue'
   search?: string
@@ -117,4 +117,34 @@ export const fetchServiceCategoriesByType = async (params: {
     ExpertOnboardingApiResponse<ExpertServiceCategoryGroups>
   >('/service-category/getservicebyservicetype', { params })
   return response.data
+}
+
+export type OfferingApiItem = {
+  _id: string
+  name: string
+}
+
+export const fetchOfferingsList = async (params?: {
+  search?: string
+  page?: number
+  limit?: number
+}) => {
+  try {
+    const response = await profileApiClient.get<{
+      data?: { offerings?: OfferingApiItem[] } | OfferingApiItem[]
+    }>('/offerings', {
+      params: { limit: 100, ...params },
+    })
+    const payload = response.data?.data
+    const list = Array.isArray(payload)
+      ? payload
+      : payload &&
+          typeof payload === 'object' &&
+          Array.isArray((payload as { offerings?: OfferingApiItem[] }).offerings)
+        ? (payload as { offerings: OfferingApiItem[] }).offerings
+        : []
+    return list.map((item) => (typeof item === 'string' ? item : item.name)).filter(Boolean)
+  } catch {
+    return []
+  }
 }

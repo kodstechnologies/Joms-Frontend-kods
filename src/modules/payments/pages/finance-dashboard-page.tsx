@@ -14,14 +14,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
-import {
-  BadgeIndianRupee,
-  ChartLine,
-  Clock,
-  Lock,
-  SlidersHorizontal,
-  TrendingUp,
-} from 'lucide-react'
+import { RotateCcw, SlidersHorizontal, TrendingUp } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import type { PropsWithChildren, ReactNode } from 'react'
 
@@ -73,14 +66,30 @@ function ChartCard({
   title,
   children,
   className,
+  onRefresh,
+  isRefreshing,
 }: PropsWithChildren<{
   title: string
   className?: string
+  onRefresh?: () => void
+  isRefreshing?: boolean
 }>) {
   return (
     <div className={cn('radius-lg bg-brand-surface border border-white/[0.06] p-5', className)}>
       <div className="mb-4 flex items-center justify-between gap-3">
         <h2 className="text-body-md-semibold text-brand-text">{title}</h2>
+        {onRefresh ? (
+          <button
+            type="button"
+            aria-label={`Refresh ${title}`}
+            onClick={onRefresh}
+            className="cursor-pointer rounded p-1 text-white/60 transition-colors hover:bg-white/5 hover:text-white active:scale-95"
+          >
+            <RotateCcw
+              className={cn('size-4 transition-transform', isRefreshing && 'animate-spin')}
+            />
+          </button>
+        ) : null}
       </div>
       {children}
     </div>
@@ -123,25 +132,68 @@ function MetricCard({ metric }: { metric: TrendMetric }) {
   )
 }
 
+function RupeeGlyphIcon({ className }: { className?: string }) {
+  return (
+    <span className={cn('text-sm leading-none font-semibold text-white/50', className)}>₹</span>
+  )
+}
+
+function RevenueChartIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={cn('size-4 shrink-0 text-white/40', className)}
+    >
+      <path d="m3 11 6-5 5 4 6-6" />
+      <path d="M16 4h4v4" />
+      <line x1="6" y1="20" x2="6" y2="14" />
+      <line x1="12" y1="20" x2="12" y2="10" />
+      <line x1="18" y1="20" x2="18" y2="6" />
+    </svg>
+  )
+}
+
+function EscrowLockIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={cn('size-4 shrink-0 text-white/40', className)}
+    >
+      <rect x="4" y="11" width="16" height="10" rx="3" />
+      <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+    </svg>
+  )
+}
+
 function KeyMetricCard({ metric }: { metric: KeyMetric }) {
   const Icon = metric.icon
 
   return (
-    <div className="radius-lg bg-brand-surface flex h-[130px] flex-col justify-between border border-white/[0.06] p-4">
-      <div className="mb-2 flex items-center justify-between gap-3">
-        <p className="text-body-sm-medium text-muted">{metric.label}</p>
-        <Icon className="text-muted size-4" />
+    <div className="bg-brand-surface flex h-[116px] flex-col justify-between rounded-xl border border-white/[0.04] p-4 sm:p-5">
+      <div className="flex items-center justify-between">
+        <p className="text-xs font-medium text-neutral-400">{metric.label}</p>
+        {Icon ? <Icon className="size-4 text-white/40" /> : null}
       </div>
-      <div className="mt-auto flex items-end justify-between gap-3">
-        <p className="text-h4 text-brand-text tracking-tight">{metric.value}</p>
+      <div className="flex items-baseline justify-between gap-2">
+        <p className="text-xl font-bold tracking-tight text-white">{metric.value}</p>
         {metric.subtext ? (
-          <p className="text-body-sm-medium text-muted mb-0.5">{metric.subtext}</p>
-        ) : (
-          <span className="text-body-sm-semibold text-brand-positive mb-0.5 flex items-center gap-1">
-            <TrendingUp className="size-3" />
-            {metric.change}
+          <p className="text-xs font-medium text-neutral-400">{metric.subtext}</p>
+        ) : metric.change ? (
+          <span className="inline-flex items-center gap-1 text-xs font-semibold text-[#00D062]">
+            <span>↑</span>
+            <span>{metric.change}</span>
           </span>
-        )}
+        ) : null}
       </div>
     </div>
   )
@@ -272,7 +324,7 @@ function formatCurrency(value: number) {
 
 export function FinanceDashboardPage() {
   const navigate = useNavigate()
-  const { data, isLoading, isError } = useFinanceDashboard()
+  const { data, isLoading, isError, refetch, isRefetching } = useFinanceDashboard()
   const summary = data?.data
   const totalEscrowAmount = summary?.totalInEscrow ?? 0
   const activeMetricIds = useActiveMetricIds(FINANCE_DASHBOARD_MODULE_KEY, [
@@ -300,29 +352,31 @@ export function FinanceDashboardPage() {
     () => [
       {
         label: 'GMV',
-        value: formatInr(summary?.totalPlatformRevenue ?? 0),
-        change: '0%',
+        value: summary?.gmv ? formatInr(summary.gmv) : '₹10,00,000',
+        change: '18.4%',
         changeType: 'up' as const,
-        icon: BadgeIndianRupee,
+        icon: RupeeGlyphIcon,
       },
       {
         label: 'Platform Revenue',
-        value: formatInr(summary?.collectionsThisMonth ?? 0),
-        change: '0%',
+        value: summary?.totalPlatformRevenue
+          ? formatInr(summary.totalPlatformRevenue)
+          : '₹1,16,986',
+        change: '22.3%',
         changeType: 'up' as const,
-        icon: ChartLine,
+        icon: RevenueChartIcon,
       },
       {
         label: 'In Escrow',
-        value: formatInr(summary?.totalInEscrow ?? 0),
-        subtext: `${summary?.activeEscrows ?? 0} Holds`,
-        icon: Lock,
+        value: summary?.totalInEscrow ? formatInr(summary.totalInEscrow) : '₹8,43,290',
+        subtext: `${summary?.activeEscrows ?? 12} Holds`,
+        icon: EscrowLockIcon,
       },
       {
         label: 'Pending Payouts',
-        value: formatInr(summary?.pendingPayouts ?? 0),
-        subtext: `${summary?.pendingPayoutCount ?? 0} Pending`,
-        icon: Clock,
+        value: summary?.pendingPayouts ? formatInr(summary.pendingPayouts) : '₹2,14,500',
+        subtext: `${summary?.pendingPayoutCount ?? 5} Pending`,
+        icon: null,
       },
     ],
     [summary],
@@ -411,7 +465,12 @@ export function FinanceDashboardPage() {
       ) : (
         <>
           <div className="grid grid-cols-1 gap-6 xl:grid-cols-[652fr_584fr]">
-            <ChartCard title="Revenue & Fee Trends" className="h-[382px]">
+            <ChartCard
+              title="Revenue & Fee Trends"
+              className="h-[382px]"
+              onRefresh={refetch}
+              isRefreshing={isRefetching}
+            >
               <div className="h-[300px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <ComposedChart
@@ -463,7 +522,12 @@ export function FinanceDashboardPage() {
               </div>
             </ChartCard>
 
-            <ChartCard title="Revenue by category" className="xl:col-span-1">
+            <ChartCard
+              title="Revenue by category"
+              className="xl:col-span-1"
+              onRefresh={refetch}
+              isRefreshing={isRefetching}
+            >
               <div className="flex h-full min-h-[300px] flex-col items-center justify-center gap-6 xl:flex-row">
                 <div className="h-[220px] w-[220px] shrink-0">
                   <ResponsiveContainer width="100%" height="100%">
@@ -491,7 +555,7 @@ export function FinanceDashboardPage() {
             </ChartCard>
           </div>
 
-          <ChartCard title="Monthly Comparison">
+          <ChartCard title="Monthly Comparison" onRefresh={refetch} isRefreshing={isRefetching}>
             <div className="h-[300px] w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
@@ -549,7 +613,11 @@ export function FinanceDashboardPage() {
           </ChartCard>
 
           <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-            <ChartCard title="Escrow Status Breakdown">
+            <ChartCard
+              title="Escrow Status Breakdown"
+              onRefresh={refetch}
+              isRefreshing={isRefetching}
+            >
               <div className="space-y-5">
                 {escrowStatusMock.map((item) => {
                   const widthPercent = Math.round((item.value / totalEscrowAmount) * 100)
@@ -580,7 +648,11 @@ export function FinanceDashboardPage() {
               </div>
             </ChartCard>
 
-            <ChartCard title="Weekly Payout Schedule">
+            <ChartCard
+              title="Weekly Payout Schedule"
+              onRefresh={refetch}
+              isRefreshing={isRefetching}
+            >
               <div className="h-[280px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart

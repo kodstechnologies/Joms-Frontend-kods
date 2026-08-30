@@ -15,7 +15,7 @@ export type KeyMetric = {
   change?: string
   changeType?: 'up' | 'down'
   subtext?: string
-  icon: LucideIcon
+  icon?: LucideIcon | React.ComponentType<{ className?: string }> | null
 }
 
 export const topSummaryCardsMock: TrendMetric[] = [
