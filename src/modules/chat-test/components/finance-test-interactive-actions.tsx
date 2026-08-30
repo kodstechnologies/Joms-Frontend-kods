@@ -326,17 +326,18 @@ function MembershipPayActions({
 
   useEffect(() => {
     const token = partner?.accessToken
-    if (!token) return
+    if (!token) {
+      setPlans([])
+      setPlanId(null)
+      setCycle(null)
+      setLoadingPlans(false)
+      return
+    }
     let active = true
+    setLoadingPlans(true)
     void (async () => {
       try {
-        let accessToken = token
-        try {
-          accessToken = (await ensureFreshPartner(partner, onPartnerChange)).accessToken
-        } catch {
-          /* use existing token */
-        }
-        const list = await listExpertMembershipPlans(accessToken)
+        const list = await listExpertMembershipPlans(token)
         if (!active) return
         setPlans(list)
         setPlanId((prev) => {
@@ -370,7 +371,7 @@ function MembershipPayActions({
     return () => {
       active = false
     }
-  }, [partner, onPartnerChange])
+  }, [partner?.accessToken])
 
   const pay = async (mode: PayMode) => {
     if (!partner?.accessToken) {

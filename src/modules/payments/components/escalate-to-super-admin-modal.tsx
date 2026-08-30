@@ -11,6 +11,10 @@ type EscalateToSuperAdminModalProps = {
   refundId: string
   requestedBy: string
   amount: string
+  assigneeName?: string
+  recordIdLabel?: string
+  requestedByLabel?: string
+  isSubmitting?: boolean
   onClose: () => void
   onSubmit?: (payload: { priority: EscalationPriority; adminNotes: string }) => void | Promise<void>
 }
@@ -30,6 +34,10 @@ export function EscalateToSuperAdminModal({
   refundId,
   requestedBy,
   amount,
+  assigneeName,
+  recordIdLabel = 'Refund ID',
+  requestedByLabel = 'Requested By',
+  isSubmitting = false,
   onClose,
   onSubmit,
 }: EscalateToSuperAdminModalProps) {
@@ -37,10 +45,11 @@ export function EscalateToSuperAdminModal({
   const [adminNotes, setAdminNotes] = useState('')
 
   const handleClose = useCallback(() => {
+    if (isSubmitting) return
     setPriority('normal')
     setAdminNotes('')
     onClose()
-  }, [onClose])
+  }, [isSubmitting, onClose])
 
   useEffect(() => {
     if (!open) return
@@ -63,8 +72,11 @@ export function EscalateToSuperAdminModal({
   }, [open, handleClose])
 
   const handleSubmit = async () => {
+    if (isSubmitting) return
+    const notes = adminNotes.trim()
+    if (!notes) return
     try {
-      await onSubmit?.({ priority, adminNotes })
+      await onSubmit?.({ priority, adminNotes: notes })
       handleClose()
     } catch {
       // Parent surfaces API errors via toast
@@ -107,17 +119,22 @@ export function EscalateToSuperAdminModal({
                 <Shield className="icon-sm" />
               </div>
               <div>
-                <p className="text-body-md-semibold text-brand-text">Escalate to Super Admin</p>
+                <p className="text-body-md-semibold text-brand-text">
+                  {assigneeName ? `Escalate to ${assigneeName}` : 'Escalate to Super Admin'}
+                </p>
                 <p className="text-body-sm text-muted mt-1">
-                  This case requires Super Admin review and decision
+                  {assigneeName
+                    ? `${assigneeName} will review this case from My Tasks`
+                    : 'This case requires Super Admin review and decision'}
                 </p>
               </div>
             </div>
 
             <div className="space-y-3">
-              <InfoRow label="Refund ID" value={refundId} />
-              <InfoRow label="Requested By" value={requestedBy} />
+              <InfoRow label={recordIdLabel} value={refundId} />
+              <InfoRow label={requestedByLabel} value={requestedBy} />
               <InfoRow label="Amount" value={amount} />
+              {assigneeName ? <InfoRow label="Assigned to" value={assigneeName} /> : null}
             </div>
           </div>
 
@@ -179,11 +196,21 @@ export function EscalateToSuperAdminModal({
         </div>
 
         <div className="ui-modal-footer">
-          <button type="button" onClick={handleClose} className="ui-modal-btn ui-modal-btn-cancel">
+          <button
+            type="button"
+            onClick={handleClose}
+            disabled={isSubmitting}
+            className="ui-modal-btn ui-modal-btn-cancel"
+          >
             Cancel
           </button>
-          <button type="button" onClick={handleSubmit} className="ui-modal-btn ui-modal-btn-cancel">
-            Submit
+          <button
+            type="button"
+            onClick={() => void handleSubmit()}
+            disabled={isSubmitting || !adminNotes.trim()}
+            className="ui-modal-btn ui-modal-btn-gold"
+          >
+            {isSubmitting ? 'Escalating...' : 'Submit'}
           </button>
         </div>
       </div>

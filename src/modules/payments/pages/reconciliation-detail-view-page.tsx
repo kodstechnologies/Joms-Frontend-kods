@@ -181,10 +181,6 @@ export function ReconciliationDetailViewPage() {
               <Download className="size-4" />
               Download Report
             </Button>
-            <Button onClick={() => toast.message('Edit tax record coming soon')}>
-              <SquarePen className="size-4" />
-              Edit Tax Record
-            </Button>
             <Button onClick={() => setIsNoteModalOpen(true)}>
               <SquarePen className="size-4" />
               Add Notes

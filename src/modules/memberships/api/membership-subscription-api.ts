@@ -5,6 +5,7 @@ import type {
   PauseSubscriptionPayload,
   ChangePlanPayload,
   ExtendSubscriptionPayload,
+  ExtendMembershipSuspensionPayload,
   SubscriptionDetailResponse,
   SubscriptionListResponse,
 } from '../types/membership-subscription'
@@ -64,6 +65,17 @@ export const cancelSubscription = async (id: string, payload: CancelSubscription
 export const pauseSubscription = async (id: string, payload: PauseSubscriptionPayload) => {
   const response = await membershipApiClient.patch<SubscriptionDetailResponse>(
     `/subscriptions/${id}/pause`,
+    payload,
+  )
+  return response.data
+}
+
+export const extendMembershipSuspension = async (
+  id: string,
+  payload: ExtendMembershipSuspensionPayload,
+) => {
+  const response = await membershipApiClient.patch<SubscriptionDetailResponse>(
+    `/subscriptions/${id}/extend-suspension`,
     payload,
   )
   return response.data

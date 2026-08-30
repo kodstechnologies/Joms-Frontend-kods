@@ -624,6 +624,12 @@ const AssignRefundAuthorityPage = lazy(() =>
   })),
 )
 
+const FinanceEscalationDetailPage = lazy(() =>
+  import('@/modules/payments').then((m) => ({
+    default: m.FinanceEscalationDetailPage,
+  })),
+)
+
 const FinanceEventsPage = lazy(() =>
   import('@/modules/payments').then((m) => ({
     default: m.FinanceEventsPage,
@@ -958,6 +964,7 @@ export function AppRouter() {
 
               <Route element={<PermissionRoute module="finance" />}>
                 <Route path="/finance/dashboard" element={<FinanceDashboardPage />} />
+                <Route path="/finance/escalations/:id" element={<FinanceEscalationDetailPage />} />
                 <Route path="/finance/revenue" element={<RevenueOverviewPage />} />
                 <Route path="/finance/revenue/:id" element={<PaymentDetailViewPage />} />
                 <Route path="/finance/events" element={<FinanceEventsPage />} />

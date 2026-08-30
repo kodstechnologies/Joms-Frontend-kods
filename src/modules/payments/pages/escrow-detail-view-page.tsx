@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react'
-import { ArrowLeft, Download, SquarePen } from 'lucide-react'
+import { ArrowLeft, Download, Flag, SquarePen } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
@@ -13,6 +13,7 @@ import {
   useFinanceEscrowDetail,
   useReleaseEscrow,
 } from '@/modules/payments/hooks/use-finance'
+import { escalateUrl } from '@/modules/payments/utils/finance-escalate'
 import {
   formatDate,
   formatInr,
@@ -176,6 +177,22 @@ export function EscrowDetailViewPage() {
             <Button type="button" variant="secondary" onClick={() => setActiveModal('note')}>
               <SquarePen className="size-4" />
               Add Internal Note
+            </Button>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() =>
+                navigate(
+                  escalateUrl(escrow._id, {
+                    kind: 'resource',
+                    resourceType: 'EscrowHold',
+                    returnTo: `/finance/escrow/${id}`,
+                  }),
+                )
+              }
+            >
+              <Flag className="size-4" />
+              Escalate
             </Button>
             {isHeld ? (
               <PermissionGate

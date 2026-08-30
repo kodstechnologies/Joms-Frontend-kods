@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react'
-import { ArrowLeft, Check, Download, SquarePen } from 'lucide-react'
+import { ArrowLeft, Check, Download, Flag, SquarePen } from 'lucide-react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 
@@ -9,12 +9,14 @@ import {
   useFinanceTaxDetail,
   useMarkTaxFiled,
 } from '@/modules/payments/hooks/use-finance'
+import { escalateUrl } from '@/modules/payments/utils/finance-escalate'
 import { formatDate, formatInr, titleCase } from '@/modules/payments/utils/finance-mappers'
 import {
   downloadKeyValueReport,
   flattenExportPairs,
 } from '@/modules/payments/hooks/use-finance-list-filters'
 import { Button } from '@/shared/components/ui/button'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
 import { cn } from '@/shared/lib/cn'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 
@@ -102,7 +104,8 @@ export function TaxComplianceDetailViewPage() {
   }
 
   const filingStatus = titleCase(tax.filingStatus)
-  const canMarkFiled = tax.filingStatus === 'pending'
+  const filingStatusKey = String(tax.filingStatus || '').toLowerCase()
+  const canMarkFiled = !['filed', 'completed'].includes(filingStatusKey)
   const detail = {
     recordTitle: 'Tax & Compliance Information',
     recordDescription: `${titleCase(tax.module)} · ${tax.taxType}`,
@@ -213,13 +216,23 @@ export function TaxComplianceDetailViewPage() {
               <Download className="size-4" />
               Download Report
             </Button>
-            <Button onClick={() => toast.message('Edit tax record coming soon')}>
-              <SquarePen className="size-4" />
-              Edit Tax Record
-            </Button>
             <Button onClick={() => setIsNoteModalOpen(true)}>
               <SquarePen className="size-4" />
               Add Notes
+            </Button>
+            <Button
+              onClick={() =>
+                navigate(
+                  escalateUrl(tax._id, {
+                    kind: 'resource',
+                    resourceType: 'TaxRecord',
+                    returnTo: `/finance/tax/${id}`,
+                  }),
+                )
+              }
+            >
+              <Flag className="size-4" />
+              Escalate
             </Button>
           </div>
         </div>
@@ -332,16 +345,14 @@ export function TaxComplianceDetailViewPage() {
             disabled={markFiledMutation.isPending}
             onClick={() => {
               markFiledMutation.mutate(
-                { id: tax._id },
+                { id: tax._id || tax.taxRecordId || id },
                 {
                   onSuccess: () => {
                     toast.success('Marked as filed')
                     void refetch()
                   },
                   onError: (err) => {
-                    const msg =
-                      (err as { response?: { data?: { message?: string } } })?.response?.data
-                        ?.message || 'Failed to mark as filed'
+                    const msg = getApiErrorMessage(err, 'Failed to mark as filed')
                     toast.error(msg)
                     if (/already filed|already completed/i.test(msg)) {
                       void refetch()

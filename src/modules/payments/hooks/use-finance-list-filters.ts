@@ -68,9 +68,9 @@ export function flattenExportPairs(
   return pairs
 }
 
-export function downloadKeyValueReport(fileName: string, pairs: Array<[string, unknown]>) {
+export async function downloadKeyValueReport(fileName: string, pairs: Array<[string, unknown]>) {
   try {
-    exportDataToFile(
+    await exportDataToFile(
       ['Field', 'Value'],
       pairs.map(([key, value]) => [key, exportDisplayValue(value)]),
       'csv',
