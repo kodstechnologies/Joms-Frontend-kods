@@ -510,7 +510,7 @@ export function ServiceMarketplacePage() {
             className="ui-manage-metrics h-9"
             onClick={() => navigate('/services/dashboard/metrics')}
           >
-            <ManageMetricsIcon className="size-5" />
+            <ManageMetricsIcon className="size-4 shrink-0" />
             Manage Metrics
           </Button>
 

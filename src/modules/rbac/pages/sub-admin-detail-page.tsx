@@ -219,7 +219,7 @@ export function SubAdminDetailPage() {
           className="ui-manage-metrics"
           onClick={() => navigate('/metrics/rbac-hub')}
         >
-          <ManageMetricsIcon className="size-5" />
+          <ManageMetricsIcon className="size-4 shrink-0" />
           Manage Metrics
         </Button>
       </div>

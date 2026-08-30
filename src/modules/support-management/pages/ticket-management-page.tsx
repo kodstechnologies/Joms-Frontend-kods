@@ -14,6 +14,7 @@ import {
   TrendingUp,
   Upload,
 } from 'lucide-react'
+import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
 import { toast } from 'sonner'
 
 import { AddTagModal } from '@/shared/components/modal/add-tag-modal'
@@ -765,7 +766,7 @@ export function TicketManagementPage() {
             onClick={() => navigate('/metrics/ticket-management?section=table')}
             className="ui-manage-metrics ui-cta ui-cta-primary"
           >
-            <SlidersHorizontal className="icon-sm shrink-0" aria-hidden="true" />
+            <ManageMetricsIcon className="size-4 shrink-0" aria-hidden="true" />
             Manage Metrics
           </button>
         </div>

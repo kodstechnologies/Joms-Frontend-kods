@@ -1,7 +1,7 @@
-import { SlidersHorizontal } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
 import { Button } from '@/shared/components/ui/button'
+import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
 
 export function EscalationHeader() {
   const navigate = useNavigate()
@@ -19,7 +19,7 @@ export function EscalationHeader() {
         className="ui-manage-metrics ui-cta ui-cta-primary"
         onClick={() => navigate('/metrics/escalations?section=table')}
       >
-        <SlidersHorizontal className="size-4" />
+        <ManageMetricsIcon className="size-4 shrink-0" />
         Manage Metrics
       </Button>
     </div>

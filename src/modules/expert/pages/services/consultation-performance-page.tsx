@@ -1,8 +1,9 @@
 import { useCallback, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import type { ColumnDef } from '@tanstack/react-table'
-import { ArrowLeft, Check, SlidersHorizontal, Star, User, Users, X } from 'lucide-react'
+import { ArrowLeft, Check, Star, User, Users, X } from 'lucide-react'
 import { toast } from 'sonner'
+import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
 
 import { Button } from '@/shared/components/ui/button'
 import { StatCard } from '@/shared/components/dashboard/stat-card'
@@ -550,7 +551,7 @@ export function ConsultationPerformancePage() {
           onClick={() => navigate(manageMetricsPath)}
           className="ui-manage-metrics h-10 rounded-xl px-5 text-sm font-semibold sm:w-auto"
         >
-          <SlidersHorizontal className="size-4" />
+          <ManageMetricsIcon className="size-4 shrink-0" />
           Manage Metrics
         </Button>
       </div>

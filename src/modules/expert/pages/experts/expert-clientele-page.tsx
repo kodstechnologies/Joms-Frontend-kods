@@ -2,8 +2,9 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import type { ColumnDef } from '@tanstack/react-table'
-import { ArrowLeft, SlidersHorizontal } from 'lucide-react'
+import { ArrowLeft } from 'lucide-react'
 import { toast } from 'sonner'
+import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
 
 import { fetchExpertClientele } from '../../api/expert-api'
 import {
@@ -638,7 +639,7 @@ export function ExpertClientelePage() {
           onClick={() => navigate(manageMetricsPath)}
           className="ui-manage-metrics h-10 rounded-xl px-5 text-sm font-semibold sm:w-auto"
         >
-          <SlidersHorizontal className="size-4" />
+          <ManageMetricsIcon className="size-4 shrink-0" />
           Manage Metrics
         </Button>
       </div>

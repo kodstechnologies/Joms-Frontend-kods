@@ -1,15 +1,13 @@
 import type { LucideIcon } from 'lucide-react'
 import {
-  BadgePercent,
   Building2,
   ChartNoAxesCombined,
   ClipboardList,
-  CreditCard,
   LifeBuoy,
   Settings,
-  Shield,
   ShieldAlert,
 } from 'lucide-react'
+import { ConciergeBellIcon, PaymentFinanceIcon, Share02Icon } from './nav-icons'
 
 export type NavBadge =
   | {
@@ -25,7 +23,9 @@ export type PermissionModule = PermissionModuleKey
 export type NavItem = {
   key: string
   label: string
-  icon?: LucideIcon
+  icon?:
+    | LucideIcon
+    | React.ComponentType<React.SVGProps<SVGSVGElement> & { strokeWidth?: number | string }>
   to?: string
   badge?: NavBadge
   roles?: Array<'admin' | 'manager'>
@@ -52,7 +52,7 @@ export const navigationConfig: NavItem[] = [
   {
     key: 'expert-application',
     label: 'Expert Application',
-    icon: Shield,
+    icon: ConciergeBellIcon,
     children: [
       {
         key: 'expert.management-group',
@@ -163,14 +163,14 @@ export const navigationConfig: NavItem[] = [
   {
     key: 'referral',
     label: 'Referrals',
-    icon: BadgePercent,
+    icon: Share02Icon,
     permissionModule: 'referrals',
     to: '/referrals/management',
   },
   {
     key: 'finance',
     label: 'Payment & Finance',
-    icon: CreditCard,
+    icon: PaymentFinanceIcon,
     permissionModule: 'finance',
     children: [
       { key: 'finance.dashboard', label: 'Dashboard', to: '/finance/dashboard' },

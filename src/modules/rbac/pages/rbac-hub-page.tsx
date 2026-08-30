@@ -7,11 +7,11 @@ import {
   Settings,
   Shield,
   ShieldOff,
-  SlidersHorizontal,
   Trash2,
   UserCheck,
   UserPlus,
 } from 'lucide-react'
+import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import createIcon from '@/assets/JOMS_ICONS-2/icons8-create.svg'
@@ -693,7 +693,7 @@ export function RbacHubPage() {
             className="ui-manage-metrics h-9 w-full rounded-xl bg-[#FBC078] px-5 text-sm font-semibold text-black shadow-none hover:bg-[#EEB46A] md:w-auto"
             onClick={() => navigate('/metrics/rbac-hub')}
           >
-            <SlidersHorizontal className="size-4" />
+            <ManageMetricsIcon className="size-4 shrink-0" />
             Manage Metrics
           </Button>
           <Button

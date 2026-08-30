@@ -40,8 +40,8 @@ import {
   User,
   Users,
   X,
-  Filter,
 } from 'lucide-react'
+import { AdvanceFilterIcon, ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
 
 import { fetchConsultationById, fetchServiceById } from '../../api/service-api'
 import {
@@ -1597,7 +1597,7 @@ function ServicesSubTab({
           onClick={onAdvancedFilter}
           className="table-advance-filter-btn inline-flex shrink-0 items-center gap-2"
         >
-          <Filter className="size-3.5" aria-hidden="true" />
+          <AdvanceFilterIcon className="size-4 shrink-0" aria-hidden="true" />
           Advance Filters
         </button>
       </div>
@@ -2431,7 +2431,7 @@ function AnalyticsTab({ expertId }: { expertId?: string }) {
           onClick={() => navigate(manageMetricsPath)}
           className="ui-manage-metrics ui-cta ui-cta-primary text-body-sm flex items-center gap-1.5 rounded-lg px-3 py-2 font-semibold"
         >
-          <SlidersHorizontal className="icon-sm shrink-0" />
+          <ManageMetricsIcon className="size-4 shrink-0" />
           Manage Metrics
         </button>
       </div>

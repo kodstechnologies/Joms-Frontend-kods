@@ -11,6 +11,7 @@ import {
   Trash2,
   TrendingUp,
 } from 'lucide-react'
+import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
 import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
@@ -610,7 +611,7 @@ export function FinanceRefundsPage() {
           </p>
         </div>
         <Button className="ui-manage-metrics" onClick={() => navigate('/metrics/finance-refunds')}>
-          <SlidersHorizontal className="size-4" />
+          <ManageMetricsIcon className="size-4 shrink-0" />
           Manage Metrics
         </Button>
       </div>

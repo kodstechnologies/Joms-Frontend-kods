@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { SlidersHorizontal } from 'lucide-react'
 import { toast } from 'sonner'
 import createIcon from '@/assets/JOMS_ICONS-2/icons8-create.svg'
 import type { ColumnDef } from '@tanstack/react-table'
+import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
 
 import {
   CommunicationActions,
@@ -331,7 +331,7 @@ export function CommunicationListPage() {
             onClick={() => navigate('/metrics/communication')}
             className="ui-manage-metrics ui-cta ui-cta-primary"
           >
-            <SlidersHorizontal className="icon-sm shrink-0" />
+            <ManageMetricsIcon className="size-4 shrink-0" />
             Manage Metrics
           </button>
           <button

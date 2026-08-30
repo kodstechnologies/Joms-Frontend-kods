@@ -2,8 +2,9 @@ import { useCallback, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
-import { ArrowLeft, SlidersHorizontal, Upload } from 'lucide-react'
+import { ArrowLeft, Upload } from 'lucide-react'
 import { toast } from 'sonner'
+import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
 
 import { useVenueFullView } from '../../hooks/use-venues'
 import { useVenueProfileAnalytics } from '../../hooks/use-venue-analytics'
@@ -134,7 +135,7 @@ export function VenueProfileAnalyticsPage() {
             className="ui-manage-metrics ui-cta ui-cta-primary h-9"
             onClick={() => navigate(manageMetricsPath)}
           >
-            <SlidersHorizontal className="size-4" />
+            <ManageMetricsIcon className="size-4 shrink-0" />
             Manage Metrics
           </Button>
           <Button className="ui-export-data h-9" onClick={handleExportData}>

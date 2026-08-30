@@ -6,7 +6,6 @@ import {
   CalendarDays,
   ExternalLink,
   Search,
-  SlidersHorizontal,
   Star,
   TrendingUp,
   Trophy,
@@ -15,6 +14,11 @@ import {
   Users,
   X,
 } from 'lucide-react'
+import {
+  AdvanceFilterIcon,
+  ExportDataIcon,
+  ManageMetricsIcon,
+} from '@/shared/components/icons/action-button-icons'
 import { useNavigate, useLocation } from 'react-router-dom'
 
 import { Button } from '@/shared/components/ui/button'
@@ -1001,7 +1005,7 @@ export const LeaderboardPage = () => {
           className="ui-manage-metrics ui-cta ui-cta-primary"
           onClick={() => navigate(metricsPath)}
         >
-          <SlidersHorizontal className="size-4" />
+          <ManageMetricsIcon className="size-4 shrink-0" />
           Manage Metrics
         </Button>
       </div>
@@ -1080,7 +1084,7 @@ export const LeaderboardPage = () => {
               className="ui-advance-filters table-advance-filter-btn gap-2"
               onClick={() => setFiltersOpen(true)}
             >
-              <SlidersHorizontal className="size-4" />
+              <AdvanceFilterIcon className="size-4 shrink-0" />
               Advance Filters
             </Button>
             <Button
@@ -1091,7 +1095,7 @@ export const LeaderboardPage = () => {
               className="ui-export-data gap-2"
               disabled={isExporting}
             >
-              <Upload className="size-4" />
+              <ExportDataIcon className="size-4 shrink-0" />
               Export Data
             </Button>
           </div>

@@ -1,9 +1,10 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { Eye, Mail, SlidersHorizontal, Trash2 } from 'lucide-react'
+import { Eye, Mail, Trash2 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import createIcon from '@/assets/JOMS_ICONS-2/icons8-create.svg'
+import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
 
 import { InviteExpertReferralModal } from '../components/invite-expert-referral-modal'
 import { ReferralDetailsModal } from '../components/referral-details-modal'
@@ -557,7 +558,7 @@ export function ReferralManagementPage() {
               navigate('/metrics/referrals?returnTo=/referrals/management&section=dashboard')
             }
           >
-            <SlidersHorizontal className="size-4" />
+            <ManageMetricsIcon className="size-4 shrink-0" />
             Manage Metrics
           </Button>
 

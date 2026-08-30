@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import { RefreshCw, Settings2, Upload } from 'lucide-react'
+import { RefreshCw, Upload } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
+import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
 import {
   Area,
   Bar,
@@ -493,7 +494,7 @@ export function PlatformHealthPage() {
             onClick={() => navigate('/metrics/platform-health?section=table')}
             className="ui-manage-metrics ui-cta ui-cta-primary inline-flex items-center gap-2 px-4"
           >
-            <Settings2 className="size-4" />
+            <ManageMetricsIcon className="size-4 shrink-0" />
             Manage Metrics
           </button>
         </div>

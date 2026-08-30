@@ -1312,7 +1312,7 @@ export const VenueManagementPage = () => {
             className="ui-manage-metrics h-9 w-full md:w-auto"
             onClick={() => navigate('/venues/management/metrics')}
           >
-            <ManageMetricsIcon className="size-5" />
+            <ManageMetricsIcon className="size-4 shrink-0" />
             Manage Metrics
           </Button>
           <Button

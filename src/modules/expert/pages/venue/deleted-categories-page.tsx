@@ -1,8 +1,8 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { SlidersHorizontal } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import createIcon from '@/assets/JOMS_ICONS-2/icons8-create.svg'
+import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
 
 import { Button } from '@/shared/components/ui/button'
 import { DataTable } from '@/shared/components/table/data-table'
@@ -144,7 +144,7 @@ export function DeletedVenueCategoriesPage() {
             className="ui-manage-metrics h-9 w-full md:w-auto"
             onClick={() => navigate('/venues/categories/management/metrics?section=table')}
           >
-            <SlidersHorizontal className="size-4" />
+            <ManageMetricsIcon className="size-4 shrink-0" />
             Manage Metrics
           </Button>
           <Button

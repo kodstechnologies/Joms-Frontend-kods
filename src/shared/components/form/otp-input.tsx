@@ -7,9 +7,10 @@ type OtpInputProps = {
   onChange: (next: string) => void
   length?: number
   className?: string
+  slotClassName?: string
 }
 
-export function OtpInput({ value, onChange, length = 6, className }: OtpInputProps) {
+export function OtpInput({ value, onChange, length = 6, className, slotClassName }: OtpInputProps) {
   const id = useId()
   const chars = useMemo(() => value.padEnd(length, ' ').slice(0, length).split(''), [length, value])
 
@@ -52,6 +53,7 @@ export function OtpInput({ value, onChange, length = 6, className }: OtpInputPro
           id={`${id}-${index}`}
           className={cn(
             'rounded-brand-md bg-brand-surface text-brand-text focus:border-brand-accent/50 focus:ring-brand-accent/20 h-12 w-10 border border-white/10 text-center text-lg font-semibold outline-none focus:ring-2',
+            slotClassName,
           )}
         />
       ))}

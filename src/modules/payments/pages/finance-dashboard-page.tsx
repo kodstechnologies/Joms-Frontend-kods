@@ -14,7 +14,8 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
-import { RotateCcw, SlidersHorizontal, TrendingUp } from 'lucide-react'
+import { RotateCcw, TrendingUp } from 'lucide-react'
+import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
 import { useNavigate } from 'react-router-dom'
 import type { PropsWithChildren, ReactNode } from 'react'
 
@@ -396,7 +397,7 @@ export function FinanceDashboardPage() {
             className="ui-manage-metrics"
             onClick={() => navigate('/metrics/finance-dashboard')}
           >
-            <SlidersHorizontal className="size-4" />
+            <ManageMetricsIcon className="size-4 shrink-0" />
             Manage Metrics
           </Button>
         </div>

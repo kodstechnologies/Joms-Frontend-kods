@@ -1,8 +1,9 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { Eye, SlidersHorizontal } from 'lucide-react'
+import { Eye } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
+import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
 
 import { fetchExpertSubscriptions } from '@/modules/memberships/api/membership-subscription-api'
 import { useExpertSubscriptions } from '@/modules/memberships/hooks/use-membership-subscriptions'
@@ -275,7 +276,7 @@ export function MembershipManagementPage() {
           className="ui-manage-metrics"
           onClick={() => navigate('/metrics/finance-memberships?section=table')}
         >
-          <SlidersHorizontal className="size-4" />
+          <ManageMetricsIcon className="size-4 shrink-0" />
           Manage Metrics
         </Button>
       </div>

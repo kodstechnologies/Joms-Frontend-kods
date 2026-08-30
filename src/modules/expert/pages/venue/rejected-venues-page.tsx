@@ -1,8 +1,9 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { ArrowLeft, PlayCircle, SlidersHorizontal } from 'lucide-react'
+import { ArrowLeft, PlayCircle } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import createIcon from '@/assets/JOMS_ICONS-2/icons8-create.svg'
+import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
 
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import { toast } from 'sonner'
@@ -279,7 +280,7 @@ export function RejectedVenuesPage() {
             className="ui-manage-metrics h-9 w-full md:w-auto"
             onClick={() => navigate('/venues/management/metrics?section=table')}
           >
-            <SlidersHorizontal className="size-4" />
+            <ManageMetricsIcon className="size-4 shrink-0" />
             Manage Metrics
           </Button>
           <Button

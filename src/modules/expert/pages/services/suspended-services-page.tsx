@@ -285,7 +285,7 @@ export function SuspendedServicesPage() {
             )
           }
         >
-          <ManageMetricsIcon className="size-5" />
+          <ManageMetricsIcon className="size-4 shrink-0" />
           Manage Metrics
         </Button>
       </div>

@@ -24,7 +24,7 @@ import {
   TableActionsItem,
 } from '@/shared/components/table/table-actions-dropdown'
 
-import { SlidersHorizontal } from 'lucide-react'
+import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
 import { Button } from '@/shared/components/ui/button'
 import { useTableColumnPreferences } from '../../hooks/use-ui-preferences'
 import {
@@ -363,7 +363,7 @@ export function VenueReportedVenuesPage() {
           className="ui-manage-metrics h-9 w-full md:w-auto"
           onClick={() => navigate('/metrics/venue-reported?returnTo=/venues/management/reported')}
         >
-          <SlidersHorizontal className="size-4" />
+          <ManageMetricsIcon className="size-4 shrink-0" />
           Manage Metrics
         </Button>
       </div>
