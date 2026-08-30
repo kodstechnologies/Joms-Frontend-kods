@@ -1,9 +1,10 @@
-import { AlertCircle, Ban, BarChart3, Hourglass, Plus, Search, Trash2, Upload } from 'lucide-react'
+import { AlertCircle, Ban, Hourglass, Plus, Search, Trash2, Upload } from 'lucide-react'
 import { useCallback, useMemo, useState, type ComponentProps, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import type { LucideIcon } from 'lucide-react'
 
+import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
 import { CreateMembershipModal } from '../components/create-membership-modal'
 import { MembershipPlanCard } from '../components/membership-plan-card'
 import {
@@ -326,7 +327,7 @@ export function MembershipPlansPage({
             navigate('/metrics/memberships?returnTo=/memberships/plans&section=dashboard')
           }
         >
-          <BarChart3 className="size-4" />
+          <ManageMetricsIcon className="size-5" />
           Manage Metrics
         </Button>
       </div>
@@ -344,12 +345,12 @@ export function MembershipPlansPage({
 
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div className="relative max-w-md flex-1">
-          <Search className="text-muted pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2" />
+          <Search className="text-muted pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2" />
           <Input
             value={searchQuery}
             onChange={(event) => setSearchQuery(event.target.value)}
             placeholder="Search by membership"
-            className="bg-brand-bg text-body-md placeholder:text-muted h-11 rounded-full border-white/10 pl-11 text-white"
+            className="ui-input-icon-left bg-brand-bg text-body-md placeholder:text-muted h-11 rounded-full border-white/10 text-white"
           />
         </div>
         <div className="flex flex-wrap gap-2.5">

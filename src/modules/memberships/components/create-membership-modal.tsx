@@ -56,13 +56,19 @@ export function CreateMembershipModal({ open, onClose }: CreateMembershipModalPr
       <div
         className="create-membership-modal flex w-full flex-col overflow-hidden text-white"
         style={{ maxHeight: 'min(1458px, 92vh)' }}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="create-membership-title"
+        onClick={(event) => event.stopPropagation()}
       >
         <div
           className="flex shrink-0 items-start justify-between gap-3 px-6 py-5"
           style={{ borderBottom: '1px solid rgba(255,255,255,0.1)' }}
         >
           <div>
-            <h2 className="create-membership-title">Create Membership</h2>
+            <h2 id="create-membership-title" className="create-membership-title">
+              Create Membership
+            </h2>
             <p className="create-membership-subtitle mt-1">
               Configure membership plan details and features
             </p>

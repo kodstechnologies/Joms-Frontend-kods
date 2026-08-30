@@ -15,7 +15,9 @@ import { DataTable } from '@/shared/components/table/data-table'
 import { useServerTableSort } from '@/shared/hooks/use-server-table-sort'
 import { useEnhancedSearch } from '@/shared/hooks/use-enhanced-search'
 import { withServerSortMeta } from '@/shared/utils/table-sort'
-import { buildDefaultTableSortFieldMap } from '@/shared/utils/table-sort-field-maps'
+import { FINANCE_PAYOUTS_TABLE_COLUMNS_CATALOG } from '@/modules/payments/config/finance-payouts-table-columns.config'
+import { FINANCE_PAYOUT_SORT_OVERRIDES } from '@/modules/payments/config/finance-table-sort-fields'
+import { buildCatalogSortFieldMap } from '@/shared/utils/table-sort-field-maps'
 import { FINANCE_PAYOUT_SEARCH_COLUMNS } from '@/shared/components/table/search-configs'
 import {
   TableActionsDropdown,
@@ -34,16 +36,10 @@ import { downloadInvoiceDocument, invoiceFromFinancePayout } from '@/shared/util
 
 const PAGE_SIZE = 10
 
-const SORT_FIELD_MAP = buildDefaultTableSortFieldMap([
-  'payoutId',
-  'recipient',
-  'type',
-  'amount',
-  'method',
-  'initiatedDate',
-  'description',
-  'status',
-])
+const SORT_FIELD_MAP = buildCatalogSortFieldMap(
+  FINANCE_PAYOUTS_TABLE_COLUMNS_CATALOG,
+  FINANCE_PAYOUT_SORT_OVERRIDES,
+)
 
 const EXPORT_COLUMN_MAP: Record<string, { header: string; accessor: (row: PayoutRow) => string }> =
   {

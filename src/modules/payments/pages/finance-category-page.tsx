@@ -105,10 +105,10 @@ export function FinanceCategoryPage() {
     [appliedFilters, enhancedSearch.columnSearches, enhancedSearch.globalSearch],
   )
 
-  const sortedRows = useMemo(
-    () => sortClientRows(filteredRows, serverSort.sortBy, serverSort.sortOrder),
-    [filteredRows, serverSort.sortBy, serverSort.sortOrder],
-  )
+  const sortedRows = useMemo(() => {
+    const sortColumnId = serverSort.sorting[0]?.id ?? serverSort.sortParams.sortBy
+    return sortClientRows(filteredRows, sortColumnId, serverSort.sortOrder)
+  }, [filteredRows, serverSort.sortOrder, serverSort.sortParams.sortBy, serverSort.sorting])
 
   const totalItems = sortedRows.length
   const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE))

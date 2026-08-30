@@ -1,7 +1,8 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { ArrowLeft, BarChart3, Eye, PlayCircle } from 'lucide-react'
+import { ArrowLeft, Eye, PlayCircle } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
 
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import { toast } from 'sonner'
@@ -284,7 +285,7 @@ export function SuspendedServicesPage() {
             )
           }
         >
-          <BarChart3 className="size-4" />
+          <ManageMetricsIcon className="size-5" />
           Manage Metrics
         </Button>
       </div>

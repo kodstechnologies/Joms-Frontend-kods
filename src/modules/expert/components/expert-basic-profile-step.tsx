@@ -1,8 +1,9 @@
-import { useMemo, useRef, useState } from 'react'
-import { ImageIcon, Search, Upload, XCircle } from 'lucide-react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { Check, ChevronDown, ImageIcon, Plus, Search, Upload, X, XCircle } from 'lucide-react'
 import { toast } from 'sonner'
 
-import { useServiceCategoriesByType } from '../hooks/use-service-categories'
+import { STANDARD_INDUSTRIES, STANDARD_OFFERINGS } from '../config/expert-profile-options.config'
+import { useOfferingsList, useServiceCategoriesByType } from '../hooks/use-service-categories'
 import type { ExpertOnboardingFormData } from '../utils/expert-onboarding-form'
 import { VerificationOtpModal } from './verification-otp-modal'
 import { RequiredMark } from '@/shared/components/form/required-mark'
@@ -27,8 +28,14 @@ export const ExpertBasicProfileStep = ({ formData, setFormData, lockedServiceTyp
   const profileInputRef = useRef<HTMLInputElement>(null)
   const sampleFileInputRef = useRef<HTMLInputElement>(null)
 
+  const industryContainerRef = useRef<HTMLDivElement>(null)
+  const offeringContainerRef = useRef<HTMLDivElement>(null)
+
   const [categorySearch, setCategorySearch] = useState('')
   const [offeringInput, setOfferingInput] = useState('')
+  const [industryDropdownOpen, setIndustryDropdownOpen] = useState(false)
+  const [offeringDropdownOpen, setOfferingDropdownOpen] = useState(false)
+
   const [verifyModal, setVerifyModal] = useState<{
     open: boolean
     type: 'phone' | 'email'
@@ -38,6 +45,26 @@ export const ExpertBasicProfileStep = ({ formData, setFormData, lockedServiceTyp
     type: 'phone',
     targetValue: '',
   })
+
+  // Close dropdowns on outside click
+  useEffect(() => {
+    const handleOutsideClick = (e: MouseEvent) => {
+      if (
+        industryContainerRef.current &&
+        !industryContainerRef.current.contains(e.target as Node)
+      ) {
+        setIndustryDropdownOpen(false)
+      }
+      if (
+        offeringContainerRef.current &&
+        !offeringContainerRef.current.contains(e.target as Node)
+      ) {
+        setOfferingDropdownOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleOutsideClick)
+    return () => document.removeEventListener('mousedown', handleOutsideClick)
+  }, [])
 
   const handleOpenPhoneVerify = () => {
     const error = validateMobileNumber(formData.phoneNumber)
@@ -82,6 +109,25 @@ export const ExpertBasicProfileStep = ({ formData, setFormData, lockedServiceTyp
     serviceType,
     categorySearch.trim() || undefined,
   )
+
+  const { data: dynamicOfferings = [] } = useOfferingsList()
+
+  const allAvailableOfferings = useMemo(() => {
+    const merged = Array.from(new Set([...(dynamicOfferings || []), ...STANDARD_OFFERINGS]))
+    return merged
+  }, [dynamicOfferings])
+
+  const filteredOfferings = useMemo(() => {
+    const q = offeringInput.trim().toLowerCase()
+    return allAvailableOfferings.filter(
+      (item) => !formData.offerings.includes(item) && (!q || item.toLowerCase().includes(q)),
+    )
+  }, [allAvailableOfferings, formData.offerings, offeringInput])
+
+  const filteredIndustries = useMemo(() => {
+    const q = formData.industry.trim().toLowerCase()
+    return STANDARD_INDUSTRIES.filter((ind) => !q || ind.toLowerCase().includes(q))
+  }, [formData.industry])
 
   const categoryGroups = useMemo(() => categoriesResponse?.data || {}, [categoriesResponse?.data])
   const flattenedCategories = useMemo(
@@ -137,7 +183,6 @@ export const ExpertBasicProfileStep = ({ formData, setFormData, lockedServiceTyp
         }
       }
 
-      // Venue: one main category; multiple sub-categories within that group.
       if (isVenueService) {
         const targetGroup = groupName ?? categoryNameToGroup.get(categoryName)
         const next = prev.serviceCategory.filter(
@@ -153,7 +198,7 @@ export const ExpertBasicProfileStep = ({ formData, setFormData, lockedServiceTyp
     })
   }
 
-  const addOffering = (value: string, reset: () => void) => {
+  const addOffering = (value: string, reset?: () => void) => {
     const trimmed = value.trim()
     if (!trimmed) return
     setFormData((prev) =>
@@ -161,7 +206,7 @@ export const ExpertBasicProfileStep = ({ formData, setFormData, lockedServiceTyp
         ? prev
         : { ...prev, offerings: [...prev.offerings, trimmed] },
     )
-    reset()
+    if (reset) reset()
   }
 
   const removeOffering = (value: string) => {
@@ -180,7 +225,8 @@ export const ExpertBasicProfileStep = ({ formData, setFormData, lockedServiceTyp
         </div>
 
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-          <div className="space-y-5">
+          {/* Left Column: Media & Identity Details */}
+          <div className="space-y-6">
             <div className="relative">
               <button
                 type="button"
@@ -234,92 +280,157 @@ export const ExpertBasicProfileStep = ({ formData, setFormData, lockedServiceTyp
               />
             </div>
 
-            <div className="pt-10">
-              <label className="mb-2 block text-xs font-medium text-white">
-                Full Name <RequiredMark />
-              </label>
-              <input
-                value={formData.fullname}
-                onChange={(e) => setFormData((prev) => ({ ...prev, fullname: e.target.value }))}
-                placeholder="Full Name"
-                className={fieldClass}
-              />
-            </div>
+            <div className="pt-8">
+              <h3 className="mb-4 text-sm font-bold text-white">Identity Details</h3>
 
-            <div>
-              <label className="mb-2 block text-xs font-medium text-white">Location</label>
-              <input
-                value={formData.location}
-                onChange={(e) => setFormData((prev) => ({ ...prev, location: e.target.value }))}
-                placeholder="Enter Location"
-                className={fieldClass}
-              />
-            </div>
+              <div className="space-y-4">
+                <div>
+                  <label className="mb-2 block text-xs font-medium text-white">
+                    Full Name <RequiredMark />
+                  </label>
+                  <input
+                    value={formData.fullname}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, fullname: e.target.value }))}
+                    placeholder="Enter full name"
+                    className={fieldClass}
+                  />
+                </div>
 
-            <div>
-              <label className="mb-2 block text-xs font-medium text-white">Bio</label>
-              <textarea
-                value={formData.bio}
-                onChange={(e) => setFormData((prev) => ({ ...prev, bio: e.target.value }))}
-                placeholder="Write a short bio"
-                className="ui-textarea h-32"
-              />
-            </div>
+                <div>
+                  <label className="mb-2 block text-xs font-medium text-white">
+                    Location <RequiredMark />
+                  </label>
+                  <input
+                    value={formData.location}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, location: e.target.value }))}
+                    placeholder="Enter location"
+                    className={fieldClass}
+                  />
+                </div>
 
-            <div>
-              <label className="mb-2 block text-xs font-medium text-white">Sample Work Link</label>
+                <div>
+                  <label className="mb-2 block text-xs font-medium text-white">
+                    Profile Bio <RequiredMark />
+                  </label>
+                  <textarea
+                    value={formData.bio}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, bio: e.target.value }))}
+                    placeholder="Write a brief bio..."
+                    rows={4}
+                    className={fieldClass}
+                  />
+                </div>
 
-              <input
-                value={formData.sampleWorkLink}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, sampleWorkLink: e.target.value }))
-                }
-                placeholder="Enter Link"
-                className={fieldClass}
-              />
-            </div>
+                <div>
+                  <label className="mb-2 block text-xs font-medium text-white">
+                    Sample Work Link
+                  </label>
+                  <input
+                    value={formData.sampleWorkLink}
+                    onChange={(e) =>
+                      setFormData((prev) => ({ ...prev, sampleWorkLink: e.target.value }))
+                    }
+                    placeholder="Enter Link"
+                    className={fieldClass}
+                  />
+                </div>
 
-            <div>
-              <label className="mb-2 block text-xs font-medium text-white">
-                Upload Sample Work File
-              </label>
-              <button
-                type="button"
-                onClick={() => sampleFileInputRef.current?.click()}
-                className="hover:border-brand-accent/50 text-muted rounded-md border border-dashed border-white/20 px-8 py-3 text-xs transition-colors"
-              >
-                {formData.sampleWorkFileName || 'Upload here'}
-              </button>
-              <input
-                ref={sampleFileInputRef}
-                type="file"
-                className="hidden"
-                onChange={(e) => {
-                  const file = e.target.files?.[0] ?? null
-                  setFormData((prev) => ({
-                    ...prev,
-                    sampleWorkFile: file,
-                    sampleWorkFileName: file?.name ?? '',
-                  }))
-                }}
-              />
+                <div>
+                  <label className="mb-2 block text-xs font-medium text-white">
+                    Upload Sample Work File
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => sampleFileInputRef.current?.click()}
+                    className="hover:border-brand-accent/50 text-muted rounded-md border border-dashed border-white/20 px-8 py-3 text-xs transition-colors"
+                  >
+                    {formData.sampleWorkFileName || 'Upload here'}
+                  </button>
+                  <input
+                    ref={sampleFileInputRef}
+                    type="file"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0] ?? null
+                      setFormData((prev) => ({
+                        ...prev,
+                        sampleWorkFile: file,
+                        sampleWorkFileName: file?.name ?? '',
+                      }))
+                    }}
+                  />
+                </div>
+              </div>
             </div>
           </div>
 
-          <div className="space-y-5">
+          {/* Right Column: Professional Information & Services */}
+          <div className="space-y-6">
             <h3 className="text-sm font-bold text-white">Professional Information</h3>
 
-            <div>
+            {/* Industry Dropdown */}
+            <div ref={industryContainerRef} className="relative">
               <label className="mb-2 block text-xs font-medium text-white">Industry</label>
               <div className="relative">
                 <Search className="text-muted absolute top-1/2 left-3 size-4 -translate-y-1/2" />
                 <input
                   value={formData.industry}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, industry: e.target.value }))}
-                  placeholder="Search industry"
-                  className={`${fieldClass} ui-input-icon-left`}
+                  onFocus={() => setIndustryDropdownOpen(true)}
+                  onChange={(e) => {
+                    setFormData((prev) => ({ ...prev, industry: e.target.value }))
+                    setIndustryDropdownOpen(true)
+                  }}
+                  placeholder="Select or search industry"
+                  className={`${fieldClass} ui-input-icon-left pr-9`}
                 />
+                <button
+                  type="button"
+                  onClick={() => setIndustryDropdownOpen((prev) => !prev)}
+                  className="text-muted absolute top-1/2 right-2.5 -translate-y-1/2 p-1 hover:text-white"
+                >
+                  <ChevronDown
+                    className={cn(
+                      'size-4 transition-transform duration-200',
+                      industryDropdownOpen && 'rotate-180',
+                    )}
+                  />
+                </button>
               </div>
+
+              {industryDropdownOpen && (
+                <div className="absolute z-50 mt-1 max-h-56 w-full overflow-y-auto rounded-lg border border-white/10 bg-[#161616] p-1.5 shadow-2xl backdrop-blur-md">
+                  {filteredIndustries.length === 0 ? (
+                    <div className="p-3 text-center text-xs text-white/50">
+                      No matching industry. Custom industry will be used: &quot;{formData.industry}
+                      &quot;
+                    </div>
+                  ) : (
+                    filteredIndustries.map((ind) => {
+                      const isSelected =
+                        formData.industry.trim().toLowerCase() === ind.toLowerCase()
+                      return (
+                        <button
+                          key={ind}
+                          type="button"
+                          onClick={() => {
+                            setFormData((prev) => ({ ...prev, industry: ind }))
+                            setIndustryDropdownOpen(false)
+                          }}
+                          className={cn(
+                            'flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-xs transition-colors',
+                            isSelected
+                              ? 'bg-brand-accent/15 text-brand-accent font-semibold'
+                              : 'text-white/80 hover:bg-white/5 hover:text-white',
+                          )}
+                        >
+                          <span>{ind}</span>
+                          {isSelected && <Check className="text-brand-accent size-3.5" />}
+                        </button>
+                      )
+                    })
+                  )}
+                </div>
+              )}
             </div>
 
             <div>
@@ -332,7 +443,7 @@ export const ExpertBasicProfileStep = ({ formData, setFormData, lockedServiceTyp
                   onChange={(e) =>
                     setFormData((prev) => ({ ...prev, experienceYears: e.target.value }))
                   }
-                  placeholder="Enter Years"
+                  placeholder="Years"
                   type="number"
                   min={0}
                   className={fieldClass}
@@ -342,7 +453,7 @@ export const ExpertBasicProfileStep = ({ formData, setFormData, lockedServiceTyp
                   onChange={(e) =>
                     setFormData((prev) => ({ ...prev, experienceMonths: e.target.value }))
                   }
-                  placeholder="Enter Month"
+                  placeholder="Months"
                   type="number"
                   min={0}
                   className={fieldClass}
@@ -434,12 +545,6 @@ export const ExpertBasicProfileStep = ({ formData, setFormData, lockedServiceTyp
                       </div>
                     )}
                   </div>
-                  {isVenueService ? (
-                    <p className="text-muted mt-2 text-xs">
-                      You can only select maximum of one category. Multiple sub-categories are
-                      allowed within that category.
-                    </p>
-                  ) : null}
                 </>
               )}
 
@@ -461,37 +566,135 @@ export const ExpertBasicProfileStep = ({ formData, setFormData, lockedServiceTyp
               )}
             </div>
 
-            <div>
-              <label className="mb-2 block text-xs font-medium text-white">Offerings</label>
+            {/* Offerings Dropdown & Multi-Select */}
+            <div ref={offeringContainerRef} className="relative">
+              <div className="mb-2 flex items-center justify-between">
+                <label className="block text-xs font-medium text-white">Offerings</label>
+                <span className="text-[11px] text-white/40">
+                  Select from dropdown or add custom
+                </span>
+              </div>
+
               <div className="relative mb-3">
                 <Search className="text-muted absolute top-1/2 left-3 size-4 -translate-y-1/2" />
                 <input
                   value={offeringInput}
-                  onChange={(e) => setOfferingInput(e.target.value)}
+                  onFocus={() => setOfferingDropdownOpen(true)}
+                  onChange={(e) => {
+                    setOfferingInput(e.target.value)
+                    setOfferingDropdownOpen(true)
+                  }}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') {
                       e.preventDefault()
-                      addOffering(offeringInput, () => setOfferingInput(''))
+                      addOffering(offeringInput, () => {
+                        setOfferingInput('')
+                        setOfferingDropdownOpen(false)
+                      })
                     }
                   }}
-                  placeholder="Search and press Enter"
-                  className={`${fieldClass} ui-input-icon-left`}
+                  placeholder="Select from dropdown or search offerings..."
+                  className={`${fieldClass} ui-input-icon-left pr-9`}
                 />
+                <button
+                  type="button"
+                  onClick={() => setOfferingDropdownOpen((prev) => !prev)}
+                  className="text-muted absolute top-1/2 right-2.5 -translate-y-1/2 p-1 hover:text-white"
+                >
+                  <ChevronDown
+                    className={cn(
+                      'size-4 transition-transform duration-200',
+                      offeringDropdownOpen && 'rotate-180',
+                    )}
+                  />
+                </button>
               </div>
+
+              {/* Offerings Suggestions Dropdown */}
+              {offeringDropdownOpen && (
+                <div className="absolute z-50 mb-2 max-h-56 w-full overflow-y-auto rounded-lg border border-white/10 bg-[#161616] p-2 shadow-2xl backdrop-blur-md">
+                  {filteredOfferings.length === 0 ? (
+                    <div className="p-3 text-center text-xs text-white/50">
+                      {offeringInput.trim() ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            addOffering(offeringInput, () => {
+                              setOfferingInput('')
+                              setOfferingDropdownOpen(false)
+                            })
+                          }}
+                          className="text-brand-accent inline-flex items-center gap-1 font-semibold hover:underline"
+                        >
+                          <Plus className="size-3.5" />
+                          Add &quot;{offeringInput}&quot; as custom offering
+                        </button>
+                      ) : (
+                        'All standard offerings selected'
+                      )}
+                    </div>
+                  ) : (
+                    <div className="space-y-1">
+                      {filteredOfferings.map((offering) => (
+                        <button
+                          key={offering}
+                          type="button"
+                          onClick={() => {
+                            addOffering(offering, () => {
+                              setOfferingInput('')
+                            })
+                          }}
+                          className="flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-xs text-white/80 transition-colors hover:bg-white/5 hover:text-white"
+                        >
+                          <span>{offering}</span>
+                          <Plus className="size-3.5 text-white/40" />
+                        </button>
+                      ))}
+                      {offeringInput.trim() &&
+                        !filteredOfferings.includes(offeringInput.trim()) && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              addOffering(offeringInput, () => {
+                                setOfferingInput('')
+                                setOfferingDropdownOpen(false)
+                              })
+                            }}
+                            className="text-brand-accent flex w-full items-center gap-1.5 border-t border-white/10 px-3 pt-2 pb-1 text-xs font-semibold hover:underline"
+                          >
+                            <Plus className="size-3.5" />
+                            Add custom &quot;{offeringInput}&quot;
+                          </button>
+                        )}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Selected Offerings Chips */}
               {formData.offerings.length > 0 && (
                 <div className="space-y-2">
-                  {formData.offerings.map((item) => (
-                    <div
-                      key={item}
-                      className="flex items-center justify-between rounded-md bg-black px-3 py-2.5 text-xs text-white"
-                    >
-                      {item}
-                      <XCircle
-                        className="text-muted size-4 cursor-pointer hover:text-white"
-                        onClick={() => removeOffering(item)}
-                      />
-                    </div>
-                  ))}
+                  <p className="text-[11px] font-semibold tracking-wider text-white/50 uppercase">
+                    Selected Offerings ({formData.offerings.length})
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {formData.offerings.map((item) => (
+                      <div
+                        key={item}
+                        className="flex items-center gap-2 rounded-lg border border-white/10 bg-[#0d0d0d] px-3 py-1.5 text-xs font-medium text-white"
+                      >
+                        <span>{item}</span>
+                        <button
+                          type="button"
+                          aria-label={`Remove ${item}`}
+                          onClick={() => removeOffering(item)}
+                          className="text-white/40 transition-colors hover:text-white"
+                        >
+                          <X className="size-3.5" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>

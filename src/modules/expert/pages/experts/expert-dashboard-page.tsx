@@ -12,7 +12,8 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
-import { BarChart3, RefreshCw, Star, TrendingDown, TrendingUp } from 'lucide-react'
+import { RefreshCw, Star, TrendingDown, TrendingUp } from 'lucide-react'
+import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
 import { toast } from 'sonner'
 
 import { fetchExpertDashboardAnalytics } from '../../api/expert-api'
@@ -269,7 +270,7 @@ export const ExpertDashboardPage = () => {
             className="ui-manage-metrics h-11 rounded-xl px-6 text-sm font-semibold sm:w-auto"
             onClick={() => navigate('/experts/dashboard/metrics')}
           >
-            <BarChart3 className="size-4" />
+            <ManageMetricsIcon className="size-5" />
             Manage Metrics
           </Button>
 

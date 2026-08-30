@@ -656,8 +656,8 @@ export const ServiceViewPage = () => {
         suspend: {
           title: 'Suspend Service',
           description:
-            'Are you sure you want to suspend this Service? This will result in removal of the account.',
-          submitLabel: 'Suspend User',
+            'Are you sure you want to suspend this service? It will be hidden from users until reactivated.',
+          submitLabel: 'Suspend Service',
           variant: 'suspend' as const,
           reasonOptions: suspendReasonOptions,
         },

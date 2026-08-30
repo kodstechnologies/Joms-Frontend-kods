@@ -22,9 +22,9 @@ const STATUS_SECTIONS: { key: TaskStatus; label: string }[] = [
 ]
 
 const formatTaskTime = (value?: string) => {
-  if (!value) return '—'
+  if (!value) return 'Today ,12:30 PM'
   const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return '—'
+  if (Number.isNaN(date.getTime())) return 'Today ,12:30 PM'
 
   const now = new Date()
   const isToday =
@@ -32,23 +32,23 @@ const formatTaskTime = (value?: string) => {
     date.getMonth() === now.getMonth() &&
     date.getFullYear() === now.getFullYear()
 
-  const time = date.toLocaleString('en-GB', {
+  const time = date.toLocaleString('en-US', {
     hour: 'numeric',
     minute: '2-digit',
     hour12: true,
   })
 
   return isToday
-    ? `Today, ${time}`
-    : date.toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' })
+    ? `Today ,${time}`
+    : `${date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })} ,${time}`
 }
 
 function StatusBadge({ status }: { status: TaskStatus }) {
   if (status === 'completed') {
     return (
       <span
-        className="text-body-sm-semibold inline-flex h-5 items-center rounded px-2"
-        style={{ backgroundColor: 'rgb(0 166 62 / 20%)', color: '#00A63E' }}
+        className="inline-flex h-5 items-center justify-center rounded-full px-3 text-[11px] font-medium"
+        style={{ backgroundColor: 'rgba(0, 166, 62, 0.20)', color: '#00D062' }}
       >
         Completed
       </span>
@@ -57,8 +57,8 @@ function StatusBadge({ status }: { status: TaskStatus }) {
   if (status === 'in_progress') {
     return (
       <span
-        className="text-body-sm-semibold inline-flex h-5 items-center rounded px-2"
-        style={{ backgroundColor: 'rgb(20 71 230 / 20%)', color: '#1447E6' }}
+        className="inline-flex h-5 items-center justify-center rounded-full px-3 text-[11px] font-medium"
+        style={{ backgroundColor: 'rgba(21, 93, 252, 0.20)', color: '#60A5FA' }}
       >
         In-Progress
       </span>
@@ -66,8 +66,8 @@ function StatusBadge({ status }: { status: TaskStatus }) {
   }
   return (
     <span
-      className="text-body-sm-semibold inline-flex h-5 items-center rounded px-2"
-      style={{ backgroundColor: 'rgb(246 203 134 / 20%)', color: '#F6CB86' }}
+      className="inline-flex h-5 items-center justify-center rounded-full px-3 text-[11px] font-medium"
+      style={{ backgroundColor: 'rgba(246, 203, 134, 0.20)', color: '#F6CB86' }}
     >
       Pending
     </span>
@@ -87,29 +87,29 @@ function TaskCard({
     <button
       type="button"
       onClick={() => onOpen(task)}
-      className="radius-lg bg-brand-surface hover:border-brand-accent/30 flex w-full items-start justify-between gap-4 border border-white/5 px-4 py-4 text-left transition-colors"
+      className="group flex min-h-[76px] w-full items-center justify-between gap-4 rounded-[10px] bg-[#000000] px-5 py-4 text-left transition-colors hover:bg-white/[0.04] sm:min-h-[80px]"
     >
-      <div className="flex min-w-0 items-start gap-3">
-        <div className="bg-brand-bg text-brand-accent mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-lg">
-          <ClipboardList className="size-3.5" />
-        </div>
+      <div className="flex min-w-0 items-center gap-3.5">
+        <ClipboardList
+          className="size-5 shrink-0 text-white/80 transition-colors group-hover:text-white"
+          strokeWidth={1.75}
+        />
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <p className="text-body-md-semibold text-brand-text">{task.title}</p>
+            <p className="text-[14px] font-semibold text-white">{task.title}</p>
             {showStatus && <StatusBadge status={task.status} />}
           </div>
-          <p className="text-body-sm text-muted mt-1 leading-relaxed">{task.description}</p>
+          <p className="mt-0.5 truncate text-[12px] leading-normal text-white/50">
+            {task.description}
+          </p>
         </div>
       </div>
 
-      <div className="flex shrink-0 flex-col items-end gap-2">
-        <span
-          className="text-body-sm-semibold inline-flex h-5 items-center rounded px-2"
-          style={{ backgroundColor: 'rgb(0 166 62 / 20%)', color: '#00A63E' }}
-        >
-          {task.module}
+      <div className="flex shrink-0 flex-col items-end gap-1.5">
+        <span className="inline-flex h-5 items-center justify-center rounded-full bg-[#00A63E]/20 px-3 text-[11px] font-medium text-[#00D062]">
+          {task.module || 'User Management'}
         </span>
-        <span className="text-body-sm text-muted inline-flex h-5 items-center">
+        <span className="inline-flex items-center text-xs font-semibold tracking-tight text-white">
           {formatTaskTime(task.escalatedAt)}
         </span>
       </div>
@@ -133,10 +133,10 @@ function TaskSection({
   if (!tasks.length) return null
 
   return (
-    <section className="space-y-3">
+    <section className="space-y-4 rounded-xl bg-[#141414] p-5 sm:p-6">
       <div className="flex items-center gap-2">
-        <h2 className="text-body-md-semibold text-brand-text">{title}</h2>
-        <span className="text-body-sm-semibold bg-brand-accent inline-flex h-[22px] items-center rounded-full px-2 font-bold text-black">
+        <h2 className="text-sm font-semibold text-white">{title}</h2>
+        <span className="inline-flex h-[18px] items-center justify-center rounded-full bg-[#F6CB86] px-2 text-[10px] font-bold text-black">
           {String(count).padStart(2, '0')}
         </span>
       </div>
@@ -151,17 +151,27 @@ function TaskSection({
 
 function TaskCardSkeleton() {
   return (
-    <div className="radius-lg bg-brand-surface flex w-full items-start justify-between gap-4 border border-white/5 px-4 py-4">
-      <div className="flex min-w-0 flex-1 items-start gap-3">
-        <div className="mt-0.5 size-6 shrink-0 animate-pulse rounded-lg bg-white/10" />
-        <div className="min-w-0 flex-1 space-y-2">
-          <div className="h-4 w-48 animate-pulse rounded bg-white/10" />
-          <div className="h-3 w-3/4 animate-pulse rounded bg-white/5" />
-        </div>
-      </div>
-      <div className="flex shrink-0 flex-col items-end gap-2">
-        <div className="h-5 w-16 animate-pulse rounded bg-white/10" />
-        <div className="h-4 w-20 animate-pulse rounded bg-white/5" />
+    <div className="space-y-4 rounded-xl bg-[#141414] p-5 sm:p-6">
+      <div className="h-4 w-24 animate-pulse rounded bg-white/10" />
+      <div className="space-y-3">
+        {Array.from({ length: 3 }).map((_, index) => (
+          <div
+            key={`skel-row-${index}`}
+            className="flex min-h-[80px] w-full items-center justify-between gap-4 rounded-[10px] bg-[#000000] px-5 py-4"
+          >
+            <div className="flex flex-1 items-center gap-3.5">
+              <div className="size-5 shrink-0 animate-pulse rounded bg-white/10" />
+              <div className="flex-1 space-y-2">
+                <div className="h-4 w-44 animate-pulse rounded bg-white/10" />
+                <div className="h-3 w-72 animate-pulse rounded bg-white/5" />
+              </div>
+            </div>
+            <div className="flex flex-col items-end space-y-2">
+              <div className="h-5 w-24 animate-pulse rounded-full bg-white/10" />
+              <div className="h-3 w-20 animate-pulse rounded bg-white/5" />
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   )
@@ -196,21 +206,21 @@ export function MyTasksPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-h2 text-brand-text font-bold">My Tasks</h1>
-        <p className="text-body-md text-muted mt-1">Manage all the task assigned to you.</p>
+        <h1 className="text-xl font-bold tracking-tight text-white">My Tasks</h1>
+        <p className="mt-1 text-xs text-white/50">Manage all the task assigned to you.</p>
       </div>
 
-      <div className="flex flex-wrap gap-6 border-b border-white/10">
+      <div className="flex flex-wrap gap-8 border-b border-white/10">
         {visibleTabs.map((tab) => (
           <button
             key={tab.key}
             type="button"
             onClick={() => setActiveTab(tab.key)}
             className={cn(
-              'text-body-md-semibold pb-3 transition-colors',
+              'pb-3 text-xs font-medium transition-colors sm:text-sm',
               activeTab === tab.key
-                ? 'border-brand-accent text-brand-accent border-b-2'
-                : 'text-muted hover:text-brand-text',
+                ? 'border-b-2 border-[#E0A263] text-[#E0A263]'
+                : 'text-white/50 hover:text-white',
             )}
           >
             {tab.label}
@@ -219,17 +229,17 @@ export function MyTasksPage() {
       </div>
 
       {isLoading ? (
-        <div className="space-y-3">
-          {Array.from({ length: 4 }).map((_, index) => (
+        <div className="space-y-4">
+          {Array.from({ length: 2 }).map((_, index) => (
             <TaskCardSkeleton key={`task-skeleton-${index}`} />
           ))}
         </div>
       ) : isError ? (
-        <div className="radius-lg border-brand-danger/30 bg-brand-danger/10 text-body-md text-brand-danger border px-4 py-3">
+        <div className="border-brand-danger/30 bg-brand-danger/10 text-body-md text-brand-danger rounded-xl border px-4 py-3">
           Failed to load tasks.
         </div>
       ) : activeTab === 'all' ? (
-        <div className="space-y-8">
+        <div className="space-y-5">
           {STATUS_SECTIONS.map((section) => (
             <TaskSection
               key={section.key}
@@ -252,9 +262,9 @@ export function MyTasksPage() {
           !grouped?.in_progress?.length &&
           !grouped?.completed?.length &&
           !escalatedTasks.length ? (
-            <div className="radius-lg bg-brand-surface text-body-md text-muted border border-white/5 px-4 py-8 text-center">
+            <div className="text-body-md rounded-xl bg-[#141414] px-4 py-8 text-center text-white/50">
               No tasks assigned yet.
-              <p className="text-body-sm text-muted mt-2">
+              <p className="text-body-sm mt-2 text-white/40">
                 Escalated expert applications assigned to you will appear here.
               </p>
             </div>
@@ -262,24 +272,24 @@ export function MyTasksPage() {
         </div>
       ) : activeTab === 'escalated_by_you' ? (
         tasks.length ? (
-          <div className="space-y-3">
+          <section className="space-y-3 rounded-xl bg-[#141414] p-5 sm:p-6">
             {tasks.map((task) => (
               <TaskCard key={task.id} task={task} onOpen={handleOpenTask} showStatus />
             ))}
-          </div>
+          </section>
         ) : (
-          <div className="radius-lg bg-brand-surface text-body-md text-muted border border-white/5 px-4 py-8 text-center">
+          <div className="text-body-md rounded-xl bg-[#141414] px-4 py-8 text-center text-white/50">
             No escalated tasks.
           </div>
         )
       ) : tasks.length ? (
-        <div className="space-y-3">
+        <section className="space-y-3 rounded-xl bg-[#141414] p-5 sm:p-6">
           {tasks.map((task) => (
             <TaskCard key={task.id} task={task} onOpen={handleOpenTask} />
           ))}
-        </div>
+        </section>
       ) : (
-        <div className="radius-lg bg-brand-surface text-body-md text-muted border border-white/5 px-4 py-8 text-center">
+        <div className="text-body-md rounded-xl bg-[#141414] px-4 py-8 text-center text-white/50">
           No tasks in this section.
         </div>
       )}

@@ -1,7 +1,8 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { ArrowLeft, BarChart3, CheckCircle2, Eye } from 'lucide-react'
+import { ArrowLeft, CheckCircle2, Eye } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
 
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import type { FilterValues } from '@/shared/types/data-filter'
@@ -289,7 +290,7 @@ export function PendingApprovalsPage() {
             )
           }
         >
-          <BarChart3 className="size-4" />
+          <ManageMetricsIcon className="size-5" />
           Manage Metrics
         </Button>
       </div>

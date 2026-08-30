@@ -1,10 +1,11 @@
-import { ArrowLeft, BarChart3 } from 'lucide-react'
+import { ArrowLeft } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
 import { getManagementStatusDisplay } from '../../utils/management-status'
 import { displayExpertValue } from './expert-list-format'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import { Button } from '@/shared/components/ui/button'
+import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
 
 export function ExpertListHeader({
   title,
@@ -34,7 +35,7 @@ export function ExpertListHeader({
         className="ui-manage-metrics h-9 w-full md:w-auto"
         onClick={() => navigate(metricsPath)}
       >
-        <BarChart3 className="size-4" />
+        <ManageMetricsIcon className="size-5" />
         Manage Metrics
       </Button>
     </div>

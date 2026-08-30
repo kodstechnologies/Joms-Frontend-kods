@@ -48,12 +48,12 @@ function ToggleSwitch({
       onClick={onChange}
       className={cn(
         'relative h-5 w-9 rounded-full transition-colors disabled:opacity-50',
-        checked ? 'bg-brand-positive' : 'bg-white/20',
+        checked ? 'bg-[#F6CB86]' : 'bg-white/20',
       )}
     >
       <span
         className={cn(
-          'absolute top-0.5 left-0.5 size-4 rounded-full bg-white transition-transform',
+          'absolute top-0.5 left-0.5 size-4 rounded-full bg-black transition-transform',
           checked && 'translate-x-4',
         )}
       />
@@ -331,12 +331,12 @@ export function TemplatesPage({ embedded = false }: { embedded?: boolean }) {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-start gap-3">
-        {!embedded ? (
+      <div className="flex items-center gap-3 border-b border-white/10 pb-4">
+        {embedded ? (
           <button
             type="button"
-            onClick={() => navigateBackOrFallback(navigate, '/communication/management')}
-            className="text-muted hover:text-brand-text mt-1 grid size-6 shrink-0 place-items-center rounded transition-colors"
+            onClick={() => navigateBackOrFallback(navigate, '/settings')}
+            className="text-muted hover:text-brand-text grid size-9 place-items-center rounded-lg border border-white/10 transition-colors hover:bg-white/5"
             aria-label="Go back"
           >
             <ArrowLeft className="size-4" />
@@ -351,15 +351,15 @@ export function TemplatesPage({ embedded = false }: { embedded?: boolean }) {
           >
             Moderation Reason Manager
           </h1>
-          <p className="text-body-md text-muted mt-1">Manage action categories and reasons.</p>
+          <p className="text-body-md text-muted mt-1">Manage action categories and reasons</p>
         </div>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-[379px_minmax(0,1fr)]">
+      <div className="grid gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
         {/* Left: Categories */}
-        <aside className="radius-lg bg-brand-bg border border-white/10 p-4">
+        <aside className="border-white/10 lg:border-r lg:pr-6">
           <p className="text-body-md-semibold text-brand-text">Categories</p>
-          <div className="radius-md bg-brand-surface mt-3 flex h-10 items-center gap-3 border border-white/10 px-3">
+          <div className="bg-brand-surface mt-3 flex h-10 items-center gap-3 rounded-lg border border-white/[0.08] px-3">
             <Search className="text-muted size-4 shrink-0" />
             <input
               value={search}
@@ -369,10 +369,10 @@ export function TemplatesPage({ embedded = false }: { embedded?: boolean }) {
             />
           </div>
 
-          <div className="mt-4 space-y-2">
+          <div className="mt-4 divide-y divide-white/[0.08]">
             {categoriesLoading ? (
               Array.from({ length: 3 }).map((_, index) => (
-                <div key={index} className="h-[45px] animate-pulse rounded-xl bg-white/5" />
+                <div key={index} className="h-[55px] animate-pulse py-3" />
               ))
             ) : categories.length === 0 ? (
               <p className="text-body-md text-muted px-2 py-6 text-center">No categories found</p>
@@ -384,20 +384,24 @@ export function TemplatesPage({ embedded = false }: { embedded?: boolean }) {
                     key={category.id}
                     type="button"
                     onClick={() => setSelectedCategoryId(category.id)}
-                    className={cn(
-                      'w-full rounded-xl border px-3 py-3 text-left transition-colors',
-                      selected
-                        ? 'border-brand-accent/40 bg-brand-accent/10'
-                        : 'bg-brand-bg border-white/10 hover:border-white/20',
-                    )}
+                    className="w-full py-4 text-left transition-colors"
                   >
-                    <div className="flex items-start justify-between gap-2">
-                      <p className="text-body-md-semibold text-brand-text">{category.title}</p>
-                      <span className="text-body-sm text-muted rounded-full bg-white/10 px-2 py-0.5 font-semibold">
+                    <div className="flex items-center gap-2">
+                      <p
+                        className={cn(
+                          'text-body-md-semibold transition-colors',
+                          selected ? 'text-white' : 'text-white/90 hover:text-white',
+                        )}
+                      >
+                        {category.title}
+                      </p>
+                      <span className="rounded-md bg-[#1C1C1E] px-2 py-0.5 text-xs font-semibold text-white">
                         {category.reasonCount}
                       </span>
                     </div>
-                    <p className="text-body-sm text-muted mt-1">{category.description}</p>
+                    <p className="text-body-sm text-muted mt-1.5 line-clamp-2">
+                      {category.description}
+                    </p>
                   </button>
                 )
               })
@@ -406,54 +410,46 @@ export function TemplatesPage({ embedded = false }: { embedded?: boolean }) {
         </aside>
 
         {/* Right: Reasons */}
-        <section className="radius-lg bg-brand-bg border border-white/10 p-4 sm:p-5">
+        <section className="min-w-0">
           {selectedCategory ? (
             <>
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                <div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <h2 className="text-h4 text-brand-text">{selectedCategory.title}</h2>
-                    <span className="text-body-sm text-muted rounded-full border border-white/15 bg-white/5 px-2 py-0.5 font-medium">
-                      {selectedCategory.slug}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => setCategoryEditOpen(true)}
-                      className="text-muted hover:text-brand-text rounded p-1 hover:bg-white/5"
-                      aria-label="Edit category"
-                    >
-                      <Pencil className="size-4" />
-                    </button>
-                    <span
-                      className="text-body-sm-semibold inline-flex h-5 items-center rounded px-2"
-                      style={{ backgroundColor: 'rgb(0 166 62 / 15%)', color: '#00A63E' }}
-                    >
-                      Active
-                    </span>
+              <div className="border-b border-white/10 pb-4">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <div className="flex flex-wrap items-center gap-2.5">
+                      <h2 className="text-xl font-bold text-white">{selectedCategory.title}</h2>
+                      <button
+                        type="button"
+                        onClick={() => setCategoryEditOpen(true)}
+                        className="text-muted hover:text-brand-text rounded p-1 hover:bg-white/5"
+                        aria-label="Edit category"
+                      >
+                        <Pencil className="size-4" />
+                      </button>
+                      <span className="inline-flex h-5 items-center rounded-full bg-[#00A63E]/20 px-2.5 text-xs font-semibold text-[#00D062]">
+                        Active
+                      </span>
+                    </div>
+                    <p className="text-body-sm text-muted mt-1.5">{selectedCategory.description}</p>
                   </div>
-                  <p className="text-body-sm text-muted mt-1">{selectedCategory.description}</p>
-                  <p className="text-body-sm text-muted mt-1 opacity-70">
-                    Create reasons for this CTA modal. Active reasons appear as chips for admins and
-                    their message templates are sent to the partner app.
-                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditingReason(null)
+                      setReasonModalOpen(true)
+                    }}
+                    className="ui-cta ui-cta-primary shrink-0"
+                  >
+                    <Plus className="size-4" />
+                    New Reason
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setEditingReason(null)
-                    setReasonModalOpen(true)
-                  }}
-                  className="ui-cta ui-cta-primary shrink-0"
-                >
-                  <Plus className="size-4" />
-                  New Reason
-                </button>
               </div>
 
-              <div className="mt-5 space-y-3">
+              <div className="mt-4 space-y-3">
                 {reasonsLoading ? (
                   Array.from({ length: 3 }).map((_, index) => (
-                    <div key={index} className="h-[82px] animate-pulse rounded-xl bg-white/5" />
+                    <div key={index} className="h-[88px] animate-pulse rounded-xl bg-white/5" />
                   ))
                 ) : reasons.length === 0 ? (
                   <div className="text-body-md text-muted rounded-xl border border-dashed border-white/10 px-4 py-10 text-center">
@@ -463,25 +459,19 @@ export function TemplatesPage({ embedded = false }: { embedded?: boolean }) {
                   reasons.map((reason) => (
                     <article
                       key={reason.id}
-                      className="radius-lg bg-brand-surface border border-white/[0.06] px-4 py-4"
+                      className="bg-brand-surface rounded-xl border border-white/[0.04] p-4 sm:p-5"
                     >
                       <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-                        <div className="min-w-0 space-y-1">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <h3 className="text-body-md-semibold text-brand-text">
-                              {reason.title}
-                            </h3>
-                            <span
-                              className="text-body-sm-semibold inline-flex h-5 items-center rounded px-2"
-                              style={{
-                                backgroundColor: 'rgb(246 203 134 / 15%)',
-                                color: '#F6CB86',
-                              }}
-                            >
+                        <div className="min-w-0 flex-1 space-y-1.5">
+                          <div className="flex flex-wrap items-center gap-2.5">
+                            <h3 className="text-base font-semibold text-white">{reason.title}</h3>
+                            <span className="inline-flex h-5 items-center rounded-full border border-[#F6CB86]/20 bg-[#3D2E14] px-2.5 text-xs font-medium text-[#F6CB86]">
                               Used in {reason.usageCount} actions
                             </span>
                           </div>
-                          <p className="text-body-sm text-muted">{reason.description}</p>
+                          <p className="text-body-sm text-muted leading-relaxed">
+                            {reason.description}
+                          </p>
                         </div>
 
                         <div className="flex shrink-0 items-center gap-3">
@@ -510,7 +500,7 @@ export function TemplatesPage({ embedded = false }: { embedded?: boolean }) {
                             className="text-muted hover:text-brand-text rounded p-1.5 hover:bg-white/5"
                             aria-label="Edit reason"
                           >
-                            <Pencil className="size-3.5" />
+                            <Pencil className="size-4" />
                           </button>
                           <button
                             type="button"
@@ -523,7 +513,7 @@ export function TemplatesPage({ embedded = false }: { embedded?: boolean }) {
                             className="text-brand-danger hover:bg-brand-danger/10 rounded p-1.5"
                             aria-label="Delete reason"
                           >
-                            <Trash2 className="size-3.5" />
+                            <Trash2 className="size-4" />
                           </button>
                         </div>
                       </div>

@@ -464,8 +464,25 @@ function CommunicationFormFields({
                   </label>
                   <input
                     type="datetime-local"
-                    className={inputClass}
+                    className={cn(
+                      inputClass,
+                      'cursor-pointer [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0',
+                    )}
                     value={scheduledAt}
+                    onClick={(e) => {
+                      try {
+                        e.currentTarget.showPicker?.()
+                      } catch {
+                        // fallback if not supported
+                      }
+                    }}
+                    onFocus={(e) => {
+                      try {
+                        e.currentTarget.showPicker?.()
+                      } catch {
+                        // fallback
+                      }
+                    }}
                     onChange={(e) => setScheduledAt(e.target.value)}
                     required={deliveryType === 'schedule'}
                   />
@@ -491,13 +508,13 @@ function CommunicationFormFields({
 
           <div>
             <label className={labelClass}>Message Content</label>
-            <textarea
-              rows={4}
+            <input
+              type="text"
               placeholder="Enter Message"
+              className={inputClass}
               value={messageContent}
               onChange={(e) => setMessageContent(e.target.value)}
               required
-              className="ui-textarea"
             />
           </div>
 

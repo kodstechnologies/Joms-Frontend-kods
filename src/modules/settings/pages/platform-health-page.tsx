@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { RefreshCw, Settings2, Upload } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
@@ -82,6 +82,150 @@ const CHART_COLORS = {
   security: '#d3191c',
 }
 
+const PLATFORM_TREND_LEFT_MAX = 1600
+const PLATFORM_TREND_LEFT_TICKS = [0, 400, 800, 1200, 1600]
+const PLATFORM_TREND_UPTIME_TICKS = [99, 99.25, 99.5, 99.75, 100]
+const SYSTEM_PERF_LEFT_TICKS = [0, 25, 50, 75, 100]
+const SYSTEM_PERF_RIGHT_MAX = 3200
+const SYSTEM_PERF_RIGHT_TICKS = [0, 800, 1600, 2400, 3200]
+const SECURITY_TICKS = [0, 2, 4, 6, 8]
+
+/** Figma bar dimensions (px) */
+const PLATFORM_TREND_BAR_SIZE = 70
+const PLATFORM_TREND_BAR_GAP = 4
+const PLATFORM_TREND_CATEGORY_GAP = 40
+const SECURITY_BAR_SIZE = 40
+const SECURITY_BAR_GAP = 4
+const SECURITY_CATEGORY_GAP = 40
+const CHART_HEIGHT = 420
+
+function calcGroupedBarChartMinWidth(
+  dataLength: number,
+  barsPerGroup: number,
+  barSize: number,
+  barGap: number,
+  categoryGap = 40,
+) {
+  if (dataLength <= 0) return 0
+  const groupBarWidth = barsPerGroup * barSize + Math.max(0, barsPerGroup - 1) * barGap
+  return dataLength * (groupBarWidth + categoryGap) + 72
+}
+
+function useChartContainerWidth() {
+  const ref = useRef<HTMLDivElement>(null)
+  const [width, setWidth] = useState(960)
+
+  useEffect(() => {
+    const node = ref.current
+    if (!node) return
+
+    const update = () => {
+      setWidth(node.clientWidth || 960)
+    }
+
+    update()
+    const observer = new ResizeObserver(update)
+    observer.observe(node)
+    return () => observer.disconnect()
+  }, [])
+
+  return { ref, width }
+}
+
+function roundAxisTick(value: number) {
+  return Math.round(value * 100) / 100
+}
+
+function resolvePlatformTrendLeftAxis(
+  data: Array<{ supportTickets?: number; transactions?: number }>,
+) {
+  const peak = data.reduce(
+    (max, row) => Math.max(max, row.supportTickets || 0, row.transactions || 0),
+    0,
+  )
+  if (peak === 0) {
+    return {
+      domain: [0, PLATFORM_TREND_LEFT_MAX] as [number, number],
+      ticks: PLATFORM_TREND_LEFT_TICKS,
+    }
+  }
+  if (peak <= 80) {
+    const max = Math.max(20, Math.ceil(peak / 5) * 5)
+    const ticks = Array.from({ length: 5 }, (_, index) => Math.round((max / 4) * index))
+    return { domain: [0, max] as [number, number], ticks }
+  }
+  if (peak <= PLATFORM_TREND_LEFT_MAX) {
+    return {
+      domain: [0, PLATFORM_TREND_LEFT_MAX] as [number, number],
+      ticks: PLATFORM_TREND_LEFT_TICKS,
+    }
+  }
+  const roundedMax = Math.ceil(peak / 400) * 400
+  const ticks = Array.from({ length: 5 }, (_, index) => Math.round((roundedMax / 4) * index))
+  return { domain: [0, roundedMax] as [number, number], ticks }
+}
+
+function resolvePlatformTrendUptimeAxis(data: Array<{ uptime?: number }>) {
+  const values = data.map((row) => row.uptime ?? 0).filter((value) => value > 0)
+  if (!values.length) {
+    return { domain: [99, 100] as [number, number], ticks: PLATFORM_TREND_UPTIME_TICKS }
+  }
+
+  const min = Math.min(...values)
+  const max = Math.max(...values)
+
+  if (min >= 98 && max <= 100) {
+    return { domain: [99, 100] as [number, number], ticks: PLATFORM_TREND_UPTIME_TICKS }
+  }
+
+  const floor = Math.max(0, Math.floor(min / 5) * 5 - (min % 5 === 0 ? 0 : 5))
+  const ceil = Math.min(100, Math.ceil(max / 5) * 5 + (max % 5 === 0 ? 0 : 5))
+  const span = Math.max(5, ceil - floor)
+  const step = span / 4
+  const ticks = Array.from({ length: 5 }, (_, index) => roundAxisTick(floor + step * index))
+
+  return { domain: [floor, ceil] as [number, number], ticks }
+}
+
+function resolveSystemPerfRightAxis(data: Array<{ requestsPerMin?: number }>) {
+  const peak = data.reduce((max, row) => Math.max(max, row.requestsPerMin || 0), 0)
+  if (peak <= 0) {
+    return {
+      domain: [0, SYSTEM_PERF_RIGHT_MAX] as [number, number],
+      ticks: SYSTEM_PERF_RIGHT_TICKS,
+    }
+  }
+  if (peak <= SYSTEM_PERF_RIGHT_MAX) {
+    const max = Math.max(80, Math.ceil(peak / 40) * 40)
+    const ticks = Array.from({ length: 5 }, (_, index) => Math.round((max / 4) * index))
+    return { domain: [0, max] as [number, number], ticks }
+  }
+  const roundedMax = Math.ceil(peak / 800) * 800
+  const ticks = Array.from({ length: 5 }, (_, index) => Math.round((roundedMax / 4) * index))
+  return { domain: [0, roundedMax] as [number, number], ticks }
+}
+
+function resolveSecurityAxis(
+  data: Array<{ compliance?: number; issuesResolved?: number; security?: number }>,
+) {
+  const peak = data.reduce(
+    (max, row) => Math.max(max, row.compliance || 0, row.issuesResolved || 0, row.security || 0),
+    0,
+  )
+  if (peak <= 8) {
+    return { domain: [0, 8] as [number, number], ticks: SECURITY_TICKS }
+  }
+  const max = Math.ceil(peak / 2) * 2
+  const ticks = Array.from({ length: 5 }, (_, index) => Math.round((max / 4) * index))
+  return { domain: [0, max] as [number, number], ticks }
+}
+
+function formatPlatformTrendTooltip(value: number | string, name: string) {
+  if (name === 'Uptime %') return [`${Number(value).toFixed(2)}%`, name]
+  if (name === 'Transactions (K)') return [value, 'Transaction(K)']
+  return [value, name]
+}
+
 function ChartLegend({ payload }: { payload?: Array<{ value?: string; color?: string }> }) {
   if (!payload?.length) return null
   return (
@@ -123,6 +267,9 @@ function TableRowSkeleton() {
   )
 }
 
+const REFRESH_BUTTON_CLASS =
+  'text-muted hover:text-brand-text grid size-9 place-items-center rounded-full transition-colors'
+
 function ChartPanel({
   title,
   children,
@@ -157,7 +304,7 @@ function ChartPanel({
           <button
             type="button"
             onClick={onRefresh}
-            className="bg-brand-bg text-muted hover:text-brand-text grid size-9 place-items-center rounded-full border border-white/10"
+            className={REFRESH_BUTTON_CLASS}
             aria-label="Refresh chart"
           >
             <RefreshCw className={cn('size-4', isLoading && 'animate-spin')} />
@@ -236,6 +383,63 @@ export function PlatformHealthPage() {
   const infrastructure = dashboardData?.infrastructure || []
   const skeletonCount = filteredActiveMetricIds.length || DEFAULT_PLATFORM_HEALTH_METRIC_IDS.length
 
+  const platformTrendAxis = useMemo(
+    () => resolvePlatformTrendLeftAxis(charts?.platformTrends || []),
+    [charts?.platformTrends],
+  )
+
+  const platformTrendUptimeAxis = useMemo(
+    () => resolvePlatformTrendUptimeAxis(charts?.platformTrends || []),
+    [charts?.platformTrends],
+  )
+
+  const systemPerfRightAxis = useMemo(
+    () => resolveSystemPerfRightAxis(charts?.systemPerformance24h || []),
+    [charts?.systemPerformance24h],
+  )
+
+  const securityAxis = useMemo(
+    () => resolveSecurityAxis(charts?.securityCompliance || []),
+    [charts?.securityCompliance],
+  )
+
+  const platformTrendData = charts?.platformTrends || []
+  const securityComplianceData = charts?.securityCompliance || []
+
+  const platformTrendChartMinWidth = useMemo(
+    () =>
+      calcGroupedBarChartMinWidth(
+        platformTrendData.length,
+        2,
+        PLATFORM_TREND_BAR_SIZE,
+        PLATFORM_TREND_BAR_GAP,
+        PLATFORM_TREND_CATEGORY_GAP,
+      ),
+    [platformTrendData.length],
+  )
+
+  const securityChartMinWidth = useMemo(
+    () =>
+      calcGroupedBarChartMinWidth(
+        securityComplianceData.length,
+        3,
+        SECURITY_BAR_SIZE,
+        SECURITY_BAR_GAP,
+        SECURITY_CATEGORY_GAP,
+      ),
+    [securityComplianceData.length],
+  )
+
+  const { ref: platformTrendChartRef, width: platformTrendChartContainerWidth } =
+    useChartContainerWidth()
+  const { ref: securityChartRef, width: securityChartContainerWidth } = useChartContainerWidth()
+
+  const platformTrendChartWidth = Math.max(
+    platformTrendChartMinWidth,
+    platformTrendChartContainerWidth,
+  )
+  const securityChartWidth = Math.max(securityChartMinWidth, securityChartContainerWidth)
+
   const refresh = () => {
     dashboardQuery.refetch()
   }
@@ -312,13 +516,15 @@ export function PlatformHealthPage() {
         onRefresh={refresh}
         isLoading={isLoading}
       >
-        <div className="h-[420px] w-full">
-          <ResponsiveContainer width="100%" height="100%">
+        <div ref={platformTrendChartRef} className="h-[420px] w-full overflow-x-auto">
+          <div style={{ width: platformTrendChartWidth, height: CHART_HEIGHT }}>
             <ComposedChart
-              data={charts?.platformTrends || []}
-              margin={{ left: 4, right: 12, top: 8, bottom: 0 }}
-              barGap={2}
-              barCategoryGap="18%"
+              width={platformTrendChartWidth}
+              height={CHART_HEIGHT}
+              data={platformTrendData}
+              margin={{ left: 4, right: 16, top: 8, bottom: 0 }}
+              barGap={PLATFORM_TREND_BAR_GAP}
+              barCategoryGap={PLATFORM_TREND_CATEGORY_GAP}
             >
               <CartesianGrid
                 stroke="rgba(255,255,255,0.06)"
@@ -327,12 +533,16 @@ export function PlatformHealthPage() {
               />
               <XAxis
                 dataKey="date"
+                interval="preserveStartEnd"
+                minTickGap={28}
                 tickLine={false}
                 axisLine={false}
                 tick={{ fill: 'rgba(148,163,184,0.85)', fontSize: 12 }}
               />
               <YAxis
                 yAxisId="left"
+                domain={platformTrendAxis.domain}
+                ticks={platformTrendAxis.ticks}
                 tickLine={false}
                 axisLine={false}
                 tick={{ fill: 'rgba(148,163,184,0.85)', fontSize: 12 }}
@@ -340,17 +550,18 @@ export function PlatformHealthPage() {
               <YAxis
                 yAxisId="right"
                 orientation="right"
-                domain={[99, 100]}
+                domain={platformTrendUptimeAxis.domain}
+                ticks={platformTrendUptimeAxis.ticks}
+                tickFormatter={(value) => `${value}%`}
                 tickLine={false}
                 axisLine={false}
                 tick={{ fill: 'rgba(148,163,184,0.85)', fontSize: 12 }}
               />
               <Tooltip
                 contentStyle={tooltipStyle}
-                formatter={(value, name) => {
-                  if (name === 'Uptime %') return [`${value}%`, name]
-                  return [value, name]
-                }}
+                formatter={(value, name) =>
+                  formatPlatformTrendTooltip(value as number | string, String(name))
+                }
               />
               <Legend content={<ChartLegend />} />
               <Bar
@@ -359,7 +570,7 @@ export function PlatformHealthPage() {
                 name="Support tickets"
                 fill={CHART_COLORS.supportTickets}
                 radius={[4, 4, 0, 0]}
-                maxBarSize={28}
+                barSize={PLATFORM_TREND_BAR_SIZE}
               />
               <Bar
                 yAxisId="left"
@@ -367,7 +578,7 @@ export function PlatformHealthPage() {
                 name="Transactions (K)"
                 fill={CHART_COLORS.transactions}
                 radius={[4, 4, 0, 0]}
-                maxBarSize={36}
+                barSize={PLATFORM_TREND_BAR_SIZE}
               />
               <Line
                 yAxisId="right"
@@ -376,10 +587,12 @@ export function PlatformHealthPage() {
                 name="Uptime %"
                 stroke={CHART_COLORS.uptime}
                 strokeWidth={2}
-                dot={{ r: 4, fill: CHART_COLORS.uptime }}
+                dot={{ r: 4, fill: CHART_COLORS.uptime, strokeWidth: 0 }}
+                activeDot={{ r: 5, fill: CHART_COLORS.uptime }}
+                isAnimationActive={false}
               />
             </ComposedChart>
-          </ResponsiveContainer>
+          </div>
         </div>
       </ChartPanel>
 
@@ -410,6 +623,7 @@ export function PlatformHealthPage() {
               <YAxis
                 yAxisId="left"
                 domain={[0, 100]}
+                ticks={SYSTEM_PERF_LEFT_TICKS}
                 tickLine={false}
                 axisLine={false}
                 tick={{ fill: 'rgba(148,163,184,0.85)', fontSize: 12 }}
@@ -417,6 +631,8 @@ export function PlatformHealthPage() {
               <YAxis
                 yAxisId="right"
                 orientation="right"
+                domain={systemPerfRightAxis.domain}
+                ticks={systemPerfRightAxis.ticks}
                 tickLine={false}
                 axisLine={false}
                 tick={{ fill: 'rgba(148,163,184,0.85)', fontSize: 12 }}
@@ -450,7 +666,8 @@ export function PlatformHealthPage() {
                 name="Request/min"
                 stroke={CHART_COLORS.requests}
                 strokeWidth={2}
-                dot={{ r: 4, fill: CHART_COLORS.requests }}
+                dot={{ r: 4, fill: CHART_COLORS.requests, strokeWidth: 0 }}
+                isAnimationActive={false}
               />
             </ComposedChart>
           </ResponsiveContainer>
@@ -464,13 +681,15 @@ export function PlatformHealthPage() {
         onRefresh={refresh}
         isLoading={isLoading}
       >
-        <div className="h-[420px] w-full">
-          <ResponsiveContainer width="100%" height="100%">
+        <div ref={securityChartRef} className="h-[420px] w-full overflow-x-auto">
+          <div style={{ width: securityChartWidth, height: CHART_HEIGHT }}>
             <ComposedChart
-              data={charts?.securityCompliance || []}
+              width={securityChartWidth}
+              height={CHART_HEIGHT}
+              data={securityComplianceData}
               margin={{ left: 4, right: 8, top: 8, bottom: 0 }}
-              barGap={4}
-              barCategoryGap="24%"
+              barGap={SECURITY_BAR_GAP}
+              barCategoryGap={SECURITY_CATEGORY_GAP}
             >
               <CartesianGrid
                 stroke="rgba(255,255,255,0.06)"
@@ -484,6 +703,10 @@ export function PlatformHealthPage() {
                 tick={{ fill: 'rgba(148,163,184,0.85)', fontSize: 12 }}
               />
               <YAxis
+                domain={securityAxis.domain}
+                ticks={securityAxis.ticks}
+                allowDecimals={false}
+                tickFormatter={(value) => String(value).padStart(2, '0')}
                 tickLine={false}
                 axisLine={false}
                 tick={{ fill: 'rgba(148,163,184,0.85)', fontSize: 12 }}
@@ -495,24 +718,27 @@ export function PlatformHealthPage() {
                 name="Compliance Flags"
                 fill={CHART_COLORS.compliance}
                 radius={[4, 4, 0, 0]}
-                maxBarSize={28}
+                barSize={SECURITY_BAR_SIZE}
+                isAnimationActive={false}
               />
               <Bar
                 dataKey="issuesResolved"
                 name="Issues Resolved"
                 fill={CHART_COLORS.resolved}
                 radius={[4, 4, 0, 0]}
-                maxBarSize={28}
+                barSize={SECURITY_BAR_SIZE}
+                isAnimationActive={false}
               />
               <Bar
                 dataKey="security"
                 name="Security Incidents"
                 fill={CHART_COLORS.security}
                 radius={[4, 4, 0, 0]}
-                maxBarSize={28}
+                barSize={SECURITY_BAR_SIZE}
+                isAnimationActive={false}
               />
             </ComposedChart>
-          </ResponsiveContainer>
+          </div>
         </div>
       </ChartPanel>
 
@@ -537,7 +763,7 @@ export function PlatformHealthPage() {
             <button
               type="button"
               onClick={refresh}
-              className="bg-brand-bg text-muted hover:text-brand-text grid size-9 place-items-center rounded-full border border-white/10"
+              className={REFRESH_BUTTON_CLASS}
               aria-label="Refresh infrastructure"
             >
               <RefreshCw className={cn('size-4', dashboardQuery.isFetching && 'animate-spin')} />

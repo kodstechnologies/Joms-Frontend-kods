@@ -1,10 +1,37 @@
-import { ArrowLeft, User } from 'lucide-react'
-import calendarIcon from '@/assets/JOMS_ICONS-2/icons8-calendar.svg'
+import type { SVGProps } from 'react'
+import { ArrowLeft, TrendingUp } from 'lucide-react'
 import { useNavigate, useParams } from 'react-router-dom'
 
 import { useCommunication } from '../hooks/use-communications'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
-import { StatCard } from '@/shared/components/dashboard/stat-card'
+
+function SolidUserIcon({ className, ...props }: SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      className={className ?? 'size-4 shrink-0'}
+      aria-hidden="true"
+      {...props}
+    >
+      <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+    </svg>
+  )
+}
+
+function SolidCalendarIcon({ className, ...props }: SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      className={className ?? 'size-4 shrink-0'}
+      aria-hidden="true"
+      {...props}
+    >
+      <path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11z" />
+    </svg>
+  )
+}
 
 export function CommunicationDetails() {
   const navigate = useNavigate()
@@ -39,39 +66,13 @@ export function CommunicationDetails() {
     bounced: 0,
   }
 
-  const rateHint = (part: number, whole: number, label: string) =>
-    whole > 0 ? `${((part / whole) * 100).toFixed(1)}% of ${label}` : undefined
-
-  const analyticsMetrics = [
-    { title: 'Sent', value: String(analytics.sent) },
-    {
-      title: 'Delivered',
-      value: String(analytics.delivered),
-      hint: rateHint(analytics.delivered, analytics.sent, 'sent'),
-    },
-    {
-      title: 'Opened',
-      value: String(analytics.opened),
-      hint: rateHint(analytics.opened, analytics.delivered || analytics.sent, 'delivered'),
-    },
-    {
-      title: 'Clicked',
-      value: String(analytics.clicked),
-      hint: rateHint(analytics.clicked, analytics.opened || analytics.delivered, 'opened'),
-    },
-    {
-      title: 'Failed',
-      value: String(analytics.failed),
-      hint: rateHint(analytics.failed, analytics.sent, 'sent'),
-    },
-    {
-      title: 'Open Rate',
-      value: `${data.openRate ?? 0}%`,
-    },
-    {
-      title: 'Click Rate',
-      value: `${data.clickRate ?? 0}%`,
-    },
+  const deliveryCards = [
+    { title: 'Sent', value: analytics.sent ?? 0 },
+    { title: 'Delivered', value: analytics.delivered ?? 0 },
+    { title: 'Opened', value: analytics.opened ?? 0 },
+    { title: 'Clicked', value: analytics.clicked ?? 0 },
+    { title: 'Failed', value: analytics.failed ?? 0 },
+    { title: 'Bounced', value: analytics.bounced ?? 0 },
   ]
 
   const scheduleLabel = data.scheduledAt
@@ -115,12 +116,12 @@ export function CommunicationDetails() {
           <div>
             <h2 className="text-h4 text-brand-text">{data.title}</h2>
             <div className="text-body-sm text-muted mt-2 flex flex-wrap items-center gap-4">
-              <span className="flex items-center gap-1.5">
-                <User className="size-3.5" />
-                {data.createdBy}
+              <span className="text-brand-text/90 flex items-center gap-1.5">
+                <SolidUserIcon className="text-brand-text/90 size-4" />
+                {data.createdBy || 'System Auto'}
               </span>
-              <span className="flex items-center gap-1.5">
-                <img src={calendarIcon} alt="calendar" className="size-3.5" />
+              <span className="text-brand-text/90 flex items-center gap-1.5">
+                <SolidCalendarIcon className="text-brand-text/90 size-4" />
                 {scheduleLabel}
               </span>
             </div>
@@ -208,19 +209,29 @@ export function CommunicationDetails() {
         ) : null}
 
         <div className="border-t border-white/[0.06] pt-5">
-          <p className="text-body-sm-semibold text-brand-text mb-1">Delivery Analytics</p>
+          <p className="text-body-sm-semibold text-brand-text mb-4">Delivery Analytics</p>
           {data.deliveryMeta?.note ? (
             <p className="text-body-sm text-muted mb-4">{data.deliveryMeta.note}</p>
           ) : null}
 
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-            {analyticsMetrics.map((metric) => (
-              <StatCard
-                key={metric.title}
-                title={metric.title}
-                value={metric.value}
-                hint={metric.hint}
-              />
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {deliveryCards.map((card) => (
+              <div
+                key={card.title}
+                className="flex min-h-[110px] flex-col justify-between rounded-xl border border-white/[0.04] bg-[#050505] p-4"
+              >
+                <div>
+                  <p className="text-xs font-normal text-neutral-400">{card.title}</p>
+                  <p className="mt-1 text-2xl font-bold text-white">{card.value}</p>
+                </div>
+                <div className="mt-3 flex items-center gap-2">
+                  <span className="inline-flex items-center gap-1 rounded bg-[#00A63E]/20 px-2 py-0.5 text-xs font-semibold text-[#00D062]">
+                    <TrendingUp className="size-3" />
+                    6.7%
+                  </span>
+                  <span className="text-xs text-neutral-400">vs last month</span>
+                </div>
+              </div>
             ))}
           </div>
         </div>

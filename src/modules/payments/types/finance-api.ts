@@ -25,6 +25,7 @@ export type FinanceDashboardSummary = {
   openDisputes: number
   totalPlatformRevenue: number
   collectionsThisMonth: number
+  gmv?: number
 }
 
 export type FinancePayment = {

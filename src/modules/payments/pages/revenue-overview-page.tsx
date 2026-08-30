@@ -50,9 +50,14 @@ import { useTableExportColumnIds } from '@/shared/hooks/use-table-export-column-
 import type { FilterValues } from '@/shared/types/data-filter'
 import type { FinancePayment } from '@/modules/payments/types/finance-api'
 
+import { FINANCE_PAYMENT_SORT_OVERRIDES } from '@/modules/payments/config/finance-table-sort-fields'
+
 const PAGE_SIZE = 10
 
-const SORT_FIELD_MAP = buildCatalogSortFieldMap(FINANCE_REVENUE_TABLE_COLUMNS_CATALOG)
+const SORT_FIELD_MAP = buildCatalogSortFieldMap(
+  FINANCE_REVENUE_TABLE_COLUMNS_CATALOG,
+  FINANCE_PAYMENT_SORT_OVERRIDES,
+)
 
 type RevenueExportRow = RevenueOverviewRow & {
   transactionId?: string

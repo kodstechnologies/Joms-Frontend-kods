@@ -37,9 +37,14 @@ import {
   createFinanceReconciliationFilteredExportHandler,
 } from '@/shared/utils/export-filter-utils'
 
+import { FINANCE_RECONCILIATION_SORT_OVERRIDES } from '@/modules/payments/config/finance-table-sort-fields'
+
 const PAGE_SIZE = 10
 
-const SORT_FIELD_MAP = buildCatalogSortFieldMap(FINANCE_RECONCILIATION_TABLE_COLUMNS_CATALOG)
+const SORT_FIELD_MAP = buildCatalogSortFieldMap(
+  FINANCE_RECONCILIATION_TABLE_COLUMNS_CATALOG,
+  FINANCE_RECONCILIATION_SORT_OVERRIDES,
+)
 
 function getDifferenceClassName(difference: FinanceReconciliationRow['difference']) {
   if (difference === 'Matched') {

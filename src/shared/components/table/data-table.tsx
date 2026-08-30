@@ -1,17 +1,18 @@
 import { useState, type ReactNode } from 'react'
-import type { ColumnDef, RowData, SortingState } from '@tanstack/react-table'
+import type { ColumnDef, Column, RowData, SortingState } from '@tanstack/react-table'
 import {
   flexRender,
   getCoreRowModel,
   getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table'
-import { ArrowUpDown, ArrowDown, ArrowUp, Filter, Search, Upload } from 'lucide-react'
+import { ArrowUpDown, ArrowDown, ArrowUp, Search } from 'lucide-react'
 
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
 import type { SearchableColumn, ColumnSearchValues } from '@/shared/types/search-types'
 import { EnhancedSearchBar } from './enhanced-search-bar'
+import { AdvanceFilterIcon, ExportDataIcon } from '@/shared/components/icons/action-button-icons'
 
 declare module '@tanstack/react-table' {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars -- required to match upstream ColumnMeta signature for declaration merging
@@ -72,6 +73,18 @@ export type DataTableProps<TData> = {
   onColumnSearchRemove?: (key: string) => void
   /** Column-specific search: called to clear all column searches. */
   onClearAllSearches?: () => void
+}
+
+/** Server-sorted tables use enableSorting on column defs; TanStack getCanSort() also requires accessorFn. */
+function isHeaderSortable<TData>(column: Column<TData, unknown>, manualSorting: boolean) {
+  const columnId = column.id
+  if (!columnId || columnId === 'select' || columnId === 'actions' || columnId === 'action') {
+    return false
+  }
+  if (manualSorting) {
+    return column.columnDef.enableSorting === true
+  }
+  return column.getCanSort()
 }
 
 const getVisiblePages = (currentPage: number, totalPages: number) => {
@@ -200,7 +213,7 @@ export function DataTable<TData>({
                 disabled={!onAdvancedFilter}
                 className="table-advance-filter-btn gap-2"
               >
-                <Filter className="size-3.5" aria-hidden="true" />
+                <AdvanceFilterIcon className="size-5 shrink-0" aria-hidden="true" />
                 {advancedFilterLabel}
               </Button>
             ) : null}
@@ -212,7 +225,7 @@ export function DataTable<TData>({
                 disabled={!onExport || isExporting}
                 className="table-export-btn gap-2"
               >
-                <Upload className="icon-md" aria-hidden="true" />
+                <ExportDataIcon className="size-5 shrink-0" aria-hidden="true" />
                 {isExporting ? 'Exporting...' : 'Export Data'}
               </Button>
             ) : null}
@@ -259,12 +272,12 @@ export function DataTable<TData>({
                       <div
                         className={cn(
                           'inline-flex items-center gap-1.5',
-                          header.column.getCanSort() &&
+                          isHeaderSortable(header.column, manualSorting) &&
                             showSortIcons &&
                             'cursor-pointer select-none',
                         )}
                         onClick={
-                          header.column.getCanSort() && showSortIcons
+                          isHeaderSortable(header.column, manualSorting) && showSortIcons
                             ? () => {
                                 const column = header.column
                                 const columnId = column.id
@@ -285,9 +298,7 @@ export function DataTable<TData>({
                         }
                       >
                         {flexRender(header.column.columnDef.header, header.getContext())}
-                        {header.column.id !== 'select' &&
-                          header.column.id !== 'actions' &&
-                          header.column.getCanSort() &&
+                        {isHeaderSortable(header.column, manualSorting) &&
                           showSortIcons &&
                           (() => {
                             const columnId = header.column.id

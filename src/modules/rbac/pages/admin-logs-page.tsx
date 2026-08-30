@@ -1,8 +1,9 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { ArrowLeft, BarChart3, ClipboardList, ExternalLink, Flag, UserRound } from 'lucide-react'
+import { ArrowLeft, ClipboardList, ExternalLink, Flag, UserRound } from 'lucide-react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
+import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
 
 import { useFlagAuditLog, useRoleLogs, useSubAdminLogs } from '../hooks/use-rbac'
 import { fetchRoleLogs, fetchSubAdminLogs } from '../api/rbac-api'
@@ -586,7 +587,7 @@ export function AdminLogsPage() {
           className="ui-manage-metrics"
           onClick={() => navigate('/metrics/admin-logs')}
         >
-          <BarChart3 className="size-4" />
+          <ManageMetricsIcon className="size-5" />
           Manage Metrics
         </Button>
       </div>
