@@ -13,7 +13,7 @@ const yesNoDisputedOptions = [
   { label: 'Disputed', value: 'disputed' },
 ]
 
-const figmaExpertCheckboxFields: FilterSectionConfig['fields'] = [
+const expertCheckboxFields: FilterSectionConfig['fields'] = [
   {
     id: 'accountStatus',
     label: 'Account Status',
@@ -75,7 +75,7 @@ const figmaExpertCheckboxFields: FilterSectionConfig['fields'] = [
   },
 ]
 
-const figmaExpertDocumentFields: FilterSectionConfig['fields'] = [
+const expertDocumentFields: FilterSectionConfig['fields'] = [
   { id: 'expertId', label: 'Expert ID', type: 'text', placeholder: 'Enter Expert ID' },
   {
     id: 'organizationId',
@@ -87,21 +87,21 @@ const figmaExpertDocumentFields: FilterSectionConfig['fields'] = [
   { id: 'profession', label: 'Profession', type: 'search', placeholder: 'Search by name' },
 ]
 
-export const figmaByExpertsSection: FilterSectionConfig = {
+export const byExpertsSection: FilterSectionConfig = {
   id: 'by-experts',
   title: 'By Experts',
   defaultExpanded: true,
-  fields: [...figmaExpertDocumentFields, ...figmaExpertCheckboxFields],
+  fields: [...expertDocumentFields, ...expertCheckboxFields],
 }
 
-export const figmaByExpertsSectionCheckboxesOnly: FilterSectionConfig = {
+export const byExpertsSectionCheckboxesOnly: FilterSectionConfig = {
   id: 'by-experts',
   title: 'By Experts',
   defaultExpanded: true,
-  fields: figmaExpertCheckboxFields,
+  fields: expertCheckboxFields,
 }
 
-export const figmaByServicesSection: FilterSectionConfig = {
+export const byServicesSection: FilterSectionConfig = {
   id: 'by-services',
   title: 'By Services',
   fields: [
@@ -149,7 +149,7 @@ export const figmaByServicesSection: FilterSectionConfig = {
   ],
 }
 
-export const figmaByOrdersSection: FilterSectionConfig = {
+export const byOrdersSection: FilterSectionConfig = {
   id: 'by-orders',
   title: 'By Orders',
   fields: [
@@ -238,7 +238,7 @@ export const figmaByOrdersSection: FilterSectionConfig = {
   ],
 }
 
-export const figmaByCustomersSection: FilterSectionConfig = {
+export const byCustomersSection: FilterSectionConfig = {
   id: 'by-customers',
   title: 'By Customers',
   fields: [
@@ -273,20 +273,20 @@ export const figmaByCustomersSection: FilterSectionConfig = {
   ],
 }
 
-export function createFigmaExpertManagementFilterSections(
-  expertsSection: FilterSectionConfig = figmaByExpertsSection,
+export function expertFilterSections(
+  expertsSection: FilterSectionConfig = byExpertsSection,
 ): FilterSectionConfig[] {
   return [
     prefixSectionFields(expertsSection, 'experts'),
-    prefixSectionFields(figmaByServicesSection, 'services'),
-    prefixSectionFields(figmaByOrdersSection, 'orders'),
-    prefixSectionFields(figmaByCustomersSection, 'customers'),
+    prefixSectionFields(byServicesSection, 'services'),
+    prefixSectionFields(byOrdersSection, 'orders'),
+    prefixSectionFields(byCustomersSection, 'customers'),
     prefixSectionFields(byLocationSection, 'location'),
   ]
 }
 
-export const figmaExpertManagementFilterSections = createFigmaExpertManagementFilterSections()
+export const expertManagementFilterSections = expertFilterSections()
 
-export const figmaExpertProfileServicesFilterSections = createFigmaExpertManagementFilterSections(
-  figmaByExpertsSectionCheckboxesOnly,
+export const expertProfileServicesFilterSections = expertFilterSections(
+  byExpertsSectionCheckboxesOnly,
 )

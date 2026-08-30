@@ -202,7 +202,7 @@ export function InvoicesBillingPage() {
           className="text-slate-800 hover:bg-slate-100 hover:text-slate-900"
           onClick={() => {
             setActiveDropdownId(null)
-            navigate(`/finance/invoices/${record.id}`)
+            navigate(`/finance/invoices/${encodeURIComponent(record.id)}`)
           }}
         >
           View Invoice
@@ -375,6 +375,7 @@ export function InvoicesBillingPage() {
         onAdvancedFilter={onAdvancedFilter}
         advancedFilterVariant="primary"
         onExport={onExport}
+        onRowClick={(row) => navigate(`/finance/invoices/${encodeURIComponent(row.id)}`)}
         pagination={{
           page: meta?.page ?? currentPage,
           pageSize: meta?.limit ?? PAGE_SIZE,

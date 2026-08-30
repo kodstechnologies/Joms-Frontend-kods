@@ -26,7 +26,7 @@ const invoiceDetails: InvoiceDetail[] = [
     dueDate: '2025-01-13',
     status: 'Pending',
     recipientName: 'Rajesh Kumar',
-    recipientEmail: 'rajesh.k@gmail.com',
+    recipientEmail: 'rajesh.k@email.com',
     itemDescription: 'Financial Planning',
     platformFee: '₹500',
     unitPrice: '₹50,000',

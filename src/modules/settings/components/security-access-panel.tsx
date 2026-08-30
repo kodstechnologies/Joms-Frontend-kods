@@ -123,7 +123,7 @@ export function SecurityAccessPanel({ value, onChange }: SecurityAccessPanelProp
 
   return (
     <div className="security-access-panel">
-      {/* Session Timeout — Figma ~1182 wide */}
+      {/* Session timeout */}
       <section className="security-section">
         <header className="security-section-header">
           <h2 className="security-section-title">Session Timeout</h2>
@@ -209,7 +209,7 @@ export function SecurityAccessPanel({ value, onChange }: SecurityAccessPanelProp
         </div>
       </section>
 
-      {/* MFA — Figma ~1206x204 */}
+      {/* MFA */}
       <section className="security-section security-section-mfa">
         <div className="security-toggle-header">
           <div>
@@ -241,7 +241,7 @@ export function SecurityAccessPanel({ value, onChange }: SecurityAccessPanelProp
         />
       </section>
 
-      {/* Password Reset Policy — Figma ~1206x355 */}
+      {/* Password reset */}
       <section className="security-section">
         <header className="security-section-header">
           <h2 className="security-section-title">Password Reset Policy</h2>
@@ -316,7 +316,7 @@ export function SecurityAccessPanel({ value, onChange }: SecurityAccessPanelProp
         </div>
       </section>
 
-      {/* Quick links — Figma 621x91 each */}
+      {/* Quick links */}
       <div className="security-quick-links">
         <QuickLinkCard
           title="Locked Accounts"

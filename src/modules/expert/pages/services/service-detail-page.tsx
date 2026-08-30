@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import axios from 'axios'
 import {
@@ -40,8 +40,11 @@ import {
 } from '../../components/service-drilldown/drilldown-primitives'
 import {
   DASH,
+  displayServiceTitle,
   formatCurrency,
+  formatDate,
   formatRelativeTime,
+  formatServiceTypeLabel,
   titleCase,
 } from '../../components/service-drilldown/drilldown-format'
 import { servicePerformancePath } from '../../lib/service-navigation'
@@ -61,6 +64,15 @@ const parseTierDescription = (description = '') => {
     .map((part) => part.trim())
     .filter(Boolean)
   return { summary, features }
+}
+
+function InfoRow({ label, value }: { label: string; value: ReactNode }) {
+  return (
+    <div className="flex items-center justify-between gap-4 border-b border-white/5 py-3 last:border-b-0">
+      <span className="text-body-sm text-muted">{label}</span>
+      <span className="text-body-sm-medium text-right text-white">{value}</span>
+    </div>
+  )
 }
 
 export const ServiceDetailPage = () => {
@@ -602,7 +614,7 @@ export const ServiceDetailPage = () => {
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0">
               <h1 className="text-[28px] leading-tight font-semibold text-white">
-                {service.title}
+                {displayServiceTitle(service.title)}
               </h1>
               {service.category?.name ? (
                 <p className="text-body-sm text-muted mt-1">{service.category.name}</p>
@@ -632,6 +644,21 @@ export const ServiceDetailPage = () => {
               ))}
             </div>
           ) : null}
+
+          <section className="mt-6 rounded-xl border border-white/[0.06] bg-[#141414] p-5">
+            <h3 className="text-body-md font-semibold text-white">Service Information</h3>
+            <p className="text-body-sm text-muted mt-1">Provide details about this service</p>
+            <div className="mt-2">
+              <InfoRow label="Service Name" value={displayServiceTitle(service.title)} />
+              <InfoRow
+                label="Service Type"
+                value={formatServiceTypeLabel(pricing.pricingType || service.pricingType)}
+              />
+              <InfoRow label="Category" value={service.category?.name || DASH} />
+              <InfoRow label="Created" value={formatDate(service.createdAt)} />
+              <InfoRow label="Status" value={titleCase(service.displayStatus || service.status)} />
+            </div>
+          </section>
 
           {pricing.pricingType === 'fixed' ? (
             <div className="mt-8 flex flex-wrap gap-4">

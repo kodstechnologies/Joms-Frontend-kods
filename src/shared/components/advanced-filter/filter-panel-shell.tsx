@@ -1,6 +1,8 @@
 import type { PropsWithChildren, ReactNode } from 'react'
+import { useRef } from 'react'
 import { X } from 'lucide-react'
 
+import { useDialogFocusTrap } from '@/shared/hooks/use-dialog-focus-trap'
 import { cn } from '@/shared/lib/cn'
 
 type FilterPanelShellProps = PropsWithChildren<{
@@ -25,13 +27,21 @@ export function FilterPanelShell({
   size = 'xl',
   children,
 }: FilterPanelShellProps) {
+  const dialogRef = useRef<HTMLDivElement>(null)
+  useDialogFocusTrap(open, onClose, dialogRef)
+
   if (!open) {
     return null
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 sm:p-6">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 sm:p-6"
+      onClick={onClose}
+      role="presentation"
+    >
       <div
+        ref={dialogRef}
         className={cn(
           'bg-brand-surface text-brand-text radius-popup flex max-h-[92vh] w-full flex-col overflow-hidden border border-white/10 shadow-[0_24px_80px_rgba(0,0,0,0.65)]',
           sizeClasses[size],

@@ -133,3 +133,19 @@ export const titleCase = (value?: string | null) => {
     .replace(/[_-]+/g, ' ')
     .replace(/\b\w/g, (char) => char.toUpperCase())
 }
+
+const PRICING_TYPE_SUFFIX = /\s*\((fixed|tiered|custom|milestone)\)\s*$/i
+
+export const displayServiceTitle = (value?: string | null) => {
+  if (!value) return DASH
+  const cleaned = String(value).replace(PRICING_TYPE_SUFFIX, '').trim()
+  return cleaned || String(value)
+}
+
+export const formatServiceTypeLabel = (pricingType?: string | null) => {
+  if (!pricingType) return DASH
+  const fromSuffix = String(pricingType).match(PRICING_TYPE_SUFFIX)?.[1]
+  const label = titleCase(fromSuffix || pricingType)
+  if (label === DASH) return DASH
+  return /service$/i.test(label) ? label : `${label} Service`
+}

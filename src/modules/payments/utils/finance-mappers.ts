@@ -15,6 +15,15 @@ export const formatInr = (amount?: number | null) => {
   return `₹${value.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`
 }
 
+export const firstDate = (...values: unknown[]): string | null => {
+  for (const value of values) {
+    if (value == null || value === '') continue
+    const date = new Date(value as string | number | Date)
+    if (!Number.isNaN(date.getTime())) return date.toISOString()
+  }
+  return null
+}
+
 export const formatDate = (value?: string | null) => {
   if (!value) return '—'
   const date = new Date(value)
@@ -42,6 +51,21 @@ export const formatDateTime = (value?: string | null) => {
 export const titleCase = (value?: string | null) => {
   if (!value) return '—'
   return value.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+}
+
+const PRICING_TYPE_SUFFIX = /\s*\((fixed|tiered|custom|milestone)\)\s*$/i
+
+export const displayServiceTitle = (value?: string | null) => {
+  if (!value) return ''
+  const cleaned = String(value).replace(PRICING_TYPE_SUFFIX, '').trim()
+  return cleaned || String(value)
+}
+
+export const formatServiceTypeLabel = (pricingType?: string | null) => {
+  if (!pricingType) return '—'
+  const fromSuffix = String(pricingType).match(PRICING_TYPE_SUFFIX)?.[1]
+  const label = titleCase(fromSuffix || pricingType)
+  return /service$/i.test(label) ? label : `${label} Service`
 }
 
 export const mapPaymentStatus = (status: string) => {
@@ -100,23 +124,67 @@ export const mapEscrowToRow = (escrow: FinanceEscrowHold) => ({
   lastUpdated: formatDate(escrow.createdAt),
 })
 
+export const mapPayeeType = (value?: string | null) => {
+  if (value === 'venue_partner') return 'Venue Partner'
+  if (value === 'expert') return 'Expert'
+  if (value === 'organisation') return 'Organisation'
+  return titleCase(value)
+}
+
 export const mapPayoutStatus = (status: string) => {
-  if (status === 'paid') return 'Completed' as const
+  if (status === 'paid') return 'Paid' as const
   if (status === 'failed') return 'Failed' as const
+  if (status === 'processing') return 'Processing' as const
+  if (status === 'paused_dispute') return 'On Hold' as const
+  if (status === 'cancelled') return 'Cancelled' as const
   return 'Pending' as const
 }
+
+export const canReleasePayout = (status?: string | null) =>
+  ['scheduled', 'pending_approval', 'failed'].includes(String(status || ''))
 
 export const mapPayoutToRow = (payout: FinancePayout) => ({
   id: payout._id,
   payoutId: payout.payoutId,
-  recipient: payout.partnerName || payout.partnerId,
-  type: titleCase(payout.module),
+  recipient: payout.partnerName || payout.partnerId || '—',
+  type: titleCase(payout.module || 'payout'),
   amount: formatInr(payout.fees?.netPayable ?? payout.fees?.grossAmount),
   method: payout.bankingSnapshot?.bankReference || payout.settlementPath || 'Bank Transfer',
   initiatedDate: formatDate(payout.scheduledAt || payout.createdAt),
-  description: `${titleCase(payout.pricingType)} · ${titleCase(payout.status)}`,
-  status: mapPayoutStatus(payout.status),
+  description: `${titleCase(payout.pricingType || 'payout')} · ${titleCase(payout.status)}`,
+  status:
+    payout.status === 'paid'
+      ? ('Completed' as const)
+      : payout.status === 'failed'
+        ? ('Failed' as const)
+        : ('Pending' as const),
 })
+
+export const mapPayoutToAdminRow = (payout: FinancePayout) => {
+  const fees = payout.fees || {}
+  const taxDeduction = (Number(fees.taxGst) || 0) + (Number(fees.taxTds) || 0)
+  return {
+    id: payout._id,
+    payoutId: payout.payoutId,
+    payeeId: payout.partnerId || '—',
+    payeeName: payout.partnerName || payout.partnerId || '—',
+    payeeType: mapPayeeType(payout.payeeType),
+    relatedTransaction:
+      payout.relatedTransaction || payout.referenceId || String(payout.paymentId || '—'),
+    grossAmount: formatInr(fees.grossAmount),
+    platformCommission: formatInr(fees.platformCommission),
+    taxDeduction: formatInr(taxDeduction),
+    gatewayCharges: formatInr(fees.gatewayCharges),
+    netPayout: formatInr(fees.netPayable ?? fees.grossAmount),
+    currency: fees.currency || 'INR',
+    bankReference: payout.bankingSnapshot?.bankReference || '—',
+    scheduledDate: formatDate(payout.scheduledAt || payout.createdAt),
+    processedDate: formatDate(payout.paidAt),
+    financeApprover: payout.financeApproverId || payout.releasedByAdminId || '—',
+    status: mapPayoutStatus(payout.status),
+    rawStatus: payout.status,
+  }
+}
 
 export const mapDisputeStatus = (status: string) => {
   if (status === 'resolved_full_refund' || status === 'resolved_partial_refund') {
@@ -251,7 +319,7 @@ export const mapPaymentToServiceRow = (
     id: payment._id,
     tab,
     serviceId: payment.orderId,
-    name: (snapshot.title as string) || payment.description || payment.orderId,
+    name: displayServiceTitle((snapshot.title as string) || payment.description) || payment.orderId,
     expertName: (snapshot.partnerName as string) || payment.partnerId || '—',
     bookingId: payment.referenceId || payment.orderId,
     userName: (snapshot.userName as string) || payment.userId || '—',

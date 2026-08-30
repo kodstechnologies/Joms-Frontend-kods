@@ -2394,7 +2394,7 @@ select.settings-control,
   gap: 10px;
 }
 
-/* ===== Schedule Maintenance modal (Figma ~881x645) ===== */
+/* Schedule maintenance modal */
 .sm-modal-overlay {
   position: fixed;
   inset: 0;

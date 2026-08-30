@@ -41,7 +41,6 @@ import type { StaticChatUser } from '../config/static-users'
 
 type Props = {
   user: StaticChatUser
-  /** Prefill partner id (e.g. from finance testing harness) */
   defaultPartnerId?: string
   defaultPartnerName?: string
 }

@@ -77,7 +77,7 @@ export function PaymentFinanceTestingPage() {
             </p>
           </div>
           <Link to="/dev/chat-test" className="text-sm text-zinc-400 hover:text-zinc-200">
-            Other harnesses
+            Other test pages
           </Link>
         </header>
 

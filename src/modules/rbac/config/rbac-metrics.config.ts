@@ -8,7 +8,6 @@ export type RbacHubMetricCatalogItem = {
   defaultActive: boolean
 }
 
-/** Exactly 5 RBAC dashboard metrics — matches the Role Based Access page. */
 export const RBAC_HUB_METRICS_CATALOG: RbacHubMetricCatalogItem[] = [
   {
     id: 'total-user',

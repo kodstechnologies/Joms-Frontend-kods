@@ -1,4 +1,4 @@
-export type SubscriptionStatus = 'active' | 'paused' | 'cancelled' | 'expired'
+export type SubscriptionStatus = 'active' | 'paused' | 'cancelled' | 'expired' | 'suspended'
 
 export type MembershipSubscription = {
   _id: string
@@ -96,6 +96,7 @@ export type SubscriptionListResponse = {
         paused: number
         cancelled: number
         expired: number
+        suspended: number
         total: number
       }
     }
@@ -138,3 +139,10 @@ export type CancelSubscriptionPayload = {
 }
 
 export type PauseSubscriptionPayload = CancelSubscriptionPayload
+
+export type ExtendMembershipSuspensionPayload = {
+  startDate: string
+  endDate: string
+  adminNotes?: string
+  updatedBy?: string
+}

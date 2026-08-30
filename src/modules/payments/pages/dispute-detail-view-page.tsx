@@ -30,7 +30,6 @@ import {
   titleCase,
 } from '@/modules/payments/utils/finance-mappers'
 import { escalateUrl } from '@/modules/payments/utils/finance-escalate'
-import { DetailViewSkeleton } from '@/shared/components/ui/skeleton'
 import { cn } from '@/shared/lib/cn'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 
@@ -128,7 +127,7 @@ export function DisputeDetailViewPage() {
     (err as { response?: { data?: { message?: string } } })?.response?.data?.message || fallback
 
   if (isLoading) {
-    return <DetailViewSkeleton pillCount={6} cardCount={3} />
+    return <p className="text-body-sm text-muted">Loading dispute details...</p>
   }
 
   if (isError || !dispute) {

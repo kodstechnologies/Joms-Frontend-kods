@@ -67,6 +67,7 @@ const STATUS_FILTERS: Array<{ label: string; value: SubscriptionStatus | 'all' }
 function getStatusClassName(status: FinanceMembershipStatus) {
   if (status === 'Active') return 'membership-status-badge membership-status-active'
   if (status === 'Paused') return 'membership-status-badge membership-status-paused'
+  if (status === 'Suspended') return 'membership-status-badge membership-status-paused'
   if (status === 'Cancelled') return 'membership-status-badge membership-status-cancelled'
   return 'membership-status-badge membership-status-expired'
 }

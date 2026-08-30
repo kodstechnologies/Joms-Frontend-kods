@@ -1,4 +1,3 @@
-/** Preserve first-seen order while removing duplicate catalog entries by id. */
 export function dedupeCatalogItems<T extends { id: string }>(items: T[]): T[] {
   const seen = new Set<string>()
   const result: T[] = []
@@ -12,7 +11,6 @@ export function dedupeCatalogItems<T extends { id: string }>(items: T[]): T[] {
   return result
 }
 
-/** Preserve first-seen order while removing duplicate string ids. */
 export function dedupeOrderedIds(ids: string[]): string[] {
   const seen = new Set<string>()
   const result: string[] = []
@@ -26,7 +24,6 @@ export function dedupeOrderedIds(ids: string[]): string[] {
   return result
 }
 
-/** Sort ids to match a catalog order; unknown ids are appended at the end. */
 export function sortIdsByCatalogOrder(ids: string[], catalogOrder: string[]): string[] {
   const deduped = dedupeOrderedIds(ids)
   const rank = new Map(catalogOrder.map((id, index) => [id, index]))

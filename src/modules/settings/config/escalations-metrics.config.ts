@@ -8,7 +8,6 @@ export type EscalationsMetricCatalogItem = {
   defaultActive: boolean
 }
 
-/** Exactly 4 escalation dashboard metrics — matches the All Escalation page. */
 export const ESCALATIONS_METRICS_CATALOG: EscalationsMetricCatalogItem[] = [
   {
     id: 'total-escalation',

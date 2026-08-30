@@ -8,7 +8,6 @@ export type VenueViewAnalyticsMetricCatalogItem = {
   defaultActive: boolean
 }
 
-/** Space View Analytics overview metrics — matches the View Analytics overview cards. */
 export const VENUE_VIEW_ANALYTICS_METRICS_CATALOG: VenueViewAnalyticsMetricCatalogItem[] = [
   {
     id: 'total-bookings',

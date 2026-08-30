@@ -29,7 +29,12 @@ export function SettingsFooterActions({
       </Button>
       <Button
         variant="primary"
-        onClick={onSave}
+        type="button"
+        onClick={(e) => {
+          e.preventDefault()
+          if (saveDisabled || isSaving || isResetting) return
+          onSave()
+        }}
         disabled={saveDisabled || isSaving || isResetting}
         className="settings-page-footer-save"
       >

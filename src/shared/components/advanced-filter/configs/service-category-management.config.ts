@@ -13,7 +13,6 @@ const yesNoDisputedOptions = [
   { label: 'Disputed', value: 'disputed' },
 ]
 
-/** By Services — matches Figma Advanced Filters - Service Category Management */
 const categoryByServicesSection: FilterSectionConfig = {
   id: 'by-services',
   title: 'By Services',
@@ -87,7 +86,6 @@ const categoryByServicesSection: FilterSectionConfig = {
   ],
 }
 
-/** By Experts — matches Figma */
 const categoryByExpertsSection: FilterSectionConfig = {
   id: 'by-experts',
   title: 'By Experts',
@@ -177,7 +175,6 @@ const categoryByExpertsSection: FilterSectionConfig = {
   ],
 }
 
-/** By Orders — matches Figma (checkbox groups only) */
 const categoryByOrdersSection: FilterSectionConfig = {
   id: 'by-orders',
   title: 'By Orders',
@@ -267,7 +264,6 @@ const categoryByOrdersSection: FilterSectionConfig = {
   ],
 }
 
-/** By Customers — Figma shows only these two fields */
 const categoryByCustomersSection: FilterSectionConfig = {
   id: 'by-customers',
   title: 'By Customers',

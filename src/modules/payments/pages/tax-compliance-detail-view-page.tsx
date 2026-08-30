@@ -16,7 +16,6 @@ import {
   flattenExportPairs,
 } from '@/modules/payments/hooks/use-finance-list-filters'
 import { Button } from '@/shared/components/ui/button'
-import { DetailViewSkeleton } from '@/shared/components/ui/skeleton'
 import { getApiErrorMessage } from '@/shared/lib/api-error'
 import { cn } from '@/shared/lib/cn'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
@@ -86,7 +85,7 @@ export function TaxComplianceDetailViewPage() {
   const tax = data?.data
 
   if (isLoading) {
-    return <DetailViewSkeleton pillCount={6} cardCount={2} />
+    return <p className="text-body-sm text-muted">Loading tax record...</p>
   }
 
   if (isError || !tax) {

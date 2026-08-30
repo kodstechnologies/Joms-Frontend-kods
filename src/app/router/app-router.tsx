@@ -656,7 +656,7 @@ const InvoicesBillingPage = lazy(() =>
 )
 
 const InvoiceDetailViewPage = lazy(() =>
-  import('@/modules/payments').then((m) => ({
+  import('@/modules/payments/pages/invoice-detail-view-page').then((m) => ({
     default: m.InvoiceDetailViewPage,
   })),
 )

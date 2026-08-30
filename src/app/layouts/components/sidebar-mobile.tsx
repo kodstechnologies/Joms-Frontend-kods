@@ -3,7 +3,6 @@ import { useEffect } from 'react'
 
 import { Sidebar } from '@/app/layouts/components/sidebar'
 import { SidebarBrand } from '@/app/layouts/components/sidebar-brand'
-import { cn } from '@/shared/lib/cn'
 
 type SidebarMobileProps = {
   open: boolean
@@ -22,17 +21,18 @@ export function SidebarMobile({ open, onClose }: SidebarMobileProps) {
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [open, onClose])
 
+  if (!open) return null
+
   return (
     <>
-      {open ? (
-        <div className="fixed inset-0 z-40 bg-black/60 lg:hidden" onClick={onClose} aria-hidden />
-      ) : null}
+      <div
+        className="fixed inset-0 z-40 bg-black/60 lg:hidden"
+        onClick={onClose}
+        aria-hidden="true"
+      />
 
-      <aside
-        className={cn(
-          'bg-brand-surface fixed inset-y-0 left-0 z-50 w-[var(--brand-sidebar-width)] border-r border-white/10 shadow-[0_20px_70px_rgba(0,0,0,0.55)] transition-transform lg:hidden',
-          open ? 'translate-x-0' : '-translate-x-full',
-        )}
+      <div
+        className="bg-brand-surface fixed inset-y-0 left-0 z-50 w-[var(--brand-sidebar-width)] border-r border-white/10 shadow-[0_20px_70px_rgba(0,0,0,0.55)] lg:hidden"
         role="dialog"
         aria-modal="true"
         aria-label="Sidebar navigation"
@@ -49,7 +49,7 @@ export function SidebarMobile({ open, onClose }: SidebarMobileProps) {
           </button>
         </div>
         <Sidebar onNavigate={onClose} compact={false} />
-      </aside>
+      </div>
     </>
   )
 }

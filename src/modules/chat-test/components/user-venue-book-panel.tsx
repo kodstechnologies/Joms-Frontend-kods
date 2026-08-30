@@ -228,9 +228,7 @@ export function UserVenueBookPanel({ user }: Props) {
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
           <h2 className="text-lg font-medium text-emerald-300">Book venue / space</h2>
-          <p className="text-xs text-zinc-500">
-            Separate harness — venue-service only · {env.venueApiBaseUrl}
-          </p>
+          <p className="text-xs text-zinc-500">venue-service only · {env.venueApiBaseUrl}</p>
         </div>
         <button
           type="button"
