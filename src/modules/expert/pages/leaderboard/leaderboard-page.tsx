@@ -1101,7 +1101,7 @@ export const LeaderboardPage = () => {
           </div>
         </div>
 
-        <p className="ui-table-showing mt-4">
+        <div className="ui-table-showing mt-4">
           {showShimmer ? (
             <ShimmerBlock className="inline-block h-4 w-48 bg-white/5 align-middle" />
           ) : pagination ? (
@@ -1118,7 +1118,7 @@ export const LeaderboardPage = () => {
               <span className="ui-table-showing-value">0</span> users
             </>
           )}
-        </p>
+        </div>
 
         {isError && !showShimmer && (
           <p className="mt-3 text-sm text-red-400">Failed to load leaderboard. Please retry.</p>

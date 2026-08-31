@@ -33,8 +33,12 @@ const mapSubStatus = (
   return sub.status === 'PAUSED' ? 'Paused' : 'Active'
 }
 
-const toCategoryId = (category: { _id: string; categoryId?: string }) =>
-  category.categoryId || `CAT${category._id.toString().slice(-3).toUpperCase()}`
+const resolveDocId = (doc: { _id?: string; id?: string }) => String(doc._id ?? doc.id ?? '')
+
+const toCategoryId = (category: { _id?: string; id?: string; categoryId?: string }) => {
+  const docId = resolveDocId(category)
+  return category.categoryId || `CAT${docId.slice(-3).toUpperCase()}`
+}
 
 const formatRevenueLabel = (category: { revenue?: number; revenueLabel?: string }) => {
   if (category.revenueLabel) return category.revenueLabel
@@ -49,43 +53,49 @@ const formatRevenueLabel = (category: { revenue?: number; revenueLabel?: string 
 
 const toSubCategoryId = (subId: string) => `SUB${subId.toString().slice(-3).toUpperCase()}`
 
-const mapServiceSubCategory = (sub: CategoryApiSubCategory): Category['subCategories'][number] => ({
-  id: sub._id,
-  subCategoryId: toSubCategoryId(sub._id),
-  name: sub.name,
-  status: mapSubStatus(sub, 'service'),
-  description: sub.description || '',
-  adminNotes: '',
-  icon: sub.vectorIcon || undefined,
-  addedOn: formatDate(sub.createdAt),
-  createdBy: sub.createdByName || sub.createdBy || 'Admin',
-  updatedAt: formatDate(sub.updatedAt),
-  services: sub.services ?? sub.activeListings ?? 0,
-  experts: sub.experts ?? 0,
-})
+const mapServiceSubCategory = (sub: CategoryApiSubCategory): Category['subCategories'][number] => {
+  const subId = resolveDocId(sub)
+  return {
+    id: subId,
+    subCategoryId: toSubCategoryId(subId),
+    name: sub.name,
+    status: mapSubStatus(sub, 'service'),
+    description: sub.description || '',
+    adminNotes: '',
+    icon: sub.vectorIcon || undefined,
+    addedOn: formatDate(sub.createdAt),
+    createdBy: sub.createdByName || sub.createdBy || 'Admin',
+    updatedAt: formatDate(sub.updatedAt),
+    services: sub.services ?? sub.activeListings ?? 0,
+    experts: sub.experts ?? 0,
+  }
+}
 
 const mapVenueSubCategory = (
   sub: CategoryApiSubCategory,
-): VenueCategory['subCategories'][number] => ({
-  id: sub._id,
-  subCategoryId: toSubCategoryId(sub._id),
-  name: sub.name,
-  status: mapSubStatus(sub, 'venue'),
-  description: sub.description || '',
-  adminNotes: '',
-  icon: sub.vectorIcon || undefined,
-  addedOn: formatDate(sub.createdAt),
-  createdBy: sub.createdByName || sub.createdBy || 'Admin',
-  updatedAt: formatDate(sub.updatedAt),
-  venues: sub.venues ?? sub.totalVenues ?? 0,
-})
+): VenueCategory['subCategories'][number] => {
+  const subId = resolveDocId(sub)
+  return {
+    id: subId,
+    subCategoryId: toSubCategoryId(subId),
+    name: sub.name,
+    status: mapSubStatus(sub, 'venue'),
+    description: sub.description || '',
+    adminNotes: '',
+    icon: sub.vectorIcon || undefined,
+    addedOn: formatDate(sub.createdAt),
+    createdBy: sub.createdByName || sub.createdBy || 'Admin',
+    updatedAt: formatDate(sub.updatedAt),
+    venues: sub.venues ?? sub.totalVenues ?? 0,
+  }
+}
 
 export const mapServiceCategoryToUi = (category: ServiceCategoryApi): Category => {
   const activeSubs = (category.subCategories || []).filter((sub) => sub.status !== 'DELETED')
   const repeatPct = typeof category.repeatBookingPct === 'number' ? category.repeatBookingPct : 0
 
   return {
-    id: category._id,
+    id: resolveDocId(category),
     categoryId: toCategoryId(category),
     name: category.name,
     description: category.description || '',
@@ -115,7 +125,7 @@ export const mapVenueCategoryToUi = (category: VenueCategoryApi): VenueCategory 
   const activeSubs = (category.subCategories || []).filter((sub) => !sub.isDeleted)
 
   return {
-    id: category._id,
+    id: resolveDocId(category),
     categoryId: toCategoryId(category),
     name: category.name,
     description: category.description || '',

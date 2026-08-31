@@ -45,16 +45,13 @@ import {
   useVenueCategoryMetrics,
 } from '../../hooks/use-venue-category-management'
 import { useTableColumnPreferences } from '../../hooks/use-ui-preferences'
-import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
+import { selectPreferredColumns } from '../../utils/select-preferred-columns'
 
 const PAGE_SIZE = 10
 
 const VENUE_CATEGORY_COLUMN_SORT_FIELDS = buildCatalogSortFieldMap(
   VENUE_CATEGORY_MANAGEMENT_TABLE_COLUMNS_CATALOG,
 )
-
-const normalizeVenueColumnIds = (ids: string[]) =>
-  ids.map((id) => VENUE_CATEGORY_LEGACY_COLUMN_ID_MAP[id] ?? id)
 
 const normalizeVenueMetricIds = (ids: string[]) =>
   ids.map((id) => VENUE_CATEGORY_LEGACY_METRIC_ID_MAP[id] ?? id)
@@ -213,22 +210,14 @@ export function VenueCategoryManagementPage() {
     const rawVisibleIds = preferencesQuery.data?.visibleColumnIds?.length
       ? preferencesQuery.data.visibleColumnIds
       : DEFAULT_VISIBLE_IDS
-    const visibleIds = normalizeVenueColumnIds(rawVisibleIds)
-
-    const dataColumnsById = Object.fromEntries(
-      venueCategoryColumns.map((column) => [column.id, column] as const),
-    ) as Record<string, ColumnDef<VenueCategory>>
-    const matched = visibleIds.filter((id) => id in dataColumnsById)
-    const selectedDataColumns = sortIdsByCatalogOrder(
-      matched.length > 0 ? matched : DEFAULT_VISIBLE_IDS,
-      DEFAULT_VISIBLE_IDS,
-    )
-      .map((id) => dataColumnsById[id])
-      .filter(Boolean)
-    const actionsColumn = dataColumnsById.actions
 
     return withServerSortMeta(
-      actionsColumn ? [...selectedDataColumns, actionsColumn] : selectedDataColumns,
+      selectPreferredColumns(
+        venueCategoryColumns,
+        rawVisibleIds,
+        DEFAULT_VISIBLE_IDS,
+        VENUE_CATEGORY_LEGACY_COLUMN_ID_MAP,
+      ),
       VENUE_CATEGORY_COLUMN_SORT_FIELDS,
     )
   }, [preferencesQuery.data])
