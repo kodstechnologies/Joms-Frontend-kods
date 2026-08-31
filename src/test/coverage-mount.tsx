@@ -37,7 +37,11 @@ export function beginCoverageMount() {
   return { host, root, queryClient }
 }
 
-export function endCoverageMount(root: Root, host: HTMLDivElement, queryClient: QueryClient) {
+export function endCoverageMount(
+  root: Root,
+  host: HTMLDivElement | undefined,
+  queryClient: QueryClient,
+) {
   try {
     act(() => {
       root.unmount()
@@ -45,7 +49,7 @@ export function endCoverageMount(root: Root, host: HTMLDivElement, queryClient: 
   } catch {
     // Chat/socket and other effects may throw on unmount in jsdom.
   }
-  host.remove()
+  host?.remove()
   queryClient.clear()
   useAuthStore.getState().clearSession()
 }
