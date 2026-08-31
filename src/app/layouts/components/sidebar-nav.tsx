@@ -30,7 +30,6 @@ export function Sidebar({
     try {
       await logout()
     } catch {
-      // Logout still clears local session below
     } finally {
       clearSession()
       onNavigate?.()

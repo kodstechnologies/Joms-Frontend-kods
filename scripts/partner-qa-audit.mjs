@@ -119,7 +119,7 @@ async function hit({ c, m, u, name, group }) {
   }
 }
 
-function buildChecks(partnerId, serviceType) {
+function buildChecks(partnerId) {
   const auth = (token) => client(AUTH_BASE, token)
   const svc = (token) => client(SERVICE_BASE, token)
   const venue = (token) => client(VENUE_BASE, token)
@@ -130,7 +130,6 @@ function buildChecks(partnerId, serviceType) {
   const profile = (token) => client(PROFILE_BASE, token)
 
   const checks = (token) => [
-    // Auth & account
     { group: 'Auth', name: 'Referral info', c: auth(token), m: 'GET', u: '/auth/referral-info' },
     { group: 'Auth', name: 'Contact details', c: auth(token), m: 'GET', u: '/auth/contact-details' },
     { group: 'Auth', name: 'Account report status', c: auth(token), m: 'GET', u: '/auth/account-report' },
@@ -145,7 +144,6 @@ function buildChecks(partnerId, serviceType) {
       u: `/auth/partners/${partnerId}`,
     },
 
-    // KYC (concierge + shared)
     { group: 'KYC', name: 'Digilocker config', c: kyc(token), m: 'GET', u: '/digilocker/config' },
     {
       group: 'KYC',
@@ -169,7 +167,6 @@ function buildChecks(partnerId, serviceType) {
       u: '/venue-kyc/me',
     },
 
-    // Services & consultations
     { group: 'Services', name: 'My services', c: svc(token), m: 'GET', u: '/services/my-services' },
     {
       group: 'Services',
@@ -217,7 +214,6 @@ function buildChecks(partnerId, serviceType) {
       u: '/partner-insights/bookings?limit=5',
     },
 
-    // Venues (venue partners — concierge may get 403/404, that is Expected)
     { group: 'Venues', name: 'Owner venues', c: venue(token), m: 'GET', u: '/venues/owner' },
     { group: 'Venues', name: 'Venue profile', c: venue(token), m: 'GET', u: '/venues/profile' },
     {
@@ -228,7 +224,6 @@ function buildChecks(partnerId, serviceType) {
       u: '/partner-insights/home',
     },
 
-    // Membership
     {
       group: 'Membership',
       name: 'Membership catalog',
@@ -244,7 +239,6 @@ function buildChecks(partnerId, serviceType) {
       u: '/subscriptions/me',
     },
 
-    // Chat & notifications
     { group: 'Chat', name: 'Chat threads', c: chat(token), m: 'GET', u: '/chat/threads?limit=5' },
     {
       group: 'Notifications',
@@ -275,7 +269,6 @@ function buildChecks(partnerId, serviceType) {
       u: '/notifications/alerts/preference',
     },
 
-    // Profile / offerings
     {
       group: 'Profile',
       name: 'Concierge profile me',
@@ -291,10 +284,6 @@ function buildChecks(partnerId, serviceType) {
       u: '/offerings/',
     },
   ]
-
-  if (serviceType === 'venue') {
-    // venue-specific ordering — already included above
-  }
 
   return checks
 }
@@ -333,7 +322,7 @@ async function main() {
     throw new Error('Could not decode partner id from token. Set QA_PARTNER_ID if needed.')
   }
 
-  const checks = buildChecks(partnerId, partner.servicetype)
+  const checks = buildChecks(partnerId)
   const results = []
   for (const check of checks(token)) {
     results.push(await hit(check))

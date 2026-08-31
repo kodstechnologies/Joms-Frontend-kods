@@ -161,14 +161,12 @@ async function runFlows(ctx) {
 
   const flowCtx = {}
 
-  // ── Notifications: prefs + device token register/unregister ──
   const deviceToken = `qa-device-${stamp}`
   await step(results, { flow: 'Notifications', name: 'Update in-app preference', c: notify, method: 'PATCH', url: '/notifications/in-app/preference', data: { inappNotification: true } })
   await step(results, { flow: 'Notifications', name: 'Update alert preference', c: notify, method: 'PATCH', url: '/notifications/alerts/preference', data: { offerPromotions: true } })
   await step(results, { flow: 'Notifications', name: 'Register device token', c: notify, method: 'POST', url: '/notifications/device-tokens', data: { token: deviceToken, platform: 'web' } })
   await step(results, { flow: 'Notifications', name: 'Unregister device token', c: notify, method: 'DELETE', url: '/notifications/device-tokens', data: { token: deviceToken } })
 
-  // ── Offerings: create → edit → delete ──
   await step(results, {
     flow: 'Offerings',
     name: 'Create offering',
@@ -186,7 +184,6 @@ async function runFlows(ctx) {
     await step(results, { flow: 'Offerings', name: 'Delete offering', c: profile, method: 'DELETE', url: `/offerings/${flowCtx.offeringId}` })
   }
 
-  // ── Profile experience: add → update → remove ──
   await step(results, {
     flow: 'Profile',
     name: 'Add experience',
@@ -219,7 +216,6 @@ async function runFlows(ctx) {
     await step(results, { flow: 'Profile', name: 'Remove experience', c: profile, method: 'PATCH', url: `/profile/experience/${flowCtx.experienceId}/remove` })
   }
 
-  // ── Auth: update work experience ──
   await step(results, {
     flow: 'Auth',
     name: 'Update work experience',
@@ -239,16 +235,12 @@ async function runFlows(ctx) {
     },
   })
 
-  // ── KYC: dismiss create-profile prompt ──
   await step(results, { flow: 'KYC', name: 'Dismiss create-profile prompt', c: kyc, method: 'PATCH', url: '/concierge-banking/concierge/create-profile/dismiss' })
 
-  // ── Calendar availability: upsert ──
   await step(results, { flow: 'Calendar', name: 'Upsert partner availability', c: svc, method: 'PUT', url: '/calendar/availability', data: AVAILABILITY_BODY })
 
-  // ── Consultation topic: create ──
   await step(results, { flow: 'Consultations', name: 'Create consultation topic', c: svc, method: 'POST', url: '/consultations/topics', data: { name: `${tag}-topic` } })
 
-  // ── Service listing: create → edit draft ──
   let category = null
   const catRes = await svc.get('/categories/public')
   const categories = Array.isArray(catRes.data?.data)
@@ -315,7 +307,6 @@ async function runFlows(ctx) {
     })
   }
 
-  // ── Consultation: create → edit → availability → delete availability ──
   await step(results, {
     flow: 'Consultations',
     name: 'Create consultation (preview)',
@@ -377,7 +368,6 @@ async function runFlows(ctx) {
     })
   }
 
-  // ── Edit live consultation (existing) ──
   const myConsults = await svc.get('/consultations/my-consultations?limit=5')
   const liveConsult = (myConsults.data?.data?.data || myConsults.data?.data || []).find(
     (c) => String(c.status).toLowerCase() === 'live',
@@ -394,7 +384,6 @@ async function runFlows(ctx) {
     })
   }
 
-  // ── Chat: thread → message → edit → pin/mute/read → delete message ──
   await step(results, {
     flow: 'Chat',
     name: 'Create or open chat thread',
@@ -445,7 +434,6 @@ async function runFlows(ctx) {
     await step(results, { flow: 'Chat', name: 'Unmute thread', c: chat, method: 'PATCH', url: `/chat/threads/${flowCtx.threadId}/mute`, data: { isMuted: false } })
   }
 
-  // ── Venue partner flows (when applicable) ──
   if (ctx.serviceType === 'venue') {
     const venue = client(VENUE_BASE, token)
     await step(results, { flow: 'Venues', name: 'Dismiss venue create-profile', c: kyc, method: 'PATCH', url: '/venue-kyc/create-profile/dismiss' })
@@ -459,7 +447,6 @@ async function runFlows(ctx) {
     })
   }
 
-  // ── Optional: close+delete live service (destructive — off by default) ──
   if (!SKIP_DESTRUCTIVE) {
     const myServices = await svc.get('/services/my-services?limit=10')
     const liveService = (myServices.data?.data?.data || myServices.data?.data || []).find(
