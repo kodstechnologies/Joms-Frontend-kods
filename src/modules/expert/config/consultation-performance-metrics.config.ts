@@ -1,5 +1,3 @@
-/** Ids stay camelCase to match consultation performance metrics payload. */
-
 export const CONSULTATION_PERFORMANCE_MODULE_KEY = 'consultation-performance'
 
 export type ConsultationPerformanceMetricCatalogItem = {
@@ -142,9 +140,6 @@ export const DEFAULT_CONSULTATION_PERFORMANCE_METRIC_IDS =
 export const CONSULTATION_PERFORMANCE_MAX_ACTIVE_METRICS =
   CONSULTATION_PERFORMANCE_METRICS_CATALOG.length
 
-/**
- * Catalog id → alternate API metric / KPI keys (legacy service-shaped payload).
- */
 export const CONSULTATION_PERFORMANCE_METRIC_API_ALIASES: Record<string, string[]> = {
   totalConsultationsBooked: ['totalOrders', 'totalConsultationsBooked'],
   completedConsultations: ['completedOrders', 'completedConsultations'],
@@ -153,7 +148,6 @@ export const CONSULTATION_PERFORMANCE_METRIC_API_ALIASES: Record<string, string[
   scheduledConsultations: ['scheduledConsultations', 'inProgressOrders'],
 }
 
-/** Maps saved preference ids → current catalog ids. */
 export const CONSULTATION_PERFORMANCE_LEGACY_METRIC_ID_MAP: Record<string, string> = {
   completedOrders: 'completedConsultations',
   terminatedOrders: 'cancelledConsultations',

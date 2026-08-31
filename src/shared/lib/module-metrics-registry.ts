@@ -255,7 +255,6 @@ const column = (
   defaultVisible,
 })
 
-/** Frontend fallback catalogs for modules without (or with empty) server catalogs */
 export const MODULE_METRICS_REGISTRY: Record<string, ModuleMetricsDefinition> = {
   'finance-dashboard': {
     moduleKey: FINANCE_DASHBOARD_MODULE_KEY,

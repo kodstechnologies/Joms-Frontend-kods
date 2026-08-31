@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 
-/** Keep a live clock ticking every second. */
 export function useLiveClock(tickMs = 1000) {
   const [now, setNow] = useState(() => new Date())
 
@@ -63,10 +62,6 @@ function getZonedParts(date: Date, timeZone: string) {
   }
 }
 
-/**
- * Formats like Figma topbar: `11/02/2026 | 05:29.00 IST`
- * Date pattern follows Display Preferences (`DD/MM/YY`, `MM/DD/YY`, `YYYY-MM-DD`).
- */
 export function formatDisplayClock(
   date: Date,
   dateTimeFormat?: string | null,

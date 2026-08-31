@@ -1,9 +1,3 @@
-/**
- * Platform Health — Infrastructure Health table column catalog.
- * Source: Settings → Platform Health → Infrastructure Health Table.
- * Keep ids kebab-case to match Manage Metrics / ui-preferences.
- */
-
 export type PlatformHealthTableColumnCatalogItem = {
   id: string
   label: string
@@ -52,7 +46,6 @@ export const DEFAULT_PLATFORM_HEALTH_VISIBLE_COLUMN_IDS =
     (column) => column.id,
   )
 
-/** Maps legacy camelCase preference ids → current catalog ids. */
 export const PLATFORM_HEALTH_LEGACY_COLUMN_ID_MAP: Record<string, string> = {
   id: 'infrastructure-id',
   infrastructureId: 'infrastructure-id',

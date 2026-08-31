@@ -1,7 +1,3 @@
-/**
- * Keep ids kebab-case to match Manage Metrics / ui-preferences.
- */
-
 export type MembershipTableColumnCatalogItem = {
   id: string
   label: string
@@ -223,7 +219,6 @@ export const DEFAULT_MEMBERSHIPS_ACTIVE_METRIC_IDS = MEMBERSHIPS_DASHBOARD_METRI
 
 export const MEMBERSHIPS_MAX_ACTIVE_METRICS = MEMBERSHIPS_DASHBOARD_METRICS_CATALOG.length
 
-/** @deprecated Use MEMBERSHIPS_DASHBOARD_METRICS_CATALOG */
 export const MEMBERSHIP_METRICS_CATALOG = MEMBERSHIPS_DASHBOARD_METRICS_CATALOG
 export const MEMBERSHIP_METRIC_IDS = MEMBERSHIPS_DASHBOARD_METRICS_CATALOG.map((m) => m.id)
 export const MEMBERSHIP_METRIC_ID_SET = new Set(MEMBERSHIP_METRIC_IDS)

@@ -8,9 +8,6 @@ export const venueQueryKeys = {
   managementMetrics: ['venue-management-metrics'] as const,
 }
 
-/**
- * React Query hook for the venue dashboard
- */
 export const useVenueDashboard = (filters: VenueDashboardFilters = {}) => {
   return useQuery({
     queryKey: venueQueryKeys.overview(filters),
@@ -20,9 +17,6 @@ export const useVenueDashboard = (filters: VenueDashboardFilters = {}) => {
   })
 }
 
-/**
- * React Query hook for Venue Management metric cards
- */
 export const useVenueManagementMetrics = () => {
   return useQuery({
     queryKey: venueQueryKeys.managementMetrics,

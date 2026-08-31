@@ -1,7 +1,3 @@
-/**
- * Re-exports membership Manage Metrics catalogs.
- * Canonical definitions live in membership-management-table-columns.config.ts.
- */
 export {
   MEMBERSHIPS_MODULE_KEY,
   MEMBERSHIPS_MAX_ACTIVE_METRICS,

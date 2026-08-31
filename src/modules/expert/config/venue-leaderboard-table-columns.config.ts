@@ -1,9 +1,3 @@
-/**
- * Venue Leaderboard — table column catalog.
- * Mirrors Experts Leaderboard with venue naming (no service/consultation listing cols).
- * Keep ids kebab-case to match Manage Metrics / ui-preferences.
- */
-
 export const VENUE_LEADERBOARD_MODULE_KEY = 'venue-leaderboard'
 
 export type VenueLeaderboardTableColumnCatalogItem = {
@@ -71,7 +65,6 @@ export const DEFAULT_VENUE_LEADERBOARD_VISIBLE_COLUMN_IDS =
     (column) => column.id,
   )
 
-/** Maps legacy preference ids → current catalog ids. */
 export const VENUE_LEADERBOARD_LEGACY_COLUMN_ID_MAP: Record<string, string> = {
   'events-count': 'orders-completed',
   ratings: 'average-rating',

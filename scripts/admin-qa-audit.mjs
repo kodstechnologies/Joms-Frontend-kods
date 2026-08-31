@@ -1,7 +1,4 @@
-/**
- * Admin panel QA audit — local super-admin smoke test.
- * Run: node scripts/admin-qa-audit.mjs
- */
+
 import axios from 'axios'
 
 const TOKEN =

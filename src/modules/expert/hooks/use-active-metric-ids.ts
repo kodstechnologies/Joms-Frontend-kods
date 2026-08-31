@@ -3,10 +3,6 @@ import { useMemo } from 'react'
 import { dedupeOrderedIds } from '@/shared/lib/dedupe-ids'
 import { useDashboardMetricPreferences } from './use-ui-preferences'
 
-/**
- * Returns active metric ids in preference order.
- * Uses saved preferences when available; falls back only while loading or when unset.
- */
 export function useActiveMetricIds(moduleKey: string, fallbackIds: string[]) {
   const preferencesQuery = useDashboardMetricPreferences(moduleKey)
 

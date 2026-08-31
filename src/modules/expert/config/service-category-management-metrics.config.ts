@@ -1,5 +1,3 @@
-/** Keep ids kebab-case to match Manage Metrics / ui-preferences. */
-
 export const SERVICE_CATEGORY_MANAGEMENT_MODULE_KEY = 'service-category-management'
 
 export type ServiceCategoryManagementMetricCatalogItem = {
@@ -89,7 +87,6 @@ export const DEFAULT_SERVICE_CATEGORY_MANAGEMENT_METRIC_IDS =
 export const SERVICE_CATEGORY_MANAGEMENT_MAX_ACTIVE_METRICS =
   SERVICE_CATEGORY_MANAGEMENT_METRICS_CATALOG.length
 
-/** Maps legacy camelCase / old kebab prefs → current catalog ids. */
 export const SERVICE_CATEGORY_LEGACY_METRIC_ID_MAP: Record<string, string> = {
   'top-category': 'top-revenue-category',
 }

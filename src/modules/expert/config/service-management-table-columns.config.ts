@@ -1,8 +1,3 @@
-/**
- * Service management table-column catalogs (shared shape with backend catalogs).
- * Keep ids kebab-case to match Manage Metrics / ui-preferences.
- */
-
 export type ServiceTableColumnCatalogItem = {
   id: string
   label: string
@@ -31,7 +26,6 @@ export const SERVICE_REPORTED_MODULE_KEY = 'service-reported'
 export const SERVICE_SUSPENDED_MODULE_KEY = 'service-suspended'
 export const SERVICE_DELETED_MODULE_KEY = 'service-deleted'
 
-/** Main Service Management table */
 export const SERVICE_MANAGEMENT_TABLE_COLUMNS_CATALOG: ServiceTableColumnCatalogItem[] = [
   col('service-id', 'Listing ID', 'Text', 'Unique listing identifier (SER/CON)', true),
   col('name', 'Listing Name', 'Text', 'Service or consultation title', true),
@@ -90,7 +84,6 @@ export const SERVICE_MANAGEMENT_TABLE_COLUMNS_CATALOG: ServiceTableColumnCatalog
 export const DEFAULT_SERVICE_MANAGEMENT_VISIBLE_COLUMN_IDS =
   SERVICE_MANAGEMENT_TABLE_COLUMNS_CATALOG.filter((c) => c.defaultVisible).map((c) => c.id)
 
-/** Pending Approvals table */
 export const SERVICE_PENDING_APPROVALS_TABLE_COLUMNS_CATALOG: ServiceTableColumnCatalogItem[] = [
   col('service-id', 'Listing ID', 'Text', 'Unique listing identifier (SER/CON)', true),
   col('name', 'Listing Name', 'Text', 'Service or consultation title', true),
@@ -113,7 +106,6 @@ export const SERVICE_PENDING_APPROVALS_TABLE_COLUMNS_CATALOG: ServiceTableColumn
 export const DEFAULT_SERVICE_PENDING_VISIBLE_COLUMN_IDS =
   SERVICE_PENDING_APPROVALS_TABLE_COLUMNS_CATALOG.filter((c) => c.defaultVisible).map((c) => c.id)
 
-/** Reported Services table */
 export const SERVICE_REPORTED_TABLE_COLUMNS_CATALOG: ServiceTableColumnCatalogItem[] = [
   col('report-id', 'Report ID', 'Text', 'Unique report identifier', true),
   col('listing-id', 'Listing ID', 'Text', 'Reported listing identifier', true),
@@ -129,7 +121,6 @@ export const SERVICE_REPORTED_TABLE_COLUMNS_CATALOG: ServiceTableColumnCatalogIt
 export const DEFAULT_SERVICE_REPORTED_VISIBLE_COLUMN_IDS =
   SERVICE_REPORTED_TABLE_COLUMNS_CATALOG.filter((c) => c.defaultVisible).map((c) => c.id)
 
-/** Suspended Services table */
 export const SERVICE_SUSPENDED_TABLE_COLUMNS_CATALOG: ServiceTableColumnCatalogItem[] = [
   col('service-id', 'Listing ID', 'Text', 'Suspended listing identifier', true),
   col('name', 'Listing Name', 'Text', 'Listing title', true),
@@ -145,7 +136,6 @@ export const SERVICE_SUSPENDED_TABLE_COLUMNS_CATALOG: ServiceTableColumnCatalogI
 export const DEFAULT_SERVICE_SUSPENDED_VISIBLE_COLUMN_IDS =
   SERVICE_SUSPENDED_TABLE_COLUMNS_CATALOG.filter((c) => c.defaultVisible).map((c) => c.id)
 
-/** Deleted Services table */
 export const SERVICE_DELETED_TABLE_COLUMNS_CATALOG: ServiceTableColumnCatalogItem[] = [
   col('service-id', 'Listing ID', 'Text', 'Deleted listing identifier', true),
   col('name', 'Listing Name', 'Text', 'Listing title', true),

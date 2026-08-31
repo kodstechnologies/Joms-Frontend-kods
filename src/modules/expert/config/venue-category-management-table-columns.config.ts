@@ -1,5 +1,3 @@
-/** Keep ids kebab-case to match Manage Metrics / ui-preferences. */
-
 export type VenueCategoryManagementTableColumnCatalogItem = {
   id: string
   label: string

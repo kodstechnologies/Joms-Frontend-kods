@@ -30,8 +30,7 @@ const currency = (value: number) =>
 
 const formatByType = (
   type:
-    | ServicePerformanceMetricCatalogItem['type']
-    | ConsultationPerformanceMetricCatalogItem['type'],
+    ServicePerformanceMetricCatalogItem['type'] | ConsultationPerformanceMetricCatalogItem['type'],
   value: number,
 ) => {
   switch (type) {
@@ -119,10 +118,6 @@ const buildCardsFromCatalog = (
     }
   })
 
-/**
- * Every catalog metric becomes a card. Metrics without a data source render a
- * dash and carry the backend's reason as the hint, never a substituted number.
- */
 export const buildServicePerformanceCards = (
   performance: ServicePerformance | undefined,
 ): ServicePerformanceCard[] =>

@@ -10,7 +10,6 @@ type UseTableExportColumnIdsOptions = {
   allowedColumnIds?: ReadonlySet<string> | readonly string[]
 }
 
-/** Resolves Manage Metrics table column preferences for export (matches on-screen table). */
 export function useTableExportColumnIds({
   visibleColumnIds,
   defaultColumnIds,

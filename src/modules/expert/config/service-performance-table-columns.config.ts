@@ -1,5 +1,3 @@
-/** Keep ids kebab-case to match Manage Metrics / ui-preferences. */
-
 export type ServicePerformanceTableColumnCatalogItem = {
   id: string
   label: string
@@ -59,7 +57,6 @@ export const DEFAULT_SERVICE_PERFORMANCE_VISIBLE_COLUMN_IDS =
     (column) => column.id,
   )
 
-/** Maps legacy preference ids → current catalog ids. */
 export const SERVICE_PERFORMANCE_LEGACY_COLUMN_ID_MAP: Record<string, string> = {
   orderId: 'order-id',
   clientId: 'client-id',

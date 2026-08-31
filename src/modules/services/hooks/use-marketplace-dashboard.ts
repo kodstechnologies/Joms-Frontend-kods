@@ -8,9 +8,6 @@ export const marketplaceQueryKeys = {
   overview: (filters: DashboardFilters) => ['marketplace-dashboard', 'overview', filters] as const,
 }
 
-/**
- * Marketplace dashboard query (KPIs, charts, trends, summary).
- */
 export const useMarketplaceDashboard = (filters: DashboardFilters = {}) => {
   return useQuery({
     queryKey: marketplaceQueryKeys.overview(filters),
@@ -20,7 +17,6 @@ export const useMarketplaceDashboard = (filters: DashboardFilters = {}) => {
   })
 }
 
-/** Local filter state for the marketplace dashboard. */
 export const useMarketplaceDashboardFilters = (
   initialFilters: DashboardFilters = { dateRange: 'last30days' },
 ) => {

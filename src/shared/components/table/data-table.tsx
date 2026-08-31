@@ -19,7 +19,7 @@ declare module '@tanstack/react-table' {
   interface ColumnMeta<TData extends RowData, TValue> {
     headerClassName?: string
     cellClassName?: string
-    /** API field used for server-side sorting; defaults to column id */
+
     sortField?: string
   }
 }
@@ -45,7 +45,7 @@ export type DataTableProps<TData> = {
   searchPlaceholder?: string
   advancedFilterLabel?: string
   onAdvancedFilter?: () => void
-  /** @deprecated Advance Filters always use the white outline style. Kept for call-site compatibility. */
+
   advancedFilterVariant?: 'primary' | 'secondary'
   onExport?: () => void
   isExporting?: boolean
@@ -58,24 +58,23 @@ export type DataTableProps<TData> = {
   showSortIcons?: boolean
   contentClassName?: string
   tone?: 'default' | 'category'
-  /** When true, sorting is handled server-side (no client row reordering). */
+
   manualSorting?: boolean
   sorting?: SortingState
   onSortingChange?: (updater: SortingState | ((old: SortingState) => SortingState)) => void
   onRowClick?: (row: TData) => void
-  /** Column-specific search: searchable column definitions. When provided, the enhanced search bar is shown. */
+
   searchableColumns?: SearchableColumn[]
-  /** Column-specific search: current values for column searches. */
+
   columnSearches?: ColumnSearchValues
-  /** Column-specific search: called when a column search value changes. */
+
   onColumnSearchChange?: (key: string, value: string) => void
-  /** Column-specific search: called when a column search is cleared. */
+
   onColumnSearchRemove?: (key: string) => void
-  /** Column-specific search: called to clear all column searches. */
+
   onClearAllSearches?: () => void
 }
 
-/** Server-sorted tables use enableSorting on column defs; TanStack getCanSort() also requires accessorFn. */
 function isHeaderSortable<TData>(column: Column<TData, unknown>, manualSorting: boolean) {
   const columnId = column.id
   if (!columnId || columnId === 'select' || columnId === 'actions' || columnId === 'action') {

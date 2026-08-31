@@ -1,8 +1,4 @@
-/**
- * Firefox viewport smoke for Admin login (no secrets).
- *   pnpm dlx playwright@1.55.0 test -- skipped; run via node:
- *   node scripts/firefox-viewport-smoke.mjs
- */
+
 import { firefox } from 'playwright'
 import path from 'node:path'
 import fs from 'node:fs'

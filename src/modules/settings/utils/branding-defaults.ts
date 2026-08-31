@@ -22,7 +22,6 @@ import {
   venueDefaults,
 } from '@/modules/settings/mock/settings.defaults'
 
-/** General product branding used when platform settings are missing/unavailable. */
 export const GENERAL_BRANDING = {
   productTitle: 'Command Operations Centre',
   applicationName: 'JOMS Applications',
@@ -75,7 +74,6 @@ export const getModulePlaceholder = <M extends SettingsModule>(
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value)
 
-/** Deep-merge API payloads onto defaults so missing keys never blank the UI. */
 export const mergeWithDefaults = <T>(defaults: T, incoming: unknown): T => {
   if (incoming == null) return defaults
   if (!isRecord(defaults) || !isRecord(incoming)) return (incoming as T) ?? defaults

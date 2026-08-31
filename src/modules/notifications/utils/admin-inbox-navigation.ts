@@ -194,6 +194,5 @@ export const resolveAdminInboxNavigation = (item: InAppNotification): AdminInbox
   return { path: '/my-tasks' }
 }
 
-/** @deprecated Use resolveAdminInboxNavigation for path + optional router state. */
 export const resolveAdminInboxPath = (item: InAppNotification): string =>
   resolveAdminInboxNavigation(item).path

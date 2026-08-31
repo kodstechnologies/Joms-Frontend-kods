@@ -94,7 +94,6 @@ function parseIsoDate(iso?: string | null) {
   return date
 }
 
-/** Default schedule window: start = now, end = now + 1 hour */
 function getDefaultSchedule() {
   const start = new Date()
   const end = new Date(start.getTime() + 60 * 60 * 1000)

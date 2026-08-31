@@ -2,7 +2,6 @@ import type { ExportFormatOption } from '../mock/platform-options.mock'
 import type { PlatformSettings } from '../types/settings'
 import { platformDefaults } from '../mock/settings.defaults'
 
-/** Normalize legacy values (e.g. XLSX) to the supported admin export formats. */
 export function resolveDefaultExportFormat(value?: string | null): ExportFormatOption {
   const normalized = String(value || '')
     .trim()

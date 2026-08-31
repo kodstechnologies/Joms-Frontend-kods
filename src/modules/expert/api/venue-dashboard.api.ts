@@ -28,10 +28,6 @@ export type VenueManagementMetricsResponse = {
   generatedAt?: string
 }
 
-/**
- * Fetch complete Venue Dashboard in one single API call.
- * GET /venues/dashboard
- */
 export const fetchVenueDashboard = async (
   filters: VenueDashboardFilters = {},
 ): Promise<VenueDashboardResponse> => {
@@ -42,10 +38,6 @@ export const fetchVenueDashboard = async (
   return res.data.data
 }
 
-/**
- * Fetch Venue Management metric cards.
- * GET /venues/management/metrics
- */
 export const fetchVenueManagementMetrics = async (): Promise<VenueManagementMetricsResponse> => {
   const res = await venueApiClient.get<{
     success: boolean

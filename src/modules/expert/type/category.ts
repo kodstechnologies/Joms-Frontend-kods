@@ -205,14 +205,12 @@ export interface VenueCategoryListResponse {
   meta?: PaginationMeta
 }
 
-/** @deprecated Use ServiceCategoryApi — kept for existing category-api consumers */
 export interface SubCategory {
   _id: string
   name: string
   isActive?: boolean
 }
 
-/** @deprecated Use ServiceCategoryApi */
 export interface Category {
   _id: string
   name: string

@@ -59,10 +59,6 @@ async function fetchPublicSecurityPolicy(): Promise<
   }
 }
 
-/**
- * Prefer authenticated settings when logged in (reflects draft-saved values);
- * fall back to public policy endpoint for password forms before/without auth context.
- */
 export function useSecurityPolicy() {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
   const token = useAuthStore((state) => state.token)
@@ -84,9 +80,7 @@ export function useSecurityPolicy() {
   })
 
   const config = (authedQuery.data?.config || publicQuery.data) as
-    | Partial<SecuritySettings>
-    | PublicSecurityPolicy
-    | undefined
+    Partial<SecuritySettings> | PublicSecurityPolicy | undefined
 
   const passwordPolicy = {
     ...DEFAULT_PASSWORD_POLICY,

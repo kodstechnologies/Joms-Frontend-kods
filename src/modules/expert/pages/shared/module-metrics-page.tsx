@@ -108,17 +108,11 @@ export type ModuleMetricsPageConfig = {
   moduleKey: string
   moduleName?: string
   returnTo?: string
-  /** Force dashboard section on/off. When omitted, derived from `section` + catalogs. */
+
   includeDashboard?: boolean
-  /** Force table section on/off. When omitted, derived from `section` + catalogs. */
+
   includeTableColumns?: boolean
-  /**
-   * Which sections to show:
-   * - `dashboard` → cards/metrics only
-   * - `table` → table columns only
-   * - `all` → both (when catalogs exist)
-   * Can also be set via `?section=` query param.
-   */
+
   section?: MetricsSection
   maxActiveMetrics?: number
 }

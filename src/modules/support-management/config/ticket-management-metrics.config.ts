@@ -1,8 +1,3 @@
-/**
- * Ticket Management personal metrics catalog.
- * Excel has no separate ticket KPIs — personal subset of Support Dashboard metrics.
- */
-
 export const TICKET_MANAGEMENT_MODULE_KEY = 'ticket-management'
 
 export type TicketManagementMetricCatalogItem = {
@@ -51,7 +46,6 @@ export const TICKET_MANAGEMENT_METRICS_CATALOG: TicketManagementMetricCatalogIte
   },
 ]
 
-/** Maps legacy preference / API ids → current catalog ids. */
 export const TICKET_MANAGEMENT_LEGACY_METRIC_ID_MAP: Record<string, string> = {
   'my-open-tickets': 'assigned-to-me',
   'avg-response-time': 'average-first-response-time',

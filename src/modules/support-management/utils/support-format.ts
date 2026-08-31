@@ -171,7 +171,6 @@ export function formatSlaCountdown(remainingMs: number) {
 
 const pad2 = (value: number) => String(value).padStart(2, '0')
 
-/** Spec table format: DD MMM YYYY HH:mm */
 export function formatTicketDateTime(value?: string | Date | null) {
   if (!value) return '—'
   const date = value instanceof Date ? value : new Date(value)
@@ -193,7 +192,6 @@ export function formatTicketDateTime(value?: string | Date | null) {
   return `${pick('day')} ${pick('month')} ${pick('year')} ${pick('hour')}:${pick('minute')}`
 }
 
-/** Spec duration format: HH:mm:ss */
 export function formatTicketDurationHms(
   value?: string | null,
   start?: string | null,

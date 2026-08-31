@@ -38,15 +38,10 @@ export function PolicySettingsTopTabs({ activeKey = 'platform' }: { activeKey?: 
 }
 
 type PolicyBreadcrumbProps = {
-  /** Current leaf label (e.g. policy title, Create Policy, Timeline) */
   current?: string
   application?: string
 }
 
-/**
- * Always under Platform Controls → Policy Management → optional current page.
- * Segments are clickable for Back navigation.
- */
 export function PolicyBreadcrumb({ current, application = 'expert' }: PolicyBreadcrumbProps) {
   const navigate = useNavigate()
 

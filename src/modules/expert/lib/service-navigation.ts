@@ -18,10 +18,6 @@ export const getServiceManagementViewPath = (service: ServiceViewTarget) => {
 const expertServiceBase = (expertId: string, serviceId: string) =>
   `/experts/management/profile/${expertId}/service/${serviceId}`
 
-/**
- * Expert Management drill-down. Live consultations open Performance.
- * Pending reviews stay on the legacy management view page.
- */
 export const getExpertServiceDrilldownPath = (service: ServiceViewTarget, expertId: string) => {
   const isConsultation = (service.serviceType || '').toLowerCase().includes('consultation')
 

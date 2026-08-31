@@ -1,9 +1,3 @@
-/**
- * Error Reporting & Incident Tracking — main table column catalog.
- * Source: Settings Logs → Error Reporting & Incident Tracking Table.
- * Keep ids kebab-case to match Manage Metrics / ui-preferences.
- */
-
 export type IncidentTableColumnCatalogItem = {
   id: string
   label: string
@@ -44,7 +38,6 @@ export const DEFAULT_INCIDENT_TRACKING_VISIBLE_COLUMN_IDS =
     (column) => column.id,
   )
 
-/** Maps legacy camelCase / accessorKey preference ids → current catalog ids. */
 export const INCIDENT_TRACKING_LEGACY_COLUMN_ID_MAP: Record<string, string> = {
   incidentId: 'incident-id',
   title: 'incident-title',

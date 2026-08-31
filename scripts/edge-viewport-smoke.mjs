@@ -1,7 +1,4 @@
-/**
- * Edge viewport smoke for Admin login (XPLAT-02).
- *   node scripts/edge-viewport-smoke.mjs
- */
+
 import { chromium } from 'playwright'
 import path from 'node:path'
 import fs from 'node:fs'

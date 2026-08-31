@@ -4,7 +4,7 @@ type SupportAvatarProps = {
   name?: string
   src?: string | null
   sizeClassName?: string
-  /** `icon` = human logo when there is no photo (mobile chat / assigned agent). */
+
   fallback?: 'initials' | 'icon'
 }
 

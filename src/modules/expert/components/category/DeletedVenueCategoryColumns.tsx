@@ -9,7 +9,6 @@ function getDisplayStatus(category: VenueCategory) {
   return category.previousStatus ?? category.status
 }
 
-/** Full Manage Metrics catalog columns for deleted venue categories. */
 export const deletedVenueCategoryColumns: ColumnDef<VenueCategory>[] = venueCategoryColumns.map(
   (column) => {
     if (column.id === 'status') {

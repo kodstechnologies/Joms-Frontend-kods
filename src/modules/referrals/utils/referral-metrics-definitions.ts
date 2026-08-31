@@ -17,7 +17,6 @@ export type ReferralMetricDefinition = {
   registryType: 'Count' | 'Percentage' | 'Average' | 'Text'
 }
 
-/** Fallback when API has not loaded. Dashboard never uses null — always 0 / "—". */
 export const REFERRAL_METRICS_SEED: ReferralMetricsValues = {
   totalReferralsGenerated: 0,
   userToUserReferrals: 0,
@@ -75,7 +74,6 @@ const FORMAT_BY_TYPE: Record<string, ReferralMetricFormat> = {
   Text: 'string',
 }
 
-/** Built from catalog so Manage Metrics and dashboard cards stay aligned. */
 export const REFERRAL_METRIC_DEFINITIONS: ReferralMetricDefinition[] =
   REFERRALS_DASHBOARD_METRICS_CATALOG.map((item) => ({
     id: item.id,

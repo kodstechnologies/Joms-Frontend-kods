@@ -1,8 +1,3 @@
-/**
- * Support Management dashboard metrics catalog.
- * Source: JOMS Excel → Support Management → Dashboard Metrics (8).
- */
-
 export const SUPPORT_DASHBOARD_MODULE_KEY = 'support-dashboard'
 
 export type SupportDashboardMetricCatalogItem = {
@@ -72,7 +67,6 @@ export const SUPPORT_DASHBOARD_METRICS_CATALOG: SupportDashboardMetricCatalogIte
   },
 ]
 
-/** Maps legacy preference / API ids → current Excel catalog ids. */
 export const SUPPORT_DASHBOARD_LEGACY_METRIC_ID_MAP: Record<string, string> = {
   'total-open-tickets': 'open-tickets',
   'escalated-tickets': 'escalated-by-me',

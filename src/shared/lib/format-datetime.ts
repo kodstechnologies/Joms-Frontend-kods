@@ -1,5 +1,3 @@
-/** Preserves per-screen date/time output — do not merge variants without checking rendered strings. */
-
 export function formatDateTimeEnInFinance(value?: string | null) {
   if (!value) return '—'
   const date = new Date(value)

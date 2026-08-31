@@ -2,9 +2,6 @@ import ExcelJS from 'exceljs'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 
-/**
- * Formats a value for export, returning empty string if missing or empty.
- */
 export function exportDisplayValue(value: unknown): string {
   if (value === null || value === undefined) return ''
   if (typeof value === 'string' && value.trim() === '') return ''
@@ -28,14 +25,6 @@ function excelBufferToBlob(buffer: ExcelJS.Buffer) {
   })
 }
 
-/**
- * Utility to export tabular data to CSV, Excel, or PDF formats.
- *
- * @param headers An array of strings representing the column headers.
- * @param rows An array of string arrays, where each string array represents a row of data.
- * @param format The desired export format ('csv' | 'excel' | 'pdf').
- * @param fileNamePrefix The prefix for the downloaded file (e.g., 'venue_data').
- */
 export async function exportDataToFile(
   headers: string[],
   rows: string[][],
@@ -77,9 +66,6 @@ export type ExcelSheetData = {
   rows: (string | number)[][]
 }
 
-/**
- * Downloads a multi-sheet Excel workbook. Empty sheets are skipped.
- */
 export async function exportSheetsToExcel(sheets: ExcelSheetData[], fileNamePrefix: string) {
   const validSheets = sheets.filter((sheet) => sheet.headers.length > 0 && sheet.rows.length > 0)
   if (!validSheets.length) {

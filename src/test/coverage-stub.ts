@@ -1,5 +1,3 @@
-/** Shared stubs so coverage mounts execute page/component bodies instead of dying on empty data. */
-
 const ARRAY_METHODS = new Set([
   'map',
   'filter',

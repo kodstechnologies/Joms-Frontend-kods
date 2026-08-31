@@ -1,8 +1,3 @@
-/** @vitest-environment jsdom */
-/**
- * Invoke Admin API module exports so axios call sites count toward coverage.
- * chat-test APIs are excluded (dev harness).
- */
 import { beforeAll, describe, expect, it, vi } from 'vitest'
 
 vi.mock('axios', async (importOriginal) => {

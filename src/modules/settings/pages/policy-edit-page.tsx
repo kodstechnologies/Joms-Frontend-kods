@@ -157,5 +157,4 @@ export function PolicyEditPage() {
   )
 }
 
-/** @deprecated Prefer PolicyEditPage; kept for router compatibility */
 export const PolicyDetailPage = PolicyEditPage

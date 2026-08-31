@@ -62,7 +62,6 @@ const statusCol = (
   },
 })
 
-/** Preference-driven column map for partner-based expert tables. */
 export function buildExpertDataColumnsById(): Record<string, ColumnDef<Expert>> {
   return {
     'expert-id': textCol('expert-id', 'Expert ID', (e) => e.expertId),

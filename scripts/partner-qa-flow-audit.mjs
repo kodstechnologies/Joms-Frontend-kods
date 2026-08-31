@@ -1,19 +1,4 @@
-/**
- * Partner API flow audit — create / edit / delete smoke tests with cleanup.
- *
- * Usage:
- *   set QA_PARTNER_TOKEN=eyJhbGci...
- *   node scripts/partner-qa-flow-audit.mjs
- *
- * Or:
- *   set QA_PARTNER_PHONE=9900000001
- *   set QA_PARTNER_PASSWORD=your-password
- *   node scripts/partner-qa-flow-audit.mjs
- *
- * Optional env:
- *   QA_PARTNER_ID, QA_TEST_USER_ID (default seed-user-001)
- *   QA_SKIP_DESTRUCTIVE=1 — skip close/delete on live seed resources
- */
+
 import axios from 'axios'
 import fs from 'fs'
 import path from 'path'

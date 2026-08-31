@@ -1,8 +1,3 @@
-/**
- * Referral Management — dashboard metric + table column catalogs.
- * Keep ids kebab-case to match Manage Metrics / ui-preferences.
- */
-
 export type ReferralTableColumnCatalogItem = {
   id: string
   label: string

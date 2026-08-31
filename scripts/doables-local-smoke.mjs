@@ -1,9 +1,4 @@
-/**
- * Local doables pack: NET-04 / REG-06 / UX deep-link+filters / REG-07 / PRIV-03.
- * Injects minted auth-storage from %TEMP% (no secrets printed).
- *
- *   node scripts/doables-local-smoke.mjs
- */
+
 import { chromium } from 'playwright'
 import fs from 'node:fs'
 import os from 'node:os'

@@ -1,4 +1,3 @@
-/** @vitest-environment jsdom */
 import { beforeAll, describe, expect, it, vi } from 'vitest'
 
 describe('high-ROI pure exports for coverage', () => {

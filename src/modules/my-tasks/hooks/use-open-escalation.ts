@@ -8,10 +8,6 @@ import {
   type EscalationNavigationTarget,
 } from '../utils/escalation-navigation'
 
-/**
- * Opens the review screen for an escalation and flips it to In-Progress for the
- * assignee (the API is a no-op for super admins and non-assigned escalations).
- */
 export const useOpenEscalation = () => {
   const navigate = useNavigate()
   const queryClient = useQueryClient()

@@ -1,5 +1,3 @@
-/** Keep ids kebab-case to match Manage Metrics / ui-preferences. */
-
 export type ServiceCategoryManagementTableColumnCatalogItem = {
   id: string
   label: string
@@ -51,7 +49,6 @@ export const DEFAULT_SERVICE_CATEGORY_MANAGEMENT_VISIBLE_COLUMN_IDS =
     (column) => column.id,
   )
 
-/** Maps legacy camelCase prefs → current catalog ids. */
 export const SERVICE_CATEGORY_LEGACY_COLUMN_ID_MAP: Record<string, string> = {
   categoryId: 'category-id',
   name: 'category-name',

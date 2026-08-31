@@ -1,8 +1,3 @@
-/**
- * Past Tickets of User — table column catalog.
- * Source: JOMS Excel → Support Management → Ticket Management – Past Tickets of User (13).
- */
-
 export const PAST_TICKETS_MODULE_KEY = 'past-tickets'
 
 export type PastTicketsTableColumnCatalogItem = {
@@ -43,7 +38,6 @@ export const PAST_TICKETS_TABLE_COLUMNS_CATALOG: PastTicketsTableColumnCatalogIt
   col('last-updated-at', 'Last Updated At', 'Date', 'Last activity timestamp', true),
 ]
 
-/** Maps legacy accessorKey-style preference ids → kebab catalog ids. */
 export const PAST_TICKETS_LEGACY_COLUMN_ID_MAP: Record<string, string> = {
   id: 'ticket-id',
   ticketId: 'ticket-id',

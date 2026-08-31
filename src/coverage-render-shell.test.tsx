@@ -1,4 +1,3 @@
-/** @vitest-environment jsdom */
 import { QueryClientProvider } from '@tanstack/react-query'
 import { act } from 'react'
 import { MemoryRouter } from 'react-router-dom'

@@ -8,7 +8,6 @@ export function isSortableColumnId(columnId: string) {
   return columnId.length > 0 && !NON_SORTABLE_COLUMN_IDS.has(columnId)
 }
 
-/** Resolve stable column id from explicit id or accessorKey (TanStack default). */
 export function resolveColumnDefId<T>(column: ColumnDef<T>): string {
   if (column.id) return String(column.id)
   if ('accessorKey' in column && column.accessorKey != null && column.accessorKey !== '') {
@@ -24,7 +23,6 @@ export function camelToKebab(value: string) {
     .toLowerCase()
 }
 
-/** Look up API sort field by column id or kebab-case catalog id. */
 export function resolveSortFieldMapEntry(
   columnId: string,
   sortFieldMap?: Record<string, string | null | undefined>,
@@ -40,7 +38,6 @@ export function resolveSortFieldMapEntry(
   return undefined
 }
 
-/** Attach meta.sortField (defaults to column id) for server-side sorting. */
 export function withServerSortMeta<T>(
   columns: ColumnDef<T>[],
   sortFieldMap?: Record<string, string | null | undefined>,
@@ -88,7 +85,6 @@ const toSortableValue = (value: unknown) => {
   return String(value).toLowerCase()
 }
 
-/** Client-side sort for mock / locally paginated tables. */
 export function sortClientRows<T extends Record<string, unknown>>(
   rows: T[],
   sortBy: string | undefined,

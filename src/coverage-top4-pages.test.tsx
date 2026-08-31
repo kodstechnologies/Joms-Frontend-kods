@@ -1,8 +1,3 @@
-/** @vitest-environment jsdom */
-/**
- * Targeted coverage for the 4 largest uncovered Admin pages.
- * Mocks data hooks with rich fixtures so tabs/steps leave loading shells.
- */
 import { act, Component, type ComponentType, type ReactNode } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'

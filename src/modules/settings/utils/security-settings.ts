@@ -3,7 +3,6 @@ import type { SecuritySettings } from '@/modules/settings/types/settings'
 
 type LegacyMfa = SecuritySettings['mfa'] & { requireForAllAdmins?: boolean }
 
-/** Normalize security settings from API (handles legacy requireForAllAdmins field). */
 export function normalizeSecuritySettings(config: SecuritySettings): SecuritySettings {
   const mfa = config.mfa as LegacyMfa
 

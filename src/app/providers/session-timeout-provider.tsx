@@ -14,9 +14,6 @@ const ACTIVITY_EVENTS: Array<keyof WindowEventMap> = [
   'click',
 ]
 
-/**
- * Logs the admin out after configured idle minutes (Security & Access → Session Timeout).
- */
 export function SessionTimeoutProvider({ children }: PropsWithChildren) {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
   const token = useAuthStore((state) => state.token)

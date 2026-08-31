@@ -8,11 +8,6 @@ export type ExecutiveOverviewMetricCatalogItem = {
   defaultActive: boolean
 }
 
-/**
- * Executive Dashboard Manage Metrics catalog.
- * Only KPIs that can be calculated from existing aggregates are included.
- * Excel gaps (Net Profit, Chargebacks, System Uptime, Impersonation, etc.) are omitted.
- */
 export const EXECUTIVE_OVERVIEW_METRICS_CATALOG: ExecutiveOverviewMetricCatalogItem[] = [
   // —— Core (defaults) ——
   {

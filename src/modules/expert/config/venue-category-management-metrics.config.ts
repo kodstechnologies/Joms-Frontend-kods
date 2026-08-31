@@ -1,5 +1,3 @@
-/** Keep ids kebab-case to match Manage Metrics / ui-preferences. */
-
 export const VENUE_CATEGORY_MANAGEMENT_MODULE_KEY = 'venue-category-management'
 
 export type VenueCategoryManagementMetricCatalogItem = {

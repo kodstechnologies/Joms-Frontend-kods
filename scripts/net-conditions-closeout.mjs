@@ -1,10 +1,4 @@
-/**
- * NET close-out: Slow 3G prod login, offline toast, Slow-3G double Save.
- * No tokens printed.
- *
- *   node Joms-backend/scripts/mint-local-admin-jwt.mjs
- *   node scripts/net-conditions-closeout.mjs
- */
+
 import { chromium } from 'playwright'
 import fs from 'node:fs'
 import os from 'node:os'
@@ -22,7 +16,6 @@ const storagePath = path.join(os.tmpdir(), 'joms-local-auth-storage.json')
 const edgePath =
   process.env.EDGE_PATH || 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe'
 
-/** Chrome DevTools "Slow 3G" defaults (bytes/s + ms). */
 const SLOW_3G = {
   offline: false,
   downloadThroughput: 51200,

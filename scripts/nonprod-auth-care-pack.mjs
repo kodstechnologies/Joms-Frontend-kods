@@ -1,10 +1,4 @@
-/**
- * Non-prod care pack: create dedicated QA admins + run AUTH-09 / UI-03 / LOCK /
- * RBAC-SUB / IDOR / AUTH-15 / REG-01 against local auth only.
- * Never prints passwords, OTPs, JWTs, or internal keys.
- *
- *   node scripts/nonprod-auth-care-pack.mjs
- */
+
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'

@@ -13,12 +13,10 @@ function kebabToCamel(value: string) {
   return value.replace(/-([a-z])/g, (_, char: string) => char.toUpperCase())
 }
 
-/** Default column-id → field map using camelCase conversion. */
 export function buildDefaultColumnSortMap(columnIds: string[]) {
   return Object.fromEntries(columnIds.map((id) => [id, kebabToCamel(id)]))
 }
 
-/** Build sort field map from a table column catalog with optional overrides. */
 export function buildCatalogSortFieldMap(
   catalog: ReadonlyArray<{ id: string }>,
   overrides: Record<string, string | null | undefined> = {},
@@ -27,12 +25,10 @@ export function buildCatalogSortFieldMap(
   return { ...base, ...overrides }
 }
 
-/** Finance and ops tables: default kebab-case column id → camelCase API field. */
 export function buildDefaultTableSortFieldMap(columnIds: string[]) {
   return buildDefaultColumnSortMap(columnIds)
 }
 
-/** Maps expert table column ids to API / list-item field names for server-side sorting. */
 export const EXPERT_COLUMN_SORT_FIELDS: Record<string, string> = {
   'expert-id': 'expertId',
   name: 'name',
@@ -112,7 +108,6 @@ export const EXPERT_COLUMN_SORT_FIELDS: Record<string, string> = {
   'reinstatement-eligible': 'reinstatementEligible',
 }
 
-/** Auth-service Partner document fields used when sorting before enrichment. */
 export const EXPERT_AUTH_SORT_FIELDS: Record<string, string> = {
   name: 'fullname',
   email: 'email',

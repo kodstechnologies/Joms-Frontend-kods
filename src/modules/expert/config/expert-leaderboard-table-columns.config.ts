@@ -1,5 +1,3 @@
-/** Keep ids kebab-case to match Manage Metrics / ui-preferences. */
-
 export const EXPERT_LEADERBOARD_MODULE_KEY = 'expert-leaderboard'
 
 export type ExpertLeaderboardTableColumnCatalogItem = {
@@ -69,7 +67,6 @@ export const DEFAULT_EXPERT_LEADERBOARD_VISIBLE_COLUMN_IDS =
     (column) => column.id,
   )
 
-/** Maps legacy preference ids → current catalog ids. */
 export const EXPERT_LEADERBOARD_LEGACY_COLUMN_ID_MAP: Record<string, string> = {
   'events-count': 'orders-completed',
   ratings: 'average-rating',

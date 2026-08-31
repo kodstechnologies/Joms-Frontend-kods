@@ -119,7 +119,6 @@ const countCol = (
   },
 })
 
-/** Preference-driven column map for service / consultation listing tables. */
 export function buildServiceDataColumnsById(): Record<string, ColumnDef<Service>> {
   return {
     'service-id': {

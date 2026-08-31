@@ -2,7 +2,6 @@ import type { ColumnDef } from '@tanstack/react-table'
 
 import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
 
-/** Build preference-driven columns from a full catalog, always appending actions. */
 export function selectPreferredColumns<T>(
   allColumns: ColumnDef<T>[],
   rawVisibleIds: string[],

@@ -65,10 +65,6 @@ export function getApiErrorMessage(
   return fallback
 }
 
-/**
- * Returns the server-provided message, or the fallback. Unlike getApiErrorMessage
- * this never surfaces raw axios/Error text, so it is safe for user-facing toasts.
- */
 export function apiErrorMessage(
   error: unknown,
   fallback = 'Something went wrong. Please try again.',

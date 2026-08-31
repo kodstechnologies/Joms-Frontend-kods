@@ -1,8 +1,3 @@
-/**
- * Expert management table-column catalog builders (shared shape with backend catalogs).
- * Keep ids kebab-case to match Manage Metrics / ui-preferences.
- */
-
 export type ExpertTableColumnCatalogItem = {
   id: string
   label: string
@@ -31,7 +26,6 @@ export const EXPERT_REPORTED_MODULE_KEY = 'expert-reported'
 export const EXPERT_SUSPENDED_MODULE_KEY = 'expert-suspended'
 export const EXPERT_DELETED_MODULE_KEY = 'expert-deleted'
 
-/** Main Experts Management table — images 1–2 */
 export const EXPERT_MANAGEMENT_TABLE_COLUMNS_CATALOG: ExpertTableColumnCatalogItem[] = [
   col('expert-id', 'Expert ID', 'Text', 'Unique expert identifier', true),
   col('name', 'Expert Name', 'Text', 'Full legal / display name', true),
@@ -113,7 +107,6 @@ export const EXPERT_MANAGEMENT_TABLE_COLUMNS_CATALOG: ExpertTableColumnCatalogIt
 export const DEFAULT_EXPERT_MANAGEMENT_VISIBLE_COLUMN_IDS =
   EXPERT_MANAGEMENT_TABLE_COLUMNS_CATALOG.filter((c) => c.defaultVisible).map((c) => c.id)
 
-/** Pending Approvals table — image 3 */
 export const EXPERT_PENDING_APPROVALS_TABLE_COLUMNS_CATALOG: ExpertTableColumnCatalogItem[] = [
   col('expert-id', 'Expert ID', 'Text', 'Unique expert identifier', true),
   col('name', 'Expert Name', 'Text', 'Registered full name', true),
@@ -141,7 +134,6 @@ export const EXPERT_PENDING_APPROVALS_TABLE_COLUMNS_CATALOG: ExpertTableColumnCa
 export const DEFAULT_EXPERT_PENDING_VISIBLE_COLUMN_IDS =
   EXPERT_PENDING_APPROVALS_TABLE_COLUMNS_CATALOG.filter((c) => c.defaultVisible).map((c) => c.id)
 
-/** Reported Experts table — image 4 */
 export const EXPERT_REPORTED_TABLE_COLUMNS_CATALOG: ExpertTableColumnCatalogItem[] = [
   col('report-id', 'Report ID', 'Text', 'Unique report identifier', true),
   col('expert-id', 'Expert ID', 'Text', 'Reported expert identifier', true),
@@ -167,7 +159,6 @@ export const EXPERT_REPORTED_TABLE_COLUMNS_CATALOG: ExpertTableColumnCatalogItem
 export const DEFAULT_EXPERT_REPORTED_VISIBLE_COLUMN_IDS =
   EXPERT_REPORTED_TABLE_COLUMNS_CATALOG.filter((c) => c.defaultVisible).map((c) => c.id)
 
-/** Suspended Experts table — image 5 */
 export const EXPERT_SUSPENDED_TABLE_COLUMNS_CATALOG: ExpertTableColumnCatalogItem[] = [
   col('expert-id', 'Expert ID', 'Text', 'Unique expert identifier', true),
   col('name', 'Expert Name', 'Text', 'Registered full name', true),
@@ -204,7 +195,6 @@ export const EXPERT_SUSPENDED_TABLE_COLUMNS_CATALOG: ExpertTableColumnCatalogIte
 export const DEFAULT_EXPERT_SUSPENDED_VISIBLE_COLUMN_IDS =
   EXPERT_SUSPENDED_TABLE_COLUMNS_CATALOG.filter((c) => c.defaultVisible).map((c) => c.id)
 
-/** Deleted Experts — current UI + stored soft-delete fields (no deleted-image attached) */
 export const EXPERT_DELETED_TABLE_COLUMNS_CATALOG: ExpertTableColumnCatalogItem[] = [
   col('expert-id', 'Expert ID', 'Text', 'Unique expert identifier', true),
   col('name', 'Expert Name', 'Text', 'Registered full name', true),

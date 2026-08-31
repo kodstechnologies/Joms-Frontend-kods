@@ -9,7 +9,6 @@ function getDisplayStatus(category: Category) {
   return category.previousStatus ?? category.status
 }
 
-/** Full Manage Metrics catalog columns for deleted service categories. */
 export const deletedCategoryColumns: ColumnDef<Category>[] = categoryColumns.map((column) => {
   if (column.id === 'status') {
     return {

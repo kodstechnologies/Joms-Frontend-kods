@@ -1,17 +1,4 @@
-/**
- * Partner API QA audit — smoke-test partner-scoped endpoints.
- *
- * Usage (provide YOUR partner JWT):
- *   set QA_PARTNER_TOKEN=eyJhbGci...
- *   node scripts/partner-qa-audit.mjs
- *
- * Or login first:
- *   set QA_PARTNER_PHONE=9900000001
- *   set QA_PARTNER_PASSWORD=your-password
- *   node scripts/partner-qa-audit.mjs
- *
- * Optional: QA_PARTNER_ID overrides partner id used in path params (default: decoded from JWT).
- */
+
 import axios from 'axios'
 import fs from 'fs'
 import path from 'path'

@@ -1,5 +1,3 @@
-/** Ids stay camelCase to match serviceListing-service performance metrics payload. */
-
 export const SERVICE_PERFORMANCE_MODULE_KEY = 'service-performance'
 
 export type ServicePerformanceMetricCatalogItem = {

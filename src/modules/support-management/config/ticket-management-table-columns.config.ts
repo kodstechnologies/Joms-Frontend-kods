@@ -1,8 +1,3 @@
-/**
- * Ticket Management table column catalog (UNION across All / My / Escalated tabs).
- * Source: JOMS Excel → Support Management → Ticket Management tables.
- */
-
 export type TicketManagementTableColumnCatalogItem = {
   id: string
   label: string
@@ -25,7 +20,6 @@ const col = (
   defaultVisible,
 })
 
-/** UNION of All Tickets (16) + My extras + Escalated extras. */
 export const TICKET_MANAGEMENT_TABLE_COLUMNS_CATALOG: TicketManagementTableColumnCatalogItem[] = [
   col('ticket-id', 'Ticket ID', 'Text', 'Unique ticket identifier', true),
   col('subject', 'Subject', 'Text', 'Ticket title', true),
@@ -56,7 +50,6 @@ export const TICKET_MANAGEMENT_TABLE_COLUMNS_CATALOG: TicketManagementTableColum
   col('last-updated-at', 'Last Updated At', 'Date', 'Latest ticket activity', true),
 ]
 
-/** Excel All Tickets columns (16). */
 export const ALL_TAB_COLUMN_IDS = [
   'ticket-id',
   'subject',
@@ -76,7 +69,6 @@ export const ALL_TAB_COLUMN_IDS = [
   'last-updated-at',
 ] as const
 
-/** Excel My Tickets columns (14). */
 export const MY_TAB_COLUMN_IDS = [
   'ticket-id',
   'subject',
@@ -94,7 +86,6 @@ export const MY_TAB_COLUMN_IDS = [
   'last-updated-at',
 ] as const
 
-/** Excel Escalated Tickets columns (16). */
 export const ESCALATED_TAB_COLUMN_IDS = [
   'ticket-id',
   'subject',
@@ -118,7 +109,6 @@ export const ALL_TAB_COLUMN_ID_SET = new Set<string>(ALL_TAB_COLUMN_IDS)
 export const MY_TAB_COLUMN_ID_SET = new Set<string>(MY_TAB_COLUMN_IDS)
 export const ESCALATED_TAB_COLUMN_ID_SET = new Set<string>(ESCALATED_TAB_COLUMN_IDS)
 
-/** Maps legacy accessorKey-style preference ids → kebab catalog ids. */
 export const TICKET_MANAGEMENT_LEGACY_COLUMN_ID_MAP: Record<string, string> = {
   id: 'ticket-id',
   ticketId: 'ticket-id',

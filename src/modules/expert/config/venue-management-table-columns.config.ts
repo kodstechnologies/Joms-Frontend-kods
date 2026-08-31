@@ -49,7 +49,6 @@ const metric = (
   defaultActive,
 })
 
-/** Main Venues Management Table Columns (Excel Spec) */
 export const VENUE_MANAGEMENT_TABLE_COLUMNS_CATALOG: TableColumnCatalogItem[] = [
   col('venue-id', 'Venue ID', 'Text', 'Unique venue identifier', true),
   col('name', 'Venue Name', 'Text', 'Venue display name', true),
@@ -83,7 +82,6 @@ export const VENUE_MANAGEMENT_TABLE_COLUMNS_CATALOG: TableColumnCatalogItem[] = 
   col('last-updated-at', 'Last Updated At', 'Date', 'Latest update timestamp'),
 ]
 
-/** Pending Approvals Table Columns (Excel Spec) */
 export const VENUE_PENDING_APPROVALS_TABLE_COLUMNS_CATALOG: TableColumnCatalogItem[] = [
   col('venue-id', 'Venue ID', 'Text', 'Unique venue identifier', true),
   col('venue-name', 'Venue Name', 'Text', 'Venue display name', true),
@@ -102,7 +100,6 @@ export const VENUE_PENDING_APPROVALS_TABLE_COLUMNS_CATALOG: TableColumnCatalogIt
   col('submitted-by', 'Submitted By', 'Text', 'Host or Admin who submitted'),
 ]
 
-/** Reported Venues Table Columns (Excel Spec) */
 export const VENUE_REPORTED_TABLE_COLUMNS_CATALOG: TableColumnCatalogItem[] = [
   col('report-id', 'Report ID', 'Text', 'Unique report identifier', true),
   col('venue-id', 'Venue ID', 'Text', 'Linked venue identifier', true),
@@ -122,7 +119,6 @@ export const VENUE_REPORTED_TABLE_COLUMNS_CATALOG: TableColumnCatalogItem[] = [
   ),
 ]
 
-/** Suspended Venues Table Columns (Excel Spec) */
 export const VENUE_SUSPENDED_TABLE_COLUMNS_CATALOG: TableColumnCatalogItem[] = [
   col('suspension-id', 'Suspension ID', 'Text', 'Unique suspension identifier', true),
   col('venue-id', 'Venue ID', 'Text', 'Linked venue identifier', true),
@@ -138,7 +134,6 @@ export const VENUE_SUSPENDED_TABLE_COLUMNS_CATALOG: TableColumnCatalogItem[] = [
   col('compliance-status', 'Compliance Status', 'Status', 'Compliance review status', true),
 ]
 
-/** Deleted Venues Table Columns (Excel Spec) */
 export const VENUE_DELETED_TABLE_COLUMNS_CATALOG: TableColumnCatalogItem[] = [
   col('deletion-id', 'Deletion ID', 'Text', 'Unique deletion identifier', true),
   col('venue-id', 'Venue ID', 'Text', 'Linked venue identifier', true),
@@ -153,7 +148,6 @@ export const VENUE_DELETED_TABLE_COLUMNS_CATALOG: TableColumnCatalogItem[] = [
   col('compliance-status', 'Compliance Status', 'Status', 'Archived, Under Investigation', true),
 ]
 
-/** Venue Analytics Dashboard Metrics (Excel Spec) */
 export const VENUE_DASHBOARD_METRICS_CATALOG: DashboardMetricCatalogItem[] = [
   metric('total-venues', 'Total Venues', 'Count', 'Total registered venues', true),
   metric('active-venues', 'Active Venues', 'Count', 'Live venues available for booking', true),
@@ -275,7 +269,6 @@ export const VENUE_DASHBOARD_METRICS_CATALOG: DashboardMetricCatalogItem[] = [
   ),
 ]
 
-/** Venue Management Top Summary Metrics (Excel Spec - 8 Cards) */
 export const VENUE_MANAGEMENT_DASHBOARD_METRICS_CATALOG: DashboardMetricCatalogItem[] = [
   metric(
     'total-venues-listed',

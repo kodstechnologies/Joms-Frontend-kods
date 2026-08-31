@@ -4,12 +4,7 @@ export type FilterOption = {
 }
 
 export type FilterFieldType =
-  | 'text'
-  | 'checkbox-group'
-  | 'number-range'
-  | 'date-range'
-  | 'search'
-  | 'location'
+  'text' | 'checkbox-group' | 'number-range' | 'date-range' | 'search' | 'location'
 
 export type FilterFieldConfig = {
   id: string
@@ -36,7 +31,7 @@ export type ModuleFilterConfig = {
   moduleKey: string
   moduleName: string
   sections: FilterSectionConfig[]
-  /** Export modal sections when different from advanced filter (e.g. Service Management uses By Owner). */
+
   exportSections?: FilterSectionConfig[]
 }
 

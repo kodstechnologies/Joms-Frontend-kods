@@ -16,7 +16,6 @@ export type SupportDashboardMetricCard = {
   }
 }
 
-/** Re-export for consumers resolving saved preference ids. */
 export { SUPPORT_DASHBOARD_LEGACY_METRIC_ID_MAP }
 
 const defaultTrend = {

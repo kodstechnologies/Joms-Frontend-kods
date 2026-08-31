@@ -36,7 +36,6 @@ const buildFallbackUrl = ({
   }
 }
 
-/** Older escalations were stored without an applicationUrl, so rebuild it from the entity. */
 export const resolveEscalationUrl = (target: EscalationNavigationTarget) => {
   const stored = target.applicationUrl?.trim()
   if (stored && stored !== '/') return stored

@@ -127,7 +127,7 @@ export type CreateCommunicationPayload = {
   subject?: string
   messageContent: string
   additionalNotes?: string
-  /** When set, delivery is limited to these partner IDs instead of the full audience. */
+
   partnerIds?: string[]
 }
 

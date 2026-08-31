@@ -1,5 +1,3 @@
-/** Shared UI column id → API sort field maps for finance list endpoints. */
-
 export const FINANCE_PAYMENT_SORT_OVERRIDES: Record<string, string> = {
   'transaction-id': 'orderId',
   'entity-id': 'referenceId',

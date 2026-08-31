@@ -1,9 +1,4 @@
-/**
- * UX-04 partner harness smoke (local Admin `/dev/chat-partner`).
- * Does not print passwords or JWTs.
- *
- *   node scripts/ux04-partner-harness.mjs
- */
+
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'

@@ -1,4 +1,3 @@
-/** @vitest-environment jsdom */
 import { AxiosError } from 'axios'
 import { afterEach, describe, expect, it } from 'vitest'
 

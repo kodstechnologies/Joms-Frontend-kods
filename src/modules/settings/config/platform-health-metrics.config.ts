@@ -8,7 +8,6 @@ export type PlatformHealthMetricCatalogItem = {
   defaultActive: boolean
 }
 
-/** Figma / spec dashboard metrics for Settings → Platform Health. */
 export const PLATFORM_HEALTH_METRICS_CATALOG: PlatformHealthMetricCatalogItem[] = [
   {
     id: 'system-uptime',

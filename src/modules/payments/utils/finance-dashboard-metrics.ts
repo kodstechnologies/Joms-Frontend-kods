@@ -10,7 +10,6 @@ import { FINANCE_DASHBOARD_LEGACY_METRIC_ID_MAP } from '@/modules/payments/confi
 
 export type FinanceDashboardMetricCard = TrendMetric & { id: string }
 
-/** Re-export for consumers resolving saved preference ids. */
 export { FINANCE_DASHBOARD_LEGACY_METRIC_ID_MAP }
 
 const mockById = new Map<string, TrendMetric>()

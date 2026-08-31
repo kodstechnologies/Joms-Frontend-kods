@@ -1,7 +1,3 @@
-/** @vitest-environment jsdom */
-/**
- * Deep-mount heaviest Admin pages with real :id routes and settled queries.
- */
 import { act, Component, type ComponentType, type ReactNode } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 

@@ -1,8 +1,3 @@
-/**
- * Past Tickets metrics catalog.
- * Excel has no past-specific KPIs — keep existing closed/resolved/avg/reopened set.
- */
-
 export const PAST_TICKETS_MODULE_KEY = 'past-tickets'
 
 export type PastTicketsMetricCatalogItem = {

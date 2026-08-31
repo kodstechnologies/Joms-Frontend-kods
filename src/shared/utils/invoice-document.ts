@@ -29,7 +29,7 @@ export type InvoiceDocumentData = {
     id?: string
     address?: string
   }
-  /** Optional second party (e.g. client on expert payout invoices). */
+
   client?: {
     name?: string
     id?: string
@@ -40,7 +40,7 @@ export type InvoiceDocumentData = {
     billingCycle?: string
     period?: string
   }
-  /** Section heading for plan/service block. Defaults to membership/plan. */
+
   planSectionTitle?: string
   lineItems: InvoiceLineItem[]
   subtotal: number
@@ -69,7 +69,6 @@ const MUTED: [number, number, number] = [113, 113, 122]
 const LINE: [number, number, number] = [228, 228, 231]
 const PAGE_BOTTOM = 20
 
-/** ASCII-safe money for jsPDF (avoids ₹ + narrow-space breaking in Helvetica). */
 const formatMoney = (amount: number, currency = 'INR') => {
   const value = Number.isFinite(Number(amount)) ? Number(amount) : 0
   const digits = value.toLocaleString('en-IN', {
@@ -121,7 +120,6 @@ async function loadImageDataUrl(url?: string | null): Promise<string | null> {
   }
 }
 
-/** Wrap text including long IDs with no spaces. */
 function wrapText(doc: jsPDF, text: string, maxWidth: number): string[] {
   const value = String(text ?? '')
   if (!value) return ['—']

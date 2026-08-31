@@ -25,7 +25,6 @@ export type MembershipPlanConfig = {
   otherSettings: MembershipPlanConfigItem[]
 }
 
-/** Legacy + planConfig-aware features payload used by admin create/update. */
 export type MembershipFeatures = {
   accessToBasicNetworkingFeatures?: boolean
   joinCommunities?: {

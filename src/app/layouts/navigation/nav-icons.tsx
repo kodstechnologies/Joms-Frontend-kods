@@ -1,6 +1,5 @@
 import type { SVGProps } from 'react'
 
-/** FontAwesome classic bell-concierge for Expert Application */
 export function ConciergeBellIcon({
   className,
   ...props
@@ -18,7 +17,6 @@ export function ConciergeBellIcon({
   )
 }
 
-/** Shield Currency / Dollar Icon for Payment & Finance */
 export function PaymentFinanceIcon({
   className,
   ...props
@@ -42,7 +40,6 @@ export function PaymentFinanceIcon({
   )
 }
 
-/** Hugeicons Share-02 Icon (Stroke Rounded) for Referrals */
 export function Share02Icon({
   className,
   ...props

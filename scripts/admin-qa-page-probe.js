@@ -1,7 +1,3 @@
-/**
- * Browser-side page probe — paste result of auth injection then run via CDP.
- * Returns { path, hasError, hasLoading, heading, snippet }
- */
 export function probePage() {
   const text = document.body?.innerText || ''
   const lower = text.toLowerCase()

@@ -11,10 +11,9 @@ export type ServerSortParams = {
 }
 
 type UseServerTableSortOptions = {
-  /** Column id used for default sort (kebab-case). */
   defaultSortBy?: string
   defaultSortOrder?: ServerSortOrder
-  /** Maps table column id → API sortBy field name. */
+
   sortFieldMap?: Record<string, string | null | undefined>
   onPageReset?: () => void
 }

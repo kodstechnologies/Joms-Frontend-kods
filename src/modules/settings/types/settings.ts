@@ -1,12 +1,5 @@
 export type SettingsModule =
-  | 'platform'
-  | 'security'
-  | 'notifications'
-  | 'finance'
-  | 'backup'
-  | 'expert'
-  | 'venue'
-  | 'service'
+  'platform' | 'security' | 'notifications' | 'finance' | 'backup' | 'expert' | 'venue' | 'service'
 
 export type PlatformSettings = {
   applicationSettings: {
@@ -94,7 +87,7 @@ export type ExpertSettings = {
     allowNewAccounts: boolean
     maxDevicesPerUser: number
     phoneVerification: 'mandatory' | 'optional'
-    /** 90 | 180 | 365 — Excel: 3 / 6 / 12 months */
+
     reVerificationDays: 90 | 180 | 365
     duplicateAccountDetection: boolean
     samePhoneNumber: boolean
@@ -108,7 +101,7 @@ export type ExpertSettings = {
     failedLogins24h: number
     suspendOnNewDeviceLogin: boolean
     suspendOnUserReports: number
-    /** 7 | 30 | 90 | 180 | 0 (0 = permanent) */
+
     suspensionDurationDays: 7 | 30 | 90 | 180 | 0
     notifySuperAdmin: boolean
     notifyAffectedAdmin: boolean
@@ -324,7 +317,7 @@ export type IncidentStatus = 'Open' | 'Investigating' | 'Resolved'
 export type IncidentRow = {
   id: string
   incidentId: string
-  /** Short title / subject when available */
+
   title?: string
   severity: IncidentSeverity
   module: string
@@ -335,7 +328,7 @@ export type IncidentRow = {
   sourceTicketId?: string | null
   sourceTicketNumber?: string
   createdOn: string
-  /** Prefer over createdOn when present (Excel: reported-at) */
+
   reportedAt?: string
   firstResponseTime?: string | null
   closedAt?: string | null

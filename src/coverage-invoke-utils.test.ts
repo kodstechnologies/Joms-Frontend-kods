@@ -1,7 +1,3 @@
-/** @vitest-environment node */
-/**
- * Invoke util module exports for line coverage (no DOM).
- */
 import { describe, expect, it } from 'vitest'
 
 const utils = import.meta.glob(

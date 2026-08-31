@@ -96,12 +96,6 @@ export const useResetSettings = <M extends SettingsModule>(module: M) => {
   })
 }
 
-/**
- * Local editable draft of a settings config, seeded from query data once it
- * loads (and re-seeded whenever the query data reference changes, e.g. after
- * a reset). Syncing happens during render rather than in an effect.
- * Always falls back to defaults when API data is missing.
- */
 export function useSettingsDraft<T>(
   queryData: { config: T } | undefined,
   defaults: T,

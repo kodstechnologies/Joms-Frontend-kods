@@ -9,7 +9,6 @@ function getDisplayStatus(category: Category) {
   return category.previousStatus ?? category.status
 }
 
-/** Full Manage Metrics catalog columns for paused service categories. */
 export const pausedCategoryColumns: ColumnDef<Category>[] = categoryColumns.map((column) => {
   if (column.id === 'status') {
     return {

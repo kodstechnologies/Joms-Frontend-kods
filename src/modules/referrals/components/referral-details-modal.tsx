@@ -15,10 +15,6 @@ type ReferralDetailsModalProps = {
   expertInvite?: ExpertInvite | null
 }
 
-/**
- * Platform Referral → "Invites Details"
- * Partner / Expert Referral → "Referral Details"
- */
 export function ReferralDetailsModal({ open, onClose, expertInvite }: ReferralDetailsModalProps) {
   if (!open || !expertInvite) return null
 

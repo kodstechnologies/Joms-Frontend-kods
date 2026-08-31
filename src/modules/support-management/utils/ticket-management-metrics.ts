@@ -13,7 +13,6 @@ export type TicketManagementMetricCard = {
   direction: 'up' | 'down'
 }
 
-/** Re-export for consumers resolving saved preference ids. */
 export { TICKET_MANAGEMENT_LEGACY_METRIC_ID_MAP }
 
 const defaultById: Record<string, { value: string; changePercent: number }> = {

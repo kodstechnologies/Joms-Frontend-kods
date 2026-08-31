@@ -1,10 +1,4 @@
-/**
- * Authenticated Lighthouse a11y (A11Y-02 / A11Y-03).
- * Uses minted local auth-storage — no tokens printed.
- *
- *   node Joms-backend/scripts/mint-local-admin-jwt.mjs
- *   node scripts/lighthouse-authed-a11y.mjs
- */
+
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
