@@ -235,7 +235,7 @@ export function EscalationDetails() {
         onColumnSearchChange={enhancedSearch.setColumnSearch}
         onColumnSearchRemove={enhancedSearch.removeColumnSearch}
         onClearAllSearches={enhancedSearch.clearAll}
-        searchPlaceholder="Search by name, ID or profession"
+        searchPlaceholder="Search by escalation ID or expert"
         advancedFilterLabel="Advance Filters"
         onAdvancedFilter={onAdvancedFilter}
         advancedFilterVariant="primary"

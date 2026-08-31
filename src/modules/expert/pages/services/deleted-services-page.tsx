@@ -288,7 +288,7 @@ export function DeletedServicesPage() {
         onAdvancedFilter={onAdvancedFilter}
         onExport={onExport}
         {...serverSort.dataTableSortProps}
-        searchPlaceholder="Search by name, ID or profession"
+        searchPlaceholder="Search by service name or ID"
         pagination={{
           page: currentPage,
           pageSize: meta?.pagination.limit || 10,

@@ -239,7 +239,7 @@ export function InvitesOverviewPage() {
         onColumnSearchChange={enhancedSearch.setColumnSearch}
         onColumnSearchRemove={enhancedSearch.removeColumnSearch}
         onClearAllSearches={enhancedSearch.clearAll}
-        searchPlaceholder="Search by name, ID or profession"
+        searchPlaceholder="Search by email or invite ID"
         onAdvancedFilter={onAdvancedFilter}
         advancedFilterVariant="primary"
         onExport={onExport}

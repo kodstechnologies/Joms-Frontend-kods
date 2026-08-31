@@ -371,7 +371,7 @@ export function CommunicationListPage() {
         onColumnSearchChange={enhancedSearch.setColumnSearch}
         onColumnSearchRemove={enhancedSearch.removeColumnSearch}
         onClearAllSearches={enhancedSearch.clearAll}
-        searchPlaceholder="Search by name, ID or profession"
+        searchPlaceholder="Search by message ID or subject"
         advancedFilterLabel="Advance Filters"
         onAdvancedFilter={onAdvancedFilter}
         onExport={onExport}

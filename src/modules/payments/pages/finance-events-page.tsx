@@ -371,7 +371,7 @@ export function FinanceEventsPage() {
         onColumnSearchChange={enhancedSearch.setColumnSearch}
         onColumnSearchRemove={enhancedSearch.removeColumnSearch}
         onClearAllSearches={enhancedSearch.clearAll}
-        searchPlaceholder="Search by name, ID or profession"
+        searchPlaceholder="Search by event or transaction ID"
         advancedFilterLabel="Advance Filters"
         onAdvancedFilter={onAdvancedFilter}
         advancedFilterVariant="primary"

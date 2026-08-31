@@ -608,7 +608,7 @@ export function ServicePerformancePage() {
         onColumnSearchChange={enhancedSearch.setColumnSearch}
         onColumnSearchRemove={enhancedSearch.removeColumnSearch}
         onClearAllSearches={enhancedSearch.clearAll}
-        searchPlaceholder="Search by name, ID or profession"
+        searchPlaceholder="Search by service name or ID"
         resourceLabel="orders"
         emptyMessage="No orders placed for this service yet."
         showAdvancedFilter

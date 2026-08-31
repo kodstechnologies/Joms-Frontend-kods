@@ -781,7 +781,7 @@ export function RbacHubPage() {
           onColumnSearchChange={enhancedSearch.setColumnSearch}
           onColumnSearchRemove={enhancedSearch.removeColumnSearch}
           onClearAllSearches={enhancedSearch.clearAll}
-          searchPlaceholder="Search by name, ID or profession"
+          searchPlaceholder="Search by role or admin name"
           onAdvancedFilter={onAdvancedFilter}
           advancedFilterVariant="primary"
           onExport={onExport}
@@ -809,7 +809,7 @@ export function RbacHubPage() {
           onColumnSearchChange={enhancedSearch.setColumnSearch}
           onColumnSearchRemove={enhancedSearch.removeColumnSearch}
           onClearAllSearches={enhancedSearch.clearAll}
-          searchPlaceholder="Search by name, ID or profession"
+          searchPlaceholder="Search by role or admin name"
           onAdvancedFilter={onAdvancedFilter}
           advancedFilterVariant="primary"
           onExport={onExport}

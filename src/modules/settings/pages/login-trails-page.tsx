@@ -283,7 +283,7 @@ export function LoginTrailsPage() {
           onColumnSearchChange={enhancedSearch.setColumnSearch}
           onColumnSearchRemove={enhancedSearch.removeColumnSearch}
           onClearAllSearches={enhancedSearch.clearAll}
-          searchPlaceholder="Search by name, ID or profession."
+          searchPlaceholder="Search by admin email or IP"
           onAdvancedFilter={onAdvancedFilter}
           advancedFilterVariant="primary"
           onExport={onExport}

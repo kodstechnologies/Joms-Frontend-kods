@@ -569,7 +569,7 @@ export function EscrowManagementPage() {
           onColumnSearchChange={enhancedSearch.setColumnSearch}
           onColumnSearchRemove={enhancedSearch.removeColumnSearch}
           onClearAllSearches={enhancedSearch.clearAll}
-          searchPlaceholder="Search by name, ID or profession"
+          searchPlaceholder="Search by escrow ID or partner"
           advancedFilterLabel="Advance Filters"
           onAdvancedFilter={onAdvancedFilter}
           advancedFilterVariant="primary"
@@ -597,7 +597,7 @@ export function EscrowManagementPage() {
           onColumnSearchChange={enhancedSearch.setColumnSearch}
           onColumnSearchRemove={enhancedSearch.removeColumnSearch}
           onClearAllSearches={enhancedSearch.clearAll}
-          searchPlaceholder="Search by name, ID or profession"
+          searchPlaceholder="Search by escrow ID or partner"
           advancedFilterLabel="Advance Filters"
           onAdvancedFilter={onAdvancedFilter}
           advancedFilterVariant="primary"
