@@ -6,6 +6,12 @@ import { toast } from 'sonner'
 import createIcon from '@/assets/JOMS_ICONS-2/icons8-create.svg'
 import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
 
+import { DecisionActionModal } from '@/shared/components/modal/decision-action-modal'
+import {
+  MODERATION_CATEGORY_SLUGS,
+  recordModerationReasonUsage,
+} from '@/modules/settings/api/templates-api'
+import { useModerationReasonOptions } from '@/modules/settings/hooks/use-templates'
 import { InviteExpertReferralModal } from '../components/invite-expert-referral-modal'
 import { ReferralDetailsModal } from '../components/referral-details-modal'
 import { ReferralStatsBar } from '../components/referral-stats-bar'
@@ -386,6 +392,16 @@ export function ReferralManagementPage() {
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [inviteOpen, setInviteOpen] = useState(false)
   const [detailsExpert, setDetailsExpert] = useState<ExpertInvite | null>(null)
+  const [deleteReferralTarget, setDeleteReferralTarget] = useState<ExpertInvite | null>(null)
+  const [deleteSelectedReasons, setDeleteSelectedReasons] = useState<string[]>([])
+  const [deleteAdminNotes, setDeleteAdminNotes] = useState('')
+  const [deleteConfirmed, setDeleteConfirmed] = useState(false)
+
+  const {
+    options: deleteReasonOptions,
+    reasons: deleteReasonsList,
+    buildPayload: buildDeleteReasonPayload,
+  } = useModerationReasonOptions(MODERATION_CATEGORY_SLUGS.deleteReferral)
 
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
 
@@ -470,18 +486,64 @@ export function ReferralManagementPage() {
     [resendExpertMutation],
   )
 
-  const handleDelete = useCallback(
-    async (id: string) => {
-      setActiveDropdownId(null)
-      try {
-        await deleteExpertMutation.mutateAsync(id)
-        toast.success('Expert referral deleted')
-      } catch (err) {
-        toast.error(getApiErrorMessage(err, 'Failed to delete referral'))
+  const openDeleteModal = useCallback((record: ExpertInvite) => {
+    setActiveDropdownId(null)
+    setDeleteReferralTarget(record)
+    setDeleteSelectedReasons([])
+    setDeleteAdminNotes('')
+    setDeleteConfirmed(false)
+  }, [])
+
+  const closeDeleteModal = useCallback(() => {
+    setDeleteReferralTarget(null)
+    setDeleteSelectedReasons([])
+    setDeleteAdminNotes('')
+    setDeleteConfirmed(false)
+  }, [])
+
+  const toggleDeleteReason = useCallback((value: string) => {
+    setDeleteSelectedReasons((current) =>
+      current.includes(value) ? current.filter((item) => item !== value) : [...current, value],
+    )
+  }, [])
+
+  const handleDeleteSubmit = useCallback(async () => {
+    if (!deleteReferralTarget) return
+
+    if (!deleteAdminNotes.trim()) {
+      toast.error('Admin notes are required')
+      return
+    }
+
+    const id = deleteReferralTarget.referralId || deleteReferralTarget._id
+    const reasonPayload = buildDeleteReasonPayload(deleteSelectedReasons)
+
+    try {
+      await deleteExpertMutation.mutateAsync({
+        id,
+        payload: {
+          ...reasonPayload,
+          adminNotes: deleteAdminNotes.trim(),
+        },
+      })
+
+      if (reasonPayload.reasonIds.length > 0) {
+        recordModerationReasonUsage(reasonPayload.reasonIds).catch(() => {})
       }
-    },
-    [deleteExpertMutation],
-  )
+
+      toast.success('Referral deleted successfully')
+      closeDeleteModal()
+    } catch (err) {
+      toast.error(getApiErrorMessage(err, 'Failed to delete referral'))
+    }
+  }, [
+    buildDeleteReasonPayload,
+    closeDeleteModal,
+    deleteAdminNotes,
+    deleteExpertMutation,
+    deleteReferralTarget,
+    deleteSelectedReasons,
+  ])
 
   const renderActions = useCallback(
     (record: ExpertInvite) => {
@@ -509,14 +571,14 @@ export function ReferralManagementPage() {
           </TableActionsItem>
           <TableActionsItem
             icon={<Trash2 className="size-3.5 text-rose-300" />}
-            onClick={() => handleDelete(id)}
+            onClick={() => openDeleteModal(record)}
           >
             <span className="text-rose-300">Delete Referral</span>
           </TableActionsItem>
         </TableActionsDropdown>
       )
     },
-    [activeDropdownId, handleDelete, handleResend],
+    [activeDropdownId, handleResend, openDeleteModal],
   )
 
   const expertColumns = useMemo<ColumnDef<ExpertInvite>[]>(() => {
@@ -642,6 +704,29 @@ export function ReferralManagementPage() {
         open={Boolean(detailsExpert)}
         onClose={() => setDetailsExpert(null)}
         expertInvite={detailsExpert}
+      />
+
+      <DecisionActionModal
+        open={Boolean(deleteReferralTarget)}
+        variant="delete"
+        title="Delete Referral"
+        description="Are you sure you want  Delete this Referral code? This will result in Deactivating the referral link."
+        submitLabel="Delete Referral"
+        submitIcon="none"
+        heroLayout="stack"
+        reasonOptions={deleteReasonOptions}
+        selectedReasons={deleteSelectedReasons}
+        onReasonToggle={toggleDeleteReason}
+        showReasonsLabel={true}
+        confirmationLabel="I confirm the documents are not approved due to above reasons."
+        confirmationChecked={deleteConfirmed}
+        onConfirmationChange={setDeleteConfirmed}
+        adminNotes={deleteAdminNotes}
+        onAdminNotesChange={setDeleteAdminNotes}
+        onClose={closeDeleteModal}
+        onSubmit={handleDeleteSubmit}
+        isSubmitting={deleteExpertMutation.isPending}
+        submitDisabled={!deleteAdminNotes.trim()}
       />
 
       {exportFilterModals}

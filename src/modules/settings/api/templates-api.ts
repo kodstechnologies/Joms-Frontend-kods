@@ -42,6 +42,7 @@ export const MODERATION_CATEGORY_SLUGS = {
   rejectConsultation: 'reject-Consultation',
   revokeInvite: 'revoke-invite',
   reinviteUser: 'reinvite-user',
+  deleteReferral: 'delete-referral',
 } as const
 
 export type ModerationCategorySlug =

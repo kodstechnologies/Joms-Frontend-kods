@@ -75,8 +75,28 @@ export const createBulkExpertInvites = async (payload: BulkExpertInvitePayload) 
   return response.data
 }
 
-export const deleteExpertInvite = async (id: string) => {
-  const response = await adminApiClient.delete(`/admin/referrals/expert-invites/${id}`)
+export type DeleteReferralPayload = {
+  selectedReasons?: string[]
+  reasonIds?: string[]
+  reasonDetails?: string
+  adminNotes?: string
+}
+
+export const deleteExpertInvite = async (id: string, payload?: DeleteReferralPayload) => {
+  const response = await adminApiClient.delete(`/admin/referrals/expert-invites/${id}`, {
+    data: payload,
+  })
+  return response.data
+}
+
+export const updateReferralGoalProgress = async (
+  id: string,
+  payload: { signedUpCount?: number; maxReferrals?: number },
+) => {
+  const response = await adminApiClient.patch<{
+    success: boolean
+    data: ExpertInvite
+  }>(`/admin/referrals/expert-invites/${id}/progress`, payload)
   return response.data
 }
 

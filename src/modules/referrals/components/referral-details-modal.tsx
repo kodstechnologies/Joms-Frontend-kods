@@ -63,6 +63,13 @@ export function ReferralDetailsModal({ open, onClose, expertInvite }: ReferralDe
                   value={formatInviteDetailDateTime(expertInvite.createdAt)}
                   date
                 />
+                <GoalProgressField
+                  signedUpCount={
+                    expertInvite.goalProgress?.signedUpCount ?? (status === 'accepted' ? 1 : 0)
+                  }
+                  maxReferrals={expertInvite.goalProgress?.maxReferrals || 10}
+                  percent={expertInvite.goalProgressPercent}
+                />
               </div>
             </>
           ) : (
@@ -82,6 +89,13 @@ export function ReferralDetailsModal({ open, onClose, expertInvite }: ReferralDe
                   label="Referred at"
                   value={formatInviteDetailDateTime(expertInvite.createdAt)}
                   date
+                />
+                <GoalProgressField
+                  signedUpCount={
+                    expertInvite.goalProgress?.signedUpCount ?? (status === 'accepted' ? 1 : 0)
+                  }
+                  maxReferrals={expertInvite.goalProgress?.maxReferrals || 10}
+                  percent={expertInvite.goalProgressPercent}
                 />
               </div>
             </>
@@ -133,6 +147,39 @@ function StatusField({
     <div className="invite-detail-field">
       <p className="invite-detail-label">{label}</p>
       <span className={cn('invite-details-status-badge', tone)}>{statusLabel}</span>
+    </div>
+  )
+}
+
+function GoalProgressField({
+  signedUpCount,
+  maxReferrals,
+  percent,
+}: {
+  signedUpCount: number
+  maxReferrals: number
+  percent?: number | null
+}) {
+  const calculatedPercent =
+    percent ?? Math.min(100, Math.max(0, Math.round((signedUpCount / (maxReferrals || 10)) * 100)))
+
+  return (
+    <div className="invite-detail-field">
+      <p className="invite-detail-label">Goal Progress</p>
+      <div className="flex w-full max-w-[200px] flex-col gap-1.5 pt-1">
+        <div className="flex items-center justify-between text-xs">
+          <span className="font-medium text-white">
+            {signedUpCount} / {maxReferrals}
+          </span>
+          <span className="text-brand-text font-medium">{calculatedPercent}%</span>
+        </div>
+        <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+          <div
+            className="bg-brand-accent h-full rounded-full transition-all duration-300"
+            style={{ width: `${calculatedPercent}%` }}
+          />
+        </div>
+      </div>
     </div>
   )
 }

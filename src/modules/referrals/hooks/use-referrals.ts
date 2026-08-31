@@ -7,6 +7,8 @@ import {
   fetchExpertInvites,
   fetchReferralStats,
   resendExpertInvite,
+  updateReferralGoalProgress,
+  type DeleteReferralPayload,
   type ExpertInviteListParams,
 } from '../api/referral-api'
 import type { BulkExpertInvitePayload, ExpertInvitePayload } from '../types/referral'
@@ -47,7 +49,22 @@ export const useCreateBulkExpertInvites = () => {
 export const useDeleteExpertInvite = () => {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (id: string) => deleteExpertInvite(id),
+    mutationFn: ({ id, payload }: { id: string; payload?: DeleteReferralPayload }) =>
+      deleteExpertInvite(id, payload),
+    onSuccess: () => invalidateReferrals(queryClient),
+  })
+}
+
+export const useUpdateReferralGoalProgress = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({
+      id,
+      payload,
+    }: {
+      id: string
+      payload: { signedUpCount?: number; maxReferrals?: number }
+    }) => updateReferralGoalProgress(id, payload),
     onSuccess: () => invalidateReferrals(queryClient),
   })
 }
