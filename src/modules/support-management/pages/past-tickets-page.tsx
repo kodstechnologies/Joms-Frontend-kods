@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { ArrowLeft, Eye, SlidersHorizontal } from 'lucide-react'
+import { ArrowLeft, Eye } from 'lucide-react'
+import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 
@@ -390,7 +391,7 @@ export function PastTicketsPage() {
           onClick={() => navigate('/metrics/past-tickets?section=table')}
           className="ui-manage-metrics ui-cta ui-cta-primary shrink-0"
         >
-          <SlidersHorizontal className="icon-sm shrink-0" />
+          <ManageMetricsIcon className="size-4 shrink-0" />
           Manage Metrics
         </button>
       </div>

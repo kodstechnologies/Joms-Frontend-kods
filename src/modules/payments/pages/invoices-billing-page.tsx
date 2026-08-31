@@ -1,8 +1,9 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { Bell, Download, Eye, SlidersHorizontal, TrendingUp } from 'lucide-react'
+import { Bell, Download, Eye, TrendingUp } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
+import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
 
 import { useBranding } from '@/app/providers/use-branding'
 import type { InvoiceRow, InvoiceStatus } from '@/modules/payments/types/finance-table-rows'
@@ -332,7 +333,7 @@ export function InvoicesBillingPage() {
           </p>
         </div>
         <Button className="ui-manage-metrics" onClick={() => navigate('/metrics/finance-invoices')}>
-          <SlidersHorizontal className="size-4" />
+          <ManageMetricsIcon className="size-4 shrink-0" />
           Manage Metrics
         </Button>
       </div>

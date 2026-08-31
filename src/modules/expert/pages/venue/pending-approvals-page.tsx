@@ -1,9 +1,10 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { ArrowLeft, CheckCircle2, ClipboardCheck, Eye, SlidersHorizontal } from 'lucide-react'
+import { ArrowLeft, CheckCircle2, ClipboardCheck, Eye } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import createIcon from '@/assets/JOMS_ICONS-2/icons8-create.svg'
+import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
 
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import type { FilterValues } from '@/shared/types/data-filter'
@@ -438,7 +439,7 @@ export function VenuePendingApprovalsPage() {
               navigate('/metrics/venue-pending-approvals?returnTo=/venues/management/pending')
             }
           >
-            <SlidersHorizontal className="size-4" />
+            <ManageMetricsIcon className="size-4 shrink-0" />
             Manage Metrics
           </Button>
           <Button

@@ -1011,7 +1011,7 @@ export const ExpertManagementPage = () => {
             className="ui-manage-metrics h-9 w-full md:w-auto"
             onClick={() => navigate('/metrics/expert-management?returnTo=/experts/management')}
           >
-            <ManageMetricsIcon className="size-5" />
+            <ManageMetricsIcon className="size-4 shrink-0" />
             Manage Metrics
           </Button>
 

@@ -7,7 +7,9 @@ import { cn } from '@/shared/lib/cn'
 type SidebarItemProps = {
   label: string
   to?: string
-  icon?: LucideIcon
+  icon?:
+    | LucideIcon
+    | React.ComponentType<React.SVGProps<SVGSVGElement> & { strokeWidth?: number | string }>
   badge?: { label: string; variant?: 'default' | 'success' | 'warning' }
   depth?: number
   active?: boolean

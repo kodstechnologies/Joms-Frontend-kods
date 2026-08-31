@@ -10,7 +10,8 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
-import { ArrowLeft, RefreshCw, SlidersHorizontal, Star, Upload } from 'lucide-react'
+import { ArrowLeft, RefreshCw, Star, Upload } from 'lucide-react'
+import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
 
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import { Button } from '@/shared/components/ui/button'
@@ -98,7 +99,7 @@ export function SpaceAnalyticsPage() {
         </div>
         <div className="flex flex-wrap gap-3">
           <Button className="ui-manage-metrics h-9" onClick={() => navigate(manageMetricsPath)}>
-            <SlidersHorizontal className="size-4" />
+            <ManageMetricsIcon className="size-4 shrink-0" />
             Manage Metrics
           </Button>
           <Button

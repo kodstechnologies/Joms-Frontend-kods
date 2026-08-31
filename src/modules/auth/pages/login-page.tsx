@@ -1,13 +1,44 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { UserRound } from 'lucide-react'
+import { Eye, EyeOff } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { toast } from 'sonner'
 
+const LinkedInIcon = () => (
+  <svg viewBox="0 0 24 24" className="size-3.5" fill="currentColor" aria-hidden="true">
+    <path d="M20.45 20.45h-3.55v-5.57c0-1.33-.03-3.04-1.85-3.04-1.86 0-2.14 1.45-2.14 2.94v5.67H9.35V9h3.41v1.56h.05c.47-.9 1.63-1.85 3.36-1.85 3.6 0 4.26 2.37 4.26 5.45v6.29ZM5.34 7.43a2.06 2.06 0 1 1 0-4.12 2.06 2.06 0 0 1 0 4.12ZM7.12 20.45H3.56V9h3.56v11.45ZM22.23 0H1.77C.79 0 0 .77 0 1.73v20.54C0 23.23.79 24 1.77 24h20.46c.98 0 1.77-.77 1.77-1.73V1.73C24 .77 23.21 0 22.23 0Z" />
+  </svg>
+)
+
+const InstagramIcon = () => (
+  <svg
+    viewBox="0 0 24 24"
+    className="size-3.5"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden="true"
+  >
+    <rect width="20" height="20" x="2" y="2" rx="5" ry="5" />
+    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+    <line x1="17.5" x2="17.51" y1="6.5" y2="6.5" />
+  </svg>
+)
+
+// Material Design mdiAccountLock Icon
+const AccountLockIcon = () => (
+  <svg viewBox="0 0 24 24" className="size-6 text-white" fill="currentColor" aria-hidden="true">
+    <path d="M12,4A4,4 0 0,1 16,8A4,4 0 0,1 12,12A4,4 0 0,1 8,8A4,4 0 0,1 12,4M12,14C16.42,14 20,15.79 20,18V20H4V18C4,15.79 7.58,14 12,14M18,16A2,2 0 0,1 20,18V19H21V23H15V19H16V18A2,2 0 0,1 18,16M18,17A1,1 0 0,0 17,18V19H19V18A1,1 0 0,0 18,17Z" />
+  </svg>
+)
+
 import type { AdminSessionUser } from '@/modules/auth/api/auth-api'
 import { type AdminUser, useAuthStore } from '@/modules/auth/store/auth-store'
 import { fetchRbacMe } from '@/modules/rbac/api/rbac-api'
+import jomsLogo from '@/assets/joms-logo.png'
 import {
   getDefaultHomeRoute,
   normalizeUserPermissions,
@@ -17,12 +48,7 @@ import { useVerifyOtpMutation } from '@/modules/auth/hooks/use-verify-otp-mutati
 import { type LoginSchema, loginSchema } from '@/modules/auth/validations/login-schema'
 import { type OtpSchema, otpSchema } from '@/modules/auth/validations/otp-schema'
 import { getApiErrorMessage } from '@/shared/lib/api-error'
-import { FormField } from '@/shared/components/form/form-field'
 import { OtpInput } from '@/shared/components/form/otp-input'
-import { Button } from '@/shared/components/ui/button'
-import { Card } from '@/shared/components/ui/card'
-import { Input } from '@/shared/components/ui/input'
-import jomsLogo from '@/assets/joms-logo.png'
 
 function buildSessionUser(admin: AdminSessionUser | undefined, fallbackEmail: string): AdminUser {
   if (admin) {
@@ -58,6 +84,7 @@ export function LoginPage() {
   const { mutateAsync: verifyOtp, isPending: isVerifyPending } = useVerifyOtpMutation()
   const [step, setStep] = useState<'credentials' | 'otp'>('credentials')
   const [pendingEmail, setPendingEmail] = useState<string | null>(null)
+  const [showPassword, setShowPassword] = useState(false)
 
   const credentialsForm = useForm<LoginSchema>({
     resolver: zodResolver(loginSchema),
@@ -177,115 +204,203 @@ export function LoginPage() {
     }
   }
 
-  const subtitle = useMemo(() => {
-    return step === 'credentials'
-      ? 'Enter your email and password to access the admin panel. Sub-admins use the credentials set when their account was created.'
-      : 'Enter 6 digit authorisation code sent to your email.'
-  }, [step])
-
   return (
-    <main className="relative min-h-screen overflow-hidden bg-gradient-to-r from-[#6F6857] via-[#B8AF9A] to-[#F2E1B9]">
-      <header className="absolute top-6 left-6 flex items-center gap-3">
+    <main
+      className="relative flex min-h-screen flex-col justify-between overflow-x-hidden"
+      style={{
+        background:
+          'linear-gradient(125deg, #797365 0%, #9c9483 25%, #d5c7a5 58%, #eee3c8 75%, #cec0a1 100%)',
+      }}
+    >
+      {/* Top Left Branding */}
+      <header className="absolute top-8 left-8 flex items-center gap-3">
         <img src={jomsLogo} alt="JOMS" className="size-9 rounded-full object-contain shadow-sm" />
-        <p className="text-lg font-semibold tracking-wide text-white">JOMS</p>
+        <p className="text-lg font-semibold tracking-wider text-white">JOMS</p>
       </header>
 
-      <div className="flex min-h-screen items-center justify-center px-4 py-20">
-        <Card className="w-full max-w-md border border-black/50 bg-black/90 p-8 shadow-2xl">
+      {/* Main Login / 2FA Card Center */}
+      <div className="flex flex-1 items-center justify-center px-4 py-20">
+        <div className="w-full max-w-[565px] rounded-[32px] bg-[#050505] px-10 py-12 shadow-[0_25px_60px_rgba(0,0,0,0.65)] sm:px-14 sm:py-14">
           {step === 'otp' ? (
-            <div className="mb-6 flex justify-center">
-              <div className="grid size-10 place-items-center rounded-full bg-white/10 text-slate-100">
-                <UserRound className="size-5" />
+            /* Two Factor Authentication View */
+            <div className="space-y-6">
+              {/* Account Lock Icon Badge */}
+              <div className="flex justify-center">
+                <div className="grid size-12 place-items-center rounded-full bg-[#1E1E1E] shadow-sm">
+                  <AccountLockIcon />
+                </div>
               </div>
+
+              <div className="space-y-1.5 text-center">
+                <h1 className="text-[24px] font-semibold tracking-tight text-white sm:text-[26px]">
+                  Two Factor Authentication
+                </h1>
+                <p className="text-sm font-normal text-[#717182]">
+                  Enter 6 digit authorisation code sent to your email.
+                </p>
+              </div>
+
+              <form className="mt-8 space-y-7" onSubmit={otpForm.handleSubmit(onSubmitOtp)}>
+                <div className="mx-auto w-full max-w-[405px] space-y-3">
+                  <Controller
+                    control={otpForm.control}
+                    name="code"
+                    render={({ field }) => (
+                      <OtpInput
+                        length={6}
+                        value={field.value}
+                        onChange={field.onChange}
+                        className="gap-2.5 sm:gap-3"
+                        slotClassName="w-11 sm:w-13 h-12 sm:h-14 rounded-b-2xl border-0 border-b-2 border-[#717182]/50 bg-transparent text-center text-xl sm:text-2xl font-semibold text-white outline-none focus:border-b-2 focus:border-[#E0A263] focus:ring-0 transition-colors"
+                      />
+                    )}
+                  />
+                  {otpForm.formState.errors.code?.message ? (
+                    <p className="text-center text-xs text-rose-300">
+                      {otpForm.formState.errors.code.message}
+                    </p>
+                  ) : null}
+                </div>
+
+                {/* Login button with #FFFFF0 */}
+                <button
+                  type="submit"
+                  disabled={isVerifyPending}
+                  className="mx-auto mt-6 flex h-12 w-full max-w-[361px] cursor-pointer items-center justify-center rounded-[10px] bg-[#FFFFF0] text-[15px] font-semibold text-[#000000] shadow-sm transition-all hover:bg-[#f4f4e2] active:scale-[0.99] disabled:opacity-60"
+                >
+                  {isVerifyPending ? 'Verifying...' : 'Login'}
+                </button>
+              </form>
             </div>
-          ) : null}
-
-          <div className="space-y-2 text-center">
-            <h1 className="text-2xl font-semibold text-slate-100">
-              {step === 'credentials' ? 'Login' : 'Two Factor Authentication'}
-            </h1>
-            <p className="text-xs text-slate-400">{subtitle}</p>
-          </div>
-
-          {step === 'credentials' ? (
-            <form
-              className="mt-8 space-y-5"
-              onSubmit={credentialsForm.handleSubmit(onSubmitCredentials)}
-            >
-              <FormField label="Email ID" error={credentialsForm.formState.errors.email?.message}>
-                <Input
-                  type="email"
-                  className="border-0 border-b border-white/10 bg-transparent text-slate-100 shadow-none focus-visible:ring-2 focus-visible:ring-white/50"
-                  placeholder="Enter your email"
-                  autoComplete="username"
-                  {...credentialsForm.register('email')}
-                />
-              </FormField>
-
-              <FormField
-                label="Password"
-                error={credentialsForm.formState.errors.password?.message}
-              >
-                <Input
-                  type="password"
-                  className="border-0 border-b border-white/10 bg-transparent text-slate-100 shadow-none focus-visible:ring-2 focus-visible:ring-white/50"
-                  placeholder="Enter your password"
-                  autoComplete="current-password"
-                  {...credentialsForm.register('password')}
-                />
-              </FormField>
-
-              <Button className="mt-2 w-full" type="submit" disabled={isLoginPending}>
-                {isLoginPending ? 'Signing in...' : 'Sign In'}
-              </Button>
-            </form>
           ) : (
-            <form className="mt-8 space-y-6" onSubmit={otpForm.handleSubmit(onSubmitOtp)}>
-              <div className="space-y-3">
-                <Controller
-                  control={otpForm.control}
-                  name="code"
-                  render={({ field }) => (
-                    <OtpInput length={6} value={field.value} onChange={field.onChange} />
-                  )}
-                />
-                {otpForm.formState.errors.code?.message ? (
-                  <p className="text-center text-xs text-rose-300">
-                    {otpForm.formState.errors.code.message}
-                  </p>
-                ) : null}
+            /* Credentials View */
+            <div>
+              <div className="space-y-1.5 text-center">
+                <h1 className="text-[28px] font-semibold tracking-tight text-white sm:text-[30px]">
+                  Login
+                </h1>
+                <p className="text-sm font-normal text-[#717182]">
+                  Enter your credentials to access the admin panel
+                </p>
               </div>
 
-              <Button className="w-full" type="submit" disabled={isVerifyPending}>
-                {isVerifyPending ? 'Verifying...' : 'Login'}
-              </Button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setStep('credentials')
-                  otpForm.reset()
-                }}
-                className="w-full text-center text-xs text-slate-400 hover:text-slate-200"
+              <form
+                className="mt-8 space-y-6"
+                onSubmit={credentialsForm.handleSubmit(onSubmitCredentials)}
               >
-                Back to login
-              </button>
-            </form>
+                {/* Email ID Field */}
+                <div className="space-y-1.5">
+                  <label className="block text-[13px] font-normal text-white" htmlFor="login-email">
+                    Email ID
+                  </label>
+                  <div className="border-b border-[#717182]/50 transition-colors focus-within:border-[#E0A263]">
+                    <input
+                      id="login-email"
+                      type="email"
+                      className="w-full bg-transparent py-2 text-sm text-white outline-none placeholder:text-[#717182] focus:outline-none"
+                      placeholder="admin@example.com"
+                      autoComplete="username"
+                      {...credentialsForm.register('email')}
+                    />
+                  </div>
+                  {credentialsForm.formState.errors.email?.message ? (
+                    <p className="text-xs text-rose-400">
+                      {credentialsForm.formState.errors.email.message}
+                    </p>
+                  ) : null}
+                </div>
+
+                {/* Password Field */}
+                <div className="space-y-1.5">
+                  <label
+                    className="block text-[13px] font-normal text-white"
+                    htmlFor="login-password"
+                  >
+                    Password
+                  </label>
+                  <div className="relative flex items-center border-b border-[#717182]/50 transition-colors focus-within:border-[#E0A263]">
+                    <input
+                      id="login-password"
+                      type={showPassword ? 'text' : 'password'}
+                      className="w-full bg-transparent py-2 pr-8 text-sm text-white outline-none placeholder:text-[#717182] focus:outline-none"
+                      placeholder="admin123"
+                      autoComplete="current-password"
+                      {...credentialsForm.register('password')}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-0 cursor-pointer text-[#717182] transition-colors hover:text-white focus:outline-none"
+                      aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    >
+                      {showPassword ? (
+                        <EyeOff className="size-[18px]" />
+                      ) : (
+                        <Eye className="size-[18px]" />
+                      )}
+                    </button>
+                  </div>
+                  {credentialsForm.formState.errors.password?.message ? (
+                    <p className="text-xs text-rose-400">
+                      {credentialsForm.formState.errors.password.message}
+                    </p>
+                  ) : null}
+                </div>
+
+                {/* Sign In Button */}
+                <button
+                  type="submit"
+                  disabled={isLoginPending}
+                  className="mt-7 flex h-12 w-full cursor-pointer items-center justify-center rounded-[10px] bg-[#E0A263] text-[15px] font-semibold text-[#000000] shadow-sm transition-all hover:bg-[#d89756] active:scale-[0.99] disabled:opacity-60"
+                >
+                  {isLoginPending ? 'Signing in...' : 'Sign In'}
+                </button>
+              </form>
+            </div>
           )}
-        </Card>
+        </div>
       </div>
 
-      <footer className="absolute right-0 bottom-0 left-0 border-t border-black/20 bg-black/10 px-6 py-3 text-[11px] text-slate-800">
+      {/* Footer */}
+      <footer className="w-full border-t border-black/10 bg-transparent px-8 py-3.5 text-[11px] text-black sm:text-xs">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
-            <span className="font-semibold">Email: hello@joms.in</span>
+            <a
+              href="https://linkedin.com"
+              target="_blank"
+              rel="noreferrer"
+              className="text-black transition-colors hover:opacity-75"
+            >
+              <LinkedInIcon />
+            </a>
+            <a
+              href="https://instagram.com"
+              target="_blank"
+              rel="noreferrer"
+              className="text-black transition-colors hover:opacity-75"
+            >
+              <InstagramIcon />
+            </a>
+            <span className="font-normal text-black">Email: hello@joms.in</span>
           </div>
-          <div className="flex flex-wrap items-center gap-x-6 gap-y-1">
+
+          <div className="text-center text-black">
             <span>© 2026 JOMS Commerce &amp; Technologies Pvt Ltd</span>
-            <span>Disclaimer</span>
-            <span>Terms of Service</span>
-            <span>Privacy</span>
-            <span>Cookies</span>
+          </div>
+
+          <div className="flex flex-wrap items-center justify-end gap-x-5 gap-y-1 text-black">
+            <a href="#" className="hover:underline">
+              Disclaimer
+            </a>
+            <a href="#" className="hover:underline">
+              Terms of Service
+            </a>
+            <a href="#" className="hover:underline">
+              Privacy
+            </a>
+            <a href="#" className="hover:underline">
+              Cookies
+            </a>
           </div>
         </div>
       </footer>

@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from 'react'
-import { SlidersHorizontal } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
+import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
 
 import {
   DEFAULT_ESCALATIONS_METRIC_IDS,
@@ -204,7 +204,7 @@ export function EscalationDetails() {
           className="ui-manage-metrics ui-cta ui-cta-primary w-full shrink-0 sm:w-auto"
           onClick={() => navigate('/metrics/escalations?section=table')}
         >
-          <SlidersHorizontal className="size-4" />
+          <ManageMetricsIcon className="size-4 shrink-0" />
           Manage Metrics
         </Button>
       </div>

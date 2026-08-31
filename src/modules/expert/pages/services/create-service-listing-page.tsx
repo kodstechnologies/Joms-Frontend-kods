@@ -15,6 +15,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import { toast } from 'sonner'
 import { useCategories, useSubcategories } from '@/modules/expert/hooks/use-categories'
+import { getCategoryApiId } from '@/modules/expert/type/category'
 import {
   useConsultationTopics,
   useCreateConsultation,
@@ -1537,21 +1538,24 @@ export const CreateServiceListingPage = () => {
                     <p className="text-body-sm text-muted">No subcategories available</p>
                   ) : (
                     <div className="flex flex-wrap gap-2">
-                      {subcategories.map((subCategory) => (
-                        <button
-                          key={subCategory._id}
-                          type="button"
-                          onClick={() => toggleSubCategory(subCategory._id)}
-                          className={cn(
-                            'rounded-md border px-2.5 py-1 text-[10px] font-semibold transition-colors',
-                            selectedSubCategoryIds.includes(subCategory._id)
-                              ? 'border-brand-accent bg-brand-accent/10 text-brand-accent'
-                              : 'text-muted border-white/10 hover:border-white/30',
-                          )}
-                        >
-                          {subCategory.name}
-                        </button>
-                      ))}
+                      {subcategories.map((subCategory) => {
+                        const subCategoryId = getCategoryApiId(subCategory)
+                        return (
+                          <button
+                            key={subCategoryId}
+                            type="button"
+                            onClick={() => toggleSubCategory(subCategoryId)}
+                            className={cn(
+                              'rounded-md border px-2.5 py-1 text-[10px] font-semibold transition-colors',
+                              selectedSubCategoryIds.includes(subCategoryId)
+                                ? 'border-brand-accent bg-brand-accent/10 text-brand-accent'
+                                : 'text-muted border-white/10 hover:border-white/30',
+                            )}
+                          >
+                            {subCategory.name}
+                          </button>
+                        )
+                      })}
                     </div>
                   )}
                 </div>
@@ -2269,15 +2273,20 @@ export const CreateServiceListingPage = () => {
                 {selectedSubCategoryIds.length > 0 && (
                   <div className="flex flex-wrap gap-2 pt-1">
                     {subcategories
-                      .filter((subCategory) => selectedSubCategoryIds.includes(subCategory._id))
-                      .map((subCategory) => (
-                        <span
-                          key={subCategory._id}
-                          className="bg-brand-surface text-body-sm rounded-md border border-white/20 px-3 py-1.5 font-bold text-white"
-                        >
-                          {subCategory.name}
-                        </span>
-                      ))}
+                      .filter((subCategory) =>
+                        selectedSubCategoryIds.includes(getCategoryApiId(subCategory)),
+                      )
+                      .map((subCategory) => {
+                        const subCategoryId = getCategoryApiId(subCategory)
+                        return (
+                          <span
+                            key={subCategoryId}
+                            className="bg-brand-surface text-body-sm rounded-md border border-white/20 px-3 py-1.5 font-bold text-white"
+                          >
+                            {subCategory.name}
+                          </span>
+                        )
+                      })}
                   </div>
                 )}
               </div>

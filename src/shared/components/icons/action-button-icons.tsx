@@ -49,15 +49,15 @@ export function ExportDataIcon({ className, ...props }: SVGProps<SVGSVGElement>)
 
 export function ManageMetricsIcon({
   className,
-  size = 20,
-  strokeWidth = 2.2,
+  size = 16,
+  strokeWidth = 2,
   ...props
 }: LucideProps) {
   return (
     <SlidersHorizontal
       size={size}
       strokeWidth={strokeWidth}
-      className={className ?? 'size-10 shrink-0'}
+      className={className ?? 'size-4 shrink-0'}
       aria-hidden="true"
       {...props}
     />

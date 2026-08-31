@@ -270,7 +270,7 @@ export const ExpertDashboardPage = () => {
             className="ui-manage-metrics h-11 rounded-xl px-6 text-sm font-semibold sm:w-auto"
             onClick={() => navigate('/experts/dashboard/metrics')}
           >
-            <ManageMetricsIcon className="size-5" />
+            <ManageMetricsIcon className="size-4 shrink-0" />
             Manage Metrics
           </Button>
 

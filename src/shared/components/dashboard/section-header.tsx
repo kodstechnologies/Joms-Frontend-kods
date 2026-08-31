@@ -56,7 +56,7 @@ export function SectionHeader({
                 {action.icon ? (
                   action.icon
                 ) : isManageMetrics ? (
-                  <ManageMetricsIcon className="size-5 shrink-0" />
+                  <ManageMetricsIcon className="size-4 shrink-0" />
                 ) : isExportData ? (
                   <ExportDataIcon className="size-5 shrink-0" />
                 ) : null}

@@ -67,7 +67,11 @@ export function resolveVisibleExportColumnIds({
 
   const fromPrefs = normalize(visibleColumnIds ?? [])
   const fallback = normalize(defaultColumnIds)
-  return sortIdsByCatalogOrder(fromPrefs.length ? fromPrefs : fallback, [...catalogColumnIds])
+  const minColumns = Math.min(3, fallback.length)
+  const useFallback =
+    fromPrefs.length === 0 || (fromPrefs.length < minColumns && fallback.length > fromPrefs.length)
+
+  return sortIdsByCatalogOrder(useFallback ? fallback : fromPrefs, [...catalogColumnIds])
 }
 
 export function buildExportColumnMapFromCatalog<T>(

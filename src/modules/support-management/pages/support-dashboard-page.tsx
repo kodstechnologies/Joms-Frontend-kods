@@ -1,7 +1,8 @@
 import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
-import { SlidersHorizontal, Upload } from 'lucide-react'
+import { Upload } from 'lucide-react'
+import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
 
 import { SupportDashboardCharts } from '../components/support-dashboard-charts'
 import { SupportStatCard } from '../components/support-stat-card'
@@ -86,7 +87,7 @@ export function SupportDashboardPage() {
             onClick={() => navigate('/metrics/support-dashboard')}
             className="ui-manage-metrics ui-cta ui-cta-primary"
           >
-            <SlidersHorizontal className="icon-sm shrink-0" />
+            <ManageMetricsIcon className="size-4 shrink-0" />
             Manage Metrics
           </button>
         </div>

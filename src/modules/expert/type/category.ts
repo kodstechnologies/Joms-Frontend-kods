@@ -1,7 +1,11 @@
 export type CategoryApiStatus = 'ACTIVE' | 'PAUSED' | 'DELETED'
 
+export const getCategoryApiId = (doc: { _id?: string; id?: string }): string =>
+  doc._id ?? doc.id ?? ''
+
 export interface CategoryApiSubCategory {
-  _id: string
+  _id?: string
+  id?: string
   name: string
   description?: string
   vectorIcon?: string | null
@@ -30,7 +34,8 @@ export interface CategoryApiSubCategory {
 }
 
 export interface ServiceCategoryApi {
-  _id: string
+  _id?: string
+  id?: string
   categoryId?: string
   name: string
   description?: string
@@ -58,7 +63,8 @@ export interface ServiceCategoryApi {
 }
 
 export interface VenueCategoryApi {
-  _id: string
+  _id?: string
+  id?: string
   categoryId?: string
   name: string
   description?: string

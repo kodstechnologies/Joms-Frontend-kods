@@ -43,16 +43,13 @@ import {
 } from '../../hooks/use-category-management'
 import { mapServiceCategoryToUi } from '../../utils/category-mapper'
 import { useTableColumnPreferences } from '../../hooks/use-ui-preferences'
-import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
+import { selectPreferredColumns } from '../../utils/select-preferred-columns'
 
 const PAGE_SIZE = 10
 
 const SERVICE_CATEGORY_COLUMN_SORT_FIELDS = buildCatalogSortFieldMap(
   SERVICE_CATEGORY_MANAGEMENT_TABLE_COLUMNS_CATALOG,
 )
-
-const normalizeServiceColumnIds = (ids: string[]) =>
-  ids.map((id) => SERVICE_CATEGORY_LEGACY_COLUMN_ID_MAP[id] ?? id)
 
 const normalizeServiceMetricIds = (ids: string[]) =>
   ids.map((id) => SERVICE_CATEGORY_LEGACY_METRIC_ID_MAP[id] ?? id)
@@ -238,22 +235,14 @@ export function CategoryManagementPage() {
     const rawVisibleIds = preferencesQuery.data?.visibleColumnIds?.length
       ? preferencesQuery.data.visibleColumnIds
       : DEFAULT_VISIBLE_IDS
-    const visibleIds = normalizeServiceColumnIds(rawVisibleIds)
-
-    const dataColumnsById = Object.fromEntries(
-      categoryColumns.map((column) => [column.id, column] as const),
-    ) as Record<string, ColumnDef<Category>>
-    const matched = visibleIds.filter((id) => id in dataColumnsById)
-    const selectedDataColumns = sortIdsByCatalogOrder(
-      matched.length > 0 ? matched : DEFAULT_VISIBLE_IDS,
-      DEFAULT_VISIBLE_IDS,
-    )
-      .map((id) => dataColumnsById[id])
-      .filter(Boolean)
-    const actionsColumn = dataColumnsById.actions
 
     return withServerSortMeta(
-      actionsColumn ? [...selectedDataColumns, actionsColumn] : selectedDataColumns,
+      selectPreferredColumns(
+        categoryColumns,
+        rawVisibleIds,
+        DEFAULT_VISIBLE_IDS,
+        SERVICE_CATEGORY_LEGACY_COLUMN_ID_MAP,
+      ),
       SERVICE_CATEGORY_COLUMN_SORT_FIELDS,
     )
   }, [preferencesQuery.data])

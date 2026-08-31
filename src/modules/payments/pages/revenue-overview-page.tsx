@@ -1,8 +1,9 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { AlertTriangle, Eye, SlidersHorizontal, Tag, Trash2 } from 'lucide-react'
+import { AlertTriangle, Eye, Tag, Trash2 } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
+import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
 
 import type { RevenueOverviewRow } from '@/modules/payments/types/finance-table-rows'
 import {
@@ -446,7 +447,7 @@ export function RevenueOverviewPage() {
           className="ui-manage-metrics"
           onClick={() => navigate('/metrics/finance-revenue?section=table')}
         >
-          <SlidersHorizontal className="size-4" />
+          <ManageMetricsIcon className="size-4 shrink-0" />
           Manage Metrics
         </Button>
       </div>

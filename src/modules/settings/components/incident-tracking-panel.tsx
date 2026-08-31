@@ -3,6 +3,7 @@ import type { ColumnDef } from '@tanstack/react-table'
 import { ClipboardList } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
+import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
 
 import { AssignUserModal } from './assign-user-modal'
 import {
@@ -342,9 +343,10 @@ export function IncidentTrackingPanel({ highlightIncidentId = null }: IncidentTr
         </div>
         <Button
           variant="secondary"
-          className="ui-manage-metrics"
+          className="ui-manage-metrics inline-flex items-center gap-2"
           onClick={() => navigate('/metrics/incident-tracking?section=table')}
         >
+          <ManageMetricsIcon className="size-4 shrink-0" />
           Manage Metrics
         </Button>
       </div>

@@ -25,13 +25,13 @@ import {
   PauseCircle,
   Plus,
   Search,
-  SlidersHorizontal,
   Star,
   Tag,
   Upload,
   User,
   Users,
 } from 'lucide-react'
+import { AdvanceFilterIcon, ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
 
 import { useVenueManagementControls } from '@/modules/settings/hooks/use-venue-public-settings'
 import {
@@ -1024,7 +1024,7 @@ function SpacesTab({ data, venueId }: { data: VenueFullView; venueId: string }) 
           onClick={onAdvancedFilter}
           className="ui-advance-filters ui-cta ui-cta-outline text-body-sm gap-2 px-4 font-semibold"
         >
-          <SlidersHorizontal className="size-4" />
+          <AdvanceFilterIcon className="size-4 shrink-0" />
           Advance Filters
         </button>
       </div>
@@ -1339,7 +1339,7 @@ function AnalyticsTab({ data, venueId }: { data: VenueFullView; venueId: string 
           onClick={() => navigate(manageMetricsPath)}
           className="ui-manage-metrics ui-cta ui-cta-primary text-body-sm flex items-center gap-1.5 rounded-lg px-3 py-2 font-semibold"
         >
-          <SlidersHorizontal className="icon-sm shrink-0" />
+          <ManageMetricsIcon className="size-4 shrink-0" />
           Manage Metrics
         </button>
       </div>

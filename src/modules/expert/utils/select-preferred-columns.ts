@@ -16,10 +16,17 @@ export function selectPreferredColumns<T>(
   ) as Record<string, ColumnDef<T>>
 
   const catalogOrder = allColumns.map((column) => column.id).filter(Boolean) as string[]
-  const visibleIds = rawVisibleIds.map((id) => legacyIdMap[id] ?? id)
-  const matched = visibleIds.filter((id) => id in dataColumnsById)
+  const normalize = (ids: readonly string[]) =>
+    [...new Set(ids.map((id) => legacyIdMap[id] ?? id))].filter((id) => id in dataColumnsById)
+
+  const fromPrefs = normalize(rawVisibleIds)
+  const fallback = normalize(defaultVisibleIds)
+  const minColumns = Math.min(3, fallback.length)
+  const useFallback =
+    fromPrefs.length === 0 || (fromPrefs.length < minColumns && fallback.length > fromPrefs.length)
+
   const selected = sortIdsByCatalogOrder(
-    matched.length > 0 ? matched : defaultVisibleIds,
+    useFallback ? fallback : fromPrefs,
     catalogOrder.length ? catalogOrder : defaultVisibleIds,
   )
     .map((id) => dataColumnsById[id])

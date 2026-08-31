@@ -1,7 +1,8 @@
 import type { LucideIcon } from 'lucide-react'
-import { Hourglass, Trash2, SlidersHorizontal } from 'lucide-react'
+import { Hourglass, Trash2 } from 'lucide-react'
 import createIcon from '@/assets/JOMS_ICONS-2/icons8-create.svg'
 import { useNavigate } from 'react-router-dom'
+import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
 
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
@@ -56,7 +57,7 @@ export function CategoryManagementPageHeader({
           className="ui-manage-metrics h-9 w-full md:w-auto"
           onClick={() => navigate(metricsPath)}
         >
-          <SlidersHorizontal className="size-4" />
+          <ManageMetricsIcon className="size-4 shrink-0" />
           Manage Metrics
         </Button>
 

@@ -1,8 +1,9 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { Eye, SlidersHorizontal } from 'lucide-react'
+import { Eye } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
+import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
 
 import type { FinanceReconciliationRow } from '@/modules/payments/types/finance-table-rows'
 import { fetchFinanceReconciliation } from '@/modules/payments/api/finance-api'
@@ -311,7 +312,7 @@ export function FinanceReconciliationPage() {
           className="ui-manage-metrics"
           onClick={() => navigate('/metrics/finance-reconciliation?section=table')}
         >
-          <SlidersHorizontal className="size-4" />
+          <ManageMetricsIcon className="size-4 shrink-0" />
           Manage Metrics
         </Button>
       </div>

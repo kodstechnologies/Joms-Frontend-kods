@@ -1,9 +1,10 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 import { useQueryClient } from '@tanstack/react-query'
-import { AlertTriangle, Eye, SlidersHorizontal, Tag, Trash2 } from 'lucide-react'
+import { AlertTriangle, Eye, Tag, Trash2 } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
+import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
 
 import { financeServiceTabs } from '@/modules/payments/mock/finance-services.mock'
 import type {
@@ -459,7 +460,7 @@ export function FinanceServicesPage() {
           className="ui-manage-metrics"
           onClick={() => navigate('/metrics/finance-services?section=table')}
         >
-          <SlidersHorizontal className="size-4" />
+          <ManageMetricsIcon className="size-4 shrink-0" />
           Manage Metrics
         </Button>
       </div>
