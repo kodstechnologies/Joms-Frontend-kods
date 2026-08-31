@@ -163,6 +163,16 @@ export function MainSettingsPage() {
     resetVenue.isPending ||
     resetService.isPending
 
+  const persistSecuritySettings = async (config: typeof securityConfig) => {
+    const normalizedSecurity = normalizeSecuritySettings(config)
+    if (countEnabledMfaMethods(normalizedSecurity.mfa) === 0) {
+      toast.error('Enable at least one MFA method before saving')
+      throw new Error('At least one MFA method must be enabled')
+    }
+    await updateSecurity.mutateAsync(normalizedSecurity)
+    setSecurityConfig(normalizedSecurity)
+  }
+
   const handleSave = async () => {
     if (!isApiTab) {
       toast.message('This tab is static for now')
@@ -173,12 +183,7 @@ export function MainSettingsPage() {
       if (activeTab === 'platform') {
         await updatePlatform.mutateAsync(platformConfig)
       } else if (activeTab === 'security') {
-        const normalizedSecurity = normalizeSecuritySettings(securityConfig)
-        if (countEnabledMfaMethods(normalizedSecurity.mfa) === 0) {
-          toast.error('Enable at least one MFA method before saving')
-          return
-        }
-        await updateSecurity.mutateAsync(normalizedSecurity)
+        await persistSecuritySettings(securityConfig)
       } else if (activeTab === 'notifications') {
         await updateNotifications.mutateAsync(notificationsConfig)
       } else if (activeTab === 'finance') {
@@ -285,7 +290,11 @@ export function MainSettingsPage() {
             <PlatformSettingsPanel value={platformConfig} onChange={setPlatformConfig} />
           ) : null}
           {activeTab === 'security' ? (
-            <SecurityAccessPanel value={securityConfig} onChange={setSecurityConfig} />
+            <SecurityAccessPanel
+              value={securityConfig}
+              onChange={setSecurityConfig}
+              onPersist={persistSecuritySettings}
+            />
           ) : null}
           {activeTab === 'notifications' ? (
             <NotificationSettingsPanel

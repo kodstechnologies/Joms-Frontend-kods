@@ -17,6 +17,7 @@ import { SettingsToggle } from './settings-toggle-row'
 type SecurityAccessPanelProps = {
   value: SecuritySettings
   onChange: (value: SecuritySettings) => void
+  onPersist?: (value: SecuritySettings) => Promise<void>
 }
 
 function SecuritySelect({
@@ -96,7 +97,7 @@ function SecurityCheckboxRow({
   )
 }
 
-export function SecurityAccessPanel({ value, onChange }: SecurityAccessPanelProps) {
+export function SecurityAccessPanel({ value, onChange, onPersist }: SecurityAccessPanelProps) {
   const navigate = useNavigate()
   const [securityQuestionsOpen, setSecurityQuestionsOpen] = useState(false)
 
@@ -334,10 +335,23 @@ export function SecurityAccessPanel({ value, onChange }: SecurityAccessPanelProp
         open={securityQuestionsOpen}
         config={value.securityQuestionsConfig}
         onClose={() => setSecurityQuestionsOpen(false)}
-        onSubmit={(config) => {
-          patch({ securityQuestionsConfig: config })
-          setSecurityQuestionsOpen(false)
-          toast.success('Security questions updated — save settings to apply')
+        onSubmit={async (config) => {
+          const nextConfig = { ...value, securityQuestionsConfig: config }
+          onChange(nextConfig)
+
+          if (!onPersist) {
+            setSecurityQuestionsOpen(false)
+            toast.success('Security questions updated — save settings to apply')
+            return
+          }
+
+          try {
+            await onPersist(nextConfig)
+            setSecurityQuestionsOpen(false)
+            toast.success('Security questions saved')
+          } catch {
+            toast.error('Failed to save security questions')
+          }
         }}
       />
     </div>

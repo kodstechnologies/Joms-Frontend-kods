@@ -26,6 +26,8 @@ type MembershipKpiStat = {
 }
 
 const API_TREND_KEY_BY_METRIC_ID: Record<string, string> = {
+  'total-membership-plans': 'totalMembershipPlans',
+  'active-membership-plans': 'activeMembershipPlans',
   'total-subscribers': 'totalSubscribers',
   'active-subscribers': 'activeSubscribers',
   'total-membership-revenue': 'totalMembershipRevenue',
@@ -113,6 +115,14 @@ function buildMembershipKpiStats(
   })
 }
 
+const DEFAULT_TREND: MembershipTrend = {
+  direction: 'up',
+  percentage: 0,
+  label: 'vs last month',
+}
+
+const TREND_METRIC_IDS = new Set(Object.keys(API_TREND_KEY_BY_METRIC_ID))
+
 const TEXT_VALUE_METRIC_IDS = new Set([
   'most-subscribed-plan',
   'subscribers-by-plan',
@@ -121,7 +131,8 @@ const TEXT_VALUE_METRIC_IDS = new Set([
 ])
 
 function MembershipMetricCard({ metric }: { metric: MembershipKpiStat }) {
-  const isUp = metric.trend?.direction === 'up'
+  const trend = TREND_METRIC_IDS.has(metric.id) ? (metric.trend ?? DEFAULT_TREND) : metric.trend
+  const isUp = trend?.direction === 'up'
   const invertTrend = [
     'churn-rate',
     'cancellations-current-month',
@@ -148,7 +159,7 @@ function MembershipMetricCard({ metric }: { metric: MembershipKpiStat }) {
       <div className="mt-auto flex items-center gap-2 pt-3">
         {showAttentionHint ? (
           <span className="text-muted text-[10px]">Require attention</span>
-        ) : metric.trend ? (
+        ) : trend ? (
           <>
             <span
               className={cn(
@@ -159,11 +170,11 @@ function MembershipMetricCard({ metric }: { metric: MembershipKpiStat }) {
               )}
             >
               {isUp ? <TrendingUp className="size-3" /> : <TrendingDown className="size-3" />}
-              {isUp ? '+' : metric.trend.percentage === 0 ? '' : '-'}
-              {metric.trend.percentage}%
+              {isUp ? '+' : trend.percentage === 0 ? '' : '-'}
+              {trend.percentage}%
             </span>
             <span className="text-muted truncate text-[10px]">
-              {metric.trend.label ?? 'vs last month'}
+              {trend.label ?? 'vs last month'}
             </span>
           </>
         ) : null}
