@@ -72,8 +72,7 @@ export function VenueProfileAnalyticsPage() {
 
   const venueAnalyticsCards = useMemo(() => {
     const venueAnalytics = data?.data?.profile as
-      | ({ analytics?: Record<string, unknown> } & Record<string, unknown>)
-      | undefined
+      ({ analytics?: Record<string, unknown> } & Record<string, unknown>) | undefined
     const allCards = buildVenueProfileAnalyticsMetricCards(
       analyticsData,
       venueAnalytics?.analytics ?? null,

@@ -41,7 +41,7 @@ export function Sidebar({
     <div className={cn('flex h-full flex-col pt-1 pb-6', compact ? 'px-2' : 'px-3')}>
       <nav
         className={cn(
-          'flex-1 overflow-y-auto pb-4 [scrollbar-color:rgba(255,255,255,0.2)_transparent] [scrollbar-width:thin]',
+          'flex-1 [scrollbar-width:thin] [scrollbar-color:rgba(255,255,255,0.2)_transparent] overflow-y-auto pb-4',
           compact ? 'space-y-1' : 'space-y-0.5',
         )}
       >
