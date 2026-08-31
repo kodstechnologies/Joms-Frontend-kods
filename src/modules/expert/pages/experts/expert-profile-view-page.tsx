@@ -41,7 +41,7 @@ import {
   Users,
   X,
 } from 'lucide-react'
-import { AdvanceFilterIcon, ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
+import { AdvanceFilterIcon, ExportDataIcon, ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
 
 import { fetchConsultationById, fetchServiceById } from '../../api/service-api'
 import {
@@ -1632,7 +1632,7 @@ function ServicesSubTab({
               title="Export selected services"
               className="flex size-8 items-center justify-center rounded-md bg-black text-white transition-colors hover:bg-white/10"
             >
-              <Upload className="size-3.5" aria-hidden="true" />
+              <ExportDataIcon className="size-3.5" />
             </button>
             <button
               type="button"
@@ -3240,7 +3240,11 @@ export function ExpertProfileViewPage() {
                 onClick={action.onClick}
                 className={PROFILE_HEADER_BTN}
               >
-                <action.icon className="size-3 shrink-0" strokeWidth={2.25} />
+                {action.label.toLowerCase().includes('export') ? (
+                  <ExportDataIcon className="size-3 shrink-0" />
+                ) : (
+                  <action.icon className="size-3 shrink-0" strokeWidth={2.25} />
+                )}
                 {action.label}
               </button>
             ))}

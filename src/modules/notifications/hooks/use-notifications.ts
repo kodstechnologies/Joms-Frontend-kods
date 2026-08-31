@@ -26,9 +26,14 @@ export const useUnreadNotificationCount = (kind?: InboxKind) =>
   useQuery({
     queryKey: notificationKeys.unread(kind),
     queryFn: async () => {
-      const result = await fetchMyUnreadNotificationCount(kind)
-      return result.data?.unreadCount ?? 0
+      try {
+        const result = await fetchMyUnreadNotificationCount(kind)
+        return result.data?.unreadCount ?? 0
+      } catch {
+        return 0
+      }
     },
+    retry: 1,
     refetchInterval: 30_000,
   })
 

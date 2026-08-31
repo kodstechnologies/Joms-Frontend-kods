@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import { RefreshCw, Upload } from 'lucide-react'
+import { RefreshCw } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
-import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
+import { ExportDataIcon, ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
 import {
   Area,
   Bar,
@@ -485,7 +485,7 @@ export function PlatformHealthPage() {
             onClick={handleExportData}
             className="ui-export-data ui-cta ui-cta-primary inline-flex items-center gap-2 px-4"
           >
-            <Upload className="size-4" />
+            <ExportDataIcon className="size-5 shrink-0" />
             Export Data
           </button>
           <button

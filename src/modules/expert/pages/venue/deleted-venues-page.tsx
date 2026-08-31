@@ -1,9 +1,9 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { ArrowLeft, RotateCcw, Upload } from 'lucide-react'
+import { ArrowLeft, RotateCcw } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import createIcon from '@/assets/JOMS_ICONS-2/icons8-create.svg'
-import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
+import { ExportDataIcon, ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
 
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import { toast } from 'sonner'
@@ -376,7 +376,7 @@ export function VenueDeletedPage() {
               Restore Venue
             </TableActionsItem>
             <TableActionsItem
-              icon={<Upload className="size-3.5" />}
+              icon={<ExportDataIcon className="size-3.5" />}
               onClick={() => {
                 setActiveDropdownId(null)
                 void handleExportVenueRow(venue)

@@ -1,10 +1,10 @@
-import { AlertCircle, Ban, Hourglass, Plus, Search, Trash2, Upload } from 'lucide-react'
+import { AlertCircle, Ban, Hourglass, Plus, Search, Trash2 } from 'lucide-react'
 import { useCallback, useMemo, useState, type ComponentProps, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import type { LucideIcon } from 'lucide-react'
 
-import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
+import { ExportDataIcon, ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
 import { CreateMembershipModal } from '../components/create-membership-modal'
 import { MembershipPlanCard } from '../components/membership-plan-card'
 import {
@@ -359,7 +359,7 @@ export function MembershipPlansPage({
             onClick={() => void handleExportData()}
             disabled={isExporting}
           >
-            <Upload className="size-4" />
+            <ExportDataIcon className="size-5 shrink-0" />
             {isExporting ? 'Exporting...' : 'Export Data'}
           </Button>
           <Button className="ui-cta ui-cta-primary" onClick={() => setCreateOpen(true)}>

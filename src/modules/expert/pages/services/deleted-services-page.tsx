@@ -1,8 +1,8 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { ArrowLeft, Eye, RotateCcw, Upload } from 'lucide-react'
+import { ArrowLeft, Eye, RotateCcw } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
-import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
+import { ExportDataIcon, ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
 
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import { toast } from 'sonner'
@@ -214,7 +214,7 @@ export function DeletedServicesPage() {
                   Restore Service
                 </TableActionsItem>
                 <TableActionsItem
-                  icon={<Upload className="size-3.5" />}
+                  icon={<ExportDataIcon className="size-3.5" />}
                   onClick={() => {
                     setActiveDropdownId(null)
                     void handleExportServiceRow(service)

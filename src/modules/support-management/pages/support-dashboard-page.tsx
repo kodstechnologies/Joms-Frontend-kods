@@ -1,8 +1,7 @@
 import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
-import { Upload } from 'lucide-react'
-import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
+import { ExportDataIcon, ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
 
 import { SupportDashboardCharts } from '../components/support-dashboard-charts'
 import { SupportStatCard } from '../components/support-stat-card'
@@ -79,7 +78,7 @@ export function SupportDashboardPage() {
             disabled={exportMutation.isPending}
             className="ui-export-data ui-cta ui-cta-primary inline-flex items-center gap-2 px-4"
           >
-            <Upload className="icon-sm shrink-0" />
+            <ExportDataIcon className="size-5 shrink-0" />
             Export Data
           </button>
           <button

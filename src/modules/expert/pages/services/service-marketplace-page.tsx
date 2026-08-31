@@ -515,7 +515,7 @@ export function ServiceMarketplacePage() {
           </Button>
 
           <Button className="ui-export-data h-9" onClick={handleExportData}>
-            <ExportDataIcon className="size-5" />
+            <ExportDataIcon className="size-5 shrink-0" />
             Export Data
           </Button>
         </div>

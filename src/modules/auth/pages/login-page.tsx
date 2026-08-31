@@ -298,7 +298,7 @@ export function LoginPage() {
                       id="login-email"
                       type="email"
                       className="w-full bg-transparent py-2 text-sm text-white outline-none placeholder:text-[#717182] focus:outline-none"
-                      placeholder="admin@example.com"
+                      placeholder="Enter your email"
                       autoComplete="username"
                       {...credentialsForm.register('email')}
                     />
@@ -323,7 +323,7 @@ export function LoginPage() {
                       id="login-password"
                       type={showPassword ? 'text' : 'password'}
                       className="w-full bg-transparent py-2 pr-8 text-sm text-white outline-none placeholder:text-[#717182] focus:outline-none"
-                      placeholder="admin123"
+                      placeholder="Enter your password"
                       autoComplete="current-password"
                       {...credentialsForm.register('password')}
                     />

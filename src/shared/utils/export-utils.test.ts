@@ -25,14 +25,14 @@ describe('export-utils', () => {
     vi.restoreAllMocks()
   })
 
-  it('formats display values and exports csv', () => {
+  it('formats display values and exports csv', async () => {
     expect(exportDisplayValue(null)).toBe('')
     expect(exportDisplayValue('  ')).toBe('')
     expect(exportDisplayValue(true)).toBe('Yes')
     expect(exportDisplayValue(false)).toBe('No')
     expect(exportDisplayValue(12)).toBe('12')
-    expect(() => exportDataToFile(['A'], [], 'csv', 'empty')).toThrow('NO_RECORDS')
-    exportDataToFile(['Name'], [['Ada']], 'csv', 'people')
+    await expect(exportDataToFile(['A'], [], 'csv', 'empty')).rejects.toThrow('NO_RECORDS')
+    await exportDataToFile(['Name'], [['Ada']], 'csv', 'people')
     expect(clicks.some((name) => name.endsWith('.csv'))).toBe(true)
   })
 })

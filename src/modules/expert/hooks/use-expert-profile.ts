@@ -42,6 +42,7 @@ export const useUpdateExpertAdminNotes = (partnerId?: string) => {
       updateExpertAdminNotes(partnerId as string, internalNotes),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['expert-profile', partnerId] })
+      queryClient.invalidateQueries({ queryKey: ['experts'] })
     },
   })
 }

@@ -39,11 +39,24 @@ export const useVenueCategoryManagementList = (params?: Record<string, unknown>)
   useQuery({
     queryKey: [VENUE_CATEGORY_QUERY_KEY, 'list', params],
     queryFn: () => fetchVenueCategoryList(params),
-    select: (response) => ({
-      categories: (response.data || []).map(mapVenueCategoryToUi),
-      pagination: response.meta,
-      message: response.message,
-    }),
+    retry: 1,
+    staleTime: 15_000,
+    select: (response) => {
+      const rows = Array.isArray(response.data) ? response.data : []
+      const categories = []
+      for (const row of rows) {
+        try {
+          categories.push(mapVenueCategoryToUi(row))
+        } catch (error) {
+          console.error('[venue-categories] skipped unreadable row', error)
+        }
+      }
+      return {
+        categories,
+        pagination: response.meta,
+        message: response.message,
+      }
+    },
   })
 
 export const useVenueCategoryMetrics = () =>

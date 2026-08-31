@@ -34,7 +34,6 @@ export function EscalateToSuperAdminModal({
   refundId,
   requestedBy,
   amount,
-  assigneeName,
   recordIdLabel = 'Refund ID',
   requestedByLabel = 'Requested By',
   isSubmitting = false,
@@ -113,33 +112,26 @@ export function EscalateToSuperAdminModal({
         </div>
 
         <div className="ui-modal-body space-y-5">
-          <div className="radius-lg bg-brand-bg border border-white/10 p-4">
-            <div className="mb-4 flex items-start gap-3 border-b border-white/10 pb-4">
-              <div className="bg-brand-bg text-muted grid size-10 shrink-0 place-items-center rounded-full border border-white/10">
-                <Shield className="icon-sm" />
-              </div>
-              <div>
-                <p className="text-body-md-semibold text-brand-text">
-                  {assigneeName ? `Escalate to ${assigneeName}` : 'Escalate to Super Admin'}
-                </p>
-                <p className="text-body-sm text-muted mt-1">
-                  {assigneeName
-                    ? `${assigneeName} will review this case from My Tasks`
-                    : 'This case requires Super Admin review and decision'}
-                </p>
-              </div>
+          <div className="radius-lg bg-brand-bg flex items-center gap-3 border border-white/10 p-4">
+            <div className="bg-brand-bg text-muted grid size-10 shrink-0 place-items-center rounded-full border border-white/10">
+              <Shield className="icon-sm" />
             </div>
-
-            <div className="space-y-3">
-              <InfoRow label={recordIdLabel} value={refundId} />
-              <InfoRow label={requestedByLabel} value={requestedBy} />
-              <InfoRow label="Amount" value={amount} />
-              {assigneeName ? <InfoRow label="Assigned to" value={assigneeName} /> : null}
+            <div className="min-w-0">
+              <p className="text-body-md-semibold text-brand-text">Escalate to Super Admin</p>
+              <p className="text-body-sm text-muted mt-0.5">
+                This case requires Super Admin review and decision
+              </p>
             </div>
           </div>
 
+          <div className="space-y-3">
+            <InfoRow label={recordIdLabel} value={refundId} />
+            <InfoRow label={requestedByLabel} value={requestedBy} />
+            <InfoRow label="Amount" value={amount} />
+          </div>
+
           <div>
-            <p className="text-body-sm text-muted mb-3">Priority Level</p>
+            <p className="text-body-md-medium text-brand-text mb-3">Priority Level</p>
             <div className="space-y-2.5">
               {priorityOptions.map((option) => {
                 const selected = priority === option.id
@@ -150,32 +142,34 @@ export function EscalateToSuperAdminModal({
                     type="button"
                     onClick={() => setPriority(option.id)}
                     className={cn(
-                      'radius-lg flex w-full items-center gap-3 border px-4 py-3.5 text-left transition-colors',
+                      'radius-lg flex w-full items-center gap-3 px-4 py-3.5 text-left transition-colors',
                       selected
-                        ? 'border-brand-accent/50 bg-brand-accent text-brand-bg'
-                        : 'bg-brand-bg text-brand-text border-white/10 hover:border-white/15',
+                        ? 'bg-brand-accent text-brand-text-dark'
+                        : 'bg-brand-bg text-brand-text border border-white/10 hover:border-white/15',
                     )}
                   >
-                    <span
-                      className={cn(
-                        'grid size-4 shrink-0 place-items-center rounded-full border-2',
-                        selected
-                          ? 'border-brand-bg bg-brand-bg'
-                          : 'border-brand-muted bg-transparent',
-                      )}
-                    >
-                      {selected ? <span className="bg-brand-text size-1.5 rounded-full" /> : null}
-                    </span>
-                    <span className="min-w-0">
+                    <span className="min-w-0 flex-1">
                       <span className="text-body-md-semibold block">{option.label}</span>
                       <span
                         className={cn(
                           'text-body-sm mt-0.5 block',
-                          selected ? 'text-brand-bg/70' : 'text-muted',
+                          selected ? 'text-brand-text-dark/70' : 'text-muted',
                         )}
                       >
                         {option.description}
                       </span>
+                    </span>
+                    <span
+                      className={cn(
+                        'grid size-4 shrink-0 place-items-center rounded-full border-2',
+                        selected
+                          ? 'border-brand-text-dark bg-transparent'
+                          : 'border-brand-muted bg-transparent',
+                      )}
+                    >
+                      {selected ? (
+                        <span className="bg-brand-text-dark size-1.5 rounded-full" />
+                      ) : null}
                     </span>
                   </button>
                 )
@@ -184,7 +178,7 @@ export function EscalateToSuperAdminModal({
           </div>
 
           <label className="block space-y-2.5">
-            <span className="text-body-sm text-muted">Admin Notes</span>
+            <span className="text-body-md-medium text-brand-text">Admin Notes</span>
             <textarea
               value={adminNotes}
               onChange={(event) => setAdminNotes(event.target.value)}
@@ -208,7 +202,7 @@ export function EscalateToSuperAdminModal({
             type="button"
             onClick={() => void handleSubmit()}
             disabled={isSubmitting || !adminNotes.trim()}
-            className="ui-modal-btn ui-modal-btn-gold"
+            className="ui-modal-btn ui-modal-btn-cancel"
           >
             {isSubmitting ? 'Escalating...' : 'Submit'}
           </button>

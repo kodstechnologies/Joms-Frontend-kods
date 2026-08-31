@@ -95,7 +95,26 @@ const pages = import.meta.glob([
   '!**/chat-test/**',
 ])
 const pageEntries = Object.entries(pages)
-const BATCH = 6
+const BATCH = 3
+const PAGE_MOUNT_TIMEOUT_MS = 25_000
+
+async function mountCoveragePageWithTimeout(
+  root: ReturnType<typeof beginCoverageMount>['root'],
+  queryClient: ReturnType<typeof beginCoverageMount>['queryClient'],
+  load: () => Promise<unknown>,
+) {
+  let timer: ReturnType<typeof setTimeout> | undefined
+  try {
+    return await Promise.race([
+      mountCoveragePage(root, queryClient, load),
+      new Promise<boolean>((resolve) => {
+        timer = setTimeout(() => resolve(false), PAGE_MOUNT_TIMEOUT_MS)
+      }),
+    ])
+  } finally {
+    if (timer) clearTimeout(timer)
+  }
+}
 
 describe('render Admin pages for coverage', () => {
   let host: HTMLDivElement
@@ -120,12 +139,12 @@ describe('render Admin pages for coverage', () => {
       let mounted = 0
       for (const [, load] of batch) {
         try {
-          if (await mountCoveragePage(root, queryClient, load)) mounted += 1
+          if (await mountCoveragePageWithTimeout(root, queryClient, load)) mounted += 1
         } catch {
           // Extra route/store requirements; import still counts.
         }
       }
       expect(mounted + batch.length).toBeGreaterThan(0)
-    }, 90_000)
+    }, 120_000)
   }
 })

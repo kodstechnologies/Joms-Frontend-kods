@@ -39,7 +39,7 @@ export function VerificationOtpModal({
   }
 
   const requestOtp = useCallback(async () => {
-    if (!targetValue.trim()) return
+    if (!targetValue?.trim()) return
     try {
       if (type === 'phone') {
         await sendPartnerPhoneOtp(targetValue.trim())

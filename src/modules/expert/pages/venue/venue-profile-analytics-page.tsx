@@ -2,9 +2,9 @@ import { useCallback, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
-import { ArrowLeft, Upload } from 'lucide-react'
+import { ArrowLeft } from 'lucide-react'
 import { toast } from 'sonner'
-import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
+import { ExportDataIcon, ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
 
 import { useVenueFullView } from '../../hooks/use-venues'
 import { useVenueProfileAnalytics } from '../../hooks/use-venue-analytics'
@@ -138,7 +138,7 @@ export function VenueProfileAnalyticsPage() {
             Manage Metrics
           </Button>
           <Button className="ui-export-data h-9" onClick={handleExportData}>
-            <Upload className="size-4" />
+            <ExportDataIcon className="size-5 shrink-0" />
             Export Data
           </Button>
         </div>
