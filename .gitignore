@@ -1,3 +1,7 @@
+# Optimized branch — docs not shipped (local copies may remain)
+*.md
+**/*.md
+
 # Logs
 logs
 *.log
