@@ -6,7 +6,7 @@ import {
 import { fetchExperts } from '../../api/expert-api'
 import type { ColumnDef } from '@tanstack/react-table'
 import createIcon from '@/assets/JOMS_ICONS-2/icons8-create.svg'
-import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
+import { ExportDataIcon, ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
 import {
   AlertCircle,
   Ban,
@@ -73,10 +73,12 @@ import {
   type DecisionActionModalOption,
 } from '@/shared/components/modal/decision-action-modal'
 import { AddTagModal } from '@/shared/components/modal/add-tag-modal'
+import { AdminNotesModal } from '@/modules/settings/components/admin-notes-modal'
 import { StatusQuickLinkCard, StatusQuickLinkRow } from '@/shared/components/status-quick-link-card'
 import { Button } from '@/shared/components/ui/button'
 import { PayoutHistoryDrawer } from '../../components/payout-history-drawer'
 import { statusCardTones } from '@/shared/lib/design-tokens'
+import { getApiErrorMessage } from '@/shared/lib/api-error'
 import { useEntityTags } from '@/shared/hooks/use-entity-tags'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter'
 import type { FilterValues } from '@/shared/types/data-filter'
@@ -90,6 +92,7 @@ import {
   useRecordModerationReasonUsage,
 } from '@/modules/settings/hooks/use-templates'
 import { useEscalationAssignees } from '@/modules/my-tasks/hooks/use-admin-escalation'
+import { useUpdateExpertAdminNotes } from '../../hooks/use-expert-profile'
 
 const ACTION_ITEM_CLASS = 'text-slate-800 hover:bg-slate-100 hover:text-slate-900'
 
@@ -116,11 +119,13 @@ export const ExpertManagementPage = () => {
   const [deleteReasons, setDeleteReasons] = useState<string[]>([])
   const [deleteAdminNotes, setDeleteAdminNotes] = useState('')
   const [reportExpertTarget, setReportExpertTarget] = useState<Expert | null>(null)
+  const [notesExpertTarget, setNotesExpertTarget] = useState<Expert | null>(null)
   const [appliedAdvancedFilters, setAppliedAdvancedFilters] = useState<FilterValues>({})
   const navigate = useNavigate()
   const authUser = useAuthStore((state) => state.user)
   const suspendExpertMutation = useSuspendExpert()
   const deactivateExpertMutation = useDeactivateExpert()
+  const updateNotesMutation = useUpdateExpertAdminNotes(notesExpertTarget?.id)
   const recordReasonUsage = useRecordModerationReasonUsage()
   const { options: suspendReasonOptions, buildPayload: buildSuspendReasonPayload } =
     useModerationReasonOptions(MODERATION_CATEGORY_SLUGS.suspendExpert)
@@ -264,6 +269,25 @@ export const ExpertManagementPage = () => {
     setDeleteReasons([])
     setIsBulkDelete(false)
   }, [])
+
+  const handleSaveInternalNotes = useCallback(
+    (notes: string) => {
+      if (!notesExpertTarget?.id) {
+        toast.error('Unable to save notes for this expert.')
+        return
+      }
+      updateNotesMutation.mutate(notes, {
+        onSuccess: () => {
+          toast.success('Admin notes saved')
+          setNotesExpertTarget(null)
+        },
+        onError: (error: unknown) => {
+          toast.error(getApiErrorMessage(error) || 'Failed to save admin notes')
+        },
+      })
+    },
+    [notesExpertTarget?.id, updateNotesMutation],
+  )
 
   const toggleDeleteReason = useCallback((value: string) => {
     setDeleteReasons((current) =>
@@ -871,6 +895,16 @@ export const ExpertManagementPage = () => {
               Delete Expert
             </TableActionsItem>
             <TableActionsItem
+              icon={<FileText className="size-3.5 text-slate-700" aria-hidden="true" />}
+              className={ACTION_ITEM_CLASS}
+              onClick={() => {
+                setActiveDropdownId(null)
+                setNotesExpertTarget(expert)
+              }}
+            >
+              Add Internal Notes
+            </TableActionsItem>
+            <TableActionsItem
               icon={<Tag className="size-3.5 text-slate-700" aria-hidden="true" />}
               className={ACTION_ITEM_CLASS}
               onClick={() => {
@@ -1084,7 +1118,11 @@ export const ExpertManagementPage = () => {
                 onClick={() => handleBulkActionClick(action.label)}
                 className="flex size-8 items-center justify-center rounded-md bg-black text-white transition-colors hover:bg-white/10"
               >
-                <action.icon className="size-3.5" aria-hidden="true" />
+                {action.label.toLowerCase().includes('export') ? (
+                  <ExportDataIcon className="size-3.5" />
+                ) : (
+                  <action.icon className="size-3.5" aria-hidden="true" />
+                )}
               </button>
             ))}
           </div>
@@ -1248,6 +1286,13 @@ export const ExpertManagementPage = () => {
         onClose={closeTagModal}
         initialTags={initialTags}
         onSubmit={saveTags}
+      />
+
+      <AdminNotesModal
+        open={Boolean(notesExpertTarget)}
+        initialNotes={notesExpertTarget?.adminNotes || ''}
+        onClose={() => setNotesExpertTarget(null)}
+        onSubmit={handleSaveInternalNotes}
       />
 
       {reportExpertTarget && authUser && (

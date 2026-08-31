@@ -10,7 +10,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
-import { RefreshCw, Star, TrendingDown, TrendingUp, Upload } from 'lucide-react'
+import { RefreshCw, Star, TrendingDown, TrendingUp } from 'lucide-react'
 import { useCallback, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
@@ -24,7 +24,7 @@ import { useVenueDashboard } from '../../hooks/use-venue-dashboard'
 import { exportVenueDashboardToExcel } from '../../utils/export-venue-dashboard'
 import { Button } from '@/shared/components/ui/button'
 import { cn } from '@/shared/lib/cn'
-import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
+import { ExportDataIcon, ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
 
 type Metric = {
   id: string
@@ -392,7 +392,7 @@ export const VenueDashboardPage = () => {
           </Button>
 
           <Button className="ui-export-data h-9" onClick={handleExportData}>
-            <Upload className="size-4" />
+            <ExportDataIcon className="size-5 shrink-0" />
             Export Data
           </Button>
         </div>

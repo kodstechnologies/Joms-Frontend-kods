@@ -444,9 +444,13 @@ export function FinanceServicesPage() {
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-h2 text-brand-text tracking-tight">Services</h1>
+          <h1 className="text-h2 text-brand-text tracking-tight">
+            {isEscrowTab ? 'Escrow Management' : 'Services'}
+          </h1>
           <p className="text-body-sm text-muted mt-1 leading-[20px]">
-            Manage service bookings, expert commissions, and payouts
+            {isEscrowTab
+              ? 'Track revenue, payouts, and financial performance'
+              : 'Manage service bookings, expert commissions, and payouts'}
           </p>
           <p className="text-body-sm text-muted mt-3 leading-[20px]">
             <Link to="/finance/dashboard" className="hover:text-brand-text transition-colors">

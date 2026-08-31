@@ -15,8 +15,8 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
-import { ArrowLeft, Star, Upload, User } from 'lucide-react'
-import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
+import { ArrowLeft, Star, User } from 'lucide-react'
+import { ExportDataIcon, ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
 
 import { useExpertAnalytics, useExpertProfile } from '../../hooks/use-expert-profile'
 import {
@@ -430,7 +430,7 @@ export function ExpertProfileAnalyticsPage() {
             Manage Metrics
           </Button>
           <Button className="ui-export-data h-9" onClick={handleExport}>
-            <Upload className="size-4" />
+            <ExportDataIcon className="size-5 shrink-0" />
             Export Data
           </Button>
         </div>

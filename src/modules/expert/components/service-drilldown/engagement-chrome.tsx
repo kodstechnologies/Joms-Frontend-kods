@@ -265,7 +265,7 @@ export function EngagementCard({
   onPaymentClick?: () => void
 }) {
   return (
-    <article className="max-w-[560px] overflow-hidden rounded-[20px] border border-white/[0.06] bg-[#141414]">
+    <article className="w-[355px] max-w-full overflow-hidden rounded-[20px] border border-white/[0.06] bg-[#141414]">
       <StatusBar
         paymentLabel={paymentLabel}
         workLabel={workLabel}
@@ -310,7 +310,7 @@ export function MilestoneStatusCard({
     milestone.title.replace(/^milestone\s*\d*\s*[:\-–—]?\s*/i, '').trim() || milestone.title
 
   return (
-    <article className="min-w-0 flex-1 overflow-hidden rounded-[20px] border border-white/[0.06] bg-[#141414]">
+    <article className="w-[355px] max-w-full overflow-hidden rounded-[20px] border border-white/[0.06] bg-[#141414]">
       <StatusBar
         paymentLabel={chrome.paymentLabel}
         workLabel={chrome.workLabel}

@@ -1,5 +1,6 @@
 import React from 'react'
-import { Filter, RotateCcw, Upload } from 'lucide-react'
+import { Filter, RotateCcw } from 'lucide-react'
+import { ExportDataIcon } from '@/shared/components/icons/action-button-icons'
 
 import type { FilterValues, ModuleFilterConfig } from '@/shared/types/data-filter'
 
@@ -115,7 +116,7 @@ export function ExportDataModal({
             disabled={isExporting}
             className="ui-export-data ui-cta ui-cta-primary w-full sm:w-auto"
           >
-            <Upload className="icon-sm" aria-hidden="true" />
+            <ExportDataIcon className="size-5 shrink-0" />
             {isExporting ? 'Exporting...' : 'Export Data'}
           </button>
         </div>

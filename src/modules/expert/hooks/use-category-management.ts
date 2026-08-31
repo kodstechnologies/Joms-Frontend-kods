@@ -34,8 +34,9 @@ export const useServiceCategories = (params?: CategoryListParams) =>
   useQuery({
     queryKey: [CATEGORY_QUERY_KEY, params],
     queryFn: () => fetchCategories(params),
+    retry: 2,
     select: (response) => ({
-      categories: (response.data || []).map(mapServiceCategoryToUi),
+      categories: (Array.isArray(response.data) ? response.data : []).map(mapServiceCategoryToUi),
       pagination: response.meta?.pagination,
       message: response.message,
     }),

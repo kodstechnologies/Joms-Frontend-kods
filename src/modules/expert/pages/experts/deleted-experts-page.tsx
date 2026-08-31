@@ -1,7 +1,8 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { Eye, RotateCcw, Upload } from 'lucide-react'
+import { Eye, RotateCcw } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import { ExportDataIcon } from '@/shared/components/icons/action-button-icons'
 import { toast } from 'sonner'
 import type { FilterValues } from '@/shared/types/data-filter'
 import { useModuleExportFilters } from '@/shared/components/advanced-filter/use-module-export-filters'
@@ -196,7 +197,7 @@ export function ExpertDeletedExpertsPage() {
                   Retrieve Account
                 </TableActionsItem>
                 <TableActionsItem
-                  icon={<Upload className="size-3.5" aria-hidden="true" />}
+                  icon={<ExportDataIcon className="size-3.5" />}
                   onClick={() => {
                     setActiveDropdownId(null)
                     void handleExportExpertRow(expert)

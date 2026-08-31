@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
+import { ExportDataIcon, ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
 import {
   AlertCircle,
   Ban,
@@ -1000,7 +1000,11 @@ export const ServiceManagementPage = () => {
                 onClick={action.onClick}
                 className="flex size-8 items-center justify-center rounded-md bg-black text-white transition-colors hover:bg-white/10"
               >
-                <action.icon className="size-3.5" aria-hidden="true" />
+                {action.label.toLowerCase().includes('export') ? (
+                  <ExportDataIcon className="size-3.5" />
+                ) : (
+                  <action.icon className="size-3.5" aria-hidden="true" />
+                )}
               </button>
             ))}
           </div>

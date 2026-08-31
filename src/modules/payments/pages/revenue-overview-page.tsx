@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { AlertTriangle, Eye, Tag, Trash2 } from 'lucide-react'
+import { AlertTriangle, Eye, SquarePen, Tag, Trash2 } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
@@ -25,6 +25,7 @@ import { sortIdsByCatalogOrder } from '@/shared/lib/dedupe-ids'
 import { mapPaymentToRevenueRow } from '@/modules/payments/utils/finance-mappers'
 import { escalateUrl } from '@/modules/payments/utils/finance-escalate'
 import { AddTagsModal } from '@/shared/components/modals/add-tags-modal'
+import { AddFinanceNoteModal } from '@/modules/payments/components/add-finance-note-modal'
 import {
   FinanceEscalateDeleteModal,
   type FinanceEscalateDeleteAction,
@@ -121,6 +122,7 @@ export function RevenueOverviewPage() {
   const [appliedFilters, setAppliedFilters] = useState<FilterValues>({})
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null)
   const [tagTarget, setTagTarget] = useState<RevenueOverviewRow | null>(null)
+  const [noteTarget, setNoteTarget] = useState<RevenueOverviewRow | null>(null)
   const [rowAction, setRowAction] = useState<FinanceEscalateDeleteAction | null>(null)
   const addNote = useAddFinanceNote()
   const escalate = useEscalateFinance()
@@ -213,6 +215,16 @@ export function RevenueOverviewPage() {
             }}
           >
             View Details
+          </TableActionsItem>
+          <TableActionsItem
+            icon={<SquarePen className="size-3.5 text-slate-700" aria-hidden="true" />}
+            className="text-slate-800 hover:bg-slate-100 hover:text-slate-900"
+            onClick={() => {
+              setActiveDropdownId(null)
+              setNoteTarget(record)
+            }}
+          >
+            Add Internal Notes
           </TableActionsItem>
           <TableActionsItem
             icon={<Tag className="size-3.5 text-slate-700" aria-hidden="true" />}
@@ -483,6 +495,25 @@ export function RevenueOverviewPage() {
         }}
         resourceLabel="payments"
         emptyMessage="No revenue records found."
+      />
+
+      <AddFinanceNoteModal
+        open={!!noteTarget}
+        isSubmitting={addNote.isPending}
+        onClose={() => setNoteTarget(null)}
+        onSubmit={(adminNote) => {
+          if (!noteTarget) return
+          addNote.mutate(
+            { id: noteTarget.id, resourceType: 'Payment', adminNote },
+            {
+              onSuccess: () => {
+                toast.success('Note saved')
+                setNoteTarget(null)
+              },
+              onError: () => toast.error('Failed to save note'),
+            },
+          )
+        }}
       />
 
       <AddTagsModal

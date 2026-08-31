@@ -10,8 +10,8 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
-import { ArrowLeft, RefreshCw, Star, Upload } from 'lucide-react'
-import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
+import { ArrowLeft, RefreshCw, Star } from 'lucide-react'
+import { ExportDataIcon, ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
 
 import { navigateBackOrFallback } from '@/shared/lib/navigation'
 import { Button } from '@/shared/components/ui/button'
@@ -117,7 +117,7 @@ export function SpaceAnalyticsPage() {
               URL.revokeObjectURL(url)
             }}
           >
-            <Upload className="size-4" />
+            <ExportDataIcon className="size-5 shrink-0" />
             Export Data
           </Button>
         </div>

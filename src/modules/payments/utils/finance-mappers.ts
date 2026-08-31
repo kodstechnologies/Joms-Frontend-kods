@@ -39,6 +39,17 @@ export const formatDate = (value?: string | null) => {
 
 export { formatDateTimeEnInFinance as formatDateTime } from '@/shared/lib/format-datetime'
 
+export const formatLongDate = (value?: string | null) => {
+  if (!value) return '—'
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return '—'
+  return date.toLocaleDateString('en-GB', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  })
+}
+
 export const titleCase = (value?: string | null) => {
   if (!value) return '—'
   return value.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())

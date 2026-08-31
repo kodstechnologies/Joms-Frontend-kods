@@ -158,7 +158,7 @@ export function PayoutDetailViewPage() {
               <Download className="size-4" />
               Download Invoice
             </Button>
-            <Button type="button" variant="secondary" onClick={() => setNoteModal('note')}>
+            <Button type="button" className="ui-cta" onClick={() => setNoteModal('note')}>
               <SquarePen className="size-4" />
               Add Internal Note
             </Button>

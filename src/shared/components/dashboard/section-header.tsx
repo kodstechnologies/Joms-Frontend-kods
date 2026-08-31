@@ -53,12 +53,12 @@ export function SectionHeader({
                       : undefined,
                 )}
               >
-                {action.icon ? (
+                {isExportData ? (
+                  <ExportDataIcon className="size-5 shrink-0" />
+                ) : action.icon ? (
                   action.icon
                 ) : isManageMetrics ? (
                   <ManageMetricsIcon className="size-4 shrink-0" />
-                ) : isExportData ? (
-                  <ExportDataIcon className="size-5 shrink-0" />
                 ) : null}
                 {action.label}
               </Button>

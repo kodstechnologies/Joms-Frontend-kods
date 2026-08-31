@@ -12,9 +12,8 @@ import {
   Trash2,
   TrendingDown,
   TrendingUp,
-  Upload,
 } from 'lucide-react'
-import { ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
+import { ExportDataIcon, ManageMetricsIcon } from '@/shared/components/icons/action-button-icons'
 import { toast } from 'sonner'
 
 import { AddTagModal } from '@/shared/components/modal/add-tag-modal'
@@ -758,7 +757,7 @@ export function TicketManagementPage() {
             disabled={isExportingMetrics}
             className="ui-export-data ui-cta ui-cta-primary"
           >
-            <Upload className="icon-sm shrink-0" aria-hidden="true" />
+            <ExportDataIcon className="size-5 shrink-0" />
             {isExportingMetrics ? 'Exporting...' : 'Export Data'}
           </Button>
           <button

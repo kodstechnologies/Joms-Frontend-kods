@@ -9,7 +9,6 @@ import {
   Star,
   TrendingUp,
   Trophy,
-  Upload,
   UserRound,
   Users,
   X,
@@ -728,7 +727,7 @@ function FiltersPanel({
                 disabled={isExporting}
                 onClick={() => onExport?.(selectedFormat)}
               >
-                <Upload className="size-4" />
+                <ExportDataIcon className="size-5 shrink-0" />
                 {isExporting ? 'Exporting...' : 'Export Data'}
               </Button>
             </>
@@ -1095,7 +1094,7 @@ export const LeaderboardPage = () => {
               className="ui-export-data gap-2"
               disabled={isExporting}
             >
-              <ExportDataIcon className="size-4 shrink-0" />
+              <ExportDataIcon className="size-5 shrink-0" />
               Export Data
             </Button>
           </div>
