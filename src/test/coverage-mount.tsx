@@ -79,7 +79,8 @@ function pickComponent(
   )
   if (named) return named[1] as ComponentType<Record<string, unknown>>
   return Object.values(mod).find((value) => typeof value === 'function') as
-    ComponentType<Record<string, unknown>> | undefined
+    | ComponentType<Record<string, unknown>>
+    | undefined
 }
 
 export async function mountCoveragePage(
