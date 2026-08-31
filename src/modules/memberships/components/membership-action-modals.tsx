@@ -440,11 +440,11 @@ function ExtendEndDateField({
   const displayValue = value ? formatMembershipDate(value) : null
 
   return (
-    <label className="flex items-center justify-between gap-4">
+    <label className="flex items-center gap-3">
       <span className="shrink-0 text-[14px] leading-[22px] text-white">
         End Date <RequiredMark />
       </span>
-      <div className="relative w-full max-w-[238px]">
+      <div className="relative w-[150px] shrink-0">
         <input
           type="date"
           value={value}

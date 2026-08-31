@@ -1,7 +1,7 @@
 import { X } from 'lucide-react'
 import { useEffect } from 'react'
 
-import { Sidebar } from '@/app/layouts/components/sidebar'
+import { Sidebar } from '@/app/layouts/components/sidebar-nav'
 import { SidebarBrand } from '@/app/layouts/components/sidebar-brand'
 
 type SidebarMobileProps = {

@@ -2,12 +2,7 @@ import { settingsApiClient } from '@/shared/lib/axios'
 
 export type CommunicationChannel = 'in-app' | 'email' | 'push'
 export type CommunicationType =
-  | 'transactional'
-  | 'marketing'
-  | 'promotional'
-  | 'reminder'
-  | 'announcement'
-  | 'system'
+  'transactional' | 'marketing' | 'promotional' | 'reminder' | 'announcement' | 'system'
 export type CommunicationAudience =
   | 'all-users'
   | 'experts'
@@ -153,6 +148,7 @@ type ApiEnvelope<T> = {
 }
 
 export const COMMUNICATION_AUDIENCE_OPTIONS: CommunicationOption[] = [
+  { value: 'all-users', label: 'All Users' },
   { value: 'experts', label: 'Experts' },
   { value: 'venue-partners', label: 'Venue Partners' },
   { value: 'members', label: 'Members' },
