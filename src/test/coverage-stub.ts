@@ -236,6 +236,7 @@ export function coverageComponentProps(): Record<string, unknown> {
     value: '',
     id: 'id-1',
     type: 'text',
+    targetValue: 'admin@example.com',
     action: 'upgrade',
     subscription,
     plan: subscription,
