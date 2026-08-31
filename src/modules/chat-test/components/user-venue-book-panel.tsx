@@ -3,8 +3,8 @@ import {
   completeVenueBooking,
   createVenueBooking,
   getSpaceSlots,
+  listAllBookableVenues,
   listBookableSpaces,
-  listBookableVenues,
   listMyVenueBookings,
   payVenueBooking,
   type VenueBookableSpace,
@@ -79,10 +79,10 @@ export function UserVenueBookPanel({ user }: Props) {
     setLoadingVenues(true)
     setError(null)
     try {
-      const result = await listBookableVenues(token, 1, 50)
-      setVenues(result.data)
+      const rows = await listAllBookableVenues(token, 'all')
+      setVenues(rows)
       setError(null)
-      setSuccess(`Loaded ${result.data.length} venues`)
+      setSuccess(`Loaded ${rows.length} venues`)
     } catch (err) {
       setError(errMessage(err))
     } finally {
@@ -95,10 +95,10 @@ export function UserVenueBookPanel({ user }: Props) {
 
     void (async () => {
       try {
-        const result = await listBookableVenues(token, 1, 50)
+        const rows = await listAllBookableVenues(token, 'all')
         if (!active) return
-        setVenues(result.data)
-        setSuccess(`Loaded ${result.data.length} venues`)
+        setVenues(rows)
+        setSuccess(`Loaded ${rows.length} venues`)
       } catch (err) {
         if (!active) return
         setError(errMessage(err))
@@ -266,6 +266,7 @@ export function UserVenueBookPanel({ user }: Props) {
             {venues.map((v) => (
               <option key={v.id} value={v.id}>
                 {v.name || v.id}
+                {v.status && v.status !== 'live' ? ` (${v.status.replace('_', ' ')})` : ''}
               </option>
             ))}
           </select>

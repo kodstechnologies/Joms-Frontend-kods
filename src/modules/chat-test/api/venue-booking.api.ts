@@ -6,6 +6,7 @@ export type VenueBookingProjectStatus = 'all' | 'new' | 'ongoing' | 'completed' 
 export type VenueBookableVenue = {
   id: string
   name: string
+  status?: string | null
   coverImageUrl?: string | null
   venueType?: string | null
   aboutVenue?: string | null
@@ -87,14 +88,35 @@ function client(token: string) {
   })
 }
 
-export async function listBookableVenues(token: string, page = 1, limit = 20) {
+export async function listBookableVenues(
+  token: string,
+  page = 1,
+  limit = 20,
+  scope: 'bookable' | 'all' = 'bookable',
+) {
   const res = await client(token).get('/venue-bookings/venues', {
-    params: { page, limit },
+    params: { page, limit, scope },
   })
   return {
     data: (res.data?.data || []) as VenueBookableVenue[],
     meta: res.data?.meta as { pagination?: Record<string, number> } | undefined,
   }
+}
+
+/** Fetches every page so dev tools always show the full venue catalog. */
+export async function listAllBookableVenues(token: string, scope: 'bookable' | 'all' = 'all') {
+  const all: VenueBookableVenue[] = []
+  let page = 1
+  let totalPages = 1
+
+  while (page <= totalPages) {
+    const result = await listBookableVenues(token, page, 100, scope)
+    all.push(...result.data)
+    totalPages = result.meta?.pagination?.totalPages ?? 1
+    page += 1
+  }
+
+  return all
 }
 
 export async function listBookableSpaces(token: string, venueId: string) {

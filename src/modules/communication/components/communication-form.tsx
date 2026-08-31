@@ -65,6 +65,7 @@ const labelClass = 'text-body-sm text-muted mb-1.5 block'
 
 const CHANNEL_VALUES = new Set(['in-app', 'email', 'push'])
 const AUDIENCE_VALUES = new Set([
+  'all-users',
   'experts',
   'venue-partners',
   'members',
@@ -221,7 +222,8 @@ function CommunicationFormFields({
   const [additionalNotes, setAdditionalNotes] = useState(initialValues.additionalNotes)
 
   const audienceOptions = useMemo(() => {
-    const options = [...(audiences ?? COMMUNICATION_AUDIENCE_OPTIONS)]
+    const resolved = audiences?.length ? audiences : COMMUNICATION_AUDIENCE_OPTIONS
+    const options = [...resolved]
     if (audience && !options.some((opt) => opt.value === audience)) {
       options.push({ value: audience, label: audience })
     }

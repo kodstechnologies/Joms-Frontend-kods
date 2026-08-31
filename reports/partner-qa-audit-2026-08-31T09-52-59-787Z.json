@@ -1,0 +1,381 @@
+{
+  "generatedAt": "2026-08-31T09:52:59.790Z",
+  "partner": {
+    "id": "seed-partner-001",
+    "userType": "partner",
+    "servicetype": "",
+    "name": "Seed Priya Nair"
+  },
+  "summary": {
+    "total": 33,
+    "pass": 30,
+    "expected": 3,
+    "partial": 0,
+    "errors500": 0
+  },
+  "results": [
+    {
+      "group": "Auth",
+      "name": "Referral info",
+      "method": "GET",
+      "url": "/auth/referral-info",
+      "status": 200,
+      "message": "Referral info fetched successfully",
+      "ms": 348,
+      "bucket": "Pass",
+      "is500": false
+    },
+    {
+      "group": "Auth",
+      "name": "Contact details",
+      "method": "GET",
+      "url": "/auth/contact-details",
+      "status": 200,
+      "message": "Contact details fetched successfully",
+      "ms": 38,
+      "bucket": "Pass",
+      "is500": false
+    },
+    {
+      "group": "Auth",
+      "name": "Account report status",
+      "method": "GET",
+      "url": "/auth/account-report",
+      "status": 200,
+      "message": "Report waiting period completed",
+      "ms": 71,
+      "bucket": "Pass",
+      "is500": false
+    },
+    {
+      "group": "Auth",
+      "name": "Delete account status",
+      "method": "GET",
+      "url": "/auth/delete-account",
+      "status": 200,
+      "message": "No delete account request found",
+      "ms": 38,
+      "bucket": "Pass",
+      "is500": false
+    },
+    {
+      "group": "Auth",
+      "name": "Two-step status",
+      "method": "GET",
+      "url": "/auth/two-step",
+      "status": 200,
+      "message": "Two-step verification status fetched",
+      "ms": 43,
+      "bucket": "Pass",
+      "is500": false
+    },
+    {
+      "group": "Auth",
+      "name": "Walkthrough",
+      "method": "GET",
+      "url": "/auth/walkthrough",
+      "status": 200,
+      "message": "Walkthrough images fetched successfully",
+      "ms": 33,
+      "bucket": "Pass",
+      "is500": false
+    },
+    {
+      "group": "Auth",
+      "name": "Own partner profile",
+      "method": "GET",
+      "url": "/auth/partners/seed-partner-001",
+      "status": 200,
+      "message": "ok",
+      "ms": 34,
+      "bucket": "Pass",
+      "is500": false
+    },
+    {
+      "group": "KYC",
+      "name": "Digilocker config",
+      "method": "GET",
+      "url": "/digilocker/config",
+      "status": 200,
+      "message": "DigiLocker config fetched",
+      "ms": 17,
+      "bucket": "Pass",
+      "is500": false
+    },
+    {
+      "group": "KYC",
+      "name": "Concierge KYC me",
+      "method": "GET",
+      "url": "/concierge-kyc/concierge/me",
+      "status": 200,
+      "message": "KYC details retrieved",
+      "ms": 268,
+      "bucket": "Pass",
+      "is500": false
+    },
+    {
+      "group": "KYC",
+      "name": "Concierge banking me",
+      "method": "GET",
+      "url": "/concierge-banking/me",
+      "status": 404,
+      "message": "ok",
+      "ms": 17,
+      "bucket": "Expected",
+      "is500": false
+    },
+    {
+      "group": "KYC",
+      "name": "Venue KYC me",
+      "method": "GET",
+      "url": "/venue-kyc/me",
+      "status": 400,
+      "message": "Partner is not a 'venue' service type",
+      "ms": 47,
+      "bucket": "Expected",
+      "is500": false
+    },
+    {
+      "group": "Services",
+      "name": "My services",
+      "method": "GET",
+      "url": "/services/my-services",
+      "status": 200,
+      "message": "Services retrieved",
+      "ms": 320,
+      "bucket": "Pass",
+      "is500": false
+    },
+    {
+      "group": "Services",
+      "name": "Listing pricing config",
+      "method": "GET",
+      "url": "/services/pricing-config",
+      "status": 200,
+      "message": "Listing pricing config fetched",
+      "ms": 223,
+      "bucket": "Pass",
+      "is500": false
+    },
+    {
+      "group": "Services",
+      "name": "My banking details",
+      "method": "GET",
+      "url": "/services/banking/me",
+      "status": 200,
+      "message": "Banking details retrieved successfully",
+      "ms": 228,
+      "bucket": "Pass",
+      "is500": false
+    },
+    {
+      "group": "Services",
+      "name": "Consultations list",
+      "method": "GET",
+      "url": "/consultations?limit=5",
+      "status": 200,
+      "message": "Consultations retrieved",
+      "ms": 52,
+      "bucket": "Pass",
+      "is500": false
+    },
+    {
+      "group": "Services",
+      "name": "Consultation topics",
+      "method": "GET",
+      "url": "/consultations/topics",
+      "status": 200,
+      "message": "Topics retrieved",
+      "ms": 100,
+      "bucket": "Pass",
+      "is500": false
+    },
+    {
+      "group": "Services",
+      "name": "Partner quotations",
+      "method": "GET",
+      "url": "/quotations?limit=5",
+      "status": 200,
+      "message": "Quotation requests fetched successfully",
+      "ms": 50,
+      "bucket": "Pass",
+      "is500": false
+    },
+    {
+      "group": "Services",
+      "name": "Partner insights home",
+      "method": "GET",
+      "url": "/partner-insights/home",
+      "status": 200,
+      "message": "Partner home dashboard fetched",
+      "ms": 342,
+      "bucket": "Pass",
+      "is500": false
+    },
+    {
+      "group": "Services",
+      "name": "Partner insights overview",
+      "method": "GET",
+      "url": "/partner-insights/overview",
+      "status": 200,
+      "message": "Partner insights overview fetched",
+      "ms": 207,
+      "bucket": "Pass",
+      "is500": false
+    },
+    {
+      "group": "Services",
+      "name": "Partner insights earnings",
+      "method": "GET",
+      "url": "/partner-insights/earnings",
+      "status": 200,
+      "message": "Partner earnings fetched",
+      "ms": 43,
+      "bucket": "Pass",
+      "is500": false
+    },
+    {
+      "group": "Services",
+      "name": "Partner insights bookings",
+      "method": "GET",
+      "url": "/partner-insights/bookings?limit=5",
+      "status": 400,
+      "message": "\"limit\" is not allowed",
+      "ms": 16,
+      "bucket": "Expected",
+      "is500": false
+    },
+    {
+      "group": "Venues",
+      "name": "Owner venues",
+      "method": "GET",
+      "url": "/venues/owner",
+      "status": 200,
+      "message": "Owner venues fetched successfully",
+      "ms": 257,
+      "bucket": "Pass",
+      "is500": false
+    },
+    {
+      "group": "Venues",
+      "name": "Venue profile",
+      "method": "GET",
+      "url": "/venues/profile",
+      "status": 200,
+      "message": "Venue details fetched successfully",
+      "ms": 309,
+      "bucket": "Pass",
+      "is500": false
+    },
+    {
+      "group": "Venues",
+      "name": "Venue partner insights home",
+      "method": "GET",
+      "url": "/partner-insights/home",
+      "status": 200,
+      "message": "Partner home dashboard fetched",
+      "ms": 166,
+      "bucket": "Pass",
+      "is500": false
+    },
+    {
+      "group": "Membership",
+      "name": "Membership catalog",
+      "method": "GET",
+      "url": "/memberships?limit=5",
+      "status": 200,
+      "message": "Expert membership plans retrieved successfully",
+      "ms": 213,
+      "bucket": "Pass",
+      "is500": false
+    },
+    {
+      "group": "Membership",
+      "name": "My subscription",
+      "method": "GET",
+      "url": "/subscriptions/me",
+      "status": 200,
+      "message": "Membership retrieved successfully",
+      "ms": 94,
+      "bucket": "Pass",
+      "is500": false
+    },
+    {
+      "group": "Chat",
+      "name": "Chat threads",
+      "method": "GET",
+      "url": "/chat/threads?limit=5",
+      "status": 200,
+      "message": "Chat threads fetched",
+      "ms": 188,
+      "bucket": "Pass",
+      "is500": false
+    },
+    {
+      "group": "Notifications",
+      "name": "In-app notifications",
+      "method": "GET",
+      "url": "/notifications/in-app/me?limit=5",
+      "status": 200,
+      "message": "Notifications retrieved",
+      "ms": 278,
+      "bucket": "Pass",
+      "is500": false
+    },
+    {
+      "group": "Notifications",
+      "name": "In-app unread count",
+      "method": "GET",
+      "url": "/notifications/in-app/me/unread-count",
+      "status": 200,
+      "message": "Unread count retrieved",
+      "ms": 66,
+      "bucket": "Pass",
+      "is500": false
+    },
+    {
+      "group": "Notifications",
+      "name": "In-app preference",
+      "method": "GET",
+      "url": "/notifications/in-app/preference",
+      "status": 200,
+      "message": "In-app notification preference retrieved",
+      "ms": 48,
+      "bucket": "Pass",
+      "is500": false
+    },
+    {
+      "group": "Notifications",
+      "name": "Alert preferences",
+      "method": "GET",
+      "url": "/notifications/alerts/preference",
+      "status": 200,
+      "message": "Alert preference retrieved",
+      "ms": 45,
+      "bucket": "Pass",
+      "is500": false
+    },
+    {
+      "group": "Profile",
+      "name": "Concierge profile me",
+      "method": "GET",
+      "url": "/profile/me",
+      "status": 200,
+      "message": "Profile retrieved",
+      "ms": 236,
+      "bucket": "Pass",
+      "is500": false
+    },
+    {
+      "group": "Profile",
+      "name": "My offerings",
+      "method": "GET",
+      "url": "/offerings/",
+      "status": 200,
+      "message": "Offerings retrieved successfully",
+      "ms": 210,
+      "bucket": "Pass",
+      "is500": false
+    }
+  ]
+}

@@ -1,0 +1,381 @@
+{
+  "generatedAt": "2026-08-31T10:07:14.743Z",
+  "partner": {
+    "id": "seed-partner-001",
+    "userType": "partner",
+    "servicetype": "concierge",
+    "name": "Seed Priya Nair"
+  },
+  "summary": {
+    "total": 33,
+    "pass": 33,
+    "expected": 0,
+    "partial": 0,
+    "errors500": 0
+  },
+  "results": [
+    {
+      "flow": "Notifications",
+      "name": "Update in-app preference",
+      "method": "PATCH",
+      "url": "/notifications/in-app/preference",
+      "status": 200,
+      "message": "In-app notification preference updated",
+      "ms": 168,
+      "bucket": "Pass",
+      "is500": false
+    },
+    {
+      "flow": "Notifications",
+      "name": "Update alert preference",
+      "method": "PATCH",
+      "url": "/notifications/alerts/preference",
+      "status": 200,
+      "message": "Alert preference updated",
+      "ms": 158,
+      "bucket": "Pass",
+      "is500": false
+    },
+    {
+      "flow": "Notifications",
+      "name": "Register device token",
+      "method": "POST",
+      "url": "/notifications/device-tokens",
+      "status": 201,
+      "message": "Device token registered",
+      "ms": 103,
+      "bucket": "Pass",
+      "is500": false
+    },
+    {
+      "flow": "Notifications",
+      "name": "Unregister device token",
+      "method": "DELETE",
+      "url": "/notifications/device-tokens",
+      "status": 200,
+      "message": "Device token removed",
+      "ms": 79,
+      "bucket": "Pass",
+      "is500": false
+    },
+    {
+      "flow": "Offerings",
+      "name": "Create offering",
+      "method": "POST",
+      "url": "/offerings",
+      "status": 201,
+      "message": "Offering created successfully",
+      "ms": 300,
+      "bucket": "Pass",
+      "is500": false
+    },
+    {
+      "flow": "Offerings",
+      "name": "Update offering",
+      "method": "PUT",
+      "url": "/offerings/cmth2qpxa0002w0743zfsf60t",
+      "status": 200,
+      "message": "Offering updated successfully",
+      "ms": 135,
+      "bucket": "Pass",
+      "is500": false
+    },
+    {
+      "flow": "Offerings",
+      "name": "Delete offering",
+      "method": "DELETE",
+      "url": "/offerings/cmth2qpxa0002w0743zfsf60t",
+      "status": 200,
+      "message": "Offering deleted successfully",
+      "ms": 272,
+      "bucket": "Pass",
+      "is500": false
+    },
+    {
+      "flow": "Profile",
+      "name": "Add experience",
+      "method": "PATCH",
+      "url": "/profile/experience",
+      "status": 200,
+      "message": "Experience added",
+      "ms": 485,
+      "bucket": "Pass",
+      "is500": false
+    },
+    {
+      "flow": "Profile",
+      "name": "Update experience",
+      "method": "PATCH",
+      "url": "/profile/experience/fb1623c4-27f9-45a2-a60e-c343472c8970",
+      "status": 200,
+      "message": "Experience updated",
+      "ms": 448,
+      "bucket": "Pass",
+      "is500": false
+    },
+    {
+      "flow": "Profile",
+      "name": "Remove experience",
+      "method": "PATCH",
+      "url": "/profile/experience/fb1623c4-27f9-45a2-a60e-c343472c8970/remove",
+      "status": 200,
+      "message": "Experience removed",
+      "ms": 412,
+      "bucket": "Pass",
+      "is500": false
+    },
+    {
+      "flow": "Auth",
+      "name": "Update work experience",
+      "method": "PATCH",
+      "url": "/auth/partners/seed-partner-001/work-experience",
+      "status": 200,
+      "message": "Work experience updated successfully",
+      "ms": 207,
+      "bucket": "Pass",
+      "is500": false
+    },
+    {
+      "flow": "KYC",
+      "name": "Dismiss create-profile prompt",
+      "method": "PATCH",
+      "url": "/concierge-banking/concierge/create-profile/dismiss",
+      "status": 200,
+      "message": "Create profile state updated successfully",
+      "ms": 481,
+      "bucket": "Pass",
+      "is500": false
+    },
+    {
+      "flow": "Calendar",
+      "name": "Upsert partner availability",
+      "method": "PUT",
+      "url": "/calendar/availability",
+      "status": 200,
+      "message": "Availability updated successfully",
+      "ms": 362,
+      "bucket": "Pass",
+      "is500": false
+    },
+    {
+      "flow": "Consultations",
+      "name": "Create consultation topic",
+      "method": "POST",
+      "url": "/consultations/topics",
+      "status": 201,
+      "message": "Topic created",
+      "ms": 31,
+      "bucket": "Pass",
+      "is500": false
+    },
+    {
+      "flow": "Services",
+      "name": "Create service listing (draft)",
+      "method": "POST",
+      "url": "/services",
+      "status": 201,
+      "message": "Service created",
+      "ms": 257,
+      "bucket": "Pass",
+      "is500": false
+    },
+    {
+      "flow": "Services",
+      "name": "Edit service basic info",
+      "method": "PATCH",
+      "url": "/services/cmth2qso70001w06gsgihdyej/basic",
+      "status": 200,
+      "message": "Basic info updated",
+      "ms": 66,
+      "bucket": "Pass",
+      "is500": false
+    },
+    {
+      "flow": "Services",
+      "name": "Close draft service (expect deny)",
+      "method": "PATCH",
+      "url": "/services/cmth2qso70001w06gsgihdyej/close",
+      "status": 400,
+      "message": "Invalid status transition",
+      "ms": 66,
+      "bucket": "Pass",
+      "is500": false
+    },
+    {
+      "flow": "Services",
+      "name": "Delete draft service (expect deny)",
+      "method": "DELETE",
+      "url": "/services/cmth2qso70001w06gsgihdyej/delete",
+      "status": 400,
+      "message": "Only closed services can be deleted",
+      "ms": 31,
+      "bucket": "Pass",
+      "is500": false
+    },
+    {
+      "flow": "Consultations",
+      "name": "Create consultation (preview)",
+      "method": "POST",
+      "url": "/consultations",
+      "status": 201,
+      "message": "Consultation created",
+      "ms": 41,
+      "bucket": "Pass",
+      "is500": false
+    },
+    {
+      "flow": "Consultations",
+      "name": "Edit consultation draft",
+      "method": "PATCH",
+      "url": "/consultations/cmth2qstx0002w06g40remgfg",
+      "status": 200,
+      "message": "Consultation updated",
+      "ms": 81,
+      "bucket": "Pass",
+      "is500": false
+    },
+    {
+      "flow": "Consultations",
+      "name": "Set consultation availability",
+      "method": "POST",
+      "url": "/consultations/cmth2qstx0002w06g40remgfg/availability",
+      "status": 200,
+      "message": "Availability updated",
+      "ms": 134,
+      "bucket": "Pass",
+      "is500": false
+    },
+    {
+      "flow": "Consultations",
+      "name": "Delete consultation availability",
+      "method": "DELETE",
+      "url": "/consultations/cmth2qstx0002w06g40remgfg/availability",
+      "status": 200,
+      "message": "Availability cleared",
+      "ms": 81,
+      "bucket": "Pass",
+      "is500": false
+    },
+    {
+      "flow": "Consultations",
+      "name": "Close preview consultation (expect deny)",
+      "method": "PATCH",
+      "url": "/consultations/cmth2qstx0002w06g40remgfg/close",
+      "status": 400,
+      "message": "Only LIVE consultations can be closed",
+      "ms": 42,
+      "bucket": "Pass",
+      "is500": false
+    },
+    {
+      "flow": "Consultations",
+      "name": "Delete preview consultation (expect deny)",
+      "method": "DELETE",
+      "url": "/consultations/cmth2qstx0002w06g40remgfg",
+      "status": 400,
+      "message": "Only closed consultations can be deleted",
+      "ms": 29,
+      "bucket": "Pass",
+      "is500": false
+    },
+    {
+      "flow": "Chat",
+      "name": "Create or open chat thread",
+      "method": "POST",
+      "url": "/chat/threads",
+      "status": 200,
+      "message": "Chat thread ready",
+      "ms": 390,
+      "bucket": "Pass",
+      "is500": false
+    },
+    {
+      "flow": "Chat",
+      "name": "Send chat message",
+      "method": "POST",
+      "url": "/chat/threads/seed-thread-001/messages",
+      "status": 201,
+      "message": "Message sent",
+      "ms": 249,
+      "bucket": "Pass",
+      "is500": false
+    },
+    {
+      "flow": "Chat",
+      "name": "Edit chat message",
+      "method": "PATCH",
+      "url": "/chat/threads/seed-thread-001/messages/cmth2qtid0002w08g8kgfddcb",
+      "status": 200,
+      "message": "Message updated",
+      "ms": 259,
+      "bucket": "Pass",
+      "is500": false
+    },
+    {
+      "flow": "Chat",
+      "name": "Delete chat message",
+      "method": "DELETE",
+      "url": "/chat/threads/seed-thread-001/messages/cmth2qtid0002w08g8kgfddcb",
+      "status": 200,
+      "message": "Message deleted",
+      "ms": 185,
+      "bucket": "Pass",
+      "is500": false
+    },
+    {
+      "flow": "Chat",
+      "name": "Mark thread read",
+      "method": "PATCH",
+      "url": "/chat/threads/seed-thread-001/read",
+      "status": 200,
+      "message": "Thread marked as read",
+      "ms": 167,
+      "bucket": "Pass",
+      "is500": false
+    },
+    {
+      "flow": "Chat",
+      "name": "Pin thread",
+      "method": "PATCH",
+      "url": "/chat/threads/seed-thread-001/pin",
+      "status": 200,
+      "message": "Chat pinned",
+      "ms": 103,
+      "bucket": "Pass",
+      "is500": false
+    },
+    {
+      "flow": "Chat",
+      "name": "Unpin thread",
+      "method": "PATCH",
+      "url": "/chat/threads/seed-thread-001/pin",
+      "status": 200,
+      "message": "Chat unpinned",
+      "ms": 114,
+      "bucket": "Pass",
+      "is500": false
+    },
+    {
+      "flow": "Chat",
+      "name": "Mute thread",
+      "method": "PATCH",
+      "url": "/chat/threads/seed-thread-001/mute",
+      "status": 200,
+      "message": "Chat muted",
+      "ms": 102,
+      "bucket": "Pass",
+      "is500": false
+    },
+    {
+      "flow": "Chat",
+      "name": "Unmute thread",
+      "method": "PATCH",
+      "url": "/chat/threads/seed-thread-001/mute",
+      "status": 200,
+      "message": "Chat unmuted",
+      "ms": 101,
+      "bucket": "Pass",
+      "is500": false
+    }
+  ]
+}

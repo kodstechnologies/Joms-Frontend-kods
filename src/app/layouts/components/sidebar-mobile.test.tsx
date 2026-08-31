@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { SidebarMobile } from './sidebar-mobile'
 
-vi.mock('@/app/layouts/components/sidebar', () => ({
+vi.mock('@/app/layouts/components/sidebar-nav', () => ({
   Sidebar: () => <nav>Sidebar nav</nav>,
 }))
 
